@@ -146,6 +146,8 @@ Contrast: all text on `ui-panel` meets WCAG AA (`ui-text-dim` on `ui-panel` is 6
 
 ## 5. UI style
 
+Implementation: `src/ui/style/theme.css` exposes the §4.4 tokens as CSS custom properties (`--ui-*`) and provides the `.tut-*` components below (panel, button, label, data, table, badge, meter, top bar, icon). Icons are registered in `src/ui/data/icon-manifest.ts`. Preview: `docs/design/ui-theme-preview.png`, built from `tools/art/preview/ui-theme.html`.
+
 - **Type**: labels and data in monospace: `ui-monospace, "JetBrains Mono", "Cascadia Mono", "SF Mono", Consolas, monospace`. Body copy in `system-ui, "Segoe UI", Roboto, sans-serif`. Labels are uppercase with `letter-spacing: 0.08em`.
 - **Shapes**: rectangles with one 45° chamfered corner (top-right, 8 px) on panels and buttons. That chamfer is the signature; nothing else is rounded.
 - **Lines**: 1 px `ui-line`. No shadows, no gradients, no blur.

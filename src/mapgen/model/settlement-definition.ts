@@ -1,4 +1,4 @@
-import type { SettlementScale } from "./map-recipe";
+import type { SettlementScale } from "../../content/model/settlement-scale";
 
 // ===========================================
 // Settlement definition

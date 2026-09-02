@@ -1,4 +1,4 @@
-import type { BiomeId } from "./map-recipe";
+import type { BiomeId } from "../../content/model/biome-id";
 import type { PropKindId } from "./prop";
 import type { SurfaceId } from "./surface";
 

@@ -1,5 +1,5 @@
 import type { CoverLevel } from "./cover";
-import type { BiomeId } from "./map-recipe";
+import type { BiomeId } from "../../content/model/biome-id";
 import type { TileCoord } from "./tile-coord";
 
 // ===========================================

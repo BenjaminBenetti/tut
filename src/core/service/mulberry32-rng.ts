@@ -1,4 +1,5 @@
 import type { Rng, RngState } from "../model/rng";
+import { hashSeed } from "./seed-hash";
 
 // ===========================================
 // Constants
@@ -21,6 +22,7 @@ export class Mulberry32Rng implements Rng {
   // Fields
   // ===========================================
 
+  private readonly seed: number;
   private state: number;
 
   // ===========================================
@@ -31,8 +33,9 @@ export class Mulberry32Rng implements Rng {
    * Creates a generator from a numeric seed. Any finite number is
    * accepted and truncated to an unsigned 32-bit integer.
    */
-  constructor(seed: number) {
-    this.state = seed >>> 0;
+  constructor(seed: number, state: number = seed) {
+    this.seed = seed >>> 0;
+    this.state = state >>> 0;
   }
 
   /**
@@ -45,7 +48,7 @@ export class Mulberry32Rng implements Rng {
         `Cannot restore ${ALGORITHM} from state of algorithm "${snapshot.algorithm}"`,
       );
     }
-    return new Mulberry32Rng(snapshot.state);
+    return new Mulberry32Rng(snapshot.seed, snapshot.state);
   }
 
   // ===========================================
@@ -92,13 +95,52 @@ export class Mulberry32Rng implements Rng {
     return this.next() < probability;
   }
 
-  /** Derives a new generator seeded from this stream, advancing it once. */
-  fork(): Rng {
+  /** Returns a weighted pick; see `Rng.pickWeighted`. */
+  pickWeighted<T>(items: readonly T[], weight: (item: T) => number): T {
+    if (items.length === 0) {
+      throw new Error("Cannot pick from an empty list");
+    }
+    const weights = items.map((item) => Math.max(0, weight(item)));
+    const total = weights.reduce((sum, w) => sum + w, 0);
+    if (total <= 0) {
+      throw new Error("pickWeighted requires at least one positive weight");
+    }
+    let roll = this.next() * total;
+    for (let i = 0; i < items.length; i++) {
+      roll -= weights[i]!;
+      if (roll < 0) {
+        return items[i] as T;
+      }
+    }
+    // Floating point can leave roll at exactly 0 after the last item.
+    return items[items.length - 1] as T;
+  }
+
+  /** Fisher–Yates shuffle of a copy. */
+  shuffle<T>(items: readonly T[]): T[] {
+    const copy = [...items];
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = this.nextInt(0, i);
+      const tmp = copy[i] as T;
+      copy[i] = copy[j] as T;
+      copy[j] = tmp;
+    }
+    return copy;
+  }
+
+  /**
+   * Labelled forks hash (seed, label) and leave this generator untouched;
+   * unlabelled forks seed the child from the next draw.
+   */
+  fork(label?: string): Rng {
+    if (label !== undefined) {
+      return new Mulberry32Rng(hashSeed(`${this.seed}:${label}`));
+    }
     return new Mulberry32Rng(this.nextInt(0, TWO_POW_32 - 1));
   }
 
-  /** Captures the current state for serialization. */
+  /** Captures the seed and current state for serialization. */
   getState(): RngState {
-    return { algorithm: ALGORITHM, state: this.state };
+    return { algorithm: ALGORITHM, seed: this.seed, state: this.state };
   }
 }

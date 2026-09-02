@@ -6,6 +6,8 @@
 export interface RngState {
   /** Identifies the algorithm so a loader can pick the right implementation. */
   readonly algorithm: string;
+  /** The seed the generator was created with; labelled forks derive from it. */
+  readonly seed: number;
   /** Algorithm-specific internal state as a 32-bit unsigned integer. */
   readonly state: number;
 }
@@ -34,8 +36,23 @@ export interface Rng {
   /** Returns true with the given probability in [0, 1]. */
   chance(probability: number): boolean;
 
-  /** Derives a new independent stream, advancing this one once. */
-  fork(): Rng;
+  /**
+   * Returns an element chosen with probability proportional to its
+   * weight. Weights need not sum to 1; non-positive weights are never
+   * chosen. Throws if the list is empty or no weight is positive.
+   */
+  pickWeighted<T>(items: readonly T[], weight: (item: T) => number): T;
+
+  /** Returns a uniformly shuffled copy; the input is not mutated. */
+  shuffle<T>(items: readonly T[]): T[];
+
+  /**
+   * Derives a new independent stream. With a label, the child is a pure
+   * function of this generator's seed and the label and consumes no
+   * state, so inserting or reordering other draws never perturbs it.
+   * Without a label, the child is seeded from the next draw.
+   */
+  fork(label?: string): Rng;
 
   /** Captures the internal state for serialization. */
   getState(): RngState;

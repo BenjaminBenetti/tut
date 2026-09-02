@@ -1,6 +1,6 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-02 (session 1, third update)
+Last updated: 2026-09-02 (session 1, fourth update)
 
 ## 1. What I was doing and where it stands
 
@@ -9,18 +9,20 @@ Last updated: 2026-09-02 (session 1, third update)
 | Style guide `docs/design/style-guide.md` | #2 | **Merged** (PR #12). §8 still describes my original proposal; rewrite to the #10 shape once it lands. |
 | Concept sheets `docs/design/concepts/` (7 subjects) | #3 | **Merged** (PR #86, infantry second pass PR #96). |
 | Placeholder GLBs batch 1 (38 models) + build/render tooling | #4 | **Merged** (PR #89). Tech Lead: the #10 engineer seeds the typed manifest from `tools/art/placeholders.manifest.json`, so no registration PR from me. |
-| Placeholder batch 2: biome tiles + every mapgen prop kind (13 models), mapgen id → model table in style guide §7 | #93 | PR #110 open |
+| Placeholder batch 2: biome tiles + every mapgen prop kind (13 models), mapgen id → model table in style guide §7 | #93 | **Merged** (PR #110). |
 | UI theme `src/ui/style/theme.css`, 24 icons, `src/ui/data/icon-manifest.ts` | #102 | **Merged** (PR #109). Not yet imported by the app; #72 should import `src/ui/style/theme.css`. |
-| Image generation recipe | — | **Working.** See §5. |
+| VFX sprites (muzzle flash, impact, egg burst) + `src/graphics/data/sprite-manifest.ts` | #119 | PR #121 open |
+| Icon `BASE_URL` follow-up, `gen-image.sh` stdin fix | #102, #3 | **Merged** (PR #114, PR #116). |
+| Image generation recipe (incl. transparent sprites) | — | **Working.** See §5. |
 | Headless GLB / page render checks | — | **Working.** See §7. |
 
-Issues #2, #3, #4, #93, #102 are on project 5 (Terra Under Threat).
+Issues #2, #3, #4, #93, #102, #119 are on project 5 (Terra Under Threat).
 
 ## 2. Open PRs / issues I own
 
-- PR #110 `feat(art): placeholder batch 2` → closes #93. Rebased on main after #89's squash.
-- PR #109 (UI theme) merged; #72 (composition root) should import `src/ui/style/theme.css`. Told epic #41.
-- Closed: #2, #3, #4 (all merged).
+- PR #121 `feat(art): VFX sprites + sprite manifest` → closes #119.
+- Offers posted, no reply yet: #74 (stylised Earth texture for the overworld map), #42 (unit/part thumbnails rendered from the placeholders for roster and mech bay screens).
+- Closed: #2, #3, #4, #93, #102 (all merged).
 
 ## 3. Decisions I made and why
 
@@ -34,16 +36,17 @@ Issues #2, #3, #4, #93, #102 are on project 5 (Terra Under Threat).
 - **`tools/art/` holds art tooling** (build, image gen, preview). ESLint already lints `.mjs` there; generated `placeholders.manifest.json` is in `.prettierignore` so rebuilds stay byte-identical.
 - **Ground tiles are named by mapgen surface id** (`tile.ground.grass`, `.dirt`, `.sand`, `.snow`, `.rock`, `.water`) and props by mapgen prop kind (`prop.crate`, `prop.tree-pine`, …) so the graphics lookup in style guide §7 is a one-liner. `car` maps to the 1×1 `prop.car-compact`; `prop.car-sedan` (2×1) stays for hand-placed wrecks.
 - **UI icons are CSS masks**, not inline SVG: `.tut-icon` with `--icon: url(...)` from `iconUrl(id)`. One colour, `currentColor`, so badges and states tint them. Icon manifest lives in `src/ui/data/` because icons are DOM assets, not three.js ones.
+- **Sprite manifest mirrors the icon manifest**: `SPRITE_MANIFEST` in `src/graphics/data/` (three.js-side assets), entries carry `path`, `size`, `blend`, `label`; test parses the PNG header itself (width, height, colour type with alpha) so no image library is needed. Sprites are RGBA ≤ 512², under 150 KB; a painterly result gets downscaled to 256² rather than shipped fat.
 - **Chamfer border trick**: `.tut-panel`/`.tut-btn` are two clipped layers (line colour behind, surface colour inset 1 px) so the 1 px border follows the 45° cut. `--surface` custom property selects the inner colour per variant.
 
 ## 4. Next, in order
 
-1. Land PR #110 (address review). If #10 merges before #110, add the 13 batch-2 ids to the typed manifest in a tiny follow-up.
-2. When #10 lands: rewrite style guide §8 to the shipped shape (`content/data/model-ids.ts` union + `graphics/data/model-manifest.ts` `satisfies Record<ModelAssetId, ModelAssetEntry>`, no `id` field).
-3. Overworld art for M1: a stylised Earth map plate texture or region plates (see #74; the engineer uses primitives first) and a city-marker sprite that reads infestation 0–100 (green → bug-green → danger). Wait for #74's implementer to say what they want; offer on the issue.
-4. VFX sprites for M2 (muzzle flash, impact, egg burst; ≤ 512², transparent, generated with `tools/art/gen-image.sh` asking for a transparent background) and a `sprite-manifest.ts`.
-5. Textures: a 512² palette atlas is not needed while models are one-material-per-token; revisit when real models arrive.
-6. Concept sheets round 2 when the Director gives feedback: mech variants (heavy chassis, alternate arm weapons), snow/desert/coastal tile kits, hive core (M3).
+1. Land PR #121 (address review).
+2. When #10 lands: rewrite style guide §8 to the shipped shape (`content/data/model-ids.ts` union + `graphics/data/model-manifest.ts` `satisfies Record<ModelAssetId, ModelAssetEntry>`, no `id` field) and check the 51 manifest entries match `tools/art/placeholders.manifest.json`.
+3. Answer whoever replies on #74 (Earth texture) or #42 (thumbnails); both are one-command jobs with the existing tooling (`gen-image.sh`, `render-placeholders.mjs`).
+4. Egg-burst sprite second pass with "flat fills, no shading inside shapes" so it returns to 512² (sidecar note).
+5. Concept sheets round 2 when the Director gives feedback: heavy mech chassis and alternate weapons, snow/desert/coastal tile kits, hive core (M3). Muzzle-flash 4-frame strip when tactical animation exists.
+6. Textures: not needed while models are one material per token.
 
 ## 5. Image generation recipe (Codex CLI)
 
@@ -74,6 +77,8 @@ codex exec --skip-git-repo-check --ephemeral -s danger-full-access \
 - If the file is not at the requested path, the image is still under `~/.codex/generated_images/<session id>/exec-*.png`; the session id is printed in the exec header on stderr. The helper script falls back to that.
 - Prompt skeleton lives in the style guide §10. Always put palette hexes in the prompt verbatim; always say "no text, no watermark".
 - `--ephemeral` keeps `~/.codex` from filling with session files.
+- **stdin must be `/dev/null`** (`tools/art/gen-image.sh` does this since PR #116). With a non-TTY stdin left open, codex prints `Reading additional input from stdin...` and waits forever.
+- **Transparent sprites work**: say "Transparent background PNG" and the tool returns RGBA with real alpha (verified: alpha min 0, max 255). Ask for "flat fills, no shading inside shapes" or the result goes painterly and heavy.
 
 ## 6. Gotchas
 

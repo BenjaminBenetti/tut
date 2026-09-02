@@ -8,3 +8,6 @@ test-results/
 .eslintcache
 *.local
 .DS_Store
+
+# Producer grooming scratch output
+.producer/

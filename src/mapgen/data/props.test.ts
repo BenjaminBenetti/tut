@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { COVER_LEVELS } from "../model/cover";
 import { createRegistry } from "../service/definition-registry";
-import { KNOWN_BIOME_IDS } from "./biome-ids";
+import { BIOME_IDS } from "../../content/model/biome-id";
 import { PROP_DEFINITIONS, PropKindIds } from "./props";
 
 describe("prop definitions", () => {
@@ -25,7 +25,7 @@ describe("prop definitions", () => {
   it("only restrict kinds to biomes that exist", () => {
     for (const definition of registry.values) {
       for (const biome of definition.biomes ?? []) {
-        expect(KNOWN_BIOME_IDS, `${definition.id} → ${biome}`).toContain(biome);
+        expect(BIOME_IDS, `${definition.id} → ${biome}`).toContain(biome);
       }
     }
   });

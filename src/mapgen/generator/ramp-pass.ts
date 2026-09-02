@@ -1,6 +1,5 @@
 import { DIRECTIONS } from "../../core/model/direction";
 import { manhattanDistance, stepGridPos } from "../../core/service/grid-math";
-import { SurfaceIds } from "../data/surfaces";
 import type {
   DraftCapability,
   GenerationContext,
@@ -8,6 +7,7 @@ import type {
 } from "../model/generation-pass";
 import type { MapDraft } from "../model/map-draft";
 import type { TileCoord } from "../model/tile-coord";
+import { isPassableGround } from "../service/draft-queries";
 
 // ===========================================
 // Types
@@ -105,16 +105,6 @@ function collectNodes(draft: MapDraft): Set<number> {
     }
   }
   return nodes;
-}
-
-/** Dry, uncovered ground with no prop on it. */
-function isPassableGround(draft: MapDraft, x: number, z: number): boolean {
-  return (
-    draft.inBounds(x, z) &&
-    !draft.isCovered(x, z) &&
-    draft.groundSurfaceAt(x, z) !== SurfaceIds.WATER &&
-    draft.propAt(draft.groundCoord(x, z)) === undefined
-  );
 }
 
 /** Unions 4-neighbours at the same level with no wall between them. */

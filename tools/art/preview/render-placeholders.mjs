@@ -5,7 +5,7 @@
  *
  *   node tools/art/preview/render-placeholders.mjs [--out tools/art/preview/out]
  *
- * Needs `playwright` with Chromium installed (devcontainer). Serves the repo
+ * Needs `@playwright/test` with Chromium installed (devcontainer). Serves the repo
  * root on a local port so `harness.html` can import three.js from
  * `node_modules` and load GLBs from `public/`.
  *
@@ -78,7 +78,7 @@ function zoomFor(height) {
  * Entry point: renders each manifest entry at yaw 45° and 225°.
  */
 async function main() {
-  const { chromium } = await import("playwright");
+  const { chromium } = await import("@playwright/test");
   const manifest = JSON.parse(
     readFileSync(join(here, "..", "placeholders.manifest.json"), "utf8"),
   );

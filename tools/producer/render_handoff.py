@@ -36,7 +36,7 @@ def render_digest(d):
         L += ["", ("⚠ " + " · ".join(flags)) if flags else "All live seats occupied.", ""]
     L += ["**Ready now** (no unmerged dependencies):", ""] + [f"- #{n} ({o}) {t}" for n, o, t in d["ready"]] + [""]
     L += ["**In-flight PRs** (age h / idle h / review):", ""]
-    L += [f"- #{p['number']} {p['age_h']}h / {p['idle_h']}h / {p['review']}{' · DRAFT' if p['draft'] else ''} — {p['title']}" + ("  ⚠ needs review" if p["idle_h"] > 3 and p["review"] == "none" else "") for p in d["open_prs"]] or ["- none"]
+    L += [f"- #{p['number']} {p['age_h']}h / {p['idle_h']}h / {p['review']}{' · DRAFT' if p['draft'] else ''} — {p['title']}" + ("  ⚠ needs review" if p["idle_h"] > 3 and p["review"] in ("none", "n/a") else "") for p in d["open_prs"]] or ["- none"]
     L += ["", "**In progress** (branch pushed?):", ""] + ([f"- #{n} {'yes' if b else 'NO BRANCH'} — {t}" for n, t, b in d["in_progress"]] or ["- none"])
     L += ["", "**Blocked**:", ""] + ([f"- #{n} — {t}" for n, t in d["blocked"]] or ["- none"])
     L += ["", "**Next assignments for idle engineers** (Ready first, then what unblocks next):", ""]

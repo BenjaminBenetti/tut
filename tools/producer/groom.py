@@ -17,8 +17,32 @@ def edit(item, field, opt):
     if DRY: return
     gh("project", "item-edit", "--project-id", PID, "--id", item, "--field-id", field, "--single-select-option-id", opt)
 
-issues = {i["number"]: i for i in json.loads(gh("issue", "list", "-R", REPO, "--state", "all", "--limit", "500", "--json", "number,title,state,labels,milestone,body,url,updatedAt,createdAt"))}
-prs = json.loads(gh("pr", "list", "-R", REPO, "--state", "all", "--limit", "200", "--json", "number,title,state,headRefName,body,createdAt,updatedAt,reviewDecision,mergedAt,isDraft"))
+# Reads go through REST (separate 5000/h budget) because the shared account's GraphQL quota is
+# spent by every agent; GraphQL is reserved for the project-field writes below.
+def rest_issues():
+    """All issues (not PRs) as gh-issue-list-shaped dicts."""
+    raw = json.loads(gh("api", f"repos/{REPO}/issues?state=all&per_page=100", "--paginate", "--slurp"))
+    out = {}
+    for page in raw:
+        for i in page:
+            if "pull_request" in i: continue
+            out[i["number"]] = dict(number=i["number"], title=i["title"], state=i["state"].upper(),
+                                    labels=[{"name": l["name"]} for l in i["labels"]],
+                                    milestone={"title": i["milestone"]["title"]} if i.get("milestone") else None,
+                                    body=i.get("body") or "", url=i["html_url"], updatedAt=i["updated_at"], createdAt=i["created_at"])
+    return out
+def rest_prs():
+    """All PRs as gh-pr-list-shaped dicts (state OPEN / MERGED / CLOSED)."""
+    raw = json.loads(gh("api", f"repos/{REPO}/pulls?state=all&per_page=100", "--paginate", "--slurp"))
+    out = []
+    for page in raw:
+        for p in page:
+            state = "OPEN" if p["state"] == "open" else ("MERGED" if p.get("merged_at") else "CLOSED")
+            out.append(dict(number=p["number"], title=p["title"], state=state, headRefName=p["head"]["ref"], body=p.get("body") or "",
+                            createdAt=p["created_at"], updatedAt=p["updated_at"], reviewDecision=None, mergedAt=p.get("merged_at"), isDraft=p.get("draft", False)))
+    return out
+issues = rest_issues()
+prs = rest_prs()
 subprocess.run(["git", "fetch", "origin", "--prune", "-q"], cwd=ROOT)
 branches = [b.strip().replace("origin/", "") for b in subprocess.run(["git", "branch", "-r"], capture_output=True, text=True, cwd=ROOT).stdout.splitlines() if "->" not in b]
 items = json.loads(gh("project", "item-list", PNUM, "--owner", POWNER, "--format", "json", "--limit", "500"))["items"]
@@ -90,7 +114,7 @@ for n, i in sorted(issues.items()):
 # digest data
 now = datetime.datetime.now(datetime.timezone.utc)
 def age_h(ts): return round((now - datetime.datetime.fromisoformat(ts.replace("Z", "+00:00"))).total_seconds() / 3600, 1)
-open_prs = [dict(number=p["number"], title=p["title"], age_h=age_h(p["createdAt"]), idle_h=age_h(p["updatedAt"]), review=p["reviewDecision"] or "none", draft=p["isDraft"]) for p in prs if p["state"] == "OPEN"]
+open_prs = [dict(number=p["number"], title=p["title"], age_h=age_h(p["createdAt"]), idle_h=age_h(p["updatedAt"]), review=p["reviewDecision"] or "n/a", draft=p["isDraft"]) for p in prs if p["state"] == "OPEN"]
 ms = {}
 for i in issues.values():
     t = (i.get("milestone") or {}).get("title", "none")

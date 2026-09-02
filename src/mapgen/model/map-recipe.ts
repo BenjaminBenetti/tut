@@ -1,4 +1,6 @@
 import type { BiomeId } from "../../content/model/biome-id";
+import type { MapSizeId } from "../../content/model/map-size-id";
+import { MAP_SIZE_IDS } from "../../content/model/map-size-id";
 import type { SettlementScale } from "../../content/model/settlement-scale";
 import type { HookKind, HookMeta } from "./hook";
 import type { PassMask } from "./pass-mask";
@@ -13,15 +15,16 @@ import type { PassMask } from "./pass-mask";
  */
 export type MapArchetype = "settlement";
 
-/** Named map sizes, resolved through `mapgen/data/map-sizes`. */
-export type MapSizePreset = "small" | "medium" | "large";
+/**
+ * Named map sizes, resolved through `mapgen/data/map-sizes`. The union
+ * itself is shared vocabulary in `content/model/map-size-id` (ADR 0002
+ * §2.1) so the overworld's `Mission` can name a size without importing
+ * `mapgen/`.
+ */
+export type MapSizePreset = MapSizeId;
 
 /** Every size preset, smallest first. */
-export const MAP_SIZE_PRESETS: readonly MapSizePreset[] = [
-  "small",
-  "medium",
-  "large",
-];
+export const MAP_SIZE_PRESETS: readonly MapSizePreset[] = MAP_SIZE_IDS;
 
 /** Explicit horizontal size in tiles. */
 export interface MapDimensions {

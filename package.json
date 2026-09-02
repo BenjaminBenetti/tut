@@ -8,7 +8,8 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "art:placeholders": "node tools/art/build-placeholders.mjs"
   },
   "dependencies": {
     "three": "^0.185.1"

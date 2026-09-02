@@ -800,9 +800,10 @@ function buildStairs(mf) {
       }),
     );
   }
+  const slope = -Math.atan2(1.5, 1);
   parts.push(
-    box(mf.get("env-metal"), [0.04, 0.9, 1], [-0.47, 0.95, 0], { name: "rail_l" }),
-    box(mf.get("env-metal"), [0.04, 0.9, 1], [0.47, 0.95, 0], { name: "rail_r" }),
+    box(mf.get("env-metal"), [0.04, 0.06, 1.8], [-0.47, 0.9, 0], { name: "rail_l", rot: [slope, 0, 0] }),
+    box(mf.get("env-metal"), [0.04, 0.06, 1.8], [0.47, 0.9, 0], { name: "rail_r", rot: [slope, 0, 0] }),
   );
   return group("root", parts);
 }

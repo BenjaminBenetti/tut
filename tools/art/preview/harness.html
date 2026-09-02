@@ -1,0 +1,33 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#3a3f4a}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/"}}</script>
+</head><body>
+<script type="module">
+import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+const params = new URLSearchParams(location.search);
+const file = params.get("file");
+const px = Number(params.get("px") || 64);   // pixels per tile
+const size = Number(params.get("size") || 320);
+const yaw = Number(params.get("yaw") || 45) * Math.PI / 180;
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(size, size); renderer.setPixelRatio(1);
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x3a3f4a);
+const grid = new THREE.GridHelper(6, 6, 0x6a7080, 0x4a5060); grid.position.y = -0.001; scene.add(grid);
+const tile = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ color: 0x556070 }));
+tile.rotation.x = -Math.PI / 2; tile.position.y = -0.002; scene.add(tile);
+scene.add(new THREE.AmbientLight(0xffffff, 0.9));
+const key = new THREE.DirectionalLight(0xffffff, 2.2); key.position.set(2, 4, 3); scene.add(key);
+const worldUnits = size / px; // visible units across
+const cam = new THREE.OrthographicCamera(-worldUnits/2, worldUnits/2, worldUnits/2, -worldUnits/2, 0.1, 100);
+const elev = 35 * Math.PI / 180;
+const lookAt = new THREE.Vector3(0, Number(params.get("cy") || 0.8), 0);
+cam.position.set(Math.sin(yaw) * 10 * Math.cos(elev), 10 * Math.sin(elev) + lookAt.y, Math.cos(yaw) * 10 * Math.cos(elev));
+cam.lookAt(lookAt); cam.updateProjectionMatrix();
+new GLTFLoader().load(file, (gltf) => {
+  scene.add(gltf.scene);
+  renderer.render(scene, cam);
+  document.title = "READY";
+}, undefined, (e) => { document.title = "ERROR " + e.message; });
+</script></body></html>

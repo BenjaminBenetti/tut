@@ -1,4 +1,3 @@
-import { cityId } from "../model/city";
 import type { EarthMap } from "../model/earth-map";
 import type {
   CityLink,
@@ -6,7 +5,6 @@ import type {
   EarthMapSpec,
   RegionSeed,
 } from "../model/earth-map-spec";
-import { regionId } from "../model/region";
 import { buildEarthMap } from "../service/earth-map-builder";
 import { projectEquirectangular } from "../service/map-projection";
 
@@ -21,16 +19,12 @@ function city(
   latitude: number,
   longitude: number,
 ): CitySeed {
-  return {
-    id: cityId(id),
-    name,
-    layout: projectEquirectangular(latitude, longitude),
-  };
+  return { id, name, layout: projectEquirectangular(latitude, longitude) };
 }
 
 /** Declares an undirected spread route between two cities. */
 function link(a: string, b: string): CityLink {
-  return [cityId(a), cityId(b)];
+  return [a, b];
 }
 
 // ===========================================
@@ -61,7 +55,7 @@ function link(a: string, b: string): CityLink {
  */
 const REGIONS: readonly RegionSeed[] = [
   {
-    id: regionId("north-america-west"),
+    id: "north-america-west",
     name: "North America West",
     biome: "coastal",
     cities: [
@@ -71,7 +65,7 @@ const REGIONS: readonly RegionSeed[] = [
     ],
   },
   {
-    id: regionId("north-america-east"),
+    id: "north-america-east",
     name: "North America East",
     biome: "temperate",
     cities: [
@@ -81,7 +75,7 @@ const REGIONS: readonly RegionSeed[] = [
     ],
   },
   {
-    id: regionId("latin-america"),
+    id: "latin-america",
     name: "Latin America",
     biome: "coastal",
     cities: [
@@ -92,7 +86,7 @@ const REGIONS: readonly RegionSeed[] = [
     ],
   },
   {
-    id: regionId("western-europe"),
+    id: "western-europe",
     name: "Western Europe",
     biome: "temperate",
     cities: [
@@ -102,7 +96,7 @@ const REGIONS: readonly RegionSeed[] = [
     ],
   },
   {
-    id: regionId("eastern-europe"),
+    id: "eastern-europe",
     name: "Eastern Europe",
     biome: "snowy",
     cities: [
@@ -112,7 +106,7 @@ const REGIONS: readonly RegionSeed[] = [
     ],
   },
   {
-    id: regionId("middle-east"),
+    id: "middle-east",
     name: "Middle East",
     biome: "desert",
     cities: [
@@ -122,7 +116,7 @@ const REGIONS: readonly RegionSeed[] = [
     ],
   },
   {
-    id: regionId("sub-saharan-africa"),
+    id: "sub-saharan-africa",
     name: "Sub-Saharan Africa",
     biome: "temperate",
     cities: [
@@ -132,7 +126,7 @@ const REGIONS: readonly RegionSeed[] = [
     ],
   },
   {
-    id: regionId("south-asia"),
+    id: "south-asia",
     name: "South Asia",
     biome: "desert",
     cities: [
@@ -142,7 +136,7 @@ const REGIONS: readonly RegionSeed[] = [
     ],
   },
   {
-    id: regionId("north-asia"),
+    id: "north-asia",
     name: "North Asia",
     biome: "snowy",
     cities: [
@@ -152,7 +146,7 @@ const REGIONS: readonly RegionSeed[] = [
     ],
   },
   {
-    id: regionId("east-asia"),
+    id: "east-asia",
     name: "East Asia",
     biome: "temperate",
     cities: [
@@ -162,7 +156,7 @@ const REGIONS: readonly RegionSeed[] = [
     ],
   },
   {
-    id: regionId("southeast-asia"),
+    id: "southeast-asia",
     name: "Southeast Asia",
     biome: "coastal",
     cities: [
@@ -172,7 +166,7 @@ const REGIONS: readonly RegionSeed[] = [
     ],
   },
   {
-    id: regionId("oceania"),
+    id: "oceania",
     name: "Oceania",
     biome: "coastal",
     cities: [

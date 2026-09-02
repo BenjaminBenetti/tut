@@ -6,16 +6,11 @@ import type { RegionId } from "./region";
 // ===========================================
 
 /**
- * Branded id of a city. Seed cities use stable slugs such as
- * `"new-york"`; anything created at runtime would draw from core's
- * `IdGenerator`. Create one with {@link cityId}.
+ * Id of a city. Plain string, like every id in the codebase (ADR 0003).
+ * Seed cities use stable slugs such as `"new-york"`; anything created at
+ * runtime would draw from core's `IdGenerator`.
  */
-export type CityId = string & { readonly __brand: "CityId" };
-
-/** Brands a raw string as a `CityId`. No validation: ids are static data. */
-export function cityId(raw: string): CityId {
-  return raw as CityId;
-}
+export type CityId = string;
 
 // ===========================================
 // Infestation bounds

@@ -1,7 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import { cityId } from "../model/city";
-import { regionId } from "../model/region";
 import { buildEarthMap } from "./earth-map-builder";
 import {
   allCities,
@@ -19,11 +17,11 @@ import {
 // Fixture
 // ===========================================
 
-const A = cityId("a");
-const B = cityId("b");
-const C = cityId("c");
-const WEST = regionId("west");
-const EAST = regionId("east");
+const A = "a";
+const B = "b";
+const C = "c";
+const WEST = "west";
+const EAST = "east";
 
 const MAP = buildEarthMap({
   regions: [
@@ -61,32 +59,28 @@ describe("earth-map-query-service", () => {
 
   it("finds cities and regions by id, or returns undefined", () => {
     expect(findCity(MAP, B)?.name).toBe("B");
-    expect(findCity(MAP, cityId("z"))).toBeUndefined();
+    expect(findCity(MAP, "z")).toBeUndefined();
     expect(findRegion(MAP, EAST)?.name).toBe("East");
-    expect(findRegion(MAP, regionId("nowhere"))).toBeUndefined();
+    expect(findRegion(MAP, "nowhere")).toBeUndefined();
   });
 
   it("gets cities and regions by id, throwing on unknown ids", () => {
     expect(getCity(MAP, C).regionId).toBe(EAST);
     expect(getRegion(MAP, WEST).biome).toBe("temperate");
-    expect(() => getCity(MAP, cityId("z"))).toThrow(/Unknown city "z"/);
-    expect(() => getRegion(MAP, regionId("nowhere"))).toThrow(
-      /Unknown region "nowhere"/,
-    );
+    expect(() => getCity(MAP, "z")).toThrow(/Unknown city "z"/);
+    expect(() => getRegion(MAP, "nowhere")).toThrow(/Unknown region "nowhere"/);
   });
 
   it("returns a region's cities in cityIds order", () => {
     expect(citiesInRegion(MAP, WEST).map((city) => city.id)).toEqual([A, B]);
     expect(citiesInRegion(MAP, EAST).map((city) => city.id)).toEqual([C]);
-    expect(() => citiesInRegion(MAP, regionId("nowhere"))).toThrow(
-      /Unknown region/,
-    );
+    expect(() => citiesInRegion(MAP, "nowhere")).toThrow(/Unknown region/);
   });
 
   it("returns a city's neighbours in neighbourIds order", () => {
     expect(neighboursOf(MAP, B).map((city) => city.id)).toEqual([A, C]);
     expect(neighboursOf(MAP, A).map((city) => city.id)).toEqual([B]);
-    expect(() => neighboursOf(MAP, cityId("z"))).toThrow(/Unknown city/);
+    expect(() => neighboursOf(MAP, "z")).toThrow(/Unknown city/);
   });
 
   it("returns the region a city belongs to", () => {

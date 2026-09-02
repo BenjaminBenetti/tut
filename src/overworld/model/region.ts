@@ -7,15 +7,10 @@ import type { MapLayout } from "./map-layout";
 // ===========================================
 
 /**
- * Branded id of a region. Seed regions use stable slugs such as
- * `"western-europe"`. Create one with {@link regionId}.
+ * Id of a region. Plain string, like every id in the codebase (ADR 0003).
+ * Seed regions use stable slugs such as `"western-europe"`.
  */
-export type RegionId = string & { readonly __brand: "RegionId" };
-
-/** Brands a raw string as a `RegionId`. No validation: ids are static data. */
-export function regionId(raw: string): RegionId {
-  return raw as RegionId;
-}
+export type RegionId = string;
 
 // ===========================================
 // Region

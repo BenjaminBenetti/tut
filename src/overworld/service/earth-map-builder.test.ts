@@ -1,19 +1,17 @@
 import { describe, expect, it } from "vitest";
 
-import { cityId } from "../model/city";
 import type { EarthMapSpec } from "../model/earth-map-spec";
-import { regionId } from "../model/region";
 import { buildEarthMap } from "./earth-map-builder";
 
 // ===========================================
 // Fixture
 // ===========================================
 
-const A = cityId("a");
-const B = cityId("b");
-const C = cityId("c");
-const WEST = regionId("west");
-const EAST = regionId("east");
+const A = "a";
+const B = "b";
+const C = "c";
+const WEST = "west";
+const EAST = "east";
 
 /**
  * Two regions, three cities, one intra-region link and one cross-region
@@ -124,7 +122,7 @@ describe("buildEarthMap", () => {
   });
 
   it("rejects links to unknown cities, self links and repeated links", () => {
-    const unknown = cityId("nowhere");
+    const unknown = "nowhere";
     expect(() => buildEarthMap({ ...SPEC, links: [[A, unknown]] })).toThrow(
       /unknown city "nowhere"/,
     );

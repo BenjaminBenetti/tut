@@ -1,3 +1,4 @@
+import { assertWholeCredits } from "../model/credit-amount";
 import type { EconomyState } from "../model/economy-state";
 
 /**
@@ -12,10 +13,6 @@ import type { EconomyState } from "../model/economy-state";
 export function createInitialEconomyState(
   startingCredits: number,
 ): EconomyState {
-  if (!Number.isInteger(startingCredits) || startingCredits < 0) {
-    throw new RangeError(
-      `Invalid startingCredits ${String(startingCredits)}: must be a non-negative integer`,
-    );
-  }
+  assertWholeCredits(startingCredits, "startingCredits");
   return { credits: startingCredits, ledger: [] };
 }

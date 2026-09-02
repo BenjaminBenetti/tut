@@ -57,6 +57,16 @@ export function isTransactionKind(value: string): value is TransactionKind {
 // Transaction
 // ===========================================
 
+/** Prefix the id generator uses for ledger entries, e.g. `"txn-12"`. */
+export const TRANSACTION_ID_PREFIX = "txn";
+
+/**
+ * Identifier of a ledger entry, issued by core's `IdGenerator` with the
+ * `TRANSACTION_ID_PREFIX` prefix. Plain string, matching the generator's
+ * contract.
+ */
+export type TransactionId = string;
+
 /**
  * One movement of credits, recorded in the economy ledger. Plain data,
  * never edited after it is appended.
@@ -68,7 +78,7 @@ export function isTransactionKind(value: string): value is TransactionKind {
  */
 export interface Transaction {
   /** Unique id from `core/` id generation, e.g. `"txn-12"`. */
-  readonly id: string;
+  readonly id: TransactionId;
   /** Overworld day on which the transaction happened. */
   readonly day: number;
   /** Signed whole credits: negative for spending, positive for income. */

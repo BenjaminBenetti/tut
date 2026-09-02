@@ -163,7 +163,7 @@ Implementation: `src/ui/style/theme.css` exposes the §4.4 tokens as CSS custom 
 - **Pivot**: centre of the base footprint at y = 0. Wall and edge pieces pivot on the tile edge they attach to (see §7).
 - **Materials**: one `MeshStandardMaterial` per palette token, named exactly as the token (`tdf-grey-mid`). `metalness 0`, `roughness 0.9` for cloth and chitin, `0.6` for painted metal. Emissive tokens set `emissive` to the same hex with `emissiveIntensity 1.5`.
 - **Shading**: flat. No smoothing groups on armour, tiles or buildings. Organic bug flesh may use smooth normals.
-- **Textures**: avoid. When needed, a palette atlas ≤ 1024², nearest-neighbour filtered, no mipmaps for pixel-locked detail. Sprites ≤ 512².
+- **Textures**: avoid on kits and props. Units use the two 512² palette atlases (`tdf-atlas_albedo`, `bug-atlas_albedo`, one 128 px cell per token, built by `tools/art/build-textures.mjs`); a mesh maps its whole UV range into the cell of its token, and the GLB references the atlas as an external image so files stay small. Linear filtered with mipmaps; nearest-neighbour only for pixel-locked detail. Sprites ≤ 512².
 - **Sockets**: empty nodes named `socket_<name>` mark attach points. Mechs expose `socket_arm_l`, `socket_arm_r`, `socket_back`, `socket_legs`. Buildings expose `socket_door`, `socket_roof`. Spawners expose `socket_hatch` for the egg-burst VFX.
 - **Mech part nodes**: a mech is assembled at runtime from separate GLBs: `chassis`, `legs`, `arm-l`, `arm-r`, `weapon-arm`, `weapon-back`. Each part pivots at its socket point so the mech bay can swap them.
 - **No lights, no cameras, no animations** in GLBs for now. Animation is a later track; when it comes it will be node-transform clips, not skinning, for everything except infantry.

@@ -36,6 +36,22 @@ export const TEXTURE_MANIFEST = {
     colorSpace: "srgb",
     label: "Stylised plate carrée world map for the overworld plane",
   },
+  "units.tdf-atlas": {
+    path: "assets/textures/units/tdf-atlas_albedo.png",
+    width: 512,
+    height: 512,
+    colorSpace: "srgb",
+    label:
+      "TDF unit atlas: armour, cloth, markings, visor (4×4 cells of 128 px)",
+  },
+  "units.bug-atlas": {
+    path: "assets/textures/units/bug-atlas_albedo.png",
+    width: 512,
+    height: 512,
+    colorSpace: "srgb",
+    label:
+      "Bug unit atlas: chitin, flesh, bioluminescence, bone (4×4 cells of 128 px)",
+  },
 } as const satisfies Record<string, TextureAssetEntry>;
 
 /** Union of registered texture ids. */

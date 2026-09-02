@@ -37,6 +37,7 @@ const MIME = {
   ".mjs": "text/javascript",
   ".json": "application/json",
   ".glb": "model/gltf-binary",
+  ".png": "image/png",
 };
 
 /**

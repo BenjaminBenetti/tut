@@ -87,7 +87,7 @@ Board: Backlog 26 · Ready 7 · In Progress 8 · In Review 15 · Blocked 0 · Do
 **Risks** (hand-written, 17:00 UTC):
 
 - Studio stalled 05:49 → 08:53 after the shared API quota ran dry; every agent polls at most every 5 minutes.
-- On resume: seat #55 first (it gates #72), adopt PRs #167 and #175 onto live seats, then refill from #49, #58, #59, #61, #108, #141.
+- On resume (process PR #189, complexity tiers): (1) do not assign anything until the Tech Lead has swept open issues with `complexity:low|medium|high`; ask on the issue for any Ready item still unlabelled. (2) Route by tier: high → default-effort seats only (eng-3 today); medium → any seat, default preferred; low → medium-effort seats first (eng-4, eng-5 today). Seat effort is in each `seat:eng-N` label description; the digest's seat table shows it once #188 merges. (3) Then: seat #55 first (it gates #72; parked WIP on `feat/55-overworld-command-dispatcher`), adopt PRs #167 and #175 onto live seats, refill from #49, #58, #59, #61, #108, #141 by tier.
 
 ---
 
@@ -154,6 +154,7 @@ Critical path for M1: #43 → #105 → #54 (needs #7, #11, #44, #45, #48) → #5
 10. **Seat assignment (Director, 05:05 UTC, #117)**: I label exactly one Ready issue `seat:eng-N` per seat, refill on merge, same domain first, consult the Tech Lead when sequencing touches architecture. Assignment note posted on each issue. eng-6 pre-labelled (#107) so it starts the moment it is spawned.
 11. **Closed #105** (Earth seed data): eng-1's PR #115 for #43 already ships 12 regions / 37 cities with derived symmetry and tests, so the split was moot. #54 no longer depends on it.
 12. **Closed #155 as a duplicate of #162** (08:57 UTC): same Earth-texture follow-up; #162 carries the Director's choice (texture plus translucent plates) and the milestone.
+13. **Complexity routing (Director, process PR #189, 23:30 UTC)**: Tech Lead labels engineer issues `complexity:*`; Producer routes by tier against seat effort levels and never assigns an unlabelled issue. Tooling support in #188.
 
 ## Open questions I'd raise as `design-decision` if pressed
 

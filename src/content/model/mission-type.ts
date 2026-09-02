@@ -1,3 +1,4 @@
+import type { MapSizeId } from "./map-size-id";
 import type { MissionTypeId } from "./mission-type-id";
 
 // ===========================================
@@ -16,6 +17,30 @@ export interface DifficultyBand {
  * type's `difficultyBand` narrows this range, never widens it.
  */
 export const MISSION_DIFFICULTY_RANGE: DifficultyBand = { min: 1, max: 10 };
+
+// ===========================================
+// Hook requirements
+// ===========================================
+
+/**
+ * A kind of map hook a mission type needs, in shared vocabulary: the kind
+ * id (`deploy`, `egg-spawner`, `edge-spawn`, `extraction`, ...) and how
+ * many, optionally growing with difficulty. Map generation (#85) turns
+ * this into its own `HookRequirement` with pass masks and distances, so
+ * content never imports `mapgen/`.
+ *
+ * ```
+ *   count at difficulty d = count + floor(countPerDifficulty × (d − 1))
+ * ```
+ */
+export interface MissionHookRequirement {
+  /** Hook kind id known to map generation's placer registry. */
+  readonly kind: string;
+  /** Hooks required at the lowest difficulty. */
+  readonly count: number;
+  /** Extra hooks per difficulty step above the lowest; fractional allowed. */
+  readonly countPerDifficulty?: number;
+}
 
 // ===========================================
 // Mission type
@@ -56,8 +81,11 @@ export interface MissionType {
   readonly ignorePenalty: number;
   /**
    * Map hooks a tactical map must provide for this type (deploy zones,
-   * objectives, extraction, ...). Reserved for the mission → map-recipe
-   * adapter (#85); empty in M1.
+   * objectives, extraction, ...), read by the mission → map-recipe
+   * adapter (#85). Every type needs at least a deploy zone and an
+   * extraction.
    */
-  readonly requiredHooks: readonly string[];
+  readonly requiredHooks: readonly MissionHookRequirement[];
+  /** Map size the mission generator uses unless the site says otherwise. */
+  readonly mapSize: MapSizeId;
 }

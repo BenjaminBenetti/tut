@@ -14,6 +14,8 @@ import type { MissionTypeId } from "../model/mission-type-id";
 //   • ignorePenalty 10 is on the 0–100 city infestation scale; new
 //     campaigns seed cities at 10–30, so ignoring a mission hurts but is
 //     not fatal on its own.
+//   • requiredHooks: 2 egg spawners at difficulty 1 growing to 4 at 10,
+//     2 edge spawn zones growing to 3, always one deploy and extraction.
 
 /** The baseline M1 mission: destroy the egg spawners in an infested city. */
 export const INFESTATION_CLEARANCE: MissionType = {
@@ -25,7 +27,13 @@ export const INFESTATION_CLEARANCE: MissionType = {
   rewardPerDifficulty: 300,
   expiryDays: 5,
   ignorePenalty: 10,
-  requiredHooks: [],
+  requiredHooks: [
+    { kind: "deploy", count: 1 },
+    { kind: "egg-spawner", count: 2, countPerDifficulty: 0.25 },
+    { kind: "edge-spawn", count: 2, countPerDifficulty: 0.2 },
+    { kind: "extraction", count: 1 },
+  ],
+  mapSize: "medium",
 };
 
 /**

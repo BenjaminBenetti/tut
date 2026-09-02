@@ -50,10 +50,17 @@ describe("mission-types data", () => {
     }
   });
 
-  it("reserves requiredHooks as an empty list in M1", () => {
+  it("requires a deploy zone and an extraction with sane counts", () => {
     for (const type of Object.values(MISSION_TYPES)) {
-      expect(Array.isArray(type.requiredHooks)).toBe(true);
-      expect(type.requiredHooks).toEqual([]);
+      const kinds = type.requiredHooks.map((hook) => hook.kind);
+      expect(kinds).toContain("deploy");
+      expect(kinds).toContain("extraction");
+      for (const hook of type.requiredHooks) {
+        expect(Number.isInteger(hook.count), hook.kind).toBe(true);
+        expect(hook.count).toBeGreaterThanOrEqual(0);
+        expect(hook.countPerDifficulty ?? 0).toBeGreaterThanOrEqual(0);
+      }
+      expect(["small", "medium", "large"]).toContain(type.mapSize);
     }
   });
 

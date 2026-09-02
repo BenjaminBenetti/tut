@@ -11,6 +11,7 @@ import { SETTLEMENT_DEFINITIONS } from "../data/settlements";
 import type { GenerationPass } from "../model/generation-pass";
 import type { MapRecipe, MapSizePreset } from "../model/map-recipe";
 import { MAP_SIZE_PRESETS } from "../model/map-recipe";
+import { areaFactor } from "../generator/lot-pass";
 import { PassMask } from "../model/pass-mask";
 import { renderAscii } from "./ascii-map-renderer";
 import { createDefaultRegistries } from "./default-registries";
@@ -98,14 +99,14 @@ const GOLDENS: readonly Golden[] = [
     biome: "temperate",
     settlement: "rural",
     size: "small",
-    checksum: 1351613085,
+    checksum: 3762984164,
   },
   {
     seed: "golden-city",
     biome: "desert",
     settlement: "city",
     size: "large",
-    checksum: 2256117296,
+    checksum: 3681158800,
   },
 ];
 
@@ -136,7 +137,10 @@ describe("generation sweep", () => {
               const definition = SETTLEMENT_DEFINITIONS[settlement];
               expect(map.buildings.length, label).toBeGreaterThan(0);
               expect(map.buildings.length, label).toBeLessThanOrEqual(
-                definition.buildingCount.max,
+                Math.round(
+                  definition.buildingCount.max *
+                    areaFactor(map.width, map.depth),
+                ),
               );
               if (settlement !== "rural") {
                 expect(

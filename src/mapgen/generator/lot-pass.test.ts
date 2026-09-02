@@ -12,7 +12,7 @@ import type { MapDraft } from "../model/map-draft";
 import type { MapGenParams } from "../model/map-recipe";
 import { createDefaultRegistries } from "../service/default-registries";
 import { PipelineMapGenerator } from "../service/pipeline-map-generator";
-import { LotPass } from "./lot-pass";
+import { areaFactor, LotPass } from "./lot-pass";
 import { RoadPass } from "./road-pass";
 import { TerrainPass } from "./terrain-pass";
 import { WaterPass } from "./water-pass";
@@ -153,17 +153,31 @@ describe("LotPass", () => {
     }
   });
 
-  it("stays within the maximum on small maps", () => {
+  it("scales the target by map area: fewer lots on small maps, more on large", () => {
     for (const settlement of SETTLEMENT_SCALES) {
       const range = SETTLEMENT_DEFINITIONS[settlement].buildingCount;
       for (let i = 0; i < SEEDS; i++) {
-        const draft = run("coastal", settlement, `small-${i}`, "small");
-        expect(draft.lots.length, `${settlement}/${i}`).toBeGreaterThan(0);
-        expect(draft.lots.length, `${settlement}/${i}`).toBeLessThanOrEqual(
-          range.max,
+        const small = run("coastal", settlement, `small-${i}`, "small");
+        expect(small.lots.length, `${settlement}/${i}`).toBeGreaterThan(0);
+        expect(small.lots.length, `${settlement}/${i}`).toBeLessThanOrEqual(
+          Math.round(range.max * areaFactor(32, 32)),
         );
+        const large = run("temperate", settlement, `large-${i}`, "large");
+        expect(large.lots.length, `${settlement}/${i}`).toBeLessThanOrEqual(
+          Math.round(range.max * areaFactor(64, 64)),
+        );
+        if (settlement !== "rural") {
+          expect(large.lots.length, `${settlement}/${i}`).toBeGreaterThan(
+            range.min,
+          );
+        }
       }
     }
+    expect(areaFactor(48, 48)).toBe(1);
+    expect(areaFactor(32, 32)).toBe(0.5);
+    expect(areaFactor(64, 64)).toBeCloseTo(1.778, 2);
+    expect(areaFactor(256, 256)).toBe(2);
+    expect(areaFactor(16, 16)).toBe(0.5);
   });
 
   it("uses more than one frontage direction across a town", () => {

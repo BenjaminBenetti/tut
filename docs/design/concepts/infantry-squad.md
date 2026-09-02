@@ -10,15 +10,15 @@
 ## Prompt
 
 ```
-Concept sheet for a TDF infantry squad token from a near-future Earth turn-based tactics game: five small soldiers standing together on one thin round base disc, arranged in a loose wedge with the leader front centre. Practical military kit: big helmets with small visors, body armour, rifles held ready; one soldier carries a long rocket launcher over the shoulder. Uniforms olive #6B7A3F with dark olive #45502A webbing and boots, armour plates cool grey #5B6573, tiny orange #F08A24 shoulder markings, visors #7FD1FF, base disc dark grey #2E3440. Chunky readable proportions, oversized helmets, no facial detail. Low-poly game model style, flat shading, hard edges, clean vector-like fills with no gradients or noise, plain neutral grey background #8E8A82, no text, no labels, no watermark, no logos. Wide landscape concept sheet showing the same design three times side by side: front view, side view, and isometric three-quarter view from 35 degrees above.
+Concept sheet for a TDF infantry squad token from a near-future Earth turn-based tactics game. Exactly five small soldiers stand together on one thin round dark base disc: two soldiers kneeling in the front row, three standing in the back row, arranged as a tight wedge with the leader front centre. Count carefully: five helmets, five rifles or launchers, one base disc. Practical military kit: big helmets with small cyan visors, body armour, rifles held ready; the back-left soldier carries a long rocket launcher over the shoulder. Uniforms olive #6B7A3F with dark olive #45502A webbing and boots, armour plates cool grey #5B6573, tiny orange #F08A24 shoulder markings, visors #7FD1FF, base disc dark grey #2E3440. Chunky readable proportions, oversized helmets, no facial detail. Low-poly game model style, flat shading, hard edges, clean vector-like fills with no gradients or noise, plain neutral grey background #8E8A82, no text, no labels, no watermark, no logos. Wide landscape concept sheet showing the same five-soldier group three times side by side: front view, side view, and isometric three-quarter view from 35 degrees above.
 ```
 
 ## Keep
 
-- Big helmets, cyan visors, orange shoulder patch, olive uniform with grey chest plate, single dark base disc. The rocket carrier reads instantly.
-- Chunky proportions survive downscaling.
+- Second pass. Kneeling front rank, standing rear rank, rocket carrier on the flank: this is the squad-token composition. Big helmets, cyan visors, orange shoulder patch, olive uniform with grey chest plate, one dark base disc. Chunky proportions survive downscaling.
 
 ## Change next pass
 
-- Generator drew three to four figures; the token is five. Regenerate with the count spelled out per figure ("exactly five soldiers: two kneeling in front, three standing behind").
-- Base disc should be thinner (0.05 u) and the figures should overlap less at the front.
+- The generator drew six figures even when told "exactly five"; the token is five and the placeholder GLB builds five. Treat the sixth as an extra reference pose, or crop.
+- Base disc should be thinner (0.05 u); rear-rank figures could stand a little further back so the wedge reads from above.
+- First pass (three to four figures) is kept in git history only.

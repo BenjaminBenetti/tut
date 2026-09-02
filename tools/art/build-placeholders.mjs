@@ -105,7 +105,11 @@ const PALETTE = {
 };
 
 /** Tokens rendered as emissive light sources. */
-const EMISSIVE_TOKENS = new Set(["tdf-visor", "bug-bio-green", "bug-bio-magenta"]);
+const EMISSIVE_TOKENS = new Set([
+  "tdf-visor",
+  "bug-bio-green",
+  "bug-bio-magenta",
+]);
 
 /** Tokens that read as painted metal (lower roughness than cloth/chitin). */
 const METAL_TOKENS = new Set([
@@ -193,7 +197,11 @@ function place(mesh, at, opts = {}) {
  * @returns {Mesh} Box mesh.
  */
 function box(material, size, at, opts) {
-  return place(new Mesh(new BoxGeometry(size[0], size[1], size[2]), material), at, opts);
+  return place(
+    new Mesh(new BoxGeometry(size[0], size[1], size[2]), material),
+    at,
+    opts,
+  );
 }
 
 /**
@@ -208,7 +216,9 @@ function box(material, size, at, opts) {
  * @returns {Mesh} Cylinder mesh.
  */
 function cylinder(material, rTop, rBottom, height, segments, at, opts) {
-  const geometry = faceted(new CylinderGeometry(rTop, rBottom, height, segments));
+  const geometry = faceted(
+    new CylinderGeometry(rTop, rBottom, height, segments),
+  );
   return place(new Mesh(geometry, material), at, opts);
 }
 
@@ -238,7 +248,11 @@ function cone(material, radius, height, segments, at, opts) {
  */
 function ellipsoid(material, radius, scale, at, opts = {}) {
   const geometry = faceted(
-    new SphereGeometry(radius, opts.widthSegments ?? 8, opts.heightSegments ?? 6),
+    new SphereGeometry(
+      radius,
+      opts.widthSegments ?? 8,
+      opts.heightSegments ?? 6,
+    ),
   );
   const mesh = place(new Mesh(geometry, material), at, { name: opts.name });
   mesh.scale.set(scale[0], scale[1], scale[2]);
@@ -280,7 +294,9 @@ function group(name, children, at) {
  * @returns {Mesh} Slab mesh.
  */
 function slab(material, thickness = 0.05) {
-  return box(material, [1, thickness, 1], [0, thickness / 2, 0], { name: "slab" });
+  return box(material, [1, thickness, 1], [0, thickness / 2, 0], {
+    name: "slab",
+  });
 }
 
 // ===========================================
@@ -305,40 +321,68 @@ const SQUAD_SLOTS = [
  */
 function buildFigure(mf, kit, name) {
   const parts = [
-    box(mf.get("tdf-olive-dark"), [0.18, 0.4, 0.14], [0, 0.2, 0], { name: "legs" }),
-    box(mf.get("tdf-olive"), [0.26, 0.34, 0.18], [0, 0.57, 0], { name: "torso" }),
-    box(mf.get("tdf-grey-mid"), [0.28, 0.2, 0.06], [0, 0.62, 0.11], { name: "plate" }),
-    box(mf.get("tdf-grey-mid"), [0.16, 0.16, 0.16], [0, 0.82, 0], { name: "helmet" }),
-    box(mf.get("tdf-visor"), [0.12, 0.04, 0.02], [0, 0.82, 0.09], { name: "visor" }),
-    box(mf.get("tdf-orange"), [0.06, 0.03, 0.06], [-0.15, 0.7, 0], { name: "marking" }),
+    box(mf.get("tdf-olive-dark"), [0.18, 0.4, 0.14], [0, 0.2, 0], {
+      name: "legs",
+    }),
+    box(mf.get("tdf-olive"), [0.26, 0.34, 0.18], [0, 0.57, 0], {
+      name: "torso",
+    }),
+    box(mf.get("tdf-grey-mid"), [0.28, 0.2, 0.06], [0, 0.62, 0.11], {
+      name: "plate",
+    }),
+    box(mf.get("tdf-grey-mid"), [0.16, 0.16, 0.16], [0, 0.82, 0], {
+      name: "helmet",
+    }),
+    box(mf.get("tdf-visor"), [0.12, 0.04, 0.02], [0, 0.82, 0.09], {
+      name: "visor",
+    }),
+    box(mf.get("tdf-orange"), [0.06, 0.03, 0.06], [-0.15, 0.7, 0], {
+      name: "marking",
+    }),
   ];
   switch (kit) {
     case "rocket":
       parts.push(
-        box(mf.get("tdf-grey-dark"), [0.08, 0.08, 0.6], [0.14, 0.86, 0], { name: "launcher" }),
+        box(mf.get("tdf-grey-dark"), [0.08, 0.08, 0.6], [0.14, 0.86, 0], {
+          name: "launcher",
+        }),
       );
       break;
     case "sniper":
       parts.push(
-        box(mf.get("tdf-grey-dark"), [0.05, 0.05, 0.55], [0.14, 0.55, 0.15], { name: "rifle" }),
+        box(mf.get("tdf-grey-dark"), [0.05, 0.05, 0.55], [0.14, 0.55, 0.15], {
+          name: "rifle",
+        }),
       );
       break;
     case "engineer":
       parts.push(
-        box(mf.get("tdf-grey-dark"), [0.05, 0.05, 0.3], [0.14, 0.55, 0.1], { name: "carbine" }),
-        box(mf.get("tdf-orange-dim"), [0.2, 0.24, 0.1], [0, 0.6, -0.14], { name: "pack" }),
+        box(mf.get("tdf-grey-dark"), [0.05, 0.05, 0.3], [0.14, 0.55, 0.1], {
+          name: "carbine",
+        }),
+        box(mf.get("tdf-orange-dim"), [0.2, 0.24, 0.1], [0, 0.6, -0.14], {
+          name: "pack",
+        }),
       );
       break;
     case "medic":
       parts.push(
-        box(mf.get("tdf-grey-dark"), [0.05, 0.05, 0.3], [0.14, 0.55, 0.1], { name: "carbine" }),
-        box(mf.get("tdf-grey-light"), [0.2, 0.24, 0.1], [0, 0.6, -0.14], { name: "pack" }),
-        box(mf.get("tdf-orange"), [0.12, 0.04, 0.02], [0, 0.6, -0.2], { name: "cross" }),
+        box(mf.get("tdf-grey-dark"), [0.05, 0.05, 0.3], [0.14, 0.55, 0.1], {
+          name: "carbine",
+        }),
+        box(mf.get("tdf-grey-light"), [0.2, 0.24, 0.1], [0, 0.6, -0.14], {
+          name: "pack",
+        }),
+        box(mf.get("tdf-orange"), [0.12, 0.04, 0.02], [0, 0.6, -0.2], {
+          name: "cross",
+        }),
       );
       break;
     default:
       parts.push(
-        box(mf.get("tdf-grey-dark"), [0.05, 0.05, 0.36], [0.14, 0.55, 0.12], { name: "rifle" }),
+        box(mf.get("tdf-grey-dark"), [0.05, 0.05, 0.36], [0.14, 0.55, 0.12], {
+          name: "rifle",
+        }),
       );
   }
   return group(name, parts);
@@ -352,9 +396,17 @@ function buildFigure(mf, kit, name) {
  * @returns {Object3D} Squad root.
  */
 function buildInfantrySquad(mf, kit) {
-  const base = cylinder(mf.get("tdf-grey-dark"), 0.425, 0.425, 0.05, 16, [0, 0.025, 0], {
-    name: "base",
-  });
+  const base = cylinder(
+    mf.get("tdf-grey-dark"),
+    0.425,
+    0.425,
+    0.05,
+    16,
+    [0, 0.025, 0],
+    {
+      name: "base",
+    },
+  );
   const figures = SQUAD_SLOTS.map(([x, z], i) => {
     const figure = buildFigure(mf, i === 1 ? kit : "rifle", `figure_${i}`);
     figure.position.set(x, 0.05, z);
@@ -377,15 +429,27 @@ function buildMechLegs(mf) {
   for (const side of [-1, 1]) {
     const x = side * 0.3;
     parts.push(
-      box(mf.get("tdf-grey-dark"), [0.34, 0.14, 0.56], [x, 0.07, 0.05], { name: `foot_${side}` }),
-      box(mf.get("tdf-grey-mid"), [0.26, 0.55, 0.3], [x, 0.4, -0.05], { name: `shin_${side}` }),
-      box(mf.get("tdf-grey-dark"), [0.3, 0.16, 0.36], [x, 0.7, 0], { name: `knee_${side}` }),
-      box(mf.get("tdf-grey-mid"), [0.28, 0.42, 0.32], [x, 0.95, 0.02], { name: `thigh_${side}` }),
+      box(mf.get("tdf-grey-dark"), [0.34, 0.14, 0.56], [x, 0.07, 0.05], {
+        name: `foot_${side}`,
+      }),
+      box(mf.get("tdf-grey-mid"), [0.26, 0.55, 0.3], [x, 0.4, -0.05], {
+        name: `shin_${side}`,
+      }),
+      box(mf.get("tdf-grey-dark"), [0.3, 0.16, 0.36], [x, 0.7, 0], {
+        name: `knee_${side}`,
+      }),
+      box(mf.get("tdf-grey-mid"), [0.28, 0.42, 0.32], [x, 0.95, 0.02], {
+        name: `thigh_${side}`,
+      }),
     );
   }
   parts.push(
-    box(mf.get("tdf-grey-dark"), [0.96, 0.28, 0.5], [0, 1.28, 0], { name: "hip" }),
-    box(mf.get("tdf-olive"), [0.5, 0.2, 0.1], [0, 1.24, 0.28], { name: "pelvis_plate" }),
+    box(mf.get("tdf-grey-dark"), [0.96, 0.28, 0.5], [0, 1.28, 0], {
+      name: "hip",
+    }),
+    box(mf.get("tdf-olive"), [0.5, 0.2, 0.1], [0, 1.24, 0.28], {
+      name: "pelvis_plate",
+    }),
     socket("chassis", [0, 1.42, 0]),
   );
   return group("root", parts);
@@ -398,16 +462,36 @@ function buildMechLegs(mf) {
  */
 function buildMechChassis(mf) {
   return group("root", [
-    box(mf.get("tdf-grey-mid"), [1.0, 1.0, 0.7], [0, 0.5, 0], { name: "torso" }),
-    box(mf.get("tdf-olive"), [0.7, 0.5, 0.08], [0, 0.45, 0.37], { name: "chest_plate" }),
-    box(mf.get("tdf-grey-dark"), [0.8, 0.7, 0.1], [0, 0.5, -0.38], { name: "back_plate" }),
-    box(mf.get("tdf-grey-dark"), [1.36, 0.3, 0.6], [0, 0.9, 0], { name: "shoulders" }),
-    box(mf.get("tdf-olive"), [0.3, 0.34, 0.62], [-0.55, 0.92, 0], { name: "pad_l" }),
-    box(mf.get("tdf-olive"), [0.3, 0.34, 0.62], [0.55, 0.92, 0], { name: "pad_r" }),
-    box(mf.get("tdf-grey-mid"), [0.44, 0.32, 0.44], [0, 1.21, 0.05], { name: "cockpit" }),
-    box(mf.get("tdf-visor"), [0.32, 0.08, 0.03], [0, 1.23, 0.28], { name: "visor" }),
-    box(mf.get("tdf-orange"), [0.2, 0.12, 0.02], [-0.3, 0.6, 0.36], { name: "marking" }),
-    box(mf.get("tdf-orange-dim"), [0.1, 0.3, 0.02], [0.42, 0.4, 0.36], { name: "hazard" }),
+    box(mf.get("tdf-grey-mid"), [1.0, 1.0, 0.7], [0, 0.5, 0], {
+      name: "torso",
+    }),
+    box(mf.get("tdf-olive"), [0.7, 0.5, 0.08], [0, 0.45, 0.37], {
+      name: "chest_plate",
+    }),
+    box(mf.get("tdf-grey-dark"), [0.8, 0.7, 0.1], [0, 0.5, -0.38], {
+      name: "back_plate",
+    }),
+    box(mf.get("tdf-grey-dark"), [1.36, 0.3, 0.6], [0, 0.9, 0], {
+      name: "shoulders",
+    }),
+    box(mf.get("tdf-olive"), [0.3, 0.34, 0.62], [-0.55, 0.92, 0], {
+      name: "pad_l",
+    }),
+    box(mf.get("tdf-olive"), [0.3, 0.34, 0.62], [0.55, 0.92, 0], {
+      name: "pad_r",
+    }),
+    box(mf.get("tdf-grey-mid"), [0.44, 0.32, 0.44], [0, 1.21, 0.05], {
+      name: "cockpit",
+    }),
+    box(mf.get("tdf-visor"), [0.32, 0.08, 0.03], [0, 1.23, 0.28], {
+      name: "visor",
+    }),
+    box(mf.get("tdf-orange"), [0.2, 0.12, 0.02], [-0.3, 0.6, 0.36], {
+      name: "marking",
+    }),
+    box(mf.get("tdf-orange-dim"), [0.1, 0.3, 0.02], [0.42, 0.4, 0.36], {
+      name: "hazard",
+    }),
     socket("arm_l", [-0.72, 0.85, 0]),
     socket("arm_r", [0.72, 0.85, 0]),
     socket("back", [0.3, 1.05, -0.25]),
@@ -424,11 +508,21 @@ function buildMechChassis(mf) {
 function buildMechArm(mf, side) {
   const s = side;
   return group("root", [
-    box(mf.get("tdf-grey-dark"), [0.28, 0.28, 0.28], [s * 0.08, 0, 0], { name: "shoulder" }),
-    box(mf.get("tdf-grey-mid"), [0.26, 0.5, 0.3], [s * 0.1, -0.35, 0], { name: "upper_arm" }),
-    box(mf.get("tdf-olive"), [0.05, 0.3, 0.02], [s * 0.24, -0.35, 0.16], { name: "stripe" }),
-    box(mf.get("tdf-grey-dark"), [0.24, 0.2, 0.24], [s * 0.1, -0.62, 0.05], { name: "elbow" }),
-    box(mf.get("tdf-grey-mid"), [0.24, 0.24, 0.4], [s * 0.1, -0.65, 0.27], { name: "forearm" }),
+    box(mf.get("tdf-grey-dark"), [0.28, 0.28, 0.28], [s * 0.08, 0, 0], {
+      name: "shoulder",
+    }),
+    box(mf.get("tdf-grey-mid"), [0.26, 0.5, 0.3], [s * 0.1, -0.35, 0], {
+      name: "upper_arm",
+    }),
+    box(mf.get("tdf-olive"), [0.05, 0.3, 0.02], [s * 0.24, -0.35, 0.16], {
+      name: "stripe",
+    }),
+    box(mf.get("tdf-grey-dark"), [0.24, 0.2, 0.24], [s * 0.1, -0.62, 0.05], {
+      name: "elbow",
+    }),
+    box(mf.get("tdf-grey-mid"), [0.24, 0.24, 0.4], [s * 0.1, -0.65, 0.27], {
+      name: "forearm",
+    }),
     socket("weapon", [s * 0.1, -0.65, 0.47]),
   ]);
 }
@@ -440,9 +534,15 @@ function buildMechArm(mf, side) {
  */
 function buildAutocannon(mf) {
   return group("root", [
-    box(mf.get("tdf-grey-dark"), [0.22, 0.22, 0.3], [0, 0, 0.1], { name: "receiver" }),
-    box(mf.get("tdf-grey-mid"), [0.1, 0.1, 0.45], [0, 0, 0.4], { name: "barrel" }),
-    box(mf.get("tdf-orange"), [0.14, 0.14, 0.06], [0, 0, 0.63], { name: "muzzle" }),
+    box(mf.get("tdf-grey-dark"), [0.22, 0.22, 0.3], [0, 0, 0.1], {
+      name: "receiver",
+    }),
+    box(mf.get("tdf-grey-mid"), [0.1, 0.1, 0.45], [0, 0, 0.4], {
+      name: "barrel",
+    }),
+    box(mf.get("tdf-orange"), [0.14, 0.14, 0.06], [0, 0, 0.63], {
+      name: "muzzle",
+    }),
     socket("muzzle", [0, 0, 0.66]),
   ]);
 }
@@ -454,15 +554,23 @@ function buildAutocannon(mf) {
  */
 function buildMissilePod(mf) {
   const parts = [
-    box(mf.get("tdf-grey-dark"), [0.2, 0.1, 0.2], [0, -0.05, 0], { name: "mount" }),
-    box(mf.get("tdf-grey-mid"), [0.5, 0.34, 0.5], [0, 0.17, 0], { name: "pod" }),
-    box(mf.get("tdf-orange-dim"), [0.5, 0.04, 0.02], [0, 0.34, 0.26], { name: "stripe" }),
+    box(mf.get("tdf-grey-dark"), [0.2, 0.1, 0.2], [0, -0.05, 0], {
+      name: "mount",
+    }),
+    box(mf.get("tdf-grey-mid"), [0.5, 0.34, 0.5], [0, 0.17, 0], {
+      name: "pod",
+    }),
+    box(mf.get("tdf-orange-dim"), [0.5, 0.04, 0.02], [0, 0.34, 0.26], {
+      name: "stripe",
+    }),
   ];
   let i = 0;
   for (const y of [0.1, 0.24]) {
     for (const x of [-0.15, 0, 0.15]) {
       parts.push(
-        box(mf.get("tdf-grey-dark"), [0.1, 0.1, 0.06], [x, y, 0.26], { name: `tube_${i++}` }),
+        box(mf.get("tdf-grey-dark"), [0.1, 0.1, 0.06], [x, y, 0.26], {
+          name: `tube_${i++}`,
+        }),
       );
     }
   }
@@ -517,9 +625,15 @@ function buildSwarmer(mf) {
     box(mid, [0.28, 0.2, 0.26], [0, 0.3, -0.38], { name: "abdomen" }),
     box(mid, [0.26, 0.18, 0.22], [0, 0.22, 0.28], { name: "thorax" }),
     box(dark, [0.18, 0.14, 0.18], [0, 0.14, 0.44], { name: "head" }),
-    box(mf.get("bug-bio-green"), [0.04, 0.04, 0.04], [-0.05, 0.16, 0.53], { name: "eye_l" }),
-    box(mf.get("bug-bio-green"), [0.04, 0.04, 0.04], [0.05, 0.16, 0.53], { name: "eye_r" }),
-    box(mf.get("bug-bio-green"), [0.02, 0.02, 0.4], [0, 0.39, -0.1], { name: "vein" }),
+    box(mf.get("bug-bio-green"), [0.04, 0.04, 0.04], [-0.05, 0.16, 0.53], {
+      name: "eye_l",
+    }),
+    box(mf.get("bug-bio-green"), [0.04, 0.04, 0.04], [0.05, 0.16, 0.53], {
+      name: "eye_r",
+    }),
+    box(mf.get("bug-bio-green"), [0.02, 0.02, 0.4], [0, 0.39, -0.1], {
+      name: "vein",
+    }),
   ];
   [-0.2, -0.05, 0.1].forEach((z, i) =>
     parts.push(cone(bone, 0.05, 0.14, 4, [0, 0.44, z], { name: `spine_${i}` })),
@@ -535,10 +649,15 @@ function buildSwarmer(mf) {
       );
     }
     parts.push(
-      box(mf.get("bug-chitin-black"), [0.05, 0.06, 0.3], [side * 0.14, 0.12, 0.5], {
-        name: `blade_back_${side}`,
-        rot: [0.5, 0, 0],
-      }),
+      box(
+        mf.get("bug-chitin-black"),
+        [0.05, 0.06, 0.3],
+        [side * 0.14, 0.12, 0.5],
+        {
+          name: `blade_back_${side}`,
+          rot: [0.5, 0, 0],
+        },
+      ),
       box(bone, [0.02, 0.05, 0.3], [side * 0.14, 0.09, 0.51], {
         name: `blade_edge_${side}`,
         rot: [0.5, 0, 0],
@@ -561,17 +680,36 @@ function buildLurker(mf) {
   const black = mf.get("bug-chitin-black");
   const parts = [
     box(mid, [0.16, 0.2, 0.14], [0, 0.85, 0], { name: "waist" }),
-    box(dark, [0.3, 0.34, 0.22], [0, 1.03, 0.08], { name: "chest", rot: [0.35, 0, 0] }),
-    box(dark, [0.16, 0.18, 0.22], [0, 1.24, 0.2], { name: "head", rot: [0.3, 0, 0] }),
-    box(mf.get("bug-bio-magenta"), [0.1, 0.02, 0.02], [0, 1.2, 0.32], { name: "slit" }),
-    box(mf.get("bug-bio-magenta"), [0.03, 0.3, 0.02], [0, 1.02, -0.06], { name: "spine_glow" }),
-    box(dark, [0.08, 0.08, 0.6], [0, 0.78, -0.38], { name: "tail", rot: [-0.4, 0, 0] }),
+    box(dark, [0.3, 0.34, 0.22], [0, 1.03, 0.08], {
+      name: "chest",
+      rot: [0.35, 0, 0],
+    }),
+    box(dark, [0.16, 0.18, 0.22], [0, 1.24, 0.2], {
+      name: "head",
+      rot: [0.3, 0, 0],
+    }),
+    box(mf.get("bug-bio-magenta"), [0.1, 0.02, 0.02], [0, 1.2, 0.32], {
+      name: "slit",
+    }),
+    box(mf.get("bug-bio-magenta"), [0.03, 0.3, 0.02], [0, 1.02, -0.06], {
+      name: "spine_glow",
+    }),
+    box(dark, [0.08, 0.08, 0.6], [0, 0.78, -0.38], {
+      name: "tail",
+      rot: [-0.4, 0, 0],
+    }),
   ];
   for (const side of [-1, 1]) {
     const x = side * 0.12;
     parts.push(
-      box(dark, [0.09, 0.42, 0.12], [x, 0.62, -0.08], { name: `thigh_${side}`, rot: [-0.35, 0, 0] }),
-      box(dark, [0.08, 0.5, 0.09], [x, 0.24, 0.04], { name: `shin_${side}`, rot: [0.2, 0, 0] }),
+      box(dark, [0.09, 0.42, 0.12], [x, 0.62, -0.08], {
+        name: `thigh_${side}`,
+        rot: [-0.35, 0, 0],
+      }),
+      box(dark, [0.08, 0.5, 0.09], [x, 0.24, 0.04], {
+        name: `shin_${side}`,
+        rot: [0.2, 0, 0],
+      }),
       box(black, [0.06, 0.06, 0.06], [x, 0.03, 0.08], { name: `foot_${side}` }),
       box(mid, [0.07, 0.42, 0.08], [side * 0.2, 1.08, 0.3], {
         name: `upper_arm_${side}`,
@@ -607,10 +745,16 @@ function buildBrute(mf) {
       widthSegments: 10,
       heightSegments: 6,
     }),
-    box(mf.get("bug-flesh"), [0.9, 0.06, 0.06], [0, 0.55, 0.3], { name: "seam" }),
+    box(mf.get("bug-flesh"), [0.9, 0.06, 0.06], [0, 0.55, 0.3], {
+      name: "seam",
+    }),
     box(dark, [0.34, 0.28, 0.3], [0, 0.72, 0.5], { name: "head" }),
-    box(mf.get("bug-bio-green"), [0.08, 0.02, 0.02], [-0.08, 0.76, 0.66], { name: "eye_l" }),
-    box(mf.get("bug-bio-green"), [0.08, 0.02, 0.02], [0.08, 0.76, 0.66], { name: "eye_r" }),
+    box(mf.get("bug-bio-green"), [0.08, 0.02, 0.02], [-0.08, 0.76, 0.66], {
+      name: "eye_l",
+    }),
+    box(mf.get("bug-bio-green"), [0.08, 0.02, 0.02], [0.08, 0.76, 0.66], {
+      name: "eye_r",
+    }),
   ];
   const spikes = [
     [0, 1.82, 0],
@@ -620,19 +764,32 @@ function buildBrute(mf) {
     [0.3, 1.5, 0.2],
   ];
   spikes.forEach((at, i) =>
-    parts.push(cone(bone, 0.08, 0.25, 4, at, { name: `spike_${i}`, rot: [0.15 * (i % 2), 0, 0] })),
+    parts.push(
+      cone(bone, 0.08, 0.25, 4, at, {
+        name: `spike_${i}`,
+        rot: [0.15 * (i % 2), 0, 0],
+      }),
+    ),
   );
   let leg = 0;
   for (const side of [-1, 1]) {
     for (const z of [-0.22, 0.2]) {
       parts.push(
-        box(dark, [0.22, 0.42, 0.24], [side * 0.3, 0.21, z], { name: `leg_${leg++}` }),
+        box(dark, [0.22, 0.42, 0.24], [side * 0.3, 0.21, z], {
+          name: `leg_${leg++}`,
+        }),
       );
     }
     parts.push(
-      box(mid, [0.24, 0.5, 0.26], [side * 0.5, 0.55, 0.2], { name: `arm_${side}` }),
-      box(black, [0.1, 0.16, 0.7], [side * 0.46, 0.08, 0.4], { name: `blade_back_${side}` }),
-      box(bone, [0.11, 0.05, 0.68], [side * 0.46, 0.02, 0.42], { name: `blade_edge_${side}` }),
+      box(mid, [0.24, 0.5, 0.26], [side * 0.5, 0.55, 0.2], {
+        name: `arm_${side}`,
+      }),
+      box(black, [0.1, 0.16, 0.7], [side * 0.46, 0.08, 0.4], {
+        name: `blade_back_${side}`,
+      }),
+      box(bone, [0.11, 0.05, 0.68], [side * 0.46, 0.02, 0.42], {
+        name: `blade_edge_${side}`,
+      }),
     );
   }
   return group("root", parts);
@@ -648,15 +805,21 @@ function buildEggSpawner(mf) {
   const flesh = mf.get("bug-flesh");
   const fleshLight = mf.get("bug-flesh-light");
   const parts = [
-    cylinder(mf.get("bug-bio-green-dim"), 0.55, 0.55, 0.02, 12, [0, 0.01, 0], { name: "pool" }),
+    cylinder(mf.get("bug-bio-green-dim"), 0.55, 0.55, 0.02, 12, [0, 0.01, 0], {
+      name: "pool",
+    }),
     ellipsoid(flesh, 0.5, [1.0, 0.8, 1.0], [0, 0.15, 0], {
       name: "mound",
       widthSegments: 10,
       heightSegments: 6,
     }),
     cylinder(flesh, 0.12, 0.2, 0.7, 8, [0, 0.85, 0], { name: "stalk" }),
-    cylinder(mf.get("bug-chitin-dark"), 0.2, 0.2, 0.1, 8, [0, 1.25, 0], { name: "hatch" }),
-    cylinder(mf.get("bug-bio-magenta"), 0.12, 0.12, 0.04, 8, [0, 1.32, 0], { name: "hatch_glow" }),
+    cylinder(mf.get("bug-chitin-dark"), 0.2, 0.2, 0.1, 8, [0, 1.25, 0], {
+      name: "hatch",
+    }),
+    cylinder(mf.get("bug-bio-magenta"), 0.12, 0.12, 0.04, 8, [0, 1.32, 0], {
+      name: "hatch_glow",
+    }),
     socket("hatch", [0, 1.4, 0]),
     box(mf.get("bug-chitin-dark"), [0.08, 0.14, 0.5], [-0.25, 0.45, -0.1], {
       name: "ridge_0",
@@ -673,20 +836,38 @@ function buildEggSpawner(mf) {
     [-0.22, 0.48, -0.28],
   ];
   eggs.forEach((at, i) =>
-    parts.push(ellipsoid(fleshLight, 0.18, [1, 1.4, 1], at, { name: `egg_${i}` })),
+    parts.push(
+      ellipsoid(fleshLight, 0.18, [1, 1.4, 1], at, { name: `egg_${i}` }),
+    ),
   );
   parts.push(
-    ellipsoid(fleshLight, 0.18, [1, 0.9, 1], [0.28, 0.5, 0.24], { name: "egg_split" }),
-    ellipsoid(mf.get("bug-bio-magenta"), 0.11, [1, 1, 1], [0.28, 0.66, 0.24], { name: "egg_core" }),
+    ellipsoid(fleshLight, 0.18, [1, 0.9, 1], [0.28, 0.5, 0.24], {
+      name: "egg_split",
+    }),
+    ellipsoid(mf.get("bug-bio-magenta"), 0.11, [1, 1, 1], [0.28, 0.66, 0.24], {
+      name: "egg_core",
+    }),
   );
   const veins = [
-    [[0, 0.46, 0.3], [0, 0.6, 0]],
-    [[-0.3, 0.4, -0.05], [0, 1.4, 0]],
-    [[0.15, 0.44, -0.3], [0, -0.5, 0]],
+    [
+      [0, 0.46, 0.3],
+      [0, 0.6, 0],
+    ],
+    [
+      [-0.3, 0.4, -0.05],
+      [0, 1.4, 0],
+    ],
+    [
+      [0.15, 0.44, -0.3],
+      [0, -0.5, 0],
+    ],
   ];
   veins.forEach(([at, rot], i) =>
     parts.push(
-      box(mf.get("bug-bio-green"), [0.025, 0.025, 0.4], at, { name: `vein_${i}`, rot }),
+      box(mf.get("bug-bio-green"), [0.025, 0.025, 0.4], at, {
+        name: `vein_${i}`,
+        rot,
+      }),
     ),
   );
   return group("root", parts);
@@ -718,14 +899,31 @@ function dash(mf, at, alongX, name) {
 function buildRoad(mf, shape) {
   const parts = [slab(mf.get("env-asphalt"))];
   const arms = {
-    straight: [[0, 0, -0.3], [0, 0, 0], [0, 0, 0.3]],
-    corner: [[0, 0, 0.3], [0, 0, 0], [0.3, 0, 0]],
-    t: [[-0.3, 0, 0], [0, 0, 0], [0.3, 0, 0], [0, 0, 0.3]],
+    straight: [
+      [0, 0, -0.3],
+      [0, 0, 0],
+      [0, 0, 0.3],
+    ],
+    corner: [
+      [0, 0, 0.3],
+      [0, 0, 0],
+      [0.3, 0, 0],
+    ],
+    t: [
+      [-0.3, 0, 0],
+      [0, 0, 0],
+      [0.3, 0, 0],
+      [0, 0, 0.3],
+    ],
     cross: [],
   }[shape];
   arms.forEach((at, i) => parts.push(dash(mf, at, at[0] !== 0, `dash_${i}`)));
   if (shape === "cross") {
-    parts.push(box(mf.get("env-sidewalk"), [0.12, 0.01, 0.12], [0, 0.05, 0], { name: "centre" }));
+    parts.push(
+      box(mf.get("env-sidewalk"), [0.12, 0.01, 0.12], [0, 0.05, 0], {
+        name: "centre",
+      }),
+    );
   }
   return group("root", parts);
 }
@@ -739,10 +937,16 @@ function buildRoad(mf, shape) {
 function buildSidewalk(mf, corner) {
   const parts = [
     slab(mf.get("env-sidewalk"), 0.12),
-    box(mf.get("env-concrete"), [1, 0.12, 0.08], [0, 0.06, 0.46], { name: "kerb_z" }),
+    box(mf.get("env-concrete"), [1, 0.12, 0.08], [0, 0.06, 0.46], {
+      name: "kerb_z",
+    }),
   ];
   if (corner) {
-    parts.push(box(mf.get("env-concrete"), [0.08, 0.12, 1], [0.46, 0.06, 0], { name: "kerb_x" }));
+    parts.push(
+      box(mf.get("env-concrete"), [0.08, 0.12, 1], [0.46, 0.06, 0], {
+        name: "kerb_x",
+      }),
+    );
   }
   return group("root", parts);
 }
@@ -763,18 +967,24 @@ function buildWall(mf, kind) {
         box(brick, [1, 0.4, 0.1], [0, 1.3, 0], { name: "lintel" }),
         box(brick, [0.2, 0.5, 0.1], [-0.4, 0.85, 0], { name: "jamb_l" }),
         box(brick, [0.2, 0.5, 0.1], [0.4, 0.85, 0], { name: "jamb_r" }),
-        box(mf.get("env-glass"), [0.6, 0.5, 0.02], [0, 0.85, 0], { name: "glass" }),
+        box(mf.get("env-glass"), [0.6, 0.5, 0.02], [0, 0.85, 0], {
+          name: "glass",
+        }),
       ]);
     case "door":
       return group("root", [
         box(brick, [0.2, 1.5, 0.1], [-0.4, 0.75, 0], { name: "jamb_l" }),
         box(brick, [0.2, 1.5, 0.1], [0.4, 0.75, 0], { name: "jamb_r" }),
         box(brick, [0.6, 0.3, 0.1], [0, 1.35, 0], { name: "lintel" }),
-        box(mf.get("env-metal"), [0.64, 0.04, 0.12], [0, 1.22, 0], { name: "frame" }),
+        box(mf.get("env-metal"), [0.64, 0.04, 0.12], [0, 1.22, 0], {
+          name: "frame",
+        }),
         socket("door", [0, 0, 0]),
       ]);
     case "half":
-      return group("root", [box(concrete, [1, 0.5, 0.12], [0, 0.25, 0], { name: "wall" })]);
+      return group("root", [
+        box(concrete, [1, 0.5, 0.12], [0, 0.25, 0], { name: "wall" }),
+      ]);
     default:
       return group("root", [
         box(brick, [1, 1.5, 0.1], [0, 0.75, 0], { name: "wall" }),
@@ -795,15 +1005,26 @@ function buildStairs(mf) {
     const top = (1.5 / steps) * (i + 1);
     const depth = 1 / steps;
     parts.push(
-      box(mf.get("env-concrete"), [0.9, top, depth], [0, top / 2, -0.5 + depth * (i + 0.5)], {
-        name: `step_${i}`,
-      }),
+      box(
+        mf.get("env-concrete"),
+        [0.9, top, depth],
+        [0, top / 2, -0.5 + depth * (i + 0.5)],
+        {
+          name: `step_${i}`,
+        },
+      ),
     );
   }
   const slope = -Math.atan2(1.5, 1);
   parts.push(
-    box(mf.get("env-metal"), [0.04, 0.06, 1.8], [-0.47, 0.9, 0], { name: "rail_l", rot: [slope, 0, 0] }),
-    box(mf.get("env-metal"), [0.04, 0.06, 1.8], [0.47, 0.9, 0], { name: "rail_r", rot: [slope, 0, 0] }),
+    box(mf.get("env-metal"), [0.04, 0.06, 1.8], [-0.47, 0.9, 0], {
+      name: "rail_l",
+      rot: [slope, 0, 0],
+    }),
+    box(mf.get("env-metal"), [0.04, 0.06, 1.8], [0.47, 0.9, 0], {
+      name: "rail_r",
+      rot: [slope, 0, 0],
+    }),
   );
   return group("root", parts);
 }
@@ -816,7 +1037,9 @@ function buildStairs(mf) {
 function buildCar(mf) {
   const parts = [
     box(mf.get("env-metal"), [1.8, 0.36, 0.8], [0, 0.34, 0], { name: "body" }),
-    box(mf.get("env-glass"), [0.9, 0.3, 0.72], [-0.1, 0.67, 0], { name: "cabin" }),
+    box(mf.get("env-glass"), [0.9, 0.3, 0.72], [-0.1, 0.67, 0], {
+      name: "cabin",
+    }),
     box(mf.get("env-rust"), [0.3, 0.1, 0.7], [0.8, 0.3, 0], { name: "bumper" }),
   ];
   let i = 0;
@@ -843,9 +1066,15 @@ function buildProp(mf, kind) {
   switch (kind) {
     case "barrier-concrete":
       return group("root", [
-        box(mf.get("env-concrete"), [0.9, 0.15, 0.45], [0, 0.075, 0], { name: "base" }),
-        box(mf.get("env-concrete"), [0.9, 0.35, 0.25], [0, 0.325, 0], { name: "top" }),
-        box(mf.get("tdf-orange-dim"), [0.9, 0.06, 0.26], [0, 0.4, 0], { name: "stripe" }),
+        box(mf.get("env-concrete"), [0.9, 0.15, 0.45], [0, 0.075, 0], {
+          name: "base",
+        }),
+        box(mf.get("env-concrete"), [0.9, 0.35, 0.25], [0, 0.325, 0], {
+          name: "top",
+        }),
+        box(mf.get("tdf-orange-dim"), [0.9, 0.06, 0.26], [0, 0.4, 0], {
+          name: "stripe",
+        }),
       ]);
     case "sandbags": {
       const parts = [];
@@ -855,9 +1084,14 @@ function buildProp(mf, kind) {
         const offset = row % 2 ? 0.15 : 0;
         for (let i = 0; i < 3 - (row % 2); i++) {
           parts.push(
-            box(mf.get("tdf-olive-dark"), [0.3, 0.16, 0.24], [-0.3 + offset + i * 0.3, y, 0], {
-              name: `bag_${n++}`,
-            }),
+            box(
+              mf.get("tdf-olive-dark"),
+              [0.3, 0.16, 0.24],
+              [-0.3 + offset + i * 0.3, y, 0],
+              {
+                name: `bag_${n++}`,
+              },
+            ),
           );
         }
       }
@@ -866,21 +1100,39 @@ function buildProp(mf, kind) {
     case "dumpster":
       return group("root", [
         box(mf.get("env-metal"), [0.9, 0.8, 0.6], [0, 0.5, 0], { name: "bin" }),
-        box(mf.get("env-rust"), [0.94, 0.1, 0.64], [0, 0.95, 0], { name: "lid" }),
-        box(mf.get("tdf-grey-dark"), [0.8, 0.1, 0.5], [0, 0.05, 0], { name: "wheels" }),
+        box(mf.get("env-rust"), [0.94, 0.1, 0.64], [0, 0.95, 0], {
+          name: "lid",
+        }),
+        box(mf.get("tdf-grey-dark"), [0.8, 0.1, 0.5], [0, 0.05, 0], {
+          name: "wheels",
+        }),
       ]);
     case "lamp-post":
       return group("root", [
-        cylinder(mf.get("env-metal"), 0.06, 0.08, 0.2, 8, [0, 0.1, 0], { name: "base" }),
-        cylinder(mf.get("env-metal"), 0.035, 0.045, 2.4, 6, [0, 1.4, 0], { name: "pole" }),
-        box(mf.get("env-metal"), [0.5, 0.05, 0.05], [0.25, 2.6, 0], { name: "arm" }),
-        box(mf.get("tdf-grey-light"), [0.25, 0.1, 0.16], [0.42, 2.55, 0], { name: "lamp" }),
+        cylinder(mf.get("env-metal"), 0.06, 0.08, 0.2, 8, [0, 0.1, 0], {
+          name: "base",
+        }),
+        cylinder(mf.get("env-metal"), 0.035, 0.045, 2.4, 6, [0, 1.4, 0], {
+          name: "pole",
+        }),
+        box(mf.get("env-metal"), [0.5, 0.05, 0.05], [0.25, 2.6, 0], {
+          name: "arm",
+        }),
+        box(mf.get("tdf-grey-light"), [0.25, 0.1, 0.16], [0.42, 2.55, 0], {
+          name: "lamp",
+        }),
       ]);
     case "hydrant":
       return group("root", [
-        cylinder(mf.get("env-rust"), 0.08, 0.1, 0.5, 8, [0, 0.25, 0], { name: "body" }),
-        cylinder(mf.get("env-rust"), 0.05, 0.09, 0.1, 8, [0, 0.55, 0], { name: "cap" }),
-        box(mf.get("env-rust"), [0.3, 0.08, 0.08], [0, 0.35, 0], { name: "nozzles" }),
+        cylinder(mf.get("env-rust"), 0.08, 0.1, 0.5, 8, [0, 0.25, 0], {
+          name: "body",
+        }),
+        cylinder(mf.get("env-rust"), 0.05, 0.09, 0.1, 8, [0, 0.55, 0], {
+          name: "cap",
+        }),
+        box(mf.get("env-rust"), [0.3, 0.08, 0.08], [0, 0.35, 0], {
+          name: "nozzles",
+        }),
       ]);
     default:
       throw new Error(`Unknown prop: ${kind}`);
@@ -911,17 +1163,94 @@ const MODEL_DEFS = [
     height: kit === "rocket" ? 0.95 : 0.95,
     build: (mf) => buildInfantrySquad(mf, kit),
   })),
-  { id: "tdf.mech.legs-a", category: "units", file: "tdf-mech-legs-a.glb", footprint: { w: 1, d: 1 }, height: 1.42, build: buildMechLegs },
-  { id: "tdf.mech.chassis-a", category: "units", file: "tdf-mech-chassis-a.glb", footprint: { w: 0, d: 0 }, height: 1.37, build: buildMechChassis },
-  { id: "tdf.mech.arm-l-a", category: "units", file: "tdf-mech-arm-l-a.glb", footprint: { w: 0, d: 0 }, height: 0.77, build: (mf) => buildMechArm(mf, -1) },
-  { id: "tdf.mech.arm-r-a", category: "units", file: "tdf-mech-arm-r-a.glb", footprint: { w: 0, d: 0 }, height: 0.77, build: (mf) => buildMechArm(mf, 1) },
-  { id: "tdf.mech.weapon-arm.autocannon", category: "units", file: "tdf-mech-weapon-arm-autocannon.glb", footprint: { w: 0, d: 0 }, height: 0.22, build: buildAutocannon },
-  { id: "tdf.mech.weapon-back.missile-pod", category: "units", file: "tdf-mech-weapon-back-missile-pod.glb", footprint: { w: 0, d: 0 }, height: 0.36, build: buildMissilePod },
-  { id: "tdf.mech.assembled-a", category: "units", file: "tdf-mech-assembled-a.glb", footprint: { w: 1, d: 1 }, height: 2.79, build: buildMechAssembled },
-  { id: "bug.swarmer", category: "bugs", file: "bug-swarmer.glb", footprint: { w: 1, d: 1 }, height: 0.51, build: buildSwarmer },
-  { id: "bug.lurker", category: "bugs", file: "bug-lurker.glb", footprint: { w: 1, d: 1 }, height: 1.35, build: buildLurker },
-  { id: "bug.brute", category: "bugs", file: "bug-brute.glb", footprint: { w: 1, d: 1 }, height: 1.85, build: buildBrute },
-  { id: "bug.egg-spawner", category: "props", file: "egg-spawner.glb", footprint: { w: 1, d: 1 }, height: 1.4, build: buildEggSpawner },
+  {
+    id: "tdf.mech.legs-a",
+    category: "units",
+    file: "tdf-mech-legs-a.glb",
+    footprint: { w: 1, d: 1 },
+    height: 1.42,
+    build: buildMechLegs,
+  },
+  {
+    id: "tdf.mech.chassis-a",
+    category: "units",
+    file: "tdf-mech-chassis-a.glb",
+    footprint: { w: 0, d: 0 },
+    height: 1.37,
+    build: buildMechChassis,
+  },
+  {
+    id: "tdf.mech.arm-l-a",
+    category: "units",
+    file: "tdf-mech-arm-l-a.glb",
+    footprint: { w: 0, d: 0 },
+    height: 0.77,
+    build: (mf) => buildMechArm(mf, -1),
+  },
+  {
+    id: "tdf.mech.arm-r-a",
+    category: "units",
+    file: "tdf-mech-arm-r-a.glb",
+    footprint: { w: 0, d: 0 },
+    height: 0.77,
+    build: (mf) => buildMechArm(mf, 1),
+  },
+  {
+    id: "tdf.mech.weapon-arm.autocannon",
+    category: "units",
+    file: "tdf-mech-weapon-arm-autocannon.glb",
+    footprint: { w: 0, d: 0 },
+    height: 0.22,
+    build: buildAutocannon,
+  },
+  {
+    id: "tdf.mech.weapon-back.missile-pod",
+    category: "units",
+    file: "tdf-mech-weapon-back-missile-pod.glb",
+    footprint: { w: 0, d: 0 },
+    height: 0.36,
+    build: buildMissilePod,
+  },
+  {
+    id: "tdf.mech.assembled-a",
+    category: "units",
+    file: "tdf-mech-assembled-a.glb",
+    footprint: { w: 1, d: 1 },
+    height: 2.79,
+    build: buildMechAssembled,
+  },
+  {
+    id: "bug.swarmer",
+    category: "bugs",
+    file: "bug-swarmer.glb",
+    footprint: { w: 1, d: 1 },
+    height: 0.51,
+    build: buildSwarmer,
+  },
+  {
+    id: "bug.lurker",
+    category: "bugs",
+    file: "bug-lurker.glb",
+    footprint: { w: 1, d: 1 },
+    height: 1.35,
+    build: buildLurker,
+  },
+  {
+    id: "bug.brute",
+    category: "bugs",
+    file: "bug-brute.glb",
+    footprint: { w: 1, d: 1 },
+    height: 1.85,
+    build: buildBrute,
+  },
+  {
+    id: "bug.egg-spawner",
+    category: "props",
+    file: "egg-spawner.glb",
+    footprint: { w: 1, d: 1 },
+    height: 1.4,
+    build: buildEggSpawner,
+  },
   ...["straight", "corner", "t", "cross"].map((shape) => ({
     id: `tile.city.road-${shape}`,
     category: "tiles",
@@ -930,24 +1259,155 @@ const MODEL_DEFS = [
     height: 0.05,
     build: (mf) => buildRoad(mf, shape),
   })),
-  { id: "tile.city.sidewalk", category: "tiles", file: "city-sidewalk.glb", footprint: { w: 1, d: 1 }, height: 0.12, build: (mf) => buildSidewalk(mf, false) },
-  { id: "tile.city.sidewalk-corner", category: "tiles", file: "city-sidewalk-corner.glb", footprint: { w: 1, d: 1 }, height: 0.12, build: (mf) => buildSidewalk(mf, true) },
-  { id: "tile.temperate.ground-a", category: "tiles", file: "temperate-ground-a.glb", footprint: { w: 1, d: 1 }, height: 0.05, build: (mf) => group("root", [slab(mf.get("env-grass"))]) },
-  { id: "tile.temperate.ground-b", category: "tiles", file: "temperate-ground-b.glb", footprint: { w: 1, d: 1 }, height: 0.05, build: (mf) => group("root", [slab(mf.get("env-dirt"))]) },
-  { id: "building.wall", category: "buildings", file: "wall.glb", footprint: { w: 1, d: 0 }, height: 1.5, build: (mf) => buildWall(mf, "solid") },
-  { id: "building.wall-window", category: "buildings", file: "wall-window.glb", footprint: { w: 1, d: 0 }, height: 1.5, build: (mf) => buildWall(mf, "window") },
-  { id: "building.wall-door", category: "buildings", file: "wall-door.glb", footprint: { w: 1, d: 0 }, height: 1.5, build: (mf) => buildWall(mf, "door") },
-  { id: "building.wall-half", category: "buildings", file: "wall-half.glb", footprint: { w: 1, d: 0 }, height: 0.5, build: (mf) => buildWall(mf, "half") },
-  { id: "building.floor", category: "buildings", file: "floor.glb", footprint: { w: 1, d: 1 }, height: 0.05, build: (mf) => group("root", [slab(mf.get("env-concrete"))]) },
-  { id: "building.roof", category: "buildings", file: "roof.glb", footprint: { w: 1, d: 1 }, height: 0.05, build: (mf) => group("root", [slab(mf.get("env-roof"))]) },
-  { id: "building.roof-parapet", category: "buildings", file: "roof-parapet.glb", footprint: { w: 1, d: 0 }, height: 0.15, build: (mf) => group("root", [box(mf.get("env-concrete"), [1, 0.15, 0.08], [0, 0.075, 0], { name: "parapet" })]) },
-  { id: "building.stairs", category: "buildings", file: "stairs.glb", footprint: { w: 1, d: 1 }, height: 1.5, build: buildStairs },
-  { id: "prop.barrier-concrete", category: "props", file: "barrier-concrete.glb", footprint: { w: 1, d: 1 }, height: 0.5, build: (mf) => buildProp(mf, "barrier-concrete") },
-  { id: "prop.sandbags", category: "props", file: "sandbags.glb", footprint: { w: 1, d: 1 }, height: 0.48, build: (mf) => buildProp(mf, "sandbags") },
-  { id: "prop.dumpster", category: "props", file: "dumpster.glb", footprint: { w: 1, d: 1 }, height: 1.0, build: (mf) => buildProp(mf, "dumpster") },
-  { id: "prop.car-sedan", category: "props", file: "car-sedan.glb", footprint: { w: 2, d: 1 }, height: 0.82, build: buildCar },
-  { id: "prop.lamp-post", category: "props", file: "lamp-post.glb", footprint: { w: 1, d: 1 }, height: 2.65, build: (mf) => buildProp(mf, "lamp-post") },
-  { id: "prop.hydrant", category: "props", file: "hydrant.glb", footprint: { w: 1, d: 1 }, height: 0.6, build: (mf) => buildProp(mf, "hydrant") },
+  {
+    id: "tile.city.sidewalk",
+    category: "tiles",
+    file: "city-sidewalk.glb",
+    footprint: { w: 1, d: 1 },
+    height: 0.12,
+    build: (mf) => buildSidewalk(mf, false),
+  },
+  {
+    id: "tile.city.sidewalk-corner",
+    category: "tiles",
+    file: "city-sidewalk-corner.glb",
+    footprint: { w: 1, d: 1 },
+    height: 0.12,
+    build: (mf) => buildSidewalk(mf, true),
+  },
+  {
+    id: "tile.temperate.ground-a",
+    category: "tiles",
+    file: "temperate-ground-a.glb",
+    footprint: { w: 1, d: 1 },
+    height: 0.05,
+    build: (mf) => group("root", [slab(mf.get("env-grass"))]),
+  },
+  {
+    id: "tile.temperate.ground-b",
+    category: "tiles",
+    file: "temperate-ground-b.glb",
+    footprint: { w: 1, d: 1 },
+    height: 0.05,
+    build: (mf) => group("root", [slab(mf.get("env-dirt"))]),
+  },
+  {
+    id: "building.wall",
+    category: "buildings",
+    file: "wall.glb",
+    footprint: { w: 1, d: 0 },
+    height: 1.5,
+    build: (mf) => buildWall(mf, "solid"),
+  },
+  {
+    id: "building.wall-window",
+    category: "buildings",
+    file: "wall-window.glb",
+    footprint: { w: 1, d: 0 },
+    height: 1.5,
+    build: (mf) => buildWall(mf, "window"),
+  },
+  {
+    id: "building.wall-door",
+    category: "buildings",
+    file: "wall-door.glb",
+    footprint: { w: 1, d: 0 },
+    height: 1.5,
+    build: (mf) => buildWall(mf, "door"),
+  },
+  {
+    id: "building.wall-half",
+    category: "buildings",
+    file: "wall-half.glb",
+    footprint: { w: 1, d: 0 },
+    height: 0.5,
+    build: (mf) => buildWall(mf, "half"),
+  },
+  {
+    id: "building.floor",
+    category: "buildings",
+    file: "floor.glb",
+    footprint: { w: 1, d: 1 },
+    height: 0.05,
+    build: (mf) => group("root", [slab(mf.get("env-concrete"))]),
+  },
+  {
+    id: "building.roof",
+    category: "buildings",
+    file: "roof.glb",
+    footprint: { w: 1, d: 1 },
+    height: 0.05,
+    build: (mf) => group("root", [slab(mf.get("env-roof"))]),
+  },
+  {
+    id: "building.roof-parapet",
+    category: "buildings",
+    file: "roof-parapet.glb",
+    footprint: { w: 1, d: 0 },
+    height: 0.15,
+    build: (mf) =>
+      group("root", [
+        box(mf.get("env-concrete"), [1, 0.15, 0.08], [0, 0.075, 0], {
+          name: "parapet",
+        }),
+      ]),
+  },
+  {
+    id: "building.stairs",
+    category: "buildings",
+    file: "stairs.glb",
+    footprint: { w: 1, d: 1 },
+    height: 1.5,
+    build: buildStairs,
+  },
+  {
+    id: "prop.barrier-concrete",
+    category: "props",
+    file: "barrier-concrete.glb",
+    footprint: { w: 1, d: 1 },
+    height: 0.5,
+    build: (mf) => buildProp(mf, "barrier-concrete"),
+  },
+  {
+    id: "prop.sandbags",
+    category: "props",
+    file: "sandbags.glb",
+    footprint: { w: 1, d: 1 },
+    height: 0.48,
+    build: (mf) => buildProp(mf, "sandbags"),
+  },
+  {
+    id: "prop.dumpster",
+    category: "props",
+    file: "dumpster.glb",
+    footprint: { w: 1, d: 1 },
+    height: 1.0,
+    build: (mf) => buildProp(mf, "dumpster"),
+  },
+  {
+    id: "prop.car-sedan",
+    category: "props",
+    file: "car-sedan.glb",
+    footprint: { w: 2, d: 1 },
+    height: 0.82,
+    build: buildCar,
+  },
+  {
+    id: "prop.lamp-post",
+    category: "props",
+    file: "lamp-post.glb",
+    footprint: { w: 1, d: 1 },
+    height: 2.65,
+    build: (mf) => buildProp(mf, "lamp-post"),
+  },
+  {
+    id: "prop.hydrant",
+    category: "props",
+    file: "hydrant.glb",
+    footprint: { w: 1, d: 1 },
+    height: 0.6,
+    build: (mf) => buildProp(mf, "hydrant"),
+  },
 ];
 
 // ===========================================
@@ -964,7 +1424,9 @@ function countTriangles(root) {
   root.traverse((node) => {
     if (node instanceof Mesh) {
       const geometry = node.geometry;
-      const count = geometry.index ? geometry.index.count : geometry.attributes.position.count;
+      const count = geometry.index
+        ? geometry.index.count
+        : geometry.attributes.position.count;
       triangles += count / 3;
     }
   });
@@ -1021,18 +1483,24 @@ async function main() {
   const here = dirname(fileURLToPath(import.meta.url));
   const outFlag = process.argv.indexOf("--out");
   const outDir = resolve(
-    outFlag >= 0 ? process.argv[outFlag + 1] : join(here, "..", "..", "public", "assets", "models"),
+    outFlag >= 0
+      ? process.argv[outFlag + 1]
+      : join(here, "..", "..", "public", "assets", "models"),
   );
   const records = [];
   for (const def of MODEL_DEFS) {
     const record = await exportModel(def, outDir);
     records.push(record);
     const kb = (record.bytes / 1024).toFixed(1).padStart(6);
-    console.log(`${record.id.padEnd(36)} ${String(record.triangles).padStart(5)} tris ${kb} KB`);
+    console.log(
+      `${record.id.padEnd(36)} ${String(record.triangles).padStart(5)} tris ${kb} KB`,
+    );
   }
   const manifestPath = join(here, "placeholders.manifest.json");
   writeFileSync(manifestPath, `${JSON.stringify(records, null, 2)}\n`);
-  console.log(`\n${records.length} models → ${outDir}\nmanifest → ${manifestPath}`);
+  console.log(
+    `\n${records.length} models → ${outDir}\nmanifest → ${manifestPath}`,
+  );
 }
 
 await main();

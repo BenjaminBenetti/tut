@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>tut — map generation preview</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+      }
+      #layout {
+        display: flex;
+        width: 100%;
+        height: 100%;
+      }
+      #panel {
+        flex: 0 0 380px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px;
+        overflow-y: auto;
+        box-sizing: border-box;
+      }
+      #map-viewport {
+        flex: 1 1 auto;
+        min-width: 0;
+        height: 100%;
+      }
+      canvas {
+        display: block;
+      }
+      .mapgen-controls {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px;
+      }
+      .mapgen-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .mapgen-caption {
+        flex: 0 0 84px;
+        color: var(--ui-text-dim, #8b94a6);
+        font-family: var(--font-mono, monospace);
+        font-size: 12px;
+        text-transform: uppercase;
+      }
+      .mapgen-row .tut-input,
+      .mapgen-row input[type="range"] {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      .mapgen-level-label {
+        flex: 0 0 3em;
+        font-family: var(--font-mono, monospace);
+        text-align: right;
+      }
+      .mapgen-status:empty {
+        display: none;
+      }
+      .mapgen-status[data-state="error"] {
+        color: var(--ui-danger, #e0453c);
+        font-family: var(--font-mono, monospace);
+        white-space: pre-wrap;
+      }
+      .mapgen-stats {
+        display: grid;
+        grid-template-columns: max-content 1fr;
+        gap: 2px 12px;
+        margin: 0;
+        padding: 12px;
+        font-family: var(--font-mono, monospace);
+        font-size: 12px;
+      }
+      .mapgen-stats dt {
+        color: var(--ui-text-dim, #8b94a6);
+      }
+      .mapgen-stats dd {
+        margin: 0;
+      }
+      .mapgen-ascii {
+        margin: 0;
+        padding: 12px;
+        font-family: var(--font-mono, monospace);
+        font-size: 9px;
+        line-height: 1;
+        letter-spacing: 1px;
+        overflow: auto;
+      }
+      .mapgen-notes {
+        margin: 0;
+        padding: 12px 12px 12px 28px;
+        font-family: var(--font-mono, monospace);
+        font-size: 11px;
+        max-height: 40vh;
+        overflow-y: auto;
+      }
+      .mapgen-note-pass {
+        color: var(--ui-info, #7fd1ff);
+        margin-top: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="layout">
+      <aside id="panel"></aside>
+      <div id="map-viewport"></div>
+    </div>
+    <script type="module" src="/src/mapgen-preview.ts"></script>
+  </body>
+</html>

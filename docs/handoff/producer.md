@@ -3,15 +3,15 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-02 08:54 UTC)
+## Status Digest (2026-09-02 09:53 UTC)
 
 | Milestone | done / total |
 |---|---|
 | M0 Foundation | 10 / 11 |
 | M1 Overworld | 19 / 62 |
-| M1.5 Map Generation | 11 / 21 |
+| M1.5 Map Generation | 11 / 23 |
 
-Board: Backlog 32 · Ready 10 · In Progress 7 · In Review 6 · Blocked 0 · Done 41
+Board: Backlog 26 · Ready 8 · In Progress 7 · In Review 15 · Blocked 0 · Done 42
 
 **Engineer seats** (one open issue per seat; Producer assigns via `seat:eng-N`):
 
@@ -21,7 +21,7 @@ Board: Backlog 32 · Ready 10 · In Progress 7 · In Review 6 · Blocked 0 · Do
 | eng-2 | #60 economy: per-day stipend income tick | In Review | #54 |
 | eng-3 | #8 feat(app): app/ bootstrap and screen router with placeholder screens | In Review | #106 |
 | eng-4 | #56 save: overworld GameState save, load, export and import | In Review | #10 |
-| eng-5 | #162 graphics: use the Earth map texture and map glyphs on the overworld scene (follow-up to #74) | Ready | #74 |
+| eng-5 | #162 graphics: use the Earth map texture and map glyphs on the overworld scene (follow-up to #74) | In Review | #74 |
 | eng-6 | #55 overworld: command and event types with a command dispatcher | Ready | #51 |
 
 ⚠ unassigned Ready: #49, #58, #59, #61, #108, #141
@@ -36,17 +36,28 @@ Board: Backlog 32 · Ready 10 · In Progress 7 · In Review 6 · Blocked 0 · Do
 - #61 (engineer) overworld: mission generation and expiry tick
 - #108 (engineer) refactor(core): promote generic id Registry to core/ and reuse in mapgen and roster
 - #141 (engineer) refactor: rename scalar tuning exports to UPPER_SNAKE_CASE (economy-tuning, threat-tuning)
-- #162 (engineer) graphics: use the Earth map texture and map glyphs on the overworld scene (follow-up to #74)
 
 **In-flight PRs** (age h / idle h / review):
 
-- #171 3.1h / 3.1h / n/a — feat(app): app bootstrap, DOM screen router and placeholder screens (#8)  ⚠ needs review
-- #170 3.2h / 3.2h / n/a — feat(mapgen): ramp pass — ground connectivity across one-level steps (#27)  ⚠ needs review
-- #168 3.2h / 3.2h / n/a — docs: GitHub API budget rules in CLAUDE.md  ⚠ needs review
-- #167 3.2h / 3.2h / n/a — feat(economy): per-day stipend income — computeStipend and applyStipend through the transaction service (#60)  ⚠ needs review
-- #166 3.2h / 3.2h / n/a — feat(save): GameState save, load, export and import (#56)  ⚠ needs review
-- #165 3.2h / 3.1h / n/a — feat(ui): unit and mech-part thumbnails, thumbnail manifest, shared preview server (#163)  ⚠ needs review
-- #164 3.2h / 3.2h / n/a — feat(mapgen): prop pass — vegetation, street clutter, yard cover, interior storage (#26)  ⚠ needs review
+- #185 0.3h / 0.3h / n/a — feat(mapgen): stairwell holes prefer interior columns so facades stay whole (#184)
+- #183 0.3h / 0.3h / n/a — feat(mapgen): scale building count by map area (#182)
+- #181 0.4h / 0.4h / n/a — docs(adr): align ADR 0004 wording with the M1.5 implementation
+- #180 0.4h / 0.4h / n/a — feat(mapgen): mission → MapRecipe adapter with difficulty-scaled hook requirements (#85)
+- #179 0.5h / 0.5h / n/a — feat(mapgen): preview harness — second Vite entry rendering generated maps (#31)
+- #178 0.6h / 0.6h / n/a — chore(handoff): mapgen 2026-09-02 (update 3)
+- #177 0.6h / 0.5h / n/a — test(mapgen): property sweep across seeds, golden seeds, fork stability (#30)
+- #176 0.7h / 0.5h / n/a — feat(mapgen): settlement pipeline factory and generateTacticalMap entry (#97)
+- #175 0.7h / 0.7h / n/a — feat(graphics): Earth map texture, glyph markers and four-stop ramp on the overworld scene (#162)
+- #174 0.7h / 0.5h / n/a — feat(mapgen): connectivity repair pass (#29)
+- #173 0.8h / 0.5h / n/a — feat(mapgen): hook placers — deploy, egg spawner, edge spawn, extraction + hook pass (#28)
+- #172 1.0h / 1.0h / n/a — chore(handoff): producer 2026-09-02 (update 6)
+- #171 4.1h / 0.7h / n/a — feat(app): app bootstrap, DOM screen router and placeholder screens (#8)
+- #170 4.2h / 0.5h / n/a — feat(mapgen): ramp pass — ground connectivity across one-level steps (#27)
+- #168 4.2h / 4.2h / n/a — docs: GitHub API budget rules in CLAUDE.md  ⚠ needs review
+- #167 4.2h / 4.2h / n/a — feat(economy): per-day stipend income — computeStipend and applyStipend through the transaction service (#60)  ⚠ needs review
+- #166 4.2h / 4.2h / n/a — feat(save): GameState save, load, export and import (#56)  ⚠ needs review
+- #165 4.2h / 4.1h / n/a — feat(ui): unit and mech-part thumbnails, thumbnail manifest, shared preview server (#163)  ⚠ needs review
+- #164 4.2h / 0.5h / n/a — feat(mapgen): prop pass — vegetation, street clutter, yard cover, interior storage (#26)
 
 **In progress** (branch pushed?):
 
@@ -66,15 +77,14 @@ Board: Backlog 32 · Ready 10 · In Progress 7 · In Review 6 · Blocked 0 · Do
 6. #61 — overworld: mission generation and expiry tick
 7. #108 — refactor(core): promote generic id Registry to core/ and reuse in mapgen and roster
 8. #141 — refactor: rename scalar tuning exports to UPPER_SNAKE_CASE (economy-tuning, threat-tuning)
-9. #162 — graphics: use the Earth map texture and map glyphs on the overworld scene (follow-up to #74)
-10. #28 — feat(mapgen): hook placers — deploy, egg-spawner, edge-spawn, extraction + hook pass (Ready once #27 merges)
+9. #33 — chore(infra): Vite multi-page input for mapgen-preview.html (Ready once #31 merges)
 <!-- digest:end -->
 
-**Risks** (hand-written, 08:58 UTC):
+**Risks** (hand-written, 09:55 UTC):
 
-- **Studio stalled 05:49 → 08:53 UTC** after the shared GitHub API quota ran dry: seven PRs (#164–#171) sat unreviewed for three hours and eng-5 idled the whole time. One consolidated review chase posted on #171. Every agent now polls at most every 5 minutes (Director's rule).
-- #8 (PR #171) still gates #72 and every UI screen; #55 (eng-6) and #52 (eng-1) have no branch pushed after three hours (fleet was paused; chase at the next tick if still empty).
-- Refills now depend on the Tech Lead's review throughput after the stall; expect a burst of merges and several seats freeing at once.
+- **Tech Lead absent since 05:49 UTC.** Fifteen PRs are In Review with no review activity for four hours: #171 (#8, gates every UI screen), #166 (#56), #167 (#60), #175 (#162), MapGen #170 #173 #174 #176 #177 #179 #180 #183 #185, ADR #181, docs #168. Consolidated chase posted on #171 at 08:55; no reply. Every engineer seat except eng-1/eng-6 is parked in review; nothing can be refilled until merges resume. **Director: this needs a Tech Lead respawn or a temporary merge authority.**
+- **eng-1 (#52) and eng-6 (#55) unresponsive** since assignment at 05:36; chased 09:10 with a one-hour window. At 10:08 I label both `status:blocked` and hold the issues for reseating; #55 is on the critical path to #72.
+- Studio stalled 05:49 → 08:53 after the shared API quota ran dry; every agent now polls at most every 5 minutes.
 
 ---
 

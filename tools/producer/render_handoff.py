@@ -1,29 +1,65 @@
-import json, os, subprocess, sys
-"""Render docs/handoff/producer.md from .producer/digest.json (groom.py) + tools/producer/handoff_static.md."""
-SP=os.path.dirname(os.path.abspath(__file__))
-ROOT=subprocess.run(["git","rev-parse","--show-toplevel"],capture_output=True,text=True,cwd=SP).stdout.strip()
-d=json.load(open(os.path.join(ROOT,".producer","digest.json")))
-ms=d["milestones"]; cols=d["columns"]
-def mrow(k): v=ms.get(k,[0,0]); return f"| {k} | {v[0]} / {v[1]} |"
-L=["# Producer handoff","","> Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.","",
-   f"## Status Digest ({d['generated']})","","| Milestone | done / total |","|---|---|"]
-for k in ("M0 Foundation","M1 Overworld","M1.5 Map Generation"): L.append(mrow(k))
-L+=["", "Board: " + " · ".join(f"{k} {cols.get(k,0)}" for k in ("Backlog","Ready","In Progress","In Review","Blocked","Done")), ""]
-L+=["**Ready now** (no unmerged dependencies):",""]+[f"- #{n} ({o}) {t}" for n,o,t in d["ready"]]+[""]
-L+=["**In-flight PRs** (age h / idle h / review):",""]+([f"- #{p['number']} {p['age_h']}h / {p['idle_h']}h / {p['review']}{' · DRAFT' if p['draft'] else ''} — {p['title']}"+("  ⚠ needs review" if p['idle_h']>3 and p['review']=='none' else "") for p in d["open_prs"]] or ["- none"])+[""]
-L+=["**In progress** (branch pushed?):",""]+([f"- #{n} {'yes' if b else 'NO BRANCH'} — {t}" for n,t,b in d["in_progress"]] or ["- none"])+[""]
-L+=["**Blocked**:",""]+([f"- #{n} — {t}" for n,t in d["blocked"]] or ["- none"])+[""]
-L+=["**Next assignments for idle engineers** (Ready first, then what unblocks next):",""]
-eng=[r for r in d["ready"] if r[1]=="engineer"]
-L+=[f"{i+1}. #{n} — {t}" for i,(n,o,t) in enumerate(eng)]
-L+=[f"{len(eng)+i+1}. #{n} — {t} (Ready once {', '.join('#'+str(x) for x in deps)} merges)" for i,(n,t,deps) in enumerate(d["next_up"][:6])]
-L+=["", "**Risks**:", "",
-    "- M1 Ready queue is four data-model issues; it widens only as #43 merges (unblocks #50, #51, #52) and #7/#8/#11 land (unblocks #47, #53, #54). If engineers outpace the Tech Lead's M0 merges, they idle.",
-    "- #54 (GameState root) must fit #7's root and ADR 0003; a mismatch costs a rework day on the critical path.",
-    "- Biome / settlement ids: #43 and MapGen #19 must agree (comment on #19). Whoever lands second reconciles.",
-    "- M1.5 is one serial chain of passes; a slow review on any one stalls the whole milestone.",
-    "- #29 is oversized (flagged on #32).",
-    "", "---", ""]
-L.append(open(os.path.join(SP,"handoff_static.md")).read())
-open(os.path.join(ROOT,"docs/handoff/producer.md"),"w").write("\n".join(L))
-print("rendered docs/handoff/producer.md", len(L), "lines")
+"""Regenerate the Status Digest inside docs/handoff/producer.md.
+
+Reads .producer/digest.json (written by groom.py) and replaces the block between
+<!-- digest:start --> and <!-- digest:end --> in the handoff file. Everything
+outside the markers is hand-written by the Producer and left untouched. If the
+markers are missing, the digest is inserted before the first "## " heading that
+follows the title, and markers are added.
+"""
+import json, os, re, subprocess
+
+SP = os.path.dirname(os.path.abspath(__file__))
+ROOT = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True, cwd=SP).stdout.strip()
+HANDOFF = os.path.join(ROOT, "docs", "handoff", "producer.md")
+START, END = "<!-- digest:start -->", "<!-- digest:end -->"
+
+
+def render_digest(d):
+    """Build the digest markdown from groom.py's digest.json."""
+    ms, cols = d["milestones"], d["columns"]
+    L = [f"## Status Digest ({d['generated']})", "", "| Milestone | done / total |", "|---|---|"]
+    for k in ("M0 Foundation", "M1 Overworld", "M1.5 Map Generation"):
+        v = ms.get(k, [0, 0]); L.append(f"| {k} | {v[0]} / {v[1]} |")
+    L += ["", "Board: " + " · ".join(f"{k} {cols.get(k, 0)}" for k in ("Backlog", "Ready", "In Progress", "In Review", "Blocked", "Done")), ""]
+    sm = d.get("seat_map", {})
+    if sm:
+        L += ["**Engineer seats** (one open issue per seat; Producer assigns via `seat:eng-N`):", "", "| Seat | Current | Status | Last merged |", "|---|---|---|---|"]
+        for seat, v in sm.items():
+            cur = "; ".join(f"#{n} {t}" for n, _, t in v["current"]) or "IDLE"
+            st = "; ".join(str(s) for _, s, _ in v["current"]) or "-"
+            last = f"#{v['last_done'][0]}" if v.get("last_done") else "-"
+            L.append(f"| {seat} | {cur} | {st} | {last} |")
+        flags = []
+        if d.get("idle_seats"): flags.append("idle: " + ", ".join(d["idle_seats"]))
+        if d.get("over_assigned"): flags.append("over-assigned: " + ", ".join(d["over_assigned"]))
+        if d.get("unassigned_ready"): flags.append("unassigned Ready: " + ", ".join(f"#{n}" for n, _ in d["unassigned_ready"]))
+        L += ["", ("⚠ " + " · ".join(flags)) if flags else "All live seats occupied.", ""]
+    L += ["**Ready now** (no unmerged dependencies):", ""] + [f"- #{n} ({o}) {t}" for n, o, t in d["ready"]] + [""]
+    L += ["**In-flight PRs** (age h / idle h / review):", ""]
+    L += [f"- #{p['number']} {p['age_h']}h / {p['idle_h']}h / {p['review']}{' · DRAFT' if p['draft'] else ''} — {p['title']}" + ("  ⚠ needs review" if p["idle_h"] > 3 and p["review"] == "none" else "") for p in d["open_prs"]] or ["- none"]
+    L += ["", "**In progress** (branch pushed?):", ""] + ([f"- #{n} {'yes' if b else 'NO BRANCH'} — {t}" for n, t, b in d["in_progress"]] or ["- none"])
+    L += ["", "**Blocked**:", ""] + ([f"- #{n} — {t}" for n, t in d["blocked"]] or ["- none"])
+    L += ["", "**Next assignments for idle engineers** (Ready first, then what unblocks next):", ""]
+    eng = [r for r in d["ready"] if r[1] == "engineer"]
+    L += [f"{i + 1}. #{n} — {t}" for i, (n, o, t) in enumerate(eng)]
+    L += [f"{len(eng) + i + 1}. #{n} — {t} (Ready once {', '.join('#' + str(x) for x in deps)} merges)" for i, (n, t, deps) in enumerate(d["next_up"][:6])]
+    return "\n".join(L)
+
+
+def main():
+    """Splice the rendered digest into the handoff file."""
+    d = json.load(open(os.path.join(ROOT, ".producer", "digest.json")))
+    digest = f"{START}\n{render_digest(d)}\n{END}"
+    text = open(HANDOFF).read() if os.path.exists(HANDOFF) else "# Producer handoff\n\n"
+    if START in text and END in text:
+        text = re.sub(re.escape(START) + r".*?" + re.escape(END), lambda _: digest, text, count=1, flags=re.S)
+    else:
+        # Legacy layout: replace the generated "## Status Digest" section up to the risks divider, else insert after the title block.
+        m = re.search(r"## Status Digest.*?\n---\n", text, re.S)
+        text = text[:m.start()] + digest + "\n\n" + text[m.end():] if m else re.sub(r"(\A# [^\n]*\n(?:>[^\n]*\n)?\n?)", lambda mm: mm.group(1) + digest + "\n\n", text, count=1)
+    open(HANDOFF, "w").write(text)
+    print(f"digest written to {os.path.relpath(HANDOFF, ROOT)}")
+
+
+if __name__ == "__main__":
+    main()

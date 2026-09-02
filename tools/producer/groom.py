@@ -105,9 +105,23 @@ for n in cols.get("Backlog", []):
     deps = deps_of(i)
     if deps and all(issues.get(d, {}).get("state") == "CLOSED" or any(p["state"] == "OPEN" for p in issue_prs(d)) for d in deps):
         nextup.append((n, i["title"], [d for d in deps if issues.get(d, {}).get("state") != "CLOSED"]))
-digest = dict(generated=now.strftime("%Y-%m-%d %H:%M UTC"), milestones=ms, columns={k: len(v) for k, v in cols.items()}, ready=ready, blocked=blocked, in_progress=inprog, open_prs=open_prs, next_up=nextup, changes=changes, added=added)
+# engineer seats: current open issue per seat label, plus the most recently closed one for context
+SEATS = ["eng-1", "eng-2", "eng-3", "eng-4", "eng-5", "eng-6"]
+seat_map = {}
+for seat in SEATS:
+    lab = f"seat:{seat}"
+    cur = [i for i in issues.values() if lab in labels(i) and i["state"] == "OPEN"]
+    last = sorted([i for i in issues.values() if lab in labels(i) and i["state"] == "CLOSED"], key=lambda i: i["updatedAt"], reverse=True)
+    seat_map[seat] = dict(
+        current=[(i["number"], by_num.get(i["number"], {}).get("status"), i["title"]) for i in cur],
+        last_done=(last[0]["number"], last[0]["title"]) if last else None,
+    )
+idle_seats = [s for s, v in seat_map.items() if not v["current"]]
+over_assigned = [s for s, v in seat_map.items() if len(v["current"]) > 1]
+unassigned_ready = [(n, t) for n, o, t in ready if o == "engineer" and not any(l.startswith("seat:") for l in labels(issues[n]))]
+digest = dict(seat_map=seat_map, idle_seats=idle_seats, over_assigned=over_assigned, unassigned_ready=unassigned_ready, generated=now.strftime("%Y-%m-%d %H:%M UTC"), milestones=ms, columns={k: len(v) for k, v in cols.items()}, ready=ready, blocked=blocked, in_progress=inprog, open_prs=open_prs, next_up=nextup, changes=changes, added=added)
 json.dump(digest, open(os.path.join(OUT, "digest.json"), "w"), indent=1, default=str)
 print(f"{'[dry] ' if DRY else ''}added={added} changes={len(changes)}")
 for c in changes: print("  ", c)
 print("columns:", digest["columns"]); print("milestones:", ms)
-print("READY:", [f"#{n} ({o})" for n, o, _ in ready]); print("IN PROGRESS:", inprog); print("OPEN PRs:", open_prs); print("NEXT UP:", nextup[:12])
+print("SEATS:", {k: [c[0] for c in v["current"]] for k, v in seat_map.items()}, "IDLE:", idle_seats, "OVER:", over_assigned, "UNASSIGNED READY:", [n for n, _ in unassigned_ready]); print("READY:", [f"#{n} ({o})" for n, o, _ in ready]); print("IN PROGRESS:", inprog); print("OPEN PRs:", open_prs); print("NEXT UP:", nextup[:12])

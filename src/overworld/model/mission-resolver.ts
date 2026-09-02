@@ -1,8 +1,8 @@
 import type { Rng } from "../../core/model/rng";
-import type { Deployment } from "../model/deployment";
-import type { Mission } from "../model/mission";
-import type { MissionResolutionState } from "../model/mission-resolution-state";
-import type { MissionResult } from "../model/mission-result";
+import type { Deployment } from "./deployment";
+import type { Mission } from "./mission";
+import type { MissionResolutionState } from "./mission-resolution-state";
+import type { MissionResult } from "./mission-result";
 
 /**
  * Turns a launched mission into a result (architecture §5). The overworld

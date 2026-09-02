@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import type { Rng } from "../../core/model/rng";
-import type { Deployment } from "../model/deployment";
-import type { Mission } from "../model/mission";
-import type { MissionResolutionState } from "../model/mission-resolution-state";
-import type { MissionResult } from "../model/mission-result";
+import type { Deployment } from "./deployment";
+import type { Mission } from "./mission";
+import type { MissionResolutionState } from "./mission-resolution-state";
+import type { MissionResult } from "./mission-result";
 import type { MissionResolver } from "./mission-resolver";
 
 const MISSION: Mission = {

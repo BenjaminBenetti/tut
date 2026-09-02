@@ -9,16 +9,11 @@ import {
 } from "three";
 
 import type { Vec3 } from "../../core/model/grid";
+import type { Disposable } from "../model/disposable";
 
 // ===========================================
 // Types
 // ===========================================
-
-/** Anything holding GPU resources that must be released explicitly. */
-interface Disposable {
-  /** Frees the underlying resources. */
-  dispose(): void;
-}
 
 /** A style-guide palette token and its hex value. */
 interface PaletteToken {

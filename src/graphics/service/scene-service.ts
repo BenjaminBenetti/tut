@@ -9,6 +9,7 @@ import {
 
 import type { FrameUpdatable } from "../model/frame-updatable";
 import type { SceneCamera } from "../model/scene-camera";
+import type { Viewport } from "./isometric-camera-math";
 
 // ===========================================
 // Types
@@ -35,8 +36,10 @@ const CLEAR_COLOUR = 0x0b0d12;
 const MAX_FRAME_SECONDS = 0.1;
 
 /**
- * Owns the three.js renderer lifecycle: canvas creation, lights, resize
- * handling and the render loop. Content and camera are injected.
+ * Owns the three.js renderer lifecycle: canvas creation, lights, sizing
+ * to its container and the render loop. Content and camera are injected.
+ * The canvas fills whatever element it is mounted in and follows that
+ * element's size, so a screen can give the map a viewport region.
  *
  * ```
  *   every frame:  updatables[i].update(dt) ──▶ camera.apply() ──▶ render
@@ -47,10 +50,12 @@ export class SceneService {
   // Fields
   // ===========================================
 
+  private readonly container: HTMLElement;
   private readonly renderer: WebGLRenderer;
   private readonly scene: Scene;
   private readonly sceneCamera: SceneCamera;
   private readonly updatables: readonly FrameUpdatable[];
+  private readonly resizeObserver: ResizeObserver;
   private readonly firstFrame: Promise<void>;
   private resolveFirstFrame: (() => void) | undefined;
   private lastFrameTimeMs: number | undefined;
@@ -63,10 +68,11 @@ export class SceneService {
    * Creates the renderer and scene graph, and attaches the canvas
    * to the given container element.
    *
-   * @param container - DOM element the WebGL canvas is appended to.
+   * @param container - DOM element the WebGL canvas is appended to and sized to.
    * @param options - Camera, content and per-frame subscribers.
    */
   constructor(container: HTMLElement, options: SceneServiceOptions) {
+    this.container = container;
     this.sceneCamera = options.camera;
     this.updatables = options.updatables ?? [];
 
@@ -87,8 +93,9 @@ export class SceneService {
       this.resolveFirstFrame = resolve;
     });
 
-    this.applySize(window.innerWidth, window.innerHeight);
-    window.addEventListener("resize", this.handleResize);
+    this.applySize(this.measure());
+    this.resizeObserver = new ResizeObserver(this.handleResize);
+    this.resizeObserver.observe(container);
   }
 
   // ===========================================
@@ -110,6 +117,17 @@ export class SceneService {
     return this.firstFrame;
   }
 
+  /**
+   * Stops the loop, stops watching the container and removes the canvas.
+   * Scene content is left to its owner to dispose.
+   */
+  dispose(): void {
+    this.renderer.setAnimationLoop(null);
+    this.resizeObserver.disconnect();
+    this.renderer.dispose();
+    this.renderer.domElement.remove();
+  }
+
   // ===========================================
   // Private Methods
   // ===========================================
@@ -129,11 +147,26 @@ export class SceneService {
   }
 
   /**
+   * The container's current size in CSS pixels, falling back to the
+   * window when the container has not been laid out yet.
+   *
+   * @returns Width and height to render at.
+   */
+  private measure(): Viewport {
+    const width = this.container.clientWidth;
+    const height = this.container.clientHeight;
+    if (width > 0 && height > 0) {
+      return { width, height };
+    }
+    return { width: window.innerWidth, height: window.innerHeight };
+  }
+
+  /**
    * Sizes the canvas and tells the camera owner about the new viewport.
    */
-  private applySize(widthPx: number, heightPx: number): void {
-    this.renderer.setSize(widthPx, heightPx);
-    this.sceneCamera.resize(widthPx, heightPx);
+  private applySize(viewport: Viewport): void {
+    this.renderer.setSize(viewport.width, viewport.height);
+    this.sceneCamera.resize(viewport.width, viewport.height);
   }
 
   /**
@@ -158,9 +191,9 @@ export class SceneService {
   };
 
   /**
-   * Keeps the camera and renderer in sync with the window size.
+   * Keeps the canvas and camera in step with the container's size.
    */
   private readonly handleResize = (): void => {
-    this.applySize(window.innerWidth, window.innerHeight);
+    this.applySize(this.measure());
   };
 }

@@ -21,6 +21,11 @@
         pointer-events: none;
         opacity: 0.8;
       }
+      #app,
+      #map-viewport {
+        width: 100%;
+        height: 100%;
+      }
       canvas {
         display: block;
       }
@@ -28,8 +33,9 @@
   </head>
   <body>
     <div id="overlay">
-      <strong>tut</strong> — placeholder tactical scene. <code>Q</code> /
+      <strong>tut</strong> — overworld map. Click a city · <code>Q</code> /
       <code>E</code> rotate · wheel zoom · <code>WASD</code> or arrows pan.
+      <span id="selected-city"></span>
     </div>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>

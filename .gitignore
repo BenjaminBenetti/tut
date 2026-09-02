@@ -9,5 +9,8 @@ test-results/
 *.local
 .DS_Store
 
+# Producer grooming scratch output
+.producer/
+
 # art preview renders
 tools/art/preview/out/

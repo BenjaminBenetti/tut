@@ -31,20 +31,21 @@ Single player, browser only, no server.
 
 ```
  ┌───────────────────────────────────────────────────────────────┐
- │  app/          bootstrap, screen router, game loop wiring       │
+ │  app/          bootstrap, screen router, dependency wiring      │
  ├───────────────────────────────────────────────────────────────┤
  │  ui/           DOM screens & HUD          graphics/  three.js   │
  │  (presentation — reads state, emits commands)                   │
  ├───────────────────────────────────────────────────────────────┤
- │  overworld/  tactical/  mapgen/  roster/  bugs/  economy/  ...  │
+ │  save/         root GameState, serialize / deserialize / migrate│
+ ├───────────────────────────────────────────────────────────────┤
+ │  overworld/  tactical/  mapgen/  roster/  bugs/  economy/ content│
  │  (simulation — pure TS, deterministic, no DOM, no three.js)     │
  ├───────────────────────────────────────────────────────────────┤
  │  core/         rng, ids, events, math, grid, result types       │
- │  save/         serialize / deserialize / migrate                │
  └───────────────────────────────────────────────────────────────┘
 ```
 
-Imports only point downward. `ui` and `graphics` may import simulation domains; simulation domains never import `ui`, `graphics`, or `app`.
+Imports only point downward. `ui` and `graphics` may import `save` and simulation domains; `save` composes the root state from simulation slices and imports nothing above it; simulation domains never import `save`, `ui`, `graphics`, or `app`. These rules are enforced by ESLint; see [ADR 0002](../adr/0002-layering-enforced-by-lint.md).
 
 ## 4. Domain map (initial)
 
@@ -63,7 +64,7 @@ Follow `/<domain>/<type>/<file>` under `src/`. Types are things like `model`, `s
 | `mapgen` | Procedural map generator, biomes, buildings, placement hooks, preview harness |
 | `graphics` | Renderer, isometric camera rig, scene builders for overworld and tactical, asset loader, VFX |
 | `ui` | DOM screens (menu, overworld, mech bay, deployment, mission HUD, results), shared components |
-| `content` | Cross-domain data such as mission type definitions, biome definitions |
+| `content` | Cross-domain vocabulary: closed id unions (biome, settlement scale, model ids) and definitions more than one domain consumes (mission types). A definition only one domain reads lives in that domain's `data/`, keyed by the shared union (ADR 0002) |
 
 Add domains via ADR when needed. Don't create `utils` dumping grounds.
 
@@ -92,3 +93,10 @@ Add domains via ADR when needed. Don't create `utils` dumping grounds.
 ## 8. Architecture Decision Records
 
 Any change to §2, §3, or a new library goes in `docs/adr/NNNN-title.md` with context, decision, consequences. The Tech Lead writes or approves ADRs; the Director signs off when it touches §2.
+
+| ADR | Title |
+|---|---|
+| [0001](../adr/0001-toolchain.md) | Toolchain: TypeScript 6, Vite, Vitest, Playwright, ESLint, CI |
+| [0002](../adr/0002-layering-enforced-by-lint.md) | Layering enforced by lint; `save/` and `content/` placement |
+| [0003](../adr/0003-state-commands-events-ids.md) | Root state, commands, events, plain string ids, data conventions |
+| [0004](../adr/0004-tactical-map-contract.md) | Tactical map contract and generation pipeline |

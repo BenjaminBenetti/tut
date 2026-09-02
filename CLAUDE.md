@@ -77,6 +77,17 @@ Use section comments to visually separate logical regions of a class or module (
 
 Provide ASCII diagrams in docs and doc comments when they clarify structure or flow.
 
+## Conventions decided in ADRs
+
+Read `docs/adr/` once; the short version:
+
+- Ids are plain `string` aliases, never branded types (ADR 0003 §2.4).
+- Exported constants are `UPPER_SNAKE_CASE`; tuning is one object typed by an interface in `model/` (ADR 0003 §2.5).
+- Content lives in `<domain>/data/` typed against `<domain>/model/`; closed id sets use `Readonly<Record<Id, Definition>>`; services depend on catalogue interfaces, not data modules.
+- Simulation services return `Applied { state, events }` and `Result` errors; they never mutate input or read `Date` / `Math.random()` (ADR 0003 §2.2, §2.3).
+- Shared id unions go in `content/model`; domain-only definitions stay in the owning domain (ADR 0002 §2.1).
+- A test that reads the disk starts with `/// <reference types="node" />`; browser code reading `import.meta.env` relies on `src/vite-env.d.ts` (ADR 0001).
+
 ## Git
 
 - Branch: `<type>/<issue>-<slug>` (`feat/12-earth-map-model`)

@@ -61,6 +61,16 @@ describe("TileIndex", () => {
     expect(index.column(2, 1)).toEqual([]);
   });
 
+  it("returns an empty column off-map instead of aliasing a real one", () => {
+    // z * width + x would map (-1, 1) onto (2, 0) without a bounds check.
+    const index = new TileIndex(source([tile(2, 0, 0)]));
+    expect(index.column(-1, 1)).toEqual([]);
+    expect(index.column(3, 0)).toEqual([]);
+    expect(index.column(0, -1)).toEqual([]);
+    expect(index.column(0, 2)).toEqual([]);
+    expect(index.column(2, 0)).toHaveLength(1);
+  });
+
   it("finds same-level neighbours and nothing across the edge", () => {
     const index = new TileIndex(source([...GROUND, ...STACK]));
     const origin = index.get(1, 0, 0);

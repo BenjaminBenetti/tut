@@ -119,10 +119,14 @@ export class TileIndex {
 
   /**
    * Returns every tile in the column `(x, z)` in ascending level order, or
-   * an empty list. Ground is the lowest entry; building floors and the roof
+   * an empty list (also for off-map columns, which must never alias an
+   * on-map one). Ground is the lowest entry; building floors and the roof
    * follow.
    */
   column(x: number, z: number): readonly Tile[] {
+    if (!isInBounds({ x, y: 0, z }, this.width, this.depth)) {
+      return EMPTY_COLUMN;
+    }
     return this.byColumn.get(this.columnKeyOf(x, z)) ?? EMPTY_COLUMN;
   }
 

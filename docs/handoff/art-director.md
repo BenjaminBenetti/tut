@@ -10,7 +10,7 @@ Last updated: 2026-09-02 (session 1, third update)
 | Concept sheets `docs/design/concepts/` (7 subjects) | #3 | **Merged** (PR #86, infantry second pass PR #96). |
 | Placeholder GLBs batch 1 (38 models) + build/render tooling | #4 | **Merged** (PR #89). Tech Lead: the #10 engineer seeds the typed manifest from `tools/art/placeholders.manifest.json`, so no registration PR from me. |
 | Placeholder batch 2: biome tiles + every mapgen prop kind (13 models), mapgen id → model table in style guide §7 | #93 | PR #110 open |
-| UI theme `src/ui/style/theme.css`, 24 icons, `src/ui/data/icon-manifest.ts` | #102 | PR #109 open |
+| UI theme `src/ui/style/theme.css`, 24 icons, `src/ui/data/icon-manifest.ts` | #102 | **Merged** (PR #109). Not yet imported by the app; #72 should import `src/ui/style/theme.css`. |
 | Image generation recipe | — | **Working.** See §5. |
 | Headless GLB / page render checks | — | **Working.** See §7. |
 
@@ -19,7 +19,7 @@ Issues #2, #3, #4, #93, #102 are on project 5 (Terra Under Threat).
 ## 2. Open PRs / issues I own
 
 - PR #110 `feat(art): placeholder batch 2` → closes #93. Rebased on main after #89's squash.
-- PR #109 `feat(ui): theme stylesheet, icon set, icon manifest` → closes #102. Not yet imported by the app; #72 (composition root) should `import "./ui/style/theme.css"`. Told epic #41.
+- PR #109 (UI theme) merged; #72 (composition root) should import `src/ui/style/theme.css`. Told epic #41.
 - Closed: #2, #3, #4 (all merged).
 
 ## 3. Decisions I made and why
@@ -38,7 +38,7 @@ Issues #2, #3, #4, #93, #102 are on project 5 (Terra Under Threat).
 
 ## 4. Next, in order
 
-1. Land PR #110 and PR #109 (address review). If #10 merges before #110, add the 13 batch-2 ids to the typed manifest in a tiny follow-up.
+1. Land PR #110 (address review). If #10 merges before #110, add the 13 batch-2 ids to the typed manifest in a tiny follow-up.
 2. When #10 lands: rewrite style guide §8 to the shipped shape (`content/data/model-ids.ts` union + `graphics/data/model-manifest.ts` `satisfies Record<ModelAssetId, ModelAssetEntry>`, no `id` field).
 3. Overworld art for M1: a stylised Earth map plate texture or region plates (see #74; the engineer uses primitives first) and a city-marker sprite that reads infestation 0–100 (green → bug-green → danger). Wait for #74's implementer to say what they want; offer on the issue.
 4. VFX sprites for M2 (muzzle flash, impact, egg burst; ≤ 512², transparent, generated with `tools/art/gen-image.sh` asking for a transparent background) and a `sprite-manifest.ts`.

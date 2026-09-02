@@ -1,22 +1,11 @@
+import type { BiomeId } from "../../content/model/biome-id";
+import type { SettlementScale } from "../../content/model/settlement-scale";
 import type { HookKind, HookMeta } from "./hook";
 import type { PassMask } from "./pass-mask";
 
 // ===========================================
 // Parameters
 // ===========================================
-
-/** Biome identifier, resolved through the biome registry (`mapgen/data/biomes`). */
-export type BiomeId = string;
-
-/** How built-up the map is. Drives roads, lots, building count and height. */
-export type SettlementScale = "rural" | "town" | "city";
-
-/** Every settlement scale, sparsest first. */
-export const SETTLEMENT_SCALES: readonly SettlementScale[] = [
-  "rural",
-  "town",
-  "city",
-];
 
 /**
  * Which pass list generates the map. M1.5 ships `settlement`; hives, crash

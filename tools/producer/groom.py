@@ -31,8 +31,12 @@ def deps_of(i):
     m = re.search(r"## Dependencies\s*(.*?)(?:\n## |\Z)", body, re.S)
     sec = (m.group(1) if m else "").strip()
     if re.match(r"(?i)^[_*\s]*none\b", sec): return []
+    # Prefer numbers inside explicit blocker phrases ("Blocked by #N, #M", "depends on #N"); a sentence such as
+    # "independent of #8" must not count. Fall back to every number only when no phrase is present.
+    phrases = re.findall(r"(?i)(?:blocked by|depends on|needs|after|requires)((?:\s*(?:,|and|\+)?\s*#\d+(?:\s*\([^)]*\))?)+)", sec)
+    nums = {int(x) for ph in phrases for x in re.findall(r"#(\d+)", ph)} if phrases else {int(x) for x in re.findall(r"#(\d+)", sec)}
     out = set()
-    for n in {int(x) for x in re.findall(r"#(\d+)", sec)}:
+    for n in nums:
         if n in issues: out.add(n)
         elif n in PR_BY_NUM and PR_BY_NUM[n]["state"] == "OPEN": out.add(n)  # open PR named as a blocker
     return sorted(out)

@@ -42,7 +42,7 @@ export const SPRITE_MANIFEST = {
   },
   "vfx.egg-burst": {
     path: "assets/sprites/vfx/egg-burst.png",
-    size: 256,
+    size: 512,
     blend: "normal",
     label: "Egg spawner hatch burst",
   },

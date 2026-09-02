@@ -1,7 +1,7 @@
-import type { MissionTypeId } from "../../content/model/mission-type-id";
-import type { CityId } from "./city";
 import type { EarthMap } from "./earth-map";
 import type { EventTypeId } from "./event-type";
+import type { Mission } from "./mission";
+import type { MissionResult } from "./mission-result";
 import type { RegionId } from "./region";
 
 // ===========================================
@@ -19,18 +19,6 @@ export const FIRST_DAY = 1;
 // only ever an element of an empty list in a new game, so widening it
 // later changes no persisted data. When the owning issue lands, replace
 // the placeholder with an import of the real type.
-
-/** Placeholder until #51 defines `Mission` in `overworld/model/mission.ts`. */
-export interface Mission {
-  readonly id: string;
-  readonly typeId: MissionTypeId;
-  readonly cityId: CityId;
-}
-
-/** Placeholder until #51 defines `MissionResult` in `overworld/model/mission-result.ts`. */
-export interface MissionResult {
-  readonly missionId: string;
-}
 
 /** Placeholder until #70 defines `PendingEvent` in `overworld/model/pending-event.ts`. */
 export interface PendingEvent {

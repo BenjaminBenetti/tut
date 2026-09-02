@@ -1,51 +1,60 @@
-import type { ModelAssetId } from "./content/data/model-ids";
 import { CameraInputController } from "./graphics/controller/camera-input-controller";
-import { MODEL_MANIFEST } from "./graphics/data/model-manifest";
-import { GltfModelLoader } from "./graphics/service/gltf-model-loader";
+import { MapPickingController } from "./graphics/controller/map-picking-controller";
+import { CAMERA_ZOOM } from "./graphics/model/camera-state";
 import { IsometricCameraRig } from "./graphics/service/isometric-camera-rig";
-import { PlaceholderModelFactory } from "./graphics/service/placeholder-model-factory";
+import { OverworldSceneBuilder } from "./graphics/service/overworld-scene-builder";
 import { SceneService } from "./graphics/service/scene-service";
-import type { GroundTile } from "./graphics/view/placeholder-tactical-view";
-import { PlaceholderTacticalView } from "./graphics/view/placeholder-tactical-view";
-
-/** The one model shown on the placeholder scene, proving the asset pipeline end to end. */
-const SHOWCASE_MODEL: ModelAssetId = "tdf.mech.assembled-a";
-
-/** Where the showcase model stands, clear of the scale boxes. */
-const SHOWCASE_TILE: GroundTile = { x: 6, z: 10 };
+import { EARTH_MAP } from "./overworld/data/earth-map";
+import { getCity } from "./overworld/service/earth-map-query-service";
 
 /**
- * Application entry point: composes the placeholder tactical scene, the
- * model loader, the isometric camera rig and its input controller,
- * mounts the three.js scene into the page, and marks the document ready
+ * Application entry point: composes the overworld map scene, the
+ * isometric camera rig, camera input and map picking, mounts the
+ * three.js canvas into `#map-viewport`, and marks the document ready
  * once the first frame is on screen. The `data-app-state` attribute is
- * the hook end-to-end tests wait on; the showcase model is loaded
- * before it is set so a broken asset path fails the smoke test.
+ * the hook end-to-end tests wait on; a selected city is mirrored to
+ * `data-selected-city` until the overworld screen (#73) owns it.
  */
 async function main(): Promise<void> {
-  const container = document.getElementById("app");
-  if (!container) {
+  const app = document.getElementById("app");
+  if (!app) {
     throw new Error("Missing #app container element");
   }
+  const viewport = document.createElement("div");
+  viewport.id = "map-viewport";
+  app.appendChild(viewport);
+  const selectedLabel = document.getElementById("selected-city");
 
-  const view = new PlaceholderTacticalView();
-  const models = new GltfModelLoader({
-    manifest: MODEL_MANIFEST,
-    baseUrl: import.meta.env.BASE_URL,
-    fallback: new PlaceholderModelFactory(),
-    logger: console,
+  const mapScene = new OverworldSceneBuilder();
+  mapScene.build(EARTH_MAP);
+  const rig = new IsometricCameraRig({
+    target: mapScene.centre,
+    zoom: CAMERA_ZOOM.min,
   });
-  view.placeOnTile(await models.load(SHOWCASE_MODEL), SHOWCASE_TILE);
-
-  const rig = new IsometricCameraRig({ target: view.centre });
   const cameraInput = new CameraInputController(rig);
-  const scene = new SceneService(container, {
+  const picking = new MapPickingController(mapScene, rig, {
+    onCitySelected: (cityId) => {
+      document.body.dataset.selectedCity = cityId;
+      if (selectedLabel) {
+        selectedLabel.textContent = getCity(EARTH_MAP, cityId).name;
+      }
+    },
+  });
+  const scene = new SceneService(viewport, {
     camera: rig,
-    content: view.root,
+    content: mapScene.root,
     updatables: [cameraInput],
   });
 
-  cameraInput.attach(container);
+  cameraInput.attach(viewport);
+  picking.attach(viewport);
+  if (import.meta.env.DEV) {
+    window.__tut__ = {
+      selectCity: (cityId) => picking.selectCity(cityId),
+      cityScreenPosition: (cityId) => picking.screenPositionOf(cityId),
+    };
+  }
+
   scene.start();
   await scene.whenFirstFrameRendered();
   document.body.dataset.appState = "ready";

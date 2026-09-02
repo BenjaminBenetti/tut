@@ -12,7 +12,9 @@
  *
  * Alongside the GLBs it writes `tools/art/placeholders.manifest.json`, a
  * machine-readable record (id, path, footprint, height, sockets, triangles)
- * that the typed asset manifest under `src/graphics/data/` is derived from.
+ * that the typed asset manifest under `src/graphics/data/` is checked
+ * against. Unit models reference their texture atlas from inside the GLB
+ * (see `attachAtlases`), so the record does not list textures.
  *
  *   ┌──────────────┐   build()    ┌──────────────┐  GLTFExporter   ┌───────┐
  *   │ MODEL_DEFS   │ ───────────► │ three.js     │ ──────────────► │ .glb  │
@@ -34,6 +36,7 @@ import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { ATLAS_CELLS, ATLAS_PATHS, GRID } from "./build-textures.mjs";
 
 // ===========================================
 // Node polyfill
@@ -133,9 +136,15 @@ const METAL_TOKENS = new Set([
  * shares materials across its meshes and the exporter emits each once.
  */
 class MaterialFactory {
-  constructor() {
+  /**
+   * @param {boolean} [textured] - When true, tokens that have an atlas cell
+   *   get a white base colour and carry `userData.cell` so meshes remap their
+   *   UVs and the GLB references the atlas (first-pass textures, #145).
+   */
+  constructor(textured = false) {
     /** @type {Map<string, MeshStandardMaterial>} */
     this.cache = new Map();
+    this.textured = textured;
   }
 
   /**
@@ -158,6 +167,11 @@ class MaterialFactory {
       if (EMISSIVE_TOKENS.has(token)) {
         material.emissive = new Color(hex);
         material.emissiveIntensity = 1.5;
+      }
+      const cell = ATLAS_CELLS[token];
+      if (this.textured && cell) {
+        material.color = new Color(0xffffff);
+        material.userData.cell = cell;
       }
       this.cache.set(token, material);
     }
@@ -182,6 +196,28 @@ function faceted(geometry) {
   return flat;
 }
 
+/** Inset from the cell edge so linear filtering never bleeds a neighbour. */
+const CELL_INSET = 0.03;
+
+/**
+ * Rescales a geometry's UVs from [0, 1] into one atlas cell. GLTFExporter
+ * writes UVs unchanged and GLTFLoader samples textures with `flipY` off, so
+ * the exported v axis runs top-down like glTF: row 0 is the top of the atlas.
+ * @param {import("three").BufferGeometry} geometry - Geometry to remap in place.
+ * @param {{col: number, row: number}} cell - Atlas cell.
+ */
+function remapUvToCell(geometry, cell) {
+  const uv = geometry.attributes.uv;
+  if (!uv) return;
+  const span = 1 - 2 * CELL_INSET;
+  for (let i = 0; i < uv.count; i++) {
+    const u = CELL_INSET + uv.getX(i) * span;
+    const v = CELL_INSET + uv.getY(i) * span;
+    uv.setXY(i, (cell.col + u) / GRID, (cell.row + 1 - v) / GRID);
+  }
+  uv.needsUpdate = true;
+}
+
 /**
  * Places a mesh and optionally names and rotates it.
  * @param {Mesh} mesh - Mesh to position.
@@ -190,6 +226,8 @@ function faceted(geometry) {
  * @returns {Mesh} The same mesh.
  */
 function place(mesh, at, opts = {}) {
+  const cell = mesh.material.userData.cell;
+  if (cell) remapUvToCell(mesh.geometry, cell);
   mesh.position.set(at[0], at[1], at[2]);
   if (opts.rot) mesh.rotation.set(opts.rot[0], opts.rot[1], opts.rot[2]);
   if (opts.name) mesh.name = opts.name;
@@ -1378,6 +1416,7 @@ function buildMapgenProp(mf, kind) {
  * @property {{w: number, d: number}} footprint - Footprint in tiles (0×0 for parts).
  * @property {number} height - Height in world units.
  * @property {(mf: MaterialFactory) => Object3D} build - Builder.
+ * @property {boolean} [textured] - Map palette tokens onto the unit atlases.
  */
 
 /** @type {ModelDef[]} */
@@ -1387,11 +1426,13 @@ const MODEL_DEFS = [
     category: "units",
     file: `tdf-infantry-${kit}.glb`,
     footprint: { w: 1, d: 1 },
-    height: kit === "rocket" ? 0.95 : 0.95,
+    height: 0.95,
+    textured: true,
     build: (mf) => buildInfantrySquad(mf, kit),
   })),
   {
     id: "tdf.mech.legs-a",
+    textured: true,
     category: "units",
     file: "tdf-mech-legs-a.glb",
     footprint: { w: 1, d: 1 },
@@ -1400,6 +1441,7 @@ const MODEL_DEFS = [
   },
   {
     id: "tdf.mech.chassis-a",
+    textured: true,
     category: "units",
     file: "tdf-mech-chassis-a.glb",
     footprint: { w: 0, d: 0 },
@@ -1408,6 +1450,7 @@ const MODEL_DEFS = [
   },
   {
     id: "tdf.mech.arm-l-a",
+    textured: true,
     category: "units",
     file: "tdf-mech-arm-l-a.glb",
     footprint: { w: 0, d: 0 },
@@ -1416,6 +1459,7 @@ const MODEL_DEFS = [
   },
   {
     id: "tdf.mech.arm-r-a",
+    textured: true,
     category: "units",
     file: "tdf-mech-arm-r-a.glb",
     footprint: { w: 0, d: 0 },
@@ -1424,6 +1468,7 @@ const MODEL_DEFS = [
   },
   {
     id: "tdf.mech.weapon-arm.autocannon",
+    textured: true,
     category: "units",
     file: "tdf-mech-weapon-arm-autocannon.glb",
     footprint: { w: 0, d: 0 },
@@ -1432,6 +1477,7 @@ const MODEL_DEFS = [
   },
   {
     id: "tdf.mech.weapon-back.missile-pod",
+    textured: true,
     category: "units",
     file: "tdf-mech-weapon-back-missile-pod.glb",
     footprint: { w: 0, d: 0 },
@@ -1440,6 +1486,7 @@ const MODEL_DEFS = [
   },
   {
     id: "tdf.mech.assembled-a",
+    textured: true,
     category: "units",
     file: "tdf-mech-assembled-a.glb",
     footprint: { w: 1, d: 1 },
@@ -1448,6 +1495,7 @@ const MODEL_DEFS = [
   },
   {
     id: "bug.swarmer",
+    textured: true,
     category: "bugs",
     file: "bug-swarmer.glb",
     footprint: { w: 1, d: 1 },
@@ -1456,6 +1504,7 @@ const MODEL_DEFS = [
   },
   {
     id: "bug.lurker",
+    textured: true,
     category: "bugs",
     file: "bug-lurker.glb",
     footprint: { w: 1, d: 1 },
@@ -1464,6 +1513,7 @@ const MODEL_DEFS = [
   },
   {
     id: "bug.brute",
+    textured: true,
     category: "bugs",
     file: "bug-brute.glb",
     footprint: { w: 1, d: 1 },
@@ -1472,6 +1522,7 @@ const MODEL_DEFS = [
   },
   {
     id: "bug.egg-spawner",
+    textured: true,
     category: "props",
     file: "egg-spawner.glb",
     footprint: { w: 1, d: 1 },
@@ -1778,18 +1829,90 @@ function collectSockets(root) {
 }
 
 /**
+ * Lists the atlases referenced by textured materials under a node, in
+ * first-use order.
+ * @param {Object3D} root - Node to traverse.
+ * @returns {("tdf"|"bug")[]} Atlas ids.
+ */
+function collectAtlases(root) {
+  const atlases = [];
+  root.traverse((node) => {
+    const atlas =
+      node instanceof Mesh ? node.material.userData.cell?.atlas : undefined;
+    if (atlas && !atlases.includes(atlas)) atlases.push(atlas);
+  });
+  return atlases;
+}
+
+/** glTF sampler constants: LINEAR, LINEAR_MIPMAP_LINEAR, CLAMP_TO_EDGE. */
+const SAMPLER = {
+  magFilter: 9729,
+  minFilter: 9987,
+  wrapS: 33071,
+  wrapT: 33071,
+};
+
+/**
+ * Rewrites a GLB so textured materials sample their atlas from an external
+ * PNG next to the models instead of an embedded copy. GLTFExporter cannot
+ * write external images and embedding would duplicate the atlas in every
+ * file, so this edits the JSON chunk directly:
+ *
+ *   images[]   ← ../../textures/units/<atlas>_albedo.png (relative to the GLB)
+ *   textures[] ← one per atlas, shared sampler
+ *   materials[i].pbrMetallicRoughness.baseColorTexture ← by material name
+ *
+ * @param {Buffer} glb - Exported GLB.
+ * @param {("tdf"|"bug")[]} atlases - Atlases used by the model.
+ * @param {string} category - Model folder, to compute the relative URI.
+ * @returns {Buffer} GLB with external texture references (unchanged if no atlases).
+ */
+function attachAtlases(glb, atlases, category) {
+  if (atlases.length === 0) return glb;
+  const jsonLength = glb.readUInt32LE(12);
+  const json = JSON.parse(glb.toString("utf8", 20, 20 + jsonLength));
+  const rest = glb.subarray(20 + jsonLength);
+  const depth = category.split("/").length + 1;
+  json.images = atlases.map((atlas) => ({
+    uri: `${"../".repeat(depth)}${ATLAS_PATHS[atlas].replace("assets/", "")}`,
+  }));
+  json.samplers = [SAMPLER];
+  json.textures = atlases.map((_, i) => ({ sampler: 0, source: i }));
+  for (const material of json.materials ?? []) {
+    const cell = ATLAS_CELLS[material.name];
+    const index = cell ? atlases.indexOf(cell.atlas) : -1;
+    if (index < 0) continue;
+    material.pbrMetallicRoughness = {
+      ...(material.pbrMetallicRoughness ?? {}),
+      baseColorTexture: { index, texCoord: 0 },
+    };
+  }
+  let text = JSON.stringify(json);
+  while (text.length % 4 !== 0) text += " ";
+  const jsonChunk = Buffer.from(text, "utf8");
+  const header = Buffer.alloc(20);
+  header.write("glTF", 0, "ascii");
+  header.writeUInt32LE(2, 4);
+  header.writeUInt32LE(20 + jsonChunk.length + rest.length, 8);
+  header.writeUInt32LE(jsonChunk.length, 12);
+  header.writeUInt32LE(0x4e4f534a, 16);
+  return Buffer.concat([header, jsonChunk, rest]);
+}
+
+/**
  * Builds one model, exports it as GLB and returns its manifest record.
  * @param {ModelDef} def - Model definition.
  * @param {string} outDir - Root output directory.
  * @returns {Promise<object>} Manifest record with byte size and triangle count.
  */
 async function exportModel(def, outDir) {
-  const root = def.build(new MaterialFactory());
+  const root = def.build(new MaterialFactory(def.textured === true));
   const scene = new Scene();
   scene.add(root);
   const exporter = new GLTFExporter();
   const glb = await exporter.parseAsync(scene, { binary: true });
-  const bytes = Buffer.from(glb);
+  const atlases = collectAtlases(root);
+  const bytes = attachAtlases(Buffer.from(glb), atlases, def.category);
   const relative = join(def.category, def.file);
   const target = join(outDir, relative);
   mkdirSync(dirname(target), { recursive: true });

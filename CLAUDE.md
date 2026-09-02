@@ -88,6 +88,21 @@ Read `docs/adr/` once; the short version:
 - Shared id unions go in `content/model`; domain-only definitions stay in the owning domain (ADR 0002 §2.1).
 - A test that reads the disk starts with `/// <reference types="node" />`; browser code reading `import.meta.env` relies on `src/vite-env.d.ts` (ADR 0001).
 
+## GitHub API budget
+
+Every agent shares one GitHub account and one rate limit: 5,000 requests per hour, and GraphQL has its own point budget that runs out first. When it is exhausted, every agent stalls. Rules:
+
+- **Poll GitHub at most once every 5 minutes.** Never loop on `gh` commands faster than that, not even to wait for CI; do local work between polls.
+- **Prefer REST over GraphQL.** `gh pr list`, `gh pr view`, `gh pr checks`, `gh pr diff`, `gh issue list` and `gh issue view` use GraphQL. Use `gh api repos/BenjaminBenetti/tut/...` instead:
+  - open PRs: `gh api "repos/BenjaminBenetti/tut/pulls?state=open&per_page=50" --jq '.[] | "#\(.number) \(.title)"'`
+  - one PR, its files, its diff: `gh api repos/BenjaminBenetti/tut/pulls/N`, `.../pulls/N/files`, `.../pulls/N -H "Accept: application/vnd.github.v3.diff"`
+  - CI on a commit: `gh api repos/BenjaminBenetti/tut/commits/SHA/check-runs --jq '.check_runs[] | "\(.name): \(.conclusion)"'`
+  - comment: `gh api -X POST repos/BenjaminBenetti/tut/issues/N/comments -f body='...'`
+  - merge: `gh api -X PUT repos/BenjaminBenetti/tut/pulls/N/merge -f merge_method=squash`
+  - check out a branch: `git fetch origin BRANCH && git checkout -B BRANCH origin/BRANCH` (no API call)
+- **Request only the fields you need** (`--jq`, `per_page`), and cache what you fetched in your scratch directory instead of fetching it again.
+- **Back off on errors.** On "API rate limit exceeded", run `gh api rate_limit --jq .resources` and do nothing on GitHub until `reset`; do not retry in a loop.
+
 ## Git
 
 - Branch: `<type>/<issue>-<slug>` (`feat/12-earth-map-model`)

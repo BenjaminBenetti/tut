@@ -26,6 +26,17 @@ export interface GltfModelLoaderOptions {
 }
 
 // ===========================================
+// Constants
+// ===========================================
+
+/**
+ * Prefix on every fallback warning. The end-to-end smoke test fails on any
+ * console warning carrying it, so a broken asset path cannot slip through
+ * even though the app itself keeps running on the placeholder.
+ */
+export const ASSET_WARNING_PREFIX = "[assets]";
+
+// ===========================================
 // GltfModelLoader
 // ===========================================
 
@@ -113,7 +124,7 @@ export class GltfModelLoader implements ModelLoader {
       return scene;
     } catch (error: unknown) {
       this.logger.warn(
-        `Model "${id}" failed to load from ${url}; using a placeholder. ${describeError(error)}`,
+        `${ASSET_WARNING_PREFIX} Model "${id}" failed to load from ${url}; using a placeholder. ${describeError(error)}`,
       );
       return this.fallback.create(id, entry);
     }

@@ -7,7 +7,7 @@ import { MODEL_MANIFEST } from "../data/model-manifest";
 import type { ModelManifest } from "../model/asset-manifest";
 import type { FallbackModelFactory } from "../model/model-loader";
 import type { SceneLoadFn } from "./gltf-model-loader";
-import { GltfModelLoader } from "./gltf-model-loader";
+import { ASSET_WARNING_PREFIX, GltfModelLoader } from "./gltf-model-loader";
 
 const BASE_URL = "/base/";
 
@@ -88,6 +88,9 @@ describe("GltfModelLoader", () => {
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn).toHaveBeenCalledWith(
       expect.stringContaining("tile.ground.grass"),
+    );
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringMatching(new RegExp(`^\\${ASSET_WARNING_PREFIX} `)),
     );
     expect(first.name).toBe("fallback:tile.ground.grass");
     expect(second.name).toBe("fallback:tile.ground.grass");

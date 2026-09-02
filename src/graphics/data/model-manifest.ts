@@ -73,7 +73,7 @@ export const MODEL_MANIFEST = {
   },
   "tdf.mech.assembled-a": {
     category: "units",
-    path: "assets/models/units/tdf-mech-assembled-MISSING.glb",
+    path: "assets/models/units/tdf-mech-assembled-a.glb",
     footprint: { w: 1, d: 1 },
     height: 2.79,
     sockets: [

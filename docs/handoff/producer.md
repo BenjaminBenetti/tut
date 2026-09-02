@@ -3,7 +3,7 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-02 09:53 UTC)
+## Status Digest (2026-09-02 17:02 UTC)
 
 | Milestone | done / total |
 |---|---|
@@ -11,26 +11,25 @@
 | M1 Overworld | 19 / 62 |
 | M1.5 Map Generation | 11 / 23 |
 
-Board: Backlog 26 · Ready 8 · In Progress 7 · In Review 15 · Blocked 0 · Done 42
+Board: Backlog 26 · Ready 7 · In Progress 8 · In Review 15 · Blocked 0 · Done 42
 
 **Engineer seats** (one open issue per seat; Producer assigns via `seat:eng-N`):
 
 | Seat | Current | Status | Last merged |
 |---|---|---|---|
-| eng-1 | #52 overworld: deployable model and type data | Ready | #57 |
-| eng-2 | #60 economy: per-day stipend income tick | In Review | #54 |
+| eng-1 | IDLE | - | #57 |
+| eng-2 | IDLE | - | #54 |
 | eng-3 | #8 feat(app): app/ bootstrap and screen router with placeholder screens | In Review | #106 |
 | eng-4 | #56 save: overworld GameState save, load, export and import | In Review | #10 |
-| eng-5 | #162 graphics: use the Earth map texture and map glyphs on the overworld scene (follow-up to #74) | In Review | #74 |
-| eng-6 | #55 overworld: command and event types with a command dispatcher | Ready | #51 |
+| eng-5 | IDLE | - | #74 |
+| eng-6 | IDLE | - | #51 |
 
-⚠ unassigned Ready: #49, #58, #59, #61, #108, #141
+⚠ idle: eng-1, eng-2, eng-5, eng-6 · unassigned Ready: #49, #52, #58, #59, #61, #108, #141
 
 **Ready now** (no unmerged dependencies):
 
 - #49 (engineer) roster: loadout validation and mech stat sheet service
 - #52 (engineer) overworld: deployable model and type data
-- #55 (engineer) overworld: command and event types with a command dispatcher
 - #58 (engineer) overworld: infestation spread and seeding
 - #59 (engineer) overworld: lose condition and win stub
 - #61 (engineer) overworld: mission generation and expiry tick
@@ -39,29 +38,29 @@ Board: Backlog 26 · Ready 8 · In Progress 7 · In Review 15 · Blocked 0 · Do
 
 **In-flight PRs** (age h / idle h / review):
 
-- #185 0.3h / 0.3h / n/a — feat(mapgen): stairwell holes prefer interior columns so facades stay whole (#184)
-- #183 0.3h / 0.3h / n/a — feat(mapgen): scale building count by map area (#182)
-- #181 0.4h / 0.4h / n/a — docs(adr): align ADR 0004 wording with the M1.5 implementation
-- #180 0.4h / 0.4h / n/a — feat(mapgen): mission → MapRecipe adapter with difficulty-scaled hook requirements (#85)
-- #179 0.5h / 0.5h / n/a — feat(mapgen): preview harness — second Vite entry rendering generated maps (#31)
-- #178 0.6h / 0.6h / n/a — chore(handoff): mapgen 2026-09-02 (update 3)
-- #177 0.6h / 0.5h / n/a — test(mapgen): property sweep across seeds, golden seeds, fork stability (#30)
-- #176 0.7h / 0.5h / n/a — feat(mapgen): settlement pipeline factory and generateTacticalMap entry (#97)
-- #175 0.7h / 0.7h / n/a — feat(graphics): Earth map texture, glyph markers and four-stop ramp on the overworld scene (#162)
-- #174 0.7h / 0.5h / n/a — feat(mapgen): connectivity repair pass (#29)
-- #173 0.8h / 0.5h / n/a — feat(mapgen): hook placers — deploy, egg spawner, edge spawn, extraction + hook pass (#28)
-- #172 1.0h / 1.0h / n/a — chore(handoff): producer 2026-09-02 (update 6)
-- #171 4.1h / 0.7h / n/a — feat(app): app bootstrap, DOM screen router and placeholder screens (#8)
-- #170 4.2h / 0.5h / n/a — feat(mapgen): ramp pass — ground connectivity across one-level steps (#27)
-- #168 4.2h / 4.2h / n/a — docs: GitHub API budget rules in CLAUDE.md  ⚠ needs review
-- #167 4.2h / 4.2h / n/a — feat(economy): per-day stipend income — computeStipend and applyStipend through the transaction service (#60)  ⚠ needs review
-- #166 4.2h / 4.2h / n/a — feat(save): GameState save, load, export and import (#56)  ⚠ needs review
-- #165 4.2h / 4.1h / n/a — feat(ui): unit and mech-part thumbnails, thumbnail manifest, shared preview server (#163)  ⚠ needs review
-- #164 4.2h / 0.5h / n/a — feat(mapgen): prop pass — vegetation, street clutter, yard cover, interior storage (#26)
+- #186 7.1h / 7.1h / n/a — chore(handoff): producer 2026-09-02 (update 7)  ⚠ needs review
+- #185 7.5h / 7.5h / n/a — feat(mapgen): stairwell holes prefer interior columns so facades stay whole (#184)  ⚠ needs review
+- #183 7.5h / 7.5h / n/a — feat(mapgen): scale building count by map area (#182)  ⚠ needs review
+- #181 7.6h / 7.6h / n/a — docs(adr): align ADR 0004 wording with the M1.5 implementation  ⚠ needs review
+- #180 7.6h / 7.6h / n/a — feat(mapgen): mission → MapRecipe adapter with difficulty-scaled hook requirements (#85)  ⚠ needs review
+- #179 7.6h / 7.6h / n/a — feat(mapgen): preview harness — second Vite entry rendering generated maps (#31)  ⚠ needs review
+- #178 7.8h / 7.8h / n/a — chore(handoff): mapgen 2026-09-02 (update 3)  ⚠ needs review
+- #177 7.8h / 7.7h / n/a — test(mapgen): property sweep across seeds, golden seeds, fork stability (#30)  ⚠ needs review
+- #176 7.9h / 7.7h / n/a — feat(mapgen): settlement pipeline factory and generateTacticalMap entry (#97)  ⚠ needs review
+- #175 7.9h / 7.9h / n/a — feat(graphics): Earth map texture, glyph markers and four-stop ramp on the overworld scene (#162)  ⚠ needs review
+- #174 7.9h / 7.7h / n/a — feat(mapgen): connectivity repair pass (#29)  ⚠ needs review
+- #173 8.0h / 7.7h / n/a — feat(mapgen): hook placers — deploy, egg spawner, edge spawn, extraction + hook pass (#28)  ⚠ needs review
+- #171 11.2h / 7.9h / n/a — feat(app): app bootstrap, DOM screen router and placeholder screens (#8)  ⚠ needs review
+- #170 11.3h / 7.7h / n/a — feat(mapgen): ramp pass — ground connectivity across one-level steps (#27)  ⚠ needs review
+- #168 11.3h / 11.3h / n/a — docs: GitHub API budget rules in CLAUDE.md  ⚠ needs review
+- #167 11.3h / 11.3h / n/a — feat(economy): per-day stipend income — computeStipend and applyStipend through the transaction service (#60)  ⚠ needs review
+- #166 11.3h / 11.3h / n/a — feat(save): GameState save, load, export and import (#56)  ⚠ needs review
+- #165 11.3h / 11.3h / n/a — feat(ui): unit and mech-part thumbnails, thumbnail manifest, shared preview server (#163)  ⚠ needs review
+- #164 11.4h / 7.7h / n/a — feat(mapgen): prop pass — vegetation, street clutter, yard cover, interior storage (#26)  ⚠ needs review
 
 **In progress** (branch pushed?):
 
-- none
+- #55 yes — overworld: command and event types with a command dispatcher
 
 **Blocked**:
 
@@ -71,20 +70,24 @@ Board: Backlog 26 · Ready 8 · In Progress 7 · In Review 15 · Blocked 0 · Do
 
 1. #49 — roster: loadout validation and mech stat sheet service
 2. #52 — overworld: deployable model and type data
-3. #55 — overworld: command and event types with a command dispatcher
-4. #58 — overworld: infestation spread and seeding
-5. #59 — overworld: lose condition and win stub
-6. #61 — overworld: mission generation and expiry tick
-7. #108 — refactor(core): promote generic id Registry to core/ and reuse in mapgen and roster
-8. #141 — refactor: rename scalar tuning exports to UPPER_SNAKE_CASE (economy-tuning, threat-tuning)
-9. #33 — chore(infra): Vite multi-page input for mapgen-preview.html (Ready once #31 merges)
+3. #58 — overworld: infestation spread and seeding
+4. #59 — overworld: lose condition and win stub
+5. #61 — overworld: mission generation and expiry tick
+6. #108 — refactor(core): promote generic id Registry to core/ and reuse in mapgen and roster
+7. #141 — refactor: rename scalar tuning exports to UPPER_SNAKE_CASE (economy-tuning, threat-tuning)
+8. #33 — chore(infra): Vite multi-page input for mapgen-preview.html (Ready once #31 merges)
 <!-- digest:end -->
 
-**Risks** (hand-written, 09:55 UTC):
+**Status: PRODUCTION PAUSED by the Executive Director (Director, 2026-09-02 ~17:00 UTC) until further notice.**
 
-- **Tech Lead absent since 05:49 UTC.** Fifteen PRs are In Review with no review activity for four hours: #171 (#8, gates every UI screen), #166 (#56), #167 (#60), #175 (#162), MapGen #170 #173 #174 #176 #177 #179 #180 #183 #185, ADR #181, docs #168. Consolidated chase posted on #171 at 08:55; no reply. Every engineer seat except eng-1/eng-6 is parked in review; nothing can be refilled until merges resume. **Director: this needs a Tech Lead respawn or a temporary merge authority.**
-- **eng-1 (#52) and eng-6 (#55) unresponsive** since assignment at 05:36; chased 09:10 with a one-hour window. At 10:08 I label both `status:blocked` and hold the issues for reseating; #55 is on the critical path to #72.
-- Studio stalled 05:49 → 08:53 after the shared API quota ran dry; every agent now polls at most every 5 minutes.
+- Engineer pool reduced to two live seats: eng-3 (#8, PR #171) and eng-4 (#56, PR #166). eng-1, eng-2, eng-5, eng-6 are stopped by the Director; their idle rows in the seat table above are intentional and are not to be escalated.
+- #52 and #55 returned to Ready (#55 has parked WIP on `feat/55-overworld-command-dispatcher`). #60 (PR #167) and #162 (PR #175) keep their open PRs for a live seat to adopt when work resumes.
+- Producer during the pause: no new assignments, no spawns, seat-refill monitor stopped, light grooming tick every 30 minutes, digest kept accurate. Fifteen PRs remain In Review awaiting the Tech Lead.
+
+**Risks** (hand-written, 17:00 UTC):
+
+- Studio stalled 05:49 → 08:53 after the shared API quota ran dry; every agent polls at most every 5 minutes.
+- On resume: seat #55 first (it gates #72), adopt PRs #167 and #175 onto live seats, then refill from #49, #58, #59, #61, #108, #141.
 
 ---
 
@@ -159,7 +162,7 @@ Critical path for M1: #43 → #105 → #54 (needs #7, #11, #44, #45, #48) → #5
 ## Gotchas
 
 - **GitHub API budget (Director, 05:41 UTC, studio-wide):** 5000 calls/hour shared by every agent on one account. Poll at most once per 5 minutes (monitor included), prefer REST (`gh api repos/BenjaminBenetti/tut/...`) over `gh issue list` / `gh pr list` (GraphQL), request only needed fields, batch calls per tick, check `gh api rate_limit` on errors and back off. `groom.py` reads via REST and uses GraphQL only for project-field writes (no REST exists for Projects v2). Seat labels and comments: `gh api -X POST .../issues/N/labels` and `.../comments`.
-- A persistent Monitor (session-local) polls merged PRs and Producer mentions every 5 minutes via REST and wakes me for seat refills; the 15-minute cron is the fallback. A replacement must re-arm both.
+- During the pause there is no merge monitor; a 30-minute cron runs the light grooming tick. On resume: re-arm a REST monitor polling merged PRs and Producer mentions every 5 minutes, and return the cron to 15 minutes.
 - **Never push a follow-up commit to an open PR.** The Tech Lead merges within one to two minutes; twice a later commit was stranded on a merged branch (#94, #98). Open a new PR instead.
 - Run every `gh` call with `-R BenjaminBenetti/tut` or from `/workspaces/tut`; from another cwd `gh` cannot infer the repo.
 - `git` remote was SSH and unauthenticated; switched to HTTPS with `gh auth setup-git`.

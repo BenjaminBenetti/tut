@@ -1,9 +1,17 @@
 import type { IdGeneratorState } from "../../core/model/id-generator";
 import type { RngState } from "../../core/model/rng";
+import type { EconomyState } from "../../economy/model/economy-state";
+import type { OverworldState } from "../../overworld/model/overworld-state";
+import type { RosterState } from "../../roster/model/roster-state";
 
 /**
  * Schema version of `GameState`. Bump it whenever the shape changes and
- * add a matching `Migration` to `save/data/migrations.ts`.
+ * add a matching `Migration` to `save/data/migrations.ts` (ADR 0003 §2.1).
+ *
+ * Still `1` after the M1 slices were added (#54): no `GameState` had been
+ * written to storage before then (the save round trip is #56), so there
+ * is no `{ meta }`-only save anywhere to migrate from. Every reshape
+ * from here on bumps.
  */
 export const GAME_STATE_SCHEMA_VERSION = 1;
 
@@ -26,17 +34,30 @@ export interface GameMeta {
  *
  * ```
  *   GameState
- *   ├── meta        seed, rng, ids, createdAt
- *   ├── overworld   (M1) earth map, cities, infestation, time, missions
- *   ├── roster      (M1) squads, mechs, parts, loadouts
- *   ├── economy     (M1) credits, transactions
+ *   ├── meta            seed, rng, ids, createdAt
+ *   ├── overworld       day, earth map, threat, missions, events, deployables
+ *   ├── roster          squads, mechs, saved loadouts
+ *   ├── economy         credits, ledger
  *   └── activeMission?  (M2) tactical state while a mission is live
  * ```
  *
- * The M1 slices are added by the engineers who build those domains:
- * add the field here, bump `GAME_STATE_SCHEMA_VERSION`, and add a
- * migration that fills the new slice for older saves.
+ * Each slice is typed by its domain's `*State` interface and built by
+ * that domain's factory; `save/service/new-game-service.ts` composes
+ * them into a fresh campaign. Adding or reshaping a slice means bumping
+ * `GAME_STATE_SCHEMA_VERSION` and appending a migration.
  */
 export interface GameState {
   readonly meta: GameMeta;
+  /** Earth, time, threat, missions, events and deployables (GDD §5). */
+  readonly overworld: OverworldState;
+  /** Squads, mechs and saved loadouts (GDD §5.7, §5.8). */
+  readonly roster: RosterState;
+  /** Credits and the transaction ledger (GDD §5.5). */
+  readonly economy: EconomyState;
+  /**
+   * Reserved for M2: tactical state while a mission is being played.
+   * Always absent in M1; the tactical domain replaces `undefined` with
+   * its state type when it lands.
+   */
+  readonly activeMission?: undefined;
 }

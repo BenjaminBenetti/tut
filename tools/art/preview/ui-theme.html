@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>TUT UI theme preview</title>
+    <link rel="stylesheet" href="../../../src/ui/style/theme.css" />
+    <style>
+      main {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        padding: 16px;
+        max-width: 1100px;
+      }
+      .swatches {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .swatch {
+        width: 96px;
+        padding: 6px;
+        font-family: var(--font-mono);
+        font-size: 10px;
+      }
+      .swatch i {
+        display: block;
+        height: 28px;
+        margin-bottom: 4px;
+      }
+      .icons {
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        gap: 12px;
+      }
+      .icons figure {
+        margin: 0;
+        text-align: center;
+      }
+      .icons figcaption {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--ui-text-dim);
+      }
+      .icons .tut-icon {
+        display: block;
+        margin: 0 auto 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="tut-topbar">
+      <span class="tut-topbar__stat"
+        ><span
+          class="tut-icon tut-icon--sm"
+          style="--icon: url(../../../public/assets/ui/icons/day.svg)"
+        ></span
+        ><span class="tut-label">Day</span>
+        <span class="tut-data">042</span></span
+      >
+      <span class="tut-topbar__stat"
+        ><span
+          class="tut-icon tut-icon--sm"
+          style="--icon: url(../../../public/assets/ui/icons/credits.svg)"
+        ></span
+        ><span class="tut-label">Credits</span>
+        <span class="tut-data">¢ 12,450</span></span
+      >
+      <span class="tut-topbar__stat"
+        ><span
+          class="tut-icon tut-icon--sm"
+          style="
+            --icon: url(../../../public/assets/ui/icons/threat.svg);
+            color: var(--ui-bug);
+          "
+        ></span
+        ><span class="tut-label">Threat</span>
+        <span class="tut-data" style="color: var(--ui-bug)">37</span></span
+      >
+      <span class="tut-topbar__spacer"></span>
+      <button class="tut-btn tut-btn--primary">
+        <span
+          class="tut-icon tut-icon--sm"
+          style="--icon: url(../../../public/assets/ui/icons/advance.svg)"
+        ></span
+        >Advance day
+      </button>
+    </header>
+    <main>
+      <section class="tut-panel">
+        <div class="tut-panel__title">Tokens</div>
+        <div class="swatches" id="swatches"></div>
+      </section>
+      <section class="tut-panel">
+        <div class="tut-panel__title">Type and buttons</div>
+        <div class="tut-stack">
+          <h1>Deployment authorised</h1>
+          <h2>Contact: 3 swarmers</h2>
+          <h3>Sector 7 · Kharkiv</h3>
+          <p>
+            Body copy is sentence case in the sans stack.
+            <span class="tut-dim">Secondary text is dimmed.</span>
+          </p>
+          <div class="tut-row">
+            <button class="tut-btn">Default</button>
+            <button class="tut-btn tut-btn--primary">Primary</button>
+            <button class="tut-btn tut-btn--danger">Scrap mech</button>
+            <button class="tut-btn" disabled>Disabled</button>
+          </div>
+          <div class="tut-row">
+            <input class="tut-input" value="ATLAS-02" />
+            <select class="tut-select">
+              <option>Chassis A</option>
+            </select>
+            <span class="tut-badge tut-badge--ok">Ready</span>
+            <span class="tut-badge tut-badge--warn">Damaged</span>
+            <span class="tut-badge tut-badge--danger">Lost</span>
+            <span class="tut-badge tut-badge--info">Intel</span>
+            <span class="tut-badge tut-badge--bug">Infested</span>
+          </div>
+        </div>
+      </section>
+      <section class="tut-panel">
+        <div class="tut-panel__title">Roster</div>
+        <table class="tut-table">
+          <thead>
+            <tr>
+              <th>Unit</th>
+              <th>Type</th>
+              <th class="tut-data">HP</th>
+              <th class="tut-data">Kills</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="is-selected">
+              <td>ATLAS-02</td>
+              <td>Mech</td>
+              <td class="tut-data">184/200</td>
+              <td class="tut-data">12</td>
+            </tr>
+            <tr>
+              <td>Bravo</td>
+              <td>Rifle squad</td>
+              <td class="tut-data">5/5</td>
+              <td class="tut-data">31</td>
+            </tr>
+            <tr>
+              <td>Echo</td>
+              <td>Rocket squad</td>
+              <td class="tut-data">3/5</td>
+              <td class="tut-data">7</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+      <section class="tut-panel tut-panel--raised">
+        <div class="tut-panel__title">City · Infestation</div>
+        <div class="tut-stack">
+          <div class="tut-row">
+            <span class="tut-label" style="width: 90px">Infestation</span>
+            <div class="tut-meter tut-meter--bug" style="flex: 1">
+              <div class="tut-meter__fill" style="--value: 64%"></div>
+            </div>
+            <span class="tut-data">64</span>
+          </div>
+          <div class="tut-row">
+            <span class="tut-label" style="width: 90px">Threat</span>
+            <div class="tut-meter tut-meter--danger" style="flex: 1">
+              <div class="tut-meter__fill" style="--value: 37%"></div>
+            </div>
+            <span class="tut-data">37</span>
+          </div>
+          <div class="tut-row">
+            <span class="tut-label" style="width: 90px">Suppression</span>
+            <div class="tut-meter tut-meter--ok" style="flex: 1">
+              <div class="tut-meter__fill" style="--value: 22%"></div>
+            </div>
+            <span class="tut-data">+22 %</span>
+          </div>
+          <ul class="tut-list">
+            <li>
+              <span>Infestation clearance</span
+              ><span class="tut-badge tut-badge--warn">Expires 2d</span>
+            </li>
+            <li class="is-selected">
+              <span>Spore crash site</span
+              ><span class="tut-badge tut-badge--danger">Hard</span>
+            </li>
+          </ul>
+        </div>
+      </section>
+      <section class="tut-panel" style="grid-column: 1 / -1">
+        <div class="tut-panel__title">Icons</div>
+        <div class="icons" id="icons"></div>
+      </section>
+    </main>
+    <script>
+      const tokens = [
+        "ui-bg",
+        "ui-panel",
+        "ui-panel-raised",
+        "ui-line",
+        "ui-text",
+        "ui-text-dim",
+        "ui-accent",
+        "ui-info",
+        "ui-ok",
+        "ui-warn",
+        "ui-danger",
+        "ui-bug",
+      ];
+      const cs = getComputedStyle(document.documentElement);
+      document.getElementById("swatches").innerHTML = tokens
+        .map(
+          (t) =>
+            `<div class="swatch tut-chamfer"><i style="background: var(--${t})"></i>--${t}<br>${cs.getPropertyValue(`--${t}`).trim()}</div>`,
+        )
+        .join("");
+      const icons = [
+        "advance",
+        "day",
+        "credits",
+        "threat",
+        "city",
+        "region",
+        "mission",
+        "squad",
+        "mech",
+        "deploy",
+        "extract",
+        "move",
+        "attack",
+        "overwatch",
+        "reload",
+        "ability",
+        "infestation",
+        "egg",
+        "warning",
+        "info",
+        "check",
+        "close",
+        "back",
+        "lock",
+      ];
+      document.getElementById("icons").innerHTML = icons
+        .map(
+          (i) =>
+            `<figure><span class="tut-icon" style="--icon: url(../../../public/assets/ui/icons/${i}.svg)"></span><figcaption>${i}</figcaption></figure>`,
+        )
+        .join("");
+    </script>
+  </body>
+</html>

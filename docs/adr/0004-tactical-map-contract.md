@@ -1,6 +1,6 @@
 # ADR 0004: Tactical map contract and generation pipeline
 
-- **Status:** Accepted (Tech Lead, PR #14)
+- **Status:** Accepted (Tech Lead, PR #14); wording aligned with the implementation after M1.5 landed
 - **Date:** 2026-09-02
 - **Author:** MapGen (Map Generation Specialist)
 - **Numbering note:** 0001–0003 are reserved by #11 (toolchain, layering, state/command); this is 0004.
@@ -181,18 +181,20 @@ on the wall face between `from` and `to`.
 
 ```ts
 // src/mapgen/model/prop.ts
-export type PropId = string;           // data-defined: 'car', 'crate', 'tree-pine', 'boulder', 'fence', ...
+export type PropKindId = string;       // data-defined: 'car', 'crate', 'tree-pine', 'boulder', 'fence', ...
 export interface Prop {
-  readonly id: string;
-  readonly kind: PropId;
+  readonly id: string;                 // instance id
+  readonly kind: PropKindId;
   readonly tile: TileCoord;            // the tile it occupies (one tile per prop in M1.5)
   readonly rotation: 0 | 1 | 2 | 3;    // quarter turns, for graphics
 }
+export type PropPlacement = 'ground' | 'road' | 'interior';
 export interface PropDefinition {      // src/mapgen/data/props.ts
-  readonly id: PropId;
+  readonly id: PropKindId;
   readonly cover: CoverLevel;
   readonly blocksLos: boolean;
-  readonly biomes?: readonly string[]; // restrict to biomes; undefined = any
+  readonly placements: readonly PropPlacement[];   // where the prop pass may put it
+  readonly biomes?: readonly BiomeId[]; // restrict to biomes; undefined = any
 }
 ```
 
@@ -268,11 +270,14 @@ plus `meta` (e.g. egg spawner `{ hatchRadius: 3 }`), and in the pipeline's hook-
 ### 4.7 Root type and recipe
 
 ```ts
-// src/mapgen/model/map-recipe.ts
-export type BiomeId = string;                       // 'temperate' | 'snowy' | 'desert' | 'coastal' | ...
+// src/content/model/{biome-id,settlement-scale,map-size-id}.ts  (shared vocabulary; see §11.2)
+export type BiomeId = 'temperate' | 'snowy' | 'desert' | 'coastal';
 export type SettlementScale = 'rural' | 'town' | 'city';
+export type MapSizeId = 'small' | 'medium' | 'large';        // 32², 48², 64² by default
+
+// src/mapgen/model/map-recipe.ts
 export type MapArchetype = 'settlement';            // M3: 'hive' | 'crash-site'; M4: 'platform'
-export type MapSizePreset = 'small' | 'medium' | 'large';   // 32², 48², 64² by default
+export type MapSizePreset = MapSizeId;
 
 export interface HookRequirement {
   readonly kind: HookKind;
@@ -414,7 +419,7 @@ export interface GenerationPass {
 }
 
 export type DraftCapability =
-  'heightmap' | 'water' | 'roads' | 'lots' | 'buildings' | 'props' | 'ramps' | 'hooks' | 'connected';
+  'heightmap' | 'water' | 'roads' | 'lots' | 'buildings' | 'interiors' | 'props' | 'ramps' | 'hooks' | 'connected';
 ```
 
 `MapDraft` (`src/mapgen/model/map-draft.ts`) is the mutable counterpart of `TacticalMap`: a dense
@@ -445,12 +450,13 @@ RNG fork, records diagnostics, then runs `validateTacticalMap`.
 | 2 | `water` | `heightmap` | `water` | Coastal biome only: carves a shoreline along one map edge, tiles become `water` (impassable). No-op elsewhere. |
 | 3 | `roads` | `heightmap`,`water` | `roads` | Road network by settlement scale (rural: one meandering road; town: main street + side streets; city: grid + alleys). Flattens terrain along roads. |
 | 4 | `lots` | `roads` | `lots` | Parcels land adjacent to roads into rectangular lots sized by settlement scale; flattens each lot to one level. |
-| 5 | `buildings` | `lots` | `buildings` | Picks a building template per lot (biome + settlement weights), emits floors, rooms, walls, doors, windows, stairs, roof access. |
-| 6 | `props` | `buildings` | `props` | Vegetation and clutter from the biome's prop table; street props on roads; interior crates in storage rooms. Never blocks doors. |
+| 5a | `buildings` | `lots` | `buildings` | Picks a building template per lot (biome + settlement weights), emits floors, exterior walls, doors and windows; guarantees a multi-storey building where the settlement allows one. |
+| 5b | `interiors` | `buildings` | `interiors` | Bisects floors into rooms with a door per cut, places stairs (verified to keep the building connected), roof tiles and exterior ladders. |
+| 6 | `props` | `interiors` | `props` | Vegetation and clutter from the biome's prop table; street props on roads; yard clutter beside buildings; interior crates in storage rooms. Never blocks doors or connector ends. |
 | 7 | `ramps` | `props` | `ramps` | Ensures ground-level connectivity: BFS over ground columns; where a 1-level step separates components, emits ramps; ≥ 2-level steps stay cliffs (routes go around). |
 | 8 | `hooks` | `ramps` | `hooks` | For each `HookRequirement`, resolves a `HookPlacer` from the registry and runs it (§7.4). |
-| 9 | `connectivity` | `hooks` | `connected` | Checks I7. Repairs by, in order: removing a blocking prop, adding a door, adding a ramp, relocating the hook. Logs every repair to diagnostics so the preview shows them. |
-| 10 | `finalize` | `connected` | – | Denormalises `pass` and `coverProvided`, computes `levels`, freezes the draft into `TacticalMap`, validates. |
+| 9 | `connectivity` | `hooks` | `connected` | Checks I7. Repairs along the route needing the fewest changes (remove a blocking prop, open a door in a building wall, add a ramp across a one-level step); relocates the hook only when no repairable route exists. Logs every repair to diagnostics so the preview shows them. |
+| 10 | freeze + validate | `connected` | – | Not a pass: `generateTacticalMap` denormalises `pass` and `coverProvided`, computes `levels`, freezes the draft into `TacticalMap` and validates (a `GenerationPass` cannot return a map). |
 
 Hive, crash-site and platform archetypes reuse `props`, `hooks`, `connectivity` and `finalize`
 unchanged and swap the first six for their own passes (caverns, crater + debris, decks + void). That is
@@ -486,8 +492,10 @@ export interface BiomeDefinition {
 }
 ```
 
-Adding a biome is a new entry in `data/biomes.ts` (plus any new surfaces/props). Adding a hook kind is
-a new `HookPlacer` registered in `data/hook-placers.ts`. Neither touches an existing pass.
+Adding a biome is a new member of the `BiomeId` union in `content/model` plus a new entry in
+`data/biomes.ts` (the record is keyed by the union, so the compiler demands the entry) and any new
+surfaces/props. Adding a hook kind is a new `HookPlacer` in `generator/placer/` plus an entry in
+`default-hook-placers.ts` and `data/hook-kind-defaults.ts`. Neither touches an existing pass.
 
 ### 7.5 File layout
 
@@ -496,10 +504,13 @@ src/mapgen/
   model/      tile-coord, pass-mask, cover, surface, wall, tile, connector, prop, building, hook,
               map-recipe, tactical-map, map-draft, generation-pass, registries
   data/       surfaces, props, biomes, settlements, building-templates, map-sizes, hook-placers
-  generator/  terrain-pass, water-pass, road-pass, lot-pass, building-pass, prop-pass, ramp-pass,
-              hook-pass, connectivity-pass, finalize-pass, placer/{deploy,egg-spawner,edge-spawn,extraction}
-  service/    pipeline-map-generator, settlement-pipeline (factory), tile-index, reachability-service,
-              map-validator, value-noise, ascii-map-renderer
+  generator/  terrain-pass, water-pass, road-pass (+ road/ builders), lot-pass, building-pass,
+              interior-pass (+ interior/ partitioner, stair placer), prop-pass, ramp-pass, hook-pass,
+              connectivity-pass, placer/{deploy,egg-spawner,edge-spawn,extraction,default-hook-placers}
+  service/    generate-tactical-map (entry), pipeline-map-generator, settlement-pipeline (factory),
+              draft-freezer, draft-queries, ground-components, tile-index, reachability-service,
+              map-validator, value-noise, ascii-map-renderer, fixture-map-builder (tests),
+              mission-map-recipe-adapter, generation-sweep.test (property sweep + golden seeds)
 ```
 
 `ascii-map-renderer` is pure TS and doubles as the fastest preview: one character per column per level,

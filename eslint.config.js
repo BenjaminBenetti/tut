@@ -53,6 +53,9 @@ const THREE_MESSAGE =
 const UPWARD_MESSAGE =
   "Simulation domains never import ui, graphics, or app (architecture §3). Imports point downward only.";
 
+const THREE_FREE_MESSAGE =
+  "Camera state and math are three-free so they run in Node tests (ADR 0002 §2.2).";
+
 const RANDOM_MESSAGE =
   "No Math.random() outside core/'s RNG implementation. Inject an Rng from core/model/rng.";
 
@@ -144,6 +147,25 @@ export default defineConfig(
       "no-restricted-globals": [
         "error",
         ...DOM_GLOBALS.map((name) => ({ name, message: DOM_MESSAGE })),
+      ],
+    },
+  },
+
+  // ---- Camera math stays three-free so it is testable in Node (ADR 0002) ----
+  {
+    files: [
+      "src/graphics/model/camera-state.ts",
+      "src/graphics/service/isometric-camera-math.ts",
+    ],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [{ name: "three", message: THREE_FREE_MESSAGE }],
+          patterns: [
+            { group: ["three/*", "three/**"], message: THREE_FREE_MESSAGE },
+          ],
+        },
       ],
     },
   },

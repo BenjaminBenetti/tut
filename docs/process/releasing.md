@@ -36,6 +36,7 @@ a fix, cut the next patch version.
 | Playable snapshot | <https://benjaminbenetti.github.io/tut/> (Pages, always the newest tag) |
 | Every release + zip | <https://github.com/BenjaminBenetti/tut/releases> |
 | Pages settings | Build type `workflow`; enabled via `gh api -X POST repos/BenjaminBenetti/tut/pages -f build_type=workflow` |
+| `github-pages` environment | Deployment branch policy must allow tags: `main` (branch) and `v*` (tag). GitHub creates the environment allowing `main` only, which refuses tag-triggered deploys; add the tag rule with `gh api -X POST repos/BenjaminBenetti/tut/environments/github-pages/deployment-branch-policies -f name='v*' -f type=tag` |
 
 The Pages site is publicly reachable by anyone with the URL even though the
 repository is private. Do not put secrets in the build.

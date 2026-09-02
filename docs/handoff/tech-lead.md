@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-02 (session 1). Read `docs/process/roles/tech-lead.md` first.
+Last updated: 2026-09-02 (session 1, evening). Read `docs/process/roles/tech-lead.md` first.
 
 ## 1. Where things stand
 
@@ -14,15 +14,19 @@ Last updated: 2026-09-02 (session 1). Read `docs/process/roles/tech-lead.md` fir
 | `app/` bootstrap + screen router | #8 | — | **assigned to an engineer** by the Director; body has interface expectations |
 | isometric camera rig | #9 | — | **assigned to an engineer**; body has interface expectations |
 | asset manifest + GLTF loader | #10 | — | **to be assigned**; blocked by #89 (placeholder GLBs) for seed data |
-| ADRs 0001–0003 | #11 | — | next thing I write (see §4) |
+| ADRs 0001–0003 | #11 | #128 | merged; `architecture.md` and `CLAUDE.md` updated |
+| Release pipeline: tag → GitHub Release + Pages | #127 | #135 | merged; proven with `v0.0.1`, live at https://benjaminbenetti.github.io/tut/ |
 
 Director instruction (2026-09-02): **clear the open-PR queue before starting any implementation chunk, and do not implement M0 items yourself any more**; engineers own #8, #9, #10. Reviews and ADRs are the job.
 
-Merged from other roles today: studio charter (#1), style guide (#12), ADR 0004 tactical map contract (#14), mapgen map model (#88), concept sheets (#86, #96), placeholder GLB tooling (#89, pending CI rerun after a `.gitignore` conflict I resolved with a merge commit), handoffs (#15, #91, #92, #94).
+Engineer PRs merged today (all green, all reviewed against ADR 0003): economy #100/#130, roster #103/#104/#126, overworld #115/#131/#134, content #125, app store #132, camera rig #118 (issue #9). MapGen: #88, #99, #113, #120, #129, #138, #139 (passes 1–4 of the pipeline). Art: #109/#114 theme + icons, #110/#121/#133 assets. Process: #117 seat model.
+
+Merged from other roles earlier: studio charter (#1), style guide (#12), ADR 0004 tactical map contract (#14), mapgen map model (#88), concept sheets (#86, #96), placeholder GLB tooling (#89, pending CI rerun after a `.gitignore` conflict I resolved with a merge commit), handoffs (#15, #91, #92, #94).
 
 ## 2. Open PRs / issues I own
 
-- #11 ADRs (not started). Everything else M0 is either merged or handed to engineers.
+- Nothing open. Follow-ups I filed for engineers: #108 (promote generic `Registry` to `core/`), #141 (rename scalar tuning exports to `UPPER_SNAKE`).
+- Process: engineers occupy seats `eng-1..6`; the Producer assigns via `seat:eng-N` labels (#117). I advise on sequencing in issue comments and may veto.
 
 ## 3. Decisions I made and why
 
@@ -39,10 +43,10 @@ Merged from other roles today: studio charter (#1), style guide (#12), ADR 0004 
 
 ## 4. Next, in order
 
-1. Merge #89 when CI is green (it was green before the conflict; only `.gitignore` changed).
-2. Write ADRs 0001 toolchain, 0002 layering (including the `save/` position and the `content/` vocabulary rule), 0003 root state + command + event contract. Update `architecture.md` §3/§4/§8 to match. Issue #11.
-3. Keep the review loop: poll every ~5 minutes; run `pnpm typecheck && pnpm lint && pnpm test` on every code PR before approving; fast-track `chore(handoff)` but glance at the file list (see gotcha below).
-4. Watch the first engineer PRs on #8 and #9 for `SceneService` conflicts; whoever lands second rebases.
+1. Keep the review loop: poll every ~5 minutes; run `pnpm typecheck && pnpm lint && pnpm test` on every code PR before approving; fast-track `chore(handoff)` but glance at the file list.
+2. Watch #8 (app bootstrap + router) and #10 (asset manifest + loader) when they open: they touch `main.ts` / `SceneService`; whoever lands second rebases. #10 must seed 51 ids from `tools/art/placeholders.manifest.json`.
+3. Watch #54 (GameState root slices) against ADR 0003 §2.1: add field, bump `GAME_STATE_SCHEMA_VERSION`, append a migration.
+4. Tag `v0.0.2` once #8 lands so the Executive Director can click through a menu; the Director may tag sooner.
 5. Add `chunkSizeWarningLimit` or a vendor chunk for three.js in `vite.config.ts` when someone touches it; the 500 kB warning is noise, not a failure.
 
 ## 5. Gotchas
@@ -55,3 +59,6 @@ Merged from other roles today: studio charter (#1), style guide (#12), ADR 0004 
 - pnpm 11's minimum-release-age gate rewrites `pnpm-workspace.yaml` on `pnpm add`; commit it.
 - Headless Chromium needs `--use-angle=swiftshader --use-gl=angle --enable-unsafe-swiftshader` for WebGL; already in `playwright.config.ts`.
 - Codex image generation quirks are in `docs/handoff/art-director.md` §5.
+- GitHub auto-creates the `github-pages` environment allowing `main` only; a tag-triggered deploy is refused until a `v*` tag policy is added (done; see `docs/process/releasing.md`). The Release job is independent and succeeds regardless.
+- Engineers sometimes stack a PR on an unmerged sibling branch; after the sibling squash-merges, GitHub's diff still shows the sibling's files but the merge is clean because the content is identical. Check `additions` against the PR body before worrying.
+- The Pages site is public to anyone with the URL although the repo is private.

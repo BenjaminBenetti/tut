@@ -13,7 +13,10 @@ function expectRange(range: IntRange, label: string, floor: number): void {
 }
 
 describe("settlement definitions", () => {
-  const settlements = createRegistry("settlement", SETTLEMENT_DEFINITIONS);
+  const settlements = createRegistry(
+    "settlement",
+    Object.values(SETTLEMENT_DEFINITIONS),
+  );
 
   it("define every scale exactly once", () => {
     for (const id of SETTLEMENT_SCALES) {

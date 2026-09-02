@@ -7,9 +7,6 @@ import type { PassMask } from "./pass-mask";
 // Parameters
 // ===========================================
 
-export type { BiomeId } from "../../content/model/biome-id";
-export type { SettlementScale } from "../../content/model/settlement-scale";
-
 /**
  * Which pass list generates the map. M1.5 ships `settlement`; hives, crash
  * sites and the space platform are later archetypes (ADR 0004 §7.3).

@@ -19,8 +19,11 @@ export function createDefaultRegistries(): MapGenRegistries {
   return {
     surfaces: createRegistry("surface", SURFACE_DEFINITIONS),
     props: createRegistry("prop", PROP_DEFINITIONS),
-    biomes: createRegistry("biome", BIOME_DEFINITIONS),
-    settlements: createRegistry("settlement", SETTLEMENT_DEFINITIONS),
-    mapSizes: createRegistry("map size", MAP_SIZE_DEFINITIONS),
+    biomes: createRegistry("biome", Object.values(BIOME_DEFINITIONS)),
+    settlements: createRegistry(
+      "settlement",
+      Object.values(SETTLEMENT_DEFINITIONS),
+    ),
+    mapSizes: createRegistry("map size", Object.values(MAP_SIZE_DEFINITIONS)),
   };
 }

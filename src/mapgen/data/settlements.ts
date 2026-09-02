@@ -1,3 +1,4 @@
+import type { SettlementScale } from "../../content/model/settlement-scale";
 import type { SettlementDefinition } from "../model/settlement-definition";
 
 // ===========================================
@@ -5,11 +6,14 @@ import type { SettlementDefinition } from "../model/settlement-definition";
 // ===========================================
 
 /**
- * The three M1.5 settlement scales (GDD §7). Numbers are conservative
- * starting points; tune them in the preview harness, not in passes.
+ * The three M1.5 settlement scales (GDD §7), keyed by id so the compiler
+ * fails when a scale has no definition. Numbers are conservative starting
+ * points; tune them in the preview harness, not in passes.
  */
-export const SETTLEMENT_DEFINITIONS: readonly SettlementDefinition[] = [
-  {
+export const SETTLEMENT_DEFINITIONS: Readonly<
+  Record<SettlementScale, SettlementDefinition>
+> = {
+  rural: {
     id: "rural",
     roadStyle: "trail",
     sideStreets: { min: 0, max: 0 },
@@ -23,7 +27,7 @@ export const SETTLEMENT_DEFINITIONS: readonly SettlementDefinition[] = [
     streetPropDensity: 1,
     rampSpacing: 6,
   },
-  {
+  town: {
     id: "town",
     roadStyle: "streets",
     sideStreets: { min: 2, max: 4 },
@@ -37,7 +41,7 @@ export const SETTLEMENT_DEFINITIONS: readonly SettlementDefinition[] = [
     streetPropDensity: 3,
     rampSpacing: 5,
   },
-  {
+  city: {
     id: "city",
     roadStyle: "grid",
     sideStreets: { min: 0, max: 0 },
@@ -51,4 +55,4 @@ export const SETTLEMENT_DEFINITIONS: readonly SettlementDefinition[] = [
     streetPropDensity: 5,
     rampSpacing: 4,
   },
-];
+};

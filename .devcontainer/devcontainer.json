@@ -1,7 +1,7 @@
 {
   "name": "tut",
   "image": "mcr.microsoft.com/devcontainers/javascript-node:latest",
-  "postCreateCommand": "corepack enable && pnpm install",
+  "postCreateCommand": "sudo corepack enable && pnpm install",
   "forwardPorts": [5173],
   "portsAttributes": {
     "5173": {

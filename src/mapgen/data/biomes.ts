@@ -1,3 +1,4 @@
+import type { BiomeId } from "../../content/model/biome-id";
 import type { BiomeDefinition } from "../model/biome-definition";
 import { BuildingKindIds } from "./building-kind-ids";
 import { PropKindIds } from "./props";
@@ -8,11 +9,12 @@ import { SurfaceIds } from "./surfaces";
 // ===========================================
 
 /**
- * The four M1.5 biomes (GDD §7). Numbers are conservative starting points;
+ * The four M1.5 biomes (GDD §7), keyed by id so the compiler fails when a
+ * biome id has no definition. Numbers are conservative starting points;
  * tune them in the preview harness, not in passes.
  */
-export const BIOME_DEFINITIONS: readonly BiomeDefinition[] = [
-  {
+export const BIOME_DEFINITIONS: Readonly<Record<BiomeId, BiomeDefinition>> = {
+  temperate: {
     id: "temperate",
     groundSurfaces: [
       { surface: SurfaceIds.GRASS, weight: 8 },
@@ -40,7 +42,7 @@ export const BIOME_DEFINITIONS: readonly BiomeDefinition[] = [
     roadSurface: SurfaceIds.ROAD,
     trailSurface: SurfaceIds.DIRT,
   },
-  {
+  snowy: {
     id: "snowy",
     groundSurfaces: [
       { surface: SurfaceIds.SNOW, weight: 8.5 },
@@ -65,7 +67,7 @@ export const BIOME_DEFINITIONS: readonly BiomeDefinition[] = [
     roadSurface: SurfaceIds.ROAD,
     trailSurface: SurfaceIds.SNOW,
   },
-  {
+  desert: {
     id: "desert",
     groundSurfaces: [
       { surface: SurfaceIds.SAND, weight: 8 },
@@ -92,7 +94,7 @@ export const BIOME_DEFINITIONS: readonly BiomeDefinition[] = [
     roadSurface: SurfaceIds.ROAD,
     trailSurface: SurfaceIds.SAND,
   },
-  {
+  coastal: {
     id: "coastal",
     groundSurfaces: [
       { surface: SurfaceIds.GRASS, weight: 5 },
@@ -119,4 +121,4 @@ export const BIOME_DEFINITIONS: readonly BiomeDefinition[] = [
     roadSurface: SurfaceIds.ROAD,
     trailSurface: SurfaceIds.DIRT,
   },
-];
+};

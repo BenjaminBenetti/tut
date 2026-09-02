@@ -8,7 +8,7 @@ import { PROP_DEFINITIONS } from "./props";
 import { SURFACE_DEFINITIONS } from "./surfaces";
 
 describe("biome definitions", () => {
-  const biomes = createRegistry("biome", BIOME_DEFINITIONS);
+  const biomes = createRegistry("biome", Object.values(BIOME_DEFINITIONS));
   const surfaces = createRegistry("surface", SURFACE_DEFINITIONS);
   const props = createRegistry("prop", PROP_DEFINITIONS);
 

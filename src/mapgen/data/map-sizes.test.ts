@@ -9,7 +9,7 @@ import { createRegistry } from "../service/definition-registry";
 import { MAP_SIZE_DEFINITIONS } from "./map-sizes";
 
 describe("map size definitions", () => {
-  const sizes = createRegistry("map size", MAP_SIZE_DEFINITIONS);
+  const sizes = createRegistry("map size", Object.values(MAP_SIZE_DEFINITIONS));
 
   it("define every preset exactly once", () => {
     for (const id of MAP_SIZE_PRESETS) {

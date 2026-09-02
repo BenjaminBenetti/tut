@@ -1,7 +1,11 @@
 import type { Direction } from "../../core/model/direction";
 import type { Rect } from "../../core/model/grid";
 import type { Rng } from "../../core/model/rng";
-import { oppositeDirection, rectContains } from "../../core/service/grid-math";
+import {
+  oppositeDirection,
+  rectContains,
+  stepGridPos,
+} from "../../core/service/grid-math";
 import { SurfaceIds } from "../data/surfaces";
 import type {
   DraftCapability,
@@ -83,7 +87,7 @@ export class LotPass implements GenerationPass {
       for (let attempt = 0; attempt < SIZE_ATTEMPTS; attempt++) {
         const rect = proposeRect(draft, settlement, anchor, setback, rng);
         if (rect !== undefined && fits(draft, rect, occupied)) {
-          placeLot(draft, rect, anchor, occupied);
+          placeLot(draft, rect, anchor, setback, occupied);
           break;
         }
       }
@@ -202,15 +206,22 @@ function fits(
 
 /**
  * Records the lot, marks its columns occupied and flattens them to the
- * level of the corridor column directly in front of the anchor.
+ * level of the corridor column directly in front of it: the sidewalk
+ * when there is a setback, else the anchor road column. Doors open onto
+ * that column, so it must sit at the lot's level.
  */
 function placeLot(
   draft: MapDraft,
   rect: Rect,
   anchor: Anchor,
+  setback: number,
   occupied: Set<number>,
 ): void {
-  const level = draft.groundLevelAt(anchor.column.x, anchor.column.z);
+  const front =
+    setback > 0
+      ? stepGridPos({ ...anchor.column, y: 0 }, anchor.side)
+      : anchor.column;
+  const level = draft.groundLevelAt(front.x, front.z);
   for (let z = rect.z; z < rect.z + rect.d; z++) {
     for (let x = rect.x; x < rect.x + rect.w; x++) {
       occupied.add(z * draft.width + x);

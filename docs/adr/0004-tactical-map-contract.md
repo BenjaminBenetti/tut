@@ -1,6 +1,6 @@
 # ADR 0004: Tactical map contract and generation pipeline
 
-- **Status:** Proposed
+- **Status:** Accepted (Tech Lead, PR #14)
 - **Date:** 2026-09-02
 - **Author:** MapGen (Map Generation Specialist)
 - **Numbering note:** 0001–0003 are reserved by #11 (toolchain, layering, state/command); this is 0004.
@@ -80,7 +80,8 @@ within one map (`"b3"`, `"c12"`, `"hook-deploy-0"`). Names are the ones the impl
 
 ```ts
 // src/mapgen/model/tile-coord.ts
-export interface TileCoord { readonly x: number; readonly y: number; readonly z: number }
+/** Alias of core's GridPos (#6): integer x, y, z with no semantics attached. */
+export type TileCoord = GridPos;
 
 export type Direction = 'n' | 'e' | 's' | 'w';
 
@@ -358,34 +359,39 @@ map is a bug, never a runtime fallback.
 
 ### 7.1 RNG dependency
 
-Mapgen depends on an **interface**, not an implementation. The implementation lives in `core/` per
-`CLAUDE.md` and is scheduled to land with the tooling issue (#5). The interface mapgen needs:
+Mapgen depends on the `Rng` **interface** in `src/core/model/rng.ts` (landed by #5, extended by #6),
+never on a concrete generator. The interface as it exists after #6:
 
 ```ts
-// expected at src/core/model/rng.ts (Tech Lead's call on exact location)
+// src/core/model/rng.ts
 export interface Rng {
-  /** Uniform float in [0, 1). */
+  /** Returns the next float in the half-open range [0, 1). */
   next(): number;
-  /** Uniform integer in [min, max] inclusive. */
-  int(min: number, max: number): number;
-  /** True with probability p. */
-  chance(p: number): boolean;
+  /** Returns a uniformly distributed integer in the inclusive range [min, max]. */
+  nextInt(min: number, max: number): number;
+  /** Returns a uniformly chosen element. Throws on an empty list. */
   pick<T>(items: readonly T[]): T;
   /** Weighted pick; weights need not sum to 1. */
   pickWeighted<T>(items: readonly T[], weight: (item: T) => number): T;
   /** Returns a shuffled copy. */
   shuffle<T>(items: readonly T[]): T[];
-  /** A child RNG whose stream is a pure function of (this seed, label). */
-  fork(label: string): Rng;
+  /** Returns true with the given probability in [0, 1]. */
+  chance(probability: number): boolean;
+  /**
+   * Derives an independent child stream. With a label the child is a pure function of
+   * (parent seed, label) and consumes no parent state; without one it advances the parent once.
+   */
+  fork(label?: string): Rng;
+  /** Captures the internal state for serialization. */
+  getState(): RngState;
 }
 ```
 
-`fork(label)` is the important one. Each pass draws from `ctx.rng.fork(pass.id)`, so inserting or
+Labelled forks are the important part. Each pass draws from `ctx.rng.fork(pass.id)`, so inserting or
 reordering a pass, or changing how many numbers one pass consumes, does **not** perturb the others.
 That keeps golden seeds stable while the generator is tuned and makes bisecting a bad map tractable.
-
-If the #5 RNG lacks `fork(label)`, MapGen will open a small follow-up PR adding it (hash the parent
-seed with the label to derive the child state) rather than working around it inside `mapgen/`.
+Because the same label always yields the same stream, the pipeline runner asserts that pass ids are
+unique before running anything.
 
 ### 7.2 Pass interface and context
 
@@ -497,9 +503,12 @@ src/mapgen/
 ```
 
 `ascii-map-renderer` is pure TS and doubles as the fastest preview: one character per column per level,
-used in tests and printable from a script. The graphical harness is a thin `graphics/` view over
-`TacticalMap` plus a `ui/` screen with seed/param controls; it is added after the pipeline lands and
-after the Tech Lead's screen router exists, and contains no generation logic.
+used in tests and printable from a script. The graphical harness is a second Vite HTML entry,
+`mapgen-preview.html` at the repo root next to `index.html`, with entry script `src/mapgen-preview.ts`
+(one entry script per page at the `src/` root, mirroring `src/main.ts`). Behind the entry: the map view
+in `src/graphics/view/tactical-map-view.ts` so the game reuses it later, and the seed/param controls in
+`src/ui/screen/mapgen-preview-screen.ts`. It contains no generation logic and uses the isometric
+camera rig from #9. The Tech Lead wires the multi-page input in `vite.config.ts` once the entry exists.
 
 ## 8. Testing
 
@@ -542,12 +551,13 @@ after the Tech Lead's screen router exists, and contains no generation logic.
 - **Walls stored once per edge (n/w only).** Halves duplication but every consumer needs the mirror
   lookup. Rejected for ergonomics; symmetry is validated instead.
 
-## 11. Open questions for the Tech Lead
+## 11. Questions resolved with the Tech Lead (PR #14)
 
-1. RNG: does `core/` ship an `Rng` with `fork(label)`? If not, MapGen will propose one (§7.1).
-2. Grid primitives: #6 adds `Vec2/Vec3/GridPos` to `core/model`. If `GridPos` is `{x, y, z}` with
-   integer `y` as the vertical axis, mapgen will alias `TileCoord = GridPos` instead of defining its own.
-3. Should `SurfaceId`/`PropId` → material/mesh mapping live in a `graphics/data` manifest keyed by these
-   ids? MapGen assumes yes and will not reference asset paths.
-4. Preview harness entry: a second Vite HTML entry (`preview/mapgen.html`) vs. a screen in the router.
-   MapGen prefers the second HTML entry so it never blocks on `app/` and can be opened by QA directly.
+1. **RNG.** `core/model/rng.ts` from #5 has `next`, `nextInt`, `pick`, `chance`, `fork()`, `getState`;
+   #6 adds `fork(label?)`, `pickWeighted` and `shuffle`. Mapgen uses the names in §7.1 as-is.
+2. **Grid primitives.** #6 exports `GridPos { readonly x; readonly y; readonly z }` from
+   `core/model/grid.ts`; mapgen aliases `TileCoord = GridPos` (§4.1).
+3. **Asset mapping.** `SurfaceId`/`PropId` → mesh/material lives in a `graphics/data` manifest keyed by
+   those ids (architecture §7). Mapgen never references asset paths.
+4. **Preview harness.** Second Vite HTML entry per the convention in §7.5; the multi-page Vite input is
+   a follow-up infra issue owned by the Tech Lead.

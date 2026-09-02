@@ -72,7 +72,7 @@ Add domains via ADR when needed. Don't create `utils` dumping grounds.
 - **Root game state**: one serializable object `GameState { meta, overworld, roster, economy, activeMission? }`.
 - **Command pattern**: presentation issues commands (`AdvanceDay`, `PurchasePart`, `MoveUnit`, `FireWeapon`). Simulation services validate and apply commands, returning a new state and a list of domain events for presentation to animate.
 - **Mission resolver interface**: `MissionResolver.resolve(mission, deployment, state) → MissionResult`. M1 ships an `AutoResolveMissionResolver`; M2 ships the tactical one. The overworld doesn't care which.
-- **Map contract**: `TacticalMap { width, depth, levels, tiles[], buildings[], hooks{deployZones, objectives, edgeSpawns, extraction} }`. Map generation produces it; tactical consumes it; graphics renders it.
+- **Map contract**: `TacticalMap { width, depth, levels, tiles[], buildings[], hooks{deployZones, objectives, edgeSpawns, extraction} }`. Map generation produces it; tactical consumes it; graphics renders it. Full contract and invariants: [ADR 0004](../adr/0004-tactical-map-contract.md).
 - **Isometric camera**: orthographic, fixed elevation angle, yaw snapped to 4 orientations, zoom clamped. One module owns it.
 
 ## 6. Testing strategy

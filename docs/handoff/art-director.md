@@ -1,6 +1,6 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-02 (session 1, fourth update)
+Last updated: 2026-09-02 (session 1, fifth update)
 
 ## 1. What I was doing and where it stands
 
@@ -11,7 +11,7 @@ Last updated: 2026-09-02 (session 1, fourth update)
 | Placeholder GLBs batch 1 (38 models) + build/render tooling | #4 | **Merged** (PR #89). Tech Lead: the #10 engineer seeds the typed manifest from `tools/art/placeholders.manifest.json`, so no registration PR from me. |
 | Placeholder batch 2: biome tiles + every mapgen prop kind (13 models), mapgen id → model table in style guide §7 | #93 | **Merged** (PR #110). |
 | UI theme `src/ui/style/theme.css`, 24 icons, `src/ui/data/icon-manifest.ts` | #102 | **Merged** (PR #109). Not yet imported by the app; #72 should import `src/ui/style/theme.css`. |
-| VFX sprites (muzzle flash, impact, egg burst) + `src/graphics/data/sprite-manifest.ts` | #119 | PR #121 open |
+| VFX sprites (muzzle flash, impact, egg burst) + `src/graphics/data/sprite-manifest.ts` | #119 | **Merged** (PR #121; egg burst third pass PR #133). |
 | Icon `BASE_URL` follow-up, `gen-image.sh` stdin fix | #102, #3 | **Merged** (PR #114, PR #116). |
 | Image generation recipe (incl. transparent sprites) | — | **Working.** See §5. |
 | Headless GLB / page render checks | — | **Working.** See §7. |
@@ -20,9 +20,9 @@ Issues #2, #3, #4, #93, #102, #119 are on project 5 (Terra Under Threat).
 
 ## 2. Open PRs / issues I own
 
-- PR #121 `feat(art): VFX sprites + sprite manifest` → closes #119.
+- None open. Every art deliverable to date is on `main`.
 - Offers posted, no reply yet: #74 (stylised Earth texture for the overworld map), #42 (unit/part thumbnails rendered from the placeholders for roster and mech bay screens).
-- Closed: #2, #3, #4, #93, #102 (all merged).
+- Watching for #10 (typed model manifest) to land so style guide §8 can be rewritten to the shipped shape.
 
 ## 3. Decisions I made and why
 
@@ -41,12 +41,10 @@ Issues #2, #3, #4, #93, #102, #119 are on project 5 (Terra Under Threat).
 
 ## 4. Next, in order
 
-1. Land PR #121 (address review).
-2. When #10 lands: rewrite style guide §8 to the shipped shape (`content/data/model-ids.ts` union + `graphics/data/model-manifest.ts` `satisfies Record<ModelAssetId, ModelAssetEntry>`, no `id` field) and check the 51 manifest entries match `tools/art/placeholders.manifest.json`.
-3. Answer whoever replies on #74 (Earth texture) or #42 (thumbnails); both are one-command jobs with the existing tooling (`gen-image.sh`, `render-placeholders.mjs`).
-4. Egg-burst sprite second pass with "flat fills, no shading inside shapes" so it returns to 512² (sidecar note).
-5. Concept sheets round 2 when the Director gives feedback: heavy mech chassis and alternate weapons, snow/desert/coastal tile kits, hive core (M3). Muzzle-flash 4-frame strip when tactical animation exists.
-6. Textures: not needed while models are one material per token.
+1. When #10 lands: rewrite style guide §8 to the shipped shape (`content/data/model-ids.ts` union + `graphics/data/model-manifest.ts` `satisfies Record<ModelAssetId, ModelAssetEntry>`, no `id` field) and check the 51 manifest entries match `tools/art/placeholders.manifest.json`.
+2. Answer whoever replies on #74 (Earth texture) or #42 (thumbnails); both are one-command jobs with the existing tooling (`gen-image.sh`, `render-placeholders.mjs`). For thumbnails, add `omitBackground` + transparent clear colour to the harness.
+3. Concept sheets round 2 when the Director gives feedback: heavy mech chassis and alternate weapons, snow/desert/coastal tile kits, hive core (M3). Muzzle-flash 4-frame strip when tactical animation exists.
+4. Textures: not needed while models are one material per token.
 
 ## 5. Image generation recipe (Codex CLI)
 
@@ -78,7 +76,7 @@ codex exec --skip-git-repo-check --ephemeral -s danger-full-access \
 - Prompt skeleton lives in the style guide §10. Always put palette hexes in the prompt verbatim; always say "no text, no watermark".
 - `--ephemeral` keeps `~/.codex` from filling with session files.
 - **stdin must be `/dev/null`** (`tools/art/gen-image.sh` does this since PR #116). With a non-TTY stdin left open, codex prints `Reading additional input from stdin...` and waits forever.
-- **Transparent sprites work**: say "Transparent background PNG" and the tool returns RGBA with real alpha (verified: alpha min 0, max 255). Ask for "flat fills, no shading inside shapes" or the result goes painterly and heavy.
+- **Transparent sprites work**, but phrase it exactly: "fully transparent background (real alpha channel; do not paint a checkerboard, do not paint any background colour)". Without the checkerboard clause one pass painted a magenta checker with alpha 0.16 in the corners. Add "flat vector-style fills, no shading or gradients inside shapes" or the result goes painterly and heavy (250 KB vs 17 KB at 512²). Always check `magick <png> -alpha extract -format "%[min] %[max]" info:` and a corner crop's mean alpha.
 
 ## 6. Gotchas
 

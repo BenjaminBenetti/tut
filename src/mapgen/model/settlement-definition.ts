@@ -47,6 +47,8 @@ export interface SettlementDefinition {
   readonly floorCount: IntRange;
   /** Street props per 100 road columns. */
   readonly streetPropDensity: number;
+  /** Low-cover clutter per 100 open columns beside buildings and sidewalks. */
+  readonly yardPropDensity: number;
   /** Maximum columns between ramps along a plateau edge. */
   readonly rampSpacing: number;
 }

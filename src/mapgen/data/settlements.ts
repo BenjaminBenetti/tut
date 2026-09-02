@@ -25,6 +25,7 @@ export const SETTLEMENT_DEFINITIONS: Readonly<
     buildingCount: { min: 1, max: 3 },
     floorCount: { min: 1, max: 2 },
     streetPropDensity: 1,
+    yardPropDensity: 3,
     rampSpacing: 6,
   },
   town: {
@@ -39,6 +40,7 @@ export const SETTLEMENT_DEFINITIONS: Readonly<
     buildingCount: { min: 6, max: 12 },
     floorCount: { min: 1, max: 3 },
     streetPropDensity: 3,
+    yardPropDensity: 10,
     rampSpacing: 5,
   },
   city: {
@@ -53,6 +55,7 @@ export const SETTLEMENT_DEFINITIONS: Readonly<
     buildingCount: { min: 12, max: 24 },
     floorCount: { min: 2, max: 5 },
     streetPropDensity: 5,
+    yardPropDensity: 14,
     rampSpacing: 4,
   },
 };

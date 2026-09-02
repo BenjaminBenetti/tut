@@ -3,37 +3,51 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-02 04:57 UTC)
+## Status Digest (2026-09-02 05:09 UTC)
 
 | Milestone | done / total |
 |---|---|
-| M0 Foundation | 6 / 10 |
-| M1 Overworld | 2 / 54 |
-| M1.5 Map Generation | 3 / 21 |
+| M0 Foundation | 7 / 10 |
+| M1 Overworld | 6 / 55 |
+| M1.5 Map Generation | 6 / 21 |
 
-Board: Backlog 58 · Ready 11 · In Progress 4 · In Review 1 · Blocked 0 · Done 11
+Board: Backlog 52 · Ready 11 · In Progress 4 · In Review 1 · Blocked 0 · Done 19
+
+**Engineer seats** (one open issue per seat; Producer assigns via `seat:eng-N`):
+
+| Seat | Current | Status | Last merged |
+|---|---|---|---|
+| eng-1 | IDLE | - | #43 |
+| eng-2 | #53 economy: transaction service | Ready | #44 |
+| eng-3 | #106 content: mission type model and data | Ready | #45 |
+| eng-4 | #48 roster: mech and loadout model | Ready | #46 |
+| eng-5 | #47 app: GameStore — observable state container with command dispatch | Ready | #9 |
+| eng-6 | #107 overworld: event type model and starter event data | Ready | - |
+
+⚠ idle: eng-1 · unassigned Ready: #50, #52, #108
 
 **Ready now** (no unmerged dependencies):
 
-- #43 (engineer) overworld: Earth map model, ids and query helpers
 - #47 (engineer) app: GameStore — observable state container with command dispatch
+- #48 (engineer) roster: mech and loadout model
+- #50 (engineer) overworld: threat level and region aggregation
+- #52 (engineer) overworld: deployable model and type data
 - #53 (engineer) economy: transaction service
 - #8 (tech-lead) feat(app): app/ bootstrap and screen router with placeholder screens
-- #9 (tech-lead) feat(graphics): isometric camera rig
 - #11 (tech-lead) docs(adr): initial ADRs — toolchain, layering enforcement, state and command pattern
-- #18 (mapgen) feat(mapgen): map validator, reachability service, ASCII renderer
-- #20 (mapgen) feat(mapgen): pipeline runner — GenerationPass, GenerationContext, MapDraft, labelled RNG forks
-- #102 (art-director) Art: UI theme stylesheet (tokens, chamfer panels, buttons, tables, meters) and 24 px icon set
+- #21 (mapgen) feat(mapgen): terrain and water passes (seeded value noise, quantised elevation, shoreline)
 - #106 (engineer) content: mission type model and data
 - #107 (engineer) overworld: event type model and starter event data
+- #108 (engineer) refactor(core): promote generic id Registry to core/ and reuse in mapgen and roster
 
 **In-flight PRs** (age h / idle h / review):
 
-- #104 0.0h / 0.0h / none — feat(roster): mech part model and starter part catalogue (#46)
+- #122 0.0h / 0.0h / none — chore(producer): seat map in digest, marker-based renderer
+- #121 0.0h / 0.0h / none — feat(art): VFX sprites — muzzle flash, impact, egg burst — with sprite manifest (#119)
 
 **In progress** (branch pushed?):
 
-- #93 yes — Art: placeholder batch 2 — models for every mapgen surface and prop kind
+- none
 
 **Blocked**:
 
@@ -41,23 +55,38 @@ Board: Backlog 58 · Ready 11 · In Progress 4 · In Review 1 · Blocked 0 · Do
 
 **Next assignments for idle engineers** (Ready first, then what unblocks next):
 
-1. #43 — overworld: Earth map model, ids and query helpers
-2. #47 — app: GameStore — observable state container with command dispatch
-3. #53 — economy: transaction service
-4. #106 — content: mission type model and data
-5. #107 — overworld: event type model and starter event data
-6. #48 — roster: mech and loadout model (Ready once #46 merges)
+1. #47 — app: GameStore — observable state container with command dispatch
+2. #48 — roster: mech and loadout model
+3. #50 — overworld: threat level and region aggregation
+4. #52 — overworld: deployable model and type data
+5. #53 — economy: transaction service
+6. #106 — content: mission type model and data
+7. #107 — overworld: event type model and starter event data
+8. #108 — refactor(core): promote generic id Registry to core/ and reuse in mapgen and roster
 <!-- digest:end -->
 
-**Risks** (hand-written, 04:58 UTC):
+**Risks** (hand-written, 05:12 UTC):
 
-- Engineer-Ready is five (#43, #47, #53, #106, #107) with four engineers already active; #46 merging opens #48, #43 merging opens #50, #52, #105. Watch this every tick.
+- Seat refills depend on merges landing on time: eng-1 (#43, PR #115) → #50 threat; eng-5 (#47) → #74; eng-4 (#48) → #108 → #49. If a PR stalls, the seat idles; the tick flags idle seats.
+- #8 (app bootstrap and router) is unclaimed and gates every UI issue; asked the Tech Lead on #8 whether to seat it.
 - #54 (GameState root) must fit #7's root and ADR 0003 (#11, still open); a mismatch costs a day on the critical path.
 - M1.5 is a serial chain from #21 to #29; a slow review on any one pass stalls the milestone.
-- Engineers took #9 (camera rig) although Owner said tech-lead; fine, but the Tech Lead should know #8 is now the only M0 item nobody has claimed.
 
 ---
 
+
+## Seat plan (next up per seat; refill immediately on merge, same domain first)
+
+| Seat | Now | Then | Then |
+|---|---|---|---|
+| eng-1 | #43 Earth map (PR #115) | #50 threat → #57 growth → #58 spread | #54 GameState root (needs #48, #11) → #55 dispatcher |
+| eng-2 | #53 transaction service | #60 stipend (needs #50) | #52 → #65 → #66 deployables |
+| eng-3 | #106 mission types | #51 mission models (needs #43) | #61 generation → #62 auto-resolve → #67 launch |
+| eng-4 | #48 mech + loadout model | #108 core registry refactor (Tech Lead to confirm) | #49 validation → #63 roster service → #64 casualties |
+| eng-5 | #47 GameStore | #74 Earth map scene (needs #43) | #72 composition root (needs #8, #55, #56) → #73 |
+| eng-6 | #107 event types (seat not yet spawned) | #70 events resolution (needs #54) | #59 outcome → #68 AdvanceDay |
+
+Unassigned but Ready: whatever the digest flags. #8 is the Tech Lead's unless they hand it over (asked on #8).
 
 ## Project board IDs (project 5, owner BenjaminBenetti)
 
@@ -92,7 +121,7 @@ Critical path for M1: #43 → #105 → #54 (needs #7, #11, #44, #45, #48) → #5
 
 - Grooming script: `tools/producer/groom.py` (`python3 tools/producer/groom.py [--dry]`), then `python3 tools/producer/render_handoff.py` to regenerate the digest between the `digest:start` / `digest:end` markers in this file. Everything outside the markers is hand-written; edit it directly. Tooling changes go in `chore(producer): …` PRs (Tech Lead's ask on #94); `chore(handoff)` PRs carry only this file. It reads every issue, PR and remote branch, then sets Status: closed → Done; open PR referencing the issue (`Closes #N`, `(#N)` in title, or branch `type/N-slug`) → In Review; remote branch `type/N-*` → In Progress; label `status:blocked` → Blocked; every `Blocked by #N` in the Dependencies section closed → Ready; else Backlog. Epics go In Progress once any child leaves Backlog/Ready and Done when all children close. Missing issues are added to the board with Owner inferred from labels (mapgen / art / qa / M0→tech-lead / epic→producer / else engineer).
 - Dependencies are parsed from the `## Dependencies` section, so keep writing `Blocked by #N` there.
-- Loop every ~15 min: `git pull`, run groom, read new comments addressed to Producer, chase PRs idle > 3 h and In Progress issues with no branch > 3 h, regenerate this file's digest, push the handoff PR when the digest changed materially.
+- Loop every ~15 min: `git pull`, run groom, **fill idle seats first** (digest flags them; pick the same-domain next from the seat plan), read new comments addressed to Producer, chase PRs idle > 3 h and In Progress issues with no branch > 3 h, regenerate this file's digest, push the handoff PR when the digest changed materially.
 
 ## Decisions made and why
 
@@ -105,6 +134,8 @@ Critical path for M1: #43 → #105 → #54 (needs #7, #11, #44, #45, #48) → #5
 7. **Split #43 into model (#43) and seed data (#105)** at 04:55 so the three issues that only need the types (#50, #51, #52) unblock within hours, not half a day. Carved the dependency-free content out of #51 (→ #106 mission types) and #70 (→ #107 event types) for the same reason.
 8. **#47 (GameStore) marked Ready with #11 still open**: its real contract (`Command`, `Applied`, `Result`) merged in core #6; ADR 0003 documents those types. Judged the design question closed. If #11 lands with a different store shape, #47 adapts in review.
 9. **MapGen split #29 → #29 + #97** on my size note; #85 now blocks on #97.
+10. **Seat assignment (Director, 05:05 UTC, #117)**: I label exactly one Ready issue `seat:eng-N` per seat, refill on merge, same domain first, consult the Tech Lead when sequencing touches architecture. Assignment note posted on each issue. eng-6 pre-labelled (#107) so it starts the moment it is spawned.
+11. **Closed #105** (Earth seed data): eng-1's PR #115 for #43 already ships 12 regions / 37 cities with derived symmetry and tests, so the split was moot. #54 no longer depends on it.
 
 ## Open questions I'd raise as `design-decision` if pressed
 
@@ -112,6 +143,7 @@ Critical path for M1: #43 → #105 → #54 (needs #7, #11, #44, #45, #48) → #5
 
 ## Gotchas
 
+- **Never push a follow-up commit to an open PR.** The Tech Lead merges within one to two minutes; twice a later commit was stranded on a merged branch (#94, #98). Open a new PR instead.
 - Run every `gh` call with `-R BenjaminBenetti/tut` or from `/workspaces/tut`; from another cwd `gh` cannot infer the repo.
 - `git` remote was SSH and unauthenticated; switched to HTTPS with `gh auth setup-git`.
 - Issue numbers interleave with PR numbers; `gh api repos/.../issues/N` tells you which is which (`pull_request` key).

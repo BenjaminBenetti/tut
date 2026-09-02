@@ -333,9 +333,9 @@
     "bytes": 5836
   },
   {
-    "id": "tile.temperate.ground-a",
+    "id": "tile.ground.grass",
     "category": "tiles",
-    "path": "assets/models/tiles/temperate-ground-a.glb",
+    "path": "assets/models/tiles/ground-grass.glb",
     "footprint": {
       "w": 1,
       "d": 1
@@ -347,9 +347,9 @@
     "bytes": 2140
   },
   {
-    "id": "tile.temperate.ground-b",
+    "id": "tile.ground.dirt",
     "category": "tiles",
-    "path": "assets/models/tiles/temperate-ground-b.glb",
+    "path": "assets/models/tiles/ground-dirt.glb",
     "footprint": {
       "w": 1,
       "d": 1

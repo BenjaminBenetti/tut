@@ -1,6 +1,5 @@
 import { CoverLevel } from "../model/cover";
 import type { PropDefinition } from "../model/prop";
-import { BiomeIds } from "./biome-ids";
 
 // ===========================================
 // Prop kind ids
@@ -87,27 +86,27 @@ export const PROP_DEFINITIONS: readonly PropDefinition[] = [
     cover: CoverLevel.HIGH,
     blocksLos: false,
     placements: ["ground"],
-    biomes: [BiomeIds.TEMPERATE, BiomeIds.SNOWY],
+    biomes: ["temperate", "snowy"],
   },
   {
     id: PropKindIds.TREE_OAK,
     cover: CoverLevel.HIGH,
     blocksLos: false,
     placements: ["ground"],
-    biomes: [BiomeIds.TEMPERATE, BiomeIds.COASTAL],
+    biomes: ["temperate", "coastal"],
   },
   {
     id: PropKindIds.TREE_PALM,
     cover: CoverLevel.HIGH,
     blocksLos: false,
     placements: ["ground"],
-    biomes: [BiomeIds.COASTAL, BiomeIds.DESERT],
+    biomes: ["coastal", "desert"],
   },
   {
     id: PropKindIds.CACTUS,
     cover: CoverLevel.LOW,
     blocksLos: false,
     placements: ["ground"],
-    biomes: [BiomeIds.DESERT],
+    biomes: ["desert"],
   },
 ];

@@ -30,6 +30,8 @@
       const px = Number(params.get("px") || 64); // pixels per tile
       const size = Number(params.get("size") || 320);
       const yaw = (Number(params.get("yaw") || 45) * Math.PI) / 180;
+      const transparent = params.get("bg") === "transparent";
+      const fit = params.get("fit") === "1";
       const renderer = new THREE.WebGLRenderer({
         antialias: true,
         preserveDrawingBuffer: true,
@@ -38,17 +40,21 @@
       renderer.setPixelRatio(1);
       document.body.appendChild(renderer.domElement);
       const scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x3a3f4a);
+      if (transparent) {
+        renderer.setClearColor(0x000000, 0);
+        document.documentElement.style.background = "transparent";
+        document.body.style.background = "transparent";
+      } else scene.background = new THREE.Color(0x3a3f4a);
       const grid = new THREE.GridHelper(6, 6, 0x6a7080, 0x4a5060);
       grid.position.y = -0.001;
-      scene.add(grid);
+      if (!transparent) scene.add(grid);
       const tile = new THREE.Mesh(
         new THREE.PlaneGeometry(1, 1),
         new THREE.MeshBasicMaterial({ color: 0x556070 }),
       );
       tile.rotation.x = -Math.PI / 2;
       tile.position.y = -0.002;
-      scene.add(tile);
+      if (!transparent) scene.add(tile);
       scene.add(new THREE.AmbientLight(0xffffff, 0.9));
       const key = new THREE.DirectionalLight(0xffffff, 2.2);
       key.position.set(2, 4, 3);
@@ -75,6 +81,23 @@
         file,
         (gltf) => {
           scene.add(gltf.scene);
+          if (fit) {
+            const box = new THREE.Box3().setFromObject(gltf.scene);
+            const centre = box.getCenter(new THREE.Vector3());
+            const extent =
+              box.getSize(new THREE.Vector3()).length() * 0.62 + 0.15;
+            cam.left = -extent;
+            cam.right = extent;
+            cam.top = extent;
+            cam.bottom = -extent;
+            cam.position.set(
+              centre.x + Math.sin(yaw) * 10 * Math.cos(elev),
+              centre.y + 10 * Math.sin(elev),
+              centre.z + Math.cos(yaw) * 10 * Math.cos(elev),
+            );
+            cam.lookAt(centre);
+            cam.updateProjectionMatrix();
+          }
           renderer.render(scene, cam);
           document.title = "READY";
         },

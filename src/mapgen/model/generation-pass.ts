@@ -19,6 +19,7 @@ export type DraftCapability =
   | "roads"
   | "lots"
   | "buildings"
+  | "interiors"
   | "props"
   | "ramps"
   | "hooks"

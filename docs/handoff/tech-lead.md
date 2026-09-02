@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-02 (session 1, evening). Read `docs/process/roles/tech-lead.md` first.
+Last updated: 2026-09-02 (session 1, late). Read `docs/process/roles/tech-lead.md` first.
 
 ## 1. Where things stand
 
@@ -19,7 +19,9 @@ Last updated: 2026-09-02 (session 1, evening). Read `docs/process/roles/tech-lea
 
 Director instruction (2026-09-02): **clear the open-PR queue before starting any implementation chunk, and do not implement M0 items yourself any more**; engineers own #8, #9, #10. Reviews and ADRs are the job.
 
-Engineer PRs merged today (all green, all reviewed against ADR 0003): economy #100/#130, roster #103/#104/#126, overworld #115/#131/#134, content #125, app store #132, camera rig #118 (issue #9). MapGen: #88, #99, #113, #120, #129, #138, #139 (passes 1–4 of the pipeline). Art: #109/#114 theme + icons, #110/#121/#133 assets. Process: #117 seat model.
+Engineer PRs merged today (all green, all reviewed against ADR 0003): economy #100/#130, roster #103/#104/#126, overworld #115/#131/#134/#147/#149, content #125, app store #132, camera rig #118 (issue #9), asset manifest + loader #148 (issue #10), **GameState root + new-game factory #153 (issue #54)**. MapGen: #88, #99, #113, #120, #129, #138, #139, #150, #154 (passes 1–5 plus the draft freezer). Art: #109/#114 theme + icons, #110/#121/#133/#151/#152 assets and concepts. Process: #117 seat model.
+
+Still open from M0: #8 (app bootstrap + router, seat eng-3). Everything else in M0 is merged; the release pipeline (#127) is live at https://benjaminbenetti.github.io/tut/ (tag `v0.0.1`).
 
 Merged from other roles earlier: studio charter (#1), style guide (#12), ADR 0004 tactical map contract (#14), mapgen map model (#88), concept sheets (#86, #96), placeholder GLB tooling (#89, pending CI rerun after a `.gitignore` conflict I resolved with a merge commit), handoffs (#15, #91, #92, #94).
 
@@ -45,7 +47,7 @@ Merged from other roles earlier: studio charter (#1), style guide (#12), ADR 000
 
 1. Keep the review loop: poll every ~5 minutes; run `pnpm typecheck && pnpm lint && pnpm test` on every code PR before approving; fast-track `chore(handoff)` but glance at the file list.
 2. Watch #8 (app bootstrap + router) and #10 (asset manifest + loader) when they open: they touch `main.ts` / `SceneService`; whoever lands second rebases. #10 must seed 51 ids from `tools/art/placeholders.manifest.json`.
-3. Watch #54 (GameState root slices) against ADR 0003 §2.1: add field, bump `GAME_STATE_SCHEMA_VERSION`, append a migration.
+3. `GameState` now has `overworld`, `roster`, `economy` slices (#153) at schema v1 with no persisted saves yet. **From the moment #8 writes an autosave, every reshape bumps `GAME_STATE_SCHEMA_VERSION` and appends a migration.** Hold that line in review; #56 (save round trip) is where it starts to matter.
 4. Tag `v0.0.2` once #8 lands so the Executive Director can click through a menu; the Director may tag sooner.
 5. Add `chunkSizeWarningLimit` or a vendor chunk for three.js in `vite.config.ts` when someone touches it; the 500 kB warning is noise, not a failure.
 
@@ -62,3 +64,5 @@ Merged from other roles earlier: studio charter (#1), style guide (#12), ADR 000
 - GitHub auto-creates the `github-pages` environment allowing `main` only; a tag-triggered deploy is refused until a `v*` tag policy is added (done; see `docs/process/releasing.md`). The Release job is independent and succeeds regardless.
 - Engineers sometimes stack a PR on an unmerged sibling branch; after the sibling squash-merges, GitHub's diff still shows the sibling's files but the merge is clean because the content is identical. Check `additions` against the PR body before worrying.
 - The Pages site is public to anyone with the URL although the repo is private.
+- The 5,000/hr GitHub API limit is shared by every agent on the account; GraphQL can be exhausted while REST still has budget. `gh pr view/checks/diff/list/merge` use GraphQL. REST fallbacks that kept the loop running: `gh api repos/O/R/pulls?state=open`, `gh api repos/O/R/pulls/N -H "Accept: application/vnd.github.v3.diff"`, `gh api repos/O/R/commits/SHA/check-runs`, `gh api -X POST repos/O/R/issues/N/comments -f body=…`, `gh api -X PUT repos/O/R/pulls/N/merge -f merge_method=squash`, `gh api -X DELETE repos/O/R/git/refs/heads/BRANCH`; check out with `git fetch origin BRANCH && git checkout -B BRANCH origin/BRANCH`.
+- Review conventions applied today and worth repeating: interfaces in `model/`, implementations in `service/` or `repository/`; nothing under `content/` (tests included) imports a consuming domain; placeholder types for an in-flight sibling issue must be swapped for the real import when the sibling merges (#153 ↔ #149).

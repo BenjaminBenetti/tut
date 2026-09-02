@@ -1,0 +1,410 @@
+/*
+ * Terra Under Threat — UI theme
+ * Source of truth: docs/design/style-guide.md §4.4 (tokens) and §5 (style).
+ * Military-procedural: flat, high contrast, monospace data, one 45° chamfer
+ * on the top-right corner as the signature. No gradients, shadows or radii.
+ *
+ *   ┌────────────────────────╱   .tut-panel / .tut-btn: two stacked layers
+ *   │  line colour (outer)   │   clipped by the same polygon give a 1 px
+ *   │  ┌──────────────────╱  │   border that follows the chamfer.
+ *   │  │ panel colour     │  │
+ */
+
+/* =========================================== */
+/* Tokens                                      */
+/* =========================================== */
+
+:root {
+  --ui-bg: #0b0d12;
+  --ui-panel: #141821;
+  --ui-panel-raised: #1c2230;
+  --ui-line: #2e3646;
+  --ui-text: #e6e8ee;
+  --ui-text-dim: #8b94a6;
+  --ui-accent: #f08a24;
+  --ui-accent-text: #0b0d12;
+  --ui-info: #7fd1ff;
+  --ui-ok: #7ccb5a;
+  --ui-warn: #f0c63c;
+  --ui-danger: #e0453c;
+  --ui-bug: #9cff3d;
+
+  --font-mono:
+    ui-monospace, "JetBrains Mono", "Cascadia Mono", "SF Mono", Consolas,
+    monospace;
+  --font-sans: system-ui, "Segoe UI", Roboto, sans-serif;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --chamfer: 8px;
+  --line: 1px;
+  --chamfer-path: polygon(
+    0 0,
+    calc(100% - var(--chamfer)) 0,
+    100% var(--chamfer),
+    100% 100%,
+    0 100%
+  );
+}
+
+/* =========================================== */
+/* Base typography                             */
+/* =========================================== */
+
+body {
+  margin: 0;
+  background: var(--ui-bg);
+  color: var(--ui-text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+h1 {
+  font-size: 18px;
+}
+h2 {
+  font-size: 14px;
+}
+h3 {
+  font-size: 12px;
+  color: var(--ui-text-dim);
+}
+
+.tut-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ui-text-dim);
+}
+
+.tut-data {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.tut-mono {
+  font-family: var(--font-mono);
+}
+
+.tut-dim {
+  color: var(--ui-text-dim);
+}
+
+/* =========================================== */
+/* Chamfered surfaces                          */
+/* =========================================== */
+
+.tut-chamfer,
+.tut-panel,
+.tut-btn {
+  position: relative;
+  isolation: isolate;
+  background: var(--ui-line);
+  clip-path: var(--chamfer-path);
+}
+
+.tut-chamfer::before,
+.tut-panel::before,
+.tut-btn::before {
+  content: "";
+  position: absolute;
+  inset: var(--line);
+  z-index: -1;
+  background: var(--surface, var(--ui-panel));
+  clip-path: var(--chamfer-path);
+}
+
+.tut-panel {
+  --surface: var(--ui-panel);
+  padding: var(--space-4);
+}
+
+.tut-panel--raised {
+  --surface: var(--ui-panel-raised);
+}
+
+.tut-panel__title {
+  margin: calc(-1 * var(--space-4)) calc(-1 * var(--space-4)) var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  border-bottom: var(--line) solid var(--ui-line);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ui-text-dim);
+}
+
+/* =========================================== */
+/* Buttons                                     */
+/* =========================================== */
+
+.tut-btn {
+  --surface: var(--ui-panel-raised);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 32px;
+  padding: 0 var(--space-4);
+  border: 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ui-text);
+  cursor: pointer;
+}
+
+.tut-btn:hover {
+  --surface: var(--ui-line);
+}
+
+.tut-btn:focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: -2px;
+}
+
+.tut-btn:active {
+  --surface: var(--ui-panel);
+}
+
+.tut-btn--primary {
+  --surface: var(--ui-accent);
+  background: var(--ui-accent);
+  color: var(--ui-accent-text);
+  font-weight: 600;
+}
+
+.tut-btn--primary:hover {
+  --surface: #f7a24c;
+  background: #f7a24c;
+}
+
+.tut-btn--danger {
+  --surface: var(--ui-danger);
+  background: var(--ui-danger);
+  color: var(--ui-accent-text);
+  font-weight: 600;
+}
+
+.tut-btn:disabled,
+.tut-btn[aria-disabled="true"] {
+  --surface: var(--ui-panel);
+  color: var(--ui-text-dim);
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* =========================================== */
+/* Selection, lists, tables                    */
+/* =========================================== */
+
+.is-selected {
+  box-shadow: inset 2px 0 0 var(--ui-accent);
+}
+
+.tut-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tut-list > li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: var(--line) solid var(--ui-line);
+}
+
+.tut-list > li:hover {
+  background: var(--ui-panel-raised);
+}
+
+.tut-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.tut-table th {
+  padding: var(--space-1) var(--space-2);
+  border-bottom: var(--line) solid var(--ui-line);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 400;
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ui-text-dim);
+}
+
+.tut-table td {
+  padding: var(--space-1) var(--space-2);
+  border-bottom: var(--line) solid var(--ui-line);
+}
+
+.tut-table td.tut-data,
+.tut-table th.tut-data {
+  text-align: right;
+}
+
+.tut-table tbody tr:hover {
+  background: var(--ui-panel-raised);
+}
+
+/* =========================================== */
+/* Badges and meters                           */
+/* =========================================== */
+
+.tut-badge {
+  display: inline-block;
+  padding: 1px var(--space-2);
+  border: var(--line) solid currentColor;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ui-text-dim);
+}
+
+.tut-badge--ok {
+  color: var(--ui-ok);
+}
+.tut-badge--warn {
+  color: var(--ui-warn);
+}
+.tut-badge--danger {
+  color: var(--ui-danger);
+}
+.tut-badge--info {
+  color: var(--ui-info);
+}
+.tut-badge--bug {
+  color: var(--ui-bug);
+}
+
+.tut-meter {
+  position: relative;
+  height: 8px;
+  background: var(--ui-line);
+}
+
+.tut-meter__fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--value, 0%);
+  background: var(--fill, var(--ui-accent));
+}
+
+.tut-meter--bug .tut-meter__fill {
+  --fill: var(--ui-bug);
+}
+.tut-meter--danger .tut-meter__fill {
+  --fill: var(--ui-danger);
+}
+.tut-meter--ok .tut-meter__fill {
+  --fill: var(--ui-ok);
+}
+
+/* =========================================== */
+/* Top bar and layout                          */
+/* =========================================== */
+
+.tut-topbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  height: 40px;
+  padding: 0 var(--space-4);
+  background: var(--ui-panel);
+  border-bottom: var(--line) solid var(--ui-line);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.tut-topbar__stat {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.tut-topbar__stat .tut-label {
+  font-size: 10px;
+}
+
+.tut-topbar__spacer {
+  flex: 1;
+}
+
+.tut-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.tut-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* =========================================== */
+/* Icons                                       */
+/* =========================================== */
+
+/*
+ * Icons are single-colour SVGs used as masks so they take the text colour:
+ *   <span class="tut-icon" style="--icon: url(/assets/ui/icons/mech.svg)"></span>
+ * Paths come from src/ui/data/icon-manifest.ts, never string literals.
+ */
+.tut-icon {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  background: currentColor;
+  -webkit-mask: var(--icon) center / contain no-repeat;
+  mask: var(--icon) center / contain no-repeat;
+}
+
+.tut-icon--sm {
+  width: 16px;
+  height: 16px;
+}
+
+/* =========================================== */
+/* Inputs                                      */
+/* =========================================== */
+
+.tut-input,
+.tut-select {
+  min-height: 32px;
+  padding: 0 var(--space-2);
+  border: var(--line) solid var(--ui-line);
+  background: var(--ui-bg);
+  color: var(--ui-text);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.tut-input:focus-visible,
+.tut-select:focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: -2px;
+}

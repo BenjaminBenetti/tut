@@ -9,8 +9,8 @@ How work moves through the Terra Under Threat project. Every agent reads this be
 | **Executive Director** (human) | — | Vision, milestones, taste decisions |
 | **Director** (Claude, outside fleet) | — | Design doc, architecture sign-off, staffing, priorities. Never reads code. |
 | **Tech Lead** | long-lived | Reviews and merges every PR. CI, engine architecture, ADRs, conventions. Sole merge authority. |
-| **Producer** | long-lived | Project board, issue decomposition, dependency tracking, status digest, stale PR chasing |
-| **Engineer** | one issue | Implements an issue, opens a PR, addresses review |
+| **Producer** | long-lived | Project board, issue decomposition, dependency tracking, **assigning issues to engineer seats**, status digest, stale PR chasing |
+| **Engineer** | long-lived seat (`eng-1`…`eng-6`) | Works the one issue labeled `seat:<seat>`, opens a PR, addresses review, then pulls the next |
 | **Map Generation Specialist** | long-lived | Owns `mapgen/` end to end |
 | **Art Director** | long-lived | Models, textures, generated images, VFX, style guide |
 | **QA** | periodic | Headless runs, smoke tests, bug reports |
@@ -27,6 +27,7 @@ Role briefs live in `docs/process/roles/`. Handoff notes live in `docs/handoff/`
 
 1. **Issue.** Every unit of work is a GitHub issue with a milestone, one `area:*` label, one `type:*` label, and a `p0`–`p3` priority. Epics (`type:epic`) list child issues as a task list.
 2. **Ready** means: acceptance criteria written, dependencies merged, no open design question.
+   **Assignment**: the Producer labels a Ready issue `seat:eng-N`; that seat's engineer picks it up. Management is layered: the Director manages the Producer, Tech Lead, and Art Director; the Producer (with Tech Lead input) manages engineer assignments; the Director only sizes the engineer pool.
 3. **Branch.** `<type>/<issue-number>-<short-slug>`, e.g. `feat/42-infestation-tick`. Branch from `main`.
 4. **PR.** Title `<type>(<area>): <summary> (#<issue>)`. Body follows the template. Link the issue with `Closes #N`. Keep PRs under ~500 changed lines where possible; split otherwise.
 5. **Review.** Tech Lead reviews. Engineers address comments on the same branch. Tech Lead merges with squash when CI is green and the PR is approved.

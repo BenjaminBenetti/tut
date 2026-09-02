@@ -11,3 +11,6 @@ test-results/
 
 # Producer grooming scratch output
 .producer/
+
+# art preview renders
+tools/art/preview/out/

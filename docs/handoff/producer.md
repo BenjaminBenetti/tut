@@ -2,36 +2,38 @@
 
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
-## Status Digest (2026-09-02 04:50 UTC)
+<!-- digest:start -->
+## Status Digest (2026-09-02 04:57 UTC)
 
 | Milestone | done / total |
 |---|---|
-| M0 Foundation | 5 / 10 |
-| M1 Overworld | 0 / 50 |
-| M1.5 Map Generation | 1 / 20 |
+| M0 Foundation | 6 / 10 |
+| M1 Overworld | 2 / 54 |
+| M1.5 Map Generation | 3 / 21 |
 
-Board: Backlog 65 · Ready 5 · In Progress 1 · In Review 3 · Blocked 0 · Done 6
+Board: Backlog 58 · Ready 11 · In Progress 4 · In Review 1 · Blocked 0 · Done 11
 
 **Ready now** (no unmerged dependencies):
 
-- #43 (engineer) overworld: Earth map model and seed data
-- #44 (engineer) economy: credits state and transaction model
-- #45 (engineer) roster: infantry squad model and squad type data
-- #46 (engineer) roster: mech part model and starter part catalogue
+- #43 (engineer) overworld: Earth map model, ids and query helpers
+- #47 (engineer) app: GameStore — observable state container with command dispatch
+- #53 (engineer) economy: transaction service
+- #8 (tech-lead) feat(app): app/ bootstrap and screen router with placeholder screens
+- #9 (tech-lead) feat(graphics): isometric camera rig
 - #11 (tech-lead) docs(adr): initial ADRs — toolchain, layering enforcement, state and command pattern
+- #18 (mapgen) feat(mapgen): map validator, reachability service, ASCII renderer
+- #20 (mapgen) feat(mapgen): pipeline runner — GenerationPass, GenerationContext, MapDraft, labelled RNG forks
+- #102 (art-director) Art: UI theme stylesheet (tokens, chamfer panels, buttons, tables, meters) and 24 px icon set
+- #106 (engineer) content: mission type model and data
+- #107 (engineer) overworld: event type model and starter event data
 
 **In-flight PRs** (age h / idle h / review):
 
-- #96 0.0h / 0.0h / none — docs(art): regenerate infantry squad concept with kneeling front rank (#3)
-- #95 0.0h / 0.0h / none — feat(mapgen): biome, settlement and map-size data + parameter resolution (#19)
-- #94 0.0h / 0.0h / none — chore(handoff): producer 2026-09-02
-- #92 0.1h / 0.1h / none — chore(handoff): art-director 2026-09-02 (update 2)
-- #89 0.1h / 0.0h / none — feat(art): deterministic placeholder GLB models and build tooling (#4)
-- #88 0.1h / 0.1h / none — feat(mapgen): map model, tile index, surface and prop registries (#17)
+- #104 0.0h / 0.0h / none — feat(roster): mech part model and starter part catalogue (#46)
 
 **In progress** (branch pushed?):
 
-- none
+- #93 yes — Art: placeholder batch 2 — models for every mapgen surface and prop kind
 
 **Blocked**:
 
@@ -39,22 +41,23 @@ Board: Backlog 65 · Ready 5 · In Progress 1 · In Review 3 · Blocked 0 · Don
 
 **Next assignments for idle engineers** (Ready first, then what unblocks next):
 
-1. #43 — overworld: Earth map model and seed data
-2. #44 — economy: credits state and transaction model
-3. #45 — roster: infantry squad model and squad type data
-4. #46 — roster: mech part model and starter part catalogue
-5. #18 — feat(mapgen): map validator, reachability service, ASCII renderer (Ready once #17 merges)
-6. #20 — feat(mapgen): pipeline runner — GenerationPass, GenerationContext, MapDraft, labelled RNG forks (Ready once #17 merges)
+1. #43 — overworld: Earth map model, ids and query helpers
+2. #47 — app: GameStore — observable state container with command dispatch
+3. #53 — economy: transaction service
+4. #106 — content: mission type model and data
+5. #107 — overworld: event type model and starter event data
+6. #48 — roster: mech and loadout model (Ready once #46 merges)
+<!-- digest:end -->
 
-**Risks**:
+**Risks** (hand-written, 04:58 UTC):
 
-- M1 Ready queue is four data-model issues; it widens only as #43 merges (unblocks #50, #51, #52) and #7/#8/#11 land (unblocks #47, #53, #54). If engineers outpace the Tech Lead's M0 merges, they idle.
-- #54 (GameState root) must fit #7's root and ADR 0003; a mismatch costs a rework day on the critical path.
-- Biome / settlement ids: #43 and MapGen #19 must agree (comment on #19). Whoever lands second reconciles.
-- M1.5 is one serial chain of passes; a slow review on any one stalls the whole milestone.
-- #29 is oversized (flagged on #32).
+- Engineer-Ready is five (#43, #47, #53, #106, #107) with four engineers already active; #46 merging opens #48, #43 merging opens #50, #52, #105. Watch this every tick.
+- #54 (GameState root) must fit #7's root and ADR 0003 (#11, still open); a mismatch costs a day on the critical path.
+- M1.5 is a serial chain from #21 to #29; a slow review on any one pass stalls the milestone.
+- Engineers took #9 (camera rig) although Owner said tech-lead; fine, but the Tech Lead should know #8 is now the only M0 item nobody has claimed.
 
 ---
+
 
 ## Project board IDs (project 5, owner BenjaminBenetti)
 
@@ -72,22 +75,22 @@ Example: `gh project item-edit --project-id PVT_kwHOAVZkgc4BiL0w --id <item> --f
 
 | Epic | Milestone | Children |
 |---|---|---|
-| #35 World model, state root, commands | M1 | #43 #54 #55 #56 |
+| #35 World model, state root, commands | M1 | #43 #105 #54 #55 #56 |
 | #36 Infestation, threat, end conditions | M1 | #50 #57 #58 #59 #68 |
 | #37 Economy | M1 | #44 #53 #60 |
 | #38 Roster | M1 | #45 #46 #48 #49 #63 #64 #69 |
-| #39 Missions, events, auto-resolve | M1 | #51 #61 #62 #67 #70 #71 |
+| #39 Missions, events, auto-resolve | M1 | #106 #51 #61 #62 #67 #107 #70 #71 |
 | #40 Deployables | M1 | #52 #65 #66 |
 | #41 Overworld presentation | M1 | #47 #72 #73 #74 #75 #76 #77 #78 |
 | #42 Roster / mech bay / deployment UI + e2e | M1 | #79 #80 #81 #82 #83 #84 |
-| #32 Map generation (MapGen owns) | M1.5 | #13 #17–#31 #33 #85 |
+| #32 Map generation (MapGen owns) | M1.5 | #13 #17–#31 #33 #97 #85 |
 | M0 skeleton (Tech Lead owns, no epic) | M0 | #2–#11 |
 
-Critical path for M1: #43 → #54 (needs #7, #11, #44, #45, #48) → #55 → #68 (AdvanceDay) → #72/#73 (screens) → #82/#83 → #84 e2e.
+Critical path for M1: #43 → #105 → #54 (needs #7, #11, #44, #45, #48) → #55 → #68 (AdvanceDay) → #72/#73 (screens) → #82/#83 → #84 e2e.
 
 ## How I work
 
-- Grooming script: `tools/producer/groom.py` (`python3 tools/producer/groom.py [--dry]`), then `python3 tools/producer/render_handoff.py` to regenerate this file's digest from `.producer/digest.json` plus `tools/producer/handoff_static.md` (the hand-written half). It reads every issue, PR and remote branch, then sets Status: closed → Done; open PR referencing the issue (`Closes #N`, `(#N)` in title, or branch `type/N-slug`) → In Review; remote branch `type/N-*` → In Progress; label `status:blocked` → Blocked; every `Blocked by #N` in the Dependencies section closed → Ready; else Backlog. Epics go In Progress once any child leaves Backlog/Ready and Done when all children close. Missing issues are added to the board with Owner inferred from labels (mapgen / art / qa / M0→tech-lead / epic→producer / else engineer).
+- Grooming script: `tools/producer/groom.py` (`python3 tools/producer/groom.py [--dry]`), then `python3 tools/producer/render_handoff.py` to regenerate the digest between the `digest:start` / `digest:end` markers in this file. Everything outside the markers is hand-written; edit it directly. Tooling changes go in `chore(producer): …` PRs (Tech Lead's ask on #94); `chore(handoff)` PRs carry only this file. It reads every issue, PR and remote branch, then sets Status: closed → Done; open PR referencing the issue (`Closes #N`, `(#N)` in title, or branch `type/N-slug`) → In Review; remote branch `type/N-*` → In Progress; label `status:blocked` → Blocked; every `Blocked by #N` in the Dependencies section closed → Ready; else Backlog. Epics go In Progress once any child leaves Backlog/Ready and Done when all children close. Missing issues are added to the board with Owner inferred from labels (mapgen / art / qa / M0→tech-lead / epic→producer / else engineer).
 - Dependencies are parsed from the `## Dependencies` section, so keep writing `Blocked by #N` there.
 - Loop every ~15 min: `git pull`, run groom, read new comments addressed to Producer, chase PRs idle > 3 h and In Progress issues with no branch > 3 h, regenerate this file's digest, push the handoff PR when the digest changed materially.
 
@@ -99,6 +102,9 @@ Critical path for M1: #43 → #54 (needs #7, #11, #44, #45, #48) → #55 → #68
 4. **Four M1 issues Ready before the M0 skeleton is complete** (#43, #44, #45, #46): they are pure data models with tests and need only the merged tooling (#5). Everything that needs `core/` Result types, the router, save or the camera rig stays Backlog until those merge.
 5. **Sizes**: every child is a half day to a day; #54, #49, #58, #61–#64, #67, #68, #72–#75, #79, #80, #82 are the full-day ones.
 6. **Owner on child issues is the role expected to take it**, not a person. The Director spawns engineers against Ready.
+7. **Split #43 into model (#43) and seed data (#105)** at 04:55 so the three issues that only need the types (#50, #51, #52) unblock within hours, not half a day. Carved the dependency-free content out of #51 (→ #106 mission types) and #70 (→ #107 event types) for the same reason.
+8. **#47 (GameStore) marked Ready with #11 still open**: its real contract (`Command`, `Applied`, `Result`) merged in core #6; ADR 0003 documents those types. Judged the design question closed. If #11 lands with a different store shape, #47 adapts in review.
+9. **MapGen split #29 → #29 + #97** on my size note; #85 now blocks on #97.
 
 ## Open questions I'd raise as `design-decision` if pressed
 
@@ -110,4 +116,5 @@ Critical path for M1: #43 → #54 (needs #7, #11, #44, #45, #48) → #55 → #68
 - `git` remote was SSH and unauthenticated; switched to HTTPS with `gh auth setup-git`.
 - Issue numbers interleave with PR numbers; `gh api repos/.../issues/N` tells you which is which (`pull_request` key).
 - Sub-issue links exist (REST `sub_issues`), so the board's "Parent issue" field works; the task lists in epic bodies are the human-readable copy and must be kept in sync by hand.
+- `groom.py` on `main` may lag the scratchpad copy while a `chore(producer)` PR is open; run the newest copy. The dependency parser drops merged PR numbers and treats a leading "none" as no deps (fix in #98).
 - MapGen's chain #21 → #29 is strictly serial; only #18/#19/#20 fan out after #17. Expect M1.5 to be paced by one PR at a time.

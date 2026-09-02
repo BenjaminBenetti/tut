@@ -20,8 +20,10 @@ PROMPT="$(cat "$PROMPT_FILE")
 Save the final image as a PNG file at exactly this path: $OUT_ABS
 Use your built-in image generation tool; do not write code to draw the image. Generate exactly one image. Reply with only the saved path."
 
+# stdin is redirected from /dev/null: with a non-TTY stdin left open, codex
+# waits for piped input and never starts.
 codex exec --skip-git-repo-check --ephemeral -s danger-full-access \
-  -C "$WORK" -o "$WORK/last.txt" "$PROMPT" >"$WORK/stdout.log" 2>"$WORK/stderr.log" || true
+  -C "$WORK" -o "$WORK/last.txt" "$PROMPT" </dev/null >"$WORK/stdout.log" 2>"$WORK/stderr.log" || true
 
 if [ ! -s "$OUT_ABS" ]; then
   # Fallback: pull the newest image from this session's generated_images folder.

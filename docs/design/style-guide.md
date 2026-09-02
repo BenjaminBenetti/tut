@@ -114,7 +114,7 @@ Rule: bioluminescence is small and bright, never a wash. Swarmers get green only
 
 ### 4.3 Environment by biome
 
-Shared: `env-asphalt #3A3D42`, `env-concrete #8E8A82`, `env-sidewalk #A7A297`, `env-brick #8A4B3A`, `env-glass #6E8FA6`, `env-roof #55524C`, `env-metal #6F7378`, `env-rust #8C5A3A`.
+Shared: `env-asphalt #3A3D42`, `env-concrete #8E8A82`, `env-sidewalk #A7A297`, `env-brick #8A4B3A`, `env-glass #6E8FA6`, `env-roof #55524C`, `env-metal #6F7378`, `env-rust #8C5A3A`, `env-rock #6E6A66`, `env-bark #5A4634`, `env-foliage #3F6B33`.
 
 | Biome | Ground | Secondary | Accent |
 |---|---|---|---|
@@ -145,6 +145,8 @@ Infested ground overlays use `bug-flesh` and `bug-bio-green-dim`; never recolour
 Contrast: all text on `ui-panel` meets WCAG AA (`ui-text-dim` on `ui-panel` is 6.3:1).
 
 ## 5. UI style
+
+Implementation: `src/ui/style/theme.css` exposes the §4.4 tokens as CSS custom properties (`--ui-*`) and provides the `.tut-*` components below (panel, button, label, data, table, badge, meter, top bar, icon). Icons are registered in `src/ui/data/icon-manifest.ts`. Preview: `docs/design/ui-theme-preview.png`, built from `tools/art/preview/ui-theme.html`.
 
 - **Type**: labels and data in monospace: `ui-monospace, "JetBrains Mono", "Cascadia Mono", "SF Mono", Consolas, monospace`. Body copy in `system-ui, "Segoe UI", Roboto, sans-serif`. Labels are uppercase with `letter-spacing: 0.08em`.
 - **Shapes**: rectangles with one 45° chamfered corner (top-right, 8 px) on panels and buttons. That chamfer is the signature; nothing else is rounded.
@@ -189,6 +191,35 @@ Map generation assembles maps from these pieces (GDD §7, architecture §5 map c
 - **Floors** are 1×1 u slabs at y = 0 of their level; **stairs** occupy one tile and rise 1.5 u along local +Z; **ramps** are outdoor stairs' terrain cousin, same rise, biome-textured; **roofs** are 1×1 caps with a 0.1 u parapet.
 - **Props** are ≤ 1×1, pivot at base centre: `barrier-concrete`, `sandbags`, `dumpster`, `car-sedan` (2×1, pivot at centre of the 2-tile footprint), `lamp-post`, `hydrant`.
 - Every kit ships a `README.md` listing pieces, footprints and which edge they snap to.
+
+### Mapgen ids → models
+
+Map generation (`src/mapgen/data/surfaces.ts`, `props.ts`) emits surface ids and prop kinds; graphics resolves them to models with this table. Placeholder ids come from `tools/art/placeholders.manifest.json`.
+
+| Surface id | Model id | Note |
+|---|---|---|
+| `grass` / `dirt` / `sand` / `snow` / `rock` | `tile.ground.<id>` | 1×1 slabs; rock has lumps |
+| `road` | `tile.city.road-straight` | Graphics picks `-corner`, `-t`, `-cross` by road neighbours |
+| `sidewalk` | `tile.city.sidewalk` | `-corner` by neighbours |
+| `water` | `tile.ground.water` | Recessed 0.02 u below ground |
+| `floor` | `building.floor` | Interior |
+| `roof` | `building.roof` | Plus `building.roof-parapet` on outer edges |
+| `stairs` | `building.stairs` | Rises along local +Z |
+
+| Prop kind | Model id | Cover in mapgen |
+|---|---|---|
+| `car` | `prop.car-compact` (1×1). `prop.car-sedan` is 2×1 for hand-placed wrecks | high |
+| `crate` | `prop.crate` | low |
+| `barrier` | `prop.barrier-concrete` | low |
+| `sandbags` | `prop.sandbags` | low |
+| `dumpster` | `prop.dumpster` | high |
+| `shelving` | `prop.shelving` | high |
+| `fence` | `prop.fence` | low |
+| `boulder` | `prop.boulder` | high |
+| `tree-pine` / `tree-oak` / `tree-palm` | `prop.tree-<id>` | high |
+| `cactus` | `prop.cactus` | high |
+
+Walls are `Wall` records on tile edges, not props: `building.wall`, `building.wall-window`, `building.wall-door`, `building.wall-half` by wall kind.
 
 ## 8. Asset manifest format (proposal for Tech Lead)
 

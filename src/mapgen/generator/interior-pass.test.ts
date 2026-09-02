@@ -7,10 +7,18 @@ import { hashSeed } from "../../core/service/seed-hash";
 import { rectContains, rectsOverlap } from "../../core/service/grid-math";
 import { SurfaceIds } from "../data/surfaces";
 import type { Building } from "../model/building";
+import type { BuildingTemplate } from "../model/building-template";
+import type {
+  DraftCapability,
+  GenerationContext,
+  GenerationPass,
+} from "../model/generation-pass";
 import type { MapDraft } from "../model/map-draft";
 import type { MapGenParams, MapRecipe } from "../model/map-recipe";
 import type { TacticalMap } from "../model/tactical-map";
+import type { MapGenRegistries } from "../model/registries";
 import { createDefaultRegistries } from "../service/default-registries";
+import { createRegistry } from "../service/definition-registry";
 import { freezeDraft } from "../service/draft-freezer";
 import type { InvariantId, Violation } from "../service/map-validator";
 import { validateTacticalMap } from "../service/map-validator";
@@ -172,6 +180,69 @@ describe("InteriorPass", () => {
     expect(flights).toBeGreaterThan(0);
     expect(roofs).toBeGreaterThan(0);
     expect(ladders).toBeGreaterThan(0);
+  });
+
+  it("keeps stairwell holes off the facade when the footprint allows", () => {
+    const provides: DraftCapability[] = ["heightmap", "water", "roads", "lots"];
+    const oneLot: GenerationPass = {
+      id: "one-lot",
+      requires: [],
+      provides,
+      run: (ctx: GenerationContext): void => {
+        for (let i = 4; i <= 15; i++) {
+          ctx.draft.setRoad(i, 4);
+        }
+        ctx.draft.lots.push({
+          id: "lot-1",
+          rect: { x: 6, z: 6, w: 8, d: 8 },
+          level: 0,
+          frontage: "n",
+        });
+      },
+    };
+    const box: BuildingTemplate = {
+      id: "house",
+      footprintWidth: { min: 5, max: 5 },
+      footprintDepth: { min: 5, max: 5 },
+      floors: { min: 2, max: 2 },
+      roof: "pitched",
+      roofWalkable: false,
+      windowDensity: 0.5,
+      scales: ["rural", "town", "city"],
+      minRoomSize: 2,
+    };
+    const regs: MapGenRegistries = {
+      ...registries,
+      buildingTemplates: createRegistry("building template", [box]),
+      biomes: createRegistry("biome", [
+        {
+          ...registries.biomes.get("temperate"),
+          buildingKinds: [{ template: "house", weight: 1 }],
+        },
+      ]),
+    };
+    for (let i = 0; i < 10; i++) {
+      const { draft } = new PipelineMapGenerator(
+        [oneLot, new BuildingPass(), new InteriorPass()],
+        regs,
+      ).run(
+        {
+          archetype: "settlement",
+          biome: "temperate",
+          settlement: "town",
+          size: { width: 20, depth: 20 },
+          hooks: [],
+        },
+        new Mulberry32Rng(hashSeed(`stairwell-${i}`)),
+      );
+      const stairs = draft.connectors.find((c) => c.kind === "stairs");
+      expect(stairs, `seed ${i}`).toBeDefined();
+      if (stairs === undefined) continue;
+      const hole = { x: stairs.from.x, z: stairs.from.z };
+      const onEdge =
+        hole.x === 6 || hole.x === 10 || hole.z === 6 || hole.z === 10;
+      expect(onEdge, `seed ${i} hole at ${hole.x},${hole.z}`).toBe(false);
+    }
   });
 
   it("is deterministic per seed", () => {

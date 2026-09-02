@@ -1,26 +1,26 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-02 (session 1, second update)
+Last updated: 2026-09-02 (session 1, third update)
 
 ## 1. What I was doing and where it stands
 
 | Deliverable | Issue | State |
 |---|---|---|
-| Style guide `docs/design/style-guide.md` | #2 | **Merged** (PR #12). §8 needs a small rewrite once #10 lands (see §3). |
-| Concept sheets `docs/design/concepts/` (7 subjects) | #3 | PR #86 open, CI green, awaiting Tech Lead review |
-| Placeholder GLBs (38 models) + build/render tooling | #4 | PR #89 open, CI pending at time of writing; lint/test/build green locally |
-| Manifest registration of the 38 GLBs | #4 | Blocked on #10 (Tech Lead ships `content/data/model-ids.ts` + `graphics/data/model-manifest.ts`) |
+| Style guide `docs/design/style-guide.md` | #2 | **Merged** (PR #12). §8 still describes my original proposal; rewrite to the #10 shape once it lands. |
+| Concept sheets `docs/design/concepts/` (7 subjects) | #3 | **Merged** (PR #86, infantry second pass PR #96). |
+| Placeholder GLBs batch 1 (38 models) + build/render tooling | #4 | **Merged** (PR #89). Tech Lead: the #10 engineer seeds the typed manifest from `tools/art/placeholders.manifest.json`, so no registration PR from me. |
+| Placeholder batch 2: biome tiles + every mapgen prop kind (13 models), mapgen id → model table in style guide §7 | #93 | PR #110 open |
+| UI theme `src/ui/style/theme.css`, 24 icons, `src/ui/data/icon-manifest.ts` | #102 | PR #109 open |
 | Image generation recipe | — | **Working.** See §5. |
-| Headless GLB render check | — | **Working.** See §7. |
+| Headless GLB / page render checks | — | **Working.** See §7. |
 
-Issues #2, #3, #4 are on project 5 (Terra Under Threat).
+Issues #2, #3, #4, #93, #102 are on project 5 (Terra Under Threat).
 
 ## 2. Open PRs / issues I own
 
-- PR #86 `docs(art): concept sheets` → closes #3.
-- PR #89 `feat(art): placeholder GLB models and build tooling` → closes #4 (registration follow-up PR still to open).
-- Issues #3, #4 open (`area:art`, M0 Foundation). #2 closed by PR #12.
-- Tech Lead answered on #10 and on PR #12; decisions recorded in §3 below.
+- PR #110 `feat(art): placeholder batch 2` → closes #93. Rebased on main after #89's squash.
+- PR #109 `feat(ui): theme stylesheet, icon set, icon manifest` → closes #102. Not yet imported by the app; #72 (composition root) should `import "./ui/style/theme.css"`. Told epic #41.
+- Closed: #2, #3, #4 (all merged).
 
 ## 3. Decisions I made and why
 
@@ -32,14 +32,18 @@ Issues #2, #3, #4 are on project 5 (Terra Under Threat).
 - **Mech is six GLBs plus one assembled reference**: legs, chassis, arm-l, arm-r, weapon-arm autocannon, weapon-back missile pod, joined at `socket_*` nodes. Assembled file exists so engineers can drop a mech in without socket code.
 - **Concept sheets are downscaled to 1536 px** and kept as PNG (about 1–1.4 MB each). They are docs, not runtime assets.
 - **`tools/art/` holds art tooling** (build, image gen, preview). ESLint already lints `.mjs` there; generated `placeholders.manifest.json` is in `.prettierignore` so rebuilds stay byte-identical.
+- **Ground tiles are named by mapgen surface id** (`tile.ground.grass`, `.dirt`, `.sand`, `.snow`, `.rock`, `.water`) and props by mapgen prop kind (`prop.crate`, `prop.tree-pine`, …) so the graphics lookup in style guide §7 is a one-liner. `car` maps to the 1×1 `prop.car-compact`; `prop.car-sedan` (2×1) stays for hand-placed wrecks.
+- **UI icons are CSS masks**, not inline SVG: `.tut-icon` with `--icon: url(...)` from `iconUrl(id)`. One colour, `currentColor`, so badges and states tint them. Icon manifest lives in `src/ui/data/` because icons are DOM assets, not three.js ones.
+- **Chamfer border trick**: `.tut-panel`/`.tut-btn` are two clipped layers (line colour behind, surface colour inset 1 px) so the 1 px border follows the 45° cut. `--surface` custom property selects the inner colour per variant.
 
 ## 4. Next, in order
 
-1. Address review on PR #86 and PR #89; keep both rebased on `main` (main moves fast: #16 CI tooling, #34 core, #90 save are landing today).
-2. When #10 merges: open `feat/4-manifest-registration` that adds the 38 ids to `content/data/model-ids.ts` and entries to `graphics/data/model-manifest.ts` from `tools/art/placeholders.manifest.json`, and rewrite style guide §8 to the shipped shape. Consider generating the TS from the JSON in `build-placeholders.mjs` so the two never drift.
-3. Regenerate the infantry concept sheet with an explicit five-figure layout; recolour the tileset dumpster (sidecar notes).
-4. VFX sprites (muzzle flash, impact, egg burst; ≤ 512², transparent) and UI icons (16/24 px single-colour SVG) when tactical/UI issues ask for them. Overworld Earth map (#74) may want a city-marker sprite and an infestation decal soon.
-5. Biome ground tiles for snow, desert, coastal (style guide §4.3) once mapgen's biome pass (#17 and children) names its surface ids.
+1. Land PR #110 and PR #109 (address review). If #10 merges before #110, add the 13 batch-2 ids to the typed manifest in a tiny follow-up.
+2. When #10 lands: rewrite style guide §8 to the shipped shape (`content/data/model-ids.ts` union + `graphics/data/model-manifest.ts` `satisfies Record<ModelAssetId, ModelAssetEntry>`, no `id` field).
+3. Overworld art for M1: a stylised Earth map plate texture or region plates (see #74; the engineer uses primitives first) and a city-marker sprite that reads infestation 0–100 (green → bug-green → danger). Wait for #74's implementer to say what they want; offer on the issue.
+4. VFX sprites for M2 (muzzle flash, impact, egg burst; ≤ 512², transparent, generated with `tools/art/gen-image.sh` asking for a transparent background) and a `sprite-manifest.ts`.
+5. Textures: a 512² palette atlas is not needed while models are one-material-per-token; revisit when real models arrive.
+6. Concept sheets round 2 when the Director gives feedback: mech variants (heavy chassis, alternate arm weapons), snow/desert/coastal tile kits, hive core (M3).
 
 ## 5. Image generation recipe (Codex CLI)
 
@@ -76,12 +80,13 @@ codex exec --skip-git-repo-check --ephemeral -s danger-full-access \
 - Codex claims success even when the copy failed (test 3 reported a path that did not exist). Always `file` the output.
 - `codex exec` prints its transcript to stderr, not stdout; `-o` writes only the final message.
 - Vite is on `pnpm`; `npm pack` still works for fetching the codex tarball.
+- **Branch from a fresh `origin/main`** and check `git diff --name-only origin/main...HEAD` before opening a PR. Branching from a stale main once swept untracked tooling and 100 ignored render PNGs into a commit (the `.gitignore` entry lived on the other branch).
 - Never `cd` inside a long `&&` chain in the shell: one failed step leaves later relative paths pointing at the wrong directory. Use absolute paths.
 - Concept sheets are docs, not runtime assets, so the ≤ 1024² texture rule does not apply to them; keep them under ~1.5 MB each anyway.
 
 ## 7. Headless render check (verifying GLBs without a browser)
 
-`tools/art/preview/render-placeholders.mjs` serves the repo root on 127.0.0.1:8790, opens `tools/art/preview/harness.html` in headless Chromium (Playwright, SwiftShader GL) for each manifest entry at yaw 45° and 225°, and writes 320 px PNGs into `tools/art/preview/out/` (git-ignored). Make a contact sheet with ImageMagick, which is installed:
+`tools/art/preview/render-placeholders.mjs` serves the repo root on 127.0.0.1:8790, opens `tools/art/preview/harness.html` in headless Chromium (`@playwright/test`, SwiftShader GL) for each manifest entry at yaw 45° and 225°, and writes 320 px PNGs into `tools/art/preview/out/` (git-ignored). `tools/art/preview/shoot-page.mjs <page> <out.png>` screenshots any repo page the same way (used for the UI theme preview). Make a contact sheet with ImageMagick, which is installed:
 
 ```bash
 node tools/art/preview/render-placeholders.mjs

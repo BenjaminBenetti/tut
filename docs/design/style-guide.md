@@ -37,7 +37,7 @@ These are the presentation assumptions the art is built against (GDD §6.1; the 
 
 ## 3. Scale and proportions
 
-**1 tile = 1 world unit = 2 metres.** Everything below is in world units (u). Pivot is the centre of the base footprint at y = 0 (feet on the ground). +Y up, +Z forward, right-handed (glTF convention).
+**1 tile = 1 world unit = 2 metres.** Everything below is in world units (u). Vertical levels from the map contract (ADR 0004) are one storey each, so one level = 1.5 u. Pivot is the centre of the base footprint at y = 0 (feet on the ground). +Y up, +Z forward, right-handed (glTF convention).
 
 | Subject | Footprint (tiles) | Height (u) | Notes |
 |---|---|---|---|
@@ -53,7 +53,7 @@ These are the presentation assumptions the art is built against (GDD §6.1; the 
 | Wall | — | 1.5 × 0.1 thick | Snaps to tile edges. |
 | Low cover | ≤ 1×1 | 0.5 | Half cover. Sandbags, barriers, car hoods. |
 | High cover | ≤ 1×1 | ≥ 1.0 | Full cover. Walls, dumpsters, pillars. |
-| Terrain elevation step | — | 0.5 | Three steps = one building floor. Confirm with mapgen/Tech Lead. |
+| Terrain elevation step | — | 1.5 | One level = one storey (ADR 0004). A one-level ground step is a cliff unless a ramp tile spans it. |
 | Door | — | 1.2 tall × 0.6 wide | Centred on a wall segment. |
 
 ```
@@ -186,7 +186,7 @@ Map generation assembles maps from these pieces (GDD §7, architecture §5 map c
 
 - **Ground tiles** are 1×1 u, 0.05 u thick slabs, pivot at centre. Variants: `<biome>-ground-a/b/c`, `city-road-straight`, `city-road-corner`, `city-road-cross`, `city-road-t`, `city-sidewalk`, `city-sidewalk-corner`.
 - **Walls** are 1 u long, 1.5 u tall, 0.1 u thick, pivot at the wall's base midpoint, running along local +X. Placed on tile edges. Variants: `wall`, `wall-window`, `wall-door` (door 1.2 × 0.6 opening), `wall-half` (0.5 u high, low cover).
-- **Floors** are 1×1 u slabs at y = 0 of their level; **stairs** occupy one tile and rise 1.5 u along local +Z; **roofs** are 1×1 caps with a 0.1 u parapet.
+- **Floors** are 1×1 u slabs at y = 0 of their level; **stairs** occupy one tile and rise 1.5 u along local +Z; **ramps** are outdoor stairs' terrain cousin, same rise, biome-textured; **roofs** are 1×1 caps with a 0.1 u parapet.
 - **Props** are ≤ 1×1, pivot at base centre: `barrier-concrete`, `sandbags`, `dumpster`, `car-sedan` (2×1, pivot at centre of the 2-tile footprint), `lamp-post`, `hydrant`.
 - Every kit ships a `README.md` listing pieces, footprints and which edge they snap to.
 

@@ -221,41 +221,29 @@ Map generation (`src/mapgen/data/surfaces.ts`, `props.ts`) emits surface ids and
 
 Walls are `Wall` records on tile edges, not props: `building.wall`, `building.wall-window`, `building.wall-door`, `building.wall-half` by wall kind.
 
-## 8. Asset manifest format (proposal for Tech Lead)
+## 8. Asset manifests
 
-Architecture §7: one typed manifest per category so no code references a path string outside the manifest. Proposed shape, living under `src/graphics/data/`:
+Shipped in #10; this section describes what exists. Ids and registries are split so simulation data can name a model without importing the renderer (architecture §3, ADR 0002).
+
+| File | Holds |
+|---|---|
+| `src/content/data/model-ids.ts` | `MODEL_IDS` const array of dot-separated `faction.subject.variant` ids; `ModelAssetId` is its union. Declare the id here first. |
+| `src/graphics/model/asset-manifest.ts` | `ModelAssetEntry { category, path, footprint {w,d}, height, sockets, quality }` and `ModelManifest = Readonly<Record<ModelAssetId, ModelAssetEntry>>`. The key carries the id; entries have no `id` field. |
+| `src/graphics/data/model-manifest.ts` | `MODEL_MANIFEST`, typed against `ModelManifest`, so an id without an entry or a misspelt field fails typecheck. |
+| `src/graphics/data/model-manifest.test.ts` | Every id registered exactly once; paths inside their category folder; GLB present and < 500 KB; sane footprints and `socket_*` names; entry-for-entry equality with `tools/art/placeholders.manifest.json`; no other file under `src/` may spell `assets/models/`. |
+| `src/graphics/service/gltf-model-loader.ts` | Loads by id, prefixes Vite's `BASE_URL`, caches, falls back to `placeholder-model-factory.ts` primitives. External images referenced by a GLB (the unit atlases, §6) resolve relative to the GLB URL. |
+
+Adding a model: add it to `MODEL_DEFS` in `tools/art/build-placeholders.mjs` (or drop a final GLB into the category folder), run `pnpm art:placeholders`, add the id to `MODEL_IDS`, add the entry to `MODEL_MANIFEST` copied from the JSON record, run `pnpm test`.
+
+Sprites, textures and icons use the lighter self-keyed shape, since nothing in simulation references them:
 
 ```ts
-// src/graphics/data/model-manifest.ts
-export type ModelCategory = "units" | "bugs" | "props" | "tiles" | "buildings";
-
-export interface ModelAssetEntry {
-  /** Stable id, dot-separated: faction.subject.variant */
-  readonly id: string;
-  readonly category: ModelCategory;
-  /** Path under public/, e.g. "assets/models/units/tdf-mech-chassis-a.glb" */
-  readonly path: string;
-  /** Footprint in tiles */
-  readonly footprint: { readonly w: number; readonly d: number };
-  /** Height in world units */
-  readonly height: number;
-  /** Socket node names exposed by the model */
-  readonly sockets: readonly string[];
-  /** Placeholder geometry or final art */
-  readonly quality: "placeholder" | "final";
-}
-
-export const MODEL_MANIFEST = {
-  "tdf.mech.chassis-a": { id: "tdf.mech.chassis-a", category: "units", path: "assets/models/units/tdf-mech-chassis-a.glb", footprint: { w: 1, d: 1 }, height: 2.6, sockets: ["socket_arm_l", "socket_arm_r", "socket_back", "socket_legs"], quality: "placeholder" },
-  // ...
-} as const satisfies Record<string, ModelAssetEntry>;
-
-export type ModelAssetId = keyof typeof MODEL_MANIFEST;
+export const SPRITE_MANIFEST = { "vfx.muzzle-flash": { path, size, blend, label } } as const satisfies Record<string, SpriteAssetEntry>;
+export type SpriteId = keyof typeof SPRITE_MANIFEST;
+export function spriteUrl(id: SpriteId): string { return `${import.meta.env.BASE_URL}${SPRITE_MANIFEST[id].path}`; }
 ```
 
-Textures, sprites and UI icons follow the same pattern in `texture-manifest.ts`, `sprite-manifest.ts` and `icon-manifest.ts`, with `size` replacing `footprint`/`height`. A build script under `tools/art/` regenerates placeholder GLBs and asserts every manifest path exists on disk.
-
-Open points for the Tech Lead: (a) confirm `src/graphics/data/` as the home; (b) whether ids should be a closed union in `content/` so simulation data (e.g. a bug species record) can reference a model id without importing `graphics`.
+`sprite-manifest.ts` and `texture-manifest.ts` live in `src/graphics/data/`; `icon-manifest.ts` lives in `src/ui/data/` because icons are DOM assets. Each has a test that parses the PNG or SVG header to pin size, alpha and byte budget.
 
 ## 9. File naming and locations
 

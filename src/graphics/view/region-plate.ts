@@ -32,20 +32,24 @@ const OUTLINE_COLOUR = 0x8b94a6;
 /** Label placeholder bar size, in world units. */
 const LABEL_BAR = { maxWidth: 1.6, height: 0.04, depth: 0.3 };
 
+/** Plates draw first among transparent objects so marker sprites sit on top of them. */
+const PLATE_RENDER_ORDER = 1;
+
 // ===========================================
 // Plate
 // ===========================================
 
 /**
- * Placeholder for one region: a flat slab coloured by biome with an
- * outline and a small bar where the label will go. Real continents come
- * with art; nothing here blocks on them (architecture §7).
+ * One region: a translucent slab tinted by biome so the Earth texture
+ * shows through, an outline, and a small bar where the label will go.
+ * The tint reads as "this region's climate" over whatever the map
+ * beneath it looks like, textured or flat (architecture §7).
  *
  * ```
  *     ┌──────────────────┐ ◀ outline (EdgesGeometry)
  *     │      ▬▬▬▬        │ ◀ label placeholder at region.layout
- *     │   ·        ·     │   (city markers are separate objects)
- *     └──────────────────┘
+ *     │ ░░·░░░░░░░░·░░░░ │   translucent biome tint over the map
+ *     └──────────────────┘   (city markers are separate objects)
  * ```
  */
 export class RegionPlate {
@@ -87,10 +91,14 @@ export class RegionPlate {
       flatShading: true,
       metalness: 0,
       roughness: 0.9,
+      transparent: true,
+      opacity: config.plateOpacity,
+      depthWrite: false,
     });
     slabMaterial.name = `biome-${region.biome}`;
     const slab = new Mesh(slabGeometry, slabMaterial);
     slab.name = `region-slab-${region.id}`;
+    slab.renderOrder = PLATE_RENDER_ORDER;
     slab.position.y = config.plateHeight / 2;
     this.object.add(slab);
 

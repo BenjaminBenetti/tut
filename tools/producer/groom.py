@@ -93,7 +93,11 @@ def desired_status(i, current):
         if kids and all(k["state"] == "CLOSED" for k in kids): return "Done"
         if any(by_num.get(k["number"], {}).get("status") not in (None, "Backlog", "Ready") for k in kids): return "In Progress"
         return current if current in ("In Progress",) else "Backlog"
-    if has_branch(n) or current == "In Progress": return "In Progress"
+    # In Progress means someone is on it: a seated engineer issue, or a non-engineer owner (mapgen, art, tech-lead)
+    # working its own branch. An unseated engineer issue with a parked branch is Ready again (Director, pause rules).
+    seated = any(l.startswith("seat:") for l in L)
+    owner = by_num.get(n, {}).get("owner")
+    if (has_branch(n) or current == "In Progress") and (seated or owner not in (None, "engineer")): return "In Progress"
     if "status:blocked" in L: return "Blocked"
     deps = deps_of(i)
     if all(issues.get(d, {}).get("state") == "CLOSED" for d in deps): return "Ready"

@@ -7,6 +7,9 @@ import type { SquadTypeId } from "./squad-type";
  */
 export type SquadId = string;
 
+/** Prefix the id generator uses for squads, e.g. `"squad-3"`. */
+export const SQUAD_ID_PREFIX = "squad";
+
 /** Soldiers in a full squad (GDD §5.7: "one squad token of ~5 soldiers"). */
 export const SQUAD_MAX_STRENGTH = 5;
 

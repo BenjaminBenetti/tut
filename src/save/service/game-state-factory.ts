@@ -1,6 +1,6 @@
 import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
-import type { GameState } from "../model/game-state";
+import type { GameMeta } from "../model/game-state";
 
 /** Inputs the app supplies when starting a campaign. */
 export interface NewGameOptions {
@@ -10,17 +10,16 @@ export interface NewGameOptions {
 }
 
 /**
- * Builds the initial `GameState` for a fresh campaign. Everything random
- * downstream derives from `seed`; this is the one place the master RNG
- * and id generator are born.
+ * Builds the `meta` slice for a fresh campaign. This is the one place the
+ * master RNG and id generator are born; everything random downstream
+ * derives from `seed`. `createNewGame` restores both from this snapshot,
+ * fills the domain slices, and writes their advanced states back.
  */
-export function createNewGameState(options: NewGameOptions): GameState {
+export function createNewGameMeta(options: NewGameOptions): GameMeta {
   return {
-    meta: {
-      seed: options.seed >>> 0,
-      rng: new Mulberry32Rng(options.seed).getState(),
-      ids: new SequentialIdGenerator().getState(),
-      createdAt: options.createdAt,
-    },
+    seed: options.seed >>> 0,
+    rng: new Mulberry32Rng(options.seed).getState(),
+    ids: new SequentialIdGenerator().getState(),
+    createdAt: options.createdAt,
   };
 }

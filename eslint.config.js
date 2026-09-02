@@ -165,7 +165,7 @@ export default defineConfig(
 
   // ---- Node-side config files: plain JS, no type information ----
   {
-    files: ["**/*.js"],
+    files: ["**/*.{js,mjs,cjs}"],
     extends: [js.configs.recommended, tseslint.configs.disableTypeChecked],
     languageOptions: { globals: { ...globals.node } },
   },

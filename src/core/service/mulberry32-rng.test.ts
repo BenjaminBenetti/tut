@@ -110,7 +110,52 @@ describe("Mulberry32Rng", () => {
 
   it("refuses to restore a foreign algorithm's state", () => {
     expect(() =>
-      Mulberry32Rng.fromState({ algorithm: "xorshift", state: 1 }),
+      Mulberry32Rng.fromState({ algorithm: "xorshift", seed: 1, state: 1 }),
     ).toThrow(/xorshift/);
+  });
+
+  it("labelled forks depend only on seed and label, not on draws so far", () => {
+    const fresh = new Mulberry32Rng(99);
+    const used = new Mulberry32Rng(99);
+    used.next();
+    used.next();
+    const before = used.getState();
+
+    expect(fresh.fork("terrain").next()).toBe(used.fork("terrain").next());
+    expect(used.getState()).toEqual(before);
+    expect(fresh.fork("terrain").next()).not.toBe(fresh.fork("roads").next());
+  });
+
+  it("labelled forks survive a save/load round trip", () => {
+    const original = new Mulberry32Rng(5);
+    original.next();
+    const restored = Mulberry32Rng.fromState(original.getState());
+    expect(restored.fork("hooks").next()).toBe(original.fork("hooks").next());
+  });
+
+  it("pickWeighted never returns zero-weight items and skews toward heavy ones", () => {
+    const rng = new Mulberry32Rng(11);
+    const items = [
+      { id: "never", w: 0 },
+      { id: "light", w: 1 },
+      { id: "heavy", w: 9 },
+    ];
+    const counts: Record<string, number> = { never: 0, light: 0, heavy: 0 };
+    for (let i = 0; i < 5_000; i++) {
+      counts[rng.pickWeighted(items, (item) => item.w).id]! += 1;
+    }
+    expect(counts.never).toBe(0);
+    expect(counts.heavy).toBeGreaterThan(counts.light! * 6);
+    expect(() => rng.pickWeighted([], () => 1)).toThrow();
+    expect(() => rng.pickWeighted(items, () => 0)).toThrow();
+  });
+
+  it("shuffle returns a permutation and leaves the input alone", () => {
+    const rng = new Mulberry32Rng(3);
+    const input = [1, 2, 3, 4, 5, 6, 7, 8];
+    const output = rng.shuffle(input);
+    expect(input).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+    expect([...output].sort((a, b) => a - b)).toEqual(input);
+    expect(new Mulberry32Rng(3).shuffle(input)).toEqual(output);
   });
 });

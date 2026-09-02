@@ -1,4 +1,5 @@
 import { BIOME_DEFINITIONS } from "../data/biomes";
+import { BUILDING_TEMPLATES } from "../data/building-templates";
 import { MAP_SIZE_DEFINITIONS } from "../data/map-sizes";
 import { PROP_DEFINITIONS } from "../data/props";
 import { SETTLEMENT_DEFINITIONS } from "../data/settlements";
@@ -25,5 +26,9 @@ export function createDefaultRegistries(): MapGenRegistries {
       Object.values(SETTLEMENT_DEFINITIONS),
     ),
     mapSizes: createRegistry("map size", Object.values(MAP_SIZE_DEFINITIONS)),
+    buildingTemplates: createRegistry(
+      "building template",
+      Object.values(BUILDING_TEMPLATES),
+    ),
   };
 }

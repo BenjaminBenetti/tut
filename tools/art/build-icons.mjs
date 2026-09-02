@@ -58,6 +58,16 @@ const ICONS = {
   close: '<path d="M5 5 L19 19 M19 5 L5 19"/>',
   back: '<path d="M15 4 L7 12 L15 20"/>',
   lock: '<path d="M5 11 H19 V21 H5 Z"/><path d="M8 11 V7 A4 4 0 0 1 16 7 V11"/>',
+  // Overworld map glyphs (#143). Markers point at their tile with a stem.
+  "marker-city":
+    '<path d="M12 2 L20 6.5 V15.5 L12 20 L4 15.5 V6.5 Z"/><path d="M12 20 V23"/><path d="M8 14 V10 H11 V14 M13 14 V8 H16 V14"/>',
+  "marker-hive":
+    '<path d="M12 2 L20 6.5 V15.5 L12 20 L4 15.5 V6.5 Z"/><path d="M12 20 V23"/><circle cx="12" cy="11" r="3"/><path d="M12 5 V8 M12 14 V17 M7 8 L9.5 9.5 M17 8 L14.5 9.5 M7 14 L9.5 12.5 M17 14 L14.5 12.5"/>',
+  "infestation-low": '<path d="M3 21 H21"/><path d="M5 21 V15 H9 V21"/>',
+  "infestation-mid":
+    '<path d="M3 21 H21"/><path d="M5 21 V15 H9 V21"/><path d="M10 21 V10 H14 V21"/>',
+  "infestation-high":
+    '<path d="M3 21 H21"/><path d="M5 21 V15 H9 V21"/><path d="M10 21 V10 H14 V21"/><path d="M15 21 V4 H19 V21"/>',
 };
 
 // ===========================================

@@ -1,3 +1,4 @@
+import type { Object3D } from "three";
 import {
   BoxGeometry,
   Group,
@@ -21,13 +22,19 @@ interface PaletteToken {
   readonly hex: number;
 }
 
+/** A ground tile by column and row; `(x, z)` covers `[x, x + 1) × [z, z + 1)`. */
+export interface GroundTile {
+  readonly x: number;
+  readonly z: number;
+}
+
 /** A box placed on a tile to show how tall things are at this zoom. */
 export interface ScaleReference {
   readonly id: string;
   /** Height in world units. */
   readonly height: number;
   /** Tile the box stands on. */
-  readonly tile: { readonly x: number; readonly z: number };
+  readonly tile: GroundTile;
   readonly material: PaletteToken;
 }
 
@@ -124,6 +131,17 @@ export class PlaceholderTacticalView {
   /** Ground-plane centre of the map, where the camera should look by default. */
   get centre(): Vec3 {
     return { x: this.size / 2, y: 0, z: this.size / 2 };
+  }
+
+  /**
+   * Stands an object on a tile: its pivot (base centre, per the style
+   * guide) goes to the tile's ground centre and it joins the group. The
+   * caller keeps ownership of the object's resources; `dispose` only
+   * detaches it.
+   */
+  placeOnTile(object: Object3D, tile: GroundTile): void {
+    object.position.set(tile.x + 0.5, 0, tile.z + 0.5);
+    this.root.add(object);
   }
 
   /** Releases GPU resources and empties the group. */

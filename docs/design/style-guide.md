@@ -180,7 +180,7 @@ Implementation: `src/ui/style/theme.css` exposes the §4.4 tokens as CSS custom 
 | Building module (wall, floor, roof, stairs) | ≤ 800 | ≤ 100 KB |
 | Prop (cover, street furniture) | ≤ 300 | ≤ 60 KB |
 
-Hard cap from the role brief: models < 500 KB, textures ≤ 1024², sprites ≤ 512².
+Hard cap from the role brief: models < 500 KB, textures ≤ 1024², sprites ≤ 512². One documented exception: the overworld world-map texture is 2048×1024 (a 2:1 plate carrée needs the width for coastlines at map zoom); it is the only texture allowed over 1024² and must stay under 1.5 MB.
 
 ## 7. Tile and building kit conventions
 

@@ -19,8 +19,8 @@ def edit(item, field, opt):
 
 issues = {i["number"]: i for i in json.loads(gh("issue", "list", "-R", REPO, "--state", "all", "--limit", "500", "--json", "number,title,state,labels,milestone,body,url,updatedAt,createdAt"))}
 prs = json.loads(gh("pr", "list", "-R", REPO, "--state", "all", "--limit", "200", "--json", "number,title,state,headRefName,body,createdAt,updatedAt,reviewDecision,mergedAt,isDraft"))
-branches = [b.strip().replace("origin/", "") for b in subprocess.run(["git", "branch", "-r"], capture_output=True, text=True, cwd=ROOT).stdout.splitlines() if "->" not in b]
 subprocess.run(["git", "fetch", "origin", "--prune", "-q"], cwd=ROOT)
+branches = [b.strip().replace("origin/", "") for b in subprocess.run(["git", "branch", "-r"], capture_output=True, text=True, cwd=ROOT).stdout.splitlines() if "->" not in b]
 items = json.loads(gh("project", "item-list", PNUM, "--owner", POWNER, "--format", "json", "--limit", "500"))["items"]
 by_num = {it["content"]["number"]: it for it in items if it.get("content", {}).get("number")}
 

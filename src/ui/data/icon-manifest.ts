@@ -51,6 +51,26 @@ export const ICON_MANIFEST = {
   squad: { path: "assets/ui/icons/squad.svg", label: "Infantry squad" },
   threat: { path: "assets/ui/icons/threat.svg", label: "Global threat" },
   warning: { path: "assets/ui/icons/warning.svg", label: "Warning" },
+  "marker-city": {
+    path: "assets/ui/icons/marker-city.svg",
+    label: "City marker",
+  },
+  "marker-hive": {
+    path: "assets/ui/icons/marker-hive.svg",
+    label: "Hive marker",
+  },
+  "infestation-low": {
+    path: "assets/ui/icons/infestation-low.svg",
+    label: "Infestation: low",
+  },
+  "infestation-mid": {
+    path: "assets/ui/icons/infestation-mid.svg",
+    label: "Infestation: medium",
+  },
+  "infestation-high": {
+    path: "assets/ui/icons/infestation-high.svg",
+    label: "Infestation: high",
+  },
 } as const satisfies Record<string, IconAssetEntry>;
 
 /** Union of registered icon ids. */

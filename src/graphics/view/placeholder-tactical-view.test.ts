@@ -1,5 +1,5 @@
 import type { BoxGeometry } from "three";
-import { InstancedMesh, Mesh } from "three";
+import { Group, InstancedMesh, Mesh } from "three";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -64,6 +64,14 @@ describe("PlaceholderTacticalView", () => {
       "tdf-grey-mid",
       "tdf-olive",
     ]);
+  });
+
+  it("places an object at a tile's ground centre", () => {
+    const view = new PlaceholderTacticalView();
+    const model = new Group();
+    view.placeOnTile(model, { x: 6, z: 10 });
+    expect(model.parent).toBe(view.root);
+    expect(model.position.toArray()).toEqual([6.5, 0, 10.5]);
   });
 
   it("dispose empties the group", () => {

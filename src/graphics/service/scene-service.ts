@@ -22,6 +22,8 @@ export class SceneService {
   private readonly scene: Scene;
   private readonly camera: PerspectiveCamera;
   private readonly cube: Mesh;
+  private readonly firstFrame: Promise<void>;
+  private resolveFirstFrame: (() => void) | undefined;
 
   // ===========================================
   // Constructor
@@ -54,6 +56,10 @@ export class SceneService {
     this.scene.add(this.cube);
     this.scene.add(this.createLight());
 
+    this.firstFrame = new Promise<void>((resolve) => {
+      this.resolveFirstFrame = resolve;
+    });
+
     window.addEventListener("resize", this.handleResize);
   }
 
@@ -66,6 +72,14 @@ export class SceneService {
    */
   start(): void {
     this.renderer.setAnimationLoop(this.renderFrame);
+  }
+
+  /**
+   * Resolves once the first frame has been rendered, so callers can
+   * signal readiness to the page (and to end-to-end tests).
+   */
+  whenFirstFrameRendered(): Promise<void> {
+    return this.firstFrame;
   }
 
   // ===========================================
@@ -101,6 +115,8 @@ export class SceneService {
     this.cube.rotation.x += 0.01;
     this.cube.rotation.y += 0.015;
     this.renderer.render(this.scene, this.camera);
+    this.resolveFirstFrame?.();
+    this.resolveFirstFrame = undefined;
   };
 
   /**

@@ -44,3 +44,8 @@ export interface City {
   /** Where the overworld screen draws it. */
   readonly layout: MapLayout;
 }
+
+/** Clamps a value into `[MIN_INFESTATION, MAX_INFESTATION]`. */
+export function clampInfestation(value: number): number {
+  return Math.min(MAX_INFESTATION, Math.max(MIN_INFESTATION, value));
+}

@@ -5,6 +5,7 @@ import { stepGridPos } from "../../core/service/grid-math";
 import { SurfaceIds } from "../data/surfaces";
 import type { Building, Entrance, Floor } from "../model/building";
 import type { BuildingTemplate } from "../model/building-template";
+import type { DiagnosticSink } from "../model/diagnostics";
 import type {
   DraftCapability,
   GenerationContext,
@@ -61,9 +62,14 @@ export class BuildingPass implements GenerationPass {
   // Public Methods
   // ===========================================
 
-  /** Raises one building per lot that can hold a template. */
+  /**
+   * Plans one building per lot that can hold a template, guarantees a
+   * multi-storey building wherever the settlement allows one (verticality
+   * is a pillar), then raises the shells.
+   */
   run(context: GenerationContext): void {
     const { draft, params, rng, registries, diagnostics } = context;
+    const planned: { lot: Lot; rng: Rng; plan: BuildingPlan }[] = [];
     let skipped = 0;
     for (const lot of draft.lots) {
       const lotRng = rng.fork(lot.id);
@@ -77,6 +83,10 @@ export class BuildingPass implements GenerationPass {
         });
         continue;
       }
+      planned.push({ lot, rng: lotRng, plan });
+    }
+    ensureMultiStorey(planned, params, diagnostics);
+    for (const { lot, rng: lotRng, plan } of planned) {
       draft.buildings.push(raiseShell(draft, lot, plan, lotRng));
     }
     diagnostics.note(
@@ -133,6 +143,32 @@ function planBuilding(
       ...floorRange(template.floors, params.settlement.floorCount),
     ),
   };
+}
+
+/**
+ * When the settlement allows two or more floors but every plan is
+ * single-storey, raises the first plan whose template allows it to two
+ * floors so towns and cities always offer some verticality.
+ */
+function ensureMultiStorey(
+  planned: { lot: Lot; rng: Rng; plan: BuildingPlan }[],
+  params: ResolvedMapGenParams,
+  diagnostics: DiagnosticSink,
+): void {
+  if (
+    params.settlement.floorCount.max < 2 ||
+    planned.some((p) => p.plan.floorCount >= 2)
+  ) {
+    return;
+  }
+  const candidate = planned.find((p) => p.plan.template.floors.max >= 2);
+  if (candidate === undefined) {
+    return;
+  }
+  candidate.plan = { ...candidate.plan, floorCount: 2 };
+  diagnostics.note(
+    `raised ${candidate.plan.template.id} on ${candidate.lot.id} to two floors`,
+  );
 }
 
 /**

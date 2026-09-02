@@ -24,11 +24,18 @@ branches = [b.strip().replace("origin/", "") for b in subprocess.run(["git", "br
 items = json.loads(gh("project", "item-list", PNUM, "--owner", POWNER, "--format", "json", "--limit", "500"))["items"]
 by_num = {it["content"]["number"]: it for it in items if it.get("content", {}).get("number")}
 
+PR_BY_NUM = {p["number"]: p for p in prs}
 def deps_of(i):
+    """Issue numbers named in the Dependencies section. PR numbers are dropped unless the PR is still open."""
     body = i["body"] or ""
     m = re.search(r"## Dependencies\s*(.*?)(?:\n## |\Z)", body, re.S)
-    sec = m.group(1) if m else ""
-    return sorted({int(n) for n in re.findall(r"#(\d+)", sec)})
+    sec = (m.group(1) if m else "").strip()
+    if re.match(r"(?i)^[_*\s]*none\b", sec): return []
+    out = set()
+    for n in {int(x) for x in re.findall(r"#(\d+)", sec)}:
+        if n in issues: out.add(n)
+        elif n in PR_BY_NUM and PR_BY_NUM[n]["state"] == "OPEN": out.add(n)  # open PR named as a blocker
+    return sorted(out)
 def labels(i): return {l["name"] for l in i["labels"]}
 def issue_prs(n):
     out = []

@@ -1,3 +1,4 @@
+import type { SettlementScale } from "../../content/model/settlement-scale";
 import type { City, CityId } from "../model/city";
 import { MAX_INFESTATION, MIN_INFESTATION } from "../model/city";
 import type { EarthMap } from "../model/earth-map";
@@ -9,6 +10,13 @@ import type {
 } from "../model/earth-map-spec";
 import type { MapLayout } from "../model/map-layout";
 import type { Region, RegionId } from "../model/region";
+
+// ===========================================
+// Constants
+// ===========================================
+
+/** Scale a city seed gets when it declares none: the shipped Earth is a map of major cities. */
+export const DEFAULT_CITY_SCALE: SettlementScale = "city";
 
 // ===========================================
 // Types
@@ -139,6 +147,7 @@ function buildCity(
     name: seed.name,
     regionId,
     infestation,
+    scale: seed.scale ?? DEFAULT_CITY_SCALE,
     neighbourIds: neighbours.get(seed.id) ?? [],
     layout: seed.layout,
   };

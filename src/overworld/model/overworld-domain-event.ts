@@ -1,5 +1,7 @@
 import type { Applied, DomainEvent } from "../../core/model/domain-event";
+import type { MissionTypeId } from "../../content/model/mission-type-id";
 import type { CityId } from "./city";
+import type { Mission, MissionId } from "./mission";
 
 // ===========================================
 // City infestation changed
@@ -71,16 +73,60 @@ export type ThreatChangedEvent = DomainEvent<
 >;
 
 // ===========================================
+// Mission offered
+// ===========================================
+
+/** Event type emitted when the mission tick attaches a new mission to a city. */
+export const MISSION_OFFERED = "overworld:mission-offered";
+
+/** What presentation needs to show a new offer. The whole mission, since it is new data. */
+export interface MissionOfferedPayload {
+  readonly mission: Mission;
+}
+
+/** A mission appeared on the map. */
+export type MissionOfferedEvent = DomainEvent<
+  typeof MISSION_OFFERED,
+  MissionOfferedPayload
+>;
+
+// ===========================================
+// Mission expired
+// ===========================================
+
+/** Event type emitted when an unplayed mission passes its expiry day. */
+export const MISSION_EXPIRED = "overworld:mission-expired";
+
+/** What presentation needs to animate a lapsed offer and its penalty. */
+export interface MissionExpiredPayload {
+  readonly missionId: MissionId;
+  readonly typeId: MissionTypeId;
+  readonly cityId: CityId;
+  /** Infestation added to the host city for ignoring it (before clamping). */
+  readonly ignorePenalty: number;
+}
+
+/** An unplayed mission lapsed and its host city paid the ignore penalty. */
+export type MissionExpiredEvent = DomainEvent<
+  typeof MISSION_EXPIRED,
+  MissionExpiredPayload
+>;
+
+// ===========================================
 // Union
 // ===========================================
 
 /**
  * Every domain event the overworld can emit, one line per event so the
  * list stays discoverable. Extended by each tick step and command as it
- * lands (#58, #61, #67, #68).
+ * lands (#58, #67, #68).
  */
 export type OverworldDomainEvent =
-  CityInfestationChangedEvent | DayAdvancedEvent | ThreatChangedEvent;
+  | CityInfestationChangedEvent
+  | DayAdvancedEvent
+  | ThreatChangedEvent
+  | MissionOfferedEvent
+  | MissionExpiredEvent;
 
 /**
  * The `{ state, events }` pair overworld handlers and tick steps return,

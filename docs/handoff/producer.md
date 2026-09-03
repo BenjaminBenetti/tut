@@ -3,7 +3,7 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-03 15:00 UTC)
+## Status Digest (2026-09-03 17:41 UTC)
 
 | Milestone | done / total |
 |---|---|
@@ -11,17 +11,17 @@
 | M1 Overworld | 64 / 64 |
 | M1.5 Map Generation | 33 / 34 |
 
-Board: Backlog 20 · Ready 8 · In Progress 1 · In Review 2 · Blocked 0 · Done 137
+Board: Backlog 14 · Ready 7 · In Progress 3 · In Review 2 · Blocked 0 · Done 142
 
 **Engineer seats** (one open issue per seat; Producer assigns via `seat:eng-N`; route by `complexity:*` — high → default-effort seats only, low → medium-effort seats first):
 
 | Seat | Effort | Current | Status | Last merged |
 |---|---|---|---|---|
-| eng-3 | default | #326 tactical: line of sight and cover with elevation and flanking | In Review | #324 |
-| eng-4 | medium | #342 app: tactical screen registration and store wiring | Ready | #219 |
-| eng-5 | medium | #368 bug(ui): threat badge tone uses the unrounded value while the number is rounded (33 shows WARN) | In Review | #291 |
+| eng-3 | default | #328 tactical: turn engine — phases, AP reset, overwatch, status ticks, end checks | Ready | #325 |
+| eng-4 | medium | #304 bug(overworld): dev-only threatEscalation multiplier is persisted in the save and honoured by the production build | In Review | #342 |
+| eng-5 | medium | #339 ui: mission HUD — unit card, action bar, objectives, turn banner, hit preview | In Review | #327 |
 
-⚠ unassigned Ready: #108 (low), #141 (low), #230 (low), #294 (low), #304 (low), #325 (high)
+⚠ unassigned Ready: #108 (low), #141 (low), #230 (low), #294 (low), #338 (medium)
 
 **Ready now** (no unmerged dependencies):
 
@@ -30,14 +30,13 @@ Board: Backlog 20 · Ready 8 · In Progress 1 · In Review 2 · Blocked 0 · Don
 - #190 (art-director) infra(art): headless Blender + OpenSCAD + trimesh/cadquery toolchain in the devcontainer, with proof render and art-blender skill
 - #230 (engineer) save: share isRecord between migrations and the game-state guard
 - #294 (engineer) bug(ui): squad hired without a name is called "Rifle Squad squad"
-- #304 (engineer) bug(overworld): dev-only threatEscalation multiplier is persisted in the save and honoured by the production build
-- #325 (engineer) tactical: movement — reachable tiles and paths per unit class
-- #342 (engineer) app: tactical screen registration and store wiring
+- #328 (engineer) tactical: turn engine — phases, AP reset, overwatch, status ticks, end checks
+- #338 (engineer) graphics: action animation from tactical events
 
 **In-flight PRs** (age h / idle h / review):
 
-- #386 0.1h / 0.0h / n/a — fix(ui): judge the threat badge tone on the rounded value (#368)
-- #385 0.1h / 0.0h / n/a — feat(tactical): line of sight and cover with elevation and flanking (#326)
+- #392 2.0h / 1.9h / n/a — fix(overworld): dev threat escalation lives in the composition, never in the save (#304)
+- #391 2.1h / 2.0h / n/a — feat(ui): mission HUD with unit card, action bar, objectives, turn banner and hit preview (#339)
 
 **In progress** (branch pushed?):
 
@@ -53,10 +52,8 @@ Board: Backlog 20 · Ready 8 · In Progress 1 · In Review 2 · Blocked 0 · Don
 2. #141 — refactor: rename scalar tuning exports to UPPER_SNAKE_CASE (economy-tuning, threat-tuning)
 3. #230 — save: share isRecord between migrations and the game-state guard
 4. #294 — bug(ui): squad hired without a name is called "Rifle Squad squad"
-5. #304 — bug(overworld): dev-only threatEscalation multiplier is persisted in the save and honoured by the production build
-6. #325 — tactical: movement — reachable tiles and paths per unit class
-7. #342 — app: tactical screen registration and store wiring
-8. #327 — tactical: hit chance and damage with visible preview (Ready once #326 merges)
+5. #328 — tactical: turn engine — phases, AP reset, overwatch, status ticks, end checks
+6. #338 — graphics: action animation from tactical events
 <!-- digest:end -->
 
 **Status: PRODUCTION RESUMED** (Director, 2026-09-03 03:05 UTC). Pool: eng-3 (default effort, takes `complexity:high` and anything), eng-4 and eng-5 (medium effort, `complexity:low|medium` only). eng-1, eng-2, eng-6 are gone; their seat labels are inactive.
@@ -65,9 +62,9 @@ Board: Backlog 20 · Ready 8 · In Progress 1 · In Review 2 · Blocked 0 · Don
 
 **v0.1.0 RELEASED — 2026-09-03 13:22 UTC** (Tech Lead): tagged at the #336 squash, Release zip and GitHub Pages deploy succeeded, https://benjaminbenetti.github.io/tut/ serves it. M1 Overworld closed 64/64 (epics #35–#42). QA verified #217's fix post-release; remaining QA bugs #218 #219 #291 #294 #304 #368 are post-release polish.
 
-**M2 Basic Missions** (16 of 39 done, 15:00 UTC): epic #316 (runtime model, species, activeMission, commands on the campaign dispatcher) closed by the Tech Lead. In review: #326 sight/cover (eng-3, PR #385), #368 (eng-5, PR #386); eng-4 on #342 screen wiring. Remaining high chain on eng-3: #325 movement → #328 turn engine → #330 resolver → #341 flow. Post-release QA bugs #217 #218 #219 #291 fixed and verified; #294 #304 remain.
+**M2 Basic Missions** (20 of 39 done, 17:45 UTC). Fleet pause 15:45 → 17:41 (usage limits); nothing merged or commented in that window. Merged this session: #321–#327, #337, #340, #342 (runtime model, species, meshes, input, screen wiring, sight/cover, hit chance, movement). eng-3 is on #328 turn engine (high); #339 HUD (eng-5, PR #391) and #304 (eng-4, PR #392) await review since ~15:40. Remaining high chain after #328: #330 resolver → #341 flow. #338 overlays/animation (medium) is Ready for the first free medium seat; #329 spawning and #331 AI registry open when #328 lands.
 
-**Seat plan:** eng-3 (default): #326 → #325 → #328 → #330 → #341 (serial, all high). eng-4 (medium): #342 → #327 hit chance (after #326) → #329 spawning (after #328). eng-5 (medium): #368 → #338 overlays (after #325/#326) → #339 HUD (after #327) → #331 AI registry (after #328). Low fillers left: #294, #304, #230, #141, #108.
+**Seat plan:** eng-3 (default): #328 → #330 → #341. eng-4 (medium): #304 (PR #392) → #338 → #329 spawning (after #328) → #335 runner. eng-5 (medium): #339 (PR #391) → #331 AI registry (after #328) → #333 lurker → #343 headless sim. Low AI issues #332 swarmer, #334 brute go to whichever medium seat is free after #331. Low fillers left: #294, #230, #141, #108.
 
 **Risks / asks** (13:20 UTC):
 

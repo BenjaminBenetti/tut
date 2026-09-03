@@ -56,6 +56,7 @@ export class SquadListView {
   private hireButton: HTMLButtonElement | undefined;
   private credits = 0;
   private readonly disposers: (() => void)[] = [];
+  private squads: readonly Squad[] = [];
 
   // ===========================================
   // Constructor
@@ -112,6 +113,7 @@ export class SquadListView {
 
   /** Rebuilds the rows and re-prices the hire form from `model`. */
   update(model: SquadListModel): void {
+    this.squads = model.roster.squads;
     if (!this.rows) {
       return;
     }
@@ -250,7 +252,7 @@ export class SquadListView {
       const chosen = this.nameInput.value.trim();
       this.handlers.onHire(
         type.id,
-        chosen === "" ? nextSquadName(type) : chosen,
+        chosen === "" ? nextSquadName(type, this.squads) : chosen,
       );
       this.nameInput.value = "";
       this.refreshHireForm();
@@ -305,7 +307,13 @@ export class SquadListView {
 // Naming
 // ===========================================
 
-/** A default name for a hired squad when the player leaves the field blank. */
-function nextSquadName(type: SquadType): string {
-  return `${type.name} squad`;
+/**
+ * A default name for a hired squad when the player leaves the field
+ * blank: the type name numbered per type across the roster (#294), so
+ * the third rifle squad hired is "Rifle Squad 3" and never
+ * "Rifle Squad squad".
+ */
+function nextSquadName(type: SquadType, squads: readonly Squad[]): string {
+  const ofType = squads.filter((squad) => squad.typeId === type.id).length;
+  return `${type.name} ${String(ofType + 1)}`;
 }

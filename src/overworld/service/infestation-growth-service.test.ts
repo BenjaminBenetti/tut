@@ -12,7 +12,11 @@ import { applyGrowth, growthDelta } from "./infestation-growth-service";
 // ===========================================
 
 /** Base growth 4, doubling at maximum threat. */
-const TUNING: InfestationTuning = { baseGrowthRate: 4, threatFactor: 1 };
+const TUNING: InfestationTuning = {
+  ...INFESTATION_TUNING,
+  baseGrowthRate: 4,
+  threatFactor: 1,
+};
 
 /**
  * Four cities: one dormant, one fresh, one near the cap, one overrun.
@@ -86,7 +90,7 @@ describe("growthDelta", () => {
   });
 
   it("ignores threat when the threat factor is zero", () => {
-    const flat: InfestationTuning = { baseGrowthRate: 4, threatFactor: 0 };
+    const flat: InfestationTuning = { ...TUNING, threatFactor: 0 };
     expect(growthDelta(100, 0, flat)).toBe(4);
   });
 
@@ -169,7 +173,11 @@ describe("applyGrowth", () => {
   });
 
   it("rounds fractional growth to keep infestation an integer", () => {
-    const half: InfestationTuning = { baseGrowthRate: 2.5, threatFactor: 0 };
+    const half: InfestationTuning = {
+      ...TUNING,
+      baseGrowthRate: 2.5,
+      threatFactor: 0,
+    };
     const { state } = applyGrowth(fixture(), 0, {}, half);
     expect(levels(state).fresh).toBe(13);
     for (const city of state.cities) {

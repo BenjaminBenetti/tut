@@ -4,6 +4,7 @@ import type { EventTypeId } from "./event-type";
 import type { Mission } from "./mission";
 import type { MissionResult } from "./mission-result";
 import type { RegionId } from "./region";
+import type { SpreadCooldowns } from "./spread-cooldown";
 
 // ===========================================
 // Time
@@ -53,6 +54,7 @@ export type GameOutcome = "victory" | "defeat";
  *   ├── day                 FIRST_DAY and counting
  *   ├── map                 regions, cities, infestation levels
  *   ├── threat              0–100, derived by computeThreat, stored by the tick
+ *   ├── spreadCooldowns     days until each city may spread again
  *   ├── missions[]          offers attached to cities
  *   ├── pendingEvents[]     choices awaiting the player
  *   ├── deployables[]       regional installations
@@ -72,6 +74,11 @@ export interface OverworldState {
    * presentation never recomputes it.
    */
   readonly threat: number;
+  /**
+   * Days until each city may spread again, keyed by city id. Cities not
+   * listed are off cooldown. Advanced by the spread service.
+   */
+  readonly spreadCooldowns: SpreadCooldowns;
   /** Missions currently on offer. */
   readonly missions: readonly Mission[];
   /** Events waiting for the player's choice. */

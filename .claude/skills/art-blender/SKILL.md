@@ -71,7 +71,9 @@ Hard cap for anything: 500 KB (the validator's default).
 
 ## CadQuery and OpenSCAD
 
-For parts that are easier as CSG: build with `art-python` (CadQuery) or `openscad -o part.stl part.scad`, then in the model script `bpy.ops.wm.stl_import(filepath=...)` and assign materials with `bpy_kit.material`. Keep the source next to the model script.
+For parts that are easier as CSG: build with `art-python` (CadQuery) or `openscad -o part.stl part.scad`, then in the model script `bpy.ops.wm.stl_import(filepath=...)`, rotate CadQuery's +Z onto Blender −Y (`rotation_euler = (π/2, 0, 0)`), assign materials with `bpy_kit.material` and set faces flat. Keep the source next to the model script. Tessellation is where the budget goes: export with coarse tolerances (`cq.exporters.export(part, path, tolerance=0.02, angularTolerance=0.6)`) or draw `polygon(8, d)` instead of `circle(r)`; a default-tessellated barrel cost 740 triangles against a 300 budget. Verified route: CadQuery barrel → STL → Blender → GLB, watertight.
+
+Sub-parts (arms, weapons, back modules) pivot at their socket, so their geometry hangs below the origin; run `make_model.py` with `--footprint 0x0` and the validator skips the base-on-ground check (`validate_glb.py --allow-below-ground`).
 
 ## Gotchas
 

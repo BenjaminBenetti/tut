@@ -264,12 +264,12 @@ describe("RosterScreen", () => {
     expect(status().hidden).toBe(true);
   });
 
-  it("names a hired squad after its type when the field is blank", () => {
+  it("names a hired squad after its type, numbered per type, when the field is blank", () => {
     mountWith(newGame(), root);
     q<HTMLButtonElement>('[data-action="hire"]').click();
     expect(
       squadRows().at(-1)?.querySelector('[data-field="name"]')?.textContent,
-    ).toBe("Rifle Squad squad");
+    ).toBe("Rifle Squad 3");
   });
 
   it("reinforces a depleted squad to full for the shown price", () => {

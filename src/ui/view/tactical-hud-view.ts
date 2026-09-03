@@ -1,0 +1,375 @@
+import type { Result } from "../../core/model/result";
+import { attack } from "../../tactical/model/attack-command";
+import type { AttackPreview } from "../../tactical/model/attack-preview";
+import type { CombatTuning } from "../../tactical/model/combat-tuning";
+import { endTurn } from "../../tactical/model/end-turn-command";
+import { move } from "../../tactical/model/move-command";
+import { overwatch } from "../../tactical/model/overwatch-command";
+import { reload } from "../../tactical/model/reload-command";
+import type { TacticalCommand } from "../../tactical/model/tactical-command";
+import type { TacticalError } from "../../tactical/model/tactical-error";
+import type { TacticalState } from "../../tactical/model/tactical-state";
+import type { Team, Unit, UnitId } from "../../tactical/model/unit";
+import { previewAttack } from "../../tactical/service/combat-service";
+import type { TacticalIntent } from "../model/tactical-intent";
+import type { ActionBarAction } from "./action-bar-view";
+import { ActionBarView } from "./action-bar-view";
+import { HitPreviewView } from "./hit-preview-view";
+import { ObjectiveTrackerView } from "./objective-tracker-view";
+import { TurnBannerView } from "./turn-banner-view";
+import { UnitCardView } from "./unit-card-view";
+
+// ===========================================
+// Types
+// ===========================================
+
+/** Which action is armed on the selected unit. */
+export type HudMode = "select" | "move" | "attack";
+
+/** What the HUD reports back to its owner. */
+export interface TacticalHudHandlers {
+  /** A command the player asked for; the owner dispatches it and reports refusals through `showStatus`. */
+  readonly onCommand: (command: TacticalCommand) => void;
+  /** The player asked to leave the mission screen. */
+  readonly onBack: () => void;
+}
+
+/** What the HUD needs injected. */
+export interface TacticalHudDeps {
+  /** Tuning handed to `previewAttack`; the HUD never computes a number itself. */
+  readonly combatTuning: CombatTuning;
+}
+
+/** Which team acts in which phase. */
+const TEAM_FOR_PHASE: Readonly<Record<TacticalState["phase"], Team>> = {
+  player: "tdf",
+  bugs: "bugs",
+};
+
+// ===========================================
+// TacticalHudView
+// ===========================================
+
+/**
+ * The mission HUD (GDD §6.2) composed from its parts, plus the small
+ * amount of presentation state the parts share: which unit is selected,
+ * which action is armed, and which enemy is being previewed. Every
+ * number on screen comes from the mission state or `previewAttack`.
+ *
+ * ```
+ *   intent select-unit ──▶ attack mode + enemy? ──▶ preview target
+ *                      └─▶ else select it (card follows)
+ *   intent select-tile ──▶ move mode ──▶ onCommand(move(selected, [tile]))
+ *   intent action      ──▶ move / attack arm the mode; overwatch / reload
+ *                          ──▶ onCommand; cancel clears; next-unit cycles
+ *   intent end-turn    ──▶ onCommand(endTurn())
+ *   Fire               ──▶ onCommand(attack(selected, target))
+ * ```
+ */
+export class TacticalHudView {
+  // ===========================================
+  // Fields
+  // ===========================================
+
+  private readonly handlers: TacticalHudHandlers;
+  private readonly deps: TacticalHudDeps;
+  private readonly banner: TurnBannerView;
+  private readonly card = new UnitCardView();
+  private readonly preview: HitPreviewView;
+  private readonly objectives = new ObjectiveTrackerView();
+  private readonly actions: ActionBarView;
+  private root: HTMLElement | undefined;
+  private mission: TacticalState | undefined;
+  private selected: UnitId | undefined;
+  private target: UnitId | undefined;
+  private mode: HudMode = "select";
+
+  // ===========================================
+  // Constructor
+  // ===========================================
+
+  /** @param handlers - Where commands and navigation go. */
+  constructor(handlers: TacticalHudHandlers, deps: TacticalHudDeps) {
+    this.handlers = handlers;
+    this.deps = deps;
+    this.banner = new TurnBannerView({ onBack: () => handlers.onBack() });
+    this.preview = new HitPreviewView({
+      onConfirm: () => {
+        this.confirmAttack();
+      },
+    });
+    this.actions = new ActionBarView({
+      onAction: (action) => {
+        this.handleAction(action);
+      },
+    });
+  }
+
+  // ===========================================
+  // Lifecycle
+  // ===========================================
+
+  /** Builds the HUD under `parent`: banner on top, side column, action bar below. */
+  mount(parent: HTMLElement): void {
+    const doc = parent.ownerDocument;
+    const hud = doc.createElement("div");
+    hud.id = "mission-hud";
+    hud.className = "tut-hud";
+    const top = doc.createElement("div");
+    top.className = "tut-hud__top";
+    const side = doc.createElement("aside");
+    side.className = "tut-hud__side tut-stack";
+    const bottom = doc.createElement("div");
+    bottom.className = "tut-hud__bottom";
+    this.banner.mount(top);
+    this.card.mount(side);
+    this.preview.mount(side);
+    this.objectives.mount(side);
+    this.actions.mount(bottom);
+    hud.append(top, side, bottom);
+    parent.appendChild(hud);
+    this.root = hud;
+    this.refresh();
+  }
+
+  /** Renders `mission`, dropping a selection or target that is gone or dead. */
+  update(mission: TacticalState | undefined): void {
+    this.mission = mission;
+    const alive = (id: UnitId | undefined): boolean =>
+      id !== undefined &&
+      (mission?.units.some((u) => u.id === id && u.hp > 0) ?? false);
+    if (!alive(this.selected)) {
+      this.selected = undefined;
+      this.mode = "select";
+    }
+    if (!alive(this.target)) {
+      this.target = undefined;
+    }
+    this.refresh();
+  }
+
+  /** Shows a one-line message in the banner (a rejected command, for instance). */
+  showStatus(message: string): void {
+    this.banner.showStatus(message);
+  }
+
+  /** Removes the HUD. */
+  unmount(): void {
+    this.actions.unmount();
+    this.objectives.unmount();
+    this.preview.unmount();
+    this.card.unmount();
+    this.banner.unmount();
+    this.root?.remove();
+    this.root = undefined;
+  }
+
+  // ===========================================
+  // State
+  // ===========================================
+
+  /** The selected unit, if any; the scene highlights it. */
+  getSelectedUnitId(): UnitId | undefined {
+    return this.selected;
+  }
+
+  /** The armed action. */
+  getMode(): HudMode {
+    return this.mode;
+  }
+
+  /** The enemy being previewed, if any. */
+  getTargetUnitId(): UnitId | undefined {
+    return this.target;
+  }
+
+  // ===========================================
+  // Intents
+  // ===========================================
+
+  /** Applies an intent from the input controller or the keyboard. */
+  handleIntent(intent: TacticalIntent): void {
+    switch (intent.kind) {
+      case "select-unit":
+        this.selectUnit(intent.unitId);
+        return;
+      case "select-tile":
+        if (this.mode === "move" && this.selected !== undefined) {
+          this.handlers.onCommand(move(this.selected, [intent.tile]));
+          this.mode = "select";
+          this.refresh();
+        }
+        return;
+      case "action":
+        this.handleAction(intent.action);
+        return;
+      case "end-turn":
+        this.handlers.onCommand(endTurn());
+        return;
+    }
+  }
+
+  // ===========================================
+  // Private Methods
+  // ===========================================
+
+  /** In attack mode an enemy becomes the preview target; otherwise the unit is selected. */
+  private selectUnit(unitId: UnitId): void {
+    const unit = this.unit(unitId);
+    if (!unit) {
+      return;
+    }
+    const selected = this.unit(this.selected);
+    if (this.mode === "attack" && selected && unit.team !== selected.team) {
+      this.target = unitId;
+      this.refresh();
+      return;
+    }
+    this.selected = unitId;
+    this.target = undefined;
+    this.mode = "select";
+    this.refresh();
+  }
+
+  /** Arms, cancels, cycles or dispatches per the action. */
+  private handleAction(action: ActionBarAction | "next-unit" | "cancel"): void {
+    switch (action) {
+      case "move":
+      case "attack":
+        if (this.canAct()) {
+          this.mode = this.mode === action ? "select" : action;
+          this.target = undefined;
+        }
+        break;
+      case "overwatch":
+        if (this.canAct() && this.selected !== undefined) {
+          this.handlers.onCommand(overwatch(this.selected));
+        }
+        break;
+      case "reload":
+        if (this.canAct() && this.selected !== undefined) {
+          this.handlers.onCommand(reload(this.selected));
+        }
+        break;
+      case "end-turn":
+        this.handlers.onCommand(endTurn());
+        break;
+      case "cancel":
+        this.mode = "select";
+        this.target = undefined;
+        break;
+      case "next-unit":
+        this.selectNextActor();
+        break;
+    }
+    this.refresh();
+  }
+
+  /** Dispatches the previewed attack and clears the preview. */
+  private confirmAttack(): void {
+    if (this.selected === undefined || this.target === undefined) {
+      return;
+    }
+    this.handlers.onCommand(attack(this.selected, this.target));
+    this.target = undefined;
+    this.mode = "select";
+    this.refresh();
+  }
+
+  /** Selects the next friendly unit with action points after the current selection, wrapping. */
+  private selectNextActor(): void {
+    const mission = this.mission;
+    if (!mission) {
+      return;
+    }
+    const team = TEAM_FOR_PHASE[mission.phase];
+    const actors = mission.units.filter(
+      (u) => u.team === team && u.hp > 0 && u.ap > 0,
+    );
+    if (actors.length === 0) {
+      return;
+    }
+    const at = actors.findIndex((u) => u.id === this.selected);
+    const next = actors[(at + 1) % actors.length];
+    if (next) {
+      this.selected = next.id;
+      this.target = undefined;
+      this.mode = "select";
+    }
+  }
+
+  /** True when the selected unit is on the acting side, alive, with action points. */
+  private canAct(): boolean {
+    const mission = this.mission;
+    const unit = this.unit(this.selected);
+    return (
+      mission !== undefined &&
+      unit !== undefined &&
+      unit.hp > 0 &&
+      unit.ap > 0 &&
+      unit.team === TEAM_FOR_PHASE[mission.phase]
+    );
+  }
+
+  /** A unit of the current mission by id. */
+  private unit(id: UnitId | undefined): Unit | undefined {
+    return id === undefined
+      ? undefined
+      : this.mission?.units.find((u) => u.id === id);
+  }
+
+  /** The preview for the selected unit against the target, from the combat service. */
+  private currentPreview(): Result<AttackPreview, TacticalError> | undefined {
+    if (
+      !this.mission ||
+      this.selected === undefined ||
+      this.target === undefined
+    ) {
+      return undefined;
+    }
+    return previewAttack(
+      this.mission,
+      this.selected,
+      this.target,
+      this.deps.combatTuning,
+    );
+  }
+
+  /** Pushes the mission and the presentation state into every part. */
+  private refresh(): void {
+    const mission = this.mission;
+    if (!mission) {
+      this.card.update(undefined, undefined);
+      this.preview.update(undefined);
+      this.objectives.update([], []);
+      this.actions.update({
+        canAct: false,
+        playerPhase: false,
+        mode: undefined,
+      });
+      return;
+    }
+    this.banner.update(mission.turn, mission.phase);
+    const selected = this.unit(this.selected);
+    this.card.update(
+      selected,
+      selected ? mission.templates[selected.templateId] : undefined,
+    );
+    const target = this.unit(this.target);
+    const preview = this.currentPreview();
+    this.preview.update(
+      target && preview
+        ? {
+            targetName: mission.templates[target.templateId]?.name ?? target.id,
+            preview,
+          }
+        : undefined,
+    );
+    this.objectives.update(mission.objectives, mission.spawners);
+    this.actions.update({
+      canAct: this.canAct(),
+      playerPhase: mission.phase === "player",
+      mode: this.mode === "select" ? undefined : this.mode,
+    });
+  }
+}

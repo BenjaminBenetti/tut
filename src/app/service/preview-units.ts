@@ -1,6 +1,7 @@
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
+import { HookKinds } from "../../mapgen/model/hook";
 import { MECH_RATING_TUNING } from "../../roster/data/mech-rating-tuning";
 import { STARTER_PARTS } from "../../roster/data/parts";
 import { SQUAD_TYPES } from "../../roster/data/squad-types";
@@ -13,6 +14,17 @@ import { createMech } from "../../roster/service/mech-factory";
 import { UNIT_TUNING } from "../../tactical/data/unit-tuning";
 import type { BugUnitSource } from "../../tactical/model/bug-unit-source";
 import type { Unit } from "../../tactical/model/unit";
+import type {
+  Objective,
+  Spawner,
+  TacticalState,
+} from "../../tactical/model/tactical-state";
+import {
+  FIRST_EDGE_SPAWN_TURN,
+  FIRST_TURN,
+  SPAWNER_HP,
+  DEFAULT_HATCH_RADIUS,
+} from "../../tactical/model/tactical-state";
 import type { UnitTemplate } from "../../tactical/model/unit-template";
 import type { UnitBuild } from "../../tactical/service/unit-factory";
 import {
@@ -106,4 +118,49 @@ export function previewUnits(map: TacticalMap): PreviewUnits {
     templates[build.template.id] = build.template;
   }
   return { units: builds.map((b) => b.unit), templates };
+}
+
+// ===========================================
+// Mission
+// ===========================================
+
+/**
+ * A synthetic mission around `previewUnits` for the preview page's HUD
+ * (#339): player phase, turn one, one destroy-spawner objective per
+ * egg-spawner hook. Not game code: `startTacticalMission` builds real
+ * missions.
+ */
+export function previewMission(map: TacticalMap): TacticalState {
+  const { units, templates } = previewUnits(map);
+  const spawners: Spawner[] = map.hooks.objectives
+    .filter((hook) => hook.kind === HookKinds.EGG_SPAWNER)
+    .flatMap((hook) => hook.tiles)
+    .map((pos, i) => ({
+      id: `spawner-${String(i + 1)}`,
+      pos,
+      hatchRadius: DEFAULT_HATCH_RADIUS,
+      hp: SPAWNER_HP,
+      destroyed: false,
+    }));
+  const objectives: Objective[] = spawners.map((spawner, i) => ({
+    id: `objective-${String(i + 1)}`,
+    kind: "destroy-spawner",
+    targetId: spawner.id,
+    complete: false,
+  }));
+  return {
+    missionId: "preview",
+    seed: 1,
+    map,
+    units,
+    templates,
+    turn: FIRST_TURN,
+    phase: "player",
+    objectives,
+    spawners,
+    edgeSpawn: { nextTurn: FIRST_EDGE_SPAWN_TURN, wave: 0 },
+    extraction: map.hooks.extraction.tiles,
+    extracted: [],
+    log: [],
+  };
 }

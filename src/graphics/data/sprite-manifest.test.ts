@@ -29,12 +29,21 @@ describe("SPRITE_MANIFEST", () => {
     }
   });
 
-  it("keeps every sprite square, at its declared size, with alpha, under 150 KB", () => {
+  it("keeps every sprite at its declared size (sheets: columns × rows × frame), with alpha, under 150 KB", () => {
     for (const entry of Object.values(SPRITE_MANIFEST)) {
       const bytes = readFileSync(`${publicDir}${entry.path}`);
       const header = pngHeader(bytes);
-      expect(header.width, entry.path).toBe(entry.size);
-      expect(header.height, entry.path).toBe(entry.size);
+      const sheet = "sheet" in entry ? entry.sheet : undefined;
+      const width = sheet ? sheet.columns * sheet.frame : entry.size;
+      const height = sheet ? sheet.rows * sheet.frame : entry.size;
+      expect(header.width, entry.path).toBe(width);
+      expect(header.height, entry.path).toBe(height);
+      if (sheet) {
+        expect(sheet.frames, entry.path).toBeLessThanOrEqual(
+          sheet.columns * sheet.rows,
+        );
+        expect(entry.size, entry.path).toBe(width);
+      }
       expect(header.hasAlpha, entry.path).toBe(true);
       expect(bytes.length, entry.path).toBeLessThan(150 * 1024);
     }

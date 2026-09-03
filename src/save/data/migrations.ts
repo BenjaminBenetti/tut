@@ -133,17 +133,38 @@ const RESERVE_ACTIVE_MISSION: Migration = {
 };
 
 /**
- * v6 → v7 (#328): a mission in progress gains `extracted`, the units that
+ * v6 → v7 (#304): `meta.debug` is gone. The dev-only threat escalation
+ * switch used to ride in the save, so a dev-made save carried it into
+ * production; it now lives in the composition. Any stored value is
+ * dropped so an old save plays at the shipped pace.
+ */
+const DROP_META_DEBUG: Migration = {
+  from: 6,
+  to: 7,
+  apply(state) {
+    if (!isRecord(state) || !isRecord(state.meta)) {
+      throw new Error("v6 state has no meta");
+    }
+    if (!("debug" in state.meta)) {
+      return state;
+    }
+    const { debug: _dropped, ...meta } = state.meta;
+    return { ...state, meta };
+  },
+};
+
+/**
+ * v7 → v8 (#328): a mission in progress gains `extracted`, the units that
  * left through the extraction zone. Nothing could extract before the turn
  * engine, so an existing mission starts with none; a save without a
  * mission is untouched.
  */
 const ADD_MISSION_EXTRACTED: Migration = {
-  from: 6,
-  to: 7,
+  from: 7,
+  to: 8,
   apply(state) {
     if (!isRecord(state) || !isRecord(state.overworld)) {
-      throw new Error("v6 state has no overworld slice");
+      throw new Error("v7 state has no overworld slice");
     }
     const mission = state.activeMission;
     if (!isRecord(mission) || Array.isArray(mission.extracted)) {
@@ -168,5 +189,6 @@ export const GAME_STATE_MIGRATIONS: readonly Migration[] = [
   ADD_GRAVEYARD,
   ADD_THREAT_OFFSET,
   RESERVE_ACTIVE_MISSION,
+  DROP_META_DEBUG,
   ADD_MISSION_EXTRACTED,
 ];

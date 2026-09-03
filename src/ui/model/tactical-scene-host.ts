@@ -1,4 +1,6 @@
+import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { TacticalState } from "../../tactical/model/tactical-state";
+import type { UnitId } from "../../tactical/model/unit";
 import type { TacticalIntentSink } from "./tactical-intent";
 
 // ===========================================
@@ -13,7 +15,8 @@ import type { TacticalIntentSink } from "./tactical-intent";
  *
  * ```
  *   screen.mount ──► host.attach(viewport, mission, intents)   builds scene + input
- *   store change ──► host.update(mission)                       moves units
+ *   store change ──► host.update(mission, events)               animates, then moves units
+ *   selection    ──► host.select(unitId)                        range / cover / LOS overlays
  *   screen.unmount ► host.release()                             disposes everything
  * ```
  */
@@ -28,8 +31,17 @@ export interface TacticalSceneHost {
     intents: TacticalIntentSink,
   ): Promise<void>;
 
-  /** Brings the units in step with a newer mission state. Resolves when placed. */
-  update(mission: TacticalState): Promise<void>;
+  /**
+   * Plays `events` in order, then brings the units in step with the
+   * newer mission state. Resolves when the units are placed.
+   */
+  update(
+    mission: TacticalState,
+    events?: readonly TacticalEvent[],
+  ): Promise<void>;
+
+  /** Shows the overlays for a selected unit, or clears them. */
+  select(unitId: UnitId | undefined): void;
 
   /** Tears the scene down. Safe to call when not attached. */
   release(): void;

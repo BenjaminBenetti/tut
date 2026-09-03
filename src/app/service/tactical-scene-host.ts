@@ -2,14 +2,24 @@ import { Group } from "three";
 
 import { CameraInputController } from "../../graphics/controller/camera-input-controller";
 import { MODEL_MANIFEST } from "../../graphics/data/model-manifest";
+import { SPRITE_MANIFEST } from "../../graphics/data/sprite-manifest";
 import { CAMERA_ZOOM } from "../../graphics/model/camera-state";
 import type { ModelLoader } from "../../graphics/model/model-loader";
+import type { SpriteSource } from "../../graphics/model/sprite-source";
 import { GltfModelLoader } from "../../graphics/service/gltf-model-loader";
+import { ManifestSpriteLoader } from "../../graphics/service/manifest-sprite-loader";
 import { IsometricCameraRig } from "../../graphics/service/isometric-camera-rig";
 import { PlaceholderModelFactory } from "../../graphics/service/placeholder-model-factory";
 import { SceneService } from "../../graphics/service/scene-service";
+import { TacticalAnimationQueue } from "../../graphics/service/tactical-animation-queue";
+import {
+  TacticalOverlays,
+  overlaysFor,
+} from "../../graphics/service/tactical-overlays";
 import { TacticalSceneBuilder } from "../../graphics/service/tactical-scene-builder";
+import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { TacticalState } from "../../tactical/model/tactical-state";
+import type { UnitId } from "../../tactical/model/unit";
 import { TacticalInputController } from "../../ui/controller/tactical-input-controller";
 import type {
   TacticalIntentSink,
@@ -27,8 +37,12 @@ export interface DomTacticalSceneHostDeps {
   readonly models?: ModelLoader;
   /** Receives the input controller's test hooks whenever a scene is attached; dev builds put them on `window`. */
   readonly onHooks?: (hooks: TacticalTestHooks | undefined) => void;
-  /** Public base URL for the manifest loader when `models` is not given. */
+  /** Public base URL for the manifest loaders when `models` / `sprites` are not given. */
   readonly baseUrl?: string;
+  /** Loads VFX sprites; the app passes the manifest loader, tests a stub. */
+  readonly sprites?: SpriteSource;
+  /** Collapses every animation to its end state at once; the tactical specs turn it on. */
+  readonly instantAnimations?: boolean;
 }
 
 /** Everything one attached scene owns, released together. */
@@ -36,6 +50,10 @@ interface AttachedScene {
   readonly builder: TacticalSceneBuilder;
   readonly input: TacticalInputController;
   readonly scene: SceneService;
+  readonly overlays: TacticalOverlays;
+  readonly animations: TacticalAnimationQueue;
+  mission: TacticalState;
+  selected: UnitId | undefined;
 }
 
 // ===========================================
@@ -55,8 +73,11 @@ interface AttachedScene {
  *     ├─ builder = TacticalSceneBuilder({ map, models })
  *     ├─ rig.setBounds(map) · rig.lookAt(centre)
  *     ├─ input = TacticalInputController({ picker: builder, camera: rig, cameraInput, intents })
- *     ├─ scene = SceneService(container, { camera: rig, content, updatables: [input] })
+ *     ├─ overlays = TacticalOverlays()  ·  animations = TacticalAnimationQueue({ scene: builder, sprites })
+ *     ├─ scene = SceneService(container, { camera: rig, content, updatables: [input, animations] })
  *     └─ builder.update(units, templates) ──► body[data-tactical-units]
+ *   update(mission, events) ──► animations.enqueue(events, () => builder.update(...)) (#338)
+ *   select(unitId)          ──► overlays.show(overlaysFor(mission, unitId))
  * ```
  */
 export class DomTacticalSceneHost implements TacticalSceneHost {
@@ -66,6 +87,7 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
 
   private readonly deps: DomTacticalSceneHostDeps;
   private readonly models: ModelLoader;
+  private readonly sprites: SpriteSource;
   private attached: AttachedScene | undefined;
 
   // ===========================================
@@ -81,6 +103,13 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
         manifest: MODEL_MANIFEST,
         baseUrl: deps.baseUrl ?? "/",
         fallback: new PlaceholderModelFactory(),
+        logger: console,
+      });
+    this.sprites =
+      deps.sprites ??
+      new ManifestSpriteLoader({
+        manifest: SPRITE_MANIFEST,
+        baseUrl: deps.baseUrl ?? "/",
         logger: console,
       });
   }
@@ -100,8 +129,14 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
       map: mission.map,
       models: this.models,
     });
+    const overlays = new TacticalOverlays();
+    const animations = new TacticalAnimationQueue({
+      scene: builder,
+      sprites: this.sprites,
+      instant: this.deps.instantAnimations ?? false,
+    });
     const content = new Group();
-    content.add(builder.root);
+    content.add(builder.root, overlays.root, animations.root);
     const rig = new IsometricCameraRig({ zoom: CAMERA_ZOOM.min });
     rig.setBounds({ x: 0, z: 0, w: mission.map.width, d: mission.map.depth });
     rig.lookAt(builder.centre);
@@ -114,19 +149,48 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
     const scene = new SceneService(container, {
       camera: rig,
       content,
-      updatables: [input],
+      updatables: [input, animations],
     });
     input.attach(container);
     this.deps.onHooks?.(input.hooks());
-    this.attached = { builder, input, scene };
+    this.attached = {
+      builder,
+      input,
+      scene,
+      overlays,
+      animations,
+      mission,
+      selected: undefined,
+    };
     scene.start();
     await this.placeUnits(mission);
   }
 
-  /** Moves the units to match `mission`. */
-  async update(mission: TacticalState): Promise<void> {
+  /** Plays `events`, then moves the units to match `mission` and refreshes the overlays. */
+  update(
+    mission: TacticalState,
+    events: readonly TacticalEvent[] = [],
+  ): Promise<void> {
+    const attached = this.attached;
+    if (!attached) {
+      return Promise.resolve();
+    }
+    attached.mission = mission;
+    return new Promise((resolve) => {
+      attached.animations.enqueue(events, () => {
+        void this.placeUnits(mission).then(() => {
+          this.refreshOverlays();
+          resolve();
+        });
+      });
+    });
+  }
+
+  /** Shows range, cover and line-of-sight overlays for `unitId`, or clears them. */
+  select(unitId: UnitId | undefined): void {
     if (this.attached) {
-      await this.placeUnits(mission);
+      this.attached.selected = unitId;
+      this.refreshOverlays();
     }
   }
 
@@ -139,6 +203,8 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
     this.attached = undefined;
     attached.input.detach();
     attached.scene.dispose();
+    attached.animations.dispose();
+    attached.overlays.dispose();
     attached.builder.dispose();
     this.deps.onHooks?.(undefined);
     delete document.body.dataset.tacticalUnits;
@@ -147,6 +213,16 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
   // ===========================================
   // Private Methods
   // ===========================================
+
+  /** Recomputes the overlays for the current selection against the current mission. */
+  private refreshOverlays(): void {
+    const attached = this.attached;
+    if (!attached) {
+      return;
+    }
+    attached.overlays.show(overlaysFor(attached.mission, attached.selected));
+    document.body.dataset.tacticalSelected = attached.selected ?? "";
+  }
 
   /** Places the mission's units and records the count on the body for tests. */
   private async placeUnits(mission: TacticalState): Promise<void> {

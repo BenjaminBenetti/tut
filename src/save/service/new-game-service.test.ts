@@ -106,18 +106,23 @@ describe("createNewGame", () => {
     expect(economy.ledger).toEqual([]);
   });
 
-  it("carries debug options into meta only when given", () => {
+  it("never writes dev switches into meta; escalation comes from the threat tuning it is given", () => {
     expect("debug" in newGame(42).meta).toBe(false);
     const fast = createNewGame(
+      { seed: 42, createdAt: CREATED_AT },
       {
-        seed: 42,
-        createdAt: CREATED_AT,
-        debug: { threatEscalationMultiplier: 100 },
+        ...DEPS,
+        threatTuning: {
+          ...THREAT_TUNING,
+          escalationPerDay: THREAT_TUNING.escalationPerDay * 100,
+          escalationCap: THREAT_TUNING.escalationCap * 100,
+        },
       },
-      DEPS,
     );
-    expect(fast.meta.debug).toEqual({ threatEscalationMultiplier: 100 });
-    expect(JSON.parse(JSON.stringify(fast))).toEqual(fast);
+    expect("debug" in fast.meta).toBe(false);
+    expect(fast.overworld.threat).toBeGreaterThanOrEqual(
+      newGame(42).overworld.threat,
+    );
   });
 
   it("writes the advanced id counters and the untouched master RNG back into meta", () => {

@@ -1,6 +1,6 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-03 (session 1, twelfth update)
+Last updated: 2026-09-03 (session 1, thirteenth update)
 
 ## 1. What I was doing and where it stands
 
@@ -21,6 +21,8 @@ Last updated: 2026-09-03 (session 1, twelfth update)
 | **Replace placeholders with Blender models** (Director go on 2026-09-03) | #274 | **Merged**: pipeline #277, batch A Mech A set #280, batch B all mech variants #283. batch C bugs + spawner #287, batch D five squads #288 **merged** too. Every roster unit (30 ids) is a Blender model; `build-placeholders.mjs` keeps tiles, buildings and props. Batch E waits for tactical demand. |
 | Kit follow-ups from dry runs (`bevel`, sub-part validation, CadQuery/OpenSCAD notes) | #190 | **Merged** (PR #264). |
 | Demand-driven props (batch E): `prop.table` for mapgen's interior table kind | #213 | **Merged** (PR #350). Pattern: one model script, `make_model.py --quality final`, id + manifest entry, style guide §7 row. |
+| **Tactical tile textures** (Director ask for M2): env atlas for 16 environment tokens applied to every tile, building and prop through the cell pipeline | #394 | PR #398 open. |
+| **VFX animation sheets** (Director ask for M2): muzzle flash, impact, egg burst frame sheets + `sheet` metadata on the sprite manifest | #395 | PR #396 open; #338 briefed. |
 | Image generation recipe (incl. transparent sprites) | — | **Working.** See §5. |
 | Headless GLB / page render checks (Playwright) and Blender review renders | — | **Working.** See §7 and §8. |
 
@@ -28,7 +30,7 @@ Issues #2, #3, #4, #93, #102, #119, #143, #144, #145 are on project 5; #162, #16
 
 ## 2. Open PRs / issues I own
 
-- None open. #274 (replacement track) is paused after batches A–D; batch E is demand-driven (first request, `prop.table` #213, is done). Zoom check: every unit rendered at exactly 64 px per tile through the three.js harness keeps its silhouette (style guide §1 rule 1 holds for the Blender models).
+- PR #398 (env atlas, #394) and PR #396 (VFX sheets, #395) open. #274 (replacement track) is paused after batches A–D; batch E is demand-driven (first request, `prop.table` #213, is done). Zoom check: every unit rendered at exactly 64 px per tile through the three.js harness keeps its silhouette (style guide §1 rule 1 holds for the Blender models).
 
 ## 3. Decisions I made and why
 
@@ -46,6 +48,9 @@ Issues #2, #3, #4, #93, #102, #119, #143, #144, #145 are on project 5; #162, #16
 - **Unit textures are two 512² atlases referenced externally from the GLBs**: `build-textures.mjs` paints one 128 px cell per token from a seeded PRNG (own PNG encoder over `node:zlib`); `build-placeholders.mjs` remaps each textured mesh's UVs into its cell and rewrites the GLB JSON to add `images[].uri`, a sampler, textures and `baseColorTexture` per material. Embedding would have duplicated the atlas in every GLB. glTF UVs run top-down (row 0 at the top), unlike three.js; the first pass sampled the unused black cells.
 - **Earth map is 2048×1024, quantised to 256 colours** (881 KB) so it fits the 1.5 MB cap; the flat faceted style loses nothing. Chosen from two generations; the other stretched continents vertically.
 - **Stacked PRs with a squash-merging Tech Lead**: after each merge, rebase the next branch with `git rebase --onto origin/main <merged-branch> <next-branch>` and each higher branch onto the one below (capture old tips first); plain `git rebase` conflicts on the squashed copies. Five PRs stalled for 40 minutes once because of this.
+- **Environment atlas (#394)**: a third 512² atlas with 16 env cells; `build-placeholders.mjs` textures everything by default (only tokens with a cell change), Blender models pick env cells up through `atlas-cells.json`. `env-bark` and `env-scrub` stay flat (no cell). Tile textures are one cell per face, so a road tile shows one asphalt cell with its crack; regenerate the cell painter to change the look, never the models.
+- **VFX sheets (#395)** are derived from the single sprites by `tools/art/build-vfx-strips.sh` (scale + alpha per frame); write sheets as `png32:` or ImageMagick's palette output fails the alpha colour-type test. `SpriteAssetEntry.sheet` carries the layout for the animation queue.
+- **Worktrees**: a second `git worktree` with a symlinked `node_modules` lets two branches build in parallel, but `pnpm` refuses to run there (deps status check); call `node_modules/.bin/{tsc,eslint,prettier,vitest}` directly.
 - **Replacement recipe (batches A/B, reuse for C/D/E)**: shared builders in `tools/art/models/<set>_parts.py`, thin per-id scripts; run `make_model.py` per id with `--quality final` (records land in `placeholders.manifest.json`); delete the same ids' defs and builder functions from `build-placeholders.mjs` (whole-word check: `buildMechAssembledB` contains `buildMechAssembled`); rebuild placeholders (it keeps foreign records); regenerate `MODEL_MANIFEST` entries for `quality: "final"` records from the JSON; thumbnails, both preview sheets, resize renders to 512 px; `pnpm test`. Sub-parts use `--footprint 0x0` (validator skips the base check). Duplicate socket names in assembled models are sanitised to `socket_x_2`.
 - **Blender pipeline shape (#190)**: models are Python scripts under `tools/art/models/` built with `tools/art/bpy_kit.py`; `tools/art/make_model.py` does export → trimesh validation → three Cycles CPU renders → JSON record in one command; ids and TS manifest entries are still added by hand (the printed entry). `build-placeholders.mjs` keeps records it did not create so both pipelines share `placeholders.manifest.json`. Blender models face −Y in Blender so the glTF export faces +Z.
 - **Dry run of the skill on an organic model** (hive-core mound with ribs and tendrils, scratch only): spheres with `smooth=True`, rotated cylinders and `join` all export and validate; the validator caught a sphere sunk below ground, which led to `bpy_kit.cut_below` (#214). A 500-triangle organic prop renders in about 4 s.
@@ -53,10 +58,10 @@ Issues #2, #3, #4, #93, #102, #119, #143, #144, #145 are on project 5; #162, #16
 
 ## 4. Next, in order
 
-1. Director round-2 notes on any batch: edit the matching `tools/art/models/*_parts.py`, rerun the ids with `--quality final`, regenerate `MODEL_MANIFEST` entries from the JSON, thumbnails and previews, PR (recipe in §3).
-2. Batch E (props, building kit, tiles) only when tactical or mapgen asks; the placeholder kit is adequate for flat pieces.
-3. Textures beyond the atlases only if the Director wants more surface detail; repaint cells in `build-textures.mjs` without touching models.
-4. #162 (overworld scene uses the Earth texture) landed as engineer work (#313 uses the glyph set); answer questions there if any.
+1. Land PR #398 (env atlas) and PR #396 (VFX sheets); remove the `wt-395` worktree afterwards (`git worktree remove`).
+2. Director round-2 notes on any model or texture: edit the builder or painter, rerun, regenerate previews, PR.
+3. Batch E props and kit pieces on demand (mapgen/tactical asks like #213).
+4. If #338 wants hand-drawn intermediate frames instead of scaled ones, draw them at 128 px into the same sheet layout; the manifest stays as is.
 
 ## 5. Image generation recipe (Codex CLI)
 

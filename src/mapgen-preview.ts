@@ -2,7 +2,9 @@ import "./ui/style/theme.css";
 
 import { Group } from "three";
 
-import { previewUnits } from "./app/service/preview-units";
+import { previewMission } from "./app/service/preview-units";
+import { COMBAT_TUNING } from "./tactical/data/combat-tuning";
+import { TacticalHudView } from "./ui/view/tactical-hud-view";
 import { CameraInputController } from "./graphics/controller/camera-input-controller";
 import { MODEL_MANIFEST } from "./graphics/data/model-manifest";
 import { CAMERA_ZOOM } from "./graphics/model/camera-state";
@@ -112,6 +114,7 @@ async function main(): Promise<void> {
     new URLSearchParams(window.location.search).get("units") === "1";
   let view: TacticalSceneBuilder | undefined;
   let input: TacticalInputController | undefined;
+  let hud: TacticalHudView | undefined;
 
   const regenerate = (state: PreviewControlsState): void => {
     const recipe: MapRecipe = {
@@ -131,6 +134,7 @@ async function main(): Promise<void> {
       });
       const elapsedMs = performance.now() - started;
       input?.detach();
+      hud?.unmount();
       view?.dispose();
       const builder = new TacticalSceneBuilder({ map, models });
       view = builder;
@@ -139,14 +143,34 @@ async function main(): Promise<void> {
       rig.lookAt(builder.centre);
       if (showUnits) {
         delete document.body.dataset.units;
-        const { units, templates } = previewUnits(map);
+        const mission = previewMission(map);
+        const { units, templates } = mission;
+        // The HUD (#339) sits over the map; commands are recorded, not run.
+        const hudView = new TacticalHudView(
+          {
+            onCommand: (command) => {
+              document.body.dataset.lastCommand = command.type;
+            },
+            onBack: () => undefined,
+          },
+          { combatTuning: COMBAT_TUNING },
+        );
+        hudView.mount(viewport);
+        hudView.update(mission);
+        hud = hudView;
         // The tactical input controller owns the camera input while a
         // unit preview is up (#340); intents land on the body for tests.
         input = new TacticalInputController({
           picker: builder,
           camera: rig,
           cameraInput,
-          intents: { emit: (intent) => recordIntent(intent) },
+          intents: {
+            emit: (intent) => {
+              recordIntent(intent);
+              hudView.handleIntent(intent);
+              builder.setSelected(hudView.getSelectedUnitId());
+            },
+          },
         });
         input.attach(viewport);
         window.__tutTactical__ = input.hooks();

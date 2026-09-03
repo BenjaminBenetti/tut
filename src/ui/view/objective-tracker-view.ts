@@ -1,0 +1,88 @@
+import type { Objective, Spawner } from "../../tactical/model/tactical-state";
+import { formatWhole } from "../service/format";
+
+// ===========================================
+// ObjectiveTrackerView
+// ===========================================
+
+/**
+ * The mission's objectives (GDD §6.3): one row per objective with its
+ * state, and for spawner objectives the spawner's remaining hit points.
+ * Rows are rebuilt on every update; there are a handful at most.
+ *
+ * ```
+ *   OBJECTIVES  1 / 2
+ *   ├ ✓ Destroy spawner spawner-1
+ *   └ ○ Destroy spawner spawner-2 · 20 hp
+ * ```
+ */
+export class ObjectiveTrackerView {
+  // ===========================================
+  // Fields
+  // ===========================================
+
+  private root: HTMLElement | undefined;
+  private summary: HTMLElement | undefined;
+  private list: HTMLElement | undefined;
+
+  // ===========================================
+  // Lifecycle
+  // ===========================================
+
+  /** Builds the tracker under `parent`; call `update` to fill it. */
+  mount(parent: HTMLElement): void {
+    const doc = parent.ownerDocument;
+    const section = doc.createElement("section");
+    section.id = "objectives";
+    section.className = "tut-panel tut-hud__objectives";
+    const title = doc.createElement("div");
+    title.className = "tut-panel__title";
+    title.textContent = "Objectives";
+    const summary = doc.createElement("div");
+    summary.className = "tut-mono";
+    summary.dataset.field = "objective-summary";
+    const list = doc.createElement("ul");
+    list.className = "tut-list";
+    list.dataset.role = "objective-list";
+    section.append(title, summary, list);
+    parent.appendChild(section);
+    this.root = section;
+    this.summary = summary;
+    this.list = list;
+  }
+
+  /** Rebuilds the rows from the mission's objectives and spawners. */
+  update(objectives: readonly Objective[], spawners: readonly Spawner[]): void {
+    if (!this.list || !this.summary) {
+      return;
+    }
+    const done = objectives.filter((o) => o.complete).length;
+    this.summary.textContent = `${formatWhole(done)} / ${formatWhole(objectives.length)}`;
+    const doc = this.list.ownerDocument;
+    this.list.replaceChildren();
+    for (const objective of objectives) {
+      const row = doc.createElement("li");
+      row.dataset.objectiveId = objective.id;
+      row.dataset.complete = objective.complete ? "true" : "false";
+      const label = doc.createElement("span");
+      label.textContent = `${objective.complete ? "✓" : "○"} Destroy spawner ${objective.targetId}`;
+      row.appendChild(label);
+      const spawner = spawners.find((s) => s.id === objective.targetId);
+      if (spawner && !spawner.destroyed) {
+        const hp = doc.createElement("span");
+        hp.className = "tut-mono tut-dim";
+        hp.textContent = `${formatWhole(spawner.hp)} hp`;
+        row.appendChild(hp);
+      }
+      this.list.appendChild(row);
+    }
+  }
+
+  /** Removes the tracker. */
+  unmount(): void {
+    this.root?.remove();
+    this.root = undefined;
+    this.summary = undefined;
+    this.list = undefined;
+  }
+}

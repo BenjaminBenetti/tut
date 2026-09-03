@@ -347,120 +347,8 @@ function slab(material, thickness = 0.05) {
 }
 
 // ===========================================
-// TDF infantry (style guide §3: 0.9 u figures on a Ø0.85 disc)
+// TDF infantry squads are Blender models now: tools/art/models/squad_parts.py.
 // ===========================================
-
-/** Figure positions (x, z) in a loose wedge, leader front centre (+Z). */
-const SQUAD_SLOTS = [
-  [0, 0.28],
-  [-0.24, 0.05],
-  [0.24, 0.05],
-  [-0.13, -0.2],
-  [0.13, -0.2],
-];
-
-/**
- * One 0.9 u infantry figure standing at the origin facing +Z.
- * @param {MaterialFactory} mf - Material factory.
- * @param {"rifle"|"rocket"|"sniper"|"engineer"|"medic"} kit - Weapon or kit carried.
- * @param {string} name - Node name.
- * @returns {Object3D} Figure node.
- */
-function buildFigure(mf, kit, name) {
-  const parts = [
-    box(mf.get("tdf-olive-dark"), [0.18, 0.4, 0.14], [0, 0.2, 0], {
-      name: "legs",
-    }),
-    box(mf.get("tdf-olive"), [0.26, 0.34, 0.18], [0, 0.57, 0], {
-      name: "torso",
-    }),
-    box(mf.get("tdf-grey-mid"), [0.28, 0.2, 0.06], [0, 0.62, 0.11], {
-      name: "plate",
-    }),
-    box(mf.get("tdf-grey-mid"), [0.16, 0.16, 0.16], [0, 0.82, 0], {
-      name: "helmet",
-    }),
-    box(mf.get("tdf-visor"), [0.12, 0.04, 0.02], [0, 0.82, 0.09], {
-      name: "visor",
-    }),
-    box(mf.get("tdf-orange"), [0.06, 0.03, 0.06], [-0.15, 0.7, 0], {
-      name: "marking",
-    }),
-  ];
-  switch (kit) {
-    case "rocket":
-      parts.push(
-        box(mf.get("tdf-grey-dark"), [0.08, 0.08, 0.6], [0.14, 0.86, 0], {
-          name: "launcher",
-        }),
-      );
-      break;
-    case "sniper":
-      parts.push(
-        box(mf.get("tdf-grey-dark"), [0.05, 0.05, 0.55], [0.14, 0.55, 0.15], {
-          name: "rifle",
-        }),
-      );
-      break;
-    case "engineer":
-      parts.push(
-        box(mf.get("tdf-grey-dark"), [0.05, 0.05, 0.3], [0.14, 0.55, 0.1], {
-          name: "carbine",
-        }),
-        box(mf.get("tdf-orange-dim"), [0.2, 0.24, 0.1], [0, 0.6, -0.14], {
-          name: "pack",
-        }),
-      );
-      break;
-    case "medic":
-      parts.push(
-        box(mf.get("tdf-grey-dark"), [0.05, 0.05, 0.3], [0.14, 0.55, 0.1], {
-          name: "carbine",
-        }),
-        box(mf.get("tdf-grey-light"), [0.2, 0.24, 0.1], [0, 0.6, -0.14], {
-          name: "pack",
-        }),
-        box(mf.get("tdf-orange"), [0.12, 0.04, 0.02], [0, 0.6, -0.2], {
-          name: "cross",
-        }),
-      );
-      break;
-    default:
-      parts.push(
-        box(mf.get("tdf-grey-dark"), [0.05, 0.05, 0.36], [0.14, 0.55, 0.12], {
-          name: "rifle",
-        }),
-      );
-  }
-  return group(name, parts);
-}
-
-/**
- * Infantry squad token: five figures on one base disc. The left-flank figure
- * carries the squad's special kit.
- * @param {MaterialFactory} mf - Material factory.
- * @param {"rifle"|"rocket"|"sniper"|"engineer"|"medic"} kit - Squad type.
- * @returns {Object3D} Squad root.
- */
-function buildInfantrySquad(mf, kit) {
-  const base = cylinder(
-    mf.get("tdf-grey-dark"),
-    0.425,
-    0.425,
-    0.05,
-    16,
-    [0, 0.025, 0],
-    {
-      name: "base",
-    },
-  );
-  const figures = SQUAD_SLOTS.map(([x, z], i) => {
-    const figure = buildFigure(mf, i === 1 ? kit : "rifle", `figure_${i}`);
-    figure.position.set(x, 0.05, z);
-    return figure;
-  });
-  return group("root", [base, ...figures]);
-}
 
 // ===========================================
 // TDF mech parts (style guide §3, §6 sockets). Mech A parts (chassis-a, legs-a,
@@ -978,15 +866,6 @@ function buildMapgenProp(mf, kind) {
 
 /** @type {ModelDef[]} */
 const MODEL_DEFS = [
-  ...["rifle", "rocket", "sniper", "engineer", "medic"].map((kit) => ({
-    id: `tdf.infantry.${kit}`,
-    category: "units",
-    file: `tdf-infantry-${kit}.glb`,
-    footprint: { w: 1, d: 1 },
-    height: 0.95,
-    textured: true,
-    build: (mf) => buildInfantrySquad(mf, kit),
-  })),
   ...["straight", "corner", "t", "cross"].map((shape) => ({
     id: `tile.city.road-${shape}`,
     category: "tiles",

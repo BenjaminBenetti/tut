@@ -9,7 +9,7 @@ import {
   twoFloorBuilding,
   unitAt,
   walledField,
-} from "./movement-fixtures";
+} from "./movement-fixtures.test-helper";
 import {
   apCostOf,
   buildMoveGraph,

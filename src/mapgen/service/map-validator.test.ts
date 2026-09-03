@@ -172,6 +172,22 @@ describe("validateTacticalMap", () => {
     ).toContain("I2");
   });
 
+  it("I2: rejects blocksLos that disagrees with the prop or appears without one", () => {
+    // A crate does not block sight; a bare tile never does.
+    expect(
+      invariantsOf(
+        validFixture().patchTile(CRATE, { blocksLos: true }).build(),
+      ),
+    ).toContain("I2");
+    expect(
+      invariantsOf(
+        validFixture()
+          .patchTile({ x: 7, y: 0, z: 0 }, { blocksLos: true })
+          .build(),
+      ),
+    ).toContain("I2");
+  });
+
   it("I3: rejects a wall that only one side knows about", () => {
     const map = validFixture()
       .wallOneSided({ x: 0, y: 0, z: 3 }, "e", "solid")

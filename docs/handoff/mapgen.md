@@ -1,6 +1,6 @@
 # Handoff: Map Generation Specialist
 
-Last updated: 2026-09-03 08:15 UTC (session 2, update 6). Read `docs/process/roles/mapgen.md` and ADR 0004 first.
+Last updated: 2026-09-03 13:20 UTC (session 2, update 7). Read `docs/process/roles/mapgen.md` and ADR 0004 first.
 
 ## 1. Where things stand
 
@@ -14,10 +14,20 @@ Last updated: 2026-09-03 08:15 UTC (session 2, update 6). Read `docs/process/rol
   #235 hatch space around egg spawners (M2), #239 map metrics in the preview, #242 apartment
   template, #245 wide sweep behind `MAPGEN_WIDE=1`, #249 snowy fences, #253 ladder climb cap,
   #223 edge-trail crash fix. Epic #32 has no open children (noted on the epic for the Producer).
-- **Open PRs** (independent, each against `main`, all green locally and on CI):
-  1. #260 edge spawns relax spacing on maps too small for it (#258; fixes I8 at the 16² minimum)
-  2. #269 tuning pass 1: desert boulders 2.5 with palms 1, `rampSpacing` rural 8 / town 7 (#267)
-  3. #272 city block jitter ± 2 so grids stop reading as graph paper (#271)
+- **Also merged since update 6:** #260 edge-spawn spacing relaxes on the smallest maps, #269 tuning
+  pass 1 (desert cover, ramp spacing), #272 city block jitter ± 2, #276 preview seed stepping and
+  metric deltas. `main` re-validated at bb98b7e: unit suite and the 1200-map wide sweep.
+- **Design decision #281** (cover density): the Director chose *keep as is* (~20 % towns, ~23 %
+  cities) and to halve `streetPropDensity` only if two-lane cities read busy in play; the issue stays
+  open under M2 for the Executive Director's call from a playable mission.
+- **Open PRs for M2** (independent, each against `main`, green locally and on CI):
+  1. #353 `Tile.blocksLos` denormalised from the prop definition, I2 checks it, ADR §4.2 updated (#352):
+     lets #326's sight service stay pure over `TacticalMap` + `TileIndex`.
+  2. #355 `hatchTiles` + `snapshotMap` in `service/hatch-space.ts` (#354): the tile set #329's spawn
+     service hatches into; `hatchSpace` is its length.
+- **M2 issues that consume the map** (#316–#345 filed by the Producer): I left the exact APIs as
+  comments on #323 (mission start), #325 (movement), #326 (sight and cover), #329 (spawning). #337
+  reuses `graphics/view/tactical-map-view.ts`; #343 (headless sim) needs nothing new.
 - Art follow-up #213 (`prop.table` placeholder) is the Art Director's.
 
 ## 2. Pipeline as built
@@ -32,13 +42,13 @@ Last updated: 2026-09-03 08:15 UTC (session 2, update 6). Read `docs/process/rol
 |---|---|---|
 | terrain | fbm value noise, contrast ×2.2, quantised to levels; surface patches at 2× freq | raw fbm piles on one level |
 | water | coastal band along one edge, level 0, sand beach | edge = rng pick |
-| roads | builder per style (trail/streets/grid); largest network; 8-col chunks ±1; ramps at chunk steps; sidewalks; flat networks grade the whole plat; grid lays `roadWidth` lanes every `blockSize ± blockJitter` (#272) | cities: block 12 ± 2, two lanes, one level |
+| roads | builder per style (trail/streets/grid); largest network; 8-col chunks ±1; ramps at chunk steps; sidewalks; flat networks grade the whole plat; grid lays `roadWidth` lanes every `blockSize ± blockJitter` | cities: block 12 ± 2, two lanes, one level |
 | lots | shuffled (road column, side) anchors; rect beside corridor; gap 1, margin 1; count × `areaFactor` | inner-lane anchors reject themselves |
 | buildings | weighted template per lot (house, shop, warehouse, tower, apartment); `ensureMultiStorey` | templates in `data/building-templates` |
 | interiors | recursive bisection with a door per cut; room kinds `hall`/`room`/`storage` (`data/room-kind-ids`); stairs BFS-verified, holes interior-first; roof tiles; ladders ≤ 2 storeys and ≤ 2 levels of climb (#253) | `interiors` capability |
 | props | vegetation by density with per-kind clusters; width-aware street props; yard clutter; room furnishing via `registries.roomFurnishing`; every interior placement BFS-verified | blocked: thresholds, connector ends |
 | ramps | union-find over ground (`service/ground-components`); ramp per one-level step between components; spacing ramps | 2-level steps stay cliffs |
-| hooks | `HookPlacer` registry; deploy (largest ground component, edge band); egg spawners (≥ 12 from deploy, ≥ 6 apart, half indoors, `HATCH_SPACE_MIN` 6 reachable tiles within `hatchRadius`, checked lazily in draw order); edge spawns (strict spacing first, relaxed only for zones that do not fit, #260); extraction = deploy | placers share one `snapshotDraft` |
+| hooks | `HookPlacer` registry; deploy (largest ground component, edge band); egg spawners (≥ 12 from deploy, ≥ 6 apart, half indoors, `HATCH_SPACE_MIN` 6 reachable tiles within `hatchRadius`, checked lazily in draw order); edge spawns (strict spacing first, relaxed only for zones that do not fit); extraction = deploy | placers share one `snapshotDraft` |
 | connectivity | per hook × class: freeze, check, 0-1 BFS for cheapest repairs (prop / door / ramp), else relocate | I7 guarantee |
 
 Entry: `service/generate-tactical-map.ts`. Adapter: `service/mission-map-recipe-adapter.ts` +
@@ -47,7 +57,7 @@ Hatch BFS: `service/hatch-space.ts`. Wide sweep: `MAPGEN_WIDE=1 pnpm exec vitest
 (PR #245). Scratch measurements: a throwaway `src/mapgen/zz-debug.test.ts` (git-excluded; move it
 out before `pnpm typecheck`/`lint`).
 
-## 3. Measurements (medium maps, 8 seeds per cell, `main` before #269)
+## 3. Measurements (medium maps, 8 seeds per cell, `main` before #269; desert and ramps moved as noted below)
 
 Share of open ground beside a cover prop / beside a wall; high and low cover tiles per 100 ground
 tiles; interior props per building; ramps per map.
@@ -66,12 +76,12 @@ desert high cover to 3.5 (rural) / 3.0 (town) per 100 and cover adjacency to 18.
 `rampSpacing` rural 8 / town 7 takes ramps per medium map from 37 / 43 to 28 / 33 with connectivity
 repairs and relocations still zero.
 
-**Still the Director's call** (data knobs, each a golden re-pin):
-- Cover beside open ground sits at 13–23 %. If tactical wants XCOM-like density (~30 % in towns),
-  raise `yardPropDensity` (town 10 → 15) and add a `cabinet` interior kind (high, blocks LOS; needs
-  a placeholder model like #213).
-- Street props doubled with two lanes (23 → 43 per medium city); halve `streetPropDensity` if it reads busy.
-- Explicit sizes: the resolver accepts 16–256; 128² generates in ~260 ms. Presets stay 32/48/64.
+**Decided on #281:** cover density stays where it is until a playable mission says otherwise; the
+knobs if it changes are `yardPropDensity` (town 10 → 15 for ~30 %), a `cabinet` interior kind (high,
+blocks LOS; needs a placeholder like #213), and `streetPropDensity` (halve if two-lane cities read
+busy). Explicit sizes: the resolver accepts 16–256 and every accepted size generates (#260); 128²
+takes ~260 ms. Heavy recipes (8 egg spawners, 6 edge spawns) generate on small and medium presets
+with zero relocations.
 
 ## 4. What M2 (tactical) consumes
 
@@ -81,8 +91,10 @@ repairs and relocations still zero.
   movement rules must not make a move legal that `canStep` forbids.
 - Hooks: `map.hooks.deployZones[].tiles`, `objectives[]` (egg spawners, `meta.hatchRadius` 3, ≥ 6
   reachable tiles around each), `edgeSpawns[]` (boundary tiles, infantry-reachable), `extraction`.
-- `hatchSpace(snapshot, origin, radius, PassMask.INFANTRY)` from `service/hatch-space.ts` if the
-  spawner service wants the exact tile set.
+- `snapshotMap(map)` then `hatchTiles(snapshot, origin, radius, PassMask.INFANTRY)` from
+  `service/hatch-space.ts` (#355) for the exact tile set a spawner hatches into, origin first.
+- `Tile.blocksLos` (#353) and `Tile.coverProvided` for sight and cover; walls on both sides of an edge
+  (`tile.walls`, I3); `y` is the level for elevation bonuses.
 - Open question filed on #231: if brutes are mech-sized, set edge spawns' `requiredPass` to
   `PassMask.ALL` in `data/hook-kind-defaults.ts`.
 
@@ -100,7 +112,10 @@ repairs and relocations still zero.
 
 ## 6. What I would do next, in order
 
-1. Keep the review loop for #260, #269, #272 (independent; rebase, gate, `--force-with-lease`).
+1. Keep the review loop for #353 and #355 (independent; rebase, gate, `--force-with-lease`).
+   Then answer questions on #323/#325/#326/#329 as engineers pick them up; the map contract should
+   not need to move again for M2 unless brutes turn out mech-sized (flip edge spawns to
+   `PassMask.ALL` in `data/hook-kind-defaults.ts`).
 2. Run `MAPGEN_WIDE=1` before merging any generator change (85 s); it is the check that found #221.
 3. Tuning from §3 once the Director picks targets; the preview shows the metrics live.
 4. M3 archetypes: `createPipeline`'s per-archetype table in `service/settlement-pipeline.ts` takes a

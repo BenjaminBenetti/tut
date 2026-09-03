@@ -3,8 +3,10 @@ import { advanceDay } from "../../overworld/model/advance-day-command";
 import { buildDeployable } from "../../overworld/model/build-deployable-command";
 import { decommissionDeployable } from "../../overworld/model/decommission-deployable-command";
 import type { DeployableTypeCatalogue } from "../../overworld/model/deployable-type-catalogue";
+import type { EventTypeCatalogue } from "../../overworld/model/event-type-catalogue";
 import type { MissionId } from "../../overworld/model/mission";
 import type { OverworldCommand } from "../../overworld/model/overworld-command";
+import { resolveEvent } from "../../overworld/model/resolve-event-command";
 import { findCity } from "../../overworld/service/earth-map-query-service";
 import type { MissionTypeCatalogue } from "../../overworld/service/mission-generation-service";
 import type { GameState } from "../../save/model/game-state";
@@ -15,6 +17,7 @@ import type { Screen, ScreenId } from "../model/screen";
 import type { ScreenRouter } from "../model/screen-router";
 import { CityPanelView } from "../view/city-panel-view";
 import { DeployablesView } from "../view/deployables-view";
+import { EventDialogView } from "../view/event-dialog-view";
 import { MissionDetailsView } from "../view/mission-details-view";
 import { MissionListView } from "../view/mission-list-view";
 import { SidePanelView } from "../view/side-panel-view";
@@ -34,6 +37,8 @@ export interface OverworldScreenDeps {
   readonly deployableTypes: DeployableTypeCatalogue;
   /** Names and describes mission types for the list and briefing. */
   readonly missionTypes: MissionTypeCatalogue;
+  /** Copy and choices for the pending event dialog. */
+  readonly eventTypes: EventTypeCatalogue;
   /** Lends the map canvas to the layout's map cell while mounted; absent in unit tests. */
   readonly mapViewport?: MapViewportHost;
 }
@@ -60,12 +65,14 @@ export interface OverworldScreenDeps {
  *   │                                              │  missions       │
  *   │                                              │  briefing       │
  *   │                                              │  #deployables   │
+ *   │  [event dialog over everything while an event waits]           │
  *   └──────────────────────────────────────────────┴─────────────────┘
  *
  *   store.subscribe / selection.subscribe ──► render(state): every view
  *   [Advance day]        ──► store.dispatch(advanceDay())
  *   [Build …]            ──► store.dispatch(buildDeployable(type, region))
  *   [Decommission]       ──► store.dispatch(decommissionDeployable(id))
+ *   event choice         ──► store.dispatch(resolveEvent(eventId, choiceId))
  *                            any rejection ──► topBar.showStatus
  *   [Roster] / [Main menu] ──► router.navigate
  *   mission row          ──► selection.selectMission(id, cityId)
@@ -90,6 +97,7 @@ export class OverworldScreen implements Screen {
   private readonly missionList: MissionListView;
   private readonly missionDetails: MissionDetailsView;
   private readonly deployables: DeployablesView;
+  private readonly eventDialog: EventDialogView;
   private root: HTMLElement | undefined;
   private unsubscribe: Unsubscribe | undefined;
   private unsubscribeSelection: Unsubscribe | undefined;
@@ -144,6 +152,14 @@ export class OverworldScreen implements Screen {
       },
       deps.deployableTypes,
     );
+    this.eventDialog = new EventDialogView(
+      { eventTypes: deps.eventTypes },
+      {
+        onChoose: (eventId, choiceId) => {
+          this.dispatch(resolveEvent(eventId, choiceId));
+        },
+      },
+    );
   }
 
   // ===========================================
@@ -170,17 +186,22 @@ export class OverworldScreen implements Screen {
     this.missionList.mount(sections);
     this.missionDetails.mount(sections);
     this.deployables.mount(sections);
+    this.eventDialog.mount(layout);
     root.appendChild(layout);
     this.root = layout;
     this.deps.mapViewport?.attach(mapArea);
 
     const store = this.deps.session.store;
+    // Subscribe to the selection before the first render: rendering with
+    // a selected mission that is no longer on offer (just launched, or
+    // expired) clears the selection and relies on this subscription to
+    // render again with it cleared (#83).
+    this.unsubscribeSelection = this.deps.selection.subscribe(() => {
+      this.render(this.deps.session.store?.getState());
+    });
     this.render(store?.getState());
     this.unsubscribe = store?.subscribe((change) => {
       this.render(change.state);
-    });
-    this.unsubscribeSelection = this.deps.selection.subscribe(() => {
-      this.render(this.deps.session.store?.getState());
     });
   }
 
@@ -191,6 +212,7 @@ export class OverworldScreen implements Screen {
     this.unsubscribe = undefined;
     this.unsubscribeSelection?.();
     this.unsubscribeSelection = undefined;
+    this.eventDialog.unmount();
     this.topBar.unmount();
     this.deployables.unmount();
     this.missionDetails.unmount();
@@ -287,5 +309,6 @@ export class OverworldScreen implements Screen {
     this.deployables.update(state, city?.regionId);
     this.missionList.update(state, selection);
     this.missionDetails.update(state, mission);
+    this.eventDialog.update(state);
   }
 }

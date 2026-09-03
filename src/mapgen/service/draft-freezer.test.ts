@@ -73,7 +73,9 @@ describe("freezeDraft", () => {
     expect(car?.propId).toBe("prop-1");
     expect(car?.pass).toBe(PassMask.NONE);
     expect(car?.coverProvided).toBe(CoverLevel.HIGH);
+    expect(car?.blocksLos).toBe(true);
     expect(index.get(1, 0, 1)?.coverProvided).toBe(CoverLevel.NONE);
+    expect(index.get(1, 0, 1)?.blocksLos).toBe(false);
     expect(map.props[0]?.rotation).toBe(3);
   });
 

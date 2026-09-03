@@ -25,7 +25,12 @@ test("a mission appears, opens a briefing, routes to deployment, launches and re
 
   const rows = page.locator('[data-role="mission-list"] [data-mission-id]');
   const advance = page.locator('[data-action="advance-day"]');
+  const choice = page.locator('[data-role="event-dialog"] [data-choice-id]');
   for (let day = 0; day < MAX_DAYS && (await rows.count()) === 0; day++) {
+    // An event blocks Advance Day until answered; take the default option.
+    if (await choice.first().isVisible()) {
+      await choice.first().click();
+    }
     await advance.click();
   }
   await expect(rows.first()).toBeVisible();
@@ -52,6 +57,9 @@ test("a mission appears, opens a briefing, routes to deployment, launches and re
   await expect(body).toHaveAttribute("data-selected-city", cityId ?? "");
   await expect(page.locator("#selected-city")).not.toHaveText("—");
 
+  const dayBefore = Number(
+    await page.locator('#top-bar [data-field="day"]').textContent(),
+  );
   await details.locator('[data-action="plan-deployment"]').click();
   await expect(body).toHaveAttribute("data-screen", "deployment");
   await expect(
@@ -72,9 +80,17 @@ test("a mission appears, opens a briefing, routes to deployment, launches and re
   await expect(body).toHaveAttribute("data-screen", "mission-results");
   await expect(
     page.locator('[data-screen="mission-results"] [data-field="outcome"]'),
-  ).toHaveText(/Mission (won|lost|extracted)/);
+  ).toHaveAttribute("data-outcome", /^(won|lost|extracted)$/);
+  // The debrief names the outcome and every loss section, then Continue
+  // advances the day (#83) and returns to the overworld.
+  const results = page.locator('[data-screen="mission-results"]');
+  await expect(results.locator('[data-field="mechs-destroyed"]')).toBeVisible();
+  await expect(results.locator('[data-field="credits"]')).toBeVisible();
   await page.locator('[data-action="continue"]').click();
   await expect(body).toHaveAttribute("data-screen", "overworld");
+  await expect(page.locator('#top-bar [data-field="day"]')).toHaveText(
+    String(dayBefore + 1),
+  );
   await expect(
     page.locator(
       `[data-role="mission-list"] [data-mission-id="${missionId ?? ""}"]`,

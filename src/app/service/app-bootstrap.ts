@@ -24,6 +24,7 @@ import type { ScreenId } from "../../ui/model/screen";
 import { GameOverScreen } from "../../ui/screen/game-over-screen";
 import { MainMenuScreen } from "../../ui/screen/main-menu-screen";
 import { OverworldScreen } from "../../ui/screen/overworld-screen";
+import { MechBayScreen } from "../../ui/screen/mech-bay-screen";
 import { RosterScreen } from "../../ui/screen/roster-screen";
 import { CitySelectionStore } from "../../ui/service/city-selection-store";
 import type { TutTestHooks } from "../model/test-hooks";
@@ -55,7 +56,7 @@ const MAP_VIEWPORT_ID = "map-viewport";
  * ```
  *   document
  *     ├── #app / #map-viewport  ◀── SceneService (overworld map, camera rig, input, picking)
- *     └── #ui                   ◀── DomScreenRouter ──▶ MainMenuScreen / OverworldScreen / RosterScreen
+ *     └── #ui                   ◀── DomScreenRouter ──▶ MainMenuScreen / OverworldScreen / RosterScreen / MechBayScreen
  *                                        │                        └── composeGame(): session (GameStore),
  *                                        │                            saves, autosave, createCampaign
  *                                        └── body[data-screen]
@@ -124,6 +125,17 @@ export async function bootstrapApp(doc: Document): Promise<void> {
             squadTypes: game.content.squadTypes,
             parts: game.content.parts,
             rosterTuning: game.content.rosterTuning,
+          }),
+      ],
+      [
+        "mech-bay",
+        () =>
+          new MechBayScreen({
+            router,
+            session: game.session,
+            parts: game.content.parts,
+            rating: game.content.rating,
+            upgrades: game.content.upgrades,
           }),
       ],
       [

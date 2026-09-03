@@ -8,13 +8,15 @@
  * factory map is keyed by it so a new id without a registered screen is
  * caught at composition time.
  */
-export type ScreenId = "main-menu" | "overworld" | "roster" | "game-over";
+export type ScreenId =
+  "main-menu" | "overworld" | "roster" | "mech-bay" | "game-over";
 
 /** Every screen id, in a fixed order. */
 export const SCREEN_IDS: readonly ScreenId[] = [
   "main-menu",
   "overworld",
   "roster",
+  "mech-bay",
   "game-over",
 ];
 

@@ -230,6 +230,42 @@
   vertical-align: middle;
 }
 
+/* ====================================
+   Mech bay screen (#80)
+   =========================================== */
+#ui > .tut-mech-bay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  background: var(--ui-bg, #0b0e12);
+}
+.tut-mech-bay__bar {
+  grid-row: 1;
+}
+.tut-mech-bay__body {
+  grid-row: 2;
+  overflow: auto;
+  padding: var(--space-4);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) min(360px, 40vw);
+  gap: var(--space-4);
+  align-content: start;
+}
+.tut-mech-bay__row {
+  display: grid;
+  grid-template-columns: 8em minmax(0, 1fr);
+  gap: var(--space-2);
+  align-items: center;
+}
+.tut-mech-bay__error {
+  grid-column: 2;
+  color: var(--ui-danger);
+  font-size: 0.9em;
+}
+.tut-mech-bay__errors li {
+  color: var(--ui-danger);
+}
 /* =========================================== */
 /* Game over                                   */
 /* =========================================== */

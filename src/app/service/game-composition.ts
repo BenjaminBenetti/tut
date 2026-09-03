@@ -36,6 +36,7 @@ import type { SaveClock } from "../../save/model/save-clock";
 import type { GameSaveService } from "../../save/service/game-save-service";
 import { createGameSaveService } from "../../save/service/game-save-service";
 import type { NewGameOptions } from "../../save/service/game-state-factory";
+import type { MechRatingTuning } from "../../roster/model/mech-rating-tuning";
 import type { PartCatalogue } from "../../roster/model/part-catalogue";
 import type { RosterTuning } from "../../roster/model/roster-tuning";
 import type { SquadTypeCatalogue } from "../../roster/model/squad-type-catalogue";
@@ -70,6 +71,7 @@ export interface GameContent {
   readonly parts: PartCatalogue;
   readonly rosterTuning: RosterTuning;
   readonly upgrades: UpgradeTuning;
+  readonly rating: MechRatingTuning;
 }
 
 /** The simulation-facing services screens are handed. */
@@ -120,10 +122,10 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     parts: new StaticPartCatalogue(STARTER_PARTS),
     rosterTuning: ROSTER_TUNING,
     upgrades: UPGRADE_TUNING,
+    rating: MECH_RATING_TUNING,
   };
   registerRosterCommands(dispatcher, {
     ...content,
-    rating: MECH_RATING_TUNING,
     transactionsFor: (ids) => new LedgerTransactionService(ids),
   });
   const tickDeps = composeTickDeps();

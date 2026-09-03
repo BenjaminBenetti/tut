@@ -12,7 +12,7 @@ Last updated: 2026-09-03 (session 1, run 38, ~17:20 UTC). Read `docs/process/rol
 | `pnpm test:e2e` on main | 31 / 31 (`event-dialog.spec.ts` added by #77) |
 | Exploratory pass | eleven flows (+ **events**): 0 findings after accounting for events interposing on ticks; #357 no longer reproduces |
 | Filed this run | **#368** (p3, ui): threat badge tone from the unrounded value ("33 · WARN") |
-| **Release gate** | **PR #359** (`e2e/overworld-loop.spec.ts`, #84) is **ready for review**: green 3/3 on `2340782` in ~1.7 s, answers events, expects Continue to advance the day. Merge it and v0.1.0's end-to-end proof is in CI. |
+| **Release gate** | **#84 done: PR #359 merged as `8307d87`.** `e2e/overworld-loop.spec.ts` runs in CI; both CI suites are green on `2f80f22` (33 e2e tests) and the full QA loop on that head reports 0 findings across eleven flows. From QA's side v0.1.0 can be tagged from `2f80f22` or later. |
 | **Health** | **Green.** The M1 loop plays end to end in the browser with no console errors: menu → overworld → deployables → missions → deployment → launch → debrief → next day → events → roster → mech bay → export/import. |
 
 ### Run history
@@ -83,7 +83,7 @@ Exploratory coverage at `35857b2` (headless Chromium, SwiftShader, 1280×720, pr
 
 ## 2. Open PRs / issues I own
 
-- **#359 (ready for review)** `test(e2e): overworld loop end-to-end smoke test (#84)`: green on main; the v0.1.0 gate.
+- Merged: **#359** `test(e2e): overworld loop end-to-end smoke test (#84)` (`8307d87`).
 - This handoff PR.
 - Merged earlier today: #225 (three promoted specs), #257 (v1 save migration fixture), handoffs #228 / #233 / #240 / #261 / #292 / #296 / #303 / #305 / #309 / #314.
 
@@ -128,7 +128,7 @@ Commented on **#33** at `35857b2` (preview missing from the build); #209 fixed i
 ## 6. Next, in order
 
 1. Loop: `/tmp/qa-scripts/qa-run.sh` on the QA instance (a copy of the session scratchpad; `QA_SCRIPTS` overrides the path) does pull → typecheck → lint → build → vitest → e2e → ten exploratory flows (`qa-explore`, `qa-menu`, `qa-migrate`, `qa-overworld`, `qa-roster`, `qa-city`, `qa-debug`, `qa-mechbay`, `qa-launch` .mjs) and prints the state of every filed issue, in one call (~10 min); the scripts are not in the repo (role brief: throwaway), so a fresh instance rebuilds them from the descriptions in §1; a background monitor polls `repos/BenjaminBenetti/tut/commits?per_page=1` every 5 min and validates the SHA (`^[0-9a-f]{40}$`, an API error body once produced a bogus "new main" event). Update this file when a bug is filed, a PR opens, or roughly hourly; not per quiet run.
-2. **Release gate:** #359 is ready; after it merges confirm CI is green with `overworld-loop.spec.ts` on the tagged commit before v0.1.0 is announced. Then run the full loop once more on the tag.
+2. **Release gate:** met on `2f80f22` (CI green, loop spec in). When v0.1.0 is tagged, run the full loop once on the tag and note it here.
 3. When #83 (full debrief) and the event dialog (#77 successor) land, extend the launch flow to read the debrief rows and trigger a pending event (#70/#71) and take each choice, checking credits and the stipend/threat modifiers (#307). select a city and read its detail, accept and launch a mission (auto-resolve), inspect the results and the graveyard after losses, reinforce a depleted squad, build a mech and save a loadout.
    The city flow already reaches missions (they appear by ~day 12) and Plan deployment; once #77 lands, follow it into the deployment screen, launch (auto-resolve, #67), and check credits, roster damage, casualties and the graveyard.
    The roster flow stages state it cannot reach yet (damaged mechs, treasury) by Export → edit JSON → Import from the main menu; reuse that trick for casualties once missions run.

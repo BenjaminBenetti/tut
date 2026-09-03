@@ -1,4 +1,5 @@
 import type { InstancedMesh } from "three";
+import { OrthographicCamera, Vector3 } from "three";
 import { describe, expect, it } from "vitest";
 
 import { PropKindIds } from "../../mapgen/data/props";
@@ -112,5 +113,69 @@ describe("TacticalMapView", () => {
       "hooks:hook:hive-core:0",
     );
     view.dispose();
+  });
+});
+
+// ===========================================
+// Tile picking (#340)
+// ===========================================
+
+describe("TacticalMapView.pickTile", () => {
+  /** A top-down orthographic camera over the 4×3 fixture. */
+  function topDown(): OrthographicCamera {
+    const camera = new OrthographicCamera(0, 4, 0, -3, 0.1, 100);
+    camera.position.set(0, 20, 0);
+    camera.up.set(0, 0, -1);
+    camera.lookAt(new Vector3(0, 0, 0));
+    camera.updateProjectionMatrix();
+    camera.updateMatrixWorld(true);
+    return camera;
+  }
+  const ndcOf = (camera: OrthographicCamera, x: number, z: number) => {
+    const v = new Vector3(x, 0, z).project(camera);
+    return { x: v.x, y: v.y };
+  };
+
+  it("finds the ground tile under a ray and the ledge on its own level", () => {
+    const view = new TacticalMapView(fixture().build());
+    const camera = topDown();
+    expect(view.pickTile(ndcOf(camera, 1.5, 0.5), camera)).toEqual({
+      x: 1,
+      y: 0,
+      z: 0,
+    });
+    expect(view.pickTile(ndcOf(camera, 3.5, 1.5), camera)).toEqual({
+      x: 3,
+      y: 1,
+      z: 1,
+    });
+    expect(view.pickTile(ndcOf(camera, 0.5, 2.5), camera)).toEqual({
+      x: 0,
+      y: 1,
+      z: 2,
+    });
+  });
+
+  it("misses off the map and reports tile centres", () => {
+    const view = new TacticalMapView(fixture().build());
+    const camera = topDown();
+    expect(view.pickTile({ x: 2, y: 2 }, camera)).toBeUndefined();
+    expect(view.tileWorldPosition({ x: 1, y: 0, z: 0 })).toEqual({
+      x: 1.5,
+      y: SLAB_HEIGHT,
+      z: 0.5,
+    });
+    expect(view.tileWorldPosition({ x: 9, y: 0, z: 9 })).toBeUndefined();
+  });
+
+  it("ignores hidden levels", () => {
+    const view = new TacticalMapView(fixture().build());
+    view.setMaxLevel(0);
+    const camera = topDown();
+    expect(view.pickTile(ndcOf(camera, 3.5, 1.5), camera)).toEqual({
+      x: 3,
+      y: 0,
+      z: 1,
+    });
   });
 });

@@ -235,6 +235,27 @@ describe("TacticalSceneBuilder", () => {
     expect(builder.pickUnit(ndcOf(4.5, 4.5), camera)).toBeUndefined();
   });
 
+  it("forwards tile picking to the map view, unobstructed by units", async () => {
+    const { builder } = build();
+    await builder.update([unit("u1", "squad:squad-1", 1, 1)], TEMPLATES);
+    const camera = topDownCamera();
+    expect(builder.pickTile(ndcOf(1.5, 1.5), camera)).toEqual({
+      x: 1,
+      y: 0,
+      z: 1,
+    });
+    expect(builder.pickTile(ndcOf(4.5, 4.5), camera)).toEqual({
+      x: 4,
+      y: 0,
+      z: 4,
+    });
+    expect(builder.tileWorldPosition({ x: 4, y: 0, z: 4 })).toEqual({
+      x: 4.5,
+      y: SLAB_HEIGHT,
+      z: 4.5,
+    });
+  });
+
   it("dispose empties the scene", async () => {
     const parent = new Group();
     const { builder } = build();

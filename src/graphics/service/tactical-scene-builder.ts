@@ -3,6 +3,7 @@ import { Group, Raycaster, Vector2 } from "three";
 
 import type { Vec2, Vec3 } from "../../core/model/grid";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
+import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { Unit, UnitId } from "../../tactical/model/unit";
 import type {
   UnitTemplate,
@@ -10,6 +11,7 @@ import type {
 } from "../../tactical/model/unit-template";
 import type { Disposable } from "../model/disposable";
 import type { ModelLoader } from "../model/model-loader";
+import type { TilePicker } from "../model/tile-picker";
 import type { UnitPicker } from "../model/unit-picker";
 import { TacticalMapView } from "../view/tactical-map-view";
 import { UnitMesh } from "../view/unit-mesh";
@@ -49,7 +51,9 @@ export type UnitTemplateLookup = Readonly<Record<UnitTemplateId, UnitTemplate>>;
  *   pickUnit(ndc) ──► raycast over every mesh's pick targets ──► nearest hit's unit
  * ```
  */
-export class TacticalSceneBuilder implements UnitPicker, Disposable {
+export class TacticalSceneBuilder
+  implements UnitPicker, TilePicker, Disposable
+{
   // ===========================================
   // Fields
   // ===========================================
@@ -198,6 +202,20 @@ export class TacticalSceneBuilder implements UnitPicker, Disposable {
   /** A unit's feet in world space, or undefined for an unknown or still-loading unit. */
   unitWorldPosition(unitId: UnitId): Vec3 | undefined {
     return this.meshes.get(unitId)?.worldPosition();
+  }
+
+  // ===========================================
+  // TilePicker
+  // ===========================================
+
+  /** The map tile under a normalised device coordinate; units do not occlude it. */
+  pickTile(ndc: Vec2, camera: Camera): TileCoord | undefined {
+    return this.mapView.pickTile(ndc, camera);
+  }
+
+  /** The world centre of a tile's top face, or undefined off the map. */
+  tileWorldPosition(tile: TileCoord): Vec3 | undefined {
+    return this.mapView.tileWorldPosition(tile);
   }
 
   // ===========================================

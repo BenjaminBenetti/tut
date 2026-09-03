@@ -1,6 +1,9 @@
 {
   "name": "tut",
-  "image": "mcr.microsoft.com/devcontainers/javascript-node:latest",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "."
+  },
   "postCreateCommand": "sudo corepack enable && pnpm install && pnpm exec playwright install --with-deps chromium",
   "forwardPorts": [5173],
   "portsAttributes": {

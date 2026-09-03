@@ -1,0 +1,57 @@
+{
+  "blender": "4.5.13 LTS",
+  "engine": "CYCLES/CPU",
+  "samples": 32,
+  "size": 640,
+  "parts": 23,
+  "triangles_authored": 276,
+  "glb": {
+    "path": "tools/art/preview/blender-smoke/smoke-mech.glb",
+    "bytes": 35828
+  },
+  "validation": {
+    "path": "tools/art/preview/blender-smoke/smoke-mech.glb",
+    "bytes": 35828,
+    "meshes": 23,
+    "triangles": 276,
+    "watertight": {
+      "foot_-1": true,
+      "shin_-1": true,
+      "knee_-1": true,
+      "thigh_-1": true,
+      "foot_1": true,
+      "shin_1": true,
+      "knee_1": true,
+      "thigh_1": true,
+      "hip": true,
+      "torso": true,
+      "chest_plate": true,
+      "shoulders": true,
+      "pad_l": true,
+      "pad_r": true,
+      "cockpit": true,
+      "visor": true,
+      "marking": true,
+      "arm_l": true,
+      "forearm_l": true,
+      "arm_r": true,
+      "cannon": true,
+      "muzzle": true,
+      "pod": true
+    },
+    "bounds": [
+      [-0.949999988079071, 0.0, -0.5],
+      [0.949999988079071, 2.7900001108646393, 0.8599999826401472]
+    ],
+    "extents": [1.899999976158142, 2.7900001108646393, 1.3599999826401472],
+    "height": 2.7900001108646393,
+    "ok": true,
+    "problems": []
+  },
+  "renders": [
+    "tools/art/preview/blender-smoke/mech_045.png",
+    "tools/art/preview/blender-smoke/mech_135.png",
+    "tools/art/preview/blender-smoke/mech_225.png"
+  ],
+  "seconds": 2.8
+}

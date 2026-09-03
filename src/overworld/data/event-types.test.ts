@@ -83,6 +83,18 @@ describe("event-types data", () => {
     }
   });
 
+  it("names a default choice that exists and never charges credits", () => {
+    for (const type of ALL_TYPES) {
+      const choice = type.choices.find((c) => c.id === type.defaultChoiceId);
+      expect(choice, type.id).toBeDefined();
+      for (const effect of choice?.effects ?? []) {
+        if (effect.kind === "credits") {
+          expect(effect.amount, `${type.id}/${choice?.id}`).toBeGreaterThan(0);
+        }
+      }
+    }
+  });
+
   it("gives every choice at least one effect", () => {
     for (const type of ALL_TYPES) {
       for (const choice of type.choices) {

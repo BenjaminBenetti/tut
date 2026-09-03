@@ -603,6 +603,11 @@ function paintAtlas(atlas) {
 function main() {
   const here = dirname(fileURLToPath(import.meta.url));
   const publicDir = join(here, "..", "..", "public");
+  // Cell layout for the Blender pipeline (tools/art/make_model.py reads it).
+  writeFileSync(
+    join(here, "atlas-cells.json"),
+    `${JSON.stringify({ grid: GRID, cell: CELL, inset: 0.03, paths: ATLAS_PATHS, cells: ATLAS_CELLS }, null, 2)}\n`,
+  );
   for (const [atlas, rel] of Object.entries(ATLAS_PATHS)) {
     const target = join(publicDir, rel);
     mkdirSync(dirname(target), { recursive: true });

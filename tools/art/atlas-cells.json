@@ -1,0 +1,130 @@
+{
+  "grid": 4,
+  "cell": 128,
+  "inset": 0.03,
+  "paths": {
+    "tdf": "assets/textures/units/tdf-atlas_albedo.png",
+    "bug": "assets/textures/units/bug-atlas_albedo.png"
+  },
+  "cells": {
+    "tdf-grey-dark": {
+      "atlas": "tdf",
+      "col": 0,
+      "row": 0,
+      "hex": "#2E3440",
+      "style": "armour"
+    },
+    "tdf-grey-mid": {
+      "atlas": "tdf",
+      "col": 1,
+      "row": 0,
+      "hex": "#5B6573",
+      "style": "armour"
+    },
+    "tdf-grey-light": {
+      "atlas": "tdf",
+      "col": 2,
+      "row": 0,
+      "hex": "#9AA5B1",
+      "style": "armour"
+    },
+    "tdf-olive": {
+      "atlas": "tdf",
+      "col": 3,
+      "row": 0,
+      "hex": "#6B7A3F",
+      "style": "cloth"
+    },
+    "tdf-olive-dark": {
+      "atlas": "tdf",
+      "col": 0,
+      "row": 1,
+      "hex": "#45502A",
+      "style": "cloth"
+    },
+    "tdf-orange": {
+      "atlas": "tdf",
+      "col": 1,
+      "row": 1,
+      "hex": "#F08A24",
+      "style": "decal"
+    },
+    "tdf-orange-dim": {
+      "atlas": "tdf",
+      "col": 2,
+      "row": 1,
+      "hex": "#B86414",
+      "style": "decal"
+    },
+    "tdf-visor": {
+      "atlas": "tdf",
+      "col": 3,
+      "row": 1,
+      "hex": "#7FD1FF",
+      "style": "glass"
+    },
+    "bug-chitin-black": {
+      "atlas": "bug",
+      "col": 0,
+      "row": 0,
+      "hex": "#14121A",
+      "style": "chitin"
+    },
+    "bug-chitin-dark": {
+      "atlas": "bug",
+      "col": 1,
+      "row": 0,
+      "hex": "#2B2436",
+      "style": "chitin"
+    },
+    "bug-chitin-mid": {
+      "atlas": "bug",
+      "col": 2,
+      "row": 0,
+      "hex": "#4A3B5A",
+      "style": "chitin"
+    },
+    "bug-flesh": {
+      "atlas": "bug",
+      "col": 3,
+      "row": 0,
+      "hex": "#7A3A4E",
+      "style": "flesh"
+    },
+    "bug-flesh-light": {
+      "atlas": "bug",
+      "col": 0,
+      "row": 1,
+      "hex": "#B05A6E",
+      "style": "flesh"
+    },
+    "bug-bio-green": {
+      "atlas": "bug",
+      "col": 1,
+      "row": 1,
+      "hex": "#9CFF3D",
+      "style": "glow"
+    },
+    "bug-bio-green-dim": {
+      "atlas": "bug",
+      "col": 2,
+      "row": 1,
+      "hex": "#4C8F1A",
+      "style": "residue"
+    },
+    "bug-bio-magenta": {
+      "atlas": "bug",
+      "col": 3,
+      "row": 1,
+      "hex": "#E23DFF",
+      "style": "glow"
+    },
+    "bug-bone": {
+      "atlas": "bug",
+      "col": 0,
+      "row": 2,
+      "hex": "#D8CBB0",
+      "style": "bone"
+    }
+  }
+}

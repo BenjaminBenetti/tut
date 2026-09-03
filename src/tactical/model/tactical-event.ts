@@ -6,10 +6,10 @@ import type { Applied } from "../../core/model/domain-event";
 //
 // The union of tactical events is *derived* from `TacticalEventMap`, and
 // each event module registers itself from its own file (#246). The whole
-// group joins the campaign's `OverworldEventMap` as one `tactical` entry
-// (declared there with a type import, the way the roster and economy
-// groups are), so every tactical event reaches the one store and the one
-// autosave (Tech Lead ruling on #324).
+// group joins the campaign's `OverworldEventMap` as one `tactical` entry,
+// registered by augmentation from `tactical-event-group.ts`, so every
+// tactical event reaches the one store and the one autosave (Tech Lead
+// ruling on #324) while the overworld never imports this domain.
 //
 // To add an event: create `tactical/model/<name>-event.ts` with the
 // `tactical:` tag, payload, event type and

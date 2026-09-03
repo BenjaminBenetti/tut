@@ -1,6 +1,5 @@
 import type { EconomyEvent } from "../../economy/model/economy-event";
 import type { RosterEvent } from "../../roster/model/roster-event";
-import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { CampaignApplied, CampaignEvent } from "./campaign-event";
 
 // ===========================================
@@ -45,8 +44,6 @@ export interface OverworldEventMap {
   readonly economy: EconomyEvent;
   /** Every roster event, as one group (GDD §5.7): roster commands (#63) run through this dispatcher. */
   readonly roster: RosterEvent;
-  /** Every tactical event, as one group (GDD §6): tactical commands (#324) run through this dispatcher too. */
-  readonly tactical: TacticalEvent;
 }
 
 // ===========================================

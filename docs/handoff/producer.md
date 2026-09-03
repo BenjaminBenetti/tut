@@ -3,7 +3,7 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-03 14:00 UTC)
+## Status Digest (2026-09-03 15:00 UTC)
 
 | Milestone | done / total |
 |---|---|
@@ -11,35 +11,33 @@
 | M1 Overworld | 64 / 64 |
 | M1.5 Map Generation | 33 / 34 |
 
-Board: Backlog 24 · Ready 10 · In Progress 2 · In Review 2 · Blocked 0 · Done 130
+Board: Backlog 20 · Ready 8 · In Progress 1 · In Review 2 · Blocked 0 · Done 137
 
 **Engineer seats** (one open issue per seat; Producer assigns via `seat:eng-N`; route by `complexity:*` — high → default-effort seats only, low → medium-effort seats first):
 
 | Seat | Effort | Current | Status | Last merged |
 |---|---|---|---|---|
-| eng-3 | default | #323 tactical: mission state, activeMission slot and mission start factory | In Review | #322 |
-| eng-4 | medium | #219 bug(ui): Continue is silently disabled when the autosave exists but cannot be decoded | Ready | #217 |
-| eng-5 | medium | #369 refactor(graphics): rebuild MapPickingController on the generic PickingController | In Review | #340 |
+| eng-3 | default | #326 tactical: line of sight and cover with elevation and flanking | In Review | #324 |
+| eng-4 | medium | #342 app: tactical screen registration and store wiring | Ready | #219 |
+| eng-5 | medium | #368 bug(ui): threat badge tone uses the unrounded value while the number is rounded (33 shows WARN) | In Review | #291 |
 
-⚠ unassigned Ready: #108 (low), #141 (low), #218 (low), #230 (low), #291 (low), #294 (low), #304 (low), #368 (low)
+⚠ unassigned Ready: #108 (low), #141 (low), #230 (low), #294 (low), #304 (low), #325 (high)
 
 **Ready now** (no unmerged dependencies):
 
 - #108 (engineer) refactor(core): promote generic id Registry to core/ and reuse in mapgen and roster
 - #141 (engineer) refactor: rename scalar tuning exports to UPPER_SNAKE_CASE (economy-tuning, threat-tuning)
 - #190 (art-director) infra(art): headless Blender + OpenSCAD + trimesh/cadquery toolchain in the devcontainer, with proof render and art-blender skill
-- #218 (engineer) bug(engine): overworld camera pan is unbounded; the map can be panned entirely off screen
-- #219 (engineer) bug(ui): Continue is silently disabled when the autosave exists but cannot be decoded
 - #230 (engineer) save: share isRecord between migrations and the game-state guard
-- #291 (engineer) bug(ui): overworld top bar wraps and the outcome badge spills out below ~1000 px width
 - #294 (engineer) bug(ui): squad hired without a name is called "Rifle Squad squad"
 - #304 (engineer) bug(overworld): dev-only threatEscalation multiplier is persisted in the save and honoured by the production build
-- #368 (engineer) bug(ui): threat badge tone uses the unrounded value while the number is rounded (33 shows WARN)
+- #325 (engineer) tactical: movement — reachable tiles and paths per unit class
+- #342 (engineer) app: tactical screen registration and store wiring
 
 **In-flight PRs** (age h / idle h / review):
 
-- #377 0.1h / 0.1h / n/a — refactor(graphics): rebuild overworld picking on the generic PickingController (#369)
-- #372 0.7h / 0.0h / n/a — feat(tactical): mission state, activeMission slot and mission start factory (#323)
+- #386 0.1h / 0.0h / n/a — fix(ui): judge the threat badge tone on the rounded value (#368)
+- #385 0.1h / 0.0h / n/a — feat(tactical): line of sight and cover with elevation and flanking (#326)
 
 **In progress** (branch pushed?):
 
@@ -53,15 +51,12 @@ Board: Backlog 24 · Ready 10 · In Progress 2 · In Review 2 · Blocked 0 · Do
 
 1. #108 — refactor(core): promote generic id Registry to core/ and reuse in mapgen and roster
 2. #141 — refactor: rename scalar tuning exports to UPPER_SNAKE_CASE (economy-tuning, threat-tuning)
-3. #218 — bug(engine): overworld camera pan is unbounded; the map can be panned entirely off screen
-4. #219 — bug(ui): Continue is silently disabled when the autosave exists but cannot be decoded
-5. #230 — save: share isRecord between migrations and the game-state guard
-6. #291 — bug(ui): overworld top bar wraps and the outcome badge spills out below ~1000 px width
-7. #294 — bug(ui): squad hired without a name is called "Rifle Squad squad"
-8. #304 — bug(overworld): dev-only threatEscalation multiplier is persisted in the save and honoured by the production build
-9. #368 — bug(ui): threat badge tone uses the unrounded value while the number is rounded (33 shows WARN)
-10. #324 — tactical: command and event unions on the augmentable maps (Ready once #323 merges)
-11. #326 — tactical: line of sight and cover with elevation and flanking (Ready once #323 merges)
+3. #230 — save: share isRecord between migrations and the game-state guard
+4. #294 — bug(ui): squad hired without a name is called "Rifle Squad squad"
+5. #304 — bug(overworld): dev-only threatEscalation multiplier is persisted in the save and honoured by the production build
+6. #325 — tactical: movement — reachable tiles and paths per unit class
+7. #342 — app: tactical screen registration and store wiring
+8. #327 — tactical: hit chance and damage with visible preview (Ready once #326 merges)
 <!-- digest:end -->
 
 **Status: PRODUCTION RESUMED** (Director, 2026-09-03 03:05 UTC). Pool: eng-3 (default effort, takes `complexity:high` and anything), eng-4 and eng-5 (medium effort, `complexity:low|medium` only). eng-1, eng-2, eng-6 are gone; their seat labels are inactive.
@@ -70,9 +65,9 @@ Board: Backlog 24 · Ready 10 · In Progress 2 · In Review 2 · Blocked 0 · Do
 
 **v0.1.0 RELEASED — 2026-09-03 13:22 UTC** (Tech Lead): tagged at the #336 squash, Release zip and GitHub Pages deploy succeeded, https://benjaminbenetti.github.io/tut/ serves it. M1 Overworld closed 64/64 (epics #35–#42). QA verified #217's fix post-release; remaining QA bugs #218 #219 #291 #294 #304 #368 are post-release polish.
 
-**M2 Basic Missions** (13 of 39 done, 14:05 UTC): #321 unit model, #322 species, #337 unit meshes, #340 input controller merged. Critical path on eng-3: #323 (PR #372, changes requested 13:26, no push since — Tech Lead checked in 14:00) → #324 → #325 → #326 → #328 → #330 → #341. Medium seats: #369 picking refactor (eng-5, PR #377), #219 QA bug (eng-4); then #338/#339/#342 as their high-tier inputs land.
+**M2 Basic Missions** (16 of 39 done, 15:00 UTC): epic #316 (runtime model, species, activeMission, commands on the campaign dispatcher) closed by the Tech Lead. In review: #326 sight/cover (eng-3, PR #385), #368 (eng-5, PR #386); eng-4 on #342 screen wiring. Remaining high chain on eng-3: #325 movement → #328 turn engine → #330 resolver → #341 flow. Post-release QA bugs #217 #218 #219 #291 fixed and verified; #294 #304 remain.
 
-**Seat plan:** eng-3 (default): #323 → #324 → #325 → #326 → #328 → #330 → #341. eng-4 (medium): #219 → #218 → #291 → #294 → #304 → #368 → #230. eng-5 (medium): #369 → #338 (after #325/#326) → #339 (after #327) → #342 (after #324). Low fillers run out in roughly a day; after that the medium seats depend on eng-3's chain.
+**Seat plan:** eng-3 (default): #326 → #325 → #328 → #330 → #341 (serial, all high). eng-4 (medium): #342 → #327 hit chance (after #326) → #329 spawning (after #328). eng-5 (medium): #368 → #338 overlays (after #325/#326) → #339 HUD (after #327) → #331 AI registry (after #328). Low fillers left: #294, #304, #230, #141, #108.
 
 **Risks / asks** (13:20 UTC):
 

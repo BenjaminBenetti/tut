@@ -116,6 +116,7 @@ export async function bootstrapApp(doc: Document): Promise<void> {
             session: game.session,
             selection,
             missionTypes: game.content.missionTypes,
+            eventTypes: game.content.eventTypes,
             deployableTypes: new DataDeployableTypeCatalogue(
               DEPLOYABLE_TYPE_IDS.map((id) => DEPLOYABLE_TYPES[id]),
             ),

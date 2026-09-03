@@ -29,6 +29,11 @@ import { DECOMMISSION_DEPLOYABLE } from "../../overworld/model/decommission-depl
 import { DEPLOYABLE_TYPE_IDS } from "../../overworld/model/deployable-type";
 import { DataDeployableTypeCatalogue } from "../../overworld/repository/deployable-type-catalogue";
 import { MISSION_TYPES } from "../../content/data/mission-types";
+import { EVENT_TYPES } from "../../overworld/data/event-types";
+import { EVENT_TYPE_IDS } from "../../overworld/model/event-type";
+import type { PendingEvent } from "../../overworld/model/pending-event";
+import { RESOLVE_EVENT } from "../../overworld/model/resolve-event-command";
+import { DataEventTypeCatalogue } from "../../overworld/repository/event-type-catalogue";
 import type { Mission } from "../../overworld/model/mission";
 import { OverworldSelectionState } from "../service/overworld-selection-state";
 import { OverworldScreen } from "./overworld-screen";
@@ -58,6 +63,7 @@ class FakeStore implements CampaignStore {
     StoreListener<GameState, OverworldCommand, CampaignEvent>
   >();
   fail = false;
+  readonly resolved: string[] = [];
   constructor(state: GameState) {
     this.state = state;
   }
@@ -105,6 +111,17 @@ class FakeStore implements CampaignStore {
           ...this.state.overworld,
           deployables: this.state.overworld.deployables.filter(
             (d) => d.id !== command.payload.deployableId,
+          ),
+        },
+      };
+    } else if (command.type === RESOLVE_EVENT) {
+      this.resolved.push(command.payload.choiceId);
+      this.state = {
+        ...this.state,
+        overworld: {
+          ...this.state.overworld,
+          pendingEvents: this.state.overworld.pendingEvents.filter(
+            (e) => e.id !== command.payload.eventId,
           ),
         },
       };
@@ -174,6 +191,10 @@ const sessionWith = (store: CampaignStore | undefined): GameSession => ({
   clear: () => undefined,
 });
 
+const EVENT_TYPES_CATALOGUE = new DataEventTypeCatalogue(
+  EVENT_TYPE_IDS.map((id) => EVENT_TYPES[id]),
+);
+
 const DEPLOYABLE_TYPES_CATALOGUE = new DataDeployableTypeCatalogue(
   DEPLOYABLE_TYPE_IDS.map((id) => DEPLOYABLE_TYPES[id]),
 );
@@ -189,6 +210,7 @@ const depsFor = (
   selection,
   deployableTypes: DEPLOYABLE_TYPES_CATALOGUE,
   missionTypes: MISSION_TYPES,
+  eventTypes: EVENT_TYPES_CATALOGUE,
 });
 
 const fakeRouter = (): { router: ScreenRouter; navigate: NavigateMock } => {
@@ -542,6 +564,102 @@ describe("OverworldScreen", () => {
     expect(rows()).toHaveLength(0);
     expect(
       root.querySelector<HTMLElement>('[data-role="no-missions"]')?.hidden,
+    ).toBe(false);
+  });
+
+  // ===========================================
+  // Events (#77)
+  // ===========================================
+
+  const withEvents = (events: readonly PendingEvent[]): GameState => {
+    const state = newGame();
+    return {
+      ...state,
+      overworld: { ...state.overworld, day: 3, pendingEvents: events },
+    };
+  };
+
+  const PLEA: PendingEvent = {
+    id: "event-1",
+    typeId: "city-plea",
+    cityId: "berlin",
+    createdDay: 3,
+    expiresDay: 8,
+  };
+
+  it("shows the pending event as a modal and blocks Advance day until it is answered", () => {
+    const store = new FakeStore(withEvents([PLEA]));
+    new OverworldScreen(depsFor(store)).mount(root);
+    const dialog = root.querySelector<HTMLElement>(
+      '[data-role="event-dialog"]',
+    );
+    expect(dialog?.hidden).toBe(false);
+    expect(dialog?.dataset.eventId).toBe("event-1");
+    expect(root.querySelector('[data-field="event-title"]')?.textContent).toBe(
+      EVENT_TYPES["city-plea"].title,
+    );
+    expect(root.querySelector('[data-field="event-city"]')?.textContent).toBe(
+      "Berlin",
+    );
+    expect(
+      root.querySelector('[data-field="event-text"]')?.textContent,
+    ).toContain("Berlin");
+    const choices = root.querySelectorAll(
+      '[data-role="event-choices"] [data-choice-id]',
+    );
+    expect(choices).toHaveLength(EVENT_TYPES["city-plea"].choices.length);
+    const advance = root.querySelector<HTMLButtonElement>(
+      '[data-action="advance-day"]',
+    );
+    expect(advance?.disabled).toBe(true);
+
+    (choices[1] as HTMLButtonElement).click();
+    expect(store.resolved).toEqual([EVENT_TYPES["city-plea"].choices[1]?.id]);
+    expect(dialog?.hidden).toBe(true);
+    expect(advance?.disabled).toBe(false);
+  });
+
+  it("shows the head of the queue and moves on to the next event after a choice", () => {
+    const second: PendingEvent = {
+      ...PLEA,
+      id: "event-2",
+      typeId: "funding-review",
+      cityId: undefined,
+    };
+    const store = new FakeStore(withEvents([PLEA, second]));
+    new OverworldScreen(depsFor(store)).mount(root);
+    const dialog = root.querySelector<HTMLElement>(
+      '[data-role="event-dialog"]',
+    );
+    root
+      .querySelector<HTMLButtonElement>(
+        '[data-role="event-choices"] [data-choice-id]',
+      )
+      ?.click();
+    expect(dialog?.hidden).toBe(false);
+    expect(dialog?.dataset.eventId).toBe("event-2");
+    expect(
+      root.querySelector<HTMLElement>('[data-field="event-city"]')?.hidden,
+    ).toBe(true);
+    expect(
+      root.querySelector<HTMLButtonElement>('[data-action="advance-day"]')
+        ?.disabled,
+    ).toBe(true);
+  });
+
+  it("shows a rejected choice in the bar and keeps the dialog up", () => {
+    const store = new FakeStore(withEvents([PLEA]));
+    store.fail = true;
+    new OverworldScreen(depsFor(store)).mount(root);
+    root
+      .querySelector<HTMLButtonElement>(
+        '[data-role="event-choices"] [data-choice-id]',
+      )
+      ?.click();
+    const status = root.querySelector<HTMLElement>('[data-role="status"]');
+    expect(status?.hidden).toBe(false);
+    expect(
+      root.querySelector<HTMLElement>('[data-role="event-dialog"]')?.hidden,
     ).toBe(false);
   });
 });

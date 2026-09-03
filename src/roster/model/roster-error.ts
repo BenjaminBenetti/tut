@@ -80,11 +80,11 @@ export interface RosterInsufficientCreditsError {
  * | `unknown-squad-type`     | HireSquad                  |
  * | `unknown-squad`          | ReinforceSquad             |
  * | `invalid-reinforcement`  | ReinforceSquad             |
- * | `unknown-mech`           | RepairMech                 |
+ * | `unknown-mech`           | RepairMech, RenameMech     |
  * | `mech-undamaged`         | RepairMech                 |
  * | `unknown-loadout`        | BuildMech, DeleteLoadout   |
  * | `invalid-loadout`        | SaveLoadout, BuildMech     |
- * | `invalid-name`           | HireSquad, SaveLoadout, BuildMech |
+ * | `invalid-name`           | HireSquad, SaveLoadout, BuildMech, RenameMech |
  * | `insufficient-credits`   | HireSquad, ReinforceSquad, BuildMech, RepairMech |
  */
 export type RosterError =

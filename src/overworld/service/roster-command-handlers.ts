@@ -14,6 +14,7 @@ import {
   deleteLoadout,
   hireSquad,
   reinforceSquad,
+  renameMech,
   saveLoadout,
 } from "../../roster/service/roster-service";
 import type { CampaignState } from "../model/campaign-state";
@@ -33,6 +34,8 @@ import {
   REINFORCE_SQUAD,
   SAVE_LOADOUT,
 } from "../model/overworld-command";
+import type { RenameMechCommand } from "../model/rename-mech-command";
+import { RENAME_MECH } from "../model/rename-mech-command";
 import type { RepairMechCommand } from "../model/repair-mech-command";
 import { REPAIR_MECH } from "../model/repair-mech-command";
 
@@ -62,6 +65,7 @@ export interface RosterCommandHandlers<TState extends CampaignState> {
   readonly deleteLoadout: CommandHandler<TState, DeleteLoadoutCommand>;
   readonly buildMech: CommandHandler<TState, BuildMechCommand>;
   readonly repairMech: CommandHandler<TState, RepairMechCommand>;
+  readonly renameMech: CommandHandler<TState, RenameMechCommand>;
 }
 
 // ===========================================
@@ -140,6 +144,11 @@ export function createRosterCommandHandlers<TState extends CampaignState>(
           transactions: deps.transactionsFor(ctx.ids),
         }),
       ),
+    renameMech: (state, command) =>
+      lift(
+        state,
+        renameMech(state, command.payload.mechId, command.payload.name),
+      ),
   };
 }
 
@@ -155,6 +164,7 @@ export function registerRosterCommands<TState extends CampaignState>(
   dispatcher.register(DELETE_LOADOUT, handlers.deleteLoadout);
   dispatcher.register(BUILD_MECH, handlers.buildMech);
   dispatcher.register(REPAIR_MECH, handlers.repairMech);
+  dispatcher.register(RENAME_MECH, handlers.renameMech);
 }
 
 // ===========================================

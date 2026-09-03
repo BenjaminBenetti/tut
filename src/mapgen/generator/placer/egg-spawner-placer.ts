@@ -53,8 +53,9 @@ interface Candidate {
  * `minDistanceFromDeploy` from any deploy tile, spread at least
  * `MIN_SPREAD` apart, half of them inside buildings when interiors exist,
  * with at least `HATCH_SPACE_MIN` infantry-reachable tiles within the
- * hatch radius, preferring tiles infantry can already reach. The rest of
- * the map's open ground is the fallback so the count is always met.
+ * hatch radius (checked in draw order, only as far as needed), preferring
+ * tiles infantry can already reach. The rest of the map's open ground is
+ * the fallback so the count is always met.
  */
 export class EggSpawnerPlacer implements HookPlacer {
   // ===========================================
@@ -81,14 +82,11 @@ export class EggSpawnerPlacer implements HookPlacer {
         !taken.has(draft.tileKey(c.coord)) &&
         distanceToDeploy(draft, c.coord) >= minDistance,
     );
-    const roomy = all.filter(
-      (c) =>
-        hatchSpace(snapshot, c.coord, radius, PassMask.INFANTRY) >=
-        HATCH_SPACE_MIN,
-    );
-    const spacious = roomy.length >= requirement.count ? roomy : all;
-    const preferred = spacious.filter((c) => reachable(c.coord));
-    const pool = preferred.length >= requirement.count ? preferred : spacious;
+    const preferred = all.filter((c) => reachable(c.coord));
+    const pool = preferred.length >= requirement.count ? preferred : all;
+    const roomy = (c: Candidate): boolean =>
+      hatchSpace(snapshot, c.coord, radius, PassMask.INFANTRY) >=
+      HATCH_SPACE_MIN;
     if (pool.length === 0) {
       diagnostics.note("no candidate tiles for egg spawners");
       return;
@@ -106,8 +104,11 @@ export class EggSpawnerPlacer implements HookPlacer {
       }
       const wantInterior = i < Math.ceil(requirement.count * INTERIOR_SHARE);
       const interior = remaining.filter((c) => c.interior);
-      const pick =
-        wantInterior && interior.length > 0 ? interior[0] : remaining[0];
+      const ordered =
+        wantInterior && interior.length > 0 ? interior : remaining;
+      // Hatch space is measured lazily, in draw order, so only a handful of
+      // candidates per map are walked; a cramped pool falls back to its head.
+      const pick = ordered.find(roomy) ?? ordered[0];
       if (pick === undefined) {
         break;
       }

@@ -15,6 +15,7 @@ import { applySpread } from "./infestation-spread-service";
 import type { MissionTypeCatalogue } from "./mission-generation-service";
 import { expireMissions, generateMissions } from "./mission-generation-service";
 import { applyOutcome } from "./outcome-service";
+import { applyDebugThreat } from "./campaign-debug-service";
 import { computeThreat, unfestedFraction } from "./threat-service";
 
 // ===========================================
@@ -234,7 +235,11 @@ function threatStep<TState extends CampaignState>(
     name: TICK_STEP_NAMES.threat,
     run: (state, ctx) => {
       const { overworld } = state;
-      const threat = computeThreat(overworld.map, ctx.day, deps.threatTuning);
+      const threat = computeThreat(
+        overworld.map,
+        ctx.day,
+        applyDebugThreat(deps.threatTuning, state.meta.debug),
+      );
       if (threat === overworld.threat) {
         return { state, events: [] };
       }

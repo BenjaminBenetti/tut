@@ -1,5 +1,6 @@
 import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
+import type { CampaignDebugOptions } from "../../overworld/model/campaign-debug";
 import type { GameMeta } from "../model/game-state";
 
 /** Inputs the app supplies when starting a campaign. */
@@ -7,6 +8,8 @@ export interface NewGameOptions {
   readonly seed: number;
   /** ISO-8601 timestamp from the app's clock. */
   readonly createdAt: string;
+  /** Test and tuning switches for this campaign; omitted for a normal game. */
+  readonly debug?: CampaignDebugOptions;
 }
 
 /**
@@ -21,5 +24,6 @@ export function createNewGameMeta(options: NewGameOptions): GameMeta {
     rng: new Mulberry32Rng(options.seed).getState(),
     ids: new SequentialIdGenerator().getState(),
     createdAt: options.createdAt,
+    ...(options.debug === undefined ? {} : { debug: options.debug }),
   };
 }

@@ -1,5 +1,6 @@
 import type { IdGeneratorState } from "../../core/model/id-generator";
 import type { RngState } from "../../core/model/rng";
+import type { CampaignDebugOptions } from "./campaign-debug";
 import type { EconomyState } from "../../economy/model/economy-state";
 import type { RosterState } from "../../roster/model/roster-state";
 import type { OverworldState } from "./overworld-state";
@@ -16,6 +17,8 @@ import type { OverworldState } from "./overworld-state";
 export interface CampaignMeta {
   readonly rng: RngState;
   readonly ids: IdGeneratorState;
+  /** Test and tuning switches chosen at new game; absent in a normal campaign. */
+  readonly debug?: CampaignDebugOptions;
 }
 
 /**

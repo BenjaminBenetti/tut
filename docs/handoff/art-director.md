@@ -1,6 +1,6 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-03 (session 1, thirteenth update)
+Last updated: 2026-09-03 (session 1, fourteenth update)
 
 ## 1. What I was doing and where it stands
 
@@ -21,8 +21,9 @@ Last updated: 2026-09-03 (session 1, thirteenth update)
 | **Replace placeholders with Blender models** (Director go on 2026-09-03) | #274 | **Merged**: pipeline #277, batch A Mech A set #280, batch B all mech variants #283. batch C bugs + spawner #287, batch D five squads #288 **merged** too. Every roster unit (30 ids) is a Blender model; `build-placeholders.mjs` keeps tiles, buildings and props. Batch E waits for tactical demand. |
 | Kit follow-ups from dry runs (`bevel`, sub-part validation, CadQuery/OpenSCAD notes) | #190 | **Merged** (PR #264). |
 | Demand-driven props (batch E): `prop.table` for mapgen's interior table kind | #213 | **Merged** (PR #350). Pattern: one model script, `make_model.py --quality final`, id + manifest entry, style guide §7 row. |
-| **Tactical tile textures** (Director ask for M2): env atlas for 16 environment tokens applied to every tile, building and prop through the cell pipeline | #394 | PR #398 open. |
-| **VFX animation sheets** (Director ask for M2): muzzle flash, impact, egg burst frame sheets + `sheet` metadata on the sprite manifest | #395 | PR #396 open; #338 briefed. |
+| **Tactical tile textures** (Director ask for M2): env atlas for 16 environment tokens applied to every tile, building and prop through the cell pipeline | #394 | **Merged** (PR #398). |
+| **VFX animation sheets** (Director ask for M2): muzzle flash, impact, egg burst frame sheets + `sheet` metadata on the sprite manifest | #395 | **Merged** (PR #396); consumed by the animation queue (#338, merged in #402). |
+| Composed scene preview (`tools/art/preview/render-scene.mjs` + `layouts/city-block.json` → `docs/design/scene-preview.png`) | — | **Merged** (PR #407); first in-context render posted on #274. |
 | Image generation recipe (incl. transparent sprites) | — | **Working.** See §5. |
 | Headless GLB / page render checks (Playwright) and Blender review renders | — | **Working.** See §7 and §8. |
 
@@ -30,7 +31,7 @@ Issues #2, #3, #4, #93, #102, #119, #143, #144, #145 are on project 5; #162, #16
 
 ## 2. Open PRs / issues I own
 
-- PR #398 (env atlas, #394) and PR #396 (VFX sheets, #395) open. #274 (replacement track) is paused after batches A–D; batch E is demand-driven (first request, `prop.table` #213, is done). Zoom check: every unit rendered at exactly 64 px per tile through the three.js harness keeps its silhouette (style guide §1 rule 1 holds for the Blender models).
+- None open. #274 (replacement track) is paused after batches A–D; batch E is demand-driven (first request, `prop.table` #213, is done). The Director's M2 asks (VFX sheets, tile textures) are on main. Zoom check: every unit rendered at exactly 64 px per tile through the three.js harness keeps its silhouette (style guide §1 rule 1 holds for the Blender models).
 
 ## 3. Decisions I made and why
 
@@ -58,10 +59,10 @@ Issues #2, #3, #4, #93, #102, #119, #143, #144, #145 are on project 5; #162, #16
 
 ## 4. Next, in order
 
-1. Land PR #398 (env atlas) and PR #396 (VFX sheets); remove the `wt-395` worktree afterwards (`git worktree remove`).
-2. Director round-2 notes on any model or texture: edit the builder or painter, rerun, regenerate previews, PR.
-3. Batch E props and kit pieces on demand (mapgen/tactical asks like #213).
-4. If #338 wants hand-drawn intermediate frames instead of scaled ones, draw them at 128 px into the same sheet layout; the manifest stays as is.
+1. Director round-2 notes on any model, texture cell or the scene render: edit the builder or painter, rerun, regenerate previews (`render-placeholders.mjs`, `render-thumbnails.mjs`, `render-scene.mjs`), PR.
+2. Batch E props and kit pieces on demand (mapgen/tactical asks like #213); biome building kits (snow, desert, coastal) if mapgen's templates start naming them.
+3. Hand-drawn intermediate VFX frames only if #338's playback reads as a zoom rather than motion.
+4. Keep `docs/design/scene-preview.png` current after any tile, kit or unit change; it is the one image that shows everything together.
 
 ## 5. Image generation recipe (Codex CLI)
 

@@ -98,6 +98,16 @@ class RecordingRestorer implements MetaServiceRestorer {
 // ===========================================
 
 describe("OverworldCommandDispatcher", () => {
+  it("rejects an unregistered command tag at compile time", () => {
+    const dispatcher = createOverworldCommandDispatcher<CampaignState>();
+    // The directive is the test: typecheck fails if `register` ever
+    // accepts a tag that no command module registered in the map (#246).
+    // @ts-expect-error "overworld:not-a-command" is not a key of OverworldCommandMap
+    dispatcher.register("overworld:not-a-command", bumpDay);
+    const result = dispatcher.process(BASE, advanceDay());
+    expect(result.ok).toBe(false);
+  });
+
   it("routes a command to its registered handler and returns its outcome", () => {
     const dispatcher = createOverworldCommandDispatcher<CampaignState>();
     dispatcher.register(ADVANCE_DAY, bumpDay);

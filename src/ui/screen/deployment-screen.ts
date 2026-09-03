@@ -1,5 +1,5 @@
 import type { GameSession } from "../model/game-session";
-import type { OverworldUiState } from "../model/overworld-selection";
+import type { OverworldSelection } from "../model/overworld-selection";
 import type { Screen, ScreenId } from "../model/screen";
 import type { ScreenRouter } from "../model/screen-router";
 
@@ -12,7 +12,7 @@ export interface DeploymentScreenDeps {
   readonly router: ScreenRouter;
   readonly session: GameSession;
   /** Carries the mission the player chose on the overworld. */
-  readonly selection: OverworldUiState;
+  readonly selection: OverworldSelection;
 }
 
 // ===========================================

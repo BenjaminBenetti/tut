@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { OverworldSelection } from "../model/overworld-selection";
+import type { OverworldSelectionSnapshot } from "../model/overworld-selection";
 import { OverworldSelectionState } from "./overworld-selection-state";
 
 describe("OverworldSelectionState", () => {
@@ -18,9 +18,9 @@ describe("OverworldSelectionState", () => {
       cityId: "cairo",
       missionId: "mission-1",
     });
-    state.selectCity("cairo");
+    state.select("cairo");
     expect(state.selection.missionId).toBe("mission-1");
-    state.selectCity("lagos");
+    state.select("lagos");
     expect(state.selection).toEqual({ cityId: "lagos", missionId: undefined });
   });
 
@@ -33,12 +33,12 @@ describe("OverworldSelectionState", () => {
 
   it("notifies subscribers only on real changes and honours unsubscribe", () => {
     const state = new OverworldSelectionState();
-    const seen: OverworldSelection[] = [];
+    const seen: OverworldSelectionSnapshot[] = [];
     const stop = state.subscribe((s) => {
       seen.push(s);
     });
-    state.selectCity("cairo");
-    state.selectCity("cairo");
+    state.select("cairo");
+    state.select("cairo");
     state.selectMission("mission-1", "cairo");
     state.selectMission("mission-1", "cairo");
     state.clearMission();
@@ -49,7 +49,7 @@ describe("OverworldSelectionState", () => {
       { cityId: "cairo", missionId: undefined },
     ]);
     stop();
-    state.selectCity("lagos");
+    state.select("lagos");
     expect(seen).toHaveLength(3);
   });
 });

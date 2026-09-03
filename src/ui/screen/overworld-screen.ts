@@ -4,7 +4,7 @@ import type { MissionTypeCatalogue } from "../../overworld/service/mission-gener
 import type { GameState } from "../../save/model/game-state";
 import type { CampaignStore, GameSession } from "../model/game-session";
 import type { MapViewportHost } from "../model/map-viewport-host";
-import type { OverworldUiState } from "../model/overworld-selection";
+import type { OverworldSelection } from "../model/overworld-selection";
 import type { Screen, ScreenId } from "../model/screen";
 import type { ScreenRouter } from "../model/screen-router";
 import { MissionDetailsView } from "../view/mission-details-view";
@@ -21,7 +21,7 @@ export interface OverworldScreenDeps {
   readonly router: ScreenRouter;
   readonly session: GameSession;
   /** Shared selection of city and mission; the map wiring writes into it too. */
-  readonly selection: OverworldUiState;
+  readonly selection: OverworldSelection;
   /** Names and describes mission types. */
   readonly missionTypes: MissionTypeCatalogue;
   /** Lends the map canvas to the layout's map cell while mounted; absent in unit tests. */

@@ -3,11 +3,11 @@ import type { CityId } from "../../overworld/model/city";
 import type { MissionId } from "../../overworld/model/mission";
 
 // ===========================================
-// Selection
+// Snapshot
 // ===========================================
 
 /** What the player currently has picked on the overworld. Plain data. */
-export interface OverworldSelection {
+export interface OverworldSelectionSnapshot {
   /** The highlighted city, from the map or from a mission. */
   readonly cityId: CityId | undefined;
   /** The mission open in the side panel; always in `cityId` when set. */
@@ -15,31 +15,44 @@ export interface OverworldSelection {
 }
 
 /** Receives every selection change. */
-export type SelectionListener = (selection: OverworldSelection) => void;
+export type SelectionListener = (selection: OverworldSelectionSnapshot) => void;
 
 // ===========================================
-// UI state
+// Selection
 // ===========================================
 
 /**
  * Presentation-only state shared by the overworld views and the map:
- * which city and which mission are selected. Simulation never sees it.
- * The map picking wiring writes cities into it and reads it back to
- * highlight markers; the mission list writes missions into it; screens
- * that need "the mission the player chose" (deployment) read it.
+ * which city and which mission are selected. Not part of the campaign,
+ * never saved. The map picking wiring writes cities into it and reads it
+ * back to highlight markers; the city panel, deployables and mission
+ * views render from it; the mission list writes missions into it; the
+ * deployment screen reads "the mission the player chose".
  *
  * ```
- *   map click ──► selectCity(id) ──┐
- *                                  ├──► selection ──► subscribers (views, map highlight)
- *   mission row ──► selectMission(id, cityId) ──┘
+ *   picking ──select(cityId)──────────────┐
+ *   mission row ──selectMission(id, city)─┼──► selection ──subscribe──► panels, map highlight
+ *   briefing ──clearMission()─────────────┘
  * ```
+ *
+ * `CitySelection` (#293) is the former name of this interface and is
+ * re-exported from `ui/model/city-selection.ts` for one release.
  */
-export interface OverworldUiState {
-  /** The current selection. */
-  readonly selection: OverworldSelection;
+export interface OverworldSelection {
+  /** The selected city, or undefined when none is. */
+  readonly cityId: CityId | undefined;
 
-  /** Highlights a city. A mission in another city is deselected; one in this city stays. */
-  selectCity(cityId: CityId): void;
+  /** The open mission, or undefined when none is. */
+  readonly missionId: MissionId | undefined;
+
+  /** Both values as one snapshot. */
+  readonly selection: OverworldSelectionSnapshot;
+
+  /**
+   * Selects a city, or clears everything with `undefined`. A mission in
+   * another city is deselected; one in this city stays open.
+   */
+  select(cityId: CityId | undefined): void;
 
   /** Opens a mission and highlights its host city. */
   selectMission(missionId: MissionId, cityId: CityId): void;

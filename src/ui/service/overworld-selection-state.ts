@@ -3,7 +3,7 @@ import type { CityId } from "../../overworld/model/city";
 import type { MissionId } from "../../overworld/model/mission";
 import type {
   OverworldSelection,
-  OverworldUiState,
+  OverworldSelectionSnapshot,
   SelectionListener,
 } from "../model/overworld-selection";
 
@@ -12,34 +12,50 @@ import type {
 // ===========================================
 
 /**
- * In-memory `OverworldUiState`. Notifies subscribers only when the
+ * In-memory `OverworldSelection`. Notifies subscribers only when the
  * selection actually changes, so the map highlight and the views can
- * write back into it without echoing forever.
+ * write back into it without echoing forever; views render from state,
+ * so a repeated click on the same city has nothing new to show.
+ *
+ * `CitySelectionStore` (#293) is the former name of this class and is
+ * re-exported from `ui/service/city-selection-store.ts` for one release.
  */
-export class OverworldSelectionState implements OverworldUiState {
+export class OverworldSelectionState implements OverworldSelection {
   // ===========================================
   // Fields
   // ===========================================
 
-  private current: OverworldSelection = {
+  private current: OverworldSelectionSnapshot = {
     cityId: undefined,
     missionId: undefined,
   };
   private readonly listeners = new Set<SelectionListener>();
 
   // ===========================================
-  // OverworldUiState
+  // OverworldSelection
   // ===========================================
 
-  /** The current selection. */
-  get selection(): OverworldSelection {
+  /** The selected city, or undefined when none is. */
+  get cityId(): CityId | undefined {
+    return this.current.cityId;
+  }
+
+  /** The open mission, or undefined when none is. */
+  get missionId(): MissionId | undefined {
+    return this.current.missionId;
+  }
+
+  /** Both values as one snapshot. */
+  get selection(): OverworldSelectionSnapshot {
     return this.current;
   }
 
-  /** Highlights a city, keeping the mission only if it lives there. */
-  selectCity(cityId: CityId): void {
+  /** Highlights a city (or clears with undefined), keeping the mission only if it lives there. */
+  select(cityId: CityId | undefined): void {
     const missionId =
-      this.current.cityId === cityId ? this.current.missionId : undefined;
+      cityId !== undefined && this.current.cityId === cityId
+        ? this.current.missionId
+        : undefined;
     this.set({ cityId, missionId });
   }
 
@@ -66,7 +82,7 @@ export class OverworldSelectionState implements OverworldUiState {
   // ===========================================
 
   /** Stores and broadcasts a new selection unless it equals the current one. */
-  private set(next: OverworldSelection): void {
+  private set(next: OverworldSelectionSnapshot): void {
     if (
       next.cityId === this.current.cityId &&
       next.missionId === this.current.missionId

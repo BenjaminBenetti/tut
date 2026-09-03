@@ -3,7 +3,7 @@ import type { Mission, MissionId } from "../../overworld/model/mission";
 import { findCity } from "../../overworld/service/earth-map-query-service";
 import type { MissionTypeCatalogue } from "../../overworld/service/mission-generation-service";
 import type { GameState } from "../../save/model/game-state";
-import type { OverworldSelection } from "../model/overworld-selection";
+import type { OverworldSelectionSnapshot } from "../model/overworld-selection";
 import { formatCredits, formatWhole } from "../service/format";
 
 // ===========================================
@@ -110,7 +110,10 @@ export class MissionListView {
   }
 
   /** Syncs the rows to the missions on offer and highlights the selection. */
-  update(state: GameState | undefined, selection: OverworldSelection): void {
+  update(
+    state: GameState | undefined,
+    selection: OverworldSelectionSnapshot,
+  ): void {
     if (!this.list || !this.empty) {
       return;
     }

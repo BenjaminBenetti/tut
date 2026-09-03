@@ -18,7 +18,7 @@ import { WebStorageKeyValueStore } from "../../save/repository/web-storage-key-v
 import { iconHref } from "../../ui/data/icon-manifest";
 import type { ScreenId } from "../../ui/model/screen";
 import { MainMenuScreen } from "../../ui/screen/main-menu-screen";
-import type { OverworldUiState } from "../../ui/model/overworld-selection";
+import type { OverworldSelection } from "../../ui/model/overworld-selection";
 import { DeploymentScreen } from "../../ui/screen/deployment-screen";
 import { OverworldScreen } from "../../ui/screen/overworld-screen";
 import { OverworldSelectionState } from "../../ui/service/overworld-selection-state";
@@ -151,7 +151,7 @@ async function composeScene(
   doc: Document,
   viewport: HTMLElement,
   window: Window,
-  selection: OverworldUiState,
+  selection: OverworldSelection,
 ): Promise<SceneService> {
   const assets = await loadOverworldAssets({
     textures: new ManifestTextureLoader({
@@ -172,7 +172,7 @@ async function composeScene(
   const cameraInput = new CameraInputController(rig);
   const picking = new MapPickingController(mapScene, rig, {
     onCitySelected: (cityId) => {
-      selection.selectCity(cityId);
+      selection.select(cityId);
     },
   });
   // The selection is the truth for both directions: a map click lands

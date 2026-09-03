@@ -204,7 +204,7 @@ describe("OverworldScreen", () => {
   it("a city picked on the map shows in the panel and drops a mission elsewhere", () => {
     const { selection } = mountWith(new FakeStore(campaignOnDay(4, MISSIONS)));
     rows()[0]?.click();
-    selection.selectCity("tokyo");
+    selection.select("tokyo");
     expect(root.querySelector("#selected-city")?.textContent).toBe("Tokyo");
     expect(
       root.querySelector<HTMLElement>('[data-role="mission-details"]')?.hidden,
@@ -264,7 +264,7 @@ describe("OverworldScreen", () => {
     screen.unmount();
     expect(store.listenerCount).toBe(0);
     expect(root.children).toHaveLength(0);
-    selection.selectCity("cairo");
+    selection.select("cairo");
     expect(root.children).toHaveLength(0);
   });
 

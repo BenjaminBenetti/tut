@@ -15,9 +15,13 @@ import { createAdvanceDayHandler } from "../../overworld/service/advance-day-ser
 import { createOverworldCommandDispatcher } from "../../overworld/service/command-dispatcher";
 import type { TickDeps } from "../../overworld/service/default-tick-steps";
 import { createDefaultTickSteps } from "../../overworld/service/default-tick-steps";
+import { registerRosterCommands } from "../../overworld/service/roster-command-handlers";
+import { MECH_RATING_TUNING } from "../../roster/data/mech-rating-tuning";
+import { STARTER_PARTS } from "../../roster/data/parts";
 import { SQUAD_TYPES } from "../../roster/data/squad-types";
 import { STARTER_ROSTER } from "../../roster/data/starter-roster";
 import { DataSquadTypeCatalogue } from "../../roster/repository/squad-type-catalogue";
+import { StaticPartCatalogue } from "../../roster/repository/static-part-catalogue";
 import { AUTOSAVE_SLOT_ID } from "../../save/data/save-slots";
 import type { GameState } from "../../save/model/game-state";
 import type { KeyValueStore } from "../../save/model/key-value-store";
@@ -79,16 +83,22 @@ export interface GameComposition {
  *   shipped content ──► createCampaign(options)
  * ```
  *
- * Overworld command handlers are registered on `dispatcher` here:
- * `AdvanceDay` runs the default tick pipeline over the shipped content;
- * the remaining commands land with their issues (#65 deployables, #67
- * LaunchMission with the #62 resolver injected, #70 events). A command
- * without a handler is rejected as `unknown-command` and the store stays
- * put.
+ * Command handlers are registered on `dispatcher` here: the roster
+ * commands (#63) and `AdvanceDay` (#68), which runs the default tick
+ * pipeline over the shipped content. #65 deployables, #67 LaunchMission
+ * with the #62 resolver injected and #70 events follow. Anything
+ * unregistered is rejected as `unknown-command` and the store stays put.
  */
 export function composeGame(deps: GameCompositionDeps): GameComposition {
   const saves = createGameSaveService(deps.storage, deps.clock);
   const dispatcher = createOverworldCommandDispatcher<GameState>();
+  const squadTypes = new DataSquadTypeCatalogue(SQUAD_TYPES);
+  registerRosterCommands(dispatcher, {
+    squadTypes,
+    parts: new StaticPartCatalogue(STARTER_PARTS),
+    rating: MECH_RATING_TUNING,
+    transactionsFor: (ids) => new LedgerTransactionService(ids),
+  });
   const tickDeps = composeTickDeps();
   dispatcher.register(
     ADVANCE_DAY,
@@ -105,7 +115,7 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     (state) => new GameStore(state, dispatcher),
     (store) => autosave.attach(store),
   );
-  const newGameDeps = composeNewGameDeps();
+  const newGameDeps = composeNewGameDeps(squadTypes);
 
   return {
     saves,
@@ -137,10 +147,10 @@ function composeTickDeps(): TickDeps {
 }
 
 /** The shipped content and tuning a new campaign is built from. */
-function composeNewGameDeps(): NewGameDeps {
+function composeNewGameDeps(squadTypes: DataSquadTypeCatalogue): NewGameDeps {
   return {
     map: EARTH_MAP,
-    squadTypes: new DataSquadTypeCatalogue(SQUAD_TYPES),
+    squadTypes,
     starterRoster: STARTER_ROSTER,
     newGameTuning: NEW_GAME_TUNING,
     threatTuning: THREAT_TUNING,

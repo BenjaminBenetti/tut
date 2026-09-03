@@ -122,7 +122,8 @@ def main() -> None:
     rel_path = f"assets/models/{args.category}/{args.file}"
     glb_path = os.path.join(REPO_ROOT, args.out_root, args.category, args.file)
     size = bpy_kit.export_glb(glb_path)
-    validation = report_for(glb_path, max_triangles=args.max_triangles, max_bytes=500 * 1024)
+    sub_part = w == 0 and d == 0  # footprint 0×0: pivots at its socket, may hang below y = 0
+    validation = report_for(glb_path, max_triangles=args.max_triangles, max_bytes=500 * 1024, allow_below_ground=sub_part)
     bpy_kit.setup_render(args.size, args.samples)
     renders = bpy_kit.render_yaws(os.path.join(REPO_ROOT, args.render), args.id) if args.render else []
     record = {

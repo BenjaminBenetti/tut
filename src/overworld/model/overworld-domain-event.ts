@@ -1,5 +1,7 @@
 import type { Applied, DomainEvent } from "../../core/model/domain-event";
 import type { MissionTypeId } from "../../content/model/mission-type-id";
+import type { EconomyEvent } from "../../economy/model/economy-event";
+import type { RosterEvent } from "../../roster/model/roster-event";
 import type { CityId } from "./city";
 import type { Mission, MissionId } from "./mission";
 import type { DeployableId } from "./deployable";
@@ -209,7 +211,9 @@ export type MissionExpiredEvent = DomainEvent<
 /**
  * Every domain event the overworld can emit, one line per event so the
  * list stays discoverable. Extended by each tick step and command as it
- * lands (#67, #68).
+ * lands (#67, #68). Roster and economy events are folded in because
+ * roster commands (#63) run through this dispatcher and their purchases
+ * emit `CreditsChanged`.
  */
 export type OverworldDomainEvent =
   | CityInfestationChangedEvent
@@ -221,7 +225,9 @@ export type OverworldDomainEvent =
   | DeployableOnlineEvent
   | GameEndedEvent
   | MissionOfferedEvent
-  | MissionExpiredEvent;
+  | MissionExpiredEvent
+  | RosterEvent
+  | EconomyEvent;
 
 /**
  * The `{ state, events }` pair overworld handlers and tick steps return,

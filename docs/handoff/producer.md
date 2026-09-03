@@ -3,15 +3,15 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-03 03:08 UTC)
+## Status Digest (2026-09-03 03:29 UTC)
 
 | Milestone | done / total |
 |---|---|
-| M0 Foundation | 10 / 13 |
-| M1 Overworld | 19 / 62 |
-| M1.5 Map Generation | 11 / 23 |
+| M0 Foundation | 12 / 13 |
+| M1 Overworld | 23 / 63 |
+| M1.5 Map Generation | 17 / 28 |
 
-Board: Backlog 25 · Ready 9 · In Progress 8 · In Review 16 · Blocked 0 · Done 42
+Board: Backlog 25 · Ready 13 · In Progress 7 · In Review 6 · Blocked 0 · Done 55
 
 **Engineer seats** (one open issue per seat; Producer assigns via `seat:eng-N`; route by `complexity:*` — high → default-effort seats only, low → medium-effort seats first):
 
@@ -19,51 +19,41 @@ Board: Backlog 25 · Ready 9 · In Progress 8 · In Review 16 · Blocked 0 · Do
 |---|---|---|---|---|
 | eng-1 | unknown | IDLE | - | #57 |
 | eng-2 | unknown | IDLE | - | #54 |
-| eng-3 | default | #8 feat(app): app/ bootstrap and screen router with placeholder screens | In Review | #106 |
-| eng-4 | medium | #56 save: overworld GameState save, load, export and import | In Review | #10 |
-| eng-5 | medium | IDLE | - | #74 |
+| eng-3 | default | #55 overworld: command and event types with a command dispatcher | In Progress | #8 |
+| eng-4 | medium | #197 refactor(economy): computeStipend takes the unfested fraction, not the EarthMap | In Review | #56 |
+| eng-5 | medium | #52 overworld: deployable model and type data | Ready | #74 |
 | eng-6 | unknown | IDLE | - | #51 |
 
-⚠ idle: eng-1, eng-2, eng-5, eng-6 · unassigned Ready: #49 (no complexity label), #52 (no complexity label), #55 (no complexity label), #58 (no complexity label), #59 (no complexity label), #61 (no complexity label), #108 (no complexity label), #141 (no complexity label) · need Tech Lead complexity label before assignment: #49, #52, #55, #58, #59, #61, #108, #141
+⚠ idle: eng-1, eng-2, eng-6 · unassigned Ready: #49 (medium), #58 (medium), #59 (low), #61 (medium), #108 (low), #141 (low)
 
 **Ready now** (no unmerged dependencies):
 
 - #49 (engineer) roster: loadout validation and mech stat sheet service
 - #52 (engineer) overworld: deployable model and type data
-- #55 (engineer) overworld: command and event types with a command dispatcher
 - #58 (engineer) overworld: infestation spread and seeding
 - #59 (engineer) overworld: lose condition and win stub
 - #61 (engineer) overworld: mission generation and expiry tick
 - #108 (engineer) refactor(core): promote generic id Registry to core/ and reuse in mapgen and roster
 - #141 (engineer) refactor: rename scalar tuning exports to UPPER_SNAKE_CASE (economy-tuning, threat-tuning)
 - #190 (art-director) infra(art): headless Blender + OpenSCAD + trimesh/cadquery toolchain in the devcontainer, with proof render and art-blender skill
+- #200 (mapgen) feat(mapgen): grade city blocks flat inside the road grid
+- #201 (mapgen) feat(mapgen): two-column roads for cities
+- #202 (mapgen) feat(mapgen): furnish non-storage rooms with sparse low cover
+- #203 (mapgen) feat(mapgen): vegetation clusters instead of uniform scatter
+- #204 (mapgen) chore(mapgen): trails visible on sand and snow
 
 **In-flight PRs** (age h / idle h / review):
 
-- #194 0.0h / 0.0h / n/a — chore(handoff): art-director 2026-09-03 (Blender toolchain)
-- #193 0.1h / 0.0h / n/a — feat(art): art-blender skill — bpy kit, one-command model loop, GLB renderer (#191)
-- #192 0.1h / 0.1h / n/a — chore(infra): devcontainer with headless Blender 4.5, openscad, trimesh, cadquery + smoke render proof (#191)
-- #188 10.1h / 0.0h / n/a — chore(producer): seat-aware In Progress, seat effort and complexity tiers in the digest
-- #185 17.6h / 17.6h / n/a — feat(mapgen): stairwell holes prefer interior columns so facades stay whole (#184)  ⚠ needs review
-- #183 17.6h / 17.6h / n/a — feat(mapgen): scale building count by map area (#182)  ⚠ needs review
-- #181 17.6h / 17.6h / n/a — docs(adr): align ADR 0004 wording with the M1.5 implementation  ⚠ needs review
-- #180 17.7h / 17.7h / n/a — feat(mapgen): mission → MapRecipe adapter with difficulty-scaled hook requirements (#85)  ⚠ needs review
-- #179 17.7h / 17.7h / n/a — feat(mapgen): preview harness — second Vite entry rendering generated maps (#31)  ⚠ needs review
-- #177 17.9h / 17.8h / n/a — test(mapgen): property sweep across seeds, golden seeds, fork stability (#30)  ⚠ needs review
-- #176 18.0h / 17.8h / n/a — feat(mapgen): settlement pipeline factory and generateTacticalMap entry (#97)  ⚠ needs review
-- #175 18.0h / 18.0h / n/a — feat(graphics): Earth map texture, glyph markers and four-stop ramp on the overworld scene (#162)  ⚠ needs review
-- #174 18.0h / 17.8h / n/a — feat(mapgen): connectivity repair pass (#29)  ⚠ needs review
-- #173 18.1h / 17.8h / n/a — feat(mapgen): hook placers — deploy, egg spawner, edge spawn, extraction + hook pass (#28)  ⚠ needs review
-- #171 21.3h / 18.0h / n/a — feat(app): app bootstrap, DOM screen router and placeholder screens (#8)  ⚠ needs review
-- #170 21.4h / 17.8h / n/a — feat(mapgen): ramp pass — ground connectivity across one-level steps (#27)  ⚠ needs review
-- #167 21.4h / 21.4h / n/a — feat(economy): per-day stipend income — computeStipend and applyStipend through the transaction service (#60)  ⚠ needs review
-- #166 21.4h / 21.4h / n/a — feat(save): GameState save, load, export and import (#56)  ⚠ needs review
-- #165 21.4h / 21.4h / n/a — feat(ui): unit and mech-part thumbnails, thumbnail manifest, shared preview server (#163)  ⚠ needs review
-- #164 21.5h / 3.5h / n/a — feat(mapgen): prop pass — vegetation, street clutter, yard cover, interior storage (#26)  ⚠ needs review
+- #198 0.1h / 0.1h / n/a — refactor(economy): computeStipend takes the unfested fraction, not the EarthMap (#197)
+- #195 0.3h / 0.0h / n/a — feat(art): placeholder batch 3 — mech part variants for the starter part catalogue (#169)
+- #185 17.9h / 0.1h / n/a — feat(mapgen): stairwell holes prefer interior columns so facades stay whole (#184)
+- #183 18.0h / 0.1h / n/a — feat(mapgen): scale building count by map area (#182)
+- #180 18.0h / 0.1h / n/a — feat(mapgen): mission → MapRecipe adapter with difficulty-scaled hook requirements (#85)
+- #179 18.1h / 0.1h / n/a — feat(mapgen): preview harness — second Vite entry rendering generated maps (#31)
 
 **In progress** (branch pushed?):
 
-- #169 yes — Art: placeholder batch 3 — mech part variants matching the starter part catalogue
+- #55 yes — overworld: command and event types with a command dispatcher
 
 **Blocked**:
 
@@ -73,28 +63,26 @@ Board: Backlog 25 · Ready 9 · In Progress 8 · In Review 16 · Blocked 0 · Do
 
 1. #49 — roster: loadout validation and mech stat sheet service
 2. #52 — overworld: deployable model and type data
-3. #55 — overworld: command and event types with a command dispatcher
-4. #58 — overworld: infestation spread and seeding
-5. #59 — overworld: lose condition and win stub
-6. #61 — overworld: mission generation and expiry tick
-7. #108 — refactor(core): promote generic id Registry to core/ and reuse in mapgen and roster
-8. #141 — refactor: rename scalar tuning exports to UPPER_SNAKE_CASE (economy-tuning, threat-tuning)
-9. #33 — chore(infra): Vite multi-page input for mapgen-preview.html (Ready once #31 merges)
+3. #58 — overworld: infestation spread and seeding
+4. #59 — overworld: lose condition and win stub
+5. #61 — overworld: mission generation and expiry tick
+6. #108 — refactor(core): promote generic id Registry to core/ and reuse in mapgen and roster
+7. #141 — refactor: rename scalar tuning exports to UPPER_SNAKE_CASE (economy-tuning, threat-tuning)
+8. #33 — chore(infra): Vite multi-page input for mapgen-preview.html (Ready once #31 merges)
 <!-- digest:end -->
 
 **Status: PRODUCTION RESUMED** (Director, 2026-09-03 03:05 UTC). Pool: eng-3 (default effort, takes `complexity:high` and anything), eng-4 and eng-5 (medium effort, `complexity:low|medium` only). eng-1, eng-2, eng-6 are gone; their seat labels are inactive.
 
-**Gap audit (03:10 UTC, posted on #35):** stopped-seat issues #43 #50 #57 #44 #53 #54 #51 #107 are Done. #52 Ready (no branch). #55 Ready (parked WIP on `feat/55-overworld-command-dispatcher`, gates #72). #60 In Review with orphaned PR #167 (medium seat adopts at next refill). #162 In Review with PR #175 (back to eng-5 first). No engineer issue is In Progress without a PR; no open issue carries a stopped-seat label.
+**Gap audit (03:10 UTC, posted on #35):** closed. Every stopped-seat issue is Done or reseated (#52 → eng-5, #55 → eng-3); #60 and #162 merged.
 
-**Blocked on:** `complexity:*` labels — none exist yet. Tech Lead sweep requested on #35. Until then no assignment is allowed (producer.md §4).
+**Complexity sweep done (03:23 UTC).** Every open engineer issue carries a tier. Live seats filled by tier: eng-3 (default) → #55 high; eng-4 (medium) → #197 low; eng-5 (medium) → #52 low.
 
-**Seat plan on resume:** eng-5 ← #162 (own PR #175) → #52 (low) → #58/#59. eng-4: #56 (PR #166) → adopt #60/PR #167 → #49. eng-3: #8 (PR #171) → #55 (high, parked WIP) → #72 composition root → #73.
+**Seat plan:** eng-3: #55 → #72 composition root (high) → #68 AdvanceDay (high) → #67 launch (high). eng-4: #197 → #49 loadout validation (medium) → #63 roster service (medium) → #64. eng-5: #52 → #59 lose/win (low) → #58 spread (medium) → #61 generation (medium). Low-tier fillers for medium seats: #141, then #108 **only after the mapgen stack #179/#180/#183/#185 merges** (Tech Lead, #108).
 
-**Risks** (03:10 UTC):
+**Risks** (03:30 UTC):
 
-- Sixteen PRs In Review; the Tech Lead is merging process/handoff first. Refills depend on that queue draining.
-- Only one default-effort seat: every `complexity:high` issue (#55, #72, #68 likely) serialises on eng-3.
-- #167 (#60) has no owner until a medium seat frees; if review comments land first, nobody answers them.
+- One default-effort seat carries every `complexity:high` gate (#55 → #72 → #68 → #67) in series; M1's critical path is eng-3's throughput.
+- Medium seats will outrun their Ready supply once #59/#49/#58/#61 are taken: #65/#66 need #52, #63/#64 need #49, #70/#71 need #55. Keep an eye on the queue at each tick.
 
 ---
 

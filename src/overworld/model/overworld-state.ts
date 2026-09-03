@@ -1,3 +1,4 @@
+import type { Deployable } from "./deployable";
 import type { EarthMap } from "./earth-map";
 import type { EventTypeId } from "./event-type";
 import type { Mission } from "./mission";
@@ -24,13 +25,6 @@ export const FIRST_DAY = 1;
 export interface PendingEvent {
   readonly id: string;
   readonly typeId: EventTypeId;
-}
-
-/** Placeholder until #52 defines `Deployable` in `overworld/model/deployable.ts`. */
-export interface Deployable {
-  readonly id: string;
-  readonly typeId: string;
-  readonly regionId: RegionId;
 }
 
 /** Placeholder until M3 defines bug hives (GDD §5.3). */

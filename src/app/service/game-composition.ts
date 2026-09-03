@@ -24,16 +24,12 @@ import { registerLaunchMission } from "../../overworld/service/launch-mission-se
 import { createOverworldCommandDispatcher } from "../../overworld/service/command-dispatcher";
 import { registerDeployableCommands } from "../../overworld/service/deployable-command-handlers";
 import { registerEventCommands } from "../../overworld/service/event-command-handlers";
-import { COMBAT_TUNING } from "../../tactical/data/combat-tuning";
-import { ATTACK } from "../../tactical/model/attack-command";
-import { MOVE } from "../../tactical/model/move-command";
-import { createAttackHandler } from "../../tactical/service/combat-service";
-import { moveHandler } from "../../tactical/service/move-handler";
-import { registerTacticalCommands } from "../../tactical/service/tactical-command-handlers";
 import type { TickDeps } from "../../overworld/service/default-tick-steps";
 import type { MissionTypeCatalogue } from "../../overworld/service/mission-generation-service";
 import { createDefaultTickSteps } from "../../overworld/service/default-tick-steps";
 import { registerRosterCommands } from "../../overworld/service/roster-command-handlers";
+import type { TacticalComposition } from "./tactical-composition";
+import { composeTactical } from "./tactical-composition";
 import { AUTO_RESOLVE_TUNING } from "../../overworld/data/auto-resolve-tuning";
 import { MECH_RATING_TUNING } from "../../roster/data/mech-rating-tuning";
 import { STARTER_PARTS } from "../../roster/data/parts";
@@ -110,6 +106,8 @@ export interface GameComposition {
   readonly clock: SaveClock;
   /** The catalogues and tuning the dispatcher was wired with, for screens. */
   readonly content: GameContent;
+  /** The tactical side: registered rule handlers and mission-start deps (#342). */
+  readonly tactical: TacticalComposition;
 }
 
 // ===========================================
@@ -165,12 +163,6 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     eventTypes: tickDeps.eventTypes,
     transactionsFor: tickDeps.createTransactions,
   });
-  // Tactical rules register here as they land (#324 lifts them over the
-  // active mission); the Attack handler is the first (#327).
-  registerTacticalCommands(dispatcher, {
-    [ATTACK]: createAttackHandler(COMBAT_TUNING),
-    [MOVE]: moveHandler,
-  });
   dispatcher.register(
     ADVANCE_DAY,
     createAdvanceDayHandler(createDefaultTickSteps<GameState>(tickDeps), {
@@ -196,6 +188,7 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     rosterTuning: content.rosterTuning,
     transactionsFor: (ids) => new LedgerTransactionService(ids),
   });
+  const tactical = composeTactical(dispatcher, content);
   const autosave = new AutosaveService(
     saves,
     AUTOSAVE_SLOT_ID,
@@ -223,6 +216,7 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     newSeed: deps.newSeed,
     clock: deps.clock,
     content,
+    tactical,
   };
 }
 

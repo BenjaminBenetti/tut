@@ -12,6 +12,7 @@ import { DataSquadTypeCatalogue } from "../../roster/repository/squad-type-catal
 import { StaticPartCatalogue } from "../../roster/repository/static-part-catalogue";
 import type { GameState } from "../../save/model/game-state";
 import { ATTACK } from "../../tactical/model/attack-command";
+import { MOVE } from "../../tactical/model/move-command";
 import { END_TURN, endTurn } from "../../tactical/model/end-turn-command";
 import type { TacticalHandler } from "../../tactical/model/tactical-handler";
 import { TURN_STARTED } from "../../tactical/model/turn-started-event";
@@ -110,7 +111,7 @@ describe("composeTactical", () => {
   it("registers the shipped rules by default (Attack today) and leaves the rest unknown", () => {
     const dispatcher = createOverworldCommandDispatcher<GameState>();
     const tactical = composeTactical(dispatcher, CONTENT);
-    expect(Object.keys(tactical.handlers)).toEqual([ATTACK]);
+    expect(Object.keys(tactical.handlers)).toEqual([ATTACK, MOVE]);
     const outcome = dispatcher.process(campaignOnDay(1, []), endTurn());
     expect(outcome.ok).toBe(false);
     if (outcome.ok) return;

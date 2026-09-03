@@ -1,5 +1,5 @@
 import type { Direction } from "../../core/model/direction";
-import type { PassMask } from "../../mapgen/model/pass-mask";
+import type { UnitClass } from "../../mapgen/model/pass-mask";
 import { PassMask as PASS } from "../../mapgen/model/pass-mask";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { UnitTemplateId } from "./unit-template";
@@ -105,6 +105,6 @@ export interface Unit {
 // ===========================================
 
 /** The mapgen passability bit a unit class needs on a tile. */
-export function passMaskFor(passClass: PassClass): PassMask {
+export function passMaskFor(passClass: PassClass): UnitClass {
   return passClass === "mech" ? PASS.MECH : PASS.INFANTRY;
 }

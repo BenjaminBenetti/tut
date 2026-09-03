@@ -20,6 +20,7 @@ import type { MapGenRegistries } from "../model/registries";
 import type { ResolvedMapGenParams } from "../model/resolved-params";
 import type { ColumnCoord } from "../model/road";
 import type { TileCoord } from "../model/tile-coord";
+import { isOpenGround, isRoadAt } from "../service/draft-queries";
 import { unreachableInteriorTiles } from "./interior/building-reachability";
 
 // ===========================================
@@ -440,24 +441,6 @@ function allowedIn(
     prop.placements.includes(placement) &&
     (prop.biomes === undefined || prop.biomes.includes(biome))
   );
-}
-
-/** Dry, uncovered, non-road, non-sidewalk column with no prop yet. */
-function isOpenGround(draft: MapDraft, x: number, z: number): boolean {
-  if (!draft.inBounds(x, z) || draft.isCovered(x, z) || draft.isRoad(x, z)) {
-    return false;
-  }
-  const surface = draft.groundSurfaceAt(x, z);
-  return (
-    surface !== SurfaceIds.WATER &&
-    surface !== SurfaceIds.SIDEWALK &&
-    draft.propAt(draft.groundCoord(x, z)) === undefined
-  );
-}
-
-/** Road check tolerant of off-map coordinates. */
-function isRoadAt(draft: MapDraft, x: number, z: number): boolean {
-  return draft.inBounds(x, z) && draft.isRoad(x, z);
 }
 
 /** True when a 4-neighbour at the same level already holds a prop. */

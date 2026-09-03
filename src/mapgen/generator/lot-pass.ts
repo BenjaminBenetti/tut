@@ -16,6 +16,7 @@ import type { Lot } from "../model/lot";
 import type { MapDraft } from "../model/map-draft";
 import type { ColumnCoord } from "../model/road";
 import type { SettlementDefinition } from "../model/settlement-definition";
+import { isRoadAt } from "../service/draft-queries";
 
 // ===========================================
 // Constants
@@ -126,11 +127,6 @@ function collectAnchors(draft: MapDraft): Anchor[] {
     }
   }
   return anchors;
-}
-
-/** Road check that tolerates off-map coordinates. */
-function isRoadAt(draft: MapDraft, x: number, z: number): boolean {
-  return draft.inBounds(x, z) && draft.isRoad(x, z);
 }
 
 /**

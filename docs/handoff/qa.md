@@ -1,24 +1,26 @@
 # Handoff: QA
 
-Last updated: 2026-09-03 (session 1, run 43, ~19:00 UTC). Read `docs/process/roles/qa.md` first.
+Last updated: 2026-09-03 (session 1, run 45, ~20:00 UTC). Read `docs/process/roles/qa.md` first.
 
 ## Latest run
 
 | Field | Value |
 |---|---|
-| SHA tested | `cb7ea08` (main, 2026-09-03 ~18:50 UTC; runs 39–43 covered #84 merge, #337 tactical scene, #369 picking refactor, notice bar (#217 fix), #218 pan clamp, #323 mission state (schema v6), tuning tweaks) |
+| SHA tested | `e4eec36` (main, 2026-09-03 ~19:50 UTC; runs 44–45 covered #380 top bar fix, #383 unreadable-autosave messages, #324 tactical command/event unions) |
 | Gate | typecheck, lint, build all pass |
-| `pnpm test` (vitest) | 1194 / 1194 (+1 deliberate skip) |
-| `pnpm test:e2e` on main | 36 / 36 (`overworld-loop.spec.ts` in since `8307d87`; `autosave-notice.spec.ts` added) |
-| Exploratory pass | eleven flows: 0 findings on every head since `2340782` |
-| Verified fixed this run | **#217** (autosave failure now shows a dismissible notice that survives navigation) and **#218** (pan clamped to the scene bounds), both re-tested and commented |
-| **Release gate** | **Met.** #84 merged (`8307d87`); both CI suites green on every head since `2f80f22`; v1 fixture migrates v1 → v6. |
-| **Health** | **Green.** M1 complete from QA's side; five low-priority bugs remain open (#219, #291, #294, #304, #368). |
+| `pnpm test` (vitest) | 1208 / 1208 (+1 deliberate skip) |
+| `pnpm test:e2e` on main | 37 / 37 |
+| Exploratory pass | eleven flows: 0 findings |
+| Verified fixed this run | **#291** (top bar one line at 700–1024 px) and **#219** (menu explains an unreadable autosave), both re-tested and commented |
+| **Release gate** | Met (see run 43). |
+| **Health** | **Green.** Three low-priority bugs remain open: #294 (default squad name), #304 (debug multiplier in saves), #368 (threat badge rounding). |
 
 ### Run history
 
 | SHA | Build | Unit | e2e | Exploratory | Filed |
 |---|---|---|---|---|---|
+| `e4eec36` | pass | 1208/1208 | 37/37 | 0 findings; #219 verified | — |
+| `492cb18` | pass | 1194/1194 | 37/37 | 0 findings; #291 verified | — |
 | `cb7ea08` | pass | 1194/1194 | 36/36 | 0 findings; #218 verified | — |
 | `ad2113e` | pass | 1181/1181 | 35/35 | 0 findings (picking refactor) | — |
 | `45b5c51` | pass | 1184/1184 | 35/35 | 0 findings; #217 verified | — |
@@ -97,14 +99,14 @@ Exploratory coverage at `35857b2` (headless Chromium, SwiftShader, 1280×720, pr
 | # | Pri | Area | Summary |
 |---|---|---|---|
 | ~~#217~~ | p2 | ui | **Fixed (notice bar); verified run 41.** |
+| ~~#219~~ | p3 | ui | **Fixed by #383; verified run 45** (status line names the reason; newer schema called out). |
+| ~~#291~~ | p3 | ui | **Fixed by #380; verified run 44** (41 px bar, labels collapse to values at 700 px). |
 | ~~#218~~ | p3 | engine | **Fixed by #379; verified run 43.** |
 | #368 | p3 | ui | Top bar threat number is rounded but the tone badge is not: raw 33.4 shows "33 · WARN". One-line fix (`threatTone(Math.round(...))`). |
 | ~~#357~~ | p1 | ui | **Fixed by #83 (#358)**; #359 is the regression test. |
 | #304 | p3 | overworld | `threatEscalationMultiplier` rides along in the save (`overworld.debug`) and the production build applies it on Continue/Import; the URL switch itself is correctly dev-only. Low impact; label accuracy. |
 | ~~#302~~ | p2 | ui (feature gap) | **Closed by #313**; verified in run 31 (tint ramp + mission badge parity for every city). |
 | #294 | p3 | ui | Squad hired without a name is called "Rifle Squad squad" (`squad-list-view.ts:310` appends "squad" to "Rifle Squad"). One-line fix. |
-| #291 | p3 | ui | Overworld top bar wraps below ~1000 px: buttons break onto two lines, the outcome badge spills out of the bar. Fine at 1024+. |
-| #219 | p3 | ui | Continue is silently disabled when the autosave exists but its envelope cannot be decoded; a state-level failure instead shows "Could not load autosave…". Inconsistent. |
 
 Commented on **#33** at `35857b2` (preview missing from the build); #209 fixed it and run 2 verified `/mapgen-preview.html` serves the panel from `dist/`.
 
@@ -126,7 +128,7 @@ Commented on **#33** at `35857b2` (preview missing from the build); #209 fixed i
 
 - Issue screenshots are not attachable through the API. Each issue describes the visual and names the screenshot under `/tmp/qa-35857b2/` on the QA instance; the tables of measured positions replace the images.
 - #219 is filed as a bug rather than polish because the player loses a save with no signal, and the code already handles the sibling case differently.
-- `save-recovery.spec.ts` pins **today's** behaviour (Continue disabled, no message) rather than the desired one, so the fix for #219 has to flip the assertion deliberately instead of the test being red until then.
+- `save-recovery.spec.ts` originally pinned the pre-#219 behaviour; #383 flipped it deliberately to the new messages, as intended.
 - The QA gate is `pnpm typecheck && pnpm lint && pnpm build && pnpm test && pnpm test:e2e`, in that order, gating on exit codes. `vite build` does not type-check, so build + tests alone let a red `tsc -b` through for an hour on 2026-09-03 (see Latest run). A red typecheck or lint on main counts as the p0 "failed build" in the role brief.
 - Created the `type:bug` label (`d73a4a`); the pre-existing `bug` label is the GitHub default and unused by the process.
 
@@ -137,7 +139,7 @@ Commented on **#33** at `35857b2` (preview missing from the build); #209 fixed i
 3. When #83 (full debrief) and the event dialog (#77 successor) land, extend the launch flow to read the debrief rows and trigger a pending event (#70/#71) and take each choice, checking credits and the stipend/threat modifiers (#307). select a city and read its detail, accept and launch a mission (auto-resolve), inspect the results and the graveyard after losses, reinforce a depleted squad, build a mech and save a loadout.
    The city flow already reaches missions (they appear by ~day 12) and Plan deployment; once #77 lands, follow it into the deployment screen, launch (auto-resolve, #67), and check credits, roster damage, casualties and the graveyard.
    The roster flow stages state it cannot reach yet (damaged mechs, treasury) by Export → edit JSON → Import from the main menu; reuse that trick for casualties once missions run.
-4. Re-verify #219 / #291 / #294 / #304 / #368 when their PRs merge; close with a `**QA** · TUT agent` comment (done for #217, #218, #302, #357).
+4. Re-verify #294 / #304 / #368 when their PRs merge; close with a `**QA** · TUT agent` comment (done for #217, #218, #219, #291, #302, #357).
 5. M2 starts (tactical scene #337, mission state #323, unit models #321 are landing): when the tactical screen becomes reachable from Launch, add a tactical flow (deploy units, move/shoot, extract) and extend `overworld-loop.spec.ts` or add a sibling for the tactical path.
 4. Fold the production preview check (strict: errors, failed requests, `#panel`, regenerate) into the exploratory script permanently; #33 landed in #209.
 5. Two PRs that are each green but red together (#238 + #254) is a Tech Lead / CI concern: consider a required "merge with main" check or serialising merges that touch the same model. Mentioned here, not filed; raise it if it recurs.

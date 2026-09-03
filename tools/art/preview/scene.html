@@ -1,0 +1,88 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: #3a3f4a;
+      }
+      canvas {
+        display: block;
+      }
+    </style>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "/node_modules/three/build/three.module.js",
+          "three/addons/": "/node_modules/three/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <script type="module">
+      // Composite scene review: ?layout=<url of a JSON file> lists placements
+      // { model: "assets/models/...glb", x, z, yaw? , y? }, plus optional
+      // { px, yaw, cx, cz, size }. Isometric camera at 35.264°, same lights as harness.html.
+      import * as THREE from "three";
+      import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+      const params = new URLSearchParams(location.search);
+      const layout = await (await fetch(params.get("layout"))).json();
+      const size = layout.size ?? 960;
+      const px = layout.px ?? 64;
+      const yaw = ((layout.yaw ?? 45) * Math.PI) / 180;
+      const renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        preserveDrawingBuffer: true,
+      });
+      renderer.setSize(size, size);
+      renderer.setPixelRatio(1);
+      document.body.appendChild(renderer.domElement);
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x1c2230);
+      scene.add(new THREE.AmbientLight(0xffffff, 0.9));
+      const key = new THREE.DirectionalLight(0xffffff, 2.2);
+      key.position.set(2, 4, 3);
+      scene.add(key);
+      const units = size / px;
+      const cam = new THREE.OrthographicCamera(
+        -units / 2,
+        units / 2,
+        units / 2,
+        -units / 2,
+        0.1,
+        100,
+      );
+      const elev = Math.atan(1 / Math.sqrt(2));
+      const target = new THREE.Vector3(
+        layout.cx ?? 0,
+        layout.cy ?? 0.6,
+        layout.cz ?? 0,
+      );
+      cam.position.set(
+        target.x + Math.sin(yaw) * 20 * Math.cos(elev),
+        target.y + 20 * Math.sin(elev),
+        target.z + Math.cos(yaw) * 20 * Math.cos(elev),
+      );
+      cam.lookAt(target);
+      cam.updateProjectionMatrix();
+      const loader = new GLTFLoader();
+      const cache = new Map();
+      const load = (path) => {
+        if (!cache.has(path)) cache.set(path, loader.loadAsync(path));
+        return cache.get(path);
+      };
+      for (const p of layout.placements) {
+        const gltf = await load(`/public/${p.model}`);
+        const node = gltf.scene.clone(true);
+        node.position.set(p.x, p.y ?? 0, p.z);
+        node.rotation.y = ((p.yaw ?? 0) * Math.PI) / 180;
+        scene.add(node);
+      }
+      renderer.render(scene, cam);
+      document.title = "READY";
+    </script>
+  </body>
+</html>

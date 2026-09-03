@@ -12,6 +12,7 @@ Art Director build scripts. See `docs/design/style-guide.md` and `docs/handoff/a
 | `preview/shoot-page.mjs <page> <out.png>` | Screenshots a repo page (e.g. `preview/ui-theme.html`) with headless Chromium. |
 | `preview/render-thumbnails.mjs` | Renders 128 px transparent thumbnails of every unit, mech part and bug into `public/assets/ui/thumbs/`; `src/ui/data/thumbnail-manifest.ts` registers them. |
 | `preview/serve-repo.mjs` | Shared read-only static server over the repo root used by the preview scripts. |
+| `preview/render-scene.mjs <layout.json> <out.png>` | Renders a composed scene of registered models (tiles, walls, props, units) for in-context review; `preview/layouts/city-block.json` is the default block. Drives `preview/scene.html`. |
 | `preview/harness.html` | The three.js page the renderer drives: orthographic camera at 35°, 64 px per tile by default, the unit's tile highlighted; `bg=transparent&fit=1` frames the model's bounding box on a clear background for thumbnails. |
 
 Rules: no `Math.random()` anywhere in these scripts; every model follows style guide §6 (axes, pivot, materials named after palette tokens).

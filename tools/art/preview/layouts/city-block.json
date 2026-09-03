@@ -1,0 +1,528 @@
+{
+  "size": 960,
+  "px": 72,
+  "yaw": 45,
+  "cx": 3.5,
+  "cz": 3.5,
+  "cy": 0.4,
+  "placements": [
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 0,
+      "z": 0,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 0,
+      "z": 1,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 0,
+      "z": 2,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/city-sidewalk.glb",
+      "x": 0,
+      "z": 3,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/city-road-straight.glb",
+      "x": 0,
+      "z": 4,
+      "yaw": 90
+    },
+    {
+      "model": "assets/models/tiles/city-sidewalk.glb",
+      "x": 0,
+      "z": 5,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 0,
+      "z": 6,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-dirt.glb",
+      "x": 0,
+      "z": 7,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 1,
+      "z": 0,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 1,
+      "z": 1,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 1,
+      "z": 2,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/city-sidewalk.glb",
+      "x": 1,
+      "z": 3,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/city-road-straight.glb",
+      "x": 1,
+      "z": 4,
+      "yaw": 90
+    },
+    {
+      "model": "assets/models/tiles/city-sidewalk.glb",
+      "x": 1,
+      "z": 5,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 1,
+      "z": 6,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 1,
+      "z": 7,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/city-sidewalk.glb",
+      "x": 2,
+      "z": 0,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/city-sidewalk.glb",
+      "x": 2,
+      "z": 1,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/city-sidewalk.glb",
+      "x": 2,
+      "z": 2,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/city-sidewalk.glb",
+      "x": 2,
+      "z": 3,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/city-road-straight.glb",
+      "x": 2,
+      "z": 4,
+      "yaw": 90
+    },
+    {
+      "model": "assets/models/tiles/city-sidewalk.glb",
+      "x": 2,
+      "z": 5,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/city-sidewalk.glb",
+      "x": 2,
+      "z": 6,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/city-sidewalk.glb",
+      "x": 2,
+      "z": 7,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/city-road-straight.glb",
+      "x": 3,
+      "z": 0,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/city-road-straight.glb",
+      "x": 3,
+      "z": 1,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/city-road-straight.glb",
+      "x": 3,
+      "z": 2,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/city-road-straight.glb",
+      "x": 3,
+      "z": 3,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/city-road-cross.glb",
+      "x": 3,
+      "z": 4,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/city-road-straight.glb",
+      "x": 3,
+      "z": 5,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/city-road-straight.glb",
+      "x": 3,
+      "z": 6,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/city-road-straight.glb",
+      "x": 3,
+      "z": 7,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/city-sidewalk.glb",
+      "x": 4,
+      "z": 0,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/city-sidewalk.glb",
+      "x": 4,
+      "z": 1,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/city-sidewalk.glb",
+      "x": 4,
+      "z": 2,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/city-sidewalk.glb",
+      "x": 4,
+      "z": 3,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/city-road-straight.glb",
+      "x": 4,
+      "z": 4,
+      "yaw": 90
+    },
+    {
+      "model": "assets/models/tiles/city-sidewalk.glb",
+      "x": 4,
+      "z": 5,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/city-sidewalk.glb",
+      "x": 4,
+      "z": 6,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/city-sidewalk.glb",
+      "x": 4,
+      "z": 7,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 5,
+      "z": 0,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 5,
+      "z": 1,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 5,
+      "z": 2,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/city-sidewalk.glb",
+      "x": 5,
+      "z": 3,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/city-road-straight.glb",
+      "x": 5,
+      "z": 4,
+      "yaw": 90
+    },
+    {
+      "model": "assets/models/tiles/city-sidewalk.glb",
+      "x": 5,
+      "z": 5,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 5,
+      "z": 6,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 5,
+      "z": 7,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-water.glb",
+      "x": 6,
+      "z": 0,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-water.glb",
+      "x": 6,
+      "z": 1,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 6,
+      "z": 2,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/city-sidewalk.glb",
+      "x": 6,
+      "z": 3,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/city-road-straight.glb",
+      "x": 6,
+      "z": 4,
+      "yaw": 90
+    },
+    {
+      "model": "assets/models/tiles/city-sidewalk.glb",
+      "x": 6,
+      "z": 5,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 6,
+      "z": 6,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 6,
+      "z": 7,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-water.glb",
+      "x": 7,
+      "z": 0,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-water.glb",
+      "x": 7,
+      "z": 1,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 7,
+      "z": 2,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/city-sidewalk.glb",
+      "x": 7,
+      "z": 3,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/city-road-straight.glb",
+      "x": 7,
+      "z": 4,
+      "yaw": 90
+    },
+    {
+      "model": "assets/models/tiles/city-sidewalk.glb",
+      "x": 7,
+      "z": 5,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 7,
+      "z": 6,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 7,
+      "z": 7,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/buildings/floor.glb",
+      "x": 5,
+      "z": 6,
+      "y": 0.001
+    },
+    {
+      "model": "assets/models/buildings/floor.glb",
+      "x": 5,
+      "z": 7,
+      "y": 0.001
+    },
+    {
+      "model": "assets/models/buildings/floor.glb",
+      "x": 6,
+      "z": 6,
+      "y": 0.001
+    },
+    {
+      "model": "assets/models/buildings/floor.glb",
+      "x": 6,
+      "z": 7,
+      "y": 0.001
+    },
+    {
+      "model": "assets/models/buildings/floor.glb",
+      "x": 7,
+      "z": 6,
+      "y": 0.001
+    },
+    {
+      "model": "assets/models/buildings/floor.glb",
+      "x": 7,
+      "z": 7,
+      "y": 0.001
+    },
+    {
+      "model": "assets/models/buildings/wall.glb",
+      "x": 5,
+      "z": 5.5,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/buildings/wall-door.glb",
+      "x": 6,
+      "z": 5.5,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/buildings/wall.glb",
+      "x": 7,
+      "z": 5.5,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/buildings/wall-window.glb",
+      "x": 4.5,
+      "z": 6,
+      "yaw": 90
+    },
+    {
+      "model": "assets/models/buildings/wall.glb",
+      "x": 4.5,
+      "z": 7,
+      "yaw": 90
+    },
+    {
+      "model": "assets/models/props/barrier-concrete.glb",
+      "x": 1,
+      "z": 2,
+      "yaw": 90
+    },
+    {
+      "model": "assets/models/props/car-compact.glb",
+      "x": 3,
+      "z": 1,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/props/lamp-post.glb",
+      "x": 2,
+      "z": 6
+    },
+    {
+      "model": "assets/models/props/tree-oak.glb",
+      "x": 0,
+      "z": 0
+    },
+    {
+      "model": "assets/models/props/dumpster.glb",
+      "x": 5,
+      "z": 3
+    },
+    {
+      "model": "assets/models/units/tdf-mech-assembled-a.glb",
+      "x": 1,
+      "z": 5,
+      "yaw": 45
+    },
+    {
+      "model": "assets/models/units/tdf-infantry-rifle.glb",
+      "x": 2,
+      "z": 2,
+      "yaw": 30
+    },
+    {
+      "model": "assets/models/units/tdf-infantry-rocket.glb",
+      "x": 1,
+      "z": 3,
+      "yaw": 30
+    },
+    {
+      "model": "assets/models/bugs/bug-brute.glb",
+      "x": 6,
+      "z": 3,
+      "yaw": 200
+    },
+    {
+      "model": "assets/models/bugs/bug-swarmer.glb",
+      "x": 5,
+      "z": 1,
+      "yaw": 220
+    },
+    {
+      "model": "assets/models/bugs/bug-lurker.glb",
+      "x": 7,
+      "z": 4,
+      "yaw": 230
+    },
+    {
+      "model": "assets/models/props/egg-spawner.glb",
+      "x": 6,
+      "z": 6.5
+    }
+  ]
+}

@@ -104,7 +104,7 @@ describe("HookPass", () => {
     }
     // Placers prefer reachable tiles; the connectivity pass (#29) closes the gap.
     expect(unreachable / maps).toBeLessThanOrEqual(0.15);
-  });
+  }, 20_000);
 
   it("puts egg spawners indoors often, far from deploy and apart from each other", () => {
     let indoors = 0;

@@ -150,8 +150,11 @@ def complexity_of(i):
     for l in labels(i):
         if l.startswith("complexity:"): return l.split(":", 1)[1]
     return None
+def seat_active(seat):
+    """A seat whose label description says INACTIVE is not part of the live pool."""
+    return "inactive" not in label_desc.get(f"seat:{seat}", "").lower()
 seat_map = {}
-for seat in SEATS:
+for seat in [s for s in SEATS if seat_active(s)]:
     lab = f"seat:{seat}"
     cur = [i for i in issues.values() if lab in labels(i) and i["state"] == "OPEN"]
     last = sorted([i for i in issues.values() if lab in labels(i) and i["state"] == "CLOSED"], key=lambda i: i["updatedAt"], reverse=True)

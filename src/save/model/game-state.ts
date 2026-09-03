@@ -1,6 +1,7 @@
 import type { IdGeneratorState } from "../../core/model/id-generator";
 import type { RngState } from "../../core/model/rng";
 import type { EconomyState } from "../../economy/model/economy-state";
+import type { CampaignDebugOptions } from "../../overworld/model/campaign-debug";
 import type { OverworldState } from "../../overworld/model/overworld-state";
 import type { RosterState } from "../../roster/model/roster-state";
 
@@ -29,6 +30,11 @@ export interface GameMeta {
   readonly ids: IdGeneratorState;
   /** ISO-8601 timestamp supplied by the app when the campaign started. */
   readonly createdAt: string;
+  /**
+   * Test and tuning switches chosen at new game (#78). Absent in a normal
+   * campaign, so no save written before it existed needs migrating.
+   */
+  readonly debug?: CampaignDebugOptions;
 }
 
 /**

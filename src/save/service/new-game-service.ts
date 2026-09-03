@@ -5,6 +5,7 @@ import { createInitialEconomyState } from "../../economy/service/economy-state-f
 import type { EarthMap } from "../../overworld/model/earth-map";
 import type { NewGameTuning } from "../../overworld/model/new-game-tuning";
 import type { ThreatTuning } from "../../overworld/model/threat-tuning";
+import { applyDebugThreat } from "../../overworld/service/campaign-debug-service";
 import { createInitialOverworldState } from "../../overworld/service/overworld-state-factory";
 import type { SquadTypeCatalogue } from "../../roster/model/squad-type-catalogue";
 import type { StarterRosterSpec } from "../../roster/model/starter-roster-spec";
@@ -77,7 +78,7 @@ export function createNewGame(
   const overworld = createInitialOverworldState(deps.map, {
     rng: rng.fork(OPENING_INFESTATION_STREAM),
     tuning: deps.newGameTuning,
-    threatTuning: deps.threatTuning,
+    threatTuning: applyDebugThreat(deps.threatTuning, options.debug),
   });
   const roster = createInitialRosterState(deps.starterRoster, {
     ids,

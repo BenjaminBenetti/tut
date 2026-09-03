@@ -21,6 +21,7 @@ import { WebStorageKeyValueStore } from "../../save/repository/web-storage-key-v
 import { iconHref } from "../../ui/data/icon-manifest";
 import type { CitySelection } from "../../ui/model/city-selection";
 import type { ScreenId } from "../../ui/model/screen";
+import { GameOverScreen } from "../../ui/screen/game-over-screen";
 import { MainMenuScreen } from "../../ui/screen/main-menu-screen";
 import { OverworldScreen } from "../../ui/screen/overworld-screen";
 import { RosterScreen } from "../../ui/screen/roster-screen";
@@ -28,6 +29,7 @@ import { CitySelectionStore } from "../../ui/service/city-selection-store";
 import type { TutTestHooks } from "../model/test-hooks";
 import type { ScreenFactory } from "./dom-screen-router";
 import { DomMapViewportHost } from "./dom-map-viewport-host";
+import { parseDebugOptions } from "./debug-options";
 import { DomScreenRouter } from "./dom-screen-router";
 import { composeGame } from "./game-composition";
 
@@ -70,6 +72,9 @@ export async function bootstrapApp(doc: Document): Promise<void> {
   const viewport = createMapViewport(doc, appRoot);
   const mapViewport = new DomMapViewportHost(viewport, appRoot);
   const selection = new CitySelectionStore();
+  const debug = import.meta.env.DEV
+    ? parseDebugOptions(window.location.search)
+    : undefined;
 
   const clock: SaveClock = { now: () => new Date().toISOString() };
   const game = composeGame({
@@ -94,6 +99,7 @@ export async function bootstrapApp(doc: Document): Promise<void> {
             createCampaign: game.createCampaign,
             newSeed: game.newSeed,
             clock: game.clock,
+            ...(debug === undefined ? {} : { debug }),
           }),
       ],
       [
@@ -119,6 +125,10 @@ export async function bootstrapApp(doc: Document): Promise<void> {
             parts: game.content.parts,
             rosterTuning: game.content.rosterTuning,
           }),
+      ],
+      [
+        "game-over",
+        () => new GameOverScreen({ router, session: game.session }),
       ],
     ]),
   );

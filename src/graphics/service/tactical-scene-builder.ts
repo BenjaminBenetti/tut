@@ -204,6 +204,11 @@ export class TacticalSceneBuilder
     return this.meshes.get(unitId)?.worldPosition();
   }
 
+  /** The unit's scene object for animation, or undefined once removed or while loading. */
+  unitObject(unitId: UnitId): Object3D | undefined {
+    return this.meshes.get(unitId)?.object;
+  }
+
   // ===========================================
   // TilePicker
   // ===========================================

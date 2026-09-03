@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { err, ok } from "../../core/model/result";
 import { CoverLevel } from "../../mapgen/model/cover";
+import type { ActionBarAction } from "./action-bar-view";
 import { ActionBarView } from "./action-bar-view";
 import { HitPreviewView } from "./hit-preview-view";
 import { hudMission, hudTemplate, hudUnit } from "./mission-hud.test-helper";
@@ -54,7 +55,7 @@ describe("UnitCardView", () => {
 
 describe("ActionBarView", () => {
   it("enables unit actions only when the unit can act, marks the mode and reports presses", () => {
-    const onAction = vi.fn();
+    const onAction = vi.fn<(action: ActionBarAction) => void>();
     const view = new ActionBarView({ onAction });
     view.mount(root);
     const button = (a: string) =>

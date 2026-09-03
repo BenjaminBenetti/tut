@@ -93,7 +93,11 @@ def desired_status(i, current):
         if kids and all(k["state"] == "CLOSED" for k in kids): return "Done"
         if any(by_num.get(k["number"], {}).get("status") not in (None, "Backlog", "Ready") for k in kids): return "In Progress"
         return current if current in ("In Progress",) else "Backlog"
-    if has_branch(n) or current == "In Progress": return "In Progress"
+    # In Progress means someone is on it: a seated engineer issue, or a non-engineer owner (mapgen, art, tech-lead)
+    # working its own branch. An unseated engineer issue with a parked branch is Ready again (Director, pause rules).
+    seated = any(l.startswith("seat:") for l in L)
+    owner = by_num.get(n, {}).get("owner")
+    if (has_branch(n) or current == "In Progress") and (seated or owner not in (None, "engineer")): return "In Progress"
     if "status:blocked" in L: return "Blocked"
     deps = deps_of(i)
     if all(issues.get(d, {}).get("state") == "CLOSED" for d in deps): return "Ready"
@@ -135,21 +139,34 @@ for n in cols.get("Backlog", []):
         nextup.append((n, i["title"], [d for d in deps if issues.get(d, {}).get("state") != "CLOSED"]))
 # engineer seats: current open issue per seat label, plus the most recently closed one for context
 SEATS = ["eng-1", "eng-2", "eng-3", "eng-4", "eng-5", "eng-6"]
+# Seat effort level is recorded in each seat label's description (process PR #189): default | medium | low.
+label_desc = {l["name"]: (l.get("description") or "") for l in json.loads(gh("api", f"repos/{REPO}/labels?per_page=100"))}
+def seat_effort(seat):
+    """Effort tier parsed from the seat label description, or 'unknown'."""
+    m = re.search(r"(?i)\b(default|medium|low|high)\b", label_desc.get(f"seat:{seat}", ""))
+    return m.group(1).lower() if m else "unknown"
+def complexity_of(i):
+    """complexity:* tier of an issue, or None when the Tech Lead has not labelled it."""
+    for l in labels(i):
+        if l.startswith("complexity:"): return l.split(":", 1)[1]
+    return None
 seat_map = {}
 for seat in SEATS:
     lab = f"seat:{seat}"
     cur = [i for i in issues.values() if lab in labels(i) and i["state"] == "OPEN"]
     last = sorted([i for i in issues.values() if lab in labels(i) and i["state"] == "CLOSED"], key=lambda i: i["updatedAt"], reverse=True)
     seat_map[seat] = dict(
+        effort=seat_effort(seat),
         current=[(i["number"], by_num.get(i["number"], {}).get("status"), i["title"]) for i in cur],
         last_done=(last[0]["number"], last[0]["title"]) if last else None,
     )
 idle_seats = [s for s, v in seat_map.items() if not v["current"]]
 over_assigned = [s for s, v in seat_map.items() if len(v["current"]) > 1]
-unassigned_ready = [(n, t) for n, o, t in ready if o == "engineer" and not any(l.startswith("seat:") for l in labels(issues[n]))]
-digest = dict(seat_map=seat_map, idle_seats=idle_seats, over_assigned=over_assigned, unassigned_ready=unassigned_ready, generated=now.strftime("%Y-%m-%d %H:%M UTC"), milestones=ms, columns={k: len(v) for k, v in cols.items()}, ready=ready, blocked=blocked, in_progress=inprog, open_prs=open_prs, next_up=nextup, changes=changes, added=added)
+unassigned_ready = [(n, t, complexity_of(issues[n])) for n, o, t in ready if o == "engineer" and not any(l.startswith("seat:") for l in labels(issues[n]))]
+missing_complexity = [n for n, _, c in unassigned_ready if c is None]
+digest = dict(seat_map=seat_map, idle_seats=idle_seats, over_assigned=over_assigned, unassigned_ready=unassigned_ready, missing_complexity=missing_complexity, generated=now.strftime("%Y-%m-%d %H:%M UTC"), milestones=ms, columns={k: len(v) for k, v in cols.items()}, ready=ready, blocked=blocked, in_progress=inprog, open_prs=open_prs, next_up=nextup, changes=changes, added=added)
 json.dump(digest, open(os.path.join(OUT, "digest.json"), "w"), indent=1, default=str)
 print(f"{'[dry] ' if DRY else ''}added={added} changes={len(changes)}")
 for c in changes: print("  ", c)
 print("columns:", digest["columns"]); print("milestones:", ms)
-print("SEATS:", {k: [c[0] for c in v["current"]] for k, v in seat_map.items()}, "IDLE:", idle_seats, "OVER:", over_assigned, "UNASSIGNED READY:", [n for n, _ in unassigned_ready]); print("READY:", [f"#{n} ({o})" for n, o, _ in ready]); print("IN PROGRESS:", inprog); print("OPEN PRs:", open_prs); print("NEXT UP:", nextup[:12])
+print("SEATS:", {k: [c[0] for c in v["current"]] for k, v in seat_map.items()}, "IDLE:", idle_seats, "OVER:", over_assigned, "UNASSIGNED READY:", [f"#{n}:{c or '?'}" for n, _, c in unassigned_ready], "MISSING COMPLEXITY:", missing_complexity); print("READY:", [f"#{n} ({o})" for n, o, _ in ready]); print("IN PROGRESS:", inprog); print("OPEN PRs:", open_prs); print("NEXT UP:", nextup[:12])

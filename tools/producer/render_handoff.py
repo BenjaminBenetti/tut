@@ -23,16 +23,17 @@ def render_digest(d):
     L += ["", "Board: " + " · ".join(f"{k} {cols.get(k, 0)}" for k in ("Backlog", "Ready", "In Progress", "In Review", "Blocked", "Done")), ""]
     sm = d.get("seat_map", {})
     if sm:
-        L += ["**Engineer seats** (one open issue per seat; Producer assigns via `seat:eng-N`):", "", "| Seat | Current | Status | Last merged |", "|---|---|---|---|"]
+        L += ["**Engineer seats** (one open issue per seat; Producer assigns via `seat:eng-N`; route by `complexity:*` — high → default-effort seats only, low → medium-effort seats first):", "", "| Seat | Effort | Current | Status | Last merged |", "|---|---|---|---|---|"]
         for seat, v in sm.items():
             cur = "; ".join(f"#{n} {t}" for n, _, t in v["current"]) or "IDLE"
             st = "; ".join(str(s) for _, s, _ in v["current"]) or "-"
             last = f"#{v['last_done'][0]}" if v.get("last_done") else "-"
-            L.append(f"| {seat} | {cur} | {st} | {last} |")
+            L.append(f"| {seat} | {v.get('effort', '?')} | {cur} | {st} | {last} |")
         flags = []
         if d.get("idle_seats"): flags.append("idle: " + ", ".join(d["idle_seats"]))
         if d.get("over_assigned"): flags.append("over-assigned: " + ", ".join(d["over_assigned"]))
-        if d.get("unassigned_ready"): flags.append("unassigned Ready: " + ", ".join(f"#{n}" for n, _ in d["unassigned_ready"]))
+        if d.get("unassigned_ready"): flags.append("unassigned Ready: " + ", ".join(f"#{u[0]} ({u[2] if len(u) > 2 and u[2] else 'no complexity label'})" for u in d["unassigned_ready"]))
+        if d.get("missing_complexity"): flags.append("need Tech Lead complexity label before assignment: " + ", ".join(f"#{n}" for n in d["missing_complexity"]))
         L += ["", ("⚠ " + " · ".join(flags)) if flags else "All live seats occupied.", ""]
     L += ["**Ready now** (no unmerged dependencies):", ""] + [f"- #{n} ({o}) {t}" for n, o, t in d["ready"]] + [""]
     L += ["**In-flight PRs** (age h / idle h / review):", ""]

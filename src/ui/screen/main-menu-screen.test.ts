@@ -161,6 +161,59 @@ describe("MainMenuScreen", () => {
     expect(saves.listSlots()).toEqual([]);
   });
 
+  it.each([
+    ["corrupt JSON", "{not json"],
+    ["an empty value", ""],
+    ["a JSON null", "null"],
+    ["an array", "[]"],
+  ])(
+    "disables Continue and Export and explains an autosave that is %s",
+    (_label, raw) => {
+      const store = new MemoryKeyValueStore();
+      store.set(`tut:save:${AUTOSAVE_SLOT_ID}`, raw);
+      mountWith(store);
+      expect(button("continue").disabled).toBe(true);
+      expect(button("export").disabled).toBe(true);
+      expect(status()?.hidden).toBe(false);
+      expect(status()?.textContent).toContain("cannot be read");
+      expect(status()?.textContent).toContain("start a new game");
+    },
+  );
+
+  it("says an autosave from a newer schema was written by a newer version", () => {
+    const { store } = withAutosave(7);
+    const key = `tut:save:${AUTOSAVE_SLOT_ID}`;
+    const envelope = JSON.parse(store.get(key) ?? "{}") as {
+      schemaVersion: number;
+    };
+    store.set(
+      key,
+      JSON.stringify({
+        ...envelope,
+        schemaVersion: envelope.schemaVersion + 1,
+      }),
+    );
+    mountWith(store);
+    expect(button("continue").disabled).toBe(true);
+    expect(status()?.textContent).toContain("newer version");
+    expect(status()?.textContent).toContain("unsupported-version");
+  });
+
+  it("treats a decodable envelope whose state is not a campaign the same way", () => {
+    const { store } = withAutosave(7);
+    const key = `tut:save:${AUTOSAVE_SLOT_ID}`;
+    const envelope = JSON.parse(store.get(key) ?? "{}") as object;
+    store.set(key, JSON.stringify({ ...envelope, state: 42 }));
+    mountWith(store);
+    expect(button("continue").disabled).toBe(true);
+    expect(status()?.textContent).toContain("not a campaign");
+  });
+
+  it("stays quiet when there is simply no autosave", () => {
+    mountWith();
+    expect(status()?.hidden ?? true).toBe(true);
+  });
+
   it("Continue is enabled with an autosave and loads it into the session", () => {
     const { store, existing } = withAutosave(99);
     const { navigate, session } = mountWith(store);

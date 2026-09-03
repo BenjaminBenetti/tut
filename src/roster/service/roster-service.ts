@@ -25,6 +25,7 @@ import type { Squad, SquadId } from "../model/squad";
 import { SQUAD_ID_PREFIX } from "../model/squad";
 import type { SquadTypeId } from "../model/squad-type";
 import type { SquadTypeCatalogue } from "../model/squad-type-catalogue";
+import type { UpgradeTuning } from "../model/upgrade-tuning";
 import { validateLoadout } from "./loadout-validation-service";
 import { createMech } from "./mech-factory";
 import { createSquad } from "./squad-factory";
@@ -38,6 +39,8 @@ export interface RosterServiceDeps {
   readonly squadTypes: SquadTypeCatalogue;
   readonly parts: PartCatalogue;
   readonly rating: MechRatingTuning;
+  /** Upgrade multipliers the stat sheet applies to recorded levels. */
+  readonly upgrades: UpgradeTuning;
   /** The one door credits move through; must share `ids` so ledger ids stay unique. */
   readonly transactions: TransactionService;
   /** Issues squad and mech ids. */
@@ -192,7 +195,12 @@ export function saveLoadout(
   if (nameError !== undefined) {
     return err(nameError);
   }
-  const validated = validateLoadout(loadout, deps.parts, deps.rating);
+  const validated = validateLoadout(
+    loadout,
+    deps.parts,
+    deps.rating,
+    deps.upgrades,
+  );
   if (!validated.ok) {
     return err({
       code: "invalid-loadout",
@@ -270,7 +278,12 @@ export function buildMech(
   if (nameError !== undefined) {
     return err(nameError);
   }
-  const validated = validateLoadout(loadout, deps.parts, deps.rating);
+  const validated = validateLoadout(
+    loadout,
+    deps.parts,
+    deps.rating,
+    deps.upgrades,
+  );
   if (!validated.ok) {
     return err({
       code: "invalid-loadout",

@@ -7,7 +7,9 @@ import type { PartCatalogue } from "../../roster/model/part-catalogue";
 import { describeRosterError } from "../../roster/model/roster-error";
 import type { RosterTuning } from "../../roster/model/roster-tuning";
 import type { SquadTypeCatalogue } from "../../roster/model/squad-type-catalogue";
+import type { UpgradeTuning } from "../../roster/model/upgrade-tuning";
 import { repairMech } from "../../roster/service/repair-service";
+import { upgradePart } from "../../roster/service/upgrade-service";
 import type { RosterResult } from "../../roster/service/roster-service";
 import {
   buildMech,
@@ -38,6 +40,8 @@ import type { RenameMechCommand } from "../model/rename-mech-command";
 import { RENAME_MECH } from "../model/rename-mech-command";
 import type { RepairMechCommand } from "../model/repair-mech-command";
 import { REPAIR_MECH } from "../model/repair-mech-command";
+import type { UpgradePartCommand } from "../model/upgrade-part-command";
+import { UPGRADE_PART } from "../model/upgrade-part-command";
 
 // ===========================================
 // Types
@@ -50,6 +54,8 @@ export interface RosterHandlerDeps {
   readonly rating: MechRatingTuning;
   /** Repair pricing and mission experience (#64). */
   readonly rosterTuning: RosterTuning;
+  /** Upgrade levels, multipliers and prices (#69). */
+  readonly upgrades: UpgradeTuning;
   /**
    * Builds the transaction service for one command over the context's
    * id generator, so ledger ids share the campaign's counters.
@@ -66,6 +72,7 @@ export interface RosterCommandHandlers<TState extends CampaignState> {
   readonly buildMech: CommandHandler<TState, BuildMechCommand>;
   readonly repairMech: CommandHandler<TState, RepairMechCommand>;
   readonly renameMech: CommandHandler<TState, RenameMechCommand>;
+  readonly upgradePart: CommandHandler<TState, UpgradePartCommand>;
 }
 
 // ===========================================
@@ -91,6 +98,7 @@ export function createRosterCommandHandlers<TState extends CampaignState>(
     squadTypes: deps.squadTypes,
     parts: deps.parts,
     rating: deps.rating,
+    upgrades: deps.upgrades,
     transactions: deps.transactionsFor(ids),
     ids,
   });
@@ -149,6 +157,21 @@ export function createRosterCommandHandlers<TState extends CampaignState>(
         state,
         renameMech(state, command.payload.mechId, command.payload.name),
       ),
+    upgradePart: (state, command, ctx) =>
+      lift(
+        state,
+        upgradePart(
+          state,
+          command.payload.mechId,
+          command.payload.partId,
+          state.overworld.day,
+          {
+            parts: deps.parts,
+            upgrades: deps.upgrades,
+            transactions: deps.transactionsFor(ctx.ids),
+          },
+        ),
+      ),
   };
 }
 
@@ -165,6 +188,7 @@ export function registerRosterCommands<TState extends CampaignState>(
   dispatcher.register(BUILD_MECH, handlers.buildMech);
   dispatcher.register(REPAIR_MECH, handlers.repairMech);
   dispatcher.register(RENAME_MECH, handlers.renameMech);
+  dispatcher.register(UPGRADE_PART, handlers.upgradePart);
 }
 
 // ===========================================

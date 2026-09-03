@@ -3,49 +3,49 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-03 08:21 UTC)
+## Status Digest (2026-09-03 09:00 UTC)
 
 | Milestone | done / total |
 |---|---|
 | M0 Foundation | 12 / 13 |
-| M1 Overworld | 40 / 66 |
+| M1 Overworld | 45 / 66 |
 | M1.5 Map Generation | 33 / 34 |
 
-Board: Backlog 9 · Ready 14 · In Progress 4 · In Review 3 · Blocked 0 · Done 98
+Board: Backlog 6 · Ready 15 · In Progress 3 · In Review 1 · Blocked 0 · Done 105
 
 **Engineer seats** (one open issue per seat; Producer assigns via `seat:eng-N`; route by `complexity:*` — high → default-effort seats only, low → medium-effort seats first):
 
 | Seat | Effort | Current | Status | Last merged |
 |---|---|---|---|---|
-| eng-3 | default | #67 overworld: LaunchMission command and result application | Ready | #73 |
-| eng-4 | medium | #79 ui: roster screen — squads and mechs | Ready | #64 |
-| eng-5 | medium | #65 overworld: build and decommission deployable commands | In Review | #246 |
+| eng-3 | default | #76 ui: mission list and mission details | Ready | #67 |
+| eng-4 | medium | #80 ui: mech bay — slot picker, live validation and stat sheet | Ready | #69 |
+| eng-5 | medium | #78 ui: defeat and victory-stub screens | Ready | #75 |
 
-⚠ unassigned Ready: #69 (medium), #70 (medium), #76 (medium), #78 (medium), #108 (low), #141 (low), #217 (low), #218 (low), #219 (low), #230 (low)
+⚠ unassigned Ready: #70 (medium), #108 (low), #141 (low), #217 (low), #218 (low), #219 (low), #230 (low), #291 (low), #294 (low)
 
 **Ready now** (no unmerged dependencies):
 
-- #67 (engineer) overworld: LaunchMission command and result application
-- #69 (engineer) roster: part upgrade levels
 - #70 (engineer) overworld: pending events and choice resolution
 - #76 (engineer) ui: mission list and mission details
 - #78 (engineer) ui: defeat and victory-stub screens
-- #79 (engineer) ui: roster screen — squads and mechs
+- #80 (engineer) ui: mech bay — slot picker, live validation and stat sheet
 - #108 (engineer) refactor(core): promote generic id Registry to core/ and reuse in mapgen and roster
 - #141 (engineer) refactor: rename scalar tuning exports to UPPER_SNAKE_CASE (economy-tuning, threat-tuning)
+- #190 (art-director) infra(art): headless Blender + OpenSCAD + trimesh/cadquery toolchain in the devcontainer, with proof render and art-blender skill
 - #213 (art-director) art: placeholder model for the table prop (prop.table)
 - #217 (engineer) bug(ui): autosave failure on New game is never shown; menu unmounts before the message is visible
 - #218 (engineer) bug(engine): overworld camera pan is unbounded; the map can be panned entirely off screen
 - #219 (engineer) bug(ui): Continue is silently disabled when the autosave exists but cannot be decoded
 - #230 (engineer) save: share isRecord between migrations and the game-state guard
 - #281 (mapgen) design-decision: target cover density for tactical maps
+- #291 (engineer) bug(ui): overworld top bar wraps and the outcome badge spills out below ~1000 px width
+- #294 (engineer) bug(ui): squad hired without a name is called "Rifle Squad squad"
 
 **In-flight PRs** (age h / idle h / review):
 
-- #285 0.1h / 0.0h / n/a — feat(overworld): build and decommission deployable commands (#65)
-- #283 0.2h / 0.2h / n/a — feat(art): mech part variants as Blender low-poly models (#274 batch B)
-- #280 0.3h / 0.3h / n/a — feat(art): Mech A set as Blender low-poly models (#274 batch A)
-- #277 0.4h / 0.3h / n/a — feat(art): Blender models pick up the unit atlases (#274)
+- #288 0.5h / 0.1h / n/a — feat(art): five infantry squad kits as Blender low-poly models (#274 batch D)
+- #287 0.6h / 0.1h / n/a — feat(art): swarmer, lurker, brute and egg spawner as Blender low-poly models (#274 batch C)
+- #283 0.8h / 0.1h / n/a — feat(art): mech part variants as Blender low-poly models (#274 batch B)
 
 **In progress** (branch pushed?):
 
@@ -57,33 +57,32 @@ Board: Backlog 9 · Ready 14 · In Progress 4 · In Review 3 · Blocked 0 · Don
 
 **Next assignments for idle engineers** (Ready first, then what unblocks next):
 
-1. #67 — overworld: LaunchMission command and result application
-2. #69 — roster: part upgrade levels
-3. #70 — overworld: pending events and choice resolution
-4. #76 — ui: mission list and mission details
-5. #78 — ui: defeat and victory-stub screens
-6. #79 — ui: roster screen — squads and mechs
-7. #108 — refactor(core): promote generic id Registry to core/ and reuse in mapgen and roster
-8. #141 — refactor: rename scalar tuning exports to UPPER_SNAKE_CASE (economy-tuning, threat-tuning)
-9. #217 — bug(ui): autosave failure on New game is never shown; menu unmounts before the message is visible
-10. #218 — bug(engine): overworld camera pan is unbounded; the map can be panned entirely off screen
-11. #219 — bug(ui): Continue is silently disabled when the autosave exists but cannot be decoded
-12. #230 — save: share isRecord between migrations and the game-state guard
-13. #75 — ui: city panel with region summary and deployables (Ready once #65 merges)
+1. #70 — overworld: pending events and choice resolution
+2. #76 — ui: mission list and mission details
+3. #78 — ui: defeat and victory-stub screens
+4. #80 — ui: mech bay — slot picker, live validation and stat sheet
+5. #108 — refactor(core): promote generic id Registry to core/ and reuse in mapgen and roster
+6. #141 — refactor: rename scalar tuning exports to UPPER_SNAKE_CASE (economy-tuning, threat-tuning)
+7. #217 — bug(ui): autosave failure on New game is never shown; menu unmounts before the message is visible
+8. #218 — bug(engine): overworld camera pan is unbounded; the map can be panned entirely off screen
+9. #219 — bug(ui): Continue is silently disabled when the autosave exists but cannot be decoded
+10. #230 — save: share isRecord between migrations and the game-state guard
+11. #291 — bug(ui): overworld top bar wraps and the outcome badge spills out below ~1000 px width
+12. #294 — bug(ui): squad hired without a name is called "Rifle Squad squad"
 <!-- digest:end -->
 
 **Status: PRODUCTION RESUMED** (Director, 2026-09-03 03:05 UTC). Pool: eng-3 (default effort, takes `complexity:high` and anything), eng-4 and eng-5 (medium effort, `complexity:low|medium` only). eng-1, eng-2, eng-6 are gone; their seat labels are inactive.
 
 **Gap audit (03:10 UTC, posted on #35):** closed. Every stopped-seat issue is Done or reseated (#52 → eng-5, #55 → eng-3); #60 and #162 merged.
 
-**08:25 UTC.** Simulation side of M1 is one issue from done: #68 AdvanceDay, #64 casualties and #73 overworld shell merged this hour; #67 LaunchMission (high) is on eng-3 and is the last sim gate. UI epic #41/#42 is open: #76 mission list, #78 end screens Ready; #79 roster screen on eng-4; #75 city panel opens when #65 lands. M1 at 39 of 66; epics #35, #36, #37 closed.
+**09:00 UTC.** M1 simulation complete (#67 LaunchMission merged); epics #35, #36, #37, #38, #40 closed, only #39 (events #70/#71 left) and the UI epics #41/#42 open. M1 at 45 of 66. Remaining M1 chain: #76 mission list → #82 deployment → #83 results → #84 e2e, plus #80 → #81 mech bay, #78 end screens, #77/#70/#71 events. Art Director is replacing every unit placeholder with Blender models (#274 batches A–D, A merged).
 
-**Seat plan:** eng-3 (default): #67 → #82 deployment screen (medium, needs #76) → #84 e2e if QA does not take it. eng-4 (medium): #79 roster screen → #80 mech bay editor → #81 loadouts/build. eng-5 (medium): #65 (PR in review) → #75 city panel → #76 mission list → #78 end screens. Then #83 results, #77 event dialog (needs #71), #70/#71 events, #69 upgrades. Low-tier fillers: #141, #108, #230, QA bugs #217 #218 #219.
+**Seat plan:** eng-3 (default): #76 → #82 → #83 (all medium; no high left in M1). eng-4 (medium): #80 → #81 → #230 / #141. eng-5 (medium): #78 → #70 → #71 → #77. #84 e2e: QA asked on the issue (no reply yet); seat it if no answer by the time #83 merges. Low-tier fillers: #108, #141, #230, QA bugs #217 #218 #219 #291 #294.
 
-**Risks** (08:25 UTC):
+**Risks** (09:00 UTC):
 
-- UI work is now the whole remaining M1 scope (#75–#84) and all of it is medium/low: the two medium seats carry it while eng-3 finishes #67 and then joins on #82.
-- #84 (M1 e2e) is QA-owned; QA is active (#222, #256 merged) but confirm they take it, else seat it.
+- M1 completion is now paced by the two medium seats plus eng-3 on UI; no architectural gates remain. Expect M1 done within a few hours of review throughput.
+- M2 (tactical) has no decomposition filed yet; a draft (5 epics, 27 issues) sits in my scratchpad and gets filed when the Director asks or when Ready drops below six for the live seats.
 
 ---
 

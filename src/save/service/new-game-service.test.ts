@@ -106,6 +106,20 @@ describe("createNewGame", () => {
     expect(economy.ledger).toEqual([]);
   });
 
+  it("carries debug options into meta only when given", () => {
+    expect("debug" in newGame(42).meta).toBe(false);
+    const fast = createNewGame(
+      {
+        seed: 42,
+        createdAt: CREATED_AT,
+        debug: { threatEscalationMultiplier: 100 },
+      },
+      DEPS,
+    );
+    expect(fast.meta.debug).toEqual({ threatEscalationMultiplier: 100 });
+    expect(JSON.parse(JSON.stringify(fast))).toEqual(fast);
+  });
+
   it("writes the advanced id counters and the untouched master RNG back into meta", () => {
     const { meta } = newGame(42);
     expect(meta.seed).toBe(42);

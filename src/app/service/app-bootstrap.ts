@@ -12,20 +12,26 @@ import { loadOverworldAssets } from "../../graphics/service/overworld-asset-load
 import { OverworldSceneBuilder } from "../../graphics/service/overworld-scene-builder";
 import { SceneService } from "../../graphics/service/scene-service";
 import { SvgGlyphRasteriser } from "../../graphics/service/svg-glyph-rasteriser";
+import { DEPLOYABLE_TYPES } from "../../overworld/data/deployable-types";
 import { EARTH_MAP } from "../../overworld/data/earth-map";
+import { DEPLOYABLE_TYPE_IDS } from "../../overworld/model/deployable-type";
+import { DataDeployableTypeCatalogue } from "../../overworld/repository/deployable-type-catalogue";
 import type { SaveClock } from "../../save/model/save-clock";
 import { WebStorageKeyValueStore } from "../../save/repository/web-storage-key-value-store";
 import { iconHref } from "../../ui/data/icon-manifest";
 import type { ScreenId } from "../../ui/model/screen";
+import { GameOverScreen } from "../../ui/screen/game-over-screen";
 import { MainMenuScreen } from "../../ui/screen/main-menu-screen";
 import type { OverworldSelection } from "../../ui/model/overworld-selection";
 import { DeploymentScreen } from "../../ui/screen/deployment-screen";
 import { OverworldScreen } from "../../ui/screen/overworld-screen";
 import { OverworldSelectionState } from "../../ui/service/overworld-selection-state";
+import { MechBayScreen } from "../../ui/screen/mech-bay-screen";
 import { RosterScreen } from "../../ui/screen/roster-screen";
 import type { TutTestHooks } from "../model/test-hooks";
 import type { ScreenFactory } from "./dom-screen-router";
 import { DomMapViewportHost } from "./dom-map-viewport-host";
+import { parseDebugOptions } from "./debug-options";
 import { DomScreenRouter } from "./dom-screen-router";
 import { composeGame } from "./game-composition";
 
@@ -51,7 +57,7 @@ const MAP_VIEWPORT_ID = "map-viewport";
  * ```
  *   document
  *     ├── #app / #map-viewport  ◀── SceneService (overworld map, camera rig, input, picking)
- *     └── #ui                   ◀── DomScreenRouter ──▶ MainMenuScreen / OverworldScreen / RosterScreen
+ *     └── #ui                   ◀── DomScreenRouter ──▶ MainMenuScreen / OverworldScreen / RosterScreen / MechBayScreen
  *                                        │                        └── composeGame(): session (GameStore),
  *                                        │                            saves, autosave, createCampaign
  *                                        └── body[data-screen]
@@ -68,6 +74,9 @@ export async function bootstrapApp(doc: Document): Promise<void> {
   const viewport = createMapViewport(doc, appRoot);
   const mapViewport = new DomMapViewportHost(viewport, appRoot);
   const selection = new OverworldSelectionState();
+  const debug = import.meta.env.DEV
+    ? parseDebugOptions(window.location.search)
+    : undefined;
 
   const clock: SaveClock = { now: () => new Date().toISOString() };
   const game = composeGame({
@@ -92,6 +101,7 @@ export async function bootstrapApp(doc: Document): Promise<void> {
             createCampaign: game.createCampaign,
             newSeed: game.newSeed,
             clock: game.clock,
+            ...(debug === undefined ? {} : { debug }),
           }),
       ],
       [
@@ -102,6 +112,9 @@ export async function bootstrapApp(doc: Document): Promise<void> {
             session: game.session,
             selection,
             missionTypes: game.content.missionTypes,
+            deployableTypes: new DataDeployableTypeCatalogue(
+              DEPLOYABLE_TYPE_IDS.map((id) => DEPLOYABLE_TYPES[id]),
+            ),
             mapViewport,
           }),
       ],
@@ -125,6 +138,21 @@ export async function bootstrapApp(doc: Document): Promise<void> {
             rosterTuning: game.content.rosterTuning,
           }),
       ],
+      [
+        "mech-bay",
+        () =>
+          new MechBayScreen({
+            router,
+            session: game.session,
+            parts: game.content.parts,
+            rating: game.content.rating,
+            upgrades: game.content.upgrades,
+          }),
+      ],
+      [
+        "game-over",
+        () => new GameOverScreen({ router, session: game.session }),
+      ],
     ]),
   );
   router.navigate("main-menu");
@@ -142,10 +170,11 @@ export async function bootstrapApp(doc: Document): Promise<void> {
 /**
  * The overworld map scene from #160: loads textures and marker glyphs,
  * builds the Earth scene, the isometric rig at minimum zoom, camera
- * input and city picking, all mounted into the given `#map-viewport`. A selected city is mirrored to `body[data-selected-city]` and,
- * when the overworld panel is mounted, to its `#selected-city` label. In
- * dev builds the `window.__tut__` hooks let end-to-end tests select
- * cities without pointer input.
+ * input and city picking, all mounted into the given `#map-viewport`. A
+ * selected city is mirrored to `body[data-selected-city]` and pushed into
+ * `selection`, which the overworld panels render. In dev builds the
+ * `window.__tut__` hooks let end-to-end tests select cities without
+ * pointer input.
  */
 async function composeScene(
   doc: Document,

@@ -56,9 +56,6 @@ export interface RosterScreenDeps {
  *   store.subscribe ──► views.update(state)
  * ```
  *
- * The Mech Bay button is present but disabled until the mech bay screen
- * (#80) registers, mirroring how the overworld bar shipped its Roster
- * button before this screen existed.
  */
 export class RosterScreen implements Screen {
   // ===========================================
@@ -225,8 +222,9 @@ export class RosterScreen implements Screen {
     status.hidden = true;
 
     const mechBay = this.createButton(doc, "mech-bay", "Mech bay");
-    mechBay.disabled = true;
-    mechBay.title = "The mech bay arrives with #80";
+    this.listen(mechBay, () => {
+      this.deps.router.navigate("mech-bay");
+    });
     const overworld = this.createButton(doc, "overworld", "Overworld");
     this.listen(overworld, () => {
       this.deps.router.navigate("overworld");

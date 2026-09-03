@@ -5,6 +5,7 @@ import { LedgerTransactionService } from "../../economy/service/transaction-serv
 import { MECH_RATING_TUNING } from "../../roster/data/mech-rating-tuning";
 import { STARTER_PARTS } from "../../roster/data/parts";
 import { ROSTER_TUNING } from "../../roster/data/roster-tuning";
+import { UPGRADE_TUNING } from "../../roster/data/upgrade-tuning";
 import { SQUAD_TYPES } from "../../roster/data/squad-types";
 import { STARTER_LOADOUT } from "../../roster/data/starter-roster";
 import {
@@ -13,6 +14,7 @@ import {
   MECH_BUILT,
   MECH_RENAMED,
   MECH_REPAIRED,
+  PART_UPGRADED,
   SQUAD_HIRED,
   SQUAD_REINFORCED,
 } from "../../roster/model/roster-event";
@@ -31,6 +33,7 @@ import {
 } from "../model/overworld-command";
 import { renameMech } from "../model/rename-mech-command";
 import { repairMech } from "../model/repair-mech-command";
+import { upgradePart } from "../model/upgrade-part-command";
 import { createOverworldCommandDispatcher } from "./command-dispatcher";
 import type { RosterHandlerDeps } from "./roster-command-handlers";
 import { registerRosterCommands } from "./roster-command-handlers";
@@ -91,6 +94,7 @@ const DEPS: RosterHandlerDeps = {
   parts: new StaticPartCatalogue(STARTER_PARTS),
   rating: MECH_RATING_TUNING,
   rosterTuning: ROSTER_TUNING,
+  upgrades: UPGRADE_TUNING,
   transactionsFor: (ids) => new LedgerTransactionService(ids),
 };
 
@@ -133,6 +137,7 @@ describe("registerRosterCommands", () => {
       buildMech(STARTER_LOADOUT.name, "X"),
       repairMech("mech-1"),
       renameMech("mech-1", "Anvil II"),
+      upgradePart("mech-1", STARTER_LOADOUT.armWeaponId),
     ];
     for (const command of commands) {
       expect(d.process(BASE, command).ok).toBe(true);
@@ -222,8 +227,22 @@ describe("roster handlers through the dispatcher", () => {
     expect(types).toEqual([MECH_RENAMED]);
   });
 
+  it("UpgradePart raises the level on the mech's own loadout and charges the step", () => {
+    const partId = STARTER_LOADOUT.armWeaponId;
+    const { state, types } = apply(upgradePart("mech-1", partId));
+    expect(state.roster.mechs[0]?.loadout.upgrades).toEqual({ [partId]: 1 });
+    expect(state.roster.savedLoadouts[0]?.upgrades).toBeUndefined();
+    expect(state.economy.ledger[0]).toMatchObject({
+      kind: "purchase",
+      ref: "mech-1",
+      day: DAY,
+    });
+    expect(types).toEqual(["economy:credits-changed", PART_UPGRADED]);
+  });
+
   it.each([
     ["HireSquad", hireSquad("cavalry", "X"), "unknown-squad-type"],
+    ["UpgradePart", upgradePart("mech-1", "legs-jumper"), "part-not-fitted"],
     ["RepairMech", repairMech("mech-9"), "unknown-mech"],
     ["RenameMech", renameMech("mech-1", ""), "invalid-name"],
     ["ReinforceSquad", reinforceSquad("squad-9", 1), "unknown-squad"],

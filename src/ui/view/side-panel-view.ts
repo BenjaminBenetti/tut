@@ -1,17 +1,14 @@
-import { findCity } from "../../overworld/service/earth-map-query-service";
 import type { GameState } from "../../save/model/game-state";
-import type { OverworldSelectionSnapshot } from "../model/overworld-selection";
 
 // ===========================================
 // SidePanelView
 // ===========================================
 
 /**
- * The overworld's right-hand panel: the situation report (selected city
- * and campaign seed) followed by whatever sections the screen mounts
- * into `sections` (the mission list and briefing). The selected city is
- * rendered from the UI selection state, so the map and the mission list
- * both drive the same label.
+ * The overworld's right-hand panel: the situation report (seed and the
+ * camera hint) followed by whatever sections the screen mounts into
+ * `container` (the city card and deployables from #75, the mission list
+ * from #76).
  */
 export class SidePanelView {
   // ===========================================
@@ -19,10 +16,18 @@ export class SidePanelView {
   // ===========================================
 
   private root: HTMLElement | undefined;
-  private host: HTMLElement | undefined;
-  private city: HTMLElement | undefined;
   private seed: HTMLElement | undefined;
   private note: HTMLElement | undefined;
+  private sections: HTMLElement | undefined;
+
+  // ===========================================
+  // Accessors
+  // ===========================================
+
+  /** Where the screen mounts further sections; undefined before `mount`. */
+  get container(): HTMLElement | undefined {
+    return this.sections;
+  }
 
   // ===========================================
   // Lifecycle
@@ -41,14 +46,8 @@ export class SidePanelView {
 
     const grid = doc.createElement("dl");
     grid.className = "tut-kv";
-    const [cityTerm, cityValue] = this.createField(
-      doc,
-      "Selected city",
-      "selected-city",
-    );
-    cityValue.id = "selected-city";
     const [seedTerm, seedValue] = this.createField(doc, "Seed", "seed");
-    grid.append(cityTerm, cityValue, seedTerm, seedValue);
+    grid.append(seedTerm, seedValue);
 
     const note = doc.createElement("p");
     note.className = "tut-dim";
@@ -61,56 +60,35 @@ export class SidePanelView {
     hint.textContent =
       "Click a city · Q / E rotate · wheel zoom · WASD or arrows pan.";
 
-    const host = doc.createElement("div");
-    host.className = "tut-stack";
-    host.dataset.role = "side-panel-sections";
+    const sections = doc.createElement("div");
+    sections.className = "tut-stack";
+    sections.dataset.role = "panel-sections";
 
-    panel.append(title, grid, note, hint, host);
+    panel.append(title, grid, note, hint, sections);
     parent.appendChild(panel);
 
     this.root = panel;
-    this.host = host;
-    this.city = cityValue;
     this.seed = seedValue;
     this.note = note;
+    this.sections = sections;
   }
 
-  /** Where the screen mounts further sections, in order. Only valid while mounted. */
-  get sections(): HTMLElement {
-    if (!this.host) {
-      throw new Error("SidePanelView is not mounted");
-    }
-    return this.host;
-  }
-
-  /** Refreshes the campaign facts and the selected city's name. */
-  update(
-    state: GameState | undefined,
-    selection: OverworldSelectionSnapshot,
-  ): void {
-    if (!this.seed || !this.note || !this.city) {
+  /** Refreshes the campaign facts; shows the no-campaign note when there is none. */
+  update(state: GameState | undefined): void {
+    if (!this.seed || !this.note) {
       return;
     }
     this.seed.textContent = state ? String(state.meta.seed) : "—";
     this.note.hidden = state !== undefined;
-    const city =
-      state && selection.cityId !== undefined
-        ? findCity(state.overworld.map, selection.cityId)
-        : undefined;
-    const name = city?.name ?? "—";
-    if (this.city.textContent !== name) {
-      this.city.textContent = name;
-    }
   }
 
   /** Removes the panel. */
   unmount(): void {
     this.root?.remove();
     this.root = undefined;
-    this.host = undefined;
-    this.city = undefined;
     this.seed = undefined;
     this.note = undefined;
+    this.sections = undefined;
   }
 
   // ===========================================

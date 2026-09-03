@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { MECH_RATING_TUNING } from "../data/mech-rating-tuning";
 import { STARTER_PARTS } from "../data/parts";
+import { UPGRADE_TUNING } from "../data/upgrade-tuning";
 import { STARTER_LOADOUT } from "../data/starter-roster";
 import type { LoadoutErrorCode } from "../model/loadout-error";
 import type { MechLoadout } from "../model/mech-loadout";
@@ -112,7 +113,7 @@ const TUNING: MechRatingTuning = {
 
 /** Runs validation and returns the error codes, failing the test on success. */
 function errorCodes(loadout: MechLoadout): LoadoutErrorCode[] {
-  const result = validateLoadout(loadout, CATALOGUE, TUNING);
+  const result = validateLoadout(loadout, CATALOGUE, TUNING, UPGRADE_TUNING);
   if (result.ok) {
     throw new Error("expected validation to fail");
   }
@@ -125,7 +126,7 @@ function errorCodes(loadout: MechLoadout): LoadoutErrorCode[] {
 
 describe("validateLoadout on a valid loadout", () => {
   it("returns the summed stat sheet, cost and rating", () => {
-    const result = validateLoadout(VALID, CATALOGUE, TUNING);
+    const result = validateLoadout(VALID, CATALOGUE, TUNING, UPGRADE_TUNING);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.value).toEqual({
@@ -150,16 +151,41 @@ describe("validateLoadout on a valid loadout", () => {
       },
       ...["legs", "arms", "gun", "pod"].map((id) => CATALOGUE.getPart(id)!),
     ]);
-    const result = validateLoadout({ ...VALID, utilityIds: [] }, tight, TUNING);
+    const result = validateLoadout(
+      { ...VALID, utilityIds: [] },
+      tight,
+      TUNING,
+      UPGRADE_TUNING,
+    );
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.value.weight).toBe(56);
     expect(result.value.powerBalance).toBe(0);
   });
 
+  it("applies recorded upgrade levels to the stat sheet and its cost", () => {
+    const upgraded: MechLoadout = {
+      ...VALID,
+      upgrades: { gun: 2, chassis: 1, legs: 9 },
+    };
+    const result = validateLoadout(upgraded, CATALOGUE, TUNING, UPGRADE_TUNING);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    // gun firepower 18 × 1.2 → 22; chassis armor 20 × 1.1 → 22, mobility 5 × 1.1 → 6 (5.5 rounds up);
+    // legs clamp to level 3: armor 5 × 1.3 → 7 (6.5 rounds up), mobility 2 × 1.3 → 3 (2.6).
+    expect(result.value.armor).toBe(25 + 2 + 2);
+    expect(result.value.mobility).toBe(7 + 1 + 1);
+    expect(result.value.firepower).toBe(40 + 4);
+    // weight and power never change with upgrades
+    expect(result.value.weight).toBe(60);
+    expect(result.value.powerBalance).toBe(10);
+    // cost: base 1650 + gun (100 + 200) + chassis 500 + legs (50 + 100 + 150)
+    expect(result.value.totalCost).toBe(1650 + 300 + 500 + 300);
+  });
+
   it("does not mutate the loadout", () => {
     const copy = JSON.parse(JSON.stringify(VALID)) as MechLoadout;
-    validateLoadout(VALID, CATALOGUE, TUNING);
+    validateLoadout(VALID, CATALOGUE, TUNING, UPGRADE_TUNING);
     expect(VALID).toEqual(copy);
   });
 
@@ -169,6 +195,7 @@ describe("validateLoadout on a valid loadout", () => {
       STARTER_LOADOUT,
       catalogue,
       MECH_RATING_TUNING,
+      UPGRADE_TUNING,
     );
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -184,7 +211,12 @@ describe("validateLoadout on a valid loadout", () => {
 
 describe("validateLoadout structural errors", () => {
   it("reports missing-part for an empty single-slot id", () => {
-    const result = validateLoadout({ ...VALID, legsId: "" }, CATALOGUE, TUNING);
+    const result = validateLoadout(
+      { ...VALID, legsId: "" },
+      CATALOGUE,
+      TUNING,
+      UPGRADE_TUNING,
+    );
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.error).toMatchObject([
@@ -198,6 +230,7 @@ describe("validateLoadout structural errors", () => {
       { ...VALID, utilityIds: ["  "] },
       CATALOGUE,
       TUNING,
+      UPGRADE_TUNING,
     );
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -211,6 +244,7 @@ describe("validateLoadout structural errors", () => {
       { ...VALID, armWeaponId: "nope" },
       CATALOGUE,
       TUNING,
+      UPGRADE_TUNING,
     );
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -225,6 +259,7 @@ describe("validateLoadout structural errors", () => {
       { ...VALID, backWeaponId: "gun", utilityIds: ["legs"] },
       CATALOGUE,
       TUNING,
+      UPGRADE_TUNING,
     );
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -257,6 +292,7 @@ describe("validateLoadout capacity errors", () => {
       { ...VALID, utilityIds: ["anvil"] },
       CATALOGUE,
       TUNING,
+      UPGRADE_TUNING,
     );
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -272,6 +308,7 @@ describe("validateLoadout capacity errors", () => {
       { ...VALID, utilityIds: ["reactor-hog"] },
       CATALOGUE,
       TUNING,
+      UPGRADE_TUNING,
     );
     expect(result.ok).toBe(false);
     if (result.ok) return;

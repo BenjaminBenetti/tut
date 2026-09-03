@@ -17,6 +17,7 @@ import { registerRosterCommands } from "../../overworld/service/roster-command-h
 import { MECH_RATING_TUNING } from "../../roster/data/mech-rating-tuning";
 import { STARTER_PARTS } from "../../roster/data/parts";
 import { ROSTER_TUNING } from "../../roster/data/roster-tuning";
+import { UPGRADE_TUNING } from "../../roster/data/upgrade-tuning";
 import { SQUAD_TYPES } from "../../roster/data/squad-types";
 import { STARTER_ROSTER } from "../../roster/data/starter-roster";
 import { DataSquadTypeCatalogue } from "../../roster/repository/squad-type-catalogue";
@@ -97,6 +98,7 @@ class RealStore implements CampaignStore {
       parts: PART_CATALOGUE,
       rating: MECH_RATING_TUNING,
       rosterTuning: ROSTER_TUNING,
+      upgrades: UPGRADE_TUNING,
       transactionsFor: (ids) => new LedgerTransactionService(ids),
     });
   }
@@ -242,7 +244,7 @@ describe("RosterScreen", () => {
     ]);
     expect(q('[data-role="no-losses"]').hidden).toBe(true);
     expect(q<HTMLButtonElement>('[data-action="mech-bay"]').disabled).toBe(
-      true,
+      false,
     );
   });
 
@@ -352,6 +354,8 @@ describe("RosterScreen", () => {
 
   it("Overworld navigates back and unmount unsubscribes and clears the DOM", () => {
     const { store, navigate, screen } = mountWith(newGame(), root);
+    q<HTMLButtonElement>('[data-action="mech-bay"]').click();
+    expect(navigate).toHaveBeenCalledWith("mech-bay");
     q<HTMLButtonElement>('[data-action="overworld"]').click();
     expect(navigate).toHaveBeenCalledWith("overworld");
     expect(store?.listenerCount).toBe(1);

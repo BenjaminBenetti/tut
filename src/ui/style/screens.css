@@ -158,6 +158,39 @@
   line-height: 1.3;
 }
 
+/* =========================================== */
+/* Overworld side panel: city card, deployables */
+/* =========================================== */
+
+.tut-city__name {
+  font-family: var(--font-display, inherit);
+  font-size: 18px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: var(--space-2);
+}
+
+.tut-city__mission {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-1) var(--space-3);
+  align-items: center;
+}
+
+.tut-city__mission .tut-btn {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+
+.tut-deployables .tut-list > li {
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.tut-deployables__build .tut-btn {
+  text-align: left;
+}
+
 /* ===========================================
    Roster screen (#79)
    =========================================== */
@@ -237,4 +270,58 @@
 
 .tut-missions__row .tut-data {
   white-space: nowrap;
+}
+
+/* ====================================
+   Mech bay screen (#80)
+   =========================================== */
+#ui > .tut-mech-bay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  background: var(--ui-bg, #0b0e12);
+}
+.tut-mech-bay__bar {
+  grid-row: 1;
+}
+.tut-mech-bay__body {
+  grid-row: 2;
+  overflow: auto;
+  padding: var(--space-4);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) min(360px, 40vw);
+  gap: var(--space-4);
+  align-content: start;
+}
+.tut-mech-bay__row {
+  display: grid;
+  grid-template-columns: 8em minmax(0, 1fr);
+  gap: var(--space-2);
+  align-items: center;
+}
+.tut-mech-bay__error {
+  grid-column: 2;
+  color: var(--ui-danger);
+  font-size: 0.9em;
+}
+.tut-mech-bay__errors li {
+  color: var(--ui-danger);
+}
+/* =========================================== */
+/* Game over                                   */
+/* =========================================== */
+
+.tut-game-over__title {
+  margin: var(--space-2) 0;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tut-game-over__title--danger {
+  color: var(--ui-danger);
+}
+
+.tut-game-over__title--ok {
+  color: var(--ui-ok);
 }

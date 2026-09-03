@@ -28,8 +28,8 @@ export const BIOME_DEFINITIONS: Readonly<Record<BiomeId, BiomeDefinition>> = {
     },
     hasShoreline: false,
     vegetation: [
-      { prop: PropKindIds.TREE_OAK, density: 4 },
-      { prop: PropKindIds.TREE_PINE, density: 2 },
+      { prop: PropKindIds.TREE_OAK, density: 4, cluster: { min: 3, max: 6 } },
+      { prop: PropKindIds.TREE_PINE, density: 2, cluster: { min: 3, max: 6 } },
       { prop: PropKindIds.BOULDER, density: 0.5 },
       { prop: PropKindIds.FENCE, density: 1 },
     ],
@@ -56,8 +56,8 @@ export const BIOME_DEFINITIONS: Readonly<Record<BiomeId, BiomeDefinition>> = {
     },
     hasShoreline: false,
     vegetation: [
-      { prop: PropKindIds.TREE_PINE, density: 5 },
-      { prop: PropKindIds.BOULDER, density: 1 },
+      { prop: PropKindIds.TREE_PINE, density: 5, cluster: { min: 3, max: 7 } },
+      { prop: PropKindIds.BOULDER, density: 1, cluster: { min: 2, max: 3 } },
     ],
     buildingKinds: [
       { template: BuildingKindIds.HOUSE, weight: 5 },
@@ -82,7 +82,7 @@ export const BIOME_DEFINITIONS: Readonly<Record<BiomeId, BiomeDefinition>> = {
     hasShoreline: false,
     vegetation: [
       { prop: PropKindIds.CACTUS, density: 3 },
-      { prop: PropKindIds.BOULDER, density: 1.5 },
+      { prop: PropKindIds.BOULDER, density: 1.5, cluster: { min: 2, max: 4 } },
       { prop: PropKindIds.TREE_PALM, density: 0.5 },
     ],
     buildingKinds: [
@@ -109,9 +109,9 @@ export const BIOME_DEFINITIONS: Readonly<Record<BiomeId, BiomeDefinition>> = {
     },
     hasShoreline: true,
     vegetation: [
-      { prop: PropKindIds.TREE_PALM, density: 3 },
-      { prop: PropKindIds.TREE_OAK, density: 1 },
-      { prop: PropKindIds.BOULDER, density: 1 },
+      { prop: PropKindIds.TREE_PALM, density: 3, cluster: { min: 2, max: 4 } },
+      { prop: PropKindIds.TREE_OAK, density: 1, cluster: { min: 3, max: 5 } },
+      { prop: PropKindIds.BOULDER, density: 1, cluster: { min: 2, max: 3 } },
       { prop: PropKindIds.FENCE, density: 1 },
     ],
     buildingKinds: [

@@ -142,7 +142,22 @@ function collectBlockedTiles(draft: MapDraft): ReadonlySet<number> {
 // Vegetation
 // ===========================================
 
-/** Scatters the biome's ground props; returns how many were placed. */
+/** Columns a cluster may grow into, as manhattan distance from its seed. */
+const CLUSTER_RADIUS = 2;
+
+/**
+ * Scatters the biome's ground props; returns how many were placed.
+ * Every open column rolls once against the biome's total density. A
+ * kind with a `cluster` range is seeded at `density / mean cluster size`
+ * and grown to a rolled size around the seed, so its expected count per
+ * 100 columns is still its density; other kinds land as singletons.
+ *
+ * ```
+ *   . . T . .      T seed, t grown within CLUSTER_RADIUS
+ *   . t T t .      expected props = seeds × mean size = density
+ *   . . t . .
+ * ```
+ */
 function placeVegetation(
   draft: MapDraft,
   biome: BiomeDefinition,
@@ -153,29 +168,73 @@ function placeVegetation(
   const entries = biome.vegetation.filter((entry) =>
     allowedIn(registries.props.get(entry.prop), biome.id, "ground"),
   );
-  const total = entries.reduce((sum, entry) => sum + entry.density, 0) / 100;
+  const seedRate = (entry: VegetationEntry): number =>
+    entry.density / meanClusterSize(entry);
+  const total = entries.reduce((sum, entry) => sum + seedRate(entry), 0) / 100;
   if (entries.length === 0 || total <= 0) {
     return 0;
   }
+  const free = (x: number, z: number): boolean =>
+    isOpenGround(draft, x, z) &&
+    !blocked.has(draft.tileKey(draft.groundCoord(x, z))) &&
+    draft.propAt(draft.groundCoord(x, z)) === undefined;
   let placed = 0;
   for (let z = 0; z < draft.depth; z++) {
     for (let x = 0; x < draft.width; x++) {
-      if (!isOpenGround(draft, x, z)) {
+      if (!free(x, z) || !rng.chance(total)) {
         continue;
       }
-      const coord = draft.groundCoord(x, z);
-      if (blocked.has(draft.tileKey(coord)) || !rng.chance(total)) {
-        continue;
-      }
-      const entry: VegetationEntry = rng.pickWeighted(
-        entries,
-        (e) => e.density,
-      );
-      draft.addProp(entry.prop, coord, randomRotation(rng));
+      const entry: VegetationEntry = rng.pickWeighted(entries, seedRate);
+      draft.addProp(entry.prop, draft.groundCoord(x, z), randomRotation(rng));
       placed++;
+      if (entry.cluster === undefined) {
+        continue;
+      }
+      const size = rng.nextInt(entry.cluster.min, entry.cluster.max);
+      const around = rng.shuffle(clusterColumns(draft, x, z, free));
+      for (const column of around.slice(0, size - 1)) {
+        draft.addProp(
+          entry.prop,
+          draft.groundCoord(column.x, column.z),
+          randomRotation(rng),
+        );
+        placed++;
+      }
     }
   }
   return placed;
+}
+
+/** Mean of a kind's cluster size, or 1 for singletons. */
+function meanClusterSize(entry: VegetationEntry): number {
+  return entry.cluster === undefined
+    ? 1
+    : (entry.cluster.min + entry.cluster.max) / 2;
+}
+
+/** Free columns within `CLUSTER_RADIUS` of the seed, in scan order. */
+function clusterColumns(
+  draft: MapDraft,
+  x: number,
+  z: number,
+  free: (x: number, z: number) => boolean,
+): ColumnCoord[] {
+  const columns: ColumnCoord[] = [];
+  for (let dz = -CLUSTER_RADIUS; dz <= CLUSTER_RADIUS; dz++) {
+    for (let dx = -CLUSTER_RADIUS; dx <= CLUSTER_RADIUS; dx++) {
+      const distance = Math.abs(dx) + Math.abs(dz);
+      if (
+        distance === 0 ||
+        distance > CLUSTER_RADIUS ||
+        !draft.inBounds(x + dx, z + dz) ||
+        !free(x + dx, z + dz)
+      ) {
+        continue;
+      }
+      columns.push({ x: x + dx, z: z + dz });
+    }
+  }
+  return columns;
 }
 
 // ===========================================

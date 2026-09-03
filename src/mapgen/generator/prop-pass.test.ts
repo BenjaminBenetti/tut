@@ -4,6 +4,7 @@ import { BIOME_IDS } from "../../content/model/biome-id";
 import { SETTLEMENT_SCALES } from "../../content/model/settlement-scale";
 import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import { hashSeed } from "../../core/service/seed-hash";
+import { DIRECTIONS } from "../../core/model/direction";
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
 import { rectContains, stepGridPos } from "../../core/service/grid-math";
 import { BIOME_DEFINITIONS } from "../data/biomes";
@@ -150,6 +151,38 @@ describe("PropPass", () => {
       const perHundred = (placed / open) * 100;
       expect(perHundred, biome).toBeGreaterThanOrEqual(expected * 0.75);
       expect(perHundred, biome).toBeLessThanOrEqual(expected * 1.25);
+    }
+  });
+
+  it("clumps clustered kinds so most have a same-kind neighbour", () => {
+    // Independent scatter at these densities gives ~10–16 % (measured on
+    // main); clusters lift temperate and snowy well past 40 %.
+    for (const biome of ["temperate", "snowy"] as const) {
+      const clustered = new Set(
+        BIOME_DEFINITIONS[biome].vegetation
+          .filter((v) => v.cluster !== undefined)
+          .map((v) => v.prop),
+      );
+      let total = 0;
+      let withSameKind = 0;
+      for (let i = 0; i < 12; i++) {
+        const { draft } = run(biome, "rural", `clump-${i}`);
+        for (const prop of draft.props) {
+          if (!clustered.has(prop.kind)) continue;
+          total++;
+          const near = DIRECTIONS.some((direction) => {
+            const next = stepGridPos(prop.tile, direction);
+            if (!draft.inBounds(next.x, next.z)) return false;
+            return (
+              draft.propAt(draft.groundCoord(next.x, next.z))?.kind ===
+              prop.kind
+            );
+          });
+          if (near) withSameKind++;
+        }
+      }
+      expect(total, biome).toBeGreaterThan(0);
+      expect(withSameKind / total, biome).toBeGreaterThan(0.4);
     }
   });
 

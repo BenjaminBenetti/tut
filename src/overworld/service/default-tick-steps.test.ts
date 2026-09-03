@@ -20,6 +20,10 @@ import { THREAT_TUNING } from "../data/threat-tuning";
 import { DEPLOYABLE_TYPE_IDS } from "../model/deployable-type";
 import type { TickContext } from "../model/tick-step";
 import { DataDeployableTypeCatalogue } from "../repository/deployable-type-catalogue";
+import { DataEventTypeCatalogue } from "../repository/event-type-catalogue";
+import { EVENT_TUNING } from "../data/event-tuning";
+import { EVENT_TYPES } from "../data/event-types";
+import { EVENT_TYPE_IDS } from "../model/event-type";
 import type { TickDeps } from "./default-tick-steps";
 import { createDefaultTickSteps, TICK_STEP_NAMES } from "./default-tick-steps";
 import { unfestedFraction } from "./threat-service";
@@ -38,6 +42,10 @@ const TICK_DEPS: TickDeps = {
   missionTypes: MISSION_TYPES,
   threatTuning: THREAT_TUNING,
   economyTuning: ECONOMY_TUNING,
+  eventTypes: new DataEventTypeCatalogue(
+    EVENT_TYPE_IDS.map((id) => EVENT_TYPES[id]),
+  ),
+  eventTuning: EVENT_TUNING,
 };
 
 function newGame(): GameState {

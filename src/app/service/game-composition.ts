@@ -2,6 +2,7 @@ import { ECONOMY_TUNING } from "../../economy/data/economy-tuning";
 import { LedgerTransactionService } from "../../economy/service/transaction-service";
 import { MISSION_TYPES } from "../../content/data/mission-types";
 import { DEPLOYABLE_TYPES } from "../../overworld/data/deployable-types";
+import { EVENT_TUNING } from "../../overworld/data/event-tuning";
 import { EVENT_TYPES } from "../../overworld/data/event-types";
 import { EARTH_MAP } from "../../overworld/data/earth-map";
 import { INFESTATION_TUNING } from "../../overworld/data/infestation-tuning";
@@ -145,9 +146,7 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     transactionsFor: tickDeps.createTransactions,
   });
   registerEventCommands(dispatcher, {
-    eventTypes: new DataEventTypeCatalogue(
-      EVENT_TYPE_IDS.map((id) => EVENT_TYPES[id]),
-    ),
+    eventTypes: tickDeps.eventTypes,
     transactionsFor: tickDeps.createTransactions,
   });
   dispatcher.register(
@@ -214,6 +213,10 @@ function composeTickDeps(): TickDeps {
     missionTypes: MISSION_TYPES,
     threatTuning: THREAT_TUNING,
     economyTuning: ECONOMY_TUNING,
+    eventTypes: new DataEventTypeCatalogue(
+      EVENT_TYPE_IDS.map((id) => EVENT_TYPES[id]),
+    ),
+    eventTuning: EVENT_TUNING,
   };
 }
 

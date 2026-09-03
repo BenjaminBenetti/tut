@@ -1,5 +1,7 @@
 import type { IdGenerator } from "../../core/model/id-generator";
 import type { EconomyTuning } from "../../economy/model/economy-tuning";
+import type { EventTuning } from "../model/event-tuning";
+import type { EventTypeCatalogue } from "../model/event-type-catalogue";
 import type { TransactionService } from "../../economy/model/transaction-service";
 import { applyStipend } from "../../economy/service/income-service";
 import type { CampaignState } from "../model/campaign-state";
@@ -21,6 +23,7 @@ import {
   tickStipendModifiers,
 } from "./stipend-modifier-service";
 import { computeThreat, unfestedFraction } from "./threat-service";
+import { createEventStep, EVENT_STEP_NAME } from "./event-generation-service";
 
 // ===========================================
 // Types
@@ -39,6 +42,8 @@ export interface TickDeps {
   readonly missionTypes: MissionTypeCatalogue;
   readonly threatTuning: ThreatTuning;
   readonly economyTuning: EconomyTuning;
+  readonly eventTypes: EventTypeCatalogue;
+  readonly eventTuning: EventTuning;
 }
 
 // ===========================================
@@ -52,6 +57,7 @@ export const TICK_STEP_NAMES = {
   spread: "spread",
   missionExpiry: "mission-expiry",
   missionGeneration: "mission-generation",
+  events: EVENT_STEP_NAME,
   stipend: "stipend",
   threat: "threat",
   outcome: "outcome",
@@ -70,11 +76,11 @@ export const TICK_STEP_NAMES = {
  *   3. spread              infested cities spread to neighbours; threat seeds clean ones
  *   4. mission-expiry      lapsed missions go; host cities pay the ignore penalty
  *   5. mission-generation  infested cities may offer missions (+ intel bonus)
- *      ── #71 event generation registers here, after missions, before pay ──
- *   6. stipend             Earth pays for the day, scaled by how much is unfested
+ *   6. events              lapsed events resolve by default; maybe a new one (#71)
+ *   7. stipend             Earth pays for the day, scaled by how much is unfested
  *                          and by any event-driven stipend modifiers (#70)
- *   7. threat              recompute and store global threat
- *   8. outcome             defeat / victory-stub check, once
+ *   8. threat              recompute and store global threat
+ *   9. outcome             defeat / victory-stub check, once
  * ```
  *
  * Growth and spread read the threat stored by the previous tick; the
@@ -91,6 +97,7 @@ export function createDefaultTickSteps<TState extends CampaignState>(
     spreadStep(deps),
     missionExpiryStep(),
     missionGenerationStep(deps),
+    createEventStep<TState>(deps),
     stipendStep(deps),
     threatStep(deps),
     outcomeStep(),

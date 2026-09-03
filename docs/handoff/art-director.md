@@ -1,6 +1,6 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-03 (session 1, eleventh update)
+Last updated: 2026-09-03 (session 1, twelfth update)
 
 ## 1. What I was doing and where it stands
 
@@ -20,6 +20,7 @@ Last updated: 2026-09-03 (session 1, eleventh update)
 | **Headless Blender toolchain** (Executive Director priority) | #190 | **Merged**: devcontainer + proof PR #192, skill PR #193, handoff PR #194, `cut_below` helper PR #214. Proof and completion note on #190; fleet rebuild requested there (Director does it). |
 | **Replace placeholders with Blender models** (Director go on 2026-09-03) | #274 | **Merged**: pipeline #277, batch A Mech A set #280, batch B all mech variants #283. batch C bugs + spawner #287, batch D five squads #288 **merged** too. Every roster unit (30 ids) is a Blender model; `build-placeholders.mjs` keeps tiles, buildings and props. Batch E waits for tactical demand. |
 | Kit follow-ups from dry runs (`bevel`, sub-part validation, CadQuery/OpenSCAD notes) | #190 | **Merged** (PR #264). |
+| Demand-driven props (batch E): `prop.table` for mapgen's interior table kind | #213 | **Merged** (PR #350). Pattern: one model script, `make_model.py --quality final`, id + manifest entry, style guide §7 row. |
 | Image generation recipe (incl. transparent sprites) | — | **Working.** See §5. |
 | Headless GLB / page render checks (Playwright) and Blender review renders | — | **Working.** See §7 and §8. |
 
@@ -27,7 +28,7 @@ Issues #2, #3, #4, #93, #102, #119, #143, #144, #145 are on project 5; #162, #16
 
 ## 2. Open PRs / issues I own
 
-- None open. #274 (replacement track) is paused after batches A–D with a completion comment; batch E waits for demand.
+- None open. #274 (replacement track) is paused after batches A–D; batch E is demand-driven (first request, `prop.table` #213, is done). Zoom check: every unit rendered at exactly 64 px per tile through the three.js harness keeps its silhouette (style guide §1 rule 1 holds for the Blender models).
 
 ## 3. Decisions I made and why
 

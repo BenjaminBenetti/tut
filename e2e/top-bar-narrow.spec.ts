@@ -1,9 +1,20 @@
 import { expect, test } from "@playwright/test";
 
+/** Client-pixel box of an element, or null when it is not rendered. */
+interface Box {
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+}
+
 /**
  * QA's repro for #291: at 800×600 the overworld top bar must stay one
- * line with its buttons and the outcome badge inside it. The campaign is
- * ended quickly with the debug threat escalation so the badge shows.
+ * line with its buttons, the outcome badge and a long status message
+ * inside it. Since #298 the overworld hands over to the game-over screen
+ * the moment a campaign ends, so the badge never lingers in a live
+ * session; the test reveals it (and a long status) in place to measure
+ * the layout deterministically.
  */
 test("the overworld top bar stays one line at 800 px with the outcome badge", async ({
   page,
@@ -14,61 +25,67 @@ test("the overworld top bar stays one line at 800 px with the outcome badge", as
     errors.push(error.message);
   });
 
-  await page.goto("/?threatEscalation=100");
+  await page.goto("/");
   const body = page.locator("body");
   await expect(body).toHaveAttribute("data-app-state", "ready");
   await page.locator('[data-action="new-game"]').click();
   await expect(body).toHaveAttribute("data-screen", "overworld");
 
-  const bar = page.locator("#top-bar");
-  const barBox = await bar.boundingBox();
-  if (!barBox) throw new Error("no top bar");
-  expect(barBox.height).toBeLessThanOrEqual(44);
+  const boxes = await page.evaluate((): Record<string, Box | null> => {
+    /** The DOM as this test needs it; the e2e tsconfig has no DOM library. */
+    interface ElementLike {
+      hidden: boolean;
+      textContent: string | null;
+      getBoundingClientRect(): Box;
+    }
+    interface DocumentLike {
+      querySelector(selector: string): ElementLike | null;
+    }
+    const doc = (globalThis as { document?: DocumentLike }).document;
+    if (!doc) {
+      return {};
+    }
+    const badge = doc.querySelector('#top-bar [data-field="outcome"]');
+    const status = doc.querySelector('#top-bar [data-role="status"]');
+    if (badge) {
+      badge.hidden = false;
+      badge.textContent = "Campaign over · defeat";
+    }
+    if (status) {
+      status.hidden = false;
+      status.textContent =
+        "Need 1,500 credits, have 320: the treasury cannot cover this build right now";
+    }
+    const rect = (selector: string): Box | null => {
+      const el = doc.querySelector(selector);
+      if (!el) return null;
+      const r = el.getBoundingClientRect();
+      return { x: r.x, y: r.y, width: r.width, height: r.height };
+    };
+    return {
+      bar: rect("#top-bar"),
+      badge: rect('#top-bar [data-field="outcome"]'),
+      roster: rect('#top-bar [data-action="roster"]'),
+      menu: rect('#top-bar [data-action="main-menu"]'),
+      advance: rect('#top-bar [data-action="advance-day"]'),
+      day: rect('#top-bar [data-field="day"]'),
+    };
+  });
 
-  // Run the campaign to defeat; the overworld hands over to the game-over
-  // screen a microtask later, so read the badge from the bar just before.
-  const advance = page.locator('[data-action="advance-day"]');
-  let sawBadge = false;
-  for (let day = 0; day < 14; day++) {
-    if ((await body.getAttribute("data-screen")) !== "overworld") {
-      break;
-    }
-    const outcome = page.locator('#top-bar [data-field="outcome"]');
-    if (await outcome.isVisible()) {
-      sawBadge = true;
-      const badgeBox = await outcome.boundingBox();
-      const nowBar = await bar.boundingBox();
-      if (!badgeBox || !nowBar) throw new Error("no badge or bar box");
-      expect(nowBar.height).toBeLessThanOrEqual(44);
-      expect(badgeBox.y).toBeGreaterThanOrEqual(nowBar.y - 1);
-      expect(badgeBox.y + badgeBox.height).toBeLessThanOrEqual(
-        nowBar.y + nowBar.height + 1,
-      );
-      expect(badgeBox.x + badgeBox.width).toBeLessThanOrEqual(
-        nowBar.x + nowBar.width + 1,
-      );
-      break;
-    }
-    // An event blocks Advance Day until answered (#77); take the first option.
-    const choice = page.locator('[data-role="event-dialog"] [data-choice-id]');
-    if (await choice.first().isVisible()) {
-      await choice.first().click();
-    }
-    await expect(advance).toBeEnabled();
-    await advance.click();
+  const bar = boxes.bar;
+  if (!bar) throw new Error("no top bar");
+  expect(bar.height).toBeLessThanOrEqual(44);
+  for (const name of ["badge", "roster", "menu", "advance", "day"] as const) {
+    const box = boxes[name];
+    expect(box, name).not.toBeNull();
+    if (!box) continue;
+    expect(box.height, name).toBeLessThanOrEqual(bar.height);
+    expect(box.y, name).toBeGreaterThanOrEqual(bar.y - 1);
+    expect(box.y + box.height, name).toBeLessThanOrEqual(
+      bar.y + bar.height + 1,
+    );
+    expect(box.x, name).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width, name).toBeLessThanOrEqual(800 + 1);
   }
-
-  for (const action of ["main-menu", "advance-day", "roster"]) {
-    const box = await page
-      .locator(`#top-bar [data-action="${action}"]`)
-      .boundingBox();
-    if (box) {
-      expect(box.height).toBeLessThanOrEqual(40);
-      expect(box.x + box.width).toBeLessThanOrEqual(800 + 1);
-    }
-  }
-  expect(
-    sawBadge || (await body.getAttribute("data-screen")) === "game-over",
-  ).toBe(true);
   expect(errors).toEqual([]);
 });

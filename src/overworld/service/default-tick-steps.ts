@@ -17,7 +17,6 @@ import { applySpread } from "./infestation-spread-service";
 import type { MissionTypeCatalogue } from "./mission-generation-service";
 import { expireMissions, generateMissions } from "./mission-generation-service";
 import { applyOutcome } from "./outcome-service";
-import { applyDebugThreat } from "./campaign-debug-service";
 import {
   stipendFactor,
   tickStipendModifiers,
@@ -280,7 +279,7 @@ function threatStep<TState extends CampaignState>(
       const threat = computeThreat(
         overworld.map,
         ctx.day,
-        applyDebugThreat(deps.threatTuning, state.meta.debug),
+        deps.threatTuning,
         overworld.threatOffset,
       );
       if (threat === overworld.threat) {

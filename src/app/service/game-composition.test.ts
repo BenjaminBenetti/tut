@@ -166,4 +166,61 @@ describe("composeGame", () => {
     expect(one.winProbability).toBeGreaterThan(empty.winProbability);
     expect(one.target).toBeGreaterThan(0);
   });
+
+  // ===========================================
+  // Dev switches (#304)
+  // ===========================================
+
+  it("applies the debug escalation multiplier from the composition, never from the save", () => {
+    const storage = new MemoryKeyValueStore();
+    const fast = composeGame({
+      storage,
+      clock: { now: () => NOW },
+      newSeed: () => 7,
+      onAutosaveFailure: () => undefined,
+      debug: { threatEscalationMultiplier: 50 },
+    });
+    const slow = composeGame({
+      storage: new MemoryKeyValueStore(),
+      clock: { now: () => NOW },
+      newSeed: () => 7,
+      onAutosaveFailure: () => undefined,
+    });
+    const options = { seed: 7, createdAt: NOW };
+    fast.session.start(fast.createCampaign(options));
+    slow.session.start(slow.createCampaign(options));
+    for (let i = 0; i < 5; i++) {
+      fast.session.store?.dispatch(advanceDay());
+      slow.session.store?.dispatch(advanceDay());
+    }
+    const fastThreat = fast.session.state?.overworld.threat ?? 0;
+    const slowThreat = slow.session.state?.overworld.threat ?? 0;
+    expect(fastThreat).toBeGreaterThan(slowThreat);
+    expect("debug" in (fast.session.state?.meta ?? {})).toBe(false);
+    const saved = JSON.parse(storage.get("tut:save:autosave") ?? "{}") as {
+      state?: { meta?: Record<string, unknown> };
+    };
+    expect(saved.state?.meta).toBeDefined();
+    expect("debug" in (saved.state?.meta ?? {})).toBe(false);
+  });
+
+  it("strips a stale meta.debug from an imported save so it plays at the shipped pace", () => {
+    const game = composeGame({
+      storage: new MemoryKeyValueStore(),
+      clock: { now: () => NOW },
+      newSeed: () => 7,
+      onAutosaveFailure: () => undefined,
+    });
+    const state = game.createCampaign({ seed: 7, createdAt: NOW });
+    const exported = JSON.parse(game.saves.exportGame(state)) as {
+      schemaVersion: number;
+      state: { meta: Record<string, unknown> };
+    };
+    exported.schemaVersion = 6;
+    exported.state.meta.debug = { threatEscalationMultiplier: 50 };
+    const imported = game.saves.importGame(JSON.stringify(exported));
+    expect(imported.ok).toBe(true);
+    if (!imported.ok) return;
+    expect("debug" in imported.value.meta).toBe(false);
+  });
 });

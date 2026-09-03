@@ -137,4 +137,22 @@ describe("GAME_STATE_MIGRATIONS", () => {
     expect(v5).toEqual(before);
     expect(() => step?.apply({ meta: {} })).toThrow(/overworld/);
   });
+
+  it("v6 → v7 drops meta.debug and leaves a save without it untouched", () => {
+    const step = GAME_STATE_MIGRATIONS.find((m) => m.from === 6)!;
+    const meta = {
+      seed: 1,
+      rng: {},
+      ids: {},
+      createdAt: "x",
+      debug: { threatEscalationMultiplier: 10 },
+    };
+    const state = { meta, overworld: {}, roster: {}, economy: {} };
+    const out = step.apply(state) as { meta: Record<string, unknown> };
+    expect("debug" in out.meta).toBe(false);
+    expect(out.meta.seed).toBe(1);
+    const clean = { meta: { seed: 2 }, overworld: {} };
+    expect(step.apply(clean)).toBe(clean);
+    expect(() => step.apply({ overworld: {} })).toThrow(/meta/);
+  });
 });

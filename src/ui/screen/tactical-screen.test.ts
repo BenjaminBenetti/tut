@@ -17,7 +17,11 @@ import { DataSquadTypeCatalogue } from "../../roster/repository/squad-type-catal
 import { StaticPartCatalogue } from "../../roster/repository/static-part-catalogue";
 import { validateLoadout } from "../../roster/service/loadout-validation-service";
 import type { GameState } from "../../save/model/game-state";
+import { COMBAT_TUNING } from "../../tactical/data/combat-tuning";
 import { UNIT_TUNING } from "../../tactical/data/unit-tuning";
+import { ATTACK } from "../../tactical/model/attack-command";
+import { commandError } from "../../core/model/command-error";
+import { err, ok } from "../../core/model/result";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import { startTacticalMission } from "../../tactical/service/mission-start-service";
 import type { CampaignStore, GameSession } from "../model/game-session";
@@ -97,8 +101,13 @@ class FakeStore implements CampaignStore {
       listener({ kind: "replace", state, events: [] });
     }
   }
-  dispatch(): never {
-    throw new Error("not used");
+  readonly dispatched: OverworldCommand[] = [];
+  dispatch(command: OverworldCommand) {
+    this.dispatched.push(command);
+    if (command.type === ATTACK) {
+      return err(commandError("no-line-of-sight", "No line of sight"));
+    }
+    return ok({ state: this.state, events: [] });
   }
   onError(): Unsubscribe {
     return () => undefined;
@@ -176,6 +185,7 @@ describe("TacticalScreen", () => {
     new TacticalScreen({
       router: fakeRouter().router,
       session: sessionWith(new FakeStore(state)),
+      combatTuning: COMBAT_TUNING,
       sceneHost: host,
     }).mount(root);
     expect(root.querySelector('[data-screen="tactical"]')).not.toBeNull();
@@ -199,6 +209,7 @@ describe("TacticalScreen", () => {
     new TacticalScreen({
       router: fakeRouter().router,
       session: sessionWith(store),
+      combatTuning: COMBAT_TUNING,
       sceneHost: host,
     }).mount(root);
     const mission = state.activeMission!;
@@ -218,6 +229,7 @@ describe("TacticalScreen", () => {
     new TacticalScreen({
       router: fakeRouter().router,
       session: sessionWith(new FakeStore(state)),
+      combatTuning: COMBAT_TUNING,
       sceneHost: host,
       onIntent: (intent) => seen.push(intent),
     }).mount(root);
@@ -233,6 +245,7 @@ describe("TacticalScreen", () => {
     new TacticalScreen({
       router: fakeRouter().router,
       session: sessionWith(new FakeStore(campaignOnDay(1, []))),
+      combatTuning: COMBAT_TUNING,
       sceneHost: host,
     }).mount(root);
     expect(
@@ -249,6 +262,7 @@ describe("TacticalScreen", () => {
     const screen = new TacticalScreen({
       router,
       session: sessionWith(store),
+      combatTuning: COMBAT_TUNING,
       sceneHost: host,
     });
     screen.mount(root);
@@ -259,5 +273,74 @@ describe("TacticalScreen", () => {
     expect(store.listenerCount).toBe(0);
     expect(host.calls.at(-1)).toBe("release");
     expect(root.childElementCount).toBe(0);
+  });
+
+  it("mounts the HUD over the viewport and previews then dispatches an attack from the scene's intents", () => {
+    const state = inMission();
+    const store = new FakeStore(state);
+    const host = new FakeHost();
+    new TacticalScreen({
+      router: fakeRouter().router,
+      session: sessionWith(store),
+      combatTuning: COMBAT_TUNING,
+      sceneHost: host,
+    }).mount(root);
+    expect(
+      root.querySelector("#tactical-viewport #mission-hud"),
+    ).not.toBeNull();
+    expect(
+      root.querySelector('#turn-banner [data-field="turn"]')?.textContent,
+    ).toBe("1");
+    const started = state.activeMission!;
+    const squad = started.units.find((u) => u.kind === "squad");
+    if (!squad) throw new Error("fixture needs a squad");
+    // Bugs hatch later in a real mission; drop one next to the squad so
+    // the HUD has an enemy to preview against.
+    const bug = {
+      ...squad,
+      id: "bug-test",
+      kind: "bug" as const,
+      team: "bugs" as const,
+      sourceId: "swarmer",
+      pos: { x: squad.pos.x + 1, y: squad.pos.y, z: squad.pos.z },
+    };
+    const mission = { ...started, units: [...started.units, bug] };
+    store.replace({ ...state, activeMission: mission });
+
+    host.intents?.emit({ kind: "select-unit", unitId: squad.id });
+    expect(
+      root.querySelector('#unit-card [data-field="unit-name"]')?.textContent,
+    ).toBe(mission.templates[squad.templateId]?.name);
+    host.intents?.emit({ kind: "action", action: "attack" });
+    host.intents?.emit({ kind: "select-unit", unitId: bug.id });
+    expect(root.querySelector<HTMLElement>("#hit-preview")?.hidden).toBe(false);
+    const fire = root.querySelector<HTMLButtonElement>(
+      '[data-action="confirm-attack"]',
+    );
+    if (fire && !fire.disabled) {
+      fire.click();
+      expect(store.dispatched.map((c) => c.type)).toEqual([ATTACK]);
+      expect(
+        root.querySelector('#turn-banner [data-role="status"]')?.textContent,
+      ).toBe("No line of sight");
+    } else {
+      expect(
+        root.querySelector<HTMLElement>('[data-role="preview-error"]')?.hidden,
+      ).toBe(false);
+    }
+  });
+
+  it("End turn from the HUD goes through the store", () => {
+    const store = new FakeStore(inMission());
+    new TacticalScreen({
+      router: fakeRouter().router,
+      session: sessionWith(store),
+      combatTuning: COMBAT_TUNING,
+      sceneHost: new FakeHost(),
+    }).mount(root);
+    root
+      .querySelector<HTMLButtonElement>('#action-bar [data-action="end-turn"]')
+      ?.click();
+    expect(store.dispatched.map((c) => c.type)).toEqual(["tactical:end-turn"]);
   });
 });

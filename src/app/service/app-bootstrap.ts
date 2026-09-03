@@ -18,6 +18,7 @@ import { SceneService } from "../../graphics/service/scene-service";
 import { SvgGlyphRasteriser } from "../../graphics/service/svg-glyph-rasteriser";
 import { DEPLOYABLE_TYPES } from "../../overworld/data/deployable-types";
 import { EARTH_MAP } from "../../overworld/data/earth-map";
+import { COMBAT_TUNING } from "../../tactical/data/combat-tuning";
 import { DEPLOYABLE_TYPE_IDS } from "../../overworld/model/deployable-type";
 import { DataDeployableTypeCatalogue } from "../../overworld/repository/deployable-type-catalogue";
 import type { SaveClock } from "../../save/model/save-clock";
@@ -29,11 +30,11 @@ import { MainMenuScreen } from "../../ui/screen/main-menu-screen";
 import type { OverworldSelection } from "../../ui/model/overworld-selection";
 import { DeploymentScreen } from "../../ui/screen/deployment-screen";
 import { OverworldScreen } from "../../ui/screen/overworld-screen";
+import { TacticalScreen } from "../../ui/screen/tactical-screen";
 import { OverworldSelectionState } from "../../ui/service/overworld-selection-state";
 import { MechBayScreen } from "../../ui/screen/mech-bay-screen";
 import { MissionResultsScreen } from "../../ui/screen/mission-results-screen";
 import { RosterScreen } from "../../ui/screen/roster-screen";
-import { TacticalScreen } from "../../ui/screen/tactical-screen";
 import { NoticeBarView } from "../../ui/view/notice-bar-view";
 import type { TutTestHooks } from "../model/test-hooks";
 import type { ScreenFactory } from "./dom-screen-router";
@@ -190,6 +191,7 @@ export async function bootstrapApp(doc: Document): Promise<void> {
           new TacticalScreen({
             router,
             session: game.session,
+            combatTuning: COMBAT_TUNING,
             sceneHost: new DomTacticalSceneHost({
               baseUrl: import.meta.env.BASE_URL,
               onHooks: (hooks) => {

@@ -1,5 +1,7 @@
 import type { Unsubscribe } from "../../core/model/event-bus";
 import type { GameState } from "../../save/model/game-state";
+import type { CombatTuning } from "../../tactical/model/combat-tuning";
+import type { TacticalCommand } from "../../tactical/model/tactical-command";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { GameSession } from "../model/game-session";
 import type { Screen, ScreenId } from "../model/screen";
@@ -7,6 +9,7 @@ import type { ScreenRouter } from "../model/screen-router";
 import type { TacticalIntent } from "../model/tactical-intent";
 import type { TacticalSceneHost } from "../model/tactical-scene-host";
 import { formatWhole } from "../service/format";
+import { TacticalHudView } from "../view/tactical-hud-view";
 
 // ===========================================
 // Types
@@ -16,12 +19,14 @@ import { formatWhole } from "../service/format";
 export interface TacticalScreenDeps {
   readonly router: ScreenRouter;
   readonly session: GameSession;
+  /** Tuning the HUD hands to `previewAttack`; the screen computes no number itself. */
+  readonly combatTuning: CombatTuning;
   /** Builds and owns the three.js scene for the mission; absent in unit tests that only check the DOM. */
   readonly sceneHost?: TacticalSceneHost;
   /**
-   * Receives every intent from the input controller. #T4.x maps them to
-   * tactical commands; until then the screen records the last one on the
-   * body for the Playwright specs.
+   * Also receives every intent from the input controller, after the HUD
+   * has handled it; the screen records the last one on the body for the
+   * Playwright specs.
    */
   readonly onIntent?: (intent: TacticalIntent) => void;
 }
@@ -33,16 +38,22 @@ export interface TacticalScreenDeps {
 /**
  * The tactical mission screen (GDD §6): a status bar with the mission,
  * turn, phase and unit counts over a viewport the scene host renders
- * into. Reads `activeMission` from the campaign store and re-renders
- * on every change; the rules issues add the action bar and the intent
- * to command mapping (#T4.x). With no mission in progress it says so
- * and offers the overworld.
+ * into, with the mission HUD (#339) laid over the viewport. Reads
+ * `activeMission` from the campaign store and re-renders the bar, the
+ * scene and the HUD on every change; the HUD turns the scene's intents
+ * into commands, which go through the store with refusals shown in the
+ * HUD's banner. With no mission in progress it says so; the HUD's
+ * banner is the one way back to the overworld.
  *
  * ```
- *   ┌ #tactical-bar  MISSION mission-4 · TURN 1 · PLAYER  TDF 3 / BUGS 1  [Overworld] ┐
- *   ├──────────────────────────────────────────────────────────────────────────────────┤
- *   │ #tactical-viewport  ◄── sceneHost.attach / update                                 │
- *   └──────────────────────────────────────────────────────────────────────────────────┘
+ *   ┌ #tactical-bar  MISSION mission-4 · TURN 1 · PLAYER  TDF 3 / BUGS 1 ┐
+ *   ├─────────────────────────────────────────────────────────────────────┤
+ *   │ #tactical-viewport ◄── sceneHost.attach / update                    │
+ *   │   └ #mission-hud: #turn-banner / #unit-card #hit-preview            │
+ *   │                   #objectives / #action-bar                         │
+ *   └─────────────────────────────────────────────────────────────────────┘
+ *
+ *   host intents ──▶ hud.handleIntent ──▶ onCommand ──▶ store.dispatch
  * ```
  */
 export class TacticalScreen implements Screen {
@@ -52,6 +63,7 @@ export class TacticalScreen implements Screen {
 
   readonly id: ScreenId = "tactical";
   private readonly deps: TacticalScreenDeps;
+  private readonly hud: TacticalHudView;
   private root: HTMLElement | undefined;
   private viewport: HTMLElement | undefined;
   private fields = new Map<string, HTMLElement>();
@@ -64,9 +76,20 @@ export class TacticalScreen implements Screen {
   // Constructor
   // ===========================================
 
-  /** @param deps - Router, session, scene host and the intent sink. */
+  /** @param deps - Router, session, tuning, scene host and the intent sink. */
   constructor(deps: TacticalScreenDeps) {
     this.deps = deps;
+    this.hud = new TacticalHudView(
+      {
+        onCommand: (command) => {
+          this.dispatch(command);
+        },
+        onBack: () => {
+          this.deps.router.navigate("overworld");
+        },
+      },
+      { combatTuning: deps.combatTuning },
+    );
   }
 
   // ===========================================
@@ -85,6 +108,7 @@ export class TacticalScreen implements Screen {
     viewport.id = "tactical-viewport";
     viewport.className = "tut-tactical__viewport";
     layout.appendChild(viewport);
+    this.hud.mount(viewport);
 
     const note = doc.createElement("p");
     note.className = "tut-dim tut-tactical__note";
@@ -114,6 +138,7 @@ export class TacticalScreen implements Screen {
     }
     this.deps.sceneHost?.release();
     this.attachedMissionId = undefined;
+    this.hud.unmount();
     this.root?.remove();
     this.root = undefined;
     this.viewport = undefined;
@@ -131,6 +156,7 @@ export class TacticalScreen implements Screen {
     if (this.note) {
       this.note.hidden = mission !== undefined;
     }
+    this.hud.update(mission);
     if (!mission) {
       this.setField("mission-id", "—");
       this.setField("turn", "—");
@@ -155,6 +181,7 @@ export class TacticalScreen implements Screen {
     }
     const intents = {
       emit: (intent: TacticalIntent): void => {
+        this.hud.handleIntent(intent);
         this.recordIntent(intent);
         this.deps.onIntent?.(intent);
       },
@@ -185,7 +212,18 @@ export class TacticalScreen implements Screen {
     }
   }
 
-  /** The status bar: mission, turn, phase, unit counts and the way out. */
+  /** Runs a HUD command through the store; a refusal lands in the HUD's banner. */
+  private dispatch(command: TacticalCommand): void {
+    const store = this.deps.session.store;
+    if (!store) {
+      this.hud.showStatus("No active campaign.");
+      return;
+    }
+    const result = store.dispatch(command);
+    this.hud.showStatus(result.ok ? "" : result.error.message);
+  }
+
+  /** The status bar: mission, turn, phase and unit counts; the HUD's banner holds the way out. */
   private createBar(doc: Document): HTMLElement {
     const bar = doc.createElement("header");
     bar.id = "tactical-bar";
@@ -212,19 +250,7 @@ export class TacticalScreen implements Screen {
     }
     const spacer = doc.createElement("span");
     spacer.className = "tut-topbar__spacer";
-    const overworld = doc.createElement("button");
-    overworld.type = "button";
-    overworld.className = "tut-btn";
-    overworld.dataset.action = "overworld";
-    overworld.textContent = "Overworld";
-    const onOverworld = (): void => {
-      this.deps.router.navigate("overworld");
-    };
-    overworld.addEventListener("click", onOverworld);
-    this.disposers.push(() => {
-      overworld.removeEventListener("click", onOverworld);
-    });
-    bar.append(spacer, overworld);
+    bar.appendChild(spacer);
     return bar;
   }
 

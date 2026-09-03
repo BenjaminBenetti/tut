@@ -3,15 +3,20 @@ import type { Mock } from "vitest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Unsubscribe } from "../../core/model/event-bus";
+import { ok } from "../../core/model/result";
 import { SimpleEventBus } from "../../core/service/simple-event-bus";
 import { ECONOMY_TUNING } from "../../economy/data/economy-tuning";
+import { LedgerTransactionService } from "../../economy/service/transaction-service";
 import { EARTH_MAP } from "../../overworld/data/earth-map";
 import { NEW_GAME_TUNING } from "../../overworld/data/new-game-tuning";
 import { THREAT_TUNING } from "../../overworld/data/threat-tuning";
 import type { CampaignEvent } from "../../overworld/model/campaign-event";
 import type { OverworldCommand } from "../../overworld/model/overworld-command";
+import { createOverworldCommandDispatcher } from "../../overworld/service/command-dispatcher";
+import { registerRosterCommands } from "../../overworld/service/roster-command-handlers";
 import { MECH_RATING_TUNING } from "../../roster/data/mech-rating-tuning";
 import { STARTER_PARTS } from "../../roster/data/parts";
+import { ROSTER_TUNING } from "../../roster/data/roster-tuning";
 import { SQUAD_TYPES } from "../../roster/data/squad-types";
 import {
   STARTER_LOADOUT,
@@ -77,9 +82,61 @@ class ReadStore implements CampaignStore {
   }
 }
 
+/** A campaign store over the real dispatcher with the roster commands registered. */
+class RealStore implements CampaignStore {
+  private state: GameState;
+  private readonly dispatcher = createOverworldCommandDispatcher<GameState>();
+  private readonly listeners = new Set<
+    StoreListener<GameState, OverworldCommand, CampaignEvent>
+  >();
+  constructor(state: GameState) {
+    this.state = state;
+    registerRosterCommands(this.dispatcher, {
+      squadTypes: new DataSquadTypeCatalogue(SQUAD_TYPES),
+      parts: PARTS,
+      rating: MECH_RATING_TUNING,
+      rosterTuning: ROSTER_TUNING,
+      upgrades: UPGRADE_TUNING,
+      transactionsFor: (ids) => new LedgerTransactionService(ids),
+    });
+  }
+  getState(): GameState {
+    return this.state;
+  }
+  subscribe(
+    listener: StoreListener<GameState, OverworldCommand, CampaignEvent>,
+  ): Unsubscribe {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  }
+  dispatch(command: OverworldCommand) {
+    const outcome = this.dispatcher.process(this.state, command);
+    if (!outcome.ok) {
+      return outcome;
+    }
+    this.state = outcome.value.state;
+    for (const listener of [...this.listeners]) {
+      listener({
+        kind: "command",
+        command,
+        state: this.state,
+        events: outcome.value.events,
+      });
+    }
+    return ok(outcome.value);
+  }
+  onError(): Unsubscribe {
+    return () => undefined;
+  }
+}
+
 const sessionWith = (store: CampaignStore | undefined): GameSession => ({
   store,
-  state: store?.getState(),
+  get state() {
+    return store?.getState();
+  },
   start: () => undefined,
   replace: () => undefined,
   clear: () => undefined,
@@ -89,12 +146,17 @@ const sessionWith = (store: CampaignStore | undefined): GameSession => ({
 function mountWith(
   state: GameState | undefined,
   root: HTMLElement,
+  live = false,
 ): {
-  store: ReadStore | undefined;
+  store: CampaignStore | undefined;
   navigate: NavigateMock;
   screen: MechBayScreen;
 } {
-  const store = state ? new ReadStore(state) : undefined;
+  const store = state
+    ? live
+      ? new RealStore(state)
+      : new ReadStore(state)
+    : undefined;
   const navigate: NavigateMock = vi.fn();
   const router: ScreenRouter = {
     current: "mech-bay",
@@ -227,9 +289,124 @@ describe("MechBayScreen", () => {
     const { store, navigate, screen } = mountWith(newGame(), root);
     q<HTMLButtonElement>('[data-action="roster"]').click();
     expect(navigate).toHaveBeenCalledWith("roster");
-    expect(store?.listenerCount).toBe(1);
+    expect((store as ReadStore).listenerCount).toBe(1);
     screen.unmount();
-    expect(store?.listenerCount).toBe(0);
+    expect((store as ReadStore).listenerCount).toBe(0);
     expect(root.childElementCount).toBe(0);
+  });
+
+  // ===========================================
+  // Save, load, delete, build
+  // ===========================================
+
+  const savedNames = (): string[] =>
+    [...root.querySelectorAll<HTMLElement>("#saved-loadouts li")].map(
+      (li) => li.dataset.loadoutName ?? "",
+    );
+  const button = (action: string): HTMLButtonElement =>
+    q<HTMLButtonElement>(`[data-action="${action}"]`);
+  const status = (): HTMLElement => q('[data-role="status"]');
+
+  it("lists the saved templates and shows the build cost on the button", () => {
+    mountWith(newGame(), root, true);
+    expect(savedNames()).toEqual([STARTER_LOADOUT.name]);
+    expect(button("build-mech").textContent).toBe("Build ¢3,250");
+    expect(button("build-mech").disabled).toBe(false);
+    expect(button("save-loadout").disabled).toBe(false);
+  });
+
+  it("Save loadout stores the draft under the editor's name and the list follows", () => {
+    const { store } = mountWith(newGame(), root, true);
+    const name = q<HTMLInputElement>('[data-field="loadout-name"]');
+    name.value = "Brawler";
+    name.dispatchEvent(new Event("input"));
+    choose("arm-weapon", "arm-weapon-flamer");
+    button("save-loadout").click();
+    expect(savedNames()).toEqual([STARTER_LOADOUT.name, "Brawler"]);
+    expect(store?.getState().roster.savedLoadouts[1]).toMatchObject({
+      name: "Brawler",
+      armWeaponId: "arm-weapon-flamer",
+    });
+    expect(status().hidden).toBe(true);
+  });
+
+  it("Load replaces the draft and Delete removes the template", () => {
+    const state = newGame();
+    const brawler = {
+      ...STARTER_LOADOUT,
+      name: "Brawler",
+      armWeaponId: "arm-weapon-flamer",
+    };
+    mountWith(
+      {
+        ...state,
+        roster: { ...state.roster, savedLoadouts: [STARTER_LOADOUT, brawler] },
+      },
+      root,
+      true,
+    );
+    const row = q<HTMLElement>(
+      '#saved-loadouts li[data-loadout-name="Brawler"]',
+    );
+    row.querySelector<HTMLButtonElement>('[data-action="load"]')!.click();
+    expect(q<HTMLInputElement>('[data-field="loadout-name"]').value).toBe(
+      "Brawler",
+    );
+    expect(picker("arm-weapon").value).toBe("arm-weapon-flamer");
+
+    row.querySelector<HTMLButtonElement>('[data-action="delete"]')!.click();
+    expect(savedNames()).toEqual([STARTER_LOADOUT.name]);
+  });
+
+  it("Build saves the draft, builds the mech for the sheet cost and reports it", () => {
+    const { store } = mountWith(newGame(), root, true);
+    q<HTMLInputElement>('[data-field="mech-name"]').value = "Anvil";
+    const mechsBefore = store!.getState().roster.mechs.length;
+    button("build-mech").click();
+    const after = store!.getState();
+    expect(after.roster.mechs).toHaveLength(mechsBefore + 1);
+    expect(after.roster.mechs.at(-1)?.name).toBe("Anvil");
+    expect(after.economy.credits).toBe(5000 - 3250);
+    expect(q('#mech-bay-bar [data-field="credits"]').textContent).toBe(
+      "¢1,750",
+    );
+    expect(status().textContent).toBe("Built Anvil.");
+    // A second build is now unaffordable.
+    expect(button("build-mech").disabled).toBe(true);
+    expect(button("build-mech").title).toBe("Not enough credits");
+  });
+
+  it("Build falls back to a default mech name when the field is blank", () => {
+    const { store } = mountWith(newGame(), root, true);
+    button("build-mech").click();
+    expect(store!.getState().roster.mechs.at(-1)?.name).toBe("Mech");
+  });
+
+  it("disables Save and Build while the draft is invalid", () => {
+    mountWith(newGame(), root, true);
+    choose("arm-weapon", "arm-weapon-railgun");
+    expect(button("save-loadout").disabled).toBe(true);
+    expect(button("build-mech").disabled).toBe(true);
+    expect(button("build-mech").textContent).toBe("Build");
+    choose("arm-weapon", STARTER_LOADOUT.armWeaponId);
+    expect(button("build-mech").disabled).toBe(false);
+  });
+
+  it("shows a rejected command in the status line", () => {
+    const state = newGame();
+    mountWith(
+      { ...state, roster: { ...state.roster, savedLoadouts: [] } },
+      root,
+      true,
+    );
+    // Nothing is saved, so Delete on a stale name cannot come from the list; drive the
+    // store-facing path through Save with an empty name instead.
+    const name = q<HTMLInputElement>('[data-field="loadout-name"]');
+    name.value = "   ";
+    name.dispatchEvent(new Event("input"));
+    button("save-loadout").disabled = false;
+    button("save-loadout").click();
+    expect(status().hidden).toBe(false);
+    expect(status().textContent).toContain("not a valid name");
   });
 });

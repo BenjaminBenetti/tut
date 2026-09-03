@@ -283,3 +283,14 @@
 .tut-game-over__title--ok {
   color: var(--ui-ok);
 }
+
+.tut-mech-bay__saved .tut-row {
+  align-items: center;
+  gap: var(--space-2);
+}
+.tut-mech-bay__saved [data-field="name"] {
+  flex: 1;
+}
+.tut-mech-bay__bar .tut-input {
+  width: 9em;
+}

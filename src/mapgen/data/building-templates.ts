@@ -46,6 +46,17 @@ export const BUILDING_TEMPLATES: Readonly<
     scales: ["rural", "town", "city"],
     minRoomSize: 4,
   },
+  apartment: {
+    id: "apartment",
+    footprintWidth: { min: 3, max: 6 },
+    footprintDepth: { min: 3, max: 6 },
+    floors: { min: 3, max: 4 },
+    roof: "flat",
+    roofWalkable: true,
+    windowDensity: 0.6,
+    scales: ["town", "city"],
+    minRoomSize: 2,
+  },
   tower: {
     id: "tower",
     footprintWidth: { min: 3, max: 5 },

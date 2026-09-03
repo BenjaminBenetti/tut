@@ -23,6 +23,7 @@ import argparse
 import importlib.util
 import json
 import os
+import re
 import struct
 import sys
 import time
@@ -121,6 +122,23 @@ def attach_atlases(glb_path: str, atlases: list[str], category: str, layout: dic
 
 
 # ===========================================
+# Sockets
+# ===========================================
+
+
+def sanitise_socket_names() -> None:
+    """Rename duplicate sockets (Blender's ``socket_x.001``) to ``socket_x_2`` and so on.
+
+    Assembled references contain every part's sockets; a duplicate name is
+    fine as long as it still matches the manifest rule ``socket_[a-z0-9_]+``.
+    """
+    for ob in bpy.context.scene.objects:
+        match = re.fullmatch(r"(socket_[a-z0-9_]+)\.(\d+)", ob.name)
+        if match:
+            ob.name = f"{match.group(1)}_{int(match.group(2)) + 1}"
+
+
+# ===========================================
 # Manifest record
 # ===========================================
 
@@ -165,6 +183,7 @@ def main() -> None:
     footprint = args.footprint or "x".join(str(v) for v in getattr(module, "FOOTPRINT", (1, 1)))
     w, d = (float(v) for v in footprint.lower().split("x"))
     lo, hi = bpy_kit.bounds()
+    sanitise_socket_names()
     sockets = sorted(ob.name for ob in bpy.context.scene.objects if ob.name.startswith("socket_"))
     rel_path = f"assets/models/{args.category}/{args.file}"
     glb_path = os.path.join(REPO_ROOT, args.out_root, args.category, args.file)

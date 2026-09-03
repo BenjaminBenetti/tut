@@ -1,4 +1,4 @@
-import type { Vec3 } from "../../core/model/grid";
+import type { Rect, Vec3 } from "../../core/model/grid";
 import type { IsometricCameraState, YawIndex } from "../model/camera-state";
 import {
   CAMERA_ZOOM,
@@ -54,11 +54,59 @@ export function createCameraState(
     throw new RangeError(`Camera zoom must be a finite number, got ${zoom}`);
   }
   const target = overrides.target ?? DEFAULT_CAMERA_STATE.target;
+  const bounds = overrides.bounds;
   return {
     yawIndex: overrides.yawIndex ?? DEFAULT_CAMERA_STATE.yawIndex,
     zoom: clampZoom(zoom),
-    target: { x: target.x, y: target.y, z: target.z },
+    target: clampTarget(target, bounds),
+    ...(bounds === undefined ? {} : { bounds: { ...bounds } }),
   };
+}
+
+// ===========================================
+// Bounds
+// ===========================================
+
+/**
+ * Copies `target`, clamped onto the ground-plane rectangle when one is
+ * given (#218). A rectangle with no extent pins the target to its corner;
+ * `y` is never touched.
+ */
+export function clampTarget(target: Vec3, bounds: Rect | undefined): Vec3 {
+  if (bounds === undefined) {
+    return { x: target.x, y: target.y, z: target.z };
+  }
+  return {
+    x: Math.min(bounds.x + Math.max(0, bounds.w), Math.max(bounds.x, target.x)),
+    y: target.y,
+    z: Math.min(bounds.z + Math.max(0, bounds.d), Math.max(bounds.z, target.z)),
+  };
+}
+
+/**
+ * Returns a state bounded by `bounds` (or unbounded for `undefined`),
+ * with the current target clamped into it at once so a pan cannot start
+ * outside. The rectangle is copied, not aliased.
+ *
+ * @throws {RangeError} When a bound is not a finite number.
+ */
+export function withBounds(
+  state: IsometricCameraState,
+  bounds: Rect | undefined,
+): IsometricCameraState {
+  if (bounds === undefined) {
+    const { bounds: _dropped, ...rest } = state;
+    return rest;
+  }
+  for (const value of [bounds.x, bounds.z, bounds.w, bounds.d]) {
+    if (!Number.isFinite(value)) {
+      throw new RangeError(
+        `Camera bounds must be finite, got ${String(value)}`,
+      );
+    }
+  }
+  const copy = { ...bounds };
+  return { ...state, bounds: copy, target: clampTarget(state.target, copy) };
 }
 
 // ===========================================
@@ -135,12 +183,12 @@ export function zoomBy(
 // Target
 // ===========================================
 
-/** Returns a state looking at `target`; the point is copied, not aliased. */
+/** Returns a state looking at `target`, clamped into the bounds; the point is copied, not aliased. */
 export function retarget(
   state: IsometricCameraState,
   target: Vec3,
 ): IsometricCameraState {
-  return { ...state, target: { x: target.x, y: target.y, z: target.z } };
+  return { ...state, target: clampTarget(target, state.bounds) };
 }
 
 /**
@@ -158,6 +206,9 @@ export function retarget(
  *   └───────────┘                right ╱        ╲ camera
  * ```
  *
+ * The moved target is clamped into the state's bounds, so a held key can
+ * never carry the content off screen (#218).
+ *
  * @param state - State to move.
  * @param screenDx - Pixels to move the view to the right.
  * @param screenDy - Pixels to move the view down (DOM convention).
@@ -172,11 +223,14 @@ export function panBy(
   const alongUp = -screenDy / (state.zoom * Math.sin(ISOMETRIC_ELEVATION_RAD));
   return {
     ...state,
-    target: {
-      x: state.target.x + right.x * alongRight + up.x * alongUp,
-      y: state.target.y,
-      z: state.target.z + right.z * alongRight + up.z * alongUp,
-    },
+    target: clampTarget(
+      {
+        x: state.target.x + right.x * alongRight + up.x * alongUp,
+        y: state.target.y,
+        z: state.target.z + right.z * alongRight + up.z * alongUp,
+      },
+      state.bounds,
+    ),
   };
 }
 

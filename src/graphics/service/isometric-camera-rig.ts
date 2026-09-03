@@ -1,6 +1,6 @@
 import { OrthographicCamera } from "three";
 
-import type { Vec3 } from "../../core/model/grid";
+import type { Rect, Vec3 } from "../../core/model/grid";
 import type { CameraControls } from "../model/camera-controls";
 import type { IsometricCameraState } from "../model/camera-state";
 import type { SceneCamera } from "../model/scene-camera";
@@ -12,6 +12,7 @@ import {
   panBy,
   retarget,
   rotateYaw,
+  withBounds,
   zoomBy,
 } from "./isometric-camera-math";
 
@@ -100,9 +101,18 @@ export class IsometricCameraRig implements CameraControls, SceneCamera {
     this.state = panBy(this.state, screenDx, screenDy);
   }
 
-  /** Points the camera at a world-space position. */
+  /** Points the camera at a world-space position, clamped into the bounds. */
   lookAt(target: Vec3): void {
     this.state = retarget(this.state, target);
+  }
+
+  /**
+   * Keeps the target inside a ground-plane rectangle from now on, or
+   * lifts the limit with `undefined` (#218). The scene that owns the
+   * content sets this: the overworld plate, a tactical map's extent.
+   */
+  setBounds(bounds: Rect | undefined): void {
+    this.state = withBounds(this.state, bounds);
   }
 
   /**

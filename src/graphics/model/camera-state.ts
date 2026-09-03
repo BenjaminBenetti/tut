@@ -1,4 +1,4 @@
-import type { Vec3 } from "../../core/model/grid";
+import type { Rect, Vec3 } from "../../core/model/grid";
 
 // ===========================================
 // Types
@@ -33,6 +33,13 @@ export interface IsometricCameraState {
   readonly zoom: number;
   /** World-space point at the centre of the view. */
   readonly target: Vec3;
+  /**
+   * Ground-plane rectangle the target is kept inside (#218), in world
+   * units: `x`/`z` the near corner, `w`/`d` the extent along x and z.
+   * Set by the scene that owns the content (the overworld plate, a
+   * tactical map); absent means unbounded, as before.
+   */
+  readonly bounds?: Rect;
 }
 
 // ===========================================

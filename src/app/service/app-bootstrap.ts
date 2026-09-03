@@ -9,6 +9,7 @@ import {
 } from "../../graphics/controller/picking-controller";
 import { TEXTURE_MANIFEST } from "../../graphics/data/texture-manifest";
 import { CAMERA_ZOOM } from "../../graphics/model/camera-state";
+import { OVERWORLD_SCENE_CONFIG } from "../../graphics/model/overworld-scene-config";
 import { IsometricCameraRig } from "../../graphics/service/isometric-camera-rig";
 import { ManifestTextureLoader } from "../../graphics/service/manifest-texture-loader";
 import { loadOverworldAssets } from "../../graphics/service/overworld-asset-loader";
@@ -226,6 +227,14 @@ async function composeScene(
   const rig = new IsometricCameraRig({
     target: mapScene.centre,
     zoom: CAMERA_ZOOM.min,
+    // The target stays on the map plate, so a held pan key can never
+    // carry Earth off screen (#218).
+    bounds: {
+      x: 0,
+      z: 0,
+      w: OVERWORLD_SCENE_CONFIG.mapWidth,
+      d: OVERWORLD_SCENE_CONFIG.mapDepth,
+    },
   });
   const cameraInput = new CameraInputController(rig);
   const picking = new PickingController(cityPickerAdapter(mapScene), rig, {

@@ -121,4 +121,20 @@ describe("GAME_STATE_MIGRATIONS", () => {
     expect(step.apply(state)).toBe(state);
     expect(() => step.apply({ overworld: {} })).toThrow(/roster/);
   });
+
+  it("v5 → v6 leaves a save without a mission unchanged and drops a stray activeMission", () => {
+    const step = GAME_STATE_MIGRATIONS[4];
+    expect(step?.from).toBe(5);
+    expect(step?.to).toBe(6);
+    const v5 = {
+      meta: { seed: 7 },
+      overworld: { day: 3, map: {}, threatOffset: 0 },
+      roster: { graveyard: [] },
+    };
+    const before = JSON.parse(JSON.stringify(v5)) as unknown;
+    expect(step?.apply(v5)).toEqual(v5);
+    expect(step?.apply({ ...v5, activeMission: null })).toEqual(v5);
+    expect(v5).toEqual(before);
+    expect(() => step?.apply({ meta: {} })).toThrow(/overworld/);
+  });
 });

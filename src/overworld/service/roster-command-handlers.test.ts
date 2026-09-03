@@ -11,6 +11,7 @@ import {
   LOADOUT_DELETED,
   LOADOUT_SAVED,
   MECH_BUILT,
+  MECH_RENAMED,
   MECH_REPAIRED,
   SQUAD_HIRED,
   SQUAD_REINFORCED,
@@ -28,6 +29,7 @@ import {
   reinforceSquad,
   saveLoadout,
 } from "../model/overworld-command";
+import { renameMech } from "../model/rename-mech-command";
 import { repairMech } from "../model/repair-mech-command";
 import { createOverworldCommandDispatcher } from "./command-dispatcher";
 import type { RosterHandlerDeps } from "./roster-command-handlers";
@@ -130,6 +132,7 @@ describe("registerRosterCommands", () => {
       deleteLoadout(STARTER_LOADOUT.name),
       buildMech(STARTER_LOADOUT.name, "X"),
       repairMech("mech-1"),
+      renameMech("mech-1", "Anvil II"),
     ];
     for (const command of commands) {
       expect(d.process(BASE, command).ok).toBe(true);
@@ -211,9 +214,18 @@ describe("roster handlers through the dispatcher", () => {
     expect(types).toEqual(["economy:credits-changed", MECH_REPAIRED]);
   });
 
+  it("RenameMech changes the name without touching credits or counters", () => {
+    const { state, types } = apply(renameMech("mech-1", "Anvil II"));
+    expect(state.roster.mechs[0]?.name).toBe("Anvil II");
+    expect(state.economy).toEqual(BASE.economy);
+    expect(state.meta.ids.counters).toEqual(BASE.meta.ids.counters);
+    expect(types).toEqual([MECH_RENAMED]);
+  });
+
   it.each([
     ["HireSquad", hireSquad("cavalry", "X"), "unknown-squad-type"],
     ["RepairMech", repairMech("mech-9"), "unknown-mech"],
+    ["RenameMech", renameMech("mech-1", ""), "invalid-name"],
     ["ReinforceSquad", reinforceSquad("squad-9", 1), "unknown-squad"],
     [
       "SaveLoadout",

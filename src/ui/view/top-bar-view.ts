@@ -12,6 +12,8 @@ export interface TopBarViewHandlers {
   readonly onAdvanceDay: () => void;
   /** The player asked for the main menu. */
   readonly onMainMenu: () => void;
+  /** The player asked for the roster screen; absent when no roster screen is reachable. */
+  readonly onRoster?: () => void;
 }
 
 // ===========================================
@@ -86,8 +88,7 @@ export class TopBarView {
     status.hidden = true;
 
     const roster = this.createButton(doc, "roster", "Roster", false);
-    roster.disabled = true;
-    roster.title = "The roster screen arrives with #79";
+    roster.disabled = this.handlers.onRoster === undefined;
     const menu = this.createButton(doc, "main-menu", "Main menu", false);
     const advance = this.createButton(doc, "advance-day", "Advance day", true);
     advance.disabled = true;
@@ -107,6 +108,9 @@ export class TopBarView {
 
     this.listen(advance, this.handlers.onAdvanceDay);
     this.listen(menu, this.handlers.onMainMenu);
+    if (this.handlers.onRoster) {
+      this.listen(roster, this.handlers.onRoster);
+    }
 
     this.root = bar;
     this.day = day.value;

@@ -8,10 +8,14 @@
  * factory map is keyed by it so a new id without a registered screen is
  * caught at composition time.
  */
-export type ScreenId = "main-menu" | "overworld";
+export type ScreenId = "main-menu" | "overworld" | "roster";
 
 /** Every screen id, in a fixed order. */
-export const SCREEN_IDS: readonly ScreenId[] = ["main-menu", "overworld"];
+export const SCREEN_IDS: readonly ScreenId[] = [
+  "main-menu",
+  "overworld",
+  "roster",
+];
 
 /**
  * A DOM overlay that owns its own markup and listeners for as long as it

@@ -20,6 +20,7 @@ import { iconHref } from "../../ui/data/icon-manifest";
 import type { ScreenId } from "../../ui/model/screen";
 import { MainMenuScreen } from "../../ui/screen/main-menu-screen";
 import { OverworldScreen } from "../../ui/screen/overworld-screen";
+import { RosterScreen } from "../../ui/screen/roster-screen";
 import type { TutTestHooks } from "../model/test-hooks";
 import type { ScreenFactory } from "./dom-screen-router";
 import { DomMapViewportHost } from "./dom-map-viewport-host";
@@ -51,7 +52,7 @@ const SELECTED_CITY_ID = "selected-city";
  * ```
  *   document
  *     ├── #app / #map-viewport  ◀── SceneService (overworld map, camera rig, input, picking)
- *     └── #ui                   ◀── DomScreenRouter ──▶ MainMenuScreen / OverworldScreen
+ *     └── #ui                   ◀── DomScreenRouter ──▶ MainMenuScreen / OverworldScreen / RosterScreen
  *                                        │                        └── composeGame(): session (GameStore),
  *                                        │                            saves, autosave, createCampaign
  *                                        └── body[data-screen]
@@ -100,6 +101,17 @@ export async function bootstrapApp(doc: Document): Promise<void> {
             router,
             session: game.session,
             mapViewport,
+          }),
+      ],
+      [
+        "roster",
+        () =>
+          new RosterScreen({
+            router,
+            session: game.session,
+            squadTypes: game.content.squadTypes,
+            parts: game.content.parts,
+            rosterTuning: game.content.rosterTuning,
           }),
       ],
     ]),

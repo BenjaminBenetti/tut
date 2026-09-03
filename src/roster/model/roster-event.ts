@@ -196,6 +196,26 @@ export type MechRepairedEvent = DomainEvent<
 >;
 
 // ===========================================
+// Mech renamed
+// ===========================================
+
+/** Event type emitted when a mech's name changes. */
+export const MECH_RENAMED = "roster:mech-renamed";
+
+/** What presentation needs to refresh a label. */
+export interface MechRenamedPayload {
+  readonly mechId: MechId;
+  readonly from: string;
+  readonly to: string;
+}
+
+/** A mech was renamed. */
+export type MechRenamedEvent = DomainEvent<
+  typeof MECH_RENAMED,
+  MechRenamedPayload
+>;
+
+// ===========================================
 // Union and applied shape
 // ===========================================
 
@@ -209,7 +229,8 @@ export type RosterEvent =
   | UnitDamagedEvent
   | SquadWipedEvent
   | MechDestroyedEvent
-  | MechRepairedEvent;
+  | MechRepairedEvent
+  | MechRenamedEvent;
 
 /**
  * What a roster command returns: the next roster and economy slices plus

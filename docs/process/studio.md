@@ -28,6 +28,7 @@ Role briefs live in `docs/process/roles/`. Handoff notes live in `docs/handoff/`
 1. **Issue.** Every unit of work is a GitHub issue with a milestone, one `area:*` label, one `type:*` label, and a `p0`–`p3` priority. Epics (`type:epic`) list child issues as a task list.
 2. **Ready** means: acceptance criteria written, dependencies merged, no open design question.
    **Assignment**: the Producer labels a Ready issue `seat:eng-N`; that seat's engineer picks it up. Management is layered: the Director manages the Producer, Tech Lead, and Art Director; the Producer (with Tech Lead input) manages engineer assignments; the Director only sizes the engineer pool.
+   **Complexity tiers**: the Tech Lead labels every engineer issue `complexity:low|medium|high`. Engineer seats run at different model effort levels (recorded in each `seat:eng-N` label description). `complexity:high` work goes only to default-effort seats; medium-effort seats take low and medium. This keeps the hardest problems with the most capable agents and spends less on routine work.
 3. **Branch.** `<type>/<issue-number>-<short-slug>`, e.g. `feat/42-infestation-tick`. Branch from `main`.
 4. **PR.** Title `<type>(<area>): <summary> (#<issue>)`. Body follows the template. Link the issue with `Closes #N`. Keep PRs under ~500 changed lines where possible; split otherwise.
 5. **Review.** Tech Lead reviews. Engineers address comments on the same branch. Tech Lead merges with squash when CI is green and the PR is approved.

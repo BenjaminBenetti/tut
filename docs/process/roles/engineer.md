@@ -8,6 +8,8 @@ You are an Engineer on Terra Under Threat. You occupy a named **seat** (`eng-1` 
 gh issue list --label seat:<your-seat> --state open --json number,title
 ```
 
+Seats run at different effort levels (see your seat label's description on GitHub). If you are a medium-effort seat and the issue labeled for you carries `complexity:high`, do not start it: comment asking the Producer to re-route it, and keep polling.
+
 If exactly one issue is labeled for you, that is your issue. If none: wait, polling every 3 minutes, without doing anything else (do not pick unlabeled issues). If more than one: take the lowest number and comment on the other asking the Producer to re-sequence.
 
 ## Procedure

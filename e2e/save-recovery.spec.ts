@@ -46,14 +46,12 @@ async function reloadWithAutosave(page: Page, value: string): Promise<void> {
 }
 
 /**
- * Pins the current recovery behaviour found in the 2026-09-03 QA pass:
- * an autosave whose envelope cannot be decoded disables Continue
- * without any console error, and one whose state fails the campaign
- * guard is offered but reports a visible message instead of crashing.
- * #219 tracks making the two cases consistent; fixing it should update
- * this test deliberately.
+ * Recovery behaviour after #219: whatever is wrong with the autosave,
+ * the menu disables Continue and says so on its status line, naming the
+ * reason; a save from a newer schema is called out as such. Only a
+ * missing slot is silent.
  */
-test("an undecodable autosave disables Continue without console errors", async ({
+test("an undecodable autosave disables Continue and explains why, without console errors", async ({
   page,
 }) => {
   const errors = collectErrors(page);
@@ -69,10 +67,16 @@ test("an undecodable autosave disables Continue without console errors", async (
     schemaVersion: parsed.schemaVersion + 1,
   });
 
-  for (const value of ["{not json", "", "null", "[]", newerSchema]) {
+  const status = page.locator('[data-role="status"]');
+  for (const value of ["{not json", "", "null", "[]"]) {
     await reloadWithAutosave(page, value);
     await expect(page.locator('[data-action="continue"]')).toBeDisabled();
+    await expect(status).toBeVisible();
+    await expect(status).toContainText("cannot be read");
   }
+  await reloadWithAutosave(page, newerSchema);
+  await expect(page.locator('[data-action="continue"]')).toBeDisabled();
+  await expect(status).toContainText("newer version");
 
   // The real envelope still loads afterwards.
   await reloadWithAutosave(page, envelope);
@@ -86,7 +90,7 @@ test("an undecodable autosave disables Continue without console errors", async (
   expect(errors).toEqual([]);
 });
 
-test("an autosave whose state is not a campaign reports a message and stays on the menu", async ({
+test("an autosave whose state is not a campaign is refused the same way", async ({
   page,
 }) => {
   const errors = collectErrors(page);
@@ -102,17 +106,10 @@ test("an autosave whose state is not a campaign reports a message and stays on t
   });
   await reloadWithAutosave(page, brokenState);
 
-  const cont = page.locator('[data-action="continue"]');
-  await expect(cont).toBeEnabled();
-  await cont.click();
-
-  await expect(page.locator("body")).toHaveAttribute(
-    "data-screen",
-    "main-menu",
-  );
+  await expect(page.locator('[data-action="continue"]')).toBeDisabled();
   const status = page.locator('[data-role="status"]');
   await expect(status).toBeVisible();
-  await expect(status).toContainText("Could not load autosave");
+  await expect(status).toContainText("not a campaign");
 
   expect(errors).toEqual([]);
 });

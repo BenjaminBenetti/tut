@@ -2,6 +2,7 @@ import type { CampaignDebugOptions } from "../../overworld/model/campaign-debug"
 import { AUTOSAVE_SLOT_ID } from "../../save/data/save-slots";
 import type { GameState } from "../../save/model/game-state";
 import type { SaveClock } from "../../save/model/save-clock";
+import type { SaveError } from "../../save/model/save-error";
 import type { GameSaveService } from "../../save/service/game-save-service";
 import type { NewGameOptions } from "../../save/service/game-state-factory";
 import type { GameSession } from "../model/game-session";
@@ -91,7 +92,8 @@ export class MainMenuScreen implements Screen {
     tagline.className = "tut-dim";
     tagline.textContent = "The bugs are here. Hold the line.";
 
-    const hasSave = this.hasAutosave();
+    const autosave = this.probeAutosave();
+    const hasSave = autosave.usable;
     const seedRow = this.createSeedRow(doc);
     const newGame = this.createButton(doc, "new-game", "New game", true);
     const cont = this.createButton(doc, "continue", "Continue", false);
@@ -126,6 +128,9 @@ export class MainMenuScreen implements Screen {
 
     this.panel = panel;
     this.status = status;
+    if (autosave.problem) {
+      this.showStatus(describeUnreadableAutosave(autosave.problem));
+    }
   }
 
   /** Removes the panel and every listener added in `mount`. */
@@ -202,11 +207,21 @@ export class MainMenuScreen implements Screen {
   // Helpers
   // ===========================================
 
-  /** True when the autosave slot holds a readable save. */
-  private hasAutosave(): boolean {
-    return this.deps.saves
-      .listSlots()
-      .some((slot) => slot.id === AUTOSAVE_SLOT_ID);
+  /**
+   * Whether the autosave slot holds a loadable campaign. An absent slot
+   * is simply no autosave; anything else that fails to load (corrupt
+   * JSON, a schema this build cannot read, a state that is not a
+   * campaign) is reported so Continue never goes quiet on a save the
+   * player can see in storage (#219).
+   */
+  private probeAutosave(): { usable: boolean; problem?: SaveError } {
+    const loaded = this.deps.saves.loadGame(AUTOSAVE_SLOT_ID);
+    if (loaded.ok) {
+      return { usable: true };
+    }
+    return loaded.error.kind === "missing"
+      ? { usable: false }
+      : { usable: false, problem: loaded.error };
   }
 
   /** Label plus the seed text box, pre-filled with a fresh random seed. */
@@ -298,4 +313,17 @@ export class MainMenuScreen implements Screen {
     this.status.textContent = message;
     this.status.hidden = false;
   }
+}
+
+// ===========================================
+// Helpers
+// ===========================================
+
+/** One sentence telling the player why the autosave cannot be continued, and what to do. */
+export function describeUnreadableAutosave(error: SaveError): string {
+  const lead =
+    error.kind === "unsupported-version"
+      ? "The autosave was written by a newer version of the game and cannot be read by this build"
+      : "An autosave exists but cannot be read";
+  return `${lead} (${error.kind}: ${error.message}). Import a copy you exported earlier, or start a new game.`;
 }

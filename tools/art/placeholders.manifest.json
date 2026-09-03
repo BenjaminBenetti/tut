@@ -11,7 +11,7 @@
     "sockets": [],
     "quality": "placeholder",
     "triangles": 48,
-    "bytes": 7712
+    "bytes": 8268
   },
   {
     "id": "tile.city.road-corner",
@@ -25,7 +25,7 @@
     "sockets": [],
     "quality": "placeholder",
     "triangles": 48,
-    "bytes": 7712
+    "bytes": 8268
   },
   {
     "id": "tile.city.road-t",
@@ -39,7 +39,7 @@
     "sockets": [],
     "quality": "placeholder",
     "triangles": 60,
-    "bytes": 9516
+    "bytes": 10140
   },
   {
     "id": "tile.city.road-cross",
@@ -53,7 +53,7 @@
     "sockets": [],
     "quality": "placeholder",
     "triangles": 24,
-    "bytes": 4108
+    "bytes": 4520
   },
   {
     "id": "tile.city.sidewalk",
@@ -67,7 +67,7 @@
     "sockets": [],
     "quality": "placeholder",
     "triangles": 24,
-    "bytes": 4072
+    "bytes": 4484
   },
   {
     "id": "tile.city.sidewalk-corner",
@@ -81,7 +81,7 @@
     "sockets": [],
     "quality": "placeholder",
     "triangles": 36,
-    "bytes": 5836
+    "bytes": 6320
   },
   {
     "id": "tile.ground.grass",
@@ -95,7 +95,7 @@
     "sockets": [],
     "quality": "placeholder",
     "triangles": 12,
-    "bytes": 2140
+    "bytes": 2436
   },
   {
     "id": "tile.ground.dirt",
@@ -109,7 +109,7 @@
     "sockets": [],
     "quality": "placeholder",
     "triangles": 12,
-    "bytes": 2140
+    "bytes": 2428
   },
   {
     "id": "building.wall",
@@ -123,7 +123,7 @@
     "sockets": [],
     "quality": "placeholder",
     "triangles": 24,
-    "bytes": 4068
+    "bytes": 4480
   },
   {
     "id": "building.wall-window",
@@ -137,7 +137,7 @@
     "sockets": [],
     "quality": "placeholder",
     "triangles": 60,
-    "bytes": 9396
+    "bytes": 10020
   },
   {
     "id": "building.wall-door",
@@ -153,7 +153,7 @@
     ],
     "quality": "placeholder",
     "triangles": 48,
-    "bytes": 7716
+    "bytes": 8272
   },
   {
     "id": "building.wall-half",
@@ -167,7 +167,7 @@
     "sockets": [],
     "quality": "placeholder",
     "triangles": 12,
-    "bytes": 2144
+    "bytes": 2436
   },
   {
     "id": "building.floor",
@@ -181,7 +181,7 @@
     "sockets": [],
     "quality": "placeholder",
     "triangles": 12,
-    "bytes": 2144
+    "bytes": 2436
   },
   {
     "id": "building.roof",
@@ -195,7 +195,7 @@
     "sockets": [],
     "quality": "placeholder",
     "triangles": 12,
-    "bytes": 2140
+    "bytes": 2432
   },
   {
     "id": "building.roof-parapet",
@@ -209,7 +209,7 @@
     "sockets": [],
     "quality": "placeholder",
     "triangles": 12,
-    "bytes": 2176
+    "bytes": 2472
   },
   {
     "id": "building.stairs",
@@ -223,7 +223,7 @@
     "sockets": [],
     "quality": "placeholder",
     "triangles": 96,
-    "bytes": 14980
+    "bytes": 15816
   },
   {
     "id": "prop.barrier-concrete",
@@ -237,7 +237,7 @@
     "sockets": [],
     "quality": "placeholder",
     "triangles": 36,
-    "bytes": 5936
+    "bytes": 6488
   },
   {
     "id": "prop.sandbags",
@@ -251,7 +251,7 @@
     "sockets": [],
     "quality": "placeholder",
     "triangles": 96,
-    "bytes": 14788
+    "bytes": 15576
   },
   {
     "id": "prop.dumpster",
@@ -265,7 +265,7 @@
     "sockets": [],
     "quality": "placeholder",
     "triangles": 36,
-    "bytes": 6080
+    "bytes": 6684
   },
   {
     "id": "prop.car-sedan",
@@ -279,7 +279,7 @@
     "sockets": [],
     "quality": "placeholder",
     "triangles": 164,
-    "bytes": 22216
+    "bytes": 23156
   },
   {
     "id": "prop.lamp-post",
@@ -293,7 +293,7 @@
     "sockets": [],
     "quality": "placeholder",
     "triangles": 80,
-    "bytes": 11192
+    "bytes": 11820
   },
   {
     "id": "prop.hydrant",
@@ -307,7 +307,7 @@
     "sockets": [],
     "quality": "placeholder",
     "triangles": 76,
-    "bytes": 10036
+    "bytes": 10464
   },
   {
     "id": "tile.ground.sand",
@@ -321,7 +321,7 @@
     "sockets": [],
     "quality": "placeholder",
     "triangles": 12,
-    "bytes": 2140
+    "bytes": 2428
   },
   {
     "id": "tile.ground.snow",
@@ -335,7 +335,7 @@
     "sockets": [],
     "quality": "placeholder",
     "triangles": 12,
-    "bytes": 2136
+    "bytes": 2428
   },
   {
     "id": "tile.ground.rock",
@@ -349,7 +349,7 @@
     "sockets": [],
     "quality": "placeholder",
     "triangles": 84,
-    "bytes": 10868
+    "bytes": 11300
   },
   {
     "id": "tile.ground.water",
@@ -363,7 +363,7 @@
     "sockets": [],
     "quality": "placeholder",
     "triangles": 24,
-    "bytes": 4052
+    "bytes": 4456
   },
   {
     "id": "prop.crate",
@@ -377,7 +377,7 @@
     "sockets": [],
     "quality": "placeholder",
     "triangles": 36,
-    "bytes": 5940
+    "bytes": 6308
   },
   {
     "id": "prop.shelving",
@@ -391,7 +391,7 @@
     "sockets": [],
     "quality": "placeholder",
     "triangles": 120,
-    "bytes": 18560
+    "bytes": 19452
   },
   {
     "id": "prop.fence",
@@ -419,7 +419,7 @@
     "sockets": [],
     "quality": "placeholder",
     "triangles": 92,
-    "bytes": 10956
+    "bytes": 11316
   },
   {
     "id": "prop.cactus",
@@ -447,7 +447,7 @@
     "sockets": [],
     "quality": "placeholder",
     "triangles": 164,
-    "bytes": 22204
+    "bytes": 23148
   },
   {
     "id": "prop.tree-pine",
@@ -461,7 +461,7 @@
     "sockets": [],
     "quality": "placeholder",
     "triangles": 60,
-    "bytes": 9824
+    "bytes": 10252
   },
   {
     "id": "prop.tree-oak",
@@ -475,7 +475,7 @@
     "sockets": [],
     "quality": "placeholder",
     "triangles": 184,
-    "bytes": 20904
+    "bytes": 21260
   },
   {
     "id": "prop.tree-palm",
@@ -489,7 +489,7 @@
     "sockets": [],
     "quality": "placeholder",
     "triangles": 96,
-    "bytes": 15544
+    "bytes": 16176
   },
   {
     "id": "bug.brute",
@@ -561,7 +561,7 @@
     "sockets": [],
     "quality": "final",
     "triangles": 140,
-    "bytes": 17160
+    "bytes": 17336
   },
   {
     "id": "tdf.infantry.engineer",

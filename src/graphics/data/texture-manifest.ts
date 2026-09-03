@@ -52,6 +52,14 @@ export const TEXTURE_MANIFEST = {
     label:
       "Bug unit atlas: chitin, flesh, bioluminescence, bone (4×4 cells of 128 px)",
   },
+  "tiles.env-atlas": {
+    path: "assets/textures/tiles/env-atlas_albedo.png",
+    width: 512,
+    height: 512,
+    colorSpace: "srgb",
+    label:
+      "Environment atlas: ground, road, building kit, water, foliage (4×4 cells of 128 px)",
+  },
 } as const satisfies Record<string, TextureAssetEntry>;
 
 /** Union of registered texture ids. */

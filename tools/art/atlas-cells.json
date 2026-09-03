@@ -4,7 +4,8 @@
   "inset": 0.03,
   "paths": {
     "tdf": "assets/textures/units/tdf-atlas_albedo.png",
-    "bug": "assets/textures/units/bug-atlas_albedo.png"
+    "bug": "assets/textures/units/bug-atlas_albedo.png",
+    "env": "assets/textures/tiles/env-atlas_albedo.png"
   },
   "cells": {
     "tdf-grey-dark": {
@@ -125,6 +126,118 @@
       "row": 2,
       "hex": "#D8CBB0",
       "style": "bone"
+    },
+    "env-asphalt": {
+      "atlas": "env",
+      "col": 0,
+      "row": 0,
+      "hex": "#3A3D42",
+      "style": "asphalt"
+    },
+    "env-sidewalk": {
+      "atlas": "env",
+      "col": 1,
+      "row": 0,
+      "hex": "#A7A297",
+      "style": "paving"
+    },
+    "env-concrete": {
+      "atlas": "env",
+      "col": 2,
+      "row": 0,
+      "hex": "#8E8A82",
+      "style": "slab"
+    },
+    "env-brick": {
+      "atlas": "env",
+      "col": 3,
+      "row": 0,
+      "hex": "#8A4B3A",
+      "style": "brick"
+    },
+    "env-glass": {
+      "atlas": "env",
+      "col": 0,
+      "row": 1,
+      "hex": "#6E8FA6",
+      "style": "pane"
+    },
+    "env-roof": {
+      "atlas": "env",
+      "col": 1,
+      "row": 1,
+      "hex": "#55524C",
+      "style": "gravel"
+    },
+    "env-metal": {
+      "atlas": "env",
+      "col": 2,
+      "row": 1,
+      "hex": "#6F7378",
+      "style": "brushed"
+    },
+    "env-rust": {
+      "atlas": "env",
+      "col": 3,
+      "row": 1,
+      "hex": "#8C5A3A",
+      "style": "rust"
+    },
+    "env-grass": {
+      "atlas": "env",
+      "col": 0,
+      "row": 2,
+      "hex": "#5E7A3A",
+      "style": "grass"
+    },
+    "env-dirt": {
+      "atlas": "env",
+      "col": 1,
+      "row": 2,
+      "hex": "#7A6045",
+      "style": "dirt"
+    },
+    "env-sand": {
+      "atlas": "env",
+      "col": 2,
+      "row": 2,
+      "hex": "#D9B87A",
+      "style": "sand"
+    },
+    "env-snow": {
+      "atlas": "env",
+      "col": 3,
+      "row": 2,
+      "hex": "#E8ECF0",
+      "style": "snow"
+    },
+    "env-rock": {
+      "atlas": "env",
+      "col": 0,
+      "row": 3,
+      "hex": "#6E6A66",
+      "style": "rock"
+    },
+    "env-water-shallow": {
+      "atlas": "env",
+      "col": 1,
+      "row": 3,
+      "hex": "#3F8FA8",
+      "style": "water"
+    },
+    "env-water-deep": {
+      "atlas": "env",
+      "col": 2,
+      "row": 3,
+      "hex": "#1F5C73",
+      "style": "water"
+    },
+    "env-foliage": {
+      "atlas": "env",
+      "col": 3,
+      "row": 3,
+      "hex": "#3F6B33",
+      "style": "foliage"
     }
   }
 }

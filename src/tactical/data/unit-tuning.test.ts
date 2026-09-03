@@ -39,6 +39,18 @@ describe("unit tuning", () => {
     }
   });
 
+  it("gives every shipped squad type and the mech a positive whole charge pool", () => {
+    for (const type of SQUAD_TYPES) {
+      const charges = UNIT_TUNING.infantry.chargesByType[type.id];
+      expect(charges, type.id).toBeDefined();
+      expect(Number.isInteger(charges)).toBe(true);
+      expect(charges).toBeGreaterThan(0);
+    }
+    expect(UNIT_TUNING.infantry.fallbackCharges).toBeGreaterThan(0);
+    expect(Number.isInteger(UNIT_TUNING.mech.charges)).toBe(true);
+    expect(UNIT_TUNING.mech.charges).toBeGreaterThan(0);
+  });
+
   it("maps every shipped squad type to a known model", () => {
     for (const type of SQUAD_TYPES) {
       const modelId = UNIT_TUNING.infantry.modelIdByType[type.id];

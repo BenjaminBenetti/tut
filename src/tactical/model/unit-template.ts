@@ -46,4 +46,10 @@ export interface UnitTemplate {
   readonly passClass: PassClass;
   /** Model graphics draws for every unit of this template. */
   readonly modelId: ModelAssetId;
+  /**
+   * Shots the unit can fire before it must reload or vent (#409): an
+   * abstract pool covering a squad's magazines and a mech's heat. Absent
+   * means unlimited, as for bugs. Positive integer when present.
+   */
+  readonly charges?: number;
 }

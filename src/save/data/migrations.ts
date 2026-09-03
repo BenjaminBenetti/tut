@@ -170,6 +170,38 @@ const ADD_MISSION_EXTRACTED: Migration = {
   },
 };
 
+/**
+ * v8 → v9 (#409): units in a live mission gain `charges`, filled from
+ * their template's pool. Templates saved before v9 carry no pool, so a
+ * mission in flight at upgrade time stays unlimited until it ends; no
+ * mission in progress means nothing to touch.
+ */
+const ADD_UNIT_CHARGES: Migration = {
+  from: 8,
+  to: 9,
+  apply(state) {
+    if (!isRecord(state)) {
+      throw new Error("v8 state is not an object");
+    }
+    const mission = state.activeMission;
+    if (!isRecord(mission) || !Array.isArray(mission.units)) {
+      return state;
+    }
+    const templates = isRecord(mission.templates) ? mission.templates : {};
+    const units = mission.units.map((unit: unknown) => {
+      if (!isRecord(unit) || "charges" in unit) {
+        return unit;
+      }
+      const templateId =
+        typeof unit.templateId === "string" ? unit.templateId : "";
+      const template = templates[templateId];
+      const charges = isRecord(template) ? template.charges : undefined;
+      return typeof charges === "number" ? { ...unit, charges } : unit;
+    });
+    return { ...state, activeMission: { ...mission, units } };
+  },
+};
+
 // ===========================================
 // Chain
 // ===========================================
@@ -187,4 +219,5 @@ export const GAME_STATE_MIGRATIONS: readonly Migration[] = [
   RESERVE_ACTIVE_MISSION,
   DROP_META_DEBUG,
   ADD_MISSION_EXTRACTED,
+  ADD_UNIT_CHARGES,
 ];

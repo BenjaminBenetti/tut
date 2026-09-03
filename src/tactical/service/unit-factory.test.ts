@@ -91,6 +91,7 @@ describe("squadUnit", () => {
       armor: 0,
       passClass: "infantry",
       modelId: "tdf.infantry.rifle",
+      charges: 3,
     });
     expect(unit).toEqual({
       id: "unit-1",
@@ -106,6 +107,7 @@ describe("squadUnit", () => {
       maxAp: 2,
       status: [],
       passClass: "infantry",
+      charges: 3,
     });
   });
 
@@ -157,6 +159,7 @@ describe("mechUnit", () => {
       armor: 9,
       passClass: "mech",
       modelId: "tdf.mech.assembled-a",
+      charges: 4,
     });
     expect(unit).toMatchObject({
       kind: "mech",
@@ -208,6 +211,7 @@ describe("bugUnit", () => {
       passClass: "infantry",
       modelId: "bug.swarmer",
     });
+    expect("charges" in first.unit).toBe(false);
     expect(second.template).toEqual(first.template);
     expect([first.unit.id, second.unit.id]).toEqual(["unit-1", "unit-2"]);
     expect(first.unit).toMatchObject({

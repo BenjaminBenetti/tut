@@ -18,6 +18,9 @@ export interface InfantryUnitTuning {
   /** Model per squad type; types missing here draw `fallbackModelId`. */
   readonly modelIdByType: Readonly<Record<SquadTypeId, ModelAssetId>>;
   readonly fallbackModelId: ModelAssetId;
+  /** Shots per magazine per squad type (#409); types missing here get `fallbackCharges`. Positive integers. */
+  readonly chargesByType: Readonly<Record<SquadTypeId, number>>;
+  readonly fallbackCharges: number;
 }
 
 // ===========================================
@@ -41,6 +44,8 @@ export interface MechUnitTuning {
   /** Weapon shape; `damage` scales sheet `firepower`, `accuracy` is the base the sheet's modifier adds to. */
   readonly weapon: WeaponProfile;
   readonly modelId: ModelAssetId;
+  /** Shots a mech fires before it must vent heat (#409). Positive integer. */
+  readonly charges: number;
 }
 
 // ===========================================

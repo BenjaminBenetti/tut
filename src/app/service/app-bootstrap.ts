@@ -19,14 +19,15 @@ import { DataDeployableTypeCatalogue } from "../../overworld/repository/deployab
 import type { SaveClock } from "../../save/model/save-clock";
 import { WebStorageKeyValueStore } from "../../save/repository/web-storage-key-value-store";
 import { iconHref } from "../../ui/data/icon-manifest";
-import type { CitySelection } from "../../ui/model/city-selection";
 import type { ScreenId } from "../../ui/model/screen";
 import { GameOverScreen } from "../../ui/screen/game-over-screen";
 import { MainMenuScreen } from "../../ui/screen/main-menu-screen";
+import type { OverworldSelection } from "../../ui/model/overworld-selection";
+import { DeploymentScreen } from "../../ui/screen/deployment-screen";
 import { OverworldScreen } from "../../ui/screen/overworld-screen";
+import { OverworldSelectionState } from "../../ui/service/overworld-selection-state";
 import { MechBayScreen } from "../../ui/screen/mech-bay-screen";
 import { RosterScreen } from "../../ui/screen/roster-screen";
-import { CitySelectionStore } from "../../ui/service/city-selection-store";
 import type { TutTestHooks } from "../model/test-hooks";
 import type { ScreenFactory } from "./dom-screen-router";
 import { DomMapViewportHost } from "./dom-map-viewport-host";
@@ -72,7 +73,7 @@ export async function bootstrapApp(doc: Document): Promise<void> {
 
   const viewport = createMapViewport(doc, appRoot);
   const mapViewport = new DomMapViewportHost(viewport, appRoot);
-  const selection = new CitySelectionStore();
+  const selection = new OverworldSelectionState();
   const debug = import.meta.env.DEV
     ? parseDebugOptions(window.location.search)
     : undefined;
@@ -110,10 +111,20 @@ export async function bootstrapApp(doc: Document): Promise<void> {
             router,
             session: game.session,
             selection,
+            missionTypes: game.content.missionTypes,
             deployableTypes: new DataDeployableTypeCatalogue(
               DEPLOYABLE_TYPE_IDS.map((id) => DEPLOYABLE_TYPES[id]),
             ),
             mapViewport,
+          }),
+      ],
+      [
+        "deployment",
+        () =>
+          new DeploymentScreen({
+            router,
+            session: game.session,
+            selection,
           }),
       ],
       [
@@ -169,7 +180,7 @@ async function composeScene(
   doc: Document,
   viewport: HTMLElement,
   window: Window,
-  selection: CitySelection,
+  selection: OverworldSelection,
 ): Promise<SceneService> {
   const assets = await loadOverworldAssets({
     textures: new ManifestTextureLoader({
@@ -190,9 +201,21 @@ async function composeScene(
   const cameraInput = new CameraInputController(rig);
   const picking = new MapPickingController(mapScene, rig, {
     onCitySelected: (cityId) => {
-      doc.body.dataset.selectedCity = cityId;
       selection.select(cityId);
     },
+  });
+  // The selection is the truth for both directions: a map click lands
+  // in it above, and a mission chosen in the side panel highlights its
+  // city here. The identity checks stop the two from echoing.
+  selection.subscribe(({ cityId }) => {
+    if (cityId === undefined) {
+      delete doc.body.dataset.selectedCity;
+      return;
+    }
+    doc.body.dataset.selectedCity = cityId;
+    if (mapScene.getSelected() !== cityId) {
+      picking.selectCity(cityId);
+    }
   });
   const scene = new SceneService(viewport, {
     camera: rig,

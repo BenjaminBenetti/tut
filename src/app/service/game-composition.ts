@@ -21,6 +21,7 @@ import { createOverworldCommandDispatcher } from "../../overworld/service/comman
 import { registerDeployableCommands } from "../../overworld/service/deployable-command-handlers";
 import { registerEventCommands } from "../../overworld/service/event-command-handlers";
 import type { TickDeps } from "../../overworld/service/default-tick-steps";
+import type { MissionTypeCatalogue } from "../../overworld/service/mission-generation-service";
 import { createDefaultTickSteps } from "../../overworld/service/default-tick-steps";
 import { registerRosterCommands } from "../../overworld/service/roster-command-handlers";
 import { AUTO_RESOLVE_TUNING } from "../../overworld/data/auto-resolve-tuning";
@@ -76,6 +77,8 @@ export interface GameContent {
   readonly rosterTuning: RosterTuning;
   readonly upgrades: UpgradeTuning;
   readonly rating: MechRatingTuning;
+  /** Names and describes mission types for the mission list and briefing. */
+  readonly missionTypes: MissionTypeCatalogue;
 }
 
 /** The simulation-facing services screens are handed. */
@@ -127,6 +130,7 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     rosterTuning: ROSTER_TUNING,
     upgrades: UPGRADE_TUNING,
     rating: MECH_RATING_TUNING,
+    missionTypes: MISSION_TYPES,
   };
   registerRosterCommands(dispatcher, {
     ...content,

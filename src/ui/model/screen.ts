@@ -9,7 +9,12 @@
  * caught at composition time.
  */
 export type ScreenId =
-  "main-menu" | "overworld" | "roster" | "mech-bay" | "game-over";
+  | "main-menu"
+  | "overworld"
+  | "roster"
+  | "mech-bay"
+  | "game-over"
+  | "deployment";
 
 /** Every screen id, in a fixed order. */
 export const SCREEN_IDS: readonly ScreenId[] = [
@@ -18,6 +23,7 @@ export const SCREEN_IDS: readonly ScreenId[] = [
   "roster",
   "mech-bay",
   "game-over",
+  "deployment",
 ];
 
 /**

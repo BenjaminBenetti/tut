@@ -3,16 +3,20 @@ import { advanceDay } from "../../overworld/model/advance-day-command";
 import { buildDeployable } from "../../overworld/model/build-deployable-command";
 import { decommissionDeployable } from "../../overworld/model/decommission-deployable-command";
 import type { DeployableTypeCatalogue } from "../../overworld/model/deployable-type-catalogue";
+import type { MissionId } from "../../overworld/model/mission";
 import type { OverworldCommand } from "../../overworld/model/overworld-command";
 import { findCity } from "../../overworld/service/earth-map-query-service";
+import type { MissionTypeCatalogue } from "../../overworld/service/mission-generation-service";
 import type { GameState } from "../../save/model/game-state";
-import type { CitySelection } from "../model/city-selection";
 import type { CampaignStore, GameSession } from "../model/game-session";
 import type { MapViewportHost } from "../model/map-viewport-host";
+import type { OverworldSelection } from "../model/overworld-selection";
 import type { Screen, ScreenId } from "../model/screen";
 import type { ScreenRouter } from "../model/screen-router";
 import { CityPanelView } from "../view/city-panel-view";
 import { DeployablesView } from "../view/deployables-view";
+import { MissionDetailsView } from "../view/mission-details-view";
+import { MissionListView } from "../view/mission-list-view";
 import { SidePanelView } from "../view/side-panel-view";
 import { TopBarView } from "../view/top-bar-view";
 
@@ -24,10 +28,12 @@ import { TopBarView } from "../view/top-bar-view";
 export interface OverworldScreenDeps {
   readonly router: ScreenRouter;
   readonly session: GameSession;
-  /** Which city the map picking selected; the panels render it. */
-  readonly selection: CitySelection;
+  /** Shared city + mission selection; the map wiring writes into it too. */
+  readonly selection: OverworldSelection;
   /** Names, costs and caps for the deployables section. */
   readonly deployableTypes: DeployableTypeCatalogue;
+  /** Names and describes mission types for the list and briefing. */
+  readonly missionTypes: MissionTypeCatalogue;
   /** Lends the map canvas to the layout's map cell while mounted; absent in unit tests. */
   readonly mapViewport?: MapViewportHost;
 }
@@ -41,8 +47,9 @@ export interface OverworldScreenDeps {
  * mount the screen borrows the app's map viewport into `#map-area`, so
  * the scene resizes to the cell and no marker sits under a panel; on
  * unmount it hands the viewport back. The top bar reads day, credits and
- * threat; Advance Day dispatches through the campaign store and every
- * store change re-renders the views incrementally.
+ * threat; the side panel shows the selected city, the missions on offer,
+ * the open briefing and the region's deployables; every store or
+ * selection change re-renders the views incrementally.
  *
  * ```
  *   ┌ #top-bar ──────────────────────────────────────────────────────┐
@@ -50,14 +57,19 @@ export interface OverworldScreenDeps {
  *   │  #map-area ▸ #map-viewport ▸ canvas          │  #side-panel    │
  *   │  (wheel, keys and city picking)              │  situation      │
  *   │                                              │  #city-panel    │
+ *   │                                              │  missions       │
+ *   │                                              │  briefing       │
  *   │                                              │  #deployables   │
  *   └──────────────────────────────────────────────┴─────────────────┘
  *
  *   store.subscribe / selection.subscribe ──► render(state): every view
- *   [Advance day]   ──► store.dispatch(advanceDay())
- *   [Build …]       ──► store.dispatch(buildDeployable(type, region))
- *   [Decommission]  ──► store.dispatch(decommissionDeployable(id))
- *                       any rejection ──► topBar.showStatus
+ *   [Advance day]        ──► store.dispatch(advanceDay())
+ *   [Build …]            ──► store.dispatch(buildDeployable(type, region))
+ *   [Decommission]       ──► store.dispatch(decommissionDeployable(id))
+ *                            any rejection ──► topBar.showStatus
+ *   [Roster] / [Main menu] ──► router.navigate
+ *   mission row          ──► selection.selectMission(id, cityId)
+ *   [Plan deployment]    ──► selection.selectMission + router.navigate("deployment")
  *   state.overworld.outcome set ──► router.navigate("game-over")  (next microtask)
  * ```
  *
@@ -75,6 +87,8 @@ export class OverworldScreen implements Screen {
   private readonly topBar: TopBarView;
   private readonly sidePanel = new SidePanelView();
   private readonly cityPanel: CityPanelView;
+  private readonly missionList: MissionListView;
+  private readonly missionDetails: MissionDetailsView;
   private readonly deployables: DeployablesView;
   private root: HTMLElement | undefined;
   private unsubscribe: Unsubscribe | undefined;
@@ -84,7 +98,7 @@ export class OverworldScreen implements Screen {
   // Constructor
   // ===========================================
 
-  /** @param deps - Router and the session whose store is rendered. */
+  /** @param deps - Router, session, selection state and content. */
   constructor(deps: OverworldScreenDeps) {
     this.deps = deps;
     this.topBar = new TopBarView({
@@ -99,10 +113,26 @@ export class OverworldScreen implements Screen {
       },
     });
     this.cityPanel = new CityPanelView({
-      onPlanDeployment: () => {
-        this.topBar.showStatus("Deployment planning arrives with #77.");
+      onPlanDeployment: (missionId) => {
+        this.planDeployment(missionId);
       },
     });
+    this.missionList = new MissionListView(
+      { missionTypes: deps.missionTypes },
+      {
+        onSelectMission: (missionId, cityId) => {
+          this.deps.selection.selectMission(missionId, cityId);
+        },
+      },
+    );
+    this.missionDetails = new MissionDetailsView(
+      { missionTypes: deps.missionTypes },
+      {
+        onPlanDeployment: (missionId) => {
+          this.planDeployment(missionId);
+        },
+      },
+    );
     this.deployables = new DeployablesView(
       {
         onBuild: (typeId, regionId) => {
@@ -120,7 +150,7 @@ export class OverworldScreen implements Screen {
   // Screen
   // ===========================================
 
-  /** Builds the layout, mounts the views and subscribes to the campaign store. */
+  /** Builds the layout, mounts the views and subscribes to the store and the selection. */
   mount(root: HTMLElement): void {
     const doc = root.ownerDocument;
     const layout = doc.createElement("section");
@@ -137,6 +167,8 @@ export class OverworldScreen implements Screen {
     this.sidePanel.mount(layout);
     const sections = this.sidePanel.container ?? layout;
     this.cityPanel.mount(sections);
+    this.missionList.mount(sections);
+    this.missionDetails.mount(sections);
     this.deployables.mount(sections);
     root.appendChild(layout);
     this.root = layout;
@@ -161,6 +193,8 @@ export class OverworldScreen implements Screen {
     this.unsubscribeSelection = undefined;
     this.topBar.unmount();
     this.deployables.unmount();
+    this.missionDetails.unmount();
+    this.missionList.unmount();
     this.cityPanel.unmount();
     this.sidePanel.unmount();
     this.root?.remove();
@@ -189,6 +223,23 @@ export class OverworldScreen implements Screen {
     }
   }
 
+  /**
+   * Opens the deployment screen for a mission: the mission (and its city)
+   * is put into the shared selection, which the deployment screen reads
+   * on mount. A mission that is no longer on offer is reported instead.
+   */
+  private planDeployment(missionId: MissionId): void {
+    const mission = this.deps.session.state?.overworld.missions.find(
+      (m) => m.id === missionId,
+    );
+    if (!mission) {
+      this.topBar.showStatus("That mission is no longer on offer.");
+      return;
+    }
+    this.deps.selection.selectMission(mission.id, mission.cityId);
+    this.deps.router.navigate("deployment");
+  }
+
   // ===========================================
   // Helpers
   // ===========================================
@@ -207,19 +258,34 @@ export class OverworldScreen implements Screen {
     });
   }
 
-  /** Pushes the state and the current selection into every view, or hands over once the campaign has ended. */
+  /**
+   * Pushes the state and the current selection into every view, or hands
+   * over once the campaign has ended. A selected mission that is no
+   * longer on offer (expired or launched) is deselected first, which
+   * re-enters here through the selection subscription.
+   */
   private render(state: GameState | undefined): void {
     if (state?.overworld.outcome !== undefined) {
       this.scheduleGameOver();
     }
+    const selection = this.deps.selection.selection;
+    const mission =
+      state && selection.missionId !== undefined
+        ? state.overworld.missions.find((m) => m.id === selection.missionId)
+        : undefined;
+    if (selection.missionId !== undefined && mission === undefined) {
+      this.deps.selection.clearMission();
+      return;
+    }
     this.topBar.update(state);
     this.sidePanel.update(state);
-    const cityId = this.deps.selection.cityId;
-    this.cityPanel.update(state, cityId);
+    this.cityPanel.update(state, selection.cityId);
     const city =
-      state && cityId !== undefined
-        ? findCity(state.overworld.map, cityId)
+      state && selection.cityId !== undefined
+        ? findCity(state.overworld.map, selection.cityId)
         : undefined;
     this.deployables.update(state, city?.regionId);
+    this.missionList.update(state, selection);
+    this.missionDetails.update(state, mission);
   }
 }

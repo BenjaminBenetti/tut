@@ -28,7 +28,9 @@ import { BUILD_DEPLOYABLE } from "../../overworld/model/build-deployable-command
 import { DECOMMISSION_DEPLOYABLE } from "../../overworld/model/decommission-deployable-command";
 import { DEPLOYABLE_TYPE_IDS } from "../../overworld/model/deployable-type";
 import { DataDeployableTypeCatalogue } from "../../overworld/repository/deployable-type-catalogue";
-import { CitySelectionStore } from "../service/city-selection-store";
+import { MISSION_TYPES } from "../../content/data/mission-types";
+import type { Mission } from "../../overworld/model/mission";
+import { OverworldSelectionState } from "../service/overworld-selection-state";
 import { OverworldScreen } from "./overworld-screen";
 
 type NavigateMock = Mock<(id: ScreenId) => void>;
@@ -107,11 +109,15 @@ class FakeStore implements CampaignStore {
         },
       };
     } else if (command.type === ADVANCE_DAY) {
+      const day = this.state.overworld.day + 1;
       this.state = {
         ...this.state,
         overworld: {
           ...this.state.overworld,
-          day: this.state.overworld.day + 1,
+          day,
+          missions: this.state.overworld.missions.filter(
+            (m) => day < m.expiresDay,
+          ),
         },
         economy: {
           ...this.state.economy,
@@ -176,12 +182,13 @@ const DEPLOYABLE_TYPES_CATALOGUE = new DataDeployableTypeCatalogue(
 const depsFor = (
   store: CampaignStore | undefined,
   router: ScreenRouter = fakeRouter().router,
-  selection = new CitySelectionStore(),
+  selection = new OverworldSelectionState(),
 ) => ({
   router,
   session: sessionWith(store),
   selection,
   deployableTypes: DEPLOYABLE_TYPES_CATALOGUE,
+  missionTypes: MISSION_TYPES,
 });
 
 const fakeRouter = (): { router: ScreenRouter; navigate: NavigateMock } => {
@@ -271,7 +278,7 @@ describe("OverworldScreen", () => {
 
   it("renders the selected city and its region's deployables, and builds through the store", () => {
     const store = new FakeStore(newGame());
-    const selection = new CitySelectionStore();
+    const selection = new OverworldSelectionState();
     new OverworldScreen(depsFor(store, undefined, selection)).mount(root);
     expect(
       root.querySelector<HTMLElement>('[data-role="no-city"]')?.hidden,
@@ -315,7 +322,7 @@ describe("OverworldScreen", () => {
 
   it("shows a rejected build in the bar", () => {
     const store = new FakeStore(newGame());
-    const selection = new CitySelectionStore();
+    const selection = new OverworldSelectionState();
     new OverworldScreen(depsFor(store, undefined, selection)).mount(root);
     selection.select(EARTH_MAP.cities[0]?.id);
     store.fail = true;
@@ -387,5 +394,154 @@ describe("OverworldScreen", () => {
     expect(log).toEqual(["attach:map-area"]);
     screen.unmount();
     expect(log).toEqual(["attach:map-area", "release"]);
+  });
+
+  // ===========================================
+  // Missions (#76)
+  // ===========================================
+
+  const missionAt = (
+    id: string,
+    cityId: string,
+    expiresDay: number,
+    difficulty = 3,
+  ): Mission => ({
+    id,
+    typeId: "infestation-clearance",
+    cityId,
+    difficulty,
+    mapParams: {
+      biome: "desert",
+      settlement: "town",
+      size: "medium",
+      seed: "9",
+    },
+    rewards: { credits: difficulty * 300 },
+    createdDay: 1,
+    expiresDay,
+    ignorePenalty: 10,
+  });
+
+  const withMissions = (
+    day: number,
+    missions: readonly Mission[],
+  ): GameState => {
+    const state = newGame();
+    return { ...state, overworld: { ...state.overworld, day, missions } };
+  };
+
+  const MISSIONS: Mission[] = [
+    missionAt("mission-2", "lagos", 9, 5),
+    missionAt("mission-1", "cairo", 6, 2),
+  ];
+
+  const rows = (): HTMLElement[] => [
+    ...root.querySelectorAll<HTMLElement>(
+      '[data-role="mission-list"] [data-mission-id]',
+    ),
+  ];
+
+  it("lists missions soonest first and opens one on click, selecting its city", () => {
+    const selection = new OverworldSelectionState();
+    new OverworldScreen(
+      depsFor(new FakeStore(withMissions(4, MISSIONS)), undefined, selection),
+    ).mount(root);
+    expect(rows().map((r) => r.dataset.missionId)).toEqual([
+      "mission-1",
+      "mission-2",
+    ]);
+    rows()[1]?.click();
+    expect(selection.selection).toEqual({
+      cityId: "lagos",
+      missionId: "mission-2",
+    });
+    expect(root.querySelector("#selected-city")?.textContent).toBe("Lagos");
+    expect(rows()[1]?.classList.contains("is-selected")).toBe(true);
+    const details = root.querySelector<HTMLElement>(
+      '[data-role="mission-details"]',
+    );
+    expect(details?.hidden).toBe(false);
+    expect(details?.dataset.missionId).toBe("mission-2");
+  });
+
+  it("a city picked on the map shows in the panel and drops a mission elsewhere", () => {
+    const selection = new OverworldSelectionState();
+    new OverworldScreen(
+      depsFor(new FakeStore(withMissions(4, MISSIONS)), undefined, selection),
+    ).mount(root);
+    rows()[0]?.click();
+    selection.select("tokyo");
+    expect(root.querySelector("#selected-city")?.textContent).toBe("Tokyo");
+    expect(
+      root.querySelector<HTMLElement>('[data-role="mission-details"]')?.hidden,
+    ).toBe(true);
+    expect(rows().some((r) => r.classList.contains("is-selected"))).toBe(false);
+  });
+
+  it("Plan deployment from the briefing selects the mission and navigates to deployment", () => {
+    const { router, navigate } = fakeRouter();
+    const selection = new OverworldSelectionState();
+    new OverworldScreen(
+      depsFor(new FakeStore(withMissions(4, MISSIONS)), router, selection),
+    ).mount(root);
+    rows()[0]?.click();
+    root
+      .querySelector<HTMLButtonElement>(
+        '[data-role="mission-details"] [data-action="plan-deployment"]',
+      )
+      ?.click();
+    expect(navigate).toHaveBeenCalledWith("deployment");
+    expect(selection.selection).toEqual({
+      cityId: "cairo",
+      missionId: "mission-1",
+    });
+  });
+
+  it("Plan deployment from the city panel goes through the same selection", () => {
+    const { router, navigate } = fakeRouter();
+    const selection = new OverworldSelectionState();
+    new OverworldScreen(
+      depsFor(new FakeStore(withMissions(4, MISSIONS)), router, selection),
+    ).mount(root);
+    selection.select("lagos");
+    root
+      .querySelector<HTMLButtonElement>(
+        '#city-panel [data-action="plan-deployment"]',
+      )
+      ?.click();
+    expect(navigate).toHaveBeenCalledWith("deployment");
+    expect(selection.selection).toEqual({
+      cityId: "lagos",
+      missionId: "mission-2",
+    });
+  });
+
+  it("deselects a mission that expires on a tick and keeps the city", () => {
+    const store = new FakeStore(withMissions(5, MISSIONS));
+    const selection = new OverworldSelectionState();
+    new OverworldScreen(depsFor(store, undefined, selection)).mount(root);
+    rows()[0]?.click();
+    expect(selection.selection.missionId).toBe("mission-1");
+    root
+      .querySelector<HTMLButtonElement>('[data-action="advance-day"]')
+      ?.click();
+    expect(rows().map((r) => r.dataset.missionId)).toEqual(["mission-2"]);
+    expect(selection.selection).toEqual({
+      cityId: "cairo",
+      missionId: undefined,
+    });
+    expect(
+      root.querySelector<HTMLElement>('[data-role="mission-details"]')?.hidden,
+    ).toBe(true);
+  });
+
+  it("shows the empty mission state when nothing is on offer", () => {
+    new OverworldScreen(depsFor(new FakeStore(withMissions(1, [])))).mount(
+      root,
+    );
+    expect(rows()).toHaveLength(0);
+    expect(
+      root.querySelector<HTMLElement>('[data-role="no-missions"]')?.hidden,
+    ).toBe(false);
   });
 });

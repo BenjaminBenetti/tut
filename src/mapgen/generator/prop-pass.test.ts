@@ -4,15 +4,19 @@ import { BIOME_IDS } from "../../content/model/biome-id";
 import { SETTLEMENT_SCALES } from "../../content/model/settlement-scale";
 import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import { hashSeed } from "../../core/service/seed-hash";
+import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
 import { rectContains, stepGridPos } from "../../core/service/grid-math";
 import { BIOME_DEFINITIONS } from "../data/biomes";
+import { SETTLEMENT_DEFINITIONS } from "../data/settlements";
 import { PROP_DEFINITIONS } from "../data/props";
 import { SurfaceIds } from "../data/surfaces";
 import { CoverLevel } from "../model/cover";
-import type { MapDraft } from "../model/map-draft";
+import { MapDraft } from "../model/map-draft";
+import type { GenerationContext } from "../model/generation-pass";
 import type { MapGenParams, MapRecipe } from "../model/map-recipe";
 import type { TacticalMap } from "../model/tactical-map";
 import { createDefaultRegistries } from "../service/default-registries";
+import { DiagnosticsCollector } from "../service/diagnostics-collector";
 import { freezeDraft } from "../service/draft-freezer";
 import type { InvariantId } from "../service/map-validator";
 import { validateTacticalMap } from "../service/map-validator";
@@ -190,6 +194,42 @@ describe("PropPass", () => {
       }
     }
     expect(street).toBeGreaterThan(0);
+  });
+
+  it("places street props on a trail that hugs the map edge without throwing", () => {
+    // Regression for #221: the rotation lookup read the column beyond the
+    // edge and tripped the draft's bounds check.
+    const draft = new MapDraft(
+      8,
+      8,
+      new SequentialIdGenerator(),
+      SurfaceIds.GRASS,
+    );
+    for (let z = 0; z < draft.depth; z++) {
+      draft.setRoad(0, z);
+      draft.setGroundSurface(0, z, SurfaceIds.DIRT);
+    }
+    const settlement = {
+      ...SETTLEMENT_DEFINITIONS.rural,
+      streetPropDensity: 100,
+    };
+    const diagnostics = new DiagnosticsCollector();
+    const context: GenerationContext = {
+      params: {
+        archetype: "settlement",
+        width: draft.width,
+        depth: draft.depth,
+        biome: BIOME_DEFINITIONS.temperate,
+        settlement,
+        hooks: [],
+      },
+      rng: new Mulberry32Rng(hashSeed("edge-trail")),
+      draft,
+      registries,
+      diagnostics: diagnostics.forPass("props"),
+    };
+    expect(() => new PropPass().run(context)).not.toThrow();
+    expect(draft.props.some((p) => p.tile.x === 0)).toBe(true);
   });
 
   it("stacks interior props only in storage rooms", () => {

@@ -60,6 +60,7 @@ export const TICK_STEP_NAMES = {
   events: EVENT_STEP_NAME,
   stipend: "stipend",
   threat: "threat",
+  threatOffset: 0,
   outcome: "outcome",
 } as const;
 
@@ -281,6 +282,7 @@ function threatStep<TState extends CampaignState>(
         overworld.map,
         ctx.day,
         applyDebugThreat(deps.threatTuning, state.meta.debug),
+        overworld.threatOffset,
       );
       if (threat === overworld.threat) {
         return { state, events: [] };

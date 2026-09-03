@@ -60,20 +60,32 @@ export function escalation(day: number, tuning: ThreatTuning): number {
 
 /**
  * Global threat level (GDD §5.1): mean city infestation weighted by
- * `infestationWeight`, plus the escalation for `day`, clamped to
+ * `infestationWeight`, plus the escalation for `day`, plus the lasting
+ * `threatOffset` from event choices (#307), clamped to
  * `[MIN_THREAT, MAX_THREAT]`. Pure: the orchestrator stores the result
  * on the overworld state.
  *
- * @throws {RangeError} if `day` is negative or not finite.
+ * ```
+ *   threat = clamp( infestation × weight + escalation(day) + threatOffset, 0, 100 )
+ * ```
+ *
+ * @throws {RangeError} if `day` is negative or not finite, or if
+ *   `threatOffset` is not finite.
  */
 export function computeThreat(
   map: EarthMap,
   day: number,
   tuning: ThreatTuning,
+  threatOffset = 0,
 ): number {
+  if (!Number.isFinite(threatOffset)) {
+    throw new RangeError(
+      `Invalid threatOffset ${String(threatOffset)}: must be a finite number`,
+    );
+  }
   const fromInfestation = globalInfestation(map) * tuning.infestationWeight;
   return clamp(
-    fromInfestation + escalation(day, tuning),
+    fromInfestation + escalation(day, tuning) + threatOffset,
     MIN_THREAT,
     MAX_THREAT,
   );

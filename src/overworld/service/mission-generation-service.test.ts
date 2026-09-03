@@ -108,6 +108,7 @@ function fixtureState(overrides: Partial<OverworldState> = {}): OverworldState {
     day: 5,
     map: fixtureMap(),
     threat: 40,
+    threatOffset: 0,
     spreadCooldowns: {},
     missions: [],
     pendingEvents: [],

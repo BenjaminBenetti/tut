@@ -177,3 +177,55 @@ describe("computeThreat", () => {
     expect(() => computeThreat(MIXED, -1, THREAT_TUNING)).toThrow(RangeError);
   });
 });
+
+// ===========================================
+// Threat offset (#307)
+// ===========================================
+
+describe("computeThreat with a threat offset", () => {
+  it("adds the offset before clamping and defaults it to zero", () => {
+    const map = buildEarthMap({
+      regions: [
+        {
+          id: "r",
+          name: "R",
+          biome: "temperate",
+          cities: [
+            { id: "x", name: "X", layout: { x: 0.1, y: 0.1 }, infestation: 50 },
+          ],
+        },
+      ],
+      links: [],
+    });
+    const flat = {
+      infestationWeight: 1,
+      escalationPerDay: 0,
+      escalationCap: 0,
+    };
+    expect(computeThreat(map, 1, flat)).toBe(50);
+    expect(computeThreat(map, 1, flat, -8)).toBe(42);
+    expect(computeThreat(map, 1, flat, 8)).toBe(58);
+    expect(computeThreat(map, 1, flat, -500)).toBe(0);
+    expect(computeThreat(map, 1, flat, 500)).toBe(100);
+  });
+
+  it("rejects a non-finite offset", () => {
+    const map = buildEarthMap({
+      regions: [
+        {
+          id: "r",
+          name: "R",
+          biome: "temperate",
+          cities: [{ id: "x", name: "X", layout: { x: 0.1, y: 0.1 } }],
+        },
+      ],
+      links: [],
+    });
+    const flat = {
+      infestationWeight: 1,
+      escalationPerDay: 0,
+      escalationCap: 0,
+    };
+    expect(() => computeThreat(map, 1, flat, Number.NaN)).toThrow(RangeError);
+  });
+});

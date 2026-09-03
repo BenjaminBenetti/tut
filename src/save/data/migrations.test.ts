@@ -31,6 +31,22 @@ describe("GAME_STATE_MIGRATIONS", () => {
     expect(v1).toEqual(before);
   });
 
+  it("v4 → v5 adds a zero threat offset and keeps everything else", () => {
+    const step = GAME_STATE_MIGRATIONS.find((m) => m.from === 4);
+    expect(step?.to).toBe(5);
+    const v4 = {
+      meta: { seed: 7 },
+      overworld: { day: 3, threat: 40 },
+      roster: {},
+    };
+    expect(step?.apply(v4)).toEqual({
+      meta: { seed: 7 },
+      overworld: { day: 3, threat: 40, threatOffset: 0 },
+      roster: {},
+    });
+    expect(() => step?.apply({ meta: {} })).toThrow(/overworld/);
+  });
+
   it("v1 → v2 rejects a state without an overworld slice", () => {
     expect(() => GAME_STATE_MIGRATIONS[0]?.apply({ meta: {} })).toThrow(
       /overworld/,

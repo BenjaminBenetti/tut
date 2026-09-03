@@ -66,7 +66,8 @@ interface Working {
  *   for each effect (in order):
  *     credits            ──► earn / spend (kind "event", ref = event id) ──err──► insufficient-credits
  *     cityInfestation    ──► attached city ± delta, clamped   (+ CityInfestationChanged)
- *     threat             ──► stored threat ± delta, clamped   (+ ThreatChanged)
+ *     threat             ──► stored threat ± delta, clamped, and threatOffset by
+ *                            the amount that actually moved (+ ThreatChanged)
  *     stipendMultiplier  ──► stipendModifiers + { factor, daysLeft: days }
  *   pendingEvents − event; events + EventResolved
  * ```
@@ -234,14 +235,22 @@ function applyCityInfestation(
   });
 }
 
-/** Shifts the stored global threat, clamped, noting the change. */
+/**
+ * Shifts the stored global threat, clamped, and carries the shift into
+ * `threatOffset` so the daily recompute keeps it (#307). Only the part of
+ * `delta` the clamp let through reaches the offset.
+ */
 function applyThreat(working: Working, delta: number): void {
   const from = working.overworld.threat;
   const to = Math.min(MAX_THREAT, Math.max(MIN_THREAT, from + delta));
   if (to === from) {
     return;
   }
-  working.overworld = { ...working.overworld, threat: to };
+  working.overworld = {
+    ...working.overworld,
+    threat: to,
+    threatOffset: working.overworld.threatOffset + (to - from),
+  };
   working.events.push({ type: THREAT_CHANGED, payload: { from, to } });
 }
 

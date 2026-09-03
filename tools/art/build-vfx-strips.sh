@@ -28,7 +28,7 @@ frame() {
 sheet() {
   local name="$1" tile="$2"; shift 2
   montage "$@" -tile "$tile" -geometry "${FRAME}x${FRAME}+0+0" -background none "$TMP/$name.png"
-  magick "$TMP/$name.png" -strip -colors 256 -define png:compression-level=9 "$SRC/$name-sheet.png"
+  magick "$TMP/$name.png" -strip -define png:compression-level=9 "png32:$SRC/$name-sheet.png"
   magick identify -format "$name-sheet.png %w x %h %[channels]\n" "$SRC/$name-sheet.png"
 }
 

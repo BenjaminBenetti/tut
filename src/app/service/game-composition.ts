@@ -1,12 +1,17 @@
 import { ECONOMY_TUNING } from "../../economy/data/economy-tuning";
+import { LedgerTransactionService } from "../../economy/service/transaction-service";
 import { EARTH_MAP } from "../../overworld/data/earth-map";
 import { NEW_GAME_TUNING } from "../../overworld/data/new-game-tuning";
 import { THREAT_TUNING } from "../../overworld/data/threat-tuning";
 import type { CommandDispatcher } from "../../overworld/model/command-dispatcher";
 import { createOverworldCommandDispatcher } from "../../overworld/service/command-dispatcher";
+import { registerRosterCommands } from "../../overworld/service/roster-command-handlers";
+import { MECH_RATING_TUNING } from "../../roster/data/mech-rating-tuning";
+import { STARTER_PARTS } from "../../roster/data/parts";
 import { SQUAD_TYPES } from "../../roster/data/squad-types";
 import { STARTER_ROSTER } from "../../roster/data/starter-roster";
 import { DataSquadTypeCatalogue } from "../../roster/repository/squad-type-catalogue";
+import { StaticPartCatalogue } from "../../roster/repository/static-part-catalogue";
 import { AUTOSAVE_SLOT_ID } from "../../save/data/save-slots";
 import type { GameState } from "../../save/model/game-state";
 import type { KeyValueStore } from "../../save/model/key-value-store";
@@ -68,14 +73,22 @@ export interface GameComposition {
  *   shipped content ──► createCampaign(options)
  * ```
  *
- * Overworld command handlers are registered on `dispatcher` as their
- * issues land (#68 AdvanceDay, #65 deployables, #67 LaunchMission with the
- * #62 resolver injected, #70 events); none exist yet, so every dispatch
- * is currently rejected as `unknown-command` and the store stays put.
+ * Command handlers are registered on `dispatcher` as their issues land.
+ * The roster commands (#63) are wired here; #68 AdvanceDay, #65
+ * deployables, #67 LaunchMission with the #62 resolver injected and #70
+ * events follow. Anything unregistered is rejected as `unknown-command`
+ * and the store stays put.
  */
 export function composeGame(deps: GameCompositionDeps): GameComposition {
   const saves = createGameSaveService(deps.storage, deps.clock);
   const dispatcher = createOverworldCommandDispatcher<GameState>();
+  const squadTypes = new DataSquadTypeCatalogue(SQUAD_TYPES);
+  registerRosterCommands(dispatcher, {
+    squadTypes,
+    parts: new StaticPartCatalogue(STARTER_PARTS),
+    rating: MECH_RATING_TUNING,
+    transactionsFor: (ids) => new LedgerTransactionService(ids),
+  });
   const autosave = new AutosaveService(
     saves,
     AUTOSAVE_SLOT_ID,
@@ -85,7 +98,7 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     (state) => new GameStore(state, dispatcher),
     (store) => autosave.attach(store),
   );
-  const newGameDeps = composeNewGameDeps();
+  const newGameDeps = composeNewGameDeps(squadTypes);
 
   return {
     saves,
@@ -102,10 +115,10 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
 // ===========================================
 
 /** The shipped content and tuning a new campaign is built from. */
-function composeNewGameDeps(): NewGameDeps {
+function composeNewGameDeps(squadTypes: DataSquadTypeCatalogue): NewGameDeps {
   return {
     map: EARTH_MAP,
-    squadTypes: new DataSquadTypeCatalogue(SQUAD_TYPES),
+    squadTypes,
     starterRoster: STARTER_ROSTER,
     newGameTuning: NEW_GAME_TUNING,
     threatTuning: THREAT_TUNING,

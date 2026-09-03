@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-03 (session 2, update 5, ~09:05 UTC). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-03 (session 2, update 6, ~09:55 UTC). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 1. Where things stand
 
@@ -21,15 +21,21 @@ Between 04:45 and 09:05 the M1 simulation loop closed and the first real screens
 
 **Composition-root churn.** `app/service/game-composition.ts` is the remaining hand-edited hot spot: #243, #265, #285, #289, #290 and #295 each register something there, and five of them needed a second merge of `main`. The conflicts are small (adjacent registration blocks) and authors resolve them in minutes; I chose not to file a refactor. Tell the next author to merge `main` right before pushing and merge whatever is ready without waiting.
 
-Open when this was written:
+Between 09:05 and 09:55 the M1 UI finished except #77 (event dialog), #83 (results screen body) and #84 (QA smoke): #298 game-over screens, #300 mission list with one `OverworldSelection` model, #301 + #310 mech bay, #306 + #312 events (generation, expiry, resolution), #315 deployment screen with a resolver-side `DeploymentAssessor`, #313 map markers following campaign state, and the Blender replacement track #277 → #288 (every unit model is now a scripted Blender model; the placeholder pipeline owns none). The Producer decomposed **M2 Basic Missions** into #316–#345 (five epics, 24 engineer issues); all 24 are tiered.
 
-- **Art chain #283 → #287 → #288** (mech variants, bugs, squads as Blender models): approved on content; each conflicts after the previous squash and the Art Director rebases with `--onto`. Merge in order as each comes green.
-- **#297** producer handoff, CI running.
+Open when this was written: nothing. The queue is empty for the first time this session.
+
+**M2 ruling (on #324, referenced from #342):** tactical commands and events augment the campaign's maps (`OverworldCommandMap` / `OverworldEventMap`) exactly as #246 set up; handlers lift `state.activeMission`, use `ctx.rng` / `ctx.ids`, and return a typed `no-active-mission` error when there is no mission. One `GameStore`, one autosave, one event stream; no `TacticalStore`. Tactical services stay pure over `TacticalState` so the headless sim (#343) drives them without a store. Hold #324, #342 and #341 to this.
+
+**M2 tiers:** high #323, #324, #325, #326, #328, #330, #341 (the critical path, serial on the one default-effort seat unless the Director adds one); medium #321, #327, #329, #331, #333, #335, #337, #338, #339, #340, #342, #343; low #322, #332, #334, #344, #345. Noted for the Producer on #317.
+
+**#323 is a save reshape** (`GameState.activeMission` gains `TacticalState`): v4 → v5 with a migration, same recipe as #216/#238/#279. Reject it without one.
 
 Every engineer-facing issue carries a `complexity:*` label (checked every poll; five new issues labelled during the session).
 
 ## 2. Open PRs / issues I own
 
+- #336 `tuning: squad combat ratings vs auto-resolve difficulty scale` (complexity:low, after #84) filed from an observation on #315; #307 (persistent threat offset) carries my recommendation for the Director.
 - #197 (filed from #167) closed the same session via #198. #246 `refactor(overworld): derive the command and event unions from augmentable maps` (complexity:medium) is mine: four PRs in one hour needed a second merge of `main` purely for the union line; module augmentation removes the shared line.
 - Earlier follow-ups still open: #108 (promote `Registry` to `core/`, sequence after the mapgen stack), #141 (UPPER_SNAKE tuning exports).
 - Nothing else of mine is open.
@@ -61,11 +67,11 @@ Session 1 (still binding):
 
 ## 4. Next, in order
 
-1. Merge the art chain in order as it rebases (#283, #287, #288); then whatever the seats open next: #76 mission list, #77 event dialog, #78 defeat screen, #80/#81 mech bay, #82 deployment, #83 results, #84 QA smoke. Screens follow #282's pattern (views with mount / update / unmount, dispatch through `session.store`, rejections shown not thrown, content injected from `composeGame().content`).
-2. Review loop every ~5 minutes: `gh api "repos/BenjaminBenetti/tut/pulls?state=open"`, merged-tree gate, diff, merge; label any new unlabeled engineer issue first. Handoff PRs: check the file list, then fast-track.
-3. Every `GameState` reshape bumps `GAME_STATE_SCHEMA_VERSION` and appends a migration (v4 now). Reject a reshape without one; the v1 fixture e2e (#257) is the backstop.
-4. New commands and events are one file each with a `declare module` block (#268); a PR that edits `overworld-command.ts` or `overworld-domain-event.ts` to add a member is doing it wrong.
-5. Tag `v0.1.0` when #84's smoke test passes (the M1 loop playable end to end); the Director may tag sooner.
+1. Review loop every ~5 minutes; label any new unlabeled engineer issue first (the Producer files in batches; a sweep costs one issues call).
+2. M1 remainder: #77 event dialog, #83 results screen body, #84 QA smoke. When #84 is green, tag `v0.1.0` (`docs/process/releasing.md`); the Director may tag sooner.
+3. M2 reviews: #321/#322 (models, data) will come first; then #323 (insist on the v4 → v5 migration and on `activeMission` being plain data); then #324 against the ruling above. `tactical/` must not import `graphics/`, `ui/` or `app/` (ESLint enforces it) and must not read `Math.random()` or `Date`.
+4. Composition-root churn continues to be the one hot spot (`app/service/game-composition.ts`, `app-bootstrap.ts`, `ui/model/screen.ts`, `screens.css`): tell the next author to merge `main` right before pushing; merge whatever is ready without waiting for siblings.
+5. #336 tuning after #84; #307 after the Director's decision.
 6. Add a vendor chunk for three.js in `vite.config.ts` when someone touches it; the 500 kB warning is noise.
 
 ## 5. Gotchas

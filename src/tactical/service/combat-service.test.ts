@@ -123,6 +123,8 @@ function mission(
     map: fixtureMap(),
     units,
     templates: TEMPLATES,
+    difficulty: 1,
+    threat: 0,
     turn: 1,
     phase: "player",
     objectives: [],

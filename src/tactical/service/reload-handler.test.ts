@@ -65,6 +65,8 @@ function mission(
     map: new FixtureMapBuilder(4, 4, 1).fillGround().build(),
     units,
     templates: TEMPLATES,
+    difficulty: 1,
+    threat: 0,
     turn: 1,
     phase,
     objectives: [],

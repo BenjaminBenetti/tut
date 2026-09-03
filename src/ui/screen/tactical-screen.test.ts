@@ -19,6 +19,7 @@ import { validateLoadout } from "../../roster/service/loadout-validation-service
 import type { GameState } from "../../save/model/game-state";
 import { COMBAT_TUNING } from "../../tactical/data/combat-tuning";
 import { UNIT_TUNING } from "../../tactical/data/unit-tuning";
+import { SPAWN_TUNING } from "../../tactical/data/spawn-tuning";
 import { ATTACK } from "../../tactical/model/attack-command";
 import { commandError } from "../../core/model/command-error";
 import { err, ok } from "../../core/model/result";
@@ -67,6 +68,7 @@ function inMission(): GameState {
         return sheet.ok ? sheet.value : undefined;
       },
       unitTuning: UNIT_TUNING,
+      spawnTuning: SPAWN_TUNING,
       ids: new SequentialIdGenerator(),
       registries: createDefaultRegistries(),
     },

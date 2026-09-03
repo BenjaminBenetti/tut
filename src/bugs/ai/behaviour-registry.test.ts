@@ -13,6 +13,7 @@ import { StaticPartCatalogue } from "../../roster/repository/static-part-catalog
 import { validateLoadout } from "../../roster/service/loadout-validation-service";
 import { COMBAT_TUNING } from "../../tactical/data/combat-tuning";
 import { UNIT_TUNING } from "../../tactical/data/unit-tuning";
+import { SPAWN_TUNING } from "../../tactical/data/spawn-tuning";
 import { ATTACK } from "../../tactical/model/attack-command";
 import { MOVE } from "../../tactical/model/move-command";
 import type { TacticalState } from "../../tactical/model/tactical-state";
@@ -103,6 +104,7 @@ function missionWithBug(): { mission: TacticalState; bug: Unit } {
         return sheet.ok ? sheet.value : undefined;
       },
       unitTuning: UNIT_TUNING,
+      spawnTuning: SPAWN_TUNING,
       ids: new SequentialIdGenerator(),
       registries: createDefaultRegistries(),
     },

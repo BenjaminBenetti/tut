@@ -20,11 +20,10 @@ import type {
   TacticalState,
 } from "../../tactical/model/tactical-state";
 import {
-  FIRST_EDGE_SPAWN_TURN,
-  FIRST_TURN,
-  SPAWNER_HP,
   DEFAULT_HATCH_RADIUS,
+  FIRST_TURN,
 } from "../../tactical/model/tactical-state";
+import { SPAWN_TUNING } from "../../tactical/data/spawn-tuning";
 import type { UnitTemplate } from "../../tactical/model/unit-template";
 import type { UnitBuild } from "../../tactical/service/unit-factory";
 import {
@@ -139,7 +138,8 @@ export function previewMission(map: TacticalMap): TacticalState {
       id: `spawner-${String(i + 1)}`,
       pos,
       hatchRadius: DEFAULT_HATCH_RADIUS,
-      hp: SPAWNER_HP,
+      hp: SPAWN_TUNING.spawnerHp,
+      timer: SPAWN_TUNING.hatchInterval,
       destroyed: false,
     }));
   const objectives: Objective[] = spawners.map((spawner, i) => ({
@@ -151,6 +151,8 @@ export function previewMission(map: TacticalMap): TacticalState {
   return {
     missionId: "preview",
     seed: 1,
+    difficulty: 1,
+    threat: 0,
     map,
     units,
     templates,
@@ -158,7 +160,7 @@ export function previewMission(map: TacticalMap): TacticalState {
     phase: "player",
     objectives,
     spawners,
-    edgeSpawn: { nextTurn: FIRST_EDGE_SPAWN_TURN, wave: 0 },
+    edgeSpawn: { nextTurn: SPAWN_TUNING.firstWaveTurn, wave: 0 },
     extraction: map.hooks.extraction.tiles,
     extracted: [],
     log: [],

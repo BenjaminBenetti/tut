@@ -20,8 +20,9 @@ import type { TacticalState } from "../../tactical/model/tactical-state";
  * - `7`: `meta.debug` removed; dev switches live in the composition (#304).
  * - `8`: `activeMission.extracted` (#328).
  * - `9`: `activeMission.units[].charges` from each unit's template (#409).
+ * - `10`: `activeMission.difficulty`, `.threat` and `spawners[].timer` (#329).
  */
-export const GAME_STATE_SCHEMA_VERSION = 9;
+export const GAME_STATE_SCHEMA_VERSION = 10;
 
 /**
  * Bookkeeping that every save needs regardless of gameplay content.

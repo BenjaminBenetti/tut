@@ -13,13 +13,15 @@ import { OverworldSceneBuilder } from "../../graphics/service/overworld-scene-bu
 import { SceneService } from "../../graphics/service/scene-service";
 import { SvgGlyphRasteriser } from "../../graphics/service/svg-glyph-rasteriser";
 import { EARTH_MAP } from "../../overworld/data/earth-map";
-import { getCity } from "../../overworld/service/earth-map-query-service";
 import type { SaveClock } from "../../save/model/save-clock";
 import { WebStorageKeyValueStore } from "../../save/repository/web-storage-key-value-store";
 import { iconHref } from "../../ui/data/icon-manifest";
 import type { ScreenId } from "../../ui/model/screen";
 import { MainMenuScreen } from "../../ui/screen/main-menu-screen";
+import type { OverworldUiState } from "../../ui/model/overworld-selection";
+import { DeploymentScreen } from "../../ui/screen/deployment-screen";
 import { OverworldScreen } from "../../ui/screen/overworld-screen";
+import { OverworldSelectionState } from "../../ui/service/overworld-selection-state";
 import { RosterScreen } from "../../ui/screen/roster-screen";
 import type { TutTestHooks } from "../model/test-hooks";
 import type { ScreenFactory } from "./dom-screen-router";
@@ -33,9 +35,6 @@ import { composeGame } from "./game-composition";
 
 /** Id of the element inside `#app` the map canvas mounts into; e2e waits on it. */
 const MAP_VIEWPORT_ID = "map-viewport";
-
-/** Id of the label the overworld panel hosts for the selected city's name. */
-const SELECTED_CITY_ID = "selected-city";
 
 // ===========================================
 // Bootstrap
@@ -68,6 +67,7 @@ export async function bootstrapApp(doc: Document): Promise<void> {
 
   const viewport = createMapViewport(doc, appRoot);
   const mapViewport = new DomMapViewportHost(viewport, appRoot);
+  const selection = new OverworldSelectionState();
 
   const clock: SaveClock = { now: () => new Date().toISOString() };
   const game = composeGame({
@@ -100,7 +100,18 @@ export async function bootstrapApp(doc: Document): Promise<void> {
           new OverworldScreen({
             router,
             session: game.session,
+            selection,
+            missionTypes: game.content.missionTypes,
             mapViewport,
+          }),
+      ],
+      [
+        "deployment",
+        () =>
+          new DeploymentScreen({
+            router,
+            session: game.session,
+            selection,
           }),
       ],
       [
@@ -118,7 +129,7 @@ export async function bootstrapApp(doc: Document): Promise<void> {
   );
   router.navigate("main-menu");
 
-  const scene = await composeScene(doc, viewport, window);
+  const scene = await composeScene(doc, viewport, window, selection);
   scene.start();
   await scene.whenFirstFrameRendered();
   doc.body.dataset.appState = "ready";
@@ -140,6 +151,7 @@ async function composeScene(
   doc: Document,
   viewport: HTMLElement,
   window: Window,
+  selection: OverworldUiState,
 ): Promise<SceneService> {
   const assets = await loadOverworldAssets({
     textures: new ManifestTextureLoader({
@@ -160,12 +172,21 @@ async function composeScene(
   const cameraInput = new CameraInputController(rig);
   const picking = new MapPickingController(mapScene, rig, {
     onCitySelected: (cityId) => {
-      doc.body.dataset.selectedCity = cityId;
-      const label = doc.getElementById(SELECTED_CITY_ID);
-      if (label) {
-        label.textContent = getCity(EARTH_MAP, cityId).name;
-      }
+      selection.selectCity(cityId);
     },
+  });
+  // The selection is the truth for both directions: a map click lands
+  // in it above, and a mission chosen in the side panel highlights its
+  // city here. The identity checks stop the two from echoing.
+  selection.subscribe(({ cityId }) => {
+    if (cityId === undefined) {
+      delete doc.body.dataset.selectedCity;
+      return;
+    }
+    doc.body.dataset.selectedCity = cityId;
+    if (mapScene.getSelected() !== cityId) {
+      picking.selectCity(cityId);
+    }
   });
   const scene = new SceneService(viewport, {
     camera: rig,

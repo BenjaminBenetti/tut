@@ -17,6 +17,7 @@ import { registerLaunchMission } from "../../overworld/service/launch-mission-se
 import { createOverworldCommandDispatcher } from "../../overworld/service/command-dispatcher";
 import { registerDeployableCommands } from "../../overworld/service/deployable-command-handlers";
 import type { TickDeps } from "../../overworld/service/default-tick-steps";
+import type { MissionTypeCatalogue } from "../../overworld/service/mission-generation-service";
 import { createDefaultTickSteps } from "../../overworld/service/default-tick-steps";
 import { registerRosterCommands } from "../../overworld/service/roster-command-handlers";
 import { AUTO_RESOLVE_TUNING } from "../../overworld/data/auto-resolve-tuning";
@@ -67,6 +68,8 @@ export interface GameContent {
   readonly squadTypes: SquadTypeCatalogue;
   readonly parts: PartCatalogue;
   readonly rosterTuning: RosterTuning;
+  /** Names and describes mission types for the mission list and briefing. */
+  readonly missionTypes: MissionTypeCatalogue;
 }
 
 /** The simulation-facing services screens are handed. */
@@ -116,6 +119,7 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     squadTypes,
     parts: new StaticPartCatalogue(STARTER_PARTS),
     rosterTuning: ROSTER_TUNING,
+    missionTypes: MISSION_TYPES,
   };
   registerRosterCommands(dispatcher, {
     ...content,

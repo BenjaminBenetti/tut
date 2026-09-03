@@ -38,6 +38,7 @@ const BASE: CampaignState = {
       links: [],
     }),
     threat: 20,
+    threatOffset: 0,
     spreadCooldowns: {},
     missions: [],
     pendingEvents: [

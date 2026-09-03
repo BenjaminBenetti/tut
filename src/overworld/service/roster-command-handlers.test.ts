@@ -53,6 +53,7 @@ const BASE: CampaignState = {
     day: DAY,
     map: { regions: [], cities: [] },
     threat: 0,
+    threatOffset: 0,
     spreadCooldowns: {},
     missions: [],
     pendingEvents: [],

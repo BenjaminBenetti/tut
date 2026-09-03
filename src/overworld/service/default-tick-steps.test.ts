@@ -126,3 +126,32 @@ describe("stipend step with event modifiers", () => {
     expect("stipendModifiers" in day2.overworld).toBe(false);
   });
 });
+
+// ===========================================
+// Threat step (#307)
+// ===========================================
+
+describe("threat step with a threat offset", () => {
+  /** The threat step from the default pipeline. */
+  function threatStep() {
+    const step = createDefaultTickSteps<GameState>(TICK_DEPS).find(
+      (s) => s.name === TICK_STEP_NAMES.threat,
+    );
+    if (!step) throw new Error("no threat step");
+    return step;
+  }
+
+  it("folds the offset into the recomputed threat so it survives the tick", () => {
+    const base = newGame();
+    const plain = threatStep().run(base, ctx(2)).state.overworld.threat;
+    // A fresh campaign sits near zero threat, so a positive offset is the
+    // one that is not swallowed by the clamp.
+    const shifted: GameState = {
+      ...base,
+      overworld: { ...base.overworld, threatOffset: 8 },
+    };
+    const { state } = threatStep().run(shifted, ctx(2));
+    expect(state.overworld.threat).toBeCloseTo(plain + 8);
+    expect(state.overworld.threatOffset).toBe(8);
+  });
+});

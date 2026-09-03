@@ -15,8 +15,9 @@ import type { RosterState } from "../../roster/model/roster-state";
  * - `2`: `overworld.spreadCooldowns` (#58).
  * - `3`: `overworld.map.cities[].scale` (#61).
  * - `4`: `roster.graveyard` (#64).
+ * - `5`: `overworld.threatOffset` (#307).
  */
-export const GAME_STATE_SCHEMA_VERSION = 4;
+export const GAME_STATE_SCHEMA_VERSION = 5;
 
 /**
  * Bookkeeping that every save needs regardless of gameplay content.

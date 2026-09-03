@@ -70,6 +70,7 @@ function campaign(
         links: [["a", "b"]],
       }),
       threat: 30,
+      threatOffset: 0,
       spreadCooldowns: {},
       missions: [],
       pendingEvents: overrides.pendingEvents ?? [],

@@ -41,7 +41,11 @@ export interface SettlementDefinition {
   readonly lotWidth: IntRange;
   /** Depth (away from the road) of a lot. */
   readonly lotDepth: IntRange;
-  /** Buildings the lot pass aims for. */
+  /**
+   * Buildings the lot pass aims for on a medium (48²) map; the target is
+   * scaled by map area so large maps are not empty and small ones are
+   * not crammed.
+   */
   readonly buildingCount: IntRange;
   /** Floors per building, clamped by the template. */
   readonly floorCount: IntRange;

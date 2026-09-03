@@ -31,6 +31,13 @@ const LOT_GAP = 1;
 /** Attempts per anchor before giving up on it. */
 const SIZE_ATTEMPTS = 3;
 
+/** Map area the settlement's building counts are written for (medium, 48²). */
+const REFERENCE_AREA = 48 * 48;
+
+/** Bounds on the area scaling so extreme sizes stay sane. */
+const AREA_FACTOR_MIN = 0.5;
+const AREA_FACTOR_MAX = 2;
+
 /** A road column and the side of it a lot could sit on. */
 interface Anchor {
   readonly column: ColumnCoord;
@@ -44,7 +51,8 @@ interface Anchor {
 
 /**
  * Pass 4 of the settlement archetype (ADR 0004 §7.3). Parcels the land
- * beside roads into rectangular lots sized from the settlement, never
+ * beside roads into rectangular lots sized from the settlement (the count
+ * scaled by map area against a medium map), never
  * overlapping roads, sidewalks, water, other lots or a one-column margin
  * at the map edge, with a one-column gap between lots. Each lot is
  * flattened to the level of the corridor column in front of it and
@@ -73,9 +81,14 @@ export class LotPass implements GenerationPass {
   run(context: GenerationContext): void {
     const { draft, params, rng, diagnostics } = context;
     const { settlement } = params;
-    const target = rng.nextInt(
-      settlement.buildingCount.min,
-      settlement.buildingCount.max,
+    const target = Math.max(
+      1,
+      Math.round(
+        rng.nextInt(
+          settlement.buildingCount.min,
+          settlement.buildingCount.max,
+        ) * areaFactor(draft.width, draft.depth),
+      ),
     );
     const anchors = rng.shuffle(collectAnchors(draft));
     const occupied = new Set<number>();
@@ -102,6 +115,16 @@ export class LotPass implements GenerationPass {
 // ===========================================
 // Helpers
 // ===========================================
+
+/**
+ * How much bigger or smaller the map is than the medium map the building
+ * counts are tuned for, clamped so a 32² map still gets a hamlet and a
+ * 64² map is not wall to wall.
+ */
+export function areaFactor(width: number, depth: number): number {
+  const factor = (width * depth) / REFERENCE_AREA;
+  return Math.min(AREA_FACTOR_MAX, Math.max(AREA_FACTOR_MIN, factor));
+}
 
 /**
  * Every (road column, perpendicular side) pair. A column on an x-running

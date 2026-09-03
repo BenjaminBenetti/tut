@@ -4,6 +4,7 @@ import { MAP_SIZE_DEFINITIONS } from "../data/map-sizes";
 import { PROP_DEFINITIONS } from "../data/props";
 import { SETTLEMENT_DEFINITIONS } from "../data/settlements";
 import { SURFACE_DEFINITIONS } from "../data/surfaces";
+import { DEFAULT_HOOK_PLACERS } from "../generator/placer/default-hook-placers";
 import type { MapGenRegistries } from "../model/registries";
 import { createRegistry } from "./definition-registry";
 
@@ -30,5 +31,6 @@ export function createDefaultRegistries(): MapGenRegistries {
       "building template",
       Object.values(BUILDING_TEMPLATES),
     ),
+    hookPlacers: createRegistry("hook placer", DEFAULT_HOOK_PLACERS),
   };
 }

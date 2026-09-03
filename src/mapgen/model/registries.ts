@@ -1,5 +1,6 @@
 import type { BiomeDefinition } from "./biome-definition";
 import type { BuildingTemplate } from "./building-template";
+import type { HookPlacer } from "./hook-placer";
 import type { MapSizeDefinition } from "./map-size-definition";
 import type { PropDefinition } from "./prop";
 import type { Registry } from "./registry";
@@ -13,7 +14,7 @@ import type { SurfaceDefinition } from "./surface";
 /**
  * Every data registry generation reads (ADR 0004 §7.4). Injected into the
  * pipeline so tests can swap definitions and so a new biome or prop is a
- * data change only. Later issues add hook placers.
+ * data change only.
  */
 export interface MapGenRegistries {
   readonly surfaces: Registry<SurfaceDefinition>;
@@ -22,4 +23,5 @@ export interface MapGenRegistries {
   readonly settlements: Registry<SettlementDefinition>;
   readonly mapSizes: Registry<MapSizeDefinition>;
   readonly buildingTemplates: Registry<BuildingTemplate>;
+  readonly hookPlacers: Registry<HookPlacer>;
 }

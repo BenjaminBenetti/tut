@@ -1,15 +1,22 @@
-import type { GameSession } from "../model/game-session";
+import type { Unsubscribe } from "../../core/model/event-bus";
+import { advanceDay } from "../../overworld/model/overworld-command";
+import type { CampaignStore, GameSession } from "../model/game-session";
+import type { MapViewportHost } from "../model/map-viewport-host";
 import type { Screen, ScreenId } from "../model/screen";
 import type { ScreenRouter } from "../model/screen-router";
+import { SidePanelView } from "../view/side-panel-view";
+import { TopBarView } from "../view/top-bar-view";
 
 // ===========================================
 // Types
 // ===========================================
 
-/** What the placeholder overworld needs from the app. */
+/** What the overworld screen needs from the app. */
 export interface OverworldScreenDeps {
   readonly router: ScreenRouter;
   readonly session: GameSession;
+  /** Lends the map canvas to the layout's map cell while mounted; absent in unit tests. */
+  readonly mapViewport?: MapViewportHost;
 }
 
 // ===========================================
@@ -17,11 +24,23 @@ export interface OverworldScreenDeps {
 // ===========================================
 
 /**
- * Placeholder overworld: shows the campaign's seed and start time from
- * the session over the Earth map, hosts the `#selected-city` label the
- * map picking controller writes into, and offers a way back to the
- * menu. The real overworld screen (#73 onward) replaces the body of
- * `mount`; the id, deps and lifecycle stay.
+ * The overworld (GDD §5): the Earth map laid out beside its panels. On
+ * mount the screen borrows the app's map viewport into `#map-area`, so
+ * the scene resizes to the cell and no marker sits under a panel; on
+ * unmount it hands the viewport back. The top bar reads day, credits and
+ * threat; Advance Day dispatches through the campaign store and every
+ * store change re-renders the views incrementally.
+ *
+ * ```
+ *   ┌ #top-bar ──────────────────────────────────────────────────────┐
+ *   ├──────────────────────────────────────────────┬─────────────────┤
+ *   │  #map-area ▸ #map-viewport ▸ canvas          │  #side-panel    │
+ *   │  (wheel, keys and city picking)              │  situation      │
+ *   └──────────────────────────────────────────────┴─────────────────┘
+ *
+ *   store.subscribe ──► topBar.update(state), sidePanel.update(state)
+ *   [Advance day]  ──► store.dispatch(advanceDay()) ──err──► topBar.showStatus
+ * ```
  */
 export class OverworldScreen implements Screen {
   // ===========================================
@@ -30,125 +49,93 @@ export class OverworldScreen implements Screen {
 
   readonly id: ScreenId = "overworld";
   private readonly deps: OverworldScreenDeps;
-  private panel: HTMLElement | undefined;
-  private readonly disposers: (() => void)[] = [];
+  private readonly topBar: TopBarView;
+  private readonly sidePanel = new SidePanelView();
+  private root: HTMLElement | undefined;
+  private unsubscribe: Unsubscribe | undefined;
 
   // ===========================================
   // Constructor
   // ===========================================
 
-  /** @param deps - Router and the session whose state is displayed. */
+  /** @param deps - Router and the session whose store is rendered. */
   constructor(deps: OverworldScreenDeps) {
     this.deps = deps;
+    this.topBar = new TopBarView({
+      onAdvanceDay: () => {
+        this.advanceDay();
+      },
+      onMainMenu: () => {
+        this.deps.router.navigate("main-menu");
+      },
+    });
   }
 
   // ===========================================
   // Screen
   // ===========================================
 
-  /** Builds the campaign panel from the session state. */
+  /** Builds the layout, mounts the views and subscribes to the campaign store. */
   mount(root: HTMLElement): void {
     const doc = root.ownerDocument;
+    const layout = doc.createElement("section");
+    layout.className = "tut-overworld";
+    layout.dataset.screen = this.id;
 
-    const panel = doc.createElement("section");
-    panel.className = "tut-panel tut-overworld";
-    panel.dataset.screen = this.id;
+    this.topBar.mount(layout);
 
-    const kicker = doc.createElement("div");
-    kicker.className = "tut-panel__title";
-    kicker.textContent = "Overworld · placeholder";
+    const mapArea = doc.createElement("div");
+    mapArea.id = "map-area";
+    mapArea.className = "tut-overworld__map";
+    layout.appendChild(mapArea);
 
-    const title = doc.createElement("h1");
-    title.textContent = "Campaign";
+    this.sidePanel.mount(layout);
+    root.appendChild(layout);
+    this.root = layout;
+    this.deps.mapViewport?.attach(mapArea);
 
-    panel.append(kicker, title, this.createSummary(doc));
-
-    const hint = doc.createElement("p");
-    hint.className = "tut-dim";
-    hint.textContent =
-      "Click a city · Q / E rotate · wheel zoom · WASD or arrows pan.";
-
-    const back = doc.createElement("button");
-    back.type = "button";
-    back.className = "tut-btn";
-    back.dataset.action = "back-to-menu";
-    back.textContent = "Back to menu";
-
-    panel.append(hint, back);
-    root.appendChild(panel);
-
-    const handler = (): void => {
-      this.deps.router.navigate("main-menu");
-    };
-    back.addEventListener("click", handler);
-    this.disposers.push(() => {
-      back.removeEventListener("click", handler);
+    const store = this.deps.session.store;
+    this.render(store?.getState());
+    this.unsubscribe = store?.subscribe((change) => {
+      this.render(change.state);
     });
-
-    this.panel = panel;
   }
 
-  /** Removes the panel and its listener. */
+  /** Returns the viewport, unsubscribes, unmounts the views and removes the layout. */
   unmount(): void {
-    for (const dispose of this.disposers.splice(0)) {
-      dispose();
+    this.deps.mapViewport?.release();
+    this.unsubscribe?.();
+    this.unsubscribe = undefined;
+    this.topBar.unmount();
+    this.sidePanel.unmount();
+    this.root?.remove();
+    this.root = undefined;
+  }
+
+  // ===========================================
+  // Actions
+  // ===========================================
+
+  /** Dispatches `AdvanceDay`; a rejection is shown in the bar, never thrown. */
+  private advanceDay(): void {
+    const store: CampaignStore | undefined = this.deps.session.store;
+    if (!store) {
+      this.topBar.showStatus("No active campaign.");
+      return;
     }
-    this.panel?.remove();
-    this.panel = undefined;
+    const result = store.dispatch(advanceDay());
+    if (!result.ok) {
+      this.topBar.showStatus(result.error.message);
+    }
   }
 
   // ===========================================
   // Helpers
   // ===========================================
 
-  /**
-   * Seed, start time and the selected-city slot as a label/value grid, or
-   * a note when no campaign is active. The city value carries
-   * `id="selected-city"` so the map picking wiring in the bootstrap can
-   * fill it without knowing about this screen.
-   */
-  private createSummary(doc: Document): HTMLElement {
-    const state = this.deps.session.state;
-    if (!state) {
-      const note = doc.createElement("p");
-      note.className = "tut-dim";
-      note.dataset.role = "no-campaign";
-      note.textContent = "No active campaign.";
-      return note;
-    }
-
-    const grid = doc.createElement("dl");
-    grid.className = "tut-kv";
-    const [cityTerm, cityDetail] = this.createField(
-      doc,
-      "Selected city",
-      "selected-city",
-      "",
-    );
-    cityDetail.id = "selected-city";
-    grid.append(
-      ...this.createField(doc, "Seed", "seed", String(state.meta.seed)),
-      ...this.createField(doc, "Started", "created-at", state.meta.createdAt),
-      cityTerm,
-      cityDetail,
-    );
-    return grid;
-  }
-
-  /** One label/value pair; the value carries `data-field` for tests. */
-  private createField(
-    doc: Document,
-    label: string,
-    field: string,
-    value: string,
-  ): [HTMLElement, HTMLElement] {
-    const term = doc.createElement("dt");
-    term.className = "tut-label";
-    term.textContent = label;
-    const detail = doc.createElement("dd");
-    detail.className = "tut-mono";
-    detail.dataset.field = field;
-    detail.textContent = value;
-    return [term, detail];
+  /** Pushes the state into both views. */
+  private render(state: Parameters<TopBarView["update"]>[0]): void {
+    this.topBar.update(state);
+    this.sidePanel.update(state);
   }
 }

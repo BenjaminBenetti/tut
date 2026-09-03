@@ -22,6 +22,7 @@ import { MainMenuScreen } from "../../ui/screen/main-menu-screen";
 import { OverworldScreen } from "../../ui/screen/overworld-screen";
 import type { TutTestHooks } from "../model/test-hooks";
 import type { ScreenFactory } from "./dom-screen-router";
+import { DomMapViewportHost } from "./dom-map-viewport-host";
 import { DomScreenRouter } from "./dom-screen-router";
 import { composeGame } from "./game-composition";
 
@@ -64,6 +65,9 @@ export async function bootstrapApp(doc: Document): Promise<void> {
     throw new Error("Document is not attached to a window");
   }
 
+  const viewport = createMapViewport(doc, appRoot);
+  const mapViewport = new DomMapViewportHost(viewport, appRoot);
+
   const clock: SaveClock = { now: () => new Date().toISOString() };
   const game = composeGame({
     storage: new WebStorageKeyValueStore(window.localStorage),
@@ -91,13 +95,18 @@ export async function bootstrapApp(doc: Document): Promise<void> {
       ],
       [
         "overworld",
-        () => new OverworldScreen({ router, session: game.session }),
+        () =>
+          new OverworldScreen({
+            router,
+            session: game.session,
+            mapViewport,
+          }),
       ],
     ]),
   );
   router.navigate("main-menu");
 
-  const scene = await composeScene(doc, appRoot, window);
+  const scene = await composeScene(doc, viewport, window);
   scene.start();
   await scene.whenFirstFrameRendered();
   doc.body.dataset.appState = "ready";
@@ -110,21 +119,16 @@ export async function bootstrapApp(doc: Document): Promise<void> {
 /**
  * The overworld map scene from #160: loads textures and marker glyphs,
  * builds the Earth scene, the isometric rig at minimum zoom, camera
- * input and city picking, all mounted into a `#map-viewport` inside
- * `#app`. A selected city is mirrored to `body[data-selected-city]` and,
+ * input and city picking, all mounted into the given `#map-viewport`. A selected city is mirrored to `body[data-selected-city]` and,
  * when the overworld panel is mounted, to its `#selected-city` label. In
  * dev builds the `window.__tut__` hooks let end-to-end tests select
  * cities without pointer input.
  */
 async function composeScene(
   doc: Document,
-  appRoot: HTMLElement,
+  viewport: HTMLElement,
   window: Window,
 ): Promise<SceneService> {
-  const viewport = doc.createElement("div");
-  viewport.id = MAP_VIEWPORT_ID;
-  appRoot.appendChild(viewport);
-
   const assets = await loadOverworldAssets({
     textures: new ManifestTextureLoader({
       manifest: TEXTURE_MANIFEST,
@@ -169,6 +173,19 @@ async function composeScene(
     window.__tut__ = hooks;
   }
   return scene;
+}
+
+/**
+ * Creates the element the map canvas mounts into, inside `#app`. The
+ * overworld screen borrows it through a `MapViewportHost` while mounted
+ * so the map sits beside its panels; between screens it is the menu's
+ * full-window background.
+ */
+function createMapViewport(doc: Document, appRoot: HTMLElement): HTMLElement {
+  const viewport = doc.createElement("div");
+  viewport.id = MAP_VIEWPORT_ID;
+  appRoot.appendChild(viewport);
+  return viewport;
 }
 
 /** Looks up a required mount point by id; a missing one is a page bug. */

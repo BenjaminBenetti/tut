@@ -468,3 +468,54 @@
   border-top-color: var(--ui-danger);
   color: var(--ui-danger);
 }
+
+/* =========================================== */
+/* Top bar: one line at any supported width    */
+/* =========================================== */
+
+/*
+ * Buttons and badges never break inside their boxes (#291). The bar's
+ * status line is the one flexible item: it truncates with an ellipsis
+ * rather than pushing the buttons onto a second line. Below 1024 px the
+ * stat labels go and the gaps tighten so day, credits, threat, the
+ * outcome badge and three buttons fit in 800 px, the narrowest window
+ * the overworld supports.
+ */
+
+.tut-btn,
+.tut-badge {
+  white-space: nowrap;
+}
+
+.tut-topbar > * {
+  flex: 0 0 auto;
+}
+
+.tut-topbar__spacer {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.tut-topbar__status {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 1023px) {
+  .tut-topbar {
+    gap: var(--space-2);
+    padding: 0 var(--space-2);
+  }
+
+  .tut-topbar__stat .tut-label {
+    display: none;
+  }
+
+  .tut-topbar .tut-btn {
+    padding-left: var(--space-2);
+    padding-right: var(--space-2);
+  }
+}

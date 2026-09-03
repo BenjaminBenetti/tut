@@ -128,4 +128,42 @@ describe("composeGame", () => {
       loaded.ok && loaded.value.overworld.lastMissionResult?.missionId,
     ).toBe(mission.id);
   });
+
+  it("exposes a deployment assessor that rates the starter roster above zero", () => {
+    const { game } = build();
+    const state = game.createCampaign({ seed: 7, createdAt: NOW });
+    const city = state.overworld.map.cities[0];
+    const squad = state.roster.squads[0];
+    if (!city || !squad) throw new Error("fixture needs a city and a squad");
+    const mission: Mission = {
+      id: "mission-1",
+      typeId: "infestation-clearance",
+      cityId: city.id,
+      difficulty: 1,
+      mapParams: {
+        biome: "temperate",
+        settlement: city.scale,
+        size: "small",
+        seed: "1",
+      },
+      rewards: { credits: 300 },
+      createdDay: 1,
+      expiresDay: 6,
+      ignorePenalty: 10,
+    };
+    const empty = game.assessor.assess(
+      mission,
+      { missionId: mission.id, squadIds: [], mechIds: [] },
+      { squads: state.roster.squads, mechs: state.roster.mechs, city },
+    );
+    const one = game.assessor.assess(
+      mission,
+      { missionId: mission.id, squadIds: [squad.id], mechIds: [] },
+      { squads: state.roster.squads, mechs: state.roster.mechs, city },
+    );
+    expect(empty.force).toBe(0);
+    expect(one.force).toBeGreaterThan(0);
+    expect(one.winProbability).toBeGreaterThan(empty.winProbability);
+    expect(one.target).toBeGreaterThan(0);
+  });
 });

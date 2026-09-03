@@ -221,6 +221,27 @@ Map generation (`src/mapgen/data/surfaces.ts`, `props.ts`) emits surface ids and
 
 Walls are `Wall` records on tile edges, not props: `building.wall`, `building.wall-window`, `building.wall-door`, `building.wall-half` by wall kind.
 
+### Part catalogue → models
+
+The roster's starter part catalogue (`src/roster/data/parts.ts`) maps to mech part models like this; the mech bay assembles them at the sockets in §6. Utilities have no visual slot.
+
+| Part id | Model id |
+|---|---|
+| `chassis-vanguard` | `tdf.mech.chassis-a` |
+| `chassis-bulwark` | `tdf.mech.chassis.bulwark` |
+| `chassis-atlas` | `tdf.mech.chassis.atlas` |
+| `legs-strider` | `tdf.mech.legs-a` |
+| `legs-bastion` | `tdf.mech.legs.bastion` |
+| `legs-jumper` | `tdf.mech.legs.jumper` |
+| `arms-tracker` | `tdf.mech.arm-l-a` + `tdf.mech.arm-r-a` |
+| `arms-manipulator` | `tdf.mech.arms.manipulator-l` + `-r` |
+| `arms-brace` | `tdf.mech.arms.brace-l` + `-r` |
+| `arm-weapon-autocannon` / `-flamer` / `-laser` / `-railgun` | `tdf.mech.weapon-arm.autocannon` / `.flamer` / `.laser` / `.railgun` |
+| `back-weapon-missile-pod` / `-mortar` / `-rotary-cannon` | `tdf.mech.weapon-back.missile-pod` / `.mortar` / `.rotary-cannon` |
+| `utility-*` | none |
+
+Reference assemblies: `tdf.mech.assembled-a` (Vanguard, Strider, Tracker, Autocannon, Missile Pod) and `tdf.mech.assembled-b` (Bulwark, Bastion, Brace, Railgun, Mortar).
+
 ## 8. Asset manifests
 
 Shipped in #10; this section describes what exists. Ids and registries are split so simulation data can name a model without importing the renderer (architecture §3, ADR 0002).

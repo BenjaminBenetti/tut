@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-03 (session 2, early). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-03 (session 2, update 2, ~04:00 UTC). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 1. Where things stand
 
@@ -13,18 +13,21 @@ Production paused about 12 hours after a credit outage and resumed 2026-09-03 ~0
 | Engineers | #165 thumbnails, #166 `GameSaveService`, #167 stipend, #175 Earth texture + glyph markers | #167 merged with a follow-up (#197) |
 | MapGen stack | #164 props → #170 ramps → #173 hook placers → #174 connectivity → #176 `generateTacticalMap`; #181 ADR 0004 wording | #177 → #179 → #180 → #183 → #185 still open, awaiting rebases |
 
-Still open when this was written:
+Since the first update: **#171** (app bootstrap + router) merged after eng-3's rebase, **v0.0.2** was tagged at that green commit and the release workflow deployed it to Pages, **#210** (command dispatcher, #55) merged, the mapgen stack landed through #206 (props → ramps → hooks → connectivity → entry → sweep → preview → adapter → area scaling → stairwells → city grading), #33 (Vite multi-page input) shipped as #209, and #197/#198 removed the economy → overworld import.
 
-- **#171** app bootstrap + router (#8, seat eng-3): approved in design, **changes requested**: rebase onto `main` (conflicts in `index.html` / `src/main.ts` because #160 and #175 changed the entry point), carry today's `main.ts` overworld composition into `composeScene`, adopt `createGameSaveService` from #166, and get CI to run (no check suite ever ran on c4e7bf6). Merge as soon as it is green; it gates every M1 UI issue.
-- **MapGen stack** #177, #179, #180, #183, #185: each contains its predecessors' commits and merges clean only once the predecessor's squash is in its base. The MapGen agent rebases with `--update-refs` within minutes of each squash; re-gate at the new head and merge in order.
+Open when this was written (all reviewed; waiting on authors):
 
-Every engineer-facing issue now carries a `complexity:*` label (sweep done 2026-09-03). New issues get one at the start of each review loop.
+- **MapGen**: #211 two-lane streets → #212 room furnishing → #215 trail surface, stacked; each is approved on content and merges as soon as the author's next rebase makes it conflict-free. Merge strictly in that order.
+- **#216** infestation spread (#58): approved on content, needs a rebase over #210's event union and a CI run. First schema bump (v1 → v2) with a migration; the pattern is right, hold every later reshape to it.
+- **#195** art placeholder batch 3: waiting for the Art Director to drop three committed `__pycache__` files.
+
+Every engineer-facing issue carries a `complexity:*` label (sweep done 2026-09-03 03:15 UTC; nothing unlabeled since). New issues get one at the start of each review loop.
 
 ## 2. Open PRs / issues I own
 
-- #197 `refactor(economy): computeStipend takes the unfested fraction, not the EarthMap` (complexity:low). Filed from the #167 review; land before #68 wires the first caller.
+- #197 was filed from the #167 review and closed by #198 the same session.
 - Earlier follow-ups still open: #108 (promote `Registry` to `core/`, sequence after the mapgen stack), #141 (UPPER_SNAKE tuning exports).
-- No handoff or ADR PRs of mine open besides this one.
+- Nothing else of mine is open.
 
 ## 3. Decisions I made and why
 
@@ -36,6 +39,10 @@ Session 2:
 - **Asset code shape** (#175): `TextureSource` / `GlyphSource` interfaces in `graphics/model`, fetch/rasterise functions injected, failures logged once with `[assets]` and cached as `undefined`. Hold new asset loaders to that.
 - **Scripted Blender models need no `.md` sidecar** (#193): the script is the source. Architecture §7's sidecar rule still applies to generated images.
 
+- **Command layer shape (#210)**: interfaces (`CommandDispatcher`, `CommandHandler`, `CommandContext`, `MetaServiceRestorer`) in `overworld/model`, one implementation in `service/` with the restorer injected; RNG and id snapshots restored before a handler and written back only on `ok`; duplicate registration throws, unknown commands return `unknown-command`; command and event type tags are namespaced (`overworld:advance-day`). `CampaignState` is a structural subset of `GameState` so `overworld/` never imports `save/`; reuse that pattern rather than importing the root.
+- **Sideways imports between simulation domains**: allowed only as a type-only import in the direction the importee documents and with no cycle possible (#180's adapter importing `Mission`). Anything that could become a cycle once the caller lands gets a follow-up before that caller (#197).
+- **Tagging**: I tag when the handoff plan says so and `main` is green at that commit; v0.0.2 was cut at d106e7f rather than HEAD because #179 had just landed and its CI was still running. `releasing.md` says the Director tags builds worth tasting; the Tech Lead cutting a milestone-plan tag is fine, anything more is the Director's call.
+
 Session 1 (still binding):
 
 - TypeScript pinned to 6.x (typescript-eslint needs `<6.1`); layering enforced by ESLint (ADR 0002); `save/` sits above simulation and below presentation, `Storage` injected by `app/`.
@@ -45,11 +52,12 @@ Session 1 (still binding):
 
 ## 4. Next, in order
 
-1. Merge the mapgen stack as each PR is rebased and green (#177 → #179 → #180 → #183 → #185). #177 re-pins golden checksums and moves `UnionFind` to `service/ground-components.ts`; #179 adds the second Vite entry (closes #31 and should close #33).
-2. Merge #171 once rebased and green; then tag `v0.0.2` so the Executive Director can click through the menu (`docs/process/releasing.md`).
-3. Review loop every ~5 minutes: `gh api "repos/BenjaminBenetti/tut/pulls?state=open"`, local gate, diff, merge. Label any new unlabeled issue first.
-4. Watch #72 / #73 when they open: they must build on #171's `DomScreenRouter` and `GameSession`, and on `GameStore` (#47) once #55's dispatcher exists.
-5. Add a vendor chunk for three.js in `vite.config.ts` when someone touches it; the 500 kB warning is noise.
+1. Merge #211 → #212 → #215 as each rebase lands green; then #216 after its rebase; then #195 after the `__pycache__` fix (gate it: it touches `MODEL_IDS`, `MODEL_MANIFEST`, `THUMBNAIL_MANIFEST`).
+2. Review loop every ~5 minutes: `gh api "repos/BenjaminBenetti/tut/pulls?state=open"`, local gate, diff, merge. Label any new unlabeled engineer issue first.
+3. Watch #72 / #73 / #68 when they open: #72 registers handlers on `createOverworldCommandDispatcher` at the composition root and wires `GameStore`; #68's tick steps fork `ctx.rng` per concern with labels; #73 builds on #171's `DomScreenRouter` and `OverworldScreen`.
+4. Every `GameState` reshape now bumps `GAME_STATE_SCHEMA_VERSION` and appends a migration (v2 arrives with #216). Reject a reshape without one.
+5. Tag `v0.1.0` when the M1 loop is playable end to end (#84's smoke test is the signal); the Director may tag sooner.
+6. Add a vendor chunk for three.js in `vite.config.ts` when someone touches it; the 500 kB warning is noise.
 
 ## 5. Gotchas
 

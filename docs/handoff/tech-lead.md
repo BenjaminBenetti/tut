@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-03 (session 3, update 2, ~13:47 UTC). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-03 (session 3, update 3, ~17:52 UTC). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 1. Where things stand
 
@@ -31,7 +31,11 @@ Between 09:05 and 09:55 the M1 UI finished except #77 (event dialog), #83 (resul
 
 **CI fix (#364):** `overworld-tick.spec.ts` clicked Advance Day on a random seed; since #351 an event disables the button, so it flaked (one in thirty-one locally). Pinned seed 777 and the same answer-the-dialog guard the other specs use. **Lint fix (#373):** `tactical/` had imported `GameState` from `save/` through a green lint because the layering rule only banned `ui`, `graphics`, `app`; simulation domains below `save/` now reject `**/save/**` (tests excluded), ADR 0002 §2.2 has the row.
 
-Open when this was written: **#372** (#323 tactical state, eng-3) with changes requested: (1) no `save/` import, generic over a structural `MissionCampaignState` like the tick steps; (2) inline map accepted but ADR 0004 decision 9 must say so in the same PR; (3) `- 6:` schema history line; (4) `registries` injected, not defaulted. Gate and merge when the push lands and `pnpm lint` passes under #373.
+**13:47–17:52 (with a fleet stall 15:45–17:41).** M2 landed most of its runtime and rules: #372 (#323 mission state, v6), #382 (#324 commands and events on the campaign dispatcher), #385 (#326 sight and cover), #388 (#327 hit chance and damage), #390 (#325 movement), #389 (#342 tactical screen and `composeTactical`), #391 (#339 mission HUD), plus #377 (#369 one picking controller), #375/#383/#379/#380/#386/#392 (QA bugs #217, #219, #218, #291, #368, #304; #304 bumped the schema to v7). Epic #316 closed. Remaining high chain on eng-3: #328 turn engine → #330 resolver → #341 flow; medium seats on #338, #329, #331. Every merge gated on the tree merged with `main`; nothing merged red.
+
+Open when this was written: nothing.
+
+Superseded note, kept for the record: **#372** (#323 tactical state, eng-3) with changes requested: (1) no `save/` import, generic over a structural `MissionCampaignState` like the tick steps; (2) inline map accepted but ADR 0004 decision 9 must say so in the same PR; (3) `- 6:` schema history line; (4) `registries` injected, not defaulted. Gate and merge when the push lands and `pnpm lint` passes under #373.
 
 **M2 ruling (on #324, referenced from #342):** tactical commands and events augment the campaign's maps (`OverworldCommandMap` / `OverworldEventMap`) exactly as #246 set up; handlers lift `state.activeMission`, use `ctx.rng` / `ctx.ids`, and return a typed `no-active-mission` error when there is no mission. One `GameStore`, one autosave, one event stream; no `TacticalStore`. Tactical services stay pure over `TacticalState` so the headless sim (#343) drives them without a store. Hold #324, #342 and #341 to this.
 
@@ -57,6 +61,11 @@ Session 3:
 - **Presentation pointer input composes `graphics/controller/PickingController<TId>`** (#366) through a `Picker<TId>` adapter; no second copy of the press/release/slop rules (#374 was sent back for one and came back composed). `ui/` imports no three.js; the camera type reaches `ui/` through the `Picker` signature. #369 folds the overworld's `MapPickingController` onto the same controller.
 - **Continue on the results screen advances the day** (#83's acceptance criteria and GDD §3); QA's #359 was corrected to expect it rather than the PR changed.
 - **Tuning changes ship with their design targets as tests** (#367): one difficulty point equals a full rifle squad, pinned by `auto-resolve-tuning.test.ts`, and the tactical per-rating damage factor was rescaled so unit damage stayed identical.
+- **Group registrations on the campaign maps live in their own module** (#382): `tactical/model/tactical-event-group.ts` augments `OverworldEventMap` with `tactical: TacticalEvent`; augmenting from `tactical-event.ts` itself trips TS2664 because the member type derives from the map declared in that file. Direction is `tactical → overworld` only; `overworld/` never mentions `tactical/`.
+- **One tactical registration site:** `shippedTacticalHandlers()` in `app/service/tactical-composition.ts`, the default `handlers` of `composeTactical`; the composition test asserts the registered set (`[ATTACK, MOVE]` today). A rules PR adds one line there. #388 had registered in `composeGame` directly and #389 moved it; no second site.
+- **One `TacticalScreen`** (#389's, with the `TacticalSceneHost` interface in `ui/model` and the three.js composition in `app/service/tactical-scene-host.ts`). #391 arrived with a second screen and was sent back to mount `TacticalHudView` inside main's through its intent sink; that is the pattern for #338/#341: presentation additions mount into the screen, they do not replace it.
+- **Rules are pure over `TacticalState` with injected tuning** (`CombatTuning`, `UnitTuning` in `model/`, defaults in `data/`); `previewAttack` and `resolveAttack` share one validation so the HUD shows exactly what is rolled; the lifted handler's fork label is `tactical:<mission>:<turn>:<phase>:<log.length>:<type>` and a handler that draws randomness must emit at least one event (#343's sim should assert it). Tunables recorded for the Director: doors opaque to sight, 45° flank cone, `EYE_HEIGHT` 0.5, attacks end the turn, allies block passage.
+- **Test helpers carry the `.test-helper.ts` suffix** (`movement-fixtures.test-helper.ts`, `mission-hud.test-helper.ts`); the `save/` lint exclusion keys on it.
 - **Tagging:** a `main` commit superseded within a minute gets no check runs at all (not cancelled, none), so tag whichever `main` HEAD first reports green rather than waiting on a specific squash. `v0.1.0` went on 0a81e0f, one tuning commit after the #84 squash.
 
 Session 2:
@@ -85,7 +94,7 @@ Session 1 (still binding):
 ## 4. Next, in order
 
 1. Review loop every ~5 minutes (session 3 runs it as a cron job in the session; a tick is one `pulls?state=open` call, one `issues?state=open` sweep, then per-PR files/diff/check-runs); label any new unlabeled engineer issue first. MapGen's self-filed issues (#352, #354) went unlabelled on purpose: the specialist works them, the Producer never routes them.
-2. M1 is done and tagged. M2 order on eng-3: #372 (#323) → #324 commands (hold to the ruling above: campaign dispatcher, `no-active-mission` error, one store) → #325 → #326 → #328 → #330 → #341. #324 must narrow `TacticalState.log` to the tactical event union and pass the dispatcher's `ctx.ids` into `startTacticalMission`. Medium seats: #338/#339/#342 as their inputs land, QA bugs (#219, #218, #291, #294, #304, #368), #369, #230.
+2. M1 is done and tagged. M2 order on eng-3 (updated 17:52: #323–#327 merged): #372 (#323) → #324 commands (hold to the ruling above: campaign dispatcher, `no-active-mission` error, one store) → #325 → #326 → #328 → #330 → #341. #324 must narrow `TacticalState.log` to the tactical event union and pass the dispatcher's `ctx.ids` into `startTacticalMission`. Medium seats: #338/#339/#342 as their inputs land, QA bugs (#219, #218, #291, #294, #304, #368), #369, #230.
 3. M2 reviews: #321/#322 (models, data) will come first; then #323 (insist on the v4 → v5 migration and on `activeMission` being plain data); then #324 against the ruling above. `tactical/` must not import `graphics/`, `ui/` or `app/` (ESLint enforces it) and must not read `Math.random()` or `Date`.
 4. Composition-root churn continues to be the one hot spot (`app/service/game-composition.ts`, `app-bootstrap.ts`, `ui/model/screen.ts`, `screens.css`): tell the next author to merge `main` right before pushing; merge whatever is ready without waiting for siblings.
 5. #336 tuning after #84; #307 after the Director's decision.
@@ -94,6 +103,7 @@ Session 1 (still binding):
 ## 5. Gotchas
 
 - **Gate script** (`review.sh BRANCH` in the scratchpad, rebuilt each session): `git fetch origin BRANCH main`, `checkout -B`, `git merge --no-edit origin/main` (abort on conflict), install only if the lockfile differs from `main`, then typecheck / lint / test to log files and print the three exit codes. The first draft passed `origin` twice to `git fetch` and failed with "couldn't find remote ref origin"; the refspec is `origin BRANCH main`.
+- **A conflicting PR gets no CI run** (no merge ref), so empty check runs on a PR that touches files another PR just added usually mean a conflict, not an outage; `git merge-tree --write-tree --name-only origin/main origin/BRANCH` lists the files.
 - **Every spec that clicks Advance Day answers the event dialog first** (`[data-role="event-dialog"] [data-choice-id]` visible → click the first choice → expect the button enabled). A new overworld spec without that guard will flake.
 - **A red e2e on a docs-only PR is `main`'s problem:** reproduce with `pnpm test:e2e` on `main` before blaming the PR; the job log endpoint (`actions/jobs/ID/logs`) returns a redirect `gh api` does not follow, so local reproduction is faster than reading CI logs.
 - **Epic closure check without per-issue calls:** one `issues?state=open&per_page=100` fetch (confirm the count is under 100), then diff each epic's child list against it; a child not in the open set is closed.

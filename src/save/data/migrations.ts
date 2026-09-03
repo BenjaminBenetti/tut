@@ -174,7 +174,10 @@ const ADD_MISSION_EXTRACTED: Migration = {
  * v8 → v9 (#329): a mission in progress gains its spawn clocks. A mission
  * already under way was launched before `difficulty` and `threat` were
  * recorded, so it takes the gentlest values; every spawner gets a
- * `timer` at the shipped hatch interval of three bug phases.
+ * `timer` at the hatch interval shipped at the time, three bug phases.
+ * The `3` is deliberately a literal, not `SPAWN_TUNING.hatchInterval`:
+ * migrations are frozen data and must keep producing the same v9 state
+ * however the tuning moves later.
  */
 const ADD_SPAWN_CLOCKS: Migration = {
   from: 8,

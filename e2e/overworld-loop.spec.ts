@@ -33,12 +33,28 @@ function collectErrors(page: Page): string[] {
   return errors;
 }
 
-/** Clicks Advance day and waits for the calendar to move. */
+/**
+ * Answers a pending event with its first choice, if one is waiting. An
+ * event blocks Advance day and overlays the overworld until answered
+ * (GDD §5.4), so every step that ticks or navigates calls this first.
+ */
+async function answerPendingEvent(page: Page): Promise<void> {
+  const choice = page
+    .locator('[data-role="event-dialog"] [data-choice-id]')
+    .first();
+  for (let i = 0; i < 3 && (await choice.isVisible()); i++) {
+    await choice.click();
+  }
+}
+
+/** Clicks Advance day, waits for the calendar to move and answers any event it raised. */
 async function advanceDay(page: Page): Promise<void> {
+  await answerPendingEvent(page);
   const day = page.locator('#top-bar [data-field="day"]');
   const before = parseCredits(await day.textContent());
   await page.locator('[data-action="advance-day"]').click();
   await expect(day).toHaveText(String(before + 1));
+  await answerPendingEvent(page);
 }
 
 /**
@@ -101,11 +117,11 @@ test("plays the overworld loop end to end without console errors", async ({
     await advanceDay(page);
   }
   await expect(missionRows.first()).toBeVisible();
-  const missionsOffered = await missionRows.count();
   const dayAtLaunch = (await day.textContent()) ?? "";
   const creditsAtLaunch = parseCredits(await credits.textContent());
 
   // Open the mission, deploy everything, launch.
+  const launchedId = await missionRows.first().getAttribute("data-mission-id");
   await missionRows.first().click();
   const details = page.locator('[data-role="mission-details"]');
   await expect(details.locator('[data-field="description"]')).not.toBeEmpty();
@@ -123,7 +139,7 @@ test("plays the overworld loop end to end without console errors", async ({
   ).toHaveAttribute("data-tone", /ok|warn|danger/);
   await page.locator('[data-action="launch"]').click();
 
-  // Results, then back to a live overworld.
+  // Results; Continue advances the day (#83) and returns to a live overworld.
   await expect(body).toHaveAttribute("data-screen", "mission-results");
   await expect(
     page.locator('[data-screen="mission-results"] [data-field="outcome"]'),
@@ -137,14 +153,22 @@ test("plays the overworld loop end to end without console errors", async ({
     .locator('[data-screen="mission-results"] [data-action="continue"]')
     .click();
   await expect(body).toHaveAttribute("data-screen", "overworld");
-  await expect(day).toHaveText(dayAtLaunch);
-  await expect(credits).toHaveText(
-    `¢${(creditsAtLaunch + awarded).toLocaleString("en-US")}`,
+  await expect(day).toHaveText(String(Number(dayAtLaunch) + 1));
+  await answerPendingEvent(page);
+  // Reward plus one day's stipend, less at most one day's upkeep.
+  expect(parseCredits(await credits.textContent())).toBeGreaterThan(
+    creditsAtLaunch + awarded,
   );
   await expect(page.locator('[data-action="advance-day"]')).toBeEnabled();
-  await expect(missionRows).toHaveCount(missionsOffered - 1);
+  // The launched mission is gone; the tick may have offered new ones.
+  await expect(
+    page.locator(
+      `[data-action="select-mission"][data-mission-id="${launchedId ?? ""}"]`,
+    ),
+  ).toHaveCount(0);
 
   // Roster: hire a squad.
+  await answerPendingEvent(page);
   await page.locator('#top-bar [data-action="roster"]').click();
   await expect(body).toHaveAttribute("data-screen", "roster");
   const squadRows = page.locator("#squad-list tbody tr");
@@ -196,6 +220,7 @@ test("plays the overworld loop end to end without console errors", async ({
   await page.locator('[data-action="overworld"]').click();
   await expect(body).toHaveAttribute("data-screen", "overworld");
   const finalDay = (await day.textContent()) ?? "";
+  await answerPendingEvent(page);
   await page.locator('#top-bar [data-action="main-menu"]').click();
   await expect(body).toHaveAttribute("data-screen", "main-menu");
   await page.locator('[data-action="export"]').click();
@@ -208,6 +233,7 @@ test("plays the overworld loop end to end without console errors", async ({
   await page.locator('[data-action="new-game"]').click();
   await expect(body).toHaveAttribute("data-screen", "overworld");
   await expect(day).toHaveText("1");
+  await answerPendingEvent(page);
   await page.locator('#top-bar [data-action="main-menu"]').click();
   await page.locator('textarea[data-field="save-json"]').fill(exported);
   await page.locator('[data-action="import"]').click();

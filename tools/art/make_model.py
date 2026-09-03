@@ -23,6 +23,7 @@ import argparse
 import importlib.util
 import json
 import os
+import struct
 import sys
 import time
 
@@ -58,6 +59,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--size", type=int, default=640)
     parser.add_argument("--max-triangles", type=int, default=4000)
     parser.add_argument("--no-register", action="store_true")
+    parser.add_argument(
+        "--no-textured",
+        action="store_true",
+        help="skip the unit atlases (tokens with a cell are otherwise UV-mapped and referenced)",
+    )
     parser.add_argument("--out-root", default=os.path.join("public", "assets", "models"))
     return parser.parse_args(argv)
 
@@ -71,6 +77,47 @@ def load_model_module(path: str):
     if not hasattr(module, "build"):
         raise SystemExit(f"{path} must define build()")
     return module
+
+
+# ===========================================
+# Atlas reference (mirrors attachAtlases in build-placeholders.mjs)
+# ===========================================
+
+SAMPLER = {"magFilter": 9729, "minFilter": 9987, "wrapS": 33071, "wrapT": 33071}
+
+
+def attach_atlases(glb_path: str, atlases: list[str], category: str, layout: dict) -> None:
+    """Rewrite the GLB so textured materials sample their atlas from the shared PNG.
+
+    Adds ``images`` (relative URIs from the model folder), one sampler,
+    ``textures``, and ``baseColorTexture`` with a white ``baseColorFactor`` on
+    every material whose name is an atlas token. Embedding would copy the
+    atlas into every file; a relative URI loads it once.
+    """
+    if not atlases:
+        return
+    with open(glb_path, "rb") as fh:
+        data = fh.read()
+    json_len = struct.unpack("<I", data[12:16])[0]
+    doc = json.loads(data[20 : 20 + json_len])
+    rest = data[20 + json_len :]
+    depth = category.count("/") + 2
+    doc["images"] = [{"uri": "../" * depth + layout["paths"][a].replace("assets/", "", 1)} for a in atlases]
+    doc["samplers"] = [SAMPLER]
+    doc["textures"] = [{"sampler": 0, "source": i} for i in range(len(atlases))]
+    for mat in doc.get("materials", []):
+        cell = layout["cells"].get(mat.get("name", ""))
+        if not cell or cell["atlas"] not in atlases:
+            continue
+        pbr = mat.setdefault("pbrMetallicRoughness", {})
+        pbr["baseColorFactor"] = [1.0, 1.0, 1.0, 1.0]
+        pbr["baseColorTexture"] = {"index": atlases.index(cell["atlas"]), "texCoord": 0}
+    text = json.dumps(doc, separators=(",", ":"))
+    text += " " * (-len(text) % 4)
+    chunk = text.encode("utf-8")
+    header = b"glTF" + struct.pack("<II", 2, 20 + len(chunk) + len(rest)) + struct.pack("<II", len(chunk), 0x4E4F534A)
+    with open(glb_path, "wb") as fh:
+        fh.write(header + chunk + rest)
 
 
 # ===========================================
@@ -121,7 +168,13 @@ def main() -> None:
     sockets = sorted(ob.name for ob in bpy.context.scene.objects if ob.name.startswith("socket_"))
     rel_path = f"assets/models/{args.category}/{args.file}"
     glb_path = os.path.join(REPO_ROOT, args.out_root, args.category, args.file)
+    layout = None if args.no_textured else bpy_kit.load_atlas_layout()
+    atlases = bpy_kit.apply_atlas_uvs(layout) if layout else []
     size = bpy_kit.export_glb(glb_path)
+    if atlases:
+        attach_atlases(glb_path, atlases, args.category, layout)
+        size = os.path.getsize(glb_path)
+        bpy_kit.apply_atlas_preview_materials(layout, REPO_ROOT)
     sub_part = w == 0 and d == 0  # footprint 0×0: pivots at its socket, may hang below y = 0
     validation = report_for(glb_path, max_triangles=args.max_triangles, max_bytes=500 * 1024, allow_below_ground=sub_part)
     bpy_kit.setup_render(args.size, args.samples)
@@ -142,6 +195,7 @@ def main() -> None:
     print("\n## make_model report")
     print(f"- {args.id} → {rel_path} ({size} bytes, {validation['triangles']} triangles, height {record['height']} u, {round(time.time() - started, 1)} s)")
     print(f"- sockets: {sockets or 'none'}")
+    print(f"- atlases: {atlases or 'none (flat colours)'}")
     print(f"- validation ok: {validation['ok']} {validation['problems']}")
     for path in renders:
         print(f"- render: {os.path.relpath(path, REPO_ROOT)}")

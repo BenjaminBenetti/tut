@@ -3,6 +3,9 @@ import { describe, expect, it } from "vitest";
 import { UNKNOWN_COMMAND } from "../../overworld/model/command-dispatcher";
 import type { OverworldCommand } from "../../overworld/model/overworld-command";
 import { advanceDay } from "../../overworld/model/overworld-command";
+import { launchMission } from "../../overworld/model/launch-mission-command";
+import type { Mission } from "../../overworld/model/mission";
+import { MISSION_RESOLVED } from "../../overworld/model/mission-resolved-event";
 import { AUTOSAVE_SLOT_ID } from "../../save/data/save-slots";
 import type { SaveError } from "../../save/model/save-error";
 import { MemoryKeyValueStore } from "../../save/repository/memory-key-value-store";
@@ -77,5 +80,52 @@ describe("composeGame", () => {
     const { game } = build();
     expect(game.newSeed()).toBe(7);
     expect(game.clock.now()).toBe(NOW);
+  });
+
+  it("launches a mission through the auto-resolver and applies the result", () => {
+    const { game } = build();
+    const fresh = game.createCampaign({ seed: 7, createdAt: NOW });
+    const city = fresh.overworld.map.cities.find((c) => c.infestation > 0);
+    const squad = fresh.roster.squads[0];
+    if (!city || !squad)
+      throw new Error("fixture needs an infested city and a squad");
+    const mission: Mission = {
+      id: "mission-1",
+      typeId: "infestation-clearance",
+      cityId: city.id,
+      difficulty: 1,
+      mapParams: {
+        biome: "temperate",
+        settlement: city.scale,
+        size: "small",
+        seed: "1",
+      },
+      rewards: { credits: 300 },
+      createdDay: 1,
+      expiresDay: 6,
+      ignorePenalty: 10,
+    };
+    game.session.start({
+      ...fresh,
+      overworld: { ...fresh.overworld, missions: [mission] },
+    });
+
+    const result = game.session.store?.dispatch(
+      launchMission(mission.id, {
+        missionId: mission.id,
+        squadIds: [squad.id],
+        mechIds: [],
+      }),
+    );
+    expect(result?.ok).toBe(true);
+    if (!result?.ok) return;
+    expect(result.value.events[0]?.type).toBe(MISSION_RESOLVED);
+    const after = game.session.state;
+    expect(after?.overworld.missions).toEqual([]);
+    expect(after?.overworld.lastMissionResult?.missionId).toBe(mission.id);
+    const loaded = game.saves.loadGame(AUTOSAVE_SLOT_ID);
+    expect(
+      loaded.ok && loaded.value.overworld.lastMissionResult?.missionId,
+    ).toBe(mission.id);
   });
 });

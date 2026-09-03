@@ -1,24 +1,30 @@
 # Handoff: QA
 
-Last updated: 2026-09-03 (session 1, run 12; resumed 07:45 UTC after a usage-limit pause). Read `docs/process/roles/qa.md` first.
+Last updated: 2026-09-03 (session 1, run 19, ~08:50 UTC). Read `docs/process/roles/qa.md` first.
 
 ## Latest run
 
 | Field | Value |
 |---|---|
-| SHA tested | `833cf73` (main, 2026-09-03 ~05:10 UTC; runs 11–12 covered #61 mission generation + expiry (schema v3), #62 auto-resolve resolver, #263 City fixture typecheck fix, #257 QA migration e2e) |
-| `pnpm typecheck` / `pnpm lint` | pass (added to the QA gate in run 12; see §5) |
-| `pnpm build` | pass |
-| `pnpm test` (vitest) | 828 / 828 (+1 deliberate `MAPGEN_WIDE` skip) |
-| `pnpm test:e2e` on main | 22 / 22 (#257 merged) |
-| Exploratory pass | standard, menu and v1-save migration flows: 0 findings; the v1 fixture now migrates v1 → v2 → v3 and is rewritten as v3 |
-| Bugs filed this run | none; #217 / #218 / #219 still reproduce |
-| **Health** | **Green** at `833cf73`. Note: main's `pnpm typecheck` was **red between `343b1a7` and `fd413af`** (~1 h): #238 added a required `City.scale` and #254's test fixtures, green on their own branch, lacked it once both were on main. #263 fixed it. My gate did not catch it because it only built and tested; fixed in run 12. |
+| SHA tested | `696f8e1` (main, 2026-09-03 ~08:45 UTC; runs 13–19 covered #63 roster service, #68 AdvanceDay tick, #275 preview seed stepping, #246 command/event maps, #271 block jitter, **#73 overworld screen + top bar**, #64 casualties (schema v4), #65 deployable commands) |
+| Gate | typecheck, lint, build all pass |
+| `pnpm test` (vitest) | 937 / 937 (+1 deliberate skip) |
+| `pnpm test:e2e` on main | 23 / 23 (#73 added `overworld-tick.spec.ts`) |
+| Exploratory pass | standard, menu, migration and the new **overworld flow**: 0 findings at `696f8e1` |
+| Bugs filed this run | **#291** (p3, ui): top bar wraps and the outcome badge spills below ~1000 px width |
+| **Health** | **Green.** The overworld loop is now playable end to end in the browser: Advance day ticks at ~35–65 ms, the stipend pays, threat climbs, an idle campaign ends in **defeat on day 58** (threat 100, 36/37 cities infested, 32 lost), the outcome locks Advance day, and everything persists through Continue, reload and export. |
 
 ### Run history
 
 | SHA | Build | Unit | e2e | Exploratory | Filed |
 |---|---|---|---|---|---|
+| `696f8e1` | pass | 937/937 | 23/23 | 0 findings (+ overworld flow) | — |
+| `2fb2c6d` | pass | 920/920 | 23/23 | 1 race in my check, fixed | #291 |
+| `81d0612` | pass | 920/920 | 23/23 | scripts adapted to #73 | — |
+| `e8769e3` | pass | 885/885 | 22/22 | 0 findings | — |
+| `10c17b0` | pass | 882/882 | 22/22 | 0 findings (+ next-seed) | — |
+| `5a49fb4` | pass | 866/866 | 22/22 | 0 findings | — |
+| `cfe0504` | pass | 866/866 | 22/22 | 0 findings | — |
 | `833cf73` | pass (tc/lint added) | 828/828 | 22/22 | 0 findings | — |
 | `85a2630` | pass (typecheck was red, unnoticed) | 828/828 | 19/19 | 0 findings | — |
 | `f7f33d6` | pass | 775/775 | 19/19 | 0 findings (+ migration flow) | — (PR #257) |
@@ -44,6 +50,8 @@ Exploratory coverage at `35857b2` (headless Chromium, SwiftShader, 1280×720, pr
 - Viewports 480×320, 800×600, 1920×1080 and a live resize: canvas backing size tracks CSS size; panel never overflows.
 - Save edge cases: corrupt JSON, empty, `null`, `[]`, wrong / string / missing `schemaVersion`, missing state, non-object state, save deleted mid-session, storage at quota.
 - Mapgen preview: all 72 biome × settlement × size × 2-seed combinations generate (max 1.07 s incl. page load); Generate, reroll, Enter-to-submit, level slider 0–5 behave; unknown query values fall back silently (see observations).
+- Overworld screen (#73, runs 17–19): day 1 on New game; ten single ticks each bump the day, pay the stipend (¢5,000 → ¢9,856 by day 11), raise threat and rewrite the autosave; the threat badge flips ok→warn at 34 and warn→danger at 69 (thresholds ≤33 / ≤66); 25 rapid clicks all register; Main menu → Continue and reload → Continue keep the day and credits; Export carries the day; New game over an active campaign resets to day 1 with a new seed; running idle ends in "Campaign over · defeat" on day 58 with threat 100, Advance day disabled, the outcome persisted and kept after Continue, and Enter on the disabled button does nothing; the map canvas lives in `#map-area` beside the side panel (960×679 at 1280×720) and returns to the full window one frame after leaving the screen; layout holds at 1024×600, 1280×720 and 1920×1080 (800×600 is #291).
+- Preview seed stepping (#275, run 15): terra-01→terra-02, seed9→seed10, coast→coast-2, coast-2→coast-3, a-009→a-010; deltas shown inline; 20 rapid steps land on rapid-21 with no error.
 - Save migration (run 9–10): an autosave captured at `35857b2` (schema v1) loads at `bb1b5bd`+ (schema v2) through Continue and Import, seed preserved, `spreadCooldowns` added by the migration, slot rewritten as v2, no console errors.
 - Main menu (#72, run 3): seed box resolves `12345` verbatim, `4294967295` verbatim, `0` verbatim, blank / whitespace to a random seed, `terra-01` / `-5` / `99999999999` / emoji to a stable hash; New game and Import write the autosave on session start; Export fills the text box with the envelope JSON and a status line; Import restores an export (seed preserved after reload), accepts a hand-edited export, and rejects empty, whitespace, non-JSON, `42`, `[]`, `{}`, schema v999 ("this build reads up to v1"), stripped state and a 2 MB blob, each with a message; typing q/e/wasd in the seed box does not move the camera; the panel fits 800×600 and up.
 
@@ -58,13 +66,15 @@ Exploratory coverage at `35857b2` (headless Chromium, SwiftShader, 1280×720, pr
 |---|---|---|---|
 | #217 | p2 | ui | Autosave failure on New game is never shown: `MainMenuScreen.startNewGame` shows the status then navigates, and the router unmounts the panel in the same task. Reproduced with storage at quota: overworld opens, no message, no save, Continue later disabled silently. |
 | #218 | p3 | engine | Overworld camera pan is unbounded: hold A for 13 s and the markers sit at x≈8300 px on a 1280 px viewport; black screen, no recentre. |
+| #291 | p3 | ui | Overworld top bar wraps below ~1000 px: buttons break onto two lines, the outcome badge spills out of the bar. Fine at 1024+. |
 | #219 | p3 | ui | Continue is silently disabled when the autosave exists but its envelope cannot be decoded; a state-level failure instead shows "Could not load autosave…". Inconsistent. |
 
 Commented on **#33** at `35857b2` (preview missing from the build); #209 fixed it and run 2 verified `/mapgen-preview.html` serves the panel from `dist/`.
 
 ## 4. Observations not filed (expected for placeholders, or too minor)
 
-- The overworld shows seed, start time and selected city only: no day counter, threat, infestation, missions, economy, roster. That is the M1 backlog (#73 onward), not a defect.
+- The overworld now shows day, credits, threat and the outcome; missions, city detail and the roster screen are still the M1 backlog (#75, #76, #79). The Roster button is disabled with a tooltip naming #79.
+- **Tuning note for the Director:** with no player action the campaign is lost on day 58 (threat +~1.7/day; ok→warn on day 32, warn→danger on day 44). Whether that pace is right is a design call, not a bug.
 - The map is fully interactive under the main menu (keys and clicks work before New game). Harmless now; the real menu (#72) may want to disable input.
 - `body[data-selected-city]` and the marker highlight persist across Back to menu → Continue while the panel label is empty; selection is not in `GameState`. The real overworld screen (#73) should decide.
 - Mapgen preview: `?size=huge`, `?biome=lava`, `?settlement=megacity` snap to the first select option and the URL is rewritten to the fallback with no notice. Dev tool only.
@@ -83,7 +93,7 @@ Commented on **#33** at `35857b2` (preview missing from the build); #209 fixed i
 ## 6. Next, in order
 
 1. Loop: `qa-run.sh` in the scratchpad does pull → build → vitest → e2e → standard, menu and migration exploratory flows in one call (~4 min); a background monitor polls `repos/BenjaminBenetti/tut/commits?per_page=1` every 5 min and validates the SHA (`^[0-9a-f]{40}$`, an API error body once produced a bogus "new main" event). Update this file when a bug is filed, a PR opens, or roughly hourly; not per quiet run.
-2. When #72 (real menu) and #73 (real overworld) land, extend the exploratory script: advance day, mission list, economy, roster, then the mech bay and launch/results screens as they appear.
+2. When #75 (city detail), #76 (mission list) and #79 (roster screen) land, extend `qa-overworld.mjs`: select a city and read its detail, accept and launch a mission (auto-resolve), inspect the results, hire/reinforce squads; then the mech bay and results screens as they appear.
 3. Re-verify #217 / #218 / #219 when their PRs merge; close with a `**QA** · TUT agent` comment.
 4. Fold the production preview check (strict: errors, failed requests, `#panel`, regenerate) into the exploratory script permanently; #33 landed in #209.
 5. Two PRs that are each green but red together (#238 + #254) is a Tech Lead / CI concern: consider a required "merge with main" check or serialising merges that touch the same model. Mentioned here, not filed; raise it if it recurs.
@@ -95,6 +105,7 @@ Commented on **#33** at `35857b2` (preview missing from the build); #209 fixed i
 - `e2e/` is type-checked by `tsconfig.node.json` (lib ES2022, no DOM). Nothing inside `page.evaluate` may name `document`/`window` types; importing DOM-free value modules from `src/` (`EARTH_MAP`, `BIOME_IDS`, `SETTLEMENT_SCALES`) works.
 - Production build (`vite preview`) has no `window.__tut__` hooks; run hook-based checks against the dev server. Since #209 it does include `mapgen-preview.html`.
 - Chromium localStorage is ~5 MB per origin. To force an autosave failure **clear storage first**, then fill with 512 KB chunks, then 64 KB, 4 KB, 256 B, 16 B, 1 B until each throws. Filling around an existing autosave lets the next save succeed (same key, same size).
+- Since #73 the overworld's back button is `[data-action="main-menu"]`, the created-at field is gone, and the map canvas is inside `#map-area` (not the window): compare canvas size to `#map-area`, and allow one frame (poll up to 2 s) for it to regrow after returning to the menu.
 - `pnpm test` reports "1 skipped" since #244: `MAPGEN_WIDE=1` enables the wide property sweep. Not a regression.
 - Keep `/tmp/qa-35857b2/C-autosave.json` (also `e2e/fixtures/autosave-v1.json` after #257) as the v1 fixture; never regenerate it.
 - The #72 menu puts the seed `<input>` first in tab order and reuses `data-field="seed"` (the overworld's seed `<dd>` has the same attribute); scope selectors by `section[data-screen=…]`.

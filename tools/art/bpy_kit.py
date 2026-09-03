@@ -19,6 +19,7 @@ Conventions baked in (style guide §3, §6):
 
 from __future__ import annotations
 
+import json
 import math
 import os
 
@@ -263,6 +264,99 @@ def export_glb(path: str) -> int:
     bpy.ops.object.select_all(action="SELECT")
     bpy.ops.export_scene.gltf(filepath=path, export_format="GLB", export_yup=True, export_apply=True)
     return os.path.getsize(path)
+
+
+# ===========================================
+# Unit atlases (style guide §6): UV cells + Blender-side preview materials
+# ===========================================
+
+ATLAS_LAYOUT_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "atlas-cells.json")
+
+# Faces smaller than this (in tiles²) sample the flat centre of their cell.
+SLIVER_AREA = 0.004
+
+
+def load_atlas_layout() -> dict | None:
+    """The cell layout written by ``build-textures.mjs`` (grid, inset, paths, token → cell)."""
+    if not os.path.exists(ATLAS_LAYOUT_PATH):
+        return None
+    with open(ATLAS_LAYOUT_PATH, encoding="utf-8") as fh:
+        return json.load(fh)
+
+
+def apply_atlas_uvs(layout: dict) -> list[str]:
+    """Remap every polygon whose material token has an atlas cell into that cell.
+
+    Blender's glTF exporter flips V, so the Blender-side v range for image row
+    ``r`` is ``[1 - (r + 1) / grid, 1 - r / grid]``; the exported file then
+    samples the right row. Meshes without a UV layer get one (all zeros, one
+    texel of the cell), so a textured material never renders white.
+
+    Returns:
+        Atlas ids used, in first-use order (``"tdf"``, ``"bug"``).
+    """
+    grid = layout["grid"]
+    inset = layout["inset"]
+    span = 1.0 - 2.0 * inset
+    cells = layout["cells"]
+    used: list[str] = []
+    for ob in mesh_objects():
+        me = ob.data
+        if not me.uv_layers:
+            me.uv_layers.new(name="UVMap")
+        # Every face gets the whole cell, like the three.js placeholders (a
+        # box face is one panel), rather than Blender's cross-shaped cube layout.
+        bpy.ops.object.select_all(action="DESELECT")
+        ob.select_set(True)
+        bpy.context.view_layer.objects.active = ob
+        bpy.ops.object.mode_set(mode="EDIT")
+        bpy.ops.mesh.select_all(action="SELECT")
+        bpy.ops.uv.reset()
+        bpy.ops.object.mode_set(mode="OBJECT")
+        uv = me.uv_layers.active.data
+        for poly in me.polygons:
+            mat = me.materials[poly.material_index] if me.materials else None
+            cell = cells.get(mat.name) if mat else None
+            if not cell:
+                continue
+            if cell["atlas"] not in used:
+                used.append(cell["atlas"])
+            # Chamfer strips and other slivers would show a full seam pattern
+            # squeezed into a few pixels; park them on the cell's flat centre.
+            sliver = poly.area < SLIVER_AREA
+            for li in poly.loop_indices:
+                u, v = uv[li].uv
+                u = min(max(u, 0.0), 1.0)
+                v = min(max(v, 0.0), 1.0)
+                if sliver:
+                    u = 0.45 + 0.1 * u
+                    v = 0.45 + 0.1 * v
+                uv[li].uv = (
+                    (cell["col"] + inset + u * span) / grid,
+                    (grid - cell["row"] - 1 + inset + v * span) / grid,
+                )
+    return used
+
+
+def apply_atlas_preview_materials(layout: dict, repo_root: str) -> None:
+    """Wire the atlas PNGs into the token materials' Base Color for Blender renders.
+
+    Call after ``export_glb`` (the exporter would otherwise embed the image);
+    the GLB gets its external reference from ``make_model.attach_atlases``.
+    """
+    images: dict[str, bpy.types.Image] = {}
+    for token, cell in layout["cells"].items():
+        mat = bpy.data.materials.get(token)
+        if not mat:
+            continue
+        atlas = cell["atlas"]
+        if atlas not in images:
+            images[atlas] = bpy.data.images.load(os.path.join(repo_root, "public", layout["paths"][atlas]))
+        nodes = mat.node_tree.nodes
+        tex = nodes.new("ShaderNodeTexImage")
+        tex.image = images[atlas]
+        tex.interpolation = "Linear"
+        mat.node_tree.links.new(tex.outputs["Color"], nodes["Principled BSDF"].inputs["Base Color"])
 
 
 # ===========================================

@@ -3,7 +3,7 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-03 17:41 UTC)
+## Status Digest (2026-09-03 18:45 UTC)
 
 | Milestone | done / total |
 |---|---|
@@ -11,32 +11,33 @@
 | M1 Overworld | 64 / 64 |
 | M1.5 Map Generation | 33 / 34 |
 
-Board: Backlog 14 · Ready 7 · In Progress 3 · In Review 2 · Blocked 0 · Done 142
+Board: Backlog 9 · Ready 8 · In Progress 3 · In Review 2 · Blocked 0 · Done 152
 
 **Engineer seats** (one open issue per seat; Producer assigns via `seat:eng-N`; route by `complexity:*` — high → default-effort seats only, low → medium-effort seats first):
 
 | Seat | Effort | Current | Status | Last merged |
 |---|---|---|---|---|
-| eng-3 | default | #328 tactical: turn engine — phases, AP reset, overwatch, status ticks, end checks | Ready | #325 |
-| eng-4 | medium | #304 bug(overworld): dev-only threatEscalation multiplier is persisted in the save and honoured by the production build | In Review | #342 |
-| eng-5 | medium | #339 ui: mission HUD — unit card, action bar, objectives, turn banner, hit preview | In Review | #327 |
+| eng-3 | default | #329 tactical: spawning — egg spawners and escalating edge spawns | In Review | #328 |
+| eng-4 | medium | #333 ai: lurker — flank through cover and strike from behind | Ready | #331 |
+| eng-5 | medium | #409 tactical: Reload / vent — ammo and heat model behind the Reload command | In Review | #403 |
 
-⚠ unassigned Ready: #108 (low), #141 (low), #230 (low), #294 (low), #338 (medium)
+⚠ unassigned Ready: #108 (low), #141 (low), #332 (low), #334 (low), #404 (low), #412 (low)
 
 **Ready now** (no unmerged dependencies):
 
 - #108 (engineer) refactor(core): promote generic id Registry to core/ and reuse in mapgen and roster
 - #141 (engineer) refactor: rename scalar tuning exports to UPPER_SNAKE_CASE (economy-tuning, threat-tuning)
 - #190 (art-director) infra(art): headless Blender + OpenSCAD + trimesh/cadquery toolchain in the devcontainer, with proof render and art-blender skill
-- #230 (engineer) save: share isRecord between migrations and the game-state guard
-- #294 (engineer) bug(ui): squad hired without a name is called "Rifle Squad squad"
-- #328 (engineer) tactical: turn engine — phases, AP reset, overwatch, status ticks, end checks
-- #338 (engineer) graphics: action animation from tactical events
+- #332 (engineer) ai: swarmer — rush the nearest target and group up
+- #333 (engineer) ai: lurker — flank through cover and strike from behind
+- #334 (engineer) ai: brute — slow advance toward clumps, absorb overwatch
+- #404 (engineer) bug(ui): tactical action bar offers END TURN / RELOAD / OVERWATCH with no handler; status shows "No handler registered for command…"
+- #412 (engineer) bug(tactical): END TURN enters the bugs phase and nothing ever ends it — mission soft-locks at turn 1
 
 **In-flight PRs** (age h / idle h / review):
 
-- #392 2.0h / 1.9h / n/a — fix(overworld): dev threat escalation lives in the composition, never in the save (#304)
-- #391 2.1h / 2.0h / n/a — feat(ui): mission HUD with unit card, action bar, objectives, turn banner and hit preview (#339)
+- #416 0.1h / 0.1h / n/a — feat(tactical): spawning — egg spawners and escalating edge spawns (#329)
+- #415 0.1h / 0.1h / n/a — feat(tactical): charges pool behind Attack and Reload (#409)
 
 **In progress** (branch pushed?):
 
@@ -50,10 +51,12 @@ Board: Backlog 14 · Ready 7 · In Progress 3 · In Review 2 · Blocked 0 · Don
 
 1. #108 — refactor(core): promote generic id Registry to core/ and reuse in mapgen and roster
 2. #141 — refactor: rename scalar tuning exports to UPPER_SNAKE_CASE (economy-tuning, threat-tuning)
-3. #230 — save: share isRecord between migrations and the game-state guard
-4. #294 — bug(ui): squad hired without a name is called "Rifle Squad squad"
-5. #328 — tactical: turn engine — phases, AP reset, overwatch, status ticks, end checks
-6. #338 — graphics: action animation from tactical events
+3. #332 — ai: swarmer — rush the nearest target and group up
+4. #333 — ai: lurker — flank through cover and strike from behind
+5. #334 — ai: brute — slow advance toward clumps, absorb overwatch
+6. #404 — bug(ui): tactical action bar offers END TURN / RELOAD / OVERWATCH with no handler; status shows "No handler registered for command…"
+7. #412 — bug(tactical): END TURN enters the bugs phase and nothing ever ends it — mission soft-locks at turn 1
+8. #330 — tactical: objectives, extraction and the TacticalMissionResolver (Ready once #329 merges)
 <!-- digest:end -->
 
 **Status: PRODUCTION RESUMED** (Director, 2026-09-03 03:05 UTC). Pool: eng-3 (default effort, takes `complexity:high` and anything), eng-4 and eng-5 (medium effort, `complexity:low|medium` only). eng-1, eng-2, eng-6 are gone; their seat labels are inactive.
@@ -62,9 +65,9 @@ Board: Backlog 14 · Ready 7 · In Progress 3 · In Review 2 · Blocked 0 · Don
 
 **v0.1.0 RELEASED — 2026-09-03 13:22 UTC** (Tech Lead): tagged at the #336 squash, Release zip and GitHub Pages deploy succeeded, https://benjaminbenetti.github.io/tut/ serves it. M1 Overworld closed 64/64 (epics #35–#42). QA verified #217's fix post-release; remaining QA bugs #218 #219 #291 #294 #304 #368 are post-release polish.
 
-**M2 Basic Missions** (20 of 39 done, 17:45 UTC). Fleet pause 15:45 → 17:41 (usage limits); nothing merged or commented in that window. Merged this session: #321–#327, #337, #340, #342 (runtime model, species, meshes, input, screen wiring, sight/cover, hit chance, movement). eng-3 is on #328 turn engine (high); #339 HUD (eng-5, PR #391) and #304 (eng-4, PR #392) await review since ~15:40. Remaining high chain after #328: #330 resolver → #341 flow. #338 overlays/animation (medium) is Ready for the first free medium seat; #329 spawning and #331 AI registry open when #328 lands.
+**M2 Basic Missions** (27 of 43 done, 18:45 UTC). Turn engine #328 and AI registry #331 merged; in review: #329 spawning (eng-3, PR #416), #409 charges/reload (eng-5, PR #415, Director decision: one abstract charges pool); eng-4 on #333 lurker. Remaining high chain: #330 resolver (after #329) → #341 flow. AI epic: #332 swarmer, #334 brute (low, Ready), #335 runner (medium; Tech Lead says its inputs are in and it is the real fix for QA's soft-lock #412). Producer's 5-minute occupancy loop now labels empty seats itself (first autofill: eng-4 ← #333).
 
-**Seat plan:** eng-3 (default): #328 → #330 → #341. eng-4 (medium): #304 (PR #392) → #338 → #329 spawning (after #328) → #335 runner. eng-5 (medium): #339 (PR #391) → #331 AI registry (after #328) → #333 lurker → #343 headless sim. Low AI issues #332 swarmer, #334 brute go to whichever medium seat is free after #331. Low fillers left: #294, #230, #141, #108.
+**Seat plan:** eng-3 (default): #329 → #330 → #341. eng-4 (medium): #333 → #335 runner → #343 headless sim. eng-5 (medium): #409 → #332 swarmer → #334 brute → #404 (HUD disables unhandled actions). Fillers: #412 stopgap (low, only if #335 is far), #141, #108.
 
 **Risks / asks** (13:20 UTC):
 
@@ -151,7 +154,7 @@ Critical path for M1: #43 → #105 → #54 (needs #7, #11, #44, #45, #48) → #5
 ## Gotchas
 
 - **GitHub API budget (Director, 05:41 UTC, studio-wide):** 5000 calls/hour shared by every agent on one account. Poll at most once per 5 minutes (monitor included), prefer REST (`gh api repos/BenjaminBenetti/tut/...`) over `gh issue list` / `gh pr list` (GraphQL), request only needed fields, batch calls per tick, check `gh api rate_limit` on errors and back off. `groom.py` reads via REST and uses GraphQL only for project-field writes (no REST exists for Projects v2). Seat labels and comments: `gh api -X POST .../issues/N/labels` and `.../comments`.
-- A persistent Monitor (session-local) polls merged PRs and Producer mentions every 5 minutes via REST and wakes me for seat refills; the 15-minute cron is the fallback. A replacement must re-arm both.
+- A persistent Monitor (session-local) runs `autofill.py` (scratchpad; to be committed under `tools/producer/`) every 5 minutes: for each live seat with no open `seat:eng-N` issue it labels the highest-priority Ready, tiered, unseated issue routed by tier (default seat: high>medium>low; medium seat: medium>low), posts the assignment comment, and prints `AUTOFILL`; it also prints Producer mentions. The 15-minute cron still runs the full groom. A replacement must re-arm both.
 - **Never push a follow-up commit to an open PR.** The Tech Lead merges within one to two minutes; twice a later commit was stranded on a merged branch (#94, #98). Open a new PR instead.
 - Run every `gh` call with `-R BenjaminBenetti/tut` or from `/workspaces/tut`; from another cwd `gh` cannot infer the repo.
 - `git` remote was SSH and unauthenticated; switched to HTTPS with `gh auth setup-git`.

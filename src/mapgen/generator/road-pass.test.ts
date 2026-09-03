@@ -177,6 +177,35 @@ describe("RoadPass", () => {
     }
   });
 
+  it("grades the plat inside a city grid to one level", () => {
+    for (const biome of BIOME_IDS) {
+      for (let i = 0; i < SEEDS; i++) {
+        const label = `${biome}/${i}`;
+        const draft = run(biome, "city", `plat-${i}`);
+        const roads = roadColumns(draft);
+        const first = roads[0];
+        expect(first, label).toBeDefined();
+        if (first === undefined) continue;
+        const level = draft.groundLevelAt(first.x, first.z);
+        const xs = roads.map((c) => c.x);
+        const zs = roads.map((c) => c.z);
+        for (let z = Math.min(...zs) - 1; z <= Math.max(...zs) + 1; z++) {
+          for (let x = Math.min(...xs) - 1; x <= Math.max(...xs) + 1; x++) {
+            if (
+              !draft.inBounds(x, z) ||
+              draft.groundSurfaceAt(x, z) === SurfaceIds.WATER
+            ) {
+              continue;
+            }
+            expect(draft.groundLevelAt(x, z), `${label} at ${x},${z}`).toBe(
+              level,
+            );
+          }
+        }
+      }
+    }
+  });
+
   it("never leaves a step along a road without a ramp", () => {
     for (const settlement of SETTLEMENT_SCALES) {
       for (let i = 0; i < SEEDS; i++) {

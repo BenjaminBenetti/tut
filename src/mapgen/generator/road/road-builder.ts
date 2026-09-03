@@ -28,7 +28,7 @@ export interface RoadBuilderContext {
 /**
  * How the pass levels a builder's lines: `follow` keeps chunks within one
  * level of their neighbours so a trail climbs hills; `flat` grades the
- * whole network to one level, as a city would.
+ * whole network, and the plat it encloses, to one level, as a city would.
  */
 export type RoadLevelling = "follow" | "flat";
 

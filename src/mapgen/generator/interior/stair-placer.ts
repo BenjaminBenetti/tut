@@ -40,8 +40,9 @@ interface StairCandidate {
  *
  * Candidates are rejected when the stair tile or landing has a door, sits
  * on the entrance, or lies in a room narrower than two tiles, and when the
- * hole would cut the upper floor off. Returns the connector, or undefined
- * when no candidate works.
+ * hole would cut the upper floor off. Holes on interior columns are tried
+ * before holes on the perimeter so facades stay whole. Returns the
+ * connector, or undefined when no candidate works.
  */
 export function placeStairs(
   draft: MapDraft,
@@ -54,9 +55,15 @@ export function placeStairs(
   rng: Rng,
 ): Connector | undefined {
   const roomsById = new Map(rooms.map((room) => [room.id, room]));
-  const candidates = rng.shuffle(
+  const shuffled = rng.shuffle(
     collectCandidates(draft, buildingId, fromY, toY, roomsById, entrance),
   );
+  // Interior holes first: a hole on the perimeter takes the facade wall
+  // on that column with it.
+  const candidates = [
+    ...shuffled.filter((c) => !onPerimeter(draft, c.hole)),
+    ...shuffled.filter((c) => onPerimeter(draft, c.hole)),
+  ];
   for (const candidate of candidates.slice(0, MAX_ATTEMPTS)) {
     const connector = tryCandidate(
       draft,
@@ -150,6 +157,18 @@ function tryCandidate(
   from.surface = SurfaceIds.FLOOR;
   draft.addTile(hole);
   return undefined;
+}
+
+/**
+ * True when the tile has a wall on a side with no tile beyond it at the
+ * same level, i.e. it sits on the building's outer edge.
+ */
+function onPerimeter(draft: MapDraft, tile: TileCoord): boolean {
+  return DIRECTIONS.some(
+    (direction) =>
+      draft.wallAt(tile, direction) !== undefined &&
+      draft.getTile(stepGridPos(tile, direction)) === undefined,
+  );
 }
 
 /** A floor tile that has not already become stairs and carries no door. */

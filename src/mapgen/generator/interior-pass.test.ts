@@ -182,6 +182,25 @@ describe("InteriorPass", () => {
     expect(ladders).toBeGreaterThan(0);
   });
 
+  it("never lets a ladder climb more than two levels", () => {
+    // Snowy terrain has three levels, so buildings often sit on ledges
+    // with the ground outside a wall one or two levels below their own.
+    let ladders = 0;
+    for (let i = 0; i < SEEDS; i++) {
+      const { draft } = run("snowy", "town", `climb-${i}`);
+      for (const ladder of draft.connectors) {
+        if (ladder.kind !== "ladder") continue;
+        ladders++;
+        expect(ladder.to.y - ladder.from.y, ladder.id).toBeLessThanOrEqual(2);
+        expect(
+          draft.groundLevelAt(ladder.from.x, ladder.from.z),
+          ladder.id,
+        ).toBe(ladder.from.y);
+      }
+    }
+    expect(ladders).toBeGreaterThan(0);
+  });
+
   it("keeps stairwell holes off the facade when the footprint allows", () => {
     const provides: DraftCapability[] = ["heightmap", "water", "roads", "lots"];
     const oneLot: GenerationPass = {

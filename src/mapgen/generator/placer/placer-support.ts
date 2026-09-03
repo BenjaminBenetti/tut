@@ -7,6 +7,8 @@ import type { MapGenRegistries } from "../../model/registries";
 import type { ResolvedMapGenParams } from "../../model/resolved-params";
 import type { TileCoord } from "../../model/tile-coord";
 import { freezeDraft } from "../../service/draft-freezer";
+import type { ReachabilitySnapshot } from "../../service/hatch-space";
+export { hatchSpace } from "../../service/hatch-space";
 import { ReachabilityService } from "../../service/reachability-service";
 import { TileIndex } from "../../service/tile-index";
 
@@ -54,20 +56,34 @@ export function hookTileKeys(draft: MapDraft): Set<number> {
 // Reachability on a draft
 // ===========================================
 
+/** The interim draft frozen once so several queries share the work. */
+export type DraftSnapshot = ReachabilitySnapshot;
+
 /**
- * Freezes the draft as it stands and answers "can this class reach the
- * coordinate from a deploy zone" under the real §5 rule. Placers use it
- * to prefer reachable tiles; the connectivity pass is the guarantee.
+ * Freezes the draft as it stands so placers can ask reachability
+ * questions under the real §5 rule instead of re-deriving it.
  */
-export function reachableFromDeploy(
+export function snapshotDraft(
   draft: MapDraft,
   params: ResolvedMapGenParams,
   registries: MapGenRegistries,
-  unitClass: UnitClass,
-): (coord: TileCoord) => boolean {
+): DraftSnapshot {
   const map = freezeDraft(draft, recipeFor(params), registries);
   const index = new TileIndex(map);
-  const reach = new ReachabilityService(index, map.connectors);
+  return { index, reach: new ReachabilityService(index, map.connectors) };
+}
+
+/**
+ * Answers "can this class reach the coordinate from a deploy zone" on a
+ * snapshot. Placers use it to prefer reachable tiles; the connectivity
+ * pass is the guarantee.
+ */
+export function reachableFromDeploy(
+  draft: MapDraft,
+  snapshot: DraftSnapshot,
+  unitClass: UnitClass,
+): (coord: TileCoord) => boolean {
+  const { index, reach } = snapshot;
   const reachable = reach.reachableFrom(deployTiles(draft), unitClass);
   return (coord: TileCoord): boolean => {
     const tile = index.getAt(coord);

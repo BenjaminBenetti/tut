@@ -1,4 +1,5 @@
 import type { BiomeId } from "../../content/model/biome-id";
+import type { SettlementScale } from "../../content/model/settlement-scale";
 import type { CityId } from "./city";
 import type { MapLayout } from "./map-layout";
 import type { RegionId } from "./region";
@@ -18,6 +19,8 @@ export interface CitySeed {
   readonly layout: MapLayout;
   /** Starting infestation; defaults to `MIN_INFESTATION`. */
   readonly infestation?: number;
+  /** Settlement scale for missions here; defaults to `DEFAULT_CITY_SCALE`. */
+  readonly scale?: SettlementScale;
 }
 
 /** Authoring form of a region: its cities are nested rather than referenced. */

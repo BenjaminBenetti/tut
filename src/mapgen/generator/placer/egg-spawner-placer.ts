@@ -11,8 +11,10 @@ import type { TileCoord } from "../../model/tile-coord";
 import { isBoundaryColumn, isOpenGround } from "../../service/draft-queries";
 import {
   distanceToDeploy,
+  hatchSpace,
   hookTileKeys,
   reachableFromDeploy,
+  snapshotDraft,
 } from "./placer-support";
 
 // ===========================================
@@ -28,6 +30,14 @@ const INTERIOR_SHARE = 0.5;
 /** Default hatch radius written into `meta` when the recipe gives none. */
 const DEFAULT_HATCH_RADIUS = 3;
 
+/**
+ * Fewest infantry-reachable tiles a spawner needs within its hatch radius
+ * (itself included) so hatched bugs have somewhere to stand. The
+ * connectivity pass only adds passability, so the count holds on the
+ * final map.
+ */
+export const HATCH_SPACE_MIN = 6;
+
 /** A candidate tile and whether it is inside a building. */
 interface Candidate {
   readonly coord: TileCoord;
@@ -42,8 +52,10 @@ interface Candidate {
  * Places egg spawners (GDD §6.3): point hooks at least
  * `minDistanceFromDeploy` from any deploy tile, spread at least
  * `MIN_SPREAD` apart, half of them inside buildings when interiors exist,
- * preferring tiles infantry can already reach. The rest of the map's
- * open ground is the fallback so the count is always met.
+ * with at least `HATCH_SPACE_MIN` infantry-reachable tiles within the
+ * hatch radius (checked in draw order, only as far as needed), preferring
+ * tiles infantry can already reach. The rest of the map's open ground is
+ * the fallback so the count is always met.
  */
 export class EggSpawnerPlacer implements HookPlacer {
   // ===========================================
@@ -60,12 +72,9 @@ export class EggSpawnerPlacer implements HookPlacer {
   /** Adds `count` spawner hooks to the objectives. */
   place(requirement: HookRequirement, context: GenerationContext): void {
     const { draft, params, registries, rng, diagnostics } = context;
-    const reachable = reachableFromDeploy(
-      draft,
-      params,
-      registries,
-      PassMask.INFANTRY,
-    );
+    const snapshot = snapshotDraft(draft, params, registries);
+    const reachable = reachableFromDeploy(draft, snapshot, PassMask.INFANTRY);
+    const radius = hatchRadiusOf(requirement);
     const minDistance = requirement.minDistanceFromDeploy ?? 0;
     const taken = hookTileKeys(draft);
     const all = collectCandidates(draft).filter(
@@ -75,6 +84,9 @@ export class EggSpawnerPlacer implements HookPlacer {
     );
     const preferred = all.filter((c) => reachable(c.coord));
     const pool = preferred.length >= requirement.count ? preferred : all;
+    const roomy = (c: Candidate): boolean =>
+      hatchSpace(snapshot, c.coord, radius, PassMask.INFANTRY) >=
+      HATCH_SPACE_MIN;
     if (pool.length === 0) {
       diagnostics.note("no candidate tiles for egg spawners");
       return;
@@ -92,8 +104,11 @@ export class EggSpawnerPlacer implements HookPlacer {
       }
       const wantInterior = i < Math.ceil(requirement.count * INTERIOR_SHARE);
       const interior = remaining.filter((c) => c.interior);
-      const pick =
-        wantInterior && interior.length > 0 ? interior[0] : remaining[0];
+      const ordered =
+        wantInterior && interior.length > 0 ? interior : remaining;
+      // Hatch space is measured lazily, in draw order, so only a handful of
+      // candidates per map are walked; a cramped pool falls back to its head.
+      const pick = ordered.find(roomy) ?? ordered[0];
       if (pick === undefined) {
         break;
       }
@@ -104,7 +119,7 @@ export class EggSpawnerPlacer implements HookPlacer {
         [pick.coord],
         requirement.requiredPass,
         {
-          hatchRadius: DEFAULT_HATCH_RADIUS,
+          hatchRadius: radius,
           ...requirement.meta,
         },
       );
@@ -163,6 +178,12 @@ function isEntrance(draft: MapDraft, tile: TileCoord): boolean {
       (e) => e.tile.x === tile.x && e.tile.y === tile.y && e.tile.z === tile.z,
     ),
   );
+}
+
+/** The recipe's hatch radius, or the default when it gives none. */
+function hatchRadiusOf(requirement: HookRequirement): number {
+  const radius = requirement.meta?.hatchRadius;
+  return typeof radius === "number" ? radius : DEFAULT_HATCH_RADIUS;
 }
 
 /** Column equality. */

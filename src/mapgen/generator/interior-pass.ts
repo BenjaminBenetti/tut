@@ -2,6 +2,7 @@ import { DIRECTIONS } from "../../core/model/direction";
 import type { Rect } from "../../core/model/grid";
 import type { Rng } from "../../core/model/rng";
 import { rectContains, stepGridPos } from "../../core/service/grid-math";
+import { RoomKindIds } from "../data/room-kind-ids";
 import { SurfaceIds } from "../data/surfaces";
 import type { Building, Floor, Room } from "../model/building";
 import type { BuildingTemplate } from "../model/building-template";
@@ -23,6 +24,9 @@ import { placeStairs } from "./interior/stair-placer";
 
 /** Exterior ladders only reach roofs this many storeys up. */
 const MAX_LADDER_FLOORS = 2;
+
+/** Most levels a ladder climbs from the ground column outside the wall. */
+const MAX_LADDER_CLIMB = 2;
 
 // ===========================================
 // InteriorPass
@@ -190,13 +194,15 @@ function roomKind(
   template: BuildingTemplate,
 ): string {
   if (template.id === "warehouse") {
-    return "storage";
+    return RoomKindIds.STORAGE;
   }
   const groundFloor = floor.y === entrance.y;
   if (groundFloor && rectContains(room.rect, entrance.x, entrance.z)) {
-    return "hall";
+    return RoomKindIds.HALL;
   }
-  return groundFloor && template.id === "shop" ? "storage" : "room";
+  return groundFloor && template.id === "shop"
+    ? RoomKindIds.STORAGE
+    : RoomKindIds.ROOM;
 }
 
 /** Adds walkable roof tiles over the whole footprint. */
@@ -216,7 +222,8 @@ function addRoof(
 /**
  * Adds an exterior ladder from a free ground column beside the building
  * up to a roof tile across the wall (never the stairwell hole), when such
- * a column exists.
+ * a column exists no more than `MAX_LADDER_CLIMB` levels below the roof;
+ * a building on a ledge keeps its roof reachable through its stairs.
  */
 function addLadder(
   draft: MapDraft,
@@ -236,7 +243,8 @@ function addLadder(
           !draft.inBounds(outside.x, outside.z) ||
           draft.isCovered(outside.x, outside.z) ||
           draft.groundSurfaceAt(outside.x, outside.z) === SurfaceIds.WATER ||
-          draft.groundLevelAt(outside.x, outside.z) >= roofY
+          draft.groundLevelAt(outside.x, outside.z) >= roofY ||
+          roofY - draft.groundLevelAt(outside.x, outside.z) > MAX_LADDER_CLIMB
         ) {
           continue;
         }

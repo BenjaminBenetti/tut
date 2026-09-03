@@ -32,8 +32,8 @@ export interface Deployable {
   readonly builtDay: number;
   /**
    * Whether the installation applies its effect. Built installations
-   * start online; a future rule (unpaid upkeep, damage) may take one
-   * offline without removing it. Upkeep is charged either way.
+   * start online; the upkeep tick takes one offline when its upkeep
+   * cannot be paid and brings it back the first day it can be.
    */
   readonly online: boolean;
 }

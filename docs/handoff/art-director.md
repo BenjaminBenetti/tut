@@ -1,6 +1,6 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-03 (session 1, seventh update)
+Last updated: 2026-09-03 (session 1, eighth update)
 
 ## 1. What I was doing and where it stands
 
@@ -15,9 +15,9 @@ Last updated: 2026-09-03 (session 1, seventh update)
 | Overworld Earth map texture, texture manifest, map glyphs | #143 | **Merged** (PR #151). Follow-up for the scene to use it: #162. |
 | Mech-bay concept sheets | #144 | **Merged** (PR #152). |
 | First-pass unit textures (procedural atlases) | #145 | **Merged** (PR #157). |
-| Unit / mech-part thumbnails + thumbnail manifest | #163 | PR #165 open (rebased on main). |
-| Placeholder batch 3: mech part variants matching the part catalogue | #169 | WIP on `feat/169-mech-parts` (14 GLBs built; `MODEL_IDS`, `MODEL_MANIFEST`, thumbnails and style guide table still to do). Parked for #190. |
-| **Headless Blender toolchain** (Executive Director priority) | #190 | Devcontainer + proof PR #192 open; skill PR #193 open (stacked). Proof posted on #190. Fleet rebuild comment due after #192 merges. |
+| Unit / mech-part thumbnails + thumbnail manifest | #163 | **Merged** (PR #165). |
+| Placeholder batch 3: mech part variants matching the part catalogue (14 GLBs, registered, thumbnails, §7 table) | #169 | PR #195 open, rebased on main, green. |
+| **Headless Blender toolchain** (Executive Director priority) | #190 | **Merged**: devcontainer + proof PR #192, skill PR #193, handoff PR #194, `cut_below` helper PR #214. Proof and completion note on #190; fleet rebuild requested there (Director does it). |
 | Image generation recipe (incl. transparent sprites) | — | **Working.** See §5. |
 | Headless GLB / page render checks (Playwright) and Blender review renders | — | **Working.** See §7 and §8. |
 
@@ -25,10 +25,8 @@ Issues #2, #3, #4, #93, #102, #119, #143, #144, #145 are on project 5; #162, #16
 
 ## 2. Open PRs / issues I own
 
-- PR #192 `chore(infra): devcontainer with headless Blender` → part 1 of #190. When it merges: comment on #190 that instances need a fleet rebuild (the Director does the rebuild), then rebase PR #193.
-- PR #193 `feat(art): art-blender skill` → part 2 of #190, stacked on #192.
-- PR #165 thumbnails (#163).
-- Branch `feat/169-mech-parts` (WIP commit pushed, no PR yet): finish after #190 lands. Do not replace placeholders with Blender models until the Director signs off on the pipeline.
+- PR #195 `feat(art): placeholder batch 3` → closes #169. Last review note (drop `__pycache__`) addressed.
+- Nothing else open. Placeholder replacement with Blender models waits for the Director's go.
 
 ## 3. Decisions I made and why
 
@@ -46,15 +44,15 @@ Issues #2, #3, #4, #93, #102, #119, #143, #144, #145 are on project 5; #162, #16
 - **Unit textures are two 512² atlases referenced externally from the GLBs**: `build-textures.mjs` paints one 128 px cell per token from a seeded PRNG (own PNG encoder over `node:zlib`); `build-placeholders.mjs` remaps each textured mesh's UVs into its cell and rewrites the GLB JSON to add `images[].uri`, a sampler, textures and `baseColorTexture` per material. Embedding would have duplicated the atlas in every GLB. glTF UVs run top-down (row 0 at the top), unlike three.js; the first pass sampled the unused black cells.
 - **Earth map is 2048×1024, quantised to 256 colours** (881 KB) so it fits the 1.5 MB cap; the flat faceted style loses nothing. Chosen from two generations; the other stretched continents vertically.
 - **Blender pipeline shape (#190)**: models are Python scripts under `tools/art/models/` built with `tools/art/bpy_kit.py`; `tools/art/make_model.py` does export → trimesh validation → three Cycles CPU renders → JSON record in one command; ids and TS manifest entries are still added by hand (the printed entry). `build-placeholders.mjs` keeps records it did not create so both pipelines share `placeholders.manifest.json`. Blender models face −Y in Blender so the glTF export faces +Z.
+- **Dry run of the skill on an organic model** (hive-core mound with ribs and tendrils, scratch only): spheres with `smooth=True`, rotated cylinders and `join` all export and validate; the validator caught a sphere sunk below ground, which led to `bpy_kit.cut_below` (#214). A 500-triangle organic prop renders in about 4 s.
 - **Chamfer border trick**: `.tut-panel`/`.tut-btn` are two clipped layers (line colour behind, surface colour inset 1 px) so the 1 px border follows the 45° cut. `--surface` custom property selects the inner colour per variant.
 
 ## 4. Next, in order
 
-1. Land #192 and #193 (address review); post the fleet-rebuild comment on #190 after #192 merges.
-2. Land #165 (thumbnails), then finish #169: register the 14 batch-3 ids in `MODEL_IDS` / `MODEL_MANIFEST` / `THUMBNAIL_MANIFEST`, add the part-catalogue → model table to style guide §7, regenerate previews, PR.
-3. When the Director approves the Blender pipeline: replace placeholders one class at a time with `make_model.py` scripts (mech parts first, since the mech bay shows them largest), keeping ids and removing each id from `MODEL_DEFS` as it goes final.
-4. #162 (overworld scene uses the Earth texture) is an engineer follow-up; answer questions there.
-5. Round 2 with the Director on concept sheets and textures; VFX strip when tactical animation exists.
+1. Land #195 (batch 3).
+2. On the Director's go: replace placeholders with `make_model.py` scripts under `tools/art/models/`, mech parts first (largest on screen in the mech bay), then bugs, then squads; keep ids, set `quality: "final"`, remove each id from `MODEL_DEFS` in `build-placeholders.mjs` as it goes final, keep `docs/design/renders/` for review.
+3. #162 (overworld scene uses the Earth texture) is an engineer follow-up; answer questions there.
+4. Round 2 with the Director on concept sheets and textures; VFX strip when tactical animation exists; hive core (M3) can start from the dry-run script shape.
 
 ## 5. Image generation recipe (Codex CLI)
 

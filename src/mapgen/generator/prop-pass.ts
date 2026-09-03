@@ -28,12 +28,6 @@ import type { Axis } from "./road/road-builder";
 // Constants
 // ===========================================
 
-/** Most props one storage room receives. */
-const MAX_PROPS_PER_ROOM = 3;
-
-/** Storage room tiles per interior prop. */
-const TILES_PER_INTERIOR_PROP = 5;
-
 /** Placement counts for the diagnostic note. */
 interface PlacementCounts {
   vegetation: number;
@@ -50,14 +44,14 @@ interface PlacementCounts {
  * Pass 6 of the settlement archetype (ADR 0004 §4.4, §7.3). Scatters the
  * biome's vegetation on open ground, puts street props on straight road
  * columns that can be walked around, drops low-cover clutter in yards
- * beside buildings and sidewalks, and stacks crates and shelving in
- * storage rooms without cutting a building off. Never occupies an
- * entrance's threshold, a connector endpoint or a tile with a door.
+ * beside buildings and sidewalks, and furnishes every room from its
+ * kind's `RoomFurnishing` without cutting a building off. Never occupies
+ * an entrance's threshold, a connector endpoint or a tile with a door.
  *
  * ```
  *   open ground   chance(total density) ─► weighted vegetation pick
  *   road columns  streetPropDensity per 100 ─► straight, bypassable only
- *   storage rooms area / 5, at most 3 ─► verified with a building BFS
+ *   rooms         area / tilesPerProp, at most maxProps ─► verified with a building BFS
  * ```
  */
 export class PropPass implements GenerationPass {
@@ -148,7 +142,22 @@ function collectBlockedTiles(draft: MapDraft): ReadonlySet<number> {
 // Vegetation
 // ===========================================
 
-/** Scatters the biome's ground props; returns how many were placed. */
+/** Columns a cluster may grow into, as manhattan distance from its seed. */
+const CLUSTER_RADIUS = 2;
+
+/**
+ * Scatters the biome's ground props; returns how many were placed.
+ * Every open column rolls once against the biome's total density. A
+ * kind with a `cluster` range is seeded at `density / mean cluster size`
+ * and grown to a rolled size around the seed, so its expected count per
+ * 100 columns is still its density; other kinds land as singletons.
+ *
+ * ```
+ *   . . T . .      T seed, t grown within CLUSTER_RADIUS
+ *   . t T t .      expected props = seeds × mean size = density
+ *   . . t . .
+ * ```
+ */
 function placeVegetation(
   draft: MapDraft,
   biome: BiomeDefinition,
@@ -159,29 +168,73 @@ function placeVegetation(
   const entries = biome.vegetation.filter((entry) =>
     allowedIn(registries.props.get(entry.prop), biome.id, "ground"),
   );
-  const total = entries.reduce((sum, entry) => sum + entry.density, 0) / 100;
+  const seedRate = (entry: VegetationEntry): number =>
+    entry.density / meanClusterSize(entry);
+  const total = entries.reduce((sum, entry) => sum + seedRate(entry), 0) / 100;
   if (entries.length === 0 || total <= 0) {
     return 0;
   }
+  const free = (x: number, z: number): boolean =>
+    isOpenGround(draft, x, z) &&
+    !blocked.has(draft.tileKey(draft.groundCoord(x, z))) &&
+    draft.propAt(draft.groundCoord(x, z)) === undefined;
   let placed = 0;
   for (let z = 0; z < draft.depth; z++) {
     for (let x = 0; x < draft.width; x++) {
-      if (!isOpenGround(draft, x, z)) {
+      if (!free(x, z) || !rng.chance(total)) {
         continue;
       }
-      const coord = draft.groundCoord(x, z);
-      if (blocked.has(draft.tileKey(coord)) || !rng.chance(total)) {
-        continue;
-      }
-      const entry: VegetationEntry = rng.pickWeighted(
-        entries,
-        (e) => e.density,
-      );
-      draft.addProp(entry.prop, coord, randomRotation(rng));
+      const entry: VegetationEntry = rng.pickWeighted(entries, seedRate);
+      draft.addProp(entry.prop, draft.groundCoord(x, z), randomRotation(rng));
       placed++;
+      if (entry.cluster === undefined) {
+        continue;
+      }
+      const size = rng.nextInt(entry.cluster.min, entry.cluster.max);
+      const around = rng.shuffle(clusterColumns(draft, x, z, free));
+      for (const column of around.slice(0, size - 1)) {
+        draft.addProp(
+          entry.prop,
+          draft.groundCoord(column.x, column.z),
+          randomRotation(rng),
+        );
+        placed++;
+      }
     }
   }
   return placed;
+}
+
+/** Mean of a kind's cluster size, or 1 for singletons. */
+function meanClusterSize(entry: VegetationEntry): number {
+  return entry.cluster === undefined
+    ? 1
+    : (entry.cluster.min + entry.cluster.max) / 2;
+}
+
+/** Free columns within `CLUSTER_RADIUS` of the seed, in scan order. */
+function clusterColumns(
+  draft: MapDraft,
+  x: number,
+  z: number,
+  free: (x: number, z: number) => boolean,
+): ColumnCoord[] {
+  const columns: ColumnCoord[] = [];
+  for (let dz = -CLUSTER_RADIUS; dz <= CLUSTER_RADIUS; dz++) {
+    for (let dx = -CLUSTER_RADIUS; dx <= CLUSTER_RADIUS; dx++) {
+      const distance = Math.abs(dx) + Math.abs(dz);
+      if (
+        distance === 0 ||
+        distance > CLUSTER_RADIUS ||
+        !draft.inBounds(x + dx, z + dz) ||
+        !free(x + dx, z + dz)
+      ) {
+        continue;
+      }
+      columns.push({ x: x + dx, z: z + dz });
+    }
+  }
+  return columns;
 }
 
 // ===========================================
@@ -371,8 +424,9 @@ function touchesBuildingOrSidewalk(
 // ===========================================
 
 /**
- * Fills storage rooms with crates and shelving, reverting any prop that
- * would cut part of the building off; returns how many stayed.
+ * Furnishes every room from its kind's `RoomFurnishing` (rooms of a kind
+ * with no entry stay bare), reverting any prop that would cut part of
+ * the building off; returns how many stayed.
  */
 function placeInteriorProps(
   draft: MapDraft,
@@ -381,12 +435,6 @@ function placeInteriorProps(
   blocked: ReadonlySet<number>,
   rng: Rng,
 ): number {
-  const kinds = registries.props.values.filter((prop) =>
-    allowedIn(prop, biome.id, "interior"),
-  );
-  if (kinds.length === 0) {
-    return 0;
-  }
   let placed = 0;
   for (const building of draft.buildings) {
     const entrance = building.entrances[0];
@@ -399,19 +447,29 @@ function placeInteriorProps(
     const topLevel = building.groundLevel + building.floors.length;
     for (const floor of building.floors) {
       for (const room of floor.rooms) {
-        if (room.kind !== "storage") {
+        const furnishing =
+          room.kind === undefined
+            ? undefined
+            : registries.roomFurnishing.find(room.kind);
+        if (furnishing === undefined) {
+          continue;
+        }
+        const kinds = furnishing.props.filter((kind) =>
+          allowedIn(registries.props.get(kind), biome.id, "interior"),
+        );
+        if (kinds.length === 0) {
           continue;
         }
         const candidates = rng.shuffle(
-          storageTiles(draft, building, floor.y, room.rect, blocked),
+          roomTiles(draft, building, floor.y, room.rect, blocked),
         );
         const quota = Math.min(
-          MAX_PROPS_PER_ROOM,
-          Math.floor((room.rect.w * room.rect.d) / TILES_PER_INTERIOR_PROP),
+          furnishing.maxProps,
+          Math.floor((room.rect.w * room.rect.d) / furnishing.tilesPerProp),
         );
         for (const tile of candidates.slice(0, quota)) {
           const prop = draft.addProp(
-            rng.pick(kinds).id,
+            rng.pick(kinds),
             tile,
             randomRotation(rng),
           );
@@ -435,7 +493,7 @@ function placeInteriorProps(
 }
 
 /** Floor tiles of a room that may hold a prop. */
-function storageTiles(
+function roomTiles(
   draft: MapDraft,
   building: Building,
   y: number,

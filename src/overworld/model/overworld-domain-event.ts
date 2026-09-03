@@ -1,7 +1,13 @@
 import type { Applied, DomainEvent } from "../../core/model/domain-event";
+import type { MissionTypeId } from "../../content/model/mission-type-id";
 import type { EconomyEvent } from "../../economy/model/economy-event";
 import type { RosterEvent } from "../../roster/model/roster-event";
 import type { CityId } from "./city";
+import type { Mission, MissionId } from "./mission";
+import type { DeployableId } from "./deployable";
+import type { DeployableTypeId } from "./deployable-type";
+import type { GameOutcome } from "./game-outcome";
+import type { RegionId } from "./region";
 
 // ===========================================
 // City infestation changed
@@ -115,13 +121,97 @@ export type InfestationSeededEvent = DomainEvent<
 >;
 
 // ===========================================
+// Deployable offline / online
+// ===========================================
+
+/** What presentation needs to point at an installation that changed status. */
+export interface DeployableStatusPayload {
+  readonly deployableId: DeployableId;
+  readonly typeId: DeployableTypeId;
+  readonly regionId: RegionId;
+}
+
+/** Event type emitted when upkeep cannot be paid and an installation stops acting. */
+export const DEPLOYABLE_OFFLINE = "overworld:deployable-offline";
+
+/** An installation went offline because its upkeep was unaffordable (GDD §5.6). */
+export type DeployableOfflineEvent = DomainEvent<
+  typeof DEPLOYABLE_OFFLINE,
+  DeployableStatusPayload
+>;
+
+/** Event type emitted when an offline installation's upkeep is paid again. */
+export const DEPLOYABLE_ONLINE = "overworld:deployable-online";
+
+/** An offline installation came back online because its upkeep was paid. */
+export type DeployableOnlineEvent = DomainEvent<
+  typeof DEPLOYABLE_ONLINE,
+  DeployableStatusPayload
+>;
+
+// ===========================================
+// Game ended
+// ===========================================
+
+/** Event type emitted once, when the campaign is won or lost. */
+export const GAME_ENDED = "overworld:game-ended";
+
+/** What presentation needs to show the end screen. */
+export interface GameEndedPayload {
+  readonly outcome: GameOutcome;
+}
+
+/** The campaign ended (GDD §5.3). Emitted at most once per campaign. */
+export type GameEndedEvent = DomainEvent<typeof GAME_ENDED, GameEndedPayload>;
+
+// ===========================================
+// Mission offered
+// ===========================================
+
+/** Event type emitted when the mission tick attaches a new mission to a city. */
+export const MISSION_OFFERED = "overworld:mission-offered";
+
+/** What presentation needs to show a new offer. The whole mission, since it is new data. */
+export interface MissionOfferedPayload {
+  readonly mission: Mission;
+}
+
+/** A mission appeared on the map. */
+export type MissionOfferedEvent = DomainEvent<
+  typeof MISSION_OFFERED,
+  MissionOfferedPayload
+>;
+
+// ===========================================
+// Mission expired
+// ===========================================
+
+/** Event type emitted when an unplayed mission passes its expiry day. */
+export const MISSION_EXPIRED = "overworld:mission-expired";
+
+/** What presentation needs to animate a lapsed offer and its penalty. */
+export interface MissionExpiredPayload {
+  readonly missionId: MissionId;
+  readonly typeId: MissionTypeId;
+  readonly cityId: CityId;
+  /** Infestation added to the host city for ignoring it (before clamping). */
+  readonly ignorePenalty: number;
+}
+
+/** An unplayed mission lapsed and its host city paid the ignore penalty. */
+export type MissionExpiredEvent = DomainEvent<
+  typeof MISSION_EXPIRED,
+  MissionExpiredPayload
+>;
+
+// ===========================================
 // Union
 // ===========================================
 
 /**
  * Every domain event the overworld can emit, one line per event so the
  * list stays discoverable. Extended by each tick step and command as it
- * lands (#61, #67, #68). Roster and economy events are folded in because
+ * lands (#67, #68). Roster and economy events are folded in because
  * roster commands (#63) run through this dispatcher and their purchases
  * emit `CreditsChanged`.
  */
@@ -131,6 +221,11 @@ export type OverworldDomainEvent =
   | ThreatChangedEvent
   | InfestationSpreadEvent
   | InfestationSeededEvent
+  | DeployableOfflineEvent
+  | DeployableOnlineEvent
+  | GameEndedEvent
+  | MissionOfferedEvent
+  | MissionExpiredEvent
   | RosterEvent
   | EconomyEvent;
 

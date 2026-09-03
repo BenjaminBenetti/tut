@@ -1,5 +1,6 @@
 import type { BiomeId } from "../../content/model/biome-id";
 import type { PropKindId } from "./prop";
+import type { IntRange } from "./settlement-definition";
 import type { SurfaceId } from "./surface";
 
 // ===========================================
@@ -28,8 +29,14 @@ export interface TerrainProfile {
 /** A prop kind and how densely the prop pass scatters it. */
 export interface VegetationEntry {
   readonly prop: PropKindId;
-  /** Props per 100 open ground columns. */
+  /** Props per 100 open ground columns, clusters included. */
   readonly density: number;
+  /**
+   * When set, props of this kind come in clumps of this many (a copse, a
+   * boulder field) grown around a seed column; the expected count per
+   * 100 columns stays `density`. Unset means singletons.
+   */
+  readonly cluster?: IntRange;
 }
 
 /** A building template with a relative weight for lot assignment. */
@@ -56,6 +63,9 @@ export interface BiomeDefinition {
   readonly buildingKinds: readonly WeightedBuildingKind[];
   /** Surface of paved roads. */
   readonly roadSurface: SurfaceId;
-  /** Surface of unpaved roads (rural settlements). */
+  /**
+   * Surface of unpaved roads (rural settlements). Never the biome's
+   * dominant ground surface, or the trail is invisible.
+   */
   readonly trailSurface: SurfaceId;
 }

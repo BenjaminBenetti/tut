@@ -1,3 +1,4 @@
+import type { SettlementScale } from "../../content/model/settlement-scale";
 import type { MapLayout } from "./map-layout";
 import type { RegionId } from "./region";
 
@@ -39,6 +40,8 @@ export interface City {
   readonly regionId: RegionId;
   /** Integer in `[MIN_INFESTATION, MAX_INFESTATION]`. */
   readonly infestation: number;
+  /** How built-up the city is; missions here generate maps at this scale (GDD §7). */
+  readonly scale: SettlementScale;
   /** Cities the infestation can spread to. Adjacency is symmetric. */
   readonly neighbourIds: readonly CityId[];
   /** Where the overworld screen draws it. */

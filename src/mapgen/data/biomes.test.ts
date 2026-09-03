@@ -34,6 +34,16 @@ describe("biome definitions", () => {
     }
   });
 
+  it("paint trails in a surface that reads against the dominant ground", () => {
+    for (const biome of biomes.values) {
+      const dominant = [...biome.groundSurfaces].sort(
+        (a, b) => b.weight - a.weight,
+      )[0];
+      expect(dominant, biome.id).toBeDefined();
+      expect(biome.trailSurface, biome.id).not.toBe(dominant?.surface);
+    }
+  });
+
   it("only scatter ground props that are allowed in that biome", () => {
     for (const biome of biomes.values) {
       for (const entry of biome.vegetation) {

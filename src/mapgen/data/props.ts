@@ -13,6 +13,7 @@ export const PropKindIds = {
   SANDBAGS: "sandbags",
   DUMPSTER: "dumpster",
   SHELVING: "shelving",
+  TABLE: "table",
   FENCE: "fence",
   BOULDER: "boulder",
   TREE_PINE: "tree-pine",
@@ -67,6 +68,12 @@ export const PROP_DEFINITIONS: readonly PropDefinition[] = [
     id: PropKindIds.SHELVING,
     cover: CoverLevel.HIGH,
     blocksLos: true,
+    placements: ["interior"],
+  },
+  {
+    id: PropKindIds.TABLE,
+    cover: CoverLevel.LOW,
+    blocksLos: false,
     placements: ["interior"],
   },
   {

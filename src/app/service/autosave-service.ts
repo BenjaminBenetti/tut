@@ -1,6 +1,6 @@
 import type { Unsubscribe } from "../../core/model/event-bus";
 import type { OverworldCommand } from "../../overworld/model/overworld-command";
-import type { OverworldDomainEvent } from "../../overworld/model/overworld-domain-event";
+import type { CampaignEvent } from "../../overworld/model/campaign-event";
 import type { GameState } from "../../save/model/game-state";
 import type { SaveError } from "../../save/model/save-error";
 import type { SaveSlotId } from "../../save/model/save-slot";
@@ -67,7 +67,7 @@ export class AutosaveService {
    * the unsubscribe that stops following the store.
    */
   attach(
-    store: StateSource<GameState, OverworldCommand, OverworldDomainEvent>,
+    store: StateSource<GameState, OverworldCommand, CampaignEvent>,
   ): Unsubscribe {
     this.save(store.getState());
     return store.subscribe((change) => {

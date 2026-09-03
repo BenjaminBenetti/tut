@@ -249,9 +249,9 @@ export const MODEL_MANIFEST = {
     category: "bugs",
     path: "assets/models/bugs/bug-brute.glb",
     footprint: { w: 1, d: 1 },
-    height: 1.85,
+    height: 1.95,
     sockets: [],
-    quality: "placeholder",
+    quality: "final",
   },
   "bug.lurker": {
     category: "bugs",
@@ -259,15 +259,15 @@ export const MODEL_MANIFEST = {
     footprint: { w: 1, d: 1 },
     height: 1.35,
     sockets: [],
-    quality: "placeholder",
+    quality: "final",
   },
   "bug.swarmer": {
     category: "bugs",
     path: "assets/models/bugs/bug-swarmer.glb",
     footprint: { w: 1, d: 1 },
-    height: 0.51,
+    height: 0.54,
     sockets: [],
-    quality: "placeholder",
+    quality: "final",
   },
 
   // ===========================================
@@ -277,9 +277,9 @@ export const MODEL_MANIFEST = {
     category: "props",
     path: "assets/models/props/egg-spawner.glb",
     footprint: { w: 1, d: 1 },
-    height: 1.4,
+    height: 1.34,
     sockets: ["socket_hatch"],
-    quality: "placeholder",
+    quality: "final",
   },
   "prop.barrier-concrete": {
     category: "props",

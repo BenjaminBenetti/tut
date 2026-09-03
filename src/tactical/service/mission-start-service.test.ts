@@ -4,6 +4,7 @@ import { MISSION_TYPES } from "../../content/data/mission-types";
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
 import { ECONOMY_TUNING } from "../../economy/data/economy-tuning";
 import { HookKinds } from "../../mapgen/model/hook";
+import { createDefaultRegistries } from "../../mapgen/service/default-registries";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import { EARTH_MAP } from "../../overworld/data/earth-map";
 import { NEW_GAME_TUNING } from "../../overworld/data/new-game-tuning";
@@ -50,6 +51,7 @@ function deps(): MissionStartDeps {
     },
     unitTuning: UNIT_TUNING,
     ids: new SequentialIdGenerator(),
+    registries: createDefaultRegistries(),
   };
 }
 

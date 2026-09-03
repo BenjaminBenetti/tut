@@ -11,7 +11,6 @@ import { allows, PassMask } from "../../mapgen/model/pass-mask";
 import type { MapGenRegistries } from "../../mapgen/model/registries";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
-import { createDefaultRegistries } from "../../mapgen/service/default-registries";
 import { generateTacticalMap } from "../../mapgen/service/generate-tactical-map";
 import { missionToMapRecipe } from "../../mapgen/service/mission-map-recipe-adapter";
 import { TileIndex } from "../../mapgen/service/tile-index";
@@ -20,7 +19,7 @@ import type { MissionId } from "../../overworld/model/mission";
 import type { Mech } from "../../roster/model/mech";
 import type { MechStatSheet } from "../../roster/model/mech-stat-sheet";
 import type { SquadTypeCatalogue } from "../../roster/model/squad-type-catalogue";
-import type { GameState } from "../../save/model/game-state";
+import type { MissionCampaignState } from "../model/mission-campaign-state";
 import type { TacticalError } from "../model/tactical-error";
 import type {
   Objective,
@@ -53,8 +52,8 @@ export interface MissionStartDeps {
   readonly unitTuning: UnitTuning;
   /** Issues unit, spawner and objective ids; the caller writes its state back to `meta`. */
   readonly ids: IdGenerator;
-  /** Map generation content; the shipped registries unless a test substitutes. */
-  readonly registries?: MapGenRegistries;
+  /** Map generation content; the composition root passes the shipped registries. */
+  readonly registries: MapGenRegistries;
 }
 
 /** Id prefixes the mission start issues. */
@@ -85,13 +84,15 @@ export const OBJECTIVE_ID_PREFIX = "objective";
  * Deterministic: the same campaign state, deployment and id counters
  * always produce a deep-equal tactical state, because the map comes from
  * the mission's seed and placement walks hooks and tiles in order.
+ * Generic over the campaign state so the app passes its `GameState`
+ * while this domain never imports `save/` (ADR 0002 §3).
  */
-export function startTacticalMission(
-  state: GameState,
+export function startTacticalMission<TState extends MissionCampaignState>(
+  state: TState,
   missionId: MissionId,
   deployment: Deployment,
   deps: MissionStartDeps,
-): Result<GameState, TacticalError> {
+): Result<TState, TacticalError> {
   if (state.activeMission !== undefined) {
     return err({
       kind: "mission-active",
@@ -106,11 +107,10 @@ export function startTacticalMission(
     return err({ kind: "empty-deployment" });
   }
 
-  const registries = deps.registries ?? createDefaultRegistries();
   const recipe = missionToMapRecipe(
     mission,
     deps.missionTypes[mission.typeId],
-    registries,
+    deps.registries,
   );
   if (!recipe.ok) {
     return err({
@@ -118,7 +118,9 @@ export function startTacticalMission(
       reason: describeRecipeError(recipe.error),
     });
   }
-  const map = generateTacticalMap(recipe.value, { registries });
+  const map = generateTacticalMap(recipe.value, {
+    registries: deps.registries,
+  });
 
   const placed = placeDeployment(state, deployment, map, deps);
   if (!placed.ok) {
@@ -166,7 +168,7 @@ interface Placed {
  * Zones and their tiles are walked in map order; a tile is used once.
  */
 function placeDeployment(
-  state: GameState,
+  state: MissionCampaignState,
   deployment: Deployment,
   map: TacticalMap,
   deps: MissionStartDeps,
@@ -179,7 +181,7 @@ function placeDeployment(
   const units: Unit[] = [];
   const templates: Record<UnitTemplateId, UnitTemplate> = {};
 
-  const builds: Result<UnitBuild, TacticalError>[] = [];
+  const builds: UnitBuild[] = [];
   for (const mechId of deployment.mechIds) {
     const mech = state.roster.mechs.find((m) => m.id === mechId);
     if (mech === undefined) {
@@ -193,7 +195,7 @@ function placeDeployment(
     if (placement === undefined) {
       return err({ kind: "no-deploy-room", unitId: mechId, passClass: "mech" });
     }
-    builds.push(ok(mechUnit(mech, sheet, placement, factoryDeps)));
+    builds.push(mechUnit(mech, sheet, placement, factoryDeps));
   }
   for (const squadId of deployment.squadIds) {
     const squad = state.roster.squads.find((s) => s.id === squadId);
@@ -212,15 +214,12 @@ function placeDeployment(
         passClass: "infantry",
       });
     }
-    builds.push(ok(squadUnit(squad, type, placement, factoryDeps)));
+    builds.push(squadUnit(squad, type, placement, factoryDeps));
   }
 
   for (const build of builds) {
-    if (!build.ok) {
-      return build;
-    }
-    units.push(build.value.unit);
-    templates[build.value.template.id] = build.value.template;
+    units.push(build.unit);
+    templates[build.template.id] = build.template;
   }
   return ok({ units, templates });
 }

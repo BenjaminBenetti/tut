@@ -17,6 +17,7 @@ import type { TacticalState } from "../../tactical/model/tactical-state";
  * - `3`: `overworld.map.cities[].scale` (#61).
  * - `4`: `roster.graveyard` (#64).
  * - `5`: `overworld.threatOffset` (#307).
+ * - `6`: `activeMission` becomes the `TacticalState` slot (#323).
  */
 export const GAME_STATE_SCHEMA_VERSION = 6;
 

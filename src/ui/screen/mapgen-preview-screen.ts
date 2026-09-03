@@ -3,6 +3,7 @@ import type { BiomeId } from "../../content/model/biome-id";
 import { SETTLEMENT_SCALES } from "../../content/model/settlement-scale";
 import type { SettlementScale } from "../../content/model/settlement-scale";
 import type { GenerationDiagnostics } from "../../mapgen/model/diagnostics";
+import type { MapMetrics } from "../../mapgen/model/map-metrics";
 import type { MapSizePreset } from "../../mapgen/model/map-recipe";
 import { MAP_SIZE_PRESETS } from "../../mapgen/model/map-recipe";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
@@ -24,6 +25,7 @@ export interface PreviewControlsState {
 export interface PreviewResult {
   readonly map: TacticalMap;
   readonly diagnostics: GenerationDiagnostics;
+  readonly metrics: MapMetrics;
   readonly ascii: string;
   readonly elapsedMs: number;
 }
@@ -171,7 +173,7 @@ export class MapgenPreviewScreen {
 
   /** Describes a generated map in the read-outs. */
   showResult(result: PreviewResult): void {
-    const { map, diagnostics } = result;
+    const { map, diagnostics, metrics } = result;
     this.status.textContent = "";
     this.status.dataset.state = "ok";
     this.levelSlider.max = String(map.levels);
@@ -195,6 +197,25 @@ export class MapgenPreviewScreen {
       [
         "Generated in",
         `${result.elapsedMs.toFixed(1)} ms (passes ${totalMs.toFixed(1)} ms)`,
+      ],
+      ["Open ground", `${metrics.openTiles} of ${metrics.groundTiles}`],
+      ["Beside cover", percent(metrics.coverAdjacency)],
+      ["Beside a wall", percent(metrics.wallAdjacency)],
+      [
+        "Cover per 100",
+        `${metrics.highCoverPer100.toFixed(1)} high, ${metrics.lowCoverPer100.toFixed(1)} low`,
+      ],
+      [
+        "Interior props",
+        `${metrics.interiorPropsPerBuilding.toFixed(1)} per building`,
+      ],
+      [
+        "Vertical",
+        `${metrics.ramps} ramps, ${metrics.stairs} stairs, ${metrics.ladders} ladders, ${metrics.maxFloors} floors max`,
+      ],
+      [
+        "Hatch space",
+        `${metrics.hatchSpaceMin} min, ${metrics.hatchSpaceMean.toFixed(1)} mean`,
       ],
     ]);
     this.ascii.textContent = result.ascii;
@@ -316,4 +337,9 @@ function randomSeed(doc: Document): string {
   const bytes = new Uint8Array(4);
   doc.defaultView?.crypto.getRandomValues(bytes);
   return `seed-${Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("")}`;
+}
+
+/** Formats a share in [0, 1] as a percentage. */
+function percent(share: number): string {
+  return `${(100 * share).toFixed(1)} %`;
 }

@@ -15,7 +15,7 @@ tools/art/models/<name>.py ──► make_model.py ──► public/assets/model
                                                              then: model-ids.ts + model-manifest.ts, pnpm test
 ```
 
-## Prerequisites (devcontainer, #191)
+## Prerequisites (devcontainer, #190)
 
 - `blender` 4.5 LTS on PATH (`blender -b --version`), trimesh inside Blender's Python.
 - `art-python` (trimesh + cadquery venv) for standalone validation or CadQuery/OpenSCAD side work.

@@ -1,4 +1,4 @@
-"""Shared helpers for Blender model scripts (art-blender skill, #191).
+"""Shared helpers for Blender model scripts (art-blender skill, #190).
 
 Import from a model script run inside Blender:
 

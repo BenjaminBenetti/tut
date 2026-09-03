@@ -90,6 +90,26 @@ describe("TopBarView", () => {
     expect(badge.dataset.tone).toBe("danger");
   });
 
+  it("shows a threat badge that agrees with the rounded number (#368)", () => {
+    const base = newGame();
+    const state = {
+      ...base,
+      overworld: { ...base.overworld, threat: 33.4 },
+    };
+    const view = new TopBarView({
+      onAdvanceDay: () => undefined,
+      onMainMenu: () => undefined,
+      onRoster: () => undefined,
+    });
+    view.mount(root);
+    view.update(state);
+    expect(field("threat").textContent).toBe("33");
+    expect(field("threat-tone").dataset.tone).toBe("ok");
+    view.update({ ...state, overworld: { ...state.overworld, threat: 33.5 } });
+    expect(field("threat").textContent).toBe("34");
+    expect(field("threat-tone").dataset.tone).toBe("warn");
+  });
+
   it("disables Advance Day and shows the outcome once the campaign has ended", () => {
     const view = new TopBarView({ onAdvanceDay: vi.fn(), onMainMenu: vi.fn() });
     view.mount(root);

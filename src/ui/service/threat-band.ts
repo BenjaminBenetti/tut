@@ -1,5 +1,3 @@
-import { MAX_THREAT } from "../../overworld/model/threat";
-
 // ===========================================
 // Threat colour band
 // ===========================================
@@ -17,13 +15,19 @@ export type ThreatTone = "ok" | "warn" | "danger";
  */
 export const THREAT_BAND_UPPER = { ok: 33, warn: 66 } as const;
 
-/** Maps a threat level onto its colour band. Values above the scale are red. */
+/**
+ * Maps a threat level onto its colour band. The band is judged on the
+ * value rounded to a whole number, which is what every readout shows
+ * (`formatWhole`), so a badge never disagrees with the number beside it
+ * (#368): 33.4 reads `33 · ok`, 33.5 reads `34 · warn`.
+ */
 export function threatTone(threat: number): ThreatTone {
-  if (threat <= THREAT_BAND_UPPER.ok) {
+  const shown = Math.round(threat);
+  if (shown <= THREAT_BAND_UPPER.ok) {
     return "ok";
   }
-  if (threat <= THREAT_BAND_UPPER.warn) {
+  if (shown <= THREAT_BAND_UPPER.warn) {
     return "warn";
   }
-  return threat <= MAX_THREAT ? "danger" : "danger";
+  return "danger";
 }

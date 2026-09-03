@@ -8,7 +8,11 @@ import type { HookPlacer } from "../../model/hook-placer";
 import type { MapDraft } from "../../model/map-draft";
 import type { HookRequirement } from "../../model/map-recipe";
 import type { TileCoord } from "../../model/tile-coord";
-import { isPassableGround } from "../../service/draft-queries";
+import { columnKey, isPassableGround } from "../../service/draft-queries";
+import {
+  buildGroundComponents,
+  largestGroundComponent,
+} from "../../service/ground-components";
 import { MIN_DEPLOY_INFANTRY_TILES } from "../../service/map-validator";
 import { hookTileKeys } from "./placer-support";
 
@@ -102,9 +106,14 @@ function findZone(
   const fresh = rng.shuffle(DIRECTIONS.filter((edge) => !usedEdges.has(edge)));
   const reused = DIRECTIONS.filter((edge) => usedEdges.has(edge));
   const taken = hookTileKeys(draft);
+  const mainland = mainlandColumns(draft);
   let best: Zone | undefined;
   for (const edge of [...fresh, ...reused]) {
-    const seeds = rng.shuffle(seedColumns(draft, edge, taken));
+    const all = seedColumns(draft, edge, taken);
+    const onMainland = all.filter((seed) =>
+      mainland.has(columnKey(draft, seed.x, seed.z)),
+    );
+    const seeds = rng.shuffle(onMainland.length > 0 ? onMainland : all);
     for (const seed of seeds.slice(0, SEEDS_PER_EDGE)) {
       const tiles = growZone(draft, seed, taken);
       if (tiles.length >= TARGET_TILES) {
@@ -119,6 +128,26 @@ function findZone(
     }
   }
   return best;
+}
+
+/**
+ * Column keys of the largest connected ground area. Seeding there keeps
+ * the deploy zone off mesas and islands nothing can reach (a ramp joins
+ * one-level steps, but a two-level cliff stays a cliff).
+ */
+function mainlandColumns(draft: MapDraft): ReadonlySet<number> {
+  const ground = buildGroundComponents(draft);
+  const root = largestGroundComponent(ground);
+  const keys = new Set<number>();
+  if (root === undefined) {
+    return keys;
+  }
+  for (const key of ground.nodes) {
+    if (ground.components.find(key) === root) {
+      keys.add(key);
+    }
+  }
+  return keys;
 }
 
 /** Passable ground columns within the edge band, as ground coordinates. */

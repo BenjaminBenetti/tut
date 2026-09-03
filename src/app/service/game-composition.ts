@@ -13,6 +13,7 @@ import { ADVANCE_DAY } from "../../overworld/model/overworld-command";
 import { DataDeployableTypeCatalogue } from "../../overworld/repository/deployable-type-catalogue";
 import { createAdvanceDayHandler } from "../../overworld/service/advance-day-service";
 import { createOverworldCommandDispatcher } from "../../overworld/service/command-dispatcher";
+import { registerDeployableCommands } from "../../overworld/service/deployable-command-handlers";
 import type { TickDeps } from "../../overworld/service/default-tick-steps";
 import { createDefaultTickSteps } from "../../overworld/service/default-tick-steps";
 import { registerRosterCommands } from "../../overworld/service/roster-command-handlers";
@@ -85,9 +86,9 @@ export interface GameComposition {
  * ```
  *
  * Command handlers are registered on `dispatcher` here: the roster
- * commands (#63) and `AdvanceDay` (#68), which runs the default tick
- * pipeline over the shipped content. #65 deployables, #67 LaunchMission
- * with the #62 resolver injected and #70 events follow. Anything
+ * commands (#63), the deployable commands (#65) and `AdvanceDay` (#68),
+ * which runs the default tick pipeline over the shipped content. #67
+ * LaunchMission with the #62 resolver injected and #70 events follow. Anything
  * unregistered is rejected as `unknown-command` and the store stays put.
  */
 export function composeGame(deps: GameCompositionDeps): GameComposition {
@@ -102,6 +103,10 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     transactionsFor: (ids) => new LedgerTransactionService(ids),
   });
   const tickDeps = composeTickDeps();
+  registerDeployableCommands(dispatcher, {
+    catalogue: tickDeps.catalogue,
+    transactionsFor: tickDeps.createTransactions,
+  });
   dispatcher.register(
     ADVANCE_DAY,
     createAdvanceDayHandler(createDefaultTickSteps<GameState>(tickDeps), {

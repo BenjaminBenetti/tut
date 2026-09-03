@@ -412,6 +412,27 @@ describe("resolveAttack", () => {
     expect(missed).toBe(true);
   });
 
+  it("spends a charge per shot and refuses at zero, leaving bugs unlimited", () => {
+    const m = mission([
+      unit("s1", "tdf", "rifle", 1, 1, { charges: 1 }),
+      unit("b1", "bugs", "swarmer", 2, 1, { hp: 60, maxHp: 60 }),
+    ]);
+    const first = resolveAttack(m, attack("s1", "b1"), ctx(1), {
+      ...T,
+      attackEndsTurn: false,
+    });
+    expect(first.ok).toBe(true);
+    if (!first.ok) return;
+    expect(first.value.state.units[0]?.charges).toBe(0);
+    expect(first.value.state.units[1]?.charges).toBeUndefined();
+    const second = previewAttack(first.value.state, "s1", "b1", T);
+    expect(second.ok).toBe(false);
+    if (second.ok) return;
+    expect(second.error.kind).toBe("no-charges");
+    const bugShot = previewAttack({ ...m, phase: "bugs" }, "b1", "s1", T);
+    expect(bugShot.ok).toBe(true);
+  });
+
   it("returns the error and leaves the mission untouched for an illegal attack", () => {
     const m = base();
     const before = JSON.parse(JSON.stringify(m)) as TacticalState;

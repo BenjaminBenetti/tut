@@ -14,6 +14,9 @@ import type { UnitTuning } from "../model/unit-tuning";
  * - The starter mech (armor 30, mobility 7, firepower 40) comes out at
  *   80 hp, 6 move, a 40-damage 70% shot and 9 per-hit armor.
  * - Both sides get the XCOM-style two-action turn (GDD §6.2).
+ * - Charges (#409): a rifle squad fires three times before reloading, a
+ *   rocket squad once, a mech four times before venting; bugs never run
+ *   dry.
  */
 export const UNIT_TUNING: UnitTuning = {
   infantry: {
@@ -34,6 +37,8 @@ export const UNIT_TUNING: UnitTuning = {
       medic: "tdf.infantry.medic",
     },
     fallbackModelId: "tdf.infantry.rifle",
+    chargesByType: { rifle: 3, rocket: 1, sniper: 2, engineer: 3, medic: 3 },
+    fallbackCharges: 3,
   },
   mech: {
     baseHp: 50,
@@ -45,5 +50,6 @@ export const UNIT_TUNING: UnitTuning = {
     maxMove: 8,
     weapon: { range: 10, accuracy: 70, damage: 1, armorPen: 2 },
     modelId: "tdf.mech.assembled-a",
+    charges: 4,
   },
 };

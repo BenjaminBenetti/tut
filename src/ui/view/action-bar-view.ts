@@ -22,6 +22,8 @@ export interface ActionBarModel {
   readonly playerPhase: boolean;
   /** The armed action, if any; its button reads pressed. */
   readonly mode: "move" | "attack" | undefined;
+  /** Label of the reload button: "Vent" for a mech, "Reload" otherwise (#409). */
+  readonly reloadLabel?: string;
 }
 
 // ===========================================
@@ -120,6 +122,9 @@ export class ActionBarView {
       const pressed = action === model.mode;
       button.classList.toggle("is-selected", pressed);
       button.setAttribute("aria-pressed", pressed ? "true" : "false");
+      if (action === "reload") {
+        button.textContent = model.reloadLabel ?? "Reload";
+      }
     }
   }
 

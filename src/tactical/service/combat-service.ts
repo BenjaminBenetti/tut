@@ -169,6 +169,9 @@ export function validateAttack(
   if (attacker.ap < tuning.attackApCost) {
     return err({ kind: "no-action-points", unitId: attackerId });
   }
+  if (attacker.charges !== undefined && attacker.charges <= 0) {
+    return err({ kind: "no-charges", unitId: attackerId });
+  }
   return validateTargeting(mission, attackerId, targetId);
 }
 
@@ -297,7 +300,11 @@ export function rollAttack(
 
   const units = mission.units.map((unit): Unit => {
     if (unit.id === attacker.id) {
-      return { ...unit, ap: apAfter };
+      return {
+        ...unit,
+        ap: apAfter,
+        ...(unit.charges === undefined ? {} : { charges: unit.charges - 1 }),
+      };
     }
     if (unit.id === target.id && damage > 0) {
       return { ...unit, hp: targetHp };

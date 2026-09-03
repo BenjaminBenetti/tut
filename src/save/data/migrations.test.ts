@@ -47,6 +47,35 @@ describe("GAME_STATE_MIGRATIONS", () => {
     expect(() => step?.apply({ meta: {} })).toThrow(/overworld/);
   });
 
+  it("v8 → v9 fills unit charges from their templates and leaves the rest alone", () => {
+    const step = GAME_STATE_MIGRATIONS.find((m) => m.from === 8);
+    expect(step?.to).toBe(9);
+    const v8 = {
+      meta: { seed: 1 },
+      activeMission: {
+        templates: { rifle: { charges: 3 }, swarmer: {} },
+        units: [
+          { id: "u1", templateId: "rifle" },
+          { id: "u2", templateId: "swarmer" },
+          { id: "u3", templateId: "rifle", charges: 1 },
+        ],
+      },
+    };
+    expect(step?.apply(v8)).toEqual({
+      meta: { seed: 1 },
+      activeMission: {
+        templates: { rifle: { charges: 3 }, swarmer: {} },
+        units: [
+          { id: "u1", templateId: "rifle", charges: 3 },
+          { id: "u2", templateId: "swarmer" },
+          { id: "u3", templateId: "rifle", charges: 1 },
+        ],
+      },
+    });
+    const idle = { meta: { seed: 1 }, overworld: {} };
+    expect(step?.apply(idle)).toEqual(idle);
+  });
+
   it("v1 → v2 rejects a state without an overworld slice", () => {
     expect(() => GAME_STATE_MIGRATIONS[0]?.apply({ meta: {} })).toThrow(
       /overworld/,
@@ -178,9 +207,9 @@ describe("GAME_STATE_MIGRATIONS", () => {
     expect(() => step?.apply({ meta: {} })).toThrow(/overworld/);
   });
 
-  it("v8 → v9 gives a mission in progress its spawn clocks and leaves the rest alone", () => {
-    const step = GAME_STATE_MIGRATIONS.find((m) => m.from === 8);
-    expect(step?.to).toBe(9);
+  it("v9 → v10 gives a mission in progress its spawn clocks and leaves the rest alone", () => {
+    const step = GAME_STATE_MIGRATIONS.find((m) => m.from === 9);
+    expect(step?.to).toBe(10);
     const idle = { meta: { seed: 7 }, overworld: { day: 3 }, roster: {} };
     expect(step?.apply(idle)).toBe(idle);
     const v8 = {

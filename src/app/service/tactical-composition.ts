@@ -16,10 +16,12 @@ import { ATTACK } from "../../tactical/model/attack-command";
 import { END_TURN } from "../../tactical/model/end-turn-command";
 import { MOVE } from "../../tactical/model/move-command";
 import { OVERWATCH } from "../../tactical/model/overwatch-command";
+import { RELOAD } from "../../tactical/model/reload-command";
 import { createAttackHandler } from "../../tactical/service/combat-service";
 import type { MissionStartDeps } from "../../tactical/service/mission-start-service";
 import { createMoveHandler } from "../../tactical/service/move-handler";
 import { overwatchHandler } from "../../tactical/service/overwatch-handler";
+import { reloadHandler } from "../../tactical/service/reload-handler";
 import type { SpawnDeps } from "../../tactical/service/spawn-service";
 import {
   createEdgeWaveStep,
@@ -120,6 +122,7 @@ export function shippedTacticalHandlers(): TacticalHandlers {
       createEdgeWaveStep(spawn),
     ]),
     [OVERWATCH]: overwatchHandler,
+    [RELOAD]: reloadHandler,
   };
 }
 

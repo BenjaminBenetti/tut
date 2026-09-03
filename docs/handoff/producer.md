@@ -3,7 +3,7 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-03 09:51 UTC)
+## Status Digest (2026-09-03 12:41 UTC)
 
 | Milestone | done / total |
 |---|---|
@@ -44,8 +44,9 @@ Board: Backlog 30 · Ready 16 · In Progress 2 · In Review 1 · Blocked 0 · Do
 
 **In-flight PRs** (age h / idle h / review):
 
-- #347 0.0h / 0.0h / n/a — chore(handoff): tech-lead 2026-09-03 (update 6)
-- #346 0.0h / 0.0h / n/a — feat(overworld): persistent threat offset from event choices (#307)
+- #349 2.8h / 2.8h / n/a — chore(handoff): art-director 2026-09-03 (update 11)
+- #348 2.8h / 2.8h / n/a — chore(handoff): producer 2026-09-03 (update 8)
+- #346 2.9h / 2.8h / n/a — feat(overworld): persistent threat offset from event choices (#307)
 
 **In progress** (branch pushed?):
 
@@ -77,14 +78,14 @@ Board: Backlog 30 · Ready 16 · In Progress 2 · In Review 1 · Blocked 0 · Do
 
 **Gap audit (03:10 UTC, posted on #35):** closed. Every stopped-seat issue is Done or reseated (#52 → eng-5, #55 → eng-3); #60 and #162 merged.
 
-**09:55 UTC.** M1 at 54 of 66 with only #77 (event dialog), #83 (results), #84 (e2e), #307 (threat offset, in review) and QA bugs left; epics #35–#40 closed. **M2 Basic Missions filed**: epics #316–#320, children #321–#345 (24 issues, half-day to one-day each, sub-issue linked, blockers explicit). Critical path #321/#322 → #323 → #324 → #325/#326 → #327 → #328 → #329 → #330 → #341 → #344. Tech Lead tiering requested on #316; #321 medium and #322 low already.
+**12:45 UTC.** Fleet pause 09:58 → 12:41 (usage limits); nothing merged or commented in that window. M1 at 52 of 67 with #77 (eng-3), #83 (eng-4), #307 (eng-5, PR #346), #84 e2e and QA bugs left. **M2 filed and tiered**: epics #316–#320, children #321–#345; Tech Lead tiers (#317): high #323 #324 #325 #326 #328 #330 #341; medium #321 #327 #329 #331 #333 #335 #337–#340 #342 #343; low #322 #332 #334 #344 #345. #324 ruling: tactical commands join the campaign dispatcher, no second store. #337 rebalanced to unit meshes only (overlays → #338) so a medium seat can start it early.
 
-**Seat plan:** eng-3 (default): #77 → #323 mission state (expected high) → #324 → #328 → #330. eng-4 (medium): #83 → #321 unit model (medium) → #325 movement → #327 combat. eng-5 (medium): #307 (in review) → #322 species data (low) → #326 sight/cover → #331 AI registry. #84 e2e: QA has not answered; seat it on the first free medium seat once #83 merges. Low-tier fillers between waves: #230, #141, #108, #336, QA bugs #217 #218 #219 #291 #294 #304.
+**Seat plan:** eng-3 (default): #77 → #323 → #324 → #325 → #326 → #328 → #330 → #341 (serial, all high). eng-4 (medium): #83 → #321 unit model → #337 unit meshes → #342 after #324. eng-5 (medium): #307 → #322 species → #84 e2e (QA silent) → fillers #230 #141 #108 #336, QA bugs #217 #218 #219 #291 #294 #304.
 
-**Risks** (09:55 UTC):
+**Risks / asks** (12:45 UTC):
 
-- M2's critical path is long and mostly high-tier at the head (#323, #324, #328, #330), so eng-3 is again the pacing seat; medium seats should take #321/#322/#325/#326/#327 in parallel to feed it.
-- #84 ownership unresolved (QA silent on the ask); it is the M1 definition of done.
+- **Director: M2's critical path is seven high-tier issues on one default seat.** A second default-effort seat runs #325/#326 in parallel and #330 beside #328, roughly halving M2 wall-clock. Medium seats will otherwise idle on fillers within a day.
+- Review queue after the pause: #346 (#307), #348, #349 waiting ~3 h.
 
 ---
 

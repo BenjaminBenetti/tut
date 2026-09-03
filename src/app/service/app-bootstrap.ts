@@ -14,10 +14,14 @@ import { IsometricCameraRig } from "../../graphics/service/isometric-camera-rig"
 import { ManifestTextureLoader } from "../../graphics/service/manifest-texture-loader";
 import { loadOverworldAssets } from "../../graphics/service/overworld-asset-loader";
 import { OverworldSceneBuilder } from "../../graphics/service/overworld-scene-builder";
+import { GltfModelLoader } from "../../graphics/service/gltf-model-loader";
+import { PlaceholderModelFactory } from "../../graphics/service/placeholder-model-factory";
 import { SceneService } from "../../graphics/service/scene-service";
+import { MODEL_MANIFEST } from "../../graphics/data/model-manifest";
 import { SvgGlyphRasteriser } from "../../graphics/service/svg-glyph-rasteriser";
 import { DEPLOYABLE_TYPES } from "../../overworld/data/deployable-types";
 import { EARTH_MAP } from "../../overworld/data/earth-map";
+import { COMBAT_TUNING } from "../../tactical/data/combat-tuning";
 import { DEPLOYABLE_TYPE_IDS } from "../../overworld/model/deployable-type";
 import { DataDeployableTypeCatalogue } from "../../overworld/repository/deployable-type-catalogue";
 import type { SaveClock } from "../../save/model/save-clock";
@@ -29,6 +33,7 @@ import { MainMenuScreen } from "../../ui/screen/main-menu-screen";
 import type { OverworldSelection } from "../../ui/model/overworld-selection";
 import { DeploymentScreen } from "../../ui/screen/deployment-screen";
 import { OverworldScreen } from "../../ui/screen/overworld-screen";
+import { TacticalScreen } from "../../ui/screen/tactical-screen";
 import { OverworldSelectionState } from "../../ui/service/overworld-selection-state";
 import { MechBayScreen } from "../../ui/screen/mech-bay-screen";
 import { MissionResultsScreen } from "../../ui/screen/mission-results-screen";
@@ -146,6 +151,23 @@ export async function bootstrapApp(doc: Document): Promise<void> {
             assessor: game.assessor,
             squadTypes: game.content.squadTypes,
             missionTypes: game.content.missionTypes,
+          }),
+      ],
+      [
+        "tactical",
+        () =>
+          new TacticalScreen({
+            router,
+            session: game.session,
+            models: new GltfModelLoader({
+              manifest: MODEL_MANIFEST,
+              baseUrl: import.meta.env.BASE_URL,
+              fallback: new PlaceholderModelFactory(),
+              logger: console,
+            }),
+            combatTuning: COMBAT_TUNING,
+            createScene: (container, options) =>
+              new SceneService(container, options),
           }),
       ],
       [

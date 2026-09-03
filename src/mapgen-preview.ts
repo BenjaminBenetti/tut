@@ -4,10 +4,6 @@ import { Group } from "three";
 
 import { previewUnits } from "./app/service/preview-units";
 import { CameraInputController } from "./graphics/controller/camera-input-controller";
-import {
-  PickingController,
-  unitPickerAdapter,
-} from "./graphics/controller/picking-controller";
 import { MODEL_MANIFEST } from "./graphics/data/model-manifest";
 import { CAMERA_ZOOM } from "./graphics/model/camera-state";
 import { GltfModelLoader } from "./graphics/service/gltf-model-loader";
@@ -22,6 +18,8 @@ import { createDefaultRegistries } from "./mapgen/service/default-registries";
 import { generateTacticalMapWithDiagnostics } from "./mapgen/service/generate-tactical-map";
 import { computeMapMetrics } from "./mapgen/service/map-metrics";
 import type { PreviewControlsState } from "./ui/screen/mapgen-preview-screen";
+import { TacticalInputController } from "./ui/controller/tactical-input-controller";
+import type { TacticalIntent } from "./ui/model/tactical-intent";
 import { MapgenPreviewScreen } from "./ui/screen/mapgen-preview-screen";
 
 // ===========================================
@@ -72,6 +70,19 @@ function writeUrl(state: PreviewControlsState): void {
 // Entry
 // ===========================================
 
+/** Mirrors an input intent onto the body so end-to-end tests can read it. */
+function recordIntent(intent: TacticalIntent): void {
+  const body = document.body.dataset;
+  body.lastIntent = intent.kind;
+  if (intent.kind === "select-unit") {
+    body.selectedUnit = intent.unitId;
+  } else if (intent.kind === "select-tile") {
+    body.selectedTile = `${String(intent.tile.x)},${String(intent.tile.y)},${String(intent.tile.z)}`;
+  } else if (intent.kind === "action") {
+    body.lastAction = intent.action;
+  }
+}
+
 /**
  * Map generation preview (ADR 0004 §7.5, GDD §7): a second page that
  * generates a map from the controls, renders it with placeholder
@@ -100,7 +111,7 @@ async function main(): Promise<void> {
   const showUnits =
     new URLSearchParams(window.location.search).get("units") === "1";
   let view: TacticalSceneBuilder | undefined;
-  let picking: PickingController<string> | undefined;
+  let input: TacticalInputController | undefined;
 
   const regenerate = (state: PreviewControlsState): void => {
     const recipe: MapRecipe = {
@@ -119,7 +130,7 @@ async function main(): Promise<void> {
         registries,
       });
       const elapsedMs = performance.now() - started;
-      picking?.detach();
+      input?.detach();
       view?.dispose();
       const builder = new TacticalSceneBuilder({ map, models });
       view = builder;
@@ -128,12 +139,16 @@ async function main(): Promise<void> {
       if (showUnits) {
         delete document.body.dataset.units;
         const { units, templates } = previewUnits(map);
-        picking = new PickingController(unitPickerAdapter(builder), rig, {
-          onSelected: (unitId) => {
-            document.body.dataset.selectedUnit = unitId;
-          },
+        // The tactical input controller owns the camera input while a
+        // unit preview is up (#340); intents land on the body for tests.
+        input = new TacticalInputController({
+          picker: builder,
+          camera: rig,
+          cameraInput,
+          intents: { emit: (intent) => recordIntent(intent) },
         });
-        picking.attach(viewport);
+        input.attach(viewport);
+        window.__tutTactical__ = input.hooks();
         void builder.update(units, templates).then(() => {
           if (view === builder) {
             document.body.dataset.units = String(builder.unitIds().length);
@@ -162,9 +177,17 @@ async function main(): Promise<void> {
   const scene = new SceneService(viewport, {
     camera: rig,
     content,
-    updatables: [cameraInput],
+    updatables: [
+      {
+        update: (dt) => {
+          (input ?? cameraInput).update(dt);
+        },
+      },
+    ],
   });
-  cameraInput.attach(viewport);
+  if (!showUnits) {
+    cameraInput.attach(viewport);
+  }
   // N steps the seed unless the user is typing in a control.
   document.addEventListener("keydown", (event) => {
     const target = event.target;

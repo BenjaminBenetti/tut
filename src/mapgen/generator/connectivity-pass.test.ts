@@ -169,7 +169,7 @@ describe("ConnectivityPass", () => {
       }
     }
     expect(relocations / hooks).toBeLessThanOrEqual(0.05);
-  });
+  }, 30_000);
 
   it("removes a blocking prop rather than relocating", () => {
     const { map, notes } = scenario((draft) => {

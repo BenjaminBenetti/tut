@@ -420,13 +420,13 @@ export class TacticalMapView implements Disposable {
 // Geometry helpers
 // ===========================================
 
-/** World height of a tile's top surface. */
-function tileTop(level: number): number {
+/** World height of a tile's top surface. Shared with the unit meshes. */
+export function tileTop(level: number): number {
   return level * LEVEL_HEIGHT + SLAB_HEIGHT;
 }
 
-/** World-space centre of a tile's top face. */
-function tileTopCentre(coord: TileCoord): Vec3 {
+/** World-space centre of a tile's top face. Shared with the unit meshes. */
+export function tileTopCentre(coord: TileCoord): Vec3 {
   return { x: coord.x + 0.5, y: tileTop(coord.y), z: coord.z + 0.5 };
 }
 

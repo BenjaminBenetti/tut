@@ -2,11 +2,19 @@ import "./ui/style/theme.css";
 
 import { Group } from "three";
 
+import { previewUnits } from "./app/service/preview-units";
 import { CameraInputController } from "./graphics/controller/camera-input-controller";
+import {
+  PickingController,
+  unitPickerAdapter,
+} from "./graphics/controller/picking-controller";
+import { MODEL_MANIFEST } from "./graphics/data/model-manifest";
 import { CAMERA_ZOOM } from "./graphics/model/camera-state";
+import { GltfModelLoader } from "./graphics/service/gltf-model-loader";
 import { IsometricCameraRig } from "./graphics/service/isometric-camera-rig";
+import { PlaceholderModelFactory } from "./graphics/service/placeholder-model-factory";
 import { SceneService } from "./graphics/service/scene-service";
-import { TacticalMapView } from "./graphics/view/tactical-map-view";
+import { TacticalSceneBuilder } from "./graphics/service/tactical-scene-builder";
 import { DEFAULT_MISSION_HOOKS } from "./mapgen/data/hook-requirements";
 import type { MapRecipe } from "./mapgen/model/map-recipe";
 import { renderAscii } from "./mapgen/service/ascii-map-renderer";
@@ -82,7 +90,17 @@ async function main(): Promise<void> {
   const content = new Group();
   const rig = new IsometricCameraRig({ zoom: CAMERA_ZOOM.min });
   const cameraInput = new CameraInputController(rig);
-  let view: TacticalMapView | undefined;
+  const models = new GltfModelLoader({
+    manifest: MODEL_MANIFEST,
+    baseUrl: import.meta.env.BASE_URL,
+    fallback: new PlaceholderModelFactory(),
+    logger: console,
+  });
+  // `?units=1` drops a few sample units on the map (#337's smoke test).
+  const showUnits =
+    new URLSearchParams(window.location.search).get("units") === "1";
+  let view: TacticalSceneBuilder | undefined;
+  let picking: PickingController<string> | undefined;
 
   const regenerate = (state: PreviewControlsState): void => {
     const recipe: MapRecipe = {
@@ -101,10 +119,27 @@ async function main(): Promise<void> {
         registries,
       });
       const elapsedMs = performance.now() - started;
+      picking?.detach();
       view?.dispose();
-      view = new TacticalMapView(map);
-      content.add(view.root);
-      rig.lookAt(view.centre);
+      const builder = new TacticalSceneBuilder({ map, models });
+      view = builder;
+      content.add(builder.root);
+      rig.lookAt(builder.centre);
+      if (showUnits) {
+        delete document.body.dataset.units;
+        const { units, templates } = previewUnits(map);
+        picking = new PickingController(unitPickerAdapter(builder), rig, {
+          onSelected: (unitId) => {
+            document.body.dataset.selectedUnit = unitId;
+          },
+        });
+        picking.attach(viewport);
+        void builder.update(units, templates).then(() => {
+          if (view === builder) {
+            document.body.dataset.units = String(builder.unitIds().length);
+          }
+        });
+      }
       screen.showResult({
         map,
         diagnostics,

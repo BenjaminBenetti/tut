@@ -35,7 +35,7 @@ RUN apt-get update \
 RUN curl -fsSL "https://download.blender.org/release/Blender${BLENDER_SERIES}/blender-${BLENDER_VERSION}-linux-x64.tar.xz" \
         | tar -xJ -C /opt \
     && ln -s "/opt/blender-${BLENDER_VERSION}-linux-x64/blender" /usr/local/bin/blender \
-    && BPY="$(ls /opt/blender-${BLENDER_VERSION}-linux-x64/${BLENDER_SERIES}/python/bin/python3*)" \
+    && BPY="$(find /opt/blender-${BLENDER_VERSION}-linux-x64/${BLENDER_SERIES}/python/bin -maxdepth 1 -name 'python3.[0-9]*' ! -name '*-config' | head -n 1)" \
     && "$BPY" -m ensurepip \
     && "$BPY" -m pip install --no-cache-dir trimesh \
     && blender -b --version

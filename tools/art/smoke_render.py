@@ -1,4 +1,4 @@
-"""Headless Blender smoke test for the art toolchain (#191).
+"""Headless Blender smoke test for the art toolchain (#190).
 
     blender -b --python tools/art/smoke_render.py -- [--out DIR] [--samples 32] [--size 640]
 

@@ -23,6 +23,9 @@ import { TrailRoadBuilder } from "./road/trail-road-builder";
 /** Columns per levelled chunk when a road follows the terrain. */
 const CHUNK_LENGTH = 8;
 
+/** Columns beyond the outermost road that plat grading covers (the sidewalk). */
+const PLAT_MARGIN = 1;
+
 /** The shipped builder per road style. */
 export const DEFAULT_ROAD_BUILDERS: Readonly<Record<RoadStyle, RoadBuilder>> = {
   trail: new TrailRoadBuilder(),
@@ -38,12 +41,14 @@ export const DEFAULT_ROAD_BUILDERS: Readonly<Record<RoadStyle, RoadBuilder>> = {
  * Pass 3 of the settlement archetype (ADR 0004 §7.3). Asks the builder for
  * the settlement's road style for line geometry, keeps the largest
  * connected network, levels each line (chunks within one level of each
- * other, or one grade for the whole network), paints road and sidewalk
- * surfaces, records `RoadSegment`s, and adds a ramp wherever consecutive
- * chunks differ by a level so the road itself is always walkable.
+ * other, or one grade for the whole network and the plat it encloses),
+ * paints road and sidewalk surfaces, records `RoadSegment`s, and adds a
+ * ramp wherever consecutive chunks differ by a level so the road itself
+ * is always walkable.
  *
  * ```
  *   builder lines ─► drop wet/duplicate ─► largest component ─► level & paint ─► segments + ramps
+ *                                                              └► grade plat (flat only)
  * ```
  */
 export class RoadPass implements GenerationPass {
@@ -93,6 +98,12 @@ export class RoadPass implements GenerationPass {
       builder.levelling === "flat" ? medianLevel(draft, lines) : undefined;
     for (const line of lines) {
       levelLine(draft, line, surface, flatLevel, diagnostics);
+    }
+    if (flatLevel !== undefined) {
+      const graded = gradePlat(draft, lines, flatLevel);
+      diagnostics.note(
+        `graded ${graded} columns inside the plat to level ${flatLevel}`,
+      );
     }
     if (settlement.sidewalks) {
       paintSidewalks(draft);
@@ -313,6 +324,53 @@ function adjacentRoadLevel(
     }
   }
   return undefined;
+}
+
+/**
+ * Grades every dry column inside the road network's bounding box, plus
+ * the sidewalk column beyond it, to the flat level, the way a city plat
+ * is graded before anything is built on it. Terrain outside the plat
+ * keeps its noise, so cliffs and ramps stay at the map margin. Returns
+ * how many columns changed level.
+ *
+ * ```
+ *   ^^^^^^^^^^^^^^^^^^      margin keeps the terrain
+ *   ^ ==+====+====+== ^
+ *   ^   |    |    |   ^     everything between the outermost roads
+ *   ^ ==+====+====+== ^     (and one column beyond) is one level
+ *   ^^^^^^^^^^^^^^^^^^
+ * ```
+ */
+function gradePlat(
+  draft: MapDraft,
+  lines: readonly RoadLine[],
+  level: number,
+): number {
+  let minX = draft.width;
+  let maxX = -1;
+  let minZ = draft.depth;
+  let maxZ = -1;
+  for (const line of lines) {
+    for (const column of line.columns) {
+      minX = Math.min(minX, column.x);
+      maxX = Math.max(maxX, column.x);
+      minZ = Math.min(minZ, column.z);
+      maxZ = Math.max(maxZ, column.z);
+    }
+  }
+  if (maxX < 0) {
+    return 0;
+  }
+  let graded = 0;
+  for (let z = minZ - PLAT_MARGIN; z <= maxZ + PLAT_MARGIN; z++) {
+    for (let x = minX - PLAT_MARGIN; x <= maxX + PLAT_MARGIN; x++) {
+      if (isDry(draft, x, z) && draft.groundLevelAt(x, z) !== level) {
+        draft.setGroundLevel(x, z, level);
+        graded++;
+      }
+    }
+  }
+  return graded;
 }
 
 /**

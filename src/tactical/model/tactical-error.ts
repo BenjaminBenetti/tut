@@ -54,7 +54,10 @@ export type TacticalError =
       readonly distance: number;
       readonly range: number;
     }
-  | { readonly kind: "no-line-of-sight"; readonly targetId: string };
+  | { readonly kind: "no-line-of-sight"; readonly targetId: string }
+  | { readonly kind: "no-charges"; readonly unitId: string }
+  | { readonly kind: "charges-full"; readonly unitId: string }
+  | { readonly kind: "no-reload"; readonly unitId: string };
 
 /** Human-readable text for a tactical error, for the status line and logs. */
 export function describeTacticalError(error: TacticalError): string {
@@ -95,5 +98,11 @@ export function describeTacticalError(error: TacticalError): string {
       return `Target is ${String(error.distance)} tiles away; weapon reaches ${String(error.range)}`;
     case "no-line-of-sight":
       return `No line of sight to "${error.targetId}"`;
+    case "no-charges":
+      return `Unit "${error.unitId}" is out of charges; reload or vent first`;
+    case "charges-full":
+      return `Unit "${error.unitId}" is already fully loaded`;
+    case "no-reload":
+      return `Unit "${error.unitId}" has nothing to reload`;
   }
 }

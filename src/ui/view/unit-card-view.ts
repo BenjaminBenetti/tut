@@ -74,6 +74,7 @@ export class UnitCardView {
       ["AP", "ap"],
       ["Weapon", "weapon"],
       ["Armor", "armor"],
+      ["Charges", "charges"],
       ["Status", "status"],
     ] as const) {
       const term = doc.createElement("dt");
@@ -118,6 +119,12 @@ export class UnitCardView {
       `range ${formatWhole(w.range)} · acc ${formatWhole(w.accuracy)} · dmg ${formatWhole(w.damage)} · pen ${formatWhole(w.armorPen)}`,
     );
     this.set("armor", formatWhole(template.armor));
+    this.set(
+      "charges",
+      template.charges === undefined || unit.charges === undefined
+        ? "—"
+        : `${unit.kind === "mech" ? "heat" : "ammo"} ${formatWhole(unit.charges)} / ${formatWhole(template.charges)}`,
+    );
     this.set("status", unit.status.length === 0 ? "—" : unit.status.join(", "));
     this.meter?.style.setProperty(
       "--value",

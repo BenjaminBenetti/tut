@@ -8,6 +8,7 @@ import type { MapSizePreset } from "../../mapgen/model/map-recipe";
 import { MAP_SIZE_PRESETS } from "../../mapgen/model/map-recipe";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import { ASCII_LEGEND } from "../../mapgen/service/ascii-map-renderer";
+import { nextSeed } from "../service/seed-sequence";
 
 // ===========================================
 // Types
@@ -76,6 +77,8 @@ export class MapgenPreviewScreen {
   private readonly ascii: HTMLPreElement;
   private readonly notes: HTMLElement;
   private readonly status: HTMLElement;
+  /** Metrics of the last map shown, for the delta column. */
+  private previousMetrics: MapMetrics | undefined;
 
   // ===========================================
   // Constructor
@@ -108,7 +111,15 @@ export class MapgenPreviewScreen {
       this.seedInput.value = randomSeed(doc);
       this.options.onGenerate(this.getState());
     });
-    form.appendChild(labelled(doc, "Seed", this.seedInput, reroll));
+    const next = el(doc, "button", "tut-btn");
+    next.type = "button";
+    next.id = "next-seed";
+    next.textContent = "▸";
+    next.title = "Next seed (N)";
+    next.addEventListener("click", () => {
+      this.advanceSeed();
+    });
+    form.appendChild(labelled(doc, "Seed", this.seedInput, reroll, next));
 
     this.biomeSelect = select(doc, "biome", BIOME_IDS, initial.biome);
     this.settlementSelect = select(
@@ -161,6 +172,12 @@ export class MapgenPreviewScreen {
   // Public Methods
   // ===========================================
 
+  /** Steps the seed to the next in its series and generates. */
+  advanceSeed(): void {
+    this.seedInput.value = nextSeed(this.seedInput.value);
+    this.options.onGenerate(this.getState());
+  }
+
   /** Current control values. */
   getState(): PreviewControlsState {
     return {
@@ -198,26 +215,9 @@ export class MapgenPreviewScreen {
         "Generated in",
         `${result.elapsedMs.toFixed(1)} ms (passes ${totalMs.toFixed(1)} ms)`,
       ],
-      ["Open ground", `${metrics.openTiles} of ${metrics.groundTiles}`],
-      ["Beside cover", percent(metrics.coverAdjacency)],
-      ["Beside a wall", percent(metrics.wallAdjacency)],
-      [
-        "Cover per 100",
-        `${metrics.highCoverPer100.toFixed(1)} high, ${metrics.lowCoverPer100.toFixed(1)} low`,
-      ],
-      [
-        "Interior props",
-        `${metrics.interiorPropsPerBuilding.toFixed(1)} per building`,
-      ],
-      [
-        "Vertical",
-        `${metrics.ramps} ramps, ${metrics.stairs} stairs, ${metrics.ladders} ladders, ${metrics.maxFloors} floors max`,
-      ],
-      [
-        "Hatch space",
-        `${metrics.hatchSpaceMin} min, ${metrics.hatchSpaceMean.toFixed(1)} mean`,
-      ],
+      ...metricRows(metrics, this.previousMetrics),
     ]);
+    this.previousMetrics = metrics;
     this.ascii.textContent = result.ascii;
     this.renderNotes(diagnostics);
   }
@@ -339,7 +339,48 @@ function randomSeed(doc: Document): string {
   return `seed-${Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("")}`;
 }
 
-/** Formats a share in [0, 1] as a percentage. */
-function percent(share: number): string {
-  return `${(100 * share).toFixed(1)} %`;
+/**
+ * The tuning read-outs, each with its change against the previous map
+ * when there is one, so a knob or a seed step reads as a delta.
+ */
+function metricRows(
+  metrics: MapMetrics,
+  previous: MapMetrics | undefined,
+): (readonly [string, string])[] {
+  const delta = (
+    pick: (m: MapMetrics) => number,
+    format: (value: number) => string,
+  ): string => {
+    const value = format(pick(metrics));
+    if (previous === undefined) {
+      return value;
+    }
+    const change = pick(metrics) - pick(previous);
+    const sign = change > 0 ? "+" : change < 0 ? "−" : "±";
+    return `${value} (${sign}${format(Math.abs(change))})`;
+  };
+  const pct = (share: number): string => `${(100 * share).toFixed(1)} %`;
+  const one = (value: number): string => value.toFixed(1);
+  const whole = (value: number): string => String(Math.round(value));
+  return [
+    ["Open ground", `${metrics.openTiles} of ${metrics.groundTiles}`],
+    ["Beside cover", delta((m) => m.coverAdjacency, pct)],
+    ["Beside a wall", delta((m) => m.wallAdjacency, pct)],
+    [
+      "Cover per 100",
+      `${delta((m) => m.highCoverPer100, one)} high, ${delta((m) => m.lowCoverPer100, one)} low`,
+    ],
+    [
+      "Interior props",
+      `${delta((m) => m.interiorPropsPerBuilding, one)} per building`,
+    ],
+    [
+      "Vertical",
+      `${delta((m) => m.ramps, whole)} ramps, ${metrics.stairs} stairs, ${metrics.ladders} ladders, ${metrics.maxFloors} floors max`,
+    ],
+    [
+      "Hatch space",
+      `${delta((m) => m.hatchSpaceMin, whole)} min, ${delta((m) => m.hatchSpaceMean, one)} mean`,
+    ],
+  ];
 }

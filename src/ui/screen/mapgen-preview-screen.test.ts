@@ -1,0 +1,64 @@
+// @vitest-environment jsdom
+import { describe, expect, it, vi } from "vitest";
+
+import { PropKindIds } from "../../mapgen/data/props";
+import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
+import { computeMapMetrics } from "../../mapgen/service/map-metrics";
+import type { PreviewResult } from "./mapgen-preview-screen";
+import { MapgenPreviewScreen } from "./mapgen-preview-screen";
+
+function result(props: number): PreviewResult {
+  const builder = new FixtureMapBuilder(8, 8, 1)
+    .fillGround()
+    .deploy([{ x: 0, y: 0, z: 0 }]);
+  for (let i = 0; i < props; i++) {
+    builder.prop(PropKindIds.BOULDER, { x: 2 + i, y: 0, z: 4 });
+  }
+  const map = builder.build();
+  return {
+    map,
+    diagnostics: { notes: [], timings: [] },
+    metrics: computeMapMetrics(map),
+    ascii: "",
+    elapsedMs: 1,
+  };
+}
+
+describe("MapgenPreviewScreen", () => {
+  it("steps the seed with the Next button and generates", () => {
+    const onGenerate = vi.fn();
+    const root = document.createElement("div");
+    const screen = new MapgenPreviewScreen(
+      root,
+      {
+        seed: "terra-01",
+        biome: "temperate",
+        settlement: "town",
+        size: "medium",
+      },
+      { onGenerate, onLevelChange: vi.fn() },
+    );
+    root.querySelector<HTMLButtonElement>("#next-seed")?.click();
+    expect(onGenerate).toHaveBeenCalledWith(
+      expect.objectContaining({ seed: "terra-02" }),
+    );
+    screen.advanceSeed();
+    expect(screen.getState().seed).toBe("terra-03");
+  });
+
+  it("shows metric deltas from the second map on", () => {
+    const root = document.createElement("div");
+    const screen = new MapgenPreviewScreen(
+      root,
+      { seed: "s", biome: "temperate", settlement: "town", size: "medium" },
+      { onGenerate: vi.fn(), onLevelChange: vi.fn() },
+    );
+    const stats = (): string => root.querySelector("#stats")?.textContent ?? "";
+    screen.showResult(result(1));
+    expect(stats()).toMatch(/Beside cover[\d.]+ %Beside a wall/);
+    screen.showResult(result(3));
+    expect(stats()).toMatch(/Beside cover.*\(\+/);
+    screen.showResult(result(3));
+    expect(stats()).toMatch(/Beside cover.*\(±/);
+  });
+});

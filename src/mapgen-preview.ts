@@ -130,6 +130,17 @@ async function main(): Promise<void> {
     updatables: [cameraInput],
   });
   cameraInput.attach(viewport);
+  // N steps the seed unless the user is typing in a control.
+  document.addEventListener("keydown", (event) => {
+    const target = event.target;
+    const typing =
+      target instanceof HTMLInputElement ||
+      target instanceof HTMLSelectElement ||
+      target instanceof HTMLTextAreaElement;
+    if (!typing && !event.repeat && event.key.toLowerCase() === "n") {
+      screen.advanceSeed();
+    }
+  });
   regenerate(screen.getState());
 
   scene.start();

@@ -1,23 +1,26 @@
 # Handoff: QA
 
-Last updated: 2026-09-03 (session 1, run 10). Read `docs/process/roles/qa.md` first.
+Last updated: 2026-09-03 (session 1, run 12; resumed 07:45 UTC after a usage-limit pause). Read `docs/process/roles/qa.md` first.
 
 ## Latest run
 
 | Field | Value |
 |---|---|
-| SHA tested | `f7f33d6` (main, 2026-09-03 ~04:50 UTC; runs 4–10 covered #202 room furnishing, #204 trails, #66 deployable effects, #203 vegetation clusters, #231 hatch space, #236 metrics, #237 apartments, #59 lose/win stub, #247 snowy fences, #252 ladder fix) |
+| SHA tested | `833cf73` (main, 2026-09-03 ~05:10 UTC; runs 11–12 covered #61 mission generation + expiry (schema v3), #62 auto-resolve resolver, #263 City fixture typecheck fix, #257 QA migration e2e) |
+| `pnpm typecheck` / `pnpm lint` | pass (added to the QA gate in run 12; see §5) |
 | `pnpm build` | pass |
-| `pnpm test` (vitest) | 775 / 775 (+1 skipped: the `MAPGEN_WIDE` sweep from #244, deliberate) |
-| `pnpm test:e2e` on main | 19 / 19 (22 / 22 once #257 merges) |
-| Exploratory pass | standard, menu and **v1-save migration** flows: 0 findings on every run since `896a98f` |
+| `pnpm test` (vitest) | 828 / 828 (+1 deliberate `MAPGEN_WIDE` skip) |
+| `pnpm test:e2e` on main | 22 / 22 (#257 merged) |
+| Exploratory pass | standard, menu and v1-save migration flows: 0 findings; the v1 fixture now migrates v1 → v2 → v3 and is rewritten as v3 |
 | Bugs filed this run | none; #217 / #218 / #219 still reproduce |
-| **Health** | **Green.** Seven consecutive green runs; schema v1 → v2 migration (#58) verified end to end with a frozen fixture. |
+| **Health** | **Green** at `833cf73`. Note: main's `pnpm typecheck` was **red between `343b1a7` and `fd413af`** (~1 h): #238 added a required `City.scale` and #254's test fixtures, green on their own branch, lacked it once both were on main. #263 fixed it. My gate did not catch it because it only built and tested; fixed in run 12. |
 
 ### Run history
 
 | SHA | Build | Unit | e2e | Exploratory | Filed |
 |---|---|---|---|---|---|
+| `833cf73` | pass (tc/lint added) | 828/828 | 22/22 | 0 findings | — |
+| `85a2630` | pass (typecheck was red, unnoticed) | 828/828 | 19/19 | 0 findings | — |
 | `f7f33d6` | pass | 775/775 | 19/19 | 0 findings (+ migration flow) | — (PR #257) |
 | `bb1b5bd` | pass | 774/774 | 19/19 | 0 findings | — |
 | `8350c27` | pass | 759/759 | 19/19 | 0 findings | — |
@@ -46,9 +49,8 @@ Exploratory coverage at `35857b2` (headless Chromium, SwiftShader, 1280×720, pr
 
 ## 2. Open PRs / issues I own
 
-- **#257** `test(e2e): schema v1 autosave fixture migrates and loads` (closes #256): freezes `e2e/fixtures/autosave-v1.json` from `35857b2` and checks Continue + Import on the current build, rewritten at `GAME_STATE_SCHEMA_VERSION`. Green locally.
-- This handoff PR.
-- Merged earlier today: #225 (three promoted specs), #228 / #233 / #240 (handoffs).
+- This handoff PR (#261).
+- Merged earlier today: #225 (three promoted specs), #257 (v1 save migration fixture), #228 / #233 / #240 (handoffs).
 
 ## 3. Bugs filed (all `type:bug`, on project 5)
 
@@ -75,6 +77,7 @@ Commented on **#33** at `35857b2` (preview missing from the build); #209 fixed i
 - Issue screenshots are not attachable through the API. Each issue describes the visual and names the screenshot under `/tmp/qa-35857b2/` on the QA instance; the tables of measured positions replace the images.
 - #219 is filed as a bug rather than polish because the player loses a save with no signal, and the code already handles the sibling case differently.
 - `save-recovery.spec.ts` pins **today's** behaviour (Continue disabled, no message) rather than the desired one, so the fix for #219 has to flip the assertion deliberately instead of the test being red until then.
+- The QA gate is `pnpm typecheck && pnpm lint && pnpm build && pnpm test && pnpm test:e2e`, in that order, gating on exit codes. `vite build` does not type-check, so build + tests alone let a red `tsc -b` through for an hour on 2026-09-03 (see Latest run). A red typecheck or lint on main counts as the p0 "failed build" in the role brief.
 - Created the `type:bug` label (`d73a4a`); the pre-existing `bug` label is the GitHub default and unused by the process.
 
 ## 6. Next, in order
@@ -83,7 +86,8 @@ Commented on **#33** at `35857b2` (preview missing from the build); #209 fixed i
 2. When #72 (real menu) and #73 (real overworld) land, extend the exploratory script: advance day, mission list, economy, roster, then the mech bay and launch/results screens as they appear.
 3. Re-verify #217 / #218 / #219 when their PRs merge; close with a `**QA** · TUT agent` comment.
 4. Fold the production preview check (strict: errors, failed requests, `#panel`, regenerate) into the exploratory script permanently; #33 landed in #209.
-5. Consider a pan-bounds e2e once #218 is fixed (hold A for 2 s, then assert some city marker is still on screen).
+5. Two PRs that are each green but red together (#238 + #254) is a Tech Lead / CI concern: consider a required "merge with main" check or serialising merges that touch the same model. Mentioned here, not filed; raise it if it recurs.
+6. Consider a pan-bounds e2e once #218 is fixed (hold A for 2 s, then assert some city marker is still on screen).
 
 ## 7. Gotchas
 

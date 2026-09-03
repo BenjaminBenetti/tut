@@ -1,75 +1,5 @@
 [
   {
-    "id": "tdf.infantry.rifle",
-    "category": "units",
-    "path": "assets/models/units/tdf-infantry-rifle.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 0.95,
-    "sockets": [],
-    "quality": "placeholder",
-    "triangles": 484,
-    "bytes": 75148
-  },
-  {
-    "id": "tdf.infantry.rocket",
-    "category": "units",
-    "path": "assets/models/units/tdf-infantry-rocket.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 0.95,
-    "sockets": [],
-    "quality": "placeholder",
-    "triangles": 484,
-    "bytes": 75148
-  },
-  {
-    "id": "tdf.infantry.sniper",
-    "category": "units",
-    "path": "assets/models/units/tdf-infantry-sniper.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 0.95,
-    "sockets": [],
-    "quality": "placeholder",
-    "triangles": 484,
-    "bytes": 75144
-  },
-  {
-    "id": "tdf.infantry.engineer",
-    "category": "units",
-    "path": "assets/models/units/tdf-infantry-engineer.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 0.95,
-    "sockets": [],
-    "quality": "placeholder",
-    "triangles": 496,
-    "bytes": 77248
-  },
-  {
-    "id": "tdf.infantry.medic",
-    "category": "units",
-    "path": "assets/models/units/tdf-infantry-medic.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 0.95,
-    "sockets": [],
-    "quality": "placeholder",
-    "triangles": 508,
-    "bytes": 79136
-  },
-  {
     "id": "tile.city.road-straight",
     "category": "tiles",
     "path": "assets/models/tiles/city-road-straight.glb",
@@ -618,6 +548,76 @@
     "quality": "final",
     "triangles": 530,
     "bytes": 60712
+  },
+  {
+    "id": "tdf.infantry.engineer",
+    "category": "units",
+    "path": "assets/models/units/tdf-infantry-engineer.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.97,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1112,
+    "bytes": 122760
+  },
+  {
+    "id": "tdf.infantry.medic",
+    "category": "units",
+    "path": "assets/models/units/tdf-infantry-medic.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.97,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1136,
+    "bytes": 125832
+  },
+  {
+    "id": "tdf.infantry.rifle",
+    "category": "units",
+    "path": "assets/models/units/tdf-infantry-rifle.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.97,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1112,
+    "bytes": 122528
+  },
+  {
+    "id": "tdf.infantry.rocket",
+    "category": "units",
+    "path": "assets/models/units/tdf-infantry-rocket.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.98,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1128,
+    "bytes": 123880
+  },
+  {
+    "id": "tdf.infantry.sniper",
+    "category": "units",
+    "path": "assets/models/units/tdf-infantry-sniper.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.97,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1112,
+    "bytes": 122532
   },
   {
     "id": "tdf.mech.arm-l-a",

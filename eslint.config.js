@@ -30,6 +30,19 @@ const simulationFiles = SIMULATION_DOMAINS.map(
   (domain) => `src/${domain}/**/*.ts`,
 );
 
+/**
+ * Domains below `save/` in the layering. `save/` composes their slices
+ * into the root state, so they never import it (ADR 0002 §3); a service
+ * that needs the root types the state structurally (`CampaignState`).
+ */
+const BELOW_SAVE_DOMAINS = SIMULATION_DOMAINS.filter(
+  (domain) => domain !== "save",
+);
+
+const belowSaveFiles = BELOW_SAVE_DOMAINS.map(
+  (domain) => `src/${domain}/**/*.ts`,
+);
+
 const DOM_GLOBALS = [
   "window",
   "document",
@@ -52,6 +65,9 @@ const THREE_MESSAGE =
 
 const UPWARD_MESSAGE =
   "Simulation domains never import ui, graphics, or app (architecture §3). Imports point downward only.";
+
+const SAVE_MESSAGE =
+  "Simulation domains never import save/ (architecture §3, ADR 0002 §3). Type the state structurally (e.g. CampaignState) and let save/ compose the slice.";
 
 const THREE_FREE_MESSAGE =
   "Camera state and math are three-free so they run in Node tests (ADR 0002 §2.2).";
@@ -147,6 +163,28 @@ export default defineConfig(
       "no-restricted-globals": [
         "error",
         ...DOM_GLOBALS.map((name) => ({ name, message: DOM_MESSAGE })),
+      ],
+    },
+  },
+
+  // ---- Domains below save/ never import it (ADR 0002 §3); tests may build fixtures from it ----
+  {
+    files: belowSaveFiles,
+    ignores: ["**/*.test.ts", "**/*.test-helper.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [{ name: "three", message: THREE_MESSAGE }],
+          patterns: [
+            { group: ["three/*", "three/**"], message: THREE_MESSAGE },
+            {
+              group: ["**/ui/**", "**/graphics/**", "**/app/**"],
+              message: UPWARD_MESSAGE,
+            },
+            { group: ["**/save/**"], message: SAVE_MESSAGE },
+          ],
+        },
       ],
     },
   },

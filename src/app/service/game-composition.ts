@@ -12,13 +12,17 @@ import { DEPLOYABLE_TYPE_IDS } from "../../overworld/model/deployable-type";
 import { ADVANCE_DAY } from "../../overworld/model/overworld-command";
 import { DataDeployableTypeCatalogue } from "../../overworld/repository/deployable-type-catalogue";
 import { createAdvanceDayHandler } from "../../overworld/service/advance-day-service";
+import { AutoResolveMissionResolver } from "../../overworld/service/auto-resolve-mission-resolver";
+import { registerLaunchMission } from "../../overworld/service/launch-mission-service";
 import { createOverworldCommandDispatcher } from "../../overworld/service/command-dispatcher";
 import { registerDeployableCommands } from "../../overworld/service/deployable-command-handlers";
 import type { TickDeps } from "../../overworld/service/default-tick-steps";
 import { createDefaultTickSteps } from "../../overworld/service/default-tick-steps";
 import { registerRosterCommands } from "../../overworld/service/roster-command-handlers";
+import { AUTO_RESOLVE_TUNING } from "../../overworld/data/auto-resolve-tuning";
 import { MECH_RATING_TUNING } from "../../roster/data/mech-rating-tuning";
 import { STARTER_PARTS } from "../../roster/data/parts";
+import { LoadoutMechRater } from "../../roster/service/loadout-mech-rater";
 import { ROSTER_TUNING } from "../../roster/data/roster-tuning";
 import { SQUAD_TYPES } from "../../roster/data/squad-types";
 import { STARTER_ROSTER } from "../../roster/data/starter-roster";
@@ -31,6 +35,9 @@ import type { SaveClock } from "../../save/model/save-clock";
 import type { GameSaveService } from "../../save/service/game-save-service";
 import { createGameSaveService } from "../../save/service/game-save-service";
 import type { NewGameOptions } from "../../save/service/game-state-factory";
+import type { PartCatalogue } from "../../roster/model/part-catalogue";
+import type { RosterTuning } from "../../roster/model/roster-tuning";
+import type { SquadTypeCatalogue } from "../../roster/model/squad-type-catalogue";
 import type { NewGameDeps } from "../../save/service/new-game-service";
 import { createNewGame } from "../../save/service/new-game-service";
 import type { GameSession } from "../../ui/model/game-session";
@@ -55,6 +62,13 @@ export interface GameCompositionDeps {
   readonly onAutosaveFailure: AutosaveFailureListener;
 }
 
+/** Shipped content and tuning screens read to label and price things. */
+export interface GameContent {
+  readonly squadTypes: SquadTypeCatalogue;
+  readonly parts: PartCatalogue;
+  readonly rosterTuning: RosterTuning;
+}
+
 /** The simulation-facing services screens are handed. */
 export interface GameComposition {
   readonly saves: GameSaveService;
@@ -65,6 +79,8 @@ export interface GameComposition {
   readonly createCampaign: (options: NewGameOptions) => GameState;
   readonly newSeed: () => number;
   readonly clock: SaveClock;
+  /** The catalogues and tuning the dispatcher was wired with, for screens. */
+  readonly content: GameContent;
 }
 
 // ===========================================
@@ -86,20 +102,24 @@ export interface GameComposition {
  * ```
  *
  * Command handlers are registered on `dispatcher` here: the roster
- * commands (#63), the deployable commands (#65) and `AdvanceDay` (#68),
- * which runs the default tick pipeline over the shipped content. #67
- * LaunchMission with the #62 resolver injected and #70 events follow. Anything
- * unregistered is rejected as `unknown-command` and the store stays put.
+ * commands (#63), the deployable commands (#65), `AdvanceDay` (#68), which
+ * runs the default tick pipeline over the shipped content, and
+ * `LaunchMission` (#67) with the #62 auto-resolver injected as the M1
+ * `MissionResolver`. #70 events follow. Anything unregistered is rejected
+ * as `unknown-command` and the store stays put.
  */
 export function composeGame(deps: GameCompositionDeps): GameComposition {
   const saves = createGameSaveService(deps.storage, deps.clock);
   const dispatcher = createOverworldCommandDispatcher<GameState>();
   const squadTypes = new DataSquadTypeCatalogue(SQUAD_TYPES);
-  registerRosterCommands(dispatcher, {
+  const content: GameContent = {
     squadTypes,
     parts: new StaticPartCatalogue(STARTER_PARTS),
-    rating: MECH_RATING_TUNING,
     rosterTuning: ROSTER_TUNING,
+  };
+  registerRosterCommands(dispatcher, {
+    ...content,
+    rating: MECH_RATING_TUNING,
     transactionsFor: (ids) => new LedgerTransactionService(ids),
   });
   const tickDeps = composeTickDeps();
@@ -113,6 +133,15 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
       catalogue: tickDeps.catalogue,
     }),
   );
+  registerLaunchMission(dispatcher, {
+    resolver: new AutoResolveMissionResolver({
+      squadTypes: content.squadTypes,
+      mechRater: new LoadoutMechRater(content.parts, MECH_RATING_TUNING),
+      tuning: AUTO_RESOLVE_TUNING,
+    }),
+    rosterTuning: content.rosterTuning,
+    transactionsFor: (ids) => new LedgerTransactionService(ids),
+  });
   const autosave = new AutosaveService(
     saves,
     AUTOSAVE_SLOT_ID,
@@ -131,6 +160,7 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     createCampaign: (options) => createNewGame(options, newGameDeps),
     newSeed: deps.newSeed,
     clock: deps.clock,
+    content,
   };
 }
 

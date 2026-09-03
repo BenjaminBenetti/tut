@@ -190,3 +190,42 @@
 .tut-deployables__build .tut-btn {
   text-align: left;
 }
+
+/* ===========================================
+   Roster screen (#79)
+   =========================================== */
+#ui > .tut-roster {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  background: var(--ui-bg, #0b0e12);
+}
+.tut-roster__bar {
+  grid-row: 1;
+}
+.tut-roster__body {
+  grid-row: 2;
+  overflow: auto;
+  padding: var(--space-4);
+  display: grid;
+  gap: var(--space-4);
+  align-content: start;
+}
+.tut-roster__panel .tut-table {
+  width: 100%;
+}
+.tut-roster__hire {
+  margin-top: var(--space-3);
+  gap: var(--space-2);
+  align-items: center;
+}
+.tut-roster [data-field="name"] .tut-input {
+  width: 10em;
+  margin-right: var(--space-2);
+}
+.tut-roster [data-field="damage"] .tut-meter {
+  display: inline-block;
+  width: 6em;
+  vertical-align: middle;
+}

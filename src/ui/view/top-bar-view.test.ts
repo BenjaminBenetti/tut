@@ -144,4 +144,17 @@ describe("TopBarView", () => {
     advance.click();
     expect(onAdvanceDay).not.toHaveBeenCalled();
   });
+
+  it("enables Roster only when an onRoster handler is given, and calls it", () => {
+    const onRoster = vi.fn();
+    const view = new TopBarView({
+      onAdvanceDay: vi.fn(),
+      onMainMenu: vi.fn(),
+      onRoster,
+    });
+    view.mount(root);
+    expect(button("roster").disabled).toBe(false);
+    button("roster").click();
+    expect(onRoster).toHaveBeenCalledTimes(1);
+  });
 });

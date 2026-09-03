@@ -229,6 +229,13 @@ describe("OverworldScreen", () => {
     expect(button("advance-day").disabled).toBe(true);
   });
 
+  it("Roster navigates to the roster screen", () => {
+    const { router, navigate } = fakeRouter();
+    new OverworldScreen(depsFor(new FakeStore(newGame()), router)).mount(root);
+    button("roster").click();
+    expect(navigate).toHaveBeenCalledWith("roster");
+  });
+
   it("Main menu navigates to the main menu", () => {
     const { router, navigate } = fakeRouter();
     new OverworldScreen(depsFor(new FakeStore(newGame()), router)).mount(root);

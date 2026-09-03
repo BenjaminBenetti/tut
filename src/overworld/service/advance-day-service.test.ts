@@ -21,6 +21,10 @@ import { DAY_ADVANCED, GAME_ENDED } from "../model/overworld-domain-event";
 import type { TickStep } from "../model/tick-step";
 import { MAX_THREAT } from "../model/threat";
 import { DataDeployableTypeCatalogue } from "../repository/deployable-type-catalogue";
+import { DataEventTypeCatalogue } from "../repository/event-type-catalogue";
+import { EVENT_TUNING } from "../data/event-tuning";
+import { EVENT_TYPES } from "../data/event-types";
+import { EVENT_TYPE_IDS } from "../model/event-type";
 import { SQUAD_TYPES } from "../../roster/data/squad-types";
 import { STARTER_ROSTER } from "../../roster/data/starter-roster";
 import { DataSquadTypeCatalogue } from "../../roster/repository/squad-type-catalogue";
@@ -47,6 +51,10 @@ const TICK_DEPS: TickDeps = {
   missionTypes: MISSION_TYPES,
   threatTuning: THREAT_TUNING,
   economyTuning: ECONOMY_TUNING,
+  eventTypes: new DataEventTypeCatalogue(
+    EVENT_TYPE_IDS.map((id) => EVENT_TYPES[id]),
+  ),
+  eventTuning: EVENT_TUNING,
 };
 
 function newGame(seed: number): GameState {
@@ -258,6 +266,7 @@ describe("default tick pipeline", () => {
       TICK_STEP_NAMES.spread,
       TICK_STEP_NAMES.missionExpiry,
       TICK_STEP_NAMES.missionGeneration,
+      TICK_STEP_NAMES.events,
       TICK_STEP_NAMES.stipend,
       TICK_STEP_NAMES.threat,
       TICK_STEP_NAMES.outcome,

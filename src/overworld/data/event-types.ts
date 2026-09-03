@@ -16,6 +16,8 @@ import type { EventType, EventTypeId } from "../model/event-type";
 //     numbers below a city plea fires about a third of the time.
 //   • City-attached types name the city with `CITY_NAME_TOKEN`
 //     (`{city}`); presentation substitutes the real name.
+//   • `defaultChoiceId` is what happens when the player ignores the event
+//     for `EVENT_TUNING.expiryDays`: the passive option, never a purchase.
 
 /**
  * The four M1 event types, keyed by id so the compiler fails when an
@@ -29,6 +31,7 @@ export const EVENT_TYPES: Readonly<Record<EventTypeId, EventType>> = {
     text: "The oversight council has opened a review of TDF's budget. How command handles the hearing sets the stipend for the coming fortnight.",
     requiresCity: false,
     weight: 3,
+    defaultChoiceId: "keep-heads-down",
     choices: [
       {
         id: "request-advance",
@@ -60,6 +63,7 @@ export const EVENT_TYPES: Readonly<Record<EventTypeId, EventType>> = {
     text: "A field team has recovered an intact hatcher carcass. R&D wants it on a slab; the defence contractors want it on a truck.",
     requiresCity: false,
     weight: 2,
+    defaultChoiceId: "sell-specimen",
     choices: [
       {
         id: "sell-specimen",
@@ -83,6 +87,7 @@ export const EVENT_TYPES: Readonly<Record<EventTypeId, EventType>> = {
     text: "The administration of {city} is requesting TDF relief. Crawlers are in the outer districts and the local militia is out of ammunition.",
     requiresCity: true,
     weight: 4,
+    defaultChoiceId: "turn-away",
     choices: [
       {
         id: "send-relief",
@@ -106,6 +111,7 @@ export const EVENT_TYPES: Readonly<Record<EventTypeId, EventType>> = {
     text: "Eggs are falling on {city} and hatching in the open. Decontamination crews can be scrambled, at a price.",
     requiresCity: true,
     weight: 3,
+    defaultChoiceId: "let-it-fall",
     choices: [
       {
         id: "scramble-crews",

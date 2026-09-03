@@ -203,4 +203,9 @@ export interface EventType {
   readonly weight: number;
   /** The options offered to the player. At least one. */
   readonly choices: readonly EventChoice[];
+  /**
+   * The choice applied when the event expires unanswered (#71). Must
+   * name one of `choices`; when absent the first choice is the default.
+   */
+  readonly defaultChoiceId?: EventChoiceId;
 }

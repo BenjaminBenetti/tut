@@ -16,6 +16,10 @@ test("advancing three days moves the calendar and pays the stipend", async ({
   await page.goto("/");
   const body = page.locator("body");
   await expect(body).toHaveAttribute("data-app-state", "ready");
+  // A fixed seed keeps the first days deterministic; the random default
+  // sometimes raised an event on day 2 or 3, which disables Advance Day
+  // until it is answered (#77).
+  await page.locator('[data-field="seed"]').fill("777");
   await page.locator('[data-action="new-game"]').click();
   await expect(body).toHaveAttribute("data-screen", "overworld");
 
@@ -27,8 +31,14 @@ test("advancing three days moves the calendar and pays the stipend", async ({
   const startingCredits = await credits.textContent();
 
   const advance = page.locator('[data-action="advance-day"]');
+  const choice = page.locator('[data-role="event-dialog"] [data-choice-id]');
   await expect(advance).toBeEnabled();
   for (let i = 0; i < 3; i++) {
+    // An event blocks Advance Day until answered; take the default option.
+    if (await choice.first().isVisible()) {
+      await choice.first().click();
+    }
+    await expect(advance).toBeEnabled();
     await advance.click();
   }
   await expect(day).toHaveText("4");

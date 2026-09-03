@@ -11,15 +11,16 @@ import type { AttackPreview } from "../model/attack-preview";
 import { ATTACK_RESOLVED } from "../model/attack-resolved-event";
 import type { CombatTuning } from "../model/combat-tuning";
 import type { TacticalError } from "../model/tactical-error";
-import type { TacticalEvent } from "../model/tactical-event";
+import type { TacticalApplied, TacticalEvent } from "../model/tactical-event";
 import type {
   TacticalContext,
   TacticalHandler,
   TacticalOutcome,
 } from "../model/tactical-handler";
 import type { TacticalState } from "../model/tactical-state";
+import { TEAM_FOR_PHASE } from "../model/tactical-state";
 import { UNIT_DIED } from "../model/unit-died-event";
-import type { Team, Unit, UnitId } from "../model/unit";
+import type { Unit, UnitId } from "../model/unit";
 import type { UnitTemplate } from "../model/unit-template";
 import type { WeaponProfile } from "../model/weapon-profile";
 import { coverAgainst, elevationBonus, hasLineOfSight } from "./sight-service";
@@ -43,16 +44,6 @@ export interface AttackTerrain {
   readonly flanked: boolean;
   readonly elevation: number;
 }
-
-// ===========================================
-// Constants
-// ===========================================
-
-/** Which team acts in which phase. */
-const TEAM_FOR_PHASE: Readonly<Record<TacticalState["phase"], Team>> = {
-  player: "tdf",
-  bugs: "bugs",
-};
 
 // ===========================================
 // Formulae
@@ -147,9 +138,10 @@ const SIDE_PROBES: readonly { x: number; z: number }[] = [
 // ===========================================
 
 /**
- * Checks an attack is legal: both units exist and live, the attacker is
- * on the acting side with action points, the target is an enemy other
- * than itself, in range and in sight. Returns the pair for the formulae.
+ * Checks an attack is legal for the acting unit: both units on the map
+ * and alive, the attacker on the acting side with action points to spend,
+ * and everything `validateTargeting` asks. Returns the pair for the
+ * formulae.
  */
 export function validateAttack(
   mission: TacticalState,
@@ -176,6 +168,35 @@ export function validateAttack(
   }
   if (attacker.ap < tuning.attackApCost) {
     return err({ kind: "no-action-points", unitId: attackerId });
+  }
+  return validateTargeting(mission, attackerId, targetId);
+}
+
+/**
+ * The targeting checks that hold whoever's phase it is and whatever the
+ * attacker's action points: both units on the map and alive, the target
+ * an enemy other than the attacker, in range and in sight. Overwatch
+ * reactions (#328) fire on exactly these. Returns the pair and terrain
+ * for the formulae.
+ */
+export function validateTargeting(
+  mission: TacticalState,
+  attackerId: UnitId,
+  targetId: UnitId,
+): Result<AttackPair & { readonly terrain: AttackTerrain }, TacticalError> {
+  const attacker = mission.units.find((u) => u.id === attackerId);
+  if (attacker === undefined) {
+    return err({ kind: "unit-not-on-map", unitId: attackerId });
+  }
+  const target = mission.units.find((u) => u.id === targetId);
+  if (target === undefined) {
+    return err({ kind: "unit-not-on-map", unitId: targetId });
+  }
+  if (attacker.hp <= 0) {
+    return err({ kind: "unit-dead", unitId: attackerId });
+  }
+  if (target.hp <= 0) {
+    return err({ kind: "unit-dead", unitId: targetId });
   }
   if (attackerId === targetId) {
     return err({ kind: "self-target", unitId: attackerId });
@@ -240,21 +261,76 @@ export function previewAttack(
 // ===========================================
 
 /**
- * Rolls an attack (GDD §6.2) with the context's RNG, the fork the lifted
- * handler labelled for this command. Draw order, part of the determinism
- * contract:
+ * Rolls a validated attack (GDD §6.2) with the context's RNG. Draw order,
+ * part of the determinism contract:
  *
  * ```
  *   1. chance(hitChance / 100)                 hit?
  *   2. nextInt(damage.min, damage.max)         only on a hit
  * ```
  *
- * The target loses the damage (never below zero hit points); the attacker
- * pays `attackApCost`, or all of its action points when attacks end the
- * turn. Emits `AttackResolved` always and `UnitDied` (with the killer)
- * when the target's hit points reach zero; the corpse stays in `units`
- * at zero hit points for graphics to remove and the results to count.
- * Pure: on any error the mission is returned untouched.
+ * The target loses the damage (never below zero hit points) and the
+ * attacker's action points become `apAfter`: what the attack leaves for
+ * a normal shot, unchanged for an overwatch reaction. Emits
+ * `AttackResolved` always and `UnitDied` (with the killer) when the
+ * target's hit points reach zero; the corpse stays in `units` at zero
+ * hit points for graphics to remove and the results to count.
+ */
+export function rollAttack(
+  mission: TacticalState,
+  checked: AttackPair & { readonly terrain: AttackTerrain },
+  ctx: TacticalContext,
+  tuning: CombatTuning,
+  apAfter: number,
+): TacticalApplied<TacticalState> {
+  const { attacker, attackerTemplate, target, targetTemplate, terrain } =
+    checked;
+  const chance = hitChance(attackerTemplate.weapon, terrain, tuning);
+  const band = damageRange(
+    attackerTemplate.weapon,
+    targetTemplate.armor,
+    tuning,
+  );
+  const hit = ctx.rng.chance(chance / 100);
+  const damage = hit ? ctx.rng.nextInt(band[0], band[1]) : 0;
+  const targetHp = Math.max(0, target.hp - damage);
+
+  const units = mission.units.map((unit): Unit => {
+    if (unit.id === attacker.id) {
+      return { ...unit, ap: apAfter };
+    }
+    if (unit.id === target.id && damage > 0) {
+      return { ...unit, hp: targetHp };
+    }
+    return unit;
+  });
+  const events: TacticalEvent[] = [
+    {
+      type: ATTACK_RESOLVED,
+      payload: {
+        attackerId: attacker.id,
+        targetId: target.id,
+        hit,
+        damage,
+        targetHp,
+      },
+    },
+  ];
+  if (target.hp > 0 && targetHp === 0) {
+    events.push({
+      type: UNIT_DIED,
+      payload: { unitId: target.id, killerId: attacker.id },
+    });
+  }
+  return { state: { ...mission, units }, events };
+}
+
+/**
+ * Resolves an `Attack` command: validates it, then rolls it with the
+ * attacker paying `attackApCost`, or every remaining action point when
+ * attacks end the turn. Rolls against exactly the numbers
+ * `previewAttack` shows. Pure: on any error the mission is returned
+ * untouched.
  */
 export function resolveAttack(
   mission: TacticalState,
@@ -263,46 +339,14 @@ export function resolveAttack(
   tuning: CombatTuning,
 ): TacticalOutcome {
   const { attackerId, targetId } = command.payload;
-  const preview = previewAttack(mission, attackerId, targetId, tuning);
-  if (!preview.ok) {
-    return preview;
+  const checked = validateAttack(mission, attackerId, targetId, tuning);
+  if (!checked.ok) {
+    return checked;
   }
-  const attacker = mission.units.find((u) => u.id === attackerId);
-  const target = mission.units.find((u) => u.id === targetId);
-  if (attacker === undefined || target === undefined) {
-    throw new Error("validated units vanished");
-  }
-  const hit = ctx.rng.chance(preview.value.hitChance / 100);
-  const damage = hit
-    ? ctx.rng.nextInt(preview.value.damage[0], preview.value.damage[1])
-    : 0;
-  const targetHp = Math.max(0, target.hp - damage);
-  const spentAp = tuning.attackEndsTurn
+  const apAfter = tuning.attackEndsTurn
     ? 0
-    : Math.max(0, attacker.ap - tuning.attackApCost);
-
-  const units = mission.units.map((unit): Unit => {
-    if (unit.id === attackerId) {
-      return { ...unit, ap: spentAp };
-    }
-    if (unit.id === targetId && damage > 0) {
-      return { ...unit, hp: targetHp };
-    }
-    return unit;
-  });
-  const events: TacticalEvent[] = [
-    {
-      type: ATTACK_RESOLVED,
-      payload: { attackerId, targetId, hit, damage, targetHp },
-    },
-  ];
-  if (target.hp > 0 && targetHp === 0) {
-    events.push({
-      type: UNIT_DIED,
-      payload: { unitId: targetId, killerId: attackerId },
-    });
-  }
-  return ok({ state: { ...mission, units }, events });
+    : Math.max(0, checked.value.attacker.ap - tuning.attackApCost);
+  return ok(rollAttack(mission, checked.value, ctx, tuning, apAfter));
 }
 
 /** The `Attack` handler for `registerTacticalCommands`, closed over the tuning. */

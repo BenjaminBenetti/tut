@@ -28,6 +28,9 @@ export type TacticalHandlers = {
 /** `CommandError.code` when a tactical command arrives with no mission in progress. */
 export const NO_ACTIVE_MISSION = "no-active-mission";
 
+/** `CommandError.code` when a tactical command arrives after the mission has ended. */
+export const MISSION_OVER = "mission-over";
+
 // ===========================================
 // Lifting
 // ===========================================
@@ -37,11 +40,14 @@ export const NO_ACTIVE_MISSION = "no-active-mission";
  * lifts `activeMission` out of the campaign, hands the handler a stream
  * forked for this one command, and writes the mission back with the new
  * events appended to its log. A command with no mission in progress is
- * rejected with `no-active-mission`; a handler's `TacticalError` becomes
- * a `CommandError` whose `code` is the error's `kind`.
+ * rejected with `no-active-mission`, one after the mission has ended
+ * with `mission-over`; a handler's `TacticalError` becomes a
+ * `CommandError` whose `code` is the error's `kind`.
  *
  * ```
  *   state.activeMission ──undefined──► err no-active-mission
+ *          │
+ *   mission.outcome ──────set──────► err mission-over
  *          │
  *   handler(mission, command, { rng: fork(label), ids })
  *          ├── err ──► CommandError(kind, message)   (nothing written back)
@@ -65,6 +71,17 @@ export function liftTacticalHandler<
         commandError(
           NO_ACTIVE_MISSION,
           describeTacticalError({ kind: "no-active-mission" }),
+        ),
+      );
+    }
+    if (mission.outcome !== undefined) {
+      return err(
+        commandError(
+          MISSION_OVER,
+          describeTacticalError({
+            kind: "mission-over",
+            outcome: mission.outcome,
+          }),
         ),
       );
     }

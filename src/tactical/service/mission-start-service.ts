@@ -146,6 +146,7 @@ export function startTacticalMission<TState extends MissionCampaignState>(
     spawners,
     edgeSpawn: { nextTurn: FIRST_EDGE_SPAWN_TURN, wave: 0 },
     extraction: map.hooks.extraction.tiles.map(coordOf),
+    extracted: [],
     log: [],
   };
   return ok({ ...state, activeMission: tactical });

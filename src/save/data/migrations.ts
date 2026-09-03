@@ -132,6 +132,27 @@ const RESERVE_ACTIVE_MISSION: Migration = {
   },
 };
 
+/**
+ * v6 → v7 (#328): a mission in progress gains `extracted`, the units that
+ * left through the extraction zone. Nothing could extract before the turn
+ * engine, so an existing mission starts with none; a save without a
+ * mission is untouched.
+ */
+const ADD_MISSION_EXTRACTED: Migration = {
+  from: 6,
+  to: 7,
+  apply(state) {
+    if (!isRecord(state) || !isRecord(state.overworld)) {
+      throw new Error("v6 state has no overworld slice");
+    }
+    const mission = state.activeMission;
+    if (!isRecord(mission) || Array.isArray(mission.extracted)) {
+      return state;
+    }
+    return { ...state, activeMission: { ...mission, extracted: [] } };
+  },
+};
+
 // ===========================================
 // Chain
 // ===========================================
@@ -147,4 +168,5 @@ export const GAME_STATE_MIGRATIONS: readonly Migration[] = [
   ADD_GRAVEYARD,
   ADD_THREAT_OFFSET,
   RESERVE_ACTIVE_MISSION,
+  ADD_MISSION_EXTRACTED,
 ];

@@ -1,3 +1,5 @@
+import type { MissionOutcome } from "../../overworld/model/mission-result";
+
 // ===========================================
 // Tactical error
 // ===========================================
@@ -33,6 +35,7 @@ export type TacticalError =
       readonly unitId: string;
       readonly reason: MoveRejection;
     }
+  | { readonly kind: "mission-over"; readonly outcome: MissionOutcome }
   | { readonly kind: "invalid-loadout"; readonly mechId: string }
   | { readonly kind: "map-recipe"; readonly reason: string }
   | {
@@ -68,6 +71,8 @@ export function describeTacticalError(error: TacticalError): string {
       return `Unit "${error.unitId}" is not in the roster`;
     case "illegal-move":
       return `Unit "${error.unitId}" cannot make that move: ${MOVE_REJECTION_TEXT[error.reason]}`;
+    case "mission-over":
+      return `The mission is over: ${error.outcome}`;
     case "invalid-loadout":
       return `Mech "${error.mechId}" has a loadout that no longer validates`;
     case "map-recipe":

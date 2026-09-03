@@ -128,6 +128,7 @@ function mission(
     objectives: [],
     spawners: [],
     edgeSpawn: { nextTurn: 3, wave: 0 },
+    extracted: [],
     extraction: [],
     log: [],
     ...overrides,

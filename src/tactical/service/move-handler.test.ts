@@ -7,20 +7,22 @@ import { move } from "../model/move-command";
 import type { TacticalContext } from "../model/tactical-handler";
 import type { TacticalState } from "../model/tactical-state";
 import { UNIT_MOVED } from "../model/unit-moved-event";
-import { moveHandler } from "./move-handler";
+import { createMoveHandler } from "./move-handler";
 import {
   missionWith,
   openField,
   twoFloorBuilding,
   unitAt,
   walledField,
-} from "./movement-fixtures.test-helper";
+} from "./tactical-fixtures.test-helper";
 
 // ===========================================
 // Fixtures
 // ===========================================
 
 const at = (x: number, z: number, y = 0): TileCoord => ({ x, y, z });
+
+const moveHandler = createMoveHandler();
 
 const ctx: TacticalContext = {
   rng: new Mulberry32Rng(1),

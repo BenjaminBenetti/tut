@@ -137,4 +137,26 @@ describe("GAME_STATE_MIGRATIONS", () => {
     expect(v5).toEqual(before);
     expect(() => step?.apply({ meta: {} })).toThrow(/overworld/);
   });
+
+  it("v6 → v7 gives a mission in progress an empty extracted list and leaves the rest alone", () => {
+    const step = GAME_STATE_MIGRATIONS[5];
+    expect(step?.from).toBe(6);
+    expect(step?.to).toBe(7);
+    const idle = { meta: { seed: 7 }, overworld: { day: 3 }, roster: {} };
+    expect(step?.apply(idle)).toBe(idle);
+    const v6 = {
+      ...idle,
+      activeMission: { missionId: "m", turn: 2, units: [] },
+    };
+    expect(step?.apply(v6)).toEqual({
+      ...v6,
+      activeMission: { ...v6.activeMission, extracted: [] },
+    });
+    const already = {
+      ...idle,
+      activeMission: { missionId: "m", extracted: ["unit-1"] },
+    };
+    expect(step?.apply(already)).toBe(already);
+    expect(() => step?.apply({ meta: {} })).toThrow(/overworld/);
+  });
 });

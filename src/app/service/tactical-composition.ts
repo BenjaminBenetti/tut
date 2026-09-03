@@ -11,12 +11,19 @@ import type { GameState } from "../../save/model/game-state";
 import { COMBAT_TUNING } from "../../tactical/data/combat-tuning";
 import { UNIT_TUNING } from "../../tactical/data/unit-tuning";
 import { ATTACK } from "../../tactical/model/attack-command";
+import { END_TURN } from "../../tactical/model/end-turn-command";
 import { MOVE } from "../../tactical/model/move-command";
+import { OVERWATCH } from "../../tactical/model/overwatch-command";
 import { createAttackHandler } from "../../tactical/service/combat-service";
 import type { MissionStartDeps } from "../../tactical/service/mission-start-service";
-import { moveHandler } from "../../tactical/service/move-handler";
+import { createMoveHandler } from "../../tactical/service/move-handler";
+import { overwatchHandler } from "../../tactical/service/overwatch-handler";
 import type { TacticalHandlers } from "../../tactical/service/tactical-command-handlers";
 import { registerTacticalCommands } from "../../tactical/service/tactical-command-handlers";
+import {
+  createEndTurnHandler,
+  createOverwatchReaction,
+} from "../../tactical/service/turn-service";
 import type { GameContent } from "./game-composition";
 
 // ===========================================
@@ -93,7 +100,9 @@ export function composeTactical(
 export function shippedTacticalHandlers(): TacticalHandlers {
   return {
     [ATTACK]: createAttackHandler(COMBAT_TUNING),
-    [MOVE]: moveHandler,
+    [MOVE]: createMoveHandler(createOverwatchReaction(COMBAT_TUNING)),
+    [END_TURN]: createEndTurnHandler(),
+    [OVERWATCH]: overwatchHandler,
   };
 }
 

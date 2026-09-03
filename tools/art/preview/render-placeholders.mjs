@@ -11,59 +11,17 @@
  *
  *   manifest ──► static server ──► harness.html (three.js, ortho 35°) ──► screenshot
  */
-import { createServer } from "node:http";
-import {
-  createReadStream,
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  statSync,
-} from "node:fs";
-import { dirname, extname, join, resolve } from "node:path";
+import { mkdirSync, readFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { serveRepo } from "./serve-repo.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const repoRoot = resolve(here, "..", "..", "..");
 const outFlag = process.argv.indexOf("--out");
 const outDir = resolve(
   outFlag >= 0 ? process.argv[outFlag + 1] : join(here, "out"),
 );
 const PORT = 8790;
-
-/** MIME types the harness needs. */
-const MIME = {
-  ".html": "text/html",
-  ".js": "text/javascript",
-  ".mjs": "text/javascript",
-  ".json": "application/json",
-  ".glb": "model/gltf-binary",
-};
-
-/**
- * Serves files under the repo root read-only, for the harness page.
- * @returns {Promise<import("node:http").Server>} Listening server.
- */
-function serveRepo() {
-  const server = createServer((req, res) => {
-    const pathname = decodeURIComponent(new URL(req.url, "http://x").pathname);
-    const path = resolve(repoRoot, `.${pathname}`);
-    if (
-      !path.startsWith(repoRoot) ||
-      !existsSync(path) ||
-      statSync(path).isDirectory()
-    ) {
-      res.writeHead(404).end();
-      return;
-    }
-    res.writeHead(200, {
-      "content-type": MIME[extname(path)] ?? "application/octet-stream",
-    });
-    createReadStream(path).pipe(res);
-  });
-  return new Promise((done) =>
-    server.listen(PORT, "127.0.0.1", () => done(server)),
-  );
-}
 
 /**
  * Picks pixels-per-tile so tall models fit the 320 px frame.
@@ -83,7 +41,7 @@ async function main() {
     readFileSync(join(here, "..", "placeholders.manifest.json"), "utf8"),
   );
   mkdirSync(outDir, { recursive: true });
-  const server = await serveRepo();
+  const server = await serveRepo(PORT);
   const browser = await chromium.launch({
     args: [
       "--use-gl=angle",

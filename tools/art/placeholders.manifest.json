@@ -11,7 +11,7 @@
     "sockets": [],
     "quality": "placeholder",
     "triangles": 484,
-    "bytes": 72136
+    "bytes": 75148
   },
   {
     "id": "tdf.infantry.rocket",
@@ -25,7 +25,7 @@
     "sockets": [],
     "quality": "placeholder",
     "triangles": 484,
-    "bytes": 72136
+    "bytes": 75148
   },
   {
     "id": "tdf.infantry.sniper",
@@ -39,7 +39,7 @@
     "sockets": [],
     "quality": "placeholder",
     "triangles": 484,
-    "bytes": 72136
+    "bytes": 75144
   },
   {
     "id": "tdf.infantry.engineer",
@@ -53,7 +53,7 @@
     "sockets": [],
     "quality": "placeholder",
     "triangles": 496,
-    "bytes": 74124
+    "bytes": 77248
   },
   {
     "id": "tdf.infantry.medic",
@@ -67,7 +67,7 @@
     "sockets": [],
     "quality": "placeholder",
     "triangles": 508,
-    "bytes": 75940
+    "bytes": 79136
   },
   {
     "id": "tdf.mech.legs-a",
@@ -83,7 +83,7 @@
     ],
     "quality": "placeholder",
     "triangles": 120,
-    "bytes": 18760
+    "bytes": 19800
   },
   {
     "id": "tdf.mech.chassis-a",
@@ -101,7 +101,7 @@
     ],
     "quality": "placeholder",
     "triangles": 120,
-    "bytes": 19548
+    "bytes": 20724
   },
   {
     "id": "tdf.mech.arm-l-a",
@@ -117,7 +117,7 @@
     ],
     "quality": "placeholder",
     "triangles": 60,
-    "bytes": 9808
+    "bytes": 10484
   },
   {
     "id": "tdf.mech.arm-r-a",
@@ -133,7 +133,7 @@
     ],
     "quality": "placeholder",
     "triangles": 60,
-    "bytes": 9804
+    "bytes": 10480
   },
   {
     "id": "tdf.mech.weapon-arm.autocannon",
@@ -149,7 +149,7 @@
     ],
     "quality": "placeholder",
     "triangles": 36,
-    "bytes": 6204
+    "bytes": 6736
   },
   {
     "id": "tdf.mech.weapon-back.missile-pod",
@@ -165,7 +165,7 @@
     ],
     "quality": "placeholder",
     "triangles": 108,
-    "bytes": 16948
+    "bytes": 17920
   },
   {
     "id": "tdf.mech.assembled-a",
@@ -188,7 +188,7 @@
     ],
     "quality": "placeholder",
     "triangles": 504,
-    "bytes": 78156
+    "bytes": 81648
   },
   {
     "id": "bug.swarmer",
@@ -202,7 +202,7 @@
     "sockets": [],
     "quality": "placeholder",
     "triangles": 228,
-    "bytes": 37604
+    "bytes": 39436
   },
   {
     "id": "bug.lurker",
@@ -216,7 +216,7 @@
     "sockets": [],
     "quality": "placeholder",
     "triangles": 216,
-    "bytes": 34652
+    "bytes": 36352
   },
   {
     "id": "bug.brute",
@@ -230,7 +230,7 @@
     "sockets": [],
     "quality": "placeholder",
     "triangles": 308,
-    "bytes": 45428
+    "bytes": 47308
   },
   {
     "id": "bug.egg-spawner",
@@ -246,7 +246,7 @@
     ],
     "quality": "placeholder",
     "triangles": 704,
-    "bytes": 81700
+    "bytes": 83228
   },
   {
     "id": "tile.city.road-straight",

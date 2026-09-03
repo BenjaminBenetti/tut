@@ -11,6 +11,9 @@ import type { MechLoadout } from "./mech-loadout";
  */
 export type MechId = string;
 
+/** Prefix the id generator uses for mechs, e.g. `"mech-2"`. */
+export const MECH_ID_PREFIX = "mech";
+
 // ===========================================
 // Constants
 // ===========================================

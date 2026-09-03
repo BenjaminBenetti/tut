@@ -3,51 +3,64 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-02 05:09 UTC)
+## Status Digest (2026-09-02 17:02 UTC)
 
 | Milestone | done / total |
 |---|---|
-| M0 Foundation | 7 / 10 |
-| M1 Overworld | 6 / 55 |
-| M1.5 Map Generation | 6 / 21 |
+| M0 Foundation | 10 / 11 |
+| M1 Overworld | 19 / 62 |
+| M1.5 Map Generation | 11 / 23 |
 
-Board: Backlog 52 · Ready 11 · In Progress 4 · In Review 1 · Blocked 0 · Done 19
+Board: Backlog 26 · Ready 7 · In Progress 8 · In Review 15 · Blocked 0 · Done 42
 
 **Engineer seats** (one open issue per seat; Producer assigns via `seat:eng-N`):
 
 | Seat | Current | Status | Last merged |
 |---|---|---|---|
-| eng-1 | IDLE | - | #43 |
-| eng-2 | #53 economy: transaction service | Ready | #44 |
-| eng-3 | #106 content: mission type model and data | Ready | #45 |
-| eng-4 | #48 roster: mech and loadout model | Ready | #46 |
-| eng-5 | #47 app: GameStore — observable state container with command dispatch | Ready | #9 |
-| eng-6 | #107 overworld: event type model and starter event data | Ready | - |
+| eng-1 | IDLE | - | #57 |
+| eng-2 | IDLE | - | #54 |
+| eng-3 | #8 feat(app): app/ bootstrap and screen router with placeholder screens | In Review | #106 |
+| eng-4 | #56 save: overworld GameState save, load, export and import | In Review | #10 |
+| eng-5 | IDLE | - | #74 |
+| eng-6 | IDLE | - | #51 |
 
-⚠ idle: eng-1 · unassigned Ready: #50, #52, #108
+⚠ idle: eng-1, eng-2, eng-5, eng-6 · unassigned Ready: #49, #52, #58, #59, #61, #108, #141
 
 **Ready now** (no unmerged dependencies):
 
-- #47 (engineer) app: GameStore — observable state container with command dispatch
-- #48 (engineer) roster: mech and loadout model
-- #50 (engineer) overworld: threat level and region aggregation
+- #49 (engineer) roster: loadout validation and mech stat sheet service
 - #52 (engineer) overworld: deployable model and type data
-- #53 (engineer) economy: transaction service
-- #8 (tech-lead) feat(app): app/ bootstrap and screen router with placeholder screens
-- #11 (tech-lead) docs(adr): initial ADRs — toolchain, layering enforcement, state and command pattern
-- #21 (mapgen) feat(mapgen): terrain and water passes (seeded value noise, quantised elevation, shoreline)
-- #106 (engineer) content: mission type model and data
-- #107 (engineer) overworld: event type model and starter event data
+- #58 (engineer) overworld: infestation spread and seeding
+- #59 (engineer) overworld: lose condition and win stub
+- #61 (engineer) overworld: mission generation and expiry tick
 - #108 (engineer) refactor(core): promote generic id Registry to core/ and reuse in mapgen and roster
+- #141 (engineer) refactor: rename scalar tuning exports to UPPER_SNAKE_CASE (economy-tuning, threat-tuning)
 
 **In-flight PRs** (age h / idle h / review):
 
-- #122 0.0h / 0.0h / none — chore(producer): seat map in digest, marker-based renderer
-- #121 0.0h / 0.0h / none — feat(art): VFX sprites — muzzle flash, impact, egg burst — with sprite manifest (#119)
+- #186 7.1h / 7.1h / n/a — chore(handoff): producer 2026-09-02 (update 7)  ⚠ needs review
+- #185 7.5h / 7.5h / n/a — feat(mapgen): stairwell holes prefer interior columns so facades stay whole (#184)  ⚠ needs review
+- #183 7.5h / 7.5h / n/a — feat(mapgen): scale building count by map area (#182)  ⚠ needs review
+- #181 7.6h / 7.6h / n/a — docs(adr): align ADR 0004 wording with the M1.5 implementation  ⚠ needs review
+- #180 7.6h / 7.6h / n/a — feat(mapgen): mission → MapRecipe adapter with difficulty-scaled hook requirements (#85)  ⚠ needs review
+- #179 7.6h / 7.6h / n/a — feat(mapgen): preview harness — second Vite entry rendering generated maps (#31)  ⚠ needs review
+- #178 7.8h / 7.8h / n/a — chore(handoff): mapgen 2026-09-02 (update 3)  ⚠ needs review
+- #177 7.8h / 7.7h / n/a — test(mapgen): property sweep across seeds, golden seeds, fork stability (#30)  ⚠ needs review
+- #176 7.9h / 7.7h / n/a — feat(mapgen): settlement pipeline factory and generateTacticalMap entry (#97)  ⚠ needs review
+- #175 7.9h / 7.9h / n/a — feat(graphics): Earth map texture, glyph markers and four-stop ramp on the overworld scene (#162)  ⚠ needs review
+- #174 7.9h / 7.7h / n/a — feat(mapgen): connectivity repair pass (#29)  ⚠ needs review
+- #173 8.0h / 7.7h / n/a — feat(mapgen): hook placers — deploy, egg spawner, edge spawn, extraction + hook pass (#28)  ⚠ needs review
+- #171 11.2h / 7.9h / n/a — feat(app): app bootstrap, DOM screen router and placeholder screens (#8)  ⚠ needs review
+- #170 11.3h / 7.7h / n/a — feat(mapgen): ramp pass — ground connectivity across one-level steps (#27)  ⚠ needs review
+- #168 11.3h / 11.3h / n/a — docs: GitHub API budget rules in CLAUDE.md  ⚠ needs review
+- #167 11.3h / 11.3h / n/a — feat(economy): per-day stipend income — computeStipend and applyStipend through the transaction service (#60)  ⚠ needs review
+- #166 11.3h / 11.3h / n/a — feat(save): GameState save, load, export and import (#56)  ⚠ needs review
+- #165 11.3h / 11.3h / n/a — feat(ui): unit and mech-part thumbnails, thumbnail manifest, shared preview server (#163)  ⚠ needs review
+- #164 11.4h / 7.7h / n/a — feat(mapgen): prop pass — vegetation, street clutter, yard cover, interior storage (#26)  ⚠ needs review
 
 **In progress** (branch pushed?):
 
-- none
+- #55 yes — overworld: command and event types with a command dispatcher
 
 **Blocked**:
 
@@ -55,38 +68,42 @@ Board: Backlog 52 · Ready 11 · In Progress 4 · In Review 1 · Blocked 0 · Do
 
 **Next assignments for idle engineers** (Ready first, then what unblocks next):
 
-1. #47 — app: GameStore — observable state container with command dispatch
-2. #48 — roster: mech and loadout model
-3. #50 — overworld: threat level and region aggregation
-4. #52 — overworld: deployable model and type data
-5. #53 — economy: transaction service
-6. #106 — content: mission type model and data
-7. #107 — overworld: event type model and starter event data
-8. #108 — refactor(core): promote generic id Registry to core/ and reuse in mapgen and roster
+1. #49 — roster: loadout validation and mech stat sheet service
+2. #52 — overworld: deployable model and type data
+3. #58 — overworld: infestation spread and seeding
+4. #59 — overworld: lose condition and win stub
+5. #61 — overworld: mission generation and expiry tick
+6. #108 — refactor(core): promote generic id Registry to core/ and reuse in mapgen and roster
+7. #141 — refactor: rename scalar tuning exports to UPPER_SNAKE_CASE (economy-tuning, threat-tuning)
+8. #33 — chore(infra): Vite multi-page input for mapgen-preview.html (Ready once #31 merges)
 <!-- digest:end -->
 
-**Risks** (hand-written, 05:12 UTC):
+**Status: PRODUCTION PAUSED by the Executive Director (Director, 2026-09-02 ~17:00 UTC) until further notice.**
 
-- Seat refills depend on merges landing on time: eng-1 (#43, PR #115) → #50 threat; eng-5 (#47) → #74; eng-4 (#48) → #108 → #49. If a PR stalls, the seat idles; the tick flags idle seats.
-- #8 (app bootstrap and router) is unclaimed and gates every UI issue; asked the Tech Lead on #8 whether to seat it.
-- #54 (GameState root) must fit #7's root and ADR 0003 (#11, still open); a mismatch costs a day on the critical path.
-- M1.5 is a serial chain from #21 to #29; a slow review on any one pass stalls the milestone.
+- Engineer pool reduced to two live seats: eng-3 (#8, PR #171) and eng-4 (#56, PR #166). eng-1, eng-2, eng-5, eng-6 are stopped by the Director; their idle rows in the seat table above are intentional and are not to be escalated.
+- #52 and #55 returned to Ready (#55 has parked WIP on `feat/55-overworld-command-dispatcher`). #60 (PR #167) and #162 (PR #175) keep their open PRs for a live seat to adopt when work resumes.
+- Producer during the pause: no new assignments, no spawns, seat-refill monitor stopped, light grooming tick every 30 minutes, digest kept accurate. Fifteen PRs remain In Review awaiting the Tech Lead.
+
+**Risks** (hand-written, 17:00 UTC):
+
+- Studio stalled 05:49 → 08:53 after the shared API quota ran dry; every agent polls at most every 5 minutes.
+- On resume (process PR #189, complexity tiers): (1) do not assign anything until the Tech Lead has swept open issues with `complexity:low|medium|high`; ask on the issue for any Ready item still unlabelled. (2) Route by tier: high → default-effort seats only (eng-3 today); medium → any seat, default preferred; low → medium-effort seats first (eng-4, eng-5 today). Seat effort is in each `seat:eng-N` label description; the digest's seat table shows it once #188 merges. (3) Then: seat #55 first (it gates #72; parked WIP on `feat/55-overworld-command-dispatcher`), adopt PRs #167 and #175 onto live seats, refill from #49, #58, #59, #61, #108, #141 by tier.
 
 ---
 
 
-## Seat plan (next up per seat; refill immediately on merge, same domain first)
+## Seat plan (next up per seat; refill immediately on merge, priority first, then same domain)
 
 | Seat | Now | Then | Then |
 |---|---|---|---|
-| eng-1 | #43 Earth map (PR #115) | #50 threat → #57 growth → #58 spread | #54 GameState root (needs #48, #11) → #55 dispatcher |
-| eng-2 | #53 transaction service | #60 stipend (needs #50) | #52 → #65 → #66 deployables |
-| eng-3 | #106 mission types | #51 mission models (needs #43) | #61 generation → #62 auto-resolve → #67 launch |
-| eng-4 | #48 mech + loadout model | #108 core registry refactor (Tech Lead to confirm) | #49 validation → #63 roster service → #64 casualties |
-| eng-5 | #47 GameStore | #74 Earth map scene (needs #43) | #72 composition root (needs #8, #55, #56) → #73 |
-| eng-6 | #107 event types (seat not yet spawned) | #70 events resolution (needs #54) | #59 outcome → #68 AdvanceDay |
+| eng-1 | #52 deployable model (no branch yet) | #59 lose/win (Ready) | #58 spread → #65 → #66 |
+| eng-2 | #60 stipend (PR #167) | #65 deployable commands (needs #52) | #66 effects → #68 AdvanceDay |
+| eng-3 | #8 app bootstrap + router (PR #171) | #72 composition root (needs #55, #56) | #73 overworld screen |
+| eng-4 | #56 save round trip (PR #166) | #108 core registry refactor | #49 validation → #63 → #64 |
+| eng-5 | #162 Earth texture on overworld scene | #72 or #73 (whichever is open when it frees) | #75 city panel |
+| eng-6 | #55 dispatcher (no branch yet) | #61 mission generation (Ready) | #62 auto-resolve → #67 launch |
 
-Unassigned but Ready: whatever the digest flags. #8 is the Tech Lead's unless they hand it over (asked on #8).
+Unassigned Ready fillers: #141 (tuning export rename, p3), #49, #58, #59, #61, #108. Rule of thumb when a seat frees: p0 gates first (#8, #55, #56, #72), then the seat's own domain, then the fillers. Every assignment gets a one-line `**Producer**` comment on the issue naming the tentative follow-on.
 
 ## Project board IDs (project 5, owner BenjaminBenetti)
 
@@ -136,6 +153,8 @@ Critical path for M1: #43 → #105 → #54 (needs #7, #11, #44, #45, #48) → #5
 9. **MapGen split #29 → #29 + #97** on my size note; #85 now blocks on #97.
 10. **Seat assignment (Director, 05:05 UTC, #117)**: I label exactly one Ready issue `seat:eng-N` per seat, refill on merge, same domain first, consult the Tech Lead when sequencing touches architecture. Assignment note posted on each issue. eng-6 pre-labelled (#107) so it starts the moment it is spawned.
 11. **Closed #105** (Earth seed data): eng-1's PR #115 for #43 already ships 12 regions / 37 cities with derived symmetry and tests, so the split was moot. #54 no longer depends on it.
+12. **Closed #155 as a duplicate of #162** (08:57 UTC): same Earth-texture follow-up; #162 carries the Director's choice (texture plus translucent plates) and the milestone.
+13. **Complexity routing (Director, process PR #189, 23:30 UTC)**: Tech Lead labels engineer issues `complexity:*`; Producer routes by tier against seat effort levels and never assigns an unlabelled issue. Tooling support in #188.
 
 ## Open questions I'd raise as `design-decision` if pressed
 
@@ -143,6 +162,8 @@ Critical path for M1: #43 → #105 → #54 (needs #7, #11, #44, #45, #48) → #5
 
 ## Gotchas
 
+- **GitHub API budget (Director, 05:41 UTC, studio-wide):** 5000 calls/hour shared by every agent on one account. Poll at most once per 5 minutes (monitor included), prefer REST (`gh api repos/BenjaminBenetti/tut/...`) over `gh issue list` / `gh pr list` (GraphQL), request only needed fields, batch calls per tick, check `gh api rate_limit` on errors and back off. `groom.py` reads via REST and uses GraphQL only for project-field writes (no REST exists for Projects v2). Seat labels and comments: `gh api -X POST .../issues/N/labels` and `.../comments`.
+- During the pause there is no merge monitor; a 30-minute cron runs the light grooming tick. On resume: re-arm a REST monitor polling merged PRs and Producer mentions every 5 minutes, and return the cron to 15 minutes.
 - **Never push a follow-up commit to an open PR.** The Tech Lead merges within one to two minutes; twice a later commit was stranded on a merged branch (#94, #98). Open a new PR instead.
 - Run every `gh` call with `-R BenjaminBenetti/tut` or from `/workspaces/tut`; from another cwd `gh` cannot infer the repo.
 - `git` remote was SSH and unauthenticated; switched to HTTPS with `gh auth setup-git`.

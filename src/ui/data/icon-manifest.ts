@@ -51,17 +51,47 @@ export const ICON_MANIFEST = {
   squad: { path: "assets/ui/icons/squad.svg", label: "Infantry squad" },
   threat: { path: "assets/ui/icons/threat.svg", label: "Global threat" },
   warning: { path: "assets/ui/icons/warning.svg", label: "Warning" },
+  "marker-city": {
+    path: "assets/ui/icons/marker-city.svg",
+    label: "City marker",
+  },
+  "marker-hive": {
+    path: "assets/ui/icons/marker-hive.svg",
+    label: "Hive marker",
+  },
+  "infestation-low": {
+    path: "assets/ui/icons/infestation-low.svg",
+    label: "Infestation: low",
+  },
+  "infestation-mid": {
+    path: "assets/ui/icons/infestation-mid.svg",
+    label: "Infestation: medium",
+  },
+  "infestation-high": {
+    path: "assets/ui/icons/infestation-high.svg",
+    label: "Infestation: high",
+  },
 } as const satisfies Record<string, IconAssetEntry>;
 
 /** Union of registered icon ids. */
 export type IconId = keyof typeof ICON_MANIFEST;
 
 /**
- * Resolves an icon id to its public URL for use as a CSS mask. Prefixes
+ * Resolves an icon id to its plain public URL, for code that fetches the
+ * SVG itself (the overworld map rasterises glyphs into sprites). Prefixes
  * Vite's `BASE_URL` so a sub-path deploy still finds the asset.
+ * @param id - Registered icon id.
+ * @returns Absolute URL path of the SVG.
+ */
+export function iconHref(id: IconId): string {
+  return `${import.meta.env.BASE_URL}${ICON_MANIFEST[id].path}`;
+}
+
+/**
+ * Resolves an icon id to its public URL for use as a CSS mask.
  * @param id - Registered icon id.
  * @returns A `url(...)` value for the `--icon` custom property.
  */
 export function iconUrl(id: IconId): string {
-  return `url(${import.meta.env.BASE_URL}${ICON_MANIFEST[id].path})`;
+  return `url(${iconHref(id)})`;
 }

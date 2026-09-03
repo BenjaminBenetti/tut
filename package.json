@@ -15,7 +15,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "art:placeholders": "node tools/art/build-placeholders.mjs"
+    "art:placeholders": "node tools/art/build-placeholders.mjs",
+    "art:textures": "node tools/art/build-textures.mjs"
   },
   "dependencies": {
     "three": "^0.185.1"

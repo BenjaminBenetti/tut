@@ -1,28 +1,30 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-02 (session 1, fourth update)
+Last updated: 2026-09-02 (session 1, sixth update)
 
 ## 1. What I was doing and where it stands
 
 | Deliverable | Issue | State |
 |---|---|---|
-| Style guide `docs/design/style-guide.md` | #2 | **Merged** (PR #12). §8 still describes my original proposal; rewrite to the #10 shape once it lands. |
-| Concept sheets `docs/design/concepts/` (7 subjects) | #3 | **Merged** (PR #86, infantry second pass PR #96). |
-| Placeholder GLBs batch 1 (38 models) + build/render tooling | #4 | **Merged** (PR #89). Tech Lead: the #10 engineer seeds the typed manifest from `tools/art/placeholders.manifest.json`, so no registration PR from me. |
-| Placeholder batch 2: biome tiles + every mapgen prop kind (13 models), mapgen id → model table in style guide §7 | #93 | **Merged** (PR #110). |
-| UI theme `src/ui/style/theme.css`, 24 icons, `src/ui/data/icon-manifest.ts` | #102 | **Merged** (PR #109). Not yet imported by the app; #72 should import `src/ui/style/theme.css`. |
-| VFX sprites (muzzle flash, impact, egg burst) + `src/graphics/data/sprite-manifest.ts` | #119 | PR #121 open |
-| Icon `BASE_URL` follow-up, `gen-image.sh` stdin fix | #102, #3 | **Merged** (PR #114, PR #116). |
+| Style guide | #2 | **Merged** (PR #12); §8 rewrite to the shipped #10 shape in a docs PR (open at time of writing). |
+| Concept sheets (7 subjects) | #3 | **Merged** (PR #86, #96). |
+| Placeholder GLBs batch 1 (38) + tooling | #4 | **Merged** (PR #89). Registered in the typed manifest by #10. |
+| Placeholder batch 2 (13) + mapgen id table | #93 | **Merged** (PR #110). |
+| UI theme, 24 icons, icon manifest | #102 | **Merged** (PR #109, #114). |
+| VFX sprites + sprite manifest | #119 | **Merged** (PR #121, #133). |
+| Overworld Earth map texture, texture manifest, map glyphs (Director priority a) | #143 | **Merged** (PR #151); handoff comment posted on #74. |
+| Mech-bay concept sheets (Director priority b) | #144 | **Merged** (PR #152). |
+| First-pass unit textures: procedural atlases on unit placeholders (Director priority c) | #145 | PR open. |
 | Image generation recipe (incl. transparent sprites) | — | **Working.** See §5. |
 | Headless GLB / page render checks | — | **Working.** See §7. |
 
-Issues #2, #3, #4, #93, #102, #119 are on project 5 (Terra Under Threat).
+Issues #2, #3, #4, #93, #102, #119, #143, #144, #145 are on project 5 (Terra Under Threat).
 
 ## 2. Open PRs / issues I own
 
-- PR #121 `feat(art): VFX sprites + sprite manifest` → closes #119.
-- Offers posted, no reply yet: #74 (stylised Earth texture for the overworld map), #42 (unit/part thumbnails rendered from the placeholders for roster and mech bay screens).
-- Closed: #2, #3, #4, #93, #102 (all merged).
+- PR for #145 (unit textures) and the style guide §8 docs PR. Both green locally.
+- Offers posted, no reply yet: #74 (art delivered anyway, see #143), #42 (unit/part thumbnails).
+- The Director gave three priorities in-session on 2026-09-02 (Earth map art, mech-bay concepts, unit textures); all three are delivered or in review.
 
 ## 3. Decisions I made and why
 
@@ -37,16 +39,16 @@ Issues #2, #3, #4, #93, #102, #119 are on project 5 (Terra Under Threat).
 - **Ground tiles are named by mapgen surface id** (`tile.ground.grass`, `.dirt`, `.sand`, `.snow`, `.rock`, `.water`) and props by mapgen prop kind (`prop.crate`, `prop.tree-pine`, …) so the graphics lookup in style guide §7 is a one-liner. `car` maps to the 1×1 `prop.car-compact`; `prop.car-sedan` (2×1) stays for hand-placed wrecks.
 - **UI icons are CSS masks**, not inline SVG: `.tut-icon` with `--icon: url(...)` from `iconUrl(id)`. One colour, `currentColor`, so badges and states tint them. Icon manifest lives in `src/ui/data/` because icons are DOM assets, not three.js ones.
 - **Sprite manifest mirrors the icon manifest**: `SPRITE_MANIFEST` in `src/graphics/data/` (three.js-side assets), entries carry `path`, `size`, `blend`, `label`; test parses the PNG header itself (width, height, colour type with alpha) so no image library is needed. Sprites are RGBA ≤ 512², under 150 KB; a painterly result gets downscaled to 256² rather than shipped fat.
+- **Unit textures are two 512² atlases referenced externally from the GLBs**: `build-textures.mjs` paints one 128 px cell per token from a seeded PRNG (own PNG encoder over `node:zlib`); `build-placeholders.mjs` remaps each textured mesh's UVs into its cell and rewrites the GLB JSON to add `images[].uri`, a sampler, textures and `baseColorTexture` per material. Embedding would have duplicated the atlas in every GLB. glTF UVs run top-down (row 0 at the top), unlike three.js; the first pass sampled the unused black cells.
+- **Earth map is 2048×1024, quantised to 256 colours** (881 KB) so it fits the 1.5 MB cap; the flat faceted style loses nothing. Chosen from two generations; the other stretched continents vertically.
 - **Chamfer border trick**: `.tut-panel`/`.tut-btn` are two clipped layers (line colour behind, surface colour inset 1 px) so the 1 px border follows the 45° cut. `--surface` custom property selects the inner colour per variant.
 
 ## 4. Next, in order
 
-1. Land PR #121 (address review).
-2. When #10 lands: rewrite style guide §8 to the shipped shape (`content/data/model-ids.ts` union + `graphics/data/model-manifest.ts` `satisfies Record<ModelAssetId, ModelAssetEntry>`, no `id` field) and check the 51 manifest entries match `tools/art/placeholders.manifest.json`.
-3. Answer whoever replies on #74 (Earth texture) or #42 (thumbnails); both are one-command jobs with the existing tooling (`gen-image.sh`, `render-placeholders.mjs`).
-4. Egg-burst sprite second pass with "flat fills, no shading inside shapes" so it returns to 512² (sidecar note).
-5. Concept sheets round 2 when the Director gives feedback: heavy mech chassis and alternate weapons, snow/desert/coastal tile kits, hive core (M3). Muzzle-flash 4-frame strip when tactical animation exists.
-6. Textures: not needed while models are one material per token.
+1. Land the #145 textures PR and the §8 docs PR (address review).
+2. Reply on #74 if the implementer wants a different aspect or a seam-safe edge; reply on #42 if a screen wants thumbnails (harness needs `omitBackground` + transparent clear colour).
+3. Director round 2: whatever feedback lands on the mech-bay sheets or the textures. Candidates already noted in sidecars: heavy mech chassis models, alternate arm/back weapon GLBs from the concept sheets (`docs/design/concepts/mech-bay/`), snow/desert/coastal tile kits, hive core (M3).
+4. Muzzle-flash 4-frame strip when tactical animation exists; normal/roughness maps only when real models arrive.
 
 ## 5. Image generation recipe (Codex CLI)
 
@@ -78,13 +80,14 @@ codex exec --skip-git-repo-check --ephemeral -s danger-full-access \
 - Prompt skeleton lives in the style guide §10. Always put palette hexes in the prompt verbatim; always say "no text, no watermark".
 - `--ephemeral` keeps `~/.codex` from filling with session files.
 - **stdin must be `/dev/null`** (`tools/art/gen-image.sh` does this since PR #116). With a non-TTY stdin left open, codex prints `Reading additional input from stdin...` and waits forever.
-- **Transparent sprites work**: say "Transparent background PNG" and the tool returns RGBA with real alpha (verified: alpha min 0, max 255). Ask for "flat fills, no shading inside shapes" or the result goes painterly and heavy.
+- **Transparent sprites work**, but phrase it exactly: "fully transparent background (real alpha channel; do not paint a checkerboard, do not paint any background colour)". Without the checkerboard clause one pass painted a magenta checker with alpha 0.16 in the corners. Add "flat vector-style fills, no shading or gradients inside shapes" or the result goes painterly and heavy (250 KB vs 17 KB at 512²). Always check `magick <png> -alpha extract -format "%[min] %[max]" info:` and a corner crop's mean alpha.
 
 ## 6. Gotchas
 
 - Codex claims success even when the copy failed (test 3 reported a path that did not exist). Always `file` the output.
 - `codex exec` prints its transcript to stderr, not stdout; `-o` writes only the final message.
 - Vite is on `pnpm`; `npm pack` still works for fetching the codex tarball.
+- **GitHub GraphQL rate limit is shared by every agent on this token** and ran out once (`gh pr create`, `gh pr view` fail with "API rate limit already exceeded"). REST has a separate budget: `gh api repos/BenjaminBenetti/tut/pulls -f title= -f head= -f base= -f body=` opens a PR and `gh api repos/.../issues/N/comments -f body=` comments. Check with `gh api rate_limit`.
 - **Branch from a fresh `origin/main`** and check `git diff --name-only origin/main...HEAD` before opening a PR. Branching from a stale main once swept untracked tooling and 100 ignored render PNGs into a commit (the `.gitignore` entry lived on the other branch).
 - Never `cd` inside a long `&&` chain in the shell: one failed step leaves later relative paths pointing at the wrong directory. Use absolute paths.
 - Concept sheets are docs, not runtime assets, so the ≤ 1024² texture rule does not apply to them; keep them under ~1.5 MB each anyway.

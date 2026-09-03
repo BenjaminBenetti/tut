@@ -14,3 +14,9 @@ test-results/
 
 # art preview renders
 tools/art/preview/out/
+
+# blender smoke render output
+tools/art/preview/blender-smoke/
+
+# python
+__pycache__/

@@ -163,7 +163,7 @@ Implementation: `src/ui/style/theme.css` exposes the §4.4 tokens as CSS custom 
 - **Pivot**: centre of the base footprint at y = 0. Wall and edge pieces pivot on the tile edge they attach to (see §7).
 - **Materials**: one `MeshStandardMaterial` per palette token, named exactly as the token (`tdf-grey-mid`). `metalness 0`, `roughness 0.9` for cloth and chitin, `0.6` for painted metal. Emissive tokens set `emissive` to the same hex with `emissiveIntensity 1.5`.
 - **Shading**: flat. No smoothing groups on armour, tiles or buildings. Organic bug flesh may use smooth normals.
-- **Textures**: avoid. When needed, a palette atlas ≤ 1024², nearest-neighbour filtered, no mipmaps for pixel-locked detail. Sprites ≤ 512².
+- **Textures**: avoid on kits and props. Units use the two 512² palette atlases (`tdf-atlas_albedo`, `bug-atlas_albedo`, one 128 px cell per token, built by `tools/art/build-textures.mjs`); a mesh maps its whole UV range into the cell of its token, and the GLB references the atlas as an external image so files stay small. Linear filtered with mipmaps; nearest-neighbour only for pixel-locked detail. Sprites ≤ 512².
 - **Sockets**: empty nodes named `socket_<name>` mark attach points. Mechs expose `socket_arm_l`, `socket_arm_r`, `socket_back`, `socket_legs`. Buildings expose `socket_door`, `socket_roof`. Spawners expose `socket_hatch` for the egg-burst VFX.
 - **Mech part nodes**: a mech is assembled at runtime from separate GLBs: `chassis`, `legs`, `arm-l`, `arm-r`, `weapon-arm`, `weapon-back`. Each part pivots at its socket point so the mech bay can swap them.
 - **No lights, no cameras, no animations** in GLBs for now. Animation is a later track; when it comes it will be node-transform clips, not skinning, for everything except infantry.
@@ -180,7 +180,7 @@ Implementation: `src/ui/style/theme.css` exposes the §4.4 tokens as CSS custom 
 | Building module (wall, floor, roof, stairs) | ≤ 800 | ≤ 100 KB |
 | Prop (cover, street furniture) | ≤ 300 | ≤ 60 KB |
 
-Hard cap from the role brief: models < 500 KB, textures ≤ 1024², sprites ≤ 512².
+Hard cap from the role brief: models < 500 KB, textures ≤ 1024², sprites ≤ 512². One documented exception: the overworld world-map texture is 2048×1024 (a 2:1 plate carrée needs the width for coastlines at map zoom); it is the only texture allowed over 1024² and must stay under 1.5 MB.
 
 ## 7. Tile and building kit conventions
 
@@ -221,41 +221,29 @@ Map generation (`src/mapgen/data/surfaces.ts`, `props.ts`) emits surface ids and
 
 Walls are `Wall` records on tile edges, not props: `building.wall`, `building.wall-window`, `building.wall-door`, `building.wall-half` by wall kind.
 
-## 8. Asset manifest format (proposal for Tech Lead)
+## 8. Asset manifests
 
-Architecture §7: one typed manifest per category so no code references a path string outside the manifest. Proposed shape, living under `src/graphics/data/`:
+Shipped in #10; this section describes what exists. Ids and registries are split so simulation data can name a model without importing the renderer (architecture §3, ADR 0002).
+
+| File | Holds |
+|---|---|
+| `src/content/data/model-ids.ts` | `MODEL_IDS` const array of dot-separated `faction.subject.variant` ids; `ModelAssetId` is its union. Declare the id here first. |
+| `src/graphics/model/asset-manifest.ts` | `ModelAssetEntry { category, path, footprint {w,d}, height, sockets, quality }` and `ModelManifest = Readonly<Record<ModelAssetId, ModelAssetEntry>>`. The key carries the id; entries have no `id` field. |
+| `src/graphics/data/model-manifest.ts` | `MODEL_MANIFEST`, typed against `ModelManifest`, so an id without an entry or a misspelt field fails typecheck. |
+| `src/graphics/data/model-manifest.test.ts` | Every id registered exactly once; paths inside their category folder; GLB present and < 500 KB; sane footprints and `socket_*` names; entry-for-entry equality with `tools/art/placeholders.manifest.json`; no other file under `src/` may spell `assets/models/`. |
+| `src/graphics/service/gltf-model-loader.ts` | Loads by id, prefixes Vite's `BASE_URL`, caches, falls back to `placeholder-model-factory.ts` primitives. External images referenced by a GLB (the unit atlases, §6) resolve relative to the GLB URL. |
+
+Adding a model: add it to `MODEL_DEFS` in `tools/art/build-placeholders.mjs` (or drop a final GLB into the category folder), run `pnpm art:placeholders`, add the id to `MODEL_IDS`, add the entry to `MODEL_MANIFEST` copied from the JSON record, run `pnpm test`.
+
+Sprites, textures and icons use the lighter self-keyed shape, since nothing in simulation references them:
 
 ```ts
-// src/graphics/data/model-manifest.ts
-export type ModelCategory = "units" | "bugs" | "props" | "tiles" | "buildings";
-
-export interface ModelAssetEntry {
-  /** Stable id, dot-separated: faction.subject.variant */
-  readonly id: string;
-  readonly category: ModelCategory;
-  /** Path under public/, e.g. "assets/models/units/tdf-mech-chassis-a.glb" */
-  readonly path: string;
-  /** Footprint in tiles */
-  readonly footprint: { readonly w: number; readonly d: number };
-  /** Height in world units */
-  readonly height: number;
-  /** Socket node names exposed by the model */
-  readonly sockets: readonly string[];
-  /** Placeholder geometry or final art */
-  readonly quality: "placeholder" | "final";
-}
-
-export const MODEL_MANIFEST = {
-  "tdf.mech.chassis-a": { id: "tdf.mech.chassis-a", category: "units", path: "assets/models/units/tdf-mech-chassis-a.glb", footprint: { w: 1, d: 1 }, height: 2.6, sockets: ["socket_arm_l", "socket_arm_r", "socket_back", "socket_legs"], quality: "placeholder" },
-  // ...
-} as const satisfies Record<string, ModelAssetEntry>;
-
-export type ModelAssetId = keyof typeof MODEL_MANIFEST;
+export const SPRITE_MANIFEST = { "vfx.muzzle-flash": { path, size, blend, label } } as const satisfies Record<string, SpriteAssetEntry>;
+export type SpriteId = keyof typeof SPRITE_MANIFEST;
+export function spriteUrl(id: SpriteId): string { return `${import.meta.env.BASE_URL}${SPRITE_MANIFEST[id].path}`; }
 ```
 
-Textures, sprites and UI icons follow the same pattern in `texture-manifest.ts`, `sprite-manifest.ts` and `icon-manifest.ts`, with `size` replacing `footprint`/`height`. A build script under `tools/art/` regenerates placeholder GLBs and asserts every manifest path exists on disk.
-
-Open points for the Tech Lead: (a) confirm `src/graphics/data/` as the home; (b) whether ids should be a closed union in `content/` so simulation data (e.g. a bug species record) can reference a model id without importing `graphics`.
+`sprite-manifest.ts` and `texture-manifest.ts` live in `src/graphics/data/`; `icon-manifest.ts` lives in `src/ui/data/` because icons are DOM assets. Each has a test that parses the PNG or SVG header to pin size, alpha and byte budget.
 
 ## 9. File naming and locations
 

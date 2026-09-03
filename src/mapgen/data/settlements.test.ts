@@ -34,6 +34,7 @@ describe("settlement definitions", () => {
       expectRange(settlement.sideStreets, `${settlement.id} sideStreets`, 0);
       expect(settlement.rampSpacing).toBeGreaterThanOrEqual(2);
       expect(settlement.streetPropDensity).toBeGreaterThanOrEqual(0);
+      expect(settlement.yardPropDensity).toBeGreaterThanOrEqual(0);
     }
   });
 

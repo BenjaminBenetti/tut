@@ -2,14 +2,23 @@ import type { Camera } from "three";
 import { Vector3 } from "three";
 
 import type { Vec2, Vec3 } from "../../core/model/grid";
+import type { CityId } from "../../overworld/model/city";
+import type { CityPicker } from "../model/city-picker";
 import type { SceneCamera } from "../model/scene-camera";
 import { ndcToPointer, pointerToNdc } from "../service/pointer-ndc";
-import type { PickingSurface } from "./map-picking-controller";
-import { MAP_PICKING_TUNING } from "./map-picking-controller";
 
 // ===========================================
 // Types
 // ===========================================
+
+/**
+ * The DOM surface the controller listens on: the element the canvas
+ * lives in. `HTMLElement` satisfies this directly.
+ */
+export type PickingSurface = Pick<
+  HTMLElement,
+  "addEventListener" | "removeEventListener" | "getBoundingClientRect"
+>;
 
 /** What the controller needs from a scene to hover and select things of one kind. */
 export interface Picker<TId> {
@@ -30,16 +39,25 @@ export interface PickingOptions<TId> {
 }
 
 // ===========================================
+// Constants
+// ===========================================
+
+/** Pointer tuning shared by every scene. */
+export const PICKING_TUNING = {
+  /** A press that moves further than this before release is a drag, not a click. */
+  clickSlopPx: 4,
+} as const;
+
+// ===========================================
 // Controller
 // ===========================================
 
 /**
  * Pointer input over a scene turned into hover and selection for any
  * kind of pickable thing: moving highlights what is under the pointer, a
- * press-and-release without drag selects it. The generic sibling of
- * `MapPickingController`, which stays city-shaped for the overworld; the
- * tactical scene wraps its `UnitPicker` in a `Picker<UnitId>` and uses
- * this.
+ * press-and-release without drag selects it. The one pointer-to-selection
+ * implementation (#369): the overworld uses it through `cityPickerAdapter`
+ * and the tactical screen through its target picker.
  *
  * ```
  *   pointermove ──▶ pick ──▶ picker.setHovered
@@ -157,7 +175,7 @@ export class PickingController<TId> {
       return;
     }
     const moved = Math.hypot(event.clientX - press.x, event.clientY - press.y);
-    if (moved > MAP_PICKING_TUNING.clickSlopPx) {
+    if (moved > PICKING_TUNING.clickSlopPx) {
       return;
     }
     const id = this.pickAt(event);
@@ -200,6 +218,20 @@ export class PickingController<TId> {
 // ===========================================
 // Adapters
 // ===========================================
+
+/** Adapts the overworld's `CityPicker` to the generic `Picker` contract. */
+export function cityPickerAdapter(picker: CityPicker): Picker<CityId> {
+  return {
+    pick: (ndc, camera) => picker.pickCity(ndc, camera),
+    setHovered: (id) => {
+      picker.setHovered(id);
+    },
+    setSelected: (id) => {
+      picker.setSelected(id);
+    },
+    worldPosition: (id) => picker.markerWorldPosition(id),
+  };
+}
 
 /** The `UnitPicker` shape, generic over the id so the adapter stays free of tactical imports. */
 export interface UnitPickerLike<TId> {

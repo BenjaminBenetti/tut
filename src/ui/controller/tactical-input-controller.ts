@@ -1,7 +1,9 @@
 import type { Vec2, Vec3 } from "../../core/model/grid";
 import type { CameraInputSurface } from "../../graphics/controller/camera-input-controller";
-import type { PickingSurface } from "../../graphics/controller/map-picking-controller";
-import type { Picker } from "../../graphics/controller/picking-controller";
+import type {
+  Picker,
+  PickingSurface,
+} from "../../graphics/controller/picking-controller";
 import { PickingController } from "../../graphics/controller/picking-controller";
 import type { FrameUpdatable } from "../../graphics/model/frame-updatable";
 import type { SceneCamera } from "../../graphics/model/scene-camera";

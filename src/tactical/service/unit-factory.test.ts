@@ -115,7 +115,7 @@ describe("squadUnit", () => {
     expect(unit.maxHp).toBe(20);
     const rocket = squadUnit(squad(5, "rocket"), ROCKET, AT, deps());
     expect(rocket.template.weapon.damage).toBe(
-      Math.ceil(ROCKET.combatRating * 0.3),
+      Math.ceil(ROCKET.combatRating * deps().tuning.infantry.weapon.damage),
     );
     expect(rocket.template.modelId).toBe("tdf.infantry.rocket");
   });

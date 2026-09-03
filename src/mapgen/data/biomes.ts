@@ -59,6 +59,7 @@ export const BIOME_DEFINITIONS: Readonly<Record<BiomeId, BiomeDefinition>> = {
     vegetation: [
       { prop: PropKindIds.TREE_PINE, density: 5, cluster: { min: 3, max: 7 } },
       { prop: PropKindIds.BOULDER, density: 1, cluster: { min: 2, max: 3 } },
+      { prop: PropKindIds.FENCE, density: 1 },
     ],
     buildingKinds: [
       { template: BuildingKindIds.HOUSE, weight: 5 },

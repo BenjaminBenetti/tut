@@ -56,6 +56,7 @@ const CITY = {
   name: "C",
   regionId: "r",
   infestation: 30,
+  scale: "city" as const,
   neighbourIds: [],
   layout: { x: 0, y: 0 },
 };

@@ -31,7 +31,7 @@ export interface MechStatSheet {
   readonly weight: number;
   /** Chassis power output plus every fitted part's draw or supply; negative means over budget. */
   readonly powerBalance: number;
-  /** Purchase price of every part, in credits. */
+  /** Purchase price of every part plus the upgrade levels the loadout records, in credits. */
   readonly totalCost: number;
   /** Scalar strength for the auto-resolver, from `MechRatingTuning`; never negative. */
   readonly combatRating: number;

@@ -24,6 +24,7 @@ import { MECH_RATING_TUNING } from "../../roster/data/mech-rating-tuning";
 import { STARTER_PARTS } from "../../roster/data/parts";
 import { LoadoutMechRater } from "../../roster/service/loadout-mech-rater";
 import { ROSTER_TUNING } from "../../roster/data/roster-tuning";
+import { UPGRADE_TUNING } from "../../roster/data/upgrade-tuning";
 import { SQUAD_TYPES } from "../../roster/data/squad-types";
 import { STARTER_ROSTER } from "../../roster/data/starter-roster";
 import { DataSquadTypeCatalogue } from "../../roster/repository/squad-type-catalogue";
@@ -38,6 +39,7 @@ import type { NewGameOptions } from "../../save/service/game-state-factory";
 import type { PartCatalogue } from "../../roster/model/part-catalogue";
 import type { RosterTuning } from "../../roster/model/roster-tuning";
 import type { SquadTypeCatalogue } from "../../roster/model/squad-type-catalogue";
+import type { UpgradeTuning } from "../../roster/model/upgrade-tuning";
 import type { NewGameDeps } from "../../save/service/new-game-service";
 import { createNewGame } from "../../save/service/new-game-service";
 import type { GameSession } from "../../ui/model/game-session";
@@ -67,6 +69,7 @@ export interface GameContent {
   readonly squadTypes: SquadTypeCatalogue;
   readonly parts: PartCatalogue;
   readonly rosterTuning: RosterTuning;
+  readonly upgrades: UpgradeTuning;
 }
 
 /** The simulation-facing services screens are handed. */
@@ -116,6 +119,7 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     squadTypes,
     parts: new StaticPartCatalogue(STARTER_PARTS),
     rosterTuning: ROSTER_TUNING,
+    upgrades: UPGRADE_TUNING,
   };
   registerRosterCommands(dispatcher, {
     ...content,
@@ -136,7 +140,11 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
   registerLaunchMission(dispatcher, {
     resolver: new AutoResolveMissionResolver({
       squadTypes: content.squadTypes,
-      mechRater: new LoadoutMechRater(content.parts, MECH_RATING_TUNING),
+      mechRater: new LoadoutMechRater(
+        content.parts,
+        MECH_RATING_TUNING,
+        content.upgrades,
+      ),
       tuning: AUTO_RESOLVE_TUNING,
     }),
     rosterTuning: content.rosterTuning,

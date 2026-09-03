@@ -8,6 +8,7 @@ import { MECH_RATING_TUNING } from "../data/mech-rating-tuning";
 import { STARTER_PARTS } from "../data/parts";
 import { SQUAD_TYPES } from "../data/squad-types";
 import { STARTER_LOADOUT } from "../data/starter-roster";
+import { UPGRADE_TUNING } from "../data/upgrade-tuning";
 import type { MechLoadout } from "../model/mech-loadout";
 import type { RosterError } from "../model/roster-error";
 import { describeRosterError } from "../model/roster-error";
@@ -74,6 +75,7 @@ function setup(credits = 10_000): {
     squadTypes: new DataSquadTypeCatalogue(SQUAD_TYPES),
     parts: new StaticPartCatalogue(STARTER_PARTS),
     rating: MECH_RATING_TUNING,
+    upgrades: UPGRADE_TUNING,
     transactions: new LedgerTransactionService(ids),
     ids,
   };

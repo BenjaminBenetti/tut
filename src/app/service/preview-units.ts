@@ -160,6 +160,7 @@ export function previewMission(map: TacticalMap): TacticalState {
     spawners,
     edgeSpawn: { nextTurn: FIRST_EDGE_SPAWN_TURN, wave: 0 },
     extraction: map.hooks.extraction.tiles,
+    extracted: [],
     log: [],
   };
 }

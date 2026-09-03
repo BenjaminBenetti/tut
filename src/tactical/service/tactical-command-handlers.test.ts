@@ -32,6 +32,7 @@ import { TURN_STARTED } from "../model/turn-started-event";
 import { UNIT_MOVED } from "../model/unit-moved-event";
 import { startTacticalMission } from "./mission-start-service";
 import {
+  MISSION_OVER,
   NO_ACTIVE_MISSION,
   registerTacticalCommands,
 } from "./tactical-command-handlers";
@@ -238,5 +239,20 @@ describe("registerTacticalCommands", () => {
     expect(once.value.state.activeMission?.log.map((e) => e.type)).toEqual([
       UNIT_MOVED,
     ]);
+  });
+
+  it("refuses every tactical command once the mission has an outcome", () => {
+    const dispatcher = dispatcherWith();
+    const state = inMission();
+    if (!state.activeMission) throw new Error("fixture needs a mission");
+    const ended: GameState = {
+      ...state,
+      activeMission: { ...state.activeMission, outcome: "won" },
+    };
+    const result = dispatcher.process(ended, endTurn());
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.code).toBe(MISSION_OVER);
+    expect(result.error.message).toContain("won");
   });
 });

@@ -13,6 +13,8 @@ import { StaticPartCatalogue } from "../../roster/repository/static-part-catalog
 import type { GameState } from "../../save/model/game-state";
 import { ATTACK } from "../../tactical/model/attack-command";
 import { MOVE } from "../../tactical/model/move-command";
+import { OVERWATCH } from "../../tactical/model/overwatch-command";
+import { reload } from "../../tactical/model/reload-command";
 import { END_TURN, endTurn } from "../../tactical/model/end-turn-command";
 import type { TacticalHandler } from "../../tactical/model/tactical-handler";
 import { TURN_STARTED } from "../../tactical/model/turn-started-event";
@@ -108,11 +110,16 @@ describe("composeTactical", () => {
     expect(outcome.error.code).toBe(NO_ACTIVE_MISSION);
   });
 
-  it("registers the shipped rules by default (Attack today) and leaves the rest unknown", () => {
+  it("registers the shipped rules by default and leaves the rest unknown", () => {
     const dispatcher = createOverworldCommandDispatcher<GameState>();
     const tactical = composeTactical(dispatcher, CONTENT);
-    expect(Object.keys(tactical.handlers)).toEqual([ATTACK, MOVE]);
-    const outcome = dispatcher.process(campaignOnDay(1, []), endTurn());
+    expect(Object.keys(tactical.handlers)).toEqual([
+      ATTACK,
+      MOVE,
+      END_TURN,
+      OVERWATCH,
+    ]);
+    const outcome = dispatcher.process(campaignOnDay(1, []), reload("unit-1"));
     expect(outcome.ok).toBe(false);
     if (outcome.ok) return;
     expect(outcome.error.code).toBe("unknown-command");

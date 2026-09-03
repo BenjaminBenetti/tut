@@ -1,8 +1,9 @@
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { MissionId } from "../../overworld/model/mission";
+import type { MissionOutcome } from "../../overworld/model/mission-result";
 import type { TacticalEvent } from "./tactical-event";
-import type { Unit } from "./unit";
+import type { Team, Unit, UnitId } from "./unit";
 import type { UnitTemplate, UnitTemplateId } from "./unit-template";
 
 // ===========================================
@@ -20,6 +21,18 @@ export type TacticalPhase = "player" | "bugs";
 
 /** Every phase, in turn order. */
 export const TACTICAL_PHASES: readonly TacticalPhase[] = ["player", "bugs"];
+
+/** Which team acts in which phase (GDD §6.2). */
+export const TEAM_FOR_PHASE: Readonly<Record<TacticalPhase, Team>> = {
+  player: "tdf",
+  bugs: "bugs",
+};
+
+/** The phase each team acts in. */
+export const PHASE_FOR_TEAM: Readonly<Record<Team, TacticalPhase>> = {
+  tdf: "player",
+  bugs: "bugs",
+};
 
 // ===========================================
 // Constants
@@ -90,6 +103,8 @@ export interface EdgeSpawnSchedule {
  *   ├── objectives[], spawners[]
  *   ├── edgeSpawn             when the next edge wave arrives
  *   ├── extraction[]          tiles a unit must reach to leave
+ *   ├── extracted[]           units that left through them; no longer in units[]
+ *   ├── outcome?              how it ended, once a turn boundary found it over
  *   └── log[]                 domain events so far, for the debrief and replays
  * ```
  *
@@ -113,6 +128,14 @@ export interface TacticalState {
   readonly edgeSpawn: EdgeSpawnSchedule;
   /** Tiles of the extraction hook. */
   readonly extraction: readonly TileCoord[];
+  /** Units that left the map through the extraction zone, in order; they are no longer in `units`. */
+  readonly extracted: readonly UnitId[];
+  /**
+   * Set when a terminal condition held at a turn boundary (#328). Once
+   * set, no further tactical command applies; the resolver (#330) turns
+   * the mission into a `MissionResult`.
+   */
+  readonly outcome?: MissionOutcome;
   /** Tactical events emitted so far, oldest first; the debrief and replays read it. */
   readonly log: readonly TacticalEvent[];
 }

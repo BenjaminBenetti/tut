@@ -1,23 +1,29 @@
+import type { Rng, RngState } from "../../core/model/rng";
+import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
 import { SurfaceIds } from "../../mapgen/data/surfaces";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
+import type { TacticalContext } from "../model/tactical-handler";
 import type { TacticalState } from "../model/tactical-state";
-import type { PassClass, Team, Unit } from "../model/unit";
+import type { PassClass, Team, Unit, UnitStatus } from "../model/unit";
 import type { UnitTemplate } from "../model/unit-template";
 
 // ===========================================
 // Templates
 // ===========================================
 
-/** Template ids the movement fixtures use. */
+/** Template ids the tactical fixtures use. */
 export const FIXTURE_TEMPLATES = {
   infantry: "squad:fixture",
   mech: "mech:fixture",
   bug: "bug:swarmer",
 } as const;
 
-/** Stat blocks: every fixture unit has two actions of three tiles. */
+/**
+ * Stat blocks: every fixture unit has two actions of three tiles, ten hit
+ * points, no armor and a range-5 weapon that rolls 2–4 damage.
+ */
 const TEMPLATES: Readonly<Record<string, UnitTemplate>> = {
   [FIXTURE_TEMPLATES.infantry]: template(
     FIXTURE_TEMPLATES.infantry,
@@ -47,11 +53,12 @@ function template(id: string, passClass: PassClass): UnitTemplate {
 // Units and missions
 // ===========================================
 
-/** Optional stat overrides for a fixture unit. */
+/** Optional overrides for a fixture unit. */
 export interface UnitOptions {
   readonly ap?: number;
   readonly hp?: number;
   readonly team?: Team;
+  readonly status?: readonly UnitStatus[];
 }
 
 /** A living TDF unit of the class at the position, full action points unless told otherwise. */
@@ -80,15 +87,24 @@ export function unitAt(
     maxHp: 10,
     ap: options.ap ?? 2,
     maxAp: 2,
-    status: [],
+    status: options.status ?? [],
     passClass,
   };
 }
 
-/** A mission in the player phase on the map with the units. */
+/** Optional overrides for a fixture mission. */
+export type MissionOptions = Partial<
+  Pick<
+    TacticalState,
+    "phase" | "turn" | "objectives" | "spawners" | "extracted" | "outcome"
+  >
+>;
+
+/** A mission on the map with the units, in the first player turn unless told otherwise. */
 export function missionWith(
   map: TacticalMap,
   units: readonly Unit[],
+  options: MissionOptions = {},
 ): TacticalState {
   return {
     missionId: "mission-fixture",
@@ -102,8 +118,46 @@ export function missionWith(
     spawners: [],
     edgeSpawn: { nextTurn: 3, wave: 0 },
     extraction: [],
+    extracted: [],
     log: [],
+    ...options,
   };
+}
+
+// ===========================================
+// Randomness
+// ===========================================
+
+/**
+ * An `Rng` with the dice loaded: every `chance` answers `hit`, every
+ * `nextInt` returns the low or high end of its band, and the rest is
+ * deterministic and dull. For rules tests that need a known roll.
+ */
+export function riggedRng(hit: boolean, damage: "low" | "high" = "low"): Rng {
+  const rng: Rng = {
+    next: () => (hit ? 0 : 0.999),
+    nextInt: (min, max) => (damage === "low" ? min : max),
+    pick: (items) => {
+      const first = items[0];
+      if (first === undefined) throw new Error("pick from empty list");
+      return first;
+    },
+    chance: () => hit,
+    pickWeighted: (items) => {
+      const first = items[0];
+      if (first === undefined) throw new Error("pickWeighted from empty list");
+      return first;
+    },
+    shuffle: (items) => [...items],
+    fork: () => rng,
+    getState: (): RngState => ({ algorithm: "rigged", seed: 0, state: 0 }),
+  };
+  return rng;
+}
+
+/** A handler context over the rng, with fresh sequential ids. */
+export function ctxWith(rng: Rng): TacticalContext {
+  return { rng, ids: new SequentialIdGenerator() };
 }
 
 // ===========================================
@@ -117,7 +171,8 @@ export function openField(): FixtureMapBuilder {
 
 /**
  * The field split by a solid wall between `x = 3` and `x = 4` with one
- * door at `z = 2`: infantry crosses at the door, a mech cannot.
+ * door at `z = 2`: infantry crosses at the door, a mech cannot, and
+ * nothing sees through any of it.
  *
  * ```
  *   x: 0 1 2 3 │ 4 5 6 7

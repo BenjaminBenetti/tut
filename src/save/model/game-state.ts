@@ -18,8 +18,9 @@ import type { TacticalState } from "../../tactical/model/tactical-state";
  * - `5`: `overworld.threatOffset` (#307).
  * - `6`: `activeMission` becomes the `TacticalState` slot (#323).
  * - `7`: `meta.debug` removed; dev switches live in the composition (#304).
+ * - `8`: `activeMission.extracted` (#328).
  */
-export const GAME_STATE_SCHEMA_VERSION = 7;
+export const GAME_STATE_SCHEMA_VERSION = 8;
 
 /**
  * Bookkeeping that every save needs regardless of gameplay content.

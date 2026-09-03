@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>tut</title>
+    <title>Terra Under Threat</title>
     <style>
       html,
       body {
@@ -11,15 +11,6 @@
         height: 100%;
         overflow: hidden;
         background: #0b0d12;
-        color: #e6e8ee;
-        font-family: system-ui, sans-serif;
-      }
-      #overlay {
-        position: fixed;
-        top: 12px;
-        left: 16px;
-        pointer-events: none;
-        opacity: 0.8;
       }
       #app,
       #map-viewport {
@@ -32,12 +23,8 @@
     </style>
   </head>
   <body>
-    <div id="overlay">
-      <strong>tut</strong> — overworld map. Click a city · <code>Q</code> /
-      <code>E</code> rotate · wheel zoom · <code>WASD</code> or arrows pan.
-      <span id="selected-city"></span>
-    </div>
     <div id="app"></div>
+    <div id="ui"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

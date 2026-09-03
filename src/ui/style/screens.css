@@ -1,0 +1,77 @@
+/*
+ * Screen layout: the #ui overlay sits over the three.js canvas and lets
+ * pointer events through wherever no panel is drawn, so camera input on
+ * #app keeps working around the UI. Tokens and components come from
+ * theme.css (style guide §4.4, §5).
+ *
+ *   ┌─ #ui (fixed, full window, pointer-events: none) ─────────┐
+ *   │                                                           │
+ *   │        ┌─ .tut-menu (centred panel) ───╱                 │
+ *   │        │  pointer-events: auto         │                 │
+ *   │        └──────────────────────────────┘                 │
+ *   │                                                           │
+ *   └───────────────────────────────────────────────────────────┘
+ */
+
+/* =========================================== */
+/* Overlay                                     */
+/* =========================================== */
+
+#ui {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+#ui > * {
+  pointer-events: auto;
+}
+
+/* =========================================== */
+/* Screens                                     */
+/* =========================================== */
+
+.tut-menu {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(360px, calc(100vw - 2 * var(--space-4)));
+  transform: translate(-50%, -50%);
+}
+
+.tut-menu .tut-stack {
+  margin-top: var(--space-4);
+}
+
+.tut-menu .tut-btn {
+  justify-content: center;
+}
+
+.tut-menu__status {
+  margin: var(--space-3) 0 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.tut-overworld {
+  position: absolute;
+  top: var(--space-4);
+  left: var(--space-4);
+  width: min(360px, calc(100vw - 2 * var(--space-4)));
+}
+
+/* =========================================== */
+/* Label / value grid                          */
+/* =========================================== */
+
+.tut-kv {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-1) var(--space-3);
+  margin: 0 0 var(--space-3);
+}
+
+.tut-kv dd {
+  margin: 0;
+}

@@ -26,15 +26,11 @@ import type {
   Spawner,
   TacticalState,
 } from "../model/tactical-state";
-import {
-  DEFAULT_HATCH_RADIUS,
-  FIRST_EDGE_SPAWN_TURN,
-  FIRST_TURN,
-  SPAWNER_HP,
-} from "../model/tactical-state";
+import { DEFAULT_HATCH_RADIUS, FIRST_TURN } from "../model/tactical-state";
 import type { PassClass, Unit } from "../model/unit";
 import { passMaskFor } from "../model/unit";
 import type { UnitTemplate, UnitTemplateId } from "../model/unit-template";
+import type { SpawnTuning } from "../model/spawn-tuning";
 import type { UnitTuning } from "../model/unit-tuning";
 import type { UnitBuild, UnitPlacement } from "./unit-factory";
 import { mechUnit, squadUnit } from "./unit-factory";
@@ -50,6 +46,8 @@ export interface MissionStartDeps {
   /** The mech's stat sheet from its loadout, or undefined when it no longer validates. */
   readonly sheetFor: (mech: Mech) => MechStatSheet | undefined;
   readonly unitTuning: UnitTuning;
+  /** Spawner hit points and timers, and the first edge wave's turn (#329). */
+  readonly spawnTuning: SpawnTuning;
   /** Issues unit, spawner and objective ids; the caller writes its state back to `meta`. */
   readonly ids: IdGenerator;
   /** Map generation content; the composition root passes the shipped registries. */
@@ -126,7 +124,7 @@ export function startTacticalMission<TState extends MissionCampaignState>(
   if (!placed.ok) {
     return placed;
   }
-  const spawners = spawnersFrom(map, deps.ids);
+  const spawners = spawnersFrom(map, deps.ids, deps.spawnTuning);
   const objectives = spawners.map((spawner): Objective => ({
     id: deps.ids.nextId(OBJECTIVE_ID_PREFIX),
     kind: "destroy-spawner",
@@ -137,6 +135,8 @@ export function startTacticalMission<TState extends MissionCampaignState>(
   const tactical: TacticalState = {
     missionId: mission.id,
     seed: hashSeed(recipe.value.seed),
+    difficulty: mission.difficulty,
+    threat: state.overworld.threat,
     map,
     units: placed.value.units,
     templates: placed.value.templates,
@@ -144,7 +144,7 @@ export function startTacticalMission<TState extends MissionCampaignState>(
     phase: "player",
     objectives,
     spawners,
-    edgeSpawn: { nextTurn: FIRST_EDGE_SPAWN_TURN, wave: 0 },
+    edgeSpawn: { nextTurn: deps.spawnTuning.firstWaveTurn, wave: 0 },
     extraction: map.hooks.extraction.tiles.map(coordOf),
     extracted: [],
     log: [],
@@ -274,15 +274,20 @@ function facingToward(
 // Spawners
 // ===========================================
 
-/** One spawner per egg-spawner objective hook, on the hook's first tile. */
-function spawnersFrom(map: TacticalMap, ids: IdGenerator): Spawner[] {
+/** One spawner per egg-spawner objective hook, on the hook's first tile, a full hatch interval from hatching. */
+function spawnersFrom(
+  map: TacticalMap,
+  ids: IdGenerator,
+  tuning: SpawnTuning,
+): Spawner[] {
   return map.hooks.objectives
     .filter((hook) => hook.kind === HookKinds.EGG_SPAWNER)
     .map((hook): Spawner => ({
       id: ids.nextId(SPAWNER_ID_PREFIX),
       pos: coordOf(firstTile(hook)),
       hatchRadius: hatchRadiusOf(hook),
-      hp: SPAWNER_HP,
+      hp: tuning.spawnerHp,
+      timer: tuning.hatchInterval,
       destroyed: false,
     }));
 }

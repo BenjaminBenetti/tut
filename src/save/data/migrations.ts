@@ -170,6 +170,43 @@ const ADD_MISSION_EXTRACTED: Migration = {
   },
 };
 
+/**
+ * v8 → v9 (#329): a mission in progress gains its spawn clocks. A mission
+ * already under way was launched before `difficulty` and `threat` were
+ * recorded, so it takes the gentlest values; every spawner gets a
+ * `timer` at the shipped hatch interval of three bug phases.
+ */
+const ADD_SPAWN_CLOCKS: Migration = {
+  from: 8,
+  to: 9,
+  apply(state) {
+    if (!isRecord(state) || !isRecord(state.overworld)) {
+      throw new Error("v8 state has no overworld slice");
+    }
+    const mission = state.activeMission;
+    if (!isRecord(mission)) {
+      return state;
+    }
+    const spawners = Array.isArray(mission.spawners)
+      ? mission.spawners.map((spawner: unknown) =>
+          isRecord(spawner) && typeof spawner.timer !== "number"
+            ? { ...spawner, timer: 3 }
+            : spawner,
+        )
+      : mission.spawners;
+    return {
+      ...state,
+      activeMission: {
+        ...mission,
+        difficulty:
+          typeof mission.difficulty === "number" ? mission.difficulty : 1,
+        threat: typeof mission.threat === "number" ? mission.threat : 0,
+        spawners,
+      },
+    };
+  },
+};
+
 // ===========================================
 // Chain
 // ===========================================
@@ -187,4 +224,5 @@ export const GAME_STATE_MIGRATIONS: readonly Migration[] = [
   RESERVE_ACTIVE_MISSION,
   DROP_META_DEBUG,
   ADD_MISSION_EXTRACTED,
+  ADD_SPAWN_CLOCKS,
 ];

@@ -8,8 +8,10 @@ import type { PartCatalogue } from "../../roster/model/part-catalogue";
 import type { UpgradeTuning } from "../../roster/model/upgrade-tuning";
 import { validateLoadout } from "../../roster/service/loadout-validation-service";
 import type { GameState } from "../../save/model/game-state";
+import { BUG_SPECIES } from "../../bugs/data/species";
 import { COMBAT_TUNING } from "../../tactical/data/combat-tuning";
 import { UNIT_TUNING } from "../../tactical/data/unit-tuning";
+import { SPAWN_TUNING } from "../../tactical/data/spawn-tuning";
 import { ATTACK } from "../../tactical/model/attack-command";
 import { END_TURN } from "../../tactical/model/end-turn-command";
 import { MOVE } from "../../tactical/model/move-command";
@@ -18,11 +20,17 @@ import { createAttackHandler } from "../../tactical/service/combat-service";
 import type { MissionStartDeps } from "../../tactical/service/mission-start-service";
 import { createMoveHandler } from "../../tactical/service/move-handler";
 import { overwatchHandler } from "../../tactical/service/overwatch-handler";
+import type { SpawnDeps } from "../../tactical/service/spawn-service";
+import {
+  createEdgeWaveStep,
+  createHatchStep,
+} from "../../tactical/service/spawn-service";
 import type { TacticalHandlers } from "../../tactical/service/tactical-command-handlers";
 import { registerTacticalCommands } from "../../tactical/service/tactical-command-handlers";
 import {
   createEndTurnHandler,
   createOverwatchReaction,
+  DEFAULT_PHASE_STEPS,
 } from "../../tactical/service/turn-service";
 import type { GameContent } from "./game-composition";
 
@@ -82,6 +90,7 @@ export function composeTactical(
       squadTypes: content.squadTypes,
       sheetFor,
       unitTuning: UNIT_TUNING,
+      spawnTuning: SPAWN_TUNING,
       ids,
       registries,
     }),
@@ -98,10 +107,18 @@ export function composeTactical(
  * their own object to isolate the lifting path.
  */
 export function shippedTacticalHandlers(): TacticalHandlers {
+  const spawn: SpawnDeps = {
+    species: Object.values(BUG_SPECIES),
+    tuning: SPAWN_TUNING,
+  };
   return {
     [ATTACK]: createAttackHandler(COMBAT_TUNING),
     [MOVE]: createMoveHandler(createOverwatchReaction(COMBAT_TUNING)),
-    [END_TURN]: createEndTurnHandler(),
+    [END_TURN]: createEndTurnHandler([
+      ...DEFAULT_PHASE_STEPS,
+      createHatchStep(spawn),
+      createEdgeWaveStep(spawn),
+    ]),
     [OVERWATCH]: overwatchHandler,
   };
 }

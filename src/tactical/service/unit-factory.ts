@@ -153,7 +153,7 @@ export function mechUnit(
 export function bugUnit(
   species: BugUnitSource,
   placement: UnitPlacement,
-  deps: UnitFactoryDeps,
+  deps: Pick<UnitFactoryDeps, "ids">,
 ): UnitBuild {
   const template: UnitTemplate = {
     id: templateIdFor("bug", species.id),

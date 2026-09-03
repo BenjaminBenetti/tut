@@ -96,7 +96,15 @@ export function unitAt(
 export type MissionOptions = Partial<
   Pick<
     TacticalState,
-    "phase" | "turn" | "objectives" | "spawners" | "extracted" | "outcome"
+    | "phase"
+    | "turn"
+    | "objectives"
+    | "spawners"
+    | "edgeSpawn"
+    | "extracted"
+    | "outcome"
+    | "difficulty"
+    | "threat"
   >
 >;
 
@@ -112,6 +120,8 @@ export function missionWith(
     map,
     units,
     templates: TEMPLATES,
+    difficulty: 1,
+    threat: 0,
     turn: 1,
     phase: "player",
     objectives: [],

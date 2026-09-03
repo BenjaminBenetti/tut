@@ -22,6 +22,7 @@ import { validateLoadout } from "../../roster/service/loadout-validation-service
 import type { GameState } from "../../save/model/game-state";
 import { createNewGame } from "../../save/service/new-game-service";
 import { UNIT_TUNING } from "../data/unit-tuning";
+import { SPAWN_TUNING } from "../data/spawn-tuning";
 import { attack } from "../model/attack-command";
 import type { EndTurnCommand } from "../model/end-turn-command";
 import { END_TURN, endTurn } from "../model/end-turn-command";
@@ -103,6 +104,7 @@ function inMission(): GameState {
         return r.ok ? r.value : undefined;
       },
       unitTuning: UNIT_TUNING,
+      spawnTuning: SPAWN_TUNING,
       ids: new SequentialIdGenerator(),
       registries: createDefaultRegistries(),
     },

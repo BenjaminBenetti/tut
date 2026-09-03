@@ -22,11 +22,8 @@ import { validateLoadout } from "../../roster/service/loadout-validation-service
 import type { GameState } from "../../save/model/game-state";
 import { createNewGame } from "../../save/service/new-game-service";
 import { UNIT_TUNING } from "../data/unit-tuning";
-import {
-  FIRST_EDGE_SPAWN_TURN,
-  FIRST_TURN,
-  SPAWNER_HP,
-} from "../model/tactical-state";
+import { SPAWN_TUNING } from "../data/spawn-tuning";
+import { FIRST_TURN } from "../model/tactical-state";
 import type { MissionStartDeps } from "./mission-start-service";
 import { startTacticalMission, tileAdmits } from "./mission-start-service";
 
@@ -50,6 +47,7 @@ function deps(): MissionStartDeps {
       return result.ok ? result.value : undefined;
     },
     unitTuning: UNIT_TUNING,
+    spawnTuning: SPAWN_TUNING,
     ids: new SequentialIdGenerator(),
     registries: createDefaultRegistries(),
   };
@@ -128,12 +126,14 @@ describe("startTacticalMission", () => {
     expect(tactical).toBeDefined();
     if (!tactical) return;
     expect(tactical.missionId).toBe(mission.id);
+    expect(tactical.difficulty).toBe(mission.difficulty);
+    expect(tactical.threat).toBeGreaterThanOrEqual(0);
     expect(tactical.map.recipe.seed).toBe("start-1");
     expect(tactical.map.tiles.length).toBeGreaterThan(0);
     expect(tactical.turn).toBe(FIRST_TURN);
     expect(tactical.phase).toBe("player");
     expect(tactical.edgeSpawn).toEqual({
-      nextTurn: FIRST_EDGE_SPAWN_TURN,
+      nextTurn: SPAWN_TUNING.firstWaveTurn,
       wave: 0,
     });
     expect(tactical.log).toEqual([]);
@@ -198,7 +198,8 @@ describe("startTacticalMission", () => {
         z: hook.tiles[0]!.z,
       });
       expect(spawner.hatchRadius).toBe(hook.meta?.hatchRadius ?? 3);
-      expect(spawner.hp).toBe(SPAWNER_HP);
+      expect(spawner.hp).toBe(SPAWN_TUNING.spawnerHp);
+      expect(spawner.timer).toBe(SPAWN_TUNING.hatchInterval);
       expect(spawner.destroyed).toBe(false);
     });
     expect(tactical.objectives.map((o) => o.targetId)).toEqual(

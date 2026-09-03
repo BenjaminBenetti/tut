@@ -233,4 +233,3 @@ function tacticalEventsOf(
     e.type.startsWith("tactical:"),
   );
 }
-}

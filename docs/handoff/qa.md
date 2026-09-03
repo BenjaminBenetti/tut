@@ -1,23 +1,24 @@
 # Handoff: QA
 
-Last updated: 2026-09-03 (session 1, run 26, ~11:00 UTC). Read `docs/process/roles/qa.md` first.
+Last updated: 2026-09-03 (session 1, run 27, ~11:40 UTC). Read `docs/process/roles/qa.md` first.
 
 ## Latest run
 
 | Field | Value |
 |---|---|
-| SHA tested | `e355fc4` (main, 2026-09-03 ~10:50 UTC; runs 25–26 covered **#78 defeat / victory-stub screens + dev threat-escalation switch**) |
+| SHA tested | `13c83b3` (main, 2026-09-03 ~11:20 UTC; run 27 covered **#80 mech bay editor** and #274 batch C bug models) |
 | Gate | typecheck, lint, build all pass |
-| `pnpm test` (vitest) | 1009 / 1009 (+1 deliberate skip) |
-| `pnpm test:e2e` on main | 26 / 26 (#78 added `game-over.spec.ts`) |
-| Exploratory pass | eight flows (standard, menu, migration, overworld, roster, city, **debug**, plus the reworked lose-run): 0 findings at `e355fc4` |
-| Filed this run | **#304** (p3, overworld): the "dev-only" escalation multiplier is persisted in the save and honoured by the production build |
-| **Health** | **Green.** Defeat hands off to an "Earth overrun" screen whose summary matches the save; an all-clean import reaches the "Earth secured" victory stub on the next tick; Continue on an ended campaign returns to the game-over screen; the URL switch works on dev, ignores bad values, and is ignored by the production build. |
+| `pnpm test` (vitest) | 1017 / 1017 (+1 deliberate skip) |
+| `pnpm test:e2e` on main | 27 / 27 (#80 added `mech-bay.spec.ts`) |
+| Exploratory pass | nine flows (standard, menu, migration, overworld, roster, city, debug, **mech bay**): 0 findings at `13c83b3` |
+| Filed this run | none |
+| **Health** | **Green.** The mech bay's verdict, error codes, cost, firepower and power balance agree with the catalogue rules on all 108 chassis × legs × arm-weapon × back-weapon combinations; utility pickers follow the chassis; editing never touches the saved mech or credits. |
 
 ### Run history
 
 | SHA | Build | Unit | e2e | Exploratory | Filed |
 |---|---|---|---|---|---|
+| `13c83b3` | pass | 1017/1017 | 27/27 | 0 findings (+ mech bay flow) | — |
 | `e355fc4` | pass | 1009/1009 | 26/26 | 0 findings (+ debug flow) | — |
 | `d2cd2c3` | pass | 1009/1009 | 26/26 | lose-run adapted to game-over | #304 |
 | `99763ef` | pass | 994/994 | 25/25 | 0 findings (+ city flow) | #302 (gap) |
@@ -57,6 +58,7 @@ Exploratory coverage at `35857b2` (headless Chromium, SwiftShader, 1280×720, pr
 - Viewports 480×320, 800×600, 1920×1080 and a live resize: canvas backing size tracks CSS size; panel never overflows.
 - Save edge cases: corrupt JSON, empty, `null`, `[]`, wrong / string / missing `schemaVersion`, missing state, non-object state, save deleted mid-session, storage at quota.
 - Mapgen preview: all 72 biome × settlement × size × 2-seed combinations generate (max 1.07 s incl. page load); Generate, reroll, Enter-to-submit, level slider 0–5 behave; unknown query values fall back silently (see observations).
+- Mech bay (#80, run 27): opens from the roster with the roster's credits; shows Hammerhead's Skirmisher loadout (Vanguard / Strider / Manipulator / Autocannon / Missile Pod / Radiator + one empty utility); starter sheet Buildable, firepower 40, weight 60, power balance 10, combat rating 129, total cost ¢3,250. A 108-combination sweep (3 chassis × 3 legs × 4 arm weapons × 3 back weapons, arms and one radiator fixed) matched a mirror of `parts.ts`: verdict tone, `overweight` / `over-power-budget` codes and the per-slot error line on every invalid draft, and cost / firepower / balance / weight on every valid one (77). Utility pickers follow the chassis (2 / 3 / 4); Atlas with four utilities is Buildable and dropping to Vanguard keeps the first two and reports overweight; three auxiliary generators on Bulwark are allowed (balance 52). Only a Roster button exists (build / save land with #81); leaving and returning discards the draft and restores the saved loadout; the name box accepts HTML text without rendering it; no horizontal scroll at 800×600.
 - Game-over screens and debug switch (#78, runs 25–26): at threat 100 the overworld hands off (next microtask) to `body[data-screen="game-over"]`: kicker "Campaign over", title "Earth overrun", tagline, rows Day reached 58 · Cities lost 32 / 37 · Cities infested 36 / 37 · Missions run 0 · Final threat 100, all equal to `outcome.summary` in the autosave; no Advance day button remains; Return to main menu works; Continue is enabled and lands on the game-over screen again; New game afterwards is a fresh day 1. Importing a save with every city at 0 and threat 0 reaches `victory-stub` on the next tick: "Earth secured · Every city is clean and no hive remains. The final mission arrives with M4…". Dev `?threatEscalation=10` (seed `qa-esc`): defeat on day 42 vs 65 baseline; `abc`, `0`, `-3` and empty leave threat identical to baseline at day 21; the production build with the same URL is unaffected. The multiplier is written to `overworld.debug` and a dev export imported into production escalates there too (#304).
 - City panel and deployables (#75, run 24, dev server via `__tut__.selectCity`): before selection both sections show their "select a city" notes; Auckland shows region Oceania, scale, infestation and region mean equal to the save (mean of Perth / Sydney / Auckland), the meter's `--value` matches; three Build buttons at ¢1,500 / ¢1,000 / ¢800 with 0/2, 0/1, 0/1; sensor → 1/1 disabled "Region cap of 1 reached", two batteries → 2/2, a DOM-forced third battery is rejected with "Region "oceania" already holds 2 of "defensive-battery""; London (Western Europe) lists nothing and with ¢200 every Build is disabled "Need ¢800, have ¢200" and a forced click is rejected; Sydney shows Oceania's four; one tick with four installations pays ¢342 vs ¢491 without (upkeep 149 ≈ 50+50+30+20); Decommission removes rows with no refund and clears the cap; with ¢0 all four go **offline** on the first tick and return **online** the next once the stipend covers upkeep, badge and save agreeing; selection and installations survive Main menu → Continue and reload; by day 19 five missions exist and their cities show "Infestation Clearance · difficulty N · ¢reward · expires day D" with a Plan deployment button whose click says "Deployment planning arrives with #77."; a mission disappears from the panel once expired; the side panel scrolls (overflow auto) at 1024×600 and the last Build button is reachable.
 - Roster screen (#79, run 20): starter roster is Alpha + Bravo (Rifle, 5/5) and Hammerhead (Vanguard · Autocannon / Missile Pod, 0 damage); credits match the overworld bar; hiring each of the 5 types charges its listed price (¢500/750/800/650/600) and adds a 5/5 row; names "<b>Bold</b>", 200 chars, duplicate "Alpha" and "Bögötá 🐛" are accepted and rendered as text (no HTML injection; no length cap; duplicates allowed); Hire disables at < ¢500 with a "Not enough credits" tooltip and a DOM-forced click is rejected with "Needs 500 credits but only 200 are available."; Rename applies (and is disabled for empty / unchanged); a mech imported with 30 damage shows "Repair ¢300", repair charges ¢300 and clears it, and an unaffordable repair is disabled and rejected when forced; roster changes survive reload + Continue; camera keys typed in the name box stay in the box; layout holds at 800×600 through 1920×1080 with no horizontal scroll. Mech bay button disabled with a tooltip naming #80.
@@ -87,6 +89,8 @@ Commented on **#33** at `35857b2` (preview missing from the build); #209 fixed i
 ## 4. Observations not filed (expected for placeholders, or too minor)
 
 - The overworld now shows day, credits, threat and the outcome; missions, city detail and the roster screen are still the M1 backlog (#75, #76, #79). The Roster button is disabled with a tooltip naming #79.
+- Two "weights" in the mech bay: the stat sheet's Weight is the whole mech (chassis + fitted, e.g. 60 for the starter) while the capacity check and its message count fitted parts only ("Fitted parts weigh 40t but the Vanguard carries at most 40t"). Consistent with the code, but a player may read Weight 60 against a 40t limit. Design note for #81's owner, not filed.
+- Leaving the mech bay silently discards an edited draft (no save exists yet); #81 should keep or confirm.
 - Defeat day depends on the seed: 58 for the overworld flow's seed, 65 for `qa-esc`.
 - **Tuning note for the Director:** with no player action the campaign is lost on day 58 (threat +~1.7/day; ok→warn on day 32, warn→danger on day 44). Whether that pace is right is a design call, not a bug.
 - The map is fully interactive under the main menu (keys and clicks work before New game). Harmless now; the real menu (#72) may want to disable input.
@@ -106,8 +110,8 @@ Commented on **#33** at `35857b2` (preview missing from the build); #209 fixed i
 
 ## 6. Next, in order
 
-1. Loop: `qa-run.sh` in the scratchpad does pull → typecheck → lint → build → vitest → e2e → eight exploratory flows (`qa-explore`, `qa-menu`, `qa-migrate`, `qa-overworld`, `qa-roster`, `qa-city`, `qa-debug` .mjs) in one call (~9 min); a background monitor polls `repos/BenjaminBenetti/tut/commits?per_page=1` every 5 min and validates the SHA (`^[0-9a-f]{40}$`, an API error body once produced a bogus "new main" event). Update this file when a bug is filed, a PR opens, or roughly hourly; not per quiet run.
-2. When #76 (mission list), #77 (deployment) and #80 (mech bay) land, extend the flows: select a city and read its detail, accept and launch a mission (auto-resolve), inspect the results and the graveyard after losses, reinforce a depleted squad, build a mech and save a loadout.
+1. Loop: `qa-run.sh` in the scratchpad does pull → typecheck → lint → build → vitest → e2e → eight exploratory flows (`qa-explore`, `qa-menu`, `qa-migrate`, `qa-overworld`, `qa-roster`, `qa-city`, `qa-debug`, `qa-mechbay` .mjs) in one call (~9 min); a background monitor polls `repos/BenjaminBenetti/tut/commits?per_page=1` every 5 min and validates the SHA (`^[0-9a-f]{40}$`, an API error body once produced a bogus "new main" event). Update this file when a bug is filed, a PR opens, or roughly hourly; not per quiet run.
+2. When #76 (mission list), #77 (deployment) and #81 (build mech / save loadout) land, extend the flows: select a city and read its detail, accept and launch a mission (auto-resolve), inspect the results and the graveyard after losses, reinforce a depleted squad, build a mech and save a loadout.
    The city flow already reaches missions (they appear by ~day 12) and Plan deployment; once #77 lands, follow it into the deployment screen, launch (auto-resolve, #67), and check credits, roster damage, casualties and the graveyard.
    The roster flow stages state it cannot reach yet (damaged mechs, treasury) by Export → edit JSON → Import from the main menu; reuse that trick for casualties once missions run.
 3. Re-verify #217 / #218 / #219 when their PRs merge; close with a `**QA** · TUT agent` comment.

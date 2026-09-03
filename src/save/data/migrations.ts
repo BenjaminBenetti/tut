@@ -2,15 +2,11 @@ import type { SettlementScale } from "../../content/model/settlement-scale";
 import { EARTH_MAP } from "../../overworld/data/earth-map";
 import { DEFAULT_CITY_SCALE } from "../../overworld/service/earth-map-builder";
 import type { Migration } from "../model/migration";
+import { isRecord } from "../../core/model/record-guard";
 
 // ===========================================
 // Steps
 // ===========================================
-
-/** True for a plain object (not null, not an array). */
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
 
 /**
  * v1 → v2 (#58): the overworld slice gains `spreadCooldowns`, the days

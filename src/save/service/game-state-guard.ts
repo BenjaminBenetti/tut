@@ -1,4 +1,5 @@
 import type { GameState } from "../model/game-state";
+import { isRecord } from "../../core/model/record-guard";
 
 // ===========================================
 // Guard
@@ -46,8 +47,3 @@ export function isGameStateShape(value: unknown): value is GameState {
 // ===========================================
 // Helpers
 // ===========================================
-
-/** True for a plain object (not null, not an array). */
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}

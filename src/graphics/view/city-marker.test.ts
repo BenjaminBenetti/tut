@@ -8,6 +8,7 @@ import {
   HOVER_COLOUR,
   INFESTATION_RAMP,
   infestationColour,
+  MISSION_COLOUR,
 } from "./city-marker";
 
 const CITY: City = {
@@ -169,5 +170,41 @@ describe("CityMarker (glyph sprite)", () => {
     const lift = marker.pickPoint().y - BASE.y;
     expect(lift).toBeGreaterThan(0);
     expect(lift).toBeLessThan(OVERWORLD_SCENE_CONFIG.markerGlyphSize / 2);
+  });
+});
+
+describe("CityMarker mission badge", () => {
+  it("is hidden until setMission and reports through look()", () => {
+    const marker = makeMarker();
+    const badge = marker.object.getObjectByName(`city-badge-${CITY.id}`);
+    expect(badge).toBeDefined();
+    expect(badge?.visible).toBe(false);
+    expect(marker.hasMission()).toBe(false);
+    marker.setMission(true);
+    expect(badge?.visible).toBe(true);
+    expect(marker.look()).toEqual({
+      colourHex: marker.colourHex(),
+      mission: true,
+    });
+    marker.setMission(false);
+    expect(badge?.visible).toBe(false);
+  });
+
+  it("draws the badge as a sprite when a mission glyph is given, tinted MISSION_COLOUR", () => {
+    const geometry = {
+      body: new CylinderGeometry(1, 1, 1, 12),
+      ring: new RingGeometry(1, 2, 24),
+    };
+    const marker = new CityMarker(
+      CITY,
+      { x: 0, y: 0, z: 0 },
+      { geometry, glyph: new Texture(), missionGlyph: new Texture() },
+      OVERWORLD_SCENE_CONFIG,
+    );
+    const badge = marker.object.getObjectByName(`city-badge-${CITY.id}`);
+    expect(badge).toBeInstanceOf(Sprite);
+    expect((badge as Sprite).material.color.getHex()).toBe(MISSION_COLOUR);
+    expect(badge!.position.x).toBeGreaterThan(0);
+    expect(badge!.position.y).toBeGreaterThan(0);
   });
 });

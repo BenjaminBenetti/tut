@@ -34,6 +34,7 @@ import { DomMapViewportHost } from "./dom-map-viewport-host";
 import { parseDebugOptions } from "./debug-options";
 import { DomScreenRouter } from "./dom-screen-router";
 import { composeGame } from "./game-composition";
+import { MapSceneSync } from "./map-scene-sync";
 
 // ===========================================
 // Constants
@@ -79,6 +80,7 @@ export async function bootstrapApp(doc: Document): Promise<void> {
     : undefined;
 
   const clock: SaveClock = { now: () => new Date().toISOString() };
+  const mapSync = new MapSceneSync();
   const game = composeGame({
     storage: new WebStorageKeyValueStore(window.localStorage),
     clock,
@@ -86,6 +88,7 @@ export async function bootstrapApp(doc: Document): Promise<void> {
     onAutosaveFailure: (error) => {
       console.error(`Autosave failed (${error.kind}): ${error.message}`);
     },
+    onStore: mapSync.observe,
   });
 
   const router: DomScreenRouter = new DomScreenRouter(
@@ -157,7 +160,7 @@ export async function bootstrapApp(doc: Document): Promise<void> {
   );
   router.navigate("main-menu");
 
-  const scene = await composeScene(doc, viewport, window, selection);
+  const scene = await composeScene(doc, viewport, window, selection, mapSync);
   scene.start();
   await scene.whenFirstFrameRendered();
   doc.body.dataset.appState = "ready";
@@ -172,15 +175,18 @@ export async function bootstrapApp(doc: Document): Promise<void> {
  * builds the Earth scene, the isometric rig at minimum zoom, camera
  * input and city picking, all mounted into the given `#map-viewport`. A
  * selected city is mirrored to `body[data-selected-city]` and pushed into
- * `selection`, which the overworld panels render. In dev builds the
- * `window.__tut__` hooks let end-to-end tests select cities without
- * pointer input.
+ * `selection`, which the overworld panels render. The scene attaches to
+ * `mapSync` so every campaign store's state retints and badges the
+ * markers (#302). In dev builds the `window.__tut__` hooks let
+ * end-to-end tests select cities and read marker looks without pointer
+ * input.
  */
 async function composeScene(
   doc: Document,
   viewport: HTMLElement,
   window: Window,
   selection: OverworldSelection,
+  mapSync: MapSceneSync,
 ): Promise<SceneService> {
   const assets = await loadOverworldAssets({
     textures: new ManifestTextureLoader({
@@ -190,10 +196,12 @@ async function composeScene(
     }),
     glyphs: new SvgGlyphRasteriser({ logger: console }),
     markerGlyphUrl: iconHref("marker-city"),
+    missionGlyphUrl: iconHref("mission"),
   });
 
   const mapScene = new OverworldSceneBuilder({ assets });
   mapScene.build(EARTH_MAP);
+  mapSync.attach(mapScene);
   const rig = new IsometricCameraRig({
     target: mapScene.centre,
     zoom: CAMERA_ZOOM.min,
@@ -231,6 +239,7 @@ async function composeScene(
         picking.selectCity(cityId);
       },
       cityScreenPosition: (cityId) => picking.screenPositionOf(cityId),
+      cityMarkerLook: (cityId) => mapScene.markerLook(cityId),
     };
     window.__tut__ = hooks;
   }

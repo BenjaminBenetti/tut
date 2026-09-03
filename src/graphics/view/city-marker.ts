@@ -53,6 +53,17 @@ const SPRITE_RENDER_ORDER = 2;
 /** Fraction of the glyph height above the anchor where `pickPoint` sits. */
 const GLYPH_PICK_LIFT = 0.1;
 
+/** Mission badge tint: `ui-info`, distinct from every infestation stop and the accent. */
+export const MISSION_COLOUR = 0x7fd1ff;
+
+/** Badge size relative to the marker glyph, and where it sits relative to the pin. */
+const BADGE_SCALE = 0.45;
+const BADGE_OFFSET_X = 0.55;
+const BADGE_OFFSET_Y = 0.85;
+
+/** Badges draw after the marker so they sit on top of the pin. */
+const BADGE_RENDER_ORDER = 3;
+
 /**
  * Maps infestation `0–100` to a colour on the ramp, as a `0xRRGGBB`
  * number. Channels are interpolated linearly in sRGB between the two
@@ -100,22 +111,33 @@ export interface CityMarkerGeometry {
   readonly ring: BufferGeometry;
 }
 
-/** How markers look: shared geometry and, when art is available, the glyph. */
+/** How markers look: shared geometry and, when art is available, the glyphs. */
 export interface CityMarkerLook {
   readonly geometry: CityMarkerGeometry;
   /** White-on-transparent glyph; `undefined` draws a disc instead. */
   readonly glyph: Texture | undefined;
+  /** White-on-transparent mission glyph for the badge; `undefined` draws a small disc. */
+  readonly missionGlyph?: Texture | undefined;
+}
+
+/** What a marker currently shows, for tests and the dev hooks. */
+export interface CityMarkerLookReport {
+  /** Tint as `0xRRGGBB`; hover overrides infestation. */
+  readonly colourHex: number;
+  /** True while the active-mission badge is shown. */
+  readonly mission: boolean;
 }
 
 /**
  * One city on the strategic map: a pin glyph (or a disc when the glyph
  * is missing) tinted by infestation, accent-tinted and grown while
- * hovered, ringed while selected. Holds no game truth; `setInfestation`
- * is how state reaches it.
+ * hovered, ringed while selected, badged while its city has an active
+ * mission. Holds no game truth; `setInfestation` and `setMission` are
+ * how state reaches it.
  *
  * ```
- *          ╱▔▔╲   glyph sprite, anchored at its bottom edge
- *          ╲__╱   (or a disc when no glyph loaded)
+ *          ╱▔▔╲ ◆  glyph sprite, anchored at its bottom edge, mission
+ *          ╲__╱    badge up and to the right (or discs without art)
  *       ═════╧═════  ring, visible only when selected
  *     ───────────────  plate top = the marker's base
  * ```
@@ -134,9 +156,12 @@ export class CityMarker {
   private readonly material: SpriteMaterial | MeshStandardMaterial;
   private readonly ring: Mesh;
   private readonly ringMaterial: MeshStandardMaterial;
+  private readonly badge: Sprite | Mesh;
+  private readonly badgeMaterial: SpriteMaterial | MeshStandardMaterial;
   private readonly config: OverworldSceneConfig;
   private infestationHex = 0;
   private hovered = false;
+  private mission = false;
 
   // ===========================================
   // Constructor
@@ -200,6 +225,42 @@ export class CityMarker {
     this.ring.visible = false;
     this.object.add(this.ring);
 
+    const badgeSize = config.markerGlyphSize * BADGE_SCALE;
+    if (look.missionGlyph) {
+      const material = new SpriteMaterial({
+        map: look.missionGlyph,
+        color: MISSION_COLOUR,
+        transparent: true,
+        depthWrite: false,
+      });
+      const sprite = new Sprite(material);
+      sprite.center.set(0.5, 0);
+      sprite.scale.set(badgeSize, badgeSize, 1);
+      sprite.renderOrder = BADGE_RENDER_ORDER;
+      this.badgeMaterial = material;
+      this.badge = sprite;
+    } else {
+      const material = new MeshStandardMaterial({
+        color: MISSION_COLOUR,
+        emissive: MISSION_COLOUR,
+        emissiveIntensity: 0.8,
+        flatShading: true,
+        metalness: 0,
+        roughness: 0.6,
+      });
+      const disc = new Mesh(look.geometry.body, material);
+      disc.scale.setScalar(BADGE_SCALE);
+      this.badgeMaterial = material;
+      this.badge = disc;
+    }
+    const lift = this.usesGlyph()
+      ? config.markerGlyphSize * BADGE_OFFSET_Y
+      : config.markerHeight * (1 + BADGE_OFFSET_Y);
+    this.badge.position.set(config.markerGlyphSize * BADGE_OFFSET_X, lift, 0);
+    this.badge.name = `city-badge-${city.id}`;
+    this.badge.visible = false;
+    this.object.add(this.badge);
+
     this.setInfestation(city.infestation);
     this.setHovered(false);
   }
@@ -237,9 +298,25 @@ export class CityMarker {
     this.ring.visible = selected;
   }
 
+  /** Shows the mission badge while the city has an active mission. */
+  setMission(active: boolean): void {
+    this.mission = active;
+    this.badge.visible = active;
+  }
+
+  /** True while the mission badge is shown. */
+  hasMission(): boolean {
+    return this.mission;
+  }
+
   /** Current tint as `0xRRGGBB`, for tests and debug readouts. */
   colourHex(): number {
     return this.material.color.getHex();
+  }
+
+  /** Tint and badge state together, for tests and the dev hooks. */
+  look(): CityMarkerLookReport {
+    return { colourHex: this.colourHex(), mission: this.mission };
   }
 
   /**
@@ -261,6 +338,7 @@ export class CityMarker {
   dispose(): void {
     this.material.dispose();
     this.ringMaterial.dispose();
+    this.badgeMaterial.dispose();
   }
 
   // ===========================================

@@ -101,7 +101,11 @@ describe("OverworldSceneBuilder", () => {
   it("puts the Earth texture on the slab top and glyph sprites on cities when art is given", () => {
     const mapTexture = new Texture();
     const builder = new OverworldSceneBuilder({
-      assets: { mapTexture, markerGlyph: new Texture() },
+      assets: {
+        mapTexture,
+        markerGlyph: new Texture(),
+        missionGlyph: undefined,
+      },
     });
     builder.build(EARTH_MAP);
     expect(builder.usesMapTexture()).toBe(true);
@@ -121,7 +125,11 @@ describe("OverworldSceneBuilder", () => {
 
   it("picks glyph sprites through the real camera too", () => {
     const builder = new OverworldSceneBuilder({
-      assets: { mapTexture: undefined, markerGlyph: new Texture() },
+      assets: {
+        mapTexture: undefined,
+        markerGlyph: new Texture(),
+        missionGlyph: undefined,
+      },
     });
     builder.build(EARTH_MAP);
     const rig = makeCamera(builder);
@@ -140,7 +148,7 @@ describe("OverworldSceneBuilder", () => {
     mapTexture.addEventListener("dispose", () => disposed.push("map"));
     markerGlyph.addEventListener("dispose", () => disposed.push("glyph"));
     const builder = new OverworldSceneBuilder({
-      assets: { mapTexture, markerGlyph },
+      assets: { mapTexture, markerGlyph, missionGlyph: undefined },
     });
     builder.build(EARTH_MAP);
     builder.dispose();

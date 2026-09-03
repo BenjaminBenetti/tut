@@ -204,8 +204,8 @@ def join(objects: list[bpy.types.Object], name: str) -> bpy.types.Object:
 
 
 def mesh_objects() -> list[bpy.types.Object]:
-    """All mesh objects in the scene."""
-    return [ob for ob in bpy.context.scene.objects if ob.type == "MESH"]
+    """All model mesh objects in the scene (render helpers such as the ground are excluded)."""
+    return [ob for ob in bpy.context.scene.objects if ob.type == "MESH" and not ob.name.startswith("render_")]
 
 
 def triangle_count() -> int:

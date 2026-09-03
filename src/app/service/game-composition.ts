@@ -1,10 +1,20 @@
 import { ECONOMY_TUNING } from "../../economy/data/economy-tuning";
 import { LedgerTransactionService } from "../../economy/service/transaction-service";
+import { MISSION_TYPES } from "../../content/data/mission-types";
+import { DEPLOYABLE_TYPES } from "../../overworld/data/deployable-types";
 import { EARTH_MAP } from "../../overworld/data/earth-map";
+import { INFESTATION_TUNING } from "../../overworld/data/infestation-tuning";
+import { MISSION_TUNING } from "../../overworld/data/mission-tuning";
 import { NEW_GAME_TUNING } from "../../overworld/data/new-game-tuning";
 import { THREAT_TUNING } from "../../overworld/data/threat-tuning";
 import type { CommandDispatcher } from "../../overworld/model/command-dispatcher";
+import { DEPLOYABLE_TYPE_IDS } from "../../overworld/model/deployable-type";
+import { ADVANCE_DAY } from "../../overworld/model/overworld-command";
+import { DataDeployableTypeCatalogue } from "../../overworld/repository/deployable-type-catalogue";
+import { createAdvanceDayHandler } from "../../overworld/service/advance-day-service";
 import { createOverworldCommandDispatcher } from "../../overworld/service/command-dispatcher";
+import type { TickDeps } from "../../overworld/service/default-tick-steps";
+import { createDefaultTickSteps } from "../../overworld/service/default-tick-steps";
 import { registerRosterCommands } from "../../overworld/service/roster-command-handlers";
 import { MECH_RATING_TUNING } from "../../roster/data/mech-rating-tuning";
 import { STARTER_PARTS } from "../../roster/data/parts";
@@ -73,11 +83,11 @@ export interface GameComposition {
  *   shipped content ──► createCampaign(options)
  * ```
  *
- * Command handlers are registered on `dispatcher` as their issues land.
- * The roster commands (#63) are wired here; #68 AdvanceDay, #65
- * deployables, #67 LaunchMission with the #62 resolver injected and #70
- * events follow. Anything unregistered is rejected as `unknown-command`
- * and the store stays put.
+ * Command handlers are registered on `dispatcher` here: the roster
+ * commands (#63) and `AdvanceDay` (#68), which runs the default tick
+ * pipeline over the shipped content. #65 deployables, #67 LaunchMission
+ * with the #62 resolver injected and #70 events follow. Anything
+ * unregistered is rejected as `unknown-command` and the store stays put.
  */
 export function composeGame(deps: GameCompositionDeps): GameComposition {
   const saves = createGameSaveService(deps.storage, deps.clock);
@@ -89,6 +99,13 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     rating: MECH_RATING_TUNING,
     transactionsFor: (ids) => new LedgerTransactionService(ids),
   });
+  const tickDeps = composeTickDeps();
+  dispatcher.register(
+    ADVANCE_DAY,
+    createAdvanceDayHandler(createDefaultTickSteps<GameState>(tickDeps), {
+      catalogue: tickDeps.catalogue,
+    }),
+  );
   const autosave = new AutosaveService(
     saves,
     AUTOSAVE_SLOT_ID,
@@ -113,6 +130,21 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
 // ===========================================
 // Helpers
 // ===========================================
+
+/** The shipped content, tuning and services the day tick runs on. */
+function composeTickDeps(): TickDeps {
+  return {
+    catalogue: new DataDeployableTypeCatalogue(
+      DEPLOYABLE_TYPE_IDS.map((id) => DEPLOYABLE_TYPES[id]),
+    ),
+    createTransactions: (ids) => new LedgerTransactionService(ids),
+    infestationTuning: INFESTATION_TUNING,
+    missionTuning: MISSION_TUNING,
+    missionTypes: MISSION_TYPES,
+    threatTuning: THREAT_TUNING,
+    economyTuning: ECONOMY_TUNING,
+  };
+}
 
 /** The shipped content and tuning a new campaign is built from. */
 function composeNewGameDeps(squadTypes: DataSquadTypeCatalogue): NewGameDeps {

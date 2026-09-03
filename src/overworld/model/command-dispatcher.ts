@@ -6,7 +6,7 @@ import type {
   OverworldCommand,
   OverworldCommandType,
 } from "./overworld-command";
-import type { OverworldDomainEvent } from "./overworld-domain-event";
+import type { CampaignEvent } from "./campaign-event";
 
 // ===========================================
 // Error codes
@@ -36,7 +36,7 @@ export const UNKNOWN_COMMAND = "unknown-command";
  */
 export interface CommandDispatcher<
   TState extends CampaignState,
-> extends CommandProcessor<TState, OverworldCommand, OverworldDomainEvent> {
+> extends CommandProcessor<TState, OverworldCommand, CampaignEvent> {
   /**
    * Registers the one handler for a command type.
    *

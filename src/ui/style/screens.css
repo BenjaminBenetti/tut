@@ -234,3 +234,7 @@
 .tut-mission-details .tut-btn {
   margin-top: var(--space-3);
 }
+
+.tut-missions__row .tut-data {
+  white-space: nowrap;
+}

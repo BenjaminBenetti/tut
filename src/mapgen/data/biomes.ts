@@ -35,6 +35,7 @@ export const BIOME_DEFINITIONS: Readonly<Record<BiomeId, BiomeDefinition>> = {
     ],
     buildingKinds: [
       { template: BuildingKindIds.HOUSE, weight: 5 },
+      { template: BuildingKindIds.APARTMENT, weight: 3 },
       { template: BuildingKindIds.SHOP, weight: 2 },
       { template: BuildingKindIds.WAREHOUSE, weight: 1 },
       { template: BuildingKindIds.TOWER, weight: 1 },
@@ -58,9 +59,11 @@ export const BIOME_DEFINITIONS: Readonly<Record<BiomeId, BiomeDefinition>> = {
     vegetation: [
       { prop: PropKindIds.TREE_PINE, density: 5, cluster: { min: 3, max: 7 } },
       { prop: PropKindIds.BOULDER, density: 1, cluster: { min: 2, max: 3 } },
+      { prop: PropKindIds.FENCE, density: 1 },
     ],
     buildingKinds: [
       { template: BuildingKindIds.HOUSE, weight: 5 },
+      { template: BuildingKindIds.APARTMENT, weight: 3 },
       { template: BuildingKindIds.WAREHOUSE, weight: 2 },
       { template: BuildingKindIds.SHOP, weight: 1 },
     ],
@@ -87,6 +90,7 @@ export const BIOME_DEFINITIONS: Readonly<Record<BiomeId, BiomeDefinition>> = {
     ],
     buildingKinds: [
       { template: BuildingKindIds.HOUSE, weight: 4 },
+      { template: BuildingKindIds.APARTMENT, weight: 3 },
       { template: BuildingKindIds.WAREHOUSE, weight: 2 },
       { template: BuildingKindIds.SHOP, weight: 2 },
       { template: BuildingKindIds.TOWER, weight: 1 },
@@ -116,6 +120,7 @@ export const BIOME_DEFINITIONS: Readonly<Record<BiomeId, BiomeDefinition>> = {
     ],
     buildingKinds: [
       { template: BuildingKindIds.HOUSE, weight: 5 },
+      { template: BuildingKindIds.APARTMENT, weight: 3 },
       { template: BuildingKindIds.SHOP, weight: 3 },
       { template: BuildingKindIds.WAREHOUSE, weight: 2 },
     ],

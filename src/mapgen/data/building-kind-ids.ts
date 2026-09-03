@@ -12,6 +12,7 @@ export const BuildingKindIds = {
   SHOP: "shop",
   WAREHOUSE: "warehouse",
   TOWER: "tower",
+  APARTMENT: "apartment",
 } as const;
 
 /** One of the shipped building kind ids. */
@@ -24,4 +25,5 @@ export const KNOWN_BUILDING_KIND_IDS: readonly KnownBuildingKindId[] = [
   BuildingKindIds.SHOP,
   BuildingKindIds.WAREHOUSE,
   BuildingKindIds.TOWER,
+  BuildingKindIds.APARTMENT,
 ];

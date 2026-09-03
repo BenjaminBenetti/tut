@@ -73,28 +73,28 @@ const GOLDENS: readonly Golden[] = [
     biome: "temperate",
     settlement: "town",
     size: "medium",
-    checksum: 3113046881,
+    checksum: 1735787786,
   },
   {
     seed: "golden-snowy",
     biome: "snowy",
     settlement: "town",
     size: "medium",
-    checksum: 1649794462,
+    checksum: 4069874687,
   },
   {
     seed: "golden-desert",
     biome: "desert",
     settlement: "town",
     size: "medium",
-    checksum: 3325511246,
+    checksum: 4090468784,
   },
   {
     seed: "golden-coastal",
     biome: "coastal",
     settlement: "town",
     size: "medium",
-    checksum: 1900577075,
+    checksum: 2951903635,
   },
   {
     seed: "golden-rural",
@@ -108,7 +108,7 @@ const GOLDENS: readonly Golden[] = [
     biome: "desert",
     settlement: "city",
     size: "large",
-    checksum: 2790548028,
+    checksum: 2493850120,
   },
 ];
 
@@ -120,6 +120,10 @@ describe("generation sweep", () => {
       let buildings = 0;
       let interiorProps = 0;
       let crampedSpawners = 0;
+      const tallMaps: Record<string, { maps: number; tall: number }> = {
+        town: { maps: 0, tall: 0 },
+        city: { maps: 0, tall: 0 },
+      };
       let unreachableEntrances = 0;
       let hooks = 0;
       let relocations = 0;
@@ -152,6 +156,13 @@ describe("generation sweep", () => {
                   map.buildings.some((b) => b.floors.length >= 2),
                   label,
                 ).toBe(true);
+                const bucket = tallMaps[settlement];
+                if (bucket !== undefined) {
+                  bucket.maps++;
+                  if (map.buildings.some((b) => b.floors.length >= 3)) {
+                    bucket.tall++;
+                  }
+                }
               }
               expect(map.props.length, label).toBeGreaterThan(0);
               interiorProps += map.props.filter(
@@ -215,6 +226,14 @@ describe("generation sweep", () => {
       expect(interiorProps / buildings).toBeGreaterThanOrEqual(1);
       // Every spawner has room to hatch into (#231).
       expect(crampedSpawners).toBe(0);
+      // Apartments give skylines height in every biome (#237): measured
+      // 71/72 city and 67/72 town maps with a building of three floors.
+      expect(
+        (tallMaps.city?.tall ?? 0) / (tallMaps.city?.maps ?? 1),
+      ).toBeGreaterThanOrEqual(0.95);
+      expect(
+        (tallMaps.town?.tall ?? 0) / (tallMaps.town?.maps ?? 1),
+      ).toBeGreaterThanOrEqual(0.85);
       expect(relocations / hooks).toBeLessThanOrEqual(0.05);
     },
     SWEEP_TIMEOUT_MS,

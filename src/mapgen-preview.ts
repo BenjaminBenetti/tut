@@ -12,6 +12,7 @@ import type { MapRecipe } from "./mapgen/model/map-recipe";
 import { renderAscii } from "./mapgen/service/ascii-map-renderer";
 import { createDefaultRegistries } from "./mapgen/service/default-registries";
 import { generateTacticalMapWithDiagnostics } from "./mapgen/service/generate-tactical-map";
+import { computeMapMetrics } from "./mapgen/service/map-metrics";
 import type { PreviewControlsState } from "./ui/screen/mapgen-preview-screen";
 import { MapgenPreviewScreen } from "./ui/screen/mapgen-preview-screen";
 
@@ -107,6 +108,7 @@ async function main(): Promise<void> {
       screen.showResult({
         map,
         diagnostics,
+        metrics: computeMapMetrics(map),
         ascii: renderAscii(map),
         elapsedMs,
       });

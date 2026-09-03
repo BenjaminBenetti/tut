@@ -274,7 +274,12 @@ def setup_render(size: int = 640, samples: int = 32, background: str = "#3A3F4A"
     bpy.ops.mesh.primitive_plane_add(size=8, location=(0, 0, 0))
     ground = bpy.context.active_object
     ground.name = "render_ground"
-    ground.data.materials.append(material("tdf-grey-dark"))
+    # Own material, not a palette token: an imported GLB may already own a
+    # material with that name (textured), and the ground would borrow it.
+    ground_mat = bpy.data.materials.new("render_ground")
+    ground_mat.use_nodes = True
+    ground_mat.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = hex_to_linear_rgba("#2E3440")
+    ground.data.materials.append(ground_mat)
 
 
 def render_yaws(out_dir: str, stem: str, yaws: tuple[int, ...] = (45, 135, 225)) -> list[str]:

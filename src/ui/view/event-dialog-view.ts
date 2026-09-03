@@ -29,7 +29,7 @@ export interface EventDialogViewDeps {
 // ===========================================
 
 /**
- * The pending event as a modal over the overworld (GDD §5.4): title,
+ * The pending event as a modal over the overworld (GDD §5.4): title and
  * body with the city's name substituted, the city if the event has one,
  * days before it resolves by default, and one button per choice. Shows
  * the head of `pendingEvents`; hidden when there is none. The buttons are
@@ -160,13 +160,10 @@ export class EventDialogView {
       return;
     }
     const cityName = this.cityName(state, event);
-    this.setText(this.title, type.title);
+    this.setText(this.title, this.substitute(type.title, cityName));
     this.city.hidden = cityName === undefined;
     this.setText(this.city, cityName ?? "");
-    this.setText(
-      this.text,
-      type.text.replaceAll(CITY_NAME_TOKEN, cityName ?? ""),
-    );
+    this.setText(this.text, this.substitute(type.text, cityName));
     this.setText(
       this.expiry,
       `Resolves by default in ${formatWhole(event.expiresDay - state.overworld.day)} d`,
@@ -198,6 +195,11 @@ export class EventDialogView {
   // ===========================================
   // Helpers
   // ===========================================
+
+  /** Replaces the city token in copy; global events have no city and no token. */
+  private substitute(copy: string, cityName: string | undefined): string {
+    return copy.replaceAll(CITY_NAME_TOKEN, cityName ?? "");
+  }
 
   /** The attached city's display name, if the event has one that is on the map. */
   private cityName(state: GameState, event: PendingEvent): string | undefined {

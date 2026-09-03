@@ -596,7 +596,7 @@ describe("OverworldScreen", () => {
     expect(dialog?.hidden).toBe(false);
     expect(dialog?.dataset.eventId).toBe("event-1");
     expect(root.querySelector('[data-field="event-title"]')?.textContent).toBe(
-      EVENT_TYPES["city-plea"].title,
+      EVENT_TYPES["city-plea"].title.replaceAll("{city}", "Berlin"),
     );
     expect(root.querySelector('[data-field="event-city"]')?.textContent).toBe(
       "Berlin",

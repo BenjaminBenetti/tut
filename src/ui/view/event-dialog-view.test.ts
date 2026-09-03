@@ -69,7 +69,7 @@ describe("EventDialogView", () => {
     view.update(withEvents([PLEA]));
     expect(dialog()?.hidden).toBe(false);
     expect(field("event-title")?.textContent).toBe(
-      EVENT_TYPES["city-plea"].title,
+      EVENT_TYPES["city-plea"].title.replaceAll("{city}", "Berlin"),
     );
     expect(field("event-city")?.hidden).toBe(false);
     expect(field("event-city")?.textContent).toBe("Berlin");

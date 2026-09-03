@@ -1,19 +1,25 @@
 # Handoff: QA
 
-Last updated: 2026-09-03 (session 1). Read `docs/process/roles/qa.md` first.
+Last updated: 2026-09-03 (session 1, run 2). Read `docs/process/roles/qa.md` first.
 
 ## Latest run
 
 | Field | Value |
 |---|---|
-| SHA tested | `35857b2` (main, 2026-09-03 ~03:30 UTC; includes #171 app bootstrap, #166 save, #175 Earth map, #179 preview, #180 recipe adapter) |
-| `pnpm build` | pass (577 kB chunk warning is known noise) |
-| `pnpm test` (vitest) | 638 / 638 |
-| `pnpm test:e2e` on main | 4 / 4 |
-| `pnpm test:e2e` with #225 | 19 / 19 |
-| Exploratory pass | 6 flows, 0 console errors, 0 page errors, 0 failed requests |
-| Bugs filed | #217 (p2), #218 (p3), #219 (p3) |
-| **Health** | **Green.** Build, unit and e2e are green on main. Three UX defects filed, none blocking; the placeholder screens do what #8 promised. |
+| SHA tested | `1872787` (main, 2026-09-03 ~04:00 UTC; 14 merges since `35857b2` incl. #33 preview in build, #55 command dispatcher, #52 deployables, #221 mapgen fix) |
+| `pnpm build` | pass; `dist/` now has `index.html` **and** `mapgen-preview.html` |
+| `pnpm test` (vitest) | 663 / 663 |
+| `pnpm test:e2e` on main | 4 / 4 (19 / 19 once #225 merges) |
+| Exploratory pass | 6 flows, 0 findings, 0 console errors, 0 failed requests; production preview page renders coastal/city/large in 2.2 s with no errors |
+| Bugs filed this run | none; #217 / #218 / #219 still reproduce |
+| **Health** | **Green.** Nothing regressed across 14 merges; #33 verified fixed in the production build. |
+
+### Run history
+
+| SHA | Build | Unit | e2e | Exploratory | Filed |
+|---|---|---|---|---|---|
+| `1872787` | pass | 663/663 | 4/4 | 0 findings | — |
+| `35857b2` | pass | 638/638 | 4/4 | 3 findings | #217 #218 #219 |
 
 ## 1. What I was doing and where it stands
 
@@ -41,7 +47,7 @@ Exploratory coverage at `35857b2` (headless Chromium, SwiftShader, 1280×720, pr
 | #218 | p3 | engine | Overworld camera pan is unbounded: hold A for 13 s and the markers sit at x≈8300 px on a 1280 px viewport; black screen, no recentre. |
 | #219 | p3 | ui | Continue is silently disabled when the autosave exists but its envelope cannot be decoded; a state-level failure instead shows "Could not load autosave…". Inconsistent. |
 
-Also commented on **#33**: `pnpm build` emits only `dist/index.html`; `/mapgen-preview.html` on the preview server returns the SPA fallback. #179 did not close #33.
+Commented on **#33** at `35857b2` (preview missing from the build); #209 fixed it and run 2 verified `/mapgen-preview.html` serves the panel from `dist/`.
 
 ## 4. Observations not filed (expected for placeholders, or too minor)
 
@@ -63,15 +69,16 @@ Also commented on **#33**: `pnpm build` emits only `dist/index.html`; `/mapgen-p
 1. Loop: poll `repos/BenjaminBenetti/tut/commits?per_page=1` every 5 min; on a new merge (or every 30 min) rerun build, e2e and the exploratory script; update this file's table.
 2. When #72 (real menu) and #73 (real overworld) land, extend the exploratory script: advance day, mission list, economy, roster, then the mech bay and launch/results screens as they appear.
 3. Re-verify #217 / #218 / #219 when their PRs merge; close with a `**QA** · TUT agent` comment.
-4. When #33 lands, add a production-build check that `/mapgen-preview.html` serves `#panel`.
+4. Fold the production preview check (strict: errors, failed requests, `#panel`, regenerate) into the exploratory script permanently; #33 landed in #209.
 5. Consider a pan-bounds e2e once #218 is fixed (hold A for 2 s, then assert some city marker is still on screen).
 
 ## 7. Gotchas
 
 - `DomScreenRouter` mirrors the screen id onto `body[data-screen]`, so `[data-screen="main-menu"]` matches body **and** the panel; use `section[data-screen=…]` for the panel.
 - `e2e/` is type-checked by `tsconfig.node.json` (lib ES2022, no DOM). Nothing inside `page.evaluate` may name `document`/`window` types; importing DOM-free value modules from `src/` (`EARTH_MAP`, `BIOME_IDS`, `SETTLEMENT_SCALES`) works.
-- Production build (`vite preview`) has no `window.__tut__` hooks and no `mapgen-preview.html`; run hook-based checks against the dev server.
+- Production build (`vite preview`) has no `window.__tut__` hooks; run hook-based checks against the dev server. Since #209 it does include `mapgen-preview.html`.
 - Chromium localStorage is ~5 MB per origin. To force an autosave failure fill with 512 KB chunks, then 64 KB, 4 KB, 256 B, 16 B until each throws; a coarse fill leaves room for the 10 KB save.
+- `pkill -f 'vite --port 4173'` kills your own shell because the pattern matches the calling command line (exit 144); kill by port via `ss -ltnp` instead.
 - Playwright reuses an already-running :4173 dev server; start it as `timeout 1800 pnpm exec vite --port 4173 --strictPort &` so it cannot outlive the session.
 - The harness prints a "GitHub API rate limit exceeded" reminder whenever that phrase appears in tool output, including inside `docs/handoff/tech-lead.md`. Check `gh api rate_limit` before believing it.
 - First `git pull` over ssh in a fresh instance fails on host key verification: keyscan `github.com`, verify the ed25519 fingerprint `SHA256:+DiY3wvvV6TuJJhbpZisF/zLDA0zPMSvHdkr4UvCOqU`, append to `~/.ssh/known_hosts`.

@@ -1,5 +1,6 @@
 import type { Unsubscribe } from "../../core/model/event-bus";
 import type { GameState } from "../../save/model/game-state";
+import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { GameSession } from "../model/game-session";
 import type { Screen, ScreenId } from "../model/screen";
@@ -101,7 +102,7 @@ export class TacticalScreen implements Screen {
     const store = this.deps.session.store;
     this.render(store?.getState());
     this.unsubscribe = store?.subscribe((change) => {
-      this.render(change.state);
+      this.render(change.state, tacticalEventsOf(change.events));
     });
   }
 
@@ -125,8 +126,11 @@ export class TacticalScreen implements Screen {
   // Rendering
   // ===========================================
 
-  /** Pushes the mission into the bar and the scene host. */
-  private render(state: GameState | undefined): void {
+  /** Pushes the mission into the bar and the scene host, with the events that produced it. */
+  private render(
+    state: GameState | undefined,
+    events: readonly TacticalEvent[] = [],
+  ): void {
     const mission = state?.activeMission;
     if (this.note) {
       this.note.hidden = mission !== undefined;
@@ -144,11 +148,14 @@ export class TacticalScreen implements Screen {
     this.setField("phase", mission.phase);
     this.setField("tdf-units", formatWhole(countAlive(mission, "tdf")));
     this.setField("bug-units", formatWhole(countAlive(mission, "bugs")));
-    this.syncScene(mission);
+    this.syncScene(mission, events);
   }
 
   /** Attaches the scene on the first mission, updates it afterwards; never throws into the store. */
-  private syncScene(mission: TacticalState): void {
+  private syncScene(
+    mission: TacticalState,
+    events: readonly TacticalEvent[],
+  ): void {
     const host = this.deps.sceneHost;
     if (!host || !this.viewport) {
       return;
@@ -161,7 +168,7 @@ export class TacticalScreen implements Screen {
     };
     const pending =
       this.attachedMissionId === mission.missionId
-        ? host.update(mission)
+        ? host.update(mission, events)
         : host.attach(this.viewport, mission, intents);
     this.attachedMissionId = mission.missionId;
     void pending.catch((error: unknown) => {
@@ -169,8 +176,13 @@ export class TacticalScreen implements Screen {
     });
   }
 
-  /** Mirrors the last intent to the body so end-to-end tests can watch it. */
+  /** Mirrors the last intent to the body so end-to-end tests can watch it, and tracks the selection for the overlays. */
   private recordIntent(intent: TacticalIntent): void {
+    if (intent.kind === "select-unit") {
+      this.deps.sceneHost?.select(intent.unitId);
+    } else if (intent.kind === "action" && intent.action === "cancel") {
+      this.deps.sceneHost?.select(undefined);
+    }
     const body = this.root?.ownerDocument.body;
     if (!body) {
       return;
@@ -240,6 +252,15 @@ export class TacticalScreen implements Screen {
 // ===========================================
 // Helpers
 // ===========================================
+
+/** The tactical events in a store change; everything else is the overworld's. */
+function tacticalEventsOf(
+  events: readonly { readonly type: string }[],
+): TacticalEvent[] {
+  return events.filter((e): e is TacticalEvent =>
+    e.type.startsWith("tactical:"),
+  );
+}
 
 /** Living units on one team. */
 function countAlive(mission: TacticalState, team: "tdf" | "bugs"): number {

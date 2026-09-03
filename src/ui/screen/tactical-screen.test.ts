@@ -97,6 +97,21 @@ class FakeStore implements CampaignStore {
       listener({ kind: "replace", state, events: [] });
     }
   }
+  /** Notifies as if a command produced `events`. */
+  command(state: GameState, events: CampaignEvent[]): void {
+    this.state = state;
+    for (const listener of [...this.listeners]) {
+      listener({
+        kind: "command",
+        command: {
+          type: "tactical:end-turn",
+          payload: { early: false },
+        } as OverworldCommand,
+        state,
+        events,
+      });
+    }
+  }
   dispatch(): never {
     throw new Error("not used");
   }
@@ -121,9 +136,17 @@ class FakeHost implements TacticalSceneHost {
     this.intents = intents;
     return Promise.resolve();
   }
-  update(mission: TacticalState): Promise<void> {
-    this.calls.push(`update:${mission.missionId}:${mission.turn}`);
+  update(
+    mission: TacticalState,
+    events: readonly { type: string }[] = [],
+  ): Promise<void> {
+    this.calls.push(
+      `update:${mission.missionId}:${mission.turn}:${events.map((e) => e.type).join(",")}`,
+    );
     return Promise.resolve();
+  }
+  select(unitId: string | undefined): void {
+    this.calls.push(`select:${unitId ?? "none"}`);
   }
   release(): void {
     this.calls.push("release");
@@ -208,7 +231,54 @@ describe("TacticalScreen", () => {
     });
     expect(field("turn")).toBe("2");
     expect(field("phase")).toBe("bugs");
-    expect(host.calls).toEqual(["attach:mission-2:1", "update:mission-2:2"]);
+    expect(host.calls).toEqual(["attach:mission-2:1", "update:mission-2:2:"]);
+  });
+
+  it("hands only the tactical events of a store change to the host, in order", () => {
+    const state = inMission();
+    const store = new FakeStore(state);
+    const host = new FakeHost();
+    new TacticalScreen({
+      router: fakeRouter().router,
+      session: sessionWith(store),
+      sceneHost: host,
+    }).mount(root);
+    const mission = state.activeMission!;
+    store.command({ ...state, activeMission: { ...mission, turn: 2 } }, [
+      {
+        type: "economy:credits-changed",
+        payload: {
+          before: 1,
+          after: 2,
+          transaction: { id: "t", day: 1, amount: 1, kind: "reward", ref: "r" },
+        },
+      },
+      {
+        type: "tactical:unit-moved",
+        payload: {
+          unitId: "unit-1",
+          from: { x: 0, y: 0, z: 0 },
+          to: { x: 1, y: 0, z: 0 },
+          path: [{ x: 1, y: 0, z: 0 }],
+        },
+      },
+      { type: "tactical:turn-started", payload: { turn: 2, phase: "player" } },
+    ] as CampaignEvent[]);
+    expect(host.calls.at(-1)).toBe(
+      "update:mission-2:2:tactical:unit-moved,tactical:turn-started",
+    );
+  });
+
+  it("selects on the host when a unit is picked and clears on cancel", () => {
+    const host = new FakeHost();
+    new TacticalScreen({
+      router: fakeRouter().router,
+      session: sessionWith(new FakeStore(inMission())),
+      sceneHost: host,
+    }).mount(root);
+    host.intents?.emit({ kind: "select-unit", unitId: "unit-1" });
+    host.intents?.emit({ kind: "action", action: "cancel" });
+    expect(host.calls.slice(1)).toEqual(["select:unit-1", "select:none"]);
   });
 
   it("forwards intents from the host to the sink and mirrors them on the body", () => {

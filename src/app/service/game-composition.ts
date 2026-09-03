@@ -163,8 +163,6 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     eventTypes: tickDeps.eventTypes,
     transactionsFor: tickDeps.createTransactions,
   });
-  // Tactical rules register here as they land (#324 lifts them over the
-  // active mission); the Attack handler is the first (#327).
   dispatcher.register(
     ADVANCE_DAY,
     createAdvanceDayHandler(createDefaultTickSteps<GameState>(tickDeps), {

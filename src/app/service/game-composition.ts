@@ -24,6 +24,10 @@ import { registerLaunchMission } from "../../overworld/service/launch-mission-se
 import { createOverworldCommandDispatcher } from "../../overworld/service/command-dispatcher";
 import { registerDeployableCommands } from "../../overworld/service/deployable-command-handlers";
 import { registerEventCommands } from "../../overworld/service/event-command-handlers";
+import { COMBAT_TUNING } from "../../tactical/data/combat-tuning";
+import { ATTACK } from "../../tactical/model/attack-command";
+import { createAttackHandler } from "../../tactical/service/combat-service";
+import { registerTacticalCommands } from "../../tactical/service/tactical-command-handlers";
 import type { TickDeps } from "../../overworld/service/default-tick-steps";
 import type { MissionTypeCatalogue } from "../../overworld/service/mission-generation-service";
 import { createDefaultTickSteps } from "../../overworld/service/default-tick-steps";
@@ -162,6 +166,11 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
   registerEventCommands(dispatcher, {
     eventTypes: tickDeps.eventTypes,
     transactionsFor: tickDeps.createTransactions,
+  });
+  // Tactical rules register here as they land (#324 lifts them over the
+  // active mission); the Attack handler is the first (#327).
+  registerTacticalCommands(dispatcher, {
+    [ATTACK]: createAttackHandler(COMBAT_TUNING),
   });
   dispatcher.register(
     ADVANCE_DAY,

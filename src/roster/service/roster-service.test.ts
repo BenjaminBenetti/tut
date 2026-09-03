@@ -58,6 +58,7 @@ const ROSTER: RosterState = {
   squads: [DEPLETED, FULL],
   mechs: [],
   savedLoadouts: [STARTER_LOADOUT],
+  graveyard: [],
 };
 
 /** Fresh deps and slices per test so ids and ledgers never leak. */

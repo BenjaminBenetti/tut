@@ -93,6 +93,7 @@ describe("createInitialRosterState", () => {
       squads: [],
       mechs: [],
       savedLoadouts: [],
+      graveyard: [],
     });
     expect(ids.getState()).toEqual({ counters: {} });
   });

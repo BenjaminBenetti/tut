@@ -85,4 +85,24 @@ describe("GAME_STATE_MIGRATIONS", () => {
       /cities/,
     );
   });
+
+  it("v3 → v4 adds an empty graveyard and keeps everything else", () => {
+    const step = GAME_STATE_MIGRATIONS.find((m) => m.from === 3)!;
+    const roster = { squads: [1], mechs: [], savedLoadouts: [] };
+    const state = { meta: {}, overworld: {}, roster, economy: { credits: 1 } };
+    const out = step.apply(state) as typeof state & {
+      roster: { graveyard: unknown[] };
+    };
+    expect(out.roster).toEqual({ ...roster, graveyard: [] });
+    expect(out.economy).toBe(state.economy);
+    expect(state.roster).toEqual(roster);
+  });
+
+  it("v3 → v4 keeps a graveyard that is already there and rejects a state without a roster", () => {
+    const step = GAME_STATE_MIGRATIONS.find((m) => m.from === 3)!;
+    const graveyard = [{ kind: "squad", name: "A", day: 1, missionId: "m" }];
+    const state = { roster: { squads: [], graveyard } };
+    expect(step.apply(state)).toBe(state);
+    expect(() => step.apply({ overworld: {} })).toThrow(/roster/);
+  });
 });

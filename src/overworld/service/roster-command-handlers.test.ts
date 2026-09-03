@@ -4,12 +4,14 @@ import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import { LedgerTransactionService } from "../../economy/service/transaction-service";
 import { MECH_RATING_TUNING } from "../../roster/data/mech-rating-tuning";
 import { STARTER_PARTS } from "../../roster/data/parts";
+import { ROSTER_TUNING } from "../../roster/data/roster-tuning";
 import { SQUAD_TYPES } from "../../roster/data/squad-types";
 import { STARTER_LOADOUT } from "../../roster/data/starter-roster";
 import {
   LOADOUT_DELETED,
   LOADOUT_SAVED,
   MECH_BUILT,
+  MECH_REPAIRED,
   SQUAD_HIRED,
   SQUAD_REINFORCED,
 } from "../../roster/model/roster-event";
@@ -24,6 +26,7 @@ import {
   deleteLoadout,
   hireSquad,
   reinforceSquad,
+  repairMech,
   saveLoadout,
 } from "../model/overworld-command";
 import { createOverworldCommandDispatcher } from "./command-dispatcher";
@@ -39,7 +42,7 @@ const DAY = 7;
 const BASE: CampaignState = {
   meta: {
     rng: new Mulberry32Rng(1).getState(),
-    ids: { counters: { squad: 3, txn: 2 } },
+    ids: { counters: { squad: 3, txn: 2, mech: 2 } },
   },
   overworld: {
     day: DAY,
@@ -64,8 +67,19 @@ const BASE: CampaignState = {
         xp: 0,
       },
     ],
-    mechs: [],
+    mechs: [
+      {
+        id: "mech-1",
+        name: "Hammer",
+        loadout: STARTER_LOADOUT,
+        damage: 40,
+        kills: 0,
+        missionsSurvived: 0,
+        xp: 0,
+      },
+    ],
     savedLoadouts: [STARTER_LOADOUT],
+    graveyard: [],
   },
   economy: { credits: 20_000, ledger: [] },
 };
@@ -74,6 +88,7 @@ const DEPS: RosterHandlerDeps = {
   squadTypes: new DataSquadTypeCatalogue(SQUAD_TYPES),
   parts: new StaticPartCatalogue(STARTER_PARTS),
   rating: MECH_RATING_TUNING,
+  rosterTuning: ROSTER_TUNING,
   transactionsFor: (ids) => new LedgerTransactionService(ids),
 };
 
@@ -114,6 +129,7 @@ describe("registerRosterCommands", () => {
       saveLoadout({ ...STARTER_LOADOUT, name: "Brawler" }),
       deleteLoadout(STARTER_LOADOUT.name),
       buildMech(STARTER_LOADOUT.name, "X"),
+      repairMech("mech-1"),
     ];
     for (const command of commands) {
       expect(d.process(BASE, command).ok).toBe(true);
@@ -143,7 +159,7 @@ describe("roster handlers through the dispatcher", () => {
     expect(state.economy.ledger.map((t) => [t.id, t.day])).toEqual([
       ["txn-2", DAY],
     ]);
-    expect(state.meta.ids.counters).toEqual({ squad: 4, txn: 3 });
+    expect(state.meta.ids.counters).toEqual({ squad: 4, txn: 3, mech: 2 });
     expect(state.meta.rng).toEqual(BASE.meta.rng);
     expect(state.overworld).toBe(BASE.overworld);
     expect(types).toEqual(["economy:credits-changed", SQUAD_HIRED]);
@@ -175,15 +191,29 @@ describe("roster handlers through the dispatcher", () => {
   it("BuildMech charges the sheet cost and names the mech", () => {
     const { state, types } = apply(buildMech(STARTER_LOADOUT.name, "Anvil"));
     expect(state.roster.mechs.map((m) => [m.id, m.name])).toEqual([
-      ["mech-1", "Anvil"],
+      ["mech-1", "Hammer"],
+      ["mech-2", "Anvil"],
     ]);
     expect(state.economy.credits).toBe(20_000 - 3250);
-    expect(state.meta.ids.counters).toEqual({ squad: 3, txn: 3, mech: 2 });
+    expect(state.meta.ids.counters).toEqual({ squad: 3, txn: 3, mech: 3 });
     expect(types).toEqual(["economy:credits-changed", MECH_BUILT]);
+  });
+
+  it("RepairMech charges repairCostPerPoint × damage on the campaign day", () => {
+    const { state, types } = apply(repairMech("mech-1"));
+    expect(state.roster.mechs[0]?.damage).toBe(0);
+    expect(state.economy.ledger[0]).toMatchObject({
+      amount: -40 * ROSTER_TUNING.repairCostPerPoint,
+      kind: "repair",
+      ref: "mech-1",
+      day: DAY,
+    });
+    expect(types).toEqual(["economy:credits-changed", MECH_REPAIRED]);
   });
 
   it.each([
     ["HireSquad", hireSquad("cavalry", "X"), "unknown-squad-type"],
+    ["RepairMech", repairMech("mech-9"), "unknown-mech"],
     ["ReinforceSquad", reinforceSquad("squad-9", 1), "unknown-squad"],
     [
       "SaveLoadout",

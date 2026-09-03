@@ -8,6 +8,7 @@ import { createOverworldCommandDispatcher } from "../../overworld/service/comman
 import { registerRosterCommands } from "../../overworld/service/roster-command-handlers";
 import { MECH_RATING_TUNING } from "../../roster/data/mech-rating-tuning";
 import { STARTER_PARTS } from "../../roster/data/parts";
+import { ROSTER_TUNING } from "../../roster/data/roster-tuning";
 import { SQUAD_TYPES } from "../../roster/data/squad-types";
 import { STARTER_ROSTER } from "../../roster/data/starter-roster";
 import { DataSquadTypeCatalogue } from "../../roster/repository/squad-type-catalogue";
@@ -87,6 +88,7 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     squadTypes,
     parts: new StaticPartCatalogue(STARTER_PARTS),
     rating: MECH_RATING_TUNING,
+    rosterTuning: ROSTER_TUNING,
     transactionsFor: (ids) => new LedgerTransactionService(ids),
   });
   const autosave = new AutosaveService(

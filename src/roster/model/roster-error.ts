@@ -1,4 +1,5 @@
 import type { LoadoutError } from "./loadout-error";
+import type { MechId } from "./mech";
 import type { SquadId } from "./squad";
 import type { SquadTypeId } from "./squad-type";
 
@@ -44,6 +45,18 @@ export interface InvalidLoadoutError {
   readonly errors: readonly LoadoutError[];
 }
 
+/** A repair named a mech not in the roster. */
+export interface UnknownMechError {
+  readonly code: "unknown-mech";
+  readonly mechId: MechId;
+}
+
+/** A repair was asked for a mech with no damage. */
+export interface MechUndamagedError {
+  readonly code: "mech-undamaged";
+  readonly mechId: MechId;
+}
+
 /** A squad, mech or loadout name was empty. */
 export interface InvalidNameError {
   readonly code: "invalid-name";
@@ -67,15 +80,19 @@ export interface RosterInsufficientCreditsError {
  * | `unknown-squad-type`     | HireSquad                  |
  * | `unknown-squad`          | ReinforceSquad             |
  * | `invalid-reinforcement`  | ReinforceSquad             |
+ * | `unknown-mech`           | RepairMech                 |
+ * | `mech-undamaged`         | RepairMech                 |
  * | `unknown-loadout`        | BuildMech, DeleteLoadout   |
  * | `invalid-loadout`        | SaveLoadout, BuildMech     |
  * | `invalid-name`           | HireSquad, SaveLoadout, BuildMech |
- * | `insufficient-credits`   | HireSquad, ReinforceSquad, BuildMech |
+ * | `insufficient-credits`   | HireSquad, ReinforceSquad, BuildMech, RepairMech |
  */
 export type RosterError =
   | UnknownSquadTypeError
   | UnknownSquadError
   | InvalidReinforcementError
+  | UnknownMechError
+  | MechUndamagedError
   | UnknownLoadoutError
   | InvalidLoadoutError
   | InvalidNameError
@@ -97,6 +114,10 @@ export function describeRosterError(error: RosterError): string {
       return `No squad "${error.squadId}" is in the roster.`;
     case "invalid-reinforcement":
       return `Cannot add ${error.requested} soldiers to squad "${error.squadId}"; it is missing ${error.missing}.`;
+    case "unknown-mech":
+      return `No mech "${error.mechId}" is in the roster.`;
+    case "mech-undamaged":
+      return `Mech "${error.mechId}" has no damage to repair.`;
     case "unknown-loadout":
       return `No loadout named "${error.name}" is saved.`;
     case "invalid-loadout":

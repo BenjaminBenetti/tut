@@ -5,8 +5,10 @@ import type { TransactionService } from "../../economy/model/transaction-service
 import type { MechRatingTuning } from "../../roster/model/mech-rating-tuning";
 import type { PartCatalogue } from "../../roster/model/part-catalogue";
 import { describeRosterError } from "../../roster/model/roster-error";
-import type { RosterResult } from "../../roster/service/roster-service";
+import type { RosterTuning } from "../../roster/model/roster-tuning";
 import type { SquadTypeCatalogue } from "../../roster/model/squad-type-catalogue";
+import { repairMech } from "../../roster/service/repair-service";
+import type { RosterResult } from "../../roster/service/roster-service";
 import {
   buildMech,
   deleteLoadout,
@@ -22,6 +24,7 @@ import type {
   DeleteLoadoutCommand,
   HireSquadCommand,
   ReinforceSquadCommand,
+  RepairMechCommand,
   SaveLoadoutCommand,
 } from "../model/overworld-command";
 import {
@@ -29,6 +32,7 @@ import {
   DELETE_LOADOUT,
   HIRE_SQUAD,
   REINFORCE_SQUAD,
+  REPAIR_MECH,
   SAVE_LOADOUT,
 } from "../model/overworld-command";
 
@@ -41,6 +45,8 @@ export interface RosterHandlerDeps {
   readonly squadTypes: SquadTypeCatalogue;
   readonly parts: PartCatalogue;
   readonly rating: MechRatingTuning;
+  /** Repair pricing and mission experience (#64). */
+  readonly rosterTuning: RosterTuning;
   /**
    * Builds the transaction service for one command over the context's
    * id generator, so ledger ids share the campaign's counters.
@@ -55,6 +61,7 @@ export interface RosterCommandHandlers<TState extends CampaignState> {
   readonly saveLoadout: CommandHandler<TState, SaveLoadoutCommand>;
   readonly deleteLoadout: CommandHandler<TState, DeleteLoadoutCommand>;
   readonly buildMech: CommandHandler<TState, BuildMechCommand>;
+  readonly repairMech: CommandHandler<TState, RepairMechCommand>;
 }
 
 // ===========================================
@@ -125,6 +132,14 @@ export function createRosterCommandHandlers<TState extends CampaignState>(
           serviceDeps(ctx.ids),
         ),
       ),
+    repairMech: (state, command, ctx) =>
+      lift(
+        state,
+        repairMech(state, command.payload.mechId, state.overworld.day, {
+          tuning: deps.rosterTuning,
+          transactions: deps.transactionsFor(ctx.ids),
+        }),
+      ),
   };
 }
 
@@ -139,6 +154,7 @@ export function registerRosterCommands<TState extends CampaignState>(
   dispatcher.register(SAVE_LOADOUT, handlers.saveLoadout);
   dispatcher.register(DELETE_LOADOUT, handlers.deleteLoadout);
   dispatcher.register(BUILD_MECH, handlers.buildMech);
+  dispatcher.register(REPAIR_MECH, handlers.repairMech);
 }
 
 // ===========================================

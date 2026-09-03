@@ -1,13 +1,12 @@
-import { Vector3 } from "three";
-
-import type { Vec2 } from "../../core/model/grid";
+import type { Vec2, Vec3 } from "../../core/model/grid";
 import type { CameraInputSurface } from "../../graphics/controller/camera-input-controller";
-import { MAP_PICKING_TUNING } from "../../graphics/controller/map-picking-controller";
+import type { PickingSurface } from "../../graphics/controller/map-picking-controller";
+import type { Picker } from "../../graphics/controller/picking-controller";
+import { PickingController } from "../../graphics/controller/picking-controller";
 import type { FrameUpdatable } from "../../graphics/model/frame-updatable";
 import type { SceneCamera } from "../../graphics/model/scene-camera";
 import type { TilePicker } from "../../graphics/model/tile-picker";
 import type { UnitPicker } from "../../graphics/model/unit-picker";
-import { ndcToPointer, pointerToNdc } from "../../graphics/service/pointer-ndc";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { UnitId } from "../../tactical/model/unit";
 import type {
@@ -21,11 +20,18 @@ import type {
 // ===========================================
 
 /** The DOM surface the controller listens on: the element the map canvas lives in. */
-export type TacticalInputSurface = CameraInputSurface &
-  Pick<HTMLElement, "getBoundingClientRect">;
+export type TacticalInputSurface = CameraInputSurface & PickingSurface;
 
 /** What the scene must offer: unit and tile hit-testing with highlights. */
 export type TacticalPicker = UnitPicker & TilePicker;
+
+/** The camera type the generic picker hands through; named here so `ui/` never imports three. */
+type PickCamera = Parameters<Picker<TacticalTarget>["pick"]>[1];
+
+/** What a pick lands on: a unit, or the tile under an empty spot. */
+export type TacticalTarget =
+  | { readonly kind: "unit"; readonly unitId: UnitId }
+  | { readonly kind: "tile"; readonly tile: TileCoord };
 
 /** The camera input this controller owns while attached (#9's controller). */
 export interface CameraInput extends FrameUpdatable {
@@ -69,23 +75,95 @@ export const TACTICAL_SHORTCUTS: Readonly<
 };
 
 // ===========================================
+// Target picker
+// ===========================================
+
+/**
+ * Adapts the scene's unit and tile pickers to one `Picker<TacticalTarget>`
+ * for the generic `PickingController`: a pick tries the unit under the
+ * pointer, then the tile; hover forwards units to the scene and
+ * remembers the tile; selection forwards units only, since the scene
+ * highlights units and a chosen tile is the screen's business.
+ */
+export class TacticalTargetPicker implements Picker<TacticalTarget> {
+  // ===========================================
+  // Fields
+  // ===========================================
+
+  private readonly scene: TacticalPicker;
+  private hoveredUnit: UnitId | undefined;
+  private hoveredTile: TileCoord | undefined;
+
+  // ===========================================
+  // Constructor
+  // ===========================================
+
+  /** @param scene - The scene's unit and tile pickers. */
+  constructor(scene: TacticalPicker) {
+    this.scene = scene;
+  }
+
+  // ===========================================
+  // Picker
+  // ===========================================
+
+  /** The unit under the coordinate, else the tile, else undefined. */
+  pick(ndc: Vec2, camera: PickCamera): TacticalTarget | undefined {
+    const unitId = this.scene.pickUnit(ndc, camera);
+    if (unitId !== undefined) {
+      return { kind: "unit", unitId };
+    }
+    const tile = this.scene.pickTile(ndc, camera);
+    return tile === undefined ? undefined : { kind: "tile", tile };
+  }
+
+  /** Highlights a hovered unit in the scene (only when it changes) and remembers a hovered tile. */
+  setHovered(target: TacticalTarget | undefined): void {
+    const unitId = target?.kind === "unit" ? target.unitId : undefined;
+    if (unitId !== this.hoveredUnit) {
+      this.hoveredUnit = unitId;
+      this.scene.setHovered(unitId);
+    }
+    this.hoveredTile = target?.kind === "tile" ? target.tile : undefined;
+  }
+
+  /** Marks a selected unit in the scene; a tile selection leaves the unit highlight alone. */
+  setSelected(target: TacticalTarget | undefined): void {
+    if (target === undefined || target.kind === "unit") {
+      this.scene.setSelected(target?.unitId);
+    }
+  }
+
+  /** A unit's feet or a tile's top centre. */
+  worldPosition(target: TacticalTarget): Vec3 | undefined {
+    return target.kind === "unit"
+      ? this.scene.unitWorldPosition(target.unitId)
+      : this.scene.tileWorldPosition(target.tile);
+  }
+
+  /** The tile currently under the pointer, for a HUD readout. */
+  getHoveredTile(): TileCoord | undefined {
+    return this.hoveredTile;
+  }
+}
+
+// ===========================================
 // Controller
 // ===========================================
 
 /**
- * Turns pointer and keyboard input over the tactical scene into intents
- * (GDD §6.2): moving hovers the unit under the pointer, else the tile; a
- * click without drag selects what is hovered and reports it; shortcut
- * keys report actions and End Turn. Camera rotate, zoom and pan are
- * delegated to the injected camera input, attached and detached
- * together with this controller. Every pick projects through the live
- * camera, so picking stays correct at any yaw.
+ * Turns input over the tactical scene into intents (GDD §6.2). Pointer
+ * hover and selection are #366's `PickingController` over a
+ * `TacticalTargetPicker` (unit first, then tile); shortcut keys report
+ * actions and End Turn; camera rotate, zoom and pan are the injected
+ * camera input, attached and detached together with this controller.
+ * Every pick and projection goes through the live camera, so it stays
+ * correct at any yaw.
  *
  * ```
- *   pointermove ──▶ pickUnit ?? pickTile ──▶ picker.setHovered / hovered tile
- *   pointerup   ──▶ no drag? unit ──▶ setSelected + emit select-unit
- *                            tile ──▶ emit select-tile
- *   keydown     ──▶ TACTICAL_SHORTCUTS ──▶ emit action | end-turn
+ *   pointer ──▶ PickingController<TacticalTarget> ──▶ onSelected ──▶ emit select-unit | select-tile
+ *   keydown ──▶ TACTICAL_SHORTCUTS ──▶ emit action | end-turn
+ *   update  ──▶ cameraInput.update
  * ```
  */
 export class TacticalInputController implements FrameUpdatable {
@@ -94,10 +172,9 @@ export class TacticalInputController implements FrameUpdatable {
   // ===========================================
 
   private readonly deps: TacticalInputDeps;
+  private readonly targets: TacticalTargetPicker;
+  private readonly picking: PickingController<TacticalTarget>;
   private surface: TacticalInputSurface | undefined;
-  private hoveredUnit: UnitId | undefined;
-  private hoveredTile: TileCoord | undefined;
-  private press: Vec2 | undefined;
 
   // ===========================================
   // Constructor
@@ -106,6 +183,12 @@ export class TacticalInputController implements FrameUpdatable {
   /** @param deps - Scene picker, camera owner, camera input and where intents go. */
   constructor(deps: TacticalInputDeps) {
     this.deps = deps;
+    this.targets = new TacticalTargetPicker(deps.picker);
+    this.picking = new PickingController(this.targets, deps.camera, {
+      onSelected: (target) => {
+        this.emitSelection(target);
+      },
+    });
   }
 
   // ===========================================
@@ -118,10 +201,7 @@ export class TacticalInputController implements FrameUpdatable {
       this.detach();
     }
     this.surface = surface;
-    surface.addEventListener("pointermove", this.handlePointerMove);
-    surface.addEventListener("pointerdown", this.handlePointerDown);
-    surface.addEventListener("pointerup", this.handlePointerUp);
-    surface.addEventListener("pointerleave", this.handlePointerLeave);
+    this.picking.attach(surface);
     surface.ownerDocument.addEventListener("keydown", this.handleKeyDown);
     this.deps.cameraInput.attach(surface);
   }
@@ -132,15 +212,9 @@ export class TacticalInputController implements FrameUpdatable {
     if (!surface) {
       return;
     }
-    surface.removeEventListener("pointermove", this.handlePointerMove);
-    surface.removeEventListener("pointerdown", this.handlePointerDown);
-    surface.removeEventListener("pointerup", this.handlePointerUp);
-    surface.removeEventListener("pointerleave", this.handlePointerLeave);
+    this.picking.detach();
     surface.ownerDocument.removeEventListener("keydown", this.handleKeyDown);
     this.deps.cameraInput.detach();
-    this.setHoveredUnit(undefined);
-    this.hoveredTile = undefined;
-    this.press = undefined;
     this.surface = undefined;
   }
 
@@ -160,18 +234,17 @@ export class TacticalInputController implements FrameUpdatable {
 
   /** Selects a unit as if clicked: highlights it and reports it. */
   selectUnit(unitId: UnitId): void {
-    this.deps.picker.setSelected(unitId);
-    this.deps.intents.emit({ kind: "select-unit", unitId });
+    this.picking.select({ kind: "unit", unitId });
   }
 
   /** Reports a tile as if clicked. Selection highlight stays on the unit. */
   selectTile(tile: TileCoord): void {
-    this.deps.intents.emit({ kind: "select-tile", tile });
+    this.picking.select({ kind: "tile", tile });
   }
 
   /** The tile currently under the pointer, for a HUD readout. */
   getHoveredTile(): TileCoord | undefined {
-    return this.hoveredTile;
+    return this.targets.getHoveredTile();
   }
 
   // ===========================================
@@ -180,12 +253,12 @@ export class TacticalInputController implements FrameUpdatable {
 
   /** Where a unit's feet appear in client pixels, or undefined when detached or unknown. */
   unitScreenPosition(unitId: UnitId): Vec2 | undefined {
-    return this.project(this.deps.picker.unitWorldPosition(unitId));
+    return this.picking.screenPositionOf({ kind: "unit", unitId });
   }
 
   /** Where a tile's top centre appears in client pixels, or undefined when detached or off the map. */
   tileScreenPosition(tile: TileCoord): Vec2 | undefined {
-    return this.project(this.deps.picker.tileWorldPosition(tile));
+    return this.picking.screenPositionOf({ kind: "tile", tile });
   }
 
   /** The end-to-end test hooks for this controller. */
@@ -203,67 +276,19 @@ export class TacticalInputController implements FrameUpdatable {
   }
 
   // ===========================================
-  // Pointer
+  // Private Methods
   // ===========================================
 
-  /** Hovers the unit under the pointer, else remembers the tile. */
-  private readonly handlePointerMove = (event: PointerEvent): void => {
-    const ndc = this.ndcOf(event);
-    if (!ndc) {
-      return;
-    }
-    const unit = this.deps.picker.pickUnit(ndc, this.deps.camera.camera);
-    this.setHoveredUnit(unit);
-    this.hoveredTile =
-      unit === undefined
-        ? this.deps.picker.pickTile(ndc, this.deps.camera.camera)
-        : undefined;
-  };
+  /** Turns a picked target into the matching select intent. */
+  private emitSelection(target: TacticalTarget): void {
+    this.deps.intents.emit(
+      target.kind === "unit"
+        ? { kind: "select-unit", unitId: target.unitId }
+        : { kind: "select-tile", tile: target.tile },
+    );
+  }
 
-  /** Remembers where a press started so a drag can be told from a click. */
-  private readonly handlePointerDown = (event: PointerEvent): void => {
-    this.press = { x: event.clientX, y: event.clientY };
-  };
-
-  /** Selects the unit, else the tile, under a release that did not drag. */
-  private readonly handlePointerUp = (event: PointerEvent): void => {
-    const press = this.press;
-    this.press = undefined;
-    if (!press) {
-      return;
-    }
-    const moved = Math.hypot(event.clientX - press.x, event.clientY - press.y);
-    if (moved > MAP_PICKING_TUNING.clickSlopPx) {
-      return;
-    }
-    const ndc = this.ndcOf(event);
-    if (!ndc) {
-      return;
-    }
-    const camera = this.deps.camera.camera;
-    const unit = this.deps.picker.pickUnit(ndc, camera);
-    if (unit !== undefined) {
-      this.selectUnit(unit);
-      return;
-    }
-    const tile = this.deps.picker.pickTile(ndc, camera);
-    if (tile !== undefined) {
-      this.selectTile(tile);
-    }
-  };
-
-  /** Clears hover and any pending press when the pointer leaves the surface. */
-  private readonly handlePointerLeave = (): void => {
-    this.setHoveredUnit(undefined);
-    this.hoveredTile = undefined;
-    this.press = undefined;
-  };
-
-  // ===========================================
-  // Keyboard
-  // ===========================================
-
-  /** Reports the action or End Turn bound to a key; ignores typing in form controls. */
+  /** Reports the action or End Turn bound to a key; ignores repeats and typing in form controls. */
   private readonly handleKeyDown = (event: KeyboardEvent): void => {
     if (event.repeat || isTyping(event.target)) {
       return;
@@ -279,49 +304,6 @@ export class TacticalInputController implements FrameUpdatable {
         : { kind: "action", action: bound },
     );
   };
-
-  // ===========================================
-  // Helpers
-  // ===========================================
-
-  /** Pushes a hover change to the picker only when it actually changed. */
-  private setHoveredUnit(unitId: UnitId | undefined): void {
-    if (unitId === this.hoveredUnit) {
-      return;
-    }
-    this.hoveredUnit = unitId;
-    this.deps.picker.setHovered(unitId);
-  }
-
-  /** Normalised device coordinate of a pointer event, or undefined when detached. */
-  private ndcOf(
-    event: Pick<PointerEvent, "clientX" | "clientY">,
-  ): Vec2 | undefined {
-    if (!this.surface) {
-      return undefined;
-    }
-    return pointerToNdc(
-      this.surface.getBoundingClientRect(),
-      event.clientX,
-      event.clientY,
-    );
-  }
-
-  /** Projects a world point to client pixels through the live camera. */
-  private project(
-    world: { x: number; y: number; z: number } | undefined,
-  ): Vec2 | undefined {
-    if (!this.surface || !world) {
-      return undefined;
-    }
-    const ndc = new Vector3(world.x, world.y, world.z).project(
-      this.deps.camera.camera,
-    );
-    return ndcToPointer(this.surface.getBoundingClientRect(), {
-      x: ndc.x,
-      y: ndc.y,
-    });
-  }
 }
 
 /** True when the key event came from a text control, so shortcuts never eat typing. */

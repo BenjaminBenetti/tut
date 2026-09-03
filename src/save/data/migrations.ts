@@ -1,3 +1,6 @@
+import type { SettlementScale } from "../../content/model/settlement-scale";
+import { EARTH_MAP } from "../../overworld/data/earth-map";
+import { DEFAULT_CITY_SCALE } from "../../overworld/service/earth-map-builder";
 import type { Migration } from "../model/migration";
 
 // ===========================================
@@ -28,6 +31,51 @@ const ADD_SPREAD_COOLDOWNS: Migration = {
   },
 };
 
+/**
+ * Settlement scale of every shipped city, so a migrated save gets the
+ * same scale a new campaign would (Perth stays a town). Built once at
+ * module load from the seed data.
+ */
+const SHIPPED_CITY_SCALES: ReadonlyMap<string, SettlementScale> = new Map(
+  EARTH_MAP.cities.map((city) => [city.id, city.scale]),
+);
+
+/**
+ * v2 → v3 (#61): every city gains a required `scale` used for mission
+ * map parameters. Cities from the shipped Earth take their seed's scale;
+ * any other id (a future custom map) falls back to `DEFAULT_CITY_SCALE`.
+ * A city that already carries a scale is left alone.
+ */
+const ADD_CITY_SCALE: Migration = {
+  from: 2,
+  to: 3,
+  apply(state) {
+    if (!isRecord(state) || !isRecord(state.overworld)) {
+      throw new Error("v2 state has no overworld slice");
+    }
+    const map = state.overworld.map;
+    if (!isRecord(map) || !Array.isArray(map.cities)) {
+      throw new Error("v2 overworld has no map with cities");
+    }
+    const cities = map.cities.map((city: unknown) => {
+      if (!isRecord(city) || typeof city.id !== "string") {
+        throw new Error("v2 map has a city without a string id");
+      }
+      if (city.scale !== undefined) {
+        return city;
+      }
+      return {
+        ...city,
+        scale: SHIPPED_CITY_SCALES.get(city.id) ?? DEFAULT_CITY_SCALE,
+      };
+    });
+    return {
+      ...state,
+      overworld: { ...state.overworld, map: { ...map, cities } },
+    };
+  },
+};
+
 // ===========================================
 // Chain
 // ===========================================
@@ -39,4 +87,5 @@ const ADD_SPREAD_COOLDOWNS: Migration = {
  */
 export const GAME_STATE_MIGRATIONS: readonly Migration[] = [
   ADD_SPREAD_COOLDOWNS,
+  ADD_CITY_SCALE,
 ];

@@ -15,6 +15,7 @@ const CITY: City = {
   name: "London",
   regionId: "western-europe",
   infestation: 0,
+  scale: "city",
   neighbourIds: [],
   layout: { x: 0.5, y: 0.2 },
 };

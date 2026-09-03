@@ -1,3 +1,4 @@
+import type { SettlementScale } from "../../content/model/settlement-scale";
 import type { EarthMap } from "../model/earth-map";
 import type {
   CityLink,
@@ -12,14 +13,24 @@ import { projectEquirectangular } from "../service/map-projection";
 // Authoring helpers
 // ===========================================
 
-/** Declares a city at a real-world latitude / longitude (degrees). */
+/**
+ * Declares a city at a real-world latitude / longitude (degrees). Scale
+ * defaults to `"city"`; the sparser sites are declared `"town"` so map
+ * generation gets exercised at more than one settlement scale.
+ */
 function city(
   id: string,
   name: string,
   latitude: number,
   longitude: number,
+  scale?: SettlementScale,
 ): CitySeed {
-  return { id, name, layout: projectEquirectangular(latitude, longitude) };
+  return {
+    id,
+    name,
+    layout: projectEquirectangular(latitude, longitude),
+    ...(scale === undefined ? {} : { scale }),
+  };
 }
 
 /** Declares an undirected spread route between two cities. */
@@ -140,9 +151,9 @@ const REGIONS: readonly RegionSeed[] = [
     name: "North Asia",
     biome: "snowy",
     cities: [
-      city("novosibirsk", "Novosibirsk", 55.03, 82.92),
-      city("almaty", "Almaty", 43.24, 76.89),
-      city("ulaanbaatar", "Ulaanbaatar", 47.89, 106.91),
+      city("novosibirsk", "Novosibirsk", 55.03, 82.92, "town"),
+      city("almaty", "Almaty", 43.24, 76.89, "town"),
+      city("ulaanbaatar", "Ulaanbaatar", 47.89, 106.91, "town"),
     ],
   },
   {
@@ -170,9 +181,9 @@ const REGIONS: readonly RegionSeed[] = [
     name: "Oceania",
     biome: "coastal",
     cities: [
-      city("perth", "Perth", -31.95, 115.86),
+      city("perth", "Perth", -31.95, 115.86, "town"),
       city("sydney", "Sydney", -33.87, 151.21),
-      city("auckland", "Auckland", -36.85, 174.76),
+      city("auckland", "Auckland", -36.85, 174.76, "town"),
     ],
   },
 ];

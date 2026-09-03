@@ -13,7 +13,7 @@ import type { RosterState } from "../../roster/model/roster-state";
  * - `1`: the M1 slices (#54). No earlier save existed to migrate from.
  * - `2`: `overworld.spreadCooldowns` (#58).
  */
-export const GAME_STATE_SCHEMA_VERSION = 2;
+export const GAME_STATE_SCHEMA_VERSION = 3;
 
 /**
  * Bookkeeping that every save needs regardless of gameplay content.

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { BIOME_IDS } from "../../content/model/biome-id";
+import { SETTLEMENT_SCALES } from "../../content/model/settlement-scale";
 import type { CityId } from "../model/city";
 import { MAX_INFESTATION, MIN_INFESTATION } from "../model/city";
 import {
@@ -154,5 +155,18 @@ describe("EARTH_MAP seed data", () => {
 
   it("is plain JSON-serializable data", () => {
     expect(JSON.parse(JSON.stringify(EARTH_MAP))).toEqual(EARTH_MAP);
+  });
+});
+
+describe("EARTH_MAP settlement scales", () => {
+  it("gives every city a shipped settlement scale", () => {
+    for (const city of EARTH_MAP.cities) {
+      expect(SETTLEMENT_SCALES).toContain(city.scale);
+    }
+  });
+
+  it("uses more than one scale so map generation is exercised across them", () => {
+    const scales = new Set(EARTH_MAP.cities.map((city) => city.scale));
+    expect(scales.size).toBeGreaterThan(1);
   });
 });

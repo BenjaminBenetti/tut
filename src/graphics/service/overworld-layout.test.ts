@@ -24,6 +24,7 @@ function city(id: string, x: number, y: number): City {
     name: id,
     regionId: "r",
     infestation: 0,
+    scale: "city",
     neighbourIds: [],
     layout: { x, y },
   };

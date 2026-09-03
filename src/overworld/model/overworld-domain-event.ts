@@ -1,6 +1,6 @@
-import type { Applied } from "../../core/model/domain-event";
 import type { EconomyEvent } from "../../economy/model/economy-event";
 import type { RosterEvent } from "../../roster/model/roster-event";
+import type { CampaignApplied, CampaignEvent } from "./campaign-event";
 
 // ===========================================
 // Event map
@@ -25,7 +25,7 @@ import type { RosterEvent } from "../../roster/model/roster-event";
 //   └───────────┬────────────┘     └──────────────┬─────────────┘
 //               └───────────── augment ───────────┘
 //                                  ▼
-//               OverworldEventMap ──► CampaignEvent = values of the map
+//               OverworldEventMap ──► CampaignEvent (campaign-event.ts) = values of the map
 // ```
 //
 // To add an event: create `overworld/model/<name>-event.ts` with the
@@ -51,11 +51,10 @@ export interface OverworldEventMap {
 // ===========================================
 
 /**
- * Every event the campaign dispatcher can emit: overworld events plus
- * the economy (and later roster) groups. Derived from the map, so it is
- * always complete.
+ * The union derived from the map lives in `campaign-event.ts` as
+ * `CampaignEvent`; it is re-exported here so either import path works.
  */
-export type CampaignEvent = OverworldEventMap[keyof OverworldEventMap];
+export type { CampaignEvent } from "./campaign-event";
 
 /**
  * Former name of `CampaignEvent`, kept as an alias for one release so
@@ -64,10 +63,10 @@ export type CampaignEvent = OverworldEventMap[keyof OverworldEventMap];
 export type OverworldDomainEvent = CampaignEvent;
 
 /**
- * The `{ state, events }` pair overworld handlers and tick steps return,
- * generic over the state they operate on (a slice or the whole campaign).
+ * Former name of `CampaignApplied`, kept as an alias for one release:
+ * the `{ state, events }` pair overworld handlers and tick steps return.
  */
-export type OverworldApplied<TState> = Applied<TState, CampaignEvent>;
+export type OverworldApplied<TState> = CampaignApplied<TState>;
 
 // ===========================================
 // Re-exports

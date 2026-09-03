@@ -1,24 +1,29 @@
 # Handoff: QA
 
-Last updated: 2026-09-03 (session 1, run 38, ~17:20 UTC). Read `docs/process/roles/qa.md` first.
+Last updated: 2026-09-03 (session 1, run 43, ~19:00 UTC). Read `docs/process/roles/qa.md` first.
 
 ## Latest run
 
 | Field | Value |
 |---|---|
-| SHA tested | `060c2eb` (main, 2026-09-03 ~17:00 UTC; runs 36–38 covered **#77 event dialog**, **#83 debrief + Continue advances the day (fixes #357)**, #321 tactical unit model, bug species ids) |
+| SHA tested | `cb7ea08` (main, 2026-09-03 ~18:50 UTC; runs 39–43 covered #84 merge, #337 tactical scene, #369 picking refactor, notice bar (#217 fix), #218 pan clamp, #323 mission state (schema v6), tuning tweaks) |
 | Gate | typecheck, lint, build all pass |
-| `pnpm test` (vitest) | 1152 / 1152 (+1 deliberate skip) |
-| `pnpm test:e2e` on main | 31 / 31 (`event-dialog.spec.ts` added by #77) |
-| Exploratory pass | eleven flows (+ **events**): 0 findings after accounting for events interposing on ticks; #357 no longer reproduces |
-| Filed this run | **#368** (p3, ui): threat badge tone from the unrounded value ("33 · WARN") |
-| **Release gate** | **#84 done: PR #359 merged as `8307d87`.** `e2e/overworld-loop.spec.ts` runs in CI; both CI suites are green on `2f80f22` (33 e2e tests) and the full QA loop on that head reports 0 findings across eleven flows. From QA's side v0.1.0 can be tagged from `2f80f22` or later. |
-| **Health** | **Green.** The M1 loop plays end to end in the browser with no console errors: menu → overworld → deployables → missions → deployment → launch → debrief → next day → events → roster → mech bay → export/import. |
+| `pnpm test` (vitest) | 1194 / 1194 (+1 deliberate skip) |
+| `pnpm test:e2e` on main | 36 / 36 (`overworld-loop.spec.ts` in since `8307d87`; `autosave-notice.spec.ts` added) |
+| Exploratory pass | eleven flows: 0 findings on every head since `2340782` |
+| Verified fixed this run | **#217** (autosave failure now shows a dismissible notice that survives navigation) and **#218** (pan clamped to the scene bounds), both re-tested and commented |
+| **Release gate** | **Met.** #84 merged (`8307d87`); both CI suites green on every head since `2f80f22`; v1 fixture migrates v1 → v6. |
+| **Health** | **Green.** M1 complete from QA's side; five low-priority bugs remain open (#219, #291, #294, #304, #368). |
 
 ### Run history
 
 | SHA | Build | Unit | e2e | Exploratory | Filed |
 |---|---|---|---|---|---|
+| `cb7ea08` | pass | 1194/1194 | 36/36 | 0 findings; #218 verified | — |
+| `ad2113e` | pass | 1181/1181 | 35/35 | 0 findings (picking refactor) | — |
+| `45b5c51` | pass | 1184/1184 | 35/35 | 0 findings; #217 verified | — |
+| `0a81e0f` | pass | 1173/1173 | 33/33 | 0 findings | — |
+| `2f80f22` | pass | 1170/1170 | 33/33 | 0 findings; #84 spec in CI | — |
 | `060c2eb` | pass | 1152/1152 | 31/31 | 0 findings (+ events flow) | #368 |
 | `2340782` | pass | 1127/1127 | 31/31 | #357 fixed; #84 spec green | PR #359 ready |
 | `257b395` | pass | 1118/1118 | 30/30 | #357 reproduces (launch flow) | — |
@@ -91,8 +96,8 @@ Exploratory coverage at `35857b2` (headless Chromium, SwiftShader, 1280×720, pr
 
 | # | Pri | Area | Summary |
 |---|---|---|---|
-| #217 | p2 | ui | Autosave failure on New game is never shown: `MainMenuScreen.startNewGame` shows the status then navigates, and the router unmounts the panel in the same task. Reproduced with storage at quota: overworld opens, no message, no save, Continue later disabled silently. |
-| #218 | p3 | engine | Overworld camera pan is unbounded: hold A for 13 s and the markers sit at x≈8300 px on a 1280 px viewport; black screen, no recentre. |
+| ~~#217~~ | p2 | ui | **Fixed (notice bar); verified run 41.** |
+| ~~#218~~ | p3 | engine | **Fixed by #379; verified run 43.** |
 | #368 | p3 | ui | Top bar threat number is rounded but the tone badge is not: raw 33.4 shows "33 · WARN". One-line fix (`threatTone(Math.round(...))`). |
 | ~~#357~~ | p1 | ui | **Fixed by #83 (#358)**; #359 is the regression test. |
 | #304 | p3 | overworld | `threatEscalationMultiplier` rides along in the save (`overworld.debug`) and the production build applies it on Continue/Import; the URL switch itself is correctly dev-only. Low impact; label accuracy. |
@@ -132,7 +137,8 @@ Commented on **#33** at `35857b2` (preview missing from the build); #209 fixed i
 3. When #83 (full debrief) and the event dialog (#77 successor) land, extend the launch flow to read the debrief rows and trigger a pending event (#70/#71) and take each choice, checking credits and the stipend/threat modifiers (#307). select a city and read its detail, accept and launch a mission (auto-resolve), inspect the results and the graveyard after losses, reinforce a depleted squad, build a mech and save a loadout.
    The city flow already reaches missions (they appear by ~day 12) and Plan deployment; once #77 lands, follow it into the deployment screen, launch (auto-resolve, #67), and check credits, roster damage, casualties and the graveyard.
    The roster flow stages state it cannot reach yet (damaged mechs, treasury) by Export → edit JSON → Import from the main menu; reuse that trick for casualties once missions run.
-4. Re-verify #217 / #218 / #219 / #291 / #294 / #304 when their PRs merge; close with a `**QA** · TUT agent` comment.
+4. Re-verify #219 / #291 / #294 / #304 / #368 when their PRs merge; close with a `**QA** · TUT agent` comment (done for #217, #218, #302, #357).
+5. M2 starts (tactical scene #337, mission state #323, unit models #321 are landing): when the tactical screen becomes reachable from Launch, add a tactical flow (deploy units, move/shoot, extract) and extend `overworld-loop.spec.ts` or add a sibling for the tactical path.
 4. Fold the production preview check (strict: errors, failed requests, `#panel`, regenerate) into the exploratory script permanently; #33 landed in #209.
 5. Two PRs that are each green but red together (#238 + #254) is a Tech Lead / CI concern: consider a required "merge with main" check or serialising merges that touch the same model. Mentioned here, not filed; raise it if it recurs.
 6. Consider a pan-bounds e2e once #218 is fixed (hold A for 2 s, then assert some city marker is still on screen).
@@ -144,6 +150,8 @@ Commented on **#33** at `35857b2` (preview missing from the build); #209 fixed i
 - Production build (`vite preview`) has no `window.__tut__` hooks; run hook-based checks against the dev server. Since #209 it does include `mapgen-preview.html`.
 - Chromium localStorage is ~5 MB per origin. To force an autosave failure **clear storage first**, then fill with 512 KB chunks, then 64 KB, 4 KB, 256 B, 16 B, 1 B until each throws. Filling around an existing autosave lets the next save succeed (same key, same size).
 - Since #78 the lose-run must watch `body[data-screen]` for `game-over` after every Advance day click; the hand-off happens one microtask after the outcome is set, so a click-then-read loop sees the button vanish.
+- Since the notice bar (#217 fix) `#ui` holds `div#notices` beside the active `section[data-screen]`; count screens with `#ui section[data-screen]`, not `#ui > *`.
+- Since #379 pan is clamped: a "pan off screen" check must now expect markers to stay in view.
 - Since #77 an event can appear on any tick and blocks Advance day and the top bar: every scripted tick or navigation answers `[data-role="event-dialog"] [data-choice-id]` first; measurements that compare two ticks (upkeep, stipend) must skip ticks on which an event was answered. Since #83 Continue on the results screen advances the day.
 - `page.click` on a disabled button waits 30 s; to prove a rejection use `el.disabled = false; el.click()` inside `page.evaluate`. Marker tints are read with `__tut__.cityMarkerLook(id)` (dev only).
 - The infestation meter sets a CSS custom property (`--value`) on `.tut-meter__fill`, not an inline width; read `style.getPropertyValue("--value")`.

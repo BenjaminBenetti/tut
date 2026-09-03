@@ -24,7 +24,7 @@ tools/art/models/<name>.py ──► make_model.py ──► public/assets/model
 ## The loop
 
 1. **Read the brief**: style guide (`docs/design/style-guide.md`) §3 scale and silhouette, §4 palette, §6 conventions and budgets, §9 naming; the concept sheet under `docs/design/concepts/` if one exists; the existing placeholder in `tools/art/build-placeholders.mjs` for proportions and socket positions.
-2. **Write the script** `tools/art/models/<kebab-name>.py` (copy `example-supply-crate.py`). Define `build()`; use `bpy_kit.box / cylinder / sphere / join / socket`; optional `FOOTPRINT = (w, d)`.
+2. **Write the script** `tools/art/models/<kebab-name>.py` (copy `example-supply-crate.py`). Define `build()`; use `bpy_kit.box / cylinder / sphere / cut_below / join / socket`; optional `FOOTPRINT = (w, d)`.
 3. **Run the loop**:
    ```
    blender -b --python tools/art/make_model.py -- \
@@ -44,7 +44,7 @@ Review any GLB (including the three.js placeholders) the same way: `blender -b -
 |---|---|
 | Axes | Build in Blender with Z up and the **front facing −Y**; `export_glb` writes +Y up so the front becomes +Z (three.js/glTF). |
 | Scale | 1 unit = 1 tile = 2 m. Infantry figure 0.9 u, mech 2.4–3.2 u, swarmer 0.5, lurker 1.3, brute 1.8, spawner 1.4, wall 1.5 × 1 × 0.1, floor 1.5 u per level. |
-| Pivot | Base centre: feet on z = 0, footprint centred on the origin. Walls pivot at the base midpoint along +X. Sub-parts (arms, weapons) pivot at their socket. |
+| Pivot | Base centre: feet on z = 0, footprint centred on the origin. Walls pivot at the base midpoint along +X. Sub-parts (arms, weapons) pivot at their socket. A mound or boulder sunk into the ground gets `cut_below(ob)` so nothing hangs under z = 0 (the validator rejects it). |
 | Materials | One flat Principled material per palette token, named after the token (`bpy_kit.material`). No textures on scripted models; units pick up the atlases later via material name. |
 | Shading | Flat. `bpy_kit` primitives are flat by default; organic bug flesh may pass `smooth=True`. |
 | Sockets | `socket("arm_l", (x, y, z))` creates an empty `socket_arm_l`; mechs expose `chassis`, `arm_l`, `arm_r`, `back`, `weapon`, `muzzle`; spawners `hatch`; door walls `door`. |

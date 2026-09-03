@@ -33,6 +33,8 @@ describe("settlement definitions", () => {
       expectRange(settlement.floorCount, `${settlement.id} floors`, 1);
       expectRange(settlement.sideStreets, `${settlement.id} sideStreets`, 0);
       expect(settlement.rampSpacing).toBeGreaterThanOrEqual(2);
+      expect(Number.isInteger(settlement.roadWidth)).toBe(true);
+      expect(settlement.roadWidth).toBeGreaterThanOrEqual(1);
       expect(settlement.streetPropDensity).toBeGreaterThanOrEqual(0);
       expect(settlement.yardPropDensity).toBeGreaterThanOrEqual(0);
     }

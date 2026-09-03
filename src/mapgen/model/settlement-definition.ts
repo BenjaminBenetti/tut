@@ -33,6 +33,11 @@ export interface SettlementDefinition {
   readonly sideStreets: IntRange;
   /** Block edge length in tiles for `grid`; ignored by other styles. */
   readonly blockSize: number;
+  /**
+   * Lanes per road. The `grid` builder lays this many adjacent lines per
+   * grid line; `trail` and `streets` are always one lane wide.
+   */
+  readonly roadWidth: number;
   /** True when roads use the biome's paved surface, else its trail surface. */
   readonly pavedRoads: boolean;
   /** True when road-flanking columns become sidewalk. */

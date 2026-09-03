@@ -177,6 +177,35 @@ describe("RoadPass", () => {
     }
   });
 
+  it("lays two-lane streets in cities", () => {
+    for (const biome of BIOME_IDS) {
+      for (let i = 0; i < SEEDS; i++) {
+        const draft = run(biome, "city", `lanes-${i}`);
+        const roads = roadColumns(draft);
+        const roadAt = (x: number, z: number): boolean =>
+          draft.inBounds(x, z) && draft.isRoad(x, z);
+        const withLane = roads.filter(({ x, z }) => {
+          const alongX = roadAt(x + 1, z) && roadAt(x - 1, z);
+          const across: readonly (readonly [number, number])[] = alongX
+            ? [
+                [0, 1],
+                [0, -1],
+              ]
+            : [
+                [1, 0],
+                [-1, 0],
+              ];
+          return across.some(([dx, dz]) => roadAt(x + dx, z + dz));
+        });
+        // Every lane column has the other lane beside it, except stubs at
+        // a shoreline where one lane's dry run is too short to keep.
+        expect(withLane.length / roads.length, `${biome}/${i}`).toBeGreaterThan(
+          0.9,
+        );
+      }
+    }
+  });
+
   it("grades the plat inside a city grid to one level", () => {
     for (const biome of BIOME_IDS) {
       for (let i = 0; i < SEEDS; i++) {

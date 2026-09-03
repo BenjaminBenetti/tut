@@ -102,6 +102,8 @@ def desired_status(i, current):
     owner = by_num.get(n, {}).get("owner")
     if (has_branch(n) or current == "In Progress") and (seated or owner not in (None, "engineer")): return "In Progress"
     if "status:blocked" in L: return "Blocked"
+    # studio.md §2: Ready means no open design question. A design-decision issue waits in Backlog for the Director.
+    if "design-decision" in L: return "Backlog"
     deps = deps_of(i)
     if all(issues.get(d, {}).get("state") == "CLOSED" for d in deps): return "Ready"
     return "Backlog"

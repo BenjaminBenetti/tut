@@ -132,6 +132,27 @@ const RESERVE_ACTIVE_MISSION: Migration = {
   },
 };
 
+/**
+ * v6 → v7 (#304): `meta.debug` is gone. The dev-only threat escalation
+ * switch used to ride in the save, so a dev-made save carried it into
+ * production; it now lives in the composition. Any stored value is
+ * dropped so an old save plays at the shipped pace.
+ */
+const DROP_META_DEBUG: Migration = {
+  from: 6,
+  to: 7,
+  apply(state) {
+    if (!isRecord(state) || !isRecord(state.meta)) {
+      throw new Error("v6 state has no meta");
+    }
+    if (!("debug" in state.meta)) {
+      return state;
+    }
+    const { debug: _dropped, ...meta } = state.meta;
+    return { ...state, meta };
+  },
+};
+
 // ===========================================
 // Chain
 // ===========================================
@@ -147,4 +168,5 @@ export const GAME_STATE_MIGRATIONS: readonly Migration[] = [
   ADD_GRAVEYARD,
   ADD_THREAT_OFFSET,
   RESERVE_ACTIVE_MISSION,
+  DROP_META_DEBUG,
 ];

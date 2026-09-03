@@ -1,7 +1,6 @@
 import type { IdGeneratorState } from "../../core/model/id-generator";
 import type { RngState } from "../../core/model/rng";
 import type { EconomyState } from "../../economy/model/economy-state";
-import type { CampaignDebugOptions } from "../../overworld/model/campaign-debug";
 import type { OverworldState } from "../../overworld/model/overworld-state";
 import type { RosterState } from "../../roster/model/roster-state";
 import type { TacticalState } from "../../tactical/model/tactical-state";
@@ -18,8 +17,9 @@ import type { TacticalState } from "../../tactical/model/tactical-state";
  * - `4`: `roster.graveyard` (#64).
  * - `5`: `overworld.threatOffset` (#307).
  * - `6`: `activeMission` becomes the `TacticalState` slot (#323).
+ * - `7`: `meta.debug` removed; dev switches live in the composition (#304).
  */
-export const GAME_STATE_SCHEMA_VERSION = 6;
+export const GAME_STATE_SCHEMA_VERSION = 7;
 
 /**
  * Bookkeeping that every save needs regardless of gameplay content.
@@ -33,11 +33,6 @@ export interface GameMeta {
   readonly ids: IdGeneratorState;
   /** ISO-8601 timestamp supplied by the app when the campaign started. */
   readonly createdAt: string;
-  /**
-   * Test and tuning switches chosen at new game (#78). Absent in a normal
-   * campaign, so no save written before it existed needs migrating.
-   */
-  readonly debug?: CampaignDebugOptions;
 }
 
 /**

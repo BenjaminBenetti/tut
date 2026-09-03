@@ -109,6 +109,7 @@ export async function bootstrapApp(doc: Document): Promise<void> {
       });
     },
     onStore: mapSync.observe,
+    ...(debug === undefined ? {} : { debug }),
   });
 
   const router: DomScreenRouter = new DomScreenRouter(
@@ -124,7 +125,6 @@ export async function bootstrapApp(doc: Document): Promise<void> {
             createCampaign: game.createCampaign,
             newSeed: game.newSeed,
             clock: game.clock,
-            ...(debug === undefined ? {} : { debug }),
           }),
       ],
       [

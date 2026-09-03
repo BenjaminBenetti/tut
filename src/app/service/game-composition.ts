@@ -9,6 +9,8 @@ import { INFESTATION_TUNING } from "../../overworld/data/infestation-tuning";
 import { MISSION_TUNING } from "../../overworld/data/mission-tuning";
 import { NEW_GAME_TUNING } from "../../overworld/data/new-game-tuning";
 import { THREAT_TUNING } from "../../overworld/data/threat-tuning";
+import type { CampaignDebugOptions } from "../../overworld/model/campaign-debug";
+import { applyDebugThreat } from "../../overworld/service/campaign-debug-service";
 import type { CommandDispatcher } from "../../overworld/model/command-dispatcher";
 import type { DeploymentAssessor } from "../../overworld/model/deployment-assessment";
 import type { EventTypeCatalogue } from "../../overworld/model/event-type-catalogue";
@@ -77,6 +79,13 @@ export interface GameCompositionDeps {
   readonly onAutosaveFailure: AutosaveFailureListener;
   /** Extra observer attached to every campaign store beside autosave; the map scene sync, for instance. */
   readonly onStore?: StoreObserver;
+  /**
+   * Test and tuning switches for this session (#78), applied to the
+   * shipped tuning here and never written into a save, so they cannot
+   * travel to a production build (#304). The bootstrap passes them only
+   * in dev builds.
+   */
+  readonly debug?: CampaignDebugOptions;
 }
 
 /** Shipped content and tuning screens read to label and price things. */
@@ -154,7 +163,7 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     ...content,
     transactionsFor: (ids) => new LedgerTransactionService(ids),
   });
-  const tickDeps = composeTickDeps();
+  const tickDeps = composeTickDeps(deps.debug);
   registerDeployableCommands(dispatcher, {
     catalogue: tickDeps.catalogue,
     transactionsFor: tickDeps.createTransactions,
@@ -205,7 +214,7 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
       };
     },
   );
-  const newGameDeps = composeNewGameDeps(squadTypes);
+  const newGameDeps = composeNewGameDeps(squadTypes, deps.debug);
 
   return {
     saves,
@@ -225,7 +234,7 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
 // ===========================================
 
 /** The shipped content, tuning and services the day tick runs on. */
-function composeTickDeps(): TickDeps {
+function composeTickDeps(debug: CampaignDebugOptions | undefined): TickDeps {
   return {
     catalogue: new DataDeployableTypeCatalogue(
       DEPLOYABLE_TYPE_IDS.map((id) => DEPLOYABLE_TYPES[id]),
@@ -234,7 +243,7 @@ function composeTickDeps(): TickDeps {
     infestationTuning: INFESTATION_TUNING,
     missionTuning: MISSION_TUNING,
     missionTypes: MISSION_TYPES,
-    threatTuning: THREAT_TUNING,
+    threatTuning: applyDebugThreat(THREAT_TUNING, debug),
     economyTuning: ECONOMY_TUNING,
     eventTypes: new DataEventTypeCatalogue(
       EVENT_TYPE_IDS.map((id) => EVENT_TYPES[id]),
@@ -244,13 +253,16 @@ function composeTickDeps(): TickDeps {
 }
 
 /** The shipped content and tuning a new campaign is built from. */
-function composeNewGameDeps(squadTypes: DataSquadTypeCatalogue): NewGameDeps {
+function composeNewGameDeps(
+  squadTypes: DataSquadTypeCatalogue,
+  debug: CampaignDebugOptions | undefined,
+): NewGameDeps {
   return {
     map: EARTH_MAP,
     squadTypes,
     starterRoster: STARTER_ROSTER,
     newGameTuning: NEW_GAME_TUNING,
-    threatTuning: THREAT_TUNING,
+    threatTuning: applyDebugThreat(THREAT_TUNING, debug),
     economyTuning: ECONOMY_TUNING,
   };
 }

@@ -4,7 +4,7 @@ import type { Result } from "../../core/model/result";
 import type { Rng } from "../../core/model/rng";
 import type { CampaignState } from "./campaign-state";
 import type { OverworldCommand } from "./overworld-command";
-import type { OverworldApplied } from "./overworld-domain-event";
+import type { CampaignApplied } from "./campaign-event";
 
 // ===========================================
 // Context
@@ -32,7 +32,7 @@ export interface CommandContext {
 
 /** What a handler returns: the next state and events, or a typed rejection. */
 export type CommandOutcome<TState> = Result<
-  OverworldApplied<TState>,
+  CampaignApplied<TState>,
   CommandError
 >;
 

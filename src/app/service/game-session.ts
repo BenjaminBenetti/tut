@@ -1,6 +1,6 @@
 import type { Unsubscribe } from "../../core/model/event-bus";
 import type { OverworldCommand } from "../../overworld/model/overworld-command";
-import type { OverworldDomainEvent } from "../../overworld/model/overworld-domain-event";
+import type { CampaignEvent } from "../../overworld/model/campaign-event";
 import type { GameState } from "../../save/model/game-state";
 import type { GameSession } from "../../ui/model/game-session";
 import type { GameStore } from "./game-store";
@@ -13,7 +13,7 @@ import type { GameStore } from "./game-store";
 export type CampaignGameStore = GameStore<
   GameState,
   OverworldCommand,
-  OverworldDomainEvent
+  CampaignEvent
 >;
 
 /** Builds the store for a campaign; the composition root binds the dispatcher. */

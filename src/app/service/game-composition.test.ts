@@ -1,12 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { ok } from "../../core/model/result";
 import { UNKNOWN_COMMAND } from "../../overworld/model/command-dispatcher";
-import {
-  ADVANCE_DAY,
-  advanceDay,
-} from "../../overworld/model/overworld-command";
-import { DAY_ADVANCED } from "../../overworld/model/overworld-domain-event";
+import type { OverworldCommand } from "../../overworld/model/overworld-command";
+import { advanceDay } from "../../overworld/model/overworld-command";
 import { AUTOSAVE_SLOT_ID } from "../../save/data/save-slots";
 import type { SaveError } from "../../save/model/save-error";
 import { MemoryKeyValueStore } from "../../save/repository/memory-key-value-store";
@@ -49,11 +45,15 @@ describe("composeGame", () => {
     expect(failures).toEqual([]);
   });
 
-  it("rejects commands with no registered handler and leaves the autosave alone", () => {
+  it("rejects a command with no registered handler and leaves the autosave alone", () => {
     const { game } = build();
     const state = game.createCampaign({ seed: 7, createdAt: NOW });
     game.session.start(state);
-    const result = game.session.store?.dispatch(advanceDay());
+    const unknown = {
+      type: "overworld:not-a-command",
+      payload: {},
+    } as unknown as OverworldCommand;
+    const result = game.session.store?.dispatch(unknown);
     expect(result?.ok).toBe(false);
     if (!result || result.ok) return;
     expect(result.error.code).toBe(UNKNOWN_COMMAND);
@@ -62,15 +62,8 @@ describe("composeGame", () => {
     expect(loaded.ok && loaded.value).toEqual(state);
   });
 
-  it("routes registered handlers through the store and autosaves the outcome", () => {
+  it("runs AdvanceDay through the store and autosaves the new day", () => {
     const { game } = build();
-    game.dispatcher.register(ADVANCE_DAY, (state) => {
-      const from = state.overworld.day;
-      return ok({
-        state: { ...state, overworld: { ...state.overworld, day: from + 1 } },
-        events: [{ type: DAY_ADVANCED, payload: { from, to: from + 1 } }],
-      });
-    });
     game.session.start(game.createCampaign({ seed: 7, createdAt: NOW }));
 
     const result = game.session.store?.dispatch(advanceDay());

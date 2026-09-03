@@ -7,7 +7,7 @@ import { EARTH_MAP } from "../../overworld/data/earth-map";
 import { NEW_GAME_TUNING } from "../../overworld/data/new-game-tuning";
 import { THREAT_TUNING } from "../../overworld/data/threat-tuning";
 import type { OverworldCommand } from "../../overworld/model/overworld-command";
-import type { OverworldDomainEvent } from "../../overworld/model/overworld-domain-event";
+import type { CampaignEvent } from "../../overworld/model/campaign-event";
 import { SQUAD_TYPES } from "../../roster/data/squad-types";
 import { STARTER_ROSTER } from "../../roster/data/starter-roster";
 import { DataSquadTypeCatalogue } from "../../roster/repository/squad-type-catalogue";
@@ -35,7 +35,7 @@ const stateWithSeed = (seed: number): GameState =>
 const idleProcessor: CommandProcessor<
   GameState,
   OverworldCommand,
-  OverworldDomainEvent
+  CampaignEvent
 > = { process: (state) => ok({ state, events: [] }) };
 
 const createStore = (state: GameState): CampaignGameStore =>
@@ -74,11 +74,7 @@ describe("StoreGameSession", () => {
   it("replace swaps the store's state and notifies subscribers", () => {
     const session = new StoreGameSession(createStore);
     session.start(stateWithSeed(1));
-    const seen: StoreChange<
-      GameState,
-      OverworldCommand,
-      OverworldDomainEvent
-    >[] = [];
+    const seen: StoreChange<GameState, OverworldCommand, CampaignEvent>[] = [];
     session.store?.subscribe((change) => {
       seen.push(change);
     });

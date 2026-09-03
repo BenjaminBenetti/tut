@@ -1,5 +1,5 @@
 import type { OverworldCommand } from "../../overworld/model/overworld-command";
-import type { OverworldDomainEvent } from "../../overworld/model/overworld-domain-event";
+import type { CampaignEvent } from "../../overworld/model/campaign-event";
 import type { GameState } from "../../save/model/game-state";
 import type { CommandSink, StateSource } from "./state-store";
 
@@ -15,9 +15,9 @@ import type { CommandSink, StateSource } from "./state-store";
 export type CampaignStore = StateSource<
   GameState,
   OverworldCommand,
-  OverworldDomainEvent
+  CampaignEvent
 > &
-  CommandSink<GameState, OverworldCommand, OverworldDomainEvent>;
+  CommandSink<GameState, OverworldCommand, CampaignEvent>;
 
 // ===========================================
 // GameSession

@@ -70,127 +70,6 @@
     "bytes": 79136
   },
   {
-    "id": "tdf.mech.legs-a",
-    "category": "units",
-    "path": "assets/models/units/tdf-mech-legs-a.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 1.42,
-    "sockets": [
-      "socket_chassis"
-    ],
-    "quality": "placeholder",
-    "triangles": 120,
-    "bytes": 19800
-  },
-  {
-    "id": "tdf.mech.chassis-a",
-    "category": "units",
-    "path": "assets/models/units/tdf-mech-chassis-a.glb",
-    "footprint": {
-      "w": 0,
-      "d": 0
-    },
-    "height": 1.37,
-    "sockets": [
-      "socket_arm_l",
-      "socket_arm_r",
-      "socket_back"
-    ],
-    "quality": "placeholder",
-    "triangles": 120,
-    "bytes": 20724
-  },
-  {
-    "id": "tdf.mech.arm-l-a",
-    "category": "units",
-    "path": "assets/models/units/tdf-mech-arm-l-a.glb",
-    "footprint": {
-      "w": 0,
-      "d": 0
-    },
-    "height": 0.77,
-    "sockets": [
-      "socket_weapon"
-    ],
-    "quality": "placeholder",
-    "triangles": 60,
-    "bytes": 10484
-  },
-  {
-    "id": "tdf.mech.arm-r-a",
-    "category": "units",
-    "path": "assets/models/units/tdf-mech-arm-r-a.glb",
-    "footprint": {
-      "w": 0,
-      "d": 0
-    },
-    "height": 0.77,
-    "sockets": [
-      "socket_weapon"
-    ],
-    "quality": "placeholder",
-    "triangles": 60,
-    "bytes": 10480
-  },
-  {
-    "id": "tdf.mech.weapon-arm.autocannon",
-    "category": "units",
-    "path": "assets/models/units/tdf-mech-weapon-arm-autocannon.glb",
-    "footprint": {
-      "w": 0,
-      "d": 0
-    },
-    "height": 0.22,
-    "sockets": [
-      "socket_muzzle"
-    ],
-    "quality": "placeholder",
-    "triangles": 36,
-    "bytes": 6736
-  },
-  {
-    "id": "tdf.mech.weapon-back.missile-pod",
-    "category": "units",
-    "path": "assets/models/units/tdf-mech-weapon-back-missile-pod.glb",
-    "footprint": {
-      "w": 0,
-      "d": 0
-    },
-    "height": 0.36,
-    "sockets": [
-      "socket_muzzle"
-    ],
-    "quality": "placeholder",
-    "triangles": 108,
-    "bytes": 17920
-  },
-  {
-    "id": "tdf.mech.assembled-a",
-    "category": "units",
-    "path": "assets/models/units/tdf-mech-assembled-a.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 2.79,
-    "sockets": [
-      "socket_chassis",
-      "socket_arm_l",
-      "socket_arm_r",
-      "socket_back",
-      "socket_weapon",
-      "socket_weapon",
-      "socket_muzzle",
-      "socket_muzzle"
-    ],
-    "quality": "placeholder",
-    "triangles": 504,
-    "bytes": 81648
-  },
-  {
     "id": "tdf.mech.chassis.bulwark",
     "category": "units",
     "path": "assets/models/units/tdf-mech-chassis-bulwark.glb",
@@ -974,5 +853,126 @@
     "quality": "placeholder",
     "triangles": 96,
     "bytes": 15544
+  },
+  {
+    "id": "tdf.mech.arm-l-a",
+    "category": "units",
+    "path": "assets/models/units/tdf-mech-arm-l-a.glb",
+    "footprint": {
+      "w": 0,
+      "d": 0
+    },
+    "height": 0.9,
+    "sockets": [
+      "socket_weapon"
+    ],
+    "quality": "final",
+    "triangles": 240,
+    "bytes": 24536
+  },
+  {
+    "id": "tdf.mech.arm-r-a",
+    "category": "units",
+    "path": "assets/models/units/tdf-mech-arm-r-a.glb",
+    "footprint": {
+      "w": 0,
+      "d": 0
+    },
+    "height": 0.9,
+    "sockets": [
+      "socket_weapon"
+    ],
+    "quality": "final",
+    "triangles": 240,
+    "bytes": 24528
+  },
+  {
+    "id": "tdf.mech.assembled-a",
+    "category": "units",
+    "path": "assets/models/units/tdf-mech-assembled-a.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 2.88,
+    "sockets": [
+      "socket_arm_l",
+      "socket_arm_r",
+      "socket_back",
+      "socket_chassis",
+      "socket_muzzle",
+      "socket_muzzle_2",
+      "socket_weapon",
+      "socket_weapon_2"
+    ],
+    "quality": "final",
+    "triangles": 2212,
+    "bytes": 209428
+  },
+  {
+    "id": "tdf.mech.chassis-a",
+    "category": "units",
+    "path": "assets/models/units/tdf-mech-chassis-a.glb",
+    "footprint": {
+      "w": 0,
+      "d": 0
+    },
+    "height": 1.34,
+    "sockets": [
+      "socket_arm_l",
+      "socket_arm_r",
+      "socket_back"
+    ],
+    "quality": "final",
+    "triangles": 472,
+    "bytes": 47816
+  },
+  {
+    "id": "tdf.mech.legs-a",
+    "category": "units",
+    "path": "assets/models/units/tdf-mech-legs-a.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.47,
+    "sockets": [
+      "socket_chassis"
+    ],
+    "quality": "final",
+    "triangles": 780,
+    "bytes": 74228
+  },
+  {
+    "id": "tdf.mech.weapon-arm.autocannon",
+    "category": "units",
+    "path": "assets/models/units/tdf-mech-weapon-arm-autocannon.glb",
+    "footprint": {
+      "w": 0,
+      "d": 0
+    },
+    "height": 0.22,
+    "sockets": [
+      "socket_muzzle"
+    ],
+    "quality": "final",
+    "triangles": 232,
+    "bytes": 24032
+  },
+  {
+    "id": "tdf.mech.weapon-back.missile-pod",
+    "category": "units",
+    "path": "assets/models/units/tdf-mech-weapon-back-missile-pod.glb",
+    "footprint": {
+      "w": 0,
+      "d": 0
+    },
+    "height": 0.45,
+    "sockets": [
+      "socket_muzzle"
+    ],
+    "quality": "final",
+    "triangles": 248,
+    "bytes": 24284
   }
 ]

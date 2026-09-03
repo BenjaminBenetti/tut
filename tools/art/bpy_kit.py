@@ -365,7 +365,11 @@ def apply_atlas_preview_materials(layout: dict, repo_root: str) -> None:
 
 
 def setup_render(size: int = 640, samples: int = 32, background: str = "#3A3F4A") -> None:
-    """Cycles on the CPU, square frame, denoised, key + fill light, grey ground."""
+    """Cycles on the CPU, square frame, denoised, key + fill light, grey ground.
+
+    The ground plane sits just under the lowest point of the model, so
+    sub-parts that pivot at their socket (arms, weapons) are not hidden.
+    """
     scene = bpy.context.scene
     scene.render.engine = "CYCLES"
     scene.cycles.device = "CPU"
@@ -393,7 +397,9 @@ def setup_render(size: int = 640, samples: int = 32, background: str = "#3A3F4A"
     fill.data.energy = 1.2
     fill.data.angle = math.radians(20)
     fill.rotation_euler = (math.radians(60), 0, math.radians(215))
-    bpy.ops.mesh.primitive_plane_add(size=8, location=(0, 0, 0))
+    lo, _hi = bounds()
+    ground_z = min(0.0, lo.z) - 0.002 if lo.z != math.inf else 0.0
+    bpy.ops.mesh.primitive_plane_add(size=8, location=(0, 0, ground_z))
     ground = bpy.context.active_object
     ground.name = "render_ground"
     # Own material, not a palette token: an imported GLB may already own a

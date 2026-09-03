@@ -54,11 +54,55 @@
   font-size: 12px;
 }
 
-.tut-overworld {
+/*
+ * Overworld layout. While the screen is mounted the map viewport (and
+ * its canvas) is borrowed into #map-area, so the scene resizes to the
+ * cell and sits beside the panels rather than under them.
+ *
+ *   ┌ #top-bar ─────────────────────────────────────────┐
+ *   ├───────────────────────────────────┬───────────────┤
+ *   │ #map-area ▸ #map-viewport         │ #side-panel   │
+ *   └───────────────────────────────────┴───────────────┘
+ */
+
+#ui > .tut-overworld {
   position: absolute;
-  top: var(--space-4);
-  left: var(--space-4);
-  width: min(360px, calc(100vw - 2 * var(--space-4)));
+  inset: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) min(320px, 40vw);
+  grid-template-areas:
+    "bar bar"
+    "map side";
+  pointer-events: none;
+}
+
+.tut-overworld > * {
+  pointer-events: auto;
+}
+
+.tut-overworld__bar {
+  grid-area: bar;
+}
+
+.tut-overworld__map {
+  grid-area: map;
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.tut-overworld__side {
+  grid-area: side;
+  align-self: start;
+  margin: var(--space-4);
+  max-height: calc(100% - 2 * var(--space-4));
+  overflow: auto;
+}
+
+.tut-topbar__status {
+  font-family: var(--font-mono);
+  font-size: 11px;
 }
 
 /* =========================================== */

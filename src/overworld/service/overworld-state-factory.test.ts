@@ -52,6 +52,7 @@ describe("createInitialOverworldState", () => {
     const state = build(1);
     expect(state.day).toBe(FIRST_DAY);
     expect(state.missions).toEqual([]);
+    expect(state.spreadCooldowns).toEqual({});
     expect(state.pendingEvents).toEqual([]);
     expect(state.deployables).toEqual([]);
     expect(state.hives).toEqual([]);

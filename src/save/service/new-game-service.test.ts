@@ -57,6 +57,7 @@ describe("createNewGame", () => {
       computeThreat(overworld.map, FIRST_DAY, THREAT_TUNING),
     );
     expect(overworld.missions).toEqual([]);
+    expect(overworld.spreadCooldowns).toEqual({});
     expect(overworld.pendingEvents).toEqual([]);
     expect(overworld.deployables).toEqual([]);
     expect(overworld.hives).toEqual([]);

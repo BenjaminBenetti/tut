@@ -11,6 +11,7 @@ import { NEW_GAME_TUNING } from "../../overworld/data/new-game-tuning";
 import { THREAT_TUNING } from "../../overworld/data/threat-tuning";
 import type { CommandDispatcher } from "../../overworld/model/command-dispatcher";
 import type { DeploymentAssessor } from "../../overworld/model/deployment-assessment";
+import type { EventTypeCatalogue } from "../../overworld/model/event-type-catalogue";
 import { DEPLOYABLE_TYPE_IDS } from "../../overworld/model/deployable-type";
 import { EVENT_TYPE_IDS } from "../../overworld/model/event-type";
 import { ADVANCE_DAY } from "../../overworld/model/overworld-command";
@@ -85,6 +86,8 @@ export interface GameContent {
   readonly rating: MechRatingTuning;
   /** Names and describes mission types for the mission list and briefing. */
   readonly missionTypes: MissionTypeCatalogue;
+  /** Copy and choices for the event dialog. */
+  readonly eventTypes: EventTypeCatalogue;
 }
 
 /** The simulation-facing services screens are handed. */
@@ -139,6 +142,9 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     upgrades: UPGRADE_TUNING,
     rating: MECH_RATING_TUNING,
     missionTypes: MISSION_TYPES,
+    eventTypes: new DataEventTypeCatalogue(
+      EVENT_TYPE_IDS.map((id) => EVENT_TYPES[id]),
+    ),
   };
   registerRosterCommands(dispatcher, {
     ...content,

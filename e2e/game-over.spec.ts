@@ -24,6 +24,11 @@ test("a campaign with fast threat escalation reaches defeat and the game-over sc
     if ((await body.getAttribute("data-screen")) === "game-over") {
       break;
     }
+    // An event blocks Advance Day until answered; take the default option.
+    const choice = page.locator('[data-role="event-dialog"] [data-choice-id]');
+    if (await choice.first().isVisible()) {
+      await choice.first().click();
+    }
     await expect(advance).toBeEnabled();
     await advance.click();
   }

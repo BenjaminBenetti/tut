@@ -378,3 +378,32 @@
   font-family: var(--font-mono);
   font-size: 12px;
 }
+
+/* =========================================== */
+/* Modal (event dialog)                        */
+/* =========================================== */
+
+.tut-overworld > .tut-modal {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  background: rgb(11 13 18 / 0.7);
+}
+
+.tut-modal__panel {
+  width: min(480px, calc(100vw - 2 * var(--space-4)));
+}
+
+.tut-modal__panel h2 {
+  margin-top: var(--space-2);
+}
+
+.tut-modal__panel [data-field="event-text"] {
+  margin: var(--space-3) 0;
+}
+
+.tut-modal__panel .tut-stack {
+  margin-top: var(--space-4);
+}

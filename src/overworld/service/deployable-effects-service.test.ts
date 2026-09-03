@@ -89,7 +89,7 @@ function campaign(
       deployables,
       hives: [],
     },
-    roster: { squads: [], mechs: [], savedLoadouts: [] },
+    roster: { squads: [], mechs: [], savedLoadouts: [], graveyard: [] },
     economy: { credits, ledger: [] },
   };
 }

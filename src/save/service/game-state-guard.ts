@@ -14,7 +14,7 @@ import type { GameState } from "../model/game-state";
  * ```
  *   { meta: { seed, rng, ids, createdAt },
  *     overworld: { day, map, ... },
- *     roster: { squads[], mechs[], savedLoadouts[] },
+ *     roster: { squads[], mechs[], savedLoadouts[], graveyard[] },
  *     economy: { credits, ledger[] } }
  * ```
  */
@@ -36,6 +36,7 @@ export function isGameStateShape(value: unknown): value is GameState {
     Array.isArray(roster.squads) &&
     Array.isArray(roster.mechs) &&
     Array.isArray(roster.savedLoadouts) &&
+    Array.isArray(roster.graveyard) &&
     isRecord(economy) &&
     typeof economy.credits === "number" &&
     Array.isArray(economy.ledger)

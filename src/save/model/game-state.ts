@@ -12,8 +12,10 @@ import type { RosterState } from "../../roster/model/roster-state";
  *
  * - `1`: the M1 slices (#54). No earlier save existed to migrate from.
  * - `2`: `overworld.spreadCooldowns` (#58).
+ * - `3`: `overworld.map.cities[].scale` (#61).
+ * - `4`: `roster.graveyard` (#64).
  */
-export const GAME_STATE_SCHEMA_VERSION = 3;
+export const GAME_STATE_SCHEMA_VERSION = 4;
 
 /**
  * Bookkeeping that every save needs regardless of gameplay content.
@@ -36,7 +38,7 @@ export interface GameMeta {
  *   GameState
  *   ├── meta            seed, rng, ids, createdAt
  *   ├── overworld       day, earth map, threat, missions, events, deployables
- *   ├── roster          squads, mechs, saved loadouts
+ *   ├── roster          squads, mechs, saved loadouts, graveyard
  *   ├── economy         credits, ledger
  *   └── activeMission?  (M2) tactical state while a mission is live
  * ```
@@ -50,7 +52,7 @@ export interface GameState {
   readonly meta: GameMeta;
   /** Earth, time, threat, missions, events and deployables (GDD §5). */
   readonly overworld: OverworldState;
-  /** Squads, mechs and saved loadouts (GDD §5.7, §5.8). */
+  /** Squads, mechs, saved loadouts and the graveyard (GDD §5.7, §5.8). */
   readonly roster: RosterState;
   /** Credits and the transaction ledger (GDD §5.5). */
   readonly economy: EconomyState;

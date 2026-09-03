@@ -58,6 +58,7 @@ export function createInitialRosterState(
     squads,
     mechs,
     savedLoadouts: uniqueByName(spec.mechs.map((mech) => mech.loadout)),
+    graveyard: [],
   };
 }
 

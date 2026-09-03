@@ -1,10 +1,10 @@
 import type { DomainEvent } from "../../core/model/domain-event";
 import type { EconomyEvent } from "../../economy/model/economy-event";
 import type { EconomyState } from "../../economy/model/economy-state";
-import type { Mech } from "./mech";
+import type { Mech, MechId } from "./mech";
 import type { MechLoadout } from "./mech-loadout";
 import type { MechStatSheet } from "./mech-stat-sheet";
-import type { RosterState } from "./roster-state";
+import type { GraveyardEntry, RosterState } from "./roster-state";
 import type { Squad, SquadId } from "./squad";
 
 // ===========================================
@@ -108,6 +108,94 @@ export type LoadoutDeletedEvent = DomainEvent<
 >;
 
 // ===========================================
+// Unit damaged
+// ===========================================
+
+/** Event type emitted for every squad or mech that came back hurt. */
+export const UNIT_DAMAGED = "roster:unit-damaged";
+
+/** What presentation needs to animate a casualty or damage bar. */
+export interface UnitDamagedPayload {
+  readonly kind: "squad" | "mech";
+  /** The squad or mech id. */
+  readonly unitId: string;
+  /** Squad strength or mech damage before. */
+  readonly from: number;
+  /** Squad strength or mech damage after. Never equal to `from`. */
+  readonly to: number;
+}
+
+/** A squad lost soldiers or a mech took damage and survived. */
+export type UnitDamagedEvent = DomainEvent<
+  typeof UNIT_DAMAGED,
+  UnitDamagedPayload
+>;
+
+// ===========================================
+// Squad wiped
+// ===========================================
+
+/** Event type emitted when a squad is lost for good. */
+export const SQUAD_WIPED = "roster:squad-wiped";
+
+/** What presentation needs to memorialise the squad. */
+export interface SquadWipedPayload {
+  /** The squad as it was before the mission. */
+  readonly squad: Squad;
+  readonly grave: GraveyardEntry;
+}
+
+/** A squad's strength reached zero; it is gone (GDD §5.7). */
+export type SquadWipedEvent = DomainEvent<
+  typeof SQUAD_WIPED,
+  SquadWipedPayload
+>;
+
+// ===========================================
+// Mech destroyed
+// ===========================================
+
+/** Event type emitted when a mech is destroyed, parts and all. */
+export const MECH_DESTROYED = "roster:mech-destroyed";
+
+/** What presentation needs to memorialise the mech. */
+export interface MechDestroyedPayload {
+  /** The mech as it was before the mission. */
+  readonly mech: Mech;
+  readonly grave: GraveyardEntry;
+}
+
+/** A mech reached maximum damage; it and its parts are gone (GDD §5.7). */
+export type MechDestroyedEvent = DomainEvent<
+  typeof MECH_DESTROYED,
+  MechDestroyedPayload
+>;
+
+// ===========================================
+// Mech repaired
+// ===========================================
+
+/** Event type emitted when a mech's damage is paid off. */
+export const MECH_REPAIRED = "roster:mech-repaired";
+
+/** What presentation needs to animate the repair. */
+export interface MechRepairedPayload {
+  readonly mechId: MechId;
+  /** Damage before; always positive. */
+  readonly from: number;
+  /** Damage after; always `0`. */
+  readonly to: number;
+  /** Credits paid. */
+  readonly cost: number;
+}
+
+/** A mech was fully repaired. */
+export type MechRepairedEvent = DomainEvent<
+  typeof MECH_REPAIRED,
+  MechRepairedPayload
+>;
+
+// ===========================================
 // Union and applied shape
 // ===========================================
 
@@ -117,7 +205,11 @@ export type RosterEvent =
   | SquadReinforcedEvent
   | MechBuiltEvent
   | LoadoutSavedEvent
-  | LoadoutDeletedEvent;
+  | LoadoutDeletedEvent
+  | UnitDamagedEvent
+  | SquadWipedEvent
+  | MechDestroyedEvent
+  | MechRepairedEvent;
 
 /**
  * What a roster command returns: the next roster and economy slices plus

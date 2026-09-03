@@ -80,7 +80,7 @@ function campaign(
       hives: options.hives ? [{ id: "hive-1", regionId: "r" }] : [],
       ...(options.outcome === undefined ? {} : { outcome: options.outcome }),
     },
-    roster: { squads: [], mechs: [], savedLoadouts: [] },
+    roster: { squads: [], mechs: [], savedLoadouts: [], graveyard: [] },
     economy: { credits: 100, ledger: options.ledger ?? [] },
   };
 }

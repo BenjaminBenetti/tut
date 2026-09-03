@@ -76,6 +76,26 @@ const ADD_CITY_SCALE: Migration = {
   },
 };
 
+/**
+ * v3 → v4 (#64): the roster slice gains `graveyard`, the squads and
+ * mechs lost in missions. No mission had been resolved against a v3
+ * save, so it starts empty. A roster that already carries one is left
+ * alone.
+ */
+const ADD_GRAVEYARD: Migration = {
+  from: 3,
+  to: 4,
+  apply(state) {
+    if (!isRecord(state) || !isRecord(state.roster)) {
+      throw new Error("v3 state has no roster slice");
+    }
+    if (state.roster.graveyard !== undefined) {
+      return state;
+    }
+    return { ...state, roster: { ...state.roster, graveyard: [] } };
+  },
+};
+
 // ===========================================
 // Chain
 // ===========================================
@@ -88,4 +108,5 @@ const ADD_CITY_SCALE: Migration = {
 export const GAME_STATE_MIGRATIONS: readonly Migration[] = [
   ADD_SPREAD_COOLDOWNS,
   ADD_CITY_SCALE,
+  ADD_GRAVEYARD,
 ];

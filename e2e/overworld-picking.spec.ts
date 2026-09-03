@@ -44,25 +44,25 @@ function inside(point: Point, box: Box): boolean {
   );
 }
 
-/** True when the point is inside the viewport and not covered by the overworld panel. */
+/** True when the point is inside the viewport and not covered by any occluder. */
 function isClickable(
   position: Point,
   viewport: Box,
-  panel: Box | null,
+  occluders: readonly Box[],
 ): boolean {
   if (!inside(position, viewport)) {
     return false;
   }
-  return panel === null || !inside(position, panel);
+  return occluders.every((box) => !inside(position, box));
 }
 
 /**
  * Every city in the shipped Earth map is pickable with a real pointer
  * click at its projected marker position, and the selection is mirrored
  * to `body[data-selected-city]` and the panel's `#selected-city` label.
- * Cities hidden under the overworld panel are skipped, but the test
- * insists that almost all of them were actually exercised so a layout
- * change cannot hollow it out silently.
+ * Cities hidden under the top bar or the side panel are skipped, but the
+ * test insists that almost all of them were actually exercised so a
+ * layout change cannot hollow it out silently.
  */
 test("every city marker picks itself with a pointer click", async ({
   page,
@@ -90,15 +90,19 @@ test("every city marker picks itself with a pointer click", async ({
     throw new Error("Test needs a fixed viewport");
   }
   const viewport: Box = { x: 0, y: 0, ...size };
-  const panel = await page
-    .locator('section[data-screen="overworld"]')
-    .boundingBox();
+  const occluders: Box[] = [];
+  for (const selector of ["#top-bar", "#side-panel"]) {
+    const box = await page.locator(selector).boundingBox();
+    if (box) {
+      occluders.push(box);
+    }
+  }
 
   const skipped: string[] = [];
   const misses: string[] = [];
   for (const city of EARTH_MAP.cities) {
     const position = await markerPosition(page, city.id);
-    if (!position || !isClickable(position, viewport, panel)) {
+    if (!position || !isClickable(position, viewport, occluders)) {
       skipped.push(city.id);
       continue;
     }

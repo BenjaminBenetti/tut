@@ -41,6 +41,8 @@ export interface SquadCasualties {
   readonly squadId: SquadId;
   /** Soldiers lost, `0` to the squad's strength at launch. */
   readonly losses: number;
+  /** Kills credited to the squad (#64); absent means none. */
+  readonly kills?: number;
 }
 
 /** Damage one deployed mech took. */
@@ -48,6 +50,8 @@ export interface MechDamageReport {
   readonly mechId: MechId;
   /** Damage added, `>= 0`, on the mech's `0..MECH_MAX_DAMAGE` scale. */
   readonly damage: number;
+  /** Kills credited to the mech (#64); absent means none. */
+  readonly kills?: number;
 }
 
 // ===========================================

@@ -42,7 +42,7 @@ test("menu → new game → overworld → reload → continue → export → imp
   await expect(seedField).toHaveText("12345");
 
   // Export dumps the autosave as JSON; Import starts a campaign from it.
-  await page.locator('[data-action="back-to-menu"]').click();
+  await page.locator('[data-action="main-menu"]').click();
   await expect(body).toHaveAttribute("data-screen", "main-menu");
   await page.locator('[data-action="export"]').click();
   const saveJson = page.locator('[data-field="save-json"]');

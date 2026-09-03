@@ -125,9 +125,6 @@ export class ActionBarView {
       if (action === "reload") {
         button.textContent = model.reloadLabel ?? "Reload";
       }
-      if (action === "reload") {
-        button.textContent = model.reloadLabel ?? "Reload";
-      }
     }
   }
 

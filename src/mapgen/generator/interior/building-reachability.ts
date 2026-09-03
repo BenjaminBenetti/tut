@@ -11,9 +11,11 @@ import type { TileCoord } from "../../model/tile-coord";
 /**
  * Infantry BFS over one building's draft tiles up to `maxLevel`: same-
  * level steps through edges without a solid or window wall, plus the
- * given connectors. Returns the tiles it could not reach from `start`.
- * The interior pass uses it to accept or reject a stair placement before
- * the map exists; the validator repeats the check on the frozen map.
+ * given connectors. Tiles holding a prop are impassable and are not
+ * expected to be reached. Returns the tiles it could not reach from
+ * `start`. The interior and prop passes use it to accept or reject a
+ * placement before the map exists; the validator repeats the check on
+ * the frozen map.
  */
 export function unreachableInteriorTiles(
   draft: MapDraft,
@@ -24,7 +26,7 @@ export function unreachableInteriorTiles(
 ): DraftTile[] {
   const tiles = draft
     .tilesOfBuilding(buildingId)
-    .filter((tile) => tile.y <= maxLevel);
+    .filter((tile) => tile.y <= maxLevel && draft.propAt(tile) === undefined);
   const byKey = new Map(tiles.map((tile) => [draft.tileKey(tile), tile]));
   const links = new Map<number, number[]>();
   for (const connector of connectors) {

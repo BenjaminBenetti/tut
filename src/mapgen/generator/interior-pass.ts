@@ -179,20 +179,24 @@ function withRooms(
   return { ...floor, rooms };
 }
 
-/** Hall for the entrance room, storage in warehouses, room otherwise. */
+/**
+ * Warehouses are storage throughout; elsewhere the entrance room is the
+ * hall, a shop's other ground-floor rooms are storage, the rest are rooms.
+ */
 function roomKind(
   room: Room,
   floor: Floor,
   entrance: TileCoord,
   template: BuildingTemplate,
 ): string {
-  if (
-    floor.y === entrance.y &&
-    rectContains(room.rect, entrance.x, entrance.z)
-  ) {
+  if (template.id === "warehouse") {
+    return "storage";
+  }
+  const groundFloor = floor.y === entrance.y;
+  if (groundFloor && rectContains(room.rect, entrance.x, entrance.z)) {
     return "hall";
   }
-  return template.id === "warehouse" ? "storage" : "room";
+  return groundFloor && template.id === "shop" ? "storage" : "room";
 }
 
 /** Adds walkable roof tiles over the whole footprint. */

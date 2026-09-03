@@ -117,13 +117,13 @@ describe("InteriorPass", () => {
           }
         }
         const hall = building.floors[0]?.rooms.find((r) => r.kind === "hall");
-        expect(hall, building.id).toBeDefined();
         if (building.kind === "warehouse") {
           expect(
-            building.floors[0]?.rooms.every(
-              (r) => r.kind === "hall" || r.kind === "storage",
-            ),
+            building.floors[0]?.rooms.every((r) => r.kind === "storage"),
+            building.id,
           ).toBe(true);
+        } else {
+          expect(hall, building.id).toBeDefined();
         }
       }
     }

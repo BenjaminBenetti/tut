@@ -161,29 +161,31 @@ describe("PropPass", () => {
         const { x, z } = prop.tile;
         if (!draft.isRoad(x, z)) continue;
         street++;
-        const roadNeighbours = [
-          [1, 0],
-          [-1, 0],
-          [0, 1],
-          [0, -1],
-        ].filter(([dx, dz]) => {
-          const nx = x + (dx ?? 0);
-          const nz = z + (dz ?? 0);
-          return draft.inBounds(nx, nz) && draft.isRoad(nx, nz);
-        }).length;
-        expect(roadNeighbours, prop.id).toBe(2);
+        const roadPair = (dx: number, dz: number): boolean =>
+          draft.inBounds(x + dx, z + dz) &&
+          draft.isRoad(x + dx, z + dz) &&
+          draft.inBounds(x - dx, z - dz) &&
+          draft.isRoad(x - dx, z - dz);
+        const alongX = roadPair(1, 0);
+        const alongZ = roadPair(0, 1);
+        expect(alongX !== alongZ, `${prop.id} on a crossing or road end`).toBe(
+          true,
+        );
         const level = draft.groundLevelAt(x, z);
-        const bypass = [
-          [1, 0],
-          [-1, 0],
-          [0, 1],
-          [0, -1],
-        ].some(([dx, dz]) => {
-          const nx = x + (dx ?? 0);
-          const nz = z + (dz ?? 0);
+        const across: readonly (readonly [number, number])[] = alongX
+          ? [
+              [0, 1],
+              [0, -1],
+            ]
+          : [
+              [1, 0],
+              [-1, 0],
+            ];
+        const bypass = across.some(([dx, dz]) => {
+          const nx = x + dx;
+          const nz = z + dz;
           return (
             draft.inBounds(nx, nz) &&
-            !draft.isRoad(nx, nz) &&
             !draft.isCovered(nx, nz) &&
             draft.groundSurfaceAt(nx, nz) !== SurfaceIds.WATER &&
             draft.groundLevelAt(nx, nz) === level &&

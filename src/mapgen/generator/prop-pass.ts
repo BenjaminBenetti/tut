@@ -22,6 +22,7 @@ import type { ColumnCoord } from "../model/road";
 import type { TileCoord } from "../model/tile-coord";
 import { isOpenGround, isRoadAt } from "../service/draft-queries";
 import { unreachableInteriorTiles } from "./interior/building-reachability";
+import type { Axis } from "./road/road-builder";
 
 // ===========================================
 // Constants
@@ -214,53 +215,85 @@ function placeStreetProps(
       break;
     }
     const coord = draft.groundCoord(column.x, column.z);
+    const axis = roadAxis(draft, column);
     if (
+      axis === undefined ||
       blocked.has(draft.tileKey(coord)) ||
       draft.propAt(coord) !== undefined ||
-      !isStraightRoad(draft, column) ||
-      !hasWayAround(draft, column) ||
+      !isStraightRoad(draft, column, axis) ||
+      !hasWayAround(draft, column, axis) ||
       hasAdjacentProp(draft, coord)
     ) {
       continue;
     }
-    const alongX =
-      isRoadAt(draft, column.x + 1, column.z) ||
-      isRoadAt(draft, column.x - 1, column.z);
-    draft.addProp(rng.pick(kinds).id, coord, alongX ? 0 : 1);
+    draft.addProp(rng.pick(kinds).id, coord, axis === "x" ? 0 : 1);
     placed++;
   }
   return placed;
 }
 
-/** Road columns on a straight stretch: exactly two road neighbours in line. */
-function isStraightRoad(draft: MapDraft, column: ColumnCoord): boolean {
+/**
+ * The one axis along which the column has road on both sides, if any.
+ * A crossing (road both ways) and a road end have none.
+ */
+function roadAxis(draft: MapDraft, column: ColumnCoord): Axis | undefined {
   const { x, z } = column;
-  const ew = isRoadAt(draft, x + 1, z) && isRoadAt(draft, x - 1, z);
-  const ns = isRoadAt(draft, x, z + 1) && isRoadAt(draft, x, z - 1);
-  const count = DIRECTIONS.filter((d) => {
-    const next = stepGridPos({ x, y: 0, z }, d);
-    return isRoadAt(draft, next.x, next.z);
-  }).length;
-  return count === 2 && (ew || ns);
+  const alongX = isRoadAt(draft, x + 1, z) && isRoadAt(draft, x - 1, z);
+  const alongZ = isRoadAt(draft, x, z + 1) && isRoadAt(draft, x, z - 1);
+  if (alongX === alongZ) {
+    return undefined;
+  }
+  return alongX ? "x" : "z";
+}
+
+/** The two columns beside the column, perpendicular to the axis. */
+function acrossNeighbours(column: ColumnCoord, axis: Axis): ColumnCoord[] {
+  const { x, z } = column;
+  return axis === "x"
+    ? [
+        { x, z: z - 1 },
+        { x, z: z + 1 },
+      ]
+    : [
+        { x: x - 1, z },
+        { x: x + 1, z },
+      ];
 }
 
 /**
- * A non-road neighbour (sidewalk or open ground) at the road's level with
- * no prop, so units can step around the clutter.
+ * Road columns on a straight stretch: any road beside the column is a
+ * parallel lane of the same stretch, never a crossing or a branching
+ * street. Holds for one-lane trails and multi-lane city streets alike.
  */
-function hasWayAround(draft: MapDraft, column: ColumnCoord): boolean {
+function isStraightRoad(
+  draft: MapDraft,
+  column: ColumnCoord,
+  axis: Axis,
+): boolean {
+  return acrossNeighbours(column, axis).every(
+    (next) =>
+      !isRoadAt(draft, next.x, next.z) || roadAxis(draft, next) === axis,
+  );
+}
+
+/**
+ * A prop-free column beside the road at the road's level (sidewalk, open
+ * ground or the other lane) so units can step around the clutter.
+ */
+function hasWayAround(
+  draft: MapDraft,
+  column: ColumnCoord,
+  axis: Axis,
+): boolean {
   const level = draft.groundLevelAt(column.x, column.z);
-  return DIRECTIONS.some((direction) => {
-    const next = stepGridPos({ ...column, y: 0 }, direction);
-    return (
+  return acrossNeighbours(column, axis).some(
+    (next) =>
       draft.inBounds(next.x, next.z) &&
-      !draft.isRoad(next.x, next.z) &&
       !draft.isCovered(next.x, next.z) &&
       draft.groundSurfaceAt(next.x, next.z) !== SurfaceIds.WATER &&
       draft.groundLevelAt(next.x, next.z) === level &&
-      draft.propAt(draft.groundCoord(next.x, next.z)) === undefined
-    );
-  });
+      draft.propAt(draft.groundCoord(next.x, next.z)) === undefined,
+  );
 }
 
 // ===========================================

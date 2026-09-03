@@ -65,6 +65,7 @@ function campaign(
         links: [["a", "b"]],
       }),
       threat: 0,
+      threatOffset: 0,
       spreadCooldowns: {},
       missions: [],
       pendingEvents: [],

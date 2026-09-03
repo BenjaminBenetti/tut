@@ -218,6 +218,7 @@ Map generation (`src/mapgen/data/surfaces.ts`, `props.ts`) emits surface ids and
 | `boulder` | `prop.boulder` | high |
 | `tree-pine` / `tree-oak` / `tree-palm` | `prop.tree-<id>` | high |
 | `cactus` | `prop.cactus` | high |
+| `table` | `prop.table` | low (interior) |
 
 Walls are `Wall` records on tile edges, not props: `building.wall`, `building.wall-window`, `building.wall-door`, `building.wall-half` by wall kind.
 

@@ -120,6 +120,7 @@ function campaign(
         links: [["hub", "far"]],
       }),
       threat: 30,
+      threatOffset: 0,
       spreadCooldowns: {},
       missions: [MISSION],
       pendingEvents: [],

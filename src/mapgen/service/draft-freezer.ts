@@ -102,6 +102,8 @@ function materialise(
       prop === undefined
         ? CoverLevel.NONE
         : registries.props.get(prop.kind).cover,
+    blocksLos:
+      prop === undefined ? false : registries.props.get(prop.kind).blocksLos,
     ...(prop === undefined ? {} : { propId: prop.id }),
     ...(ownership.buildingId === undefined
       ? {}

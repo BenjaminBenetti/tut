@@ -83,6 +83,7 @@ function campaign(
       day: 3,
       map: map(),
       threat: 10,
+      threatOffset: 0,
       spreadCooldowns: {},
       missions: [],
       pendingEvents: [],

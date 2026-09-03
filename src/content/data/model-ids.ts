@@ -59,6 +59,7 @@ export const MODEL_IDS = [
   "prop.lamp-post",
   "prop.sandbags",
   "prop.shelving",
+  "prop.table",
   "prop.tree-oak",
   "prop.tree-palm",
   "prop.tree-pine",

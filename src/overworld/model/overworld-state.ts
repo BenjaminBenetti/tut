@@ -44,6 +44,7 @@ export interface Hive {
  *   ├── day                 FIRST_DAY and counting
  *   ├── map                 regions, cities, infestation levels
  *   ├── threat              0–100, derived by computeThreat, stored by the tick
+ *   ├── threatOffset        signed, lasting shift from event choices, folded into threat
  *   ├── spreadCooldowns     days until each city may spread again
  *   ├── missions[]          offers attached to cities
  *   ├── pendingEvents[]     choices awaiting the player
@@ -65,6 +66,14 @@ export interface OverworldState {
    * presentation never recomputes it.
    */
   readonly threat: number;
+  /**
+   * Lasting shift on the global threat from event choices (#307), signed.
+   * `computeThreat` adds it after the map and time terms and before the
+   * clamp, so a paid threat reduction survives the daily recompute. The
+   * `threat` event effect moves it by however much the stored threat
+   * actually moved, so it never carries a shift the clamp swallowed.
+   */
+  readonly threatOffset: number;
   /**
    * Days until each city may spread again, keyed by city id. Cities not
    * listed are off cooldown. Advanced by the spread service.

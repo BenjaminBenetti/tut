@@ -115,6 +115,7 @@ function campaign(
         links: [["a", "b"]],
       }),
       threat,
+      threatOffset: 0,
       spreadCooldowns: {},
       missions: [],
       pendingEvents: events,
@@ -163,6 +164,7 @@ describe("resolveEvent effects", () => {
     expect(infestationOf(result.value, "a")).toBe(15);
     expect(infestationOf(result.value, "b")).toBe(0);
     expect(overworld.threat).toBe(44);
+    expect(overworld.threatOffset).toBe(4);
     expect(overworld.stipendModifiers).toEqual([{ factor: 1.5, daysLeft: 3 }]);
     expect(overworld.pendingEvents).toEqual([]);
     expect(events.map((e) => e.type)).toEqual([
@@ -191,6 +193,7 @@ describe("resolveEvent effects", () => {
     if (!result.ok) return;
     expect(infestationOf(result.value, "a")).toBe(0);
     expect(result.value.overworld.threat).toBe(100);
+    expect(result.value.overworld.threatOffset).toBe(1);
     expect(result.value.events.map((e) => e.payload)).toEqual([
       { cityId: "a", from: 30, to: 0 },
       { from: 99, to: 100 },

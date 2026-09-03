@@ -281,6 +281,7 @@ function threatStep<TState extends CampaignState>(
         overworld.map,
         ctx.day,
         applyDebugThreat(deps.threatTuning, state.meta.debug),
+        overworld.threatOffset,
       );
       if (threat === overworld.threat) {
         return { state, events: [] };

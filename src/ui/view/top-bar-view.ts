@@ -125,7 +125,8 @@ export class TopBarView {
   /**
    * Refreshes the values from `state`. With no campaign the readouts show
    * dashes and Advance Day is disabled; with an ended campaign the outcome
-   * badge appears and Advance Day is disabled.
+   * badge appears and Advance Day is disabled; while an event waits for
+   * an answer Advance Day is disabled too (GDD §5.4).
    */
   update(state: GameState | undefined): void {
     if (!this.day || !this.credits || !this.threat || !this.threatBadge) {
@@ -150,7 +151,11 @@ export class TopBarView {
     this.setText(this.threatBadge, tone);
     this.threatBadge.dataset.tone = tone;
     this.setOutcome(overworld.outcome?.kind);
-    this.setAdvanceEnabled(overworld.outcome === undefined);
+    const eventPending = overworld.pendingEvents.length > 0;
+    this.setAdvanceEnabled(overworld.outcome === undefined && !eventPending);
+    if (this.advance) {
+      this.advance.title = eventPending ? "Answer the pending event first" : "";
+    }
   }
 
   /** Shows a one-line message in the bar (a rejected command, for instance). */

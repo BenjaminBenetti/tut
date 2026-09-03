@@ -129,6 +129,8 @@ export interface Tile {
   readonly propId?: string;
   /** Cover this tile grants to units on adjacent tiles. Denormalised from the prop. */
   readonly coverProvided: CoverLevel;
+  /** True when the occupying prop blocks line of sight. Denormalised; false without a prop. */
+  readonly blocksLos: boolean;
   /** Set on interior floor, stair and roof tiles. */
   readonly buildingId?: string;
   readonly floorIndex?: number;
@@ -352,7 +354,7 @@ map is a bug, never a runtime fallback.
 | # | Invariant |
 |---|---|
 | I1 | Every tile is in bounds and `(x,y,z)` is unique. `levels` ≥ max `y` + 1. |
-| I2 | A tile with `propId` has `pass == NONE`; its `coverProvided` equals the prop definition's cover. Every prop's tile exists and references it back. |
+| I2 | A tile with `propId` has `pass == NONE`; its `coverProvided` and `blocksLos` equal the prop definition's. A tile without a prop provides no cover and blocks no sight. Every prop's tile exists and references it back. |
 | I3 | Wall symmetry: `tile.walls[d]` equals `neighbour(d).walls[opposite(d)]` whenever the neighbour tile exists at the same `y`. |
 | I4 | Every connector references two existing tiles with the kind's `Δy` and adjacency rule; `pass` matches the kind; stairs' `from` tile has `surface 'stairs'`. |
 | I5 | Buildings: ≥ 1 floor, ≥ 1 entrance whose door wall exists; every floor tile lies inside the footprint and carries `buildingId`; every floor `i > 0` is reachable from floor 0 via the building's own connectors; interior and roof tiles are not mech-passable. |

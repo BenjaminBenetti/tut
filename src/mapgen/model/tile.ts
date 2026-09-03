@@ -33,6 +33,12 @@ export interface Tile extends TileCoord {
   readonly propId?: string;
   /** Cover this tile grants to units on adjacent tiles. Denormalised from the prop. */
   readonly coverProvided: CoverLevel;
+  /**
+   * True when what occupies the tile blocks line of sight through it.
+   * Denormalised from the prop definition; false without a prop, so a
+   * sight rule never needs the prop registry.
+   */
+  readonly blocksLos: boolean;
   /** Set on interior floor, stair and roof tiles. */
   readonly buildingId?: string;
   /** Floor number within the building, 0 for the ground floor. */

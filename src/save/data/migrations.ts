@@ -96,6 +96,25 @@ const ADD_GRAVEYARD: Migration = {
   },
 };
 
+/**
+ * v4 → v5 (#307): the overworld slice gains `threatOffset`, the lasting
+ * shift event choices leave on the global threat. No event could shift
+ * it lastingly before, so every v4 save starts at zero.
+ */
+const ADD_THREAT_OFFSET: Migration = {
+  from: 4,
+  to: 5,
+  apply(state) {
+    if (!isRecord(state) || !isRecord(state.overworld)) {
+      throw new Error("v4 state has no overworld slice");
+    }
+    return {
+      ...state,
+      overworld: { ...state.overworld, threatOffset: 0 },
+    };
+  },
+};
+
 // ===========================================
 // Chain
 // ===========================================
@@ -109,4 +128,5 @@ export const GAME_STATE_MIGRATIONS: readonly Migration[] = [
   ADD_SPREAD_COOLDOWNS,
   ADD_CITY_SCALE,
   ADD_GRAVEYARD,
+  ADD_THREAT_OFFSET,
 ];

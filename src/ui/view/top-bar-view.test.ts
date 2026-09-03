@@ -157,4 +157,29 @@ describe("TopBarView", () => {
     button("roster").click();
     expect(onRoster).toHaveBeenCalledTimes(1);
   });
+
+  it("disables Advance Day while an event waits for an answer", () => {
+    const view = new TopBarView({ onAdvanceDay: vi.fn(), onMainMenu: vi.fn() });
+    view.mount(root);
+    const base = newGame();
+    view.update({
+      ...base,
+      overworld: {
+        ...base.overworld,
+        pendingEvents: [
+          {
+            id: "event-1",
+            typeId: "funding-review",
+            createdDay: 1,
+            expiresDay: 6,
+          },
+        ],
+      },
+    });
+    expect(button("advance-day").disabled).toBe(true);
+    expect(button("advance-day").title).toContain("event");
+    view.update(base);
+    expect(button("advance-day").disabled).toBe(false);
+    expect(button("advance-day").title).toBe("");
+  });
 });

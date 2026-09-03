@@ -65,6 +65,7 @@ export function createInitialOverworldState(
     day: FIRST_DAY,
     map: seeded,
     threat: computeThreat(seeded, FIRST_DAY, deps.threatTuning),
+    threatOffset: 0,
     spreadCooldowns: {},
     missions: [],
     pendingEvents: [],

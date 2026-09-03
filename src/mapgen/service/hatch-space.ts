@@ -1,8 +1,9 @@
 import type { UnitClass } from "../model/pass-mask";
 import type { Tile } from "../model/tile";
 import type { TileCoord } from "../model/tile-coord";
-import type { ReachabilityService } from "./reachability-service";
-import type { TileIndex } from "./tile-index";
+import type { TacticalMap } from "../model/tactical-map";
+import { ReachabilityService } from "./reachability-service";
+import { TileIndex } from "./tile-index";
 
 // ===========================================
 // Types
@@ -19,10 +20,19 @@ export interface ReachabilitySnapshot {
 // ===========================================
 
 /**
- * How many tiles the class can reach from `origin` (itself included)
- * without stepping further than `radius` columns from it, under the §5
- * rule: the room a spawner has to hatch into. Zero when the origin has
- * no tile or the class cannot stand there.
+ * Builds the snapshot a frozen map needs for traversal queries: one
+ * index and one reachability service, shared by every call.
+ */
+export function snapshotMap(map: TacticalMap): ReachabilitySnapshot {
+  const index = new TileIndex(map);
+  return { index, reach: new ReachabilityService(index, map.connectors) };
+}
+
+/**
+ * The tiles the class can reach from `origin` (itself first, then in
+ * order of discovery) without stepping further than `radius` columns
+ * from it, under the §5 rule: where a spawner's hatchlings can stand.
+ * Empty when the origin has no tile or the class cannot stand there.
  *
  * ```
  *   . # . . .      # wall  o counted  x beyond the radius
@@ -31,16 +41,16 @@ export interface ReachabilitySnapshot {
  *   o # o o x
  * ```
  */
-export function hatchSpace(
+export function hatchTiles(
   snapshot: ReachabilitySnapshot,
   origin: TileCoord,
   radius: number,
   unitClass: UnitClass,
-): number {
+): Tile[] {
   const { index, reach } = snapshot;
   const start = index.getAt(origin);
   if (start === undefined || (start.pass & unitClass) === 0) {
-    return 0;
+    return [];
   }
   const seen = new Set<number>([index.keyOf(start)]);
   const queue: Tile[] = [start];
@@ -56,5 +66,18 @@ export function hatchSpace(
       queue.push(next);
     }
   }
-  return seen.size;
+  return queue;
+}
+
+/**
+ * How many tiles `hatchTiles` finds: the room a spawner has to hatch
+ * into. Zero when the origin has no tile or the class cannot stand there.
+ */
+export function hatchSpace(
+  snapshot: ReachabilitySnapshot,
+  origin: TileCoord,
+  radius: number,
+  unitClass: UnitClass,
+): number {
+  return hatchTiles(snapshot, origin, radius, unitClass).length;
 }

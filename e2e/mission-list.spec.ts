@@ -25,7 +25,12 @@ test("a mission appears, opens a briefing, routes to deployment, launches and re
 
   const rows = page.locator('[data-role="mission-list"] [data-mission-id]');
   const advance = page.locator('[data-action="advance-day"]');
+  const choice = page.locator('[data-role="event-dialog"] [data-choice-id]');
   for (let day = 0; day < MAX_DAYS && (await rows.count()) === 0; day++) {
+    // An event blocks Advance Day until answered; take the default option.
+    if (await choice.first().isVisible()) {
+      await choice.first().click();
+    }
     await advance.click();
   }
   await expect(rows.first()).toBeVisible();

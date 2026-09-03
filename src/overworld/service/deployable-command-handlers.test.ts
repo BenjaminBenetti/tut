@@ -57,7 +57,7 @@ const BASE: CampaignState = {
     ],
     hives: [],
   },
-  roster: { squads: [], mechs: [], savedLoadouts: [] },
+  roster: { squads: [], mechs: [], savedLoadouts: [], graveyard: [] },
   economy: { credits: 10_000, ledger: [] },
 };
 

@@ -1,7 +1,7 @@
-import type { DomainEvent } from "../../core/model/domain-event";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { MissionId } from "../../overworld/model/mission";
+import type { TacticalEvent } from "./tactical-event";
 import type { Unit } from "./unit";
 import type { UnitTemplate, UnitTemplateId } from "./unit-template";
 
@@ -113,6 +113,6 @@ export interface TacticalState {
   readonly edgeSpawn: EdgeSpawnSchedule;
   /** Tiles of the extraction hook. */
   readonly extraction: readonly TileCoord[];
-  /** Domain events emitted so far, oldest first. */
-  readonly log: readonly DomainEvent[];
+  /** Tactical events emitted so far, oldest first; the debrief and replays read it. */
+  readonly log: readonly TacticalEvent[];
 }

@@ -4,6 +4,7 @@
 
 /** Why a tactical command or mission start was rejected. Serializable. */
 export type TacticalError =
+  | { readonly kind: "no-active-mission" }
   | { readonly kind: "mission-active"; readonly missionId: string }
   | { readonly kind: "mission-not-found"; readonly missionId: string }
   | { readonly kind: "empty-deployment" }
@@ -19,6 +20,8 @@ export type TacticalError =
 /** Human-readable text for a tactical error, for the status line and logs. */
 export function describeTacticalError(error: TacticalError): string {
   switch (error.kind) {
+    case "no-active-mission":
+      return "No mission is in progress";
     case "mission-active":
       return `Mission "${error.missionId}" is already in progress`;
     case "mission-not-found":

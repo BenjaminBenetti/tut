@@ -20,6 +20,7 @@ import { OverworldScreen } from "./overworld-screen";
 type NavigateMock = Mock<(id: ScreenId) => void>;
 
 const sessionWith = (state: GameState | undefined): GameSession => ({
+  store: undefined,
   state,
   start: () => undefined,
   replace: () => undefined,

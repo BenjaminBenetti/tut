@@ -2,7 +2,6 @@ import "../../ui/style/theme.css";
 import "../../ui/style/screens.css";
 
 import { randomSeed } from "../../core/service/random-seed";
-import { ECONOMY_TUNING } from "../../economy/data/economy-tuning";
 import { CameraInputController } from "../../graphics/controller/camera-input-controller";
 import { MapPickingController } from "../../graphics/controller/map-picking-controller";
 import { TEXTURE_MANIFEST } from "../../graphics/data/texture-manifest";
@@ -14,17 +13,9 @@ import { OverworldSceneBuilder } from "../../graphics/service/overworld-scene-bu
 import { SceneService } from "../../graphics/service/scene-service";
 import { SvgGlyphRasteriser } from "../../graphics/service/svg-glyph-rasteriser";
 import { EARTH_MAP } from "../../overworld/data/earth-map";
-import { NEW_GAME_TUNING } from "../../overworld/data/new-game-tuning";
-import { THREAT_TUNING } from "../../overworld/data/threat-tuning";
 import { getCity } from "../../overworld/service/earth-map-query-service";
-import { SQUAD_TYPES } from "../../roster/data/squad-types";
-import { STARTER_ROSTER } from "../../roster/data/starter-roster";
-import { DataSquadTypeCatalogue } from "../../roster/repository/squad-type-catalogue";
 import type { SaveClock } from "../../save/model/save-clock";
 import { WebStorageKeyValueStore } from "../../save/repository/web-storage-key-value-store";
-import { createGameSaveService } from "../../save/service/game-save-service";
-import type { NewGameDeps } from "../../save/service/new-game-service";
-import { createNewGame } from "../../save/service/new-game-service";
 import { iconHref } from "../../ui/data/icon-manifest";
 import type { ScreenId } from "../../ui/model/screen";
 import { MainMenuScreen } from "../../ui/screen/main-menu-screen";
@@ -32,7 +23,7 @@ import { OverworldScreen } from "../../ui/screen/overworld-screen";
 import type { TutTestHooks } from "../model/test-hooks";
 import type { ScreenFactory } from "./dom-screen-router";
 import { DomScreenRouter } from "./dom-screen-router";
-import { InMemoryGameSession } from "./game-session";
+import { composeGame } from "./game-composition";
 
 // ===========================================
 // Constants
@@ -49,18 +40,19 @@ const SELECTED_CITY_ID = "selected-city";
 // ===========================================
 
 /**
- * The composition root. Builds every long-lived object once, wires them
- * together, shows the main menu, then loads the overworld art and starts
- * the map scene, marking the document ready after the first rendered
- * frame (the hook end-to-end tests wait on). Art is awaited before the
- * ready flag so a broken asset path surfaces in the smoke test.
+ * The presentation composition root. Gets the simulation-facing services
+ * from `composeGame`, builds the DOM router and screens around them,
+ * shows the main menu, then loads the overworld art and starts the map
+ * scene, marking the document ready after the first rendered frame (the
+ * hook end-to-end tests wait on). Art is awaited before the ready flag
+ * so a broken asset path surfaces in the smoke test.
  *
  * ```
  *   document
  *     ├── #app / #map-viewport  ◀── SceneService (overworld map, camera rig, input, picking)
  *     └── #ui                   ◀── DomScreenRouter ──▶ MainMenuScreen / OverworldScreen
- *                                        │                        ├── GameSession (live state)
- *                                        │                        └── GameSaveService ◀── localStorage
+ *                                        │                        └── composeGame(): session (GameStore),
+ *                                        │                            saves, autosave, createCampaign
  *                                        └── body[data-screen]
  * ```
  */
@@ -73,12 +65,14 @@ export async function bootstrapApp(doc: Document): Promise<void> {
   }
 
   const clock: SaveClock = { now: () => new Date().toISOString() };
-  const saves = createGameSaveService(
-    new WebStorageKeyValueStore(window.localStorage),
+  const game = composeGame({
+    storage: new WebStorageKeyValueStore(window.localStorage),
     clock,
-  );
-  const newGameDeps = composeNewGameDeps();
-  const session = new InMemoryGameSession();
+    newSeed: randomSeed,
+    onAutosaveFailure: (error) => {
+      console.error(`Autosave failed (${error.kind}): ${error.message}`);
+    },
+  });
 
   const router: DomScreenRouter = new DomScreenRouter(
     uiRoot,
@@ -88,14 +82,17 @@ export async function bootstrapApp(doc: Document): Promise<void> {
         () =>
           new MainMenuScreen({
             router,
-            session,
-            saves,
-            createCampaign: (options) => createNewGame(options, newGameDeps),
-            newSeed: randomSeed,
-            clock,
+            session: game.session,
+            saves: game.saves,
+            createCampaign: game.createCampaign,
+            newSeed: game.newSeed,
+            clock: game.clock,
           }),
       ],
-      ["overworld", () => new OverworldScreen({ router, session })],
+      [
+        "overworld",
+        () => new OverworldScreen({ router, session: game.session }),
+      ],
     ]),
   );
   router.navigate("main-menu");
@@ -172,18 +169,6 @@ async function composeScene(
     window.__tut__ = hooks;
   }
   return scene;
-}
-
-/** The shipped content and tuning a new campaign is built from. */
-function composeNewGameDeps(): NewGameDeps {
-  return {
-    map: EARTH_MAP,
-    squadTypes: new DataSquadTypeCatalogue(SQUAD_TYPES),
-    starterRoster: STARTER_ROSTER,
-    newGameTuning: NEW_GAME_TUNING,
-    threatTuning: THREAT_TUNING,
-    economyTuning: ECONOMY_TUNING,
-  };
 }
 
 /** Looks up a required mount point by id; a missing one is a page bug. */

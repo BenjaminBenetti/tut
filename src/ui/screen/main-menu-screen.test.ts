@@ -2,6 +2,7 @@
 import type { Mock } from "vitest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { hashSeed } from "../../core/service/seed-hash";
 import { SimpleEventBus } from "../../core/service/simple-event-bus";
 import { ECONOMY_TUNING } from "../../economy/data/economy-tuning";
 import { EARTH_MAP } from "../../overworld/data/earth-map";
@@ -28,6 +29,7 @@ const NOW = "2026-09-02T12:00:00.000Z";
 type NavigateMock = Mock<(id: ScreenId) => void>;
 
 class FakeSession implements GameSession {
+  readonly store = undefined;
   state: GameState | undefined;
   start(state: GameState): void {
     this.state = state;
@@ -99,61 +101,111 @@ describe("MainMenuScreen", () => {
     return element;
   };
 
-  it("renders both actions with Continue disabled when there is no autosave", () => {
+  const field = <T extends HTMLElement>(name: string): T => {
+    const element = root.querySelector<T>(`[data-field="${name}"]`);
+    if (!element) {
+      throw new Error(`Missing field ${name}`);
+    }
+    return element;
+  };
+
+  const status = (): HTMLElement | null =>
+    root.querySelector<HTMLElement>('[data-role="status"]');
+
+  const withAutosave = (seed: number) => {
+    const store = new MemoryKeyValueStore();
+    const existing = createCampaign({ seed, createdAt: NOW });
+    savesOver(store).saveGame(AUTOSAVE_SLOT_ID, existing);
+    return { store, existing };
+  };
+
+  it("renders the controls with Continue and Export disabled when there is no autosave", () => {
     mountWith();
     expect(root.querySelector('[data-screen="main-menu"]')).not.toBeNull();
     expect(button("new-game").disabled).toBe(false);
     expect(button("continue").disabled).toBe(true);
+    expect(button("export").disabled).toBe(true);
+    expect(button("import").disabled).toBe(false);
   });
 
-  it("New game starts a session from the injected seed and clock, autosaves and navigates", () => {
-    const { navigate, session, saves } = mountWith();
-    button("new-game").click();
+  it("pre-fills the seed box from the injected seed source", () => {
+    mountWith();
+    expect(field<HTMLInputElement>("seed").value).toBe("42");
+  });
 
+  it("New game starts a session from the seed box and clock, then navigates", () => {
+    const { navigate, session } = mountWith();
+    button("new-game").click();
     expect(session.state?.meta.seed).toBe(42);
     expect(session.state?.meta.createdAt).toBe(NOW);
     expect(session.state?.roster.squads.length).toBeGreaterThan(0);
-    const saved = saves.loadGame(AUTOSAVE_SLOT_ID);
-    expect(saved.ok && saved.value).toEqual(session.state);
     expect(navigate).toHaveBeenCalledWith("overworld");
   });
 
-  it("Continue is enabled with an autosave and loads it into the session", () => {
-    const store = new MemoryKeyValueStore();
-    const existing = createCampaign({ seed: 99, createdAt: NOW });
-    savesOver(store).saveGame(AUTOSAVE_SLOT_ID, existing);
+  it("New game honours a typed numeric seed and hashes a text seed", () => {
+    const first = mountWith();
+    field<HTMLInputElement>("seed").value = "12345";
+    button("new-game").click();
+    expect(first.session.state?.meta.seed).toBe(12345);
 
+    first.screen.unmount();
+    const second = mountWith();
+    field<HTMLInputElement>("seed").value = "terra-01";
+    button("new-game").click();
+    expect(second.session.state?.meta.seed).toBe(hashSeed("terra-01"));
+  });
+
+  it("does not write a save itself; the session observer owns autosave", () => {
+    const { saves } = mountWith();
+    button("new-game").click();
+    expect(saves.listSlots()).toEqual([]);
+  });
+
+  it("Continue is enabled with an autosave and loads it into the session", () => {
+    const { store, existing } = withAutosave(99);
     const { navigate, session } = mountWith(store);
     expect(button("continue").disabled).toBe(false);
     button("continue").click();
-
     expect(session.state).toEqual(existing);
     expect(navigate).toHaveBeenCalledWith("overworld");
   });
 
-  it("reports a failed autosave on the panel but still opens the overworld", () => {
-    const failing: KeyValueStore = {
-      get: () => undefined,
-      set: () => {
-        throw new Error("quota exceeded");
-      },
-      remove: () => undefined,
-      keys: () => [],
-    };
-    const { navigate } = mountWith(failing);
-    button("new-game").click();
+  it("Export writes the autosave as importable JSON into the text box", () => {
+    const { store, existing } = withAutosave(5);
+    const { saves } = mountWith(store);
+    button("export").click();
+    const text = field<HTMLTextAreaElement>("save-json").value;
+    expect(JSON.parse(text)).toMatchObject({ savedAt: NOW });
+    const imported = saves.importGame(text);
+    expect(imported.ok && imported.value).toEqual(existing);
+    expect(status()?.hidden).toBe(false);
+  });
 
-    const status = root.querySelector<HTMLElement>('[data-role="status"]');
-    expect(status?.hidden).toBe(false);
-    expect(status?.textContent).toContain("quota exceeded");
+  it("Import starts a session from pasted JSON and navigates", () => {
+    const { existing } = withAutosave(8);
+    const { navigate, session, saves } = mountWith();
+    field<HTMLTextAreaElement>("save-json").value = saves.exportGame(existing);
+    button("import").click();
+    expect(session.state).toEqual(existing);
     expect(navigate).toHaveBeenCalledWith("overworld");
+  });
+
+  it("Import rejects an empty or malformed document without leaving the menu", () => {
+    const { navigate, session } = mountWith();
+    button("import").click();
+    expect(status()?.textContent).toContain("Paste an exported save");
+
+    field<HTMLTextAreaElement>("save-json").value = '{"not":"a save"}';
+    button("import").click();
+    expect(status()?.textContent).toContain("Could not import save");
+    expect(session.state).toBeUndefined();
+    expect(navigate).not.toHaveBeenCalled();
   });
 
   it("unmount removes the panel and its listeners", () => {
     const { navigate, screen } = mountWith();
     const newGame = button("new-game");
     screen.unmount();
-
     expect(root.children).toHaveLength(0);
     newGame.click();
     expect(navigate).not.toHaveBeenCalled();

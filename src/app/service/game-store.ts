@@ -10,7 +10,7 @@ import type {
   StateSource,
   StoreChange,
   StoreListener,
-} from "../model/state-store";
+} from "../../ui/model/state-store";
 
 /**
  * Holds the current game state and is the one place presentation changes

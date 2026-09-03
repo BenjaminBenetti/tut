@@ -6,7 +6,7 @@ import type { CommandProcessor } from "../../core/model/command-processor";
 import type { Applied, DomainEvent } from "../../core/model/domain-event";
 import type { Result } from "../../core/model/result";
 import { err, ok } from "../../core/model/result";
-import type { CommandFailure, StoreChange } from "../model/state-store";
+import type { CommandFailure, StoreChange } from "../../ui/model/state-store";
 import { GameStore } from "./game-store";
 
 // ===========================================

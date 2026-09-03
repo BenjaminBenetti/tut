@@ -265,7 +265,8 @@ export interface PlacementHooks {
 ```
 
 The four groups are kept because tactical and UI address them by role. Extensibility lives in `kind`
-plus `meta` (e.g. egg spawner `{ hatchRadius: 3 }`), and in the pipeline's hook-placer registry (§6.4).
+plus `meta` (e.g. egg spawner `{ hatchRadius: 3 }`, with at least six infantry-reachable tiles within
+that radius guaranteed by the placer), and in the pipeline's hook-placer registry (§7.4).
 
 ### 4.7 Root type and recipe
 
@@ -448,13 +449,13 @@ RNG fork, records diagnostics, then runs `validateTacticalMap`.
 |---|---|---|---|---|
 | 1 | `terrain` | – | `heightmap` | Value noise (permutation table seeded from the pass RNG) quantised to levels using the biome's amplitude; assigns ground surfaces from the biome palette. |
 | 2 | `water` | `heightmap` | `water` | Coastal biome only: carves a shoreline along one map edge, tiles become `water` (impassable). No-op elsewhere. |
-| 3 | `roads` | `heightmap`,`water` | `roads` | Road network by settlement scale (rural: one meandering road; town: main street + side streets; city: grid + alleys). Flattens terrain along roads. |
+| 3 | `roads` | `heightmap`,`water` | `roads` | Road network by settlement scale (rural: one meandering trail; town: main street + side streets; city: a grid of `roadWidth`-lane streets). Levels each road; a flat-graded network (cities) also grades the whole plat it encloses to one level, so a city's verticality comes from its buildings. |
 | 4 | `lots` | `roads` | `lots` | Parcels land adjacent to roads into rectangular lots sized by settlement scale; flattens each lot to one level. |
 | 5a | `buildings` | `lots` | `buildings` | Picks a building template per lot (biome + settlement weights), emits floors, exterior walls, doors and windows; guarantees a multi-storey building where the settlement allows one. |
 | 5b | `interiors` | `buildings` | `interiors` | Bisects floors into rooms with a door per cut, places stairs (verified to keep the building connected), roof tiles and exterior ladders. |
-| 6 | `props` | `interiors` | `props` | Vegetation and clutter from the biome's prop table; street props on roads; yard clutter beside buildings; interior crates in storage rooms. Never blocks doors or connector ends. |
+| 6 | `props` | `interiors` | `props` | Vegetation from the biome's prop table (kinds with a `cluster` range grow copses and boulder fields at the same expected density); street props on straight, bypassable road columns of any lane count; yard clutter beside buildings; every room furnished from its kind's `RoomFurnishing` entry, each placement verified not to cut the building off. Never blocks doors or connector ends. |
 | 7 | `ramps` | `props` | `ramps` | Ensures ground-level connectivity: BFS over ground columns; where a 1-level step separates components, emits ramps; ≥ 2-level steps stay cliffs (routes go around). |
-| 8 | `hooks` | `ramps` | `hooks` | For each `HookRequirement`, resolves a `HookPlacer` from the registry and runs it (§7.4). |
+| 8 | `hooks` | `ramps` | `hooks` | For each `HookRequirement`, resolves a `HookPlacer` from the registry and runs it (§7.4). Placers share one frozen snapshot of the draft to prefer reachable tiles; egg spawners also keep at least six infantry-reachable tiles within their hatch radius. |
 | 9 | `connectivity` | `hooks` | `connected` | Checks I7. Repairs along the route needing the fewest changes (remove a blocking prop, open a door in a building wall, add a ramp across a one-level step); relocates the hook only when no repairable route exists. Logs every repair to diagnostics so the preview shows them. |
 | 10 | freeze + validate | `connected` | – | Not a pass: `generateTacticalMap` denormalises `pass` and `coverProvided`, computes `levels`, freezes the draft into `TacticalMap` and validates (a `GenerationPass` cannot return a map). |
 
@@ -471,7 +472,9 @@ export interface MapGenRegistries {
   readonly props: Registry<PropDefinition>;
   readonly biomes: Registry<BiomeDefinition>;
   readonly settlements: Registry<SettlementDefinition>;
+  readonly mapSizes: Registry<MapSizeDefinition>;
   readonly buildingTemplates: Registry<BuildingTemplate>;
+  readonly roomFurnishing: Registry<RoomFurnishing>;   // interior props per room kind
   readonly hookPlacers: Registry<HookPlacer>;
 }
 
@@ -486,16 +489,20 @@ export interface BiomeDefinition {
   readonly groundSurfaces: readonly { surface: SurfaceId; weight: number }[];
   readonly terrain: { amplitudeLevels: number; frequency: number; roughness: number };
   readonly hasShoreline: boolean;
-  readonly vegetation: readonly { prop: PropId; density: number }[];
+  readonly vegetation: readonly { prop: PropKindId; density: number; cluster?: IntRange }[];
   readonly buildingKinds: readonly { template: string; weight: number }[];
   readonly roadSurface: SurfaceId;
+  readonly trailSurface: SurfaceId;   // never the dominant ground surface
 }
 ```
 
 Adding a biome is a new member of the `BiomeId` union in `content/model` plus a new entry in
 `data/biomes.ts` (the record is keyed by the union, so the compiler demands the entry) and any new
 surfaces/props. Adding a hook kind is a new `HookPlacer` in `generator/placer/` plus an entry in
-`default-hook-placers.ts` and `data/hook-kind-defaults.ts`. Neither touches an existing pass.
+`default-hook-placers.ts` and `data/hook-kind-defaults.ts`. Adding a room kind is a member of
+`RoomKindIds` plus an entry in `data/room-furnishing.ts` (keyed by the id union, so the compiler
+demands it); adding a building kind is a template entry plus biome weights. None of these touch an
+existing pass.
 
 ### 7.5 File layout
 

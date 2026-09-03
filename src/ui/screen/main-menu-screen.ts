@@ -1,3 +1,4 @@
+import type { CampaignDebugOptions } from "../../overworld/model/campaign-debug";
 import { AUTOSAVE_SLOT_ID } from "../../save/data/save-slots";
 import type { GameState } from "../../save/model/game-state";
 import type { SaveClock } from "../../save/model/save-clock";
@@ -23,6 +24,8 @@ export interface MainMenuScreenDeps {
   readonly newSeed: () => number;
   /** Timestamp source for `createdAt`; the app passes the wall clock. */
   readonly clock: SaveClock;
+  /** Debug switches applied to every campaign started here; dev builds read them from the URL. */
+  readonly debug?: CampaignDebugOptions;
 }
 
 // ===========================================
@@ -147,6 +150,7 @@ export class MainMenuScreen implements Screen {
     const state = this.deps.createCampaign({
       seed,
       createdAt: this.deps.clock.now(),
+      ...(this.deps.debug === undefined ? {} : { debug: this.deps.debug }),
     });
     this.deps.session.start(state);
     this.deps.router.navigate("overworld");

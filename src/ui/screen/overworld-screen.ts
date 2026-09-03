@@ -58,7 +58,12 @@ export interface OverworldScreenDeps {
  *   [Build …]       ──► store.dispatch(buildDeployable(type, region))
  *   [Decommission]  ──► store.dispatch(decommissionDeployable(id))
  *                       any rejection ──► topBar.showStatus
+ *   state.overworld.outcome set ──► router.navigate("game-over")  (next microtask)
  * ```
+ *
+ * The game-over hand-off is deferred one microtask because `render` can
+ * run inside `mount`, and a router does not expect a screen to navigate
+ * away while it is still being mounted.
  */
 export class OverworldScreen implements Screen {
   // ===========================================
@@ -188,8 +193,25 @@ export class OverworldScreen implements Screen {
   // Helpers
   // ===========================================
 
-  /** Pushes the state and the current selection into every view. */
+  /** Routes to the game-over screen on the next microtask if this screen is still up and the campaign is still over. */
+  private scheduleGameOver(): void {
+    queueMicrotask(() => {
+      if (
+        this.root === undefined ||
+        this.deps.router.current !== this.id ||
+        this.deps.session.state?.overworld.outcome === undefined
+      ) {
+        return;
+      }
+      this.deps.router.navigate("game-over");
+    });
+  }
+
+  /** Pushes the state and the current selection into every view, or hands over once the campaign has ended. */
   private render(state: GameState | undefined): void {
+    if (state?.overworld.outcome !== undefined) {
+      this.scheduleGameOver();
+    }
     this.topBar.update(state);
     this.sidePanel.update(state);
     const cityId = this.deps.selection.cityId;

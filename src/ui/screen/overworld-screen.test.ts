@@ -132,11 +132,37 @@ class FakeStore implements CampaignStore {
   get listenerCount(): number {
     return this.listeners.size;
   }
+  /** Ends the campaign in defeat and notifies, as the tick would. */
+  end(): void {
+    this.state = {
+      ...this.state,
+      overworld: {
+        ...this.state.overworld,
+        outcome: {
+          kind: "defeat",
+          day: this.state.overworld.day,
+          summary: {
+            citiesLost: 0,
+            citiesInfested: 0,
+            citiesTotal: this.state.overworld.map.cities.length,
+            missionsRun: 0,
+            daysSurvived: this.state.overworld.day,
+            finalThreat: 100,
+          },
+        },
+      },
+    };
+    for (const listener of [...this.listeners]) {
+      listener({ kind: "replace", state: this.state, events: [] });
+    }
+  }
 }
 
 const sessionWith = (store: CampaignStore | undefined): GameSession => ({
   store,
-  state: store?.getState(),
+  get state() {
+    return store?.getState();
+  },
   start: () => undefined,
   replace: () => undefined,
   clear: () => undefined,
@@ -301,6 +327,36 @@ describe("OverworldScreen", () => {
     const status = root.querySelector<HTMLElement>('[data-role="status"]');
     expect(status?.hidden).toBe(false);
     expect(status?.textContent).toContain("ended");
+  });
+
+  it("hands over to the game-over screen once the outcome is set", async () => {
+    const store = new FakeStore(newGame());
+    const { router, navigate } = fakeRouter();
+    new OverworldScreen(depsFor(store, router)).mount(root);
+    store.end();
+    expect(navigate).not.toHaveBeenCalled();
+    await Promise.resolve();
+    expect(navigate).toHaveBeenCalledWith("game-over");
+  });
+
+  it("hands over on mount when the campaign has already ended", async () => {
+    const store = new FakeStore(newGame());
+    store.end();
+    const { router, navigate } = fakeRouter();
+    new OverworldScreen(depsFor(store, router)).mount(root);
+    await Promise.resolve();
+    expect(navigate).toHaveBeenCalledWith("game-over");
+  });
+
+  it("does not hand over after it was unmounted", async () => {
+    const store = new FakeStore(newGame());
+    store.end();
+    const { router, navigate } = fakeRouter();
+    const screen = new OverworldScreen(depsFor(store, router));
+    screen.mount(root);
+    screen.unmount();
+    await Promise.resolve();
+    expect(navigate).not.toHaveBeenCalled();
   });
 
   it("unmount unsubscribes from the store and removes the layout", () => {

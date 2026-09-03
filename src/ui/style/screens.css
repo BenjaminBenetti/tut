@@ -230,7 +230,7 @@
   vertical-align: middle;
 }
 
-/* ===========================================
+/* ====================================
    Mech bay screen (#80)
    =========================================== */
 #ui > .tut-mech-bay {
@@ -265,4 +265,21 @@
 }
 .tut-mech-bay__errors li {
   color: var(--ui-danger);
+}
+/* =========================================== */
+/* Game over                                   */
+/* =========================================== */
+
+.tut-game-over__title {
+  margin: var(--space-2) 0;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tut-game-over__title--danger {
+  color: var(--ui-danger);
+}
+
+.tut-game-over__title--ok {
+  color: var(--ui-ok);
 }

@@ -140,7 +140,11 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
   registerLaunchMission(dispatcher, {
     resolver: new AutoResolveMissionResolver({
       squadTypes: content.squadTypes,
-      mechRater: new LoadoutMechRater(content.parts, MECH_RATING_TUNING),
+      mechRater: new LoadoutMechRater(
+        content.parts,
+        MECH_RATING_TUNING,
+        content.upgrades,
+      ),
       tuning: AUTO_RESOLVE_TUNING,
     }),
     rosterTuning: content.rosterTuning,

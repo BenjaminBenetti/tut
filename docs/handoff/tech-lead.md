@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-03 (session 2, update 6, ~09:55 UTC). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-03 (session 3, update 1, ~13:00 UTC). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 1. Where things stand
 
@@ -23,7 +23,11 @@ Between 04:45 and 09:05 the M1 simulation loop closed and the first real screens
 
 Between 09:05 and 09:55 the M1 UI finished except #77 (event dialog), #83 (results screen body) and #84 (QA smoke): #298 game-over screens, #300 mission list with one `OverworldSelection` model, #301 + #310 mech bay, #306 + #312 events (generation, expiry, resolution), #315 deployment screen with a resolver-side `DeploymentAssessor`, #313 map markers following campaign state, and the Blender replacement track #277 → #288 (every unit model is now a scripted Blender model; the placeholder pipeline owns none). The Producer decomposed **M2 Basic Missions** into #316–#345 (five epics, 24 engineer issues); all 24 are tiered.
 
-Open when this was written: nothing. The queue is empty for the first time this session.
+**Session 3 (from 12:42 UTC).** The fleet stalled 09:58–12:41 on the shared usage limit; the queue at resume was #346 (#307 threat offset, already approved on content by session 2), #348 and #349 (handoffs). All three merged within ten minutes, then the first poll brought five more which merged inside the same tick: #353 `Tile.blocksLos` and #355 `hatchTiles` + `snapshotMap` (MapGen's two M2 API PRs), #350 `prop.table` Blender model, #351 event dialog (#77, the last child of #41), #356 MapGen handoff. `main` is cfa55cc, green, typechecks locally after every merge.
+
+**M1 epics closed by me:** #35, #36, #37, #38, #39, #40 (every child closed; checked against the open-issue set, 56 issues on one page), then #41 after #351. Only #42 remains: #83 results screen, #84 e2e smoke. **#357** (QA, `complexity:low`): after Continue from mission results the overworld renders blank because `OverworldScreen.render` clears the stale mission selection and returns before subscribing; QA's diagnosis is exact and the fix is one re-render. It blocks #84's spec, so it goes before the tag.
+
+Open when this was written: nothing.
 
 **M2 ruling (on #324, referenced from #342):** tactical commands and events augment the campaign's maps (`OverworldCommandMap` / `OverworldEventMap`) exactly as #246 set up; handlers lift `state.activeMission`, use `ctx.rng` / `ctx.ids`, and return a typed `no-active-mission` error when there is no mission. One `GameStore`, one autosave, one event stream; no `TacticalStore`. Tactical services stay pure over `TacticalState` so the headless sim (#343) drives them without a store. Hold #324, #342 and #341 to this.
 
@@ -35,7 +39,7 @@ Every engineer-facing issue carries a `complexity:*` label (checked every poll; 
 
 ## 2. Open PRs / issues I own
 
-- #336 `tuning: squad combat ratings vs auto-resolve difficulty scale` (complexity:low, after #84) filed from an observation on #315; #307 (persistent threat offset) carries my recommendation for the Director.
+- #336 `tuning: squad combat ratings vs auto-resolve difficulty scale` (complexity:low, after #84) filed from an observation on #315. #307 shipped in #346 (Director chose the persistent offset; v4 → v5 `ADD_THREAT_OFFSET`).
 - #197 (filed from #167) closed the same session via #198. #246 `refactor(overworld): derive the command and event unions from augmentable maps` (complexity:medium) is mine: four PRs in one hour needed a second merge of `main` purely for the union line; module augmentation removes the shared line.
 - Earlier follow-ups still open: #108 (promote `Registry` to `core/`, sequence after the mapgen stack), #141 (UPPER_SNAKE tuning exports).
 - Nothing else of mine is open.
@@ -67,14 +71,17 @@ Session 1 (still binding):
 
 ## 4. Next, in order
 
-1. Review loop every ~5 minutes; label any new unlabeled engineer issue first (the Producer files in batches; a sweep costs one issues call).
-2. M1 remainder: #77 event dialog, #83 results screen body, #84 QA smoke. When #84 is green, tag `v0.1.0` (`docs/process/releasing.md`); the Director may tag sooner.
+1. Review loop every ~5 minutes (session 3 runs it as a cron job in the session; a tick is one `pulls?state=open` call, one `issues?state=open` sweep, then per-PR files/diff/check-runs); label any new unlabeled engineer issue first. MapGen's self-filed issues (#352, #354) went unlabelled on purpose: the specialist works them, the Producer never routes them.
+2. M1 remainder: #83 results screen body, #357 blank overworld after Continue, #84 QA smoke. When #84 is green, tag `v0.1.0` (`docs/process/releasing.md`); the Director may tag sooner. Close #42 when #83 and #84 are in.
 3. M2 reviews: #321/#322 (models, data) will come first; then #323 (insist on the v4 → v5 migration and on `activeMission` being plain data); then #324 against the ruling above. `tactical/` must not import `graphics/`, `ui/` or `app/` (ESLint enforces it) and must not read `Math.random()` or `Date`.
 4. Composition-root churn continues to be the one hot spot (`app/service/game-composition.ts`, `app-bootstrap.ts`, `ui/model/screen.ts`, `screens.css`): tell the next author to merge `main` right before pushing; merge whatever is ready without waiting for siblings.
 5. #336 tuning after #84; #307 after the Director's decision.
 6. Add a vendor chunk for three.js in `vite.config.ts` when someone touches it; the 500 kB warning is noise.
 
 ## 5. Gotchas
+
+- **Gate script** (`review.sh BRANCH` in the scratchpad, rebuilt each session): `git fetch origin BRANCH main`, `checkout -B`, `git merge --no-edit origin/main` (abort on conflict), install only if the lockfile differs from `main`, then typecheck / lint / test to log files and print the three exit codes. The first draft passed `origin` twice to `git fetch` and failed with "couldn't find remote ref origin"; the refspec is `origin BRANCH main`.
+- **Epic closure check without per-issue calls:** one `issues?state=open&per_page=100` fetch (confirm the count is under 100), then diff each epic's child list against it; a child not in the open set is closed.
 
 - **Stacked PRs conflict when a later PR modifies a file its predecessor added.** Identical adds on both sides merge clean; an add on `main` (the squash) versus add-plus-edit on the branch is an add/add conflict and GitHub answers 405 "merge conflicts". Wait for the author's rebase; never rebase a branch you do not own.
 - **REST merge with a head guard**: `gh api -X PUT repos/O/R/pulls/N/merge -f merge_method=squash -f sha=<head>` refuses if the author pushed between your gate and the merge. Use it on every merge.

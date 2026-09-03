@@ -185,6 +185,21 @@ def socket(name: str, at: tuple[float, float, float]) -> bpy.types.Object:
     return ob
 
 
+def cut_below(ob: bpy.types.Object, z: float = 0.0) -> bpy.types.Object:
+    """Slice away everything under the plane ``z`` and cap the hole, so a sphere or
+    ellipsoid sunk into the ground still exports watertight with its base on z = 0."""
+    bpy.ops.object.select_all(action="DESELECT")
+    ob.select_set(True)
+    bpy.context.view_layer.objects.active = ob
+    bpy.ops.object.mode_set(mode="EDIT")
+    bpy.ops.mesh.select_all(action="SELECT")
+    bpy.ops.mesh.bisect(
+        plane_co=(0.0, 0.0, z), plane_no=(0.0, 0.0, 1.0), use_fill=True, clear_inner=True, clear_outer=False
+    )
+    bpy.ops.object.mode_set(mode="OBJECT")
+    return ob
+
+
 def join(objects: list[bpy.types.Object], name: str) -> bpy.types.Object:
     """Join several mesh objects into one (materials are kept per face)."""
     bpy.ops.object.select_all(action="DESELECT")

@@ -108,6 +108,76 @@ export const THUMBNAIL_MANIFEST = {
     model: "bug.egg-spawner",
     label: "Egg spawner",
   },
+  "tdf.mech.chassis.bulwark": {
+    path: "assets/ui/thumbs/tdf.mech.chassis.bulwark.png",
+    model: "tdf.mech.chassis.bulwark",
+    label: "Bulwark chassis",
+  },
+  "tdf.mech.chassis.atlas": {
+    path: "assets/ui/thumbs/tdf.mech.chassis.atlas.png",
+    model: "tdf.mech.chassis.atlas",
+    label: "Atlas chassis",
+  },
+  "tdf.mech.legs.bastion": {
+    path: "assets/ui/thumbs/tdf.mech.legs.bastion.png",
+    model: "tdf.mech.legs.bastion",
+    label: "Bastion legs",
+  },
+  "tdf.mech.legs.jumper": {
+    path: "assets/ui/thumbs/tdf.mech.legs.jumper.png",
+    model: "tdf.mech.legs.jumper",
+    label: "Jumper legs",
+  },
+  "tdf.mech.arms.manipulator-l": {
+    path: "assets/ui/thumbs/tdf.mech.arms.manipulator-l.png",
+    model: "tdf.mech.arms.manipulator-l",
+    label: "Manipulator arm (left)",
+  },
+  "tdf.mech.arms.manipulator-r": {
+    path: "assets/ui/thumbs/tdf.mech.arms.manipulator-r.png",
+    model: "tdf.mech.arms.manipulator-r",
+    label: "Manipulator arm (right)",
+  },
+  "tdf.mech.arms.brace-l": {
+    path: "assets/ui/thumbs/tdf.mech.arms.brace-l.png",
+    model: "tdf.mech.arms.brace-l",
+    label: "Brace arm (left)",
+  },
+  "tdf.mech.arms.brace-r": {
+    path: "assets/ui/thumbs/tdf.mech.arms.brace-r.png",
+    model: "tdf.mech.arms.brace-r",
+    label: "Brace arm (right)",
+  },
+  "tdf.mech.weapon-arm.flamer": {
+    path: "assets/ui/thumbs/tdf.mech.weapon-arm.flamer.png",
+    model: "tdf.mech.weapon-arm.flamer",
+    label: "Flamer (arm weapon)",
+  },
+  "tdf.mech.weapon-arm.laser": {
+    path: "assets/ui/thumbs/tdf.mech.weapon-arm.laser.png",
+    model: "tdf.mech.weapon-arm.laser",
+    label: "Pulse laser (arm weapon)",
+  },
+  "tdf.mech.weapon-arm.railgun": {
+    path: "assets/ui/thumbs/tdf.mech.weapon-arm.railgun.png",
+    model: "tdf.mech.weapon-arm.railgun",
+    label: "Railgun (arm weapon)",
+  },
+  "tdf.mech.weapon-back.mortar": {
+    path: "assets/ui/thumbs/tdf.mech.weapon-back.mortar.png",
+    model: "tdf.mech.weapon-back.mortar",
+    label: "Mortar (back weapon)",
+  },
+  "tdf.mech.weapon-back.rotary-cannon": {
+    path: "assets/ui/thumbs/tdf.mech.weapon-back.rotary-cannon.png",
+    model: "tdf.mech.weapon-back.rotary-cannon",
+    label: "Rotary cannon (back weapon)",
+  },
+  "tdf.mech.assembled-b": {
+    path: "assets/ui/thumbs/tdf.mech.assembled-b.png",
+    model: "tdf.mech.assembled-b",
+    label: "Mech B, assembled (Bulwark, Bastion, Brace, Railgun, Mortar)",
+  },
 } as const satisfies Record<string, ThumbnailAssetEntry>;
 
 /** Union of registered thumbnail ids. */

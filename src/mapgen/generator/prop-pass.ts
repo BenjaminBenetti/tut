@@ -22,16 +22,11 @@ import type { ColumnCoord } from "../model/road";
 import type { TileCoord } from "../model/tile-coord";
 import { isOpenGround, isRoadAt } from "../service/draft-queries";
 import { unreachableInteriorTiles } from "./interior/building-reachability";
+import type { Axis } from "./road/road-builder";
 
 // ===========================================
 // Constants
 // ===========================================
-
-/** Most props one storage room receives. */
-const MAX_PROPS_PER_ROOM = 3;
-
-/** Storage room tiles per interior prop. */
-const TILES_PER_INTERIOR_PROP = 5;
 
 /** Placement counts for the diagnostic note. */
 interface PlacementCounts {
@@ -49,14 +44,14 @@ interface PlacementCounts {
  * Pass 6 of the settlement archetype (ADR 0004 §4.4, §7.3). Scatters the
  * biome's vegetation on open ground, puts street props on straight road
  * columns that can be walked around, drops low-cover clutter in yards
- * beside buildings and sidewalks, and stacks crates and shelving in
- * storage rooms without cutting a building off. Never occupies an
- * entrance's threshold, a connector endpoint or a tile with a door.
+ * beside buildings and sidewalks, and furnishes every room from its
+ * kind's `RoomFurnishing` without cutting a building off. Never occupies
+ * an entrance's threshold, a connector endpoint or a tile with a door.
  *
  * ```
  *   open ground   chance(total density) ─► weighted vegetation pick
  *   road columns  streetPropDensity per 100 ─► straight, bypassable only
- *   storage rooms area / 5, at most 3 ─► verified with a building BFS
+ *   rooms         area / tilesPerProp, at most maxProps ─► verified with a building BFS
  * ```
  */
 export class PropPass implements GenerationPass {
@@ -214,53 +209,85 @@ function placeStreetProps(
       break;
     }
     const coord = draft.groundCoord(column.x, column.z);
+    const axis = roadAxis(draft, column);
     if (
+      axis === undefined ||
       blocked.has(draft.tileKey(coord)) ||
       draft.propAt(coord) !== undefined ||
-      !isStraightRoad(draft, column) ||
-      !hasWayAround(draft, column) ||
+      !isStraightRoad(draft, column, axis) ||
+      !hasWayAround(draft, column, axis) ||
       hasAdjacentProp(draft, coord)
     ) {
       continue;
     }
-    const alongX =
-      isRoadAt(draft, column.x + 1, column.z) ||
-      isRoadAt(draft, column.x - 1, column.z);
-    draft.addProp(rng.pick(kinds).id, coord, alongX ? 0 : 1);
+    draft.addProp(rng.pick(kinds).id, coord, axis === "x" ? 0 : 1);
     placed++;
   }
   return placed;
 }
 
-/** Road columns on a straight stretch: exactly two road neighbours in line. */
-function isStraightRoad(draft: MapDraft, column: ColumnCoord): boolean {
+/**
+ * The one axis along which the column has road on both sides, if any.
+ * A crossing (road both ways) and a road end have none.
+ */
+function roadAxis(draft: MapDraft, column: ColumnCoord): Axis | undefined {
   const { x, z } = column;
-  const ew = isRoadAt(draft, x + 1, z) && isRoadAt(draft, x - 1, z);
-  const ns = isRoadAt(draft, x, z + 1) && isRoadAt(draft, x, z - 1);
-  const count = DIRECTIONS.filter((d) => {
-    const next = stepGridPos({ x, y: 0, z }, d);
-    return isRoadAt(draft, next.x, next.z);
-  }).length;
-  return count === 2 && (ew || ns);
+  const alongX = isRoadAt(draft, x + 1, z) && isRoadAt(draft, x - 1, z);
+  const alongZ = isRoadAt(draft, x, z + 1) && isRoadAt(draft, x, z - 1);
+  if (alongX === alongZ) {
+    return undefined;
+  }
+  return alongX ? "x" : "z";
+}
+
+/** The two columns beside the column, perpendicular to the axis. */
+function acrossNeighbours(column: ColumnCoord, axis: Axis): ColumnCoord[] {
+  const { x, z } = column;
+  return axis === "x"
+    ? [
+        { x, z: z - 1 },
+        { x, z: z + 1 },
+      ]
+    : [
+        { x: x - 1, z },
+        { x: x + 1, z },
+      ];
 }
 
 /**
- * A non-road neighbour (sidewalk or open ground) at the road's level with
- * no prop, so units can step around the clutter.
+ * Road columns on a straight stretch: any road beside the column is a
+ * parallel lane of the same stretch, never a crossing or a branching
+ * street. Holds for one-lane trails and multi-lane city streets alike.
  */
-function hasWayAround(draft: MapDraft, column: ColumnCoord): boolean {
+function isStraightRoad(
+  draft: MapDraft,
+  column: ColumnCoord,
+  axis: Axis,
+): boolean {
+  return acrossNeighbours(column, axis).every(
+    (next) =>
+      !isRoadAt(draft, next.x, next.z) || roadAxis(draft, next) === axis,
+  );
+}
+
+/**
+ * A prop-free column beside the road at the road's level (sidewalk, open
+ * ground or the other lane) so units can step around the clutter.
+ */
+function hasWayAround(
+  draft: MapDraft,
+  column: ColumnCoord,
+  axis: Axis,
+): boolean {
   const level = draft.groundLevelAt(column.x, column.z);
-  return DIRECTIONS.some((direction) => {
-    const next = stepGridPos({ ...column, y: 0 }, direction);
-    return (
+  return acrossNeighbours(column, axis).some(
+    (next) =>
       draft.inBounds(next.x, next.z) &&
-      !draft.isRoad(next.x, next.z) &&
       !draft.isCovered(next.x, next.z) &&
       draft.groundSurfaceAt(next.x, next.z) !== SurfaceIds.WATER &&
       draft.groundLevelAt(next.x, next.z) === level &&
-      draft.propAt(draft.groundCoord(next.x, next.z)) === undefined
-    );
-  });
+      draft.propAt(draft.groundCoord(next.x, next.z)) === undefined,
+  );
 }
 
 // ===========================================
@@ -338,8 +365,9 @@ function touchesBuildingOrSidewalk(
 // ===========================================
 
 /**
- * Fills storage rooms with crates and shelving, reverting any prop that
- * would cut part of the building off; returns how many stayed.
+ * Furnishes every room from its kind's `RoomFurnishing` (rooms of a kind
+ * with no entry stay bare), reverting any prop that would cut part of
+ * the building off; returns how many stayed.
  */
 function placeInteriorProps(
   draft: MapDraft,
@@ -348,12 +376,6 @@ function placeInteriorProps(
   blocked: ReadonlySet<number>,
   rng: Rng,
 ): number {
-  const kinds = registries.props.values.filter((prop) =>
-    allowedIn(prop, biome.id, "interior"),
-  );
-  if (kinds.length === 0) {
-    return 0;
-  }
   let placed = 0;
   for (const building of draft.buildings) {
     const entrance = building.entrances[0];
@@ -366,19 +388,29 @@ function placeInteriorProps(
     const topLevel = building.groundLevel + building.floors.length;
     for (const floor of building.floors) {
       for (const room of floor.rooms) {
-        if (room.kind !== "storage") {
+        const furnishing =
+          room.kind === undefined
+            ? undefined
+            : registries.roomFurnishing.find(room.kind);
+        if (furnishing === undefined) {
+          continue;
+        }
+        const kinds = furnishing.props.filter((kind) =>
+          allowedIn(registries.props.get(kind), biome.id, "interior"),
+        );
+        if (kinds.length === 0) {
           continue;
         }
         const candidates = rng.shuffle(
-          storageTiles(draft, building, floor.y, room.rect, blocked),
+          roomTiles(draft, building, floor.y, room.rect, blocked),
         );
         const quota = Math.min(
-          MAX_PROPS_PER_ROOM,
-          Math.floor((room.rect.w * room.rect.d) / TILES_PER_INTERIOR_PROP),
+          furnishing.maxProps,
+          Math.floor((room.rect.w * room.rect.d) / furnishing.tilesPerProp),
         );
         for (const tile of candidates.slice(0, quota)) {
           const prop = draft.addProp(
-            rng.pick(kinds).id,
+            rng.pick(kinds),
             tile,
             randomRotation(rng),
           );
@@ -402,7 +434,7 @@ function placeInteriorProps(
 }
 
 /** Floor tiles of a room that may hold a prop. */
-function storageTiles(
+function roomTiles(
   draft: MapDraft,
   building: Building,
   y: number,

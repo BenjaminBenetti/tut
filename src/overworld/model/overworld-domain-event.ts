@@ -73,6 +73,48 @@ export type ThreatChangedEvent = DomainEvent<
 >;
 
 // ===========================================
+// Infestation spread
+// ===========================================
+
+/** Event type emitted when a city pushes infestation into a neighbour. */
+export const INFESTATION_SPREAD = "overworld:infestation-spread";
+
+/** What presentation needs to animate a spread along a city link. */
+export interface InfestationSpreadPayload {
+  /** The city at or above the spread threshold. */
+  readonly fromCityId: CityId;
+  /** The neighbour that received infestation. */
+  readonly toCityId: CityId;
+  /** Infestation points actually added to `toCityId`, after clamping. Positive. */
+  readonly amount: number;
+}
+
+/** A city spread infestation to a neighbour (GDD §5.3). */
+export type InfestationSpreadEvent = DomainEvent<
+  typeof INFESTATION_SPREAD,
+  InfestationSpreadPayload
+>;
+
+// ===========================================
+// Infestation seeded
+// ===========================================
+
+/** Event type emitted when a clean city gains a fresh infestation. */
+export const INFESTATION_SEEDED = "overworld:infestation-seeded";
+
+/** What presentation needs to animate a new landing. */
+export interface InfestationSeededPayload {
+  /** The city that was clean and is now infested. */
+  readonly cityId: CityId;
+}
+
+/** A clean city was seeded with a new infestation (GDD §5.3). */
+export type InfestationSeededEvent = DomainEvent<
+  typeof INFESTATION_SEEDED,
+  InfestationSeededPayload
+>;
+
+// ===========================================
 // Mission offered
 // ===========================================
 
@@ -119,12 +161,14 @@ export type MissionExpiredEvent = DomainEvent<
 /**
  * Every domain event the overworld can emit, one line per event so the
  * list stays discoverable. Extended by each tick step and command as it
- * lands (#58, #67, #68).
+ * lands (#67, #68).
  */
 export type OverworldDomainEvent =
   | CityInfestationChangedEvent
   | DayAdvancedEvent
   | ThreatChangedEvent
+  | InfestationSpreadEvent
+  | InfestationSeededEvent
   | MissionOfferedEvent
   | MissionExpiredEvent;
 

@@ -71,42 +71,42 @@ const GOLDENS: readonly Golden[] = [
     biome: "temperate",
     settlement: "town",
     size: "medium",
-    checksum: 3294769516,
+    checksum: 3634661978,
   },
   {
     seed: "golden-snowy",
     biome: "snowy",
     settlement: "town",
     size: "medium",
-    checksum: 3536499145,
+    checksum: 362653775,
   },
   {
     seed: "golden-desert",
     biome: "desert",
     settlement: "town",
     size: "medium",
-    checksum: 887715607,
+    checksum: 2080352986,
   },
   {
     seed: "golden-coastal",
     biome: "coastal",
     settlement: "town",
     size: "medium",
-    checksum: 315484029,
+    checksum: 1578863085,
   },
   {
     seed: "golden-rural",
     biome: "temperate",
     settlement: "rural",
     size: "small",
-    checksum: 3762984164,
+    checksum: 381180235,
   },
   {
     seed: "golden-city",
     biome: "desert",
     settlement: "city",
     size: "large",
-    checksum: 1446450599,
+    checksum: 3316735340,
   },
 ];
 
@@ -116,6 +116,7 @@ describe("generation sweep", () => {
     () => {
       let generations = 0;
       let buildings = 0;
+      let interiorProps = 0;
       let unreachableEntrances = 0;
       let hooks = 0;
       let relocations = 0;
@@ -134,6 +135,7 @@ describe("generation sweep", () => {
               );
               generations++;
 
+              const index = new TileIndex(map);
               const definition = SETTLEMENT_DEFINITIONS[settlement];
               expect(map.buildings.length, label).toBeGreaterThan(0);
               expect(map.buildings.length, label).toBeLessThanOrEqual(
@@ -149,6 +151,9 @@ describe("generation sweep", () => {
                 ).toBe(true);
               }
               expect(map.props.length, label).toBeGreaterThan(0);
+              interiorProps += map.props.filter(
+                (p) => index.getAt(p.tile)?.buildingId !== undefined,
+              ).length;
               expect(
                 map.connectors.some((c) => c.kind === "stairs"),
                 label,
@@ -158,7 +163,6 @@ describe("generation sweep", () => {
                 ),
               );
 
-              const index = new TileIndex(map);
               const reach = new ReachabilityService(index, map.connectors);
               const reachable = reach.reachableFrom(
                 map.hooks.deployZones.flatMap((z) => z.tiles),
@@ -187,6 +191,8 @@ describe("generation sweep", () => {
       }
       expect(generations).toBeGreaterThanOrEqual(200);
       expect(unreachableEntrances / buildings).toBeLessThanOrEqual(0.03);
+      // Every room kind is furnished (#202): measured ~2.6 per building.
+      expect(interiorProps / buildings).toBeGreaterThanOrEqual(1);
       expect(relocations / hooks).toBeLessThanOrEqual(0.05);
     },
     SWEEP_TIMEOUT_MS,

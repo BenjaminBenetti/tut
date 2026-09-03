@@ -3,57 +3,55 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-03 03:29 UTC)
+## Status Digest (2026-09-03 04:01 UTC)
 
 | Milestone | done / total |
 |---|---|
 | M0 Foundation | 12 / 13 |
-| M1 Overworld | 23 / 63 |
-| M1.5 Map Generation | 17 / 28 |
+| M1 Overworld | 27 / 63 |
+| M1.5 Map Generation | 24 / 29 |
 
-Board: Backlog 25 · Ready 13 · In Progress 7 · In Review 6 · Blocked 0 · Done 55
+Board: Backlog 20 · Ready 13 · In Progress 5 · In Review 7 · Blocked 0 · Done 69
 
 **Engineer seats** (one open issue per seat; Producer assigns via `seat:eng-N`; route by `complexity:*` — high → default-effort seats only, low → medium-effort seats first):
 
 | Seat | Effort | Current | Status | Last merged |
 |---|---|---|---|---|
-| eng-1 | unknown | IDLE | - | #57 |
-| eng-2 | unknown | IDLE | - | #54 |
-| eng-3 | default | #55 overworld: command and event types with a command dispatcher | In Progress | #8 |
-| eng-4 | medium | #197 refactor(economy): computeStipend takes the unfested fraction, not the EarthMap | In Review | #56 |
-| eng-5 | medium | #52 overworld: deployable model and type data | Ready | #74 |
-| eng-6 | unknown | IDLE | - | #51 |
+| eng-3 | default | #61 overworld: mission generation and expiry tick | Ready | #72 |
+| eng-4 | medium | #49 roster: loadout validation and mech stat sheet service | In Review | #197 |
+| eng-5 | medium | #58 overworld: infestation spread and seeding | In Review | #52 |
 
-⚠ idle: eng-1, eng-2, eng-6 · unassigned Ready: #49 (medium), #58 (medium), #59 (low), #61 (medium), #108 (low), #141 (low)
+⚠ unassigned Ready: #59 (low), #65 (medium), #70 (medium), #108 (low), #141 (low), #217 (low), #218 (low), #219 (low), #230 (low)
 
 **Ready now** (no unmerged dependencies):
 
-- #49 (engineer) roster: loadout validation and mech stat sheet service
-- #52 (engineer) overworld: deployable model and type data
-- #58 (engineer) overworld: infestation spread and seeding
 - #59 (engineer) overworld: lose condition and win stub
 - #61 (engineer) overworld: mission generation and expiry tick
+- #65 (engineer) overworld: build and decommission deployable commands
+- #70 (engineer) overworld: pending events and choice resolution
 - #108 (engineer) refactor(core): promote generic id Registry to core/ and reuse in mapgen and roster
 - #141 (engineer) refactor: rename scalar tuning exports to UPPER_SNAKE_CASE (economy-tuning, threat-tuning)
 - #190 (art-director) infra(art): headless Blender + OpenSCAD + trimesh/cadquery toolchain in the devcontainer, with proof render and art-blender skill
-- #200 (mapgen) feat(mapgen): grade city blocks flat inside the road grid
-- #201 (mapgen) feat(mapgen): two-column roads for cities
-- #202 (mapgen) feat(mapgen): furnish non-storage rooms with sparse low cover
-- #203 (mapgen) feat(mapgen): vegetation clusters instead of uniform scatter
-- #204 (mapgen) chore(mapgen): trails visible on sand and snow
+- #213 (art-director) art: placeholder model for the table prop (prop.table)
+- #217 (engineer) bug(ui): autosave failure on New game is never shown; menu unmounts before the message is visible
+- #218 (engineer) bug(engine): overworld camera pan is unbounded; the map can be panned entirely off screen
+- #219 (engineer) bug(ui): Continue is silently disabled when the autosave exists but cannot be decoded
+- #230 (engineer) save: share isRecord between migrations and the game-state guard
+- #231 (mapgen) feat(mapgen): guarantee hatch space around egg spawners for M2 bug spawning
 
 **In-flight PRs** (age h / idle h / review):
 
-- #198 0.1h / 0.1h / n/a — refactor(economy): computeStipend takes the unfested fraction, not the EarthMap (#197)
-- #195 0.3h / 0.0h / n/a — feat(art): placeholder batch 3 — mech part variants for the starter part catalogue (#169)
-- #185 17.9h / 0.1h / n/a — feat(mapgen): stairwell holes prefer interior columns so facades stay whole (#184)
-- #183 18.0h / 0.1h / n/a — feat(mapgen): scale building count by map area (#182)
-- #180 18.0h / 0.1h / n/a — feat(mapgen): mission → MapRecipe adapter with difficulty-scaled hook requirements (#85)
-- #179 18.1h / 0.1h / n/a — feat(mapgen): preview harness — second Vite entry rendering generated maps (#31)
+- #224 0.2h / 0.1h / n/a — feat(mapgen): vegetation clusters instead of uniform scatter (#203)
+- #220 0.2h / 0.0h / n/a — feat(roster): loadout validation service and mech stat sheet with data-driven combat rating (#49)
+- #216 0.2h / 0.1h / n/a — feat(overworld): infestation spread and seeding (#58)
+- #215 0.3h / 0.1h / n/a — chore(mapgen): trails visible on sand and snow (#204)
+- #212 0.3h / 0.1h / n/a — feat(mapgen): furnish every room kind from a data table (#202)
+- #211 0.4h / 0.1h / n/a — feat(mapgen): two-lane streets for cities (#201)
+- #195 0.9h / 0.1h / n/a — feat(art): placeholder batch 3 — mech part variants for the starter part catalogue (#169)
 
 **In progress** (branch pushed?):
 
-- #55 yes — overworld: command and event types with a command dispatcher
+- none
 
 **Blocked**:
 
@@ -61,28 +59,33 @@ Board: Backlog 25 · Ready 13 · In Progress 7 · In Review 6 · Blocked 0 · Do
 
 **Next assignments for idle engineers** (Ready first, then what unblocks next):
 
-1. #49 — roster: loadout validation and mech stat sheet service
-2. #52 — overworld: deployable model and type data
-3. #58 — overworld: infestation spread and seeding
-4. #59 — overworld: lose condition and win stub
-5. #61 — overworld: mission generation and expiry tick
-6. #108 — refactor(core): promote generic id Registry to core/ and reuse in mapgen and roster
-7. #141 — refactor: rename scalar tuning exports to UPPER_SNAKE_CASE (economy-tuning, threat-tuning)
-8. #33 — chore(infra): Vite multi-page input for mapgen-preview.html (Ready once #31 merges)
+1. #59 — overworld: lose condition and win stub
+2. #61 — overworld: mission generation and expiry tick
+3. #65 — overworld: build and decommission deployable commands
+4. #70 — overworld: pending events and choice resolution
+5. #108 — refactor(core): promote generic id Registry to core/ and reuse in mapgen and roster
+6. #141 — refactor: rename scalar tuning exports to UPPER_SNAKE_CASE (economy-tuning, threat-tuning)
+7. #217 — bug(ui): autosave failure on New game is never shown; menu unmounts before the message is visible
+8. #218 — bug(engine): overworld camera pan is unbounded; the map can be panned entirely off screen
+9. #219 — bug(ui): Continue is silently disabled when the autosave exists but cannot be decoded
+10. #230 — save: share isRecord between migrations and the game-state guard
+11. #62 — overworld: auto-resolve mission resolver (Ready once #49 merges)
+12. #63 — roster: roster service — hire, reinforce, save loadout, build mech (Ready once #49 merges)
+13. #66 — overworld: deployable effects and upkeep tick (Ready once #58 merges)
 <!-- digest:end -->
 
 **Status: PRODUCTION RESUMED** (Director, 2026-09-03 03:05 UTC). Pool: eng-3 (default effort, takes `complexity:high` and anything), eng-4 and eng-5 (medium effort, `complexity:low|medium` only). eng-1, eng-2, eng-6 are gone; their seat labels are inactive.
 
 **Gap audit (03:10 UTC, posted on #35):** closed. Every stopped-seat issue is Done or reseated (#52 → eng-5, #55 → eng-3); #60 and #162 merged.
 
-**Complexity sweep done (03:23 UTC).** Every open engineer issue carries a tier. Live seats filled by tier: eng-3 (default) → #55 high; eng-4 (medium) → #197 low; eng-5 (medium) → #52 low.
+**04:00 UTC.** #72 merged: the app has a real composition root, main menu, new game, save/load and autosave. Overworld shell (#73) and the day loop (#68) are the next gates. QA is active and filing bugs (#217–#219, low tier).
 
-**Seat plan:** eng-3: #55 → #72 composition root (high) → #68 AdvanceDay (high) → #67 launch (high). eng-4: #197 → #49 loadout validation (medium) → #63 roster service (medium) → #64. eng-5: #52 → #59 lose/win (low) → #58 spread (medium) → #61 generation (medium). Low-tier fillers for medium seats: #141, then #108 **only after the mapgen stack #179/#180/#183/#185 merges** (Tech Lead, #108).
+**Seat plan:** eng-3 (default): #61 mission generation (medium, no high Ready) → #68 AdvanceDay (high, needs #66) → #67 launch (high, needs #62, #64) → #73 shell. eng-4 (medium): #49 (PR #220) → #63 roster service → #64 casualties. eng-5 (medium): #58 (PR #216) → #66 deployable effects → #65 deployable commands → #59. Low-tier fillers for any free medium seat: #59, #141, #108 (mapgen stack merged, now free), #230, QA bugs #217 #218 #219.
 
-**Risks** (03:30 UTC):
+**Risks** (04:00 UTC):
 
-- One default-effort seat carries every `complexity:high` gate (#55 → #72 → #68 → #67) in series; M1's critical path is eng-3's throughput.
-- Medium seats will outrun their Ready supply once #59/#49/#58/#61 are taken: #65/#66 need #52, #63/#64 need #49, #70/#71 need #55. Keep an eye on the queue at each tick.
+- Critical path to the playable loop: #49 → #62/#63 → #64 → #67 and #58 → #66 → #68, both through medium seats then eng-3. Any review stall on #216/#220 delays both chains.
+- UI epics (#41, #42) have not started; #73 unblocks after #68 and is medium, so it can go to a medium seat while eng-3 holds #67/#68.
 
 ---
 

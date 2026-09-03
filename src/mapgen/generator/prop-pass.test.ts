@@ -161,29 +161,31 @@ describe("PropPass", () => {
         const { x, z } = prop.tile;
         if (!draft.isRoad(x, z)) continue;
         street++;
-        const roadNeighbours = [
-          [1, 0],
-          [-1, 0],
-          [0, 1],
-          [0, -1],
-        ].filter(([dx, dz]) => {
-          const nx = x + (dx ?? 0);
-          const nz = z + (dz ?? 0);
-          return draft.inBounds(nx, nz) && draft.isRoad(nx, nz);
-        }).length;
-        expect(roadNeighbours, prop.id).toBe(2);
+        const roadPair = (dx: number, dz: number): boolean =>
+          draft.inBounds(x + dx, z + dz) &&
+          draft.isRoad(x + dx, z + dz) &&
+          draft.inBounds(x - dx, z - dz) &&
+          draft.isRoad(x - dx, z - dz);
+        const alongX = roadPair(1, 0);
+        const alongZ = roadPair(0, 1);
+        expect(alongX !== alongZ, `${prop.id} on a crossing or road end`).toBe(
+          true,
+        );
         const level = draft.groundLevelAt(x, z);
-        const bypass = [
-          [1, 0],
-          [-1, 0],
-          [0, 1],
-          [0, -1],
-        ].some(([dx, dz]) => {
-          const nx = x + (dx ?? 0);
-          const nz = z + (dz ?? 0);
+        const across: readonly (readonly [number, number])[] = alongX
+          ? [
+              [0, 1],
+              [0, -1],
+            ]
+          : [
+              [1, 0],
+              [-1, 0],
+            ];
+        const bypass = across.some(([dx, dz]) => {
+          const nx = x + dx;
+          const nz = z + dz;
           return (
             draft.inBounds(nx, nz) &&
-            !draft.isRoad(nx, nz) &&
             !draft.isCovered(nx, nz) &&
             draft.groundSurfaceAt(nx, nz) !== SurfaceIds.WATER &&
             draft.groundLevelAt(nx, nz) === level &&
@@ -232,24 +234,55 @@ describe("PropPass", () => {
     expect(draft.props.some((p) => p.tile.x === 0)).toBe(true);
   });
 
-  it("stacks interior props only in storage rooms", () => {
+  it("furnishes every room kind from its table and no room beyond it", () => {
     let interior = 0;
+    const perBuilding: number[] = [];
     for (let i = 0; i < SEEDS; i++) {
       const { draft } = run("snowy", "town", `interior-${i}`);
+      const counts = new Map<string, number>();
       for (const prop of draft.props) {
         const tile = draft.getTile(prop.tile);
         if (tile?.buildingId === undefined) continue;
         interior++;
+        counts.set(tile.buildingId, (counts.get(tile.buildingId) ?? 0) + 1);
         const building = draft.buildings.find((b) => b.id === tile.buildingId);
         const room = building?.floors
           .flatMap((f) => f.rooms.map((r) => ({ r, y: f.y })))
           .find(
             ({ r, y }) => y === tile.y && rectContains(r.rect, tile.x, tile.z),
           );
-        expect(room?.r.kind, prop.id).toBe("storage");
+        expect(room?.r.kind, prop.id).toBeDefined();
+        const furnishing = registries.roomFurnishing.get(room?.r.kind ?? "");
+        expect(furnishing.props, `${prop.id} in ${room?.r.kind}`).toContain(
+          prop.kind,
+        );
+        const area = room === undefined ? 0 : room.r.rect.w * room.r.rect.d;
+        expect(
+          draft.props.filter((p) => {
+            const t = draft.getTile(p.tile);
+            return (
+              t !== undefined &&
+              t.buildingId === tile.buildingId &&
+              t.y === tile.y &&
+              room !== undefined &&
+              rectContains(room.r.rect, t.x, t.z)
+            );
+          }).length,
+          `${prop.id} room quota`,
+        ).toBeLessThanOrEqual(
+          Math.min(
+            furnishing.maxProps,
+            Math.floor(area / furnishing.tilesPerProp),
+          ),
+        );
+      }
+      for (const building of draft.buildings) {
+        perBuilding.push(counts.get(building.id) ?? 0);
       }
     }
     expect(interior).toBeGreaterThan(0);
+    const mean = perBuilding.reduce((a, b) => a + b, 0) / perBuilding.length;
+    expect(mean).toBeGreaterThanOrEqual(1);
   });
 
   it("mixes low and high cover in towns and cities", () => {

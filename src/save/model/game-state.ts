@@ -8,12 +8,12 @@ import type { RosterState } from "../../roster/model/roster-state";
  * Schema version of `GameState`. Bump it whenever the shape changes and
  * add a matching `Migration` to `save/data/migrations.ts` (ADR 0003 §2.1).
  *
- * Still `1` after the M1 slices were added (#54): no `GameState` had been
- * written to storage before then (the save round trip is #56), so there
- * is no `{ meta }`-only save anywhere to migrate from. Every reshape
- * from here on bumps.
+ * History:
+ *
+ * - `1`: the M1 slices (#54). No earlier save existed to migrate from.
+ * - `2`: `overworld.spreadCooldowns` (#58).
  */
-export const GAME_STATE_SCHEMA_VERSION = 1;
+export const GAME_STATE_SCHEMA_VERSION = 2;
 
 /**
  * Bookkeeping that every save needs regardless of gameplay content.

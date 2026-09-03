@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-03 (session 2, update 4, ~07:55 UTC, after the 05:00–07:40 usage stall). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-03 (session 2, update 5, ~09:05 UTC). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 1. Where things stand
 
@@ -15,13 +15,16 @@ Production paused about 12 hours after a credit outage and resumed 2026-09-03 ~0
 
 Since the first update the queue has stayed near empty: everything an author finishes merges within one or two five-minute polls. Landed in session 2 (about 55 PRs): v0.0.2 on Pages; app bootstrap (#171) and the composition root with autosave, Export/Import and the seed box (#229); the command dispatcher (#210); overworld services for spread (#216, first schema bump v1 → v2), deployables (#207, #241), the lose condition (#248); roster loadout validation (#220); the whole MapGen M1.5 stack through city grading, two-lane streets, room furnishing, vegetation clusters, hatch space, map metrics, apartments, the wide sweep and two crash fixes; ADR 0004 realigned twice (#181, #251); art batch 3 (#195) and the Blender kit (#193, #214); QA's promoted e2e checks (#225).
 
-Between 04:45 and 07:55: #238, #243, #254 (auto-resolve), #248 (lose condition), #241 (deployable effects), #257 (v1 autosave fixture e2e), the rest of the MapGen stack (#211 → #253, plus #260) and the art kit (#264) merged. The team stalled on the usage limit from about 05:00 to 07:40; the Producer's chase note on #243 is what the queue looked like at resume.
+Between 04:45 and 09:05 the M1 simulation loop closed and the first real screens landed. Merged: #216 spread, #241 deployable effects, #248 lose condition, #254 auto-resolve, #238 mission generation (v2 → v3 migration for `City.scale`), #243 roster service, #265 AdvanceDay pipeline, #268 augmentable command/event maps (#246), #279 casualties and repair (v3 → v4 for `graveyard`), #285 deployable commands, #289 LaunchMission, #295 part upgrades, #220 loadout validation; screens #282 overworld shell, #290 roster, #293 city panel; mapgen #206 → #276 plus fixes; art #264, #277, #280 (Mech A set as Blender models); QA e2e promotions #225, #257. The team stalled on the usage limit 05:00–07:40; the Producer's chase note on #243 is what the queue looked like at resume.
 
-**Incident #262 (main red, 04:51–04:57):** #238 made `City.scale` required; #254 was gated and CI-checked at its own head, which predated #238's squash, and its two test fixtures lacked the field. Both PRs were green; the merged tree was not. Fixed in #263 within six minutes. Process change: the gate now merges `origin/main` into the branch locally before typecheck/lint/test (see §5), and after back-to-back merges that touch shared types I re-run typecheck on fresh `main` before the next merge.
+**Incident #262 (main red, 04:51–04:57):** #238 made `City.scale` required; #254 was gated and CI-checked at its own head, which predated #238's squash, and its two test fixtures lacked the field. Fixed in #263 within six minutes. Process change: the gate now merges `origin/main` into the branch locally before typecheck/lint/test (see §5). It has since caught two more of the same kind before they merged (#285's fixtures without `graveyard`; #289 and #295 disagreeing on the `LoadoutMechRater` constructor), each fixed by the author in one push.
+
+**Composition-root churn.** `app/service/game-composition.ts` is the remaining hand-edited hot spot: #243, #265, #285, #289, #290 and #295 each register something there, and five of them needed a second merge of `main`. The conflicts are small (adjacent registration blocks) and authors resolve them in minutes; I chose not to file a refactor. Tell the next author to merge `main` right before pushing and merge whatever is ready without waiting.
 
 Open when this was written:
 
-- **#265** AdvanceDay orchestrator (#68): approved on content; conflicts only in `app/service/game-composition.ts` with #243's roster-handler registration. Merge as soon as eng-3 merges `main`. It unblocks #73 and the whole UI epic.
+- **Art chain #283 → #287 → #288** (mech variants, bugs, squads as Blender models): approved on content; each conflicts after the previous squash and the Art Director rebases with `--onto`. Merge in order as each comes green.
+- **#297** producer handoff, CI running.
 
 Every engineer-facing issue carries a `complexity:*` label (checked every poll; five new issues labelled during the session).
 
@@ -58,11 +61,11 @@ Session 1 (still binding):
 
 ## 4. Next, in order
 
-1. Merge #238 after its final merge of `main` (gate at the new head), then #243 after it merges `main`.
-2. Review loop every ~5 minutes: `gh api "repos/BenjaminBenetti/tut/pulls?state=open"`, local gate, diff, merge; label any new unlabeled engineer issue first. Handoff PRs: check the file list, then fast-track.
-3. #68 (AdvanceDay pipeline) is the next big one: hold it to `TickStep`s forking `ctx.rng` with labels, `applyOutcome` last, a refusal while `outcome` is set, and `chargeUpkeep → computeModifiers → growth → spread → expiry → generation → stipend → threat → outcome` in that order. #67 (LaunchMission) must write one `reward` ledger entry per mission with the mission id as `ref` (#248 counts them).
-4. #73 (overworld screen) and the M1 screens build on `session.store` from #229; screens dispatch, never construct services.
-5. Tag `v0.1.0` when the M1 loop is playable end to end (#84's smoke test is the signal); the Director may tag sooner.
+1. Merge the art chain in order as it rebases (#283, #287, #288); then whatever the seats open next: #76 mission list, #77 event dialog, #78 defeat screen, #80/#81 mech bay, #82 deployment, #83 results, #84 QA smoke. Screens follow #282's pattern (views with mount / update / unmount, dispatch through `session.store`, rejections shown not thrown, content injected from `composeGame().content`).
+2. Review loop every ~5 minutes: `gh api "repos/BenjaminBenetti/tut/pulls?state=open"`, merged-tree gate, diff, merge; label any new unlabeled engineer issue first. Handoff PRs: check the file list, then fast-track.
+3. Every `GameState` reshape bumps `GAME_STATE_SCHEMA_VERSION` and appends a migration (v4 now). Reject a reshape without one; the v1 fixture e2e (#257) is the backstop.
+4. New commands and events are one file each with a `declare module` block (#268); a PR that edits `overworld-command.ts` or `overworld-domain-event.ts` to add a member is doing it wrong.
+5. Tag `v0.1.0` when #84's smoke test passes (the M1 loop playable end to end); the Director may tag sooner.
 6. Add a vendor chunk for three.js in `vite.config.ts` when someone touches it; the 500 kB warning is noise.
 
 ## 5. Gotchas

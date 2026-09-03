@@ -77,7 +77,10 @@ def issue_prs(n):
 def has_branch(n): return any(re.match(rf"[a-z]+/{n}-", b) for b in branches)
 def infer_owner(i):
     L = labels(i); t = i["title"]
-    if "type:epic" in L: return "mapgen" if "area:mapgen" in L else "producer"
+    if "type:epic" in L:
+        if "area:mapgen" in L: return "mapgen"
+        if "area:art" in L or t.startswith("Art:"): return "art-director"
+        return "producer"
     if "area:mapgen" in L: return "mapgen"
     if "area:art" in L or t.startswith("Art:"): return "art-director"
     if "area:qa" in L: return "qa"

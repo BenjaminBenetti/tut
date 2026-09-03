@@ -33,14 +33,20 @@ import { OverworldSelectionState } from "../../ui/service/overworld-selection-st
 import { MechBayScreen } from "../../ui/screen/mech-bay-screen";
 import { MissionResultsScreen } from "../../ui/screen/mission-results-screen";
 import { RosterScreen } from "../../ui/screen/roster-screen";
+import { TacticalScreen } from "../../ui/screen/tactical-screen";
 import { NoticeBarView } from "../../ui/view/notice-bar-view";
 import type { TutTestHooks } from "../model/test-hooks";
 import type { ScreenFactory } from "./dom-screen-router";
 import { DomMapViewportHost } from "./dom-map-viewport-host";
 import { parseDebugOptions } from "./debug-options";
 import { DomScreenRouter } from "./dom-screen-router";
+import type { GameComposition } from "./game-composition";
 import { composeGame } from "./game-composition";
 import { MapSceneSync } from "./map-scene-sync";
+import { DomTacticalSceneHost } from "./tactical-scene-host";
+import { DefaultMetaServiceRestorer } from "../../overworld/service/meta-service-restorer";
+import { startTacticalMission } from "../../tactical/service/mission-start-service";
+import { describeTacticalError } from "../../tactical/model/tactical-error";
 
 // ===========================================
 // Constants
@@ -178,11 +184,34 @@ export async function bootstrapApp(doc: Document): Promise<void> {
         "game-over",
         () => new GameOverScreen({ router, session: game.session }),
       ],
+      [
+        "tactical",
+        () =>
+          new TacticalScreen({
+            router,
+            session: game.session,
+            sceneHost: new DomTacticalSceneHost({
+              baseUrl: import.meta.env.BASE_URL,
+              onHooks: (hooks) => {
+                if (import.meta.env.DEV) {
+                  window.__tutTactical__ = hooks;
+                }
+              },
+            }),
+          }),
+      ],
     ]),
   );
   router.navigate("main-menu");
 
-  const scene = await composeScene(doc, viewport, window, selection, mapSync);
+  const scene = await composeScene(
+    doc,
+    viewport,
+    window,
+    selection,
+    mapSync,
+    (id) => startMissionForTests(id, game, router),
+  );
   scene.start();
   await scene.whenFirstFrameRendered();
   doc.body.dataset.appState = "ready";
@@ -209,6 +238,7 @@ async function composeScene(
   window: Window,
   selection: OverworldSelection,
   mapSync: MapSceneSync,
+  startMission: (missionId: string) => string | undefined,
 ): Promise<SceneService> {
   const assets = await loadOverworldAssets({
     textures: new ManifestTextureLoader({
@@ -270,6 +300,7 @@ async function composeScene(
       },
       cityScreenPosition: (cityId) => picking.screenPositionOf(cityId),
       cityMarkerLook: (cityId) => mapScene.markerLook(cityId),
+      startTacticalMission: startMission,
     };
     window.__tut__ = hooks;
   }
@@ -296,4 +327,42 @@ function requireElement(doc: Document, id: string): HTMLElement {
     throw new Error(`Missing #${id} container element`);
   }
   return element;
+}
+
+/**
+ * Dev-only: puts the campaign into the given offered mission with every
+ * squad and mech deployed, then opens the tactical screen. Goes through
+ * `startTacticalMission` and `session.replace`, the same state the real
+ * launch (#341) will write, so the tactical Playwright specs can reach
+ * the screen before that lands. Returns the reason when it cannot.
+ */
+function startMissionForTests(
+  missionId: string,
+  game: GameComposition,
+  router: DomScreenRouter,
+): string | undefined {
+  const state = game.session.state;
+  if (!state) {
+    return "No active campaign.";
+  }
+  const ids = new DefaultMetaServiceRestorer().restoreIds(state.meta.ids);
+  const started = startTacticalMission(
+    state,
+    missionId,
+    {
+      missionId,
+      squadIds: state.roster.squads.map((s) => s.id),
+      mechIds: state.roster.mechs.map((m) => m.id),
+    },
+    game.tactical.missionStartDepsFor(ids),
+  );
+  if (!started.ok) {
+    return describeTacticalError(started.error);
+  }
+  game.session.replace({
+    ...started.value,
+    meta: { ...started.value.meta, ids: ids.getState() },
+  });
+  router.navigate("tactical");
+  return undefined;
 }

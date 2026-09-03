@@ -4,6 +4,7 @@ import type { YawIndex } from "../model/camera-state";
 import { CAMERA_ZOOM, ISOMETRIC_ELEVATION_RAD } from "../model/camera-state";
 import {
   cameraPosition,
+  clampTarget,
   createCameraState,
   groundScreenAxes,
   horizontalDirection,
@@ -11,6 +12,7 @@ import {
   panBy,
   retarget,
   rotateYaw,
+  withBounds,
   zoomBy,
 } from "./isometric-camera-math";
 
@@ -266,5 +268,93 @@ describe("isometric-camera-math", () => {
       expect(state.target).toEqual(TARGET);
       expect(state.target).not.toBe(TARGET);
     });
+  });
+});
+
+// ===========================================
+// Bounds (#218)
+// ===========================================
+
+describe("camera bounds", () => {
+  const BOUNDS = { x: 0, z: 0, w: 24, d: 12 };
+
+  it("clampTarget copies an unbounded target and clamps a bounded one", () => {
+    const free = clampTarget({ x: -5, y: 1, z: 40 }, undefined);
+    expect(free).toEqual({ x: -5, y: 1, z: 40 });
+    expect(clampTarget({ x: -5, y: 1, z: 40 }, BOUNDS)).toEqual({
+      x: 0,
+      y: 1,
+      z: 12,
+    });
+    expect(clampTarget({ x: 30, y: 0, z: -3 }, BOUNDS)).toEqual({
+      x: 24,
+      y: 0,
+      z: 0,
+    });
+    expect(clampTarget({ x: 3, y: 0, z: 4 }, BOUNDS)).toEqual({
+      x: 3,
+      y: 0,
+      z: 4,
+    });
+    expect(
+      clampTarget({ x: 3, y: 0, z: 4 }, { x: 1, z: 1, w: -5, d: 0 }),
+    ).toEqual({
+      x: 1,
+      y: 0,
+      z: 1,
+    });
+  });
+
+  it("withBounds clamps the current target at once, copies the rect, and lifts on undefined", () => {
+    const state = createCameraState({ target: { x: 100, y: 0, z: -100 } });
+    const bounded = withBounds(state, BOUNDS);
+    expect(bounded.target).toEqual({ x: 24, y: 0, z: 0 });
+    expect(bounded.bounds).toEqual(BOUNDS);
+    expect(bounded.bounds).not.toBe(BOUNDS);
+    const lifted = withBounds(bounded, undefined);
+    expect("bounds" in lifted).toBe(false);
+    expect(() => withBounds(state, { ...BOUNDS, w: Number.NaN })).toThrow(
+      RangeError,
+    );
+  });
+
+  it("createCameraState and retarget respect the bounds", () => {
+    const state = createCameraState({
+      target: { x: 99, y: 0, z: 99 },
+      bounds: BOUNDS,
+    });
+    expect(state.target).toEqual({ x: 24, y: 0, z: 12 });
+    expect(retarget(state, { x: -1, y: 0, z: 6 }).target).toEqual({
+      x: 0,
+      y: 0,
+      z: 6,
+    });
+  });
+
+  it("panBy stops at the edge of the bounds and stays put on further pans", () => {
+    for (const yawIndex of YAWS) {
+      let state = createCameraState({
+        yawIndex,
+        target: { x: 12, y: 0, z: 6 },
+        bounds: BOUNDS,
+      });
+      for (let i = 0; i < 50; i++) {
+        state = panBy(state, -400, 0);
+      }
+      expect(state.target.x).toBeGreaterThanOrEqual(0);
+      expect(state.target.x).toBeLessThanOrEqual(24);
+      expect(state.target.z).toBeGreaterThanOrEqual(0);
+      expect(state.target.z).toBeLessThanOrEqual(12);
+      const again = panBy(state, -400, 0);
+      expect(again.target).toEqual(state.target);
+    }
+    const free = panBy(
+      createCameraState({ target: { x: 12, y: 0, z: 6 } }),
+      -4000,
+      0,
+    );
+    expect(Math.abs(free.target.x) + Math.abs(free.target.z)).toBeGreaterThan(
+      24,
+    );
   });
 });

@@ -109,4 +109,21 @@ describe("IsometricCameraRig", () => {
     }
     expect(rig.camera.position.distanceTo(start)).toBeCloseTo(0);
   });
+
+  it("setBounds clamps the target now and on every later pan and lookAt (#218)", () => {
+    const rig = new IsometricCameraRig({ target: { x: 50, y: 0, z: 50 } });
+    rig.setBounds({ x: 0, z: 0, w: 24, d: 12 });
+    expect(rig.getState().target).toEqual({ x: 24, y: 0, z: 12 });
+    for (let i = 0; i < 100; i++) {
+      rig.panBy(-500, 500);
+    }
+    const { target } = rig.getState();
+    expect(target.x).toBeGreaterThanOrEqual(0);
+    expect(target.z).toBeGreaterThanOrEqual(0);
+    rig.lookAt({ x: -10, y: 0, z: 5 });
+    expect(rig.getState().target).toEqual({ x: 0, y: 0, z: 5 });
+    rig.setBounds(undefined);
+    rig.panBy(-5000, 0);
+    expect(rig.getState().target.x).toBeLessThan(-10);
+  });
 });

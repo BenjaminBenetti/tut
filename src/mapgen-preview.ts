@@ -135,6 +135,7 @@ async function main(): Promise<void> {
       const builder = new TacticalSceneBuilder({ map, models });
       view = builder;
       content.add(builder.root);
+      rig.setBounds({ x: 0, z: 0, w: map.width, d: map.depth });
       rig.lookAt(builder.centre);
       if (showUnits) {
         delete document.body.dataset.units;

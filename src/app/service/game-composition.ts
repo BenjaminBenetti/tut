@@ -2,6 +2,7 @@ import { ECONOMY_TUNING } from "../../economy/data/economy-tuning";
 import { LedgerTransactionService } from "../../economy/service/transaction-service";
 import { MISSION_TYPES } from "../../content/data/mission-types";
 import { DEPLOYABLE_TYPES } from "../../overworld/data/deployable-types";
+import { EVENT_TYPES } from "../../overworld/data/event-types";
 import { EARTH_MAP } from "../../overworld/data/earth-map";
 import { INFESTATION_TUNING } from "../../overworld/data/infestation-tuning";
 import { MISSION_TUNING } from "../../overworld/data/mission-tuning";
@@ -9,13 +10,16 @@ import { NEW_GAME_TUNING } from "../../overworld/data/new-game-tuning";
 import { THREAT_TUNING } from "../../overworld/data/threat-tuning";
 import type { CommandDispatcher } from "../../overworld/model/command-dispatcher";
 import { DEPLOYABLE_TYPE_IDS } from "../../overworld/model/deployable-type";
+import { EVENT_TYPE_IDS } from "../../overworld/model/event-type";
 import { ADVANCE_DAY } from "../../overworld/model/overworld-command";
 import { DataDeployableTypeCatalogue } from "../../overworld/repository/deployable-type-catalogue";
+import { DataEventTypeCatalogue } from "../../overworld/repository/event-type-catalogue";
 import { createAdvanceDayHandler } from "../../overworld/service/advance-day-service";
 import { AutoResolveMissionResolver } from "../../overworld/service/auto-resolve-mission-resolver";
 import { registerLaunchMission } from "../../overworld/service/launch-mission-service";
 import { createOverworldCommandDispatcher } from "../../overworld/service/command-dispatcher";
 import { registerDeployableCommands } from "../../overworld/service/deployable-command-handlers";
+import { registerEventCommands } from "../../overworld/service/event-command-handlers";
 import type { TickDeps } from "../../overworld/service/default-tick-steps";
 import { createDefaultTickSteps } from "../../overworld/service/default-tick-steps";
 import { registerRosterCommands } from "../../overworld/service/roster-command-handlers";
@@ -129,6 +133,12 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
   const tickDeps = composeTickDeps();
   registerDeployableCommands(dispatcher, {
     catalogue: tickDeps.catalogue,
+    transactionsFor: tickDeps.createTransactions,
+  });
+  registerEventCommands(dispatcher, {
+    eventTypes: new DataEventTypeCatalogue(
+      EVENT_TYPE_IDS.map((id) => EVENT_TYPES[id]),
+    ),
     transactionsFor: tickDeps.createTransactions,
   });
   dispatcher.register(

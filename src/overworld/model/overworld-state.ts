@@ -1,6 +1,7 @@
 import type { Deployable } from "./deployable";
 import type { EarthMap } from "./earth-map";
-import type { EventTypeId } from "./event-type";
+import type { PendingEvent } from "./pending-event";
+import type { StipendModifier } from "./stipend-modifier";
 import type { GameOutcome } from "./game-outcome";
 import type { Mission } from "./mission";
 import type { MissionResult } from "./mission-result";
@@ -22,12 +23,6 @@ export const FIRST_DAY = 1;
 // only ever an element of an empty list in a new game, so widening it
 // later changes no persisted data. When the owning issue lands, replace
 // the placeholder with an import of the real type.
-
-/** Placeholder until #70 defines `PendingEvent` in `overworld/model/pending-event.ts`. */
-export interface PendingEvent {
-  readonly id: string;
-  readonly typeId: EventTypeId;
-}
 
 /** Placeholder until M3 defines bug hives (GDD §5.3). */
 export interface Hive {
@@ -52,6 +47,7 @@ export interface Hive {
  *   ├── spreadCooldowns     days until each city may spread again
  *   ├── missions[]          offers attached to cities
  *   ├── pendingEvents[]     choices awaiting the player
+ *   ├── stipendModifiers?   event-driven scales on upcoming stipends
  *   ├── deployables[]       regional installations
  *   ├── hives[]             (M3) persistent bug hives
  *   ├── outcome?            set once the campaign is won or lost
@@ -78,6 +74,12 @@ export interface OverworldState {
   readonly missions: readonly Mission[];
   /** Events waiting for the player's choice. */
   readonly pendingEvents: readonly PendingEvent[];
+  /**
+   * Scales queued by event choices on upcoming stipend payments (#70).
+   * Absent when none are active, which is also how every save written
+   * before the field existed reads.
+   */
+  readonly stipendModifiers?: readonly StipendModifier[];
   /** Installations built on regions. */
   readonly deployables: readonly Deployable[];
   /** Bug hives (M3). Always empty in M1. */

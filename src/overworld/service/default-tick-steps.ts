@@ -16,6 +16,10 @@ import type { MissionTypeCatalogue } from "./mission-generation-service";
 import { expireMissions, generateMissions } from "./mission-generation-service";
 import { applyOutcome } from "./outcome-service";
 import { applyDebugThreat } from "./campaign-debug-service";
+import {
+  stipendFactor,
+  tickStipendModifiers,
+} from "./stipend-modifier-service";
 import { computeThreat, unfestedFraction } from "./threat-service";
 
 // ===========================================
@@ -68,6 +72,7 @@ export const TICK_STEP_NAMES = {
  *   5. mission-generation  infested cities may offer missions (+ intel bonus)
  *      ── #71 event generation registers here, after missions, before pay ──
  *   6. stipend             Earth pays for the day, scaled by how much is unfested
+ *                          and by any event-driven stipend modifiers (#70)
  *   7. threat              recompute and store global threat
  *   8. outcome             defeat / victory-stub check, once
  * ```
@@ -215,15 +220,45 @@ function stipendStep<TState extends CampaignState>(
   return {
     name: TICK_STEP_NAMES.stipend,
     run: (state, ctx) => {
+      const { overworld } = state;
+      const factor = stipendFactor(overworld.stipendModifiers);
       const paid = applyStipend(
         state.economy,
-        unfestedFraction(state.overworld.map),
+        unfestedFraction(overworld.map),
         ctx.day,
-        deps.economyTuning,
+        scaleStipend(deps.economyTuning, factor),
         deps.createTransactions(ctx.ids),
       );
-      return { state: { ...state, economy: paid.state }, events: paid.events };
+      const remaining = tickStipendModifiers(overworld.stipendModifiers);
+      const { stipendModifiers: _dropped, ...rest } = overworld;
+      return {
+        state: {
+          ...state,
+          overworld:
+            remaining === undefined
+              ? rest
+              : { ...rest, stipendModifiers: remaining },
+          economy: paid.state,
+        },
+        events: paid.events,
+      };
     },
+  };
+}
+
+/**
+ * The economy tuning with the base stipend and its floor scaled by an
+ * event-driven factor, rounded to whole credits so the ledger stays
+ * whole. Returns the input by identity at factor 1.
+ */
+function scaleStipend(tuning: EconomyTuning, factor: number): EconomyTuning {
+  if (factor === 1) {
+    return tuning;
+  }
+  return {
+    ...tuning,
+    baseStipend: Math.round(tuning.baseStipend * factor),
+    stipendFloor: Math.round(tuning.stipendFloor * factor),
   };
 }
 

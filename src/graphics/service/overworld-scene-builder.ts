@@ -1,9 +1,10 @@
-import type { Camera } from "three";
+import type { Camera, Material, Object3D } from "three";
 import {
   BoxGeometry,
   CylinderGeometry,
   Group,
   Mesh,
+  MeshBasicMaterial,
   MeshStandardMaterial,
   Raycaster,
   RingGeometry,
@@ -16,6 +17,8 @@ import type { CityId } from "../../overworld/model/city";
 import type { EarthMap } from "../../overworld/model/earth-map";
 import { citiesInRegion } from "../../overworld/service/earth-map-query-service";
 import type { CityPicker } from "../model/city-picker";
+import type { OverworldSceneAssets } from "../model/overworld-scene-assets";
+import { NO_OVERWORLD_ASSETS } from "../model/overworld-scene-assets";
 import type { OverworldSceneConfig } from "../model/overworld-scene-config";
 import { OVERWORLD_SCENE_CONFIG } from "../model/overworld-scene-config";
 import type { CityMarkerGeometry } from "../view/city-marker";
@@ -28,14 +31,26 @@ import {
 } from "./overworld-layout";
 
 // ===========================================
+// Types
+// ===========================================
+
+/** What the builder is composed from. */
+export interface OverworldSceneBuilderOptions {
+  /** Scene sizes; defaults to `OVERWORLD_SCENE_CONFIG`. */
+  readonly config?: OverworldSceneConfig;
+  /** Loaded art; defaults to none, which paints flat colours and discs. */
+  readonly assets?: OverworldSceneAssets;
+}
+
+// ===========================================
 // Constants
 // ===========================================
 
-/** Ocean slab colour: `env-water-deep`. */
+/** Ocean slab colour: `env-water-deep`, used for the sides and as the top's fallback. */
 const OCEAN_COLOUR = 0x1f5c73;
 
-/** How far the ocean slab extends past the map plane on each side. */
-const OCEAN_MARGIN = 1;
+/** `BoxGeometry` material slot for the +y face (order: +x, −x, +y, −y, +z, −z). */
+const BOX_TOP_FACE = 2;
 
 /**
  * Radial segments for marker discs. Deliberately not a multiple of 8:
@@ -55,14 +70,16 @@ const RING_OUTER_SCALE = 2;
 
 /**
  * Builds the strategic map scene from an `EarthMap` and keeps it in
- * step with later states: an ocean slab, one plate per region, one
- * marker per city, plus hit-testing for the pointer controller. Reads
- * state, holds no game truth (architecture §2.3).
+ * step with later states: a slab whose top carries the Earth texture,
+ * one translucent plate per region, one marker per city, plus
+ * hit-testing for the pointer controller. Reads state, holds no game
+ * truth (architecture §2.3). Art is optional: without the texture the
+ * slab is flat ocean, without the glyph markers are discs.
  *
  * ```
- *   build(map)   ─▶  ocean + plates + markers under `root`
- *   update(map)  ─▶  markers recoloured in place (same objects)
- *   pickCity()   ─▶  raycast against marker bodies
+ *   build(map)   ─▶  slab + plates + markers under `root`
+ *   update(map)  ─▶  markers retinted in place (same objects)
+ *   pickCity()   ─▶  raycast against marker pick targets
  *   dispose()    ─▶  everything released, `root` emptied
  * ```
  */
@@ -74,12 +91,13 @@ export class OverworldSceneBuilder implements CityPicker {
   /** Add this to the scene. Everything the builder creates lives under it. */
   readonly root: Group;
   private readonly config: OverworldSceneConfig;
+  private readonly assets: OverworldSceneAssets;
   private readonly raycaster = new Raycaster();
   private readonly markerGeometry: CityMarkerGeometry;
   private readonly markers = new Map<CityId, CityMarker>();
-  private readonly bodyToCity = new Map<Mesh, CityId>();
+  private readonly targetToCity = new Map<Object3D, CityId>();
   private plates: RegionPlate[] = [];
-  private ocean: Mesh | undefined;
+  private slab: Mesh | undefined;
   private hovered: CityId | undefined;
   private selected: CityId | undefined;
 
@@ -88,10 +106,12 @@ export class OverworldSceneBuilder implements CityPicker {
   // ===========================================
 
   /**
-   * @param config - Scene sizes; defaults to `OVERWORLD_SCENE_CONFIG`.
+   * @param options - Sizes and loaded art; both optional.
    */
-  constructor(config: OverworldSceneConfig = OVERWORLD_SCENE_CONFIG) {
+  constructor(options: OverworldSceneBuilderOptions = {}) {
+    const config = options.config ?? OVERWORLD_SCENE_CONFIG;
     this.config = config;
+    this.assets = options.assets ?? NO_OVERWORLD_ASSETS;
     this.root = new Group();
     this.root.name = "overworld-map";
     this.markerGeometry = {
@@ -118,11 +138,16 @@ export class OverworldSceneBuilder implements CityPicker {
     return mapCentre(this.config);
   }
 
+  /** True when the slab top carries the Earth texture rather than flat ocean. */
+  usesMapTexture(): boolean {
+    return this.assets.mapTexture !== undefined;
+  }
+
   /** Builds every object from scratch, discarding anything built before. */
   build(map: EarthMap): void {
     this.clear();
-    this.ocean = this.createOcean();
-    this.root.add(this.ocean);
+    this.slab = this.createSlab();
+    this.root.add(this.slab);
     for (const region of map.regions) {
       const extent = regionPlateExtent(
         region,
@@ -139,18 +164,18 @@ export class OverworldSceneBuilder implements CityPicker {
       const marker = new CityMarker(
         city,
         base,
-        this.markerGeometry,
+        { geometry: this.markerGeometry, glyph: this.assets.markerGlyph },
         this.config,
       );
       this.markers.set(city.id, marker);
-      this.bodyToCity.set(marker.body, city.id);
+      this.targetToCity.set(marker.pickTarget, city.id);
       this.root.add(marker.object);
     }
     this.applyHighlights();
   }
 
   /**
-   * Brings the scene up to date with a newer map. Markers are recoloured
+   * Brings the scene up to date with a newer map. Markers are retinted
    * in place; nothing is rebuilt unless the set of cities changed, which
    * falls back to `build`.
    */
@@ -164,7 +189,10 @@ export class OverworldSceneBuilder implements CityPicker {
     }
   }
 
-  /** Releases every geometry and material and empties `root`. */
+  /**
+   * Releases every geometry and material and empties `root`. The loaded
+   * art in `assets` belongs to whoever loaded it and is left alone.
+   */
   dispose(): void {
     this.clear();
     this.markerGeometry.body.dispose();
@@ -181,22 +209,41 @@ export class OverworldSceneBuilder implements CityPicker {
   // ===========================================
 
   /**
-   * Raycasts marker bodies from a normalised device coordinate and
-   * returns the nearest hit. World matrices are refreshed first so a
-   * pick between frames sees the current layout.
+   * Raycasts marker pick targets from a normalised device coordinate.
+   * Glyph sprites are billboards taller than the gap between close
+   * cities, so several can sit under one ray; the hit whose marker
+   * anchor is nearest the ray wins, which makes a click near a pin's
+   * base pick that pin even inside a cluster. World matrices are
+   * refreshed first so a pick between frames sees the current layout.
    */
   pickCity(ndc: Vec2, camera: Camera): CityId | undefined {
-    if (this.bodyToCity.size === 0) {
+    if (this.targetToCity.size === 0) {
       return undefined;
     }
     this.root.updateMatrixWorld(true);
     this.raycaster.setFromCamera(new Vector2(ndc.x, ndc.y), camera);
     const hits = this.raycaster.intersectObjects(
-      [...this.bodyToCity.keys()],
+      [...this.targetToCity.keys()],
       false,
     );
-    const first = hits[0];
-    return first ? this.bodyToCity.get(first.object as Mesh) : undefined;
+    let best: CityId | undefined;
+    let bestDistance = Number.POSITIVE_INFINITY;
+    const anchor = new Vector3();
+    for (const hit of hits) {
+      const cityId = this.targetToCity.get(hit.object);
+      const marker =
+        cityId === undefined ? undefined : this.markers.get(cityId);
+      if (!marker) {
+        continue;
+      }
+      marker.object.getWorldPosition(anchor);
+      const distance = this.raycaster.ray.distanceToPoint(anchor);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        best = cityId;
+      }
+    }
+    return best;
   }
 
   /** Highlights one marker as hovered, or none. */
@@ -216,15 +263,14 @@ export class OverworldSceneBuilder implements CityPicker {
     return this.selected;
   }
 
-  /** World position of a city's marker, or `undefined` for an unknown city. */
+  /** A world point inside a city's marker, or `undefined` for an unknown city. */
   markerWorldPosition(cityId: CityId): Vec3 | undefined {
     const marker = this.markers.get(cityId);
     if (!marker) {
       return undefined;
     }
     this.root.updateMatrixWorld(true);
-    const position = marker.object.getWorldPosition(new Vector3());
-    return { x: position.x, y: position.y, z: position.z };
+    return marker.pickPoint();
   }
 
   // ===========================================
@@ -232,28 +278,40 @@ export class OverworldSceneBuilder implements CityPicker {
   // ===========================================
 
   /**
-   * Builds the ocean slab the plates sit on.
+   * Builds the slab the plates sit on: exactly the map plane in extent,
+   * so the Earth texture on its top face lines up with `layoutToWorld`
+   * (texture `u` runs west → east along +x, the image top is north at
+   * `z = 0`). Without the texture the top is flat ocean, unlit either way
+   * so the palette reads exactly.
    *
    * @returns The slab, with its top at `y = 0`.
    */
-  private createOcean(): Mesh {
+  private createSlab(): Mesh {
     const geometry = new BoxGeometry(
-      this.config.mapWidth + 2 * OCEAN_MARGIN,
+      this.config.mapWidth,
       this.config.oceanHeight,
-      this.config.mapDepth + 2 * OCEAN_MARGIN,
+      this.config.mapDepth,
     );
-    const material = new MeshStandardMaterial({
+    const side = new MeshStandardMaterial({
       color: OCEAN_COLOUR,
       flatShading: true,
       metalness: 0,
       roughness: 0.9,
     });
-    material.name = "env-water-deep";
-    const ocean = new Mesh(geometry, material);
-    ocean.name = "ocean";
+    side.name = "env-water-deep";
+    const top = this.assets.mapTexture
+      ? new MeshBasicMaterial({ map: this.assets.mapTexture })
+      : new MeshBasicMaterial({ color: OCEAN_COLOUR });
+    top.name = this.assets.mapTexture
+      ? "overworld.earth-map"
+      : "env-water-deep";
+    const materials: Material[] = [side, side, side, side, side, side];
+    materials[BOX_TOP_FACE] = top;
+    const slab = new Mesh(geometry, materials);
+    slab.name = "map-slab";
     const centre = this.centre;
-    ocean.position.set(centre.x, -this.config.oceanHeight / 2, centre.z);
-    return ocean;
+    slab.position.set(centre.x, -this.config.oceanHeight / 2, centre.z);
+    return slab;
   }
 
   /** Pushes hovered and selected state onto every marker. */
@@ -280,14 +338,25 @@ export class OverworldSceneBuilder implements CityPicker {
     for (const plate of this.plates) {
       plate.dispose();
     }
-    if (this.ocean) {
-      this.ocean.geometry.dispose();
-      (this.ocean.material as MeshStandardMaterial).dispose();
+    if (this.slab) {
+      this.slab.geometry.dispose();
+      for (const material of new Set(materialsOf(this.slab))) {
+        material.dispose();
+      }
     }
     this.markers.clear();
-    this.bodyToCity.clear();
+    this.targetToCity.clear();
     this.plates = [];
-    this.ocean = undefined;
+    this.slab = undefined;
     this.root.clear();
   }
+}
+
+// ===========================================
+// Helpers
+// ===========================================
+
+/** A mesh's materials as a list, whether it has one or several. */
+function materialsOf(mesh: Mesh): Material[] {
+  return Array.isArray(mesh.material) ? mesh.material : [mesh.material];
 }

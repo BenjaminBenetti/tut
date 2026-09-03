@@ -10,8 +10,8 @@
  * ```
  *   y ▲          markers stand on the plate top
  *     │   ┌─┐
- *     │ ┌─┴─┴───────┐ ◀── region plate, plateHeight thick
- *   0 ┼─┴───────────┴──── ocean slab top
+ *     │ ┌─┴─┴───────┐ ◀── translucent region plate, plateHeight thick
+ *   0 ┼─┴───────────┴──── slab top: the Earth texture, or flat ocean
  *     └──────────────────────────────▶ x / z
  * ```
  */
@@ -26,12 +26,16 @@ export interface OverworldSceneConfig {
   readonly plateMinSize: number;
   /** Thickness of a region plate; its top is the surface markers stand on. */
   readonly plateHeight: number;
+  /** Opacity of a region plate, so the map shows through it. */
+  readonly plateOpacity: number;
   /** Thickness of the ocean slab beneath the plates. */
   readonly oceanHeight: number;
   /** Radius of a city marker. */
   readonly markerRadius: number;
-  /** Height of a city marker. */
+  /** Height of a disc marker (the fallback when no glyph is available). */
   readonly markerHeight: number;
+  /** Side of the square glyph sprite standing on a city, in world units. */
+  readonly markerGlyphSize: number;
 }
 
 /** Default sizes: a 2:1 plane that fits a 1280 px viewport at minimum zoom. */
@@ -40,8 +44,10 @@ export const OVERWORLD_SCENE_CONFIG: OverworldSceneConfig = {
   mapDepth: 12,
   platePadding: 0.8,
   plateMinSize: 1.6,
-  plateHeight: 0.15,
+  plateHeight: 0.05,
+  plateOpacity: 0.3,
   oceanHeight: 0.1,
   markerRadius: 0.3,
   markerHeight: 0.25,
+  markerGlyphSize: 0.6,
 };

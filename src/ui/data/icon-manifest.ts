@@ -77,11 +77,21 @@ export const ICON_MANIFEST = {
 export type IconId = keyof typeof ICON_MANIFEST;
 
 /**
- * Resolves an icon id to its public URL for use as a CSS mask. Prefixes
+ * Resolves an icon id to its plain public URL, for code that fetches the
+ * SVG itself (the overworld map rasterises glyphs into sprites). Prefixes
  * Vite's `BASE_URL` so a sub-path deploy still finds the asset.
+ * @param id - Registered icon id.
+ * @returns Absolute URL path of the SVG.
+ */
+export function iconHref(id: IconId): string {
+  return `${import.meta.env.BASE_URL}${ICON_MANIFEST[id].path}`;
+}
+
+/**
+ * Resolves an icon id to its public URL for use as a CSS mask.
  * @param id - Registered icon id.
  * @returns A `url(...)` value for the `--icon` custom property.
  */
 export function iconUrl(id: IconId): string {
-  return `url(${import.meta.env.BASE_URL}${ICON_MANIFEST[id].path})`;
+  return `url(${iconHref(id)})`;
 }

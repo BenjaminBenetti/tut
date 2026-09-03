@@ -4,6 +4,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import type { ModelAssetId } from "../../content/data/model-ids";
 import type { ModelAssetEntry, ModelManifest } from "../model/asset-manifest";
 import type { AssetLogger } from "../model/asset-logger";
+import { ASSET_WARNING_PREFIX } from "../model/asset-logger";
 import type { FallbackModelFactory, ModelLoader } from "../model/model-loader";
 
 // ===========================================
@@ -29,12 +30,8 @@ export interface GltfModelLoaderOptions {
 // Constants
 // ===========================================
 
-/**
- * Prefix on every fallback warning. The end-to-end smoke test fails on any
- * console warning carrying it, so a broken asset path cannot slip through
- * even though the app itself keeps running on the placeholder.
- */
-export const ASSET_WARNING_PREFIX = "[assets]";
+/** Re-exported for callers that learned the prefix here; it lives in `model/asset-logger`. */
+export { ASSET_WARNING_PREFIX };
 
 // ===========================================
 // GltfModelLoader

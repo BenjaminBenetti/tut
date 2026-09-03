@@ -4,7 +4,7 @@ import { err, ok } from "../../core/model/result";
 import type { EconomyState } from "../../economy/model/economy-state";
 import type { TransactionKind } from "../../economy/model/transaction";
 import type { TransactionService } from "../../economy/model/transaction-service";
-import type { Mech } from "../model/mech";
+import type { Mech, MechId } from "../model/mech";
 import { MECH_ID_PREFIX } from "../model/mech";
 import type { MechLoadout } from "../model/mech-loadout";
 import type { MechRatingTuning } from "../model/mech-rating-tuning";
@@ -16,6 +16,7 @@ import {
   LOADOUT_DELETED,
   LOADOUT_SAVED,
   MECH_BUILT,
+  MECH_RENAMED,
   SQUAD_HIRED,
   SQUAD_REINFORCED,
 } from "../model/roster-event";
@@ -306,6 +307,43 @@ export function buildMech(
         type: MECH_BUILT,
         payload: { mech, statSheet, cost: statSheet.totalCost },
       },
+    ],
+  });
+}
+
+// ===========================================
+// Rename
+// ===========================================
+
+/**
+ * Gives a mech a new player-facing name. Free; rejects an unknown mech
+ * or an empty name. A name equal to the current one is accepted and
+ * still emits `MechRenamed`, so the caller need not diff first.
+ */
+export function renameMech(
+  slices: RosterSlices,
+  mechId: MechId,
+  name: string,
+): RosterResult {
+  const mech = slices.roster.mechs.find((m) => m.id === mechId);
+  if (mech === undefined) {
+    return err({ code: "unknown-mech", mechId });
+  }
+  const nameError = checkName(name);
+  if (nameError !== undefined) {
+    return err(nameError);
+  }
+  const trimmed = name.trim();
+  return ok({
+    roster: {
+      ...slices.roster,
+      mechs: slices.roster.mechs.map((m) =>
+        m.id === mechId ? { ...m, name: trimmed } : m,
+      ),
+    },
+    economy: slices.economy,
+    events: [
+      { type: MECH_RENAMED, payload: { mechId, from: mech.name, to: trimmed } },
     ],
   });
 }

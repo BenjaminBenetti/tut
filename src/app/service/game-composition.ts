@@ -30,6 +30,9 @@ import type { SaveClock } from "../../save/model/save-clock";
 import type { GameSaveService } from "../../save/service/game-save-service";
 import { createGameSaveService } from "../../save/service/game-save-service";
 import type { NewGameOptions } from "../../save/service/game-state-factory";
+import type { PartCatalogue } from "../../roster/model/part-catalogue";
+import type { RosterTuning } from "../../roster/model/roster-tuning";
+import type { SquadTypeCatalogue } from "../../roster/model/squad-type-catalogue";
 import type { NewGameDeps } from "../../save/service/new-game-service";
 import { createNewGame } from "../../save/service/new-game-service";
 import type { GameSession } from "../../ui/model/game-session";
@@ -54,6 +57,13 @@ export interface GameCompositionDeps {
   readonly onAutosaveFailure: AutosaveFailureListener;
 }
 
+/** Shipped content and tuning screens read to label and price things. */
+export interface GameContent {
+  readonly squadTypes: SquadTypeCatalogue;
+  readonly parts: PartCatalogue;
+  readonly rosterTuning: RosterTuning;
+}
+
 /** The simulation-facing services screens are handed. */
 export interface GameComposition {
   readonly saves: GameSaveService;
@@ -64,6 +74,8 @@ export interface GameComposition {
   readonly createCampaign: (options: NewGameOptions) => GameState;
   readonly newSeed: () => number;
   readonly clock: SaveClock;
+  /** The catalogues and tuning the dispatcher was wired with, for screens. */
+  readonly content: GameContent;
 }
 
 // ===========================================
@@ -94,11 +106,14 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
   const saves = createGameSaveService(deps.storage, deps.clock);
   const dispatcher = createOverworldCommandDispatcher<GameState>();
   const squadTypes = new DataSquadTypeCatalogue(SQUAD_TYPES);
-  registerRosterCommands(dispatcher, {
+  const content: GameContent = {
     squadTypes,
     parts: new StaticPartCatalogue(STARTER_PARTS),
-    rating: MECH_RATING_TUNING,
     rosterTuning: ROSTER_TUNING,
+  };
+  registerRosterCommands(dispatcher, {
+    ...content,
+    rating: MECH_RATING_TUNING,
     transactionsFor: (ids) => new LedgerTransactionService(ids),
   });
   const tickDeps = composeTickDeps();
@@ -126,6 +141,7 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     createCampaign: (options) => createNewGame(options, newGameDeps),
     newSeed: deps.newSeed,
     clock: deps.clock,
+    content,
   };
 }
 

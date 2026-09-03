@@ -16,6 +16,7 @@ import {
   LOADOUT_DELETED,
   LOADOUT_SAVED,
   MECH_BUILT,
+  MECH_RENAMED,
   SQUAD_HIRED,
   SQUAD_REINFORCED,
 } from "../model/roster-event";
@@ -29,6 +30,7 @@ import {
   deleteLoadout,
   hireSquad,
   reinforceSquad,
+  renameMech,
   saveLoadout,
 } from "./roster-service";
 
@@ -415,6 +417,48 @@ describe("buildMech", () => {
     });
     expect(deps.ids.getState().counters).toEqual({});
     expect(slices).toEqual(snapshot);
+  });
+});
+
+// ===========================================
+// renameMech
+// ===========================================
+
+describe("renameMech", () => {
+  /** Slices holding one built mech. */
+  function withMech(): { deps: RosterServiceDeps; slices: RosterSlices } {
+    const { deps, slices } = setup();
+    const built = expectOk(
+      buildMech(slices, STARTER_LOADOUT.name, "Anvil", DAY, deps),
+    );
+    return { deps, slices: { roster: built.roster, economy: built.economy } };
+  }
+
+  it("trims and applies the new name for free and emits MechRenamed", () => {
+    const { slices } = withMech();
+    const snapshot = JSON.parse(JSON.stringify(slices)) as RosterSlices;
+    const applied = expectOk(renameMech(slices, "mech-1", "  Hammer "));
+    expect(applied.roster.mechs[0]?.name).toBe("Hammer");
+    expect(applied.economy).toBe(slices.economy);
+    expect(applied.events).toEqual([
+      {
+        type: MECH_RENAMED,
+        payload: { mechId: "mech-1", from: "Anvil", to: "Hammer" },
+      },
+    ]);
+    expect(slices).toEqual(snapshot);
+  });
+
+  it("rejects an unknown mech and an empty name", () => {
+    const { slices } = withMech();
+    expect(expectErr(renameMech(slices, "mech-9", "X"))).toEqual({
+      code: "unknown-mech",
+      mechId: "mech-9",
+    });
+    expect(expectErr(renameMech(slices, "mech-1", " "))).toEqual({
+      code: "invalid-name",
+      name: " ",
+    });
   });
 });
 

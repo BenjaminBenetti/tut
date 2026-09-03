@@ -68,6 +68,9 @@ export class OverworldScreen implements Screen {
       onMainMenu: () => {
         this.deps.router.navigate("main-menu");
       },
+      onRoster: () => {
+        this.deps.router.navigate("roster");
+      },
     });
   }
 

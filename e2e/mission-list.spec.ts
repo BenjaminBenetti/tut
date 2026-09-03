@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 /** Days to advance before giving up on a mission appearing for the fixed seed. */
 const MAX_DAYS = 40;
 
-test("a mission appears on the list, opens a briefing, selects its city and routes to deployment", async ({
+test("a mission appears, opens a briefing, routes to deployment, launches and reaches the results", async ({
   page,
 }) => {
   const errors: string[] = [];
@@ -57,8 +57,29 @@ test("a mission appears on the list, opens a briefing, selects its city and rout
   await expect(
     page.locator('[data-screen="deployment"] [data-field="mission-id"]'),
   ).toHaveText(missionId ?? "");
-  await page.locator('[data-action="back-to-overworld"]').click();
+  // Pick one squad, watch the resolver-side readout move, launch.
+  const launch = page.locator('[data-action="launch"]');
+  await expect(launch).toBeDisabled();
+  const firstSquad = page
+    .locator('#deploy-squads input[type="checkbox"]')
+    .first();
+  await firstSquad.check();
+  await expect(launch).toBeEnabled();
+  await expect(page.locator('[data-field="force"]')).not.toHaveText("0");
+  await expect(page.locator('[data-field="win-chance"]')).toHaveText(/\d+ %/);
+  await launch.click();
+
+  await expect(body).toHaveAttribute("data-screen", "mission-results");
+  await expect(
+    page.locator('[data-screen="mission-results"] [data-field="outcome"]'),
+  ).toHaveText(/Mission (won|lost|extracted)/);
+  await page.locator('[data-action="continue"]').click();
   await expect(body).toHaveAttribute("data-screen", "overworld");
+  await expect(
+    page.locator(
+      `[data-role="mission-list"] [data-mission-id="${missionId ?? ""}"]`,
+    ),
+  ).toHaveCount(0);
 
   expect(errors).toEqual([]);
 });

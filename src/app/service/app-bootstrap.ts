@@ -27,6 +27,7 @@ import { DeploymentScreen } from "../../ui/screen/deployment-screen";
 import { OverworldScreen } from "../../ui/screen/overworld-screen";
 import { OverworldSelectionState } from "../../ui/service/overworld-selection-state";
 import { MechBayScreen } from "../../ui/screen/mech-bay-screen";
+import { MissionResultsScreen } from "../../ui/screen/mission-results-screen";
 import { RosterScreen } from "../../ui/screen/roster-screen";
 import type { TutTestHooks } from "../model/test-hooks";
 import type { ScreenFactory } from "./dom-screen-router";
@@ -125,7 +126,14 @@ export async function bootstrapApp(doc: Document): Promise<void> {
             router,
             session: game.session,
             selection,
+            assessor: game.assessor,
+            squadTypes: game.content.squadTypes,
+            missionTypes: game.content.missionTypes,
           }),
+      ],
+      [
+        "mission-results",
+        () => new MissionResultsScreen({ router, session: game.session }),
       ],
       [
         "roster",

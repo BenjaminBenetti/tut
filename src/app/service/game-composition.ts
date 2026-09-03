@@ -9,6 +9,7 @@ import { MISSION_TUNING } from "../../overworld/data/mission-tuning";
 import { NEW_GAME_TUNING } from "../../overworld/data/new-game-tuning";
 import { THREAT_TUNING } from "../../overworld/data/threat-tuning";
 import type { CommandDispatcher } from "../../overworld/model/command-dispatcher";
+import type { DeploymentAssessor } from "../../overworld/model/deployment-assessment";
 import { DEPLOYABLE_TYPE_IDS } from "../../overworld/model/deployable-type";
 import { EVENT_TYPE_IDS } from "../../overworld/model/event-type";
 import { ADVANCE_DAY } from "../../overworld/model/overworld-command";
@@ -16,6 +17,7 @@ import { DataDeployableTypeCatalogue } from "../../overworld/repository/deployab
 import { DataEventTypeCatalogue } from "../../overworld/repository/event-type-catalogue";
 import { createAdvanceDayHandler } from "../../overworld/service/advance-day-service";
 import { AutoResolveMissionResolver } from "../../overworld/service/auto-resolve-mission-resolver";
+import { createDeploymentAssessor } from "../../overworld/service/deployment-assessment-service";
 import { registerLaunchMission } from "../../overworld/service/launch-mission-service";
 import { createOverworldCommandDispatcher } from "../../overworld/service/command-dispatcher";
 import { registerDeployableCommands } from "../../overworld/service/deployable-command-handlers";
@@ -89,6 +91,8 @@ export interface GameComposition {
   readonly dispatcher: CommandDispatcher<GameState>;
   /** Builds a complete campaign from the shipped content. */
   readonly createCampaign: (options: NewGameOptions) => GameState;
+  /** Rates a planned deployment the way the mission resolver will. */
+  readonly assessor: DeploymentAssessor;
   readonly newSeed: () => number;
   readonly clock: SaveClock;
   /** The catalogues and tuning the dispatcher was wired with, for screens. */
@@ -153,14 +157,20 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
       catalogue: tickDeps.catalogue,
     }),
   );
+  const mechRater = new LoadoutMechRater(
+    content.parts,
+    MECH_RATING_TUNING,
+    content.upgrades,
+  );
+  const assessor = createDeploymentAssessor({
+    squadTypes: content.squadTypes,
+    mechRater,
+    tuning: AUTO_RESOLVE_TUNING,
+  });
   registerLaunchMission(dispatcher, {
     resolver: new AutoResolveMissionResolver({
       squadTypes: content.squadTypes,
-      mechRater: new LoadoutMechRater(
-        content.parts,
-        MECH_RATING_TUNING,
-        content.upgrades,
-      ),
+      mechRater,
       tuning: AUTO_RESOLVE_TUNING,
     }),
     rosterTuning: content.rosterTuning,
@@ -182,6 +192,7 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     session,
     dispatcher,
     createCampaign: (options) => createNewGame(options, newGameDeps),
+    assessor,
     newSeed: deps.newSeed,
     clock: deps.clock,
     content,

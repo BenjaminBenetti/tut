@@ -14,7 +14,8 @@ export type ScreenId =
   | "roster"
   | "mech-bay"
   | "game-over"
-  | "deployment";
+  | "deployment"
+  | "mission-results";
 
 /** Every screen id, in a fixed order. */
 export const SCREEN_IDS: readonly ScreenId[] = [
@@ -24,6 +25,7 @@ export const SCREEN_IDS: readonly ScreenId[] = [
   "mech-bay",
   "game-over",
   "deployment",
+  "mission-results",
 ];
 
 /**

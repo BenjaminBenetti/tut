@@ -5,10 +5,10 @@ import type { GameState } from "../../save/model/game-state";
 // ===========================================
 
 /**
- * The overworld's right-hand panel. In this slice it shows the situation
- * report: the selected city (filled in by the map picking wiring through
- * `#selected-city`), the campaign seed and the camera hint. The city
- * detail and mission list issues (#75, #76) extend it.
+ * The overworld's right-hand panel: the situation report (seed and the
+ * camera hint) followed by whatever sections the screen mounts into
+ * `container` (the city card and deployables from #75, the mission list
+ * from #76).
  */
 export class SidePanelView {
   // ===========================================
@@ -18,6 +18,16 @@ export class SidePanelView {
   private root: HTMLElement | undefined;
   private seed: HTMLElement | undefined;
   private note: HTMLElement | undefined;
+  private sections: HTMLElement | undefined;
+
+  // ===========================================
+  // Accessors
+  // ===========================================
+
+  /** Where the screen mounts further sections; undefined before `mount`. */
+  get container(): HTMLElement | undefined {
+    return this.sections;
+  }
 
   // ===========================================
   // Lifecycle
@@ -36,14 +46,8 @@ export class SidePanelView {
 
     const grid = doc.createElement("dl");
     grid.className = "tut-kv";
-    const [cityTerm, cityValue] = this.createField(
-      doc,
-      "Selected city",
-      "selected-city",
-    );
-    cityValue.id = "selected-city";
     const [seedTerm, seedValue] = this.createField(doc, "Seed", "seed");
-    grid.append(cityTerm, cityValue, seedTerm, seedValue);
+    grid.append(seedTerm, seedValue);
 
     const note = doc.createElement("p");
     note.className = "tut-dim";
@@ -56,12 +60,17 @@ export class SidePanelView {
     hint.textContent =
       "Click a city · Q / E rotate · wheel zoom · WASD or arrows pan.";
 
-    panel.append(title, grid, note, hint);
+    const sections = doc.createElement("div");
+    sections.className = "tut-stack";
+    sections.dataset.role = "panel-sections";
+
+    panel.append(title, grid, note, hint, sections);
     parent.appendChild(panel);
 
     this.root = panel;
     this.seed = seedValue;
     this.note = note;
+    this.sections = sections;
   }
 
   /** Refreshes the campaign facts; shows the no-campaign note when there is none. */
@@ -79,6 +88,7 @@ export class SidePanelView {
     this.root = undefined;
     this.seed = undefined;
     this.note = undefined;
+    this.sections = undefined;
   }
 
   // ===========================================

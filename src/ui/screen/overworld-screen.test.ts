@@ -23,6 +23,12 @@ import type { MapViewportHost } from "../model/map-viewport-host";
 import type { ScreenId } from "../model/screen";
 import type { ScreenRouter, ScreenRouterEvents } from "../model/screen-router";
 import type { StoreListener } from "../model/state-store";
+import { DEPLOYABLE_TYPES } from "../../overworld/data/deployable-types";
+import { BUILD_DEPLOYABLE } from "../../overworld/model/build-deployable-command";
+import { DECOMMISSION_DEPLOYABLE } from "../../overworld/model/decommission-deployable-command";
+import { DEPLOYABLE_TYPE_IDS } from "../../overworld/model/deployable-type";
+import { DataDeployableTypeCatalogue } from "../../overworld/repository/deployable-type-catalogue";
+import { CitySelectionStore } from "../service/city-selection-store";
 import { OverworldScreen } from "./overworld-screen";
 
 type NavigateMock = Mock<(id: ScreenId) => void>;
@@ -65,17 +71,56 @@ class FakeStore implements CampaignStore {
     };
   }
   dispatch(command: OverworldCommand) {
-    if (this.fail || command.type !== ADVANCE_DAY) {
+    if (this.fail) {
       return err(commandError("campaign-over", "The campaign has ended"));
     }
-    this.state = {
-      ...this.state,
-      overworld: { ...this.state.overworld, day: this.state.overworld.day + 1 },
-      economy: {
-        ...this.state.economy,
-        credits: this.state.economy.credits + 10,
-      },
-    };
+    if (command.type === BUILD_DEPLOYABLE) {
+      const type = DEPLOYABLE_TYPES[command.payload.typeId];
+      this.state = {
+        ...this.state,
+        overworld: {
+          ...this.state.overworld,
+          deployables: [
+            ...this.state.overworld.deployables,
+            {
+              id: `deployable-${String(this.state.overworld.deployables.length + 1)}`,
+              typeId: command.payload.typeId,
+              regionId: command.payload.regionId,
+              builtDay: this.state.overworld.day,
+              online: true,
+            },
+          ],
+        },
+        economy: {
+          ...this.state.economy,
+          credits: this.state.economy.credits - type.buildCost,
+        },
+      };
+    } else if (command.type === DECOMMISSION_DEPLOYABLE) {
+      this.state = {
+        ...this.state,
+        overworld: {
+          ...this.state.overworld,
+          deployables: this.state.overworld.deployables.filter(
+            (d) => d.id !== command.payload.deployableId,
+          ),
+        },
+      };
+    } else if (command.type === ADVANCE_DAY) {
+      this.state = {
+        ...this.state,
+        overworld: {
+          ...this.state.overworld,
+          day: this.state.overworld.day + 1,
+        },
+        economy: {
+          ...this.state.economy,
+          credits: this.state.economy.credits + 10,
+        },
+      };
+    } else {
+      return err(commandError("unknown-command", "Not handled by the fake"));
+    }
     for (const listener of [...this.listeners]) {
       listener({ kind: "command", command, state: this.state, events: [] });
     }
@@ -95,6 +140,22 @@ const sessionWith = (store: CampaignStore | undefined): GameSession => ({
   start: () => undefined,
   replace: () => undefined,
   clear: () => undefined,
+});
+
+const DEPLOYABLE_TYPES_CATALOGUE = new DataDeployableTypeCatalogue(
+  DEPLOYABLE_TYPE_IDS.map((id) => DEPLOYABLE_TYPES[id]),
+);
+
+/** Screen deps around a store, with a fresh selection unless one is given. */
+const depsFor = (
+  store: CampaignStore | undefined,
+  router: ScreenRouter = fakeRouter().router,
+  selection = new CitySelectionStore(),
+) => ({
+  router,
+  session: sessionWith(store),
+  selection,
+  deployableTypes: DEPLOYABLE_TYPES_CATALOGUE,
 });
 
 const fakeRouter = (): { router: ScreenRouter; navigate: NavigateMock } => {
@@ -128,10 +189,7 @@ describe("OverworldScreen", () => {
 
   it("lays out the top bar, map area and side panel with the campaign facts", () => {
     const store = new FakeStore(newGame());
-    new OverworldScreen({
-      router: fakeRouter().router,
-      session: sessionWith(store),
-    }).mount(root);
+    new OverworldScreen(depsFor(store)).mount(root);
     expect(root.querySelector('[data-screen="overworld"]')).not.toBeNull();
     expect(root.querySelector("#top-bar")).not.toBeNull();
     expect(root.querySelector("#map-area")).not.toBeNull();
@@ -144,10 +202,7 @@ describe("OverworldScreen", () => {
 
   it("Advance day dispatches through the store and the bar follows the store change", () => {
     const store = new FakeStore(newGame());
-    new OverworldScreen({
-      router: fakeRouter().router,
-      session: sessionWith(store),
-    }).mount(root);
+    new OverworldScreen(depsFor(store)).mount(root);
     button("advance-day").click();
     button("advance-day").click();
     expect(store.getState().overworld.day).toBe(3);
@@ -158,10 +213,7 @@ describe("OverworldScreen", () => {
   it("shows a rejected command in the bar instead of throwing", () => {
     const store = new FakeStore(newGame());
     store.fail = true;
-    new OverworldScreen({
-      router: fakeRouter().router,
-      session: sessionWith(store),
-    }).mount(root);
+    new OverworldScreen(depsFor(store)).mount(root);
     button("advance-day").click();
     const status = root.querySelector<HTMLElement>('[data-role="status"]');
     expect(status?.hidden).toBe(false);
@@ -169,10 +221,7 @@ describe("OverworldScreen", () => {
   });
 
   it("notes when no campaign is active and keeps Advance day disabled", () => {
-    new OverworldScreen({
-      router: fakeRouter().router,
-      session: sessionWith(undefined),
-    }).mount(root);
+    new OverworldScreen(depsFor(undefined)).mount(root);
     expect(
       root.querySelector<HTMLElement>('[data-role="no-campaign"]')?.hidden,
     ).toBe(false);
@@ -182,20 +231,74 @@ describe("OverworldScreen", () => {
 
   it("Main menu navigates to the main menu", () => {
     const { router, navigate } = fakeRouter();
-    new OverworldScreen({
-      router,
-      session: sessionWith(new FakeStore(newGame())),
-    }).mount(root);
+    new OverworldScreen(depsFor(new FakeStore(newGame()), router)).mount(root);
     button("main-menu").click();
     expect(navigate).toHaveBeenCalledWith("main-menu");
   });
 
+  it("renders the selected city and its region's deployables, and builds through the store", () => {
+    const store = new FakeStore(newGame());
+    const selection = new CitySelectionStore();
+    new OverworldScreen(depsFor(store, undefined, selection)).mount(root);
+    expect(
+      root.querySelector<HTMLElement>('[data-role="no-city"]')?.hidden,
+    ).toBe(false);
+
+    const city = EARTH_MAP.cities[0];
+    if (!city) throw new Error("fixture map has no cities");
+    selection.select(city.id);
+    expect(root.querySelector("#selected-city")?.textContent).toBe(city.name);
+    expect(field("region")?.textContent).toBe(
+      EARTH_MAP.regions.find((r) => r.id === city.regionId)?.name,
+    );
+    expect(
+      root.querySelector<HTMLElement>('[data-role="no-city"]')?.hidden,
+    ).toBe(true);
+
+    const build = root.querySelector<HTMLButtonElement>(
+      '[data-action="build-deployable"][data-type-id="defensive-battery"]',
+    );
+    if (!build) throw new Error("missing build button");
+    expect(build.disabled).toBe(false);
+    build.click();
+    expect(store.getState().overworld.deployables).toHaveLength(1);
+    expect(store.getState().overworld.deployables[0]?.regionId).toBe(
+      city.regionId,
+    );
+    expect(field("credits")?.textContent).toBe("¢3,500");
+    const rows = root.querySelectorAll("#deployables [data-deployable-id]");
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.textContent).toContain("Defensive battery");
+
+    const remove = root.querySelector<HTMLButtonElement>(
+      '[data-action="decommission-deployable"]',
+    );
+    remove?.click();
+    expect(store.getState().overworld.deployables).toHaveLength(0);
+    expect(
+      root.querySelectorAll("#deployables [data-deployable-id]"),
+    ).toHaveLength(0);
+  });
+
+  it("shows a rejected build in the bar", () => {
+    const store = new FakeStore(newGame());
+    const selection = new CitySelectionStore();
+    new OverworldScreen(depsFor(store, undefined, selection)).mount(root);
+    selection.select(EARTH_MAP.cities[0]?.id);
+    store.fail = true;
+    root
+      .querySelector<HTMLButtonElement>(
+        '[data-action="build-deployable"][data-type-id="sensor-array"]',
+      )
+      ?.click();
+    const status = root.querySelector<HTMLElement>('[data-role="status"]');
+    expect(status?.hidden).toBe(false);
+    expect(status?.textContent).toContain("ended");
+  });
+
   it("unmount unsubscribes from the store and removes the layout", () => {
     const store = new FakeStore(newGame());
-    const screen = new OverworldScreen({
-      router: fakeRouter().router,
-      session: sessionWith(store),
-    });
+    const screen = new OverworldScreen(depsFor(store));
     screen.mount(root);
     expect(store.listenerCount).toBe(1);
     screen.unmount();
@@ -214,8 +317,7 @@ describe("OverworldScreen", () => {
       },
     };
     const screen = new OverworldScreen({
-      router: fakeRouter().router,
-      session: sessionWith(new FakeStore(newGame())),
+      ...depsFor(new FakeStore(newGame())),
       mapViewport: host,
     });
     screen.mount(root);

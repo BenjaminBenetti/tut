@@ -12,14 +12,18 @@ import { loadOverworldAssets } from "../../graphics/service/overworld-asset-load
 import { OverworldSceneBuilder } from "../../graphics/service/overworld-scene-builder";
 import { SceneService } from "../../graphics/service/scene-service";
 import { SvgGlyphRasteriser } from "../../graphics/service/svg-glyph-rasteriser";
+import { DEPLOYABLE_TYPES } from "../../overworld/data/deployable-types";
 import { EARTH_MAP } from "../../overworld/data/earth-map";
-import { getCity } from "../../overworld/service/earth-map-query-service";
+import { DEPLOYABLE_TYPE_IDS } from "../../overworld/model/deployable-type";
+import { DataDeployableTypeCatalogue } from "../../overworld/repository/deployable-type-catalogue";
 import type { SaveClock } from "../../save/model/save-clock";
 import { WebStorageKeyValueStore } from "../../save/repository/web-storage-key-value-store";
 import { iconHref } from "../../ui/data/icon-manifest";
+import type { CitySelection } from "../../ui/model/city-selection";
 import type { ScreenId } from "../../ui/model/screen";
 import { MainMenuScreen } from "../../ui/screen/main-menu-screen";
 import { OverworldScreen } from "../../ui/screen/overworld-screen";
+import { CitySelectionStore } from "../../ui/service/city-selection-store";
 import type { TutTestHooks } from "../model/test-hooks";
 import type { ScreenFactory } from "./dom-screen-router";
 import { DomMapViewportHost } from "./dom-map-viewport-host";
@@ -32,9 +36,6 @@ import { composeGame } from "./game-composition";
 
 /** Id of the element inside `#app` the map canvas mounts into; e2e waits on it. */
 const MAP_VIEWPORT_ID = "map-viewport";
-
-/** Id of the label the overworld panel hosts for the selected city's name. */
-const SELECTED_CITY_ID = "selected-city";
 
 // ===========================================
 // Bootstrap
@@ -67,6 +68,7 @@ export async function bootstrapApp(doc: Document): Promise<void> {
 
   const viewport = createMapViewport(doc, appRoot);
   const mapViewport = new DomMapViewportHost(viewport, appRoot);
+  const selection = new CitySelectionStore();
 
   const clock: SaveClock = { now: () => new Date().toISOString() };
   const game = composeGame({
@@ -99,6 +101,10 @@ export async function bootstrapApp(doc: Document): Promise<void> {
           new OverworldScreen({
             router,
             session: game.session,
+            selection,
+            deployableTypes: new DataDeployableTypeCatalogue(
+              DEPLOYABLE_TYPE_IDS.map((id) => DEPLOYABLE_TYPES[id]),
+            ),
             mapViewport,
           }),
       ],
@@ -106,7 +112,7 @@ export async function bootstrapApp(doc: Document): Promise<void> {
   );
   router.navigate("main-menu");
 
-  const scene = await composeScene(doc, viewport, window);
+  const scene = await composeScene(doc, viewport, window, selection);
   scene.start();
   await scene.whenFirstFrameRendered();
   doc.body.dataset.appState = "ready";
@@ -119,15 +125,17 @@ export async function bootstrapApp(doc: Document): Promise<void> {
 /**
  * The overworld map scene from #160: loads textures and marker glyphs,
  * builds the Earth scene, the isometric rig at minimum zoom, camera
- * input and city picking, all mounted into the given `#map-viewport`. A selected city is mirrored to `body[data-selected-city]` and,
- * when the overworld panel is mounted, to its `#selected-city` label. In
- * dev builds the `window.__tut__` hooks let end-to-end tests select
- * cities without pointer input.
+ * input and city picking, all mounted into the given `#map-viewport`. A
+ * selected city is mirrored to `body[data-selected-city]` and pushed into
+ * `selection`, which the overworld panels render. In dev builds the
+ * `window.__tut__` hooks let end-to-end tests select cities without
+ * pointer input.
  */
 async function composeScene(
   doc: Document,
   viewport: HTMLElement,
   window: Window,
+  selection: CitySelection,
 ): Promise<SceneService> {
   const assets = await loadOverworldAssets({
     textures: new ManifestTextureLoader({
@@ -149,10 +157,7 @@ async function composeScene(
   const picking = new MapPickingController(mapScene, rig, {
     onCitySelected: (cityId) => {
       doc.body.dataset.selectedCity = cityId;
-      const label = doc.getElementById(SELECTED_CITY_ID);
-      if (label) {
-        label.textContent = getCity(EARTH_MAP, cityId).name;
-      }
+      selection.select(cityId);
     },
   });
   const scene = new SceneService(viewport, {

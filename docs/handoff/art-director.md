@@ -1,6 +1,6 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-03 (session 1, ninth update)
+Last updated: 2026-09-03 (session 1, tenth update)
 
 ## 1. What I was doing and where it stands
 
@@ -18,8 +18,8 @@ Last updated: 2026-09-03 (session 1, ninth update)
 | Unit / mech-part thumbnails + thumbnail manifest | #163 | **Merged** (PR #165). |
 | Placeholder batch 3: mech part variants matching the part catalogue | #169 | **Merged** (PR #195). Superseded by Blender models in #274 batch B. |
 | **Headless Blender toolchain** (Executive Director priority) | #190 | **Merged**: devcontainer + proof PR #192, skill PR #193, handoff PR #194, `cut_below` helper PR #214. Proof and completion note on #190; fleet rebuild requested there (Director does it). |
-| **Replace placeholders with Blender models** (Director go on 2026-09-03) | #274 | Pipeline PR #277 (atlases on Blender models); batch A Mech A set PR #280; batch B all mech variants PR #283. Stacked: #264 → #277 → #280 → #283. Batch C (bugs, spawner) in progress on `feat/274-bugs`. |
-| Kit follow-ups from dry runs (`bevel`, sub-part validation, CadQuery/OpenSCAD notes) | #190 | PR #264 open. |
+| **Replace placeholders with Blender models** (Director go on 2026-09-03) | #274 | **Merged**: pipeline #277, batch A Mech A set #280, batch B all mech variants #283. **Open**: batch C bugs + spawner #287, batch D five squads #288 (stacked on #287). After D, every roster unit (30 ids) is a Blender model; `build-placeholders.mjs` keeps tiles, buildings and props. Batch E waits for tactical demand. |
+| Kit follow-ups from dry runs (`bevel`, sub-part validation, CadQuery/OpenSCAD notes) | #190 | **Merged** (PR #264). |
 | Image generation recipe (incl. transparent sprites) | — | **Working.** See §5. |
 | Headless GLB / page render checks (Playwright) and Blender review renders | — | **Working.** See §7 and §8. |
 
@@ -27,9 +27,8 @@ Issues #2, #3, #4, #93, #102, #119, #143, #144, #145 are on project 5; #162, #16
 
 ## 2. Open PRs / issues I own
 
-- Review chain, merge in order: PR #264 (kit bevel + validator sub-part rule) → #277 (Blender models pick up the unit atlases) → #280 (Mech A set) → #283 (mech variants). Each is rebased on the one below; after a squash-merge, `git rebase --onto origin/main <old-base-branch> <branch>` the next one.
-- Issue #274 is the replacement track with the batch checklist; progress comments are there.
-- Working branch `feat/274-bugs` (batch C: swarmer, lurker, brute, egg spawner) is scratch-rendering; registration follows the same recipe as batches A/B.
+- PR #287 (batch C: swarmer, lurker, brute, egg spawner) and PR #288 (batch D: five squad kits), stacked; #288 needs `git rebase --onto origin/main feat/274-bugs feat/274-squads` after #287 squash-merges (`/tmp/.../rebase-chain.sh` did this for the chain; the recipe is one `--onto` per branch, then `--force-with-lease`).
+- Issue #274 is the replacement track; progress comments there per batch.
 
 ## 3. Decisions I made and why
 
@@ -46,6 +45,7 @@ Issues #2, #3, #4, #93, #102, #119, #143, #144, #145 are on project 5; #162, #16
 - **Sprite manifest mirrors the icon manifest**: `SPRITE_MANIFEST` in `src/graphics/data/` (three.js-side assets), entries carry `path`, `size`, `blend`, `label`; test parses the PNG header itself (width, height, colour type with alpha) so no image library is needed. Sprites are RGBA ≤ 512², under 150 KB; a painterly result gets downscaled to 256² rather than shipped fat.
 - **Unit textures are two 512² atlases referenced externally from the GLBs**: `build-textures.mjs` paints one 128 px cell per token from a seeded PRNG (own PNG encoder over `node:zlib`); `build-placeholders.mjs` remaps each textured mesh's UVs into its cell and rewrites the GLB JSON to add `images[].uri`, a sampler, textures and `baseColorTexture` per material. Embedding would have duplicated the atlas in every GLB. glTF UVs run top-down (row 0 at the top), unlike three.js; the first pass sampled the unused black cells.
 - **Earth map is 2048×1024, quantised to 256 colours** (881 KB) so it fits the 1.5 MB cap; the flat faceted style loses nothing. Chosen from two generations; the other stretched continents vertically.
+- **Stacked PRs with a squash-merging Tech Lead**: after each merge, rebase the next branch with `git rebase --onto origin/main <merged-branch> <next-branch>` and each higher branch onto the one below (capture old tips first); plain `git rebase` conflicts on the squashed copies. Five PRs stalled for 40 minutes once because of this.
 - **Replacement recipe (batches A/B, reuse for C/D/E)**: shared builders in `tools/art/models/<set>_parts.py`, thin per-id scripts; run `make_model.py` per id with `--quality final` (records land in `placeholders.manifest.json`); delete the same ids' defs and builder functions from `build-placeholders.mjs` (whole-word check: `buildMechAssembledB` contains `buildMechAssembled`); rebuild placeholders (it keeps foreign records); regenerate `MODEL_MANIFEST` entries for `quality: "final"` records from the JSON; thumbnails, both preview sheets, resize renders to 512 px; `pnpm test`. Sub-parts use `--footprint 0x0` (validator skips the base check). Duplicate socket names in assembled models are sanitised to `socket_x_2`.
 - **Blender pipeline shape (#190)**: models are Python scripts under `tools/art/models/` built with `tools/art/bpy_kit.py`; `tools/art/make_model.py` does export → trimesh validation → three Cycles CPU renders → JSON record in one command; ids and TS manifest entries are still added by hand (the printed entry). `build-placeholders.mjs` keeps records it did not create so both pipelines share `placeholders.manifest.json`. Blender models face −Y in Blender so the glTF export faces +Z.
 - **Dry run of the skill on an organic model** (hive-core mound with ribs and tendrils, scratch only): spheres with `smooth=True`, rotated cylinders and `join` all export and validate; the validator caught a sphere sunk below ground, which led to `bpy_kit.cut_below` (#214). A 500-triangle organic prop renders in about 4 s.
@@ -53,10 +53,11 @@ Issues #2, #3, #4, #93, #102, #119, #143, #144, #145 are on project 5; #162, #16
 
 ## 4. Next, in order
 
-1. Land the #264 → #277 → #280 → #283 chain, rebasing each after the previous squash-merge.
-2. Batch C: bugs and spawner (branch `feat/274-bugs`, stacked on #283), then batch D squads (five kits; figures share a builder), then batch E props/kits as tactical needs them. Check #274 for Director notes between batches and fold round-2 feedback into the `*_parts.py` builders.
-3. Handoff and #274 progress comments after each batch.
-4. #162 (overworld scene uses the Earth texture) stays an engineer follow-up.
+1. Rebase #288 when #287 merges; land both.
+2. Director round-2 notes on any batch go into the matching `tools/art/models/*_parts.py`; rerun the ids, sync the manifest entries, regenerate thumbnails and previews (recipe in §3).
+3. Batch E (props, building kit, tiles) only when tactical or mapgen asks; the placeholder kit is adequate for flat pieces.
+4. Textures beyond the atlases (normal/roughness maps) only if the Director wants more surface detail; the atlas cells can be repainted in `build-textures.mjs` without touching models.
+5. #162 (overworld scene uses the Earth texture) stays an engineer follow-up.
 
 ## 5. Image generation recipe (Codex CLI)
 

@@ -1,5 +1,6 @@
 import type { LoadoutError } from "./loadout-error";
 import type { MechId } from "./mech";
+import type { PartId } from "./mech-part";
 import type { SquadId } from "./squad";
 import type { SquadTypeId } from "./squad-type";
 
@@ -57,6 +58,27 @@ export interface MechUndamagedError {
   readonly mechId: MechId;
 }
 
+/** An upgrade named a part the mech does not carry. */
+export interface PartNotFittedError {
+  readonly code: "part-not-fitted";
+  readonly mechId: MechId;
+  readonly partId: PartId;
+}
+
+/** An upgrade named a part the catalogue lacks. */
+export interface UnknownPartError {
+  readonly code: "unknown-part";
+  readonly partId: PartId;
+}
+
+/** An upgrade was asked for a part already at the top level. */
+export interface MaxUpgradeLevelError {
+  readonly code: "max-upgrade-level";
+  readonly mechId: MechId;
+  readonly partId: PartId;
+  readonly level: number;
+}
+
 /** A squad, mech or loadout name was empty. */
 export interface InvalidNameError {
   readonly code: "invalid-name";
@@ -82,10 +104,13 @@ export interface RosterInsufficientCreditsError {
  * | `invalid-reinforcement`  | ReinforceSquad             |
  * | `unknown-mech`           | RepairMech, RenameMech     |
  * | `mech-undamaged`         | RepairMech                 |
+ * | `part-not-fitted`        | UpgradePart                |
+ * | `unknown-part`           | UpgradePart                |
+ * | `max-upgrade-level`      | UpgradePart                |
  * | `unknown-loadout`        | BuildMech, DeleteLoadout   |
  * | `invalid-loadout`        | SaveLoadout, BuildMech     |
  * | `invalid-name`           | HireSquad, SaveLoadout, BuildMech, RenameMech |
- * | `insufficient-credits`   | HireSquad, ReinforceSquad, BuildMech, RepairMech |
+ * | `insufficient-credits`   | HireSquad, ReinforceSquad, BuildMech, RepairMech, UpgradePart |
  */
 export type RosterError =
   | UnknownSquadTypeError
@@ -93,6 +118,9 @@ export type RosterError =
   | InvalidReinforcementError
   | UnknownMechError
   | MechUndamagedError
+  | PartNotFittedError
+  | UnknownPartError
+  | MaxUpgradeLevelError
   | UnknownLoadoutError
   | InvalidLoadoutError
   | InvalidNameError
@@ -118,6 +146,12 @@ export function describeRosterError(error: RosterError): string {
       return `No mech "${error.mechId}" is in the roster.`;
     case "mech-undamaged":
       return `Mech "${error.mechId}" has no damage to repair.`;
+    case "part-not-fitted":
+      return `Mech "${error.mechId}" does not carry part "${error.partId}".`;
+    case "unknown-part":
+      return `No part "${error.partId}" exists in the catalogue.`;
+    case "max-upgrade-level":
+      return `Part "${error.partId}" on mech "${error.mechId}" is already at level ${error.level}.`;
     case "unknown-loadout":
       return `No loadout named "${error.name}" is saved.`;
     case "invalid-loadout":

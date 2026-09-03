@@ -2,6 +2,7 @@ import type { Mech } from "../model/mech";
 import type { MechRater } from "../model/mech-rater";
 import type { MechRatingTuning } from "../model/mech-rating-tuning";
 import type { PartCatalogue } from "../model/part-catalogue";
+import type { UpgradeTuning } from "../model/upgrade-tuning";
 import { validateLoadout } from "./loadout-validation-service";
 
 // ===========================================
@@ -21,15 +22,21 @@ export class LoadoutMechRater implements MechRater {
 
   private readonly catalogue: PartCatalogue;
   private readonly tuning: MechRatingTuning;
+  private readonly upgrades: UpgradeTuning;
 
   // ===========================================
   // Construction
   // ===========================================
 
-  /** Rates against the given parts and rating weights. */
-  constructor(catalogue: PartCatalogue, tuning: MechRatingTuning) {
+  /** Rates against the given parts, rating weights and upgrade tuning. */
+  constructor(
+    catalogue: PartCatalogue,
+    tuning: MechRatingTuning,
+    upgrades: UpgradeTuning,
+  ) {
     this.catalogue = catalogue;
     this.tuning = tuning;
+    this.upgrades = upgrades;
   }
 
   // ===========================================
@@ -38,7 +45,12 @@ export class LoadoutMechRater implements MechRater {
 
   /** The stat sheet's combat rating, or `0` when the loadout does not validate. */
   rateMech(mech: Mech): number {
-    const sheet = validateLoadout(mech.loadout, this.catalogue, this.tuning);
+    const sheet = validateLoadout(
+      mech.loadout,
+      this.catalogue,
+      this.tuning,
+      this.upgrades,
+    );
     return sheet.ok ? sheet.value.combatRating : 0;
   }
 }

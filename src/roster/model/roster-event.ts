@@ -3,6 +3,7 @@ import type { EconomyEvent } from "../../economy/model/economy-event";
 import type { EconomyState } from "../../economy/model/economy-state";
 import type { Mech, MechId } from "./mech";
 import type { MechLoadout } from "./mech-loadout";
+import type { PartId } from "./mech-part";
 import type { MechStatSheet } from "./mech-stat-sheet";
 import type { GraveyardEntry, RosterState } from "./roster-state";
 import type { Squad, SquadId } from "./squad";
@@ -216,6 +217,31 @@ export type MechRenamedEvent = DomainEvent<
 >;
 
 // ===========================================
+// Part upgraded
+// ===========================================
+
+/** Event type emitted when a fitted part gains an upgrade level. */
+export const PART_UPGRADED = "roster:part-upgraded";
+
+/** What presentation needs to animate the upgrade. */
+export interface PartUpgradedPayload {
+  readonly mechId: MechId;
+  readonly partId: PartId;
+  /** Level before. */
+  readonly from: number;
+  /** Level after; always `from + 1`. */
+  readonly to: number;
+  /** Credits paid. */
+  readonly cost: number;
+}
+
+/** A part on a mech was upgraded one level. */
+export type PartUpgradedEvent = DomainEvent<
+  typeof PART_UPGRADED,
+  PartUpgradedPayload
+>;
+
+// ===========================================
 // Union and applied shape
 // ===========================================
 
@@ -230,7 +256,8 @@ export type RosterEvent =
   | SquadWipedEvent
   | MechDestroyedEvent
   | MechRepairedEvent
-  | MechRenamedEvent;
+  | MechRenamedEvent
+  | PartUpgradedEvent;
 
 /**
  * What a roster command returns: the next roster and economy slices plus

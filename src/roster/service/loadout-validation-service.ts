@@ -14,7 +14,12 @@ import { isChassisPart } from "../model/mech-part";
 import type { MechRatingTuning } from "../model/mech-rating-tuning";
 import type { MechStatSheet } from "../model/mech-stat-sheet";
 import type { PartCatalogue } from "../model/part-catalogue";
-import { effectivePartStats, sumPartStats } from "./part-stat-service";
+import type { UpgradeTuning } from "../model/upgrade-tuning";
+import {
+  cumulativeUpgradeCost,
+  effectivePartStats,
+  sumPartStats,
+} from "./part-stat-service";
 
 // ===========================================
 // Constants
@@ -75,11 +80,14 @@ export function validateLoadout(
   loadout: MechLoadout,
   catalogue: PartCatalogue,
   rating: MechRatingTuning,
+  upgrades: UpgradeTuning,
 ): Result<MechStatSheet, LoadoutError[]> {
   const resolved = resolveLoadout(loadout, catalogue);
   const errors = [...resolved.errors];
   if (resolved.chassis !== undefined) {
-    errors.push(...checkCapacity(resolved.chassis, resolved.components));
+    errors.push(
+      ...checkCapacity(resolved.chassis, resolved.components, upgrades),
+    );
   }
   if (errors.length > 0 || resolved.chassis === undefined) {
     return err(errors);
@@ -90,6 +98,7 @@ export function validateLoadout(
       upgradeLevelOf(loadout, resolved.chassis.id),
       resolved.components,
       rating,
+      upgrades,
     ),
   );
 }
@@ -202,10 +211,11 @@ function upgradeLevelOf(loadout: MechLoadout, id: PartId): number {
 function checkCapacity(
   chassis: ChassisPart,
   components: readonly FittedPart[],
+  upgrades: UpgradeTuning,
 ): LoadoutError[] {
   const errors: LoadoutError[] = [];
   const fitted = sumPartStats(
-    components.map((c) => effectivePartStats(c.part, c.upgradeLevel)),
+    components.map((c) => effectivePartStats(c.part, c.upgradeLevel, upgrades)),
   );
   const { maxWeight, powerOutput, utilitySlots } = chassis.capacity;
 
@@ -248,17 +258,22 @@ function buildStatSheet(
   chassisUpgradeLevel: number,
   components: readonly FittedPart[],
   rating: MechRatingTuning,
+  upgrades: UpgradeTuning,
 ): MechStatSheet {
   const fitted = sumPartStats(
-    components.map((c) => effectivePartStats(c.part, c.upgradeLevel)),
+    components.map((c) => effectivePartStats(c.part, c.upgradeLevel, upgrades)),
   );
   const total = sumPartStats([
-    effectivePartStats(chassis, chassisUpgradeLevel),
+    effectivePartStats(chassis, chassisUpgradeLevel, upgrades),
     fitted,
   ]);
   const totalCost = components.reduce(
-    (sum, c) => sum + c.part.cost,
-    chassis.cost,
+    (sum, c) =>
+      sum +
+      c.part.cost +
+      cumulativeUpgradeCost(c.part, c.upgradeLevel, upgrades),
+    chassis.cost +
+      cumulativeUpgradeCost(chassis, chassisUpgradeLevel, upgrades),
   );
   return {
     armor: total.armor,

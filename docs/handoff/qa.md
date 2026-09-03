@@ -1,24 +1,31 @@
 # Handoff: QA
 
-Last updated: 2026-09-03 (session 1, run 45, ~20:00 UTC). Read `docs/process/roles/qa.md` first.
+Last updated: 2026-09-03 (session 1, run 51, ~18:00 UTC; resumed after a ~2 h usage-limit stall). Read `docs/process/roles/qa.md` first.
 
 ## Latest run
 
 | Field | Value |
 |---|---|
-| SHA tested | `e4eec36` (main, 2026-09-03 ~19:50 UTC; runs 44–45 covered #380 top bar fix, #383 unreadable-autosave messages, #324 tactical command/event unions) |
+| SHA tested | `1aef30a` (main, 2026-09-03 ~17:45 UTC; runs 46–51 covered #326 line of sight, #386 badge fix, #327 combat, **#342 tactical screen + dev hooks**, #329 movement service, #392 debug-in-composition) |
 | Gate | typecheck, lint, build all pass |
-| `pnpm test` (vitest) | 1208 / 1208 (+1 deliberate skip) |
-| `pnpm test:e2e` on main | 37 / 37 |
-| Exploratory pass | eleven flows: 0 findings |
-| Verified fixed this run | **#291** (top bar one line at 700–1024 px) and **#219** (menu explains an unreadable autosave), both re-tested and commented |
-| **Release gate** | Met (see run 43). |
-| **Health** | **Green.** Three low-priority bugs remain open: #294 (default squad name), #304 (debug multiplier in saves), #368 (threat badge rounding). |
+| `pnpm test` (vitest) | 1282 / 1282 (+1 deliberate skip) |
+| `pnpm test:e2e` on main | 38 / 38 (`tactical-screen.spec.ts` added by #342) |
+| Exploratory pass | twelve flows (+ **tactical**): 0 findings after ruling out an anchor artefact in the new flow |
+| Verified fixed this run | **#368** (badge tone on the rounded value) and **#304** (debug multiplier no longer in the save), both re-tested and commented |
+| **Release gate** | Met (run 43). |
+| **Health** | **Green.** One p3 bug open (#294). M2 has started: the tactical screen boots from the dev hook with the roster deployed on a generated city map; intents are recorded but not yet mapped to commands. |
 
 ### Run history
 
 | SHA | Build | Unit | e2e | Exploratory | Filed |
 |---|---|---|---|---|---|
+| `1aef30a` | pass | 1282/1282 | 38/38 | 0 findings (+ tactical flow); #304 verified | — |
+| `75e1913` | pass | 1279/1279 | 38/38 | 0 findings | — |
+| `f8cecc9` | pass | 1262/1262 | 38/38 | 0 findings (tactical screen lands) | — |
+| `6db1ce9` | pass | 1252/1252 | 37/37 | 0 findings | — |
+| `ab301d6` | pass | 1225/1225 | 37/37 | 0 findings | — |
+| `84b1a6a` | pass | 1225/1225 | 37/37 | 0 findings; #368 verified | — |
+| `24c31cb` | pass | 1208/1208 | 37/37 | 0 findings | — |
 | `e4eec36` | pass | 1208/1208 | 37/37 | 0 findings; #219 verified | — |
 | `492cb18` | pass | 1194/1194 | 37/37 | 0 findings; #291 verified | — |
 | `cb7ea08` | pass | 1194/1194 | 36/36 | 0 findings; #218 verified | — |
@@ -74,6 +81,7 @@ Exploratory coverage at `35857b2` (headless Chromium, SwiftShader, 1280×720, pr
 - Viewports 480×320, 800×600, 1920×1080 and a live resize: canvas backing size tracks CSS size; panel never overflows.
 - Save edge cases: corrupt JSON, empty, `null`, `[]`, wrong / string / missing `schemaVersion`, missing state, non-object state, save deleted mid-session, storage at quota.
 - Mapgen preview: all 72 biome × settlement × size × 2-seed combinations generate (max 1.07 s incl. page load); Generate, reroll, Enter-to-submit, level slider 0–5 behave; unknown query values fall back silently (see observations).
+- Tactical screen slice (#342, run 51, dev hook `__tut__.startTacticalMission(missionId)` on seed `4242`): opens `body[data-screen="tactical"]` with a canvas filling `#tactical-viewport`, bar "MISSION mission-1 · TURN 1 · PHASE player · TDF 3 · BUGS 0" and an Overworld button; the autosave gains `activeMission` (3 TDF units on adjacent deploy tiles, 2 spawners, 2 objectives, 16 extraction tiles); `body[data-tactical-units]` equals the unit count; `__tutTactical__.selectUnit/selectTile` mirror to `body[data-selected-unit|data-selected-tile]`; real clicks 10–30 px above each unit's anchor select that unit (the anchor is the tile centre under the feet, so a click exactly there hits the ground or the unit in front — occlusion, not a mispick); a tile click records the tile; keys m/a/o/r/Tab/Escape/Enter record move/attack/overwatch/reload/next-unit/cancel/end-turn intents but change nothing yet (turn stays 1 / player); Overworld returns to a re-hosted map with the mission kept; `startTacticalMission` again says `Mission "mission-1" is already in progress`; reload → Continue lands on the overworld with the mission kept (the spec notes #341 will flip this to tactical). **Observation:** Advance day is enabled while a mission is active; decide with #341 whether time may pass during a deployment.
 - Event dialog (#77 over #70/#71, run 37, seeds `9` and `qa-events-2`): no dialog on day 1; when a tick raises an event the overlay shows title, city line for city events, text, expiry and the catalogue's choices, is `aria-modal`, blocks the top bar (elementFromPoint on Main menu hits the backdrop), ignores Escape, and disables Advance day with the tooltip "Answer the pending event first"; each choice applied exactly its catalogue effect over 13 events of all four types (funding-review ±¢1,500/−¢500/0, research-find +¢1,200, city-plea −¢600 / threat +3, spore-shower −¢400 / threat +2), the answered event leaves `pendingEvents`, the dialog hides and Advance re-enables; "{city}" is substituted in titles and text; a pending event survives reload + Continue and still blocks. "Request an advance" then pays a halved stipend (observed, not asserted).
 - Deployment, launch and results (#82, runs 31–35, seed `qa-launch`): the deployment screen shows the mission title and briefing, one checkbox row per squad ("Alpha | Rifle Squad | 5/5") and mech ("Hammerhead | 0 % damage"), Launch disabled with nothing picked; the assessment moves with the picker (force 10 → 20 → 149 against an even-fight target of 60, win chance 22 % → 27 % → 90 %) and its tone follows `ODDS_BAND_LOWER` (ok ≥ 66 %, warn ≥ 40 %); Launch → `mission-results` ("Mission extracted", mission id, credits ¢150, squads wiped 0, mechs destroyed 0, infestation 0, "The full debrief arrives with #83"); the stored `lastMissionResult` matches the screen, the treasury rises by exactly `creditsAwarded`, the city's infestation moves by exactly `infestationDelta`, the mission leaves the list, squad strengths drop by the reported losses (3 and 1), the mech takes the reported 30 damage; nine single-unit launches later one squad was wiped and appears in the graveyard, UI and state agreeing. **After Continue the overworld is blank (#357)**; the flow recovers via Roster → Overworld.
 - Map markers (#302 → #313, run 31, dev hook `cityMarkerLook`): for 36 cities the marker tint equals the infestation ramp (stops #7ccb5a / #9cff3d / #f0c63c / #e0453c, ±3 per channel) and the mission badge equals "city has a mission in state" (6 badges); the selected city is drawn in the selection colour.
@@ -102,9 +110,9 @@ Exploratory coverage at `35857b2` (headless Chromium, SwiftShader, 1280×720, pr
 | ~~#219~~ | p3 | ui | **Fixed by #383; verified run 45** (status line names the reason; newer schema called out). |
 | ~~#291~~ | p3 | ui | **Fixed by #380; verified run 44** (41 px bar, labels collapse to values at 700 px). |
 | ~~#218~~ | p3 | engine | **Fixed by #379; verified run 43.** |
-| #368 | p3 | ui | Top bar threat number is rounded but the tone badge is not: raw 33.4 shows "33 · WARN". One-line fix (`threatTone(Math.round(...))`). |
+| ~~#368~~ | p3 | ui | **Fixed by #386; verified run 47** (0 badge/number mismatches over 58 ticks). |
+| ~~#304~~ | p3 | overworld | **Fixed by #392; verified run 51** (no debug key in the save; dev URL still escalates; prod unaffected). |
 | ~~#357~~ | p1 | ui | **Fixed by #83 (#358)**; #359 is the regression test. |
-| #304 | p3 | overworld | `threatEscalationMultiplier` rides along in the save (`overworld.debug`) and the production build applies it on Continue/Import; the URL switch itself is correctly dev-only. Low impact; label accuracy. |
 | ~~#302~~ | p2 | ui (feature gap) | **Closed by #313**; verified in run 31 (tint ramp + mission badge parity for every city). |
 | #294 | p3 | ui | Squad hired without a name is called "Rifle Squad squad" (`squad-list-view.ts:310` appends "squad" to "Rifle Squad"). One-line fix. |
 
@@ -134,13 +142,13 @@ Commented on **#33** at `35857b2` (preview missing from the build); #209 fixed i
 
 ## 6. Next, in order
 
-1. Loop: `/tmp/qa-scripts/qa-run.sh` on the QA instance (a copy of the session scratchpad; `QA_SCRIPTS` overrides the path) does pull → typecheck → lint → build → vitest → e2e → ten exploratory flows (`qa-explore`, `qa-menu`, `qa-migrate`, `qa-overworld`, `qa-roster`, `qa-city`, `qa-debug`, `qa-mechbay`, `qa-launch` .mjs) and prints the state of every filed issue, in one call (~10 min); the scripts are not in the repo (role brief: throwaway), so a fresh instance rebuilds them from the descriptions in §1; a background monitor polls `repos/BenjaminBenetti/tut/commits?per_page=1` every 5 min and validates the SHA (`^[0-9a-f]{40}$`, an API error body once produced a bogus "new main" event). Update this file when a bug is filed, a PR opens, or roughly hourly; not per quiet run.
+1. Loop: `/tmp/qa-scripts/qa-run.sh` on the QA instance (a copy of the session scratchpad; `QA_SCRIPTS` overrides the path) does pull → typecheck → lint → build → vitest → e2e → ten exploratory flows (`qa-explore`, `qa-menu`, `qa-migrate`, `qa-overworld`, `qa-roster`, `qa-city`, `qa-debug`, `qa-mechbay`, `qa-launch`, `qa-events`, `qa-tactical` .mjs) and prints the state of every filed issue, in one call (~10 min); the scripts are not in the repo (role brief: throwaway), so a fresh instance rebuilds them from the descriptions in §1; a background monitor polls `repos/BenjaminBenetti/tut/commits?per_page=1` every 5 min and validates the SHA (`^[0-9a-f]{40}$`, an API error body once produced a bogus "new main" event). Update this file when a bug is filed, a PR opens, or roughly hourly; not per quiet run.
 2. **Release gate:** met on `2f80f22` (CI green, loop spec in). When v0.1.0 is tagged, run the full loop once on the tag and note it here.
 3. When #83 (full debrief) and the event dialog (#77 successor) land, extend the launch flow to read the debrief rows and trigger a pending event (#70/#71) and take each choice, checking credits and the stipend/threat modifiers (#307). select a city and read its detail, accept and launch a mission (auto-resolve), inspect the results and the graveyard after losses, reinforce a depleted squad, build a mech and save a loadout.
    The city flow already reaches missions (they appear by ~day 12) and Plan deployment; once #77 lands, follow it into the deployment screen, launch (auto-resolve, #67), and check credits, roster damage, casualties and the graveyard.
    The roster flow stages state it cannot reach yet (damaged mechs, treasury) by Export → edit JSON → Import from the main menu; reuse that trick for casualties once missions run.
-4. Re-verify #294 / #304 / #368 when their PRs merge; close with a `**QA** · TUT agent` comment (done for #217, #218, #219, #291, #302, #357).
-5. M2 starts (tactical scene #337, mission state #323, unit models #321 are landing): when the tactical screen becomes reachable from Launch, add a tactical flow (deploy units, move/shoot, extract) and extend `overworld-loop.spec.ts` or add a sibling for the tactical path.
+4. Re-verify #294 when its PR merges; close with a `**QA** · TUT agent` comment (done for #217, #218, #219, #291, #302, #304, #357, #368).
+5. M2: `qa-tactical.mjs` covers the #342 slice. When intents map to commands (move/attack/overwatch/reload/end-turn), extend it: move a unit along a path and compare the state's position, attack a bug with the preview's hit chance, end turn and watch the bug phase / spawns, extract, and check the results and roster afterwards; when #341 routes Launch to the tactical screen, add the tactical path to `overworld-loop.spec.ts` (or a sibling) and flip the reload expectation in `tactical-screen.spec.ts`.
 4. Fold the production preview check (strict: errors, failed requests, `#panel`, regenerate) into the exploratory script permanently; #33 landed in #209.
 5. Two PRs that are each green but red together (#238 + #254) is a Tech Lead / CI concern: consider a required "merge with main" check or serialising merges that touch the same model. Mentioned here, not filed; raise it if it recurs.
 6. Consider a pan-bounds e2e once #218 is fixed (hold A for 2 s, then assert some city marker is still on screen).
@@ -152,6 +160,7 @@ Commented on **#33** at `35857b2` (preview missing from the build); #209 fixed i
 - Production build (`vite preview`) has no `window.__tut__` hooks; run hook-based checks against the dev server. Since #209 it does include `mapgen-preview.html`.
 - Chromium localStorage is ~5 MB per origin. To force an autosave failure **clear storage first**, then fill with 512 KB chunks, then 64 KB, 4 KB, 256 B, 16 B, 1 B until each throws. Filling around an existing autosave lets the next save succeed (same key, same size).
 - Since #78 the lose-run must watch `body[data-screen]` for `game-over` after every Advance day click; the hand-off happens one microtask after the outcome is set, so a click-then-read loop sees the button vanish.
+- `__tutTactical__.unitScreenPosition` returns the tile centre under the unit (same as `tileScreenPosition`); click 10–30 px above it to hit the mesh, and expect the front unit to win when deploy tiles overlap in screen space.
 - Since the notice bar (#217 fix) `#ui` holds `div#notices` beside the active `section[data-screen]`; count screens with `#ui section[data-screen]`, not `#ui > *`.
 - Since #379 pan is clamped: a "pan off screen" check must now expect markers to stay in view.
 - Since #77 an event can appear on any tick and blocks Advance day and the top bar: every scripted tick or navigation answers `[data-role="event-dialog"] [data-choice-id]` first; measurements that compare two ticks (upkeep, stipend) must skip ticks on which an event was answered. Since #83 Continue on the results screen advances the day.

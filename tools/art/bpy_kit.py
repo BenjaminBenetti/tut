@@ -185,6 +185,19 @@ def socket(name: str, at: tuple[float, float, float]) -> bpy.types.Object:
     return ob
 
 
+def bevel(ob: bpy.types.Object, width: float = 0.03, segments: int = 1) -> bpy.types.Object:
+    """Chamfer an object's edges with a bevel modifier (angle-limited, so flat faces stay flat).
+
+    One segment reads as a machined chamfer at isometric distance and costs
+    roughly 2× the triangles of the plain box; ``export_glb`` applies it.
+    """
+    mod = ob.modifiers.new("bevel", "BEVEL")
+    mod.width = width
+    mod.segments = segments
+    mod.limit_method = "ANGLE"
+    return ob
+
+
 def cut_below(ob: bpy.types.Object, z: float = 0.0) -> bpy.types.Object:
     """Slice away everything under the plane ``z`` and cap the hole, so a sphere or
     ellipsoid sunk into the ground still exports watertight with its base on z = 0."""

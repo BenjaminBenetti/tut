@@ -65,7 +65,7 @@ export const BIOME_DEFINITIONS: Readonly<Record<BiomeId, BiomeDefinition>> = {
       { template: BuildingKindIds.SHOP, weight: 1 },
     ],
     roadSurface: SurfaceIds.ROAD,
-    trailSurface: SurfaceIds.SNOW,
+    trailSurface: SurfaceIds.DIRT,
   },
   desert: {
     id: "desert",
@@ -92,7 +92,7 @@ export const BIOME_DEFINITIONS: Readonly<Record<BiomeId, BiomeDefinition>> = {
       { template: BuildingKindIds.TOWER, weight: 1 },
     ],
     roadSurface: SurfaceIds.ROAD,
-    trailSurface: SurfaceIds.SAND,
+    trailSurface: SurfaceIds.DIRT,
   },
   coastal: {
     id: "coastal",

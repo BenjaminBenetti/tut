@@ -56,6 +56,9 @@ export interface BiomeDefinition {
   readonly buildingKinds: readonly WeightedBuildingKind[];
   /** Surface of paved roads. */
   readonly roadSurface: SurfaceId;
-  /** Surface of unpaved roads (rural settlements). */
+  /**
+   * Surface of unpaved roads (rural settlements). Never the biome's
+   * dominant ground surface, or the trail is invisible.
+   */
   readonly trailSurface: SurfaceId;
 }

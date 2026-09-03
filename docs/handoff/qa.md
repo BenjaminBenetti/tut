@@ -1,25 +1,28 @@
 # Handoff: QA
 
-Last updated: 2026-09-03 (session 1, run 55, ~18:40 UTC). Read `docs/process/roles/qa.md` first.
+Last updated: 2026-09-03 (session 1, run 59, ~19:45 UTC). Read `docs/process/roles/qa.md` first.
 
 ## Latest run
 
 | Field | Value |
 |---|---|
-| SHA tested | `319e66e` (main, 2026-09-03 ~18:30 UTC; runs 52–55 covered **#339 mission HUD**, #394/#395 art atlases and VFX sheets, #401 default squad names) |
+| SHA tested | `fd236be` (main, 2026-09-03 ~19:30 UTC; runs 56–59 covered #338 tactical overlays + animation queue, #406 one status row, #230 isRecord, **#328 turn engine**) |
 | Gate | typecheck, lint, build all pass |
-| `pnpm test` (vitest) | 1297 / 1297 (+1 deliberate skip) |
-| `pnpm test:e2e` on main | 39 / 39 (`tactical-hud.spec.ts` added by #339) |
-| Exploratory pass | twelve flows: 0 findings outside the tactical slice; the tactical flow reports only the known #404 |
-| Filed this run | **#403** (p3, ui): two status rows / two Overworld buttons on the tactical screen; **#404** (p3, ui): END TURN / RELOAD / OVERWATCH have no handler and the status line shows "No handler registered for command…" |
-| Verified fixed this run | **#294** (default squad names are numbered per type) |
+| `pnpm test` (vitest) | 1330 / 1330 (+1 deliberate skip) |
+| `pnpm test:e2e` on main | 39 / 39 |
+| Exploratory pass | twelve flows: 0 findings outside the tactical slice; the tactical flow finds **#412** |
+| Filed this run | **#412 (p2, tactical)**: END TURN enters the bugs phase and nothing ends it — the mission soft-locks at turn 1 |
+| Verified fixed this run | **#403** (one status row); **#404** partly (END TURN and OVERWATCH now handled; RELOAD still unhandled, kept open) |
 | **Release gate** | Met (run 43). |
-| **Health** | **Green for M1; M2 in progress.** Every M1 bug filed today is closed and verified. The tactical HUD renders and MOVE works end to end; END TURN, RELOAD, OVERWATCH and ATTACK wait on their handlers, so a mission cannot yet be played through. |
+| **Health** | **Green for M1; amber for M2.** MOVE and OVERWATCH work with correct AP costs and refusals; the range / cover / LOS overlays render; but a tactical mission cannot get past turn 1 until the bugs phase has a runner (#412). Only reachable through the dev hook, so no player impact yet. |
 
 ### Run history
 
 | SHA | Build | Unit | e2e | Exploratory | Filed |
 |---|---|---|---|---|---|
+| `fd236be` | pass | 1330/1330 | 39/39 | bugs phase soft-lock; #403 verified | #412 |
+| `602ec97` | pass | 1310/1310 | 39/39 | known #404 only | — |
+| `bf31bb7` | pass | 1310/1310 | 39/39 | known #404 only; overlays render | — |
 | `319e66e` | pass | 1297/1297 | 39/39 | known #404 only; #294 verified | — |
 | `713490e` | pass | 1297/1297 | 39/39 | known #404 only | — |
 | `ca9a726` | pass | 1297/1297 | 39/39 | HUD flow: 2 real gaps | #403, #404 |
@@ -85,6 +88,7 @@ Exploratory coverage at `35857b2` (headless Chromium, SwiftShader, 1280×720, pr
 - Viewports 480×320, 800×600, 1920×1080 and a live resize: canvas backing size tracks CSS size; panel never overflows.
 - Save edge cases: corrupt JSON, empty, `null`, `[]`, wrong / string / missing `schemaVersion`, missing state, non-object state, save deleted mid-session, storage at quota.
 - Mapgen preview: all 72 biome × settlement × size × 2-seed combinations generate (max 1.07 s incl. page load); Generate, reroll, Enter-to-submit, level slider 0–5 behave; unknown query values fall back silently (see observations).
+- Turn engine and overlays (#328 / #338, runs 56–59): selecting a unit paints a blue movement-range field with yellow/red cover rings; MOVE to an adjacent tile costs 1 AP; OVERWATCH sets the unit's status to "overwatch" and spends its AP; RELOAD still says "No handler registered for command "tactical:reload"" (#404 / #409); END TURN logs `tactical:turn-started` and switches the banner to "bugs" — and stays there with every action disabled (#412).
 - Mission HUD (#339, run 53, seed `4242`): the HUD preselects the first unit; the unit card shows name, side ("tdf · mech" / "tdf · squad"), an HP meter, HP 80/80 or 20/20, AP 2/2, weapon (range · acc · dmg · pen), armour and status, all equal to `activeMission.units`; the objectives panel lists "0 / 2" with both spawners at 20 hp; the action bar has MOVE / ATTACK / OVERWATCH / RELOAD / END TURN. **MOVE works:** arm MOVE, pick an adjacent free tile → the unit's `pos` changes and AP drops 2 → 1; a non-adjacent path is refused with "the path does not step from tile to tile" and a far tile with "a tile on the path cannot be entered". **END TURN, RELOAD and OVERWATCH** put "No handler registered for command \"tactical:end-turn\"" (…reload / …overwatch) in the banner and change nothing (#404), so no bugs ever spawn and ATTACK cannot be exercised yet; the turn stays 1 through 18 attempts. The HUD's turn banner duplicates the #342 bar's turn/phase and Overworld button (#403).
 - Tactical screen slice (#342, run 51, dev hook `__tut__.startTacticalMission(missionId)` on seed `4242`): opens `body[data-screen="tactical"]` with a canvas filling `#tactical-viewport`, bar "MISSION mission-1 · TURN 1 · PHASE player · TDF 3 · BUGS 0" and an Overworld button; the autosave gains `activeMission` (3 TDF units on adjacent deploy tiles, 2 spawners, 2 objectives, 16 extraction tiles); `body[data-tactical-units]` equals the unit count; `__tutTactical__.selectUnit/selectTile` mirror to `body[data-selected-unit|data-selected-tile]`; real clicks 10–30 px above each unit's anchor select that unit (the anchor is the tile centre under the feet, so a click exactly there hits the ground or the unit in front — occlusion, not a mispick); a tile click records the tile; keys m/a/o/r/Tab/Escape/Enter record move/attack/overwatch/reload/next-unit/cancel/end-turn intents but change nothing yet (turn stays 1 / player); Overworld returns to a re-hosted map with the mission kept; `startTacticalMission` again says `Mission "mission-1" is already in progress`; reload → Continue lands on the overworld with the mission kept (the spec notes #341 will flip this to tactical). **Observation:** Advance day is enabled while a mission is active; decide with #341 whether time may pass during a deployment.
 - Event dialog (#77 over #70/#71, run 37, seeds `9` and `qa-events-2`): no dialog on day 1; when a tick raises an event the overlay shows title, city line for city events, text, expiry and the catalogue's choices, is `aria-modal`, blocks the top bar (elementFromPoint on Main menu hits the backdrop), ignores Escape, and disables Advance day with the tooltip "Answer the pending event first"; each choice applied exactly its catalogue effect over 13 events of all four types (funding-review ±¢1,500/−¢500/0, research-find +¢1,200, city-plea −¢600 / threat +3, spore-shower −¢400 / threat +2), the answered event leaves `pendingEvents`, the dialog hides and Advance re-enables; "{city}" is substituted in titles and text; a pending event survives reload + Continue and still blocks. "Request an advance" then pays a halved stipend (observed, not asserted).
@@ -115,8 +119,9 @@ Exploratory coverage at `35857b2` (headless Chromium, SwiftShader, 1280×720, pr
 | ~~#219~~ | p3 | ui | **Fixed by #383; verified run 45** (status line names the reason; newer schema called out). |
 | ~~#291~~ | p3 | ui | **Fixed by #380; verified run 44** (41 px bar, labels collapse to values at 700 px). |
 | ~~#218~~ | p3 | engine | **Fixed by #379; verified run 43.** |
-| #403 | p3 | ui | Tactical screen shows `#tactical-bar` and `#turn-banner` together: turn/phase twice, two Overworld buttons. |
-| #404 | p3 | ui | Action bar offers END TURN / RELOAD / OVERWATCH without handlers; status leaks "No handler registered for command…". Likely self-resolving as handlers land; the message wording should change regardless. |
+| #412 | **p2** | tactical | END TURN → bugs phase that nothing runs or closes; soft lock at turn 1 with no message. Stopgap: end the bugs phase immediately when no bug can act. |
+| ~~#403~~ | p3 | ui | **Fixed by #406; verified run 59.** Tactical screen shows `#tactical-bar` and `#turn-banner` together: turn/phase twice, two Overworld buttons. |
+| #404 | p3 | ui | RELOAD still unhandled after #328 (END TURN and OVERWATCH now work); the banner still leaks "No handler registered for command…". Reload arrives with #409. |
 | ~~#294~~ | p3 | ui | **Fixed by #401; verified run 55** ("Rifle Squad 3", "Medic Squad 1"). |
 | ~~#368~~ | p3 | ui | **Fixed by #386; verified run 47** (0 badge/number mismatches over 58 ticks). |
 | ~~#304~~ | p3 | overworld | **Fixed by #392; verified run 51** (no debug key in the save; dev URL still escalates; prod unaffected). |
@@ -154,7 +159,7 @@ Commented on **#33** at `35857b2` (preview missing from the build); #209 fixed i
 3. When #83 (full debrief) and the event dialog (#77 successor) land, extend the launch flow to read the debrief rows and trigger a pending event (#70/#71) and take each choice, checking credits and the stipend/threat modifiers (#307). select a city and read its detail, accept and launch a mission (auto-resolve), inspect the results and the graveyard after losses, reinforce a depleted squad, build a mech and save a loadout.
    The city flow already reaches missions (they appear by ~day 12) and Plan deployment; once #77 lands, follow it into the deployment screen, launch (auto-resolve, #67), and check credits, roster damage, casualties and the graveyard.
    The roster flow stages state it cannot reach yet (damaged mechs, treasury) by Export → edit JSON → Import from the main menu; reuse that trick for casualties once missions run.
-4. Re-verify #403 / #404 when their PRs merge; close with a `**QA** · TUT agent` comment (done for every M1 bug: #217, #218, #219, #291, #294, #302, #304, #357, #368).
+4. Re-verify #404 / #412 when their PRs merge; close with a `**QA** · TUT agent` comment (done for every M1 bug: #217, #218, #219, #291, #294, #302, #304, #357, #368).
 5. M2: `qa-tactical.mjs` covers #342 + #339 (move works; end turn / attack / overwatch / reload wait on handlers, #404). When the handlers land, the flow already tries to: move a unit along a path and compare the state's position, attack a bug with the preview's hit chance, end turn and watch the bug phase / spawns, extract, and check the results and roster afterwards; when #341 routes Launch to the tactical screen, add the tactical path to `overworld-loop.spec.ts` (or a sibling) and flip the reload expectation in `tactical-screen.spec.ts`.
 4. Fold the production preview check (strict: errors, failed requests, `#panel`, regenerate) into the exploratory script permanently; #33 landed in #209.
 5. Two PRs that are each green but red together (#238 + #254) is a Tech Lead / CI concern: consider a required "merge with main" check or serialising merges that touch the same model. Mentioned here, not filed; raise it if it recurs.
@@ -167,6 +172,7 @@ Commented on **#33** at `35857b2` (preview missing from the build); #209 fixed i
 - Production build (`vite preview`) has no `window.__tut__` hooks; run hook-based checks against the dev server. Since #209 it does include `mapgen-preview.html`.
 - Chromium localStorage is ~5 MB per origin. To force an autosave failure **clear storage first**, then fill with 512 KB chunks, then 64 KB, 4 KB, 256 B, 16 B, 1 B until each throws. Filling around an existing autosave lets the next save succeed (same key, same size).
 - Since #78 the lose-run must watch `body[data-screen]` for `game-over` after every Advance day click; the hand-off happens one microtask after the outcome is set, so a click-then-read loop sees the button vanish.
+- Keyboard shortcuts on the tactical screen now issue real commands (`o` = overwatch spends AP, Enter ends the turn): run intent probes last, or on a unit you do not need afterwards.
 - The tactical screen does not set `body[data-last-command]` (only the mapgen preview does); judge a tactical command by the state change (`activeMission` in the autosave: `pos`, `ap`, `turn`, `log.length`) and the banner's `[data-role="status"]`.
 - `__tutTactical__.unitScreenPosition` returns the tile centre under the unit (same as `tileScreenPosition`); click 10–30 px above it to hit the mesh, and expect the front unit to win when deploy tiles overlap in screen space.
 - Since the notice bar (#217 fix) `#ui` holds `div#notices` beside the active `section[data-screen]`; count screens with `#ui section[data-screen]`, not `#ui > *`.

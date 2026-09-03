@@ -549,3 +549,64 @@
   align-self: start;
   margin: var(--space-4);
 }
+
+/* =========================================== */
+/* Mission HUD (#339)                          */
+/* =========================================== */
+
+.tut-tactical__viewport {
+  position: relative;
+}
+
+/*
+ * The HUD is an overlay grid over the tactical viewport: banner across
+ * the top, a side column on the right, the action bar along the bottom.
+ * The grid itself lets pointer events through to the map; its parts do
+ * not.
+ */
+.tut-hud {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) min(300px, 36vw);
+  grid-template-areas:
+    "top top"
+    "map side"
+    "bottom bottom";
+  pointer-events: none;
+}
+
+.tut-hud > * {
+  pointer-events: auto;
+}
+
+.tut-hud__top {
+  grid-area: top;
+}
+
+.tut-hud__side {
+  grid-area: side;
+  margin: var(--space-4);
+  overflow: auto;
+}
+
+.tut-hud__bottom {
+  grid-area: bottom;
+  padding: var(--space-3) var(--space-4);
+  background: var(--ui-panel);
+  border-top: var(--line) solid var(--ui-line);
+}
+
+.tut-hud__actions {
+  justify-content: center;
+}
+
+.tut-hud__preview .tut-row {
+  gap: var(--space-4);
+  font-size: 16px;
+}
+
+.tut-hud .tut-btn.is-selected {
+  box-shadow: inset 0 0 0 2px var(--ui-accent);
+}

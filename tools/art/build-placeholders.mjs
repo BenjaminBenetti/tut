@@ -861,7 +861,7 @@ function buildMapgenProp(mf, kind) {
  * @property {{w: number, d: number}} footprint - Footprint in tiles (0×0 for parts).
  * @property {number} height - Height in world units.
  * @property {(mf: MaterialFactory) => Object3D} build - Builder.
- * @property {boolean} [textured] - Map palette tokens onto the unit atlases.
+ * @property {boolean} [textured] - Map palette tokens onto the atlases (default true; only tokens with a cell change).
  */
 
 /** @type {ModelDef[]} */
@@ -1169,7 +1169,7 @@ function collectSockets(root) {
  * Lists the atlases referenced by textured materials under a node, in
  * first-use order.
  * @param {Object3D} root - Node to traverse.
- * @returns {("tdf"|"bug")[]} Atlas ids.
+ * @returns {("tdf"|"bug"|"env")[]} Atlas ids.
  */
 function collectAtlases(root) {
   const atlases = [];
@@ -1200,7 +1200,7 @@ const SAMPLER = {
  *   materials[i].pbrMetallicRoughness.baseColorTexture ← by material name
  *
  * @param {Buffer} glb - Exported GLB.
- * @param {("tdf"|"bug")[]} atlases - Atlases used by the model.
+ * @param {("tdf"|"bug"|"env")[]} atlases - Atlases used by the model.
  * @param {string} category - Model folder, to compute the relative URI.
  * @returns {Buffer} GLB with external texture references (unchanged if no atlases).
  */
@@ -1243,7 +1243,7 @@ function attachAtlases(glb, atlases, category) {
  * @returns {Promise<object>} Manifest record with byte size and triangle count.
  */
 async function exportModel(def, outDir) {
-  const root = def.build(new MaterialFactory(def.textured === true));
+  const root = def.build(new MaterialFactory(def.textured !== false));
   const scene = new Scene();
   scene.add(root);
   const exporter = new GLTFExporter();

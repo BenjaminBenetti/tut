@@ -14,6 +14,12 @@ export interface TutTestHooks {
   cityScreenPosition(cityId: CityId): Vec2 | undefined;
   /** What a city's marker currently shows: tint and mission badge. */
   cityMarkerLook(cityId: CityId): CityMarkerLookReport | undefined;
+  /**
+   * Starts the offered mission `missionId` tactically with the whole
+   * roster and opens the tactical screen (#342). Returns the error
+   * message when it cannot; `LaunchMission` (#341) is the real path.
+   */
+  startTacticalMission(missionId: string): string | undefined;
 }
 
 declare global {

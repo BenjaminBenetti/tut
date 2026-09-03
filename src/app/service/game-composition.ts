@@ -28,6 +28,8 @@ import type { TickDeps } from "../../overworld/service/default-tick-steps";
 import type { MissionTypeCatalogue } from "../../overworld/service/mission-generation-service";
 import { createDefaultTickSteps } from "../../overworld/service/default-tick-steps";
 import { registerRosterCommands } from "../../overworld/service/roster-command-handlers";
+import type { TacticalComposition } from "./tactical-composition";
+import { composeTactical } from "./tactical-composition";
 import { AUTO_RESOLVE_TUNING } from "../../overworld/data/auto-resolve-tuning";
 import { MECH_RATING_TUNING } from "../../roster/data/mech-rating-tuning";
 import { STARTER_PARTS } from "../../roster/data/parts";
@@ -104,6 +106,8 @@ export interface GameComposition {
   readonly clock: SaveClock;
   /** The catalogues and tuning the dispatcher was wired with, for screens. */
   readonly content: GameContent;
+  /** The tactical side: registered rule handlers and mission-start deps (#342). */
+  readonly tactical: TacticalComposition;
 }
 
 // ===========================================
@@ -184,6 +188,7 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     rosterTuning: content.rosterTuning,
     transactionsFor: (ids) => new LedgerTransactionService(ids),
   });
+  const tactical = composeTactical(dispatcher, content);
   const autosave = new AutosaveService(
     saves,
     AUTOSAVE_SLOT_ID,
@@ -211,6 +216,7 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     newSeed: deps.newSeed,
     clock: deps.clock,
     content,
+    tactical,
   };
 }
 

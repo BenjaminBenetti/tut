@@ -2,6 +2,7 @@ import type { Applied, DomainEvent } from "../../core/model/domain-event";
 import type { CityId } from "./city";
 import type { DeployableId } from "./deployable";
 import type { DeployableTypeId } from "./deployable-type";
+import type { GameOutcome } from "./game-outcome";
 import type { RegionId } from "./region";
 
 // ===========================================
@@ -145,6 +146,21 @@ export type DeployableOnlineEvent = DomainEvent<
 >;
 
 // ===========================================
+// Game ended
+// ===========================================
+
+/** Event type emitted once, when the campaign is won or lost. */
+export const GAME_ENDED = "overworld:game-ended";
+
+/** What presentation needs to show the end screen. */
+export interface GameEndedPayload {
+  readonly outcome: GameOutcome;
+}
+
+/** The campaign ended (GDD §5.3). Emitted at most once per campaign. */
+export type GameEndedEvent = DomainEvent<typeof GAME_ENDED, GameEndedPayload>;
+
+// ===========================================
 // Union
 // ===========================================
 
@@ -160,7 +176,8 @@ export type OverworldDomainEvent =
   | InfestationSpreadEvent
   | InfestationSeededEvent
   | DeployableOfflineEvent
-  | DeployableOnlineEvent;
+  | DeployableOnlineEvent
+  | GameEndedEvent;
 
 /**
  * The `{ state, events }` pair overworld handlers and tick steps return,

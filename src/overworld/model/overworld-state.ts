@@ -1,6 +1,7 @@
 import type { Deployable } from "./deployable";
 import type { EarthMap } from "./earth-map";
 import type { EventTypeId } from "./event-type";
+import type { GameOutcome } from "./game-outcome";
 import type { Mission } from "./mission";
 import type { MissionResult } from "./mission-result";
 import type { RegionId } from "./region";
@@ -33,12 +34,6 @@ export interface Hive {
   readonly id: string;
   readonly regionId: RegionId;
 }
-
-/**
- * How a campaign ended (GDD §5.3). Placeholder until #59 (lose condition
- * and win stub) settles the vocabulary.
- */
-export type GameOutcome = "victory" | "defeat";
 
 // ===========================================
 // Overworld state
@@ -87,7 +82,11 @@ export interface OverworldState {
   readonly deployables: readonly Deployable[];
   /** Bug hives (M3). Always empty in M1. */
   readonly hives: readonly Hive[];
-  /** Present once the campaign has ended. */
+  /**
+   * Present once the campaign has ended. Written once by the outcome
+   * service and never overwritten; the day tick refuses to run while it
+   * is set.
+   */
   readonly outcome?: GameOutcome;
   /** Result of the most recent mission, for the results screen. */
   readonly lastMissionResult?: MissionResult;

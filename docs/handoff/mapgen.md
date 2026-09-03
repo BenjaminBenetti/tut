@@ -1,6 +1,6 @@
 # Handoff: Map Generation Specialist
 
-Last updated: 2026-09-03 05:10 UTC (session 2, update 5). Read `docs/process/roles/mapgen.md` and ADR 0004 first.
+Last updated: 2026-09-03 08:15 UTC (session 2, update 6). Read `docs/process/roles/mapgen.md` and ADR 0004 first.
 
 ## 1. Where things stand
 
@@ -11,14 +11,14 @@ Last updated: 2026-09-03 05:10 UTC (session 2, update 5). Read `docs/process/rol
   is fixed (#223).
 - **Merged quality PRs today:** #206 city plats graded flat, #211 two-lane city streets with
   `blockSize` 12, #212 room furnishing per kind, #215 visible trails, #224 vegetation clusters,
-  #235 hatch space around egg spawners (M2), #223 edge-trail crash fix.
-- **Open PRs, review order** (linear stack on `main`; rebase with `--update-refs` after each squash):
-  1. #239 map metrics service, shown in the preview (#236)
-  2. #242 apartment template for skyline height (#237)
-  3. #245 on-demand wide sweep behind `MAPGEN_WIDE=1` (#244)
-  4. #249 snowy fences for low cover (#247)
-- Epic #32 can close once #239/#242/#245/#249 land (the Producer ticks it). Art follow-up #213
-  (`prop.table` placeholder) is the Art Director's.
+  #235 hatch space around egg spawners (M2), #239 map metrics in the preview, #242 apartment
+  template, #245 wide sweep behind `MAPGEN_WIDE=1`, #249 snowy fences, #253 ladder climb cap,
+  #223 edge-trail crash fix. Epic #32 has no open children (noted on the epic for the Producer).
+- **Open PRs** (independent, each against `main`, all green locally and on CI):
+  1. #260 edge spawns relax spacing on maps too small for it (#258; fixes I8 at the 16² minimum)
+  2. #269 tuning pass 1: desert boulders 2.5 with palms 1, `rampSpacing` rural 8 / town 7 (#267)
+  3. #272 city block jitter ± 2 so grids stop reading as graph paper (#271)
+- Art follow-up #213 (`prop.table` placeholder) is the Art Director's.
 
 ## 2. Pipeline as built
 
@@ -32,13 +32,13 @@ Last updated: 2026-09-03 05:10 UTC (session 2, update 5). Read `docs/process/rol
 |---|---|---|
 | terrain | fbm value noise, contrast ×2.2, quantised to levels; surface patches at 2× freq | raw fbm piles on one level |
 | water | coastal band along one edge, level 0, sand beach | edge = rng pick |
-| roads | builder per style (trail/streets/grid); largest network; 8-col chunks ±1; ramps at chunk steps; sidewalks; flat networks grade the whole plat; grid lays `roadWidth` lanes | cities: block 12, two lanes, one level |
+| roads | builder per style (trail/streets/grid); largest network; 8-col chunks ±1; ramps at chunk steps; sidewalks; flat networks grade the whole plat; grid lays `roadWidth` lanes every `blockSize ± blockJitter` (#272) | cities: block 12 ± 2, two lanes, one level |
 | lots | shuffled (road column, side) anchors; rect beside corridor; gap 1, margin 1; count × `areaFactor` | inner-lane anchors reject themselves |
 | buildings | weighted template per lot (house, shop, warehouse, tower, apartment); `ensureMultiStorey` | templates in `data/building-templates` |
-| interiors | recursive bisection with a door per cut; room kinds `hall`/`room`/`storage` (`data/room-kind-ids`); stairs BFS-verified, holes interior-first; roof tiles; ladders ≤ 2 storeys | `interiors` capability |
+| interiors | recursive bisection with a door per cut; room kinds `hall`/`room`/`storage` (`data/room-kind-ids`); stairs BFS-verified, holes interior-first; roof tiles; ladders ≤ 2 storeys and ≤ 2 levels of climb (#253) | `interiors` capability |
 | props | vegetation by density with per-kind clusters; width-aware street props; yard clutter; room furnishing via `registries.roomFurnishing`; every interior placement BFS-verified | blocked: thresholds, connector ends |
 | ramps | union-find over ground (`service/ground-components`); ramp per one-level step between components; spacing ramps | 2-level steps stay cliffs |
-| hooks | `HookPlacer` registry; deploy (largest ground component, edge band); egg spawners (≥ 12 from deploy, ≥ 6 apart, half indoors, `HATCH_SPACE_MIN` 6 reachable tiles within `hatchRadius`, checked lazily in draw order); edge spawns; extraction = deploy | placers share one `snapshotDraft` |
+| hooks | `HookPlacer` registry; deploy (largest ground component, edge band); egg spawners (≥ 12 from deploy, ≥ 6 apart, half indoors, `HATCH_SPACE_MIN` 6 reachable tiles within `hatchRadius`, checked lazily in draw order); edge spawns (strict spacing first, relaxed only for zones that do not fit, #260); extraction = deploy | placers share one `snapshotDraft` |
 | connectivity | per hook × class: freeze, check, 0-1 BFS for cheapest repairs (prop / door / ramp), else relocate | I7 guarantee |
 
 Entry: `service/generate-tactical-map.ts`. Adapter: `service/mission-map-recipe-adapter.ts` +
@@ -47,7 +47,7 @@ Hatch BFS: `service/hatch-space.ts`. Wide sweep: `MAPGEN_WIDE=1 pnpm exec vitest
 (PR #245). Scratch measurements: a throwaway `src/mapgen/zz-debug.test.ts` (git-excluded; move it
 out before `pnpm typecheck`/`lint`).
 
-## 3. Measurements (medium maps, 8 seeds per cell, stack as of #249)
+## 3. Measurements (medium maps, 8 seeds per cell, `main` before #269)
 
 Share of open ground beside a cover prop / beside a wall; high and low cover tiles per 100 ground
 tiles; interior props per building; ramps per map.
@@ -61,14 +61,17 @@ tiles; interior props per building; ramps per map.
 Hatch space minimum is 7–13 tiles of 25 everywhere (floor is 6). City maps with a 3+-floor
 building: 71/72 (was 61/72 before apartments); towns 67/72.
 
-**Tuning proposals for the Director / M2 playtests** (all data knobs, each a golden re-pin):
+**Applied in #269 (tuning pass 1), measured the same way:** desert boulders 2.5 + palms 1 take
+desert high cover to 3.5 (rural) / 3.0 (town) per 100 and cover adjacency to 18.8 % / 19.8 %;
+`rampSpacing` rural 8 / town 7 takes ramps per medium map from 37 / 43 to 28 / 33 with connectivity
+repairs and relocations still zero.
+
+**Still the Director's call** (data knobs, each a golden re-pin):
 - Cover beside open ground sits at 13–23 %. If tactical wants XCOM-like density (~30 % in towns),
-  raise `yardPropDensity` (town 10 → 15) and add a `cabinet` interior kind (high, blocks LOS).
-- Desert high cover is low (1.6–2.2 per 100): boulders cluster 2–4 at density 1.5; raise to 2.5 or add
-  a `wreck`/`car` ground placement for desert towns.
-- Towns keep 40–58 ramps per medium map; `rampSpacing` 5 → 7 halves the spacing ramps if ledges
-  should matter more. Cities have none (graded), by design.
+  raise `yardPropDensity` (town 10 → 15) and add a `cabinet` interior kind (high, blocks LOS; needs
+  a placeholder model like #213).
 - Street props doubled with two lanes (23 → 43 per medium city); halve `streetPropDensity` if it reads busy.
+- Explicit sizes: the resolver accepts 16–256; 128² generates in ~260 ms. Presets stay 32/48/64.
 
 ## 4. What M2 (tactical) consumes
 
@@ -97,7 +100,7 @@ building: 71/72 (was 61/72 before apartments); towns 67/72.
 
 ## 6. What I would do next, in order
 
-1. Keep the review loop for #239 → #242 → #245 → #249 (rebase, gate, `--force-with-lease`).
+1. Keep the review loop for #260, #269, #272 (independent; rebase, gate, `--force-with-lease`).
 2. Run `MAPGEN_WIDE=1` before merging any generator change (85 s); it is the check that found #221.
 3. Tuning from §3 once the Director picks targets; the preview shows the metrics live.
 4. M3 archetypes: `createPipeline`'s per-archetype table in `service/settlement-pipeline.ts` takes a
@@ -107,6 +110,8 @@ building: 71/72 (was 61/72 before apartments); towns 67/72.
    Crash site: terrain + a crater pass (bowl, debris props, `wreck` building) before roads/lots.
    Platform: a decks pass (floor tiles on `void`, `PassMask.NONE` surface) instead of terrain/water.
 5. Preview polish: show `MapMetrics` deltas between two seeds; a "regenerate with next seed" key.
+6. When an engineer takes #108 (promote `Registry` to `core/`), `mapgen/model/registry.ts` and
+   `service/definition-registry.ts` are the files to retire; nothing in mapgen depends on the class.
 
 ## 7. Gotchas
 

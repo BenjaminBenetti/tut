@@ -26,9 +26,9 @@ import {
   deleteLoadout,
   hireSquad,
   reinforceSquad,
-  repairMech,
   saveLoadout,
 } from "../model/overworld-command";
+import { repairMech } from "../model/repair-mech-command";
 import { createOverworldCommandDispatcher } from "./command-dispatcher";
 import type { RosterHandlerDeps } from "./roster-command-handlers";
 import { registerRosterCommands } from "./roster-command-handlers";

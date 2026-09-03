@@ -8,7 +8,7 @@ import { NEW_GAME_TUNING } from "../../overworld/data/new-game-tuning";
 import { THREAT_TUNING } from "../../overworld/data/threat-tuning";
 import type { OverworldCommand } from "../../overworld/model/overworld-command";
 import { advanceDay } from "../../overworld/model/overworld-command";
-import type { OverworldDomainEvent } from "../../overworld/model/overworld-domain-event";
+import type { CampaignEvent } from "../../overworld/model/campaign-event";
 import { SQUAD_TYPES } from "../../roster/data/squad-types";
 import { STARTER_ROSTER } from "../../roster/data/starter-roster";
 import { DataSquadTypeCatalogue } from "../../roster/repository/squad-type-catalogue";
@@ -38,11 +38,7 @@ const newGame = (): GameState =>
   );
 
 /** Bumps the day on every command. */
-const bumpDay: CommandProcessor<
-  GameState,
-  OverworldCommand,
-  OverworldDomainEvent
-> = {
+const bumpDay: CommandProcessor<GameState, OverworldCommand, CampaignEvent> = {
   process: (state) =>
     ok({
       state: {

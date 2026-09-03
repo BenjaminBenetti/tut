@@ -24,7 +24,6 @@ import type {
   DeleteLoadoutCommand,
   HireSquadCommand,
   ReinforceSquadCommand,
-  RepairMechCommand,
   SaveLoadoutCommand,
 } from "../model/overworld-command";
 import {
@@ -32,9 +31,10 @@ import {
   DELETE_LOADOUT,
   HIRE_SQUAD,
   REINFORCE_SQUAD,
-  REPAIR_MECH,
   SAVE_LOADOUT,
 } from "../model/overworld-command";
+import type { RepairMechCommand } from "../model/repair-mech-command";
+import { REPAIR_MECH } from "../model/repair-mech-command";
 
 // ===========================================
 // Types

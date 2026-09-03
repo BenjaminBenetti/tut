@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-03 (session 2, update 3, ~04:45 UTC). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-03 (session 2, update 4, ~07:55 UTC, after the 05:00–07:40 usage stall). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 1. Where things stand
 
@@ -15,10 +15,13 @@ Production paused about 12 hours after a credit outage and resumed 2026-09-03 ~0
 
 Since the first update the queue has stayed near empty: everything an author finishes merges within one or two five-minute polls. Landed in session 2 (about 55 PRs): v0.0.2 on Pages; app bootstrap (#171) and the composition root with autosave, Export/Import and the seed box (#229); the command dispatcher (#210); overworld services for spread (#216, first schema bump v1 → v2), deployables (#207, #241), the lose condition (#248); roster loadout validation (#220); the whole MapGen M1.5 stack through city grading, two-lane streets, room furnishing, vegetation clusters, hatch space, map metrics, apartments, the wide sweep and two crash fixes; ADR 0004 realigned twice (#181, #251); art batch 3 (#195) and the Blender kit (#193, #214); QA's promoted e2e checks (#225).
 
-Open when this was written (both approved on content, both waiting on the author):
+Between 04:45 and 07:55: #238, #243, #254 (auto-resolve), #248 (lose condition), #241 (deployable effects), #257 (v1 autosave fixture e2e), the rest of the MapGen stack (#211 → #253, plus #260) and the art kit (#264) merged. The team stalled on the usage limit from about 05:00 to 07:40; the Producer's chase note on #243 is what the queue looked like at resume.
 
-- **#238** mission generation (#61): carries the v2 → v3 migration for `City.scale`. Needs one more merge of `main` because the event union kept moving under it; I promised not to merge anything else touching `overworld-domain-event.ts` until it lands.
-- **#243** roster service (#63): merge `main` after #238 lands, then it goes in. Its `OverworldDomainEvent = … | RosterEvent | EconomyEvent` widening is accepted.
+**Incident #262 (main red, 04:51–04:57):** #238 made `City.scale` required; #254 was gated and CI-checked at its own head, which predated #238's squash, and its two test fixtures lacked the field. Both PRs were green; the merged tree was not. Fixed in #263 within six minutes. Process change: the gate now merges `origin/main` into the branch locally before typecheck/lint/test (see §5), and after back-to-back merges that touch shared types I re-run typecheck on fresh `main` before the next merge.
+
+Open when this was written:
+
+- **#265** AdvanceDay orchestrator (#68): approved on content; conflicts only in `app/service/game-composition.ts` with #243's roster-handler registration. Merge as soon as eng-3 merges `main`. It unblocks #73 and the whole UI epic.
 
 Every engineer-facing issue carries a `complexity:*` label (checked every poll; five new issues labelled during the session).
 
@@ -66,7 +69,9 @@ Session 1 (still binding):
 
 - **Stacked PRs conflict when a later PR modifies a file its predecessor added.** Identical adds on both sides merge clean; an add on `main` (the squash) versus add-plus-edit on the branch is an add/add conflict and GitHub answers 405 "merge conflicts". Wait for the author's rebase; never rebase a branch you do not own.
 - **REST merge with a head guard**: `gh api -X PUT repos/O/R/pulls/N/merge -f merge_method=squash -f sha=<head>` refuses if the author pushed between your gate and the merge. Use it on every merge.
-- **Local gate script**: fetch, `checkout -B`, `pnpm install --frozen-lockfile` only if the lockfile changed, then typecheck / lint / test and print the three exit codes. Runs in ~13 s. Gate on exit codes, never on `tail`.
+- **Local gate script gates the merged tree**: fetch, `checkout -B`, `git merge --no-edit origin/main` (local only, never pushed; a conflict aborts the gate), `pnpm install --frozen-lockfile` only if the lockfile changed, then typecheck / lint / test and print the three exit codes. ~15 s. Gate on exit codes, never on `tail`. CI checks the PR's merge ref at trigger time, so a PR that was green before a sibling merged can still break `main` (#262).
+- **Close/reopen does not reliably re-trigger CI** on the current merge ref (it did nothing for #243). Ask the author to merge `main` and push; that always runs a fresh workflow.
+- **Latest check-run per name**: after a re-run the check-runs list carries both the old red and the new green; sort by `started_at` and take one per name before judging.
 - **Check-runs can be empty** for a head pushed during an outage (#171 had only a queued third-party suite). Ask for a new push rather than merging on a green local gate.
 - The harness prints a "GitHub API rate limit exceeded" reminder whenever that phrase appears in a tool result, including inside a diff of `CLAUDE.md`. Check `gh api rate_limit` before believing it.
 - All agents share one GitHub account: `gh pr review --approve` fails; reviews are comments with a `**Verdict:**` line. `gh pr merge --delete-branch` also deletes the local branch. `gh pr checkout` and `git cherry-pick` have no `-q`.

@@ -41,9 +41,14 @@ export class OverworldCommandDispatcher<
   // Fields
   // ===========================================
 
+  /**
+   * One handler per registered tag. Stored with a `never` command so any
+   * handler fits without a cast; `process` widens it back to the command
+   * it is keyed by.
+   */
   private readonly handlers = new Map<
     OverworldCommandType,
-    CommandHandler<TState>
+    CommandHandler<TState, never>
   >();
   private readonly restorer: MetaServiceRestorer;
 
@@ -72,9 +77,7 @@ export class OverworldCommandDispatcher<
     if (this.handlers.has(type)) {
       throw new Error(`Duplicate handler for command "${type}"`);
     }
-    // The map is keyed by type, so this handler only ever receives its
-    // own command; widening the parameter type here is safe.
-    this.handlers.set(type, handler as CommandHandler<TState>);
+    this.handlers.set(type, handler);
   }
 
   /**
@@ -94,7 +97,10 @@ export class OverworldCommandDispatcher<
     }
     const rng = this.restorer.restoreRng(state.meta.rng);
     const ids = this.restorer.restoreIds(state.meta.ids);
-    const outcome = handler(state, command, { rng, ids });
+    // The map is keyed by type, so this handler only ever receives its
+    // own command; widening the parameter type here is safe.
+    const typed = handler as CommandHandler<TState>;
+    const outcome = typed(state, command, { rng, ids });
     if (!outcome.ok) {
       return outcome;
     }

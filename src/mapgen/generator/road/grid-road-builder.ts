@@ -22,17 +22,18 @@ const MIN_BLOCK = 4;
 // ===========================================
 
 /**
- * City road style: streets every `blockSize` columns along both axes with
- * a small random offset, each `roadWidth` lanes wide, spanning the map
- * and broken only by water (ADR 0004 §7.3). Every lane is its own line;
- * runs that water cuts off are separate lines; the pass keeps the
- * largest connected network.
+ * City road style: streets about every `blockSize` columns along both
+ * axes, each gap jittered by up to `blockJitter` so blocks vary, with a
+ * small random offset, each `roadWidth` lanes wide, spanning the map and
+ * broken only by water (ADR 0004 §7.3). Every lane is its own line; runs
+ * that water cuts off are separate lines; the pass keeps the largest
+ * connected network.
  *
  * ```
- *   ==++====++====++==
- *   ==++====++====++==     roadWidth 2
- *     ||    ||    ||
- *   ==++====++====++==
+ *   ==++=====++===++==
+ *   ==++=====++===++==     roadWidth 2, blocks 12 ± 2
+ *     ||     ||   ||
+ *   ==++=====++===++==
  * ```
  */
 export class GridRoadBuilder implements RoadBuilder {
@@ -51,6 +52,10 @@ export class GridRoadBuilder implements RoadBuilder {
   build(context: RoadBuilderContext): RoadLine[] {
     const { draft, settlement, rng } = context;
     const block = Math.max(MIN_BLOCK, settlement.blockSize);
+    const jitter = Math.min(
+      Math.max(0, settlement.blockJitter),
+      Math.floor((block - MIN_BLOCK) / 2),
+    );
     const width = Math.max(1, settlement.roadWidth);
     const lines: RoadLine[] = [];
     for (const axis of ["x", "z"] as const) {
@@ -60,7 +65,7 @@ export class GridRoadBuilder implements RoadBuilder {
       for (
         let lateral = offset;
         lateral < lateralLength - 1;
-        lateral += block
+        lateral += block + (jitter > 0 ? rng.nextInt(-jitter, jitter) : 0)
       ) {
         for (let lane = 0; lane < width; lane++) {
           if (lateral + lane < lateralLength) {

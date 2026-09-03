@@ -25,7 +25,11 @@ import type { InvariantId } from "../service/map-validator";
 import { validateTacticalMap } from "../service/map-validator";
 import { PipelineMapGenerator } from "../service/pipeline-map-generator";
 import { BuildingPass } from "./building-pass";
+import { TileIndex } from "../service/tile-index";
+import { ReachabilityService } from "../service/reachability-service";
 import { HookPass } from "./hook-pass";
+import { hatchSpace } from "./placer/placer-support";
+import { HATCH_SPACE_MIN } from "./placer/egg-spawner-placer";
 import { InteriorPass } from "./interior-pass";
 import { LotPass } from "./lot-pass";
 import { DEFAULT_HOOK_PLACERS } from "./placer/default-hook-placers";
@@ -111,18 +115,27 @@ describe("HookPass", () => {
     let total = 0;
     for (const settlement of ["town", "city"] as const) {
       for (let i = 0; i < SEEDS; i++) {
-        const { draft } = run("temperate", settlement, `eggs-${i}`);
+        const { draft, map } = run("temperate", settlement, `eggs-${i}`);
         const eggs = draft.hooks.objectives.filter(
           (h) => h.kind === HookKinds.EGG_SPAWNER,
         );
         expect(eggs, `${settlement}/${i}`).toHaveLength(3);
         const deploy = draft.hooks.deployZones.flatMap((z) => z.tiles);
+        const index = new TileIndex(map);
+        const snapshot = {
+          index,
+          reach: new ReachabilityService(index, map.connectors),
+        };
         for (const egg of eggs) {
           const tile = egg.tiles[0];
           if (tile === undefined) continue;
           total++;
           if (draft.getTile(tile) !== undefined) indoors++;
           expect(egg.meta?.hatchRadius).toBe(3);
+          expect(
+            hatchSpace(snapshot, tile, 3, PassMask.INFANTRY),
+            `${settlement}/${i} hatch space`,
+          ).toBeGreaterThanOrEqual(HATCH_SPACE_MIN);
           const nearest = Math.min(
             ...deploy.map((d) => manhattanDistance(d, tile)),
           );

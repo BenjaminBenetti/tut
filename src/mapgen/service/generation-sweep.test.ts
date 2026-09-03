@@ -12,6 +12,8 @@ import type { GenerationPass } from "../model/generation-pass";
 import type { MapRecipe, MapSizePreset } from "../model/map-recipe";
 import { MAP_SIZE_PRESETS } from "../model/map-recipe";
 import { areaFactor } from "../generator/lot-pass";
+import { hatchSpace } from "../generator/placer/placer-support";
+import { HATCH_SPACE_MIN } from "../generator/placer/egg-spawner-placer";
 import { PassMask } from "../model/pass-mask";
 import { renderAscii } from "./ascii-map-renderer";
 import { createDefaultRegistries } from "./default-registries";
@@ -71,42 +73,42 @@ const GOLDENS: readonly Golden[] = [
     biome: "temperate",
     settlement: "town",
     size: "medium",
-    checksum: 3634661978,
+    checksum: 3113046881,
   },
   {
     seed: "golden-snowy",
     biome: "snowy",
     settlement: "town",
     size: "medium",
-    checksum: 362653775,
+    checksum: 1649794462,
   },
   {
     seed: "golden-desert",
     biome: "desert",
     settlement: "town",
     size: "medium",
-    checksum: 2080352986,
+    checksum: 3325511246,
   },
   {
     seed: "golden-coastal",
     biome: "coastal",
     settlement: "town",
     size: "medium",
-    checksum: 1578863085,
+    checksum: 1900577075,
   },
   {
     seed: "golden-rural",
     biome: "temperate",
     settlement: "rural",
     size: "small",
-    checksum: 381180235,
+    checksum: 3661305563,
   },
   {
     seed: "golden-city",
     biome: "desert",
     settlement: "city",
     size: "large",
-    checksum: 3316735340,
+    checksum: 2790548028,
   },
 ];
 
@@ -117,6 +119,7 @@ describe("generation sweep", () => {
       let generations = 0;
       let buildings = 0;
       let interiorProps = 0;
+      let crampedSpawners = 0;
       let unreachableEntrances = 0;
       let hooks = 0;
       let relocations = 0;
@@ -181,6 +184,23 @@ describe("generation sweep", () => {
               }
               hooks +=
                 map.hooks.objectives.length + map.hooks.edgeSpawns.length;
+              for (const objective of map.hooks.objectives) {
+                const origin = objective.tiles[0];
+                const radius = objective.meta?.hatchRadius;
+                if (origin === undefined || typeof radius !== "number") {
+                  continue;
+                }
+                if (
+                  hatchSpace(
+                    { index, reach },
+                    origin,
+                    radius,
+                    PassMask.INFANTRY,
+                  ) < HATCH_SPACE_MIN
+                ) {
+                  crampedSpawners++;
+                }
+              }
               relocations += diagnostics.notes.filter(
                 (n) =>
                   n.pass === "connectivity" && n.message.includes("relocated"),
@@ -193,6 +213,8 @@ describe("generation sweep", () => {
       expect(unreachableEntrances / buildings).toBeLessThanOrEqual(0.03);
       // Every room kind is furnished (#202): measured ~2.6 per building.
       expect(interiorProps / buildings).toBeGreaterThanOrEqual(1);
+      // Every spawner has room to hatch into (#231).
+      expect(crampedSpawners).toBe(0);
       expect(relocations / hooks).toBeLessThanOrEqual(0.05);
     },
     SWEEP_TIMEOUT_MS,

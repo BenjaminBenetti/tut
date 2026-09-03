@@ -15,6 +15,7 @@ import {
   distanceToDeploy,
   hookTileKeys,
   reachableFromDeploy,
+  snapshotDraft,
 } from "./placer-support";
 
 // ===========================================
@@ -66,8 +67,7 @@ export class EdgeSpawnPlacer implements HookPlacer {
     const { draft, params, registries, rng, diagnostics } = context;
     const reachable = reachableFromDeploy(
       draft,
-      params,
-      registries,
+      snapshotDraft(draft, params, registries),
       PassMask.INFANTRY,
     );
     const taken = hookTileKeys(draft);

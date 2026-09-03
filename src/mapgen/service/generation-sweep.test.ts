@@ -12,6 +12,8 @@ import type { GenerationPass } from "../model/generation-pass";
 import type { MapRecipe, MapSizePreset } from "../model/map-recipe";
 import { MAP_SIZE_PRESETS } from "../model/map-recipe";
 import { areaFactor } from "../generator/lot-pass";
+import { hatchSpace } from "../generator/placer/placer-support";
+import { HATCH_SPACE_MIN } from "../generator/placer/egg-spawner-placer";
 import { PassMask } from "../model/pass-mask";
 import { renderAscii } from "./ascii-map-renderer";
 import { createDefaultRegistries } from "./default-registries";
@@ -117,6 +119,7 @@ describe("generation sweep", () => {
       let generations = 0;
       let buildings = 0;
       let interiorProps = 0;
+      let crampedSpawners = 0;
       let unreachableEntrances = 0;
       let hooks = 0;
       let relocations = 0;
@@ -181,6 +184,23 @@ describe("generation sweep", () => {
               }
               hooks +=
                 map.hooks.objectives.length + map.hooks.edgeSpawns.length;
+              for (const objective of map.hooks.objectives) {
+                const origin = objective.tiles[0];
+                const radius = objective.meta?.hatchRadius;
+                if (origin === undefined || typeof radius !== "number") {
+                  continue;
+                }
+                if (
+                  hatchSpace(
+                    { index, reach },
+                    origin,
+                    radius,
+                    PassMask.INFANTRY,
+                  ) < HATCH_SPACE_MIN
+                ) {
+                  crampedSpawners++;
+                }
+              }
               relocations += diagnostics.notes.filter(
                 (n) =>
                   n.pass === "connectivity" && n.message.includes("relocated"),
@@ -193,6 +213,8 @@ describe("generation sweep", () => {
       expect(unreachableEntrances / buildings).toBeLessThanOrEqual(0.03);
       // Every room kind is furnished (#202): measured ~2.6 per building.
       expect(interiorProps / buildings).toBeGreaterThanOrEqual(1);
+      // Every spawner has room to hatch into (#231).
+      expect(crampedSpawners).toBe(0);
       expect(relocations / hooks).toBeLessThanOrEqual(0.05);
     },
     SWEEP_TIMEOUT_MS,

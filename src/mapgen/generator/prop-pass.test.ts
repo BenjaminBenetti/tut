@@ -234,24 +234,55 @@ describe("PropPass", () => {
     expect(draft.props.some((p) => p.tile.x === 0)).toBe(true);
   });
 
-  it("stacks interior props only in storage rooms", () => {
+  it("furnishes every room kind from its table and no room beyond it", () => {
     let interior = 0;
+    const perBuilding: number[] = [];
     for (let i = 0; i < SEEDS; i++) {
       const { draft } = run("snowy", "town", `interior-${i}`);
+      const counts = new Map<string, number>();
       for (const prop of draft.props) {
         const tile = draft.getTile(prop.tile);
         if (tile?.buildingId === undefined) continue;
         interior++;
+        counts.set(tile.buildingId, (counts.get(tile.buildingId) ?? 0) + 1);
         const building = draft.buildings.find((b) => b.id === tile.buildingId);
         const room = building?.floors
           .flatMap((f) => f.rooms.map((r) => ({ r, y: f.y })))
           .find(
             ({ r, y }) => y === tile.y && rectContains(r.rect, tile.x, tile.z),
           );
-        expect(room?.r.kind, prop.id).toBe("storage");
+        expect(room?.r.kind, prop.id).toBeDefined();
+        const furnishing = registries.roomFurnishing.get(room?.r.kind ?? "");
+        expect(furnishing.props, `${prop.id} in ${room?.r.kind}`).toContain(
+          prop.kind,
+        );
+        const area = room === undefined ? 0 : room.r.rect.w * room.r.rect.d;
+        expect(
+          draft.props.filter((p) => {
+            const t = draft.getTile(p.tile);
+            return (
+              t !== undefined &&
+              t.buildingId === tile.buildingId &&
+              t.y === tile.y &&
+              room !== undefined &&
+              rectContains(room.r.rect, t.x, t.z)
+            );
+          }).length,
+          `${prop.id} room quota`,
+        ).toBeLessThanOrEqual(
+          Math.min(
+            furnishing.maxProps,
+            Math.floor(area / furnishing.tilesPerProp),
+          ),
+        );
+      }
+      for (const building of draft.buildings) {
+        perBuilding.push(counts.get(building.id) ?? 0);
       }
     }
     expect(interior).toBeGreaterThan(0);
+    const mean = perBuilding.reduce((a, b) => a + b, 0) / perBuilding.length;
+    expect(mean).toBeGreaterThanOrEqual(1);
   });
 
   it("mixes low and high cover in towns and cities", () => {

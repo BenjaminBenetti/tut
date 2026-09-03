@@ -4,6 +4,7 @@ import type { HookPlacer } from "./hook-placer";
 import type { MapSizeDefinition } from "./map-size-definition";
 import type { PropDefinition } from "./prop";
 import type { Registry } from "./registry";
+import type { RoomFurnishing } from "./room-furnishing";
 import type { SettlementDefinition } from "./settlement-definition";
 import type { SurfaceDefinition } from "./surface";
 
@@ -23,5 +24,7 @@ export interface MapGenRegistries {
   readonly settlements: Registry<SettlementDefinition>;
   readonly mapSizes: Registry<MapSizeDefinition>;
   readonly buildingTemplates: Registry<BuildingTemplate>;
+  /** Interior props per room kind, keyed by the kind id. */
+  readonly roomFurnishing: Registry<RoomFurnishing>;
   readonly hookPlacers: Registry<HookPlacer>;
 }

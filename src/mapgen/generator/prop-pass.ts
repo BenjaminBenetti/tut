@@ -28,12 +28,6 @@ import type { Axis } from "./road/road-builder";
 // Constants
 // ===========================================
 
-/** Most props one storage room receives. */
-const MAX_PROPS_PER_ROOM = 3;
-
-/** Storage room tiles per interior prop. */
-const TILES_PER_INTERIOR_PROP = 5;
-
 /** Placement counts for the diagnostic note. */
 interface PlacementCounts {
   vegetation: number;
@@ -50,14 +44,14 @@ interface PlacementCounts {
  * Pass 6 of the settlement archetype (ADR 0004 §4.4, §7.3). Scatters the
  * biome's vegetation on open ground, puts street props on straight road
  * columns that can be walked around, drops low-cover clutter in yards
- * beside buildings and sidewalks, and stacks crates and shelving in
- * storage rooms without cutting a building off. Never occupies an
- * entrance's threshold, a connector endpoint or a tile with a door.
+ * beside buildings and sidewalks, and furnishes every room from its
+ * kind's `RoomFurnishing` without cutting a building off. Never occupies
+ * an entrance's threshold, a connector endpoint or a tile with a door.
  *
  * ```
  *   open ground   chance(total density) ─► weighted vegetation pick
  *   road columns  streetPropDensity per 100 ─► straight, bypassable only
- *   storage rooms area / 5, at most 3 ─► verified with a building BFS
+ *   rooms         area / tilesPerProp, at most maxProps ─► verified with a building BFS
  * ```
  */
 export class PropPass implements GenerationPass {
@@ -371,8 +365,9 @@ function touchesBuildingOrSidewalk(
 // ===========================================
 
 /**
- * Fills storage rooms with crates and shelving, reverting any prop that
- * would cut part of the building off; returns how many stayed.
+ * Furnishes every room from its kind's `RoomFurnishing` (rooms of a kind
+ * with no entry stay bare), reverting any prop that would cut part of
+ * the building off; returns how many stayed.
  */
 function placeInteriorProps(
   draft: MapDraft,
@@ -381,12 +376,6 @@ function placeInteriorProps(
   blocked: ReadonlySet<number>,
   rng: Rng,
 ): number {
-  const kinds = registries.props.values.filter((prop) =>
-    allowedIn(prop, biome.id, "interior"),
-  );
-  if (kinds.length === 0) {
-    return 0;
-  }
   let placed = 0;
   for (const building of draft.buildings) {
     const entrance = building.entrances[0];
@@ -399,19 +388,29 @@ function placeInteriorProps(
     const topLevel = building.groundLevel + building.floors.length;
     for (const floor of building.floors) {
       for (const room of floor.rooms) {
-        if (room.kind !== "storage") {
+        const furnishing =
+          room.kind === undefined
+            ? undefined
+            : registries.roomFurnishing.find(room.kind);
+        if (furnishing === undefined) {
+          continue;
+        }
+        const kinds = furnishing.props.filter((kind) =>
+          allowedIn(registries.props.get(kind), biome.id, "interior"),
+        );
+        if (kinds.length === 0) {
           continue;
         }
         const candidates = rng.shuffle(
-          storageTiles(draft, building, floor.y, room.rect, blocked),
+          roomTiles(draft, building, floor.y, room.rect, blocked),
         );
         const quota = Math.min(
-          MAX_PROPS_PER_ROOM,
-          Math.floor((room.rect.w * room.rect.d) / TILES_PER_INTERIOR_PROP),
+          furnishing.maxProps,
+          Math.floor((room.rect.w * room.rect.d) / furnishing.tilesPerProp),
         );
         for (const tile of candidates.slice(0, quota)) {
           const prop = draft.addProp(
-            rng.pick(kinds).id,
+            rng.pick(kinds),
             tile,
             randomRotation(rng),
           );
@@ -435,7 +434,7 @@ function placeInteriorProps(
 }
 
 /** Floor tiles of a room that may hold a prop. */
-function storageTiles(
+function roomTiles(
   draft: MapDraft,
   building: Building,
   y: number,

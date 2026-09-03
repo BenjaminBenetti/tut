@@ -437,3 +437,34 @@
 .tut-modal__panel .tut-stack {
   margin-top: var(--space-4);
 }
+
+/* ===========================================
+   Notice bar (#217)
+   =========================================== */
+/* Bottom edge, so it never covers a screen's top bar or its buttons. */
+#ui > .tut-notice {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  background: var(--ui-panel-raised);
+  border-top: var(--line) solid var(--ui-line);
+}
+.tut-notice__text {
+  flex: 1;
+}
+.tut-notice--info {
+  border-top-color: var(--ui-info);
+}
+.tut-notice--warn {
+  border-top-color: var(--ui-warn);
+}
+.tut-notice--danger {
+  border-top-color: var(--ui-danger);
+  color: var(--ui-danger);
+}

@@ -29,6 +29,7 @@ import { OverworldSelectionState } from "../../ui/service/overworld-selection-st
 import { MechBayScreen } from "../../ui/screen/mech-bay-screen";
 import { MissionResultsScreen } from "../../ui/screen/mission-results-screen";
 import { RosterScreen } from "../../ui/screen/roster-screen";
+import { NoticeBarView } from "../../ui/view/notice-bar-view";
 import type { TutTestHooks } from "../model/test-hooks";
 import type { ScreenFactory } from "./dom-screen-router";
 import { DomMapViewportHost } from "./dom-map-viewport-host";
@@ -82,12 +83,20 @@ export async function bootstrapApp(doc: Document): Promise<void> {
 
   const clock: SaveClock = { now: () => new Date().toISOString() };
   const mapSync = new MapSceneSync();
+  // The notice bar sits in #ui beside the screens, so it survives every
+  // navigation; the router only ever removes the screen it mounted (#217).
+  const notices = new NoticeBarView();
+  notices.mount(uiRoot);
   const game = composeGame({
     storage: new WebStorageKeyValueStore(window.localStorage),
     clock,
     newSeed: randomSeed,
     onAutosaveFailure: (error) => {
       console.error(`Autosave failed (${error.kind}): ${error.message}`);
+      notices.notify({
+        tone: "danger",
+        message: `Autosave failed: ${error.message} Progress will not survive a reload until saving works; use Export from the main menu to keep a copy.`,
+      });
     },
     onStore: mapSync.observe,
   });

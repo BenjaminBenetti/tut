@@ -158,6 +158,39 @@
   line-height: 1.3;
 }
 
+/* =========================================== */
+/* Overworld side panel: city card, deployables */
+/* =========================================== */
+
+.tut-city__name {
+  font-family: var(--font-display, inherit);
+  font-size: 18px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: var(--space-2);
+}
+
+.tut-city__mission {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-1) var(--space-3);
+  align-items: center;
+}
+
+.tut-city__mission .tut-btn {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+
+.tut-deployables .tut-list > li {
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.tut-deployables__build .tut-btn {
+  text-align: left;
+}
+
 /* ===========================================
    Roster screen (#79)
    =========================================== */

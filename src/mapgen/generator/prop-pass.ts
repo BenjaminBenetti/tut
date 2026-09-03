@@ -224,8 +224,8 @@ function placeStreetProps(
       continue;
     }
     const alongX =
-      draft.isRoad(column.x + 1, column.z) ||
-      draft.isRoad(column.x - 1, column.z);
+      isRoadAt(draft, column.x + 1, column.z) ||
+      isRoadAt(draft, column.x - 1, column.z);
     draft.addProp(rng.pick(kinds).id, coord, alongX ? 0 : 1);
     placed++;
   }

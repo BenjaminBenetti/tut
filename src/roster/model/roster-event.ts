@@ -1,0 +1,135 @@
+import type { DomainEvent } from "../../core/model/domain-event";
+import type { EconomyEvent } from "../../economy/model/economy-event";
+import type { EconomyState } from "../../economy/model/economy-state";
+import type { Mech } from "./mech";
+import type { MechLoadout } from "./mech-loadout";
+import type { MechStatSheet } from "./mech-stat-sheet";
+import type { RosterState } from "./roster-state";
+import type { Squad, SquadId } from "./squad";
+
+// ===========================================
+// Squad hired
+// ===========================================
+
+/** Event type emitted when a squad joins the roster. Namespaced for the event bus. */
+export const SQUAD_HIRED = "roster:squad-hired";
+
+/** What presentation needs to show the new squad. */
+export interface SquadHiredPayload {
+  readonly squad: Squad;
+  /** Credits paid. */
+  readonly cost: number;
+}
+
+/** A squad was hired at full strength. */
+export type SquadHiredEvent = DomainEvent<
+  typeof SQUAD_HIRED,
+  SquadHiredPayload
+>;
+
+// ===========================================
+// Squad reinforced
+// ===========================================
+
+/** Event type emitted when soldiers are added to a depleted squad. */
+export const SQUAD_REINFORCED = "roster:squad-reinforced";
+
+/** What presentation needs to animate the strength bar. */
+export interface SquadReinforcedPayload {
+  readonly squadId: SquadId;
+  /** Strength before. */
+  readonly from: number;
+  /** Strength after. Always greater than `from`. */
+  readonly to: number;
+  /** Credits paid. */
+  readonly cost: number;
+}
+
+/** A squad's strength rose through reinforcement. */
+export type SquadReinforcedEvent = DomainEvent<
+  typeof SQUAD_REINFORCED,
+  SquadReinforcedPayload
+>;
+
+// ===========================================
+// Mech built
+// ===========================================
+
+/** Event type emitted when a mech is built from a saved loadout. */
+export const MECH_BUILT = "roster:mech-built";
+
+/** What presentation needs to show the new mech and its sheet. */
+export interface MechBuiltPayload {
+  readonly mech: Mech;
+  readonly statSheet: MechStatSheet;
+  /** Credits paid; equals `statSheet.totalCost`. */
+  readonly cost: number;
+}
+
+/** A mech was built and joined the roster. */
+export type MechBuiltEvent = DomainEvent<typeof MECH_BUILT, MechBuiltPayload>;
+
+// ===========================================
+// Loadout saved
+// ===========================================
+
+/** Event type emitted when a loadout template is saved. */
+export const LOADOUT_SAVED = "roster:loadout-saved";
+
+/** What presentation needs to refresh the template list. */
+export interface LoadoutSavedPayload {
+  readonly loadout: MechLoadout;
+  /** True when a template of the same name was overwritten. */
+  readonly replaced: boolean;
+}
+
+/** A loadout template was saved or overwritten. */
+export type LoadoutSavedEvent = DomainEvent<
+  typeof LOADOUT_SAVED,
+  LoadoutSavedPayload
+>;
+
+// ===========================================
+// Loadout deleted
+// ===========================================
+
+/** Event type emitted when a loadout template is removed. */
+export const LOADOUT_DELETED = "roster:loadout-deleted";
+
+/** What presentation needs to refresh the template list. */
+export interface LoadoutDeletedPayload {
+  readonly name: string;
+}
+
+/** A loadout template was deleted. */
+export type LoadoutDeletedEvent = DomainEvent<
+  typeof LOADOUT_DELETED,
+  LoadoutDeletedPayload
+>;
+
+// ===========================================
+// Union and applied shape
+// ===========================================
+
+/** Every event the roster domain can emit, one line per event. */
+export type RosterEvent =
+  | SquadHiredEvent
+  | SquadReinforcedEvent
+  | MechBuiltEvent
+  | LoadoutSavedEvent
+  | LoadoutDeletedEvent;
+
+/**
+ * What a roster command returns: the next roster and economy slices plus
+ * the roster events and any `CreditsChanged` the purchase produced, in
+ * the order they happened.
+ *
+ * ```
+ *   (roster, economy, command) ──► service ──► { roster', economy', events[] }
+ * ```
+ */
+export interface RosterApplied {
+  readonly roster: RosterState;
+  readonly economy: EconomyState;
+  readonly events: readonly (RosterEvent | EconomyEvent)[];
+}

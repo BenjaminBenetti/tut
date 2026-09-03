@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
-import { EARTH_MAP } from "../../overworld/data/earth-map";
-import type { EarthMap } from "../../overworld/model/earth-map";
-import { buildEarthMap } from "../../overworld/service/earth-map-builder";
-import { unfestedFraction } from "../../overworld/service/threat-service";
 import { ECONOMY_TUNING } from "../data/economy-tuning";
 import { CREDITS_CHANGED } from "../model/economy-event";
 import type { EconomyState } from "../model/economy-state";
@@ -12,26 +8,6 @@ import type { EconomyTuning } from "../model/economy-tuning";
 import { createInitialEconomyState } from "./economy-state-factory";
 import { applyStipend, computeStipend, STIPEND_REF } from "./income-service";
 import { LedgerTransactionService } from "./transaction-service";
-
-/** A one-region Earth whose cities have the given infestation levels. */
-function earthWith(...levels: number[]): EarthMap {
-  return buildEarthMap({
-    regions: [
-      {
-        id: "r",
-        name: "R",
-        biome: "temperate",
-        cities: levels.map((infestation, i) => ({
-          id: `c${i}`,
-          name: `C${i}`,
-          layout: { x: 0.5, y: 0.5 },
-          infestation,
-        })),
-      },
-    ],
-    links: levels.slice(1).map((_, i) => [`c${i}`, `c${i + 1}`] as const),
-  });
-}
 
 const TUNING: EconomyTuning = {
   startingCredits: 1000,
@@ -41,41 +17,37 @@ const TUNING: EconomyTuning = {
 
 describe("computeStipend", () => {
   it("pays the full base stipend for a clean Earth", () => {
-    expect(computeStipend(earthWith(0, 0, 0), TUNING)).toBe(500);
-    expect(computeStipend(EARTH_MAP, ECONOMY_TUNING)).toBe(
-      ECONOMY_TUNING.baseStipend,
-    );
+    expect(computeStipend(1, TUNING)).toBe(500);
+    expect(computeStipend(1, ECONOMY_TUNING)).toBe(ECONOMY_TUNING.baseStipend);
   });
 
   it("pays the floor for an overrun Earth", () => {
-    expect(computeStipend(earthWith(100, 100, 100), TUNING)).toBe(50);
+    expect(computeStipend(0, TUNING)).toBe(50);
   });
 
   it("scales linearly with the unfested fraction", () => {
-    expect(computeStipend(earthWith(0, 50, 100), TUNING)).toBe(250);
-    expect(computeStipend(earthWith(20, 20, 20, 20), TUNING)).toBe(400);
+    expect(computeStipend(0.5, TUNING)).toBe(250);
+    expect(computeStipend(0.8, TUNING)).toBe(400);
   });
 
   it("rounds to whole credits", () => {
-    // mean 10/3 → unfested 0.9666… → 483.33… → 483
-    expect(computeStipend(earthWith(0, 0, 10), TUNING)).toBe(483);
-    expect(Number.isInteger(computeStipend(earthWith(7, 13, 29), TUNING))).toBe(
-      true,
-    );
+    // mean infestation 10/3 → unfested 0.9666… → 483.33… → 483
+    expect(computeStipend(1 - 10 / 300, TUNING)).toBe(483);
+    expect(Number.isInteger(computeStipend(1 - 49 / 300, TUNING))).toBe(true);
   });
 
   it("applies the floor once the scaled stipend falls below it", () => {
-    // unfested 0.05 → 25, below the floor of 50
-    expect(computeStipend(earthWith(95, 95), TUNING)).toBe(50);
-    // unfested 0.11 → 55, just above the floor
-    expect(computeStipend(earthWith(89, 89), TUNING)).toBe(55);
+    // 0.05 → 25, below the floor of 50
+    expect(computeStipend(0.05, TUNING)).toBe(50);
+    // 0.11 → 55, just above the floor
+    expect(computeStipend(0.11, TUNING)).toBe(55);
   });
 
   it("honours substitute tuning", () => {
     const generous: EconomyTuning = { ...TUNING, baseStipend: 2000 };
-    expect(computeStipend(earthWith(0, 50, 100), generous)).toBe(1000);
+    expect(computeStipend(0.5, generous)).toBe(1000);
     const highFloor: EconomyTuning = { ...TUNING, stipendFloor: 400 };
-    expect(computeStipend(earthWith(0, 50, 100), highFloor)).toBe(400);
+    expect(computeStipend(0.5, highFloor)).toBe(400);
   });
 });
 
@@ -94,15 +66,8 @@ describe("applyStipend", () => {
   it("pays a clean Earth the full stipend as one ledger entry with an event", () => {
     const { transactions, economy } = setup();
     const before = JSON.parse(JSON.stringify(economy)) as EconomyState;
-    const map = earthWith(0, 0);
 
-    const { state, events } = applyStipend(
-      economy,
-      map,
-      3,
-      TUNING,
-      transactions,
-    );
+    const { state, events } = applyStipend(economy, 1, 3, TUNING, transactions);
 
     expect(state.credits).toBe(1500);
     expect(state.ledger).toEqual([
@@ -119,13 +84,7 @@ describe("applyStipend", () => {
 
   it("pays an overrun Earth the floor", () => {
     const { transactions, economy } = setup();
-    const { state } = applyStipend(
-      economy,
-      earthWith(100, 100),
-      1,
-      TUNING,
-      transactions,
-    );
+    const { state } = applyStipend(economy, 0, 1, TUNING, transactions);
     expect(state.credits).toBe(1050);
     expect(state.ledger[0]?.amount).toBe(TUNING.stipendFloor);
     expect(state.ledger[0]?.kind).toBe("stipend");
@@ -134,9 +93,8 @@ describe("applyStipend", () => {
   it("accumulates one entry per day across consecutive days", () => {
     const { transactions } = setup();
     let economy = createInitialEconomyState(0);
-    const map = earthWith(0, 50, 100);
     for (let day = 1; day <= 3; day++) {
-      economy = applyStipend(economy, map, day, TUNING, transactions).state;
+      economy = applyStipend(economy, 0.5, day, TUNING, transactions).state;
     }
     expect(economy.credits).toBe(750);
     expect(economy.ledger.map((t) => [t.id, t.day])).toEqual([
@@ -146,14 +104,13 @@ describe("applyStipend", () => {
     ]);
   });
 
-  it("matches the threat service's unfested fraction on real data", () => {
+  it("pays computeStipend's amount for a fractional unfested share", () => {
     const { transactions, economy } = setup();
-    const map = earthWith(30, 0, 0, 0);
-    const expected = Math.max(
-      TUNING.stipendFloor,
-      Math.round(TUNING.baseStipend * unfestedFraction(map)),
+    const fraction = 1 - 30 / 400;
+    const { state } = applyStipend(economy, fraction, 1, TUNING, transactions);
+    expect(state.credits - economy.credits).toBe(
+      computeStipend(fraction, TUNING),
     );
-    const { state } = applyStipend(economy, map, 1, TUNING, transactions);
-    expect(state.credits - economy.credits).toBe(expected);
+    expect(state.credits - economy.credits).toBe(463);
   });
 });

@@ -1,28 +1,53 @@
+import type { OverworldCommand } from "../../overworld/model/overworld-command";
+import type { OverworldDomainEvent } from "../../overworld/model/overworld-domain-event";
 import type { GameState } from "../../save/model/game-state";
+import type { CommandSink, StateSource } from "./state-store";
+
+// ===========================================
+// Campaign store
+// ===========================================
+
+/**
+ * The store a running campaign lives in, as screens see it: the read
+ * side to render from and the command side to act through. The app's
+ * `GameStore` satisfies both.
+ */
+export type CampaignStore = StateSource<
+  GameState,
+  OverworldCommand,
+  OverworldDomainEvent
+> &
+  CommandSink<GameState, OverworldCommand, OverworldDomainEvent>;
 
 // ===========================================
 // GameSession
 // ===========================================
 
 /**
- * Holds the live `GameState` between screens. Screens read it to render
- * and replace it after loading or applying commands; the app owns the
- * single instance and hands it to every screen through its constructor.
+ * Holds the live campaign between screens. Starting a session builds a
+ * fresh store around the state (new game, Continue, Import); screens
+ * dispatch commands and subscribe through `store`, and the app's
+ * composition root observes each new store to autosave it.
  *
- * Until the overworld command dispatcher lands, this is the only state
- * holder; once it does, the bootstrap will build a `GameStore` from the
- * session's state when a campaign starts.
+ * ```
+ *   start(state) ──► store = createStore(state) ──► observers(store)
+ *   store         ◄── screens render / dispatch
+ *   clear()       ──► store = undefined, observers detached
+ * ```
  */
 export interface GameSession {
-  /** The current campaign state, or undefined when no campaign is active. */
+  /** The active campaign's store, or undefined when no campaign is running. */
+  readonly store: CampaignStore | undefined;
+
+  /** The active campaign's current state; shorthand for `store?.getState()`. */
   readonly state: GameState | undefined;
 
-  /** Begins a session with the given state (new game or loaded save). */
+  /** Begins a session around `state`, replacing any campaign already running. */
   start(state: GameState): void;
 
-  /** Replaces the state of the active session. Throws when no session is active. */
+  /** Swaps the active session's state without a command (load). Throws when no session is active. */
   replace(state: GameState): void;
 
-  /** Ends the session; `state` becomes undefined. */
+  /** Ends the session; `store` and `state` become undefined. */
   clear(): void;
 }

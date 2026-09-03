@@ -6,6 +6,7 @@ import type { NewGameOptions } from "../../save/service/game-state-factory";
 import type { GameSession } from "../model/game-session";
 import type { Screen, ScreenId } from "../model/screen";
 import type { ScreenRouter } from "../model/screen-router";
+import { resolveSeed } from "../service/seed-input";
 
 // ===========================================
 // Types
@@ -18,7 +19,7 @@ export interface MainMenuScreenDeps {
   readonly saves: GameSaveService;
   /** Builds a full campaign; the app binds `createNewGame` to the shipped content. */
   readonly createCampaign: (options: NewGameOptions) => GameState;
-  /** Source of the seed for a new campaign; the app passes core's `randomSeed`. */
+  /** Default seed offered in the seed box; the app passes core's `randomSeed`. */
   readonly newSeed: () => number;
   /** Timestamp source for `createdAt`; the app passes the wall clock. */
   readonly clock: SaveClock;
@@ -29,13 +30,17 @@ export interface MainMenuScreenDeps {
 // ===========================================
 
 /**
- * Title screen. "New game" creates a campaign from a fresh seed, writes
- * it to the autosave slot and opens the overworld; "Continue" reloads the
- * autosave and is disabled when there is none.
+ * Title screen. New game builds a campaign from the seed box, Continue
+ * reloads the autosave, Export dumps the autosave as JSON into the text
+ * box and Import starts a campaign from pasted JSON. Starting a session
+ * is what persists it: the app's autosave observes every store the
+ * session creates, so the menu never writes a save itself.
  *
  * ```
- *   [New game] ──▶ createCampaign ──▶ session.start ──▶ saves.saveGame(autosave) ──▶ overworld
- *   [Continue] ──▶ saves.loadGame(autosave) ──▶ session.start ───────────────────────▶ overworld
+ *   [New game] ──▶ createCampaign(seed) ──▶ session.start ──▶ overworld
+ *   [Continue] ──▶ saves.loadGame(autosave) ──▶ session.start ──▶ overworld
+ *   [Export]   ──▶ saves.loadGame(autosave) ──▶ saves.exportGame ──▶ text box
+ *   [Import]   ──▶ saves.importGame(text box) ──▶ session.start ──▶ overworld
  * ```
  */
 export class MainMenuScreen implements Screen {
@@ -46,6 +51,8 @@ export class MainMenuScreen implements Screen {
   readonly id: ScreenId = "main-menu";
   private readonly deps: MainMenuScreenDeps;
   private panel: HTMLElement | undefined;
+  private seedInput: HTMLInputElement | undefined;
+  private saveText: HTMLTextAreaElement | undefined;
   private status: HTMLElement | undefined;
   private readonly disposers: (() => void)[] = [];
 
@@ -62,7 +69,7 @@ export class MainMenuScreen implements Screen {
   // Screen
   // ===========================================
 
-  /** Builds the menu panel and wires its buttons. */
+  /** Builds the menu panel and wires its controls. */
   mount(root: HTMLElement): void {
     const doc = root.ownerDocument;
 
@@ -81,20 +88,24 @@ export class MainMenuScreen implements Screen {
     tagline.className = "tut-dim";
     tagline.textContent = "The bugs are here. Hold the line.";
 
-    const actions = doc.createElement("div");
-    actions.className = "tut-stack";
-
+    const hasSave = this.hasAutosave();
+    const seedRow = this.createSeedRow(doc);
     const newGame = this.createButton(doc, "new-game", "New game", true);
     const cont = this.createButton(doc, "continue", "Continue", false);
-    cont.disabled = !this.hasAutosave();
-    actions.append(newGame, cont);
+    cont.disabled = !hasSave;
+
+    const actions = doc.createElement("div");
+    actions.className = "tut-stack";
+    actions.append(seedRow, newGame, cont);
+
+    const io = this.createSaveIo(doc, hasSave);
 
     const status = doc.createElement("p");
     status.className = "tut-menu__status tut-dim";
     status.dataset.role = "status";
     status.hidden = true;
 
-    panel.append(kicker, title, tagline, actions, status);
+    panel.append(kicker, title, tagline, actions, io.section, status);
     root.appendChild(panel);
 
     this.listen(newGame, () => {
@@ -102,6 +113,12 @@ export class MainMenuScreen implements Screen {
     });
     this.listen(cont, () => {
       this.continueGame();
+    });
+    this.listen(io.exportButton, () => {
+      this.exportSave();
+    });
+    this.listen(io.importButton, () => {
+      this.importSave();
     });
 
     this.panel = panel;
@@ -115,6 +132,8 @@ export class MainMenuScreen implements Screen {
     }
     this.panel?.remove();
     this.panel = undefined;
+    this.seedInput = undefined;
+    this.saveText = undefined;
     this.status = undefined;
   }
 
@@ -122,25 +141,18 @@ export class MainMenuScreen implements Screen {
   // Actions
   // ===========================================
 
-  /**
-   * Creates a campaign, starts the session, autosaves and navigates. A
-   * failed autosave is reported on the panel but does not block play.
-   */
+  /** Builds a campaign from the seed box, starts the session and opens the overworld. */
   private startNewGame(): void {
+    const seed = resolveSeed(this.seedInput?.value ?? "", this.deps.newSeed);
     const state = this.deps.createCampaign({
-      seed: this.deps.newSeed(),
+      seed,
       createdAt: this.deps.clock.now(),
     });
     this.deps.session.start(state);
-
-    const saved = this.deps.saves.saveGame(AUTOSAVE_SLOT_ID, state);
-    if (!saved.ok) {
-      this.showStatus(`Autosave failed: ${saved.error.message}`);
-    }
     this.deps.router.navigate("overworld");
   }
 
-  /** Loads the autosave into the session and navigates; a failed load stays on the menu with a message. */
+  /** Loads the autosave into a new session and opens the overworld; a failed load stays here with a message. */
   private continueGame(): void {
     const loaded = this.deps.saves.loadGame(AUTOSAVE_SLOT_ID);
     if (!loaded.ok) {
@@ -148,6 +160,37 @@ export class MainMenuScreen implements Screen {
       return;
     }
     this.deps.session.start(loaded.value);
+    this.deps.router.navigate("overworld");
+  }
+
+  /** Dumps the autosave as a self-describing JSON document into the text box. */
+  private exportSave(): void {
+    const loaded = this.deps.saves.loadGame(AUTOSAVE_SLOT_ID);
+    if (!loaded.ok) {
+      this.showStatus(`Nothing to export: ${loaded.error.message}`);
+      return;
+    }
+    if (this.saveText) {
+      this.saveText.value = this.deps.saves.exportGame(loaded.value);
+    }
+    this.showStatus(
+      "Autosave exported to the text box. Copy it somewhere safe.",
+    );
+  }
+
+  /** Starts a campaign from the JSON in the text box; a rejected document stays here with the reason. */
+  private importSave(): void {
+    const text = this.saveText?.value.trim() ?? "";
+    if (text.length === 0) {
+      this.showStatus("Paste an exported save into the text box first.");
+      return;
+    }
+    const imported = this.deps.saves.importGame(text);
+    if (!imported.ok) {
+      this.showStatus(`Could not import save: ${imported.error.message}`);
+      return;
+    }
+    this.deps.session.start(imported.value);
     this.deps.router.navigate("overworld");
   }
 
@@ -160,6 +203,64 @@ export class MainMenuScreen implements Screen {
     return this.deps.saves
       .listSlots()
       .some((slot) => slot.id === AUTOSAVE_SLOT_ID);
+  }
+
+  /** Label plus the seed text box, pre-filled with a fresh random seed. */
+  private createSeedRow(doc: Document): HTMLElement {
+    const row = doc.createElement("label");
+    row.className = "tut-menu__seed";
+
+    const label = doc.createElement("span");
+    label.className = "tut-label";
+    label.textContent = "Seed";
+
+    const input = doc.createElement("input");
+    input.type = "text";
+    input.className = "tut-input";
+    input.dataset.field = "seed";
+    input.spellcheck = false;
+    input.autocomplete = "off";
+    input.value = String(this.deps.newSeed());
+
+    row.append(label, input);
+    this.seedInput = input;
+    return row;
+  }
+
+  /** The Export / Import buttons and the shared JSON text box. */
+  private createSaveIo(
+    doc: Document,
+    hasSave: boolean,
+  ): {
+    section: HTMLElement;
+    exportButton: HTMLButtonElement;
+    importButton: HTMLButtonElement;
+  } {
+    const section = doc.createElement("div");
+    section.className = "tut-menu__io";
+
+    const heading = doc.createElement("span");
+    heading.className = "tut-label";
+    heading.textContent = "Save file";
+
+    const textarea = doc.createElement("textarea");
+    textarea.className = "tut-input tut-textarea";
+    textarea.dataset.field = "save-json";
+    textarea.rows = 4;
+    textarea.spellcheck = false;
+    textarea.placeholder =
+      "Exported save JSON appears here; paste one to import.";
+
+    const buttons = doc.createElement("div");
+    buttons.className = "tut-row";
+    const exportButton = this.createButton(doc, "export", "Export", false);
+    exportButton.disabled = !hasSave;
+    const importButton = this.createButton(doc, "import", "Import", false);
+    buttons.append(exportButton, importButton);
+
+    section.append(heading, textarea, buttons);
+    this.saveText = textarea;
+    return { section, exportButton, importButton };
   }
 
   /** Builds a themed button carrying its `data-action`. */
@@ -185,7 +286,7 @@ export class MainMenuScreen implements Screen {
     });
   }
 
-  /** Shows a one-line message under the buttons. */
+  /** Shows a one-line message under the controls. */
   private showStatus(message: string): void {
     if (!this.status) {
       return;

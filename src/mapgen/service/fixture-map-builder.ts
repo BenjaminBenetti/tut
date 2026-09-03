@@ -34,6 +34,7 @@ interface MutableTile {
   walls: Partial<Record<Direction, WallKind>>;
   propId?: string;
   coverProvided: CoverLevel;
+  blocksLos: boolean;
   buildingId?: string;
   floorIndex?: number;
   roomId?: string;
@@ -123,6 +124,7 @@ export class FixtureMapBuilder {
       pass: definition?.defaultPass ?? PassMask.ALL,
       walls: {},
       coverProvided: Cover.NONE,
+      blocksLos: false,
       ...overrides,
     };
     this.tiles.set(keyOf(coord), tile);
@@ -183,6 +185,7 @@ export class FixtureMapBuilder {
     tile.propId = id;
     tile.pass = PassMask.NONE;
     tile.coverProvided = PROPS.get(kind).cover;
+    tile.blocksLos = PROPS.get(kind).blocksLos;
     this.props.push({ id, kind, tile: { ...coord }, rotation });
     return this;
   }

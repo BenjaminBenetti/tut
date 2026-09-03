@@ -173,6 +173,9 @@ class MapValidator {
         if (tile.coverProvided !== CoverLevel.NONE) {
           this.fail("I2", "Tile without a prop provides cover", tile);
         }
+        if (tile.blocksLos) {
+          this.fail("I2", "Tile without a prop blocks line of sight", tile);
+        }
         continue;
       }
       const prop = propsById.get(tile.propId);
@@ -201,6 +204,12 @@ class MapValidator {
         this.fail(
           "I2",
           `Cover ${tile.coverProvided} does not match ${prop.kind}`,
+          tile,
+        );
+      } else if (tile.blocksLos !== definition.blocksLos) {
+        this.fail(
+          "I2",
+          `blocksLos ${String(tile.blocksLos)} does not match ${prop.kind}`,
           tile,
         );
       }

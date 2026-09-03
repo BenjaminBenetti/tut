@@ -16,6 +16,7 @@ function tile(x: number, y: number, z: number, surface = "grass"): Tile {
     pass: PassMask.ALL,
     walls: NO_WALLS,
     coverProvided: CoverLevel.NONE,
+    blocksLos: false,
   };
 }
 

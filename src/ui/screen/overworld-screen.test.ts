@@ -544,4 +544,17 @@ describe("OverworldScreen", () => {
       root.querySelector<HTMLElement>('[data-role="no-missions"]')?.hidden,
     ).toBe(false);
   });
+
+  it("renders the campaign even when the selection names a mission that is gone (#83)", () => {
+    // Returning from the results screen: the launched mission is no longer
+    // on offer but still selected. The first render clears it and must
+    // still end with the bar showing the day.
+    const selection = new OverworldSelectionState();
+    selection.selectMission("mission-9", "lagos");
+    new OverworldScreen(
+      depsFor(new FakeStore(withMissions(4, MISSIONS)), undefined, selection),
+    ).mount(root);
+    expect(selection.selection.missionId).toBeUndefined();
+    expect(field("day")?.textContent).toBe("4");
+  });
 });

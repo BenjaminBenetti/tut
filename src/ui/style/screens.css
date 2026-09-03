@@ -378,3 +378,32 @@
   font-family: var(--font-mono);
   font-size: 12px;
 }
+
+/* ===========================================
+   Mission results (#83)
+   =========================================== */
+.tut-mission-results__title {
+  margin: var(--space-2) 0;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.tut-mission-results__title--ok {
+  color: var(--ui-ok);
+}
+.tut-mission-results__title--warn {
+  color: var(--ui-warn);
+}
+.tut-mission-results__title--danger {
+  color: var(--ui-danger);
+}
+.tut-mission-results__section {
+  margin-top: var(--space-3);
+}
+.tut-mission-results__section--prominent {
+  border-left: 3px solid var(--ui-danger);
+  padding-left: var(--space-3);
+  font-size: 1.15em;
+}
+.tut-mission-results__loss {
+  color: var(--ui-danger);
+}

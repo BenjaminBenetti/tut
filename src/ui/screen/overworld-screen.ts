@@ -175,12 +175,16 @@ export class OverworldScreen implements Screen {
     this.deps.mapViewport?.attach(mapArea);
 
     const store = this.deps.session.store;
+    // Subscribe to the selection before the first render: rendering with
+    // a selected mission that is no longer on offer (just launched, or
+    // expired) clears the selection and relies on this subscription to
+    // render again with it cleared (#83).
+    this.unsubscribeSelection = this.deps.selection.subscribe(() => {
+      this.render(this.deps.session.store?.getState());
+    });
     this.render(store?.getState());
     this.unsubscribe = store?.subscribe((change) => {
       this.render(change.state);
-    });
-    this.unsubscribeSelection = this.deps.selection.subscribe(() => {
-      this.render(this.deps.session.store?.getState());
     });
   }
 

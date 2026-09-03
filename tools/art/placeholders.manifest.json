@@ -550,6 +550,20 @@
     "bytes": 60712
   },
   {
+    "id": "prop.table",
+    "category": "props",
+    "path": "assets/models/props/table.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.5,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 140,
+    "bytes": 17160
+  },
+  {
     "id": "tdf.infantry.engineer",
     "category": "units",
     "path": "assets/models/units/tdf-infantry-engineer.glb",

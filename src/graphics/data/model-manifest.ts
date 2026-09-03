@@ -377,6 +377,14 @@ export const MODEL_MANIFEST = {
     sockets: [],
     quality: "placeholder",
   },
+  "prop.table": {
+    category: "props",
+    path: "assets/models/props/table.glb",
+    footprint: { w: 1, d: 1 },
+    height: 0.5,
+    sockets: [],
+    quality: "final",
+  },
   "prop.tree-oak": {
     category: "props",
     path: "assets/models/props/tree-oak.glb",

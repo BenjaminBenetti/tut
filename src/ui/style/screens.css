@@ -28,6 +28,15 @@
   pointer-events: auto;
 }
 
+/*
+ * Views toggle visibility with the `hidden` attribute. Theme components
+ * set their own `display`, which would beat the browser's default
+ * `[hidden]` rule, so restate it with priority.
+ */
+[hidden] {
+  display: none !important;
+}
+
 /* =========================================== */
 /* Screens                                     */
 /* =========================================== */

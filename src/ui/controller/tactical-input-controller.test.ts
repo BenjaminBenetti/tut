@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import type { Vec2, Vec3 } from "../../core/model/grid";
 import type { CameraInputSurface } from "../../graphics/controller/camera-input-controller";
-import { MAP_PICKING_TUNING } from "../../graphics/controller/map-picking-controller";
+import { PICKING_TUNING } from "../../graphics/controller/picking-controller";
 import type { SceneCamera } from "../../graphics/model/scene-camera";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { TacticalIntent } from "../model/tactical-intent";
@@ -167,7 +167,7 @@ describe("TacticalInputController", () => {
     surface.dispatch("pointerup", { clientX: 380, clientY: 200 });
     surface.dispatch("pointerdown", { clientX: 20, clientY: 200 });
     surface.dispatch("pointerup", {
-      clientX: 20 + MAP_PICKING_TUNING.clickSlopPx + 1,
+      clientX: 20 + PICKING_TUNING.clickSlopPx + 1,
       clientY: 200,
     });
     expect(intents).toEqual([

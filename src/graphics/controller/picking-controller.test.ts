@@ -4,10 +4,15 @@ import { describe, expect, it } from "vitest";
 
 import type { Vec2, Vec3 } from "../../core/model/grid";
 import type { SceneCamera } from "../model/scene-camera";
-import type { PickingSurface } from "./map-picking-controller";
-import { MAP_PICKING_TUNING } from "./map-picking-controller";
-import type { Picker } from "./picking-controller";
-import { PickingController, unitPickerAdapter } from "./picking-controller";
+import type { CityId } from "../../overworld/model/city";
+import type { CityPicker } from "../model/city-picker";
+import type { Picker, PickingSurface } from "./picking-controller";
+import {
+  cityPickerAdapter,
+  PICKING_TUNING,
+  PickingController,
+  unitPickerAdapter,
+} from "./picking-controller";
 
 type Listener = (event: unknown) => void;
 
@@ -15,12 +20,16 @@ type Listener = (event: unknown) => void;
 class FakeSurface {
   readonly listeners = new Map<string, Set<Listener>>();
   rect = { left: 0, top: 0, width: 400, height: 400 };
+  addCalls = 0;
+  removeCalls = 0;
   addEventListener(type: string, listener: unknown): void {
+    this.addCalls += 1;
     const set = this.listeners.get(type) ?? new Set<Listener>();
     set.add(listener as Listener);
     this.listeners.set(type, set);
   }
   removeEventListener(type: string, listener: unknown): void {
+    this.removeCalls += 1;
     this.listeners.get(type)?.delete(listener as Listener);
   }
   getBoundingClientRect(): typeof this.rect {
@@ -98,7 +107,7 @@ describe("PickingController", () => {
     controller.attach(surface.asSurface());
     surface.dispatch("pointerdown", { clientX: 20, clientY: 200 });
     surface.dispatch("pointerup", {
-      clientX: 20 + MAP_PICKING_TUNING.clickSlopPx + 1,
+      clientX: 20 + PICKING_TUNING.clickSlopPx + 1,
       clientY: 200,
     });
     expect(selected).toEqual([]);
@@ -151,5 +160,77 @@ describe("PickingController", () => {
     adapted.setSelected(undefined);
     expect(calls).toEqual(["hover:u1", "select:none"]);
     expect(adapted.worldPosition("u1")).toEqual({ x: 1, y: 2, z: 3 });
+  });
+
+  it("registers the four pointer listeners and removes every one, idempotently", () => {
+    const controller = new PickingController(new FakePicker(), sceneCamera(), {
+      onSelected: () => undefined,
+    });
+    const surface = new FakeSurface();
+    controller.attach(surface.asSurface());
+    expect([...surface.listeners.keys()].sort()).toEqual([
+      "pointerdown",
+      "pointerleave",
+      "pointermove",
+      "pointerup",
+    ]);
+    controller.detach();
+    expect(surface.removeCalls).toBe(surface.addCalls);
+    controller.detach();
+    expect(surface.removeCalls).toBe(surface.addCalls);
+  });
+
+  it("clears hover on pointer leave and does not select a release with no press or a miss", () => {
+    const picker = new FakePicker();
+    const selected: string[] = [];
+    const controller = new PickingController(picker, sceneCamera(), {
+      onSelected: (id) => selected.push(id),
+    });
+    const surface = new FakeSurface();
+    controller.attach(surface.asSurface());
+    surface.dispatch("pointermove", { clientX: 20, clientY: 200 });
+    surface.dispatch("pointerleave");
+    expect(picker.hovered).toBeUndefined();
+    surface.dispatch("pointerup", { clientX: 20, clientY: 200 });
+    surface.dispatch("pointerdown", { clientX: 200, clientY: 200 });
+    surface.dispatch("pointerup", { clientX: 200, clientY: 200 });
+    expect(selected).toEqual([]);
+    expect(picker.selected).toBeUndefined();
+  });
+
+  it("projects inside the surface rect through the camera", () => {
+    const picker = new FakePicker();
+    const controller = new PickingController(picker, sceneCamera(), {
+      onSelected: () => undefined,
+    });
+    const surface = new FakeSurface();
+    surface.rect = { left: 100, top: 50, width: 800, height: 400 };
+    controller.attach(surface.asSurface());
+    const at = controller.screenPositionOf("left");
+    expect(at).toBeDefined();
+    if (!at) throw new Error("unreachable");
+    // x = −1 in a 4-wide frustum lands a quarter of the way across.
+    expect(at.x).toBeCloseTo(surface.rect.left + surface.rect.width / 4);
+    expect(at.y).toBeCloseTo(surface.rect.top + surface.rect.height / 2, 0);
+  });
+
+  it("adapts the overworld's city picker to the generic contract", () => {
+    const calls: string[] = [];
+    const cityPicker: CityPicker = {
+      pickCity: () => "london",
+      setHovered: (id: CityId | undefined) =>
+        calls.push(`hover:${id ?? "none"}`),
+      setSelected: (id: CityId | undefined) =>
+        calls.push(`select:${id ?? "none"}`),
+      markerWorldPosition: (id: CityId) =>
+        id === "london" ? { x: 1, y: 0, z: 2 } : undefined,
+    };
+    const adapted = cityPickerAdapter(cityPicker);
+    expect(adapted.pick({ x: 0, y: 0 }, sceneCamera().camera)).toBe("london");
+    adapted.setHovered("london");
+    adapted.setSelected(undefined);
+    expect(calls).toEqual(["hover:london", "select:none"]);
+    expect(adapted.worldPosition("london")).toEqual({ x: 1, y: 0, z: 2 });
+    expect(adapted.worldPosition("sydney")).toBeUndefined();
   });
 });

@@ -3,7 +3,10 @@ import "../../ui/style/screens.css";
 
 import { randomSeed } from "../../core/service/random-seed";
 import { CameraInputController } from "../../graphics/controller/camera-input-controller";
-import { MapPickingController } from "../../graphics/controller/map-picking-controller";
+import {
+  cityPickerAdapter,
+  PickingController,
+} from "../../graphics/controller/picking-controller";
 import { TEXTURE_MANIFEST } from "../../graphics/data/texture-manifest";
 import { CAMERA_ZOOM } from "../../graphics/model/camera-state";
 import { IsometricCameraRig } from "../../graphics/service/isometric-camera-rig";
@@ -225,8 +228,8 @@ async function composeScene(
     zoom: CAMERA_ZOOM.min,
   });
   const cameraInput = new CameraInputController(rig);
-  const picking = new MapPickingController(mapScene, rig, {
-    onCitySelected: (cityId) => {
+  const picking = new PickingController(cityPickerAdapter(mapScene), rig, {
+    onSelected: (cityId) => {
       selection.select(cityId);
     },
   });
@@ -240,7 +243,7 @@ async function composeScene(
     }
     doc.body.dataset.selectedCity = cityId;
     if (mapScene.getSelected() !== cityId) {
-      picking.selectCity(cityId);
+      picking.select(cityId);
     }
   });
   const scene = new SceneService(viewport, {
@@ -254,7 +257,7 @@ async function composeScene(
   if (import.meta.env.DEV) {
     const hooks: TutTestHooks = {
       selectCity: (cityId) => {
-        picking.selectCity(cityId);
+        picking.select(cityId);
       },
       cityScreenPosition: (cityId) => picking.screenPositionOf(cityId),
       cityMarkerLook: (cityId) => mapScene.markerLook(cityId),

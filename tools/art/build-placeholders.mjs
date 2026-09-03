@@ -13,7 +13,8 @@
  * Alongside the GLBs it writes `tools/art/placeholders.manifest.json`, a
  * machine-readable record (id, path, footprint, height, sockets, triangles)
  * that the typed asset manifest under `src/graphics/data/` is checked
- * against. Unit models reference their texture atlas from inside the GLB
+ * against. Records written by other pipelines (Blender models made with
+ * `tools/art/make_model.py`) are kept when this script rewrites the file. Unit models reference their texture atlas from inside the GLB
  * (see `attachAtlases`), so the record does not list textures.
  *
  *   ┌──────────────┐   build()    ┌──────────────┐  GLTFExporter   ┌───────┐
@@ -33,7 +34,7 @@ import {
   SphereGeometry,
 } from "three";
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ATLAS_CELLS, ATLAS_PATHS, GRID } from "./build-textures.mjs";
@@ -1951,7 +1952,17 @@ async function main() {
     );
   }
   const manifestPath = join(here, "placeholders.manifest.json");
-  writeFileSync(manifestPath, `${JSON.stringify(records, null, 2)}\n`);
+  const ownIds = new Set(records.map((record) => record.id));
+  const foreign = existsSync(manifestPath)
+    ? JSON.parse(readFileSync(manifestPath, "utf8")).filter(
+        (record) => !ownIds.has(record.id),
+      )
+    : [];
+  foreign.sort((a, b) => a.id.localeCompare(b.id));
+  writeFileSync(
+    manifestPath,
+    `${JSON.stringify([...records, ...foreign], null, 2)}\n`,
+  );
   console.log(
     `\n${records.length} models → ${outDir}\nmanifest → ${manifestPath}`,
   );

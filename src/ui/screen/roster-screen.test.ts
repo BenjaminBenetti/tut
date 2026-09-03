@@ -244,7 +244,7 @@ describe("RosterScreen", () => {
     ]);
     expect(q('[data-role="no-losses"]').hidden).toBe(true);
     expect(q<HTMLButtonElement>('[data-action="mech-bay"]').disabled).toBe(
-      true,
+      false,
     );
   });
 
@@ -354,6 +354,8 @@ describe("RosterScreen", () => {
 
   it("Overworld navigates back and unmount unsubscribes and clears the DOM", () => {
     const { store, navigate, screen } = mountWith(newGame(), root);
+    q<HTMLButtonElement>('[data-action="mech-bay"]').click();
+    expect(navigate).toHaveBeenCalledWith("mech-bay");
     q<HTMLButtonElement>('[data-action="overworld"]').click();
     expect(navigate).toHaveBeenCalledWith("overworld");
     expect(store?.listenerCount).toBe(1);

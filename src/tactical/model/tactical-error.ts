@@ -2,6 +2,25 @@
 // Tactical error
 // ===========================================
 
+/** Why a `Move` was refused (#325). Closed so the HUD can phrase each one. */
+export type MoveRejection =
+  | "empty-path"
+  | "unit-down"
+  | "wrong-phase"
+  | "over-budget"
+  | "unreachable"
+  | "not-a-step";
+
+/** Human-readable text per move rejection. */
+const MOVE_REJECTION_TEXT: Readonly<Record<MoveRejection, string>> = {
+  "empty-path": "the path is empty",
+  "unit-down": "the unit is down",
+  "wrong-phase": "it is not that side's phase",
+  "over-budget": "the path is longer than its action points allow",
+  unreachable: "a tile on the path cannot be entered",
+  "not-a-step": "the path does not step from tile to tile",
+};
+
 /** Why a tactical command or mission start was rejected. Serializable. */
 export type TacticalError =
   | { readonly kind: "no-active-mission" }
@@ -9,6 +28,11 @@ export type TacticalError =
   | { readonly kind: "mission-not-found"; readonly missionId: string }
   | { readonly kind: "empty-deployment" }
   | { readonly kind: "unit-not-found"; readonly unitId: string }
+  | {
+      readonly kind: "illegal-move";
+      readonly unitId: string;
+      readonly reason: MoveRejection;
+    }
   | { readonly kind: "invalid-loadout"; readonly mechId: string }
   | { readonly kind: "map-recipe"; readonly reason: string }
   | {
@@ -30,6 +54,8 @@ export function describeTacticalError(error: TacticalError): string {
       return "A deployment needs at least one unit";
     case "unit-not-found":
       return `Unit "${error.unitId}" is not in the roster`;
+    case "illegal-move":
+      return `Unit "${error.unitId}" cannot make that move: ${MOVE_REJECTION_TEXT[error.reason]}`;
     case "invalid-loadout":
       return `Mech "${error.mechId}" has a loadout that no longer validates`;
     case "map-recipe":

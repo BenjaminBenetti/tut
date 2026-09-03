@@ -1,30 +1,34 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-02 (session 1, sixth update)
+Last updated: 2026-09-03 (session 1, seventh update)
 
 ## 1. What I was doing and where it stands
 
 | Deliverable | Issue | State |
 |---|---|---|
-| Style guide | #2 | **Merged** (PR #12); §8 rewrite to the shipped #10 shape in a docs PR (open at time of writing). |
+| Style guide (+ §8 rewritten to the shipped manifest shape) | #2 | **Merged** (PR #12, #158). |
 | Concept sheets (7 subjects) | #3 | **Merged** (PR #86, #96). |
-| Placeholder GLBs batch 1 (38) + tooling | #4 | **Merged** (PR #89). Registered in the typed manifest by #10. |
+| Placeholder GLBs batch 1 (38) + tooling | #4 | **Merged** (PR #89). |
 | Placeholder batch 2 (13) + mapgen id table | #93 | **Merged** (PR #110). |
-| UI theme, 24 icons, icon manifest | #102 | **Merged** (PR #109, #114). |
+| UI theme, icons, icon manifest | #102 | **Merged** (PR #109, #114). |
 | VFX sprites + sprite manifest | #119 | **Merged** (PR #121, #133). |
-| Overworld Earth map texture, texture manifest, map glyphs (Director priority a) | #143 | **Merged** (PR #151); handoff comment posted on #74. |
-| Mech-bay concept sheets (Director priority b) | #144 | **Merged** (PR #152). |
-| First-pass unit textures: procedural atlases on unit placeholders (Director priority c) | #145 | PR open. |
+| Overworld Earth map texture, texture manifest, map glyphs | #143 | **Merged** (PR #151). Follow-up for the scene to use it: #162. |
+| Mech-bay concept sheets | #144 | **Merged** (PR #152). |
+| First-pass unit textures (procedural atlases) | #145 | **Merged** (PR #157). |
+| Unit / mech-part thumbnails + thumbnail manifest | #163 | PR #165 open (rebased on main). |
+| Placeholder batch 3: mech part variants matching the part catalogue | #169 | WIP on `feat/169-mech-parts` (14 GLBs built; `MODEL_IDS`, `MODEL_MANIFEST`, thumbnails and style guide table still to do). Parked for #191. |
+| **Headless Blender toolchain** (Executive Director priority) | #191 | Devcontainer + proof PR #192 open; skill PR #193 open (stacked). Proof posted on #191. Fleet rebuild comment due after #192 merges. |
 | Image generation recipe (incl. transparent sprites) | — | **Working.** See §5. |
-| Headless GLB / page render checks | — | **Working.** See §7. |
+| Headless GLB / page render checks (Playwright) and Blender review renders | — | **Working.** See §7 and §8. |
 
-Issues #2, #3, #4, #93, #102, #119, #143, #144, #145 are on project 5 (Terra Under Threat).
+Issues #2, #3, #4, #93, #102, #119, #143, #144, #145 are on project 5; #162, #163, #169, #191 were filed by REST during the rate-limit outage and need the Producer to add them.
 
 ## 2. Open PRs / issues I own
 
-- PR for #145 (unit textures) and the style guide §8 docs PR. Both green locally.
-- Offers posted, no reply yet: #74 (art delivered anyway, see #143), #42 (unit/part thumbnails).
-- The Director gave three priorities in-session on 2026-09-02 (Earth map art, mech-bay concepts, unit textures); all three are delivered or in review.
+- PR #192 `chore(infra): devcontainer with headless Blender` → part 1 of #191. When it merges: comment on #191 that instances need a fleet rebuild (the Director does the rebuild), then rebase PR #193.
+- PR #193 `feat(art): art-blender skill` → part 2 of #191, stacked on #192.
+- PR #165 thumbnails (#163).
+- Branch `feat/169-mech-parts` (WIP commit pushed, no PR yet): finish after #191 lands. Do not replace placeholders with Blender models until the Director signs off on the pipeline.
 
 ## 3. Decisions I made and why
 
@@ -41,14 +45,16 @@ Issues #2, #3, #4, #93, #102, #119, #143, #144, #145 are on project 5 (Terra Und
 - **Sprite manifest mirrors the icon manifest**: `SPRITE_MANIFEST` in `src/graphics/data/` (three.js-side assets), entries carry `path`, `size`, `blend`, `label`; test parses the PNG header itself (width, height, colour type with alpha) so no image library is needed. Sprites are RGBA ≤ 512², under 150 KB; a painterly result gets downscaled to 256² rather than shipped fat.
 - **Unit textures are two 512² atlases referenced externally from the GLBs**: `build-textures.mjs` paints one 128 px cell per token from a seeded PRNG (own PNG encoder over `node:zlib`); `build-placeholders.mjs` remaps each textured mesh's UVs into its cell and rewrites the GLB JSON to add `images[].uri`, a sampler, textures and `baseColorTexture` per material. Embedding would have duplicated the atlas in every GLB. glTF UVs run top-down (row 0 at the top), unlike three.js; the first pass sampled the unused black cells.
 - **Earth map is 2048×1024, quantised to 256 colours** (881 KB) so it fits the 1.5 MB cap; the flat faceted style loses nothing. Chosen from two generations; the other stretched continents vertically.
+- **Blender pipeline shape (#191)**: models are Python scripts under `tools/art/models/` built with `tools/art/bpy_kit.py`; `tools/art/make_model.py` does export → trimesh validation → three Cycles CPU renders → JSON record in one command; ids and TS manifest entries are still added by hand (the printed entry). `build-placeholders.mjs` keeps records it did not create so both pipelines share `placeholders.manifest.json`. Blender models face −Y in Blender so the glTF export faces +Z.
 - **Chamfer border trick**: `.tut-panel`/`.tut-btn` are two clipped layers (line colour behind, surface colour inset 1 px) so the 1 px border follows the 45° cut. `--surface` custom property selects the inner colour per variant.
 
 ## 4. Next, in order
 
-1. Land the #145 textures PR and the §8 docs PR (address review).
-2. Reply on #74 if the implementer wants a different aspect or a seam-safe edge; reply on #42 if a screen wants thumbnails (harness needs `omitBackground` + transparent clear colour).
-3. Director round 2: whatever feedback lands on the mech-bay sheets or the textures. Candidates already noted in sidecars: heavy mech chassis models, alternate arm/back weapon GLBs from the concept sheets (`docs/design/concepts/mech-bay/`), snow/desert/coastal tile kits, hive core (M3).
-4. Muzzle-flash 4-frame strip when tactical animation exists; normal/roughness maps only when real models arrive.
+1. Land #192 and #193 (address review); post the fleet-rebuild comment on #191 after #192 merges.
+2. Land #165 (thumbnails), then finish #169: register the 14 batch-3 ids in `MODEL_IDS` / `MODEL_MANIFEST` / `THUMBNAIL_MANIFEST`, add the part-catalogue → model table to style guide §7, regenerate previews, PR.
+3. When the Director approves the Blender pipeline: replace placeholders one class at a time with `make_model.py` scripts (mech parts first, since the mech bay shows them largest), keeping ids and removing each id from `MODEL_DEFS` as it goes final.
+4. #162 (overworld scene uses the Earth texture) is an engineer follow-up; answer questions there.
+5. Round 2 with the Director on concept sheets and textures; VFX strip when tactical animation exists.
 
 ## 5. Image generation recipe (Codex CLI)
 
@@ -102,4 +108,27 @@ cd tools/art/preview/out && montage $(ls *@45.png | sort) -tile 8x -geometry 200
 ```
 
 Chromium needed system libraries the first time (`sudo npx playwright install-deps chromium`); the devcontainer now installs Chromium via PR #16, so a fresh container should have them. If you see `libnspr4.so: cannot open shared object file`, run install-deps again.
+
+## 8. Blender recipe (headless, no GPU)
+
+Installed by `.devcontainer/Dockerfile` (PR #192) and by hand on this instance:
+
+```bash
+sudo apt-get install -y --no-install-recommends libxi6 libxxf86vm1 libxfixes3 libxrender1 libgl1 libegl1 libsm6 xz-utils openscad python3-venv xvfb
+curl -fsSL https://download.blender.org/release/Blender4.5/blender-4.5.13-linux-x64.tar.xz | sudo tar -xJ -C /opt
+sudo ln -s /opt/blender-4.5.13-linux-x64/blender /usr/local/bin/blender
+sudo /opt/blender-4.5.13-linux-x64/4.5/python/bin/python3.11 -m ensurepip && sudo ... -m pip install trimesh
+sudo python3 -m venv /opt/art-venv && sudo /opt/art-venv/bin/pip install trimesh cadquery
+printf '#!/bin/sh\nexec /opt/art-venv/bin/python "$@"\n' | sudo tee /usr/local/bin/art-python && sudo chmod +x /usr/local/bin/art-python
+```
+
+Use: `.claude/skills/art-blender/SKILL.md` is the loop. Proof: `blender -b --python tools/art/smoke_render.py` (3 s: GLB, trimesh report, three renders). Review any GLB: `blender -b --python tools/art/render_glb.py -- --glb <file> --out <dir>`.
+
+Gotchas:
+- `art-python` must be a wrapper script, not a symlink: Python finds the venv from the real executable path, so a symlink silently runs system Python (no trimesh).
+- The base image's Python is externally managed: venv, never `pip install` into it.
+- glTF export splits vertices per flat face; trimesh reports "not watertight" unless vertices are merged first (`validate_glb.py` does).
+- Script args go after `--`; start scripts with `read_factory_settings(use_empty=True)`; Cycles needs no xvfb in `-b` mode.
+- Blender's `primitive_cone_add(radius1=bottom, radius2=top)`.
+- The GitHub API budget is shared across agents: poll at most every 5 minutes, use `gh api` REST, back off on rate-limit errors and keep producing locally.
 

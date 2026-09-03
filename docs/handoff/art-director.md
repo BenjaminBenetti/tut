@@ -16,19 +16,19 @@ Last updated: 2026-09-03 (session 1, seventh update)
 | Mech-bay concept sheets | #144 | **Merged** (PR #152). |
 | First-pass unit textures (procedural atlases) | #145 | **Merged** (PR #157). |
 | Unit / mech-part thumbnails + thumbnail manifest | #163 | PR #165 open (rebased on main). |
-| Placeholder batch 3: mech part variants matching the part catalogue | #169 | WIP on `feat/169-mech-parts` (14 GLBs built; `MODEL_IDS`, `MODEL_MANIFEST`, thumbnails and style guide table still to do). Parked for #191. |
-| **Headless Blender toolchain** (Executive Director priority) | #191 | Devcontainer + proof PR #192 open; skill PR #193 open (stacked). Proof posted on #191. Fleet rebuild comment due after #192 merges. |
+| Placeholder batch 3: mech part variants matching the part catalogue | #169 | WIP on `feat/169-mech-parts` (14 GLBs built; `MODEL_IDS`, `MODEL_MANIFEST`, thumbnails and style guide table still to do). Parked for #190. |
+| **Headless Blender toolchain** (Executive Director priority) | #190 | Devcontainer + proof PR #192 open; skill PR #193 open (stacked). Proof posted on #190. Fleet rebuild comment due after #192 merges. |
 | Image generation recipe (incl. transparent sprites) | — | **Working.** See §5. |
 | Headless GLB / page render checks (Playwright) and Blender review renders | — | **Working.** See §7 and §8. |
 
-Issues #2, #3, #4, #93, #102, #119, #143, #144, #145 are on project 5; #162, #163, #169, #191 were filed by REST during the rate-limit outage and need the Producer to add them.
+Issues #2, #3, #4, #93, #102, #119, #143, #144, #145 are on project 5; #162, #163, #169, #190 were filed by REST during the rate-limit outage and need the Producer to add them.
 
 ## 2. Open PRs / issues I own
 
-- PR #192 `chore(infra): devcontainer with headless Blender` → part 1 of #191. When it merges: comment on #191 that instances need a fleet rebuild (the Director does the rebuild), then rebase PR #193.
-- PR #193 `feat(art): art-blender skill` → part 2 of #191, stacked on #192.
+- PR #192 `chore(infra): devcontainer with headless Blender` → part 1 of #190. When it merges: comment on #190 that instances need a fleet rebuild (the Director does the rebuild), then rebase PR #193.
+- PR #193 `feat(art): art-blender skill` → part 2 of #190, stacked on #192.
 - PR #165 thumbnails (#163).
-- Branch `feat/169-mech-parts` (WIP commit pushed, no PR yet): finish after #191 lands. Do not replace placeholders with Blender models until the Director signs off on the pipeline.
+- Branch `feat/169-mech-parts` (WIP commit pushed, no PR yet): finish after #190 lands. Do not replace placeholders with Blender models until the Director signs off on the pipeline.
 
 ## 3. Decisions I made and why
 
@@ -45,12 +45,12 @@ Issues #2, #3, #4, #93, #102, #119, #143, #144, #145 are on project 5; #162, #16
 - **Sprite manifest mirrors the icon manifest**: `SPRITE_MANIFEST` in `src/graphics/data/` (three.js-side assets), entries carry `path`, `size`, `blend`, `label`; test parses the PNG header itself (width, height, colour type with alpha) so no image library is needed. Sprites are RGBA ≤ 512², under 150 KB; a painterly result gets downscaled to 256² rather than shipped fat.
 - **Unit textures are two 512² atlases referenced externally from the GLBs**: `build-textures.mjs` paints one 128 px cell per token from a seeded PRNG (own PNG encoder over `node:zlib`); `build-placeholders.mjs` remaps each textured mesh's UVs into its cell and rewrites the GLB JSON to add `images[].uri`, a sampler, textures and `baseColorTexture` per material. Embedding would have duplicated the atlas in every GLB. glTF UVs run top-down (row 0 at the top), unlike three.js; the first pass sampled the unused black cells.
 - **Earth map is 2048×1024, quantised to 256 colours** (881 KB) so it fits the 1.5 MB cap; the flat faceted style loses nothing. Chosen from two generations; the other stretched continents vertically.
-- **Blender pipeline shape (#191)**: models are Python scripts under `tools/art/models/` built with `tools/art/bpy_kit.py`; `tools/art/make_model.py` does export → trimesh validation → three Cycles CPU renders → JSON record in one command; ids and TS manifest entries are still added by hand (the printed entry). `build-placeholders.mjs` keeps records it did not create so both pipelines share `placeholders.manifest.json`. Blender models face −Y in Blender so the glTF export faces +Z.
+- **Blender pipeline shape (#190)**: models are Python scripts under `tools/art/models/` built with `tools/art/bpy_kit.py`; `tools/art/make_model.py` does export → trimesh validation → three Cycles CPU renders → JSON record in one command; ids and TS manifest entries are still added by hand (the printed entry). `build-placeholders.mjs` keeps records it did not create so both pipelines share `placeholders.manifest.json`. Blender models face −Y in Blender so the glTF export faces +Z.
 - **Chamfer border trick**: `.tut-panel`/`.tut-btn` are two clipped layers (line colour behind, surface colour inset 1 px) so the 1 px border follows the 45° cut. `--surface` custom property selects the inner colour per variant.
 
 ## 4. Next, in order
 
-1. Land #192 and #193 (address review); post the fleet-rebuild comment on #191 after #192 merges.
+1. Land #192 and #193 (address review); post the fleet-rebuild comment on #190 after #192 merges.
 2. Land #165 (thumbnails), then finish #169: register the 14 batch-3 ids in `MODEL_IDS` / `MODEL_MANIFEST` / `THUMBNAIL_MANIFEST`, add the part-catalogue → model table to style guide §7, regenerate previews, PR.
 3. When the Director approves the Blender pipeline: replace placeholders one class at a time with `make_model.py` scripts (mech parts first, since the mech bay shows them largest), keeping ids and removing each id from `MODEL_DEFS` as it goes final.
 4. #162 (overworld scene uses the Earth texture) is an engineer follow-up; answer questions there.

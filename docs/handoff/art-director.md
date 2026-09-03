@@ -1,6 +1,6 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-03 (session 1, tenth update)
+Last updated: 2026-09-03 (session 1, eleventh update)
 
 ## 1. What I was doing and where it stands
 
@@ -18,7 +18,7 @@ Last updated: 2026-09-03 (session 1, tenth update)
 | Unit / mech-part thumbnails + thumbnail manifest | #163 | **Merged** (PR #165). |
 | Placeholder batch 3: mech part variants matching the part catalogue | #169 | **Merged** (PR #195). Superseded by Blender models in #274 batch B. |
 | **Headless Blender toolchain** (Executive Director priority) | #190 | **Merged**: devcontainer + proof PR #192, skill PR #193, handoff PR #194, `cut_below` helper PR #214. Proof and completion note on #190; fleet rebuild requested there (Director does it). |
-| **Replace placeholders with Blender models** (Director go on 2026-09-03) | #274 | **Merged**: pipeline #277, batch A Mech A set #280, batch B all mech variants #283. **Open**: batch C bugs + spawner #287, batch D five squads #288 (stacked on #287). After D, every roster unit (30 ids) is a Blender model; `build-placeholders.mjs` keeps tiles, buildings and props. Batch E waits for tactical demand. |
+| **Replace placeholders with Blender models** (Director go on 2026-09-03) | #274 | **Merged**: pipeline #277, batch A Mech A set #280, batch B all mech variants #283. batch C bugs + spawner #287, batch D five squads #288 **merged** too. Every roster unit (30 ids) is a Blender model; `build-placeholders.mjs` keeps tiles, buildings and props. Batch E waits for tactical demand. |
 | Kit follow-ups from dry runs (`bevel`, sub-part validation, CadQuery/OpenSCAD notes) | #190 | **Merged** (PR #264). |
 | Image generation recipe (incl. transparent sprites) | — | **Working.** See §5. |
 | Headless GLB / page render checks (Playwright) and Blender review renders | — | **Working.** See §7 and §8. |
@@ -27,8 +27,7 @@ Issues #2, #3, #4, #93, #102, #119, #143, #144, #145 are on project 5; #162, #16
 
 ## 2. Open PRs / issues I own
 
-- PR #287 (batch C: swarmer, lurker, brute, egg spawner) and PR #288 (batch D: five squad kits), stacked; #288 needs `git rebase --onto origin/main feat/274-bugs feat/274-squads` after #287 squash-merges (`/tmp/.../rebase-chain.sh` did this for the chain; the recipe is one `--onto` per branch, then `--force-with-lease`).
-- Issue #274 is the replacement track; progress comments there per batch.
+- None open. #274 (replacement track) is paused after batches A–D with a completion comment; batch E waits for demand.
 
 ## 3. Decisions I made and why
 
@@ -53,11 +52,10 @@ Issues #2, #3, #4, #93, #102, #119, #143, #144, #145 are on project 5; #162, #16
 
 ## 4. Next, in order
 
-1. Rebase #288 when #287 merges; land both.
-2. Director round-2 notes on any batch go into the matching `tools/art/models/*_parts.py`; rerun the ids, sync the manifest entries, regenerate thumbnails and previews (recipe in §3).
-3. Batch E (props, building kit, tiles) only when tactical or mapgen asks; the placeholder kit is adequate for flat pieces.
-4. Textures beyond the atlases (normal/roughness maps) only if the Director wants more surface detail; the atlas cells can be repainted in `build-textures.mjs` without touching models.
-5. #162 (overworld scene uses the Earth texture) stays an engineer follow-up.
+1. Director round-2 notes on any batch: edit the matching `tools/art/models/*_parts.py`, rerun the ids with `--quality final`, regenerate `MODEL_MANIFEST` entries from the JSON, thumbnails and previews, PR (recipe in §3).
+2. Batch E (props, building kit, tiles) only when tactical or mapgen asks; the placeholder kit is adequate for flat pieces.
+3. Textures beyond the atlases only if the Director wants more surface detail; repaint cells in `build-textures.mjs` without touching models.
+4. #162 (overworld scene uses the Earth texture) landed as engineer work (#313 uses the glyph set); answer questions there if any.
 
 ## 5. Image generation recipe (Codex CLI)
 

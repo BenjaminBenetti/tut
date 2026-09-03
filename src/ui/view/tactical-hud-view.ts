@@ -339,6 +339,7 @@ export class TacticalHudView {
   private refresh(): void {
     const mission = this.mission;
     if (!mission) {
+      this.banner.update(undefined);
       this.card.update(undefined, undefined);
       this.preview.update(undefined);
       this.objectives.update([], []);
@@ -349,7 +350,13 @@ export class TacticalHudView {
       });
       return;
     }
-    this.banner.update(mission.turn, mission.phase);
+    this.banner.update({
+      missionId: mission.missionId,
+      turn: mission.turn,
+      phase: mission.phase,
+      tdfUnits: countAlive(mission, "tdf"),
+      bugUnits: countAlive(mission, "bugs"),
+    });
     const selected = this.unit(this.selected);
     this.card.update(
       selected,
@@ -372,4 +379,13 @@ export class TacticalHudView {
       mode: this.mode === "select" ? undefined : this.mode,
     });
   }
+}
+
+// ===========================================
+// Helpers
+// ===========================================
+
+/** Living units on one team. */
+function countAlive(mission: TacticalState, team: Team): number {
+  return mission.units.filter((u) => u.team === team && u.hp > 0).length;
 }

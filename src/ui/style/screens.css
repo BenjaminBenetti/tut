@@ -527,14 +527,11 @@
   position: absolute;
   inset: 0;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   background: var(--ui-bg, #0b0e12);
 }
-.tut-tactical__bar {
-  grid-row: 1;
-}
 .tut-tactical__viewport {
-  grid-row: 2;
+  grid-row: 1;
   position: relative;
   min-height: 0;
   overflow: hidden;
@@ -545,7 +542,7 @@
   height: 100%;
 }
 .tut-tactical__note {
-  grid-row: 2;
+  grid-row: 1;
   align-self: start;
   margin: var(--space-4);
 }

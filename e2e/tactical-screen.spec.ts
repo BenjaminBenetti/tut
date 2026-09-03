@@ -55,9 +55,9 @@ test("the tactical screen mounts a generated map with the deployed roster and ex
   await expect(body).toHaveAttribute("data-screen", "tactical");
   await expect(page.locator("#tactical-viewport canvas")).toBeVisible();
   await expect(
-    page.locator('#tactical-bar [data-field="mission-id"]'),
+    page.locator('#turn-banner [data-field="mission-id"]'),
   ).toHaveText(missionId ?? "");
-  await expect(page.locator('#tactical-bar [data-field="turn"]')).toHaveText(
+  await expect(page.locator('#turn-banner [data-field="turn"]')).toHaveText(
     "1",
   );
   await expect(body).toHaveAttribute("data-tactical-units", /^[1-9]\d*$/);

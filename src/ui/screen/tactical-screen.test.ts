@@ -176,10 +176,10 @@ describe("TacticalScreen", () => {
   });
 
   const field = (name: string): string =>
-    root.querySelector(`#tactical-bar [data-field="${name}"]`)?.textContent ??
+    root.querySelector(`#turn-banner [data-field="${name}"]`)?.textContent ??
     "";
 
-  it("mounts the bar and viewport from the active mission and attaches the scene host", () => {
+  it("mounts the banner and viewport from the active mission and attaches the scene host", () => {
     const state = inMission();
     const host = new FakeHost();
     new TacticalScreen({
@@ -192,7 +192,7 @@ describe("TacticalScreen", () => {
     expect(root.querySelector("#tactical-viewport")).not.toBeNull();
     expect(field("mission-id")).toBe("mission-2");
     expect(field("turn")).toBe("1");
-    expect(field("phase")).toBe("player");
+    expect(field("phase")).toBe("player phase");
     expect(field("tdf-units")).toBe(
       String(state.roster.squads.length + state.roster.mechs.length),
     );
@@ -202,7 +202,7 @@ describe("TacticalScreen", () => {
     ).toBe(true);
   });
 
-  it("updates the host and the bar on store changes, attaching only once per mission", () => {
+  it("updates the host and the banner on store changes, attaching only once per mission", () => {
     const state = inMission();
     const store = new FakeStore(state);
     const host = new FakeHost();
@@ -218,7 +218,7 @@ describe("TacticalScreen", () => {
       activeMission: { ...mission, turn: 2, phase: "bugs" },
     });
     expect(field("turn")).toBe("2");
-    expect(field("phase")).toBe("bugs");
+    expect(field("phase")).toBe("bug phase");
     expect(host.calls).toEqual(["attach:mission-2:1", "update:mission-2:2"]);
   });
 
@@ -288,6 +288,9 @@ describe("TacticalScreen", () => {
     expect(
       root.querySelector("#tactical-viewport #mission-hud"),
     ).not.toBeNull();
+    expect(root.querySelector("#tactical-bar")).toBeNull();
+    expect(root.querySelectorAll('[data-action="overworld"]')).toHaveLength(1);
+    expect(root.querySelectorAll('[data-field="turn"]')).toHaveLength(1);
     expect(
       root.querySelector('#turn-banner [data-field="turn"]')?.textContent,
     ).toBe("1");

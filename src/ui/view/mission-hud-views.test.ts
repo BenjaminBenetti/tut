@@ -94,7 +94,16 @@ describe("TurnBannerView", () => {
     const onBack = vi.fn();
     const view = new TurnBannerView({ onBack });
     view.mount(root);
-    view.update(3, "bugs");
+    view.update({
+      missionId: "mission-7",
+      turn: 3,
+      phase: "bugs",
+      tdfUnits: 2,
+      bugUnits: 5,
+    });
+    expect(field("mission-id")?.textContent).toBe("mission-7");
+    expect(field("tdf-units")?.textContent).toBe("2");
+    expect(field("bug-units")?.textContent).toBe("5");
     expect(field("turn")?.textContent).toBe("3");
     expect(field("phase")?.dataset.phase).toBe("bugs");
     view.showStatus("Nope");

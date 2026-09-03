@@ -36,4 +36,53 @@ describe("GAME_STATE_MIGRATIONS", () => {
       /overworld/,
     );
   });
+
+  it("v2 → v3 gives every city a scale: the seed's for shipped ids, the default otherwise", () => {
+    const step = GAME_STATE_MIGRATIONS[1];
+    expect(step?.from).toBe(2);
+    expect(step?.to).toBe(3);
+    const v2 = {
+      meta: { seed: 7 },
+      overworld: {
+        day: 3,
+        map: {
+          regions: [],
+          cities: [
+            { id: "perth", name: "Perth", infestation: 5 },
+            { id: "london", name: "London", infestation: 0 },
+            { id: "atlantis", name: "Atlantis", infestation: 0 },
+            { id: "kept", name: "Kept", infestation: 0, scale: "rural" },
+          ],
+        },
+        spreadCooldowns: {},
+      },
+      roster: {},
+    };
+    const before = JSON.parse(JSON.stringify(v2)) as unknown;
+    const migrated = step?.apply(v2) as typeof v2 & {
+      overworld: { map: { cities: { id: string; scale: string }[] } };
+    };
+    expect(
+      migrated.overworld.map.cities.map((city) => [city.id, city.scale]),
+    ).toEqual([
+      ["perth", "town"],
+      ["london", "city"],
+      ["atlantis", "city"],
+      ["kept", "rural"],
+    ]);
+    expect(migrated.overworld.map.cities[0]).toMatchObject({
+      name: "Perth",
+      infestation: 5,
+    });
+    expect(migrated.overworld.spreadCooldowns).toEqual({});
+    expect(v2).toEqual(before);
+  });
+
+  it("v2 → v3 rejects a state without a city list", () => {
+    const step = GAME_STATE_MIGRATIONS[1];
+    expect(() => step?.apply({ meta: {} })).toThrow(/overworld/);
+    expect(() => step?.apply({ meta: {}, overworld: { map: {} } })).toThrow(
+      /cities/,
+    );
+  });
 });

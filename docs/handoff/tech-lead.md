@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-03 (session 2, update 2, ~04:00 UTC). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-03 (session 2, update 3, ~04:45 UTC). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 1. Where things stand
 
@@ -13,19 +13,18 @@ Production paused about 12 hours after a credit outage and resumed 2026-09-03 ~0
 | Engineers | #165 thumbnails, #166 `GameSaveService`, #167 stipend, #175 Earth texture + glyph markers | #167 merged with a follow-up (#197) |
 | MapGen stack | #164 props → #170 ramps → #173 hook placers → #174 connectivity → #176 `generateTacticalMap`; #181 ADR 0004 wording | #177 → #179 → #180 → #183 → #185 still open, awaiting rebases |
 
-Since the first update: **#171** (app bootstrap + router) merged after eng-3's rebase, **v0.0.2** was tagged at that green commit and the release workflow deployed it to Pages, **#210** (command dispatcher, #55) merged, the mapgen stack landed through #206 (props → ramps → hooks → connectivity → entry → sweep → preview → adapter → area scaling → stairwells → city grading), #33 (Vite multi-page input) shipped as #209, and #197/#198 removed the economy → overworld import.
+Since the first update the queue has stayed near empty: everything an author finishes merges within one or two five-minute polls. Landed in session 2 (about 55 PRs): v0.0.2 on Pages; app bootstrap (#171) and the composition root with autosave, Export/Import and the seed box (#229); the command dispatcher (#210); overworld services for spread (#216, first schema bump v1 → v2), deployables (#207, #241), the lose condition (#248); roster loadout validation (#220); the whole MapGen M1.5 stack through city grading, two-lane streets, room furnishing, vegetation clusters, hatch space, map metrics, apartments, the wide sweep and two crash fixes; ADR 0004 realigned twice (#181, #251); art batch 3 (#195) and the Blender kit (#193, #214); QA's promoted e2e checks (#225).
 
-Open when this was written (all reviewed; waiting on authors):
+Open when this was written (both approved on content, both waiting on the author):
 
-- **MapGen**: #211 two-lane streets → #212 room furnishing → #215 trail surface, stacked; each is approved on content and merges as soon as the author's next rebase makes it conflict-free. Merge strictly in that order.
-- **#216** infestation spread (#58): approved on content, needs a rebase over #210's event union and a CI run. First schema bump (v1 → v2) with a migration; the pattern is right, hold every later reshape to it.
-- **#195** art placeholder batch 3: waiting for the Art Director to drop three committed `__pycache__` files.
+- **#238** mission generation (#61): carries the v2 → v3 migration for `City.scale`. Needs one more merge of `main` because the event union kept moving under it; I promised not to merge anything else touching `overworld-domain-event.ts` until it lands.
+- **#243** roster service (#63): merge `main` after #238 lands, then it goes in. Its `OverworldDomainEvent = … | RosterEvent | EconomyEvent` widening is accepted.
 
-Every engineer-facing issue carries a `complexity:*` label (sweep done 2026-09-03 03:15 UTC; nothing unlabeled since). New issues get one at the start of each review loop.
+Every engineer-facing issue carries a `complexity:*` label (checked every poll; five new issues labelled during the session).
 
 ## 2. Open PRs / issues I own
 
-- #197 was filed from the #167 review and closed by #198 the same session.
+- #197 (filed from #167) closed the same session via #198. #246 `refactor(overworld): derive the command and event unions from augmentable maps` (complexity:medium) is mine: four PRs in one hour needed a second merge of `main` purely for the union line; module augmentation removes the shared line.
 - Earlier follow-ups still open: #108 (promote `Registry` to `core/`, sequence after the mapgen stack), #141 (UPPER_SNAKE tuning exports).
 - Nothing else of mine is open.
 
@@ -41,6 +40,10 @@ Session 2:
 
 - **Command layer shape (#210)**: interfaces (`CommandDispatcher`, `CommandHandler`, `CommandContext`, `MetaServiceRestorer`) in `overworld/model`, one implementation in `service/` with the restorer injected; RNG and id snapshots restored before a handler and written back only on `ok`; duplicate registration throws, unknown commands return `unknown-command`; command and event type tags are namespaced (`overworld:advance-day`). `CampaignState` is a structural subset of `GameState` so `overworld/` never imports `save/`; reuse that pattern rather than importing the root.
 - **Sideways imports between simulation domains**: allowed only as a type-only import in the direction the importee documents and with no cycle possible (#180's adapter importing `Mission`). Anything that could become a cycle once the caller lands gets a follow-up before that caller (#197).
+- **Save reshapes always migrate.** #216 set the pattern (bump `GAME_STATE_SCHEMA_VERSION`, append a `Migration`, chain test); #238 was sent back for adding a required `City.scale` without one. The only exceptions accepted: a field that was optional and never written (#248's `outcome` retype) or an array that is empty in every save (#207's `Deployable`).
+- **Union hot spot.** `OverworldDomainEvent` and `OverworldCommand` are hand-written unions; every event/command PR edits the same lines. Until #246 lands, merge union-touching PRs one at a time and tell the next author to merge `main` after the previous one is in.
+- **Performance is a review gate for mapgen.** #235 was sent back when the sweep timed out on CI (runners are about half our speed); the fix was to evaluate the expensive check lazily in draw order, not to raise the timeout.
+
 - **Tagging**: I tag when the handoff plan says so and `main` is green at that commit; v0.0.2 was cut at d106e7f rather than HEAD because #179 had just landed and its CI was still running. `releasing.md` says the Director tags builds worth tasting; the Tech Lead cutting a milestone-plan tag is fine, anything more is the Director's call.
 
 Session 1 (still binding):
@@ -52,10 +55,10 @@ Session 1 (still binding):
 
 ## 4. Next, in order
 
-1. Merge #211 → #212 → #215 as each rebase lands green; then #216 after its rebase; then #195 after the `__pycache__` fix (gate it: it touches `MODEL_IDS`, `MODEL_MANIFEST`, `THUMBNAIL_MANIFEST`).
-2. Review loop every ~5 minutes: `gh api "repos/BenjaminBenetti/tut/pulls?state=open"`, local gate, diff, merge. Label any new unlabeled engineer issue first.
-3. Watch #72 / #73 / #68 when they open: #72 registers handlers on `createOverworldCommandDispatcher` at the composition root and wires `GameStore`; #68's tick steps fork `ctx.rng` per concern with labels; #73 builds on #171's `DomScreenRouter` and `OverworldScreen`.
-4. Every `GameState` reshape now bumps `GAME_STATE_SCHEMA_VERSION` and appends a migration (v2 arrives with #216). Reject a reshape without one.
+1. Merge #238 after its final merge of `main` (gate at the new head), then #243 after it merges `main`.
+2. Review loop every ~5 minutes: `gh api "repos/BenjaminBenetti/tut/pulls?state=open"`, local gate, diff, merge; label any new unlabeled engineer issue first. Handoff PRs: check the file list, then fast-track.
+3. #68 (AdvanceDay pipeline) is the next big one: hold it to `TickStep`s forking `ctx.rng` with labels, `applyOutcome` last, a refusal while `outcome` is set, and `chargeUpkeep → computeModifiers → growth → spread → expiry → generation → stipend → threat → outcome` in that order. #67 (LaunchMission) must write one `reward` ledger entry per mission with the mission id as `ref` (#248 counts them).
+4. #73 (overworld screen) and the M1 screens build on `session.store` from #229; screens dispatch, never construct services.
 5. Tag `v0.1.0` when the M1 loop is playable end to end (#84's smoke test is the signal); the Director may tag sooner.
 6. Add a vendor chunk for three.js in `vite.config.ts` when someone touches it; the 500 kB warning is noise.
 

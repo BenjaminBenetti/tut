@@ -8,7 +8,10 @@ import type { PartCatalogue } from "../../roster/model/part-catalogue";
 import type { UpgradeTuning } from "../../roster/model/upgrade-tuning";
 import { validateLoadout } from "../../roster/service/loadout-validation-service";
 import type { GameState } from "../../save/model/game-state";
+import { COMBAT_TUNING } from "../../tactical/data/combat-tuning";
 import { UNIT_TUNING } from "../../tactical/data/unit-tuning";
+import { ATTACK } from "../../tactical/model/attack-command";
+import { createAttackHandler } from "../../tactical/service/combat-service";
 import type { MissionStartDeps } from "../../tactical/service/mission-start-service";
 import type { TacticalHandlers } from "../../tactical/service/tactical-command-handlers";
 import { registerTacticalCommands } from "../../tactical/service/tactical-command-handlers";
@@ -40,9 +43,9 @@ export interface TacticalComposition {
  * Wires the tactical domain into the campaign (#342, per the #324
  * ruling): tactical commands join the campaign dispatcher, lifted over
  * `activeMission`, so there is one store, one autosave and one event
- * stream. `handlers` is what the rules issues have landed; a command
- * without a handler dispatches as `unknown-command` until its issue
- * merges. `missionStartDepsFor` gives `LaunchMission` (#341) and the dev
+ * stream. `handlers` defaults to `shippedTacticalHandlers`, the rules
+ * that have landed; a command without a handler dispatches as
+ * `unknown-command` until its issue merges. `missionStartDepsFor` gives `LaunchMission` (#341) and the dev
  * hook what `startTacticalMission` needs from the shipped content.
  *
  * ```
@@ -54,7 +57,7 @@ export interface TacticalComposition {
 export function composeTactical(
   dispatcher: CommandDispatcher<GameState>,
   content: TacticalContent,
-  handlers: TacticalHandlers = {},
+  handlers: TacticalHandlers = shippedTacticalHandlers(),
 ): TacticalComposition {
   registerTacticalCommands(dispatcher, handlers);
   const registries = createDefaultRegistries();
@@ -79,6 +82,17 @@ export function composeTactical(
 // ===========================================
 // Helpers
 // ===========================================
+
+/**
+ * The rule handlers that have landed, one line per rules issue: this is
+ * the single registration site for tactical commands (#342). Tests pass
+ * their own object to isolate the lifting path.
+ */
+export function shippedTacticalHandlers(): TacticalHandlers {
+  return {
+    [ATTACK]: createAttackHandler(COMBAT_TUNING),
+  };
+}
 
 /** A mech's current stat sheet from its loadout, or undefined when it no longer validates. */
 export function createSheetLookup(

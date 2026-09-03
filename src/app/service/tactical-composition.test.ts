@@ -11,6 +11,7 @@ import { UPGRADE_TUNING } from "../../roster/data/upgrade-tuning";
 import { DataSquadTypeCatalogue } from "../../roster/repository/squad-type-catalogue";
 import { StaticPartCatalogue } from "../../roster/repository/static-part-catalogue";
 import type { GameState } from "../../save/model/game-state";
+import { ATTACK } from "../../tactical/model/attack-command";
 import { END_TURN, endTurn } from "../../tactical/model/end-turn-command";
 import type { TacticalHandler } from "../../tactical/model/tactical-handler";
 import { TURN_STARTED } from "../../tactical/model/turn-started-event";
@@ -106,10 +107,10 @@ describe("composeTactical", () => {
     expect(outcome.error.code).toBe(NO_ACTIVE_MISSION);
   });
 
-  it("registers nothing by default, so unhandled tactical commands are unknown", () => {
+  it("registers the shipped rules by default (Attack today) and leaves the rest unknown", () => {
     const dispatcher = createOverworldCommandDispatcher<GameState>();
     const tactical = composeTactical(dispatcher, CONTENT);
-    expect(tactical.handlers).toEqual({});
+    expect(Object.keys(tactical.handlers)).toEqual([ATTACK]);
     const outcome = dispatcher.process(campaignOnDay(1, []), endTurn());
     expect(outcome.ok).toBe(false);
     if (outcome.ok) return;

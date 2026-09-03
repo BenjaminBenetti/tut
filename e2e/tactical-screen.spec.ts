@@ -34,7 +34,13 @@ test("the tactical screen mounts a generated map with the deployed roster and ex
 
   const rows = page.locator('[data-role="mission-list"] [data-mission-id]');
   const advance = page.locator('[data-action="advance-day"]');
+  const choice = page.locator('[data-role="event-dialog"] [data-choice-id]');
   for (let day = 0; day < MAX_DAYS && (await rows.count()) === 0; day++) {
+    // An event blocks Advance Day until answered; take the default option.
+    if (await choice.first().isVisible()) {
+      await choice.first().click();
+    }
+    await expect(advance).toBeEnabled();
     await advance.click();
   }
   await expect(rows.first()).toBeVisible();
@@ -62,7 +68,9 @@ test("the tactical screen mounts a generated map with the deployed roster and ex
   );
   await expect(body).toHaveAttribute("data-selected-unit", "unit-1");
 
-  // A reload resumes the mission from the autosave (one store, one save).
+  // The one autosave carries the live mission across a reload. Continue
+  // still lands on the overworld until #341 routes an active mission to
+  // the tactical screen; #341 should flip this expectation to "tactical".
   await page.reload();
   await expect(body).toHaveAttribute("data-app-state", "ready");
   await page.locator('[data-action="continue"]').click();

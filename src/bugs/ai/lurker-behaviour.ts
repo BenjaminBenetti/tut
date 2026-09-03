@@ -14,6 +14,8 @@ import {
   apCostOf,
   buildMoveGraph,
 } from "../../tactical/service/movement-service";
+import { LURKER_TUNING } from "../data/lurker-tuning";
+import type { LurkerTuning } from "../model/lurker-tuning";
 import type { BehaviourContext, BugBehaviour } from "./bug-behaviour";
 import {
   attackOptions,
@@ -27,50 +29,6 @@ import {
   targetValue,
   tileDistance,
 } from "./utility";
-
-// ===========================================
-// Tuning
-// ===========================================
-
-/** Weights the lurker's tile scoring composes; a substitute reshapes the stalk. */
-export interface LurkerTuning {
-  /** Reward for a tile whose attack on the mark would flank. */
-  readonly flankWeight: number;
-  /** Reward for standing on the tile directly behind the mark's facing. */
-  readonly behindWeight: number;
-  /** Reward for any tile adjacent to the mark, so closing beats hiding once it can strike. */
-  readonly adjacentWeight: number;
-  /** Penalty per fraction of enemies other than the mark that can see the tile. */
-  readonly exposureWeight: number;
-  /** Penalty per level of height difference from the mark; rooftops are not a flank. */
-  readonly levelWeight: number;
-  /** Reward for closing the distance to the mark. */
-  readonly approachWeight: number;
-  /** Radius the mark's company is counted within; stragglers are preferred. */
-  readonly isolationRadius: number;
-  /** Penalty per fraction of enemies near the mark. */
-  readonly isolationWeight: number;
-  /** Distance at which `approachWeight` has fully decayed. */
-  readonly approachHorizon: number;
-}
-
-/**
- * Shipped weights: once adjacency is reachable it wins (adjacent plus
- * behind outscores any hidden tile), the behind tile beats the front by
- * the behind weight, and while still approaching the lurker prefers
- * tiles the mark's friends cannot see and stays on the mark's level.
- */
-export const LURKER_TUNING: LurkerTuning = {
-  flankWeight: 3,
-  behindWeight: 2,
-  adjacentWeight: 2.5,
-  exposureWeight: 1.5,
-  levelWeight: 0.5,
-  approachWeight: 2,
-  isolationRadius: 3,
-  isolationWeight: 1.5,
-  approachHorizon: 12,
-};
 
 // ===========================================
 // Behaviour

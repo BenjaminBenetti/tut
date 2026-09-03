@@ -85,8 +85,8 @@ export const BIOME_DEFINITIONS: Readonly<Record<BiomeId, BiomeDefinition>> = {
     hasShoreline: false,
     vegetation: [
       { prop: PropKindIds.CACTUS, density: 3 },
-      { prop: PropKindIds.BOULDER, density: 1.5, cluster: { min: 2, max: 4 } },
-      { prop: PropKindIds.TREE_PALM, density: 0.5 },
+      { prop: PropKindIds.BOULDER, density: 2.5, cluster: { min: 2, max: 4 } },
+      { prop: PropKindIds.TREE_PALM, density: 1 },
     ],
     buildingKinds: [
       { template: BuildingKindIds.HOUSE, weight: 4 },

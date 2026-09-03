@@ -23,13 +23,15 @@ import trimesh
 # ===========================================
 
 
-def report_for(path: str, max_triangles: int, max_bytes: int) -> dict:
+def report_for(path: str, max_triangles: int, max_bytes: int, allow_below_ground: bool = False) -> dict:
     """Load a GLB and describe it.
 
     Args:
         path: GLB file to inspect.
         max_triangles: Style guide triangle budget for this asset class.
         max_bytes: Style guide file-size cap.
+        allow_below_ground: Skip the base-on-y=0 check for sub-parts (arms,
+            weapons) that pivot at their socket and legitimately hang below it.
 
     Returns:
         A JSON-serialisable report with an ``ok`` flag and ``problems`` list.
@@ -56,7 +58,7 @@ def report_for(path: str, max_triangles: int, max_bytes: int) -> dict:
         problems.append(f"{triangles} triangles exceeds budget {max_triangles}")
     if size > max_bytes:
         problems.append(f"{size} bytes exceeds cap {max_bytes}")
-    if meshes and abs(bounds[0][1]) > 0.05:
+    if meshes and not allow_below_ground and abs(bounds[0][1]) > 0.05:
         problems.append(f"model base is at y={bounds[0][1]:.3f}, expected 0 (pivot at base centre)")
     return {
         "path": path,
@@ -83,8 +85,9 @@ def main() -> int:
     parser.add_argument("path")
     parser.add_argument("--max-triangles", type=int, default=4000)
     parser.add_argument("--max-bytes", type=int, default=500 * 1024)
+    parser.add_argument("--allow-below-ground", action="store_true", help="sub-part pivoting at its socket")
     args = parser.parse_args()
-    report = report_for(args.path, args.max_triangles, args.max_bytes)
+    report = report_for(args.path, args.max_triangles, args.max_bytes, args.allow_below_ground)
     print(json.dumps(report, indent=2))
     return 0 if report["ok"] else 1
 

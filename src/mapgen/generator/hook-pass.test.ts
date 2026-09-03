@@ -19,6 +19,7 @@ import { PassMask } from "../model/pass-mask";
 import type { MapGenRegistries } from "../model/registries";
 import type { TacticalMap } from "../model/tactical-map";
 import { createDefaultRegistries } from "../service/default-registries";
+import { isBoundaryColumn } from "../service/draft-queries";
 import { createRegistry } from "../service/definition-registry";
 import { freezeDraft } from "../service/draft-freezer";
 import type { InvariantId } from "../service/map-validator";
@@ -183,6 +184,38 @@ describe("HookPass", () => {
           }
         }
         expect(draft.hooks.extraction?.tiles).toEqual(deploy.tiles);
+      }
+    }
+  });
+
+  it("meets the edge spawn count on the smallest map the resolver accepts", () => {
+    // "tiny-3" on a 16×16 temperate city is the probe seed that placed one
+    // zone of two under the strict spacing alone (#258).
+    const cases: [MapGenParams["settlement"], string][] = [["city", "tiny-3"]];
+    for (const settlement of SETTLEMENT_SCALES) {
+      for (let i = 0; i < SEEDS * 2; i++) {
+        cases.push([settlement, `tiny-${settlement}-${i}`]);
+      }
+    }
+    for (const [settlement, seed] of cases) {
+      {
+        const params: MapGenParams = {
+          archetype: "settlement",
+          biome: "temperate",
+          settlement,
+          size: { width: 16, depth: 16 },
+          hooks: DEFAULT_MISSION_HOOKS,
+        };
+        const { draft } = generator.run(
+          params,
+          new Mulberry32Rng(hashSeed(seed)),
+        );
+        expect(draft.hooks.edgeSpawns, seed).toHaveLength(2);
+        for (const zone of draft.hooks.edgeSpawns) {
+          for (const tile of zone.tiles) {
+            expect(isBoundaryColumn(draft, tile.x, tile.z), seed).toBe(true);
+          }
+        }
       }
     }
   });

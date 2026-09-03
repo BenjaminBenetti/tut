@@ -24,7 +24,7 @@ tools/art/models/<name>.py ──► make_model.py ──► public/assets/model
 ## The loop
 
 1. **Read the brief**: style guide (`docs/design/style-guide.md`) §3 scale and silhouette, §4 palette, §6 conventions and budgets, §9 naming; the concept sheet under `docs/design/concepts/` if one exists; the existing placeholder in `tools/art/build-placeholders.mjs` for proportions and socket positions.
-2. **Write the script** `tools/art/models/<kebab-name>.py` (copy `example-supply-crate.py`). Define `build()`; use `bpy_kit.box / cylinder / sphere / cut_below / join / socket`; optional `FOOTPRINT = (w, d)`.
+2. **Write the script** `tools/art/models/<kebab-name>.py` (copy `example-supply-crate.py`). Define `build()`; use `bpy_kit.box / cylinder / sphere / bevel / cut_below / join / socket`; optional `FOOTPRINT = (w, d)`.
 3. **Run the loop**:
    ```
    blender -b --python tools/art/make_model.py -- \
@@ -46,7 +46,7 @@ Review any GLB (including the three.js placeholders) the same way: `blender -b -
 | Scale | 1 unit = 1 tile = 2 m. Infantry figure 0.9 u, mech 2.4–3.2 u, swarmer 0.5, lurker 1.3, brute 1.8, spawner 1.4, wall 1.5 × 1 × 0.1, floor 1.5 u per level. |
 | Pivot | Base centre: feet on z = 0, footprint centred on the origin. Walls pivot at the base midpoint along +X. Sub-parts (arms, weapons) pivot at their socket. A mound or boulder sunk into the ground gets `cut_below(ob)` so nothing hangs under z = 0 (the validator rejects it). |
 | Materials | One flat Principled material per palette token, named after the token (`bpy_kit.material`). No textures on scripted models; units pick up the atlases later via material name. |
-| Shading | Flat. `bpy_kit` primitives are flat by default; organic bug flesh may pass `smooth=True`. |
+| Shading | Flat. `bpy_kit` primitives are flat by default; organic bug flesh may pass `smooth=True`. `bevel(ob, 0.03)` chamfers armour plates (about 2× the triangles of a plain box; keep it for hero parts). |
 | Sockets | `socket("arm_l", (x, y, z))` creates an empty `socket_arm_l`; mechs expose `chassis`, `arm_l`, `arm_r`, `back`, `weapon`, `muzzle`; spawners `hatch`; door walls `door`. |
 | Naming | Files kebab-case with faction/kit prefix (`tdf-mech-chassis-bulwark.glb`, `bug-lurker.glb`, `city-road-corner.glb`); ids dot-separated `faction.subject.variant`. |
 | Watertight | Every mesh closed. The validator merges the exporter's split flat-shading vertices before checking, so only real holes fail. |
@@ -71,7 +71,9 @@ Hard cap for anything: 500 KB (the validator's default).
 
 ## CadQuery and OpenSCAD
 
-For parts that are easier as CSG: build with `art-python` (CadQuery) or `openscad -o part.stl part.scad`, then in the model script `bpy.ops.wm.stl_import(filepath=...)` and assign materials with `bpy_kit.material`. Keep the source next to the model script.
+For parts that are easier as CSG: build with `art-python` (CadQuery) or `openscad -o part.stl part.scad`, then in the model script `bpy.ops.wm.stl_import(filepath=...)`, rotate CadQuery's +Z onto Blender −Y (`rotation_euler = (π/2, 0, 0)`), assign materials with `bpy_kit.material` and set faces flat. Keep the source next to the model script. Tessellation is where the budget goes: export with coarse tolerances (`cq.exporters.export(part, path, tolerance=0.02, angularTolerance=0.6)`) or draw `polygon(8, d)` instead of `circle(r)`; a default-tessellated barrel cost 740 triangles against a 300 budget. Verified routes: CadQuery barrel → STL → Blender → GLB, and OpenSCAD hex crate (`$fn = 6`, `openscad -o crate.stl crate.scad`) → STL → Blender → GLB, both watertight. A `join` of boxes with different tokens exports as one primitive per material, which trimesh reports as `name`, `name_1`, `name_2`; that is expected.
+
+Sub-parts (arms, weapons, back modules) pivot at their socket, so their geometry hangs below the origin; run `make_model.py` with `--footprint 0x0` and the validator skips the base-on-ground check (`validate_glb.py --allow-below-ground`).
 
 ## Gotchas
 

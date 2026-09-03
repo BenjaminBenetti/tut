@@ -1,5 +1,6 @@
 import type { Applied } from "../../core/model/domain-event";
 import type { EconomyEvent } from "../../economy/model/economy-event";
+import type { RosterEvent } from "../../roster/model/roster-event";
 
 // ===========================================
 // Event map
@@ -30,7 +31,8 @@ import type { EconomyEvent } from "../../economy/model/economy-event";
 // To add an event: create `overworld/model/<name>-event.ts` with the
 // constant, payload, event type and the `declare module` block above.
 // Nothing here changes. Whole-domain event groups from other slices
-// (economy today, roster when it emits events) register as one entry.
+// (economy, roster) register as one entry each, here, because those
+// domains must not import `overworld/`.
 
 /**
  * Registry of every event the campaign can emit, keyed by its `type`
@@ -40,6 +42,8 @@ import type { EconomyEvent } from "../../economy/model/economy-event";
 export interface OverworldEventMap {
   /** Every economy event, as one group (GDD §5.5). */
   readonly economy: EconomyEvent;
+  /** Every roster event, as one group (GDD §5.7): roster commands (#63) run through this dispatcher. */
+  readonly roster: RosterEvent;
 }
 
 // ===========================================

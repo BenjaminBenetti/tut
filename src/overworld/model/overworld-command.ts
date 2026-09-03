@@ -44,8 +44,13 @@ export type CommandFor<TType extends OverworldCommandType> =
 // Re-exports
 // ===========================================
 //
-// `AdvanceDay` lived in this file before #246 and is re-exported so
-// existing imports keep compiling for one release. Commands added after
-// #246 live only in their own module.
+// The commands that lived in this file before #246 (`AdvanceDay` and the
+// #63 roster commands) are re-exported so existing imports keep compiling
+// for one release. Commands added after #246 live only in their own module.
 
 export * from "./advance-day-command";
+export * from "./build-mech-command";
+export * from "./delete-loadout-command";
+export * from "./hire-squad-command";
+export * from "./reinforce-squad-command";
+export * from "./save-loadout-command";

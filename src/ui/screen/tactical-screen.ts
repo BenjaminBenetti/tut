@@ -9,7 +9,6 @@ import type { Screen, ScreenId } from "../model/screen";
 import type { ScreenRouter } from "../model/screen-router";
 import type { TacticalIntent } from "../model/tactical-intent";
 import type { TacticalSceneHost } from "../model/tactical-scene-host";
-import { formatWhole } from "../service/format";
 import { TacticalHudView } from "../view/tactical-hud-view";
 
 // ===========================================
@@ -37,21 +36,19 @@ export interface TacticalScreenDeps {
 // ===========================================
 
 /**
- * The tactical mission screen (GDD §6): a status bar with the mission,
- * turn, phase and unit counts over a viewport the scene host renders
- * into, with the mission HUD (#339) laid over the viewport. Reads
- * `activeMission` from the campaign store and re-renders the bar, the
- * scene and the HUD on every change; the HUD turns the scene's intents
+ * The tactical mission screen (GDD §6): a viewport the scene host
+ * renders into, with the mission HUD (#339) laid over it; the HUD's
+ * banner is the one status row (#403). Reads
+ * `activeMission` from the campaign store and re-renders the scene and
+ * the HUD on every change; the HUD turns the scene's intents
  * into commands, which go through the store with refusals shown in the
  * HUD's banner. With no mission in progress it says so; the HUD's
  * banner is the one way back to the overworld.
  *
  * ```
- *   ┌ #tactical-bar  MISSION mission-4 · TURN 1 · PLAYER  TDF 3 / BUGS 1 ┐
- *   ├─────────────────────────────────────────────────────────────────────┤
- *   │ #tactical-viewport ◄── sceneHost.attach / update                    │
- *   │   └ #mission-hud: #turn-banner / #unit-card #hit-preview            │
- *   │                   #objectives / #action-bar                         │
+ *   ┌ #tactical-viewport ◄── sceneHost.attach / update ───────────────────┐
+ *   │   └ #mission-hud: #turn-banner (mission, turn, phase, counts, exit) │
+ *   │                   #unit-card #hit-preview #objectives / #action-bar  │
  *   └─────────────────────────────────────────────────────────────────────┘
  *
  *   host intents ──▶ hud.handleIntent ──▶ onCommand ──▶ store.dispatch
@@ -69,7 +66,6 @@ export class TacticalScreen implements Screen {
   private readonly hud: TacticalHudView;
   private root: HTMLElement | undefined;
   private viewport: HTMLElement | undefined;
-  private fields = new Map<string, HTMLElement>();
   private note: HTMLElement | undefined;
   private unsubscribe: Unsubscribe | undefined;
   private attachedMissionId: string | undefined;
@@ -99,13 +95,12 @@ export class TacticalScreen implements Screen {
   // Screen
   // ===========================================
 
-  /** Builds the bar and viewport, attaches the scene and subscribes to the store. */
+  /** Builds the viewport and HUD, attaches the scene and subscribes to the store. */
   mount(root: HTMLElement): void {
     const doc = root.ownerDocument;
     const layout = doc.createElement("section");
     layout.className = "tut-tactical";
     layout.dataset.screen = this.id;
-    layout.appendChild(this.createBar(doc));
 
     const viewport = doc.createElement("div");
     viewport.id = "tactical-viewport";
@@ -146,7 +141,6 @@ export class TacticalScreen implements Screen {
     this.root = undefined;
     this.viewport = undefined;
     this.note = undefined;
-    this.fields = new Map();
   }
 
   // ===========================================
@@ -164,18 +158,8 @@ export class TacticalScreen implements Screen {
     }
     this.hud.update(mission);
     if (!mission) {
-      this.setField("mission-id", "—");
-      this.setField("turn", "—");
-      this.setField("phase", "—");
-      this.setField("tdf-units", "—");
-      this.setField("bug-units", "—");
       return;
     }
-    this.setField("mission-id", mission.missionId);
-    this.setField("turn", formatWhole(mission.turn));
-    this.setField("phase", mission.phase);
-    this.setField("tdf-units", formatWhole(countAlive(mission, "tdf")));
-    this.setField("bug-units", formatWhole(countAlive(mission, "bugs")));
     this.syncScene(mission, events);
   }
 
@@ -235,45 +219,6 @@ export class TacticalScreen implements Screen {
     const result = store.dispatch(command);
     this.hud.showStatus(result.ok ? "" : result.error.message);
   }
-
-  /** The status bar: mission, turn, phase and unit counts; the HUD's banner holds the way out. */
-  private createBar(doc: Document): HTMLElement {
-    const bar = doc.createElement("header");
-    bar.id = "tactical-bar";
-    bar.className = "tut-topbar tut-tactical__bar";
-    for (const [label, field] of [
-      ["Mission", "mission-id"],
-      ["Turn", "turn"],
-      ["Phase", "phase"],
-      ["TDF", "tdf-units"],
-      ["Bugs", "bug-units"],
-    ] as const) {
-      const stat = doc.createElement("span");
-      stat.className = "tut-topbar__stat";
-      const term = doc.createElement("span");
-      term.className = "tut-label";
-      term.textContent = label;
-      const value = doc.createElement("span");
-      value.className = "tut-data";
-      value.dataset.field = field;
-      value.textContent = "—";
-      stat.append(term, value);
-      bar.appendChild(stat);
-      this.fields.set(field, value);
-    }
-    const spacer = doc.createElement("span");
-    spacer.className = "tut-topbar__spacer";
-    bar.appendChild(spacer);
-    return bar;
-  }
-
-  /** Writes a bar value when it changed. */
-  private setField(field: string, text: string): void {
-    const el = this.fields.get(field);
-    if (el && el.textContent !== text) {
-      el.textContent = text;
-    }
-  }
 }
 
 // ===========================================
@@ -287,9 +232,4 @@ function tacticalEventsOf(
   return events.filter((e): e is TacticalEvent =>
     e.type.startsWith("tactical:"),
   );
-}
-
-/** Living units on one team. */
-function countAlive(mission: TacticalState, team: "tdf" | "bugs"): number {
-  return mission.units.filter((u) => u.team === team && u.hp > 0).length;
 }

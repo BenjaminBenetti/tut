@@ -25,6 +25,9 @@ import { placeStairs } from "./interior/stair-placer";
 /** Exterior ladders only reach roofs this many storeys up. */
 const MAX_LADDER_FLOORS = 2;
 
+/** Most levels a ladder climbs from the ground column outside the wall. */
+const MAX_LADDER_CLIMB = 2;
+
 // ===========================================
 // InteriorPass
 // ===========================================
@@ -219,7 +222,8 @@ function addRoof(
 /**
  * Adds an exterior ladder from a free ground column beside the building
  * up to a roof tile across the wall (never the stairwell hole), when such
- * a column exists.
+ * a column exists no more than `MAX_LADDER_CLIMB` levels below the roof;
+ * a building on a ledge keeps its roof reachable through its stairs.
  */
 function addLadder(
   draft: MapDraft,
@@ -239,7 +243,8 @@ function addLadder(
           !draft.inBounds(outside.x, outside.z) ||
           draft.isCovered(outside.x, outside.z) ||
           draft.groundSurfaceAt(outside.x, outside.z) === SurfaceIds.WATER ||
-          draft.groundLevelAt(outside.x, outside.z) >= roofY
+          draft.groundLevelAt(outside.x, outside.z) >= roofY ||
+          roofY - draft.groundLevelAt(outside.x, outside.z) > MAX_LADDER_CLIMB
         ) {
           continue;
         }

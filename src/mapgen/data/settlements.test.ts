@@ -35,6 +35,11 @@ describe("settlement definitions", () => {
       expect(settlement.rampSpacing).toBeGreaterThanOrEqual(2);
       expect(Number.isInteger(settlement.roadWidth)).toBe(true);
       expect(settlement.roadWidth).toBeGreaterThanOrEqual(1);
+      expect(Number.isInteger(settlement.blockJitter)).toBe(true);
+      expect(settlement.blockJitter).toBeGreaterThanOrEqual(0);
+      if (settlement.roadStyle === "grid") {
+        expect(settlement.blockJitter * 2).toBeLessThan(settlement.blockSize);
+      }
       expect(settlement.streetPropDensity).toBeGreaterThanOrEqual(0);
       expect(settlement.yardPropDensity).toBeGreaterThanOrEqual(0);
     }

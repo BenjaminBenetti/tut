@@ -34,6 +34,11 @@ export interface SettlementDefinition {
   /** Block edge length in tiles for `grid`; ignored by other styles. */
   readonly blockSize: number;
   /**
+   * How far each grid line may drift from `blockSize` spacing, in tiles,
+   * drawn per line so blocks vary; 0 keeps a regular grid.
+   */
+  readonly blockJitter: number;
+  /**
    * Lanes per road. The `grid` builder lays this many adjacent lines per
    * grid line; `trail` and `streets` are always one lane wide.
    */

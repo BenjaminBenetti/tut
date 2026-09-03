@@ -7,13 +7,16 @@ import { NEW_GAME_TUNING } from "../../overworld/data/new-game-tuning";
 import { THREAT_TUNING } from "../../overworld/data/threat-tuning";
 import type { CityId } from "../../overworld/model/city";
 import type { EarthMap } from "../../overworld/model/earth-map";
+import type { CampaignEvent } from "../../overworld/model/campaign-event";
 import type { Mission } from "../../overworld/model/mission";
+import type { OverworldCommand } from "../../overworld/model/overworld-command";
 import { createOverworldCommandDispatcher } from "../../overworld/service/command-dispatcher";
 import { SQUAD_TYPES } from "../../roster/data/squad-types";
 import { STARTER_ROSTER } from "../../roster/data/starter-roster";
 import { DataSquadTypeCatalogue } from "../../roster/repository/squad-type-catalogue";
 import type { GameState } from "../../save/model/game-state";
 import { createNewGame } from "../../save/service/new-game-service";
+import type { CampaignGameStore } from "./game-session";
 import { GameStore } from "./game-store";
 import { MapSceneSync, missionCityIds } from "./map-scene-sync";
 
@@ -60,8 +63,11 @@ class RecordingView implements MapStateView {
 }
 
 /** A store over an empty dispatcher; `replaceState` is enough to drive changes. */
-function storeOf(state: GameState): GameStore<GameState, never, never> {
-  return new GameStore(state, createOverworldCommandDispatcher<GameState>());
+function storeOf(state: GameState): CampaignGameStore {
+  return new GameStore<GameState, OverworldCommand, CampaignEvent>(
+    state,
+    createOverworldCommandDispatcher<GameState>(),
+  );
 }
 
 // ===========================================

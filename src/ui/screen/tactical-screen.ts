@@ -2,6 +2,7 @@ import type { Unsubscribe } from "../../core/model/event-bus";
 import type { GameState } from "../../save/model/game-state";
 import type { CombatTuning } from "../../tactical/model/combat-tuning";
 import type { TacticalCommand } from "../../tactical/model/tactical-command";
+import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { GameSession } from "../model/game-session";
 import type { Screen, ScreenId } from "../model/screen";
@@ -49,6 +50,10 @@ export interface TacticalScreenDeps {
  *   │   └ #mission-hud: #turn-banner (mission, turn, phase, counts, exit) │
  *   │                   #unit-card #hit-preview #objectives / #action-bar  │
  *   └─────────────────────────────────────────────────────────────────────┘
+ *
+ *   host intents ──▶ hud.handleIntent ──▶ onCommand ──▶ store.dispatch
+ *                └─▶ host.select(hud.getSelectedUnitId())   range / cover / LOS overlays
+ *   store change ──▶ host.update(mission, tactical events)  animations, then units
  * ```
  */
 export class TacticalScreen implements Screen {
@@ -118,7 +123,7 @@ export class TacticalScreen implements Screen {
     const store = this.deps.session.store;
     this.render(store?.getState());
     this.unsubscribe = store?.subscribe((change) => {
-      this.render(change.state);
+      this.render(change.state, tacticalEventsOf(change.events));
     });
   }
 
@@ -142,8 +147,11 @@ export class TacticalScreen implements Screen {
   // Rendering
   // ===========================================
 
-  /** Pushes the mission into the bar and the scene host. */
-  private render(state: GameState | undefined): void {
+  /** Pushes the mission into the bar, the HUD and the scene host, with the events that produced it. */
+  private render(
+    state: GameState | undefined,
+    events: readonly TacticalEvent[] = [],
+  ): void {
     const mission = state?.activeMission;
     if (this.note) {
       this.note.hidden = mission !== undefined;
@@ -152,11 +160,14 @@ export class TacticalScreen implements Screen {
     if (!mission) {
       return;
     }
-    this.syncScene(mission);
+    this.syncScene(mission, events);
   }
 
   /** Attaches the scene on the first mission, updates it afterwards; never throws into the store. */
-  private syncScene(mission: TacticalState): void {
+  private syncScene(
+    mission: TacticalState,
+    events: readonly TacticalEvent[],
+  ): void {
     const host = this.deps.sceneHost;
     if (!host || !this.viewport) {
       return;
@@ -164,13 +175,17 @@ export class TacticalScreen implements Screen {
     const intents = {
       emit: (intent: TacticalIntent): void => {
         this.hud.handleIntent(intent);
+        // The HUD owns selection: in attack mode a click on an enemy is
+        // the preview target, not the selected unit, so the overlays
+        // follow the unit whose card is up (#338).
+        host.select(this.hud.getSelectedUnitId());
         this.recordIntent(intent);
         this.deps.onIntent?.(intent);
       },
     };
     const pending =
       this.attachedMissionId === mission.missionId
-        ? host.update(mission)
+        ? host.update(mission, events)
         : host.attach(this.viewport, mission, intents);
     this.attachedMissionId = mission.missionId;
     void pending.catch((error: unknown) => {
@@ -204,4 +219,18 @@ export class TacticalScreen implements Screen {
     const result = store.dispatch(command);
     this.hud.showStatus(result.ok ? "" : result.error.message);
   }
+}
+
+// ===========================================
+// Helpers
+// ===========================================
+
+/** The tactical events in a store change; everything else is the overworld's. */
+function tacticalEventsOf(
+  events: readonly { readonly type: string }[],
+): TacticalEvent[] {
+  return events.filter((e): e is TacticalEvent =>
+    e.type.startsWith("tactical:"),
+  );
+}
 }

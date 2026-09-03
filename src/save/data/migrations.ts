@@ -115,6 +115,23 @@ const ADD_THREAT_OFFSET: Migration = {
   },
 };
 
+/**
+ * v5 → v6 (#323): `activeMission` becomes the tactical state slot. No v5
+ * save was ever written mid-mission, so the slot stays absent; the step
+ * only asserts the root shape it will be read from.
+ */
+const RESERVE_ACTIVE_MISSION: Migration = {
+  from: 5,
+  to: 6,
+  apply(state) {
+    if (!isRecord(state) || !isRecord(state.overworld)) {
+      throw new Error("v5 state has no overworld slice");
+    }
+    const { activeMission: _absent, ...rest } = state;
+    return rest;
+  },
+};
+
 // ===========================================
 // Chain
 // ===========================================
@@ -129,4 +146,5 @@ export const GAME_STATE_MIGRATIONS: readonly Migration[] = [
   ADD_CITY_SCALE,
   ADD_GRAVEYARD,
   ADD_THREAT_OFFSET,
+  RESERVE_ACTIVE_MISSION,
 ];

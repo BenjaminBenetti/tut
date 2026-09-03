@@ -4,6 +4,7 @@ import type { EconomyState } from "../../economy/model/economy-state";
 import type { CampaignDebugOptions } from "../../overworld/model/campaign-debug";
 import type { OverworldState } from "../../overworld/model/overworld-state";
 import type { RosterState } from "../../roster/model/roster-state";
+import type { TacticalState } from "../../tactical/model/tactical-state";
 
 /**
  * Schema version of `GameState`. Bump it whenever the shape changes and
@@ -16,8 +17,9 @@ import type { RosterState } from "../../roster/model/roster-state";
  * - `3`: `overworld.map.cities[].scale` (#61).
  * - `4`: `roster.graveyard` (#64).
  * - `5`: `overworld.threatOffset` (#307).
+ * - `6`: `activeMission` becomes the `TacticalState` slot (#323).
  */
-export const GAME_STATE_SCHEMA_VERSION = 5;
+export const GAME_STATE_SCHEMA_VERSION = 6;
 
 /**
  * Bookkeeping that every save needs regardless of gameplay content.
@@ -64,9 +66,9 @@ export interface GameState {
   /** Credits and the transaction ledger (GDD §5.5). */
   readonly economy: EconomyState;
   /**
-   * Reserved for M2: tactical state while a mission is being played.
-   * Always absent in M1; the tactical domain replaces `undefined` with
-   * its state type when it lands.
+   * Tactical state while a mission is being played (M2); absent between
+   * missions. Set by the tactical mission start and cleared when the
+   * mission resolves.
    */
-  readonly activeMission?: undefined;
+  readonly activeMission?: TacticalState;
 }

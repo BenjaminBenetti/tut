@@ -44,6 +44,11 @@ that mapgen's connectivity guarantees mean something, and (c) the shape of the g
    new data + a new placer pass, never edits to the model.
 9. **`TacticalMap` is a derived artifact; `MapRecipe` is the saved state.** Saves store
    `{ seed, params }`, not the map. The generator is deterministic, so this is lossless.
+   *Amended by #323:* the campaign stores recipes, but the **active mission** stores its
+   frozen map inline in `GameState.activeMission.map`, with `map.recipe` as provenance.
+   Generation is deterministic within a build, not across builds (tuning PRs re-pin the
+   goldens), so a recipe-only mid-mission save would move tiles under the player after an
+   update; the slot is absent between missions, so campaign saves stay small.
 10. **Generation is a linear pipeline of `GenerationPass` objects** over a mutable `MapDraft`, with each
     pass drawing from a *labelled fork* of the injected RNG. Archetypes (`settlement` now; `hive`,
     `crash-site`, `platform` later) are just different pass lists.

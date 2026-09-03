@@ -2,6 +2,7 @@ import { DIRECTIONS } from "../../core/model/direction";
 import type { Rect } from "../../core/model/grid";
 import type { Rng } from "../../core/model/rng";
 import { rectContains, stepGridPos } from "../../core/service/grid-math";
+import { RoomKindIds } from "../data/room-kind-ids";
 import { SurfaceIds } from "../data/surfaces";
 import type { Building, Floor, Room } from "../model/building";
 import type { BuildingTemplate } from "../model/building-template";
@@ -190,13 +191,15 @@ function roomKind(
   template: BuildingTemplate,
 ): string {
   if (template.id === "warehouse") {
-    return "storage";
+    return RoomKindIds.STORAGE;
   }
   const groundFloor = floor.y === entrance.y;
   if (groundFloor && rectContains(room.rect, entrance.x, entrance.z)) {
-    return "hall";
+    return RoomKindIds.HALL;
   }
-  return groundFloor && template.id === "shop" ? "storage" : "room";
+  return groundFloor && template.id === "shop"
+    ? RoomKindIds.STORAGE
+    : RoomKindIds.ROOM;
 }
 
 /** Adds walkable roof tiles over the whole footprint. */

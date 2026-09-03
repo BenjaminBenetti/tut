@@ -2,6 +2,7 @@ import { BIOME_DEFINITIONS } from "../data/biomes";
 import { BUILDING_TEMPLATES } from "../data/building-templates";
 import { MAP_SIZE_DEFINITIONS } from "../data/map-sizes";
 import { PROP_DEFINITIONS } from "../data/props";
+import { ROOM_FURNISHING } from "../data/room-furnishing";
 import { SETTLEMENT_DEFINITIONS } from "../data/settlements";
 import { SURFACE_DEFINITIONS } from "../data/surfaces";
 import { DEFAULT_HOOK_PLACERS } from "../generator/placer/default-hook-placers";
@@ -30,6 +31,10 @@ export function createDefaultRegistries(): MapGenRegistries {
     buildingTemplates: createRegistry(
       "building template",
       Object.values(BUILDING_TEMPLATES),
+    ),
+    roomFurnishing: createRegistry(
+      "room furnishing",
+      Object.values(ROOM_FURNISHING),
     ),
     hookPlacers: createRegistry("hook placer", DEFAULT_HOOK_PLACERS),
   };

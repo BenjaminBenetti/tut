@@ -1,23 +1,26 @@
 # Handoff: QA
 
-Last updated: 2026-09-03 (session 1, run 35, ~16:10 UTC; resumed after a ~2.5 h usage-limit stall). Read `docs/process/roles/qa.md` first.
+Last updated: 2026-09-03 (session 1, run 38, ~17:20 UTC). Read `docs/process/roles/qa.md` first.
 
 ## Latest run
 
 | Field | Value |
 |---|---|
-| SHA tested | `257b395` (main, 2026-09-03 ~16:00 UTC; runs 30–35 covered #71 event tick, **#82 deployment + launch + results**, **#302 marker fix (#313)**, #307 threat offset, mapgen/art updates) |
+| SHA tested | `060c2eb` (main, 2026-09-03 ~17:00 UTC; runs 36–38 covered **#77 event dialog**, **#83 debrief + Continue advances the day (fixes #357)**, #321 tactical unit model, bug species ids) |
 | Gate | typecheck, lint, build all pass |
-| `pnpm test` (vitest) | 1118 / 1118 (+1 deliberate skip) |
-| `pnpm test:e2e` on main | 30 / 30 (`overworld-markers.spec.ts` added by #313) |
-| Exploratory pass | ten flows (standard, menu, migration, overworld, roster, city + markers, debug, mech bay + build, **launch**): **1 finding** at `257b395` |
-| Filed this run | **#357 (p1, ui)**: overworld is blank after Continue from mission results; one-line fix confirmed. **PR #359 (draft)**: `e2e/overworld-loop.spec.ts` for #84, red on main only because of #357, green in 2.4 s with the fix. |
-| **Health** | **Amber for the release.** Everything else is green, but every mission currently ends in a dead overworld until the player leaves and returns (#357). It blocks the #84 end-to-end proof and therefore v0.1.0; the fix is one line and #359 becomes its regression test. |
+| `pnpm test` (vitest) | 1152 / 1152 (+1 deliberate skip) |
+| `pnpm test:e2e` on main | 31 / 31 (`event-dialog.spec.ts` added by #77) |
+| Exploratory pass | eleven flows (+ **events**): 0 findings after accounting for events interposing on ticks; #357 no longer reproduces |
+| Filed this run | **#368** (p3, ui): threat badge tone from the unrounded value ("33 · WARN") |
+| **Release gate** | **#84 done: PR #359 merged as `8307d87`.** `e2e/overworld-loop.spec.ts` runs in CI; both CI suites are green on `2f80f22` (33 e2e tests) and the full QA loop on that head reports 0 findings across eleven flows. From QA's side v0.1.0 can be tagged from `2f80f22` or later. |
+| **Health** | **Green.** The M1 loop plays end to end in the browser with no console errors: menu → overworld → deployables → missions → deployment → launch → debrief → next day → events → roster → mech bay → export/import. |
 
 ### Run history
 
 | SHA | Build | Unit | e2e | Exploratory | Filed |
 |---|---|---|---|---|---|
+| `060c2eb` | pass | 1152/1152 | 31/31 | 0 findings (+ events flow) | #368 |
+| `2340782` | pass | 1127/1127 | 31/31 | #357 fixed; #84 spec green | PR #359 ready |
 | `257b395` | pass | 1118/1118 | 30/30 | #357 reproduces (launch flow) | — |
 | `5c5453f` | pass | 1115/1115 | 30/30 | #357 reproduces; #84 spec written | #357, PR #359 |
 | `c68b7b0` | pass | 1111/1111 | 30/30 | launch flow added; #302 verified fixed | — |
@@ -64,6 +67,7 @@ Exploratory coverage at `35857b2` (headless Chromium, SwiftShader, 1280×720, pr
 - Viewports 480×320, 800×600, 1920×1080 and a live resize: canvas backing size tracks CSS size; panel never overflows.
 - Save edge cases: corrupt JSON, empty, `null`, `[]`, wrong / string / missing `schemaVersion`, missing state, non-object state, save deleted mid-session, storage at quota.
 - Mapgen preview: all 72 biome × settlement × size × 2-seed combinations generate (max 1.07 s incl. page load); Generate, reroll, Enter-to-submit, level slider 0–5 behave; unknown query values fall back silently (see observations).
+- Event dialog (#77 over #70/#71, run 37, seeds `9` and `qa-events-2`): no dialog on day 1; when a tick raises an event the overlay shows title, city line for city events, text, expiry and the catalogue's choices, is `aria-modal`, blocks the top bar (elementFromPoint on Main menu hits the backdrop), ignores Escape, and disables Advance day with the tooltip "Answer the pending event first"; each choice applied exactly its catalogue effect over 13 events of all four types (funding-review ±¢1,500/−¢500/0, research-find +¢1,200, city-plea −¢600 / threat +3, spore-shower −¢400 / threat +2), the answered event leaves `pendingEvents`, the dialog hides and Advance re-enables; "{city}" is substituted in titles and text; a pending event survives reload + Continue and still blocks. "Request an advance" then pays a halved stipend (observed, not asserted).
 - Deployment, launch and results (#82, runs 31–35, seed `qa-launch`): the deployment screen shows the mission title and briefing, one checkbox row per squad ("Alpha | Rifle Squad | 5/5") and mech ("Hammerhead | 0 % damage"), Launch disabled with nothing picked; the assessment moves with the picker (force 10 → 20 → 149 against an even-fight target of 60, win chance 22 % → 27 % → 90 %) and its tone follows `ODDS_BAND_LOWER` (ok ≥ 66 %, warn ≥ 40 %); Launch → `mission-results` ("Mission extracted", mission id, credits ¢150, squads wiped 0, mechs destroyed 0, infestation 0, "The full debrief arrives with #83"); the stored `lastMissionResult` matches the screen, the treasury rises by exactly `creditsAwarded`, the city's infestation moves by exactly `infestationDelta`, the mission leaves the list, squad strengths drop by the reported losses (3 and 1), the mech takes the reported 30 damage; nine single-unit launches later one squad was wiped and appears in the graveyard, UI and state agreeing. **After Continue the overworld is blank (#357)**; the flow recovers via Roster → Overworld.
 - Map markers (#302 → #313, run 31, dev hook `cityMarkerLook`): for 36 cities the marker tint equals the infestation ramp (stops #7ccb5a / #9cff3d / #f0c63c / #e0453c, ±3 per channel) and the mission badge equals "city has a mission in state" (6 badges); the selected city is drawn in the selection colour.
 - Mission list and deployment placeholder (#76, run 29): by day 19 the Missions section lists exactly the state's 5 missions (city, type, difficulty, reward, days left); clicking a row selects its city and opens the Briefing with description, type, city, difficulty "D7", reward, "5 d", biome, settlement, size and penalty "+10 infestation"; Plan deployment (from the city card or the briefing) opens `body[data-screen="deployment"]` showing the mission id and city id, and Back to overworld returns with the selection kept.
@@ -79,7 +83,7 @@ Exploratory coverage at `35857b2` (headless Chromium, SwiftShader, 1280×720, pr
 
 ## 2. Open PRs / issues I own
 
-- **#359 (draft)** `test(e2e): overworld loop end-to-end smoke test (#84)`: red on main only at the post-Continue assertion (#357); mark ready and merge once #357 lands. Runs in ~3 s.
+- Merged: **#359** `test(e2e): overworld loop end-to-end smoke test (#84)` (`8307d87`).
 - This handoff PR.
 - Merged earlier today: #225 (three promoted specs), #257 (v1 save migration fixture), handoffs #228 / #233 / #240 / #261 / #292 / #296 / #303 / #305 / #309 / #314.
 
@@ -89,7 +93,8 @@ Exploratory coverage at `35857b2` (headless Chromium, SwiftShader, 1280×720, pr
 |---|---|---|---|
 | #217 | p2 | ui | Autosave failure on New game is never shown: `MainMenuScreen.startNewGame` shows the status then navigates, and the router unmounts the panel in the same task. Reproduced with storage at quota: overworld opens, no message, no save, Continue later disabled silently. |
 | #218 | p3 | engine | Overworld camera pan is unbounded: hold A for 13 s and the markers sit at x≈8300 px on a 1280 px viewport; black screen, no recentre. |
-| #357 | **p1** | ui | Overworld renders nothing after Continue from mission results: `OverworldScreen.render` clears the stale mission selection and returns before updating any view, and the selection subscription is attached only after that first render. One-line fix (`render(state)` again after `clearMission()`), verified locally: the #84 loop goes green. |
+| #368 | p3 | ui | Top bar threat number is rounded but the tone badge is not: raw 33.4 shows "33 · WARN". One-line fix (`threatTone(Math.round(...))`). |
+| ~~#357~~ | p1 | ui | **Fixed by #83 (#358)**; #359 is the regression test. |
 | #304 | p3 | overworld | `threatEscalationMultiplier` rides along in the save (`overworld.debug`) and the production build applies it on Continue/Import; the URL switch itself is correctly dev-only. Low impact; label accuracy. |
 | ~~#302~~ | p2 | ui (feature gap) | **Closed by #313**; verified in run 31 (tint ramp + mission badge parity for every city). |
 | #294 | p3 | ui | Squad hired without a name is called "Rifle Squad squad" (`squad-list-view.ts:310` appends "squad" to "Rifle Squad"). One-line fix. |
@@ -123,7 +128,7 @@ Commented on **#33** at `35857b2` (preview missing from the build); #209 fixed i
 ## 6. Next, in order
 
 1. Loop: `/tmp/qa-scripts/qa-run.sh` on the QA instance (a copy of the session scratchpad; `QA_SCRIPTS` overrides the path) does pull → typecheck → lint → build → vitest → e2e → ten exploratory flows (`qa-explore`, `qa-menu`, `qa-migrate`, `qa-overworld`, `qa-roster`, `qa-city`, `qa-debug`, `qa-mechbay`, `qa-launch` .mjs) and prints the state of every filed issue, in one call (~10 min); the scripts are not in the repo (role brief: throwaway), so a fresh instance rebuilds them from the descriptions in §1; a background monitor polls `repos/BenjaminBenetti/tut/commits?per_page=1` every 5 min and validates the SHA (`^[0-9a-f]{40}$`, an API error body once produced a bogus "new main" event). Update this file when a bug is filed, a PR opens, or roughly hourly; not per quiet run.
-2. **Release gate:** when #357 is fixed, rerun `qa-run.sh` (the launch flow must report 0 findings), flip PR #359 from draft to ready, and confirm CI is green with `overworld-loop.spec.ts` before v0.1.0 is tagged.
+2. **Release gate:** met on `2f80f22` (CI green, loop spec in). When v0.1.0 is tagged, run the full loop once on the tag and note it here.
 3. When #83 (full debrief) and the event dialog (#77 successor) land, extend the launch flow to read the debrief rows and trigger a pending event (#70/#71) and take each choice, checking credits and the stipend/threat modifiers (#307). select a city and read its detail, accept and launch a mission (auto-resolve), inspect the results and the graveyard after losses, reinforce a depleted squad, build a mech and save a loadout.
    The city flow already reaches missions (they appear by ~day 12) and Plan deployment; once #77 lands, follow it into the deployment screen, launch (auto-resolve, #67), and check credits, roster damage, casualties and the graveyard.
    The roster flow stages state it cannot reach yet (damaged mechs, treasury) by Export → edit JSON → Import from the main menu; reuse that trick for casualties once missions run.
@@ -139,7 +144,7 @@ Commented on **#33** at `35857b2` (preview missing from the build); #209 fixed i
 - Production build (`vite preview`) has no `window.__tut__` hooks; run hook-based checks against the dev server. Since #209 it does include `mapgen-preview.html`.
 - Chromium localStorage is ~5 MB per origin. To force an autosave failure **clear storage first**, then fill with 512 KB chunks, then 64 KB, 4 KB, 256 B, 16 B, 1 B until each throws. Filling around an existing autosave lets the next save succeed (same key, same size).
 - Since #78 the lose-run must watch `body[data-screen]` for `game-over` after every Advance day click; the hand-off happens one microtask after the outcome is set, so a click-then-read loop sees the button vanish.
-- After a mission the overworld may be blank (#357): scripts that continue past results must check `#top-bar [data-field="day"]` for "—" and recover via Roster → Overworld until the fix lands.
+- Since #77 an event can appear on any tick and blocks Advance day and the top bar: every scripted tick or navigation answers `[data-role="event-dialog"] [data-choice-id]` first; measurements that compare two ticks (upkeep, stipend) must skip ticks on which an event was answered. Since #83 Continue on the results screen advances the day.
 - `page.click` on a disabled button waits 30 s; to prove a rejection use `el.disabled = false; el.click()` inside `page.evaluate`. Marker tints are read with `__tut__.cityMarkerLook(id)` (dev only).
 - The infestation meter sets a CSS custom property (`--value`) on `.tut-meter__fill`, not an inline width; read `style.getPropertyValue("--value")`.
 - Playwright refuses to click a disabled button (it waits 30 s); assert `disabled` instead, and use `el.disabled = false; el.click()` in `page.evaluate` to prove the service rejects a forced command.

@@ -37,6 +37,7 @@ Architecture §2 says simulation is pure TypeScript with no three.js or DOM, ran
 | Files | Rule |
 |---|---|
 | `core save content overworld economy roster tactical bugs mapgen` | no `three` import; no import from `ui/`, `graphics/`, `app/`; no DOM globals (`window`, `document`, `localStorage`, `fetch`, `requestAnimationFrame`, …) |
+| `core content overworld economy roster tactical bugs mapgen` (not `*.test.ts`) | no import from `save/`: `save/` composes their slices, so a service that needs the root types it structurally (`CampaignState`) |
 | everywhere | `Math.random()` is an error |
 | `src/core/service/random-seed.ts` | the one sanctioned `Math.random()` site |
 | `src/graphics/model/camera-state.ts`, `src/graphics/service/isometric-camera-math.ts` | no `three` import, so camera math stays testable in Node |

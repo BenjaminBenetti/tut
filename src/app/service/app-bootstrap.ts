@@ -3,7 +3,10 @@ import "../../ui/style/screens.css";
 
 import { randomSeed } from "../../core/service/random-seed";
 import { CameraInputController } from "../../graphics/controller/camera-input-controller";
-import { MapPickingController } from "../../graphics/controller/map-picking-controller";
+import {
+  cityPickerAdapter,
+  PickingController,
+} from "../../graphics/controller/picking-controller";
 import { TEXTURE_MANIFEST } from "../../graphics/data/texture-manifest";
 import { CAMERA_ZOOM } from "../../graphics/model/camera-state";
 import { IsometricCameraRig } from "../../graphics/service/isometric-camera-rig";
@@ -29,6 +32,7 @@ import { OverworldSelectionState } from "../../ui/service/overworld-selection-st
 import { MechBayScreen } from "../../ui/screen/mech-bay-screen";
 import { MissionResultsScreen } from "../../ui/screen/mission-results-screen";
 import { RosterScreen } from "../../ui/screen/roster-screen";
+import { NoticeBarView } from "../../ui/view/notice-bar-view";
 import type { TutTestHooks } from "../model/test-hooks";
 import type { ScreenFactory } from "./dom-screen-router";
 import { DomMapViewportHost } from "./dom-map-viewport-host";
@@ -82,12 +86,20 @@ export async function bootstrapApp(doc: Document): Promise<void> {
 
   const clock: SaveClock = { now: () => new Date().toISOString() };
   const mapSync = new MapSceneSync();
+  // The notice bar sits in #ui beside the screens, so it survives every
+  // navigation; the router only ever removes the screen it mounted (#217).
+  const notices = new NoticeBarView();
+  notices.mount(uiRoot);
   const game = composeGame({
     storage: new WebStorageKeyValueStore(window.localStorage),
     clock,
     newSeed: randomSeed,
     onAutosaveFailure: (error) => {
       console.error(`Autosave failed (${error.kind}): ${error.message}`);
+      notices.notify({
+        tone: "danger",
+        message: `Autosave failed: ${error.message} Progress will not survive a reload until saving works; use Export from the main menu to keep a copy.`,
+      });
     },
     onStore: mapSync.observe,
   });
@@ -216,8 +228,8 @@ async function composeScene(
     zoom: CAMERA_ZOOM.min,
   });
   const cameraInput = new CameraInputController(rig);
-  const picking = new MapPickingController(mapScene, rig, {
-    onCitySelected: (cityId) => {
+  const picking = new PickingController(cityPickerAdapter(mapScene), rig, {
+    onSelected: (cityId) => {
       selection.select(cityId);
     },
   });
@@ -231,7 +243,7 @@ async function composeScene(
     }
     doc.body.dataset.selectedCity = cityId;
     if (mapScene.getSelected() !== cityId) {
-      picking.selectCity(cityId);
+      picking.select(cityId);
     }
   });
   const scene = new SceneService(viewport, {
@@ -245,7 +257,7 @@ async function composeScene(
   if (import.meta.env.DEV) {
     const hooks: TutTestHooks = {
       selectCity: (cityId) => {
-        picking.selectCity(cityId);
+        picking.select(cityId);
       },
       cityScreenPosition: (cityId) => picking.screenPositionOf(cityId),
       cityMarkerLook: (cityId) => mapScene.markerLook(cityId),

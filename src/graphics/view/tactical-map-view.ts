@@ -1,4 +1,4 @@
-import type { Material } from "three";
+import type { Camera, Material, Object3D } from "three";
 import {
   BoxGeometry,
   Group,
@@ -7,12 +7,14 @@ import {
   Mesh,
   MeshStandardMaterial,
   Quaternion,
+  Raycaster,
+  Vector2,
   Vector3,
 } from "three";
 
 import type { Direction } from "../../core/model/direction";
 import { DIRECTIONS } from "../../core/model/direction";
-import type { Vec3 } from "../../core/model/grid";
+import type { Vec2, Vec3 } from "../../core/model/grid";
 import { stepGridPos } from "../../core/service/grid-math";
 import type { Connector } from "../../mapgen/model/connector";
 import type { Hook } from "../../mapgen/model/hook";
@@ -35,6 +37,7 @@ import {
   WALL_THICKNESS,
 } from "../data/mapgen-preview-palette";
 import type { Disposable } from "../model/disposable";
+import type { TilePicker } from "../model/tile-picker";
 
 // ===========================================
 // Types
@@ -62,6 +65,12 @@ const PLANK = { length: 1.2, thickness: 0.1, width: 0.6 } as const;
 /** Ladder dimensions. */
 const LADDER = { width: 0.35, thickness: 0.1 } as const;
 
+/** How far a pick point is pushed along the ray so a hit on a box face floors into that box's tile. */
+const PICK_NUDGE = 0.001;
+
+/** Prefix of the per-level group names. */
+const LEVEL_GROUP_PREFIX = "level-";
+
 // ===========================================
 // TacticalMapView
 // ===========================================
@@ -82,7 +91,7 @@ const LADDER = { width: 0.35, thickness: 0.1 } as const;
  *   ▌▒▒▒▒▒▒▒▒▒▒▒▒ ← ground pillar rises from world y = 0
  * ```
  */
-export class TacticalMapView implements Disposable {
+export class TacticalMapView implements Disposable, TilePicker {
   // ===========================================
   // Fields
   // ===========================================
@@ -95,6 +104,7 @@ export class TacticalMapView implements Disposable {
   private readonly materials = new Map<string, Material>();
   private readonly disposables: Disposable[] = [];
   private readonly unitBox = new BoxGeometry(1, 1, 1);
+  private readonly raycaster = new Raycaster();
 
   // ===========================================
   // Constructor
@@ -136,6 +146,45 @@ export class TacticalMapView implements Disposable {
     for (const [level, group] of this.levelGroups) {
       group.visible = maxLevel === undefined || level <= maxLevel;
     }
+  }
+
+  // ===========================================
+  // TilePicker
+  // ===========================================
+
+  /**
+   * The tile under a normalised device coordinate: the nearest hit on
+   * any visible map mesh, nudged a hair along the ray so a hit on a
+   * box's side floors into that box, with the level read off the group
+   * the mesh hangs on. Undefined when the ray misses the map or lands on
+   * a coordinate with no tile.
+   */
+  pickTile(ndc: Vec2, camera: Camera): TileCoord | undefined {
+    this.root.updateMatrixWorld(true);
+    this.raycaster.setFromCamera(new Vector2(ndc.x, ndc.y), camera);
+    const visible = [...this.levelGroups.values()].filter((g) => g.visible);
+    const hit = this.raycaster.intersectObjects(visible, true)[0];
+    if (hit === undefined) {
+      return undefined;
+    }
+    const level = levelOf(hit.object);
+    if (level === undefined) {
+      return undefined;
+    }
+    const point = hit.point
+      .clone()
+      .addScaledVector(this.raycaster.ray.direction, PICK_NUDGE);
+    const coord: TileCoord = {
+      x: Math.floor(point.x),
+      y: level,
+      z: Math.floor(point.z),
+    };
+    return this.index.has(coord) ? coord : undefined;
+  }
+
+  /** The world centre of a tile's top face, or undefined for a coordinate with no tile. */
+  tileWorldPosition(tile: TileCoord): Vec3 | undefined {
+    return this.index.has(tile) ? tileTopCentre(tile) : undefined;
   }
 
   /** Frees every geometry and material this view created. */
@@ -420,13 +469,13 @@ export class TacticalMapView implements Disposable {
 // Geometry helpers
 // ===========================================
 
-/** World height of a tile's top surface. */
-function tileTop(level: number): number {
+/** World height of a tile's top surface. Shared with the unit meshes. */
+export function tileTop(level: number): number {
   return level * LEVEL_HEIGHT + SLAB_HEIGHT;
 }
 
-/** World-space centre of a tile's top face. */
-function tileTopCentre(coord: TileCoord): Vec3 {
+/** World-space centre of a tile's top face. Shared with the unit meshes. */
+export function tileTopCentre(coord: TileCoord): Vec3 {
   return { x: coord.x + 0.5, y: tileTop(coord.y), z: coord.z + 0.5 };
 }
 
@@ -460,6 +509,19 @@ function pushBatch(
   } else {
     batch.matrices.push(matrix);
   }
+}
+
+/** The level index of the group an object hangs on, or undefined outside the level groups. */
+function levelOf(object: Object3D): number | undefined {
+  let current: Object3D | null = object;
+  while (current !== null) {
+    if (current.name.startsWith(LEVEL_GROUP_PREFIX)) {
+      const level = Number(current.name.slice(LEVEL_GROUP_PREFIX.length));
+      return Number.isInteger(level) ? level : undefined;
+    }
+    current = current.parent;
+  }
+  return undefined;
 }
 
 /** True when the hook belongs to the objectives group. */

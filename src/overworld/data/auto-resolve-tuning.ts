@@ -5,18 +5,18 @@ import type { AutoResolveTuning } from "../model/auto-resolve-tuning";
 // ===========================================
 
 /**
- * Default auto-resolve tuning. Sized against the starter roster: two
- * rifle squads (10 each) and the starter mech (129) make a force of
- * about 150, so with `difficultyScale` 30 the opening force is at even
- * odds on a difficulty 5 mission and near-certain on a skirmish.
- * `winSpread` 40 means being 40 rating ahead or behind is roughly a
- * 3-to-1 fight. Casualties bite hardest on a loss: half the soldiers and
- * a coin-flip's worth of mechs, so an ignored difficulty warning is a
- * memorable mistake (GDD §5.8). Placeholders until the loop (#68) is
- * playable end to end.
+ * Default auto-resolve tuning. `difficultyScale` 40 makes one point of
+ * difficulty worth exactly a full rifle squad (rating 40, #336), so a
+ * lone squad is an even fight at difficulty 1, two squads at difficulty
+ * 2, and the starter roster (two rifle squads plus the 129-rated starter
+ * mech, about 209) is at even odds on a difficulty 5 mission and
+ * near-certain on a skirmish. `winSpread` 40 means being one full squad
+ * ahead or behind is roughly a 3-to-1 fight. Casualties bite hardest on
+ * a loss: half the soldiers and a coin-flip's worth of mechs, so an
+ * ignored difficulty warning is a memorable mistake (GDD §5.8).
  */
 export const AUTO_RESOLVE_TUNING: AutoResolveTuning = {
-  difficultyScale: 30,
+  difficultyScale: 40,
   winSpread: 40,
   damagePenalty: 1,
   extractChance: 0.5,

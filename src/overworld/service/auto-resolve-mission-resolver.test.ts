@@ -151,7 +151,9 @@ function damageOf(mechId: string): number {
 
 describe("winProbability", () => {
   it("is even when force matches the difficulty's demand", () => {
-    expect(winProbability(150, 5, TUNING)).toBeCloseTo(0.5);
+    expect(winProbability(5 * TUNING.difficultyScale, 5, TUNING)).toBeCloseTo(
+      0.5,
+    );
   });
 
   it("rises with force and falls with difficulty, staying in (0, 1)", () => {

@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
 
+import { MECH_RATING_TUNING } from "../../roster/data/mech-rating-tuning";
+import { STARTER_PARTS } from "../../roster/data/parts";
+import { RIFLE_SQUAD } from "../../roster/data/squad-types";
+import { STARTER_LOADOUT } from "../../roster/data/starter-roster";
+import { UPGRADE_TUNING } from "../../roster/data/upgrade-tuning";
 import { MECH_MAX_DAMAGE } from "../../roster/model/mech";
+import { StaticPartCatalogue } from "../../roster/repository/static-part-catalogue";
+import { validateLoadout } from "../../roster/service/loadout-validation-service";
 import { MISSION_OUTCOMES } from "../model/mission-result";
+import { winProbability } from "../service/auto-resolve-mission-resolver";
 import { AUTO_RESOLVE_TUNING } from "./auto-resolve-tuning";
 
 const T = AUTO_RESOLVE_TUNING;
@@ -60,5 +68,38 @@ describe("auto-resolve tuning", () => {
     expect(Number.isInteger(T.lossInfestationPenalty)).toBe(true);
     expect(T.clearanceBase + T.clearancePerDifficulty).toBeGreaterThan(0);
     expect(T.lossInfestationPenalty).toBeGreaterThan(0);
+  });
+
+  // ===========================================
+  // Design targets (#336)
+  // ===========================================
+
+  it("makes one point of difficulty worth exactly a full rifle squad", () => {
+    expect(T.difficultyScale).toBe(RIFLE_SQUAD.combatRating);
+  });
+
+  it("gives a lone full rifle squad an even fight at difficulty 1 and two squads at difficulty 2", () => {
+    const squad = RIFLE_SQUAD.combatRating;
+    expect(winProbability(squad, 1, T)).toBeCloseTo(0.5, 5);
+    expect(winProbability(2 * squad, 2, T)).toBeCloseTo(0.5, 5);
+  });
+
+  it("keeps the starter roster at or above even odds on a difficulty 5 mission and warns a lone squad off difficulty 3", () => {
+    const sheet = validateLoadout(
+      STARTER_LOADOUT,
+      new StaticPartCatalogue(STARTER_PARTS),
+      MECH_RATING_TUNING,
+      UPGRADE_TUNING,
+    );
+    if (!sheet.ok) throw new Error("starter loadout must validate");
+    const starterForce =
+      2 * RIFLE_SQUAD.combatRating + sheet.value.combatRating;
+    expect(winProbability(starterForce, 5, T)).toBeGreaterThanOrEqual(0.5);
+    expect(winProbability(starterForce, 3, T)).toBeGreaterThan(0.85);
+    expect(winProbability(RIFLE_SQUAD.combatRating, 3, T)).toBeLessThan(0.2);
+    // The starter mech is worth a bit over three squads, not a dozen.
+    const mechInSquads = sheet.value.combatRating / RIFLE_SQUAD.combatRating;
+    expect(mechInSquads).toBeGreaterThan(2.5);
+    expect(mechInSquads).toBeLessThan(4.5);
   });
 });

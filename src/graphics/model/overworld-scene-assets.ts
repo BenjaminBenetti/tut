@@ -11,10 +11,13 @@ export interface OverworldSceneAssets {
   readonly mapTexture: Texture | undefined;
   /** White-on-transparent city glyph for marker sprites; `undefined` uses discs. */
   readonly markerGlyph: Texture | undefined;
+  /** White-on-transparent mission glyph for the active-mission badge; `undefined` uses a small disc. */
+  readonly missionGlyph: Texture | undefined;
 }
 
 /** No art at all: flat ocean and disc markers. */
 export const NO_OVERWORLD_ASSETS: OverworldSceneAssets = {
   mapTexture: undefined,
   markerGlyph: undefined,
+  missionGlyph: undefined,
 };

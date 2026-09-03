@@ -12,6 +12,8 @@ export interface OverworldAssetLoaderDeps {
   readonly glyphs: GlyphSource;
   /** Public URL of the city glyph SVG, resolved by the app from the icon manifest. */
   readonly markerGlyphUrl: string;
+  /** Public URL of the mission glyph SVG for the active-mission badge. */
+  readonly missionGlyphUrl: string;
 }
 
 // ===========================================
@@ -37,9 +39,10 @@ export const MARKER_GLYPH_RASTER_PX = 128;
 export async function loadOverworldAssets(
   deps: OverworldAssetLoaderDeps,
 ): Promise<OverworldSceneAssets> {
-  const [mapTexture, markerGlyph] = await Promise.all([
+  const [mapTexture, markerGlyph, missionGlyph] = await Promise.all([
     deps.textures.loadTexture("overworld.earth-map"),
     deps.glyphs.loadGlyph(deps.markerGlyphUrl, MARKER_GLYPH_RASTER_PX),
+    deps.glyphs.loadGlyph(deps.missionGlyphUrl, MARKER_GLYPH_RASTER_PX),
   ]);
-  return { mapTexture, markerGlyph };
+  return { mapTexture, markerGlyph, missionGlyph };
 }

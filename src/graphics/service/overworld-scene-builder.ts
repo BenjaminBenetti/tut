@@ -21,7 +21,11 @@ import type { OverworldSceneAssets } from "../model/overworld-scene-assets";
 import { NO_OVERWORLD_ASSETS } from "../model/overworld-scene-assets";
 import type { OverworldSceneConfig } from "../model/overworld-scene-config";
 import { OVERWORLD_SCENE_CONFIG } from "../model/overworld-scene-config";
-import type { CityMarkerGeometry } from "../view/city-marker";
+import type { MapStateView } from "../model/map-state-view";
+import type {
+  CityMarkerGeometry,
+  CityMarkerLookReport,
+} from "../view/city-marker";
 import { CityMarker } from "../view/city-marker";
 import { RegionPlate } from "../view/region-plate";
 import {
@@ -60,6 +64,9 @@ const BOX_TOP_FACE = 2;
  */
 const MARKER_SEGMENTS = 12;
 
+/** The empty mission set, for `update` calls that only carry a map. */
+const NO_CITIES: ReadonlySet<CityId> = new Set();
+
 /** Selection ring radii relative to the marker radius. */
 const RING_INNER_SCALE = 1.5;
 const RING_OUTER_SCALE = 2;
@@ -77,13 +84,13 @@ const RING_OUTER_SCALE = 2;
  * slab is flat ocean, without the glyph markers are discs.
  *
  * ```
- *   build(map)   ─▶  slab + plates + markers under `root`
- *   update(map)  ─▶  markers retinted in place (same objects)
+ *   build(map)            ─▶  slab + plates + markers under `root`
+ *   update(map, missions) ─▶  markers retinted and badged in place (same objects)
  *   pickCity()   ─▶  raycast against marker pick targets
  *   dispose()    ─▶  everything released, `root` emptied
  * ```
  */
-export class OverworldSceneBuilder implements CityPicker {
+export class OverworldSceneBuilder implements CityPicker, MapStateView {
   // ===========================================
   // Fields
   // ===========================================
@@ -164,7 +171,11 @@ export class OverworldSceneBuilder implements CityPicker {
       const marker = new CityMarker(
         city,
         base,
-        { geometry: this.markerGeometry, glyph: this.assets.markerGlyph },
+        {
+          geometry: this.markerGeometry,
+          glyph: this.assets.markerGlyph,
+          missionGlyph: this.assets.missionGlyph,
+        },
         this.config,
       );
       this.markers.set(city.id, marker);
@@ -175,18 +186,25 @@ export class OverworldSceneBuilder implements CityPicker {
   }
 
   /**
-   * Brings the scene up to date with a newer map. Markers are retinted
-   * in place; nothing is rebuilt unless the set of cities changed, which
-   * falls back to `build`.
+   * Brings the scene up to date with a newer map and the cities that
+   * currently host a mission. Markers are retinted and badged in place;
+   * nothing is rebuilt unless the set of cities changed, which falls
+   * back to `build` (and then badges).
    */
-  update(map: EarthMap): void {
+  update(map: EarthMap, missionCityIds: ReadonlySet<CityId> = NO_CITIES): void {
     if (!this.hasSameCities(map)) {
       this.build(map);
-      return;
     }
     for (const city of map.cities) {
-      this.markers.get(city.id)?.setInfestation(city.infestation);
+      const marker = this.markers.get(city.id);
+      marker?.setInfestation(city.infestation);
+      marker?.setMission(missionCityIds.has(city.id));
     }
+  }
+
+  /** What a city's marker currently shows, or `undefined` for an unknown city. */
+  markerLook(cityId: CityId): CityMarkerLookReport | undefined {
+    return this.markers.get(cityId)?.look();
   }
 
   /**

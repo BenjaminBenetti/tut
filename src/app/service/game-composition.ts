@@ -54,6 +54,7 @@ import { createNewGame } from "../../save/service/new-game-service";
 import type { GameSession } from "../../ui/model/game-session";
 import type { AutosaveFailureListener } from "./autosave-service";
 import { AutosaveService } from "./autosave-service";
+import type { StoreObserver } from "./game-session";
 import { StoreGameSession } from "./game-session";
 import { GameStore } from "./game-store";
 
@@ -71,6 +72,8 @@ export interface GameCompositionDeps {
   readonly newSeed: () => number;
   /** Told about every failed autosave. */
   readonly onAutosaveFailure: AutosaveFailureListener;
+  /** Extra observer attached to every campaign store beside autosave; the map scene sync, for instance. */
+  readonly onStore?: StoreObserver;
 }
 
 /** Shipped content and tuning screens read to label and price things. */
@@ -182,7 +185,14 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
   );
   const session = new StoreGameSession(
     (state) => new GameStore(state, dispatcher),
-    (store) => autosave.attach(store),
+    (store) => {
+      const detachAutosave = autosave.attach(store);
+      const detachExtra = deps.onStore?.(store);
+      return () => {
+        detachAutosave();
+        detachExtra?.();
+      };
+    },
   );
   const newGameDeps = composeNewGameDeps(squadTypes);
 

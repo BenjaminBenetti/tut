@@ -7,7 +7,7 @@ import {
 } from "./overworld-asset-loader";
 
 describe("loadOverworldAssets", () => {
-  it("asks for the Earth map and the city glyph and bundles what came back", async () => {
+  it("asks for the Earth map and both glyphs and bundles what came back", async () => {
     const map = new Texture();
     const glyph = new Texture();
     const asked: string[] = [];
@@ -25,12 +25,18 @@ describe("loadOverworldAssets", () => {
         },
       },
       markerGlyphUrl: "/icons/marker-city.svg",
+      missionGlyphUrl: "/icons/mission.svg",
     });
     expect(asked.sort()).toEqual([
       `glyph:/icons/marker-city.svg@${MARKER_GLYPH_RASTER_PX}`,
+      `glyph:/icons/mission.svg@${MARKER_GLYPH_RASTER_PX}`,
       "texture:overworld.earth-map",
     ]);
-    expect(assets).toEqual({ mapTexture: map, markerGlyph: glyph });
+    expect(assets).toEqual({
+      mapTexture: map,
+      markerGlyph: glyph,
+      missionGlyph: glyph,
+    });
   });
 
   it("passes missing assets through as undefined", async () => {
@@ -38,7 +44,12 @@ describe("loadOverworldAssets", () => {
       textures: { loadTexture: () => Promise.resolve(undefined) },
       glyphs: { loadGlyph: () => Promise.resolve(undefined) },
       markerGlyphUrl: "/icons/marker-city.svg",
+      missionGlyphUrl: "/icons/marker-city.svg",
     });
-    expect(assets).toEqual({ mapTexture: undefined, markerGlyph: undefined });
+    expect(assets).toEqual({
+      mapTexture: undefined,
+      markerGlyph: undefined,
+      missionGlyph: undefined,
+    });
   });
 });

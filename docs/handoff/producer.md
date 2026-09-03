@@ -3,30 +3,28 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-03 04:01 UTC)
+## Status Digest (2026-09-03 04:45 UTC)
 
 | Milestone | done / total |
 |---|---|
 | M0 Foundation | 12 / 13 |
-| M1 Overworld | 27 / 63 |
-| M1.5 Map Generation | 24 / 29 |
+| M1 Overworld | 32 / 64 |
+| M1.5 Map Generation | 33 / 34 |
 
-Board: Backlog 20 · Ready 13 · In Progress 5 · In Review 7 · Blocked 0 · Done 69
+Board: Backlog 17 · Ready 12 · In Progress 5 · In Review 3 · Blocked 0 · Done 84
 
 **Engineer seats** (one open issue per seat; Producer assigns via `seat:eng-N`; route by `complexity:*` — high → default-effort seats only, low → medium-effort seats first):
 
 | Seat | Effort | Current | Status | Last merged |
 |---|---|---|---|---|
-| eng-3 | default | #61 overworld: mission generation and expiry tick | Ready | #72 |
-| eng-4 | medium | #49 roster: loadout validation and mech stat sheet service | In Review | #197 |
-| eng-5 | medium | #58 overworld: infestation spread and seeding | In Review | #52 |
+| eng-3 | default | #61 overworld: mission generation and expiry tick | In Review | #72 |
+| eng-4 | medium | #63 roster: roster service — hire, reinforce, save loadout, build mech | In Review | #49 |
+| eng-5 | medium | #62 overworld: auto-resolve mission resolver | In Review | #59 |
 
-⚠ unassigned Ready: #59 (low), #65 (medium), #70 (medium), #108 (low), #141 (low), #217 (low), #218 (low), #219 (low), #230 (low)
+⚠ unassigned Ready: #65 (medium), #70 (medium), #108 (low), #141 (low), #217 (low), #218 (low), #219 (low), #230 (low), #246 (medium)
 
 **Ready now** (no unmerged dependencies):
 
-- #59 (engineer) overworld: lose condition and win stub
-- #61 (engineer) overworld: mission generation and expiry tick
 - #65 (engineer) overworld: build and decommission deployable commands
 - #70 (engineer) overworld: pending events and choice resolution
 - #108 (engineer) refactor(core): promote generic id Registry to core/ and reuse in mapgen and roster
@@ -37,17 +35,15 @@ Board: Backlog 20 · Ready 13 · In Progress 5 · In Review 7 · Blocked 0 · Do
 - #218 (engineer) bug(engine): overworld camera pan is unbounded; the map can be panned entirely off screen
 - #219 (engineer) bug(ui): Continue is silently disabled when the autosave exists but cannot be decoded
 - #230 (engineer) save: share isRecord between migrations and the game-state guard
-- #231 (mapgen) feat(mapgen): guarantee hatch space around egg spawners for M2 bug spawning
+- #246 (engineer) refactor(overworld): derive the command and event unions from augmentable maps so new members stop conflicting
+- #256 (qa) test(e2e): schema v1 autosave fixture migrates and loads on the current build
 
 **In-flight PRs** (age h / idle h / review):
 
-- #224 0.2h / 0.1h / n/a — feat(mapgen): vegetation clusters instead of uniform scatter (#203)
-- #220 0.2h / 0.0h / n/a — feat(roster): loadout validation service and mech stat sheet with data-driven combat rating (#49)
-- #216 0.2h / 0.1h / n/a — feat(overworld): infestation spread and seeding (#58)
-- #215 0.3h / 0.1h / n/a — chore(mapgen): trails visible on sand and snow (#204)
-- #212 0.3h / 0.1h / n/a — feat(mapgen): furnish every room kind from a data table (#202)
-- #211 0.4h / 0.1h / n/a — feat(mapgen): two-lane streets for cities (#201)
-- #195 0.9h / 0.1h / n/a — feat(art): placeholder batch 3 — mech part variants for the starter part catalogue (#169)
+- #255 0.1h / 0.1h / n/a — chore(handoff): tech-lead 2026-09-03 (update 3)
+- #254 0.1h / 0.1h / n/a — feat(overworld): auto-resolve mission resolver (#62)
+- #243 0.4h / 0.3h / n/a — feat(roster): roster service with hire, reinforce, save/delete loadout and build mech commands (#63)
+- #238 0.6h / 0.1h / n/a — feat(overworld): mission generation and expiry tick (#61)
 
 **In progress** (branch pushed?):
 
@@ -59,33 +55,32 @@ Board: Backlog 20 · Ready 13 · In Progress 5 · In Review 7 · Blocked 0 · Do
 
 **Next assignments for idle engineers** (Ready first, then what unblocks next):
 
-1. #59 — overworld: lose condition and win stub
-2. #61 — overworld: mission generation and expiry tick
-3. #65 — overworld: build and decommission deployable commands
-4. #70 — overworld: pending events and choice resolution
-5. #108 — refactor(core): promote generic id Registry to core/ and reuse in mapgen and roster
-6. #141 — refactor: rename scalar tuning exports to UPPER_SNAKE_CASE (economy-tuning, threat-tuning)
-7. #217 — bug(ui): autosave failure on New game is never shown; menu unmounts before the message is visible
-8. #218 — bug(engine): overworld camera pan is unbounded; the map can be panned entirely off screen
-9. #219 — bug(ui): Continue is silently disabled when the autosave exists but cannot be decoded
-10. #230 — save: share isRecord between migrations and the game-state guard
-11. #62 — overworld: auto-resolve mission resolver (Ready once #49 merges)
-12. #63 — roster: roster service — hire, reinforce, save loadout, build mech (Ready once #49 merges)
-13. #66 — overworld: deployable effects and upkeep tick (Ready once #58 merges)
+1. #65 — overworld: build and decommission deployable commands
+2. #70 — overworld: pending events and choice resolution
+3. #108 — refactor(core): promote generic id Registry to core/ and reuse in mapgen and roster
+4. #141 — refactor: rename scalar tuning exports to UPPER_SNAKE_CASE (economy-tuning, threat-tuning)
+5. #217 — bug(ui): autosave failure on New game is never shown; menu unmounts before the message is visible
+6. #218 — bug(engine): overworld camera pan is unbounded; the map can be panned entirely off screen
+7. #219 — bug(ui): Continue is silently disabled when the autosave exists but cannot be decoded
+8. #230 — save: share isRecord between migrations and the game-state guard
+9. #246 — refactor(overworld): derive the command and event unions from augmentable maps so new members stop conflicting
+10. #64 — roster: casualties, permadeath and repair bookkeeping (Ready once #63 merges)
+11. #68 — overworld: AdvanceDay orchestrator (tick pipeline) (Ready once #61 merges)
+12. #69 — roster: part upgrade levels (Ready once #63 merges)
 <!-- digest:end -->
 
 **Status: PRODUCTION RESUMED** (Director, 2026-09-03 03:05 UTC). Pool: eng-3 (default effort, takes `complexity:high` and anything), eng-4 and eng-5 (medium effort, `complexity:low|medium` only). eng-1, eng-2, eng-6 are gone; their seat labels are inactive.
 
 **Gap audit (03:10 UTC, posted on #35):** closed. Every stopped-seat issue is Done or reseated (#52 → eng-5, #55 → eng-3); #60 and #162 merged.
 
-**04:00 UTC.** #72 merged: the app has a real composition root, main menu, new game, save/load and autosave. Overworld shell (#73) and the day loop (#68) are the next gates. QA is active and filing bugs (#217–#219, low tier).
+**04:45 UTC.** M1.5 is complete (MapGen closed #32: every pass, the preview harness, property sweeps and tuning follow-ups merged). M1 is at 32 of 64 with the simulation nearly done: remaining sim gates are #68 AdvanceDay (needs #61, in review), #64 casualties (needs #63, in review) and #67 launch (needs #62 in review, #64). The UI epics #41/#42 have not started; #73 shell is the first UI issue and needs #68.
 
-**Seat plan:** eng-3 (default): #61 mission generation (medium, no high Ready) → #68 AdvanceDay (high, needs #66) → #67 launch (high, needs #62, #64) → #73 shell. eng-4 (medium): #49 (PR #220) → #63 roster service → #64 casualties. eng-5 (medium): #58 (PR #216) → #66 deployable effects → #65 deployable commands → #59. Low-tier fillers for any free medium seat: #59, #141, #108 (mapgen stack merged, now free), #230, QA bugs #217 #218 #219.
+**Seat plan:** eng-3 (default): #61 (PR #238) → #68 AdvanceDay (high) → #67 LaunchMission (high) → #73 shell (medium, if no high is Ready). eng-4 (medium): #63 (PR #243) → #64 casualties → #69 upgrades. eng-5 (medium): #62 (PR #254) → #246 union refactor (medium, first: it ends the `OverworldDomainEvent` merge-conflict churn that cost #238 three rebases) → #65 deployable commands → #70 events. Low-tier fillers for any free medium seat: #141, #108, #230, QA bugs #217 #218 #219.
 
-**Risks** (04:00 UTC):
+**Risks** (04:45 UTC):
 
-- Critical path to the playable loop: #49 → #62/#63 → #64 → #67 and #58 → #66 → #68, both through medium seats then eng-3. Any review stall on #216/#220 delays both chains.
-- UI epics (#41, #42) have not started; #73 unblocks after #68 and is medium, so it can go to a medium seat while eng-3 holds #67/#68.
+- Every remaining sim gate (#68, #67) is `complexity:high` and serialises on eng-3; UI work (#73–#84) cannot start before #68. Consider whether #73 (medium) can be pulled ahead on a medium seat once #68's handler shape is known.
+- Union-file merge conflicts: three rebases on #238 today. #246 fixes the root cause; seat it before #64/#65/#67 land more members.
 
 ---
 

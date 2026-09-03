@@ -1,0 +1,527 @@
+{
+  "schemaVersion": 1,
+  "savedAt": "2026-09-03T03:39:37.713Z",
+  "state": {
+    "meta": {
+      "seed": 3350754568,
+      "rng": {
+        "algorithm": "mulberry32",
+        "seed": 3350754568,
+        "state": 3350754568
+      },
+      "ids": { "counters": { "squad": 3, "mech": 2 } },
+      "createdAt": "2026-09-03T03:39:37.713Z"
+    },
+    "overworld": {
+      "day": 1,
+      "map": {
+        "regions": [
+          {
+            "id": "north-america-west",
+            "name": "North America West",
+            "biome": "coastal",
+            "cityIds": ["vancouver", "san-francisco", "los-angeles"],
+            "neighbourRegionIds": [
+              "north-america-east",
+              "east-asia",
+              "latin-america"
+            ],
+            "layout": { "x": 0.16316666666666665, "y": 0.2757407407407407 }
+          },
+          {
+            "id": "north-america-east",
+            "name": "North America East",
+            "biome": "temperate",
+            "cityIds": ["toronto", "chicago", "new-york"],
+            "neighbourRegionIds": [
+              "north-america-west",
+              "latin-america",
+              "western-europe"
+            ],
+            "layout": { "x": 0.2768333333333333, "y": 0.2662222222222222 }
+          },
+          {
+            "id": "latin-america",
+            "name": "Latin America",
+            "biome": "coastal",
+            "cityIds": ["mexico-city", "bogota", "sao-paulo", "buenos-aires"],
+            "neighbourRegionIds": [
+              "north-america-west",
+              "north-america-east",
+              "sub-saharan-africa"
+            ],
+            "layout": { "x": 0.3067986111111112, "y": 0.5472361111111111 }
+          },
+          {
+            "id": "western-europe",
+            "name": "Western Europe",
+            "biome": "temperate",
+            "cityIds": ["london", "paris", "berlin"],
+            "neighbourRegionIds": [
+              "north-america-east",
+              "sub-saharan-africa",
+              "eastern-europe",
+              "middle-east"
+            ],
+            "layout": { "x": 0.514462962962963, "y": 0.21687037037037038 }
+          },
+          {
+            "id": "eastern-europe",
+            "name": "Eastern Europe",
+            "biome": "snowy",
+            "cityIds": ["stockholm", "warsaw", "moscow"],
+            "neighbourRegionIds": [
+              "western-europe",
+              "middle-east",
+              "north-asia"
+            ],
+            "layout": { "x": 0.5710185185185185, "y": 0.19014814814814818 }
+          },
+          {
+            "id": "middle-east",
+            "name": "Middle East",
+            "biome": "desert",
+            "cityIds": ["istanbul", "cairo", "tehran"],
+            "neighbourRegionIds": [
+              "western-europe",
+              "sub-saharan-africa",
+              "eastern-europe",
+              "south-asia",
+              "north-asia"
+            ],
+            "layout": { "x": 0.6033425925925926, "y": 0.30233333333333334 }
+          },
+          {
+            "id": "sub-saharan-africa",
+            "name": "Sub-Saharan Africa",
+            "biome": "temperate",
+            "cityIds": ["lagos", "nairobi", "johannesburg"],
+            "neighbourRegionIds": [
+              "latin-america",
+              "western-europe",
+              "middle-east",
+              "south-asia"
+            ],
+            "layout": { "x": 0.5631944444444446, "y": 0.5388333333333333 }
+          },
+          {
+            "id": "south-asia",
+            "name": "South Asia",
+            "biome": "desert",
+            "cityIds": ["karachi", "delhi", "mumbai"],
+            "neighbourRegionIds": [
+              "middle-east",
+              "southeast-asia",
+              "sub-saharan-africa"
+            ],
+            "layout": { "x": 0.7010185185185186, "y": 0.36564814814814817 }
+          },
+          {
+            "id": "north-asia",
+            "name": "North Asia",
+            "biome": "snowy",
+            "cityIds": ["novosibirsk", "almaty", "ulaanbaatar"],
+            "neighbourRegionIds": [
+              "eastern-europe",
+              "middle-east",
+              "east-asia"
+            ],
+            "layout": { "x": 0.7469629629629629, "y": 0.2293333333333333 }
+          },
+          {
+            "id": "east-asia",
+            "name": "East Asia",
+            "biome": "temperate",
+            "cityIds": ["beijing", "seoul", "tokyo"],
+            "neighbourRegionIds": [
+              "north-asia",
+              "southeast-asia",
+              "oceania",
+              "north-america-west"
+            ],
+            "layout": { "x": 0.8546944444444445, "y": 0.2904629629629629 }
+          },
+          {
+            "id": "southeast-asia",
+            "name": "Southeast Asia",
+            "biome": "coastal",
+            "cityIds": ["bangkok", "singapore", "jakarta"],
+            "neighbourRegionIds": ["south-asia", "east-asia", "oceania"],
+            "layout": { "x": 0.7881203703703704, "y": 0.4835185185185185 }
+          },
+          {
+            "id": "oceania",
+            "name": "Oceania",
+            "biome": "coastal",
+            "cityIds": ["perth", "sydney", "auckland"],
+            "neighbourRegionIds": ["southeast-asia", "east-asia"],
+            "layout": { "x": 0.9091018518518519, "y": 0.6901296296296296 }
+          }
+        ],
+        "cities": [
+          {
+            "id": "vancouver",
+            "name": "Vancouver",
+            "regionId": "north-america-west",
+            "infestation": 0,
+            "neighbourIds": ["san-francisco", "toronto"],
+            "layout": { "x": 0.15799999999999997, "y": 0.2262222222222222 }
+          },
+          {
+            "id": "san-francisco",
+            "name": "San Francisco",
+            "regionId": "north-america-west",
+            "infestation": 0,
+            "neighbourIds": ["vancouver", "los-angeles", "tokyo"],
+            "layout": { "x": 0.15994444444444444, "y": 0.29016666666666663 }
+          },
+          {
+            "id": "los-angeles",
+            "name": "Los Angeles",
+            "regionId": "north-america-west",
+            "infestation": 0,
+            "neighbourIds": ["san-francisco", "chicago", "mexico-city"],
+            "layout": { "x": 0.17155555555555557, "y": 0.31083333333333335 }
+          },
+          {
+            "id": "toronto",
+            "name": "Toronto",
+            "regionId": "north-america-east",
+            "infestation": 0,
+            "neighbourIds": ["chicago", "new-york", "vancouver"],
+            "layout": { "x": 0.2795, "y": 0.2575 }
+          },
+          {
+            "id": "chicago",
+            "name": "Chicago",
+            "regionId": "north-america-east",
+            "infestation": 0,
+            "neighbourIds": [
+              "toronto",
+              "new-york",
+              "los-angeles",
+              "mexico-city"
+            ],
+            "layout": { "x": 0.25658333333333333, "y": 0.2673333333333333 }
+          },
+          {
+            "id": "new-york",
+            "name": "New York",
+            "regionId": "north-america-east",
+            "infestation": 0,
+            "neighbourIds": ["toronto", "chicago", "london"],
+            "layout": { "x": 0.29441666666666666, "y": 0.2738333333333333 }
+          },
+          {
+            "id": "mexico-city",
+            "name": "Mexico City",
+            "regionId": "latin-america",
+            "infestation": 0,
+            "neighbourIds": ["bogota", "los-angeles", "chicago"],
+            "layout": { "x": 0.2246388888888889, "y": 0.3920555555555555 }
+          },
+          {
+            "id": "bogota",
+            "name": "Bogotá",
+            "regionId": "latin-america",
+            "infestation": 0,
+            "neighbourIds": ["mexico-city", "sao-paulo"],
+            "layout": { "x": 0.29425, "y": 0.4738333333333334 }
+          },
+          {
+            "id": "sao-paulo",
+            "name": "São Paulo",
+            "regionId": "latin-america",
+            "infestation": 0,
+            "neighbourIds": ["bogota", "buenos-aires", "lagos"],
+            "layout": { "x": 0.37047222222222226, "y": 0.6308333333333334 }
+          },
+          {
+            "id": "buenos-aires",
+            "name": "Buenos Aires",
+            "regionId": "latin-america",
+            "infestation": 0,
+            "neighbourIds": ["sao-paulo"],
+            "layout": { "x": 0.3378333333333333, "y": 0.6922222222222222 }
+          },
+          {
+            "id": "london",
+            "name": "London",
+            "regionId": "western-europe",
+            "infestation": 0,
+            "neighbourIds": ["paris", "new-york", "lagos", "stockholm"],
+            "layout": { "x": 0.4996388888888889, "y": 0.21383333333333335 }
+          },
+          {
+            "id": "paris",
+            "name": "Paris",
+            "regionId": "western-europe",
+            "infestation": 0,
+            "neighbourIds": ["london", "berlin"],
+            "layout": { "x": 0.5065277777777778, "y": 0.22855555555555557 }
+          },
+          {
+            "id": "berlin",
+            "name": "Berlin",
+            "regionId": "western-europe",
+            "infestation": 0,
+            "neighbourIds": ["paris", "warsaw", "istanbul"],
+            "layout": { "x": 0.5372222222222223, "y": 0.2082222222222222 }
+          },
+          {
+            "id": "stockholm",
+            "name": "Stockholm",
+            "regionId": "eastern-europe",
+            "infestation": 0,
+            "neighbourIds": ["warsaw", "moscow", "london"],
+            "layout": { "x": 0.5501944444444444, "y": 0.1703888888888889 }
+          },
+          {
+            "id": "warsaw",
+            "name": "Warsaw",
+            "regionId": "eastern-europe",
+            "infestation": 0,
+            "neighbourIds": ["stockholm", "moscow", "berlin"],
+            "layout": { "x": 0.5583611111111111, "y": 0.20983333333333334 }
+          },
+          {
+            "id": "moscow",
+            "name": "Moscow",
+            "regionId": "eastern-europe",
+            "infestation": 0,
+            "neighbourIds": ["warsaw", "stockholm", "tehran", "novosibirsk"],
+            "layout": { "x": 0.6045, "y": 0.19022222222222224 }
+          },
+          {
+            "id": "istanbul",
+            "name": "Istanbul",
+            "regionId": "middle-east",
+            "infestation": 0,
+            "neighbourIds": ["cairo", "tehran", "berlin"],
+            "layout": { "x": 0.5805, "y": 0.27216666666666667 }
+          },
+          {
+            "id": "cairo",
+            "name": "Cairo",
+            "regionId": "middle-east",
+            "infestation": 0,
+            "neighbourIds": ["istanbul", "nairobi"],
+            "layout": { "x": 0.5867777777777778, "y": 0.33311111111111114 }
+          },
+          {
+            "id": "tehran",
+            "name": "Tehran",
+            "regionId": "middle-east",
+            "infestation": 24,
+            "neighbourIds": ["istanbul", "moscow", "karachi", "almaty"],
+            "layout": { "x": 0.6427499999999999, "y": 0.3017222222222222 }
+          },
+          {
+            "id": "lagos",
+            "name": "Lagos",
+            "regionId": "sub-saharan-africa",
+            "infestation": 0,
+            "neighbourIds": ["nairobi", "johannesburg", "sao-paulo", "london"],
+            "layout": { "x": 0.5093888888888889, "y": 0.4637777777777778 }
+          },
+          {
+            "id": "nairobi",
+            "name": "Nairobi",
+            "regionId": "sub-saharan-africa",
+            "infestation": 0,
+            "neighbourIds": ["lagos", "johannesburg", "cairo", "mumbai"],
+            "layout": { "x": 0.6022777777777778, "y": 0.5071666666666667 }
+          },
+          {
+            "id": "johannesburg",
+            "name": "Johannesburg",
+            "regionId": "sub-saharan-africa",
+            "infestation": 0,
+            "neighbourIds": ["nairobi", "lagos"],
+            "layout": { "x": 0.5779166666666667, "y": 0.6455555555555555 }
+          },
+          {
+            "id": "karachi",
+            "name": "Karachi",
+            "regionId": "south-asia",
+            "infestation": 0,
+            "neighbourIds": ["delhi", "mumbai", "tehran"],
+            "layout": { "x": 0.6861388888888889, "y": 0.36188888888888887 }
+          },
+          {
+            "id": "delhi",
+            "name": "Delhi",
+            "regionId": "south-asia",
+            "infestation": 0,
+            "neighbourIds": ["karachi", "mumbai", "bangkok"],
+            "layout": { "x": 0.7144722222222222, "y": 0.34105555555555556 }
+          },
+          {
+            "id": "mumbai",
+            "name": "Mumbai",
+            "regionId": "south-asia",
+            "infestation": 25,
+            "neighbourIds": ["karachi", "delhi", "nairobi"],
+            "layout": { "x": 0.7024444444444444, "y": 0.394 }
+          },
+          {
+            "id": "novosibirsk",
+            "name": "Novosibirsk",
+            "regionId": "north-asia",
+            "infestation": 0,
+            "neighbourIds": ["almaty", "ulaanbaatar", "moscow"],
+            "layout": { "x": 0.7303333333333334, "y": 0.19427777777777777 }
+          },
+          {
+            "id": "almaty",
+            "name": "Almaty",
+            "regionId": "north-asia",
+            "infestation": 0,
+            "neighbourIds": ["novosibirsk", "tehran"],
+            "layout": { "x": 0.7135833333333333, "y": 0.2597777777777778 }
+          },
+          {
+            "id": "ulaanbaatar",
+            "name": "Ulaanbaatar",
+            "regionId": "north-asia",
+            "infestation": 0,
+            "neighbourIds": ["novosibirsk", "beijing"],
+            "layout": { "x": 0.7969722222222221, "y": 0.23394444444444445 }
+          },
+          {
+            "id": "beijing",
+            "name": "Beijing",
+            "regionId": "east-asia",
+            "infestation": 0,
+            "neighbourIds": ["seoul", "ulaanbaatar", "bangkok"],
+            "layout": { "x": 0.8233333333333333, "y": 0.2783333333333333 }
+          },
+          {
+            "id": "seoul",
+            "name": "Seoul",
+            "regionId": "east-asia",
+            "infestation": 0,
+            "neighbourIds": ["beijing", "tokyo"],
+            "layout": { "x": 0.8527222222222223, "y": 0.2912777777777778 }
+          },
+          {
+            "id": "tokyo",
+            "name": "Tokyo",
+            "regionId": "east-asia",
+            "infestation": 0,
+            "neighbourIds": ["seoul", "sydney", "san-francisco"],
+            "layout": { "x": 0.8880277777777777, "y": 0.30177777777777776 }
+          },
+          {
+            "id": "bangkok",
+            "name": "Bangkok",
+            "regionId": "southeast-asia",
+            "infestation": 0,
+            "neighbourIds": ["singapore", "delhi", "beijing"],
+            "layout": { "x": 0.7791666666666667, "y": 0.4235555555555555 }
+          },
+          {
+            "id": "singapore",
+            "name": "Singapore",
+            "regionId": "southeast-asia",
+            "infestation": 0,
+            "neighbourIds": ["bangkok", "jakarta"],
+            "layout": { "x": 0.7883888888888889, "y": 0.49250000000000005 }
+          },
+          {
+            "id": "jakarta",
+            "name": "Jakarta",
+            "regionId": "southeast-asia",
+            "infestation": 0,
+            "neighbourIds": ["singapore", "perth"],
+            "layout": { "x": 0.7968055555555557, "y": 0.5345 }
+          },
+          {
+            "id": "perth",
+            "name": "Perth",
+            "regionId": "oceania",
+            "infestation": 0,
+            "neighbourIds": ["sydney", "jakarta"],
+            "layout": { "x": 0.8218333333333334, "y": 0.6775 }
+          },
+          {
+            "id": "sydney",
+            "name": "Sydney",
+            "regionId": "oceania",
+            "infestation": 0,
+            "neighbourIds": ["perth", "auckland", "tokyo"],
+            "layout": { "x": 0.9200277777777779, "y": 0.6881666666666667 }
+          },
+          {
+            "id": "auckland",
+            "name": "Auckland",
+            "regionId": "oceania",
+            "infestation": 0,
+            "neighbourIds": ["sydney"],
+            "layout": { "x": 0.9854444444444445, "y": 0.7047222222222221 }
+          }
+        ]
+      },
+      "threat": 1.4243243243243244,
+      "missions": [],
+      "pendingEvents": [],
+      "deployables": [],
+      "hives": []
+    },
+    "roster": {
+      "squads": [
+        {
+          "id": "squad-1",
+          "name": "Alpha",
+          "typeId": "rifle",
+          "strength": 5,
+          "maxStrength": 5,
+          "kills": 0,
+          "missionsSurvived": 0,
+          "xp": 0
+        },
+        {
+          "id": "squad-2",
+          "name": "Bravo",
+          "typeId": "rifle",
+          "strength": 5,
+          "maxStrength": 5,
+          "kills": 0,
+          "missionsSurvived": 0,
+          "xp": 0
+        }
+      ],
+      "mechs": [
+        {
+          "id": "mech-1",
+          "name": "Hammerhead",
+          "loadout": {
+            "name": "Skirmisher",
+            "chassisId": "chassis-vanguard",
+            "legsId": "legs-strider",
+            "armsId": "arms-manipulator",
+            "armWeaponId": "arm-weapon-autocannon",
+            "backWeaponId": "back-weapon-missile-pod",
+            "utilityIds": ["utility-radiator"]
+          },
+          "damage": 0,
+          "kills": 0,
+          "missionsSurvived": 0,
+          "xp": 0
+        }
+      ],
+      "savedLoadouts": [
+        {
+          "name": "Skirmisher",
+          "chassisId": "chassis-vanguard",
+          "legsId": "legs-strider",
+          "armsId": "arms-manipulator",
+          "armWeaponId": "arm-weapon-autocannon",
+          "backWeaponId": "back-weapon-missile-pod",
+          "utilityIds": ["utility-radiator"]
+        }
+      ]
+    },
+    "economy": { "credits": 5000, "ledger": [] }
+  }
+}

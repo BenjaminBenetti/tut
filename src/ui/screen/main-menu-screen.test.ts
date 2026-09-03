@@ -3,16 +3,21 @@ import type { Mock } from "vitest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { SimpleEventBus } from "../../core/service/simple-event-bus";
+import { ECONOMY_TUNING } from "../../economy/data/economy-tuning";
+import { EARTH_MAP } from "../../overworld/data/earth-map";
+import { NEW_GAME_TUNING } from "../../overworld/data/new-game-tuning";
+import { THREAT_TUNING } from "../../overworld/data/threat-tuning";
+import { SQUAD_TYPES } from "../../roster/data/squad-types";
+import { STARTER_ROSTER } from "../../roster/data/starter-roster";
+import { DataSquadTypeCatalogue } from "../../roster/repository/squad-type-catalogue";
 import { AUTOSAVE_SLOT_ID } from "../../save/data/save-slots";
 import type { GameState } from "../../save/model/game-state";
-import { GAME_STATE_SCHEMA_VERSION } from "../../save/model/game-state";
 import type { KeyValueStore } from "../../save/model/key-value-store";
-import { KeyValueSaveRepository } from "../../save/repository/key-value-save-repository";
 import { MemoryKeyValueStore } from "../../save/repository/memory-key-value-store";
-import { createNewGameState } from "../../save/service/game-state-factory";
-import { MigrationRunner } from "../../save/service/migration-runner";
-import { SaveCodec } from "../../save/service/save-codec";
-import { SaveService } from "../../save/service/save-service";
+import type { GameSaveService } from "../../save/service/game-save-service";
+import { createGameSaveService } from "../../save/service/game-save-service";
+import type { NewGameOptions } from "../../save/service/game-state-factory";
+import { createNewGame } from "../../save/service/new-game-service";
 import type { GameSession } from "../model/game-session";
 import type { ScreenId } from "../model/screen";
 import type { ScreenRouter, ScreenRouterEvents } from "../model/screen-router";
@@ -35,14 +40,19 @@ class FakeSession implements GameSession {
   }
 }
 
-const saveServiceOver = (store: KeyValueStore): SaveService<GameState> =>
-  new SaveService(
-    new SaveCodec<GameState>(
-      GAME_STATE_SCHEMA_VERSION,
-      new MigrationRunner([], GAME_STATE_SCHEMA_VERSION),
-    ),
-    new KeyValueSaveRepository(store),
-  );
+/** A campaign from the shipped content. */
+const createCampaign = (options: NewGameOptions): GameState =>
+  createNewGame(options, {
+    map: EARTH_MAP,
+    squadTypes: new DataSquadTypeCatalogue(SQUAD_TYPES),
+    starterRoster: STARTER_ROSTER,
+    newGameTuning: NEW_GAME_TUNING,
+    threatTuning: THREAT_TUNING,
+    economyTuning: ECONOMY_TUNING,
+  });
+
+const savesOver = (store: KeyValueStore): GameSaveService =>
+  createGameSaveService(store, { now: () => NOW });
 
 const fakeRouter = (): { router: ScreenRouter; navigate: NavigateMock } => {
   const navigate: NavigateMock = vi.fn();
@@ -66,13 +76,14 @@ describe("MainMenuScreen", () => {
   const mountWith = (store: KeyValueStore = new MemoryKeyValueStore()) => {
     const { router, navigate } = fakeRouter();
     const session = new FakeSession();
-    const saves = saveServiceOver(store);
+    const saves = savesOver(store);
     const screen = new MainMenuScreen({
       router,
       session,
       saves,
+      createCampaign,
       newSeed: () => 42,
-      now: () => NOW,
+      clock: { now: () => NOW },
     });
     screen.mount(root);
     return { navigate, session, saves, screen };
@@ -101,15 +112,16 @@ describe("MainMenuScreen", () => {
 
     expect(session.state?.meta.seed).toBe(42);
     expect(session.state?.meta.createdAt).toBe(NOW);
-    const saved = saves.load(AUTOSAVE_SLOT_ID);
+    expect(session.state?.roster.squads.length).toBeGreaterThan(0);
+    const saved = saves.loadGame(AUTOSAVE_SLOT_ID);
     expect(saved.ok && saved.value).toEqual(session.state);
     expect(navigate).toHaveBeenCalledWith("overworld");
   });
 
   it("Continue is enabled with an autosave and loads it into the session", () => {
     const store = new MemoryKeyValueStore();
-    const existing = createNewGameState({ seed: 99, createdAt: NOW });
-    saveServiceOver(store).save(AUTOSAVE_SLOT_ID, existing, NOW);
+    const existing = createCampaign({ seed: 99, createdAt: NOW });
+    savesOver(store).saveGame(AUTOSAVE_SLOT_ID, existing);
 
     const { navigate, session } = mountWith(store);
     expect(button("continue").disabled).toBe(false);

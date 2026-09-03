@@ -3,8 +3,15 @@ import type { Mock } from "vitest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { SimpleEventBus } from "../../core/service/simple-event-bus";
+import { ECONOMY_TUNING } from "../../economy/data/economy-tuning";
+import { EARTH_MAP } from "../../overworld/data/earth-map";
+import { NEW_GAME_TUNING } from "../../overworld/data/new-game-tuning";
+import { THREAT_TUNING } from "../../overworld/data/threat-tuning";
+import { SQUAD_TYPES } from "../../roster/data/squad-types";
+import { STARTER_ROSTER } from "../../roster/data/starter-roster";
+import { DataSquadTypeCatalogue } from "../../roster/repository/squad-type-catalogue";
 import type { GameState } from "../../save/model/game-state";
-import { createNewGameState } from "../../save/service/game-state-factory";
+import { createNewGame } from "../../save/service/new-game-service";
 import type { GameSession } from "../model/game-session";
 import type { ScreenId } from "../model/screen";
 import type { ScreenRouter, ScreenRouterEvents } from "../model/screen-router";
@@ -39,10 +46,17 @@ describe("OverworldScreen", () => {
   });
 
   it("shows the seed and start time of the active campaign", () => {
-    const state = createNewGameState({
-      seed: 1234,
-      createdAt: "2026-09-02T12:00:00.000Z",
-    });
+    const state = createNewGame(
+      { seed: 1234, createdAt: "2026-09-02T12:00:00.000Z" },
+      {
+        map: EARTH_MAP,
+        squadTypes: new DataSquadTypeCatalogue(SQUAD_TYPES),
+        starterRoster: STARTER_ROSTER,
+        newGameTuning: NEW_GAME_TUNING,
+        threatTuning: THREAT_TUNING,
+        economyTuning: ECONOMY_TUNING,
+      },
+    );
     new OverworldScreen({
       router: fakeRouter().router,
       session: sessionWith(state),
@@ -53,6 +67,7 @@ describe("OverworldScreen", () => {
     expect(root.querySelector('[data-field="created-at"]')?.textContent).toBe(
       "2026-09-02T12:00:00.000Z",
     );
+    expect(root.querySelector("#selected-city")).not.toBeNull();
   });
 
   it("notes when no campaign is active instead of a seed", () => {

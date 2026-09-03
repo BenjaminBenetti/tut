@@ -1,10 +1,28 @@
 import { describe, expect, it } from "vitest";
 
-import { createNewGameState } from "../../save/service/game-state-factory";
+import { ECONOMY_TUNING } from "../../economy/data/economy-tuning";
+import { EARTH_MAP } from "../../overworld/data/earth-map";
+import { NEW_GAME_TUNING } from "../../overworld/data/new-game-tuning";
+import { THREAT_TUNING } from "../../overworld/data/threat-tuning";
+import { SQUAD_TYPES } from "../../roster/data/squad-types";
+import { STARTER_ROSTER } from "../../roster/data/starter-roster";
+import { DataSquadTypeCatalogue } from "../../roster/repository/squad-type-catalogue";
+import type { GameState } from "../../save/model/game-state";
+import { createNewGame } from "../../save/service/new-game-service";
 import { InMemoryGameSession } from "./game-session";
 
-const stateWithSeed = (seed: number) =>
-  createNewGameState({ seed, createdAt: "2026-09-02T00:00:00Z" });
+const stateWithSeed = (seed: number): GameState =>
+  createNewGame(
+    { seed, createdAt: "2026-09-02T00:00:00Z" },
+    {
+      map: EARTH_MAP,
+      squadTypes: new DataSquadTypeCatalogue(SQUAD_TYPES),
+      starterRoster: STARTER_ROSTER,
+      newGameTuning: NEW_GAME_TUNING,
+      threatTuning: THREAT_TUNING,
+      economyTuning: ECONOMY_TUNING,
+    },
+  );
 
 describe("InMemoryGameSession", () => {
   it("has no state until started", () => {

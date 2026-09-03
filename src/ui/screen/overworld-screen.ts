@@ -18,8 +18,9 @@ export interface OverworldScreenDeps {
 
 /**
  * Placeholder overworld: shows the campaign's seed and start time from
- * the session over the placeholder tactical scene, with a way back to
- * the menu. The real overworld screen (#73 onward) replaces the body of
+ * the session over the Earth map, hosts the `#selected-city` label the
+ * map picking controller writes into, and offers a way back to the
+ * menu. The real overworld screen (#73 onward) replaces the body of
  * `mount`; the id, deps and lifecycle stay.
  */
 export class OverworldScreen implements Screen {
@@ -65,7 +66,7 @@ export class OverworldScreen implements Screen {
     const hint = doc.createElement("p");
     hint.className = "tut-dim";
     hint.textContent =
-      "Q / E rotate · wheel zoom · WASD or arrows pan the placeholder scene.";
+      "Click a city · Q / E rotate · wheel zoom · WASD or arrows pan.";
 
     const back = doc.createElement("button");
     back.type = "button";
@@ -100,7 +101,12 @@ export class OverworldScreen implements Screen {
   // Helpers
   // ===========================================
 
-  /** Seed and start time as a label/value grid, or a note when no campaign is active. */
+  /**
+   * Seed, start time and the selected-city slot as a label/value grid, or
+   * a note when no campaign is active. The city value carries
+   * `id="selected-city"` so the map picking wiring in the bootstrap can
+   * fill it without knowing about this screen.
+   */
   private createSummary(doc: Document): HTMLElement {
     const state = this.deps.session.state;
     if (!state) {
@@ -113,9 +119,18 @@ export class OverworldScreen implements Screen {
 
     const grid = doc.createElement("dl");
     grid.className = "tut-kv";
+    const [cityTerm, cityDetail] = this.createField(
+      doc,
+      "Selected city",
+      "selected-city",
+      "",
+    );
+    cityDetail.id = "selected-city";
     grid.append(
       ...this.createField(doc, "Seed", "seed", String(state.meta.seed)),
       ...this.createField(doc, "Started", "created-at", state.meta.createdAt),
+      cityTerm,
+      cityDetail,
     );
     return grid;
   }

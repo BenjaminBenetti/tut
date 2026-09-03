@@ -24,6 +24,13 @@ test("renders the overworld map into #map-viewport and selects cities", async ({
   await expect(page.locator("body")).toHaveAttribute("data-app-state", "ready");
   await expect(page.locator("#map-viewport canvas")).toBeVisible();
 
+  // The selected-city label lives on the overworld panel; start a campaign to show it.
+  await page.locator('[data-action="new-game"]').click();
+  await expect(page.locator("body")).toHaveAttribute(
+    "data-screen",
+    "overworld",
+  );
+
   // The dev-only hook selects a city without pointer input.
   await page.evaluate(() =>
     (globalThis as HookGlobal).__tut__?.selectCity("new-york"),

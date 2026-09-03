@@ -1,7 +1,8 @@
 import { AUTOSAVE_SLOT_ID } from "../../save/data/save-slots";
 import type { GameState } from "../../save/model/game-state";
-import { createNewGameState } from "../../save/service/game-state-factory";
-import type { SaveService } from "../../save/service/save-service";
+import type { SaveClock } from "../../save/model/save-clock";
+import type { GameSaveService } from "../../save/service/game-save-service";
+import type { NewGameOptions } from "../../save/service/game-state-factory";
 import type { GameSession } from "../model/game-session";
 import type { Screen, ScreenId } from "../model/screen";
 import type { ScreenRouter } from "../model/screen-router";
@@ -14,11 +15,13 @@ import type { ScreenRouter } from "../model/screen-router";
 export interface MainMenuScreenDeps {
   readonly router: ScreenRouter;
   readonly session: GameSession;
-  readonly saves: SaveService<GameState>;
+  readonly saves: GameSaveService;
+  /** Builds a full campaign; the app binds `createNewGame` to the shipped content. */
+  readonly createCampaign: (options: NewGameOptions) => GameState;
   /** Source of the seed for a new campaign; the app passes core's `randomSeed`. */
   readonly newSeed: () => number;
-  /** ISO-8601 timestamp source; the app passes the wall clock. */
-  readonly now: () => string;
+  /** Timestamp source for `createdAt`; the app passes the wall clock. */
+  readonly clock: SaveClock;
 }
 
 // ===========================================
@@ -31,8 +34,8 @@ export interface MainMenuScreenDeps {
  * autosave and is disabled when there is none.
  *
  * ```
- *   [New game] ──▶ createNewGameState ──▶ session.start ──▶ saves.save(autosave) ──▶ overworld
- *   [Continue] ──▶ saves.load(autosave) ──▶ session.start ──────────────────────────▶ overworld
+ *   [New game] ──▶ createCampaign ──▶ session.start ──▶ saves.saveGame(autosave) ──▶ overworld
+ *   [Continue] ──▶ saves.loadGame(autosave) ──▶ session.start ───────────────────────▶ overworld
  * ```
  */
 export class MainMenuScreen implements Screen {
@@ -50,7 +53,7 @@ export class MainMenuScreen implements Screen {
   // Constructor
   // ===========================================
 
-  /** @param deps - Router, session, save service and the seed / clock sources. */
+  /** @param deps - Router, session, save service, campaign factory and the seed / clock sources. */
   constructor(deps: MainMenuScreenDeps) {
     this.deps = deps;
   }
@@ -82,9 +85,8 @@ export class MainMenuScreen implements Screen {
     actions.className = "tut-stack";
 
     const newGame = this.createButton(doc, "new-game", "New game", true);
-    const canContinue = this.hasAutosave();
     const cont = this.createButton(doc, "continue", "Continue", false);
-    cont.disabled = !canContinue;
+    cont.disabled = !this.hasAutosave();
     actions.append(newGame, cont);
 
     const status = doc.createElement("p");
@@ -125,17 +127,13 @@ export class MainMenuScreen implements Screen {
    * failed autosave is reported on the panel but does not block play.
    */
   private startNewGame(): void {
-    const state = createNewGameState({
+    const state = this.deps.createCampaign({
       seed: this.deps.newSeed(),
-      createdAt: this.deps.now(),
+      createdAt: this.deps.clock.now(),
     });
     this.deps.session.start(state);
 
-    const saved = this.deps.saves.save(
-      AUTOSAVE_SLOT_ID,
-      state,
-      this.deps.now(),
-    );
+    const saved = this.deps.saves.saveGame(AUTOSAVE_SLOT_ID, state);
     if (!saved.ok) {
       this.showStatus(`Autosave failed: ${saved.error.message}`);
     }
@@ -144,7 +142,7 @@ export class MainMenuScreen implements Screen {
 
   /** Loads the autosave into the session and navigates; a failed load stays on the menu with a message. */
   private continueGame(): void {
-    const loaded = this.deps.saves.load(AUTOSAVE_SLOT_ID);
+    const loaded = this.deps.saves.loadGame(AUTOSAVE_SLOT_ID);
     if (!loaded.ok) {
       this.showStatus(`Could not load autosave: ${loaded.error.message}`);
       return;

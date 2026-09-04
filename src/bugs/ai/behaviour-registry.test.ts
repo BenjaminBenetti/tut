@@ -1,35 +1,15 @@
 import { describe, expect, it } from "vitest";
 
 import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
-import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
-import { MISSION_TYPES } from "../../content/data/mission-types";
-import { createDefaultRegistries } from "../../mapgen/service/default-registries";
-import { MECH_RATING_TUNING } from "../../roster/data/mech-rating-tuning";
-import { STARTER_PARTS } from "../../roster/data/parts";
-import { SQUAD_TYPES } from "../../roster/data/squad-types";
-import { UPGRADE_TUNING } from "../../roster/data/upgrade-tuning";
-import { DataSquadTypeCatalogue } from "../../roster/repository/squad-type-catalogue";
-import { StaticPartCatalogue } from "../../roster/repository/static-part-catalogue";
-import { validateLoadout } from "../../roster/service/loadout-validation-service";
 import { COMBAT_TUNING } from "../../tactical/data/combat-tuning";
-import { UNIT_TUNING } from "../../tactical/data/unit-tuning";
-import { SPAWN_TUNING } from "../../tactical/data/spawn-tuning";
 import { ATTACK } from "../../tactical/model/attack-command";
 import { MOVE } from "../../tactical/model/move-command";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { Unit } from "../../tactical/model/unit";
-import { startTacticalMission } from "../../tactical/service/mission-start-service";
 import { buildMoveGraph } from "../../tactical/service/movement-service";
-import { ECONOMY_TUNING } from "../../economy/data/economy-tuning";
-import { EARTH_MAP } from "../../overworld/data/earth-map";
-import { NEW_GAME_TUNING } from "../../overworld/data/new-game-tuning";
-import { THREAT_TUNING } from "../../overworld/data/threat-tuning";
-import type { Mission } from "../../overworld/model/mission";
-import { STARTER_ROSTER } from "../../roster/data/starter-roster";
-import type { GameState } from "../../save/model/game-state";
-import { createNewGame } from "../../save/service/new-game-service";
 import { BUG_SPECIES, SWARMER } from "../data/species";
 import type { BehaviourContext, BugBehaviour } from "./bug-behaviour";
+import { startedMission, withBug } from "./bug-mission.test-helper";
 import { chooseBugCommands, MapBehaviourRegistry } from "./behaviour-registry";
 import {
   attackOptions,
@@ -44,112 +24,15 @@ import {
 // Fixtures
 // ===========================================
 
-/** A day-4 campaign from the shipped content with one mission offered at Lagos. */
-function campaignWithMission(): GameState {
-  const base = createNewGame(
-    { seed: 3, createdAt: "2026-09-03T00:00:00.000Z" },
-    {
-      map: EARTH_MAP,
-      squadTypes: new DataSquadTypeCatalogue(SQUAD_TYPES),
-      starterRoster: STARTER_ROSTER,
-      newGameTuning: NEW_GAME_TUNING,
-      threatTuning: THREAT_TUNING,
-      economyTuning: ECONOMY_TUNING,
-    },
-  );
-  const mission: Mission = {
-    id: "mission-2",
-    typeId: "infestation-clearance",
-    cityId: "lagos",
-    difficulty: 5,
-    mapParams: {
-      biome: "temperate",
-      settlement: "city",
-      size: "small",
-      seed: "mission-2:map",
-    },
-    rewards: { credits: 1500 },
-    createdDay: 4,
-    expiresDay: 9,
-    ignorePenalty: 10,
-  };
-  return {
-    ...base,
-    overworld: { ...base.overworld, day: 4, missions: [mission] },
-  };
-}
-
 /** A live mission with the starter roster and one swarmer beside a squad, in the bugs' phase. */
 function missionWithBug(): { mission: TacticalState; bug: Unit } {
-  const state = campaignWithMission();
-  const parts = new StaticPartCatalogue(STARTER_PARTS);
-  const started = startTacticalMission(
-    state,
-    "mission-2",
-    {
-      missionId: "mission-2",
-      squadIds: state.roster.squads.map((s) => s.id),
-      mechIds: state.roster.mechs.map((m) => m.id),
-    },
-    {
-      missionTypes: MISSION_TYPES,
-      squadTypes: new DataSquadTypeCatalogue(SQUAD_TYPES),
-      sheetFor: (mech) => {
-        const sheet = validateLoadout(
-          mech.loadout,
-          parts,
-          MECH_RATING_TUNING,
-          UPGRADE_TUNING,
-        );
-        return sheet.ok ? sheet.value : undefined;
-      },
-      unitTuning: UNIT_TUNING,
-      spawnTuning: SPAWN_TUNING,
-      ids: new SequentialIdGenerator(),
-      registries: createDefaultRegistries(),
-    },
-  );
-  if (!started.ok || !started.value.activeMission)
-    throw new Error("fixture must start");
-  const base = started.value.activeMission;
+  const base = startedMission("bugs");
   const squad = base.units.find((u) => u.kind === "squad")!;
-  // A swarmer template and unit a few tiles from the squad, on the same level.
-  const templateId = "bug:swarmer";
-  const bug: Unit = {
-    id: "bug-1",
-    kind: "bug",
-    team: "bugs",
-    sourceId: SWARMER.id,
-    templateId,
-    pos: { x: squad.pos.x + 1, y: squad.pos.y, z: squad.pos.z },
-    facing: "n",
-    hp: SWARMER.hp,
-    maxHp: SWARMER.hp,
-    ap: SWARMER.ap,
-    maxAp: SWARMER.ap,
-    status: [],
-    passClass: "infantry",
-  };
-  const mission: TacticalState = {
-    ...base,
-    phase: "bugs",
-    units: [...base.units, bug],
-    templates: {
-      ...base.templates,
-      [templateId]: {
-        id: templateId,
-        name: SWARMER.name,
-        maxHp: SWARMER.hp,
-        maxAp: SWARMER.ap,
-        move: SWARMER.move,
-        weapon: SWARMER.weapon,
-        armor: SWARMER.armor,
-        passClass: "infantry",
-        modelId: SWARMER.modelId,
-      },
-    },
-  };
-  return { mission, bug };
+  return withBug(base, SWARMER, {
+    x: squad.pos.x + 1,
+    y: squad.pos.y,
+    z: squad.pos.z,
+  });
 }
 
 const ctx = (mission: TacticalState): BehaviourContext => ({

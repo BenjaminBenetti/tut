@@ -120,8 +120,10 @@ describe("TacticalOverlays", () => {
         { tile: { x: 3, y: 0, z: 1 }, level: 2 },
       ],
       lineOfSight: [{ x: 3, y: 0, z: 1 }],
+      weaponRange: [],
     });
     expect(overlays.counts()).toEqual({
+      weaponRange: 0,
       rangeOneAp: 2,
       rangeTwoAp: 1,
       coverLow: 1,
@@ -130,6 +132,7 @@ describe("TacticalOverlays", () => {
     });
     overlays.clear();
     expect(overlays.counts()).toEqual({
+      weaponRange: 0,
       rangeOneAp: 0,
       rangeTwoAp: 0,
       coverLow: 0,
@@ -146,7 +149,12 @@ describe("TacticalOverlays", () => {
       tile: { x: i % 20, y: 0, z: Math.floor(i / 20) },
       apCost: 1,
     }));
-    overlays.show({ moveRange: many, cover: [], lineOfSight: [] });
+    overlays.show({
+      moveRange: many,
+      cover: [],
+      lineOfSight: [],
+      weaponRange: [],
+    });
     expect(overlays.counts().rangeOneAp).toBe(300);
     overlays.dispose();
   });
@@ -250,5 +258,132 @@ describe("overlaysFor action-point tiers", () => {
     // A tile the same distance away with no wall in the way stays cheap.
     const west = range.find((e) => e.tile.x === 4 && e.tile.z === 0);
     expect(west?.apCost).toBe(1);
+  });
+});
+
+// ===========================================
+// Weapon range (#522)
+// ===========================================
+
+describe("overlaysFor weapon range", () => {
+  /** An open field with one unit of weapon `range` at (5,0,5). */
+  function field(range: number, walled = false): TacticalState {
+    const builder = new FixtureMapBuilder(12, 12, 1).fillGround();
+    if (walled) {
+      // A solid screen due east of the unit, two tiles out.
+      for (let z = 0; z < 12; z++) {
+        builder.wall({ x: 7, y: 0, z }, "w", "solid");
+      }
+    }
+    const unit = unitAt("u1", "infantry", { x: 5, y: 0, z: 5 });
+    const base = missionWith(builder.build(), [unit]);
+    const template = base.templates[unit.templateId]!;
+    return {
+      ...base,
+      templates: {
+        ...base.templates,
+        [unit.templateId]: {
+          ...template,
+          weapon: { ...template.weapon, range },
+        },
+      },
+    };
+  }
+
+  it("maps the weapon's range to the tiles inside it, by the metric the hit chance uses", () => {
+    const state = field(3);
+    const tiles = overlaysFor(state, "u1").weaponRange;
+    expect(tiles.length).toBeGreaterThan(0);
+    // Manhattan, matching validateTargeting; nothing beyond the range.
+    for (const tile of tiles) {
+      const distance =
+        Math.abs(tile.x - 5) + Math.abs(tile.z - 5) + Math.abs(tile.y - 0);
+      expect(distance).toBeLessThanOrEqual(3);
+    }
+    // And the whole diamond is there on open ground: 1 + 4 + 8 + 12 = 25.
+    expect(tiles).toHaveLength(25);
+  });
+
+  it("grows with the weapon, so a longer gun paints more", () => {
+    expect(overlaysFor(field(5), "u1").weaponRange.length).toBeGreaterThan(
+      overlaysFor(field(3), "u1").weaponRange.length,
+    );
+  });
+
+  it("agrees with the rules: a tile behind a wall is out of the envelope", () => {
+    const tiles = overlaysFor(field(5, true), "u1").weaponRange;
+    const keys = new Set(tiles.map((t) => `${t.x},${t.y},${t.z}`));
+    // In range by distance, but the screen at x=7 blocks the sight line.
+    expect(keys.has("8,0,5")).toBe(false);
+    // The same distance the other way is clear.
+    expect(keys.has("2,0,5")).toBe(true);
+  });
+
+  it("is empty for a unit whose template carries no reach", () => {
+    expect(overlaysFor(field(0), "u1").weaponRange).toEqual([]);
+  });
+
+  it("is empty when nothing is selected", () => {
+    expect(overlaysFor(field(3), undefined).weaponRange).toEqual([]);
+  });
+});
+
+describe("TacticalOverlays weapon-range outline", () => {
+  /** A 3-tile-wide horizontal strip, whose edge is every tile but the middle. */
+  const strip = [
+    { x: 1, y: 0, z: 1 },
+    { x: 2, y: 0, z: 1 },
+    { x: 3, y: 0, z: 1 },
+  ];
+
+  function shown(weaponRange: typeof strip): number {
+    const overlays = new TacticalOverlays();
+    overlays.show({
+      moveRange: [],
+      cover: [],
+      lineOfSight: [],
+      weaponRange,
+    });
+    const count = overlays.counts().weaponRange;
+    overlays.dispose();
+    return count;
+  }
+
+  it("draws the edge of the envelope, not every tile in it", () => {
+    // A 5x5 block: the 16 perimeter tiles are drawn, the 9 inside are not.
+    const block = [];
+    for (let x = 0; x < 5; x++) {
+      for (let z = 0; z < 5; z++) {
+        block.push({ x, y: 0, z });
+      }
+    }
+    expect(shown(block)).toBe(25 - 9);
+  });
+
+  it("treats a thin strip as all edge", () => {
+    expect(shown(strip)).toBe(3);
+  });
+
+  it("draws nothing for an empty envelope", () => {
+    expect(shown([])).toBe(0);
+  });
+
+  it("hides and restores the outline on toggle, leaving the other layers alone", () => {
+    const overlays = new TacticalOverlays();
+    overlays.show({
+      moveRange: [{ tile: { x: 9, y: 0, z: 9 }, apCost: 1 }],
+      cover: [],
+      lineOfSight: [],
+      weaponRange: strip,
+    });
+    expect(overlays.isWeaponRangeVisible()).toBe(true);
+    expect(overlays.counts().weaponRange).toBe(3);
+    overlays.setWeaponRangeVisible(false);
+    expect(overlays.counts().weaponRange).toBe(0);
+    // The movement band is untouched by the toggle.
+    expect(overlays.counts().rangeOneAp).toBe(1);
+    overlays.setWeaponRangeVisible(true);
+    expect(overlays.counts().weaponRange).toBe(3);
+    overlays.dispose();
   });
 });

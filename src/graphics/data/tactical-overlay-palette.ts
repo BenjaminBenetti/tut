@@ -42,6 +42,18 @@ export const MOVE_RANGE_TWO_AP_OPACITY = 0.22;
 export const MOVE_RANGE_ONE_AP_FOOTPRINT = 0.92;
 export const MOVE_RANGE_TWO_AP_FOOTPRINT = 0.66;
 
+/**
+ * `ui-accent`: how far the selected unit can shoot (#522). The weapon
+ * envelope is drawn as an outline along its edge rather than as a fill,
+ * so it cannot be read as a third movement band — fill means "you can
+ * stand here", line means "this far".
+ */
+export const WEAPON_RANGE_COLOUR = 0xf08a24;
+
+/** Opacity and footprint of the weapon-range edge quads. */
+export const WEAPON_RANGE_OPACITY = 0.5;
+export const WEAPON_RANGE_FOOTPRINT = 0.96;
+
 /** `ui-warn`: partial protection on that edge. */
 export const COVER_LOW_COLOUR = 0xf0c63c;
 

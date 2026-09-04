@@ -199,6 +199,11 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
     }
   }
 
+  /** Shows or hides the weapon-range outline (#522). */
+  setWeaponRangeVisible(visible: boolean): void {
+    this.attached?.overlays.setWeaponRangeVisible(visible);
+  }
+
   /** Disposes the scene, input and builder. */
   release(): void {
     const attached = this.attached;

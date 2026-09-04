@@ -170,6 +170,9 @@ class FakeHost implements TacticalSceneHost {
   select(unitId: string | undefined): void {
     this.calls.push(`select:${unitId ?? "none"}`);
   }
+  setWeaponRangeVisible(visible: boolean): void {
+    this.calls.push(`weapon-range:${String(visible)}`);
+  }
   release(): void {
     this.calls.push("release");
   }
@@ -393,7 +396,11 @@ describe("TacticalScreen", () => {
     expect(selects[0]).toBe(`select:${squad.id}`);
     expect(selects.at(-1)).toBe(`select:${squad.id}`);
     host.intents?.emit({ kind: "action", action: "cancel" });
-    expect(host.calls.at(-1)).toBe(`select:${squad.id}`);
+    // Every intent also pushes the weapon-range toggle (#522), so ask the
+    // selection calls rather than the last call of any kind.
+    expect(host.calls.filter((c) => c.startsWith("select:")).at(-1)).toBe(
+      `select:${squad.id}`,
+    );
   });
 
   it("mounts the HUD over the viewport and previews then dispatches an attack from the scene's intents", () => {

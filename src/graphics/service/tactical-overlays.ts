@@ -9,11 +9,12 @@ import {
   RingGeometry,
 } from "three";
 
+import { manhattanDistance } from "../../core/service/grid-math";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { CoverLevel } from "../../mapgen/model/cover";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import type { TacticalState } from "../../tactical/model/tactical-state";
-import type { UnitId } from "../../tactical/model/unit";
+import type { Unit, UnitId } from "../../tactical/model/unit";
 import {
   apCostOf,
   buildMoveGraph,
@@ -37,6 +38,9 @@ import {
   MOVE_RANGE_TWO_AP_OPACITY,
   OVERLAY_LIFT,
   RANGE_THICKNESS,
+  WEAPON_RANGE_COLOUR,
+  WEAPON_RANGE_FOOTPRINT,
+  WEAPON_RANGE_OPACITY,
 } from "../data/tactical-overlay-palette";
 import type { Disposable } from "../model/disposable";
 import { tileTopCentre } from "../view/tactical-map-view";
@@ -71,6 +75,13 @@ export interface OverlayState {
   readonly cover: readonly CoverMarker[];
   /** Reachable tiles with a line of sight to at least one living enemy. */
   readonly lineOfSight: readonly TileCoord[];
+  /**
+   * Tiles the selected unit could fire on from where it stands (#522):
+   * inside its weapon's range and with the sight line clear — the same
+   * pair `validateTargeting` checks, so what is painted and what can be
+   * fired agree.
+   */
+  readonly weaponRange: readonly TileCoord[];
 }
 
 /** Nothing shown. */
@@ -78,11 +89,20 @@ export const EMPTY_OVERLAYS: OverlayState = {
   moveRange: [],
   cover: [],
   lineOfSight: [],
+  weaponRange: [],
 };
 
 // ===========================================
 // Constants
 // ===========================================
+
+/** The four cardinal steps, for tracing the edge of a region. */
+const CARDINALS: readonly (readonly [number, number])[] = [
+  [1, 0],
+  [-1, 0],
+  [0, 1],
+  [0, -1],
+];
 
 /** Tiles a mission may need at most before the instanced buffers grow. */
 const INITIAL_CAPACITY = 256;
@@ -161,7 +181,7 @@ class OverlayLayer implements Disposable {
 
 /**
  * Movement-range, cover and line-of-sight overlays over the tactical map
- * (#338). Five instanced layers, each toggled by setting its instance
+ * (#338). Six instanced layers, each toggled by setting its instance
  * count from an `OverlayState`; no rule lives here, `overlaysFor` asks
  * the movement and sight services and hands the answer over as plain
  * tile lists.
@@ -171,7 +191,8 @@ class OverlayLayer implements Disposable {
  *                            ├─ range 1 AP: full quads, ui-info
  *                            ├─ range 2 AP: inset quads, ui-info dimmed
  *                            ├─ cover:      rings, ui-warn (low) / ui-danger (high)
- *                            └─ los:        small rings, ui-accent
+ *                            ├─ los:        small rings, ui-accent
+ *                            └─ weapon:     edge quads, ui-accent
  * ```
  *
  * The two move bands differ in tone *and* in footprint, so the boundary
@@ -189,6 +210,9 @@ export class TacticalOverlays implements Disposable {
   private readonly coverLow: OverlayLayer;
   private readonly coverHigh: OverlayLayer;
   private readonly los: OverlayLayer;
+  private readonly weaponRange: OverlayLayer;
+  private weaponRangeVisible = true;
+  private lastState: OverlayState = EMPTY_OVERLAYS;
 
   // ===========================================
   // Constructor
@@ -241,7 +265,19 @@ export class TacticalOverlays implements Disposable {
       LINE_OF_SIGHT_OPACITY,
       3,
     );
+    this.weaponRange = new OverlayLayer(
+      "overlay-weapon-range",
+      new BoxGeometry(
+        WEAPON_RANGE_FOOTPRINT,
+        RANGE_THICKNESS,
+        WEAPON_RANGE_FOOTPRINT,
+      ),
+      WEAPON_RANGE_COLOUR,
+      WEAPON_RANGE_OPACITY,
+      4,
+    );
     this.root.add(
+      this.weaponRange.mesh,
       this.rangeOneAp.mesh,
       this.rangeTwoAp.mesh,
       this.coverLow.mesh,
@@ -279,6 +315,24 @@ export class TacticalOverlays implements Disposable {
       true,
     );
     this.los.setTiles(state.lineOfSight, OVERLAY_LIFT * 3, true);
+    this.lastState = state;
+    this.drawWeaponRange();
+  }
+
+  /**
+   * Shows or hides the weapon-range outline without disturbing the other
+   * layers (#522). The indicator is on by default and shows nothing
+   * anyway while no unit is selected, because an empty state carries an
+   * empty envelope.
+   */
+  setWeaponRangeVisible(visible: boolean): void {
+    this.weaponRangeVisible = visible;
+    this.drawWeaponRange();
+  }
+
+  /** Whether the weapon-range outline is currently shown. */
+  isWeaponRangeVisible(): boolean {
+    return this.weaponRangeVisible;
   }
 
   /** Hides every layer. */
@@ -286,8 +340,30 @@ export class TacticalOverlays implements Disposable {
     this.show(EMPTY_OVERLAYS);
   }
 
+  /**
+   * Draws the edge of the weapon envelope: every tile in it with a
+   * cardinal neighbour on its level that is not, which is the outline of
+   * the region including the notches walls cut out of it.
+   */
+  private drawWeaponRange(): void {
+    if (!this.weaponRangeVisible) {
+      this.weaponRange.setTiles([], OVERLAY_LIFT, false);
+      return;
+    }
+    const inside = new Set(
+      this.lastState.weaponRange.map((t) => `${t.x},${t.y},${t.z}`),
+    );
+    const edge = this.lastState.weaponRange.filter((t) =>
+      CARDINALS.some(
+        ([dx, dz]) => !inside.has(`${t.x + dx},${t.y},${t.z + dz}`),
+      ),
+    );
+    this.weaponRange.setTiles(edge, OVERLAY_LIFT, false);
+  }
+
   /** Instances drawn per layer, for tests and debug readouts. */
   counts(): {
+    weaponRange: number;
     rangeOneAp: number;
     rangeTwoAp: number;
     coverLow: number;
@@ -295,6 +371,7 @@ export class TacticalOverlays implements Disposable {
     los: number;
   } {
     return {
+      weaponRange: this.weaponRange.mesh.count,
       rangeOneAp: this.rangeOneAp.mesh.count,
       rangeTwoAp: this.rangeTwoAp.mesh.count,
       coverLow: this.coverLow.mesh.count,
@@ -306,6 +383,7 @@ export class TacticalOverlays implements Disposable {
   /** The layer objects, for tests. */
   layers(): readonly Object3D[] {
     return [
+      this.weaponRange.mesh,
       this.rangeOneAp.mesh,
       this.rangeTwoAp.mesh,
       this.coverLow.mesh,
@@ -316,6 +394,7 @@ export class TacticalOverlays implements Disposable {
 
   /** Frees every layer and detaches the root. */
   dispose(): void {
+    this.weaponRange.dispose();
     this.rangeOneAp.dispose();
     this.rangeTwoAp.dispose();
     this.coverLow.dispose();
@@ -378,7 +457,48 @@ export function overlaysFor(
       lineOfSight.push(tile);
     }
   }
-  return { moveRange, cover, lineOfSight };
+  return {
+    moveRange,
+    cover,
+    lineOfSight,
+    weaponRange: weaponRangeFrom(mission, unit, index),
+  };
+}
+
+/**
+ * The tiles `unit` could fire on without moving: inside its weapon's
+ * range by the same metric the hit chance uses, and with the sight line
+ * clear. A unit whose template has no weapon can fire on nothing.
+ *
+ * Deliberately the *whole* envelope rather than its outline: this is the
+ * honest answer to "what can I shoot", and how it is drawn — an edge
+ * line, not a fill — is the overlay's business, not the state's.
+ */
+function weaponRangeFrom(
+  mission: TacticalState,
+  unit: Unit,
+  index: TileIndex,
+): TileCoord[] {
+  const range = mission.templates[unit.templateId]?.weapon.range ?? 0;
+  if (range <= 0) {
+    return [];
+  }
+  const tiles: TileCoord[] = [];
+  for (let x = unit.pos.x - range; x <= unit.pos.x + range; x++) {
+    const spread = range - Math.abs(x - unit.pos.x);
+    for (let z = unit.pos.z - spread; z <= unit.pos.z + spread; z++) {
+      for (const tile of index.column(x, z)) {
+        if (manhattanDistance(tile, unit.pos) > range) {
+          continue;
+        }
+        if (!hasLineOfSight(mission.map, unit.pos, tile, index)) {
+          continue;
+        }
+        tiles.push({ x: tile.x, y: tile.y, z: tile.z });
+      }
+    }
+  }
+  return tiles;
 }
 
 /** The tiles of `range` costing exactly `apCost` action points. */

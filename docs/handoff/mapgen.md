@@ -1,6 +1,6 @@
 # Handoff: Map Generation Specialist
 
-Last updated: 2026-09-04 16:10 UTC (session 3, update 7). Read `docs/process/roles/mapgen.md` and ADR 0004 first.
+Last updated: 2026-09-04 17:20 UTC (session 3, update 8). Read `docs/process/roles/mapgen.md` and ADR 0004 first.
 
 ## 1. Where things stand
 
@@ -58,12 +58,14 @@ Last updated: 2026-09-04 16:10 UTC (session 3, update 7). Read `docs/process/rol
   reuses `graphics/view/tactical-map-view.ts`; #343 (headless sim) needs nothing new.
 - Art follow-up #213 (`prop.table` placeholder) merged as #350.
 
-- **Session 3, final stretch.** Merged: #703 (#701, desert palms grow in groves — the desert was the
-  only biome whose tree entry had no `cluster`). Open: **#717** (#714, a prop pass requires what its
-  placements need — the capability wall §2c predicted, fixed before the hive hits it) and **#712**
-  (temperate is the only biome whose boulders are not clustered; minor, and the repair may just be a
-  note). Measured and posted: the **emergence** half of #685 (§3d), which is the finding that
-  actually changes that decision.
+- **Session 3, final stretch.** Merged: **#717** (#714, a prop pass requires what its placements
+  need — the capability wall §2c predicted, cleared before the hive hits it). **#703 was merged and
+  then reverted** (#723): desert palm clustering turned `main` red on `sim · mission sweep`, and
+  §3f is the investigation of why — the short version is that it was not the palms. #701 is still
+  open and still real. Also open: **#712** (temperate boulders, minor). **#591 is unbundled from
+  #281** and my option 2 is the recommendation of record, pre-checked clean against the sweep (§3e).
+  Measured and posted: the **emergence** half of #685 and the visibility-break numbers (§3d), and
+  two findings handed to #497 (§3g).
 
 ## 2. Pipeline as built
 
@@ -424,6 +426,31 @@ Three consequences worth carrying forward:
 Caveat on the method: "never seen: 0 %" is an artefact of walking the squad directly at each spawner.
 The claim is the distance, not the eventual sighting.
 
+### Does visibility ever break? A third of the time, briefly
+
+The follow-up question, because "a bug can start unseen" is not the same as "a bug can stalk".
+Squad of five holding a mid-map position, every approach walked, counting visibility transitions
+*after* the bug is first seen:
+
+| | at least one break | mean time hidden |
+|---|---|---|
+| rural, from an edge | 23 % | 2.0 steps |
+| rural, from a nest | **41 %** | 3.7 steps |
+| town, from an edge | 36 % | **5.6 steps** |
+| town, from a nest | 32 % | 4.3 steps |
+| city, from an edge | 32 % | 2.1 steps |
+| city, from a nest | 27 % | 2.4 steps |
+
+100 % of approaches are seen at some point, and **59–77 % never break at all** — one continuous
+observation from first contact to arrival. So emergence buys concealed *initiation*, not concealed
+*pursuit*, and a memory of where an enemy was last seen (#722) pays out on about a third of
+engagements for a two-to-six-step window. I first said the lurker's premise was "map-native today";
+that was too broad and I corrected it on #281.
+
+The lever for anyone tuning this is break *length*, not blocker count: two steps is a bug clipping a
+corner, five is a bug behind a building. Town has the longest breaks because its buildings are big
+enough to hide behind and sparse enough to walk around.
+
 ## 3e. Vegetation opacity, re-measured after the hill fix (#591, 2026-09-04)
 
 #591's original table (rural 87–89 % visible) is **stale** — it was taken before #593 landed, when
@@ -445,7 +472,61 @@ needs per-instance opacity, which would stop `Tile.blocksLos` being a straight d
 kind. I withdrew my preference for option 1 and recommended option 2: three data lines in
 `data/props.ts`, no model change. Awaiting the call.
 
-It changes no placement, so unlike most of §3 it does **not** spend the ground budget #281 is judging.
+It changes no placement, so unlike most of §3 it does **not** spend the ground budget #281 is
+judging — which is the argument that got it unbundled from #281 on 2026-09-04.
+
+**Pre-checked against the trap that reverted #703** (§3f), so whoever lands it is not caught the same
+way: goldens **unchanged** and no re-pin needed (`blocksLos` does not alter the ASCII glyph, which is
+keyed by cover level); shipped `pnpm test:sim` **exit 0**; 114/120 wins against a baseline 115/120 at
+difficulties 1–4, which is the same one-mission noise §3f measures; outcomes byte-identical between
+runs. It is a same-day change the moment the call comes.
+
+## 3f. The palm revert, and what it actually showed (#701, #723, 2026-09-04)
+
+#703 clustered desert palms; `main` went red on `sim · mission sweep`; the Tech Lead bisected it to
+that commit and reverted. The revert was right — `main` must be green — but **the diagnosis does not
+survive a larger sample**, and the mechanism matters for every future map change.
+
+**The sim plays a desert city.** Every one of its sixty seeds builds Istanbul, because the biome
+comes from campaign seed 7's first infested city rather than from the map seed. So all sixty maps
+are exactly the maps a desert data change touches. The bisect was causally sound; establish this
+before arguing with a sweep result.
+
+**The paired experiment.** 120 seeds, thirty at each of difficulties 1–4, played twice on the same
+seeds with a 60-turn cap so nothing hides behind the cap:
+
+| | d1 | d2 | d3 | d4 | total |
+|---|---|---|---|---|---|
+| scattered (`main`) | 30/30 | 30/30 | **26/30** | 29/30 | **115/120** |
+| clustered (#701) | 30/30 | 30/30 | **30/30** | 27/30 | **117/120** |
+
+Clustering wins *more*. Eight missions flipped, five toward winning and three away — marginal
+missions falling either side of a line, not a difficulty change.
+
+**The finding underneath: the walkover band is not a walkover.** Unmodified `main` loses 5 of 120 at
+difficulties 1–4. The sweep's `WALKOVER_CEILING` assertion reads zero because it samples six seeds
+per difficulty, and twenty-four cannot see a 4 % rate. So `expect(lostOrStalled).toBe(0)` is a
+knife-edge that **any** map change can trip by resampling which marginal missions fall which way.
+Mine was simply first. Before landing any map change, run `pnpm test:sim`; if it trips this
+assertion, measure at 120 seeds before believing the change caused it.
+
+## 3g. Two findings handed to #497 (2026-09-04)
+
+Neither is mapgen's to act on; both came out of map measurement and are recorded so they are not
+re-derived.
+
+- **Traversal does not explain the difficulty cliff.** The walk from deploy to a tile that can shoot
+  each spawner (range 8, with line of sight — a squad stops when it can fire, not when it arrives)
+  is 4.8–6.0 turns at difficulties 1–4 and 6.5–8.9 at 5–10, scaling linearly at 21–30 steps per
+  spawner with no discontinuity at 5. Mission length over the same range steps 5–7 → 25–34 turns.
+  Across all 36 biome × settlement × size combinations the worst map in the game is **10.9 turns of
+  walking**, so no configuration accounts for it. Size is the only lever that moves traversal
+  (small → large roughly doubles it); settlement scale barely registers, and `INFESTATION_CLEARANCE`
+  hard-codes `mapSize: "medium"` so the variance is currently unreachable.
+- **Outcomes are bimodal with nothing in between.** Every win lands at 4–6 turns, every loss at
+  39–50, over 240 plays. A won mission *is* the walk — combat adds almost nothing to the clock — and
+  a lost one is a forty-turn grind. Difficulty today is a coin flip between the two rather than a
+  gradient.
 
 ## 4. What M2 (tactical) consumes
 
@@ -478,12 +559,13 @@ It changes no placement, so unlike most of §3 it does **not** spend the ground 
 
 ## 6. What I would do next, in order
 
-1. **In review: #717** (#714, the prop-pass capability fix — note it lands with no production caller,
-   which I flagged on the PR for the Tech Lead to accept or reject). **Waiting on a one-line call:**
-   #591 (flip the three tree kinds to `blocksLos: true` — three data lines, no placement change, and
-   it does *not* spend #281's budget, §3e) and #712 (temperate boulders). **Waiting on a design
+1. **Nothing of mine is in review.** **Waiting on a one-line call:** #591 (flip the three tree kinds
+   to `blocksLos: true` — three data lines, no placement change, does *not* spend #281's budget, and
+   pre-checked clean against the sweep, §3e) and #712 (temperate boulders). **Waiting on a design
    call:** #685, where the option that matters is now emergence rather than anything mapgen builds
-   (§3d). Other open threads on other people: #446
+   (§3d) — and note I retired my own option 2 there, which is what unbundled it from #281.
+   **Needs a decision from someone who owns the sweep:** #701, where the change is measured harmless
+   at 120 seeds but trips a 24-seed assertion (§3f); do not re-push it without that. Other open threads on other people: #446
    (melee bugs invert cover — tactical's, routed), #487 (deployment over 16 units cannot launch),
    #447 (M3 archetypes, two questions for the Director), #281 (the cover call), and the turn-budget
    finding noted in #547 (a worst-case mech needs 11 turns to a firing position on `town/medium/9`
@@ -547,8 +629,13 @@ It changes no placement, so unlike most of §3 it does **not** spend the ground 
   suite and CI runners are contended; the generation sweep keeps its own 60 s (#672). Neither is a
   performance gate — the wide sweep's runtime is. Do not buy time by cutting `SEEDS_PER_COMBO`: the
   sweep asserts `generations >= 200` precisely to stop that, and it is a deliberate tripwire.
-- **Measure twice under load.** A branch-versus-`main` comparison told me my crash-site PR had
-  doubled the sweep (23.6 s against 11.8 s). It had not — a background wide sweep was still running.
+- **Measure twice under load, and then measure the thing CI runs.** A branch-versus-`main`
+  comparison told me my crash-site PR had doubled the sweep (23.6 s against 11.8 s). It had not — a
+  background wide sweep was still running. Later the same day I nearly published "opaque trees cost
+  50–60 % of simulation runtime" off two runs at 147 s and 160 s against 84 s and 103 s; the
+  *shipped* sweep then came in **faster** with the change than without (78 s against 98.6 s). Nine
+  agents share this box. Two agreeing runs are not a signal, and a scratch probe's runtime is not
+  the number anyone cares about.
 - **Know the baseline before you tune to a target.** I spent three sweeps tuning the crash site's
   prop load toward "about what a settlement has" before checking what the crash site itself was: 137
   props at 18.2 %, already in a settlement's range. The target was right and I had invented it.

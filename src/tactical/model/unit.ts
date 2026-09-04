@@ -98,6 +98,11 @@ export interface Unit {
   readonly status: readonly UnitStatus[];
   /** Copied from the template; movement reads it without a lookup. */
   readonly passClass: PassClass;
+  /**
+   * Shots left before a reload or vent (#409), in `[0, template.charges]`.
+   * Absent when the template has no pool (bugs fire without limit).
+   */
+  readonly charges?: number;
 }
 
 // ===========================================

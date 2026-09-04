@@ -82,6 +82,7 @@ export function squadUnit(
     armor: infantry.armor,
     passClass: "infantry",
     modelId: infantry.modelIdByType[squadType.id] ?? infantry.fallbackModelId,
+    charges: infantry.chargesByType[squadType.id] ?? infantry.fallbackCharges,
   };
   return build(
     "squad",
@@ -137,6 +138,7 @@ export function mechUnit(
     armor: Math.max(0, Math.round(sheet.armor * tuning.armorFactor)),
     passClass: "mech",
     modelId: tuning.modelId,
+    charges: tuning.charges,
   };
   const hp = Math.round(
     (maxHp * (MECH_MAX_DAMAGE - mech.damage)) / MECH_MAX_DAMAGE,
@@ -153,7 +155,7 @@ export function mechUnit(
 export function bugUnit(
   species: BugUnitSource,
   placement: UnitPlacement,
-  deps: UnitFactoryDeps,
+  deps: Pick<UnitFactoryDeps, "ids">,
 ): UnitBuild {
   const template: UnitTemplate = {
     id: templateIdFor("bug", species.id),
@@ -181,7 +183,7 @@ export function bugUnit(
 // Helpers
 // ===========================================
 
-/** Assembles the unit record around a template at full action points. */
+/** Assembles the unit record around a template at full action points and a full charge pool. */
 function build(
   kind: UnitKind,
   team: Unit["team"],
@@ -205,6 +207,7 @@ function build(
     maxAp: template.maxAp,
     status: [],
     passClass: template.passClass,
+    ...(template.charges === undefined ? {} : { charges: template.charges }),
   };
   return { unit, template };
 }

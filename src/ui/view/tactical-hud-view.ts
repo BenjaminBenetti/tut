@@ -377,6 +377,7 @@ export class TacticalHudView {
       canAct: this.canAct(),
       playerPhase: mission.phase === "player",
       mode: this.mode === "select" ? undefined : this.mode,
+      reloadLabel: selected?.kind === "mech" ? "Vent" : "Reload",
     });
   }
 }

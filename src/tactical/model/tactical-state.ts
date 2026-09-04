@@ -41,12 +41,6 @@ export const PHASE_FOR_TEAM: Readonly<Record<Team, TacticalPhase>> = {
 /** The turn a mission starts on. */
 export const FIRST_TURN = 1;
 
-/** Turn the first edge wave arrives on. Placeholder until the spawner rules (#329) tune waves. */
-export const FIRST_EDGE_SPAWN_TURN = 3;
-
-/** Hit points an egg spawner starts with. Placeholder until the combat rules land. */
-export const SPAWNER_HP = 20;
-
 /** Tiles around a spawner its hatchlings appear in when the hook carries no radius. */
 export const DEFAULT_HATCH_RADIUS = 3;
 
@@ -61,8 +55,10 @@ export interface Spawner {
   readonly pos: TileCoord;
   /** Manhattan radius hatchlings appear within. */
   readonly hatchRadius: number;
-  /** Hit points left in `[0, SPAWNER_HP]`. */
+  /** Hit points left in `[0, spawnerHp]` (spawn tuning). */
   readonly hp: number;
+  /** Bug phases until it next hatches; counts down each bug phase and resets to the tuning's interval (#329). */
+  readonly timer: number;
   /** True once destroyed; the record stays so the debrief can count it. */
   readonly destroyed: boolean;
 }
@@ -97,6 +93,7 @@ export interface EdgeSpawnSchedule {
  * ```
  *   TacticalState
  *   ├── missionId, seed       which mission; the RNG seed its rules fork from
+ *   ├── difficulty, threat    launch-time inputs the edge waves escalate with
  *   ├── map                   the generated TacticalMap (ADR 0004); recipe inside
  *   ├── units[], templates    everyone on the map, plus the stat blocks they share
  *   ├── turn, phase           FIRST_TURN and counting; player then bugs
@@ -115,6 +112,10 @@ export interface TacticalState {
   readonly missionId: MissionId;
   /** Unsigned 32-bit seed the mission's rules fork their streams from. */
   readonly seed: number;
+  /** The mission's difficulty at launch; edge waves escalate with it (GDD §6.3). */
+  readonly difficulty: number;
+  /** Global threat at launch in `[0, 100]`; edge waves escalate with it. */
+  readonly threat: number;
   readonly map: TacticalMap;
   /** Every unit on the map, TDF and bugs, alive or not. */
   readonly units: readonly Unit[];

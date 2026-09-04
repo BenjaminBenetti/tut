@@ -170,6 +170,78 @@ const ADD_MISSION_EXTRACTED: Migration = {
   },
 };
 
+/**
+ * v8 → v9 (#409): units in a live mission gain `charges`, filled from
+ * their template's pool. Templates saved before v9 carry no pool, so a
+ * mission in flight at upgrade time stays unlimited until it ends; no
+ * mission in progress means nothing to touch.
+ */
+const ADD_UNIT_CHARGES: Migration = {
+  from: 8,
+  to: 9,
+  apply(state) {
+    if (!isRecord(state)) {
+      throw new Error("v8 state is not an object");
+    }
+    const mission = state.activeMission;
+    if (!isRecord(mission) || !Array.isArray(mission.units)) {
+      return state;
+    }
+    const templates = isRecord(mission.templates) ? mission.templates : {};
+    const units = mission.units.map((unit: unknown) => {
+      if (!isRecord(unit) || "charges" in unit) {
+        return unit;
+      }
+      const templateId =
+        typeof unit.templateId === "string" ? unit.templateId : "";
+      const template = templates[templateId];
+      const charges = isRecord(template) ? template.charges : undefined;
+      return typeof charges === "number" ? { ...unit, charges } : unit;
+    });
+    return { ...state, activeMission: { ...mission, units } };
+  },
+};
+
+/**
+ * v9 → v10 (#329): a mission in progress gains its spawn clocks. A mission
+ * already under way was launched before `difficulty` and `threat` were
+ * recorded, so it takes the gentlest values; every spawner gets a
+ * `timer` at the hatch interval shipped at the time, three bug phases.
+ * The `3` is deliberately a literal, not `SPAWN_TUNING.hatchInterval`:
+ * migrations are frozen data and must keep producing the same v10 state
+ * however the tuning moves later.
+ */
+const ADD_SPAWN_CLOCKS: Migration = {
+  from: 9,
+  to: 10,
+  apply(state) {
+    if (!isRecord(state) || !isRecord(state.overworld)) {
+      throw new Error("v9 state has no overworld slice");
+    }
+    const mission = state.activeMission;
+    if (!isRecord(mission)) {
+      return state;
+    }
+    const spawners = Array.isArray(mission.spawners)
+      ? mission.spawners.map((spawner: unknown) =>
+          isRecord(spawner) && typeof spawner.timer !== "number"
+            ? { ...spawner, timer: 3 }
+            : spawner,
+        )
+      : mission.spawners;
+    return {
+      ...state,
+      activeMission: {
+        ...mission,
+        difficulty:
+          typeof mission.difficulty === "number" ? mission.difficulty : 1,
+        threat: typeof mission.threat === "number" ? mission.threat : 0,
+        spawners,
+      },
+    };
+  },
+};
+
 // ===========================================
 // Chain
 // ===========================================
@@ -187,4 +259,6 @@ export const GAME_STATE_MIGRATIONS: readonly Migration[] = [
   RESERVE_ACTIVE_MISSION,
   DROP_META_DEBUG,
   ADD_MISSION_EXTRACTED,
+  ADD_UNIT_CHARGES,
+  ADD_SPAWN_CLOCKS,
 ];

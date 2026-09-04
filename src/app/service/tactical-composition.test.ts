@@ -14,7 +14,8 @@ import type { GameState } from "../../save/model/game-state";
 import { ATTACK } from "../../tactical/model/attack-command";
 import { MOVE } from "../../tactical/model/move-command";
 import { OVERWATCH } from "../../tactical/model/overwatch-command";
-import { reload } from "../../tactical/model/reload-command";
+import { RELOAD } from "../../tactical/model/reload-command";
+import { extract } from "../../tactical/model/extract-command";
 import { END_TURN, endTurn } from "../../tactical/model/end-turn-command";
 import type { TacticalHandler } from "../../tactical/model/tactical-handler";
 import { TURN_STARTED } from "../../tactical/model/turn-started-event";
@@ -118,8 +119,9 @@ describe("composeTactical", () => {
       MOVE,
       END_TURN,
       OVERWATCH,
+      RELOAD,
     ]);
-    const outcome = dispatcher.process(campaignOnDay(1, []), reload("unit-1"));
+    const outcome = dispatcher.process(campaignOnDay(1, []), extract("unit-1"));
     expect(outcome.ok).toBe(false);
     if (outcome.ok) return;
     expect(outcome.error.code).toBe("unknown-command");

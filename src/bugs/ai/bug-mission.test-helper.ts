@@ -16,6 +16,7 @@ import { StaticPartCatalogue } from "../../roster/repository/static-part-catalog
 import { validateLoadout } from "../../roster/service/loadout-validation-service";
 import type { GameState } from "../../save/model/game-state";
 import { createNewGame } from "../../save/service/new-game-service";
+import { SPAWN_TUNING } from "../../tactical/data/spawn-tuning";
 import { UNIT_TUNING } from "../../tactical/data/unit-tuning";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { TacticalState } from "../../tactical/model/tactical-state";
@@ -141,6 +142,7 @@ export function startedMission(
         return sheet.ok ? sheet.value : undefined;
       },
       unitTuning: UNIT_TUNING,
+      spawnTuning: SPAWN_TUNING,
       ids: new SequentialIdGenerator(),
       registries: createDefaultRegistries(),
     },

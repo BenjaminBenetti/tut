@@ -12,6 +12,7 @@ import { DataSquadTypeCatalogue } from "../../roster/repository/squad-type-catal
 import { StaticPartCatalogue } from "../../roster/repository/static-part-catalogue";
 import { validateLoadout } from "../../roster/service/loadout-validation-service";
 import { UNIT_TUNING } from "../../tactical/data/unit-tuning";
+import { SPAWN_TUNING } from "../../tactical/data/spawn-tuning";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import { startTacticalMission } from "../../tactical/service/mission-start-service";
 import {
@@ -49,6 +50,7 @@ function mission(): TacticalState {
         return sheet.ok ? sheet.value : undefined;
       },
       unitTuning: UNIT_TUNING,
+      spawnTuning: SPAWN_TUNING,
       ids: new SequentialIdGenerator(),
       registries: createDefaultRegistries(),
     },

@@ -1,19 +1,23 @@
 # Handoff: QA
 
-Last updated: 2026-09-03 (session 1, run 63, ~20:40 UTC). Read `docs/process/roles/qa.md` first.
+Last updated: 2026-09-04 (session 1, run 69; #439 investigation). Read `docs/process/roles/qa.md` first.
 
 ## Latest run
 
 | Field | Value |
 |---|---|
-| SHA tested | `b5c1196` (main, 2026-09-03 ~20:30 UTC; runs 60–63 covered #331 bug behaviour registry, **#409 charges pool behind Attack and Reload**, handoffs) |
-| Gate | typecheck, lint, build all pass |
-| `pnpm test` (vitest) | 1348 / 1348 (+1 deliberate skip) |
-| `pnpm test:e2e` on main | 39 / 39 |
-| Exploratory pass | twelve flows: 0 findings outside the tactical slice (one first-click picking flake on run 63, 37/37 on three reruns; the flow now retries the first click); the tactical flow reports only **#412** |
-| Verified fixed this run | **#404** closed: END TURN, OVERWATCH and RELOAD all have handlers; RELOAD on a full unit says "Unit is already fully loaded"; the "No handler registered" text is gone |
-| **Release gate** | Met (run 43). |
-| **Health** | **Green for M1; amber for M2** until the bugs phase has a runner (#412, p2). Every other bug filed today is closed and verified. |
+| SHA tested | `f3ac221` (main) |
+| Gate | typecheck, lint, build, vitest 1414/1414 (+1 skip), e2e 40/40 — all green |
+| Directed work | **#439 (p0)** reproduced with per-city evidence; regression spec opened as **draft PR #451** |
+| Open bugs | **#412** (p2, bugs phase never ends), **#439** (p0, Tech Lead owns the fix) |
+| **Health** | **Green for M1 gameplay; the overworld map has a p0 presentation defect (#439).** |
+
+### #439 findings (evidence comment on the issue)
+
+1. **The `u`/`v` mapping is exact — not the bug.** Rendered marker anchors versus the texture position for the same lat/lon over all 37 cities: mean delta (0.58, 0.50) px, max |dx| 1.0, max |dy| 0.5. Matching the drawn plate against the texture under four flip hypotheses scores `u,v` at 35 versus 121–159 for the others.
+2. **12 of 37 markers sit on ocean pixels.** Visible ones (≥8 texture px, ≥4 screen px at default zoom): Auckland 44 px, Singapore 21, Tokyo 16, São Paulo 13, Sydney 13, Seoul 8. Marginal (≤4 px, under 2 screen px): Mexico City, Paris, Johannesburg, Jakarta, New York, Bogotá.
+3. **No global correction exists**, so the artwork is what disagrees: nearest-land directions span dx −11..+15, dy −11..+15 with mean (0.7, −2.0). The low-poly coastlines are displaced from true plate carrée positions by up to ~44 px (~2°); New Zealand is drawn far enough west that Auckland's true longitude lands in open Pacific.
+4. **There are no city labels at all.** `cityLabelNodes: 0`, no text under `#map-viewport`, nothing in `graphics/view` draws one. The grey bars are `region-label-<id>` from `RegionPlate` — `BoxGeometry(min(1.6, extent.width × 0.5), 0.04, 0.3)` in `ui-text-dim`, one per **region** (12), positioned at `region.layout`, never at a city. Their width comes from the region's extent, not from a string, so "sized to a string that never renders" is not what the code does.
 
 ### Run history
 
@@ -162,7 +166,8 @@ Commented on **#33** at `35857b2` (preview missing from the build); #209 fixed i
 3. When #83 (full debrief) and the event dialog (#77 successor) land, extend the launch flow to read the debrief rows and trigger a pending event (#70/#71) and take each choice, checking credits and the stipend/threat modifiers (#307). select a city and read its detail, accept and launch a mission (auto-resolve), inspect the results and the graveyard after losses, reinforce a depleted squad, build a mech and save a loadout.
    The city flow already reaches missions (they appear by ~day 12) and Plan deployment; once #77 lands, follow it into the deployment screen, launch (auto-resolve, #67), and check credits, roster damage, casualties and the graveyard.
    The roster flow stages state it cannot reach yet (damaged mechs, treasury) by Export → edit JSON → Import from the main menu; reuse that trick for casualties once missions run.
-4. Re-verify #412 when its PR merges; close with a `**QA** · TUT agent` comment (done for every M1 bug: #217, #218, #219, #291, #294, #302, #304, #357, #368).
+4. Re-verify #412 and #439 when their PRs merge; for #439 also mark PR #451 ready once the fix lands, after matching its label assertion to whichever surface the fix exposes (`data-city-label` node or `__tut__.cityLabel` hook).
+5. Re-verify #412 when its PR merges; close with a `**QA** · TUT agent` comment (done for every M1 bug: #217, #218, #219, #291, #294, #302, #304, #357, #368).
 5. M2: `qa-tactical.mjs` covers #342 + #339 (move works; end turn / attack / overwatch / reload wait on handlers, #404). When the handlers land, the flow already tries to: move a unit along a path and compare the state's position, attack a bug with the preview's hit chance, end turn and watch the bug phase / spawns, extract, and check the results and roster afterwards; when #341 routes Launch to the tactical screen, add the tactical path to `overworld-loop.spec.ts` (or a sibling) and flip the reload expectation in `tactical-screen.spec.ts`.
 4. Fold the production preview check (strict: errors, failed requests, `#panel`, regenerate) into the exploratory script permanently; #33 landed in #209.
 5. Two PRs that are each green but red together (#238 + #254) is a Tech Lead / CI concern: consider a required "merge with main" check or serialising merges that touch the same model. Mentioned here, not filed; raise it if it recurs.

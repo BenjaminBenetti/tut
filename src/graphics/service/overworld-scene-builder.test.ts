@@ -30,8 +30,7 @@ function washOf(
   regionId: string,
 ): { colour: number; opacity: number } {
   const slab = builder.root.getObjectByName(`region-slab-${regionId}`) as
-    | Mesh
-    | undefined;
+    Mesh | undefined;
   if (!slab) throw new Error(`no plate for ${regionId}`);
   const material = slab.material as MeshStandardMaterial;
   return { colour: material.color.getHex(), opacity: material.opacity };

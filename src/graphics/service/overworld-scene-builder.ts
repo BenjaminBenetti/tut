@@ -378,10 +378,7 @@ export class OverworldSceneBuilder implements CityPicker, MapStateView {
       if (regionId === undefined) {
         continue;
       }
-      worst.set(
-        regionId,
-        Math.max(worst.get(regionId) ?? 0, city.infestation),
-      );
+      worst.set(regionId, Math.max(worst.get(regionId) ?? 0, city.infestation));
     }
     for (const [regionId, plate] of this.plates) {
       plate.setInfestation(worst.get(regionId) ?? 0);

@@ -10,6 +10,7 @@ import type { TacticalCommand } from "../../tactical/model/tactical-command";
 import type { TacticalError } from "../../tactical/model/tactical-error";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { Team, Unit, UnitId } from "../../tactical/model/unit";
+import { findAttackTarget } from "../../tactical/service/attack-target-service";
 import { previewAttack } from "../../tactical/service/combat-service";
 import type { TacticalIntent } from "../model/tactical-intent";
 import type { ActionBarAction } from "./action-bar-view";
@@ -132,17 +133,22 @@ export class TacticalHudView {
     this.refresh();
   }
 
-  /** Renders `mission`, dropping a selection or target that is gone or dead. */
+  /** Renders `mission`, dropping a selection or target that is gone, dead or destroyed. */
   update(mission: TacticalState | undefined): void {
     this.mission = mission;
-    const alive = (id: UnitId | undefined): boolean =>
+    const aliveUnit = (id: UnitId | undefined): boolean =>
       id !== undefined &&
       (mission?.units.some((u) => u.id === id && u.hp > 0) ?? false);
-    if (!alive(this.selected)) {
+    if (!aliveUnit(this.selected)) {
       this.selected = undefined;
       this.mode = "select";
     }
-    if (!alive(this.target)) {
+    // The target may be an egg spawner (#426), which is not in `units`.
+    const target =
+      mission && this.target !== undefined
+        ? findAttackTarget(mission, this.target)
+        : undefined;
+    if (target === undefined || target.hp <= 0) {
       this.target = undefined;
     }
     this.refresh();
@@ -178,7 +184,7 @@ export class TacticalHudView {
     return this.mode;
   }
 
-  /** The enemy being previewed, if any. */
+  /** The enemy being previewed — a unit or an egg spawner (#426) — if any. */
   getTargetUnitId(): UnitId | undefined {
     return this.target;
   }
@@ -213,16 +219,28 @@ export class TacticalHudView {
   // Private Methods
   // ===========================================
 
-  /** In attack mode an enemy becomes the preview target; otherwise the unit is selected. */
+  /**
+   * In attack mode anything on the other side becomes the preview target,
+   * resolved through the same port the combat rules use so an egg spawner
+   * is picked exactly as a unit is (#426); otherwise the unit is selected.
+   * An id that is not a unit can only ever be a target.
+   */
   private selectUnit(unitId: UnitId): void {
-    const unit = this.unit(unitId);
-    if (!unit) {
+    const mission = this.mission;
+    if (!mission) {
+      return;
+    }
+    const picked = findAttackTarget(mission, unitId);
+    if (!picked || picked.hp <= 0) {
       return;
     }
     const selected = this.unit(this.selected);
-    if (this.mode === "attack" && selected && unit.team !== selected.team) {
+    if (this.mode === "attack" && selected && picked.team !== selected.team) {
       this.target = unitId;
       this.refresh();
+      return;
+    }
+    if (picked.kind !== "unit") {
       return;
     }
     this.selected = unitId;
@@ -362,15 +380,13 @@ export class TacticalHudView {
       selected,
       selected ? mission.templates[selected.templateId] : undefined,
     );
-    const target = this.unit(this.target);
+    const target =
+      this.target === undefined
+        ? undefined
+        : findAttackTarget(mission, this.target);
     const preview = this.currentPreview();
     this.preview.update(
-      target && preview
-        ? {
-            targetName: mission.templates[target.templateId]?.name ?? target.id,
-            preview,
-          }
-        : undefined,
+      target && preview ? { targetName: target.name, preview } : undefined,
     );
     this.objectives.update(mission.objectives, mission.spawners);
     this.actions.update({

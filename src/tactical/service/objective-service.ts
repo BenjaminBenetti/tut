@@ -3,24 +3,18 @@ import { manhattanDistance } from "../../core/service/grid-math";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { ExtractCommand } from "../model/extract-command";
 import type { InteractCommand } from "../model/interact-command";
-import { MISSION_ENDED } from "../model/mission-ended-event";
-import { OBJECTIVE_UPDATED } from "../model/objective-updated-event";
 import type { ObjectiveTuning } from "../model/objective-tuning";
-import { SPAWNER_DAMAGED } from "../model/spawner-damaged-event";
-import type { TacticalApplied, TacticalEvent } from "../model/tactical-event";
+import type { TacticalEvent } from "../model/tactical-event";
 import type {
   TacticalHandler,
   TacticalOutcome,
 } from "../model/tactical-handler";
-import type {
-  Objective,
-  Spawner,
-  TacticalState,
-} from "../model/tactical-state";
+import type { Objective, TacticalState } from "../model/tactical-state";
 import { TEAM_FOR_PHASE } from "../model/tactical-state";
 import type { Unit } from "../model/unit";
 import { UNIT_EXTRACTED } from "../model/unit-extracted-event";
-import { missionOutcome } from "./turn-service";
+import { endIfOver } from "./mission-end-service";
+import { damageSpawner } from "./spawner-damage-service";
 
 // ===========================================
 // Objective kinds
@@ -84,43 +78,7 @@ export const plantCharges: ObjectiveInteraction = (
     });
   }
 
-  const hp = Math.max(0, spawner.hp - tuning.chargeDamage);
-  const destroyed = hp <= 0;
-  const damaged: Spawner = { ...spawner, hp, destroyed };
-  const events: TacticalEvent[] = [
-    {
-      type: SPAWNER_DAMAGED,
-      payload: {
-        spawnerId: spawner.id,
-        unitId: unit.id,
-        damage: spawner.hp - hp,
-        hp,
-        destroyed,
-      },
-    },
-  ];
-  if (destroyed) {
-    events.push({
-      type: OBJECTIVE_UPDATED,
-      payload: { objectiveId: objective.id, complete: true },
-    });
-  }
-  return ok({
-    state: {
-      ...mission,
-      spawners: mission.spawners.map((candidate) =>
-        candidate.id === spawner.id ? damaged : candidate,
-      ),
-      objectives: destroyed
-        ? mission.objectives.map((candidate): Objective =>
-            candidate.id === objective.id
-              ? { ...candidate, complete: true }
-              : candidate,
-          )
-        : mission.objectives,
-    },
-    events,
-  });
+  return ok(damageSpawner(mission, spawner.id, tuning.chargeDamage, unit.id));
 };
 
 /** The interaction each objective kind ships with (GDD §6.3: M2 clears egg spawners). */
@@ -280,33 +238,6 @@ export function createExtractHandler(
       },
     ];
     return ok(endIfOver(pulled, events));
-  };
-}
-
-// ===========================================
-// Ending
-// ===========================================
-
-/**
- * Records the outcome and announces `MissionEnded` when a terminal
- * condition now holds, otherwise hands the mission back untouched. The
- * turn engine runs the same check at every turn boundary; objectives and
- * extraction can decide a mission mid-phase, and this is where they ask.
- */
-export function endIfOver(
-  mission: TacticalState,
-  events: readonly TacticalEvent[],
-): TacticalApplied<TacticalState> {
-  const outcome = missionOutcome(mission);
-  if (outcome === undefined) {
-    return { state: mission, events: [...events] };
-  }
-  return {
-    state: { ...mission, outcome },
-    events: [
-      ...events,
-      { type: MISSION_ENDED, payload: { outcome, turn: mission.turn } },
-    ],
   };
 }
 

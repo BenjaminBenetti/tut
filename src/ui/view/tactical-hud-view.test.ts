@@ -7,6 +7,7 @@ import { END_TURN } from "../../tactical/model/end-turn-command";
 import { MOVE } from "../../tactical/model/move-command";
 import { OVERWATCH } from "../../tactical/model/overwatch-command";
 import type { TacticalCommand } from "../../tactical/model/tactical-command";
+import { SPAWNER_NAME } from "../../tactical/service/attack-target-service";
 import { previewAttack } from "../../tactical/service/combat-service";
 import { hudMission } from "./mission-hud.test-helper";
 import { TacticalHudView } from "./tactical-hud-view";
@@ -59,6 +60,61 @@ describe("TacticalHudView", () => {
     ).toBe(true);
     hud.handleIntent({ kind: "select-unit", unitId: "b1" });
     expect(field("unit-side")?.textContent).toBe("bugs · bug");
+  });
+
+  it("previews and fires at an egg spawner, naming it in the panel (#426)", () => {
+    const commands: TacticalCommand[] = [];
+    const hud = new TacticalHudView(
+      { onCommand: (c) => commands.push(c), onBack: vi.fn() },
+      { combatTuning: COMBAT_TUNING },
+    );
+    hud.mount(root);
+    // Put the squad within the rifle's reach of the live spawner at (9,0,0).
+    const base = hudMission();
+    const mission = {
+      ...base,
+      units: base.units.map((u) =>
+        u.id === "s1" ? { ...u, pos: { x: 5, y: 0, z: 0 } } : u,
+      ),
+    };
+    hud.update(mission);
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    hud.handleIntent({ kind: "action", action: "attack" });
+    hud.handleIntent({ kind: "select-unit", unitId: "spawner-1" });
+
+    expect(hud.getTargetUnitId()).toBe("spawner-1");
+    // Aiming at a spawner never steals the selection from the squad.
+    expect(hud.getSelectedUnitId()).toBe("s1");
+    expect(field("target-name")?.textContent).toBe(SPAWNER_NAME);
+    const expected = previewAttack(mission, "s1", "spawner-1", COMBAT_TUNING);
+    expect(expected.ok).toBe(true);
+    if (!expected.ok) return;
+    expect(field("hit-chance")?.textContent).toBe(
+      `${String(expected.value.hitChance)}% hit`,
+    );
+
+    root
+      .querySelector<HTMLButtonElement>('[data-action="confirm-attack"]')
+      ?.click();
+    expect(commands).toEqual([
+      { type: ATTACK, payload: { attackerId: "s1", targetId: "spawner-1" } },
+    ]);
+  });
+
+  it("drops a spawner target once it is destroyed", () => {
+    const { hud } = setup();
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    hud.handleIntent({ kind: "action", action: "attack" });
+    hud.handleIntent({ kind: "select-unit", unitId: "spawner-1" });
+    expect(hud.getTargetUnitId()).toBe("spawner-1");
+    const cleared = hudMission();
+    hud.update({
+      ...cleared,
+      spawners: cleared.spawners.map((s) =>
+        s.id === "spawner-1" ? { ...s, hp: 0, destroyed: true } : s,
+      ),
+    });
+    expect(hud.getTargetUnitId()).toBeUndefined();
   });
 
   it("previews an attack from the combat service and fires it", () => {

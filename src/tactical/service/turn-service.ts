@@ -15,6 +15,7 @@ import { TURN_STARTED } from "../model/turn-started-event";
 import type { Unit, UnitId, UnitStatus } from "../model/unit";
 import { UNIT_STATUS_CHANGED } from "../model/unit-status-changed-event";
 import { rollAttack, validateTargeting } from "./combat-service";
+import { missionOutcome } from "./mission-end-service";
 
 // ===========================================
 // Types
@@ -161,38 +162,6 @@ function openNextPhase(
     events.push(...applied.events);
   }
   return { state, events };
-}
-
-/**
- * Whether a terminal condition holds (GDD §6.3), and which:
- *
- * ```
- *   every objective complete (and there is one) ──► won
- *   no TDF unit standing on the map ─┬─ someone extracted ──► extracted
- *                                    └─ nobody extracted ───► lost
- *   otherwise ─────────────────────────────────────────────► undefined
- * ```
- *
- * Objectives win first: a force that finishes the job as its last unit
- * falls has still finished the job. #330 may call this after `Interact`
- * and `Extract` to end a mission mid-phase.
- */
-export function missionOutcome(
-  mission: TacticalState,
-): MissionOutcome | undefined {
-  if (
-    mission.objectives.length > 0 &&
-    mission.objectives.every((objective) => objective.complete)
-  ) {
-    return "won";
-  }
-  const standing = mission.units.some(
-    (unit) => unit.team === "tdf" && unit.hp > 0,
-  );
-  if (standing) {
-    return undefined;
-  }
-  return mission.extracted.length > 0 ? "extracted" : "lost";
 }
 
 // ===========================================

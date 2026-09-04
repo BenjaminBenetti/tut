@@ -6,9 +6,9 @@ Last updated: 2026-09-04 (post-v0.2.0; win path settled on #317).
 
 | Field | Value |
 |---|---|
-| SHA tested | `ea276a9` (main, after v0.2.3) |
-| Gate | typecheck, lint, build pass; vitest **1880 / 1880** (+1 deliberate skip); e2e **58 / 58** |
-| Exploratory | 11 flows clean; v0.2.3 verified as a shipped artifact; overwatch exercised end to end |
+| SHA tested | `8db18b5` (main, after v0.2.3) |
+| Gate | typecheck, lint, build pass; vitest **1902 / 1902** (+1 deliberate skip); e2e **59 / 59** |
+| Exploratory | 11 flows clean; determinism verified after the RNG nonce change; overwatch exercised end to end |
 | **Verdict** | **Healthy, and the board is clear.** Control scheme 7/7 on every head since band 1; a mission is completable with fog active, guarded by a permanent spec. **No open QA-filed defects.** |
 
 ### Release push, in order of what mattered
@@ -152,7 +152,19 @@ Last updated: 2026-09-04 (post-v0.2.0; win path settled on #317).
     - **`EMFILE: too many open files`** on the e2e gate. `fs.inotify.max_user_instances` is **128** here and a long session leaks `vite` and `chrome` watchers until the dev server cannot start. It surfaces as `Process from config.webServer was not able to start`, which reads like broken CI infrastructure. Sweep stray processes periodically; after killing them it went straight back to 58 passed.
     - **Testing the title instead of the acceptance criteria.** #573 reads "announce the turn a mission opens on", so I tested for a phase banner, found none in 3.5 s, and had a clean control proving my detector worked — it caught both End-turn banners in the same run. The issue was about the **event log** being empty at mission open, which works (`Turn 1 — TDF phase`). Every other false alarm this session came from a broken instrument; this one came from a correct instrument aimed at the wrong target, and no amount of validating the tool would have caught it. **Read the body, not the title.**
 
-24. **Three features have now shipped fully working and invisible**, every one with CI green: **#555** (every overlay failing a depth test), **#572** (the 2 AP band painted over by the range fill), **#605** (the selection ring never drawn). That is the single most useful thing this seat has learned. Photograph the screen and look at it; the suite cannot see any of these.
+24. **Determinism verified after the RNG nonce change (#667).** Two independent runs of seed `det-seed`, each playing an identical three-turn script, produced byte-identical state — same map, same deployment, same eight bugs on the same tiles with the same hit points after three turns of AI movement. That change is exactly the kind that can break reproducibility silently, and reproducibility underpins the 60-seed sweep, the win-path spec and every seeded bug report in the tracker.
+
+25. **The win-path spec is not made redundant by #343's sweep — check before anyone deletes it.** The sweep proves missions are winnable at the **rules** level across 60 seeds; `e2e/tactical-objective-destroyed.spec.ts` proves a player can do it **through the UI**, driving the real control scheme. They cover different failures. Two of the bugs I filed this session (#555's invisible overlays, #605's undrawn selection ring) were rules-correct and screen-broken, which is precisely the gap a service-level sweep cannot see.
+
+26. **I over-read my own evidence on #666, and corrected it.** I endorsed the sweep's "stall" framing and wrote that a ten-turn play showed "no ending in prospect in either direction". #692 then showed the unresolved seeds were **cut off by the 30-turn cap**, not stalled — a difficulty-10 mission needs 37–56 turns. My data was accurate; the inference was not. Ten turns is a fifth of what a hard mission needs to conclude.
+
+    What survived was the part I measured rather than inferred: the defeat path works and requires annihilation, seed `wipe-check` ending correctly after **42** turns — inside the band #692 identifies. **A growth curve over ten turns is not evidence about an outcome that needs forty.**
+
+27. **Distinguish a false red I caused from a false red the suite caused.** Three fixes this session came out of local failures I nearly swallowed as my own mess: **#578** (save-recovery reloading on every asset), **#691** (assertion allowance below the test timeout), **#700** (local workers uncapped, so contention faked failures).
+
+    The line: a stray server or a stale probe is mine to fix quietly; the suite being fragile under load is a **finding**, because it bites CI too. I conflated those for most of the day and sat on signal worth passing upstream. When a red result is not reproducible, ask *why* it was not reproducible before filing it under "my environment".
+
+28. **Three features have now shipped fully working and invisible**, every one with CI green: **#555** (every overlay failing a depth test), **#572** (the 2 AP band painted over by the range fill), **#605** (the selection ring never drawn). That is the single most useful thing this seat has learned. Photograph the screen and look at it; the suite cannot see any of these.
 
 ### Harness lessons that cost me a wrong reading
 
@@ -167,6 +179,9 @@ Three times this session a control-scheme or rendering change silently invalidat
 
 | SHA | Build | Unit | e2e | Exploratory | Filed |
 |---|---|---|---|---|---|
+| `8db18b5` | pass | 1902/1902 | 59/59 | worker cap steadies e2e | — |
+| `484f67b` | pass | 1891/1891 | 59/59 | same seed plays identically | — |
+| `c99a5d9` | pass | 1886/1886 | 59/59 | memory reads cold, darkness means unseen | — |
 | `ea276a9` | pass | 1880/1880 | 58/58 | crash-site archetype is preview-only | — |
 | `9a0863e` | pass | 1877/1877 | 58/58 | #573 log opens with an entry | — |
 | `814b2ff` | pass | 1873/1873 | 58/58 | overwatch still fires after #579 | — |

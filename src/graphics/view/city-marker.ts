@@ -50,16 +50,22 @@ const HOVER_EMISSIVE = 0.6;
 /** Sprites draw after translucent plates so the plate tint never sits on the glyph. */
 const SPRITE_RENDER_ORDER = 2;
 
-/** Fraction of the glyph height above the anchor where `pickPoint` sits. */
-const GLYPH_PICK_LIFT = 0.1;
-
 /** Mission badge tint: `ui-info`, distinct from every infestation stop and the accent. */
 export const MISSION_COLOUR = 0x7fd1ff;
 
-/** Badge size relative to the marker glyph, and where it sits relative to the pin. */
+/**
+ * Badge size relative to the marker glyph, and where it sits from the
+ * marker's centre **on the ground plane**: east and north, so it reads
+ * up and to the right under the strategic map's straight-down camera
+ * (#420). An offset in world `y` would point at the camera and show no
+ * screen movement at all.
+ */
 const BADGE_SCALE = 0.45;
-const BADGE_OFFSET_X = 0.55;
-const BADGE_OFFSET_Y = 0.85;
+const BADGE_OFFSET_EAST = 0.55;
+const BADGE_OFFSET_NORTH = 0.55;
+
+/** Height the badge floats above the plate so it never z-fights it. */
+const BADGE_LIFT = 0.02;
 
 /** Badges draw after the marker so they sit on top of the pin. */
 const BADGE_RENDER_ORDER = 3;
@@ -192,7 +198,10 @@ export class CityMarker {
         depthWrite: false,
       });
       const sprite = new Sprite(material);
-      sprite.center.set(0.5, 0);
+      // Centred on the city, not standing on it: a bottom-anchored
+      // sprite always draws above its anchor in screen space, which read
+      // as the marker being offset from its city (#420).
+      sprite.center.set(0.5, 0.5);
       sprite.renderOrder = SPRITE_RENDER_ORDER;
       this.material = material;
       this.visual = sprite;
@@ -234,7 +243,7 @@ export class CityMarker {
         depthWrite: false,
       });
       const sprite = new Sprite(material);
-      sprite.center.set(0.5, 0);
+      sprite.center.set(0.5, 0.5);
       sprite.scale.set(badgeSize, badgeSize, 1);
       sprite.renderOrder = BADGE_RENDER_ORDER;
       this.badgeMaterial = material;
@@ -253,10 +262,14 @@ export class CityMarker {
       this.badgeMaterial = material;
       this.badge = disc;
     }
-    const lift = this.usesGlyph()
-      ? config.markerGlyphSize * BADGE_OFFSET_Y
-      : config.markerHeight * (1 + BADGE_OFFSET_Y);
-    this.badge.position.set(config.markerGlyphSize * BADGE_OFFSET_X, lift, 0);
+    const spread = this.usesGlyph()
+      ? config.markerGlyphSize
+      : config.markerRadius * 2;
+    this.badge.position.set(
+      spread * BADGE_OFFSET_EAST,
+      BADGE_LIFT,
+      -spread * BADGE_OFFSET_NORTH,
+    );
     this.badge.name = `city-badge-${city.id}`;
     this.badge.visible = false;
     this.object.add(this.badge);
@@ -321,15 +334,13 @@ export class CityMarker {
 
   /**
    * A world-space point inside the pickable, for projecting to the
-   * screen: just above the anchor on the glyph's pin tail, or the centre
-   * of the disc. Staying close to the anchor keeps the point on this
-   * marker's side when neighbouring pins overlap. Call after the scene's
-   * world matrices are up to date.
+   * screen: the marker's anchor, which is its city's own position, so a
+   * projected marker lands on its city rather than beside it (#420). A
+   * disc marker keeps its half-height so the point is inside the solid.
+   * Call after the scene's world matrices are up to date.
    */
   pickPoint(): Vec3 {
-    const lift = this.usesGlyph()
-      ? this.config.markerGlyphSize * GLYPH_PICK_LIFT
-      : this.config.markerHeight / 2;
+    const lift = this.usesGlyph() ? 0 : this.config.markerHeight / 2;
     const base = this.object.getWorldPosition(this.object.position.clone());
     return { x: base.x, y: base.y + lift, z: base.z };
   }

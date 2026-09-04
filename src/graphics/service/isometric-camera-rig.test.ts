@@ -1,7 +1,11 @@
 import { Vector3 } from "three";
 import { describe, expect, it } from "vitest";
 
-import { CAMERA_ZOOM, ISOMETRIC_ELEVATION_RAD } from "../model/camera-state";
+import {
+  CAMERA_ZOOM,
+  ISOMETRIC_ELEVATION_RAD,
+  TOP_DOWN_PROJECTION,
+} from "../model/camera-state";
 import { cameraPosition, groundScreenAxes } from "./isometric-camera-math";
 import { CAMERA_DISTANCE, IsometricCameraRig } from "./isometric-camera-rig";
 
@@ -125,5 +129,28 @@ describe("IsometricCameraRig", () => {
     rig.setBounds(undefined);
     rig.panBy(-5000, 0);
     expect(rig.getState().target.x).toBeLessThan(-10);
+  });
+});
+
+describe("IsometricCameraRig with the top-down projection (#420)", () => {
+  it("sits straight above the target and orients the map north up", () => {
+    const rig = new IsometricCameraRig({
+      target: TARGET,
+      projection: TOP_DOWN_PROJECTION,
+    });
+    rig.resize(WIDTH, HEIGHT);
+    rig.apply();
+    expect(rig.camera.position.x).toBeCloseTo(TARGET.x);
+    expect(rig.camera.position.z).toBeCloseTo(TARGET.z);
+    expect(rig.camera.position.y).toBeCloseTo(TARGET.y + CAMERA_DISTANCE);
+    // +y would be parallel to the view direction and give three no basis.
+    expect(rig.camera.up.x).toBeCloseTo(0);
+    expect(rig.camera.up.y).toBe(0);
+    expect(rig.camera.up.z).toBeCloseTo(-1);
+    // North (-z) projects above the target on screen, east (+x) to its right.
+    const north = new Vector3(TARGET.x, 0, TARGET.z - 1).project(rig.camera);
+    const east = new Vector3(TARGET.x + 1, 0, TARGET.z).project(rig.camera);
+    expect(north.y).toBeGreaterThan(0);
+    expect(east.x).toBeGreaterThan(0);
   });
 });

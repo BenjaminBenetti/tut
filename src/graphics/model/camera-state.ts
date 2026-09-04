@@ -40,6 +40,32 @@ export interface IsometricCameraState {
    * tactical map); absent means unbounded, as before.
    */
   readonly bounds?: Rect;
+  /**
+   * How the camera looks at the ground plane. Absent means the isometric
+   * projection every tactical scene uses; the strategic map passes
+   * {@link TOP_DOWN_PROJECTION} (#420).
+   */
+  readonly projection?: CameraProjection;
+}
+
+/**
+ * How a camera is angled onto the ground plane. Two shipped projections:
+ * the tilted isometric view the tactical maps are authored for (ADR 0004
+ * §3) and the straight-down view the strategic map uses, where the Earth
+ * plate reads as an upright rectangle with north up (#420).
+ *
+ * ```
+ *   elevationRad          yawOffsetRad = angle of yaw index 0 from +x toward +z
+ *
+ *   isometric  35.26°     π/4  camera on a diagonal, screen-up is north-west
+ *   top-down   90°        π/2  camera straight above, screen-up is north
+ * ```
+ */
+export interface CameraProjection {
+  /** Angle above the ground plane in radians; `π/2` looks straight down. */
+  readonly elevationRad: number;
+  /** Ground angle of yaw index 0's offset from the target, from `+x` toward `+z`. */
+  readonly yawOffsetRad: number;
 }
 
 // ===========================================
@@ -48,6 +74,28 @@ export interface IsometricCameraState {
 
 /** Elevation above the ground plane: atan(1/√2) ≈ 35.26°, true isometric. */
 export const ISOMETRIC_ELEVATION_RAD = Math.atan(1 / Math.SQRT2);
+
+/** Elevation of a camera looking straight down at the ground plane. */
+export const TOP_DOWN_ELEVATION_RAD = Math.PI / 2;
+
+/**
+ * The tactical projection: true isometric, camera on one of the four
+ * diagonals. Tactical maps are authored for it (ADR 0004 §3).
+ */
+export const ISOMETRIC_PROJECTION: CameraProjection = {
+  elevationRad: ISOMETRIC_ELEVATION_RAD,
+  yawOffsetRad: Math.PI / 4,
+};
+
+/**
+ * The strategic map projection (#420): straight down with the camera's
+ * yaw on the axes, so north is screen-up, east is screen-right and the
+ * map plate reads as an upright rectangle rather than a rhombus.
+ */
+export const TOP_DOWN_PROJECTION: CameraProjection = {
+  elevationRad: TOP_DOWN_ELEVATION_RAD,
+  yawOffsetRad: Math.PI / 2,
+};
 
 /** Zoom limits in pixels per tile (style guide §2). */
 export const CAMERA_ZOOM = { min: 40, max: 128, initial: 64 } as const;

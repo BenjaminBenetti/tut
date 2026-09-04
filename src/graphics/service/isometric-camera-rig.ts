@@ -12,6 +12,7 @@ import {
   panBy,
   retarget,
   rotateYaw,
+  screenUpVector,
   withBounds,
   zoomBy,
 } from "./isometric-camera-math";
@@ -134,8 +135,12 @@ export class IsometricCameraRig implements CameraControls, SceneCamera {
     const position = cameraPosition(this.state, CAMERA_DISTANCE);
     const frustum = orthoFrustum(this.state, this.viewport);
 
+    const up = screenUpVector(this.state);
+
     this.camera.position.set(position.x, position.y, position.z);
-    this.camera.up.set(0, 1, 0);
+    // World `+y` for a tilted camera; the ground plane's screen-up axis
+    // for one looking straight down, where `+y` would be degenerate (#420).
+    this.camera.up.set(up.x, up.y, up.z);
     this.camera.lookAt(target.x, target.y, target.z);
 
     this.camera.left = frustum.left;

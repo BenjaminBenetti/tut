@@ -1,9 +1,13 @@
 import type { Rect, Vec3 } from "../../core/model/grid";
-import type { IsometricCameraState, YawIndex } from "../model/camera-state";
+import type {
+  CameraProjection,
+  IsometricCameraState,
+  YawIndex,
+} from "../model/camera-state";
 import {
   CAMERA_ZOOM,
   DEFAULT_CAMERA_STATE,
-  ISOMETRIC_ELEVATION_RAD,
+  ISOMETRIC_PROJECTION,
   YAW_COUNT,
 } from "../model/camera-state";
 
@@ -37,6 +41,34 @@ export interface GroundScreenAxes {
 }
 
 // ===========================================
+// Projection
+// ===========================================
+
+/** Below this cosine the camera is treated as looking straight down. */
+const TOP_DOWN_EPSILON = 1e-6;
+
+/**
+ * The state's projection, defaulting to isometric so every caller from
+ * before #420 keeps the tactical view it was written for.
+ */
+export function projectionOf(state: IsometricCameraState): CameraProjection {
+  return state.projection ?? ISOMETRIC_PROJECTION;
+}
+
+/**
+ * The world direction that points up the screen: the ground plane's
+ * screen-up axis for a camera looking straight down, and world `+y` for
+ * any tilted camera, which is what three's `lookAt` wants as its hint.
+ */
+export function screenUpVector(state: IsometricCameraState): Vec3 {
+  const projection = projectionOf(state);
+  if (Math.cos(projection.elevationRad) > TOP_DOWN_EPSILON) {
+    return { x: 0, y: 1, z: 0 };
+  }
+  return groundScreenAxes(state.yawIndex, projection).up;
+}
+
+// ===========================================
 // Construction
 // ===========================================
 
@@ -60,6 +92,9 @@ export function createCameraState(
     zoom: clampZoom(zoom),
     target: clampTarget(target, bounds),
     ...(bounds === undefined ? {} : { bounds: { ...bounds } }),
+    ...(overrides.projection === undefined
+      ? {}
+      : { projection: { ...overrides.projection } }),
   };
 }
 
@@ -118,8 +153,11 @@ export function withBounds(
  * the ground plane from +x toward +z. Yaw 0 is 45°, so the camera sits
  * on the +x +z diagonal; each step adds 90°.
  */
-export function yawAngleRad(yawIndex: YawIndex): number {
-  return Math.PI / 4 + yawIndex * (Math.PI / 2);
+export function yawAngleRad(
+  yawIndex: YawIndex,
+  projection: CameraProjection = ISOMETRIC_PROJECTION,
+): number {
+  return projection.yawOffsetRad + yawIndex * (Math.PI / 2);
 }
 
 /** Steps the yaw one orientation left or right, wrapping 3→0 and 0→3. */
@@ -134,8 +172,11 @@ export function rotateYaw(
 }
 
 /** Unit vector on the ground plane pointing from the target toward the camera. */
-export function horizontalDirection(yawIndex: YawIndex): Vec3 {
-  const angle = yawAngleRad(yawIndex);
+export function horizontalDirection(
+  yawIndex: YawIndex,
+  projection: CameraProjection = ISOMETRIC_PROJECTION,
+): Vec3 {
+  const angle = yawAngleRad(yawIndex, projection);
   return { x: Math.cos(angle), y: 0, z: Math.sin(angle) };
 }
 
@@ -144,8 +185,11 @@ export function horizontalDirection(yawIndex: YawIndex): Vec3 {
  * horizontal forward `f = -horizontalDirection` and world up `+y`,
  * screen-right is `f × up` and screen-up on the ground is `f` itself.
  */
-export function groundScreenAxes(yawIndex: YawIndex): GroundScreenAxes {
-  const angle = yawAngleRad(yawIndex);
+export function groundScreenAxes(
+  yawIndex: YawIndex,
+  projection: CameraProjection = ISOMETRIC_PROJECTION,
+): GroundScreenAxes {
+  const angle = yawAngleRad(yawIndex, projection);
   return {
     right: { x: Math.sin(angle), y: 0, z: -Math.cos(angle) },
     up: { x: -Math.cos(angle), y: 0, z: -Math.sin(angle) },
@@ -218,9 +262,10 @@ export function panBy(
   screenDx: number,
   screenDy: number,
 ): IsometricCameraState {
-  const { right, up } = groundScreenAxes(state.yawIndex);
+  const projection = projectionOf(state);
+  const { right, up } = groundScreenAxes(state.yawIndex, projection);
   const alongRight = screenDx / state.zoom;
-  const alongUp = -screenDy / (state.zoom * Math.sin(ISOMETRIC_ELEVATION_RAD));
+  const alongUp = -screenDy / (state.zoom * Math.sin(projection.elevationRad));
   return {
     ...state,
     target: clampTarget(
@@ -240,19 +285,21 @@ export function panBy(
 
 /**
  * World position of the camera: the target plus `distance` along the
- * view direction, which is `horizontalDirection` tilted up by
- * `ISOMETRIC_ELEVATION_RAD`. All four yaws share one height and one
- * distance, so the camera orbits on a circle above the target.
+ * view direction, which is `horizontalDirection` tilted up by the
+ * projection's elevation. All four yaws share one height and one
+ * distance, so the camera orbits on a circle above the target; a
+ * straight-down projection puts it directly overhead.
  */
 export function cameraPosition(
   state: IsometricCameraState,
   distance: number,
 ): Vec3 {
-  const horizontal = horizontalDirection(state.yawIndex);
-  const ground = distance * Math.cos(ISOMETRIC_ELEVATION_RAD);
+  const projection = projectionOf(state);
+  const horizontal = horizontalDirection(state.yawIndex, projection);
+  const ground = distance * Math.cos(projection.elevationRad);
   return {
     x: state.target.x + ground * horizontal.x,
-    y: state.target.y + distance * Math.sin(ISOMETRIC_ELEVATION_RAD),
+    y: state.target.y + distance * Math.sin(projection.elevationRad),
     z: state.target.z + ground * horizontal.z,
   };
 }

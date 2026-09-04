@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import type { YawIndex } from "../model/camera-state";
-import { CAMERA_ZOOM, ISOMETRIC_ELEVATION_RAD } from "../model/camera-state";
+import {
+  CAMERA_ZOOM,
+  ISOMETRIC_ELEVATION_RAD,
+  ISOMETRIC_PROJECTION,
+  TOP_DOWN_PROJECTION,
+} from "../model/camera-state";
 import {
   cameraPosition,
   clampTarget,
@@ -12,6 +17,7 @@ import {
   panBy,
   retarget,
   rotateYaw,
+  screenUpVector,
   withBounds,
   zoomBy,
 } from "./isometric-camera-math";
@@ -356,5 +362,72 @@ describe("camera bounds", () => {
     expect(Math.abs(free.target.x) + Math.abs(free.target.z)).toBeGreaterThan(
       24,
     );
+  });
+});
+
+// ===========================================
+// Projections (#420)
+// ===========================================
+
+describe("the top-down projection", () => {
+  const topDown = (yawIndex: YawIndex = 0) =>
+    createCameraState({
+      yawIndex,
+      target: TARGET,
+      projection: TOP_DOWN_PROJECTION,
+    });
+
+  it("defaults to isometric, and copies a projection it is given", () => {
+    expect(createCameraState({}).projection).toBeUndefined();
+    const state = topDown();
+    expect(state.projection).toEqual(TOP_DOWN_PROJECTION);
+    expect(state.projection).not.toBe(TOP_DOWN_PROJECTION);
+    expect(ISOMETRIC_PROJECTION.elevationRad).toBe(ISOMETRIC_ELEVATION_RAD);
+  });
+
+  it("puts the camera directly above the target, however it is yawed", () => {
+    for (const yawIndex of YAWS) {
+      const at = cameraPosition(topDown(yawIndex), 100);
+      expect(at.x).toBeCloseTo(TARGET.x);
+      expect(at.z).toBeCloseTo(TARGET.z);
+      expect(at.y).toBeCloseTo(TARGET.y + 100);
+    }
+  });
+
+  it("reads the map north up and east right", () => {
+    const { right, up } = groundScreenAxes(0, TOP_DOWN_PROJECTION);
+    expect(right.x).toBeCloseTo(1);
+    expect(right.z).toBeCloseTo(0);
+    expect(up.x).toBeCloseTo(0);
+    expect(up.z).toBeCloseTo(-1);
+  });
+
+  it("hands three's lookAt the ground's screen-up axis, not the degenerate +y", () => {
+    expect(screenUpVector(createCameraState({ target: TARGET }))).toEqual({
+      x: 0,
+      y: 1,
+      z: 0,
+    });
+    const up = screenUpVector(topDown());
+    expect(up.y).toBe(0);
+    expect(up.z).toBeCloseTo(-1);
+  });
+
+  it("pans one world unit per zoom pixel in both axes, with no foreshortening", () => {
+    const state = topDown();
+    const moved = panBy(state, 2 * state.zoom, -3 * state.zoom);
+    expect(moved.target.x).toBeCloseTo(TARGET.x + 2);
+    // Dragging the view up walks north, which is -z.
+    expect(moved.target.z).toBeCloseTo(TARGET.z - 3);
+  });
+
+  it("leaves the isometric projection foreshortened, as the tactical camera needs", () => {
+    const state = createCameraState({ target: TARGET });
+    const moved = panBy(state, 0, -state.zoom);
+    const walked = Math.hypot(
+      moved.target.x - TARGET.x,
+      moved.target.z - TARGET.z,
+    );
+    expect(walked).toBeCloseTo(1 / Math.sin(ISOMETRIC_ELEVATION_RAD));
   });
 });

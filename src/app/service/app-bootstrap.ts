@@ -8,7 +8,10 @@ import {
   PickingController,
 } from "../../graphics/controller/picking-controller";
 import { TEXTURE_MANIFEST } from "../../graphics/data/texture-manifest";
-import { CAMERA_ZOOM } from "../../graphics/model/camera-state";
+import {
+  CAMERA_ZOOM,
+  TOP_DOWN_PROJECTION,
+} from "../../graphics/model/camera-state";
 import { OVERWORLD_SCENE_CONFIG } from "../../graphics/model/overworld-scene-config";
 import { IsometricCameraRig } from "../../graphics/service/isometric-camera-rig";
 import { ManifestTextureLoader } from "../../graphics/service/manifest-texture-loader";
@@ -259,6 +262,9 @@ async function composeScene(
   const rig = new IsometricCameraRig({
     target: mapScene.centre,
     zoom: CAMERA_ZOOM.min,
+    // The strategic map is looked at straight on with north up, the way
+    // a map is read, rather than from an isometric corner (#420).
+    projection: TOP_DOWN_PROJECTION,
     // The target stays on the map plate, so a held pan key can never
     // carry Earth off screen (#218).
     bounds: {
@@ -268,7 +274,8 @@ async function composeScene(
       d: OVERWORLD_SCENE_CONFIG.mapDepth,
     },
   });
-  const cameraInput = new CameraInputController(rig);
+  // No rotation on the strategic map: north stays up (#420).
+  const cameraInput = new CameraInputController(rig, { rotate: false });
   const picking = new PickingController(cityPickerAdapter(mapScene), rig, {
     onSelected: (cityId) => {
       selection.select(cityId);

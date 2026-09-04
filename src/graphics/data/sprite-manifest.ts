@@ -60,6 +60,25 @@ export const SPRITE_MANIFEST = {
     blend: "normal",
     label: "Egg spawner hatch burst",
   },
+  "vfx.tracer": {
+    path: "assets/sprites/vfx/tracer.png",
+    size: 512,
+    blend: "additive",
+    label:
+      "Ballistic tracer streak, head pointing +X; stretch along the shot axis",
+  },
+  "vfx.claw-slash": {
+    path: "assets/sprites/vfx/claw-slash.png",
+    size: 512,
+    blend: "additive",
+    label: "Bug melee claw slash, three gashes sweeping up to the right",
+  },
+  "vfx.bug-death": {
+    path: "assets/sprites/vfx/bug-death.png",
+    size: 512,
+    blend: "normal",
+    label: "Bug death burst: chitin shards, ichor droplets and bone slivers",
+  },
   "vfx.muzzle-flash-sheet": {
     path: "assets/sprites/vfx/muzzle-flash-sheet.png",
     size: 256,
@@ -79,6 +98,20 @@ export const SPRITE_MANIFEST = {
     size: 384,
     blend: "normal",
     label: "Egg burst, 6 frames: swell to splash to fade",
+    sheet: { frame: 128, columns: 3, rows: 2, frames: 6, frameMs: 70 },
+  },
+  "vfx.claw-slash-sheet": {
+    path: "assets/sprites/vfx/claw-slash-sheet.png",
+    size: 256,
+    blend: "additive",
+    label: "Claw slash, 4 frames: the arc swings in, lands, widens, fades",
+    sheet: { frame: 128, columns: 2, rows: 2, frames: 4, frameMs: 50 },
+  },
+  "vfx.bug-death-sheet": {
+    path: "assets/sprites/vfx/bug-death-sheet.png",
+    size: 384,
+    blend: "normal",
+    label: "Bug death, 6 frames: shards burst outward and fade",
     sheet: { frame: 128, columns: 3, rows: 2, frames: 6, frameMs: 70 },
   },
 } as const satisfies Record<string, SpriteAssetEntry>;

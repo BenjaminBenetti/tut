@@ -87,7 +87,7 @@ Hex values are the single source of truth. Model materials, textures, sprites an
 |---|---|---|
 | `tdf-grey-dark` | `#2E3440` | Joints, undersides, weapon bodies |
 | `tdf-grey-mid` | `#5B6573` | Primary mech armour |
-| `tdf-grey-light` | `#9AA5B1` | Armour edge highlights, worn paint |
+| `tdf-grey-light` | `#9AA5B1` | Armour edge highlights, worn paint, **infantry helmets** (§4.2.1) |
 | `tdf-olive` | `#6B7A3F` | Infantry uniform, mech secondary panels |
 | `tdf-olive-dark` | `#45502A` | Infantry webbing, boots, olive shadows |
 | `tdf-orange` | `#F08A24` | Unit markings, lights, weapon tips, selection ring. Also the UI accent. |
@@ -129,10 +129,14 @@ node tools/art/preview/render-scene.mjs tools/art/preview/layouts/rock-read.json
 ```
 
 - **Asphalt** is the bugs' worst ground. Dark chitin on dark road: the bodies merge and only the bone crest and the glow carry them. TDF read comfortably here.
-- **Grass** is TDF's worst ground, and it is the temperate biome's primary surface — the most common ground in the game. `tdf-olive #6B7A3F` against `env-grass #5E7A3A` is **ΔE 6.2, ΔL 1.0**: no tonal separation at all, and barely above the threshold at which two colours are the same colour. Infantry are olive over the torso and arms, so at 64 px per tile they lose their silhouette completely. Bugs read strongly here.
+- **Grass** is TDF's worst ground, and it is the temperate biome's primary surface — the most common ground in the game. `tdf-olive #6B7A3F` against `env-grass #5E7A3A` is **ΔE 6.2, ΔL 1.0**: no tonal separation at all, and barely above the threshold at which two colours are the same colour. The olive torso and arms still merge with it and always will — that is what olive drab is *for*. What makes the squads findable is the helmet above them (#613).
 - **Rock** is the control. Both factions read.
 
-**Screen with the numbers, judge with the render.** ΔE against a ground token catches a duplicate like olive-on-grass instantly and is worth computing for any new colour. It is only a screen, though: it predicted trouble for `tdf-grey-mid` mech armour on rock (ΔE 12.3) which the render does not bear out, because the mech is large and internally contrasty — dark greys, light greys and orange inside one silhouette — and that carries it. **Size and internal contrast beat any single hue distance.** A small, near-monotone model is the one in danger.
+**Screen on value, not on colour distance** (#613). ΔE catches an outright duplicate like olive-on-grass, and is worth computing for any new colour — but on its own it will tell you a figure is fine when it is invisible. The infantry helmet was `tdf-grey-mid`: **ΔE 46 from grass and ΔL 5**. Hue distance carrying no tonal difference does not survive 64 px and a cast shadow, and the squads disappeared exactly as though the helmet were not there.
+
+What actually keeps a figure visible is that **at least one of its parts separates in value from the ground it stands on.** By that measure the old infantry were tonally flat on *four* grounds — rock 3.7, frozen dirt 4.0, grass 5.3, dirt 6.1 — every part of the figure the same tone as the terrain. A light helmet takes the worst case to 9.6, and on the grounds where the helmet then matches the ground instead (sidewalk, wet sand) the olive body carries it. That two-part split is the TDF equivalent of the bugs' bone crest, and `faction-read.test.ts` guards both the ΔE screen and the value one.
+
+ΔE also overstates the large models: it flagged `tdf-grey-mid` mech armour on rock at 12.3, which the render does not bear out, because the mech is big and internally contrasty. **Size and internal contrast beat any single hue distance.** A small, near-monotone model is the one in danger.
 
 **There is no colour that separates from every ground**, so do not go looking for one. `tdf-grey-light` merely trades grass for concrete (ΔE 15.7). Separation has to come from something that is not hue: the bone crest on the bugs, and contact shadows (#507) for everything — a shape on ground of its own tone is separated by the shadow under it as much as by anything on its back. That is why the answer to "I cannot see the units" is not more glow, and not a new colour.
 

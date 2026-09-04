@@ -43,7 +43,14 @@ def figure(prefix: str, at: tuple[float, float], kit: str, kneel: bool = False) 
     box(f"{prefix}_arm_l", (0.07, 0.24, 0.07), (x - 0.15, y - 0.12, z + 0.24), "tdf-olive")
     box(f"{prefix}_arm_r", (0.07, 0.24, 0.07), (x + 0.15, y - 0.12, z + 0.24), "tdf-olive")
     # helmet: bevelled box with a brim and a visor slit
-    bevel(box(f"{prefix}_helmet", (0.18, 0.18, 0.16), (x, y, z + 0.44), "tdf-grey-mid"), 0.03)
+    # The helmet is the one surface an isometric camera always sees, so
+    # it carries the read (#613). Light, not mid: against grass the two
+    # greys are equally distant in hue (ΔE 46 and 48) and it is *value*
+    # that survives at 64 px and under a cast shadow -- grey-mid sits
+    # only ΔL 6 from the olive torso, grey-light ΔL 19. This is the TDF
+    # equivalent of the bugs' bone crest (§4.2): a small bright element
+    # that says "there is something there" when the body cannot.
+    bevel(box(f"{prefix}_helmet", (0.18, 0.18, 0.16), (x, y, z + 0.44), "tdf-grey-light"), 0.03)
     box(f"{prefix}_brim", (0.2, 0.06, 0.02), (x, y - 0.09, z + 0.44), "tdf-grey-dark")
     box(f"{prefix}_visor", (0.12, 0.02, 0.04), (x, y - 0.1, z + 0.42), "tdf-visor")
     # kit

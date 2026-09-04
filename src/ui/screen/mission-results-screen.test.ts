@@ -187,6 +187,33 @@ describe("MissionResultsScreen", () => {
     expect(field("infestation-delta").textContent).toBe("-20");
   });
 
+  it("does not raise the alarm on a debrief with nothing to mourn", () => {
+    // "Mechs destroyed" earns top billing when a mech is destroyed. It
+    // was applied whatever the content, so a clean extraction opened
+    // with a red bar, a red heading and 1.15em type reading "No mechs
+    // lost." -- the loudest thing on the screen announcing the worst,
+    // then denying it.
+    const clean = afterMission();
+    const store = new FakeStore({
+      ...clean,
+      overworld: {
+        ...clean.overworld,
+        lastMissionResult: { ...RESULT, mechsDestroyed: [] },
+      },
+    });
+    new MissionResultsScreen({
+      router: fakeRouter().router,
+      session: sessionWith(store),
+    }).mount(root);
+    const section = field("mechs-destroyed");
+    expect(section.dataset.count).toBe("0");
+    expect(
+      section.classList.contains("tut-mission-results__section--prominent"),
+    ).toBe(false);
+    expect(section.querySelector(".tut-mission-results__loss")).toBeNull();
+    expect(section.textContent).toContain("No mechs lost.");
+  });
+
   it("does not say there were no casualties on a mission that wiped the force (#480)", () => {
     const state = afterMission();
     // Everything died: both squads wiped, the mech destroyed. Each is

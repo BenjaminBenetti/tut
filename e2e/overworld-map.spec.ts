@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import type { TutTestHooks } from "../src/app/model/test-hooks";
+import { MAP_READY_ATTRIBUTE } from "../src/ui/model/map-viewport-host";
 
 /** The page's global object as seen from `page.evaluate`, with the dev hooks. */
 interface HookGlobal {
@@ -29,6 +30,10 @@ test("renders the overworld map into #map-viewport and selects cities", async ({
   await expect(page.locator("body")).toHaveAttribute(
     "data-screen",
     "overworld",
+  );
+  await expect(page.locator("body")).toHaveAttribute(
+    MAP_READY_ATTRIBUTE,
+    "true",
   );
 
   // The dev-only hook selects a city without pointer input.

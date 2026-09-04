@@ -60,6 +60,8 @@ interface AttachedScene {
   readonly animations: TacticalAnimationQueue;
   mission: TacticalState;
   selected: UnitId | undefined;
+  /** The armed attack target, so the sight cue can narrow to it (#517). */
+  target: string | undefined;
 }
 
 // ===========================================
@@ -179,6 +181,7 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
       animations,
       mission,
       selected: undefined,
+      target: undefined,
     };
     scene.start();
     // The map art and the unit models are independent fetches; running
@@ -217,10 +220,15 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
    * mission. Hover was wired and selection was not, which is backwards:
    * a unit merely pointed at rang, and the one actually being commanded
    * did not.
+   *
+   * @param unitId - The selected unit.
+   * @param targetId - The armed target, when one is chosen; it narrows
+   *   the sight cue to that target rather than to any enemy (#517).
    */
-  select(unitId: UnitId | undefined): void {
+  select(unitId: UnitId | undefined, targetId?: string): void {
     if (this.attached) {
       this.attached.selected = unitId;
+      this.attached.target = targetId;
       this.attached.builder.setSelected(unitId);
       this.refreshOverlays();
     }
@@ -257,7 +265,9 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
     if (!attached) {
       return;
     }
-    attached.overlays.show(overlaysFor(attached.mission, attached.selected));
+    attached.overlays.show(
+      overlaysFor(attached.mission, attached.selected, attached.target),
+    );
     document.body.dataset.tacticalSelected = attached.selected ?? "";
   }
 

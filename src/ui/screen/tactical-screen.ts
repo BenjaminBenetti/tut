@@ -84,7 +84,11 @@ export class TacticalScreen implements Screen {
   private attachedMissionId: string | undefined;
   /** Last overlay state pushed to the scene, so an unchanged refresh costs nothing. */
   private overlayState:
-    | { readonly selected: UnitId | undefined; readonly weaponRange: boolean }
+    | {
+        readonly selected: UnitId | undefined;
+        readonly weaponRange: boolean;
+        readonly target: UnitId | undefined;
+      }
     | undefined;
   /** The mission `FinishMission` has already been dispatched for, so it is asked once. */
   private finishedMissionId: string | undefined;
@@ -239,16 +243,18 @@ export class TacticalScreen implements Screen {
     }
     const selected = this.hud.getSelectedUnitId();
     const weaponRange = this.hud.isWeaponRangeVisible();
+    const target = this.hud.getTargetUnitId();
     const pushed = this.overlayState;
     if (
       pushed !== undefined &&
       pushed.selected === selected &&
-      pushed.weaponRange === weaponRange
+      pushed.weaponRange === weaponRange &&
+      pushed.target === target
     ) {
       return;
     }
-    this.overlayState = { selected, weaponRange };
-    host.select(selected);
+    this.overlayState = { selected, weaponRange, target };
+    host.select(selected, target);
     host.setWeaponRangeVisible(weaponRange);
   }
 
@@ -281,7 +287,11 @@ export class TacticalScreen implements Screen {
       // envelope. Recording it rather than pushing it keeps the attach
       // free of a redundant round trip, and the call below then pushes
       // only if the HUD is holding something different.
-      this.overlayState = { selected: undefined, weaponRange: false };
+      this.overlayState = {
+        selected: undefined,
+        weaponRange: false,
+        target: undefined,
+      };
     }
     this.attachedMissionId = mission.missionId;
     this.syncOverlays();

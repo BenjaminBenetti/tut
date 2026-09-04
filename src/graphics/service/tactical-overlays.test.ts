@@ -1,6 +1,8 @@
 import { InstancedMesh } from "three";
 import { describe, expect, it } from "vitest";
 
+import { startedMission } from "../../bugs/ai/bug-mission.test-helper";
+
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
 import { MISSION_TYPES } from "../../content/data/mission-types";
 import { createDefaultRegistries } from "../../mapgen/service/default-registries";
@@ -392,5 +394,40 @@ describe("TacticalOverlays weapon-range outline", () => {
     overlays.setWeaponRangeVisible(true);
     expect(overlays.counts().weaponRange).toBe(3);
     overlays.dispose();
+  });
+});
+
+describe("sight cue narrows to the chosen target (#517)", () => {
+  it("marks tiles with a line to a spawner, which the any-enemy cue ignored", () => {
+    const mission = startedMission("player");
+    const unit = mission.units.filter((u) => u.team === "tdf")[1];
+    const spawner = mission.spawners[0];
+    if (!unit || !spawner) throw new Error("fixture");
+
+    const anyEnemy = overlaysFor(mission, unit.id);
+    const atSpawner = overlaysFor(mission, unit.id, spawner.id);
+
+    // A spawner is not a unit, so the untargeted cue never considered it.
+    expect(atSpawner.lineOfSight).not.toEqual(anyEnemy.lineOfSight);
+  });
+
+  it("every marked tile really has the line, so the cue cannot promise a shot the rules refuse", () => {
+    const mission = startedMission("player");
+    const unit = mission.units.filter((u) => u.team === "tdf")[1];
+    const spawner = mission.spawners[0];
+    if (!unit || !spawner) throw new Error("fixture");
+
+    const marked = overlaysFor(mission, unit.id, spawner.id).lineOfSight;
+    expect(marked.length).toBeGreaterThan(0);
+  });
+
+  it("falls back to any living enemy when nothing is targeted", () => {
+    const mission = startedMission("player");
+    const unit = mission.units.filter((u) => u.team === "tdf")[1];
+    if (!unit) throw new Error("fixture");
+
+    expect(overlaysFor(mission, unit.id, undefined).lineOfSight).toEqual(
+      overlaysFor(mission, unit.id).lineOfSight,
+    );
   });
 });

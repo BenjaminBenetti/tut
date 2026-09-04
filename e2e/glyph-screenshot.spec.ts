@@ -2,6 +2,9 @@ import { expect, test } from "@playwright/test";
 
 import { launchMission, settleForShot } from "./mission-capture.helper";
 
+/** Turns to hand over before giving up on a bug walking into view. */
+const TURNS_FOR_A_TARGET = 10;
+
 /** Glyphs the roster screen must show once it has the starter force (#595). */
 const ROSTER_ICONS = ["squad", "mech"];
 
@@ -23,6 +26,9 @@ test("captures the glyphed screens for review", async ({ page }) => {
     process.env.CAPTURE === undefined,
     "set CAPTURE=1 to regenerate the glyph screenshots",
   );
+  // Handing turns over to reach a target costs far more than the
+  // suite's default, and it is still bounded by TURNS_FOR_A_TARGET.
+  test.setTimeout(180_000);
 
   /** Every glyph on the page whose mask failed to load. */
   const unresolved = async (): Promise<string[]> =>
@@ -38,6 +44,9 @@ test("captures the glyphed screens for review", async ({ page }) => {
   await page.goto("/");
   const body = page.locator("body");
   await expect(body).toHaveAttribute("data-app-state", "ready");
+  await page.locator('[data-field="seed"]').fill("4242");
+  await page.locator('[data-action="new-game"]').click();
+  await expect(body).toHaveAttribute("data-screen", "overworld");
 
   // Roster: one glyph per row, by kind.
   await page.locator('[data-action="roster"]').click();
@@ -79,4 +88,63 @@ test("captures the glyphed screens for review", async ({ page }) => {
   await settleForShot(page);
   expect(await unresolved(), "every tactical glyph resolves").toEqual([]);
   await page.screenshot({ path: "docs/design/ui-glyphs-tactical.png" });
+
+  // The chips only exist once something is targeted *and in range*. On
+  // seed 4242 the board is empty until turn 4, the squad has eyes on a
+  // bug by turn 5, and they are in contact by turn 6 — so aim every
+  // turn and stop when the preview offers a shot rather than a refusal.
+  // A refused preview leaves the chip row empty, which has no box at
+  // all, so "visible" is the honest test for "there is a shot here".
+  const endTurn = page.locator('#action-bar [data-action="end-turn"]');
+  const chips = page.locator('[data-field="preview-terrain"]');
+  let aimed = false;
+  for (let turn = 0; turn < TURNS_FOR_A_TARGET && !aimed; turn++) {
+    const mark = await page.evaluate(() => {
+      const raw = localStorage.getItem("tut:save:autosave");
+      if (raw === null) return null;
+      const mission = (
+        JSON.parse(raw) as {
+          state: {
+            activeMission?: { vision: { tdf: { spotted: string[] } } };
+          };
+        }
+      ).state.activeMission;
+      return mission?.vision.tdf.spotted[0] ?? null;
+    });
+    if (mark !== null) {
+      // Aiming is three steps, not one — pick the shooter, arm Attack,
+      // pick the mark. Selecting the bug alone only inspects it, which
+      // is why an earlier version of this walk produced no preview.
+      await page.evaluate(
+        (id) =>
+          (
+            globalThis as { __tutTactical__?: { selectUnit(id: string): void } }
+          ).__tutTactical__?.selectUnit(id),
+        mineId,
+      );
+      await page.keyboard.press("2");
+      await page.evaluate(
+        (id) =>
+          (
+            globalThis as { __tutTactical__?: { selectUnit(id: string): void } }
+          ).__tutTactical__?.selectUnit(id),
+        mark,
+      );
+      aimed = await chips.isVisible();
+      if (aimed) {
+        break;
+      }
+    }
+    await expect(endTurn).toBeEnabled();
+    await endTurn.click();
+    await expect(
+      page.locator('#turn-banner [data-field="phase"]'),
+    ).toContainText(/player/i, { timeout: 30000 });
+  }
+  // Required, not conditional: a capture behind an `if` that quietly
+  // does nothing is how a committed frame goes stale unnoticed (#650).
+  expect(aimed, "a bug came into range to aim at").toBe(true);
+  await settleForShot(page);
+  expect(await unresolved(), "every hit-preview glyph resolves").toEqual([]);
+  await page.screenshot({ path: "docs/design/ui-glyphs-hit-preview.png" });
 });

@@ -320,14 +320,22 @@ export class MissionResultsScreen implements Screen {
     emptyText: string,
     prominent: boolean,
   ): HTMLElement {
+    // Top billing only when there is something to bill. `prominent` says
+    // this section *deserves* the alarm when it fires -- losing a mech
+    // should be memorable (GDD §5.8) -- but it was applied whatever the
+    // content, so a clean mission opened its debrief with a red bar, a
+    // red heading and 1.15em type reading "No mechs lost." The loudest
+    // thing on the screen said the worst had happened, and then said it
+    // had not. Emphasis follows the loss; it does not precede it.
+    const alarmed = prominent && items.length > 0;
     const block = doc.createElement("div");
-    block.className = prominent
+    block.className = alarmed
       ? "tut-mission-results__section tut-mission-results__section--prominent"
       : "tut-mission-results__section";
     block.dataset.field = field;
     block.dataset.count = String(items.length);
     const heading = doc.createElement("div");
-    heading.className = prominent
+    heading.className = alarmed
       ? "tut-label tut-mission-results__loss"
       : "tut-label";
     heading.textContent = label;

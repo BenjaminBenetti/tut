@@ -101,3 +101,5 @@ Any change to §2, §3, or a new library goes in `docs/adr/NNNN-title.md` with c
 | [0003](../adr/0003-state-commands-events-ids.md) | Root state, commands, events, plain string ids, data conventions |
 | [0004](../adr/0004-tactical-map-contract.md) | Tactical map contract and generation pipeline |
 | [0005](../adr/0005-overworld-camera-is-top-down.md) | Strategic map camera is top-down; tactical stays isometric |
+| [0006](../adr/0006-fog-of-war-is-per-side-knowledge.md) | Fog of war is per-side knowledge in the mission state |
+| [0007](../adr/0007-in-world-ui-is-dom-anchored-to-world-points.md) | In-world UI is DOM anchored to projected world points |

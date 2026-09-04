@@ -28,10 +28,11 @@ import {
 import type { ReachableObjective } from "../../tactical/service/objective-service";
 import { reachableObjectives } from "../../tactical/service/objective-service";
 import type {
+  ActionBarAction,
+  TacticalAction,
   TacticalIntent,
   TacticalInvokeTarget,
 } from "../model/tactical-intent";
-import type { ActionBarAction } from "./action-bar-view";
 import { ActionBarView } from "./action-bar-view";
 import { HitPreviewView } from "./hit-preview-view";
 import { ObjectiveTrackerView } from "./objective-tracker-view";
@@ -405,10 +406,17 @@ export class TacticalHudView {
     this.refresh();
   }
 
-  /** Arms, cancels, cycles or dispatches per the action. */
-  private handleAction(
-    action: ActionBarAction | "next-unit" | "next-target" | "cancel",
-  ): void {
+  /**
+   * Arms, cancels, cycles or dispatches per the action.
+   *
+   * It takes **both** vocabularies, because neither contains the other:
+   * the bar has `end-turn` and no `toggle-range` (#522 gave that a key
+   * and no button), while the keyboard has `next-unit`, `next-target`
+   * and `cancel` and no button of their own. #520 binds the number row
+   * to `ACTION_BAR_ORDER` alone, so the two sets stay deliberately
+   * different and this is the one place they meet.
+   */
+  private handleAction(action: TacticalAction | ActionBarAction): void {
     switch (action) {
       case "move":
       case "attack":

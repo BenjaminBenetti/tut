@@ -30,6 +30,12 @@ export interface ActionBarModel {
    * offered to a unit that has already spent its turn.
    */
   readonly canExtract?: boolean;
+  /**
+   * Whether the selected unit is in reach of an objective it could work
+   * (#427). Its own flag rather than `canAct`, because being able to act
+   * is not enough: there has to be something in reach to act on.
+   */
+  readonly canInteract?: boolean;
 }
 
 // ===========================================
@@ -46,6 +52,7 @@ const BUTTONS: readonly {
   { action: "attack", label: "Attack", primary: false },
   { action: "overwatch", label: "Overwatch", primary: false },
   { action: "reload", label: "Reload", primary: false },
+  { action: "interact", label: "Interact", primary: false },
   { action: "extract", label: "Extract", primary: false },
   { action: "end-turn", label: "End turn", primary: true },
 ];
@@ -60,10 +67,10 @@ const BUTTONS: readonly {
  * armed action (move or attack) reads pressed until it is used or
  * cancelled. One delegated click listener serves every button.
  *
- * Two buttons answer to their own flag rather than to `canAct`: End turn
- * is offered for the whole player phase, and Extract whenever the
- * selected unit stands in the extraction zone, since walking out costs
- * no action points.
+ * Three buttons answer to their own flag rather than to `canAct`: End
+ * turn is offered for the whole player phase, Extract whenever the
+ * selected unit stands in the extraction zone (walking out costs no
+ * action points), and Interact only when an objective is in reach.
  */
 export class ActionBarView {
   // ===========================================
@@ -160,6 +167,8 @@ function isEnabled(action: ActionBarAction, model: ActionBarModel): boolean {
       return model.playerPhase;
     case "extract":
       return model.canExtract ?? false;
+    case "interact":
+      return model.canInteract ?? false;
     default:
       return model.canAct;
   }

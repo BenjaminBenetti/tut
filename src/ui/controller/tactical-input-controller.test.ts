@@ -193,6 +193,7 @@ describe("TacticalInputController", () => {
     key("Tab");
     key("Escape");
     key("x");
+    key("i");
     key("z");
     key("a", { repeat: true });
     key("r", { target: { tagName: "INPUT" } });
@@ -202,6 +203,7 @@ describe("TacticalInputController", () => {
       { kind: "action", action: "next-unit" },
       { kind: "action", action: "cancel" },
       { kind: "action", action: "extract" },
+      { kind: "action", action: "interact" },
     ]);
   });
 

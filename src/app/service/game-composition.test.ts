@@ -6,7 +6,9 @@ import { advanceDay } from "../../overworld/model/overworld-command";
 import type { CampaignDebugOptions } from "../../overworld/model/campaign-debug";
 import type { Deployment } from "../../overworld/model/deployment";
 import { launchMission } from "../../overworld/model/launch-mission-command";
+import { OBJECTIVE_TUNING } from "../../tactical/data/objective-tuning";
 import { finishMission } from "../../tactical/model/finish-mission-command";
+import { interact } from "../../tactical/model/interact-command";
 import { startMission } from "../../tactical/model/start-mission-command";
 import type { Mission } from "../../overworld/model/mission";
 import { MISSION_RESOLVED } from "../../overworld/model/mission-resolved-event";
@@ -192,6 +194,81 @@ describe("composeGame", () => {
     );
     const loaded = game.saves.loadGame(AUTOSAVE_SLOT_ID);
     expect(loaded.ok && loaded.value.activeMission).toBeUndefined();
+  });
+
+  it("wins a mission by clearing its objectives and pays the full reward", () => {
+    const { game } = build();
+    const { mission, deployment } = campaignWithMission(game);
+    game.session.store?.dispatch(startMission(mission.id, deployment));
+    const started = game.session.state;
+    const active = started?.activeMission;
+    const spawner = active?.spawners[0];
+    const unit = active?.units[0];
+    if (!started || !active || !spawner || !unit)
+      throw new Error("mission did not start with a spawner and a unit");
+
+    // Stand the squad beside one spawner and make it the only objective;
+    // the real map puts spawners 12+ tiles from the deploy zone, which is
+    // a march, not a rule. Everything after this is the shipped path.
+    game.session.replace({
+      ...started,
+      activeMission: {
+        ...active,
+        units: [
+          { ...unit, pos: { ...spawner.pos, x: spawner.pos.x + 1 }, ap: 2 },
+        ],
+        spawners: [spawner],
+        objectives: active.objectives
+          .filter((o) => o.targetId === spawner.id)
+          .map((o) => ({ ...o, complete: false })),
+      },
+    });
+    const objectiveId = game.session.state?.activeMission?.objectives[0]?.id;
+    if (objectiveId === undefined) throw new Error("no objective to work");
+
+    // Plant charges until the spawner is down: 10 a go against 20 hp, so
+    // two actions — one unit's whole turn beside it.
+    let guard = 0;
+    while (
+      game.session.state?.activeMission?.outcome === undefined &&
+      guard++ < 10
+    ) {
+      const before = game.session.state?.activeMission?.units[0];
+      if (before !== undefined && before.ap < OBJECTIVE_TUNING.interactApCost) {
+        // Refresh the turn the cheap way; the turn engine is not the
+        // subject here.
+        const live = game.session.state;
+        if (!live?.activeMission) break;
+        game.session.replace({
+          ...live,
+          activeMission: {
+            ...live.activeMission,
+            units: live.activeMission.units.map((u) => ({ ...u, ap: u.maxAp })),
+          },
+        });
+      }
+      const outcome = game.session.store?.dispatch(
+        interact(unit.id, objectiveId),
+      );
+      expect(outcome?.ok).toBe(true);
+    }
+
+    const decided = game.session.state?.activeMission;
+    expect(decided?.spawners[0]?.destroyed).toBe(true);
+    expect(decided?.objectives[0]?.complete).toBe(true);
+    expect(decided?.outcome).toBe("won");
+
+    const result = game.session.store?.dispatch(finishMission(mission.id));
+    expect(result?.ok).toBe(true);
+    const after = game.session.state;
+    expect(after?.activeMission).toBeUndefined();
+    expect(after?.overworld.lastMissionResult?.outcome).toBe("won");
+    expect(after?.overworld.lastMissionResult?.creditsAwarded).toBe(
+      mission.rewards.credits,
+    );
+    expect(after?.overworld.lastMissionResult?.infestationDelta).toBeLessThan(
+      0,
+    );
   });
 
   it("refuses to finish a mission that is still being fought", () => {

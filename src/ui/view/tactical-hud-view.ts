@@ -6,12 +6,16 @@ import { endTurn } from "../../tactical/model/end-turn-command";
 import { move } from "../../tactical/model/move-command";
 import { overwatch } from "../../tactical/model/overwatch-command";
 import { extract } from "../../tactical/model/extract-command";
+import { interact } from "../../tactical/model/interact-command";
+import type { ObjectiveTuning } from "../../tactical/model/objective-tuning";
 import { reload } from "../../tactical/model/reload-command";
 import type { TacticalCommand } from "../../tactical/model/tactical-command";
 import type { TacticalError } from "../../tactical/model/tactical-error";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { Team, Unit, UnitId } from "../../tactical/model/unit";
 import { previewAttack } from "../../tactical/service/combat-service";
+import type { ReachableObjective } from "../../tactical/service/objective-service";
+import { reachableObjectives } from "../../tactical/service/objective-service";
 import type { TacticalIntent } from "../model/tactical-intent";
 import type { ActionBarAction } from "./action-bar-view";
 import { ActionBarView } from "./action-bar-view";
@@ -39,6 +43,8 @@ export interface TacticalHudHandlers {
 export interface TacticalHudDeps {
   /** Tuning handed to `previewAttack`; the HUD never computes a number itself. */
   readonly combatTuning: CombatTuning;
+  /** Tuning handed to `reachableObjectives`; the HUD judges no distance itself. */
+  readonly objectiveTuning: ObjectiveTuning;
 }
 
 /** Which team acts in which phase. */
@@ -257,6 +263,13 @@ export class TacticalHudView {
           this.handlers.onCommand(extract(this.selected));
         }
         break;
+      case "interact": {
+        const target = this.interactTarget();
+        if (target && this.selected !== undefined) {
+          this.handlers.onCommand(interact(this.selected, target.objective.id));
+        }
+        break;
+      }
       case "end-turn":
         this.handlers.onCommand(endTurn());
         break;
@@ -340,6 +353,24 @@ export class TacticalHudView {
     );
   }
 
+  /**
+   * The objective Interact would work: the nearest one the selected unit
+   * can reach, or undefined when there is none. The rules answer this
+   * (`reachableObjectives`), so the button offers exactly what the
+   * handler would accept.
+   */
+  private interactTarget(): ReachableObjective | undefined {
+    const mission = this.mission;
+    if (!mission || this.selected === undefined) {
+      return undefined;
+    }
+    return reachableObjectives(
+      mission,
+      this.selected,
+      this.deps.objectiveTuning,
+    )[0];
+  }
+
   /** A unit of the current mission by id. */
   private unit(id: UnitId | undefined): Unit | undefined {
     return id === undefined
@@ -377,6 +408,7 @@ export class TacticalHudView {
         playerPhase: false,
         mode: undefined,
         canExtract: false,
+        canInteract: false,
       });
       return;
     }
@@ -402,13 +434,19 @@ export class TacticalHudView {
           }
         : undefined,
     );
-    this.objectives.update(mission.objectives, mission.spawners);
+    const inReach = this.interactTarget();
+    this.objectives.update(
+      mission.objectives,
+      mission.spawners,
+      inReach?.objective.id,
+    );
     this.actions.update({
       canAct: this.canAct(),
       playerPhase: mission.phase === "player",
       mode: this.mode === "select" ? undefined : this.mode,
       reloadLabel: selected?.kind === "mech" ? "Vent" : "Reload",
       canExtract: this.canExtract(),
+      canInteract: inReach !== undefined,
     });
   }
 }

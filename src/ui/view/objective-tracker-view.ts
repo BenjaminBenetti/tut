@@ -1,4 +1,8 @@
-import type { Objective, Spawner } from "../../tactical/model/tactical-state";
+import type {
+  Objective,
+  ObjectiveId,
+  Spawner,
+} from "../../tactical/model/tactical-state";
 import { formatWhole } from "../service/format";
 
 // ===========================================
@@ -13,8 +17,11 @@ import { formatWhole } from "../service/format";
  * ```
  *   OBJECTIVES  1 / 2
  *   ├ ✓ Destroy spawner spawner-1
- *   └ ○ Destroy spawner spawner-2 · 20 hp
+ *   └ ○ Destroy spawner spawner-2 · 20 hp · IN REACH
  * ```
+ *
+ * The row marked `in reach` is the one Interact would work, so a player
+ * with two spawners in range can see which gets the charges (#427).
  */
 export class ObjectiveTrackerView {
   // ===========================================
@@ -51,8 +58,16 @@ export class ObjectiveTrackerView {
     this.list = list;
   }
 
-  /** Rebuilds the rows from the mission's objectives and spawners. */
-  update(objectives: readonly Objective[], spawners: readonly Spawner[]): void {
+  /**
+   * Rebuilds the rows from the mission's objectives and spawners.
+   * `inReachId` names the objective the selected unit could work now, if
+   * any; its row is marked so the Interact button is never ambiguous.
+   */
+  update(
+    objectives: readonly Objective[],
+    spawners: readonly Spawner[],
+    inReachId?: ObjectiveId,
+  ): void {
     if (!this.list || !this.summary) {
       return;
     }
@@ -64,6 +79,9 @@ export class ObjectiveTrackerView {
       const row = doc.createElement("li");
       row.dataset.objectiveId = objective.id;
       row.dataset.complete = objective.complete ? "true" : "false";
+      if (objective.id === inReachId) {
+        row.dataset.inReach = "true";
+      }
       const label = doc.createElement("span");
       label.textContent = `${objective.complete ? "✓" : "○"} Destroy spawner ${objective.targetId}`;
       row.appendChild(label);
@@ -73,6 +91,13 @@ export class ObjectiveTrackerView {
         hp.className = "tut-mono tut-dim";
         hp.textContent = `${formatWhole(spawner.hp)} hp`;
         row.appendChild(hp);
+      }
+      if (objective.id === inReachId) {
+        const reach = doc.createElement("span");
+        reach.className = "tut-mono";
+        reach.dataset.role = "in-reach";
+        reach.textContent = "in reach";
+        row.appendChild(reach);
       }
       this.list.appendChild(row);
     }

@@ -2,6 +2,7 @@ import type { Unsubscribe } from "../../core/model/event-bus";
 import type { GameState } from "../../save/model/game-state";
 import type { CombatTuning } from "../../tactical/model/combat-tuning";
 import { finishMission } from "../../tactical/model/finish-mission-command";
+import type { ObjectiveTuning } from "../../tactical/model/objective-tuning";
 import type { TacticalCommand } from "../../tactical/model/tactical-command";
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { TacticalState } from "../../tactical/model/tactical-state";
@@ -22,6 +23,8 @@ export interface TacticalScreenDeps {
   readonly session: GameSession;
   /** Tuning the HUD hands to `previewAttack`; the screen computes no number itself. */
   readonly combatTuning: CombatTuning;
+  /** Tuning the HUD hands to `reachableObjectives`; the screen judges no distance itself. */
+  readonly objectiveTuning: ObjectiveTuning;
   /** Builds and owns the three.js scene for the mission; absent in unit tests that only check the DOM. */
   readonly sceneHost?: TacticalSceneHost;
   /**
@@ -94,7 +97,10 @@ export class TacticalScreen implements Screen {
           this.deps.router.navigate("overworld");
         },
       },
-      { combatTuning: deps.combatTuning },
+      {
+        combatTuning: deps.combatTuning,
+        objectiveTuning: deps.objectiveTuning,
+      },
     );
   }
 

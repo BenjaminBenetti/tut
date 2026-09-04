@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  BLOCKED_SHOT_OPACITY,
+  BLOCKED_SHOT_SIZE,
   COVER_OPACITY,
   COVER_RING_INNER_RADIUS,
   COVER_RING_OUTER_RADIUS,
   GROUND_SLAB_THICKNESS,
-  LINE_OF_SIGHT_OPACITY,
-  LINE_OF_SIGHT_PIP_OUTER_RADIUS,
   MOVE_RANGE_ONE_AP_COLOUR,
   MOVE_RANGE_ONE_AP_FOOTPRINT,
   MOVE_RANGE_TWO_AP_COLOUR,
@@ -14,7 +14,7 @@ import {
   MOVE_RANGE_TWO_AP_FOOTPRINT,
   MOVE_RANGE_TWO_AP_OPACITY,
   OVERLAY_LIFT,
-  WEAPON_RANGE_FOOTPRINT,
+  WEAPON_RANGE_LINE_WIDTH,
 } from "./tactical-overlay-palette";
 
 // ===========================================
@@ -74,17 +74,21 @@ describe("tactical overlay palette", () => {
     );
   });
 
-  it("keeps the weapon-range mark small enough not to bury a move band", () => {
-    // #572: at nearly a whole tile the range overlay filled in a city and
-    // covered the 2 AP band underneath it.
-    expect(WEAPON_RANGE_FOOTPRINT).toBeLessThan(MOVE_RANGE_TWO_AP_FOOTPRINT);
+  it("keeps the weapon-range boundary a line, not a footprint", () => {
+    // #572 shrank a tile-filling range overlay to a pip and #624 replaced
+    // the pip with one outline. A "line" wide enough to read as a tile is
+    // a fill again, and fills mean somewhere to stand.
+    expect(WEAPON_RANGE_LINE_WIDTH).toBeLessThan(
+      MOVE_RANGE_TWO_AP_FOOTPRINT / 4,
+    );
   });
 
-  it("ranks a threat above an attribute, so cover never out-shouts sight", () => {
+  it("ranks a refusal above an attribute, so cover never out-shouts it", () => {
     // #590: cover is a property of a tile the player may never care
-    // about; being seen is the thing on this plane entitled to
-    // interrupt. Cover was the heaviest value in the file at 0.85.
-    expect(COVER_OPACITY).toBeLessThan(LINE_OF_SIGHT_OPACITY);
+    // about. A tile that will refuse the shot is the thing on this
+    // plane entitled to interrupt -- and it can afford the weight,
+    // because since #624 it is rare rather than universal.
+    expect(COVER_OPACITY).toBeLessThan(BLOCKED_SHOT_OPACITY);
     expect(COVER_OPACITY).toBeLessThanOrEqual(0.6);
   });
 
@@ -98,10 +102,12 @@ describe("tactical overlay palette", () => {
     expect(COVER_RING_OUTER_RADIUS).toBeLessThanOrEqual(0.5);
   });
 
-  it("nests the sight pip inside the cover ring instead of overlapping it", () => {
-    // A tile can carry both. Sized so it reads as a ring with a dot in
-    // it rather than two marks fighting over the same pixels.
-    expect(LINE_OF_SIGHT_PIP_OUTER_RADIUS).toBeLessThan(
+  it("nests the blocked-shot diamond inside the cover ring", () => {
+    // A tile can carry both. The diamond's corners reach half its side
+    // times root two; keeping that inside the ring's hole means the two
+    // marks read as a ring with a diamond in it rather than fighting
+    // over the same pixels.
+    expect((BLOCKED_SHOT_SIZE / 2) * Math.SQRT2).toBeLessThan(
       COVER_RING_INNER_RADIUS,
     );
   });

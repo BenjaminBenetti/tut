@@ -1,15 +1,17 @@
 import type { Object3D } from "three";
 import {
   BoxGeometry,
+  BufferAttribute,
+  BufferGeometry,
   Group,
   InstancedBufferAttribute,
   InstancedMesh,
   Matrix4,
+  Mesh,
   MeshBasicMaterial,
   RingGeometry,
 } from "three";
 
-import { manhattanDistance } from "../../core/service/grid-math";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { CoverLevel } from "../../mapgen/model/cover";
 import { TileIndex } from "../../mapgen/service/tile-index";
@@ -32,11 +34,9 @@ import {
   COVER_RING_INNER_RADIUS,
   COVER_RING_OUTER_RADIUS,
   COVER_RING_SEGMENTS,
-  LINE_OF_SIGHT_COLOUR,
-  LINE_OF_SIGHT_OPACITY,
-  LINE_OF_SIGHT_PIP_INNER_RADIUS,
-  LINE_OF_SIGHT_PIP_OUTER_RADIUS,
-  LINE_OF_SIGHT_PIP_SEGMENTS,
+  BLOCKED_SHOT_COLOUR,
+  BLOCKED_SHOT_OPACITY,
+  BLOCKED_SHOT_SIZE,
   MOVE_RANGE_ONE_AP_COLOUR,
   MOVE_RANGE_ONE_AP_FOOTPRINT,
   MOVE_RANGE_ONE_AP_OPACITY,
@@ -46,7 +46,7 @@ import {
   OVERLAY_LIFT,
   RANGE_THICKNESS,
   WEAPON_RANGE_COLOUR,
-  WEAPON_RANGE_FOOTPRINT,
+  WEAPON_RANGE_LINE_WIDTH,
   WEAPON_RANGE_OPACITY,
 } from "../data/tactical-overlay-palette";
 import type { Disposable } from "../model/disposable";
@@ -81,14 +81,17 @@ export interface OverlayState {
   /** Reachable tiles with cover, and how much. */
   readonly cover: readonly CoverMarker[];
   /**
-   * Reachable tiles with a clear line to something worth shooting.
+   * Reachable tiles with **no** clear line to the chosen target, and
+   * empty when no target is chosen (#624).
    *
-   * With a target chosen it means **that** target, which is what a
-   * player standing in front of a refusal needs to know (#517); with
-   * none it falls back to any living enemy, so a unit with nothing
-   * selected still sees where it could open fire from.
+   * Deliberately the complement of what it used to be. Marking every
+   * tile that *could* see an enemy put a mark on 93 of 93 reachable
+   * tiles once nine bugs were on the board: an indicator true almost
+   * everywhere has stopped being an indicator. The tiles worth marking
+   * are the ones that will refuse the shot, which is exactly what a
+   * player standing in front of a silent refusal needs (#517).
    */
-  readonly lineOfSight: readonly TileCoord[];
+  readonly blockedShot: readonly TileCoord[];
   /**
    * Tiles the selected unit could fire on from where it stands (#522):
    * inside its weapon's range and with the sight line clear — the same
@@ -102,7 +105,7 @@ export interface OverlayState {
 export const EMPTY_OVERLAYS: OverlayState = {
   moveRange: [],
   cover: [],
-  lineOfSight: [],
+  blockedShot: [],
   weaponRange: [],
 };
 
@@ -124,6 +127,113 @@ const INITIAL_CAPACITY = 256;
 // ===========================================
 // Layer
 // ===========================================
+
+/**
+ * The weapon envelope's outline: one continuous ribbon around its
+ * perimeter, rebuilt whenever the envelope changes.
+ *
+ * ```
+ *   ┌───┬───┬───┐      the ribbon traces only the edges where an
+ *   │   │   │   │      inside tile meets an outside one, so the
+ *   ├───┼───┼───┤      notches line of sight cuts into the envelope
+ *   │   │   │            are part of the outline rather than lost
+ *   └───┴───┘            in a field of per-tile marks
+ * ```
+ *
+ * A ribbon of ground quads rather than `LineSegments`: WebGL ignores
+ * `linewidth` on almost every platform, so a line would be one pixel
+ * wide at every zoom and vanish at the far stop.
+ */
+class PerimeterRibbon implements Disposable {
+  readonly mesh: Mesh;
+  private readonly geometry = new BufferGeometry();
+  private readonly material: MeshBasicMaterial;
+
+  /** @param name - Object name for tests and debugging. */
+  constructor(name: string, colour: number, opacity: number, renderOrder: number) {
+    this.material = new MeshBasicMaterial({
+      color: colour,
+      transparent: true,
+      opacity,
+      depthWrite: false,
+    });
+    this.mesh = new Mesh(this.geometry, this.material);
+    this.mesh.name = name;
+    this.mesh.renderOrder = renderOrder;
+    this.mesh.frustumCulled = false;
+  }
+
+  /**
+   * Rebuilds the outline around `tiles`.
+   *
+   * @param tiles - Every tile inside the envelope.
+   * @param lift - Height above the tile top to lay the ribbon at.
+   */
+  setTiles(tiles: readonly TileCoord[], lift: number): void {
+    // Keyed by column: the envelope is a footprint on the ground, so a
+    // neighbour at a different height is still inside it, and a step in
+    // the terrain must not read as the edge of weapon range.
+    const inside = new Set(tiles.map((t) => `${t.x},${t.z}`));
+    const half = WEAPON_RANGE_LINE_WIDTH / 2;
+    const positions: number[] = [];
+    for (const tile of tiles) {
+      const centre = tileTopCentre(tile);
+      for (const [dx, dz] of CARDINALS) {
+        if (inside.has(`${tile.x + dx},${tile.z + dz}`)) {
+          continue;
+        }
+        // Midpoint of the shared edge, then out to the ribbon's corners:
+        // half a tile each way along the edge, half a width across it.
+        const mx = centre.x + dx * 0.5;
+        const mz = centre.z + dz * 0.5;
+        const y = centre.y + lift;
+        const rx = dz === 0 ? 0 : 0.5;
+        const rz = dx === 0 ? 0 : 0.5;
+        const nx = dx * half;
+        const nz = dz * half;
+        const corners = [
+          [mx - rx - nx, mz - rz - nz],
+          [mx + rx - nx, mz + rz - nz],
+          [mx + rx + nx, mz + rz + nz],
+          [mx - rx + nx, mz - rz + nz],
+        ] as const;
+        for (const [a, b, c] of [
+          [0, 1, 2],
+          [0, 2, 3],
+        ] as const) {
+          for (const corner of [corners[a], corners[b], corners[c]]) {
+            positions.push(corner[0], y, corner[1]);
+          }
+        }
+      }
+    }
+    this.geometry.setAttribute(
+      "position",
+      new BufferAttribute(new Float32Array(positions), 3),
+    );
+    this.geometry.computeBoundingSphere();
+  }
+
+  /**
+   * Boundary edges currently drawn, for tests and debug readouts. One
+   * per tile side where the envelope meets what is outside it, so a
+   * 5 x 5 block reads 20 however many tiles are inside it.
+   */
+  edgeCount(): number {
+    const position = this.geometry.getAttribute("position") as
+      | BufferAttribute
+      | undefined;
+    // Six vertices per edge: two triangles making one ribbon quad.
+    return position === undefined ? 0 : position.count / 6;
+  }
+
+  /** Detaches the mesh and releases its geometry and material. */
+  dispose(): void {
+    this.mesh.removeFromParent();
+    this.geometry.dispose();
+    this.material.dispose();
+  }
+}
 
 /** One instanced layer: a geometry and colour drawn once per tile. */
 class OverlayLayer implements Disposable {
@@ -223,8 +333,8 @@ export class TacticalOverlays implements Disposable {
   private readonly rangeTwoAp: OverlayLayer;
   private readonly coverLow: OverlayLayer;
   private readonly coverHigh: OverlayLayer;
-  private readonly los: OverlayLayer;
-  private readonly weaponRange: OverlayLayer;
+  private readonly blockedShot: OverlayLayer;
+  private readonly weaponRange: PerimeterRibbon;
   /**
    * Off until something asks for it (#590). The screen drives this from
    * armed intent, and a scene that defaulted to on would paint the
@@ -285,24 +395,22 @@ export class TacticalOverlays implements Disposable {
       COVER_OPACITY,
       2,
     );
-    this.los = new OverlayLayer(
-      "overlay-line-of-sight",
-      new RingGeometry(
-        LINE_OF_SIGHT_PIP_INNER_RADIUS,
-        LINE_OF_SIGHT_PIP_OUTER_RADIUS,
-        LINE_OF_SIGHT_PIP_SEGMENTS,
-      ),
-      LINE_OF_SIGHT_COLOUR,
-      LINE_OF_SIGHT_OPACITY,
+    this.blockedShot = new OverlayLayer(
+      "overlay-blocked-shot",
+      // A box turned 45 degrees about its own axis: a diamond, which no
+      // other plane draws. Shape carries the question a mark answers;
+      // colour only says how loudly the world is pushing back (#624).
+      new BoxGeometry(
+        BLOCKED_SHOT_SIZE,
+        RANGE_THICKNESS,
+        BLOCKED_SHOT_SIZE,
+      ).rotateY(Math.PI / 4),
+      BLOCKED_SHOT_COLOUR,
+      BLOCKED_SHOT_OPACITY,
       3,
     );
-    this.weaponRange = new OverlayLayer(
+    this.weaponRange = new PerimeterRibbon(
       "overlay-weapon-range",
-      new BoxGeometry(
-        WEAPON_RANGE_FOOTPRINT,
-        RANGE_THICKNESS,
-        WEAPON_RANGE_FOOTPRINT,
-      ),
       WEAPON_RANGE_COLOUR,
       WEAPON_RANGE_OPACITY,
       4,
@@ -313,7 +421,7 @@ export class TacticalOverlays implements Disposable {
       this.rangeTwoAp.mesh,
       this.coverLow.mesh,
       this.coverHigh.mesh,
-      this.los.mesh,
+      this.blockedShot.mesh,
     );
   }
 
@@ -345,7 +453,7 @@ export class TacticalOverlays implements Disposable {
       OVERLAY_LIFT * 2,
       true,
     );
-    this.los.setTiles(state.lineOfSight, OVERLAY_LIFT * 3, true);
+    this.blockedShot.setTiles(state.blockedShot, OVERLAY_LIFT * 3, true);
     this.lastState = state;
     this.drawWeaponRange();
   }
@@ -372,24 +480,18 @@ export class TacticalOverlays implements Disposable {
   }
 
   /**
-   * Draws the edge of the weapon envelope: every tile in it with a
-   * cardinal neighbour on its level that is not, which is the outline of
-   * the region including the notches walls cut out of it.
+   * Draws the envelope's outline as one continuous ribbon (#624).
+   *
+   * The inside/outside test was always here; it used to be thrown away
+   * by stamping a pip on every tile that passed it, which is N marks
+   * for a single fact. The ribbon joins those edges instead, so the
+   * notches walls cut into the envelope become part of the outline.
    */
   private drawWeaponRange(): void {
-    if (!this.weaponRangeVisible) {
-      this.weaponRange.setTiles([], OVERLAY_LIFT, false);
-      return;
-    }
-    const inside = new Set(
-      this.lastState.weaponRange.map((t) => `${t.x},${t.y},${t.z}`),
+    this.weaponRange.setTiles(
+      this.weaponRangeVisible ? this.lastState.weaponRange : [],
+      OVERLAY_LIFT,
     );
-    const edge = this.lastState.weaponRange.filter((t) =>
-      CARDINALS.some(
-        ([dx, dz]) => !inside.has(`${t.x + dx},${t.y},${t.z + dz}`),
-      ),
-    );
-    this.weaponRange.setTiles(edge, OVERLAY_LIFT, false);
   }
 
   /** Instances drawn per layer, for tests and debug readouts. */
@@ -399,15 +501,15 @@ export class TacticalOverlays implements Disposable {
     rangeTwoAp: number;
     coverLow: number;
     coverHigh: number;
-    los: number;
+    blockedShot: number;
   } {
     return {
-      weaponRange: this.weaponRange.mesh.count,
+      weaponRange: this.weaponRange.edgeCount(),
       rangeOneAp: this.rangeOneAp.mesh.count,
       rangeTwoAp: this.rangeTwoAp.mesh.count,
       coverLow: this.coverLow.mesh.count,
       coverHigh: this.coverHigh.mesh.count,
-      los: this.los.mesh.count,
+      blockedShot: this.blockedShot.mesh.count,
     };
   }
 
@@ -419,7 +521,7 @@ export class TacticalOverlays implements Disposable {
       this.rangeTwoAp.mesh,
       this.coverLow.mesh,
       this.coverHigh.mesh,
-      this.los.mesh,
+      this.blockedShot.mesh,
     ];
   }
 
@@ -430,7 +532,7 @@ export class TacticalOverlays implements Disposable {
     this.rangeTwoAp.dispose();
     this.coverLow.dispose();
     this.coverHigh.dispose();
-    this.los.dispose();
+    this.blockedShot.dispose();
     this.root.removeFromParent();
   }
 }
@@ -477,49 +579,55 @@ export function overlaysFor(
       apCost: apCostOf(mission, unit, search.costs.get(key) ?? 0),
     });
   }
-  // A chosen target narrows the sight cue to it. `findAttackTarget`
-  // resolves units and egg spawners alike, which is the whole point:
-  // a spawner is not a unit, so an "any living enemy" cue ignored the
-  // objective the player was actually trying to shoot (#517).
+  // The sight cue means a *chosen* target or it does not draw (#624).
+  // `findAttackTarget` resolves units and egg spawners alike, which is
+  // the whole point: a spawner is not a unit, so an "any living enemy"
+  // cue ignored the objective the player was trying to shoot (#517).
   const chosen =
     targetId === undefined ? undefined : findAttackTarget(mission, targetId);
-  const marks: readonly { readonly pos: TileCoord }[] =
-    chosen !== undefined && chosen.team !== unit.team
-      ? [chosen]
-      : mission.units.filter((u) => u.team !== unit.team && u.hp > 0);
+  const aim = chosen !== undefined && chosen.team !== unit.team ? chosen : undefined;
   const cover: CoverMarker[] = [];
-  const lineOfSight: TileCoord[] = [];
+  const blockedShot: TileCoord[] = [];
   for (const { tile } of moveRange) {
     const level = bestCover(mission, tile, index);
     if (level !== CoverLevel.NONE) {
       cover.push({ tile, level });
     }
-    if (marks.some((e) => hasLineOfSight(mission.map, tile, e.pos, index))) {
-      lineOfSight.push(tile);
+    // The exception, not the rule. Marking every tile that *can* see
+    // put a ring on 93 of 93 reachable tiles with nine bugs on the
+    // board (#624) -- a light that is always on says nothing. The few
+    // tiles with no shot are the ones worth a mark, and they are what
+    // QA needed when a mech silently refused to fire (#517).
+    if (aim !== undefined && !hasLineOfSight(mission.map, tile, aim.pos, index)) {
+      blockedShot.push(tile);
     }
   }
   return {
     moveRange,
     cover,
-    lineOfSight,
-    weaponRange: weaponRangeFrom(mission, unit, index),
+    blockedShot,
+    weaponRange: weaponRangeFrom(mission, unit),
   };
 }
 
 /**
- * The tiles `unit` could fire on without moving: inside its weapon's
- * range by the same metric the hit chance uses, and with the sight line
- * clear. A unit whose template has no weapon can fire on nothing.
+ * How far `unit` can fire: one ground tile per column inside its
+ * weapon's range, by the same metric the hit chance uses. A unit whose
+ * template has no weapon can fire nowhere.
  *
- * Deliberately the *whole* envelope rather than its outline: this is the
- * honest answer to "what can I shoot", and how it is drawn — an edge
- * line, not a fill — is the overlay's business, not the state's.
+ * **Range only — deliberately not filtered by line of sight** (#624).
+ * The question this answers is the one the Executive Director asked,
+ * _"how far can I fire"_, and that is a property of the weapon, not of
+ * where the walls happen to be. Filtering by sight made the set a
+ * scatter of pockets whose outline came out as disconnected dashes,
+ * which states nothing at all; and it produced a tile per *level* per
+ * column, so a boundary drawn round it also had interior edges through
+ * every step in the terrain.
+ *
+ * Whether a particular tile will actually take the shot is a different
+ * question, asked of a chosen target, and `blockedShot` answers it.
  */
-function weaponRangeFrom(
-  mission: TacticalState,
-  unit: Unit,
-  index: TileIndex,
-): TileCoord[] {
+function weaponRangeFrom(mission: TacticalState, unit: Unit): TileCoord[] {
   const range = mission.templates[unit.templateId]?.weapon.range ?? 0;
   if (range <= 0) {
     return [];
@@ -528,15 +636,20 @@ function weaponRangeFrom(
   for (let x = unit.pos.x - range; x <= unit.pos.x + range; x++) {
     const spread = range - Math.abs(x - unit.pos.x);
     for (let z = unit.pos.z - spread; z <= unit.pos.z + spread; z++) {
-      for (const tile of index.column(x, z)) {
-        if (manhattanDistance(tile, unit.pos) > range) {
-          continue;
-        }
-        if (!hasLineOfSight(mission.map, unit.pos, tile, index)) {
-          continue;
-        }
-        tiles.push({ x: tile.x, y: tile.y, z: tile.z });
-      }
+      // Flat, at the firer's own level, and a pure horizontal reach.
+      //
+      // Laying it on each column's top instead made the line climb the
+      // side of every building it passed, because neighbouring columns
+      // end at different heights. Letting height into the test dented
+      // the outline against tall ground, which is worse than untidy:
+      // the dents are a picture of terrain the player may not have
+      // seen, drawn on top of fog that exists to hide it.
+      //
+      // So the boundary states the weapon's reach and nothing else. It
+      // is occluded by whatever stands in front of it, like any other
+      // ground mark. Whether one particular tile will take the shot is
+      // `blockedShot`'s question, asked of a chosen target.
+      tiles.push({ x, y: unit.pos.y, z });
     }
   }
   return tiles;

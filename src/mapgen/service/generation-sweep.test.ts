@@ -36,7 +36,7 @@ const SEEDS_PER_COMBO = 6;
  * The sweep is the most expensive thing in the suite: 216 maps, 12–16 s
  * on an idle box across repeated runs, and a CI runner is about half
  * that speed. Thirty seconds was written when the sweep was smaller and
- * stopped being enough — it timed out on CI (#666) with no cost
+ * stopped being enough — it timed out on CI (#671) with no cost
  * regression behind it, measured at 12 s on the branch against 12 s on
  * `main`.
  *

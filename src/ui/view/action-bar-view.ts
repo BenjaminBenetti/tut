@@ -26,6 +26,12 @@ export interface ActionBarModel {
   /** Label of the reload button: "Vent" for a mech, "Reload" otherwise (#409). */
   readonly reloadLabel?: string;
   /**
+   * Shots the selected unit has left this turn (#533). Shown on the
+   * Attack button when it is more than one, which is how a player sees
+   * that a squad fires twice and a mech once.
+   */
+  readonly attacksLeft?: number;
+  /**
    * Whether the selected unit is standing in the extraction zone, so it
    * can leave the map (#341). Extraction costs no action points, so it is
    * offered to a unit that has already spent its turn.
@@ -182,6 +188,16 @@ export class ActionBarView {
       const pressed = action === model.mode;
       button.classList.toggle("is-selected", pressed);
       button.setAttribute("aria-pressed", pressed ? "true" : "false");
+      if (action === "attack") {
+        const label = button.querySelector<HTMLElement>(".tut-btn__label");
+        const left = model.attacksLeft ?? 0;
+        const text =
+          left > 1 ? `${LABELS.attack} ×${String(left)}` : LABELS.attack;
+        if (label) {
+          label.textContent = text;
+        }
+        button.dataset.attacksLeft = String(left);
+      }
       if (action === "reload") {
         // Only the label changes; the digit hint beside it stays put.
         const label = button.querySelector<HTMLElement>(".tut-btn__label");

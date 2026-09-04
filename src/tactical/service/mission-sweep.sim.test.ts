@@ -318,7 +318,7 @@ const TURN_CAP = 15;
 const BUDGET_MS = 300_000;
 
 /**
- * How many of the 60 seeds must reach a win or a loss. 41 do today; the
+ * How many of the 60 seeds must reach a win or a loss. 42 do today; the
  * rest stall on #666. Set below the measured figure so ordinary drift in
  * the rules does not flake the sweep, and high enough that a real
  * regression in how often a mission concludes fails it.
@@ -402,5 +402,17 @@ describe("seeded tactical sweep", () => {
     for (const [outcome, count] of tally) {
       expect([outcome, count < runs.length]).toEqual([outcome, true]);
     }
+    // Worth stating plainly, because the spread above passes without it:
+    // today the tally is `won 42, unresolved 18` and no seed is ever
+    // lost. A mission is won or it hangs; there is no losing it. That is
+    // the other half of #666 — the defeat condition does not fire
+    // rarely, it does not fire at all across 60 seeds and every
+    // difficulty. Pinned so that when #666 gives a hopeless mission an
+    // ending, this fails and gets tightened rather than staying a
+    // comment nobody rereads.
+    expect([`lost ${String(tally.get("lost") ?? 0)}`, "see #666"]).toEqual([
+      "lost 0",
+      "see #666",
+    ]);
   });
 });

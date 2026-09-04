@@ -13,6 +13,7 @@ import { reload } from "../../tactical/model/reload-command";
 import type { TacticalCommand } from "../../tactical/model/tactical-command";
 import type { TacticalError } from "../../tactical/model/tactical-error";
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
+import type { MissionView } from "../../tactical/model/mission-view";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { Team, Unit, UnitId } from "../../tactical/model/unit";
 import {
@@ -20,6 +21,7 @@ import {
   findAttackTarget,
 } from "../../tactical/service/attack-target-service";
 import { previewAttack } from "../../tactical/service/combat-service";
+import { viewFor } from "../../tactical/service/mission-view-service";
 import type { MoveGraph } from "../../tactical/service/movement-service";
 import {
   buildMoveGraph,
@@ -169,6 +171,15 @@ export class TacticalHudView {
   private readonly actions: ActionBarView;
   private root: HTMLElement | undefined;
   private mission: TacticalState | undefined;
+  /**
+   * The mission as the player's side perceives it (ADR 0006). Kept
+   * beside the true mission rather than replacing it: what is *shown*
+   * and what can be *aimed at* come from here, so an enemy nobody has
+   * spotted is neither counted nor cycled onto, while movement still
+   * plans against the real board — a path routed through an unseen bug
+   * would be refused by the rules and read as a bug in the HUD.
+   */
+  private view: MissionView | undefined;
   private selected: UnitId | undefined;
   private target: UnitId | undefined;
   private mode: HudMode = DEFAULT_HUD_MODE;
@@ -245,6 +256,7 @@ export class TacticalHudView {
       this.log.clear();
     }
     this.mission = mission;
+    this.view = mission === undefined ? undefined : viewFor(mission, "tdf");
     this.phases.announce(phaseChangesIn(events));
     this.log.append(events, mission);
     const aliveUnit = (id: UnitId | undefined): boolean =>
@@ -747,12 +759,14 @@ export class TacticalHudView {
    * fired on instead of the key silently skipping it.
    */
   private selectNextTarget(): void {
-    const mission = this.mission;
+    const view = this.view;
     const selected = this.unit(this.selected);
-    if (!mission || !selected || !this.canAct()) {
+    if (!view || !selected || !this.canAct()) {
       return;
     }
-    const targets = enemyAttackTargets(mission, selected.team);
+    // From the view, so the key never steps onto a bug the player has
+    // never seen — which would announce both that it exists and where.
+    const targets = enemyAttackTargets(view, selected.team);
     if (targets.length === 0) {
       return;
     }
@@ -849,7 +863,9 @@ export class TacticalHudView {
       turn: mission.turn,
       phase: mission.phase,
       tdfUnits: countAlive(mission, "tdf"),
-      bugUnits: countAlive(mission, "bugs"),
+      // Spotted bugs only: a count of every bug alive tells the player
+      // how many are out there before anyone has seen one.
+      bugUnits: this.view === undefined ? 0 : countAlive(this.view, "bugs"),
     });
     const selected = this.unit(this.selected);
     this.card.update(

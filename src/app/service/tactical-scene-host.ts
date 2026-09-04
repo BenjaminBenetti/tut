@@ -4,6 +4,7 @@ import { CameraInputController } from "../../graphics/controller/camera-input-co
 import { MODEL_MANIFEST } from "../../graphics/data/model-manifest";
 import { SPRITE_MANIFEST } from "../../graphics/data/sprite-manifest";
 import { CAMERA_ZOOM } from "../../graphics/model/camera-state";
+import { phaseEvents } from "../../graphics/service/animation-phases";
 import { missionFocus } from "../../graphics/service/tactical-framing";
 import {
   perceivedSpawners,
@@ -202,10 +203,17 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
     }
     attached.mission = mission;
     return new Promise((resolve) => {
-      attached.animations.enqueue(events, () => {
+      // Spots play last, on purpose: the scene draws only what the player
+      // perceives, so an enemy coming into view has no object at all until
+      // `placeUnits` has run, and a reveal enqueued with the rest would
+      // find nothing to animate (#585). `phaseEvents` owns that rule.
+      const phases = phaseEvents(events);
+      attached.animations.enqueue(phases.before, () => {
         void this.placeUnits(mission).then(() => {
-          this.refreshOverlays();
-          resolve();
+          attached.animations.enqueue(phases.after, () => {
+            this.refreshOverlays();
+            resolve();
+          });
         });
       });
     });

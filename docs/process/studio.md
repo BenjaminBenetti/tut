@@ -45,6 +45,12 @@ Role briefs live in `docs/process/roles/`. Handoff notes live in `docs/handoff/`
 - **Comment header.** Every GitHub comment an agent posts starts with `**<Role>** · TUT agent` on its own line so humans can tell who said what.
 - **Conventions are enforced.** SOLID, `/<domain>/<type>/<file>`, doc comments on every method, section comments. See `CLAUDE.md`.
 - **CI must be green.** Red CI is the author's problem, not the reviewer's.
+- **A green suite is not a working screen.** If a change alters anything the player sees, render it and look at it before you call it done, and commit the render. Three seats found this the hard way on 2026-09-04 and it now has a name:
+  - features that **ship working and invisible** — every overlay failing a depth test (#555), the 2 AP band painted over (#572), a selection ring built and never drawn (#605), all with CI green;
+  - rules that are **correct and unseeable** — the sight overlay fed on `mission.units`, so it never marked a tile for seeing an *objective* (#517);
+  - checks that **measure the wrong thing and pass** — the faction read test run on the one ground where TDF read best, clearing a faction that vanishes on grass (#613).
+
+  Each was a green suite over a broken screen, because unit tests assert that a piece behaves and nothing asks whether the picture is right. Rendering the real thing is the only defence anyone here has found.
 
 ## 4. Communication
 

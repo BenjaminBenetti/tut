@@ -463,3 +463,77 @@ describe("perceivedSpawners", () => {
     ).toEqual([]);
   });
 });
+// ===========================================
+// Replay and save (#531)
+// ===========================================
+
+describe("vision across a seeded replay", () => {
+  /** A campaign holding one fixture mission, both sides having looked once. */
+  function campaignFor(): MissionCampaignState & {
+    activeMission: TacticalState;
+  } {
+    const mission = withVision({
+      state: {
+        ...missionWith(WALLED, [
+          unitAt("u", "infantry", at(0, 0)),
+          unitAt("b", "infantry", at(5, 0), { team: "bugs" }),
+        ]),
+        vision: emptyVision(),
+      },
+      events: [],
+    }).state;
+    return {
+      meta: {
+        rng: { algorithm: "mulberry32", seed: 1, state: 1 },
+        ids: { counters: {} },
+      },
+      overworld: {} as MissionCampaignState["overworld"],
+      roster: {} as MissionCampaignState["roster"],
+      economy: {} as MissionCampaignState["economy"],
+      activeMission: mission,
+    };
+  }
+
+  /** The same walk through the door, dispatched the same way, every time. */
+  function replay(): TacticalState {
+    let state = campaignFor();
+    const lifted = liftTacticalHandler<typeof state, typeof MOVE>(
+      createMoveHandler(),
+    );
+    const steps = [
+      [at(0, 1), at(0, 2), at(1, 2)],
+      [at(2, 2), at(3, 2), at(4, 2)],
+    ];
+    for (const [i, path] of steps.entries()) {
+      const outcome = lifted(state, move("u", path), {
+        rng: new Mulberry32Rng(7).fork(`step:${String(i)}`),
+        ids: new SequentialIdGenerator(),
+      });
+      if (!outcome.ok) throw new Error(`step ${String(i)} refused`);
+      state = outcome.value.state;
+    }
+    const mission = state.activeMission;
+    if (!mission) throw new Error("mission vanished");
+    return mission;
+  }
+
+  it("produces the same vision twice from the same seed", () => {
+    const first = replay();
+    const second = replay();
+    // Not just the vision: the whole mission, so an ordering difference
+    // anywhere in the fog would show up here rather than in a save diff.
+    expect(first).toEqual(second);
+    expect(first.vision.tdf.explored.length).toBeGreaterThan(0);
+  });
+
+  it("round-trips the vision through JSON unchanged, which is what a save is", () => {
+    const mission = replay();
+    const reloaded = JSON.parse(JSON.stringify(mission)) as TacticalState;
+    expect(reloaded.vision).toEqual(mission.vision);
+    // And a reload recomputes what it must not trust: feeding the saved
+    // mission back through withVision leaves the same answer.
+    expect(withVision({ state: reloaded, events: [] }).state.vision).toEqual(
+      mission.vision,
+    );
+  });
+});

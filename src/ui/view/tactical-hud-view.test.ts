@@ -14,6 +14,7 @@ import { SPAWNER_NAME } from "../../tactical/service/attack-target-service";
 import { previewAttack } from "../../tactical/service/combat-service";
 import { hudMission } from "./mission-hud.test-helper";
 import { TacticalHudView } from "./tactical-hud-view";
+import { withVision } from "../../tactical/service/vision-service";
 
 let root: HTMLElement;
 const field = (name: string): HTMLElement | null =>
@@ -611,5 +612,63 @@ describe("TacticalHudView", () => {
       root.querySelector<HTMLButtonElement>('[data-action="end-turn"]')
         ?.disabled,
     ).toBe(true);
+  });
+});
+// ===========================================
+// Fog of war (#531)
+// ===========================================
+
+describe("TacticalHudView under fog", () => {
+  it("neither counts nor cycles onto an enemy the player has never seen", () => {
+    const { hud, mission } = setup();
+    // Short-sighted squads on the same board: the bugs are three tiles
+    // and more away, so a real vision pass spots none of them. The map
+    // is too small to walk out of a twelve-tile sight radius.
+    const shortSighted = {
+      ...mission,
+      templates: Object.fromEntries(
+        Object.entries(mission.templates).map(([id, t]) => [
+          id,
+          { ...t, sightRange: 1 },
+        ]),
+      ),
+    };
+    const far = withVision({ state: shortSighted, events: [] }).state;
+    expect(far.vision.tdf.spotted).toEqual([]);
+    hud.update(far);
+
+    // The banner counts what the player knows about, not what exists.
+    expect(
+      far.units.filter((u) => u.team === "bugs" && u.hp > 0).length,
+    ).toBeGreaterThan(0);
+    expect(
+      root.querySelector('#turn-banner [data-field="bug-units"]')?.textContent,
+    ).toBe("0");
+
+    // And next-target never lands on one of them.
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    const reached: (string | undefined)[] = [];
+    for (let i = 0; i < 4; i++) {
+      hud.handleIntent({ kind: "action", action: "next-target" });
+      reached.push(hud.getTargetUnitId());
+    }
+    for (const id of reached) {
+      expect(far.units.some((u) => u.id === id && u.team === "bugs")).toBe(
+        false,
+      );
+    }
+  });
+
+  it("counts and cycles onto an enemy once it has been seen", () => {
+    const { hud, mission } = setup();
+    hud.update(mission);
+    expect(mission.vision.tdf.spotted.length).toBeGreaterThan(0);
+    expect(
+      root.querySelector('#turn-banner [data-field="bug-units"]')?.textContent,
+    ).toBe(String(mission.vision.tdf.spotted.length));
+
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    hud.handleIntent({ kind: "action", action: "next-target" });
+    expect(mission.vision.tdf.spotted).toContain(hud.getTargetUnitId());
   });
 });

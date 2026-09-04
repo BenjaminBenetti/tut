@@ -237,7 +237,12 @@ export class MissionResultsScreen implements Screen {
     panel.appendChild(
       this.section(
         doc,
-        "Casualties",
+        // Say whose casualties these are when some squads are not among
+        // them: with a squad wiped, "Casualties: Bravo −2" otherwise
+        // reads as two lost when seven were (#480).
+        result.squadsWiped.length > 0
+          ? "Casualties (surviving squads)"
+          : "Casualties",
         "casualties",
         result.squadCasualties
           .filter(
@@ -250,14 +255,22 @@ export class MissionResultsScreen implements Screen {
               : "";
             return `${squad?.name ?? c.squadId} −${formatWhole(c.losses)}${strength}`;
           }),
-        "No casualties.",
+        // A wiped squad is listed in its own row above, so it is left out
+        // of this one to avoid counting it twice. When every squad went
+        // that way this row is empty, and "No casualties" then flatly
+        // contradicts the line above it (#480) — so say what is missing.
+        result.squadsWiped.length > 0
+          ? "No further casualties."
+          : "No casualties.",
         false,
       ),
     );
     panel.appendChild(
       this.section(
         doc,
-        "Mech damage",
+        result.mechsDestroyed.length > 0
+          ? "Mech damage (surviving mechs)"
+          : "Mech damage",
         "mech-damage",
         result.mechDamage
           .filter(
@@ -268,7 +281,10 @@ export class MissionResultsScreen implements Screen {
             const total = mech ? ` (${formatWhole(mech.damage)}/100)` : "";
             return `${mech?.name ?? d.mechId} +${formatWhole(d.damage)}${total}`;
           }),
-        "No damage taken.",
+        // Same reasoning as casualties: a destroyed mech is its own row.
+        result.mechsDestroyed.length > 0
+          ? "No damage among surviving mechs."
+          : "No damage taken.",
         false,
       ),
     );

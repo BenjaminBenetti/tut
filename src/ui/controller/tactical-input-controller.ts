@@ -60,7 +60,9 @@ export interface TacticalInputDeps {
 /**
  * Keyboard shortcuts (GDD §6.2 actions plus End Turn), keyed by
  * `KeyboardEvent.key` lower-cased. Q / E / WASD / arrows belong to the
- * camera controller and are not listed here.
+ * camera controller and are not listed here. `t` cycles attack targets,
+ * which is the only way to aim at an egg spawner until the scene draws
+ * one the pointer can hit (#426).
  */
 export const TACTICAL_SHORTCUTS: Readonly<
   Record<string, TacticalAction | "end-turn">
@@ -70,7 +72,9 @@ export const TACTICAL_SHORTCUTS: Readonly<
   f: "attack",
   o: "overwatch",
   r: "reload",
+  x: "extract",
   tab: "next-unit",
+  t: "next-target",
   escape: "cancel",
   enter: "end-turn",
   end: "end-turn",

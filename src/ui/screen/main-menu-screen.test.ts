@@ -223,6 +223,20 @@ describe("MainMenuScreen", () => {
     expect(navigate).toHaveBeenCalledWith("overworld");
   });
 
+  it("Continue resumes a mission in progress on the tactical screen", () => {
+    const store = new MemoryKeyValueStore();
+    const base = createCampaign({ seed: 11, createdAt: NOW });
+    const existing: GameState = {
+      ...base,
+      activeMission: { missionId: "mission-1" } as GameState["activeMission"],
+    };
+    savesOver(store).saveGame(AUTOSAVE_SLOT_ID, existing);
+    const { navigate, session } = mountWith(store);
+    button("continue").click();
+    expect(session.state?.activeMission?.missionId).toBe("mission-1");
+    expect(navigate).toHaveBeenCalledWith("tactical");
+  });
+
   it("Export writes the autosave as importable JSON into the text box", () => {
     const { store, existing } = withAutosave(5);
     const { saves } = mountWith(store);

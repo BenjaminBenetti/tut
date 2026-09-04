@@ -3,7 +3,11 @@ import { describe, expect, it } from "vitest";
 import { UNKNOWN_COMMAND } from "../../overworld/model/command-dispatcher";
 import type { OverworldCommand } from "../../overworld/model/overworld-command";
 import { advanceDay } from "../../overworld/model/overworld-command";
+import type { CampaignDebugOptions } from "../../overworld/model/campaign-debug";
+import type { Deployment } from "../../overworld/model/deployment";
 import { launchMission } from "../../overworld/model/launch-mission-command";
+import { finishMission } from "../../tactical/model/finish-mission-command";
+import { startMission } from "../../tactical/model/start-mission-command";
 import type { Mission } from "../../overworld/model/mission";
 import { MISSION_RESOLVED } from "../../overworld/model/mission-resolved-event";
 import { AUTOSAVE_SLOT_ID } from "../../save/data/save-slots";
@@ -14,7 +18,9 @@ import { composeGame } from "./game-composition";
 
 const NOW = "2026-09-03T00:00:00.000Z";
 
-const build = (): { game: GameComposition; failures: SaveError[] } => {
+const build = (
+  debug?: CampaignDebugOptions,
+): { game: GameComposition; failures: SaveError[] } => {
   const failures: SaveError[] = [];
   const game = composeGame({
     storage: new MemoryKeyValueStore(),
@@ -23,8 +29,44 @@ const build = (): { game: GameComposition; failures: SaveError[] } => {
     onAutosaveFailure: (error) => {
       failures.push(error);
     },
+    ...(debug === undefined ? {} : { debug }),
   });
   return { game, failures };
+};
+
+/** A campaign with one small clearance mission on an infested city, ready to launch. */
+const campaignWithMission = (
+  game: GameComposition,
+): { mission: Mission; deployment: Deployment } => {
+  const fresh = game.createCampaign({ seed: 7, createdAt: NOW });
+  const city = fresh.overworld.map.cities.find((c) => c.infestation > 0);
+  const squad = fresh.roster.squads[0];
+  if (!city || !squad)
+    throw new Error("fixture needs an infested city and a squad");
+  const mission: Mission = {
+    id: "mission-1",
+    typeId: "infestation-clearance",
+    cityId: city.id,
+    difficulty: 1,
+    mapParams: {
+      biome: "temperate",
+      settlement: city.scale,
+      size: "small",
+      seed: "1",
+    },
+    rewards: { credits: 300 },
+    createdDay: 1,
+    expiresDay: 6,
+    ignorePenalty: 10,
+  };
+  game.session.start({
+    ...fresh,
+    overworld: { ...fresh.overworld, missions: [mission] },
+  });
+  return {
+    mission,
+    deployment: { missionId: mission.id, squadIds: [squad.id], mechIds: [] },
+  };
 };
 
 describe("composeGame", () => {
@@ -83,39 +125,11 @@ describe("composeGame", () => {
   });
 
   it("launches a mission through the auto-resolver and applies the result", () => {
-    const { game } = build();
-    const fresh = game.createCampaign({ seed: 7, createdAt: NOW });
-    const city = fresh.overworld.map.cities.find((c) => c.infestation > 0);
-    const squad = fresh.roster.squads[0];
-    if (!city || !squad)
-      throw new Error("fixture needs an infested city and a squad");
-    const mission: Mission = {
-      id: "mission-1",
-      typeId: "infestation-clearance",
-      cityId: city.id,
-      difficulty: 1,
-      mapParams: {
-        biome: "temperate",
-        settlement: city.scale,
-        size: "small",
-        seed: "1",
-      },
-      rewards: { credits: 300 },
-      createdDay: 1,
-      expiresDay: 6,
-      ignorePenalty: 10,
-    };
-    game.session.start({
-      ...fresh,
-      overworld: { ...fresh.overworld, missions: [mission] },
-    });
+    const { game } = build({ autoResolve: true });
+    const { mission, deployment } = campaignWithMission(game);
 
     const result = game.session.store?.dispatch(
-      launchMission(mission.id, {
-        missionId: mission.id,
-        squadIds: [squad.id],
-        mechIds: [],
-      }),
+      launchMission(mission.id, deployment),
     );
     expect(result?.ok).toBe(true);
     if (!result?.ok) return;
@@ -127,6 +141,69 @@ describe("composeGame", () => {
     expect(
       loaded.ok && loaded.value.overworld.lastMissionResult?.missionId,
     ).toBe(mission.id);
+    expect(game.autoResolve).toBe(true);
+  });
+
+  it("starts a tactical mission and autosaves it, leaving the offer standing", () => {
+    const { game } = build();
+    const { mission, deployment } = campaignWithMission(game);
+
+    const result = game.session.store?.dispatch(
+      startMission(mission.id, deployment),
+    );
+    expect(result?.ok).toBe(true);
+    expect(game.autoResolve).toBe(false);
+    const active = game.session.state?.activeMission;
+    expect(active?.missionId).toBe(mission.id);
+    expect(active?.units.length).toBe(deployment.squadIds.length);
+    // The mission is still on offer: nothing is resolved until it ends.
+    expect(game.session.state?.overworld.missions).toHaveLength(1);
+    const loaded = game.saves.loadGame(AUTOSAVE_SLOT_ID);
+    expect(loaded.ok && loaded.value.activeMission?.missionId).toBe(mission.id);
+  });
+
+  it("finishes a played mission through the tactical resolver and clears the slot", () => {
+    const { game } = build();
+    const { mission, deployment } = campaignWithMission(game);
+    game.session.store?.dispatch(startMission(mission.id, deployment));
+    const started = game.session.state;
+    const active = started?.activeMission;
+    if (!started || !active) throw new Error("mission did not start");
+    // Stand in for playing it out: every objective done, outcome recorded.
+    game.session.replace({
+      ...started,
+      activeMission: {
+        ...active,
+        objectives: active.objectives.map((o) => ({ ...o, complete: true })),
+        outcome: "won",
+      },
+    });
+
+    const result = game.session.store?.dispatch(finishMission(mission.id));
+    expect(result?.ok).toBe(true);
+    if (!result?.ok) return;
+    expect(result.value.events[0]?.type).toBe(MISSION_RESOLVED);
+    const after = game.session.state;
+    expect(after?.activeMission).toBeUndefined();
+    expect(after?.overworld.missions).toEqual([]);
+    expect(after?.overworld.lastMissionResult?.outcome).toBe("won");
+    expect(after?.overworld.lastMissionResult?.creditsAwarded).toBe(
+      mission.rewards.credits,
+    );
+    const loaded = game.saves.loadGame(AUTOSAVE_SLOT_ID);
+    expect(loaded.ok && loaded.value.activeMission).toBeUndefined();
+  });
+
+  it("refuses to finish a mission that is still being fought", () => {
+    const { game } = build();
+    const { mission, deployment } = campaignWithMission(game);
+    game.session.store?.dispatch(startMission(mission.id, deployment));
+
+    const result = game.session.store?.dispatch(finishMission(mission.id));
+    expect(result?.ok).toBe(false);
+    if (result?.ok) return;
+    expect(result?.error.code).toBe("mission-not-over");
+    expect(game.session.state?.activeMission).toBeDefined();
   });
 
   it("exposes a deployment assessor that rates the starter roster above zero", () => {

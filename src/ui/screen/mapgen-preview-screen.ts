@@ -416,11 +416,18 @@ function metricRows(
   const delta = deltaFor(metrics, previous);
   const pct = (share: number): string => `${(100 * share).toFixed(1)} %`;
   const one = (value: number): string => value.toFixed(1);
+  const two = (value: number): string => value.toFixed(2);
   const whole = (value: number): string => String(Math.round(value));
   return [
     ["Open ground", `${metrics.openTiles} of ${metrics.groundTiles}`],
     ["Beside cover", delta((m) => m.coverAdjacency, pct)],
     ["Beside a wall", delta((m) => m.wallAdjacency, pct)],
+    [
+      "Cover that holds",
+      `${delta((m) => m.coveredShare, pct)} one side, ` +
+        `${delta((m) => m.flankProofShare, pct)} two`,
+    ],
+    ["Covered sides", `${delta((m) => m.coveredSidesMean, two)} per open tile`],
     [
       "Cover per 100",
       `${delta((m) => m.highCoverPer100, one)} high, ${delta((m) => m.lowCoverPer100, one)} low`,

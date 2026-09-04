@@ -15,6 +15,7 @@ import { TURN_STARTED } from "../model/turn-started-event";
 import type { Unit, UnitId, UnitStatus } from "../model/unit";
 import { UNIT_STATUS_CHANGED } from "../model/unit-status-changed-event";
 import { rollAttack, validateTargeting } from "./combat-service";
+import { missionOutcome } from "./mission-end-service";
 
 // ===========================================
 // Types
@@ -84,12 +85,23 @@ export const DEFAULT_PHASE_STEPS: readonly PhaseStep[] = [refreshSides];
  * new phase; otherwise the phase flips, the turn counter advances on the
  * bugs → player edge, `TurnStarted` is announced and the phase steps run.
  *
+ * With a `bugPhase` runner (#335, `bugs/ai/bug-phase-runner`), the bugs
+ * play their whole phase inside the player's `EndTurn`: after the bugs'
+ * phase steps the runner acts for every bug, the terminal check runs
+ * again (the bugs may have wiped the squad), and the phase flips on to
+ * the next player turn in the same command. Without one, the bugs phase
+ * is left open for a second `EndTurn`, as the headless sim (#343) and
+ * the rules tests drive it.
+ *
  * ```
  *   missionOutcome(mission) ──defined──► MissionEnded { outcome, turn }, outcome recorded
  *          │
  *   player ──► bugs (same turn)        bugs ──► player (turn + 1)
  *          │
  *   TurnStarted { turn, phase } ──► steps in order (refreshSides, then #329's waves …)
+ *          │
+ *   bugs phase and a runner? ──► runner acts ──► decided? MissionEnded
+ *                                                       └─► player (turn + 1), TurnStarted, steps
  * ```
  *
  * `early` on the payload is informational. Commands after the mission
@@ -97,63 +109,59 @@ export const DEFAULT_PHASE_STEPS: readonly PhaseStep[] = [refreshSides];
  */
 export function createEndTurnHandler(
   steps: readonly PhaseStep[] = DEFAULT_PHASE_STEPS,
+  bugPhase?: PhaseStep,
 ): TacticalHandler<EndTurnCommand> {
   return (mission, _command, ctx) => {
     const outcome = missionOutcome(mission);
     if (outcome !== undefined) {
-      return ok({
-        state: { ...mission, outcome },
-        events: [
-          { type: MISSION_ENDED, payload: { outcome, turn: mission.turn } },
-        ],
-      });
+      return ok(endMission(mission, outcome));
     }
-    let state: TacticalState =
-      mission.phase === "player"
-        ? { ...mission, phase: "bugs" }
-        : { ...mission, phase: "player", turn: mission.turn + 1 };
-    const events: TacticalEvent[] = [
-      { type: TURN_STARTED, payload: { turn: state.turn, phase: state.phase } },
-    ];
-    for (const step of steps) {
-      const applied = step(state, ctx);
-      state = applied.state;
-      events.push(...applied.events);
+    const opened = openNextPhase(mission, steps, ctx);
+    if (opened.state.phase !== "bugs" || bugPhase === undefined) {
+      return ok(opened);
     }
-    return ok({ state, events });
+    const played = bugPhase(opened.state, ctx);
+    const events: TacticalEvent[] = [...opened.events, ...played.events];
+    const decided = missionOutcome(played.state);
+    if (decided !== undefined) {
+      const ended = endMission(played.state, decided);
+      return ok({ state: ended.state, events: [...events, ...ended.events] });
+    }
+    const next = openNextPhase(played.state, steps, ctx);
+    return ok({ state: next.state, events: [...events, ...next.events] });
   };
 }
 
-/**
- * Whether a terminal condition holds (GDD §6.3), and which:
- *
- * ```
- *   every objective complete (and there is one) ──► won
- *   no TDF unit standing on the map ─┬─ someone extracted ──► extracted
- *                                    └─ nobody extracted ───► lost
- *   otherwise ─────────────────────────────────────────────► undefined
- * ```
- *
- * Objectives win first: a force that finishes the job as its last unit
- * falls has still finished the job. #330 may call this after `Interact`
- * and `Extract` to end a mission mid-phase.
- */
-export function missionOutcome(
+/** Records the outcome on the mission and announces `MissionEnded`. */
+function endMission(
   mission: TacticalState,
-): MissionOutcome | undefined {
-  if (
-    mission.objectives.length > 0 &&
-    mission.objectives.every((objective) => objective.complete)
-  ) {
-    return "won";
+  outcome: MissionOutcome,
+): TacticalApplied<TacticalState> {
+  return {
+    state: { ...mission, outcome },
+    events: [{ type: MISSION_ENDED, payload: { outcome, turn: mission.turn } }],
+  };
+}
+
+/** Flips to the next phase, announces `TurnStarted` and runs the phase steps in order. */
+function openNextPhase(
+  mission: TacticalState,
+  steps: readonly PhaseStep[],
+  ctx: TacticalContext,
+): TacticalApplied<TacticalState> {
+  let state: TacticalState =
+    mission.phase === "player"
+      ? { ...mission, phase: "bugs" }
+      : { ...mission, phase: "player", turn: mission.turn + 1 };
+  const events: TacticalEvent[] = [
+    { type: TURN_STARTED, payload: { turn: state.turn, phase: state.phase } },
+  ];
+  for (const step of steps) {
+    const applied = step(state, ctx);
+    state = applied.state;
+    events.push(...applied.events);
   }
-  const standing = mission.units.some(
-    (unit) => unit.team === "tdf" && unit.hp > 0,
-  );
-  if (standing) {
-    return undefined;
-  }
-  return mission.extracted.length > 0 ? "extracted" : "lost";
+  return { state, events };
 }
 
 // ===========================================

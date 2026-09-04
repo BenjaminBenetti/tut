@@ -40,6 +40,7 @@ export interface MainMenuScreenDeps {
  * ```
  *   [New game] ──▶ createCampaign(seed) ──▶ session.start ──▶ overworld
  *   [Continue] ──▶ saves.loadGame(autosave) ──▶ session.start ──▶ overworld
+ *                                                        └── activeMission? ──▶ tactical
  *   [Export]   ──▶ saves.loadGame(autosave) ──▶ saves.exportGame ──▶ text box
  *   [Import]   ──▶ saves.importGame(text box) ──▶ session.start ──▶ overworld
  * ```
@@ -157,7 +158,11 @@ export class MainMenuScreen implements Screen {
     this.deps.router.navigate("overworld");
   }
 
-  /** Loads the autosave into a new session and opens the overworld; a failed load stays here with a message. */
+  /**
+   * Loads the autosave into a new session and resumes where the player
+   * left off: the tactical screen when a mission was in progress (#341),
+   * the overworld otherwise. A failed load stays here with a message.
+   */
   private continueGame(): void {
     const loaded = this.deps.saves.loadGame(AUTOSAVE_SLOT_ID);
     if (!loaded.ok) {
@@ -165,7 +170,9 @@ export class MainMenuScreen implements Screen {
       return;
     }
     this.deps.session.start(loaded.value);
-    this.deps.router.navigate("overworld");
+    this.deps.router.navigate(
+      loaded.value.activeMission === undefined ? "overworld" : "tactical",
+    );
   }
 
   /** Dumps the autosave as a self-describing JSON document into the text box. */

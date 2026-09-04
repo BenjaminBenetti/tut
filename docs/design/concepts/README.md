@@ -17,6 +17,7 @@ Sheets are documentation, not runtime assets; they are downscaled to 1536 px wid
 | [bug-brute](bug-brute.md) | Armoured dome with cleaver blades | §3 brute, §4.2 |
 | [egg-spawner](egg-spawner.md) | Fleshy egg mound objective | §3 spawner, §4.2 |
 | [tileset-city-street](tileset-city-street.md) | Modular road, sidewalk, wall, roof, stairs and prop kit | §7, §4.3 |
+| [tactical-firefight](tactical-firefight.md) | A whole mission: what everything adds up to in one scene | §12, §4.1, §4.2 |
 
 Recipe and environment notes: `docs/handoff/art-director.md` §5. Prompt skeleton: `docs/design/style-guide.md` §10.
 

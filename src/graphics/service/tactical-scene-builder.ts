@@ -15,6 +15,8 @@ import type { ModelLoader } from "../model/model-loader";
 import type { SpawnerPicker } from "../model/spawner-picker";
 import type { TilePicker } from "../model/tile-picker";
 import type { UnitPicker } from "../model/unit-picker";
+import type { GhostUniforms } from "./ghost-cutaway";
+import { createGhostUniforms } from "./ghost-cutaway";
 import { TacticalMapView } from "../view/tactical-map-view";
 import { UnitMesh } from "../view/unit-mesh";
 
@@ -67,6 +69,18 @@ export type UnitTemplateLookup = Readonly<Record<UnitTemplateId, UnitTemplate>>;
  *   pickSpawner(ndc) ──► raycast the spawner meshes ──► nearest hit's spawner
  * ```
  */
+/**
+ * Cutaway radius in world units and the alpha a fully cut-away wall
+ * keeps. Roughly three tiles across, so the unit and the ground it is
+ * fighting over both stay visible, and a floor rather than zero so the
+ * wall still reads as a wall.
+ */
+const GHOST_RADIUS = 3;
+const GHOST_FLOOR = 0.18;
+
+/**
+ *
+ */
 export class TacticalSceneBuilder
   implements UnitPicker, TilePicker, SpawnerPicker, Disposable
 {
@@ -77,6 +91,8 @@ export class TacticalSceneBuilder
   /** Add this to the scene: the map and the units. */
   readonly root: Group;
   private readonly mapView: TacticalMapView;
+  /** Cutaway uniforms every ghosted wall material shares (#526). */
+  private readonly ghostUniforms: GhostUniforms;
   private readonly models: ModelLoader;
   private readonly unitsGroup: Group;
   private readonly meshes = new Map<UnitId, UnitMesh>();
@@ -105,7 +121,8 @@ export class TacticalSceneBuilder
   /** Builds the map immediately; units arrive through `update`. */
   constructor(options: TacticalSceneBuilderOptions) {
     this.models = options.models;
-    this.mapView = new TacticalMapView(options.map);
+    this.ghostUniforms = createGhostUniforms(GHOST_RADIUS, GHOST_FLOOR);
+    this.mapView = new TacticalMapView(options.map, this.ghostUniforms);
     this.unitsGroup = new Group();
     this.unitsGroup.name = "units";
     this.spawnersGroup = new Group();
@@ -118,6 +135,23 @@ export class TacticalSceneBuilder
   // ===========================================
   // Public Methods
   // ===========================================
+
+  /**
+   * The drawn unit objects the wall cutaway centres on (#526).
+   *
+   * The **objects the scene is already drawing**, not a list read from
+   * the mission: the renderer only builds objects for units the player
+   * may see, so ghosting can never cut a wall away around something
+   * vision rules hide (ADR 0006).
+   */
+  ghostTargets(): readonly Object3D[] {
+    return this.unitsGroup.children;
+  }
+
+  /** The cutaway uniforms, for the frame controller that updates them. */
+  get ghosting(): GhostUniforms {
+    return this.ghostUniforms;
+  }
 
   /** Ground-plane centre of the map, where the camera should look. */
   get centre(): Vec3 {

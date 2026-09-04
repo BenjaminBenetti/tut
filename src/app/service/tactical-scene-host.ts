@@ -209,11 +209,27 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
     });
   }
 
-  /** Shows range, cover and line-of-sight overlays for `unitId`, or clears them. */
+  /**
+   * Shows range, cover and line-of-sight overlays for `unitId`, and
+   * rings the unit itself, or clears both.
+   *
+   * The ring was the half that never happened (#605). `UnitMesh` has
+   * built one since #471 and the builder has implemented `setSelected`
+   * all along, but the only caller was `mapgen-preview.ts` -- so the
+   * ring worked in the dev harness and had never been drawn in a real
+   * mission. Hover was wired and selection was not, which is backwards:
+   * a unit merely pointed at rang, and the one actually being commanded
+   * did not.
+   *
+   * @param unitId - The selected unit.
+   * @param targetId - The armed target, when one is chosen; it narrows
+   *   the sight cue to that target rather than to any enemy (#517).
+   */
   select(unitId: UnitId | undefined, targetId?: string): void {
     if (this.attached) {
       this.attached.selected = unitId;
       this.attached.target = targetId;
+      this.attached.builder.setSelected(unitId);
       this.refreshOverlays();
     }
   }

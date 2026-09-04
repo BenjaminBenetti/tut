@@ -49,11 +49,28 @@ export const SURFACE_COLOURS: Readonly<Record<string, number>> = {
 /** Loud magenta so an unknown surface is impossible to miss. */
 export const FALLBACK_SURFACE_COLOUR = 0xff00ff;
 
-/** Wall segments by kind: brick body, glass pane, a dark opening for a door. */
+/**
+ * Wall segments by kind: brick body, glass pane, a dark opening for a
+ * door, and `env-concrete` for a parapet, which is what a low wall is
+ * cast from.
+ */
 export const WALL_COLOURS: Readonly<Record<WallKind, number>> = {
   solid: 0x8a4b3a,
   window: 0x6e8fa6,
   door: 0x3a3d42,
+  half: 0x8e8a82,
+};
+
+/**
+ * Wall height as a fraction of a level, so a parapet reads as something
+ * to crouch behind rather than a wall to hide inside (style guide §7:
+ * `wall-half` is 0.5 u against a 1 u storey).
+ */
+export const WALL_HEIGHTS: Readonly<Record<WallKind, number>> = {
+  solid: 1,
+  window: 1,
+  door: 1,
+  half: 0.5,
 };
 
 /**

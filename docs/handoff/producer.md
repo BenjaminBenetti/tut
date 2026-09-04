@@ -3,63 +3,59 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-04 09:30 UTC)
+## Status Digest (2026-09-04 10:30 UTC)
 
 | Milestone | done / total |
 |---|---|
-| M0 Foundation | 12 / 13 |
+| M0 Foundation | 13 / 13 |
 | M1 Overworld | 64 / 64 |
 | M1.5 Map Generation | 33 / 34 |
 
-Board: Backlog 5 · Ready 29 · In Progress 3 · In Review 2 · Blocked 0 · Done 211
+Board: Backlog 5 · Ready 25 · In Progress 3 · In Review 3 · Blocked 0 · Done 226
 
 **Engineer seats** (one open issue per seat; Producer assigns via `seat:eng-N`; route by `complexity:*` — high → default-effort seats only, low → medium-effort seats first):
 
 | Seat | Effort | Current | Status | Last merged |
 |---|---|---|---|---|
 | eng-3 | high | #531 tactical: fog of war — per-side vision, hidden enemies, unscouted map | In Progress | #519 |
-| eng-4 | low | #566 tactical: the 2 AP movement band does not read as distinct from shadowed ground | Ready | #552 |
-| eng-5 | low | #551 graphics: the tactical scene draws the player view — unseen enemies absent, unexplored map hidden | In Review | #538 |
+| eng-4 | low | #446 tactical: melee bugs cannot be blocked by cover, and cover hands them a flank bonus | In Review | #468 |
+| eng-5 | low | #584 infra(ci): a flaky e2e pass exits 0, so the gate reports green on a broken spec | Ready | #480 |
 
-⚠ unassigned Ready: #108 (low), #141 (low), #424 (low), #457 (no complexity label), #446 (no complexity label), #447 (no complexity label), #468 (low), #473 (low), #477 (no complexity label), #480 (low), #487 (low), #507 (no complexity label), #511 (no complexity label), #517 (no complexity label), #528 (medium), #532 (high), #533 (low), #557 (no complexity label), #559 (no complexity label), #572 (no complexity label), #568 (no complexity label), #569 (no complexity label), #573 (no complexity label) · need Tech Lead complexity label before assignment: #457, #446, #447, #477, #507, #511, #517, #557, #559, #572, #568, #569, #573
+⚠ unassigned Ready: #108 (low), #141 (low), #424 (low), #457 (medium), #447 (high), #473 (low), #477 (low), #487 (low), #507 (medium), #511 (medium), #532 (high), #533 (low), #557 (medium), #573 (low), #579 (low), #585 (medium), #591 (low), #593 (medium), #594 (low), #595 (low)
 
 **Ready now** (no unmerged dependencies):
 
 - #108 (engineer) refactor(core): promote generic id Registry to core/ and reuse in mapgen and roster
 - #141 (engineer) refactor: rename scalar tuning exports to UPPER_SNAKE_CASE (economy-tuning, threat-tuning)
-- #190 (art-director) infra(art): headless Blender + OpenSCAD + trimesh/cadquery toolchain in the devcontainer, with proof render and art-blender skill
 - #343 (qa) qa: headless tactical simulation across seeds
-- #344 (qa) qa: Playwright tactical smoke
 - #424 (engineer) refactor(graphics): rename the Isometric* camera rig now that it carries two projections
 - #457 (engineer) Tactical VFX playback: tracer between shooter and target, claw slash for melee, burst on bug death
-- #446 (engineer) tactical: melee bugs cannot be blocked by cover, and cover hands them a flank bonus
 - #447 (engineer) mapgen: M3 archetypes — hive and spore crash site, design sketch
 - #450 (art-director) Art: redraw the Earth map as a true equirectangular projection
-- #468 (engineer) ui: leaving a mission through the HUD strands it — no way back to the tactical screen
 - #473 (engineer) overworld: signal when the map is measurable, not just when the screen is shown
 - #477 (engineer) Overlapping hook markers z-fight: a tile that is both deploy and extraction shows whichever batch happens to draw last
-- #480 (engineer) bug(ui): debrief says "No casualties" and "No damage taken" on a mission that wiped the whole force
 - #487 (engineer) bug: a deployment over 16 units cannot launch — nothing caps it and the deploy zone is 16 tiles
 - #507 (engineer) Nothing casts a shadow, so the city reads as art placed on a plane rather than a place
-- #508 (mapgen) mapgen: no WallKind can express a half wall, so building.wall-half is orphaned art
 - #511 (engineer) graphics: pick a wall family per building, so a block stops reading as one extruded material
-- #517 (engineer) Tactical screen gives no cue where a unit can shoot an objective from
-- #528 (engineer) tactical: attack confirmation as a radial menu centred on the target
 - #532 (engineer) tactical: one attack option per weapon
 - #533 (engineer) tactical: infantry squads get two attacks per turn
 - #557 (engineer) graphics: tileTop names the slab centre plane, so everything placed on a tile sits half a slab low
-- #559 (engineer) ai: a bug that can perceive no enemy holds still — missions go passive under fog
-- #572 (engineer) Weapon range overlay hides the 2 AP movement band, so #521 is not readable by default
-- #566 (art-director) tactical: the 2 AP movement band does not read as distinct from shadowed ground
-- #568 (engineer) tactical: the 2 AP movement band is too faint to read at default zoom
-- #569 (engineer) bug(graphics): the 2 AP movement band is not legible, and the 1 AP band reads as water
 - #573 (engineer) tactical: the event log is empty when a mission opens — the first turn is never announced
+- #578 (qa) e2e: save-recovery spec fails and passes on retry, three times in an hour
+- #579 (engineer) tactical: overwatch re-derives sight instead of reading the vision state, so there are two rules for one thing
+- #584 (tech-lead) infra(ci): a flaky e2e pass exits 0, so the gate reports green on a broken spec
+- #585 (engineer) graphics: animate a reveal when UnitSpotted fires
+- #591 (engineer) design-decision: rural maps are nearly transparent under fog of war — no tree blocks sight
+- #593 (engineer) bug(tactical): a hill does not block line of sight — terrain is invisible to the sight rule
+- #594 (engineer) ui(mech-bay): a utility slot reads as a missing thumbnail rather than a part with no picture
+- #595 (engineer) ui: glyphs for the remaining screens — stat sheet, roster tables, hit preview
+- #605 (art-director) fix(graphics): the selected unit has no ring on the map — setSelected is never called outside the dev harness
 
 **In-flight PRs** (age h / idle h / review):
 
-- #574 0.0h / 0.0h / n/a — feat(ui): glyphs on the action bar and the unit card (#495)
-- #571 0.1h / 0.1h / n/a — docs(design): the weapon range overlay hides the 2 AP movement band
-- #570 0.1h / 0.1h / n/a — feat(graphics): the tactical scene draws the player view (#551)
+- #608 0.0h / 0.0h / n/a — feat(graphics): the sight cue follows the chosen target (#517)
+- #607 0.1h / 0.1h / n/a — feat(mapgen): half walls, and parapets along every raised edge (#508)
+- #606 0.1h / 0.1h / n/a — fix(tactical): a melee attacker gets no flank bonus and no cover mitigation (#446)
 
 **In progress** (branch pushed?):
 
@@ -76,25 +72,22 @@ Board: Backlog 5 · Ready 29 · In Progress 3 · In Review 2 · Blocked 0 · Don
 2. #141 — refactor: rename scalar tuning exports to UPPER_SNAKE_CASE (economy-tuning, threat-tuning)
 3. #424 — refactor(graphics): rename the Isometric* camera rig now that it carries two projections
 4. #457 — Tactical VFX playback: tracer between shooter and target, claw slash for melee, burst on bug death
-5. #446 — tactical: melee bugs cannot be blocked by cover, and cover hands them a flank bonus
-6. #447 — mapgen: M3 archetypes — hive and spore crash site, design sketch
-7. #468 — ui: leaving a mission through the HUD strands it — no way back to the tactical screen
-8. #473 — overworld: signal when the map is measurable, not just when the screen is shown
-9. #477 — Overlapping hook markers z-fight: a tile that is both deploy and extraction shows whichever batch happens to draw last
-10. #480 — bug(ui): debrief says "No casualties" and "No damage taken" on a mission that wiped the whole force
-11. #487 — bug: a deployment over 16 units cannot launch — nothing caps it and the deploy zone is 16 tiles
-12. #507 — Nothing casts a shadow, so the city reads as art placed on a plane rather than a place
-13. #511 — graphics: pick a wall family per building, so a block stops reading as one extruded material
-14. #517 — Tactical screen gives no cue where a unit can shoot an objective from
-15. #528 — tactical: attack confirmation as a radial menu centred on the target
-16. #532 — tactical: one attack option per weapon
-17. #533 — tactical: infantry squads get two attacks per turn
-18. #557 — graphics: tileTop names the slab centre plane, so everything placed on a tile sits half a slab low
-19. #559 — ai: a bug that can perceive no enemy holds still — missions go passive under fog
-20. #572 — Weapon range overlay hides the 2 AP movement band, so #521 is not readable by default
-21. #568 — tactical: the 2 AP movement band is too faint to read at default zoom
-22. #569 — bug(graphics): the 2 AP movement band is not legible, and the 1 AP band reads as water
-23. #573 — tactical: the event log is empty when a mission opens — the first turn is never announced
+5. #447 — mapgen: M3 archetypes — hive and spore crash site, design sketch
+6. #473 — overworld: signal when the map is measurable, not just when the screen is shown
+7. #477 — Overlapping hook markers z-fight: a tile that is both deploy and extraction shows whichever batch happens to draw last
+8. #487 — bug: a deployment over 16 units cannot launch — nothing caps it and the deploy zone is 16 tiles
+9. #507 — Nothing casts a shadow, so the city reads as art placed on a plane rather than a place
+10. #511 — graphics: pick a wall family per building, so a block stops reading as one extruded material
+11. #532 — tactical: one attack option per weapon
+12. #533 — tactical: infantry squads get two attacks per turn
+13. #557 — graphics: tileTop names the slab centre plane, so everything placed on a tile sits half a slab low
+14. #573 — tactical: the event log is empty when a mission opens — the first turn is never announced
+15. #579 — tactical: overwatch re-derives sight instead of reading the vision state, so there are two rules for one thing
+16. #585 — graphics: animate a reveal when UnitSpotted fires
+17. #591 — design-decision: rural maps are nearly transparent under fog of war — no tree blocks sight
+18. #593 — bug(tactical): a hill does not block line of sight — terrain is invisible to the sight rule
+19. #594 — ui(mech-bay): a utility slot reads as a missing thumbnail rather than a part with no picture
+20. #595 — ui: glyphs for the remaining screens — stat sheet, roster tables, hit preview
 <!-- digest:end -->
 
 **Status: PRODUCTION RESUMED** (Director, 2026-09-03 03:05 UTC). Pool: eng-3 (default effort, takes `complexity:high` and anything), eng-4 and eng-5 (medium effort, `complexity:low|medium` only). eng-1, eng-2, eng-6 are gone; their seat labels are inactive.
@@ -103,27 +96,25 @@ Board: Backlog 5 · Ready 29 · In Progress 3 · In Review 2 · Blocked 0 · Don
 
 **v0.1.0 RELEASED — 2026-09-03 13:22 UTC** (Tech Lead): tagged at the #336 squash, Release zip and GitHub Pages deploy succeeded, https://benjaminbenetti.github.io/tut/ serves it. M1 Overworld closed 64/64 (epics #35–#42). QA verified #217's fix post-release; remaining QA bugs #218 #219 #291 #294 #304 #368 are post-release polish.
 
-**v0.2.1 tagged at `b60d27b` (09:2x).** M2.5 band 1 is complete and verified on screen by QA at 1280×720 — move by default, right click invokes with digit keys, phase banners, camera on the deployed force, weapon range overlay. Gate green: 1662 unit tests, 50 e2e.
+**v0.2.2 tagged at `3c6ea54`.** M0 Foundation closed (13/13). M2 at 46/50, M2.5 at 17/24 and the live milestone.
 
-**M2.5 Tactical Feel** (13 of 23, milestone 10) is the live milestone and outranks the M2 remainder. Bands: 1 done; 2 largely the Art Director's (#457, #524 done, #526 ghosting theirs, #525 event log merged); 3 unblocked by ADR #534 (#528 then #529 — they share one `world-anchored-layer`, so #529 is blocked by #528); 4 raised by the Director (#531 fog p1, #532/#533 p2).
+**Fog of war shipped** across four issues and three seats (#531 parent, #550 MissionView + AI, #551 renderer, #552 overwatch). It changes what every tactical test can see: an unspotted bug has **no scene object at all**, not a hidden one, and a spawner is undrawn until its tile is explored. Any spec or driver that looks at the map must scout first — that is the game working, not a test failure. I have recorded it on #343 and on the epic; expect to keep repeating it.
 
-**Fog of war ran three seats wide** and is nearly done: #550 (MissionView + AI), #552 (overwatch visibility) merged; #551 (renderer) on eng-5; #531 is the parent and may now be closable.
+**M2 has three issues left:** #343 (re-scoped), #450 (Earth map projection), #281 (parked on purpose — see below).
 
-**Three failures this hour worth inheriting, all of them mine:**
+**#281 cover density is deliberately parked, not neglected.** MapGen will not publish final numbers until #446 lands, because the current table was measured against combat rules that #446 changes. Chain: **#446 ships → MapGen re-measures → Executive Director judges from play.** I raised #446 p2 → p1 for being the first link. Carry this into the eventual call: the quantity #281 has been measuring, cover that mitigates a *shot*, is not what a player feels — no bug shoots. What a squad feels is **approaches denied**, and ground that looks bare by the first measure already denies a swarm one approach across 44–55 % of it. Different knobs.
 
-1. **#525 was implemented twice.** The "never end a turn idle" rule I added pushed a seat with no labelled work to take another seat's issue during a two-minute gap. Closed by PR #563: a seat with no labelled issue waits visibly and the Producer fills it; and check the issue for an existing start comment before beginning, because labels lag and comments do not.
-2. **I mis-routed #552 to eng-4 while eng-3 was already building it** — the same guard, not applied to myself. `autofill.py` now reads the chosen issue's comments before labelling and skips it if an engineer has said they are on it.
-3. **#343 surfaced four times from three distinct ranking bugs**: tier beat milestone; milestone matched by string prefix so M2.5 tied with M2; and the fog children were filed with no milestone at all. Precedence is now priority → milestone → tier, with an explicit `MILESTONE_RANK`.
+**Closed as already-delivered this hour, both my misses:** #344 (nine tactical e2e specs cover it; the suite is 33 files / 55 tests against 39 when filed) and #190 (the Blender toolchain shipped under duplicate #191 via #192/#193, verified on `main`, while #190 sat open at p0 and my loop dutifully seated someone on it). **Before seating anything, ask whether it is already done** — the board is now old enough that some Ready issues describe shipped work.
 
-**Duplicate issues are frequent enough to check for.** #566/#569 (AP band legibility) and #462/#460 (swarmer registration) were both filed twice within minutes. Before filing from someone else's note, look for an existing issue — I lost churn on #566 by not doing it.
+**The engineer rules are working.** eng-5 hit an empty queue, waited visibly, and posted a ranked list of four with reasoning instead of self-picking (#584). That is PR #563 doing its job, and it produced a better pick than my ranking would have: a CI gate that exits 0 on a flaky pass, which had already let a spec broken 3/3 through review on #570.
 
-**Seat plan:** eng-3 #531 (fog parent), eng-4 #569 (AP band legibility), eng-5 #551 (fog renderer). Next by rank: #528 radial menu (p2 medium, builds the shared layer), #532 per-weapon actions (p2 high), #533 squads attack twice (p2 low).
+**Seat plan:** eng-3 #531 (fog parent, may be closable), eng-4 #446 (melee/cover rule — gates #281), eng-5 #584 (CI gate integrity). Queued: #585 (`UnitSpotted` reveal, last criterion from #551) then #595 for eng-5; #529 (context menu, band 3's last item, unblocked by dropping its #532 dependency) for whoever frees. **#594 stays unseated until the Art Director picks between its three options.**
 
-**Risks / asks** (09:30 UTC):
+**Risks / asks** (10:30 UTC):
 
-- **Thirteen Ready issues are untiered** and cannot be auto-seated. The Tech Lead is the bottleneck; my standing practice is to chase, then apply provisional `complexity:*` labels marked as mine after a stated deadline. That has been accepted every time so far.
-- **"Merged but invisible" is the failure class to watch.** #555 (every overlay under the ground slab since #474), #495 (42 icons and 30 thumbnails registered with zero consumers), #484 (spawners undrawn), #538 (camera off the force). None were catchable by CI; all were found by someone looking at a screen. The Director asked me to keep flagging these on the epic.
-- Fog of war and the in-world UI (#528/#529) are the two remaining large pieces of M2.5.
+- **The gate lies** until #584 lands: a flaky e2e pass exits 0, so green does not mean green. Weigh review verdicts accordingly until it merges.
+- **Duplicate filing is common** — #566/#569, #462/#460, #190/#191, #479/#484 all within minutes of each other. Search before filing from someone else's note; I lost churn on #566 by not doing it.
+- Every Ready issue is tiered for the first time today; the Tech Lead cleared the backlog.
 
 ---
 

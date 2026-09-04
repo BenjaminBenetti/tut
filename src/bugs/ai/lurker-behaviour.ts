@@ -7,6 +7,7 @@ import type { MissionView } from "../../tactical/model/mission-view";
 import type { TacticalCommand } from "../../tactical/model/tactical-command";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { Unit, UnitId } from "../../tactical/model/unit";
+import { isMelee } from "../../tactical/model/weapon-profile";
 import {
   attackTerrain,
   validateAttack,
@@ -225,6 +226,14 @@ export class LurkerBehaviour implements BugBehaviour {
     const checked = validateAttack(mission, unit.id, mark.id, ctx.combat);
     if (!checked.ok) {
       return undefined;
+    }
+    // A melee attacker gets no flank bonus and no cover mitigation
+    // (#446), so there is no better angle to hold out for: in contact is
+    // the whole opportunity. Waiting for `terrain.flanked` here would be
+    // waiting for a condition the rules can no longer produce, and a
+    // lurker beside a covered mark would circle it forever.
+    if (isMelee(checked.value.attackerTemplate.weapon)) {
+      return attack(unit.id, mark.id);
     }
     if (checked.value.terrain.flanked || !markHasAnyCover(mission, mark)) {
       return attack(unit.id, mark.id);

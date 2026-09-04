@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
+import { PropKindIds } from "../../mapgen/data/props";
+import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
+import {
+  missionWith,
+  unitAt,
+} from "../../tactical/service/tactical-fixtures.test-helper";
 import { COMBAT_TUNING } from "../../tactical/data/combat-tuning";
 import { ATTACK } from "../../tactical/model/attack-command";
 import { MOVE } from "../../tactical/model/move-command";
@@ -144,5 +150,41 @@ describe("LurkerBehaviour", () => {
       units: mission.units.map((u) => (u.id === bug.id ? { ...u, hp: 0 } : u)),
     };
     expect(lurker.choose(bugView(dead), bug.id, ctx(dead, 1))).toEqual([]);
+  });
+});
+
+// ===========================================
+// Melee and cover (#446)
+// ===========================================
+
+describe("LurkerBehaviour against a mark in cover", () => {
+  /**
+   * A lurker standing next to a squad that has a crate on one side, so
+   * `markHasAnyCover` is true and — since #446 — the terrain can never
+   * report the melee attacker as flanking.
+   */
+  function besideCoveredMark() {
+    const map = new FixtureMapBuilder(9, 9, 1)
+      .fillGround()
+      .prop(PropKindIds.CRATE, { x: 4, y: 0, z: 3 })
+      .build();
+    const squad = unitAt("squad-1", "infantry", { x: 4, y: 0, z: 4 });
+    const base = missionWith(map, [squad], { phase: "bugs" });
+    return withBug(base, LURKER, { x: 5, y: 0, z: 4 }, "lurker-1").mission;
+  }
+
+  it("strikes instead of circling, because flanking a melee target buys nothing (#446)", () => {
+    // Before #446 this lurker waited for a flank that a melee weapon can
+    // never get. The rule removed the bonus; the behaviour has to stop
+    // holding out for it or it circles a covered mark forever.
+    const mission = besideCoveredMark();
+    const commands = new LurkerBehaviour().choose(
+      bugView(mission),
+      "lurker-1",
+      ctx(mission, 1),
+    );
+    expect(commands.length).toBeGreaterThan(0);
+    expect(commands.at(-1)?.type).toBe(ATTACK);
+    expect(commands.at(-1)?.payload).toMatchObject({ targetId: "squad-1" });
   });
 });

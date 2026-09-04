@@ -103,6 +103,8 @@ Until M2, tactical missions are **auto-resolved** by a placeholder resolver so t
 - **One attack action per weapon.** A unit does not have a single generic "attack". A mech carrying an arm weapon and a back weapon offers two distinct attacks, each with its own range, damage, accuracy and cost. Squad weapons work the same way.
 - **Infantry squads attack twice per turn.** Squads are the answer to numerous small bugs; mechs are the answer to armoured and large targets. This asymmetry is deliberate and is what makes both worth fielding.
 - Cover, line of sight, elevation bonuses, flanking. Hit chance and damage are visible before committing.
+- **Cover and flanking are ranged concepts. A melee attacker (weapon range 1) gets neither.** No cover mitigation, no flank bonus — a bite or a claw resolves on base accuracy plus elevation and status. Cover still protects against melee, but structurally rather than as a percentage: a prop tile cannot be stood on, so cover denies approach angles. A defender with a boulder to the north simply cannot be attacked from the north.
+  Without this rule the flank term inverted the lesson of the whole system: `flanked` is "the attacker found an angle your cover does not protect", which for an adjacent attacker was true precisely *because* the cover existed — so standing beside a boulder raised a swarmer's chance from 60 % to 75 %, and a player reading that correctly would learn to avoid cover (#446).
 
 ### 6.2.1 Vision and fog of war
 Vision is a core system, not a presentation detail.

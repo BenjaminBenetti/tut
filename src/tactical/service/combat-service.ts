@@ -24,6 +24,7 @@ import { UNIT_DIED } from "../model/unit-died-event";
 import type { Unit, UnitId } from "../model/unit";
 import type { UnitTemplate } from "../model/unit-template";
 import type { WeaponProfile } from "../model/weapon-profile";
+import { isMelee } from "../model/weapon-profile";
 import { findAttackTarget } from "./attack-target-service";
 import { endIfOver } from "./mission-end-service";
 import { coverAgainst, elevationBonus, hasLineOfSight } from "./sight-service";
@@ -130,6 +131,26 @@ export function attackTerrain(
     flanked: cover === Cover.NONE && anyCover,
     elevation: elevationBonus(attacker, target),
   };
+}
+
+/**
+ * The terrain as it applies to `weapon` (#446). Geometry is the same for
+ * everyone, but cover is not: a melee attacker gets neither the
+ * mitigation nor the flank bonus, because both describe a firing line it
+ * does not have. Ranged attacks are returned unchanged.
+ *
+ * Applied here, where the weapon is known, rather than inside
+ * `attackTerrain`, which is a pure question about two tiles and a map
+ * and is asked by callers that have no weapon in hand.
+ */
+export function terrainForWeapon(
+  terrain: AttackTerrain,
+  weapon: WeaponProfile,
+): AttackTerrain {
+  if (!isMelee(weapon)) {
+    return terrain;
+  }
+  return { ...terrain, cover: Cover.NONE, flanked: false };
 }
 
 /** One tile out on each side, to ask whether the target has cover there. */
@@ -241,7 +262,10 @@ export function validateTargeting(
     );
   }
   const index = new TileIndex(mission.map);
-  const terrain = attackTerrain(mission.map, attacker.pos, target.pos, index);
+  const terrain = terrainForWeapon(
+    attackTerrain(mission.map, attacker.pos, target.pos, index),
+    attackerTemplate.weapon,
+  );
   if (terrain.distance > attackerTemplate.weapon.range) {
     return err({
       kind: "out-of-range",

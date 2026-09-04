@@ -18,7 +18,9 @@ import type { SpawnTuning } from "../model/spawn-tuning";
  */
 export const SPAWN_TUNING: SpawnTuning = {
   spawnerHp: 20,
-  hatchInterval: 3,
+  hatchInterval: 6,
+  hatchCutPerDifficulty: 0.25,
+  minHatchInterval: 3,
   hatchCount: 2,
   firstWaveTurn: 3,
   waveInterval: 4,

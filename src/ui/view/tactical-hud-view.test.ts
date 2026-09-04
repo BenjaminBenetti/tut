@@ -211,6 +211,120 @@ describe("TacticalHudView", () => {
     expect(hud.getMode()).toBe("select");
   });
 
+  // ===========================================
+  // Moving (#488)
+  // ===========================================
+
+  it("walks a unit across several tiles to a distant tile, not one step", () => {
+    const { hud, commands } = setup();
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    hud.handleIntent({ kind: "action", action: "move" });
+    // s1 stands at (1,0,1) with two actions of five tiles: ten steps.
+    const target = { x: 8, y: 0, z: 4 };
+    hud.handleIntent({ kind: "select-tile", tile: target });
+
+    expect(commands).toHaveLength(1);
+    const command = commands[0];
+    expect(command?.type).toBe(MOVE);
+    if (command?.type !== MOVE) return;
+    const { path } = command.payload;
+    // The whole route, not a single hop: every tile it steps through, in
+    // order, ending on the tile that was clicked.
+    expect(path.length).toBeGreaterThan(1);
+    expect(path.at(-1)).toEqual(target);
+    expect(path).toHaveLength(10);
+    // Each entry is one orthogonal step on from the last, which is what
+    // `move-handler` validates and what the old one-element path failed.
+    let previous = { x: 1, y: 0, z: 1 };
+    for (const step of path) {
+      expect(
+        Math.abs(step.x - previous.x) + Math.abs(step.z - previous.z),
+      ).toBe(1);
+      previous = step;
+    }
+    expect(hud.getMode()).toBe("select");
+  });
+
+  it("routes around what it cannot walk through rather than through it", () => {
+    const { hud, commands, mission } = setup();
+    // Line the squad up with the crate at (4,0,2) and aim past it.
+    hud.update({
+      ...mission,
+      units: mission.units.map((u) =>
+        u.id === "s1" ? { ...u, pos: { x: 1, y: 0, z: 2 } } : u,
+      ),
+    });
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    hud.handleIntent({ kind: "action", action: "move" });
+    hud.handleIntent({ kind: "select-tile", tile: { x: 6, y: 0, z: 2 } });
+
+    expect(commands).toHaveLength(1);
+    const command = commands[0];
+    if (command?.type !== MOVE) throw new Error("expected a move");
+    const { path } = command.payload;
+    expect(path.at(-1)).toEqual({ x: 6, y: 0, z: 2 });
+    // The straight line runs through the crate, so the route must not.
+    expect(
+      path.some((step) => step.x === 4 && step.y === 0 && step.z === 2),
+    ).toBe(false);
+    // Which makes it longer than the five tiles of the straight line.
+    expect(path.length).toBeGreaterThan(5);
+  });
+
+  it("refuses a tile nothing can stand on, such as a crate", () => {
+    const { hud, commands, mission } = setup();
+    hud.update({
+      ...mission,
+      units: mission.units.map((u) =>
+        u.id === "s1" ? { ...u, pos: { x: 3, y: 0, z: 2 } } : u,
+      ),
+    });
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    hud.handleIntent({ kind: "action", action: "move" });
+    hud.handleIntent({ kind: "select-tile", tile: { x: 4, y: 0, z: 2 } });
+    expect(commands).toEqual([]);
+    expect(
+      root.querySelector<HTMLElement>('[data-role="status"]')?.textContent,
+    ).toContain("out of reach");
+  });
+
+  it("refuses a tile out of reach, says why, and stays ready for another click", () => {
+    const { hud, commands, mission } = setup();
+    // One action of five tiles from (1,0,1) cannot cross the map.
+    hud.update({
+      ...mission,
+      units: mission.units.map((u) => (u.id === "s1" ? { ...u, ap: 1 } : u)),
+    });
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    hud.handleIntent({ kind: "action", action: "move" });
+    hud.handleIntent({ kind: "select-tile", tile: { x: 9, y: 0, z: 5 } });
+
+    expect(commands).toEqual([]);
+    expect(
+      root.querySelector<HTMLElement>('[data-role="status"]')?.textContent,
+    ).toContain("out of reach");
+    // Still armed: the player misjudged the range, not the intent.
+    expect(hud.getMode()).toBe("move");
+    hud.handleIntent({ kind: "select-tile", tile: { x: 2, y: 0, z: 1 } });
+    expect(commands).toHaveLength(1);
+  });
+
+  it("treats a click on the unit's own tile as a cancel, not an empty move", () => {
+    const { hud, commands } = setup();
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    hud.handleIntent({ kind: "action", action: "move" });
+    hud.handleIntent({ kind: "select-tile", tile: { x: 1, y: 0, z: 1 } });
+    expect(commands).toEqual([]);
+    expect(hud.getMode()).toBe("select");
+  });
+
+  it("ignores a tile click when no move is armed", () => {
+    const { hud, commands } = setup();
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    hud.handleIntent({ kind: "select-tile", tile: { x: 5, y: 0, z: 3 } });
+    expect(commands).toEqual([]);
+  });
+
   it("offers Interact only when an objective is in reach, and works the nearest", () => {
     const { hud, mission, commands } = setup();
     const button = (): HTMLButtonElement | null =>

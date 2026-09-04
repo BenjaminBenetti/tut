@@ -8,7 +8,7 @@ import { SETTLEMENT_DEFINITIONS } from "../data/settlements";
 import { SURFACE_DEFINITIONS } from "../data/surfaces";
 import { DEFAULT_HOOK_PLACERS } from "../generator/placer/default-hook-placers";
 import type { MapGenRegistries } from "../model/registries";
-import { createRegistry } from "./definition-registry";
+import { createRegistry } from "../../core/service/definition-registry";
 
 // ===========================================
 // Default registries

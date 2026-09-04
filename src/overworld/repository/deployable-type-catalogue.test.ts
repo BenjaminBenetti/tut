@@ -27,8 +27,12 @@ describe("DataDeployableTypeCatalogue", () => {
 
   it("rejects duplicate ids", () => {
     const battery = DEPLOYABLE_TYPES["defensive-battery"];
+    // The whole message, not just "Duplicate": the wording is the
+    // catalogue's contract with anyone reading a content error, and
+    // delegating the lookup to core's registry (#108) is exactly the
+    // change that could have altered it unnoticed.
     expect(() => new DataDeployableTypeCatalogue([battery, battery])).toThrow(
-      /Duplicate/,
+      'Duplicate deployable type id "defensive-battery"',
     );
   });
 });

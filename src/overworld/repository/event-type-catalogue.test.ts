@@ -23,6 +23,9 @@ describe("DataEventTypeCatalogue", () => {
 
   it("rejects duplicate ids", () => {
     const plea = EVENT_TYPES["city-plea"];
-    expect(() => new DataEventTypeCatalogue([plea, plea])).toThrow(/Duplicate/);
+    // The whole message: see the deployable catalogue's test (#108).
+    expect(() => new DataEventTypeCatalogue([plea, plea])).toThrow(
+      `Duplicate event type id "${plea.id}"`,
+    );
   });
 });

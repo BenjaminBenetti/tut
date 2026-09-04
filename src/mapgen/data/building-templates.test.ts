@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { SETTLEMENT_SCALES } from "../../content/model/settlement-scale";
-import { createRegistry } from "../service/definition-registry";
+import { createRegistry } from "../../core/service/definition-registry";
 import { BIOME_DEFINITIONS } from "./biomes";
 import { KNOWN_BUILDING_KIND_IDS } from "./building-kind-ids";
 import { BUILDING_TEMPLATES } from "./building-templates";

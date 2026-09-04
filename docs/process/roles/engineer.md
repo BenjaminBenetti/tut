@@ -20,6 +20,12 @@ If exactly one issue is labeled for you, that is your issue. If none: wait, poll
 4. Implement. Follow SOLID, `/<domain>/<type>/<file>`, JSDoc on every method, section comments. Simulation code stays pure TS.
 5. Write tests. Vitest for simulation; extend the Playwright smoke test if you touch screens.
 6. `pnpm typecheck && pnpm lint && pnpm test && pnpm build` must pass locally.
+   A green exit code is not the whole story for Playwright: CI retries once, so a
+   spec that fails and passes on the retry reports `flaky` and used to exit `0`.
+   `pnpm test:e2e` now runs with `--fail-on-flaky-tests`, so a flake is red — but
+   locally retries are off, so reproduce the CI shape with `CI=1 pnpm test:e2e`
+   before trusting a new spec, and repeat it: load changes the result and one
+   green run proves nothing.
 7. Push and open a PR with the template. `Closes #N`. Explain any assumptions you made.
 8. Poll the PR every few minutes: `gh pr view <number> --json reviews,comments,statusCheckRollup`. Address review comments promptly on the same branch. Fix CI if it's red.
 9. When merged, post a final one-line comment on the issue with anything the next person should know. `git checkout main && git pull`. Go back to **Finding your work**.

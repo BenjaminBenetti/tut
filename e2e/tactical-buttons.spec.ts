@@ -125,9 +125,12 @@ test("the number row arms actions in action-bar order", async ({ page }) => {
   await expect(
     page.locator('#action-bar [data-action="move"] [data-role="shortcut"]'),
   ).toHaveText("1");
+  // One key reaches every weapon button (#652), so each carries the same
+  // digit. The array form asserts all of them; `.first()` would pass here
+  // while checking less than the single-element form used to.
   await expect(
     page.locator('#action-bar [data-action="attack"] [data-role="shortcut"]'),
-  ).toHaveText("2");
+  ).toHaveText(["2", "2"]);
 });
 
 test("the browser menu is suppressed on the map, not on the document", async ({

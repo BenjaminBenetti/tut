@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-03 (session 3, update 3, ~17:52 UTC). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-04 (session 3, update 4, ~04:35 UTC). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 1. Where things stand
 
@@ -33,7 +33,13 @@ Between 09:05 and 09:55 the M1 UI finished except #77 (event dialog), #83 (resul
 
 **13:47–17:52 (with a fleet stall 15:45–17:41).** M2 landed most of its runtime and rules: #372 (#323 mission state, v6), #382 (#324 commands and events on the campaign dispatcher), #385 (#326 sight and cover), #388 (#327 hit chance and damage), #390 (#325 movement), #389 (#342 tactical screen and `composeTactical`), #391 (#339 mission HUD), plus #377 (#369 one picking controller), #375/#383/#379/#380/#386/#392 (QA bugs #217, #219, #218, #291, #368, #304; #304 bumped the schema to v7). Epic #316 closed. Remaining high chain on eng-3: #328 turn engine → #330 resolver → #341 flow; medium seats on #338, #329, #331. Every merge gated on the tree merged with `main`; nothing merged red.
 
-Open when this was written: nothing.
+**Overnight (17:52 → 04:15 the fleet was stalled; it woke at 04:16).** Merged before the stall: #402 overlays and the animation queue (#338), #401 default squad names (#294), #405/#397/#411/#413/#417/#419/#421 handoffs, #406 one status row (#403), #410 shared `isRecord` (#230), #408 turn engine (#328), #414 behaviour registry (#331), #415 charges (#409), #416 spawning (#329), #418 lurker (#333), #407 the Art Director's scene preview.
+
+**The Executive Director filed #420 at 20:10 UTC and it sat unanswered for eight hours** because every agent was stalled. Read it first if you are new: the human is the vision holder and their issues outrank the board. It asked for the strategic map "more flat front on, just like XCOM" and for city markers that line up with their cities. I took it myself rather than seating it (camera rig and architecture §5 are Tech Lead territory; all three seats were on the M2 critical path) and shipped it as #423, with **ADR 0005** and before/after renders committed at `docs/design/overworld-camera-before.png` / `-after.png`. The Producer had raised it to p0 and scoped it to the overworld; both calls were right.
+
+**What #420 taught, worth keeping:** the strategic scene was written assuming a tilted camera, so world `+y` read as screen-up. Under a top-down camera `+y` points at the viewer and moves nothing on screen. Anything drawn on the strategic map must now offset across the **ground plane**; the mission badge and the marker glyph both had to change, and the marker glyph being a bottom-anchored sprite is what made markers look misaligned in the first place (a bottom-anchored sprite always draws a full glyph-height above its anchor). Region label bars are the next thing that will hit this if they are ever drawn in 3D.
+
+Open when this was written: **#422** (#335 bug-phase runner) approved on content, holding for one line that registers `LurkerBehaviour` in `shippedBugBehaviours()`, since #418 landed it as dead code.
 
 Superseded note, kept for the record: **#372** (#323 tactical state, eng-3) with changes requested: (1) no `save/` import, generic over a structural `MissionCampaignState` like the tick steps; (2) inline map accepted but ADR 0004 decision 9 must say so in the same PR; (3) `- 6:` schema history line; (4) `registries` injected, not defaulted. Gate and merge when the push lands and `pnpm lint` passes under #373.
 
@@ -53,6 +59,14 @@ Every engineer-facing issue carries a `complexity:*` label (checked every poll; 
 - Nothing else of mine is open.
 
 ## 3. Decisions I made and why
+
+Session 3, 2026-09-04:
+
+- **The strategic map is top-down, the tactical map stays isometric** (ADR 0005, from the Executive Director's #420). Projection is state (`CameraProjection { elevationRad, yawOffsetRad }`) rather than a module constant, defaulting to isometric so nothing written before it moved. The elevation is one number if the Executive Director ever wants a tilt back.
+- **A human's issue is answered the same tick it is found, before any queue work.** #420 waited eight hours through a stall. When you see one, reply with your reading of it before you write code, so they can correct you cheaply, and put a rendered screenshot in front of them rather than asking them to read a diff.
+- **I self-merge Tech Lead architecture and CI PRs** (#364, #373, #423) since nobody else can review them, and I say so in a comment on the PR rather than doing it quietly.
+- **Bug-phase re-entrancy (#422 corrected me).** I had written on #412 that the runner should dispatch through the campaign dispatcher and then send `EndTurn`; that means a handler re-entering the dispatcher and a command the player never sent. The right shape, which shipped, is a pure `PhaseStep` that `EndTurn` composes, so one end of turn hatches, waves, plays the bugs and hands back the next player turn as one command, one autosave, one event batch. Take engineer pushback seriously; that one was right and I was wrong.
+- **Tuning lives in `<domain>/model` and `<domain>/data`** even for AI weights (#418 was sent back for keeping `LURKER_TUNING` inside the behaviour module), so #345's tuning pass has one place to look.
 
 Session 3:
 
@@ -94,7 +108,8 @@ Session 1 (still binding):
 ## 4. Next, in order
 
 1. Review loop every ~5 minutes (session 3 runs it as a cron job in the session; a tick is one `pulls?state=open` call, one `issues?state=open` sweep, then per-PR files/diff/check-runs); label any new unlabeled engineer issue first. MapGen's self-filed issues (#352, #354) went unlabelled on purpose: the specialist works them, the Producer never routes them.
-2. M1 is done and tagged. M2 order on eng-3 (updated 17:52: #323–#327 merged): #372 (#323) → #324 commands (hold to the ruling above: campaign dispatcher, `no-active-mission` error, one store) → #325 → #326 → #328 → #330 → #341. #324 must narrow `TacticalState.log` to the tactical event union and pass the dispatcher's `ctx.ids` into `startTacticalMission`. Medium seats: #338/#339/#342 as their inputs land, QA bugs (#219, #218, #291, #294, #304, #368), #369, #230.
+2. **Schema is at v10** (v9 `ADD_UNIT_CHARGES` #409, v10 `ADD_SPAWN_CLOCKS` #329). Two PRs took the same version number within twenty minutes; when that happens, the one that merges second renumbers and the chain test catches it. Check `GAME_STATE_SCHEMA_VERSION` before approving any save reshape.
+3. M1 is done and tagged. M2 order on eng-3 (updated 17:52: #323–#327 merged): #372 (#323) → #324 commands (hold to the ruling above: campaign dispatcher, `no-active-mission` error, one store) → #325 → #326 → #328 → #330 → #341. #324 must narrow `TacticalState.log` to the tactical event union and pass the dispatcher's `ctx.ids` into `startTacticalMission`. Medium seats: #338/#339/#342 as their inputs land, QA bugs (#219, #218, #291, #294, #304, #368), #369, #230.
 3. M2 reviews: #321/#322 (models, data) will come first; then #323 (insist on the v4 → v5 migration and on `activeMission` being plain data); then #324 against the ruling above. `tactical/` must not import `graphics/`, `ui/` or `app/` (ESLint enforces it) and must not read `Math.random()` or `Date`.
 4. Composition-root churn continues to be the one hot spot (`app/service/game-composition.ts`, `app-bootstrap.ts`, `ui/model/screen.ts`, `screens.css`): tell the next author to merge `main` right before pushing; merge whatever is ready without waiting for siblings.
 5. #336 tuning after #84; #307 after the Director's decision.

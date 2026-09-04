@@ -9,31 +9,16 @@ import {
 
 import type { Vec3 } from "../../core/model/grid";
 import type { City, CityId } from "../../overworld/model/city";
-import { MAX_INFESTATION, MIN_INFESTATION } from "../../overworld/model/city";
 import type { OverworldSceneConfig } from "../model/overworld-scene-config";
+import type { TextTextureSource } from "../model/text-texture-source";
+import type { RampStop } from "./infestation-ramp";
+import { INFESTATION_RAMP, infestationColour } from "./infestation-ramp";
 
-// ===========================================
-// Colour ramp
-// ===========================================
-
-/** One stop on the infestation ramp: normalised position and colour. */
-export interface RampStop {
-  /** Position in `[0, 1]`; stops are listed in ascending order. */
-  readonly at: number;
-  readonly hex: number;
-}
-
-/**
- * Infestation ramp from the Art Director (#74): `ui-ok` (clean) through
- * `ui-bug` (infested) and `ui-warn` to `ui-danger` (overrun), evenly
- * spaced.
- */
-export const INFESTATION_RAMP: readonly RampStop[] = [
-  { at: 0, hex: 0x7ccb5a },
-  { at: 1 / 3, hex: 0x9cff3d },
-  { at: 2 / 3, hex: 0xf0c63c },
-  { at: 1, hex: 0xe0453c },
-];
+// The infestation ramp moved to `infestation-ramp.ts` when regions
+// started sampling it too (#440). Re-exported so a marker stays the one
+// place a caller needs for "how does a city look".
+export type { RampStop };
+export { INFESTATION_RAMP, infestationColour };
 
 /** Hovered marker tint: `ui-accent`. */
 export const HOVER_COLOUR = 0xf08a24;
@@ -67,43 +52,15 @@ const BADGE_OFFSET_NORTH = 0.55;
 /** Height the badge floats above the plate so it never z-fights it. */
 const BADGE_LIFT = 0.02;
 
+/** Label height in world units, and how far south of the marker it sits. */
+const LABEL_HEIGHT = 0.34;
+const LABEL_OFFSET_SOUTH = 0.62;
+
+/** Labels draw above everything else on the map. */
+const LABEL_RENDER_ORDER = 4;
+
 /** Badges draw after the marker so they sit on top of the pin. */
 const BADGE_RENDER_ORDER = 3;
-
-/**
- * Maps infestation `0–100` to a colour on the ramp, as a `0xRRGGBB`
- * number. Channels are interpolated linearly in sRGB between the two
- * nearest stops; values outside the range clamp to the nearest end and a
- * non-number counts as clean.
- */
-export function infestationColour(infestation: number): number {
-  const span = MAX_INFESTATION - MIN_INFESTATION;
-  const raw = (infestation - MIN_INFESTATION) / span;
-  const t = Number.isFinite(raw) ? Math.min(1, Math.max(0, raw)) : 0;
-  const [first] = INFESTATION_RAMP;
-  if (!first) {
-    return 0;
-  }
-  let lower = first;
-  let upper = first;
-  for (const stop of INFESTATION_RAMP) {
-    if (stop.at <= t) {
-      lower = stop;
-    }
-    upper = stop;
-    if (stop.at >= t) {
-      break;
-    }
-  }
-  const width = upper.at - lower.at;
-  const local = width > 0 ? (t - lower.at) / width : 0;
-  const channel = (shift: number): number => {
-    const a = (lower.hex >> shift) & 0xff;
-    const b = (upper.hex >> shift) & 0xff;
-    return Math.round(a + (b - a) * local);
-  };
-  return (channel(16) << 16) | (channel(8) << 8) | channel(0);
-}
 
 // ===========================================
 // Marker
@@ -124,6 +81,8 @@ export interface CityMarkerLook {
   readonly glyph: Texture | undefined;
   /** White-on-transparent mission glyph for the badge; `undefined` draws a small disc. */
   readonly missionGlyph?: Texture | undefined;
+  /** Rasterises the city's name; absent (or yielding nothing) draws no label. */
+  readonly text?: TextTextureSource | undefined;
 }
 
 /** What a marker currently shows, for tests and the dev hooks. */
@@ -164,9 +123,12 @@ export class CityMarker {
   private readonly ringMaterial: MeshStandardMaterial;
   private readonly badge: Sprite | Mesh;
   private readonly badgeMaterial: SpriteMaterial | MeshStandardMaterial;
+  private readonly label: Sprite | undefined;
+  private readonly labelMaterial: SpriteMaterial | undefined;
   private readonly config: OverworldSceneConfig;
   private infestationHex = 0;
   private hovered = false;
+  private selected = false;
   private mission = false;
 
   // ===========================================
@@ -274,6 +236,31 @@ export class CityMarker {
     this.badge.visible = false;
     this.object.add(this.badge);
 
+    const labelTexture = look.text?.textTexture(city.name);
+    if (labelTexture) {
+      const material = new SpriteMaterial({
+        map: labelTexture,
+        transparent: true,
+        depthWrite: false,
+      });
+      const sprite = new Sprite(material);
+      sprite.scale.set(LABEL_HEIGHT * aspectOf(labelTexture), LABEL_HEIGHT, 1);
+      // South of the marker, on the ground plane: under the strategic
+      // map's straight-down camera that reads as directly below the icon,
+      // clear of the badge, which sits east and north (#439).
+      sprite.position.set(
+        0,
+        BADGE_LIFT,
+        this.config.markerGlyphSize * LABEL_OFFSET_SOUTH,
+      );
+      sprite.renderOrder = LABEL_RENDER_ORDER;
+      sprite.visible = false;
+      sprite.name = `city-label-${city.id}`;
+      this.label = sprite;
+      this.labelMaterial = material;
+      this.object.add(sprite);
+    }
+
     this.setInfestation(city.infestation);
     this.setHovered(false);
   }
@@ -296,6 +283,7 @@ export class CityMarker {
   /** Grows the marker and tints it with the accent while hovered. */
   setHovered(hovered: boolean): void {
     this.hovered = hovered;
+    this.refreshLabel();
     const scale = hovered ? HOVER_SCALE : 1;
     if (this.visual instanceof Sprite) {
       const size = this.config.markerGlyphSize * scale;
@@ -308,7 +296,14 @@ export class CityMarker {
 
   /** Shows the selection ring while selected. */
   setSelected(selected: boolean): void {
+    this.selected = selected;
     this.ring.visible = selected;
+    this.refreshLabel();
+  }
+
+  /** True while the city's name is on screen. */
+  labelVisible(): boolean {
+    return this.label?.visible ?? false;
   }
 
   /** Shows the mission badge while the city has an active mission. */
@@ -350,6 +345,18 @@ export class CityMarker {
     this.material.dispose();
     this.ringMaterial.dispose();
     this.badgeMaterial.dispose();
+    this.labelMaterial?.dispose();
+  }
+
+  /**
+   * A city's name is shown while it is hovered or selected, and only
+   * then: thirty-seven names at once is the clutter the placeholder
+   * label bars were already causing (#439).
+   */
+  private refreshLabel(): void {
+    if (this.label) {
+      this.label.visible = this.hovered || this.selected;
+    }
   }
 
   // ===========================================
@@ -365,4 +372,16 @@ export class CityMarker {
       this.material.emissiveIntensity = this.hovered ? HOVER_EMISSIVE : 0;
     }
   }
+}
+
+/**
+ * Width over height of a rasterised label, so a sprite wearing it is not
+ * stretched. Falls back to square for a texture with no measurable image
+ * (a stub in tests).
+ */
+function aspectOf(texture: Texture): number {
+  const image = texture.image as { width?: number; height?: number } | null;
+  const width = image?.width ?? 1;
+  const height = image?.height ?? 1;
+  return height > 0 ? width / height : 1;
 }

@@ -4,11 +4,17 @@ import type { CommandDispatcher } from "../../overworld/model/command-dispatcher
 import type { CommandHandler } from "../../overworld/model/command-handler";
 import type { MissionCampaignState } from "../model/mission-campaign-state";
 import type {
+  TacticalCommand,
   TacticalCommandFor,
   TacticalCommandType,
 } from "../model/tactical-command";
 import { describeTacticalError } from "../model/tactical-error";
-import type { TacticalHandler } from "../model/tactical-handler";
+import type {
+  TacticalContext,
+  TacticalHandler,
+  TacticalOutcome,
+} from "../model/tactical-handler";
+import type { TacticalState } from "../model/tactical-state";
 
 // ===========================================
 // Types
@@ -30,6 +36,38 @@ export const NO_ACTIVE_MISSION = "no-active-mission";
 
 /** `CommandError.code` when a tactical command arrives after the mission has ended. */
 export const MISSION_OVER = "mission-over";
+
+// ===========================================
+// Applying
+// ===========================================
+
+/**
+ * Applies one command to a mission through the pure handlers, without
+ * the campaign store: the processor the bug phase (#335) and the
+ * headless sim (#343) drive. A command whose type has no handler is
+ * refused with `unhandled-command` rather than thrown, since which rules
+ * have landed is configuration, not a bug in the caller.
+ *
+ * ```
+ *   handlers[command.type] ──undefined──► err unhandled-command
+ *          │
+ *          └──► handler(mission, command, ctx) ──► ok { state, events } | err
+ * ```
+ */
+export function applyTacticalCommand(
+  handlers: TacticalHandlers,
+  mission: TacticalState,
+  command: TacticalCommand,
+  ctx: TacticalContext,
+): TacticalOutcome {
+  // The mapped type pairs each key with its own command's handler; the
+  // lookup is by the command's own tag, so widening to the union is safe.
+  const handler = handlers[command.type] as TacticalHandler | undefined;
+  if (handler === undefined) {
+    return err({ kind: "unhandled-command", commandType: command.type });
+  }
+  return handler(mission, command, ctx);
+}
 
 // ===========================================
 // Lifting

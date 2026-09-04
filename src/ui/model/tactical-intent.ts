@@ -1,4 +1,5 @@
 import type { TileCoord } from "../../mapgen/model/tile-coord";
+import type { SpawnerId } from "../../tactical/model/tactical-state";
 import type { UnitId } from "../../tactical/model/unit";
 
 // ===========================================
@@ -11,7 +12,15 @@ import type { UnitId } from "../../tactical/model/unit";
  * they are the whole vocabulary the input layer speaks.
  */
 export type TacticalAction =
-  "move" | "attack" | "overwatch" | "reload" | "next-unit" | "cancel";
+  | "move"
+  | "attack"
+  | "overwatch"
+  | "reload"
+  | "interact"
+  | "extract"
+  | "next-unit"
+  | "next-target"
+  | "cancel";
 
 /** Every `TacticalAction`, in a fixed order. */
 export const TACTICAL_ACTIONS = [
@@ -19,7 +28,10 @@ export const TACTICAL_ACTIONS = [
   "attack",
   "overwatch",
   "reload",
+  "interact",
+  "extract",
   "next-unit",
+  "next-target",
   "cancel",
 ] as const satisfies readonly TacticalAction[];
 
@@ -30,6 +42,7 @@ export const TACTICAL_ACTIONS = [
  */
 export type TacticalIntent =
   | { readonly kind: "select-unit"; readonly unitId: UnitId }
+  | { readonly kind: "select-spawner"; readonly spawnerId: SpawnerId }
   | { readonly kind: "select-tile"; readonly tile: TileCoord }
   | { readonly kind: "action"; readonly action: TacticalAction }
   | { readonly kind: "end-turn" };
@@ -52,10 +65,16 @@ export interface TacticalIntentSink {
 export interface TacticalTestHooks {
   /** Selects a unit as if clicked. */
   selectUnit(unitId: UnitId): void;
+  /** Targets an egg spawner as if clicked (#484). */
+  selectSpawner(spawnerId: SpawnerId): void;
   /** Selects a tile as if clicked. */
   selectTile(tile: TileCoord): void;
   /** Client-pixel position of a unit's feet, for a real pointer click. */
   unitScreenPosition(unitId: UnitId): { x: number; y: number } | undefined;
+  /** Client-pixel position of an egg spawner's base, for a real pointer click. */
+  spawnerScreenPosition(
+    spawnerId: SpawnerId,
+  ): { x: number; y: number } | undefined;
   /** Client-pixel position of a tile's top centre, for a real pointer click. */
   tileScreenPosition(tile: TileCoord): { x: number; y: number } | undefined;
 }

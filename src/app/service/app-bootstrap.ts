@@ -22,6 +22,7 @@ import { SvgGlyphRasteriser } from "../../graphics/service/svg-glyph-rasteriser"
 import { DEPLOYABLE_TYPES } from "../../overworld/data/deployable-types";
 import { EARTH_MAP } from "../../overworld/data/earth-map";
 import { COMBAT_TUNING } from "../../tactical/data/combat-tuning";
+import { OBJECTIVE_TUNING } from "../../tactical/data/objective-tuning";
 import { DEPLOYABLE_TYPE_IDS } from "../../overworld/model/deployable-type";
 import { DataDeployableTypeCatalogue } from "../../overworld/repository/deployable-type-catalogue";
 import type { SaveClock } from "../../save/model/save-clock";
@@ -156,6 +157,7 @@ export async function bootstrapApp(doc: Document): Promise<void> {
             assessor: game.assessor,
             squadTypes: game.content.squadTypes,
             missionTypes: game.content.missionTypes,
+            autoResolve: game.autoResolve,
           }),
       ],
       [
@@ -195,6 +197,7 @@ export async function bootstrapApp(doc: Document): Promise<void> {
             router,
             session: game.session,
             combatTuning: COMBAT_TUNING,
+            objectiveTuning: OBJECTIVE_TUNING,
             sceneHost: new DomTacticalSceneHost({
               baseUrl: import.meta.env.BASE_URL,
               onHooks: (hooks) => {

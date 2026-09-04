@@ -24,6 +24,18 @@ export interface ActionBarModel {
   readonly mode: "move" | "attack" | undefined;
   /** Label of the reload button: "Vent" for a mech, "Reload" otherwise (#409). */
   readonly reloadLabel?: string;
+  /**
+   * Whether the selected unit is standing in the extraction zone, so it
+   * can leave the map (#341). Extraction costs no action points, so it is
+   * offered to a unit that has already spent its turn.
+   */
+  readonly canExtract?: boolean;
+  /**
+   * Whether the selected unit is in reach of an objective it could work
+   * (#427). Its own flag rather than `canAct`, because being able to act
+   * is not enough: there has to be something in reach to act on.
+   */
+  readonly canInteract?: boolean;
 }
 
 // ===========================================
@@ -40,6 +52,8 @@ const BUTTONS: readonly {
   { action: "attack", label: "Attack", primary: false },
   { action: "overwatch", label: "Overwatch", primary: false },
   { action: "reload", label: "Reload", primary: false },
+  { action: "interact", label: "Interact", primary: false },
+  { action: "extract", label: "Extract", primary: false },
   { action: "end-turn", label: "End turn", primary: true },
 ];
 
@@ -52,6 +66,11 @@ const BUTTONS: readonly {
  * actions are enabled only while a unit that can act is selected; the
  * armed action (move or attack) reads pressed until it is used or
  * cancelled. One delegated click listener serves every button.
+ *
+ * Three buttons answer to their own flag rather than to `canAct`: End
+ * turn is offered for the whole player phase, Extract whenever the
+ * selected unit stands in the extraction zone (walking out costs no
+ * action points), and Interact only when an objective is in reach.
  */
 export class ActionBarView {
   // ===========================================
@@ -117,8 +136,7 @@ export class ActionBarView {
   /** Enables buttons per the model and marks the armed action. */
   update(model: ActionBarModel): void {
     for (const [action, button] of this.buttons) {
-      const enabled = action === "end-turn" ? model.playerPhase : model.canAct;
-      button.disabled = !enabled;
+      button.disabled = !isEnabled(action, model);
       const pressed = action === model.mode;
       button.classList.toggle("is-selected", pressed);
       button.setAttribute("aria-pressed", pressed ? "true" : "false");
@@ -135,5 +153,23 @@ export class ActionBarView {
     this.root?.remove();
     this.root = undefined;
     this.buttons.clear();
+  }
+}
+
+// ===========================================
+// Helpers
+// ===========================================
+
+/** Whether one button is offered for the model. */
+function isEnabled(action: ActionBarAction, model: ActionBarModel): boolean {
+  switch (action) {
+    case "end-turn":
+      return model.playerPhase;
+    case "extract":
+      return model.canExtract ?? false;
+    case "interact":
+      return model.canInteract ?? false;
+    default:
+      return model.canAct;
   }
 }

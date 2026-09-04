@@ -3,7 +3,7 @@ import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { MissionId } from "../../overworld/model/mission";
 import type { MissionOutcome } from "../../overworld/model/mission-result";
 import type { TacticalEvent } from "./tactical-event";
-import type { Team, Unit, UnitId } from "./unit";
+import type { Team, Unit } from "./unit";
 import type { UnitTemplate, UnitTemplateId } from "./unit-template";
 
 // ===========================================
@@ -100,7 +100,7 @@ export interface EdgeSpawnSchedule {
  *   ├── objectives[], spawners[]
  *   ├── edgeSpawn             when the next edge wave arrives
  *   ├── extraction[]          tiles a unit must reach to leave
- *   ├── extracted[]           units that left through them; no longer in units[]
+ *   ├── extracted[]           units that left through them, as they left; not in units[]
  *   ├── outcome?              how it ended, once a turn boundary found it over
  *   └── log[]                 domain events so far, for the debrief and replays
  * ```
@@ -129,8 +129,13 @@ export interface TacticalState {
   readonly edgeSpawn: EdgeSpawnSchedule;
   /** Tiles of the extraction hook. */
   readonly extraction: readonly TileCoord[];
-  /** Units that left the map through the extraction zone, in order; they are no longer in `units`. */
-  readonly extracted: readonly UnitId[];
+  /**
+   * Units that left the map through the extraction zone, in the order
+   * they left, frozen as they were when they walked out. They are no
+   * longer in `units`, so no rule can see or shoot them; the resolver
+   * (#330) reads their hit points to bring their crews home.
+   */
+  readonly extracted: readonly Unit[];
   /**
    * Set when a terminal condition held at a turn boundary (#328). Once
    * set, no further tactical command applies; the resolver (#330) turns

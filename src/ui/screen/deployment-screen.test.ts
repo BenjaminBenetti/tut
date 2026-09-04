@@ -10,6 +10,7 @@ import { SimpleEventBus } from "../../core/service/simple-event-bus";
 import type { CampaignEvent } from "../../overworld/model/campaign-event";
 import type { DeploymentAssessor } from "../../overworld/model/deployment-assessment";
 import { LAUNCH_MISSION } from "../../overworld/model/launch-mission-command";
+import { START_MISSION } from "../../tactical/model/start-mission-command";
 import type { Mission } from "../../overworld/model/mission";
 import type { MissionResult } from "../../overworld/model/mission-result";
 import type { OverworldCommand } from "../../overworld/model/overworld-command";
@@ -49,10 +50,20 @@ class FakeStore implements CampaignStore {
     };
   }
   dispatch(command: OverworldCommand) {
-    if (this.fail || command.type !== LAUNCH_MISSION) {
+    const launching =
+      command.type === LAUNCH_MISSION || command.type === START_MISSION;
+    if (this.fail || !launching) {
       return err(commandError("mission-expired", "Mission expired on day 6"));
     }
     this.launched.push(command);
+    if (command.type === START_MISSION) {
+      // Starting a mission only fills `activeMission`; the offer stays
+      // until `FinishMission` resolves it.
+      for (const listener of [...this.listeners]) {
+        listener({ kind: "command", command, state: this.state, events: [] });
+      }
+      return ok({ state: this.state, events: [] });
+    }
     const result: MissionResult = {
       missionId: command.payload.missionId,
       outcome: "won",
@@ -148,7 +159,11 @@ describe("DeploymentScreen", () => {
     box.dispatchEvent(new Event("change", { bubbles: true }));
   };
 
-  const mountWith = (store: CampaignStore | undefined, missionId?: string) => {
+  const mountWith = (
+    store: CampaignStore | undefined,
+    missionId?: string,
+    autoResolve = false,
+  ) => {
     const { router, navigate } = fakeRouter();
     const selection = new OverworldSelectionState();
     if (missionId !== undefined) {
@@ -161,6 +176,7 @@ describe("DeploymentScreen", () => {
       assessor: ASSESSOR,
       squadTypes: new DataSquadTypeCatalogue(SQUAD_TYPES),
       missionTypes: MISSION_TYPES,
+      autoResolve,
     });
     screen.mount(root);
     return { screen, navigate };
@@ -201,7 +217,7 @@ describe("DeploymentScreen", () => {
     expect(field("force")).toBe("10");
   });
 
-  it("Launch dispatches the picked units and opens the results screen", () => {
+  it("Launch starts the tactical mission with the picked units and opens the tactical screen", () => {
     const store = new FakeStore(campaignOnDay(4, [MISSION]));
     const { navigate } = mountWith(store, "mission-1");
     const [first, second] = squadBoxes();
@@ -210,11 +226,27 @@ describe("DeploymentScreen", () => {
     button("launch").click();
     expect(store.launched).toHaveLength(1);
     const command = store.launched[0];
+    expect(command?.type).toBe(START_MISSION);
+    if (command?.type === START_MISSION) {
+      expect(command.payload.missionId).toBe("mission-1");
+      expect(command.payload.deployment.missionId).toBe("mission-1");
+      expect(command.payload.deployment.squadIds).toHaveLength(2);
+      expect(command.payload.deployment.mechIds).toEqual([]);
+    }
+    expect(navigate).toHaveBeenCalledWith("tactical");
+  });
+
+  it("under auto-resolve Launch settles the mission and opens the results screen", () => {
+    const store = new FakeStore(campaignOnDay(4, [MISSION]));
+    const { navigate } = mountWith(store, "mission-1", true);
+    tick(squadBoxes()[0]!);
+    button("launch").click();
+    expect(store.launched).toHaveLength(1);
+    const command = store.launched[0];
     expect(command?.type).toBe(LAUNCH_MISSION);
     if (command?.type === LAUNCH_MISSION) {
       expect(command.payload.missionId).toBe("mission-1");
-      expect(command.payload.deployment.squadIds).toHaveLength(2);
-      expect(command.payload.deployment.mechIds).toEqual([]);
+      expect(command.payload.deployment.squadIds).toHaveLength(1);
     }
     expect(navigate).toHaveBeenCalledWith("mission-results");
   });

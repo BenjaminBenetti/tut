@@ -112,6 +112,20 @@ Rule: orange covers at most 10 % of any TDF model's visible surface. It is a mar
 
 Rule: bioluminescence is small and bright, never a wash. Swarmers get green only. Lurkers get magenta. Brutes get green with bone. Spawners get both, pulsing.
 
+Rule: **`bug-bone` is what makes a bug readable, not the glow.** Dark chitin on dark asphalt is a silhouette with no edge, so every species carries a segmented bone crest along its spine — plates, not one slab, with the glow between them. The glow says *which* species; the crest is what says *there is something there* at 64 px per tile.
+
+### 4.2.1 The read test
+
+![Both factions on asphalt at 64 px per tile](faction-read-on-asphalt.png)
+
+`tools/art/preview/layouts/asphalt-read.json` puts both factions on nothing but road — the darkest ground in the game and the worst case for either — at exactly 64 px per tile. Run it after any change to a unit or bug:
+
+```
+node tools/art/preview/render-scene.mjs tools/art/preview/layouts/asphalt-read.json out.png
+```
+
+What it shows today: **TDF read comfortably.** Olive over grey separates from asphalt on its own, and the orange markings — the 10 % from §4.1 — are doing exactly the job they were reserved for. **Bugs read adequately** with the bone crest and would read properly with contact shadows (#507): a dark shape on dark ground is separated by the shadow under it as much as by anything on its back, which is why the answer to "the bugs are hard to see" is not more glow.
+
 ### 4.3 Environment by biome
 
 Shared: `env-asphalt #3A3D42`, `env-concrete #8E8A82`, `env-sidewalk #A7A297`, `env-brick #8A4B3A`, `env-glass #6E8FA6`, `env-roof #55524C`, `env-metal #6F7378`, `env-rust #8C5A3A`, `env-rock #6E6A66`, `env-bark #5A4634`, `env-foliage #3F6B33`.
@@ -152,8 +166,9 @@ Implementation: `src/ui/style/theme.css` exposes the §4.4 tokens as CSS custom 
 - **Shapes**: rectangles with one 45° chamfered corner (top-right, 8 px) on panels and buttons. That chamfer is the signature; nothing else is rounded.
 - **Lines**: 1 px `ui-line`. No shadows, no gradients, no blur.
 - **States**: hover raises to `ui-panel-raised`; active/selected gets a 2 px `ui-accent` left bar; disabled drops text to `ui-text-dim` at 60 % opacity.
+- **Checkboxes and radios** are styled on the element, not behind a class: 16 px, `ui-line` border on `ui-bg`, filled `ui-accent` with a drawn tick when checked, so a selected row reads from across the screen. A screen that writes a plain `<input type="checkbox">` gets the game's control, not the browser's white box — which is what the deployment picker was showing.
 - **Numbers**: tabular figures, right-aligned. Percentages carry the sign (`+12 %`). Credits are prefixed `¢`.
-- **Icons**: 16 and 24 px, single colour, 2 px stroke, SVG. Live under `public/assets/ui/icons/`.
+- **Icons**: 16 and 24 px, single colour, 2 px stroke, SVG. Live under `public/assets/ui/icons/`. Two sets: overworld and shared chrome (#102), and the tactical HUD set (#466) — `end-turn`, `interact`, the `hidden` and `suppressed` statuses, and the stat glyphs `hp`, `ap`, `armor`, `damage`, `range`, `cover-low`, `cover-high`, `elevation`, `ammo`. `ap` deliberately shows two filled pips and one empty: spent against remaining.
 - **Voice**: military-procedural. `DEPLOYMENT AUTHORISED`, `CONTACT: 3 SWARMERS`, `MECH LOST — ATLAS-02`. Terse, uppercase for headers, sentence case for body.
 
 ## 6. Modelling and material conventions
@@ -190,7 +205,9 @@ Map generation assembles maps from these pieces (GDD §7, architecture §5 map c
 - **Walls** are 1 u long, 1.5 u tall, 0.1 u thick, pivot at the wall's base midpoint, running along local +X. Placed on tile edges. Variants: `wall`, `wall-window`, `wall-door` (door 1.2 × 0.6 opening), `wall-half` (0.5 u high, low cover).
 - **Floors** are 1×1 u slabs at y = 0 of their level; **stairs** occupy one tile and rise 1.5 u along local +Z; **ramps** are outdoor stairs' terrain cousin, same rise, biome-textured; **roofs** are 1×1 caps with a 0.1 u parapet.
 - **Props** are ≤ 1×1, pivot at base centre: `barrier-concrete`, `sandbags`, `dumpster`, `car-sedan` (2×1, pivot at centre of the 2-tile footprint), `lamp-post`, `hydrant`.
-- Every kit ships a `README.md` listing pieces, footprints and which edge they snap to.
+- Every kit ships a doc listing pieces, footprints and which edge they snap to. The city building kit is [`kits/city-building-kit.md`](kits/city-building-kit.md) and the props are [`kits/cover-props.md`](kits/cover-props.md).
+
+**Tile texture rule (#441).** A tile's whole top face samples one 128 px atlas cell, and there is one model per tile id, so every grass tile in a field is the same stamp. Detail therefore lives at **mid scale** — value noise of period 6–11 and blobs 4–13 px across, plus fine grain — never one tile-sized feature, which turns a field into visible repetition. Aim for a luminance standard deviation of **7–15 per cell** (`env-sidewalk` 15.6 and `env-rock` 9.9 are the reference points); below about 5 the surface reads as flat colour at 64 px per tile. Keep the cell's mean on its palette hex (§4): contrast comes from the multipliers around it, not from a new colour.
 
 ### Mapgen ids → models
 
@@ -221,6 +238,8 @@ Map generation (`src/mapgen/data/surfaces.ts`, `props.ts`) emits surface ids and
 | `table` | `prop.table` | low (interior) |
 
 Walls are `Wall` records on tile edges, not props: `building.wall`, `building.wall-window`, `building.wall-door`, `building.wall-half` by wall kind.
+
+Full-height walls ship in **three material families** — brick, concrete and panel — with identical geometry and different palette tokens (`building.wall{,-concrete,-panel}` and the `-window`/`-door` variants of each). One family per building, chosen by hashing the tile'"'"'s `buildingId`; walls with no building stay brick. The table and the reasoning are in [`kits/city-building-kit.md`](kits/city-building-kit.md).
 
 ### Part catalogue → models
 
@@ -303,3 +322,59 @@ Palette hexes go in the prompt verbatim. Ask for "concept sheet with three views
 - [ ] Pivot, axes and sockets per §6/§7.
 - [ ] Registered in the manifest (§8).
 - [ ] Concept image, if any, has a prompt sidecar.
+
+## 12. Tactical scene presentation
+
+What a mission looks like once the models, textures and sprites are in the scene. Numbers here are the ones the code actually uses, so this section is a description of the shipped look, not a wish: `src/graphics/service/scene-service.ts` (lights), `tactical-overlays.ts` (overlays), `tactical-animation-queue.ts` (VFX), `unit-mesh.ts` (selection).
+
+### 12.1 Lighting
+
+One key and one fill, fixed — the camera rotates, the lights do not, so a given face always shades the same way and a player learns the read.
+
+| Light | Colour | Intensity | Position |
+|---|---|---|---|
+| Key, directional | white | 2.5 | `(4, 8, 12)` |
+| Ambient | white | 0.8 | — |
+
+The key is deliberately off-axis from all four yaw stops (§2): at every stop the two visible faces of a box shade differently, which is what gives a flat-shaded low-poly model its form. No shadow maps: at 64 px per tile a cast shadow costs more than it says, and the ambient at 0.8 keeps unlit faces readable rather than dramatic. Clear colour is `ui-bg #0B0D12`.
+
+Consequence for models: **do not bake light into a texture.** An atlas cell that already has a top-left highlight fights the key light at two of the four yaw stops.
+
+### 12.2 Tile overlays
+
+Overlays are instanced quads lifted 0.02 u above the tile top. They carry meaning by palette token, in one escalating order — information, caution, danger:
+
+| Overlay | Token | Hex | Means |
+|---|---|---|---|
+| Move range | `ui-info` | `#7FD1FF` | Where this unit can go |
+| Low cover | `ui-warn` | `#F0C63C` | Partial protection on that edge |
+| High cover | `ui-danger` | `#E0453C` | Full protection on that edge |
+| Line of sight / target | `ui-accent` | `#F08A24` | What the current action touches |
+| Selected unit ring | `ui-accent` | `#F08A24` | Who is acting |
+
+Orange is the player's own intent, blue is possibility, yellow and red are the world pushing back. Nothing else on the tactical plane may use these four colours.
+
+### 12.3 VFX
+
+Sizes are in world units (1 u = 1 tile = 2 m); every billboard sits `0.6 u` above the unit's feet.
+
+| Effect | Sprite | Blend | Size | Time |
+|---|---|---|---|---|
+| Muzzle flash | `vfx.muzzle-flash` | additive | 0.8 | 0.35 s with the impact |
+| Tracer | `vfx.tracer` | additive | stretched along the shot | flight |
+| Impact | `vfx.impact` | additive | 0.7 | 0.35 s |
+| Claw slash (melee) | `vfx.claw-slash` | additive | 0.7 | 0.35 s |
+| Egg burst | `vfx.egg-burst` | normal | 0.8 | 0.42 s |
+| Bug death | `vfx.bug-death` | normal | 0.8 | over the 0.5 s fade |
+| Damage floater | canvas text, `ui-danger` `#E0453C` | normal | 0.45, rises 0.8 | 0.7 s |
+| Miss floater | canvas text, `ui-text-dim` `#8B94A6` | normal | 0.45, rises 0.8 | 0.7 s |
+
+**Additive is energy, normal is matter.** A muzzle flash, a tracer, a spark and a bioluminescent slash are light and must brighten whatever is behind them; chitin shards, shell fragments and ichor are objects and must stay dark over a light tile. Getting this backwards is the single most common way a VFX sprite looks wrong in the scene.
+
+Pace (`DEFAULT_ANIMATION_TIMING`): 0.12 s per tile stepped, 0.35 s for an attack, 0.7 s for a floater, 0.5 s for a death fade. A full move-and-shoot resolves in about a second; anything slower and a bug phase with eight units becomes a cutscene.
+
+### 12.4 What still has no art
+
+- TDF deaths use the plain shrink; they have no counterpart to `vfx.bug-death` (sparks and scorched plate, no ichor).
+- No suppression, overwatch-trigger or reload effect.
+- No decals: scorch marks, blood pools and rubble are geometry-free today, so a fought-over tile looks the same as an untouched one.

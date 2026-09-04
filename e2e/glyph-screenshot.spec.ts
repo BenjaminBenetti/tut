@@ -91,6 +91,58 @@ test("captures the glyphed screens for review", async ({ page }) => {
   expect(await unresolved(), "every tactical glyph resolves").toEqual([]);
   await page.screenshot({ path: "docs/design/ui-glyphs-tactical.png" });
 
+  // The radial menu's glyphs exist only while it is open, so nothing
+  // above looks at them. Arm Attack and right-click a tile: the menu is
+  // exactly what fills the gap when the armed action cannot act there
+  // (#529).
+  const menu = page.locator("#radial-menu");
+  // The nearest free extraction tile, which is what `context-menu.spec`
+  // uses: somewhere the unit could plausibly walk, so the menu has an
+  // entry to offer rather than nothing.
+  const here = await page.evaluate((id) => {
+    const raw = localStorage.getItem("tut:save:autosave");
+    if (raw === null) return null;
+    const mission = (
+      JSON.parse(raw) as {
+        state: {
+          activeMission?: {
+            units: { id: string; pos: { x: number; y: number; z: number } }[];
+            extraction: { x: number; y: number; z: number }[];
+          };
+        };
+      }
+    ).state.activeMission;
+    const unit = mission?.units.find((u) => u.id === id);
+    if (!mission || !unit) return null;
+    const taken = new Set(
+      mission.units.map((u) => `${u.pos.x},${u.pos.y},${u.pos.z}`),
+    );
+    return (
+      mission.extraction
+        .filter((t) => !taken.has(`${t.x},${t.y},${t.z}`))
+        .sort(
+          (a, b) =>
+            Math.abs(a.x - unit.pos.x) +
+            Math.abs(a.z - unit.pos.z) -
+            (Math.abs(b.x - unit.pos.x) + Math.abs(b.z - unit.pos.z)),
+        )[0] ?? null
+    );
+  }, mineId);
+  expect(here, "there is a free tile to right-click").not.toBeNull();
+  if (here === null) return;
+  await page.locator('#action-bar [data-action="attack"]').first().click();
+  await page.evaluate(
+    (tile) =>
+      (
+        globalThis as { __tutTactical__?: { invokeTile(t: unknown): void } }
+      ).__tutTactical__?.invokeTile(tile),
+    here,
+  );
+  await expect(menu).toHaveAttribute("data-open", "true");
+  expect(await unresolved(), "every radial-menu glyph resolves").toEqual([]);
+  await page.keyboard.press("Escape");
+  await expect(menu).toBeHidden();
+
   // The chips only exist once something is targeted *and in range*. On
   // seed 4242 the board is empty until turn 4, the squad has eyes on a
   // bug by turn 5, and they are in contact by turn 6 — so aim every

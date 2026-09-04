@@ -3,7 +3,7 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-04 15:49 UTC)
+## Status Digest (2026-09-04 16:56 UTC)
 
 | Milestone | done / total |
 |---|---|
@@ -11,47 +11,46 @@
 | M1 Overworld | 64 / 64 |
 | M1.5 Map Generation | 33 / 34 |
 
-Board: Backlog 3 · Ready 15 · In Progress 1 · In Review 4 · Blocked 0 · Done 271
+Board: Backlog 5 · Ready 11 · In Progress 3 · In Review 3 · Blocked 0 · Done 275
 
 **Engineer seats** (one open issue per seat; Producer assigns via `seat:eng-N`; route by `complexity:*` — high → default-effort seats only, low → medium-effort seats first):
 
 | Seat | Effort | Current | Status | Last merged |
 |---|---|---|---|---|
-| eng-3 | high | #424 refactor(graphics): rename the Isometric* camera rig now that it carries two projections | Ready | #679 |
-| eng-4 | low | #497 tactical: difficulty tuning pass against auto-resolve expectations (re-files #345) | In Review | #595 |
-| eng-5 | low | #688 bug(qa): tactical-hud.spec races the preview unit load, failing unrelated PRs | In Review | #141 |
+| eng-3 | high | #424 refactor(graphics): rename the Isometric* camera rig now that it carries two projections | In Review | #679 |
+| eng-4 | low | #497 tactical: difficulty tuning pass against auto-resolve expectations (re-files #345) | In Progress | #595 |
+| eng-5 | low | #709 test(e2e): the side-rail spec samples data-overflow instead of waiting for it | In Review | #688 |
 
-⚠ unassigned Ready: #457 (medium), #447 (high), #477 (low), #591 (low), #594 (low), #626 (low), #673 (low), #685 (no complexity label), #709 (low), #716 (no complexity label) · need Tech Lead complexity label before assignment: #685, #716
+⚠ unassigned Ready: #457 (medium), #447 (high), #477 (low), #594 (low), #626 (low), #673 (low)
 
 **Ready now** (no unmerged dependencies):
 
-- #424 (engineer) refactor(graphics): rename the Isometric* camera rig now that it carries two projections
 - #457 (engineer) Tactical VFX playback: tracer between shooter and target, claw slash for melee, burst on bug death
 - #447 (engineer) mapgen: M3 archetypes — hive and spore crash site, design sketch
 - #450 (art-director) Art: redraw the Earth map as a true equirectangular projection
 - #477 (engineer) Overlapping hook markers z-fight: a tile that is both deploy and extraction shows whichever batch happens to draw last
-- #591 (engineer) design-decision: rural maps are nearly transparent under fog of war — no tree blocks sight
 - #594 (engineer) ui(mech-bay): a utility slot reads as a missing thumbnail rather than a part with no picture
 - #615 (art-director) art: the sight cue needs its own treatment, not a reused line-of-sight ring
 - #626 (engineer) graphics: SLAB_HEIGHT and GROUND_SLAB_THICKNESS are two answers to "how thick is a ground tile"
 - #673 (engineer) art(ui): four stat-sheet icons — firepower, accuracy, heat, weight
-- #685 (engineer) design-decision: bugs can never reach the squad unseen — ambush is impossible on current maps
 - #694 (art-director) feat(ui): the mech bay has no picture of the mech you are building
-- #709 (engineer) test(e2e): the side-rail spec samples data-overflow instead of waiting for it
 - #712 (mapgen) chore(mapgen): temperate is the only biome whose boulders are not clustered — record the intent either way
-- #716 (engineer) feat(bugs): give the lurker a last-known position, so seeking cover is not forgetting
+- #728 (art-director) chore(design): the fog review captures have no refresh trigger left, and are 29 commits stale
 
 **In-flight PRs** (age h / idle h / review):
 
-- #717 0.1h / 0.1h / n/a — refactor(mapgen): a prop pass requires what its placements need (#714)
-- #715 0.1h / 0.1h / n/a — fix(qa): give the preview a signal that means the units are placed (#688)
-- #713 0.2h / 0.2h / n/a — feat(graphics): the egg burst plays when charges finish a spawner (#697)
-- #711 0.2h / 0.0h / n/a — test(tactical): let the sweep's turn cap be set, so the deep curve is one command
-- #708 0.4h / 0.1h / n/a — docs(tactical): the measured difficulty curve, and which lever moves it (#666)
+- #729 0.1h / 0.1h / n/a — test(e2e): wait for the side rail's overflow cue, and require the overflow (#709)
+- #727 0.6h / 0.6h / n/a — chore(handoff): qa — the gate was missing pnpm test:sim
+- #726 0.7h / 0.6h / n/a — refactor(graphics): the camera rig is orthographic, not isometric (#424)
+- #724 0.8h / 0.8h / n/a — chore(handoff): mapgen 2026-09-04 (session 3, update 7)
+- #722 0.9h / 0.3h / n/a — feat(bugs): remember where a side last saw each enemy (#716)
+- #720 1.1h / 1.1h / n/a — chore(producer): commit the seat autofill loop, and let its hold list say why
 
 **In progress** (branch pushed?):
 
+- #497 yes — tactical: difficulty tuning pass against auto-resolve expectations (re-files #345)
 - #502 yes — Art: bugs read as dark blobs on dark ground — the chitin silhouette has no edge at 64 px
+- #701 yes — fix(mapgen): desert palms are the only tree in the game placed singly — the cluster is missing from the biome entry
 
 **Blocked**:
 
@@ -59,17 +58,12 @@ Board: Backlog 3 · Ready 15 · In Progress 1 · In Review 4 · Blocked 0 · Don
 
 **Next assignments for idle engineers** (Ready first, then what unblocks next):
 
-1. #424 — refactor(graphics): rename the Isometric* camera rig now that it carries two projections
-2. #457 — Tactical VFX playback: tracer between shooter and target, claw slash for melee, burst on bug death
-3. #447 — mapgen: M3 archetypes — hive and spore crash site, design sketch
-4. #477 — Overlapping hook markers z-fight: a tile that is both deploy and extraction shows whichever batch happens to draw last
-5. #591 — design-decision: rural maps are nearly transparent under fog of war — no tree blocks sight
-6. #594 — ui(mech-bay): a utility slot reads as a missing thumbnail rather than a part with no picture
-7. #626 — graphics: SLAB_HEIGHT and GROUND_SLAB_THICKNESS are two answers to "how thick is a ground tile"
-8. #673 — art(ui): four stat-sheet icons — firepower, accuracy, heat, weight
-9. #685 — design-decision: bugs can never reach the squad unseen — ambush is impossible on current maps
-10. #709 — test(e2e): the side-rail spec samples data-overflow instead of waiting for it
-11. #716 — feat(bugs): give the lurker a last-known position, so seeking cover is not forgetting
+1. #457 — Tactical VFX playback: tracer between shooter and target, claw slash for melee, burst on bug death
+2. #447 — mapgen: M3 archetypes — hive and spore crash site, design sketch
+3. #477 — Overlapping hook markers z-fight: a tile that is both deploy and extraction shows whichever batch happens to draw last
+4. #594 — ui(mech-bay): a utility slot reads as a missing thumbnail rather than a part with no picture
+5. #626 — graphics: SLAB_HEIGHT and GROUND_SLAB_THICKNESS are two answers to "how thick is a ground tile"
+6. #673 — art(ui): four stat-sheet icons — firepower, accuracy, heat, weight
 <!-- digest:end -->
 
 
@@ -79,7 +73,7 @@ Board: Backlog 3 · Ready 15 · In Progress 1 · In Review 4 · Blocked 0 · Don
 
 You are the Producer for Terra Under Threat. You own the project board, issue decomposition, priorities, and which engineer seat works what. You do **not** write game code, and you do **not** decide design questions — you route them to the Director with a recommended default.
 
-**Where the project is (2026-09-04 15:55 UTC).** M0, M1 and M1.5 are closed. **M2 Basic Missions** is 47/50 and effectively done. **M2.5 Tactical Feel** is 25/27 and answers the Executive Director's first playtest in full — controls, readability, combat feedback, fog of war, per-weapon attacks, squads attacking twice. Three releases shipped today: v0.2.1, v0.2.2, v0.2.3, all live on GitHub Pages.
+**Where the project is (2026-09-04 17:05 UTC).** M0, M1 and M1.5 are closed. **M2 Basic Missions** is 47/50 and effectively done. **M2.5 Tactical Feel** is 25/27 and answers the Executive Director's first playtest in full — controls, readability, combat feedback, fog of war, per-weapon attacks, squads attacking twice. Three releases shipped today: v0.2.1, v0.2.2, v0.2.3, all live on GitHub Pages.
 
 **What is deliberately not happening: M3.** The Director is holding it until the Executive Director plays v0.2.3 and steers, because his last round of feedback reshaped an entire milestone. Do not decompose M3. MapGen's crash-site prototype (#662) is sanctioned exploratory groundwork; the hive is not started and waits on two design answers in #447.
 
@@ -89,9 +83,14 @@ Three live seats, all Opus. **eng-3** runs at max effort, **eng-4** and **eng-5*
 
 Assign by putting exactly one `seat:eng-N` label on a Ready issue. One open issue per seat, except where the Director says otherwise. **The tier rule was relaxed on 2026-09-04: every seat can take `complexity:high`; eng-3 is merely offered it first.** The seat label descriptions still say MEDIUM for eng-4/eng-5 — stale, and the tooling overrides it in code.
 
-Current, confirmed against the live labels at 15:50 UTC: **eng-3 #424**, **eng-4 #497** (In Review), **eng-5 #688** (In Review, PR #715). No seat is idle. #666 closed; the loop seated eng-3 on #424 at 15:42 and nothing has started on it, so it is still cheap to re-route if something better than a p3 rename turns up.
+Current at 17:05: **eng-3 #424** (PR #726), **eng-4 #497** (In Progress), **eng-5 #709** (PR #729). No seat idle.
 
-**Two seats are one merge away from free and the eligible queue behind them is three items deep** — #477, #626, #709, all `complexity:low`. Everything richer is held or parked: #457 behind the Art Director (below), #447 behind the M3 embargo, #594 behind an Art Director choice, #591 and #685 behind the Director. #716 would be the fourth the moment the Tech Lead tiers it. If the Executive Director's playtest answer is days away rather than hours, the honest read is that this pool runs out of substantive work before it runs out of seats.
+**#457 is unblocked and first in the queue.** #719 merged, #697 is closed, and #457 is `p1` in M2.5 — priority, then milestone, then tier puts it ahead of everything else Ready, so the next seat that frees takes it automatically. Do not pre-seat it; one issue per seat.
+
+**#716 shipped without ever being seated** (PR #722). Asked on the issue which seat is on it; no answer yet. The seat map is the only thing keeping two engineers off one file, so chase this rather than letting it drift.
+
+The eligible engineer pool behind #457 is thin — #477, #626, #673 — because M3 is embargoed and three design calls are parked. If the playtest answer is days out rather than hours, this pool runs out of substantive work before it runs out of seats.
+
 
 ## The tooling — read before you touch a seat
 
@@ -104,7 +103,7 @@ Two scripts are committed under `tools/producer/`. **`autofill.py` is not commit
 **Selection precedence, in order:** priority (p0→p3) → milestone (`MILESTONE_RANK`: M2.5 above M2 above the rest) → the richer tier the seat can take → issue number. Getting that order wrong cost six false starts on one issue; do not "simplify" it.
 
 **Two control files, both git-ignored, in `.producer/`:**
-- `hold.txt` — issue numbers the loop must never seat. Currently **457, 594, 447**; I pruned 343, 524, 526 and 529, all long closed. **It is a bare list of integers with nowhere to say why**, and a `#` comment would make `int()` throw inside a bare `except` that silently sets the hold list to *empty* — i.e. a well-meant annotation quietly un-holds everything. Until the parser is fixed, the reason for every hold goes in the table below **and** as a comment on the issue; I lost twenty minutes re-deriving why #457 was held.
+- `hold.txt` — issue numbers the loop must never seat, **with the reason on the same line** once #720 merges (the parser that allows it ships in that PR; until then the file must stay bare integers, or the old parser silently empties the whole list). Currently **594, 447, 591, 685**.
 - `release-allowlist.txt` — when present, the loop seats **only** from this ordered list and prints HOLD otherwise. Create it to freeze scope for a release; delete it to lift.
 
 **The loop never auto-seats `area:art`, `area:qa` or `area:mapgen`** — those belong to the Art Director, QA and MapGen, who self-direct. When an engineer genuinely should take one, label it by hand; that is the designed escape hatch, not a workaround.
@@ -113,13 +112,13 @@ Two scripts are committed under `tools/producer/`. **`autofill.py` is not commit
 
 | Item | Waiting on |
 |---|---|
-| **#281** target cover density | Executive Director, from play. MapGen has re-measured against shipped rules. |
 | **#450** redraw the Earth map | Art Director. Cosmetic; fine to move to Track: Arsenal. |
 | **#594** mech-bay utility slot | Art Director, choosing between three options. On hold. |
 | **#652** unit card at 720p | Art Director: may `range · acc · dmg · pen` be abbreviated? Three answers offered. |
-| **#685, #591** | Design calls filed with options, waiting on the Director. (#679 landed as #710.) |
-| **#457** VFX playback | **The Art Director's PR #713, not priority.** #697 item 2 rewrites `tactical-animation-queue.ts` frame stepping; #457 needs the same seam in the same file. Assets are ready (#436 merged). Seat it the moment #713 merges — it is the last non-epic item in M2.5 and it is p1. |
-| **#716** lurker memory | Tech Lead, for a `complexity:*` label. Untiered issues are invisible to my loop. My read is medium. |
+| **#281 + #685** | Executive Director, from play. **One decision about one piece of ground**: #685's fix spends the density budget #281 is judging, and MapGen asked for the #281 call first. |
+| **#591** | Director. **Unbundled and cheap** — three data lines, reversible, no art, does not need the playtest. MapGen's **option 2** is the recommendation of record; they withdrew option 1. |
+| **#728** fog captures | Art Director, or me. 29 commits stale, and they are the frames the Executive Director looks at. I retag `area:graphics` and seat it if unclaimed by ~19:00. |
+| **#716** which seat | The engineer who shipped it (PR #722). Board bookkeeping only — the tier ask is withdrawn. |
 | **#320, #514** epics | Close when the Director says the milestones are done. |
 | **#447** hive archetype | Two design answers: are hive caverns mech-passable, and how big is a hive. **The first decides whether every mech sits out the assault mission M3 is built around.** |
 
@@ -151,11 +150,12 @@ Grooming tick every 15 minutes by cron; seat-refill loop every 5 minutes by Moni
 
 ## What I would do next
 
-1. **Watch PR #713.** When it merges, drop `457` from `.producer/hold.txt` and seat #457 — that closes M2.5 down to its epic. It is the single highest-value thing on my board and it is purely a sequencing wait.
-2. **Get #716 tiered** (asked at 15:47) so the loop can see it, and keep asking on every newly filed issue — untiered work does not exist as far as the seat loop is concerned.
-3. Get the Executive Director's playtest answer. Three of M3's five clusters depend on it, and #281 and #497's tuning half are parked behind it. **It is now also what the queue depth depends on** — see the seats section.
-4. Close M2 by moving #450 to Track: Arsenal and taking the #281 call, or accept it sits at 47/50 until he plays.
-5. Land `autofill.py` under `tools/producer/` in a `chore(producer):` PR, and give `hold.txt` a parser that tolerates `#` comments and fails loudly instead of silently emptying itself.
+1. **#457 goes to the next seat that frees.** It is released from hold and ranks first; the loop will take it. Tell whoever gets it that #697 built the sheet-stepping path, so the tracer/claw/death effects need feeding, not building.
+2. **Chase #728** — if the Art Director has not claimed the stale fog captures by ~19:00, retag `area:graphics` and seat it. They are what the Executive Director looks at.
+3. **Get an answer on #591 specifically.** It is now separable from the playtest: three data lines, reversible, MapGen ready to build. The cheapest unblock available.
+4. Get the Executive Director's playtest answer for the rest. #281+#685, #497's calibration half, and three of M3's five clusters all sit behind it — and so does the queue depth.
+5. **#720 must merge or be carried forward by hand.** `autofill.py` still exists only in a session scratchpad; if this session dies before that PR lands, copy it out first.
+6. Close M2 by moving #450 to Track: Arsenal and taking the #281 call, or accept 47/50 until he plays.
 
 ## Session log — 2026-09-04, successor's first tick (15:45–15:55 UTC)
 
@@ -166,3 +166,71 @@ Grooming tick every 15 minutes by cron; seat-refill loop every 5 minutes by Moni
 - Re-tagged **#673** from `area:ui` to `area:art`: it is four icons *asked of* the Art Director, and under `area:ui` my loop would have cheerfully seated an engineer on drawing them.
 - Asked the Tech Lead to tier #716.
 - Re-armed both loops (they die with the session): the 5-minute Monitor and a 15-minute grooming cron.
+
+## Session log — the rest of the day (15:55–17:05 UTC)
+
+**16:00 main went red and came back.** #701 (palm clustering) lost a difficulty-4 mission and
+was reverted in #723. **Reopened #701** — the board said Done for a change no longer in the
+tree, and the Tech Lead wants it re-landed. Closed **#725** as a duplicate of **#721**: two
+engineers bisected the same red independently, six minutes apart. Routed the durable finding
+to #497 — a pure prop-placement change flipped a d4 mission, so that band is one map change
+from a loss.
+
+**16:24 #711.** The author had loosened `WALKOVER_CEILING` to a floor of 20/24; the #701
+evidence showed that floor would have swallowed the regression. I supplied the board datum —
+the red cost an engineer-hour twice over through duplicate triage — and argued that is a
+filing problem, not an argument for a looser gate. He re-ran it and set 24/24 himself.
+
+**16:35 #497.** eng-4 had paused, unsure the issue was still theirs after my predecessor's
+14:23/14:38 unseat-reseat churn. Answered immediately, and stated the standing rule: **a seat
+label is an assignment, not a proposal.** Also drew the scope line their finding needed — *a
+dial that does nothing is a defect, not a taste call* — so the responsiveness fix proceeds
+now while the values that set felt difficulty stay parked. Tech Lead invited to veto.
+
+**17:00** #719 merged, #697 closed, #457 released from hold.
+
+## The trap I fell into, so you do not
+
+**#591 and #685 carry `design-decision:` in their TITLES and did not carry the LABEL.** The
+loop skips the label. Both were eligible all along; they surfaced only when I gave #591 a
+priority and a `type:task` while tidying the board, which lifted it into the ranking. eng-5's
+seat freed, the loop took it, and it seated an engineer on a question I had said nineteen
+minutes earlier was blocked on the Executive Director. Caught before any work started.
+
+I had also asserted, in my own words that day, that both were "design-decision labelled, so
+my loop skips them". I read the titles and never checked the labels. **Check the label.**
+Same class as the inert start-comment guard my predecessor found: a belief about a guard is
+not the guard.
+
+Fixed three ways — the real label on both, both on the hold list, the reason on the issue.
+**Tooling follow-up:** have `autofill.py` warn when a title starts with `design-decision:`
+and the label is absent.
+
+## Corrections I had to make
+
+MapGen revised their measurements and I quoted their first table on #281. Three claims wrong:
+
+1. The **87–89 %** rural visibility is stale. #645 and #677 landed; rural is **68–72 %**. The
+   sight-rule fix bought ~20 points of concealment by itself.
+2. I recommended **#591 option 1 after its author had withdrawn it**. The prop pass already
+   clusters 82–100 % of trees, so options 1 and 2 differ by 0–2 points, and option 1 does
+   nothing in the desert, where 0 % of trees are clustered.
+3. **#591 does not belong in the #281 bundle** — it changes no placement, so it does not
+   spend the density budget. Unbundled.
+
+The lesson, which cost me two wrong comments in twenty minutes: **a measurement in an issue
+body is a snapshot, and the fixes that land during the day move it.** Read the newest comment
+before quoting the original table.
+
+## Carry to the Director
+
+- **The difficulty dial stops responding at 4.** eng-4 established by arithmetic, not
+  sampling, that **d7–d10 are byte-identical missions**: `minWaveInterval: 2` floors at d4,
+  `maxWaveSize: 8` caps the first wave at d7, and `hatchInterval`/`hatchCount` carry no
+  difficulty term at all. Three taps fill the board; one ignores its handle entirely and two
+  are shut against their stops across the top two thirds of the range.
+- **The gradient above d5 was sampling noise.** Played paired — the same six maps at all ten
+  difficulties — the cliff at 5 is sharp and the top half is flat (2/6 2/6 2/6 2/6 1/6 1/6).
+- **Ambush is impossible today** (#685: 0 % of contact tiles are ever unseen), and PR #722
+  merged the lurker's memory of where it last saw you. We now have memory for a stalker with
+  nowhere to stalk. #685 is what fixes that.

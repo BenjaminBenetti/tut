@@ -1,6 +1,6 @@
 import type { ModelAssetId } from "../../content/data/model-ids";
 import type { PassClass } from "./unit";
-import type { WeaponProfile } from "./weapon-profile";
+import type { UnitWeapon } from "./unit-weapon";
 
 // ===========================================
 // Ids
@@ -39,7 +39,12 @@ export interface UnitTemplate {
   readonly maxAp: number;
   /** Tiles one move action covers. Positive integer. */
   readonly move: number;
-  readonly weapon: WeaponProfile;
+  /**
+   * Every attack this unit can make (#532), ordered; the first is what a
+   * bare "attack" means. A squad or a bug carries one; a mech carries
+   * its arm weapon and its back weapon, each with its own range.
+   */
+  readonly weapons: readonly UnitWeapon[];
   /**
    * Tiles the unit can see, for fog of war (ADR 0006 §2.1). Deliberately
    * longer than the weapon's range: a unit that saw no further than it
@@ -53,10 +58,4 @@ export interface UnitTemplate {
   readonly passClass: PassClass;
   /** Model graphics draws for every unit of this template. */
   readonly modelId: ModelAssetId;
-  /**
-   * Shots the unit can fire before it must reload or vent (#409): an
-   * abstract pool covering a squad's magazines and a mech's heat. Absent
-   * means unlimited, as for bugs. Positive integer when present.
-   */
-  readonly charges?: number;
 }

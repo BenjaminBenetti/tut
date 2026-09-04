@@ -1,3 +1,4 @@
+import type { WeaponId } from "./unit-weapon";
 import type { Direction } from "../../core/model/direction";
 import type { UnitClass } from "../../mapgen/model/pass-mask";
 import { PassMask as PASS } from "../../mapgen/model/pass-mask";
@@ -99,10 +100,14 @@ export interface Unit {
   /** Copied from the template; movement reads it without a lookup. */
   readonly passClass: PassClass;
   /**
-   * Shots left before a reload or vent (#409), in `[0, template.charges]`.
-   * Absent when the template has no pool (bugs fire without limit).
+   * Shots left per weapon before a reload or vent (#409), keyed by
+   * `UnitWeapon.id` and each in `[0, that weapon's charges]`. Absent
+   * when no weapon has a pool, as for bugs.
+   *
+   * Per weapon since #532: emptying the arm gun does not silence the
+   * one on the back.
    */
-  readonly charges?: number;
+  readonly charges?: Readonly<Record<WeaponId, number>>;
 }
 
 // ===========================================

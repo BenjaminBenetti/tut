@@ -636,7 +636,13 @@ export function overlaysFor(
  * question, asked of a chosen target, and `blockedShot` answers it.
  */
 function weaponRangeFrom(mission: TacticalState, unit: Unit): TileCoord[] {
-  const range = mission.templates[unit.templateId]?.weapon.range ?? 0;
+  // The unit's default weapon (#532). A mech now carries several with
+  // different reaches, and the boundary should follow whichever the
+  // player has armed — but the overlay is asked for a unit, not for a
+  // weapon, so threading the armed weapon through is #522's follow-up.
+  // For every squad and bug, which carry one weapon, this is exact.
+  const range =
+    mission.templates[unit.templateId]?.weapons[0]?.profile.range ?? 0;
   if (range <= 0) {
     return [];
   }

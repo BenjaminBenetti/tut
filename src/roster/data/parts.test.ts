@@ -114,6 +114,21 @@ describe("STARTER_PARTS", () => {
     }
   });
 
+  it("gives every weapon part a firing profile, and no other part one", () => {
+    for (const part of componentParts) {
+      if (WEAPON_SLOTS.includes(part.slot)) {
+        // A weapon part with no profile is skipped silently when a
+        // loadout is turned into a unit's weapons (#532), so the mech
+        // would walk into the mission carrying nothing.
+        expect(part.weapon, part.id).toBeDefined();
+        expect(part.weapon?.range, part.id).toBeGreaterThan(0);
+        expect(part.weapon?.armorPen, part.id).toBeGreaterThanOrEqual(0);
+      } else {
+        expect(part.weapon, part.id).toBeUndefined();
+      }
+    }
+  });
+
   it("lets every chassis carry the lightest part in each required slot", () => {
     const lightest = REQUIRED_SLOTS.map((slot) => cheapestFor(slot, "weight"));
     const leanest = REQUIRED_SLOTS.map((slot) => cheapestFor(slot, "power"));

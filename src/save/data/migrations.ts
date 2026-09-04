@@ -1,3 +1,7 @@
+import {
+  DEFAULT_WEAPON_NAME,
+  PRIMARY_WEAPON_ID,
+} from "../../tactical/model/unit-weapon";
 import type { SettlementScale } from "../../content/model/settlement-scale";
 import { EARTH_MAP } from "../../overworld/data/earth-map";
 import { DEFAULT_CITY_SCALE } from "../../overworld/service/earth-map-builder";
@@ -285,6 +289,67 @@ const ADD_MISSION_VISION: Migration = {
  * schema bump; never edit or remove an existing entry, since old saves
  * in players' browsers depend on it.
  */
+/**
+ * v11 → v12 (#532): a unit's weapons become a list and its charges a
+ * record keyed by weapon.
+ *
+ * Every template saved before v12 carried exactly one `weapon` and, if
+ * it had a pool, one `charges` number — so the conversion is exact:
+ * the weapon becomes the single `primary` entry and the unit's remaining
+ * charges are filed under it. Nothing is guessed.
+ *
+ * A save with no mission in progress has no units and no templates to
+ * touch, which is the common case.
+ */
+const SPLIT_WEAPONS_PER_UNIT: Migration = {
+  from: 11,
+  to: 12,
+  apply(state) {
+    if (!isRecord(state)) {
+      throw new Error("v11 state is not an object");
+    }
+    const mission = state.activeMission;
+    if (!isRecord(mission)) {
+      return state;
+    }
+    const templates = isRecord(mission.templates) ? mission.templates : {};
+    const migratedTemplates = Object.fromEntries(
+      Object.entries(templates).map(([id, template]) => {
+        if (!isRecord(template) || Array.isArray(template.weapons)) {
+          return [id, template];
+        }
+        const { weapon, charges, ...rest } = template;
+        return [
+          id,
+          {
+            ...rest,
+            weapons: [
+              {
+                id: PRIMARY_WEAPON_ID,
+                name: DEFAULT_WEAPON_NAME,
+                profile: weapon,
+                ...(typeof charges === "number" ? { charges } : {}),
+              },
+            ],
+          },
+        ];
+      }),
+    );
+    const units = Array.isArray(mission.units)
+      ? mission.units.map((unit: unknown) => {
+          if (!isRecord(unit) || typeof unit.charges !== "number") {
+            return unit;
+          }
+          return { ...unit, charges: { [PRIMARY_WEAPON_ID]: unit.charges } };
+        })
+      : mission.units;
+    return {
+      ...state,
+      activeMission: { ...mission, templates: migratedTemplates, units },
+    };
+  },
+};
+
 export const GAME_STATE_MIGRATIONS: readonly Migration[] = [
   ADD_SPREAD_COOLDOWNS,
   ADD_CITY_SCALE,
@@ -296,4 +361,5 @@ export const GAME_STATE_MIGRATIONS: readonly Migration[] = [
   ADD_UNIT_CHARGES,
   ADD_SPAWN_CLOCKS,
   ADD_MISSION_VISION,
+  SPLIT_WEAPONS_PER_UNIT,
 ];

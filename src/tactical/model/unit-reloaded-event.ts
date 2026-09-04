@@ -1,3 +1,4 @@
+import type { WeaponId } from "./unit-weapon";
 import type { DomainEvent } from "../../core/model/domain-event";
 import type { UnitId } from "./unit";
 
@@ -12,7 +13,8 @@ export const UNIT_RELOADED = "tactical:unit-reloaded";
 export interface UnitReloadedPayload {
   readonly unitId: UnitId;
   /** The pool after reloading: the template's full charges. */
-  readonly charges: number;
+  /** Shots after the reload, per weapon id (#532). */
+  readonly charges: Readonly<Record<WeaponId, number>>;
 }
 
 /** A unit refilled its charge pool for one action. */

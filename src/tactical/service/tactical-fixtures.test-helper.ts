@@ -1,3 +1,4 @@
+import { DEFAULT_WEAPON_NAME, PRIMARY_WEAPON_ID } from "../model/unit-weapon";
 import type { Rng, RngState } from "../../core/model/rng";
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
 import { SurfaceIds } from "../../mapgen/data/surfaces";
@@ -42,7 +43,13 @@ function template(id: string, passClass: PassClass): UnitTemplate {
     maxHp: 10,
     maxAp: 2,
     move: 3,
-    weapon: { range: 5, accuracy: 60, damage: 3, armorPen: 0 },
+    weapons: [
+      {
+        id: PRIMARY_WEAPON_ID,
+        name: DEFAULT_WEAPON_NAME,
+        profile: { range: 5, accuracy: 60, damage: 3, armorPen: 0 },
+      },
+    ],
     sightRange: 8,
     armor: 0,
     passClass,

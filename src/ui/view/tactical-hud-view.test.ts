@@ -12,7 +12,7 @@ import { OVERWATCH } from "../../tactical/model/overwatch-command";
 import type { TacticalCommand } from "../../tactical/model/tactical-command";
 import { SPAWNER_NAME } from "../../tactical/service/attack-target-service";
 import { previewAttack } from "../../tactical/service/combat-service";
-import { hudMission } from "./mission-hud.test-helper";
+import { hudMission, hudTemplate, hudUnit } from "./mission-hud.test-helper";
 import { TacticalHudView } from "./tactical-hud-view";
 import { withVision } from "../../tactical/service/vision-service";
 
@@ -38,6 +38,38 @@ beforeEach(() => {
   root = document.createElement("div");
   document.body.appendChild(root);
 });
+
+/**
+ * A mission whose `m1` carries two weapons of different reach, so the
+ * armed one is observable: the short gun cannot touch `b2` eleven tiles
+ * away and the long one can.
+ */
+function twoWeaponMission() {
+  const base = hudMission();
+  const template = {
+    ...hudTemplate("mech", "Hammerhead"),
+    weapons: [
+      {
+        id: "arm-weapon",
+        name: "Autocannon",
+        profile: { range: 8, accuracy: 65, damage: 10, armorPen: 0 },
+      },
+      {
+        id: "back-weapon",
+        name: "Missile Pod",
+        profile: { range: 12, accuracy: 55, damage: 22, armorPen: 1 },
+      },
+    ],
+  };
+  return withVision({
+    state: {
+      ...base,
+      units: [...base.units, hudUnit("m1", "tdf", "mech", 1, 1)],
+      templates: { ...base.templates, mech: template },
+    },
+    events: [],
+  }).state;
+}
 
 describe("TacticalHudView", () => {
   it("renders the banner and objectives and the placeholder card", () => {
@@ -245,6 +277,62 @@ describe("TacticalHudView", () => {
     ]);
     expect(hud.getMode()).toBe("move");
     expect(root.querySelector<HTMLElement>("#hit-preview")?.hidden).toBe(true);
+  });
+
+  it("previews the weapon that is armed, not the unit's first (#532)", () => {
+    const commands: TacticalCommand[] = [];
+    const hud = new TacticalHudView(
+      { onCommand: (c) => commands.push(c), onBack: vi.fn() },
+      { combatTuning: COMBAT_TUNING, objectiveTuning: OBJECTIVE_TUNING },
+    );
+    hud.mount(root);
+    const mission = twoWeaponMission();
+    hud.update(mission);
+
+    // b2 is eleven tiles off: past the autocannon, inside the pod.
+    hud.handleIntent({ kind: "select-unit", unitId: "m1" });
+    hud.handleIntent({ kind: "action", action: "attack" });
+    hud.handleIntent({ kind: "select-unit", unitId: "b2" });
+    expect(
+      root.querySelector<HTMLElement>('[data-role="preview-error"]')
+        ?.textContent,
+    ).toContain("tiles away");
+
+    // Pressing Attack again cycles to the missile pod. If the preview
+    // still asked the combat service about the autocannon it would go on
+    // refusing a shot the trigger would happily take — which is exactly
+    // what stalled tactical-objective-destroyed.
+    hud.handleIntent({ kind: "action", action: "attack" });
+    const expected = previewAttack(
+      mission,
+      "m1",
+      "b2",
+      COMBAT_TUNING,
+      "back-weapon",
+    );
+    expect(expected.ok).toBe(true);
+    if (!expected.ok) return;
+    expect(field("hit-chance")?.textContent).toBe(
+      `${String(expected.value.hitChance)}% hit`,
+    );
+    expect(field("damage-range")?.textContent).toBe(
+      `${String(expected.value.damage[0])}\u2013${String(expected.value.damage[1])} damage`,
+    );
+
+    // And what it fires is what it previewed.
+    root
+      .querySelector<HTMLButtonElement>('[data-action="confirm-attack"]')
+      ?.click();
+    expect(commands).toEqual([
+      {
+        type: ATTACK,
+        payload: {
+          attackerId: "m1",
+          targetId: "b2",
+          weaponId: "back-weapon",
+        },
+      },
+    ]);
   });
 
   it("shows the service's refusal for an unreachable target", () => {

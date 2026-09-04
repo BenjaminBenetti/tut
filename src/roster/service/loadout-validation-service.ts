@@ -12,7 +12,7 @@ import type {
 } from "../model/mech-part";
 import { isChassisPart } from "../model/mech-part";
 import type { MechRatingTuning } from "../model/mech-rating-tuning";
-import type { MechStatSheet } from "../model/mech-stat-sheet";
+import type { MechStatSheet, MechWeapon } from "../model/mech-stat-sheet";
 import type { PartCatalogue } from "../model/part-catalogue";
 import type { UpgradeTuning } from "../model/upgrade-tuning";
 import {
@@ -285,5 +285,46 @@ function buildStatSheet(
     powerBalance: chassis.capacity.powerOutput + fitted.power,
     totalCost,
     combatRating: computeCombatRating(total, rating),
+    weapons: weaponsOf(components, upgrades),
   };
+}
+
+/**
+ * The fitted weapon parts as sheet entries, in slot order (#532). A
+ * weapon slot whose part carries no `weapon` block is skipped rather
+ * than guessed at: that is a content bug, and `parts.test.ts` fails on
+ * it rather than letting a rangeless gun reach a mission.
+ */
+function weaponsOf(
+  components: readonly FittedPart[],
+  upgrades: UpgradeTuning,
+): readonly MechWeapon[] {
+  const order = ["arm-weapon", "back-weapon"] as const;
+  const weapons: MechWeapon[] = [];
+  for (const slot of order) {
+    for (const fitted of components) {
+      const part = fitted.part;
+      if (part.slot !== slot) {
+        continue;
+      }
+      const weapon = part.weapon;
+      if (weapon === undefined) {
+        continue;
+      }
+      const stats = effectivePartStats(
+        fitted.part,
+        fitted.upgradeLevel,
+        upgrades,
+      );
+      weapons.push({
+        id: slot,
+        name: part.name,
+        range: weapon.range,
+        accuracy: stats.accuracy,
+        firepower: stats.firepower,
+        armorPen: weapon.armorPen,
+      });
+    }
+  }
+  return weapons;
 }

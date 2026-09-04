@@ -140,6 +140,8 @@ describe("validateLoadout on a valid loadout", () => {
       totalCost: 1650,
       // 25 + 21 + 2.5 + 80 − 2 = 126.5 → 127
       combatRating: 127,
+
+      weapons: expect.any(Array) as unknown as never,
     });
   });
 

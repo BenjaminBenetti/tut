@@ -8,7 +8,16 @@ import { formatCredits, formatWhole } from "../service/format";
 // ===========================================
 
 /** Sheet rows in display order with their labels. */
-const ROWS: readonly [keyof MechStatSheet, string][] = [
+/**
+ * The sheet fields this view renders. Numeric only: the sheet also
+ * carries `weapons` (#532), which is a list for the tactical layer and
+ * not a stat to print in a row.
+ */
+type StatKey = {
+  [K in keyof MechStatSheet]: MechStatSheet[K] extends number ? K : never;
+}[keyof MechStatSheet];
+
+const ROWS: readonly [StatKey, string][] = [
   ["armor", "Armor"],
   ["mobility", "Mobility"],
   ["heat", "Heat"],
@@ -36,7 +45,7 @@ export class StatSheetView {
   // ===========================================
 
   private root: HTMLElement | undefined;
-  private values = new Map<keyof MechStatSheet, HTMLElement>();
+  private values = new Map<StatKey, HTMLElement>();
   private verdict: HTMLElement | undefined;
   private errors: HTMLElement | undefined;
 
@@ -130,7 +139,7 @@ export class StatSheetView {
   unmount(): void {
     this.root?.remove();
     this.root = undefined;
-    this.values = new Map();
+    this.values = new Map<StatKey, HTMLElement>();
     this.verdict = undefined;
     this.errors = undefined;
   }

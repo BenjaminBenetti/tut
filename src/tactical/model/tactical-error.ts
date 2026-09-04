@@ -57,6 +57,7 @@ export type TacticalError =
   | { readonly kind: "no-line-of-sight"; readonly targetId: string }
   | { readonly kind: "target-destroyed"; readonly targetId: string }
   | { readonly kind: "no-charges"; readonly unitId: string }
+  | { readonly kind: "no-such-weapon"; readonly unitId: string }
   | { readonly kind: "charges-full"; readonly unitId: string }
   | { readonly kind: "no-reload"; readonly unitId: string }
   | { readonly kind: "objective-not-found"; readonly objectiveId: string }
@@ -126,6 +127,8 @@ export function describeTacticalError(error: TacticalError): string {
       return `Egg spawner "${error.targetId}" is already destroyed`;
     case "no-charges":
       return `Unit "${error.unitId}" is out of charges; reload or vent first`;
+    case "no-such-weapon":
+      return `Unit "${error.unitId}" is not carrying that weapon`;
     case "charges-full":
       return `Unit "${error.unitId}" is already fully loaded`;
     case "no-reload":

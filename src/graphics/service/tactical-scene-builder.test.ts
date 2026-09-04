@@ -1,3 +1,7 @@
+import {
+  DEFAULT_WEAPON_NAME,
+  PRIMARY_WEAPON_ID,
+} from "../../tactical/model/unit-weapon";
 import type { Object3D } from "three";
 import {
   BoxGeometry,
@@ -77,7 +81,13 @@ function template(
     maxHp: 10,
     maxAp: 2,
     move: 5,
-    weapon: { range: 5, accuracy: 60, damage: 3, armorPen: 0 },
+    weapons: [
+      {
+        id: PRIMARY_WEAPON_ID,
+        name: DEFAULT_WEAPON_NAME,
+        profile: { range: 5, accuracy: 60, damage: 3, armorPen: 0 },
+      },
+    ],
     sightRange: 12,
     armor: 0,
     passClass,

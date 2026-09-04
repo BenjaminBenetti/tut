@@ -1,3 +1,7 @@
+import {
+  DEFAULT_WEAPON_NAME,
+  PRIMARY_WEAPON_ID,
+} from "../../tactical/model/unit-weapon";
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
 import { MISSION_TYPES } from "../../content/data/mission-types";
 import { ECONOMY_TUNING } from "../../economy/data/economy-tuning";
@@ -193,7 +197,13 @@ export function withBug(
           maxHp: species.hp,
           maxAp: species.ap,
           move: species.move,
-          weapon: species.weapon,
+          weapons: [
+            {
+              id: PRIMARY_WEAPON_ID,
+              name: DEFAULT_WEAPON_NAME,
+              profile: species.weapon,
+            },
+          ],
           armor: species.armor,
           passClass: "infantry" as const,
           modelId: species.modelId,

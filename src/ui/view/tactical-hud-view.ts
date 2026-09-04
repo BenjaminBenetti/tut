@@ -16,6 +16,7 @@ import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { MissionView } from "../../tactical/model/mission-view";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { Team, Unit, UnitId } from "../../tactical/model/unit";
+import type { WeaponId } from "../../tactical/model/unit-weapon";
 import {
   enemyAttackTargets,
   findAttackTarget,
@@ -23,6 +24,7 @@ import {
 import {
   attacksRemaining,
   previewAttack,
+  weaponOptions,
 } from "../../tactical/service/combat-service";
 import { viewFor } from "../../tactical/service/mission-view-service";
 import type { MoveGraph } from "../../tactical/service/movement-service";
@@ -186,6 +188,11 @@ export class TacticalHudView {
   private selected: UnitId | undefined;
   private target: UnitId | undefined;
   private mode: HudMode = DEFAULT_HUD_MODE;
+  /**
+   * Which weapon Attack is armed with (#532). Undefined means the unit's
+   * first, which is what a single-weapon unit always uses.
+   */
+  private armedWeaponId: WeaponId | undefined;
   private weaponRangePinned = false;
 
   // ===========================================
@@ -204,7 +211,10 @@ export class TacticalHudView {
       },
     });
     this.actions = new ActionBarView({
-      onAction: (action) => {
+      onAction: (action, weaponId) => {
+        if (action === "attack" && weaponId !== undefined) {
+          this.armedWeaponId = weaponId;
+        }
         this.handleAction(action);
       },
     });
@@ -625,6 +635,7 @@ export class TacticalHudView {
     }
     this.selected = unitId;
     this.target = undefined;
+    this.armedWeaponId = undefined;
     this.mode = DEFAULT_HUD_MODE;
     this.refresh();
   }
@@ -642,12 +653,16 @@ export class TacticalHudView {
   private handleAction(action: TacticalAction | ActionBarAction): void {
     switch (action) {
       case "move":
-      case "attack":
         if (this.canAct()) {
           // Pressing the armed action again disarms it, which for Move
           // means staying on Move: there is nothing quieter to fall to.
           this.mode = this.mode === action ? DEFAULT_HUD_MODE : action;
           this.target = undefined;
+        }
+        break;
+      case "attack":
+        if (this.canAct()) {
+          this.armAttack();
         }
         break;
       case "overwatch":
@@ -704,12 +719,53 @@ export class TacticalHudView {
     this.confirmAttack();
   }
 
+  /**
+   * Arms Attack, and on a repeat press moves to the unit's next weapon
+   * (#532). The digit stays put — Attack is always 2 — because
+   * renumbering the bar per selection would move Overwatch's key
+   * depending on what is selected, which is worse than a cycle. A unit
+   * with one weapon therefore behaves exactly as it always did: press
+   * again to disarm.
+   */
+  private armAttack(): void {
+    const mission = this.mission;
+    const selected = this.unit(this.selected);
+    const weapons =
+      mission && selected
+        ? weaponOptions(mission, selected.id, this.deps.combatTuning)
+        : [];
+    if (this.mode !== "attack") {
+      this.mode = "attack";
+      // A unit with one weapon sends a bare attack, exactly as before
+      // #532: naming the weapon would change a payload that every
+      // single-weapon unit has always omitted.
+      this.armedWeaponId =
+        weapons.length > 1 ? weapons[0]?.weapon.id : undefined;
+      this.target = undefined;
+      return;
+    }
+    if (weapons.length <= 1) {
+      this.mode = DEFAULT_HUD_MODE;
+      this.armedWeaponId = undefined;
+      this.target = undefined;
+      return;
+    }
+    const at = weapons.findIndex((o) => o.weapon.id === this.armedWeaponId);
+    const next = weapons[(at + 1) % weapons.length];
+    this.armedWeaponId = next?.weapon.id;
+    // The mark stays put: comparing two weapons against the same target
+    // is the whole point of carrying two, so cycling re-previews what is
+    // already picked rather than making the player click it again.
+  }
+
   /** Dispatches the previewed attack and clears the preview. */
   private confirmAttack(): void {
     if (this.selected === undefined || this.target === undefined) {
       return;
     }
-    this.handlers.onCommand(attack(this.selected, this.target));
+    this.handlers.onCommand(
+      attack(this.selected, this.target, this.armedWeaponId),
+    );
     this.target = undefined;
     this.mode = DEFAULT_HUD_MODE;
     this.refresh();
@@ -840,6 +896,7 @@ export class TacticalHudView {
       this.selected,
       this.target,
       this.deps.combatTuning,
+      this.armedWeaponId,
     );
   }
 
@@ -895,6 +952,16 @@ export class TacticalHudView {
         selected === undefined
           ? 0
           : attacksRemaining(selected, this.deps.combatTuning),
+      weapons: selected
+        ? weaponOptions(mission, selected.id, this.deps.combatTuning).map(
+            (option) => ({
+              id: option.weapon.id,
+              name: option.weapon.name,
+              ready: option.ready,
+            }),
+          )
+        : [],
+      armedWeaponId: this.armedWeaponId,
       canAct: this.canAct(),
       playerPhase: mission.phase === "player",
       mode: this.mode,

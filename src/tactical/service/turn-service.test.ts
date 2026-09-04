@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { TileCoord } from "../../mapgen/model/tile-coord";
+import { TileIndex } from "../../mapgen/service/tile-index";
 import { COMBAT_TUNING } from "../data/combat-tuning";
 import { ATTACK_RESOLVED } from "../model/attack-resolved-event";
 import { endTurn } from "../model/end-turn-command";
@@ -21,6 +22,7 @@ import {
   unitAt,
   walledField,
 } from "./tactical-fixtures.test-helper";
+import { computeVision, unitCanSee } from "./vision-service";
 import type { PhaseStep } from "./turn-service";
 import {
   createEndTurnHandler,
@@ -289,6 +291,108 @@ describe("overwatchReaction", () => {
     );
     expect(second.events).toEqual([]);
     expect(second.state).toBe(first.state);
+  });
+
+  it("answers sight the same way the vision state does, on every case (#579)", () => {
+    // The drift guard. Overwatch and `computeVision` used to spell out
+    // range-and-line-of-sight separately; they agreed only because they
+    // were the same two lines, and would have parted in silence the
+    // moment sight grew a term. This pins both to `unitCanSee` itself.
+    //
+    // Both halves of the rule need a case that turns on them alone, or
+    // the guard is decorative: with only wall cases, dropping the range
+    // check from one caller still passed, because the fixture's sight
+    // range of 8 covers every tile of the near half of an 8x8 field.
+    const watching = { ap: 0, status: ["overwatch"] as const };
+    const cases: readonly {
+      name: string;
+      map: TacticalState["map"];
+      watcher: TileCoord;
+      mover: TileCoord;
+      expected: boolean;
+    }[] = [
+      {
+        name: "line of sight blocked by the wall",
+        map: walledField(),
+        watcher: at(1, 4),
+        mover: at(5, 4),
+        expected: false,
+      },
+      {
+        name: "in range with a clear line",
+        map: openField().build(),
+        watcher: at(1, 2),
+        mover: at(3, 2),
+        expected: true,
+      },
+      {
+        name: "clear line but out of sight range",
+        map: openField().build(),
+        watcher: at(0, 0),
+        mover: at(7, 7),
+        expected: false,
+      },
+    ];
+    for (const probe of cases) {
+      const index = new TileIndex(probe.map);
+      const mission = missionWith(
+        probe.map,
+        [
+          unitAt("w", "infantry", probe.watcher, watching),
+          unitAt("b", "infantry", probe.mover, { team: "bugs" }),
+        ],
+        { phase: "bugs" },
+      );
+      const predicate = unitCanSee(
+        mission,
+        unitIn(mission, "w"),
+        probe.mover,
+        index,
+      );
+      // The fixture says which case this is, so a rule change that makes
+      // one of them moot fails here rather than quietly testing nothing.
+      expect(predicate, `${probe.name}: predicate`).toBe(probe.expected);
+      expect(
+        computeVision(mission, "tdf", index).spotted.includes("b"),
+        `${probe.name}: vision`,
+      ).toBe(probe.expected);
+      expect(
+        overwatchReaction(mission, "b", ctxWith(riggedRng(true, "low")), T)
+          .events.length > 0,
+        `${probe.name}: overwatch`,
+      ).toBe(probe.expected);
+    }
+  });
+
+  it("lets the vision sweep follow the sight range rather than a fixed one (#579)", () => {
+    // The one thing the case table above cannot catch. `computeVision`
+    // walks a diamond and asks `unitCanSee` about each tile in it, so
+    // the bounds are a second expression of "how far can this unit see"
+    // — and a bound that stopped tracking `sightRangeOf` would clip the
+    // predicate rather than contradict it, which no agreement test sees.
+    // Fourteen tiles apart, so the fixture's usual 8 would not reach.
+    const map = openField().build();
+    const index = new TileIndex(map);
+    const base = missionWith(
+      map,
+      [
+        unitAt("w", "infantry", at(0, 0), { ap: 0, status: ["overwatch"] }),
+        unitAt("b", "infantry", at(7, 7), { team: "bugs" }),
+      ],
+      { phase: "bugs" },
+    );
+    const watcher = unitIn(base, "w");
+    const template = base.templates[watcher.templateId];
+    if (!template) throw new Error("fixture needs a template");
+    const farSighted: TacticalState = {
+      ...base,
+      templates: {
+        ...base.templates,
+        [watcher.templateId]: { ...template, sightRange: 14 },
+      },
+    };
+    expect(computeVision(base, "tdf", index).spotted).toEqual([]);
+    expect(computeVision(farSighted, "tdf", index).spotted).toEqual(["b"]);
   });
 
   it("holds its fire without line of sight, at a hidden mover, at a friend, or when down or not watching", () => {

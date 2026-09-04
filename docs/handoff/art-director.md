@@ -1,6 +1,6 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-04 (session 3, fourth update)
+Last updated: 2026-09-04 (session 3, fifth update)
 
 ## 1. What I was doing and where it stands
 
@@ -39,6 +39,89 @@ Last updated: 2026-09-04 (session 3, fourth update)
 | Image generation recipe (incl. transparent sprites) | — | **Working.** See §5. |
 | Headless GLB / page render checks (Playwright) and Blender review renders | — | **Working.** See §7 and §8. |
 
+### Band 6 — presentation that asserts something untrue
+
+| Deliverable | Issue | State |
+|---|---|---|
+| Debrief opened a clean mission with a red alarm | — | **Merged** (PR #736). |
+| Event dialog recommended the choice that is not the default | — | **Merged** (PR #742). |
+| "EARTH OVERRUN" announced over a thriving Earth | — | **Merged** (PR #749). |
+| The rule, in style guide §5 | #755 | **Merged** (PR #756). |
+
+**Three of one shape in a single afternoon, all found by sitting and
+reading screens rather than clicking past them.** A danger border and
+1.15em type on the debrief's "Mechs destroyed" section *whatever it
+contained*, so a mission where nothing was lost opened with a red alarm
+reading "No mechs lost". The event dialog's primary button on the
+**first** choice, which on three of the four event types is not the
+default — an emphasis saying "do this" next to a line saying something
+else happens if you do nothing. And the game-over panel borrowing
+`.tut-menu`, the title screen's treatment, so defeat was declared over
+a pristine blue-green Earth with healthy green city markers.
+
+The rule, now §5: **emphasis is a claim, and it has to be true.** Accent
+colour, a danger border, larger type and a primary button each assert
+something. Applied **by position** or applied **unconditionally**, they
+assert it whether or not it holds, and a player believes the loudest
+thing on a screen before they read it. The test is to read the emphasis
+aloud as a sentence and check the data agrees; the fixes that work are
+to make the emphasis conditional, or to replace a recommendation with
+information — the event dialog now names the default instead of
+recommending one.
+
+Why these survive: each looks correct in the code. A danger border on a
+casualty section, a primary button on the first option and a shared
+panel class are all individually reasonable, and none of them is wrong
+until you ask what it says about *this* data. They also sit on screens
+people click through, which is where I found them and where nobody
+looks.
+
+I read the roster and the main menu the same way and reported **no
+defect** in either — the main menu's 43 % dimming of unavailable actions
+is meaningful and correctly signals "blocked", and the save-JSON
+textarea is a product decision, not an art one. Saying so is part of the
+job; a pass that always finds something is not a pass.
+
+### Band 6a — the mech bay finally shows the mech
+
+`#694`, PR #757. Filed by me twice and unclaimed both times, so I took
+the wiring as well as the art.
+
+**The gap was smaller than I said when I filed it.** I called the
+blocker "runtime socket assembly that does not exist". Everything it
+needed did exist: `ModelLoader` hands out clones, every part GLB carries
+its `socket_*` empties, and style guide §7 already published the
+`PartId → model` table. About 250 lines joined them up. The shape is the
+one the tactical screen uses — `MechPreviewHost` as an interface in
+`ui/model/`, implemented in `app/service/` — so the bay never imports
+three.
+
+**This was the fourth registered-but-unused case** (#474, #495, #697,
+now this), and the pattern behind all four is in Band 5.
+
+Two things to inherit:
+
+- **Frame a preview on the silhouette, not on a box.** I fitted the
+  camera to the model's bounding box; it looked small, so I measured the
+  ink rather than nudging by eye: **117×183 px in a 326×300 viewport,
+  61 % of the height**, against the 82 % I had asked for. The box was
+  doing what I told it to — under an isometric tilt a box projects to a
+  hexagon whose extreme corners are empty air above and below anything
+  tall and thin. Projecting the mesh vertices into camera space measures
+  the silhouette itself: **83 %**, and two different loadouts now frame
+  identically. In style guide §7. The 48 px part thumbnails are still in
+  the older, worse version of this trap — they frame on the box's
+  *diagonal* — and fixing them costs thirty re-shoots, so it is filed
+  and not done.
+- **The end-to-end check is the only one that sees the wiring.** Only
+  the composition root builds the preview host. I deleted that line: all
+  23 mech-bay unit tests stayed green while the feature was entirely
+  absent, and the panel would have gone on rendering its "no preview"
+  note forever. One `toBeVisible()` on the canvas is the whole guard.
+  The same is true of the part table: `PartId` is a plain `string`, so
+  `tsc -b` exits **0** on a typo'd key — I checked — and only the test
+  catches it.
+
 ### Band 5 — art that shipped dark
 
 | Deliverable | Issue | State |
@@ -47,7 +130,7 @@ Last updated: 2026-09-04 (session 3, fourth update)
 | The egg burst plays when charges finish a spawner | #697 | **Merged** (PR #713). |
 | Effects play their frame sheets | #697 | **Merged** (PR #719). |
 | The city panel's mission row read as fragments | — | **Merged** (PR #707). |
-| The mech bay has no picture of the mech you build | #694 | **Open**, specced, unclaimed. |
+| The mech bay has no picture of the mech you build | #694 | **PR #757.** Taken end-to-end; see Band 6a. |
 
 **This band started from a hunch and an audit.** I had flagged "art
 registered and never consumed" three times — #474, #495, #694 — so

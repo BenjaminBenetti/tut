@@ -292,10 +292,10 @@ export class TacticalHudView {
    *   anything else           ──► ignored
    * ```
    *
-   * It invokes the *armed* action and nothing else, so with no action
-   * armed a right click does nothing. Once Move is the resting state
-   * (#519) that reads as "right click always walks", without this
-   * needing to know which of the two is true.
+   * It invokes the *armed* action and nothing else. Since #519 made Move
+   * the resting state, that reads in play as "right click walks, unless
+   * you armed Attack" — the two issues meet here: #519 chose the default
+   * action, this one chose the button that commits it.
    */
   private invokeAt(target: TacticalInvokeTarget): void {
     if (this.selected === undefined) {

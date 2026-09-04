@@ -96,8 +96,10 @@ export interface TacticalTestHooks {
   selectUnit(unitId: UnitId): void;
   /** Targets an egg spawner as if clicked (#484). */
   selectSpawner(spawnerId: SpawnerId): void;
-  /** Selects a tile as if clicked. */
+  /** Selects a tile as if left-clicked. */
   selectTile(tile: TileCoord): void;
+  /** Invokes the armed action on a tile as if right-clicked (#520). */
+  invokeTile(tile: TileCoord): void;
   /** Client-pixel position of a unit's feet, for a real pointer click. */
   unitScreenPosition(unitId: UnitId): { x: number; y: number } | undefined;
   /** Client-pixel position of an egg spawner's base, for a real pointer click. */

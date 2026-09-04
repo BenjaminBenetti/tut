@@ -321,6 +321,11 @@ export class TacticalInputController implements FrameUpdatable {
     this.picking.select({ kind: "tile", tile });
   }
 
+  /** Invokes the armed action on a tile as if right-clicked (#520). */
+  invokeTile(tile: TileCoord): void {
+    this.deps.intents.emit({ kind: "invoke", target: { kind: "tile", tile } });
+  }
+
   /** The tile currently under the pointer, for a HUD readout. */
   getHoveredTile(): TileCoord | undefined {
     return this.targets.getHoveredTile();
@@ -356,6 +361,9 @@ export class TacticalInputController implements FrameUpdatable {
       },
       selectTile: (tile) => {
         this.selectTile(tile);
+      },
+      invokeTile: (tile) => {
+        this.invokeTile(tile);
       },
       unitScreenPosition: (unitId) => this.unitScreenPosition(unitId),
       spawnerScreenPosition: (spawnerId) =>

@@ -193,6 +193,8 @@ Map generation assembles maps from these pieces (GDD §7, architecture §5 map c
 - **Props** are ≤ 1×1, pivot at base centre: `barrier-concrete`, `sandbags`, `dumpster`, `car-sedan` (2×1, pivot at centre of the 2-tile footprint), `lamp-post`, `hydrant`.
 - Every kit ships a `README.md` listing pieces, footprints and which edge they snap to.
 
+**Tile texture rule (#441).** A tile's whole top face samples one 128 px atlas cell, and there is one model per tile id, so every grass tile in a field is the same stamp. Detail therefore lives at **mid scale** — value noise of period 6–11 and blobs 4–13 px across, plus fine grain — never one tile-sized feature, which turns a field into visible repetition. Aim for a luminance standard deviation of **7–15 per cell** (`env-sidewalk` 15.6 and `env-rock` 9.9 are the reference points); below about 5 the surface reads as flat colour at 64 px per tile. Keep the cell's mean on its palette hex (§4): contrast comes from the multipliers around it, not from a new colour.
+
 ### Mapgen ids → models
 
 Map generation (`src/mapgen/data/surfaces.ts`, `props.ts`) emits surface ids and prop kinds; graphics resolves them to models with this table. Placeholder ids come from `tools/art/placeholders.manifest.json`.

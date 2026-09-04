@@ -32,7 +32,9 @@ import type { TacticalHandler } from "../model/tactical-handler";
 import { TURN_STARTED } from "../model/turn-started-event";
 import { UNIT_MOVED } from "../model/unit-moved-event";
 import { startTacticalMission } from "./mission-start-service";
+import { riggedRng } from "./tactical-fixtures.test-helper";
 import {
+  applyTacticalCommand,
   MISSION_OVER,
   NO_ACTIVE_MISSION,
   registerTacticalCommands,
@@ -256,5 +258,41 @@ describe("registerTacticalCommands", () => {
     if (result.ok) return;
     expect(result.error.code).toBe(MISSION_OVER);
     expect(result.error.message).toContain("won");
+  });
+});
+
+// ===========================================
+// Applying
+// ===========================================
+
+describe("applyTacticalCommand", () => {
+  const mission = inMission().activeMission;
+  if (mission === undefined) throw new Error("fixture has no mission");
+  const ctx = { rng: riggedRng(true), ids: new SequentialIdGenerator() };
+
+  it("routes the command to the handler for its type and returns its outcome", () => {
+    const seen: string[] = [];
+    const bump: TacticalHandler<EndTurnCommand> = (state, command) => {
+      seen.push(command.type);
+      return ok({ state: { ...state, turn: state.turn + 1 }, events: [] });
+    };
+    const outcome = applyTacticalCommand(
+      { [END_TURN]: bump },
+      mission,
+      endTurn(),
+      ctx,
+    );
+    expect(seen).toEqual([END_TURN]);
+    expect(outcome.ok && outcome.value.state.turn).toBe(mission.turn + 1);
+  });
+
+  it("refuses a command whose type has no handler with unhandled-command", () => {
+    const outcome = applyTacticalCommand({}, mission, endTurn(), ctx);
+    expect(outcome.ok).toBe(false);
+    if (outcome.ok) return;
+    expect(outcome.error).toEqual({
+      kind: "unhandled-command",
+      commandType: END_TURN,
+    });
   });
 });

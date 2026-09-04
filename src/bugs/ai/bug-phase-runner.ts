@@ -1,0 +1,129 @@
+import type { Rng } from "../../core/model/rng";
+import type { CombatTuning } from "../../tactical/model/combat-tuning";
+import type { TacticalCommand } from "../../tactical/model/tactical-command";
+import type {
+  TacticalApplied,
+  TacticalEvent,
+} from "../../tactical/model/tactical-event";
+import type { TacticalContext } from "../../tactical/model/tactical-handler";
+import type { TacticalState } from "../../tactical/model/tactical-state";
+import type { UnitId } from "../../tactical/model/unit";
+import { buildMoveGraph } from "../../tactical/service/movement-service";
+import type { TacticalHandlers } from "../../tactical/service/tactical-command-handlers";
+import { applyTacticalCommand } from "../../tactical/service/tactical-command-handlers";
+import type { PhaseStep } from "../../tactical/service/turn-service";
+import { missionOutcome } from "../../tactical/service/turn-service";
+import type { BehaviourLookup, SpeciesLookup } from "./behaviour-registry";
+import { chooseBugCommands } from "./behaviour-registry";
+
+// ===========================================
+// Types
+// ===========================================
+
+/** What the bug phase runs on; the composition root supplies all four. */
+export interface BugPhaseDeps {
+  /** The action rules the bugs' commands go through; `EndTurn` is not among them. */
+  readonly handlers: TacticalHandlers;
+  /** Behaviours by species tag; a tag without one holds still. */
+  readonly registry: BehaviourLookup;
+  /** Resolves a bug's `sourceId` to its species. */
+  readonly speciesOf: SpeciesLookup;
+  /** What the behaviours price targets with. */
+  readonly combat: CombatTuning;
+}
+
+// ===========================================
+// Runner
+// ===========================================
+
+/**
+ * The bug phase as a `PhaseStep` the turn engine runs after the phase
+ * steps have opened the bugs phase (#335, GDD §6.4): every bug alive at
+ * that point acts once, in `units` order, each choosing its commands
+ * through its species' behaviour and having them applied through the
+ * action handlers. The runner does not end the phase itself; the
+ * `EndTurn` handler flips on to the player once it returns.
+ *
+ * ```
+ *   for bug of living bugs (units order, snapshot at phase start):
+ *     decided? ──► stop                        (the bugs wiped the squad)
+ *     unitRng = ctx.rng.fork("bug:<id>")
+ *     commands = behaviour.choose(mission, id, { rng: unitRng.fork("choose"), combat, graph })
+ *     for command k: applyTacticalCommand(handlers, ..., { rng: unitRng.fork("command:k") })
+ *                      err ──► stop this bug's remaining commands
+ * ```
+ *
+ * Randomness: every draw comes off a labelled fork of the phase's own
+ * stream, so the same seed and the same mission replay the same phase,
+ * and one bug choosing differently never perturbs the next bug's draws.
+ * A refused command (the behaviour planned a move the rules refuse, or
+ * a rule that has not landed) ends that bug's turn quietly; the rest of
+ * the phase still runs. The move graph is built once and shared.
+ */
+export function createBugPhaseRunner(deps: BugPhaseDeps): PhaseStep {
+  return (mission, ctx) => {
+    if (mission.phase !== "bugs") {
+      return { state: mission, events: [] };
+    }
+    const graph = buildMoveGraph(mission.map);
+    const actors = livingBugIds(mission);
+    let state = mission;
+    const events: TacticalEvent[] = [];
+    for (const unitId of actors) {
+      if (missionOutcome(state) !== undefined) {
+        break;
+      }
+      const unitRng = ctx.rng.fork(`bug:${unitId}`);
+      const commands = chooseBugCommands(
+        state,
+        unitId,
+        deps.registry,
+        deps.speciesOf,
+        { rng: unitRng.fork("choose"), combat: deps.combat, graph },
+      );
+      const acted = applyAll(deps.handlers, state, commands, unitRng, ctx);
+      state = acted.state;
+      events.push(...acted.events);
+    }
+    return { state, events };
+  };
+}
+
+// ===========================================
+// Helpers
+// ===========================================
+
+/** The living bugs' ids in `units` order: the phase's acting order. */
+export function livingBugIds(mission: TacticalState): readonly UnitId[] {
+  return mission.units
+    .filter((unit) => unit.team === "bugs" && unit.hp > 0)
+    .map((unit) => unit.id);
+}
+
+/**
+ * Applies one bug's commands in order, each on its own labelled fork,
+ * stopping at the first refusal so a plan the rules reject cannot half
+ * apply.
+ */
+function applyAll(
+  handlers: TacticalHandlers,
+  mission: TacticalState,
+  commands: readonly TacticalCommand[],
+  unitRng: Rng,
+  ctx: TacticalContext,
+): TacticalApplied<TacticalState> {
+  let state = mission;
+  const events: TacticalEvent[] = [];
+  for (const [k, command] of commands.entries()) {
+    const outcome = applyTacticalCommand(handlers, state, command, {
+      rng: unitRng.fork(`command:${String(k)}`),
+      ids: ctx.ids,
+    });
+    if (!outcome.ok) {
+      break;
+    }
+    state = outcome.value.state;
+    events.push(...outcome.value.events);
+  }
+  return { state, events };
+}

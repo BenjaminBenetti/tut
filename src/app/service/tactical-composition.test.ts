@@ -29,7 +29,13 @@ import {
 } from "../../ui/view/mission-fixtures.test-helper";
 import { GameStore } from "./game-store";
 import type { TacticalContent } from "./tactical-composition";
-import { composeTactical, createSheetLookup } from "./tactical-composition";
+import {
+  composeTactical,
+  createSheetLookup,
+  createSpeciesLookup,
+  shippedBugBehaviours,
+} from "./tactical-composition";
+import { BUG_SPECIES } from "../../bugs/data/species";
 
 // ===========================================
 // Fixtures
@@ -119,11 +125,14 @@ describe("composeTactical", () => {
     expect(Object.keys(tactical.handlers)).toEqual([
       ATTACK,
       MOVE,
-      END_TURN,
       OVERWATCH,
       RELOAD,
       INTERACT,
       EXTRACT,
+      // EndTurn is registered last because it closes over the action
+      // rules above: the bug phase drives them and must not be able to
+      // recurse into the turn engine (#335).
+      END_TURN,
     ]);
   });
 
@@ -141,6 +150,37 @@ describe("composeTactical", () => {
     const tactical = composeTactical(dispatcher, CONTENT);
     const resolver = tactical.resolverFor(() => undefined);
     expect(resolver).toBeInstanceOf(TacticalMissionResolver);
+  });
+
+  it("one EndTurn plays the bug phase and hands the next turn back to the player (#412)", () => {
+    const dispatcher = createOverworldCommandDispatcher<GameState>();
+    const tactical = composeTactical(dispatcher, CONTENT);
+    const { state, missionId } = campaignWithMission();
+    const started = startTacticalMission(
+      state,
+      missionId,
+      {
+        missionId,
+        squadIds: state.roster.squads.map((s) => s.id),
+        mechIds: state.roster.mechs.map((m) => m.id),
+      },
+      tactical.missionStartDepsFor(new SequentialIdGenerator()),
+    );
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    const store = new GameStore(started.value, dispatcher);
+    const outcome = store.dispatch(endTurn());
+    expect(outcome.ok).toBe(true);
+    const mission = store.getState().activeMission;
+    expect(mission?.phase).toBe("player");
+    expect(mission?.turn).toBe(2);
+    expect(mission?.outcome).toBeUndefined();
+    expect(
+      mission?.log.filter((e) => e.type === TURN_STARTED).map((e) => e.payload),
+    ).toEqual([
+      { turn: 1, phase: "bugs" },
+      { turn: 2, phase: "player" },
+    ]);
   });
 
   it("mission-start deps place the whole starter roster on a generated map", () => {
@@ -180,5 +220,21 @@ describe("createSheetLookup", () => {
     expect(
       sheetFor({ ...mech, loadout: { ...mech.loadout, legsId: "nope" } }),
     ).toBeUndefined();
+  });
+});
+
+describe("createSpeciesLookup", () => {
+  it("resolves a shipped species id and nothing else", () => {
+    const speciesOf = createSpeciesLookup(BUG_SPECIES);
+    expect(speciesOf("swarmer")).toBe(BUG_SPECIES.swarmer);
+    expect(speciesOf("squad-1")).toBeUndefined();
+    expect(speciesOf("toString")).toBeUndefined();
+  });
+});
+
+describe("shippedBugBehaviours", () => {
+  it("has no duplicate tags", () => {
+    const tags = shippedBugBehaviours().map((b) => b.tag);
+    expect(new Set(tags).size).toBe(tags.length);
   });
 });

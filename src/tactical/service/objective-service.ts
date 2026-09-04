@@ -9,9 +9,13 @@ import type {
   TacticalHandler,
   TacticalOutcome,
 } from "../model/tactical-handler";
-import type { Objective, TacticalState } from "../model/tactical-state";
+import type {
+  Objective,
+  Spawner,
+  TacticalState,
+} from "../model/tactical-state";
 import { TEAM_FOR_PHASE } from "../model/tactical-state";
-import type { Unit } from "../model/unit";
+import type { Unit, UnitId } from "../model/unit";
 import { UNIT_EXTRACTED } from "../model/unit-extracted-event";
 import { endIfOver } from "./mission-end-service";
 import { damageSpawner } from "./spawner-damage-service";
@@ -173,6 +177,70 @@ export function createInteractHandler(
     };
     return ok(endIfOver(billed, worked.value.events));
   };
+}
+
+// ===========================================
+// Reach
+// ===========================================
+
+/** An objective a unit can work from where it stands. */
+export interface ReachableObjective {
+  readonly objective: Objective;
+  /** The spawner the objective tracks. */
+  readonly spawner: Spawner;
+  /** Manhattan tiles between the unit and the spawner. */
+  readonly distance: number;
+}
+
+/**
+ * The objectives the unit could work right now, nearest first. This is
+ * the `Interact` handler's own precondition set asked as a question, the
+ * way `previewAttack` answers for `Attack`: a HUD that offers only what
+ * this returns can never offer a command the handler refuses, and can
+ * never hide one it would accept.
+ *
+ * ```
+ *   unit missing, down, not TDF, off-phase, out of actions ──► []
+ *   objective complete, target gone or destroyed ──► skipped
+ *   manhattan(unit, spawner) > interactRange     ──► skipped
+ *   otherwise ──► { objective, spawner, distance }, nearest first
+ * ```
+ *
+ * Ties keep `objectives` order, so the same mission always suggests the
+ * same objective. Pure; reads only its arguments.
+ */
+export function reachableObjectives(
+  mission: TacticalState,
+  unitId: UnitId,
+  tuning: ObjectiveTuning,
+): readonly ReachableObjective[] {
+  const unit = mission.units.find((candidate) => candidate.id === unitId);
+  if (
+    unit === undefined ||
+    unit.hp <= 0 ||
+    unit.team !== "tdf" ||
+    unit.team !== TEAM_FOR_PHASE[mission.phase] ||
+    unit.ap < tuning.interactApCost
+  ) {
+    return [];
+  }
+  const reachable: ReachableObjective[] = [];
+  for (const objective of mission.objectives) {
+    if (objective.complete) {
+      continue;
+    }
+    const spawner = mission.spawners.find(
+      (candidate) => candidate.id === objective.targetId,
+    );
+    if (spawner === undefined || spawner.destroyed) {
+      continue;
+    }
+    const distance = manhattanDistance(unit.pos, spawner.pos);
+    if (distance <= tuning.interactRange) {
+      reachable.push({ objective, spawner, distance });
+    }
+  }
+  return reachable.sort((a, b) => a.distance - b.distance);
 }
 
 // ===========================================

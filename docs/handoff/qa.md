@@ -1,19 +1,23 @@
 # Handoff: QA
 
-Last updated: 2026-09-03 (session 1, run 63, ~20:40 UTC). Read `docs/process/roles/qa.md` first.
+Last updated: 2026-09-04 (release push; pre-release verdict posted 06:10 UTC).
 
 ## Latest run
 
 | Field | Value |
 |---|---|
-| SHA tested | `b5c1196` (main, 2026-09-03 ~20:30 UTC; runs 60–63 covered #331 bug behaviour registry, **#409 charges pool behind Attack and Reload**, handoffs) |
-| Gate | typecheck, lint, build all pass |
-| `pnpm test` (vitest) | 1348 / 1348 (+1 deliberate skip) |
-| `pnpm test:e2e` on main | 39 / 39 |
-| Exploratory pass | twelve flows: 0 findings outside the tactical slice (one first-click picking flake on run 63, 37/37 on three reruns; the flow now retries the first click); the tactical flow reports only **#412** |
-| Verified fixed this run | **#404** closed: END TURN, OVERWATCH and RELOAD all have handlers; RELOAD on a full unit says "Unit is already fully loaded"; the "No handler registered" text is gone |
-| **Release gate** | Met (run 43). |
-| **Health** | **Green for M1; amber for M2** until the bugs phase has a runner (#412, p2). Every other bug filed today is closed and verified. |
+| SHA tested | `14b0811` (release candidate for the 07:00 UTC build) |
+| Gate | typecheck, lint, build pass; vitest **1505 / 1505** (+1 deliberate skip); e2e **42 / 42** |
+| Exploratory | 13 flows, 0 findings (full sweep on `4ce5f01`; gate + mission play + production play re-run on `dd6ba10` and `14b0811`) |
+| **Verdict** | **A tactical mission is playable end to end in the production build.** Posted on the M2 epic (#317). Tag judged safe. |
+
+### Release push, in order of what mattered
+
+1. **#439 (p0) reproduced and then verified fixed.** Markers match the texture to within a pixel, so the projection was never wrong; the artwork disagreed. 12 of 37 markers stood on ocean pixels (Auckland 46 px from land, Singapore 20, Tokyo 18, São Paulo 14, Sydney 11). There were no city labels at all — the grey bars were per-region placeholders at each region's own centre. After #449: **29 of 37 markers directly on land, the other eight 1–4 px from shore**, names drawing on selection. Bogotá and New York still read as slightly offshore because the glyph is bottom-anchored and its body extends north; their anchors are on the coast.
+2. **The tactical loop came together during the push.** #422 fixed the bugs-phase soft lock (#412); #341 (PR #453) turned Launch from auto-resolve into the real deploy → tactical → results flow and added Extract; #426 made spawners attackable.
+3. **Played the mission both ways.** Production build, no dev hooks: Launch → HUD → click-select → END TURN → bugs act → Extract → debrief → overworld. Dev build with assertions: move costs a point, 16 shots / 5 hits / 3 kills, previews "85 % hit, 30–50 damage", bug phase wiped both squads. Losing routes to a "Mission lost" debrief; before #341 a wipe dead-ended on a frozen tactical screen.
+4. **Win path unproven.** Walking the mech at a spawner closed 14 tiles to 12 in 40 turns and never got in range. Extraction is the realistic exit at current tuning (#345).
+5. **Filed #480** (p3): the debrief says "No casualties" on a mission that wiped the whole force.
 
 ### Run history
 

@@ -15,6 +15,7 @@ export type TacticalAction =
   | "attack"
   | "overwatch"
   | "reload"
+  | "interact"
   | "extract"
   | "next-unit"
   | "next-target"
@@ -26,6 +27,7 @@ export const TACTICAL_ACTIONS = [
   "attack",
   "overwatch",
   "reload",
+  "interact",
   "extract",
   "next-unit",
   "next-target",

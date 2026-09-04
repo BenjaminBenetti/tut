@@ -8,6 +8,7 @@ import type { MapSizePreset } from "../../mapgen/model/map-recipe";
 import { MAP_SIZE_PRESETS } from "../../mapgen/model/map-recipe";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import { ASCII_LEGEND } from "../../mapgen/service/ascii-map-renderer";
+import type { MapAssessment } from "../../tactical/model/map-assessment";
 import { nextSeed } from "../service/seed-sequence";
 
 // ===========================================
@@ -27,6 +28,8 @@ export interface PreviewResult {
   readonly map: TacticalMap;
   readonly diagnostics: GenerationDiagnostics;
   readonly metrics: MapMetrics;
+  /** How the map plays, measured through the tactical rules (#448). */
+  readonly assessment: MapAssessment;
   readonly ascii: string;
   readonly elapsedMs: number;
 }
@@ -79,6 +82,8 @@ export class MapgenPreviewScreen {
   private readonly status: HTMLElement;
   /** Metrics of the last map shown, for the delta column. */
   private previousMetrics: MapMetrics | undefined;
+  /** Assessment of the last map shown, for the delta column. */
+  private previousAssessment: MapAssessment | undefined;
 
   // ===========================================
   // Constructor
@@ -190,7 +195,7 @@ export class MapgenPreviewScreen {
 
   /** Describes a generated map in the read-outs. */
   showResult(result: PreviewResult): void {
-    const { map, diagnostics, metrics } = result;
+    const { map, diagnostics, metrics, assessment } = result;
     this.status.textContent = "";
     this.status.dataset.state = "ok";
     this.levelSlider.max = String(map.levels);
@@ -216,8 +221,10 @@ export class MapgenPreviewScreen {
         `${result.elapsedMs.toFixed(1)} ms (passes ${totalMs.toFixed(1)} ms)`,
       ],
       ...metricRows(metrics, this.previousMetrics),
+      ...assessmentRows(assessment, this.previousAssessment),
     ]);
     this.previousMetrics = metrics;
+    this.previousAssessment = assessment;
     this.ascii.textContent = result.ascii;
     this.renderNotes(diagnostics);
   }
@@ -340,6 +347,65 @@ function randomSeed(doc: Document): string {
 }
 
 /**
+ * How the map plays, measured through the tactical rules (#448): what the
+ * squad walks, what it can shoot the objectives from, and how long a bug
+ * wave spends walking in. Same delta column as the tuning read-outs.
+ */
+function assessmentRows(
+  assessment: MapAssessment,
+  previous: MapAssessment | undefined,
+): (readonly [string, string])[] {
+  const delta = deltaFor(assessment, previous);
+  const pct = (share: number): string => `${(100 * share).toFixed(1)} %`;
+  const one = (value: number): string => value.toFixed(1);
+  const whole = (value: number): string => String(Math.round(value));
+  return [
+    [
+      "Approach",
+      `${delta((a) => a.approachSteps.nearest, whole)} steps to the nearest objective, ` +
+        `${delta((a) => a.approachSteps.farthest, whole)} to the farthest`,
+    ],
+    [
+      "Bug walk-in",
+      `${delta((a) => a.edgeSpawnSteps.nearest, whole)} steps from the nearest edge spawn, ` +
+        `${delta((a) => a.edgeSpawnSteps.farthest, whole)} from the farthest`,
+    ],
+    [
+      "Firing positions",
+      `${delta((a) => a.firingPositionsMean, one)} per objective ` +
+        `(${delta((a) => a.firingPositionsMin, whole)} fewest), ` +
+        `${delta((a) => a.coveredFiringShare, pct)} in cover, ` +
+        `${delta((a) => a.elevatedFiringShare, pct)} shooting down`,
+    ],
+    ["Mech reach", `${delta((a) => a.mechReachShare, pct)} of infantry's`],
+    [
+      "Levels reached",
+      `${delta((a) => a.infantryLevelSpan, whole)} infantry, ` +
+        `${delta((a) => a.mechLevelSpan, whole)} mech`,
+    ],
+  ];
+}
+
+/**
+ * Builds the "value (change)" formatter for one read-out group: the value
+ * alone on the first map, then the change against the previous one.
+ */
+function deltaFor<T>(
+  current: T,
+  previous: T | undefined,
+): (pick: (value: T) => number, format: (value: number) => string) => string {
+  return (pick, format) => {
+    const value = format(pick(current));
+    if (previous === undefined) {
+      return value;
+    }
+    const change = pick(current) - pick(previous);
+    const sign = change > 0 ? "+" : change < 0 ? "−" : "±";
+    return `${value} (${sign}${format(Math.abs(change))})`;
+  };
+}
+
+/**
  * The tuning read-outs, each with its change against the previous map
  * when there is one, so a knob or a seed step reads as a delta.
  */
@@ -347,25 +413,21 @@ function metricRows(
   metrics: MapMetrics,
   previous: MapMetrics | undefined,
 ): (readonly [string, string])[] {
-  const delta = (
-    pick: (m: MapMetrics) => number,
-    format: (value: number) => string,
-  ): string => {
-    const value = format(pick(metrics));
-    if (previous === undefined) {
-      return value;
-    }
-    const change = pick(metrics) - pick(previous);
-    const sign = change > 0 ? "+" : change < 0 ? "−" : "±";
-    return `${value} (${sign}${format(Math.abs(change))})`;
-  };
+  const delta = deltaFor(metrics, previous);
   const pct = (share: number): string => `${(100 * share).toFixed(1)} %`;
   const one = (value: number): string => value.toFixed(1);
+  const two = (value: number): string => value.toFixed(2);
   const whole = (value: number): string => String(Math.round(value));
   return [
     ["Open ground", `${metrics.openTiles} of ${metrics.groundTiles}`],
     ["Beside cover", delta((m) => m.coverAdjacency, pct)],
     ["Beside a wall", delta((m) => m.wallAdjacency, pct)],
+    [
+      "Cover that holds",
+      `${delta((m) => m.coveredShare, pct)} one side, ` +
+        `${delta((m) => m.flankProofShare, pct)} two`,
+    ],
+    ["Covered sides", `${delta((m) => m.coveredSidesMean, two)} per open tile`],
     [
       "Cover per 100",
       `${delta((m) => m.highCoverPer100, one)} high, ${delta((m) => m.lowCoverPer100, one)} low`,

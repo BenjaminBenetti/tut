@@ -4,6 +4,7 @@ import { Group } from "three";
 
 import { previewMission } from "./app/service/preview-units";
 import { COMBAT_TUNING } from "./tactical/data/combat-tuning";
+import { OBJECTIVE_TUNING } from "./tactical/data/objective-tuning";
 import { TacticalHudView } from "./ui/view/tactical-hud-view";
 import { CameraInputController } from "./graphics/controller/camera-input-controller";
 import { MODEL_MANIFEST } from "./graphics/data/model-manifest";
@@ -19,6 +20,7 @@ import { renderAscii } from "./mapgen/service/ascii-map-renderer";
 import { createDefaultRegistries } from "./mapgen/service/default-registries";
 import { generateTacticalMapWithDiagnostics } from "./mapgen/service/generate-tactical-map";
 import { computeMapMetrics } from "./mapgen/service/map-metrics";
+import { assessMap } from "./tactical/service/map-assessment-service";
 import type { PreviewControlsState } from "./ui/screen/mapgen-preview-screen";
 import { TacticalInputController } from "./ui/controller/tactical-input-controller";
 import type { TacticalIntent } from "./ui/model/tactical-intent";
@@ -153,7 +155,10 @@ async function main(): Promise<void> {
             },
             onBack: () => undefined,
           },
-          { combatTuning: COMBAT_TUNING },
+          {
+            combatTuning: COMBAT_TUNING,
+            objectiveTuning: OBJECTIVE_TUNING,
+          },
         );
         hudView.mount(viewport);
         hudView.update(mission);
@@ -184,6 +189,7 @@ async function main(): Promise<void> {
         map,
         diagnostics,
         metrics: computeMapMetrics(map),
+        assessment: assessMap(map),
         ascii: renderAscii(map),
         elapsedMs,
       });

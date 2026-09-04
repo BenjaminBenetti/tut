@@ -6,6 +6,7 @@ import type { Mission } from "../../overworld/model/mission";
 import { HookKinds } from "../model/hook";
 import { PassMask } from "../model/pass-mask";
 import { createDefaultRegistries } from "./default-registries";
+import { createRegistry } from "./definition-registry";
 import { generateTacticalMap } from "./generate-tactical-map";
 import { validateTacticalMap } from "./map-validator";
 import {
@@ -92,6 +93,61 @@ describe("missionToMapRecipe", () => {
       "edge-spawn",
       "extraction",
     ]);
+  });
+
+  it("never asks for a hook farther from deploy than the map can hold", () => {
+    // Every preset is larger than twice the shipped 12, so the default
+    // passes through; a size registry with a tiny map clamps it (#465).
+    const small = unwrap(
+      missionToMapRecipe(
+        mission({}, { size: "small" }),
+        INFESTATION_CLEARANCE,
+        registries,
+      ),
+    );
+    const eggs = small.params.hooks.find(
+      (hook) => hook.kind === HookKinds.EGG_SPAWNER,
+    );
+    expect(eggs?.minDistanceFromDeploy).toBe(12);
+
+    const tiny = {
+      ...registries,
+      mapSizes: createRegistry("map size", [
+        { id: "small" as const, width: 16, depth: 16 },
+      ]),
+    };
+    // A long thin map has the room a rule about its shorter side would
+    // deny it, so the shipped distance survives there.
+    const thin = {
+      ...registries,
+      mapSizes: createRegistry("map size", [
+        { id: "small" as const, width: 16, depth: 40 },
+      ]),
+    };
+    const recipe = unwrap(
+      missionToMapRecipe(
+        mission({}, { size: "small" }),
+        INFESTATION_CLEARANCE,
+        tiny,
+      ),
+    );
+    const clamped = recipe.params.hooks.find(
+      (hook) => hook.kind === HookKinds.EGG_SPAWNER,
+    );
+    expect(clamped?.minDistanceFromDeploy).toBe(6);
+
+    const thinRecipe = unwrap(
+      missionToMapRecipe(
+        mission({}, { size: "small" }),
+        INFESTATION_CLEARANCE,
+        thin,
+      ),
+    );
+    expect(
+      thinRecipe.params.hooks.find(
+        (hook) => hook.kind === HookKinds.EGG_SPAWNER,
+      )?.minDistanceFromDeploy,
+    ).toBe(12);
   });
 
   it("is deterministic", () => {

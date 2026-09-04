@@ -18,6 +18,7 @@ import { StaticPartCatalogue } from "../../roster/repository/static-part-catalog
 import { validateLoadout } from "../../roster/service/loadout-validation-service";
 import type { GameState } from "../../save/model/game-state";
 import { COMBAT_TUNING } from "../../tactical/data/combat-tuning";
+import { OBJECTIVE_TUNING } from "../../tactical/data/objective-tuning";
 import { UNIT_TUNING } from "../../tactical/data/unit-tuning";
 import { SPAWN_TUNING } from "../../tactical/data/spawn-tuning";
 import { ATTACK } from "../../tactical/model/attack-command";
@@ -227,6 +228,7 @@ describe("TacticalScreen", () => {
       router: fakeRouter().router,
       session: sessionWith(new FakeStore(state)),
       combatTuning: COMBAT_TUNING,
+      objectiveTuning: OBJECTIVE_TUNING,
       sceneHost: host,
     }).mount(root);
     expect(root.querySelector('[data-screen="tactical"]')).not.toBeNull();
@@ -251,6 +253,7 @@ describe("TacticalScreen", () => {
       router: fakeRouter().router,
       session: sessionWith(store),
       combatTuning: COMBAT_TUNING,
+      objectiveTuning: OBJECTIVE_TUNING,
       sceneHost: host,
     }).mount(root);
     const mission = state.activeMission!;
@@ -271,6 +274,7 @@ describe("TacticalScreen", () => {
       router: fakeRouter().router,
       session: sessionWith(new FakeStore(state)),
       combatTuning: COMBAT_TUNING,
+      objectiveTuning: OBJECTIVE_TUNING,
       sceneHost: host,
       onIntent: (intent) => seen.push(intent),
     }).mount(root);
@@ -287,6 +291,7 @@ describe("TacticalScreen", () => {
       router: fakeRouter().router,
       session: sessionWith(new FakeStore(campaignOnDay(1, []))),
       combatTuning: COMBAT_TUNING,
+      objectiveTuning: OBJECTIVE_TUNING,
       sceneHost: host,
     }).mount(root);
     expect(
@@ -304,6 +309,7 @@ describe("TacticalScreen", () => {
       router,
       session: sessionWith(store),
       combatTuning: COMBAT_TUNING,
+      objectiveTuning: OBJECTIVE_TUNING,
       sceneHost: host,
     });
     screen.mount(root);
@@ -324,6 +330,7 @@ describe("TacticalScreen", () => {
       router: fakeRouter().router,
       session: sessionWith(store),
       combatTuning: COMBAT_TUNING,
+      objectiveTuning: OBJECTIVE_TUNING,
       sceneHost: host,
     }).mount(root);
     const mission = state.activeMission!;
@@ -360,6 +367,7 @@ describe("TacticalScreen", () => {
       router: fakeRouter().router,
       session: sessionWith(store),
       combatTuning: COMBAT_TUNING,
+      objectiveTuning: OBJECTIVE_TUNING,
       sceneHost: host,
     }).mount(root);
     const started = state.activeMission!;
@@ -395,6 +403,7 @@ describe("TacticalScreen", () => {
       router: fakeRouter().router,
       session: sessionWith(store),
       combatTuning: COMBAT_TUNING,
+      objectiveTuning: OBJECTIVE_TUNING,
       sceneHost: host,
     }).mount(root);
     expect(
@@ -451,6 +460,7 @@ describe("TacticalScreen", () => {
       router: fakeRouter().router,
       session: sessionWith(store),
       combatTuning: COMBAT_TUNING,
+      objectiveTuning: OBJECTIVE_TUNING,
       sceneHost: new FakeHost(),
     }).mount(root);
     root
@@ -471,6 +481,7 @@ describe("TacticalScreen", () => {
       router,
       session: sessionWith(store),
       combatTuning: COMBAT_TUNING,
+      objectiveTuning: OBJECTIVE_TUNING,
       sceneHost: new FakeHost(),
     }).mount(root);
     expect(store.dispatched).toEqual([]);
@@ -491,6 +502,7 @@ describe("TacticalScreen", () => {
       router: fakeRouter().router,
       session: sessionWith(store),
       combatTuning: COMBAT_TUNING,
+      objectiveTuning: OBJECTIVE_TUNING,
       sceneHost: new FakeHost(),
     }).mount(root);
     store.replace(ended(state));
@@ -508,6 +520,7 @@ describe("TacticalScreen", () => {
       router,
       session: sessionWith(store),
       combatTuning: COMBAT_TUNING,
+      objectiveTuning: OBJECTIVE_TUNING,
       sceneHost: new FakeHost(),
     }).mount(root);
     expect(store.dispatched.map((c) => c.type)).toEqual([FINISH_MISSION]);
@@ -523,6 +536,7 @@ describe("TacticalScreen", () => {
       router,
       session: sessionWith(store),
       combatTuning: COMBAT_TUNING,
+      objectiveTuning: OBJECTIVE_TUNING,
       sceneHost: new FakeHost(),
     }).mount(root);
     store.replace(ended(state));

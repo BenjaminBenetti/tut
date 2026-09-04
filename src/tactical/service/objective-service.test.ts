@@ -20,6 +20,7 @@ import { OBJECTIVE_TUNING } from "../data/objective-tuning";
 import {
   createExtractHandler,
   createInteractHandler,
+  reachableObjectives,
 } from "./objective-service";
 import {
   ctxWith,
@@ -270,6 +271,123 @@ describe("createInteractHandler", () => {
     const before = structuredClone(mission);
     handler(mission, interact("u", "objective-1"), CTX);
     expect(mission).toEqual(before);
+  });
+});
+
+// ===========================================
+// Reach
+// ===========================================
+
+describe("reachableObjectives", () => {
+  it("offers the objective a unit is standing next to", () => {
+    const found = reachableObjectives(besideSpawner(), "u", TUNING);
+    expect(found).toHaveLength(1);
+    expect(found[0]?.objective.id).toBe("objective-1");
+    expect(found[0]?.spawner.id).toBe("spawner-1");
+    expect(found[0]?.distance).toBe(1);
+  });
+
+  it("sorts by distance, nearest first, keeping objective order on a tie", () => {
+    const mission: TacticalState = {
+      ...besideSpawner(),
+      spawners: [
+        spawner("spawner-far", at(6, 4)),
+        spawner("spawner-tie-a", at(3, 3)),
+        spawner("spawner-tie-b", at(3, 5)),
+      ],
+      objectives: [
+        objective("objective-far", "spawner-far"),
+        objective("objective-tie-a", "spawner-tie-a"),
+        objective("objective-tie-b", "spawner-tie-b"),
+      ],
+    };
+    const found = reachableObjectives(mission, "u", {
+      ...TUNING,
+      interactRange: 5,
+    });
+    expect(found.map((entry) => entry.objective.id)).toEqual([
+      "objective-tie-a",
+      "objective-tie-b",
+      "objective-far",
+    ]);
+  });
+
+  it("skips what the handler would refuse: complete, destroyed, missing or out of range", () => {
+    const mission = besideSpawner();
+    expect(
+      reachableObjectives(
+        {
+          ...mission,
+          objectives: [objective("objective-1", "spawner-1", true)],
+        },
+        "u",
+        TUNING,
+      ),
+    ).toEqual([]);
+    expect(
+      reachableObjectives(
+        {
+          ...mission,
+          spawners: [{ ...spawner("spawner-1", at(4, 4), 0), destroyed: true }],
+        },
+        "u",
+        TUNING,
+      ),
+    ).toEqual([]);
+    expect(
+      reachableObjectives({ ...mission, spawners: [] }, "u", TUNING),
+    ).toEqual([]);
+    expect(
+      reachableObjectives(
+        { ...mission, spawners: [spawner("spawner-1", at(7, 0))] },
+        "u",
+        TUNING,
+      ),
+    ).toEqual([]);
+  });
+
+  it("offers nothing to a unit that cannot act: missing, down, a bug, off-phase or spent", () => {
+    const mission = besideSpawner();
+    expect(reachableObjectives(mission, "ghost", TUNING)).toEqual([]);
+    expect(reachableObjectives(mission, "b", TUNING)).toEqual([]);
+    expect(reachableObjectives(besideSpawner({ ap: 0 }), "u", TUNING)).toEqual(
+      [],
+    );
+    const down: TacticalState = {
+      ...mission,
+      units: mission.units.map((unit) =>
+        unit.id === "u" ? { ...unit, hp: 0 } : unit,
+      ),
+    };
+    expect(reachableObjectives(down, "u", TUNING)).toEqual([]);
+    expect(
+      reachableObjectives({ ...mission, phase: "bugs" }, "u", TUNING),
+    ).toEqual([]);
+  });
+
+  it("agrees with the handler: everything it offers is accepted, and nothing else is", () => {
+    const mission: TacticalState = {
+      ...besideSpawner(),
+      spawners: [
+        spawner("spawner-1", at(4, 4)),
+        spawner("spawner-2", at(7, 0)),
+      ],
+      objectives: [
+        objective("objective-1", "spawner-1"),
+        objective("objective-2", "spawner-2"),
+      ],
+    };
+    const handler = createInteractHandler(TUNING);
+    const offered = new Set(
+      reachableObjectives(mission, "u", TUNING).map((e) => e.objective.id),
+    );
+    for (const candidate of mission.objectives) {
+      const applied = handler(mission, interact("u", candidate.id), CTX);
+      expect([candidate.id, applied.ok]).toEqual([
+        candidate.id,
+        offered.has(candidate.id),
+      ]);
+    }
   });
 });
 

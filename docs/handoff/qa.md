@@ -6,8 +6,8 @@ Last updated: 2026-09-04 (post-v0.2.0; win path settled on #317).
 
 | Field | Value |
 |---|---|
-| SHA tested | `5d93967` (main, M2.5 band 2 landing) |
-| Gate | typecheck, lint, build pass; vitest **1744 / 1744** (+1 deliberate skip); e2e **55 / 55** |
+| SHA tested | `dfcd2dc` (main, M2.5 band 2 landing) |
+| Gate | typecheck, lint, build pass; vitest **1764 / 1764** (+1 deliberate skip); e2e **55 / 55** |
 | Exploratory | v0.2.1 verified as a production artifact; **the win path survives fog of war**; #572 fixed and confirmed |
 | **Verdict** | **Healthy.** v0.2.1 plays correctly as a shipped artifact with no dev hooks, and a mission is still completable with the player view active. Control scheme 7/7 on every head since. No open QA-filed defects. |
 
@@ -87,7 +87,16 @@ Last updated: 2026-09-04 (post-v0.2.0; win path settled on #317).
 
 13. **#572 fixed by #577 and confirmed.** The weapon range is now light pips instead of a 0.5-opacity fill. The movement overlay in the default view went from 14,604 px to 24,307 px, **+66 %**, and toggling range off now barely changes it. Both bands read. Frame committed as `docs/design/tactical-overlays-both-bands-readable.png`, which supersedes the broken pair in PR #571.
 
-14. **Not yet verified — for whoever picks this up:** the **#528 radial attack menu**. Right-clicking a tile with Move armed correctly just moves and shows no ring, but I could not exercise the ring on a target: under fog no spawner is visible from the deploy zone at turn 1, and no bug is on the map that early. It needs a run that closes on a target first.
+14. **#528's radial menu is unwired scaffolding, and that is fine.** I chased this on `dfcd2dc` after #559 made bugs hunt the landing zone, which finally puts a target in reach. `src/ui/view/radial-menu-view.ts` has **no caller anywhere outside its own tests**, matching the merge title "the ring band 3 hangs on". No ring appears on any interaction because nothing opens one yet. Not a defect; do not file it.
+
+    What that run did confirm is that **right click invokes both actions**, which is the part that matters:
+
+    | With | Right click on | Result |
+    |---|---|---|
+    | Move armed | a free tile | `14,30 → 14,31`, moved |
+    | Attack armed | a Swarmer at 3 tiles, 66 % hit | bug hp **6 → 0**, killed |
+
+    **A warning for the next person driving this.** My first three attempts reported "right click does nothing, no damage" and I nearly filed it. The cause was mine: I had targeted the bug with `selectUnit`, which left *the bug* as the selected unit, so the mech was no longer the actor. Re-select the acting unit, then arm the action, then right click the target. A left click at the same pixel correctly showed `Swarmer` in the preview, which is what proved the coordinates were right and the sequence was wrong.
 
 15. **Filed #480** (p3): the debrief says "No casualties" on a mission that wiped the whole force.
 
@@ -104,6 +113,7 @@ Three times this session a control-scheme or rendering change silently invalidat
 
 | SHA | Build | Unit | e2e | Exploratory | Filed |
 |---|---|---|---|---|---|
+| `dfcd2dc` | pass | 1764/1764 | 55/55 | right click fires; radial is unwired | — |
 | `5d93967` | pass | 1744/1744 | 55/55 | radial menu, building ghosting; 7/7 | — |
 | `e01ee73` | pass | 1725/1725 | 55/55 | fog of war; win path still completes | — |
 | `f581d2e` | pass | 1716/1716 | 55/55 | #572 fixed, both bands read | — |

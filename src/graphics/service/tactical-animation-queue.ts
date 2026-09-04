@@ -23,6 +23,7 @@ import { UNIT_MOVED } from "../../tactical/model/unit-moved-event";
 import { UNIT_SPOTTED } from "../../tactical/model/unit-spotted-event";
 import type { UnitId } from "../../tactical/model/unit";
 import type { SpriteId } from "../data/sprite-manifest";
+import type { SpriteAssetEntry, SpriteSheet } from "../data/sprite-manifest";
 import { SPRITE_MANIFEST } from "../data/sprite-manifest";
 import type { Disposable } from "../model/disposable";
 import type { FrameUpdatable } from "../model/frame-updatable";
@@ -89,6 +90,13 @@ export interface TacticalAnimationQueueOptions {
 }
 
 /** One animation in flight: advances by seconds, reports when done. */
+/** A sprite stepping through a frame sheet, and how far in it is. */
+interface SheetPlayback {
+  readonly sheet: SpriteSheet;
+  readonly texture: Texture;
+  elapsedMs: number;
+}
+
 interface Animation {
   readonly name: string;
   /**
@@ -217,6 +225,8 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
   private current: Animation | undefined;
   private readonly textures = new Map<SpriteId, Texture | undefined>();
   private readonly live = new Set<Sprite>();
+  /** Sprites playing a frame sheet, with their own cloned texture (#697). */
+  private readonly playing = new Map<Sprite, SheetPlayback>();
 
   // ===========================================
   // Constructor
@@ -299,6 +309,7 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
 
   /** Advances the current animation, starting the next when it finishes. */
   update(deltaSeconds: number): void {
+    this.stepSheets(deltaSeconds);
     let remaining = deltaSeconds;
     while (remaining > 0) {
       if (!this.current) {
@@ -775,9 +786,19 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
       readonly rotation?: number;
     } = {},
   ): Sprite {
-    const texture = id
-      ? this.textures.get(id)
-      : chipTexture(options.label, options.tone ?? colour);
+    // An effect with a frame sheet plays it; the single-frame image is
+    // the fallback for when the sheet has not loaded yet (#697). Every
+    // effect drew as one frozen frame until this, because nothing read
+    // the `sheet` descriptor the manifest has carried since #396.
+    const sheetId = id === undefined ? undefined : sheetIdFor(id);
+    const sheetTexture = sheetId ? this.textures.get(sheetId) : undefined;
+    const sheet = sheetId ? entryOf(sheetId).sheet : undefined;
+    const animated = sheetTexture !== undefined && sheet !== undefined;
+    const texture = animated
+      ? sheetTexture.clone()
+      : id
+        ? this.textures.get(id)
+        : chipTexture(options.label, options.tone ?? colour);
     const blend =
       id && SPRITE_MANIFEST[id].blend === "additive"
         ? AdditiveBlending
@@ -801,7 +822,40 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
     sprite.renderOrder = 10;
     this.root.add(sprite);
     this.live.add(sprite);
+    if (animated && texture) {
+      // A clone per sprite: the cached texture is shared by every effect
+      // of this id, and stepping its offset would step all of them.
+      texture.needsUpdate = true;
+      texture.repeat.set(1 / sheet.columns, 1 / sheet.rows);
+      this.playing.set(sprite, { sheet, texture, elapsedMs: 0 });
+      showFrame(texture, sheet, 0);
+    }
     return sprite;
+  }
+
+  /**
+   * Advances every playing frame sheet (#697).
+   *
+   * Here rather than inside each animation because a sheet belongs to
+   * the *sprite*, not to whatever queued it: a muzzle flash and a death
+   * burst step the same way, and an effect that outlives its animation
+   * should keep playing.
+   *
+   * Plays once and holds the last frame. Looping would restart a death
+   * burst while the corpse is still fading, which reads as a second
+   * explosion rather than one.
+   *
+   * @param deltaSeconds - Frame delta.
+   */
+  private stepSheets(deltaSeconds: number): void {
+    for (const playback of this.playing.values()) {
+      playback.elapsedMs += deltaSeconds * 1000;
+      const index = Math.min(
+        playback.sheet.frames - 1,
+        Math.floor(playback.elapsedMs / playback.sheet.frameMs),
+      );
+      showFrame(playback.texture, playback.sheet, index);
+    }
   }
 
   /** Removes and disposes a billboard; safe to call twice. */
@@ -810,6 +864,12 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
       return;
     }
     sprite.removeFromParent();
+    const playback = this.playing.get(sprite);
+    if (playback) {
+      // The clone is this sprite's alone, so it goes with it.
+      playback.texture.dispose();
+      this.playing.delete(sprite);
+    }
     const map = sprite.material.map;
     if (map?.name.startsWith("vfx.floater")) {
       map.dispose();
@@ -821,6 +881,54 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
 // ===========================================
 // Helpers
 // ===========================================
+
+/**
+ * The frame-sheet id for an effect, when one is registered.
+ *
+ * The sheets are named for the sprite they animate -- `vfx.impact` and
+ * `vfx.impact-sheet` -- so the mapping needs no second table to drift
+ * out of step with the manifest.
+ *
+ * @param id - The single-frame effect id.
+ * @returns The sheet id, or undefined when the effect has no sheet.
+ */
+function sheetIdFor(id: SpriteId): SpriteId | undefined {
+  const candidate = `${id}-sheet`;
+  return candidate in SPRITE_MANIFEST &&
+    entryOf(candidate as SpriteId).sheet !== undefined
+    ? (candidate as SpriteId)
+    : undefined;
+}
+
+/**
+ * One manifest entry at its declared type.
+ *
+ * The manifest is a `satisfies` literal, so indexing it narrows to the
+ * exact entry and an entry without a sheet has no `sheet` property to
+ * read at all. Widening here keeps that check in one place.
+ *
+ * @param id - The sprite to look up.
+ * @returns Its entry, typed as the interface rather than the literal.
+ */
+function entryOf(id: SpriteId): SpriteAssetEntry {
+  return SPRITE_MANIFEST[id];
+}
+
+/**
+ * Points a texture at one frame of its sheet.
+ *
+ * Frames read left to right then top to bottom, while a texture's
+ * origin is bottom-left, so the row is counted from the far end.
+ *
+ * @param texture - The sprite's own cloned texture.
+ * @param sheet - Its frame layout.
+ * @param index - Frame to show, already clamped.
+ */
+function showFrame(texture: Texture, sheet: SpriteSheet, index: number): void {
+  const column = index % sheet.columns;
+  const row = Math.floor(index / sheet.columns);
+  texture.offset.set(column / sheet.columns, 1 - (row + 1) / sheet.rows);
+}
 
 /** Straight-line distance between two world points. */
 function distance(a: Vec3, b: Vec3): number {

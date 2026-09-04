@@ -467,6 +467,12 @@ Every effect anchors off the **unit's height**, never a fixed lift above its fee
 
 **Combat text is a chip, not tinted text.** A dark `ui-panel` plate, a `ui-line` border and a bar in `ui-danger` (damage) or `ui-text-dim` (miss), white monospace on top — the HUD's own language. Plain coloured text was unreadable over half the surfaces in the game: white on snow, red on brick. Effects draw with `depthTest` off and a high `renderOrder`, so nothing is hidden by the unit it describes.
 
+**Effects play their frame sheets** (#697). `sprite-manifest.ts` has carried a `sheet` descriptor — `{ frame, columns, rows, frames, frameMs }` — since #396, and until #697 nothing read it, so every effect in the game drew as one frozen frame while six sheets were fetched and decoded on every mission to be ignored.
+
+A billboard now prefers the sheet registered for its effect, named by convention: `vfx.impact` plays `vfx.impact-sheet`. The texture is **cloned per sprite** — the cached one is shared by every effect of that id, and stepping its offset would step all of them at once. Frames play **once and hold the last**: looping would restart a death burst while the corpse is still fading, which reads as a second explosion rather than one.
+
+![the muzzle flash igniting, at 0.02 s per frame](vfx-sequence-ranged-frames.png)
+
 **The egg burst plays when charges finish a spawner** (#697). Destroying spawners *is* the clearance mission — `0 / 2 Destroy spawner` is the objective panel — and until that issue the moment the whole mission is about resolved with nothing on screen, while the sprite sat in the manifest preloaded and undrawn. It is the largest effect in the set at 1.6 tiles against a unit death's 1.0, because it is the one the player came for, and it swells as it fades so it reads as a burst rather than a sprite being turned down. A hit that does *not* finish the spawner plays nothing extra: the attack sequence has already shown the strike, and a second effect on every hit would say it died when it did not.
 
 ![the egg burst, filmed at 64 px per tile](vfx-sequence-egg-burst.png)
@@ -474,8 +480,16 @@ Every effect anchors off the **unit's height**, never a fixed lift above its fee
 Judge any change to these with the harness rather than by playing to contact — that takes twenty turns and still misses the 0.12 s frames:
 
 ```
-node tools/art/preview/shoot-vfx.mjs out.png ranged   # or melee, death, burst
+node tools/art/preview/shoot-vfx.mjs out.png ranged            # or melee, death, burst
+node tools/art/preview/shoot-vfx.mjs out.png ranged 64 0.02   # finer, to see frames
 ```
+
+**Match the step to what you are judging.** The default 0.06 s suits an
+effect measured in tenths; a frame sheet runs at 40 ms, so sampling at
+0.06 lands past whole frames and an animation can look like a *dimmer
+static sprite* than the one it replaced. That is the wrong conclusion I
+nearly drew about the sheets in #697 — at 0.02 s the muzzle flash is
+plainly igniting, a dot growing to a full star across its 0.12 s.
 
 It runs the real animation queue against stand-in units at exactly 64 px per tile and steps it 0.06 s at a time, so the filmstrip is reproducible.
 

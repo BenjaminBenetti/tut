@@ -2,7 +2,7 @@
 /**
  * Films one combat sequence from the VFX harness as a filmstrip.
  *
- *   node tools/art/preview/shoot-vfx.mjs <out.png> [ranged|melee|death|burst] [px]
+ *   node tools/art/preview/shoot-vfx.mjs <out.png> [ranged|melee|death|burst] [px] [step]
  *
  * The harness runs the real `TacticalAnimationQueue` against stand-in units,
  * and this steps it by a fixed delta so every frame is reproducible — which
@@ -21,7 +21,15 @@ const REPO_ROOT = fileURLToPath(new URL("../../../", import.meta.url));
 const PORT = 4180;
 const BASE = `http://127.0.0.1:${PORT}`;
 /** Seconds per filmstrip frame, and how many to take. */
-const STEP_SECONDS = 0.06;
+/**
+ * Seconds per filmstrip frame.
+ *
+ * 0.06 suits an effect measured in tenths. A frame sheet runs at 40 ms
+ * (#697), so judging one at 0.06 samples past whole frames and can make
+ * an animation look like a dimmer static sprite -- which is exactly the
+ * wrong conclusion I nearly drew from it. Pass a step to see the frames.
+ */
+const STEP_SECONDS = Number(process.argv[5] ?? 0.06);
 const FRAMES = 12;
 
 /**

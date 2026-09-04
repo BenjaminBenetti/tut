@@ -60,6 +60,15 @@ describe("tactical overlay palette", () => {
     expect(MOVE_RANGE_TWO_AP_COLOUR).toBe(MOVE_RANGE_ONE_AP_COLOUR);
   });
 
+  it("leaves ground visible around every band tile, so neither reads as terrain", () => {
+    // #569: a band that reaches its tile edges merges with its
+    // neighbours into a flat sheet, and a flat blue sheet is a pond.
+    expect(MOVE_RANGE_ONE_AP_FOOTPRINT).toBeLessThanOrEqual(0.85);
+    expect(MOVE_RANGE_TWO_AP_FOOTPRINT).toBeLessThan(
+      MOVE_RANGE_ONE_AP_FOOTPRINT,
+    );
+  });
+
   it("keeps the weapon-range mark small enough not to bury a move band", () => {
     // #572: at nearly a whole tile the range overlay filled in a city and
     // covered the 2 AP band underneath it.

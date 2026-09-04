@@ -346,7 +346,7 @@ Overlays are instanced quads lifted 0.02 u above the tile top. They carry meanin
 
 | Overlay | Token | Hex | Footprint | Means |
 |---|---|---|---|---|
-| Move range, 1 AP | `ui-info` | `#7FD1FF` at 0.45 | 0.92 | One action gets you here |
+| Move range, 1 AP | `ui-info` | `#7FD1FF` at 0.45 | 0.84 | One action gets you here |
 | Move range, 2 AP | `ui-info` | `#7FD1FF` at 0.24 | 0.66 | This one costs both actions |
 | Low cover | `ui-warn` | `#F0C63C` | ring | Partial protection on that edge |
 | High cover | `ui-danger` | `#E0453C` | ring | Full protection on that edge |
@@ -361,6 +361,8 @@ Orange is the player's own intent, blue is possibility, yellow and red are the w
 **The two move bands are one token at two opacities, never two hues** (#521, retuned in #566). Move range gets one colour, and the separation stays in value and footprint — a hue split is the one deuteranopia and protanopia lose.
 
 The second band was first authored as a *darkened* `ui-info` (`#4C7D99`). That failed on contact with the map: QA measured the blend at `80,112,128`, which is shadowed ground, and the band vanished into shade. **Darkening a tint to mean "less" does not work on terrain that is already dark in places** — the shadow gets there first. Both bands are now the same token at different strengths, so every blend comes out *lighter* than whatever it covers. The dearer band is also inset to 0.66 of a tile, so the boundary is a change of shape as well as of tone and needs no legend.
+
+**Neither move band fills its tile** (#569). At 0.92 a run of near-band tiles merged into one flat sheet of colour, which is how terrain is drawn — and players read it as a pond, the water surface being `env-water-shallow #3F8FA8`. Inset to 0.84 the ground shows through between neighbours, so the same tiles read as *marked* rather than *repainted*: a continuous surface is terrain, separated squares are the overlay. That distinction survives any tone.
 
 **Weapon range is pips, not a fill** (#522, retuned in #566). An outline along the envelope's edge is thin on open ground and solid in a city, where line of sight cuts the envelope into pockets and almost every tile counts as edge; at 0.96 of a tile that buried the movement band under it. A small centred pip carries the same information for a tenth of the ink.
 

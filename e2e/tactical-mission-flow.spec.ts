@@ -148,7 +148,7 @@ test("Launch plays the mission out, extraction ends it, and the debrief comes fr
  * so any extraction tile the unit is not already standing on is both
  * walkable and a few steps away.
  */
-test("a unit moves on a tile click, with no action chosen first", async ({
+test("a unit moves on a right click, with no action chosen first", async ({
   page,
 }) => {
   await page.goto("/");
@@ -212,8 +212,9 @@ test("a unit moves on a tile click, with no action chosen first", async ({
   expect(plan).not.toBeNull();
   if (!plan) return;
 
-  // Select the unit and click the tile. Nothing on the action bar is
-  // touched between the two — that is the whole point of #519.
+  // Select the unit and right click the tile. Nothing on the action bar
+  // is touched between the two — that is the whole point of #519; #520
+  // moved the trigger from the left button to the right.
   await page.evaluate(
     (unitId) => (globalThis as HookGlobal).__tutTactical__?.selectUnit(unitId),
     plan.unitId,
@@ -223,7 +224,7 @@ test("a unit moves on a tile click, with no action chosen first", async ({
     page.locator('#action-bar [data-action="move"]'),
   ).toHaveAttribute("aria-pressed", "true");
   await page.evaluate(
-    (tile) => (globalThis as HookGlobal).__tutTactical__?.selectTile(tile),
+    (tile) => (globalThis as HookGlobal).__tutTactical__?.invokeTile(tile),
     plan.to,
   );
 

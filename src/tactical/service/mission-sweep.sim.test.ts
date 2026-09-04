@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { MISSION_TYPES } from "../../content/data/mission-types";
@@ -305,15 +306,24 @@ const SEEDS = Array.from({ length: 60 }, (_, i) => ({
 /**
  * Turns a mission gets before the sweep calls it unresolved.
  *
- * Thirty, not sixty. A mission the driver has not resolved in thirty
- * turns is a finding either way, and the back half of a long run is the
- * most expensive part of the sweep: bug counts grow every turn, and
- * every command in a hundred-bug phase recomputes both sides' vision.
- * Fifteen turns buys a usable sample cheaply; it is deliberately below
- * the 37-56 turns a difficulty-10 mission needs to finish, so seeds at
- * the top of the range are expected to come back unresolved.
+ * Fifteen buys a usable sample cheaply: the back half of a long run is
+ * the most expensive part of the sweep, because bug counts grow every
+ * turn and every command in a hundred-bug phase recomputes both sides'
+ * vision. It is deliberately below the turns a hard mission needs to
+ * finish, so seeds at the top of the range come back `unresolved`.
+ *
+ * **`unresolved` therefore means "still playing when the cap arrived",
+ * never "cannot finish".** Reading it as a hang has now misled twice —
+ * #668 pinned `lost 0` and called it a missing defeat condition (#692),
+ * and `docs/design/tactical-tuning.md` was first written around the
+ * same mistake. Raise the cap and every seed resolves.
+ *
+ * `SIM_TURN_CAP=90 pnpm test:sim` does exactly that, which is how the
+ * win/loss table in that document is reproduced without editing this
+ * file. The time budget scales with it, since a deeper sweep is
+ * legitimately slower rather than regressed.
  */
-const TURN_CAP = 15;
+const TURN_CAP = Number(process.env.SIM_TURN_CAP ?? "15");
 
 /**
  * How long the whole sweep may take. A sweep nobody will wait for is a
@@ -328,7 +338,7 @@ const TURN_CAP = 15;
  * fundamentally slower, not to fail whenever CI is busy; a 6x margin
  * still catches that and does not flake under load.
  */
-const BUDGET_MS = 300_000;
+const BUDGET_MS = 300_000 * Math.max(1, TURN_CAP / 15);
 
 /**
  * How many of the 60 seeds must reach a win or a loss inside `TURN_CAP`.
@@ -340,12 +350,39 @@ const BUDGET_MS = 300_000;
 const RESOLVED_FLOOR = 35;
 
 /**
- * The highest difficulty every seed currently wins at. Difficulties 1
- * through 4 are walkovers — 24 of 24 — and 5 upwards is a flat ~50%
- * whatever the number says (#497). The losses above it take 25-34 turns
- * to arrive, which is the pace half of #666.
+ * The bottom of the difficulty range: every seed at or below this is
+ * won, on the same maps, in 5-7 turns (#497). Nothing distinguishes
+ * difficulty 1 from difficulty 4, which is the finding — the ladder
+ * does not start until 5.
+ *
+ * Played paired, the same six maps at all ten difficulties, the cliff
+ * is sharp: 6/6 at 1 through 4, then 2/6 at 5 and roughly flat above
+ * it. Measured unpaired the top half looks like a gradient, but that is
+ * six different maps per difficulty and the variance between maps is
+ * larger than the difficulty step — see `docs/design/tactical-tuning.md`.
  */
 const WALKOVER_CEILING = 4;
+
+/**
+ * Of the 24 seeds at or below `WALKOVER_CEILING`, how many must be won.
+ *
+ * All of them, today. A floor rather than an equality so it reads as a
+ * ratchet like `RESOLVED_FLOOR` — it may only ever be raised — but with
+ * no slack, because slack is what a one-seed regression hides in.
+ *
+ * That is not hypothetical: #701 clustered desert palms, which has
+ * nothing to do with combat rules or spawn rates, and moved a single
+ * difficulty-4 seed from won on turn 5 to lost on turn 47. This
+ * assertion is what caught it; it was bisected twice and reverted in
+ * #723. A floor of 20 — four seeds of headroom, which is what this was
+ * briefly set to — would have swallowed it silently.
+ *
+ * The cost is real and worth paying: a legitimate change that moves the
+ * curve reddens the next PR and has to be updated deliberately, which
+ * #710 did. That is the trade, and today it has been on both sides of
+ * it in a few hours.
+ */
+const WALKOVER_FLOOR = 24;
 
 describe("seeded tactical sweep", () => {
   // Played in `beforeAll`, not in the describe body: work there runs at
@@ -452,19 +489,16 @@ describe("seeded tactical sweep", () => {
 
   it("has no difficulty gradient below 5, which is what #497 has to fix", () => {
     // The aggregate says the curve is broken; only the breakdown says
-    // how. Played to a 90-turn cap, where every seed resolves:
+    // how. Wins per difficulty at this file's cap, on `ece970e`:
     //
-    //   d1  6-0 won    d6  3-3, 28 turns
-    //   d2  6-0 won    d7  3-3, 28 turns
-    //   d3  6-0 won    d8  4-2, 26 turns
-    //   d4  6-0 won    d9  3-3, 25 turns
-    //   d5  3-3, 28t   d10 3-3, 34 turns
+    //   d1 6/6   d3 6/6   d5 2/6   d7 5/6   d9  0/6
+    //   d2 6/6   d4 5/6   d6 3/6   d8 4/6   d10 1/6
     //
-    // Difficulty has **two states, not ten**. Below 5 every seed is won
-    // and nothing separates d1 from d4; at 5 and above the win rate
-    // drops to a flat ~50% and stays there, so **d10 is no harder than
-    // d5**. Mission length steps the same way, 5-7 turns against 25-34.
-    // It is a cliff, not a slope.
+    // The bottom of the range is still close to a walkover and the top
+    // is not: difficulty 9 wins nothing. Measured before #710 the top
+    // half was a flat ~50% whatever the number said; sealing sight at a
+    // corner between two opaque props changed that, which is worth
+    // knowing before tuning what difficulty feeds.
     //
     // At this file's 15-turn cap those 18 losses come back `unresolved`
     // instead, which is a cap artifact and not a hang — see #692, and
@@ -482,7 +516,8 @@ describe("seeded tactical sweep", () => {
       })
       .join(", ");
     const easy = runs.filter((run) => run.difficulty <= WALKOVER_CEILING);
-    const lostOrStalled = easy.filter((run) => run.outcome !== "won");
-    expect([table, lostOrStalled.length]).toEqual([table, 0]);
+    const won = easy.filter((run) => run.outcome === "won").length;
+    const floor = `${String(won)} of ${String(easy.length)} won below d${String(WALKOVER_CEILING + 1)}`;
+    expect([table, floor, won >= WALKOVER_FLOOR]).toEqual([table, floor, true]);
   });
 });

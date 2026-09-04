@@ -107,6 +107,13 @@ export interface TacticalResolveDeps {
  * A deployed unit with no token in the mission (a mismatched deployment,
  * which mission start cannot produce) is reported as having taken no
  * losses rather than as wiped, so a bad pairing never empties the roster.
+ * `squadsWiped` and `mechsDestroyed` stay summaries of the reports beside
+ * them, the invariant `MissionResult` asks a resolver to uphold: an entry
+ * appears only when the unit actually lost something this mission.
+ *
+ * @throws {Error} if the deployment names a squad or mech missing from
+ *   `state`; `LaunchMission` (#67) validates the deployment first, so
+ *   this is a programmer error.
  */
 export function tacticalMissionResult(
   input: MissionResultInput,
@@ -133,7 +140,7 @@ export function tacticalMissionResult(
     );
     const losses = squad.strength - survivors;
     pushCasualties(squadCasualties, squad.id, losses, credited);
-    if (survivors === 0) {
+    if (losses > 0 && survivors === 0) {
       squadsWiped.push(squad.id);
     }
   }

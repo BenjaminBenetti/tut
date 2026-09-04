@@ -32,9 +32,11 @@ const OUTSIDE: readonly PropKindId[] = [
 // ===========================================
 
 /**
- * Scatters wreckage over a crash site, and stands in for the settlement
- * archetype's prop pass, which cannot be reused here: it requires
- * `interiors`, and a crash site has no buildings to furnish.
+ * Scatters wreckage over a crash site. Wreckage is its own job — thrown
+ * from an impact, densest in the bowl — so it stays a pass of its own;
+ * the biome's vegetation around the site comes from the settlement's
+ * prop pass, which since #714 can be asked for scattering without also
+ * being asked for interiors.
  *
  * **Prototype** (GDD §8, M3). Density is heaviest in the bowl and thins
  * outside it, so the debris field reads as thrown from the impact rather

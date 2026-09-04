@@ -47,13 +47,18 @@ export function createSettlementPasses(): GenerationPass[] {
  *
  * **Prototype.** It reuses the tail of the settlement list — ramps,
  * hooks, connectivity — and replaces the town-building middle with two
- * passes of its own: a terraced impact bowl and a debris field. The prop
- * pass cannot be reused because it requires `interiors`, and a crash site
- * has no buildings to furnish; that requirement is the one thing the
- * settlement pipeline assumes that a bare archetype cannot satisfy.
+ * passes of its own: a terraced impact bowl and a debris field.
+ *
+ * It also takes the biome's vegetation from the settlement's own prop
+ * pass. That used to be impossible: the pass declared `interiors`, which
+ * a site with no buildings can never provide, so the one archetype that
+ * wanted three lines of scattering had to go without. #714 made the
+ * requirement follow the placements, so asking for vegetation alone asks
+ * only for a heightmap.
  *
  * ```
- *   terrain ─► water ─► crater ─► debris ─► ramps ─► hooks ─► connectivity
+ *   terrain ─► water ─► crater ─► debris ─► vegetation ─► ramps ─► hooks
+ *                                                            ─► connectivity
  * ```
  */
 export function createCrashSitePasses(): GenerationPass[] {
@@ -62,6 +67,7 @@ export function createCrashSitePasses(): GenerationPass[] {
     new WaterPass(),
     new CraterPass(),
     new DebrisPass(),
+    new PropPass({ id: "crash-vegetation", placements: ["vegetation"] }),
     new RampPass(),
     new HookPass(),
     new ConnectivityPass(),

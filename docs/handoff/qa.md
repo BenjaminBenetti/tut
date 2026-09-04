@@ -6,10 +6,10 @@ Last updated: 2026-09-04 (post-v0.2.0; win path settled on #317).
 
 | Field | Value |
 |---|---|
-| SHA tested | `15fc14b` (main, M2.5 band 1 landing) |
-| Gate | typecheck, lint, build pass; vitest **1628 / 1628** (+1 deliberate skip); e2e **47 / 47** |
-| Exploratory | 11 flows, 0 findings; M2.5 band 1 verification under way (item 7); **#538 (now p0) still open** |
-| **Verdict** | **Band 1 is landing clean, but #538 still blocks the build.** #519 and #523 verified against their acceptance criteria; the simulation is sound and a mission is winnable. On 4 of 7 seeds a player still cannot see or select their own units (#538, p0, eng-5). |
+| SHA tested | `8d88d03` (main, M2.5 band 1 complete) |
+| Gate | typecheck, lint, build pass; vitest **1713 / 1713** (+1 deliberate skip); e2e **55 / 55** |
+| Exploratory | M2.5 band 1 verified end to end (item 7); **#538 fixed by #556**; filed **#572** (p1, overlay conflict) |
+| **Verdict** | **The control scheme works on screen and nothing blocks the v0.2.1 tag.** All five band 1 features verified with real pointer input; the camera now opens on the deployed force. One p1 open (#572): the weapon range overlay hides the 2 AP movement band, so #521 is not readable by default. |
 
 ### Release push, in order of what mattered
 
@@ -62,12 +62,30 @@ Last updated: 2026-09-04 (post-v0.2.0; win path settled on #317).
 
    One cosmetic note on #523, raised there and not a blocker: while the `BUG PHASE · Turn 1` banner shows, the status line already reads `TURN 2 · PLAYER PHASE`, because an instant bug phase lets the readout race the transition banner.
 
-8. **Filed #480** (p3): the debrief says "No casualties" on a mission that wiped the whole force.
+9. **M2.5 band 1 is complete and verified on screen (`8d88d03`).** All five features confirmed with real pointer input, no hooks driving the actions, no console errors. Verdict posted on #514; screenshots committed in PR #562 and PR #571.
+
+   | Feature | Verified |
+   |---|---|
+   | #519 move by default | Move armed on selection; no action-bar click needed |
+   | #520 right click invokes | Left click on a free tile does not move; right click does. Digits arm actions and the bar prints its shortcuts |
+   | #521 AP tiers | Renders, but see #572 below |
+   | #522 weapon range | Paints on selection with no target picked, and scales with the weapon: mech (range 10) ~85k px, squad (range 8) ~79k, ~55k unselected. `v` toggles it |
+   | #523 phase banners | `Bug phase` then `Your turn · The bugs have finished`, ~1 s each, sequential, skippable |
+   | #538 camera | Fixed by #556: 3 of 3 units on screen, selected unit centred. Was 0 of 3 on four of seven seeds |
+
+   **Two overlay bugs were invisible to CI and only showed up on screen.** #555 found every overlay failing a depth test while the suite stayed green; I then filed **#572** (p1) for the weapon range overlay painting over the 2 AP movement band, which is why #521 is not readable by default. Toggling range off with `v` reveals 2,233 px of movement overlay. **The lesson for this seat: a green gate says nothing about whether an overlay reached the screen. Photograph it and look.**
+
+   Method notes worth keeping: judge overlays by *dose-response* (a range-8 unit must paint less than a range-10 one) rather than by a binary before/after diff, and exclude the side panel from any pixel diff or you measure the HUD instead of the map. Both mistakes cost me a wrong reading before I caught them.
+
+10. **Filed #480** (p3): the debrief says "No casualties" on a mission that wiped the whole force.
 
 ### Run history
 
 | SHA | Build | Unit | e2e | Exploratory | Filed |
 |---|---|---|---|---|---|
+| `8d88d03` | pass | 1713/1713 | 55/55 | band 1 control scheme, 7/7 checks | — |
+| `b60d27b` | pass | 1710/1710 | 52/52 | overlay conflict found | **#572** |
+| `255e2a1` | pass | 1662/1662 | 50/50 | screenshot evidence for the tag | — |
 | `15fc14b` | pass | 1628/1628 | 47/47 | #519 verified, 4/4 criteria | — |
 | `eeb864a` | pass | 1626/1626 | 46/46 | #523 verified, 6/6 criteria | — |
 | `b0e2b6c` | pass | 1613/1613 | 45/45 | 11 flows clean; camera starts off the force | **#538** |

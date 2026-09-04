@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
 import { MISSION_TYPES } from "../../content/data/mission-types";
 import { createDefaultRegistries } from "../../mapgen/service/default-registries";
+import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
 import { MECH_RATING_TUNING } from "../../roster/data/mech-rating-tuning";
 import { STARTER_PARTS } from "../../roster/data/parts";
 import { SQUAD_TYPES } from "../../roster/data/squad-types";
@@ -15,6 +16,10 @@ import { UNIT_TUNING } from "../../tactical/data/unit-tuning";
 import { SPAWN_TUNING } from "../../tactical/data/spawn-tuning";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import { startTacticalMission } from "../../tactical/service/mission-start-service";
+import {
+  missionWith,
+  unitAt,
+} from "../../tactical/service/tactical-fixtures.test-helper";
 import {
   campaignOnDay,
   missionAt,
@@ -68,11 +73,13 @@ describe("overlaysFor", () => {
     expect(state.moveRange.length).toBeGreaterThan(0);
     expect(
       state.moveRange.some(
-        (t) =>
+        ({ tile: t }) =>
           t.x === squad.pos.x && t.z === squad.pos.z && t.y === squad.pos.y,
       ),
     ).toBe(false);
-    const keys = new Set(state.moveRange.map((t) => `${t.x},${t.y},${t.z}`));
+    const keys = new Set(
+      state.moveRange.map(({ tile: t }) => `${t.x},${t.y},${t.z}`),
+    );
     for (const marker of state.cover) {
       expect(
         keys.has(`${marker.tile.x},${marker.tile.y},${marker.tile.z}`),
@@ -104,9 +111,9 @@ describe("TacticalOverlays", () => {
     );
     overlays.show({
       moveRange: [
-        { x: 1, y: 0, z: 1 },
-        { x: 2, y: 0, z: 1 },
-        { x: 3, y: 0, z: 1 },
+        { tile: { x: 1, y: 0, z: 1 }, apCost: 1 },
+        { tile: { x: 2, y: 0, z: 1 }, apCost: 1 },
+        { tile: { x: 3, y: 0, z: 1 }, apCost: 2 },
       ],
       cover: [
         { tile: { x: 2, y: 0, z: 1 }, level: 1 },
@@ -115,14 +122,16 @@ describe("TacticalOverlays", () => {
       lineOfSight: [{ x: 3, y: 0, z: 1 }],
     });
     expect(overlays.counts()).toEqual({
-      range: 3,
+      rangeOneAp: 2,
+      rangeTwoAp: 1,
       coverLow: 1,
       coverHigh: 1,
       los: 1,
     });
     overlays.clear();
     expect(overlays.counts()).toEqual({
-      range: 0,
+      rangeOneAp: 0,
+      rangeTwoAp: 0,
       coverLow: 0,
       coverHigh: 0,
       los: 0,
@@ -134,12 +143,112 @@ describe("TacticalOverlays", () => {
   it("grows its buffers past the initial capacity", () => {
     const overlays = new TacticalOverlays();
     const many = Array.from({ length: 300 }, (_, i) => ({
-      x: i % 20,
-      y: 0,
-      z: Math.floor(i / 20),
+      tile: { x: i % 20, y: 0, z: Math.floor(i / 20) },
+      apCost: 1,
     }));
     overlays.show({ moveRange: many, cover: [], lineOfSight: [] });
-    expect(overlays.counts().range).toBe(300);
+    expect(overlays.counts().rangeOneAp).toBe(300);
     overlays.dispose();
+  });
+});
+
+// ===========================================
+// Action-point tiers (#521)
+// ===========================================
+
+describe("overlaysFor action-point tiers", () => {
+  /**
+   * An open field with one infantry unit of `move` tiles per action and
+   * `ap` actions, standing at (5,0,5) with room to walk in every
+   * direction.
+   */
+  function field(move: number, ap: number): TacticalState {
+    const map = new FixtureMapBuilder(12, 12, 1).fillGround().build();
+    const unit = unitAt("u1", "infantry", { x: 5, y: 0, z: 5 }, { ap });
+    const base = missionWith(map, [unit]);
+    return {
+      ...base,
+      templates: {
+        ...base.templates,
+        [unit.templateId]: {
+          ...base.templates[unit.templateId]!,
+          move,
+          maxAp: 2,
+        },
+      },
+    };
+  }
+
+  /** Tiers present in the overlay, as a sorted list. */
+  function tiers(state: TacticalState): number[] {
+    return [
+      ...new Set(overlaysFor(state, "u1").moveRange.map((e) => e.apCost)),
+    ].sort();
+  }
+
+  it("splits the range into a 1 AP and a 2 AP band by the movement service's own cost", () => {
+    const state = field(3, 2);
+    const range = overlaysFor(state, "u1").moveRange;
+    expect(tiers(state)).toEqual([1, 2]);
+    // Every tier-1 tile is inside one action's move; every tier-2 tile is
+    // beyond it. Manhattan is a lower bound on steps, so a tile at
+    // distance > move can never be reachable in one action.
+    for (const { tile, apCost } of range) {
+      const distance =
+        Math.abs(tile.x - 5) + Math.abs(tile.z - 5) + Math.abs(tile.y - 0);
+      if (distance > 3) {
+        expect(apCost).toBe(2);
+      }
+      expect(apCost === 1 || apCost === 2).toBe(true);
+    }
+    // The bands are both non-empty on an open field this size.
+    expect(range.filter((e) => e.apCost === 1).length).toBeGreaterThan(0);
+    expect(range.filter((e) => e.apCost === 2).length).toBeGreaterThan(0);
+  });
+
+  it("shows only the 1 AP band for a unit with one action point left", () => {
+    expect(tiers(field(3, 1))).toEqual([1]);
+    // And the tiles are the ones a single action reaches, not half the pair.
+    const range = overlaysFor(field(3, 1), "u1").moveRange;
+    const twoAp = overlaysFor(field(3, 2), "u1").moveRange;
+    expect(range.length).toBeLessThan(twoAp.length);
+  });
+
+  it("puts nothing in the 2 AP band when one action already covers the map", () => {
+    // Move 20 on a 12x12 field: one action reaches everything walkable.
+    expect(tiers(field(20, 2))).toEqual([1]);
+  });
+
+  it("tiers by real path cost, so a wall makes an adjacent tile cost two actions", () => {
+    // A short solid spur beside the unit. (6,0,0) is one step east as the
+    // crow flies, but the wall forces a detour south around z=3 and back:
+    // 7 steps, which at move 4 is the unit's second action.
+    const builder = new FixtureMapBuilder(12, 12, 1).fillGround();
+    for (let z = 0; z <= 2; z++) {
+      builder.wall({ x: 6, y: 0, z }, "w", "solid");
+    }
+    const unit = unitAt("u1", "infantry", { x: 5, y: 0, z: 0 }, { ap: 2 });
+    const base = missionWith(builder.build(), [unit]);
+    const state: TacticalState = {
+      ...base,
+      templates: {
+        ...base.templates,
+        [unit.templateId]: {
+          ...base.templates[unit.templateId]!,
+          move: 4,
+          maxAp: 2,
+        },
+      },
+    };
+    const range = overlaysFor(state, "u1").moveRange;
+    // The tile immediately east is reachable, and costs two actions — a
+    // radius approximation would have painted it as one, which is the
+    // whole point of tiering by the movement service's cost.
+    const behind = range.find((e) => e.tile.x === 6 && e.tile.z === 0);
+    expect(behind).toBeDefined();
+    expect(behind?.apCost).toBe(2);
+    // A tile the same distance away with no wall in the way stays cheap.
+    const west = range.find((e) => e.tile.x === 4 && e.tile.z === 0);
+    expect(west?.apCost).toBe(1);
   });
 });

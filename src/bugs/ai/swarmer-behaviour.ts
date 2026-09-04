@@ -1,5 +1,6 @@
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { attack } from "../../tactical/model/attack-command";
+import type { MissionView } from "../../tactical/model/mission-view";
 import type { TacticalCommand } from "../../tactical/model/tactical-command";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { Unit, UnitId } from "../../tactical/model/unit";
@@ -73,7 +74,9 @@ export class SwarmerBehaviour implements BugBehaviour {
 
   /** The swarmer's commands for this turn. */
   choose(
-    mission: TacticalState,
+    // The mission as the bugs perceive it (ADR 0006 §2.3): enemies this
+    // side has not spotted are simply not in `mission.units`.
+    mission: MissionView,
     unitId: UnitId,
     ctx: BehaviourContext,
   ): readonly TacticalCommand[] {

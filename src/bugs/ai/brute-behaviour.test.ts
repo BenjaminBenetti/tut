@@ -20,7 +20,7 @@ import { BRUTE } from "../data/species";
 import { BRUTE_TUNING } from "../data/brute-tuning";
 import { adjacentCount, BruteBehaviour } from "./brute-behaviour";
 import type { BehaviourContext } from "./bug-behaviour";
-import { withBug } from "./bug-mission.test-helper";
+import { withBug, bugView } from "./bug-mission.test-helper";
 import { tileDistance } from "./utility";
 
 // ===========================================
@@ -77,7 +77,7 @@ function plan(
   seed = 1,
   behaviour = new BruteBehaviour(),
 ): readonly TacticalCommand[] {
-  return behaviour.choose(mission, "brute-1", ctx(mission, seed));
+  return behaviour.choose(bugView(mission), "brute-1", ctx(mission, seed));
 }
 
 // ===========================================
@@ -212,7 +212,9 @@ describe("BruteBehaviour", () => {
       units: dead.units.map((u) => (u.id === "brute-1" ? { ...u, hp: 0 } : u)),
     };
     expect(plan(downed)).toEqual([]);
-    expect(new BruteBehaviour().choose(dead, "nobody", ctx(dead))).toEqual([]);
+    expect(
+      new BruteBehaviour().choose(bugView(dead), "nobody", ctx(dead)),
+    ).toEqual([]);
   });
 
   it("is deterministic: the same mission and seed replay the same plan", () => {

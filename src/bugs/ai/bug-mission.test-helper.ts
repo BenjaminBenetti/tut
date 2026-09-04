@@ -26,6 +26,9 @@ import {
   tileAdmits,
 } from "../../tactical/service/mission-start-service";
 import type { BugSpecies } from "../model/bug-species";
+import type { MissionView } from "../../tactical/model/mission-view";
+import { viewFor } from "../../tactical/service/mission-view-service";
+import { withVision } from "../../tactical/service/vision-service";
 
 // ===========================================
 // Campaign
@@ -176,7 +179,7 @@ export function withBug(
     status: [],
     passClass: "infantry",
   };
-  return {
+  const withUnit: { bug: Unit; mission: TacticalState } = {
     bug,
     mission: {
       ...mission,
@@ -192,12 +195,27 @@ export function withBug(
           move: species.move,
           weapon: species.weapon,
           armor: species.armor,
-          passClass: "infantry",
+          passClass: "infantry" as const,
           modelId: species.modelId,
         },
       },
     },
   };
+  // Vision follows the new unit, so a behaviour handed a view of this
+  // mission can actually see what is in front of it (ADR 0006).
+  return {
+    bug,
+    mission: withVision({ state: withUnit.mission, events: [] }).state,
+  };
+}
+
+/**
+ * The mission as the bugs perceive it, which is what a behaviour takes
+ * (ADR 0006 §2.3). Tests build it here rather than casting, so they
+ * exercise the same filter the bug phase does.
+ */
+export function bugView(mission: TacticalState): MissionView {
+  return viewFor(mission, "bugs");
 }
 
 // ===========================================

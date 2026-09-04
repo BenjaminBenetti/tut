@@ -150,12 +150,60 @@ Not distances — #489 established that every objective on every shipped
 settlement is engageable, and `objective-reachability.test.ts` guards it.
 Beyond the armour arithmetic above, the table implicates:
 
-- **what difficulty actually scales.** A flat d5–d8 says it reaches a
-  ceiling early. Worth confirming what reads the difficulty number before
-  tuning what it feeds — the bug is as likely to be "it stops being
-  applied" as "it is applied too weakly".
 - **species stats** (`species.ts`) — one sight value and one weapon
   profile per species, shared across every difficulty.
+
+## What difficulty actually scales, measured
+
+Four things read the difficulty number. Only one of them changes a
+mission, and it is not one of the two that scale most finely.
+
+| tap | scales with difficulty | does it move the mission? |
+| --- | --- | --- |
+| **spawner count** | 2 → 3 → 4, stepping at d5 and d9 | **yes — it is the whole ladder** |
+| wave size | 2 → 8, every step | **no** |
+| wave interval | 4 → 2, then floored | a little, then nothing |
+| **hatch rate** | **not at all** | **yes, dominant** |
+
+**Spawner count is the ladder.** `mission-types.ts` sets
+`{ count: 2, countPerDifficulty: 0.25 }` and the adapter floors it, so
+the count is 2 at difficulties 1–4, 3 at 5–8, and 4 at 9–10. Those bands
+are exactly the measured win bands. Every step in the curve is a step in
+this number and there are no others.
+
+**Wave size does nothing, measured rather than reasoned.** At difficulty
+5, `maxWaveSize` 8 → 5 gives an identical result: 3 of 6 won, median 43
+turns, the same seeds. Melee range is 1, so attackers are capped by the
+tiles adjacent to a unit, and `attackEndsTurn` lets each bite once. A
+surrounded mech does not care how many more arrived. Both knobs that
+feed wave size are therefore inert as difficulty levers.
+
+**Wave interval saturates a third of the way up.** It is
+`4 − (d−1) × 0.5` floored at `minWaveInterval` 2, so it reaches the floor
+at difficulty 4 and every difficulty above is identical.
+
+**Hatch rate dominates and had no difficulty term.** Two bugs every three
+bug phases, at difficulty 1 exactly as at 10. Measured at difficulty 5,
+same six maps:
+
+| change | won | median mission |
+| --- | --- | --- |
+| baseline | 3/6 | 43 turns |
+| `maxWaveSize` 8 → 5 | 3/6 | 43 turns |
+| `minWaveInterval` 2 → 4 | 5/6 | 11 turns |
+| `hatchCount` 2 → 1 | 4/6 | 10 turns |
+| `hatchInterval` 3 → 6 | 6/6 | 10 turns |
+
+Hence `hatchCutPerDifficulty` (#497): the hatch rate is the fine ladder
+inside the spawner-count bands, because it is the lever that works and
+the only one contributing nothing.
+
+**One caution for whoever tunes it.** Slowing the hatch converts losses
+into wins; it never converts a long loss into a short one. Win times sit
+at 6–12 turns and loss times at 40–49 across every spawn setting tried,
+which is the armour arithmetic above rather than the spawn rate. Tuning
+the spawn side alone will move the win rate and leave the pace problem
+untouched.
 
 Two numbers changed under this table without being weighed against it:
 

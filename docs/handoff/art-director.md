@@ -1,6 +1,6 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-04 (session 2, fourth update)
+Last updated: 2026-09-04 (session 3, first update)
 
 ## 1. What I was doing and where it stands
 
@@ -39,21 +39,80 @@ Last updated: 2026-09-04 (session 2, fourth update)
 | Image generation recipe (incl. transparent sprites) | — | **Working.** See §5. |
 | Headless GLB / page render checks (Playwright) and Blender review renders | — | **Working.** See §7 and §8. |
 
+### M2.5 Tactical Feel — playtest 1 feedback (epic #514)
+
+The Executive Director played v0.2.0 and the art notes were the ones he
+noticed most. This is the band-2 work, newest last:
+
+| Deliverable | Issue | State |
+|---|---|---|
+| **Combat feedback that reads**: effects anchored off unit height, a phased attack sequence, floating text as chips | #524 | **Merged** (PR #546). The fix for *"the damage numbers are inside the models"*: a flat 0.6 u lift is chest-high on infantry and knee-high on a 2.79 u mech. Everything now anchors off measured height. |
+| **Collapsible event log**, bottom left | #525 | **Merged** (PR #558, e2e #567). |
+| **Building ghosting** — art target, then the spec | #526 | **Merged** (PR #561, superseded by #601). The shader is the Tech Lead's, PR #581. |
+| **Radial menu** ring | #528 | **Merged** (PR #583) — *presentation only*. QA reports it as unwired scaffolding (#600); wiring is #529, not mine. |
+| HUD glyphs on the action bar and unit card | #495 | **Merged** (PR #574). |
+| **Overlay budget**: weapon range follows attack intent, cover stops shouting | #590 | **Merged** (PR #598). |
+| **Ghosting spec rewritten** around the cutaway | #526 | **Merged** (PR #601). |
+
+Two of these came from looking rather than from the brief, and both are
+the kind of thing only a play-it-yourself pass finds:
+
+- **A selection drew 71–171 overlay instances** (#590). Every rule behind
+  them was measured — but each against *the ground*, never against the
+  others, so the planes were never budgeted. The map read as an
+  instrument panel with the selected unit the quietest thing in it.
+- **Arming Attack never reached the scene.** The only thing pushing
+  overlay state was an intent arriving *from* the scene, so the mode and
+  #522's `v` key did not land until the player next clicked the map.
+  Silently one click late since #522.
+
 Issues #2, #3, #4, #93, #102, #119, #143, #144, #145 are on project 5; #162, #163, #169, #190 were filed by REST during the rate-limit outage and need the Producer to add them.
 
 ## 2. Open PRs / issues I own
 
-- **PR #436** (#429) combat VFX round 2 — CI green, waiting on the Tech Lead.
-- **PR #442** (#441) env atlas round 2 — waiting on CI/merge.
-- **PR #455** (#454) city building kit — waiting on CI/merge.
-- #457 is filed **for graphics**, not for me: the three new VFX ids are registered and unused. Do not implement it; chase it if M2 ships without them.
-- **Three art families are registered and have no consumer at all.** #474 is the big one; the other two came from screenshotting the shipped roster and mech bay:
+**Nothing of mine is open.** Both #598 and #601 merged; pick the next
+thing off §2.1 rather than looking for work in flight.
 
-  ![roster and mech bay](../design/live-screens-2026-09-04.png)
+### 2.1 What I would do next, in order
 
-  The mech bay is seven dropdowns and a stat sheet — no mech preview, no part images — while 30 part thumbnails (#163) and the assembled-mech models sit registered and unused. The roster is text tables; `grep -rn "tut-icon" src/` finds the CSS class and the manifest comment and **nothing else**, so not one of the 42 UI icons is used by any screen. Filed as #495.
-- **#474 is the thing to read first.** A live mission draws *no* tile, building or prop models: `tactical-map-view.ts` builds every tile, wall, prop and connector as flat instanced boxes coloured by `mapgen-preview-palette.ts`, whose own doc comment says it is a stopgap "until the tactical scene builder lands". The scene builder landed for **units only**. So the env atlas (#394, #441), the city kit (#454), the cover props (#463) and the 21 tile/building/prop GLBs in `MODEL_MANIFEST` are invisible in game — they appear only in my offline preview renders. **Do not commission more environment art until #474 lands.** #478 is the stopgap: it makes the boxes use the right palette.
-- #274 ledger after the kit: **27 placeholder models left** — six city road/sidewalk tiles, six ground tiles, fifteen props. Props are the next batch worth doing; ground tiles are 12-triangle slabs whose look comes from the atlas, not the geometry.
+1. **Play a mission before choosing.** Every finding worth having this
+   session came from `shoot-mission.mjs` and none from an offline
+   render. Two of them contradicted what I had just published.
+2. **#529 wires the radial menu.** Not mine, but I own how it looks and
+   QA has it as unwired scaffolding (#600). Review the look once wired.
+3. **Cover rings are still the loudest thing after the unit** even at
+   0.55. If a third overlay plane is ever added, the budget in style
+   guide §12.2 is the thing to argue against, not the ring alone.
+4. **Batch E has no outstanding demand.** #274's remaining placeholders
+   are six road/sidewalk tiles, six ground tiles and the props not yet
+   replaced; ground tiles are 12-triangle slabs whose look comes from
+   the atlas, not the geometry, so they are the lowest value left.
+
+### 2.2 Corrections to what my predecessor entry said
+
+- **#474 is fixed** (PR #505). The tactical map draws the registered
+  tile, building and prop models. The previous entry's freeze — *"do
+  not commission more environment art until #474 lands"* — **no longer
+  applies**. The env atlas, the city kit and the cover props are all on
+  screen in a live mission now.
+- **#495 is resolved.** Icons reach the action bar, unit card, top bar
+  and objectives; part thumbnails reach the mech bay (PR #588).
+- **#436, #442, #455 all merged** long ago; the previous entry listed
+  them as waiting.
+- **`tactical-ghosting-target.png` is withdrawn** (#601). It specified a
+  translucent shell, mocked on a bare plaza with one building. In a real
+  city that deletes the silhouette every time a unit stands behind
+  something. The cutaway in #581 is the spec.
+
+### 2.3 The lesson worth inheriting
+
+**A spec mocked in isolation will be wrong about density.** I published
+ghosting numbers twice from a single building on an empty slab and was
+wrong both times — first the fade floor and radius, then the technique
+itself. Style guide §12.4 now carries that warning, and §12.2 carries
+its sibling: an overlay tuned against the ground alone will be wrong
+about the other overlays. Judge tactical art by shooting a mission and
+rotating, never by rendering one object.
 
 ## 3. Decisions I made and why
 

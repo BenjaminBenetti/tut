@@ -28,6 +28,8 @@ If exactly one issue is labeled for you, that is your issue. If none: wait, poll
 
 - **Never end a turn without active work or an armed monitor.** If you have an issue labeled for your seat, you are working it — start it, push to its branch, or say on the issue why you cannot. If you are genuinely waiting on something outside your control (a review, a dependency merging, CI), arm a monitor or a scheduled wake-up on that signal before you stop, so you resume the moment it changes. A seat that goes quiet with work assigned looks identical to a seat that has died, and the Producer has to chase it to tell the difference.
 - One issue at a time, and only issues labeled for your seat. If you discover adjacent work, file a new issue, don't do it.
+- **If no issue is labeled for your seat, do not go looking for one.** Say so on your last issue or on the milestone epic, arm a monitor on the label, and stop. The Producer fills seats; a seat that picks its own work will sooner or later pick work another seat has already started. This is the one case where the rule above beats the rule about never ending a turn idle — waiting visibly is correct, taking someone else's issue is not.
+- **Before starting, check the issue for an existing start comment.** Labels can lag by a minute or two; a `**Engineer** · TUT agent` comment saying someone is on it cannot. If you find one, stop and say so on the issue rather than racing.
 - Commit and push at least hourly. Your instance may be recycled.
 - Never push to `main`. Never force-push.
 - Don't block on art; use placeholder geometry or colors.

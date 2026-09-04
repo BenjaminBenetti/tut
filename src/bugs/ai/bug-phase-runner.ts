@@ -14,6 +14,8 @@ import type { TacticalHandlers } from "../../tactical/service/tactical-command-h
 import { applyTacticalCommand } from "../../tactical/service/tactical-command-handlers";
 import type { PhaseStep } from "../../tactical/service/turn-service";
 import { missionOutcome } from "../../tactical/service/mission-end-service";
+import { viewFor } from "../../tactical/service/mission-view-service";
+import { withVision } from "../../tactical/service/vision-service";
 import type { BehaviourLookup, SpeciesLookup } from "./behaviour-registry";
 import { chooseBugCommands } from "./behaviour-registry";
 
@@ -76,8 +78,11 @@ export function createBugPhaseRunner(deps: BugPhaseDeps): PhaseStep {
         break;
       }
       const unitRng = ctx.rng.fork(`bug:${unitId}`);
+      // Built per bug, not once per phase: the bug that acted before this
+      // one may have walked into or out of sight of the squad, and a view
+      // from the top of the phase would be a memory, not a look.
       const commands = chooseBugCommands(
-        state,
+        viewFor(state, "bugs"),
         unitId,
         deps.registry,
         deps.speciesOf,
@@ -90,8 +95,14 @@ export function createBugPhaseRunner(deps: BugPhaseDeps): PhaseStep {
         },
       );
       const acted = applyAll(deps.handlers, state, commands, unitRng, ctx);
-      state = acted.state;
-      events.push(...acted.events);
+      // The phase applies commands straight through the handlers rather
+      // than the lifting adapter, so the one site that keeps vision
+      // current (ADR 0006 §2.2) is bypassed here. Without this the whole
+      // phase would decide from the vision it started with, and a bug
+      // walking into the open would stay invisible until the turn ended.
+      const seen = withVision(acted, state);
+      state = seen.state;
+      events.push(...seen.events);
     }
     return { state, events };
   };

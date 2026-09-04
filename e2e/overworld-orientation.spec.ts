@@ -19,6 +19,12 @@ interface StoredSave {
   };
 }
 
+/** A point in normalised map-layout space. */
+interface LayoutPoint {
+  readonly x: number;
+  readonly y: number;
+}
+
 /** How far apart two cities must be in layout space to be worth comparing. */
 const MIN_SEPARATION = 0.05;
 
@@ -33,10 +39,7 @@ const MIN_SEPARATION = 0.05;
  * @param id - The city's id, used to look up its nudge.
  * @returns The layout point the marker is placed at.
  */
-function drawnLayout(
-  layout: { x: number; y: number },
-  id: string,
-): { x: number; y: number } {
+function drawnLayout(layout: LayoutPoint, id: string): LayoutPoint {
   const nudge = CITY_MARKER_NUDGES[id];
   return nudge === undefined
     ? layout

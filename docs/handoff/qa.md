@@ -6,10 +6,10 @@ Last updated: 2026-09-04 (post-v0.2.0; win path settled on #317).
 
 | Field | Value |
 |---|---|
-| SHA tested | `2b4b638` (main, M2.5 band 3 landing) |
-| Gate | typecheck, lint, build pass; vitest **1805 / 1805** (+1 deliberate skip); e2e **57 / 57** |
-| Exploratory | #517, #480, #468, #605 all verified fixed; filed **#627** (p2, stuck context menu) |
-| **Verdict** | **Healthy.** Control scheme 7/7 on every head since band 1; a mission is completable with fog active, now guarded by a permanent spec. One QA-filed issue open: **#627**, the context menu cannot be dismissed. |
+| SHA tested | `7133f94` (main, M2.5 band 3) |
+| Gate | typecheck, lint, build pass; vitest **1852 / 1852** (+1 deliberate skip); e2e **58 / 58** |
+| Exploratory | 11 flows clean; #624 and #627 verified fixed; catalogue refactor (#108) checked screen by screen |
+| **Verdict** | **Healthy, and the board is clear.** Control scheme 7/7 on every head since band 1; a mission is completable with fog active, guarded by a permanent spec. **No open QA-filed defects.** |
 
 ### Release push, in order of what mattered
 
@@ -130,7 +130,16 @@ Last updated: 2026-09-04 (post-v0.2.0; win path settled on #317).
 
     **Method note worth keeping:** my first attempt tested the wrong condition (a blocked tile with Move armed, which is the direct-commit path) and my second could not be trusted until I validated the detector — it reports `hidden=true, display=none, items=0` when closed and `data-open="true", items=1` when open. When *every* path reports the same answer, suspect the instrument before the game.
 
-19. **Three features have now shipped fully working and invisible**, every one with CI green: **#555** (every overlay failing a depth test), **#572** (the 2 AP band painted over by the range fill), **#605** (the selection ring never drawn). That is the single most useful thing this seat has learned. Photograph the screen and look at it; the suite cannot see any of these.
+19. **#624 and #627 both verified fixed, and the board is now clear.**
+
+    - **#624** (range indicator burying the map) fixed by #631. Verified on the **range-10 mech with Attack armed and fog active**, per the Director — the mark count grows with the square of range, so the range-8 squad frame would have flattered it. The range is now a boundary line at the edge; interior tiles are clean. Before/after committed as `docs/design/tactical-weapon-range-{before,after}-624.png`.
+    - **#627** (stuck context menu) fixed by #633. Both halves: choosing the item now acts *and* closes (`14,30 → 14,31`), and all seven dismissal paths that previously failed — Escape, left click, click away, selecting another unit, arming Move, choosing the item, ending the turn — now close it. The #520 fast path still commits directly with no ring.
+
+20. **A false red I nearly reported as a broken main.** On `ccfae7a` the e2e suite came back `3 failed` (`tactical-buttons`, `tactical-camera`, `save-recovery`), exit 1. With my probe servers on 4173/4174 stopped it was `58 passed`, exit 0.
+
+    In non-CI mode Playwright **reuses** a running dev server, and the timing-sensitive specs fail under the contention; `CI=1` instead refuses to reuse and errors loudly. I had only recorded the loud variant. **Stop the probe servers before every e2e gate, in either mode** — under the fail-on-flaky policy this would have been reported as freshly merged work breaking main.
+
+21. **Three features have now shipped fully working and invisible**, every one with CI green: **#555** (every overlay failing a depth test), **#572** (the 2 AP band painted over by the range fill), **#605** (the selection ring never drawn). That is the single most useful thing this seat has learned. Photograph the screen and look at it; the suite cannot see any of these.
 
 ### Harness lessons that cost me a wrong reading
 
@@ -145,6 +154,11 @@ Three times this session a control-scheme or rendering change silently invalidat
 
 | SHA | Build | Unit | e2e | Exploratory | Filed |
 |---|---|---|---|---|---|
+| `7133f94` | pass | 1852/1852 | 58/58 | #613 light helmet reads | — |
+| `ccfae7a` | pass | 1851/1851 | 58/58 | per-weapon card lines; false red, see below | — |
+| `a0389c7` | pass | 1848/1848 | 58/58 | id-registry refactor, catalogues intact | — |
+| `4ad6620` | pass | 1848/1848 | 58/58 | **#627 verified fixed** | — |
+| `2d2d0a9` | pass | 1806/1806 | 57/57 | **#624 verified fixed** | — |
 | `2b4b638` | pass | 1805/1805 | 57/57 | context menu never closes | **#627** |
 | `637208c` | pass | 1801/1801 | 56/56 | right-click menu triage | — |
 | `1f8179c` | pass | 1795/1795 | 57/57 | #517 verified fixed | — |

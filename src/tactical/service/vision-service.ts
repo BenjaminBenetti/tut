@@ -1,3 +1,5 @@
+import type { GridPos } from "../../core/model/grid";
+import { manhattanDistance } from "../../core/service/grid-math";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import type { TacticalApplied, TacticalEvent } from "../model/tactical-event";
 import type {
@@ -11,6 +13,62 @@ import type { Team, Unit, UnitId } from "../model/unit";
 import { UNIT_LOST } from "../model/unit-lost-event";
 import { UNIT_SPOTTED } from "../model/unit-spotted-event";
 import { hasLineOfSight } from "./sight-service";
+
+// ===========================================
+// Seeing
+// ===========================================
+
+/**
+ * How far `unit` can see, in tiles. Zero for a unit whose template is
+ * missing, so an unknown unit sees nothing rather than everything.
+ *
+ * @param mission - The mission the unit is in.
+ * @param unit - The unit doing the looking.
+ * @returns Its sight range in tiles.
+ */
+export function sightRangeOf(mission: TacticalState, unit: Unit): number {
+  return mission.templates[unit.templateId]?.sightRange ?? 0;
+}
+
+/**
+ * Whether `watcher` can see the tile at `at`: inside its sight range by
+ * the map-plane metric, with a clear line to it.
+ *
+ * **Sight is per watcher, not per side, and that is a decision** (#579).
+ * ADR 0006 §3 governs what a *side* may draw and know; whether a
+ * particular unit has eyes on something is a different question, and the
+ * rules already ask it per unit elsewhere — `validateTargeting` traces
+ * from the attacker, not from the team. A watcher holding its shot
+ * because only a teammate across the map can see the mover would read as
+ * a bug rather than as doctrine: you shoot what you see.
+ *
+ * **It is also the only place the rule is written.** `computeVision` and
+ * the overwatch reaction both call this rather than each spelling out
+ * range-and-line-of-sight, so a rule that grows a term — elevation, a
+ * vision cone, a `hidden` status, a scanner that sees without a line —
+ * moves both. When they were two copies they agreed only because they
+ * were the same two lines, and would have drifted in silence: the
+ * renderer showing a bug as spotted while overwatch held its fire, with
+ * both sides individually correct and no test failing.
+ *
+ * @param mission - The mission being looked at.
+ * @param watcher - The unit doing the looking.
+ * @param at - The position being looked at.
+ * @param index - Tile index over `mission.map`, shared by the caller
+ *   because a sight trace is the most expensive rule in the game.
+ * @returns True when the watcher can see that position.
+ */
+export function unitCanSee(
+  mission: TacticalState,
+  watcher: Unit,
+  at: GridPos,
+  index: TileIndex,
+): boolean {
+  return (
+    manhattanDistance(watcher.pos, at) <= sightRangeOf(mission, watcher) &&
+    hasLineOfSight(mission.map, watcher.pos, at, index)
+  );
+}
 
 // ===========================================
 // Computing
@@ -41,10 +99,12 @@ export function computeVision(
     (unit) => unit.team === team && unit.hp > 0,
   );
   for (const watcher of watchers) {
-    const range = mission.templates[watcher.templateId]?.sightRange ?? 0;
+    const range = sightRangeOf(mission, watcher);
     // Only the diamond within range, column by column, rather than every
     // tile on the map: this runs on every move, and a sight trace is the
-    // most expensive rule in the game (ADR 0006 §3).
+    // most expensive rule in the game (ADR 0006 §3). The loop bounds are
+    // an optimisation over `unitCanSee`, not a second copy of it: the
+    // predicate still decides every tile, so the two cannot disagree.
     for (let dx = -range; dx <= range; dx++) {
       const span = range - Math.abs(dx);
       for (let dz = -span; dz <= span; dz++) {
@@ -56,7 +116,7 @@ export function computeVision(
           if (visible.has(key)) {
             continue;
           }
-          if (hasLineOfSight(mission.map, watcher.pos, tile, index)) {
+          if (unitCanSee(mission, watcher, tile, index)) {
             visible.add(key);
           }
         }
@@ -207,7 +267,17 @@ function union(
   return [...all].sort((x, y) => x - y);
 }
 
-/** Whether a side can see a unit right now. */
+/**
+ * Whether a *side* has a unit spotted right now, read from the stored
+ * vision rather than traced (ADR 0006 §2.1).
+ *
+ * Not the same question as `unitCanSee`, which asks whether one
+ * particular unit has eyes on a position. This one is side knowledge —
+ * what the renderer may draw and what a behaviour may know; that one is
+ * a single watcher's line of sight, which is what decides whether a
+ * given gun has a shot. Keep them apart: the day they are conflated is
+ * the day a unit fires at something only its teammate can see.
+ */
 export function canSee(
   mission: TacticalState,
   team: Team,

@@ -346,19 +346,25 @@ Overlays are instanced quads lifted 0.02 u above the tile top. They carry meanin
 
 | Overlay | Token | Hex | Footprint | Means |
 |---|---|---|---|---|
-| Move range, 1 AP | `ui-info` | `#7FD1FF` at 0.35 | 0.92 | One action gets you here |
-| Move range, 2 AP | `ui-info` dimmed | `#4C7D99` at 0.22 | 0.66 | This one costs both actions |
+| Move range, 1 AP | `ui-info` | `#7FD1FF` at 0.45 | 0.92 | One action gets you here |
+| Move range, 2 AP | `ui-info` | `#7FD1FF` at 0.24 | 0.66 | This one costs both actions |
 | Low cover | `ui-warn` | `#F0C63C` | ring | Partial protection on that edge |
 | High cover | `ui-danger` | `#E0453C` | ring | Full protection on that edge |
 | Line of sight / target | `ui-accent` | `#F08A24` | ring | What the current action touches |
-| Weapon range | `ui-accent` | `#F08A24` at 0.5 | edge quads, 0.96 | How far this unit can shoot |
+| Weapon range | `ui-accent` | `#F08A24` at 0.38 | edge pips, 0.30 | How far this unit can shoot |
 | Selected unit ring | `ui-accent` | `#F08A24` | ring | Who is acting |
 
 Orange is the player's own intent, blue is possibility, yellow and red are the world pushing back. Nothing else on the tactical plane may use these four colours.
 
 **Weapon range is a line, movement is a fill** (#522). Both bands of the move range are filled quads and mean "you can stand here"; the weapon envelope is drawn only along its edge and means "this far". Keeping them on different visual channels is what stops the range reading as a third movement band — the two never compete even where they overlap, which is most of the time. Toggled with `v`, on by default.
 
-**The two move bands are one token at two lightnesses, never two hues** (#521). Move range gets one colour, so the second band is `ui-info` at about 60% luminance rather than a new token — and a lightness step is the one split that survives deuteranopia and protanopia, where blue against green would not. The dearer band is also inset to 0.66 of a tile, so the boundary reads as a change of shape as well as of tone and needs no legend. Values live in `src/graphics/data/tactical-overlay-palette.ts`; restyle them there, not at the call site.
+**The two move bands are one token at two opacities, never two hues** (#521, retuned in #566). Move range gets one colour, and the separation stays in value and footprint — a hue split is the one deuteranopia and protanopia lose.
+
+The second band was first authored as a *darkened* `ui-info` (`#4C7D99`). That failed on contact with the map: QA measured the blend at `80,112,128`, which is shadowed ground, and the band vanished into shade. **Darkening a tint to mean "less" does not work on terrain that is already dark in places** — the shadow gets there first. Both bands are now the same token at different strengths, so every blend comes out *lighter* than whatever it covers. The dearer band is also inset to 0.66 of a tile, so the boundary is a change of shape as well as of tone and needs no legend.
+
+**Weapon range is pips, not a fill** (#522, retuned in #566). An outline along the envelope's edge is thin on open ground and solid in a city, where line of sight cuts the envelope into pockets and almost every tile counts as edge; at 0.96 of a tile that buried the movement band under it. A small centred pip carries the same information for a tenth of the ink.
+
+Values live in `src/graphics/data/tactical-overlay-palette.ts`; restyle them there, not at the call site. `tactical-overlay-palette.test.ts` guards the relationships: both bands the same token, the dearer one weaker and smaller, the range pip smaller than either.
 
 ### 12.3 VFX
 

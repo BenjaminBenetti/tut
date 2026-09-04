@@ -146,6 +146,32 @@ export function exposureScore(
 }
 
 /**
+ * How many of `enemies` are *watching* `tile` — on overwatch and with
+ * line of sight to it — as a fraction of every enemy on overwatch. `0`
+ * when none of them is watching at all.
+ *
+ * A behaviour that fears reaction fire subtracts it; the brute adds it,
+ * because a shot spent on armor is a shot not spent on the swarm.
+ */
+export function overwatchScore(
+  mission: TacticalState,
+  tile: TileCoord,
+  enemies: readonly Unit[],
+  index: TileIndex = new TileIndex(mission.map),
+): number {
+  const watchers = enemies.filter(
+    (e) => e.hp > 0 && e.status.includes("overwatch"),
+  );
+  if (watchers.length === 0) {
+    return 0;
+  }
+  const covering = watchers.filter((w) =>
+    hasLineOfSight(mission.map, w.pos, tile, index),
+  ).length;
+  return covering / watchers.length;
+}
+
+/**
  * How much `enemies` are bunched around `tile`: the number within
  * `radius` tiles divided by their count. A brute uses it to find the
  * crowd; a lurker, negated, to find the straggler.

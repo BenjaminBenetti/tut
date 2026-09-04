@@ -3,13 +3,29 @@ import {
   AmbientLight,
   Color,
   DirectionalLight,
+  PCFShadowMap,
   Scene,
   WebGLRenderer,
 } from "three";
 
+import {
+  FILL_LIGHT_INTENSITY,
+  FILL_LIGHT_INTENSITY_UNSHADOWED,
+  KEY_LIGHT_COLOUR,
+  KEY_LIGHT_INTENSITY,
+  KEY_LIGHT_INTENSITY_UNSHADOWED,
+  KEY_LIGHT_POSITION,
+  SHADOW_BIAS,
+  SHADOW_CAMERA_FAR,
+  SHADOW_CAMERA_NEAR,
+  SHADOW_FRUSTUM_HALF_EXTENT,
+  SHADOW_MAP_SIZE,
+  SHADOW_NORMAL_BIAS,
+} from "../data/tactical-lighting";
 import type { FrameUpdatable } from "../model/frame-updatable";
 import type { SceneCamera } from "../model/scene-camera";
 import type { Viewport } from "./isometric-camera-math";
+import { ShadowFollowController } from "./shadow-follow-controller";
 
 // ===========================================
 // Types
@@ -23,6 +39,12 @@ export interface SceneServiceOptions {
   readonly content?: Object3D;
   /** Ticked in order every frame, before the camera is applied and the scene drawn. */
   readonly updatables?: readonly FrameUpdatable[];
+  /**
+   * Whether the key light casts shadows (#507). Off by default: the
+   * overworld is a globe lit for legibility, and only the tactical
+   * scene has ground for things to sit on.
+   */
+  readonly shadows?: boolean;
 }
 
 // ===========================================
@@ -54,7 +76,7 @@ export class SceneService {
   private readonly renderer: WebGLRenderer;
   private readonly scene: Scene;
   private readonly sceneCamera: SceneCamera;
-  private readonly updatables: readonly FrameUpdatable[];
+  private updatables: readonly FrameUpdatable[];
   private readonly resizeObserver: ResizeObserver;
   private readonly firstFrame: Promise<void>;
   private resolveFirstFrame: (() => void) | undefined;
@@ -78,12 +100,25 @@ export class SceneService {
 
     this.renderer = new WebGLRenderer({ antialias: true });
     this.renderer.setPixelRatio(window.devicePixelRatio);
+    if (options.shadows === true) {
+      this.renderer.shadowMap.enabled = true;
+      // Not PCFSoftShadowMap: three r185 deprecates it and silently
+      // falls back to this, warning once per scene.
+      this.renderer.shadowMap.type = PCFShadowMap;
+    }
     container.appendChild(this.renderer.domElement);
 
     this.scene = new Scene();
     this.scene.background = new Color(CLEAR_COLOUR);
-    for (const light of this.createLights()) {
-      this.scene.add(light);
+    const key = this.createKeyLight(options.shadows === true);
+    this.scene.add(key, key.target, this.createFillLight(options.shadows === true));
+    if (options.shadows === true) {
+      // Prepended, so the frustum is over the right ground before
+      // anything else this frame reads the scene.
+      this.updatables = [
+        new ShadowFollowController(key, this.sceneCamera.camera),
+        ...this.updatables,
+      ];
     }
     if (options.content) {
       this.scene.add(options.content);
@@ -133,17 +168,54 @@ export class SceneService {
   // ===========================================
 
   /**
-   * Builds the fixed lighting from the style guide: one key directional
-   * light and a soft ambient. The key comes from +x +y +z, off-axis from
-   * every yaw so the two visible faces of a box shade differently.
+   * The key directional light from the style guide (§12.1). It comes
+   * from +x +y +z, off-axis from every yaw so the two visible faces of a
+   * box shade differently.
    *
-   * @returns The lights to add to the scene.
+   * @param shadows - Whether it casts; a caster is also brighter, since
+   *   a shadowed surface keeps only the fill.
+   * @returns The key light, its target not yet placed.
    */
-  private createLights(): Object3D[] {
-    const key = new DirectionalLight(0xffffff, 2.5);
-    key.position.set(4, 8, 12);
-    const ambient = new AmbientLight(0xffffff, 0.8);
-    return [key, ambient];
+  private createKeyLight(shadows: boolean): DirectionalLight {
+    const key = new DirectionalLight(
+      KEY_LIGHT_COLOUR,
+      shadows ? KEY_LIGHT_INTENSITY : KEY_LIGHT_INTENSITY_UNSHADOWED,
+    );
+    key.position.set(
+      KEY_LIGHT_POSITION.x,
+      KEY_LIGHT_POSITION.y,
+      KEY_LIGHT_POSITION.z,
+    );
+    if (!shadows) {
+      return key;
+    }
+    key.castShadow = true;
+    key.shadow.mapSize.set(SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
+    const camera = key.shadow.camera;
+    camera.left = -SHADOW_FRUSTUM_HALF_EXTENT;
+    camera.right = SHADOW_FRUSTUM_HALF_EXTENT;
+    camera.top = SHADOW_FRUSTUM_HALF_EXTENT;
+    camera.bottom = -SHADOW_FRUSTUM_HALF_EXTENT;
+    camera.near = SHADOW_CAMERA_NEAR;
+    camera.far = SHADOW_CAMERA_FAR;
+    camera.updateProjectionMatrix();
+    key.shadow.bias = SHADOW_BIAS;
+    key.shadow.normalBias = SHADOW_NORMAL_BIAS;
+    return key;
+  }
+
+  /**
+   * The soft fill. Dropped when the key casts, because at full strength
+   * it washes every shadow into a grey smudge (§12.1).
+   *
+   * @param shadows - Whether the key casts.
+   * @returns The fill light.
+   */
+  private createFillLight(shadows: boolean): Object3D {
+    return new AmbientLight(
+      KEY_LIGHT_COLOUR,
+      shadows ? FILL_LIGHT_INTENSITY : FILL_LIGHT_INTENSITY_UNSHADOWED,
+    );
   }
 
   /**

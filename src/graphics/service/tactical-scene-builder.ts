@@ -12,6 +12,7 @@ import type {
   UnitTemplateId,
 } from "../../tactical/model/unit-template";
 import type { Disposable } from "../model/disposable";
+import { enableShadowCasting } from "./shadow-casting";
 import type { ModelLoader } from "../model/model-loader";
 import type { SpawnerPicker } from "../model/spawner-picker";
 import type { TilePicker } from "../model/tile-picker";
@@ -189,6 +190,10 @@ export class TacticalSceneBuilder
    */
   async loadMapModels(): Promise<void> {
     await this.mapView.loadModels(this.models);
+    // The real tile, building and prop meshes only exist once this
+    // resolves; the placeholder boxes it replaces were flagged when the
+    // view was built, so the city grounds itself either way (#507).
+    enableShadowCasting(this.mapView.root);
   }
 
   /** Ids of the units currently drawn or loading, in insertion order. */
@@ -417,6 +422,9 @@ export class TacticalSceneBuilder
       return;
     }
     const mesh = new UnitMesh(unit.id, model);
+    // The model only; `UnitMesh` keeps its rings out of the shadow pass,
+    // because a ring painted on the floor must not cast one (#507).
+    enableShadowCasting(model);
     mesh.setPose(unit.pos, unit.facing);
     this.meshes.set(unit.id, mesh);
     this.modelIds.set(unit.id, template.modelId);
@@ -435,6 +443,7 @@ export class TacticalSceneBuilder
       return;
     }
     const mesh = new UnitMesh(spawner.id, model);
+    enableShadowCasting(model);
     // A spawner does not turn; north is as good a rest pose as any.
     mesh.setPose(spawner.pos, "n");
     this.spawnerMeshes.set(spawner.id, mesh);

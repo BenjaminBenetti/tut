@@ -136,6 +136,10 @@ node tools/art/preview/render-scene.mjs tools/art/preview/layouts/rock-read.json
 
 **There is no colour that separates from every ground**, so do not go looking for one. `tdf-grey-light` merely trades grass for concrete (ΔE 15.7). Separation has to come from something that is not hue: the bone crest on the bugs, and contact shadows (#507) for everything — a shape on ground of its own tone is separated by the shadow under it as much as by anything on its back. That is why the answer to "I cannot see the units" is not more glow, and not a new colour.
 
+![the grass read test with and without shadows](grass-read-with-shadows.png)
+
+Shadows shipped in #507 and they are worth what they cost here — the squads gain a dark anchor and you can count three of them — but be clear about how far it goes: **it makes infantry findable, not identifiable.** The olive still merges with the grass; what has changed is that something says *there is a unit standing here*. #613 remains open for the rest.
+
 ### 4.3 Environment by biome
 
 Shared: `env-asphalt #3A3D42`, `env-concrete #8E8A82`, `env-sidewalk #A7A297`, `env-brick #8A4B3A`, `env-glass #6E8FA6`, `env-roof #55524C`, `env-metal #6F7378`, `env-rust #8C5A3A`, `env-rock #6E6A66`, `env-bark #5A4634`, `env-foliage #3F6B33`.
@@ -342,12 +346,26 @@ What a mission looks like once the models, textures and sprites are in the scene
 
 One key and one fill, fixed — the camera rotates, the lights do not, so a given face always shades the same way and a player learns the read.
 
-| Light | Colour | Intensity | Position |
-|---|---|---|---|
-| Key, directional | white | 2.5 | `(4, 8, 12)` |
-| Ambient | white | 0.8 | — |
+![before and after shadows](tactical-shadows.png)
 
-The key is deliberately off-axis from all four yaw stops (§2): at every stop the two visible faces of a box shade differently, which is what gives a flat-shaded low-poly model its form. No shadow maps: at 64 px per tile a cast shadow costs more than it says, and the ambient at 0.8 keeps unlit faces readable rather than dramatic. Clear colour is `ui-bg #0B0D12`.
+| Light | Colour | Intensity (tactical) | Intensity (overworld) | Position |
+|---|---|---|---|---|
+| Key, directional | white | 2.9, casts | 2.5 | `(4, 8, 12)` |
+| Ambient | white | 0.55 | 0.8 | — |
+
+The key is deliberately off-axis from all four yaw stops (§2): at every stop the two visible faces of a box shade differently, which is what gives a flat-shaded low-poly model its form. Clear colour is `ui-bg #0B0D12`.
+
+**The tactical scene casts shadows; the overworld does not** (#507). This section used to record "no shadow maps" as a deliberate choice, on the grounds that a cast shadow costs more than it says at 64 px per tile. That was decided before #505 put real buildings on the map, and it was wrong once they arrived: with nothing casting, a five-storey tower and a crate met the pavement the same way and the height the city had just gained was invisible.
+
+**The fill drop is half the effect and the more important half.** At 0.8 the fill washes every shadow into a grey smudge and the shadow map buys nothing for its milliseconds. At 0.55 shadows read while unlit faces stay legible, which is the constraint this section set in the first place. Take the shadow map without the fill drop and it will not look like the right-hand frame above.
+
+Numbers live in `src/graphics/data/tactical-lighting.ts`. Three things worth knowing before changing them:
+
+- **The frustum follows the view, not the map.** A `DirectionalLight` aims at the world origin, which on a 40 × 40 map is a corner, so a fixed frustum shadows ground the player is not looking at. `ShadowFollowController` moves the light and its target together each frame, keeping the offset — the *direction* must not change, or the fixed-rig promise above breaks.
+- **Flags are set once, at build time**, on the map and the units. Overlays and unit rings are deliberately left out: three defaults both flags off, and a move-range quad that cast a shadow would draw a second, offset copy of itself on the floor.
+- **Not `PCFSoftShadowMap`.** three r185 deprecates it and silently falls back to `PCFShadowMap`, warning once per scene, so the soft filter you think you asked for is not the one running.
+
+Consequence for models: **do not bake light into a texture.** An atlas cell that already has a top-left highlight fights the key light at two of the four yaw stops.
 
 Consequence for models: **do not bake light into a texture.** An atlas cell that already has a top-left highlight fights the key light at two of the four yaw stops.
 

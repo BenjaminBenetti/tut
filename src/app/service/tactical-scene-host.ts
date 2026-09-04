@@ -170,6 +170,8 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
       camera: rig,
       content,
       updatables: [input, animations, ghosting],
+      // The city sits on the ground rather than floating over it (#507).
+      shadows: true,
     });
     input.attach(container);
     this.deps.onHooks?.(input.hooks());

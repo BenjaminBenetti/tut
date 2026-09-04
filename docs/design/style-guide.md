@@ -116,15 +116,25 @@ Rule: **`bug-bone` is what makes a bug readable, not the glow.** Dark chitin on 
 
 ### 4.2.1 The read test
 
-![Both factions on asphalt at 64 px per tile](faction-read-on-asphalt.png)
+![Both factions on three grounds at 64 px per tile](faction-read-test.png)
 
-`tools/art/preview/layouts/asphalt-read.json` puts both factions on nothing but road — the darkest ground in the game and the worst case for either — at exactly 64 px per tile. Run it after any change to a unit or bug:
+**Each faction has its own worst ground, and they are not the same ground.** The test used to be asphalt alone, described as "the darkest ground in the game and the worst case for either". It cannot be the worst case for either: the factions are different colours, so the ground that swallows one is the ground that shows off the other. Asphalt is where TDF read *best*, and testing there returned a clean bill of health for a faction that disappears on grass.
+
+Run all three after any change to a unit, a bug or a ground token:
 
 ```
 node tools/art/preview/render-scene.mjs tools/art/preview/layouts/asphalt-read.json out.png
+node tools/art/preview/render-scene.mjs tools/art/preview/layouts/grass-read.json   out.png
+node tools/art/preview/render-scene.mjs tools/art/preview/layouts/rock-read.json    out.png
 ```
 
-What it shows today: **TDF read comfortably.** Olive over grey separates from asphalt on its own, and the orange markings — the 10 % from §4.1 — are doing exactly the job they were reserved for. **Bugs read adequately** with the bone crest and would read properly with contact shadows (#507): a dark shape on dark ground is separated by the shadow under it as much as by anything on its back, which is why the answer to "the bugs are hard to see" is not more glow.
+- **Asphalt** is the bugs' worst ground. Dark chitin on dark road: the bodies merge and only the bone crest and the glow carry them. TDF read comfortably here.
+- **Grass** is TDF's worst ground, and it is the temperate biome's primary surface — the most common ground in the game. `tdf-olive #6B7A3F` against `env-grass #5E7A3A` is **ΔE 6.2, ΔL 1.0**: no tonal separation at all, and barely above the threshold at which two colours are the same colour. Infantry are olive over the torso and arms, so at 64 px per tile they lose their silhouette completely. Bugs read strongly here.
+- **Rock** is the control. Both factions read.
+
+**Screen with the numbers, judge with the render.** ΔE against a ground token catches a duplicate like olive-on-grass instantly and is worth computing for any new colour. It is only a screen, though: it predicted trouble for `tdf-grey-mid` mech armour on rock (ΔE 12.3) which the render does not bear out, because the mech is large and internally contrasty — dark greys, light greys and orange inside one silhouette — and that carries it. **Size and internal contrast beat any single hue distance.** A small, near-monotone model is the one in danger.
+
+**There is no colour that separates from every ground**, so do not go looking for one. `tdf-grey-light` merely trades grass for concrete (ΔE 15.7). Separation has to come from something that is not hue: the bone crest on the bugs, and contact shadows (#507) for everything — a shape on ground of its own tone is separated by the shadow under it as much as by anything on its back. That is why the answer to "I cannot see the units" is not more glow, and not a new colour.
 
 ### 4.3 Environment by biome
 

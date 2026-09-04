@@ -6,10 +6,10 @@ Last updated: 2026-09-04 (post-v0.2.0; win path settled on #317).
 
 | Field | Value |
 |---|---|
-| SHA tested | `8d88d03` (main, M2.5 band 1 complete) |
-| Gate | typecheck, lint, build pass; vitest **1713 / 1713** (+1 deliberate skip); e2e **55 / 55** |
-| Exploratory | M2.5 band 1 verified end to end (item 7); **#538 fixed by #556**; filed **#572** (p1, overlay conflict) |
-| **Verdict** | **The control scheme works on screen and nothing blocks the v0.2.1 tag.** All five band 1 features verified with real pointer input; the camera now opens on the deployed force. One p1 open (#572): the weapon range overlay hides the 2 AP movement band, so #521 is not readable by default. |
+| SHA tested | `5d93967` (main, M2.5 band 2 landing) |
+| Gate | typecheck, lint, build pass; vitest **1744 / 1744** (+1 deliberate skip); e2e **55 / 55** |
+| Exploratory | v0.2.1 verified as a production artifact; **the win path survives fog of war**; #572 fixed and confirmed |
+| **Verdict** | **Healthy.** v0.2.1 plays correctly as a shipped artifact with no dev hooks, and a mission is still completable with the player view active. Control scheme 7/7 on every head since. No open QA-filed defects. |
 
 ### Release push, in order of what mattered
 
@@ -77,12 +77,36 @@ Last updated: 2026-09-04 (post-v0.2.0; win path settled on #317).
 
    Method notes worth keeping: judge overlays by *dose-response* (a range-8 unit must paint less than a range-10 one) rather than by a binary before/after diff, and exclude the side panel from any pixel diff or you measure the HUD instead of the map. Both mistakes cost me a wrong reading before I caught them.
 
-10. **Filed #480** (p3): the debrief says "No casualties" on a mission that wiped the whole force.
+11. **v0.2.1 verified as a shipped artifact, not just as main.** Built from the tag (`b60d27b`), served as a production preview, played with **no dev hooks** — `window.__tutTactical__` and `window.__tut__` both absent, so every action went through real pointer and keyboard input. Camera opens on the force, Move armed by default, right click invokes (`15,30 → 15,29`), digit `2` arms Attack, the bar prints its shortcuts, both phase banners fire, no console errors. Posted on #514.
+
+12. **The win path survives fog of war (#551 / #570).** This was the risk worth chasing: vision is now modelled and an indoor spawner is exactly what a mech must see in order to shoot it, so a regression here would end mission completability without touching a single unit test.
+
+    Two things make it safe, both confirmed rather than assumed. **#570 touched only graphics and `vision-service`** — `combat-service.ts` is not in the diff and never consults a view, so the attack rules are unchanged. And **visibility and shootability stay coupled**, because both derive from `hasLineOfSight`: a spawner becomes clickable exactly when it becomes shootable. An unseen spawner correctly returns no `spawnerScreenPosition` while the objectives panel still names it.
+
+    Demonstrated end to end on seed `f2`, `e01ee73`: the mech walked to 10 tiles, fired twice at 57 % for 30–50, and took `spawner-2` from 20 to 0 on turn 5. Objectives 1/2.
+
+13. **#572 fixed by #577 and confirmed.** The weapon range is now light pips instead of a 0.5-opacity fill. The movement overlay in the default view went from 14,604 px to 24,307 px, **+66 %**, and toggling range off now barely changes it. Both bands read. Frame committed as `docs/design/tactical-overlays-both-bands-readable.png`, which supersedes the broken pair in PR #571.
+
+14. **Not yet verified — for whoever picks this up:** the **#528 radial attack menu**. Right-clicking a tile with Move armed correctly just moves and shows no ring, but I could not exercise the ring on a target: under fog no spawner is visible from the deploy zone at turn 1, and no bug is on the map that early. It needs a run that closes on a target first.
+
+15. **Filed #480** (p3): the debrief says "No casualties" on a mission that wiped the whole force.
+
+### Harness lessons that cost me a wrong reading
+
+Three times this session a control-scheme or rendering change silently invalidated my probes while the game was fine, and twice a green suite hid something the player could not see. Both directions matter:
+
+- **A green gate says nothing about whether a feature reached the screen.** #555 found every tactical overlay failing a depth test with CI green throughout; #572 was the same shape, a feature that worked but was painted over. Photograph the thing and look at it.
+- **A red probe does not prove the game broke.** #520 changed `selectTile` to select only and added **`invokeTile()`** for the right-click invoke. My walker kept calling `selectTile`, selected tiles for 31 turns, and reported "0 shots" — which I nearly filed as a fog regression. Patched, the same driver killed a spawner in five turns.
+- **Judge overlays by dose-response, not a binary diff.** A range-8 unit must paint less than a range-10 one. And exclude the side panel from any pixel comparison (`x < 985`) or you measure the HUD instead of the map.
+- **Check the diff before committing to a playthrough.** Asking whether `combat-service.ts` was even touched by the fog PR took seconds and reframed a twenty-minute test.
 
 ### Run history
 
 | SHA | Build | Unit | e2e | Exploratory | Filed |
 |---|---|---|---|---|---|
+| `5d93967` | pass | 1744/1744 | 55/55 | radial menu, building ghosting; 7/7 | — |
+| `e01ee73` | pass | 1725/1725 | 55/55 | fog of war; win path still completes | — |
+| `f581d2e` | pass | 1716/1716 | 55/55 | #572 fixed, both bands read | — |
 | `8d88d03` | pass | 1713/1713 | 55/55 | band 1 control scheme, 7/7 checks | — |
 | `b60d27b` | pass | 1710/1710 | 52/52 | overlay conflict found | **#572** |
 | `255e2a1` | pass | 1662/1662 | 50/50 | screenshot evidence for the tag | — |

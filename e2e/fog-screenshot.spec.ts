@@ -1,3 +1,4 @@
+import type { Page } from "@playwright/test";
 import { expect, test } from "@playwright/test";
 
 import type { TacticalTestHooks } from "../src/ui/model/tactical-intent";
@@ -9,6 +10,108 @@ interface HookGlobal {
 
 /** Days to advance before giving up on a mission appearing for the fixed seed. */
 const MAX_DAYS = 40;
+
+/** A tile the walk can aim at. */
+interface Tile {
+  x: number;
+  y: number;
+  z: number;
+}
+
+/** Hops the walk will try in one turn before giving the tile up. */
+const WALK_CANDIDATES = 8;
+
+/** How far from the unit a hop may land, in tiles. */
+const WALK_REACH = 6;
+
+/**
+ * Reads a unit's tile out of the autosave, which is the only view of the
+ * mission a spec has.
+ *
+ * @param page - The page holding the live mission.
+ * @param unitId - The unit to locate.
+ * @returns Its tile, or `null` when there is no mission or no such unit.
+ */
+async function unitTile(page: Page, unitId: string): Promise<Tile | null> {
+  return page.evaluate((id) => {
+    const raw = localStorage.getItem("tut:save:autosave");
+    if (raw === null) return null;
+    const envelope = JSON.parse(raw) as {
+      state: {
+        activeMission?: { units: { id: string; pos: Tile }[] };
+      };
+    };
+    return (
+      envelope.state.activeMission?.units.find((u) => u.id === id)?.pos ?? null
+    );
+  }, unitId);
+}
+
+/**
+ * Walks a unit one turn'"'"'s worth of ground toward a distant tile.
+ *
+ * A move longer than the unit'"'"'s budget is **refused outright** rather
+ * than walked partway — `move-handler` rejects it as `illegal-move
+ * (over-budget)` — so the far extraction tile cannot simply be invoked.
+ * This aims at the map'"'"'s own tiles instead: the ones within `WALK_REACH`
+ * of the unit, nearest the target first, taking whichever the mover
+ * accepts.
+ *
+ * ```
+ *   candidates ──► sort by distance to target ──► invoke ──► moved? ──► done
+ *                                                   └── refused ──► next
+ * ```
+ *
+ * The right button is what triggers an action since #520; a left click
+ * only selects, which is why this spec used to end its six turns with
+ * the force still standing on the deploy zone.
+ *
+ * @param page - The page holding the live mission.
+ * @param unitId - The unit to walk.
+ * @param target - The tile to head towards; it is not expected to be reached.
+ */
+async function walkToward(
+  page: Page,
+  unitId: string,
+  target: Tile,
+): Promise<void> {
+  const from = await unitTile(page, unitId);
+  if (from === null) {
+    return;
+  }
+  await page.evaluate(
+    (id) => (globalThis as HookGlobal).__tutTactical__?.selectUnit(id),
+    unitId,
+  );
+  const candidates = await page.evaluate(
+    ({ origin, aim, reach, take }) => {
+      const raw = localStorage.getItem("tut:save:autosave");
+      if (raw === null) return [];
+      const envelope = JSON.parse(raw) as {
+        state: { activeMission?: { map: { tiles: Tile[] } } };
+      };
+      const tiles = envelope.state.activeMission?.map.tiles ?? [];
+      const near = (a: Tile, b: Tile): number =>
+        Math.abs(a.x - b.x) + Math.abs(a.z - b.z);
+      return tiles
+        .filter((t) => near(t, origin) > 0 && near(t, origin) <= reach)
+        .sort((a, b) => near(a, aim) - near(b, aim))
+        .slice(0, take);
+    },
+    { origin: from, aim: target, reach: WALK_REACH, take: WALK_CANDIDATES },
+  );
+  for (const tile of candidates) {
+    await page.evaluate(
+      (t) => (globalThis as HookGlobal).__tutTactical__?.invokeTile(t),
+      tile,
+    );
+    await page.waitForTimeout(120);
+    const now = await unitTile(page, unitId);
+    if (now !== null && (now.x !== from.x || now.z !== from.z)) {
+      return;
+    }
+  }
+}
 
 /**
  * Captures a mission with fog of war in place, for the Director to judge
@@ -98,9 +201,13 @@ test("captures a mission with fog of war for review", async ({ page }) => {
 
   // The shot has to show every unit the player is entitled to see, or it
   // is evidence of a drawing bug rather than of fog. `data-tactical-units`
-  // is what the scene actually put on the board.
-  const drawn = await body.getAttribute("data-tactical-units");
-  expect(Number(drawn)).toBe(3 + known.spottedBugs);
+  // is what the scene actually put on the board — and the host stamps it
+  // only once the unit models have loaded, so this retries to the count
+  // rather than reading the attribute once and finding it absent (#650).
+  await expect(body).toHaveAttribute(
+    "data-tactical-units",
+    String(3 + known.spottedBugs),
+  );
 
   await page.waitForTimeout(400);
   await page.screenshot({ path: "docs/design/tactical-fog-of-war.png" });
@@ -135,16 +242,22 @@ test("captures a mission with fog of war for review", async ({ page }) => {
     );
     return away[0] ?? null;
   });
-  if (step) {
-    await page.evaluate(
-      (tile) => (globalThis as HookGlobal).__tutTactical__?.selectTile(tile),
-      step,
-    );
-  }
+  const start = await unitTile(page, "unit-1");
   for (let turn = 0; turn < 6; turn++) {
+    if (step) {
+      await walkToward(page, "unit-1", step);
+    }
     await page.locator('#action-bar [data-action="end-turn"]').click();
     await page.waitForTimeout(150);
   }
+  // The walk is the whole point of the second shot, and it has already
+  // failed silently once: #520 moved the trigger to the right button and
+  // this spec went on passing while writing a turn-7 image identical to
+  // turn 1. Without this the next such regression freezes these images
+  // again with the suite still green.
+  const end = await unitTile(page, "unit-1");
+  expect(end).not.toBeNull();
+  expect(`${end?.x},${end?.z}`).not.toBe(`${start?.x},${start?.z}`);
   await page.evaluate(() =>
     (globalThis as HookGlobal).__tutTactical__?.selectUnit("unit-1"),
   );

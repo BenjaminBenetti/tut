@@ -233,10 +233,21 @@ export function bugView(mission: TacticalState): MissionView {
 // ===========================================
 
 /**
- * Applies a `Move` command's outcome to `unitId` the way the movement
- * handler would for the purposes of a behaviour test: the unit stands on
- * the end of the path with its action points refreshed, so the next call
- * to `choose` reads the next turn.
+ * Moves a unit to the end of a path and refills its action points, the
+ * way a turn boundary would.
+ *
+ * **It does not recompute vision, and that matters.** The real bug phase
+ * refreshes what the swarm perceives between bugs, so a bug that walks
+ * out of line of sight loses its mark; here the mission keeps whatever
+ * `vision` it had. A multi-turn probe built on this therefore lets a bug
+ * go on acting against an enemy it can no longer see, which flatters any
+ * behaviour that moves into cover.
+ *
+ * That is not hypothetical — it is how #695 first measured a lurker's
+ * concealment weight as costing no engagement, when driving the same
+ * sweep through `createBugPhaseRunner` showed it costing all of it. Use
+ * the runner when the question is whether a bug keeps fighting; use this
+ * when the question is only where it ends up.
  */
 export function applyMoveTo(
   mission: TacticalState,

@@ -6,6 +6,7 @@ import { DEFAULT_MISSION_HOOKS } from "../../mapgen/data/hook-requirements";
 import { PropKindIds } from "../../mapgen/data/props";
 import { SurfaceIds } from "../../mapgen/data/surfaces";
 import { HookKinds } from "../../mapgen/model/hook";
+import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import { PassMask } from "../../mapgen/model/pass-mask";
 import type { MapRecipe } from "../../mapgen/model/map-recipe";
 import { createDefaultRegistries } from "../../mapgen/service/default-registries";
@@ -163,6 +164,37 @@ describe("objectiveApproach", () => {
     expect(approaches[0]!.infantrySteps).toBeLessThan(
       approaches[1]!.infantrySteps,
     );
+  });
+
+  it("counts a mech's firing position through a window and not through a wall", () => {
+    // Why `windowDensity` is a gameplay knob and not only an art one
+    // (#492): a mech cannot enter a building, so the only line it has
+    // into one is through a window. The same room with a solid wall on
+    // that side gives it nothing.
+    const room = (kind: "window" | "solid"): TacticalMap => {
+      const builder = new FixtureMapBuilder(12, 12, 1)
+        .fillGround()
+        .deploy([{ x: 0, y: 0, z: 11 }])
+        .objective(
+          HookKinds.EGG_SPAWNER,
+          [{ x: 6, y: 0, z: 6 }],
+          PassMask.INFANTRY,
+        )
+        .edgeSpawn([{ x: 11, y: 0, z: 0 }]);
+      for (const side of ["n", "e", "s"] as const) {
+        builder.wall({ x: 6, y: 0, z: 6 }, side, "solid");
+      }
+      builder.wall({ x: 6, y: 0, z: 6 }, "w", kind);
+      return builder.build();
+    };
+
+    const [through] = objectiveApproach(room("window"));
+    const [blocked] = objectiveApproach(room("solid"));
+    expect(through?.mechFiringSteps).toBeGreaterThanOrEqual(0);
+    expect(blocked?.mechFiringSteps).toBe(-1);
+    // Neither lets a mech stand on the objective; the difference is sight.
+    expect(through?.mechSteps).toBe(-1);
+    expect(blocked?.mechSteps).toBe(-1);
   });
 
   it("reports -1 for an objective nothing can see or reach", () => {

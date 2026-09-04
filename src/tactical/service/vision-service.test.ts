@@ -255,7 +255,12 @@ describe("withVision", () => {
     const lying: TacticalState = {
       ...hidden(),
       vision: {
-        tdf: { visible: [1, 2, 3], explored: [1, 2, 3], spotted: ["b"] },
+        tdf: {
+          visible: [1, 2, 3],
+          explored: [1, 2, 3],
+          spotted: ["b"],
+          lastSeen: {},
+        },
         bugs: NO_VISION,
       },
     };
@@ -449,6 +454,7 @@ describe("perceivedSpawners", () => {
           visible: [],
           explored: [index.keyOf({ x: 2, y: 0, z: 2 })],
           spotted: [],
+          lastSeen: {},
         },
       },
     };
@@ -474,6 +480,7 @@ describe("perceivedSpawners", () => {
           visible: [],
           explored: [index.keyOf({ x: 4, y: 0, z: 4 })],
           spotted: [],
+          lastSeen: {},
         },
       },
     };
@@ -566,5 +573,64 @@ describe("vision across a seeded replay", () => {
     expect(withVision({ state: reloaded, events: [] }).state.vision).toEqual(
       mission.vision,
     );
+  });
+});
+
+// ===========================================
+// Remembered sightings
+// ===========================================
+
+describe("lastSeen (#716)", () => {
+  it("records where an enemy was standing when it was seen", () => {
+    const mission = missionWith(OPEN, [
+      unitAt("u", "infantry", at(0, 0)),
+      unitAt("b", "infantry", at(2, 0), { team: "bugs" }),
+    ]);
+    const { state } = withVision({ state: mission, events: [] });
+    expect(state.vision.tdf.spotted).toContain("b");
+    expect(state.vision.tdf.lastSeen.b).toEqual(at(2, 0));
+  });
+
+  it("keeps the record after losing sight, which is the point of it", () => {
+    // Seen once at (2,0), then gone behind the wall. `spotted` empties
+    // and the memory must not: a bug that forgets has nowhere to go.
+    const seen = withVision({
+      state: missionWith(WALLED, [
+        unitAt("u", "infantry", at(0, 0)),
+        unitAt("b", "infantry", at(2, 0), { team: "bugs" }),
+      ]),
+      events: [],
+    }).state;
+    expect(seen.vision.tdf.lastSeen.b).toEqual(at(2, 0));
+
+    const moved = withVision({
+      state: {
+        ...seen,
+        units: seen.units.map((u) =>
+          u.id === "b" ? { ...u, pos: at(6, 0) } : u,
+        ),
+      },
+      events: [],
+    }).state;
+    expect(moved.vision.tdf.spotted).not.toContain("b");
+    expect(moved.vision.tdf.lastSeen.b).toEqual(at(2, 0));
+  });
+
+  it("records only what was seen, with another enemy in view at the time", () => {
+    // Both bugs exist and one is plainly visible, so the remembering
+    // code is running — it must still refuse the one behind the wall.
+    //
+    // Asserting this with *nothing* spotted does not test it: the fold
+    // returns early on an empty list, so a version that recorded every
+    // living enemy would pass. It has to be caught with the code live.
+    const mission = missionWith(WALLED, [
+      unitAt("u", "infantry", at(0, 0)),
+      unitAt("near", "infantry", at(2, 0), { team: "bugs" }),
+      unitAt("hidden", "infantry", at(6, 0), { team: "bugs" }),
+    ]);
+    const { state } = withVision({ state: mission, events: [] });
+    expect(state.vision.tdf.spotted).toEqual(["near"]);
+    expect(state.vision.tdf.lastSeen.near).toEqual(at(2, 0));
+    expect(state.vision.tdf.lastSeen.hidden).toBeUndefined();
   });
 });

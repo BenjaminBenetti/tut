@@ -88,6 +88,46 @@ export function tileDistance(a: TileCoord, b: TileCoord): number {
 // ===========================================
 
 /**
+ * Where a bug should look when it perceives nobody: the nearest place
+ * its own side last saw an enemy (#716).
+ *
+ * ```
+ *   remembered sightings ──► nearest, excluding any already reached
+ *   none left             ──► undefined, so the caller falls back
+ * ```
+ *
+ * A memory within one tile is spent: the bug has arrived and found
+ * nothing, so it must fall through to hunting rather than circle a tile
+ * the squad left. That is what keeps this self-limiting without any
+ * state to clear.
+ *
+ * Reads only `vision[team].lastSeen`, which is written from what that
+ * side actually saw, so it cannot route a bug to a position nobody
+ * observed (ADR 0006 §2.3).
+ *
+ * @param mission - The mission as this side perceives it.
+ * @param unit - The bug doing the remembering.
+ * @returns The tile to head for, or `undefined` when nothing is worth it.
+ */
+export function recalledSite(
+  mission: TacticalState,
+  unit: Unit,
+): TileCoord | undefined {
+  const remembered = mission.vision[unit.team]?.lastSeen ?? {};
+  let best: TileCoord | undefined;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  for (const pos of Object.values(remembered)) {
+    const distance = tileDistance(unit.pos, pos);
+    if (distance <= 1 || distance >= bestDistance) {
+      continue;
+    }
+    bestDistance = distance;
+    best = pos;
+  }
+  return best;
+}
+
+/**
  * Where a bug that can perceive no enemy should head (#559): the tile of
  * the TDF landing zone nearest `from`, or undefined on a map with no
  * deploy hook.

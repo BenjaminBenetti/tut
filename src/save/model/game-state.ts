@@ -26,8 +26,10 @@ import type { TacticalState } from "../../tactical/model/tactical-state";
  *   template carries `weapons` rather than one `weapon` (#532).
  * - `13`: `activeMission.commandSeq`, the RNG fork nonce, split out from
  *   `log.length` (#667).
+ * - `14`: `activeMission.vision.<side>.lastSeen`, where a side last saw
+ *   each enemy (#716).
  */
-export const GAME_STATE_SCHEMA_VERSION = 13;
+export const GAME_STATE_SCHEMA_VERSION = 14;
 
 /**
  * Bookkeeping that every save needs regardless of gameplay content.

@@ -310,6 +310,39 @@ const ADD_COMMAND_SEQ: Migration = {
   },
 };
 
+/**
+ * v13 → v14 (#716): each side's vision gains `lastSeen`, where it last
+ * saw each enemy.
+ *
+ * Empty, not reconstructed. The record is a memory of a sighting and a
+ * save holds no history to rebuild one from — inventing entries would
+ * hand a side positions it never observed, which is the one thing ADR
+ * 0006 §2.3 forbids. A mission carried across the upgrade simply starts
+ * remembering from its next look, which costs a bug one turn of hunting.
+ */
+const ADD_VISION_LAST_SEEN: Migration = {
+  from: 13,
+  to: 14,
+  apply: (state) => {
+    if (!isRecord(state)) {
+      return state;
+    }
+    const mission = state.activeMission;
+    if (!isRecord(mission) || !isRecord(mission.vision)) {
+      return state;
+    }
+    const vision = Object.fromEntries(
+      Object.entries(mission.vision).map(([team, side]) => [
+        team,
+        isRecord(side) && !isRecord(side.lastSeen)
+          ? { ...side, lastSeen: {} }
+          : side,
+      ]),
+    );
+    return { ...state, activeMission: { ...mission, vision } };
+  },
+};
+
 // ===========================================
 // Chain
 // ===========================================
@@ -393,4 +426,5 @@ export const GAME_STATE_MIGRATIONS: readonly Migration[] = [
   ADD_MISSION_VISION,
   SPLIT_WEAPONS_PER_UNIT,
   ADD_COMMAND_SEQ,
+  ADD_VISION_LAST_SEEN,
 ];

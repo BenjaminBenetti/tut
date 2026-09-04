@@ -174,21 +174,31 @@ test("a mech can destroy an egg spawner, so a mission can be won", async ({
       const fire = panel.querySelector('[data-action="confirm-attack"]');
       return {
         error: shown === "" ? null : shown,
-        ready: shown === null && fire !== null && !(fire as HTMLButtonElement).disabled,
+        ready:
+          shown === null &&
+          fire !== null &&
+          !(fire as HTMLButtonElement).disabled,
       };
     });
   };
 
   let destroyed = false;
   for (let turn = 0; turn < MAX_TURNS && !destroyed; turn++) {
-    for (let attempt = 0; attempt < ATTEMPTS_PER_TURN && !destroyed; attempt++) {
+    for (
+      let attempt = 0;
+      attempt < ATTEMPTS_PER_TURN && !destroyed;
+      attempt++
+    ) {
       const preview = await aim();
       if (preview.ready) {
-        await page.locator('#hit-preview [data-action="confirm-attack"]').click();
+        await page
+          .locator('#hit-preview [data-action="confirm-attack"]')
+          .click();
         await page.waitForTimeout(SETTLE_MS);
         const after = await snapshot(page);
         const target = after?.spawners.find((s) => s.id === spawnerId);
-        destroyed = target === undefined || target.destroyed === true || target.hp <= 0;
+        destroyed =
+          target === undefined || target.destroyed === true || target.hp <= 0;
         continue;
       }
       // Out of range or no sight line: close the ground with a right click,
@@ -206,7 +216,11 @@ test("a mech can destroy an egg spawner, so a mission can be won", async ({
       const nearX = Math.sign(self.pos.x - target.pos.x) || 1;
       const nearZ = Math.sign(self.pos.z - target.pos.z) || 1;
       const goals = [
-        { x: target.pos.x + nearX * 4, y: self.pos.y, z: target.pos.z + nearZ * 4 },
+        {
+          x: target.pos.x + nearX * 4,
+          y: self.pos.y,
+          z: target.pos.z + nearZ * 4,
+        },
         { x: target.pos.x + nearX * 5, y: self.pos.y, z: target.pos.z },
         { x: target.pos.x, y: self.pos.y, z: target.pos.z + nearZ * 5 },
         { x: self.pos.x + stepX * 5, y: self.pos.y, z: self.pos.z },
@@ -221,7 +235,8 @@ test("a mech can destroy an egg spawner, so a mission can be won", async ({
       await page.keyboard.press("1");
       for (const goal of goals) {
         await page.evaluate(
-          (tile) => (globalThis as HookGlobal).__tutTactical__?.invokeTile(tile),
+          (tile) =>
+            (globalThis as HookGlobal).__tutTactical__?.invokeTile(tile),
           goal,
         );
         await page.waitForTimeout(SETTLE_MS);
@@ -250,5 +265,8 @@ test("a mech can destroy an egg spawner, so a mission can be won", async ({
     destroyed,
     `the mech never destroyed ${spawnerId}; it still has ${objectiveNow?.hp ?? "?"} hp`,
   ).toBe(true);
-  expect(errors, `console errors during the mission: ${errors.join(" | ")}`).toHaveLength(0);
+  expect(
+    errors,
+    `console errors during the mission: ${errors.join(" | ")}`,
+  ).toHaveLength(0);
 });

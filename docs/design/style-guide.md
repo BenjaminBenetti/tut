@@ -343,21 +343,21 @@ Consequence for models: **do not bake light into a texture.** An atlas cell that
 
 ### 12.2 Tile overlays
 
-Overlays are instanced quads lifted 0.02 u above the tile top. They carry meaning by palette token, in one escalating order — information, caution, danger:
+Overlays are instanced quads lifted one ground-slab thickness (0.05 u) above the tile top. It used to be 0.02, which sat *inside* the slab once #474 put the real tile models in, and every overlay was depth-tested away. They carry meaning by palette token, in one escalating order — information, caution, danger:
 
 | Overlay | Token | Hex | Footprint | Means |
 |---|---|---|---|---|
 | Move range, 1 AP | `ui-info` | `#7FD1FF` at 0.45 | 0.84 | One action gets you here |
 | Move range, 2 AP | `ui-info` | `#7FD1FF` at 0.24 | 0.66 | This one costs both actions |
-| Low cover | `ui-warn` | `#F0C63C` | ring | Partial protection on that edge |
-| High cover | `ui-danger` | `#E0453C` | ring | Full protection on that edge |
-| Line of sight / target | `ui-accent` | `#F08A24` | ring | What the current action touches |
+| Low cover | `ui-warn` | `#F0C63C` at 0.55 | ring 0.32–0.40 | Partial protection on that edge |
+| High cover | `ui-danger` | `#E0453C` at 0.55 | ring 0.32–0.40 | Full protection on that edge |
+| Line of sight / target | `ui-accent` | `#F08A24` at 0.75 | pip 0.12–0.18 | What the current action touches |
 | Weapon range | `ui-accent` | `#F08A24` at 0.38 | edge pips, 0.30 | How far this unit can shoot |
 | Selected unit ring | `ui-accent` | `#F08A24` | ring | Who is acting |
 
 Orange is the player's own intent, blue is possibility, yellow and red are the world pushing back. Nothing else on the tactical plane may use these four colours.
 
-**Weapon range is a line, movement is a fill** (#522). Both bands of the move range are filled quads and mean "you can stand here"; the weapon envelope is drawn only along its edge and means "this far". Keeping them on different visual channels is what stops the range reading as a third movement band — the two never compete even where they overlap, which is most of the time. Toggled with `v`, on by default.
+**Weapon range is a line, movement is a fill** (#522). Both bands of the move range are filled quads and mean "you can stand here"; the weapon envelope is drawn only along its edge and means "this far". Keeping them on different visual channels is what stops the range reading as a third movement band — the two never compete even where they overlap, which is most of the time. **Shown while Attack is armed**, with `v` to pin it up permanently (#590).
 
 **The two move bands are one token at two opacities, never two hues** (#521, retuned in #566). Move range gets one colour, and the separation stays in value and footprint — a hue split is the one deuteranopia and protanopia lose.
 
@@ -367,7 +367,16 @@ The second band was first authored as a *darkened* `ui-info` (`#4C7D99`). That f
 
 **Weapon range is pips, not a fill** (#522, retuned in #566). An outline along the envelope's edge is thin on open ground and solid in a city, where line of sight cuts the envelope into pockets and almost every tile counts as edge; at 0.96 of a tile that buried the movement band under it. A small centred pip carries the same information for a tenth of the ink.
 
-Values live in `src/graphics/data/tactical-overlay-palette.ts`; restyle them there, not at the call site. `tactical-overlay-palette.test.ts` guards the relationships: both bands the same token, the dearer one weaker and smaller, the range pip smaller than either.
+**Count the marks, not just tune them** (#590). Every rule above was argued and measured on its own overlay, and each one was right on its own. Together they put **71–171 instances** on the map for a single click — the planes were never budgeted against each other, only against the ground. The frame stopped reading as a city and started reading as an instrument panel, and the unit the player had just selected was the quietest thing in it.
+
+Two rules come out of that, and they bind any overlay added later:
+
+1. **An overlay belongs to the question being asked, not to the selection.** Movement is what selecting a unit asks, so the bands are the default plane. "How far do I shoot?" is asked while aiming, so the envelope follows armed intent and nothing else. A plane that is on for every selection needs to earn it against every other plane that is already on. Weapon range was on by default and had a key with no button, so 55–71 marks were both unavoidable and undiscoverable; gating it cut plain selection from 71–171 marks to 0–113.
+2. **Weight tracks whether a mark is an instruction or an attribute.** Cover was the heaviest value in the file, 0.85, in its two most saturated tokens — which reads as *go here*, when cover is a property of a tile the player may never care about. Attributes sit below the unit in the hierarchy. Reach for alpha rather than for value when quietening one: on a map with shadow in it, value is the channel shadow gets to first (see the band above).
+
+Line of sight keeps more weight than cover at 0.75, because it is drawn on far fewer tiles and it is a *threat* — an enemy can see you standing there — which is the one thing on this plane entitled to interrupt.
+
+Values live in `src/graphics/data/tactical-overlay-palette.ts`; restyle them there, not at the call site. Sizes live there too, for the same reason a colour does. `tactical-overlay-palette.test.ts` guards the relationships: both bands the same token, the dearer one weaker and smaller, the range pip smaller than either.
 
 ### 12.3 VFX
 

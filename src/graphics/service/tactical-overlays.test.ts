@@ -338,6 +338,9 @@ describe("TacticalOverlays weapon-range outline", () => {
 
   function shown(weaponRange: typeof strip): number {
     const overlays = new TacticalOverlays();
+    // The layer is off until intent asks for it (#590); these cases are
+    // about which tiles the outline picks, so switch it on first.
+    overlays.setWeaponRangeVisible(true);
     overlays.show({
       moveRange: [],
       cover: [],
@@ -368,7 +371,7 @@ describe("TacticalOverlays weapon-range outline", () => {
     expect(shown([])).toBe(0);
   });
 
-  it("hides and restores the outline on toggle, leaving the other layers alone", () => {
+  it("starts hidden and follows the toggle, leaving the other layers alone (#590)", () => {
     const overlays = new TacticalOverlays();
     overlays.show({
       moveRange: [{ tile: { x: 9, y: 0, z: 9 }, apCost: 1 }],
@@ -376,7 +379,11 @@ describe("TacticalOverlays weapon-range outline", () => {
       lineOfSight: [],
       weaponRange: strip,
     });
-    expect(overlays.isWeaponRangeVisible()).toBe(true);
+    // Off until asked for: a scene drawn before the screen has pushed
+    // any intent must not paint the envelope on its own.
+    expect(overlays.isWeaponRangeVisible()).toBe(false);
+    expect(overlays.counts().weaponRange).toBe(0);
+    overlays.setWeaponRangeVisible(true);
     expect(overlays.counts().weaponRange).toBe(3);
     overlays.setWeaponRangeVisible(false);
     expect(overlays.counts().weaponRange).toBe(0);

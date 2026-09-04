@@ -34,8 +34,9 @@ Last updated: 2026-09-04 14:58 UTC (session 3, update 6). Read `docs/process/rol
 - **Session 3, last stretch.** Merged: #647 and #672 (test budgets — see §7), #662 (the crash-site
   prototype, §2c). Filed for other people and landed by them: #593 (a hill blocks line of sight,
   which I found and eng-5 built), #487, #488. Open findings of mine: **#685, ambush is impossible on
-  current maps** (§3d), #591 (coastal rural is the flattest map in the game), #281 (the Executive
-  Director's cover call, re-measured twice today and now clean).
+  current maps** (§3d), #591 (vegetation opacity — re-measured after the hill fix, one-line
+  recommendation waiting on a call, §3e), #281 (the Executive Director's cover call, re-measured
+  twice today and now clean).
 - **Session 3, later stretch.** Merged: #587 (#586, the cover that stops a melee attacker), #597
   (#596, how much fog of war hides), #607 (#508, half walls and parapets). Filed and handed on:
   #591 (trees do not block sight — parked behind #593), #593 (**a hill does not block line of
@@ -354,8 +355,11 @@ Four things to save the next person the work:
   five**. Scenery cannot beat five overlapping vision cones with no facing, no arcs and no falloff.
   The lever is a rules one, or letting bugs *arrive* close (emergence, burrowing, hive tunnels)
   rather than approach.
-- **Trees are not the lever either.** Making every tree opaque moves concealment 7 % → 10 % on rural
-  and not at all in a city. Measured twice, once for visibility (#591) and once for this.
+- **Trees are not the lever *for this*, but they are for fog readability.** Making every tree opaque
+  moves approach concealment 7 % → 10 % on rural and nothing in a city — yet the same change moves
+  `assessMap`'s visible share by ten points (§3e). Two different metrics, both measured, both true:
+  opacity improves what fog hides *at rest* and barely improves the concealment of a *moving*
+  approach into a five-soldier vision union. Do not quote one number for the other.
 - **Cover and concealment are different knobs.** Only four of thirteen prop kinds block sight
   (`car`, `dumpster`, `shelving`, `boulder`); crates, sandbags, fences and every tree are
   transparent. Answering #281 with "more cover" will change survivability under fire and will not
@@ -371,6 +375,29 @@ require `distance ≥ 12`; and one watcher is not a squad. Measure the union.
 
 Option 1 on #685 — accept it — has a cost worth naming: it makes the lurker's premise (#333, stalk
 out of sight and strike from behind) impossible on the maps as they are.
+
+## 3e. Vegetation opacity, re-measured after the hill fix (#591, 2026-09-04)
+
+#591's original table (rural 87–89 % visible) is **stale** — it was taken before #593 landed, when
+terrain was invisible to the sight rule. `fix(tactical): a hill blocks line of sight` (#645) and the
+diagonal seam fix (#677) merged on 2026-09-04 and bought about twenty points of concealment on rural
+maps for free. Re-measured through `assessMap` on `main`, 4 seeds per biome × settlement:
+
+| biome | scale | baseline | clustered trees opaque | all trees opaque | trees already in a clump |
+|---|---|---|---|---|---|
+| temperate | rural | 68 % | **58 %** | 57 % | 98 % |
+| snowy | rural | 68 % | **58 %** | 58 % | 99 % |
+| desert | rural | 70 % | **70 %** | 66 % | **0 %** |
+| coastal | rural | 72 % | **64 %** | 62 % | 82 % |
+
+The finding that decides it: the prop pass already clusters **82–100 % of trees** outside the desert,
+so #591's option 1 (only clumped trees block) and option 2 (all trees block) differ by 0–2 points —
+and where they differ, option 1 does *nothing*, because desert palms are placed singly. Option 1 also
+needs per-instance opacity, which would stop `Tile.blocksLos` being a straight denormalisation of the
+kind. I withdrew my preference for option 1 and recommended option 2: three data lines in
+`data/props.ts`, no model change. Awaiting the call.
+
+It changes no placement, so unlike most of §3 it does **not** spend the ground budget #281 is judging.
 
 ## 4. What M2 (tactical) consumes
 

@@ -1,3 +1,11 @@
+import type { BugBehaviour } from "../../bugs/ai/bug-behaviour";
+import { MapBehaviourRegistry } from "../../bugs/ai/behaviour-registry";
+import type { SpeciesLookup } from "../../bugs/ai/behaviour-registry";
+import { createBugPhaseRunner } from "../../bugs/ai/bug-phase-runner";
+import { BUG_SPECIES } from "../../bugs/data/species";
+import type { BugSpecies } from "../../bugs/model/bug-species";
+import type { BugSpeciesId } from "../../content/model/bug-species-id";
+import { BUG_SPECIES_IDS } from "../../content/model/bug-species-id";
 import type { IdGenerator } from "../../core/model/id-generator";
 import { createDefaultRegistries } from "../../mapgen/service/default-registries";
 import { AUTO_RESOLVE_TUNING } from "../../overworld/data/auto-resolve-tuning";
@@ -9,7 +17,6 @@ import type { PartCatalogue } from "../../roster/model/part-catalogue";
 import type { UpgradeTuning } from "../../roster/model/upgrade-tuning";
 import { validateLoadout } from "../../roster/service/loadout-validation-service";
 import type { GameState } from "../../save/model/game-state";
-import { BUG_SPECIES } from "../../bugs/data/species";
 import { COMBAT_TUNING } from "../../tactical/data/combat-tuning";
 import { OBJECTIVE_TUNING } from "../../tactical/data/objective-tuning";
 import { UNIT_TUNING } from "../../tactical/data/unit-tuning";
@@ -135,27 +142,68 @@ export function composeTactical(
 
 /**
  * The rule handlers that have landed, one line per rules issue: this is
- * the single registration site for tactical commands (#342). Tests pass
+ * the single registration site for tactical commands (#342). The action
+ * rules are built first so the bug phase (#335) can drive them without
+ * being able to recurse into `EndTurn`; `EndTurn` then closes over the
+ * spawn steps (#329) and that runner, so one end of turn hatches, waves,
+ * plays the bugs and hands the next turn back to the player. Tests pass
  * their own object to isolate the lifting path.
+ *
+ * ```
+ *   EndTurn ──► phase steps: refreshSides, hatch, edge waves
+ *                    └──► bug phase runner ──► every living bug acts
+ *                              └──► player turn + 1 (or MissionEnded)
+ * ```
  */
 export function shippedTacticalHandlers(): TacticalHandlers {
   const spawn: SpawnDeps = {
     species: Object.values(BUG_SPECIES),
     tuning: SPAWN_TUNING,
   };
-  return {
+  const actions: TacticalHandlers = {
     [ATTACK]: createAttackHandler(COMBAT_TUNING),
     [MOVE]: createMoveHandler(createOverwatchReaction(COMBAT_TUNING)),
-    [END_TURN]: createEndTurnHandler([
-      ...DEFAULT_PHASE_STEPS,
-      createHatchStep(spawn),
-      createEdgeWaveStep(spawn),
-    ]),
     [OVERWATCH]: overwatchHandler,
     [RELOAD]: reloadHandler,
     [INTERACT]: createInteractHandler(OBJECTIVE_TUNING),
     [EXTRACT]: createExtractHandler(OBJECTIVE_TUNING),
   };
+  const bugPhase = createBugPhaseRunner({
+    handlers: actions,
+    registry: new MapBehaviourRegistry(shippedBugBehaviours()),
+    speciesOf: createSpeciesLookup(BUG_SPECIES),
+    combat: COMBAT_TUNING,
+  });
+  return {
+    ...actions,
+    [END_TURN]: createEndTurnHandler(
+      [
+        ...DEFAULT_PHASE_STEPS,
+        createHatchStep(spawn),
+        createEdgeWaveStep(spawn),
+      ],
+      bugPhase,
+    ),
+  };
+}
+
+/**
+ * The bug behaviours that have landed, one line per species issue
+ * (#332 rush, #333 flank, #334 punish-clumps). A species whose behaviour
+ * has not merged holds still during the bug phase.
+ */
+export function shippedBugBehaviours(): readonly BugBehaviour[] {
+  return [];
+}
+
+/** A species lookup over the shipped catalogue; an unknown id resolves to nothing. */
+export function createSpeciesLookup(
+  species: Readonly<Record<BugSpeciesId, BugSpecies>>,
+): SpeciesLookup {
+  return (id) =>
+    BUG_SPECIES_IDS.includes(id as BugSpeciesId)
+      ? species[id as BugSpeciesId]
+      : undefined;
 }
 
 /** A mech's current stat sheet from its loadout, or undefined when it no longer validates. */

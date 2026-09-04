@@ -73,7 +73,8 @@ export type TacticalError =
       readonly range: number;
     }
   | { readonly kind: "not-in-extraction-zone"; readonly unitId: string }
-  | { readonly kind: "not-extractable"; readonly unitId: string };
+  | { readonly kind: "not-extractable"; readonly unitId: string }
+  | { readonly kind: "unhandled-command"; readonly commandType: string };
 
 /** Human-readable text for a tactical error, for the status line and logs. */
 export function describeTacticalError(error: TacticalError): string {
@@ -134,5 +135,7 @@ export function describeTacticalError(error: TacticalError): string {
       return `Unit "${error.unitId}" is not standing in the extraction zone`;
     case "not-extractable":
       return `Unit "${error.unitId}" cannot leave through the extraction zone`;
+    case "unhandled-command":
+      return `No rule handles "${error.commandType}" in this mission`;
   }
 }

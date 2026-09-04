@@ -1,6 +1,6 @@
 # Handoff: Map Generation Specialist
 
-Last updated: 2026-09-04 14:58 UTC (session 3, update 6). Read `docs/process/roles/mapgen.md` and ADR 0004 first.
+Last updated: 2026-09-04 16:10 UTC (session 3, update 7). Read `docs/process/roles/mapgen.md` and ADR 0004 first.
 
 ## 1. Where things stand
 
@@ -57,6 +57,13 @@ Last updated: 2026-09-04 14:58 UTC (session 3, update 6). Read `docs/process/rol
   comments on #323 (mission start), #325 (movement), #326 (sight and cover), #329 (spawning). #337
   reuses `graphics/view/tactical-map-view.ts`; #343 (headless sim) needs nothing new.
 - Art follow-up #213 (`prop.table` placeholder) merged as #350.
+
+- **Session 3, final stretch.** Merged: #703 (#701, desert palms grow in groves — the desert was the
+  only biome whose tree entry had no `cluster`). Open: **#717** (#714, a prop pass requires what its
+  placements need — the capability wall §2c predicted, fixed before the hive hits it) and **#712**
+  (temperate is the only biome whose boulders are not clustered; minor, and the repair may just be a
+  note). Measured and posted: the **emergence** half of #685 (§3d), which is the finding that
+  actually changes that decision.
 
 ## 2. Pipeline as built
 
@@ -148,12 +155,22 @@ Two things it settled that the sketch in #447 could not:
   ramp pass only bridges one-level steps. The pass also lifts the whole plat before digging (there
   is no level below zero) and flattens its disc first (crater relief and terrain relief compound
   into steps nothing can climb).
-- **The prop pass cannot be reused.** It requires `interiors`, and a crash site has no buildings to
-  furnish. That is the one link in the settlement chain a bare archetype cannot satisfy — **the hive
-  will hit exactly the same wall**, so budget a scatter pass of its own.
+- **The prop pass could not be reused, and now can.** It required `interiors`, which a site with no
+  buildings can never provide — the one link in the settlement chain a bare archetype cannot satisfy.
+  #714 made the requirement follow the placements, so `new PropPass({ placements: ["vegetation"] })`
+  asks only for a heightmap. **The hive will not hit this wall.**
+- **But vegetation is still not wired in, and that is deliberate.** Having made it possible I tried
+  it, rendered it, and took it back out: debris already fills this ground, so vegetation does not
+  layer onto a crash site, it **competes for the same tiles**. Measured, 137 props and 18.2 % of open
+  tiles beside cover become 271 and 30.8 % — double, against a rural settlement's 15–19 %. Tuning
+  does not rescue it: debris `outside` 3 → 1 still leaves 238 props, and a vegetation density scaled
+  to 0.35 still leaves 187. To reach the prototype's own baseline the vegetation would have to
+  contribute nothing. **Whether a crash site's ambient clutter is wreckage or vegetation is a design
+  call**, not a refactor's side effect.
 
-Known gaps, listed rather than papered over: no wreck (wants art), no vegetation, and its 10 % cover
-against a rural settlement's 17 % follows from the missing vegetation rather than from tuning.
+Known gaps, listed rather than papered over: no wreck (wants art), and no vegetation — but note that
+the earlier claim here, that its cover deficit "follows from the missing vegetation", was wrong. The
+prototype sits at 137 props and 18.2 % beside cover, which is a rural settlement's range already.
 
 ## 3. Measurements (medium maps, 8 seeds per cell, `main` before #269; desert and ramps moved as noted below)
 
@@ -376,6 +393,37 @@ require `distance ≥ 12`; and one watcher is not a squad. Measure the union.
 Option 1 on #685 — accept it — has a cost worth naming: it makes the lurker's premise (#333, stalk
 out of sight and strike from behind) impossible on the maps as they are.
 
+### The other half: a bug that *hatches* is not seen at all
+
+Walking is the wrong verb. Egg spawners are concealed almost until contact, so an enemy that emerges
+rather than approaches gets the ambush the terrain refuses to give it. Squad of five walked from its
+deploy zone straight at each spawner, asking at every step whether the nest is visible yet; 72
+spawners per scale, 6 seeds per biome × settlement:
+
+| | rural | town | city |
+|---|---|---|---|
+| still unseen when the squad is 20 steps away | 94 % | 94 % | 96 % |
+| still unseen at 16 steps | 82 % | 81 % | 90 % |
+| still unseen at 12 steps | 40 % | 50 % | 53 % |
+| still unseen at **8 steps** | **19 %** | **28 %** | **33 %** |
+| spawner is indoors | 56 % | 67 % | 68 % |
+
+Beside the approach numbers that is the whole finding: a bug that walks is seen every time; a bug
+that hatches is, a fifth to a third of the time, already inside the squad's eight-step bubble having
+never been observed. **The map is not the obstacle — the arrival mechanism is.**
+
+Three consequences worth carrying forward:
+
+- The placer already puts nests where the squad cannot see them, because it prefers interiors and
+  overlookable buildings (#544). No map work is needed to make emergence an ambush.
+- It retires the "sight-blocking mass on the approaches" option I proposed on #685, which would have
+  spent #281's ground budget for a few percent.
+- It gives the lurker (#333) a premise that works: stalking out of sight is map-impossible;
+  *emerging* out of sight is map-native today.
+
+Caveat on the method: "never seen: 0 %" is an artefact of walking the squad directly at each spawner.
+The claim is the distance, not the eventual sighting.
+
 ## 3e. Vegetation opacity, re-measured after the hill fix (#591, 2026-09-04)
 
 #591's original table (rural 87–89 % visible) is **stale** — it was taken before #593 landed, when
@@ -430,7 +478,12 @@ It changes no placement, so unlike most of §3 it does **not** spend the ground 
 
 ## 6. What I would do next, in order
 
-1. Nothing of mine is in review except this handoff. Open threads waiting on other people: #446
+1. **In review: #717** (#714, the prop-pass capability fix — note it lands with no production caller,
+   which I flagged on the PR for the Tech Lead to accept or reject). **Waiting on a one-line call:**
+   #591 (flip the three tree kinds to `blocksLos: true` — three data lines, no placement change, and
+   it does *not* spend #281's budget, §3e) and #712 (temperate boulders). **Waiting on a design
+   call:** #685, where the option that matters is now emergence rather than anything mapgen builds
+   (§3d). Other open threads on other people: #446
    (melee bugs invert cover — tactical's, routed), #487 (deployment over 16 units cannot launch),
    #447 (M3 archetypes, two questions for the Director), #281 (the cover call), and the turn-budget
    finding noted in #547 (a worst-case mech needs 11 turns to a firing position on `town/medium/9`
@@ -461,7 +514,10 @@ It changes no placement, so unlike most of §3 it does **not** spend the ground 
    Extend `tactical/service/map-assessment-service.ts` before writing a new scratch probe.
 6. M3 archetypes: the sketch is #447, including the two questions to settle first (are hive caverns
    mech-passable, and how big is a hive). `createPipeline`'s per-archetype table in `service/settlement-pipeline.ts` takes a
-   new pass list. Hive: cavern carve (cellular automaton on the dense heightmap, one level, `rock`
+   new pass list. **#714 cleared the capability wall in advance**: a pass can now be asked for the
+   placements an archetype can support, so a hive reuses the settlement's scattering without owning
+   buildings. Budget for the lesson §2c paid for, though — ambient clutter is a fixed budget per
+   archetype, and a second source competes with the first for tiles rather than adding to it. Hive: cavern carve (cellular automaton on the dense heightmap, one level, `rock`
    walls as solid `WallSet`s), nest rooms as `Building`s with kind `nest` and a `nest` room kind in
    `data/room-furnishing`, `hive-core` hook placer; props/ramps/hooks/connectivity reuse as-is.
    Crash site: terrain + a crater pass (bowl, debris props, `wreck` building) before roads/lots.
@@ -493,6 +549,14 @@ It changes no placement, so unlike most of §3 it does **not** spend the ground 
   sweep asserts `generations >= 200` precisely to stop that, and it is a deliberate tripwire.
 - **Measure twice under load.** A branch-versus-`main` comparison told me my crash-site PR had
   doubled the sweep (23.6 s against 11.8 s). It had not — a background wide sweep was still running.
+- **Know the baseline before you tune to a target.** I spent three sweeps tuning the crash site's
+  prop load toward "about what a settlement has" before checking what the crash site itself was: 137
+  props at 18.2 %, already in a settlement's range. The target was right and I had invented it.
+  `git stash` will not undo a *committed* change, so measuring a baseline means
+  `git checkout main -- <file>`, measure, then restore — twice today a stash produced a
+  "before" identical to the "after".
+- **Render an archetype you changed.** The suite was green on a crash site that read as a forest with
+  a dent in it. Nothing in 1907 tests looks at prop density per open tile, and nothing will.
   Two clean runs said 12.0 s and 16.4 s. Never draw a performance conclusion from one run while
   anything else is going.
 - **A pass that runs before the hook placers must keep off the map's border band.** Deploy zones and

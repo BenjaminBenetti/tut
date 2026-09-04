@@ -1,5 +1,6 @@
 import { BIOME_DEFINITIONS } from "../data/biomes";
 import { BUILDING_TEMPLATES } from "../data/building-templates";
+import { ELEVATED_FEATURES } from "../data/elevated-features";
 import { MAP_SIZE_DEFINITIONS } from "../data/map-sizes";
 import { PROP_DEFINITIONS } from "../data/props";
 import { ROOM_FURNISHING } from "../data/room-furnishing";
@@ -32,6 +33,7 @@ export function createDefaultRegistries(): MapGenRegistries {
       "building template",
       Object.values(BUILDING_TEMPLATES),
     ),
+    elevatedFeatures: createRegistry("elevated feature", ELEVATED_FEATURES),
     roomFurnishing: createRegistry(
       "room furnishing",
       Object.values(ROOM_FURNISHING),

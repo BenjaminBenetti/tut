@@ -63,5 +63,11 @@ export const SETTLEMENT_DEFINITIONS: Readonly<
     streetPropDensity: 5,
     yardPropDensity: 14,
     rampSpacing: 4,
+    // The knob behind #512: how much of a city stands one level up.
+    // Attempts, not placements — the plat runs out of room first, and a
+    // medium map lands around 470 raised columns for a mech high-ground
+    // share of 0.26. Raising it further buys almost nothing; lowering it
+    // takes cities back toward flat.
+    elevatedFeatures: { min: 38, max: 48 },
   },
 };

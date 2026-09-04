@@ -1,5 +1,6 @@
 import type { BiomeDefinition } from "./biome-definition";
 import type { BuildingTemplate } from "./building-template";
+import type { ElevatedFeature } from "./elevated-feature";
 import type { HookPlacer } from "./hook-placer";
 import type { MapSizeDefinition } from "./map-size-definition";
 import type { PropDefinition } from "./prop";
@@ -24,6 +25,8 @@ export interface MapGenRegistries {
   readonly settlements: Registry<SettlementDefinition>;
   readonly mapSizes: Registry<MapSizeDefinition>;
   readonly buildingTemplates: Registry<BuildingTemplate>;
+  /** Raised outdoor structures the elevation pass may stamp (#512). */
+  readonly elevatedFeatures: Registry<ElevatedFeature>;
   /** Interior props per room kind, keyed by the kind id. */
   readonly roomFurnishing: Registry<RoomFurnishing>;
   readonly hookPlacers: Registry<HookPlacer>;

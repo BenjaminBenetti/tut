@@ -18,6 +18,7 @@ export type DraftCapability =
   | "water"
   | "roads"
   | "lots"
+  | "elevation"
   | "buildings"
   | "interiors"
   | "props"

@@ -12,6 +12,7 @@ import type { ObjectiveTuning } from "../../tactical/model/objective-tuning";
 import { reload } from "../../tactical/model/reload-command";
 import type { TacticalCommand } from "../../tactical/model/tactical-command";
 import type { TacticalError } from "../../tactical/model/tactical-error";
+import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { Team, Unit, UnitId } from "../../tactical/model/unit";
 import {
@@ -31,6 +32,12 @@ import type { ActionBarAction } from "./action-bar-view";
 import { ActionBarView } from "./action-bar-view";
 import { HitPreviewView } from "./hit-preview-view";
 import { ObjectiveTrackerView } from "./objective-tracker-view";
+import type {
+  PhaseAnnouncement,
+  PhaseBannerOptions,
+} from "./phase-banner-view";
+import { PhaseBannerView } from "./phase-banner-view";
+import { TURN_STARTED } from "../../tactical/model/turn-started-event";
 import { TurnBannerView } from "./turn-banner-view";
 import { UnitCardView } from "./unit-card-view";
 
@@ -55,6 +62,8 @@ export interface TacticalHudDeps {
   readonly combatTuning: CombatTuning;
   /** Tuning handed to `reachableObjectives`; the HUD judges no distance itself. */
   readonly objectiveTuning: ObjectiveTuning;
+  /** Hold time and timers for the phase banner; the defaults are the DOM's. */
+  readonly phaseBanner?: PhaseBannerOptions;
 }
 
 /** Which team acts in which phase. */
@@ -97,6 +106,7 @@ export class TacticalHudView {
   /** The map `graph` was built from; a new mission's map rebuilds it. */
   private graphFor: TacticalState["map"] | undefined;
   private readonly banner: TurnBannerView;
+  private readonly phases: PhaseBannerView;
   private readonly card = new UnitCardView();
   private readonly preview: HitPreviewView;
   private readonly objectives = new ObjectiveTrackerView();
@@ -116,6 +126,7 @@ export class TacticalHudView {
     this.handlers = handlers;
     this.deps = deps;
     this.banner = new TurnBannerView({ onBack: () => handlers.onBack() });
+    this.phases = new PhaseBannerView(deps.phaseBanner);
     this.preview = new HitPreviewView({
       onConfirm: () => {
         this.confirmAttack();
@@ -150,14 +161,25 @@ export class TacticalHudView {
     this.objectives.mount(side);
     this.actions.mount(bottom);
     hud.append(top, side, bottom);
+    this.phases.mount(hud);
     parent.appendChild(hud);
     this.root = hud;
     this.refresh();
   }
 
-  /** Renders `mission`, dropping a selection or target that is gone, dead or destroyed. */
-  update(mission: TacticalState | undefined): void {
+  /**
+   * Renders `mission`, dropping a selection or target that is gone, dead
+   * or destroyed, and announces any phase change in `events` (#523). One
+   * `EndTurn` can carry both the bug phase and the player's next turn,
+   * which is why the banner takes the whole batch in order rather than a
+   * diff of two states.
+   */
+  update(
+    mission: TacticalState | undefined,
+    events: readonly TacticalEvent[] = [],
+  ): void {
     this.mission = mission;
+    this.phases.announce(phaseChangesIn(events));
     const aliveUnit = (id: UnitId | undefined): boolean =>
       id !== undefined &&
       (mission?.units.some((u) => u.id === id && u.hp > 0) ?? false);
@@ -183,6 +205,7 @@ export class TacticalHudView {
 
   /** Removes the HUD. */
   unmount(): void {
+    this.phases.unmount();
     this.actions.unmount();
     this.objectives.unmount();
     this.preview.unmount();
@@ -571,4 +594,20 @@ export class TacticalHudView {
 /** Living units on one team. */
 function countAlive(mission: TacticalState, team: Team): number {
   return mission.units.filter((u) => u.team === team && u.hp > 0).length;
+}
+
+// ===========================================
+// Events
+// ===========================================
+
+/** The phase changes in a batch of tactical events, in the order they happened. */
+function phaseChangesIn(
+  events: readonly TacticalEvent[],
+): readonly PhaseAnnouncement[] {
+  return events
+    .filter((event) => event.type === TURN_STARTED)
+    .map((event) => ({
+      phase: event.payload.phase,
+      turn: event.payload.turn,
+    }));
 }

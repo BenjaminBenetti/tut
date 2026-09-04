@@ -60,6 +60,7 @@ export type TacticalError =
   | { readonly kind: "no-reload"; readonly unitId: string }
   | { readonly kind: "objective-not-found"; readonly objectiveId: string }
   | { readonly kind: "objective-complete"; readonly objectiveId: string }
+  | { readonly kind: "objective-not-yours"; readonly unitId: string }
   | {
       readonly kind: "objective-target-missing";
       readonly objectiveId: string;
@@ -123,6 +124,8 @@ export function describeTacticalError(error: TacticalError): string {
       return `No objective "${error.objectiveId}" is in this mission`;
     case "objective-complete":
       return `Objective "${error.objectiveId}" is already done`;
+    case "objective-not-yours":
+      return `Unit "${error.unitId}" is not on the side whose objective that is`;
     case "objective-target-missing":
       return `Objective "${error.objectiveId}" tracks unknown target "${error.targetId}"`;
     case "objective-out-of-reach":

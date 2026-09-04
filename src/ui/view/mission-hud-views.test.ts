@@ -142,6 +142,33 @@ describe("UnitCardView weapon lines (#641)", () => {
 });
 
 describe("ActionBarView", () => {
+  it("puts Attack's digit on every weapon button, not just the first (#652)", () => {
+    const view = new ActionBarView({ onAction: vi.fn() });
+    view.mount(root);
+    view.update({
+      canAct: true,
+      playerPhase: true,
+      mode: undefined,
+      weapons: [
+        { id: "arm-weapon", name: "Autocannon", ready: true },
+        { id: "back-weapon", name: "Missile Pod", ready: true },
+      ],
+    });
+    const weapons = [...root.querySelectorAll<HTMLElement>("[data-weapon-id]")];
+    expect(weapons).toHaveLength(2);
+    // One key reaches both -- press it again to cycle (#532) -- so the
+    // digit is true on each. A button without the hint also loses the
+    // indent it reserves, so its glyph and label sit left of its
+    // neighbours' and the bar reads as though it had no shortcut.
+    const hints = weapons.map(
+      (b) =>
+        b.querySelector<HTMLElement>('[data-role="shortcut"]')?.textContent,
+    );
+    expect(hints).toEqual(["2", "2"]);
+    // And the one that is not first says how to reach it.
+    expect(weapons[1]?.title).toContain("press again");
+  });
+
   it("enables unit actions only when the unit can act, marks the mode and reports presses", () => {
     const onAction = vi.fn<(action: ActionBarAction) => void>();
     const view = new ActionBarView({ onAction });

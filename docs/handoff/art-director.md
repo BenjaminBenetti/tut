@@ -1,6 +1,6 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-04 (session 3, second update)
+Last updated: 2026-09-04 (session 3, third update)
 
 ## 1. What I was doing and where it stands
 
@@ -38,6 +38,43 @@ Last updated: 2026-09-04 (session 3, second update)
 | Overlapping hook markers z-fight — filed for graphics | #477 | Open, p3. |
 | Image generation recipe (incl. transparent sprites) | — | **Working.** See §5. |
 | Headless GLB / page render checks (Playwright) and Blender review renders | — | **Working.** See §7 and §8. |
+
+### Band 4 — composition, and the HUD chrome around it
+
+| Deliverable | Issue | State |
+|---|---|---|
+| **Composition pass** over fog + shadows + ghosting + overlays; §12.5 | #514 | **Merged** (PR #660). The Director adopted "one channel per question, across systems" as a rule. |
+| **Fog and shadow both darkened neutrally** — memory now goes cold | #661 | **Merged** (PR #678). |
+| Weapon pool moved into its weapon, so the card fits | #652 | **Merged** (PR #656). |
+| Attack's digit on every weapon button | #652 | **PR #664**. |
+| Side rail says when it has more to show, at 720p | #657 | **Merged** (PR #674). |
+| Shadow follow-ups: the filter that actually runs, read test lit like the game | #507 | **Merged** (PR #640). |
+| Mission list: a constant column, and a grid that was never a grid | — | **Merged** (PR #683). |
+| The cascade trap, written into §5 + `cssaudit.mjs` | — | this entry. |
+
+**What this band was actually about:** four systems landed in one build,
+each right on its own. The composition pass found one real collision —
+shadow and fog both answering their question by multiplying the ground
+down, neutrally, 1.35× apart — and **killed two of three hypotheses by
+measurement**. Ghosting against shadows looked like a fight and is a
+10 % difference; overlays staying unlit in shadow is deliberate.
+
+### 1.1 The habit that produced everything above
+
+Every finding this session came from shooting the running game, and
+**my first explanation for a symptom was wrong about as often as it was
+right.** The symptom was almost always real; the cause usually was not.
+
+- Ghosting: mocked in isolation, wrong about density.
+- Sight cue: premise measured when no enemy was visible.
+- Read test: ΔE said fine, ΔL said invisible.
+- Side rail: "missing `min-height: 0`" — measured identical.
+- Mission list: "the type column holds 1.6fr" — the rule never applied.
+
+So: shoot it, measure it, *then* write the explanation. And when a
+change measures identical before and after, it has not been applied —
+check the cascade before believing the diff. `cssaudit.mjs` exists
+because that one cost me twice in a day.
 
 ### Band 3 — the overlay language and unit readability
 
@@ -111,18 +148,20 @@ Issues #2, #3, #4, #93, #102, #119, #143, #144, #145 are on project 5; #162, #16
 
 ## 2. Open PRs / issues I own
 
-**No PR of mine is open.** Two issues are filed and unclaimed: #652
-(HUD chrome, with measurements and a recommended order) and #644 (a
-mapgen test flake, not ours to fix).
+**PR #664** (Attack's digit on every weapon button) is the only one
+open. #644 (a mapgen test flake) is filed and not ours to fix.
 
 ### 2.1 What I would do next, in order
 
 1. **Play a mission before choosing.** Every finding worth having came
    from `shoot-mission.mjs`, and three contradicted something I had
    just published. Do this before trusting any list, including this one.
-2. **#652 is the readiest piece of work** and it is HUD chrome, which
-   the Director named as an area he watches. It needs a call on card
-   density that I did not want to make unilaterally.
+2. **The overworld has had one pass and deserves another.** #683 came
+   out of the first ten minutes of looking at a screen I had ignored
+   all session. The map itself is fine — I checked the 36 % letterbox
+   (a 2:1 map in a 1.27:1 viewport at deliberate minimum zoom; filling
+   it vertically crops Pacific-rim cities) and the markers do carry
+   threat once infestation exists.
 3. **#613 is closed but not finished.** A light helmet makes infantry
    *findable*; the olive body still merges with grass and always will.
    If he says he still cannot see squads, the next lever is the body,

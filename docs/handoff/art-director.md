@@ -1,6 +1,6 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-04 (session 3, third update)
+Last updated: 2026-09-04 (session 3, fourth update)
 
 ## 1. What I was doing and where it stands
 
@@ -38,6 +38,44 @@ Last updated: 2026-09-04 (session 3, third update)
 | Overlapping hook markers z-fight — filed for graphics | #477 | Open, p3. |
 | Image generation recipe (incl. transparent sprites) | — | **Working.** See §5. |
 | Headless GLB / page render checks (Playwright) and Blender review renders | — | **Working.** See §7 and §8. |
+
+### Band 5 — art that shipped dark
+
+| Deliverable | Issue | State |
+|---|---|---|
+| Manifest consumer guard — a registered asset must be drawn | #697 | **Merged** (PR #698). |
+| The egg burst plays when charges finish a spawner | #697 | **Merged** (PR #713). |
+| Effects play their frame sheets | #697 | **Merged** (PR #719). |
+| The city panel's mission row read as fragments | — | **Merged** (PR #707). |
+| The mech bay has no picture of the mech you build | #694 | **Open**, specced, unclaimed. |
+
+**This band started from a hunch and an audit.** I had flagged "art
+registered and never consumed" three times — #474, #495, #694 — so
+rather than notice a fourth by accident I audited every manifest against
+its consumers. It found the worst one: nothing read the `sheet`
+descriptor, so **every effect in the game was a single frozen frame**
+while six sheets were fetched and decoded on every mission to be
+ignored; and `vfx.egg-burst` was drawn by nothing at all, though
+destroying spawners *is* the clearance mission.
+
+The reason it kept happening is worth keeping: **a registered-and-unused
+asset breaks no test.** The manifest's own test asserts the file exists,
+is the right size and parses — which it does, dark or not. A manifest
+entry is a promise that something draws it, and nothing checked the
+promise. `sprite-consumers.test.ts` now does, and its list is empty for
+the first time.
+
+Two cautions for whoever extends that guard:
+
+- **It only sees literal ids.** A sheet is reached by appending
+  `-sheet` to its effect's id, so its literal never appears in source
+  and the guard would have gone on reporting six dark sprites the frame
+  after they started animating. It knows that convention now, and
+  asserts it. Any other id built at runtime needs the same treatment.
+- **I scoped it to sprites deliberately.** My first pass at the icon
+  manifest mis-parsed it and reported 8 ids where there are far more, so
+  I did not build a guard on numbers I did not trust. The same shape
+  extends to the other four manifests once each is checked properly.
 
 ### Band 4 — composition, and the HUD chrome around it
 
@@ -148,8 +186,16 @@ Issues #2, #3, #4, #93, #102, #119, #143, #144, #145 are on project 5; #162, #16
 
 ## 2. Open PRs / issues I own
 
-**PR #664** (Attack's digit on every weapon button) is the only one
-open. #644 (a mapgen test flake) is filed and not ours to fix.
+**Nothing of mine is open.** Two issues are filed and unclaimed:
+
+- **#694** — the mech bay has no picture of the mech you are building.
+  The fourth instance of the pattern above, and the one still standing.
+  The assembled model is registered, the parts carry `socket_*` nodes,
+  the stat-sheet column has 470 px of empty panel. I specced it and
+  offered the art and scene side; the wiring to loadout state belongs
+  with whoever owns that screen.
+- **#644** — a mapgen test that sits on a 5 s timeout and goes red under
+  load. Not ours to fix.
 
 ### 2.1 What I would do next, in order
 

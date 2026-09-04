@@ -4,7 +4,7 @@
  * and timing can be judged without playing a mission to contact.
  *
  * ```
- *   ?case=ranged|melee|death   which sequence
+ *   ?case=ranged|melee|death|burst   which sequence
  *   ?px=64                     pixels per tile, the game's default zoom
  *   window.__vfx__.step(dt)    advance deterministically, then screenshot
  * ```
@@ -38,6 +38,9 @@ import { TacticalAnimationQueue } from "../../../src/graphics/service/tactical-a
 const params = new URLSearchParams(location.search);
 const px = Number(params.get("px") ?? 64);
 const which = params.get("case") ?? "ranged";
+
+/** Height of the stand-in egg spawner, matching the registered model. */
+const SPAWNER_HEIGHT = 1.4;
 const size = 720;
 
 /** Stand-in unit: a box the height of the real thing, in its faction's grey. */
@@ -90,6 +93,10 @@ const animationScene: AnimationScene = {
   tileWorldPosition: () => ({ x: 0, y: 0, z: 0 }),
   unitHeight: (id) => HEIGHTS[id],
   unitModelId: (id) => MODELS[id],
+  // A stand-in egg spawner for the burst case (#697), where the two
+  // stand-in units are, so the filmstrip is framed the same way.
+  spawnerWorldPosition: () => ({ x: 3, y: 0, z: 0 }),
+  spawnerHeight: () => SPAWNER_HEIGHT,
 };
 
 const loader = new TextureLoader();
@@ -156,6 +163,16 @@ const EVENTS: Record<string, TacticalEvent> = {
   death: {
     type: "tactical:unit-died",
     payload: { unitId: "unit-2" },
+  },
+  burst: {
+    type: "tactical:spawner-damaged",
+    payload: {
+      spawnerId: "spawner-1",
+      unitId: "unit-1",
+      damage: 20,
+      hp: 0,
+      destroyed: true,
+    },
   },
 };
 

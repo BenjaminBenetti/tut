@@ -14,10 +14,12 @@ import { SPRITE_MANIFEST } from "./sprite-manifest";
  *
  * `TacticalAnimationQueue` preloads the whole manifest, so an entry here
  * costs a fetch and a decode on every mission and returns a frozen
- * billboard or nothing at all. The six `-sheet` entries carry the
- * `sheet` descriptor added in #396 and no code reads `.sheet`, so every
- * effect in the game is a single static frame; `vfx.egg-burst` is not
- * drawn at all, though destroying spawners is the mission objective.
+ * billboard. The six `-sheet` entries carry the `sheet` descriptor added
+ * in #396 and no code reads `.sheet`, so every effect in the game is
+ * still a single static frame.
+ *
+ * `vfx.egg-burst` has left this list: the burst plays when charges
+ * finish a spawner off, which is what the guard is for.
  *
  * **This list should only ever shrink.** A new name in it means art has
  * shipped dark.
@@ -25,7 +27,6 @@ import { SPRITE_MANIFEST } from "./sprite-manifest";
 const KNOWN_UNDRAWN: readonly string[] = [
   "vfx.bug-death-sheet",
   "vfx.claw-slash-sheet",
-  "vfx.egg-burst",
   "vfx.egg-burst-sheet",
   "vfx.impact-sheet",
   "vfx.muzzle-flash-sheet",

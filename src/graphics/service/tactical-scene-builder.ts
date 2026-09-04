@@ -108,6 +108,8 @@ export class TacticalSceneBuilder
   private readonly wanted = new Set<UnitId>();
   private readonly spawnersGroup: Group;
   private readonly spawnerMeshes = new Map<SpawnerId, UnitMesh>();
+  /** Measured once when placed, for anchoring the egg burst (#697). */
+  private readonly spawnerHeights = new Map<SpawnerId, number>();
   private readonly targetToSpawner = new Map<Object3D, SpawnerId>();
   /** Spawners the latest `updateSpawners` asked for, for the same reason as `wanted`. */
   private readonly wantedSpawners = new Set<SpawnerId>();
@@ -392,6 +394,11 @@ export class TacticalSceneBuilder
     return this.spawnerMeshes.get(spawnerId)?.worldPosition();
   }
 
+  /** A spawner's measured height, so its burst anchors like a unit's (#697). */
+  spawnerHeight(spawnerId: SpawnerId): number | undefined {
+    return this.spawnerHeights.get(spawnerId);
+  }
+
   // ===========================================
   // TilePicker
   // ===========================================
@@ -438,6 +445,7 @@ export class TacticalSceneBuilder
     // A spawner does not turn; north is as good a rest pose as any.
     mesh.setPose(spawner.pos, "n");
     this.spawnerMeshes.set(spawner.id, mesh);
+    this.spawnerHeights.set(spawner.id, measureHeight(mesh.object));
     for (const target of mesh.pickTargets()) {
       this.targetToSpawner.set(target, spawner.id);
     }
@@ -455,6 +463,7 @@ export class TacticalSceneBuilder
       }
       mesh.dispose();
       this.spawnerMeshes.delete(spawnerId);
+      this.spawnerHeights.delete(spawnerId);
     }
     if (this.hoveredSpawner === spawnerId) {
       this.hoveredSpawner = undefined;

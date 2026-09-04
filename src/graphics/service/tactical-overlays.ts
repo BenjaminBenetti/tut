@@ -150,7 +150,12 @@ class PerimeterRibbon implements Disposable {
   private readonly material: MeshBasicMaterial;
 
   /** @param name - Object name for tests and debugging. */
-  constructor(name: string, colour: number, opacity: number, renderOrder: number) {
+  constructor(
+    name: string,
+    colour: number,
+    opacity: number,
+    renderOrder: number,
+  ) {
     this.material = new MeshBasicMaterial({
       color: colour,
       transparent: true,
@@ -221,8 +226,7 @@ class PerimeterRibbon implements Disposable {
    */
   edgeCount(): number {
     const position = this.geometry.getAttribute("position") as
-      | BufferAttribute
-      | undefined;
+      BufferAttribute | undefined;
     // Six vertices per edge: two triangles making one ribbon quad.
     return position === undefined ? 0 : position.count / 6;
   }
@@ -585,7 +589,8 @@ export function overlaysFor(
   // cue ignored the objective the player was trying to shoot (#517).
   const chosen =
     targetId === undefined ? undefined : findAttackTarget(mission, targetId);
-  const aim = chosen !== undefined && chosen.team !== unit.team ? chosen : undefined;
+  const aim =
+    chosen !== undefined && chosen.team !== unit.team ? chosen : undefined;
   const cover: CoverMarker[] = [];
   const blockedShot: TileCoord[] = [];
   for (const { tile } of moveRange) {
@@ -598,7 +603,10 @@ export function overlaysFor(
     // board (#624) -- a light that is always on says nothing. The few
     // tiles with no shot are the ones worth a mark, and they are what
     // QA needed when a mech silently refused to fire (#517).
-    if (aim !== undefined && !hasLineOfSight(mission.map, tile, aim.pos, index)) {
+    if (
+      aim !== undefined &&
+      !hasLineOfSight(mission.map, tile, aim.pos, index)
+    ) {
       blockedShot.push(tile);
     }
   }

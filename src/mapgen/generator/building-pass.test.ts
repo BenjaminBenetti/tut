@@ -201,8 +201,14 @@ describe("BuildingPass", () => {
     }
   });
 
-  it("puts at most one building per lot, within the settlement's ranges", () => {
-    for (const settlement of SETTLEMENT_SCALES) {
+  // One case per settlement scale rather than one over the matrix (#644):
+  // the combined loop generated ninety-six maps in one case, and a
+  // failure said only that the matrix was slow. Split, it names the
+  // scale — and the city turns out to carry most of the cost on its own,
+  // 1.6 s of the 2.6 s. The suite-wide budget in `vitest.config.ts` is
+  // what keeps a loaded runner from tipping any of them over.
+  for (const settlement of SETTLEMENT_SCALES) {
+    it(`puts at most one building per lot in a ${settlement}, within its ranges`, () => {
       for (const biome of BIOME_IDS) {
         for (let i = 0; i < SEEDS; i++) {
           const label = `${settlement}/${biome}/${i}`;
@@ -252,8 +258,8 @@ describe("BuildingPass", () => {
           for (const count of perLot.values()) expect(count, label).toBe(1);
         }
       }
-    }
-  });
+    });
+  }
 
   it("produces some multi-storey buildings in towns and cities", () => {
     let tall = 0;

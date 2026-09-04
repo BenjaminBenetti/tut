@@ -111,7 +111,11 @@ describe("composeTactical", () => {
     const outcome = store.dispatch(endTurn());
     expect(outcome.ok).toBe(true);
     expect(store.getState().activeMission?.turn).toBe(2);
+    // Two in the log — the mission's own opening announcement (#573) and
+    // the one this EndTurn raised — but only the second was dispatched,
+    // so a subscriber still sees exactly one.
     expect(store.getState().activeMission?.log.map((e) => e.type)).toEqual([
+      TURN_STARTED,
       TURN_STARTED,
     ]);
     expect(seen).toEqual([TURN_STARTED]);
@@ -186,6 +190,7 @@ describe("composeTactical", () => {
     expect(
       mission?.log.filter((e) => e.type === TURN_STARTED).map((e) => e.payload),
     ).toEqual([
+      { turn: 1, phase: "player" },
       { turn: 1, phase: "bugs" },
       { turn: 2, phase: "player" },
     ]);

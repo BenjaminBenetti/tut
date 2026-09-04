@@ -192,9 +192,12 @@ describe("registerTacticalCommands", () => {
     const mission = result.value.state.activeMission;
     expect(mission?.turn).toBe(2);
     expect(mission?.log).toEqual([
+      { type: TURN_STARTED, payload: { turn: 1, phase: "player" } },
       { type: TURN_STARTED, payload: { turn: 2, phase: "player" } },
     ]);
-    expect(result.value.events).toEqual(mission?.log);
+    // The command's events are what the log gained, not the whole of it:
+    // it opened with the mission's own announcement (#573).
+    expect(result.value.events).toEqual(mission?.log.slice(1));
     expect(result.value.state.overworld).toBe(state.overworld);
     expect(result.value.state.roster).toBe(state.roster);
     expect(state.activeMission?.turn).toBe(1);
@@ -241,6 +244,7 @@ describe("registerTacticalCommands", () => {
     expect(chained).toHaveLength(2);
     expect(chained[0]).not.toBe(chained[1]);
     expect(once.value.state.activeMission?.log.map((e) => e.type)).toEqual([
+      TURN_STARTED,
       UNIT_MOVED,
     ]);
   });
@@ -294,5 +298,54 @@ describe("applyTacticalCommand", () => {
       kind: "unhandled-command",
       commandType: END_TURN,
     });
+  });
+});
+
+// ===========================================
+// The fork nonce
+// ===========================================
+
+describe("the RNG fork nonce (#667)", () => {
+  it("counts commands, not log entries", () => {
+    // The nonce used to be `log.length`, so anything that changed what
+    // went in the log rerolled every die in the mission. #659 seeded the
+    // log and did exactly that, with the whole gate green.
+    const state = inMission();
+    const mission = state.activeMission;
+    if (!mission) throw new Error("fixture needs a mission");
+    expect(mission.commandSeq).toBe(0);
+    expect(mission.log.length).not.toBe(mission.commandSeq);
+
+    const unit = mission.units[0];
+    if (!unit) throw new Error("fixture needs a unit");
+    const once = dispatcherWith().process(state, move(unit.id, [unit.pos]));
+    if (!once.ok) throw new Error(once.error.message);
+    expect(once.value.state.activeMission?.commandSeq).toBe(1);
+  });
+
+  it("keeps rolling fresh when the log stops growing", () => {
+    // The failure a capped or filtered log would cause: two commands of
+    // the same type, turn and phase forking identically and rolling the
+    // same numbers. Overwatch shots and hit rolls would visibly repeat.
+    const state = inMission();
+    const unit = state.activeMission?.units[0];
+    if (!unit) throw new Error("fixture needs a unit");
+    const command = move(unit.id, [unit.pos]);
+
+    const draws: number[] = [];
+    const dispatcher = dispatcherWith(draws);
+    const first = dispatcher.process(state, command);
+    if (!first.ok) throw new Error(first.error.message);
+    // Pin the log where it is, as a cap would, and roll again.
+    const capped: GameState = {
+      ...first.value.state,
+      activeMission: first.value.state.activeMission && {
+        ...first.value.state.activeMission,
+        log: state.activeMission?.log ?? [],
+      },
+    };
+    dispatcher.process(capped, command);
+    expect(draws).toHaveLength(2);
+    expect(draws[0]).not.toBe(draws[1]);
   });
 });

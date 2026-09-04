@@ -31,6 +31,7 @@ import type {
   TacticalState,
 } from "../model/tactical-state";
 import { DEFAULT_HATCH_RADIUS, FIRST_TURN } from "../model/tactical-state";
+import { TURN_STARTED } from "../model/turn-started-event";
 import { initialVision } from "./vision-service";
 import type { PassClass, Unit } from "../model/unit";
 import { passMaskFor } from "../model/unit";
@@ -160,7 +161,16 @@ export function startTacticalMission<TState extends MissionCampaignState>(
     edgeSpawn: { nextTurn: deps.spawnTuning.firstWaveTurn, wave: 0 },
     extraction: map.hooks.extraction.tiles.map(coordOf),
     extracted: [],
-    log: [],
+    // The mission does begin on turn 1 in the player phase, so it says so
+    // (#573). Every later turn is announced by `turn-service`; without
+    // this the first one was the only silent one, and a player who
+    // launched and read the log was told nothing at all.
+    log: [
+      { type: TURN_STARTED, payload: { turn: FIRST_TURN, phase: "player" } },
+    ],
+    // No command has been applied yet. Deliberately not `log.length`,
+    // which is 1 here and is exactly the coupling #667 removes.
+    commandSeq: 0,
   };
   return ok({
     ...state,

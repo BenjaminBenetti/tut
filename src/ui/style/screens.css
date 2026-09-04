@@ -239,20 +239,42 @@
   overflow: auto;
 }
 
-.tut-missions__row {
+/*
+ * The city takes all the flexible width; everything else is its own
+ * size. The type used to hold `1.6fr` -- more than the city -- for a
+ * value identical on every row, and ellipsised it anyway, so each row
+ * showed a different truncation of the same word. It is a glyph now.
+ */
+/*
+ * Selector deliberately as specific as `.tut-list > li`, which sets
+ * `display: flex; justify-content: space-between` and would otherwise
+ * win — as it did for as long as this row has existed.
+ *
+ * That is the whole reason the columns never lined up: a flex row
+ * spreads its cells to the edges and sizes each to its own content, so
+ * every row laid out independently and the mission type ellipsised at a
+ * different point on each. The `grid-template-columns` written here
+ * before was never in effect at all.
+ *
+ * Fixed tracks now, and they apply. The data cells are monospace, so
+ * `ch` sizes them exactly: `D8`, `¢2,400`, `5 d`.
+ */
+.tut-list > li.tut-missions__row {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.6fr) auto auto auto;
+  grid-template-columns: minmax(0, 1fr) 1.1rem 3ch 7ch 4ch;
   align-items: center;
   gap: var(--space-2);
   cursor: pointer;
   font-size: 12px;
 }
 
+/* Numbers line up on their right edge, as numbers should. */
+.tut-missions__row .tut-data {
+  text-align: right;
+}
+
 .tut-missions__row [data-field="type"] {
   color: var(--ui-text-dim);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .tut-missions__row:focus-visible {
@@ -611,6 +633,26 @@
   grid-area: side;
   margin: var(--space-4);
   overflow: auto;
+  scrollbar-width: thin;
+}
+
+/*
+ * There is more below the fold (#657). The rail is bounded correctly and
+ * always was -- it stops above the action bar -- but a card tall enough
+ * to push an objective past the end left the row cut with nothing to say
+ * the rest was one scroll away, which reads as a rendering fault.
+ *
+ * The fade is the cue, and it clears as soon as the player reaches the
+ * end, so it never lies about content that is not there. Set from
+ * `watchSideOverflow`, because whether it applies depends on content
+ * height against box height and no selector can ask that.
+ */
+.tut-hud__side[data-overflow="true"] {
+  mask-image: linear-gradient(
+    to bottom,
+    #000 calc(100% - var(--space-6, 24px)),
+    transparent 100%
+  );
 }
 
 .tut-hud__bottom {

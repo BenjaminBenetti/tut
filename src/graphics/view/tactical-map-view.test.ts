@@ -396,11 +396,11 @@ describe("TacticalMapView.setVision", () => {
     return new Vector3().setFromMatrixScale(matrix).length();
   }
 
-  /** Colour multiplier of instance `i`; 1 in view, VISION_DIM remembered. */
-  function tintOf(mesh: InstancedMesh, i: number): number {
+  /** Colour multiplier of instance `i`; white in view, cold when remembered. */
+  function tintOf(mesh: InstancedMesh, i: number): Color {
     const colour = new Color();
     mesh.getColorAt(i, colour);
-    return colour.r;
+    return colour;
   }
 
   /** The instanced mesh holding the ground pillars at level 0. */
@@ -456,9 +456,22 @@ describe("TacticalMapView.setVision", () => {
     };
 
     expect(at(0, 0)?.scale).toBeGreaterThan(0);
-    expect(at(0, 0)?.tint).toBeCloseTo(1);
+    const seen = at(0, 0)?.tint;
+    expect(seen?.r).toBeCloseTo(1);
+    expect(seen?.g).toBeCloseTo(1);
+    expect(seen?.b).toBeCloseTo(1);
+
     expect(at(1, 0)?.scale).toBeGreaterThan(0);
-    expect(at(1, 0)?.tint).toBeCloseTo(VISION_DIM);
+    const remembered = at(1, 0)?.tint;
+    // Memory keeps its weight -- the green channel still carries
+    // VISION_DIM, so fog recedes exactly as far as it always did.
+    expect(remembered?.g).toBeCloseTo(VISION_DIM);
+    // ...and takes a channel lighting never uses (#661). A neutral
+    // multiply is precisely what a shadow does, so memory drawn that way
+    // was indistinguishable from a shadowed tile the player *can* see.
+    // Cold, and unmistakably so: blue above green above red.
+    expect(remembered?.b).toBeGreaterThan(remembered!.g);
+    expect(remembered?.g).toBeGreaterThan(remembered!.r);
     view.dispose();
   });
 

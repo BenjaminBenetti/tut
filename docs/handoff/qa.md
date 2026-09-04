@@ -6,9 +6,9 @@ Last updated: 2026-09-04 (post-v0.2.0; win path settled on #317).
 
 | Field | Value |
 |---|---|
-| SHA tested | `7133f94` (main, M2.5 band 3) |
-| Gate | typecheck, lint, build pass; vitest **1852 / 1852** (+1 deliberate skip); e2e **58 / 58** |
-| Exploratory | 11 flows clean; #624 and #627 verified fixed; catalogue refactor (#108) checked screen by screen |
+| SHA tested | `ea276a9` (main, after v0.2.3) |
+| Gate | typecheck, lint, build pass; vitest **1880 / 1880** (+1 deliberate skip); e2e **58 / 58** |
+| Exploratory | 11 flows clean; v0.2.3 verified as a shipped artifact; overwatch exercised end to end |
 | **Verdict** | **Healthy, and the board is clear.** Control scheme 7/7 on every head since band 1; a mission is completable with fog active, guarded by a permanent spec. **No open QA-filed defects.** |
 
 ### Release push, in order of what mattered
@@ -139,7 +139,20 @@ Last updated: 2026-09-04 (post-v0.2.0; win path settled on #317).
 
     In non-CI mode Playwright **reuses** a running dev server, and the timing-sensitive specs fail under the contention; `CI=1` instead refuses to reuse and errors loudly. I had only recorded the loud variant. **Stop the probe servers before every e2e gate, in either mode** — under the fail-on-flaky policy this would have been reported as freshly merged work breaking main.
 
-21. **Three features have now shipped fully working and invisible**, every one with CI green: **#555** (every overlay failing a depth test), **#572** (the 2 AP band painted over by the range fill), **#605** (the selection ring never drawn). That is the single most useful thing this seat has learned. Photograph the screen and look at it; the suite cannot see any of these.
+21. **v0.2.3 verified as a shipped artifact** (`f4d8245`), built from the tag and played as a production preview with no dev hooks: camera opens on the force, Move armed by default, right click invokes (`15,30 → 15,29`), digits arm, both phase banners fire, no console errors. The `Attack ×2` label confirms it is the post-#533 build.
+
+22. **Overwatch works end to end, and has no e2e coverage.** Only `overwatch-handler.test.ts` covers it, and #579 unified the very sight rule it depends on. Exercised by hand on `814b2ff`: the mech armed it, and during the turn-4 bug phase a bug was damaged and one killed, status going `overwatch` → `clear`. `/tmp/qa-scripts/qa-overwatch.mjs` runs it.
+
+    **Deliberately not promoted.** It needs ~5 turns for bugs to close and their arrival is timing-dependent; with `--fail-on-flaky-tests` a slow non-deterministic spec costs more than it protects. The win-path spec was promoted because it is bounded and deterministic — that is the line.
+
+    **Trap in that probe:** `"Hammerhead is overwatch"` is the *arming* record. Matching the log on `/overwatch/` alone reports a shot that never happened; my first run claimed a hit with zero bugs on the map. Require a shot verb or read hp from the autosave.
+
+23. **Two ways this seat manufactured a red result, both mine, both worth knowing.**
+
+    - **`EMFILE: too many open files`** on the e2e gate. `fs.inotify.max_user_instances` is **128** here and a long session leaks `vite` and `chrome` watchers until the dev server cannot start. It surfaces as `Process from config.webServer was not able to start`, which reads like broken CI infrastructure. Sweep stray processes periodically; after killing them it went straight back to 58 passed.
+    - **Testing the title instead of the acceptance criteria.** #573 reads "announce the turn a mission opens on", so I tested for a phase banner, found none in 3.5 s, and had a clean control proving my detector worked — it caught both End-turn banners in the same run. The issue was about the **event log** being empty at mission open, which works (`Turn 1 — TDF phase`). Every other false alarm this session came from a broken instrument; this one came from a correct instrument aimed at the wrong target, and no amount of validating the tool would have caught it. **Read the body, not the title.**
+
+24. **Three features have now shipped fully working and invisible**, every one with CI green: **#555** (every overlay failing a depth test), **#572** (the 2 AP band painted over by the range fill), **#605** (the selection ring never drawn). That is the single most useful thing this seat has learned. Photograph the screen and look at it; the suite cannot see any of these.
 
 ### Harness lessons that cost me a wrong reading
 
@@ -154,6 +167,9 @@ Three times this session a control-scheme or rendering change silently invalidat
 
 | SHA | Build | Unit | e2e | Exploratory | Filed |
 |---|---|---|---|---|---|
+| `ea276a9` | pass | 1880/1880 | 58/58 | crash-site archetype is preview-only | — |
+| `9a0863e` | pass | 1877/1877 | 58/58 | #573 log opens with an entry | — |
+| `814b2ff` | pass | 1873/1873 | 58/58 | overwatch still fires after #579 | — |
 | `7133f94` | pass | 1852/1852 | 58/58 | #613 light helmet reads | — |
 | `ccfae7a` | pass | 1851/1851 | 58/58 | per-weapon card lines; false red, see below | — |
 | `a0389c7` | pass | 1848/1848 | 58/58 | id-registry refactor, catalogues intact | — |

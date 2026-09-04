@@ -128,6 +128,7 @@ export function hudMission(
     extracted: [],
     vision: emptyVision(),
     log: [],
+    commandSeq: 0,
     ...overrides,
   };
   // A real look from where everyone stands, so HUD tests exercise the

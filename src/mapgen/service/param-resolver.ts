@@ -17,8 +17,15 @@ export type ParamResolverRegistries = Pick<
   "biomes" | "settlements" | "mapSizes"
 >;
 
-/** Archetypes the generator can build today. */
-const SUPPORTED_ARCHETYPES: ReadonlySet<string> = new Set(["settlement"]);
+/**
+ * Archetypes the generator can build today. `crash-site` is a prototype
+ * reachable only from the preview harness and tests — no mission type
+ * names it, so nothing in the game can ask for one (#447).
+ */
+const SUPPORTED_ARCHETYPES: ReadonlySet<string> = new Set([
+  "settlement",
+  "crash-site",
+]);
 
 /**
  * Expands presets and looks up ids so passes only ever see concrete

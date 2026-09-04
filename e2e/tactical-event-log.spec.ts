@@ -67,9 +67,15 @@ test("the event log reads the mission's events and collapses (#525)", async ({
   await expect(log).toBeVisible();
   const entries = log.locator('[data-role="event-log-list"] > li');
 
-  // A mission starts with an empty log: events accumulate as commands
-  // apply, and launching applies none. Ending the turn runs the bug
-  // phase, which is the first thing there is to report.
+  // The mission announces the turn it opened on, so the log has
+  // something to say before the player has acted (#573). It used to open
+  // empty, and this test had to end a turn before it could assert that a
+  // single entry existed.
+  await expect(entries).toHaveCount(1);
+  await expect(entries.first()).toContainText("Turn 1");
+
+  // Ending the turn runs the bug phase, which is the first thing the
+  // player's own actions put in there.
   const before = await entries.count();
   await page.locator('#action-bar [data-action="end-turn"]').click();
   await expect

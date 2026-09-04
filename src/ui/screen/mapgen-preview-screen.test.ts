@@ -37,6 +37,7 @@ describe("MapgenPreviewScreen", () => {
         biome: "temperate",
         settlement: "town",
         size: "medium",
+        archetype: "settlement",
       },
       { onGenerate, onLevelChange: vi.fn() },
     );
@@ -52,7 +53,13 @@ describe("MapgenPreviewScreen", () => {
     const root = document.createElement("div");
     const screen = new MapgenPreviewScreen(
       root,
-      { seed: "s", biome: "temperate", settlement: "town", size: "medium" },
+      {
+        seed: "s",
+        biome: "temperate",
+        settlement: "town",
+        size: "medium",
+        archetype: "settlement",
+      },
       { onGenerate: vi.fn(), onLevelChange: vi.fn() },
     );
     const stats = (): string => root.querySelector("#stats")?.textContent ?? "";

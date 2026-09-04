@@ -103,8 +103,12 @@ describe("UnitCardView weapon lines (#641)", () => {
     ).toEqual(["Autocannon", "Missile Pod"]);
     expect(weapons[0]?.textContent).toContain("range 10");
     expect(weapons[1]?.textContent).toContain("range 14");
-    // Charges are per weapon too, and read the same way.
-    expect(blocks("charges")).toHaveLength(2);
+    // Each weapon carries its own pool, inside its own block (#652):
+    // the separate Charges list repeated both names to say which pool
+    // was which, and that repetition is what pushed the card off screen.
+    expect(weapons[0]?.textContent).toContain("heat 4 / 4");
+    expect(weapons[1]?.textContent).toContain("heat 4 / 4");
+    expect(field("charges")).toBeNull();
   });
 
   it("leaves a one-weapon card exactly as it was, with no name line", () => {
@@ -127,17 +131,19 @@ describe("UnitCardView weapon lines (#641)", () => {
     const mech = hudUnit("m1", "tdf", "mech", 1, 1, { kind: "mech" });
     const template = twoWeaponTemplate();
     view.update(mech, template);
-    expect(blocks("charges")).toHaveLength(2);
-    // A squad carries no pool at all, so the field falls back.
+    const pools = () =>
+      field("weapon")?.querySelectorAll('[data-role="charges"]').length;
+    expect(pools()).toBe(2);
+    // A squad carries no pool at all, so its weapon block has no line.
     view.update(
       hudUnit("s1", "tdf", "rifle", 1, 1),
       hudTemplate("rifle", "Rifle Squad"),
     );
-    expect(field("charges")?.textContent).toBe("—");
+    expect(pools()).toBe(0);
     // Selecting the mech again has to redraw it: the memo that skips an
-    // unchanged rebuild must not still be holding the old key.
+    // unchanged rebuild keys on the charges too, or the pools stay gone.
     view.update(mech, template);
-    expect(blocks("charges")).toHaveLength(2);
+    expect(pools()).toBe(2);
   });
 });
 

@@ -4,6 +4,7 @@ import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
+import { TileIndex } from "../../mapgen/service/tile-index";
 import { COMBAT_TUNING } from "../../tactical/data/combat-tuning";
 import { ATTACK } from "../../tactical/model/attack-command";
 import { MOVE } from "../../tactical/model/move-command";
@@ -18,6 +19,7 @@ import {
 } from "../../tactical/service/tactical-fixtures.test-helper";
 import { BRUTE } from "../data/species";
 import { BRUTE_TUNING } from "../data/brute-tuning";
+import { overwatchScore } from "./utility";
 import { adjacentCount, BruteBehaviour } from "./brute-behaviour";
 import type { BehaviourContext } from "./bug-behaviour";
 import { withBug, bugView } from "./bug-mission.test-helper";
@@ -163,21 +165,33 @@ describe("BruteBehaviour", () => {
       ),
     };
     const enemies = watched.units.filter((u) => u.team === "tdf");
-    expect(
-      adjacentCount(destinationOf(watched, plan(watched)), enemies),
-    ).toBeGreaterThan(0);
+    const closed = destinationOf(watched, plan(watched));
+    expect(adjacentCount(closed, enemies)).toBeGreaterThan(0);
 
-    // Turning the reward into a heavy penalty cannot change this on open
-    // ground, and that is the point: every watcher sees every tile, so
-    // overwatchScore is 1 everywhere and the term cancels. It is a
-    // tie-breaker for maps with something to hide behind, never a reason
-    // to hang back — the closing above is driven by adjacency alone.
+    // And the term is live, which is what makes the closing above worth
+    // asserting. Turn the reward into a heavy penalty and the brute goes
+    // the other way — out of the watchers' reach entirely.
+    //
+    // This case used to assert the opposite, that the penalty changed
+    // nothing, on the reasoning that "every watcher sees every tile so
+    // overwatchScore is 1 everywhere and the term cancels". That was
+    // true, and it was the bug (#663): the score asked only for a clear
+    // line and never for sight range, so it read 1 from any distance at
+    // all and no weight could move it. A term that cancels is not a
+    // tie-breaker, it is a term that is not there.
     const timid = new BruteBehaviour({
       ...BRUTE_TUNING,
       overwatchWeight: -20,
     });
-    expect(destinationOf(watched, plan(watched, 1, timid))).toEqual(
-      destinationOf(watched, plan(watched)),
+    const fled = destinationOf(watched, plan(watched, 1, timid));
+    const index = new TileIndex(watched.map);
+    expect(adjacentCount(fled, enemies)).toBe(0);
+    // Fewer guns bear on where it went than on where it would have
+    // closed. Not zero — one of the three still reaches that corner at
+    // exactly its sight range — and that is the point: the score is a
+    // gradient now, where before it was 1 on every tile of the map.
+    expect(overwatchScore(watched, fled, enemies, index)).toBeLessThan(
+      overwatchScore(watched, closed, enemies, index),
     );
   });
 

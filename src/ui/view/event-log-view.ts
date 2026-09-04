@@ -1,9 +1,9 @@
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { UnitId } from "../../tactical/model/unit";
-import { iconUrl } from "../data/icon-manifest";
 import type { IconId } from "../data/icon-manifest";
 import { formatWhole } from "../service/format";
+import { iconGlyph } from "./icon-glyph";
 
 // ===========================================
 // Types
@@ -254,11 +254,7 @@ export class EventLogView {
       const row = doc.createElement("li");
       row.className = `tut-log__row tut-log__row--${entry.tone}`;
       row.dataset.text = entry.text;
-      const icon = doc.createElement("span");
-      icon.className = "tut-icon tut-icon--sm";
-      // `iconUrl` already returns `url(…)`; wrapping it again is invalid CSS
-      // and the mask silently falls back to a solid block.
-      icon.style.setProperty("--icon", iconUrl(entry.icon));
+      const icon = iconGlyph(doc, entry.icon);
       const text = doc.createElement("span");
       text.textContent = entry.text;
       const repeat = doc.createElement("span");

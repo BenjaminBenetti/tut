@@ -1,7 +1,7 @@
 import type { Unit } from "../../tactical/model/unit";
 import type { UnitTemplate } from "../../tactical/model/unit-template";
-import { iconUrl } from "../data/icon-manifest";
 import { formatWhole } from "../service/format";
+import { iconGlyph } from "./icon-glyph";
 
 // ===========================================
 // Constants and model
@@ -15,6 +15,17 @@ interface CardEntry {
   /** Omitted when the unit carries one of whatever this lists. */
   readonly name?: string;
   readonly value: string;
+  /**
+   * The weapon's own heat or ammo, on a dim line under its numbers.
+   *
+   * It used to be a `Charges` row of its own, which repeated every
+   * weapon's name to say which pool was which -- so a two-weapon mech
+   * printed "Autocannon" and "Missile Pod" twice each and the card grew
+   * past the bottom of the screen (#652). A pool belongs to the weapon
+   * it feeds, so it goes in the weapon's block and the second list is
+   * gone.
+   */
+  readonly charges?: string;
 }
 
 // ===========================================
@@ -90,16 +101,13 @@ export class UnitCardView {
       ["Attacks", "attacks", "attack"],
       ["Weapon", "weapon", "attack"],
       ["Armor", "armor", "armor"],
-      ["Charges", "charges", "ammo"],
       ["Status", "status", "overwatch"],
     ] as const) {
       const term = doc.createElement("dt");
       term.className = "tut-label tut-row";
       // The glyph carries the row at a glance; the word stays for anyone who
       // does not know the glyph yet (#495).
-      const mark = doc.createElement("span");
-      mark.className = "tut-icon tut-icon--sm";
-      mark.style.setProperty("--icon", iconUrl(icon));
+      const mark = iconGlyph(doc, icon);
       term.append(mark, doc.createTextNode(label));
       const value = doc.createElement("dd");
       value.className = "tut-mono";
@@ -147,30 +155,24 @@ export class UnitCardView {
     // One block per weapon (#532). A squad or a bug carries one and
     // reads as it always did; a mech lists its arm and back weapons,
     // which is the whole point — they differ in reach.
+    const kind = unit.kind === "mech" ? "heat" : "ammo";
     this.setEntries(
       "weapon",
       template.weapons.map((weapon) => {
         const p = weapon.profile;
+        const capacity = weapon.charges;
+        const left = unit.charges?.[weapon.id] ?? capacity ?? 0;
         return {
           name: template.weapons.length > 1 ? weapon.name : undefined,
           value: `range ${formatWhole(p.range)} · acc ${formatWhole(p.accuracy)} · dmg ${formatWhole(p.damage)} · pen ${formatWhole(p.armorPen)}`,
+          charges:
+            capacity === undefined
+              ? undefined
+              : `${kind} ${formatWhole(left)} / ${formatWhole(capacity)}`,
         };
       }),
     );
     this.set("armor", formatWhole(template.armor));
-    const pools = template.weapons.filter((w) => w.charges !== undefined);
-    const kind = unit.kind === "mech" ? "heat" : "ammo";
-    this.setEntries(
-      "charges",
-      pools.map((weapon) => {
-        const capacity = weapon.charges ?? 0;
-        const left = unit.charges?.[weapon.id] ?? capacity;
-        return {
-          name: pools.length > 1 ? weapon.name : undefined,
-          value: `${kind} ${formatWhole(left)} / ${formatWhole(capacity)}`,
-        };
-      }),
-    );
     this.set(
       "status",
       unit.status.length === 0 ? EMPTY_FIELD : unit.status.join(", "),
@@ -211,9 +213,11 @@ export class UnitCardView {
    * ```
    *   WEAPON   Autocannon              ← name, dim, its own line
    *            range 10 · acc 75 · …
+   *            heat 4 / 4              ← its own pool, dim (#652)
    *                                    ← gap, so the block is one thing
    *            Missile Pod
    *            range 14 · acc 70 · …
+   *            heat 4 / 4
    * ```
    *
    * A `\n` between the two would have done if the panel were wide, but
@@ -236,7 +240,7 @@ export class UnitCardView {
     // store tick, and replacing these nodes each time would restart any
     // transition on them.
     const key = entries
-      .map((e) => `${e.name ?? ""}\u0000${e.value}`)
+      .map((e) => `${e.name ?? ""}\u0000${e.value}\u0000${e.charges ?? ""}`)
       .join("\u0001");
     if (el.dataset.entries === key) {
       return;
@@ -256,6 +260,13 @@ export class UnitCardView {
         const value = doc.createElement("span");
         value.textContent = entry.value;
         block.appendChild(value);
+        if (entry.charges !== undefined) {
+          const charges = doc.createElement("span");
+          charges.className = "tut-card__entry-charges tut-dim";
+          charges.dataset.role = "charges";
+          charges.textContent = entry.charges;
+          block.appendChild(charges);
+        }
         return block;
       }),
     );

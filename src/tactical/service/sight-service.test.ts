@@ -7,6 +7,7 @@ import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import { SurfaceIds } from "../../mapgen/data/surfaces";
+import type { PlaneCell } from "./sight-service";
 import {
   coverAgainst,
   elevationBonus,
@@ -288,5 +289,81 @@ describe("terrain", () => {
       .tile({ x: 2, y: 2, z: 1 }, SurfaceIds.FLOOR)
       .build();
     expect(los(map, at(0, 1), { x: 2, y: 2, z: 1 })).toBe(false);
+  });
+});
+
+// ===========================================
+// Corner seams
+// ===========================================
+
+/**
+ * A field with the two columns at `(1, 2)` and `(2, 1)` raised to level
+ * 2 and no tile beneath them: two hills that meet only at the corner
+ * between `(1, 1)` and `(2, 2)`.
+ *
+ * ```
+ *   z=1   .   ##          ## raised to level 2
+ *   z=2   ##   .          .  ground at level 0
+ *        x=1  x=2
+ * ```
+ */
+function cornerHills(...raised: readonly PlaneCell[]): TacticalMap {
+  const builder = new FixtureMapBuilder(5, 5, 3).fillGround();
+  for (const cell of raised) {
+    builder.removeTile({ x: cell.x, y: 0, z: cell.z });
+    builder.tile({ x: cell.x, y: 2, z: cell.z }, SurfaceIds.ROCK);
+  }
+  return builder.build();
+}
+
+describe("corner seams", () => {
+  it("does not let sight thread the seam between two hills (#646)", () => {
+    // The line steps diagonally through the corner and never enters
+    // either hill, so the cell rule is never asked about them.
+    const map = cornerHills({ x: 1, z: 2 }, { x: 2, z: 1 });
+    expect(los(map, at(1, 1), at(2, 2))).toBe(false);
+  });
+
+  it("leaves the diagonal open when only one side of the corner is rock", () => {
+    // One hill touched at a single corner still has an open gap beside
+    // it; sealing that would make terrain stricter than masonry.
+    const map = cornerHills({ x: 1, z: 2 });
+    expect(los(map, at(1, 1), at(2, 2))).toBe(true);
+  });
+
+  it("agrees with what a wall on the same corner already did", () => {
+    // The wall rule reads all four edges meeting at the corner, which is
+    // why it never had this hole. Terrain now matches it.
+    const walled = new FixtureMapBuilder(5, 5, 3)
+      .fillGround()
+      .wall({ x: 1, y: 0, z: 2 }, "n", "solid")
+      .build();
+    expect(los(walled, at(1, 1), at(2, 2))).toBe(false);
+  });
+
+  it("does not call ground with a floor above it rock (#646)", () => {
+    // The near-miss this rule shipped with: asking only "is there ground
+    // higher in this column" makes any tile under a storey read as solid,
+    // and a corner between two building floors seals for no reason. It
+    // blocked three times as many lines as the rule intends.
+    const map = new FixtureMapBuilder(5, 5, 3)
+      .fillGround()
+      .tile({ x: 1, y: 1, z: 2 }, SurfaceIds.FLOOR)
+      .tile({ x: 2, y: 1, z: 1 }, SurfaceIds.FLOOR)
+      .build();
+    expect(los(map, at(1, 1), at(2, 2))).toBe(true);
+  });
+
+  it("names the cells a corner step grazes, and none for a straight one", () => {
+    // Geometry the sight rule should not have to re-derive from the
+    // order of the four edges.
+    const diagonal = traceLine({ x: 0, z: 0 }, { x: 2, z: 2 });
+    const corner = diagonal.crossings.find((c) => c.edges.length === 4);
+    expect(corner?.grazed).toEqual([
+      { x: 1, z: 0 },
+      { x: 0, z: 1 },
+    ]);
+    const straight = traceLine({ x: 0, z: 0 }, { x: 3, z: 0 });
+    expect(straight.crossings.every((c) => c.grazed.length === 0)).toBe(true);
   });
 });

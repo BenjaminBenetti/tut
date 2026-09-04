@@ -15,6 +15,8 @@ import { previewAttack } from "../../tactical/service/combat-service";
 import { hudMission, hudTemplate, hudUnit } from "./mission-hud.test-helper";
 import { TacticalHudView } from "./tactical-hud-view";
 import { withVision } from "../../tactical/service/vision-service";
+import type { TurnStartedEvent } from "../../tactical/model/turn-started-event";
+import { TURN_STARTED } from "../../tactical/model/turn-started-event";
 
 let root: HTMLElement;
 const field = (name: string): HTMLElement | null =>
@@ -892,5 +894,98 @@ describe("the context menu closes when the player moves on (#627)", () => {
       ),
     });
     expect(isOpen()).toBe(false);
+  });
+});
+
+// ===========================================
+// The event log on arrival
+// ===========================================
+
+/**
+ * The lines currently in the event log panel, oldest first, with the
+ * repeat count spelled out.
+ *
+ * The panel collapses consecutive identical lines into one row and
+ * counts them (#525), so a line appended twice looks exactly like a line
+ * appended once unless the count is read as well — which is the whole
+ * difference between replaying a log and duplicating it.
+ */
+function logLines(): string[] {
+  return [
+    ...root.querySelectorAll<HTMLElement>(
+      '[data-role="event-log-list"] [data-text]',
+    ),
+  ].map((row) => {
+    const repeat = Number(row.dataset.repeat ?? "1");
+    return repeat > 1
+      ? `${row.dataset.text ?? ""} ×${repeat}`
+      : (row.dataset.text ?? "");
+  });
+}
+
+/** A HUD mounted but not yet shown a mission. */
+function bareHud(): TacticalHudView {
+  const hud = new TacticalHudView(
+    { onCommand: vi.fn(), onBack: vi.fn() },
+    { combatTuning: COMBAT_TUNING, objectiveTuning: OBJECTIVE_TUNING },
+  );
+  hud.mount(root);
+  return hud;
+}
+
+const turnStarted = (
+  turn: number,
+  phase: "player" | "bugs",
+): TurnStartedEvent => ({
+  type: TURN_STARTED,
+  payload: { turn, phase },
+});
+
+describe("the event log on arrival (#573)", () => {
+  it("says what the mission opened on, before the player has done anything", () => {
+    bareHud().update(hudMission({ turn: 1, log: [turnStarted(1, "player")] }));
+    // No command has been dispatched, so there is no event batch to
+    // append: this line can only have come from the mission's own log.
+    expect(logLines()).toEqual(["Turn 1 — TDF phase"]);
+  });
+
+  it("replays a resumed mission's whole log instead of starting blank", () => {
+    bareHud().update(
+      hudMission({
+        turn: 3,
+        log: [
+          turnStarted(1, "player"),
+          turnStarted(1, "bugs"),
+          turnStarted(2, "player"),
+        ],
+      }),
+    );
+    expect(logLines()).toEqual([
+      "Turn 1 — TDF phase",
+      "Turn 1 — bug phase",
+      "Turn 2 — TDF phase",
+    ]);
+  });
+
+  it("does not replay the log again on every later update of the same mission", () => {
+    const hud = bareHud();
+    const mission = hudMission({ turn: 1, log: [turnStarted(1, "player")] });
+    hud.update(mission);
+    // A selection, not a command: the log must not grow a second copy.
+    hud.update(mission);
+    expect(logLines()).toEqual(["Turn 1 — TDF phase"]);
+  });
+
+  it("starts the log over when a different mission opens", () => {
+    const hud = bareHud();
+    hud.update(hudMission({ turn: 1, log: [turnStarted(1, "player")] }));
+    hud.update(
+      hudMission({
+        missionId: "mission-2",
+        turn: 1,
+        log: [turnStarted(1, "player"), turnStarted(1, "bugs")],
+      }),
+    );
+    expect(logLines()).toEqual(["Turn 1 — TDF phase", "Turn 1 — bug phase"]);
   });
 });

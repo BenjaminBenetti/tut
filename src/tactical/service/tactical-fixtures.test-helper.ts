@@ -140,6 +140,7 @@ export function missionWith(
     extracted: [],
     vision: emptyVision(),
     log: [],
+    commandSeq: 0,
     ...options,
   };
 }

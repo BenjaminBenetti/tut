@@ -4,7 +4,10 @@ import { SETTLEMENT_SCALES } from "../../content/model/settlement-scale";
 import type { SettlementScale } from "../../content/model/settlement-scale";
 import type { GenerationDiagnostics } from "../../mapgen/model/diagnostics";
 import type { MapMetrics } from "../../mapgen/model/map-metrics";
-import type { MapSizePreset } from "../../mapgen/model/map-recipe";
+import type {
+  MapArchetype,
+  MapSizePreset,
+} from "../../mapgen/model/map-recipe";
 import { MAP_SIZE_PRESETS } from "../../mapgen/model/map-recipe";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import { ASCII_LEGEND } from "../../mapgen/service/ascii-map-renderer";
@@ -21,6 +24,12 @@ export interface PreviewControlsState {
   readonly biome: BiomeId;
   readonly settlement: SettlementScale;
   readonly size: MapSizePreset;
+  /**
+   * Which pass list to run. The panel has no control for it — a
+   * prototype archetype is reached with `?archetype=` and nothing else
+   * offers one (#447) — so it rides through the state untouched.
+   */
+  readonly archetype: MapArchetype;
 }
 
 /** A finished generation for the panel to describe. */
@@ -84,6 +93,8 @@ export class MapgenPreviewScreen {
   private previousMetrics: MapMetrics | undefined;
   /** Assessment of the last map shown, for the delta column. */
   private previousAssessment: MapAssessment | undefined;
+  /** Archetype the caller opened the harness with; not editable here. */
+  private readonly archetype: MapArchetype;
 
   // ===========================================
   // Constructor
@@ -96,6 +107,7 @@ export class MapgenPreviewScreen {
     options: MapgenPreviewScreenOptions,
   ) {
     this.options = options;
+    this.archetype = initial.archetype;
     const doc = root.ownerDocument;
 
     const form = el(doc, "form", "tut-panel mapgen-controls");
@@ -190,6 +202,7 @@ export class MapgenPreviewScreen {
       biome: this.biomeSelect.value as BiomeId,
       settlement: this.settlementSelect.value as SettlementScale,
       size: this.sizeSelect.value as MapSizePreset,
+      archetype: this.archetype,
     };
   }
 

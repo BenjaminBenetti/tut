@@ -1,8 +1,8 @@
 import type { IconId } from "../data/icon-manifest";
-import { iconUrl } from "../data/icon-manifest";
 import type { GameState } from "../../save/model/game-state";
 import { formatCredits, formatWhole } from "../service/format";
 import { threatTone } from "../service/threat-band";
+import { iconGlyph } from "./icon-glyph";
 
 // ===========================================
 // Types
@@ -243,12 +243,7 @@ export class TopBarView {
     }
     // The glyph carries the meaning and the word repeats it, so the
     // glyph is decorative and the label stays the accessible name (#495).
-    const glyph = doc.createElement("span");
-    glyph.className = "tut-icon tut-icon--sm";
-    glyph.dataset.icon = icon;
-    glyph.setAttribute("aria-hidden", "true");
-    // `iconUrl` already returns `url(…)`; wrapping it again is invalid CSS.
-    glyph.style.setProperty("--icon", iconUrl(icon));
+    const glyph = iconGlyph(doc, icon);
     stat.append(glyph, term, value);
     return { stat, value };
   }

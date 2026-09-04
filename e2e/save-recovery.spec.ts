@@ -37,7 +37,13 @@ async function reloadWithAutosave(page: Page, value: string): Promise<void> {
     },
     [AUTOSAVE_KEY, value] as const,
   );
-  await page.reload();
+  // domcontentloaded, not load: `load` waits for every asset the page
+  // pulls — models, textures, fonts — and this spec only ever asserts on
+  // the main menu. Six full boots in one spec, under a loaded machine,
+  // is enough for one of them to pass 30s waiting for art it never looks
+  // at, which is the flake in #578. The app-state attribute below is the
+  // signal that actually matters and it is still awaited.
+  await page.reload({ waitUntil: "domcontentloaded" });
   await expect(page.locator("body")).toHaveAttribute("data-app-state", "ready");
   await expect(page.locator("body")).toHaveAttribute(
     "data-screen",

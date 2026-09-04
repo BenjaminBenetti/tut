@@ -202,11 +202,12 @@ test("captures a mission with fog of war for review", async ({ page }) => {
   // The shot has to show every unit the player is entitled to see, or it
   // is evidence of a drawing bug rather than of fog. `data-tactical-units`
   // is what the scene actually put on the board — and the host stamps it
-  // only once the unit models have loaded, so it has to be waited for
-  // rather than read once (#650).
-  await expect(body).toHaveAttribute("data-tactical-units", /^\d+$/);
-  const drawn = await body.getAttribute("data-tactical-units");
-  expect(Number(drawn)).toBe(3 + known.spottedBugs);
+  // only once the unit models have loaded, so this retries to the count
+  // rather than reading the attribute once and finding it absent (#650).
+  await expect(body).toHaveAttribute(
+    "data-tactical-units",
+    String(3 + known.spottedBugs),
+  );
 
   await page.waitForTimeout(400);
   await page.screenshot({ path: "docs/design/tactical-fog-of-war.png" });
@@ -241,6 +242,7 @@ test("captures a mission with fog of war for review", async ({ page }) => {
     );
     return away[0] ?? null;
   });
+  const start = await unitTile(page, "unit-1");
   for (let turn = 0; turn < 6; turn++) {
     if (step) {
       await walkToward(page, "unit-1", step);
@@ -248,6 +250,14 @@ test("captures a mission with fog of war for review", async ({ page }) => {
     await page.locator('#action-bar [data-action="end-turn"]').click();
     await page.waitForTimeout(150);
   }
+  // The walk is the whole point of the second shot, and it has already
+  // failed silently once: #520 moved the trigger to the right button and
+  // this spec went on passing while writing a turn-7 image identical to
+  // turn 1. Without this the next such regression freezes these images
+  // again with the suite still green.
+  const end = await unitTile(page, "unit-1");
+  expect(end).not.toBeNull();
+  expect(`${end?.x},${end?.z}`).not.toBe(`${start?.x},${start?.z}`);
   await page.evaluate(() =>
     (globalThis as HookGlobal).__tutTactical__?.selectUnit("unit-1"),
   );

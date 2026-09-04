@@ -47,6 +47,8 @@ test("captures the glyphed screens for review", async ({ page }) => {
   await page.locator('[data-field="seed"]').fill("4242");
   await page.locator('[data-action="new-game"]').click();
   await expect(body).toHaveAttribute("data-screen", "overworld");
+  // The top bar's glyphs live here and nowhere the frames below reach.
+  expect(await unresolved(), "every overworld glyph resolves").toEqual([]);
 
   // Roster: one glyph per row, by kind.
   await page.locator('[data-action="roster"]').click();

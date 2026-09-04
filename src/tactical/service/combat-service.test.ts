@@ -10,6 +10,9 @@ import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
 import { COMBAT_TUNING } from "../data/combat-tuning";
 import { attack } from "../model/attack-command";
 import { ATTACK_RESOLVED } from "../model/attack-resolved-event";
+import { MISSION_ENDED } from "../model/mission-ended-event";
+import { OBJECTIVE_UPDATED } from "../model/objective-updated-event";
+import { SPAWNER_DAMAGED } from "../model/spawner-damaged-event";
 import type { CombatTuning } from "../model/combat-tuning";
 import type { TacticalContext } from "../model/tactical-handler";
 import type { TacticalState } from "../model/tactical-state";
@@ -441,5 +444,212 @@ describe("resolveAttack", () => {
     if (result.ok) return;
     expect(result.error.kind).toBe("wrong-phase");
     expect(m).toEqual(before);
+  });
+});
+
+// ===========================================
+// Egg spawners as targets (#426)
+// ===========================================
+
+describe("attacking an egg spawner", () => {
+  const SPAWNER_POS = { x: 5, y: 0, z: 0 };
+
+  /** A spawner at `pos` with `hp` left, and the objective tracking it. */
+  function withSpawner(
+    units: Unit[],
+    options: {
+      hp?: number;
+      destroyed?: boolean;
+      pos?: { x: number; y: number; z: number };
+      objectives?: TacticalState["objectives"];
+    } = {},
+  ): TacticalState {
+    return mission(units, {
+      spawners: [
+        {
+          id: "spawner-1",
+          pos: options.pos ?? SPAWNER_POS,
+          hatchRadius: 3,
+          hp: options.hp ?? 20,
+          timer: 2,
+          destroyed: options.destroyed ?? false,
+        },
+      ],
+      objectives: options.objectives ?? [
+        {
+          id: "objective-1",
+          kind: "destroy-spawner",
+          targetId: "spawner-1",
+          complete: false,
+        },
+      ],
+    });
+  }
+
+  /** A context whose dice always hit for the low end of the band. */
+  function riggedCtx(): TacticalContext {
+    return {
+      rng: {
+        next: () => 0,
+        nextInt: (min: number) => min,
+        pick: (items: readonly unknown[]) => items[0],
+        chance: () => true,
+        pickWeighted: (items: readonly unknown[]) => items[0],
+        shuffle: (items: readonly unknown[]) => [...items],
+        fork: function () {
+          return this;
+        },
+        getState: () => ({ algorithm: "rigged", seed: 0, state: 0 }),
+      } as unknown as TacticalContext["rng"],
+      ids: new SequentialIdGenerator(),
+    };
+  }
+
+  it("previews a shot at a spawner with the same numbers a unit gets", () => {
+    const m = withSpawner([unit("s1", "tdf", "rifle", 0, 0)]);
+    const preview = previewAttack(m, "s1", "spawner-1", T);
+    expect(preview.ok).toBe(true);
+    if (!preview.ok) return;
+    // Range, cover and elevation are judged against the spawner's tile.
+    expect(preview.value.distance).toBe(5);
+    expect(preview.value.cover).toBe(CoverLevel.NONE);
+    // A spawner is unarmoured, so the band is the rifle's own.
+    expect(preview.value.damage).toEqual(damageRange(RIFLE, 0, T));
+    expect(preview.value.hitChance).toBe(
+      hitChance(RIFLE, { ...NO_TERRAIN, distance: 5 }, T),
+    );
+  });
+
+  it("takes hit points off the spawner and announces the damage", () => {
+    const m = withSpawner([unit("s1", "tdf", "rifle", 0, 0)]);
+    const applied = resolveAttack(m, attack("s1", "spawner-1"), riggedCtx(), T);
+    expect(applied.ok).toBe(true);
+    if (!applied.ok) return;
+    const [low] = damageRange(RIFLE, 0, T);
+    expect(applied.value.state.spawners[0]).toMatchObject({
+      hp: 20 - low,
+      destroyed: false,
+    });
+    expect(applied.value.events.map((e) => e.type)).toEqual([
+      ATTACK_RESOLVED,
+      SPAWNER_DAMAGED,
+    ]);
+    // The attacker paid for the shot exactly as it would against a unit.
+    expect(applied.value.state.units[0]?.ap).toBe(0);
+    // Nothing is written into units for a spawner.
+    expect(applied.value.state.units).toHaveLength(1);
+  });
+
+  it("destroying the last spawner completes its objective and ends the mission", () => {
+    const [low] = damageRange(RIFLE, 0, T);
+    const m = withSpawner([unit("s1", "tdf", "rifle", 0, 0)], { hp: low });
+    const applied = resolveAttack(m, attack("s1", "spawner-1"), riggedCtx(), T);
+    expect(applied.ok).toBe(true);
+    if (!applied.ok) return;
+    expect(applied.value.state.spawners[0]).toMatchObject({
+      hp: 0,
+      destroyed: true,
+    });
+    expect(applied.value.state.objectives[0]?.complete).toBe(true);
+    expect(applied.value.state.outcome).toBe("won");
+    expect(applied.value.events.map((e) => e.type)).toEqual([
+      ATTACK_RESOLVED,
+      SPAWNER_DAMAGED,
+      OBJECTIVE_UPDATED,
+      MISSION_ENDED,
+    ]);
+  });
+
+  it("leaves the mission running while another objective is still open", () => {
+    const [low] = damageRange(RIFLE, 0, T);
+    const m = withSpawner([unit("s1", "tdf", "rifle", 0, 0)], {
+      hp: low,
+      objectives: [
+        {
+          id: "objective-1",
+          kind: "destroy-spawner",
+          targetId: "spawner-1",
+          complete: false,
+        },
+        {
+          id: "objective-2",
+          kind: "destroy-spawner",
+          targetId: "spawner-2",
+          complete: false,
+        },
+      ],
+    });
+    const applied = resolveAttack(m, attack("s1", "spawner-1"), riggedCtx(), T);
+    expect(applied.ok).toBe(true);
+    if (!applied.ok) return;
+    expect(applied.value.state.outcome).toBeUndefined();
+    expect(applied.value.events).not.toContainEqual(
+      expect.objectContaining({ type: MISSION_ENDED }),
+    );
+  });
+
+  it("a miss leaves the spawner untouched and says nothing about it", () => {
+    const m = withSpawner([unit("s1", "tdf", "rifle", 0, 0)]);
+    const missed = resolveAttack(
+      m,
+      attack("s1", "spawner-1"),
+      { rng: new Mulberry32Rng(1), ids: new SequentialIdGenerator() },
+      { ...T, minHitChance: 0, maxHitChance: 0 },
+    );
+    expect(missed.ok).toBe(true);
+    if (!missed.ok) return;
+    expect(missed.value.state.spawners[0]?.hp).toBe(20);
+    expect(missed.value.events.map((e) => e.type)).toEqual([ATTACK_RESOLVED]);
+  });
+
+  it("refuses a bug shooting its own hive, whatever the phase", () => {
+    const m = {
+      ...withSpawner([unit("b1", "bugs", "swarmer", 4, 0)]),
+      phase: "bugs" as const,
+    };
+    const refused = previewAttack(m, "b1", "spawner-1", T);
+    expect(refused.ok).toBe(false);
+    if (refused.ok) return;
+    expect(refused.error).toEqual({
+      kind: "friendly-target",
+      targetId: "spawner-1",
+    });
+  });
+
+  it("refuses a spawner that is already destroyed", () => {
+    const m = withSpawner([unit("s1", "tdf", "rifle", 0, 0)], {
+      hp: 0,
+      destroyed: true,
+    });
+    const refused = previewAttack(m, "s1", "spawner-1", T);
+    expect(refused.ok).toBe(false);
+    if (refused.ok) return;
+    expect(refused.error).toEqual({
+      kind: "target-destroyed",
+      targetId: "spawner-1",
+    });
+  });
+
+  it("judges range and line of sight from the spawner's own tile", () => {
+    const far = withSpawner([unit("s1", "tdf", "rifle", 0, 0)], {
+      pos: { x: 9, y: 0, z: 5 },
+    });
+    const outOfRange = previewAttack(far, "s1", "spawner-1", T);
+    expect(outOfRange.ok).toBe(false);
+    if (!outOfRange.ok) {
+      expect(outOfRange.error.kind).toBe("out-of-range");
+    }
+    // The fixture map walls the west side of (7,0,3).
+    const walled = withSpawner([unit("s1", "tdf", "rifle", 5, 3)], {
+      pos: { x: 7, y: 0, z: 3 },
+    });
+    const blocked = previewAttack(walled, "s1", "spawner-1", T);
+    expect(blocked.ok).toBe(false);
+    if (!blocked.ok) {
+      expect(blocked.error).toEqual({
+        kind: "no-line-of-sight",
+        targetId: "spawner-1",
+      });
+    }
   });
 });

@@ -25,7 +25,6 @@ import {
   createEndTurnHandler,
   createOverwatchReaction,
   DEFAULT_PHASE_STEPS,
-  missionOutcome,
   overwatchReaction,
   refreshSides,
 } from "./turn-service";
@@ -239,76 +238,6 @@ describe("createEndTurnHandler", () => {
     ]);
     const lost = handler(wiped, endTurn(), ctx);
     expect(lost.ok && lost.value.state.outcome).toBe("lost");
-  });
-});
-
-// ===========================================
-// Terminal conditions
-// ===========================================
-
-describe("missionOutcome", () => {
-  const open = [
-    { id: "o1", kind: "destroy-spawner", targetId: "s1", complete: false },
-  ] as const;
-  const done = [
-    { id: "o1", kind: "destroy-spawner", targetId: "s1", complete: true },
-  ] as const;
-
-  it("is undefined while an objective is open and a TDF unit stands, even with no objectives at all", () => {
-    const map = openField().build();
-    expect(
-      missionOutcome(
-        missionWith(map, [unitAt("u", "infantry", at(0, 0))], {
-          objectives: open,
-        }),
-      ),
-    ).toBeUndefined();
-    expect(
-      missionOutcome(missionWith(map, [unitAt("u", "infantry", at(0, 0))])),
-    ).toBeUndefined();
-  });
-
-  it("is won when every objective is complete, whoever is left standing", () => {
-    const map = openField().build();
-    expect(
-      missionOutcome(
-        missionWith(map, [unitAt("u", "infantry", at(0, 0))], {
-          objectives: done,
-        }),
-      ),
-    ).toBe("won");
-    expect(
-      missionOutcome(
-        missionWith(map, [unitAt("u", "infantry", at(0, 0), { hp: 0 })], {
-          objectives: done,
-        }),
-      ),
-    ).toBe("won");
-  });
-
-  it("is lost on a wipe with nobody extracted and extracted once the survivors have left", () => {
-    const map = openField().build();
-    const bugsOnly = [unitAt("b", "infantry", at(7, 7), { team: "bugs" })];
-    expect(
-      missionOutcome(missionWith(map, bugsOnly, { objectives: open })),
-    ).toBe("lost");
-    expect(
-      missionOutcome(
-        missionWith(map, bugsOnly, {
-          objectives: open,
-          extracted: [unitAt("u", "infantry", at(0, 0))],
-        }),
-      ),
-    ).toBe("extracted");
-    const partly = [unitAt("u", "infantry", at(0, 0)), ...bugsOnly];
-    expect(
-      missionOutcome(
-        missionWith(map, partly, {
-          objectives: open,
-          extracted: [unitAt("v", "infantry", at(0, 0))],
-        }),
-      ),
-    ).toBeUndefined();
   });
 });
 

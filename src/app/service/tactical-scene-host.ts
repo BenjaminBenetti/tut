@@ -4,6 +4,7 @@ import { CameraInputController } from "../../graphics/controller/camera-input-co
 import { MODEL_MANIFEST } from "../../graphics/data/model-manifest";
 import { SPRITE_MANIFEST } from "../../graphics/data/sprite-manifest";
 import { CAMERA_ZOOM } from "../../graphics/model/camera-state";
+import { missionFocus } from "../../graphics/service/tactical-framing";
 import type { ModelLoader } from "../../graphics/model/model-loader";
 import type { SpriteSource } from "../../graphics/model/sprite-source";
 import { GltfModelLoader } from "../../graphics/service/gltf-model-loader";
@@ -71,7 +72,7 @@ interface AttachedScene {
  * ```
  *   attach(container, mission, intents)
  *     ├─ builder = TacticalSceneBuilder({ map, models })
- *     ├─ rig.setBounds(map) · rig.lookAt(centre)
+ *     ├─ rig.setBounds(map) · rig.lookAt(missionFocus)
  *     ├─ input = TacticalInputController({ picker: builder, camera: rig, cameraInput, intents })
  *     ├─ overlays = TacticalOverlays()  ·  animations = TacticalAnimationQueue({ scene: builder, sprites })
  *     ├─ scene = SceneService(container, { camera: rig, content, updatables: [input, animations] })
@@ -142,7 +143,10 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
     const content = new Group();
     content.add(builder.root, overlays.root, animations.root);
     rig.setBounds({ x: 0, z: 0, w: mission.map.width, d: mission.map.depth });
-    rig.lookAt(builder.centre);
+    // The force the player just deployed, not the middle of the map: on
+    // a large map those are tens of tiles apart and the squad opens off
+    // screen (#538).
+    rig.lookAt(missionFocus(mission));
     const input = new TacticalInputController({
       picker: builder,
       camera: rig,

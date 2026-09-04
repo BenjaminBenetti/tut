@@ -150,10 +150,15 @@ describe("CameraInputController", () => {
     controller.update(0.5);
     expect(controls.calls).toEqual([]);
 
+    const tap = CAMERA_INPUT_TUNING.tapPanPx;
     doc.dispatch("keydown", { key: "d", repeat: false });
     controller.update(0.5);
     const step = CAMERA_INPUT_TUNING.panSpeedPxPerSecond * 0.5;
-    expect(controls.calls).toEqual([`panBy:${step.toFixed(1)},0.0`]);
+    // The press itself moves once, then holding it keeps panning.
+    expect(controls.calls).toEqual([
+      `panBy:${tap.toFixed(1)},0.0`,
+      `panBy:${step.toFixed(1)},0.0`,
+    ]);
 
     doc.dispatch("keyup", { key: "d" });
     doc.dispatch("keydown", { key: "ArrowUp", repeat: false });
@@ -162,7 +167,27 @@ describe("CameraInputController", () => {
 
     doc.dispatch("keyup", { key: "ArrowUp" });
     controller.update(0.5);
-    expect(controls.calls).toHaveLength(2);
+    // Two taps and two held steps, and nothing after the key came up.
+    expect(controls.calls).toHaveLength(4);
+  });
+
+  it("moves on a single press, so a tapped key is not swallowed (#538)", () => {
+    const { controls, controller, doc } = setup();
+    const tap = CAMERA_INPUT_TUNING.tapPanPx;
+    // Press and release inside one frame: `update` never sees the key.
+    doc.dispatch("keydown", { key: "ArrowLeft", repeat: false });
+    doc.dispatch("keyup", { key: "ArrowLeft" });
+    controller.update(0.5);
+    expect(controls.calls).toEqual([`panBy:${(-tap).toFixed(1)},0.0`]);
+  });
+
+  it("does not stack a nudge per auto-repeat while a key is held", () => {
+    const { controls, controller, doc } = setup();
+    doc.dispatch("keydown", { key: "s", repeat: false });
+    doc.dispatch("keydown", { key: "s", repeat: true });
+    doc.dispatch("keydown", { key: "s", repeat: true });
+    controller.update(0);
+    expect(controls.calls).toHaveLength(1);
   });
 
   it("normalises diagonal panning to the same speed", () => {
@@ -171,25 +196,29 @@ describe("CameraInputController", () => {
     doc.dispatch("keydown", { key: "d", repeat: false });
     controller.update(1);
     const step = CAMERA_INPUT_TUNING.panSpeedPxPerSecond / Math.SQRT2;
-    expect(controls.calls).toEqual([
+    // Each press nudged once; the held pan is the normalised one after.
+    expect(controls.calls.at(-1)).toBe(
       `panBy:${step.toFixed(1)},${(-step).toFixed(1)}`,
-    ]);
+    );
   });
 
   it("opposite keys cancel out", () => {
     const { controls, controller, doc } = setup();
     doc.dispatch("keydown", { key: "a", repeat: false });
     doc.dispatch("keydown", { key: "d", repeat: false });
+    const afterTaps = controls.calls.length;
     controller.update(1);
-    expect(controls.calls).toEqual([]);
+    // Both presses nudged, and the held pair adds nothing on top.
+    expect(controls.calls).toHaveLength(afterTaps);
   });
 
   it("drops held keys when the page is hidden", () => {
     const { controls, controller, doc } = setup();
     doc.dispatch("keydown", { key: "s", repeat: false });
+    const afterTap = controls.calls.length;
     doc.dispatch("visibilitychange");
     controller.update(1);
-    expect(controls.calls).toEqual([]);
+    expect(controls.calls).toHaveLength(afterTap);
   });
 
   it("wheel up zooms in, wheel down zooms out, clamped per event", () => {

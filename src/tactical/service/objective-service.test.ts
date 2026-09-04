@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { err, ok } from "../../core/model/result";
 import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { extract } from "../model/extract-command";
@@ -214,6 +215,32 @@ describe("createInteractHandler", () => {
         ),
       ),
     ).toBe("objective-out-of-reach");
+  });
+
+  it("hands the objective's own effect to the interaction for its kind", () => {
+    const seen: string[] = [];
+    const custom = createInteractHandler(TUNING, {
+      "destroy-spawner": (mission, objective, unit) => {
+        seen.push(`${objective.id}:${unit.id}`);
+        return ok({ state: mission, events: [] });
+      },
+    });
+    const applied = custom(besideSpawner(), interact("u", "objective-1"), CTX);
+    if (!applied.ok) throw new Error(`refused: ${applied.error.kind}`);
+
+    expect(seen).toEqual(["objective-1:u"]);
+    // The handler still bills the action, even for an interaction that
+    // changes nothing else.
+    expect(applied.value.state.units[0]?.ap).toBe(2 - TUNING.interactApCost);
+    expect(applied.value.state.spawners[0]?.hp).toBe(20);
+  });
+
+  it("spends nothing when the interaction refuses", () => {
+    const custom = createInteractHandler(TUNING, {
+      "destroy-spawner": () => err({ kind: "unit-dead", unitId: "u" }),
+    });
+    const applied = custom(besideSpawner(), interact("u", "objective-1"), CTX);
+    expect(refusal(applied)).toBe("unit-dead");
   });
 
   it("leaves the mission it was given alone", () => {

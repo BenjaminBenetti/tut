@@ -8,7 +8,10 @@ import { OBJECTIVE_UPDATED } from "../model/objective-updated-event";
 import type { ObjectiveTuning } from "../model/objective-tuning";
 import { SPAWNER_DAMAGED } from "../model/spawner-damaged-event";
 import type { TacticalApplied, TacticalEvent } from "../model/tactical-event";
-import type { TacticalHandler } from "../model/tactical-handler";
+import type {
+  TacticalHandler,
+  TacticalOutcome,
+} from "../model/tactical-handler";
 import type {
   Objective,
   Spawner,
@@ -20,37 +23,145 @@ import { UNIT_EXTRACTED } from "../model/unit-extracted-event";
 import { missionOutcome } from "./turn-service";
 
 // ===========================================
+// Objective kinds
+// ===========================================
+
+/**
+ * What one objective kind does when a unit works it. The `Interact`
+ * handler has already checked the unit and found the objective open, so
+ * an interaction only validates its own preconditions, applies its own
+ * effect and announces it; the handler bills the action point and asks
+ * whether the mission is over.
+ *
+ * One per `Objective.kind`, the way `PhaseStep` is one per thing a phase
+ * does: M3's rescue, defend and escort objectives add their own without
+ * touching the handler or each other (ADR 0003 §2.2 — pure, no mutation).
+ */
+export type ObjectiveInteraction = (
+  mission: TacticalState,
+  objective: Objective,
+  unit: Unit,
+  tuning: ObjectiveTuning,
+) => TacticalOutcome;
+
+/**
+ * `destroy-spawner`: the unit plants charges on the egg spawner the
+ * objective tracks. The spawner loses `chargeDamage` hit points and, at
+ * zero, is destroyed and its objective completed.
+ *
+ * ```
+ *   target gone ──► objective-target-missing
+ *   manhattan(unit, spawner) > interactRange ──► objective-out-of-reach
+ *          │
+ *          ▼
+ *   spawner.hp − chargeDamage, SpawnerDamaged
+ *   hp <= 0 ──► destroyed, objective complete, ObjectiveUpdated
+ * ```
+ */
+export const plantCharges: ObjectiveInteraction = (
+  mission,
+  objective,
+  unit,
+  tuning,
+) => {
+  const spawner = mission.spawners.find(
+    (candidate) => candidate.id === objective.targetId,
+  );
+  if (spawner === undefined || spawner.destroyed) {
+    return err({
+      kind: "objective-target-missing",
+      objectiveId: objective.id,
+      targetId: objective.targetId,
+    });
+  }
+  const distance = manhattanDistance(unit.pos, spawner.pos);
+  if (distance > tuning.interactRange) {
+    return err({
+      kind: "objective-out-of-reach",
+      objectiveId: objective.id,
+      distance,
+      range: tuning.interactRange,
+    });
+  }
+
+  const hp = Math.max(0, spawner.hp - tuning.chargeDamage);
+  const destroyed = hp <= 0;
+  const damaged: Spawner = { ...spawner, hp, destroyed };
+  const events: TacticalEvent[] = [
+    {
+      type: SPAWNER_DAMAGED,
+      payload: {
+        spawnerId: spawner.id,
+        unitId: unit.id,
+        damage: spawner.hp - hp,
+        hp,
+        destroyed,
+      },
+    },
+  ];
+  if (destroyed) {
+    events.push({
+      type: OBJECTIVE_UPDATED,
+      payload: { objectiveId: objective.id, complete: true },
+    });
+  }
+  return ok({
+    state: {
+      ...mission,
+      spawners: mission.spawners.map((candidate) =>
+        candidate.id === spawner.id ? damaged : candidate,
+      ),
+      objectives: destroyed
+        ? mission.objectives.map((candidate): Objective =>
+            candidate.id === objective.id
+              ? { ...candidate, complete: true }
+              : candidate,
+          )
+        : mission.objectives,
+    },
+    events,
+  });
+};
+
+/** The interaction each objective kind ships with (GDD §6.3: M2 clears egg spawners). */
+export const DEFAULT_OBJECTIVE_INTERACTIONS: Readonly<
+  Record<Objective["kind"], ObjectiveInteraction>
+> = {
+  "destroy-spawner": plantCharges,
+};
+
+// ===========================================
 // Interact
 // ===========================================
 
 /**
- * Builds the `Interact` handler (GDD §6.2). One action plants charges on
- * the egg spawner an objective tracks: the spawner loses `chargeDamage`
- * hit points and, at zero, is destroyed and its objective completed. The
- * mission ends here rather than at the next turn boundary when that was
- * the last objective, so the last spawner's destruction is the end of the
- * mission (#328's `missionOutcome` decides, this only asks it).
+ * Builds the `Interact` handler (GDD §6.2: "interact with objective").
+ * It owns what every objective kind shares — who may act, what an action
+ * costs, and whether the mission is now over — and hands the objective's
+ * own effect to the interaction registered for its kind.
  *
  * ```
  *   unit missing ──► unit-not-on-map     down ──► unit-dead
  *   other side's phase ──► wrong-phase   no actions ──► no-action-points
  *   unknown objective ──► objective-not-found
  *   already done ──► objective-complete
- *   target gone ──► objective-target-missing
- *   too far ──► objective-out-of-reach
  *          │
  *          ▼
- *   ap − interactApCost, spawner.hp − chargeDamage, SpawnerDamaged
- *   hp <= 0 ──► destroyed, objective complete, ObjectiveUpdated
- *               every objective done ──► outcome won, MissionEnded
+ *   interactions[objective.kind](mission, objective, unit, tuning)
+ *          ├── err ──► the interaction's rejection, nothing spent
+ *          └── ok ──► ap − interactApCost, then the terminal check:
+ *                     every objective done ──► outcome won, MissionEnded
  * ```
  *
- * Pure; draws nothing. M2 ships the one objective kind, so the switch
- * over `objective.kind` has a single arm; M3's rescue, defend and escort
- * objectives add their own without touching this one.
+ * The mission ends here rather than at the next turn boundary, so the
+ * last spawner's destruction is the end of the mission (#328's
+ * `missionOutcome` decides; this only asks it). Pure; draws nothing.
  */
 export function createInteractHandler(
   tuning: ObjectiveTuning,
+  interactions: Readonly<
+    Record<Objective["kind"], ObjectiveInteraction>
+  > = DEFAULT_OBJECTIVE_INTERACTIONS,
 ): TacticalHandler<InteractCommand> {
   return (mission, command) => {
     const { unitId, objectiveId } = command.payload;
@@ -76,66 +187,24 @@ export function createInteractHandler(
     if (objective.complete) {
       return err({ kind: "objective-complete", objectiveId });
     }
-    const spawner = mission.spawners.find(
-      (candidate) => candidate.id === objective.targetId,
+    const worked = interactions[objective.kind](
+      mission,
+      objective,
+      unit,
+      tuning,
     );
-    if (spawner === undefined || spawner.destroyed) {
-      return err({
-        kind: "objective-target-missing",
-        objectiveId,
-        targetId: objective.targetId,
-      });
+    if (!worked.ok) {
+      return worked;
     }
-    const distance = manhattanDistance(unit.pos, spawner.pos);
-    if (distance > tuning.interactRange) {
-      return err({
-        kind: "objective-out-of-reach",
-        objectiveId,
-        distance,
-        range: tuning.interactRange,
-      });
-    }
-
-    const hp = Math.max(0, spawner.hp - tuning.chargeDamage);
-    const destroyed = hp <= 0;
-    const damaged: Spawner = { ...spawner, hp, destroyed };
-    const events: TacticalEvent[] = [
-      {
-        type: SPAWNER_DAMAGED,
-        payload: {
-          spawnerId: spawner.id,
-          unitId,
-          damage: spawner.hp - hp,
-          hp,
-          destroyed,
-        },
-      },
-    ];
-    if (destroyed) {
-      events.push({
-        type: OBJECTIVE_UPDATED,
-        payload: { objectiveId, complete: true },
-      });
-    }
-    const worked: TacticalState = {
-      ...mission,
-      units: mission.units.map((candidate) =>
+    const billed: TacticalState = {
+      ...worked.value.state,
+      units: worked.value.state.units.map((candidate) =>
         candidate.id === unitId
           ? { ...candidate, ap: candidate.ap - tuning.interactApCost }
           : candidate,
       ),
-      spawners: mission.spawners.map((candidate) =>
-        candidate.id === spawner.id ? damaged : candidate,
-      ),
-      objectives: destroyed
-        ? mission.objectives.map((candidate): Objective =>
-            candidate.id === objectiveId
-              ? { ...candidate, complete: true }
-              : candidate,
-          )
-        : mission.objectives,
     };
-    return ok(endIfOver(worked, events));
+    return ok(endIfOver(billed, worked.value.events));
   };
 }
 

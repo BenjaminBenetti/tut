@@ -11,6 +11,7 @@ import {
   bestBy,
   clumpScore,
   distanceScore,
+  exposureScore,
   overwatchScore,
   tileDistance,
 } from "./utility";
@@ -61,8 +62,10 @@ describe("utility scores", () => {
       ],
     );
     const enemies = mission.units;
-    // Open ground: both living watchers see everything, and neither the
-    // idle soldier nor the dead one counts as watching.
+    // Both living watchers are inside their sight range of this tile
+    // (7 and 6 against 8), and neither the idle soldier nor the dead one
+    // counts as watching. "Open ground" is not the reason — see the
+    // range case below.
     expect(overwatchScore(mission, { x: 4, y: 0, z: 4 }, enemies)).toBe(1);
     // Nobody on overwatch at all scores zero rather than dividing by it.
     expect(
@@ -73,6 +76,37 @@ describe("utility scores", () => {
       ),
     ).toBe(0);
     expect(overwatchScore(mission, { x: 4, y: 0, z: 4 }, [])).toBe(0);
+  });
+
+  it("counts nobody who is out of sight range, however clear the line (#663)", () => {
+    // A map-sized field, because that is where this bites: both scores
+    // used to ask only for a line and so read 1 from any distance at
+    // all. On a 42-tile map that is every tile a bug will ever stand on.
+    const mission = missionWith(
+      new FixtureMapBuilder(42, 8, 2).fillGround().build(),
+      [
+        unitAt(
+          "watcher",
+          "infantry",
+          { x: 0, y: 0, z: 0 },
+          {
+            status: ["overwatch"],
+          },
+        ),
+      ],
+    );
+    const enemies = mission.units;
+    const at = (x: number) => ({ x, y: 0, z: 0 });
+    // Sight range 8 for the fixture's infantry: inside it, covered.
+    expect(overwatchScore(mission, at(8), enemies)).toBe(1);
+    expect(exposureScore(mission, at(8), enemies)).toBe(1);
+    // One tile further, with nothing in the way at all, is not covered.
+    expect(overwatchScore(mission, at(9), enemies)).toBe(0);
+    expect(exposureScore(mission, at(9), enemies)).toBe(0);
+    // And it stays 0 out to the far edge, rather than the flat 1 the
+    // old score gave every tile on the board.
+    expect(overwatchScore(mission, at(40), enemies)).toBe(0);
+    expect(exposureScore(mission, at(40), enemies)).toBe(0);
   });
 
   it("clumpScore is the fraction of enemies within the radius", () => {

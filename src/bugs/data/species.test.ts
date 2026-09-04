@@ -73,4 +73,15 @@ describe("bug species data", () => {
   it("round-trips through JSON unchanged", () => {
     expect(JSON.parse(JSON.stringify(BUG_SPECIES))).toEqual(BUG_SPECIES);
   });
+
+  it("gives every species eyes at least as long as its bite (ADR 0006)", () => {
+    // Same rule as the TDF tuning: a bug that could bite further than it
+    // sees would be refused overwatch reactions it is entitled to.
+    for (const species of Object.values(BUG_SPECIES)) {
+      expect([species.id, species.sightRange >= species.weapon.range]).toEqual([
+        species.id,
+        true,
+      ]);
+    }
+  });
 });

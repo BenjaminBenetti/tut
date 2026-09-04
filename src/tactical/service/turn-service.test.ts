@@ -14,6 +14,7 @@ import { UNIT_STATUS_CHANGED } from "../model/unit-status-changed-event";
 import { createMoveHandler } from "./move-handler";
 import {
   ctxWith,
+  FIXTURE_TEMPLATES,
   missionWith,
   openField,
   riggedRng,
@@ -383,6 +384,53 @@ describe("overwatchReaction", () => {
       UNIT_STATUS_CHANGED,
     ]);
     expect(unitIn(both.state, "b").hp).toBe(2);
+  });
+  it("holds its shot at a mover it cannot see (ADR 0006 §3)", () => {
+    // A watcher whose eyes are shorter than its gun: the mover is inside
+    // weapon range but outside sight, so the reaction is refused. No
+    // shipped template is built this way — the guard is what keeps it
+    // that way, and unit-tuning.test.ts pins the numbers.
+    const map = openField().build();
+    const mission = missionWith(map, [
+      unitAt("w", "infantry", at(0, 0), {
+        team: "bugs",
+        status: ["overwatch"],
+      }),
+      unitAt("m", "infantry", at(4, 0)),
+    ]);
+    const blind: TacticalState = {
+      ...mission,
+      templates: {
+        ...mission.templates,
+        [FIXTURE_TEMPLATES.bug]: {
+          ...mission.templates[FIXTURE_TEMPLATES.bug]!,
+          sightRange: 2,
+        },
+      },
+    };
+    const applied = overwatchReaction(
+      blind,
+      "m",
+      ctxWith(riggedRng(true)),
+      COMBAT_TUNING,
+    );
+    expect(applied.events).toEqual([]);
+
+    // The same watcher with eyes as long as its gun does fire.
+    const seeing: TacticalState = {
+      ...mission,
+      templates: {
+        ...mission.templates,
+        [FIXTURE_TEMPLATES.bug]: {
+          ...mission.templates[FIXTURE_TEMPLATES.bug]!,
+          sightRange: 8,
+        },
+      },
+    };
+    expect(
+      overwatchReaction(seeing, "m", ctxWith(riggedRng(true)), COMBAT_TUNING)
+        .events.length,
+    ).toBeGreaterThan(0);
   });
 });
 

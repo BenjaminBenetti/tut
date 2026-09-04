@@ -91,14 +91,44 @@ const TILES_GROUND = "tiles-ground";
 /** Placeholder label for building floor, roof and stairs slabs, which do not. */
 const TILES_SLAB = "tiles-slab";
 
-/** How much of its colour an explored-but-unseen tile keeps (#551). */
+/**
+ * How much of its colour an explored-but-unseen tile keeps (#551), and
+ * the cast that tells it apart from a shadow (#661).
+ *
+ * Memory used to be a **neutral** multiply, `0.4` on all three channels
+ * -- which is precisely the operation lighting performs. So two systems
+ * answered two different questions on one channel:
+ *
+ * ```
+ *   visible, lit          1.00
+ *   visible, in shadow    ~0.54   "something is between this and the sun"
+ *   remembered            0.40    "you cannot see this any more"
+ *   remembered + shadow   ~0.22
+ * ```
+ *
+ * 1.35x apart, both neutral, and interleaved -- so darkness stopped
+ * meaning one thing, and a shadowed street you *can* see read the same
+ * as a remembered street you cannot.
+ *
+ * The fix is the rule from style guide §12.2, applied across systems
+ * rather than within one: **one channel per question.** Lighting can
+ * darken a surface and warm or cool it a little; what it never does is
+ * take the colour out. So memory takes that channel. The green and blue
+ * are lifted relative to the red for a cold cast no light in the scene
+ * produces, and the overall weight is unchanged, so fog still recedes
+ * and unexplored black still dominates.
+ *
+ * Dark and neutral is shadow. Dark and cold is memory.
+ */
 export const VISION_DIM = 0.4;
+const VISION_DIM_RED = 0.34;
+const VISION_DIM_BLUE = 0.52;
 
 /** Multiplier for a tile in view. */
 const FULL_COLOUR = new Color(1, 1, 1);
 
 /** Multiplier for a tile remembered but not currently seen. */
-const DIM_COLOUR = new Color(VISION_DIM, VISION_DIM, VISION_DIM);
+const DIM_COLOUR = new Color(VISION_DIM_RED, VISION_DIM, VISION_DIM_BLUE);
 
 /** Collapses an instance to nothing, which also takes it out of picking. */
 const ZERO_SCALE = new Matrix4().makeScale(0, 0, 0);

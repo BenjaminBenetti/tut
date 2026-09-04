@@ -63,6 +63,9 @@ describe("MapgenPreviewScreen", () => {
     expect(stats()).toMatch(/Bug walk-in.*steps from the nearest edge spawn/);
     expect(stats()).toMatch(/Cover that holds[\d.]+ % one side, [\d.]+ % two/);
     expect(stats()).toMatch(/Covered sides[\d.]+ per open tile/);
+    expect(stats()).toMatch(
+      /Closed to melee[\d.]+ % one side, [\d.]+ % two, [\d.]+ per open tile/,
+    );
     screen.showResult(result(3));
     expect(stats()).toMatch(/Beside cover.*\(\+/);
     screen.showResult(result(3));

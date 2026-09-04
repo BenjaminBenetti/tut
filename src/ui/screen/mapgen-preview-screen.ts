@@ -429,6 +429,12 @@ function metricRows(
     ],
     ["Covered sides", `${delta((m) => m.coveredSidesMean, two)} per open tile`],
     [
+      "Closed to melee",
+      `${delta((m) => m.shelteredShare, pct)} one side, ` +
+        `${delta((m) => m.backToWallShare, pct)} two, ` +
+        `${delta((m) => m.closedSidesMean, two)} per open tile`,
+    ],
+    [
       "Cover per 100",
       `${delta((m) => m.highCoverPer100, one)} high, ${delta((m) => m.lowCoverPer100, one)} low`,
     ],

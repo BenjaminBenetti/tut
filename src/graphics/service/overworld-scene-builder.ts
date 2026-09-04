@@ -15,7 +15,9 @@ import {
 import type { Vec2, Vec3 } from "../../core/model/grid";
 import type { CityId } from "../../overworld/model/city";
 import type { EarthMap } from "../../overworld/model/earth-map";
+import type { RegionId } from "../../overworld/model/region";
 import { citiesInRegion } from "../../overworld/service/earth-map-query-service";
+import { createFalloffTexture } from "./falloff-texture";
 import type { CityPicker } from "../model/city-picker";
 import type { OverworldSceneAssets } from "../model/overworld-scene-assets";
 import { NO_OVERWORLD_ASSETS } from "../model/overworld-scene-assets";
@@ -102,9 +104,13 @@ export class OverworldSceneBuilder implements CityPicker, MapStateView {
   private readonly assets: OverworldSceneAssets;
   private readonly raycaster = new Raycaster();
   private readonly markerGeometry: CityMarkerGeometry;
+  /** Radial alpha map every region wash shares; disposed with the builder. */
+  private readonly regionFalloff = createFalloffTexture();
   private readonly markers = new Map<CityId, CityMarker>();
   private readonly targetToCity = new Map<Object3D, CityId>();
-  private plates: RegionPlate[] = [];
+  private readonly plates = new Map<RegionId, RegionPlate>();
+  /** Which region each city belongs to, for the selected region's wash. */
+  private readonly regionOfCity = new Map<CityId, RegionId>();
   private slab: Mesh | undefined;
   private hovered: CityId | undefined;
   private selected: CityId | undefined;
@@ -162,9 +168,17 @@ export class OverworldSceneBuilder implements CityPicker, MapStateView {
         citiesInRegion(map, region.id),
         this.config,
       );
-      const plate = new RegionPlate(region, extent, this.config);
-      this.plates.push(plate);
+      const plate = new RegionPlate(
+        region,
+        extent,
+        this.config,
+        this.regionFalloff,
+      );
+      this.plates.set(region.id, plate);
       this.root.add(plate.object);
+      for (const city of citiesInRegion(map, region.id)) {
+        this.regionOfCity.set(city.id, region.id);
+      }
     }
     for (const city of map.cities) {
       const ground = layoutToWorld(cityMarkerLayout(city), this.config);
@@ -202,6 +216,7 @@ export class OverworldSceneBuilder implements CityPicker, MapStateView {
       marker?.setInfestation(city.infestation);
       marker?.setMission(missionCityIds.has(city.id));
     }
+    this.applyRegionInfestation(map);
   }
 
   /** What a city's marker currently shows, or `undefined` for an unknown city. */
@@ -217,6 +232,7 @@ export class OverworldSceneBuilder implements CityPicker, MapStateView {
     this.clear();
     this.markerGeometry.body.dispose();
     this.markerGeometry.ring.dispose();
+    this.regionFalloff.dispose();
   }
 
   /** Ids of the cities currently built, in map order. */
@@ -334,11 +350,38 @@ export class OverworldSceneBuilder implements CityPicker, MapStateView {
     return slab;
   }
 
-  /** Pushes hovered and selected state onto every marker. */
+  /** Pushes hovered and selected state onto every marker and region wash. */
   private applyHighlights(): void {
     for (const [cityId, marker] of this.markers) {
       marker.setHovered(cityId === this.hovered);
       marker.setSelected(cityId === this.selected);
+    }
+    const active =
+      this.selected === undefined
+        ? undefined
+        : this.regionOfCity.get(this.selected);
+    for (const [regionId, plate] of this.plates) {
+      plate.setSelected(regionId === active);
+    }
+  }
+
+  /**
+   * Washes each region with the infestation of its worst city (#440).
+   * The worst rather than the average, because one city about to fall is
+   * what a commander needs to see; averaging hides it behind its clean
+   * neighbours.
+   */
+  private applyRegionInfestation(map: EarthMap): void {
+    const worst = new Map<RegionId, number>();
+    for (const city of map.cities) {
+      const regionId = this.regionOfCity.get(city.id);
+      if (regionId === undefined) {
+        continue;
+      }
+      worst.set(regionId, Math.max(worst.get(regionId) ?? 0, city.infestation));
+    }
+    for (const [regionId, plate] of this.plates) {
+      plate.setInfestation(worst.get(regionId) ?? 0);
     }
   }
 
@@ -355,7 +398,7 @@ export class OverworldSceneBuilder implements CityPicker, MapStateView {
     for (const marker of this.markers.values()) {
       marker.dispose();
     }
-    for (const plate of this.plates) {
+    for (const plate of this.plates.values()) {
       plate.dispose();
     }
     if (this.slab) {
@@ -366,7 +409,8 @@ export class OverworldSceneBuilder implements CityPicker, MapStateView {
     }
     this.markers.clear();
     this.targetToCity.clear();
-    this.plates = [];
+    this.plates.clear();
+    this.regionOfCity.clear();
     this.slab = undefined;
     this.root.clear();
   }

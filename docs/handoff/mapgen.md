@@ -1,6 +1,6 @@
 # Handoff: Map Generation Specialist
 
-Last updated: 2026-09-03 13:20 UTC (session 2, update 7). Read `docs/process/roles/mapgen.md` and ADR 0004 first.
+Last updated: 2026-09-04 05:05 UTC (session 3, update 1). Read `docs/process/roles/mapgen.md` and ADR 0004 first.
 
 ## 1. Where things stand
 
@@ -20,15 +20,17 @@ Last updated: 2026-09-03 13:20 UTC (session 2, update 7). Read `docs/process/rol
 - **Design decision #281** (cover density): the Director chose *keep as is* (~20 % towns, ~23 %
   cities) and to halve `streetPropDensity` only if two-lane cities read busy in play; the issue stays
   open under M2 for the Executive Director's call from a playable mission.
-- **Open PRs for M2** (independent, each against `main`, green locally and on CI):
-  1. #353 `Tile.blocksLos` denormalised from the prop definition, I2 checks it, ADR §4.2 updated (#352):
-     lets #326's sight service stay pure over `TacticalMap` + `TileIndex`.
-  2. #355 `hatchTiles` + `snapshotMap` in `service/hatch-space.ts` (#354): the tile set #329's spawn
-     service hatches into; `hatchSpace` is its length.
+- **#353 and #355 merged.** `Tile.blocksLos` (#352) and `hatchTiles` / `snapshotMap` (#354) are on
+  `main` and #326 / #329 consume them. No mapgen PR was left open by session 2.
+- **Session 3 (2026-09-04) — the tactical audit.** With movement, sight, hit chance, the turn engine,
+  spawning and bug AI landed, I measured the maps through the services that now consume them rather
+  than through mapgen's own metrics. Findings and what came of them are in §3a; open work is
+  #437 (#432 directional cover metrics), #443 (#433 edge spawn distance bands) and #444 (a design
+  call: mechs never gain elevation on city maps).
 - **M2 issues that consume the map** (#316–#345 filed by the Producer): I left the exact APIs as
   comments on #323 (mission start), #325 (movement), #326 (sight and cover), #329 (spawning). #337
   reuses `graphics/view/tactical-map-view.ts`; #343 (headless sim) needs nothing new.
-- Art follow-up #213 (`prop.table` placeholder) is the Art Director's.
+- Art follow-up #213 (`prop.table` placeholder) merged as #350.
 
 ## 2. Pipeline as built
 
@@ -83,6 +85,51 @@ busy). Explicit sizes: the resolver accepts 16–256 and every accepted size gen
 takes ~260 ms. Heavy recipes (8 egg spawners, 6 edge spawns) generate on small and medium presets
 with zero relocations.
 
+## 3a. The tactical audit (2026-09-04)
+
+Everything below was measured on `main` at `9b15c69` through the real tactical services
+(`sight-service.hasLineOfSight`, `ReachabilityService`, `TileIndex`), medium maps, 6–8 seeds per
+biome × settlement. Rebuild any of it as a throwaway `src/mapgen/zz-*.test.ts` (git-exclude it, move
+it out of `src/` before `pnpm typecheck` / `lint`) — the recipe is `generateTacticalMap` with
+`DEFAULT_MISSION_HOOKS`, then a BFS from `map.hooks.deployZones` per `PassMask`.
+
+**Cover, the way tactical credits it.** `coverAgainst` only counts the one or two sides a shot
+arrives from, so "20–23 % beside cover" is not what a squad feels. Share of open ground with cover
+on ≥ 1 side: 15–20 % rural, 21–25 % town, 29–36 % city; on ≥ 2 sides: 3–6 % everywhere. Of the
+tiles a squad can shoot an egg spawner from (infantry-reachable, range 8, LOS clear — 46–107 per
+spawner, so position is not the constraint), **5–16 % have any cover against that spawner**. Deploy
+tiles with cover on any side: 0–41 %, mean ≈ 24 %. Posted on #281 with the knobs; values unchanged,
+the call is the Executive Director's. #432 / PR #437 puts the two directional shares in
+`MapMetrics` and the preview so the call can be read live.
+
+**Edge spawn walk-in (#433, PR #443).** Every zone seed came from the farthest third of the boundary
+candidates, so waves spent the mission walking: nearest zone at the median 34 / 59 / 77 infantry
+steps from deploy on small / medium / large. At two actions a turn (swarmer 14 tiles, lurker 12,
+brute 6) the turn-3 wave reached the squad about turn 7 as swarmers and about turn 13 as brutes,
+while deploy → nearest spawner is only 23–49 steps. The fix alternates distance bands (far third,
+then middle third) and takes the medians to 28 / 45 / 61.
+
+**Mech-passable tagging is healthy.** Mech-passable exterior ground unreachable from deploy: 0.0–0.3 %
+of tiles, worst seed 0.9 %, largest pocket 13 tiles; infantry the same. Mech reach is 68–98 % of
+infantry reach (the gap is interiors and roofs, which are infantry-only by I5). Nothing to fix.
+
+**Deploy zones seat everyone.** Every deploy zone on every size is 16 tiles, all mech- and
+infantry-passable, against I6's floor of 4 / 8. `startTacticalMission` places mechs first, so a
+16-unit deployment fits; there is no roster size that can produce `no-deploy-room`.
+
+**Objectives are all attackable.** Every egg spawner on every seed has an infantry firing position,
+and one reachable by a mech too (indoor spawners are shot through windows — doors and solid walls
+are opaque, windows are not). Two of three spawners sit indoors by design, so a mech can shoot them
+but never reach them; that is the intended split and #426 does not change it.
+
+**Elevation (#444).** Rural and town give a mech 0.09–0.37 of the reachable high ground; **cities
+give it 0.00** on all four biomes and all 24 seeds, because city plats are graded flat with no ramps
+and every vantage tile at a city spawner is a building tile. With #327's ±10 per level that is a
+standing disadvantage with no counterplay. Filed as a design call with three options (a raised
+outdoor feature per few blocks is the cheap one); not built, waiting on the Director. Also measured:
+8/18 coastal-rural and 11–12/18 desert/temperate-rural spawners have no elevated firing position at
+all, which reads as biome variety rather than a gap.
+
 ## 4. What M2 (tactical) consumes
 
 - `generateTacticalMap(missionToMapRecipe(mission, missionType).value)` → `TacticalMap` (plain JSON).
@@ -95,8 +142,10 @@ with zero relocations.
   `service/hatch-space.ts` (#355) for the exact tile set a spawner hatches into, origin first.
 - `Tile.blocksLos` (#353) and `Tile.coverProvided` for sight and cover; walls on both sides of an edge
   (`tile.walls`, I3); `y` is the level for elevation bonuses.
-- Open question filed on #231: if brutes are mech-sized, set edge spawns' `requiredPass` to
-  `PassMask.ALL` in `data/hook-kind-defaults.ts`.
+- **#231's open question is closed:** `unit-factory.bugUnit` gives every species `passClass:
+  "infantry"`, brutes included, so edge spawns and egg spawners stay `PassMask.INFANTRY`. If a
+  future species is ever built mech-sized, flip that kind's `requiredPass` in
+  `data/hook-kind-defaults.ts` and the connectivity pass does the rest.
 
 ## 5. Decisions made and why
 
@@ -112,20 +161,30 @@ with zero relocations.
 
 ## 6. What I would do next, in order
 
-1. Keep the review loop for #353 and #355 (independent; rebase, gate, `--force-with-lease`).
-   Then answer questions on #323/#325/#326/#329 as engineers pick them up; the map contract should
-   not need to move again for M2 unless brutes turn out mech-sized (flip edge spawns to
-   `PassMask.ALL` in `data/hook-kind-defaults.ts`).
-2. Run `MAPGEN_WIDE=1` before merging any generator change (85 s); it is the check that found #221.
-3. Tuning from §3 once the Director picks targets; the preview shows the metrics live.
-4. M3 archetypes: `createPipeline`'s per-archetype table in `service/settlement-pipeline.ts` takes a
+1. Keep the review loop for #437 and #443 (independent, both against `main`; rebase, gate,
+   `--force-with-lease`). #443 re-pins the six sweep goldens, so a rebase over another mapgen change
+   conflicts there — take theirs and re-pin from the vitest diff.
+2. Get a decision on #444 (mechs never gain elevation in cities). Option 1 — a small mech-passable
+   platform at level + 1 with a ramp, placed per few city blocks by the lot or prop pass — is the
+   one I would build; it is a new generator feature, so it waits on the Director.
+3. Run `MAPGEN_WIDE=1` before merging any generator change (60–85 s); it is the check that found
+   #221. Re-run the §3a audit after any tuning change: the numbers there are the M2 baseline.
+4. Answer map questions as the last M2 issues land — #426 (spawners as attack targets), #341 (the
+   deploy → tactical → results flow), #343 / #344 (QA's headless sim and Playwright smoke). The map
+   contract should not need to move again for M2; #231's question is closed (§4).
+5. Tuning from §3 / §3a once the Executive Director calls #281; the preview shows the metrics live
+   and #437 adds the two directional shares to them.
+6. M3 archetypes: `createPipeline`'s per-archetype table in `service/settlement-pipeline.ts` takes a
    new pass list. Hive: cavern carve (cellular automaton on the dense heightmap, one level, `rock`
    walls as solid `WallSet`s), nest rooms as `Building`s with kind `nest` and a `nest` room kind in
    `data/room-furnishing`, `hive-core` hook placer; props/ramps/hooks/connectivity reuse as-is.
    Crash site: terrain + a crater pass (bowl, debris props, `wreck` building) before roads/lots.
    Platform: a decks pass (floor tiles on `void`, `PassMask.NONE` surface) instead of terrain/water.
-5. Preview polish: show `MapMetrics` deltas between two seeds; a "regenerate with next seed" key.
-6. When an engineer takes #108 (promote `Registry` to `core/`), `mapgen/model/registry.ts` and
+   Two things the audit says these archetypes must get right from the start: hooks want distance
+   bands, not a "far from deploy" rule (§3a), and a corridor map with cover on two sides of most
+   tiles will play very differently from the settlement's 3–6 % — decide that deliberately.
+7. Preview polish: a "regenerate with next seed" key; the metric delta column already ships (#276).
+8. When an engineer takes #108 (promote `Registry` to `core/`), `mapgen/model/registry.ts` and
    `service/definition-registry.ts` are the files to retire; nothing in mapgen depends on the class.
 
 ## 7. Gotchas

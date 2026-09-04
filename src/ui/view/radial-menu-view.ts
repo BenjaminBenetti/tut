@@ -1,5 +1,5 @@
 import type { IconId } from "../data/icon-manifest";
-import { iconUrl } from "../data/icon-manifest";
+import { iconGlyph } from "./icon-glyph";
 
 // ===========================================
 // Types
@@ -229,10 +229,7 @@ export class RadialMenuView {
       // needs no layout box of its own.
       button.style.left = `${String(Math.cos(angle) * radius * RADIUS_X_SCALE)}px`;
       button.style.top = `${String(Math.sin(angle) * radius)}px`;
-      const icon = doc.createElement("span");
-      icon.className = "tut-icon tut-icon--sm";
-      // `iconUrl` already returns `url(…)`; wrapping it again is invalid CSS.
-      icon.style.setProperty("--icon", iconUrl(item.icon));
+      const icon = iconGlyph(doc, item.icon);
       const label = doc.createElement("span");
       label.className = "tut-radial__label";
       label.textContent = item.label;

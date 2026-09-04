@@ -1,11 +1,11 @@
 import type { IconId } from "../data/icon-manifest";
-import { iconUrl } from "../data/icon-manifest";
 import type {
   Objective,
   ObjectiveId,
   Spawner,
 } from "../../tactical/model/tactical-state";
 import { formatWhole } from "../service/format";
+import { iconGlyph } from "./icon-glyph";
 
 // ===========================================
 // ObjectiveTrackerView
@@ -89,13 +89,8 @@ export class ObjectiveTrackerView {
       }
       // The state glyph replaces the ✓ / ○ text markers (#495): `check`
       // for a finished objective, `egg` for the spawner still standing.
-      const glyph = doc.createElement("span");
-      glyph.className = "tut-icon tut-icon--sm";
       const icon: IconId = objective.complete ? "check" : "egg";
-      glyph.dataset.icon = icon;
-      glyph.setAttribute("aria-hidden", "true");
-      // `iconUrl` already returns `url(…)`; wrapping it again is invalid CSS.
-      glyph.style.setProperty("--icon", iconUrl(icon));
+      const glyph = iconGlyph(doc, icon);
       const label = doc.createElement("span");
       // The word still carries the state for a screen reader, since the
       // glyph beside it is decorative.

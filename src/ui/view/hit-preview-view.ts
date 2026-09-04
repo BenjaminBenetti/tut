@@ -3,7 +3,9 @@ import { CoverLevel } from "../../mapgen/model/cover";
 import type { AttackPreview } from "../../tactical/model/attack-preview";
 import type { TacticalError } from "../../tactical/model/tactical-error";
 import { describeTacticalError } from "../../tactical/model/tactical-error";
+import type { IconId } from "../data/icon-manifest";
 import { formatWhole } from "../service/format";
+import { iconGlyph } from "./icon-glyph";
 
 // ===========================================
 // Types
@@ -26,6 +28,18 @@ const COVER_NAMES: Readonly<Record<CoverLevel, string>> = {
   [CoverLevel.NONE]: "no cover",
   [CoverLevel.LOW]: "low cover",
   [CoverLevel.HIGH]: "high cover",
+};
+
+/**
+ * Glyph per cover level (#595). `NONE` has none deliberately: the two
+ * cover icons say "something is between you and it", and there is no
+ * icon for the absence of a thing that would not be a worse label than
+ * the words "no cover".
+ */
+const COVER_ICONS: Readonly<Record<CoverLevel, IconId | undefined>> = {
+  [CoverLevel.NONE]: undefined,
+  [CoverLevel.LOW]: "cover-low",
+  [CoverLevel.HIGH]: "cover-high",
 };
 
 // ===========================================
@@ -94,7 +108,7 @@ export class HitPreviewView {
     const damage = doc.createElement("span");
     damage.className = "tut-data";
     damage.dataset.field = "damage-range";
-    numbers.append(hit, damage);
+    numbers.append(hit, iconGlyph(doc, "damage"), damage);
     const chips = doc.createElement("div");
     chips.className = "tut-dim tut-mono";
     chips.dataset.field = "preview-terrain";
@@ -156,15 +170,35 @@ export class HitPreviewView {
     const p = model.preview.value;
     this.hit.textContent = `${formatWhole(p.hitChance)}% hit`;
     this.damage.textContent = `${formatWhole(p.damage[0])}–${formatWhole(p.damage[1])} damage`;
-    const chips = [
-      `${formatWhole(p.distance)} tiles`,
-      COVER_NAMES[p.cover],
-      ...(p.flanked ? ["flanked"] : []),
+    const chips: readonly { icon?: IconId; text: string }[] = [
+      { icon: "range", text: `${formatWhole(p.distance)} tiles` },
+      { icon: COVER_ICONS[p.cover], text: COVER_NAMES[p.cover] },
+      ...(p.flanked ? [{ text: "flanked" }] : []),
       ...(p.elevation === 0
         ? []
-        : [`${p.elevation > 0 ? "+" : ""}${formatWhole(p.elevation)} lvl`]),
+        : [
+            {
+              icon: "elevation" as IconId,
+              text: `${p.elevation > 0 ? "+" : ""}${formatWhole(p.elevation)} lvl`,
+            },
+          ]),
     ];
-    this.chips.textContent = chips.join(" · ");
+    // Built as nodes rather than one string, so each fact can carry its
+    // glyph. The " · " separators stay as text between them, so the
+    // field still reads exactly as it did to anything asking for its
+    // text — a screen reader included.
+    const doc = this.chips.ownerDocument;
+    const nodes: Node[] = [];
+    for (const chip of chips) {
+      if (nodes.length > 0) {
+        nodes.push(doc.createTextNode(" · "));
+      }
+      if (chip.icon !== undefined) {
+        nodes.push(iconGlyph(doc, chip.icon));
+      }
+      nodes.push(doc.createTextNode(chip.text));
+    }
+    this.chips.replaceChildren(...nodes);
     this.error.hidden = true;
     this.fire.disabled = false;
   }

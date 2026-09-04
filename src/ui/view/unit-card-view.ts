@@ -1,7 +1,7 @@
 import type { Unit } from "../../tactical/model/unit";
 import type { UnitTemplate } from "../../tactical/model/unit-template";
-import { iconUrl } from "../data/icon-manifest";
 import { formatWhole } from "../service/format";
+import { iconGlyph } from "./icon-glyph";
 
 // ===========================================
 // Constants and model
@@ -107,9 +107,7 @@ export class UnitCardView {
       term.className = "tut-label tut-row";
       // The glyph carries the row at a glance; the word stays for anyone who
       // does not know the glyph yet (#495).
-      const mark = doc.createElement("span");
-      mark.className = "tut-icon tut-icon--sm";
-      mark.style.setProperty("--icon", iconUrl(icon));
+      const mark = iconGlyph(doc, icon);
       term.append(mark, doc.createTextNode(label));
       const value = doc.createElement("dd");
       value.className = "tut-mono";

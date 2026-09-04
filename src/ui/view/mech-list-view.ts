@@ -5,6 +5,7 @@ import type { PartCatalogue } from "../../roster/model/part-catalogue";
 import type { RosterState } from "../../roster/model/roster-state";
 import type { RosterTuning } from "../../roster/model/roster-tuning";
 import { formatCredits, formatWhole } from "../service/format";
+import { iconGlyph } from "./icon-glyph";
 
 // ===========================================
 // Types
@@ -175,7 +176,14 @@ export class MechListView {
     this.listen(rename, "click", () => {
       this.handlers.onRename(mech.id, nameInput.value.trim());
     });
-    nameCell.append(nameInput, rename);
+    // The kind glyph reads before the name does, so a roster of mixed
+    // rows is scannable without reading a word (#595). The flex row is a
+    // span inside the cell rather than the cell itself — see the squad
+    // table for what `display: flex` does to a `td`.
+    const nameRow = doc.createElement("span");
+    nameRow.className = "tut-row";
+    nameRow.append(iconGlyph(doc, "mech"), nameInput, rename);
+    nameCell.appendChild(nameRow);
 
     const loadout = doc.createElement("td");
     loadout.dataset.field = "loadout";
@@ -183,10 +191,18 @@ export class MechListView {
 
     const damage = doc.createElement("td");
     damage.dataset.field = "damage";
-    damage.append(
+    const damageRow = doc.createElement("span");
+    damageRow.className = "tut-row";
+    damageRow.append(
       this.createMeter(doc, mech.damage),
-      doc.createTextNode(` ${formatWhole(mech.damage)}`),
+      doc.createTextNode(formatWhole(mech.damage)),
     );
+    // Only when there is something to warn about: a warning glyph on
+    // every row is a light that is always on, which says nothing.
+    if (mech.damage > 0) {
+      damageRow.appendChild(iconGlyph(doc, "warning"));
+    }
+    damage.appendChild(damageRow);
 
     const kills = doc.createElement("td");
     kills.dataset.field = "kills";

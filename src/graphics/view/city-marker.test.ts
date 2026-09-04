@@ -139,12 +139,15 @@ describe("CityMarker (disc fallback)", () => {
 });
 
 describe("CityMarker (glyph sprite)", () => {
-  it("draws a bottom-anchored sprite sized from the config", () => {
+  it("draws a sprite centred on its city, sized from the config (#420)", () => {
     const marker = makeMarker(CITY, new Texture());
     expect(marker.usesGlyph()).toBe(true);
     expect(marker.pickTarget).toBeInstanceOf(Sprite);
     const sprite = marker.pickTarget as Sprite;
-    expect(sprite.center.toArray()).toEqual([0.5, 0]);
+    // Centred, not bottom-anchored: a bottom-anchored sprite draws
+    // entirely above its anchor in screen space, which read as the
+    // marker sitting off its city.
+    expect(sprite.center.toArray()).toEqual([0.5, 0.5]);
     expect(sprite.scale.x).toBe(OVERWORLD_SCENE_CONFIG.markerGlyphSize);
     expect(sprite.scale.y).toBe(OVERWORLD_SCENE_CONFIG.markerGlyphSize);
   });
@@ -164,12 +167,24 @@ describe("CityMarker (glyph sprite)", () => {
     );
   });
 
-  it("reports a pick point just above the anchor, inside the glyph", () => {
+  it("reports its city's own position as the pick point (#420)", () => {
     const marker = makeMarker(CITY, new Texture());
     marker.object.updateMatrixWorld(true);
-    const lift = marker.pickPoint().y - BASE.y;
-    expect(lift).toBeGreaterThan(0);
-    expect(lift).toBeLessThan(OVERWORLD_SCENE_CONFIG.markerGlyphSize / 2);
+    expect(marker.pickPoint()).toEqual({ x: BASE.x, y: BASE.y, z: BASE.z });
+  });
+
+  it("puts the mission badge beside the marker on the ground plane, not above it (#420)", () => {
+    const marker = makeMarker(CITY, new Texture());
+    const badge = marker.object.getObjectByName(`city-badge-${CITY.id}`);
+    expect(badge).toBeDefined();
+    if (!badge) return;
+    // East and north of the marker, so it reads up and to the right
+    // under the straight-down camera; an offset in y would point at it.
+    expect(badge.position.x).toBeGreaterThan(0);
+    expect(badge.position.z).toBeLessThan(0);
+    expect(badge.position.y).toBeLessThan(
+      OVERWORLD_SCENE_CONFIG.markerGlyphSize / 2,
+    );
   });
 });
 

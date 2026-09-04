@@ -70,12 +70,25 @@ const TEXT_ENTRY_TAGS: ReadonlySet<string> = new Set([
 ]);
 
 // ===========================================
+// Options
+// ===========================================
+
+/** Which camera controls this input drives. */
+export interface CameraInputOptions {
+  /**
+   * Whether Q / E rotate the camera. The strategic map fixes north up
+   * (#420), so it passes `false` and keeps only pan and zoom.
+   */
+  readonly rotate?: boolean;
+}
+
+// ===========================================
 // Controller
 // ===========================================
 
 /**
- * Translates DOM input into camera commands: Q / E rotate, the wheel
- * zooms, W A S D or the arrow keys pan. Panning is continuous while a
+ * Translates DOM input into camera commands: Q / E rotate (unless the
+ * owner turned rotation off), the wheel zooms, W A S D or the arrow keys pan. Panning is continuous while a
  * key is held, so the owner ticks `update` once per frame.
  */
 export class CameraInputController implements FrameUpdatable {
@@ -84,6 +97,7 @@ export class CameraInputController implements FrameUpdatable {
   // ===========================================
 
   private readonly controls: CameraControls;
+  private readonly rotatable: boolean;
   private readonly heldPan = new Set<PanDirection>();
   private surface: CameraInputSurface | undefined;
 
@@ -93,9 +107,11 @@ export class CameraInputController implements FrameUpdatable {
 
   /**
    * @param controls - The camera to drive; usually the isometric rig.
+   * @param options - Which controls are live; all of them by default.
    */
-  constructor(controls: CameraControls) {
+  constructor(controls: CameraControls, options: CameraInputOptions = {}) {
     this.controls = controls;
+    this.rotatable = options.rotate ?? true;
   }
 
   // ===========================================
@@ -184,7 +200,7 @@ export class CameraInputController implements FrameUpdatable {
     event.preventDefault();
     if (binding.kind === "pan") {
       this.heldPan.add(binding.direction);
-    } else if (!event.repeat) {
+    } else if (!event.repeat && this.rotatable) {
       if (binding.turn === "left") {
         this.controls.rotateLeft();
       } else {

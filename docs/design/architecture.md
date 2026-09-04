@@ -8,7 +8,7 @@
 |---|---|
 | Language | TypeScript, strict mode |
 | Bundler / dev server | Vite |
-| 3D | three.js (GLTF assets, orthographic isometric camera) |
+| 3D | three.js (GLTF assets, orthographic camera: isometric for missions, top-down for the strategic map) |
 | UI (menus, HUD, screens) | HTML/CSS DOM overlay, framework-free unless the Tech Lead proposes otherwise in an ADR |
 | Unit tests | Vitest |
 | End-to-end / headless | Playwright + Chromium (installed in the devcontainer) |
@@ -74,7 +74,7 @@ Add domains via ADR when needed. Don't create `utils` dumping grounds.
 - **Command pattern**: presentation issues commands (`AdvanceDay`, `PurchasePart`, `MoveUnit`, `FireWeapon`). Simulation services validate and apply commands, returning a new state and a list of domain events for presentation to animate.
 - **Mission resolver interface**: `MissionResolver.resolve(mission, deployment, state) → MissionResult`. M1 ships an `AutoResolveMissionResolver`; M2 ships the tactical one. The overworld doesn't care which.
 - **Map contract**: `TacticalMap { width, depth, levels, tiles[], buildings[], hooks{deployZones, objectives, edgeSpawns, extraction} }`. Map generation produces it; tactical consumes it; graphics renders it. Full contract and invariants: [ADR 0004](../adr/0004-tactical-map-contract.md).
-- **Isometric camera**: orthographic, fixed elevation angle, yaw snapped to 4 orientations, zoom clamped. One module owns it.
+- **Cameras**: one orthographic rig module owns the single camera, driven by a plain `IsometricCameraState`. A `CameraProjection` (elevation, yaw offset) picks how it looks at the ground: tactical maps use the isometric projection they are authored for (fixed elevation `atan(1/√2)`, yaw snapped to the 4 diagonals), and the strategic map uses the top-down projection (straight down, north up, no rotation) so Earth reads as a map rather than a rhombus. Zoom is clamped for both. See [ADR 0005](../adr/0005-overworld-camera-is-top-down.md).
 
 ## 6. Testing strategy
 
@@ -100,3 +100,4 @@ Any change to §2, §3, or a new library goes in `docs/adr/NNNN-title.md` with c
 | [0002](../adr/0002-layering-enforced-by-lint.md) | Layering enforced by lint; `save/` and `content/` placement |
 | [0003](../adr/0003-state-commands-events-ids.md) | Root state, commands, events, plain string ids, data conventions |
 | [0004](../adr/0004-tactical-map-contract.md) | Tactical map contract and generation pipeline |
+| [0005](../adr/0005-overworld-camera-is-top-down.md) | Strategic map camera is top-down; tactical stays isometric |

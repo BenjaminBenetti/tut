@@ -1,6 +1,6 @@
 # Handoff: Map Generation Specialist
 
-Last updated: 2026-09-04 05:05 UTC (session 3, update 1). Read `docs/process/roles/mapgen.md` and ADR 0004 first.
+Last updated: 2026-09-04 06:20 UTC (session 3, update 2). Read `docs/process/roles/mapgen.md` and ADR 0004 first.
 
 ## 1. Where things stand
 
@@ -24,11 +24,13 @@ Last updated: 2026-09-04 05:05 UTC (session 3, update 1). Read `docs/process/rol
   `main` and #326 / #329 consume them. No mapgen PR was left open by session 2.
 - **Session 3 (2026-09-04) — the tactical audit.** With movement, sight, hit chance, the turn engine,
   spawning and bug AI landed, I measured the maps through the services that now consume them rather
-  than through mapgen's own metrics. Findings and what came of them are in §3a; open work is
-  #437 (#432 directional cover metrics), #443 (#433 edge spawn distance bands), #456 (#448 the map
-  assessment the preview shows) and, waiting on other people, #444 (a design call: mechs never gain
-  elevation on city maps), #446 (melee bugs invert the cover rules — tactical's) and #447 (the M3
-  archetype sketch, with two questions the Director should answer before anything is built).
+  than through mapgen's own metrics. Findings and what came of them are in §3a. **Merged:** #437
+  (#432 directional cover metrics), #443 (#433 edge spawn distance bands), #470 (#465 hook distance
+  fitted to the board — a real `MapGenerationError` on small maps) and #456 (#448 `assessMap`, the
+  play read-outs in the preview). **Waiting on other people:** #444 (a design call: mechs never gain
+  elevation on city maps), #446 (melee bugs invert the cover rules — tactical's), #447 (the M3
+  archetype sketch, with two questions to answer before anything is built) and the ruling asked for
+  on #465 (should `resolveParams` reject an over-constrained recipe outright).
 - **M2 issues that consume the map** (#316–#345 filed by the Producer): I left the exact APIs as
   comments on #323 (mission start), #325 (movement), #326 (sight and cover), #329 (spawning). #337
   reuses `graphics/view/tactical-map-view.ts`; #343 (headless sim) needs nothing new.
@@ -115,6 +117,17 @@ then middle third) and takes the medians to 28 / 45 / 61.
 of tiles, worst seed 0.9 %, largest pocket 13 tiles; infantry the same. Mech reach is 68–98 % of
 infantry reach (the gap is interiors and roofs, which are infantry-only by I5). Nothing to fix.
 
+**Small maps could crash, and now cannot from a mission (#465, PR #470).** A 16×16 map cannot hold
+three egg spawners 12 tiles from a 16-tile deploy zone: on some seeds everything that far out is
+rock, road or sidewalk, the placer finds no candidate and the map dies on I8. Six failures in 480 at
+16×16. `missionToMapRecipe` now fits each kind's `minDistanceFromDeploy` to
+`floor((width + depth) / 4) − 2` — manhattan spans both sides, so a long thin map keeps its room —
+which leaves every preset untouched and takes 16×16 to 6, where 480 maps generate clean. Hand-built
+recipes (`DEFAULT_MISSION_HOOKS`, the sweeps, the preview) still carry a flat 12 and can still fail
+below about 24²; #465 asks the Tech Lead whether `resolveParams` should reject those outright.
+Everything else about shape is fine: 256², 128², 16×256, 256×16, 17×43 and 33×97 all generate, 256²
+in 1.8 s with 66k tiles.
+
 **Heavy recipes are safe.** `INFESTATION_CLEARANCE` at difficulty 10 asks for 4 egg spawners and 3
 edge spawns, which the wide sweep never exercises (it only uses `DEFAULT_MISSION_HOOKS`). Swept on
 #443's branch: 216 maps over every biome × settlement × size, 0 failures, 0 relocations, 0 repairs.
@@ -179,9 +192,10 @@ all, which reads as biome variety rather than a gap.
 
 ## 6. What I would do next, in order
 
-1. Keep the review loop for #437 and #443 (independent, both against `main`; rebase, gate,
-   `--force-with-lease`). #443 re-pins the six sweep goldens, so a rebase over another mapgen change
-   conflicts there — take theirs and re-pin from the vitest diff.
+1. Nothing of mine is in review except this handoff. When a mapgen PR does conflict on a rebase, the
+   sweep goldens are the file to expect it in: take theirs and re-pin from the vitest diff. And if
+   the Tech Lead has already merged `main` into your branch (they push the merge to your branch as
+   part of the gate), reset to theirs rather than force-pushing a rebase over it.
 2. Get a decision on #444 (mechs never gain elevation in cities). Option 1 — a small mech-passable
    platform at level + 1 with a ramp, placed per few city blocks by the lot or prop pass — is the
    one I would build; it is a new generator feature, so it waits on the Director.
@@ -191,8 +205,10 @@ all, which reads as biome variety rather than a gap.
    deploy → tactical → results flow), #343 / #344 (QA's headless sim and Playwright smoke). The map
    contract should not need to move again for M2; #231's question is closed (§4).
 5. Tuning from §3 / §3a once the Executive Director calls #281 — read it together with #446, which
-   says more cover currently means harder missions. The preview shows the metrics live; #437 adds
-   the two directional shares and #456 the play read-outs (approach, walk-in, firing positions).
+   says more cover currently means harder missions. The preview now shows all of it live: the two
+   directional cover shares (#437) and the play read-outs — approach, bug walk-in, firing positions
+   and how many are in cover or shooting down, mech reach, levels reached (#456, `assessMap`).
+   Extend `tactical/service/map-assessment-service.ts` before writing a new scratch probe.
 6. M3 archetypes: the sketch is #447, including the two questions to settle first (are hive caverns
    mech-passable, and how big is a hive). `createPipeline`'s per-archetype table in `service/settlement-pipeline.ts` takes a
    new pass list. Hive: cavern carve (cellular automaton on the dense heightmap, one level, `rock`

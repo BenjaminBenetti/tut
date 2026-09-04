@@ -47,10 +47,18 @@ export function createSettlementPasses(): GenerationPass[] {
  *
  * **Prototype.** It reuses the tail of the settlement list — ramps,
  * hooks, connectivity — and replaces the town-building middle with two
- * passes of its own: a terraced impact bowl and a debris field. The prop
- * pass cannot be reused because it requires `interiors`, and a crash site
- * has no buildings to furnish; that requirement is the one thing the
- * settlement pipeline assumes that a bare archetype cannot satisfy.
+ * passes of its own: a terraced impact bowl and a debris field.
+ *
+ * It *could* now take the biome's vegetation from the settlement's own
+ * prop pass — #714 made that pass's requirements follow its placements,
+ * so asking for scattering alone asks only for a heightmap, where before
+ * it demanded `interiors` a site with no buildings can never provide.
+ * It deliberately does not. Debris already fills this ground: adding
+ * vegetation on top doubles the prototype's prop load, from 137 props and
+ * 18 % of open tiles beside cover to 271 and 31 %. Wreckage and
+ * vegetation are alternatives competing for the same tiles, not layers,
+ * so which one a crash site is made of is a design call for when the
+ * archetype becomes content rather than a side effect of a refactor.
  *
  * ```
  *   terrain ─► water ─► crater ─► debris ─► ramps ─► hooks ─► connectivity

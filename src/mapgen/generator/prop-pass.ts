@@ -37,6 +37,57 @@ interface PlacementCounts {
 }
 
 // ===========================================
+// Configuration
+// ===========================================
+
+/**
+ * One kind of placement a prop pass performs.
+ *
+ * Each draws from its own labelled RNG fork, so dropping one never
+ * reroutes another's random stream. They are *not* independent of each
+ * other on the map: `vegetation`, `street` and `yard` compete for the
+ * same open ground, so dropping one leaves tiles free that the others
+ * take — measured, dropping vegetation raises yard barriers from 6 to 8
+ * on a temperate town. Only `interior` is fully independent, because it
+ * works inside buildings where no outdoor placement can reach.
+ */
+export type PropPlacementKind = "vegetation" | "street" | "yard" | "interior";
+
+/** Every placement, in the order a settlement runs them. */
+export const ALL_PROP_PLACEMENTS: readonly PropPlacementKind[] = [
+  "vegetation",
+  "street",
+  "yard",
+  "interior",
+];
+
+/**
+ * What each placement needs to exist before it can run. The pass declares
+ * the union of these, so an archetype that wants only vegetation does not
+ * inherit a requirement for buildings it will never raise (#714).
+ */
+const REQUIRED_BY_PLACEMENT: Readonly<
+  Record<PropPlacementKind, DraftCapability>
+> = {
+  vegetation: "heightmap",
+  street: "roads",
+  yard: "buildings",
+  interior: "interiors",
+};
+
+/** How to configure a prop pass; the default is a settlement's four. */
+export interface PropPassOptions {
+  /**
+   * Pass id, which also seeds its RNG fork. Defaults to `"props"`; give a
+   * differently configured pass a different id, and note that changing an
+   * id rerolls that pass's placements.
+   */
+  readonly id?: string;
+  /** Which placements to run. Defaults to every one. */
+  readonly placements?: readonly PropPlacementKind[];
+}
+
+// ===========================================
 // PropPass
 // ===========================================
 
@@ -59,15 +110,43 @@ export class PropPass implements GenerationPass {
   // Fields
   // ===========================================
 
-  readonly id = "props";
-  readonly requires: readonly DraftCapability[] = ["interiors"];
+  readonly id: string;
+  readonly requires: readonly DraftCapability[];
   readonly provides: readonly DraftCapability[] = ["props"];
+
+  /** Which placements this instance runs. */
+  private readonly placements: ReadonlySet<PropPlacementKind>;
+
+  // ===========================================
+  // Construction
+  // ===========================================
+
+  /**
+   * Builds a prop pass. With no arguments it is the settlement's pass:
+   * id `"props"`, all four placements, byte-identical to what it was
+   * before it became configurable.
+   */
+  constructor(options: PropPassOptions = {}) {
+    this.id = options.id ?? "props";
+    this.placements = new Set(options.placements ?? ALL_PROP_PLACEMENTS);
+    this.requires = [
+      ...new Set(
+        [...this.placements].map(
+          (placement) => REQUIRED_BY_PLACEMENT[placement],
+        ),
+      ),
+    ];
+  }
 
   // ===========================================
   // Public Methods
   // ===========================================
 
-  /** Places vegetation, street clutter and interior cover. */
+  /**
+   * Runs each configured placement. A skipped one draws nothing, and the
+   * others keep their own streams; the outdoor placements will, however,
+   * spread into ground the skipped one would have taken.
+   */
   run(context: GenerationContext): void {
     const { draft, params, rng, registries, diagnostics } = context;
     const blocked = collectBlockedTiles(draft);
@@ -77,34 +156,42 @@ export class PropPass implements GenerationPass {
       yard: 0,
       interior: 0,
     };
-    counts.vegetation = placeVegetation(
-      draft,
-      params.biome,
-      registries,
-      blocked,
-      rng.fork("vegetation"),
-    );
-    counts.street = placeStreetProps(
-      draft,
-      params,
-      registries,
-      blocked,
-      rng.fork("street"),
-    );
-    counts.yard = placeYardClutter(
-      draft,
-      params,
-      registries,
-      blocked,
-      rng.fork("yard"),
-    );
-    counts.interior = placeInteriorProps(
-      draft,
-      params.biome,
-      registries,
-      blocked,
-      rng.fork("interior"),
-    );
+    if (this.placements.has("vegetation")) {
+      counts.vegetation = placeVegetation(
+        draft,
+        params.biome,
+        registries,
+        blocked,
+        rng.fork("vegetation"),
+      );
+    }
+    if (this.placements.has("street")) {
+      counts.street = placeStreetProps(
+        draft,
+        params,
+        registries,
+        blocked,
+        rng.fork("street"),
+      );
+    }
+    if (this.placements.has("yard")) {
+      counts.yard = placeYardClutter(
+        draft,
+        params,
+        registries,
+        blocked,
+        rng.fork("yard"),
+      );
+    }
+    if (this.placements.has("interior")) {
+      counts.interior = placeInteriorProps(
+        draft,
+        params.biome,
+        registries,
+        blocked,
+        rng.fork("interior"),
+      );
+    }
     diagnostics.note(
       `${counts.vegetation} vegetation, ${counts.street} street, ` +
         `${counts.yard} yard, ${counts.interior} interior props`,

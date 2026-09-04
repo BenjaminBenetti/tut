@@ -25,7 +25,11 @@ import { PipelineMapGenerator } from "../service/pipeline-map-generator";
 import { BuildingPass } from "./building-pass";
 import { InteriorPass } from "./interior-pass";
 import { LotPass } from "./lot-pass";
-import { PropPass } from "./prop-pass";
+import {
+  ALL_PROP_PLACEMENTS,
+  PropPass,
+  type PropPlacementKind,
+} from "./prop-pass";
 import { RoadPass } from "./road-pass";
 import { TerrainPass } from "./terrain-pass";
 import { WaterPass } from "./water-pass";
@@ -339,5 +343,151 @@ describe("PropPass", () => {
     expect(run("desert", "town", "det").map).toEqual(
       run("desert", "town", "det").map,
     );
+  });
+});
+
+// ===========================================
+// Configurable placements (#714)
+// ===========================================
+
+/**
+ * Runs a pipeline whose prop pass performs only `placements`, and returns
+ * the props it left on the draft, keyed by kind.
+ */
+function propsFrom(
+  placements: readonly PropPlacementKind[] | undefined,
+  seed: string,
+): readonly { kind: string; x: number; z: number; y: number }[] {
+  // The same id on purpose: a pass's stream is `rng.fork(pass.id)`, so
+  // comparing placements only means anything at a fixed id.
+  const pass =
+    placements === undefined
+      ? new PropPass()
+      : new PropPass({ id: "props", placements });
+  const pipeline = new PipelineMapGenerator(
+    [
+      new TerrainPass(),
+      new WaterPass(),
+      new RoadPass(),
+      new LotPass(),
+      new BuildingPass(),
+      new InteriorPass(),
+      pass,
+    ],
+    registries,
+  );
+  const { draft } = pipeline.run(
+    {
+      archetype: "settlement",
+      biome: "temperate",
+      settlement: "town",
+      size: "medium",
+      hooks: [],
+    },
+    new Mulberry32Rng(hashSeed(seed)),
+  );
+  return draft.props.map((prop) => ({
+    kind: prop.kind,
+    x: prop.tile.x,
+    y: prop.tile.y,
+    z: prop.tile.z,
+  }));
+}
+
+describe("PropPass placements", () => {
+  it("defaults to the settlement's four placements and id", () => {
+    const pass = new PropPass();
+    expect(pass.id).toBe("props");
+    expect([...pass.requires].sort()).toEqual([
+      "buildings",
+      "heightmap",
+      "interiors",
+      "roads",
+    ]);
+    expect(ALL_PROP_PLACEMENTS).toEqual([
+      "vegetation",
+      "street",
+      "yard",
+      "interior",
+    ]);
+  });
+
+  it("requires only what its placements need", () => {
+    expect(
+      new PropPass({ id: "veg", placements: ["vegetation"] }).requires,
+    ).toEqual(["heightmap"]);
+    expect(
+      new PropPass({ id: "outdoor", placements: ["vegetation", "street"] })
+        .requires,
+    ).toEqual(["heightmap", "roads"]);
+    // The point of the split: no buildings demanded to scatter trees.
+    expect(
+      new PropPass({ id: "veg2", placements: ["vegetation"] }).requires,
+    ).not.toContain("interiors");
+  });
+
+  /**
+   * The property the configuration rests on, stated exactly. At a fixed
+   * pass id each placement draws from a labelled fork, and a labelled fork
+   * leaves its parent untouched, so no placement can reroute another's
+   * stream. `interior` is the one that proves it: it works inside
+   * buildings, so it competes with no outdoor placement for tiles, and
+   * dropping the other three must leave it bit-for-bit where it was.
+   *
+   * The id is held fixed deliberately: `rng.fork(pass.id)` means a pass
+   * given a new id rerolls everything it places, which is why the crash
+   * site's `crash-vegetation` is its own scattering rather than a subset
+   * of a settlement's trees.
+   */
+  it("places interior props identically when every outdoor placement is dropped", () => {
+    const key = (p: {
+      kind: string;
+      x: number;
+      y: number;
+      z: number;
+    }): string => `${p.kind}@${String(p.x)},${String(p.y)},${String(p.z)}`;
+    const full = new Set(
+      propsFrom(undefined, "placement-independence").map(key),
+    );
+    const interiorOnly = propsFrom(["interior"], "placement-independence");
+    expect(interiorOnly.length).toBeGreaterThan(0);
+    for (const prop of interiorOnly) {
+      expect(
+        full.has(key(prop)),
+        `${key(prop)} moved when dropping others`,
+      ).toBe(true);
+    }
+  });
+
+  /**
+   * The other half of the same truth, and the reason the test above names
+   * `interior` rather than any placement. The outdoor three share open
+   * ground, so dropping one does not simply subtract its props — the
+   * others expand into the tiles it would have taken.
+   *
+   * Stated as an identity, because the per-kind direction is not stable:
+   * were the placements independent, dropping vegetation would leave
+   * exactly `full - vegetationOnly` props behind. It leaves more, on every
+   * seed measured. (A single kind can go either way — `barrier` rises on
+   * one seed and falls on another — so counting one kind would be a flaky
+   * test of a real property.)
+   */
+  it("lets the outdoor placements spread into ground a dropped one would have used", () => {
+    for (const seed of ["compete", "placement-competition", "s3"]) {
+      const full = propsFrom(undefined, seed).length;
+      const vegetationOnly = propsFrom(["vegetation"], seed).length;
+      const withoutVegetation = propsFrom(
+        ["street", "yard", "interior"],
+        seed,
+      ).length;
+      expect(
+        withoutVegetation,
+        `${seed}: expected the outdoor placements to take freed ground`,
+      ).toBeGreaterThan(full - vegetationOnly);
+    }
+  });
+
+  it("places nothing at all when given no placements", () => {
+    expect(propsFrom([], "empty-placements")).toHaveLength(0);
   });
 });

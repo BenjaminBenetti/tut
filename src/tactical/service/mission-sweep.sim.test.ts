@@ -350,22 +350,39 @@ const BUDGET_MS = 300_000 * Math.max(1, TURN_CAP / 15);
 const RESOLVED_FLOOR = 35;
 
 /**
- * The bottom of the difficulty range, and how many of its seeds must be
- * won. Difficulties 1 to 4 are 23 of 24 today — 1, 2 and 3 take every
- * seed and one difficulty-4 seed does not (#497).
+ * The bottom of the difficulty range: every seed at or below this is
+ * won, on the same maps, in 5-7 turns (#497). Nothing distinguishes
+ * difficulty 1 from difficulty 4, which is the finding — the ladder
+ * does not start until 5.
  *
- * A floor rather than an equality, matching `RESOLVED_FLOOR`: an exact
- * count reddens on any rules change that moves the curve at all, which
- * it did on #710 — sealing sight at a corner between two opaque props
- * cost difficulty 4 its clean sweep and took difficulty 9 from 3 wins
- * to none. That is a real finding and worth surfacing, but not by
- * failing whichever unrelated PR happens to be open. Set below the
- * measured figure so ordinary drift passes and a collapse does not.
+ * Played paired, the same six maps at all ten difficulties, the cliff
+ * is sharp: 6/6 at 1 through 4, then 2/6 at 5 and roughly flat above
+ * it. Measured unpaired the top half looks like a gradient, but that is
+ * six different maps per difficulty and the variance between maps is
+ * larger than the difficulty step — see `docs/design/tactical-tuning.md`.
  */
 const WALKOVER_CEILING = 4;
 
-/** Of the 24 seeds at or below `WALKOVER_CEILING`, how many must be won. */
-const WALKOVER_FLOOR = 20;
+/**
+ * Of the 24 seeds at or below `WALKOVER_CEILING`, how many must be won.
+ *
+ * All of them, today. A floor rather than an equality so it reads as a
+ * ratchet like `RESOLVED_FLOOR` — it may only ever be raised — but with
+ * no slack, because slack is what a one-seed regression hides in.
+ *
+ * That is not hypothetical: #701 clustered desert palms, which has
+ * nothing to do with combat rules or spawn rates, and moved a single
+ * difficulty-4 seed from won on turn 5 to lost on turn 47. This
+ * assertion is what caught it; it was bisected twice and reverted in
+ * #723. A floor of 20 — four seeds of headroom, which is what this was
+ * briefly set to — would have swallowed it silently.
+ *
+ * The cost is real and worth paying: a legitimate change that moves the
+ * curve reddens the next PR and has to be updated deliberately, which
+ * #710 did. That is the trade, and today it has been on both sides of
+ * it in a few hours.
+ */
+const WALKOVER_FLOOR = 24;
 
 describe("seeded tactical sweep", () => {
   // Played in `beforeAll`, not in the describe body: work there runs at

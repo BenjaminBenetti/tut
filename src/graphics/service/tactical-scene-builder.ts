@@ -130,6 +130,17 @@ export class TacticalSceneBuilder
     this.mapView.setMaxLevel(maxLevel);
   }
 
+  /**
+   * Upgrades the map from placeholder boxes to the registered tile,
+   * building and prop art (#474). Separate from the constructor so the
+   * scene is on screen immediately and the models arrive when they
+   * arrive; the mapgen preview skips it and keeps its diagnostic
+   * colours. Idempotent.
+   */
+  async loadMapModels(): Promise<void> {
+    await this.mapView.loadModels(this.models);
+  }
+
   /** Ids of the units currently drawn or loading, in insertion order. */
   unitIds(): readonly UnitId[] {
     return [...this.wanted];

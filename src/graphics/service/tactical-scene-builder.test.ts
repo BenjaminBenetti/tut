@@ -367,3 +367,25 @@ describe("TacticalSceneBuilder spawners", () => {
     expect(builder.spawnerIds()).toEqual([]);
   });
 });
+
+describe("TacticalSceneBuilder.loadMapModels", () => {
+  it("upgrades the map to the registered art, and only once (#474)", async () => {
+    const { builder, models } = build();
+    await builder.loadMapModels();
+    const drawn = models.loads.filter((id) => !id.startsWith("tdf."));
+    expect(drawn.length).toBeGreaterThan(0);
+    // Tile, building and prop art, not unit art.
+    expect(
+      drawn.every(
+        (id) =>
+          id.startsWith("tile.") ||
+          id.startsWith("building.") ||
+          id.startsWith("prop."),
+      ),
+    ).toBe(true);
+    const after = models.loads.length;
+    await builder.loadMapModels();
+    expect(models.loads).toHaveLength(after);
+    builder.dispose();
+  });
+});

@@ -396,6 +396,32 @@ node tools/art/preview/shoot-vfx.mjs out.png ranged   # or melee, death
 
 It runs the real animation queue against stand-in units at exactly 64 px per tile and steps it 0.06 s at a time, so the filmstrip is reproducible.
 
+### 12.4 Building ghosting
+
+![left: a squad and a mech behind a building. right: the target look](tactical-ghosting-target.png)
+
+XCOM-style ghosting (#526): geometry between the camera and a unit fades in a soft radius so the player never loses the fight behind a wall. The reference case is reproducible —
+
+```
+node tools/art/preview/render-scene.mjs tools/art/preview/layouts/ghost-with.json out.png
+node tools/art/preview/render-scene.mjs tools/art/preview/layouts/ghost-without.json clear.png
+```
+
+— a two-storey block with a mech and a squad directly behind it, which is the situation playtest 1 complained about.
+
+| Property | Value | Why |
+|---|---|---|
+| Fade target | **0.35 alpha**, never 0 | The wall has to stay legible as a wall; cover the player cannot see is cover they will forget. At 0.25 the brick nearly disappears. |
+| Radius | **2.0 tiles** around the unit | Enough for the unit's tile and its neighbours. Wider and too much of the city dissolves at once. |
+| Soft edge | **0.65 tiles** | A hard circle reads as a hole cut in the building; a soft one reads as the building giving way. |
+| Fade in / out | **0.15 s** | Instant flickers as units move; longer lags the camera. |
+| What fades | Walls, floors, roofs, parapets and tall props between the camera and the unit | Anything that can stand in the way. |
+| What never fades | Ground, the unit itself, overlays, VFX, hook markers | These are the read. |
+
+Applies to **every unit the player can currently see**, not only their own: hiding a spotted bug behind a wall undoes the spotting. That is the same question fog of war answers (#531), so it wants one predicate, not two.
+
+The numbers above are the second pass. The first were 0.25 alpha over a 2.5-tile radius, which the mock showed dissolving most of the building — the point of mocking a look before building it.
+
 ### 12.4 What still has no art
 
 - No suppression, overwatch-trigger or reload effect.

@@ -1,4 +1,4 @@
-import type { Object3D } from "three";
+import type { Object3D, RingGeometry } from "three";
 import {
   BoxGeometry,
   BufferAttribute,
@@ -9,7 +9,6 @@ import {
   Matrix4,
   Mesh,
   MeshBasicMaterial,
-  RingGeometry,
 } from "three";
 
 import type { TileCoord } from "../../mapgen/model/tile-coord";
@@ -31,9 +30,9 @@ import {
   COVER_HIGH_COLOUR,
   COVER_LOW_COLOUR,
   COVER_OPACITY,
-  COVER_RING_INNER_RADIUS,
-  COVER_RING_OUTER_RADIUS,
-  COVER_RING_SEGMENTS,
+  COVER_TICK_INSET,
+  COVER_TICK_LENGTH,
+  COVER_TICK_WIDTH,
   BLOCKED_SHOT_COLOUR,
   BLOCKED_SHOT_OPACITY,
   BLOCKED_SHOT_SIZE,
@@ -56,10 +55,21 @@ import { tileTopCentre } from "../view/tactical-map-view";
 // Types
 // ===========================================
 
-/** One cover marker: the tile and the best cover it offers. */
+/**
+ * One cover mark: a tile, one of its four sides, and the cover that
+ * side offers.
+ *
+ * A tile can carry several — a corner is covered on two sides, and it
+ * matters which. The rules always knew this; the overlay used to
+ * collapse the four answers to their maximum and draw one ring in the
+ * middle, which says *there is cover here* and refuses to say where.
+ */
 export interface CoverMarker {
   readonly tile: TileCoord;
   readonly level: CoverLevel;
+  /** Which side of the tile the cover is on: one of these is zero. */
+  readonly dx: number;
+  readonly dz: number;
 }
 
 /**
@@ -128,6 +138,70 @@ const INITIAL_CAPACITY = 256;
 // Layer
 // ===========================================
 
+/** A point in world space; the tile-centre helper's return shape. */
+interface WorldPoint {
+  readonly x: number;
+  readonly y: number;
+  readonly z: number;
+}
+
+/**
+ * Appends one flat quad lying along a tile edge.
+ *
+ * Shared by the two planes drawn on edges rather than on tiles: the
+ * weapon-range boundary, which uses the whole edge, and the cover
+ * ticks, which use part of it and sit slightly inside.
+ *
+ * ```
+ *          along
+ *      ├─────────────┤
+ *   ───┌─────────────┐───  ┐ across
+ *      └─────────────┘     ┘
+ *            tile edge, offset `inset` back towards the tile centre
+ * ```
+ *
+ * @param out - Vertex components appended in place, three per vertex.
+ * @param centre - World centre of the tile the edge belongs to, as x, y, z.
+ * @param dx - Edge direction, -1, 0 or 1; one of `dx`/`dz` is zero.
+ * @param dz - The other edge direction component.
+ * @param along - Half the quad's length in tiles, measured along the edge.
+ * @param across - Half the quad's width in tiles, measured across it.
+ * @param inset - How far back from the edge to sit, in tiles.
+ * @param y - World height to lay the quad at.
+ */
+function pushEdgeQuad(
+  out: number[],
+  centre: WorldPoint,
+  dx: number,
+  dz: number,
+  along: number,
+  across: number,
+  inset: number,
+  y: number,
+): void {
+  const mx = centre.x + dx * (0.5 - inset);
+  const mz = centre.z + dz * (0.5 - inset);
+  // Run perpendicular to the edge normal; the normal is (dx, dz).
+  const rx = dz === 0 ? 0 : along;
+  const rz = dx === 0 ? 0 : along;
+  const nx = dx * across;
+  const nz = dz * across;
+  const corners = [
+    [mx - rx - nx, mz - rz - nz],
+    [mx + rx - nx, mz + rz - nz],
+    [mx + rx + nx, mz + rz + nz],
+    [mx - rx + nx, mz - rz + nz],
+  ] as const;
+  for (const [a, b, c] of [
+    [0, 1, 2],
+    [0, 2, 3],
+  ] as const) {
+    for (const corner of [corners[a], corners[b], corners[c]]) {
+      out.push(corner[0], y, corner[1]);
+    }
+  }
+}
+
 /**
  * The weapon envelope's outline: one continuous ribbon around its
  * perimeter, rebuilt whenever the envelope changes.
@@ -187,29 +261,7 @@ class PerimeterRibbon implements Disposable {
         if (inside.has(`${tile.x + dx},${tile.z + dz}`)) {
           continue;
         }
-        // Midpoint of the shared edge, then out to the ribbon's corners:
-        // half a tile each way along the edge, half a width across it.
-        const mx = centre.x + dx * 0.5;
-        const mz = centre.z + dz * 0.5;
-        const y = centre.y + lift;
-        const rx = dz === 0 ? 0 : 0.5;
-        const rz = dx === 0 ? 0 : 0.5;
-        const nx = dx * half;
-        const nz = dz * half;
-        const corners = [
-          [mx - rx - nx, mz - rz - nz],
-          [mx + rx - nx, mz + rz - nz],
-          [mx + rx + nx, mz + rz + nz],
-          [mx - rx + nx, mz - rz + nz],
-        ] as const;
-        for (const [a, b, c] of [
-          [0, 1, 2],
-          [0, 2, 3],
-        ] as const) {
-          for (const corner of [corners[a], corners[b], corners[c]]) {
-            positions.push(corner[0], y, corner[1]);
-          }
-        }
+        pushEdgeQuad(positions, centre, dx, dz, 0.5, half, 0, centre.y + lift);
       }
     }
     this.geometry.setAttribute(
@@ -228,6 +280,80 @@ class PerimeterRibbon implements Disposable {
     const position = this.geometry.getAttribute("position") as
       BufferAttribute | undefined;
     // Six vertices per edge: two triangles making one ribbon quad.
+    return position === undefined ? 0 : position.count / 6;
+  }
+
+  /** Detaches the mesh and releases its geometry and material. */
+  dispose(): void {
+    this.mesh.removeFromParent();
+    this.geometry.dispose();
+    this.material.dispose();
+  }
+}
+
+/**
+ * Cover ticks: a short bar against each covered side of a tile.
+ *
+ * Built the same way as the boundary and for the same reason — these
+ * are marks on *edges*, and an instanced per-tile layer cannot place
+ * them without carrying a rotation per instance.
+ */
+class EdgeTickLayer implements Disposable {
+  readonly mesh: Mesh;
+  private readonly geometry = new BufferGeometry();
+  private readonly material: MeshBasicMaterial;
+
+  /** @param name - Object name for tests and debugging. */
+  constructor(
+    name: string,
+    colour: number,
+    opacity: number,
+    renderOrder: number,
+  ) {
+    this.material = new MeshBasicMaterial({
+      color: colour,
+      transparent: true,
+      opacity,
+      depthWrite: false,
+    });
+    this.mesh = new Mesh(this.geometry, this.material);
+    this.mesh.name = name;
+    this.mesh.renderOrder = renderOrder;
+    this.mesh.frustumCulled = false;
+  }
+
+  /**
+   * Rebuilds one tick per marker.
+   *
+   * @param markers - Covered sides to draw.
+   * @param lift - Height above the tile top to lay the ticks at.
+   */
+  setEdges(markers: readonly CoverMarker[], lift: number): void {
+    const positions: number[] = [];
+    for (const marker of markers) {
+      const centre = tileTopCentre(marker.tile);
+      pushEdgeQuad(
+        positions,
+        centre,
+        marker.dx,
+        marker.dz,
+        COVER_TICK_LENGTH / 2,
+        COVER_TICK_WIDTH / 2,
+        COVER_TICK_INSET,
+        centre.y + lift,
+      );
+    }
+    this.geometry.setAttribute(
+      "position",
+      new BufferAttribute(new Float32Array(positions), 3),
+    );
+    this.geometry.computeBoundingSphere();
+  }
+
+  /** Ticks currently drawn, for tests and debug readouts. */
+  tickCount(): number {
+    const position = this.geometry.getAttribute("position") as
+      BufferAttribute | undefined;
     return position === undefined ? 0 : position.count / 6;
   }
 
@@ -335,8 +461,8 @@ export class TacticalOverlays implements Disposable {
   readonly root: Group;
   private readonly rangeOneAp: OverlayLayer;
   private readonly rangeTwoAp: OverlayLayer;
-  private readonly coverLow: OverlayLayer;
-  private readonly coverHigh: OverlayLayer;
+  private readonly coverLow: EdgeTickLayer;
+  private readonly coverHigh: EdgeTickLayer;
   private readonly blockedShot: OverlayLayer;
   private readonly weaponRange: PerimeterRibbon;
   /**
@@ -377,24 +503,14 @@ export class TacticalOverlays implements Disposable {
       MOVE_RANGE_TWO_AP_OPACITY,
       1,
     );
-    this.coverLow = new OverlayLayer(
+    this.coverLow = new EdgeTickLayer(
       "overlay-cover-low",
-      new RingGeometry(
-        COVER_RING_INNER_RADIUS,
-        COVER_RING_OUTER_RADIUS,
-        COVER_RING_SEGMENTS,
-      ),
       COVER_LOW_COLOUR,
       COVER_OPACITY,
       2,
     );
-    this.coverHigh = new OverlayLayer(
+    this.coverHigh = new EdgeTickLayer(
       "overlay-cover-high",
-      new RingGeometry(
-        COVER_RING_INNER_RADIUS,
-        COVER_RING_OUTER_RADIUS,
-        COVER_RING_SEGMENTS,
-      ),
       COVER_HIGH_COLOUR,
       COVER_OPACITY,
       2,
@@ -447,15 +563,13 @@ export class TacticalOverlays implements Disposable {
       OVERLAY_LIFT * 1.5,
       false,
     );
-    this.coverLow.setTiles(
-      state.cover.filter((c) => c.level === CoverLevel.LOW).map((c) => c.tile),
+    this.coverLow.setEdges(
+      state.cover.filter((c) => c.level === CoverLevel.LOW),
       OVERLAY_LIFT * 2,
-      true,
     );
-    this.coverHigh.setTiles(
-      state.cover.filter((c) => c.level === CoverLevel.HIGH).map((c) => c.tile),
+    this.coverHigh.setEdges(
+      state.cover.filter((c) => c.level === CoverLevel.HIGH),
       OVERLAY_LIFT * 2,
-      true,
     );
     this.blockedShot.setTiles(state.blockedShot, OVERLAY_LIFT * 3, true);
     this.lastState = state;
@@ -511,8 +625,8 @@ export class TacticalOverlays implements Disposable {
       weaponRange: this.weaponRange.edgeCount(),
       rangeOneAp: this.rangeOneAp.mesh.count,
       rangeTwoAp: this.rangeTwoAp.mesh.count,
-      coverLow: this.coverLow.mesh.count,
-      coverHigh: this.coverHigh.mesh.count,
+      coverLow: this.coverLow.tickCount(),
+      coverHigh: this.coverHigh.tickCount(),
       blockedShot: this.blockedShot.mesh.count,
     };
   }
@@ -594,10 +708,7 @@ export function overlaysFor(
   const cover: CoverMarker[] = [];
   const blockedShot: TileCoord[] = [];
   for (const { tile } of moveRange) {
-    const level = bestCover(mission, tile, index);
-    if (level !== CoverLevel.NONE) {
-      cover.push({ tile, level });
-    }
+    cover.push(...coverEdges(mission, tile, index));
     // The exception, not the rule. Marking every tile that *can* see
     // put a ring on 93 of 93 reachable tiles with nine bugs on the
     // board (#624) -- a light that is always on says nothing. The few
@@ -677,28 +788,31 @@ function tilesCosting(
   return range.filter((entry) => entry.apCost === apCost).map((e) => e.tile);
 }
 
-/** The best cover a tile offers against an attacker on any of its four sides. */
-function bestCover(
+/**
+ * One marker per side of `tile` that offers cover, with the level that
+ * side gives.
+ *
+ * The four answers used to be collapsed to their maximum and drawn as
+ * a single ring in the middle of the tile, which is the one thing a
+ * cover mark must not do: cover is *directional*, and a player choosing
+ * where to stand needs to know which way it faces (#624).
+ */
+function coverEdges(
   mission: TacticalState,
   tile: TileCoord,
   index: TileIndex,
-): CoverLevel {
-  let best: CoverLevel = CoverLevel.NONE;
-  for (const [dx, dz] of [
-    [1, 0],
-    [-1, 0],
-    [0, 1],
-    [0, -1],
-  ] as const) {
+): CoverMarker[] {
+  const edges: CoverMarker[] = [];
+  for (const [dx, dz] of CARDINALS) {
     const level = coverAgainst(
       mission.map,
       tile,
       { x: tile.x + dx, y: tile.y, z: tile.z + dz },
       index,
     );
-    if (level > best) {
-      best = level;
+    if (level !== CoverLevel.NONE) {
+      edges.push({ tile, level, dx, dz });
     }
   }
-  return best;
+  return edges;
 }

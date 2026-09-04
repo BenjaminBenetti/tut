@@ -359,9 +359,9 @@ Overlays are instanced quads lifted one ground-slab thickness (0.05 u) above the
 |---|---|---|---|---|
 | Move range, 1 AP | `ui-info` | `#7FD1FF` at 0.45 | **fill**, 0.84 | One action gets you here |
 | Move range, 2 AP | `ui-info` | `#7FD1FF` at 0.24 | **fill**, 0.66 | This one costs both actions |
-| Low cover | `ui-warn` | `#F0C63C` at 0.55 | **ring** 0.32–0.40 | Partial protection on that edge |
-| High cover | `ui-danger` | `#E0453C` at 0.55 | **ring** 0.32–0.40 | Full protection on that edge |
-| Blocked shot | `ui-danger` | `#E0453C` at 0.8 | **diamond**, 0.26 | This tile will refuse the shot |
+| Low cover | `ui-warn` | `#F0C63C` at 0.8 | **tick on that edge**, 0.60 × 0.14 | Partial protection on that side |
+| High cover | `ui-danger` | `#E0453C` at 0.8 | **tick on that edge**, 0.60 × 0.14 | Full protection on that side |
+| Blocked shot | `ui-danger` | `#E0453C` at 0.9 | **diamond**, 0.26 | This tile will refuse the shot |
 | Weapon range | `ui-accent` | `#F08A24` at 0.9 | **one boundary line**, 0.09 wide | How far this unit can shoot |
 | Selected unit ring | `ui-accent` | `#F08A24` | **ring** 0.40–0.50, drawn through geometry | Who is acting |
 
@@ -388,10 +388,16 @@ The selection ring alone also drops `depthTest`, so it reads through whatever st
 | Where can I go? | Filled tiles | The only plane legitimately per-tile — the answer genuinely differs tile by tile. A fill means *you may stand here*. |
 | How far can I shoot? | One continuous line | One fact, so one shape. A line means *this far*, and cannot be misread as somewhere to stand. |
 | Who am I commanding? | A ring on the unit | Belongs to the unit, not the ground. Exactly one on screen, ever. |
-| What does this tile give me? | A ring on the tile | An attribute of the ground, sitting below the unit in the hierarchy. |
+| What does this tile give me? | A tick on the covered edge | Cover is *directional*. The mark sits against the wall that earns it, so it says **which side**, and reads as part of that wall rather than as a target on the tile. |
 | Will this tile refuse the shot? | A diamond | Drawn by nothing else, so it never reads as cover or as range. |
 
 After #624 exactly one ring shape is on the board at a time that belongs to a unit, and it is the selection. Three ring styles used to compete with no way to tell them apart.
+
+![cover as a ring, then as an edge tick](tactical-cover-ticks.png)
+
+**Put a mark on the thing it is about** (#624). Cover was drawn as a ring in the middle of the tile, which says *there is cover here* and then refuses to say where — although the rules always knew: `coverAgainst` is asked about all four sides and the four answers were collapsed to their maximum before drawing. A tick against the covered edge gives the direction back, and a corner covered on two sides now reads as a corner.
+
+It also settled an argument this section had with itself twice. Cover opacity went 0.85 → 0.55 → 0.8. The ring at 0.85 read as a call to action; at 0.55 as a tick it disappeared. **A mark's weight in the hierarchy comes from what it is attached to, not from its alpha** — a bar lying against a wall reads as part of that wall however solid it is, and a circle floating in the middle of a tile reads as a target however faint. Total ink barely moved between the two (3.68 % of the plate against 3.54 %); what changed is where the ink sits.
 
 **Mark the exception, not the rule** (#624). The sight cue marked every reachable tile with a line to any living enemy. With nine bugs on a city map that was **93 marks on 93 reachable tiles** — an indicator true everywhere has stopped being an indicator; it is a light that is always on. It now needs a target chosen, and marks the tiles that will *refuse* the shot, which is both rare and the thing a player standing in front of a silent refusal actually needs (#517).
 

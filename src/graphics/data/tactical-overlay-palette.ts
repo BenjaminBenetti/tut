@@ -99,22 +99,22 @@ export const BLOCKED_SHOT_COLOUR = 0xe0453c;
 /**
  * Opacity of the cover rings and the line-of-sight pips.
  *
- * Cover was 0.85, the heaviest value in this file, in the two most
- * saturated tokens it has. A mark that loud reads as a *call to action*
- * -- an objective, something to go and do -- when cover is an
- * **attribute** of a tile the player may never care about. With 13-16
- * rings on screen at once (#590) the map read as an instrument panel
- * and the eye had nowhere to rest.
+ * This has been up and down, and the reason is that it was never
+ * really about the weight.
  *
- * Dropped to the point where a ring is still unmistakably chromatic
- * against this map's desaturated ground -- which is what carries it,
- * not weight -- but sits *under* the unit in the visual hierarchy
- * instead of over it. Deliberately not darkened, per the note on the
- * movement bands above: on a map with shadow in it, value is the
- * channel shadow gets to first, so the retreat is in alpha and the hue
- * stays fully saturated.
+ * At 0.85 as a big centred ring it read as a *call to action* -- an
+ * objective, something to go and do -- when cover is an attribute of a
+ * tile the player may never care about, and #590 cut it to 0.55 for
+ * that. Once the mark became a tick against the wall that earns it
+ * (#624), 0.55 made it disappear: the ring was loud because of where
+ * it sat, not how strong it was, and a thin bar at the tile edge reads
+ * as part of the wall no matter how solid it is.
+ *
+ * So it is back near where it started, and the shape is what keeps it
+ * quiet. **A mark's position in the hierarchy comes from what it is
+ * attached to, not from its alpha.**
  */
-export const COVER_OPACITY = 0.55;
+export const COVER_OPACITY = 0.8;
 
 /**
  * The blocked-shot mark can afford weight because it is now genuinely
@@ -127,33 +127,42 @@ export const COVER_OPACITY = 0.55;
  * was zero. With nine bugs on the board it marked 93 of 93 reachable
  * tiles (#624).
  */
-export const BLOCKED_SHOT_OPACITY = 0.8;
+export const BLOCKED_SHOT_OPACITY = 0.9;
 
 /**
- * Radii of a cover ring, in tiles, and of a line-of-sight pip.
+ * The cover tick: a bar lying along the tile edge the cover is on.
  *
- * These were literals at the call site, which the note at the top of
- * this file rules out for a colour and which is no better for a size:
- * they are art numbers, and tuning them should not mean opening the
- * service that draws them.
- *
- * The cover ring is thinner than it was (it spanned 0.28-0.40, a band
- * a third as wide as the tile, which is a donut rather than a ring).
- * A narrower annulus at the same radius keeps the tile it marks
- * legible through it.
+ * **Cover is directional, and a centred ring threw that away** (#624).
+ * The rules already know which side each wall protects -- `coverAgainst`
+ * is asked about all four and the answers were collapsed to their
+ * maximum -- so the mark can say *which* side, and sit against the wall
+ * that earns it instead of floating in the middle of the tile looking
+ * like a target.
  *
  * ```
  *   ┌───────────────┐   tile
- *   │    ,-----,    │
- *   │   ( ,---, )   │   ring: inner 0.32 → outer 0.40
- *   │   ( '---' )   │   the ground still shows inside it
- *   │    '-----'    │
+ *   │ ▁▁▁▁▁▁▁▁▁▁▁▁▁ │   a tick on the north edge: this side is covered
+ *   │               │
+ *   │               │   nothing in the middle, so the blocked-shot
+ *   │               │   diamond has the centre to itself
  *   └───────────────┘
  * ```
+ *
+ * Shorter than the edge so neighbouring ticks do not run together into
+ * a continuous line -- which is the weapon-range boundary's shape, and
+ * no two planes may share one.
  */
-export const COVER_RING_INNER_RADIUS = 0.32;
-export const COVER_RING_OUTER_RADIUS = 0.4;
-export const COVER_RING_SEGMENTS = 16;
+export const COVER_TICK_LENGTH = 0.6;
+export const COVER_TICK_WIDTH = 0.14;
+
+/**
+ * How far in from the tile edge the tick sits, in tiles.
+ *
+ * Just enough to clear the edge itself: two tiles either side of the
+ * same wall are both covered by it, and each draws its own tick, so
+ * they must not land on top of each other.
+ */
+export const COVER_TICK_INSET = 0.09;
 /** Side of the blocked-shot diamond, in tiles, before its 45 degree turn. */
 export const BLOCKED_SHOT_SIZE = 0.26;
 

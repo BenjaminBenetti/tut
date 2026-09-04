@@ -430,33 +430,6 @@ function buildSidewalk(mf, corner) {
 }
 
 /**
- * Two-tile sedan car, footprint 2×1 along X, pivot at the centre.
- * @param {MaterialFactory} mf - Material factory.
- * @returns {Object3D} Car root.
- */
-function buildCar(mf) {
-  const parts = [
-    box(mf.get("env-metal"), [1.8, 0.36, 0.8], [0, 0.34, 0], { name: "body" }),
-    box(mf.get("env-glass"), [0.9, 0.3, 0.72], [-0.1, 0.67, 0], {
-      name: "cabin",
-    }),
-    box(mf.get("env-rust"), [0.3, 0.1, 0.7], [0.8, 0.3, 0], { name: "bumper" }),
-  ];
-  let i = 0;
-  for (const x of [-0.6, 0.6]) {
-    for (const z of [-0.42, 0.42]) {
-      parts.push(
-        cylinder(mf.get("tdf-grey-dark"), 0.16, 0.16, 0.12, 8, [x, 0.16, z], {
-          name: `wheel_${i++}`,
-          rot: [Math.PI / 2, 0, 0],
-        }),
-      );
-    }
-  }
-  return group("root", parts);
-}
-
-/**
  * Street props keyed by name.
  * @param {MaterialFactory} mf - Material factory.
  * @param {"barrier-concrete"|"sandbags"|"dumpster"|"lamp-post"|"hydrant"} kind - Prop kind.
@@ -816,38 +789,6 @@ const MODEL_DEFS = [
     build: (mf) => group("root", [slab(mf.get("env-dirt"))]),
   },
   {
-    id: "prop.barrier-concrete",
-    category: "props",
-    file: "barrier-concrete.glb",
-    footprint: { w: 1, d: 1 },
-    height: 0.5,
-    build: (mf) => buildProp(mf, "barrier-concrete"),
-  },
-  {
-    id: "prop.sandbags",
-    category: "props",
-    file: "sandbags.glb",
-    footprint: { w: 1, d: 1 },
-    height: 0.48,
-    build: (mf) => buildProp(mf, "sandbags"),
-  },
-  {
-    id: "prop.dumpster",
-    category: "props",
-    file: "dumpster.glb",
-    footprint: { w: 1, d: 1 },
-    height: 1.0,
-    build: (mf) => buildProp(mf, "dumpster"),
-  },
-  {
-    id: "prop.car-sedan",
-    category: "props",
-    file: "car-sedan.glb",
-    footprint: { w: 2, d: 1 },
-    height: 0.82,
-    build: buildCar,
-  },
-  {
     id: "prop.lamp-post",
     category: "props",
     file: "lamp-post.glb",
@@ -896,14 +837,6 @@ const MODEL_DEFS = [
     build: buildWaterTile,
   },
   {
-    id: "prop.crate",
-    category: "props",
-    file: "crate.glb",
-    footprint: { w: 1, d: 1 },
-    height: 0.6,
-    build: (mf) => buildMapgenProp(mf, "crate"),
-  },
-  {
     id: "prop.shelving",
     category: "props",
     file: "shelving.glb",
@@ -934,14 +867,6 @@ const MODEL_DEFS = [
     footprint: { w: 1, d: 1 },
     height: 1.3,
     build: (mf) => buildMapgenProp(mf, "cactus"),
-  },
-  {
-    id: "prop.car-compact",
-    category: "props",
-    file: "car-compact.glb",
-    footprint: { w: 1, d: 1 },
-    height: 0.76,
-    build: (mf) => buildMapgenProp(mf, "car-compact"),
   },
   {
     id: "prop.tree-pine",

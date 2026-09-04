@@ -112,62 +112,6 @@
     "bytes": 2428
   },
   {
-    "id": "prop.barrier-concrete",
-    "category": "props",
-    "path": "assets/models/props/barrier-concrete.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 0.5,
-    "sockets": [],
-    "quality": "placeholder",
-    "triangles": 36,
-    "bytes": 6488
-  },
-  {
-    "id": "prop.sandbags",
-    "category": "props",
-    "path": "assets/models/props/sandbags.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 0.48,
-    "sockets": [],
-    "quality": "placeholder",
-    "triangles": 96,
-    "bytes": 15576
-  },
-  {
-    "id": "prop.dumpster",
-    "category": "props",
-    "path": "assets/models/props/dumpster.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 1,
-    "sockets": [],
-    "quality": "placeholder",
-    "triangles": 36,
-    "bytes": 6684
-  },
-  {
-    "id": "prop.car-sedan",
-    "category": "props",
-    "path": "assets/models/props/car-sedan.glb",
-    "footprint": {
-      "w": 2,
-      "d": 1
-    },
-    "height": 0.82,
-    "sockets": [],
-    "quality": "placeholder",
-    "triangles": 164,
-    "bytes": 23156
-  },
-  {
     "id": "prop.lamp-post",
     "category": "props",
     "path": "assets/models/props/lamp-post.glb",
@@ -252,20 +196,6 @@
     "bytes": 4456
   },
   {
-    "id": "prop.crate",
-    "category": "props",
-    "path": "assets/models/props/crate.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 0.6,
-    "sockets": [],
-    "quality": "placeholder",
-    "triangles": 36,
-    "bytes": 6308
-  },
-  {
     "id": "prop.shelving",
     "category": "props",
     "path": "assets/models/props/shelving.glb",
@@ -320,20 +250,6 @@
     "quality": "placeholder",
     "triangles": 120,
     "bytes": 16156
-  },
-  {
-    "id": "prop.car-compact",
-    "category": "props",
-    "path": "assets/models/props/car-compact.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 0.76,
-    "sockets": [],
-    "quality": "placeholder",
-    "triangles": 164,
-    "bytes": 23148
   },
   {
     "id": "prop.tree-pine",
@@ -548,6 +464,90 @@
     "quality": "final",
     "triangles": 216,
     "bytes": 23396
+  },
+  {
+    "id": "prop.barrier-concrete",
+    "category": "props",
+    "path": "assets/models/props/barrier-concrete.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.5,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 156,
+    "bytes": 15816
+  },
+  {
+    "id": "prop.car-compact",
+    "category": "props",
+    "path": "assets/models/props/car-compact.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.74,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 240,
+    "bytes": 26480
+  },
+  {
+    "id": "prop.car-sedan",
+    "category": "props",
+    "path": "assets/models/props/car-sedan.glb",
+    "footprint": {
+      "w": 2,
+      "d": 1
+    },
+    "height": 0.8,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 284,
+    "bytes": 30328
+  },
+  {
+    "id": "prop.crate",
+    "category": "props",
+    "path": "assets/models/props/crate.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.6,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 148,
+    "bytes": 16772
+  },
+  {
+    "id": "prop.dumpster",
+    "category": "props",
+    "path": "assets/models/props/dumpster.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.79,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 216,
+    "bytes": 23156
+  },
+  {
+    "id": "prop.sandbags",
+    "category": "props",
+    "path": "assets/models/props/sandbags.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.47,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 196,
+    "bytes": 23080
   },
   {
     "id": "prop.table",

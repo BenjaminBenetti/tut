@@ -142,6 +142,7 @@ export const DEFAULT_OBJECTIVE_INTERACTIONS: Readonly<
  *
  * ```
  *   unit missing ──► unit-not-on-map     down ──► unit-dead
+ *   not a TDF unit ──► objective-not-yours
  *   other side's phase ──► wrong-phase   no actions ──► no-action-points
  *   unknown objective ──► objective-not-found
  *   already done ──► objective-complete
@@ -171,6 +172,14 @@ export function createInteractHandler(
     }
     if (unit.hp <= 0) {
       return err({ kind: "unit-dead", unitId });
+    }
+    // Objectives are the player's (GDD §6.3). Without this a bug in its
+    // own phase satisfies the phase check and can plant charges on its
+    // own hive, winning the mission for the player (#434). If M3 ever
+    // gives a side its own objectives, the eligible team moves onto the
+    // interaction, beside its effect.
+    if (unit.team !== "tdf") {
+      return err({ kind: "objective-not-yours", unitId });
     }
     if (unit.team !== TEAM_FOR_PHASE[mission.phase]) {
       return err({ kind: "wrong-phase", unitId });

@@ -6,10 +6,10 @@ Last updated: 2026-09-04 (post-v0.2.0; win path settled on #317).
 
 | Field | Value |
 |---|---|
-| SHA tested | `dfcd2dc` (main, M2.5 band 2 landing) |
-| Gate | typecheck, lint, build pass; vitest **1764 / 1764** (+1 deliberate skip); e2e **55 / 55** |
-| Exploratory | v0.2.1 verified as a production artifact; **the win path survives fog of war**; #572 fixed and confirmed |
-| **Verdict** | **Healthy.** v0.2.1 plays correctly as a shipped artifact with no dev hooks, and a mission is still completable with the player view active. Control scheme 7/7 on every head since. No open QA-filed defects. |
+| SHA tested | `167ce46` (main, after v0.2.2) |
+| Gate | typecheck, lint, build pass; vitest **1783 / 1783** (+1 deliberate skip); e2e **56 / 56** |
+| Exploratory | #480, #468, #605 verified fixed by playing them; **#517 quantified and still open** |
+| **Verdict** | **Healthy.** Control scheme 7/7 on every head since band 1; a mission is completable with fog active. One QA-filed issue open: **#517**, no cue for which tiles can see an objective. |
 
 ### Release push, in order of what mattered
 
@@ -98,7 +98,31 @@ Last updated: 2026-09-04 (post-v0.2.0; win path settled on #317).
 
     **A warning for the next person driving this.** My first three attempts reported "right click does nothing, no damage" and I nearly filed it. The cause was mine: I had targeted the bug with `selectUnit`, which left *the bug* as the selected unit, so the mech was no longer the actor. Re-select the acting unit, then arm the action, then right click the target. A left click at the same pixel correctly showed `Swarmer` in the preview, which is what proved the coordinates were right and the sequence was wrong.
 
-15. **Filed #480** (p3): the debrief says "No casualties" on a mission that wiped the whole force.
+15. **Fixes verified by playing them, not by reading the diff.**
+
+    - **#480** (mine, p3) fixed by #602 on `9bbe836`. Played a mission to a full wipe: the debrief now reads *Mechs destroyed: Hammerhead*, *Squads wiped: Alpha, Bravo*, then *Casualties (surviving squads): No further casualties*. The two "nothing to report" lines are **scoped to survivors**, so they no longer contradict the losses listed above them.
+    - **#468** fixed by #603. Leaving a mission with the HUD's Overworld button and returning preserves it exactly — same turn, same three units on the same tiles — and the overworld offers a labelled **Resume mission** control.
+    - **#605** fixed by #610 on `167ce46`. The selected unit is now ringed; 318 of 3,381 sampled pixels around it change on selection. **It had never been drawn in a mission at all.**
+
+16. **#517 is the one QA-filed issue still open, and it is now quantified.** A line-of-sight overlay exists (orange pips), but it feeds on `mission.units` only:
+
+    ```ts
+    const enemies = mission.units.filter((u) => u.team !== unit.team && u.hp > 0);
+    ```
+
+    **Egg spawners are not in `mission.units`** — they are in `mission.spawners`, which is why `findAttackTarget` handles them separately (#426). So no tile is ever marked for having a sight line to an *objective*, which is the exact case that made me misreport the win path twice.
+
+    Measured through `overlaysFor` on seed `4242` at mission start, with zero enemy units on the map:
+
+    | Unit | reachable tiles | tiles the overlay marks | tiles that actually see a spawner |
+    |---|---|---|---|
+    | `unit-1` (mech) | 205 | **0** | **119** |
+    | `unit-2` (squad) | 117 | **0** | 70 |
+    | `unit-3` (squad) | 91 | **0** | 45 |
+
+    The machinery is all there; the gap is only which targets are fed to it. Suggested shape posted on the issue.
+
+17. **Three features have now shipped fully working and invisible**, every one with CI green: **#555** (every overlay failing a depth test), **#572** (the 2 AP band painted over by the range fill), **#605** (the selection ring never drawn). That is the single most useful thing this seat has learned. Photograph the screen and look at it; the suite cannot see any of these.
 
 ### Harness lessons that cost me a wrong reading
 
@@ -113,6 +137,9 @@ Three times this session a control-scheme or rendering change silently invalidat
 
 | SHA | Build | Unit | e2e | Exploratory | Filed |
 |---|---|---|---|---|---|
+| `167ce46` | pass | 1783/1783 | 56/56 | #605 selection ring now draws | — |
+| `9bbe836` | pass | 1774/1774 | 56/56 | #480 and #468 verified fixed | — |
+| `222a960` | pass | 1769/1769 | 55/55 | #590 range follows attack intent | — |
 | `dfcd2dc` | pass | 1764/1764 | 55/55 | right click fires; radial is unwired | — |
 | `5d93967` | pass | 1744/1744 | 55/55 | radial menu, building ghosting; 7/7 | — |
 | `e01ee73` | pass | 1725/1725 | 55/55 | fog of war; win path still completes | — |

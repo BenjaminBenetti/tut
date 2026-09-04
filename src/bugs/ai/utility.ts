@@ -19,10 +19,8 @@ import {
   pathTo,
   searchMoves,
 } from "../../tactical/service/movement-service";
-import {
-  coverAgainst,
-  hasLineOfSight,
-} from "../../tactical/service/sight-service";
+import { coverAgainst } from "../../tactical/service/sight-service";
+import { unitCanSee } from "../../tactical/service/vision-service";
 
 // ===========================================
 // Types
@@ -206,7 +204,15 @@ export function coverScore(
   return worst / CoverLevel.HIGH;
 }
 
-/** How many of `enemies` see `tile`, as a fraction; `0` with no enemies. */
+/**
+ * How many of `enemies` see `tile`, as a fraction; `0` with no enemies.
+ *
+ * By the one sight rule (#579), so range counts as well as the line.
+ * It used to ask only for a clear line, which on a 42-tile map reads 1
+ * from any distance at all — a lurker rating itself seen by enemies
+ * five times beyond their eyes, so exposure never varied and never
+ * steered it anywhere (#663).
+ */
 export function exposureScore(
   mission: TacticalState,
   tile: TileCoord,
@@ -217,7 +223,7 @@ export function exposureScore(
     return 0;
   }
   const seen = enemies.filter((e) =>
-    hasLineOfSight(mission.map, e.pos, tile, index),
+    unitCanSee(mission, e, tile, index),
   ).length;
   return seen / enemies.length;
 }
@@ -229,6 +235,12 @@ export function exposureScore(
  *
  * A behaviour that fears reaction fire subtracts it; the brute adds it,
  * because a shot spent on armor is a shot not spent on the swarm.
+ *
+ * "Watching" means what `overwatchReaction` means by it — `unitCanSee`,
+ * range and line together (ADR 0006 §3: a watcher can only react to a
+ * mover it can see). Asking only for the line counted watchers that
+ * could never fire, so the score read 1 across the whole approach and
+ * the term cancelled out of every comparison that mattered (#663).
  */
 export function overwatchScore(
   mission: TacticalState,
@@ -243,7 +255,7 @@ export function overwatchScore(
     return 0;
   }
   const covering = watchers.filter((w) =>
-    hasLineOfSight(mission.map, w.pos, tile, index),
+    unitCanSee(mission, w, tile, index),
   ).length;
   return covering / watchers.length;
 }

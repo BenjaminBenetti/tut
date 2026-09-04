@@ -6,9 +6,9 @@ Last updated: 2026-09-04 (post-v0.2.0; win path settled on #317).
 
 | Field | Value |
 |---|---|
-| SHA tested | `4cec760` (main, after v0.2.0 was tagged at `c2cddf8`) |
-| Gate | typecheck, lint, build pass; vitest **1595 / 1595** (+1 deliberate skip); e2e **44 / 44** |
-| Exploratory | win path settled: a mech destroys an indoor spawner in one shot, a lone squad cannot (see item 4) |
+| SHA tested | `f7901ba` (main, after v0.2.0 was tagged at `c2cddf8`) |
+| Gate | typecheck, lint, build pass; vitest **1608 / 1608** (+1 deliberate skip); e2e **45 / 45** |
+| Exploratory | 11 flows, 0 findings on `4cec760`; win path settled (item 4); #515 spawner picking verified with a real pointer click |
 | **Verdict** | **A tactical mission is playable end to end and winnable.** Release verdict for v0.2.0 was posted on #317 against `14b0811`; nothing since has changed it. |
 
 ### Release push, in order of what mattered
@@ -40,7 +40,9 @@ Last updated: 2026-09-04 (post-v0.2.0; win path settled on #317).
 
    At 2–4 per hit against 20 hp a squad needs about a dozen hits, so ~25 shots at ~50 %, and a rifle squad holds **3 charges** before reloading (#409). Both squads ran dry after three shots and died around turn 7. **The intended answer to an indoor spawner is the mech's gun.** That matches `objectiveApproach`'s own doc: a mech having no route *onto* an indoor objective is by design, provided some class can reach a firing position. Posted on #317.
 
-   **The real player-facing gap is discovery, not capability.** Nothing on screen marks which tiles have a sight line, so a player walks at the objective, gets no Fire button and concludes it is broken — which is precisely what I did twice. A line-of-sight or firing-position hint in the tactical overlay is worth an issue against tactical presentation.
+   **#484 (PR #515, in `f7901ba`) closed half the discovery gap.** Egg spawners are now drawn and pickable: `spawnerScreenPosition` returns a point inside `#map-viewport`, a real pointer click there targets the spawner (`Egg spawner`, `Target is 23 tiles away; weapon reaches 10`), and there is a `selectSpawner()` hook plus a permanent spec, `e2e/tactical-spawners.spec.ts`. Verified by hand on `f7901ba`.
+
+   **The remaining player-facing gap is the sight line, not the target.** Nothing on screen marks which tiles have a clear line, so a player walks at the objective, finds Fire greyed out and concludes it is broken — which is precisely what I did twice. Filed as **#517** and narrowed to exactly that after #515.
 
 5. **Filed #480** (p3): the debrief says "No casualties" on a mission that wiped the whole force.
 
@@ -48,6 +50,7 @@ Last updated: 2026-09-04 (post-v0.2.0; win path settled on #317).
 
 | SHA | Build | Unit | e2e | Exploratory | Filed |
 |---|---|---|---|---|---|
+| `f7901ba` | pass | 1608/1608 | 45/45 | 11 flows clean; real click targets a drawn spawner (#515) | — |
 | `4cec760` | pass | 1595/1595 | 44/44 | mech kills an indoor spawner; squad cannot | #517 |
 | `b5c1196` | pass | 1348/1348 | 39/39 | known #412; #404 verified | — |
 | `6e2e3c1` | pass | 1338/1338 | 39/39 | known #412 | — |

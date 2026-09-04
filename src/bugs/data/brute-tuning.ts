@@ -41,9 +41,29 @@ import type { BruteTuning } from "../model/brute-tuning";
  * every watcher saw every tile. That was true and it was a bug, not a
  * property of open ground: `overwatchScore` asked only for a clear line
  * and never for sight range, so it read 1 on every tile of the map and
- * no weight could move it (#663). The weight below was set against that
- * flat score and has not been retuned since it started varying — worth
- * a look in the next balance pass rather than a guess now.
+ * no weight could move it (#663).
+ *
+ * Measured against the corrected score (#676), on a 30-wide field with
+ * watchers placed so the sight gradient is not collinear with the
+ * approach:
+ *
+ * ```
+ *   overwatchWeight   0   0.15   0.3   0.6   1.2
+ *   destination      same same  same  same  same
+ * ```
+ *
+ * Live but dominated: `brute-behaviour.test.ts` shows a heavy penalty
+ * (-20) does move the brute out of the watchers' reach, so the term is
+ * not inert — but between 0 and four times the shipped value it never
+ * changes where the brute goes, because adjacency and approach settle
+ * it first. Left at 0.3, which the measurement supports as well as any
+ * value in that range, and where the design note above wants it: sign
+ * over size, a tie-break near the enemy line and nothing more.
+ *
+ * Caveat on the method: single-turn destinations on flat open fields,
+ * with the bug close enough to perceive an enemy at all. A bug that
+ * sees nobody idles, and a probe placed beyond bug sight range measures
+ * that rather than the weight.
  *
  * Elevation is discouraged an eighth of a tile per level — the brute has
  * `move` 3 and no business on a rooftop, but a ramp on the way into the

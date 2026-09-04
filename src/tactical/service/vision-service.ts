@@ -1,5 +1,6 @@
 import type { GridPos } from "../../core/model/grid";
 import { manhattanDistance } from "../../core/service/grid-math";
+import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import type { TacticalApplied, TacticalEvent } from "../model/tactical-event";
 import type {
@@ -178,6 +179,11 @@ export function withVision(
       visible: now.visible,
       spotted: now.spotted,
       explored: union(before.explored, now.visible),
+      // Remembered, not recomputed (#716). A side keeps where it last
+      // saw an enemy after losing sight of it, which is the difference
+      // between a bug that breaks contact and one that has forgotten
+      // there was ever anything to look for.
+      lastSeen: rememberSeen(before.lastSeen, mission, now.spotted),
     };
     for (const unitId of now.spotted) {
       if (!before.spotted.includes(unitId)) {
@@ -194,6 +200,44 @@ export function withVision(
     state: { ...mission, vision },
     events: [...applied.events, ...events],
   };
+}
+
+/**
+ * Folds the positions of everything currently spotted into what this
+ * side already remembered (#716).
+ *
+ * ```
+ *   spotted now ──► position recorded, overwriting any older one
+ *   not spotted ──► the old record survives untouched
+ * ```
+ *
+ * Only positions of units this side can see right now are ever written,
+ * so the memory cannot hold somewhere nobody looked (ADR 0006 §2.3). It
+ * is never pruned: a record for a dead unit is harmless, because a
+ * behaviour looking one up is asking "where should I go" rather than
+ * "who is alive", and the answer stays honest either way.
+ *
+ * @param remembered - What the side knew before this recompute.
+ * @param mission - The mission, for current positions.
+ * @param spotted - Enemy ids visible to this side right now.
+ * @returns The updated memory, or the same object when nothing is seen.
+ */
+function rememberSeen(
+  remembered: Readonly<Record<UnitId, TileCoord>>,
+  mission: TacticalState,
+  spotted: readonly UnitId[],
+): Readonly<Record<UnitId, TileCoord>> {
+  if (spotted.length === 0) {
+    return remembered;
+  }
+  const next: Record<UnitId, TileCoord> = { ...remembered };
+  for (const unitId of spotted) {
+    const unit = mission.units.find((u) => u.id === unitId);
+    if (unit !== undefined) {
+      next[unitId] = unit.pos;
+    }
+  }
+  return next;
 }
 
 /**

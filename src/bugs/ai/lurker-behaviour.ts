@@ -28,6 +28,7 @@ import {
   distanceScore,
   exposureScore,
   landingSite,
+  recalledSite,
   livingEnemies,
   moveTowards,
   reachableTiles,
@@ -160,7 +161,12 @@ export class LurkerBehaviour implements BugBehaviour {
     unit: Unit,
     ctx: BehaviourContext,
   ): readonly TacticalCommand[] {
-    const site = landingSite(mission, unit.pos);
+    // Where it last saw someone beats where the squad landed (#716).
+    // Without the memory a lurker that stepped into cover lost its mark,
+    // fell through to the deploy zone it was already standing beside,
+    // found no better tile and idled for the rest of the mission — which
+    // is why concealment could not be turned up at all (#695).
+    const site = recalledSite(mission, unit) ?? landingSite(mission, unit.pos);
     if (site === undefined) {
       return [];
     }

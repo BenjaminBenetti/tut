@@ -430,6 +430,7 @@ describe("TacticalMapView.setVision", () => {
       visible: [key({ x: 0, y: 0, z: 0 })],
       explored: [key({ x: 0, y: 0, z: 0 }), key({ x: 1, y: 0, z: 0 })],
       spotted: [],
+      lastSeen: {},
     });
 
     // Tiles are batched per surface, so find each instance by where it
@@ -478,7 +479,7 @@ describe("TacticalMapView.setVision", () => {
   it("collapses every tile the side has never seen", () => {
     const map = fixture().build();
     const view = new TacticalMapView(map);
-    view.setVision({ visible: [], explored: [], spotted: [] });
+    view.setVision({ visible: [], explored: [], spotted: [], lastSeen: {} });
     for (const mesh of allInstanced(view).filter((m) =>
       m.name.startsWith("tiles-"),
     )) {
@@ -509,7 +510,7 @@ describe("TacticalMapView.setVision", () => {
       z: 0,
     });
     // ...and gone once it is unexplored.
-    view.setVision({ visible: [], explored: [], spotted: [] });
+    view.setVision({ visible: [], explored: [], spotted: [], lastSeen: {} });
     expect(view.pickTile(ndcAt(1.5, 0.5), camera)).toBeUndefined();
     view.dispose();
   });
@@ -517,7 +518,7 @@ describe("TacticalMapView.setVision", () => {
   it("applies to models loaded after the vision was set", async () => {
     const map = fixture().build();
     const view = new TacticalMapView(map);
-    view.setVision({ visible: [], explored: [], spotted: [] });
+    view.setVision({ visible: [], explored: [], spotted: [], lastSeen: {} });
     await view.loadModels(new FakeModelLoader());
     for (const mesh of allInstanced(view).filter((m) =>
       m.name.includes("-model:"),

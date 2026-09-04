@@ -108,6 +108,22 @@ export interface SideVision {
   readonly explored: readonly VisionTileKey[];
   /** Enemy units currently seen, by id. Recomputed, never trusted from a save. */
   readonly spotted: readonly UnitId[];
+  /**
+   * Where this side last saw each enemy, by id (#716). Accumulated like
+   * `explored` rather than recomputed like `spotted`: it is the memory
+   * of a sighting, so losing sight must not erase it — that is the whole
+   * point of holding it.
+   *
+   * It exists because a bug that cannot see its mark had no mark at all.
+   * Concealment and engagement were mutually exclusive for the lurker at
+   * every weight (#695): stepping into cover broke line of sight, and
+   * with nothing remembered the behaviour had nowhere to go and idled
+   * for the rest of the mission.
+   *
+   * Only ever written from what the side actually perceived, so it
+   * cannot leak a position nobody saw (ADR 0006 §2.3).
+   */
+  readonly lastSeen: Readonly<Record<UnitId, TileCoord>>;
 }
 
 /** Both sides, in a fixed order, for iterating vision. */
@@ -118,6 +134,7 @@ export const NO_VISION: SideVision = {
   visible: [],
   explored: [],
   spotted: [],
+  lastSeen: {},
 };
 
 // ===========================================

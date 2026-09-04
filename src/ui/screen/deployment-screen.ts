@@ -4,6 +4,7 @@ import type {
   DeploymentAssessor,
 } from "../../overworld/model/deployment-assessment";
 import { launchMission } from "../../overworld/model/launch-mission-command";
+import { startMission } from "../../tactical/model/start-mission-command";
 import type { Mission } from "../../overworld/model/mission";
 import { findCity } from "../../overworld/service/earth-map-query-service";
 import type { MissionTypeCatalogue } from "../../overworld/service/mission-generation-service";
@@ -34,6 +35,13 @@ export interface DeploymentScreenDeps {
   readonly squadTypes: SquadTypeCatalogue;
   /** Names mission types in the briefing. */
   readonly missionTypes: MissionTypeCatalogue;
+  /**
+   * True when the session resolves missions with the M1 auto-resolver
+   * (`?autoResolve=1`, #341): Launch settles the mission on the spot and
+   * opens the results. Absent or false is the shipped game, where Launch
+   * starts a tactical mission and opens the tactical screen.
+   */
+  readonly autoResolve?: boolean;
 }
 
 /** Fields of the briefing grid, in order. */
@@ -65,8 +73,9 @@ const BRIEF_LABELS: Readonly<Record<BriefField, string>> = {
  * Choose who goes (GDD §4): the briefing of the selected mission, a
  * checklist of the roster's squads and mechs (wiped and destroyed units
  * are already gone from the roster), the resolver's own force-versus-
- * difficulty readout for the current pick, and Launch. Launch dispatches
- * `LaunchMission`; on success the results screen takes over.
+ * difficulty readout for the current pick, and Launch. Launch starts the
+ * tactical mission and hands over to the tactical screen; with
+ * `autoResolve` on it settles the mission where it stands instead.
  *
  * ```
  *   ┌ #deployment-bar  DEPLOYMENT · Cairo ──────── status ── [Back] [LAUNCH] ┐
@@ -76,8 +85,9 @@ const BRIEF_LABELS: Readonly<Record<BriefField, string>> = {
  *   └──────────────────────────────────┴───────────────────────────────────┘
  *
  *   checkbox ──► selected ids ──► assessor.assess ──► picker.update
- *   [Launch]  ──► store.dispatch(launchMission(id, deployment)) ──ok──► "mission-results"
- *                                                              ──err─► status
+ *   [Launch]  ──► dispatch(startMission(id, deployment))  ──ok──► "tactical"
+ *                 dispatch(launchMission(id, deployment)) ──ok──► "mission-results"
+ *                   (auto-resolve)                        ──err─► status
  * ```
  *
  * The pick is screen-local UI state: it is rebuilt from the roster on
@@ -182,7 +192,12 @@ export class DeploymentScreen implements Screen {
     this.render(this.deps.session.store?.getState());
   }
 
-  /** Dispatches `LaunchMission` for the pick; success opens the results screen. */
+  /**
+   * Commits the pick: `StartMission` in the shipped game, which opens the
+   * tactical screen, or `LaunchMission` under `autoResolve`, which
+   * settles it and opens the results. A refusal stays on this screen with
+   * its reason in the status line.
+   */
   private launchMission(): void {
     const store: CampaignStore | undefined = this.deps.session.store;
     const mission = this.currentMission(store?.getState());
@@ -194,18 +209,22 @@ export class DeploymentScreen implements Screen {
       this.showStatus("Pick at least one unit.");
       return;
     }
+    const deployment = {
+      missionId: mission.id,
+      squadIds: [...this.selectedSquads],
+      mechIds: [...this.selectedMechs],
+    };
+    const auto = this.deps.autoResolve ?? false;
     const result = store.dispatch(
-      launchMission(mission.id, {
-        missionId: mission.id,
-        squadIds: [...this.selectedSquads],
-        mechIds: [...this.selectedMechs],
-      }),
+      auto
+        ? launchMission(mission.id, deployment)
+        : startMission(mission.id, deployment),
     );
     if (!result.ok) {
       this.showStatus(result.error.message);
       return;
     }
-    this.deps.router.navigate("mission-results");
+    this.deps.router.navigate(auto ? "mission-results" : "tactical");
   }
 
   // ===========================================

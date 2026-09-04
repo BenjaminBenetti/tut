@@ -194,6 +194,7 @@ describe("TacticalInputController", () => {
     key("Escape");
     key("t");
     key("x");
+    key("z");
     key("a", { repeat: true });
     key("r", { target: { tagName: "INPUT" } });
     expect(intents).toEqual([
@@ -202,6 +203,7 @@ describe("TacticalInputController", () => {
       { kind: "action", action: "next-unit" },
       { kind: "action", action: "cancel" },
       { kind: "action", action: "next-target" },
+      { kind: "action", action: "extract" },
     ]);
   });
 

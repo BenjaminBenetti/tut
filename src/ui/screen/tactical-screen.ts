@@ -1,6 +1,7 @@
 import type { Unsubscribe } from "../../core/model/event-bus";
 import type { GameState } from "../../save/model/game-state";
 import type { CombatTuning } from "../../tactical/model/combat-tuning";
+import { finishMission } from "../../tactical/model/finish-mission-command";
 import type { TacticalCommand } from "../../tactical/model/tactical-command";
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { TacticalState } from "../../tactical/model/tactical-state";
@@ -43,7 +44,10 @@ export interface TacticalScreenDeps {
  * the HUD on every change; the HUD turns the scene's intents
  * into commands, which go through the store with refusals shown in the
  * HUD's banner. With no mission in progress it says so; the HUD's
- * banner is the one way back to the overworld.
+ * banner is the one way back to the overworld. When the mission reports
+ * an outcome the screen finishes it — `FinishMission` resolves it through
+ * the tactical resolver and empties `activeMission` (#341) — and hands
+ * over to the results screen.
  *
  * ```
  *   ┌ #tactical-viewport ◄── sceneHost.attach / update ───────────────────┐
@@ -54,6 +58,7 @@ export interface TacticalScreenDeps {
  *   host intents ──▶ hud.handleIntent ──▶ onCommand ──▶ store.dispatch
  *                └─▶ host.select(hud.getSelectedUnitId())   range / cover / LOS overlays
  *   store change ──▶ host.update(mission, tactical events)  animations, then units
+ *                └─▶ mission.outcome set ──▶ FinishMission ──▶ "mission-results"
  * ```
  */
 export class TacticalScreen implements Screen {
@@ -69,6 +74,8 @@ export class TacticalScreen implements Screen {
   private note: HTMLElement | undefined;
   private unsubscribe: Unsubscribe | undefined;
   private attachedMissionId: string | undefined;
+  /** The mission `FinishMission` has already been dispatched for, so it is asked once. */
+  private finishedMissionId: string | undefined;
   private readonly disposers: (() => void)[] = [];
 
   // ===========================================
@@ -136,6 +143,7 @@ export class TacticalScreen implements Screen {
     }
     this.deps.sceneHost?.release();
     this.attachedMissionId = undefined;
+    this.finishedMissionId = undefined;
     this.hud.unmount();
     this.root?.remove();
     this.root = undefined;
@@ -161,6 +169,34 @@ export class TacticalScreen implements Screen {
       return;
     }
     this.syncScene(mission, events);
+    if (mission.outcome !== undefined) {
+      this.finish(mission.missionId);
+    }
+  }
+
+  /**
+   * Resolves a mission that has reported an outcome and opens the
+   * debrief. Asked once per mission: `render` runs on every store change,
+   * and the state carries the outcome from the moment the rules set it,
+   * whether that was this session or a save reloaded after one. A refusal
+   * stays on the mission with its reason in the banner, so a broken
+   * debrief never strands the player on a dead screen.
+   */
+  private finish(missionId: string): void {
+    if (this.finishedMissionId === missionId) {
+      return;
+    }
+    this.finishedMissionId = missionId;
+    const store = this.deps.session.store;
+    if (!store) {
+      return;
+    }
+    const result = store.dispatch(finishMission(missionId));
+    if (!result.ok) {
+      this.hud.showStatus(result.error.message);
+      return;
+    }
+    this.deps.router.navigate("mission-results");
   }
 
   /** Attaches the scene on the first mission, updates it afterwards; never throws into the store. */

@@ -21,6 +21,8 @@ import { COMBAT_TUNING } from "../../tactical/data/combat-tuning";
 import { UNIT_TUNING } from "../../tactical/data/unit-tuning";
 import { SPAWN_TUNING } from "../../tactical/data/spawn-tuning";
 import { ATTACK } from "../../tactical/model/attack-command";
+import { FINISH_MISSION } from "../../tactical/model/finish-mission-command";
+import { MISSION_ENDED } from "../../tactical/model/mission-ended-event";
 import { commandError } from "../../core/model/command-error";
 import { err, ok } from "../../core/model/result";
 import type { TacticalState } from "../../tactical/model/tactical-state";
@@ -119,10 +121,17 @@ class FakeStore implements CampaignStore {
     }
   }
   readonly dispatched: OverworldCommand[] = [];
+  /** Makes `FinishMission` refuse, standing in for a mission that is not over. */
+  refuseFinish = false;
   dispatch(command: OverworldCommand) {
     this.dispatched.push(command);
     if (command.type === ATTACK) {
       return err(commandError("no-line-of-sight", "No line of sight"));
+    }
+    if (this.refuseFinish && command.type === FINISH_MISSION) {
+      return err(
+        commandError("mission-not-over", 'Mission "m" is still being fought'),
+      );
     }
     return ok({ state: this.state, events: [] });
   }
@@ -162,6 +171,13 @@ class FakeHost implements TacticalSceneHost {
   release(): void {
     this.calls.push("release");
   }
+}
+
+/** The same campaign with its mission decided, as the rules leave it. */
+function ended(state: GameState): GameState {
+  const mission = state.activeMission;
+  if (!mission) throw new Error("fixture needs a mission");
+  return { ...state, activeMission: { ...mission, outcome: "won" } };
 }
 
 const sessionWith = (store: CampaignStore | undefined): GameSession => ({
@@ -441,5 +457,80 @@ describe("TacticalScreen", () => {
       .querySelector<HTMLButtonElement>('#action-bar [data-action="end-turn"]')
       ?.click();
     expect(store.dispatched.map((c) => c.type)).toEqual(["tactical:end-turn"]);
+  });
+
+  // ===========================================
+  // Finishing the mission (#341)
+  // ===========================================
+
+  it("finishes a mission that reports an outcome and opens the debrief", () => {
+    const state = inMission();
+    const store = new FakeStore(state);
+    const { router, navigate } = fakeRouter();
+    new TacticalScreen({
+      router,
+      session: sessionWith(store),
+      combatTuning: COMBAT_TUNING,
+      sceneHost: new FakeHost(),
+    }).mount(root);
+    expect(store.dispatched).toEqual([]);
+
+    store.command(ended(state), [
+      { type: MISSION_ENDED, payload: { outcome: "won", turn: 3 } } as never,
+    ]);
+
+    expect(store.dispatched.map((c) => c.type)).toEqual([FINISH_MISSION]);
+    expect(store.dispatched[0]?.payload).toEqual({ missionId: "mission-2" });
+    expect(navigate).toHaveBeenCalledWith("mission-results");
+  });
+
+  it("asks once, however many changes the finished mission goes through", () => {
+    const state = inMission();
+    const store = new FakeStore(state);
+    new TacticalScreen({
+      router: fakeRouter().router,
+      session: sessionWith(store),
+      combatTuning: COMBAT_TUNING,
+      sceneHost: new FakeHost(),
+    }).mount(root);
+    store.replace(ended(state));
+    store.replace(ended(state));
+    expect(
+      store.dispatched.filter((c) => c.type === FINISH_MISSION),
+    ).toHaveLength(1);
+  });
+
+  it("finishes a mission that was already over when the screen mounted", () => {
+    const state = ended(inMission());
+    const store = new FakeStore(state);
+    const { router, navigate } = fakeRouter();
+    new TacticalScreen({
+      router,
+      session: sessionWith(store),
+      combatTuning: COMBAT_TUNING,
+      sceneHost: new FakeHost(),
+    }).mount(root);
+    expect(store.dispatched.map((c) => c.type)).toEqual([FINISH_MISSION]);
+    expect(navigate).toHaveBeenCalledWith("mission-results");
+  });
+
+  it("stays on the mission with the reason in the banner when the debrief is refused", () => {
+    const state = inMission();
+    const store = new FakeStore(state);
+    store.refuseFinish = true;
+    const { router, navigate } = fakeRouter();
+    new TacticalScreen({
+      router,
+      session: sessionWith(store),
+      combatTuning: COMBAT_TUNING,
+      sceneHost: new FakeHost(),
+    }).mount(root);
+    store.replace(ended(state));
+
+    expect(navigate).not.toHaveBeenCalled();
+    expect(
+      root.querySelector<HTMLElement>('#turn-banner [data-role="status"]')
+        ?.textContent,
+    ).toContain("still being fought");
   });
 });

@@ -1,6 +1,6 @@
 # Handoff: Map Generation Specialist
 
-Last updated: 2026-09-04 14:05 UTC (session 3, update 6). Read `docs/process/roles/mapgen.md` and ADR 0004 first.
+Last updated: 2026-09-04 14:58 UTC (session 3, update 6). Read `docs/process/roles/mapgen.md` and ADR 0004 first.
 
 ## 1. Where things stand
 
@@ -327,32 +327,47 @@ that fixed the same maps read 67 / 61 / 43 %, and rural stops being transparent.
 
 ## 3d. Ambush: bugs cannot reach the squad unseen (#685, 2026-09-04)
 
-The design property fog of war made real, and the answer is stark. Walking every edge-spawn and
-egg-spawner approach down the step field to the deploy zone, against what the squad sees from it at
-turn 1, 6 seeds per biome × settlement:
+The design property fog of war made real, and the answer is stark: across **2,409 approach walks**,
+not one reached the squad unseen. Every edge-spawn approach walked down the step field to a standing
+position, scored against what that position can see; 6 seeds per biome × settlement, medium maps.
 
-| | spotted at | concealed share of the last 12 steps | contact tiles never seen |
-|---|---|---|---|
-| rural | 12.0 steps | 7 % | **0 %** |
-| town | 12.0 steps | 7 % | **0 %** |
-| city | 11.2 steps | 10 % | **0 %** |
+The number that decides it is the squad, not the map. `computeVision` unions every living unit on a
+side and a squad is five soldiers (`SQUAD_MAX_STRENGTH`), so four extra pairs of eyes roughly halve
+concealment and push first contact *past* the 12-tile sight range — the forward soldiers see for the
+anchor:
 
-A bug is first seen the instant it enters the 12-tile sight range, and **not one tile adjacent to a
-deploy zone is ever unseen**. Ambush is not rare on these maps; it is impossible. Fog pays out
-entirely to the player.
+| scale | stand | concealed of last 12 (1 soldier → 5) | first spotted at (1 → 5) | never seen |
+|---|---|---|---|---|
+| rural | deploy | 20 % → **11 %** | 10.4 → 12.1 steps | 0 % |
+| rural | mid-map | 22 % → **13 %** | 13.7 → 15.3 steps | 0 % |
+| town | deploy | 19 % → **16 %** | 11.6 → 12.7 steps | 0 % |
+| town | mid-map | 19 % → **12 %** | 12.2 → 14.1 steps | 0 % |
+| city | deploy | 13 % → **7 %** | 10.7 → 12.3 steps | 0 % |
+| city | mid-map | 24 % → **12 %** | 9.8 → 12.2 steps | 0 % |
 
-Two things to save the next person the work:
+Ambush is not rare on these maps; it is impossible. Fog pays out entirely to the player.
 
-- **Trees are not the lever.** Making every tree opaque moves concealment 7 % → 10 % on rural and
-  not at all in a city. Measured twice, once for visibility (#591) and once for this.
-- **One cause is ours.** `EDGE_KEEPOUT` holds raised ground five columns clear of every map edge
-  (§2a), and deploy zones sit in that band, so the ground around them is by construction the
-  flattest on the map. The trade is right — a plaza against the border boxes squads in — but it is
-  worth knowing when someone asks why deployment feels exposed.
+Four things to save the next person the work:
+
+- **The map is not the binding constraint, and map-side fixes are weak.** The densest ground this
+  generator makes — a city interior — buys 32 % concealment against one soldier and **12 % against
+  five**. Scenery cannot beat five overlapping vision cones with no facing, no arcs and no falloff.
+  The lever is a rules one, or letting bugs *arrive* close (emergence, burrowing, hive tunnels)
+  rather than approach.
+- **Trees are not the lever either.** Making every tree opaque moves concealment 7 % → 10 % on rural
+  and not at all in a city. Measured twice, once for visibility (#591) and once for this.
 - **Cover and concealment are different knobs.** Only four of thirteen prop kinds block sight
   (`car`, `dumpster`, `shelving`, `boulder`); crates, sandbags, fences and every tree are
   transparent. Answering #281 with "more cover" will change survivability under fire and will not
   make an ambush possible.
+- **The deploy zone is not a special case.** I first blamed our own `EDGE_KEEPOUT` (§2a) for making
+  the ground around deploy zones the flattest on the map. Measured against other tiles in the same
+  edge band it is false — deploy 15/20/18 %, same band 15/20/18 % — and I withdrew it on #685. The
+  only real gradient anywhere is the city interior, which is building mass.
+
+Two methodology traps I fell into, both of which made the first numbers (7–10 %) too low: an
+approach shorter than twelve steps fills a partial "last 12" window and inflates the seen share, so
+require `distance ≥ 12`; and one watcher is not a squad. Measure the union.
 
 Option 1 on #685 — accept it — has a cost worth naming: it makes the lurker's premise (#333, stalk
 out of sight and strike from behind) impossible on the maps as they are.

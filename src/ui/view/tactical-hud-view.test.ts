@@ -117,6 +117,35 @@ describe("TacticalHudView", () => {
     expect(hud.getTargetUnitId()).toBeUndefined();
   });
 
+  it("the next-target key cycles every enemy including the egg spawner (#426)", () => {
+    const { hud } = setup();
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    // The key arms attack mode itself, so the player never has to.
+    hud.handleIntent({ kind: "action", action: "next-target" });
+    expect(hud.getMode()).toBe("attack");
+    const seen = [hud.getTargetUnitId()];
+    for (let step = 0; step < 2; step++) {
+      hud.handleIntent({ kind: "action", action: "next-target" });
+      seen.push(hud.getTargetUnitId());
+    }
+    // Two living bugs and the one standing spawner, in that order.
+    expect(seen).toEqual(["b1", "b2", "spawner-1"]);
+    // And it wraps.
+    hud.handleIntent({ kind: "action", action: "next-target" });
+    expect(hud.getTargetUnitId()).toBe("b1");
+  });
+
+  it("the next-target key does nothing without a unit that can act", () => {
+    const { hud } = setup();
+    hud.handleIntent({ kind: "action", action: "next-target" });
+    expect(hud.getTargetUnitId()).toBeUndefined();
+    expect(hud.getMode()).toBe("select");
+    // s2 is out of action points.
+    hud.handleIntent({ kind: "select-unit", unitId: "s2" });
+    hud.handleIntent({ kind: "action", action: "next-target" });
+    expect(hud.getTargetUnitId()).toBeUndefined();
+  });
+
   it("previews an attack from the combat service and fires it", () => {
     const { hud, commands, mission } = setup();
     hud.handleIntent({ kind: "select-unit", unitId: "s1" });

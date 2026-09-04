@@ -10,7 +10,10 @@ import type { TacticalCommand } from "../../tactical/model/tactical-command";
 import type { TacticalError } from "../../tactical/model/tactical-error";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { Team, Unit, UnitId } from "../../tactical/model/unit";
-import { findAttackTarget } from "../../tactical/service/attack-target-service";
+import {
+  enemyAttackTargets,
+  findAttackTarget,
+} from "../../tactical/service/attack-target-service";
 import { previewAttack } from "../../tactical/service/combat-service";
 import type { TacticalIntent } from "../model/tactical-intent";
 import type { ActionBarAction } from "./action-bar-view";
@@ -61,7 +64,8 @@ const TEAM_FOR_PHASE: Readonly<Record<TacticalState["phase"], Team>> = {
  *   intent select-unit ──▶ attack mode + enemy? ──▶ preview target
  *                      └─▶ else select it (card follows)
  *   intent select-tile ──▶ move mode ──▶ onCommand(move(selected, [tile]))
- *   intent action      ──▶ move / attack arm the mode; overwatch / reload
+ *   intent action      ──▶ move / attack arm the mode; next-target cycles
+ *                          what is aimed at; overwatch / reload
  *                          ──▶ onCommand; cancel clears; next-unit cycles
  *   intent end-turn    ──▶ onCommand(endTurn())
  *   Fire               ──▶ onCommand(attack(selected, target))
@@ -250,7 +254,9 @@ export class TacticalHudView {
   }
 
   /** Arms, cancels, cycles or dispatches per the action. */
-  private handleAction(action: ActionBarAction | "next-unit" | "cancel"): void {
+  private handleAction(
+    action: ActionBarAction | "next-unit" | "next-target" | "cancel",
+  ): void {
     switch (action) {
       case "move":
       case "attack":
@@ -278,6 +284,9 @@ export class TacticalHudView {
         break;
       case "next-unit":
         this.selectNextActor();
+        break;
+      case "next-target":
+        this.selectNextTarget();
         break;
     }
     this.refresh();
@@ -327,6 +336,32 @@ export class TacticalHudView {
       unit.ap > 0 &&
       unit.team === TEAM_FOR_PHASE[mission.phase]
     );
+  }
+
+  /**
+   * Arms attack mode and steps to the next thing the selected unit could
+   * shoot — enemy units and standing egg spawners alike, in
+   * `enemyAttackTargets` order, wrapping. A spawner has no mesh the
+   * pointer can hit yet, so this is how one is aimed at (#426); it is
+   * also how a target behind another is reached with the keyboard.
+   *
+   * Cycles every enemy rather than only the reachable ones, so the
+   * preview panel can explain why an out-of-range target cannot be
+   * fired on instead of the key silently skipping it.
+   */
+  private selectNextTarget(): void {
+    const mission = this.mission;
+    const selected = this.unit(this.selected);
+    if (!mission || !selected || !this.canAct()) {
+      return;
+    }
+    const targets = enemyAttackTargets(mission, selected.team);
+    if (targets.length === 0) {
+      return;
+    }
+    const at = targets.findIndex((t) => t.id === this.target);
+    this.mode = "attack";
+    this.target = targets[(at + 1) % targets.length]?.id;
   }
 
   /** A unit of the current mission by id. */

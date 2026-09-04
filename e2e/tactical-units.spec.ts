@@ -25,6 +25,9 @@ test("tactical scene renders a generated map with units and no console errors", 
   const body = page.locator("body");
   await expect(page.locator("canvas")).toBeVisible();
   await expect(body).toHaveAttribute("data-app-state", "ready");
+  // `ready` says the page mounted and drew a frame; the units arrive
+  // behind a model load it does not wait for (#688).
+  await expect(body).toHaveAttribute("data-preview-ready", "true");
   await expect(body).toHaveAttribute("data-units", "3");
   await expect(page.locator("#status")).toBeEmpty();
   expect(errors).toEqual([]);

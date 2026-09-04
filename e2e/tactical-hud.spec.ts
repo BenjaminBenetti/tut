@@ -25,6 +25,9 @@ test("selecting a unit shows its card and a hit preview on a target", async ({
   );
   const body = page.locator("body");
   await expect(body).toHaveAttribute("data-app-state", "ready");
+  // `ready` says the page mounted and drew a frame; the units arrive
+  // behind a model load it does not wait for (#688).
+  await expect(body).toHaveAttribute("data-preview-ready", "true");
   await expect(body).toHaveAttribute("data-units", "3");
   await expect(page.locator('#turn-banner [data-field="turn"]')).toHaveText(
     "1",

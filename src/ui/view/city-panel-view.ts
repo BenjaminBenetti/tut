@@ -116,10 +116,23 @@ export class CityPanelView {
     const missionLabel = doc.createElement("span");
     missionLabel.className = "tut-label";
     missionLabel.textContent = "Mission";
+    // Two lines, not one string. Four facts joined by "·" in a column
+    // this narrow wrapped so that two lines *began* with a separator --
+    // "· difficulty 3 · ¢900" over "· expires day 28" -- and being
+    // `tut-data`, right-aligned, they read as fragments rather than as a
+    // list. The name is a name, so it sits on its own line; the numbers
+    // go below in the mission list's own vocabulary, short enough not to
+    // wrap at all.
     const mission = doc.createElement("span");
-    mission.className = "tut-data";
+    mission.className = "tut-city__mission-value";
     mission.dataset.field = "mission";
-    mission.textContent = "—";
+    const missionName = doc.createElement("span");
+    missionName.dataset.field = "mission-name";
+    missionName.textContent = "—";
+    const missionFacts = doc.createElement("span");
+    missionFacts.className = "tut-data";
+    missionFacts.dataset.field = "mission-facts";
+    mission.append(missionName, missionFacts);
     const plan = doc.createElement("button");
     plan.type = "button";
     plan.className = "tut-btn tut-btn--primary";
@@ -188,7 +201,7 @@ export class CityPanelView {
       "--value",
       `${String((100 * city.infestation) / MAX_INFESTATION)}%`,
     );
-    this.updateMission(activeMission(state, city.id));
+    this.updateMission(activeMission(state, city.id), state.overworld.day);
     this.body.hidden = false;
     this.empty.hidden = true;
   }
@@ -235,21 +248,38 @@ export class CityPanelView {
     return value;
   }
 
-  /** Writes the mission summary and shows or hides the Plan button. */
-  private updateMission(mission: Mission | undefined): void {
+  /**
+   * Writes the mission summary and shows or hides the Plan button.
+   *
+   * @param mission - The city's active mission, if it has one.
+   * @param day - The campaign day, for the days-left figure.
+   */
+  private updateMission(mission: Mission | undefined, day: number): void {
     if (!this.mission || !this.plan) {
       return;
     }
     this.missionId = mission?.id;
+    const nameCell = this.mission.querySelector<HTMLElement>(
+      '[data-field="mission-name"]',
+    );
+    const factsCell = this.mission.querySelector<HTMLElement>(
+      '[data-field="mission-facts"]',
+    );
     if (!mission) {
-      this.setText(this.mission, "No active mission");
+      this.setText(nameCell ?? undefined, "No active mission");
+      this.setText(factsCell ?? undefined, "");
       this.plan.hidden = true;
       return;
     }
     const type = MISSION_TYPES[mission.typeId];
+    // Never below zero: a mission whose day has passed is on its last
+    // legs, not "-2 d".
+    const daysLeft = Math.max(0, mission.expiresDay - day);
+    this.setText(nameCell ?? undefined, type.name);
+    // The same shorthand the mission list uses, so the two agree.
     this.setText(
-      this.mission,
-      `${type.name} · difficulty ${formatWhole(mission.difficulty)} · ${formatCredits(mission.rewards.credits)} · expires day ${formatWhole(mission.expiresDay)}`,
+      factsCell ?? undefined,
+      `D${formatWhole(mission.difficulty)} · ${formatCredits(mission.rewards.credits)} · ${formatWhole(daysLeft)} d`,
     );
     this.plan.dataset.missionId = mission.id;
     this.plan.hidden = false;

@@ -1,14 +1,16 @@
+import type { DirectionalLight } from "three";
 import type { Object3D } from "three";
 import {
   AmbientLight,
   Color,
-  DirectionalLight,
   Scene,
+  PCFSoftShadowMap,
   WebGLRenderer,
 } from "three";
 
 import type { FrameUpdatable } from "../model/frame-updatable";
 import type { SceneCamera } from "../model/scene-camera";
+import { createKeyLight, followCamera, SHADOW_TUNING } from "./shadow-rig";
 import type { Viewport } from "./isometric-camera-math";
 
 // ===========================================
@@ -52,6 +54,8 @@ export class SceneService {
 
   private readonly container: HTMLElement;
   private readonly renderer: WebGLRenderer;
+  /** The shadow-casting key light, retargeted every frame (#507). */
+  private key: DirectionalLight | undefined;
   private readonly scene: Scene;
   private readonly sceneCamera: SceneCamera;
   private readonly updatables: readonly FrameUpdatable[];
@@ -78,6 +82,10 @@ export class SceneService {
 
     this.renderer = new WebGLRenderer({ antialias: true });
     this.renderer.setPixelRatio(window.devicePixelRatio);
+    // Cast shadows, so height reads (#507). Soft PCF because the hard
+    // edge of a 2048² map at this zoom looks like a seam, not a shadow.
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = PCFSoftShadowMap;
     container.appendChild(this.renderer.domElement);
 
     this.scene = new Scene();
@@ -135,15 +143,18 @@ export class SceneService {
   /**
    * Builds the fixed lighting from the style guide: one key directional
    * light and a soft ambient. The key comes from +x +y +z, off-axis from
-   * every yaw so the two visible faces of a box shade differently.
+   * every yaw so the two visible faces of a box shade differently, and
+   * since #507 it casts shadows and the fill is lower to let them read.
    *
    * @returns The lights to add to the scene.
    */
   private createLights(): Object3D[] {
-    const key = new DirectionalLight(0xffffff, 2.5);
-    key.position.set(4, 8, 12);
-    const ambient = new AmbientLight(0xffffff, 0.8);
-    return [key, ambient];
+    const key = createKeyLight();
+    this.key = key;
+    const ambient = new AmbientLight(0xffffff, SHADOW_TUNING.ambientIntensity);
+    // The target is a separate object three reads the light's direction
+    // from, so it has to be in the scene for `followCamera` to move it.
+    return [key, key.target, ambient];
   }
 
   /**
@@ -184,6 +195,11 @@ export class SceneService {
       updatable.update(deltaSeconds);
     }
     this.sceneCamera.apply();
+    if (this.key) {
+      // After `apply`, so the frustum follows where the camera ended up
+      // this frame rather than where it was last one.
+      followCamera(this.key, this.sceneCamera.camera);
+    }
     this.renderer.render(this.scene, this.sceneCamera.camera);
 
     this.resolveFirstFrame?.();

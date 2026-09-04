@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { COMBAT_TUNING } from "../../tactical/data/combat-tuning";
+import { EXTRACT } from "../../tactical/model/extract-command";
 import { ATTACK } from "../../tactical/model/attack-command";
 import { END_TURN } from "../../tactical/model/end-turn-command";
 import { MOVE } from "../../tactical/model/move-command";
@@ -121,6 +122,48 @@ describe("TacticalHudView", () => {
     expect(hud.getSelectedUnitId()).toBe("s2");
     hud.handleIntent({ kind: "action", action: "cancel" });
     expect(hud.getMode()).toBe("select");
+  });
+
+  it("offers Extract only to a unit standing in the extraction zone", () => {
+    const { hud, mission, commands } = setup();
+    const button = (): HTMLButtonElement | null =>
+      root.querySelector<HTMLButtonElement>('[data-action="extract"]');
+
+    // s1 stands at (1,0,1); the zone is (0,0,0).
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    expect(button()?.disabled).toBe(true);
+    hud.handleIntent({ kind: "action", action: "extract" });
+    expect(commands).toEqual([]);
+
+    hud.update({ ...mission, extraction: [{ x: 1, y: 0, z: 1 }] });
+    expect(button()?.disabled).toBe(false);
+    button()?.click();
+    expect(commands).toEqual([{ type: EXTRACT, payload: { unitId: "s1" } }]);
+  });
+
+  it("offers Extract to a unit that has spent its turn, since walking out is free", () => {
+    const { hud, mission } = setup();
+    // s2 is on the zone with no action points left.
+    hud.update({ ...mission, extraction: [{ x: 1, y: 0, z: 3 }] });
+    hud.handleIntent({ kind: "select-unit", unitId: "s2" });
+    expect(
+      root.querySelector<HTMLButtonElement>('[data-action="extract"]')
+        ?.disabled,
+    ).toBe(false);
+    expect(
+      root.querySelector<HTMLButtonElement>('[data-action="overwatch"]')
+        ?.disabled,
+    ).toBe(true);
+  });
+
+  it("never offers Extract to the other side's unit", () => {
+    const { hud, mission } = setup();
+    hud.update({ ...mission, extraction: [{ x: 4, y: 0, z: 1 }] });
+    hud.handleIntent({ kind: "select-unit", unitId: "b1" });
+    expect(
+      root.querySelector<HTMLButtonElement>('[data-action="extract"]')
+        ?.disabled,
+    ).toBe(true);
   });
 
   it("drops a selection that died and reports status through the banner", () => {

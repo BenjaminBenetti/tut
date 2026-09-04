@@ -70,6 +70,7 @@ export const TACTICAL_SHORTCUTS: Readonly<
   f: "attack",
   o: "overwatch",
   r: "reload",
+  x: "extract",
   tab: "next-unit",
   escape: "cancel",
   enter: "end-turn",

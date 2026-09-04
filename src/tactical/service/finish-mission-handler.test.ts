@@ -158,9 +158,7 @@ describe("createFinishMissionHandler", () => {
 
   it("refuses a mission that is still being fought", () => {
     const { launch, seen } = fakeLaunch();
-    const running = missionWith(MAP, [
-      tokenFor("unit-1", "squad", "squad-1"),
-    ]);
+    const running = missionWith(MAP, [tokenFor("unit-1", "squad", "squad-1")]);
     const outcome = createFinishMissionHandler<GameState>({ launch })(
       campaign(running),
       finishMission("mission-fixture"),

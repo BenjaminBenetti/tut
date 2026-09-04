@@ -85,9 +85,7 @@ describe("createStartMissionHandler", () => {
     expect(outcome.ok).toBe(true);
     if (!outcome.ok) return;
     expect(outcome.value.state.activeMission).toBe(STUB_MISSION);
-    expect(calls).toEqual([
-      { missionId: "mission-1", deployment: DEPLOYMENT },
-    ]);
+    expect(calls).toEqual([{ missionId: "mission-1", deployment: DEPLOYMENT }]);
   });
 
   it("emits no events: nothing has happened in the mission yet", () => {

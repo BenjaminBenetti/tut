@@ -55,9 +55,9 @@ export const NO_ACTIVE_MISSION = "no-active-mission";
  * mission start, so the tokens on the map and in `extracted` name exactly
  * the force that was sent.
  */
-export function createFinishMissionHandler<
-  TState extends MissionCampaignState,
->(deps: FinishMissionDeps<TState>): CommandHandler<TState, FinishMissionCommand> {
+export function createFinishMissionHandler<TState extends MissionCampaignState>(
+  deps: FinishMissionDeps<TState>,
+): CommandHandler<TState, FinishMissionCommand> {
   return (state, command, ctx) => {
     const mission = state.activeMission;
     if (mission === undefined) {

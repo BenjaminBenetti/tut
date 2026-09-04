@@ -44,9 +44,9 @@ export const DEPLOYMENT_MISMATCH = "deployment-mismatch";
  * ids the mission consumed are written back to `meta` by the dispatcher,
  * as for any command.
  */
-export function createStartMissionHandler<
-  TState extends MissionCampaignState,
->(deps: StartMissionDeps): CommandHandler<TState, StartMissionCommand> {
+export function createStartMissionHandler<TState extends MissionCampaignState>(
+  deps: StartMissionDeps,
+): CommandHandler<TState, StartMissionCommand> {
   return (state, command, ctx) => {
     const { missionId, deployment } = command.payload;
     if (deployment.missionId !== missionId) {

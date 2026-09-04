@@ -275,3 +275,82 @@ describe("GAME_STATE_MIGRATIONS", () => {
     expect(step?.apply(already)).toEqual(already);
   });
 });
+
+// ===========================================
+// v11 → v12: weapons per unit (#532)
+// ===========================================
+
+describe("v11 → v12", () => {
+  /** A v11 save mid-mission: one template with a single weapon and a pool. */
+  const v11 = {
+    meta: { version: 11 },
+    activeMission: {
+      templates: {
+        "squad:s1": {
+          id: "squad:s1",
+          name: "Rifle Squad",
+          weapon: { range: 8, accuracy: 65, damage: 3, armorPen: 0 },
+          charges: 3,
+        },
+        "bug:swarmer": {
+          id: "bug:swarmer",
+          name: "Swarmer",
+          weapon: { range: 1, accuracy: 60, damage: 3, armorPen: 0 },
+        },
+      },
+      units: [
+        { id: "unit-1", templateId: "squad:s1", charges: 1 },
+        { id: "unit-2", templateId: "bug:swarmer" },
+      ],
+    },
+  };
+
+  /** The shape the v12 step produces, as much of it as these cases read. */
+  interface V12 {
+    activeMission: {
+      templates: Record<
+        string,
+        {
+          weapons: { id: string; name: string; charges?: number }[];
+          weapon?: unknown;
+          charges?: unknown;
+        }
+      >;
+      units: { charges?: Record<string, number> }[];
+    };
+  }
+
+  /** Runs just the v11 → v12 step, the way the other cases here do. */
+  const step = (state: unknown): V12 =>
+    GAME_STATE_MIGRATIONS.find((m) => m.to === 12)?.apply(state) as V12;
+
+  it("turns the single weapon into a one-entry list, keeping its pool", () => {
+    const out = step(v11);
+    const templates = out.activeMission.templates;
+    expect(templates["squad:s1"]?.weapons).toEqual([
+      {
+        id: "primary",
+        name: "Attack",
+        profile: { range: 8, accuracy: 65, damage: 3, armorPen: 0 },
+        charges: 3,
+      },
+    ]);
+    // The old scalar fields are gone, not left beside the new list.
+    expect("weapon" in (templates["squad:s1"] ?? {})).toBe(false);
+    expect("charges" in (templates["squad:s1"] ?? {})).toBe(false);
+    // A template with no pool keeps none.
+    expect(templates["bug:swarmer"]?.weapons[0]?.charges).toBeUndefined();
+  });
+
+  it("files a unit's remaining charges under that weapon", () => {
+    const out = step(v11);
+    expect(out.activeMission.units[0]?.charges).toEqual({ primary: 1 });
+    // A unit that never had a pool still has none.
+    expect("charges" in (out.activeMission.units[1] ?? {})).toBe(false);
+  });
+
+  it("leaves a save with no mission in progress alone", () => {
+    const idle = { meta: { version: 11 }, activeMission: undefined };
+    expect(() => step(idle)).not.toThrow();
+  });
+});

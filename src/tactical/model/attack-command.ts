@@ -1,5 +1,6 @@
 import type { Command } from "../../core/model/command";
 import type { UnitId } from "./unit";
+import type { WeaponId } from "./unit-weapon";
 
 // ===========================================
 // Attack
@@ -12,14 +13,31 @@ export const ATTACK = "tactical:attack";
 export interface AttackPayload {
   readonly attackerId: UnitId;
   readonly targetId: UnitId;
+  /**
+   * Which of the attacker's weapons fires (#532). Omitted means its
+   * first, which is what a bare "attack" has always meant and what every
+   * single-weapon unit does.
+   */
+  readonly weaponId?: WeaponId;
 }
 
 /** Resolves one attack with the attacker's weapon against the target, cover and elevation applied (#328). */
 export type AttackCommand = Command<typeof ATTACK, AttackPayload>;
 
 /** Builds a `Attack` command. */
-export function attack(attackerId: UnitId, targetId: UnitId): AttackCommand {
-  return { type: ATTACK, payload: { attackerId, targetId } };
+export function attack(
+  attackerId: UnitId,
+  targetId: UnitId,
+  weaponId?: WeaponId,
+): AttackCommand {
+  return {
+    type: ATTACK,
+    payload: {
+      attackerId,
+      targetId,
+      ...(weaponId === undefined ? {} : { weaponId }),
+    },
+  };
 }
 
 // ===========================================

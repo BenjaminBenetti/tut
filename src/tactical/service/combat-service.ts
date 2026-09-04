@@ -546,8 +546,14 @@ export function resolveAttack(
   ctx: TacticalContext,
   tuning: CombatTuning,
 ): TacticalOutcome {
-  const { attackerId, targetId } = command.payload;
-  const checked = validateAttack(mission, attackerId, targetId, tuning);
+  const { attackerId, targetId, weaponId } = command.payload;
+  const checked = validateAttack(
+    mission,
+    attackerId,
+    targetId,
+    tuning,
+    weaponId,
+  );
   if (!checked.ok) {
     return checked;
   }

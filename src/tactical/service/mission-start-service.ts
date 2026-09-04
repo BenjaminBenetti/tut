@@ -168,6 +168,9 @@ export function startTacticalMission<TState extends MissionCampaignState>(
     log: [
       { type: TURN_STARTED, payload: { turn: FIRST_TURN, phase: "player" } },
     ],
+    // No command has been applied yet. Deliberately not `log.length`,
+    // which is 1 here and is exactly the coupling #667 removes.
+    commandSeq: 0,
   };
   return ok({
     ...state,

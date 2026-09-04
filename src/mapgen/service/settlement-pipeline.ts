@@ -1,5 +1,7 @@
 import { BuildingPass } from "../generator/building-pass";
 import { ConnectivityPass } from "../generator/connectivity-pass";
+import { CraterPass } from "../generator/crater-pass";
+import { DebrisPass } from "../generator/debris-pass";
 import { ElevationPass } from "../generator/elevation-pass";
 import { HookPass } from "../generator/hook-pass";
 import { InteriorPass } from "../generator/interior-pass";
@@ -41,13 +43,40 @@ export function createSettlementPasses(): GenerationPass[] {
 }
 
 /**
- * Pass list per archetype. Hives, crash sites and the space platform
- * (M3/M4) add entries here and reuse the tail of the settlement list.
+ * The ordered passes of the crash-site archetype (#447, GDD §8).
+ *
+ * **Prototype.** It reuses the tail of the settlement list — ramps,
+ * hooks, connectivity — and replaces the town-building middle with two
+ * passes of its own: a terraced impact bowl and a debris field. The prop
+ * pass cannot be reused because it requires `interiors`, and a crash site
+ * has no buildings to furnish; that requirement is the one thing the
+ * settlement pipeline assumes that a bare archetype cannot satisfy.
+ *
+ * ```
+ *   terrain ─► water ─► crater ─► debris ─► ramps ─► hooks ─► connectivity
+ * ```
+ */
+export function createCrashSitePasses(): GenerationPass[] {
+  return [
+    new TerrainPass(),
+    new WaterPass(),
+    new CraterPass(),
+    new DebrisPass(),
+    new RampPass(),
+    new HookPass(),
+    new ConnectivityPass(),
+  ];
+}
+
+/**
+ * Pass list per archetype. Hives and the space platform (M3/M4) add
+ * entries here and reuse the tail of the settlement list.
  */
 const PASSES_BY_ARCHETYPE: Readonly<
   Record<MapArchetype, () => GenerationPass[]>
 > = {
   settlement: createSettlementPasses,
+  "crash-site": createCrashSitePasses,
 };
 
 // ===========================================

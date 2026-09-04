@@ -15,5 +15,7 @@
     "noEmit": true,
     "useDefineForClassFields": true
   },
-  "include": ["src"]
+  // The VFX harness is browser code that imports the real animation queue, so
+  // it typechecks with the app rather than with the node tools.
+  "include": ["src", "tools/art/preview/vfx-harness.ts"]
 }

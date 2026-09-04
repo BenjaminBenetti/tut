@@ -167,6 +167,20 @@ describe("TacticalHudView", () => {
     expect(hud.getTargetUnitId()).toBeUndefined();
   });
 
+  it("the toggle-range key flips the weapon-range indicator, on by default (#522)", () => {
+    const { hud } = setup();
+    expect(hud.isWeaponRangeVisible()).toBe(true);
+    hud.handleIntent({ kind: "action", action: "toggle-range" });
+    expect(hud.isWeaponRangeVisible()).toBe(false);
+    hud.handleIntent({ kind: "action", action: "toggle-range" });
+    expect(hud.isWeaponRangeVisible()).toBe(true);
+    // It survives a change of selection: it is a view preference, not
+    // per-unit state.
+    hud.handleIntent({ kind: "action", action: "toggle-range" });
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    expect(hud.isWeaponRangeVisible()).toBe(false);
+  });
+
   it("previews an attack from the combat service and fires it", () => {
     const { hud, commands, mission } = setup();
     hud.handleIntent({ kind: "select-unit", unitId: "s1" });

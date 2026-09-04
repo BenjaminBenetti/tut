@@ -100,6 +100,7 @@ export const TACTICAL_SHORTCUTS: Readonly<
   x: "extract",
   tab: "next-unit",
   t: "next-target",
+  v: "toggle-range",
   escape: "cancel",
   enter: "end-turn",
   end: "end-turn",

@@ -26,7 +26,11 @@ export interface OverworldSceneConfig {
   readonly plateMinSize: number;
   /** Thickness of a region plate; its top is the surface markers stand on. */
   readonly plateHeight: number;
-  /** Opacity of a region plate, so the map shows through it. */
+  /**
+   * Peak opacity of a region's infestation wash, reached at full
+   * infestation and fading to nothing at the wash's edge (#440). The map
+   * always shows through it.
+   */
   readonly plateOpacity: number;
   /** Thickness of the ocean slab beneath the plates. */
   readonly oceanHeight: number;
@@ -45,7 +49,7 @@ export const OVERWORLD_SCENE_CONFIG: OverworldSceneConfig = {
   platePadding: 0.8,
   plateMinSize: 1.6,
   plateHeight: 0.05,
-  plateOpacity: 0.3,
+  plateOpacity: 0.45,
   oceanHeight: 0.1,
   markerRadius: 0.3,
   markerHeight: 0.25,

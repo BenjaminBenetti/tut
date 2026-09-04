@@ -10,6 +10,7 @@ import { Sprite, Texture, Vector3 } from "three";
 import { describe, expect, it } from "vitest";
 
 import { EARTH_MAP } from "../../overworld/data/earth-map";
+import { SELECTION_COLOUR } from "../view/city-marker";
 import type { City } from "../../overworld/model/city";
 import type { EarthMap } from "../../overworld/model/earth-map";
 import { CAMERA_ZOOM } from "../model/camera-state";
@@ -21,6 +22,19 @@ function rampStop(index: number): number {
   const stop = INFESTATION_RAMP[index];
   if (!stop) throw new Error("missing ramp stop");
   return stop.hex;
+}
+
+/** The wash material of a region's plate, as colour and opacity. */
+function washOf(
+  builder: OverworldSceneBuilder,
+  regionId: string,
+): { colour: number; opacity: number } {
+  const slab = builder.root.getObjectByName(`region-slab-${regionId}`) as
+    | Mesh
+    | undefined;
+  if (!slab) throw new Error(`no plate for ${regionId}`);
+  const material = slab.material as MeshStandardMaterial;
+  return { colour: material.color.getHex(), opacity: material.opacity };
 }
 
 function withInfestation(
@@ -169,6 +183,59 @@ describe("OverworldSceneBuilder", () => {
     expect(material.color.getHex()).toBe(rampStop(3));
     expect(builder.root.children).toEqual(before);
     expect(markerOf(builder, "london")).toBe(london);
+  });
+
+  it("washes a region with its worst city, not its average (#440)", () => {
+    const builder = new OverworldSceneBuilder();
+    builder.build(EARTH_MAP);
+    const london = EARTH_MAP.cities.find((city) => city.id === "london");
+    if (!london) throw new Error("fixture has no london");
+    const wash = washOf(builder, london.regionId);
+    expect(wash.opacity).toBe(0);
+
+    builder.update(withInfestation(EARTH_MAP, "london", 100));
+
+    // One city at 100 among clean neighbours still lights the region.
+    const lit = washOf(builder, london.regionId);
+    expect(lit.opacity).toBeGreaterThan(0);
+    expect(lit.colour).toBe(rampStop(3));
+  });
+
+  it("leaves other regions clean when one city is infested (#440)", () => {
+    const builder = new OverworldSceneBuilder();
+    builder.build(EARTH_MAP);
+    const london = EARTH_MAP.cities.find((city) => city.id === "london");
+    if (!london) throw new Error("fixture has no london");
+
+    builder.update(withInfestation(EARTH_MAP, "london", 100));
+
+    for (const region of EARTH_MAP.regions) {
+      if (region.id === london.regionId) {
+        continue;
+      }
+      expect(washOf(builder, region.id).opacity).toBe(0);
+    }
+  });
+
+  it("shows the selected city's region and no other (#440)", () => {
+    const builder = new OverworldSceneBuilder();
+    builder.build(EARTH_MAP);
+    const london = EARTH_MAP.cities.find((city) => city.id === "london");
+    if (!london) throw new Error("fixture has no london");
+
+    builder.setSelected("london");
+
+    expect(washOf(builder, london.regionId).opacity).toBeGreaterThan(0);
+    expect(washOf(builder, london.regionId).colour).toBe(SELECTION_COLOUR);
+    for (const region of EARTH_MAP.regions) {
+      if (region.id === london.regionId) {
+        continue;
+      }
+      expect(washOf(builder, region.id).opacity).toBe(0);
+    }
+
+    builder.setSelected(undefined);
+    expect(washOf(builder, london.regionId).opacity).toBe(0);
   });
 
   it("update rebuilds when the set of cities changes", () => {

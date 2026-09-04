@@ -220,6 +220,9 @@ export class TacticalHudView {
     switch (intent.kind) {
       case "select-unit":
         this.selectUnit(intent.unitId);
+        break;
+      case "select-spawner":
+        this.selectUnit(intent.spawnerId);
         return;
       case "select-tile":
         if (this.mode === "move" && this.selected !== undefined) {

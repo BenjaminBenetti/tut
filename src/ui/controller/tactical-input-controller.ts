@@ -7,9 +7,11 @@ import type {
 import { PickingController } from "../../graphics/controller/picking-controller";
 import type { FrameUpdatable } from "../../graphics/model/frame-updatable";
 import type { SceneCamera } from "../../graphics/model/scene-camera";
+import type { SpawnerPicker } from "../../graphics/model/spawner-picker";
 import type { TilePicker } from "../../graphics/model/tile-picker";
 import type { UnitPicker } from "../../graphics/model/unit-picker";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
+import type { SpawnerId } from "../../tactical/model/tactical-state";
 import type { UnitId } from "../../tactical/model/unit";
 import type {
   TacticalAction,
@@ -25,14 +27,15 @@ import type {
 export type TacticalInputSurface = CameraInputSurface & PickingSurface;
 
 /** What the scene must offer: unit and tile hit-testing with highlights. */
-export type TacticalPicker = UnitPicker & TilePicker;
+export type TacticalPicker = UnitPicker & TilePicker & SpawnerPicker;
 
 /** The camera type the generic picker hands through; named here so `ui/` never imports three. */
 type PickCamera = Parameters<Picker<TacticalTarget>["pick"]>[1];
 
-/** What a pick lands on: a unit, or the tile under an empty spot. */
+/** What a pick lands on: a unit, an egg spawner, or the tile under an empty spot. */
 export type TacticalTarget =
   | { readonly kind: "unit"; readonly unitId: UnitId }
+  | { readonly kind: "spawner"; readonly spawnerId: SpawnerId }
   | { readonly kind: "tile"; readonly tile: TileCoord };
 
 /** The camera input this controller owns while attached (#9's controller). */
@@ -99,6 +102,7 @@ export class TacticalTargetPicker implements Picker<TacticalTarget> {
 
   private readonly scene: TacticalPicker;
   private hoveredUnit: UnitId | undefined;
+  private hoveredSpawner: SpawnerId | undefined;
   private hoveredTile: TileCoord | undefined;
 
   // ===========================================
@@ -114,38 +118,71 @@ export class TacticalTargetPicker implements Picker<TacticalTarget> {
   // Picker
   // ===========================================
 
-  /** The unit under the coordinate, else the tile, else undefined. */
+  /**
+   * The unit under the coordinate, else the egg spawner, else the tile,
+   * else undefined. Units win over spawners because a bug standing on
+   * its own hive should still be clickable.
+   */
   pick(ndc: Vec2, camera: PickCamera): TacticalTarget | undefined {
     const unitId = this.scene.pickUnit(ndc, camera);
     if (unitId !== undefined) {
       return { kind: "unit", unitId };
     }
+    const spawnerId = this.scene.pickSpawner(ndc, camera);
+    if (spawnerId !== undefined) {
+      return { kind: "spawner", spawnerId };
+    }
     const tile = this.scene.pickTile(ndc, camera);
     return tile === undefined ? undefined : { kind: "tile", tile };
   }
 
-  /** Highlights a hovered unit in the scene (only when it changes) and remembers a hovered tile. */
+  /**
+   * Highlights a hovered unit or spawner in the scene (only when it
+   * changes) and remembers a hovered tile.
+   */
   setHovered(target: TacticalTarget | undefined): void {
     const unitId = target?.kind === "unit" ? target.unitId : undefined;
     if (unitId !== this.hoveredUnit) {
       this.hoveredUnit = unitId;
       this.scene.setHovered(unitId);
     }
+    const spawnerId = target?.kind === "spawner" ? target.spawnerId : undefined;
+    if (spawnerId !== this.hoveredSpawner) {
+      this.hoveredSpawner = spawnerId;
+      this.scene.setHoveredSpawner(spawnerId);
+    }
     this.hoveredTile = target?.kind === "tile" ? target.tile : undefined;
   }
 
-  /** Marks a selected unit in the scene; a tile selection leaves the unit highlight alone. */
+  /**
+   * Marks a selected unit or spawner in the scene; a tile selection
+   * leaves both highlights alone. Clearing clears both.
+   */
   setSelected(target: TacticalTarget | undefined): void {
-    if (target === undefined || target.kind === "unit") {
-      this.scene.setSelected(target?.unitId);
+    if (target === undefined) {
+      this.scene.setSelected(undefined);
+      this.scene.setSelectedSpawner(undefined);
+      return;
+    }
+    if (target.kind === "unit") {
+      this.scene.setSelected(target.unitId);
+      this.scene.setSelectedSpawner(undefined);
+    }
+    if (target.kind === "spawner") {
+      this.scene.setSelectedSpawner(target.spawnerId);
     }
   }
 
-  /** A unit's feet or a tile's top centre. */
+  /** A unit's feet, a spawner's base, or a tile's top centre. */
   worldPosition(target: TacticalTarget): Vec3 | undefined {
-    return target.kind === "unit"
-      ? this.scene.unitWorldPosition(target.unitId)
-      : this.scene.tileWorldPosition(target.tile);
+    switch (target.kind) {
+      case "unit":
+        return this.scene.unitWorldPosition(target.unitId);
+      case "spawner":
+        return this.scene.spawnerWorldPosition(target.spawnerId);
+      case "tile":
+        return this.scene.tileWorldPosition(target.tile);
+    }
   }
 
   /** The tile currently under the pointer, for a HUD readout. */
@@ -161,14 +198,15 @@ export class TacticalTargetPicker implements Picker<TacticalTarget> {
 /**
  * Turns input over the tactical scene into intents (GDD §6.2). Pointer
  * hover and selection are #366's `PickingController` over a
- * `TacticalTargetPicker` (unit first, then tile); shortcut keys report
+ * `TacticalTargetPicker` (unit, then spawner, then tile); shortcut keys report
  * actions and End Turn; camera rotate, zoom and pan are the injected
  * camera input, attached and detached together with this controller.
  * Every pick and projection goes through the live camera, so it stays
  * correct at any yaw.
  *
  * ```
- *   pointer ──▶ PickingController<TacticalTarget> ──▶ onSelected ──▶ emit select-unit | select-tile
+ *   pointer ──▶ PickingController<TacticalTarget> ──▶ onSelected
+ *                ──▶ emit select-unit | select-spawner | select-tile
  *   keydown ──▶ TACTICAL_SHORTCUTS ──▶ emit action | end-turn
  *   update  ──▶ cameraInput.update
  * ```
@@ -244,6 +282,11 @@ export class TacticalInputController implements FrameUpdatable {
     this.picking.select({ kind: "unit", unitId });
   }
 
+  /** Targets an egg spawner as if clicked: highlights it and reports it (#484). */
+  selectSpawner(spawnerId: SpawnerId): void {
+    this.picking.select({ kind: "spawner", spawnerId });
+  }
+
   /** Reports a tile as if clicked. Selection highlight stays on the unit. */
   selectTile(tile: TileCoord): void {
     this.picking.select({ kind: "tile", tile });
@@ -263,6 +306,11 @@ export class TacticalInputController implements FrameUpdatable {
     return this.picking.screenPositionOf({ kind: "unit", unitId });
   }
 
+  /** Where a spawner's base appears in client pixels, or undefined when detached or unknown. */
+  spawnerScreenPosition(spawnerId: SpawnerId): Vec2 | undefined {
+    return this.picking.screenPositionOf({ kind: "spawner", spawnerId });
+  }
+
   /** Where a tile's top centre appears in client pixels, or undefined when detached or off the map. */
   tileScreenPosition(tile: TileCoord): Vec2 | undefined {
     return this.picking.screenPositionOf({ kind: "tile", tile });
@@ -274,10 +322,15 @@ export class TacticalInputController implements FrameUpdatable {
       selectUnit: (unitId) => {
         this.selectUnit(unitId);
       },
+      selectSpawner: (spawnerId) => {
+        this.selectSpawner(spawnerId);
+      },
       selectTile: (tile) => {
         this.selectTile(tile);
       },
       unitScreenPosition: (unitId) => this.unitScreenPosition(unitId),
+      spawnerScreenPosition: (spawnerId) =>
+        this.spawnerScreenPosition(spawnerId),
       tileScreenPosition: (tile) => this.tileScreenPosition(tile),
     };
   }
@@ -288,11 +341,20 @@ export class TacticalInputController implements FrameUpdatable {
 
   /** Turns a picked target into the matching select intent. */
   private emitSelection(target: TacticalTarget): void {
-    this.deps.intents.emit(
-      target.kind === "unit"
-        ? { kind: "select-unit", unitId: target.unitId }
-        : { kind: "select-tile", tile: target.tile },
-    );
+    switch (target.kind) {
+      case "unit":
+        this.deps.intents.emit({ kind: "select-unit", unitId: target.unitId });
+        return;
+      case "spawner":
+        this.deps.intents.emit({
+          kind: "select-spawner",
+          spawnerId: target.spawnerId,
+        });
+        return;
+      case "tile":
+        this.deps.intents.emit({ kind: "select-tile", tile: target.tile });
+        return;
+    }
   }
 
   /** Reports the action or End Turn bound to a key; ignores repeats and typing in form controls. */

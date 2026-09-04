@@ -149,6 +149,24 @@ describe("TacticalHudView", () => {
     expect(hud.getTargetUnitId()).toBeUndefined();
   });
 
+  it("a select-spawner intent targets the spawner without stealing the selection (#484)", () => {
+    const { hud } = setup();
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    hud.handleIntent({ kind: "action", action: "attack" });
+    hud.handleIntent({ kind: "select-spawner", spawnerId: "spawner-1" });
+    expect(hud.getTargetUnitId()).toBe("spawner-1");
+    expect(hud.getSelectedUnitId()).toBe("s1");
+  });
+
+  it("a select-spawner intent outside attack mode neither targets nor selects", () => {
+    const { hud } = setup();
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    hud.handleIntent({ kind: "select-spawner", spawnerId: "spawner-1" });
+    // A spawner is never the selected unit — it has no card and no actions.
+    expect(hud.getSelectedUnitId()).toBe("s1");
+    expect(hud.getTargetUnitId()).toBeUndefined();
+  });
+
   it("previews an attack from the combat service and fires it", () => {
     const { hud, commands, mission } = setup();
     hud.handleIntent({ kind: "select-unit", unitId: "s1" });

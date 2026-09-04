@@ -11,11 +11,15 @@ import { describe, expect, it } from "vitest";
 
 import type { ModelAssetId } from "../../content/data/model-ids";
 import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
+import type { Spawner } from "../../tactical/model/tactical-state";
 import type { Unit } from "../../tactical/model/unit";
 import type { UnitTemplate } from "../../tactical/model/unit-template";
 import { LEVEL_HEIGHT, SLAB_HEIGHT } from "../data/mapgen-preview-palette";
 import type { ModelLoader } from "../model/model-loader";
-import { TacticalSceneBuilder } from "./tactical-scene-builder";
+import {
+  SPAWNER_MODEL_ID,
+  TacticalSceneBuilder,
+} from "./tactical-scene-builder";
 
 // ===========================================
 // Fixtures
@@ -264,6 +268,103 @@ describe("TacticalSceneBuilder", () => {
     builder.dispose();
     expect(parent.children).toHaveLength(0);
     expect(builder.unitIds()).toEqual([]);
+  });
+});
+
+// ===========================================
+// Egg spawners (#484)
+// ===========================================
+
+describe("TacticalSceneBuilder spawners", () => {
+  /** A standing spawner at the tile, or a destroyed one. */
+  function spawner(
+    id: string,
+    x: number,
+    z: number,
+    destroyed = false,
+  ): Spawner {
+    return {
+      id,
+      pos: { x, y: 0, z },
+      hatchRadius: 3,
+      hp: destroyed ? 0 : 20,
+      timer: 2,
+      destroyed,
+    };
+  }
+
+  it("draws one model per standing spawner and loads the spawner model", async () => {
+    const { builder, models } = build();
+    await builder.updateSpawners([spawner("s1", 1, 1), spawner("s2", 4, 4)]);
+    expect(builder.spawnerIds()).toEqual(["s1", "s2"]);
+    expect(models.loads).toEqual([SPAWNER_MODEL_ID, SPAWNER_MODEL_ID]);
+    expect(builder.spawnerWorldPosition("s1")).toBeDefined();
+  });
+
+  it("never draws a destroyed spawner, and removes one destroyed later", async () => {
+    const { builder } = build();
+    await builder.updateSpawners([
+      spawner("s1", 1, 1),
+      spawner("s2", 4, 4, true),
+    ]);
+    expect(builder.spawnerIds()).toEqual(["s1"]);
+    // The objective is met and the hive comes down.
+    await builder.updateSpawners([spawner("s1", 1, 1, true)]);
+    expect(builder.spawnerIds()).toEqual([]);
+    expect(builder.spawnerWorldPosition("s1")).toBeUndefined();
+  });
+
+  it("places it on its own tile, so a pick over that tile finds it", async () => {
+    const { builder } = build();
+    await builder.updateSpawners([spawner("s1", 2, 3)]);
+    const camera = topDownCamera();
+    // Tile centres sit at +0.5 within the tile.
+    const hit = builder.pickSpawner(ndcOf(2.5, 3.5), camera);
+    expect(hit).toBe("s1");
+    // Nothing over an empty corner.
+    expect(builder.pickSpawner(ndcOf(5.5, 0.5), camera)).toBeUndefined();
+  });
+
+  it("stops answering picks once the spawner is destroyed", async () => {
+    const { builder } = build();
+    await builder.updateSpawners([spawner("s1", 2, 3)]);
+    const camera = topDownCamera();
+    expect(builder.pickSpawner(ndcOf(2.5, 3.5), camera)).toBe("s1");
+    await builder.updateSpawners([spawner("s1", 2, 3, true)]);
+    expect(builder.pickSpawner(ndcOf(2.5, 3.5), camera)).toBeUndefined();
+  });
+
+  it("keeps spawner highlighting independent of unit highlighting", async () => {
+    const { builder } = build();
+    await builder.update([unit("u1", "squad:squad-1", 0, 0)], TEMPLATES);
+    await builder.updateSpawners([spawner("s1", 2, 3)]);
+    builder.setSelected("u1");
+    builder.setSelectedSpawner("s1");
+    builder.setHoveredSpawner("s1");
+    // Selecting the squad does not clear the spawner the HUD is aiming at.
+    expect(builder.getSelected()).toBe("u1");
+    expect(builder.spawnerWorldPosition("s1")).toBeDefined();
+    // Clearing the spawner leaves the unit selection alone.
+    builder.setSelectedSpawner(undefined);
+    expect(builder.getSelected()).toBe("u1");
+  });
+
+  it("discards a load that finishes after the spawner was destroyed", async () => {
+    const { builder, models } = build();
+    models.hold();
+    const pending = builder.updateSpawners([spawner("s1", 1, 1)]);
+    await builder.updateSpawners([]);
+    models.open();
+    await pending;
+    expect(builder.spawnerIds()).toEqual([]);
+    expect(builder.spawnerWorldPosition("s1")).toBeUndefined();
+  });
+
+  it("drops every spawner on dispose", async () => {
+    const { builder } = build();
+    await builder.updateSpawners([spawner("s1", 1, 1)]);
+    builder.dispose();
+    expect(builder.spawnerIds()).toEqual([]);
   });
 });
 

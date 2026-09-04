@@ -246,6 +246,9 @@ export class TacticalScreen implements Screen {
     if (intent.kind === "select-unit") {
       body.dataset.selectedUnit = intent.unitId;
     }
+    if (intent.kind === "select-spawner") {
+      body.dataset.selectedSpawner = intent.spawnerId;
+    }
     if (intent.kind === "select-tile") {
       body.dataset.selectedTile = `${intent.tile.x},${intent.tile.y},${intent.tile.z}`;
     }

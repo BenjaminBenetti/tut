@@ -78,6 +78,9 @@ export class ObjectiveTrackerView {
     for (const objective of objectives) {
       const row = doc.createElement("li");
       row.dataset.objectiveId = objective.id;
+      // The spawner the objective tracks, so a test can name the thing on
+      // the map that has to come down (#484).
+      row.dataset.targetId = objective.targetId;
       row.dataset.complete = objective.complete ? "true" : "false";
       if (objective.id === inReachId) {
         row.dataset.inReach = "true";

@@ -68,16 +68,25 @@ class FakeTarget {
   }
 }
 
-/** Left third: unit "u1"; middle: tile (2,0,2); right third: nothing. */
+/**
+ * Left third: unit "u1"; middle: tile (2,0,2); the band just right of it
+ * (ndc 0.4-0.7): egg spawner "spawner-1"; far right: nothing.
+ */
 class FakePicker implements TacticalPicker {
   hovered: string | undefined;
   selected: string | undefined;
+  hoveredSpawner: string | undefined;
+  selectedSpawner: string | undefined;
   readonly hoverCalls: (string | undefined)[] = [];
+  readonly spawnerHoverCalls: (string | undefined)[] = [];
   pickUnit(ndc: Vec2, _camera: Camera): string | undefined {
     return ndc.x < -0.33 ? "u1" : undefined;
   }
   pickTile(ndc: Vec2, _camera: Camera): TileCoord | undefined {
     return ndc.x >= -0.33 && ndc.x <= 0.33 ? { x: 2, y: 0, z: 2 } : undefined;
+  }
+  pickSpawner(ndc: Vec2, _camera: Camera): string | undefined {
+    return ndc.x > 0.4 && ndc.x < 0.7 ? "spawner-1" : undefined;
   }
   setHovered(id: string | undefined): void {
     this.hovered = id;
@@ -85,6 +94,16 @@ class FakePicker implements TacticalPicker {
   }
   setSelected(id: string | undefined): void {
     this.selected = id;
+  }
+  setHoveredSpawner(id: string | undefined): void {
+    this.hoveredSpawner = id;
+    this.spawnerHoverCalls.push(id);
+  }
+  setSelectedSpawner(id: string | undefined): void {
+    this.selectedSpawner = id;
+  }
+  spawnerWorldPosition(id: string): Vec3 | undefined {
+    return id === "spawner-1" ? { x: 2, y: 0, z: 2 } : undefined;
   }
   unitWorldPosition(id: string): Vec3 | undefined {
     return id === "u1" ? { x: -1, y: 0, z: 0 } : undefined;
@@ -222,5 +241,52 @@ describe("TacticalInputController", () => {
     expect(tileAt?.x).toBeGreaterThan(200);
     expect(hooks.unitScreenPosition("ghost")).toBeUndefined();
     expect(hooks.tileScreenPosition({ x: 9, y: 0, z: 9 })).toBeUndefined();
+  });
+
+  it("picks an egg spawner, highlights it and reports a select-spawner intent (#484)", () => {
+    const { surface, intents, picker } = setup();
+    // A click in the spawner band: hover marks it, release reports it.
+    surface.dispatch("pointermove", { clientX: 300, clientY: 200 });
+    expect(picker.hoveredSpawner).toBe("spawner-1");
+    expect(picker.hovered).toBeUndefined();
+    surface.dispatch("pointerdown", { clientX: 300, clientY: 200 });
+    surface.dispatch("pointerup", { clientX: 300, clientY: 200 });
+    expect(intents).toContainEqual({
+      kind: "select-spawner",
+      spawnerId: "spawner-1",
+    });
+    expect(picker.selectedSpawner).toBe("spawner-1");
+  });
+
+  it("a unit under the pointer wins over a spawner, so a bug on its hive stays clickable", () => {
+    const { surface, intents, picker } = setup();
+    // The left third answers for both a unit and (were it asked) nothing else.
+    surface.dispatch("pointerdown", { clientX: 20, clientY: 200 });
+    surface.dispatch("pointerup", { clientX: 20, clientY: 200 });
+    expect(intents).toContainEqual({ kind: "select-unit", unitId: "u1" });
+    expect(picker.selectedSpawner).toBeUndefined();
+  });
+
+  it("clears the spawner highlight when the pointer leaves it", () => {
+    const { surface, picker } = setup();
+    surface.dispatch("pointermove", { clientX: 300, clientY: 200 });
+    expect(picker.hoveredSpawner).toBe("spawner-1");
+    surface.dispatch("pointermove", { clientX: 200, clientY: 200 });
+    expect(picker.hoveredSpawner).toBeUndefined();
+    // Only changes are pushed through, not every move.
+    expect(picker.spawnerHoverCalls).toEqual(["spawner-1", undefined]);
+  });
+
+  it("exposes spawner hooks that select and project like the unit ones", () => {
+    const { controller, intents, picker } = setup();
+    const hooks = controller.hooks();
+    hooks.selectSpawner("spawner-1");
+    expect(intents).toContainEqual({
+      kind: "select-spawner",
+      spawnerId: "spawner-1",
+    });
+    expect(picker.selectedSpawner).toBe("spawner-1");
+    expect(hooks.spawnerScreenPosition("spawner-1")).toBeDefined();
+    expect(hooks.spawnerScreenPosition("nobody")).toBeUndefined();
   });
 });

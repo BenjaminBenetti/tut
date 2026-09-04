@@ -113,7 +113,7 @@ export function firingPositions(
     mission,
     unit,
     target,
-    template.weapon.range,
+    template.weapons[0]?.profile.range ?? 0,
     true,
     graph,
   );
@@ -264,17 +264,22 @@ function fireAction(
   graph: MoveGraph,
 ): DriverAction {
   const template = mission.templates[unit.templateId];
-  const range = template?.weapon.range ?? 0;
+  // The driver fires the unit's default weapon (#532); choosing between
+  // a mech's guns is a player decision, not one this harness makes.
+  const weapon = template?.weapons[0];
+  const range = weapon?.profile.range ?? 0;
   const inRange =
     manhattanDistance(unit.pos, target.pos) <= range &&
     hasLineOfSight(mission.map, unit.pos, target.pos, graph.index);
   if (inRange) {
-    if (unit.charges !== undefined && unit.charges <= 0) {
+    const left =
+      weapon?.charges === undefined
+        ? undefined
+        : (unit.charges?.[weapon.id] ?? weapon.charges);
+    if (left === 0) {
       // An empty pool is a turn spent reloading, not a dead end: the
       // stall #494 describes is a driver that stops here.
-      return template?.charges === undefined
-        ? blocked("out-of-charges")
-        : { kind: "reload", command: reload(unit.id) };
+      return { kind: "reload", command: reload(unit.id) };
     }
     return { kind: "attack", command: attack(unit.id, target.id) };
   }

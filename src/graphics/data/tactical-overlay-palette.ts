@@ -66,20 +66,19 @@ export const MOVE_RANGE_TWO_AP_FOOTPRINT = 0.66;
 export const WEAPON_RANGE_COLOUR = 0xf08a24;
 
 /**
- * Opacity and footprint of the weapon-range marks.
+ * Opacity of the weapon-range boundary.
  *
- * Nearly a whole tile at half opacity to begin with, which was fine on
- * open ground where the envelope's edge is a thin ring. In a city it is
- * not: line of sight cuts the envelope into pockets, so most tiles in it
- * border one that is out, almost every tile counts as edge, and the
- * "outline" fills. QA measured the result covering 2,233 px of the 2 AP
- * movement band (#572).
+ * Higher than any fill on this plane, because it is a *line*: a thin
+ * ribbon carries far less ink than a tinted tile, so it can be nearly
+ * solid without competing with the ground, and a boundary that is not
+ * crisp does not read as a limit.
  *
- * A small centred pip instead — the same information, a tenth of the
- * ink, and the band underneath survives it.
+ * Both earlier attempts were fills. Nearly a whole tile at half opacity
+ * buried the 2 AP band under it (#572; QA measured 2,233 px). Shrinking
+ * that to a 0.3 pip fixed the ink and kept the mistake — it was still
+ * one mark per tile for a fact that is the same everywhere (#624).
  */
-export const WEAPON_RANGE_OPACITY = 0.38;
-export const WEAPON_RANGE_FOOTPRINT = 0.3;
+export const WEAPON_RANGE_OPACITY = 0.9;
 
 /** `ui-warn`: partial protection on that edge. */
 export const COVER_LOW_COLOUR = 0xf0c63c;
@@ -87,8 +86,15 @@ export const COVER_LOW_COLOUR = 0xf0c63c;
 /** `ui-danger`: full protection on that edge. */
 export const COVER_HIGH_COLOUR = 0xe0453c;
 
-/** `ui-accent`: what the current action touches. */
-export const LINE_OF_SIGHT_COLOUR = 0xf08a24;
+/**
+ * `ui-danger`: this tile will refuse the shot (#624).
+ *
+ * Same token as high cover, deliberately, and a different **shape** --
+ * a diamond, never a ring. That is the rule the overlay planes now
+ * follow: the question a mark answers is carried by its shape, and the
+ * colour only says how loudly the world is pushing back.
+ */
+export const BLOCKED_SHOT_COLOUR = 0xe0453c;
 
 /**
  * Opacity of the cover rings and the line-of-sight pips.
@@ -111,12 +117,17 @@ export const LINE_OF_SIGHT_COLOUR = 0xf08a24;
 export const COVER_OPACITY = 0.55;
 
 /**
- * Line of sight keeps more weight than cover. It is drawn on far fewer
- * tiles, and unlike cover it is a *threat* -- an enemy can see you
- * standing there -- which is the one thing on this plane that has
- * earned the right to interrupt.
+ * The blocked-shot mark can afford weight because it is now genuinely
+ * rare: it needs a target armed, and then marks only the reachable
+ * tiles with no line to it.
+ *
+ * The reasoning it replaces was wrong on its premise. #590 gave sight
+ * more weight than cover "because it is drawn on far fewer tiles" --
+ * measured against fixtures where no enemy was visible and the count
+ * was zero. With nine bugs on the board it marked 93 of 93 reachable
+ * tiles (#624).
  */
-export const LINE_OF_SIGHT_OPACITY = 0.75;
+export const BLOCKED_SHOT_OPACITY = 0.8;
 
 /**
  * Radii of a cover ring, in tiles, and of a line-of-sight pip.
@@ -143,9 +154,22 @@ export const LINE_OF_SIGHT_OPACITY = 0.75;
 export const COVER_RING_INNER_RADIUS = 0.32;
 export const COVER_RING_OUTER_RADIUS = 0.4;
 export const COVER_RING_SEGMENTS = 16;
-export const LINE_OF_SIGHT_PIP_INNER_RADIUS = 0.12;
-export const LINE_OF_SIGHT_PIP_OUTER_RADIUS = 0.18;
-export const LINE_OF_SIGHT_PIP_SEGMENTS = 12;
+/** Side of the blocked-shot diamond, in tiles, before its 45 degree turn. */
+export const BLOCKED_SHOT_SIZE = 0.26;
+
+/**
+ * Width of the weapon-range boundary ribbon, in tiles (#624).
+ *
+ * The envelope is drawn as **one continuous line around its perimeter**,
+ * not a mark per tile: it states a single fact -- this far -- so it gets
+ * a single shape. It was a pip stamped on every edge tile, which is N
+ * marks for one fact and reads as another field of somewhere to stand.
+ *
+ * Drawn as a thin ribbon of ground quads rather than `LineSegments`,
+ * because WebGL ignores `linewidth` on almost every platform and a
+ * one-pixel line disappears at the far zoom stop.
+ */
+export const WEAPON_RANGE_LINE_WIDTH = 0.09;
 
 /**
  * Thickness of a ground tile's slab model (style guide §7). Pivot at
@@ -155,21 +179,22 @@ export const LINE_OF_SIGHT_PIP_SEGMENTS = 12;
 export const GROUND_SLAB_THICKNESS = 0.05;
 
 /**
- * Lift above the tile top, so an overlay clears the slab rather than
- * being drawn inside it.
+ * Lift above the tile top, so an overlay does not z-fight the ground it
+ * is painted on.
  *
- * This has to exceed `GROUND_SLAB_THICKNESS / 2` = 0.025. It used to be
- * 0.02, which was fine while the map was flat placeholder boxes but has
- * been *below the ground surface* since #474 put the real tile models in
- * — every overlay was drawn inside the slab and depth-tested away, so
- * move range, cover and line of sight all rendered invisibly. A full
- * slab thickness clears the top half with the same margin again, and
- * still reads as painted on the ground rather than floating.
+ * A nudge, which is all it ever should have been. It was raised to a
+ * whole slab thickness in #555 because the slab model was placed with
+ * its pivot on `tileTop`, putting the surface half a slab *above* the
+ * plane every overlay measured from, so an overlay at 0.02 was drawn
+ * inside the ground and depth-tested away. #557 moved the slab so its
+ * top face lands on `tileTop`, which is where the preview box has always
+ * put its own, so clearing the surface no longer costs anything and this
+ * goes back to keeping two coincident planes apart.
  *
  * The other layers lift by multiples of this (`× 1.5`, `× 2`, `× 3`), so
  * raising the base raises all of them together.
  */
-export const OVERLAY_LIFT = GROUND_SLAB_THICKNESS;
+export const OVERLAY_LIFT = 0.02;
 
 /** Slab thickness of the range quads. */
 export const RANGE_THICKNESS = 0.02;

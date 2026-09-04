@@ -20,6 +20,7 @@ import type { Unit } from "../model/unit";
 import { UNIT_DIED } from "../model/unit-died-event";
 import type { UnitTemplate } from "../model/unit-template";
 import type { WeaponProfile } from "../model/weapon-profile";
+import { DEFAULT_WEAPON_NAME, PRIMARY_WEAPON_ID } from "../model/unit-weapon";
 import { emptyVision } from "./vision-service";
 import {
   attackTerrain,
@@ -68,7 +69,9 @@ function template(id: string, weapon: WeaponProfile, armor = 0): UnitTemplate {
     maxHp: 20,
     maxAp: 2,
     move: 5,
-    weapon,
+    weapons: [
+      { id: PRIMARY_WEAPON_ID, name: DEFAULT_WEAPON_NAME, profile: weapon },
+    ],
     sightRange: 12,
     armor,
     passClass: "infantry",
@@ -421,17 +424,33 @@ describe("resolveAttack", () => {
   });
 
   it("spends a charge per shot and refuses at zero, leaving bugs unlimited", () => {
-    const m = mission([
-      unit("s1", "tdf", "rifle", 1, 1, { charges: 1 }),
-      unit("b1", "bugs", "swarmer", 2, 1, { hp: 60, maxHp: 60 }),
-    ]);
+    // The template declares the pool; the unit carries what is left of
+    // it, per weapon since #532.
+    const armed = {
+      ...TEMPLATES,
+      rifle: {
+        ...TEMPLATES.rifle!,
+        weapons: [{ ...TEMPLATES.rifle!.weapons[0]!, charges: 1 }],
+      },
+    };
+    const m = {
+      ...mission([
+        unit("s1", "tdf", "rifle", 1, 1, {
+          charges: { [PRIMARY_WEAPON_ID]: 1 },
+        }),
+        unit("b1", "bugs", "swarmer", 2, 1, { hp: 60, maxHp: 60 }),
+      ]),
+      templates: armed,
+    };
     const first = resolveAttack(m, attack("s1", "b1"), ctx(1), {
       ...T,
       attackEndsTurn: { squad: false, mech: false, bug: false },
     });
     expect(first.ok).toBe(true);
     if (!first.ok) return;
-    expect(first.value.state.units[0]?.charges).toBe(0);
+    expect(first.value.state.units[0]?.charges).toEqual({
+      [PRIMARY_WEAPON_ID]: 0,
+    });
     expect(first.value.state.units[1]?.charges).toBeUndefined();
     const second = previewAttack(first.value.state, "s1", "b1", T);
     expect(second.ok).toBe(false);
@@ -704,7 +723,7 @@ describe("a melee attacker and cover", () => {
     // And it is the weapon's own accuracy, since a bite is always at
     // range 1 and this fixture is level ground: no range, cover, flank or
     // elevation term applies.
-    expect(chances[0]).toBe(TEMPLATES.swarmer?.weapon.accuracy);
+    expect(chances[0]).toBe(TEMPLATES.swarmer?.weapons[0]?.profile.accuracy);
   });
 
   it("the boulder does not raise the bite the way it used to", () => {

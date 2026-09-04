@@ -22,8 +22,10 @@ import type { TacticalState } from "../../tactical/model/tactical-state";
  * - `9`: `activeMission.units[].charges` from each unit's template (#409).
  * - `10`: `activeMission.difficulty`, `.threat` and `spawners[].timer` (#329).
  * - `11`: `activeMission.vision`, per-side fog of war (#531, ADR 0006).
+ * - `12`: `activeMission.units[].charges` becomes per weapon, and each
+ *   template carries `weapons` rather than one `weapon` (#532).
  */
-export const GAME_STATE_SCHEMA_VERSION = 11;
+export const GAME_STATE_SCHEMA_VERSION = 12;
 
 /**
  * Bookkeeping that every save needs regardless of gameplay content.

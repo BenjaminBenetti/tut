@@ -357,13 +357,13 @@ Overlays are instanced quads lifted one ground-slab thickness (0.05 u) above the
 
 | Overlay | Token | Hex | Footprint | Means |
 |---|---|---|---|---|
-| Move range, 1 AP | `ui-info` | `#7FD1FF` at 0.45 | 0.84 | One action gets you here |
-| Move range, 2 AP | `ui-info` | `#7FD1FF` at 0.24 | 0.66 | This one costs both actions |
-| Low cover | `ui-warn` | `#F0C63C` at 0.55 | ring 0.32–0.40 | Partial protection on that edge |
-| High cover | `ui-danger` | `#E0453C` at 0.55 | ring 0.32–0.40 | Full protection on that edge |
-| Line of sight / target | `ui-accent` | `#F08A24` at 0.75 | pip 0.12–0.18 | What the current action touches |
-| Weapon range | `ui-accent` | `#F08A24` at 0.38 | edge pips, 0.30 | How far this unit can shoot |
-| Selected unit ring | `ui-accent` | `#F08A24` | ring 0.40–0.50, **drawn through geometry** | Who is acting |
+| Move range, 1 AP | `ui-info` | `#7FD1FF` at 0.45 | **fill**, 0.84 | One action gets you here |
+| Move range, 2 AP | `ui-info` | `#7FD1FF` at 0.24 | **fill**, 0.66 | This one costs both actions |
+| Low cover | `ui-warn` | `#F0C63C` at 0.55 | **ring** 0.32–0.40 | Partial protection on that edge |
+| High cover | `ui-danger` | `#E0453C` at 0.55 | **ring** 0.32–0.40 | Full protection on that edge |
+| Blocked shot | `ui-danger` | `#E0453C` at 0.8 | **diamond**, 0.26 | This tile will refuse the shot |
+| Weapon range | `ui-accent` | `#F08A24` at 0.9 | **one boundary line**, 0.09 wide | How far this unit can shoot |
+| Selected unit ring | `ui-accent` | `#F08A24` | **ring** 0.40–0.50, drawn through geometry | Who is acting |
 
 Orange is the player's own intent, blue is possibility, yellow and red are the world pushing back. Nothing else on the tactical plane may use these four colours.
 
@@ -380,6 +380,24 @@ The second band was first authored as a *darkened* `ui-info` (`#4C7D99`). That f
 **A mark at full opacity is not automatically the boldest** (#605). three.js sorts a material with `transparent: false` into the *opaque* pass; paired with `depthWrite: false` — which every flat ground mark needs, so it does not occlude what stands on it — that means it writes no depth and everything drawn afterwards paints straight over it. The selection ring spent every build to date in the scene graph, visible, at the right height, and absent from the screen for exactly this reason. The hover ring escaped only by accident, its 0.6 opacity putting it in the transparent pass. **Every ground mark is `transparent: true`, `depthWrite: false`, with an explicit `renderOrder`** — tile overlays take 1 through 4, unit rings sit above them.
 
 The selection ring alone also drops `depthTest`, so it reads through whatever stands in front of it. Units deploy shoulder to shoulder, and a depth-tested ring under a squad beside a 2.79 u mech is a sliver of orange — no answer to *which one am I commanding?*. It gives nothing away, because only the player's own units can be selected and their own units are always drawn. **Hover must not do this**: it lands on enemies too, and a ring through a wall would reveal a bug that vision is hiding (ADR 0006).
+
+**One channel per question, and the channel is the shape** (#624). Four planes drawn as flat marks stamped per tile, in three tokens, at similar sizes, tell the player nothing about *which question* a mark answers. Colour says only how loudly the world is pushing back; the shape says what is being asked:
+
+| Question | Shape | Why that shape |
+|---|---|---|
+| Where can I go? | Filled tiles | The only plane legitimately per-tile — the answer genuinely differs tile by tile. A fill means *you may stand here*. |
+| How far can I shoot? | One continuous line | One fact, so one shape. A line means *this far*, and cannot be misread as somewhere to stand. |
+| Who am I commanding? | A ring on the unit | Belongs to the unit, not the ground. Exactly one on screen, ever. |
+| What does this tile give me? | A ring on the tile | An attribute of the ground, sitting below the unit in the hierarchy. |
+| Will this tile refuse the shot? | A diamond | Drawn by nothing else, so it never reads as cover or as range. |
+
+After #624 exactly one ring shape is on the board at a time that belongs to a unit, and it is the selection. Three ring styles used to compete with no way to tell them apart.
+
+**Mark the exception, not the rule** (#624). The sight cue marked every reachable tile with a line to any living enemy. With nine bugs on a city map that was **93 marks on 93 reachable tiles** — an indicator true everywhere has stopped being an indicator; it is a light that is always on. It now needs a target chosen, and marks the tiles that will *refuse* the shot, which is both rare and the thing a player standing in front of a silent refusal actually needs (#517).
+
+This is the trap that catches an overlay whose premise was measured once: #590 gave sight *more* weight than cover on the grounds that it was "drawn on far fewer tiles", measured against fixtures where no enemy was visible and the count was zero. **Measure an overlay at its worst spread, not its typical one.**
+
+**A boundary states reach, not permission.** Weapon range is deliberately *not* filtered by line of sight, and is laid flat at the firer's own level. Filtering by sight cut the envelope into pockets whose outline drew as disconnected dashes; following the terrain made the line climb the side of every building, and made its shape a picture of ground the player may never have seen, drawn on top of the fog that exists to hide it. Whether one tile will take the shot is the blocked-shot question, asked of a chosen target.
 
 **Count the marks, not just tune them** (#590). Every rule above was argued and measured on its own overlay, and each one was right on its own. Together they put **71–171 instances** on the map for a single click — the planes were never budgeted against each other, only against the ground. The frame stopped reading as a city and started reading as an instrument panel, and the unit the player had just selected was the quietest thing in it.
 

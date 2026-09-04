@@ -1,3 +1,4 @@
+import { DEFAULT_WEAPON_NAME, PRIMARY_WEAPON_ID } from "../model/unit-weapon";
 import { describe, expect, it } from "vitest";
 
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
@@ -88,12 +89,18 @@ describe("squadUnit", () => {
       maxHp: 20,
       maxAp: 2,
       move: 5,
-      weapon: { range: 8, accuracy: 65, damage: 3, armorPen: 0 },
+      weapons: [
+        {
+          id: PRIMARY_WEAPON_ID,
+          name: DEFAULT_WEAPON_NAME,
+          profile: { range: 8, accuracy: 65, damage: 3, armorPen: 0 },
+          charges: 3,
+        },
+      ],
       sightRange: 12,
       armor: 0,
       passClass: "infantry",
       modelId: "tdf.infantry.rifle",
-      charges: 3,
     });
     expect(unit).toEqual({
       id: "unit-1",
@@ -109,7 +116,7 @@ describe("squadUnit", () => {
       maxAp: 2,
       status: [],
       passClass: "infantry",
-      charges: 3,
+      charges: { [PRIMARY_WEAPON_ID]: 3 },
     });
   });
 
@@ -118,7 +125,7 @@ describe("squadUnit", () => {
     expect(unit.hp).toBe(8);
     expect(unit.maxHp).toBe(20);
     const rocket = squadUnit(squad(5, "rocket"), ROCKET, AT, deps());
-    expect(rocket.template.weapon.damage).toBe(
+    expect(rocket.template.weapons[0]!.profile.damage).toBe(
       Math.ceil(ROCKET.combatRating * deps().tuning.infantry.weapon.damage),
     );
     expect(rocket.template.modelId).toBe("tdf.infantry.rocket");
@@ -133,7 +140,7 @@ describe("squadUnit", () => {
     };
     const { template } = squadUnit(squad(5, "cavalry"), odd, AT, deps());
     expect(template.modelId).toBe(UNIT_TUNING.infantry.fallbackModelId);
-    expect(template.weapon.damage).toBe(1);
+    expect(template.weapons[0]!.profile.damage).toBe(1);
   });
 });
 
@@ -151,19 +158,30 @@ describe("mechUnit", () => {
       accuracy: 0,
       firepower: 40,
     });
-    expect(template).toEqual({
+    expect(template).toMatchObject({
       id: "mech:mech-1",
       name: "Hammerhead",
       maxHp: 80,
       maxAp: 2,
       move: 8,
-      weapon: { range: 10, accuracy: 70, damage: 40, armorPen: 2 },
       sightRange: 14,
       armor: 9,
       passClass: "mech",
       modelId: "tdf.mech.assembled-a",
-      charges: 4,
     });
+    // One attack per fitted weapon (#532), each with that part's own
+    // reach and penetration rather than the tuning's single profile.
+    expect(template.weapons).toHaveLength(sheet.weapons.length);
+    expect(sheet.weapons.length).toBeGreaterThan(0);
+    for (const [i, fitted] of sheet.weapons.entries()) {
+      expect(template.weapons[i]).toMatchObject({
+        id: fitted.id,
+        name: fitted.name,
+        charges: UNIT_TUNING.mech.charges,
+      });
+      expect(template.weapons[i]?.profile.range).toBe(fitted.range);
+      expect(template.weapons[i]?.profile.armorPen).toBe(fitted.armorPen);
+    }
     expect(unit).toMatchObject({
       kind: "mech",
       team: "tdf",
@@ -186,7 +204,7 @@ describe("mechUnit", () => {
     const sluggish: MechStatSheet = { ...sheet, mobility: -10, accuracy: 500 };
     const { template } = mechUnit(mech, sluggish, AT, deps());
     expect(template.move).toBe(UNIT_TUNING.mech.minMove);
-    expect(template.weapon.accuracy).toBe(100);
+    expect(template.weapons[0]!.profile.accuracy).toBe(100);
   });
 });
 
@@ -209,7 +227,13 @@ describe("bugUnit", () => {
       maxHp: 6,
       maxAp: 2,
       move: 7,
-      weapon: SWARMER.weapon,
+      weapons: [
+        {
+          id: PRIMARY_WEAPON_ID,
+          name: DEFAULT_WEAPON_NAME,
+          profile: SWARMER.weapon,
+        },
+      ],
       sightRange: SWARMER.sightRange,
       armor: 0,
       passClass: "infantry",

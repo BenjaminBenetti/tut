@@ -1,3 +1,4 @@
+import type { WeaponId } from "../model/unit-weapon";
 import { err, ok } from "../../core/model/result";
 import type { ReloadCommand } from "../model/reload-command";
 import type { TacticalHandler } from "../model/tactical-handler";
@@ -44,11 +45,26 @@ export const reloadHandler: TacticalHandler<ReloadCommand> = (
     return err({ kind: "no-action-points", unitId });
   }
   const template = mission.templates[unit.templateId];
-  const full = template?.charges;
-  if (full === undefined || unit.charges === undefined) {
+  // One reload refills every pool the unit carries (#532). A mech vents
+  // its whole heat load rather than one barrel at a time, and a squad
+  // has a single pool anyway, so per-weapon reloading would be an action
+  // cost with no decision in it.
+  const pools = (template?.weapons ?? []).filter(
+    (weapon) => weapon.charges !== undefined,
+  );
+  if (pools.length === 0) {
     return err({ kind: "no-reload", unitId });
   }
-  if (unit.charges >= full) {
+  const full: Record<WeaponId, number> = {};
+  let anyMissing = false;
+  for (const weapon of pools) {
+    const capacity = weapon.charges ?? 0;
+    full[weapon.id] = capacity;
+    if ((unit.charges?.[weapon.id] ?? capacity) < capacity) {
+      anyMissing = true;
+    }
+  }
+  if (!anyMissing) {
     return err({ kind: "charges-full", unitId });
   }
   return ok({
@@ -56,7 +72,11 @@ export const reloadHandler: TacticalHandler<ReloadCommand> = (
       ...mission,
       units: mission.units.map((candidate) =>
         candidate.id === unitId
-          ? { ...candidate, ap: candidate.ap - RELOAD_AP_COST, charges: full }
+          ? {
+              ...candidate,
+              ap: candidate.ap - RELOAD_AP_COST,
+              charges: { ...candidate.charges, ...full },
+            }
           : candidate,
       ),
     },

@@ -106,9 +106,30 @@ export interface ChassisPart extends MechPartBase {
   readonly capacity: ChassisCapacity;
 }
 
+/**
+ * What a weapon part fires like, beyond the `firepower` and `accuracy`
+ * its stats already contribute (#532). Damage comes from `firepower` and
+ * the hit chance from `accuracy`, so what is left is how far it reaches
+ * and what it punches through — the two things a mech's weapons differ
+ * on, and the reason to carry more than one.
+ */
+export interface PartWeapon {
+  /** Tiles the weapon reaches, Manhattan. Positive integer. */
+  readonly range: number;
+  /** Armor points ignored by each hit. Non-negative. */
+  readonly armorPen: number;
+}
+
 /** Any part fitted onto a chassis: legs, arms, weapons and utilities. */
 export interface ComponentPart extends MechPartBase {
   readonly slot: ComponentSlot;
+  /**
+   * Present on `arm-weapon` and `back-weapon` parts, absent elsewhere: a
+   * set of legs has no reach. A weapon slot without one cannot be fired,
+   * which is a content bug rather than a game state — `parts.test.ts`
+   * pins that every weapon part carries it.
+   */
+  readonly weapon?: PartWeapon;
 }
 
 /**

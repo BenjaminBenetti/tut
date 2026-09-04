@@ -6,10 +6,10 @@ Last updated: 2026-09-04 (post-v0.2.0; win path settled on #317).
 
 | Field | Value |
 |---|---|
-| SHA tested | `167ce46` (main, after v0.2.2) |
-| Gate | typecheck, lint, build pass; vitest **1783 / 1783** (+1 deliberate skip); e2e **56 / 56** |
-| Exploratory | #480, #468, #605 verified fixed by playing them; **#517 quantified and still open** |
-| **Verdict** | **Healthy.** Control scheme 7/7 on every head since band 1; a mission is completable with fog active. One QA-filed issue open: **#517**, no cue for which tiles can see an objective. |
+| SHA tested | `2b4b638` (main, M2.5 band 3 landing) |
+| Gate | typecheck, lint, build pass; vitest **1805 / 1805** (+1 deliberate skip); e2e **57 / 57** |
+| Exploratory | #517, #480, #468, #605 all verified fixed; filed **#627** (p2, stuck context menu) |
+| **Verdict** | **Healthy.** Control scheme 7/7 on every head since band 1; a mission is completable with fog active, now guarded by a permanent spec. One QA-filed issue open: **#627**, the context menu cannot be dismissed. |
 
 ### Release push, in order of what mattered
 
@@ -122,7 +122,15 @@ Last updated: 2026-09-04 (post-v0.2.0; win path settled on #317).
 
     The machinery is all there; the gap is only which targets are fed to it. Suggested shape posted on the issue.
 
-17. **Three features have now shipped fully working and invisible**, every one with CI green: **#555** (every overlay failing a depth test), **#572** (the 2 AP band painted over by the range fill), **#605** (the selection ring never drawn). That is the single most useful thing this seat has learned. Photograph the screen and look at it; the suite cannot see any of these.
+17. **The win path is now guarded by a permanent spec** (`e2e/tactical-objective-destroyed.spec.ts`, PR #618, merged). Nothing asserted a mission was winnable: `tactical-mission-flow` ends by *extracting*, the exit a player takes when they give up, and `tactical-spawners` proves a spawner can be targeted, not killed. The spec drives the shipped control scheme, reads the objective from the mission rather than hard-coding tiles, and was sabotage-checked — forcing `MAX_TURNS = 0` fails with `the mech never destroyed spawner-1; it still has 20 hp`. It costs the suite ~35 s, which I flagged in the PR as the reviewer's call rather than sliding it in.
+
+    **It was held on `pnpm lint`.** I had run `tsc`, the spec three times, the full suite and `CI=1`, but not the one command that is `eslint . && prettier --check .`. Run the real lint on your own branches; a subset passes what CI then rejects.
+
+18. **Filed #627 (p2): the context menu cannot be dismissed and its item does nothing.** #529's trigger logic is correct — Move armed on a tile still commits directly, and the menu fills the mismatch cases. But once open, `Escape`, a left click anywhere, selecting another unit, arming Move, ending the turn, and **choosing the menu item itself** all leave it open, and the item does not move the unit. Only leaving the tactical screen clears it. Play is not blocked, hence p2. Render committed as `docs/design/tactical-context-menu-stuck.png`.
+
+    **Method note worth keeping:** my first attempt tested the wrong condition (a blocked tile with Move armed, which is the direct-commit path) and my second could not be trusted until I validated the detector — it reports `hidden=true, display=none, items=0` when closed and `data-open="true", items=1` when open. When *every* path reports the same answer, suspect the instrument before the game.
+
+19. **Three features have now shipped fully working and invisible**, every one with CI green: **#555** (every overlay failing a depth test), **#572** (the 2 AP band painted over by the range fill), **#605** (the selection ring never drawn). That is the single most useful thing this seat has learned. Photograph the screen and look at it; the suite cannot see any of these.
 
 ### Harness lessons that cost me a wrong reading
 
@@ -137,6 +145,9 @@ Three times this session a control-scheme or rendering change silently invalidat
 
 | SHA | Build | Unit | e2e | Exploratory | Filed |
 |---|---|---|---|---|---|
+| `2b4b638` | pass | 1805/1805 | 57/57 | context menu never closes | **#627** |
+| `637208c` | pass | 1801/1801 | 56/56 | right-click menu triage | — |
+| `1f8179c` | pass | 1795/1795 | 57/57 | #517 verified fixed | — |
 | `167ce46` | pass | 1783/1783 | 56/56 | #605 selection ring now draws | — |
 | `9bbe836` | pass | 1774/1774 | 56/56 | #480 and #468 verified fixed | — |
 | `222a960` | pass | 1769/1769 | 55/55 | #590 range follows attack intent | — |

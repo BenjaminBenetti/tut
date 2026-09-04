@@ -1,5 +1,6 @@
 import type { IconId } from "../data/icon-manifest";
 import { iconUrl } from "../data/icon-manifest";
+import type { WeaponId } from "../../tactical/model/unit-weapon";
 import type { ActionBarAction } from "../model/tactical-intent";
 import { ACTION_BAR_ORDER } from "../model/tactical-intent";
 
@@ -12,10 +13,24 @@ export type { ActionBarAction };
 /** What the bar reports back to its owner. */
 export interface ActionBarHandlers {
   /** The player pressed an action button. */
-  readonly onAction: (action: ActionBarAction) => void;
+  /**
+   * A button was pressed. `weaponId` names which weapon an Attack press
+   * arms, and is omitted for every other action and for a unit carrying
+   * one weapon (#532).
+   */
+  readonly onAction: (action: ActionBarAction, weaponId?: WeaponId) => void;
 }
 
 /** What the bar shows. */
+/** One attack the selected unit can offer, as the bar needs it (#532). */
+export interface ActionBarWeapon {
+  readonly id: WeaponId;
+  /** What the button says: the part's name, or "Attack" for a single weapon. */
+  readonly name: string;
+  /** False when the unit cannot fire it at all right now. */
+  readonly ready: boolean;
+}
+
 export interface ActionBarModel {
   /** Whether the selected unit may act this phase (friendly, alive, with action points). */
   readonly canAct: boolean;
@@ -31,6 +46,15 @@ export interface ActionBarModel {
    * that a squad fires twice and a mech once.
    */
   readonly attacksLeft?: number;
+  /**
+   * The selected unit's weapons (#532). One entry means the bar shows a
+   * single Attack button as it always did; several replace it with one
+   * button each, named after the weapon, so a mech's arm gun and back
+   * gun are separate actions.
+   */
+  readonly weapons?: readonly ActionBarWeapon[];
+  /** Which weapon Attack is armed with, when several are offered. */
+  readonly armedWeaponId?: WeaponId;
   /**
    * Whether the selected unit is standing in the extraction zone, so it
    * can leave the map (#341). Extraction costs no action points, so it is
@@ -113,6 +137,9 @@ export class ActionBarView {
   private readonly handlers: ActionBarHandlers;
   private root: HTMLElement | undefined;
   private readonly buttons = new Map<ActionBarAction, HTMLButtonElement>();
+  private attackSlot: HTMLElement | undefined;
+  /** The weapon ids the slot currently shows, so it rebuilds only on a change. */
+  private shownWeapons = "";
   private dispose: (() => void) | undefined;
 
   // ===========================================
@@ -156,7 +183,18 @@ export class ActionBarView {
       button.append(key, icon, text);
       button.title = `${label} (${key.textContent})`;
       button.disabled = true;
-      bar.appendChild(button);
+      if (action === "attack") {
+        // The attack slot is rebuilt per selection: one button per weapon
+        // when the unit carries several (#532).
+        const slot = doc.createElement("span");
+        slot.className = "tut-row tut-row--tight";
+        slot.dataset.role = "attack-slot";
+        slot.appendChild(button);
+        bar.appendChild(slot);
+        this.attackSlot = slot;
+      } else {
+        bar.appendChild(button);
+      }
       this.buttons.set(action, button);
     }
     parent.appendChild(bar);
@@ -170,6 +208,10 @@ export class ActionBarView {
         return;
       }
       const action = button.dataset.action as ActionBarAction | undefined;
+      if (action === "attack") {
+        this.handlers.onAction(action, button.dataset.weaponId);
+        return;
+      }
       if (action !== undefined && this.buttons.has(action)) {
         this.handlers.onAction(action);
       }
@@ -183,7 +225,12 @@ export class ActionBarView {
 
   /** Enables buttons per the model and marks the armed action. */
   update(model: ActionBarModel): void {
+    this.refreshAttackSlot(model);
     for (const [action, button] of this.buttons) {
+      if (action === "attack" && (model.weapons?.length ?? 0) > 1) {
+        // Replaced by per-weapon buttons, which carry their own state.
+        continue;
+      }
       button.disabled = !isEnabled(action, model);
       const pressed = action === model.mode;
       button.classList.toggle("is-selected", pressed);
@@ -208,6 +255,84 @@ export class ActionBarView {
         button.title = `${text} (${String(ACTION_BAR_ORDER.indexOf(action) + 1)})`;
       }
     }
+  }
+
+  /**
+   * Rebuilds the attack slot when the selection's weapons change. One
+   * weapon keeps the plain Attack button; several replace it with one
+   * button each, named after the weapon and armed independently.
+   */
+  private refreshAttackSlot(model: ActionBarModel): void {
+    const slot = this.attackSlot;
+    const attack = this.buttons.get("attack");
+    if (!slot || !attack) {
+      return;
+    }
+    const weapons = model.weapons ?? [];
+    const key = weapons.map((weapon) => weapon.id).join("|");
+    if (weapons.length > 1) {
+      if (key !== this.shownWeapons) {
+        const doc = slot.ownerDocument;
+        slot.replaceChildren();
+        weapons.forEach((weapon, index) => {
+          slot.appendChild(this.weaponButton(doc, weapon, index === 0));
+        });
+        this.shownWeapons = key;
+      }
+      for (const weapon of weapons) {
+        const button = slot.querySelector<HTMLButtonElement>(
+          `[data-weapon-id="${weapon.id}"]`,
+        );
+        if (button) {
+          button.disabled = !weapon.ready || !model.canAct;
+          const armed =
+            model.mode === "attack" && model.armedWeaponId === weapon.id;
+          button.classList.toggle("is-selected", armed);
+          button.setAttribute("aria-pressed", armed ? "true" : "false");
+        }
+      }
+      return;
+    }
+    if (this.shownWeapons !== "") {
+      slot.replaceChildren(attack);
+      this.shownWeapons = "";
+    }
+  }
+
+  /** One Attack button for one weapon, labelled with the weapon's name. */
+  private weaponButton(
+    doc: Document,
+    weapon: ActionBarWeapon,
+    first: boolean,
+  ): HTMLButtonElement {
+    const button = doc.createElement("button");
+    button.type = "button";
+    button.className = "tut-btn";
+    button.dataset.action = "attack";
+    button.dataset.weaponId = weapon.id;
+    // Attack keeps its digit whatever is selected (#532): the key arms
+    // the first weapon and pressing it again cycles to the next, rather
+    // than renumbering the bar and moving Overwatch's key with it. Only
+    // the first button carries the hint, because there is one key.
+    if (first) {
+      const key = doc.createElement("span");
+      key.className = "tut-btn__key";
+      key.dataset.role = "shortcut";
+      key.textContent = String(ACTION_BAR_ORDER.indexOf("attack") + 1);
+      button.appendChild(key);
+    }
+    const icon = doc.createElement("span");
+    icon.className = "tut-icon tut-icon--sm";
+    icon.style.setProperty("--icon", iconUrl(ICONS.attack));
+    const text = doc.createElement("span");
+    text.className = "tut-btn__label";
+    text.textContent = weapon.name;
+    button.append(icon, text);
+    button.title = first
+      ? `${weapon.name} (${String(ACTION_BAR_ORDER.indexOf("attack") + 1)}, press again for the next weapon)`
+      : weapon.name;
+    button.disabled = true;
+    return button;
   }
 
   /** Removes the bar and its listener. */

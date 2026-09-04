@@ -232,7 +232,7 @@ export class LurkerBehaviour implements BugBehaviour {
     // the whole opportunity. Waiting for `terrain.flanked` here would be
     // waiting for a condition the rules can no longer produce, and a
     // lurker beside a covered mark would circle it forever.
-    if (isMelee(checked.value.attackerTemplate.weapon)) {
+    if (isMelee(checked.value.weapon.profile)) {
       return attack(unit.id, mark.id);
     }
     if (checked.value.terrain.flanked || !markHasAnyCover(mission, mark)) {

@@ -126,11 +126,15 @@ test("Launch plays the mission out, extraction ends it, and the debrief comes fr
 });
 
 /**
- * Ending a turn hands the phase to the bugs. The bugs do not hand it back
- * yet (#412; #335's bug-phase runner is the fix), so this stops at the
- * handover rather than playing a full round.
+ * Ending a turn plays a whole round. Since #335 the bug-phase runner
+ * resolves every living bug inside `EndTurn`, so the phase the player
+ * sees afterwards is their own again with the turn counter one higher —
+ * the bugs never rest holding the phase. Before #335 this test stopped
+ * at the handover, because the bugs did not hand it back.
  */
-test("End turn hands the phase to the bugs", async ({ page }) => {
+test("End turn plays the bug phase and comes back to the player", async ({
+  page,
+}) => {
   await page.goto("/");
   const body = page.locator("body");
   await expect(body).toHaveAttribute("data-app-state", "ready");
@@ -157,7 +161,15 @@ test("End turn hands the phase to the bugs", async ({ page }) => {
   await expect(body).toHaveAttribute("data-screen", "tactical");
 
   const phase = page.locator('#turn-banner [data-field="phase"]');
+  const turn = page.locator('#turn-banner [data-field="turn"]');
   await expect(phase).toHaveAttribute("data-phase", "player");
+  const before = Number(await turn.textContent());
+  expect(before).toBeGreaterThan(0);
+
   await page.locator('#action-bar [data-action="end-turn"]').click();
-  await expect(phase).toHaveAttribute("data-phase", "bugs");
+
+  // The bugs act inside EndTurn, so the round is over by the time the
+  // banner repaints: same side, next turn.
+  await expect(turn).toHaveText(String(before + 1));
+  await expect(phase).toHaveAttribute("data-phase", "player");
 });

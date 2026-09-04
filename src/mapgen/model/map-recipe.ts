@@ -10,10 +10,16 @@ import type { PassMask } from "./pass-mask";
 // ===========================================
 
 /**
- * Which pass list generates the map. M1.5 ships `settlement`; hives, crash
- * sites and the space platform are later archetypes (ADR 0004 §7.3).
+ * Which pass list generates the map (ADR 0004 §7.3). `settlement` is what
+ * every mission generates today.
+ *
+ * `crash-site` is a **prototype**: no mission type asks for it and the
+ * adapter cannot produce one, so it reaches the generator only from the
+ * preview harness or a test. It exists to be looked at and measured
+ * before M3 commits to the shape (#447). Hives and the space platform
+ * follow the same route when their turn comes.
  */
-export type MapArchetype = "settlement";
+export type MapArchetype = "settlement" | "crash-site";
 
 /**
  * Named map sizes, resolved through `mapgen/data/map-sizes`. The union

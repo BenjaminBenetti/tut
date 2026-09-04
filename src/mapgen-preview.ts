@@ -36,9 +36,14 @@ const DEFAULT_STATE: PreviewControlsState = {
   biome: "temperate",
   settlement: "town",
   size: "medium",
+  archetype: "settlement",
 };
 
-/** Reads `?seed=&biome=&settlement=&size=` with defaults for anything missing. */
+/**
+ * Reads `?seed=&biome=&settlement=&size=&archetype=` with defaults for
+ * anything missing. `archetype` has no control in the panel: it is how a
+ * prototype pass list is looked at (#447), and nothing else offers one.
+ */
 function stateFromUrl(): PreviewControlsState {
   const query = new URLSearchParams(window.location.search);
   return {
@@ -52,6 +57,9 @@ function stateFromUrl(): PreviewControlsState {
     size:
       (query.get("size") as PreviewControlsState["size"] | null) ??
       DEFAULT_STATE.size,
+    archetype:
+      (query.get("archetype") as PreviewControlsState["archetype"] | null) ??
+      DEFAULT_STATE.archetype,
   };
 }
 
@@ -62,6 +70,7 @@ function writeUrl(state: PreviewControlsState): void {
     biome: state.biome,
     settlement: state.settlement,
     size: state.size,
+    archetype: state.archetype,
   });
   window.history.replaceState(
     null,
@@ -122,7 +131,7 @@ async function main(): Promise<void> {
     const recipe: MapRecipe = {
       seed: state.seed,
       params: {
-        archetype: "settlement",
+        archetype: state.archetype,
         biome: state.biome,
         settlement: state.settlement,
         size: state.size,

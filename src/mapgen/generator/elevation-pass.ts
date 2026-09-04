@@ -1,12 +1,14 @@
 import type { Rect } from "../../core/model/grid";
 import type { Rng } from "../../core/model/rng";
 import { SurfaceIds } from "../data/surfaces";
+import { isPassableGround } from "../service/draft-queries";
 import type { ElevatedFeature } from "../model/elevated-feature";
 import type {
   DraftCapability,
   GenerationContext,
   GenerationPass,
 } from "../model/generation-pass";
+import type { Lot } from "../model/lot";
 import type { MapDraft } from "../model/map-draft";
 import type { SettlementDefinition } from "../model/settlement-definition";
 import { areaFactor } from "./lot-pass";
@@ -20,6 +22,24 @@ const FEATURE_HEIGHT = 1;
 
 /** Columns of clear ground kept between two features. */
 const FEATURE_GAP = 1;
+
+/**
+ * Columns of the map border no feature touches. Deploy zones and edge
+ * spawns are placed later, in the outer band, and they need flat ground
+ * to stand on and walk off: a plaza raised against the border can box a
+ * squad into its own deploy zone with nowhere to step. Wider than the
+ * deploy placer's own band so the ramps have room too.
+ */
+const EDGE_KEEPOUT = 5;
+
+/**
+ * Columns of open ground a feature needs around its edge. The ramp pass
+ * bridges one-level steps between *ground* components, so a platform
+ * ringed entirely by lots and buildings gets no ramp and becomes an
+ * island: tiles a unit can stand on and never reach. Three columns is
+ * enough for a ramp and its landing.
+ */
+const MIN_APPROACH_COLUMNS = 3;
 
 // ===========================================
 // ElevationPass
@@ -71,6 +91,7 @@ export class ElevationPass implements GenerationPass {
     }
 
     const free = freeColumns(draft);
+    let sums = freeSums(draft, free);
     const raised = new Array<boolean>(draft.width * draft.depth).fill(false);
     let placed = 0;
     let columns = 0;
@@ -81,12 +102,13 @@ export class ElevationPass implements GenerationPass {
       const rect =
         feature.shape === "viaduct"
           ? findViaduct(draft, raised, feature, rng)
-          : findSpot(draft, free, feature, rng);
+          : findSpot(draft, free, sums, feature, rng);
       if (rect === undefined) {
         missed.set(feature.id, (missed.get(feature.id) ?? 0) + 1);
         continue;
       }
       columns += raise(draft, rect, feature, free, raised);
+      sums = freeSums(draft, free);
       byId.set(feature.id, (byId.get(feature.id) ?? 0) + 1);
       placed++;
     }
@@ -131,10 +153,13 @@ function featureTarget(
 
 /**
  * Ground a feature may stand on, as a column grid: everything that is not
- * a road, a sidewalk, water or a lot. Features may sit right against a
- * lot — a terrace abutting a building is what a city looks like — but
- * never on one, so every building still gets flat ground. Placed features
- * clear their own columns out of the grid as they go.
+ * a road, a sidewalk, water, a lot, or the strip a lot's door opens onto.
+ *
+ * A feature may sit against a lot's back or sides — a terrace abutting a
+ * building is what a city looks like — but never across its frontage,
+ * because that is where the building pass puts the entrance, and a door
+ * that opens onto a raised face is a building nothing can walk into.
+ * Placed features clear their own columns out of the grid as they go.
  */
 function freeColumns(draft: MapDraft): boolean[] {
   const free = new Array<boolean>(draft.width * draft.depth).fill(true);
@@ -149,7 +174,8 @@ function freeColumns(draft: MapDraft): boolean[] {
       if (
         draft.isRoad(x, z) ||
         surface === SurfaceIds.SIDEWALK ||
-        surface === SurfaceIds.WATER
+        surface === SurfaceIds.WATER ||
+        isNearBorder(draft, x, z)
       ) {
         block(x, z);
       }
@@ -161,8 +187,41 @@ function freeColumns(draft: MapDraft): boolean[] {
         block(x, z);
       }
     }
+    for (const column of frontageStrip(lot)) {
+      block(column.x, column.z);
+    }
   }
   return free;
+}
+
+/** True inside the border band the hook placers need left flat. */
+function isNearBorder(draft: MapDraft, x: number, z: number): boolean {
+  return (
+    x < EDGE_KEEPOUT ||
+    z < EDGE_KEEPOUT ||
+    x >= draft.width - EDGE_KEEPOUT ||
+    z >= draft.depth - EDGE_KEEPOUT
+  );
+}
+
+/** The columns immediately outside the lot on the side its door will face. */
+function frontageStrip(lot: Lot): { x: number; z: number }[] {
+  const { x, z, w, d } = lot.rect;
+  switch (lot.frontage) {
+    case "n":
+      return range(x, w).map((column) => ({ x: column, z: z - 1 }));
+    case "s":
+      return range(x, w).map((column) => ({ x: column, z: z + d }));
+    case "w":
+      return range(z, d).map((column) => ({ x: x - 1, z: column }));
+    default:
+      return range(z, d).map((column) => ({ x: x + w, z: column }));
+  }
+}
+
+/** `count` integers starting at `from`. */
+function range(from: number, count: number): number[] {
+  return Array.from({ length: count }, (_, index) => from + index);
 }
 
 /**
@@ -183,11 +242,12 @@ function freeColumns(draft: MapDraft): boolean[] {
 function findSpot(
   draft: MapDraft,
   free: readonly boolean[],
+  sums: Int32Array,
   feature: ElevatedFeature,
   rng: Rng,
 ): Rect | undefined {
   for (const [w, d] of candidateSizes(feature)) {
-    const spots = fittingRects(draft, free, w, d);
+    const spots = fittingRects(draft, free, sums, w, d);
     if (spots.length > 0) {
       return rng.pick(spots);
     }
@@ -213,16 +273,34 @@ function candidateSizes(feature: ElevatedFeature): [number, number][] {
   return sizes;
 }
 
-/** Every position where a `w × d` rectangle is free and on one level. */
+/**
+ * Every position where a `w × d` rectangle is free and on one level.
+ *
+ * The free test runs off a summed-area table so it costs the same
+ * whatever the rectangle's size; only the positions that pass it pay for
+ * the level and approach checks. Without that, a map's worth of feature
+ * draws walks the plat tens of millions of times and the property sweep
+ * blows its budget.
+ */
 function fittingRects(
   draft: MapDraft,
   free: readonly boolean[],
+  sums: Int32Array,
   w: number,
   d: number,
 ): Rect[] {
   const spots: Rect[] = [];
+  const stride = draft.width + 1;
   for (let z = 1; z + d <= draft.depth - 1; z++) {
     for (let x = 1; x + w <= draft.width - 1; x++) {
+      const inside =
+        (sums[(z + d) * stride + x + w] ?? 0) -
+        (sums[z * stride + x + w] ?? 0) -
+        (sums[(z + d) * stride + x] ?? 0) +
+        (sums[z * stride + x] ?? 0);
+      if (inside !== w * d) {
+        continue;
+      }
       const rect: Rect = { x, z, w, d };
       if (isFree(draft, free, rect)) {
         spots.push(rect);
@@ -230,6 +308,22 @@ function fittingRects(
     }
   }
   return spots;
+}
+
+/** Summed-area table over the free grid, one row and column bigger. */
+function freeSums(draft: MapDraft, free: readonly boolean[]): Int32Array {
+  const stride = draft.width + 1;
+  const sums = new Int32Array(stride * (draft.depth + 1));
+  for (let z = 0; z < draft.depth; z++) {
+    for (let x = 0; x < draft.width; x++) {
+      sums[(z + 1) * stride + x + 1] =
+        (free[z * draft.width + x] === true ? 1 : 0) +
+        (sums[z * stride + x + 1] ?? 0) +
+        (sums[(z + 1) * stride + x] ?? 0) -
+        (sums[z * stride + x] ?? 0);
+    }
+  }
+  return sums;
 }
 
 /**
@@ -249,6 +343,7 @@ function isFree(
   rect: Rect,
 ): boolean {
   const level = draft.groundLevelAt(rect.x, rect.z);
+  let approaches = 0;
   for (let z = rect.z - FEATURE_GAP; z < rect.z + rect.d + FEATURE_GAP; z++) {
     for (let x = rect.x - FEATURE_GAP; x < rect.x + rect.w + FEATURE_GAP; x++) {
       if (!draft.inBounds(x, z)) {
@@ -264,12 +359,17 @@ function isFree(
         if (!free[z * draft.width + x] || here !== level) {
           return false;
         }
-      } else if (here !== level && here !== level + FEATURE_HEIGHT) {
+        continue;
+      }
+      if (here !== level && here !== level + FEATURE_HEIGHT) {
         return false;
+      }
+      if (here === level && isPassableGround(draft, x, z)) {
+        approaches++;
       }
     }
   }
-  return true;
+  return approaches >= MIN_APPROACH_COLUMNS;
 }
 
 // ===========================================
@@ -447,7 +547,8 @@ function isLiftable(
         if (
           here !== level ||
           raised[z * draft.width + x] === true ||
-          !draft.isRoad(x, z)
+          !draft.isRoad(x, z) ||
+          isNearBorder(draft, x, z)
         ) {
           return false;
         }

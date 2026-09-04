@@ -38,7 +38,7 @@ export const ELEVATED_FEATURES: readonly ElevatedFeature[] = [
     surface: SurfaceIds.SIDEWALK,
     length: { min: 6, max: 11 },
     breadth: { min: 6, max: 9 },
-    weight: 4,
+    weight: 3,
     scales: ["city"],
   },
   {
@@ -76,6 +76,15 @@ export const ELEVATED_FEATURES: readonly ElevatedFeature[] = [
     breadth: { min: 3, max: 4 },
     weight: 2,
     scales: ["city", "town"],
+  },
+  {
+    id: "raised-park",
+    shape: "plaza",
+    surface: SurfaceIds.GRASS,
+    length: { min: 5, max: 9 },
+    breadth: { min: 4, max: 7 },
+    weight: 3,
+    scales: ["city"],
   },
   {
     id: "rubble-mound",

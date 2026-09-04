@@ -1,6 +1,6 @@
 # ADR 0007: In-world UI is DOM anchored to projected world points
 
-- **Status:** Proposed
+- **Status:** Accepted (Tech Lead). Shipped and in `v0.2.3`: the radial menu (#528, implemented in #583) and the right-click context menu (#529, implemented in #621, dismissal fixed in #633) are DOM anchored to projected world points.
 - **Date:** 2026-09-04
 - **Author:** Tech Lead
 - **Requested by:** Executive Director (#514, band 3 items 9 and 10): the attack panel should be *"a radial menu centered on the enemy clicked"*, right-click should open a context menu at the cursor, and *"don't just use a raw html menu however, game integrated would be best"*. His verdict on the current side panels: they *"feel like a spread sheet"*.

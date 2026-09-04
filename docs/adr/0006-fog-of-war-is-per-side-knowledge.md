@@ -1,6 +1,6 @@
 # ADR 0006: Fog of war is per-side knowledge in the mission state
 
-- **Status:** Proposed
+- **Status:** Accepted (Tech Lead). Shipped across six PRs and in tags `v0.2.2`/`v0.2.3`; `SideVision` reached its current shape in #722, recorded here in #732. Retrospective: it sat at Proposed while the whole of it was implemented, which is the failure this line now fixes.
 - **Date:** 2026-09-04
 - **Author:** Tech Lead
 - **Requested by:** Executive Director (#514, band 4 item 11): *"No line of sight system! This is one of the core things that makes XCOM good! We need the fog of war!"*

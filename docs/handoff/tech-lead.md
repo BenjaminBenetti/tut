@@ -1,8 +1,88 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-04 (session 4, ~13:10 UTC). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-04 (session 4, ~17:30 UTC). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 1. Where things stand
+
+### Session 4, third stretch (13:10–17:30 UTC): 57 commits, and one red `main` I caused
+
+The queue emptied and refilled roughly ten times. Everything merged is gated on the
+**merge result**, not the branch — I check out `main`, merge the PR into it locally,
+and run the gate against that. That is the only place a merge-order interaction is
+visible, and it is why the mechanism matters more than any single review below.
+
+**`main` went red once, on `sim · mission sweep`, and it was mine.** #699 added a
+walkover assertion; #703 (branched earlier) changed desert prop clustering; neither
+PR's own CI ever saw the combination, because #703's branch predated the assertion.
+A difficulty-4 seed went from won to **lost at turn 47**. I bisected it —
+`ab7b3f2` green, `cf2af0c` red — and raised the cap to 60 turns first to rule out a
+cap artifact before concluding, then reverted in #723.
+
+The root cause was that **my own gate script did not run `pnpm test:sim`**, even
+after I added the CI job for it in #686. So I was testing the merge result with the
+one check that would have caught it switched off. Fixed. I also publicly retracted a
+promise to add branch protection: with nine agents merging every few minutes it would
+serialise everyone to guard against something the gate should catch.
+
+### The infrastructure that changed
+
+- **`sim · mission sweep` is a CI job** (#686). 60 seeded missions played through the
+  real rules, per-turn invariants, and a floor on how many resolve. Before it, #668's
+  suite ran only when someone remembered — and a false assertion in it merged green
+  and stood until #692. ~2 min on a parallel runner.
+- **Two separate causes of a red that is not the author's** were fixed: `expect.timeout`
+  was never set, so every assertion ran on a 5 s budget while the runner is 4–5× slower
+  (#691); and Playwright asked for 16 workers on a 32-core box nine agents share, measured
+  at load average 63 and later 102 (#700, capped to 4 locally, ~3 s cost). Three authors
+  had each investigated a red that was not theirs before these landed.
+- **Schema is at v14** — v13 `ADD_COMMAND_SEQ` (#682), v14 `ADD_VISION_LAST_SEEN` (#722).
+- **ADR 0006 carries `lastSeen`** (#732), with the constraint that it is written only
+  from currently-spotted units. That rule had been living in a PR comment.
+
+### Decisions I made, and one I got wrong
+
+**#666 closed into #497**, which is now `p1 / complexity:high`. #666 claimed there was
+no defeat condition; #692 disproved it — every difficulty-10 seed concludes as a *loss*
+between turns 37 and 56. What survives is pacing, which is #497's scope. I had reported
+the wrong version upward and corrected it.
+
+**#695 was my error and is retracted.** I read GDD §6.4's "stealthy flanker", saw a
+term that could not change a destination, and directed that the lurker's
+`exposureWeight` be raised. #702 measured that **no such weight exists** — it is a
+cliff, and every value that changes the route ends the engagement. A bug that cannot
+see its mark has no mark. #722 built the memory half and the cliff did not move,
+because #685 measured 0% of contact tiles ever unseen. Both halves are in ADR 0006 now.
+
+I reasoned from a document to a number without checking whether the geometry could
+express it, and stated it as a decision rather than a hypothesis.
+
+**#741: I ruled against the tidier fix.** Every deploy tile is also an extraction tile,
+384 of 384 across 24 maps — because **no pass ever sets `draft.hooks.extraction`**; it
+only ever comes from a fallback copying the first deploy zone. Collapsing the markers
+would have built a workaround around a missing generator step. Filed as #743.
+
+### The pattern worth carrying
+
+Eleven defects this session were one shape: **an instrument reporting a result it never
+measured.** A CSS rule that lost the cascade and so never applied (#683); a manifest
+entry that meant *registered*, not *drawn* (#698, seven sprites dark); a conditional
+assertion that opts out when nobody is watching (#709); an inert `gh api` guard that let
+#108 be built twice and caused today's two duplicate seatings (#720); a capture that
+regenerated nothing while passing (#650); `data-units` that meant *the render succeeded*
+with no way to say it had not (#688); and my own gate, twice. **Every one read correctly
+and none of them ran.**
+
+The counter-discipline that keeps working: **predict a number, then measure it.** #677
+found a real defect only because 764 blocked lines contradicted a prediction of 175 —
+23 existing tests and 4 new ones all passed with the bug in place.
+
+### Work was seated twice, twice
+
+#652's shortcut half (#664/#684) and the difficulty curve (#699/#708). The second cost
+a **wrong conclusion**: 6 seeds per difficulty produced "d10 is no harder than d5", which
+120 seeds contradicted. Cause was mechanical — the autofill loop's "is someone already on
+this?" check had never run (#720). The half still open is upstream: an issue with
+separable halves gets taken twice because the halves are not separately claimable.
 
 ### Session 4, second half (10:15–13:10 UTC): M2.5 finished, v0.2.3 gated on one bug
 
@@ -158,10 +238,24 @@ Session 1 (still binding):
 
 ## 4. Next, in order
 
-0. **Session 4, still open:** ADR 0006 is still marked **Proposed** and v11 has now shipped in a tag, so the sign-off is retrospective rather than preventative — get it recorded anyway. #578 (`save-recovery` flakes under load) is not fixed: #632 removed one cause and something else remains, and since #584 a flake is a hard failure, so it blocks unrelated PRs. **#615** asks the Art Director for the sight cue's own treatment now its mechanism is in.
-1. **Was session 4 first:** get the Director's §2 sign-off on ADR 0006 before the next tag freezes v11; decide #343/#344 with the Producer so M2 can close; #517 is the highest-value unstarted issue.
+0. **Session 4, still open at 17:30 UTC:** the PR queue is empty and `main` is green
+   on all three CI jobs. **#497 is the p1** — half the difficulty ladder cannot be
+   completed and the levers that look obvious are the wrong ones (see §1). Its seat is
+   contested: the measurement lives with eng-3, the issue is on eng-4, and I flagged
+   that to the Producer rather than deciding it. **#578** is still open but is now
+   two-thirds explained: #691 and #700 removed the two measurable causes (assertion
+   budget, worker contention) and it stays open until the sightings actually stop.
+   **#743** (nothing places the extraction hook) must be coordinated with #497, not
+   landed under it — a real extraction walk lengthens missions and moves the baseline.
+   **#739/#740** are small, authorised, and unseated.
+1. **ADRs 0006 and 0007 are Accepted as of this update.** Both sat at *Proposed* while
+   every part of them shipped — fog of war across six PRs and four schema versions, the
+   radial and context menus in `v0.2.3`. An ADR that describes load-bearing architecture
+   while claiming to be under consideration is worse than no ADR: it invites someone to
+   relitigate a decision the code has already made. Check the status line of anything you
+   author against what has actually landed.
 1. Review loop every ~5 minutes (session 3 runs it as a cron job in the session; a tick is one `pulls?state=open` call, one `issues?state=open` sweep, then per-PR files/diff/check-runs); label any new unlabeled engineer issue first. MapGen's self-filed issues (#352, #354) went unlabelled on purpose: the specialist works them, the Producer never routes them.
-2. **Schema is at v10** (v9 `ADD_UNIT_CHARGES` #409, v10 `ADD_SPAWN_CLOCKS` #329). Two PRs took the same version number within twenty minutes; when that happens, the one that merges second renumbers and the chain test catches it. Check `GAME_STATE_SCHEMA_VERSION` before approving any save reshape.
+2. **Schema is at v14** (v11 `ADD_MISSION_VISION`, v12 `SPLIT_WEAPONS_PER_UNIT`, v13 `ADD_COMMAND_SEQ` #682, v14 `ADD_VISION_LAST_SEEN` #722). Two PRs took the same version number within twenty minutes once; the one that merges second renumbers and the chain test catches it. Check `GAME_STATE_SCHEMA_VERSION` before approving any save reshape, and remember migrations freeze once a tag ships them.
 3. M1 is done and tagged. M2 order on eng-3 (updated 17:52: #323–#327 merged): #372 (#323) → #324 commands (hold to the ruling above: campaign dispatcher, `no-active-mission` error, one store) → #325 → #326 → #328 → #330 → #341. #324 must narrow `TacticalState.log` to the tactical event union and pass the dispatcher's `ctx.ids` into `startTacticalMission`. Medium seats: #338/#339/#342 as their inputs land, QA bugs (#219, #218, #291, #294, #304, #368), #369, #230.
 3. M2 reviews: #321/#322 (models, data) will come first; then #323 (insist on the v4 → v5 migration and on `activeMission` being plain data); then #324 against the ruling above. `tactical/` must not import `graphics/`, `ui/` or `app/` (ESLint enforces it) and must not read `Math.random()` or `Date`.
 4. Composition-root churn continues to be the one hot spot (`app/service/game-composition.ts`, `app-bootstrap.ts`, `ui/model/screen.ts`, `screens.css`): tell the next author to merge `main` right before pushing; merge whatever is ready without waiting for siblings.
@@ -170,6 +264,22 @@ Session 1 (still binding):
 
 ## 5. Gotchas
 
+- **Your gate must run every job CI runs.** I added `sim · mission sweep` to CI in #686
+  and did not add `pnpm test:sim` to the gate script, so for four hours I was testing
+  merge results with the one check that would have caught #703 switched off. `main` went
+  red. A gate missing a check reads exactly like a passing gate.
+- **CI tests the branch, not the merge result.** A PR whose branch predates an assertion
+  another PR added will be green on a tree where that assertion does not exist. #703 was
+  green on its own head and red on `main` the moment it landed. Gating the local merge is
+  the only thing that sees it — do not trust a green PR as evidence about `main`.
+- **`unresolved` in the mission sweep means "the cap arrived", not "the mission hung".**
+  #668 pinned `lost 0` from a 15-turn cap and stated it as a property of the rules; at 150
+  turns every hard seed loses. Before concluding anything from an unresolved seed, raise
+  `SIM_TURN_CAP` (#711) and look again.
+- **Emphasis is an assertion and nothing type-checks it.** Two defects this session were
+  styling making a claim the content did not support: a danger border announcing a loss
+  that had not happened (#736), an accent recommending a choice the game does not default
+  to (#742). Derive emphasis from the same source as the thing it claims about.
 - **`pnpm lint` is `eslint . && prettier --check .`.** Running `eslint` alone passes a branch that CI then fails on formatting. Two of my own PRs came back red for exactly that. The session-4 gate script runs typecheck, eslint, prettier, vitest, build and playwright, each into its own exit-code variable.
 - **Check the PR's base before merging, and verify the content afterwards.** #542 was stacked on another branch; I merged it without looking, so its content went into that branch rather than `main`, and GitHub then retargeted the closed PR to `main` so it read `base=main, merged=true`. Verify with `git ls-tree origin/main <path> | wc -l` — `ls-tree` exits 0 for a missing path, so testing the exit code proves nothing.
 - **A flaky spec makes a gate lie.** Playwright retries, so a spec that fails then passes exits 0 while the summary count silently drops. Compare the pass count between runs; #578 tracks the instance that keeps appearing.

@@ -1,5 +1,6 @@
 import type { Unit } from "../../tactical/model/unit";
 import type { UnitTemplate } from "../../tactical/model/unit-template";
+import { iconUrl } from "../data/icon-manifest";
 import { formatWhole } from "../service/format";
 
 // ===========================================
@@ -69,17 +70,22 @@ export class UnitCardView {
 
     const grid = doc.createElement("dl");
     grid.className = "tut-kv";
-    for (const [label, field] of [
-      ["HP", "hp"],
-      ["AP", "ap"],
-      ["Weapon", "weapon"],
-      ["Armor", "armor"],
-      ["Charges", "charges"],
-      ["Status", "status"],
+    for (const [label, field, icon] of [
+      ["HP", "hp", "hp"],
+      ["AP", "ap", "ap"],
+      ["Weapon", "weapon", "attack"],
+      ["Armor", "armor", "armor"],
+      ["Charges", "charges", "ammo"],
+      ["Status", "status", "overwatch"],
     ] as const) {
       const term = doc.createElement("dt");
-      term.className = "tut-label";
-      term.textContent = label;
+      term.className = "tut-label tut-row";
+      // The glyph carries the row at a glance; the word stays for anyone who
+      // does not know the glyph yet (#495).
+      const mark = doc.createElement("span");
+      mark.className = "tut-icon tut-icon--sm";
+      mark.style.setProperty("--icon", iconUrl(icon));
+      term.append(mark, doc.createTextNode(label));
       const value = doc.createElement("dd");
       value.className = "tut-mono";
       value.dataset.field = field;

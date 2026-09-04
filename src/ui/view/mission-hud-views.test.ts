@@ -73,6 +73,21 @@ describe("ActionBarView", () => {
     button("end-turn")?.click();
     expect(onAction).toHaveBeenCalledTimes(2);
   });
+
+  it("marks every button with its icon", () => {
+    const view = new ActionBarView({ onAction: vi.fn() });
+    view.mount(root);
+    const iconOf = (a: string) =>
+      root
+        .querySelector<HTMLElement>(`[data-action="${a}"] .tut-icon`)
+        ?.style.getPropertyValue("--icon");
+    // `iconUrl` already yields `url(…)`; wrapping it again is invalid CSS and
+    // the mask silently degrades to a solid block, which is what shipped the
+    // first time icons were used (#495).
+    expect(iconOf("move")).toBe("url(/assets/ui/icons/move.svg)");
+    expect(iconOf("end-turn")).toBe("url(/assets/ui/icons/end-turn.svg)");
+    expect(iconOf("attack")).toBe("url(/assets/ui/icons/attack.svg)");
+  });
 });
 
 describe("ObjectiveTrackerView", () => {

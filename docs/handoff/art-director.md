@@ -1,6 +1,6 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-03 (session 1, fourteenth update)
+Last updated: 2026-09-04 (session 2, first update)
 
 ## 1. What I was doing and where it stands
 
@@ -24,6 +24,10 @@ Last updated: 2026-09-03 (session 1, fourteenth update)
 | **Tactical tile textures** (Director ask for M2): env atlas for 16 environment tokens applied to every tile, building and prop through the cell pipeline | #394 | **Merged** (PR #398). |
 | **VFX animation sheets** (Director ask for M2): muzzle flash, impact, egg burst frame sheets + `sheet` metadata on the sprite manifest | #395 | **Merged** (PR #396); consumed by the animation queue (#338, merged in #402). |
 | Composed scene preview (`tools/art/preview/render-scene.mjs` + `layouts/city-block.json` → `docs/design/scene-preview.png`) | — | **Merged** (PR #407); first in-context render posted on #274. |
+| **Combat VFX round 2**: `vfx.tracer`, `vfx.claw-slash`, `vfx.bug-death` + two sheets | #429 | **PR #436**, CI green. Completes the Director's M2 VFX list. |
+| **Env atlas round 2**: ground, roof and concrete cells repainted for readability | #441 | **PR #442**. Luminance std per cell 2.8–8 → 5.5–14.3; rule written into style guide §7. |
+| **Batch E: city building kit as Blender models** (8 pieces) | #454 | **PR #455**. Kit doc `docs/design/kits/city-building-kit.md`. |
+| VFX playback (tracer / claw / death), filed for graphics | #457 | Open, not mine to implement. |
 | Image generation recipe (incl. transparent sprites) | — | **Working.** See §5. |
 | Headless GLB / page render checks (Playwright) and Blender review renders | — | **Working.** See §7 and §8. |
 
@@ -31,7 +35,11 @@ Issues #2, #3, #4, #93, #102, #119, #143, #144, #145 are on project 5; #162, #16
 
 ## 2. Open PRs / issues I own
 
-- None open. #274 (replacement track) is paused after batches A–D; batch E is demand-driven (first request, `prop.table` #213, is done). The Director's M2 asks (VFX sheets, tile textures) are on main. Zoom check: every unit rendered at exactly 64 px per tile through the three.js harness keeps its silhouette (style guide §1 rule 1 holds for the Blender models).
+- **PR #436** (#429) combat VFX round 2 — CI green, waiting on the Tech Lead.
+- **PR #442** (#441) env atlas round 2 — waiting on CI/merge.
+- **PR #455** (#454) city building kit — waiting on CI/merge.
+- #457 is filed **for graphics**, not for me: the three new VFX ids are registered and unused. Do not implement it; chase it if M2 ships without them.
+- #274 ledger after the kit: **27 placeholder models left** — six city road/sidewalk tiles, six ground tiles, fifteen props. Props are the next batch worth doing; ground tiles are 12-triangle slabs whose look comes from the atlas, not the geometry.
 
 ## 3. Decisions I made and why
 
@@ -55,14 +63,19 @@ Issues #2, #3, #4, #93, #102, #119, #143, #144, #145 are on project 5; #162, #16
 - **Replacement recipe (batches A/B, reuse for C/D/E)**: shared builders in `tools/art/models/<set>_parts.py`, thin per-id scripts; run `make_model.py` per id with `--quality final` (records land in `placeholders.manifest.json`); delete the same ids' defs and builder functions from `build-placeholders.mjs` (whole-word check: `buildMechAssembledB` contains `buildMechAssembled`); rebuild placeholders (it keeps foreign records); regenerate `MODEL_MANIFEST` entries for `quality: "final"` records from the JSON; thumbnails, both preview sheets, resize renders to 512 px; `pnpm test`. Sub-parts use `--footprint 0x0` (validator skips the base check). Duplicate socket names in assembled models are sanitised to `socket_x_2`.
 - **Blender pipeline shape (#190)**: models are Python scripts under `tools/art/models/` built with `tools/art/bpy_kit.py`; `tools/art/make_model.py` does export → trimesh validation → three Cycles CPU renders → JSON record in one command; ids and TS manifest entries are still added by hand (the printed entry). `build-placeholders.mjs` keeps records it did not create so both pipelines share `placeholders.manifest.json`. Blender models face −Y in Blender so the glTF export faces +Z.
 - **Dry run of the skill on an organic model** (hive-core mound with ribs and tendrils, scratch only): spheres with `smooth=True`, rotated cylinders and `join` all export and validate; the validator caught a sphere sunk below ground, which led to `bpy_kit.cut_below` (#214). A 500-triangle organic prop renders in about 4 s.
+- **Generated sprites are quantised before committing**: `magick <in> -strip +dither -colors 32 -define png:compression-level=9 png32:<out>` cut the bug-death burst from 147 KB to 58 KB with no visible change. `png32:` is not optional — palette output writes colour type 3 and the manifest test requires alpha in the colour type. Same trick on big docs images: a `montage` contact sheet came out at 3 MB and quantising to 256 colours took it to 889 KB.
+- **Tile textures carry detail at mid scale, never at tile scale (#441)**: one model per tile id means every grass tile is the same stamp, so a big blob turns a field into a visible checkerboard — my first repaint did exactly that with period-3 noise and 20 px blobs. Period 6–11 noise plus 4–13 px `Cell.blob` ellipses, target luminance std 7–15 per 128 px cell, palette mean unchanged. The rule is in style guide §7 and the measurement recipe is in §9 below.
+- **Four ways a Blender kit piece goes wrong (#454)**, all in `docs/design/kits/city-building-kit.md`: coincident faces z-fight into black patches (cut openings, do not overlay panels); a recessed deck centre exposes the ground tile under it (colour, not depth, marks a border); `bpy.ops.uv.reset` orients u along whichever edge a face's loop starts on, so upright panels sample brick courses sideways (`bpy_kit.box(..., uv_rot=90)`, added in the same PR, opt-in so no existing model moves); nothing may rise above its storey (a staircase handrail put the model at 2.0 u, through the floor above).
 - **Chamfer border trick**: `.tut-panel`/`.tut-btn` are two clipped layers (line colour behind, surface colour inset 1 px) so the 1 px border follows the 45° cut. `--surface` custom property selects the inner colour per variant.
 
 ## 4. Next, in order
 
-1. Director round-2 notes on any model, texture cell or the scene render: edit the builder or painter, rerun, regenerate previews (`render-placeholders.mjs`, `render-thumbnails.mjs`, `render-scene.mjs`), PR.
-2. Batch E props and kit pieces on demand (mapgen/tactical asks like #213); biome building kits (snow, desert, coastal) if mapgen's templates start naming them.
-3. Hand-drawn intermediate VFX frames only if #338's playback reads as a zoom rather than motion.
-4. Keep `docs/design/scene-preview.png` current after any tile, kit or unit change; it is the one image that shows everything together.
+1. Watch #436, #442, #455 through review; answer Tech Lead notes.
+2. **Batch F: props as Blender models** — the fifteen remaining props, cover first (`prop.crate`, `prop.sandbags`, `prop.barrier-concrete`, `prop.dumpster`, `prop.car-compact`), then vegetation. Same recipe as the city kit; reuse `city_kit_parts` idioms and the four gotchas in the kit doc.
+3. Director round-2 notes on any model, texture cell or the scene render: edit the builder or painter, rerun, regenerate previews (`render-placeholders.mjs`, `render-thumbnails.mjs`, `render-scene.mjs`), PR.
+4. Biome building kits (snow, desert, coastal) if mapgen's templates start naming them; extra env cells (ice, sandstone, wet sand, seawall) need a bigger atlas — the 4×4 grid is full, so size it once for everything mapgen plans to emit.
+5. Hand-drawn intermediate VFX frames only if #338's playback reads as a zoom rather than motion.
+6. Keep `docs/design/scene-preview.png` current after any tile, kit or unit change; it is the one image that shows everything together.
 
 ## 5. Image generation recipe (Codex CLI)
 
@@ -105,6 +118,30 @@ codex exec --skip-git-repo-check --ephemeral -s danger-full-access \
 - **Branch from a fresh `origin/main`** and check `git diff --name-only origin/main...HEAD` before opening a PR. Branching from a stale main once swept untracked tooling and 100 ignored render PNGs into a commit (the `.gitignore` entry lived on the other branch).
 - Never `cd` inside a long `&&` chain in the shell: one failed step leaves later relative paths pointing at the wrong directory. Use absolute paths.
 - Concept sheets are docs, not runtime assets, so the ≤ 1024² texture rule does not apply to them; keep them under ~1.5 MB each anyway.
+
+## 6b. Measuring whether a texture cell reads
+
+Flatness is measurable, so do not argue about it — crop the cell out of the atlas and read its luminance spread:
+
+```bash
+python3 - <<'EOF'
+import json, subprocess
+cells = json.load(open("tools/art/atlas-cells.json"))
+CELL = cells["cell"]
+for name, c in cells["cells"].items():
+    if c["atlas"] != "env":
+        continue
+    x, y = c["col"] * CELL, c["row"] * CELL
+    out = subprocess.run(
+        ["magick", "public/assets/textures/tiles/env-atlas_albedo.png",
+         "-crop", f"{CELL}x{CELL}+{x}+{y}", "+repage", "-colorspace", "gray",
+         "-format", "%[fx:standard_deviation*255] %[fx:mean*255]", "info:"],
+        capture_output=True, text=True).stdout
+    print(f"{name:20s} {out}")
+EOF
+```
+
+Below about 5 the surface reads as flat colour at 64 px per tile; 7–15 is the band that works (`env-sidewalk` 15.6 and `env-rock` 9.9 were the reference cells). Then look, do not only measure: `node tools/art/preview/render-scene.mjs tools/art/preview/layouts/ground-field.json out.png` puts an 8×8 field of every ground surface with props for scale in front of you, which is where the repeated-stamp problem shows up and the numbers do not.
 
 ## 7. Headless render check (verifying GLBs without a browser)
 

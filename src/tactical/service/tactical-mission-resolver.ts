@@ -170,6 +170,7 @@ export function tacticalMissionResult(
 
   return {
     missionId: mission.id,
+    cityId: mission.cityId,
     outcome,
     squadCasualties,
     squadsWiped,

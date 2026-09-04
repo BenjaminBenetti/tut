@@ -153,6 +153,7 @@ export class AutoResolveMissionResolver implements MissionResolver {
 
     return {
       missionId: mission.id,
+      cityId: mission.cityId,
       outcome,
       squadCasualties,
       squadsWiped,

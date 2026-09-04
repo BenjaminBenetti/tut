@@ -256,6 +256,7 @@ describe("tacticalMissionResult", () => {
 
     expect(result).toEqual({
       missionId: "mission-1",
+      cityId: "city-1",
       outcome: "won",
       squadCasualties: [],
       squadsWiped: [],

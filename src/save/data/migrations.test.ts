@@ -392,3 +392,45 @@ describe("v12 → v13", () => {
     expect(step()?.apply(already)).toEqual(already);
   });
 });
+
+// ===========================================
+// v14 → v15: the debrief's city (#739)
+// ===========================================
+
+describe("v14 → v15", () => {
+  const step = () => GAME_STATE_MIGRATIONS.find((m) => m.to === 15);
+
+  it("drops a stored result that predates cityId rather than inventing one", () => {
+    // It cannot be repaired: the mission is removed from the offers in
+    // the same update that stores the result, so nothing in the save
+    // maps the old missionId back to a city. A wrong city on a debrief
+    // is worse than the id it replaces.
+    const v14 = {
+      meta: {},
+      overworld: {
+        day: 3,
+        lastMissionResult: { missionId: "mission-1", outcome: "won" },
+      },
+    };
+    expect(step()?.apply(v14)).toEqual({ meta: {}, overworld: { day: 3 } });
+  });
+
+  it("keeps a result that already names its city", () => {
+    const already = {
+      meta: {},
+      overworld: {
+        day: 3,
+        lastMissionResult: { missionId: "mission-1", cityId: "vancouver" },
+      },
+    };
+    expect(step()?.apply(already)).toEqual(already);
+  });
+
+  it("leaves a campaign with no stored result alone", () => {
+    expect(step()?.apply({ meta: {}, overworld: { day: 1 } })).toEqual({
+      meta: {},
+      overworld: { day: 1 },
+    });
+    expect(step()?.apply({ meta: {} })).toEqual({ meta: {} });
+  });
+});

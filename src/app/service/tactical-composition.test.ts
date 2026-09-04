@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { BUG_SPECIES } from "../../bugs/data/species";
+import {
+  startedMission,
+  walkableTileNear,
+  withBug,
+} from "../../bugs/ai/bug-mission.test-helper";
+import { BUG_SPECIES, SWARMER } from "../../bugs/data/species";
+import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import { ok } from "../../core/model/result";
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
 import { MISSION_TYPES } from "../../content/data/mission-types";
@@ -35,6 +41,7 @@ import {
   composeTactical,
   createSheetLookup,
   shippedBugBehaviours,
+  shippedTacticalHandlers,
 } from "./tactical-composition";
 import { MapBehaviourRegistry } from "../../bugs/ai/behaviour-registry";
 
@@ -270,6 +277,39 @@ describe("shippedBugBehaviours", () => {
     expect(
       () => new MapBehaviourRegistry(shippedBugBehaviours()),
     ).not.toThrow();
+  });
+
+  it("actually drives a swarmer in a live mission: one shipped EndTurn moves it (#460)", () => {
+    // The registry assertions above prove a behaviour is *registered*.
+    // This proves the whole seam still carries it through to the board:
+    // shipped EndTurn -> bugs phase -> runner -> species catalogue ->
+    // SwarmerBehaviour -> the action rules -> a unit that moved.
+    const mission = startedMission("player");
+    const squad = mission.units.find((u) => u.team === "tdf");
+    if (squad === undefined) throw new Error("fixture mission has no squad");
+    const placed = withBug(
+      mission,
+      SWARMER,
+      walkableTileNear(mission, {
+        x: squad.pos.x + 5,
+        y: squad.pos.y,
+        z: squad.pos.z + 5,
+      }),
+    );
+    const endTurnHandler = shippedTacticalHandlers()[END_TURN];
+    if (endTurnHandler === undefined) throw new Error("EndTurn is not shipped");
+    const outcome = endTurnHandler(placed.mission, endTurn(), {
+      rng: new Mulberry32Rng(11),
+      ids: new SequentialIdGenerator(),
+    });
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+    const after = outcome.value.state.units.find((u) => u.id === placed.bug.id);
+    expect(after).toBeDefined();
+    expect(after?.pos).not.toEqual(placed.bug.pos);
+    expect(after?.ap).toBeLessThan(placed.bug.ap);
+    // and the turn still came back to the player
+    expect(outcome.value.state.phase).toBe("player");
   });
 
   it("gives every species a behaviour unless it is known not to have landed", () => {

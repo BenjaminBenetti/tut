@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { COVER_LEVELS } from "../model/cover";
-import { createRegistry } from "../service/definition-registry";
+import { createRegistry } from "../../core/service/definition-registry";
 import { BIOME_IDS } from "../../content/model/biome-id";
 import { PROP_DEFINITIONS, PropKindIds } from "./props";
 

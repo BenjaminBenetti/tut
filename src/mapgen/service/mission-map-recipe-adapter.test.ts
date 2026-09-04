@@ -6,7 +6,7 @@ import type { Mission } from "../../overworld/model/mission";
 import { HookKinds } from "../model/hook";
 import { PassMask } from "../model/pass-mask";
 import { createDefaultRegistries } from "./default-registries";
-import { createRegistry } from "./definition-registry";
+import { createRegistry } from "../../core/service/definition-registry";
 import { generateTacticalMap } from "./generate-tactical-map";
 import { validateTacticalMap } from "./map-validator";
 import {

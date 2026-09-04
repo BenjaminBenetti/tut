@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { PassMask } from "../model/pass-mask";
-import { createRegistry } from "../service/definition-registry";
+import { createRegistry } from "../../core/service/definition-registry";
 import { SURFACE_DEFINITIONS, SurfaceIds } from "./surfaces";
 
 describe("surface definitions", () => {

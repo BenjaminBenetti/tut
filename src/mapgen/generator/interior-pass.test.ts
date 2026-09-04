@@ -18,7 +18,7 @@ import type { MapGenParams, MapRecipe } from "../model/map-recipe";
 import type { TacticalMap } from "../model/tactical-map";
 import type { MapGenRegistries } from "../model/registries";
 import { createDefaultRegistries } from "../service/default-registries";
-import { createRegistry } from "../service/definition-registry";
+import { createRegistry } from "../../core/service/definition-registry";
 import { freezeDraft } from "../service/draft-freezer";
 import type { InvariantId, Violation } from "../service/map-validator";
 import { validateTacticalMap } from "../service/map-validator";

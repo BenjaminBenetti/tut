@@ -1,3 +1,5 @@
+import type { Registry } from "../../core/model/registry";
+import { createRegistry } from "../../core/service/definition-registry";
 import type {
   DeployableType,
   DeployableTypeId,
@@ -18,8 +20,7 @@ export class DataDeployableTypeCatalogue implements DeployableTypeCatalogue {
   // Fields
   // ===========================================
 
-  private readonly byId: ReadonlyMap<DeployableTypeId, DeployableType>;
-  private readonly ordered: readonly DeployableType[];
+  private readonly types: Registry<DeployableType>;
 
   // ===========================================
   // Construction
@@ -27,15 +28,7 @@ export class DataDeployableTypeCatalogue implements DeployableTypeCatalogue {
 
   /** Indexes the given types; throws if two share an id. */
   constructor(types: readonly DeployableType[]) {
-    const byId = new Map<DeployableTypeId, DeployableType>();
-    for (const type of types) {
-      if (byId.has(type.id)) {
-        throw new Error(`Duplicate deployable type id "${type.id}"`);
-      }
-      byId.set(type.id, type);
-    }
-    this.byId = byId;
-    this.ordered = [...types];
+    this.types = createRegistry("deployable type", types);
   }
 
   // ===========================================
@@ -44,11 +37,11 @@ export class DataDeployableTypeCatalogue implements DeployableTypeCatalogue {
 
   /** Returns the type with the given id, or `undefined` if unknown. */
   getDeployableType(id: DeployableTypeId): DeployableType | undefined {
-    return this.byId.get(id);
+    return this.types.find(id);
   }
 
   /** Returns every type in the order they were supplied. */
   listDeployableTypes(): readonly DeployableType[] {
-    return this.ordered;
+    return this.types.values;
   }
 }

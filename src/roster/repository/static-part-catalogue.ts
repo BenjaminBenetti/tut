@@ -1,3 +1,5 @@
+import type { Registry } from "../../core/model/registry";
+import { createRegistry } from "../../core/service/definition-registry";
 import type {
   MechPart,
   PartForSlot,
@@ -26,7 +28,7 @@ export class StaticPartCatalogue implements PartCatalogue {
   // Fields
   // ===========================================
 
-  private readonly byId: ReadonlyMap<PartId, MechPart>;
+  private readonly parts: Registry<MechPart>;
   private readonly bySlot: ReadonlyMap<PartSlot, readonly MechPart[]>;
 
   // ===========================================
@@ -35,13 +37,12 @@ export class StaticPartCatalogue implements PartCatalogue {
 
   /** Indexes the parts. Throws when two parts share an id, since that is a content bug. */
   constructor(parts: readonly MechPart[]) {
-    const byId = new Map<PartId, MechPart>();
+    // The registry owns the id index and the duplicate check; the slot
+    // index is this catalogue's own, since nothing generic knows that a
+    // part belongs to a slot.
+    this.parts = createRegistry("part", parts);
     const bySlot = new Map<PartSlot, MechPart[]>();
-    for (const part of parts) {
-      if (byId.has(part.id)) {
-        throw new Error(`Duplicate part id "${part.id}"`);
-      }
-      byId.set(part.id, part);
+    for (const part of this.parts.values) {
       const slotParts = bySlot.get(part.slot);
       if (slotParts === undefined) {
         bySlot.set(part.slot, [part]);
@@ -49,7 +50,6 @@ export class StaticPartCatalogue implements PartCatalogue {
         slotParts.push(part);
       }
     }
-    this.byId = byId;
     this.bySlot = bySlot;
   }
 
@@ -59,7 +59,7 @@ export class StaticPartCatalogue implements PartCatalogue {
 
   /** Looks a part up by id. */
   getPart(id: PartId): MechPart | undefined {
-    return this.byId.get(id);
+    return this.parts.find(id);
   }
 
   /** Lists the parts indexed under a slot, in the order they were given. */

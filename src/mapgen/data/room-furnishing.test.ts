@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createRegistry } from "../service/definition-registry";
+import { createRegistry } from "../../core/service/definition-registry";
 import { PROP_DEFINITIONS } from "./props";
 import { ROOM_FURNISHING } from "./room-furnishing";
 import { RoomKindIds } from "./room-kind-ids";

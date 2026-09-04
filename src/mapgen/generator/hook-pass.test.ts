@@ -20,7 +20,7 @@ import type { MapGenRegistries } from "../model/registries";
 import type { TacticalMap } from "../model/tactical-map";
 import { createDefaultRegistries } from "../service/default-registries";
 import { isBoundaryColumn } from "../service/draft-queries";
-import { createRegistry } from "../service/definition-registry";
+import { createRegistry } from "../../core/service/definition-registry";
 import { freezeDraft } from "../service/draft-freezer";
 import type { InvariantId } from "../service/map-validator";
 import { validateTacticalMap } from "../service/map-validator";

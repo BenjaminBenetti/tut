@@ -40,6 +40,7 @@ import type { SpawnTuning } from "../model/spawn-tuning";
 import type { UnitTuning } from "../model/unit-tuning";
 import type { UnitBuild, UnitPlacement } from "./unit-factory";
 import { mechUnit, squadUnit } from "./unit-factory";
+import { hatchInterval } from "./spawn-service";
 
 // ===========================================
 // Types
@@ -138,7 +139,12 @@ export function startTacticalMission<TState extends MissionCampaignState>(
   if (!placed.ok) {
     return placed;
   }
-  const spawners = spawnersFrom(map, deps.ids, deps.spawnTuning);
+  const spawners = spawnersFrom(
+    map,
+    deps.ids,
+    deps.spawnTuning,
+    mission.difficulty,
+  );
   const objectives = spawners.map((spawner): Objective => ({
     id: deps.ids.nextId(OBJECTIVE_ID_PREFIX),
     kind: "destroy-spawner",
@@ -307,6 +313,7 @@ function spawnersFrom(
   map: TacticalMap,
   ids: IdGenerator,
   tuning: SpawnTuning,
+  difficulty: number,
 ): Spawner[] {
   return map.hooks.objectives
     .filter((hook) => hook.kind === HookKinds.EGG_SPAWNER)
@@ -315,7 +322,7 @@ function spawnersFrom(
       pos: coordOf(firstTile(hook)),
       hatchRadius: hatchRadiusOf(hook),
       hp: tuning.spawnerHp,
-      timer: tuning.hatchInterval,
+      timer: hatchInterval(difficulty, tuning),
       destroyed: false,
     }));
 }

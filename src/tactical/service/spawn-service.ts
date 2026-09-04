@@ -124,7 +124,10 @@ export function hatch(
         },
       });
     }
-    spawners.push({ ...spawner, timer: deps.tuning.hatchInterval });
+    spawners.push({
+      ...spawner,
+      timer: hatchInterval(mission.difficulty, deps.tuning),
+    });
   }
   return { state: { ...state, spawners }, events };
 }
@@ -206,6 +209,25 @@ export function edgeWave(
         ]
       : [];
   return { state: { ...placed.state, edgeSpawn }, events };
+}
+
+/**
+ * Bug phases between one spawner's hatches at this difficulty: the base
+ * interval less a cut per difficulty step above one, floored, never
+ * below `minHatchInterval`.
+ *
+ * Unlike the wave knobs this one is not scaled by threat. Threat is a
+ * campaign-wide pressure and already reaches the mission through the
+ * edge waves; the spawners in front of the player belong to the mission
+ * they chose.
+ */
+export function hatchInterval(difficulty: number, tuning: SpawnTuning): number {
+  return Math.max(
+    tuning.minHatchInterval,
+    Math.floor(
+      tuning.hatchInterval - steps(difficulty) * tuning.hatchCutPerDifficulty,
+    ),
+  );
 }
 
 /**

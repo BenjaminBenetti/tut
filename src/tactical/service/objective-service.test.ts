@@ -152,14 +152,36 @@ describe("createInteractHandler", () => {
     expect(applied.value.state.spawners[0]?.hp).toBe(0);
   });
 
+  it("refuses a bug in either phase: objectives are the player's (#434)", () => {
+    const mission = besideSpawner();
+    // A bug in the player's phase was already refused, but for the phase
+    // rather than for being a bug.
+    expect(refusal(handler(mission, interact("b", "objective-1"), CTX))).toBe(
+      "objective-not-yours",
+    );
+    // The one that mattered: in its own phase a bug passes the phase
+    // check, and without a team guard it plants charges on its own hive
+    // and wins the mission for the player.
+    const bugPhase = { ...mission, phase: "bugs" as const };
+    expect(refusal(handler(bugPhase, interact("b", "objective-1"), CTX))).toBe(
+      "objective-not-yours",
+    );
+  });
+
   it("refuses a unit that is missing, down, off-phase or out of actions", () => {
     const mission = besideSpawner();
     expect(
       refusal(handler(mission, interact("ghost", "objective-1"), CTX)),
     ).toBe("unit-not-on-map");
-    expect(refusal(handler(mission, interact("b", "objective-1"), CTX))).toBe(
-      "wrong-phase",
-    );
+    expect(
+      refusal(
+        handler(
+          { ...mission, phase: "bugs" as const },
+          interact("u", "objective-1"),
+          CTX,
+        ),
+      ),
+    ).toBe("wrong-phase");
     const down = besideSpawner();
     expect(
       refusal(

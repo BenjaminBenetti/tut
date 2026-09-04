@@ -2,6 +2,7 @@ import type { InstancedMesh, Object3D } from "three";
 import {
   BoxGeometry,
   Group,
+  Color,
   Matrix4,
   Mesh,
   MeshStandardMaterial,
@@ -15,9 +16,11 @@ import { SurfaceIds } from "../../mapgen/data/surfaces";
 import { HookKinds } from "../../mapgen/model/hook";
 import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
 import type { ModelAssetId } from "../../content/data/model-ids";
+import type { TacticalMap } from "../../mapgen/model/tactical-map";
+import { TileIndex } from "../../mapgen/service/tile-index";
 import { LEVEL_HEIGHT, SLAB_HEIGHT } from "../data/mapgen-preview-palette";
 import type { ModelLoader } from "../model/model-loader";
-import { TacticalMapView } from "./tactical-map-view";
+import { TacticalMapView, VISION_DIM } from "./tactical-map-view";
 
 /**
  * 4×3, two levels: grass ground, a road, a ledge at level 1 with a ramp,
@@ -374,3 +377,142 @@ function readInstance(mesh: InstancedMesh | undefined, i: number): Matrix4 {
   mesh.getMatrixAt(i, matrix);
   return matrix;
 }
+
+// ===========================================
+// Vision (#551)
+// ===========================================
+
+describe("TacticalMapView.setVision", () => {
+  /** The tile keys of the fixture map, by coordinate. */
+  function keysOf(map: TacticalMap) {
+    const index = new TileIndex(map);
+    return (coord: { x: number; y: number; z: number }) => index.keyOf(coord);
+  }
+
+  /** Scale of instance `i`, which is zero for a tile drawn as nothing. */
+  function scaleOf(mesh: InstancedMesh, i: number): number {
+    const matrix = new Matrix4();
+    mesh.getMatrixAt(i, matrix);
+    return new Vector3().setFromMatrixScale(matrix).length();
+  }
+
+  /** Colour multiplier of instance `i`; 1 in view, VISION_DIM remembered. */
+  function tintOf(mesh: InstancedMesh, i: number): number {
+    const colour = new Color();
+    mesh.getColorAt(i, colour);
+    return colour.r;
+  }
+
+  /** The instanced mesh holding the ground pillars at level 0. */
+  function ground(view: TacticalMapView): InstancedMesh {
+    const found = allInstanced(view).find((m) =>
+      m.name.startsWith("tiles-ground:"),
+    );
+    if (!found) throw new Error("no ground pillars");
+    return found;
+  }
+
+  it("draws every tile when there is no vision to respect", () => {
+    const view = new TacticalMapView(fixture().build());
+    view.setVision(undefined);
+    const mesh = ground(view);
+    for (let i = 0; i < mesh.count; i++) {
+      expect(scaleOf(mesh, i)).toBeGreaterThan(0);
+    }
+    view.dispose();
+  });
+
+  it("hides the unexplored, dims the remembered and shows what is in view", () => {
+    const map = fixture().build();
+    const key = keysOf(map);
+    const view = new TacticalMapView(map);
+    view.setVision({
+      visible: [key({ x: 0, y: 0, z: 0 })],
+      explored: [key({ x: 0, y: 0, z: 0 }), key({ x: 1, y: 0, z: 0 })],
+      spotted: [],
+    });
+
+    // Tiles are batched per surface, so find each instance by where it
+    // stands rather than by an index into one mesh.
+    const at = (x: number, z: number) => {
+      for (const mesh of allInstanced(view).filter((m) =>
+        m.name.startsWith("tiles-"),
+      )) {
+        for (let i = 0; i < mesh.count; i++) {
+          const matrix = new Matrix4();
+          mesh.getMatrixAt(i, matrix);
+          const scale = new Vector3().setFromMatrixScale(matrix).length();
+          const at3 = new Vector3().setFromMatrixPosition(matrix);
+          // A collapsed instance keeps its translation, so match on that.
+          if (
+            Math.abs(at3.x - (x + 0.5)) < 0.01 &&
+            Math.abs(at3.z - (z + 0.5)) < 0.01
+          ) {
+            return { scale, tint: tintOf(mesh, i) };
+          }
+        }
+      }
+      return undefined;
+    };
+
+    expect(at(0, 0)?.scale).toBeGreaterThan(0);
+    expect(at(0, 0)?.tint).toBeCloseTo(1);
+    expect(at(1, 0)?.scale).toBeGreaterThan(0);
+    expect(at(1, 0)?.tint).toBeCloseTo(VISION_DIM);
+    view.dispose();
+  });
+
+  it("collapses every tile the side has never seen", () => {
+    const map = fixture().build();
+    const view = new TacticalMapView(map);
+    view.setVision({ visible: [], explored: [], spotted: [] });
+    for (const mesh of allInstanced(view).filter((m) =>
+      m.name.startsWith("tiles-"),
+    )) {
+      for (let i = 0; i < mesh.count; i++) {
+        expect(scaleOf(mesh, i), `${mesh.name}#${String(i)}`).toBe(0);
+      }
+    }
+    view.dispose();
+  });
+
+  it("takes a hidden tile out of picking, not just out of the picture", () => {
+    const map = fixture().build();
+    const view = new TacticalMapView(map);
+    const camera = new OrthographicCamera(0, 4, 0, -3, 0.1, 100);
+    camera.position.set(0, 20, 0);
+    camera.up.set(0, 0, -1);
+    camera.lookAt(new Vector3(0, 0, 0));
+    camera.updateProjectionMatrix();
+    camera.updateMatrixWorld(true);
+    const ndcAt = (x: number, z: number) => {
+      const v = new Vector3(x, 0, z).project(camera);
+      return { x: v.x, y: v.y };
+    };
+    // Visible before vision is applied...
+    expect(view.pickTile(ndcAt(1.5, 0.5), camera)).toEqual({
+      x: 1,
+      y: 0,
+      z: 0,
+    });
+    // ...and gone once it is unexplored.
+    view.setVision({ visible: [], explored: [], spotted: [] });
+    expect(view.pickTile(ndcAt(1.5, 0.5), camera)).toBeUndefined();
+    view.dispose();
+  });
+
+  it("applies to models loaded after the vision was set", async () => {
+    const map = fixture().build();
+    const view = new TacticalMapView(map);
+    view.setVision({ visible: [], explored: [], spotted: [] });
+    await view.loadModels(new FakeModelLoader());
+    for (const mesh of allInstanced(view).filter((m) =>
+      m.name.includes("-model:"),
+    )) {
+      for (let i = 0; i < mesh.count; i++) {
+        expect(scaleOf(mesh, i), mesh.name).toBe(0);
+      }
+    }
+    view.dispose();
+  });
+});

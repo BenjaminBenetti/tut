@@ -6,6 +6,7 @@ import { stepGridPos } from "../../core/service/grid-math";
 import { SurfaceIds } from "../../mapgen/data/surfaces";
 import type { Rotation } from "../../mapgen/model/prop";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
+import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { Tile } from "../../mapgen/model/tile";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import {
@@ -34,6 +35,12 @@ export interface ModelPlacement {
   readonly position: Vec3;
   /** Quarter turns clockwise seen from above, matching `Prop.rotation`. */
   readonly turns: Rotation;
+  /**
+   * The tile this belongs to. Carried so the renderer can dim or drop it
+   * with that tile's vision (#551) — a wall is only ever as visible as
+   * the tile it stands on.
+   */
+  readonly tile: TileCoord;
 }
 
 /** Everything on a map that resolves to a model, split by what it replaces. */
@@ -137,6 +144,7 @@ function resolveTiles(
       level: tile.y,
       position: { x: tile.x + 0.5, y: tileTop(tile.y) - drop, z: tile.z + 0.5 },
       turns: fitted.turns,
+      tile: { x: tile.x, y: tile.y, z: tile.z },
     });
   }
   return placements;
@@ -248,6 +256,7 @@ function resolveWalls(
         // A wall is authored along +X, so north and south edges are
         // unturned and east and west edges take a quarter turn.
         turns: side === "n" || side === "s" ? 0 : 1,
+        tile: { x: tile.x, y: tile.y, z: tile.z },
       });
     }
   }
@@ -296,6 +305,7 @@ function resolveProps(
       level: tile.y,
       position: { x: tile.x + 0.5, y: tileTop(tile.y), z: tile.z + 0.5 },
       turns: prop.rotation,
+      tile: { x: tile.x, y: tile.y, z: tile.z },
     });
   }
   return placements;

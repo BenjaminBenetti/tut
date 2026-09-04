@@ -1,3 +1,4 @@
+import type { Page } from "@playwright/test";
 import { expect, test } from "@playwright/test";
 
 import type { TacticalTestHooks } from "../src/ui/model/tactical-intent";
@@ -57,16 +58,19 @@ test("egg spawners are drawn on the tactical map and can be targeted by clicking
   await expect(body).toHaveAttribute("data-screen", "tactical");
   await expect(page.locator("#tactical-viewport canvas")).toBeVisible();
 
-  // Every standing spawner is drawn, and there is at least one to destroy.
-  await expect(body).toHaveAttribute("data-tactical-spawners", /^[1-9]\d*$/);
-  const drawn = Number(await body.getAttribute("data-tactical-spawners"));
+  // Since #551 the scene draws the player's view, so a spawner nobody has
+  // scouted is not on the map at all. That is the point: the objective
+  // tracker names it, the map does not give away where it is.
   const objectives = page.locator('[data-role="objective-list"] li');
-  expect(drawn).toBe(await objectives.count());
+  expect(await objectives.count()).toBeGreaterThan(0);
+  await expect(body).toHaveAttribute("data-tactical-spawners", "0");
 
-  // The objective tracker names the spawner each objective tracks; that
-  // is the thing on the map the player has to bring down.
-  const spawnerId = await objectives.first().getAttribute("data-target-id");
-  expect(spawnerId).toBeTruthy();
+  // Scout until one is found: walk the squad at the nearest spawner a
+  // few tiles a turn. This is the spotting step ADR 0006 §3 asks every
+  // spec that used to look straight at the map to gain.
+  const spawnerId = await scoutToASpawner(page);
+  expect(spawnerId, "no spawner found while scouting").toBeTruthy();
+  await expect(body).not.toHaveAttribute("data-tactical-spawners", "0");
 
   // It has a place on screen, which is what makes it clickable at all.
   const at = await page.evaluate(
@@ -93,3 +97,76 @@ test("egg spawners are drawn on the tactical map and can be targeted by clicking
 
   expect(errors).toEqual([]);
 });
+
+// ===========================================
+// Scouting (#551)
+// ===========================================
+
+/** The mission as the autosave holds it. */
+interface SavedMission {
+  units: {
+    id: string;
+    team: string;
+    pos: { x: number; y: number; z: number };
+  }[];
+  spawners: { id: string; pos: { x: number; y: number; z: number } }[];
+}
+
+/** Reads the live mission out of the autosave. */
+async function savedMission(page: Page): Promise<SavedMission | null> {
+  return page.evaluate(() => {
+    const raw = localStorage.getItem("tut:save:autosave");
+    if (raw === null) return null;
+    const envelope = JSON.parse(raw) as {
+      state: { activeMission?: SavedMission };
+    };
+    return envelope.state.activeMission ?? null;
+  });
+}
+
+/**
+ * Walks the squad toward the nearest spawner, a few tiles a turn, until
+ * one is drawn. Returns the id of a spawner the objectives track, or
+ * undefined if none turned up inside the turn budget.
+ *
+ * Movement goes through the right button (#520) via `invokeTile`, and
+ * each step aims at a tile a short way along the straight line, because
+ * a move out of range is refused rather than truncated.
+ */
+async function scoutToASpawner(page: Page): Promise<string | undefined> {
+  const body = page.locator("body");
+  for (let turn = 0; turn < 12; turn++) {
+    const mission = await savedMission(page);
+    const spawner = mission?.spawners[0];
+    const unit = mission?.units.find((u) => u.team === "tdf");
+    if (!mission || !spawner || !unit) return undefined;
+
+    const dx = spawner.pos.x - unit.pos.x;
+    const dz = spawner.pos.z - unit.pos.z;
+    const distance = Math.abs(dx) + Math.abs(dz);
+    const stride = Math.min(3, distance);
+    const step = {
+      x: unit.pos.x + Math.round((dx / (distance || 1)) * stride),
+      y: unit.pos.y,
+      z: unit.pos.z + Math.round((dz / (distance || 1)) * stride),
+    };
+    await page.evaluate(
+      (args: { id: string; tile: { x: number; y: number; z: number } }) => {
+        (globalThis as HookGlobal).__tutTactical__?.selectUnit(args.id);
+        (globalThis as HookGlobal).__tutTactical__?.invokeTile(args.tile);
+      },
+      { id: unit.id, tile: step },
+    );
+
+    const drawn = await body.getAttribute("data-tactical-spawners");
+    if (drawn !== null && drawn !== "0") {
+      const objectives = page.locator('[data-role="objective-list"] li');
+      return (
+        (await objectives.first().getAttribute("data-target-id")) ?? undefined
+      );
+    }
+    await page.locator('#action-bar [data-action="end-turn"]').click();
+    await expect(body).toHaveAttribute("data-screen", "tactical");
+  }
+  return undefined;
+}

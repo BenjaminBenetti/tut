@@ -195,6 +195,14 @@ test("plays the overworld loop end to end without console errors", async ({
   await expect(
     page.locator('#stat-sheet [data-field="verdict"]'),
   ).toHaveAttribute("data-tone", "ok");
+  // The mech being built is on the screen (#694). Only the composition
+  // root wires the preview host, so nothing but an end-to-end check
+  // notices if that wiring is dropped -- the panel would keep rendering
+  // its "no preview" note and every unit test would stay green.
+  await expect(page.locator("#mech-preview canvas")).toBeVisible();
+  await expect(
+    page.locator('#mech-preview [data-role="preview-empty"]'),
+  ).toBeHidden();
   await page.locator('[data-field="loadout-name"]').fill("Loop");
   await page.locator('[data-action="save-loadout"]').click();
   await expect(

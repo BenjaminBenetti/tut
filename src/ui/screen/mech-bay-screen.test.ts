@@ -29,6 +29,8 @@ import { StaticPartCatalogue } from "../../roster/repository/static-part-catalog
 import type { GameState } from "../../save/model/game-state";
 import { createNewGame } from "../../save/service/new-game-service";
 import type { CampaignStore, GameSession } from "../model/game-session";
+import type { MechPreviewHost } from "../model/mech-preview-host";
+import type { MechLoadout } from "../../roster/model/mech-loadout";
 import type { ScreenId } from "../model/screen";
 import type { ScreenRouter, ScreenRouterEvents } from "../model/screen-router";
 import type { StoreListener } from "../model/state-store";
@@ -133,6 +135,23 @@ class RealStore implements CampaignStore {
   }
 }
 
+/** Records what the screen asks of a preview host, drawing nothing. */
+class FakePreviewHost implements MechPreviewHost {
+  readonly attached: HTMLElement[] = [];
+  readonly shown: MechLoadout[] = [];
+  releases = 0;
+  attach(container: HTMLElement): void {
+    this.attached.push(container);
+  }
+  show(loadout: MechLoadout): Promise<void> {
+    this.shown.push(loadout);
+    return Promise.resolve();
+  }
+  release(): void {
+    this.releases += 1;
+  }
+}
+
 const sessionWith = (store: CampaignStore | undefined): GameSession => ({
   store,
   get state() {
@@ -148,6 +167,7 @@ function mountWith(
   state: GameState | undefined,
   root: HTMLElement,
   live = false,
+  preview?: MechPreviewHost,
 ): {
   store: CampaignStore | undefined;
   navigate: NavigateMock;
@@ -170,6 +190,7 @@ function mountWith(
     parts: PARTS,
     rating: MECH_RATING_TUNING,
     upgrades: UPGRADE_TUNING,
+    preview,
   });
   screen.mount(root);
   return { store, navigate, screen };
@@ -451,5 +472,69 @@ describe("MechBayScreen", () => {
     button("save-loadout").click();
     expect(status().hidden).toBe(false);
     expect(status().textContent).toContain("not a valid name");
+  });
+
+  // ===========================================
+  // Assembly preview (#694)
+  // ===========================================
+
+  describe("assembly preview", () => {
+    const viewport = (): HTMLElement =>
+      q('#mech-preview [data-role="preview-viewport"]');
+    const emptyNote = (): HTMLElement =>
+      q('#mech-preview [data-role="preview-empty"]');
+
+    it("mounts the panel with no host, and says so", () => {
+      // The bay works without a preview host: the jsdom specs and any
+      // headless caller get the panel and its note, not a broken screen.
+      mountWith(newGame(), root);
+      expect(viewport()).toBeTruthy();
+      expect(emptyNote().hidden).toBe(false);
+    });
+
+    it("hands the viewport to a host and hides the note", () => {
+      const preview = new FakePreviewHost();
+      mountWith(newGame(), root, false, preview);
+      expect(preview.attached).toEqual([viewport()]);
+      expect(emptyNote().hidden).toBe(true);
+    });
+
+    it("shows the seeded draft on mount", () => {
+      const preview = new FakePreviewHost();
+      const state = newGame();
+      mountWith(state, root, false, preview);
+      expect(preview.shown).toHaveLength(1);
+      expect(preview.shown[0]?.chassisId).toBe(
+        state.roster.savedLoadouts[0]?.chassisId,
+      );
+    });
+
+    it("redraws on every picker change", () => {
+      // The point of the panel: the mech follows the part being chosen.
+      const preview = new FakePreviewHost();
+      mountWith(newGame(), root, false, preview);
+      const before = preview.shown.length;
+      choose("legs", "legs-jumper");
+      expect(preview.shown).toHaveLength(before + 1);
+      expect(preview.shown.at(-1)?.legsId).toBe("legs-jumper");
+    });
+
+    it("still draws a draft the validator rejects", () => {
+      // An over-weight mech is still the mech the player is looking at,
+      // and the frame it goes invalid is the one they need to see it on.
+      const preview = new FakePreviewHost();
+      mountWith(newGame(), root, false, preview);
+      choose("arm-weapon", "arm-weapon-railgun");
+      expect(errorCodes()).toEqual(["overweight"]);
+      expect(preview.shown.at(-1)?.armWeaponId).toBe("arm-weapon-railgun");
+    });
+
+    it("releases the host on unmount", () => {
+      const preview = new FakePreviewHost();
+      const { screen } = mountWith(newGame(), root, false, preview);
+      screen.unmount();
+      expect(preview.releases).toBe(1);
+      expect(root.querySelector("#mech-preview")).toBeNull();
+    });
   });
 });

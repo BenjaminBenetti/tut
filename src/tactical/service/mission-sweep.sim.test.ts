@@ -180,6 +180,8 @@ function startedMission(
 /** What one seeded mission came to. */
 interface SweepRun {
   readonly seed: string;
+  /** The difficulty this seed was played at, 1-10. */
+  readonly difficulty: number;
   /** Milliseconds spent generating the map and placing the force. */
   readonly startMs: number;
   /** Milliseconds spent driving the mission through the rules. */
@@ -272,6 +274,7 @@ function play(mapSeed: string, difficulty: number, maxTurns: number): SweepRun {
     seed: mapSeed,
     startMs,
     driveMs: performance.now() - droveAt,
+    difficulty,
     outcome: mission.outcome ?? "unresolved",
     turns,
     violations,
@@ -324,6 +327,13 @@ const BUDGET_MS = 300_000;
  * regression in how often a mission concludes fails it.
  */
 const RESOLVED_FLOOR = 35;
+
+/**
+ * The highest difficulty every seed currently wins at. Difficulties 1
+ * through 4 are walkovers — 24 of 24 — and 5 upwards is a coin flip
+ * between a win and a mission that never ends (#666, #497).
+ */
+const WALKOVER_CEILING = 4;
 
 describe("seeded tactical sweep", () => {
   // Played in `beforeAll`, not in the describe body: work there runs at
@@ -414,5 +424,39 @@ describe("seeded tactical sweep", () => {
       "lost 0",
       "see #666",
     ]);
+  });
+
+  it("has no difficulty gradient below 5, which is what #497 has to fix", () => {
+    // The aggregate `won 42, unresolved 18` says the curve is broken.
+    // Only the breakdown says how, and it is worse than "hard missions
+    // stall" — measured on `67f2fcd`:
+    //
+    //   d1  6/6 won    d6  2/6 won, 4 stalled
+    //   d2  6/6 won    d7  3/6 won, 3 stalled
+    //   d3  6/6 won    d8  4/6 won, 2 stalled
+    //   d4  6/6 won    d9  3/6 won, 3 stalled
+    //   d5  3/6 won    d10 3/6 won, 3 stalled
+    //
+    // Difficulty has **two states, not ten**. Below 5 every seed is a
+    // walkover; at 5 and above it is a coin flip between a win and a
+    // mission that never ends, and the stall rate does not climb with
+    // difficulty — d10 is no harder than d5. Nothing between 1 and 4
+    // differs from anything else between 1 and 4.
+    //
+    // Pinned rather than left in a document nobody rereads: a tuning
+    // pass that gives the bottom of the range any teeth turns this red,
+    // which is the point at which someone should update it deliberately.
+    // See `docs/design/tactical-tuning.md`.
+    const table = [...new Set(runs.map((run) => run.difficulty))]
+      .sort((a, b) => a - b)
+      .map((difficulty) => {
+        const at = runs.filter((run) => run.difficulty === difficulty);
+        const won = at.filter((run) => run.outcome === "won").length;
+        return `d${String(difficulty)} ${String(won)}/${String(at.length)}`;
+      })
+      .join(", ");
+    const easy = runs.filter((run) => run.difficulty <= WALKOVER_CEILING);
+    const lostOrStalled = easy.filter((run) => run.outcome !== "won");
+    expect([table, lostOrStalled.length]).toEqual([table, 0]);
   });
 });

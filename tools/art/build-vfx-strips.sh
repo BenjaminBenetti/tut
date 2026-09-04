@@ -10,6 +10,11 @@
 #   muzzle-flash: grow 55% → peak 100% → tongue 100%×125% wide → fade 80% @ 45%
 #   impact:       spark 50% → full 100% → fragments 125% @ 70% → fade 140% @ 35%
 #   egg-burst:    40% → 70% → 100% → 115% @ 85% → 125% @ 55% → 135% @ 25%
+#   claw-slash:   the arc sweeps: 62% @ -14° → 88% @ 0° → 100% @ +8° @ 70% → 110% @ +14° @ 30%
+#   bug-death:    45% → 75% → 100% → 112% @ 85% → 122% @ 55% → 132% @ 25%
+#
+# The tracer has no sheet: it is one streak the renderer stretches along the
+# shot axis and fades, so frames would fight the stretch.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 SRC=public/assets/sprites/vfx
@@ -22,6 +27,15 @@ frame() {
   local px=$(( FRAME * scale / 100 ))
   local wx=$(( px * xs / 100 ))
   magick "$in" -resize "${wx}x${px}!" -background none -gravity center -extent "${FRAME}x${FRAME}" \
+    -channel A -evaluate Multiply "$(awk "BEGIN{print $alpha/100}")" +channel "$out"
+}
+
+# rframe <in> <out> <scale%> <alpha%> <rotate-deg> — a frame that also swings.
+rframe() {
+  local in="$1" out="$2" scale="$3" alpha="$4" deg="$5"
+  local px=$(( FRAME * scale / 100 ))
+  magick "$in" -resize "${px}x${px}!" -background none -virtual-pixel none \
+    -distort SRT "$deg" -background none -gravity center -extent "${FRAME}x${FRAME}" \
     -channel A -evaluate Multiply "$(awk "BEGIN{print $alpha/100}")" +channel "$out"
 }
 
@@ -51,4 +65,18 @@ frame $SRC/egg-burst.png "$TMP/e3.png" 115 85
 frame $SRC/egg-burst.png "$TMP/e4.png" 125 55
 frame $SRC/egg-burst.png "$TMP/e5.png" 135 25
 sheet egg-burst 3x2 "$TMP/e0.png" "$TMP/e1.png" "$TMP/e2.png" "$TMP/e3.png" "$TMP/e4.png" "$TMP/e5.png"
+
+rframe $SRC/claw-slash.png "$TMP/c0.png" 62 90 -14
+rframe $SRC/claw-slash.png "$TMP/c1.png" 88 100 0
+rframe $SRC/claw-slash.png "$TMP/c2.png" 100 70 8
+rframe $SRC/claw-slash.png "$TMP/c3.png" 110 30 14
+sheet claw-slash 2x2 "$TMP/c0.png" "$TMP/c1.png" "$TMP/c2.png" "$TMP/c3.png"
+
+frame $SRC/bug-death.png "$TMP/d0.png" 45 100
+frame $SRC/bug-death.png "$TMP/d1.png" 75 100
+frame $SRC/bug-death.png "$TMP/d2.png" 100 100
+frame $SRC/bug-death.png "$TMP/d3.png" 112 85
+frame $SRC/bug-death.png "$TMP/d4.png" 122 55
+frame $SRC/bug-death.png "$TMP/d5.png" 132 25
+sheet bug-death 3x2 "$TMP/d0.png" "$TMP/d1.png" "$TMP/d2.png" "$TMP/d3.png" "$TMP/d4.png" "$TMP/d5.png"
 rm -rf "$TMP"

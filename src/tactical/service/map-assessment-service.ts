@@ -8,7 +8,11 @@ import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { ReachabilityService } from "../../mapgen/service/reachability-service";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import { UNIT_TUNING } from "../data/unit-tuning";
-import type { DistanceRange, MapAssessment } from "../model/map-assessment";
+import type {
+  DistanceRange,
+  MapAssessment,
+  ObjectiveApproach,
+} from "../model/map-assessment";
 import { coverAgainst, hasLineOfSight } from "./sight-service";
 
 // ===========================================
@@ -93,6 +97,90 @@ export function assessMap(
     infantryLevelSpan: levelSpan(map, index, infantry),
     mechLevelSpan: levelSpan(map, index, mech),
   };
+}
+
+// ===========================================
+// Objective approach
+// ===========================================
+
+/**
+ * Per objective, how each class gets at it (#345): the walk onto the
+ * tile, and the shorter walk to somewhere it can be shot from.
+ *
+ * Written for the invariant that a mission is winnable at all. A mech
+ * has no route onto an objective that sits indoors, so `mechSteps` is
+ * routinely `-1` and that is by design; what must hold on every shipped
+ * map is that *some* class can both reach a firing position and, for the
+ * charge route, stand on the tile. See `ObjectiveApproach`.
+ *
+ * Costs one BFS per class plus a sight trace per tile near each
+ * objective — the same order as `assessMap`, which it deliberately does
+ * not fold into, so the cheap summary stays cheap.
+ */
+export function objectiveApproach(
+  map: TacticalMap,
+): readonly ObjectiveApproach[] {
+  const index = new TileIndex(map);
+  const reach = new ReachabilityService(index, map.connectors);
+  const deploy = map.hooks.deployZones.flatMap((zone) => zone.tiles);
+  const infantry = walkFrom(index, reach, deploy, PassMask.INFANTRY);
+  const mech = walkFrom(index, reach, deploy, PassMask.MECH);
+  return map.hooks.objectives.map((hook, objective) => {
+    const origin = hook.tiles[0];
+    return {
+      objective,
+      infantrySteps: nearestStep(index, infantry, hook.tiles),
+      mechSteps: nearestStep(index, mech, hook.tiles),
+      infantryFiringSteps:
+        origin === undefined
+          ? -1
+          : stepsToFiringPosition(
+              map,
+              index,
+              infantry,
+              origin,
+              UNIT_TUNING.infantry.weapon.range,
+            ),
+      mechFiringSteps:
+        origin === undefined
+          ? -1
+          : stepsToFiringPosition(
+              map,
+              index,
+              mech,
+              origin,
+              UNIT_TUNING.mech.weapon.range,
+            ),
+    };
+  });
+}
+
+/**
+ * Fewest steps to a tile the class can stand on, from which `origin` is
+ * inside `range` and in sight. `-1` when it can never be shot at.
+ */
+function stepsToFiringPosition(
+  map: TacticalMap,
+  index: TileIndex,
+  steps: ReadonlyMap<number, number>,
+  origin: TileCoord,
+  range: number,
+): number {
+  let best = -1;
+  for (const tile of tilesWithin(index, origin, range)) {
+    const at = steps.get(index.keyOf(tile));
+    if (at === undefined || (best >= 0 && at >= best)) {
+      continue;
+    }
+    if (manhattanDistance(tile, origin) > range) {
+      continue;
+    }
+    if (!hasLineOfSight(map, tile, origin, index)) {
+      continue;
+    }
+    best = at;
+  }
+  return best;
 }
 
 // ===========================================

@@ -56,3 +56,44 @@ export interface DistanceRange {
   readonly nearest: number;
   readonly farthest: number;
 }
+
+// ===========================================
+// Objective approach
+// ===========================================
+
+/**
+ * How one objective can be got at by each class (#345). Where
+ * `MapAssessment.approachSteps` answers "how far is the walk", this
+ * answers the question a player actually faces: *can I bring this thing
+ * down, and how many turns before I can start*.
+ *
+ * The distinction that matters is between standing on the objective and
+ * shooting it. An egg spawner usually sits inside a building, so a mech
+ * — which cannot enter interiors (ADR 0004 §5) — has no route to the
+ * tile itself and `mechSteps` is `-1`. That is not a broken map: the
+ * mech destroys it with fire from `mechFiringSteps` away, while infantry
+ * walks in and plants charges. A map is only unwinnable when *both*
+ * firing distances are `-1`.
+ *
+ * ```
+ *   deploy ──walk──► objective tile          infantrySteps / mechSteps
+ *   deploy ──walk──► a tile in weapon range  infantryFiringSteps /
+ *                    with the sight line     mechFiringSteps
+ *                    clear
+ * ```
+ *
+ * All distances are steps under the traversal contract, `-1` for no
+ * route.
+ */
+export interface ObjectiveApproach {
+  /** Index of the objective hook this describes, in `map.hooks.objectives` order. */
+  readonly objective: number;
+  /** Infantry steps from deploy onto the objective tile; charges need this. */
+  readonly infantrySteps: number;
+  /** Mech steps onto the objective tile. `-1` whenever it sits indoors, which is usual. */
+  readonly mechSteps: number;
+  /** Infantry steps to the nearest tile it can shoot the objective from. */
+  readonly infantryFiringSteps: number;
+  /** Mech steps to the nearest tile it can shoot the objective from. */
+  readonly mechFiringSteps: number;
+}

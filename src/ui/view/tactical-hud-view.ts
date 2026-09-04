@@ -15,11 +15,15 @@ import type { TacticalError } from "../../tactical/model/tactical-error";
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { Team, Unit, UnitId } from "../../tactical/model/unit";
+import type { WeaponId } from "../../tactical/model/unit-weapon";
 import {
   enemyAttackTargets,
   findAttackTarget,
 } from "../../tactical/service/attack-target-service";
-import { previewAttack } from "../../tactical/service/combat-service";
+import {
+  previewAttack,
+  weaponOptions,
+} from "../../tactical/service/combat-service";
 import type { MoveGraph } from "../../tactical/service/movement-service";
 import {
   buildMoveGraph,
@@ -141,6 +145,11 @@ export class TacticalHudView {
   private selected: UnitId | undefined;
   private target: UnitId | undefined;
   private mode: HudMode = DEFAULT_HUD_MODE;
+  /**
+   * Which weapon Attack is armed with (#532). Undefined means the unit's
+   * first, which is what a single-weapon unit always uses.
+   */
+  private armedWeaponId: WeaponId | undefined;
   private weaponRangePinned = false;
 
   // ===========================================
@@ -159,7 +168,10 @@ export class TacticalHudView {
       },
     });
     this.actions = new ActionBarView({
-      onAction: (action) => {
+      onAction: (action, weaponId) => {
+        if (action === "attack" && weaponId !== undefined) {
+          this.armedWeaponId = weaponId;
+        }
         this.handleAction(action);
       },
     });
@@ -439,6 +451,7 @@ export class TacticalHudView {
     }
     this.selected = unitId;
     this.target = undefined;
+    this.armedWeaponId = undefined;
     this.mode = DEFAULT_HUD_MODE;
     this.refresh();
   }
@@ -523,7 +536,9 @@ export class TacticalHudView {
     if (this.selected === undefined || this.target === undefined) {
       return;
     }
-    this.handlers.onCommand(attack(this.selected, this.target));
+    this.handlers.onCommand(
+      attack(this.selected, this.target, this.armedWeaponId),
+    );
     this.target = undefined;
     this.mode = DEFAULT_HUD_MODE;
     this.refresh();
@@ -699,6 +714,16 @@ export class TacticalHudView {
       inReach?.objective.id,
     );
     this.actions.update({
+      weapons: selected
+        ? weaponOptions(mission, selected.id, this.deps.combatTuning).map(
+            (option) => ({
+              id: option.weapon.id,
+              name: option.weapon.name,
+              ready: option.ready,
+            }),
+          )
+        : [],
+      armedWeaponId: this.armedWeaponId,
       canAct: this.canAct(),
       playerPhase: mission.phase === "player",
       mode: this.mode,

@@ -210,6 +210,28 @@ export function walledField(): TacticalMap {
 }
 
 /**
+ * The field split by a two-level ridge over `x = 4`, with solid rock and
+ * no tile record beneath the crest — the terrain answer to
+ * `walledField`. Nothing sees across it at ground level, while the crest
+ * itself looks down on both sides (#593).
+ *
+ * ```
+ *   y = 2            ####          x = 4, the crest
+ *   y = 1            ????          no record: solid rock
+ *   y = 0   . . . .      . . .
+ *           0 1 2 3      5 6 7
+ * ```
+ */
+export function ridgedField(): TacticalMap {
+  const builder = openField();
+  for (let z = 0; z < 8; z++) {
+    builder.removeTile({ x: 4, y: 0, z });
+    builder.tile({ x: 4, y: 2, z }, SurfaceIds.ROCK);
+  }
+  return builder.build();
+}
+
+/**
  * The field with a two-floor building over `x ∈ {5, 6}, z ∈ {5, 6}`:
  * a west door into `(5, 5)`, stairs at `(5, 6)` rising to `(5, 1, 5)`,
  * and a stairwell hole where `(5, 1, 6)` would be.

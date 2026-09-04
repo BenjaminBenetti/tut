@@ -26,6 +26,7 @@ import {
 import {
   missionWith,
   openField,
+  ridgedField,
   unitAt,
   walledField,
 } from "./tactical-fixtures.test-helper";
@@ -41,6 +42,7 @@ function spawnerAt(id: string, pos: TileCoord): Spawner {
 
 const OPEN = openField().build();
 const WALLED = walledField();
+const RIDGED = ridgedField();
 
 /** Every fixture template sees 8 tiles. */
 const SIGHT = 8;
@@ -83,6 +85,35 @@ describe("computeVision", () => {
       unitAt("far", "infantry", at(5, 0), { team: "bugs" }),
     ]);
     expect(computeVision(mission, "tdf").spotted).toEqual(["near"]);
+  });
+
+  it("does not see across a hill, which has no tile to read (#593)", () => {
+    const mission = missionWith(RIDGED, [unitAt("u", "infantry", at(0, 0))]);
+    const index = new TileIndex(RIDGED);
+    const seen = new Set(computeVision(mission, "tdf", index).visible);
+    expect(seen.has(index.keyOf(at(3, 0)))).toBe(true);
+    // The ridge stands on x = 4 and fog now hides what is behind it.
+    expect(seen.has(index.keyOf(at(5, 0)))).toBe(false);
+  });
+
+  it("spots a bug in front of that hill and not one behind it", () => {
+    const mission = missionWith(RIDGED, [
+      unitAt("u", "infantry", at(0, 0)),
+      unitAt("near", "infantry", at(3, 0), { team: "bugs" }),
+      unitAt("far", "infantry", at(5, 0), { team: "bugs" }),
+    ]);
+    expect(computeVision(mission, "tdf").spotted).toEqual(["near"]);
+  });
+
+  it("spots both of them from the crest of that hill", () => {
+    // Taking the high ground is what un-hides the far side, which is the
+    // point of making terrain block at all.
+    const mission = missionWith(RIDGED, [
+      unitAt("u", "infantry", { x: 4, y: 2, z: 0 }),
+      unitAt("near", "infantry", at(3, 0), { team: "bugs" }),
+      unitAt("far", "infantry", at(5, 0), { team: "bugs" }),
+    ]);
+    expect(computeVision(mission, "tdf").spotted).toEqual(["near", "far"]);
   });
 
   it("sees nothing through a dead unit's eyes", () => {

@@ -25,8 +25,10 @@ Last updated: 2026-09-04 05:05 UTC (session 3, update 1). Read `docs/process/rol
 - **Session 3 (2026-09-04) — the tactical audit.** With movement, sight, hit chance, the turn engine,
   spawning and bug AI landed, I measured the maps through the services that now consume them rather
   than through mapgen's own metrics. Findings and what came of them are in §3a; open work is
-  #437 (#432 directional cover metrics), #443 (#433 edge spawn distance bands) and #444 (a design
-  call: mechs never gain elevation on city maps).
+  #437 (#432 directional cover metrics), #443 (#433 edge spawn distance bands), #456 (#448 the map
+  assessment the preview shows) and, waiting on other people, #444 (a design call: mechs never gain
+  elevation on city maps), #446 (melee bugs invert the cover rules — tactical's) and #447 (the M3
+  archetype sketch, with two questions the Director should answer before anything is built).
 - **M2 issues that consume the map** (#316–#345 filed by the Producer): I left the exact APIs as
   comments on #323 (mission start), #325 (movement), #326 (sight and cover), #329 (spawning). #337
   reuses `graphics/view/tactical-map-view.ts`; #343 (headless sim) needs nothing new.
@@ -113,6 +115,14 @@ then middle third) and takes the medians to 28 / 45 / 61.
 of tiles, worst seed 0.9 %, largest pocket 13 tiles; infantry the same. Mech reach is 68–98 % of
 infantry reach (the gap is interiors and roofs, which are infantry-only by I5). Nothing to fix.
 
+**Heavy recipes are safe.** `INFESTATION_CLEARANCE` at difficulty 10 asks for 4 egg spawners and 3
+edge spawns, which the wide sweep never exercises (it only uses `DEFAULT_MISSION_HOOKS`). Swept on
+#443's branch: 216 maps over every biome × settlement × size, 0 failures, 0 relocations, 0 repairs.
+
+**Buildings scale with the settlement.** Buildings per medium map and footprint share of the map
+area: rural 2.0 / 1.5 %, town 8.4 / 6.3 %, city 18.5 / 9.6 %; mean floors 1.53 / 1.94 / 2.58. A
+rural map is a field fight with almost no interior, which is the intended flavour.
+
 **Deploy zones seat everyone.** Every deploy zone on every size is 16 tiles, all mech- and
 infantry-passable, against I6's floor of 4 / 8. `startTacticalMission` places mechs first, so a
 16-unit deployment fits; there is no roster size that can produce `no-deploy-room`.
@@ -121,6 +131,14 @@ infantry-passable, against I6's floor of 4 / 8. `startTacticalMission` places me
 and one reachable by a mech too (indoor spawners are shot through windows — doors and solid walls
 are opaque, windows are not). Two of three spawners sit indoors by design, so a mech can shoot them
 but never reach them; that is the intended split and #426 does not change it.
+
+**Cover cannot protect the player while every bug is melee (#446).** A prop tile is impassable, so no
+bug can ever stand on the side a prop covers; the only side it can attack from is an uncovered one,
+and `flanked = cover === NONE && anyCover` means having cover anywhere is what flags the squad as
+flanked. Measured on a fixture: a squad beside one boulder is hit at 75 % by a swarmer, the same
+squad in the open at 60 %. Cover still works for the bugs, who take −20 / −40 crossing open ground.
+Filed for the tactical owner with four options; it inverts how #281 should be read, and there is a
+second comment on #281 saying so.
 
 **Elevation (#444).** Rural and town give a mech 0.09–0.37 of the reachable high ground; **cities
 give it 0.00** on all four biomes and all 24 seeds, because city plats are graded flat with no ramps
@@ -172,9 +190,11 @@ all, which reads as biome variety rather than a gap.
 4. Answer map questions as the last M2 issues land — #426 (spawners as attack targets), #341 (the
    deploy → tactical → results flow), #343 / #344 (QA's headless sim and Playwright smoke). The map
    contract should not need to move again for M2; #231's question is closed (§4).
-5. Tuning from §3 / §3a once the Executive Director calls #281; the preview shows the metrics live
-   and #437 adds the two directional shares to them.
-6. M3 archetypes: `createPipeline`'s per-archetype table in `service/settlement-pipeline.ts` takes a
+5. Tuning from §3 / §3a once the Executive Director calls #281 — read it together with #446, which
+   says more cover currently means harder missions. The preview shows the metrics live; #437 adds
+   the two directional shares and #456 the play read-outs (approach, walk-in, firing positions).
+6. M3 archetypes: the sketch is #447, including the two questions to settle first (are hive caverns
+   mech-passable, and how big is a hive). `createPipeline`'s per-archetype table in `service/settlement-pipeline.ts` takes a
    new pass list. Hive: cavern carve (cellular automaton on the dense heightmap, one level, `rock`
    walls as solid `WallSet`s), nest rooms as `Building`s with kind `nest` and a `nest` room kind in
    `data/room-furnishing`, `hive-core` hook placer; props/ramps/hooks/connectivity reuse as-is.

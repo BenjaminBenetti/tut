@@ -350,6 +350,8 @@ export class TacticalMapView implements Disposable, TilePicker {
           mesh.setMatrixAt(j, new Matrix4().multiplyMatrices(cell, part.local));
         });
         mesh.instanceMatrix.needsUpdate = true;
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
         mesh.name = `${label}-model:${key}:${String(i)}`;
         this.trackInstances(
           mesh,
@@ -640,6 +642,8 @@ export class TacticalMapView implements Disposable, TilePicker {
           ? this.ladderMesh(connector)
           : this.plankMesh(connector);
       mesh.name = connector.id;
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
       this.connectorTiles.set(mesh, this.index.keyOf(connector.to));
       this.groupFor(connector.to.y).add(mesh);
     }
@@ -746,6 +750,11 @@ export class TacticalMapView implements Disposable, TilePicker {
         mesh.setMatrixAt(i, matrix);
       });
       mesh.instanceMatrix.needsUpdate = true;
+      // Hook markers are diagnostic overlays lying on the ground: they
+      // should neither throw a shadow nor catch one (#507).
+      const solid = label !== "hooks";
+      mesh.castShadow = solid;
+      mesh.receiveShadow = solid;
       mesh.name = `${label}:${key}`;
       this.disposables.push(mesh);
       this.groupFor(batch.level).add(mesh);

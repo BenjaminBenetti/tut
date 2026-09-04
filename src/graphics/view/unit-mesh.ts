@@ -119,6 +119,12 @@ export class UnitMesh implements Disposable {
     this.object.name = `unit:${unitId}`;
     this.model = model;
     this.model.name = `unit-model:${unitId}`;
+    // A unit throws a shadow and takes one; its selection rings do not,
+    // being flat markers on the ground (#507).
+    this.model.traverse((part) => {
+      part.castShadow = true;
+      part.receiveShadow = true;
+    });
     this.hoverRing = this.createRing(
       HOVER_RING.inner,
       HOVER_RING.outer,

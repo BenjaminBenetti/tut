@@ -44,13 +44,18 @@ function inside(point: Point, box: Box): boolean {
   );
 }
 
-/** True when the point is inside the viewport and not covered by any occluder. */
+/**
+ * True when the point lands on the map canvas and nothing is drawn over
+ * it. The map cell is smaller than the window, and the scene is larger
+ * than the cell, so a city near the edge can project outside it: that
+ * marker is clipped and a click there hits the page background.
+ */
 function isClickable(
   position: Point,
-  viewport: Box,
+  mapCell: Box,
   occluders: readonly Box[],
 ): boolean {
-  if (!inside(position, viewport)) {
+  if (!inside(position, mapCell)) {
     return false;
   }
   return occluders.every((box) => !inside(position, box));
@@ -60,9 +65,9 @@ function isClickable(
  * Every city in the shipped Earth map is pickable with a real pointer
  * click at its projected marker position, and the selection is mirrored
  * to `body[data-selected-city]` and the panel's `#selected-city` label.
- * Cities hidden under the top bar or the side panel are skipped, but the
- * test insists that almost all of them were actually exercised so a
- * layout change cannot hollow it out silently.
+ * Cities whose marker is clipped by the map cell or hidden under a panel
+ * are skipped, but the test insists that almost all of them were actually
+ * exercised so a layout change cannot hollow it out silently.
  */
 test("every city marker picks itself with a pointer click", async ({
   page,
@@ -85,11 +90,10 @@ test("every city marker picks itself with a pointer click", async ({
     "overworld",
   );
 
-  const size = page.viewportSize();
-  if (!size) {
-    throw new Error("Test needs a fixed viewport");
+  const mapCell = await page.locator("#map-viewport").boundingBox();
+  if (!mapCell) {
+    throw new Error("The overworld has no #map-viewport to click in");
   }
-  const viewport: Box = { x: 0, y: 0, ...size };
   const occluders: Box[] = [];
   for (const selector of ["#top-bar", "#side-panel"]) {
     const box = await page.locator(selector).boundingBox();
@@ -102,7 +106,7 @@ test("every city marker picks itself with a pointer click", async ({
   const misses: string[] = [];
   for (const city of EARTH_MAP.cities) {
     const position = await markerPosition(page, city.id);
-    if (!position || !isClickable(position, viewport, occluders)) {
+    if (!position || !isClickable(position, mapCell, occluders)) {
       skipped.push(city.id);
       continue;
     }

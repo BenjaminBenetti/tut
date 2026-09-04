@@ -16,6 +16,7 @@ import {
   surfaceModel,
   wallModel,
 } from "../data/map-model-table";
+import { GROUND_SLAB_THICKNESS } from "../data/tactical-overlay-palette";
 import { tileTop } from "../view/tactical-map-view";
 
 // ===========================================
@@ -127,7 +128,15 @@ export function mapModelIds(
 // Tiles
 // ===========================================
 
-/** One slab per tile, sitting on the tile's top face; water is recessed. */
+/**
+ * One slab per tile, sitting on the tile's top face; water is recessed.
+ *
+ * The slab model is authored with its pivot at centre (style guide §7),
+ * so it is placed half a thickness below `tileTop` for its **top face**
+ * to land there — the same place the preview box puts its own top face.
+ * Placing the pivot at `tileTop` is what left the surface half a slab
+ * high and everything measured from it half a slab low (#557).
+ */
 function resolveTiles(
   map: TacticalMap,
   index: TileIndex,
@@ -142,7 +151,11 @@ function resolveTiles(
     placements.push({
       modelId: fitted.modelId,
       level: tile.y,
-      position: { x: tile.x + 0.5, y: tileTop(tile.y) - drop, z: tile.z + 0.5 },
+      position: {
+        x: tile.x + 0.5,
+        y: tileTop(tile.y) - GROUND_SLAB_THICKNESS / 2 - drop,
+        z: tile.z + 0.5,
+      },
       turns: fitted.turns,
       tile: { x: tile.x, y: tile.y, z: tile.z },
     });

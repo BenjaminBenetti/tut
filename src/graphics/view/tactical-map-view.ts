@@ -787,7 +787,24 @@ export class TacticalMapView implements Disposable, TilePicker {
 // Geometry helpers
 // ===========================================
 
-/** World height of a tile's top surface. Shared with the unit meshes. */
+/**
+ * The world height of a tile's **top surface** — the plane a unit stands
+ * on, a wall rises from, and an overlay is painted just above (#557).
+ *
+ * ```
+ *   ── tileTop(y) ─────────────  surface: units, walls, props, overlays
+ *      ▒▒▒▒▒▒▒▒▒▒  ground slab, pivot at its centre, so it is placed
+ *                  GROUND_SLAB_THICKNESS / 2 below this line
+ *   ── y · LEVEL_HEIGHT ───────  the level's base
+ * ```
+ *
+ * One definition, and everything measures from it: the preview box puts
+ * its top face here, `map-model-resolver` drops the slab model half a
+ * thickness so its top face lands here, `tileTopCentre` is this plus the
+ * tile's centre, and `OVERLAY_LIFT` is a nudge above it. Placing a
+ * centre-pivoted model *at* this plane is what left the visible surface
+ * half a slab high and everything on it half a slab low.
+ */
 export function tileTop(level: number): number {
   return level * LEVEL_HEIGHT + SLAB_HEIGHT;
 }

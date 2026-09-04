@@ -337,25 +337,41 @@ Orange is the player's own intent, blue is possibility, yellow and red are the w
 
 ### 12.3 VFX
 
-Sizes are in world units (1 u = 1 tile = 2 m); every billboard sits `0.6 u` above the unit's feet.
+Every effect anchors off the **unit's height**, never a fixed lift above its feet. That was the bug behind playtest 1's "no hit indication, and the damage numbers are inside the models" (#514): a flat 0.6 u lift is chest-high on an infantry figure and knee-high on a 2.79 u mech, so the flash, the spark and the number all played inside the model they belonged to.
 
-| Effect | Sprite | Blend | Size | Time |
+```
+       ── text          height + 0.25   never inside the model
+  ┌───┐
+  │ o │── muzzle        height × 0.65
+  │/|\│── impact, slash height × 0.55
+  │ | │── death burst   height × 0.50
+  └───┘── feet          0
+```
+
+| Effect | Sprite | Blend | Size (tiles) | When |
 |---|---|---|---|---|
-| Muzzle flash | `vfx.muzzle-flash` | additive | 0.8 | 0.35 s with the impact |
-| Tracer | `vfx.tracer` | additive | stretched along the shot | flight |
-| Impact | `vfx.impact` | additive | 0.7 | 0.35 s |
-| Claw slash (melee) | `vfx.claw-slash` | additive | 0.7 | 0.35 s |
-| Egg burst | `vfx.egg-burst` | normal | 0.8 | 0.42 s |
-| Bug death | `vfx.bug-death` | normal | 0.8 | over the 0.5 s fade |
-| Damage floater | canvas text, `ui-danger` `#E0453C` | normal | 0.45, rises 0.8 | 0.7 s |
-| Miss floater | canvas text, `ui-text-dim` `#8B94A6` | normal | 0.45, rises 0.8 | 0.7 s |
+| Muzzle flash | `vfx.muzzle-flash` | additive | 0.8, offset 0.35 toward the target | 0 – 0.12 s |
+| Tracer | `vfx.tracer` | additive | 0.22 thick, turned along the shot | 0.06 – 0.24 s |
+| Impact | `vfx.impact` | additive | 0.7 | on arrival, 0.15 s |
+| Claw slash | `vfx.claw-slash` | additive | 0.9, replaces the flash at range 1 | 0 – 0.2 s |
+| Damage / miss chip | canvas plate | normal | 1.3 wide | on arrival, rises 1.0 over 0.9 s |
+| Death burst | `vfx.bug-death` / `vfx.tdf-death` | normal | 1.0 | over the 0.5 s fade |
 
-**Additive is energy, normal is matter.** A muzzle flash, a tracer, a spark and a bioluminescent slash are light and must brighten whatever is behind them; chitin shards, shell fragments and ichor are objects and must stay dark over a light tile. Getting this backwards is the single most common way a VFX sprite looks wrong in the scene.
+**An attack is a sequence, not a blink.** Flash, then a tracer crossing to the target, then the impact, then the number: about 0.4 s to land. Playing them together in 0.35 s is what made the first build read as though nothing had happened.
 
-Pace (`DEFAULT_ANIMATION_TIMING`): 0.12 s per tile stepped, 0.35 s for an attack, 0.7 s for a floater, 0.5 s for a death fade. A full move-and-shoot resolves in about a second; anything slower and a bug phase with eight units becomes a cutscene.
+**Additive is energy, normal is matter.** A muzzle flash, a tracer, a spark and a bioluminescent slash are light and must brighten whatever is behind them; chitin shards, torn plate and ichor are objects and must stay dark over a light tile. Getting this backwards is the most common way a VFX sprite looks wrong in the scene.
+
+**Combat text is a chip, not tinted text.** A dark `ui-panel` plate, a `ui-line` border and a bar in `ui-danger` (damage) or `ui-text-dim` (miss), white monospace on top — the HUD's own language. Plain coloured text was unreadable over half the surfaces in the game: white on snow, red on brick. Effects draw with `depthTest` off and a high `renderOrder`, so nothing is hidden by the unit it describes.
+
+Judge any change to these with the harness rather than by playing to contact — that takes twenty turns and still misses the 0.12 s frames:
+
+```
+node tools/art/preview/shoot-vfx.mjs out.png ranged   # or melee, death
+```
+
+It runs the real animation queue against stand-in units at exactly 64 px per tile and steps it 0.06 s at a time, so the filmstrip is reproducible.
 
 ### 12.4 What still has no art
 
-- TDF deaths use the plain shrink; they have no counterpart to `vfx.bug-death` (sparks and scorched plate, no ichor).
 - No suppression, overwatch-trigger or reload effect.
 - No decals: scorch marks, blood pools and rubble are geometry-free today, so a fought-over tile looks the same as an untouched one.

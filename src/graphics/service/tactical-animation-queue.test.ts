@@ -2,6 +2,7 @@ import { Object3D, Texture } from "three";
 import { describe, expect, it } from "vitest";
 
 import type { TileCoord } from "../../mapgen/model/tile-coord";
+import { MODEL_MANIFEST } from "../data/model-manifest";
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { SpriteSource } from "../model/sprite-source";
 import { tileTopCentre } from "../view/tactical-map-view";
@@ -205,6 +206,57 @@ describe("TacticalAnimationQueue", () => {
     // The Executive Director's complaint: on a 2.8 u mech a fixed 0.6 u lift
     // put the number in the legs. It has to clear the whole model.
     expect(floater?.position.y).toBeGreaterThan(feet + height);
+  });
+
+  it("anchors text above the tallest unit model anyone can field", () => {
+    // The fixture's height is not special: nothing in the registry may poke
+    // through a damage number, so measure against the tallest of them.
+    const tallest = Math.max(
+      ...Object.values(MODEL_MANIFEST)
+        .filter(
+          (entry) => entry.category === "units" || entry.category === "bugs",
+        )
+        .map((entry) => entry.height),
+    );
+    const s = scene();
+    const heights: Record<string, number> = {
+      "unit-1": tallest,
+      "unit-2": tallest,
+    };
+    const tall: AnimationScene = { ...s, unitHeight: (id) => heights[id] };
+    const queue = new TacticalAnimationQueue({
+      scene: tall,
+      sprites,
+      timing: TIMING,
+    });
+    queue.enqueue([ATTACK]);
+    queue.update(TIMING.flashSeconds + TIMING.tracerSeconds + 0.01);
+    const feet = s.objects.get("unit-2")?.position.y ?? 0;
+    const floater = queue.root.children.find((child) =>
+      child.name.startsWith("vfx.floater"),
+    );
+    expect(floater?.position.y).toBeGreaterThan(feet + tallest);
+  });
+
+  it("shows one number at a time, so they never overlap", () => {
+    // #524 asks for overlapping numbers to stagger. They cannot overlap: the
+    // queue plays one event at a time and each attack clears its own
+    // billboards before the next starts. This test is here so that stays true.
+    const s = scene();
+    const queue = new TacticalAnimationQueue({
+      scene: s,
+      sprites,
+      timing: TIMING,
+    });
+    queue.enqueue([ATTACK, ATTACK]);
+    queue.update(TIMING.flashSeconds + TIMING.tracerSeconds + 0.01);
+    const floaters = () =>
+      queue.root.children.filter((child) =>
+        child.name.startsWith("vfx.floater"),
+      );
+    expect(floaters().length).toBe(1);
+    queue.update(5);
+    expect(floaters().length).toBe(0);
   });
 
   it("swings a claw instead of firing when the attacker is adjacent", () => {

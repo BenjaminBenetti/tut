@@ -58,7 +58,8 @@ async function advanceDay(page: Page): Promise<void> {
 }
 
 /**
- * The M1 loop in one sitting (#84): new game → advance → select a city →
+ * The M1 loop in one sitting (#84), on the auto-resolver: new game →
+ * advance → select a city →
  * build a deployable → open a mission → deploy → results → continue →
  * roster → hire → mech bay → save loadout → build mech → export/import
  * round trip. Day, credits and roster counts are checked at each step
@@ -72,8 +73,11 @@ test("plays the overworld loop end to end without console errors", async ({
   const day = page.locator('#top-bar [data-field="day"]');
   const credits = page.locator('#top-bar [data-field="credits"]');
 
-  // New game
-  await page.goto("/");
+  // New game. `?autoResolve=1` keeps this session on the M1 auto-resolver
+  // (#341): this spec is the overworld loop's regression, so Launch
+  // settles the mission on the spot rather than opening the tactical
+  // screen. `tactical-mission-flow.spec.ts` covers the played-out path.
+  await page.goto("/?autoResolve=1");
   await expect(body).toHaveAttribute("data-app-state", "ready");
   await page.locator('input[data-field="seed"]').fill(SEED);
   await page.locator('[data-action="new-game"]').click();

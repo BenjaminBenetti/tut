@@ -607,3 +607,82 @@
 .tut-hud .tut-btn.is-selected {
   box-shadow: inset 0 0 0 2px var(--ui-accent);
 }
+
+/* ===========================================
+   Phase banner (#523)
+   =========================================== */
+
+/*
+ * The transition half of the turn readout: a strip across the middle of
+ * the viewport when a phase begins. It is only in the layer that takes
+ * pointer events while it is up, so a click on the map is never eaten
+ * for longer than the banner is visible; clicking the banner skips it.
+ */
+.tut-phase-banner {
+  /*
+   * Absolutely positioned inside the `map` grid area, so it spans the
+   * viewport the player is looking at and stops short of the side
+   * column rather than drawing over the objective list.
+   */
+  grid-area: map;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 34%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-4);
+  text-align: center;
+  cursor: pointer;
+  border-block: 2px solid currentcolor;
+  background: color-mix(in srgb, var(--ui-bg) 82%, transparent);
+  animation: tut-phase-banner-in 220ms ease-out;
+}
+
+.tut-phase-banner__title {
+  font-family: var(--font-mono);
+  font-size: 30px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+
+.tut-phase-banner__detail {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  color: var(--ui-text-dim);
+}
+
+.tut-phase-banner[data-phase="player"] {
+  color: var(--ui-accent);
+}
+
+.tut-phase-banner[data-phase="bugs"] {
+  color: var(--ui-bug);
+}
+
+/*
+ * Transform only, deliberately: a keyframe that starts at `opacity: 0`
+ * leaves the banner invisible for as long as the animation takes to get
+ * its first frame, and on a busy scene that measured well past the hold
+ * itself. Animating the transform means a stalled animation degrades to
+ * "it did not slide" rather than "it was never there".
+ */
+@keyframes tut-phase-banner-in {
+  from {
+    transform: translateY(-8px) scale(0.97);
+  }
+
+  to {
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tut-phase-banner {
+    animation: none;
+  }
+}

@@ -24,7 +24,7 @@ import type { PhaseStep } from "./turn-service";
 import {
   createEndTurnHandler,
   createOverwatchReaction,
-  missionOutcome,
+  DEFAULT_PHASE_STEPS,
   overwatchReaction,
   refreshSides,
 } from "./turn-service";
@@ -137,6 +137,80 @@ describe("createEndTurnHandler", () => {
     ]);
   });
 
+  it("with a bug phase runner, plays the bugs and hands the turn back to the player in one command", () => {
+    const seen: string[] = [];
+    const moved = {
+      unitId: "b",
+      from: at(7, 7),
+      to: at(6, 6),
+      path: [at(6, 6)],
+    };
+    const runner: PhaseStep = (mission) => {
+      seen.push(`${mission.phase}:${String(mission.turn)}`);
+      return {
+        state: {
+          ...mission,
+          units: mission.units.map((u) =>
+            u.id === "b" ? { ...u, ap: 0, pos: at(6, 6) } : u,
+          ),
+        },
+        events: [{ type: UNIT_MOVED, payload: moved }],
+      };
+    };
+    const mission = missionWith(openField().build(), [
+      unitAt("u", "infantry", at(0, 0), { ap: 0 }),
+      unitAt("b", "infantry", at(7, 7), { team: "bugs", ap: 0 }),
+    ]);
+    const outcome = createEndTurnHandler(DEFAULT_PHASE_STEPS, runner)(
+      mission,
+      endTurn(),
+      ctx,
+    );
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+    expect(seen).toEqual(["bugs:1"]);
+    expect(outcome.value.events).toEqual([
+      { type: TURN_STARTED, payload: { turn: 1, phase: "bugs" } },
+      { type: UNIT_MOVED, payload: moved },
+      { type: TURN_STARTED, payload: { turn: 2, phase: "player" } },
+    ]);
+    const next = outcome.value.state;
+    expect(next.phase).toBe("player");
+    expect(next.turn).toBe(2);
+    expect(next.outcome).toBeUndefined();
+    expect(unitIn(next, "u").ap).toBe(2);
+    expect(unitIn(next, "b").ap).toBe(0);
+    expect(unitIn(next, "b").pos).toEqual(at(6, 6));
+  });
+
+  it("with a bug phase runner, ends the mission when the bugs decide it instead of opening the player's turn", () => {
+    const wipe: PhaseStep = (mission) => ({
+      state: {
+        ...mission,
+        units: mission.units.map((u) => (u.id === "u" ? { ...u, hp: 0 } : u)),
+      },
+      events: [],
+    });
+    const mission = missionWith(openField().build(), [
+      unitAt("u", "infantry", at(0, 0)),
+      unitAt("b", "infantry", at(7, 7), { team: "bugs" }),
+    ]);
+    const outcome = createEndTurnHandler(DEFAULT_PHASE_STEPS, wipe)(
+      mission,
+      endTurn(),
+      ctx,
+    );
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+    expect(outcome.value.state.outcome).toBe("lost");
+    expect(outcome.value.state.phase).toBe("bugs");
+    expect(outcome.value.state.turn).toBe(1);
+    expect(outcome.value.events).toEqual([
+      { type: TURN_STARTED, payload: { turn: 1, phase: "bugs" } },
+      { type: MISSION_ENDED, payload: { outcome: "lost", turn: 1 } },
+    ]);
+  });
+
   it("ends the mission instead of starting a phase when a terminal condition holds", () => {
     const won = missionWith(
       openField().build(),
@@ -164,70 +238,6 @@ describe("createEndTurnHandler", () => {
     ]);
     const lost = handler(wiped, endTurn(), ctx);
     expect(lost.ok && lost.value.state.outcome).toBe("lost");
-  });
-});
-
-// ===========================================
-// Terminal conditions
-// ===========================================
-
-describe("missionOutcome", () => {
-  const open = [
-    { id: "o1", kind: "destroy-spawner", targetId: "s1", complete: false },
-  ] as const;
-  const done = [
-    { id: "o1", kind: "destroy-spawner", targetId: "s1", complete: true },
-  ] as const;
-
-  it("is undefined while an objective is open and a TDF unit stands, even with no objectives at all", () => {
-    const map = openField().build();
-    expect(
-      missionOutcome(
-        missionWith(map, [unitAt("u", "infantry", at(0, 0))], {
-          objectives: open,
-        }),
-      ),
-    ).toBeUndefined();
-    expect(
-      missionOutcome(missionWith(map, [unitAt("u", "infantry", at(0, 0))])),
-    ).toBeUndefined();
-  });
-
-  it("is won when every objective is complete, whoever is left standing", () => {
-    const map = openField().build();
-    expect(
-      missionOutcome(
-        missionWith(map, [unitAt("u", "infantry", at(0, 0))], {
-          objectives: done,
-        }),
-      ),
-    ).toBe("won");
-    expect(
-      missionOutcome(
-        missionWith(map, [unitAt("u", "infantry", at(0, 0), { hp: 0 })], {
-          objectives: done,
-        }),
-      ),
-    ).toBe("won");
-  });
-
-  it("is lost on a wipe with nobody extracted and extracted once the survivors have left", () => {
-    const map = openField().build();
-    const bugsOnly = [unitAt("b", "infantry", at(7, 7), { team: "bugs" })];
-    expect(
-      missionOutcome(missionWith(map, bugsOnly, { objectives: open })),
-    ).toBe("lost");
-    expect(
-      missionOutcome(
-        missionWith(map, bugsOnly, { objectives: open, extracted: ["u"] }),
-      ),
-    ).toBe("extracted");
-    const partly = [unitAt("u", "infantry", at(0, 0)), ...bugsOnly];
-    expect(
-      missionOutcome(
-        missionWith(map, partly, { objectives: open, extracted: ["v"] }),
-      ),
-    ).toBeUndefined();
   });
 });
 

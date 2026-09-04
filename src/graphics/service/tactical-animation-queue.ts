@@ -1,4 +1,4 @@
-import type { Object3D, Texture } from "three";
+import type { Camera, Object3D, Texture } from "three";
 import {
   AdditiveBlending,
   CanvasTexture,
@@ -6,6 +6,7 @@ import {
   NormalBlending,
   Sprite,
   SpriteMaterial,
+  Vector3,
 } from "three";
 
 import type { Vec3 } from "../../core/model/grid";
@@ -26,23 +27,41 @@ import { tileTopCentre } from "../view/tactical-map-view";
 // Types
 // ===========================================
 
-/** What the queue needs from the scene: where units and tiles are. */
+/** What the queue needs from the scene: where units and tiles are, and how big. */
 export interface AnimationScene {
   /** The unit's object to move and fade, or undefined once removed. */
   unitObject(unitId: UnitId): Object3D | undefined;
   /** World centre of a tile's top, or undefined off the map. */
   tileWorldPosition(tile: TileCoord): Vec3 | undefined;
+  /**
+   * The unit's height in world units, from its registered model. Every
+   * effect anchors off this: a mech is 2.79 u and an infantry figure 0.9,
+   * so a fixed lift above the feet puts damage numbers inside the legs of
+   * anything large (#514).
+   */
+  unitHeight(unitId: UnitId): number | undefined;
+  /** The unit's model id, so a death burst can tell a machine from a bug. */
+  unitModelId(unitId: UnitId): string | undefined;
 }
 
-/** Durations in seconds; a substitute makes tests fast or the game snappier. */
+/**
+ * Durations in seconds; a substitute makes tests fast or the game snappier.
+ * An attack is a sequence rather than one blink — flash, streak, hit, number
+ * — because a single 0.35 s event with everything at once did not read as an
+ * attack at all (#514).
+ */
 export interface AnimationTiming {
   /** Per tile stepped along a move path. */
   readonly stepSeconds: number;
-  /** Muzzle flash and impact together. */
-  readonly attackSeconds: number;
+  /** Muzzle flash, or the claw slash of a melee attacker. */
+  readonly flashSeconds: number;
+  /** Tracer flight from muzzle to target. Ranged attacks only. */
+  readonly tracerSeconds: number;
+  /** Impact burst once the shot lands. */
+  readonly impactSeconds: number;
   /** Damage floater rise. */
   readonly floaterSeconds: number;
-  /** Death fade. */
+  /** Death fade, and the burst that plays over it. */
   readonly deathSeconds: number;
 }
 
@@ -50,6 +69,8 @@ export interface AnimationTiming {
 export interface TacticalAnimationQueueOptions {
   readonly scene: AnimationScene;
   readonly sprites: SpriteSource;
+  /** Used only to turn a tracer along its flight in screen space; optional. */
+  readonly camera?: Camera;
   readonly timing?: AnimationTiming;
   /** `true` finishes every animation the moment it starts; tests and "skip" use it. */
   readonly instant?: boolean;
@@ -72,24 +93,69 @@ interface Animation {
 // Constants
 // ===========================================
 
-/** Shipped pace: brisk enough to read, slow enough to follow. */
+/**
+ * Shipped pace: brisk enough to read, slow enough to follow. A whole attack
+ * lands in about 0.4 s and its number is gone by 1.3 s.
+ */
 export const DEFAULT_ANIMATION_TIMING: AnimationTiming = {
   stepSeconds: 0.12,
-  attackSeconds: 0.35,
-  floaterSeconds: 0.7,
+  flashSeconds: 0.12,
+  tracerSeconds: 0.18,
+  impactSeconds: 0.15,
+  floaterSeconds: 0.9,
   deathSeconds: 0.5,
 };
 
-/** Billboard sizes in world units. */
+/**
+ * Billboard sizes in world units (1 u = 1 tile = 64 px at the default zoom).
+ * Measured by compositing each sprite over a real mission frame, not chosen
+ * on a grey background: style guide §12.3.
+ */
 const FLASH_SIZE = 0.8;
 const IMPACT_SIZE = 0.7;
-const FLOATER_SIZE = 0.45;
+const SLASH_SIZE = 0.9;
+const DEATH_SIZE = 1;
+const TRACER_THICKNESS = 0.22;
+const FLOATER_WIDTH = 1.3;
 
-/** Where VFX sit above a unit's feet. */
-const VFX_LIFT = 0.6;
-const FLOATER_RISE = 0.8;
+/**
+ * Where an effect sits on a unit, as a fraction of that unit's height, and
+ * how far above its head the damage number floats.
+ *
+ * ```
+ *        ── text          height + 0.25   never inside the model
+ *   ┌───┐
+ *   │ o │── muzzle        height × 0.65
+ *   │/|\│── body / impact height × 0.55
+ *   │ | │
+ *   └───┘── feet          0
+ * ```
+ */
+const MUZZLE_FRACTION = 0.65;
+const BODY_FRACTION = 0.55;
+const TEXT_MARGIN = 0.25;
 
-/** Style-guide tones for floaters without a sprite: `ui-danger` damage, `ui-text-dim` miss. */
+/** How far the muzzle flash sits from the attacker's centre, toward the target. */
+const MUZZLE_OFFSET = 0.35;
+
+/** How far the damage number climbs before it fades out. */
+const FLOATER_RISE = 1;
+
+/** Height for a unit whose model is not registered; keeps effects on screen. */
+const FALLBACK_HEIGHT = 1;
+
+/**
+ * Attacks at or under this world distance are melee, so they get the claw
+ * slash instead of a muzzle flash and a tracer. Adjacent tiles are 1 u apart
+ * and diagonals 1.41, so 1.6 covers a strike from any neighbouring tile
+ * without catching a shot from two tiles away.
+ */
+const MELEE_RANGE = 1.6;
+
+/** Model ids under this prefix get the chitin death burst; everything else the machine one. */
+const BUG_MODEL_PREFIX = "bug.";
+
+/** Style-guide tones: `ui-danger` damage, `ui-text-dim` miss. */
 const DAMAGE_COLOUR = 0xe0453c;
 const MISS_COLOUR = 0x8b94a6;
 
@@ -126,6 +192,7 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
   readonly root: Group;
   private readonly scene: AnimationScene;
   private readonly sprites: SpriteSource;
+  private readonly camera: Camera | undefined;
   private readonly timing: AnimationTiming;
   private instant: boolean;
   private readonly pending: { event: TacticalEvent; onDone?: () => void }[] =
@@ -142,6 +209,7 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
   constructor(options: TacticalAnimationQueueOptions) {
     this.scene = options.scene;
     this.sprites = options.sprites;
+    this.camera = options.camera;
     this.timing = options.timing ?? DEFAULT_ANIMATION_TIMING;
     this.instant = options.instant ?? false;
     this.root = new Group();
@@ -329,7 +397,17 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
     };
   }
 
-  /** Muzzle flash at the attacker, impact burst at the target, and a floater. */
+  /**
+   * One attack, as a sequence the eye can follow: a flash at the shooter, a
+   * tracer crossing to the target, a burst where it lands and a number above
+   * the target's head. A melee attacker (adjacent) swings a claw instead of
+   * firing, and nothing is anchored to a unit's feet — see `anchor`.
+   *
+   * ```
+   *   flash ──► tracer ──────────► impact ──► number rising
+   *   0        0.06              0.24       0.39            1.29 s
+   * ```
+   */
   private attack(
     attackerId: UnitId,
     targetId: UnitId,
@@ -341,32 +419,50 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
     if (!attacker && !target) {
       return undefined;
     }
-    const flash = attacker
-      ? this.billboard(
-          "vfx.muzzle-flash",
-          attacker.position,
-          FLASH_SIZE,
-          0xffffff,
-        )
-      : undefined;
+    const muzzle = this.anchor(attackerId, MUZZLE_FRACTION);
+    const body = this.anchor(targetId, BODY_FRACTION);
+    const melee =
+      muzzle !== undefined && body !== undefined
+        ? distance(muzzle, body) <= MELEE_RANGE
+        : false;
+
+    const flash = this.openingFlash(muzzle, body, melee);
+    const tracer =
+      melee || !muzzle || !body
+        ? undefined
+        : this.billboard("vfx.tracer", muzzle, TRACER_THICKNESS, 0xffffff, {
+            width: TRACER_THICKNESS * 3,
+            rotation: this.screenAngle(muzzle, body),
+          });
     const impact =
-      target && hit
-        ? this.billboard("vfx.impact", target.position, IMPACT_SIZE, 0xffffff)
+      body && hit
+        ? this.billboard("vfx.impact", body, IMPACT_SIZE, 0xffffff)
         : undefined;
-    const floater = target
-      ? this.billboard(
-          undefined,
-          target.position,
-          FLOATER_SIZE,
-          hit ? DAMAGE_COLOUR : MISS_COLOUR,
-          hit ? `-${String(damage)}` : "miss",
-        )
+    const textAnchor = this.anchor(targetId, 1, TEXT_MARGIN);
+    const floater = textAnchor
+      ? this.billboard(undefined, textAnchor, FLOATER_WIDTH, 0xffffff, {
+          label: hit ? `-${String(damage)}` : "MISS",
+          tone: hit ? DAMAGE_COLOUR : MISS_COLOUR,
+          aspect: 0.42,
+        })
       : undefined;
-    const floaterBaseY = (target?.position.y ?? 0) + VFX_LIFT;
-    const total = this.timing.attackSeconds + this.timing.floaterSeconds;
+    if (impact) {
+      impact.visible = false;
+    }
+    if (floater) {
+      floater.visible = false;
+    }
+
+    const flashSeconds = this.timing.flashSeconds;
+    const flightSeconds = melee ? 0 : this.timing.tracerSeconds;
+    const landsAt = flashSeconds * 0.5 + flightSeconds;
+    const total =
+      landsAt + Math.max(this.timing.impactSeconds, this.timing.floaterSeconds);
+    const floaterBaseY = textAnchor?.y ?? 0;
     let elapsed = 0;
+
     const cleanup = (): void => {
-      for (const sprite of [flash, impact, floater]) {
+      for (const sprite of [flash, tracer, impact, floater]) {
         if (sprite) {
           this.removeSprite(sprite);
         }
@@ -377,19 +473,43 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
       advance: (seconds) => {
         const leftover = Math.max(0, elapsed + seconds - total);
         elapsed = Math.min(total, elapsed + seconds);
-        const attackPhase = Math.min(1, elapsed / this.timing.attackSeconds);
-        for (const sprite of [flash, impact]) {
-          if (sprite) {
-            sprite.material.opacity = 1 - attackPhase;
-            if (attackPhase >= 1) {
-              this.removeSprite(sprite);
-            }
+        if (flash) {
+          const phase = Math.min(1, elapsed / flashSeconds);
+          flash.material.opacity = 1 - phase;
+          if (phase >= 1) {
+            this.removeSprite(flash);
           }
         }
+        if (tracer && muzzle && body) {
+          const phase = Math.min(
+            1,
+            Math.max(0, (elapsed - flashSeconds * 0.5) / flightSeconds),
+          );
+          tracer.position.set(
+            muzzle.x + (body.x - muzzle.x) * phase,
+            muzzle.y + (body.y - muzzle.y) * phase,
+            muzzle.z + (body.z - muzzle.z) * phase,
+          );
+          tracer.visible = elapsed >= flashSeconds * 0.5 && phase < 1;
+        }
+        if (impact) {
+          const phase = Math.min(
+            1,
+            Math.max(0, (elapsed - landsAt) / this.timing.impactSeconds),
+          );
+          impact.visible = elapsed >= landsAt;
+          impact.material.opacity = 1 - phase;
+        }
         if (floater) {
-          const rise = Math.min(1, elapsed / total);
-          floater.position.y = floaterBaseY + FLOATER_RISE * rise;
-          floater.material.opacity = 1 - rise;
+          const phase = Math.min(
+            1,
+            Math.max(0, (elapsed - landsAt) / this.timing.floaterSeconds),
+          );
+          floater.visible = elapsed >= landsAt;
+          floater.position.y = floaterBaseY + FLOATER_RISE * phase;
+          // Hold the number solid for the first third, then fade: a number
+          // that starts fading immediately is gone before the eye finds it.
+          floater.material.opacity = Math.min(1, (1 - phase) * 1.5);
         }
         if (elapsed >= total) {
           cleanup();
@@ -401,14 +521,56 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
     };
   }
 
-  /** Shrinks the unit into the ground. The builder removes it afterwards. */
+  /** The muzzle flash of a shot, or the claw slash of a melee strike. */
+  private openingFlash(
+    muzzle: Vec3 | undefined,
+    body: Vec3 | undefined,
+    melee: boolean,
+  ): Sprite | undefined {
+    if (melee) {
+      return body
+        ? this.billboard("vfx.claw-slash", body, SLASH_SIZE, 0xffffff)
+        : undefined;
+    }
+    if (!muzzle) {
+      return undefined;
+    }
+    const at = body
+      ? {
+          x: muzzle.x + (body.x - muzzle.x) * MUZZLE_OFFSET,
+          y: muzzle.y + (body.y - muzzle.y) * MUZZLE_OFFSET,
+          z: muzzle.z + (body.z - muzzle.z) * MUZZLE_OFFSET,
+        }
+      : muzzle;
+    return this.billboard("vfx.muzzle-flash", at, FLASH_SIZE, 0xffffff);
+  }
+
+  /** Shrinks the unit into the ground under a burst. The builder removes it afterwards. */
   private fade(unitId: UnitId): Animation | undefined {
     const object = this.scene.unitObject(unitId);
     if (!object) {
       return undefined;
     }
+    const modelId = this.scene.unitModelId(unitId);
+    const burst = this.anchor(unitId, BODY_FRACTION);
+    const sprite = burst
+      ? this.billboard(
+          modelId?.startsWith(BUG_MODEL_PREFIX)
+            ? "vfx.bug-death"
+            : "vfx.tdf-death",
+          burst,
+          DEATH_SIZE,
+          0xffffff,
+        )
+      : undefined;
     const seconds = this.timing.deathSeconds;
     let elapsed = 0;
+    const cleanup = (): void => {
+      object.scale.set(0.01, 0.01, 0.01);
+      if (sprite) {
+        this.removeSprite(sprite);
+      }
+    };
     return {
       name: `fade:${unitId}`,
       advance: (delta) => {
@@ -416,12 +578,58 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
         elapsed = Math.min(seconds, elapsed + delta);
         const remaining = 1 - elapsed / seconds;
         object.scale.set(remaining, Math.max(0.01, remaining), remaining);
-        return elapsed >= seconds ? leftover : undefined;
+        if (sprite) {
+          sprite.material.opacity = remaining;
+        }
+        if (elapsed >= seconds) {
+          cleanup();
+          return leftover;
+        }
+        return undefined;
       },
-      finish: () => {
-        object.scale.set(0.01, 0.01, 0.01);
-      },
+      finish: cleanup,
     };
+  }
+
+  // ===========================================
+  // Private Methods: anchoring
+  // ===========================================
+
+  /**
+   * A point on a unit, as a fraction of its height plus an optional margin.
+   * Everything an attack draws goes through here: anchoring to the feet is
+   * what put damage numbers inside mech legs (#514).
+   */
+  private anchor(
+    unitId: UnitId,
+    fraction: number,
+    margin = 0,
+  ): Vec3 | undefined {
+    const object = this.scene.unitObject(unitId);
+    if (!object) {
+      return undefined;
+    }
+    const height = this.scene.unitHeight(unitId) ?? FALLBACK_HEIGHT;
+    return {
+      x: object.position.x,
+      y: object.position.y + height * fraction + margin,
+      z: object.position.z,
+    };
+  }
+
+  /**
+   * Screen-space angle from `from` to `to`, for turning a tracer along its
+   * flight. Without a camera (tests, headless) the tracer stays level, which
+   * is wrong but harmless.
+   */
+  private screenAngle(from: Vec3, to: Vec3): number {
+    const camera = this.camera;
+    if (!camera) {
+      return 0;
+    }
+    const a = new Vector3(from.x, from.y, from.z).project(camera);
+    const b = new Vector3(to.x, to.y, to.z).project(camera);
+    return Math.atan2(b.y - a.y, b.x - a.x);
   }
 
   // ===========================================
@@ -429,33 +637,47 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
   // ===========================================
 
   /**
-   * A sprite billboard above `at`: the manifest texture when loaded,
-   * else a flat colour; `label` becomes a canvas texture when a document
-   * exists (floaters), else the colour alone.
+   * A sprite at `at` in world space — the caller has already anchored it, so
+   * nothing here guesses a height. `label` renders the combat-text chip;
+   * `width`, `aspect` and `rotation` shape a tracer or a text plate.
    */
   private billboard(
     id: SpriteId | undefined,
-    at: { x: number; y: number; z: number },
+    at: Vec3,
     size: number,
     colour: number,
-    label?: string,
+    options: {
+      readonly label?: string;
+      readonly tone?: number;
+      readonly width?: number;
+      readonly aspect?: number;
+      readonly rotation?: number;
+    } = {},
   ): Sprite {
-    const texture = id ? this.textures.get(id) : labelTexture(label);
+    const texture = id
+      ? this.textures.get(id)
+      : chipTexture(options.label, options.tone ?? colour);
     const blend =
       id && SPRITE_MANIFEST[id].blend === "additive"
         ? AdditiveBlending
         : NormalBlending;
     const material = new SpriteMaterial({
       map: texture ?? null,
-      color: colour,
+      color: texture && options.label !== undefined ? 0xffffff : colour,
       transparent: true,
       depthWrite: false,
+      depthTest: false,
       blending: blend,
     });
+    if (options.rotation !== undefined) {
+      material.rotation = options.rotation;
+    }
     const sprite = new Sprite(material);
-    sprite.scale.set(size, size, 1);
-    sprite.position.set(at.x, at.y + VFX_LIFT, at.z);
-    sprite.name = id ?? `vfx.floater:${label ?? ""}`;
+    sprite.scale.set(options.width ?? size, size * (options.aspect ?? 1), 1);
+    sprite.position.set(at.x, at.y, at.z);
+    sprite.name = id ?? `vfx.floater:${options.label ?? ""}`;
+    // Effects belong on top of the unit they describe, never behind it.
+    sprite.renderOrder = 10;
     this.root.add(sprite);
     this.live.add(sprite);
     return sprite;
@@ -479,31 +701,58 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
 // Helpers
 // ===========================================
 
+/** Straight-line distance between two world points. */
+function distance(a: Vec3, b: Vec3): number {
+  return Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
+}
+
 /** True when two points coincide. */
 function samePoint(a: Vec3, b: Vec3): boolean {
   return a.x === b.x && a.y === b.y && a.z === b.z;
 }
 
 /**
- * Renders `label` into a small canvas texture when a document exists;
- * headless tests and node get `undefined` and a flat-colour floater.
+ * Renders combat text as a chip: a dark plate with a coloured bar, in the
+ * HUD's own language (style guide §5). Plain tinted text was unreadable over
+ * half the surfaces in the game — white on a snow tile, red on brick — which
+ * is why the plate exists rather than a colour.
+ *
+ * ```
+ *   ┌─┬──────────┐
+ *   │▌│   -12    │   bar: ui-danger for damage, ui-text-dim for a miss
+ *   └─┴──────────┘
+ * ```
+ *
+ * Headless tests and node have no document and get `undefined`, which falls
+ * back to a flat-colour sprite.
  */
-function labelTexture(label: string | undefined): Texture | undefined {
+function chipTexture(
+  label: string | undefined,
+  tone: number,
+): Texture | undefined {
   if (label === undefined || typeof document === "undefined") {
     return undefined;
   }
   const canvas = document.createElement("canvas");
-  canvas.width = 128;
-  canvas.height = 64;
+  canvas.width = 256;
+  canvas.height = 128;
   const ctx = canvas.getContext("2d");
   if (!ctx) {
     return undefined;
   }
-  ctx.font = "bold 40px system-ui, sans-serif";
+  const hex = `#${tone.toString(16).padStart(6, "0")}`;
+  ctx.fillStyle = "rgba(20, 24, 33, 0.92)";
+  ctx.fillRect(4, 16, 248, 96);
+  ctx.strokeStyle = "#2e3646";
+  ctx.lineWidth = 4;
+  ctx.strokeRect(4, 16, 248, 96);
+  ctx.fillStyle = hex;
+  ctx.fillRect(4, 16, 18, 96);
+  ctx.font = "bold 76px ui-monospace, monospace";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillStyle = "#ffffff";
-  ctx.fillText(label, 64, 32);
+  ctx.fillText(label, 140, 66);
   const texture = new CanvasTexture(canvas);
   texture.name = `vfx.floater:${label}`;
   return texture;

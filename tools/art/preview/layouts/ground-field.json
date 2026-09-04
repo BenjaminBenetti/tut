@@ -1,0 +1,424 @@
+{
+  "size": 960,
+  "px": 96,
+  "yaw": 45,
+  "cx": 3.5,
+  "cz": 3.5,
+  "cy": 0.2,
+  "placements": [
+    {
+      "model": "assets/models/tiles/ground-dirt.glb",
+      "x": 0,
+      "z": 0,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 1,
+      "z": 0,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 2,
+      "z": 0,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 3,
+      "z": 0,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-sand.glb",
+      "x": 4,
+      "z": 0,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-rock.glb",
+      "x": 5,
+      "z": 0,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-sand.glb",
+      "x": 6,
+      "z": 0,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-sand.glb",
+      "x": 7,
+      "z": 0,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 0,
+      "z": 1,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 1,
+      "z": 1,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 2,
+      "z": 1,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-dirt.glb",
+      "x": 3,
+      "z": 1,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-rock.glb",
+      "x": 4,
+      "z": 1,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-sand.glb",
+      "x": 5,
+      "z": 1,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-sand.glb",
+      "x": 6,
+      "z": 1,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-sand.glb",
+      "x": 7,
+      "z": 1,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 0,
+      "z": 2,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 1,
+      "z": 2,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-dirt.glb",
+      "x": 2,
+      "z": 2,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 3,
+      "z": 2,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-sand.glb",
+      "x": 4,
+      "z": 2,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-sand.glb",
+      "x": 5,
+      "z": 2,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-sand.glb",
+      "x": 6,
+      "z": 2,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-sand.glb",
+      "x": 7,
+      "z": 2,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 0,
+      "z": 3,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-dirt.glb",
+      "x": 1,
+      "z": 3,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 2,
+      "z": 3,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 3,
+      "z": 3,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-sand.glb",
+      "x": 4,
+      "z": 3,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-sand.glb",
+      "x": 5,
+      "z": 3,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-sand.glb",
+      "x": 6,
+      "z": 3,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-rock.glb",
+      "x": 7,
+      "z": 3,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-rock.glb",
+      "x": 0,
+      "z": 4,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-snow.glb",
+      "x": 1,
+      "z": 4,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-snow.glb",
+      "x": 2,
+      "z": 4,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-snow.glb",
+      "x": 3,
+      "z": 4,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-water.glb",
+      "x": 4,
+      "z": 4,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-water.glb",
+      "x": 5,
+      "z": 4,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-water.glb",
+      "x": 6,
+      "z": 4,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-water.glb",
+      "x": 7,
+      "z": 4,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-rock.glb",
+      "x": 0,
+      "z": 5,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-rock.glb",
+      "x": 1,
+      "z": 5,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-rock.glb",
+      "x": 2,
+      "z": 5,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-rock.glb",
+      "x": 3,
+      "z": 5,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-water.glb",
+      "x": 4,
+      "z": 5,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-water.glb",
+      "x": 5,
+      "z": 5,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-water.glb",
+      "x": 6,
+      "z": 5,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-water.glb",
+      "x": 7,
+      "z": 5,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-rock.glb",
+      "x": 0,
+      "z": 6,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-snow.glb",
+      "x": 1,
+      "z": 6,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-snow.glb",
+      "x": 2,
+      "z": 6,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-snow.glb",
+      "x": 3,
+      "z": 6,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-water.glb",
+      "x": 4,
+      "z": 6,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-water.glb",
+      "x": 5,
+      "z": 6,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-water.glb",
+      "x": 6,
+      "z": 6,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-water.glb",
+      "x": 7,
+      "z": 6,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-rock.glb",
+      "x": 0,
+      "z": 7,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-snow.glb",
+      "x": 1,
+      "z": 7,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-snow.glb",
+      "x": 2,
+      "z": 7,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-snow.glb",
+      "x": 3,
+      "z": 7,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-water.glb",
+      "x": 4,
+      "z": 7,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-water.glb",
+      "x": 5,
+      "z": 7,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-water.glb",
+      "x": 6,
+      "z": 7,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-water.glb",
+      "x": 7,
+      "z": 7,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/props/tree-pine.glb",
+      "x": 1,
+      "z": 5,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/props/boulder.glb",
+      "x": 3,
+      "z": 2,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/props/crate.glb",
+      "x": 5,
+      "z": 1,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/props/cactus.glb",
+      "x": 6,
+      "z": 2,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/props/fence.glb",
+      "x": 2,
+      "z": 3,
+      "yaw": 0
+    }
+  ]
+}

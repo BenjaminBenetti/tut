@@ -23,21 +23,21 @@
 | glow | `bug-bio-green`, `bug-bio-magenta` | near-flat with a soft radial lift (emissive does the work) |
 | residue | `bug-bio-green-dim` | mottled pools with dark spots |
 | bone | `bug-bone` | pale grain with fine cracks |
-| asphalt | `env-asphalt` | fine grain, one wandering crack, pebbles |
+| asphalt | `env-asphalt` | patch repairs, fine grain, one wandering crack, pebbles |
 | paving | `env-sidewalk` | 2×2 slabs, dark seams, per-slab tone |
-| slab | `env-concrete` | soft mottle, hairline seam, pits |
+| slab | `env-concrete` | pour mottle, damp stains, hairline seam, chipped edges, pits |
 | brick | `env-brick` | 16 px courses, half-offset bricks, light mortar |
 | pane | `env-glass` | diagonal highlight band, one mullion |
-| gravel | `env-roof` | dense mottle with specks |
+| gravel | `env-roof` | weathering patches under a dense stone scatter |
 | brushed | `env-metal` | horizontal streaks, rivet row |
 | rust | `env-rust` | blotchy stains, dark pits |
-| grass | `env-grass` | mottle with blade strokes |
-| dirt | `env-dirt` | patchy tone, pebbles |
-| sand | `env-sand` | wind ripples |
-| snow | `env-snow` | soft mottle, sparkle |
+| grass | `env-grass` | mid-scale patch tone, clumps and tufts, blade strokes, earth flecks |
+| dirt | `env-dirt` | damp and dry patches, dried cracks, pebbles |
+| sand | `env-sand` | dune shading under wind ripples, wind streaks, pebbles |
+| snow | `env-snow` | drift hollows (shadows, not highlights), wind ripples, grit |
 | rock | `env-rock` | Voronoi cracks, per-plate tone |
 | water | `env-water-shallow`, `env-water-deep` | ripple bands, caustic streaks |
-| foliage | `env-foliage` | leafy mottle, dark gaps |
+| foliage | `env-foliage` | leaf clumps, leafy mottle, dark gaps |
 
 ## Keep
 
@@ -47,3 +47,24 @@
 
 - Add a normal or roughness map when real models arrive; the base colour atlas is all the placeholders need.
 - Cloth cells could carry a subtle camouflage blotch in `tdf-olive-dark`.
+
+## Round 2: readable ground (#441)
+
+![before and after](env-atlas-round-2.png)
+
+The first pass textured everything but leant on per-pixel noise, which washes out at 64 px per tile: a snow tile was paper, grass was flat green. Round 2 repainted the eight weakest cells around one rule (style guide §7): detail at **mid scale** — noise of period 6–11 and `Cell.blob` ellipses 4–13 px across — never a tile-sized feature, because one model per tile id means a big blob repeats visibly across a field.
+
+| Cell | std before | std after |
+|---|---|---|
+| `env-snow` | 2.8 | 12.7 |
+| `env-sand` | 8.0 | 14.3 |
+| `env-grass` | 5.3 | 10.0 |
+| `env-dirt` | 6.1 | 9.0 |
+| `env-foliage` | 6.4 | 8.4 |
+| `env-concrete` | 4.0 | 7.3 |
+| `env-roof` | 4.3 | 5.5 |
+| `env-asphalt` | 2.6 | 3.0 (roads stay dark and calm on purpose) |
+
+Unchanged: `env-sidewalk` (15.6) and `env-rock` (9.9) already read, and `env-brick`, `env-glass`, `env-metal`, `env-rust`, both waters keep their look. The TDF and bug atlases are byte-identical — only env styles moved.
+
+Review harness: `node tools/art/preview/render-scene.mjs tools/art/preview/layouts/ground-field.json out.png` renders an 8×8 field of every ground surface with props for scale. `Cell.blob(cx, cy, rx, ry, k)` is the new painter helper; it wraps at the cell edges like `mul`, so blobs keep the cell tiling across box faces.

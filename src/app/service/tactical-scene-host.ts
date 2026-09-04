@@ -75,7 +75,8 @@ interface AttachedScene {
  *     ├─ input = TacticalInputController({ picker: builder, camera: rig, cameraInput, intents })
  *     ├─ overlays = TacticalOverlays()  ·  animations = TacticalAnimationQueue({ scene: builder, sprites })
  *     ├─ scene = SceneService(container, { camera: rig, content, updatables: [input, animations] })
- *     └─ builder.update(units, templates) ──► body[data-tactical-units]
+ *     └─ builder.update(units, templates)      ──► body[data-tactical-units]
+ *        builder.updateSpawners(spawners)      ──► body[data-tactical-spawners]
  *   update(mission, events) ──► animations.enqueue(events, () => builder.update(...)) (#338)
  *   select(unitId)          ──► overlays.show(overlaysFor(mission, unitId))
  * ```
@@ -130,14 +131,16 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
       models: this.models,
     });
     const overlays = new TacticalOverlays();
+    const rig = new IsometricCameraRig({ zoom: CAMERA_ZOOM.min });
     const animations = new TacticalAnimationQueue({
       scene: builder,
       sprites: this.sprites,
+      // Borrowed to turn a tracer along its flight in screen space (#514).
+      camera: rig.camera,
       instant: this.deps.instantAnimations ?? false,
     });
     const content = new Group();
     content.add(builder.root, overlays.root, animations.root);
-    const rig = new IsometricCameraRig({ zoom: CAMERA_ZOOM.min });
     rig.setBounds({ x: 0, z: 0, w: mission.map.width, d: mission.map.depth });
     rig.lookAt(builder.centre);
     const input = new TacticalInputController({
@@ -163,7 +166,9 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
       selected: undefined,
     };
     scene.start();
-    await this.placeUnits(mission);
+    // The map art and the unit models are independent fetches; running
+    // them together keeps the first frame from waiting on both in turn.
+    await Promise.all([builder.loadMapModels(), this.placeUnits(mission)]);
   }
 
   /** Plays `events`, then moves the units to match `mission` and refreshes the overlays. */
@@ -230,10 +235,19 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
     if (!attached) {
       return;
     }
-    await attached.builder.update(mission.units, mission.templates);
+    // Units and spawners load in parallel: both are just models on tiles,
+    // and a spawner is the mission's objective, so it should appear with
+    // the force rather than after it (#484).
+    await Promise.all([
+      attached.builder.update(mission.units, mission.templates),
+      attached.builder.updateSpawners(mission.spawners),
+    ]);
     if (this.attached === attached) {
       document.body.dataset.tacticalUnits = String(
         attached.builder.unitIds().length,
+      );
+      document.body.dataset.tacticalSpawners = String(
+        attached.builder.spawnerIds().length,
       );
     }
   }

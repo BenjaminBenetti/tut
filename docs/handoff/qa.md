@@ -1,24 +1,62 @@
 # Handoff: QA
 
-Last updated: 2026-09-03 (session 1, run 63, ~20:40 UTC). Read `docs/process/roles/qa.md` first.
+Last updated: 2026-09-04 (post-v0.2.0; win path settled on #317).
 
 ## Latest run
 
 | Field | Value |
 |---|---|
-| SHA tested | `b5c1196` (main, 2026-09-03 ~20:30 UTC; runs 60–63 covered #331 bug behaviour registry, **#409 charges pool behind Attack and Reload**, handoffs) |
-| Gate | typecheck, lint, build all pass |
-| `pnpm test` (vitest) | 1348 / 1348 (+1 deliberate skip) |
-| `pnpm test:e2e` on main | 39 / 39 |
-| Exploratory pass | twelve flows: 0 findings outside the tactical slice (one first-click picking flake on run 63, 37/37 on three reruns; the flow now retries the first click); the tactical flow reports only **#412** |
-| Verified fixed this run | **#404** closed: END TURN, OVERWATCH and RELOAD all have handlers; RELOAD on a full unit says "Unit is already fully loaded"; the "No handler registered" text is gone |
-| **Release gate** | Met (run 43). |
-| **Health** | **Green for M1; amber for M2** until the bugs phase has a runner (#412, p2). Every other bug filed today is closed and verified. |
+| SHA tested | `b0e2b6c` (main, after v0.2.0 was tagged at `c2cddf8`) |
+| Gate | typecheck, lint, build pass; vitest **1613 / 1613** (+1 deliberate skip); e2e **45 / 45** |
+| Exploratory | 11 flows, 0 findings; **filed #538 (p1): the tactical camera starts off the deployed force on 4 of 7 seeds and nothing pans back** |
+| **Verdict** | **The simulation is sound and a mission is winnable, but on most seeds a player cannot see or select their own units** (#538). Fix that before anyone is asked to play a mission. |
+
+### Release push, in order of what mattered
+
+1. **#439 (p0) reproduced and then verified fixed.** Markers match the texture to within a pixel, so the projection was never wrong; the artwork disagreed. 12 of 37 markers stood on ocean pixels (Auckland 46 px from land, Singapore 20, Tokyo 18, São Paulo 14, Sydney 11). There were no city labels at all — the grey bars were per-region placeholders at each region's own centre. After #449: **29 of 37 markers directly on land, the other eight 1–4 px from shore**, names drawing on selection. Bogotá and New York still read as slightly offshore because the glyph is bottom-anchored and its body extends north; their anchors are on the coast.
+2. **The tactical loop came together during the push.** #422 fixed the bugs-phase soft lock (#412); #341 (PR #453) turned Launch from auto-resolve into the real deploy → tactical → results flow and added Extract; #426 made spawners attackable.
+3. **Played the mission both ways.** Production build, no dev hooks: Launch → HUD → click-select → END TURN → bugs act → Extract → debrief → overworld. Dev build with assertions: move costs a point, 16 shots / 5 hits / 3 kills, previews "85 % hit, 30–50 damage", bug phase wiped both squads. Losing routes to a "Mission lost" debrief; before #341 a wipe dead-ended on a frozen tactical screen.
+4. **Win path proven. A mech destroys an indoor spawner; a lone squad cannot.** Two earlier readings of mine were wrong and are withdrawn: "the objective is unreachable" (it is not) and "a mech probably cannot see into an interior" (it can).
+
+   **Both zero-shot results were my driver.** First, I targeted the spawner by clicking its **tile**; the HUD resolves an attack target **by id** through `findAttackTarget`, so a tile intent never set a target and no preview ever appeared. Use `window.__tutTactical__.selectUnit("spawner-1")` while Attack is armed. Second, I walked to the **nearest reachable tile** and stopped there, which is exactly the tile MapGen measured as having line of sight only **49 %** of the time, against **99.4 %** of indoor spawners having some mech firing position (#494).
+
+   **Mech, seed `spawner-test`, spawner-1 indoors at 12,23 with 20 hp, deployed at 31,27.** Distances manhattan, the metric the game reports.
+
+   | Mech stood at | Distance | Preview |
+   |---|---|---|
+   | 31,27 | 23 | `Target is 23 tiles away; weapon reaches 10` |
+   | 17,28 | 10 | `No line of sight to "spawner-1"` |
+   | 17,18 | 10 | `No line of sight to "spawner-1"` |
+   | 17,24 | 6 | **75 % hit, 30–50 damage** |
+
+   One shot from the fourth position: **spawner 20 → 0, destroyed, objective 1/2, turn 3.** Two of three tried tiles had no sight line and the third did, which is the 49 % figure showing up in play. The mech never enters the building.
+
+   **Infantry, two seeds.** A squad does get a clean preview on an indoor spawner from outside (`51 % hit, 2–4 damage`), so sight lines are not its problem; arithmetic is.
+
+   | Seed | Reached range | Shots | Damage | Outcome |
+   |---|---|---|---|---|
+   | `s3` | turn 3, 8 tiles | 3 | 2 of 20 | squad killed turn 7, spawner at 18 hp |
+   | `s1` | turn 4, 8 tiles | 3 | 0 of 20 | squad killed turn 8, spawner untouched |
+
+   At 2–4 per hit against 20 hp a squad needs about a dozen hits, so ~25 shots at ~50 %, and a rifle squad holds **3 charges** before reloading (#409). Both squads ran dry after three shots and died around turn 7. **The intended answer to an indoor spawner is the mech's gun.** That matches `objectiveApproach`'s own doc: a mech having no route *onto* an indoor objective is by design, provided some class can reach a firing position. Posted on #317.
+
+   **#484 (PR #515, in `f7901ba`) closed half the discovery gap.** Egg spawners are now drawn and pickable: `spawnerScreenPosition` returns a point inside `#map-viewport`, a real pointer click there targets the spawner (`Egg spawner`, `Target is 23 tiles away; weapon reaches 10`), and there is a `selectSpawner()` hook plus a permanent spec, `e2e/tactical-spawners.spec.ts`. Verified by hand on `f7901ba`.
+
+   **The remaining player-facing gap is the sight line, not the target.** Nothing on screen marks which tiles have a clear line, so a player walks at the objective, finds Fire greyed out and concludes it is broken — which is precisely what I did twice. Filed as **#517** and narrowed to exactly that after #515.
+
+5. **#538 (p1), filed on `b0e2b6c`: the tactical camera starts off the deployed force and no control pans back.** Sampled seven seeds at 1280x720: `spawner-test`, `s3`, `s4` and `s7` draw **0 of 3** TDF units on screen; `s1`, `s2`, `s6` draw 3 of 3 but in the bottom ~50 px under the action bar. On `spawner-test` `unit-1` sits at screen 753,747 in a 720-px window, and arrows, WASD, mouse drag and wheel all leave it there — wheel zoom pushes it to 823, `q` rotates it to −135. Selecting a unit does not move the camera either.
+
+   Reproduced in the **production build** with no dev hooks: banner says `TDF 3`, no unit is drawn, and clicking five points across the map never sets `data-selected-unit`. Only END TURN and OVERWORLD work. The simulation under it is fine — see item 4 — so this is purely camera framing.
+
+6. **Filed #480** (p3): the debrief says "No casualties" on a mission that wiped the whole force.
 
 ### Run history
 
 | SHA | Build | Unit | e2e | Exploratory | Filed |
 |---|---|---|---|---|---|
+| `b0e2b6c` | pass | 1613/1613 | 45/45 | 11 flows clean; camera starts off the force | **#538** |
+| `f7901ba` | pass | 1608/1608 | 45/45 | 11 flows clean; real click targets a drawn spawner (#515) | — |
+| `4cec760` | pass | 1595/1595 | 44/44 | mech kills an indoor spawner; squad cannot | #517 |
 | `b5c1196` | pass | 1348/1348 | 39/39 | known #412; #404 verified | — |
 | `6e2e3c1` | pass | 1338/1338 | 39/39 | known #412 | — |
 | `5f644d4` | pass | 1338/1338 | 39/39 | known #412 | — |

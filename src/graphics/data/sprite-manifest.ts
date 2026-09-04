@@ -73,6 +73,12 @@ export const SPRITE_MANIFEST = {
     blend: "additive",
     label: "Bug melee claw slash, three gashes sweeping up to the right",
   },
+  "vfx.tdf-death": {
+    path: "assets/sprites/vfx/tdf-death.png",
+    size: 512,
+    blend: "normal",
+    label: "TDF death burst: torn armour plate, sparks and smoke",
+  },
   "vfx.bug-death": {
     path: "assets/sprites/vfx/bug-death.png",
     size: 512,
@@ -106,6 +112,13 @@ export const SPRITE_MANIFEST = {
     blend: "additive",
     label: "Claw slash, 4 frames: the arc swings in, lands, widens, fades",
     sheet: { frame: 128, columns: 2, rows: 2, frames: 4, frameMs: 50 },
+  },
+  "vfx.tdf-death-sheet": {
+    path: "assets/sprites/vfx/tdf-death-sheet.png",
+    size: 384,
+    blend: "normal",
+    label: "TDF death, 6 frames: plate and sparks burst outward and fade",
+    sheet: { frame: 128, columns: 3, rows: 2, frames: 6, frameMs: 70 },
   },
   "vfx.bug-death-sheet": {
     path: "assets/sprites/vfx/bug-death-sheet.png",

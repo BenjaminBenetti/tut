@@ -1,9 +1,10 @@
 import type { Camera, Object3D } from "three";
-import { Group, Raycaster, Vector2 } from "three";
+import { Box3, Group, Raycaster, Vector2 } from "three";
 
 import type { Vec2, Vec3 } from "../../core/model/grid";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
+import type { Spawner, SpawnerId } from "../../tactical/model/tactical-state";
 import type { Unit, UnitId } from "../../tactical/model/unit";
 import type {
   UnitTemplate,
@@ -11,6 +12,7 @@ import type {
 } from "../../tactical/model/unit-template";
 import type { Disposable } from "../model/disposable";
 import type { ModelLoader } from "../model/model-loader";
+import type { SpawnerPicker } from "../model/spawner-picker";
 import type { TilePicker } from "../model/tile-picker";
 import type { UnitPicker } from "../model/unit-picker";
 import { TacticalMapView } from "../view/tactical-map-view";
@@ -27,6 +29,13 @@ export interface TacticalSceneBuilderOptions {
   readonly models: ModelLoader;
 }
 
+/**
+ * Model every egg spawner is drawn with. Spawners carry no per-instance
+ * model the way units carry `template.modelId`, so the scene holds the
+ * one id (#484).
+ */
+export const SPAWNER_MODEL_ID = "bug.egg-spawner";
+
 /** Templates by id, as the mission state stores them. */
 export type UnitTemplateLookup = Readonly<Record<UnitTemplateId, UnitTemplate>>;
 
@@ -40,7 +49,9 @@ export type UnitTemplateLookup = Readonly<Record<UnitTemplateId, UnitTemplate>>;
  * Graphics observes state only (architecture §2): a unit that leaves the
  * list or reaches zero hit points is removed, a moved unit is re-posed,
  * a new unit's model is loaded by its template's `modelId`. Also the
- * `UnitPicker` the picking controller hit-tests through.
+ * `UnitPicker` and `SpawnerPicker` the picking controller hit-tests
+ * through. Spawners reuse `UnitMesh`: it is a model at a tile with hover
+ * and selection rings, which is exactly what a spawner needs.
  *
  * ```
  *   update(units, templates)
@@ -48,11 +59,16 @@ export type UnitTemplateLookup = Readonly<Record<UnitTemplateId, UnitTemplate>>;
  *     ├─ known           ──► mesh.setPose(pos, facing)
  *     └─ new             ──► models.load(template.modelId) ──► UnitMesh (unless removed meanwhile)
  *
- *   pickUnit(ndc) ──► raycast over every mesh's pick targets ──► nearest hit's unit
+ *   updateSpawners(spawners)
+ *     ├─ destroyed or gone ──► mesh.dispose()
+ *     └─ new               ──► models.load(SPAWNER_MODEL_ID) ──► UnitMesh
+ *
+ *   pickUnit(ndc)    ──► raycast the unit meshes    ──► nearest hit's unit
+ *   pickSpawner(ndc) ──► raycast the spawner meshes ──► nearest hit's spawner
  * ```
  */
 export class TacticalSceneBuilder
-  implements UnitPicker, TilePicker, Disposable
+  implements UnitPicker, TilePicker, SpawnerPicker, Disposable
 {
   // ===========================================
   // Fields
@@ -64,12 +80,23 @@ export class TacticalSceneBuilder
   private readonly models: ModelLoader;
   private readonly unitsGroup: Group;
   private readonly meshes = new Map<UnitId, UnitMesh>();
+  /** Model id per placed unit, so a death burst can tell a machine from a bug. */
+  private readonly modelIds = new Map<UnitId, string>();
+  /** Height per placed unit in world units, measured once when it is placed. */
+  private readonly heights = new Map<UnitId, number>();
   private readonly targetToUnit = new Map<Object3D, UnitId>();
   /** Units the latest `update` asked for; a load that finishes for a unit no longer here is discarded. */
   private readonly wanted = new Set<UnitId>();
+  private readonly spawnersGroup: Group;
+  private readonly spawnerMeshes = new Map<SpawnerId, UnitMesh>();
+  private readonly targetToSpawner = new Map<Object3D, SpawnerId>();
+  /** Spawners the latest `updateSpawners` asked for, for the same reason as `wanted`. */
+  private readonly wantedSpawners = new Set<SpawnerId>();
   private readonly raycaster = new Raycaster();
   private hovered: UnitId | undefined;
   private selected: UnitId | undefined;
+  private hoveredSpawner: SpawnerId | undefined;
+  private selectedSpawner: SpawnerId | undefined;
 
   // ===========================================
   // Constructor
@@ -81,9 +108,11 @@ export class TacticalSceneBuilder
     this.mapView = new TacticalMapView(options.map);
     this.unitsGroup = new Group();
     this.unitsGroup.name = "units";
+    this.spawnersGroup = new Group();
+    this.spawnersGroup.name = "spawners";
     this.root = new Group();
     this.root.name = "tactical-scene";
-    this.root.add(this.mapView.root, this.unitsGroup);
+    this.root.add(this.mapView.root, this.spawnersGroup, this.unitsGroup);
   }
 
   // ===========================================
@@ -103,6 +132,17 @@ export class TacticalSceneBuilder
   /** Shows only map levels up to `maxLevel`; units are never hidden. */
   setMaxLevel(maxLevel: number | undefined): void {
     this.mapView.setMaxLevel(maxLevel);
+  }
+
+  /**
+   * Upgrades the map from placeholder boxes to the registered tile,
+   * building and prop art (#474). Separate from the constructor so the
+   * scene is on screen immediately and the models arrive when they
+   * arrive; the mapgen preview skips it and keeps its diagnostic
+   * colours. Idempotent.
+   */
+  async loadMapModels(): Promise<void> {
+    await this.mapView.loadModels(this.models);
   }
 
   /** Ids of the units currently drawn or loading, in insertion order. */
@@ -148,12 +188,52 @@ export class TacticalSceneBuilder
     await Promise.all(loads);
   }
 
+  /** Ids of the spawners currently drawn or loading, in insertion order. */
+  spawnerIds(): readonly SpawnerId[] {
+    return [...this.wantedSpawners];
+  }
+
+  /**
+   * Brings the drawn egg spawners in step with `spawners` (#484). A
+   * spawner that is destroyed — or gone from the list — is removed, the
+   * way a dead unit is; the rest are placed once and never move, so
+   * there is no re-pose step. Resolves when every new model has loaded.
+   *
+   * Kept apart from `update` because spawners are not units: they have
+   * no template, no facing that changes, and they live in their own
+   * collection on the mission state.
+   */
+  async updateSpawners(spawners: readonly Spawner[]): Promise<void> {
+    const standing = spawners.filter(
+      (spawner) => !spawner.destroyed && spawner.hp > 0,
+    );
+    const keep = new Set(standing.map((spawner) => spawner.id));
+    for (const id of [...this.wantedSpawners]) {
+      if (!keep.has(id)) {
+        this.removeSpawner(id);
+      }
+    }
+    const loads: Promise<void>[] = [];
+    for (const spawner of standing) {
+      if (this.wantedSpawners.has(spawner.id)) {
+        continue;
+      }
+      this.wantedSpawners.add(spawner.id);
+      loads.push(this.placeSpawner(spawner));
+    }
+    await Promise.all(loads);
+  }
+
   /** Frees the map, every unit mesh and detaches the root. */
   dispose(): void {
     for (const id of [...this.meshes.keys()]) {
       this.remove(id);
     }
     this.wanted.clear();
+    for (const id of [...this.spawnerMeshes.keys()]) {
+      this.removeSpawner(id);
+    }
+    this.wantedSpawners.clear();
     this.mapView.dispose();
     this.root.removeFromParent();
   }
@@ -209,6 +289,63 @@ export class TacticalSceneBuilder
     return this.meshes.get(unitId)?.object;
   }
 
+  /**
+   * The unit's height in world units, measured from its placed model, or
+   * undefined while it loads. The animation queue anchors damage numbers and
+   * impacts off this instead of a fixed lift above the feet, which put them
+   * inside the legs of anything large (#514). Measured rather than read from
+   * the manifest so this class keeps depending on the injected loader alone.
+   */
+  unitHeight(unitId: UnitId): number | undefined {
+    return this.heights.get(unitId);
+  }
+
+  /** The unit's registered model id, or undefined while it loads. */
+  unitModelId(unitId: UnitId): string | undefined {
+    return this.modelIds.get(unitId);
+  }
+
+  // ===========================================
+  // SpawnerPicker
+  // ===========================================
+
+  /** Raycasts the spawner models under a normalised device coordinate; nearest hit wins. */
+  pickSpawner(ndc: Vec2, camera: Camera): SpawnerId | undefined {
+    if (this.targetToSpawner.size === 0) {
+      return undefined;
+    }
+    this.root.updateMatrixWorld(true);
+    this.raycaster.setFromCamera(new Vector2(ndc.x, ndc.y), camera);
+    const hits = this.raycaster.intersectObjects(
+      [...this.targetToSpawner.keys()],
+      false,
+    );
+    for (const hit of hits) {
+      const spawnerId = this.targetToSpawner.get(hit.object);
+      if (spawnerId !== undefined) {
+        return spawnerId;
+      }
+    }
+    return undefined;
+  }
+
+  /** Highlights one spawner as hovered, or none. */
+  setHoveredSpawner(spawnerId: SpawnerId | undefined): void {
+    this.hoveredSpawner = spawnerId;
+    this.applySpawnerHighlights();
+  }
+
+  /** Marks one spawner as targeted, or none. */
+  setSelectedSpawner(spawnerId: SpawnerId | undefined): void {
+    this.selectedSpawner = spawnerId;
+    this.applySpawnerHighlights();
+  }
+
+  /** A spawner's base in world space, or undefined while it is loading or gone. */
+  spawnerWorldPosition(spawnerId: SpawnerId): Vec3 | undefined {
+    return this.spawnerMeshes.get(spawnerId)?.worldPosition();
+  }
+
   // ===========================================
   // TilePicker
   // ===========================================
@@ -236,11 +373,59 @@ export class TacticalSceneBuilder
     const mesh = new UnitMesh(unit.id, model);
     mesh.setPose(unit.pos, unit.facing);
     this.meshes.set(unit.id, mesh);
+    this.modelIds.set(unit.id, template.modelId);
+    this.heights.set(unit.id, measureHeight(mesh.object));
     for (const target of mesh.pickTargets()) {
       this.targetToUnit.set(target, unit.id);
     }
     this.unitsGroup.add(mesh.object);
     this.applyHighlights();
+  }
+
+  /** Loads the spawner model and places it, unless it was removed while loading. */
+  private async placeSpawner(spawner: Spawner): Promise<void> {
+    const model = await this.models.load(SPAWNER_MODEL_ID);
+    if (!this.wantedSpawners.has(spawner.id)) {
+      return;
+    }
+    const mesh = new UnitMesh(spawner.id, model);
+    // A spawner does not turn; north is as good a rest pose as any.
+    mesh.setPose(spawner.pos, "n");
+    this.spawnerMeshes.set(spawner.id, mesh);
+    for (const target of mesh.pickTargets()) {
+      this.targetToSpawner.set(target, spawner.id);
+    }
+    this.spawnersGroup.add(mesh.object);
+    this.applySpawnerHighlights();
+  }
+
+  /** Forgets a spawner: its mesh, pick targets and any pending load. */
+  private removeSpawner(spawnerId: SpawnerId): void {
+    this.wantedSpawners.delete(spawnerId);
+    const mesh = this.spawnerMeshes.get(spawnerId);
+    if (mesh) {
+      for (const target of mesh.pickTargets()) {
+        this.targetToSpawner.delete(target);
+      }
+      mesh.dispose();
+      this.spawnerMeshes.delete(spawnerId);
+    }
+    if (this.hoveredSpawner === spawnerId) {
+      this.hoveredSpawner = undefined;
+    }
+    if (this.selectedSpawner === spawnerId) {
+      this.selectedSpawner = undefined;
+    }
+  }
+
+  /** Pushes hovered and targeted state onto every spawner mesh. */
+  private applySpawnerHighlights(): void {
+    for (const [id, mesh] of this.spawnerMeshes) {
+      mesh.setHighlight({
+        hovered: id === this.hoveredSpawner,
+        selected: id === this.selectedSpawner,
+      });
+    }
   }
 
   /** Forgets a unit: its mesh, pick targets and any pending load. */
@@ -253,6 +438,8 @@ export class TacticalSceneBuilder
       }
       mesh.dispose();
       this.meshes.delete(unitId);
+      this.modelIds.delete(unitId);
+      this.heights.delete(unitId);
     }
     if (this.hovered === unitId) {
       this.hovered = undefined;
@@ -271,4 +458,23 @@ export class TacticalSceneBuilder
       });
     }
   }
+}
+
+// ===========================================
+// Helpers
+// ===========================================
+
+/**
+ * The world-space height of a placed unit, measured from its bounding box.
+ * Taken once at placement: a dying unit shrinks, and an effect anchored to a
+ * shrinking box would slide down with it.
+ *
+ * @param object - The unit's scene object.
+ * @returns Height in world units, never negative.
+ */
+function measureHeight(object: Object3D): number {
+  const box = new Box3().setFromObject(object);
+  return Number.isFinite(box.max.y - box.min.y)
+    ? Math.max(0, box.max.y - box.min.y)
+    : 0;
 }

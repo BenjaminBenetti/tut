@@ -1,4 +1,4 @@
-import type { Camera, Material, Object3D } from "three";
+import type { BufferGeometry, Camera, Material, Object3D } from "three";
 import {
   BoxGeometry,
   Group,
@@ -36,7 +36,11 @@ import {
   WALL_COLOURS,
   WALL_THICKNESS,
 } from "../data/mapgen-preview-palette";
+import type { ModelAssetId } from "../../content/data/model-ids";
+import { mapModelIds, resolveMapModels } from "../service/map-model-resolver";
+import type { ModelPlacement } from "../service/map-model-resolver";
 import type { Disposable } from "../model/disposable";
+import type { ModelLoader } from "../model/model-loader";
 import type { TilePicker } from "../model/tile-picker";
 
 // ===========================================
@@ -70,6 +74,12 @@ const PICK_NUDGE = 0.001;
 
 /** Prefix of the per-level group names. */
 const LEVEL_GROUP_PREFIX = "level-";
+
+/** Placeholder label for ground pillars, which survive the model swap. */
+const TILES_GROUND = "tiles-ground";
+
+/** Placeholder label for building floor, roof and stairs slabs, which do not. */
+const TILES_SLAB = "tiles-slab";
 
 // ===========================================
 // TacticalMapView
@@ -105,6 +115,9 @@ export class TacticalMapView implements Disposable, TilePicker {
   private readonly disposables: Disposable[] = [];
   private readonly unitBox = new BoxGeometry(1, 1, 1);
   private readonly raycaster = new Raycaster();
+  /** Placeholder meshes by the category they stand in for, so models can retire them. */
+  private readonly placeholders = new Map<string, Object3D[]>();
+  private modelled = false;
 
   // ===========================================
   // Constructor
@@ -145,6 +158,108 @@ export class TacticalMapView implements Disposable, TilePicker {
   setMaxLevel(maxLevel: number | undefined): void {
     for (const [level, group] of this.levelGroups) {
       group.visible = maxLevel === undefined || level <= maxLevel;
+    }
+  }
+
+  // ===========================================
+  // Models
+  // ===========================================
+
+  /**
+   * Replaces the placeholder tiles, walls and props with the registered
+   * art (#474): every cell is resolved to a model id through
+   * `map-model-resolver`, the distinct ids are fetched once, and each
+   * one is drawn as an `InstancedMesh` per level so a city block costs a
+   * handful of draw calls rather than one per cell.
+   *
+   * ```
+   *   resolveMapModels ──► preload distinct ids
+   *          │
+   *   per (model id, level): load prototype once
+   *          └─► per mesh inside it: InstancedMesh over that cell's transforms
+   *          └─► placeholder boxes for that category hidden
+   * ```
+   *
+   * Hooks and connectors keep their placeholder geometry: they are
+   * diagnostic markers and ramps and ladders have no registered model.
+   * Safe to call once; a second call is a no-op. `ModelLoader` never
+   * rejects for a registered id, so a failed fetch shows that model's
+   * placeholder rather than losing the map.
+   */
+  async loadModels(models: ModelLoader): Promise<void> {
+    if (this.modelled) {
+      return;
+    }
+    this.modelled = true;
+    const placements = resolveMapModels(this.map, this.index);
+    await models.preload(mapModelIds(placements));
+    const categories: readonly [string, readonly ModelPlacement[]][] = [
+      ["tiles", placements.tiles],
+      ["walls", placements.walls],
+      ["props", placements.props],
+    ];
+    for (const [label, list] of categories) {
+      await this.instanceCategory(label, list, models);
+    }
+    // Building slabs, walls and props are replaced one for one. Ground
+    // pillars stay: they are the earth beneath the surface slab, not a
+    // stand-in for it.
+    for (const label of [TILES_SLAB, "walls", "props"]) {
+      this.retirePlaceholders(label);
+    }
+  }
+
+  /** Groups a category by model and level, then draws one instanced mesh per part. */
+  private async instanceCategory(
+    label: string,
+    placements: readonly ModelPlacement[],
+    models: ModelLoader,
+  ): Promise<void> {
+    const batches = new Map<
+      string,
+      { modelId: ModelAssetId; level: number; matrices: Matrix4[] }
+    >();
+    for (const placement of placements) {
+      const key = `${placement.modelId}:${String(placement.level)}`;
+      const matrix = placementMatrix(placement);
+      const batch = batches.get(key);
+      if (batch === undefined) {
+        batches.set(key, {
+          modelId: placement.modelId,
+          level: placement.level,
+          matrices: [matrix],
+        });
+      } else {
+        batch.matrices.push(matrix);
+      }
+    }
+    for (const [key, batch] of batches) {
+      const prototype = await models.load(batch.modelId);
+      prototype.updateMatrixWorld(true);
+      meshPartsOf(prototype).forEach((part, i) => {
+        const mesh = new InstancedMesh(
+          part.geometry,
+          part.material,
+          batch.matrices.length,
+        );
+        batch.matrices.forEach((cell, j) => {
+          mesh.setMatrixAt(j, new Matrix4().multiplyMatrices(cell, part.local));
+        });
+        mesh.instanceMatrix.needsUpdate = true;
+        mesh.name = `${label}-model:${key}:${String(i)}`;
+        // Geometry and materials belong to the loader's cached prototype
+        // and are shared with every other clone, so only the instanced
+        // wrapper is ours to free.
+        this.disposables.push(mesh);
+        this.groupFor(batch.level).add(mesh);
+      });
+    }
+  }
+
+  /** Hides the placeholder boxes a category's models have taken over from. */
+  private retirePlaceholders(label: string): void {
+    for (const mesh of this.placeholders.get(label) ?? []) {
+      mesh.visible = false;
     }
   }
 
@@ -202,9 +317,16 @@ export class TacticalMapView implements Disposable, TilePicker {
   // Tiles
   // ===========================================
 
-  /** Ground tiles as pillars from the ground plane; building tiles as slabs. */
+  /**
+   * Ground tiles as pillars from the ground plane; building tiles as
+   * slabs. The two are flushed under different labels because models
+   * retire only the slabs: a building floor is replaced one for one,
+   * but a ground pillar is the earth under the surface, and hiding it
+   * would leave a raised ledge floating over a hole (#474).
+   */
   private buildTiles(): void {
-    const batches = new Map<string, Batch>();
+    const ground = new Map<string, Batch>();
+    const slabs = new Map<string, Batch>();
     for (const tile of this.map.tiles) {
       const colour = SURFACE_COLOURS[tile.surface] ?? FALLBACK_SURFACE_COLOUR;
       const top = tileTop(tile.y);
@@ -219,14 +341,15 @@ export class TacticalMapView implements Disposable, TilePicker {
         1,
       );
       pushBatch(
-        batches,
-        `tile:${tile.surface}:${tile.y}:${isGround ? "g" : "s"}`,
+        isGround ? ground : slabs,
+        `tile:${tile.surface}:${tile.y}`,
         colour,
         tile.y,
         matrix,
       );
     }
-    this.flushBatches(batches, "tiles");
+    this.flushBatches(ground, TILES_GROUND);
+    this.flushBatches(slabs, TILES_SLAB);
   }
 
   // ===========================================
@@ -438,6 +561,12 @@ export class TacticalMapView implements Disposable, TilePicker {
       mesh.name = `${label}:${key}`;
       this.disposables.push(mesh);
       this.groupFor(batch.level).add(mesh);
+      const kept = this.placeholders.get(label);
+      if (kept === undefined) {
+        this.placeholders.set(label, [mesh]);
+      } else {
+        kept.push(mesh);
+      }
     }
   }
 
@@ -477,6 +606,47 @@ export function tileTop(level: number): number {
 /** World-space centre of a tile's top face. Shared with the unit meshes. */
 export function tileTopCentre(coord: TileCoord): Vec3 {
   return { x: coord.x + 0.5, y: tileTop(coord.y), z: coord.z + 0.5 };
+}
+
+/** One drawable piece of a loaded model: its geometry, material and offset from the model's pivot. */
+interface MeshPart {
+  readonly geometry: BufferGeometry;
+  readonly material: Material | Material[];
+  readonly local: Matrix4;
+}
+
+/**
+ * The meshes inside a loaded model, each with its transform relative to
+ * the model root. Instancing needs flat parts rather than a tree, so the
+ * hierarchy is baked into `local` once and every cell reuses it.
+ */
+function meshPartsOf(root: Object3D): MeshPart[] {
+  const parts: MeshPart[] = [];
+  const inverseRoot = new Matrix4().copy(root.matrixWorld).invert();
+  root.traverse((child) => {
+    if (!(child instanceof Mesh)) {
+      return;
+    }
+    parts.push({
+      geometry: child.geometry as BufferGeometry,
+      material: child.material as Material | Material[],
+      local: new Matrix4().multiplyMatrices(inverseRoot, child.matrixWorld),
+    });
+  });
+  return parts;
+}
+
+/** Transform placing a model's pivot at a placement, turned clockwise from above. */
+function placementMatrix(placement: ModelPlacement): Matrix4 {
+  const { x, y, z } = placement.position;
+  // +X is east and +Z is south, so a clockwise quarter turn seen from
+  // above is a negative rotation about Y.
+  const yaw = (-placement.turns * Math.PI) / 2;
+  return new Matrix4().compose(
+    new Vector3(x, y, z),
+    new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), yaw),
+    new Vector3(1, 1, 1),
+  );
 }
 
 /** Transform placing a unit box at a centre with the given extents. */

@@ -1,8 +1,26 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-04 (session 3, update 4, ~04:35 UTC). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-04 (session 4, ~10:15 UTC). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 1. Where things stand
+
+### Session 4 (05:00–10:15 UTC): the v0.2.0 push, then M2.5
+
+**v0.2.0 tagged at 07:00, v0.2.1 after it.** The Director ran a release push and then relaxed it — *"cut whatever is genuinely ready, do not sacrifice quality"* — which was the right call and is worth repeating next time: nothing was rubber-stamped to make the tag.
+
+Roughly 60 PRs merged. The ones that changed the shape of the game:
+
+| Area | What landed |
+|---|---|
+| Playable loop | #453 deploy → tactical → results; #496 the HUD walks a real path (a one-tile-per-click bug made missions look unwinnable); #543 move is the default action; #549 right click invokes, digits arm |
+| Fog of war | #554 state + v11 migration, #560 the AI decides from a branded `MissionView`, #564 overwatch cannot react to what it cannot see, #570 the renderer draws the player view, #589 blind bugs advance on the landing zone |
+| Tactical feel | #540 phase banners, #542/#546 combat feedback, #558 event log, #545/#577/#582 movement bands, #548 range indicator, #555 overlays lifted clear of the ground, #556 camera opens on the force, #574 glyphs, #581 building ghosting |
+| Art | #505 the map draws real models, #442 env atlas, #503 bug crests, #467 icon set, #588 mech-bay thumbnails |
+| Map | #547 spawners placed where something can shoot them, #535 outdoor high ground, #443 edge-spawn bands, #470 hook distance fitted to the map |
+
+**M2 epics #317, #318 and #319 are closed** (all sixteen children closed, QA verified `v0.2.1` as a production artifact). #320 is left; #343 and #344 look satisfied in substance and want a decision rather than scheduling. M2.5 bands 1 and 2 are done, band 3 has started.
+
+**Two ADRs, and one of them is not signed off.** ADR 0006 (fog of war) and ADR 0007 (in-world UI) shipped in #534, both marked **Proposed**. 0006 changes architecture §2 — save format and the AI interface — and `GAME_STATE_SCHEMA_VERSION` is now **11** on `main`. It was cheap to amend while it was a document; it freezes once a tag ships with it. **Ask the Director for §2 sign-off.**
 
 Production paused about 12 hours after a credit outage and resumed 2026-09-03 ~03:00 UTC with 24 open PRs. Session 2 drained the queue in the Director's order:
 
@@ -53,12 +71,28 @@ Every engineer-facing issue carries a `complexity:*` label (checked every poll; 
 
 ## 2. Open PRs / issues I own
 
+Session 4:
+
+- Nothing of mine is open. #581 (building ghosting, #526) merged after the Art Director's §12.4 settled the technique.
+- **Filed and still open:** #450 (redraw the Earth map as a true plate carrée — the nudges in #449 are a patch over an inaccurate drawing), #473 (`data-map-ready`, so specs stop racing the map viewport), #484 (spawners drawn but indoors), #578 (a flaky e2e passes on retry and the gate reads green).
+- **#517 is the one to watch**: nothing on screen says which tiles have a line to an objective, so a player walks up, finds Fire greyed out and concludes it is broken. QA did exactly that twice and withdrew two wrong bug reports because of it.
+
+Earlier:
+
 - #336 `tuning: squad combat ratings vs auto-resolve difficulty scale` (complexity:low, after #84) filed from an observation on #315. #307 shipped in #346 (Director chose the persistent offset; v4 → v5 `ADD_THREAT_OFFSET`).
 - #197 (filed from #167) closed the same session via #198. #246 `refactor(overworld): derive the command and event unions from augmentable maps` (complexity:medium) is mine: four PRs in one hour needed a second merge of `main` purely for the union line; module augmentation removes the shared line.
 - Earlier follow-ups still open: #108 (promote `Registry` to `core/`, sequence after the mapgen stack), #141 (UPPER_SNAKE tuning exports).
 - Nothing else of mine is open.
 
 ## 3. Decisions I made and why
+
+Session 4, 2026-09-04:
+
+- **Fog of war is per-side knowledge, and the AI gets a filtered view rather than a predicate** (ADR 0006 §2.3). A `canSee()` helper is advisory: a behaviour that forgets to call it still compiles and still cheats. #560 went further than I specified with a phantom-branded `MissionView`, so a raw `TacticalState` will not compile where a view is required. That is the shape to defend.
+- **In-world UI is DOM anchored to projected world points** (ADR 0007), not three.js geometry. `ui/` holds no three, the world→screen bridge already lives in `ui/controller`, and the Executive Director's objection was to panels that *sit at the side and read like a spreadsheet* — placement and presentation, not technology. The ADR turns that into five acceptance criteria.
+- **Render every visual change before believing it.** This session that caught: an `alphaMap` written to the alpha channel when three samples green; a region wash buried inside the map slab; overlays drawn below the ground since #474; and buildings turning see-through when ghosted materials stopped writing depth. Every one passed its unit tests first.
+- **Measure before diagnosing, and say which it is.** I twice told #535's author the cause was "likely the elevation pass raising ground a route ran through" before proving it. The guess pointed the right way, but the level-by-level passability counts are what settled it, and I should have led with them.
+- **A retraction can be as wrong as the claim.** On #545 I said the two AP bands read too similarly, then withdrew it when #555 revealed the overlays were invisible. Once they rendered, the bands genuinely did not read (#577 fixed it). Finding *an* explanation is not finding *the* explanation.
 
 Session 3, 2026-09-04:
 
@@ -107,6 +141,7 @@ Session 1 (still binding):
 
 ## 4. Next, in order
 
+0. **Session 4 first:** get the Director's §2 sign-off on ADR 0006 before the next tag freezes v11; decide #343/#344 with the Producer so M2 can close; #517 is the highest-value unstarted issue.
 1. Review loop every ~5 minutes (session 3 runs it as a cron job in the session; a tick is one `pulls?state=open` call, one `issues?state=open` sweep, then per-PR files/diff/check-runs); label any new unlabeled engineer issue first. MapGen's self-filed issues (#352, #354) went unlabelled on purpose: the specialist works them, the Producer never routes them.
 2. **Schema is at v10** (v9 `ADD_UNIT_CHARGES` #409, v10 `ADD_SPAWN_CLOCKS` #329). Two PRs took the same version number within twenty minutes; when that happens, the one that merges second renumbers and the chain test catches it. Check `GAME_STATE_SCHEMA_VERSION` before approving any save reshape.
 3. M1 is done and tagged. M2 order on eng-3 (updated 17:52: #323–#327 merged): #372 (#323) → #324 commands (hold to the ruling above: campaign dispatcher, `no-active-mission` error, one store) → #325 → #326 → #328 → #330 → #341. #324 must narrow `TacticalState.log` to the tactical event union and pass the dispatcher's `ctx.ids` into `startTacticalMission`. Medium seats: #338/#339/#342 as their inputs land, QA bugs (#219, #218, #291, #294, #304, #368), #369, #230.
@@ -117,6 +152,10 @@ Session 1 (still binding):
 
 ## 5. Gotchas
 
+- **`pnpm lint` is `eslint . && prettier --check .`.** Running `eslint` alone passes a branch that CI then fails on formatting. Two of my own PRs came back red for exactly that. The session-4 gate script runs typecheck, eslint, prettier, vitest, build and playwright, each into its own exit-code variable.
+- **Check the PR's base before merging, and verify the content afterwards.** #542 was stacked on another branch; I merged it without looking, so its content went into that branch rather than `main`, and GitHub then retargeted the closed PR to `main` so it read `base=main, merged=true`. Verify with `git ls-tree origin/main <path> | wc -l` — `ls-tree` exits 0 for a missing path, so testing the exit code proves nothing.
+- **A flaky spec makes a gate lie.** Playwright retries, so a spec that fails then passes exits 0 while the summary count silently drops. Compare the pass count between runs; #578 tracks the instance that keeps appearing.
+- **Do not `pkill -f` a pattern that appears in your own command line.** It matches the shell running it and kills the session. Twice this session. Find the process by port instead.
 - **Gate script** (`review.sh BRANCH` in the scratchpad, rebuilt each session): `git fetch origin BRANCH main`, `checkout -B`, `git merge --no-edit origin/main` (abort on conflict), install only if the lockfile differs from `main`, then typecheck / lint / test to log files and print the three exit codes. The first draft passed `origin` twice to `git fetch` and failed with "couldn't find remote ref origin"; the refspec is `origin BRANCH main`.
 - **A conflicting PR gets no CI run** (no merge ref), so empty check runs on a PR that touches files another PR just added usually mean a conflict, not an outage; `git merge-tree --write-tree --name-only origin/main origin/BRANCH` lists the files.
 - **Every spec that clicks Advance Day answers the event dialog first** (`[data-role="event-dialog"] [data-choice-id]` visible → click the first choice → expect the button enabled). A new overworld spec without that guard will flake.

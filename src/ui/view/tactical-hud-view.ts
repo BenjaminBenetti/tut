@@ -27,7 +27,10 @@ import {
 } from "../../tactical/service/movement-service";
 import type { ReachableObjective } from "../../tactical/service/objective-service";
 import { reachableObjectives } from "../../tactical/service/objective-service";
-import type { TacticalIntent } from "../model/tactical-intent";
+import type {
+  TacticalIntent,
+  TacticalInvokeTarget,
+} from "../model/tactical-intent";
 import type { ActionBarAction } from "./action-bar-view";
 import { ActionBarView } from "./action-bar-view";
 import { HitPreviewView } from "./hit-preview-view";
@@ -256,9 +259,11 @@ export class TacticalHudView {
         this.selectUnit(intent.spawnerId);
         return;
       case "select-tile":
-        if (this.mode === "move" && this.selected !== undefined) {
-          this.moveTo(intent.tile);
-        }
+        // Left click points, it never acts (#520). Invoking is the right
+        // button's job, below.
+        return;
+      case "invoke":
+        this.invokeAt(intent.target);
         return;
       case "action":
         this.handleAction(intent.action);
@@ -272,6 +277,40 @@ export class TacticalHudView {
   // ===========================================
   // Private Methods
   // ===========================================
+
+  /**
+   * Carries out the armed action wherever the right button landed
+   * (#520): Move walks to a tile, Attack fires on a unit or an egg
+   * spawner. A target the armed action cannot use is ignored rather than
+   * guessed at — right-clicking an enemy while Move is armed does not
+   * walk into it, and right-clicking bare ground while Attack is armed
+   * does not shoot the floor.
+   *
+   * ```
+   *   move   + tile           ──► moveTo(tile)
+   *   attack + unit/spawner   ──► fire on it
+   *   anything else           ──► ignored
+   * ```
+   *
+   * It invokes the *armed* action and nothing else, so with no action
+   * armed a right click does nothing. Once Move is the resting state
+   * (#519) that reads as "right click always walks", without this
+   * needing to know which of the two is true.
+   */
+  private invokeAt(target: TacticalInvokeTarget): void {
+    if (this.selected === undefined) {
+      return;
+    }
+    if (this.mode === "attack") {
+      if (target.kind !== "tile") {
+        this.fireAt(target.kind === "unit" ? target.unitId : target.spawnerId);
+      }
+      return;
+    }
+    if (this.mode === "move" && target.kind === "tile") {
+      this.moveTo(target.tile);
+    }
+  }
 
   /**
    * Walks the selected unit to a clicked tile (#488). The rules compute
@@ -411,6 +450,18 @@ export class TacticalHudView {
         break;
     }
     this.refresh();
+  }
+
+  /**
+   * Fires the armed attack at whatever the right button landed on,
+   * without needing the preview confirmed first: right click is the
+   * commit gesture (#520). An illegal shot is dispatched and refused by
+   * the rules, so the reason lands in the status line rather than the
+   * click being swallowed.
+   */
+  private fireAt(targetId: string): void {
+    this.target = targetId;
+    this.confirmAttack();
   }
 
   /** Dispatches the previewed attack and clears the preview. */

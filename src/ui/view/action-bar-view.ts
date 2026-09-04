@@ -1,12 +1,11 @@
-import type { TacticalAction } from "../model/tactical-intent";
+import type { ActionBarAction } from "../model/tactical-intent";
+import { ACTION_BAR_ORDER } from "../model/tactical-intent";
 
 // ===========================================
 // Types
 // ===========================================
 
-/** What the bar can be told to do. */
-export type ActionBarAction =
-  Exclude<TacticalAction, "next-unit" | "cancel"> | "end-turn";
+export type { ActionBarAction };
 
 /** What the bar reports back to its owner. */
 export interface ActionBarHandlers {
@@ -42,20 +41,31 @@ export interface ActionBarModel {
 // Constants
 // ===========================================
 
-/** Buttons in display order with their labels. */
+/** Label per action; the order comes from `ACTION_BAR_ORDER`. */
+const LABELS: Readonly<Record<ActionBarAction, string>> = {
+  move: "Move",
+  attack: "Attack",
+  overwatch: "Overwatch",
+  reload: "Reload",
+  interact: "Interact",
+  extract: "Extract",
+  "end-turn": "End turn",
+};
+
+/**
+ * Buttons in display order. Derived from `ACTION_BAR_ORDER` rather than
+ * listed again, because the number-row shortcuts are bound from the same
+ * list and a second copy would let a digit drift off its button (#520).
+ */
 const BUTTONS: readonly {
   action: ActionBarAction;
   label: string;
   primary: boolean;
-}[] = [
-  { action: "move", label: "Move", primary: false },
-  { action: "attack", label: "Attack", primary: false },
-  { action: "overwatch", label: "Overwatch", primary: false },
-  { action: "reload", label: "Reload", primary: false },
-  { action: "interact", label: "Interact", primary: false },
-  { action: "extract", label: "Extract", primary: false },
-  { action: "end-turn", label: "End turn", primary: true },
-];
+}[] = ACTION_BAR_ORDER.map((action) => ({
+  action,
+  label: LABELS[action],
+  primary: action === "end-turn",
+}));
 
 // ===========================================
 // ActionBarView
@@ -106,7 +116,17 @@ export class ActionBarView {
       button.type = "button";
       button.className = primary ? "tut-btn tut-btn--primary" : "tut-btn";
       button.dataset.action = action;
-      button.textContent = label;
+      // The digit that arms it, from the same order the shortcuts are
+      // bound from, so the bar documents the number row (#520).
+      const key = doc.createElement("span");
+      key.className = "tut-btn__key";
+      key.dataset.role = "shortcut";
+      key.textContent = String(ACTION_BAR_ORDER.indexOf(action) + 1);
+      const text = doc.createElement("span");
+      text.className = "tut-btn__label";
+      text.textContent = label;
+      button.append(key, text);
+      button.title = `${label} (${key.textContent})`;
       button.disabled = true;
       bar.appendChild(button);
       this.buttons.set(action, button);
@@ -141,7 +161,13 @@ export class ActionBarView {
       button.classList.toggle("is-selected", pressed);
       button.setAttribute("aria-pressed", pressed ? "true" : "false");
       if (action === "reload") {
-        button.textContent = model.reloadLabel ?? "Reload";
+        // Only the label changes; the digit hint beside it stays put.
+        const label = button.querySelector<HTMLElement>(".tut-btn__label");
+        const text = model.reloadLabel ?? "Reload";
+        if (label) {
+          label.textContent = text;
+        }
+        button.title = `${text} (${String(ACTION_BAR_ORDER.indexOf(action) + 1)})`;
       }
     }
   }

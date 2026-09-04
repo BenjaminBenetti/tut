@@ -686,3 +686,15 @@
     animation: none;
   }
 }
+
+/*
+ * The digit that arms an action-bar button (#520). Sits before the
+ * label so the bar itself documents the number row.
+ */
+.tut-btn__key {
+  display: inline-block;
+  min-width: 1em;
+  margin-right: var(--space-2);
+  font-size: 10px;
+  opacity: 0.65;
+}

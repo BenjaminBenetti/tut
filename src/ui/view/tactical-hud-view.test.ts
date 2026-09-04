@@ -213,7 +213,10 @@ describe("TacticalHudView", () => {
     const { hud, commands, mission } = setup();
     hud.handleIntent({ kind: "select-unit", unitId: "s1" });
     hud.handleIntent({ kind: "action", action: "move" });
-    hud.handleIntent({ kind: "select-tile", tile: { x: 2, y: 0, z: 1 } });
+    hud.handleIntent({
+      kind: "invoke",
+      target: { kind: "tile", tile: { x: 2, y: 0, z: 1 } },
+    });
     hud.handleIntent({ kind: "action", action: "overwatch" });
     hud.handleIntent({ kind: "end-turn" });
     expect(commands.map((c) => c.type)).toEqual([MOVE, OVERWATCH, END_TURN]);
@@ -239,7 +242,10 @@ describe("TacticalHudView", () => {
     hud.handleIntent({ kind: "action", action: "move" });
     // s1 stands at (1,0,1) with two actions of five tiles: ten steps.
     const target = { x: 8, y: 0, z: 4 };
-    hud.handleIntent({ kind: "select-tile", tile: target });
+    hud.handleIntent({
+      kind: "invoke",
+      target: { kind: "tile", tile: target },
+    });
 
     expect(commands).toHaveLength(1);
     const command = commands[0];
@@ -274,7 +280,10 @@ describe("TacticalHudView", () => {
     });
     hud.handleIntent({ kind: "select-unit", unitId: "s1" });
     hud.handleIntent({ kind: "action", action: "move" });
-    hud.handleIntent({ kind: "select-tile", tile: { x: 6, y: 0, z: 2 } });
+    hud.handleIntent({
+      kind: "invoke",
+      target: { kind: "tile", tile: { x: 6, y: 0, z: 2 } },
+    });
 
     expect(commands).toHaveLength(1);
     const command = commands[0];
@@ -299,7 +308,10 @@ describe("TacticalHudView", () => {
     });
     hud.handleIntent({ kind: "select-unit", unitId: "s1" });
     hud.handleIntent({ kind: "action", action: "move" });
-    hud.handleIntent({ kind: "select-tile", tile: { x: 4, y: 0, z: 2 } });
+    hud.handleIntent({
+      kind: "invoke",
+      target: { kind: "tile", tile: { x: 4, y: 0, z: 2 } },
+    });
     expect(commands).toEqual([]);
     expect(
       root.querySelector<HTMLElement>('[data-role="status"]')?.textContent,
@@ -315,7 +327,10 @@ describe("TacticalHudView", () => {
     });
     hud.handleIntent({ kind: "select-unit", unitId: "s1" });
     hud.handleIntent({ kind: "action", action: "move" });
-    hud.handleIntent({ kind: "select-tile", tile: { x: 9, y: 0, z: 5 } });
+    hud.handleIntent({
+      kind: "invoke",
+      target: { kind: "tile", tile: { x: 9, y: 0, z: 5 } },
+    });
 
     expect(commands).toEqual([]);
     expect(
@@ -323,7 +338,10 @@ describe("TacticalHudView", () => {
     ).toContain("out of reach");
     // Still armed: the player misjudged the range, not the intent.
     expect(hud.getMode()).toBe("move");
-    hud.handleIntent({ kind: "select-tile", tile: { x: 2, y: 0, z: 1 } });
+    hud.handleIntent({
+      kind: "invoke",
+      target: { kind: "tile", tile: { x: 2, y: 0, z: 1 } },
+    });
     expect(commands).toHaveLength(1);
   });
 
@@ -331,7 +349,10 @@ describe("TacticalHudView", () => {
     const { hud, commands } = setup();
     hud.handleIntent({ kind: "select-unit", unitId: "s1" });
     hud.handleIntent({ kind: "action", action: "move" });
-    hud.handleIntent({ kind: "select-tile", tile: { x: 1, y: 0, z: 1 } });
+    hud.handleIntent({
+      kind: "invoke",
+      target: { kind: "tile", tile: { x: 1, y: 0, z: 1 } },
+    });
     expect(commands).toEqual([]);
     expect(hud.getMode()).toBe("move");
   });
@@ -341,7 +362,10 @@ describe("TacticalHudView", () => {
     // No action chosen: select the unit, click a tile, it walks.
     hud.handleIntent({ kind: "select-unit", unitId: "s1" });
     expect(hud.getMode()).toBe("move");
-    hud.handleIntent({ kind: "select-tile", tile: { x: 5, y: 0, z: 3 } });
+    hud.handleIntent({
+      kind: "invoke",
+      target: { kind: "tile", tile: { x: 5, y: 0, z: 3 } },
+    });
     expect(commands.map((c) => c.type)).toEqual([MOVE]);
     // And the bar says so, so the state is legible.
     expect(
@@ -354,7 +378,10 @@ describe("TacticalHudView", () => {
   it("ignores a tile click when the selected unit is not the player's", () => {
     const { hud, commands } = setup();
     hud.handleIntent({ kind: "select-unit", unitId: "b1" });
-    hud.handleIntent({ kind: "select-tile", tile: { x: 5, y: 0, z: 3 } });
+    hud.handleIntent({
+      kind: "invoke",
+      target: { kind: "tile", tile: { x: 5, y: 0, z: 3 } },
+    });
     expect(commands).toEqual([]);
   });
 
@@ -363,7 +390,10 @@ describe("TacticalHudView", () => {
     hud.handleIntent({ kind: "select-unit", unitId: "s1" });
     hud.handleIntent({ kind: "action", action: "attack" });
     expect(hud.getMode()).toBe("attack");
-    hud.handleIntent({ kind: "select-tile", tile: { x: 5, y: 0, z: 3 } });
+    hud.handleIntent({
+      kind: "invoke",
+      target: { kind: "tile", tile: { x: 5, y: 0, z: 3 } },
+    });
     expect(commands).toEqual([]);
     // Pressing the armed action again falls back to Move, not to nothing.
     hud.handleIntent({ kind: "action", action: "attack" });

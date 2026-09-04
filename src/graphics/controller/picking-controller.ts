@@ -36,11 +36,20 @@ export interface Picker<TId> {
 export interface PickingOptions<TId> {
   /** Called whenever something is selected, by click or by `select`. */
   readonly onSelected: (id: TId) => void;
+  /**
+   * When given, a release of the secondary button reports here instead
+   * of selecting: the tactical screen invokes the armed action there
+   * (#520). Scenes that omit it keep selecting on any button.
+   */
+  readonly onInvoked?: (id: TId) => void;
 }
 
 // ===========================================
 // Constants
 // ===========================================
+
+/** `PointerEvent.button` for the right mouse button. */
+const SECONDARY_BUTTON = 2;
 
 /** Pointer tuning shared by every scene. */
 export const PICKING_TUNING = {
@@ -62,7 +71,8 @@ export const PICKING_TUNING = {
  * ```
  *   pointermove ──▶ pick ──▶ picker.setHovered
  *   pointerdown ──▶ remember press
- *   pointerup   ──▶ moved ≤ slop? pick ──▶ select ──▶ onSelected
+ *   pointerup   ──▶ moved ≤ slop? pick ─┬─ right button + onInvoked ──▶ onInvoked
+ *                                       └─ otherwise ──▶ select ──▶ onSelected
  * ```
  */
 export class PickingController<TId> {
@@ -167,7 +177,10 @@ export class PickingController<TId> {
     this.press = { x: event.clientX, y: event.clientY };
   };
 
-  /** Selects what is under a release that did not drag. */
+  /**
+   * Selects what is under a release that did not drag — or, for the
+   * secondary button on a scene that asked for one, invokes it instead.
+   */
   private readonly handlePointerUp = (event: PointerEvent): void => {
     const press = this.press;
     this.press = undefined;
@@ -179,9 +192,15 @@ export class PickingController<TId> {
       return;
     }
     const id = this.pickAt(event);
-    if (id !== undefined) {
-      this.select(id);
+    if (id === undefined) {
+      return;
     }
+    const invoke = this.options.onInvoked;
+    if (event.button === SECONDARY_BUTTON && invoke) {
+      invoke(id);
+      return;
+    }
+    this.select(id);
   };
 
   /** Clears hover and any pending press when the pointer leaves the surface. */

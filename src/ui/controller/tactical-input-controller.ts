@@ -18,6 +18,7 @@ import type {
   TacticalIntentSink,
   TacticalTestHooks,
 } from "../model/tactical-intent";
+import { ACTION_BAR_ORDER } from "../model/tactical-intent";
 
 // ===========================================
 // Types
@@ -61,15 +62,35 @@ export interface TacticalInputDeps {
 // ===========================================
 
 /**
+ * `1` … `7` in the order the action bar shows its buttons (#520), so the
+ * digit under a button is the digit that arms it. Derived from
+ * `ACTION_BAR_ORDER` rather than typed out, so a button added to the bar
+ * takes the next digit without a second edit here.
+ */
+function numberRowBindings(): Record<string, TacticalAction | "end-turn"> {
+  const bound: Record<string, TacticalAction | "end-turn"> = {};
+  ACTION_BAR_ORDER.forEach((action, index) => {
+    bound[String(index + 1)] = action;
+  });
+  return bound;
+}
+
+/**
  * Keyboard shortcuts (GDD §6.2 actions plus End Turn), keyed by
  * `KeyboardEvent.key` lower-cased. Q / E / WASD / arrows belong to the
  * camera controller and are not listed here. `t` cycles attack targets,
  * which is the only way to aim at an egg spawner until the scene draws
  * one the pointer can hit (#426).
+ *
+ * The number row comes first so the letters below can still override a
+ * digit if one is ever bound twice; nothing does today. Every letter
+ * from #340 keeps its meaning — the digits are additional, not a
+ * replacement.
  */
 export const TACTICAL_SHORTCUTS: Readonly<
   Record<string, TacticalAction | "end-turn">
 > = {
+  ...numberRowBindings(),
   m: "move",
   a: "attack",
   f: "attack",
@@ -205,8 +226,9 @@ export class TacticalTargetPicker implements Picker<TacticalTarget> {
  * correct at any yaw.
  *
  * ```
- *   pointer ──▶ PickingController<TacticalTarget> ──▶ onSelected
+ *   left  ──▶ PickingController<TacticalTarget> ──▶ onSelected
  *                ──▶ emit select-unit | select-spawner | select-tile
+ *   right ──▶ onInvoked ──▶ emit invoke, browser menu suppressed
  *   keydown ──▶ TACTICAL_SHORTCUTS ──▶ emit action | end-turn
  *   update  ──▶ cameraInput.update
  * ```
@@ -233,6 +255,9 @@ export class TacticalInputController implements FrameUpdatable {
       onSelected: (target) => {
         this.emitSelection(target);
       },
+      onInvoked: (target) => {
+        this.deps.intents.emit({ kind: "invoke", target });
+      },
     });
   }
 
@@ -247,6 +272,9 @@ export class TacticalInputController implements FrameUpdatable {
     }
     this.surface = surface;
     this.picking.attach(surface);
+    // On the viewport only, so right-clicking the rest of the app still
+    // opens the browser's menu (#520).
+    surface.addEventListener("contextmenu", this.handleContextMenu);
     surface.ownerDocument.addEventListener("keydown", this.handleKeyDown);
     this.deps.cameraInput.attach(surface);
   }
@@ -258,6 +286,7 @@ export class TacticalInputController implements FrameUpdatable {
       return;
     }
     this.picking.detach();
+    surface.removeEventListener("contextmenu", this.handleContextMenu);
     surface.ownerDocument.removeEventListener("keydown", this.handleKeyDown);
     this.deps.cameraInput.detach();
     this.surface = undefined;
@@ -356,6 +385,11 @@ export class TacticalInputController implements FrameUpdatable {
         return;
     }
   }
+
+  /** Swallows the browser menu inside the viewport, where right click invokes instead. */
+  private readonly handleContextMenu = (event: Event): void => {
+    event.preventDefault();
+  };
 
   /** Reports the action or End Turn bound to a key; ignores repeats and typing in form controls. */
   private readonly handleKeyDown = (event: KeyboardEvent): void => {

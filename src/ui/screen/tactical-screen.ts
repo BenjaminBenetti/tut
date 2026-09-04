@@ -7,6 +7,7 @@ import type { TacticalCommand } from "../../tactical/model/tactical-command";
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { UnitId } from "../../tactical/model/unit";
+import type { WeaponId } from "../../tactical/model/unit-weapon";
 import type { GameSession } from "../model/game-session";
 import type { Screen, ScreenId } from "../model/screen";
 import type { ScreenRouter } from "../model/screen-router";
@@ -88,6 +89,7 @@ export class TacticalScreen implements Screen {
         readonly selected: UnitId | undefined;
         readonly weaponRange: boolean;
         readonly target: UnitId | undefined;
+        readonly armed: WeaponId | undefined;
       }
     | undefined;
   /** The mission `FinishMission` has already been dispatched for, so it is asked once. */
@@ -248,17 +250,22 @@ export class TacticalScreen implements Screen {
     const selected = this.hud.getSelectedUnitId();
     const weaponRange = this.hud.isWeaponRangeVisible();
     const target = this.hud.getTargetUnitId();
+    // Cycling weapons changes nothing else, so the armed weapon has to
+    // be part of what is compared here or the boundary would keep the
+    // first weapon's reach until something else moved (#532).
+    const armed = this.hud.getArmedWeaponId();
     const pushed = this.overlayState;
     if (
       pushed !== undefined &&
       pushed.selected === selected &&
       pushed.weaponRange === weaponRange &&
-      pushed.target === target
+      pushed.target === target &&
+      pushed.armed === armed
     ) {
       return;
     }
-    this.overlayState = { selected, weaponRange, target };
-    host.select(selected, target);
+    this.overlayState = { selected, weaponRange, target, armed };
+    host.select(selected, target, armed);
     host.setWeaponRangeVisible(weaponRange);
   }
 
@@ -295,6 +302,7 @@ export class TacticalScreen implements Screen {
         selected: undefined,
         weaponRange: false,
         target: undefined,
+        armed: undefined,
       };
     }
     this.attachedMissionId = mission.missionId;

@@ -167,8 +167,14 @@ class FakeHost implements TacticalSceneHost {
     );
     return Promise.resolve();
   }
-  select(unitId: string | undefined): void {
-    this.calls.push(`select:${unitId ?? "none"}`);
+  select(
+    unitId: string | undefined,
+    _targetId?: string,
+    weaponId?: string,
+  ): void {
+    this.calls.push(
+      `select:${unitId ?? "none"}${weaponId === undefined ? "" : `:${weaponId}`}`,
+    );
   }
   setWeaponRangeVisible(visible: boolean): void {
     this.calls.push(`weapon-range:${String(visible)}`);
@@ -366,6 +372,55 @@ describe("TacticalScreen", () => {
     expect(host.calls.at(-1)).toBe(
       "update:mission-2:2:tactical:unit-moved,tactical:turn-started",
     );
+  });
+
+  it("re-pushes the overlays when the armed weapon changes, so the boundary follows it (#532)", () => {
+    const state = inMission();
+    const store = new FakeStore(state);
+    const host = new FakeHost();
+    new TacticalScreen({
+      router: fakeRouter().router,
+      session: sessionWith(store),
+      combatTuning: COMBAT_TUNING,
+      objectiveTuning: OBJECTIVE_TUNING,
+      sceneHost: host,
+    }).mount(root);
+    const started = state.activeMission!;
+    const squad = started.units.find((u) => u.kind === "squad");
+    if (!squad) throw new Error("fixture needs a squad");
+    // Give the squad a second gun, which is what a mech carries (#532).
+    const template = started.templates[squad.templateId]!;
+    const first = template.weapons[0]!;
+    store.replace({
+      ...state,
+      activeMission: {
+        ...started,
+        templates: {
+          ...started.templates,
+          [squad.templateId]: {
+            ...template,
+            weapons: [
+              { ...first, id: "arm-weapon", name: "Autocannon" },
+              {
+                ...first,
+                id: "back-weapon",
+                name: "Missile Pod",
+                profile: { ...first.profile, range: first.profile.range + 4 },
+              },
+            ],
+          },
+        },
+      },
+    });
+    host.intents?.emit({ kind: "select-unit", unitId: squad.id });
+    host.intents?.emit({ kind: "action", action: "attack" });
+    host.intents?.emit({ kind: "action", action: "attack" });
+    const selects = host.calls.filter((c) => c.startsWith("select:"));
+    // Nothing else about the selection changed on that second press, so
+    // without the armed weapon in what the screen compares, the push
+    // would be skipped and the boundary would keep the first gun's reach.
+    expect(selects.at(-1)).toBe(`select:${squad.id}:back-weapon`);
+    expect(selects).toContain(`select:${squad.id}:arm-weapon`);
   });
 
   it("drives the overlays from the HUD's selection, so an attack-mode target click keeps the shooter selected (#338)", () => {

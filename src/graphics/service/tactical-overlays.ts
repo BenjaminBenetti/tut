@@ -17,6 +17,7 @@ import { CoverLevel } from "../../mapgen/model/cover";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { Unit, UnitId } from "../../tactical/model/unit";
+import { weaponOf, type WeaponId } from "../../tactical/model/unit-weapon";
 import { findAttackTarget } from "../../tactical/service/attack-target-service";
 import {
   apCostOf,
@@ -561,6 +562,7 @@ export function overlaysFor(
   mission: TacticalState,
   unitId: UnitId | undefined,
   targetId?: string,
+  weaponId?: WeaponId,
 ): OverlayState {
   const unit = mission.units.find((u) => u.id === unitId);
   if (unit === undefined || unit.hp <= 0) {
@@ -614,7 +616,7 @@ export function overlaysFor(
     moveRange,
     cover,
     blockedShot,
-    weaponRange: weaponRangeFrom(mission, unit),
+    weaponRange: weaponRangeFrom(mission, unit, weaponId),
   };
 }
 
@@ -635,14 +637,19 @@ export function overlaysFor(
  * Whether a particular tile will actually take the shot is a different
  * question, asked of a chosen target, and `blockedShot` answers it.
  */
-function weaponRangeFrom(mission: TacticalState, unit: Unit): TileCoord[] {
-  // The unit's default weapon (#532). A mech now carries several with
-  // different reaches, and the boundary should follow whichever the
-  // player has armed — but the overlay is asked for a unit, not for a
-  // weapon, so threading the armed weapon through is #522's follow-up.
-  // For every squad and bug, which carry one weapon, this is exact.
-  const range =
-    mission.templates[unit.templateId]?.weapons[0]?.profile.range ?? 0;
+function weaponRangeFrom(
+  mission: TacticalState,
+  unit: Unit,
+  weaponId: WeaponId | undefined,
+): TileCoord[] {
+  // Whichever weapon is armed (#532). A mech carries several with
+  // different reaches, so drawing the first one's would tell the player
+  // a different story from the hit preview beside it: arm the missile
+  // pod and the panel offers a clean shot at twelve tiles while the
+  // boundary is still the autocannon's ten. With nothing armed, and for
+  // every squad and bug, this is the unit's only weapon.
+  const weapons = mission.templates[unit.templateId]?.weapons ?? [];
+  const range = weaponOf(weapons, weaponId)?.profile.range ?? 0;
   if (range <= 0) {
     return [];
   }

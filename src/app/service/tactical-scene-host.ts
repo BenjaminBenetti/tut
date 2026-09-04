@@ -27,6 +27,7 @@ import { TacticalSceneBuilder } from "../../graphics/service/tactical-scene-buil
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { UnitId } from "../../tactical/model/unit";
+import type { WeaponId } from "../../tactical/model/unit-weapon";
 import { TacticalInputController } from "../../ui/controller/tactical-input-controller";
 import type { Vec2 } from "../../core/model/grid";
 import type {
@@ -65,6 +66,8 @@ interface AttachedScene {
   selected: UnitId | undefined;
   /** The armed attack target, so the sight cue can narrow to it (#517). */
   target: string | undefined;
+  /** The armed weapon, so the range boundary is drawn for its reach (#532). */
+  armedWeapon: WeaponId | undefined;
 }
 
 // ===========================================
@@ -185,6 +188,7 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
       mission,
       selected: undefined,
       target: undefined,
+      armedWeapon: undefined,
     };
     scene.start();
     // The map art and the unit models are independent fetches; running
@@ -235,10 +239,15 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
    * @param targetId - The armed target, when one is chosen; it narrows
    *   the sight cue to that target rather than to any enemy (#517).
    */
-  select(unitId: UnitId | undefined, targetId?: string): void {
+  select(
+    unitId: UnitId | undefined,
+    targetId?: string,
+    weaponId?: WeaponId,
+  ): void {
     if (this.attached) {
       this.attached.selected = unitId;
       this.attached.target = targetId;
+      this.attached.armedWeapon = weaponId;
       this.attached.builder.setSelected(unitId);
       this.refreshOverlays();
     }
@@ -300,7 +309,12 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
       return;
     }
     attached.overlays.show(
-      overlaysFor(attached.mission, attached.selected, attached.target),
+      overlaysFor(
+        attached.mission,
+        attached.selected,
+        attached.target,
+        attached.armedWeapon,
+      ),
     );
     document.body.dataset.tacticalSelected = attached.selected ?? "";
   }

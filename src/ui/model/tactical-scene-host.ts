@@ -2,6 +2,7 @@ import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { Vec2 } from "../../core/model/grid";
 import type { UnitId } from "../../tactical/model/unit";
+import type { WeaponId } from "../../tactical/model/unit-weapon";
 import type {
   TacticalIntentSink,
   TacticalInvokeTarget,
@@ -51,8 +52,15 @@ export interface TacticalSceneHost {
    * @param targetId - The armed target, when one is chosen. It narrows
    *   the sight cue to that target rather than to any enemy (#517),
    *   which is what a player facing a refusal needs to see.
+   * @param weaponId - The armed weapon, when the unit carries more than
+   *   one (#532); the range boundary is drawn for that weapon's reach,
+   *   so it agrees with the hit preview.
    */
-  select(unitId: UnitId | undefined, targetId?: string): void;
+  select(
+    unitId: UnitId | undefined,
+    targetId?: string,
+    weaponId?: WeaponId,
+  ): void;
 
   /**
    * Shows or hides the weapon-range outline (#522). The screen owns the

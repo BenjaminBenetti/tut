@@ -346,6 +346,15 @@ export class TacticalHudView {
     return this.target;
   }
 
+  /**
+   * The weapon the player has armed, when the selected unit carries
+   * more than one (#532). `undefined` for a single-weapon unit, which
+   * sends a bare attack and whose only weapon the overlay finds itself.
+   */
+  getArmedWeaponId(): WeaponId | undefined {
+    return this.armedWeaponId;
+  }
+
   // ===========================================
   // Intents
   // ===========================================

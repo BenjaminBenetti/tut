@@ -353,6 +353,51 @@ describe("overlaysFor weapon range", () => {
     expect(columns.size).toBe(tiles.length);
   });
 
+  /** The same field, but `u1` carries a short gun and a long one. */
+  function twoGuns(short: number, long: number): TacticalState {
+    const base = field(short);
+    const unit = base.units.find((u) => u.id === "u1")!;
+    const template = base.templates[unit.templateId]!;
+    const first = template.weapons[0]!;
+    return {
+      ...base,
+      templates: {
+        ...base.templates,
+        [unit.templateId]: {
+          ...template,
+          weapons: [
+            { ...first, id: "arm-weapon", name: "Autocannon" },
+            {
+              ...first,
+              id: "back-weapon",
+              name: "Missile Pod",
+              profile: { ...first.profile, range: long },
+            },
+          ],
+        },
+      },
+    };
+  }
+
+  it("follows the armed weapon, not the unit's first (#532)", () => {
+    const state = twoGuns(3, 5);
+    // Nothing armed, or a single-weapon unit: the first weapon, as before.
+    expect(overlaysFor(state, "u1").weaponRange).toHaveLength(25);
+    expect(
+      overlaysFor(state, "u1", undefined, "arm-weapon").weaponRange,
+    ).toHaveLength(25);
+    // Armed with the pod, the boundary reaches as far as the pod does.
+    // Drawing the autocannon's ten while the hit preview offered a shot
+    // at twelve told the player two different things about one shot.
+    const armed = overlaysFor(state, "u1", undefined, "back-weapon");
+    expect(armed.weaponRange).toHaveLength(61);
+    for (const tile of armed.weaponRange) {
+      expect(Math.abs(tile.x - 5) + Math.abs(tile.z - 5)).toBeLessThanOrEqual(
+        5,
+      );
+    }
+  });
+
   it("is empty for a unit whose template carries no reach", () => {
     expect(overlaysFor(field(0), "u1").weaponRange).toEqual([]);
   });

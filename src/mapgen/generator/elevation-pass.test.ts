@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { BIOME_IDS } from "../../content/model/biome-id";
+import { DIRECTIONS } from "../../core/model/direction";
 import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import { hashSeed } from "../../core/service/seed-hash";
 import { DEFAULT_MISSION_HOOKS } from "../data/hook-requirements";
@@ -8,6 +9,8 @@ import { SurfaceIds } from "../data/surfaces";
 import type { MapGenParams } from "../model/map-recipe";
 import { PassMask } from "../model/pass-mask";
 import { createDefaultRegistries } from "../service/default-registries";
+import { ReachabilityService } from "../service/reachability-service";
+import { TileIndex } from "../service/tile-index";
 import { generateTacticalMap } from "../service/generate-tactical-map";
 import { PipelineMapGenerator } from "../service/pipeline-map-generator";
 import { createSettlementPasses } from "../service/settlement-pipeline";
@@ -137,6 +140,56 @@ describe("ElevationPass", () => {
       }
     }
     expect(raisedRoad).toBeGreaterThan(0);
+  });
+
+  it("rails the edge of what it raises, without shutting a mech out (#508)", () => {
+    for (let i = 0; i < SEEDS; i++) {
+      const label = `seed ${String(i)}`;
+      const map = generateTacticalMap(
+        { seed: `parapet-${String(i)}`, params: params("city") },
+        { registries },
+      );
+      const index = new TileIndex(map);
+      const levels = new Map<number, number>();
+      for (const tile of map.tiles) {
+        if (tile.buildingId === undefined) {
+          levels.set(tile.y, (levels.get(tile.y) ?? 0) + 1);
+        }
+      }
+      const base = [...levels.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+      // A raised tile has no same-level neighbour on the side it drops
+      // away, so the rail is read off the tile's own edges.
+      const railed = map.tiles
+        .filter(
+          (tile) =>
+            base !== undefined &&
+            tile.y > base &&
+            tile.buildingId === undefined,
+        )
+        .reduce(
+          (count, tile) =>
+            count +
+            DIRECTIONS.filter((side) => tile.walls[side] === "half").length,
+          0,
+        );
+      expect(railed, label).toBeGreaterThan(0);
+
+      // The rails are infantry-only, so a mech has to use the ramps — but
+      // it must still be able to get up there.
+      const reach = new ReachabilityService(index, map.connectors);
+      const deploy = map.hooks.deployZones.flatMap((zone) => zone.tiles);
+      const mech = reach.reachableFrom(deploy, PassMask.MECH);
+      const highMech = map.tiles.filter(
+        (tile) =>
+          base !== undefined &&
+          tile.y > base &&
+          tile.buildingId === undefined &&
+          mech.has(index.keyOf(tile)),
+      ).length;
+      expect(highMech, `${label} mech-reachable high ground`).toBeGreaterThan(
+        20,
+      );
+    }
   });
 
   it("leaves a settlement without the knob alone", () => {

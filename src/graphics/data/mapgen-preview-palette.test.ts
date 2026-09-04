@@ -94,6 +94,7 @@ describe("mapgen preview palette", () => {
     }
     expect(Object.keys(WALL_COLOURS).sort()).toEqual([
       "door",
+      "half",
       "solid",
       "window",
     ]);

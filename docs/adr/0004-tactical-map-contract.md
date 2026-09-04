@@ -29,7 +29,7 @@ that mapgen's connectivity guarantees mean something, and (c) the shape of the g
    is roughly 5–8k records: plain JSON, readable in tests, cheap to index.
 2. **Uniform vertical levels.** `y` is an integer level index (one level ≈ one storey). Ground elevation,
    building floors and roofs all live on the same level axis. `levels` is the exclusive upper bound of `y`.
-3. **Thin walls on tile edges** (`n/e/s/w`), each `solid | window | door`. Walls are stored on both
+3. **Thin walls on tile edges** (`n/e/s/w`), each `solid | window | door | half`. Walls are stored on both
    adjacent tiles; symmetry is an invariant.
 4. **All vertical movement is explicit.** A `Connector` record (`ramp | stairs | ladder`) is the *only*
    way to change `y`. No connector ⇒ cliff. This makes connectivity a property mapgen can prove.
@@ -117,7 +117,7 @@ export interface SurfaceDefinition {
 }
 
 // src/mapgen/model/wall.ts
-export type WallKind = 'solid' | 'window' | 'door';
+export type WallKind = 'solid' | 'window' | 'door' | 'half';
 export interface WallSet {
   readonly n?: WallKind; readonly e?: WallKind; readonly s?: WallKind; readonly w?: WallKind;
 }
@@ -205,9 +205,23 @@ export interface PropDefinition {      // src/mapgen/data/props.ts
 }
 ```
 
+Wall kinds, and what each does:
+
+| kind | movement | sight | cover it gives the unit behind it |
+|---|---|---|---|
+| `solid` | nobody | opaque | high |
+| `window` | nobody | clear | low |
+| `door` | infantry only | opaque | low |
+| `half` | infantry vaults it, mechs go round | clear | low |
+
+`half` is a waist-high parapet (#508): the low-cover primitive that costs no floor space. Every cover
+prop stands *on* a tile, so cover and standing room compete for the same ground; an edge-mounted
+piece lets a unit stand at the cover and shoot over it. A connector joins its two tiles directly and
+does not consult the wall between them, so a ramp still climbs a railed edge.
+
 Directional cover for a unit standing on `T` facing direction `d` is a **tactical** rule computed from
-`T.walls[d]` (solid/window ⇒ high cover; door ⇒ none) and `neighbour(T, d).coverProvided`. Mapgen only
-guarantees the data is consistent (I2, I3).
+`T.walls[d]` and `neighbour(T, d).coverProvided`. Mapgen only guarantees the data is consistent
+(I2, I3).
 
 ### 4.5 Buildings
 
@@ -339,8 +353,8 @@ canStep(unitClass, A, B):
   and (
     -- same level, orthogonal neighbour, no blocking wall on the shared edge
     A.y == B.y and adjacent4(A, B)
-      and wallBetween(A, B) in { none, door }           -- doors are infantry-only
-      and (wallBetween(A, B) != door or unitClass == INFANTRY)
+      and wallBetween(A, B) in { none, door, half }     -- doors and parapets are infantry-only
+      and (wallBetween(A, B) in { none } or unitClass == INFANTRY)
     or
     -- level change through an explicit connector
     exists c in connectors: {c.from, c.to} == {A, B} and c.pass & unitClass

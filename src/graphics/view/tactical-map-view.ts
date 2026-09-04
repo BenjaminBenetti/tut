@@ -41,6 +41,7 @@ import {
   SLAB_HEIGHT,
   SURFACE_COLOURS,
   WALL_COLOURS,
+  WALL_HEIGHTS,
   WALL_THICKNESS,
 } from "../data/mapgen-preview-palette";
 import type { ModelAssetId } from "../../content/data/model-ids";
@@ -550,7 +551,10 @@ export class TacticalMapView implements Disposable, TilePicker {
           continue;
         }
         const top = tileTop(tile.y);
-        const centreY = top + LEVEL_HEIGHT / 2;
+        // A parapet stands half a storey, so it sits on the floor rather
+        // than filling the opening (#508).
+        const height = LEVEL_HEIGHT * WALL_HEIGHTS[kind];
+        const centreY = top + height / 2;
         const matrix =
           side === "n" || side === "s"
             ? boxMatrix(
@@ -558,7 +562,7 @@ export class TacticalMapView implements Disposable, TilePicker {
                 centreY,
                 tile.z + (side === "s" ? 1 : 0),
                 1,
-                LEVEL_HEIGHT,
+                height,
                 WALL_THICKNESS,
               )
             : boxMatrix(
@@ -566,7 +570,7 @@ export class TacticalMapView implements Disposable, TilePicker {
                 centreY,
                 tile.z + 0.5,
                 WALL_THICKNESS,
-                LEVEL_HEIGHT,
+                height,
                 1,
               );
         pushBatch(

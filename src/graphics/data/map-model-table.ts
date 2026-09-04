@@ -83,15 +83,12 @@ export const PROP_MODELS: Readonly<Record<KnownPropKindId, ModelAssetId>> = {
 // Walls
 // ===========================================
 
-/**
- * Style guide §7, wall kind → model id. `building.wall-half` is
- * registered but unreachable: mapgen's `WallKind` has no half-height
- * member, so nothing can emit one yet.
- */
+/** Style guide §7, wall kind → model id. */
 export const WALL_MODELS: Readonly<Record<WallKind, ModelAssetId>> = {
   solid: "building.wall",
   window: "building.wall-window",
   door: "building.wall-door",
+  half: "building.wall-half",
 };
 
 // ===========================================

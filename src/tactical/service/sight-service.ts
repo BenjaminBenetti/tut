@@ -241,12 +241,20 @@ function attackSides(dx: number, dz: number): Direction[] {
   return sides;
 }
 
-/** Cover a wall kind gives to the unit behind it. */
+/**
+ * Cover a wall kind gives to the unit behind it. A solid wall is a full
+ * body of masonry; a window, a door and a half wall are all something to
+ * crouch behind rather than hide inside (#508).
+ */
 function coverFromWall(kind: WallKind | undefined): CoverLevel {
-  if (kind === undefined) {
-    return Cover.NONE;
+  switch (kind) {
+    case undefined:
+      return Cover.NONE;
+    case "solid":
+      return Cover.HIGH;
+    default:
+      return Cover.LOW;
   }
-  return kind === "solid" ? Cover.HIGH : Cover.LOW;
 }
 
 /** The higher of two cover levels. */
@@ -277,7 +285,10 @@ function wallBlocksAt(
   );
 }
 
-/** Solid walls and doors block sight; windows do not. */
+/**
+ * Solid walls and doors block sight; windows and half walls do not — a
+ * parapet is waist-high, which is the point of it (#508).
+ */
 function wallIsOpaque(kind: WallKind | undefined): boolean {
   return kind === "solid" || kind === "door";
 }

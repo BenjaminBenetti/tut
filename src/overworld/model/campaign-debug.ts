@@ -18,4 +18,11 @@ export interface CampaignDebugOptions {
    * rather than months. Positive; `1` is the shipped pace.
    */
   readonly threatEscalationMultiplier?: number;
+  /**
+   * Resolves missions with the M1 auto-resolver (#62) instead of playing
+   * them on a tactical map (#330), so QA can exercise the overworld loop
+   * without fighting every mission. Absent or `false` is the shipped
+   * game: Launch opens the tactical screen.
+   */
+  readonly autoResolve?: boolean;
 }

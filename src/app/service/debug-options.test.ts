@@ -22,4 +22,22 @@ describe("parseDebugOptions", () => {
       expect(parseDebugOptions(`?threatEscalation=${bad}`)).toBeUndefined();
     }
   });
+
+  it("reads the auto-resolve switch, on its own or beside the others", () => {
+    for (const on of ["1", "true", "TRUE", ""]) {
+      expect(parseDebugOptions(`?autoResolve=${on}`)).toEqual({
+        autoResolve: true,
+      });
+    }
+    expect(parseDebugOptions("?autoResolve=1&threatEscalation=4")).toEqual({
+      threatEscalationMultiplier: 4,
+      autoResolve: true,
+    });
+  });
+
+  it("leaves auto-resolve off unless it is asked for", () => {
+    for (const off of ["0", "false", "no"]) {
+      expect(parseDebugOptions(`?autoResolve=${off}`)).toBeUndefined();
+    }
+  });
 });

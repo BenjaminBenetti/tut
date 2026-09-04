@@ -144,7 +144,7 @@ export function liftTacticalHandler<
     // Vision is recomputed here and nowhere else (ADR 0006 §2.2): this
     // is the one site every handler's result already passes through, so
     // no rule can move a unit and forget to update what a side can see.
-    const seen = withVision(outcome.value);
+    const seen = withVision(outcome.value, mission);
     const next = seen.state;
     return ok({
       state: {

@@ -96,8 +96,17 @@ export function computeVision(
  */
 export function withVision(
   applied: TacticalApplied<TacticalState>,
+  before?: TacticalState,
 ): TacticalApplied<TacticalState> {
   const mission = applied.state;
+  // Nothing that vision depends on moved, died or left, so nothing it
+  // computes can have changed. Reloading, going on overwatch, planting
+  // charges and a missed shot all land here, and on a map with sixty
+  // bugs a full recompute costs about 40ms — too much to spend proving
+  // that a reload changed nothing.
+  if (before !== undefined && sameVantage(before, mission)) {
+    return applied;
+  }
   const index = new TileIndex(mission.map);
   const events: TacticalEvent[] = [];
   const vision: Record<Team, SideVision> = { ...mission.vision };
@@ -146,6 +155,44 @@ export function emptyVision(): Record<Team, SideVision> {
 // ===========================================
 // Helpers
 // ===========================================
+
+/**
+ * Whether two missions present the same vantage: the same units, alive or
+ * not in the same way, standing in the same places. Those are the only
+ * things vision reads, so anything else — health, action points, status,
+ * charges — can differ freely without changing what a side can see.
+ */
+function sameVantage(before: TacticalState, after: TacticalState): boolean {
+  if (before.units.length !== after.units.length) {
+    return false;
+  }
+  for (let i = 0; i < before.units.length; i++) {
+    const a = before.units[i];
+    const b = after.units[i];
+    if (b === undefined || !sameVantageUnit(a, b)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * Whether one unit presents the same vantage in both missions. Vision
+ * reads life, not health: a shot that hurts without killing changes
+ * nothing about who can see what, and most shots are that.
+ */
+function sameVantageUnit(a: Unit | undefined, b: Unit): boolean {
+  if (a === undefined) {
+    return false;
+  }
+  return (
+    a.id === b.id &&
+    a.hp > 0 === b.hp > 0 &&
+    a.pos.x === b.pos.x &&
+    a.pos.y === b.pos.y &&
+    a.pos.z === b.pos.z
+  );
+}
 
 /** The union of two key lists, as a fresh sorted array so a save is stable. */
 function union(

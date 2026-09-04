@@ -228,6 +228,58 @@ describe("withVision", () => {
     expect(after.state.vision.tdf.explored).toContain(1);
   });
 
+  it("skips the recompute when nothing it reads has changed", () => {
+    const seen = withVision({ state: hidden(), events: [] });
+    // A shot that hurts without killing, and a spent action: neither
+    // changes who can see what, so the previous vision is handed back.
+    const hurt: TacticalState = {
+      ...seen.state,
+      units: seen.state.units.map((unit) =>
+        unit.id === "b" ? { ...unit, hp: unit.hp - 1, ap: 0 } : unit,
+      ),
+    };
+    const after = withVision({ state: hurt, events: [] }, seen.state);
+    expect(after.state.vision).toBe(seen.state.vision);
+    expect(after.events).toEqual([]);
+  });
+
+  it("still recomputes when a unit moves, dies or leaves", () => {
+    const seen = withVision({ state: hidden(), events: [] });
+    const moved: TacticalState = {
+      ...seen.state,
+      units: seen.state.units.map((unit) =>
+        unit.id === "b" ? { ...unit, pos: at(2, 0) } : unit,
+      ),
+    };
+    expect(
+      canSee(
+        withVision({ state: moved, events: [] }, seen.state).state,
+        "tdf",
+        "b",
+      ),
+    ).toBe(true);
+
+    const died: TacticalState = {
+      ...seen.state,
+      units: seen.state.units.map((unit) =>
+        unit.id === "u" ? { ...unit, hp: 0 } : unit,
+      ),
+    };
+    expect(
+      withVision({ state: died, events: [] }, seen.state).state.vision.tdf
+        .visible,
+    ).toEqual([]);
+
+    const left: TacticalState = {
+      ...seen.state,
+      units: seen.state.units.filter((unit) => unit.id !== "u"),
+    };
+    expect(
+      withVision({ state: left, events: [] }, seen.state).state.vision.tdf
+        .visible,
+    ).toEqual([]);
+  });
+
   it("computes both sides, not just the player's", () => {
     const after = withVision({ state: hidden(), events: [] });
     expect(after.state.vision.bugs.visible.length).toBeGreaterThan(0);

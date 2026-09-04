@@ -123,7 +123,9 @@ test("the world map is axis aligned: east is right, south is down", async ({
   const sample = cities.slice(0, 12);
   const anchors = await page.evaluate(
     (ids) =>
-      ids.map((id) => (globalThis as HookGlobal).__tut__?.cityScreenPosition(id)),
+      ids.map((id) =>
+        (globalThis as HookGlobal).__tut__?.cityScreenPosition(id),
+      ),
     sample.map((city) => city.id),
   );
 

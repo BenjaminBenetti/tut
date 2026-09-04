@@ -73,6 +73,7 @@ export class UnitCardView {
     for (const [label, field, icon] of [
       ["HP", "hp", "hp"],
       ["AP", "ap", "ap"],
+      ["Attacks", "attacks", "attack"],
       ["Weapon", "weapon", "attack"],
       ["Armor", "armor", "armor"],
       ["Charges", "charges", "ammo"],
@@ -106,7 +107,11 @@ export class UnitCardView {
   }
 
   /** Shows `unit` with its template, or the placeholder when either is missing. */
-  update(unit: Unit | undefined, template: UnitTemplate | undefined): void {
+  update(
+    unit: Unit | undefined,
+    template: UnitTemplate | undefined,
+    attacksLeft?: number,
+  ): void {
     if (!this.body || !this.empty) {
       return;
     }
@@ -119,6 +124,12 @@ export class UnitCardView {
     this.set("unit-side", `${unit.team} · ${unit.kind}`);
     this.set("hp", `${formatWhole(unit.hp)} / ${formatWhole(unit.maxHp)}`);
     this.set("ap", `${formatWhole(unit.ap)} / ${formatWhole(unit.maxAp)}`);
+    // Action points alone do not say how many shots are left: a squad's
+    // attack costs one, a mech's commits the turn (#533).
+    this.set(
+      "attacks",
+      attacksLeft === undefined ? "—" : formatWhole(attacksLeft),
+    );
     const w = template.weapon;
     this.set(
       "weapon",

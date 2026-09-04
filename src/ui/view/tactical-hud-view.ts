@@ -20,7 +20,10 @@ import {
   enemyAttackTargets,
   findAttackTarget,
 } from "../../tactical/service/attack-target-service";
-import { previewAttack } from "../../tactical/service/combat-service";
+import {
+  attacksRemaining,
+  previewAttack,
+} from "../../tactical/service/combat-service";
 import { viewFor } from "../../tactical/service/mission-view-service";
 import type { MoveGraph } from "../../tactical/service/movement-service";
 import {
@@ -871,6 +874,7 @@ export class TacticalHudView {
     this.card.update(
       selected,
       selected ? mission.templates[selected.templateId] : undefined,
+      selected ? attacksRemaining(selected, this.deps.combatTuning) : undefined,
     );
     const target =
       this.target === undefined
@@ -887,6 +891,10 @@ export class TacticalHudView {
       inReach?.objective.id,
     );
     this.actions.update({
+      attacksLeft:
+        selected === undefined
+          ? 0
+          : attacksRemaining(selected, this.deps.combatTuning),
       canAct: this.canAct(),
       playerPhase: mission.phase === "player",
       mode: this.mode,

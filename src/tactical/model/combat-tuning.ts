@@ -1,3 +1,5 @@
+import type { UnitKind } from "./unit";
+
 import type { CoverLevel } from "../../mapgen/model/cover";
 
 // ===========================================
@@ -42,6 +44,16 @@ export interface CombatTuning {
   readonly minDamage: number;
   /** Action points an attack costs. Positive integer. */
   readonly attackApCost: number;
-  /** Whether attacking spends every remaining action point (XCOM-style). */
-  readonly attackEndsTurn: boolean;
+  /**
+   * Whether attacking spends every remaining action point (XCOM-style),
+   * per unit kind (GDD §6.2). Infantry squads are the exception: their
+   * attack costs an action like any other, so a squad with two actions
+   * fires twice, or moves and fires (#533). Everything else commits its
+   * whole turn to the shot.
+   *
+   * A record rather than a flag because "how many attacks a kind gets"
+   * is a budget rule, and the attack handler should not know which kind
+   * it is resolving.
+   */
+  readonly attackEndsTurn: Readonly<Record<UnitKind, boolean>>;
 }

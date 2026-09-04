@@ -124,6 +124,7 @@ export class TacticalHudView {
   private selected: UnitId | undefined;
   private target: UnitId | undefined;
   private mode: HudMode = DEFAULT_HUD_MODE;
+  private weaponRangeVisible = true;
 
   // ===========================================
   // Constructor
@@ -235,6 +236,11 @@ export class TacticalHudView {
   /** The armed action. */
   getMode(): HudMode {
     return this.mode;
+  }
+
+  /** Whether the weapon-range outline should be drawn (#522); on by default. */
+  isWeaponRangeVisible(): boolean {
+    return this.weaponRangeVisible;
   }
 
   /** The enemy being previewed — a unit or an egg spawner (#426) — if any. */
@@ -408,6 +414,9 @@ export class TacticalHudView {
         break;
       case "next-target":
         this.selectNextTarget();
+        break;
+      case "toggle-range":
+        this.weaponRangeVisible = !this.weaponRangeVisible;
         break;
     }
     this.refresh();

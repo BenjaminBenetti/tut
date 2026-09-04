@@ -225,6 +225,7 @@ export class TacticalScreen implements Screen {
         // the preview target, not the selected unit, so the overlays
         // follow the unit whose card is up (#338).
         host.select(this.hud.getSelectedUnitId());
+        host.setWeaponRangeVisible(this.hud.isWeaponRangeVisible());
         this.recordIntent(intent);
         this.deps.onIntent?.(intent);
       },

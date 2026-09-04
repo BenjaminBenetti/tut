@@ -351,9 +351,12 @@ Overlays are instanced quads lifted 0.02 u above the tile top. They carry meanin
 | Low cover | `ui-warn` | `#F0C63C` | ring | Partial protection on that edge |
 | High cover | `ui-danger` | `#E0453C` | ring | Full protection on that edge |
 | Line of sight / target | `ui-accent` | `#F08A24` | ring | What the current action touches |
+| Weapon range | `ui-accent` | `#F08A24` at 0.5 | edge quads, 0.96 | How far this unit can shoot |
 | Selected unit ring | `ui-accent` | `#F08A24` | ring | Who is acting |
 
 Orange is the player's own intent, blue is possibility, yellow and red are the world pushing back. Nothing else on the tactical plane may use these four colours.
+
+**Weapon range is a line, movement is a fill** (#522). Both bands of the move range are filled quads and mean "you can stand here"; the weapon envelope is drawn only along its edge and means "this far". Keeping them on different visual channels is what stops the range reading as a third movement band — the two never compete even where they overlap, which is most of the time. Toggled with `v`, on by default.
 
 **The two move bands are one token at two lightnesses, never two hues** (#521). Move range gets one colour, so the second band is `ui-info` at about 60% luminance rather than a new token — and a lightness step is the one split that survives deuteranopia and protanopia, where blue against green would not. The dearer band is also inset to 0.66 of a tile, so the boundary reads as a change of shape as well as of tone and needs no legend. Values live in `src/graphics/data/tactical-overlay-palette.ts`; restyle them there, not at the call site.
 

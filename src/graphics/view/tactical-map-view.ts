@@ -751,7 +751,7 @@ export class TacticalMapView implements Disposable, TilePicker {
       });
       mesh.instanceMatrix.needsUpdate = true;
       // Hook markers are diagnostic overlays lying on the ground: they
-      // should neither throw a shadow nor catch one (#507).
+      // neither throw a shadow nor catch one (#507).
       const solid = label !== "hooks";
       mesh.castShadow = solid;
       mesh.receiveShadow = solid;

@@ -1,14 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  escalationCap,
-  escalationPerDay,
-  infestationWeight,
-  THREAT_TUNING,
-} from "./threat-tuning";
+import { THREAT_TUNING } from "./threat-tuning";
 
 describe("threat tuning", () => {
   it("uses finite non-negative values everywhere", () => {
+    const { infestationWeight, escalationPerDay, escalationCap } =
+      THREAT_TUNING;
     for (const value of [infestationWeight, escalationPerDay, escalationCap]) {
       expect(Number.isFinite(value)).toBe(true);
       expect(value).toBeGreaterThanOrEqual(0);
@@ -16,18 +13,13 @@ describe("threat tuning", () => {
   });
 
   it("lets a fully infested Earth reach maximum threat on its own", () => {
-    expect(infestationWeight).toBeGreaterThanOrEqual(1);
+    expect(THREAT_TUNING.infestationWeight).toBeGreaterThanOrEqual(1);
   });
 
   it("keeps time alone from losing the game", () => {
-    expect(escalationCap).toBeLessThan(100);
+    expect(THREAT_TUNING.escalationCap).toBeLessThan(100);
   });
 
-  it("bundles the same values into THREAT_TUNING", () => {
-    expect(THREAT_TUNING).toEqual({
-      infestationWeight,
-      escalationPerDay,
-      escalationCap,
-    });
-  });
+  // The "bundles the same values" case went with the scalars (#141):
+  // one source of truth cannot disagree with itself.
 });

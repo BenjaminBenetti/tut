@@ -265,7 +265,7 @@ export const MODEL_MANIFEST = {
     category: "bugs",
     path: "assets/models/bugs/bug-swarmer.glb",
     footprint: { w: 1, d: 1 },
-    height: 0.54,
+    height: 0.55,
     sockets: [],
     quality: "final",
   },

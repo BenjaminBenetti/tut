@@ -112,6 +112,8 @@ Rule: orange covers at most 10 % of any TDF model's visible surface. It is a mar
 
 Rule: bioluminescence is small and bright, never a wash. Swarmers get green only. Lurkers get magenta. Brutes get green with bone. Spawners get both, pulsing.
 
+Rule: **`bug-bone` is what makes a bug readable, not the glow.** Dark chitin on dark asphalt is a silhouette with no edge, so every species carries a segmented bone crest along its spine — plates, not one slab, with the glow between them. The glow says *which* species; the crest is what says *there is something there* at 64 px per tile.
+
 ### 4.3 Environment by biome
 
 Shared: `env-asphalt #3A3D42`, `env-concrete #8E8A82`, `env-sidewalk #A7A297`, `env-brick #8A4B3A`, `env-glass #6E8FA6`, `env-roof #55524C`, `env-metal #6F7378`, `env-rust #8C5A3A`, `env-rock #6E6A66`, `env-bark #5A4634`, `env-foliage #3F6B33`.

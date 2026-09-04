@@ -28,7 +28,7 @@ import type { Unit, UnitId, UnitKind } from "../model/unit";
 import type { UnitTuning } from "../model/unit-tuning";
 import type { MissionStartDeps } from "./mission-start-service";
 import { startTacticalMission } from "./mission-start-service";
-import { missionOutcome } from "./turn-service";
+import { missionOutcome } from "./mission-end-service";
 
 // ===========================================
 // Types

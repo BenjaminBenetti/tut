@@ -13,7 +13,7 @@ import { buildMoveGraph } from "../../tactical/service/movement-service";
 import type { TacticalHandlers } from "../../tactical/service/tactical-command-handlers";
 import { applyTacticalCommand } from "../../tactical/service/tactical-command-handlers";
 import type { PhaseStep } from "../../tactical/service/turn-service";
-import { missionOutcome } from "../../tactical/service/turn-service";
+import { missionOutcome } from "../../tactical/service/mission-end-service";
 import type { BehaviourLookup, SpeciesLookup } from "./behaviour-registry";
 import { chooseBugCommands } from "./behaviour-registry";
 

@@ -17,6 +17,7 @@ export type TacticalAction =
   | "reload"
   | "extract"
   | "next-unit"
+  | "next-target"
   | "cancel";
 
 /** Every `TacticalAction`, in a fixed order. */
@@ -27,6 +28,7 @@ export const TACTICAL_ACTIONS = [
   "reload",
   "extract",
   "next-unit",
+  "next-target",
   "cancel",
 ] as const satisfies readonly TacticalAction[];
 

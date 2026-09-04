@@ -56,10 +56,10 @@ Stop any probe servers on 4173/4174 before the e2e run, or contention fakes fail
 
 | Field | Value |
 |---|---|
-| SHA tested | `de58489` (main, after v0.2.3) |
-| Gate | typecheck, lint, build pass; vitest **1906 / 1906** (+1 deliberate skip); **sim sweep 7 / 7**; e2e **59 / 59** |
-| Exploratory | 11 flows clean; determinism verified after the RNG nonce change; overwatch exercised end to end |
-| **Verdict** | **Healthy, and the board is clear.** Control scheme 7/7 on every head since band 1; a mission is completable with fog active, guarded by a permanent spec. **No open QA-filed defects.** |
+| SHA tested | `fde7a49` (main, well ahead of v0.2.3) |
+| Gate | typecheck, lint, build pass; vitest **1925 / 1925** (+1 deliberate skip); **sim sweep 7 / 7**; e2e **59 / 59** (gated on `62dab53`, docs-only since) |
+| Exploratory | 11 flows clean on `fde7a49`, dev and production; **current main plays 7/7 through the production build with no dev hooks** |
+| **Verdict** | **Healthy and tag-ready.** No open QA-filed defects. Control scheme 7/7 on every head since band 1, including across the camera-rig refactor; determinism holds after the RNG nonce change; the win path is guarded at the rules level (60-seed sweep, in CI) and through the UI. |
 
 ### Release push, in order of what mattered
 

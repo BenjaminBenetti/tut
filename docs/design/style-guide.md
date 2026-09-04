@@ -303,3 +303,59 @@ Palette hexes go in the prompt verbatim. Ask for "concept sheet with three views
 - [ ] Pivot, axes and sockets per §6/§7.
 - [ ] Registered in the manifest (§8).
 - [ ] Concept image, if any, has a prompt sidecar.
+
+## 12. Tactical scene presentation
+
+What a mission looks like once the models, textures and sprites are in the scene. Numbers here are the ones the code actually uses, so this section is a description of the shipped look, not a wish: `src/graphics/service/scene-service.ts` (lights), `tactical-overlays.ts` (overlays), `tactical-animation-queue.ts` (VFX), `unit-mesh.ts` (selection).
+
+### 12.1 Lighting
+
+One key and one fill, fixed — the camera rotates, the lights do not, so a given face always shades the same way and a player learns the read.
+
+| Light | Colour | Intensity | Position |
+|---|---|---|---|
+| Key, directional | white | 2.5 | `(4, 8, 12)` |
+| Ambient | white | 0.8 | — |
+
+The key is deliberately off-axis from all four yaw stops (§2): at every stop the two visible faces of a box shade differently, which is what gives a flat-shaded low-poly model its form. No shadow maps: at 64 px per tile a cast shadow costs more than it says, and the ambient at 0.8 keeps unlit faces readable rather than dramatic. Clear colour is `ui-bg #0B0D12`.
+
+Consequence for models: **do not bake light into a texture.** An atlas cell that already has a top-left highlight fights the key light at two of the four yaw stops.
+
+### 12.2 Tile overlays
+
+Overlays are instanced quads lifted 0.02 u above the tile top. They carry meaning by palette token, in one escalating order — information, caution, danger:
+
+| Overlay | Token | Hex | Means |
+|---|---|---|---|
+| Move range | `ui-info` | `#7FD1FF` | Where this unit can go |
+| Low cover | `ui-warn` | `#F0C63C` | Partial protection on that edge |
+| High cover | `ui-danger` | `#E0453C` | Full protection on that edge |
+| Line of sight / target | `ui-accent` | `#F08A24` | What the current action touches |
+| Selected unit ring | `ui-accent` | `#F08A24` | Who is acting |
+
+Orange is the player's own intent, blue is possibility, yellow and red are the world pushing back. Nothing else on the tactical plane may use these four colours.
+
+### 12.3 VFX
+
+Sizes are in world units (1 u = 1 tile = 2 m); every billboard sits `0.6 u` above the unit's feet.
+
+| Effect | Sprite | Blend | Size | Time |
+|---|---|---|---|---|
+| Muzzle flash | `vfx.muzzle-flash` | additive | 0.8 | 0.35 s with the impact |
+| Tracer | `vfx.tracer` | additive | stretched along the shot | flight |
+| Impact | `vfx.impact` | additive | 0.7 | 0.35 s |
+| Claw slash (melee) | `vfx.claw-slash` | additive | 0.7 | 0.35 s |
+| Egg burst | `vfx.egg-burst` | normal | 0.8 | 0.42 s |
+| Bug death | `vfx.bug-death` | normal | 0.8 | over the 0.5 s fade |
+| Damage floater | canvas text, `ui-danger` `#E0453C` | normal | 0.45, rises 0.8 | 0.7 s |
+| Miss floater | canvas text, `ui-text-dim` `#8B94A6` | normal | 0.45, rises 0.8 | 0.7 s |
+
+**Additive is energy, normal is matter.** A muzzle flash, a tracer, a spark and a bioluminescent slash are light and must brighten whatever is behind them; chitin shards, shell fragments and ichor are objects and must stay dark over a light tile. Getting this backwards is the single most common way a VFX sprite looks wrong in the scene.
+
+Pace (`DEFAULT_ANIMATION_TIMING`): 0.12 s per tile stepped, 0.35 s for an attack, 0.7 s for a floater, 0.5 s for a death fade. A full move-and-shoot resolves in about a second; anything slower and a bug phase with eight units becomes a cutscene.
+
+### 12.4 What still has no art
+
+- TDF deaths use the plain shrink; they have no counterpart to `vfx.bug-death` (sparks and scorched plate, no ichor).
+- No suppression, overwatch-trigger or reload effect.
+- No decals: scorch marks, blood pools and rubble are geometry-free today, so a fought-over tile looks the same as an untouched one.

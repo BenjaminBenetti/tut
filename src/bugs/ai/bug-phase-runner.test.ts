@@ -26,10 +26,8 @@ import {
   unitAt,
 } from "../../tactical/service/tactical-fixtures.test-helper";
 import type { TacticalHandlers } from "../../tactical/service/tactical-command-handlers";
-import {
-  createOverwatchReaction,
-  missionOutcome,
-} from "../../tactical/service/turn-service";
+import { missionOutcome } from "../../tactical/service/mission-end-service";
+import { createOverwatchReaction } from "../../tactical/service/turn-service";
 import { BUG_SPECIES, LURKER, SWARMER } from "../data/species";
 import {
   startedMission,

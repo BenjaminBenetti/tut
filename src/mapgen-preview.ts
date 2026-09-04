@@ -20,6 +20,7 @@ import { renderAscii } from "./mapgen/service/ascii-map-renderer";
 import { createDefaultRegistries } from "./mapgen/service/default-registries";
 import { generateTacticalMapWithDiagnostics } from "./mapgen/service/generate-tactical-map";
 import { computeMapMetrics } from "./mapgen/service/map-metrics";
+import { assessMap } from "./tactical/service/map-assessment-service";
 import type { PreviewControlsState } from "./ui/screen/mapgen-preview-screen";
 import { TacticalInputController } from "./ui/controller/tactical-input-controller";
 import type { TacticalIntent } from "./ui/model/tactical-intent";
@@ -188,6 +189,7 @@ async function main(): Promise<void> {
         map,
         diagnostics,
         metrics: computeMapMetrics(map),
+        assessment: assessMap(map),
         ascii: renderAscii(map),
         elapsedMs,
       });

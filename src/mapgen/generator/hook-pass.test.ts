@@ -188,6 +188,45 @@ describe("HookPass", () => {
     }
   });
 
+  it("draws the second edge spawn zone from a nearer distance band", () => {
+    // The zones alternate far / middle band (#433), so across seeds the
+    // second zone sits closer to deploy than the first while both keep
+    // the 12-tile minimum. Per seed the candidate list shifts once the
+    // first zone is placed, so the guarantee is on the aggregate.
+    let firstTotal = 0;
+    let secondTotal = 0;
+    let nearer = 0;
+    let maps = 0;
+    for (const biome of BIOME_IDS) {
+      for (let i = 0; i < SEEDS * 2; i++) {
+        const label = `${biome}/${i}`;
+        const { draft } = run(biome, "town", `bands-${i}`);
+        const deploy = draft.hooks.deployZones[0];
+        const [first, second] = draft.hooks.edgeSpawns;
+        expect(deploy, label).toBeDefined();
+        expect(second, label).toBeDefined();
+        if (deploy === undefined || first === undefined || second === undefined)
+          continue;
+        const distance = (zone: typeof first): number =>
+          Math.min(
+            ...zone.tiles.flatMap((t) =>
+              deploy.tiles.map((d) => manhattanDistance(d, t)),
+            ),
+          );
+        const a = distance(first);
+        const b = distance(second);
+        expect(a, label).toBeGreaterThanOrEqual(12);
+        expect(b, label).toBeGreaterThanOrEqual(12);
+        firstTotal += a;
+        secondTotal += b;
+        if (b < a) nearer++;
+        maps++;
+      }
+    }
+    expect(secondTotal / maps).toBeLessThan(firstTotal / maps);
+    expect(nearer / maps).toBeGreaterThan(0.5);
+  });
+
   it("meets the edge spawn count on the smallest map the resolver accepts", () => {
     // "tiny-3" on a 16×16 temperate city is the probe seed that placed one
     // zone of two under the strict spacing alone (#258).

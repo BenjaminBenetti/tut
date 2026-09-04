@@ -9,7 +9,11 @@ import type {
   TacticalHandler,
   TacticalOutcome,
 } from "../model/tactical-handler";
-import type { Objective, TacticalState } from "../model/tactical-state";
+import type {
+  Objective,
+  Spawner,
+  TacticalState,
+} from "../model/tactical-state";
 import { TEAM_FOR_PHASE } from "../model/tactical-state";
 import type { Unit, UnitId } from "../model/unit";
 import { UNIT_EXTRACTED } from "../model/unit-extracted-event";

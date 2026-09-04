@@ -69,7 +69,7 @@ describe("TacticalHudView", () => {
     const commands: TacticalCommand[] = [];
     const hud = new TacticalHudView(
       { onCommand: (c) => commands.push(c), onBack: vi.fn() },
-      { combatTuning: COMBAT_TUNING },
+      { combatTuning: COMBAT_TUNING, objectiveTuning: OBJECTIVE_TUNING },
     );
     hud.mount(root);
     // Put the squad within the rifle's reach of the live spawner at (9,0,0).

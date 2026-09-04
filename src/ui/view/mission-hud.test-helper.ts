@@ -7,7 +7,7 @@ import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { Unit } from "../../tactical/model/unit";
 import type { UnitTemplate } from "../../tactical/model/unit-template";
-import { emptyVision } from "../../tactical/service/vision-service";
+import { emptyVision, withVision } from "../../tactical/service/vision-service";
 
 /** A template for HUD tests. */
 export function hudTemplate(
@@ -73,7 +73,7 @@ export function hudMission(
     .fillGround()
     .prop(PropKindIds.CRATE, { x: 4, y: 0, z: 2 })
     .build();
-  return {
+  const base: TacticalState = {
     missionId: "mission-1",
     seed: 1,
     map,
@@ -130,4 +130,10 @@ export function hudMission(
     log: [],
     ...overrides,
   };
+  // A real look from where everyone stands, so HUD tests exercise the
+  // fogged path rather than a mission where nobody has seen anything
+  // (ADR 0006). Overrides that set `vision` explicitly still win.
+  return overrides.vision === undefined
+    ? withVision({ state: base, events: [] }).state
+    : base;
 }

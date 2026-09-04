@@ -116,15 +116,25 @@ Rule: **`bug-bone` is what makes a bug readable, not the glow.** Dark chitin on 
 
 ### 4.2.1 The read test
 
-![Both factions on asphalt at 64 px per tile](faction-read-on-asphalt.png)
+![Both factions on three grounds at 64 px per tile](faction-read-test.png)
 
-`tools/art/preview/layouts/asphalt-read.json` puts both factions on nothing but road — the darkest ground in the game and the worst case for either — at exactly 64 px per tile. Run it after any change to a unit or bug:
+**Each faction has its own worst ground, and they are not the same ground.** The test used to be asphalt alone, described as "the darkest ground in the game and the worst case for either". It cannot be the worst case for either: the factions are different colours, so the ground that swallows one is the ground that shows off the other. Asphalt is where TDF read *best*, and testing there returned a clean bill of health for a faction that disappears on grass.
+
+Run all three after any change to a unit, a bug or a ground token:
 
 ```
 node tools/art/preview/render-scene.mjs tools/art/preview/layouts/asphalt-read.json out.png
+node tools/art/preview/render-scene.mjs tools/art/preview/layouts/grass-read.json   out.png
+node tools/art/preview/render-scene.mjs tools/art/preview/layouts/rock-read.json    out.png
 ```
 
-What it shows today: **TDF read comfortably.** Olive over grey separates from asphalt on its own, and the orange markings — the 10 % from §4.1 — are doing exactly the job they were reserved for. **Bugs read adequately** with the bone crest and would read properly with contact shadows (#507): a dark shape on dark ground is separated by the shadow under it as much as by anything on its back, which is why the answer to "the bugs are hard to see" is not more glow.
+- **Asphalt** is the bugs' worst ground. Dark chitin on dark road: the bodies merge and only the bone crest and the glow carry them. TDF read comfortably here.
+- **Grass** is TDF's worst ground, and it is the temperate biome's primary surface — the most common ground in the game. `tdf-olive #6B7A3F` against `env-grass #5E7A3A` is **ΔE 6.2, ΔL 1.0**: no tonal separation at all, and barely above the threshold at which two colours are the same colour. Infantry are olive over the torso and arms, so at 64 px per tile they lose their silhouette completely. Bugs read strongly here.
+- **Rock** is the control. Both factions read.
+
+**Screen with the numbers, judge with the render.** ΔE against a ground token catches a duplicate like olive-on-grass instantly and is worth computing for any new colour. It is only a screen, though: it predicted trouble for `tdf-grey-mid` mech armour on rock (ΔE 12.3) which the render does not bear out, because the mech is large and internally contrasty — dark greys, light greys and orange inside one silhouette — and that carries it. **Size and internal contrast beat any single hue distance.** A small, near-monotone model is the one in danger.
+
+**There is no colour that separates from every ground**, so do not go looking for one. `tdf-grey-light` merely trades grass for concrete (ΔE 15.7). Separation has to come from something that is not hue: the bone crest on the bugs, and contact shadows (#507) for everything — a shape on ground of its own tone is separated by the shadow under it as much as by anything on its back. That is why the answer to "I cannot see the units" is not more glow, and not a new colour.
 
 ### 4.3 Environment by biome
 
@@ -353,7 +363,7 @@ Overlays are instanced quads lifted one ground-slab thickness (0.05 u) above the
 | High cover | `ui-danger` | `#E0453C` at 0.55 | ring 0.32–0.40 | Full protection on that edge |
 | Line of sight / target | `ui-accent` | `#F08A24` at 0.75 | pip 0.12–0.18 | What the current action touches |
 | Weapon range | `ui-accent` | `#F08A24` at 0.38 | edge pips, 0.30 | How far this unit can shoot |
-| Selected unit ring | `ui-accent` | `#F08A24` | ring | Who is acting |
+| Selected unit ring | `ui-accent` | `#F08A24` | ring 0.40–0.50, **drawn through geometry** | Who is acting |
 
 Orange is the player's own intent, blue is possibility, yellow and red are the world pushing back. Nothing else on the tactical plane may use these four colours.
 
@@ -366,6 +376,10 @@ The second band was first authored as a *darkened* `ui-info` (`#4C7D99`). That f
 **Neither move band fills its tile** (#569). At 0.92 a run of near-band tiles merged into one flat sheet of colour, which is how terrain is drawn — and players read it as a pond, the water surface being `env-water-shallow #3F8FA8`. Inset to 0.84 the ground shows through between neighbours, so the same tiles read as *marked* rather than *repainted*: a continuous surface is terrain, separated squares are the overlay. That distinction survives any tone.
 
 **Weapon range is pips, not a fill** (#522, retuned in #566). An outline along the envelope's edge is thin on open ground and solid in a city, where line of sight cuts the envelope into pockets and almost every tile counts as edge; at 0.96 of a tile that buried the movement band under it. A small centred pip carries the same information for a tenth of the ink.
+
+**A mark at full opacity is not automatically the boldest** (#605). three.js sorts a material with `transparent: false` into the *opaque* pass; paired with `depthWrite: false` — which every flat ground mark needs, so it does not occlude what stands on it — that means it writes no depth and everything drawn afterwards paints straight over it. The selection ring spent every build to date in the scene graph, visible, at the right height, and absent from the screen for exactly this reason. The hover ring escaped only by accident, its 0.6 opacity putting it in the transparent pass. **Every ground mark is `transparent: true`, `depthWrite: false`, with an explicit `renderOrder`** — tile overlays take 1 through 4, unit rings sit above them.
+
+The selection ring alone also drops `depthTest`, so it reads through whatever stands in front of it. Units deploy shoulder to shoulder, and a depth-tested ring under a squad beside a 2.79 u mech is a sliver of orange — no answer to *which one am I commanding?*. It gives nothing away, because only the player's own units can be selected and their own units are always drawn. **Hover must not do this**: it lands on enemies too, and a ring through a wall would reveal a bug that vision is hiding (ADR 0006).
 
 **Count the marks, not just tune them** (#590). Every rule above was argued and measured on its own overlay, and each one was right on its own. Together they put **71–171 instances** on the map for a single click — the planes were never budgeted against each other, only against the ground. The frame stopped reading as a city and started reading as an instrument panel, and the unit the player had just selected was the quietest thing in it.
 

@@ -41,6 +41,12 @@ export interface ActionBarModel {
   /** Label of the reload button: "Vent" for a mech, "Reload" otherwise (#409). */
   readonly reloadLabel?: string;
   /**
+   * Shots the selected unit has left this turn (#533). Shown on the
+   * Attack button when it is more than one, which is how a player sees
+   * that a squad fires twice and a mech once.
+   */
+  readonly attacksLeft?: number;
+  /**
    * The selected unit's weapons (#532). One entry means the bar shows a
    * single Attack button as it always did; several replace it with one
    * button each, named after the weapon, so a mech's arm gun and back
@@ -229,6 +235,16 @@ export class ActionBarView {
       const pressed = action === model.mode;
       button.classList.toggle("is-selected", pressed);
       button.setAttribute("aria-pressed", pressed ? "true" : "false");
+      if (action === "attack") {
+        const label = button.querySelector<HTMLElement>(".tut-btn__label");
+        const left = model.attacksLeft ?? 0;
+        const text =
+          left > 1 ? `${LABELS.attack} ×${String(left)}` : LABELS.attack;
+        if (label) {
+          label.textContent = text;
+        }
+        button.dataset.attacksLeft = String(left);
+      }
       if (action === "reload") {
         // Only the label changes; the digit hint beside it stays put.
         const label = button.querySelector<HTMLElement>(".tut-btn__label");

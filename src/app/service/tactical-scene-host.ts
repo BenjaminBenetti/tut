@@ -4,6 +4,7 @@ import { CameraInputController } from "../../graphics/controller/camera-input-co
 import { MODEL_MANIFEST } from "../../graphics/data/model-manifest";
 import { SPRITE_MANIFEST } from "../../graphics/data/sprite-manifest";
 import { CAMERA_ZOOM } from "../../graphics/model/camera-state";
+import { phaseEvents } from "../../graphics/service/animation-phases";
 import { missionFocus } from "../../graphics/service/tactical-framing";
 import {
   perceivedSpawners,
@@ -27,8 +28,10 @@ import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { UnitId } from "../../tactical/model/unit";
 import { TacticalInputController } from "../../ui/controller/tactical-input-controller";
+import type { Vec2 } from "../../core/model/grid";
 import type {
   TacticalIntentSink,
+  TacticalInvokeTarget,
   TacticalTestHooks,
 } from "../../ui/model/tactical-intent";
 import type { TacticalSceneHost } from "../../ui/model/tactical-scene-host";
@@ -60,6 +63,8 @@ interface AttachedScene {
   readonly animations: TacticalAnimationQueue;
   mission: TacticalState;
   selected: UnitId | undefined;
+  /** The armed attack target, so the sight cue can narrow to it (#517). */
+  target: string | undefined;
 }
 
 // ===========================================
@@ -179,6 +184,7 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
       animations,
       mission,
       selected: undefined,
+      target: undefined,
     };
     scene.start();
     // The map art and the unit models are independent fetches; running
@@ -197,19 +203,43 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
     }
     attached.mission = mission;
     return new Promise((resolve) => {
-      attached.animations.enqueue(events, () => {
+      // Spots play last, on purpose: the scene draws only what the player
+      // perceives, so an enemy coming into view has no object at all until
+      // `placeUnits` has run, and a reveal enqueued with the rest would
+      // find nothing to animate (#585). `phaseEvents` owns that rule.
+      const phases = phaseEvents(events);
+      attached.animations.enqueue(phases.before, () => {
         void this.placeUnits(mission).then(() => {
-          this.refreshOverlays();
-          resolve();
+          attached.animations.enqueue(phases.after, () => {
+            this.refreshOverlays();
+            resolve();
+          });
         });
       });
     });
   }
 
-  /** Shows range, cover and line-of-sight overlays for `unitId`, or clears them. */
-  select(unitId: UnitId | undefined): void {
+  /**
+   * Shows range, cover and line-of-sight overlays for `unitId`, and
+   * rings the unit itself, or clears both.
+   *
+   * The ring was the half that never happened (#605). `UnitMesh` has
+   * built one since #471 and the builder has implemented `setSelected`
+   * all along, but the only caller was `mapgen-preview.ts` -- so the
+   * ring worked in the dev harness and had never been drawn in a real
+   * mission. Hover was wired and selection was not, which is backwards:
+   * a unit merely pointed at rang, and the one actually being commanded
+   * did not.
+   *
+   * @param unitId - The selected unit.
+   * @param targetId - The armed target, when one is chosen; it narrows
+   *   the sight cue to that target rather than to any enemy (#517).
+   */
+  select(unitId: UnitId | undefined, targetId?: string): void {
     if (this.attached) {
       this.attached.selected = unitId;
+      this.attached.target = targetId;
+      this.attached.builder.setSelected(unitId);
       this.refreshOverlays();
     }
   }
@@ -220,6 +250,30 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
   }
 
   /** Disposes the scene, input and builder. */
+  /**
+   * Where a world thing appears on screen, delegated to the input
+   * controller, which owns the camera and the picker (ADR 0007 §2.1).
+   *
+   * @param target - The unit, spawner or tile to project.
+   * @returns Client pixels, or undefined when it is not drawn — which is
+   *   what closes an anchored menu whose target has died or gone unseen.
+   */
+  screenPositionOf(target: TacticalInvokeTarget): Vec2 | undefined {
+    const input = this.attached?.input;
+    if (!input) {
+      return undefined;
+    }
+    switch (target.kind) {
+      case "unit":
+        return input.unitScreenPosition(target.unitId);
+      case "spawner":
+        return input.spawnerScreenPosition(target.spawnerId);
+      case "tile":
+        return input.tileScreenPosition(target.tile);
+    }
+  }
+
+  /** Tears the scene down. Safe to call when not attached. */
   release(): void {
     const attached = this.attached;
     if (!attached) {
@@ -245,7 +299,9 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
     if (!attached) {
       return;
     }
-    attached.overlays.show(overlaysFor(attached.mission, attached.selected));
+    attached.overlays.show(
+      overlaysFor(attached.mission, attached.selected, attached.target),
+    );
     document.body.dataset.tacticalSelected = attached.selected ?? "";
   }
 

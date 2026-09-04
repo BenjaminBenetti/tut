@@ -532,9 +532,35 @@ export function rollAttack(
 }
 
 /**
+ * How many more times a unit could attack this turn (#533).
+ *
+ * ```
+ *   ap < cost                 ──► 0
+ *   attack ends the turn      ──► 1     one shot, whatever is left
+ *   otherwise                 ──► ⌊ap / cost⌋
+ * ```
+ *
+ * Derived rather than stored, so the HUD never has to know which kinds
+ * fire twice: an infantry squad with two actions reports 2, a mech with
+ * two reports 1, and a spent unit reports 0.
+ */
+export function attacksRemaining(
+  unit: Pick<Unit, "kind" | "ap">,
+  tuning: CombatTuning,
+): number {
+  if (tuning.attackApCost <= 0 || unit.ap < tuning.attackApCost) {
+    return 0;
+  }
+  return tuning.attackEndsTurn[unit.kind]
+    ? 1
+    : Math.floor(unit.ap / tuning.attackApCost);
+}
+
+/**
  * Resolves an `Attack` command: validates it, then rolls it with the
  * attacker paying `attackApCost`, or every remaining action point when
- * attacks end the turn. Rolls against exactly the numbers
+ * attacks end the turn for its kind — which is how an infantry squad
+ * gets two shots and a mech one (#533). Rolls against exactly the numbers
  * `previewAttack` shows. When the shot destroyed an egg spawner and that
  * completed the last objective, the mission ends here rather than at the
  * next turn boundary, the way `Interact` ends it (#426). Pure: on any
@@ -557,9 +583,10 @@ export function resolveAttack(
   if (!checked.ok) {
     return checked;
   }
-  const apAfter = tuning.attackEndsTurn
+  const attacker = checked.value.attacker;
+  const apAfter = tuning.attackEndsTurn[attacker.kind]
     ? 0
-    : Math.max(0, checked.value.attacker.ap - tuning.attackApCost);
+    : Math.max(0, attacker.ap - tuning.attackApCost);
   const applied = rollAttack(mission, checked.value, ctx, tuning, apAfter);
   // Shooting the last spawner wins the mission there and then, exactly
   // as planting charges on it does; a shot at a unit still waits for the

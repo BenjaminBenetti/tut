@@ -15,6 +15,7 @@ import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import { ATTACK_RESOLVED } from "../../tactical/model/attack-resolved-event";
 import { UNIT_DIED } from "../../tactical/model/unit-died-event";
 import { UNIT_MOVED } from "../../tactical/model/unit-moved-event";
+import { UNIT_SPOTTED } from "../../tactical/model/unit-spotted-event";
 import type { UnitId } from "../../tactical/model/unit";
 import type { SpriteId } from "../data/sprite-manifest";
 import { SPRITE_MANIFEST } from "../data/sprite-manifest";
@@ -63,6 +64,8 @@ export interface AnimationTiming {
   readonly floaterSeconds: number;
   /** Death fade, and the burst that plays over it. */
   readonly deathSeconds: number;
+  /** Reveal of an enemy that has just been spotted (#585). */
+  readonly revealSeconds: number;
 }
 
 /** What the queue is composed from. */
@@ -104,6 +107,7 @@ export const DEFAULT_ANIMATION_TIMING: AnimationTiming = {
   impactSeconds: 0.15,
   floaterSeconds: 0.9,
   deathSeconds: 0.5,
+  revealSeconds: 0.35,
 };
 
 /**
@@ -344,6 +348,12 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
         );
       case UNIT_DIED:
         return this.fade(event.payload.unitId);
+      case UNIT_SPOTTED:
+        // Only what the player can see: a spot on the bugs' side is
+        // their business and never reaches the screen (ADR 0006 §2.4).
+        return event.payload.team === "tdf"
+          ? this.reveal(event.payload.unitId)
+          : undefined;
       default:
         return undefined;
     }
@@ -588,6 +598,49 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
         return undefined;
       },
       finish: cleanup,
+    };
+  }
+
+  /**
+   * An enemy coming into view (#585): it swells from nothing to its full
+   * size where it was found.
+   *
+   * Ordering is the whole difficulty. The scene draws only what the
+   * player perceives, so an unspotted enemy has **no object at all** —
+   * and the host plays this queue before it places anything, which is
+   * why the host enqueues spots as a second batch, after placement. By
+   * the time this runs the unit exists; if it somehow does not, the
+   * reveal is skipped rather than faked.
+   *
+   * It deliberately does not walk the unit in from where it came: that
+   * path crosses ground the player has not explored, and animating it
+   * would draw the route out of the fog.
+   */
+  private reveal(unitId: UnitId): Animation | undefined {
+    const object = this.scene.unitObject(unitId);
+    if (!object) {
+      return undefined;
+    }
+    const seconds = this.timing.revealSeconds;
+    let elapsed = 0;
+    const settle = (): void => {
+      object.scale.set(1, 1, 1);
+    };
+    object.scale.set(0.01, 0.01, 0.01);
+    return {
+      name: `reveal:${unitId}`,
+      advance: (delta) => {
+        const leftover = Math.max(0, elapsed + delta - seconds);
+        elapsed = Math.min(seconds, elapsed + delta);
+        const grown = Math.max(0.01, elapsed / seconds);
+        object.scale.set(grown, grown, grown);
+        if (elapsed >= seconds) {
+          settle();
+          return leftover;
+        }
+        return undefined;
+      },
+      finish: settle,
     };
   }
 

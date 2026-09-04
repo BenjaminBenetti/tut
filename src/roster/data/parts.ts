@@ -261,6 +261,7 @@ export const STARTER_PARTS: readonly MechPart[] = [
       weight: 14,
     },
     description: "One slug, one brute. Needs a chassis that can feed it.",
+    weapon: { range: 14, armorPen: 4 },
   },
 
   // ===========================================

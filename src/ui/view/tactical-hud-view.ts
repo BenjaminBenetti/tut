@@ -13,6 +13,7 @@ import { reload } from "../../tactical/model/reload-command";
 import type { TacticalCommand } from "../../tactical/model/tactical-command";
 import type { TacticalError } from "../../tactical/model/tactical-error";
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
+import type { MissionView } from "../../tactical/model/mission-view";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { Team, Unit, UnitId } from "../../tactical/model/unit";
 import type { WeaponId } from "../../tactical/model/unit-weapon";
@@ -21,9 +22,11 @@ import {
   findAttackTarget,
 } from "../../tactical/service/attack-target-service";
 import {
+  attacksRemaining,
   previewAttack,
   weaponOptions,
 } from "../../tactical/service/combat-service";
+import { viewFor } from "../../tactical/service/mission-view-service";
 import type { MoveGraph } from "../../tactical/service/movement-service";
 import {
   buildMoveGraph,
@@ -41,6 +44,12 @@ import { ActionBarView } from "./action-bar-view";
 import { EventLogView } from "./event-log-view";
 import { HitPreviewView } from "./hit-preview-view";
 import { ObjectiveTrackerView } from "./objective-tracker-view";
+import type {
+  RadialMenuHub,
+  RadialMenuItem,
+  ScreenAnchor,
+} from "./radial-menu-view";
+import { RadialMenuView } from "./radial-menu-view";
 import type {
   PhaseAnnouncement,
   PhaseBannerOptions,
@@ -71,6 +80,15 @@ export interface TacticalHudHandlers {
   readonly onCommand: (command: TacticalCommand) => void;
   /** The player asked to leave the mission screen. */
   readonly onBack: () => void;
+  /**
+   * Where a world thing is on screen, for anchoring the context menu
+   * (#529, ADR 0007 §2.1). The HUD projects nothing itself; the scene
+   * owns the camera. Absent in tests and headless callers, and the menu
+   * simply does not open without it.
+   */
+  readonly anchorFor?: (
+    target: TacticalInvokeTarget,
+  ) => ScreenAnchor | undefined;
   /**
    * Selection or armed intent changed, so the overlays the scene draws
    * are stale (#590).
@@ -138,10 +156,35 @@ export class TacticalHudView {
   private readonly card = new UnitCardView();
   private readonly preview: HitPreviewView;
   private readonly objectives = new ObjectiveTrackerView();
+  /** The in-world context menu (#529); opened by right click, closed by the world. */
+  private readonly radial = new RadialMenuView({
+    onSelect: (id) => {
+      this.chooseFromMenu(id);
+    },
+    onDismiss: () => {
+      this.menuTarget = undefined;
+    },
+  });
+  /**
+   * What the open menu belongs to. The menu is dismissed by the world,
+   * not only by the player (ADR 0007 §2.2): when its target stops being
+   * drawn — killed, deselected, or unseen under fog — the anchor stops
+   * resolving and the menu closes itself.
+   */
+  private menuTarget: TacticalInvokeTarget | undefined;
   private readonly log = new EventLogView();
   private readonly actions: ActionBarView;
   private root: HTMLElement | undefined;
   private mission: TacticalState | undefined;
+  /**
+   * The mission as the player's side perceives it (ADR 0006). Kept
+   * beside the true mission rather than replacing it: what is *shown*
+   * and what can be *aimed at* come from here, so an enemy nobody has
+   * spotted is neither counted nor cycled onto, while movement still
+   * plans against the real board — a path routed through an unseen bug
+   * would be refused by the rules and read as a bug in the HUD.
+   */
+  private view: MissionView | undefined;
   private selected: UnitId | undefined;
   private target: UnitId | undefined;
   private mode: HudMode = DEFAULT_HUD_MODE;
@@ -194,6 +237,7 @@ export class TacticalHudView {
     const bottom = doc.createElement("div");
     bottom.className = "tut-hud__bottom";
     this.banner.mount(top);
+    this.radial.mount(hud);
     this.card.mount(side);
     this.preview.mount(side);
     this.objectives.mount(side);
@@ -225,6 +269,7 @@ export class TacticalHudView {
       this.log.clear();
     }
     this.mission = mission;
+    this.view = mission === undefined ? undefined : viewFor(mission, "tdf");
     this.phases.announce(phaseChangesIn(events));
     this.log.append(events, mission);
     const aliveUnit = (id: UnitId | undefined): boolean =>
@@ -357,14 +402,153 @@ export class TacticalHudView {
     if (this.selected === undefined) {
       return;
     }
-    if (this.mode === "attack") {
-      if (target.kind !== "tile") {
-        this.fireAt(target.kind === "unit" ? target.unitId : target.spawnerId);
-      }
+    // The armed action still commits directly when it applies to what
+    // was clicked — that is #520's control scheme and the fast path a
+    // player uses all mission. The menu fills the gap it leaves: right
+    // clicking an enemy with Move armed, or a tile with Attack armed,
+    // did nothing at all before (#529).
+    if (this.mode === "attack" && target.kind !== "tile") {
+      this.fireAt(target.kind === "unit" ? target.unitId : target.spawnerId);
       return;
     }
     if (this.mode === "move" && target.kind === "tile") {
       this.moveTo(target.tile);
+      return;
+    }
+    this.openMenuAt(target);
+  }
+
+  /**
+   * Opens the context menu on `target`, or reports that there was
+   * nothing to offer (#529).
+   *
+   * Entries come from the **same predicates the rules use** — `pathTo`
+   * decides whether Move is offered, `previewAttack` supplies the hit
+   * chance and damage. A menu that offers a shot the rules then refuse
+   * is the #517 defect wearing a different hat, and a menu that lies is
+   * worse than no menu.
+   *
+   * @param target - What the right click landed on.
+   * @returns True when a menu opened, so the caller stops.
+   */
+  private openMenuAt(target: TacticalInvokeTarget): boolean {
+    const anchor = this.handlers.anchorFor?.(target);
+    const mission = this.mission;
+    if (!anchor || !mission || this.selected === undefined) {
+      return false;
+    }
+    const { items, hub } = this.menuFor(target, mission);
+    if (items.length === 0) {
+      return false;
+    }
+    this.menuTarget = target;
+    this.radial.open(items, hub, anchor);
+    return true;
+  }
+
+  /** The entries and centre fact for a right click on `target`. */
+  private menuFor(
+    target: TacticalInvokeTarget,
+    mission: TacticalState,
+  ): { items: RadialMenuItem[]; hub: RadialMenuHub | undefined } {
+    const items: RadialMenuItem[] = [];
+    let hub: RadialMenuHub | undefined;
+    const unitId = this.selected;
+    if (unitId === undefined) {
+      return { items, hub };
+    }
+    if (target.kind === "tile") {
+      const path = pathTo(
+        mission,
+        unitId,
+        target.tile,
+        this.moveGraphFor(mission),
+      );
+      if (path !== undefined && path.length > 0) {
+        items.push({
+          id: `move:${String(target.tile.x)},${String(target.tile.y)},${String(target.tile.z)}`,
+          label: "Move",
+          icon: "move",
+          detail: `${String(path.length)} tiles`,
+          primary: true,
+        });
+      }
+      return { items, hub };
+    }
+    const targetId = target.kind === "unit" ? target.unitId : target.spawnerId;
+    const preview = previewAttack(
+      mission,
+      unitId,
+      targetId,
+      this.deps.combatTuning,
+    );
+    if (preview.ok) {
+      hub = {
+        value: `${String(Math.round(preview.value.hitChance * 100))}%`,
+        caption: "hit chance",
+        tone: preview.value.hitChance >= 0.5 ? "ok" : "warn",
+      };
+      items.push({
+        id: `attack:${targetId}`,
+        label: "Fire",
+        icon: "attack",
+        detail: `${String(preview.value.damage[0])}\u2013${String(preview.value.damage[1])} dmg`,
+        primary: true,
+      });
+    }
+    return { items, hub };
+  }
+
+  /**
+   * Keeps an open menu on its target, or closes it (ADR 0007 §2.2).
+   *
+   * The anchor is re-resolved from the world every refresh, so a menu
+   * follows its unit as the camera moves and closes itself the moment
+   * that unit stops being drawn — which under fog of war includes a bug
+   * walking out of sight, not only one that died.
+   */
+  private followMenu(): void {
+    const target = this.menuTarget;
+    if (target === undefined) {
+      return;
+    }
+    const anchor = this.handlers.anchorFor?.(target);
+    const mission = this.mission;
+    if (!anchor || !mission) {
+      this.menuTarget = undefined;
+      this.radial.close();
+      return;
+    }
+    // Recomputed rather than remembered, so the hub's hit chance is the
+    // one that applies now: `open` re-renders in place by design.
+    const { items, hub } = this.menuFor(target, mission);
+    if (items.length === 0) {
+      this.menuTarget = undefined;
+      this.radial.close();
+      return;
+    }
+    this.radial.open(items, hub, anchor);
+  }
+
+  /** Dispatches the command a menu entry stands for. */
+  private chooseFromMenu(id: string): void {
+    this.menuTarget = undefined;
+    const unitId = this.selected;
+    if (unitId === undefined) {
+      return;
+    }
+    if (id.startsWith("attack:")) {
+      this.fireAt(id.slice("attack:".length));
+      return;
+    }
+    if (id.startsWith("move:")) {
+      const [x, y, z] = id
+        .slice("move:".length)
+        .split(",")
+        .map((part) => Number(part));
+      if (x !== undefined && y !== undefined && z !== undefined) {
+        this.moveTo({ x, y, z });
+      }
     }
   }
 
@@ -632,12 +816,14 @@ export class TacticalHudView {
    * fired on instead of the key silently skipping it.
    */
   private selectNextTarget(): void {
-    const mission = this.mission;
+    const view = this.view;
     const selected = this.unit(this.selected);
-    if (!mission || !selected || !this.canAct()) {
+    if (!view || !selected || !this.canAct()) {
       return;
     }
-    const targets = enemyAttackTargets(mission, selected.team);
+    // From the view, so the key never steps onto a bug the player has
+    // never seen — which would announce both that it exists and where.
+    const targets = enemyAttackTargets(view, selected.team);
     if (targets.length === 0) {
       return;
     }
@@ -708,11 +894,13 @@ export class TacticalHudView {
       this.selected,
       this.target,
       this.deps.combatTuning,
+      this.armedWeaponId,
     );
   }
 
   /** Pushes the mission and the presentation state into every part. */
   private refresh(): void {
+    this.followMenu();
     const mission = this.mission;
     if (!mission) {
       this.banner.update(undefined);
@@ -733,12 +921,15 @@ export class TacticalHudView {
       turn: mission.turn,
       phase: mission.phase,
       tdfUnits: countAlive(mission, "tdf"),
-      bugUnits: countAlive(mission, "bugs"),
+      // Spotted bugs only: a count of every bug alive tells the player
+      // how many are out there before anyone has seen one.
+      bugUnits: this.view === undefined ? 0 : countAlive(this.view, "bugs"),
     });
     const selected = this.unit(this.selected);
     this.card.update(
       selected,
       selected ? mission.templates[selected.templateId] : undefined,
+      selected ? attacksRemaining(selected, this.deps.combatTuning) : undefined,
     );
     const target =
       this.target === undefined
@@ -755,6 +946,10 @@ export class TacticalHudView {
       inReach?.objective.id,
     );
     this.actions.update({
+      attacksLeft:
+        selected === undefined
+          ? 0
+          : attacksRemaining(selected, this.deps.combatTuning),
       weapons: selected
         ? weaponOptions(mission, selected.id, this.deps.combatTuning).map(
             (option) => ({

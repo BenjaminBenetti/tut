@@ -173,6 +173,11 @@ class FakeHost implements TacticalSceneHost {
   setWeaponRangeVisible(visible: boolean): void {
     this.calls.push(`weapon-range:${String(visible)}`);
   }
+  screenPositionOf(): { x: number; y: number } | undefined {
+    // The fake draws nothing, so nothing has a screen position.
+    return undefined;
+  }
+
   release(): void {
     this.calls.push("release");
   }

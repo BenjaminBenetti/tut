@@ -368,7 +368,7 @@ describe("resolveAttack", () => {
     expect(hits).toBeLessThan(180);
   });
 
-  it("applies damage, kills at zero with the killer named, and ends the attacker's turn", () => {
+  it("applies damage and kills at zero with the killer named, leaving a squad its second action", () => {
     const m = base();
     const hitSeed = [...Array(50).keys()]
       .map((i) => i + 1)
@@ -388,7 +388,9 @@ describe("resolveAttack", () => {
     const target = state.units.find((u) => u.id === "b1");
     const attacker = state.units.find((u) => u.id === "s1");
     expect(target?.hp).toBe(0);
-    expect(attacker?.ap).toBe(0);
+    // A squad's attack costs an action rather than the whole turn, so it
+    // still has one left to fire again (#533).
+    expect(attacker?.ap).toBe(1);
     expect(events.map((e) => e.type)).toEqual([ATTACK_RESOLVED, UNIT_DIED]);
     expect(events[1]?.payload).toEqual({ unitId: "b1", killerId: "s1" });
     expect(state.units).toHaveLength(2);
@@ -398,7 +400,7 @@ describe("resolveAttack", () => {
   it("spends only the attack cost when attacks do not end the turn, and a miss changes no hit points", () => {
     const tuning: CombatTuning = {
       ...T,
-      attackEndsTurn: false,
+      attackEndsTurn: { squad: false, mech: false, bug: false },
       maxHitChance: 5,
       minHitChance: 5,
     };
@@ -442,7 +444,7 @@ describe("resolveAttack", () => {
     };
     const first = resolveAttack(m, attack("s1", "b1"), ctx(1), {
       ...T,
-      attackEndsTurn: false,
+      attackEndsTurn: { squad: false, mech: false, bug: false },
     });
     expect(first.ok).toBe(true);
     if (!first.ok) return;
@@ -556,8 +558,9 @@ describe("attacking an egg spawner", () => {
       ATTACK_RESOLVED,
       SPAWNER_DAMAGED,
     ]);
-    // The attacker paid for the shot exactly as it would against a unit.
-    expect(applied.value.state.units[0]?.ap).toBe(0);
+    // The attacker paid for the shot exactly as it would against a unit:
+    // one action for a squad, not the whole turn (#533).
+    expect(applied.value.state.units[0]?.ap).toBe(1);
     // Nothing is written into units for a spawner.
     expect(applied.value.state.units).toHaveLength(1);
   });
@@ -756,5 +759,83 @@ describe("a melee attacker and cover", () => {
     expect(shot.ok).toBe(true);
     if (!shot.ok) return;
     expect(shot.value.cover).toBe(CoverLevel.LOW);
+  });
+});
+
+// ===========================================
+// Two attacks for infantry (#533)
+// ===========================================
+
+describe("attacks per turn by unit kind", () => {
+  /** A squad and a bug in range of each other, both at full actions. */
+  const pair = (attackerKind: "squad" | "mech") =>
+    mission([
+      unit("s1", "tdf", "rifle", 0, 0, { kind: attackerKind }),
+      unit("b1", "bugs", "swarmer", 1, 0, { hp: 40, maxHp: 40 }),
+    ]);
+
+  /** Loaded dice, so a shot always connects and the budget is what varies. */
+  const hit = (): TacticalContext => ctx(1);
+
+  it("lets an infantry squad fire twice in one turn", () => {
+    const first = resolveAttack(pair("squad"), attack("s1", "b1"), hit(), T);
+    expect(first.ok).toBe(true);
+    if (!first.ok) return;
+    const after = first.value.state.units.find((u) => u.id === "s1");
+    expect(after?.ap).toBe(1);
+
+    // The second shot is legal and spends the last action.
+    const second = resolveAttack(
+      first.value.state,
+      attack("s1", "b1"),
+      hit(),
+      T,
+    );
+    expect(second.ok).toBe(true);
+    if (!second.ok) return;
+    expect(second.value.state.units.find((u) => u.id === "s1")?.ap).toBe(0);
+  });
+
+  it("refuses a squad's third attack, so two is the budget and not a special case", () => {
+    let state = pair("squad");
+    for (let fired = 0; fired < 2; fired++) {
+      const applied = resolveAttack(state, attack("s1", "b1"), hit(), T);
+      expect(applied.ok).toBe(true);
+      if (!applied.ok) return;
+      state = applied.value.state;
+    }
+    const third = resolveAttack(state, attack("s1", "b1"), hit(), T);
+    expect(third.ok).toBe(false);
+    if (third.ok) return;
+    expect(third.error.kind).toBe("no-action-points");
+  });
+
+  it("still ends a mech's turn on its one attack", () => {
+    const applied = resolveAttack(pair("mech"), attack("s1", "b1"), hit(), T);
+    expect(applied.ok).toBe(true);
+    if (!applied.ok) return;
+    expect(applied.value.state.units.find((u) => u.id === "s1")?.ap).toBe(0);
+    const again = resolveAttack(
+      applied.value.state,
+      attack("s1", "b1"),
+      hit(),
+      T,
+    );
+    expect(again.ok).toBe(false);
+  });
+
+  it("still ends a bug's turn on its one attack", () => {
+    const state = mission(
+      [
+        unit("b1", "bugs", "swarmer", 0, 0),
+        unit("s1", "tdf", "rifle", 1, 0, { hp: 40, maxHp: 40 }),
+      ],
+      // A bug can only act in its own phase.
+      { phase: "bugs" },
+    );
+    const applied = resolveAttack(state, attack("b1", "s1"), hit(), T);
+    expect(applied.ok).toBe(true);
+    if (!applied.ok) return;
+    expect(applied.value.state.units.find((u) => u.id === "b1")?.ap).toBe(0);
   });
 });

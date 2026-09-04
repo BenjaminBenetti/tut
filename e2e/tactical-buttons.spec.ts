@@ -109,9 +109,11 @@ test("the number row arms actions in action-bar order", async ({ page }) => {
 
   await page.keyboard.press("2");
   await expect(body).toHaveAttribute("data-last-intent", "attack");
+  // A unit carrying several weapons shows one Attack button each (#532),
+  // so ask the armed one rather than assuming there is only one.
   await expect(
-    page.locator('#action-bar [data-action="attack"]'),
-  ).toHaveAttribute("aria-pressed", "true");
+    page.locator('#action-bar [data-action="attack"][aria-pressed="true"]'),
+  ).toHaveCount(1);
 
   await page.keyboard.press("1");
   await expect(body).toHaveAttribute("data-last-intent", "move");

@@ -469,12 +469,16 @@ export class TacticalHudView {
   private handleAction(action: TacticalAction | ActionBarAction): void {
     switch (action) {
       case "move":
-      case "attack":
         if (this.canAct()) {
           // Pressing the armed action again disarms it, which for Move
           // means staying on Move: there is nothing quieter to fall to.
           this.mode = this.mode === action ? DEFAULT_HUD_MODE : action;
           this.target = undefined;
+        }
+        break;
+      case "attack":
+        if (this.canAct()) {
+          this.armAttack();
         }
         break;
       case "overwatch":
@@ -529,6 +533,43 @@ export class TacticalHudView {
   private fireAt(targetId: string): void {
     this.target = targetId;
     this.confirmAttack();
+  }
+
+  /**
+   * Arms Attack, and on a repeat press moves to the unit's next weapon
+   * (#532). The digit stays put — Attack is always 2 — because
+   * renumbering the bar per selection would move Overwatch's key
+   * depending on what is selected, which is worse than a cycle. A unit
+   * with one weapon therefore behaves exactly as it always did: press
+   * again to disarm.
+   */
+  private armAttack(): void {
+    const mission = this.mission;
+    const selected = this.unit(this.selected);
+    const weapons =
+      mission && selected
+        ? weaponOptions(mission, selected.id, this.deps.combatTuning)
+        : [];
+    if (this.mode !== "attack") {
+      this.mode = "attack";
+      // A unit with one weapon sends a bare attack, exactly as before
+      // #532: naming the weapon would change a payload that every
+      // single-weapon unit has always omitted.
+      this.armedWeaponId =
+        weapons.length > 1 ? weapons[0]?.weapon.id : undefined;
+      this.target = undefined;
+      return;
+    }
+    if (weapons.length <= 1) {
+      this.mode = DEFAULT_HUD_MODE;
+      this.armedWeaponId = undefined;
+      this.target = undefined;
+      return;
+    }
+    const at = weapons.findIndex((o) => o.weapon.id === this.armedWeaponId);
+    const next = weapons[(at + 1) % weapons.length];
+    this.armedWeaponId = next?.weapon.id;
+    this.target = undefined;
   }
 
   /** Dispatches the previewed attack and clears the preview. */

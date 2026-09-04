@@ -258,9 +258,9 @@ export class ActionBarView {
       if (key !== this.shownWeapons) {
         const doc = slot.ownerDocument;
         slot.replaceChildren();
-        for (const weapon of weapons) {
-          slot.appendChild(this.weaponButton(doc, weapon));
-        }
+        weapons.forEach((weapon, index) => {
+          slot.appendChild(this.weaponButton(doc, weapon, index === 0));
+        });
         this.shownWeapons = key;
       }
       for (const weapon of weapons) {
@@ -287,12 +287,24 @@ export class ActionBarView {
   private weaponButton(
     doc: Document,
     weapon: ActionBarWeapon,
+    first: boolean,
   ): HTMLButtonElement {
     const button = doc.createElement("button");
     button.type = "button";
     button.className = "tut-btn";
     button.dataset.action = "attack";
     button.dataset.weaponId = weapon.id;
+    // Attack keeps its digit whatever is selected (#532): the key arms
+    // the first weapon and pressing it again cycles to the next, rather
+    // than renumbering the bar and moving Overwatch's key with it. Only
+    // the first button carries the hint, because there is one key.
+    if (first) {
+      const key = doc.createElement("span");
+      key.className = "tut-btn__key";
+      key.dataset.role = "shortcut";
+      key.textContent = String(ACTION_BAR_ORDER.indexOf("attack") + 1);
+      button.appendChild(key);
+    }
     const icon = doc.createElement("span");
     icon.className = "tut-icon tut-icon--sm";
     icon.style.setProperty("--icon", iconUrl(ICONS.attack));
@@ -300,7 +312,9 @@ export class ActionBarView {
     text.className = "tut-btn__label";
     text.textContent = weapon.name;
     button.append(icon, text);
-    button.title = weapon.name;
+    button.title = first
+      ? `${weapon.name} (${String(ACTION_BAR_ORDER.indexOf("attack") + 1)}, press again for the next weapon)`
+      : weapon.name;
     button.disabled = true;
     return button;
   }

@@ -27,8 +27,10 @@ import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { UnitId } from "../../tactical/model/unit";
 import { TacticalInputController } from "../../ui/controller/tactical-input-controller";
+import type { Vec2 } from "../../core/model/grid";
 import type {
   TacticalIntentSink,
+  TacticalInvokeTarget,
   TacticalTestHooks,
 } from "../../ui/model/tactical-intent";
 import type { TacticalSceneHost } from "../../ui/model/tactical-scene-host";
@@ -240,6 +242,30 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
   }
 
   /** Disposes the scene, input and builder. */
+  /**
+   * Where a world thing appears on screen, delegated to the input
+   * controller, which owns the camera and the picker (ADR 0007 §2.1).
+   *
+   * @param target - The unit, spawner or tile to project.
+   * @returns Client pixels, or undefined when it is not drawn — which is
+   *   what closes an anchored menu whose target has died or gone unseen.
+   */
+  screenPositionOf(target: TacticalInvokeTarget): Vec2 | undefined {
+    const input = this.attached?.input;
+    if (!input) {
+      return undefined;
+    }
+    switch (target.kind) {
+      case "unit":
+        return input.unitScreenPosition(target.unitId);
+      case "spawner":
+        return input.spawnerScreenPosition(target.spawnerId);
+      case "tile":
+        return input.tileScreenPosition(target.tile);
+    }
+  }
+
+  /** Tears the scene down. Safe to call when not attached. */
   release(): void {
     const attached = this.attached;
     if (!attached) {

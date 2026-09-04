@@ -37,6 +37,13 @@ describe("computeMapMetrics", () => {
     expect(metrics.coveredSidesMean).toBeCloseTo(6 / 35);
     expect(metrics.coveredShare).toBeCloseTo(6 / 35);
     expect(metrics.flankProofShare).toBe(0);
+    // Twenty perimeter tiles are closed by the map edge, plus the two
+    // interior neighbours of the boulder. Two or more closed sides: the
+    // four map corners, plus (0,1) and (1,0), which have the edge on one
+    // side and the boulder on the other. A wall is not a closed side on
+    // its own — a unit can stand on the far side of it (#586).
+    expect(metrics.shelteredShare).toBeCloseTo(22 / 35);
+    expect(metrics.backToWallShare).toBeCloseTo(6 / 35);
     expect(metrics.highCoverPer100).toBeCloseTo(100 / 36);
     expect(metrics.lowCoverPer100).toBe(0);
     expect(metrics.interiorPropsPerBuilding).toBe(0);
@@ -60,6 +67,10 @@ describe("computeMapMetrics", () => {
     expect(metrics.coveredSidesMean).toBe(0);
     expect(metrics.coveredShare).toBe(0);
     expect(metrics.flankProofShare).toBe(0);
+    // Every tile of a 3×3 touches the edge except the middle, and the
+    // four corners touch it twice.
+    expect(metrics.shelteredShare).toBeCloseTo(8 / 9);
+    expect(metrics.backToWallShare).toBeCloseTo(4 / 9);
   });
 
   it("counts a corner of two covers as flank proof", () => {

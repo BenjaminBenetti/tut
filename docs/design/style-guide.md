@@ -153,7 +153,7 @@ Implementation: `src/ui/style/theme.css` exposes the §4.4 tokens as CSS custom 
 - **Lines**: 1 px `ui-line`. No shadows, no gradients, no blur.
 - **States**: hover raises to `ui-panel-raised`; active/selected gets a 2 px `ui-accent` left bar; disabled drops text to `ui-text-dim` at 60 % opacity.
 - **Numbers**: tabular figures, right-aligned. Percentages carry the sign (`+12 %`). Credits are prefixed `¢`.
-- **Icons**: 16 and 24 px, single colour, 2 px stroke, SVG. Live under `public/assets/ui/icons/`.
+- **Icons**: 16 and 24 px, single colour, 2 px stroke, SVG. Live under `public/assets/ui/icons/`. Two sets: overworld and shared chrome (#102), and the tactical HUD set (#466) — `end-turn`, `interact`, the `hidden` and `suppressed` statuses, and the stat glyphs `hp`, `ap`, `armor`, `damage`, `range`, `cover-low`, `cover-high`, `elevation`, `ammo`. `ap` deliberately shows two filled pips and one empty: spent against remaining.
 - **Voice**: military-procedural. `DEPLOYMENT AUTHORISED`, `CONTACT: 3 SWARMERS`, `MECH LOST — ATLAS-02`. Terse, uppercase for headers, sentence case for body.
 
 ## 6. Modelling and material conventions

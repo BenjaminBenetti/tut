@@ -2,12 +2,22 @@
 
 Last updated: 2026-09-04 (post-v0.2.0; win path settled on #317).
 
+## The gate
+
+```
+pnpm typecheck && pnpm lint && pnpm build && pnpm test && pnpm test:sim && pnpm test:e2e
+```
+
+**`pnpm test:sim` is not optional and is easy to miss.** `vitest.config.ts` excludes `src/**/*.sim.test.ts`, so `pnpm test` does not run the 60-seed mission sweep; CI runs it as a separate `sim · mission sweep` check. A gate without it passes gameplay regressions: **#723** reverted a desert-palm mapgen change because it *lost a difficulty-4 mission*, where the measured baseline says difficulty 1–4 wins 100 % of the time. The sweep caught it; a typecheck/lint/build/test/e2e gate would not have.
+
+Stop any probe servers on 4173/4174 before the e2e run, or contention fakes failures.
+
 ## Latest run
 
 | Field | Value |
 |---|---|
-| SHA tested | `8db18b5` (main, after v0.2.3) |
-| Gate | typecheck, lint, build pass; vitest **1902 / 1902** (+1 deliberate skip); e2e **59 / 59** |
+| SHA tested | `de58489` (main, after v0.2.3) |
+| Gate | typecheck, lint, build pass; vitest **1906 / 1906** (+1 deliberate skip); **sim sweep 7 / 7**; e2e **59 / 59** |
 | Exploratory | 11 flows clean; determinism verified after the RNG nonce change; overwatch exercised end to end |
 | **Verdict** | **Healthy, and the board is clear.** Control scheme 7/7 on every head since band 1; a mission is completable with fog active, guarded by a permanent spec. **No open QA-filed defects.** |
 

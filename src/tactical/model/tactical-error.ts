@@ -29,6 +29,11 @@ export type TacticalError =
   | { readonly kind: "mission-active"; readonly missionId: string }
   | { readonly kind: "mission-not-found"; readonly missionId: string }
   | { readonly kind: "empty-deployment" }
+  | {
+      readonly kind: "oversized-deployment";
+      readonly size: number;
+      readonly max: number;
+    }
   | { readonly kind: "unit-not-found"; readonly unitId: string }
   | {
       readonly kind: "illegal-move";
@@ -95,6 +100,8 @@ export function describeTacticalError(error: TacticalError): string {
       return `No mission "${error.missionId}" is on offer`;
     case "empty-deployment":
       return "A deployment needs at least one unit";
+    case "oversized-deployment":
+      return `A deployment carries at most ${String(error.max)} units, but ${String(error.size)} were sent`;
     case "unit-not-found":
       return `Unit "${error.unitId}" is not in the roster`;
     case "illegal-move":

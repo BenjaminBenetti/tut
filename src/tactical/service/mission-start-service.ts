@@ -15,6 +15,10 @@ import { generateTacticalMap } from "../../mapgen/service/generate-tactical-map"
 import { missionToMapRecipe } from "../../mapgen/service/mission-map-recipe-adapter";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import type { Deployment } from "../../overworld/model/deployment";
+import {
+  deploymentSize,
+  MAX_DEPLOYED_UNITS,
+} from "../../overworld/model/deployment";
 import type { MissionId } from "../../overworld/model/mission";
 import type { Mech } from "../../roster/model/mech";
 import type { MechStatSheet } from "../../roster/model/mech-stat-sheet";
@@ -102,8 +106,16 @@ export function startTacticalMission<TState extends MissionCampaignState>(
   if (mission === undefined) {
     return err({ kind: "mission-not-found", missionId });
   }
-  if (deployment.squadIds.length + deployment.mechIds.length === 0) {
+  const size = deploymentSize(deployment);
+  if (size === 0) {
     return err({ kind: "empty-deployment" });
+  }
+  // Checked here as well as in `validateLaunch` (#67), so the headless
+  // path and #341's `StartMission` refuse it the same way and
+  // `no-deploy-room` goes back to meaning a genuine map problem rather
+  // than a roster the zone was never going to hold (#487).
+  if (size > MAX_DEPLOYED_UNITS) {
+    return err({ kind: "oversized-deployment", size, max: MAX_DEPLOYED_UNITS });
   }
 
   const recipe = missionToMapRecipe(

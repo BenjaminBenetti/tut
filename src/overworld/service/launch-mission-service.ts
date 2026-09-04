@@ -15,6 +15,7 @@ import { CITY_INFESTATION_CHANGED } from "../model/city-infestation-changed-even
 import type { CommandDispatcher } from "../model/command-dispatcher";
 import type { CommandHandler } from "../model/command-handler";
 import type { Deployment } from "../model/deployment";
+import { deploymentSize, MAX_DEPLOYED_UNITS } from "../model/deployment";
 import type { LaunchMissionCommand } from "../model/launch-mission-command";
 import { LAUNCH_MISSION } from "../model/launch-mission-command";
 import type { Mission, MissionId } from "../model/mission";
@@ -58,6 +59,8 @@ export const MISSION_NOT_FOUND = "mission-not-found";
 export const MISSION_EXPIRED = "mission-expired";
 /** The deployment names no units at all. */
 export const EMPTY_DEPLOYMENT = "empty-deployment";
+/** The deployment names more units than a deploy zone can hold (#487). */
+export const OVERSIZED_DEPLOYMENT = "oversized-deployment";
 /** A squad or mech in the deployment is not in the roster. */
 export const UNKNOWN_UNIT = "unknown-unit";
 /** A unit is committed twice in the same deployment. */
@@ -102,9 +105,18 @@ export function validateLaunch(
       ),
     );
   }
-  if (deployment.squadIds.length + deployment.mechIds.length === 0) {
+  const size = deploymentSize(deployment);
+  if (size === 0) {
     return err(
       commandError(EMPTY_DEPLOYMENT, "A deployment needs at least one unit"),
+    );
+  }
+  if (size > MAX_DEPLOYED_UNITS) {
+    return err(
+      commandError(
+        OVERSIZED_DEPLOYMENT,
+        `A deployment carries at most ${String(MAX_DEPLOYED_UNITS)} units, but ${String(size)} were sent`,
+      ),
     );
   }
   const repeated =

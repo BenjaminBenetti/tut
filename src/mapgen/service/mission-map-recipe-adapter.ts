@@ -6,6 +6,7 @@ import type { Result } from "../../core/model/result";
 import { err, ok } from "../../core/model/result";
 import type { Mission } from "../../overworld/model/mission";
 import { HOOK_KIND_DEFAULTS } from "../data/hook-kind-defaults";
+import type { MapDimensions } from "../model/map-recipe";
 import type { HookRequirement, MapRecipe } from "../model/map-recipe";
 import type { MapGenRegistries } from "../model/registries";
 import { createDefaultRegistries } from "./default-registries";
@@ -30,6 +31,17 @@ export type AdapterRegistries = Pick<
   MapGenRegistries,
   "biomes" | "settlements" | "mapSizes" | "hookPlacers"
 >;
+
+// ===========================================
+// Constants
+// ===========================================
+
+/**
+ * Tiles kept in hand when fitting a hook distance to a small map, so the
+ * placers still have a ring of board to choose from rather than the last
+ * legal column.
+ */
+const MAP_EDGE_MARGIN = 2;
 
 // ===========================================
 // Adapter
@@ -66,12 +78,13 @@ export function missionToMapRecipe(
   if (!registries.mapSizes.has(size)) {
     return err({ kind: "unknown-size", id: size });
   }
+  const dimensions = registries.mapSizes.get(size);
   const hooks: HookRequirement[] = [];
   for (const requirement of missionType.requiredHooks) {
     if (!registries.hookPlacers.has(requirement.kind)) {
       return err({ kind: "unknown-hook-kind", id: requirement.kind });
     }
-    hooks.push(toHookRequirement(requirement, mission.difficulty));
+    hooks.push(toHookRequirement(requirement, mission.difficulty, dimensions));
   }
   return ok({
     seed,
@@ -101,15 +114,41 @@ export function scaledHookCount(
 function toHookRequirement(
   requirement: MissionHookRequirement,
   difficulty: number,
+  size: MapDimensions,
 ): HookRequirement {
   const defaults = HOOK_KIND_DEFAULTS[requirement.kind];
+  const distance = fitDistanceToMap(defaults?.minDistanceFromDeploy, size);
   return {
     kind: requirement.kind,
     count: scaledHookCount(requirement, difficulty),
     requiredPass: defaults?.requiredPass ?? 1,
-    ...(defaults?.minDistanceFromDeploy === undefined
-      ? {}
-      : { minDistanceFromDeploy: defaults.minDistanceFromDeploy }),
+    ...(distance === undefined ? {} : { minDistanceFromDeploy: distance }),
     ...(defaults?.meta === undefined ? {} : { meta: defaults.meta }),
   };
+}
+
+/**
+ * The kind's distance from deploy, never more than half the map's shorter
+ * side less a two-tile margin (#465). A deploy zone sits in an edge band
+ * and takes sixteen tiles, so on a small map "at least 12 away" can leave
+ * nothing but rock, road and sidewalk for a placer to stand on, and the
+ * map then fails I8 — which the invariant is right to do, because the
+ * recipe asked for something the board cannot hold. Measured at 16×16
+ * over 480 maps: 6 failures at 12, 1 at 8, none at 6 or below.
+ *
+ * ```
+ *   16×16 ──► 6      20×20 ──► 8      32×32 ──► 14, so the shipped 12
+ *   48×48 ──► 22        every preset passes through untouched
+ * ```
+ */
+function fitDistanceToMap(
+  distance: number | undefined,
+  size: MapDimensions,
+): number | undefined {
+  if (distance === undefined) {
+    return undefined;
+  }
+  const room =
+    Math.floor(Math.min(size.width, size.depth) / 2) - MAP_EDGE_MARGIN;
+  return Math.min(distance, Math.max(0, room));
 }

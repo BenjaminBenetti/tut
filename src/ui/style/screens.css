@@ -772,3 +772,104 @@
   font-size: 10px;
   opacity: 0.65;
 }
+
+/* ===========================================
+   Radial menu (ADR 0007, #528)
+   =========================================== */
+
+/*
+ * A ring of choices around the thing being decided about, with the fact the
+ * decision turns on at its centre. Positioned by its owner from a projected
+ * world point; everything here is relative to that centre, so the ring has no
+ * box of its own and the battlefield stays visible behind it.
+ *
+ *          ( Fire )
+ *    ( Vent )    ( Move )      hub: 62% hit chance
+ *          ( Wait )
+ */
+.tut-radial {
+  position: absolute;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.tut-radial__ring,
+.tut-radial__hub {
+  position: absolute;
+  transform: translate(-50%, -50%);
+}
+
+.tut-radial__hub {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: var(--space-2) var(--space-3);
+  background: rgb(20 24 33 / 88%);
+  border: var(--line) solid var(--ui-line);
+  text-align: center;
+  pointer-events: none;
+}
+
+.tut-radial__value {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  line-height: 1;
+  color: var(--ui-text);
+}
+.tut-radial__value--ok {
+  color: var(--ui-ok);
+}
+.tut-radial__value--warn {
+  color: var(--ui-warn);
+}
+.tut-radial__value--danger {
+  color: var(--ui-danger);
+}
+
+.tut-radial__caption {
+  font-size: 10px;
+}
+
+/*
+ * Items are placed by their own left/top from the centre, then pulled back by
+ * half their size, so a longer label grows outward instead of shifting the
+ * ring.
+ */
+.tut-radial__item {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  white-space: nowrap;
+  pointer-events: auto;
+  animation: tut-radial-in 120ms ease-out both;
+}
+
+.tut-radial__detail {
+  font-size: 11px;
+  color: var(--ui-text-dim);
+}
+
+.tut-radial__item.tut-btn--primary .tut-radial__detail {
+  color: var(--ui-bg);
+}
+
+@keyframes tut-radial-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.86);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tut-radial__item {
+    animation: none;
+  }
+}

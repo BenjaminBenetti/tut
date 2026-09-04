@@ -280,6 +280,36 @@ const ADD_MISSION_VISION: Migration = {
   },
 };
 
+/**
+ * v12 → v13 (#667): a mission in progress gains `commandSeq`, the nonce
+ * that makes each command's RNG fork distinct.
+ *
+ * It is seeded from `log.length`, which is what the label used to read,
+ * so a save in flight keeps rolling the stream it was already on rather
+ * than jumping. From here the two are independent, which is the point:
+ * capping or filtering the log can no longer reroll the dice.
+ */
+const ADD_COMMAND_SEQ: Migration = {
+  from: 12,
+  to: 13,
+  apply: (state) => {
+    if (!isRecord(state)) {
+      return state;
+    }
+    const mission = state.activeMission;
+    if (!isRecord(mission) || typeof mission.commandSeq === "number") {
+      return state;
+    }
+    return {
+      ...state,
+      activeMission: {
+        ...mission,
+        commandSeq: Array.isArray(mission.log) ? mission.log.length : 0,
+      },
+    };
+  },
+};
+
 // ===========================================
 // Chain
 // ===========================================
@@ -362,4 +392,5 @@ export const GAME_STATE_MIGRATIONS: readonly Migration[] = [
   ADD_SPAWN_CLOCKS,
   ADD_MISSION_VISION,
   SPLIT_WEAPONS_PER_UNIT,
+  ADD_COMMAND_SEQ,
 ];

@@ -24,8 +24,10 @@ import type { TacticalState } from "../../tactical/model/tactical-state";
  * - `11`: `activeMission.vision`, per-side fog of war (#531, ADR 0006).
  * - `12`: `activeMission.units[].charges` becomes per weapon, and each
  *   template carries `weapons` rather than one `weapon` (#532).
+ * - `13`: `activeMission.commandSeq`, the RNG fork nonce, split out from
+ *   `log.length` (#667).
  */
-export const GAME_STATE_SCHEMA_VERSION = 12;
+export const GAME_STATE_SCHEMA_VERSION = 13;
 
 /**
  * Bookkeeping that every save needs regardless of gameplay content.

@@ -129,7 +129,7 @@ export function liftTacticalHandler<
       mission.missionId,
       String(mission.turn),
       mission.phase,
-      String(mission.log.length),
+      String(mission.commandSeq),
       command.type,
     ].join(":");
     const outcome = handler(mission, command, {
@@ -149,7 +149,11 @@ export function liftTacticalHandler<
     return ok({
       state: {
         ...state,
-        activeMission: { ...next, log: [...next.log, ...seen.events] },
+        activeMission: {
+          ...next,
+          log: [...next.log, ...seen.events],
+          commandSeq: mission.commandSeq + 1,
+        },
       },
       events: seen.events,
     });

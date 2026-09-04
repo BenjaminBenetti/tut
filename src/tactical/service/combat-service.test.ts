@@ -142,6 +142,7 @@ function mission(
     vision: emptyVision(),
     extraction: [],
     log: [],
+    commandSeq: 0,
     ...overrides,
   };
 }

@@ -354,3 +354,41 @@ describe("v11 → v12", () => {
     expect(() => step(idle)).not.toThrow();
   });
 });
+
+// ===========================================
+// v12 → v13: the RNG fork nonce (#667)
+// ===========================================
+
+describe("v12 → v13", () => {
+  const step = () => GAME_STATE_MIGRATIONS.find((m) => m.to === 13);
+
+  it("seeds commandSeq from the log a mission was already rolling on", () => {
+    // Not zero: the label used to read `log.length`, so a save in flight
+    // keeps its stream instead of jumping back and re-rolling.
+    const v12 = {
+      meta: {},
+      activeMission: { missionId: "m", log: [{ type: "a" }, { type: "b" }] },
+    };
+    expect(step()?.apply(v12)).toEqual({
+      ...v12,
+      activeMission: { ...v12.activeMission, commandSeq: 2 },
+    });
+  });
+
+  it("gives a mission with no log a zero", () => {
+    const v12 = { meta: {}, activeMission: { missionId: "m" } };
+    expect(step()?.apply(v12)).toEqual({
+      ...v12,
+      activeMission: { ...v12.activeMission, commandSeq: 0 },
+    });
+  });
+
+  it("leaves a campaign with no mission, and an existing commandSeq, alone", () => {
+    expect(step()?.apply({ meta: {} })).toEqual({ meta: {} });
+    const already = {
+      meta: {},
+      activeMission: { missionId: "m", log: [{ type: "a" }], commandSeq: 7 },
+    };
+    expect(step()?.apply(already)).toEqual(already);
+  });
+});

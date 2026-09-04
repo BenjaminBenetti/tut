@@ -190,4 +190,14 @@ export interface TacticalState {
   readonly vision: Readonly<Record<Team, SideVision>>;
   /** Tactical events emitted so far, oldest first; the debrief and replays read it. */
   readonly log: readonly TacticalEvent[];
+  /**
+   * Commands applied to this mission so far, and nothing else. It is the
+   * nonce that makes each command's RNG fork distinct (#667).
+   *
+   * Kept apart from `log.length`, which used to serve: the log is a list
+   * whose purpose is to be read by a player, so capping it, filtering it
+   * or seeding it silently rerolls every die in the mission. Seeding it
+   * is not hypothetical — #659 did, and the whole gate stayed green.
+   */
+  readonly commandSeq: number;
 }

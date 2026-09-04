@@ -49,16 +49,19 @@ export function createSettlementPasses(): GenerationPass[] {
  * hooks, connectivity — and replaces the town-building middle with two
  * passes of its own: a terraced impact bowl and a debris field.
  *
- * It also takes the biome's vegetation from the settlement's own prop
- * pass. That used to be impossible: the pass declared `interiors`, which
- * a site with no buildings can never provide, so the one archetype that
- * wanted three lines of scattering had to go without. #714 made the
- * requirement follow the placements, so asking for vegetation alone asks
- * only for a heightmap.
+ * It *could* now take the biome's vegetation from the settlement's own
+ * prop pass — #714 made that pass's requirements follow its placements,
+ * so asking for scattering alone asks only for a heightmap, where before
+ * it demanded `interiors` a site with no buildings can never provide.
+ * It deliberately does not. Debris already fills this ground: adding
+ * vegetation on top doubles the prototype's prop load, from 137 props and
+ * 18 % of open tiles beside cover to 271 and 31 %. Wreckage and
+ * vegetation are alternatives competing for the same tiles, not layers,
+ * so which one a crash site is made of is a design call for when the
+ * archetype becomes content rather than a side effect of a refactor.
  *
  * ```
- *   terrain ─► water ─► crater ─► debris ─► vegetation ─► ramps ─► hooks
- *                                                            ─► connectivity
+ *   terrain ─► water ─► crater ─► debris ─► ramps ─► hooks ─► connectivity
  * ```
  */
 export function createCrashSitePasses(): GenerationPass[] {
@@ -67,7 +70,6 @@ export function createCrashSitePasses(): GenerationPass[] {
     new WaterPass(),
     new CraterPass(),
     new DebrisPass(),
-    new PropPass({ id: "crash-vegetation", placements: ["vegetation"] }),
     new RampPass(),
     new HookPass(),
     new ConnectivityPass(),

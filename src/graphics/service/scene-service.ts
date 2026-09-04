@@ -57,6 +57,13 @@ export class SceneService {
   private readonly firstFrame: Promise<void>;
   private resolveFirstFrame: (() => void) | undefined;
   private lastFrameTimeMs: number | undefined;
+  /** Bumped every time a size is applied; see `onSettled`. */
+  private sizeGeneration = 0;
+  /** The generation the last rendered frame was drawn at. */
+  private renderedGeneration = -1;
+  /** The size the camera was last built for, to compare against the container. */
+  private appliedViewport: Viewport = { width: 0, height: 0 };
+  private readonly settledListeners = new Set<() => void>();
 
   // ===========================================
   // Constructor
@@ -131,12 +138,42 @@ export class SceneService {
   }
 
   /**
+   * Runs `listener` the next time a frame is rendered at a viewport size
+   * that has stopped changing — and immediately if that is already true.
+   *
+   * ```
+   *   appendChild ──▶ layout ──▶ ResizeObserver ──▶ applySize ──▶ render
+   *   ^ container size known here          camera matches it only here
+   * ```
+   *
+   * "A frame has been rendered" is not the same fact and is the one
+   * that misleads: the canvas moves between containers (#160), so after
+   * an `attach` the next frames are still drawn on the *previous*
+   * container's frustum until the observer fires. Anything projecting a
+   * world position in that window gets a confident wrong answer — a
+   * 78 px shift on the overworld, which #451 read as sixteen cities
+   * standing in the ocean (#473).
+   *
+   * @param listener - Called once, when the viewport is settled.
+   * @returns Unsubscribes, for a listener that is no longer wanted.
+   */
+  onSettled(listener: () => void): () => void {
+    if (this.isSettled()) {
+      listener();
+      return () => undefined;
+    }
+    this.settledListeners.add(listener);
+    return () => this.settledListeners.delete(listener);
+  }
+
+  /**
    * Stops the loop, stops watching the container and removes the canvas.
    * Scene content is left to its owner to dispose.
    */
   dispose(): void {
     this.renderer.setAnimationLoop(null);
     this.resizeObserver.disconnect();
+    this.settledListeners.clear();
     this.renderer.dispose();
     this.renderer.domElement.remove();
   }
@@ -183,6 +220,30 @@ export class SceneService {
   private applySize(viewport: Viewport): void {
     this.renderer.setSize(viewport.width, viewport.height);
     this.sceneCamera.resize(viewport.width, viewport.height);
+    this.appliedViewport = viewport;
+    this.sizeGeneration += 1;
+  }
+
+  /**
+   * Whether the camera both matches the container as it is right now and
+   * has drawn a frame that way.
+   *
+   * Measuring here rather than trusting the last resize is the whole
+   * point: the observer fires a task or more after the element moves, so
+   * between `appendChild` and that callback the camera is stale while
+   * every counter says it is current. Reading `clientWidth` forces the
+   * layout the observer is waiting for, so the mismatch is visible
+   * immediately instead of one frame late.
+   */
+  private isSettled(): boolean {
+    if (this.renderedGeneration !== this.sizeGeneration) {
+      return false;
+    }
+    const now = this.measure();
+    return (
+      now.width === this.appliedViewport.width &&
+      now.height === this.appliedViewport.height
+    );
   }
 
   /**
@@ -209,6 +270,17 @@ export class SceneService {
 
     this.resolveFirstFrame?.();
     this.resolveFirstFrame = undefined;
+
+    // Recorded after the draw, so a listener woken here is reading a
+    // camera that has already produced a frame at this size.
+    this.renderedGeneration = this.sizeGeneration;
+    if (this.settledListeners.size > 0 && this.isSettled()) {
+      // Copied, because a listener may unsubscribe itself or another.
+      for (const listener of [...this.settledListeners]) {
+        this.settledListeners.delete(listener);
+        listener();
+      }
+    }
   };
 
   /**

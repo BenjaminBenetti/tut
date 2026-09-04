@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import type { TutTestHooks } from "../src/app/model/test-hooks";
+import { MAP_READY_ATTRIBUTE } from "../src/ui/model/map-viewport-host";
 
 /** The page's global object as seen from `page.evaluate`, with the dev hooks. */
 interface HookGlobal {
@@ -26,6 +27,7 @@ test("holding a pan key cannot carry the overworld map off screen", async ({
   await expect(body).toHaveAttribute("data-app-state", "ready");
   await page.locator('[data-action="new-game"]').click();
   await expect(body).toHaveAttribute("data-screen", "overworld");
+  await expect(body).toHaveAttribute(MAP_READY_ATTRIBUTE, "true");
   const size = page.viewportSize();
   if (!size) {
     throw new Error("Test needs a fixed viewport");

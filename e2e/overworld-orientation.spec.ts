@@ -3,6 +3,7 @@ import { expect, test } from "@playwright/test";
 
 import { CITY_MARKER_NUDGES } from "../src/graphics/data/city-marker-nudges";
 import type { TutTestHooks } from "../src/app/model/test-hooks";
+import { MAP_READY_ATTRIBUTE } from "../src/ui/model/map-viewport-host";
 
 /** The page's global object as seen from `page.evaluate`, with the dev hooks. */
 interface HookGlobal {
@@ -102,6 +103,7 @@ test("the world map is axis aligned: east is right, south is down", async ({
   await page.locator('[data-field="seed"]').fill("4242");
   await page.locator('[data-action="new-game"]').click();
   await expect(body).toHaveAttribute("data-screen", "overworld");
+  await expect(body).toHaveAttribute(MAP_READY_ATTRIBUTE, "true");
 
   const cities = await page.evaluate((key) => {
     const raw = localStorage.getItem(key);

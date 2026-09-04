@@ -3,6 +3,7 @@ import { expect, test } from "@playwright/test";
 
 import type { TutTestHooks } from "../src/app/model/test-hooks";
 import { EARTH_MAP } from "../src/overworld/data/earth-map";
+import { MAP_READY_ATTRIBUTE } from "../src/ui/model/map-viewport-host";
 
 /** The page's global object as seen from `page.evaluate`, with the dev hooks. */
 interface HookGlobal {
@@ -88,6 +89,13 @@ test("every city marker picks itself with a pointer click", async ({
   await expect(page.locator("body")).toHaveAttribute(
     "data-screen",
     "overworld",
+  );
+  // The screen attribute flips before the camera has been rebuilt for
+  // the map cell, so every projected position is out by ~78 px for the
+  // next two frames (#473). Picking reads those positions.
+  await expect(page.locator("body")).toHaveAttribute(
+    MAP_READY_ATTRIBUTE,
+    "true",
   );
 
   const mapCell = await page.locator("#map-viewport").boundingBox();

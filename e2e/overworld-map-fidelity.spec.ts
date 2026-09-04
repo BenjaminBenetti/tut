@@ -4,6 +4,7 @@ import { expect, test } from "@playwright/test";
 
 import type { TutTestHooks } from "../src/app/model/test-hooks";
 import { EARTH_MAP } from "../src/overworld/data/earth-map";
+import { MAP_READY_ATTRIBUTE } from "../src/ui/model/map-viewport-host";
 
 // ===========================================
 // Types
@@ -95,31 +96,22 @@ async function openOverworld(page: Page): Promise<string[]> {
 }
 
 /**
- * Waits until the map canvas has taken the size of its cell. The scene
- * is mounted a frame or two after the screen appears, and measuring the
- * plate before that reads a half-resized render.
+ * Waits until the map is worth measuring: the app says so (#473).
+ *
+ * This used to poll the canvas box against the cell box and then sleep
+ * 250 ms on top. Both halves were wrong. The canvas takes the cell's
+ * size a frame before the camera is rebuilt for it, so the comparison
+ * can pass over a stale frustum — measured on seed 4242, the frame the
+ * screen appears on already has a 960 px cell while `cityScreenPosition`
+ * still answers 712.8 instead of 790.4, and it stays that way for two
+ * frames. The sleep was what actually covered that, by guess.
  */
 async function waitForMapSettled(page: Page): Promise<void> {
-  await expect
-    .poll(
-      () =>
-        page.evaluate(() => {
-          const canvas = document.querySelector("#map-viewport canvas");
-          const cell = document.getElementById("map-viewport");
-          if (!canvas || !cell) {
-            return -1;
-          }
-          const drawn = canvas.getBoundingClientRect();
-          const box = cell.getBoundingClientRect();
-          return Math.round(
-            Math.abs(drawn.width - box.width) +
-              Math.abs(drawn.height - box.height),
-          );
-        }),
-      { timeout: 10000 },
-    )
-    .toBeLessThanOrEqual(2);
-  await page.waitForTimeout(250);
+  await expect(page.locator("body")).toHaveAttribute(
+    MAP_READY_ATTRIBUTE,
+    "true",
+    { timeout: 10000 },
+  );
 }
 
 /** Where each city's marker is drawn, in client pixels. */

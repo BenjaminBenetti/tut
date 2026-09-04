@@ -33,11 +33,22 @@ gh api repos/BenjaminBenetti/tut/commits/<sha>/check-runs \
 ```
 
 Three checks should appear — `typecheck · lint · test · build`, `e2e · chromium`,
-`sim · mission sweep`. If a name appears that your gate does not run, your gate is
-incomplete; that is exactly how the miss above happened. CI is also the better
-arbiter when a local run fails: this container is loaded enough to fake timeouts,
-and a red locally with a green CI on the same SHA is a measurement problem, not a
-finding.
+`sim · mission sweep`. **Use this to learn which checks exist, not as a verdict.**
+If a name appears that your gate does not run, your gate is incomplete; that is
+exactly how the miss above happened, and the check names are readable even from a
+run that was cancelled.
+
+**Do not read a CI result as a pass unless it says `success`.** At the merge rate
+this repo sustains, a head often has no usable verdict: measured across seven
+consecutive heads, one had **zero** check-runs and four had at least one
+`cancelled` — superseded by the next merge before finishing. `cancelled` is
+neither pass nor fail, and an empty result is not agreement. **The local six-stage
+gate is the per-head verdict**; CI is corroboration when it happens to have
+finished.
+
+Where CI *is* the better arbiter is a local failure: this container is loaded
+enough to fake timeouts, so red locally with a `success` on CI for the same SHA is
+a measurement problem, not a finding.
 
 Stop any probe servers on 4173/4174 before the e2e run, or contention fakes failures.
 

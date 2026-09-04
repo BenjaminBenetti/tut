@@ -43,6 +43,7 @@ const SWARMER: SpawnSource = {
   move: 7,
   ap: 2,
   weapon: { range: 1, accuracy: 60, damage: 3, armorPen: 0 },
+  sightRange: 12,
   modelId: "bug.swarmer",
   hatchWeight: 6,
 };

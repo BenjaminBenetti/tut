@@ -3,7 +3,7 @@ import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { MissionId } from "../../overworld/model/mission";
 import type { MissionOutcome } from "../../overworld/model/mission-result";
 import type { TacticalEvent } from "./tactical-event";
-import type { Team, Unit } from "./unit";
+import type { Team, Unit, UnitId } from "./unit";
 import type { UnitTemplate, UnitTemplateId } from "./unit-template";
 
 // ===========================================
@@ -81,6 +81,46 @@ export interface EdgeSpawnSchedule {
 }
 
 // ===========================================
+// Vision
+// ===========================================
+
+/**
+ * A tile key from `TileIndex.keyOf`, packing a coordinate into one
+ * integer. Vision stores keys rather than coordinates because a mission
+ * holds thousands of them and they are only ever compared.
+ */
+export type VisionTileKey = number;
+
+/**
+ * What one side has seen (ADR 0006 §2.1). Stored rather than derived so
+ * the renderer never runs line of sight in the frame loop, so `explored`
+ * can accumulate, and so spotting is an event rather than a diff two
+ * layers have to agree on.
+ *
+ * `visible` and `spotted` are recomputed from the mission whenever a unit
+ * moves, dies or leaves; `explored` is the union of every `visible` so
+ * far and is the only part a save is trusted for (§2.5).
+ */
+export interface SideVision {
+  /** Tile keys this side can see this instant. Recomputed, never trusted from a save. */
+  readonly visible: readonly VisionTileKey[];
+  /** Tile keys this side has ever seen. Monotonic within a mission. */
+  readonly explored: readonly VisionTileKey[];
+  /** Enemy units currently seen, by id. Recomputed, never trusted from a save. */
+  readonly spotted: readonly UnitId[];
+}
+
+/** Both sides, in a fixed order, for iterating vision. */
+export const TEAMS_BY_VISION: readonly Team[] = ["tdf", "bugs"];
+
+/** No knowledge at all: what a side starts a mission with before its first look. */
+export const NO_VISION: SideVision = {
+  visible: [],
+  explored: [],
+  spotted: [],
+};
+
+// ===========================================
 // Tactical state
 // ===========================================
 
@@ -101,6 +141,7 @@ export interface EdgeSpawnSchedule {
  *   ├── edgeSpawn             when the next edge wave arrives
  *   ├── extraction[]          tiles a unit must reach to leave
  *   ├── extracted[]           units that left through them, as they left; not in units[]
+ *   ├── vision                what each side has seen (ADR 0006)
  *   ├── outcome?              how it ended, once a turn boundary found it over
  *   └── log[]                 domain events so far, for the debrief and replays
  * ```
@@ -142,6 +183,11 @@ export interface TacticalState {
    * the mission into a `MissionResult`.
    */
   readonly outcome?: MissionOutcome;
+  /**
+   * What each side has seen (ADR 0006). The renderer draws the TDF
+   * side's; a bug behaviour is handed a view built from the bugs' (#550).
+   */
+  readonly vision: Readonly<Record<Team, SideVision>>;
   /** Tactical events emitted so far, oldest first; the debrief and replays read it. */
   readonly log: readonly TacticalEvent[];
 }

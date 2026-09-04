@@ -242,6 +242,40 @@ const ADD_SPAWN_CLOCKS: Migration = {
   },
 };
 
+/**
+ * v10 → v11 (#531, ADR 0006): a mission in progress gains `vision`. Both
+ * sides start with nothing seen: `visible` and `spotted` are recomputed
+ * from scratch by the first `withVision` after load, so a stale or
+ * hand-edited value can never leak knowledge (§2.5), and `explored`
+ * cannot be recomputed at all.
+ *
+ * That means a save carried across this upgrade re-hides ground the
+ * player had already scouted. It is a real regression for exactly the one
+ * mission in flight, and the alternative is inventing explored ground
+ * that was never seen. The ADR takes the honest reset.
+ */
+const ADD_MISSION_VISION: Migration = {
+  from: 10,
+  to: 11,
+  apply: (state) => {
+    if (!isRecord(state)) {
+      return state;
+    }
+    const mission = state.activeMission;
+    if (!isRecord(mission) || isRecord(mission.vision)) {
+      return state;
+    }
+    const empty = { visible: [], explored: [], spotted: [] };
+    return {
+      ...state,
+      activeMission: {
+        ...mission,
+        vision: { tdf: { ...empty }, bugs: { ...empty } },
+      },
+    };
+  },
+};
+
 // ===========================================
 // Chain
 // ===========================================
@@ -261,4 +295,5 @@ export const GAME_STATE_MIGRATIONS: readonly Migration[] = [
   ADD_MISSION_EXTRACTED,
   ADD_UNIT_CHARGES,
   ADD_SPAWN_CLOCKS,
+  ADD_MISSION_VISION,
 ];

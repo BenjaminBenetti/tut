@@ -27,6 +27,7 @@ import type {
   TacticalState,
 } from "../model/tactical-state";
 import { DEFAULT_HATCH_RADIUS, FIRST_TURN } from "../model/tactical-state";
+import { initialVision } from "./vision-service";
 import type { PassClass, Unit } from "../model/unit";
 import { passMaskFor } from "../model/unit";
 import type { UnitTemplate, UnitTemplateId } from "../model/unit-template";
@@ -132,7 +133,7 @@ export function startTacticalMission<TState extends MissionCampaignState>(
     complete: false,
   }));
 
-  const tactical: TacticalState = {
+  const tactical: Omit<TacticalState, "vision"> = {
     missionId: mission.id,
     seed: hashSeed(recipe.value.seed),
     difficulty: mission.difficulty,
@@ -149,7 +150,12 @@ export function startTacticalMission<TState extends MissionCampaignState>(
     extracted: [],
     log: [],
   };
-  return ok({ ...state, activeMission: tactical });
+  return ok({
+    ...state,
+    // Both sides look once from where they deployed, so the first frame
+    // is already fogged rather than blank (ADR 0006).
+    activeMission: { ...tactical, vision: initialVision(tactical) },
+  });
 }
 
 // ===========================================

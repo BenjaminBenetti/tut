@@ -71,6 +71,7 @@ const SWARMER: BugUnitSource = {
   move: 7,
   ap: 2,
   weapon: { range: 1, accuracy: 60, damage: 3, armorPen: 0 },
+  sightRange: 12,
   modelId: "bug.swarmer",
 };
 
@@ -88,6 +89,7 @@ describe("squadUnit", () => {
       maxAp: 2,
       move: 5,
       weapon: { range: 8, accuracy: 65, damage: 3, armorPen: 0 },
+      sightRange: 12,
       armor: 0,
       passClass: "infantry",
       modelId: "tdf.infantry.rifle",
@@ -156,6 +158,7 @@ describe("mechUnit", () => {
       maxAp: 2,
       move: 8,
       weapon: { range: 10, accuracy: 70, damage: 40, armorPen: 2 },
+      sightRange: 14,
       armor: 9,
       passClass: "mech",
       modelId: "tdf.mech.assembled-a",
@@ -207,6 +210,7 @@ describe("bugUnit", () => {
       maxAp: 2,
       move: 7,
       weapon: SWARMER.weapon,
+      sightRange: SWARMER.sightRange,
       armor: 0,
       passClass: "infantry",
       modelId: "bug.swarmer",

@@ -20,5 +20,7 @@ export interface BugUnitSource {
   readonly move: number;
   readonly ap: number;
   readonly weapon: WeaponProfile;
+  /** Tiles it can see, for fog of war (ADR 0006). Positive. */
+  readonly sightRange: number;
   readonly modelId: ModelAssetId;
 }

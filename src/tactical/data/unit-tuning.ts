@@ -14,6 +14,9 @@ import type { UnitTuning } from "../model/unit-tuning";
  * - The starter mech (armor 30, mobility 7, firepower 40) comes out at
  *   80 hp, 6 move, a 40-damage 70% shot and 9 per-hit armor.
  * - Both sides get the XCOM-style two-action turn (GDD §6.2).
+ * - Sight reaches half again past the weapon (12 for infantry, 14 for a
+ *   mech, against ranges of 8 and 10), so a squad spots what it is about
+ *   to walk into rather than discovering it by being shot (ADR 0006).
  * - Charges (#409): a rifle squad fires three times before reloading, a
  *   rocket squad once, a mech four times before venting; bugs never run
  *   dry.
@@ -29,6 +32,7 @@ export const UNIT_TUNING: UnitTuning = {
     // gives rifle 3, rocket 5, sniper 4, engineer 3, medic 2 after the
     // ceiling, exactly the values tuned before that rescale.
     weapon: { range: 8, accuracy: 65, damage: 0.075, armorPen: 0 },
+    sightRange: 12,
     modelIdByType: {
       rifle: "tdf.infantry.rifle",
       rocket: "tdf.infantry.rocket",
@@ -49,6 +53,7 @@ export const UNIT_TUNING: UnitTuning = {
     minMove: 2,
     maxMove: 8,
     weapon: { range: 10, accuracy: 70, damage: 1, armorPen: 2 },
+    sightRange: 14,
     modelId: "tdf.mech.assembled-a",
     charges: 4,
   },

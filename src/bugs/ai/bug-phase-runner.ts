@@ -120,9 +120,10 @@ export function livingBugIds(mission: TacticalState): readonly UnitId[] {
 }
 
 /**
- * Applies one bug's commands in order, each on its own labelled fork,
- * stopping at the first refusal so a plan the rules reject cannot half
- * apply.
+ * Applies one bug's commands in order, each on its own labelled fork.
+ * The first refusal ends the bug's turn: the plan has diverged from the
+ * board it was made against, so the commands behind it are dropped
+ * rather than forced through. Whatever landed before it stands.
  */
 function applyAll(
   handlers: TacticalHandlers,

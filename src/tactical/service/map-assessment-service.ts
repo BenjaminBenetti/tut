@@ -65,7 +65,9 @@ export function assessMap(
   const reach = new ReachabilityService(index, map.connectors);
   const deploy = map.hooks.deployZones.flatMap((zone) => zone.tiles);
   const steps = walkFrom(index, reach, deploy, PassMask.INFANTRY);
-  const infantry = reach.reachableFrom(deploy, PassMask.INFANTRY);
+  // The walk already visited every infantry-reachable tile, so its keys
+  // are the reachable set; only the mech's costs a second search.
+  const infantry: ReadonlySet<number> = new Set(steps.keys());
   const mech = reach.reachableFrom(deploy, PassMask.MECH);
   const firing = map.hooks.objectives.map((objective) =>
     firingPositionsFor(map, index, infantry, objective.tiles[0], options),

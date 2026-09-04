@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { BUG_SPECIES } from "../../bugs/data/species";
 import { ok } from "../../core/model/result";
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
 import { MISSION_TYPES } from "../../content/data/mission-types";
@@ -253,14 +254,32 @@ describe("createSheetLookup", () => {
 });
 
 describe("shippedBugBehaviours", () => {
+  // The species whose behaviour has not merged yet. Every other species
+  // must be registered, so landing a behaviour class without wiring it
+  // into shippedBugBehaviours fails here instead of shipping a bug that
+  // stands still for a whole mission.
+  const UNLANDED: readonly string[] = ["punish-clumps"];
+
   it("registers the behaviours that have landed, one tag each", () => {
     const tags = shippedBugBehaviours().map((b) => b.tag);
-    // #333 shipped the lurker's flank; #332 rush and #334 punish-clumps
-    // join this list as they merge.
+    // #333 shipped the lurker's flank, #332 the swarmer's rush; #334
+    // punish-clumps joins this list as it merges.
     expect(tags).toContain("flank");
+    expect(tags).toContain("rush");
     expect(new Set(tags).size).toBe(tags.length);
     expect(
       () => new MapBehaviourRegistry(shippedBugBehaviours()),
     ).not.toThrow();
+  });
+
+  it("gives every species a behaviour unless it is known not to have landed", () => {
+    const registry = new MapBehaviourRegistry(shippedBugBehaviours());
+    for (const species of Object.values(BUG_SPECIES)) {
+      const expected = !UNLANDED.includes(species.behaviour);
+      expect(
+        registry.get(species.behaviour) !== undefined,
+        `${species.id} (${species.behaviour}) registered`,
+      ).toBe(expected);
+    }
   });
 });

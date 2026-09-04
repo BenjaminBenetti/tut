@@ -1,6 +1,6 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-04 (session 2, first update)
+Last updated: 2026-09-04 (session 2, second update)
 
 ## 1. What I was doing and where it stands
 
@@ -28,6 +28,11 @@ Last updated: 2026-09-04 (session 2, first update)
 | **Env atlas round 2**: ground, roof and concrete cells repainted for readability | #441 | **PR #442**. Luminance std per cell 2.8–8 → 5.5–14.3; rule written into style guide §7. |
 | **Batch E: city building kit as Blender models** (8 pieces) | #454 | **PR #455**. Kit doc `docs/design/kits/city-building-kit.md`. |
 | VFX playback (tracer / claw / death), filed for graphics | #457 | Open, not mine to implement. |
+| **Tactical HUD icon set** (13 icons: end-turn, interact, hidden, suppressed, hp, ap, armor, damage, range, cover-low/high, elevation, ammo) | #466 | **PR #467**. |
+| **Tactical presentation spec** (style guide §12) + mission mood concept | #471 | **PR #472**. |
+| **Tactical map palette → style guide tokens** + `shoot-mission.mjs` | #475 | **PR #478**. |
+| **The map draws boxes, not models** — filed for graphics | #474 | Open, p1. The finding that matters most; see §2. |
+| Overlapping hook markers z-fight — filed for graphics | #477 | Open, p3. |
 | Image generation recipe (incl. transparent sprites) | — | **Working.** See §5. |
 | Headless GLB / page render checks (Playwright) and Blender review renders | — | **Working.** See §7 and §8. |
 
@@ -39,6 +44,7 @@ Issues #2, #3, #4, #93, #102, #119, #143, #144, #145 are on project 5; #162, #16
 - **PR #442** (#441) env atlas round 2 — waiting on CI/merge.
 - **PR #455** (#454) city building kit — waiting on CI/merge.
 - #457 is filed **for graphics**, not for me: the three new VFX ids are registered and unused. Do not implement it; chase it if M2 ships without them.
+- **#474 is the thing to read first.** A live mission draws *no* tile, building or prop models: `tactical-map-view.ts` builds every tile, wall, prop and connector as flat instanced boxes coloured by `mapgen-preview-palette.ts`, whose own doc comment says it is a stopgap "until the tactical scene builder lands". The scene builder landed for **units only**. So the env atlas (#394, #441), the city kit (#454), the cover props (#463) and the 21 tile/building/prop GLBs in `MODEL_MANIFEST` are invisible in game — they appear only in my offline preview renders. **Do not commission more environment art until #474 lands.** #478 is the stopgap: it makes the boxes use the right palette.
 - #274 ledger after the kit: **27 placeholder models left** — six city road/sidewalk tiles, six ground tiles, fifteen props. Props are the next batch worth doing; ground tiles are 12-triangle slabs whose look comes from the atlas, not the geometry.
 
 ## 3. Decisions I made and why
@@ -66,16 +72,18 @@ Issues #2, #3, #4, #93, #102, #119, #143, #144, #145 are on project 5; #162, #16
 - **Generated sprites are quantised before committing**: `magick <in> -strip +dither -colors 32 -define png:compression-level=9 png32:<out>` cut the bug-death burst from 147 KB to 58 KB with no visible change. `png32:` is not optional — palette output writes colour type 3 and the manifest test requires alpha in the colour type. Same trick on big docs images: a `montage` contact sheet came out at 3 MB and quantising to 256 colours took it to 889 KB.
 - **Tile textures carry detail at mid scale, never at tile scale (#441)**: one model per tile id means every grass tile is the same stamp, so a big blob turns a field into a visible checkerboard — my first repaint did exactly that with period-3 noise and 20 px blobs. Period 6–11 noise plus 4–13 px `Cell.blob` ellipses, target luminance std 7–15 per 128 px cell, palette mean unchanged. The rule is in style guide §7 and the measurement recipe is in §9 below.
 - **Four ways a Blender kit piece goes wrong (#454)**, all in `docs/design/kits/city-building-kit.md`: coincident faces z-fight into black patches (cut openings, do not overlay panels); a recessed deck centre exposes the ground tile under it (colour, not depth, marks a border); `bpy.ops.uv.reset` orients u along whichever edge a face's loop starts on, so upright panels sample brick courses sideways (`bpy_kit.box(..., uv_rot=90)`, added in the same PR, opt-in so no existing model moves); nothing may rise above its storey (a staircase handrail put the model at 2.0 u, through the floor above).
+- **Look at the real game, not only at previews (#474, #475)**: `node tools/art/preview/shoot-mission.mjs out.png [seed] [--overworld]` boots the app on the dev server, plays to the first mission with the e2e `__tut__` hooks and screenshots the tactical screen. Two runs are pixel-identical. Every art review before this one was an offline render of assets the game never loads, which is exactly how #474 went unnoticed for a milestone.
 - **Chamfer border trick**: `.tut-panel`/`.tut-btn` are two clipped layers (line colour behind, surface colour inset 1 px) so the 1 px border follows the 45° cut. `--surface` custom property selects the inner colour per variant.
 
 ## 4. Next, in order
 
-1. Watch #436, #442, #455 through review; answer Tech Lead notes.
-2. **Batch F: props as Blender models** — the fifteen remaining props, cover first (`prop.crate`, `prop.sandbags`, `prop.barrier-concrete`, `prop.dumpster`, `prop.car-compact`), then vegetation. Same recipe as the city kit; reuse `city_kit_parts` idioms and the four gotchas in the kit doc.
-3. Director round-2 notes on any model, texture cell or the scene render: edit the builder or painter, rerun, regenerate previews (`render-placeholders.mjs`, `render-thumbnails.mjs`, `render-scene.mjs`), PR.
-4. Biome building kits (snow, desert, coastal) if mapgen's templates start naming them; extra env cells (ice, sandstone, wet sand, seawall) need a bigger atlas — the 4×4 grid is full, so size it once for everything mapgen plans to emit.
-5. Hand-drawn intermediate VFX frames only if #338's playback reads as a zoom rather than motion.
-6. Keep `docs/design/scene-preview.png` current after any tile, kit or unit change; it is the one image that shows everything together.
+1. Watch the open PRs (#436, #442, #455, #464, #467, #472, #478) through review; answer Tech Lead notes.
+2. Chase **#474**. Until it lands, environment art has no in-game effect; offer to write the `surface id → model id` mapping table (style guide §7 already has it) or to cut the model set if instancing every cell is too expensive.
+3. **Batch G: the last nine props as Blender models** — lamp post, hydrant, fence, shelving, boulder, cactus, three trees. Same recipe; stack on #464 only if it has not merged.
+4. Director round-2 notes on any model, texture cell or the scene render: edit the builder or painter, rerun, regenerate previews (`render-placeholders.mjs`, `render-thumbnails.mjs`, `render-scene.mjs`), PR.
+5. Biome building kits (snow, desert, coastal) if mapgen's templates start naming them; extra env cells (ice, sandstone, wet sand, seawall) need a bigger atlas — the 4×4 grid is full, so size it once for everything mapgen plans to emit.
+6. Hand-drawn intermediate VFX frames only if #338's playback reads as a zoom rather than motion.
+7. Keep `docs/design/scene-preview.png` current after any tile, kit or unit change; it is the one image that shows everything together.
 
 ## 5. Image generation recipe (Codex CLI)
 

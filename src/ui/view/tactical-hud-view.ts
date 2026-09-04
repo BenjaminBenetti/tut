@@ -162,7 +162,7 @@ export class TacticalHudView {
       this.chooseFromMenu(id);
     },
     onDismiss: () => {
-      this.menuTarget = undefined;
+      this.closeMenu();
     },
   });
   /**
@@ -370,6 +370,9 @@ export class TacticalHudView {
         this.handleAction(intent.action);
         return;
       case "end-turn":
+        // Straight to the command rather than through `handleAction`, so
+        // it closes the ring itself (#627).
+        this.closeMenu();
         this.handlers.onCommand(endTurn());
         return;
     }
@@ -510,29 +513,46 @@ export class TacticalHudView {
   private followMenu(): void {
     const target = this.menuTarget;
     if (target === undefined) {
+      // Reconciles state to the DOM in one place: anything that drops the
+      // target closes the ring, rather than each caller remembering to.
+      // This early return used to leave the ring on screen for the rest
+      // of the mission (#627).
+      this.radial.close();
       return;
     }
     const anchor = this.handlers.anchorFor?.(target);
     const mission = this.mission;
     if (!anchor || !mission) {
-      this.menuTarget = undefined;
-      this.radial.close();
+      this.closeMenu();
       return;
     }
     // Recomputed rather than remembered, so the hub's hit chance is the
     // one that applies now: `open` re-renders in place by design.
     const { items, hub } = this.menuFor(target, mission);
     if (items.length === 0) {
-      this.menuTarget = undefined;
-      this.radial.close();
+      this.closeMenu();
       return;
     }
     this.radial.open(items, hub, anchor);
   }
 
+  /**
+   * Puts the ring away and forgets what it belonged to. The one way the
+   * menu closes, so no path can drop the target while leaving the ring
+   * on screen — which is what stranded it over the map (#627).
+   */
+  private closeMenu(): void {
+    this.menuTarget = undefined;
+    this.radial.close();
+  }
+
   /** Dispatches the command a menu entry stands for. */
   private chooseFromMenu(id: string): void {
-    this.menuTarget = undefined;
+    // Close first, and unconditionally: the view reports a choice but
+    // does not hide itself, so every path out of here has to. Clearing
+    // only the target left the ring stranded on screen offering an
+    // action that had already happened (#627).
+    this.closeMenu();
     const unitId = this.selected;
     if (unitId === undefined) {
       return;
@@ -620,6 +640,9 @@ export class TacticalHudView {
     if (!mission) {
       return;
     }
+    // The ring belongs to the decision that opened it. Picking something
+    // else is a new decision, so the old one goes away (#627).
+    this.closeMenu();
     const picked = findAttackTarget(mission, unitId);
     if (!picked || picked.hp <= 0) {
       return;
@@ -651,6 +674,9 @@ export class TacticalHudView {
    * different and this is the one place they meet.
    */
   private handleAction(action: TacticalAction | ActionBarAction): void {
+    // Arming, cancelling, ending the turn: all of them move on from
+    // whatever the ring was asking about (#627).
+    this.closeMenu();
     switch (action) {
       case "move":
         if (this.canAct()) {

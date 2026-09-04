@@ -1,6 +1,6 @@
 # Handoff: Map Generation Specialist
 
-Last updated: 2026-09-04 09:20 UTC (session 3, update 4). Read `docs/process/roles/mapgen.md` and ADR 0004 first.
+Last updated: 2026-09-04 11:10 UTC (session 3, update 5). Read `docs/process/roles/mapgen.md` and ADR 0004 first.
 
 ## 1. Where things stand
 
@@ -31,6 +31,11 @@ Last updated: 2026-09-04 09:20 UTC (session 3, update 4). Read `docs/process/rol
   elevation on city maps), #446 (melee bugs invert the cover rules — tactical's), #447 (the M3
   archetype sketch, with two questions to answer before anything is built) and the ruling asked for
   on #465 (should `resolveParams` reject an over-constrained recipe outright).
+- **Session 3, later stretch.** Merged: #587 (#586, the cover that stops a melee attacker), #597
+  (#596, how much fog of war hides), #607 (#508, half walls and parapets). Filed and handed on:
+  #591 (trees do not block sight — parked behind #593), #593 (**a hill does not block line of
+  sight**, p1, seat eng-5). Re-ran #281's tables after #446 shipped, as the Director asked. Details
+  in §2b and §3c.
 - **After the tag, three more mapgen changes merged.** #506 (#492) took `windowDensity` from 0.5–0.7
   to 0.3 so buildings stop reading as glass towers; #547 (#544) made the egg-spawner placer prefer a
   tile something can shoot; #535 (#512) gave city maps outdoor high ground for mechs, on the
@@ -101,6 +106,24 @@ medium map).
 
 The knob is `SETTLEMENT_DEFINITIONS.city.elevatedFeatures`, attempts rather than placements — the
 plat runs out of room around forty, so raising it only costs generation time.
+
+## 2b. Half walls and parapets (#508, merged as #607)
+
+`WallKind` gained **`half`**: infantry vaults it, a mech goes round, it never blocks sight, and it
+grades to low cover. The movement rule is what makes it a distinct piece — an impassable,
+transparent, low-cover wall is `window`, which already existed. ADR 0004 §4.2 now carries the wall
+table and §5's traversal line includes it.
+
+**Why it matters more than another prop:** every cover prop stands *on* a tile, so cover and
+standing room compete for the same ground. An edge-mounted piece does not, so a unit can stand *at*
+the cover and shoot over it. The elevation pass rails the outer edge of everything it raises, and on
+city maps that took cover on ≥ 1 side from 28 % to 41 % and flank-proof ground from 4 % to 8 %, with
+**mech reach, ramp count and approach length all unchanged**. Ramps still climb a railed edge: a
+connector joins its two tiles directly and never consults the wall between them.
+
+Graphics rode along because `WallKind` is a compile-time union — `tsc` names every site. Walls now
+draw at a per-kind height (`WALL_HEIGHTS`), because at full storey height the parapets made the city
+read as a walled compound. **Look at the render before believing a cover number**; that is twice now.
 
 ## 3. Measurements (medium maps, 8 seeds per cell, `main` before #269; desert and ramps moved as noted below)
 
@@ -250,6 +273,29 @@ above one to stand. City ramps went from none to 15 on a small map and 42 on a m
 Cover is unmoved by all of this: 17–32 % of open ground has cover on one side, 3–5 % on two. #281 is
 still the open call, and #446 still says the sign is inverted while every bug is melee.
 
+## 3c. Cover and visibility as they stand (2026-09-04 11:10, after #446, #508, #512)
+
+6 seeds per biome × settlement. The two cover columns measure different things and both matter:
+`covered` is cover that mitigates *ranged* fire, `sheltered` is directions a *melee* attacker cannot
+come from, which is the only cover that protects against the current bestiary (#446, #586).
+
+| | covered ≥1 | flank-proof | sheltered | back-to-wall | firing spots in cover | visible in range |
+|---|---|---|---|---|---|---|
+| small rural | 16 % | 3 % | 46 % | 16 % | 6 % | 87 % |
+| small town | 22 % | 3 % | 47 % | 15 % | 9 % | 67 % |
+| small city | 41 % | 8 % | 54 % | 12 % | 15 % | 51 % |
+| medium rural | 17 % | 3 % | 43 % | 16 % | 6 % | 89 % |
+| medium town | 22 % | 4 % | 47 % | 16 % | 9 % | 70 % |
+| medium city | 40 % | 9 % | 54 % | 12 % | 14 % | 56 % |
+
+`visible in range` is #596's number: how much of what is inside sight range a unit can actually see.
+**It is wrong until #593 lands** — terrain does not block sight today, so a hill hides nothing. With
+that fixed the same maps read 67 / 61 / 43 %, and rural stops being transparent.
+
+**Generation cost**, medium / large, mean over 6 runs: rural 49 / 111 ms, town 58 / 136 ms, city
+66 / 165 ms. The elevation pass is 5 ms on a medium city and 17 ms on a large one; `connectivity`
+(25–66 ms) and `hooks` (16–33 ms) dominate and always did.
+
 ## 4. What M2 (tactical) consumes
 
 - `generateTacticalMap(missionToMapRecipe(mission, missionType).value)` → `TacticalMap` (plain JSON).
@@ -301,7 +347,11 @@ still the open call, and #446 still says the sign is inverted while every bug is
 4. Answer map questions as the last M2 issues land — #426 (spawners as attack targets), #341 (the
    deploy → tactical → results flow), #343 / #344 (QA's headless sim and Playwright smoke). The map
    contract should not need to move again for M2; #231's question is closed (§4).
-5. Tuning from §3 / §3a once the Executive Director calls #281 — read it together with #446, which
+5. **Do not add cover to rural or town until the Executive Director has judged #281.** The call is
+   a rural map played against a city map, and those are now the two ends of the range (3 % against
+   9 % flank-proof, 87 % against 51 % visible). Yard parapets are the obvious next use of #508 and
+   would raise rural and town flank-proof ground without touching a density dial — but doing it now
+   would move the thing being judged. Tuning from §3 / §3a once the Executive Director calls #281 — read it together with #446, which
    says more cover currently means harder missions. The preview now shows all of it live: the two
    directional cover shares (#437) and the play read-outs — approach, bug walk-in, firing positions
    and how many are in cover or shooting down, mech reach, levels reached (#456, `assessMap`).

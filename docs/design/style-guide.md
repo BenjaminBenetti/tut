@@ -467,10 +467,14 @@ Every effect anchors off the **unit's height**, never a fixed lift above its fee
 
 **Combat text is a chip, not tinted text.** A dark `ui-panel` plate, a `ui-line` border and a bar in `ui-danger` (damage) or `ui-text-dim` (miss), white monospace on top — the HUD's own language. Plain coloured text was unreadable over half the surfaces in the game: white on snow, red on brick. Effects draw with `depthTest` off and a high `renderOrder`, so nothing is hidden by the unit it describes.
 
+**The egg burst plays when charges finish a spawner** (#697). Destroying spawners *is* the clearance mission — `0 / 2 Destroy spawner` is the objective panel — and until that issue the moment the whole mission is about resolved with nothing on screen, while the sprite sat in the manifest preloaded and undrawn. It is the largest effect in the set at 1.6 tiles against a unit death's 1.0, because it is the one the player came for, and it swells as it fades so it reads as a burst rather than a sprite being turned down. A hit that does *not* finish the spawner plays nothing extra: the attack sequence has already shown the strike, and a second effect on every hit would say it died when it did not.
+
+![the egg burst, filmed at 64 px per tile](vfx-sequence-egg-burst.png)
+
 Judge any change to these with the harness rather than by playing to contact — that takes twenty turns and still misses the 0.12 s frames:
 
 ```
-node tools/art/preview/shoot-vfx.mjs out.png ranged   # or melee, death
+node tools/art/preview/shoot-vfx.mjs out.png ranged   # or melee, death, burst
 ```
 
 It runs the real animation queue against stand-in units at exactly 64 px per tile and steps it 0.06 s at a time, so the filmstrip is reproducible.

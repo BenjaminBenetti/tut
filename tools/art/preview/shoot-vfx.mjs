@@ -2,7 +2,7 @@
 /**
  * Films one combat sequence from the VFX harness as a filmstrip.
  *
- *   node tools/art/preview/shoot-vfx.mjs <out.png> [ranged|melee|death] [px]
+ *   node tools/art/preview/shoot-vfx.mjs <out.png> [ranged|melee|death|burst] [px]
  *
  * The harness runs the real `TacticalAnimationQueue` against stand-in units,
  * and this steps it by a fixed delta so every frame is reproducible — which
@@ -113,7 +113,9 @@ async function film(out, which, px) {
 async function main() {
   const [out, which = "ranged", px = "64"] = process.argv.slice(2);
   if (!out) {
-    throw new Error("usage: shoot-vfx.mjs <out.png> [ranged|melee|death] [px]");
+    throw new Error(
+      "usage: shoot-vfx.mjs <out.png> [ranged|melee|death|burst] [px]",
+    );
   }
   const server = await startServer();
   try {

@@ -13,6 +13,11 @@ import type { Vec3 } from "../../core/model/grid";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import { ATTACK_RESOLVED } from "../../tactical/model/attack-resolved-event";
+import {
+  SPAWNER_DAMAGED,
+  type SpawnerDamagedPayload,
+} from "../../tactical/model/spawner-damaged-event";
+import type { SpawnerId } from "../../tactical/model/tactical-state";
 import { UNIT_DIED } from "../../tactical/model/unit-died-event";
 import { UNIT_MOVED } from "../../tactical/model/unit-moved-event";
 import { UNIT_SPOTTED } from "../../tactical/model/unit-spotted-event";
@@ -43,6 +48,10 @@ export interface AnimationScene {
   unitHeight(unitId: UnitId): number | undefined;
   /** The unit's model id, so a death burst can tell a machine from a bug. */
   unitModelId(unitId: UnitId): string | undefined;
+  /** An egg spawner's base in world space, or undefined while it loads. */
+  spawnerWorldPosition(spawnerId: SpawnerId): Vec3 | undefined;
+  /** The spawner's height, so its burst anchors like every other effect. */
+  spawnerHeight(spawnerId: SpawnerId): number | undefined;
 }
 
 /**
@@ -155,6 +164,10 @@ const FALLBACK_HEIGHT = 1;
  * without catching a shot from two tiles away.
  */
 const MELEE_RANGE = 1.6;
+
+/** Egg burst size in tiles, and how far it swells as it fades (#697). */
+const BURST_SIZE = 1.6;
+const BURST_GROWTH = 0.6;
 
 /** Model ids under this prefix get the chitin death burst; everything else the machine one. */
 const BUG_MODEL_PREFIX = "bug.";
@@ -348,6 +361,8 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
         );
       case UNIT_DIED:
         return this.fade(event.payload.unitId);
+      case SPAWNER_DAMAGED:
+        return this.spawnerBurst(event.payload);
       case UNIT_SPOTTED:
         // Only what the player can see: a spot on the bugs' side is
         // their business and never reaches the screen (ADR 0006 §2.4).
@@ -641,6 +656,59 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
         return undefined;
       },
       finish: settle,
+    };
+  }
+
+  /**
+   * The egg burst, when charges finish a spawner off (#697).
+   *
+   * Destroying spawners *is* the clearance mission -- `0 / 2 Destroy
+   * spawner` is the objective panel -- and until now the moment the
+   * whole mission is about resolved with nothing on screen at all,
+   * while `vfx.egg-burst` sat in the manifest, preloaded and never
+   * drawn. A hit that does not finish it plays nothing extra: the
+   * attack sequence has already shown the strike.
+   *
+   * @param payload - The damage event; only the killing blow bursts.
+   * @returns The burst, or undefined when the spawner survives.
+   */
+  private spawnerBurst(payload: SpawnerDamagedPayload): Animation | undefined {
+    if (!payload.destroyed) {
+      return undefined;
+    }
+    const base = this.scene.spawnerWorldPosition(payload.spawnerId);
+    if (!base) {
+      return undefined;
+    }
+    // Anchored off the spawner's own height, like every other effect
+    // since #514 -- a fixed lift put bursts inside anything tall.
+    const height =
+      this.scene.spawnerHeight(payload.spawnerId) ?? FALLBACK_HEIGHT;
+    const at = { x: base.x, y: base.y + height * BODY_FRACTION, z: base.z };
+    const sprite = this.billboard("vfx.egg-burst", at, BURST_SIZE, 0xffffff);
+    const seconds = this.timing.deathSeconds;
+    let elapsed = 0;
+    const cleanup = (): void => {
+      this.removeSprite(sprite);
+    };
+    return {
+      name: `egg-burst:${payload.spawnerId}`,
+      advance: (delta) => {
+        const leftover = Math.max(0, elapsed + delta - seconds);
+        elapsed = Math.min(seconds, elapsed + delta);
+        const progress = elapsed / seconds;
+        // Swells as it fades, so it reads as a burst rather than a
+        // sprite quietly being turned down.
+        const scale = BURST_SIZE * (1 + progress * BURST_GROWTH);
+        sprite.scale.set(scale, scale, 1);
+        sprite.material.opacity = 1 - progress;
+        if (elapsed >= seconds) {
+          cleanup();
+          return leftover;
+        }
+        return undefined;
+      },
+      finish: cleanup,
     };
   }
 

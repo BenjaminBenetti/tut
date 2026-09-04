@@ -13,9 +13,10 @@ import { TacticalAnimationQueue } from "./tactical-animation-queue";
 // Fixtures
 // ===========================================
 
-/** A scene with two units on a flat map. */
+/** A scene with two units and one egg spawner on a flat map. */
 function scene(): AnimationScene & { objects: Map<string, Object3D> } {
   const objects = new Map<string, Object3D>();
+  const spawners = new Set<string>(["spawner-1"]);
   for (const [id, x] of [
     ["unit-1", 0],
     ["unit-2", 4],
@@ -33,6 +34,9 @@ function scene(): AnimationScene & { objects: Map<string, Object3D> } {
     // put its damage number inside the model, which is the bug #514 fixed.
     unitHeight: (id) => (objects.has(id) ? 2.8 : undefined),
     unitModelId: (id) => (objects.has(id) ? "tdf.mech.assembled-b" : undefined),
+    spawnerWorldPosition: (id) =>
+      spawners.has(id) ? { x: 4, y: 0, z: 5 } : undefined,
+    spawnerHeight: (id) => (spawners.has(id) ? 1.4 : undefined),
   };
 }
 
@@ -289,6 +293,70 @@ describe("TacticalAnimationQueue", () => {
     queue.update(0.01);
     expect(queue.root.children.map((child) => child.name)).toContain(
       "vfx.tdf-death",
+    );
+  });
+});
+
+// ===========================================
+// Egg burst (#697)
+// ===========================================
+
+describe("TacticalAnimationQueue egg burst", () => {
+  const charges = (destroyed: boolean): TacticalEvent => ({
+    type: "tactical:spawner-damaged",
+    payload: {
+      spawnerId: "spawner-1",
+      unitId: "unit-1",
+      damage: 10,
+      hp: destroyed ? 0 : 10,
+      destroyed,
+    },
+  });
+
+  it("bursts the spawner that the charges finished off", () => {
+    const s = scene();
+    const queue = new TacticalAnimationQueue({
+      scene: s,
+      sprites,
+      timing: TIMING,
+    });
+    queue.enqueue([charges(true)]);
+    queue.update(0.01);
+    // Destroying spawners is the mission; until #697 it resolved with
+    // nothing on screen while the sprite sat preloaded and undrawn.
+    expect(queue.root.children.map((child) => child.name)).toContain(
+      "vfx.egg-burst",
+    );
+  });
+
+  it("plays nothing when the spawner survives the charges", () => {
+    const s = scene();
+    const queue = new TacticalAnimationQueue({
+      scene: s,
+      sprites,
+      timing: TIMING,
+    });
+    queue.enqueue([charges(false)]);
+    queue.update(0.01);
+    // The attack sequence has already shown the strike; a second effect
+    // on every hit would say the spawner died when it did not.
+    expect(queue.root.children.map((child) => child.name)).not.toContain(
+      "vfx.egg-burst",
+    );
+  });
+
+  it("clears the burst once it has run", () => {
+    const s = scene();
+    const queue = new TacticalAnimationQueue({
+      scene: s,
+      sprites,
+      timing: TIMING,
+    });
+    queue.enqueue([charges(true)]);
+    queue.update(0.01);
+    queue.update(TIMING.deathSeconds + 0.01);
+    expect(queue.root.children.map((child) => child.name)).not.toContain(
+      "vfx.egg-burst",
     );
   });
 });

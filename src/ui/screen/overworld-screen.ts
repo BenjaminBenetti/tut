@@ -75,6 +75,7 @@ export interface OverworldScreenDeps {
  *   event choice         ──► store.dispatch(resolveEvent(eventId, choiceId))
  *                            any rejection ──► topBar.showStatus
  *   [Roster] / [Main menu] ──► router.navigate
+ *   [Resume mission]     ──► router.navigate("tactical")   while one is live
  *   mission row          ──► selection.selectMission(id, cityId)
  *   [Plan deployment]    ──► selection.selectMission + router.navigate("deployment")
  *   state.overworld.outcome set ──► router.navigate("game-over")  (next microtask)
@@ -118,6 +119,12 @@ export class OverworldScreen implements Screen {
       },
       onRoster: () => {
         this.deps.router.navigate("roster");
+      },
+      // A mission left through the HUD's Overworld button is still in
+      // progress; without this the campaign is stuck, because the only
+      // ways into the tactical screen are Launch and Continue (#468).
+      onResumeMission: () => {
+        this.deps.router.navigate("tactical");
       },
     });
     this.cityPanel = new CityPanelView({

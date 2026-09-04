@@ -16,6 +16,11 @@ export interface TopBarViewHandlers {
   readonly onMainMenu: () => void;
   /** The player asked for the roster screen; absent when no roster screen is reachable. */
   readonly onRoster?: () => void;
+  /**
+   * Back into a mission that is still in progress (#468). Omitted where
+   * the bar has no tactical screen to return to.
+   */
+  readonly onResumeMission?: () => void;
 }
 
 // ===========================================
@@ -46,6 +51,7 @@ export class TopBarView {
   private outcome: HTMLElement | undefined;
   private status: HTMLElement | undefined;
   private advance: HTMLButtonElement | undefined;
+  private resume: HTMLButtonElement | undefined;
   private readonly disposers: (() => void)[] = [];
 
   // ===========================================
@@ -89,6 +95,15 @@ export class TopBarView {
     status.dataset.role = "status";
     status.hidden = true;
 
+    // Primary, and first of the buttons: a mission left mid-fight is the
+    // most urgent thing the bar can offer (#468).
+    const resume = this.createButton(
+      doc,
+      "resume-mission",
+      "Resume mission",
+      true,
+    );
+    resume.hidden = true;
     const roster = this.createButton(doc, "roster", "Roster", false);
     roster.disabled = this.handlers.onRoster === undefined;
     const menu = this.createButton(doc, "main-menu", "Main menu", false);
@@ -102,6 +117,7 @@ export class TopBarView {
       outcome,
       spacer,
       status,
+      resume,
       roster,
       menu,
       advance,
@@ -113,6 +129,9 @@ export class TopBarView {
     if (this.handlers.onRoster) {
       this.listen(roster, this.handlers.onRoster);
     }
+    if (this.handlers.onResumeMission) {
+      this.listen(resume, this.handlers.onResumeMission);
+    }
 
     this.root = bar;
     this.day = day.value;
@@ -122,6 +141,7 @@ export class TopBarView {
     this.outcome = outcome;
     this.status = status;
     this.advance = advance;
+    this.resume = resume;
   }
 
   /**
@@ -134,6 +154,7 @@ export class TopBarView {
     if (!this.day || !this.credits || !this.threat || !this.threatBadge) {
       return;
     }
+    this.setResumeVisible(state?.activeMission !== undefined);
     if (!state) {
       this.day.textContent = "—";
       this.credits.textContent = "—";
@@ -157,6 +178,17 @@ export class TopBarView {
     this.setAdvanceEnabled(overworld.outcome === undefined && !eventPending);
     if (this.advance) {
       this.advance.title = eventPending ? "Answer the pending event first" : "";
+    }
+  }
+
+  /**
+   * Shows or hides Resume mission. Visible exactly while a mission is in
+   * progress, and never when there is no handler to run it (#468).
+   */
+  private setResumeVisible(visible: boolean): void {
+    if (this.resume) {
+      this.resume.hidden =
+        !visible || this.handlers.onResumeMission === undefined;
     }
   }
 

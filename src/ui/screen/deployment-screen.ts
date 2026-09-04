@@ -221,7 +221,13 @@ export class DeploymentScreen implements Screen {
         : startMission(mission.id, deployment),
     );
     if (!result.ok) {
-      this.showStatus(result.error.message);
+      // A refusal because a mission is already running is the one the
+      // player can act on, so say where to act (#468).
+      this.showStatus(
+        result.error.code === "mission-active"
+          ? `${result.error.message} Use Resume mission on the overworld to go back to it.`
+          : result.error.message,
+      );
       return;
     }
     this.deps.router.navigate(auto ? "mission-results" : "tactical");

@@ -1,5 +1,6 @@
 import { BuildingPass } from "../generator/building-pass";
 import { ConnectivityPass } from "../generator/connectivity-pass";
+import { ElevationPass } from "../generator/elevation-pass";
 import { HookPass } from "../generator/hook-pass";
 import { InteriorPass } from "../generator/interior-pass";
 import { LotPass } from "../generator/lot-pass";
@@ -29,6 +30,7 @@ export function createSettlementPasses(): GenerationPass[] {
     new WaterPass(),
     new RoadPass(),
     new LotPass(),
+    new ElevationPass(),
     new BuildingPass(),
     new InteriorPass(),
     new PropPass(),

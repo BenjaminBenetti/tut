@@ -65,4 +65,11 @@ export interface SettlementDefinition {
   readonly yardPropDensity: number;
   /** Maximum columns between ramps along a plateau edge. */
   readonly rampSpacing: number;
+  /**
+   * Raised outdoor features the elevation pass aims for on a medium
+   * (48²) map, scaled by area like `buildingCount`. Unset means none: a
+   * settlement whose terrain already carries height does not need them
+   * (#512).
+   */
+  readonly elevatedFeatures?: IntRange;
 }

@@ -63,5 +63,11 @@ export const SETTLEMENT_DEFINITIONS: Readonly<
     streetPropDensity: 5,
     yardPropDensity: 14,
     rampSpacing: 4,
+    // The knob behind #512: how much of a city stands one level up.
+    // Attempts, not placements — the plat runs out of room long before
+    // the count does, so a medium map lands around 380 raised columns
+    // whatever this says above about forty. Lowering it takes cities back
+    // toward flat; raising it only costs generation time.
+    elevatedFeatures: { min: 44, max: 56 },
   },
 };

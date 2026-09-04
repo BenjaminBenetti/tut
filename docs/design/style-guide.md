@@ -328,15 +328,18 @@ Consequence for models: **do not bake light into a texture.** An atlas cell that
 
 Overlays are instanced quads lifted 0.02 u above the tile top. They carry meaning by palette token, in one escalating order — information, caution, danger:
 
-| Overlay | Token | Hex | Means |
-|---|---|---|---|
-| Move range | `ui-info` | `#7FD1FF` | Where this unit can go |
-| Low cover | `ui-warn` | `#F0C63C` | Partial protection on that edge |
-| High cover | `ui-danger` | `#E0453C` | Full protection on that edge |
-| Line of sight / target | `ui-accent` | `#F08A24` | What the current action touches |
-| Selected unit ring | `ui-accent` | `#F08A24` | Who is acting |
+| Overlay | Token | Hex | Footprint | Means |
+|---|---|---|---|---|
+| Move range, 1 AP | `ui-info` | `#7FD1FF` at 0.35 | 0.92 | One action gets you here |
+| Move range, 2 AP | `ui-info` dimmed | `#4C7D99` at 0.22 | 0.66 | This one costs both actions |
+| Low cover | `ui-warn` | `#F0C63C` | ring | Partial protection on that edge |
+| High cover | `ui-danger` | `#E0453C` | ring | Full protection on that edge |
+| Line of sight / target | `ui-accent` | `#F08A24` | ring | What the current action touches |
+| Selected unit ring | `ui-accent` | `#F08A24` | ring | Who is acting |
 
 Orange is the player's own intent, blue is possibility, yellow and red are the world pushing back. Nothing else on the tactical plane may use these four colours.
+
+**The two move bands are one token at two lightnesses, never two hues** (#521). Move range gets one colour, so the second band is `ui-info` at about 60% luminance rather than a new token — and a lightness step is the one split that survives deuteranopia and protanopia, where blue against green would not. The dearer band is also inset to 0.66 of a tile, so the boundary reads as a change of shape as well as of tone and needs no legend. Values live in `src/graphics/data/tactical-overlay-palette.ts`; restyle them there, not at the call site.
 
 ### 12.3 VFX
 

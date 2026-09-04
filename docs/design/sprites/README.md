@@ -8,6 +8,22 @@ tools/art/gen-image.sh docs/design/sprites/prompts/<name>.txt public/assets/spri
 
 ![Round 2 contact sheet](vfx-round-2.png)
 
+## At game scale
+
+![VFX composited over a live mission at 64 px per tile](vfx-at-game-scale.png)
+
+The five effects composited over a real mission frame (`tools/art/preview/shoot-mission.mjs`) at the world sizes the animation queue uses, which is the only honest way to size a sprite. What it settled:
+
+| Effect | Size in tiles | Why |
+|---|---|---|
+| Muzzle flash | **0.8** (shipped) | Reads as a hard star at 51 px. Correct as is. |
+| Impact | **0.7** (shipped) | The spark reads. Correct as is. |
+| Tracer | **0.22 thick**, stretched shooter → target | At 0.15 it is a 10 px hairline that disappears over asphalt. |
+| Claw slash | **0.9** | At 0.7 the three gashes merge into a smudge; a melee hit should also feel bigger than a bullet. |
+| Bug death | **1.0** | Dark chitin shards vanish against a dark tile at 0.8; the green ichor carries it, the shards need the size. |
+
+These are recommendations for whoever wires #457, not something the queue does today — it plays only the flash and the impact.
+
 | Sprite | Id | Size | Blend |
 |---|---|---|---|
 | [muzzle-flash](muzzle-flash.md) | `vfx.muzzle-flash` | 512² | additive |

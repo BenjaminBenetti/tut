@@ -16,6 +16,7 @@ Game VFX sprite on a fully transparent background (real alpha channel; do not pa
 ## Keep
 
 - Three gashes, `bug-bone` core with a `bug-bio-green` leading edge — bug melee, never TDF. Every bug species is range 1 (`src/bugs/data/species.ts`), so this is the attack effect for **every** bug attack; the muzzle flash belongs to ranged attackers only.
+- **Draw it at 0.9 tiles**, not the 0.7 the impact uses: at 0.7 the three gashes merge into a smudge at 64 px per tile, and a claw landing should feel bigger than a bullet.
 - Sweeps lower-left → upper-right. Mirror on X for a strike from the other side rather than rotating 180°, or the gash tapers point the wrong way.
 
 ## Change next pass

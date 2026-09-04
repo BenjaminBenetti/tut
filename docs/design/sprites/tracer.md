@@ -15,7 +15,7 @@ Game VFX sprite on a fully transparent background (real alpha channel; do not pa
 
 ## Keep
 
-- Head points **+X** with a 5 % margin at both ends, ink spans 460×64 px centred on the middle row. Stretch it on X along the shooter→target vector, scale Y to about 0.15 tiles, fade over the flight; do not rotate the sprite about its own centre for anything but the shot axis.
+- Head points **+X** with a 5 % margin at both ends, ink spans 460×64 px centred on the middle row. Stretch it on X along the shooter→target vector, scale Y to about **0.22 tiles**, fade over the flight; do not rotate the sprite about its own centre for anything but the shot axis. (0.15 was the first guess; composited over a real frame at 64 px per tile it is a hairline that disappears over asphalt — see the README.)
 - Additive blend; white core, `tdf-orange` body, `tdf-orange-dim` tail edge. Reads at 32 px as an orange dash with a white glint.
 
 ## Change next pass

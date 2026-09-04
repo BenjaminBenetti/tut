@@ -18,6 +18,7 @@ Game VFX sprite on a fully transparent background (real alpha channel; do not pa
 - **Normal** blend, not additive: shards are dark and must stay dark over a light tile.
 - Plays over the death fade (`TacticalAnimationQueue.fade`) for bug units only; TDF deaths keep the plain shrink until they get their own effect.
 - Radial, no ground plane baked in, so it works at any of the four yaw stops.
+- **Draw it at 1.0 tiles.** At 0.8 the dark chitin shards disappear against a dark tile and only the green ichor survives; the shards are half the read.
 
 ## Change next pass
 

@@ -57,7 +57,22 @@ export type TacticalError =
   | { readonly kind: "no-line-of-sight"; readonly targetId: string }
   | { readonly kind: "no-charges"; readonly unitId: string }
   | { readonly kind: "charges-full"; readonly unitId: string }
-  | { readonly kind: "no-reload"; readonly unitId: string };
+  | { readonly kind: "no-reload"; readonly unitId: string }
+  | { readonly kind: "objective-not-found"; readonly objectiveId: string }
+  | { readonly kind: "objective-complete"; readonly objectiveId: string }
+  | {
+      readonly kind: "objective-target-missing";
+      readonly objectiveId: string;
+      readonly targetId: string;
+    }
+  | {
+      readonly kind: "objective-out-of-reach";
+      readonly objectiveId: string;
+      readonly distance: number;
+      readonly range: number;
+    }
+  | { readonly kind: "not-in-extraction-zone"; readonly unitId: string }
+  | { readonly kind: "not-extractable"; readonly unitId: string };
 
 /** Human-readable text for a tactical error, for the status line and logs. */
 export function describeTacticalError(error: TacticalError): string {
@@ -104,5 +119,17 @@ export function describeTacticalError(error: TacticalError): string {
       return `Unit "${error.unitId}" is already fully loaded`;
     case "no-reload":
       return `Unit "${error.unitId}" has nothing to reload`;
+    case "objective-not-found":
+      return `No objective "${error.objectiveId}" is in this mission`;
+    case "objective-complete":
+      return `Objective "${error.objectiveId}" is already done`;
+    case "objective-target-missing":
+      return `Objective "${error.objectiveId}" tracks unknown target "${error.targetId}"`;
+    case "objective-out-of-reach":
+      return `Objective is ${String(error.distance)} tiles away; charges reach ${String(error.range)}`;
+    case "not-in-extraction-zone":
+      return `Unit "${error.unitId}" is not standing in the extraction zone`;
+    case "not-extractable":
+      return `Unit "${error.unitId}" cannot leave through the extraction zone`;
   }
 }

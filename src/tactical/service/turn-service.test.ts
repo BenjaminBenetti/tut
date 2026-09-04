@@ -219,13 +219,19 @@ describe("missionOutcome", () => {
     ).toBe("lost");
     expect(
       missionOutcome(
-        missionWith(map, bugsOnly, { objectives: open, extracted: ["u"] }),
+        missionWith(map, bugsOnly, {
+          objectives: open,
+          extracted: [unitAt("u", "infantry", at(0, 0))],
+        }),
       ),
     ).toBe("extracted");
     const partly = [unitAt("u", "infantry", at(0, 0)), ...bugsOnly];
     expect(
       missionOutcome(
-        missionWith(map, partly, { objectives: open, extracted: ["v"] }),
+        missionWith(map, partly, {
+          objectives: open,
+          extracted: [unitAt("v", "infantry", at(0, 0))],
+        }),
       ),
     ).toBeUndefined();
   });

@@ -15,12 +15,14 @@ import { ATTACK } from "../../tactical/model/attack-command";
 import { MOVE } from "../../tactical/model/move-command";
 import { OVERWATCH } from "../../tactical/model/overwatch-command";
 import { RELOAD } from "../../tactical/model/reload-command";
-import { extract } from "../../tactical/model/extract-command";
+import { EXTRACT, extract } from "../../tactical/model/extract-command";
+import { INTERACT } from "../../tactical/model/interact-command";
 import { END_TURN, endTurn } from "../../tactical/model/end-turn-command";
 import type { TacticalHandler } from "../../tactical/model/tactical-handler";
 import { TURN_STARTED } from "../../tactical/model/turn-started-event";
 import { startTacticalMission } from "../../tactical/service/mission-start-service";
 import { NO_ACTIVE_MISSION } from "../../tactical/service/tactical-command-handlers";
+import { TacticalMissionResolver } from "../../tactical/service/tactical-mission-resolver";
 import {
   campaignOnDay,
   missionAt,
@@ -111,7 +113,7 @@ describe("composeTactical", () => {
     expect(outcome.error.code).toBe(NO_ACTIVE_MISSION);
   });
 
-  it("registers the shipped rules by default and leaves the rest unknown", () => {
+  it("registers the shipped rules by default", () => {
     const dispatcher = createOverworldCommandDispatcher<GameState>();
     const tactical = composeTactical(dispatcher, CONTENT);
     expect(Object.keys(tactical.handlers)).toEqual([
@@ -120,11 +122,25 @@ describe("composeTactical", () => {
       END_TURN,
       OVERWATCH,
       RELOAD,
+      INTERACT,
+      EXTRACT,
     ]);
+  });
+
+  it("routes a registered rule at the mission, not at unknown-command", () => {
+    const dispatcher = createOverworldCommandDispatcher<GameState>();
+    composeTactical(dispatcher, CONTENT);
     const outcome = dispatcher.process(campaignOnDay(1, []), extract("unit-1"));
     expect(outcome.ok).toBe(false);
     if (outcome.ok) return;
-    expect(outcome.error.code).toBe("unknown-command");
+    expect(outcome.error.code).toBe(NO_ACTIVE_MISSION);
+  });
+
+  it("builds a tactical resolver over a source of the finished mission", () => {
+    const dispatcher = createOverworldCommandDispatcher<GameState>();
+    const tactical = composeTactical(dispatcher, CONTENT);
+    const resolver = tactical.resolverFor(() => undefined);
+    expect(resolver).toBeInstanceOf(TacticalMissionResolver);
   });
 
   it("mission-start deps place the whole starter roster on a generated map", () => {

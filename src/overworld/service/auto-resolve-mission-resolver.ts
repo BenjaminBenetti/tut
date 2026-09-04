@@ -18,6 +18,7 @@ import {
   deployedMechs,
   deployedSquads,
 } from "./force-rating-service";
+import { creditsFor, infestationDeltaFor } from "./mission-reward-service";
 
 // ===========================================
 // Dependencies
@@ -192,44 +193,4 @@ function countHits(trials: number, probability: number, rng: Rng): number {
     }
   }
   return hits;
-}
-
-/** Whole credits paid for the outcome: full on a win, a fraction on extraction, nothing on a loss. */
-function creditsFor(
-  outcome: MissionOutcome,
-  mission: Mission,
-  tuning: Pick<AutoResolveTuning, "extractedRewardFraction">,
-): number {
-  switch (outcome) {
-    case "won":
-      return mission.rewards.credits;
-    case "extracted":
-      return Math.floor(
-        mission.rewards.credits * tuning.extractedRewardFraction,
-      );
-    case "lost":
-      return 0;
-  }
-}
-
-/** Signed infestation change for the host city: clearance on a win, a penalty on a loss. */
-function infestationDeltaFor(
-  outcome: MissionOutcome,
-  mission: Mission,
-  tuning: Pick<
-    AutoResolveTuning,
-    "clearanceBase" | "clearancePerDifficulty" | "lossInfestationPenalty"
-  >,
-): number {
-  switch (outcome) {
-    case "won":
-      return -(
-        tuning.clearanceBase +
-        tuning.clearancePerDifficulty * mission.difficulty
-      );
-    case "extracted":
-      return 0;
-    case "lost":
-      return tuning.lossInfestationPenalty;
-  }
 }

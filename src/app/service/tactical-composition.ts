@@ -1,5 +1,6 @@
 import type { IdGenerator } from "../../core/model/id-generator";
 import { createDefaultRegistries } from "../../mapgen/service/default-registries";
+import { AUTO_RESOLVE_TUNING } from "../../overworld/data/auto-resolve-tuning";
 import type { CommandDispatcher } from "../../overworld/model/command-dispatcher";
 import type { Mech } from "../../roster/model/mech";
 import type { MechRatingTuning } from "../../roster/model/mech-rating-tuning";
@@ -10,16 +11,23 @@ import { validateLoadout } from "../../roster/service/loadout-validation-service
 import type { GameState } from "../../save/model/game-state";
 import { BUG_SPECIES } from "../../bugs/data/species";
 import { COMBAT_TUNING } from "../../tactical/data/combat-tuning";
+import { OBJECTIVE_TUNING } from "../../tactical/data/objective-tuning";
 import { UNIT_TUNING } from "../../tactical/data/unit-tuning";
 import { SPAWN_TUNING } from "../../tactical/data/spawn-tuning";
 import { ATTACK } from "../../tactical/model/attack-command";
 import { END_TURN } from "../../tactical/model/end-turn-command";
+import { EXTRACT } from "../../tactical/model/extract-command";
+import { INTERACT } from "../../tactical/model/interact-command";
 import { MOVE } from "../../tactical/model/move-command";
 import { OVERWATCH } from "../../tactical/model/overwatch-command";
 import { RELOAD } from "../../tactical/model/reload-command";
 import { createAttackHandler } from "../../tactical/service/combat-service";
 import type { MissionStartDeps } from "../../tactical/service/mission-start-service";
 import { createMoveHandler } from "../../tactical/service/move-handler";
+import {
+  createExtractHandler,
+  createInteractHandler,
+} from "../../tactical/service/objective-service";
 import { overwatchHandler } from "../../tactical/service/overwatch-handler";
 import { reloadHandler } from "../../tactical/service/reload-handler";
 import type { SpawnDeps } from "../../tactical/service/spawn-service";
@@ -29,6 +37,8 @@ import {
 } from "../../tactical/service/spawn-service";
 import type { TacticalHandlers } from "../../tactical/service/tactical-command-handlers";
 import { registerTacticalCommands } from "../../tactical/service/tactical-command-handlers";
+import type { FinishedMissionSource } from "../../tactical/service/tactical-mission-resolver";
+import { TacticalMissionResolver } from "../../tactical/service/tactical-mission-resolver";
 import {
   createEndTurnHandler,
   createOverwatchReaction,
@@ -52,6 +62,14 @@ export interface TacticalComposition {
   readonly handlers: TacticalHandlers;
   /** Deps for `startTacticalMission` over the given id generator. */
   readonly missionStartDepsFor: (ids: IdGenerator) => MissionStartDeps;
+  /**
+   * The M2 `MissionResolver` (#330) over a source of the finished
+   * mission, for `LaunchMission` to resolve a played mission with (#341
+   * hands it the store's `activeMission`).
+   */
+  readonly resolverFor: (
+    finishedMission: FinishedMissionSource,
+  ) => TacticalMissionResolver;
 }
 
 // ===========================================
@@ -64,13 +82,17 @@ export interface TacticalComposition {
  * `activeMission`, so there is one store, one autosave and one event
  * stream. `handlers` defaults to `shippedTacticalHandlers`, the rules
  * that have landed; a command without a handler dispatches as
- * `unknown-command` until its issue merges. `missionStartDepsFor` gives `LaunchMission` (#341) and the dev
- * hook what `startTacticalMission` needs from the shipped content.
+ * `unknown-command` until its issue merges. `missionStartDepsFor` gives
+ * `LaunchMission` (#341) and the dev hook what `startTacticalMission`
+ * needs from the shipped content, and `resolverFor` builds the M2
+ * resolver (#330) over whatever the caller can find the finished mission
+ * in.
  *
  * ```
  *   composeGame ──► composeTactical(content, handlers)
  *                     ├── registerTacticalCommands(dispatcher, handlers)
- *                     └── missionStartDepsFor(ids) ──► startTacticalMission(...)
+ *                     ├── missionStartDepsFor(ids) ──► startTacticalMission(...)
+ *                     └── resolverFor(() => store.getState().activeMission)
  * ```
  */
 export function composeTactical(
@@ -85,17 +107,25 @@ export function composeTactical(
     content.rating,
     content.upgrades,
   );
+  const missionStartDepsFor = (ids: IdGenerator): MissionStartDeps => ({
+    missionTypes: content.missionTypes,
+    squadTypes: content.squadTypes,
+    sheetFor,
+    unitTuning: UNIT_TUNING,
+    spawnTuning: SPAWN_TUNING,
+    ids,
+    registries,
+  });
   return {
     handlers,
-    missionStartDepsFor: (ids) => ({
-      missionTypes: content.missionTypes,
-      squadTypes: content.squadTypes,
-      sheetFor,
-      unitTuning: UNIT_TUNING,
-      spawnTuning: SPAWN_TUNING,
-      ids,
-      registries,
-    }),
+    missionStartDepsFor,
+    resolverFor: (finishedMission) =>
+      new TacticalMissionResolver({
+        missionStartDepsFor,
+        unitTuning: UNIT_TUNING,
+        tuning: AUTO_RESOLVE_TUNING,
+        finishedMission,
+      }),
   };
 }
 
@@ -123,6 +153,8 @@ export function shippedTacticalHandlers(): TacticalHandlers {
     ]),
     [OVERWATCH]: overwatchHandler,
     [RELOAD]: reloadHandler,
+    [INTERACT]: createInteractHandler(OBJECTIVE_TUNING),
+    [EXTRACT]: createExtractHandler(OBJECTIVE_TUNING),
   };
 }
 

@@ -6,28 +6,31 @@ import {
   ISOMETRIC_ELEVATION_RAD,
   TOP_DOWN_PROJECTION,
 } from "../model/camera-state";
-import { cameraPosition, groundScreenAxes } from "./isometric-camera-math";
-import { CAMERA_DISTANCE, IsometricCameraRig } from "./isometric-camera-rig";
+import { cameraPosition, groundScreenAxes } from "./camera-math";
+import {
+  CAMERA_DISTANCE,
+  OrthographicCameraRig,
+} from "./orthographic-camera-rig";
 
 const TARGET = { x: 8, y: 0, z: 8 };
 const WIDTH = 1280;
 const HEIGHT = 720;
 
-function makeRig(): IsometricCameraRig {
-  const rig = new IsometricCameraRig({ target: TARGET });
+function makeRig(): OrthographicCameraRig {
+  const rig = new OrthographicCameraRig({ target: TARGET });
   rig.resize(WIDTH, HEIGHT);
   rig.apply();
   return rig;
 }
 
-function projectToPixels(rig: IsometricCameraRig, point: Vector3): Vector3 {
+function projectToPixels(rig: OrthographicCameraRig, point: Vector3): Vector3 {
   const ndc = point.clone().project(rig.camera);
   return new Vector3((ndc.x * WIDTH) / 2, (ndc.y * HEIGHT) / 2, ndc.z);
 }
 
-describe("IsometricCameraRig", () => {
+describe("OrthographicCameraRig", () => {
   it("starts from defaults merged with the given overrides", () => {
-    const rig = new IsometricCameraRig({ yawIndex: 2, target: TARGET });
+    const rig = new OrthographicCameraRig({ yawIndex: 2, target: TARGET });
     expect(rig.getState()).toEqual({
       yawIndex: 2,
       zoom: CAMERA_ZOOM.initial,
@@ -115,7 +118,7 @@ describe("IsometricCameraRig", () => {
   });
 
   it("setBounds clamps the target now and on every later pan and lookAt (#218)", () => {
-    const rig = new IsometricCameraRig({ target: { x: 50, y: 0, z: 50 } });
+    const rig = new OrthographicCameraRig({ target: { x: 50, y: 0, z: 50 } });
     rig.setBounds({ x: 0, z: 0, w: 24, d: 12 });
     expect(rig.getState().target).toEqual({ x: 24, y: 0, z: 12 });
     for (let i = 0; i < 100; i++) {
@@ -132,9 +135,9 @@ describe("IsometricCameraRig", () => {
   });
 });
 
-describe("IsometricCameraRig with the top-down projection (#420)", () => {
+describe("OrthographicCameraRig with the top-down projection (#420)", () => {
   it("sits straight above the target and orients the map north up", () => {
-    const rig = new IsometricCameraRig({
+    const rig = new OrthographicCameraRig({
       target: TARGET,
       projection: TOP_DOWN_PROJECTION,
     });

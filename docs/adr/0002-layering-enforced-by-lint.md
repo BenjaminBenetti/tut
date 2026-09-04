@@ -40,7 +40,7 @@ Architecture §2 says simulation is pure TypeScript with no three.js or DOM, ran
 | `core content overworld economy roster tactical bugs mapgen` (not `*.test.ts`) | no import from `save/`: `save/` composes their slices, so a service that needs the root types it structurally (`CampaignState`) |
 | everywhere | `Math.random()` is an error |
 | `src/core/service/random-seed.ts` | the one sanctioned `Math.random()` site |
-| `src/graphics/model/camera-state.ts`, `src/graphics/service/isometric-camera-math.ts` | no `three` import, so camera math stays testable in Node |
+| `src/graphics/model/camera-state.ts`, `src/graphics/service/camera-math.ts` | no `three` import, so camera math stays testable in Node |
 | `*.test.ts`, `e2e/**` | doc-comment rule relaxed |
 
 The rule list is the contract. Adding a domain means adding it to the simulation list in `eslint.config.js` in the same PR that creates the folder.

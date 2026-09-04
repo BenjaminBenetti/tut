@@ -4,7 +4,7 @@
 - **Date:** 2026-09-04
 - **Author:** Tech Lead
 - **Requested by:** Executive Director (#420)
-- **Scope:** Architecture §5 (camera contract); `graphics/model/camera-state.ts`, `graphics/service/isometric-camera-*`, the overworld scene
+- **Scope:** Architecture §5 (camera contract); `graphics/model/camera-state.ts`, `graphics/service/orthographic-camera-rig.ts`, `graphics/service/camera-math.ts`, the overworld scene
 
 ## 1. Context
 
@@ -36,7 +36,7 @@ Before and after, same seed and viewport:
 
 ### 2.1 Projection is state, not a constant
 
-`IsometricCameraState` gains an optional `CameraProjection { elevationRad,
+`CameraState` (named `IsometricCameraState` when this ADR was written; see the consequences) gains an optional `CameraProjection { elevationRad,
 yawOffsetRad }`. Two are shipped:
 
 | Projection | Elevation | Yaw offset | Used by |
@@ -84,10 +84,13 @@ in `+y` points at the viewer and produces no screen movement at all.
 - `e2e/overworld-orientation.spec.ts` pins the contract from the outside:
   east is right, south is down, one scale for the whole map. It fails
   against the isometric camera, which is what makes it worth having.
-- The rig and its state are still named `Isometric*` although one of the two
-  projections is not isometric. Renaming ripples through the tactical host,
-  the preview harness and their tests; it is filed as tech debt rather than
-  smuggled into a change the Executive Director is waiting on.
+- The rig and its state were left named `Isometric*` here although one of
+  the two projections is not isometric, because renaming ripples through
+  the tactical host, the preview harness and their tests, and this change
+  was one the Executive Director was waiting on. #424 has since done that
+  rename: `OrthographicCameraRig`, `CameraState`, `camera-math.ts`. The
+  `ISOMETRIC_PROJECTION` and `ISOMETRIC_ELEVATION_RAD` constants keep their
+  names, since those genuinely are isometric.
 
 ## 4. Alternatives considered
 

@@ -2,9 +2,9 @@ import { OrthographicCamera } from "three";
 
 import type { Rect, Vec3 } from "../../core/model/grid";
 import type { CameraControls } from "../model/camera-controls";
-import type { IsometricCameraState } from "../model/camera-state";
+import type { CameraState } from "../model/camera-state";
 import type { SceneCamera } from "../model/scene-camera";
-import type { Viewport } from "./isometric-camera-math";
+import type { Viewport } from "./camera-math";
 import {
   cameraPosition,
   createCameraState,
@@ -15,7 +15,7 @@ import {
   screenUpVector,
   withBounds,
   zoomBy,
-} from "./isometric-camera-math";
+} from "./camera-math";
 
 // ===========================================
 // Constants
@@ -32,7 +32,7 @@ const FAR_PLANE = CAMERA_DISTANCE * 2;
 
 /**
  * Owns the single three.js camera in the app. Camera state lives in a
- * pure `IsometricCameraState`; the mutators only replace that state, and
+ * pure `CameraState`; the mutators only replace that state, and
  * `apply` is the one place the three camera is written.
  *
  * ```
@@ -44,13 +44,13 @@ const FAR_PLANE = CAMERA_DISTANCE * 2;
  *   OrthographicCamera: position, up, lookAt, frustum, projection matrix
  * ```
  */
-export class IsometricCameraRig implements CameraControls, SceneCamera {
+export class OrthographicCameraRig implements CameraControls, SceneCamera {
   // ===========================================
   // Fields
   // ===========================================
 
   readonly camera: OrthographicCamera;
-  private state: IsometricCameraState;
+  private state: CameraState;
   private viewport: Viewport = { width: 1, height: 1 };
 
   // ===========================================
@@ -62,7 +62,7 @@ export class IsometricCameraRig implements CameraControls, SceneCamera {
    *
    * @param initial - Overrides for yaw, zoom and target; the rest default.
    */
-  constructor(initial: Partial<IsometricCameraState> = {}) {
+  constructor(initial: Partial<CameraState> = {}) {
     this.state = createCameraState(initial);
     this.camera = new OrthographicCamera(-1, 1, 1, -1, NEAR_PLANE, FAR_PLANE);
     this.apply();
@@ -73,7 +73,7 @@ export class IsometricCameraRig implements CameraControls, SceneCamera {
   // ===========================================
 
   /** Current camera state. Immutable; a new object is produced on every change. */
-  getState(): IsometricCameraState {
+  getState(): CameraState {
     return this.state;
   }
 

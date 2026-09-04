@@ -26,7 +26,7 @@ export type YawIndex = 0 | 1 | 2 | 3;
  * Everything the isometric camera needs to place itself. Plain data:
  * the three.js rig reads it, never the other way round.
  */
-export interface IsometricCameraState {
+export interface CameraState {
   /** Diagonal the camera sits on; see {@link YawIndex}. */
   readonly yawIndex: YawIndex;
   /** Pixels per world unit. One tile is one unit, so this is pixels per tile. */
@@ -104,7 +104,7 @@ export const CAMERA_ZOOM = { min: 40, max: 128, initial: 64 } as const;
 export const YAW_COUNT = 4;
 
 /** State used when a caller specifies nothing: yaw 0, default zoom, origin. */
-export const DEFAULT_CAMERA_STATE: IsometricCameraState = {
+export const DEFAULT_CAMERA_STATE: CameraState = {
   yawIndex: 0,
   zoom: CAMERA_ZOOM.initial,
   target: { x: 0, y: 0, z: 0 },

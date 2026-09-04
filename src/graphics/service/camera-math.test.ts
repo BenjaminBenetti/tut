@@ -20,12 +20,12 @@ import {
   screenUpVector,
   withBounds,
   zoomBy,
-} from "./isometric-camera-math";
+} from "./camera-math";
 
 const YAWS: readonly YawIndex[] = [0, 1, 2, 3];
 const TARGET = { x: 8, y: 0, z: 8 };
 
-describe("isometric-camera-math", () => {
+describe("camera-math", () => {
   describe("createCameraState", () => {
     it("fills defaults, clamps zoom and copies the target", () => {
       const state = createCameraState({ zoom: 1000, target: TARGET });

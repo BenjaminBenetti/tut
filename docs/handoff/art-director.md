@@ -1,6 +1,6 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-04 (session 3, first update)
+Last updated: 2026-09-04 (session 3, second update)
 
 ## 1. What I was doing and where it stands
 
@@ -39,6 +39,47 @@ Last updated: 2026-09-04 (session 3, first update)
 | Image generation recipe (incl. transparent sprites) | — | **Working.** See §5. |
 | Headless GLB / page render checks (Playwright) and Blender review renders | — | **Working.** See §7 and §8. |
 
+### Band 3 — the overlay language and unit readability
+
+| Deliverable | Issue | State |
+|---|---|---|
+| **Overlay budget**: weapon range follows attack intent, cover quietened | #590 | **Merged** (PR #598). |
+| **Selection ring** — it had never been drawn in a shipped mission | #605 | **Merged** (PR #610). |
+| **Read test per faction** + a numeric screen | #613 | **Merged** (PR #614). |
+| **The p0**: the sight cue marked every tile; the planes gained a language | #624 | **Merged** (PR #631). |
+| **Cover is directional** — edge ticks, not a centred ring | #624 | **Merged** (PR #636). |
+| **Contact shadows** — filed with a prototype, implemented by the Tech Lead | #507 | **Merged** (PR #634); my #620 closed as superseded. Follow-ups in PR #640. |
+| **Infantry read on grass** — a light helmet | #613 | **Merged** (PR #643). |
+| A two-weapon mech cuts the second objective; its weapon has no digit | #652 | **Open**, filed with measurements. |
+| `building-pass` sits on a 5 s timeout and flakes under load | #644 | **Open**, filed for mapgen. |
+
+**Five rules came out of this band, and they are all in the style guide
+because each cost a wrong turn first:**
+
+1. **One channel per question, and the channel is the shape** (§12.2).
+   Movement fills, weapon range is one boundary line, cover is a tick on
+   the covered edge, selection is a ring on the unit, a refused shot is a
+   diamond. Colour only says how loudly the world is pushing back.
+2. **Mark the exception, not the rule** (§12.2). The sight cue marked 93
+   of 93 reachable tiles. An indicator true everywhere is a light that
+   is always on.
+3. **Measure an overlay at its worst spread, not its typical one**
+   (§12.2). I gave sight more weight than cover in #590 because it was
+   "drawn on far fewer tiles" — measured against fixtures where no enemy
+   was visible and the count was zero.
+4. **A mark's weight comes from what it is attached to, not its alpha**
+   (§12.2). Cover went 0.85 → 0.55 → 0.8. The ring was loud because of
+   where it sat; the same value as a tick against a wall disappeared.
+5. **Screen on value, not colour distance** (§4.2.1). The old infantry
+   helmet was ΔE 46 from grass and ΔL 5. Hue distance carrying no tonal
+   difference does not survive 64 px and a cast shadow.
+
+**And one about method, which earned itself three times:** every finding
+worth having came from shooting a live mission, and three of them
+contradicted something I had just published — the ghosting technique,
+the sight-cue premise, and the read-test metric. Offline renders and
+palette maths are screens. The mission is the verdict.
+
 ### M2.5 Tactical Feel — playtest 1 feedback (epic #514)
 
 The Executive Director played v0.2.0 and the art notes were the ones he
@@ -70,23 +111,38 @@ Issues #2, #3, #4, #93, #102, #119, #143, #144, #145 are on project 5; #162, #16
 
 ## 2. Open PRs / issues I own
 
-**Nothing of mine is open.** Both #598 and #601 merged; pick the next
-thing off §2.1 rather than looking for work in flight.
+**No PR of mine is open.** Two issues are filed and unclaimed: #652
+(HUD chrome, with measurements and a recommended order) and #644 (a
+mapgen test flake, not ours to fix).
 
 ### 2.1 What I would do next, in order
 
-1. **Play a mission before choosing.** Every finding worth having this
-   session came from `shoot-mission.mjs` and none from an offline
-   render. Two of them contradicted what I had just published.
-2. **#529 wires the radial menu.** Not mine, but I own how it looks and
-   QA has it as unwired scaffolding (#600). Review the look once wired.
-3. **Cover rings are still the loudest thing after the unit** even at
-   0.55. If a third overlay plane is ever added, the budget in style
-   guide §12.2 is the thing to argue against, not the ring alone.
-4. **Batch E has no outstanding demand.** #274's remaining placeholders
-   are six road/sidewalk tiles, six ground tiles and the props not yet
-   replaced; ground tiles are 12-triangle slabs whose look comes from
-   the atlas, not the geometry, so they are the lowest value left.
+1. **Play a mission before choosing.** Every finding worth having came
+   from `shoot-mission.mjs`, and three contradicted something I had
+   just published. Do this before trusting any list, including this one.
+2. **#652 is the readiest piece of work** and it is HUD chrome, which
+   the Director named as an area he watches. It needs a call on card
+   density that I did not want to make unilaterally.
+3. **#613 is closed but not finished.** A light helmet makes infantry
+   *findable*; the olive body still merges with grass and always will.
+   If he says he still cannot see squads, the next lever is the body,
+   and that is a faction-identity change worth putting to him on sight.
+4. **#529 wires the radial menu.** Not mine, but I own how it looks and
+   QA has it as unwired scaffolding (#600). Review once wired.
+5. **Batch E has no outstanding demand.** #274's remaining placeholders
+   are six road/sidewalk tiles, six ground tiles and some props; ground
+   tiles are 12-triangle slabs whose look comes from the atlas, not the
+   geometry, so they are the lowest value left.
+
+### 2.1.1 Two traps in the tooling that cost me time
+
+- **`pnpm lint` is `eslint . && prettier --check .`.** Running `eslint`
+  alone passes locally and CI then rejects the branch on formatting. It
+  held #620 and would have held #636. Always the script, never the
+  binary.
+- **`tsc --noEmit -p tsconfig.json` checks nothing** — the root config
+  has `"files": []` and uses project references. `pnpm typecheck` is
+  `tsc -b`.
 
 ### 2.2 Corrections to what my predecessor entry said
 

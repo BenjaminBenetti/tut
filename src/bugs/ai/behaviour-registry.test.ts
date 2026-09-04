@@ -9,7 +9,7 @@ import type { Unit } from "../../tactical/model/unit";
 import { buildMoveGraph } from "../../tactical/service/movement-service";
 import { BUG_SPECIES, SWARMER } from "../data/species";
 import type { BehaviourContext, BugBehaviour } from "./bug-behaviour";
-import { startedMission, withBug } from "./bug-mission.test-helper";
+import { startedMission, withBug, bugView } from "./bug-mission.test-helper";
 import { chooseBugCommands, MapBehaviourRegistry } from "./behaviour-registry";
 import {
   attackOptions,
@@ -91,7 +91,7 @@ describe("chooseBugCommands", () => {
     const { mission, bug } = missionWithBug();
     const registry = new MapBehaviourRegistry([dummyRush]);
     const commands = chooseBugCommands(
-      mission,
+      bugView(mission),
       bug.id,
       registry,
       (id) => BUG_SPECIES[id as "swarmer"],
@@ -113,7 +113,7 @@ describe("chooseBugCommands", () => {
     };
     const registry = new MapBehaviourRegistry([dummyRush]);
     const commands = chooseBugCommands(
-      away,
+      bugView(away),
       bug.id,
       registry,
       (id) => BUG_SPECIES[id as "swarmer"],
@@ -145,15 +145,21 @@ describe("chooseBugCommands", () => {
       units: mission.units.map((u) => (u.id === bug.id ? { ...u, hp: 0 } : u)),
     };
     expect(
-      chooseBugCommands(dead, bug.id, registry, species, ctx(dead)),
+      chooseBugCommands(bugView(dead), bug.id, registry, species, ctx(dead)),
     ).toEqual([]);
     const squad = mission.units.find((u) => u.kind === "squad")!;
     expect(
-      chooseBugCommands(mission, squad.id, registry, species, ctx(mission)),
+      chooseBugCommands(
+        bugView(mission),
+        squad.id,
+        registry,
+        species,
+        ctx(mission),
+      ),
     ).toEqual([]);
     expect(
       chooseBugCommands(
-        mission,
+        bugView(mission),
         bug.id,
         registry,
         () => undefined,
@@ -162,7 +168,7 @@ describe("chooseBugCommands", () => {
     ).toEqual([]);
     expect(
       chooseBugCommands(
-        mission,
+        bugView(mission),
         bug.id,
         new MapBehaviourRegistry(),
         species,

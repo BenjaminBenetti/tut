@@ -319,10 +319,13 @@ describe("shippedBugBehaviours", () => {
     const placed = withBug(
       mission,
       SWARMER,
+      // Six tiles out, comfortably inside a bug's sight: since ADR 0006
+      // a swarmer rushes what it can perceive, and ten tiles away is the
+      // edge of that, which `walkableTileNear` can nudge past.
       walkableTileNear(mission, {
-        x: squad.pos.x + 5,
+        x: squad.pos.x + 3,
         y: squad.pos.y,
-        z: squad.pos.z + 5,
+        z: squad.pos.z + 3,
       }),
     );
     const endTurnHandler = shippedTacticalHandlers()[END_TURN];

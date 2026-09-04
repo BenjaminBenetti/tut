@@ -17,7 +17,7 @@ import {
 import { SWARMER } from "../data/species";
 import { SWARMER_TUNING } from "../data/swarmer-tuning";
 import type { BehaviourContext } from "./bug-behaviour";
-import { applyMoveTo, withBug } from "./bug-mission.test-helper";
+import { applyMoveTo, withBug, bugView } from "./bug-mission.test-helper";
 import { SwarmerBehaviour } from "./swarmer-behaviour";
 import { tileDistance } from "./utility";
 
@@ -82,7 +82,7 @@ function rush(
   for (let turn = 0; turn < turns && !attacked; turn++) {
     let moved = false;
     for (const command of swarmer.choose(
-      mission,
+      bugView(mission),
       bugId,
       ctx(mission, seed * 31 + turn),
     )) {
@@ -112,8 +112,11 @@ describe("SwarmerBehaviour", () => {
   });
 
   it("closes distance every turn on an open map, from every corner and seed", () => {
-    const size = 16;
-    const squadAt = { x: 8, y: 0, z: 8 };
+    // Nine tiles across, so every corner is eight from the squad and
+    // inside a swarmer's sight: since ADR 0006 a bug rushes what it can
+    // see, and the case where it can see nothing is the test below.
+    const size = 9;
+    const squadAt = { x: 4, y: 0, z: 4 };
     const corners: readonly TileCoord[] = [
       { x: 0, y: 0, z: 0 },
       { x: size - 1, y: 0, z: 0 },
@@ -139,10 +142,22 @@ describe("SwarmerBehaviour", () => {
     }
   });
 
+  it("holds when it can perceive no enemy at all (ADR 0006)", () => {
+    // The squad is twenty tiles off, well past a swarmer's sight, so the
+    // view it is handed has no enemy in it and there is nothing to rush.
+    const mission = field(24, { x: 20, y: 0, z: 20 }, [{ x: 0, y: 0, z: 0 }]);
+    const commands = new SwarmerBehaviour().choose(
+      bugView(mission),
+      "swarmer-1",
+      ctx(mission, 1),
+    );
+    expect(commands).toEqual([]);
+  });
+
   it("bites what it can already reach instead of moving", () => {
     const mission = field(8, { x: 4, y: 0, z: 4 }, [{ x: 4, y: 0, z: 3 }]);
     const commands = new SwarmerBehaviour().choose(
-      mission,
+      bugView(mission),
       "swarmer-1",
       ctx(mission, 1),
     );
@@ -164,7 +179,7 @@ describe("SwarmerBehaviour", () => {
     ]);
     for (let seed = 0; seed < 6; seed++) {
       const commands = new SwarmerBehaviour().choose(
-        mission,
+        bugView(mission),
         "swarmer-1",
         ctx(mission, seed),
       );
@@ -181,7 +196,7 @@ describe("SwarmerBehaviour", () => {
     const mission = field(9, squadAt, [{ x: 8, y: 0, z: 0 }, kinAt]);
     const endOf = (behaviour: SwarmerBehaviour, seed: number): TileCoord =>
       behaviour
-        .choose(mission, "swarmer-1", ctx(mission, seed))
+        .choose(bugView(mission), "swarmer-1", ctx(mission, seed))
         .find((c) => c.type === MOVE)!
         .payload.path.at(-1)!;
 
@@ -205,16 +220,20 @@ describe("SwarmerBehaviour", () => {
       ...mission,
       units: mission.units.filter((u) => u.team !== "tdf"),
     };
-    expect(swarmer.choose(noEnemies, "swarmer-1", ctx(noEnemies, 1))).toEqual(
-      [],
-    );
+    expect(
+      swarmer.choose(bugView(noEnemies), "swarmer-1", ctx(noEnemies, 1)),
+    ).toEqual([]);
     const dead: TacticalState = {
       ...mission,
       units: mission.units.map((u) =>
         u.id === "swarmer-1" ? { ...u, hp: 0 } : u,
       ),
     };
-    expect(swarmer.choose(dead, "swarmer-1", ctx(dead, 1))).toEqual([]);
-    expect(swarmer.choose(mission, "nobody", ctx(mission, 1))).toEqual([]);
+    expect(swarmer.choose(bugView(dead), "swarmer-1", ctx(dead, 1))).toEqual(
+      [],
+    );
+    expect(swarmer.choose(bugView(mission), "nobody", ctx(mission, 1))).toEqual(
+      [],
+    );
   });
 });

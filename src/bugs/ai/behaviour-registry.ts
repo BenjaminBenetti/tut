@@ -1,5 +1,5 @@
+import type { MissionView } from "../../tactical/model/mission-view";
 import type { TacticalCommand } from "../../tactical/model/tactical-command";
-import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { UnitId } from "../../tactical/model/unit";
 import type { BehaviourTag, BugSpecies } from "../model/bug-species";
 import type { BehaviourContext, BugBehaviour } from "./bug-behaviour";
@@ -92,13 +92,13 @@ export class MapBehaviourRegistry implements BehaviourRegistry {
  * rather than crashing the phase.
  */
 export function chooseBugCommands(
-  mission: TacticalState,
+  view: MissionView,
   unitId: UnitId,
   registry: BehaviourLookup,
   speciesOf: SpeciesLookup,
   ctx: BehaviourContext,
 ): readonly TacticalCommand[] {
-  const unit = mission.units.find((u) => u.id === unitId);
+  const unit = view.units.find((u) => u.id === unitId);
   if (unit?.kind !== "bug" || unit.hp <= 0) {
     return [];
   }
@@ -106,5 +106,5 @@ export function chooseBugCommands(
   if (tag === undefined) {
     return [];
   }
-  return registry.get(tag)?.choose(mission, unitId, ctx) ?? [];
+  return registry.get(tag)?.choose(view, unitId, ctx) ?? [];
 }

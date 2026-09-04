@@ -33,12 +33,15 @@ import {
   startedMission,
   walkableTileNear,
   withBug,
+  bugView,
 } from "./bug-mission.test-helper";
 import { LurkerBehaviour } from "./lurker-behaviour";
 import { createSpeciesLookup } from "../service/species-lookup";
 import type { BehaviourContext, BugBehaviour } from "./bug-behaviour";
 import { MapBehaviourRegistry } from "./behaviour-registry";
 import { createBugPhaseRunner, livingBugIds } from "./bug-phase-runner";
+import { UNIT_LOST } from "../../tactical/model/unit-lost-event";
+import { UNIT_SPOTTED } from "../../tactical/model/unit-spotted-event";
 
 // ===========================================
 // Fixtures
@@ -121,6 +124,19 @@ function runner(behaviour: BugBehaviour) {
 // Tests
 // ===========================================
 
+/**
+ * The command events, without the vision the runner keeps current
+ * alongside them (ADR 0006): these assertions are about what the bugs
+ * did, not about what either side can see afterwards.
+ */
+function commandEvents(
+  events: readonly { readonly type: string }[],
+): readonly string[] {
+  return events
+    .map((event) => event.type)
+    .filter((type) => type !== UNIT_SPOTTED && type !== UNIT_LOST);
+}
+
 describe("createBugPhaseRunner", () => {
   it("acts for every living bug in units order, each on its own labelled fork, applying its commands through the handlers", () => {
     const labels: string[] = [];
@@ -128,7 +144,7 @@ describe("createBugPhaseRunner", () => {
       bugsPhase(),
       ctxWith(recordingRng(labels)),
     );
-    expect(applied.events.map((e) => e.type)).toEqual([
+    expect(commandEvents(applied.events)).toEqual([
       UNIT_MOVED,
       ATTACK_RESOLVED,
       UNIT_MOVED,
@@ -156,7 +172,7 @@ describe("createBugPhaseRunner", () => {
     const shootThenStep = rush((mission, unitId) =>
       unitId === "b1"
         ? [attack(unitId, "far"), move(unitId, [at(2, 0)])]
-        : stepAndShoot.choose(mission, unitId, {
+        : stepAndShoot.choose(bugView(mission), unitId, {
             rng: riggedRng(true),
             combat: COMBAT_TUNING,
           }),
@@ -166,7 +182,7 @@ describe("createBugPhaseRunner", () => {
       units: [...bugsPhase().units, unitAt("far", "infantry", at(0, 7))],
     };
     const applied = runner(shootThenStep)(mission, ctxWith(riggedRng(true)));
-    expect(applied.events.map((e) => e.type)).toEqual([
+    expect(commandEvents(applied.events)).toEqual([
       UNIT_MOVED,
       ATTACK_RESOLVED,
     ]);
@@ -268,7 +284,7 @@ describe("createBugPhaseRunner", () => {
       bugsPhase(2),
       ctxWith(riggedRng(true)),
     );
-    expect(applied.events.map((e) => e.type)).toEqual([
+    expect(commandEvents(applied.events)).toEqual([
       UNIT_MOVED,
       ATTACK_RESOLVED,
       UNIT_DIED,
@@ -351,10 +367,13 @@ describe("createBugPhaseRunner with a shipped behaviour", () => {
     const placed = withBug(
       started,
       LURKER,
+      // Eight tiles out: inside a bug's sight, so it has something to
+      // stalk. Since ADR 0006 a lurker twelve tiles away perceives no
+      // squad at all and correctly holds.
       walkableTileNear(started, {
-        x: squad.pos.x + 6,
+        x: squad.pos.x + 4,
         y: squad.pos.y,
-        z: squad.pos.z + 6,
+        z: squad.pos.z + 4,
       }),
     );
     const shipped = createBugPhaseRunner({
@@ -380,5 +399,73 @@ describe("livingBugIds", () => {
       unitAt("b1", "infantry", at(3, 0), { team: "bugs" }),
     ]);
     expect(livingBugIds(mission)).toEqual(["b2", "b1"]);
+  });
+});
+
+// ===========================================
+// Fog of war (ADR 0006)
+// ===========================================
+
+describe("createBugPhaseRunner under fog", () => {
+  it("hands each bug a view of what its own side can see, not the mission", () => {
+    const started = startedMission("bugs");
+    const squad = started.units.find((u) => u.team === "tdf");
+    if (squad === undefined) throw new Error("fixture mission has no squad");
+    // Far enough that no bug can perceive the squad.
+    const placed = withBug(
+      started,
+      LURKER,
+      walkableTileNear(started, {
+        x: squad.pos.x + 12,
+        y: squad.pos.y,
+        z: squad.pos.z + 12,
+      }),
+    );
+    const seen: number[] = [];
+    const spy = new MapBehaviourRegistry([
+      {
+        tag: "flank" as const,
+        choose: (view) => {
+          seen.push(view.units.filter((u) => u.team === "tdf").length);
+          return [];
+        },
+      },
+    ]);
+    createBugPhaseRunner({
+      handlers: HANDLERS,
+      registry: spy,
+      speciesOf: createSpeciesLookup(BUG_SPECIES),
+      combat: COMBAT_TUNING,
+    })(placed.mission, ctxWith(new Mulberry32Rng(7)));
+
+    // The mission holds a squad; the view the behaviour got does not.
+    expect(placed.mission.units.some((u) => u.team === "tdf")).toBe(true);
+    expect(seen).toEqual([0]);
+  });
+
+  it("keeps vision current as bugs move, so a later bug sees what an earlier one revealed", () => {
+    const started = startedMission("bugs");
+    const squad = started.units.find((u) => u.team === "tdf");
+    if (squad === undefined) throw new Error("fixture mission has no squad");
+    const placed = withBug(
+      started,
+      LURKER,
+      walkableTileNear(started, {
+        x: squad.pos.x + 4,
+        y: squad.pos.y,
+        z: squad.pos.z + 4,
+      }),
+    );
+    const applied = createBugPhaseRunner({
+      handlers: HANDLERS,
+      registry: new MapBehaviourRegistry([new LurkerBehaviour()]),
+      speciesOf: createSpeciesLookup(BUG_SPECIES),
+      combat: COMBAT_TUNING,
+    })(placed.mission, ctxWith(new Mulberry32Rng(7)));
+
+    // The phase applies commands outside the lifting adapter, so if the
+    // runner did not refresh vision itself the whole phase would decide
+    // from the vision it started with.
+    expect(applied.state.vision.bugs.spotted.length).toBeGreaterThan(0);
   });
 });

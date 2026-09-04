@@ -15,6 +15,7 @@ import {
   startedMission,
   walkableTileNear,
   withBug,
+  bugView,
 } from "./bug-mission.test-helper";
 import { tileDistance } from "./utility";
 
@@ -41,7 +42,7 @@ function stalk(
   let moved = 0;
   for (let turn = 0; turn < turns; turn++) {
     const commands = lurker.choose(
-      mission,
+      bugView(mission),
       bugId,
       ctx(mission, seed * 31 + turn),
     );
@@ -110,7 +111,7 @@ describe("LurkerBehaviour", () => {
     const behind = walkableTileNear(base, tileBehind(mark));
     const { mission, bug } = withBug(base, LURKER, behind);
     const lurker = new LurkerBehaviour();
-    const commands = lurker.choose(mission, bug.id, ctx(mission, 1));
+    const commands = lurker.choose(bugView(mission), bug.id, ctx(mission, 1));
     // Standing behind the mark: either it attacks now, or the map gives the
     // mark no cover on any side and it still attacks (nothing to flank).
     expect(commands.length).toBeGreaterThan(0);
@@ -130,11 +131,13 @@ describe("LurkerBehaviour", () => {
       walkableTileNear(noEnemies, { x: 1, y: 0, z: 1 }),
     );
     const lurker = new LurkerBehaviour();
-    expect(lurker.choose(mission, bug.id, ctx(mission, 1))).toEqual([]);
+    expect(lurker.choose(bugView(mission), bug.id, ctx(mission, 1))).toEqual(
+      [],
+    );
     const dead = {
       ...mission,
       units: mission.units.map((u) => (u.id === bug.id ? { ...u, hp: 0 } : u)),
     };
-    expect(lurker.choose(dead, bug.id, ctx(dead, 1))).toEqual([]);
+    expect(lurker.choose(bugView(dead), bug.id, ctx(dead, 1))).toEqual([]);
   });
 });

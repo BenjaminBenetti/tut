@@ -84,11 +84,9 @@ export const BIOME_DEFINITIONS: Readonly<Record<BiomeId, BiomeDefinition>> = {
     },
     hasShoreline: false,
     vegetation: [
-      // A cactus stands alone deliberately; a palm grows in a grove, like
-      // every other tree in every other biome (#701).
       { prop: PropKindIds.CACTUS, density: 3 },
       { prop: PropKindIds.BOULDER, density: 2.5, cluster: { min: 2, max: 4 } },
-      { prop: PropKindIds.TREE_PALM, density: 1, cluster: { min: 2, max: 4 } },
+      { prop: PropKindIds.TREE_PALM, density: 1 },
     ],
     buildingKinds: [
       { template: BuildingKindIds.HOUSE, weight: 4 },

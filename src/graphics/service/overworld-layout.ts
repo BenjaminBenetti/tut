@@ -1,5 +1,6 @@
 import type { Vec3 } from "../../core/model/grid";
 import type { City } from "../../overworld/model/city";
+import { CITY_MARKER_NUDGES } from "../data/city-marker-nudges";
 import type { MapLayout } from "../../overworld/model/map-layout";
 import type { Region } from "../../overworld/model/region";
 import type { OverworldSceneConfig } from "../model/overworld-scene-config";
@@ -30,6 +31,19 @@ export function layoutToWorld(
   config: OverworldSceneConfig,
 ): Vec3 {
   return { x: layout.x * config.mapWidth, y: 0, z: layout.y * config.mapDepth };
+}
+
+/**
+ * Where a city's marker is drawn, in layout space: its true projected
+ * position plus the correction that puts it on the coastline the Earth
+ * texture actually draws (#439). Cities the drawing already agrees with
+ * are unchanged.
+ */
+export function cityMarkerLayout(city: City): MapLayout {
+  const nudge = CITY_MARKER_NUDGES[city.id];
+  return nudge === undefined
+    ? city.layout
+    : { x: city.layout.x + nudge.x, y: city.layout.y + nudge.y };
 }
 
 /** Centre of the map plane; the default camera target. */

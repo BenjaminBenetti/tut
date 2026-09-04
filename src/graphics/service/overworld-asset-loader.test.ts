@@ -32,11 +32,13 @@ describe("loadOverworldAssets", () => {
       `glyph:/icons/mission.svg@${MARKER_GLYPH_RASTER_PX}`,
       "texture:overworld.earth-map",
     ]);
-    expect(assets).toEqual({
+    expect(assets).toMatchObject({
       mapTexture: map,
       markerGlyph: glyph,
       missionGlyph: glyph,
     });
+    // City name labels are rasterised on demand rather than loaded (#439).
+    expect(assets.text).toBeDefined();
   });
 
   it("passes missing assets through as undefined", async () => {
@@ -46,7 +48,7 @@ describe("loadOverworldAssets", () => {
       markerGlyphUrl: "/icons/marker-city.svg",
       missionGlyphUrl: "/icons/marker-city.svg",
     });
-    expect(assets).toEqual({
+    expect(assets).toMatchObject({
       mapTexture: undefined,
       markerGlyph: undefined,
       missionGlyph: undefined,

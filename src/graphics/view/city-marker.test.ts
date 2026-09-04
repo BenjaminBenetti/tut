@@ -33,7 +33,11 @@ function stop(index: number): number {
   return entry.hex;
 }
 
-function makeMarker(city: City = CITY, glyph?: Texture): CityMarker {
+function makeMarker(
+  city: City = CITY,
+  glyph?: Texture,
+  text?: { textTexture: (name: string) => Texture | undefined },
+): CityMarker {
   const geometry = {
     body: new CylinderGeometry(0.3, 0.3, 0.25, 12),
     ring: new RingGeometry(0.4, 0.5, 8),
@@ -41,9 +45,26 @@ function makeMarker(city: City = CITY, glyph?: Texture): CityMarker {
   return new CityMarker(
     city,
     BASE,
-    { geometry, glyph },
+    { geometry, glyph, text },
     OVERWORLD_SCENE_CONFIG,
   );
+}
+
+/** A stub that rasterises any name to a 128 × 64 texture. */
+function textSource(): {
+  textTexture: (name: string) => Texture | undefined;
+  asked: string[];
+} {
+  const asked: string[] = [];
+  return {
+    asked,
+    textTexture: (name) => {
+      asked.push(name);
+      const texture = new Texture();
+      texture.image = { width: 128, height: 64 };
+      return texture;
+    },
+  };
 }
 
 describe("infestationColour", () => {
@@ -221,5 +242,44 @@ describe("CityMarker mission badge", () => {
     expect((badge as Sprite).material.color.getHex()).toBe(MISSION_COLOUR);
     expect(badge!.position.x).toBeGreaterThan(0);
     expect(badge!.position.y).toBeGreaterThan(0);
+  });
+});
+
+describe("CityMarker name label (#439)", () => {
+  const labelOf = (marker: CityMarker) =>
+    marker.object.getObjectByName(`city-label-${CITY.id}`);
+
+  it("draws the city's name south of the marker, hidden until it is wanted", () => {
+    const text = textSource();
+    const marker = makeMarker(CITY, new Texture(), text);
+    expect(text.asked).toEqual([CITY.name]);
+    const label = labelOf(marker);
+    expect(label).toBeDefined();
+    expect(label?.visible).toBe(false);
+    expect(marker.labelVisible()).toBe(false);
+    // South on the ground plane, which is below the icon on screen under
+    // the strategic map's straight-down camera; the badge goes east and
+    // north, so they never sit on each other.
+    expect(label?.position.z).toBeGreaterThan(0);
+    expect(label?.position.x).toBe(0);
+  });
+
+  it("shows the name while hovered or selected, and hides it again", () => {
+    const marker = makeMarker(CITY, new Texture(), textSource());
+    marker.setHovered(true);
+    expect(marker.labelVisible()).toBe(true);
+    marker.setHovered(false);
+    expect(marker.labelVisible()).toBe(false);
+    marker.setSelected(true);
+    expect(marker.labelVisible()).toBe(true);
+    marker.setSelected(false);
+    expect(marker.labelVisible()).toBe(false);
+  });
+
+  it("draws no label at all without a text source, as in the headless sim", () => {
+    const marker = makeMarker(CITY, new Texture());
+    expect(labelOf(marker)).toBeUndefined();
+    marker.setHovered(true);
+    expect(marker.labelVisible()).toBe(false);
   });
 });

@@ -9,14 +9,27 @@ Last updated: 2026-09-04 (release push; pre-release verdict posted 06:10 UTC).
 | SHA tested | `14b0811` (release candidate for the 07:00 UTC build) |
 | Gate | typecheck, lint, build pass; vitest **1505 / 1505** (+1 deliberate skip); e2e **42 / 42** |
 | Exploratory | 13 flows, 0 findings (full sweep on `4ce5f01`; gate + mission play + production play re-run on `dd6ba10` and `14b0811`) |
-| **Verdict** | **A tactical mission is playable end to end in the production build.** Posted on the M2 epic (#317). Tag judged safe. |
+| **Verdict** | **A tactical mission is playable end to end in the production build.** Posted on the M2 epic (#317) at 06:08 UTC, with a win-path follow-up at 06:10. Tag judged safe. Re-confirmed on `1ef1ac9`: typecheck, lint, build pass, vitest 1511/1511, e2e 42/42, mission played launch → move → 10 shots / 8 hits / 3 kills → bug phase → extract → debrief → overworld. |
 
 ### Release push, in order of what mattered
 
 1. **#439 (p0) reproduced and then verified fixed.** Markers match the texture to within a pixel, so the projection was never wrong; the artwork disagreed. 12 of 37 markers stood on ocean pixels (Auckland 46 px from land, Singapore 20, Tokyo 18, São Paulo 14, Sydney 11). There were no city labels at all — the grey bars were per-region placeholders at each region's own centre. After #449: **29 of 37 markers directly on land, the other eight 1–4 px from shore**, names drawing on selection. Bogotá and New York still read as slightly offshore because the glyph is bottom-anchored and its body extends north; their anchors are on the coast.
 2. **The tactical loop came together during the push.** #422 fixed the bugs-phase soft lock (#412); #341 (PR #453) turned Launch from auto-resolve into the real deploy → tactical → results flow and added Extract; #426 made spawners attackable.
 3. **Played the mission both ways.** Production build, no dev hooks: Launch → HUD → click-select → END TURN → bugs act → Extract → debrief → overworld. Dev build with assertions: move costs a point, 16 shots / 5 hits / 3 kills, previews "85 % hit, 30–50 damage", bug phase wiped both squads. Losing routes to a "Mission lost" debrief; before #341 a wipe dead-ended on a frozen tactical screen.
-4. **Win path unproven.** Walking the mech at a spawner closed 14 tiles to 12 in 40 turns and never got in range. Extraction is the realistic exit at current tuning (#345).
+4. **Win path unproven — the one open question at release.** No mission I played could be completed, because the objective is "destroy the egg spawners" and the force cannot reach one.
+
+   | measurement (seed `win-attempt`, `14b0811` and `1ef1ac9`) | value |
+   |---|---|
+   | deploy position of the mech | tile 0,8 |
+   | nearest spawner | tile 14,17, 20 hp |
+   | distance at turn 1 | **14 tiles** |
+   | distance after 40 turns of walking at it | **12 tiles** |
+   | shots taken at a spawner | **0** (weapon range 10, never in reach) |
+   | spawner hp at the end | 20/20, objectives 0/2 |
+
+   A unit has 2 AP and buys roughly one tile a turn once bugs engage it, and the swarm arrives long before the spawner does; the second run ended with the whole force wiped ("Mission lost", Hammerhead destroyed, both squads gone). So **extraction is the only exit a player will actually reach**, and every debrief reads "pulled out before finishing".
+
+   **eng-4 is narrowing #345 to put the nearest egg spawner within reach of the deploy zone.** When that PR merges, re-run `/tmp/qa-scripts/qa-win.mjs` (dev server on 4173; it launches through the real deployment route, walks the mech at `spawners[0]` and fires the moment the preview is enabled) and **post on #317 whether an objective can now be destroyed** — that is the last unanswered question from the release pass. Look for `spawner shots > 0`, spawner hp below 20, and `objectives 1/2`.
 5. **Filed #480** (p3): the debrief says "No casualties" on a mission that wiped the whole force.
 
 ### Run history

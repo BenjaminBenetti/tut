@@ -25,4 +25,13 @@ describe("ICON_MANIFEST", () => {
   it("builds a CSS url() from an id", () => {
     expect(iconUrl("mech")).toBe("url(/assets/ui/icons/mech.svg)");
   });
+
+  it("gives every icon a label, since the id is not one", () => {
+    // The glyph is decorative and its label is what a reader is left
+    // with, so an entry with an empty one is an icon with no meaning
+    // attached anywhere (#595).
+    for (const [id, entry] of Object.entries(ICON_MANIFEST)) {
+      expect(entry.label.trim(), id).not.toBe("");
+    }
+  });
 });

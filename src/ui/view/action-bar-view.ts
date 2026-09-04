@@ -1,8 +1,8 @@
 import type { IconId } from "../data/icon-manifest";
-import { iconUrl } from "../data/icon-manifest";
 import type { WeaponId } from "../../tactical/model/unit-weapon";
 import type { ActionBarAction } from "../model/tactical-intent";
 import { ACTION_BAR_ORDER } from "../model/tactical-intent";
+import { iconGlyph } from "./icon-glyph";
 
 // ===========================================
 // Types
@@ -172,11 +172,7 @@ export class ActionBarView {
       key.className = "tut-btn__key";
       key.dataset.role = "shortcut";
       key.textContent = String(ACTION_BAR_ORDER.indexOf(action) + 1);
-      const icon = doc.createElement("span");
-      icon.className = "tut-icon tut-icon--sm";
-      // `iconUrl` already returns `url(…)`; wrapping it again is invalid CSS
-      // and the mask degrades to a solid block.
-      icon.style.setProperty("--icon", iconUrl(ICONS[action]));
+      const icon = iconGlyph(doc, ICONS[action]);
       const text = doc.createElement("span");
       text.className = "tut-btn__label";
       text.textContent = label;
@@ -321,9 +317,7 @@ export class ActionBarView {
       key.textContent = String(ACTION_BAR_ORDER.indexOf("attack") + 1);
       button.appendChild(key);
     }
-    const icon = doc.createElement("span");
-    icon.className = "tut-icon tut-icon--sm";
-    icon.style.setProperty("--icon", iconUrl(ICONS.attack));
+    const icon = iconGlyph(doc, ICONS.attack);
     const text = doc.createElement("span");
     text.className = "tut-btn__label";
     text.textContent = weapon.name;

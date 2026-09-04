@@ -3,6 +3,7 @@ import type { Squad } from "../../roster/model/squad";
 import type { SquadType, SquadTypeId } from "../../roster/model/squad-type";
 import type { SquadTypeCatalogue } from "../../roster/model/squad-type-catalogue";
 import { formatCredits, formatWhole } from "../service/format";
+import { iconGlyph } from "./icon-glyph";
 
 // ===========================================
 // Types
@@ -150,8 +151,21 @@ export class SquadListView {
     const missing = squad.maxStrength - squad.strength;
     const cost = (type?.reinforceCostPerSoldier ?? 0) * missing;
 
+    // Same kind glyph the deployment picker and the unit card use, so a
+    // squad reads as a squad wherever it appears (#595).
+    //
+    // The flex row is a span *inside* the cell, not the cell itself:
+    // `display: flex` on a `td` takes it out of the table's own layout
+    // and its bottom border stops lining up with the rest of the row.
+    const nameCell = doc.createElement("td");
+    nameCell.dataset.field = "name";
+    const nameRow = doc.createElement("span");
+    nameRow.className = "tut-row";
+    nameRow.append(iconGlyph(doc, "squad"), doc.createTextNode(squad.name));
+    nameCell.appendChild(nameRow);
+
     row.append(
-      this.cell(doc, squad.name, "name"),
+      nameCell,
       this.cell(doc, type?.name ?? squad.typeId, "type"),
       this.cell(
         doc,

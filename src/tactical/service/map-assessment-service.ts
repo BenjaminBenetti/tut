@@ -19,10 +19,18 @@ import { coverAgainst, hasLineOfSight } from "./sight-service";
 // Types
 // ===========================================
 
-/** What the assessment measures firing positions with. */
+/** What the assessment measures firing positions and vision with. */
 export interface AssessmentOptions {
   /** Weapon range a firing position must be inside. */
   readonly range: number;
+  /** How far a standing unit sees, for the visibility sample. */
+  readonly sightRange: number;
+  /**
+   * Standing positions sampled for `visibleShare`. Every open tile
+   * against everything in range of it is millions of traces; thirty
+   * positions is steady to a point or two.
+   */
+  readonly visionSamples: number;
 }
 
 // ===========================================
@@ -32,6 +40,8 @@ export interface AssessmentOptions {
 /** Range firing positions are counted at when the caller says nothing. */
 export const DEFAULT_ASSESSMENT_OPTIONS: AssessmentOptions = {
   range: UNIT_TUNING.infantry.weapon.range,
+  sightRange: UNIT_TUNING.infantry.sightRange,
+  visionSamples: 30,
 };
 
 /** Empty range, for a map with nothing of that kind to walk to. */
@@ -93,6 +103,7 @@ export function assessMap(
     elevatedFiringShare: mean(
       firing.map((f) => (f.total === 0 ? 0 : f.elevated / f.total)),
     ),
+    ...visibility(map, index, infantry, options),
     mechReachShare: infantry.size === 0 ? 0 : mech.size / infantry.size,
     infantryLevelSpan: levelSpan(map, index, infantry),
     mechLevelSpan: levelSpan(map, index, mech),
@@ -319,6 +330,72 @@ function rangeOf(distances: readonly number[]): DistanceRange {
     return NO_DISTANCE;
   }
   return { nearest: Math.min(...found), farthest: Math.max(...found) };
+}
+
+// ===========================================
+// Visibility
+// ===========================================
+
+/**
+ * How much of what is in range a unit can actually see, and how much of
+ * the map the deploy zones see before anyone moves (#596). This is what
+ * fog of war hides, and it comes from the map: what stands on the ground
+ * and how the ground is shaped.
+ *
+ * ```
+ *   sample standing positions ──► tiles within sightRange
+ *                                 with a clear line ──► visibleShare
+ *   every deploy tile ──► union of what they see ──► deployVisibleShare
+ * ```
+ *
+ * Sampled, not exhaustive: the samples are spread evenly through the
+ * reachable tiles in map order, so the number is deterministic.
+ */
+function visibility(
+  map: TacticalMap,
+  index: TileIndex,
+  reachable: ReadonlySet<number>,
+  options: AssessmentOptions,
+): { visibleShare: number; deployVisibleShare: number } {
+  const open = map.tiles.filter((tile) => reachable.has(index.keyOf(tile)));
+  if (open.length === 0 || map.tiles.length === 0) {
+    return { visibleShare: 0, deployVisibleShare: 0 };
+  }
+  const step = Math.max(1, Math.floor(open.length / options.visionSamples));
+  let seen = 0;
+  let inRange = 0;
+  for (let i = 0; i < open.length; i += step) {
+    const from = open[i];
+    if (from === undefined) {
+      continue;
+    }
+    for (const tile of tilesWithin(index, from, options.sightRange)) {
+      if (manhattanDistance(tile, from) > options.sightRange) {
+        continue;
+      }
+      inRange++;
+      if (hasLineOfSight(map, from, tile, index)) {
+        seen++;
+      }
+    }
+  }
+
+  const known = new Set<number>();
+  for (const coord of map.hooks.deployZones.flatMap((zone) => zone.tiles)) {
+    for (const tile of tilesWithin(index, coord, options.sightRange)) {
+      if (manhattanDistance(tile, coord) > options.sightRange) {
+        continue;
+      }
+      if (hasLineOfSight(map, coord, tile, index)) {
+        known.add(index.keyOf(tile));
+      }
+    }
+  }
+
+  return {
+    visibleShare: inRange === 0 ? 0 : seen / inRange,
+    deployVisibleShare: known.size / map.tiles.length,
+  };
 }
 
 // ===========================================

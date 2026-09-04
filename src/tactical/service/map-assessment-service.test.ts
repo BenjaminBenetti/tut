@@ -12,7 +12,11 @@ import type { MapRecipe } from "../../mapgen/model/map-recipe";
 import { createDefaultRegistries } from "../../mapgen/service/default-registries";
 import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
 import { generateTacticalMap } from "../../mapgen/service/generate-tactical-map";
-import { assessMap, objectiveApproach } from "./map-assessment-service";
+import {
+  assessMap,
+  DEFAULT_ASSESSMENT_OPTIONS,
+  objectiveApproach,
+} from "./map-assessment-service";
 
 const registries = createDefaultRegistries();
 
@@ -45,7 +49,10 @@ describe("assessMap", () => {
       )
       .edgeSpawn([{ x: 8, y: 0, z: 0 }])
       .build();
-    const assessment = assessMap(map, { range: 3 });
+    const assessment = assessMap(map, {
+      ...DEFAULT_ASSESSMENT_OPTIONS,
+      range: 3,
+    });
     // The 25 tiles within three manhattan steps, less the sandbags' own.
     expect(assessment.firingPositionsMin).toBe(24);
     expect(assessment.firingPositionsMean).toBe(24);
@@ -54,6 +61,9 @@ describe("assessMap", () => {
     expect(assessment.coveredFiringShare).toBeCloseTo(3 / 24);
     expect(assessment.approachSteps).toEqual({ nearest: 8, farthest: 8 });
     expect(assessment.edgeSpawnSteps).toEqual({ nearest: 16, farthest: 16 });
+    // An open field hides nothing: everything in range is visible.
+    expect(assessment.visibleShare).toBe(1);
+    expect(assessment.deployVisibleShare).toBeGreaterThan(0);
     // Flat fixture: one level for both classes, nothing shoots down.
     expect(assessment.elevatedFiringShare).toBe(0);
     expect(assessment.infantryLevelSpan).toBe(1);

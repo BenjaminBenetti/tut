@@ -24,6 +24,7 @@ import type { PhaseStep } from "./turn-service";
 import {
   createEndTurnHandler,
   createOverwatchReaction,
+  DEFAULT_PHASE_STEPS,
   missionOutcome,
   overwatchReaction,
   refreshSides,
@@ -134,6 +135,80 @@ describe("createEndTurnHandler", () => {
     expect(outcome.value.events.map((e) => e.type)).toEqual([
       TURN_STARTED,
       TURN_STARTED,
+    ]);
+  });
+
+  it("with a bug phase runner, plays the bugs and hands the turn back to the player in one command", () => {
+    const seen: string[] = [];
+    const moved = {
+      unitId: "b",
+      from: at(7, 7),
+      to: at(6, 6),
+      path: [at(6, 6)],
+    };
+    const runner: PhaseStep = (mission) => {
+      seen.push(`${mission.phase}:${String(mission.turn)}`);
+      return {
+        state: {
+          ...mission,
+          units: mission.units.map((u) =>
+            u.id === "b" ? { ...u, ap: 0, pos: at(6, 6) } : u,
+          ),
+        },
+        events: [{ type: UNIT_MOVED, payload: moved }],
+      };
+    };
+    const mission = missionWith(openField().build(), [
+      unitAt("u", "infantry", at(0, 0), { ap: 0 }),
+      unitAt("b", "infantry", at(7, 7), { team: "bugs", ap: 0 }),
+    ]);
+    const outcome = createEndTurnHandler(DEFAULT_PHASE_STEPS, runner)(
+      mission,
+      endTurn(),
+      ctx,
+    );
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+    expect(seen).toEqual(["bugs:1"]);
+    expect(outcome.value.events).toEqual([
+      { type: TURN_STARTED, payload: { turn: 1, phase: "bugs" } },
+      { type: UNIT_MOVED, payload: moved },
+      { type: TURN_STARTED, payload: { turn: 2, phase: "player" } },
+    ]);
+    const next = outcome.value.state;
+    expect(next.phase).toBe("player");
+    expect(next.turn).toBe(2);
+    expect(next.outcome).toBeUndefined();
+    expect(unitIn(next, "u").ap).toBe(2);
+    expect(unitIn(next, "b").ap).toBe(0);
+    expect(unitIn(next, "b").pos).toEqual(at(6, 6));
+  });
+
+  it("with a bug phase runner, ends the mission when the bugs decide it instead of opening the player's turn", () => {
+    const wipe: PhaseStep = (mission) => ({
+      state: {
+        ...mission,
+        units: mission.units.map((u) => (u.id === "u" ? { ...u, hp: 0 } : u)),
+      },
+      events: [],
+    });
+    const mission = missionWith(openField().build(), [
+      unitAt("u", "infantry", at(0, 0)),
+      unitAt("b", "infantry", at(7, 7), { team: "bugs" }),
+    ]);
+    const outcome = createEndTurnHandler(DEFAULT_PHASE_STEPS, wipe)(
+      mission,
+      endTurn(),
+      ctx,
+    );
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+    expect(outcome.value.state.outcome).toBe("lost");
+    expect(outcome.value.state.phase).toBe("bugs");
+    expect(outcome.value.state.turn).toBe(1);
+    expect(outcome.value.events).toEqual([
+      { type: TURN_STARTED, payload: { turn: 1, phase: "bugs" } },
+      { type: MISSION_ENDED, payload: { outcome: "lost", turn: 1 } },
     ]);
   });
 

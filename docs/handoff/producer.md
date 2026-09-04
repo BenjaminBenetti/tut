@@ -3,41 +3,51 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-04 04:15 UTC)
+## Status Digest (2026-09-04 05:00 UTC)
 
 | Milestone | done / total |
 |---|---|
 | M0 Foundation | 12 / 13 |
-| M1 Overworld | 64 / 64 |
+| M1 Overworld | 64 / 66 |
 | M1.5 Map Generation | 33 / 34 |
 
-Board: Backlog 6 · Ready 9 · In Progress 4 · In Review 1 · Blocked 0 · Done 155
+Board: Backlog 5 · Ready 11 · In Progress 3 · In Review 7 · Blocked 0 · Done 159
 
 **Engineer seats** (one open issue per seat; Producer assigns via `seat:eng-N`; route by `complexity:*` — high → default-effort seats only, low → medium-effort seats first):
 
 | Seat | Effort | Current | Status | Last merged |
 |---|---|---|---|---|
-| eng-3 | default | #330 tactical: objectives, extraction and the TacticalMissionResolver | Ready | #329 |
-| eng-4 | medium | #333 ai: lurker — flank through cover and strike from behind | In Review | #331 |
-| eng-5 | medium | #335 ai: bug-phase runner | Ready | #409 |
+| eng-3 | high | #341 ui: deploy → tactical → results flow replaces auto-resolve | Ready | #330 |
+| eng-4 | low | #332 ai: swarmer — rush the nearest target and group up | In Review | #333 |
+| eng-5 | low | #335 ai: bug-phase runner | In Review | #409 |
 
-⚠ unassigned Ready: #108 (low), #141 (low), #332 (low), #334 (low), #412 (low), #420 (no complexity label) · need Tech Lead complexity label before assignment: #420
+⚠ unassigned Ready: #108 (low), #141 (low), #334 (low), #412 (low), #424 (low), #426 (high), #427 (medium), #439 (medium), #440 (medium)
 
 **Ready now** (no unmerged dependencies):
 
 - #108 (engineer) refactor(core): promote generic id Registry to core/ and reuse in mapgen and roster
 - #141 (engineer) refactor: rename scalar tuning exports to UPPER_SNAKE_CASE (economy-tuning, threat-tuning)
 - #190 (art-director) infra(art): headless Blender + OpenSCAD + trimesh/cadquery toolchain in the devcontainer, with proof render and art-blender skill
-- #330 (engineer) tactical: objectives, extraction and the TacticalMissionResolver
-- #332 (engineer) ai: swarmer — rush the nearest target and group up
 - #334 (engineer) ai: brute — slow advance toward clumps, absorb overwatch
-- #335 (engineer) ai: bug-phase runner
+- #341 (engineer) ui: deploy → tactical → results flow replaces auto-resolve
 - #412 (engineer) bug(tactical): END TURN enters the bugs phase and nothing ever ends it — mission soft-locks at turn 1
-- #420 (engineer) Human here.
+- #424 (engineer) refactor(graphics): rename the Isometric* camera rig now that it carries two projections
+- #426 (engineer) tactical: make egg spawners a valid attack target
+- #427 (engineer) ui: interact and extract actions on the tactical action bar
+- #439 (engineer) bug(overworld): city labels render as blank grey plates, occlude markers, and markers still sit off their cities
+- #440 (engineer) overworld: region plates read as overlapping debug rectangles in the flat view
 
 **In-flight PRs** (age h / idle h / review):
 
-- #418 9.3h / 9.1h / n/a — feat(bugs): lurker behaviour — stalk out of sight, take the tile behind the mark, strike when flanking (#333)  ⚠ needs review
+- #443 0.0h / 0.0h / n/a — feat(mapgen): spread edge spawn zones across distance bands (#433)
+- #442 0.0h / 0.0h / n/a — feat(art): env atlas round 2 — ground, roof and concrete read as surfaces (#441)
+- #438 0.1h / 0.1h / n/a — fix(tactical): Interact is TDF-only, so a bug cannot blow up its own hive (#434)
+- #437 0.1h / 0.1h / n/a — feat(mapgen): report cover the way tactical credits it (#432)
+- #436 0.1h / 0.1h / n/a — feat(art): tracer, claw slash and bug death VFX sprites + sheets (#429)
+- #435 0.1h / 0.1h / n/a — chore(handoff): qa 2026-09-04 (runs 64–68, straight-down map, picking check)
+- #431 0.2h / 0.2h / n/a — feat(bugs): swarmer behaviour — rush the nearest target and group up (#332)
+- #430 0.2h / 0.2h / n/a — test(e2e): judge city-marker clickability by the map cell, not the window
+- #422 0.6h / 0.2h / n/a — feat(bugs): bug-phase runner drives every living bug inside EndTurn (#335)
 
 **In progress** (branch pushed?):
 
@@ -51,12 +61,15 @@ Board: Backlog 6 · Ready 9 · In Progress 4 · In Review 1 · Blocked 0 · Done
 
 1. #108 — refactor(core): promote generic id Registry to core/ and reuse in mapgen and roster
 2. #141 — refactor: rename scalar tuning exports to UPPER_SNAKE_CASE (economy-tuning, threat-tuning)
-3. #330 — tactical: objectives, extraction and the TacticalMissionResolver
-4. #332 — ai: swarmer — rush the nearest target and group up
-5. #334 — ai: brute — slow advance toward clumps, absorb overwatch
-6. #335 — ai: bug-phase runner
-7. #412 — bug(tactical): END TURN enters the bugs phase and nothing ever ends it — mission soft-locks at turn 1
-8. #420 — Human here.
+3. #334 — ai: brute — slow advance toward clumps, absorb overwatch
+4. #341 — ui: deploy → tactical → results flow replaces auto-resolve
+5. #412 — bug(tactical): END TURN enters the bugs phase and nothing ever ends it — mission soft-locks at turn 1
+6. #424 — refactor(graphics): rename the Isometric* camera rig now that it carries two projections
+7. #426 — tactical: make egg spawners a valid attack target
+8. #427 — ui: interact and extract actions on the tactical action bar
+9. #439 — bug(overworld): city labels render as blank grey plates, occlude markers, and markers still sit off their cities
+10. #440 — overworld: region plates read as overlapping debug rectangles in the flat view
+11. #343 — qa: headless tactical simulation across seeds (Ready once #335 merges)
 <!-- digest:end -->
 
 **Status: PRODUCTION RESUMED** (Director, 2026-09-03 03:05 UTC). Pool: eng-3 (default effort, takes `complexity:high` and anything), eng-4 and eng-5 (medium effort, `complexity:low|medium` only). eng-1, eng-2, eng-6 are gone; their seat labels are inactive.
@@ -65,19 +78,25 @@ Board: Backlog 6 · Ready 9 · In Progress 4 · In Review 1 · Blocked 0 · Done
 
 **v0.1.0 RELEASED — 2026-09-03 13:22 UTC** (Tech Lead): tagged at the #336 squash, Release zip and GitHub Pages deploy succeeded, https://benjaminbenetti.github.io/tut/ serves it. M1 Overworld closed 64/64 (epics #35–#42). QA verified #217's fix post-release; remaining QA bugs #218 #219 #291 #294 #304 #368 are post-release polish.
 
-**FLEET STALLED 2026-09-03 19:09 → 2026-09-04 04:15 UTC (9 h).** No agent but me has spoken since the Tech Lead's 19:09 comment. Nothing merged, no branches pushed. Chases posted on #418, #330, #335 at 04:20.
+**RELEASE PUSH — build cut 2026-09-04 07:00 UTC** (Director, 05:00). The Executive Director wants to play a tactical mission in it.
 
-**Executive Director request #420 (2026-09-03 20:10) sat unlabelled for 8 h** because of that stall. Now specced, `area:engine` / `type:feature` / **p0** / M2, quoted verbatim at the top: the overworld map must render **front-on like XCOM's geoscape, not isometric**, and city markers must sit on their true geographic positions. Tactical stays isometric (GDD §6.1) — I scoped it that way and said so on the issue. Needs a Tech Lead `complexity:*` label before a seat can take it; it is p0 so the autofill loop gives it to the first free seat.
+- **Scope freeze until 07:00.** Seats refill only from `.producer/release-allowlist.txt` (git-ignored): #341 flow, #335 runner, #332 swarmer, #426 spawners-attackable, then fallbacks #427, #434, #334. #439 (p0 overworld labels/markers) is the Tech Lead's and sits in `.producer/hold.txt` with #420 so the loop leaves it alone. Delete the allowlist file to lift the freeze.
+- **Tier rule relaxed (Director, 05:00, permanent).** eng-4 and eng-5 were medium-effort seats when the `complexity:*` routing was written; they now run Opus at xhigh and take `complexity:high` too. eng-3 (Opus at max) is still offered high first. `autofill.py` seat order is now `high>medium>low` for eng-3 and `medium>high>low` for eng-4/eng-5. The `seat:eng-N` label descriptions still say MEDIUM effort — stale, worth correcting when someone has a spare minute.
+- **Go/no-go at 06:45 UTC** on epic #319/#320: merged, open, and whether a mission is playable end to end. One-shot cron `9313c27d`.
 
-**M2 Basic Missions** (29 of 43 done, 04:20 UTC). Merged: spawning #329, charges/reload #409, AI registry #331, turn engine #328. In flight: #330 resolver (eng-3, no branch), #333 lurker (eng-4, PR #418 conflicted), #335 runner (eng-5, no branch). Remaining after #330: #341 flow (high), #332 / #334 behaviours (low), #343 sim, #344 smoke, #345 tuning.
+**Fleet stall 2026-09-03 19:09 → 2026-09-04 04:15** is over; all three seats answered chases within minutes and #330, #333, #420 merged straight after.
 
-**Seat plan:** #420 (p0, Executive Director) to the first free seat once tiered. eng-3 (default): #330 → #341. eng-4 (medium): #333 → #343 headless sim. eng-5 (medium): #335 → #332 → #334. Fillers: #412 stopgap, #141, #108.
+**Executive Director requests.** #420 (flat north-up strategic map) merged as 7c6aca6, built by the Tech Lead. Their follow-up look at the render produced #439 (labels as grey plates, markers still off their cities, p0, Tech Lead) and #440 (region plates read as rectangles, p1, queued behind the freeze).
 
-**Risks / asks** (04:20 UTC):
+**M2 Basic Missions** (32 of 47, 05:10 UTC). Merged: runtime model, rules, movement, sight, combat, turn engine, spawning, charges, objectives/extraction/resolver, AI registry, lurker. Open on seats: #341 (eng-3), #332 (eng-4), #335 (eng-5, PR #422).
 
-- **Director: the engineer seats and the Tech Lead have been dead for nine hours.** Three seats hold issues nobody is working (#330, #333, #335) and the Executive Director's own request waited eight hours. This needs respawns, not reseating; the work is correctly assigned and specced.
-- Standing ask unchanged: one default-effort seat serialises M2's high chain (#330 → #341).
-- #418 is approved on content but conflicted; whoever takes #333 next should start from that branch rather than from scratch.
+**Seat plan (frozen):** eng-3 #341 → #426. eng-4 #332 → next allowlist entry. eng-5 #335 → next allowlist entry. Nothing outside the allowlist until 07:00 UTC.
+
+**Risks / asks** (05:10 UTC):
+
+- #341 is the release gate: without it Launch still auto-resolves and no mission is playable. It is high-tier on eng-3 and has no fallback owner.
+- #426 is unseated and release-critical; the relaxed tier rule means the next free seat takes it whoever they are.
+- The two overworld defects the Executive Director spotted (#439, #440) are outside the tactical release path but they are what they will look at first on the overworld screen.
 
 ---
 

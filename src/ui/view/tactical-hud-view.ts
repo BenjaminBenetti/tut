@@ -1,4 +1,5 @@
 import type { Result } from "../../core/model/result";
+import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { attack } from "../../tactical/model/attack-command";
 import type { AttackPreview } from "../../tactical/model/attack-preview";
 import type { CombatTuning } from "../../tactical/model/combat-tuning";
@@ -16,6 +17,11 @@ import {
   findAttackTarget,
 } from "../../tactical/service/attack-target-service";
 import { previewAttack } from "../../tactical/service/combat-service";
+import type { MoveGraph } from "../../tactical/service/movement-service";
+import {
+  buildMoveGraph,
+  pathTo,
+} from "../../tactical/service/movement-service";
 import type { TacticalIntent } from "../model/tactical-intent";
 import type { ActionBarAction } from "./action-bar-view";
 import { ActionBarView } from "./action-bar-view";
@@ -64,7 +70,8 @@ const TEAM_FOR_PHASE: Readonly<Record<TacticalState["phase"], Team>> = {
  * ```
  *   intent select-unit ──▶ attack mode + enemy? ──▶ preview target
  *                      └─▶ else select it (card follows)
- *   intent select-tile ──▶ move mode ──▶ onCommand(move(selected, [tile]))
+ *   intent select-tile ──▶ move mode ──▶ pathTo ──▶ onCommand(move(selected, path))
+ *                                             └─ undefined ──▶ "out of reach", stay armed
  *   intent action      ──▶ move / attack arm the mode; next-target cycles
  *                          what is aimed at; overwatch / reload
  *                          ──▶ onCommand; cancel clears; next-unit cycles
@@ -79,6 +86,10 @@ export class TacticalHudView {
 
   private readonly handlers: TacticalHudHandlers;
   private readonly deps: TacticalHudDeps;
+  /** Traversal structures for the mission's map, built once and reused. */
+  private graph: MoveGraph | undefined;
+  /** The map `graph` was built from; a new mission's map rebuilds it. */
+  private graphFor: TacticalState["map"] | undefined;
   private readonly banner: TurnBannerView;
   private readonly card = new UnitCardView();
   private readonly preview: HitPreviewView;
@@ -206,9 +217,7 @@ export class TacticalHudView {
         return;
       case "select-tile":
         if (this.mode === "move" && this.selected !== undefined) {
-          this.handlers.onCommand(move(this.selected, [intent.tile]));
-          this.mode = "select";
-          this.refresh();
+          this.moveTo(intent.tile);
         }
         return;
       case "action":
@@ -223,6 +232,56 @@ export class TacticalHudView {
   // ===========================================
   // Private Methods
   // ===========================================
+
+  /**
+   * Walks the selected unit to a clicked tile (#488). The rules compute
+   * the route: `pathTo` returns every tile stepped through, which is what
+   * `Move` validates against, so a click anywhere in the painted move
+   * range works rather than only an orthogonally adjacent one.
+   *
+   * ```
+   *   pathTo undefined ──► "out of reach", move stays armed for another click
+   *   path []          ──► the unit's own tile; disarm, nothing dispatched
+   *   otherwise        ──► onCommand(move(unit, path)), disarm
+   * ```
+   *
+   * A refusal leaves the mode armed on purpose: the player misjudged the
+   * range, not the intent, and the next click should still be a move.
+   */
+  private moveTo(tile: TileCoord): void {
+    const mission = this.mission;
+    if (!mission || this.selected === undefined) {
+      return;
+    }
+    const path = pathTo(
+      mission,
+      this.selected,
+      tile,
+      this.moveGraphFor(mission),
+    );
+    if (path === undefined) {
+      this.showStatus("That tile is out of reach this turn.");
+      return;
+    }
+    this.mode = "select";
+    if (path.length > 0) {
+      this.handlers.onCommand(move(this.selected, path));
+    }
+    this.refresh();
+  }
+
+  /**
+   * The mission map's traversal structures, built on first use and kept
+   * until the map changes. Building walks every tile, and a player clicks
+   * far more often than a mission changes map.
+   */
+  private moveGraphFor(mission: TacticalState): MoveGraph {
+    if (this.graph === undefined || this.graphFor !== mission.map) {
+      this.graph = buildMoveGraph(mission.map);
+      this.graphFor = mission.map;
+    }
+    return this.graph;
+  }
 
   /**
    * In attack mode anything on the other side becomes the preview target,

@@ -1,11 +1,9 @@
 import type { BugBehaviour } from "../../bugs/ai/bug-behaviour";
 import { MapBehaviourRegistry } from "../../bugs/ai/behaviour-registry";
-import type { SpeciesLookup } from "../../bugs/ai/behaviour-registry";
 import { createBugPhaseRunner } from "../../bugs/ai/bug-phase-runner";
+import { LurkerBehaviour } from "../../bugs/ai/lurker-behaviour";
+import { createSpeciesLookup } from "../../bugs/service/species-lookup";
 import { BUG_SPECIES } from "../../bugs/data/species";
-import type { BugSpecies } from "../../bugs/model/bug-species";
-import type { BugSpeciesId } from "../../content/model/bug-species-id";
-import { BUG_SPECIES_IDS } from "../../content/model/bug-species-id";
 import type { IdGenerator } from "../../core/model/id-generator";
 import { createDefaultRegistries } from "../../mapgen/service/default-registries";
 import { AUTO_RESOLVE_TUNING } from "../../overworld/data/auto-resolve-tuning";
@@ -188,22 +186,13 @@ export function shippedTacticalHandlers(): TacticalHandlers {
 }
 
 /**
- * The bug behaviours that have landed, one line per species issue
- * (#332 rush, #333 flank, #334 punish-clumps). A species whose behaviour
- * has not merged holds still during the bug phase.
+ * The bug behaviours that have landed, one line per species issue: the
+ * lurker's `flank` (#333). A species whose behaviour has not merged —
+ * the swarmer's `rush` (#332), the brute's `punish-clumps` (#334) —
+ * holds still during the bug phase until it does.
  */
 export function shippedBugBehaviours(): readonly BugBehaviour[] {
-  return [];
-}
-
-/** A species lookup over the shipped catalogue; an unknown id resolves to nothing. */
-export function createSpeciesLookup(
-  species: Readonly<Record<BugSpeciesId, BugSpecies>>,
-): SpeciesLookup {
-  return (id) =>
-    BUG_SPECIES_IDS.includes(id as BugSpeciesId)
-      ? species[id as BugSpeciesId]
-      : undefined;
+  return [new LurkerBehaviour()];
 }
 
 /** A mech's current stat sheet from its loadout, or undefined when it no longer validates. */

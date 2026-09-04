@@ -25,7 +25,14 @@ import {
 } from "../../tactical/service/tactical-fixtures.test-helper";
 import type { TacticalHandlers } from "../../tactical/service/tactical-command-handlers";
 import { createOverwatchReaction } from "../../tactical/service/turn-service";
-import { SWARMER } from "../data/species";
+import { BUG_SPECIES, LURKER, SWARMER } from "../data/species";
+import {
+  startedMission,
+  walkableTileNear,
+  withBug,
+} from "./bug-mission.test-helper";
+import { LurkerBehaviour } from "./lurker-behaviour";
+import { createSpeciesLookup } from "../service/species-lookup";
 import type { BehaviourContext, BugBehaviour } from "./bug-behaviour";
 import { MapBehaviourRegistry } from "./behaviour-registry";
 import { createBugPhaseRunner, livingBugIds } from "./bug-phase-runner";
@@ -282,6 +289,34 @@ describe("createBugPhaseRunner", () => {
       state: mission,
       events: [],
     });
+  });
+});
+
+describe("createBugPhaseRunner with a shipped behaviour", () => {
+  it("stalks for real: a lurker on a generated map acts through the shipped rules and the species catalogue", () => {
+    const started = startedMission("bugs");
+    const squad = started.units.find((u) => u.team === "tdf");
+    if (squad === undefined) throw new Error("fixture mission has no squad");
+    const placed = withBug(
+      started,
+      LURKER,
+      walkableTileNear(started, {
+        x: squad.pos.x + 6,
+        y: squad.pos.y,
+        z: squad.pos.z + 6,
+      }),
+    );
+    const shipped = createBugPhaseRunner({
+      handlers: HANDLERS,
+      registry: new MapBehaviourRegistry([new LurkerBehaviour()]),
+      speciesOf: createSpeciesLookup(BUG_SPECIES),
+      combat: COMBAT_TUNING,
+    });
+    const applied = shipped(placed.mission, ctxWith(new Mulberry32Rng(7)));
+    const after = applied.state.units.find((u) => u.id === placed.bug.id);
+    expect(applied.events.map((e) => e.type)).toContain(UNIT_MOVED);
+    expect(after?.pos).not.toEqual(placed.bug.pos);
+    expect(after?.ap).toBeLessThan(placed.bug.ap);
   });
 });
 

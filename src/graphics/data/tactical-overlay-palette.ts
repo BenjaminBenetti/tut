@@ -181,9 +181,18 @@ export const BLOCKED_SHOT_SIZE = 0.26;
 export const WEAPON_RANGE_LINE_WIDTH = 0.09;
 
 /**
- * Thickness of a ground tile's slab model (style guide §7). Pivot at
- * centre, so a slab placed at `tileTopCentre` occupies half of this
- * above that point as well as half below.
+ * Thickness of a ground tile's **authored slab model** (style guide §7).
+ * Pivot at centre, so a slab placed at `tileTopCentre` occupies half of
+ * this above that point as well as half below — which is why
+ * `map-model-resolver` subtracts half of it to sit the model's top face
+ * on the surface.
+ *
+ * **This does not define where the surface is.** `SLAB_HEIGHT` (0.15,
+ * in `mapgen-preview-palette`) does, through `tileTop`, and the art is
+ * fitted to it. Reading this one as "the slab thickness" and assuming
+ * the plane follows from it is the mistake that produced #557; the two
+ * numbers are different on purpose and answer different questions
+ * (#626).
  */
 export const GROUND_SLAB_THICKNESS = 0.05;
 

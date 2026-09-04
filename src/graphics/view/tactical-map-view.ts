@@ -18,8 +18,8 @@ import { DIRECTIONS } from "../../core/model/direction";
 import type { Vec2, Vec3 } from "../../core/model/grid";
 import { stepGridPos } from "../../core/service/grid-math";
 import type { Connector } from "../../mapgen/model/connector";
-import type { Hook } from "../../mapgen/model/hook";
-import { allHooks } from "../../mapgen/model/hook";
+import type { Hook, HookKind } from "../../mapgen/model/hook";
+import { allHooks, HookKinds } from "../../mapgen/model/hook";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { Tile } from "../../mapgen/model/tile";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
@@ -732,14 +732,35 @@ export class TacticalMapView implements Disposable, TilePicker {
   // Hooks
   // ===========================================
 
-  /** A flat marker on every hook tile; objectives are drawn last so they win overlaps. */
+  /**
+   * A flat marker on every hook tile, each kind on its own shelf so an
+   * overlap has a fixed winner (#477).
+   *
+   * Hook tiles overlap constantly rather than occasionally: the
+   * extraction point shares the first deploy zone's tiles (ADR 0004
+   * §4.6), and measured across 24 generated maps **every deploy tile is
+   * also an extraction tile — 384 of 384**. Drawn at one height those
+   * are coincident coplanar quads, and which one the player saw was
+   * decided by batch order, itself decided by the set of distinct
+   * colours in the scene. #477 caught the marker flipping from deploy to
+   * extraction because an unrelated branch changed some surface colours.
+   *
+   * Each kind is lifted by its rank in `HOOK_MARKER_PRIORITY`, so the
+   * most important is nearest the camera and nothing is left to draw
+   * order. Both markers still exist: a single marker per tile would be
+   * the truer picture, but with the two tile sets identical it would
+   * mean one kind never appearing anywhere in the game, which is a
+   * visual decision rather than a bug fix.
+   */
   private buildHooks(): void {
     const batches = new Map<string, Batch>();
     for (const hook of allHooks(this.map.hooks)) {
       for (const coord of hook.tiles) {
         const colour = HOOK_COLOURS[hook.kind] ?? FALLBACK_HOOK_COLOUR;
         const lift =
-          MARKER_LIFT + (isObjective(hook, this.map) ? SLAB_HEIGHT : 0);
+          MARKER_LIFT +
+          (isObjective(hook, this.map) ? SLAB_HEIGHT : 0) +
+          shelfOf(hook.kind);
         const matrix = boxMatrix(
           coord.x + 0.5,
           tileTop(coord.y) + lift,
@@ -944,6 +965,48 @@ function levelOf(object: Object3D): number | undefined {
     current = current.parent;
   }
   return undefined;
+}
+
+/**
+ * Which hook a tile shows when it carries more than one (#477), most
+ * important first.
+ *
+ * ```
+ *   egg-spawner  the mission objective
+ *   extraction   somewhere the player must return to and cannot infer
+ *   deploy       where the squad already stands, which its units show
+ *   edge-spawn   where bugs arrive; useful, never urgent
+ * ```
+ *
+ * Extraction outranks deploy because a deploy zone is self-evident from
+ * the squad standing on it, while an extraction tile is a fact the
+ * player has to be told and will need later. That is a judgement, and
+ * the point of naming it is that it can be argued with — before #477 the
+ * same question was answered by whichever batch happened to draw last.
+ *
+ * A kind not listed sorts last, so a new hook never displaces an
+ * existing marker by accident.
+ */
+const HOOK_MARKER_PRIORITY: readonly HookKind[] = [
+  HookKinds.EGG_SPAWNER,
+  HookKinds.EXTRACTION,
+  HookKinds.DEPLOY,
+  HookKinds.EDGE_SPAWN,
+];
+
+/** Vertical gap between hook shelves: enough to order them, too small to read as height. */
+const HOOK_SHELF_STEP = 0.004;
+
+/**
+ * How far above the tile a hook kind's marker sits, by priority.
+ *
+ * @param kind - The hook kind being drawn.
+ * @returns A lift in world units; higher priority sits higher.
+ */
+function shelfOf(kind: HookKind): number {
+  const at = HOOK_MARKER_PRIORITY.indexOf(kind);
+  const rank = at === -1 ? HOOK_MARKER_PRIORITY.length : at;
+  return (HOOK_MARKER_PRIORITY.length - rank) * HOOK_SHELF_STEP;
 }
 
 /** True when the hook belongs to the objectives group. */

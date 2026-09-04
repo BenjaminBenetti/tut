@@ -10,7 +10,24 @@ import type { WallKind } from "../../mapgen/model/wall";
 /** World units per map level: one building floor (style guide §3). */
 export const LEVEL_HEIGHT = 1.5;
 
-/** Thickness of a tile slab, so a level's top sits just above its base. */
+/**
+ * Thickness of the **placeholder box** a tile is drawn as before its
+ * model loads, and — because `tileTop` is `level * LEVEL_HEIGHT +
+ * SLAB_HEIGHT` — the number that defines where the world's ground
+ * surface actually is.
+ *
+ * That second job is the surprising one, and it is why this constant is
+ * load-bearing far outside the preview this file is named for. The
+ * authored slab is fitted to this plane rather than the other way
+ * round: `map-model-resolver` drops a centre-pivoted model by
+ * `GROUND_SLAB_THICKNESS / 2` so its top face lands here.
+ *
+ * **Not the same number as `GROUND_SLAB_THICKNESS` (0.05) and not meant
+ * to be.** That one is how thick the artist made the slab; this one is
+ * how high the surface sits. Confusing the two is what put the visible
+ * ground half a slab high and everything standing on it half a slab low
+ * (#557, #626).
+ */
 export const SLAB_HEIGHT = 0.15;
 
 /** Thickness of a wall segment. */

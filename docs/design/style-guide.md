@@ -353,7 +353,7 @@ Overlays are instanced quads lifted one ground-slab thickness (0.05 u) above the
 | High cover | `ui-danger` | `#E0453C` at 0.55 | ring 0.32–0.40 | Full protection on that edge |
 | Line of sight / target | `ui-accent` | `#F08A24` at 0.75 | pip 0.12–0.18 | What the current action touches |
 | Weapon range | `ui-accent` | `#F08A24` at 0.38 | edge pips, 0.30 | How far this unit can shoot |
-| Selected unit ring | `ui-accent` | `#F08A24` | ring | Who is acting |
+| Selected unit ring | `ui-accent` | `#F08A24` | ring 0.40–0.50, **drawn through geometry** | Who is acting |
 
 Orange is the player's own intent, blue is possibility, yellow and red are the world pushing back. Nothing else on the tactical plane may use these four colours.
 
@@ -366,6 +366,10 @@ The second band was first authored as a *darkened* `ui-info` (`#4C7D99`). That f
 **Neither move band fills its tile** (#569). At 0.92 a run of near-band tiles merged into one flat sheet of colour, which is how terrain is drawn — and players read it as a pond, the water surface being `env-water-shallow #3F8FA8`. Inset to 0.84 the ground shows through between neighbours, so the same tiles read as *marked* rather than *repainted*: a continuous surface is terrain, separated squares are the overlay. That distinction survives any tone.
 
 **Weapon range is pips, not a fill** (#522, retuned in #566). An outline along the envelope's edge is thin on open ground and solid in a city, where line of sight cuts the envelope into pockets and almost every tile counts as edge; at 0.96 of a tile that buried the movement band under it. A small centred pip carries the same information for a tenth of the ink.
+
+**A mark at full opacity is not automatically the boldest** (#605). three.js sorts a material with `transparent: false` into the *opaque* pass; paired with `depthWrite: false` — which every flat ground mark needs, so it does not occlude what stands on it — that means it writes no depth and everything drawn afterwards paints straight over it. The selection ring spent every build to date in the scene graph, visible, at the right height, and absent from the screen for exactly this reason. The hover ring escaped only by accident, its 0.6 opacity putting it in the transparent pass. **Every ground mark is `transparent: true`, `depthWrite: false`, with an explicit `renderOrder`** — tile overlays take 1 through 4, unit rings sit above them.
+
+The selection ring alone also drops `depthTest`, so it reads through whatever stands in front of it. Units deploy shoulder to shoulder, and a depth-tested ring under a squad beside a 2.79 u mech is a sliver of orange — no answer to *which one am I commanding?*. It gives nothing away, because only the player's own units can be selected and their own units are always drawn. **Hover must not do this**: it lands on enemies too, and a ring through a wall would reveal a bug that vision is hiding (ADR 0006).
 
 **Count the marks, not just tune them** (#590). Every rule above was argued and measured on its own overlay, and each one was right on its own. Together they put **71–171 instances** on the map for a single click — the planes were never budgeted against each other, only against the ground. The frame stopped reading as a city and started reading as an instrument panel, and the unit the player had just selected was the quietest thing in it.
 

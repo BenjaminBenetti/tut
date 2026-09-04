@@ -1,4 +1,5 @@
 import type { ModelAssetId } from "../../content/data/model-ids";
+import { hashSeed } from "../../core/service/seed-hash";
 import { PropKindIds } from "../../mapgen/data/props";
 import type { KnownPropKindId } from "../../mapgen/data/props";
 import { SurfaceIds } from "../../mapgen/data/surfaces";
@@ -83,13 +84,67 @@ export const PROP_MODELS: Readonly<Record<KnownPropKindId, ModelAssetId>> = {
 // Walls
 // ===========================================
 
-/** Style guide §7, wall kind → model id. */
-export const WALL_MODELS: Readonly<Record<WallKind, ModelAssetId>> = {
-  solid: "building.wall",
-  window: "building.wall-window",
-  door: "building.wall-door",
-  half: "building.wall-half",
+/**
+ * The material a wall face is built from (#510). Three families of
+ * identical geometry, so a block of buildings stops reading as one
+ * extruded material; which one a building draws in is `wallFamilyFor`.
+ */
+export type WallFamily = "brick" | "concrete" | "panel";
+
+/**
+ * Every family, in a fixed order. `wallFamilyFor` indexes into this, so
+ * the order is part of what a building's family depends on: reordering
+ * it redraws every map. Append rather than insert.
+ */
+export const WALL_FAMILIES: readonly WallFamily[] = [
+  "brick",
+  "concrete",
+  "panel",
+];
+
+/** The wall kinds #510 models in all three families. */
+type FamilyWallKind = Exclude<WallKind, "half">;
+
+/**
+ * Style guide §7, wall kind → model id, one row per family.
+ *
+ * ```
+ *            solid                 window                       door
+ *   brick    building.wall         building.wall-window         building.wall-door
+ *   concrete building.wall-…-conc  building.wall-window-conc    building.wall-door-conc
+ *   panel    building.wall-…-panel building.wall-window-panel   building.wall-door-panel
+ * ```
+ */
+export const WALL_MODELS: Readonly<
+  Record<WallFamily, Readonly<Record<FamilyWallKind, ModelAssetId>>>
+> = {
+  brick: {
+    solid: "building.wall",
+    window: "building.wall-window",
+    door: "building.wall-door",
+  },
+  concrete: {
+    solid: "building.wall-concrete",
+    window: "building.wall-window-concrete",
+    door: "building.wall-door-concrete",
+  },
+  panel: {
+    solid: "building.wall-panel",
+    window: "building.wall-window-panel",
+    door: "building.wall-door-panel",
+  },
 };
+
+/**
+ * The half-height wall, which #510 models in brick only.
+ *
+ * It is a low parapet rather than a wall face — a course or two above
+ * the floor — so it carries little of the material read the three
+ * families exist to vary, and a concrete building with a brick parapet
+ * costs the player nothing they can see. Modelling the missing two is
+ * the Art Director's call, not something to fake by tinting.
+ */
+export const HALF_WALL_MODEL: ModelAssetId = "building.wall-half";
 
 // ===========================================
 // Lookups
@@ -109,7 +164,28 @@ export function propModel(kind: PropKindId): ModelAssetId | undefined {
     : undefined;
 }
 
-/** The model for a wall kind. Every kind mapgen can emit has one. */
-export function wallModel(kind: WallKind): ModelAssetId {
-  return WALL_MODELS[kind];
+/**
+ * The model for a wall kind in one family. Every kind mapgen can emit
+ * has one; `half` is brick whatever the family, see `HALF_WALL_MODEL`.
+ */
+export function wallModel(kind: WallKind, family: WallFamily): ModelAssetId {
+  return kind === "half" ? HALF_WALL_MODEL : WALL_MODELS[family][kind];
+}
+
+/**
+ * The family a building draws in: one per `buildingId`, so a building
+ * is a single material rather than a patchwork, and brick where a wall
+ * belongs to no building.
+ *
+ * Hashed rather than drawn from the mission's `Rng`. Graphics observes
+ * simulation state and never draws from its stream, and the same map
+ * has to come back looking the same after a reload — which a generator
+ * position cannot promise and a hash of the id gives for free.
+ */
+export function wallFamilyFor(buildingId: string | undefined): WallFamily {
+  if (buildingId === undefined) {
+    return "brick";
+  }
+  const index = hashSeed(buildingId) % WALL_FAMILIES.length;
+  return WALL_FAMILIES[index] ?? "brick";
 }

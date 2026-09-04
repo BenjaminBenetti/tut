@@ -14,6 +14,7 @@ import {
   ROAD_VARIANTS,
   SIDEWALK_VARIANTS,
   surfaceModel,
+  wallFamilyFor,
   wallModel,
 } from "../data/map-model-table";
 import { tileTop } from "../view/tactical-map-view";
@@ -250,7 +251,7 @@ function resolveWalls(
         continue;
       }
       placements.push({
-        modelId: wallModel(kind),
+        modelId: wallModel(kind, wallFamilyFor(tile.buildingId)),
         level: tile.y,
         position: wallCentre(tile, side),
         // A wall is authored along +X, so north and south edges are

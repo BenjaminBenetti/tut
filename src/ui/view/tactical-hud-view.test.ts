@@ -672,3 +672,58 @@ describe("TacticalHudView under fog", () => {
     expect(mission.vision.tdf.spotted).toContain(hud.getTargetUnitId());
   });
 });
+
+describe("the context menu closes after it is used (#627)", () => {
+  /** A HUD whose scene answers where things are, so the menu can open. */
+  function withMenu() {
+    const commands: TacticalCommand[] = [];
+    const hud = new TacticalHudView(
+      {
+        onCommand: (c) => commands.push(c),
+        onBack: vi.fn(),
+        // Without an anchor the menu never opens and a test of its
+        // dismissal silently proves nothing.
+        anchorFor: () => ({ x: 100, y: 100 }),
+      },
+      { combatTuning: COMBAT_TUNING, objectiveTuning: OBJECTIVE_TUNING },
+    );
+    hud.mount(root);
+    const mission = hudMission();
+    hud.update(mission);
+    return { hud, commands, mission };
+  }
+
+  /** The radial menu's root. */
+  const ring = (): HTMLElement | null =>
+    root.querySelector<HTMLElement>(".tut-radial");
+
+  it("opens on a right click the armed action cannot serve", () => {
+    const { hud } = withMenu();
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    hud.handleIntent({ kind: "action", action: "attack" });
+    hud.handleIntent({
+      kind: "invoke",
+      target: { kind: "tile", tile: { x: 2, y: 0, z: 1 } },
+    });
+
+    expect(ring()?.hidden).toBe(false);
+  });
+
+  it("hides itself once an entry is chosen, rather than stranding it on the map", () => {
+    const { hud } = withMenu();
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    hud.handleIntent({ kind: "action", action: "attack" });
+    hud.handleIntent({
+      kind: "invoke",
+      target: { kind: "tile", tile: { x: 2, y: 0, z: 1 } },
+    });
+    expect(ring()?.hidden).toBe(false);
+
+    root.querySelector<HTMLButtonElement>("button[data-item]")?.click();
+
+    // The view reports the choice but does not hide itself, so the HUD
+    // has to — otherwise the ring sits on the map offering an action
+    // that has already happened.
+    expect(ring()?.hidden).toBe(true);
+  });
+});

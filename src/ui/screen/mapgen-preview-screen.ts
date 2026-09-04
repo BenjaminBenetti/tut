@@ -374,13 +374,14 @@ function assessmentRows(
       "Firing positions",
       `${delta((a) => a.firingPositionsMean, one)} per objective ` +
         `(${delta((a) => a.firingPositionsMin, whole)} fewest), ` +
-        `${delta((a) => a.coveredFiringShare, pct)} in cover`,
+        `${delta((a) => a.coveredFiringShare, pct)} in cover, ` +
+        `${delta((a) => a.elevatedFiringShare, pct)} shooting down`,
     ],
     ["Mech reach", `${delta((a) => a.mechReachShare, pct)} of infantry's`],
     [
-      "High ground",
-      `${delta((a) => a.infantryHighGroundShare, pct)} infantry, ` +
-        `${delta((a) => a.mechHighGroundShare, pct)} mech`,
+      "Levels reached",
+      `${delta((a) => a.infantryLevelSpan, whole)} infantry, ` +
+        `${delta((a) => a.mechLevelSpan, whole)} mech`,
     ],
   ];
 }

@@ -29,12 +29,26 @@ export interface MapAssessment {
    * shoot, meaned over objectives, in [0, 1].
    */
   readonly coveredFiringShare: number;
+  /**
+   * Share of firing positions that stand above the objective they shoot,
+   * meaned over objectives, in [0, 1]. What the elevation modifier
+   * rewards, and 0 on a map whose objectives cannot be looked down on.
+   */
+  readonly elevatedFiringShare: number;
   /** Mech-reachable tiles as a share of infantry-reachable ones, in [0, 1]. */
   readonly mechReachShare: number;
-  /** Share of infantry-reachable tiles above the modal exterior ground level. */
-  readonly infantryHighGroundShare: number;
-  /** The same for mechs; `0` on a map with no reachable outdoor height. */
-  readonly mechHighGroundShare: number;
+  /**
+   * How many distinct levels infantry can reach from the deploy zones:
+   * `1` on a map with no height it can use, more when stairs, ladders and
+   * ramps lead somewhere.
+   */
+  readonly infantryLevelSpan: number;
+  /**
+   * The same for mechs. `1` says the class fights the whole mission on one
+   * level and can never take the elevation modifier — true of every city
+   * map, where the plats are graded flat and roofs are infantry-only.
+   */
+  readonly mechLevelSpan: number;
 }
 
 /** Nearest and farthest of a set of walked distances; both `-1` when empty. */

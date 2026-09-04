@@ -52,9 +52,10 @@ describe("assessMap", () => {
     expect(assessment.coveredFiringShare).toBeCloseTo(3 / 24);
     expect(assessment.approachSteps).toEqual({ nearest: 8, farthest: 8 });
     expect(assessment.edgeSpawnSteps).toEqual({ nearest: 16, farthest: 16 });
-    // Flat fixture: no height, and every tile takes both classes.
-    expect(assessment.infantryHighGroundShare).toBe(0);
-    expect(assessment.mechHighGroundShare).toBe(0);
+    // Flat fixture: one level for both classes, nothing shoots down.
+    expect(assessment.elevatedFiringShare).toBe(0);
+    expect(assessment.infantryLevelSpan).toBe(1);
+    expect(assessment.mechLevelSpan).toBe(1);
     expect(assessment.mechReachShare).toBe(1);
   });
 
@@ -87,6 +88,10 @@ describe("assessMap", () => {
         expect(assessment.mechReachShare, label).toBeGreaterThan(0.5);
         expect(assessment.coveredFiringShare, label).toBeGreaterThanOrEqual(0);
         expect(assessment.coveredFiringShare, label).toBeLessThanOrEqual(1);
+        // Infantry always has the building floors; mechs stay outside, so
+        // a city map leaves them on one level (#444).
+        expect(assessment.infantryLevelSpan, label).toBeGreaterThan(1);
+        expect(assessment.mechLevelSpan, label).toBeGreaterThanOrEqual(1);
       }
     }
   }, 30_000);

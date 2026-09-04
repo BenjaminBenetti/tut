@@ -5,7 +5,6 @@ import type { UnitClass } from "../../mapgen/model/pass-mask";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { Tile } from "../../mapgen/model/tile";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
-import { SurfaceIds } from "../../mapgen/data/surfaces";
 import { ReachabilityService } from "../../mapgen/service/reachability-service";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import { UNIT_TUNING } from "../data/unit-tuning";
@@ -68,8 +67,6 @@ export function assessMap(
   const steps = walkFrom(index, reach, deploy, PassMask.INFANTRY);
   const infantry = reach.reachableFrom(deploy, PassMask.INFANTRY);
   const mech = reach.reachableFrom(deploy, PassMask.MECH);
-  const base = modalGroundLevel(map);
-
   const firing = map.hooks.objectives.map((objective) =>
     firingPositionsFor(map, index, infantry, objective.tiles[0], options),
   );
@@ -87,9 +84,12 @@ export function assessMap(
     coveredFiringShare: mean(
       firing.map((f) => (f.total === 0 ? 0 : f.covered / f.total)),
     ),
+    elevatedFiringShare: mean(
+      firing.map((f) => (f.total === 0 ? 0 : f.elevated / f.total)),
+    ),
     mechReachShare: infantry.size === 0 ? 0 : mech.size / infantry.size,
-    infantryHighGroundShare: highGroundShare(map, index, infantry, base),
-    mechHighGroundShare: highGroundShare(map, index, mech, base),
+    infantryLevelSpan: levelSpan(map, index, infantry),
+    mechLevelSpan: levelSpan(map, index, mech),
   };
 }
 
@@ -97,18 +97,23 @@ export function assessMap(
 // Firing positions
 // ===========================================
 
-/** Firing positions found for one objective, and how many hold cover. */
+/**
+ * Firing positions found for one objective, and how many of them hold
+ * cover against it or stand above it.
+ */
 interface FiringPositions {
   readonly total: number;
   readonly covered: number;
+  readonly elevated: number;
 }
 
 /**
  * Tiles a squad can shoot the objective from: reachable from deploy,
  * within `range` in the same metric the hit chance uses (manhattan), and
  * with the sight line clear. `covered` counts the ones that have cover
- * against that objective, which is what a unit trading fire with a
- * hatching spawner actually gets.
+ * against that objective and `elevated` the ones that look down on it —
+ * the two terms the hit chance adds for a unit trading fire with a
+ * hatching spawner.
  */
 function firingPositionsFor(
   map: TacticalMap,
@@ -118,10 +123,11 @@ function firingPositionsFor(
   options: AssessmentOptions,
 ): FiringPositions {
   if (origin === undefined) {
-    return { total: 0, covered: 0 };
+    return { total: 0, covered: 0, elevated: 0 };
   }
   let total = 0;
   let covered = 0;
+  let elevated = 0;
   for (const tile of tilesWithin(index, origin, options.range)) {
     if (!reachable.has(index.keyOf(tile))) {
       continue;
@@ -136,8 +142,11 @@ function firingPositionsFor(
     if (coverAgainst(map, tile, origin, index) !== CoverLevel.NONE) {
       covered++;
     }
+    if (tile.y > origin.y) {
+      elevated++;
+    }
   }
-  return { total, covered };
+  return { total, covered, elevated };
 }
 
 /** Every tile in the columns within `radius` manhattan of the origin. */
@@ -227,46 +236,24 @@ function rangeOf(distances: readonly number[]): DistanceRange {
 // ===========================================
 
 /**
- * The level most of the map's exterior ground sits on, which is what
- * "high ground" is measured against: a hill on a plain counts, the plain
- * itself does not. `0` on a map with no exterior ground.
+ * How many distinct levels the class can reach from the deploy zones.
+ * Counting levels rather than measuring against a baseline keeps the
+ * read-out stable: a map whose ground happens to be split evenly between
+ * two levels reports two either way, where a share would swing on which
+ * half is larger.
  */
-function modalGroundLevel(map: TacticalMap): number {
-  const counts = new Map<number, number>();
-  for (const tile of map.tiles) {
-    if (tile.buildingId !== undefined || tile.surface === SurfaceIds.WATER) {
-      continue;
-    }
-    counts.set(tile.y, (counts.get(tile.y) ?? 0) + 1);
-  }
-  let level = 0;
-  let best = 0;
-  for (const [candidate, count] of counts) {
-    if (count > best) {
-      best = count;
-      level = candidate;
-    }
-  }
-  return level;
-}
-
-/** Share of the reachable tiles that sit above the base level. */
-function highGroundShare(
+function levelSpan(
   map: TacticalMap,
   index: TileIndex,
   reachable: ReadonlySet<number>,
-  base: number,
 ): number {
-  if (reachable.size === 0) {
-    return 0;
-  }
-  let high = 0;
+  const levels = new Set<number>();
   for (const tile of map.tiles) {
-    if (tile.y > base && reachable.has(index.keyOf(tile))) {
-      high++;
+    if (reachable.has(index.keyOf(tile))) {
+      levels.add(tile.y);
     }
   }
-  return high / reachable.size;
+  return levels.size;
 }
 
 /** Mean of the values, or 0 when there are none. */

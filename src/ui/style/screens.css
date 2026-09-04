@@ -177,6 +177,17 @@
   align-items: center;
 }
 
+/*
+ * Name above numbers, both left-aligned in the value column. As one
+ * right-aligned string the four facts wrapped onto lines that *began*
+ * with a "·" and read as fragments (see the view).
+ */
+.tut-city__mission-value {
+  display: grid;
+  gap: 0.1em;
+  justify-items: start;
+}
+
 .tut-city__mission .tut-btn {
   grid-column: 1 / -1;
   justify-self: start;

@@ -131,9 +131,12 @@ describe("CityPanelView", () => {
       stateWith(10, [mission("mission-2", 9), mission("mission-1", 6)]),
       CITY.id,
     );
-    expect(field("mission")?.textContent).toBe(
-      "Infestation Clearance · difficulty 4 · ¢1,200 · expires day 6",
-    );
+    // Name and numbers on separate lines (#697 follow-up): as one string
+    // the four facts wrapped so that two lines *began* with a "·", and
+    // being right-aligned they read as fragments. The numbers use the
+    // mission list's shorthand so the two views agree.
+    expect(field("mission-name")?.textContent).toBe("Infestation Clearance");
+    expect(field("mission-facts")?.textContent).toBe("D4 · ¢1,200 · 5 d");
     const plan = root.querySelector<HTMLButtonElement>(
       '[data-action="plan-deployment"]',
     );

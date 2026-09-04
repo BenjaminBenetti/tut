@@ -112,6 +112,20 @@ Rule: orange covers at most 10 % of any TDF model's visible surface. It is a mar
 
 Rule: bioluminescence is small and bright, never a wash. Swarmers get green only. Lurkers get magenta. Brutes get green with bone. Spawners get both, pulsing.
 
+Rule: **`bug-bone` is what makes a bug readable, not the glow.** Dark chitin on dark asphalt is a silhouette with no edge, so every species carries a segmented bone crest along its spine — plates, not one slab, with the glow between them. The glow says *which* species; the crest is what says *there is something there* at 64 px per tile.
+
+### 4.2.1 The read test
+
+![Both factions on asphalt at 64 px per tile](faction-read-on-asphalt.png)
+
+`tools/art/preview/layouts/asphalt-read.json` puts both factions on nothing but road — the darkest ground in the game and the worst case for either — at exactly 64 px per tile. Run it after any change to a unit or bug:
+
+```
+node tools/art/preview/render-scene.mjs tools/art/preview/layouts/asphalt-read.json out.png
+```
+
+What it shows today: **TDF read comfortably.** Olive over grey separates from asphalt on its own, and the orange markings — the 10 % from §4.1 — are doing exactly the job they were reserved for. **Bugs read adequately** with the bone crest and would read properly with contact shadows (#507): a dark shape on dark ground is separated by the shadow under it as much as by anything on its back, which is why the answer to "the bugs are hard to see" is not more glow.
+
 ### 4.3 Environment by biome
 
 Shared: `env-asphalt #3A3D42`, `env-concrete #8E8A82`, `env-sidewalk #A7A297`, `env-brick #8A4B3A`, `env-glass #6E8FA6`, `env-roof #55524C`, `env-metal #6F7378`, `env-rust #8C5A3A`, `env-rock #6E6A66`, `env-bark #5A4634`, `env-foliage #3F6B33`.
@@ -191,7 +205,7 @@ Map generation assembles maps from these pieces (GDD §7, architecture §5 map c
 - **Walls** are 1 u long, 1.5 u tall, 0.1 u thick, pivot at the wall's base midpoint, running along local +X. Placed on tile edges. Variants: `wall`, `wall-window`, `wall-door` (door 1.2 × 0.6 opening), `wall-half` (0.5 u high, low cover).
 - **Floors** are 1×1 u slabs at y = 0 of their level; **stairs** occupy one tile and rise 1.5 u along local +Z; **ramps** are outdoor stairs' terrain cousin, same rise, biome-textured; **roofs** are 1×1 caps with a 0.1 u parapet.
 - **Props** are ≤ 1×1, pivot at base centre: `barrier-concrete`, `sandbags`, `dumpster`, `car-sedan` (2×1, pivot at centre of the 2-tile footprint), `lamp-post`, `hydrant`.
-- Every kit ships a `README.md` listing pieces, footprints and which edge they snap to.
+- Every kit ships a doc listing pieces, footprints and which edge they snap to. The city building kit is [`kits/city-building-kit.md`](kits/city-building-kit.md) and the props are [`kits/cover-props.md`](kits/cover-props.md).
 
 **Tile texture rule (#441).** A tile's whole top face samples one 128 px atlas cell, and there is one model per tile id, so every grass tile in a field is the same stamp. Detail therefore lives at **mid scale** — value noise of period 6–11 and blobs 4–13 px across, plus fine grain — never one tile-sized feature, which turns a field into visible repetition. Aim for a luminance standard deviation of **7–15 per cell** (`env-sidewalk` 15.6 and `env-rock` 9.9 are the reference points); below about 5 the surface reads as flat colour at 64 px per tile. Keep the cell's mean on its palette hex (§4): contrast comes from the multipliers around it, not from a new colour.
 
@@ -224,6 +238,8 @@ Map generation (`src/mapgen/data/surfaces.ts`, `props.ts`) emits surface ids and
 | `table` | `prop.table` | low (interior) |
 
 Walls are `Wall` records on tile edges, not props: `building.wall`, `building.wall-window`, `building.wall-door`, `building.wall-half` by wall kind.
+
+Full-height walls ship in **three material families** — brick, concrete and panel — with identical geometry and different palette tokens (`building.wall{,-concrete,-panel}` and the `-window`/`-door` variants of each). One family per building, chosen by hashing the tile'"'"'s `buildingId`; walls with no building stay brick. The table and the reasoning are in [`kits/city-building-kit.md`](kits/city-building-kit.md).
 
 ### Part catalogue → models
 

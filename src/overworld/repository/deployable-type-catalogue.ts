@@ -14,16 +14,13 @@ import type { DeployableTypeCatalogue } from "../model/deployable-type-catalogue
  * `DeployableTypeCatalogue` backed by an in-memory list of types, normally
  * the values of `DEPLOYABLE_TYPES` from `overworld/data/deployable-types.ts`.
  * Duplicate ids are a content bug and are rejected at construction.
- *
- * The lookup itself is core's `Registry` (#108); this class is the
- * overworld's vocabulary over it.
  */
 export class DataDeployableTypeCatalogue implements DeployableTypeCatalogue {
   // ===========================================
   // Fields
   // ===========================================
 
-  private readonly registry: Registry<DeployableType>;
+  private readonly types: Registry<DeployableType>;
 
   // ===========================================
   // Construction
@@ -31,7 +28,7 @@ export class DataDeployableTypeCatalogue implements DeployableTypeCatalogue {
 
   /** Indexes the given types; throws if two share an id. */
   constructor(types: readonly DeployableType[]) {
-    this.registry = createRegistry("deployable type", types);
+    this.types = createRegistry("deployable type", types);
   }
 
   // ===========================================
@@ -40,11 +37,11 @@ export class DataDeployableTypeCatalogue implements DeployableTypeCatalogue {
 
   /** Returns the type with the given id, or `undefined` if unknown. */
   getDeployableType(id: DeployableTypeId): DeployableType | undefined {
-    return this.registry.find(id);
+    return this.types.find(id);
   }
 
   /** Returns every type in the order they were supplied. */
   listDeployableTypes(): readonly DeployableType[] {
-    return this.registry.values;
+    return this.types.values;
   }
 }

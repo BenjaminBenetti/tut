@@ -17,7 +17,7 @@ export class DataEventTypeCatalogue implements EventTypeCatalogue {
   // Fields
   // ===========================================
 
-  private readonly registry: Registry<EventType>;
+  private readonly types: Registry<EventType>;
 
   // ===========================================
   // Construction
@@ -25,7 +25,7 @@ export class DataEventTypeCatalogue implements EventTypeCatalogue {
 
   /** Indexes the given types; throws if two share an id. */
   constructor(types: readonly EventType[]) {
-    this.registry = createRegistry("event type", types);
+    this.types = createRegistry("event type", types);
   }
 
   // ===========================================
@@ -34,11 +34,11 @@ export class DataEventTypeCatalogue implements EventTypeCatalogue {
 
   /** Returns the type with the given id, or `undefined` if unknown. */
   getEventType(id: EventTypeId): EventType | undefined {
-    return this.registry.find(id);
+    return this.types.find(id);
   }
 
   /** Returns every type in the order they were supplied. */
   listEventTypes(): readonly EventType[] {
-    return this.registry.values;
+    return this.types.values;
   }
 }

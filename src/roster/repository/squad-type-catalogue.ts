@@ -12,16 +12,18 @@ import type { SquadTypeCatalogue } from "../model/squad-type-catalogue";
  * `SQUAD_TYPES` from `roster/data/squad-types.ts`. Duplicate ids are a
  * content bug and are rejected at construction.
  *
- * The lookup itself is core's `Registry` (#108); this class is the
- * roster's vocabulary over it, so callers ask for a squad type rather
- * than for a definition and never learn how it is stored.
+ * The indexing is `core`'s `Registry` (#108); this class stays as the
+ * domain's own facade, so the roster asks for squad types by name and
+ * never learns the generic vocabulary. The registry's label is
+ * `squad type`, which keeps the message a duplicate raises identical to
+ * the one this threw before.
  */
 export class DataSquadTypeCatalogue implements SquadTypeCatalogue {
   // ===========================================
   // Fields
   // ===========================================
 
-  private readonly registry: Registry<SquadType>;
+  private readonly types: Registry<SquadType>;
 
   // ===========================================
   // Construction
@@ -29,7 +31,7 @@ export class DataSquadTypeCatalogue implements SquadTypeCatalogue {
 
   /** Indexes the given types; throws if two share an id. */
   constructor(types: readonly SquadType[]) {
-    this.registry = createRegistry("squad type", types);
+    this.types = createRegistry("squad type", types);
   }
 
   // ===========================================
@@ -38,11 +40,11 @@ export class DataSquadTypeCatalogue implements SquadTypeCatalogue {
 
   /** Returns the type with the given id, or `undefined` if unknown. */
   getSquadType(id: SquadTypeId): SquadType | undefined {
-    return this.registry.find(id);
+    return this.types.find(id);
   }
 
   /** Returns every type in the order they were supplied. */
   listSquadTypes(): readonly SquadType[] {
-    return this.registry.values;
+    return this.types.values;
   }
 }

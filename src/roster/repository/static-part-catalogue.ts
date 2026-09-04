@@ -22,17 +22,13 @@ const NO_PARTS: readonly MechPart[] = [];
  * `PartCatalogue` over a fixed list of part definitions, indexed once at
  * construction. Back it with `STARTER_PARTS` for a campaign, or a
  * hand-built list in tests.
- *
- * The id lookup is core's `Registry` (#108). The slot buckets stay here:
- * they are this catalogue's own question, not something every registry
- * needs.
  */
 export class StaticPartCatalogue implements PartCatalogue {
   // ===========================================
   // Fields
   // ===========================================
 
-  private readonly registry: Registry<MechPart>;
+  private readonly parts: Registry<MechPart>;
   private readonly bySlot: ReadonlyMap<PartSlot, readonly MechPart[]>;
 
   // ===========================================
@@ -41,11 +37,12 @@ export class StaticPartCatalogue implements PartCatalogue {
 
   /** Indexes the parts. Throws when two parts share an id, since that is a content bug. */
   constructor(parts: readonly MechPart[]) {
-    // The registry rejects duplicate ids, so the bucketing pass below
-    // never sees one.
-    this.registry = createRegistry("part", parts);
+    // The registry owns the id index and the duplicate check; the slot
+    // index is this catalogue's own, since nothing generic knows that a
+    // part belongs to a slot.
+    this.parts = createRegistry("part", parts);
     const bySlot = new Map<PartSlot, MechPart[]>();
-    for (const part of parts) {
+    for (const part of this.parts.values) {
       const slotParts = bySlot.get(part.slot);
       if (slotParts === undefined) {
         bySlot.set(part.slot, [part]);
@@ -62,7 +59,7 @@ export class StaticPartCatalogue implements PartCatalogue {
 
   /** Looks a part up by id. */
   getPart(id: PartId): MechPart | undefined {
-    return this.registry.find(id);
+    return this.parts.find(id);
   }
 
   /** Lists the parts indexed under a slot, in the order they were given. */

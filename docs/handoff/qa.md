@@ -16,15 +16,32 @@ Last updated: 2026-09-04 (release push; pre-release verdict posted 06:10 UTC).
 1. **#439 (p0) reproduced and then verified fixed.** Markers match the texture to within a pixel, so the projection was never wrong; the artwork disagreed. 12 of 37 markers stood on ocean pixels (Auckland 46 px from land, Singapore 20, Tokyo 18, São Paulo 14, Sydney 11). There were no city labels at all — the grey bars were per-region placeholders at each region's own centre. After #449: **29 of 37 markers directly on land, the other eight 1–4 px from shore**, names drawing on selection. Bogotá and New York still read as slightly offshore because the glyph is bottom-anchored and its body extends north; their anchors are on the coast.
 2. **The tactical loop came together during the push.** #422 fixed the bugs-phase soft lock (#412); #341 (PR #453) turned Launch from auto-resolve into the real deploy → tactical → results flow and added Extract; #426 made spawners attackable.
 3. **Played the mission both ways.** Production build, no dev hooks: Launch → HUD → click-select → END TURN → bugs act → Extract → debrief → overworld. Dev build with assertions: move costs a point, 16 shots / 5 hits / 3 kills, previews "85 % hit, 30–50 damage", bug phase wiped both squads. Losing routes to a "Mission lost" debrief; before #341 a wipe dead-ended on a frozen tactical screen.
-4. **Win path unproven — and my first diagnosis of it was wrong.** No mission I played could be completed. I first reported a mech spending 40 turns walking at the nearest spawner, closing 2 of 14 tiles and firing 0 shots, and read that as tuning.
+4. **Win path proven. A mech destroys an indoor spawner; a lone squad cannot.** Two earlier readings of mine were wrong and are withdrawn: "the objective is unreachable" (it is not) and "a mech probably cannot see into an interior" (it can).
 
-   **#489 (`4235a8a`) found the real cause and it is not tuning.** A spawner sits **indoors**, and a mech cannot enter interiors by design, so a walker aimed at the objective *tile* gets no path and stands still. eng-4's sweep shows a mech reaches a tile it can *shoot* the nearest spawner from in 1-5 turns on every shipped map, infantry in 1-8. The geometry is fine.
+   **Both zero-shot results were my driver.** First, I targeted the spawner by clicking its **tile**; the HUD resolves an attack target **by id** through `findAttackTarget`, so a tile intent never set a target and no preview ever appeared. Use `window.__tutTactical__.selectUnit("spawner-1")` while Attack is armed. Second, I walked to the **nearest reachable tile** and stopped there, which is exactly the tile MapGen measured as having line of sight only **49 %** of the time, against **99.4 %** of indoor spawners having some mech firing position (#494).
 
-   Re-ran with an eight-way greedy walk that closes distance instead of entering the tile: from tile 0,8 it reached 1,8 in 41 turns, `no step succeeded` from turn 8 on because the swarm occupies every neighbour. Spawner 20/20, objectives 0/2, 0 shots.
+   **Mech, seed `spawner-test`, spawner-1 indoors at 12,23 with 20 hp, deployed at 31,27.** Distances manhattan, the metric the game reports.
 
-   **Update after #488 (`c2cddf8`), which made a unit walk its whole path instead of one step.** Closing the ground is solved: the mech reached **4 tiles from the spawner in 3 turns** (it was 13 tiles after 41 turns before). It still took **0 shots** — selecting the spawner never enables Fire, from 4 tiles away with a range of 10. Following #489, the spawner is **indoors**, so the likely blocker is now line of sight, not distance: a mech cannot enter an interior and probably cannot see in. **Next run: send an infantry squad, which can enter interiors, and see whether it can destroy the spawner.** If a mech genuinely cannot finish an indoor objective, that is a design answer worth stating, not a bug.
+   | Mech stood at | Distance | Preview |
+   |---|---|---|
+   | 31,27 | 23 | `Target is 23 tiles away; weapon reaches 10` |
+   | 17,28 | 10 | `No line of sight to "spawner-1"` |
+   | 17,18 | 10 | `No line of sight to "spawner-1"` |
+   | 17,24 | 6 | **75 % hit, 30–50 damage** |
 
-   **So: still unproven, but do not repeat the claim that the objective is unreachable.** A crude walker cannot fight forward. A conclusive run must shoot whatever blocks the next step, not just step; `/tmp/qa-scripts/qa-win.mjs` has the eight-way walk and that is the missing piece. Post the answer on #317. Extraction remains the exit a player reaches today.
+   One shot from the fourth position: **spawner 20 → 0, destroyed, objective 1/2, turn 3.** Two of three tried tiles had no sight line and the third did, which is the 49 % figure showing up in play. The mech never enters the building.
+
+   **Infantry, two seeds.** A squad does get a clean preview on an indoor spawner from outside (`51 % hit, 2–4 damage`), so sight lines are not its problem; arithmetic is.
+
+   | Seed | Reached range | Shots | Damage | Outcome |
+   |---|---|---|---|---|
+   | `s3` | turn 3, 8 tiles | 3 | 2 of 20 | squad killed turn 7, spawner at 18 hp |
+   | `s1` | turn 4, 8 tiles | 3 | 0 of 20 | squad killed turn 8, spawner untouched |
+
+   At 2–4 per hit against 20 hp a squad needs about a dozen hits, so ~25 shots at ~50 %, and a rifle squad holds **3 charges** before reloading (#409). Both squads ran dry after three shots and died around turn 7. **The intended answer to an indoor spawner is the mech's gun.** That matches `objectiveApproach`'s own doc: a mech having no route *onto* an indoor objective is by design, provided some class can reach a firing position. Posted on #317.
+
+   **The real player-facing gap is discovery, not capability.** Nothing on screen marks which tiles have a sight line, so a player walks at the objective, gets no Fire button and concludes it is broken — which is precisely what I did twice. A line-of-sight or firing-position hint in the tactical overlay is worth an issue against tactical presentation.
+
 5. **Filed #480** (p3): the debrief says "No casualties" on a mission that wiped the whole force.
 
 ### Run history

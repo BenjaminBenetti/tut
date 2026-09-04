@@ -1,6 +1,6 @@
 # Handoff: Map Generation Specialist
 
-Last updated: 2026-09-04 11:10 UTC (session 3, update 5). Read `docs/process/roles/mapgen.md` and ADR 0004 first.
+Last updated: 2026-09-04 14:05 UTC (session 3, update 6). Read `docs/process/roles/mapgen.md` and ADR 0004 first.
 
 ## 1. Where things stand
 
@@ -31,6 +31,11 @@ Last updated: 2026-09-04 11:10 UTC (session 3, update 5). Read `docs/process/rol
   elevation on city maps), #446 (melee bugs invert the cover rules — tactical's), #447 (the M3
   archetype sketch, with two questions to answer before anything is built) and the ruling asked for
   on #465 (should `resolveParams` reject an over-constrained recipe outright).
+- **Session 3, last stretch.** Merged: #647 and #672 (test budgets — see §7), #662 (the crash-site
+  prototype, §2c). Filed for other people and landed by them: #593 (a hill blocks line of sight,
+  which I found and eng-5 built), #487, #488. Open findings of mine: **#685, ambush is impossible on
+  current maps** (§3d), #591 (coastal rural is the flattest map in the game), #281 (the Executive
+  Director's cover call, re-measured twice today and now clean).
 - **Session 3, later stretch.** Merged: #587 (#586, the cover that stops a melee attacker), #597
   (#596, how much fog of war hides), #607 (#508, half walls and parapets). Filed and handed on:
   #591 (trees do not block sight — parked behind #593), #593 (**a hill does not block line of
@@ -124,6 +129,30 @@ connector joins its two tiles directly and never consults the wall between them.
 Graphics rode along because `WallKind` is a compile-time union — `tsc` names every site. Walls now
 draw at a per-kind height (`WALL_HEIGHTS`), because at full storey height the parapets made the city
 read as a walled compound. **Look at the render before believing a cover number**; that is twice now.
+
+## 2c. The crash-site archetype (#447, merged as #662)
+
+**A prototype, deliberately.** The Director's steer: exploratory groundwork while the Executive
+Director's playtest decides M3, not shipped content. No mission type names `crash-site` and
+`missionToMapRecipe` cannot produce one, so it reaches the generator only from
+`/mapgen-preview.html?archetype=crash-site` or a test.
+
+```
+terrain ─► water ─► crater ─► debris ─► ramps ─► hooks ─► connectivity
+```
+
+Two things it settled that the sketch in #447 could not:
+
+- **The bowl must be terraced, not dug.** A single deep hole is a pit nothing can enter, because the
+  ramp pass only bridges one-level steps. The pass also lifts the whole plat before digging (there
+  is no level below zero) and flattens its disc first (crater relief and terrain relief compound
+  into steps nothing can climb).
+- **The prop pass cannot be reused.** It requires `interiors`, and a crash site has no buildings to
+  furnish. That is the one link in the settlement chain a bare archetype cannot satisfy — **the hive
+  will hit exactly the same wall**, so budget a scatter pass of its own.
+
+Known gaps, listed rather than papered over: no wreck (wants art), no vegetation, and its 10 % cover
+against a rural settlement's 17 % follows from the missing vegetation rather than from tuning.
 
 ## 3. Measurements (medium maps, 8 seeds per cell, `main` before #269; desert and ramps moved as noted below)
 
@@ -296,6 +325,38 @@ that fixed the same maps read 67 / 61 / 43 %, and rural stops being transparent.
 66 / 165 ms. The elevation pass is 5 ms on a medium city and 17 ms on a large one; `connectivity`
 (25–66 ms) and `hooks` (16–33 ms) dominate and always did.
 
+## 3d. Ambush: bugs cannot reach the squad unseen (#685, 2026-09-04)
+
+The design property fog of war made real, and the answer is stark. Walking every edge-spawn and
+egg-spawner approach down the step field to the deploy zone, against what the squad sees from it at
+turn 1, 6 seeds per biome × settlement:
+
+| | spotted at | concealed share of the last 12 steps | contact tiles never seen |
+|---|---|---|---|
+| rural | 12.0 steps | 7 % | **0 %** |
+| town | 12.0 steps | 7 % | **0 %** |
+| city | 11.2 steps | 10 % | **0 %** |
+
+A bug is first seen the instant it enters the 12-tile sight range, and **not one tile adjacent to a
+deploy zone is ever unseen**. Ambush is not rare on these maps; it is impossible. Fog pays out
+entirely to the player.
+
+Two things to save the next person the work:
+
+- **Trees are not the lever.** Making every tree opaque moves concealment 7 % → 10 % on rural and
+  not at all in a city. Measured twice, once for visibility (#591) and once for this.
+- **One cause is ours.** `EDGE_KEEPOUT` holds raised ground five columns clear of every map edge
+  (§2a), and deploy zones sit in that band, so the ground around them is by construction the
+  flattest on the map. The trade is right — a plaza against the border boxes squads in — but it is
+  worth knowing when someone asks why deployment feels exposed.
+- **Cover and concealment are different knobs.** Only four of thirteen prop kinds block sight
+  (`car`, `dumpster`, `shelving`, `boulder`); crates, sandbags, fences and every tree are
+  transparent. Answering #281 with "more cover" will change survivability under fire and will not
+  make an ambush possible.
+
+Option 1 on #685 — accept it — has a cost worth naming: it makes the lurker's premise (#333, stalk
+out of sight and strike from behind) impossible on the maps as they are.
+
 ## 4. What M2 (tactical) consumes
 
 - `generateTacticalMap(missionToMapRecipe(mission, missionType).value)` → `TacticalMap` (plain JSON).
@@ -384,6 +445,14 @@ that fixed the same maps read 67 / 61 / 43 %, and rural stops being transparent.
   the dev server by the PID on :5173 from `ss -ltnp`.
 - A worktree with symlinked `node_modules` cannot run `pnpm` scripts; use `node_modules/.bin/*`; run
   Playwright from the real checkout.
+- **Test budgets.** The suite-wide `testTimeout` is 20 s (#647) because generation dominates this
+  suite and CI runners are contended; the generation sweep keeps its own 60 s (#672). Neither is a
+  performance gate — the wide sweep's runtime is. Do not buy time by cutting `SEEDS_PER_COMBO`: the
+  sweep asserts `generations >= 200` precisely to stop that, and it is a deliberate tripwire.
+- **Measure twice under load.** A branch-versus-`main` comparison told me my crash-site PR had
+  doubled the sweep (23.6 s against 11.8 s). It had not — a background wide sweep was still running.
+  Two clean runs said 12.0 s and 16.4 s. Never draw a performance conclusion from one run while
+  anything else is going.
 - **A pass that runs before the hook placers must keep off the map's border band.** Deploy zones and
   edge spawns land in the outer four columns and need flat ground to stand on and walk off; anything
   raised there boxes units in and shows up as failures in other domains' tests, not mapgen's.

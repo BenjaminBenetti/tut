@@ -4,12 +4,11 @@ import { CameraInputController } from "../../graphics/controller/camera-input-co
 import { MODEL_MANIFEST } from "../../graphics/data/model-manifest";
 import { SPRITE_MANIFEST } from "../../graphics/data/sprite-manifest";
 import { CAMERA_ZOOM } from "../../graphics/model/camera-state";
-import { phaseEvents } from "../../graphics/service/animation-phases";
-import { missionFocus } from "../../graphics/service/tactical-framing";
 import {
-  perceivedSpawners,
-  perceivedUnits,
-} from "../../tactical/service/vision-service";
+  drawPerceived,
+  frameMission,
+  playAroundRedraw,
+} from "./tactical-scene-steps";
 import type { ModelLoader } from "../../graphics/model/model-loader";
 import type { SpriteSource } from "../../graphics/model/sprite-source";
 import { GltfModelLoader } from "../../graphics/service/gltf-model-loader";
@@ -152,11 +151,7 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
     });
     const content = new Group();
     content.add(builder.root, overlays.root, animations.root);
-    rig.setBounds({ x: 0, z: 0, w: mission.map.width, d: mission.map.depth });
-    // The force the player just deployed, not the middle of the map: on
-    // a large map those are tens of tiles apart and the squad opens off
-    // screen (#538).
-    rig.lookAt(missionFocus(mission));
+    frameMission(rig, mission);
     const input = new TacticalInputController({
       picker: builder,
       camera: rig,
@@ -202,20 +197,10 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
       return Promise.resolve();
     }
     attached.mission = mission;
-    return new Promise((resolve) => {
-      // Spots play last, on purpose: the scene draws only what the player
-      // perceives, so an enemy coming into view has no object at all until
-      // `placeUnits` has run, and a reveal enqueued with the rest would
-      // find nothing to animate (#585). `phaseEvents` owns that rule.
-      const phases = phaseEvents(events);
-      attached.animations.enqueue(phases.before, () => {
-        void this.placeUnits(mission).then(() => {
-          attached.animations.enqueue(phases.after, () => {
-            this.refreshOverlays();
-            resolve();
-          });
-        });
-      });
+    return playAroundRedraw(attached.animations, events, () =>
+      this.placeUnits(mission),
+    ).then(() => {
+      this.refreshOverlays();
     });
   }
 
@@ -311,20 +296,7 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
     if (!attached) {
       return;
     }
-    // Units and spawners load in parallel: both are just models on tiles,
-    // and a spawner is the mission's objective, so it should appear with
-    // the force rather than after it (#484).
-    // The scene draws the player's view, not the mission (ADR 0006 §2.4):
-    // an unspotted enemy has no object at all, so it cannot be drawn,
-    // picked, or read off the scene graph.
-    attached.builder.setVision(mission.vision.tdf);
-    await Promise.all([
-      attached.builder.update(
-        perceivedUnits(mission, "tdf"),
-        mission.templates,
-      ),
-      attached.builder.updateSpawners(perceivedSpawners(mission, "tdf")),
-    ]);
+    await drawPerceived(attached.builder, mission);
     if (this.attached === attached) {
       document.body.dataset.tacticalUnits = String(
         attached.builder.unitIds().length,

@@ -282,36 +282,6 @@
     "bytes": 15400
   },
   {
-    "id": "building.wall",
-    "category": "buildings",
-    "path": "assets/models/buildings/wall.glb",
-    "footprint": {
-      "w": 1,
-      "d": 0
-    },
-    "height": 1.5,
-    "sockets": [],
-    "quality": "final",
-    "triangles": 100,
-    "bytes": 10340
-  },
-  {
-    "id": "building.wall-door",
-    "category": "buildings",
-    "path": "assets/models/buildings/wall-door.glb",
-    "footprint": {
-      "w": 1,
-      "d": 0
-    },
-    "height": 1.5,
-    "sockets": [
-      "socket_door"
-    ],
-    "quality": "final",
-    "triangles": 212,
-    "bytes": 21232
-  },
-  {
     "id": "building.wall-half",
     "category": "buildings",
     "path": "assets/models/buildings/wall-half.glb",
@@ -324,20 +294,6 @@
     "quality": "final",
     "triangles": 56,
     "bytes": 6592
-  },
-  {
-    "id": "building.wall-window",
-    "category": "buildings",
-    "path": "assets/models/buildings/wall-window.glb",
-    "footprint": {
-      "w": 1,
-      "d": 0
-    },
-    "height": 1.5,
-    "sockets": [],
-    "quality": "final",
-    "triangles": 216,
-    "bytes": 23396
   },
   {
     "id": "prop.barrier-concrete",
@@ -988,5 +944,137 @@
     "quality": "final",
     "triangles": 228,
     "bytes": 24780
+  },
+  {
+    "id": "building.wall",
+    "category": "buildings",
+    "path": "assets/models/buildings/wall.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.5,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 100,
+    "bytes": 10340
+  },
+  {
+    "id": "building.wall-window",
+    "category": "buildings",
+    "path": "assets/models/buildings/wall-window.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.5,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 216,
+    "bytes": 23396
+  },
+  {
+    "id": "building.wall-panel",
+    "category": "buildings",
+    "path": "assets/models/buildings/wall-panel.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.5,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 100,
+    "bytes": 10340
+  },
+  {
+    "id": "building.wall-window-panel",
+    "category": "buildings",
+    "path": "assets/models/buildings/wall-window-panel.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.5,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 216,
+    "bytes": 23392
+  },
+  {
+    "id": "building.wall-door",
+    "category": "buildings",
+    "path": "assets/models/buildings/wall-door.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.5,
+    "sockets": [
+      "socket_door"
+    ],
+    "quality": "final",
+    "triangles": 212,
+    "bytes": 21232
+  },
+  {
+    "id": "building.wall-door-panel",
+    "category": "buildings",
+    "path": "assets/models/buildings/wall-door-panel.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.5,
+    "sockets": [
+      "socket_door"
+    ],
+    "quality": "final",
+    "triangles": 212,
+    "bytes": 21032
+  },
+  {
+    "id": "building.wall-concrete",
+    "category": "buildings",
+    "path": "assets/models/buildings/wall-concrete.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.5,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 100,
+    "bytes": 10340
+  },
+  {
+    "id": "building.wall-window-concrete",
+    "category": "buildings",
+    "path": "assets/models/buildings/wall-window-concrete.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.5,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 216,
+    "bytes": 23396
+  },
+  {
+    "id": "building.wall-door-concrete",
+    "category": "buildings",
+    "path": "assets/models/buildings/wall-door-concrete.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.5,
+    "sockets": [
+      "socket_door"
+    ],
+    "quality": "final",
+    "triangles": 212,
+    "bytes": 21032
   }
 ]

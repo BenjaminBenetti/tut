@@ -82,9 +82,15 @@ export const MODEL_IDS = [
   "building.roof-parapet",
   "building.stairs",
   "building.wall",
+  "building.wall-concrete",
   "building.wall-door",
+  "building.wall-door-concrete",
+  "building.wall-door-panel",
   "building.wall-half",
+  "building.wall-panel",
   "building.wall-window",
+  "building.wall-window-concrete",
+  "building.wall-window-panel",
 ] as const;
 
 /** A registered model id. */

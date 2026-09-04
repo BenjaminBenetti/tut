@@ -1,4 +1,4 @@
-"""Shared builders for the city building kit (issue #274, batch E).
+"""Shared builders for the city building kit (issues #274, #509).
 
 Blender axes: X runs along a wall, Y is its thickness, Z is up; the front
 faces -Y so the glTF export puts it on +Z. Sizes are in tiles (1 u = 2 m),
@@ -31,8 +31,46 @@ CORNICE_HEIGHT = 0.1
 PLINTH_THICKNESS = 0.14
 CORNICE_THICKNESS = 0.14
 
-#: Top of the brick field, i.e. the underside of the cornice.
+#: Top of the wall field, i.e. the underside of the cornice.
 BRICK_TOP = WALL_HEIGHT - CORNICE_HEIGHT
+
+
+# ===========================================
+# Materials
+# ===========================================
+
+
+class Material:
+    """One building's palette: the wall field, its bands, and its openings.
+
+    A city of one material reads as an atlas limitation rather than a city,
+    so the kit ships three families built from the same geometry. Only the
+    tokens change, which keeps every piece inside its 800-triangle budget
+    and keeps mixed runs lining up course for course.
+
+    @param body - Palette token for the wall field.
+    @param band - Token for the plinth and cornice.
+    @param trim - Token for sills, thresholds and window frames.
+    @param uv_rot - Cell rotation for the body; brick courses need 90.
+    """
+
+    def __init__(self, body: str, band: str, trim: str, uv_rot: int = 90) -> None:
+        self.body = body
+        self.band = band
+        self.trim = trim
+        self.uv_rot = uv_rot
+
+
+#: Residential and older stock: red brick on concrete bands. The original kit.
+BRICK = Material(body="env-brick", band="env-concrete", trim="env-concrete")
+
+#: Civic and office blocks: poured concrete banded with steel spandrels. The
+#: band is darker than the body here and lighter than it on brick — what
+#: matters at 64 px is that a floor line exists, not which way it goes.
+CONCRETE = Material(body="env-concrete", band="env-metal", trim="env-sidewalk", uv_rot=0)
+
+#: Industrial sheds and depots: profiled steel panel with rusted trim.
+PANEL = Material(body="env-metal", band="env-concrete", trim="env-rust", uv_rot=0)
 
 
 # ===========================================
@@ -40,67 +78,91 @@ BRICK_TOP = WALL_HEIGHT - CORNICE_HEIGHT
 # ===========================================
 
 
-def wall_bands() -> None:
-    """Concrete plinth at the base and cornice at the top, both slightly proud."""
+def wall_bands(material: Material = BRICK) -> None:
+    """Plinth at the base and cornice at the top, both slightly proud.
+
+    @param material - Building family; only the band token changes.
+    """
     plinth = box(
         "plinth",
         (WALL_LENGTH, PLINTH_THICKNESS, PLINTH_HEIGHT),
         (0, 0, PLINTH_HEIGHT / 2),
-        "env-concrete",
+        material.band,
     )
     bevel(plinth, 0.015)
     cornice = box(
         "cornice",
         (WALL_LENGTH, CORNICE_THICKNESS, CORNICE_HEIGHT),
         (0, 0, WALL_HEIGHT - CORNICE_HEIGHT / 2),
-        "env-concrete",
+        material.band,
     )
     bevel(cornice, 0.015)
 
 
-def brick_panel(name: str, width: float, z0: float, z1: float, x: float = 0.0) -> None:
-    """One brick field between two heights, full wall thickness.
+def wall_panel(
+    name: str,
+    width: float,
+    z0: float,
+    z1: float,
+    x: float = 0.0,
+    material: Material = BRICK,
+) -> None:
+    """One wall field between two heights, full wall thickness.
 
     @param name - Object name.
     @param width - Length along X.
     @param z0 - Bottom height.
     @param z1 - Top height.
     @param x - Centre along X.
+    @param material - Building family.
     """
-    box(name, (width, WALL_THICKNESS, z1 - z0), (x, 0, (z0 + z1) / 2), "env-brick", uv_rot=90)
+    box(
+        name,
+        (width, WALL_THICKNESS, z1 - z0),
+        (x, 0, (z0 + z1) / 2),
+        material.body,
+        uv_rot=material.uv_rot,
+    )
 
 
-def window_opening(sill_z: float = 0.55, head_z: float = 1.07, width: float = 0.56) -> None:
-    """Glazed opening with a concrete sill, brick jambs and a metal frame cross.
+def window_opening(
+    sill_z: float = 0.55,
+    head_z: float = 1.07,
+    width: float = 0.56,
+    material: Material = BRICK,
+) -> None:
+    """Glazed opening with a sill, jambs and a frame cross, in one family's tokens.
 
     @param sill_z - Top of the sill.
     @param head_z - Underside of the head.
     @param width - Clear glazed width.
+    @param material - Building family.
     """
     jamb = (WALL_LENGTH - width) / 2
-    brick_panel("spandrel", WALL_LENGTH, PLINTH_HEIGHT, sill_z - 0.06)
+    wall_panel("spandrel", WALL_LENGTH, PLINTH_HEIGHT, sill_z - 0.06, material=material)
     sill = box(
         "sill",
         (width + 2 * jamb * 0.8, PLINTH_THICKNESS + 0.02, 0.06),
         (0, 0, sill_z - 0.03),
-        "env-concrete",
+        material.trim,
     )
     bevel(sill, 0.015)
     for side in (-1, 1):
-        brick_panel(
+        wall_panel(
             f"jamb_{'l' if side < 0 else 'r'}",
             jamb,
             sill_z,
             head_z,
             side * (width + jamb) / 2,
+            material,
         )
-    brick_panel("head", WALL_LENGTH, head_z, BRICK_TOP)
+    wall_panel("head", WALL_LENGTH, head_z, BRICK_TOP, material=material)
     box("glass", (width - 0.04, 0.04, head_z - sill_z - 0.04), (0, 0, (sill_z + head_z) / 2), "env-glass")
     box("mullion", (0.04, 0.07, head_z - sill_z), (0, 0, (sill_z + head_z) / 2), "env-metal")
     box("transom", (width, 0.07, 0.04), (0, 0, (sill_z + head_z) / 2), "env-metal")
 
 
-def door_opening(width: float = 0.6, head_z: float = 1.2) -> None:
+def door_opening(width: float = 0.6, head_z: float = 1.2, material: Material = BRICK) -> None:
     """Open doorway: plinth and brick on each jamb, a lintel over the head only,
     and a metal threshold.
 
@@ -110,6 +172,7 @@ def door_opening(width: float = 0.6, head_z: float = 1.2) -> None:
 
     @param width - Clear opening width.
     @param head_z - Underside of the lintel.
+    @param material - Building family.
     """
     jamb = (WALL_LENGTH - width) / 2
     for side in (-1, 1):
@@ -119,11 +182,13 @@ def door_opening(width: float = 0.6, head_z: float = 1.2) -> None:
             f"plinth_{name}",
             (jamb, PLINTH_THICKNESS, PLINTH_HEIGHT),
             (x, 0, PLINTH_HEIGHT / 2),
-            "env-concrete",
+            material.band,
         )
         bevel(plinth, 0.015)
-        brick_panel(f"jamb_{name}", jamb, PLINTH_HEIGHT, BRICK_TOP, x)
-    brick_panel("lintel", width, head_z, BRICK_TOP)
+        wall_panel(f"jamb_{name}", jamb, PLINTH_HEIGHT, BRICK_TOP, x, material)
+    wall_panel("lintel", width, head_z, BRICK_TOP, material=material)
+    # The threshold plate stays steel in every family: a door gets walked on,
+    # and a worn metal plate is what that looks like whatever the wall is made of.
     threshold = box(
         "threshold",
         (width + 0.04, PLINTH_THICKNESS, 0.04),

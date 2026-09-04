@@ -524,13 +524,23 @@ answering "can I see this?" — and they cannot both be right.
 |---|---|---|
 | Visible, lit | 1.00 | — |
 | Visible, in shadow | ~0.54, measured on concrete | Something is between this and the sun |
-| Remembered | 0.40, `VISION_DIM` | **You cannot see this any more** |
-| Remembered, in shadow | ~0.22 | Both |
+| Remembered | 0.40 weight, **cold** | **You cannot see this any more** |
+| Remembered, in shadow | ~0.22, cold | Both |
 
-Both are **neutral multiplies on the same channel**, and the two middle
-states sit 1.35× apart — so the ladder interleaves and darkness stops
-meaning one thing. Tracked as a fix in the fog's colour rather than the
-shadow's, because shadow tone is doing the job §12.1 set for it.
+Memory used to be a **neutral** multiply, which is precisely what
+lighting does — so the two middle states sat 1.35× apart on one channel
+and darkness stopped meaning one thing.
+
+**Lighting can darken a surface and warm or cool it a little; what it
+never does is take the colour out.** So memory takes that channel
+instead: `Color(0.34, 0.40, 0.52)`, the same overall weight with a cold
+cast no light in the scene produces (#661). Fog recedes exactly as far
+as it did — a remembered tile's luminance is unchanged to within a
+third of a point — and it now sits a mean **ΔE 12.0** from the same
+tile in shadow, against 7.4 before.
+
+Dark and neutral is shadow. Dark and cold is memory. The shadow tone is
+left alone: §12.1 sets it deliberately and it is doing that job.
 
 Two more that were *checked and are not problems*, recorded so nobody
 re-opens them on a hunch:

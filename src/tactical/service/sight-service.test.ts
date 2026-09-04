@@ -223,3 +223,70 @@ describe("half walls", () => {
     expect(hasLineOfSight(map, attacker, defender, index)).toBe(true);
   });
 });
+
+// ===========================================
+// Terrain
+// ===========================================
+
+/**
+ * A 9×3 plat at level 0 with the columns at x = 4 and x = 5 raised to
+ * level 2 — a two-level ridge across the middle, with solid rock and no
+ * tile record beneath its crest (ADR 0004 §4.2).
+ *
+ * ```
+ *   level 2            ####            x = 4, 5
+ *   level 1            ????            no record: rock
+ *   level 0   ......... .. .........
+ *             ^ (0,0,1)        (8,0,1) ^
+ * ```
+ */
+function ridge(): TacticalMap {
+  const builder = new FixtureMapBuilder(9, 3, 3).fillGround();
+  for (const x of [4, 5]) {
+    for (let z = 0; z < 3; z++) {
+      builder.removeTile({ x, y: 0, z });
+      builder.tile({ x, y: 2, z }, SurfaceIds.ROCK);
+    }
+  }
+  return builder.build();
+}
+
+describe("terrain", () => {
+  it("blocks the line through a hill, which has no tile to read (#593)", () => {
+    // Solid rock is the absence of a record, so the old rule found
+    // nothing in the way and let both sight and fire pass through.
+    expect(los(ridge(), at(0, 1), at(8, 1))).toBe(false);
+  });
+
+  it("still lets the crest of that hill see the ground on either side", () => {
+    // The line descends with the shooter, so it leaves the rock behind
+    // rather than tunnelling on through it: high ground stays worth
+    // taking.
+    const map = ridge();
+    expect(los(map, { x: 4, y: 2, z: 1 }, at(0, 1))).toBe(true);
+    expect(los(map, { x: 4, y: 2, z: 1 }, at(8, 1))).toBe(true);
+  });
+
+  it("does not block on the open sky above lower ground", () => {
+    // Same missing tile, nothing above it: two units on facing ledges
+    // see across the valley between them.
+    const map = new FixtureMapBuilder(9, 3, 3)
+      .fillGround()
+      .tile({ x: 0, y: 2, z: 1 }, SurfaceIds.ROCK)
+      .tile({ x: 8, y: 2, z: 1 }, SurfaceIds.ROCK)
+      .build();
+    expect(los(map, { x: 0, y: 2, z: 1 }, { x: 8, y: 2, z: 1 })).toBe(true);
+  });
+
+  it("blocks the line through the void a staircase occupies", () => {
+    // A stairs tile spans a storey, so the level above it holds no
+    // record either; that void was a free firing lane between floors.
+    const map = new FixtureMapBuilder(3, 3, 3)
+      .fillGround(0, SurfaceIds.FLOOR)
+      .tile({ x: 1, y: 0, z: 1 }, SurfaceIds.STAIRS)
+      .tile({ x: 1, y: 2, z: 1 }, SurfaceIds.FLOOR)
+      .tile({ x: 2, y: 2, z: 1 }, SurfaceIds.FLOOR)
+      .build();
+    expect(los(map, at(0, 1), { x: 2, y: 2, z: 1 })).toBe(false);
+  });
+});

@@ -15,6 +15,7 @@ import { CoverLevel } from "../../mapgen/model/cover";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { Unit, UnitId } from "../../tactical/model/unit";
+import { findAttackTarget } from "../../tactical/service/attack-target-service";
 import {
   apCostOf,
   buildMoveGraph,
@@ -79,7 +80,14 @@ export interface OverlayState {
   readonly moveRange: readonly MoveRangeTile[];
   /** Reachable tiles with cover, and how much. */
   readonly cover: readonly CoverMarker[];
-  /** Reachable tiles with a line of sight to at least one living enemy. */
+  /**
+   * Reachable tiles with a clear line to something worth shooting.
+   *
+   * With a target chosen it means **that** target, which is what a
+   * player standing in front of a refusal needs to know (#517); with
+   * none it falls back to any living enemy, so a unit with nothing
+   * selected still sees where it could open fire from.
+   */
   readonly lineOfSight: readonly TileCoord[];
   /**
    * Tiles the selected unit could fire on from where it stands (#522):
@@ -446,6 +454,7 @@ export class TacticalOverlays implements Disposable {
 export function overlaysFor(
   mission: TacticalState,
   unitId: UnitId | undefined,
+  targetId?: string,
 ): OverlayState {
   const unit = mission.units.find((u) => u.id === unitId);
   if (unit === undefined || unit.hp <= 0) {
@@ -468,7 +477,16 @@ export function overlaysFor(
       apCost: apCostOf(mission, unit, search.costs.get(key) ?? 0),
     });
   }
-  const enemies = mission.units.filter((u) => u.team !== unit.team && u.hp > 0);
+  // A chosen target narrows the sight cue to it. `findAttackTarget`
+  // resolves units and egg spawners alike, which is the whole point:
+  // a spawner is not a unit, so an "any living enemy" cue ignored the
+  // objective the player was actually trying to shoot (#517).
+  const chosen =
+    targetId === undefined ? undefined : findAttackTarget(mission, targetId);
+  const marks: readonly { readonly pos: TileCoord }[] =
+    chosen !== undefined && chosen.team !== unit.team
+      ? [chosen]
+      : mission.units.filter((u) => u.team !== unit.team && u.hp > 0);
   const cover: CoverMarker[] = [];
   const lineOfSight: TileCoord[] = [];
   for (const { tile } of moveRange) {
@@ -476,7 +494,7 @@ export function overlaysFor(
     if (level !== CoverLevel.NONE) {
       cover.push({ tile, level });
     }
-    if (enemies.some((e) => hasLineOfSight(mission.map, tile, e.pos, index))) {
+    if (marks.some((e) => hasLineOfSight(mission.map, tile, e.pos, index))) {
       lineOfSight.push(tile);
     }
   }

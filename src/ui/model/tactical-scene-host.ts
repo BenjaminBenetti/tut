@@ -40,8 +40,15 @@ export interface TacticalSceneHost {
     events?: readonly TacticalEvent[],
   ): Promise<void>;
 
-  /** Shows the overlays for a selected unit, or clears them. */
-  select(unitId: UnitId | undefined): void;
+  /**
+   * Shows the overlays for a selected unit, or clears them.
+   *
+   * @param unitId - The selected unit.
+   * @param targetId - The armed target, when one is chosen. It narrows
+   *   the sight cue to that target rather than to any enemy (#517),
+   *   which is what a player facing a refusal needs to see.
+   */
+  select(unitId: UnitId | undefined, targetId?: string): void;
 
   /**
    * Shows or hides the weapon-range outline (#522). The screen owns the

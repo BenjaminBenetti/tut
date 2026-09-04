@@ -60,6 +60,8 @@ interface AttachedScene {
   readonly animations: TacticalAnimationQueue;
   mission: TacticalState;
   selected: UnitId | undefined;
+  /** The armed attack target, so the sight cue can narrow to it (#517). */
+  target: string | undefined;
 }
 
 // ===========================================
@@ -179,6 +181,7 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
       animations,
       mission,
       selected: undefined,
+      target: undefined,
     };
     scene.start();
     // The map art and the unit models are independent fetches; running
@@ -207,9 +210,10 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
   }
 
   /** Shows range, cover and line-of-sight overlays for `unitId`, or clears them. */
-  select(unitId: UnitId | undefined): void {
+  select(unitId: UnitId | undefined, targetId?: string): void {
     if (this.attached) {
       this.attached.selected = unitId;
+      this.attached.target = targetId;
       this.refreshOverlays();
     }
   }
@@ -245,7 +249,9 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
     if (!attached) {
       return;
     }
-    attached.overlays.show(overlaysFor(attached.mission, attached.selected));
+    attached.overlays.show(
+      overlaysFor(attached.mission, attached.selected, attached.target),
+    );
     document.body.dataset.tacticalSelected = attached.selected ?? "";
   }
 

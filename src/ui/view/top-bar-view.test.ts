@@ -25,6 +25,16 @@ const newGame = (): GameState =>
     },
   );
 
+/**
+ * The campaign with a mission in progress. Only its presence matters
+ * here — the bar reads `activeMission !== undefined` and nothing inside
+ * it — so this is the smallest shape that says "a fight is waiting".
+ */
+const inMission = (state: GameState): GameState => ({
+  ...state,
+  activeMission: {} as NonNullable<GameState["activeMission"]>,
+});
+
 const withThreat = (state: GameState, threat: number): GameState => ({
   ...state,
   overworld: { ...state.overworld, threat },
@@ -176,6 +186,37 @@ describe("TopBarView", () => {
     expect(button("roster").disabled).toBe(false);
     button("roster").click();
     expect(onRoster).toHaveBeenCalledTimes(1);
+  });
+
+  it("offers Resume mission only while a mission is in progress (#468)", () => {
+    const onResumeMission = vi.fn();
+    const view = new TopBarView({
+      onAdvanceDay: vi.fn(),
+      onMainMenu: vi.fn(),
+      onResumeMission,
+    });
+    view.mount(root);
+    // Nothing in progress: the control is not offered at all.
+    view.update(newGame());
+    expect(button("resume-mission").hidden).toBe(true);
+
+    // A mission left through the HUD is still on the state, and this is
+    // the only way back to it (#468).
+    view.update(inMission(newGame()));
+    expect(button("resume-mission").hidden).toBe(false);
+    button("resume-mission").click();
+    expect(onResumeMission).toHaveBeenCalledTimes(1);
+
+    // Finishing it takes the control away again.
+    view.update(newGame());
+    expect(button("resume-mission").hidden).toBe(true);
+  });
+
+  it("never offers Resume mission where there is no tactical screen to return to", () => {
+    const view = new TopBarView({ onAdvanceDay: vi.fn(), onMainMenu: vi.fn() });
+    view.mount(root);
+    view.update(inMission(newGame()));
+    expect(button("resume-mission").hidden).toBe(true);
   });
 
   it("disables Advance Day while an event waits for an answer", () => {

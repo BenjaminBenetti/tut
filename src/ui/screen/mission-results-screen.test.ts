@@ -187,6 +187,103 @@ describe("MissionResultsScreen", () => {
     expect(field("infestation-delta").textContent).toBe("-20");
   });
 
+  it("does not say there were no casualties on a mission that wiped the force (#480)", () => {
+    const state = afterMission();
+    // Everything died: both squads wiped, the mech destroyed. Each is
+    // listed in its own row, so the casualty and damage rows are empty —
+    // and their empty note has to say so rather than deny the losses.
+    const store = new FakeStore({
+      ...state,
+      overworld: {
+        ...state.overworld,
+        lastMissionResult: {
+          ...RESULT,
+          outcome: "lost",
+          squadCasualties: [
+            { squadId: "squad-1", losses: 5 },
+            { squadId: "squad-2", losses: 5 },
+          ],
+          squadsWiped: ["squad-1", "squad-2"],
+          mechsDestroyed: ["mech-1"],
+          mechDamage: [{ mechId: "mech-1", damage: 100 }],
+        },
+      },
+    });
+    new MissionResultsScreen({
+      router: fakeRouter().router,
+      session: sessionWith(store),
+    }).mount(root);
+
+    expect(items("squads-wiped")).toHaveLength(2);
+    expect(items("mechs-destroyed")).toHaveLength(1);
+    // The rows are empty because their losses are listed above, not
+    // because nothing was lost.
+    expect(field("casualties").querySelector(".tut-dim")?.textContent).toBe(
+      "No further casualties.",
+    );
+    expect(field("mech-damage").querySelector(".tut-dim")?.textContent).toBe(
+      "No damage among surviving mechs.",
+    );
+    expect(field("casualties").querySelector(".tut-dim")?.textContent).not.toBe(
+      "No casualties.",
+    );
+  });
+
+  it("says whose casualties a row covers when some squads are not among them (#480)", () => {
+    const state = afterMission();
+    // Bravo was wiped, Alpha took two losses. Seven soldiers are gone,
+    // and an unqualified "Casualties: Alpha −2" reads as two.
+    const store = new FakeStore({
+      ...state,
+      overworld: { ...state.overworld, lastMissionResult: RESULT },
+    });
+    new MissionResultsScreen({
+      router: fakeRouter().router,
+      session: sessionWith(store),
+    }).mount(root);
+    expect(field("casualties").querySelector(".tut-label")?.textContent).toBe(
+      "Casualties (surviving squads)",
+    );
+    expect(field("mech-damage").querySelector(".tut-label")?.textContent).toBe(
+      "Mech damage (surviving mechs)",
+    );
+  });
+
+  it("still says plainly that nothing was lost when nothing was", () => {
+    const state = afterMission();
+    const store = new FakeStore({
+      ...state,
+      overworld: {
+        ...state.overworld,
+        lastMissionResult: {
+          ...RESULT,
+          outcome: "won",
+          squadCasualties: [],
+          squadsWiped: [],
+          mechsDestroyed: [],
+          mechDamage: [],
+        },
+      },
+    });
+    new MissionResultsScreen({
+      router: fakeRouter().router,
+      session: sessionWith(store),
+    }).mount(root);
+    expect(field("casualties").querySelector(".tut-dim")?.textContent).toBe(
+      "No casualties.",
+    );
+    expect(field("mech-damage").querySelector(".tut-dim")?.textContent).toBe(
+      "No damage taken.",
+    );
+    // Nothing was lost, so nothing needs qualifying.
+    expect(field("casualties").querySelector(".tut-label")?.textContent).toBe(
+      "Casualties",
+    );
+    expect(field("mech-damage").querySelector(".tut-label")?.textContent).toBe(
+      "Mech damage",
+    );
+  });
+
   it("shows empty notes for a clean win and a positive infestation sign", () => {
     const state = afterMission();
     const store = new FakeStore({

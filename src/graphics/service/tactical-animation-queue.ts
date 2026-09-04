@@ -116,7 +116,7 @@ const IMPACT_SIZE = 0.7;
 const SLASH_SIZE = 0.9;
 const DEATH_SIZE = 1;
 const TRACER_THICKNESS = 0.22;
-const FLOATER_WIDTH = 0.8;
+const FLOATER_WIDTH = 1.3;
 
 /**
  * Where an effect sits on a unit, as a fraction of that unit's height, and
@@ -421,9 +421,10 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
     }
     const muzzle = this.anchor(attackerId, MUZZLE_FRACTION);
     const body = this.anchor(targetId, BODY_FRACTION);
-    const melee = muzzle !== undefined && body !== undefined
-      ? distance(muzzle, body) <= MELEE_RANGE
-      : false;
+    const melee =
+      muzzle !== undefined && body !== undefined
+        ? distance(muzzle, body) <= MELEE_RANGE
+        : false;
 
     const flash = this.openingFlash(muzzle, body, melee);
     const tracer =
@@ -440,9 +441,9 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
     const textAnchor = this.anchor(targetId, 1, TEXT_MARGIN);
     const floater = textAnchor
       ? this.billboard(undefined, textAnchor, FLOATER_WIDTH, 0xffffff, {
-          label: hit ? `-${String(damage)}` : "miss",
+          label: hit ? `-${String(damage)}` : "MISS",
           tone: hit ? DAMAGE_COLOUR : MISS_COLOUR,
-          aspect: 0.5,
+          aspect: 0.42,
         })
       : undefined;
     if (impact) {
@@ -672,11 +673,7 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
       material.rotation = options.rotation;
     }
     const sprite = new Sprite(material);
-    sprite.scale.set(
-      options.width ?? size,
-      size * (options.aspect ?? 1),
-      1,
-    );
+    sprite.scale.set(options.width ?? size, size * (options.aspect ?? 1), 1);
     sprite.position.set(at.x, at.y, at.z);
     sprite.name = id ?? `vfx.floater:${options.label ?? ""}`;
     // Effects belong on top of the unit they describe, never behind it.
@@ -745,17 +742,17 @@ function chipTexture(
   }
   const hex = `#${tone.toString(16).padStart(6, "0")}`;
   ctx.fillStyle = "rgba(20, 24, 33, 0.92)";
-  ctx.fillRect(8, 28, 240, 72);
+  ctx.fillRect(4, 16, 248, 96);
   ctx.strokeStyle = "#2e3646";
-  ctx.lineWidth = 3;
-  ctx.strokeRect(8, 28, 240, 72);
+  ctx.lineWidth = 4;
+  ctx.strokeRect(4, 16, 248, 96);
   ctx.fillStyle = hex;
-  ctx.fillRect(8, 28, 12, 72);
-  ctx.font = "bold 56px ui-monospace, monospace";
+  ctx.fillRect(4, 16, 18, 96);
+  ctx.font = "bold 76px ui-monospace, monospace";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillStyle = "#ffffff";
-  ctx.fillText(label, 136, 66);
+  ctx.fillText(label, 140, 66);
   const texture = new CanvasTexture(canvas);
   texture.name = `vfx.floater:${label}`;
   return texture;

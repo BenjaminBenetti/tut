@@ -73,15 +73,18 @@ export interface SightLine {
  *   edge crossed  ──► a solid or door wall on that edge, on either tile ──► blocked
  *                     a window ─────────────────────────────────────────► clear
  *   cell visited  ──► a tile whose prop blocks sight (Tile.blocksLos) ───► blocked
+ *                     no tile, but ground higher in that column ────────► blocked
+ *                     (the line is inside a hill: terrain is sparse)
  *   corner hit    ──► any of the four edges meeting there, as above
  *
  *   height(t) = (from.y + EYE) + ((to.y + EYE) − (from.y + EYE)) · t
  *   level(t)  = ⌊height(t)⌋      walls and props fill [level, level + 1)
  * ```
  *
- * The endpoint tiles never block, missing tiles (air) never block, and a
- * line that passes exactly through a corner touches only that corner's
- * edges, not the two cells it grazes. Symmetric in `from` and `to`.
+ * The endpoint tiles never block, a missing tile with only sky above it
+ * never blocks, and a line that passes exactly through a corner touches
+ * only that corner's edges, not the two cells it grazes. Symmetric in
+ * `from` and `to`.
  */
 export function hasLineOfSight(
   map: TacticalMap,
@@ -105,11 +108,44 @@ export function hasLineOfSight(
   }
   for (const cell of line.cells.slice(1, -1)) {
     const level = Math.floor(heightAt((cell.tEnter + cell.tExit) / 2));
-    if (index.get(cell.x, level, cell.z)?.blocksLos === true) {
+    const tile = index.get(cell.x, level, cell.z);
+    if (tile?.blocksLos === true) {
+      return false;
+    }
+    if (tile === undefined && isInsideTerrain(index, cell.x, level, cell.z)) {
       return false;
     }
   }
   return true;
+}
+
+/**
+ * Whether a cell with no tile is inside a hill rather than in the air
+ * above one (#593).
+ *
+ * Terrain mass is the **absence** of a record — ADR 0004 §4.2, *"tiles
+ * are sparse: air and solid rock have no record"* — so a line through
+ * the inside of a ridge finds nothing there and used to read it as clear
+ * air. Two units on level 0 could see, and shoot, straight through a
+ * two-level hill, and fog of war inherited the same hole.
+ *
+ * ```
+ *   nothing at (x, L, z)  and  some tile in that column above L  ──► solid
+ *   nothing at (x, L, z)  and  nothing above                     ──► sky
+ * ```
+ *
+ * The model has no overhangs, so ground higher up in the same column can
+ * only mean the line is buried in it. Shooting over a wall from high
+ * ground is untouched: the line's level rises with the shooter, so it
+ * clears the columns it passes rather than tunnelling through them.
+ */
+function isInsideTerrain(
+  index: TileIndex,
+  x: number,
+  level: number,
+  z: number,
+): boolean {
+  return index.column(x, z).some((tile) => tile.y > level);
 }
 
 /**

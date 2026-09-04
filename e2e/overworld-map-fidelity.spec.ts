@@ -53,6 +53,15 @@ const EARTH_TEXTURE_URL = "/assets/textures/overworld/earth-map_albedo.png";
 /** How far the search for solid land gives up, in texture pixels. */
 const LAND_SEARCH_LIMIT = 80;
 
+/**
+ * How far from solid land a marker may stand, in texture pixels. The
+ * coastline is a stylised drawing and a marker on a headland can sample
+ * a pixel the art paints as sea; four texture pixels is under two screen
+ * pixels at the default camera, so it is invisible under the glyph.
+ * Anything past that is a marker sitting in open water, which is #439.
+ */
+const MAX_PIXELS_FROM_LAND = 4;
+
 /** The slab is a 24 × 12 plane, so its drawn rectangle must stay 2:1. */
 const PLATE_ASPECT = { min: 1.95, max: 2.05 };
 
@@ -83,6 +92,34 @@ async function openOverworld(page: Page): Promise<string[]> {
     "overworld",
   );
   return errors;
+}
+
+/**
+ * Waits until the map canvas has taken the size of its cell. The scene
+ * is mounted a frame or two after the screen appears, and measuring the
+ * plate before that reads a half-resized render.
+ */
+async function waitForMapSettled(page: Page): Promise<void> {
+  await expect
+    .poll(
+      () =>
+        page.evaluate(() => {
+          const canvas = document.querySelector("#map-viewport canvas");
+          const cell = document.getElementById("map-viewport");
+          if (!canvas || !cell) {
+            return -1;
+          }
+          const drawn = canvas.getBoundingClientRect();
+          const box = cell.getBoundingClientRect();
+          return Math.round(
+            Math.abs(drawn.width - box.width) +
+              Math.abs(drawn.height - box.height),
+          );
+        }),
+      { timeout: 10000 },
+    )
+    .toBeLessThanOrEqual(2);
+  await page.waitForTimeout(250);
 }
 
 /** Where each city's marker is drawn, in client pixels. */
@@ -128,6 +165,8 @@ async function markerAnchors(
 test("no city marker stands on an ocean pixel", async ({ page }) => {
   const errors = await openOverworld(page);
 
+  await waitForMapSettled(page);
+
   const cityIds = EARTH_MAP.cities.map((city) => city.id);
   const names = Object.fromEntries(
     EARTH_MAP.cities.map((city) => [city.id, city.name]),
@@ -140,7 +179,15 @@ test("no city marker stands on an ocean pixel", async ({ page }) => {
   const shot = `data:image/png;base64,${(await page.screenshot()).toString("base64")}`;
 
   const report: MarkerReport = await page.evaluate(
-    async ({ shot, cell, anchors, names, textureUrl, searchLimit }) => {
+    async ({
+      shot,
+      cell,
+      anchors,
+      names,
+      textureUrl,
+      searchLimit,
+      tolerance,
+    }) => {
       /** Decodes an image into raw pixels. */
       const load = async (
         url: string,
@@ -254,12 +301,15 @@ test("no city marker stands on an ocean pixel", async ({ page }) => {
         const x = Math.round(u * texture.w);
         const y = Math.round(v * texture.h);
         if (!isLand(x, y)) {
-          water.push({
-            name: names[id],
-            texel: rgb(texture, x, y),
-            texturePixel: `${String(x)},${String(y)}`,
-            pixelsToLand: distanceToLand(x, y),
-          });
+          const pixelsToLand = distanceToLand(x, y);
+          if (pixelsToLand > tolerance) {
+            water.push({
+              name: names[id],
+              texel: rgb(texture, x, y),
+              texturePixel: `${String(x)},${String(y)}`,
+              pixelsToLand,
+            });
+          }
         }
       }
       return {
@@ -276,6 +326,7 @@ test("no city marker stands on an ocean pixel", async ({ page }) => {
       names,
       textureUrl: EARTH_TEXTURE_URL,
       searchLimit: LAND_SEARCH_LIMIT,
+      tolerance: MAX_PIXELS_FROM_LAND,
     },
   );
 
@@ -293,7 +344,7 @@ test("no city marker stands on an ocean pixel", async ({ page }) => {
 
   expect(
     report.water,
-    `markers standing on ocean pixels of ${EARTH_TEXTURE_URL}: ${report.water
+    `markers standing in open water on ${EARTH_TEXTURE_URL}, more than ${String(MAX_PIXELS_FROM_LAND)} px from land: ${report.water
       .map(
         (hit) =>
           `${hit.name} at ${hit.texturePixel} rgb(${hit.texel.join(",")}), ${String(hit.pixelsToLand)} px from land`,
@@ -321,6 +372,7 @@ test("no city marker stands on an ocean pixel", async ({ page }) => {
 test("selecting a city draws its name under the marker", async ({ page }) => {
   const errors = await openOverworld(page);
 
+  await waitForMapSettled(page);
   const anchors = await markerAnchors(page, LABEL_SAMPLE);
   const blank: string[] = [];
   for (const id of LABEL_SAMPLE) {

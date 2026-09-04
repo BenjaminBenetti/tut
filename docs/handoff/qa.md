@@ -1,15 +1,15 @@
 # Handoff: QA
 
-Last updated: 2026-09-04 (release push; pre-release verdict posted 06:10 UTC).
+Last updated: 2026-09-04 (post-v0.2.0; win path settled on #317).
 
 ## Latest run
 
 | Field | Value |
 |---|---|
-| SHA tested | `14b0811` (release candidate for the 07:00 UTC build) |
-| Gate | typecheck, lint, build pass; vitest **1505 / 1505** (+1 deliberate skip); e2e **42 / 42** |
-| Exploratory | 13 flows, 0 findings (full sweep on `4ce5f01`; gate + mission play + production play re-run on `dd6ba10` and `14b0811`) |
-| **Verdict** | **A tactical mission is playable end to end in the production build.** Posted on the M2 epic (#317). Tag judged safe. |
+| SHA tested | `4cec760` (main, after v0.2.0 was tagged at `c2cddf8`) |
+| Gate | typecheck, lint, build pass; vitest **1595 / 1595** (+1 deliberate skip); e2e **44 / 44** |
+| Exploratory | win path settled: a mech destroys an indoor spawner in one shot, a lone squad cannot (see item 4) |
+| **Verdict** | **A tactical mission is playable end to end and winnable.** Release verdict for v0.2.0 was posted on #317 against `14b0811`; nothing since has changed it. |
 
 ### Release push, in order of what mattered
 
@@ -48,6 +48,7 @@ Last updated: 2026-09-04 (release push; pre-release verdict posted 06:10 UTC).
 
 | SHA | Build | Unit | e2e | Exploratory | Filed |
 |---|---|---|---|---|---|
+| `4cec760` | pass | 1595/1595 | 44/44 | mech kills an indoor spawner; squad cannot | #517 |
 | `b5c1196` | pass | 1348/1348 | 39/39 | known #412; #404 verified | — |
 | `6e2e3c1` | pass | 1338/1338 | 39/39 | known #412 | — |
 | `5f644d4` | pass | 1338/1338 | 39/39 | known #412 | — |

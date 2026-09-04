@@ -236,6 +236,8 @@ describe("resolveMapModels — props", () => {
         level: 0,
         position: { x: 2.5, y: tileTop(0), z: 2.5 },
         turns: 2,
+        // Carried so vision can dim or drop it with its tile (#551).
+        tile: at(2, 2),
       },
     ]);
   });

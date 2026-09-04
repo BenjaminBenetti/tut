@@ -5,6 +5,10 @@ import { MODEL_MANIFEST } from "../../graphics/data/model-manifest";
 import { SPRITE_MANIFEST } from "../../graphics/data/sprite-manifest";
 import { CAMERA_ZOOM } from "../../graphics/model/camera-state";
 import { missionFocus } from "../../graphics/service/tactical-framing";
+import {
+  perceivedSpawners,
+  perceivedUnits,
+} from "../../tactical/service/vision-service";
 import type { ModelLoader } from "../../graphics/model/model-loader";
 import type { SpriteSource } from "../../graphics/model/sprite-source";
 import { GltfModelLoader } from "../../graphics/service/gltf-model-loader";
@@ -247,9 +251,16 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
     // Units and spawners load in parallel: both are just models on tiles,
     // and a spawner is the mission's objective, so it should appear with
     // the force rather than after it (#484).
+    // The scene draws the player's view, not the mission (ADR 0006 §2.4):
+    // an unspotted enemy has no object at all, so it cannot be drawn,
+    // picked, or read off the scene graph.
+    attached.builder.setVision(mission.vision.tdf);
     await Promise.all([
-      attached.builder.update(mission.units, mission.templates),
-      attached.builder.updateSpawners(mission.spawners),
+      attached.builder.update(
+        perceivedUnits(mission, "tdf"),
+        mission.templates,
+      ),
+      attached.builder.updateSpawners(perceivedSpawners(mission, "tdf")),
     ]);
     if (this.attached === attached) {
       document.body.dataset.tacticalUnits = String(

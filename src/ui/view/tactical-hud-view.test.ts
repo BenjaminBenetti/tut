@@ -211,7 +211,6 @@ describe("TacticalHudView", () => {
     expect(hud.getMode()).toBe("select");
   });
 
-<<<<<<< HEAD
   // ===========================================
   // Moving (#488)
   // ===========================================
@@ -324,7 +323,8 @@ describe("TacticalHudView", () => {
     hud.handleIntent({ kind: "select-unit", unitId: "s1" });
     hud.handleIntent({ kind: "select-tile", tile: { x: 5, y: 0, z: 3 } });
     expect(commands).toEqual([]);
-=======
+  });
+
   it("offers Interact only when an objective is in reach, and works the nearest", () => {
     const { hud, mission, commands } = setup();
     const button = (): HTMLButtonElement | null =>
@@ -423,7 +423,6 @@ describe("TacticalHudView", () => {
       root.querySelector<HTMLButtonElement>('[data-action="interact"]')
         ?.disabled,
     ).toBe(true);
->>>>>>> origin/main
   });
 
   it("offers Extract only to a unit standing in the extraction zone", () => {

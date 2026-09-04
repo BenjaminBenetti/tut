@@ -28,8 +28,14 @@ import {
   COVER_HIGH_COLOUR,
   COVER_LOW_COLOUR,
   COVER_OPACITY,
+  COVER_RING_INNER_RADIUS,
+  COVER_RING_OUTER_RADIUS,
+  COVER_RING_SEGMENTS,
   LINE_OF_SIGHT_COLOUR,
   LINE_OF_SIGHT_OPACITY,
+  LINE_OF_SIGHT_PIP_INNER_RADIUS,
+  LINE_OF_SIGHT_PIP_OUTER_RADIUS,
+  LINE_OF_SIGHT_PIP_SEGMENTS,
   MOVE_RANGE_ONE_AP_COLOUR,
   MOVE_RANGE_ONE_AP_FOOTPRINT,
   MOVE_RANGE_ONE_AP_OPACITY,
@@ -211,7 +217,12 @@ export class TacticalOverlays implements Disposable {
   private readonly coverHigh: OverlayLayer;
   private readonly los: OverlayLayer;
   private readonly weaponRange: OverlayLayer;
-  private weaponRangeVisible = true;
+  /**
+   * Off until something asks for it (#590). The screen drives this from
+   * armed intent, and a scene that defaulted to on would paint the
+   * envelope for the frames between attaching and the first push.
+   */
+  private weaponRangeVisible = false;
   private lastState: OverlayState = EMPTY_OVERLAYS;
 
   // ===========================================
@@ -246,21 +257,33 @@ export class TacticalOverlays implements Disposable {
     );
     this.coverLow = new OverlayLayer(
       "overlay-cover-low",
-      new RingGeometry(0.28, 0.4, 16),
+      new RingGeometry(
+        COVER_RING_INNER_RADIUS,
+        COVER_RING_OUTER_RADIUS,
+        COVER_RING_SEGMENTS,
+      ),
       COVER_LOW_COLOUR,
       COVER_OPACITY,
       2,
     );
     this.coverHigh = new OverlayLayer(
       "overlay-cover-high",
-      new RingGeometry(0.28, 0.4, 16),
+      new RingGeometry(
+        COVER_RING_INNER_RADIUS,
+        COVER_RING_OUTER_RADIUS,
+        COVER_RING_SEGMENTS,
+      ),
       COVER_HIGH_COLOUR,
       COVER_OPACITY,
       2,
     );
     this.los = new OverlayLayer(
       "overlay-line-of-sight",
-      new RingGeometry(0.12, 0.18, 12),
+      new RingGeometry(
+        LINE_OF_SIGHT_PIP_INNER_RADIUS,
+        LINE_OF_SIGHT_PIP_OUTER_RADIUS,
+        LINE_OF_SIGHT_PIP_SEGMENTS,
+      ),
       LINE_OF_SIGHT_COLOUR,
       LINE_OF_SIGHT_OPACITY,
       3,

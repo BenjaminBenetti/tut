@@ -167,18 +167,56 @@ describe("TacticalHudView", () => {
     expect(hud.getTargetUnitId()).toBeUndefined();
   });
 
-  it("the toggle-range key flips the weapon-range indicator, on by default (#522)", () => {
+  it("shows the weapon range while Attack is armed, and not on plain selection (#590)", () => {
     const { hud } = setup();
-    expect(hud.isWeaponRangeVisible()).toBe(true);
-    hud.handleIntent({ kind: "action", action: "toggle-range" });
     expect(hud.isWeaponRangeVisible()).toBe(false);
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    // Selecting a unit asks "where can I go?", not "how far do I shoot?".
+    expect(hud.isWeaponRangeVisible()).toBe(false);
+    hud.handleIntent({ kind: "action", action: "attack" });
+    expect(hud.isWeaponRangeVisible()).toBe(true);
+    // Disarming puts it away again.
+    hud.handleIntent({ kind: "action", action: "attack" });
+    expect(hud.isWeaponRangeVisible()).toBe(false);
+  });
+
+  it("the toggle-range key pins the weapon range up regardless of mode (#522, #590)", () => {
+    const { hud } = setup();
     hud.handleIntent({ kind: "action", action: "toggle-range" });
     expect(hud.isWeaponRangeVisible()).toBe(true);
     // It survives a change of selection: it is a view preference, not
     // per-unit state.
-    hud.handleIntent({ kind: "action", action: "toggle-range" });
     hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    expect(hud.isWeaponRangeVisible()).toBe(true);
+    // Arming and disarming Attack must not silently unpin it, which is
+    // why the pin is kept apart from the mode rather than sharing a flag.
+    hud.handleIntent({ kind: "action", action: "attack" });
+    hud.handleIntent({ kind: "action", action: "attack" });
+    expect(hud.isWeaponRangeVisible()).toBe(true);
+    hud.handleIntent({ kind: "action", action: "toggle-range" });
     expect(hud.isWeaponRangeVisible()).toBe(false);
+  });
+
+  it("reports a view change when armed intent moves, so the scene can restyle (#590)", () => {
+    const changes: number[] = [];
+    const hud = new TacticalHudView(
+      {
+        onCommand: vi.fn(),
+        onBack: vi.fn(),
+        onViewChange: () => changes.push(1),
+      },
+      { combatTuning: COMBAT_TUNING, objectiveTuning: OBJECTIVE_TUNING },
+    );
+    hud.mount(root);
+    hud.update(hudMission());
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    const afterSelect = changes.length;
+    expect(afterSelect).toBeGreaterThan(0);
+    // Arming Attack changes nothing the scene could learn from an
+    // intent of its own, so without this the envelope never appears.
+    hud.handleIntent({ kind: "action", action: "attack" });
+    expect(changes.length).toBeGreaterThan(afterSelect);
+    hud.unmount();
   });
 
   it("previews an attack from the combat service and fires it", () => {

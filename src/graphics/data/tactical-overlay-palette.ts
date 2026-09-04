@@ -90,9 +90,62 @@ export const COVER_HIGH_COLOUR = 0xe0453c;
 /** `ui-accent`: what the current action touches. */
 export const LINE_OF_SIGHT_COLOUR = 0xf08a24;
 
-/** Opacity of the cover rings and the line-of-sight pips. */
-export const COVER_OPACITY = 0.85;
-export const LINE_OF_SIGHT_OPACITY = 0.9;
+/**
+ * Opacity of the cover rings and the line-of-sight pips.
+ *
+ * Cover was 0.85, the heaviest value in this file, in the two most
+ * saturated tokens it has. A mark that loud reads as a *call to action*
+ * -- an objective, something to go and do -- when cover is an
+ * **attribute** of a tile the player may never care about. With 13-16
+ * rings on screen at once (#590) the map read as an instrument panel
+ * and the eye had nowhere to rest.
+ *
+ * Dropped to the point where a ring is still unmistakably chromatic
+ * against this map's desaturated ground -- which is what carries it,
+ * not weight -- but sits *under* the unit in the visual hierarchy
+ * instead of over it. Deliberately not darkened, per the note on the
+ * movement bands above: on a map with shadow in it, value is the
+ * channel shadow gets to first, so the retreat is in alpha and the hue
+ * stays fully saturated.
+ */
+export const COVER_OPACITY = 0.55;
+
+/**
+ * Line of sight keeps more weight than cover. It is drawn on far fewer
+ * tiles, and unlike cover it is a *threat* -- an enemy can see you
+ * standing there -- which is the one thing on this plane that has
+ * earned the right to interrupt.
+ */
+export const LINE_OF_SIGHT_OPACITY = 0.75;
+
+/**
+ * Radii of a cover ring, in tiles, and of a line-of-sight pip.
+ *
+ * These were literals at the call site, which the note at the top of
+ * this file rules out for a colour and which is no better for a size:
+ * they are art numbers, and tuning them should not mean opening the
+ * service that draws them.
+ *
+ * The cover ring is thinner than it was (it spanned 0.28-0.40, a band
+ * a third as wide as the tile, which is a donut rather than a ring).
+ * A narrower annulus at the same radius keeps the tile it marks
+ * legible through it.
+ *
+ * ```
+ *   ┌───────────────┐   tile
+ *   │    ,-----,    │
+ *   │   ( ,---, )   │   ring: inner 0.32 → outer 0.40
+ *   │   ( '---' )   │   the ground still shows inside it
+ *   │    '-----'    │
+ *   └───────────────┘
+ * ```
+ */
+export const COVER_RING_INNER_RADIUS = 0.32;
+export const COVER_RING_OUTER_RADIUS = 0.4;
+export const COVER_RING_SEGMENTS = 16;
+export const LINE_OF_SIGHT_PIP_INNER_RADIUS = 0.12;
+export const LINE_OF_SIGHT_PIP_OUTER_RADIUS = 0.18;
+export const LINE_OF_SIGHT_PIP_SEGMENTS = 12;
 
 /**
  * Thickness of a ground tile's slab model (style guide §7). Pivot at

@@ -67,6 +67,17 @@ export interface TacticalHudHandlers {
   readonly onCommand: (command: TacticalCommand) => void;
   /** The player asked to leave the mission screen. */
   readonly onBack: () => void;
+  /**
+   * Selection or armed intent changed, so the overlays the scene draws
+   * are stale (#590).
+   *
+   * Before this, the only thing that pushed overlay state to the scene
+   * was an intent arriving *from* the scene, so state the HUD changed on
+   * its own -- arming Attack from the action bar, or #522's range key --
+   * did not reach the map until the player next clicked it. Optional, so
+   * a HUD built without a scene needs no stub.
+   */
+  readonly onViewChange?: () => void;
 }
 
 /** What the HUD needs injected. */
@@ -130,7 +141,7 @@ export class TacticalHudView {
   private selected: UnitId | undefined;
   private target: UnitId | undefined;
   private mode: HudMode = DEFAULT_HUD_MODE;
-  private weaponRangeVisible = true;
+  private weaponRangePinned = false;
 
   // ===========================================
   // Constructor
@@ -254,9 +265,23 @@ export class TacticalHudView {
     return this.mode;
   }
 
-  /** Whether the weapon-range outline should be drawn (#522); on by default. */
+  /**
+   * Whether the weapon-range marks should be drawn (#522).
+   *
+   * Armed intent decides it, not selection (#590). "How far can I shoot?"
+   * is a question the player asks while aiming, so the envelope answers
+   * it while Attack is armed and stays out of the way otherwise. It used
+   * to default to on for every selection, which put 109-157 marks on the
+   * map the moment a unit was clicked -- more than any other overlay
+   * plane -- and #522 gave the toggle a key and no button, so there was
+   * no discoverable way back off it.
+   *
+   * The key still pins the marks up for a player who wants them
+   * permanently; pinning is kept apart from the mode so arming and
+   * disarming Attack cannot silently unpin them.
+   */
   isWeaponRangeVisible(): boolean {
-    return this.weaponRangeVisible;
+    return this.mode === "attack" || this.weaponRangePinned;
   }
 
   /** The enemy being previewed — a unit or an egg spawner (#426) — if any. */
@@ -475,7 +500,7 @@ export class TacticalHudView {
         this.selectNextTarget();
         break;
       case "toggle-range":
-        this.weaponRangeVisible = !this.weaponRangeVisible;
+        this.weaponRangePinned = !this.weaponRangePinned;
         break;
     }
     this.refresh();
@@ -681,6 +706,8 @@ export class TacticalHudView {
       canExtract: this.canExtract(),
       canInteract: inReach !== undefined,
     });
+    // Last, so the listener reads the state the refresh just settled.
+    this.handlers.onViewChange?.();
   }
 }
 

@@ -6,6 +6,7 @@ import type { ObjectiveTuning } from "../../tactical/model/objective-tuning";
 import type { TacticalCommand } from "../../tactical/model/tactical-command";
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { TacticalState } from "../../tactical/model/tactical-state";
+import type { UnitId } from "../../tactical/model/unit";
 import type { GameSession } from "../model/game-session";
 import type { Screen, ScreenId } from "../model/screen";
 import type { ScreenRouter } from "../model/screen-router";
@@ -62,7 +63,8 @@ export interface TacticalScreenDeps {
  *   └─────────────────────────────────────────────────────────────────────┘
  *
  *   host intents ──▶ hud.handleIntent ──▶ onCommand ──▶ store.dispatch
- *                └─▶ host.select(hud.getSelectedUnitId())   range / cover / LOS overlays
+ *                └─▶ syncOverlays()                        range / cover / LOS overlays
+ *   hud.onViewChange ─▶ syncOverlays()                        arming Attack shows the envelope
  *   store change ──▶ host.update(mission, tactical events)  animations, then units
  *                └─▶ mission.outcome set ──▶ FinishMission ──▶ "mission-results"
  * ```
@@ -80,6 +82,10 @@ export class TacticalScreen implements Screen {
   private note: HTMLElement | undefined;
   private unsubscribe: Unsubscribe | undefined;
   private attachedMissionId: string | undefined;
+  /** Last overlay state pushed to the scene, so an unchanged refresh costs nothing. */
+  private overlayState:
+    | { readonly selected: UnitId | undefined; readonly weaponRange: boolean }
+    | undefined;
   /** The mission `FinishMission` has already been dispatched for, so it is asked once. */
   private finishedMissionId: string | undefined;
   private readonly disposers: (() => void)[] = [];
@@ -98,6 +104,9 @@ export class TacticalScreen implements Screen {
         },
         onBack: () => {
           this.deps.router.navigate("overworld");
+        },
+        onViewChange: () => {
+          this.syncOverlays();
         },
       },
       {
@@ -153,6 +162,8 @@ export class TacticalScreen implements Screen {
     }
     this.deps.sceneHost?.release();
     this.attachedMissionId = undefined;
+    // The next scene starts with no overlays, so the next push must run.
+    this.overlayState = undefined;
     this.finishedMissionId = undefined;
     this.hud.unmount();
     this.root?.remove();
@@ -209,6 +220,38 @@ export class TacticalScreen implements Screen {
     this.deps.router.navigate("mission-results");
   }
 
+  /**
+   * Brings the scene's overlays in step with the HUD, if anything they
+   * depend on moved (#590).
+   *
+   * Deduped because recomputing them walks the movement graph, while the
+   * HUD refreshes on every event in a turn; without the guard, arming
+   * Attack once would rebuild the overlays on every subsequent banner
+   * tick as well.
+   */
+  private syncOverlays(): void {
+    const host = this.deps.sceneHost;
+    // Before the scene is attached there is nothing to draw on, and the
+    // HUD refreshes during mount; pushing then would seed the dedupe
+    // with a selection the scene never received.
+    if (!host || this.attachedMissionId === undefined) {
+      return;
+    }
+    const selected = this.hud.getSelectedUnitId();
+    const weaponRange = this.hud.isWeaponRangeVisible();
+    const pushed = this.overlayState;
+    if (
+      pushed !== undefined &&
+      pushed.selected === selected &&
+      pushed.weaponRange === weaponRange
+    ) {
+      return;
+    }
+    this.overlayState = { selected, weaponRange };
+    host.select(selected);
+    host.setWeaponRangeVisible(weaponRange);
+  }
+
   /** Attaches the scene on the first mission, updates it afterwards; never throws into the store. */
   private syncScene(
     mission: TacticalState,
@@ -224,8 +267,7 @@ export class TacticalScreen implements Screen {
         // The HUD owns selection: in attack mode a click on an enemy is
         // the preview target, not the selected unit, so the overlays
         // follow the unit whose card is up (#338).
-        host.select(this.hud.getSelectedUnitId());
-        host.setWeaponRangeVisible(this.hud.isWeaponRangeVisible());
+        this.syncOverlays();
         this.recordIntent(intent);
         this.deps.onIntent?.(intent);
       },
@@ -234,7 +276,15 @@ export class TacticalScreen implements Screen {
       this.attachedMissionId === mission.missionId
         ? host.update(mission, events)
         : host.attach(this.viewport, mission, intents);
+    if (this.attachedMissionId !== mission.missionId) {
+      // What a freshly built scene already shows: no selection, no
+      // envelope. Recording it rather than pushing it keeps the attach
+      // free of a redundant round trip, and the call below then pushes
+      // only if the HUD is holding something different.
+      this.overlayState = { selected: undefined, weaponRange: false };
+    }
     this.attachedMissionId = mission.missionId;
+    this.syncOverlays();
     void pending.catch((error: unknown) => {
       console.error("Tactical scene failed", error);
     });

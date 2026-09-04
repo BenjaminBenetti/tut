@@ -67,8 +67,29 @@ export const LINE_OF_SIGHT_COLOUR = 0xf08a24;
 export const COVER_OPACITY = 0.85;
 export const LINE_OF_SIGHT_OPACITY = 0.9;
 
-/** Lift above the tile top so the quads never z-fight with the map. */
-export const OVERLAY_LIFT = 0.02;
+/**
+ * Thickness of a ground tile's slab model (style guide §7). Pivot at
+ * centre, so a slab placed at `tileTopCentre` occupies half of this
+ * above that point as well as half below.
+ */
+export const GROUND_SLAB_THICKNESS = 0.05;
+
+/**
+ * Lift above the tile top, so an overlay clears the slab rather than
+ * being drawn inside it.
+ *
+ * This has to exceed `GROUND_SLAB_THICKNESS / 2` = 0.025. It used to be
+ * 0.02, which was fine while the map was flat placeholder boxes but has
+ * been *below the ground surface* since #474 put the real tile models in
+ * — every overlay was drawn inside the slab and depth-tested away, so
+ * move range, cover and line of sight all rendered invisibly. A full
+ * slab thickness clears the top half with the same margin again, and
+ * still reads as painted on the ground rather than floating.
+ *
+ * The other layers lift by multiples of this (`× 1.5`, `× 2`, `× 3`), so
+ * raising the base raises all of them together.
+ */
+export const OVERLAY_LIFT = GROUND_SLAB_THICKNESS;
 
 /** Slab thickness of the range quads. */
 export const RANGE_THICKNESS = 0.02;

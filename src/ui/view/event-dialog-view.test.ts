@@ -60,6 +60,33 @@ describe("EventDialogView", () => {
     expect(dialog()?.hidden).toBe(true);
   });
 
+  it("marks the choice that happens if the player ignores it, and recommends none", () => {
+    const type = EVENT_TYPES["city-plea"];
+    const view = new EventDialogView(
+      { eventTypes: CATALOGUE },
+      { onChoose: vi.fn() },
+    );
+    view.mount(root);
+    view.update(withEvents([PLEA]));
+
+    // No button carries the primary styling. It used to sit on the first
+    // choice, which on three of the four event types is *not* the
+    // default -- an emphasis saying "do this" beside a line saying
+    // something else happens if you do nothing.
+    expect(
+      choices().filter((b) => b.classList.contains("tut-btn--primary")),
+    ).toHaveLength(0);
+
+    // The default is named on the button it belongs to, and it is the
+    // one the data declares, not the first.
+    const marked = choices().filter((b) =>
+      b.querySelector('[data-role="default-choice"]'),
+    );
+    expect(marked).toHaveLength(1);
+    expect(marked[0]?.dataset.choiceId).toBe(type.defaultChoiceId);
+    expect(marked[0]?.dataset.choiceId).not.toBe(type.choices[0]?.id);
+  });
+
   it("renders title, city, substituted text, expiry and one button per choice", () => {
     const view = new EventDialogView(
       { eventTypes: CATALOGUE },

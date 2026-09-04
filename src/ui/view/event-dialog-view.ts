@@ -169,7 +169,12 @@ export class EventDialogView {
       `Resolves by default in ${formatWhole(event.expiresDay - state.overworld.day)} d`,
     );
     if (this.shown !== event.id) {
-      this.rebuildChoices(type.choices);
+      this.rebuildChoices(
+        type.choices,
+        // Absent means the first choice, which is the model's own rule
+        // (`event-type.ts`), so the marker never lies by omission.
+        type.defaultChoiceId ?? type.choices[0]?.id,
+      );
       this.shown = event.id;
       this.root.dataset.eventId = event.id;
     }
@@ -212,21 +217,39 @@ export class EventDialogView {
   /** One button per choice, in catalogue order. */
   private rebuildChoices(
     choices: readonly { id: EventChoiceId; label: string }[],
+    defaultChoiceId: EventChoiceId | undefined,
   ): void {
     if (!this.choices) {
       return;
     }
     const doc = this.choices.ownerDocument;
     this.choices.replaceChildren();
-    choices.forEach((choice, index) => {
+    for (const choice of choices) {
       const button = doc.createElement("button");
       button.type = "button";
-      button.className = index === 0 ? "tut-btn tut-btn--primary" : "tut-btn";
+      // No primary. The first choice used to carry it, which on three of
+      // the four event types highlighted a button that is *not* what
+      // happens if the player ignores the event -- next to a line saying
+      // "Resolves by default in N d". A primary button means "do this";
+      // there is no recommended answer to a dilemma, and the emphasis
+      // was asserting one that the data contradicted.
+      button.className = "tut-btn";
       button.dataset.action = "choose";
       button.dataset.choiceId = choice.id;
-      button.textContent = choice.label;
+      const label = doc.createElement("span");
+      label.textContent = choice.label;
+      button.appendChild(label);
+      if (choice.id === defaultChoiceId) {
+        // What the expiry line is talking about, said on the button it
+        // means: information, where the emphasis used to be advice.
+        const tag = doc.createElement("span");
+        tag.className = "tut-event__default tut-dim";
+        tag.dataset.role = "default-choice";
+        tag.textContent = "default";
+        button.appendChild(tag);
+      }
       this.choices?.appendChild(button);
-    });
+    }
   }
 
   /** Writes text only when it changed. */

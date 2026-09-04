@@ -56,6 +56,8 @@ describe("MapgenPreviewScreen", () => {
     const stats = (): string => root.querySelector("#stats")?.textContent ?? "";
     screen.showResult(result(1));
     expect(stats()).toMatch(/Beside cover[\d.]+ %Beside a wall/);
+    expect(stats()).toMatch(/Cover that holds[\d.]+ % one side, [\d.]+ % two/);
+    expect(stats()).toMatch(/Covered sides[\d.]+ per open tile/);
     screen.showResult(result(3));
     expect(stats()).toMatch(/Beside cover.*\(\+/);
     screen.showResult(result(3));

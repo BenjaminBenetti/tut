@@ -57,8 +57,7 @@ export class SidePanelView {
 
     const hint = doc.createElement("p");
     hint.className = "tut-dim";
-    hint.textContent =
-      "Click a city · Q / E rotate · wheel zoom · WASD or arrows pan.";
+    hint.textContent = "Click a city · wheel zoom · WASD or arrows pan.";
 
     const sections = doc.createElement("div");
     sections.className = "tut-stack";

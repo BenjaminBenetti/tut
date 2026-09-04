@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import type { Mock } from "vitest";
+import { partThumbnail } from "../data/part-thumbnail-table";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Unsubscribe } from "../../core/model/event-bus";
@@ -251,6 +252,48 @@ describe("MechBayScreen", () => {
     expect(errorCodes()).toEqual([]);
     expect(inline.hidden).toBe(true);
     expect(sheetField("combatRating")).toBe("129");
+  });
+
+  it("shows a picture of the part each picker has chosen (#495)", () => {
+    mountWith(newGame(), root);
+    const chassis = root.querySelector<HTMLImageElement>(
+      '[data-role="part-thumb"][data-field="chassis"]',
+    );
+    expect(chassis).not.toBeNull();
+    // The picture matches the part in the picker beside it.
+    expect(chassis?.dataset.thumb).toBe(partThumbnail(picker("chassis").value));
+    expect(chassis?.getAttribute("src")).toContain("assets/ui/thumbs/");
+    // Decorative: the picker already names the part.
+    expect(chassis?.alt).toBe("");
+  });
+
+  it("follows the picker: choosing another part swaps the picture", () => {
+    mountWith(newGame(), root);
+    const select = picker("chassis");
+    const thumb = root.querySelector<HTMLImageElement>(
+      '[data-role="part-thumb"][data-field="chassis"]',
+    );
+    if (!thumb) throw new Error("mech bay has no chassis row");
+    const before = thumb.dataset.thumb;
+    const other = [...select.options]
+      .map((o) => o.value)
+      .find((v) => v !== select.value);
+    if (other === undefined) throw new Error("only one chassis to pick");
+    select.value = other;
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+    expect(thumb.dataset.thumb).toBe(partThumbnail(other));
+    expect(thumb.dataset.thumb).not.toBe(before);
+  });
+
+  it("keeps the cell but no picture for a utility part, so the pickers stay aligned", () => {
+    mountWith(newGame(), root);
+    const utility = root.querySelector<HTMLImageElement>(
+      '[data-role="part-thumb"][data-field="utility-0"]',
+    );
+    // A utility has no visual slot, so there is nothing to show.
+    expect(utility).not.toBeNull();
+    expect(utility?.classList.contains("is-empty")).toBe(true);
+    expect(utility?.hasAttribute("src")).toBe(false);
   });
 
   it("changing the chassis rebuilds the utility pickers to its slot count and keeps the rest", () => {

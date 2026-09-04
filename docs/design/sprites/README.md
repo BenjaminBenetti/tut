@@ -8,6 +8,16 @@ tools/art/gen-image.sh docs/design/sprites/prompts/<name>.txt public/assets/spri
 
 ![Round 2 contact sheet](vfx-round-2.png)
 
+## In sequence
+
+![A ranged attack, frame by frame](../vfx-sequence-ranged.png)
+
+`node tools/art/preview/shoot-vfx.mjs out.png ranged|melee|death` runs the real
+`TacticalAnimationQueue` against stand-in units at 64 px per tile and steps it
+0.06 s at a time, so a filmstrip is reproducible where sampling a live mission
+is not. Use it to judge sizes, anchors and timing after any change; playing to
+contact takes twenty turns and still misses the 0.12 s frames.
+
 ## At game scale
 
 ![VFX composited over a live mission at 64 px per tile](vfx-at-game-scale.png)

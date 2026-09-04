@@ -18,20 +18,28 @@
 export const MOVE_RANGE_ONE_AP_COLOUR = 0x7fd1ff;
 
 /**
- * The same `ui-info` hue at roughly 60% luminance, for tiles that cost
- * the unit's second action point (#521).
+ * The dearer band is the **same `ui-info` token**, laid on more thinly
+ * (#566). It was a darkened hex (`0x4c7d99`); QA measured that blend at
+ * `80,112,128`, which sits on top of shadowed ground and cannot be told
+ * apart from it. Darkening a tint to say "less" fails on a map that is
+ * already dark in places — the shadow gets there first.
  *
- * Deliberately a *lightness* step rather than a second hue: the style
- * guide gives move range one token, and a hue split (blue against green,
- * say) is the split that deuteranopia and protanopia lose. Lightness
- * survives every common colour-vision deficiency, and it carries the
- * right meaning on its own — the brighter band is the cheaper one.
+ * Two opacities of one token instead: every blend is *lighter* than the
+ * ground it covers, so both bands separate from shade, and the near band
+ * is the stronger wash. The style guide gives move range one token, and a
+ * hue split (blue against green, say) is the split deuteranopia and
+ * protanopia lose — so the separation stays in value, and in the
+ * footprint below, which no colour-vision deficiency can take away.
  */
-export const MOVE_RANGE_TWO_AP_COLOUR = 0x4c7d99;
+export const MOVE_RANGE_TWO_AP_COLOUR = MOVE_RANGE_ONE_AP_COLOUR;
 
-/** Opacity per tier; the dearer band recedes as well as darkens. */
-export const MOVE_RANGE_ONE_AP_OPACITY = 0.35;
-export const MOVE_RANGE_TWO_AP_OPACITY = 0.22;
+/**
+ * Opacity per tier. The near band is laid on hard enough to read as an
+ * overlay rather than as terrain — at 0.35 it blended close to the water
+ * surface (`0x3f8fa8`) and players took it for a pond (#569).
+ */
+export const MOVE_RANGE_ONE_AP_OPACITY = 0.45;
+export const MOVE_RANGE_TWO_AP_OPACITY = 0.24;
 
 /**
  * Quad footprint per tier, in tiles. The second band is inset so the two
@@ -50,9 +58,21 @@ export const MOVE_RANGE_TWO_AP_FOOTPRINT = 0.66;
  */
 export const WEAPON_RANGE_COLOUR = 0xf08a24;
 
-/** Opacity and footprint of the weapon-range edge quads. */
-export const WEAPON_RANGE_OPACITY = 0.5;
-export const WEAPON_RANGE_FOOTPRINT = 0.96;
+/**
+ * Opacity and footprint of the weapon-range marks.
+ *
+ * Nearly a whole tile at half opacity to begin with, which was fine on
+ * open ground where the envelope's edge is a thin ring. In a city it is
+ * not: line of sight cuts the envelope into pockets, so most tiles in it
+ * border one that is out, almost every tile counts as edge, and the
+ * "outline" fills. QA measured the result covering 2,233 px of the 2 AP
+ * movement band (#572).
+ *
+ * A small centred pip instead — the same information, a tenth of the
+ * ink, and the band underneath survives it.
+ */
+export const WEAPON_RANGE_OPACITY = 0.38;
+export const WEAPON_RANGE_FOOTPRINT = 0.3;
 
 /** `ui-warn`: partial protection on that edge. */
 export const COVER_LOW_COLOUR = 0xf0c63c;

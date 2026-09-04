@@ -5,8 +5,11 @@ import {
   MOVE_RANGE_ONE_AP_COLOUR,
   MOVE_RANGE_ONE_AP_FOOTPRINT,
   MOVE_RANGE_TWO_AP_COLOUR,
+  MOVE_RANGE_ONE_AP_OPACITY,
   MOVE_RANGE_TWO_AP_FOOTPRINT,
+  MOVE_RANGE_TWO_AP_OPACITY,
   OVERLAY_LIFT,
+  WEAPON_RANGE_FOOTPRINT,
 } from "./tactical-overlay-palette";
 
 // ===========================================
@@ -39,11 +42,27 @@ describe("tactical overlay palette", () => {
     expect(OVERLAY_LIFT * 3).toBeLessThan(0.5);
   });
 
-  it("separates the two move bands in both tone and footprint", () => {
-    // #521 relies on two channels, so neither may quietly collapse.
-    expect(MOVE_RANGE_ONE_AP_COLOUR).not.toBe(MOVE_RANGE_TWO_AP_COLOUR);
+  it("separates the two move bands in both value and footprint", () => {
+    // #521 relies on two channels and neither may quietly collapse. The
+    // channels are opacity and footprint, not hue: #566 replaced the
+    // darkened second hex with the same token laid on more thinly,
+    // because darkening to say "less" collides with shadowed ground.
+    expect(MOVE_RANGE_TWO_AP_OPACITY).toBeLessThan(MOVE_RANGE_ONE_AP_OPACITY);
     expect(MOVE_RANGE_TWO_AP_FOOTPRINT).toBeLessThan(
       MOVE_RANGE_ONE_AP_FOOTPRINT,
     );
+  });
+
+  it("keeps both move bands lighter than the ground they cover", () => {
+    // Every blend has to come out above the terrain, or the dearer band
+    // reads as shade again (#566). Same token both times is what
+    // guarantees it.
+    expect(MOVE_RANGE_TWO_AP_COLOUR).toBe(MOVE_RANGE_ONE_AP_COLOUR);
+  });
+
+  it("keeps the weapon-range mark small enough not to bury a move band", () => {
+    // #572: at nearly a whole tile the range overlay filled in a city and
+    // covered the 2 AP band underneath it.
+    expect(WEAPON_RANGE_FOOTPRINT).toBeLessThan(MOVE_RANGE_TWO_AP_FOOTPRINT);
   });
 });

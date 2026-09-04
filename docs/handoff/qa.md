@@ -38,13 +38,26 @@ If a name appears that your gate does not run, your gate is incomplete; that is
 exactly how the miss above happened, and the check names are readable even from a
 run that was cancelled.
 
-**Do not read a CI result as a pass unless it says `success`.** At the merge rate
-this repo sustains, a head often has no usable verdict: measured across seven
-consecutive heads, one had **zero** check-runs and four had at least one
-`cancelled` — superseded by the next merge before finishing. `cancelled` is
-neither pass nor fail, and an empty result is not agreement. **The local six-stage
-gate is the per-head verdict**; CI is corroboration when it happens to have
-finished.
+**Do not read a CI result as a pass unless it says `success`, and expect many heads
+to have no result at all.** `.github/workflows/ci.yml` sets
+
+```yaml
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+```
+
+so on `main` **each push cancels the in-flight run for the previous head**. During a
+burst of merges only the last head gets a full verdict; the ones in the middle are
+cancelled, sometimes before their jobs register any check-runs at all — which is why
+`/check-runs` can return an empty list rather than a failure. Measured across seven
+consecutive heads: one had **zero** check-runs, four had at least one `cancelled`,
+two were clean.
+
+The consequence is worth sitting with: **an intermediate head on `main` may never be
+tested by CI at all.** The local six-stage gate is not corroboration of CI, it is
+frequently the only verification that head receives. `cancelled` is neither pass nor
+fail, and an empty result is not agreement.
 
 Where CI *is* the better arbiter is a local failure: this container is loaded
 enough to fake timeouts, so red locally with a `success` on CI for the same SHA is

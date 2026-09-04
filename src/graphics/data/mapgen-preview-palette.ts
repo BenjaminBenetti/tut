@@ -21,41 +21,51 @@ export const WALL_THICKNESS = 0.08;
 // ===========================================
 
 /**
- * Placeholder colours for the map generation preview, keyed by the ids
- * mapgen emits (style guide §4.3 environment tokens where one exists).
- * Real materials come from the model manifest once the tactical scene
- * builder lands; this palette exists so the preview never references an
- * asset path.
+ * World-surface colours for the tactical scene and the map generation
+ * preview, keyed by the ids mapgen emits. Every value is a style guide §4.3
+ * environment token, because until a map cell resolves to a model (#474)
+ * these boxes are what a player actually sees.
+ *
+ * Nothing here may use a §4.4 UI colour or one of the four overlay colours
+ * (§12.2): `ui-info` marks where a unit can move and `ui-accent` marks the
+ * unit itself, so a window painted `tdf-visor` and a door painted
+ * `tdf-orange` made every building shout in the two colours that are
+ * supposed to mean "you".
  */
 export const SURFACE_COLOURS: Readonly<Record<string, number>> = {
   grass: 0x5e7a3a,
   dirt: 0x7a6045,
-  sand: 0xc9b37a,
+  sand: 0xd9b87a,
   snow: 0xe8ecf0,
-  rock: 0x6f6f6f,
-  road: 0x3a3a3f,
-  sidewalk: 0x8e8a82,
-  water: 0x2a5d8f,
-  floor: 0x9a8f7a,
-  roof: 0x55514c,
-  stairs: 0xb08a4a,
+  rock: 0x6e6a66,
+  road: 0x3a3d42,
+  sidewalk: 0xa7a297,
+  water: 0x3f8fa8,
+  floor: 0x8e8a82,
+  roof: 0x55524c,
+  stairs: 0xa7a297,
 };
 
 /** Loud magenta so an unknown surface is impossible to miss. */
 export const FALLBACK_SURFACE_COLOUR = 0xff00ff;
 
-/** Wall segments by kind: concrete, glass, accent orange for doors. */
+/** Wall segments by kind: brick body, glass pane, a dark opening for a door. */
 export const WALL_COLOURS: Readonly<Record<WallKind, number>> = {
-  solid: 0xc8c2b4,
-  window: 0x7fd1ff,
-  door: 0xf08a24,
+  solid: 0x8a4b3a,
+  window: 0x6e8fa6,
+  door: 0x3a3d42,
 };
 
-/** Props by the cover they provide; darker means more cover. */
+/**
+ * Props by the cover they provide, as materials rather than a warning ramp:
+ * scrub and debris, then timber, then steel. `PROP_HEIGHTS` is what encodes
+ * cover — a knee-high box and a chest-high one read at a glance, and the
+ * cover overlay (§12.2) says it again in `ui-warn` / `ui-danger`.
+ */
 export const PROP_COLOURS: Readonly<Record<CoverLevel, number>> = {
-  0: 0x8b94a6,
-  1: 0x9b7b3a,
-  2: 0x4a5a3a,
+  0: 0x8a8a4a,
+  1: 0x5a4634,
+  2: 0x6f7378,
 };
 
 /** Prop box height in world units by cover level. */
@@ -65,14 +75,18 @@ export const PROP_HEIGHTS: Readonly<Record<CoverLevel, number>> = {
   2: 1.2,
 };
 
-/** Vertical links: ramps and stairs are planks, ladders are rungs. */
+/** Vertical links: concrete ramp, paved steps, steel ladder. */
 export const CONNECTOR_COLOURS: Readonly<Record<ConnectorKind, number>> = {
-  ramp: 0xd0a060,
-  stairs: 0xb08a4a,
-  ladder: 0xd9d9d9,
+  ramp: 0x8e8a82,
+  stairs: 0xa7a297,
+  ladder: 0x6f7378,
 };
 
-/** Hook markers: TDF green for deploy, bug green for eggs, danger red for edges, info cyan for extraction. */
+/**
+ * Hook markers: TDF green for deploy, bug green for eggs, danger red for
+ * edges, info cyan for extraction. These are the one place UI colours belong
+ * on the tactical plane — they are markers over the world, not surfaces of it.
+ */
 export const HOOK_COLOURS: Readonly<Record<string, number>> = {
   [HookKinds.DEPLOY]: 0x7ccb5a,
   [HookKinds.EGG_SPAWNER]: 0x9cff3d,

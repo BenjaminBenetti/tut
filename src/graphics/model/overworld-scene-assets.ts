@@ -1,5 +1,7 @@
 import type { Texture } from "three";
 
+import type { TextTextureSource } from "./text-texture-source";
+
 /**
  * Art the overworld scene can use when it is available. Every field is
  * optional by design (architecture §7: never block on art): the scene
@@ -13,6 +15,11 @@ export interface OverworldSceneAssets {
   readonly markerGlyph: Texture | undefined;
   /** White-on-transparent mission glyph for the active-mission badge; `undefined` uses a small disc. */
   readonly missionGlyph: Texture | undefined;
+  /**
+   * Rasterises city names for their labels (#439); absent draws no
+   * label, which is what the headless sim and node tests get.
+   */
+  readonly text?: TextTextureSource | undefined;
 }
 
 /** No art at all: flat ocean and disc markers. */
@@ -20,4 +27,5 @@ export const NO_OVERWORLD_ASSETS: OverworldSceneAssets = {
   mapTexture: undefined,
   markerGlyph: undefined,
   missionGlyph: undefined,
+  text: undefined,
 };

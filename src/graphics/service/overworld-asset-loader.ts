@@ -1,5 +1,6 @@
 import type { GlyphSource } from "../model/glyph-source";
 import type { OverworldSceneAssets } from "../model/overworld-scene-assets";
+import { CanvasTextTextureSource } from "./canvas-text-texture-source";
 import type { TextureSource } from "../model/texture-source";
 
 // ===========================================
@@ -44,5 +45,11 @@ export async function loadOverworldAssets(
     deps.glyphs.loadGlyph(deps.markerGlyphUrl, MARKER_GLYPH_RASTER_PX),
     deps.glyphs.loadGlyph(deps.missionGlyphUrl, MARKER_GLYPH_RASTER_PX),
   ]);
-  return { mapTexture, markerGlyph, missionGlyph };
+  return {
+    mapTexture,
+    markerGlyph,
+    missionGlyph,
+    // Labels are rasterised on demand and cached per name (#439).
+    text: new CanvasTextTextureSource(),
+  };
 }

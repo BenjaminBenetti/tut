@@ -11,6 +11,7 @@ import type { Vec3 } from "../../core/model/grid";
 import type { City, CityId } from "../../overworld/model/city";
 import { MAX_INFESTATION, MIN_INFESTATION } from "../../overworld/model/city";
 import type { OverworldSceneConfig } from "../model/overworld-scene-config";
+import type { TextTextureSource } from "../model/text-texture-source";
 
 // ===========================================
 // Colour ramp
@@ -66,6 +67,13 @@ const BADGE_OFFSET_NORTH = 0.55;
 
 /** Height the badge floats above the plate so it never z-fights it. */
 const BADGE_LIFT = 0.02;
+
+/** Label height in world units, and how far south of the marker it sits. */
+const LABEL_HEIGHT = 0.34;
+const LABEL_OFFSET_SOUTH = 0.62;
+
+/** Labels draw above everything else on the map. */
+const LABEL_RENDER_ORDER = 4;
 
 /** Badges draw after the marker so they sit on top of the pin. */
 const BADGE_RENDER_ORDER = 3;
@@ -124,6 +132,8 @@ export interface CityMarkerLook {
   readonly glyph: Texture | undefined;
   /** White-on-transparent mission glyph for the badge; `undefined` draws a small disc. */
   readonly missionGlyph?: Texture | undefined;
+  /** Rasterises the city's name; absent (or yielding nothing) draws no label. */
+  readonly text?: TextTextureSource | undefined;
 }
 
 /** What a marker currently shows, for tests and the dev hooks. */
@@ -164,9 +174,12 @@ export class CityMarker {
   private readonly ringMaterial: MeshStandardMaterial;
   private readonly badge: Sprite | Mesh;
   private readonly badgeMaterial: SpriteMaterial | MeshStandardMaterial;
+  private readonly label: Sprite | undefined;
+  private readonly labelMaterial: SpriteMaterial | undefined;
   private readonly config: OverworldSceneConfig;
   private infestationHex = 0;
   private hovered = false;
+  private selected = false;
   private mission = false;
 
   // ===========================================
@@ -274,6 +287,31 @@ export class CityMarker {
     this.badge.visible = false;
     this.object.add(this.badge);
 
+    const labelTexture = look.text?.textTexture(city.name);
+    if (labelTexture) {
+      const material = new SpriteMaterial({
+        map: labelTexture,
+        transparent: true,
+        depthWrite: false,
+      });
+      const sprite = new Sprite(material);
+      sprite.scale.set(LABEL_HEIGHT * aspectOf(labelTexture), LABEL_HEIGHT, 1);
+      // South of the marker, on the ground plane: under the strategic
+      // map's straight-down camera that reads as directly below the icon,
+      // clear of the badge, which sits east and north (#439).
+      sprite.position.set(
+        0,
+        BADGE_LIFT,
+        this.config.markerGlyphSize * LABEL_OFFSET_SOUTH,
+      );
+      sprite.renderOrder = LABEL_RENDER_ORDER;
+      sprite.visible = false;
+      sprite.name = `city-label-${city.id}`;
+      this.label = sprite;
+      this.labelMaterial = material;
+      this.object.add(sprite);
+    }
+
     this.setInfestation(city.infestation);
     this.setHovered(false);
   }
@@ -296,6 +334,7 @@ export class CityMarker {
   /** Grows the marker and tints it with the accent while hovered. */
   setHovered(hovered: boolean): void {
     this.hovered = hovered;
+    this.refreshLabel();
     const scale = hovered ? HOVER_SCALE : 1;
     if (this.visual instanceof Sprite) {
       const size = this.config.markerGlyphSize * scale;
@@ -308,7 +347,14 @@ export class CityMarker {
 
   /** Shows the selection ring while selected. */
   setSelected(selected: boolean): void {
+    this.selected = selected;
     this.ring.visible = selected;
+    this.refreshLabel();
+  }
+
+  /** True while the city's name is on screen. */
+  labelVisible(): boolean {
+    return this.label?.visible ?? false;
   }
 
   /** Shows the mission badge while the city has an active mission. */
@@ -350,6 +396,18 @@ export class CityMarker {
     this.material.dispose();
     this.ringMaterial.dispose();
     this.badgeMaterial.dispose();
+    this.labelMaterial?.dispose();
+  }
+
+  /**
+   * A city's name is shown while it is hovered or selected, and only
+   * then: thirty-seven names at once is the clutter the placeholder
+   * label bars were already causing (#439).
+   */
+  private refreshLabel(): void {
+    if (this.label) {
+      this.label.visible = this.hovered || this.selected;
+    }
   }
 
   // ===========================================
@@ -365,4 +423,16 @@ export class CityMarker {
       this.material.emissiveIntensity = this.hovered ? HOVER_EMISSIVE : 0;
     }
   }
+}
+
+/**
+ * Width over height of a rasterised label, so a sprite wearing it is not
+ * stretched. Falls back to square for a texture with no measurable image
+ * (a stub in tests).
+ */
+function aspectOf(texture: Texture): number {
+  const image = texture.image as { width?: number; height?: number } | null;
+  const width = image?.width ?? 1;
+  const height = image?.height ?? 1;
+  return height > 0 ? width / height : 1;
 }

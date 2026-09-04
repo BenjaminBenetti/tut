@@ -194,6 +194,8 @@ export class TacticalHudView {
    */
   private armedWeaponId: WeaponId | undefined;
   private weaponRangePinned = false;
+  /** Torn down with the HUD; watches the side rail for hidden content (#657). */
+  private sideOverflow: { readonly dispose: () => void } | undefined;
 
   // ===========================================
   // Constructor
@@ -244,6 +246,7 @@ export class TacticalHudView {
     this.log.mount(hud);
     this.actions.mount(bottom);
     hud.append(top, side, bottom);
+    this.watchSideOverflow(side);
     this.phases.mount(hud);
     parent.appendChild(hud);
     this.root = hud;
@@ -301,6 +304,8 @@ export class TacticalHudView {
 
   /** Removes the HUD. */
   unmount(): void {
+    this.sideOverflow?.dispose();
+    this.sideOverflow = undefined;
     this.phases.unmount();
     this.actions.unmount();
     this.log.unmount();
@@ -928,6 +933,55 @@ export class TacticalHudView {
       this.deps.combatTuning,
       this.armedWeaponId,
     );
+  }
+
+  /**
+   * Marks the side rail while it has content below the fold (#657).
+   *
+   * The rail is laid out correctly -- it is a grid row and stops above
+   * the action bar, measured at 647 against the bar's 663 at 720p. What
+   * goes wrong is quieter: a two-weapon mech's card plus two objectives
+   * comes to 654 px in a 590 px rail, so the last objective is cut and
+   * **nothing says the rest is one scroll away.** A cut row with no cue
+   * reads as a rendering fault rather than as more to see.
+   *
+   * Cannot be done in CSS alone: it depends on content height against
+   * box height, which no selector can ask about. Re-measured when the
+   * rail or any panel in it resizes, and on scroll, so the cue clears
+   * once the player reaches the end.
+   */
+  private watchSideOverflow(side: HTMLElement): void {
+    const measure = (): void => {
+      const more = side.scrollHeight - side.clientHeight - side.scrollTop > 1;
+      if (more) {
+        side.dataset.overflow = "true";
+      } else {
+        delete side.dataset.overflow;
+      }
+    };
+    side.addEventListener("scroll", measure, { passive: true });
+    // The rail's own box rarely changes; its panels' heights change on
+    // every selection, so watch those too. Guarded because the cue is
+    // an enhancement, not a requirement: without a `ResizeObserver` the
+    // scroll listener and the measure below still work, and a test
+    // environment without one must not take the HUD down with it.
+    const observer =
+      typeof ResizeObserver === "undefined"
+        ? undefined
+        : new ResizeObserver(measure);
+    if (observer) {
+      observer.observe(side);
+      for (const panel of side.children) {
+        observer.observe(panel);
+      }
+    }
+    this.sideOverflow = {
+      dispose: () => {
+        observer?.disconnect();
+        side.removeEventListener("scroll", measure);
+      },
+    };
+    measure();
   }
 
   /** Pushes the mission and the presentation state into every part. */

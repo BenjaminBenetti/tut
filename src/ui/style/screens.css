@@ -611,6 +611,26 @@
   grid-area: side;
   margin: var(--space-4);
   overflow: auto;
+  scrollbar-width: thin;
+}
+
+/*
+ * There is more below the fold (#657). The rail is bounded correctly and
+ * always was -- it stops above the action bar -- but a card tall enough
+ * to push an objective past the end left the row cut with nothing to say
+ * the rest was one scroll away, which reads as a rendering fault.
+ *
+ * The fade is the cue, and it clears as soon as the player reaches the
+ * end, so it never lies about content that is not there. Set from
+ * `watchSideOverflow`, because whether it applies depends on content
+ * height against box height and no selector can ask that.
+ */
+.tut-hud__side[data-overflow="true"] {
+  mask-image: linear-gradient(
+    to bottom,
+    #000 calc(100% - var(--space-6, 24px)),
+    transparent 100%
+  );
 }
 
 .tut-hud__bottom {

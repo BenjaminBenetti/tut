@@ -6,10 +6,10 @@ Last updated: 2026-09-04 (post-v0.2.0; win path settled on #317).
 
 | Field | Value |
 |---|---|
-| SHA tested | `f7901ba` (main, after v0.2.0 was tagged at `c2cddf8`) |
-| Gate | typecheck, lint, build pass; vitest **1608 / 1608** (+1 deliberate skip); e2e **45 / 45** |
-| Exploratory | 11 flows, 0 findings on `4cec760`; win path settled (item 4); #515 spawner picking verified with a real pointer click |
-| **Verdict** | **A tactical mission is playable end to end and winnable.** Release verdict for v0.2.0 was posted on #317 against `14b0811`; nothing since has changed it. |
+| SHA tested | `b0e2b6c` (main, after v0.2.0 was tagged at `c2cddf8`) |
+| Gate | typecheck, lint, build pass; vitest **1613 / 1613** (+1 deliberate skip); e2e **45 / 45** |
+| Exploratory | 11 flows, 0 findings; **filed #538 (p1): the tactical camera starts off the deployed force on 4 of 7 seeds and nothing pans back** |
+| **Verdict** | **The simulation is sound and a mission is winnable, but on most seeds a player cannot see or select their own units** (#538). Fix that before anyone is asked to play a mission. |
 
 ### Release push, in order of what mattered
 
@@ -44,12 +44,17 @@ Last updated: 2026-09-04 (post-v0.2.0; win path settled on #317).
 
    **The remaining player-facing gap is the sight line, not the target.** Nothing on screen marks which tiles have a clear line, so a player walks at the objective, finds Fire greyed out and concludes it is broken — which is precisely what I did twice. Filed as **#517** and narrowed to exactly that after #515.
 
-5. **Filed #480** (p3): the debrief says "No casualties" on a mission that wiped the whole force.
+5. **#538 (p1), filed on `b0e2b6c`: the tactical camera starts off the deployed force and no control pans back.** Sampled seven seeds at 1280x720: `spawner-test`, `s3`, `s4` and `s7` draw **0 of 3** TDF units on screen; `s1`, `s2`, `s6` draw 3 of 3 but in the bottom ~50 px under the action bar. On `spawner-test` `unit-1` sits at screen 753,747 in a 720-px window, and arrows, WASD, mouse drag and wheel all leave it there — wheel zoom pushes it to 823, `q` rotates it to −135. Selecting a unit does not move the camera either.
+
+   Reproduced in the **production build** with no dev hooks: banner says `TDF 3`, no unit is drawn, and clicking five points across the map never sets `data-selected-unit`. Only END TURN and OVERWORLD work. The simulation under it is fine — see item 4 — so this is purely camera framing.
+
+6. **Filed #480** (p3): the debrief says "No casualties" on a mission that wiped the whole force.
 
 ### Run history
 
 | SHA | Build | Unit | e2e | Exploratory | Filed |
 |---|---|---|---|---|---|
+| `b0e2b6c` | pass | 1613/1613 | 45/45 | 11 flows clean; camera starts off the force | **#538** |
 | `f7901ba` | pass | 1608/1608 | 45/45 | 11 flows clean; real click targets a drawn spawner (#515) | — |
 | `4cec760` | pass | 1595/1595 | 44/44 | mech kills an indoor spawner; squad cannot | #517 |
 | `b5c1196` | pass | 1348/1348 | 39/39 | known #412; #404 verified | — |

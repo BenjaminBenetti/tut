@@ -179,21 +179,22 @@ export const WEAPON_RANGE_LINE_WIDTH = 0.09;
 export const GROUND_SLAB_THICKNESS = 0.05;
 
 /**
- * Lift above the tile top, so an overlay clears the slab rather than
- * being drawn inside it.
+ * Lift above the tile top, so an overlay does not z-fight the ground it
+ * is painted on.
  *
- * This has to exceed `GROUND_SLAB_THICKNESS / 2` = 0.025. It used to be
- * 0.02, which was fine while the map was flat placeholder boxes but has
- * been *below the ground surface* since #474 put the real tile models in
- * — every overlay was drawn inside the slab and depth-tested away, so
- * move range, cover and line of sight all rendered invisibly. A full
- * slab thickness clears the top half with the same margin again, and
- * still reads as painted on the ground rather than floating.
+ * A nudge, which is all it ever should have been. It was raised to a
+ * whole slab thickness in #555 because the slab model was placed with
+ * its pivot on `tileTop`, putting the surface half a slab *above* the
+ * plane every overlay measured from, so an overlay at 0.02 was drawn
+ * inside the ground and depth-tested away. #557 moved the slab so its
+ * top face lands on `tileTop`, which is where the preview box has always
+ * put its own, so clearing the surface no longer costs anything and this
+ * goes back to keeping two coincident planes apart.
  *
  * The other layers lift by multiples of this (`× 1.5`, `× 2`, `× 3`), so
  * raising the base raises all of them together.
  */
-export const OVERLAY_LIFT = GROUND_SLAB_THICKNESS;
+export const OVERLAY_LIFT = 0.02;
 
 /** Slab thickness of the range quads. */
 export const RANGE_THICKNESS = 0.02;

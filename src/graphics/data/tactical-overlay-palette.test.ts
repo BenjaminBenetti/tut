@@ -22,23 +22,15 @@ import {
 // ===========================================
 
 describe("tactical overlay palette", () => {
-  it("lifts overlays clear of the ground slab they are painted on", () => {
-    // The regression this guards: a slab model pivots at its centre, so
-    // half of it stands above the tile top. An overlay lifted less than
-    // that is drawn inside the ground and depth-tested away — which is
-    // what happened to every overlay when the real tile art landed.
-    expect(OVERLAY_LIFT).toBeGreaterThan(GROUND_SLAB_THICKNESS / 2);
-  });
-
-  it("keeps every lifted layer clear of the slab too", () => {
-    // The cover rings, line-of-sight pips and the dearer move band lift
-    // by multiples of the base, so the smallest multiple is the one that
-    // has to clear.
-    for (const multiple of [1, 1.5, 2, 3]) {
-      expect(OVERLAY_LIFT * multiple).toBeGreaterThan(
-        GROUND_SLAB_THICKNESS / 2,
-      );
-    }
+  it("lifts overlays off the ground without clearing a slab", () => {
+    // #555 raised this to a whole slab thickness because the slab model
+    // was pivoted on `tileTop`, so half of it stood above the plane
+    // overlays measured from and anything lifted less was drawn inside
+    // the ground. #557 moved the slab so its top face lands on
+    // `tileTop`; the lift is a nudge between two coincident planes
+    // again, and paying a slab for it would read as hovering.
+    expect(OVERLAY_LIFT).toBeGreaterThan(0);
+    expect(OVERLAY_LIFT).toBeLessThan(GROUND_SLAB_THICKNESS);
   });
 
   it("keeps the overlays hugging the ground rather than floating", () => {

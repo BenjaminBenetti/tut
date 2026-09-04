@@ -6,8 +6,12 @@ import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
 import { wallFamilyFor, wallModel } from "../data/map-model-table";
-import { tileTop } from "../view/tactical-map-view";
+import { tileTop, tileTopCentre } from "../view/tactical-map-view";
 import type { ModelPlacement } from "./map-model-resolver";
+import {
+  GROUND_SLAB_THICKNESS,
+  OVERLAY_LIFT,
+} from "../data/tactical-overlay-palette";
 import {
   mapModelIds,
   resolveMapModels,
@@ -52,18 +56,27 @@ function painted(surface: string, coords: readonly TileCoord[]): TacticalMap {
 // ===========================================
 
 describe("resolveMapModels — surfaces", () => {
-  it("maps each plain surface to its registered slab at the tile top", () => {
+  it("puts each plain surface's top face on the tile top (#557)", () => {
     const map = painted(SurfaceIds.GRASS, [at(1, 1)]);
     const placement = tileAt(map, at(1, 1));
     expect(placement?.modelId).toBe("tile.ground.grass");
     expect(placement?.turns).toBe(0);
-    expect(placement?.position.y).toBe(tileTop(0));
+    // The slab pivots at its centre, so the pivot goes half a thickness
+    // below for the surface a unit stands on to land on `tileTop` —
+    // where the preview box has always put its own top face. Pivoting on
+    // `tileTop` is what left everything placed on a tile half a slab low.
+    expect(placement?.position.y).toBe(tileTop(0) - GROUND_SLAB_THICKNESS / 2);
+    expect(
+      (placement?.position.y ?? 0) + GROUND_SLAB_THICKNESS / 2,
+    ).toBeCloseTo(tileTop(0), 10);
   });
 
   it("recesses water below the surrounding ground", () => {
     const map = painted(SurfaceIds.WATER, [at(2, 2)]);
     expect(tileAt(map, at(2, 2))?.modelId).toBe("tile.ground.water");
-    expect(tileAt(map, at(2, 2))?.position.y).toBe(tileTop(0) - WATER_RECESS);
+    expect(tileAt(map, at(2, 2))?.position.y).toBe(
+      tileTop(0) - GROUND_SLAB_THICKNESS / 2 - WATER_RECESS,
+    );
   });
 
   it("maps interior surfaces to the building kit", () => {
@@ -328,5 +341,42 @@ describe("mapModelIds", () => {
     expect(ids).toContain("tile.ground.grass");
     expect(ids).toContain("building.wall");
     expect(ids).toContain("prop.crate");
+  });
+});
+// ===========================================
+// The tile's top surface (#557)
+// ===========================================
+
+describe("everything placed on a tile measures from one plane", () => {
+  it("puts the slab's surface, a unit's feet and an overlay in the right order", () => {
+    const map = painted(SurfaceIds.GRASS, [at(1, 1)]);
+    const placement = tileAt(map, at(1, 1));
+    expect(placement).toBeDefined();
+    if (!placement) return;
+
+    // The one definition: `tileTop` is the surface a unit stands on.
+    const surface = placement.position.y + GROUND_SLAB_THICKNESS / 2;
+    expect(surface).toBeCloseTo(tileTop(0), 10);
+
+    // A unit is placed at `tileTopCentre`, so its feet are on it rather
+    // than half a slab inside it — the defect this issue is named for.
+    expect(tileTopCentre({ x: 1, y: 0, z: 1 }).y).toBeCloseTo(surface, 10);
+
+    // And an overlay clears it, by a nudge rather than by a slab.
+    expect(tileTop(0) + OVERLAY_LIFT).toBeGreaterThan(surface);
+    expect(tileTop(0) + OVERLAY_LIFT - surface).toBeLessThan(
+      GROUND_SLAB_THICKNESS,
+    );
+  });
+
+  it("holds at every level, not just the ground", () => {
+    for (const level of [0, 1]) {
+      const map = painted(SurfaceIds.GRASS, [at(1, 1, level)]);
+      const placement = tileAt(map, at(1, 1, level));
+      expect([
+        level,
+        (placement?.position.y ?? 0) + GROUND_SLAB_THICKNESS / 2,
+      ]).toEqual([level, tileTop(level)]);
+    }
   });
 });

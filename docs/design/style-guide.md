@@ -112,6 +112,20 @@ Rule: orange covers at most 10 % of any TDF model's visible surface. It is a mar
 
 Rule: bioluminescence is small and bright, never a wash. Swarmers get green only. Lurkers get magenta. Brutes get green with bone. Spawners get both, pulsing.
 
+Rule: **`bug-bone` is what makes a bug readable, not the glow.** Dark chitin on dark asphalt is a silhouette with no edge, so every species carries a segmented bone crest along its spine — plates, not one slab, with the glow between them. The glow says *which* species; the crest is what says *there is something there* at 64 px per tile.
+
+### 4.2.1 The read test
+
+![Both factions on asphalt at 64 px per tile](faction-read-on-asphalt.png)
+
+`tools/art/preview/layouts/asphalt-read.json` puts both factions on nothing but road — the darkest ground in the game and the worst case for either — at exactly 64 px per tile. Run it after any change to a unit or bug:
+
+```
+node tools/art/preview/render-scene.mjs tools/art/preview/layouts/asphalt-read.json out.png
+```
+
+What it shows today: **TDF read comfortably.** Olive over grey separates from asphalt on its own, and the orange markings — the 10 % from §4.1 — are doing exactly the job they were reserved for. **Bugs read adequately** with the bone crest and would read properly with contact shadows (#507): a dark shape on dark ground is separated by the shadow under it as much as by anything on its back, which is why the answer to "the bugs are hard to see" is not more glow.
+
 ### 4.3 Environment by biome
 
 Shared: `env-asphalt #3A3D42`, `env-concrete #8E8A82`, `env-sidewalk #A7A297`, `env-brick #8A4B3A`, `env-glass #6E8FA6`, `env-roof #55524C`, `env-metal #6F7378`, `env-rust #8C5A3A`, `env-rock #6E6A66`, `env-bark #5A4634`, `env-foliage #3F6B33`.

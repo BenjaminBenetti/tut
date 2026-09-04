@@ -152,6 +152,7 @@ async function main(): Promise<void> {
       content.add(builder.root);
       rig.setBounds({ x: 0, z: 0, w: map.width, d: map.depth });
       rig.lookAt(builder.centre);
+      delete document.body.dataset.previewReady;
       if (showUnits) {
         delete document.body.dataset.units;
         const mission = previewMission(map);
@@ -188,11 +189,35 @@ async function main(): Promise<void> {
         });
         input.attach(viewport);
         window.__tutTactical__ = input.hooks();
-        void builder.update(units, templates).then(() => {
-          if (view === builder) {
-            document.body.dataset.units = String(builder.unitIds().length);
-          }
-        });
+        // Always reaches a terminal state, which is the point (#688).
+        // `data-app-state` says the page mounted and a frame drew; it
+        // cannot say the units are on the board, because they arrive
+        // behind an async model load that nothing awaits. A spec that
+        // waits on the first and reads the second is asking one question
+        // and trusting the answer to another.
+        //
+        // The failure it produced was not slowness. Idle, the gap from
+        // `ready` to `data-units` is 9-37 ms; the run that failed had
+        // retried for five seconds and found the attribute still absent.
+        // A `.then` with no `.catch` leaves it absent for ever if the
+        // load rejects, and a superseded render skips it silently. So
+        // this settles either way, and says which.
+        void builder
+          .update(units, templates)
+          .then(() => {
+            if (view === builder) {
+              document.body.dataset.units = String(builder.unitIds().length);
+              document.body.dataset.previewReady = "true";
+            }
+          })
+          .catch((error: unknown) => {
+            if (view === builder) {
+              document.body.dataset.previewReady = "error";
+              screen.showError(
+                error instanceof Error ? error.message : String(error),
+              );
+            }
+          });
       }
       screen.showResult({
         map,
@@ -203,6 +228,12 @@ async function main(): Promise<void> {
         elapsedMs,
       });
       document.body.dataset.mapSeed = state.seed;
+      // Without units there is nothing async to wait for, so this render
+      // is already done. Set unconditionally so `data-preview-ready`
+      // means the same thing on both paths (#688).
+      if (!showUnits) {
+        document.body.dataset.previewReady = "true";
+      }
       writeUrl(state);
     } catch (error) {
       screen.showError(error instanceof Error ? error.message : String(error));

@@ -63,6 +63,9 @@ test("tactical input picks units and tiles at any camera yaw and maps shortcuts"
   );
   const body = page.locator("body");
   await expect(body).toHaveAttribute("data-app-state", "ready");
+  // `ready` says the page mounted and drew a frame; the units arrive
+  // behind a model load it does not wait for (#688).
+  await expect(body).toHaveAttribute("data-preview-ready", "true");
   await expect(body).toHaveAttribute("data-units", "3");
 
   await page.evaluate(() =>

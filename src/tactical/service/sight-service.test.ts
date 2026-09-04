@@ -207,3 +207,19 @@ describe("elevationBonus", () => {
     expect(elevationBonus(at(0, 0, 1), at(3, 3, 1))).toBe(0);
   });
 });
+
+describe("half walls", () => {
+  it("gives low cover and does not block the line (#508)", () => {
+    const map = new FixtureMapBuilder(5, 1, 1)
+      .fillGround()
+      .wall({ x: 2, y: 0, z: 0 }, "e", "half")
+      .build();
+    const index = new TileIndex(map);
+    const defender = { x: 2, y: 0, z: 0 };
+    const attacker = { x: 4, y: 0, z: 0 };
+    // A parapet is something to crouch behind, not to hide inside.
+    expect(coverAgainst(map, defender, attacker, index)).toBe(CoverLevel.LOW);
+    // And it is waist-high, so the shot still has a line.
+    expect(hasLineOfSight(map, attacker, defender, index)).toBe(true);
+  });
+});

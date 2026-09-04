@@ -1,5 +1,7 @@
+import { DIRECTIONS } from "../../core/model/direction";
 import type { Rect } from "../../core/model/grid";
 import type { Rng } from "../../core/model/rng";
+import { stepGridPos } from "../../core/service/grid-math";
 import { SurfaceIds } from "../data/surfaces";
 import { isPassableGround } from "../service/draft-queries";
 import type { ElevatedFeature } from "../model/elevated-feature";
@@ -112,6 +114,7 @@ export class ElevationPass implements GenerationPass {
       byId.set(feature.id, (byId.get(feature.id) ?? 0) + 1);
       placed++;
     }
+    const parapets = railRaisedEdges(draft, raised);
     const tally = [...byId.entries()]
       .map(([id, count]) => `${id} ${count}`)
       .join(", ");
@@ -119,7 +122,8 @@ export class ElevationPass implements GenerationPass {
       .map(([id, count]) => `${id} ${count}`)
       .join(", ");
     diagnostics.note(
-      `${placed}/${target} elevated features, ${columns} columns raised` +
+      `${placed}/${target} elevated features, ${columns} columns raised, ` +
+        `${parapets} parapets` +
         (tally === "" ? "" : ` (${tally})`) +
         (misses === "" ? "" : ` · no room for ${misses}`),
     );
@@ -370,6 +374,56 @@ function isFree(
     }
   }
   return approaches >= MIN_APPROACH_COLUMNS;
+}
+
+// ===========================================
+// Parapets
+// ===========================================
+
+/**
+ * Rails the outer edge of everything raised with a half wall, and returns
+ * how many segments it set (#508).
+ *
+ * A parapet is the low-cover primitive that does not eat a tile: infantry
+ * crouches at it and shoots over, vaults it to drop off the edge, and a
+ * mech has to use a ramp. Cover props stand *on* a tile, so cover and
+ * standing room compete; an edge-mounted piece does not, which is why a
+ * plaza rim is worth more than another crate on it.
+ *
+ * ```
+ *   ▓▓▓▓▓▓▓   the raised feature
+ *   ▔▔▔▔▔▔▔   half walls along every edge that drops a level
+ * ```
+ *
+ * Ramps still work: a connector joins its two tiles directly and does not
+ * consult the wall between them, so the ramp pass punches through the
+ * rail exactly as a flight of steps does.
+ */
+function railRaisedEdges(draft: MapDraft, raised: readonly boolean[]): number {
+  let segments = 0;
+  for (let z = 0; z < draft.depth; z++) {
+    for (let x = 0; x < draft.width; x++) {
+      if (raised[z * draft.width + x] !== true) {
+        continue;
+      }
+      const level = draft.groundLevelAt(x, z);
+      for (const side of DIRECTIONS) {
+        const at = stepGridPos({ x, y: level, z }, side);
+        if (!draft.inBounds(at.x, at.z)) {
+          continue;
+        }
+        if (draft.groundLevelAt(at.x, at.z) >= level) {
+          continue;
+        }
+        if (draft.wallAt({ x, y: level, z }, side) !== undefined) {
+          continue;
+        }
+        draft.setWall({ x, y: level, z }, side, "half");
+        segments++;
+      }
+    }
+  }
+  return segments;
 }
 
 // ===========================================

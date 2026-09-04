@@ -145,3 +145,21 @@ describe("wallKindBlocks", () => {
     expect(wallKindBlocks("window", PassMask.INFANTRY)).toBe(true);
   });
 });
+
+describe("half walls", () => {
+  it("lets infantry vault a parapet and makes a mech go round (#508)", () => {
+    const map = new FixtureMapBuilder(3, 1, 1)
+      .fillGround()
+      .wall({ x: 1, y: 0, z: 0 }, "e", "half")
+      .build();
+    const index = new TileIndex(map);
+    const reach = new ReachabilityService(index, map.connectors);
+    const from = index.getAt({ x: 1, y: 0, z: 0 });
+    const to = index.getAt({ x: 2, y: 0, z: 0 });
+    expect(from).toBeDefined();
+    expect(to).toBeDefined();
+    if (!from || !to) return;
+    expect(reach.canStep(from, to, PassMask.INFANTRY)).toBe(true);
+    expect(reach.canStep(from, to, PassMask.MECH)).toBe(false);
+  });
+});

@@ -219,8 +219,10 @@ export class ReachabilityService {
 // ===========================================
 
 /**
- * True when a wall of the kind blocks the class: nothing lets a mech
- * through; a door lets infantry through.
+ * True when a wall of the kind blocks the class. Nothing lets a mech
+ * through — it is too tall to use a door and too heavy to climb a
+ * parapet — while infantry walks through a door and vaults a half wall
+ * (#508).
  */
 export function wallKindBlocks(
   kind: WallKind | undefined,
@@ -229,7 +231,10 @@ export function wallKindBlocks(
   if (kind === undefined) {
     return false;
   }
-  return kind !== "door" || unitClass !== Pass.INFANTRY;
+  if (unitClass !== Pass.INFANTRY) {
+    return true;
+  }
+  return kind !== "door" && kind !== "half";
 }
 
 /** Direction from one tile to a horizontally adjacent one, else undefined. */

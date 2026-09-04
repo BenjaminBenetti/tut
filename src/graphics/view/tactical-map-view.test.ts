@@ -530,3 +530,44 @@ describe("TacticalMapView.setVision", () => {
     view.dispose();
   });
 });
+
+// ===========================================
+// Overlapping hook markers (#477)
+// ===========================================
+
+/** The y of a batch's first instance, which is where its markers sit. */
+function firstInstanceY(view: TacticalMapView, name: string): number {
+  const mesh = meshesIn(view, 0).find((m) => m.name === name);
+  if (!mesh) throw new Error(`no batch named ${name}`);
+  const matrix = new Matrix4();
+  mesh.getMatrixAt(0, matrix);
+  return new Vector3().setFromMatrixPosition(matrix).y;
+}
+
+describe("overlapping hook markers", () => {
+  it("puts extraction above deploy on a tile that is both (#477)", () => {
+    // The extraction hook defaults to the deploy zone's tiles, which is
+    // not a contrivance: measured across 24 generated maps every deploy
+    // tile is also an extraction tile, 384 of 384 (ADR 0004 §4.6). Drawn
+    // at one height these are coincident coplanar quads and the winner
+    // was whichever batch drew last.
+    const view = new TacticalMapView(fixture().build());
+    const deploy = firstInstanceY(view, "hooks:hook:deploy:0");
+    const extraction = firstInstanceY(view, "hooks:hook:extraction:0");
+    expect(extraction).toBeGreaterThan(deploy);
+    // Ordered, not stacked: the gap must not read as height.
+    expect(extraction - deploy).toBeLessThan(0.02);
+    view.dispose();
+  });
+
+  it("still draws both markers rather than dropping one", () => {
+    // A single marker per tile would be the truer picture, but with the
+    // two tile sets identical it would mean one kind never appearing
+    // anywhere in the game. That is a visual decision, not a bug fix.
+    const names = meshesIn(new TacticalMapView(fixture().build()), 0).map(
+      (m) => m.name,
+    );
+    expect(names).toContain("hooks:hook:deploy:0");
+    expect(names).toContain("hooks:hook:extraction:0");
+  });
+});

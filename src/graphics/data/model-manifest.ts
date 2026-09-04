@@ -519,7 +519,7 @@ export const MODEL_MANIFEST = {
     footprint: { w: 1, d: 1 },
     height: 0.05,
     sockets: [],
-    quality: "placeholder",
+    quality: "final",
   },
   "building.roof": {
     category: "buildings",
@@ -527,7 +527,7 @@ export const MODEL_MANIFEST = {
     footprint: { w: 1, d: 1 },
     height: 0.05,
     sockets: [],
-    quality: "placeholder",
+    quality: "final",
   },
   "building.roof-parapet": {
     category: "buildings",
@@ -535,7 +535,7 @@ export const MODEL_MANIFEST = {
     footprint: { w: 1, d: 0 },
     height: 0.15,
     sockets: [],
-    quality: "placeholder",
+    quality: "final",
   },
   "building.stairs": {
     category: "buildings",
@@ -543,7 +543,7 @@ export const MODEL_MANIFEST = {
     footprint: { w: 1, d: 1 },
     height: 1.5,
     sockets: [],
-    quality: "placeholder",
+    quality: "final",
   },
   "building.wall": {
     category: "buildings",
@@ -551,7 +551,7 @@ export const MODEL_MANIFEST = {
     footprint: { w: 1, d: 0 },
     height: 1.5,
     sockets: [],
-    quality: "placeholder",
+    quality: "final",
   },
   "building.wall-door": {
     category: "buildings",
@@ -559,7 +559,7 @@ export const MODEL_MANIFEST = {
     footprint: { w: 1, d: 0 },
     height: 1.5,
     sockets: ["socket_door"],
-    quality: "placeholder",
+    quality: "final",
   },
   "building.wall-half": {
     category: "buildings",
@@ -567,7 +567,7 @@ export const MODEL_MANIFEST = {
     footprint: { w: 1, d: 0 },
     height: 0.5,
     sockets: [],
-    quality: "placeholder",
+    quality: "final",
   },
   "building.wall-window": {
     category: "buildings",
@@ -575,6 +575,6 @@ export const MODEL_MANIFEST = {
     footprint: { w: 1, d: 0 },
     height: 1.5,
     sockets: [],
-    quality: "placeholder",
+    quality: "final",
   },
 } as const satisfies ModelManifest;

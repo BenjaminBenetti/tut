@@ -307,19 +307,6 @@ function ellipsoid(material, radius, scale, at, opts = {}) {
 }
 
 /**
- * Empty node marking an attach point. Names follow `socket_<name>`.
- * @param {string} name - Socket name without the prefix.
- * @param {[number, number, number]} at - Position.
- * @returns {Object3D} Empty node.
- */
-function socket(name, at) {
-  const node = new Object3D();
-  node.name = `socket_${name}`;
-  node.position.set(at[0], at[1], at[2]);
-  return node;
-}
-
-/**
  * Groups children under a named node.
  * @param {string} name - Node name.
  * @param {Object3D[]} children - Children to add in order.
@@ -439,84 +426,6 @@ function buildSidewalk(mf, corner) {
       }),
     );
   }
-  return group("root", parts);
-}
-
-/**
- * Wall segment 1 u long along X, 1.5 u tall, pivot at the base midpoint.
- * @param {MaterialFactory} mf - Material factory.
- * @param {"solid"|"window"|"door"|"half"} kind - Wall variant.
- * @returns {Object3D} Wall root.
- */
-function buildWall(mf, kind) {
-  const brick = mf.get("env-brick");
-  const concrete = mf.get("env-concrete");
-  switch (kind) {
-    case "window":
-      return group("root", [
-        box(brick, [1, 0.6, 0.1], [0, 0.3, 0], { name: "sill" }),
-        box(brick, [1, 0.4, 0.1], [0, 1.3, 0], { name: "lintel" }),
-        box(brick, [0.2, 0.5, 0.1], [-0.4, 0.85, 0], { name: "jamb_l" }),
-        box(brick, [0.2, 0.5, 0.1], [0.4, 0.85, 0], { name: "jamb_r" }),
-        box(mf.get("env-glass"), [0.6, 0.5, 0.02], [0, 0.85, 0], {
-          name: "glass",
-        }),
-      ]);
-    case "door":
-      return group("root", [
-        box(brick, [0.2, 1.5, 0.1], [-0.4, 0.75, 0], { name: "jamb_l" }),
-        box(brick, [0.2, 1.5, 0.1], [0.4, 0.75, 0], { name: "jamb_r" }),
-        box(brick, [0.6, 0.3, 0.1], [0, 1.35, 0], { name: "lintel" }),
-        box(mf.get("env-metal"), [0.64, 0.04, 0.12], [0, 1.22, 0], {
-          name: "frame",
-        }),
-        socket("door", [0, 0, 0]),
-      ]);
-    case "half":
-      return group("root", [
-        box(concrete, [1, 0.5, 0.12], [0, 0.25, 0], { name: "wall" }),
-      ]);
-    default:
-      return group("root", [
-        box(brick, [1, 1.5, 0.1], [0, 0.75, 0], { name: "wall" }),
-        box(concrete, [1, 0.15, 0.12], [0, 0.075, 0], { name: "footer" }),
-      ]);
-  }
-}
-
-/**
- * Six-step staircase rising 1.5 u over one tile along +Z.
- * @param {MaterialFactory} mf - Material factory.
- * @returns {Object3D} Stairs root.
- */
-function buildStairs(mf) {
-  const parts = [];
-  const steps = 6;
-  for (let i = 0; i < steps; i++) {
-    const top = (1.5 / steps) * (i + 1);
-    const depth = 1 / steps;
-    parts.push(
-      box(
-        mf.get("env-concrete"),
-        [0.9, top, depth],
-        [0, top / 2, -0.5 + depth * (i + 0.5)],
-        {
-          name: `step_${i}`,
-        },
-      ),
-    );
-  }
-  const slope = -Math.atan2(1.5, 1);
-  parts.push(
-    box(mf.get("env-metal"), [0.04, 0.06, 1.8], [-0.47, 0.9, 0], {
-      name: "rail_l",
-      rot: [slope, 0, 0],
-    }),
-    box(mf.get("env-metal"), [0.04, 0.06, 1.8], [0.47, 0.9, 0], {
-      name: "rail_r",
-      rot: [slope, 0, 0],
-    }),
-  );
   return group("root", parts);
 }
 
@@ -905,75 +814,6 @@ const MODEL_DEFS = [
     footprint: { w: 1, d: 1 },
     height: 0.05,
     build: (mf) => group("root", [slab(mf.get("env-dirt"))]),
-  },
-  {
-    id: "building.wall",
-    category: "buildings",
-    file: "wall.glb",
-    footprint: { w: 1, d: 0 },
-    height: 1.5,
-    build: (mf) => buildWall(mf, "solid"),
-  },
-  {
-    id: "building.wall-window",
-    category: "buildings",
-    file: "wall-window.glb",
-    footprint: { w: 1, d: 0 },
-    height: 1.5,
-    build: (mf) => buildWall(mf, "window"),
-  },
-  {
-    id: "building.wall-door",
-    category: "buildings",
-    file: "wall-door.glb",
-    footprint: { w: 1, d: 0 },
-    height: 1.5,
-    build: (mf) => buildWall(mf, "door"),
-  },
-  {
-    id: "building.wall-half",
-    category: "buildings",
-    file: "wall-half.glb",
-    footprint: { w: 1, d: 0 },
-    height: 0.5,
-    build: (mf) => buildWall(mf, "half"),
-  },
-  {
-    id: "building.floor",
-    category: "buildings",
-    file: "floor.glb",
-    footprint: { w: 1, d: 1 },
-    height: 0.05,
-    build: (mf) => group("root", [slab(mf.get("env-concrete"))]),
-  },
-  {
-    id: "building.roof",
-    category: "buildings",
-    file: "roof.glb",
-    footprint: { w: 1, d: 1 },
-    height: 0.05,
-    build: (mf) => group("root", [slab(mf.get("env-roof"))]),
-  },
-  {
-    id: "building.roof-parapet",
-    category: "buildings",
-    file: "roof-parapet.glb",
-    footprint: { w: 1, d: 0 },
-    height: 0.15,
-    build: (mf) =>
-      group("root", [
-        box(mf.get("env-concrete"), [1, 0.15, 0.08], [0, 0.075, 0], {
-          name: "parapet",
-        }),
-      ]),
-  },
-  {
-    id: "building.stairs",
-    category: "buildings",
-    file: "stairs.glb",
-    footprint: { w: 1, d: 1 },
-    height: 1.5,
-    build: buildStairs,
   },
   {
     id: "prop.barrier-concrete",

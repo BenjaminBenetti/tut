@@ -134,12 +134,21 @@ def box(
     at: tuple[float, float, float],
     token: str,
     rot: tuple[float, float, float] = (0.0, 0.0, 0.0),
+    uv_rot: int = 0,
 ) -> bpy.types.Object:
-    """Flat-shaded box; ``size`` is full width/depth/height, ``at`` its centre, ``rot`` in radians."""
+    """Flat-shaded box; ``size`` is full width/depth/height, ``at`` its centre, ``rot`` in radians.
+
+    ``uv_rot`` (0, 90, 180 or 270) turns the atlas cell on the object's faces.
+    ``bpy.ops.uv.reset`` orients u along whichever edge the face's loop starts
+    on, so an upright panel can end up sampling a brick course sideways; 90
+    puts the courses back on the horizontal.
+    """
     bpy.ops.mesh.primitive_cube_add(size=1.0, location=at, rotation=rot)
     ob = bpy.context.active_object
     ob.scale = size
     bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+    if uv_rot % 360:
+        ob["atlas_uv_rot"] = uv_rot % 360
     return _finish(ob, name, token, smooth=False)
 
 
@@ -314,6 +323,7 @@ def apply_atlas_uvs(layout: dict) -> list[str]:
         bpy.ops.uv.reset()
         bpy.ops.object.mode_set(mode="OBJECT")
         uv = me.uv_layers.active.data
+        turn = int(ob.get("atlas_uv_rot", 0)) % 360
         for poly in me.polygons:
             mat = me.materials[poly.material_index] if me.materials else None
             cell = cells.get(mat.name) if mat else None
@@ -328,6 +338,12 @@ def apply_atlas_uvs(layout: dict) -> list[str]:
                 u, v = uv[li].uv
                 u = min(max(u, 0.0), 1.0)
                 v = min(max(v, 0.0), 1.0)
+                if turn == 90:
+                    u, v = v, 1.0 - u
+                elif turn == 180:
+                    u, v = 1.0 - u, 1.0 - v
+                elif turn == 270:
+                    u, v = 1.0 - v, u
                 if sliver:
                     u = 0.45 + 0.1 * u
                     v = 0.45 + 0.1 * v

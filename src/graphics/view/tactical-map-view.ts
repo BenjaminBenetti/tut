@@ -28,6 +28,8 @@ import type {
   VisionTileKey,
 } from "../../tactical/model/tactical-state";
 import { TileIndex } from "../../mapgen/service/tile-index";
+import type { GhostUniforms } from "../service/ghost-cutaway";
+import { applyGhostCutaway } from "../service/ghost-cutaway";
 import {
   CONNECTOR_COLOURS,
   FALLBACK_HOOK_COLOUR,
@@ -155,6 +157,20 @@ function stateOf(vision: IndexedVision, key: VisionTileKey): TileVisionState {
  *   ▌▒▒▒▒▒▒▒▒▒▒▒▒ ← ground pillar rises from world y = 0
  * ```
  */
+/**
+ * Model ids that fade around an obscured unit: everything a building is
+ * made of — walls, floors, roofs and parapets (style guide §12.4).
+ *
+ * Selected by model id rather than by category because the `tiles`
+ * category carries both a building's floors and the ground itself, and
+ * the ground must never fade: opening a hole in the map would be worse
+ * than the wall it was trying to see past.
+ */
+const GHOSTED_MODEL_PREFIX = "building.";
+
+/**
+ *
+ */
 export class TacticalMapView implements Disposable, TilePicker {
   // ===========================================
   // Fields
@@ -162,6 +178,8 @@ export class TacticalMapView implements Disposable, TilePicker {
 
   /** Add this to the scene. */
   readonly root: Group;
+  /** Shared cutaway uniforms, when the scene ghosts walls (#526). */
+  private readonly ghostUniforms: GhostUniforms | undefined;
   private readonly map: TacticalMap;
   private readonly index: TileIndex;
   private readonly levelGroups = new Map<number, Group>();
@@ -184,8 +202,9 @@ export class TacticalMapView implements Disposable, TilePicker {
   // ===========================================
 
   /** Builds every mesh immediately. */
-  constructor(map: TacticalMap) {
+  constructor(map: TacticalMap, ghostUniforms?: GhostUniforms) {
     this.map = map;
+    this.ghostUniforms = ghostUniforms;
     this.index = new TileIndex(map);
     this.root = new Group();
     this.root.name = "tactical-map";
@@ -305,11 +324,27 @@ export class TacticalMapView implements Disposable, TilePicker {
       const prototype = await models.load(batch.modelId);
       prototype.updateMatrixWorld(true);
       meshPartsOf(prototype).forEach((part, i) => {
+        // Walls are what stands between the camera and a unit, so they
+        // carry the ghost cutaway (#526). Their prototype material is
+        // shared by every instance of the model, so it is cloned rather
+        // than ghosted in place.
+        const prototypeMaterial = Array.isArray(part.material)
+          ? part.material[0]
+          : part.material;
+        const material =
+          this.ghostUniforms !== undefined &&
+          batch.modelId.startsWith(GHOSTED_MODEL_PREFIX) &&
+          prototypeMaterial !== undefined
+            ? applyGhostCutaway(prototypeMaterial, this.ghostUniforms)
+            : part.material;
         const mesh = new InstancedMesh(
           part.geometry,
-          part.material,
+          material,
           batch.matrices.length,
         );
+        if (material !== part.material && !Array.isArray(material)) {
+          this.disposables.push(material);
+        }
         batch.matrices.forEach((cell, j) => {
           mesh.setMatrixAt(j, new Matrix4().multiplyMatrices(cell, part.local));
         });

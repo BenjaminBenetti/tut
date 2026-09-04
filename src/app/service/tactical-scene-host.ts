@@ -15,6 +15,7 @@ import { GltfModelLoader } from "../../graphics/service/gltf-model-loader";
 import { ManifestSpriteLoader } from "../../graphics/service/manifest-sprite-loader";
 import { IsometricCameraRig } from "../../graphics/service/isometric-camera-rig";
 import { PlaceholderModelFactory } from "../../graphics/service/placeholder-model-factory";
+import { GhostController } from "../../graphics/service/ghost-controller";
 import { SceneService } from "../../graphics/service/scene-service";
 import { TacticalAnimationQueue } from "../../graphics/service/tactical-animation-queue";
 import {
@@ -157,10 +158,16 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
       cameraInput: new CameraInputController(rig),
       intents,
     });
+    // Walls fade where they stand between the camera and a unit (#526).
+    const ghosting = new GhostController(
+      rig.camera,
+      () => builder.ghostTargets(),
+      builder.ghosting,
+    );
     const scene = new SceneService(container, {
       camera: rig,
       content,
-      updatables: [input, animations],
+      updatables: [input, animations, ghosting],
     });
     input.attach(container);
     this.deps.onHooks?.(input.hooks());

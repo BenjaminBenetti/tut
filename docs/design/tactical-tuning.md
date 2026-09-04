@@ -4,8 +4,17 @@ What the mission rules actually produce, before any tuning pass (#497).
 Measured with the seeded sweep from #343 — 60 whole missions through the
 real rules headless, six seeds at each difficulty from 1 to 10.
 
-Recorded on `a279068`. Re-measure and update this table in the same
-commit as any tuning change.
+Recorded on `a279068`.
+
+> **Superseded in part by #710, on `ece970e`.** Sealing sight at a corner
+> between two opaque props changed the curve materially — difficulty 4
+> lost its clean sweep, 7 got easier, and **9 now wins nothing**. The
+> win/loss split below was measured before that and the "flat top half"
+> claim no longer holds; see *After #710* at the end for what is known
+> now. The shape of the tuning problem changed with it, so re-measure
+> before tuning against anything here.
+
+Re-measure and update this table in the same commit as any tuning change.
 
 ## The curve
 
@@ -108,3 +117,24 @@ The walkover half is pinned in `mission-sweep.sim.test.ts` ("has no
 difficulty gradient below 5"), so a pass that gives the bottom of the
 range any teeth fails there and this table is updated with it — rather
 than the two drifting apart.
+
+## After #710
+
+Re-measured on `ece970e` at the sweep's 15-turn cap, so wins only — the
+losses need the deeper run and have not been taken:
+
+| difficulty | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| wins of 6 | 6 | 6 | 6 | 5 | 2 | 3 | 5 | 4 | **0** | 1 |
+
+**The top half is no longer flat.** Difficulty 9 wins nothing and 10 wins
+once, while 7 wins five of six — so there is now a gradient at the top to
+work with, and the reading above that "difficulty 10 is no harder than
+difficulty 5" is wrong as of this commit. What survives is the cliff
+between 4 and 5.
+
+Worth noting what caused it: a **line-of-sight fix**, not a tuning value.
+Whatever difficulty feeds is sensitive to sight, which is a lead for the
+question below about what difficulty actually scales.
+
+To re-take the full win/loss table, `SIM_TURN_CAP=90 pnpm test:sim`.

@@ -54,10 +54,20 @@ cancelled, sometimes before their jobs register any check-runs at all — which 
 consecutive heads: one had **zero** check-runs, four had at least one `cancelled`,
 two were clean.
 
-The consequence is worth sitting with: **an intermediate head on `main` may never be
-tested by CI at all.** The local six-stage gate is not corroboration of CI, it is
-frequently the only verification that head receives. `cancelled` is neither pass nor
-fail, and an empty result is not agreement.
+Measured across the last 25 heads: **14 were cancelled**, including real product
+changes — the camera-rig refactor, hook shelving, the Earth-overrun fix, difficulty
+hatching.
+
+**This is not a hole, and do not report it as one.** The Tech Lead gates on the
+*merge result* rather than the branch — checks out `main`, merges the PR locally and
+runs the gate against that — so merged code is verified before it lands. The
+post-merge CI run is a second pass, and QA's gate is a third. What it does mean in
+practice:
+
+- A green CI badge is often simply absent for a head; that is expected, not a signal.
+- `cancelled` is neither pass nor fail, and an empty result is not agreement.
+- The local six-stage gate is frequently the only *post-merge* verification a head
+  receives, which is the argument for running it per head rather than per session.
 
 Where CI *is* the better arbiter is a local failure: this container is loaded
 enough to fake timeouts, so red locally with a `success` on CI for the same SHA is

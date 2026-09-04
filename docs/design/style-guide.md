@@ -120,7 +120,7 @@ Rule: **`bug-bone` is what makes a bug readable, not the glow.** Dark chitin on 
 
 **Each faction has its own worst ground, and they are not the same ground.** The test used to be asphalt alone, described as "the darkest ground in the game and the worst case for either". It cannot be the worst case for either: the factions are different colours, so the ground that swallows one is the ground that shows off the other. Asphalt is where TDF read *best*, and testing there returned a clean bill of health for a faction that disappears on grass.
 
-Run all three after any change to a unit, a bug or a ground token:
+Run all three after any change to a unit, a bug or a ground token. The page lights with the game's rig, shadows included (§12.1) — a read test lit differently from the game is testing a fiction, and contact shadows are the one thing separating a shape from ground of its own tone:
 
 ```
 node tools/art/preview/render-scene.mjs tools/art/preview/layouts/asphalt-read.json out.png
@@ -347,7 +347,24 @@ One key and one fill, fixed — the camera rotates, the lights do not, so a give
 | Key, directional | white | 2.5 | `(4, 8, 12)` |
 | Ambient | white | 0.8 | — |
 
-The key is deliberately off-axis from all four yaw stops (§2): at every stop the two visible faces of a box shade differently, which is what gives a flat-shaded low-poly model its form. No shadow maps: at 64 px per tile a cast shadow costs more than it says, and the ambient at 0.8 keeps unlit faces readable rather than dramatic. Clear colour is `ui-bg #0B0D12`.
+The key is deliberately off-axis from all four yaw stops (§2): at every stop the two visible faces of a box shade differently, which is what gives a flat-shaded low-poly model its form. Clear colour is `ui-bg #0B0D12`.
+
+**The tactical scene casts shadows** (#507, shipped in #634). This section used to record "no shadow maps" as a deliberate choice, on the grounds that a cast shadow costs more than it says at 64 px per tile. That was decided before #505 put real buildings on the map, and it did not survive them: with nothing casting, a five-storey tower and a crate met the pavement the same way, and the height the city had just gained was invisible.
+
+| Light | Intensity | Position |
+|---|---|---|
+| Key, directional, casting | 2.9 | `(4, 8, 12)` from whatever it lights |
+| Ambient | 0.55 | — |
+
+**The fill drop is half the effect.** At 0.8 the fill washes every shadow into a grey smudge and the shadow map buys nothing for its milliseconds. Take the shadow map without the fill drop and it will not look like the render.
+
+Numbers live in `src/graphics/service/shadow-rig.ts`. Three things worth knowing before changing them:
+
+- **The frustum follows the view, not the map.** A `DirectionalLight` shadows only what its orthographic frustum covers, and that frustum is centred on the light's target — left at the origin it sits on the corner of a 40 × 40 map and shadows nothing the player is looking at. `followCamera` moves the light and its target together, so the direction never changes and the fixed-rig promise above holds.
+- **Cast and receive flags are set once, when the object is built**, on the map and the units — never by a traverse inside the render loop. Overlays and unit rings are deliberately left out: a move-range quad that cast a shadow would draw a second, offset copy of itself on the floor.
+- **The filter is `PCFShadowMap`.** three r185 deprecated `PCFSoftShadowMap`; asking for it silently gets this and warns once per scene, so the soft edge you think you specified is not the one running. `VSMShadowMap` is the remaining soft option and is a real change, not a one-word swap.
+
+The map is 1024², not 2048²: at this zoom it reads the same, and 2048 took the end-to-end suite from about 30 s to a minute and a half on software SwiftShader, timing two specs out.
 
 Consequence for models: **do not bake light into a texture.** An atlas cell that already has a top-left highlight fights the key light at two of the four yaw stops.
 

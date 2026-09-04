@@ -1,12 +1,6 @@
 import type { DirectionalLight } from "three";
 import type { Object3D } from "three";
-import {
-  AmbientLight,
-  Color,
-  Scene,
-  PCFSoftShadowMap,
-  WebGLRenderer,
-} from "three";
+import { AmbientLight, Color, Scene, PCFShadowMap, WebGLRenderer } from "three";
 
 import type { FrameUpdatable } from "../model/frame-updatable";
 import type { SceneCamera } from "../model/scene-camera";
@@ -82,10 +76,21 @@ export class SceneService {
 
     this.renderer = new WebGLRenderer({ antialias: true });
     this.renderer.setPixelRatio(window.devicePixelRatio);
-    // Cast shadows, so height reads (#507). Soft PCF because the hard
-    // edge of a 2048² map at this zoom looks like a seam, not a shadow.
+    // Cast shadows, so height reads (#507).
+    //
+    // `PCFShadowMap`, and not `PCFSoftShadowMap`, because three r185
+    // deprecated the latter: it silently falls back to exactly this and
+    // warns once per scene. Asking for it did not make the filter soft,
+    // it only made the code disagree with what was running -- and the
+    // e2e log carried two warnings a session saying so.
+    //
+    // If the softer edge is wanted back, `VSMShadowMap` is the option
+    // three still offers, and it is a real change with artefacts of its
+    // own rather than a one-word swap. Worth noting for whoever weighs
+    // that: the 2048 map that timed the suite out was measured running
+    // *this* filter, since the soft one was never in play.
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = PCFSoftShadowMap;
+    this.renderer.shadowMap.type = PCFShadowMap;
     container.appendChild(this.renderer.domElement);
 
     this.scene = new Scene();

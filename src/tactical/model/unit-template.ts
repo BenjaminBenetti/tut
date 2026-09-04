@@ -40,6 +40,13 @@ export interface UnitTemplate {
   /** Tiles one move action covers. Positive integer. */
   readonly move: number;
   readonly weapon: WeaponProfile;
+  /**
+   * Tiles the unit can see, for fog of war (ADR 0006 §2.1). Deliberately
+   * longer than the weapon's range: a unit that saw no further than it
+   * shot would teach the player that walking into range is the only way
+   * to find anything. Positive integer.
+   */
+  readonly sightRange: number;
   /** Damage absorbed per hit before hit points. Non-negative integer. */
   readonly armor: number;
   /** Which tiles the unit may stand on (GDD §6.1: mechs stay outside). */

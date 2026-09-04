@@ -58,6 +58,8 @@ export interface BugSpecies {
   readonly ap: number;
   /** The species' one attack. */
   readonly weapon: WeaponProfile;
+  /** Tiles it can see, for fog of war (ADR 0006). Positive. */
+  readonly sightRange: number;
   /** How the AI plays it. */
   readonly behaviour: BehaviourTag;
   /** Model rendered on the map. */

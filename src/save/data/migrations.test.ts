@@ -246,4 +246,32 @@ describe("GAME_STATE_MIGRATIONS", () => {
     expect(step?.apply(already)).toEqual(already);
     expect(() => step?.apply({ meta: {} })).toThrow(/overworld/);
   });
+
+  it("v10 → v11 gives a mission in progress empty vision for both sides", () => {
+    const v10 = {
+      meta: {},
+      activeMission: { missionId: "m", units: [], spawners: [] },
+    };
+    const migrated = GAME_STATE_MIGRATIONS.find((m) => m.to === 11)?.apply(v10);
+    expect(migrated).toEqual({
+      ...v10,
+      activeMission: {
+        ...v10.activeMission,
+        vision: {
+          tdf: { visible: [], explored: [], spotted: [] },
+          bugs: { visible: [], explored: [], spotted: [] },
+        },
+      },
+    });
+  });
+
+  it("v10 → v11 leaves a campaign with no mission, and any existing vision, alone", () => {
+    const step = GAME_STATE_MIGRATIONS.find((m) => m.to === 11);
+    expect(step?.apply({ meta: {} })).toEqual({ meta: {} });
+    const already = {
+      meta: {},
+      activeMission: { missionId: "m", vision: { tdf: {}, bugs: {} } },
+    };
+    expect(step?.apply(already)).toEqual(already);
+  });
 });

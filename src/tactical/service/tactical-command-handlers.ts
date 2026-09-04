@@ -15,6 +15,7 @@ import type {
   TacticalOutcome,
 } from "../model/tactical-handler";
 import type { TacticalState } from "../model/tactical-state";
+import { withVision } from "./vision-service";
 
 // ===========================================
 // Types
@@ -140,13 +141,17 @@ export function liftTacticalHandler<
         commandError(outcome.error.kind, describeTacticalError(outcome.error)),
       );
     }
-    const next = outcome.value.state;
+    // Vision is recomputed here and nowhere else (ADR 0006 §2.2): this
+    // is the one site every handler's result already passes through, so
+    // no rule can move a unit and forget to update what a side can see.
+    const seen = withVision(outcome.value, mission);
+    const next = seen.state;
     return ok({
       state: {
         ...state,
-        activeMission: { ...next, log: [...next.log, ...outcome.value.events] },
+        activeMission: { ...next, log: [...next.log, ...seen.events] },
       },
-      events: outcome.value.events,
+      events: seen.events,
     });
   };
 }

@@ -78,6 +78,7 @@ function template(
     maxAp: 2,
     move: 5,
     weapon: { range: 5, accuracy: 60, damage: 3, armorPen: 0 },
+    sightRange: 12,
     armor: 0,
     passClass,
     modelId,

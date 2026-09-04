@@ -10,6 +10,7 @@ import type { Unit } from "../model/unit";
 import { UNIT_RELOADED } from "../model/unit-reloaded-event";
 import type { UnitTemplate } from "../model/unit-template";
 import { RELOAD_AP_COST, reloadHandler } from "./reload-handler";
+import { emptyVision } from "./vision-service";
 
 const TEMPLATES: Record<string, UnitTemplate> = {
   rifle: template("rifle", 3),
@@ -24,6 +25,7 @@ function template(id: string, charges: number | undefined): UnitTemplate {
     maxAp: 2,
     move: 5,
     weapon: { range: 8, accuracy: 65, damage: 10, armorPen: 0 },
+    sightRange: 12,
     armor: 0,
     passClass: "infantry",
     modelId: "tdf.infantry.rifle",
@@ -74,6 +76,7 @@ function mission(
     edgeSpawn: { nextTurn: 3, wave: 0 },
     extraction: [],
     extracted: [],
+    vision: emptyVision(),
     log: [],
   };
 }

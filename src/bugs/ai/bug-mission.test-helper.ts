@@ -186,6 +186,7 @@ export function withBug(
         [templateId]: {
           id: templateId,
           name: species.name,
+          sightRange: species.sightRange,
           maxHp: species.hp,
           maxAp: species.ap,
           move: species.move,

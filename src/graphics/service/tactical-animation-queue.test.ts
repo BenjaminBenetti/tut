@@ -47,6 +47,7 @@ const TIMING = {
   impactSeconds: 0.1,
   floaterSeconds: 0.2,
   deathSeconds: 0.2,
+  revealSeconds: 0.2,
 };
 
 const MOVE: TacticalEvent = {
@@ -289,5 +290,72 @@ describe("TacticalAnimationQueue", () => {
     expect(queue.root.children.map((child) => child.name)).toContain(
       "vfx.tdf-death",
     );
+  });
+});
+
+// ===========================================
+// Reveal (#585)
+// ===========================================
+
+describe("TacticalAnimationQueue reveal", () => {
+  const spotted = (unitId: string, team: "tdf" | "bugs"): TacticalEvent => ({
+    type: "tactical:unit-spotted",
+    payload: { unitId, team },
+  });
+
+  it("swells a spotted enemy from nothing to full size", () => {
+    const s = scene();
+    const queue = new TacticalAnimationQueue({
+      scene: s,
+      sprites,
+      timing: TIMING,
+    });
+    const object = s.unitObject("unit-1");
+    if (!object) throw new Error("fixture has no unit-1");
+    queue.enqueue([spotted("unit-1", "tdf")], () => undefined);
+
+    // It starts collapsed, so the enemy does not pop in at full size.
+    queue.update(0.001);
+    expect(object.scale.x).toBeLessThan(0.1);
+    queue.update(TIMING.revealSeconds / 2);
+    expect(object.scale.x).toBeGreaterThan(0.3);
+    expect(object.scale.x).toBeLessThan(1);
+    queue.update(TIMING.revealSeconds);
+    expect(object.scale.x).toBe(1);
+  });
+
+  it("ignores a spot on the bugs' side, which the player never sees", () => {
+    const s = scene();
+    const queue = new TacticalAnimationQueue({
+      scene: s,
+      sprites,
+      timing: TIMING,
+    });
+    const object = s.unitObject("unit-1");
+    if (!object) throw new Error("fixture has no unit-1");
+    let done = false;
+    queue.enqueue([spotted("unit-1", "bugs")], () => {
+      done = true;
+    });
+    queue.update(0.01);
+    // Nothing animated, and the unit was left exactly as it was.
+    expect(object.scale.x).toBe(1);
+    expect(done).toBe(true);
+  });
+
+  it("skips a spot for a unit the scene does not have, and still calls back", () => {
+    // This is the ordering trap the issue was filed for: before the host
+    // places units, a newly spotted enemy has no object at all.
+    const queue = new TacticalAnimationQueue({
+      scene: scene(),
+      sprites,
+      timing: TIMING,
+    });
+    let done = false;
+    queue.enqueue([spotted("never-placed", "tdf")], () => {
+      done = true;
+    });
+    queue.update(TIMING.revealSeconds * 2);
+    expect(done).toBe(true);
   });
 });

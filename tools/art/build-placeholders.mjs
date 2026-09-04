@@ -25,8 +25,6 @@
 import {
   BoxGeometry,
   Color,
-  ConeGeometry,
-  CylinderGeometry,
   Mesh,
   MeshStandardMaterial,
   Object3D,
@@ -252,39 +250,6 @@ function box(material, size, at, opts) {
 }
 
 /**
- * Faceted cylinder (or cone when `rTop` is 0) with its axis along +Y.
- * @param {MeshStandardMaterial} material - Material.
- * @param {number} rTop - Top radius.
- * @param {number} rBottom - Bottom radius.
- * @param {number} height - Height.
- * @param {number} segments - Radial segments.
- * @param {[number, number, number]} at - Centre position.
- * @param {{name?: string, rot?: [number, number, number]}} [opts] - Name and rotation.
- * @returns {Mesh} Cylinder mesh.
- */
-function cylinder(material, rTop, rBottom, height, segments, at, opts) {
-  const geometry = faceted(
-    new CylinderGeometry(rTop, rBottom, height, segments),
-  );
-  return place(new Mesh(geometry, material), at, opts);
-}
-
-/**
- * Faceted cone with its apex up.
- * @param {MeshStandardMaterial} material - Material.
- * @param {number} radius - Base radius.
- * @param {number} height - Height.
- * @param {number} segments - Radial segments.
- * @param {[number, number, number]} at - Centre position.
- * @param {{name?: string, rot?: [number, number, number]}} [opts] - Name and rotation.
- * @returns {Mesh} Cone mesh.
- */
-function cone(material, radius, height, segments, at, opts) {
-  const geometry = faceted(new ConeGeometry(radius, height, segments));
-  return place(new Mesh(geometry, material), at, opts);
-}
-
-/**
  * Faceted ellipsoid: a low-poly sphere scaled per axis.
  * @param {MeshStandardMaterial} material - Material.
  * @param {number} radius - Base radius before scaling.
@@ -429,89 +394,6 @@ function buildSidewalk(mf, corner) {
   return group("root", parts);
 }
 
-/**
- * Street props keyed by name.
- * @param {MaterialFactory} mf - Material factory.
- * @param {"barrier-concrete"|"sandbags"|"dumpster"|"lamp-post"|"hydrant"} kind - Prop kind.
- * @returns {Object3D} Prop root.
- */
-function buildProp(mf, kind) {
-  switch (kind) {
-    case "barrier-concrete":
-      return group("root", [
-        box(mf.get("env-concrete"), [0.9, 0.15, 0.45], [0, 0.075, 0], {
-          name: "base",
-        }),
-        box(mf.get("env-concrete"), [0.9, 0.35, 0.25], [0, 0.325, 0], {
-          name: "top",
-        }),
-        box(mf.get("tdf-orange-dim"), [0.9, 0.06, 0.26], [0, 0.4, 0], {
-          name: "stripe",
-        }),
-      ]);
-    case "sandbags": {
-      const parts = [];
-      let n = 0;
-      for (let row = 0; row < 3; row++) {
-        const y = 0.08 + row * 0.16;
-        const offset = row % 2 ? 0.15 : 0;
-        for (let i = 0; i < 3 - (row % 2); i++) {
-          parts.push(
-            box(
-              mf.get("tdf-olive-dark"),
-              [0.3, 0.16, 0.24],
-              [-0.3 + offset + i * 0.3, y, 0],
-              {
-                name: `bag_${n++}`,
-              },
-            ),
-          );
-        }
-      }
-      return group("root", parts);
-    }
-    case "dumpster":
-      return group("root", [
-        box(mf.get("env-metal"), [0.9, 0.8, 0.6], [0, 0.5, 0], { name: "bin" }),
-        box(mf.get("env-rust"), [0.94, 0.1, 0.64], [0, 0.95, 0], {
-          name: "lid",
-        }),
-        box(mf.get("tdf-grey-dark"), [0.8, 0.1, 0.5], [0, 0.05, 0], {
-          name: "wheels",
-        }),
-      ]);
-    case "lamp-post":
-      return group("root", [
-        cylinder(mf.get("env-metal"), 0.06, 0.08, 0.2, 8, [0, 0.1, 0], {
-          name: "base",
-        }),
-        cylinder(mf.get("env-metal"), 0.035, 0.045, 2.4, 6, [0, 1.4, 0], {
-          name: "pole",
-        }),
-        box(mf.get("env-metal"), [0.5, 0.05, 0.05], [0.25, 2.6, 0], {
-          name: "arm",
-        }),
-        box(mf.get("tdf-grey-light"), [0.25, 0.1, 0.16], [0.42, 2.55, 0], {
-          name: "lamp",
-        }),
-      ]);
-    case "hydrant":
-      return group("root", [
-        cylinder(mf.get("env-rust"), 0.08, 0.1, 0.5, 8, [0, 0.25, 0], {
-          name: "body",
-        }),
-        cylinder(mf.get("env-rust"), 0.05, 0.09, 0.1, 8, [0, 0.55, 0], {
-          name: "cap",
-        }),
-        box(mf.get("env-rust"), [0.3, 0.08, 0.08], [0, 0.35, 0], {
-          name: "nozzles",
-        }),
-      ]);
-    default:
-      throw new Error(`Unknown prop: ${kind}`);
-  }
-}
-
 // ===========================================
 // Biome tiles and mapgen props (batch 2, mapgen registries)
 // ===========================================
@@ -550,185 +432,6 @@ function buildRockTile(mf) {
       heightSegments: 4,
     }),
   ]);
-}
-
-/**
- * Trees keyed by kind; trunk pivots at the ground.
- * @param {MaterialFactory} mf - Material factory.
- * @param {"pine"|"oak"|"palm"} kind - Tree kind.
- * @returns {Object3D} Tree root.
- */
-function buildTree(mf, kind) {
-  const bark = mf.get("env-bark");
-  const foliage = mf.get("env-foliage");
-  switch (kind) {
-    case "pine":
-      return group("root", [
-        cylinder(bark, 0.06, 0.09, 0.7, 6, [0, 0.35, 0], { name: "trunk" }),
-        cone(foliage, 0.45, 0.7, 6, [0, 1.0, 0], { name: "tier_0" }),
-        cone(foliage, 0.36, 0.65, 6, [0, 1.4, 0], { name: "tier_1" }),
-        cone(foliage, 0.26, 0.6, 6, [0, 1.8, 0], { name: "tier_2" }),
-      ]);
-    case "oak":
-      return group("root", [
-        cylinder(bark, 0.08, 0.12, 0.9, 6, [0, 0.45, 0], { name: "trunk" }),
-        ellipsoid(foliage, 0.55, [1, 0.8, 1], [0, 1.3, 0], { name: "canopy" }),
-        ellipsoid(foliage, 0.35, [1, 0.8, 1], [0.25, 1.55, 0.1], {
-          name: "canopy_top",
-        }),
-      ]);
-    case "palm": {
-      const parts = [
-        cylinder(bark, 0.06, 0.09, 1.8, 6, [0, 0.9, 0], {
-          name: "trunk",
-          rot: [0, 0, 0.12],
-        }),
-      ];
-      for (let i = 0; i < 6; i++) {
-        const ry = (i * Math.PI) / 3;
-        parts.push(
-          box(
-            foliage,
-            [0.14, 0.03, 0.8],
-            [Math.sin(ry) * 0.35 - 0.1, 1.82, Math.cos(ry) * 0.35],
-            {
-              name: `frond_${i}`,
-              rot: [0.5, ry, 0],
-            },
-          ),
-        );
-      }
-      return group("root", parts);
-    }
-    default:
-      throw new Error(`Unknown tree: ${kind}`);
-  }
-}
-
-/**
- * Mapgen props not covered by the city kit.
- * @param {MaterialFactory} mf - Material factory.
- * @param {"crate"|"shelving"|"fence"|"boulder"|"cactus"|"car-compact"} kind - Prop kind.
- * @returns {Object3D} Prop root.
- */
-function buildMapgenProp(mf, kind) {
-  const metal = mf.get("env-metal");
-  switch (kind) {
-    case "crate":
-      return group("root", [
-        box(mf.get("env-bark"), [0.6, 0.6, 0.6], [0, 0.3, 0], {
-          name: "crate",
-        }),
-        box(metal, [0.62, 0.05, 0.62], [0, 0.3, 0], { name: "strap_h" }),
-        box(metal, [0.05, 0.62, 0.62], [0, 0.3, 0], { name: "strap_v" }),
-      ]);
-    case "shelving": {
-      const parts = [];
-      let i = 0;
-      for (const x of [-0.42, 0.42]) {
-        for (const z of [-0.18, 0.18]) {
-          parts.push(
-            box(metal, [0.05, 1.0, 0.05], [x, 0.5, z], { name: `post_${i++}` }),
-          );
-        }
-      }
-      [0.05, 0.5, 0.97].forEach((y, j) =>
-        parts.push(
-          box(metal, [0.9, 0.03, 0.4], [0, y, 0], { name: `shelf_${j}` }),
-        ),
-      );
-      parts.push(
-        box(mf.get("env-concrete"), [0.25, 0.2, 0.3], [-0.25, 0.17, 0], {
-          name: "goods_0",
-        }),
-        box(mf.get("env-concrete"), [0.2, 0.2, 0.3], [0.2, 0.17, 0], {
-          name: "goods_1",
-        }),
-        box(mf.get("env-bark"), [0.3, 0.25, 0.3], [0.1, 0.64, 0], {
-          name: "goods_2",
-        }),
-      );
-      return group("root", parts);
-    }
-    case "fence": {
-      const bark = mf.get("env-bark");
-      return group("root", [
-        box(bark, [0.08, 0.5, 0.08], [-0.46, 0.25, 0], { name: "post_0" }),
-        box(bark, [0.08, 0.5, 0.08], [0, 0.25, 0], { name: "post_1" }),
-        box(bark, [0.08, 0.5, 0.08], [0.46, 0.25, 0], { name: "post_2" }),
-        box(bark, [1, 0.06, 0.04], [0, 0.2, 0], { name: "rail_0" }),
-        box(bark, [1, 0.06, 0.04], [0, 0.42, 0], { name: "rail_1" }),
-      ]);
-    }
-    case "boulder": {
-      const rock = mf.get("env-rock");
-      return group("root", [
-        ellipsoid(rock, 0.5, [0.9, 1.05, 0.8], [0, 0.5, 0], {
-          name: "boulder",
-          widthSegments: 7,
-          heightSegments: 5,
-        }),
-        ellipsoid(rock, 0.25, [1, 0.8, 1], [0.3, 0.2, 0.3], {
-          name: "boulder_small",
-          widthSegments: 6,
-          heightSegments: 4,
-        }),
-      ]);
-    }
-    case "cactus": {
-      const scrub = mf.get("env-scrub");
-      return group("root", [
-        cylinder(scrub, 0.13, 0.13, 1.3, 6, [0, 0.65, 0], { name: "stem" }),
-        cylinder(scrub, 0.09, 0.09, 0.35, 6, [0.28, 0.7, 0], {
-          name: "arm_r",
-          rot: [0, 0, Math.PI / 2],
-        }),
-        cylinder(scrub, 0.09, 0.09, 0.45, 6, [0.4, 0.95, 0], {
-          name: "arm_r_up",
-        }),
-        cylinder(scrub, 0.09, 0.09, 0.3, 6, [-0.24, 0.5, 0], {
-          name: "arm_l",
-          rot: [0, 0, Math.PI / 2],
-        }),
-        cylinder(scrub, 0.09, 0.09, 0.35, 6, [-0.34, 0.7, 0], {
-          name: "arm_l_up",
-        }),
-      ]);
-    }
-    case "car-compact": {
-      const parts = [
-        box(metal, [0.9, 0.34, 0.62], [0, 0.33, 0], { name: "body" }),
-        box(mf.get("env-glass"), [0.5, 0.26, 0.56], [-0.05, 0.63, 0], {
-          name: "cabin",
-        }),
-        box(mf.get("env-rust"), [0.1, 0.1, 0.56], [0.47, 0.28, 0], {
-          name: "bumper",
-        }),
-      ];
-      let w = 0;
-      for (const x of [-0.3, 0.3]) {
-        for (const z of [-0.32, 0.32]) {
-          parts.push(
-            cylinder(
-              mf.get("tdf-grey-dark"),
-              0.12,
-              0.12,
-              0.1,
-              8,
-              [x, 0.13, z],
-              {
-                name: `wheel_${w++}`,
-                rot: [Math.PI / 2, 0, 0],
-              },
-            ),
-          );
-        }
-      }
-      return group("root", parts);
-    }
-    default:
-      throw new Error(`Unknown mapgen prop: ${kind}`);
-  }
 }
 
 // ===========================================
@@ -789,22 +492,6 @@ const MODEL_DEFS = [
     build: (mf) => group("root", [slab(mf.get("env-dirt"))]),
   },
   {
-    id: "prop.lamp-post",
-    category: "props",
-    file: "lamp-post.glb",
-    footprint: { w: 1, d: 1 },
-    height: 2.65,
-    build: (mf) => buildProp(mf, "lamp-post"),
-  },
-  {
-    id: "prop.hydrant",
-    category: "props",
-    file: "hydrant.glb",
-    footprint: { w: 1, d: 1 },
-    height: 0.6,
-    build: (mf) => buildProp(mf, "hydrant"),
-  },
-  {
     id: "tile.ground.sand",
     category: "tiles",
     file: "ground-sand.glb",
@@ -835,62 +522,6 @@ const MODEL_DEFS = [
     footprint: { w: 1, d: 1 },
     height: 0,
     build: buildWaterTile,
-  },
-  {
-    id: "prop.shelving",
-    category: "props",
-    file: "shelving.glb",
-    footprint: { w: 1, d: 1 },
-    height: 1.0,
-    build: (mf) => buildMapgenProp(mf, "shelving"),
-  },
-  {
-    id: "prop.fence",
-    category: "props",
-    file: "fence.glb",
-    footprint: { w: 1, d: 1 },
-    height: 0.5,
-    build: (mf) => buildMapgenProp(mf, "fence"),
-  },
-  {
-    id: "prop.boulder",
-    category: "props",
-    file: "boulder.glb",
-    footprint: { w: 1, d: 1 },
-    height: 1.05,
-    build: (mf) => buildMapgenProp(mf, "boulder"),
-  },
-  {
-    id: "prop.cactus",
-    category: "props",
-    file: "cactus.glb",
-    footprint: { w: 1, d: 1 },
-    height: 1.3,
-    build: (mf) => buildMapgenProp(mf, "cactus"),
-  },
-  {
-    id: "prop.tree-pine",
-    category: "props",
-    file: "tree-pine.glb",
-    footprint: { w: 1, d: 1 },
-    height: 2.1,
-    build: (mf) => buildTree(mf, "pine"),
-  },
-  {
-    id: "prop.tree-oak",
-    category: "props",
-    file: "tree-oak.glb",
-    footprint: { w: 1, d: 1 },
-    height: 1.9,
-    build: (mf) => buildTree(mf, "oak"),
-  },
-  {
-    id: "prop.tree-palm",
-    category: "props",
-    file: "tree-palm.glb",
-    footprint: { w: 1, d: 1 },
-    height: 2.0,
-    build: (mf) => buildTree(mf, "palm"),
   },
 ];
 

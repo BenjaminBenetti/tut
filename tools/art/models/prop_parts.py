@@ -1,4 +1,4 @@
-"""Shared builders for the city cover props (issue #274, batch F).
+"""Shared builders for the city props (issue #274, batches F and G).
 
 Blender axes: X right, Y depth, Z up, front facing -Y so the glTF export puts
 it on +Z. Sizes are in tiles (1 u = 2 m), so a 0.6 u crate is 1.2 m tall.
@@ -14,7 +14,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
-from bpy_kit import bevel, box, cylinder  # noqa: E402
+from bpy_kit import bevel, box, cylinder, sphere  # noqa: E402
 
 # ===========================================
 # Wheels and running gear
@@ -161,3 +161,119 @@ def slat_face(name: str, size: tuple[float, float, float], at: tuple[float, floa
     @param token - Palette token.
     """
     box(name, size, at, token)
+
+
+# ===========================================
+# Vegetation and street furniture
+# ===========================================
+
+
+def conifer(trunk_height: float, tiers: int, top: float, spread: float) -> None:
+    """A pine: a bark trunk under stacked cones that narrow toward the top.
+
+    ```
+          /\\
+         /__\\
+        /____\\      tiers of cones, each wider and shorter than the one above
+          ||        trunk
+    ```
+
+    @param trunk_height - Bare trunk height before the first tier.
+    @param tiers - Number of cones.
+    @param top - Total height.
+    @param spread - Radius of the widest (lowest) tier.
+    """
+    cylinder("trunk", 0.05, 0.07, trunk_height, 6, (0, 0, trunk_height / 2), "env-bark")
+    span = top - trunk_height
+    for i in range(tiers):
+        # Lower tiers overlap the one above by a third, so the silhouette is a
+        # continuous cone rather than a stack of separate hats.
+        base_z = trunk_height + span * i / tiers * 0.78
+        height = span / tiers * 1.35
+        radius = spread * (1 - i / tiers * 0.72)
+        cylinder(
+            f"tier_{i}",
+            radius * 0.15,
+            radius,
+            height,
+            8,
+            (0, 0, base_z + height / 2),
+            "env-foliage",
+        )
+
+
+def broadleaf(trunk_height: float, top: float, spread: float) -> None:
+    """An oak: a bark trunk under three overlapping low-poly canopy lumps.
+
+    @param trunk_height - Bare trunk height.
+    @param top - Total height.
+    @param spread - Canopy radius.
+    """
+    cylinder("trunk", 0.07, 0.1, trunk_height, 6, (0, 0, trunk_height / 2), "env-bark")
+    canopy = top - trunk_height
+    lumps = (
+        (0.0, 0.0, trunk_height + canopy * 0.55, spread),
+        (-spread * 0.42, spread * 0.2, trunk_height + canopy * 0.34, spread * 0.68),
+        (spread * 0.38, -spread * 0.26, trunk_height + canopy * 0.38, spread * 0.62),
+    )
+    for i, (x, y, z, r) in enumerate(lumps):
+        sphere(f"canopy_{i}", r, (x, y, z), "env-foliage", segments=6, rings=4, scale=(1.0, 1.0, 0.78))
+
+
+def palm(trunk_height: float, fronds: int, lean: float) -> None:
+    """A palm: a leaning segmented trunk with fronds drooping from the crown.
+
+    @param trunk_height - Crown height.
+    @param fronds - Fronds around the crown.
+    @param lean - Horizontal offset of the crown from the base.
+    """
+    segments = 5
+    for i in range(segments):
+        t = (i + 0.5) / segments
+        cylinder(
+            f"trunk_{i}",
+            0.05 - 0.012 * t,
+            0.07 - 0.012 * t,
+            trunk_height / segments * 1.08,
+            6,
+            (lean * t * t, 0, trunk_height * (i + 0.5) / segments),
+            "env-bark",
+        )
+    crown = (lean, 0, trunk_height)
+    for i in range(fronds):
+        angle = 2 * math.pi * i / fronds
+        # Alternating lengths and a real droop: fronds pitched a few degrees
+        # read as a pinwheel from overhead, which is the angle that matters.
+        reach = 0.46 if i % 2 else 0.38
+        droop = math.radians(34)
+        box(
+            f"frond_{i}",
+            (reach, 0.12, 0.035),
+            (
+                crown[0] + math.cos(angle) * reach * 0.5,
+                crown[1] + math.sin(angle) * reach * 0.5,
+                crown[2] - 0.06 - reach * 0.22,
+            ),
+            "env-foliage",
+            rot=(0, droop, angle),
+        )
+    sphere("crown", 0.08, crown, "env-bark", segments=6, rings=4)
+
+
+def post_and_rail(height: float, rails: int, span: float) -> None:
+    """A timber fence: two posts across the tile with horizontal rails.
+
+    @param height - Post height.
+    @param rails - Rail count.
+    @param span - Distance between post centres.
+    """
+    for side in (-1, 1):
+        box(
+            f"post_{'l' if side < 0 else 'r'}",
+            (0.08, 0.08, height),
+            (side * span / 2, 0, height / 2),
+            "env-bark",
+        )
+    for i in range(rails):
+        z = height * (0.34 + 0.44 * i / max(1, rails - 1)) if rails > 1 else height * 0.55
+        box(f"rail_{i}", (span + 0.08, 0.04, 0.08), (0, 0, z), "env-bark")

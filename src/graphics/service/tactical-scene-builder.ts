@@ -72,12 +72,14 @@ export type UnitTemplateLookup = Readonly<Record<UnitTemplateId, UnitTemplate>>;
  */
 /**
  * Cutaway radius in world units and the alpha a fully cut-away wall
- * keeps. Roughly three tiles across, so the unit and the ground it is
- * fighting over both stay visible, and a floor rather than zero so the
- * wall still reads as a wall.
+ * keeps, from the style guide §12.4. One world unit is one tile, so the
+ * radius covers the unit's tile and its neighbours; the floor is 0.35
+ * rather than 0 because cover the player cannot see is cover they will
+ * forget is there. The Art Director's first pass was 0.25 over 2.5
+ * tiles, which mocked up dissolving most of the building.
  */
-const GHOST_RADIUS = 3;
-const GHOST_FLOOR = 0.18;
+const GHOST_RADIUS = 2;
+const GHOST_FLOOR = 0.35;
 
 /**
  *

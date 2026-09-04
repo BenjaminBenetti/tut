@@ -12,6 +12,14 @@ import { MAX_GHOSTS } from "./ghost-cutaway";
 /** Where the units to keep visible are, in world space, newest first. */
 export type GhostSource = () => readonly Object3D[];
 
+/** Seconds a cutaway takes to open or close (style guide §12.4). */
+const FADE_SECONDS = 0.15;
+
+/** Keeps `value` inside `[low, high]`. */
+function clamp(value: number, low: number, high: number): number {
+  return Math.min(high, Math.max(low, value));
+}
+
 // ===========================================
 // Controller
 // ===========================================
@@ -45,6 +53,8 @@ export class GhostController implements FrameUpdatable {
   private readonly source: GhostSource;
   private readonly uniforms: GhostUniforms;
   private readonly scratch = new Vector3();
+  /** Object each centre slot is tracking, so a ramp follows its own unit. */
+  private readonly slots: (Object3D | undefined)[] = [];
 
   // ===========================================
   // Constructor
@@ -68,23 +78,41 @@ export class GhostController implements FrameUpdatable {
   /**
    * Refreshes the centres from the current camera and unit positions.
    *
-   * @param _deltaSeconds - Unused; the effect follows state, not time.
+   * @param deltaSeconds - Frame delta, which drives the fade ramp.
    */
-  update(_deltaSeconds: number): void {
+  update(deltaSeconds: number): void {
     const objects = this.source();
     const count = Math.min(objects.length, MAX_GHOSTS);
     this.camera.updateMatrixWorld();
-    for (let i = 0; i < count; i++) {
-      const object = objects[i];
+    const step = deltaSeconds / FADE_SECONDS;
+    for (let i = 0; i < MAX_GHOSTS; i++) {
+      const object = i < count ? objects[i] : undefined;
       const centre = this.uniforms.uGhostCentres.value[i];
-      if (object === undefined || centre === undefined) {
-        continue;
+      const previous = this.slots[i];
+      if (object !== undefined && centre !== undefined) {
+        object.getWorldPosition(this.scratch);
+        // View space is what the shader compares in, so the projection is
+        // done once here rather than per fragment.
+        centre.copy(this.scratch).applyMatrix4(this.camera.matrixWorldInverse);
       }
-      object.getWorldPosition(this.scratch);
-      // View space is what the shader compares in, so the projection is
-      // done once here rather than per fragment.
-      centre.copy(this.scratch).applyMatrix4(this.camera.matrixWorldInverse);
+      // A slot that changed hands starts from nothing, or the new unit
+      // inherits the old one's ramp and the cutaway appears to jump.
+      const strength =
+        object !== previous && object !== undefined
+          ? 0
+          : (this.uniforms.uGhostStrength.value[i] ?? 0);
+      const target = object === undefined ? 0 : 1;
+      this.uniforms.uGhostStrength.value[i] = clamp(
+        strength + Math.sign(target - strength) * step,
+        0,
+        1,
+      );
+      this.slots[i] = object;
     }
-    this.uniforms.uGhostCount.value = count;
+    // A slot still fading out has to stay in the loop's range.
+    this.uniforms.uGhostCount.value = this.uniforms.uGhostStrength.value.reduce(
+      (live, value, index) => (value > 0 ? index + 1 : live),
+      count,
+    );
   }
 }

@@ -158,12 +158,15 @@ function stateOf(vision: IndexedVision, key: VisionTileKey): TileVisionState {
  * ```
  */
 /**
- * Categories that fade around an obscured unit. Walls are what actually
- * stands between the camera and the fight; ground and props are not
- * worth the transparency, and ghosting the ground would open holes in
- * the map itself.
+ * Model ids that fade around an obscured unit: everything a building is
+ * made of — walls, floors, roofs and parapets (style guide §12.4).
+ *
+ * Selected by model id rather than by category because the `tiles`
+ * category carries both a building's floors and the ground itself, and
+ * the ground must never fade: opening a hole in the map would be worse
+ * than the wall it was trying to see past.
  */
-const GHOSTED_CATEGORIES: ReadonlySet<string> = new Set(["walls"]);
+const GHOSTED_MODEL_PREFIX = "building.";
 
 /**
  *
@@ -330,7 +333,7 @@ export class TacticalMapView implements Disposable, TilePicker {
           : part.material;
         const material =
           this.ghostUniforms !== undefined &&
-          GHOSTED_CATEGORIES.has(label) &&
+          batch.modelId.startsWith(GHOSTED_MODEL_PREFIX) &&
           prototypeMaterial !== undefined
             ? applyGhostCutaway(prototypeMaterial, this.ghostUniforms)
             : part.material;

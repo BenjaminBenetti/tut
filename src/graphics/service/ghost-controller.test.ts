@@ -77,3 +77,43 @@ describe("GhostController (#526)", () => {
     expect(uniforms.uGhostCentres.value).toHaveLength(MAX_GHOSTS);
   });
 });
+
+describe("GhostController fade (#526, style guide §12.4)", () => {
+  it("ramps a new cutaway in rather than snapping it open", () => {
+    const uniforms = createGhostUniforms(2, 0.35);
+    const unit = at(0, 0, 0);
+    const controller = new GhostController(camera(), () => [unit], uniforms);
+
+    controller.update(0.05);
+    const early = uniforms.uGhostStrength.value[0] ?? 0;
+
+    expect(early).toBeGreaterThan(0);
+    expect(early).toBeLessThan(1);
+  });
+
+  it("reaches full strength in the configured 0.15s and stops there", () => {
+    const uniforms = createGhostUniforms(2, 0.35);
+    const unit = at(0, 0, 0);
+    const controller = new GhostController(camera(), () => [unit], uniforms);
+
+    for (let i = 0; i < 3; i++) controller.update(0.05);
+    expect(uniforms.uGhostStrength.value[0]).toBeCloseTo(1, 5);
+
+    controller.update(0.05);
+    expect(uniforms.uGhostStrength.value[0]).toBeCloseTo(1, 5);
+  });
+
+  it("ramps out when the unit goes, and keeps the slot live while it does", () => {
+    const uniforms = createGhostUniforms(2, 0.35);
+    let units = [at(0, 0, 0)];
+    const controller = new GhostController(camera(), () => units, uniforms);
+    for (let i = 0; i < 3; i++) controller.update(0.05);
+
+    units = [];
+    controller.update(0.05);
+
+    // Still drawing, or the cutaway would snap shut a frame after a death.
+    expect(uniforms.uGhostStrength.value[0]).toBeGreaterThan(0);
+    expect(uniforms.uGhostCount.value).toBeGreaterThan(0);
+  });
+});

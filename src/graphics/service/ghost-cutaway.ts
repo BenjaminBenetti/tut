@@ -18,6 +18,8 @@ export interface GhostUniforms {
   readonly uGhostRadius: { value: number };
   /** Alpha a fully cut-away fragment keeps, so a wall reads as glass and not a hole. */
   readonly uGhostFloor: { value: number };
+  /** Per-centre ramp in `[0, 1]`, so a cutaway fades in and out rather than snapping. */
+  readonly uGhostStrength: { value: number[] };
 }
 
 // ===========================================
@@ -31,8 +33,8 @@ export interface GhostUniforms {
  */
 export const MAX_GHOSTS = 8;
 
-/** Where the falloff reaches full transparency, as a fraction of the radius. */
-const CORE_FRACTION = 0.45;
+/** Softness of the edge in world units, from the style guide (§12.4). */
+const SOFT_EDGE_UNITS = 0.65;
 
 // ===========================================
 // Uniforms
@@ -56,6 +58,7 @@ export function createGhostUniforms(
     },
     uGhostRadius: { value: radius },
     uGhostFloor: { value: floor },
+    uGhostStrength: { value: Array.from({ length: MAX_GHOSTS }, () => 0) },
   };
 }
 
@@ -150,7 +153,10 @@ const FRAGMENT_BODY = `
     // View space looks down -z, so a larger z is nearer the camera.
     if (vGhostView.z > centre.z) {
       float d = length(vGhostView.xy - centre.xy);
-      float f = smoothstep(uGhostRadius, uGhostRadius * ${CORE_FRACTION.toFixed(2)}, d);
+      // Soft edge measured inward from the radius in world units, so the
+      // building gives way rather than showing a circle cut in it.
+      float f = smoothstep(uGhostRadius, uGhostRadius - ${SOFT_EDGE_UNITS.toFixed(2)}, d);
+      f *= uGhostStrength[i];
       ghostAlpha = min(ghostAlpha, mix(1.0, uGhostFloor, f));
     }
   }
@@ -172,6 +178,7 @@ function fragmentHead(): string {
     uniform vec3 uGhostCentres[MAX_GHOSTS];
     uniform float uGhostRadius;
     uniform float uGhostFloor;
+    uniform float uGhostStrength[MAX_GHOSTS];
 
     float ghostDither(vec2 fragment) {
       int x = int(mod(fragment.x, 4.0));

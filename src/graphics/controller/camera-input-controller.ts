@@ -27,8 +27,15 @@ type KeyBinding =
 
 /** Tuning for keyboard and wheel input. */
 export const CAMERA_INPUT_TUNING = {
-  /** Keyboard pan speed in screen pixels per second. */
+  /** Keyboard pan speed in screen pixels per second, while a key is held. */
   panSpeedPxPerSecond: 600,
+  /**
+   * How far a single press moves the view, in screen pixels. Held keys
+   * pan continuously from `update`, but a press and release inside one
+   * frame never reaches it, so a tapped arrow key would do nothing at
+   * all — which is how QA found the camera unrecoverable (#538).
+   */
+  tapPanPx: 96,
   /** Zoom factor per wheel pixel: `factor = exp(-deltaPx × sensitivity)`. */
   wheelZoomSensitivity: 0.0015,
   /** Wheel deltas are clamped to this many pixels per event to tame fast trackpads. */
@@ -199,6 +206,12 @@ export class CameraInputController implements FrameUpdatable {
     }
     event.preventDefault();
     if (binding.kind === "pan") {
+      if (!event.repeat) {
+        // A tap must move the view. Auto-repeat is left to `update`, so
+        // holding the key does not stack a nudge per repeat on top of
+        // the continuous pan.
+        this.tapPan(binding.direction);
+      }
       this.heldPan.add(binding.direction);
     } else if (!event.repeat && this.rotatable) {
       if (binding.turn === "left") {
@@ -208,6 +221,14 @@ export class CameraInputController implements FrameUpdatable {
       }
     }
   };
+
+  /** Moves the view one press-worth in a direction. */
+  private tapPan(direction: PanDirection): void {
+    const step = CAMERA_INPUT_TUNING.tapPanPx;
+    const dx = direction === "left" ? -step : direction === "right" ? step : 0;
+    const dy = direction === "up" ? -step : direction === "down" ? step : 0;
+    this.controls.panBy(dx, dy);
+  }
 
   /** Releases a held pan key. */
   private readonly handleKeyUp = (event: KeyboardEvent): void => {

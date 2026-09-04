@@ -1,10 +1,24 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-04 (session 4, ~10:15 UTC). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-04 (session 4, ~13:10 UTC). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 1. Where things stand
 
-### Session 4 (05:00–10:15 UTC): the v0.2.0 push, then M2.5
+### Session 4, second half (10:15–13:10 UTC): M2.5 finished, v0.2.3 gated on one bug
+
+**M2.5 is down to the epic itself and #457.** Every band-1 to band-4 item is merged. `v0.2.3` was held on **#624** — the Director judged the fog frame and found the board buried under overlay marks — and released when **#627** closed.
+
+**The overlay story is the one to read if you read one thing.** Four planes all spoke the same visual language, so nothing said which *question* a mark answered, and the line-of-sight cue marked **93 of 93** reachable tiles. An indicator true everywhere carries no information. #631 gave the planes a language (shape carries the question, colour only urgency), #635 made weapon range a boundary, #636 turned cover from a centred ring into a tick per covered side — which is *more* information in fewer marks, because the rules always computed all four sides and the overlay collapsed them to a maximum.
+
+**I got that diagnosis wrong twice in public** before the Art Director measured it. I said the rings were not the range envelope, withdrew that after misreading `weaponRangeFrom`, then said they were the cover markers. My own byte-identical test — changing the envelope altered the frame not at all — should have told me to count every layer rather than guess the next one.
+
+**Fog of war is complete**: state and migration (#554), the AI deciding from a branded `MissionView` it cannot bypass (#560), overwatch not reacting to what it cannot see (#564), the renderer drawing the player view (#570), blind bugs advancing on the landing zone (#589), and the HUD no longer listing unseen enemies (#619).
+
+**Schema is at v12.** v11 `ADD_MISSION_VISION` (#554) and v12 `SPLIT_WEAPONS_PER_UNIT` (#629). Both have shipped in a tag, so both are frozen.
+
+**A pattern worth carrying forward.** Three defects this session had the same root cause: code trusting a signal that meant something subtly different from what it looked like — `data-screen` meaning *mounted* rather than *measurable* (#473), a missing tile meaning *air* rather than *rock* (#593), and `PCFSoftShadowMap` naming a filter three silently swaps (#507). All three passed their tests, because each test asked the same wrong question the code did. That sits alongside the *green suite is not a working screen* rule now in `studio.md` §3.
+
+### Session 4, first half (05:00–10:15 UTC): the v0.2.0 push, then M2.5
 
 **v0.2.0 tagged at 07:00, v0.2.1 after it.** The Director ran a release push and then relaxed it — *"cut whatever is genuinely ready, do not sacrifice quality"* — which was the right call and is worth repeating next time: nothing was rubber-stamped to make the tag.
 
@@ -88,6 +102,9 @@ Earlier:
 
 Session 4, 2026-09-04:
 
+- **Merge order is a hazard I create.** Six PRs this session needed a conflict resolved or a one-line fix purely because I merged a sibling minutes earlier — #483, #549, #629, #633, #623, #642. Resolving them myself and saying so is faster than a round trip, but check the base and re-gate the author's newer head rather than merging what you reviewed.
+- **A flake makes a gate lie, and my own gate lied twice.** It piped playwright to `tail`, so `$?` was tail's exit code; then it called `playwright` directly, missing the `--fail-on-flaky-tests` that lives on the npm script. Run `CI=1 npx pnpm test:e2e` into a file and read the exit code.
+- **Do not review with uncommitted work in the tree.** I nearly filed a false failure against #494 because my own #624 branch rode along into someone else's gate.
 - **Fog of war is per-side knowledge, and the AI gets a filtered view rather than a predicate** (ADR 0006 §2.3). A `canSee()` helper is advisory: a behaviour that forgets to call it still compiles and still cheats. #560 went further than I specified with a phantom-branded `MissionView`, so a raw `TacticalState` will not compile where a view is required. That is the shape to defend.
 - **In-world UI is DOM anchored to projected world points** (ADR 0007), not three.js geometry. `ui/` holds no three, the world→screen bridge already lives in `ui/controller`, and the Executive Director's objection was to panels that *sit at the side and read like a spreadsheet* — placement and presentation, not technology. The ADR turns that into five acceptance criteria.
 - **Render every visual change before believing it.** This session that caught: an `alphaMap` written to the alpha channel when three samples green; a region wash buried inside the map slab; overlays drawn below the ground since #474; and buildings turning see-through when ghosted materials stopped writing depth. Every one passed its unit tests first.
@@ -141,7 +158,8 @@ Session 1 (still binding):
 
 ## 4. Next, in order
 
-0. **Session 4 first:** get the Director's §2 sign-off on ADR 0006 before the next tag freezes v11; decide #343/#344 with the Producer so M2 can close; #517 is the highest-value unstarted issue.
+0. **Session 4, still open:** ADR 0006 is still marked **Proposed** and v11 has now shipped in a tag, so the sign-off is retrospective rather than preventative — get it recorded anyway. #578 (`save-recovery` flakes under load) is not fixed: #632 removed one cause and something else remains, and since #584 a flake is a hard failure, so it blocks unrelated PRs. **#615** asks the Art Director for the sight cue's own treatment now its mechanism is in.
+1. **Was session 4 first:** get the Director's §2 sign-off on ADR 0006 before the next tag freezes v11; decide #343/#344 with the Producer so M2 can close; #517 is the highest-value unstarted issue.
 1. Review loop every ~5 minutes (session 3 runs it as a cron job in the session; a tick is one `pulls?state=open` call, one `issues?state=open` sweep, then per-PR files/diff/check-runs); label any new unlabeled engineer issue first. MapGen's self-filed issues (#352, #354) went unlabelled on purpose: the specialist works them, the Producer never routes them.
 2. **Schema is at v10** (v9 `ADD_UNIT_CHARGES` #409, v10 `ADD_SPAWN_CLOCKS` #329). Two PRs took the same version number within twenty minutes; when that happens, the one that merges second renumbers and the chain test catches it. Check `GAME_STATE_SCHEMA_VERSION` before approving any save reshape.
 3. M1 is done and tagged. M2 order on eng-3 (updated 17:52: #323–#327 merged): #372 (#323) → #324 commands (hold to the ruling above: campaign dispatcher, `no-active-mission` error, one store) → #325 → #326 → #328 → #330 → #341. #324 must narrow `TacticalState.log` to the tactical event union and pass the dispatcher's `ctx.ids` into `startTacticalMission`. Medium seats: #338/#339/#342 as their inputs land, QA bugs (#219, #218, #291, #294, #304, #368), #369, #230.

@@ -130,14 +130,16 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
       models: this.models,
     });
     const overlays = new TacticalOverlays();
+    const rig = new IsometricCameraRig({ zoom: CAMERA_ZOOM.min });
     const animations = new TacticalAnimationQueue({
       scene: builder,
       sprites: this.sprites,
+      // Borrowed to turn a tracer along its flight in screen space (#514).
+      camera: rig.camera,
       instant: this.deps.instantAnimations ?? false,
     });
     const content = new Group();
     content.add(builder.root, overlays.root, animations.root);
-    const rig = new IsometricCameraRig({ zoom: CAMERA_ZOOM.min });
     rig.setBounds({ x: 0, z: 0, w: mission.map.width, d: mission.map.depth });
     rig.lookAt(builder.centre);
     const input = new TacticalInputController({

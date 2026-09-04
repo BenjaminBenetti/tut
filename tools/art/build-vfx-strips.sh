@@ -12,6 +12,8 @@
 #   egg-burst:    40% → 70% → 100% → 115% @ 85% → 125% @ 55% → 135% @ 25%
 #   claw-slash:   the arc sweeps: 62% @ -14° → 88% @ 0° → 100% @ +8° @ 70% → 110% @ +14° @ 30%
 #   bug-death:    45% → 75% → 100% → 112% @ 85% → 122% @ 55% → 132% @ 25%
+#   tdf-death:    50% → 80% → 100% → 115% @ 80% → 128% @ 50% → 140% @ 20%
+#                 (a machine throws its debris further than a body does)
 #
 # The tracer has no sheet: it is one streak the renderer stretches along the
 # shot axis and fades, so frames would fight the stretch.
@@ -79,4 +81,12 @@ frame $SRC/bug-death.png "$TMP/d3.png" 112 85
 frame $SRC/bug-death.png "$TMP/d4.png" 122 55
 frame $SRC/bug-death.png "$TMP/d5.png" 132 25
 sheet bug-death 3x2 "$TMP/d0.png" "$TMP/d1.png" "$TMP/d2.png" "$TMP/d3.png" "$TMP/d4.png" "$TMP/d5.png"
+
+frame $SRC/tdf-death.png "$TMP/t0.png" 50 100
+frame $SRC/tdf-death.png "$TMP/t1.png" 80 100
+frame $SRC/tdf-death.png "$TMP/t2.png" 100 100
+frame $SRC/tdf-death.png "$TMP/t3.png" 115 80
+frame $SRC/tdf-death.png "$TMP/t4.png" 128 50
+frame $SRC/tdf-death.png "$TMP/t5.png" 140 20
+sheet tdf-death 3x2 "$TMP/t0.png" "$TMP/t1.png" "$TMP/t2.png" "$TMP/t3.png" "$TMP/t4.png" "$TMP/t5.png"
 rm -rf "$TMP"

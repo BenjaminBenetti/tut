@@ -6,6 +6,7 @@ import { DataSquadTypeCatalogue } from "../../roster/repository/squad-type-catal
 import { campaignOnDay } from "./mission-fixtures.test-helper";
 import type { DeploymentPickerModel } from "./deployment-picker-view";
 import { DeploymentPickerView } from "./deployment-picker-view";
+import { MAX_DEPLOYED_UNITS } from "../../overworld/model/deployment";
 
 describe("DeploymentPickerView", () => {
   let root: HTMLElement;
@@ -37,6 +38,7 @@ describe("DeploymentPickerView", () => {
       selectedSquadIds: new Set(),
       selectedMechIds: new Set(),
       assessment: { force: 12, target: 30, winProbability: 0.7 },
+      maxUnits: MAX_DEPLOYED_UNITS,
       ...over,
     };
   };
@@ -124,5 +126,42 @@ describe("DeploymentPickerView", () => {
     expect(root.querySelector("#deploy-squads tbody tr")).toBe(before);
     view.unmount();
     expect(root.children).toHaveLength(0);
+  });
+
+  it("stops the player at the cap instead of at Launch (#487)", () => {
+    const { view } = build();
+    const squads = model().squads;
+    expect(squads.length).toBeGreaterThan(1);
+    const box = (id: string): HTMLInputElement | null =>
+      root.querySelector<HTMLInputElement>(
+        `tr[data-squad-id="${id}"] input[type="checkbox"]`,
+      );
+
+    // One short of the cap: everything is still pickable.
+    view.update(
+      model({
+        maxUnits: 2,
+        selectedSquadIds: new Set([squads[0]!.id]),
+      }),
+    );
+    expect(box(squads[1]!.id)?.disabled).toBe(false);
+
+    // At the cap: the unpicked are disabled and say why, while the
+    // picked stay enabled so a player can swap one out rather than
+    // having to start over.
+    view.update(
+      model({
+        maxUnits: 2,
+        selectedSquadIds: new Set([squads[0]!.id, squads[1]!.id]),
+      }),
+    );
+    expect(box(squads[0]!.id)?.disabled).toBe(false);
+    const rest = squads.find(
+      (s) => s.id !== squads[0]!.id && s.id !== squads[1]!.id,
+    );
+    if (rest) {
+      expect(box(rest.id)?.disabled).toBe(true);
+      expect(box(rest.id)?.title).toContain("full");
+    }
   });
 });

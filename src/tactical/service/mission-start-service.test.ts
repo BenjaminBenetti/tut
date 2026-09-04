@@ -26,6 +26,7 @@ import { SPAWN_TUNING } from "../data/spawn-tuning";
 import { FIRST_TURN } from "../model/tactical-state";
 import type { MissionStartDeps } from "./mission-start-service";
 import { startTacticalMission, tileAdmits } from "./mission-start-service";
+import { MAX_DEPLOYED_UNITS } from "../../overworld/model/deployment";
 
 // ===========================================
 // Fixtures
@@ -295,5 +296,36 @@ describe("startTacticalMission", () => {
     const result = startTacticalMission(state, mission.id, deployment, broken);
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error.kind).toBe("invalid-loadout");
+  });
+
+  it("refuses a deployment larger than a deploy zone can hold (#487)", () => {
+    const { state, mission } = campaign();
+    const squad = state.roster.squads[0];
+    if (!squad) throw new Error("fixture needs a squad");
+    const over = Array.from(
+      { length: MAX_DEPLOYED_UNITS + 1 },
+      (_, i) => `squad-${String(i)}`,
+    );
+    const result = startTacticalMission(
+      {
+        ...state,
+        roster: {
+          ...state.roster,
+          squads: over.map((id) => ({ ...squad, id })),
+        },
+      },
+      mission.id,
+      { missionId: mission.id, squadIds: over, mechIds: [] },
+      deps(),
+    );
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    // Not `no-deploy-room`: that means the map let the side down, and it
+    // used to be what a seventeenth squad got after the launch committed.
+    expect(result.error).toEqual({
+      kind: "oversized-deployment",
+      size: MAX_DEPLOYED_UNITS + 1,
+      max: MAX_DEPLOYED_UNITS,
+    });
   });
 });

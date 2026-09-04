@@ -3,6 +3,7 @@ import type {
   DeploymentAssessment,
   DeploymentAssessor,
 } from "../../overworld/model/deployment-assessment";
+import { MAX_DEPLOYED_UNITS } from "../../overworld/model/deployment";
 import { launchMission } from "../../overworld/model/launch-mission-command";
 import { startMission } from "../../tactical/model/start-mission-command";
 import type { Mission } from "../../overworld/model/mission";
@@ -258,6 +259,7 @@ export class DeploymentScreen implements Screen {
       mechs,
       selectedSquadIds: this.selectedSquads,
       selectedMechIds: this.selectedMechs,
+      maxUnits: MAX_DEPLOYED_UNITS,
       assessment,
     });
     if (this.launch) {

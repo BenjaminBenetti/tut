@@ -26,6 +26,7 @@ import type { MissionResult } from "../model/mission-result";
 import { MISSION_RESOLVED } from "../model/mission-resolved-event";
 import { buildEarthMap } from "./earth-map-builder";
 import type { LaunchMissionDeps } from "./launch-mission-service";
+import { MAX_DEPLOYED_UNITS } from "../model/deployment";
 import {
   createLaunchMissionHandler,
   DEPLOYMENT_MISMATCH,
@@ -33,6 +34,7 @@ import {
   EMPTY_DEPLOYMENT,
   MISSION_EXPIRED,
   MISSION_NOT_FOUND,
+  OVERSIZED_DEPLOYMENT,
   UNKNOWN_UNIT,
   validateLaunch,
 } from "./launch-mission-service";
@@ -450,5 +452,62 @@ describe("createLaunchMissionHandler", () => {
     expect(same.value.events.map((e) => e.type)).not.toContain(
       CITY_INFESTATION_CHANGED,
     );
+  });
+});
+describe("validateLaunch deployment size (#487)", () => {
+  /** A campaign whose roster holds `count` squads, all deployable. */
+  const rosterOf = (count: number): CampaignState => {
+    const base = campaign();
+    const first = base.roster.squads[0];
+    if (!first) throw new Error("fixture needs a squad");
+    return {
+      ...base,
+      roster: {
+        ...base.roster,
+        squads: Array.from({ length: count }, (_, i) => ({
+          ...first,
+          id: `squad-${String(i)}`,
+        })),
+      },
+    };
+  };
+  const idsFor = (count: number): string[] =>
+    Array.from({ length: count }, (_, i) => `squad-${String(i)}`);
+
+  it("refuses more units than a deploy zone can hold, naming both numbers", () => {
+    const over = MAX_DEPLOYED_UNITS + 1;
+    const result = validateLaunch(rosterOf(over), "mission-1", {
+      ...DEPLOYMENT,
+      squadIds: idsFor(over),
+      mechIds: [],
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.code).toBe(OVERSIZED_DEPLOYMENT);
+    // Both numbers, so the message says what the limit is and what was
+    // sent rather than only that something was wrong.
+    expect(result.error.message).toContain(String(MAX_DEPLOYED_UNITS));
+    expect(result.error.message).toContain(String(over));
+  });
+
+  it("accepts exactly the cap", () => {
+    const result = validateLaunch(rosterOf(MAX_DEPLOYED_UNITS), "mission-1", {
+      ...DEPLOYMENT,
+      squadIds: idsFor(MAX_DEPLOYED_UNITS),
+      mechIds: [],
+    });
+    expect(result.ok).toBe(true);
+  });
+
+  it("counts mechs against the same cap as squads", () => {
+    const base = rosterOf(MAX_DEPLOYED_UNITS);
+    const result = validateLaunch(base, "mission-1", {
+      ...DEPLOYMENT,
+      squadIds: idsFor(MAX_DEPLOYED_UNITS),
+      mechIds: [base.roster.mechs[0]?.id ?? "mech-1"],
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.code).toBe(OVERSIZED_DEPLOYMENT);
   });
 });

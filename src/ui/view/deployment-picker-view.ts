@@ -33,7 +33,16 @@ export interface DeploymentPickerModel {
   readonly selectedMechIds: ReadonlySet<MechId>;
   /** The resolver-side assessment of the current pick, or undefined with no mission. */
   readonly assessment: DeploymentAssessment | undefined;
+  /**
+   * Most units this deployment may carry (#487). At the cap, unpicked
+   * rows are disabled rather than left to fail at Launch; the already
+   * picked stay enabled so a player can swap one out.
+   */
+  readonly maxUnits: number;
 }
+
+/** Why a row is unpickable once the deployment is full (#487). */
+const DEPLOYMENT_FULL_REASON = "The deployment is full";
 
 // ===========================================
 // DeploymentPickerView
@@ -166,6 +175,8 @@ export class DeploymentPickerView {
       return;
     }
     const doc = this.squadBody.ownerDocument;
+    const picked = model.selectedSquadIds.size + model.selectedMechIds.size;
+    const full = picked >= model.maxUnits;
     this.syncRows(
       doc,
       this.squadBody,
@@ -178,6 +189,7 @@ export class DeploymentPickerView {
           `${formatWhole(squad.strength)}/${formatWhole(squad.maxStrength)}`,
         ],
         selected: model.selectedSquadIds.has(squad.id),
+        disabled: full && !model.selectedSquadIds.has(squad.id),
       })),
       "squadId",
       "toggle-squad",
@@ -193,6 +205,7 @@ export class DeploymentPickerView {
           `${formatWhole((mech.damage / MECH_MAX_DAMAGE) * 100)} % damage`,
         ],
         selected: model.selectedMechIds.has(mech.id),
+        disabled: full && !model.selectedMechIds.has(mech.id),
       })),
       "mechId",
       "toggle-mech",
@@ -293,6 +306,7 @@ export class DeploymentPickerView {
       id: string;
       cells: readonly string[];
       selected: boolean;
+      disabled: boolean;
     }[],
     idKey: "squadId" | "mechId",
     action: string,
@@ -321,6 +335,10 @@ export class DeploymentPickerView {
       if (box && box.checked !== item.selected) {
         box.checked = item.selected;
       }
+      if (box) {
+        box.disabled = item.disabled;
+        box.title = item.disabled ? DEPLOYMENT_FULL_REASON : "";
+      }
       const cells = row.querySelectorAll<HTMLElement>("td[data-field]");
       item.cells.forEach((text, i) => {
         const cell = cells[i];
@@ -329,6 +347,7 @@ export class DeploymentPickerView {
         }
       });
       row.classList.toggle("is-selected", item.selected);
+      row.classList.toggle("is-disabled", item.disabled);
       body.appendChild(row);
     }
     for (const [id, row] of rows) {

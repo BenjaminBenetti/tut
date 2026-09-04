@@ -1,6 +1,6 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-04 (session 2, third update)
+Last updated: 2026-09-04 (session 2, fourth update)
 
 ## 1. What I was doing and where it stands
 
@@ -47,6 +47,11 @@ Issues #2, #3, #4, #93, #102, #119, #143, #144, #145 are on project 5; #162, #16
 - **PR #442** (#441) env atlas round 2 — waiting on CI/merge.
 - **PR #455** (#454) city building kit — waiting on CI/merge.
 - #457 is filed **for graphics**, not for me: the three new VFX ids are registered and unused. Do not implement it; chase it if M2 ships without them.
+- **Three art families are registered and have no consumer at all.** #474 is the big one; the other two came from screenshotting the shipped roster and mech bay:
+
+  ![roster and mech bay](../design/live-screens-2026-09-04.png)
+
+  The mech bay is seven dropdowns and a stat sheet — no mech preview, no part images — while 30 part thumbnails (#163) and the assembled-mech models sit registered and unused. The roster is text tables; `grep -rn "tut-icon" src/` finds the CSS class and the manifest comment and **nothing else**, so not one of the 42 UI icons is used by any screen. Filed as #494.
 - **#474 is the thing to read first.** A live mission draws *no* tile, building or prop models: `tactical-map-view.ts` builds every tile, wall, prop and connector as flat instanced boxes coloured by `mapgen-preview-palette.ts`, whose own doc comment says it is a stopgap "until the tactical scene builder lands". The scene builder landed for **units only**. So the env atlas (#394, #441), the city kit (#454), the cover props (#463) and the 21 tile/building/prop GLBs in `MODEL_MANIFEST` are invisible in game — they appear only in my offline preview renders. **Do not commission more environment art until #474 lands.** #478 is the stopgap: it makes the boxes use the right palette.
 - #274 ledger after the kit: **27 placeholder models left** — six city road/sidewalk tiles, six ground tiles, fifteen props. Props are the next batch worth doing; ground tiles are 12-triangle slabs whose look comes from the atlas, not the geometry.
 

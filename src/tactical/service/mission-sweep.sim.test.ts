@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { MISSION_TYPES } from "../../content/data/mission-types";
@@ -305,15 +306,24 @@ const SEEDS = Array.from({ length: 60 }, (_, i) => ({
 /**
  * Turns a mission gets before the sweep calls it unresolved.
  *
- * Thirty, not sixty. A mission the driver has not resolved in thirty
- * turns is a finding either way, and the back half of a long run is the
- * most expensive part of the sweep: bug counts grow every turn, and
- * every command in a hundred-bug phase recomputes both sides' vision.
- * Fifteen turns buys a usable sample cheaply; it is deliberately below
- * the 37-56 turns a difficulty-10 mission needs to finish, so seeds at
- * the top of the range are expected to come back unresolved.
+ * Fifteen buys a usable sample cheaply: the back half of a long run is
+ * the most expensive part of the sweep, because bug counts grow every
+ * turn and every command in a hundred-bug phase recomputes both sides'
+ * vision. It is deliberately below the turns a hard mission needs to
+ * finish, so seeds at the top of the range come back `unresolved`.
+ *
+ * **`unresolved` therefore means "still playing when the cap arrived",
+ * never "cannot finish".** Reading it as a hang has now misled twice —
+ * #668 pinned `lost 0` and called it a missing defeat condition (#692),
+ * and `docs/design/tactical-tuning.md` was first written around the
+ * same mistake. Raise the cap and every seed resolves.
+ *
+ * `SIM_TURN_CAP=90 pnpm test:sim` does exactly that, which is how the
+ * win/loss table in that document is reproduced without editing this
+ * file. The time budget scales with it, since a deeper sweep is
+ * legitimately slower rather than regressed.
  */
-const TURN_CAP = 15;
+const TURN_CAP = Number(process.env.SIM_TURN_CAP ?? "15");
 
 /**
  * How long the whole sweep may take. A sweep nobody will wait for is a
@@ -328,7 +338,7 @@ const TURN_CAP = 15;
  * fundamentally slower, not to fail whenever CI is busy; a 6x margin
  * still catches that and does not flake under load.
  */
-const BUDGET_MS = 300_000;
+const BUDGET_MS = 300_000 * Math.max(1, TURN_CAP / 15);
 
 /**
  * How many of the 60 seeds must reach a win or a loss inside `TURN_CAP`.

@@ -17,6 +17,29 @@ async function unitPosition(page: Page, unitId: string) {
 }
 
 /**
+ * A unit's projected position once it has stopped moving: two reads a
+ * frame apart that agree. Returns undefined if it never settles, which
+ * a caller should treat as a failure rather than click blindly.
+ */
+async function settledPosition(page: Page, unitId: string) {
+  let previous: { x: number; y: number } | undefined;
+  for (let attempt = 0; attempt < 40; attempt++) {
+    const now = await unitPosition(page, unitId);
+    if (
+      now &&
+      previous &&
+      Math.abs(now.x - previous.x) < 0.5 &&
+      Math.abs(now.y - previous.y) < 0.5
+    ) {
+      return now;
+    }
+    previous = now;
+    await page.waitForTimeout(25);
+  }
+  return undefined;
+}
+
+/**
  * The tactical input controller (#340) on the unit preview: hooks select
  * units and tiles, a real click on a unit's projected position selects
  * it after the camera has been rotated (yaw-aware picking), a click on
@@ -59,10 +82,12 @@ test("tactical input picks units and tiles at any camera yaw and maps shortcuts"
   // now appears: picking must follow the camera.
   await page.locator("canvas").hover();
   await page.keyboard.press("e");
-  await page.waitForTimeout(150);
-  const at = await unitPosition(page, "unit-1");
-  expect(at).toBeDefined();
-  if (!at) throw new Error("unit-1 has no screen position");
+  // Wait for the projected position to stop moving rather than for a
+  // fixed span: the rig applies its new state on the next frame, and a
+  // stale read here clicks where the unit *was* and picks whatever is
+  // there now (#584).
+  const at = await settledPosition(page, "unit-1");
+  if (!at) throw new Error("unit-1 never settled to a screen position");
   await page.mouse.click(at.x, at.y);
   await expect(body).toHaveAttribute("data-selected-unit", "unit-1");
 

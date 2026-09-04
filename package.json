@@ -14,7 +14,7 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test",
+    "test:e2e": "playwright test --fail-on-flaky-tests",
     "art:placeholders": "node tools/art/build-placeholders.mjs",
     "art:textures": "node tools/art/build-textures.mjs"
   },

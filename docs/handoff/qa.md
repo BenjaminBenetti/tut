@@ -1,24 +1,28 @@
 # Handoff: QA
 
-Last updated: 2026-09-03 (session 1, run 63, ~20:40 UTC). Read `docs/process/roles/qa.md` first.
+Last updated: 2026-09-04 (session 1, run 68). Read `docs/process/roles/qa.md` first.
 
 ## Latest run
 
 | Field | Value |
 |---|---|
-| SHA tested | `b5c1196` (main, 2026-09-03 ~20:30 UTC; runs 60–63 covered #331 bug behaviour registry, **#409 charges pool behind Attack and Reload**, handoffs) |
+| SHA tested | `f3ac221` (main; runs 64–68 covered #331 bug behaviour registry, #333 lurker, **#420 straight-down strategic map**, **#330 objectives / extraction / TacticalMissionResolver**, #409 charges pool) |
 | Gate | typecheck, lint, build all pass |
-| `pnpm test` (vitest) | 1348 / 1348 (+1 deliberate skip) |
-| `pnpm test:e2e` on main | 39 / 39 |
-| Exploratory pass | twelve flows: 0 findings outside the tactical slice (one first-click picking flake on run 63, 37/37 on three reruns; the flow now retries the first click); the tactical flow reports only **#412** |
-| Verified fixed this run | **#404** closed: END TURN, OVERWATCH and RELOAD all have handlers; RELOAD on a full unit says "Unit is already fully loaded"; the "No handler registered" text is gone |
+| `pnpm test` (vitest) | 1414 / 1414 (+1 deliberate skip) |
+| `pnpm test:e2e` on main | 40 / 40 |
+| Exploratory pass | twelve flows: 0 findings outside the tactical slice; the tactical flow reports only **#412** |
+| Opened this run | **PR #430**: the picking spec now judges clickability by the map cell, not the window |
 | **Release gate** | Met (run 43). |
-| **Health** | **Green for M1; amber for M2** until the bugs phase has a runner (#412, p2). Every other bug filed today is closed and verified. |
+| **Health** | **Green for M1; amber for M2** until the bugs phase has a runner (#412). PR #422 (#335) is the fix and was up when this was written. |
 
 ### Run history
 
 | SHA | Build | Unit | e2e | Exploratory | Filed |
 |---|---|---|---|---|---|
+| `f3ac221` | pass | 1414/1414 | 40/40 | known #412 | — |
+| `7c6aca6` | pass | 1371/1371 | 40/40 | known #412; picking check fixed | PR #430 |
+| `0d8a370` | pass | 1363/1363 | 39/39 | known #412 | — |
+| `c9681ec` | pass | 1360/1360 | 39/39 | known #412 | — |
 | `b5c1196` | pass | 1348/1348 | 39/39 | known #412; #404 verified | — |
 | `6e2e3c1` | pass | 1338/1338 | 39/39 | known #412 | — |
 | `5f644d4` | pass | 1338/1338 | 39/39 | known #412 | — |
@@ -91,6 +95,7 @@ Exploratory coverage at `35857b2` (headless Chromium, SwiftShader, 1280×720, pr
 - Viewports 480×320, 800×600, 1920×1080 and a live resize: canvas backing size tracks CSS size; panel never overflows.
 - Save edge cases: corrupt JSON, empty, `null`, `[]`, wrong / string / missing `schemaVersion`, missing state, non-object state, save deleted mid-session, storage at quota.
 - Mapgen preview: all 72 biome × settlement × size × 2-seed combinations generate (max 1.07 s incl. page load); Generate, reroll, Enter-to-submit, level slider 0–5 behave; unknown query values fall back silently (see observations).
+- Straight-down strategic map (#420, run 67): the Earth plate now reads as an upright rectangle with north up. Q / E are **inert on the strategic map by design** (the shared camera controller keeps the binding for the isometric tactical scene) and the side-panel hint correctly dropped "Q / E rotate". Consequence for tests: the scene is larger than the map cell, so a city near the edge projects outside `#map-viewport` and its marker is clipped — zoomed in, Sydney lands at x=963 in the 16 px gap between the 960 px cell and the side panel, where a click hits `#app`. Judge clickability by the `#map-viewport` box (PR #430 does this for `overworld-picking.spec.ts`; the exploratory flow does the same), never by the window.
 - Turn engine and overlays (#328 / #338, runs 56–59): selecting a unit paints a blue movement-range field with yellow/red cover rings; MOVE to an adjacent tile costs 1 AP; OVERWATCH sets the unit's status to "overwatch" and spends its AP; RELOAD still says "No handler registered for command "tactical:reload"" (#404 / #409); END TURN logs `tactical:turn-started` and switches the banner to "bugs" — and stays there with every action disabled (#412).
 - Mission HUD (#339, run 53, seed `4242`): the HUD preselects the first unit; the unit card shows name, side ("tdf · mech" / "tdf · squad"), an HP meter, HP 80/80 or 20/20, AP 2/2, weapon (range · acc · dmg · pen), armour and status, all equal to `activeMission.units`; the objectives panel lists "0 / 2" with both spawners at 20 hp; the action bar has MOVE / ATTACK / OVERWATCH / RELOAD / END TURN. **MOVE works:** arm MOVE, pick an adjacent free tile → the unit's `pos` changes and AP drops 2 → 1; a non-adjacent path is refused with "the path does not step from tile to tile" and a far tile with "a tile on the path cannot be entered". **END TURN, RELOAD and OVERWATCH** put "No handler registered for command \"tactical:end-turn\"" (…reload / …overwatch) in the banner and change nothing (#404), so no bugs ever spawn and ATTACK cannot be exercised yet; the turn stays 1 through 18 attempts. The HUD's turn banner duplicates the #342 bar's turn/phase and Overworld button (#403).
 - Tactical screen slice (#342, run 51, dev hook `__tut__.startTacticalMission(missionId)` on seed `4242`): opens `body[data-screen="tactical"]` with a canvas filling `#tactical-viewport`, bar "MISSION mission-1 · TURN 1 · PHASE player · TDF 3 · BUGS 0" and an Overworld button; the autosave gains `activeMission` (3 TDF units on adjacent deploy tiles, 2 spawners, 2 objectives, 16 extraction tiles); `body[data-tactical-units]` equals the unit count; `__tutTactical__.selectUnit/selectTile` mirror to `body[data-selected-unit|data-selected-tile]`; real clicks 10–30 px above each unit's anchor select that unit (the anchor is the tile centre under the feet, so a click exactly there hits the ground or the unit in front — occlusion, not a mispick); a tile click records the tile; keys m/a/o/r/Tab/Escape/Enter record move/attack/overwatch/reload/next-unit/cancel/end-turn intents but change nothing yet (turn stays 1 / player); Overworld returns to a re-hosted map with the mission kept; `startTacticalMission` again says `Mission "mission-1" is already in progress`; reload → Continue lands on the overworld with the mission kept (the spec notes #341 will flip this to tactical). **Observation:** Advance day is enabled while a mission is active; decide with #341 whether time may pass during a deployment.
@@ -175,6 +180,7 @@ Commented on **#33** at `35857b2` (preview missing from the build); #209 fixed i
 - Production build (`vite preview`) has no `window.__tut__` hooks; run hook-based checks against the dev server. Since #209 it does include `mapgen-preview.html`.
 - Chromium localStorage is ~5 MB per origin. To force an autosave failure **clear storage first**, then fill with 512 KB chunks, then 64 KB, 4 KB, 256 B, 16 B, 1 B until each throws. Filling around an existing autosave lets the next save succeed (same key, same size).
 - Since #78 the lose-run must watch `body[data-screen]` for `game-over` after every Advance day click; the hand-off happens one microtask after the outcome is set, so a click-then-read loop sees the button vanish.
+- A marker projected outside `#map-viewport` is clipped, not mis-picked: check `elementFromPoint(...).closest("#map-viewport")` before counting a miss.
 - The overworld picking flow's very first click after New game occasionally selects nothing (once in ~60 runs); the flow retries that click once before counting a miss.
 - Keyboard shortcuts on the tactical screen now issue real commands (`o` = overwatch spends AP, Enter ends the turn): run intent probes last, or on a unit you do not need afterwards.
 - The tactical screen does not set `body[data-last-command]` (only the mapgen preview does); judge a tactical command by the state change (`activeMission` in the autosave: `pos`, `ap`, `turn`, `log.length`) and the banner's `[data-role="status"]`.

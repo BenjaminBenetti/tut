@@ -316,6 +316,24 @@ function cornerHills(...raised: readonly PlaneCell[]): TacticalMap {
   return builder.build();
 }
 
+/**
+ * The same field as `cornerHills`, but the corner is made of opaque
+ * props standing on ordinary ground rather than raised rock.
+ *
+ * ```
+ *   z=1   .   PP          PP  prop with blocksLos
+ *   z=2   PP   .          .   bare ground
+ *        x=1  x=2
+ * ```
+ */
+function cornerProps(...occupied: readonly PlaneCell[]): TacticalMap {
+  const builder = new FixtureMapBuilder(5, 5, 3).fillGround();
+  for (const cell of occupied) {
+    builder.prop(PropKindIds.CAR, at(cell.x, cell.z));
+  }
+  return builder.build();
+}
+
 describe("corner seams", () => {
   it("does not let sight thread the seam between two hills (#646)", () => {
     // The line steps diagonally through the corner and never enters
@@ -339,6 +357,43 @@ describe("corner seams", () => {
       .wall({ x: 1, y: 0, z: 2 }, "n", "solid")
       .build();
     expect(los(walled, at(1, 1), at(2, 2))).toBe(false);
+  });
+
+  it("does not let sight thread the seam between two opaque props (#679)", () => {
+    // The same hole as the hills above, one layer up: a prop is opaque
+    // by tuning rather than by nature, and the corner rule used to ask
+    // only about rock.
+    const map = cornerProps({ x: 1, z: 2 }, { x: 2, z: 1 });
+    expect(los(map, at(1, 1), at(2, 2))).toBe(false);
+  });
+
+  it("seals a corner where a prop meets rock (#679)", () => {
+    // The mixed pair is the case worth naming: the gap a soldier would
+    // be looking through is the same gap whichever side is which, so
+    // both sides seal it.
+    const builder = new FixtureMapBuilder(5, 5, 3).fillGround();
+    builder.removeTile({ x: 1, y: 0, z: 2 });
+    builder.tile({ x: 1, y: 2, z: 2 }, SurfaceIds.ROCK);
+    builder.prop(PropKindIds.CAR, at(2, 1));
+    expect(los(builder.build(), at(1, 1), at(2, 2))).toBe(false);
+  });
+
+  it("leaves the diagonal open when only one side of the corner is a prop", () => {
+    // Parity with rock: one opaque thing touched at a single corner
+    // still has an open gap beside it.
+    const map = cornerProps({ x: 1, z: 2 });
+    expect(los(map, at(1, 1), at(2, 2))).toBe(true);
+  });
+
+  it("leaves the diagonal open when the props do not block sight", () => {
+    // `blocksLos` is what the rule reads, not the presence of a prop:
+    // two crates at the same corner are see-through and stay so.
+    const map = new FixtureMapBuilder(5, 5, 3)
+      .fillGround()
+      .prop(PropKindIds.CRATE, at(1, 2))
+      .prop(PropKindIds.CRATE, at(2, 1))
+      .build();
+    expect(los(map, at(1, 1), at(2, 2))).toBe(true);
   });
 
   it("does not call ground with a floor above it rock (#646)", () => {

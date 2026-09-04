@@ -120,10 +120,7 @@ export function hasLineOfSight(
   }
   for (const cell of line.cells.slice(1, -1)) {
     const level = Math.floor(heightAt((cell.tEnter + cell.tExit) / 2));
-    if (index.get(cell.x, level, cell.z)?.blocksLos === true) {
-      return false;
-    }
-    if (isSolidAt(index, cell.x, level, cell.z)) {
+    if (blocksSightAt(index, cell.x, level, cell.z)) {
       return false;
     }
   }
@@ -168,8 +165,31 @@ function isSolidAt(
 }
 
 /**
- * Whether a corner the line passes exactly through is sealed by rock on
- * both sides (#646).
+ * Whether a cell stops sight at all: solid rock (#593), or a tile whose
+ * prop is opaque.
+ *
+ * The cell rule and the corner rule both ask this one question, which is
+ * what keeps them agreeing. They did not always: #646 sealed corners
+ * against rock by calling `isSolidAt` directly, so two dense trees
+ * meeting at a corner let a line thread the seam that two boulders — or
+ * a wall — in the same place would stop (#679). Rock is opaque by nature
+ * and a prop is opaque by tuning, but a sightline cannot tell the
+ * difference, so neither should these two rules.
+ */
+function blocksSightAt(
+  index: TileIndex,
+  x: number,
+  level: number,
+  z: number,
+): boolean {
+  return (
+    index.get(x, level, z)?.blocksLos === true || isSolidAt(index, x, level, z)
+  );
+}
+
+/**
+ * Whether a corner the line passes exactly through is sealed on both
+ * sides (#646, #679).
  *
  * A corner step moves diagonally and never enters the two cells it
  * passes between, so the cell loop is never asked about them. Walls cope
@@ -183,13 +203,16 @@ function isSolidAt(
  *   A  │ G2         G1, G2  only grazed
  * ```
  *
- * Both have to be solid. One hill touched at a single corner still
+ * Both have to be opaque. One hill touched at a single corner still
  * leaves an open diagonal gap beside it, and sealing that would make
- * terrain stricter than the masonry it is meant to agree with.
+ * terrain stricter than the masonry it is meant to agree with. Mixed
+ * pairs seal too: a boulder and a container stack meeting at a corner
+ * close it, because the gap a soldier would be looking through is the
+ * same gap either way.
  *
- * Measured before it was written: 175 of 197,486 sight lines across 24
- * generated maps threaded such a seam — 0.089 %, but on 17 of the 24
- * maps.
+ * Measured before each was written: 175 of 197,486 sight lines across 24
+ * generated maps threaded a rock seam (0.089 %, on 17 of 24 maps), and a
+ * further 93 of 197,311 threaded a prop seam (0.047 %, on 12 of 24).
  */
 function seamIsSealed(
   index: TileIndex,
@@ -198,7 +221,7 @@ function seamIsSealed(
 ): boolean {
   return (
     crossing.grazed.length > 0 &&
-    crossing.grazed.every((cell) => isSolidAt(index, cell.x, level, cell.z))
+    crossing.grazed.every((cell) => blocksSightAt(index, cell.x, level, cell.z))
   );
 }
 

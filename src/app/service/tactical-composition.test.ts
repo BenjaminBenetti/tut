@@ -33,10 +33,9 @@ import type { TacticalContent } from "./tactical-composition";
 import {
   composeTactical,
   createSheetLookup,
-  createSpeciesLookup,
   shippedBugBehaviours,
 } from "./tactical-composition";
-import { BUG_SPECIES } from "../../bugs/data/species";
+import { MapBehaviourRegistry } from "../../bugs/ai/behaviour-registry";
 
 // ===========================================
 // Fixtures
@@ -253,18 +252,15 @@ describe("createSheetLookup", () => {
   });
 });
 
-describe("createSpeciesLookup", () => {
-  it("resolves a shipped species id and nothing else", () => {
-    const speciesOf = createSpeciesLookup(BUG_SPECIES);
-    expect(speciesOf("swarmer")).toBe(BUG_SPECIES.swarmer);
-    expect(speciesOf("squad-1")).toBeUndefined();
-    expect(speciesOf("toString")).toBeUndefined();
-  });
-});
-
 describe("shippedBugBehaviours", () => {
-  it("has no duplicate tags", () => {
+  it("registers the behaviours that have landed, one tag each", () => {
     const tags = shippedBugBehaviours().map((b) => b.tag);
+    // #333 shipped the lurker's flank; #332 rush and #334 punish-clumps
+    // join this list as they merge.
+    expect(tags).toContain("flank");
     expect(new Set(tags).size).toBe(tags.length);
+    expect(
+      () => new MapBehaviourRegistry(shippedBugBehaviours()),
+    ).not.toThrow();
   });
 });

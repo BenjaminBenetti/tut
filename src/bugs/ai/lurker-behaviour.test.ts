@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import { PropKindIds } from "../../mapgen/data/props";
 import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
+import { TileIndex } from "../../mapgen/service/tile-index";
 import {
   missionWith,
   unitAt,
@@ -13,7 +14,12 @@ import { MOVE } from "../../tactical/model/move-command";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { Unit } from "../../tactical/model/unit";
 import { buildMoveGraph } from "../../tactical/service/movement-service";
+import type { TileCoord } from "../../mapgen/model/tile-coord";
+import type { TacticalCommand } from "../../tactical/model/tactical-command";
+import type { MoveCommand } from "../../tactical/model/move-command";
+import type { LurkerTuning } from "../model/lurker-tuning";
 import { LURKER } from "../data/species";
+import { LURKER_TUNING } from "../data/lurker-tuning";
 import type { BehaviourContext } from "./bug-behaviour";
 import { LurkerBehaviour, tileBehind } from "./lurker-behaviour";
 import {
@@ -23,7 +29,7 @@ import {
   withBug,
   bugView,
 } from "./bug-mission.test-helper";
-import { tileDistance } from "./utility";
+import { exposureScore, tileDistance } from "./utility";
 
 // ===========================================
 // Fixtures
@@ -186,5 +192,100 @@ describe("LurkerBehaviour against a mark in cover", () => {
     expect(commands.length).toBeGreaterThan(0);
     expect(commands.at(-1)?.type).toBe(ATTACK);
     expect(commands.at(-1)?.payload).toMatchObject({ targetId: "squad-1" });
+  });
+});
+
+// ===========================================
+// Dead ground, on a field wider than a sight range
+// ===========================================
+
+/**
+ * The gap #676 named: every lurker fixture until now sat inside one
+ * sight range, and a term that is constant across every test board is
+ * indistinguishable from a term that is constant everywhere — which is
+ * exactly how `exposureScore` reading `1` on every tile of the map
+ * survived until #669.
+ *
+ * So this field is 40 wide against the fixture templates' `sightRange`
+ * of 8, and the mark's friend stands far enough from the mark that the
+ * tiles the lurker can reach straddle the edge of what that friend
+ * sees:
+ *
+ * ```
+ *   x:      20            28        34
+ *            M   . . . . . L . . . F      M mark   F friend   L lurker
+ *            └ seen by M ─┘ └ seen by both ┘
+ *   exposure  0.5           1.0        0.5
+ * ```
+ *
+ * Three values on one board rather than two, because `others` counts
+ * the mark as well as its friend: the middle is watched by both, either
+ * flank by one, and the far west by neither.
+ */
+/** The lurker's plan under the given tuning. */
+function planWith(
+  mission: TacticalState,
+  tuning: LurkerTuning,
+): readonly TacticalCommand[] {
+  return new LurkerBehaviour(tuning).choose(
+    bugView(mission),
+    "lurker-1",
+    ctx(mission, 1),
+  );
+}
+
+/** Where the plan puts the lurker, or where it already stands. */
+function destinationOf(
+  mission: TacticalState,
+  commands: readonly TacticalCommand[],
+): TileCoord {
+  const step = commands.find((c): c is MoveCommand => c.type === MOVE);
+  return (
+    step?.payload.path.at(-1) ??
+    mission.units.find((u) => u.id === "lurker-1")!.pos
+  );
+}
+
+function acrossSightEdge(): TacticalState {
+  const map = new FixtureMapBuilder(40, 9, 1).fillGround().build();
+  const mark = unitAt("squad-1", "infantry", { x: 20, y: 0, z: 4 });
+  const friend = unitAt("squad-2", "infantry", { x: 34, y: 0, z: 4 });
+  const base = missionWith(map, [mark, friend], { phase: "bugs" });
+  return withBug(base, LURKER, { x: 28, y: 0, z: 4 }, "lurker-1").mission;
+}
+
+describe("LurkerBehaviour across a sight edge (#676)", () => {
+  it("has tiles the lurker can reach on both sides of what the friend sees", () => {
+    // The fixture's own precondition. Without this the test below could
+    // pass on a board where the term never varies, which is the defect
+    // it exists to rule out rather than a detail of the setup.
+    const mission = acrossSightEdge();
+    const index = new TileIndex(mission.map);
+    const others = mission.units.filter((u) => u.team === "tdf");
+    const score = (x: number): number =>
+      exposureScore(mission, { x, y: 0, z: 4 }, others, index);
+    // Three distinct values on one board, which is the whole point: both
+    // of them see the middle, only the mark sees the near side, and
+    // neither reaches the far west.
+    expect(score(27)).toBe(1);
+    expect(score(22)).toBe(0.5);
+    expect(score(5)).toBe(0);
+  });
+
+  it("consults its tuning: a lurker that likes being watched crosses into view", () => {
+    // Flip the sign and the same fixture must produce the opposite
+    // arrangement. This is the assertion that could not exist while the
+    // score read 1 everywhere: no weight could move a constant.
+    const mission = acrossSightEdge();
+    const index = new TileIndex(mission.map);
+    const others = mission.units.filter((u) => u.team === "tdf");
+    const hidden = destinationOf(mission, planWith(mission, LURKER_TUNING));
+    const bold = destinationOf(
+      mission,
+      planWith(mission, { ...LURKER_TUNING, exposureWeight: -6 }),
+    );
+    expect(exposureScore(mission, bold, others, index)).toBeGreaterThan(
+      exposureScore(mission, hidden, others, index),
+    );
   });
 });

@@ -77,6 +77,19 @@ test("Launch plays the mission out, extraction ends it, and the debrief comes fr
   await expect(
     page.locator('#turn-banner [data-field="tdf-units"]'),
   ).toHaveText("1");
+  // The objective tracker reads from the mission: every spawner still
+  // standing, none of them worked yet. Interact is offered only in reach,
+  // and the spawners sit 12+ tiles from the deploy zone (#427).
+  const objectives = page.locator('[data-role="objective-list"] li');
+  await expect(objectives.first()).toBeVisible();
+  await expect(page.locator('[data-field="objective-summary"]')).toHaveText(
+    /^0 \/ [1-9]\d*$/,
+  );
+  await expect(objectives.first()).toContainText("hp");
+  await expect(
+    page.locator('#action-bar [data-action="interact"]'),
+  ).toBeDisabled();
+
   // The mission is still on offer: nothing is resolved until it ends.
 
   // The autosave carries the live mission: a reload resumes it here.

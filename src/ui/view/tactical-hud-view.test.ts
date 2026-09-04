@@ -2,7 +2,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { COMBAT_TUNING } from "../../tactical/data/combat-tuning";
+import { OBJECTIVE_TUNING } from "../../tactical/data/objective-tuning";
 import { EXTRACT } from "../../tactical/model/extract-command";
+import { INTERACT } from "../../tactical/model/interact-command";
 import { ATTACK } from "../../tactical/model/attack-command";
 import { END_TURN } from "../../tactical/model/end-turn-command";
 import { MOVE } from "../../tactical/model/move-command";
@@ -22,7 +24,7 @@ function setup() {
   const onBack = vi.fn();
   const hud = new TacticalHudView(
     { onCommand: (c) => commands.push(c), onBack },
-    { combatTuning: COMBAT_TUNING },
+    { combatTuning: COMBAT_TUNING, objectiveTuning: OBJECTIVE_TUNING },
   );
   hud.mount(root);
   const mission = hudMission();
@@ -67,7 +69,7 @@ describe("TacticalHudView", () => {
     const commands: TacticalCommand[] = [];
     const hud = new TacticalHudView(
       { onCommand: (c) => commands.push(c), onBack: vi.fn() },
-      { combatTuning: COMBAT_TUNING },
+      { combatTuning: COMBAT_TUNING, objectiveTuning: OBJECTIVE_TUNING },
     );
     hud.mount(root);
     // Put the squad within the rifle's reach of the live spawner at (9,0,0).
@@ -207,6 +209,106 @@ describe("TacticalHudView", () => {
     expect(hud.getSelectedUnitId()).toBe("s2");
     hud.handleIntent({ kind: "action", action: "cancel" });
     expect(hud.getMode()).toBe("select");
+  });
+
+  it("offers Interact only when an objective is in reach, and works the nearest", () => {
+    const { hud, mission, commands } = setup();
+    const button = (): HTMLButtonElement | null =>
+      root.querySelector<HTMLButtonElement>('[data-action="interact"]');
+
+    // s1 stands at (1,0,1); the live spawner is at (9,0,0).
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    expect(button()?.disabled).toBe(true);
+    hud.handleIntent({ kind: "action", action: "interact" });
+    expect(commands).toEqual([]);
+
+    // Put two spawners in reach; the nearer one gets the charges.
+    hud.update({
+      ...mission,
+      spawners: [
+        {
+          ...mission.spawners[0]!,
+          id: "spawner-far",
+          pos: { x: 2, y: 0, z: 2 },
+        },
+        {
+          ...mission.spawners[0]!,
+          id: "spawner-near",
+          pos: { x: 1, y: 0, z: 2 },
+        },
+      ],
+      objectives: [
+        {
+          id: "objective-far",
+          kind: "destroy-spawner",
+          targetId: "spawner-far",
+          complete: false,
+        },
+        {
+          id: "objective-near",
+          kind: "destroy-spawner",
+          targetId: "spawner-near",
+          complete: false,
+        },
+      ],
+    });
+    expect(button()?.disabled).toBe(false);
+    button()?.click();
+    expect(commands).toEqual([
+      {
+        type: INTERACT,
+        payload: { unitId: "s1", objectiveId: "objective-near" },
+      },
+    ]);
+  });
+
+  it("marks the objective Interact would work, so two in range are not ambiguous", () => {
+    const { hud, mission } = setup();
+    hud.update({
+      ...mission,
+      spawners: [{ ...mission.spawners[0]!, pos: { x: 1, y: 0, z: 2 } }],
+    });
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    const row = root.querySelector<HTMLElement>(
+      '[data-role="objective-list"] [data-objective-id="objective-1"]',
+    );
+    expect(row?.dataset.inReach).toBe("true");
+    expect(row?.textContent).toContain("in reach");
+
+    // Nothing selected, nothing in reach.
+    hud.handleIntent({ kind: "action", action: "cancel" });
+    hud.handleIntent({ kind: "select-unit", unitId: "s2" });
+    expect(
+      root.querySelector<HTMLElement>(
+        '[data-role="objective-list"] [data-objective-id="objective-1"]',
+      )?.dataset.inReach,
+    ).toBeUndefined();
+  });
+
+  it("never offers Interact to a spent unit or for a finished objective", () => {
+    const { hud, mission } = setup();
+    const adjacent = {
+      ...mission,
+      spawners: [{ ...mission.spawners[0]!, pos: { x: 1, y: 0, z: 4 } }],
+    };
+    // s2 is beside the spawner but has no action points left.
+    hud.update(adjacent);
+    hud.handleIntent({ kind: "select-unit", unitId: "s2" });
+    expect(
+      root.querySelector<HTMLButtonElement>('[data-action="interact"]')
+        ?.disabled,
+    ).toBe(true);
+
+    // Give it actions but finish the objective: still nothing to work.
+    hud.update({
+      ...adjacent,
+      units: adjacent.units.map((u) => (u.id === "s2" ? { ...u, ap: 2 } : u)),
+      objectives: adjacent.objectives.map((o) => ({ ...o, complete: true })),
+    });
+    expect(
+      root.querySelector<HTMLButtonElement>('[data-action="interact"]')
+        ?.disabled,
+    ).toBe(true);
   });
 
   it("offers Extract only to a unit standing in the extraction zone", () => {

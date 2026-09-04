@@ -4,6 +4,7 @@ import { Group } from "three";
 
 import { previewMission } from "./app/service/preview-units";
 import { COMBAT_TUNING } from "./tactical/data/combat-tuning";
+import { OBJECTIVE_TUNING } from "./tactical/data/objective-tuning";
 import { TacticalHudView } from "./ui/view/tactical-hud-view";
 import { CameraInputController } from "./graphics/controller/camera-input-controller";
 import { MODEL_MANIFEST } from "./graphics/data/model-manifest";
@@ -154,7 +155,10 @@ async function main(): Promise<void> {
             },
             onBack: () => undefined,
           },
-          { combatTuning: COMBAT_TUNING },
+          {
+            combatTuning: COMBAT_TUNING,
+            objectiveTuning: OBJECTIVE_TUNING,
+          },
         );
         hudView.mount(viewport);
         hudView.update(mission);

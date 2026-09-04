@@ -198,3 +198,30 @@ export function withBug(
     },
   };
 }
+
+// ===========================================
+// Commands
+// ===========================================
+
+/**
+ * Applies a `Move` command's outcome to `unitId` the way the movement
+ * handler would for the purposes of a behaviour test: the unit stands on
+ * the end of the path with its action points refreshed, so the next call
+ * to `choose` reads the next turn.
+ */
+export function applyMoveTo(
+  mission: TacticalState,
+  unitId: string,
+  path: readonly TileCoord[],
+): TacticalState {
+  const end = path.at(-1);
+  if (end === undefined) {
+    return mission;
+  }
+  return {
+    ...mission,
+    units: mission.units.map((u) =>
+      u.id === unitId ? { ...u, pos: end, ap: u.maxAp } : u,
+    ),
+  };
+}

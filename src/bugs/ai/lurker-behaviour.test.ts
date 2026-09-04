@@ -11,6 +11,7 @@ import { LURKER } from "../data/species";
 import type { BehaviourContext } from "./bug-behaviour";
 import { LurkerBehaviour, tileBehind } from "./lurker-behaviour";
 import {
+  applyMoveTo,
   startedMission,
   walkableTileNear,
   withBug,
@@ -26,22 +27,6 @@ const ctx = (mission: TacticalState, seed: number): BehaviourContext => ({
   combat: COMBAT_TUNING,
   graph: buildMoveGraph(mission.map),
 });
-
-/** Applies a Move command's path end and AP cost to the bug so the next turn starts there. */
-function applyMove(
-  mission: TacticalState,
-  bugId: string,
-  path: readonly { x: number; y: number; z: number }[],
-): TacticalState {
-  const end = path.at(-1);
-  if (!end) return mission;
-  return {
-    ...mission,
-    units: mission.units.map((u) =>
-      u.id === bugId ? { ...u, pos: end, ap: u.maxAp } : u,
-    ),
-  };
-}
 
 /** Runs up to `turns` lurker turns from `start`, returning where it ends and whether it attacked. */
 function stalk(
@@ -62,7 +47,7 @@ function stalk(
     );
     for (const command of commands) {
       if (command.type === MOVE) {
-        mission = applyMove(mission, bugId, command.payload.path);
+        mission = applyMoveTo(mission, bugId, command.payload.path);
         moved++;
       }
       if (command.type === ATTACK) {

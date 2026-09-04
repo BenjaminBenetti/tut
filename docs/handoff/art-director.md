@@ -1,6 +1,6 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-04 (session 2, second update)
+Last updated: 2026-09-04 (session 2, third update)
 
 ## 1. What I was doing and where it stands
 
@@ -27,7 +27,10 @@ Last updated: 2026-09-04 (session 2, second update)
 | **Combat VFX round 2**: `vfx.tracer`, `vfx.claw-slash`, `vfx.bug-death` + two sheets | #429 | **PR #436**, CI green. Completes the Director's M2 VFX list. |
 | **Env atlas round 2**: ground, roof and concrete cells repainted for readability | #441 | **PR #442**. Luminance std per cell 2.8–8 → 5.5–14.3; rule written into style guide §7. |
 | **Batch E: city building kit as Blender models** (8 pieces) | #454 | **PR #455**. Kit doc `docs/design/kits/city-building-kit.md`. |
-| VFX playback (tracer / claw / death), filed for graphics | #457 | Open, not mine to implement. |
+| VFX playback (tracer / claw / death), filed for graphics | #457 | Open, not mine to implement. Sizes measured against a live frame and posted there. |
+| **Batch G: the last nine props** (trees, cactus, boulder, fence, hydrant, lamp post, shelving) | #490 | **PR #491**, stacked on #464. Ends the replacement track. |
+| Window density reads as glass towers — filed for mapgen | #492 | Open, p3. |
+| Region plates wash out the world map — filed for graphics | #493 | Open, p3. |
 | **Tactical HUD icon set** (13 icons: end-turn, interact, hidden, suppressed, hp, ap, armor, damage, range, cover-low/high, elevation, ammo) | #466 | **PR #467**. |
 | **Tactical presentation spec** (style guide §12) + mission mood concept | #471 | **PR #472**. |
 | **Tactical map palette → style guide tokens** + `shoot-mission.mjs` | #475 | **PR #478**. |
@@ -73,6 +76,8 @@ Issues #2, #3, #4, #93, #102, #119, #143, #144, #145 are on project 5; #162, #16
 - **Tile textures carry detail at mid scale, never at tile scale (#441)**: one model per tile id means every grass tile is the same stamp, so a big blob turns a field into a visible checkerboard — my first repaint did exactly that with period-3 noise and 20 px blobs. Period 6–11 noise plus 4–13 px `Cell.blob` ellipses, target luminance std 7–15 per 128 px cell, palette mean unchanged. The rule is in style guide §7 and the measurement recipe is in §9 below.
 - **Four ways a Blender kit piece goes wrong (#454)**, all in `docs/design/kits/city-building-kit.md`: coincident faces z-fight into black patches (cut openings, do not overlay panels); a recessed deck centre exposes the ground tile under it (colour, not depth, marks a border); `bpy.ops.uv.reset` orients u along whichever edge a face's loop starts on, so upright panels sample brick courses sideways (`bpy_kit.box(..., uv_rot=90)`, added in the same PR, opt-in so no existing model moves); nothing may rise above its storey (a staircase handrail put the model at 2.0 u, through the floor above).
 - **Look at the real game, not only at previews (#474, #475)**: `node tools/art/preview/shoot-mission.mjs out.png [seed] [--overworld]` boots the app on the dev server, plays to the first mission with the e2e `__tut__` hooks and screenshots the tactical screen. Two runs are pixel-identical. Every art review before this one was an offline render of assets the game never loads, which is exactly how #474 went unnoticed for a milestone.
+- **The twelve remaining tile placeholders stay procedural, and #274 is done at batch G.** They are 12–84 triangle slabs whose entire look comes from their env atlas cell; a Blender version would add a chamfer per tile, which at 1 600 tiles on a big map buys a visible grid and costs triangles against a 60-triangle tile budget. The replacement track was about silhouettes, and a flat slab has none. If the Director wants them converted anyway it is about two hours; say so and I will.
+- **Size a sprite against a real frame, never against a grey background.** Compositing the five combat effects over a live mission at 64 px per tile moved three of them: tracer 0.15 → 0.22 tiles thick, claw slash 0.7 → 0.9, bug death 0.8 → 1.0. The muzzle flash and impact were already right. `docs/design/sprites/README.md` has the frame and the table.
 - **Chamfer border trick**: `.tut-panel`/`.tut-btn` are two clipped layers (line colour behind, surface colour inset 1 px) so the 1 px border follows the 45° cut. `--surface` custom property selects the inner colour per variant.
 
 ## 4. Next, in order

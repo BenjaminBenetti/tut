@@ -187,6 +187,10 @@ interface SweepRun {
   readonly outcome: string;
   readonly turns: number;
   readonly violations: readonly string[];
+  /** TDF units still standing when the run stopped. */
+  readonly tdfAlive: number;
+  /** Bugs still standing when the run stopped. */
+  readonly bugsAlive: number;
 }
 
 /**
@@ -272,6 +276,9 @@ function play(mapSeed: string, difficulty: number, maxTurns: number): SweepRun {
     seed: mapSeed,
     startMs,
     driveMs: performance.now() - droveAt,
+    tdfAlive: mission.units.filter((u) => u.team === "tdf" && u.hp > 0).length,
+    bugsAlive: mission.units.filter((u) => u.team === "bugs" && u.hp > 0)
+      .length,
     outcome: mission.outcome ?? "unresolved",
     turns,
     violations,
@@ -296,9 +303,12 @@ const SEEDS = Array.from({ length: 60 }, (_, i) => ({
  * Turns a mission gets before the sweep calls it unresolved.
  *
  * Thirty, not sixty. A mission the driver has not resolved in thirty
- * turns is a finding either way, and the back half of a stalled run is
- * the most expensive part of the sweep: bug counts grow every turn, and
+ * turns is a finding either way, and the back half of a long run is the
+ * most expensive part of the sweep: bug counts grow every turn, and
  * every command in a hundred-bug phase recomputes both sides' vision.
+ * Fifteen turns buys a usable sample cheaply; it is deliberately below
+ * the 37-56 turns a difficulty-10 mission needs to finish, so seeds at
+ * the top of the range are expected to come back unresolved.
  */
 const TURN_CAP = 15;
 
@@ -318,10 +328,11 @@ const TURN_CAP = 15;
 const BUDGET_MS = 300_000;
 
 /**
- * How many of the 60 seeds must reach a win or a loss. 42 do today; the
- * rest stall on #666. Set below the measured figure so ordinary drift in
- * the rules does not flake the sweep, and high enough that a real
- * regression in how often a mission concludes fails it.
+ * How many of the 60 seeds must reach a win or a loss inside `TURN_CAP`.
+ * 42 do today; the rest are still being played when the cap arrives, not
+ * stuck. Set below the measured figure so ordinary drift in the rules
+ * does not flake the sweep, and high enough that a real regression in
+ * how often a mission concludes fails it.
  */
 const RESOLVED_FLOOR = 35;
 
@@ -357,16 +368,16 @@ describe("seeded tactical sweep", () => {
   });
 
   it("resolves at least the seeds it resolves today", () => {
-    // Not every seed reaches a win or a loss: at difficulty 5 and above
-    // the bug population outruns a three-unit force and the rules have
-    // no defeat short of a total wipe, so the mission sits unwinnable
-    // and unlost forever (#666). Raising the cap to 40 turns converted
-    // only 6 of the 19 stalls at three times the runtime, which is what
-    // says the stall is structural rather than slow.
+    // Not every seed reaches a win or a loss inside the cap. At
+    // difficulty 5 and above the bug population outruns a three-unit
+    // force, and the mission then takes 37-56 turns to conclude as a
+    // loss — measured at a 150-turn cap, well past the 15 turns this
+    // sweep can afford. The mission is not stuck; the cap is short.
     //
-    // Rather than fail on a known gap or ignore it, the count is pinned:
-    // #666 getting worse turns this red, and fixing it makes the floor
-    // easy to raise.
+    // The pace itself is the problem, and is #666: a mission four times
+    // longer than a reasonable one is unplayable even though it ends.
+    // The count is pinned so that pace regressing turns this red, and
+    // so that tuning it makes the floor easy to raise.
     const resolved = runs.filter((run) => run.outcome !== "unresolved");
     const count = `${String(resolved.length)} of ${String(runs.length)} resolved`;
     expect([count, resolved.length >= RESOLVED_FLOOR]).toEqual([count, true]);
@@ -402,17 +413,29 @@ describe("seeded tactical sweep", () => {
     for (const [outcome, count] of tally) {
       expect([outcome, count < runs.length]).toEqual([outcome, true]);
     }
-    // Worth stating plainly, because the spread above passes without it:
-    // today the tally is `won 42, unresolved 18` and no seed is ever
-    // lost. A mission is won or it hangs; there is no losing it. That is
-    // the other half of #666 — the defeat condition does not fire
-    // rarely, it does not fire at all across 60 seeds and every
-    // difficulty. Pinned so that when #666 gives a hopeless mission an
-    // ending, this fails and gets tightened rather than staying a
-    // comment nobody rereads.
-    expect([`lost ${String(tally.get("lost") ?? 0)}`, "see #666"]).toEqual([
-      "lost 0",
-      "see #666",
-    ]);
+  });
+
+  it("leaves unresolved seeds mid-mission rather than deadlocked", () => {
+    // `unresolved` here means the cap arrived before the mission ended,
+    // not that the mission cannot end. Measured at a 150-turn cap, every
+    // difficulty-10 seed concludes as a loss between turns 37 and 56 —
+    // far past this cap, which is set for CI budget, not for realism.
+    //
+    // What would be a real finding is an unresolved seed with nothing
+    // left to play: no TDF unit standing, or no bugs left to fight. The
+    // rules end a mission on either, so a seed sitting unresolved in
+    // that state is a mission the rules failed to close.
+    expect(
+      runs
+        .filter(
+          (run) =>
+            run.outcome === "unresolved" &&
+            (run.tdfAlive === 0 || run.bugsAlive === 0),
+        )
+        .map(
+          (run) =>
+            `${run.seed}: tdf ${String(run.tdfAlive)}, bugs ${String(run.bugsAlive)}`,
+        ),
+    ).toEqual([]);
   });
 });

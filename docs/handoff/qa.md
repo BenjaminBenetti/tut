@@ -6,9 +6,9 @@ Last updated: 2026-09-04 (post-v0.2.0; win path settled on #317).
 
 | Field | Value |
 |---|---|
-| SHA tested | `4cec760` (main, after v0.2.0 was tagged at `c2cddf8`) |
-| Gate | typecheck, lint, build pass; vitest **1595 / 1595** (+1 deliberate skip); e2e **44 / 44** |
-| Exploratory | win path settled: a mech destroys an indoor spawner in one shot, a lone squad cannot (see item 4) |
+| SHA tested | `f7901ba` (main, after v0.2.0 was tagged at `c2cddf8`) |
+| Gate | typecheck, lint, build pass; vitest **1608 / 1608** (+1 deliberate skip); e2e **45 / 45** |
+| Exploratory | 11 flows, 0 findings on `4cec760`; win path settled (item 4); spawner picking from #515 verified with a real click |
 | **Verdict** | **A tactical mission is playable end to end and winnable.** Release verdict for v0.2.0 was posted on #317 against `14b0811`; nothing since has changed it. |
 
 ### Release push, in order of what mattered
@@ -48,6 +48,7 @@ Last updated: 2026-09-04 (post-v0.2.0; win path settled on #317).
 
 | SHA | Build | Unit | e2e | Exploratory | Filed |
 |---|---|---|---|---|---|
+| `f7901ba` | pass | 1608/1608 | 45/45 | 11 flows clean; real click targets a drawn spawner (#515) | — |
 | `4cec760` | pass | 1595/1595 | 44/44 | mech kills an indoor spawner; squad cannot | #517 |
 | `b5c1196` | pass | 1348/1348 | 39/39 | known #412; #404 verified | — |
 | `6e2e3c1` | pass | 1338/1338 | 39/39 | known #412 | — |

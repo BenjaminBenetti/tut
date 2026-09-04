@@ -24,6 +24,7 @@ import { createNewGame } from "../../save/service/new-game-service";
 import { UNIT_TUNING } from "../data/unit-tuning";
 import { SPAWN_TUNING } from "../data/spawn-tuning";
 import { FIRST_TURN } from "../model/tactical-state";
+import { TURN_STARTED } from "../model/turn-started-event";
 import type { MissionStartDeps } from "./mission-start-service";
 import { startTacticalMission, tileAdmits } from "./mission-start-service";
 import { MAX_DEPLOYED_UNITS } from "../../overworld/model/deployment";
@@ -137,7 +138,11 @@ describe("startTacticalMission", () => {
       nextTurn: SPAWN_TUNING.firstWaveTurn,
       wave: 0,
     });
-    expect(tactical.log).toEqual([]);
+    // The mission announces the turn it opens on, so the log has
+    // something to say before the player has acted (#573).
+    expect(tactical.log).toEqual([
+      { type: TURN_STARTED, payload: { turn: FIRST_TURN, phase: "player" } },
+    ]);
     expect(Number.isInteger(tactical.seed)).toBe(true);
     expect(next.overworld).toBe(state.overworld);
     expect(next.roster).toBe(state.roster);

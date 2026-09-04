@@ -10,6 +10,21 @@ pnpm typecheck && pnpm lint && pnpm build && pnpm test && pnpm test:sim && pnpm 
 
 **`pnpm test:sim` is not optional and is easy to miss.** `vitest.config.ts` excludes `src/**/*.sim.test.ts`, so `pnpm test` does not run the 60-seed mission sweep; CI runs it as a separate `sim · mission sweep` check. A gate without it passes gameplay regressions: **#723** reverted a desert-palm mapgen change because it *lost a difficulty-4 mission*, where the measured baseline says difficulty 1–4 wins 100 % of the time. The sweep caught it; a typecheck/lint/build/test/e2e gate would not have.
 
+**This is not hypothetical — I called a red `main` green.** On `ece970e` I reported
+"typecheck, lint, build pass; unit 1906; e2e 59" and said main was healthy. CI on that
+same commit reads:
+
+```
+typecheck · lint · test · build : success
+e2e · chromium                  : success
+sim · mission sweep             : FAILURE
+```
+
+The sweep was red from `cf2af0c` (the desert-palm change) until `de58489` reverted it,
+and I gated inside that window with a five-stage gate that could not see it. Nobody was
+misled for long because the Tech Lead gates on the merge result and caught it, but the
+QA report for that head was wrong.
+
 Stop any probe servers on 4173/4174 before the e2e run, or contention fakes failures.
 
 ## Latest run

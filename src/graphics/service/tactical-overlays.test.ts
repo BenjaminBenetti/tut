@@ -110,18 +110,28 @@ describe("overlaysFor", () => {
 describe("TacticalOverlays", () => {
   it("draws one instance per tile on the matching layer and clears to zero", () => {
     const overlays = new TacticalOverlays();
-    // Every per-tile plane is instanced; the weapon envelope is not a
-    // per-tile plane at all but one outline mesh, which is the whole
-    // point of #624 and is asserted here so it cannot quietly go back.
-    const instanced = overlays
-      .layers()
-      .filter((l) => l instanceof InstancedMesh);
-    expect(instanced).toHaveLength(overlays.layers().length - 1);
-    const outline = overlays
-      .layers()
-      .find((l) => l.name === "overlay-weapon-range");
-    expect(outline).toBeDefined();
-    expect(outline instanceof InstancedMesh).toBe(false);
+    // The language of #624, asserted so it cannot quietly go back:
+    // planes that mark *tiles* are instanced, planes that mark *edges*
+    // are built meshes, because an edge mark needs a rotation an
+    // instanced tile layer cannot give it.
+    const named = (name: string) =>
+      overlays.layers().find((l) => l.name === name);
+    for (const tilePlane of [
+      "overlay-move-range-1ap",
+      "overlay-move-range-2ap",
+      "overlay-blocked-shot",
+    ]) {
+      expect(named(tilePlane)).toBeInstanceOf(InstancedMesh);
+    }
+    for (const edgePlane of [
+      "overlay-weapon-range",
+      "overlay-cover-low",
+      "overlay-cover-high",
+    ]) {
+      const layer = named(edgePlane);
+      expect(layer).toBeDefined();
+      expect(layer instanceof InstancedMesh).toBe(false);
+    }
     overlays.show({
       moveRange: [
         { tile: { x: 1, y: 0, z: 1 }, apCost: 1 },
@@ -129,8 +139,8 @@ describe("TacticalOverlays", () => {
         { tile: { x: 3, y: 0, z: 1 }, apCost: 2 },
       ],
       cover: [
-        { tile: { x: 2, y: 0, z: 1 }, level: 1 },
-        { tile: { x: 3, y: 0, z: 1 }, level: 2 },
+        { tile: { x: 2, y: 0, z: 1 }, level: 1, dx: 1, dz: 0 },
+        { tile: { x: 3, y: 0, z: 1 }, level: 2, dx: 0, dz: -1 },
       ],
       blockedShot: [{ x: 3, y: 0, z: 1 }],
       weaponRange: [],

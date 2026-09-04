@@ -4,8 +4,9 @@ import {
   BLOCKED_SHOT_OPACITY,
   BLOCKED_SHOT_SIZE,
   COVER_OPACITY,
-  COVER_RING_INNER_RADIUS,
-  COVER_RING_OUTER_RADIUS,
+  COVER_TICK_INSET,
+  COVER_TICK_LENGTH,
+  COVER_TICK_WIDTH,
   GROUND_SLAB_THICKNESS,
   MOVE_RANGE_ONE_AP_COLOUR,
   MOVE_RANGE_ONE_AP_FOOTPRINT,
@@ -89,26 +90,32 @@ describe("tactical overlay palette", () => {
     // plane entitled to interrupt -- and it can afford the weight,
     // because since #624 it is rare rather than universal.
     expect(COVER_OPACITY).toBeLessThan(BLOCKED_SHOT_OPACITY);
-    expect(COVER_OPACITY).toBeLessThanOrEqual(0.6);
   });
 
-  it("keeps the cover mark a ring rather than a donut", () => {
-    // The tile it marks has to stay legible through it, so the annulus
-    // is narrower than the hole it leaves in the middle.
-    const band = COVER_RING_OUTER_RADIUS - COVER_RING_INNER_RADIUS;
-    expect(band).toBeGreaterThan(0);
-    expect(band).toBeLessThan(COVER_RING_INNER_RADIUS);
-    // And it stays inside its own tile.
-    expect(COVER_RING_OUTER_RADIUS).toBeLessThanOrEqual(0.5);
+  it("lets the cover tick be solid, because its shape is what keeps it quiet", () => {
+    // The ceiling this used to carry (0.6) belonged to the centred ring,
+    // which was loud because of where it sat rather than how strong it
+    // was. A bar against the wall that earns it reads as part of that
+    // wall; at 0.55 it simply vanished (#624).
+    expect(COVER_OPACITY).toBeGreaterThan(0.6);
   });
 
-  it("nests the blocked-shot diamond inside the cover ring", () => {
-    // A tile can carry both. The diamond's corners reach half its side
-    // times root two; keeping that inside the ring's hole means the two
-    // marks read as a ring with a diamond in it rather than fighting
-    // over the same pixels.
-    expect((BLOCKED_SHOT_SIZE / 2) * Math.SQRT2).toBeLessThan(
-      COVER_RING_INNER_RADIUS,
-    );
+  it("keeps the cover tick short of its own edge, so neighbours stay apart", () => {
+    // Two tiles either side of one wall are both covered by it and each
+    // draws its own tick; without the inset they would land on top of
+    // each other and read as one mark belonging to neither.
+    expect(COVER_TICK_INSET).toBeGreaterThan(COVER_TICK_WIDTH / 2);
+    // Shorter than the edge, or a run of ticks joins into a continuous
+    // line -- which is the weapon-range boundary's shape.
+    expect(COVER_TICK_LENGTH).toBeLessThan(1);
+  });
+
+  it("leaves the middle of the tile to the blocked-shot diamond", () => {
+    // A tile can carry both, and now they do not compete at all: cover
+    // lives against the edges, the diamond in the centre. The diamond's
+    // corners reach half its side times root two.
+    const diamondReach = (BLOCKED_SHOT_SIZE / 2) * Math.SQRT2;
+    const tickInnerEdge = 0.5 - COVER_TICK_INSET - COVER_TICK_WIDTH;
+    expect(diamondReach).toBeLessThan(tickInnerEdge);
   });
 });

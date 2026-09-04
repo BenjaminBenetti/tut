@@ -29,6 +29,9 @@ export function computeMapMetrics(map: TacticalMap): MapMetrics {
   let coveredSides = 0;
   let covered = 0;
   let flankProof = 0;
+  let closedSides = 0;
+  let sheltered = 0;
+  let backToWall = 0;
   let high = 0;
   let low = 0;
   for (const tile of map.tiles) {
@@ -57,6 +60,10 @@ export function computeMapMetrics(map: TacticalMap): MapMetrics {
     coveredSides += sides;
     if (sides >= 1) covered++;
     if (sides >= 2) flankProof++;
+    const closed = closedSidesOf(index, tile);
+    closedSides += closed;
+    if (closed >= 1) sheltered++;
+    if (closed >= 2) backToWall++;
   }
 
   const interiorProps = map.props.filter(
@@ -85,6 +92,9 @@ export function computeMapMetrics(map: TacticalMap): MapMetrics {
     coveredSidesMean: ratio(coveredSides, openTiles),
     coveredShare: ratio(covered, openTiles),
     flankProofShare: ratio(flankProof, openTiles),
+    closedSidesMean: ratio(closedSides, openTiles),
+    shelteredShare: ratio(sheltered, openTiles),
+    backToWallShare: ratio(backToWall, openTiles),
     highCoverPer100: 100 * ratio(high, groundTiles),
     lowCoverPer100: 100 * ratio(low, groundTiles),
     interiorPropsPerBuilding: ratio(interiorProps, map.buildings.length),
@@ -121,6 +131,32 @@ function coveredSidesOf(index: TileIndex, tile: Tile): number {
       (index.neighbour(tile, direction)?.coverProvided ?? CoverLevel.NONE) >
         CoverLevel.NONE,
   ).length;
+}
+
+/**
+ * How many of a tile's four sides no unit can stand on: the neighbour at
+ * the same level is missing — the map edge, a building footprint, open
+ * air — or does not admit infantry, which covers props and water.
+ *
+ * This is the cover that stops a melee attacker (#446). A prop tile is
+ * impassable, so a boulder to the north does not reduce a swarmer's
+ * chance to hit: it means no swarmer can be north of you. Occupancy
+ * only, so nothing here needs tactical's sight rule.
+ *
+ * ```
+ *   . B .      B is a boulder, T the tile: the north side is closed and
+ *   . T #      # a building, so the east side is too. Two directions
+ *   . . .      fewer for a swarm to arrive from.
+ * ```
+ */
+function closedSidesOf(index: TileIndex, tile: Tile): number {
+  return DIRECTIONS.filter((direction) => {
+    const neighbour = index.neighbour(tile, direction);
+    return (
+      neighbour === undefined ||
+      (neighbour.pass & PassMask.INFANTRY) !== PassMask.INFANTRY
+    );
+  }).length;
 }
 
 /** `numerator / denominator`, or 0 when the denominator is 0. */

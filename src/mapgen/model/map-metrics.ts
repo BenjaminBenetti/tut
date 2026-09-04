@@ -35,6 +35,21 @@ export interface MapMetrics {
    * still holds when the attack comes from a second direction.
    */
   readonly flankProofShare: number;
+  /**
+   * Mean number of an open tile's four sides that no unit can stand on,
+   * in [0, 4]. This is the cover that stops a melee attacker: a prop tile
+   * is impassable, so cover denies an approach angle rather than
+   * mitigating a hit (#446, #586). Counted from occupancy alone — the
+   * neighbour is missing or does not admit infantry.
+   */
+  readonly closedSidesMean: number;
+  /** Share of open tiles with at least one closed side. */
+  readonly shelteredShare: number;
+  /**
+   * Share of open tiles with two or more closed sides: a position a swarm
+   * can only reach from two directions.
+   */
+  readonly backToWallShare: number;
   /** High-cover tiles per 100 ground tiles. */
   readonly highCoverPer100: number;
   /** Low-cover tiles per 100 ground tiles. */

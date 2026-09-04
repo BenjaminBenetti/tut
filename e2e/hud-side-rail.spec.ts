@@ -70,13 +70,23 @@ test("the side rail stays clear of the action bar, and says when it has more to 
   // The half that does catch it: content taller than the rail must say
   // so, or a cut-off row reads as a rendering fault rather than as more
   // to scroll to.
-  const state = await rail.evaluate((el) => ({
-    hidden: el.scrollHeight - el.clientHeight,
-    marked: el.dataset.overflow === "true",
-  }));
-  if (state.hidden > 1) {
-    expect(state.marked).toBe(true);
-  }
+  // Waited for, not sampled (#709). `data-overflow` is set by a
+  // `ResizeObserver` that fires after layout, so a one-shot `evaluate`
+  // can read the rail as overflowing and the cue as absent and be right
+  // about both for a few milliseconds. That is a wait that is not
+  // waiting, and it fired on an unrelated PR at load average 102.
+  //
+  // The overflow itself is asserted rather than guarded on. `if (hidden
+  // > 1)` looks careful and is the opposite: on any build where the rail
+  // fits, it asserts nothing at all, so deleting `watchSideOverflow`
+  // outright would leave this spec green. #674 names the change that
+  // would do it — shortening "Destroy spawner spawner-1" buys 40 px.
+  const hidden = await rail.evaluate((el) => el.scrollHeight - el.clientHeight);
+  expect(
+    hidden,
+    "the fixture must overflow or the cue below is untested",
+  ).toBeGreaterThan(1);
+  await expect(rail).toHaveAttribute("data-overflow", "true");
 
   // And the cue is honest: scrolled to the end, it clears.
   await rail.evaluate((el) => {

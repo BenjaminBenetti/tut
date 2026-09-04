@@ -343,6 +343,41 @@ const ADD_VISION_LAST_SEEN: Migration = {
   },
 };
 
+/**
+ * v14 → v15 (#739): a stored `lastMissionResult` gains `cityId`, so the
+ * debrief can name the city instead of an internal id.
+ *
+ * A result that predates the field is **dropped**, not patched. It could
+ * not be repaired honestly: `launch-mission-service` removes the mission
+ * from the offers in the same update that stores the result, so nothing
+ * in the save maps the old `missionId` back to a city. Inventing one
+ * would put a wrong city on a debrief, which is worse than the id it
+ * replaces.
+ *
+ * The cost is one screen the player has already read. `lastMissionResult`
+ * is optional and `MissionResultsScreen` renders "No result" without it,
+ * so a save taken on the debrief and reloaded across this upgrade lands
+ * on an empty results screen rather than a broken one.
+ */
+const ADD_RESULT_CITY: Migration = {
+  from: 14,
+  to: 15,
+  apply: (state) => {
+    if (!isRecord(state)) {
+      return state;
+    }
+    const overworld = state.overworld;
+    if (!isRecord(overworld) || !isRecord(overworld.lastMissionResult)) {
+      return state;
+    }
+    if (typeof overworld.lastMissionResult.cityId === "string") {
+      return state;
+    }
+    const { lastMissionResult: _dropped, ...rest } = overworld;
+    return { ...state, overworld: rest };
+  },
+};
+
 // ===========================================
 // Chain
 // ===========================================
@@ -427,4 +462,5 @@ export const GAME_STATE_MIGRATIONS: readonly Migration[] = [
   SPLIT_WEAPONS_PER_UNIT,
   ADD_COMMAND_SEQ,
   ADD_VISION_LAST_SEEN,
+  ADD_RESULT_CITY,
 ];

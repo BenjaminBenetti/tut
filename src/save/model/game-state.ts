@@ -28,8 +28,10 @@ import type { TacticalState } from "../../tactical/model/tactical-state";
  *   `log.length` (#667).
  * - `14`: `activeMission.vision.<side>.lastSeen`, where a side last saw
  *   each enemy (#716).
+ * - `15`: `overworld.lastMissionResult.cityId`, so the debrief can name
+ *   the city (#739); a result without one is dropped.
  */
-export const GAME_STATE_SCHEMA_VERSION = 14;
+export const GAME_STATE_SCHEMA_VERSION = 15;
 
 /**
  * Bookkeeping that every save needs regardless of gameplay content.

@@ -66,6 +66,7 @@ class FakeStore implements CampaignStore {
     }
     const result: MissionResult = {
       missionId: command.payload.missionId,
+      cityId: "city-1",
       outcome: "won",
       squadCasualties: [],
       squadsWiped: [],

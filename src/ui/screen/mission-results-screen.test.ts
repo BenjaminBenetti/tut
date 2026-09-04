@@ -87,6 +87,10 @@ const fakeRouter = (): {
 
 const RESULT: MissionResult = {
   missionId: "mission-1",
+  // A real city from EARTH_MAP, so the lookup resolves a name rather
+  // than falling back — "city-1" would have passed a weaker assertion
+  // while proving nothing (#739).
+  cityId: "vancouver",
   outcome: "extracted",
   squadCasualties: [
     { squadId: "squad-1", losses: 2 },
@@ -163,7 +167,13 @@ describe("MissionResultsScreen", () => {
 
     expect(field("outcome").textContent).toBe("Force extracted");
     expect(field("outcome").dataset.tone).toBe("warn");
-    expect(field("mission-id").textContent).toBe("mission-1");
+    // The debrief names what the mission list named, not the internal
+    // id it happens to carry (#739).
+    expect(field("mission-city").textContent).toBe("Vancouver");
+    // And no id reaches the player through any route on this screen —
+    // the heading is where `mission-1` used to appear, but asserting the
+    // city alone would not notice one arriving somewhere else.
+    expect(root.textContent).not.toContain("mission-1");
 
     const sections = [
       ...root.querySelectorAll<HTMLElement>(".tut-mission-results__section"),

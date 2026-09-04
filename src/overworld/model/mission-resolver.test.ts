@@ -71,6 +71,7 @@ class CoinFlipResolver implements MissionResolver {
     const losses = won ? 0 : (state.squads[0]?.strength ?? 0);
     return {
       missionId: mission.id,
+      cityId: "city-1",
       outcome: won ? "won" : "lost",
       squadCasualties: deployment.squadIds.map((squadId) => ({
         squadId,

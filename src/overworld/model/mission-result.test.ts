@@ -5,6 +5,7 @@ import { MISSION_OUTCOMES, isMissionOutcome } from "./mission-result";
 
 const SAMPLE: MissionResult = {
   missionId: "mission-4",
+  cityId: "city-1",
   outcome: "won",
   squadCasualties: [
     { squadId: "squad-1", losses: 2 },

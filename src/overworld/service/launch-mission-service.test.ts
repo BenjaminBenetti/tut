@@ -148,6 +148,7 @@ const DEPLOYMENT: Deployment = {
 
 const WIN: MissionResult = {
   missionId: "mission-1",
+  cityId: "city-1",
   outcome: "won",
   squadCasualties: [{ squadId: "squad-1", losses: 1, kills: 4 }],
   squadsWiped: [],
@@ -159,6 +160,7 @@ const WIN: MissionResult = {
 
 const LOSS: MissionResult = {
   missionId: "mission-1",
+  cityId: "city-1",
   outcome: "lost",
   squadCasualties: [{ squadId: "squad-1", losses: 5 }],
   squadsWiped: ["squad-1"],

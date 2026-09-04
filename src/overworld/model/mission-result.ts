@@ -1,5 +1,6 @@
 import type { MechId } from "../../roster/model/mech";
 import type { SquadId } from "../../roster/model/squad";
+import type { CityId } from "./city";
 import type { MissionId } from "./mission";
 
 // ===========================================
@@ -81,6 +82,18 @@ export interface MechDamageReport {
 export interface MissionResult {
   /** The mission that was resolved. */
   readonly missionId: MissionId;
+  /**
+   * The city the mission was fought over, so the debrief can name what
+   * the player chose rather than an internal id (#739).
+   *
+   * The id rather than the name: cities outlive missions in
+   * `overworld.cities`, so the view resolves the current name from one
+   * place instead of this carrying a copy that could go stale. It has to
+   * be here at all because `launch-mission-service` removes the mission
+   * from the offers in the same update that sets `lastMissionResult` —
+   * by the time the debrief renders, `missionId` points at nothing.
+   */
+  readonly cityId: CityId;
   /** How it ended. */
   readonly outcome: MissionOutcome;
   /** Losses per deployed squad; squads with no losses may be omitted. */

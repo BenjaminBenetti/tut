@@ -55,6 +55,13 @@ const OUTCOME_COPY: Readonly<Record<MissionOutcome, OutcomeCopy>> = {
   },
 };
 
+/**
+ * Shown when a stored result names a city the map no longer has — only
+ * reachable from a hand-edited save, since the migration for #739 drops
+ * results that predate `cityId` rather than leaving them to fall here.
+ */
+const UNKNOWN_CITY = "Unknown city";
+
 // ===========================================
 // MissionResultsScreen
 // ===========================================
@@ -203,10 +210,17 @@ export class MissionResultsScreen implements Screen {
     const tagline = doc.createElement("p");
     tagline.className = "tut-dim";
     tagline.textContent = copy.tagline;
+    // The city, not the id (#739). The player chose this mission from a
+    // list that called it Seoul; the screen they land on afterwards has
+    // to agree. `cityId` is carried on the result because the mission
+    // itself is removed from the offers in the same update that stores
+    // it, so there is nothing left to look the name up through.
     const mission = doc.createElement("p");
     mission.className = "tut-mono";
-    mission.dataset.field = "mission-id";
-    mission.textContent = result.missionId;
+    mission.dataset.field = "mission-city";
+    mission.textContent =
+      state.overworld.map.cities.find((c) => c.id === result.cityId)?.name ??
+      UNKNOWN_CITY;
     panel.append(title, tagline, mission);
 
     const graves = state.roster.graveyard.filter(

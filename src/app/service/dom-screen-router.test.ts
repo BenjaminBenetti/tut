@@ -115,6 +115,45 @@ describe("DomScreenRouter", () => {
     expect(empty.current).toBeUndefined();
   });
 
+  it("lets a screen navigate on from inside its own mount without stamping its id", () => {
+    const seen: ScreenChanged[] = [];
+    events.on("screen:changed", (change) => {
+      seen.push(change);
+    });
+    // The tactical screen does this when the mission it mounts on is
+    // already over: it finishes it and hands straight to the debrief.
+    const forwarding = new DomScreenRouter(
+      root,
+      new Map<ScreenId, () => Screen>([
+        [
+          "main-menu",
+          () => {
+            const screen = new FakeScreen("main-menu", log);
+            const inner = screen.mount.bind(screen);
+            screen.mount = (element) => {
+              inner(element);
+              forwarding.navigate("overworld");
+            };
+            return screen;
+          },
+        ],
+        ["overworld", () => new FakeScreen("overworld", log)],
+      ]),
+      events,
+    );
+    forwarding.navigate("main-menu");
+
+    expect(forwarding.current).toBe("overworld");
+    expect(document.body.dataset.screen).toBe("overworld");
+    expect(log).toEqual([
+      "mount:main-menu",
+      "unmount:main-menu",
+      "mount:overworld",
+    ]);
+    expect(seen.map((change) => change.to)).toEqual(["overworld"]);
+    expect(root.children).toHaveLength(1);
+  });
+
   it("creates a fresh screen instance on every navigation", () => {
     router.navigate("main-menu");
     router.navigate("overworld");

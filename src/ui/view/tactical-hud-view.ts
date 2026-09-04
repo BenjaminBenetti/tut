@@ -5,6 +5,7 @@ import type { CombatTuning } from "../../tactical/model/combat-tuning";
 import { endTurn } from "../../tactical/model/end-turn-command";
 import { move } from "../../tactical/model/move-command";
 import { overwatch } from "../../tactical/model/overwatch-command";
+import { extract } from "../../tactical/model/extract-command";
 import { reload } from "../../tactical/model/reload-command";
 import type { TacticalCommand } from "../../tactical/model/tactical-command";
 import type { TacticalError } from "../../tactical/model/tactical-error";
@@ -251,6 +252,11 @@ export class TacticalHudView {
           this.handlers.onCommand(reload(this.selected));
         }
         break;
+      case "extract":
+        if (this.canExtract() && this.selected !== undefined) {
+          this.handlers.onCommand(extract(this.selected));
+        }
+        break;
       case "end-turn":
         this.handlers.onCommand(endTurn());
         break;
@@ -311,6 +317,29 @@ export class TacticalHudView {
     );
   }
 
+  /**
+   * True when the selected unit can leave the map: a living unit of the
+   * acting side standing on an extraction tile (#341). Action points do
+   * not matter — walking out is free, so a unit that spent its turn
+   * reaching the zone still leaves on the same turn.
+   */
+  private canExtract(): boolean {
+    const mission = this.mission;
+    const unit = this.unit(this.selected);
+    return (
+      mission !== undefined &&
+      unit !== undefined &&
+      unit.hp > 0 &&
+      unit.team === TEAM_FOR_PHASE[mission.phase] &&
+      mission.extraction.some(
+        (tile) =>
+          tile.x === unit.pos.x &&
+          tile.y === unit.pos.y &&
+          tile.z === unit.pos.z,
+      )
+    );
+  }
+
   /** A unit of the current mission by id. */
   private unit(id: UnitId | undefined): Unit | undefined {
     return id === undefined
@@ -347,6 +376,7 @@ export class TacticalHudView {
         canAct: false,
         playerPhase: false,
         mode: undefined,
+        canExtract: false,
       });
       return;
     }
@@ -378,6 +408,7 @@ export class TacticalHudView {
       playerPhase: mission.phase === "player",
       mode: this.mode === "select" ? undefined : this.mode,
       reloadLabel: selected?.kind === "mech" ? "Vent" : "Reload",
+      canExtract: this.canExtract(),
     });
   }
 }

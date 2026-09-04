@@ -22,7 +22,11 @@ import { DataEventTypeCatalogue } from "../../overworld/repository/event-type-ca
 import { createAdvanceDayHandler } from "../../overworld/service/advance-day-service";
 import { AutoResolveMissionResolver } from "../../overworld/service/auto-resolve-mission-resolver";
 import { createDeploymentAssessor } from "../../overworld/service/deployment-assessment-service";
-import { registerLaunchMission } from "../../overworld/service/launch-mission-service";
+import { createLaunchMissionHandler } from "../../overworld/service/launch-mission-service";
+import { LAUNCH_MISSION } from "../../overworld/model/launch-mission-command";
+import type { MissionResolver } from "../../overworld/model/mission-resolver";
+import { registerFinishMission } from "../../tactical/service/finish-mission-handler";
+import { registerStartMission } from "../../tactical/service/start-mission-handler";
 import { createOverworldCommandDispatcher } from "../../overworld/service/command-dispatcher";
 import { registerDeployableCommands } from "../../overworld/service/deployable-command-handlers";
 import { registerEventCommands } from "../../overworld/service/event-command-handlers";
@@ -117,6 +121,12 @@ export interface GameComposition {
   readonly content: GameContent;
   /** The tactical side: registered rule handlers and mission-start deps (#342). */
   readonly tactical: TacticalComposition;
+  /**
+   * True when this session resolves missions with the M1 auto-resolver
+   * rather than playing them out (`?autoResolve=1`, #341). The deployment
+   * screen reads it to choose which command Launch dispatches.
+   */
+  readonly autoResolve: boolean;
 }
 
 // ===========================================
@@ -139,10 +149,20 @@ export interface GameComposition {
  *
  * Command handlers are registered on `dispatcher` here: the roster
  * commands (#63), the deployable commands (#65), `AdvanceDay` (#68), which
- * runs the default tick pipeline over the shipped content, and
- * `LaunchMission` (#67) with the #62 auto-resolver injected as the M1
- * `MissionResolver`. #70 events follow. Anything unregistered is rejected
- * as `unknown-command` and the store stays put.
+ * runs the default tick pipeline over the shipped content, #70's events,
+ * the tactical rules (#342), and the mission lifecycle (#341):
+ *
+ * ```
+ *   StartMission  ──► TacticalMissionResolver.beginMission ──► activeMission
+ *   FinishMission ──► LaunchMission ──► resolver ──► MissionResult, slot cleared
+ *
+ *   resolver = TacticalMissionResolver          (the shipped game)
+ *            | AutoResolveMissionResolver       (?autoResolve=1, for QA)
+ * ```
+ *
+ * The lifecycle goes on last because the M2 resolver reads the finished
+ * mission out of the campaign the session's store is holding. Anything
+ * unregistered is rejected as `unknown-command` and the store stays put.
  */
 export function composeGame(deps: GameCompositionDeps): GameComposition {
   const saves = createGameSaveService(deps.storage, deps.clock);
@@ -188,15 +208,6 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     mechRater,
     tuning: AUTO_RESOLVE_TUNING,
   });
-  registerLaunchMission(dispatcher, {
-    resolver: new AutoResolveMissionResolver({
-      squadTypes: content.squadTypes,
-      mechRater,
-      tuning: AUTO_RESOLVE_TUNING,
-    }),
-    rosterTuning: content.rosterTuning,
-    transactionsFor: (ids) => new LedgerTransactionService(ids),
-  });
   const tactical = composeTactical(dispatcher, content);
   const autosave = new AutosaveService(
     saves,
@@ -216,6 +227,29 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
   );
   const newGameDeps = composeNewGameDeps(squadTypes, deps.debug);
 
+  // The mission lifecycle is wired last because it needs the session:
+  // the M2 resolver reads the finished mission out of the campaign the
+  // store is holding, which is the state `FinishMission` was called on.
+  const autoResolve = deps.debug?.autoResolve ?? false;
+  const tacticalResolver = tactical.resolverFor(
+    () => session.state?.activeMission,
+  );
+  const resolver: MissionResolver = autoResolve
+    ? new AutoResolveMissionResolver({
+        squadTypes: content.squadTypes,
+        mechRater,
+        tuning: AUTO_RESOLVE_TUNING,
+      })
+    : tacticalResolver;
+  const launch = createLaunchMissionHandler<GameState>({
+    resolver,
+    rosterTuning: content.rosterTuning,
+    transactionsFor: (ids) => new LedgerTransactionService(ids),
+  });
+  dispatcher.register(LAUNCH_MISSION, launch);
+  registerStartMission(dispatcher, { starter: tacticalResolver });
+  registerFinishMission(dispatcher, { launch });
+
   return {
     saves,
     session,
@@ -226,6 +260,7 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     clock: deps.clock,
     content,
     tactical,
+    autoResolve,
   };
 }
 

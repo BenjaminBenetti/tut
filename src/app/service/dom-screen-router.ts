@@ -75,6 +75,12 @@ export class DomScreenRouter implements ScreenRouter {
    * Swaps screens. Re-navigating to the current id does nothing, so a
    * double click on a menu button cannot rebuild the screen. An id with
    * no factory is a composition bug and throws.
+   *
+   * A screen may navigate away from inside its own `mount` — the
+   * tactical screen hands a mission that is already over straight to the
+   * debrief (#341) — so the later navigation wins: once another screen
+   * has recorded itself as active, this one stops rather than stamping
+   * its own id over the screen that is really mounted.
    */
   navigate(id: ScreenId): void {
     if (this.active?.id === id) {
@@ -91,6 +97,9 @@ export class DomScreenRouter implements ScreenRouter {
     const next = factory();
     this.active = next;
     next.mount(this.root);
+    if (this.active !== next) {
+      return;
+    }
     this.root.ownerDocument.body.dataset.screen = id;
 
     this.events.emit("screen:changed", { from, to: id });

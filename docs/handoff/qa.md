@@ -6,10 +6,10 @@ Last updated: 2026-09-04 (post-v0.2.0; win path settled on #317).
 
 | Field | Value |
 |---|---|
-| SHA tested | `b0e2b6c` (main, after v0.2.0 was tagged at `c2cddf8`) |
-| Gate | typecheck, lint, build pass; vitest **1613 / 1613** (+1 deliberate skip); e2e **45 / 45** |
-| Exploratory | 11 flows, 0 findings; **filed #538 (p1): the tactical camera starts off the deployed force on 4 of 7 seeds and nothing pans back** |
-| **Verdict** | **The simulation is sound and a mission is winnable, but on most seeds a player cannot see or select their own units** (#538). Fix that before anyone is asked to play a mission. |
+| SHA tested | `15fc14b` (main, M2.5 band 1 landing) |
+| Gate | typecheck, lint, build pass; vitest **1628 / 1628** (+1 deliberate skip); e2e **47 / 47** |
+| Exploratory | 11 flows, 0 findings; M2.5 band 1 verification under way (item 7); **#538 (now p0) still open** |
+| **Verdict** | **Band 1 is landing clean, but #538 still blocks the build.** #519 and #523 verified against their acceptance criteria; the simulation is sound and a mission is winnable. On 4 of 7 seeds a player still cannot see or select their own units (#538, p0, eng-5). |
 
 ### Release push, in order of what mattered
 
@@ -48,12 +48,28 @@ Last updated: 2026-09-04 (post-v0.2.0; win path settled on #317).
 
    Reproduced in the **production build** with no dev hooks: banner says `TDF 3`, no unit is drawn, and clicking five points across the map never sets `data-selected-unit`. Only END TURN and OVERWORLD work. The simulation under it is fine — see item 4 — so this is purely camera framing.
 
-6. **Filed #480** (p3): the debrief says "No casualties" on a mission that wiped the whole force.
+7. **M2.5 band 1 verification (#514).** The Director cuts a build for the Executive Director once all five land, so each is verified against its own acceptance criteria as it merges, with real pointer clicks rather than hooks.
+
+   | Issue | State | Verdict |
+   |---|---|---|
+   | #519 move by default | merged `15fc14b` | **4 / 4 criteria pass.** Left click a reachable tile moves (`13,28 → 13,29`); Move shows active and Attack overrides it; an impassable tile refuses with "That tile is out of reach this turn."; clicking a bug does not walk into it |
+   | #523 phase banners | merged `eeb864a` | **6 / 6 criteria pass.** `Bug phase · Turn 1` visible 694–1760 ms then `Your turn · The bugs have finished · Turn 2` 1801–2840 ms, sequential, peak opacity 1, skippable (clicked clears at ~1050 ms vs ~2050 ms), never intercepts a click |
+   | #521 AP tiers | PR #545 open | Palette is sound — one hue at two lightnesses plus an inset footprint, chosen so deuteranopia and protanopia keep the distinction. **Not yet confirmed on screen**: the seeds I tried box the unit in, so its whole reachable set fits inside 1 AP and only one band draws. Verify on merge with a unit in open ground |
+   | #520 right click | no PR yet | Probe ready |
+   | #522 weapon range | no PR yet | Probe ready |
+
+   **Watch when #520 lands:** it makes left click never invoke, which reverses the behaviour #519's own acceptance test asserts. That test needs re-pointing, not deleting, or the two issues silently contradict each other. Flagged on PR #543.
+
+   One cosmetic note on #523, raised there and not a blocker: while the `BUG PHASE · Turn 1` banner shows, the status line already reads `TURN 2 · PLAYER PHASE`, because an instant bug phase lets the readout race the transition banner.
+
+8. **Filed #480** (p3): the debrief says "No casualties" on a mission that wiped the whole force.
 
 ### Run history
 
 | SHA | Build | Unit | e2e | Exploratory | Filed |
 |---|---|---|---|---|---|
+| `15fc14b` | pass | 1628/1628 | 47/47 | #519 verified, 4/4 criteria | — |
+| `eeb864a` | pass | 1626/1626 | 46/46 | #523 verified, 6/6 criteria | — |
 | `b0e2b6c` | pass | 1613/1613 | 45/45 | 11 flows clean; camera starts off the force | **#538** |
 | `f7901ba` | pass | 1608/1608 | 45/45 | 11 flows clean; real click targets a drawn spawner (#515) | — |
 | `4cec760` | pass | 1595/1595 | 44/44 | mech kills an indoor spawner; squad cannot | #517 |

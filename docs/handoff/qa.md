@@ -25,6 +25,20 @@ and I gated inside that window with a five-stage gate that could not see it. Nob
 misled for long because the Tech Lead gates on the merge result and caught it, but the
 QA report for that head was wrong.
 
+**Reconcile the gate against CI rather than assuming they agree.** After gating a head:
+
+```
+gh api repos/BenjaminBenetti/tut/commits/<sha>/check-runs \
+  --jq '.check_runs[] | "\(.name): \(.conclusion // .status)"'
+```
+
+Three checks should appear — `typecheck · lint · test · build`, `e2e · chromium`,
+`sim · mission sweep`. If a name appears that your gate does not run, your gate is
+incomplete; that is exactly how the miss above happened. CI is also the better
+arbiter when a local run fails: this container is loaded enough to fake timeouts,
+and a red locally with a green CI on the same SHA is a measurement problem, not a
+finding.
+
 Stop any probe servers on 4173/4174 before the e2e run, or contention fakes failures.
 
 ## Latest run

@@ -112,6 +112,10 @@ export class TacticalScreen implements Screen {
         onViewChange: () => {
           this.syncOverlays();
         },
+        // The scene owns the camera, so it is what can answer where a
+        // world thing is on screen (ADR 0007 §2.1). The HUD anchors the
+        // context menu to that point rather than to the click.
+        anchorFor: (target) => deps.sceneHost?.screenPositionOf(target),
       },
       {
         combatTuning: deps.combatTuning,

@@ -1,7 +1,11 @@
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { TacticalState } from "../../tactical/model/tactical-state";
+import type { Vec2 } from "../../core/model/grid";
 import type { UnitId } from "../../tactical/model/unit";
-import type { TacticalIntentSink } from "./tactical-intent";
+import type {
+  TacticalIntentSink,
+  TacticalInvokeTarget,
+} from "./tactical-intent";
 
 // ===========================================
 // TacticalSceneHost
@@ -55,6 +59,20 @@ export interface TacticalSceneHost {
    * toggle so the state survives a re-selection; the scene only draws.
    */
   setWeaponRangeVisible(visible: boolean): void;
+
+  /**
+   * Where a world thing appears on screen, in client pixels, or
+   * undefined when it is not drawn.
+   *
+   * The host owns the camera, so it is the only thing that can answer
+   * this. In-world UI anchors to a **world reference** rather than to
+   * the pixel a click happened at (ADR 0007 §2.2), which is what lets a
+   * menu follow its target and dismiss itself when the target goes.
+   *
+   * @param target - The unit, spawner or tile the menu belongs to.
+   * @returns Client pixels, or undefined when nothing is drawn there.
+   */
+  screenPositionOf(target: TacticalInvokeTarget): Vec2 | undefined;
 
   /** Tears the scene down. Safe to call when not attached. */
   release(): void;

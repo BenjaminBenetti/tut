@@ -14,7 +14,11 @@ import type { CombatTuning } from "../model/combat-tuning";
  * - Nothing is ever below 5% or above 95%.
  * - Damage rolls ±25% around the weapon's value; armor subtracts flat
  *   after penetration; every hit does at least 1.
- * - An attack costs one action and ends the unit's turn (GDD §6.2).
+ * - An attack costs one action. For a mech or a bug it also ends the
+ *   turn, so they attack once; an infantry squad's does not, so two
+ *   actions buy two attacks, or a move and a shot (GDD §6.2, #533).
+ *   Squads felt weak against small bugs and now differ from mechs in
+ *   volume of fire rather than in raw numbers.
  */
 export const COMBAT_TUNING: CombatTuning = {
   rangePenaltyPerTile: 2,
@@ -27,5 +31,5 @@ export const COMBAT_TUNING: CombatTuning = {
   damageSpread: 0.25,
   minDamage: 1,
   attackApCost: 1,
-  attackEndsTurn: true,
+  attackEndsTurn: { squad: false, mech: true, bug: true },
 };

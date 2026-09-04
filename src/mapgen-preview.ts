@@ -10,7 +10,7 @@ import { CameraInputController } from "./graphics/controller/camera-input-contro
 import { MODEL_MANIFEST } from "./graphics/data/model-manifest";
 import { CAMERA_ZOOM } from "./graphics/model/camera-state";
 import { GltfModelLoader } from "./graphics/service/gltf-model-loader";
-import { IsometricCameraRig } from "./graphics/service/isometric-camera-rig";
+import { OrthographicCameraRig } from "./graphics/service/orthographic-camera-rig";
 import { PlaceholderModelFactory } from "./graphics/service/placeholder-model-factory";
 import { SceneService } from "./graphics/service/scene-service";
 import { TacticalSceneBuilder } from "./graphics/service/tactical-scene-builder";
@@ -112,7 +112,7 @@ async function main(): Promise<void> {
 
   const registries = createDefaultRegistries();
   const content = new Group();
-  const rig = new IsometricCameraRig({ zoom: CAMERA_ZOOM.min });
+  const rig = new OrthographicCameraRig({ zoom: CAMERA_ZOOM.min });
   const cameraInput = new CameraInputController(rig);
   const models = new GltfModelLoader({
     manifest: MODEL_MANIFEST,

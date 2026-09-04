@@ -13,7 +13,7 @@ import {
   TOP_DOWN_PROJECTION,
 } from "../../graphics/model/camera-state";
 import { OVERWORLD_SCENE_CONFIG } from "../../graphics/model/overworld-scene-config";
-import { IsometricCameraRig } from "../../graphics/service/isometric-camera-rig";
+import { OrthographicCameraRig } from "../../graphics/service/orthographic-camera-rig";
 import { ManifestTextureLoader } from "../../graphics/service/manifest-texture-loader";
 import { loadOverworldAssets } from "../../graphics/service/overworld-asset-loader";
 import { OverworldSceneBuilder } from "../../graphics/service/overworld-scene-builder";
@@ -266,7 +266,7 @@ async function composeScene(
   const mapScene = new OverworldSceneBuilder({ assets });
   mapScene.build(EARTH_MAP);
   mapSync.attach(mapScene);
-  const rig = new IsometricCameraRig({
+  const rig = new OrthographicCameraRig({
     target: mapScene.centre,
     zoom: CAMERA_ZOOM.min,
     // The strategic map is looked at straight on with north up, the way

@@ -1,7 +1,7 @@
 import type { Rect, Vec3 } from "../../core/model/grid";
 import type {
   CameraProjection,
-  IsometricCameraState,
+  CameraState,
   YawIndex,
 } from "../model/camera-state";
 import {
@@ -51,7 +51,7 @@ const TOP_DOWN_EPSILON = 1e-6;
  * The state's projection, defaulting to isometric so every caller from
  * before #420 keeps the tactical view it was written for.
  */
-export function projectionOf(state: IsometricCameraState): CameraProjection {
+export function projectionOf(state: CameraState): CameraProjection {
   return state.projection ?? ISOMETRIC_PROJECTION;
 }
 
@@ -60,7 +60,7 @@ export function projectionOf(state: IsometricCameraState): CameraProjection {
  * screen-up axis for a camera looking straight down, and world `+y` for
  * any tilted camera, which is what three's `lookAt` wants as its hint.
  */
-export function screenUpVector(state: IsometricCameraState): Vec3 {
+export function screenUpVector(state: CameraState): Vec3 {
   const projection = projectionOf(state);
   if (Math.cos(projection.elevationRad) > TOP_DOWN_EPSILON) {
     return { x: 0, y: 1, z: 0 };
@@ -79,8 +79,8 @@ export function screenUpVector(state: IsometricCameraState): Vec3 {
  * @throws {RangeError} When the zoom override is not a finite number.
  */
 export function createCameraState(
-  overrides: Partial<IsometricCameraState> = {},
-): IsometricCameraState {
+  overrides: Partial<CameraState> = {},
+): CameraState {
   const zoom = overrides.zoom ?? DEFAULT_CAMERA_STATE.zoom;
   if (!Number.isFinite(zoom)) {
     throw new RangeError(`Camera zoom must be a finite number, got ${zoom}`);
@@ -126,9 +126,9 @@ export function clampTarget(target: Vec3, bounds: Rect | undefined): Vec3 {
  * @throws {RangeError} When a bound is not a finite number.
  */
 export function withBounds(
-  state: IsometricCameraState,
+  state: CameraState,
   bounds: Rect | undefined,
-): IsometricCameraState {
+): CameraState {
   if (bounds === undefined) {
     const { bounds: _dropped, ...rest } = state;
     return rest;
@@ -161,10 +161,7 @@ export function yawAngleRad(
 }
 
 /** Steps the yaw one orientation left or right, wrapping 3→0 and 0→3. */
-export function rotateYaw(
-  state: IsometricCameraState,
-  turn: YawTurn,
-): IsometricCameraState {
+export function rotateYaw(state: CameraState, turn: YawTurn): CameraState {
   const step = turn === "right" ? 1 : -1;
   const yawIndex = ((((state.yawIndex + step) % YAW_COUNT) + YAW_COUNT) %
     YAW_COUNT) as YawIndex;
@@ -211,10 +208,7 @@ export function clampZoom(zoom: number): number {
  *
  * @throws {RangeError} When `factor` is not a positive finite number.
  */
-export function zoomBy(
-  state: IsometricCameraState,
-  factor: number,
-): IsometricCameraState {
+export function zoomBy(state: CameraState, factor: number): CameraState {
   if (!Number.isFinite(factor) || factor <= 0) {
     throw new RangeError(
       `Zoom factor must be a positive finite number, got ${factor}`,
@@ -228,10 +222,7 @@ export function zoomBy(
 // ===========================================
 
 /** Returns a state looking at `target`, clamped into the bounds; the point is copied, not aliased. */
-export function retarget(
-  state: IsometricCameraState,
-  target: Vec3,
-): IsometricCameraState {
+export function retarget(state: CameraState, target: Vec3): CameraState {
   return { ...state, target: clampTarget(target, state.bounds) };
 }
 
@@ -258,10 +249,10 @@ export function retarget(
  * @param screenDy - Pixels to move the view down (DOM convention).
  */
 export function panBy(
-  state: IsometricCameraState,
+  state: CameraState,
   screenDx: number,
   screenDy: number,
-): IsometricCameraState {
+): CameraState {
   const projection = projectionOf(state);
   const { right, up } = groundScreenAxes(state.yawIndex, projection);
   const alongRight = screenDx / state.zoom;
@@ -290,10 +281,7 @@ export function panBy(
  * distance, so the camera orbits on a circle above the target; a
  * straight-down projection puts it directly overhead.
  */
-export function cameraPosition(
-  state: IsometricCameraState,
-  distance: number,
-): Vec3 {
+export function cameraPosition(state: CameraState, distance: number): Vec3 {
   const projection = projectionOf(state);
   const horizontal = horizontalDirection(state.yawIndex, projection);
   const ground = distance * Math.cos(projection.elevationRad);
@@ -310,7 +298,7 @@ export function cameraPosition(
  * `viewport.width / zoom` wide and `viewport.height / zoom` tall.
  */
 export function orthoFrustum(
-  state: IsometricCameraState,
+  state: CameraState,
   viewport: Viewport,
 ): OrthoFrustum {
   const halfWidth = viewport.width / (2 * state.zoom);

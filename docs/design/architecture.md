@@ -62,7 +62,7 @@ Follow `/<domain>/<type>/<file>` under `src/`. Types are things like `model`, `s
 | `tactical` | Tile grid runtime, units on map, turn engine, actions, cover/LOS, spawners, resolution |
 | `bugs` | Bug species data and AI behaviours |
 | `mapgen` | Procedural map generator, biomes, buildings, placement hooks, preview harness |
-| `graphics` | Renderer, isometric camera rig, scene builders for overworld and tactical, asset loader, VFX |
+| `graphics` | Renderer, orthographic camera rig, scene builders for overworld and tactical, asset loader, VFX |
 | `ui` | DOM screens (menu, overworld, mech bay, deployment, mission HUD, results), shared components |
 | `content` | Cross-domain vocabulary: closed id unions (biome, settlement scale, model ids) and definitions more than one domain consumes (mission types). A definition only one domain reads lives in that domain's `data/`, keyed by the shared union (ADR 0002) |
 
@@ -74,7 +74,7 @@ Add domains via ADR when needed. Don't create `utils` dumping grounds.
 - **Command pattern**: presentation issues commands (`AdvanceDay`, `PurchasePart`, `MoveUnit`, `FireWeapon`). Simulation services validate and apply commands, returning a new state and a list of domain events for presentation to animate.
 - **Mission resolver interface**: `MissionResolver.resolve(mission, deployment, state) → MissionResult`. M1 ships an `AutoResolveMissionResolver`; M2 ships the tactical one. The overworld doesn't care which.
 - **Map contract**: `TacticalMap { width, depth, levels, tiles[], buildings[], hooks{deployZones, objectives, edgeSpawns, extraction} }`. Map generation produces it; tactical consumes it; graphics renders it. Full contract and invariants: [ADR 0004](../adr/0004-tactical-map-contract.md).
-- **Cameras**: one orthographic rig module owns the single camera, driven by a plain `IsometricCameraState`. A `CameraProjection` (elevation, yaw offset) picks how it looks at the ground: tactical maps use the isometric projection they are authored for (fixed elevation `atan(1/√2)`, yaw snapped to the 4 diagonals), and the strategic map uses the top-down projection (straight down, north up, no rotation) so Earth reads as a map rather than a rhombus. Zoom is clamped for both. See [ADR 0005](../adr/0005-overworld-camera-is-top-down.md).
+- **Cameras**: one orthographic rig module owns the single camera, driven by a plain `CameraState`. A `CameraProjection` (elevation, yaw offset) picks how it looks at the ground: tactical maps use the isometric projection they are authored for (fixed elevation `atan(1/√2)`, yaw snapped to the 4 diagonals), and the strategic map uses the top-down projection (straight down, north up, no rotation) so Earth reads as a map rather than a rhombus. Zoom is clamped for both. See [ADR 0005](../adr/0005-overworld-camera-is-top-down.md).
 
 ## 6. Testing strategy
 

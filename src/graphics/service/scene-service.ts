@@ -5,7 +5,7 @@ import { AmbientLight, Color, Scene, PCFShadowMap, WebGLRenderer } from "three";
 import type { FrameUpdatable } from "../model/frame-updatable";
 import type { SceneCamera } from "../model/scene-camera";
 import { createKeyLight, followCamera, SHADOW_TUNING } from "./shadow-rig";
-import type { Viewport } from "./isometric-camera-math";
+import type { Viewport } from "./camera-math";
 
 // ===========================================
 // Types

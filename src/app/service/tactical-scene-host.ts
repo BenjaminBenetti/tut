@@ -13,7 +13,7 @@ import type { ModelLoader } from "../../graphics/model/model-loader";
 import type { SpriteSource } from "../../graphics/model/sprite-source";
 import { GltfModelLoader } from "../../graphics/service/gltf-model-loader";
 import { ManifestSpriteLoader } from "../../graphics/service/manifest-sprite-loader";
-import { IsometricCameraRig } from "../../graphics/service/isometric-camera-rig";
+import { OrthographicCameraRig } from "../../graphics/service/orthographic-camera-rig";
 import { PlaceholderModelFactory } from "../../graphics/service/placeholder-model-factory";
 import { GhostController } from "../../graphics/service/ghost-controller";
 import { SceneService } from "../../graphics/service/scene-service";
@@ -141,7 +141,7 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
       models: this.models,
     });
     const overlays = new TacticalOverlays();
-    const rig = new IsometricCameraRig({ zoom: CAMERA_ZOOM.min });
+    const rig = new OrthographicCameraRig({ zoom: CAMERA_ZOOM.min });
     const animations = new TacticalAnimationQueue({
       scene: builder,
       sprites: this.sprites,

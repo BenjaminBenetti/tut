@@ -15,7 +15,7 @@ import type { City } from "../../overworld/model/city";
 import type { EarthMap } from "../../overworld/model/earth-map";
 import { CAMERA_ZOOM } from "../model/camera-state";
 import { INFESTATION_RAMP } from "../view/city-marker";
-import { IsometricCameraRig } from "./isometric-camera-rig";
+import { OrthographicCameraRig } from "./orthographic-camera-rig";
 import { OverworldSceneBuilder } from "./overworld-scene-builder";
 
 function rampStop(index: number): number {
@@ -49,8 +49,8 @@ function withInfestation(
   };
 }
 
-function makeCamera(builder: OverworldSceneBuilder): IsometricCameraRig {
-  const rig = new IsometricCameraRig({
+function makeCamera(builder: OverworldSceneBuilder): OrthographicCameraRig {
+  const rig = new OrthographicCameraRig({
     target: builder.centre,
     zoom: CAMERA_ZOOM.min,
   });

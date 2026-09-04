@@ -753,7 +753,9 @@ export class TacticalHudView {
     const at = weapons.findIndex((o) => o.weapon.id === this.armedWeaponId);
     const next = weapons[(at + 1) % weapons.length];
     this.armedWeaponId = next?.weapon.id;
-    this.target = undefined;
+    // The mark stays put: comparing two weapons against the same target
+    // is the whole point of carrying two, so cycling re-previews what is
+    // already picked rather than making the player click it again.
   }
 
   /** Dispatches the previewed attack and clears the preview. */

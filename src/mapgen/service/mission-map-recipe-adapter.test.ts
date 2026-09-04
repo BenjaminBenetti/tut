@@ -116,6 +116,14 @@ describe("missionToMapRecipe", () => {
         { id: "small" as const, width: 16, depth: 16 },
       ]),
     };
+    // A long thin map has the room a rule about its shorter side would
+    // deny it, so the shipped distance survives there.
+    const thin = {
+      ...registries,
+      mapSizes: createRegistry("map size", [
+        { id: "small" as const, width: 16, depth: 40 },
+      ]),
+    };
     const recipe = unwrap(
       missionToMapRecipe(
         mission({}, { size: "small" }),
@@ -127,6 +135,19 @@ describe("missionToMapRecipe", () => {
       (hook) => hook.kind === HookKinds.EGG_SPAWNER,
     );
     expect(clamped?.minDistanceFromDeploy).toBe(6);
+
+    const thinRecipe = unwrap(
+      missionToMapRecipe(
+        mission({}, { size: "small" }),
+        INFESTATION_CLEARANCE,
+        thin,
+      ),
+    );
+    expect(
+      thinRecipe.params.hooks.find(
+        (hook) => hook.kind === HookKinds.EGG_SPAWNER,
+      )?.minDistanceFromDeploy,
+    ).toBe(12);
   });
 
   it("is deterministic", () => {

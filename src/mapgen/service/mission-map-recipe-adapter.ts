@@ -39,7 +39,7 @@ export type AdapterRegistries = Pick<
 /**
  * Tiles kept in hand when fitting a hook distance to a small map, so the
  * placers still have a ring of board to choose from rather than the last
- * legal column.
+ * legal column. Worth one failure in 480 at 16×16 (#465).
  */
 const MAP_EDGE_MARGIN = 2;
 
@@ -128,17 +128,23 @@ function toHookRequirement(
 }
 
 /**
- * The kind's distance from deploy, never more than half the map's shorter
- * side less a two-tile margin (#465). A deploy zone sits in an edge band
- * and takes sixteen tiles, so on a small map "at least 12 away" can leave
- * nothing but rock, road and sidewalk for a placer to stand on, and the
- * map then fails I8 — which the invariant is right to do, because the
- * recipe asked for something the board cannot hold. Measured at 16×16
- * over 480 maps: 6 failures at 12, 1 at 8, none at 6 or below.
+ * The kind's distance from deploy, fitted to the board (#465). A deploy
+ * zone sits in an edge band and takes sixteen tiles, so on a small map
+ * "at least 12 away" can leave nothing but rock, road and sidewalk for a
+ * placer to stand on; the placer finds no candidate and the map dies on
+ * I8 — which the invariant is right to do, because the recipe asked for
+ * something the board cannot hold. Measured at 16×16 over 480 maps: 6
+ * failures at distance 12, 1 at 8, none at 6 or below.
+ *
+ * The limit follows `width + depth` because the distance is manhattan and
+ * a manhattan span is bounded by the two sides together — a long thin map
+ * has room a rule about its shorter side would deny it — less a margin so
+ * the placers keep a ring of board to choose from rather than the last
+ * legal column.
  *
  * ```
- *   16×16 ──► 6      20×20 ──► 8      32×32 ──► 14, so the shipped 12
- *   48×48 ──► 22        every preset passes through untouched
+ *   16×16 ──► 6     20×20 ──► 8     16×40 ──► 12, the shipped value
+ *   32×32 ──► 14 and 16×256 ──► 66, so every preset passes untouched
  * ```
  */
 function fitDistanceToMap(
@@ -148,7 +154,6 @@ function fitDistanceToMap(
   if (distance === undefined) {
     return undefined;
   }
-  const room =
-    Math.floor(Math.min(size.width, size.depth) / 2) - MAP_EDGE_MARGIN;
+  const room = Math.floor((size.width + size.depth) / 4) - MAP_EDGE_MARGIN;
   return Math.min(distance, Math.max(0, room));
 }

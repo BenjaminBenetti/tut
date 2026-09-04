@@ -5,7 +5,7 @@ import {
   walkableTileNear,
   withBug,
 } from "../../bugs/ai/bug-mission.test-helper";
-import { BUG_SPECIES, SWARMER } from "../../bugs/data/species";
+import { BRUTE, BUG_SPECIES, SWARMER } from "../../bugs/data/species";
 import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import { ok } from "../../core/model/result";
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
@@ -265,18 +265,47 @@ describe("shippedBugBehaviours", () => {
   // must be registered, so landing a behaviour class without wiring it
   // into shippedBugBehaviours fails here instead of shipping a bug that
   // stands still for a whole mission.
-  const UNLANDED: readonly string[] = ["punish-clumps"];
+  const UNLANDED: readonly string[] = [];
 
   it("registers the behaviours that have landed, one tag each", () => {
     const tags = shippedBugBehaviours().map((b) => b.tag);
-    // #333 shipped the lurker's flank, #332 the swarmer's rush; #334
-    // punish-clumps joins this list as it merges.
+    // #333 shipped the lurker's flank, #332 the swarmer's rush and #334
+    // the brute's punish-clumps: every tag the catalogue uses is live.
     expect(tags).toContain("flank");
     expect(tags).toContain("rush");
+    expect(tags).toContain("punish-clumps");
     expect(new Set(tags).size).toBe(tags.length);
     expect(
       () => new MapBehaviourRegistry(shippedBugBehaviours()),
     ).not.toThrow();
+  });
+
+  it("actually drives a brute in a live mission: one shipped EndTurn moves it (#334)", () => {
+    const mission = startedMission("player");
+    const squad = mission.units.find((u) => u.team === "tdf");
+    if (squad === undefined) throw new Error("fixture mission has no squad");
+    const placed = withBug(
+      mission,
+      BRUTE,
+      walkableTileNear(mission, {
+        x: squad.pos.x + 4,
+        y: squad.pos.y,
+        z: squad.pos.z + 4,
+      }),
+      "brute-live",
+    );
+    const endTurnHandler = shippedTacticalHandlers()[END_TURN];
+    if (endTurnHandler === undefined) throw new Error("EndTurn is not shipped");
+    const outcome = endTurnHandler(placed.mission, endTurn(), {
+      rng: new Mulberry32Rng(5),
+      ids: new SequentialIdGenerator(),
+    });
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+    const after = outcome.value.state.units.find((u) => u.id === placed.bug.id);
+    expect(after?.pos).not.toEqual(placed.bug.pos);
+    expect(after?.ap).toBeLessThan(placed.bug.ap);
+    expect(outcome.value.state.phase).toBe("player");
   });
 
   it("actually drives a swarmer in a live mission: one shipped EndTurn moves it (#460)", () => {

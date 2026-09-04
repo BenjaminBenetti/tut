@@ -16,6 +16,9 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   test: {
     include: ["src/**/*.test.ts"],
+    // The seeded sweep (#343) plays whole missions and takes seconds per
+    // seed; it runs under `pnpm test:sim` with its own config.
+    exclude: ["**/node_modules/**", "src/**/*.sim.test.ts"],
     environment: "node",
     testTimeout: 20_000,
   },

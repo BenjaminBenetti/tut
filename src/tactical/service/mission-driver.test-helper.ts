@@ -1,5 +1,6 @@
 import { manhattanDistance } from "../../core/service/grid-math";
 import { allows } from "../../mapgen/model/pass-mask";
+import { TileIndex } from "../../mapgen/service/tile-index";
 import type { UnitClass } from "../../mapgen/model/pass-mask";
 import type { Tile } from "../../mapgen/model/tile";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
@@ -410,4 +411,66 @@ export function blockedTiles(
   graph: MoveGraph = buildMoveGraph(mission.map),
 ): ReadonlySet<TileKey> {
   return occupiedKeys(mission, graph.index, unit.id);
+}
+
+// ===========================================
+// Invariants
+// ===========================================
+
+/**
+ * What must be true of a mission after every command, whatever the rules
+ * did (#343). Returns one line per violation, empty when the mission is
+ * sound, so a sweep can name what broke rather than only that something
+ * did.
+ *
+ * ```
+ *   every unit ── on a tile that exists
+ *              ── on a tile its class may occupy
+ *              ── hp in [0, maxHp], ap in [0, maxAp]
+ *   spawners   ── hp at or above zero, destroyed exactly when hp is zero
+ *   objectives ── every target is a spawner in the mission
+ * ```
+ *
+ * Deliberately cheap: it runs after every turn of every seeded run, so a
+ * violation is reported on the turn it appears rather than inferred from
+ * a wrecked final state.
+ */
+export function missionViolations(mission: TacticalState): string[] {
+  const problems: string[] = [];
+  const index = new TileIndex(mission.map);
+  for (const unit of mission.units) {
+    const where = `${unit.id} at (${String(unit.pos.x)},${String(unit.pos.y)},${String(unit.pos.z)})`;
+    const tile = index.getAt(unit.pos);
+    if (tile === undefined) {
+      problems.push(`${where} stands on no tile`);
+    } else if (!allows(tile.pass, passMaskFor(unit.passClass))) {
+      problems.push(`${where} stands where a ${unit.passClass} may not`);
+    }
+    if (unit.hp < 0 || unit.hp > unit.maxHp) {
+      problems.push(
+        `${where} has hp ${String(unit.hp)} of ${String(unit.maxHp)}`,
+      );
+    }
+    if (unit.ap < 0 || unit.ap > unit.maxAp) {
+      problems.push(
+        `${where} has ap ${String(unit.ap)} of ${String(unit.maxAp)}`,
+      );
+    }
+  }
+  for (const spawner of mission.spawners) {
+    if (spawner.hp < 0) {
+      problems.push(`${spawner.id} has hp ${String(spawner.hp)}`);
+    }
+    if (spawner.destroyed !== spawner.hp <= 0) {
+      problems.push(
+        `${spawner.id} is ${spawner.destroyed ? "destroyed" : "standing"} at hp ${String(spawner.hp)}`,
+      );
+    }
+  }
+  for (const objective of mission.objectives) {
+    if (!mission.spawners.some((s) => s.id === objective.targetId)) {
+      problems.push(`${objective.id} tracks missing "${objective.targetId}"`);
+    }
+  }
+  return problems;
 }

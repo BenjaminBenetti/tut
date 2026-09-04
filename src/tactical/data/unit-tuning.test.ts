@@ -60,4 +60,13 @@ describe("unit tuning", () => {
     expect(MODEL_IDS).toContain(UNIT_TUNING.infantry.fallbackModelId);
     expect(MODEL_IDS).toContain(UNIT_TUNING.mech.modelId);
   });
+
+  it("gives every class eyes at least as long as its weapon (ADR 0006)", () => {
+    // Overwatch may only react to a mover the watcher can see. That holds
+    // structurally in `overwatchReaction`, but it also has to hold in the
+    // numbers, or a unit would be refused shots it is entitled to take.
+    for (const klass of [UNIT_TUNING.infantry, UNIT_TUNING.mech]) {
+      expect(klass.sightRange).toBeGreaterThanOrEqual(klass.weapon.range);
+    }
+  });
 });

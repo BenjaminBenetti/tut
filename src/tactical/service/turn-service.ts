@@ -14,7 +14,10 @@ import { TEAM_FOR_PHASE } from "../model/tactical-state";
 import { TURN_STARTED } from "../model/turn-started-event";
 import type { Unit, UnitId, UnitStatus } from "../model/unit";
 import { UNIT_STATUS_CHANGED } from "../model/unit-status-changed-event";
+import { manhattanDistance } from "../../core/service/grid-math";
+import { TileIndex } from "../../mapgen/service/tile-index";
 import { rollAttack, validateTargeting } from "./combat-service";
+import { hasLineOfSight } from "./sight-service";
 import { missionOutcome } from "./mission-end-service";
 
 // ===========================================
@@ -205,9 +208,14 @@ export function overwatchReaction(
         unit.status.includes("overwatch"),
     )
     .map((unit) => unit.id);
+  const index = new TileIndex(state.map);
   for (const watcherId of watcherIds) {
     if ((findUnit(state, movedUnitId)?.hp ?? 0) <= 0) {
       break;
+    }
+    const watcher = findUnit(state, watcherId);
+    if (watcher === undefined || !watcherSees(state, watcher, mover, index)) {
+      continue;
     }
     const checked = validateTargeting(state, watcherId, movedUnitId);
     if (!checked.ok) {
@@ -245,6 +253,32 @@ export function createOverwatchReaction(tuning: CombatTuning): StepReaction {
 // ===========================================
 // Helpers
 // ===========================================
+
+/**
+ * Whether the watcher can actually see the mover: inside its own sight
+ * range, with the line clear (ADR 0006 §3 — reacting to an unseen mover
+ * is the AI-cheating defect wearing a different hat).
+ *
+ * Every shipped template already has a weapon that reaches no further
+ * than its eyes (8 against 12, 10 against 14, 1 against 10), and
+ * `validateTargeting` refuses anything past weapon range, so today this
+ * never turns a shot away. It is here so the rule is structural rather
+ * than an accident of two tuning numbers: give a sniper range 14 and
+ * sight 12 and the guard is already in place. `unit-tuning.test.ts`
+ * pins the relationship from the other side.
+ */
+function watcherSees(
+  mission: TacticalState,
+  watcher: Unit,
+  mover: Unit,
+  index: TileIndex,
+): boolean {
+  const range = mission.templates[watcher.templateId]?.sightRange ?? 0;
+  return (
+    manhattanDistance(watcher.pos, mover.pos) <= range &&
+    hasLineOfSight(mission.map, watcher.pos, mover.pos, index)
+  );
+}
 
 /** The unit with the id, if it is in the mission. */
 function findUnit(mission: TacticalState, unitId: UnitId): Unit | undefined {

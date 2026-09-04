@@ -595,6 +595,80 @@
   border-top: var(--line) solid var(--ui-line);
 }
 
+/* ===========================================
+   Event log (#525)
+   =========================================== */
+
+/*
+ * Bottom left of the map area: clear of the action bar below and the unit
+ * card on the right, so it never covers either at 1280 x 720 or at the
+ * 800 px minimum width. Collapsed it is just its own header.
+ */
+.tut-hud__log {
+  grid-area: map;
+  align-self: end;
+  justify-self: start;
+  margin: var(--space-4);
+  width: min(360px, 40vw);
+  max-height: min(260px, 34vh);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.tut-hud__log[data-collapsed="true"] .tut-log__list {
+  display: none;
+}
+
+.tut-log__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.tut-log__header .tut-panel__title {
+  flex: 1;
+}
+
+.tut-log__toggle {
+  min-width: 28px;
+  min-height: 24px;
+  padding: 0 var(--space-2);
+  line-height: 1;
+}
+
+.tut-log__list {
+  margin: 0;
+  padding: var(--space-2) var(--space-3) var(--space-3);
+  list-style: none;
+  overflow-y: auto;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.tut-log__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--ui-text);
+}
+
+.tut-log__row--dim {
+  color: var(--ui-text-dim);
+}
+.tut-log__row--danger {
+  color: var(--ui-danger);
+}
+.tut-log__row--ok {
+  color: var(--ui-ok);
+}
+.tut-log__row--accent {
+  color: var(--ui-accent);
+}
+.tut-log__row--bug {
+  color: var(--ui-bug);
+}
+
 .tut-hud__actions {
   justify-content: center;
 }

@@ -4,7 +4,9 @@ import type { Rng } from "../../core/model/rng";
 import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { COMBAT_TUNING } from "../../tactical/data/combat-tuning";
+import { ok } from "../../core/model/result";
 import { ATTACK, attack } from "../../tactical/model/attack-command";
+import { INTERACT, interact } from "../../tactical/model/interact-command";
 import { ATTACK_RESOLVED } from "../../tactical/model/attack-resolved-event";
 import { MOVE, move } from "../../tactical/model/move-command";
 import type { TacticalCommand } from "../../tactical/model/tactical-command";
@@ -24,7 +26,10 @@ import {
   unitAt,
 } from "../../tactical/service/tactical-fixtures.test-helper";
 import type { TacticalHandlers } from "../../tactical/service/tactical-command-handlers";
-import { createOverwatchReaction } from "../../tactical/service/turn-service";
+import {
+  createOverwatchReaction,
+  missionOutcome,
+} from "../../tactical/service/turn-service";
 import { BUG_SPECIES, LURKER, SWARMER } from "../data/species";
 import {
   startedMission,
@@ -270,6 +275,54 @@ describe("createBugPhaseRunner", () => {
       ATTACK_RESOLVED,
       UNIT_DIED,
     ]);
+    expect(applied.state.units.find((u) => u.id === "b2")?.ap).toBe(2);
+  });
+
+  it("stops when a bug's own action decides the mission mid-phase, not at the next turn boundary", () => {
+    // #425 ends a mission the moment the last objective completes. The
+    // runner asks `missionOutcome` between bugs, so b2 must never act.
+    // A stub Interact keeps this about the runner's guard rather than
+    // the objective rules' own reach and cost checks.
+    const demolish: TacticalHandlers = {
+      ...HANDLERS,
+      [INTERACT]: (mission, command) =>
+        ok({
+          state: {
+            ...mission,
+            // Bills the action like the real rule, so a bug that acts
+            // after the mission is decided leaves a mark to assert on.
+            units: mission.units.map((u) =>
+              u.id === command.payload.unitId ? { ...u, ap: u.ap - 1 } : u,
+            ),
+            objectives: mission.objectives.map((o) => ({
+              ...o,
+              complete: true,
+            })),
+          },
+          events: [],
+        }),
+    };
+    const mission: TacticalState = {
+      ...bugsPhase(),
+      objectives: [
+        {
+          id: "obj-1",
+          kind: "destroy-spawner",
+          targetId: "spawner-1",
+          complete: false,
+        },
+      ],
+    };
+    const plant = rush((_mission, unitId) => [interact(unitId, "obj-1")]);
+    const applied = createBugPhaseRunner({
+      handlers: demolish,
+      registry: new MapBehaviourRegistry([plant]),
+      speciesOf,
+      combat: COMBAT_TUNING,
+    })(mission, ctxWith(riggedRng(true)));
+    expect(applied.state.objectives[0]?.complete).toBe(true);
+    expect(missionOutcome(applied.state)).toBe("won");
+    // b2 still has both actions: the phase stopped before reaching it.
     expect(applied.state.units.find((u) => u.id === "b2")?.ap).toBe(2);
   });
 

@@ -142,7 +142,7 @@ describe("TacticalHudView", () => {
     const { hud } = setup();
     hud.handleIntent({ kind: "action", action: "next-target" });
     expect(hud.getTargetUnitId()).toBeUndefined();
-    expect(hud.getMode()).toBe("select");
+    expect(hud.getMode()).toBe("move");
     // s2 is out of action points.
     hud.handleIntent({ kind: "select-unit", unitId: "s2" });
     hud.handleIntent({ kind: "action", action: "next-target" });
@@ -190,7 +190,7 @@ describe("TacticalHudView", () => {
     expect(commands).toEqual([
       { type: ATTACK, payload: { attackerId: "s1", targetId: "b1" } },
     ]);
-    expect(hud.getMode()).toBe("select");
+    expect(hud.getMode()).toBe("move");
     expect(root.querySelector<HTMLElement>("#hit-preview")?.hidden).toBe(true);
   });
 
@@ -226,7 +226,7 @@ describe("TacticalHudView", () => {
     hud.handleIntent({ kind: "action", action: "next-unit" });
     expect(hud.getSelectedUnitId()).toBe("s2");
     hud.handleIntent({ kind: "action", action: "cancel" });
-    expect(hud.getMode()).toBe("select");
+    expect(hud.getMode()).toBe("move");
   });
 
   // ===========================================
@@ -260,7 +260,7 @@ describe("TacticalHudView", () => {
       ).toBe(1);
       previous = step;
     }
-    expect(hud.getMode()).toBe("select");
+    expect(hud.getMode()).toBe("move");
   });
 
   it("routes around what it cannot walk through rather than through it", () => {
@@ -333,14 +333,41 @@ describe("TacticalHudView", () => {
     hud.handleIntent({ kind: "action", action: "move" });
     hud.handleIntent({ kind: "select-tile", tile: { x: 1, y: 0, z: 1 } });
     expect(commands).toEqual([]);
-    expect(hud.getMode()).toBe("select");
+    expect(hud.getMode()).toBe("move");
   });
 
-  it("ignores a tile click when no move is armed", () => {
+  it("moves on a tile click with nothing armed first, Move being the default (#519)", () => {
     const { hud, commands } = setup();
+    // No action chosen: select the unit, click a tile, it walks.
     hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    expect(hud.getMode()).toBe("move");
+    hud.handleIntent({ kind: "select-tile", tile: { x: 5, y: 0, z: 3 } });
+    expect(commands.map((c) => c.type)).toEqual([MOVE]);
+    // And the bar says so, so the state is legible.
+    expect(
+      root
+        .querySelector<HTMLElement>('[data-action="move"]')
+        ?.getAttribute("aria-pressed"),
+    ).toBe("true");
+  });
+
+  it("ignores a tile click when the selected unit is not the player's", () => {
+    const { hud, commands } = setup();
+    hud.handleIntent({ kind: "select-unit", unitId: "b1" });
     hud.handleIntent({ kind: "select-tile", tile: { x: 5, y: 0, z: 3 } });
     expect(commands).toEqual([]);
+  });
+
+  it("does not move onto a tile while Attack is armed", () => {
+    const { hud, commands } = setup();
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    hud.handleIntent({ kind: "action", action: "attack" });
+    expect(hud.getMode()).toBe("attack");
+    hud.handleIntent({ kind: "select-tile", tile: { x: 5, y: 0, z: 3 } });
+    expect(commands).toEqual([]);
+    // Pressing the armed action again falls back to Move, not to nothing.
+    hud.handleIntent({ kind: "action", action: "attack" });
+    expect(hud.getMode()).toBe("move");
   });
 
   it("offers Interact only when an objective is in reach, and works the nearest", () => {

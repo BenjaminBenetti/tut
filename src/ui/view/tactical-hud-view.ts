@@ -45,8 +45,16 @@ import { UnitCardView } from "./unit-card-view";
 // Types
 // ===========================================
 
-/** Which action is armed on the selected unit. */
-export type HudMode = "select" | "move" | "attack";
+/**
+ * Which action a click on the map performs. There is always one armed:
+ * moving is what a player does most, so it is the resting state and no
+ * mode has to be chosen before walking a unit (#519). Picking Attack
+ * arms it until it is used or cancelled, and then Move comes back.
+ */
+export type HudMode = "move" | "attack";
+
+/** The action the HUD falls back to: a click on a reachable tile walks there. */
+export const DEFAULT_HUD_MODE: HudMode = "move";
 
 /** What the HUD reports back to its owner. */
 export interface TacticalHudHandlers {
@@ -115,7 +123,7 @@ export class TacticalHudView {
   private mission: TacticalState | undefined;
   private selected: UnitId | undefined;
   private target: UnitId | undefined;
-  private mode: HudMode = "select";
+  private mode: HudMode = DEFAULT_HUD_MODE;
 
   // ===========================================
   // Constructor
@@ -185,7 +193,7 @@ export class TacticalHudView {
       (mission?.units.some((u) => u.id === id && u.hp > 0) ?? false);
     if (!aliveUnit(this.selected)) {
       this.selected = undefined;
-      this.mode = "select";
+      this.mode = DEFAULT_HUD_MODE;
     }
     // The target may be an egg spawner (#426), which is not in `units`.
     const target =
@@ -285,6 +293,13 @@ export class TacticalHudView {
     if (!mission || this.selected === undefined) {
       return;
     }
+    // Move is armed by default now (#519), so a tile click reaches here
+    // with anything selected — including a bug the player tapped to read
+    // its card. Only the acting side walks; the rest is a quiet no-op
+    // rather than a refusal the player did not ask for.
+    if (!this.canAct()) {
+      return;
+    }
     const path = pathTo(
       mission,
       this.selected,
@@ -295,7 +310,7 @@ export class TacticalHudView {
       this.showStatus("That tile is out of reach this turn.");
       return;
     }
-    this.mode = "select";
+    this.mode = DEFAULT_HUD_MODE;
     if (path.length > 0) {
       this.handlers.onCommand(move(this.selected, path));
     }
@@ -341,7 +356,7 @@ export class TacticalHudView {
     }
     this.selected = unitId;
     this.target = undefined;
-    this.mode = "select";
+    this.mode = DEFAULT_HUD_MODE;
     this.refresh();
   }
 
@@ -353,7 +368,9 @@ export class TacticalHudView {
       case "move":
       case "attack":
         if (this.canAct()) {
-          this.mode = this.mode === action ? "select" : action;
+          // Pressing the armed action again disarms it, which for Move
+          // means staying on Move: there is nothing quieter to fall to.
+          this.mode = this.mode === action ? DEFAULT_HUD_MODE : action;
           this.target = undefined;
         }
         break;
@@ -383,7 +400,7 @@ export class TacticalHudView {
         this.handlers.onCommand(endTurn());
         break;
       case "cancel":
-        this.mode = "select";
+        this.mode = DEFAULT_HUD_MODE;
         this.target = undefined;
         break;
       case "next-unit":
@@ -403,7 +420,7 @@ export class TacticalHudView {
     }
     this.handlers.onCommand(attack(this.selected, this.target));
     this.target = undefined;
-    this.mode = "select";
+    this.mode = DEFAULT_HUD_MODE;
     this.refresh();
   }
 
@@ -425,7 +442,7 @@ export class TacticalHudView {
     if (next) {
       this.selected = next.id;
       this.target = undefined;
-      this.mode = "select";
+      this.mode = DEFAULT_HUD_MODE;
     }
   }
 
@@ -579,7 +596,7 @@ export class TacticalHudView {
     this.actions.update({
       canAct: this.canAct(),
       playerPhase: mission.phase === "player",
-      mode: this.mode === "select" ? undefined : this.mode,
+      mode: this.mode,
       reloadLabel: selected?.kind === "mech" ? "Vent" : "Reload",
       canExtract: this.canExtract(),
       canInteract: inReach !== undefined,

@@ -656,3 +656,86 @@ describe("attacking an egg spawner", () => {
     }
   });
 });
+
+// ===========================================
+// Melee and cover (#446)
+// ===========================================
+
+describe("a melee attacker and cover", () => {
+  /** The crate at (4,0,2) gives its neighbours low cover against a shot. */
+  const DEFENDER = { x: 4, z: 3 } as const;
+
+  /** A mission with a defender beside the crate and a melee bug at `from`. */
+  function beside(from: { x: number; z: number }): TacticalState {
+    return mission([
+      unit("s1", "tdf", "rifle", DEFENDER.x, DEFENDER.z),
+      unit("b1", "bugs", "swarmer", from.x, from.z, { ap: 2 }),
+    ]);
+  }
+
+  /** Preview of the bug biting the defender from `from`, in the bugs' phase. */
+  function biteFrom(from: { x: number; z: number }) {
+    const m = { ...beside(from), phase: "bugs" as const };
+    const preview = previewAttack(m, "b1", "s1", T);
+    expect(preview.ok, `bite from ${from.x},${from.z}`).toBe(true);
+    return preview.ok ? preview.value : undefined;
+  }
+
+  it("never flanks and never mitigates, so the boulder changes nothing (#446)", () => {
+    // The four tiles around the defender; (4,0,2) is the crate itself and
+    // cannot be stood on, so the three standable sides are these.
+    const sides = [
+      { x: 3, z: 3 },
+      { x: 5, z: 3 },
+      { x: 4, z: 4 },
+    ];
+    const previews = sides.map((side) => biteFrom(side));
+    for (const [i, preview] of previews.entries()) {
+      const where = `${String(sides[i]?.x)},${String(sides[i]?.z)}`;
+      expect(preview?.flanked, `flanked from ${where}`).toBe(false);
+      expect(preview?.cover, `cover from ${where}`).toBe(CoverLevel.NONE);
+    }
+    // Identical from every side: the crate neither helps nor hinders.
+    const chances = previews.map((p) => p?.hitChance);
+    expect(new Set(chances).size).toBe(1);
+    // And it is the weapon's own accuracy, since a bite is always at
+    // range 1 and this fixture is level ground: no range, cover, flank or
+    // elevation term applies.
+    expect(chances[0]).toBe(TEMPLATES.swarmer?.weapon.accuracy);
+  });
+
+  it("the boulder does not raise the bite the way it used to", () => {
+    // The defect: `flanked` was true from the sides the crate does not
+    // cover, adding the flank bonus — standing beside cover *raised* a
+    // swarmer's chance from 60 to 75.
+    const withCrate = biteFrom({ x: 5, z: 3 })?.hitChance;
+    // The same bite on open ground well away from the crate.
+    const open = previewAttack(
+      {
+        ...mission([
+          unit("s1", "tdf", "rifle", 1, 5),
+          unit("b1", "bugs", "swarmer", 2, 5, { ap: 2 }),
+        ]),
+        phase: "bugs" as const,
+      },
+      "b1",
+      "s1",
+      T,
+    );
+    expect(open.ok).toBe(true);
+    if (!open.ok) return;
+    expect(withCrate).toBe(open.value.hitChance);
+  });
+
+  it("leaves a ranged attacker's cover and flank exactly as they were", () => {
+    // The rifle shooting the same defender still sees the crate.
+    const m = mission([
+      unit("s1", "tdf", "rifle", 4, 0),
+      unit("b1", "bugs", "swarmer", DEFENDER.x, DEFENDER.z),
+    ]);
+    const shot = previewAttack(m, "s1", "b1", T);
+    expect(shot.ok).toBe(true);
+    if (!shot.ok) return;
+    expect(shot.value.cover).toBe(CoverLevel.LOW);
+  });
+});

@@ -17,3 +17,25 @@ export interface WeaponProfile {
   /** Armor points ignored by each hit. Non-negative. */
   readonly armorPen: number;
 }
+
+// ===========================================
+// Melee
+// ===========================================
+
+/** Reach of a weapon that has to be in contact to be used. */
+export const MELEE_RANGE = 1;
+
+/**
+ * True when the weapon has to be in contact to be used (#446).
+ *
+ * Cover is a ranged concept: it says a shooter's line is obstructed. A
+ * claw at arm's length is not obstructed by the boulder the defender is
+ * standing behind, and — worse — the flank rule would read that boulder
+ * as an exposed angle and *raise* the attacker's chance, so a player who
+ * took cover was punished for it. Cover protects against melee
+ * structurally instead: a prop tile cannot be stood on, so it denies an
+ * approach rather than granting a percentage (Director's ruling, #446).
+ */
+export function isMelee(weapon: WeaponProfile): boolean {
+  return weapon.range <= MELEE_RANGE;
+}

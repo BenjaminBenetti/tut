@@ -8,6 +8,7 @@ import type {
 import type { TacticalContext } from "../../tactical/model/tactical-handler";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { UnitId } from "../../tactical/model/unit";
+import type { MoveGraph } from "../../tactical/service/movement-service";
 import { buildMoveGraph } from "../../tactical/service/movement-service";
 import type { TacticalHandlers } from "../../tactical/service/tactical-command-handlers";
 import { applyTacticalCommand } from "../../tactical/service/tactical-command-handlers";
@@ -58,14 +59,15 @@ export interface BugPhaseDeps {
  * and one bug choosing differently never perturbs the next bug's draws.
  * A refused command (the behaviour planned a move the rules refuse, or
  * a rule that has not landed) ends that bug's turn quietly; the rest of
- * the phase still runs. The move graph is built once and shared.
+ * the phase still runs. The move graph is built at most once per phase,
+ * on the first behaviour that reads it, and shared from there.
  */
 export function createBugPhaseRunner(deps: BugPhaseDeps): PhaseStep {
   return (mission, ctx) => {
     if (mission.phase !== "bugs") {
       return { state: mission, events: [] };
     }
-    const graph = buildMoveGraph(mission.map);
+    const graphOnce = sharedGraph(mission);
     const actors = livingBugIds(mission);
     let state = mission;
     const events: TacticalEvent[] = [];
@@ -79,7 +81,13 @@ export function createBugPhaseRunner(deps: BugPhaseDeps): PhaseStep {
         unitId,
         deps.registry,
         deps.speciesOf,
-        { rng: unitRng.fork("choose"), combat: deps.combat, graph },
+        {
+          rng: unitRng.fork("choose"),
+          combat: deps.combat,
+          get graph(): MoveGraph {
+            return graphOnce();
+          },
+        },
       );
       const acted = applyAll(deps.handlers, state, commands, unitRng, ctx);
       state = acted.state;
@@ -92,6 +100,17 @@ export function createBugPhaseRunner(deps: BugPhaseDeps): PhaseStep {
 // ===========================================
 // Helpers
 // ===========================================
+
+/**
+ * The mission map's move graph, built the first time a behaviour reads
+ * `ctx.graph` and shared by every bug after it. Lazy because indexing a
+ * map is O(tiles): a phase in which nothing walks — every bug holding
+ * still because its species has no behaviour yet — never pays for it.
+ */
+function sharedGraph(mission: TacticalState): () => MoveGraph {
+  let graph: MoveGraph | undefined;
+  return () => (graph ??= buildMoveGraph(mission.map));
+}
 
 /** The living bugs' ids in `units` order: the phase's acting order. */
 export function livingBugIds(mission: TacticalState): readonly UnitId[] {

@@ -60,6 +60,7 @@ export type TacticalError =
   | { readonly kind: "no-reload"; readonly unitId: string }
   | { readonly kind: "objective-not-found"; readonly objectiveId: string }
   | { readonly kind: "objective-complete"; readonly objectiveId: string }
+  | { readonly kind: "objective-not-yours"; readonly unitId: string }
   | {
       readonly kind: "objective-target-missing";
       readonly objectiveId: string;
@@ -78,7 +79,8 @@ export type TacticalError =
       readonly kind: "mission-mismatch";
       readonly expected: string;
       readonly active: string;
-    };
+    }
+  | { readonly kind: "unhandled-command"; readonly commandType: string };
 
 /** Human-readable text for a tactical error, for the status line and logs. */
 export function describeTacticalError(error: TacticalError): string {
@@ -129,6 +131,8 @@ export function describeTacticalError(error: TacticalError): string {
       return `No objective "${error.objectiveId}" is in this mission`;
     case "objective-complete":
       return `Objective "${error.objectiveId}" is already done`;
+    case "objective-not-yours":
+      return `Unit "${error.unitId}" is not on the side whose objective that is`;
     case "objective-target-missing":
       return `Objective "${error.objectiveId}" tracks unknown target "${error.targetId}"`;
     case "objective-out-of-reach":
@@ -141,5 +145,7 @@ export function describeTacticalError(error: TacticalError): string {
       return `Mission "${error.missionId}" is still being fought`;
     case "mission-mismatch":
       return `Mission "${error.expected}" was expected but "${error.active}" is in progress`;
+    case "unhandled-command":
+      return `No rule handles "${error.commandType}" in this mission`;
   }
 }

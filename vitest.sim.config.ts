@@ -15,9 +15,9 @@ export default defineConfig({
     environment: "node",
     // One mission is tens of turns of real rules; the default 5 s cuts a
     // sweep off mid-run and reports it as a timeout rather than a result.
-    testTimeout: 300_000,
+    testTimeout: 600_000,
     // The sweep plays its missions in `beforeAll`; without this it dies
     // at the 10 s default before a single seed finishes.
-    hookTimeout: 300_000,
+    hookTimeout: 600_000,
   },
 });

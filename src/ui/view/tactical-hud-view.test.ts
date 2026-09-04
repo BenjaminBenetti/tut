@@ -672,3 +672,114 @@ describe("TacticalHudView under fog", () => {
     expect(mission.vision.tdf.spotted).toContain(hud.getTargetUnitId());
   });
 });
+// ===========================================
+// The context menu (#627)
+// ===========================================
+
+describe("TacticalHudView context menu", () => {
+  /** A HUD whose world can anchor a menu, with the mech selected. */
+  function armed(mode: "move" | "attack" = "attack") {
+    const commands: TacticalCommand[] = [];
+    const hud = new TacticalHudView(
+      {
+        onCommand: (c) => commands.push(c),
+        onBack: vi.fn(),
+        anchorFor: () => ({ x: 100, y: 100 }),
+      },
+      { combatTuning: COMBAT_TUNING, objectiveTuning: OBJECTIVE_TUNING },
+    );
+    hud.mount(root);
+    const mission = hudMission();
+    hud.update(mission);
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    if (mode === "attack") {
+      hud.handleIntent({ kind: "action", action: "attack" });
+    }
+    return { hud, commands, mission };
+  }
+
+  const menu = (): HTMLElement | null =>
+    root.querySelector<HTMLElement>("#radial-menu");
+  const isOpen = (): boolean => menu()?.dataset.open === "true";
+  const openOnTile = (hud: TacticalHudView): void => {
+    hud.handleIntent({
+      kind: "invoke",
+      target: { kind: "tile", tile: { x: 2, y: 0, z: 1 } },
+    });
+  };
+
+  it("opens on a right click the armed action cannot use", () => {
+    const { hud } = armed();
+    expect(isOpen()).toBe(false);
+    openOnTile(hud);
+    expect(isOpen()).toBe(true);
+    expect(
+      root.querySelector<HTMLButtonElement>("button[data-item]")?.dataset.item,
+    ).toBe("move:2,0,1");
+  });
+
+  it("closes when its item is chosen, and acts once (#627)", () => {
+    const { hud, commands, mission } = armed();
+    openOnTile(hud);
+    root.querySelector<HTMLButtonElement>("button[data-item]")?.click();
+
+    expect(commands.map((c) => c.type)).toEqual([MOVE]);
+    // The ring used to stay on screen here, go stale, and then swallow
+    // the next click because the unit already stood on the tile it still
+    // offered — which is what read as "the button does nothing".
+    expect(isOpen()).toBe(false);
+
+    hud.update({
+      ...mission,
+      units: mission.units.map((u) =>
+        u.id === "s1" ? { ...u, pos: { x: 2, y: 0, z: 1 }, ap: 1 } : u,
+      ),
+    });
+    // Hidden, so the stale entry it still holds cannot be clicked again.
+    expect(isOpen()).toBe(false);
+    expect(menu()?.hidden).toBe(true);
+  });
+
+  it("closes on Escape, and on a click outside the ring", () => {
+    const { hud } = armed();
+    openOnTile(hud);
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    expect(isOpen()).toBe(false);
+
+    openOnTile(hud);
+    expect(isOpen()).toBe(true);
+    root.dispatchEvent(new Event("pointerdown", { bubbles: true }));
+    expect(isOpen()).toBe(false);
+  });
+
+  it("closes when the player moves on: another unit, another action, end turn", () => {
+    const { hud } = armed();
+
+    openOnTile(hud);
+    hud.handleIntent({ kind: "select-unit", unitId: "s2" });
+    expect(isOpen()).toBe(false);
+
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    hud.handleIntent({ kind: "action", action: "attack" });
+    openOnTile(hud);
+    hud.handleIntent({ kind: "action", action: "move" });
+    expect(isOpen()).toBe(false);
+
+    hud.handleIntent({ kind: "action", action: "attack" });
+    openOnTile(hud);
+    hud.handleIntent({ kind: "end-turn" });
+    expect(isOpen()).toBe(false);
+  });
+
+  it("closes when the mission stops offering the target", () => {
+    const { hud, mission } = armed();
+    openOnTile(hud);
+    expect(isOpen()).toBe(true);
+    // The selected unit dies: the decision the ring belonged to is gone.
+    hud.update({
+      ...mission,
+      units: mission.units.map((u) => (u.id === "s1" ? { ...u, hp: 0 } : u)),
+    });
+    expect(isOpen()).toBe(false);
+  });
+});

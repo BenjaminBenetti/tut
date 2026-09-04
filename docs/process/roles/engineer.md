@@ -26,6 +26,7 @@ If exactly one issue is labeled for you, that is your issue. If none: wait, poll
 
 ## Rules
 
+- **Never end a turn without active work or an armed monitor.** If you have an issue labeled for your seat, you are working it — start it, push to its branch, or say on the issue why you cannot. If you are genuinely waiting on something outside your control (a review, a dependency merging, CI), arm a monitor or a scheduled wake-up on that signal before you stop, so you resume the moment it changes. A seat that goes quiet with work assigned looks identical to a seat that has died, and the Producer has to chase it to tell the difference.
 - One issue at a time, and only issues labeled for your seat. If you discover adjacent work, file a new issue, don't do it.
 - Commit and push at least hourly. Your instance may be recycled.
 - Never push to `main`. Never force-push.

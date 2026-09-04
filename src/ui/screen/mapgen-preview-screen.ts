@@ -377,6 +377,11 @@ function assessmentRows(
         `${delta((a) => a.coveredFiringShare, pct)} in cover, ` +
         `${delta((a) => a.elevatedFiringShare, pct)} shooting down`,
     ],
+    [
+      "Visible in range",
+      `${delta((a) => a.visibleShare, pct)} from a standing unit, ` +
+        `${delta((a) => a.deployVisibleShare, pct)} of the map known at turn 1`,
+    ],
     ["Mech reach", `${delta((a) => a.mechReachShare, pct)} of infantry's`],
     [
       "Levels reached",

@@ -38,6 +38,19 @@ export interface MapAssessment {
   /** Mech-reachable tiles as a share of infantry-reachable ones, in [0, 1]. */
   readonly mechReachShare: number;
   /**
+   * Of the tiles within a unit's sight range of a standing position, the
+   * share it has a clear line to, meaned over sampled positions (#596).
+   * How much fog of war actually hides: 1 is a map where sight is
+   * limited only by range, and a low number is a map with something to
+   * hide behind.
+   */
+  readonly visibleShare: number;
+  /**
+   * Share of the whole map the deploy zones can see between them before
+   * anyone moves — what the player knows at turn 1.
+   */
+  readonly deployVisibleShare: number;
+  /**
    * How many distinct levels infantry can reach from the deploy zones:
    * `1` on a map with no height it can use, more when stairs, ladders and
    * ramps lead somewhere.

@@ -18,6 +18,8 @@ import { UNIT_TUNING } from "../../tactical/data/unit-tuning";
 import { SPAWN_TUNING } from "../../tactical/data/spawn-tuning";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import { startTacticalMission } from "../../tactical/service/mission-start-service";
+import { hasLineOfSight } from "../../tactical/service/sight-service";
+import { TileIndex } from "../../mapgen/service/tile-index";
 import {
   missionWith,
   unitAt,
@@ -68,7 +70,7 @@ function mission(): TacticalState {
 }
 
 describe("overlaysFor", () => {
-  it("lists the reachable tiles of a living unit without its own tile, with cover and LOS subsets", () => {
+  it("lists the reachable tiles of a living unit without its own tile, with cover and blocked-shot subsets", () => {
     const m = mission();
     const squad = m.units.find((u) => u.kind === "squad")!;
     const state = overlaysFor(m, squad.id);
@@ -88,7 +90,7 @@ describe("overlaysFor", () => {
       ).toBe(true);
       expect(marker.level).toBeGreaterThan(0);
     }
-    for (const tile of state.lineOfSight) {
+    for (const tile of state.blockedShot) {
       expect(keys.has(`${tile.x},${tile.y},${tile.z}`)).toBe(true);
     }
   });
@@ -108,9 +110,18 @@ describe("overlaysFor", () => {
 describe("TacticalOverlays", () => {
   it("draws one instance per tile on the matching layer and clears to zero", () => {
     const overlays = new TacticalOverlays();
-    expect(overlays.layers().every((l) => l instanceof InstancedMesh)).toBe(
-      true,
-    );
+    // Every per-tile plane is instanced; the weapon envelope is not a
+    // per-tile plane at all but one outline mesh, which is the whole
+    // point of #624 and is asserted here so it cannot quietly go back.
+    const instanced = overlays
+      .layers()
+      .filter((l) => l instanceof InstancedMesh);
+    expect(instanced).toHaveLength(overlays.layers().length - 1);
+    const outline = overlays
+      .layers()
+      .find((l) => l.name === "overlay-weapon-range");
+    expect(outline).toBeDefined();
+    expect(outline instanceof InstancedMesh).toBe(false);
     overlays.show({
       moveRange: [
         { tile: { x: 1, y: 0, z: 1 }, apCost: 1 },
@@ -121,7 +132,7 @@ describe("TacticalOverlays", () => {
         { tile: { x: 2, y: 0, z: 1 }, level: 1 },
         { tile: { x: 3, y: 0, z: 1 }, level: 2 },
       ],
-      lineOfSight: [{ x: 3, y: 0, z: 1 }],
+      blockedShot: [{ x: 3, y: 0, z: 1 }],
       weaponRange: [],
     });
     expect(overlays.counts()).toEqual({
@@ -130,7 +141,7 @@ describe("TacticalOverlays", () => {
       rangeTwoAp: 1,
       coverLow: 1,
       coverHigh: 1,
-      los: 1,
+      blockedShot: 1,
     });
     overlays.clear();
     expect(overlays.counts()).toEqual({
@@ -139,7 +150,7 @@ describe("TacticalOverlays", () => {
       rangeTwoAp: 0,
       coverLow: 0,
       coverHigh: 0,
-      los: 0,
+      blockedShot: 0,
     });
     overlays.dispose();
     expect(overlays.root.children).toHaveLength(0);
@@ -154,7 +165,7 @@ describe("TacticalOverlays", () => {
     overlays.show({
       moveRange: many,
       cover: [],
-      lineOfSight: [],
+      blockedShot: [],
       weaponRange: [],
     });
     expect(overlays.counts().rangeOneAp).toBe(300);
@@ -317,13 +328,29 @@ describe("overlaysFor weapon range", () => {
     );
   });
 
-  it("agrees with the rules: a tile behind a wall is out of the envelope", () => {
+  it("states reach, and lets a wall stop nothing (#624)", () => {
     const tiles = overlaysFor(field(5, true), "u1").weaponRange;
     const keys = new Set(tiles.map((t) => `${t.x},${t.y},${t.z}`));
-    // In range by distance, but the screen at x=7 blocks the sight line.
-    expect(keys.has("8,0,5")).toBe(false);
-    // The same distance the other way is clear.
+    // Both are five tiles away and both are inside the reach, even
+    // though the screen at x=7 blocks the sight line to the first.
+    // Filtering by sight cut the envelope into pockets whose outline
+    // drew as disconnected dashes; "how far can I fire" is a property
+    // of the weapon, not of where the walls are. Whether a given tile
+    // will take the shot is `blockedShot`'s question, asked of a
+    // chosen target, and it is tested against the rules below.
+    expect(keys.has("8,0,5")).toBe(true);
     expect(keys.has("2,0,5")).toBe(true);
+  });
+
+  it("is one flat outline at the firer's level, never a mark per level", () => {
+    const tiles = overlaysFor(field(5, true), "u1").weaponRange;
+    const unit = field(5, true).units.find((u) => u.id === "u1")!;
+    // One tile per column, all at the firer's own height: a boundary
+    // that followed the terrain climbed the side of every building and
+    // drew a picture of ground the player may never have seen.
+    expect(tiles.every((t) => t.y === unit.pos.y)).toBe(true);
+    const columns = new Set(tiles.map((t) => `${t.x},${t.z}`));
+    expect(columns.size).toBe(tiles.length);
   });
 
   it("is empty for a unit whose template carries no reach", () => {
@@ -351,7 +378,7 @@ describe("TacticalOverlays weapon-range outline", () => {
     overlays.show({
       moveRange: [],
       cover: [],
-      lineOfSight: [],
+      blockedShot: [],
       weaponRange,
     });
     const count = overlays.counts().weaponRange;
@@ -359,19 +386,21 @@ describe("TacticalOverlays weapon-range outline", () => {
     return count;
   }
 
-  it("draws the edge of the envelope, not every tile in it", () => {
-    // A 5x5 block: the 16 perimeter tiles are drawn, the 9 inside are not.
+  it("draws one outline around the envelope, not a mark per tile", () => {
+    // A 5x5 block has a 20-edge perimeter however many of its 25 tiles
+    // are inside it: one fact, one shape (#624).
     const block = [];
     for (let x = 0; x < 5; x++) {
       for (let z = 0; z < 5; z++) {
         block.push({ x, y: 0, z });
       }
     }
-    expect(shown(block)).toBe(25 - 9);
+    expect(shown(block)).toBe(20);
   });
 
-  it("treats a thin strip as all edge", () => {
-    expect(shown(strip)).toBe(3);
+  it("wraps a thin strip completely, both long sides and both ends", () => {
+    // 1 x 3: three exposed sides on each end tile, two on the middle.
+    expect(shown(strip)).toBe(8);
   });
 
   it("draws nothing for an empty envelope", () => {
@@ -383,7 +412,7 @@ describe("TacticalOverlays weapon-range outline", () => {
     overlays.show({
       moveRange: [{ tile: { x: 9, y: 0, z: 9 }, apCost: 1 }],
       cover: [],
-      lineOfSight: [],
+      blockedShot: [],
       weaponRange: strip,
     });
     // Off until asked for: a scene drawn before the screen has pushed
@@ -391,48 +420,58 @@ describe("TacticalOverlays weapon-range outline", () => {
     expect(overlays.isWeaponRangeVisible()).toBe(false);
     expect(overlays.counts().weaponRange).toBe(0);
     overlays.setWeaponRangeVisible(true);
-    expect(overlays.counts().weaponRange).toBe(3);
+    expect(overlays.counts().weaponRange).toBe(8);
     overlays.setWeaponRangeVisible(false);
     expect(overlays.counts().weaponRange).toBe(0);
     // The movement band is untouched by the toggle.
     expect(overlays.counts().rangeOneAp).toBe(1);
     overlays.setWeaponRangeVisible(true);
-    expect(overlays.counts().weaponRange).toBe(3);
+    expect(overlays.counts().weaponRange).toBe(8);
     overlays.dispose();
   });
 });
 
-describe("sight cue narrows to the chosen target (#517)", () => {
-  it("marks tiles with a line to a spawner, which the any-enemy cue ignored", () => {
+describe("the sight cue marks the exception (#517, #624)", () => {
+  it("marks the reachable tiles that will refuse the shot, and only those", () => {
     const mission = startedMission("player");
     const unit = mission.units.filter((u) => u.team === "tdf")[1];
     const spawner = mission.spawners[0];
     if (!unit || !spawner) throw new Error("fixture");
 
-    const anyEnemy = overlaysFor(mission, unit.id);
-    const atSpawner = overlaysFor(mission, unit.id, spawner.id);
-
-    // A spawner is not a unit, so the untargeted cue never considered it.
-    expect(atSpawner.lineOfSight).not.toEqual(anyEnemy.lineOfSight);
+    const state = overlaysFor(mission, unit.id, spawner.id);
+    const index = new TileIndex(mission.map);
+    const blocked = new Set(
+      state.blockedShot.map((t) => `${t.x},${t.y},${t.z}`),
+    );
+    // Every mark is a real refusal, and every refusal is marked: a cue
+    // computed a second way could promise a shot the rules then deny.
+    for (const { tile } of state.moveRange) {
+      const clear = hasLineOfSight(mission.map, tile, spawner.pos, index);
+      expect(blocked.has(`${tile.x},${tile.y},${tile.z}`)).toBe(!clear);
+    }
   });
 
-  it("every marked tile really has the line, so the cue cannot promise a shot the rules refuse", () => {
-    const mission = startedMission("player");
-    const unit = mission.units.filter((u) => u.team === "tdf")[1];
-    const spawner = mission.spawners[0];
-    if (!unit || !spawner) throw new Error("fixture");
-
-    const marked = overlaysFor(mission, unit.id, spawner.id).lineOfSight;
-    expect(marked.length).toBeGreaterThan(0);
-  });
-
-  it("falls back to any living enemy when nothing is targeted", () => {
+  it("draws nothing at all when no target is chosen", () => {
     const mission = startedMission("player");
     const unit = mission.units.filter((u) => u.team === "tdf")[1];
     if (!unit) throw new Error("fixture");
 
-    expect(overlaysFor(mission, unit.id, undefined).lineOfSight).toEqual(
-      overlaysFor(mission, unit.id).lineOfSight,
+    // The old cue fell back to "any living enemy", which with nine bugs
+    // on the board was true on 93 of 93 reachable tiles -- a light
+    // always on (#624). No target chosen, no question asked, no marks.
+    expect(overlaysFor(mission, unit.id).blockedShot).toEqual([]);
+    expect(overlaysFor(mission, unit.id, undefined).blockedShot).toEqual([]);
+  });
+
+  it("never marks more tiles than the unit can reach", () => {
+    const mission = startedMission("player");
+    const unit = mission.units.filter((u) => u.team === "tdf")[1];
+    const spawner = mission.spawners[0];
+    if (!unit || !spawner) throw new Error("fixture");
+
+    const state = overlaysFor(mission, unit.id, spawner.id);
+    expect(state.blockedShot.length).toBeLessThanOrEqual(
+      state.moveRange.length,
     );
   });
 });

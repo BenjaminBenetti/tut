@@ -116,6 +116,15 @@ h3 {
   display: block;
 }
 
+/*
+ * The weapon's own heat or ammo, under its numbers (#652). Dim, because
+ * it is state rather than a property of the weapon, and on its own line
+ * so it cannot be mistaken for another `·` term in the profile above.
+ */
+.tut-card__entry-charges {
+  display: block;
+}
+
 .tut-dim {
   color: var(--ui-text-dim);
 }

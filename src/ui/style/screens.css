@@ -673,6 +673,22 @@
   justify-content: center;
 }
 
+/*
+ * Action-bar buttons carry their glyph between the shortcut digit and the
+ * label (#495). The icon takes `currentColor`, so it dims with a disabled
+ * button and turns accent on the armed one without a rule of its own.
+ */
+.tut-hud__actions .tut-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* The unit card's rows lead with the same glyph vocabulary. */
+.tut-kv dt.tut-row {
+  gap: var(--space-2);
+}
+
 .tut-hud__preview .tut-row {
   gap: var(--space-4);
   font-size: 16px;

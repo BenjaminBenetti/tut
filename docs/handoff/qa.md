@@ -22,6 +22,8 @@ Last updated: 2026-09-04 (release push; pre-release verdict posted 06:10 UTC).
 
    Re-ran with an eight-way greedy walk that closes distance instead of entering the tile: from tile 0,8 it reached 1,8 in 41 turns, `no step succeeded` from turn 8 on because the swarm occupies every neighbour. Spawner 20/20, objectives 0/2, 0 shots.
 
+   **Update after #488 (`c2cddf8`), which made a unit walk its whole path instead of one step.** Closing the ground is solved: the mech reached **4 tiles from the spawner in 3 turns** (it was 13 tiles after 41 turns before). It still took **0 shots** — selecting the spawner never enables Fire, from 4 tiles away with a range of 10. Following #489, the spawner is **indoors**, so the likely blocker is now line of sight, not distance: a mech cannot enter an interior and probably cannot see in. **Next run: send an infantry squad, which can enter interiors, and see whether it can destroy the spawner.** If a mech genuinely cannot finish an indoor objective, that is a design answer worth stating, not a bug.
+
    **So: still unproven, but do not repeat the claim that the objective is unreachable.** A crude walker cannot fight forward. A conclusive run must shoot whatever blocks the next step, not just step; `/tmp/qa-scripts/qa-win.mjs` has the eight-way walk and that is the missing piece. Post the answer on #317. Extraction remains the exit a player reaches today.
 5. **Filed #480** (p3): the debrief says "No casualties" on a mission that wiped the whole force.
 

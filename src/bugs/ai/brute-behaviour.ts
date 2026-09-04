@@ -13,9 +13,11 @@ import { BRUTE_TUNING } from "../data/brute-tuning";
 import type { BruteTuning } from "../model/brute-tuning";
 import type { BehaviourContext, BugBehaviour } from "./bug-behaviour";
 import {
+  advanceToward,
   attackOptions,
   bestBy,
   clumpScore,
+  landingSite,
   livingEnemies,
   moveTowards,
   overwatchScore,
@@ -100,7 +102,7 @@ export class BruteBehaviour implements BugBehaviour {
     }
     const enemies = livingEnemies(mission, unit);
     if (enemies.length === 0) {
-      return [];
+      return this.hunt(mission, unit, ctx);
     }
     const index = new TileIndex(mission.map);
     const focus = this.pickFocus(mission, unit, enemies, ctx);
@@ -172,6 +174,34 @@ export class BruteBehaviour implements BugBehaviour {
       ctx.rng,
     );
     return chosen ?? enemies[0]!;
+  }
+
+  /**
+   * Nothing in view, so lumber toward where the enemy came down (#559).
+   * Approach and nothing else: a brute has no crowd to punish yet and
+   * takes no interest in cover, so its walk is the plainest of the
+   * three — which is the point, the gait should still be its own.
+   */
+  private hunt(
+    mission: MissionView,
+    unit: Unit,
+    ctx: BehaviourContext,
+  ): readonly TacticalCommand[] {
+    const site = landingSite(mission, unit.pos);
+    if (site === undefined) {
+      return [];
+    }
+    const t = this.tuning;
+    const step = advanceToward(
+      mission,
+      unit.id,
+      (tile) =>
+        -tileDistance(tile, site) * t.approachWeight -
+        Math.abs(tile.y - site.y) * t.levelWeight,
+      ctx.graph ?? buildMoveGraph(mission.map),
+      ctx.rng,
+    );
+    return step ? [step] : [];
   }
 
   /** An attack on the best target the unit can reach from where it stands, if any. */

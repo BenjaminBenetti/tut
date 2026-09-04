@@ -119,7 +119,10 @@ describe("LurkerBehaviour", () => {
     expect([ATTACK, MOVE]).toContain(last.type);
   });
 
-  it("holds still with no enemies and ignores dead lurkers", () => {
+  it("hunts rather than holding when it perceives no enemy, and ignores dead lurkers", () => {
+    // It used to hold still here. Since #559 a bug with nothing in view
+    // works toward the landing zone instead, because a player who never
+    // walks into its sight was never attacked at all.
     const base = startedMission("bugs");
     const noEnemies = {
       ...base,
@@ -131,9 +134,11 @@ describe("LurkerBehaviour", () => {
       walkableTileNear(noEnemies, { x: 1, y: 0, z: 1 }),
     );
     const lurker = new LurkerBehaviour();
-    expect(lurker.choose(bugView(mission), bug.id, ctx(mission, 1))).toEqual(
-      [],
-    );
+    const hunting = lurker.choose(bugView(mission), bug.id, ctx(mission, 1));
+    expect(hunting.length).toBeGreaterThan(0);
+    expect(hunting[0]?.type).toBe(MOVE);
+
+    // A dead lurker still does nothing at all.
     const dead = {
       ...mission,
       units: mission.units.map((u) => (u.id === bug.id ? { ...u, hp: 0 } : u)),

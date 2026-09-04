@@ -15,15 +15,18 @@ import {
   apCostOf,
   buildMoveGraph,
 } from "../../tactical/service/movement-service";
+import { hasLineOfSight } from "../../tactical/service/sight-service";
 import { LURKER_TUNING } from "../data/lurker-tuning";
 import type { LurkerTuning } from "../model/lurker-tuning";
 import type { BehaviourContext, BugBehaviour } from "./bug-behaviour";
 import {
+  advanceToward,
   attackOptions,
   bestBy,
   clumpScore,
   distanceScore,
   exposureScore,
+  landingSite,
   livingEnemies,
   moveTowards,
   reachableTiles,
@@ -90,7 +93,7 @@ export class LurkerBehaviour implements BugBehaviour {
     }
     const enemies = livingEnemies(mission, unit);
     if (enemies.length === 0) {
-      return [];
+      return this.hunt(mission, unit, ctx);
     }
     const index = new TileIndex(mission.map);
     const mark = this.pickMark(mission, unit, enemies, ctx);
@@ -142,6 +145,44 @@ export class LurkerBehaviour implements BugBehaviour {
   // ===========================================
   // Private Methods
   // ===========================================
+
+  /**
+   * Nothing in view, so work toward where the enemy came down (#559) —
+   * but the way a lurker travels: the same approach term as the stalk,
+   * still paying the exposure penalty, so it drifts along cover instead
+   * of walking up the middle. With no enemy spotted there is nobody to
+   * be exposed *to*, so the penalty is measured against the landing site
+   * itself: the thing it is creeping up on.
+   */
+  private hunt(
+    mission: MissionView,
+    unit: Unit,
+    ctx: BehaviourContext,
+  ): readonly TacticalCommand[] {
+    const site = landingSite(mission, unit.pos);
+    if (site === undefined) {
+      return [];
+    }
+    const index = new TileIndex(mission.map);
+    const t = this.tuning;
+    const step = advanceToward(
+      mission,
+      unit.id,
+      (tile) =>
+        // A per-tile penalty, not `distanceScore`: that decays to zero
+        // past `approachHorizon` (12 tiles), and a lurker hunting from
+        // across the map is further away than that — every reachable
+        // tile would score the same and it would stand still, which is
+        // the flat-line #521 already ran into from the other direction.
+        -tileDistance(tile, site) * t.approachWeight -
+        (hasLineOfSight(mission.map, tile, site, index) ? 1 : 0) *
+          t.exposureWeight -
+        Math.abs(tile.y - site.y) * t.levelWeight,
+      ctx.graph ?? buildMoveGraph(mission.map),
+      ctx.rng,
+    );
+    return step ? [step] : [];
+  }
 
   /** The most isolated enemy, ties broken by how valuable a hit on it would be. */
   private pickMark(

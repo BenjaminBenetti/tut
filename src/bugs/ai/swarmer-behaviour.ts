@@ -12,9 +12,11 @@ import { SWARMER_TUNING } from "../data/swarmer-tuning";
 import type { SwarmerTuning } from "../model/swarmer-tuning";
 import type { BehaviourContext, BugBehaviour } from "./bug-behaviour";
 import {
+  advanceToward,
   attackOptions,
   bestBy,
   clumpScore,
+  landingSite,
   livingAllies,
   livingEnemies,
   moveTowards,
@@ -86,7 +88,7 @@ export class SwarmerBehaviour implements BugBehaviour {
     }
     const enemies = livingEnemies(mission, unit);
     if (enemies.length === 0) {
-      return [];
+      return this.hunt(mission, unit, ctx);
     }
 
     // Already in reach: bite, best expected value first.
@@ -135,6 +137,35 @@ export class SwarmerBehaviour implements BugBehaviour {
   // ===========================================
   // Private Methods
   // ===========================================
+
+  /**
+   * Nothing in view, so run at where the enemy came down (#559). Scored
+   * with the same terms as a real rush minus the ones that need a
+   * target — approach and company — so a swarmer still arrives in a
+   * pack rather than in single file.
+   */
+  private hunt(
+    mission: MissionView,
+    unit: Unit,
+    ctx: BehaviourContext,
+  ): readonly TacticalCommand[] {
+    const site = landingSite(mission, unit.pos);
+    if (site === undefined) {
+      return [];
+    }
+    const kin = this.kinOf(mission, unit);
+    const t = this.tuning;
+    const step = advanceToward(
+      mission,
+      unit.id,
+      (tile) =>
+        -tileDistance(tile, site) * t.approachWeight +
+        clumpScore(tile, kin, t.swarmRadius) * t.swarmWeight,
+      ctx.graph ?? buildMoveGraph(mission.map),
+      ctx.rng,
+    );
+    return step ? [step] : [];
+  }
 
   /**
    * The living allies of the same species — the swarm this one groups up

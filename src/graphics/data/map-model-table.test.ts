@@ -12,15 +12,24 @@ import {
   SURFACE_MODELS,
   surfaceModel,
   wallModel,
+  WALL_FAMILIES,
+  wallFamilyFor,
   WALL_MODELS,
+  HALF_WALL_MODEL,
 } from "./map-model-table";
+
+/** Every wall model the table names, across all three families. */
+const allWallModels = [
+  ...WALL_FAMILIES.flatMap((family) => Object.values(WALL_MODELS[family])),
+  HALF_WALL_MODEL,
+];
 
 describe("map model table", () => {
   it("registers every model it names, so nothing resolves to a missing asset", () => {
     const named = [
       ...Object.values(SURFACE_MODELS),
       ...Object.values(PROP_MODELS),
-      ...Object.values(WALL_MODELS),
+      ...allWallModels,
       ...Object.values(ROAD_VARIANTS),
       ...Object.values(SIDEWALK_VARIANTS),
     ];
@@ -38,11 +47,51 @@ describe("map model table", () => {
     }
   });
 
-  it("gives every wall kind a model", () => {
-    const kinds: readonly WallKind[] = ["solid", "window", "door"];
-    for (const kind of kinds) {
-      expect(MODEL_MANIFEST[wallModel(kind)], kind).toBeDefined();
+  it("gives every wall kind a model in every family", () => {
+    const kinds: readonly WallKind[] = ["solid", "window", "door", "half"];
+    for (const family of WALL_FAMILIES) {
+      for (const kind of kinds) {
+        expect(
+          MODEL_MANIFEST[wallModel(kind, family)],
+          `${family}/${kind}`,
+        ).toBeDefined();
+      }
     }
+  });
+
+  it("draws a half wall in brick whatever the family, the only one modelled", () => {
+    for (const family of WALL_FAMILIES) {
+      expect(wallModel("half", family)).toBe(HALF_WALL_MODEL);
+    }
+  });
+
+  it("gives each family a distinct model for the kinds it does carry", () => {
+    for (const kind of ["solid", "window", "door"] as const) {
+      const ids = WALL_FAMILIES.map((family) => wallModel(kind, family));
+      expect(new Set(ids).size, kind).toBe(WALL_FAMILIES.length);
+    }
+  });
+
+  it("gives a building one family, and no building brick", () => {
+    // Same id, same family, however often it is asked.
+    const ids = ["building-1", "b-42", "block-a/3"];
+    for (const id of ids) {
+      const family = wallFamilyFor(id);
+      expect(wallFamilyFor(id), id).toBe(family);
+      expect(WALL_FAMILIES, id).toContain(family);
+    }
+    expect(wallFamilyFor(undefined)).toBe("brick");
+  });
+
+  it("spreads buildings across all three families", () => {
+    // A block that came out all one material is the bug this fixes, so
+    // it is not enough that the choice is stable — it has to vary.
+    const seen = new Set(
+      Array.from({ length: 60 }, (_, i) =>
+        wallFamilyFor(`building-${String(i)}`),
+      ),
+    );
+    expect(seen.size).toBe(WALL_FAMILIES.length);
   });
 
   it("resolves an unregistered surface or prop kind to nothing rather than guessing", () => {
@@ -59,7 +108,7 @@ describe("map model table", () => {
     for (const id of Object.values(PROP_MODELS)) {
       expect(MODEL_MANIFEST[id].category).toBe("props");
     }
-    for (const id of Object.values(WALL_MODELS)) {
+    for (const id of allWallModels) {
       expect(MODEL_MANIFEST[id].category).toBe("buildings");
     }
   });

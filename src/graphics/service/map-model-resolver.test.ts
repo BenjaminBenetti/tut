@@ -5,6 +5,7 @@ import { SurfaceIds } from "../../mapgen/data/surfaces";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
+import { wallFamilyFor, wallModel } from "../data/map-model-table";
 import { tileTop, tileTopCentre } from "../view/tactical-map-view";
 import type { ModelPlacement } from "./map-model-resolver";
 import {
@@ -227,6 +228,67 @@ describe("resolveMapModels — walls", () => {
     expect(doors).toHaveLength(1);
     // (2,3)'s north edge is the same edge as (2,2)'s south.
     expect(doors[0]?.position).toEqual({ x: 2.5, y: tileTop(0), z: 3 });
+  });
+
+  it("draws one building in one family, so it is not a patchwork (#511)", () => {
+    const b = field();
+    // A four-tile building, walled all round its outside.
+    for (const [x, z] of [
+      [2, 2],
+      [3, 2],
+      [2, 3],
+      [3, 3],
+    ] as const) {
+      b.patchTile(at(x, z), { buildingId: "b1" });
+    }
+    b.wall(at(2, 2), "n", "solid");
+    b.wall(at(3, 2), "n", "window");
+    b.wall(at(2, 2), "w", "door");
+    b.wall(at(2, 3), "w", "solid");
+    const { walls } = resolveMapModels(b.build());
+    const family = wallFamilyFor("b1");
+    expect(walls.length).toBeGreaterThan(0);
+    for (const wall of walls) {
+      const kinds = ["solid", "window", "door"] as const;
+      const drawn = kinds.map((kind) => wallModel(kind, family));
+      expect(drawn, `${wall.modelId} in ${family}`).toContain(wall.modelId);
+    }
+  });
+
+  it("gives two buildings on a block different families", () => {
+    const b = field();
+    b.patchTile(at(2, 2), { buildingId: "b1" });
+    b.patchTile(at(6, 6), { buildingId: "tower" });
+    b.wall(at(2, 2), "n", "solid");
+    b.wall(at(6, 6), "n", "solid");
+    // Guard the fixture: if the hash ever moves these two together the
+    // test should say so rather than quietly stop testing anything.
+    expect(wallFamilyFor("b1")).not.toBe(wallFamilyFor("tower"));
+    const { walls } = resolveMapModels(b.build());
+    const at22 = walls.find((w) => w.tile.x === 2 && w.tile.z === 2);
+    const at66 = walls.find((w) => w.tile.x === 6 && w.tile.z === 6);
+    expect(at22?.modelId).toBe(wallModel("solid", wallFamilyFor("b1")));
+    expect(at66?.modelId).toBe(wallModel("solid", wallFamilyFor("tower")));
+    expect(at22?.modelId).not.toBe(at66?.modelId);
+  });
+
+  it("draws a wall belonging to no building in brick", () => {
+    const b = field();
+    b.wall(at(2, 2), "n", "solid");
+    const { walls } = resolveMapModels(b.build());
+    expect(walls[0]?.modelId).toBe("building.wall");
+  });
+
+  it("draws the same map the same way twice, so a reload does not reskin it", () => {
+    const build = () => {
+      const b = field();
+      b.patchTile(at(2, 2), { buildingId: "b1" });
+      b.patchTile(at(6, 6), { buildingId: "tower" });
+      b.wall(at(2, 2), "n", "solid");
+      b.wall(at(6, 6), "n", "window");
+      return resolveMapModels(b.build()).walls.map((w) => w.modelId);
+    };
+    expect(build()).toEqual(build());
   });
 
   it("draws an outer wall with nothing beyond it", () => {

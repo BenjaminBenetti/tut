@@ -180,6 +180,8 @@ function startedMission(
 /** What one seeded mission came to. */
 interface SweepRun {
   readonly seed: string;
+  /** The difficulty this seed was played at, 1-10. */
+  readonly difficulty: number;
   /** Milliseconds spent generating the map and placing the force. */
   readonly startMs: number;
   /** Milliseconds spent driving the mission through the rules. */
@@ -276,6 +278,7 @@ function play(mapSeed: string, difficulty: number, maxTurns: number): SweepRun {
     seed: mapSeed,
     startMs,
     driveMs: performance.now() - droveAt,
+    difficulty,
     tdfAlive: mission.units.filter((u) => u.team === "tdf" && u.hp > 0).length,
     bugsAlive: mission.units.filter((u) => u.team === "bugs" && u.hp > 0)
       .length,
@@ -335,6 +338,14 @@ const BUDGET_MS = 300_000;
  * how often a mission concludes fails it.
  */
 const RESOLVED_FLOOR = 35;
+
+/**
+ * The highest difficulty every seed currently wins at. Difficulties 1
+ * through 4 are walkovers — 24 of 24 — and 5 upwards is a flat ~50%
+ * whatever the number says (#497). The losses above it take 25-34 turns
+ * to arrive, which is the pace half of #666.
+ */
+const WALKOVER_CEILING = 4;
 
 describe("seeded tactical sweep", () => {
   // Played in `beforeAll`, not in the describe body: work there runs at
@@ -437,5 +448,41 @@ describe("seeded tactical sweep", () => {
             `${run.seed}: tdf ${String(run.tdfAlive)}, bugs ${String(run.bugsAlive)}`,
         ),
     ).toEqual([]);
+  });
+
+  it("has no difficulty gradient below 5, which is what #497 has to fix", () => {
+    // The aggregate says the curve is broken; only the breakdown says
+    // how. Played to a 90-turn cap, where every seed resolves:
+    //
+    //   d1  6-0 won    d6  3-3, 28 turns
+    //   d2  6-0 won    d7  3-3, 28 turns
+    //   d3  6-0 won    d8  4-2, 26 turns
+    //   d4  6-0 won    d9  3-3, 25 turns
+    //   d5  3-3, 28t   d10 3-3, 34 turns
+    //
+    // Difficulty has **two states, not ten**. Below 5 every seed is won
+    // and nothing separates d1 from d4; at 5 and above the win rate
+    // drops to a flat ~50% and stays there, so **d10 is no harder than
+    // d5**. Mission length steps the same way, 5-7 turns against 25-34.
+    // It is a cliff, not a slope.
+    //
+    // At this file's 15-turn cap those 18 losses come back `unresolved`
+    // instead, which is a cap artifact and not a hang — see #692, and
+    // `docs/design/tactical-tuning.md` for the full table.
+    //
+    // Pinned rather than left in a document nobody rereads: a tuning
+    // pass that gives the bottom of the range any teeth turns this red,
+    // which is the point at which someone should update it deliberately.
+    const table = [...new Set(runs.map((run) => run.difficulty))]
+      .sort((a, b) => a - b)
+      .map((difficulty) => {
+        const at = runs.filter((run) => run.difficulty === difficulty);
+        const won = at.filter((run) => run.outcome === "won").length;
+        return `d${String(difficulty)} ${String(won)}/${String(at.length)}`;
+      })
+      .join(", ");
+    const easy = runs.filter((run) => run.difficulty <= WALKOVER_CEILING);
+    const lostOrStalled = easy.filter((run) => run.outcome !== "won");
+    expect([table, lostOrStalled.length]).toEqual([table, 0]);
   });
 });

@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { PropKindIds } from "../../mapgen/data/props";
 import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
 import { computeMapMetrics } from "../../mapgen/service/map-metrics";
+import { assessMap } from "../../tactical/service/map-assessment-service";
 import type { PreviewResult } from "./mapgen-preview-screen";
 import { MapgenPreviewScreen } from "./mapgen-preview-screen";
 
@@ -19,6 +20,7 @@ function result(props: number): PreviewResult {
     map,
     diagnostics: { notes: [], timings: [] },
     metrics: computeMapMetrics(map),
+    assessment: assessMap(map),
     ascii: "",
     elapsedMs: 1,
   };
@@ -56,6 +58,11 @@ describe("MapgenPreviewScreen", () => {
     const stats = (): string => root.querySelector("#stats")?.textContent ?? "";
     screen.showResult(result(1));
     expect(stats()).toMatch(/Beside cover[\d.]+ %Beside a wall/);
+    expect(stats()).toMatch(/Approach.*steps to the nearest objective/);
+    expect(stats()).toMatch(/Firing positions[\d.]+ per objective/);
+    expect(stats()).toMatch(/Bug walk-in.*steps from the nearest edge spawn/);
+    expect(stats()).toMatch(/Cover that holds[\d.]+ % one side, [\d.]+ % two/);
+    expect(stats()).toMatch(/Covered sides[\d.]+ per open tile/);
     screen.showResult(result(3));
     expect(stats()).toMatch(/Beside cover.*\(\+/);
     screen.showResult(result(3));

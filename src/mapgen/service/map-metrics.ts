@@ -4,6 +4,7 @@ import { CoverLevel } from "../model/cover";
 import type { MapMetrics } from "../model/map-metrics";
 import { PassMask } from "../model/pass-mask";
 import type { TacticalMap } from "../model/tactical-map";
+import type { Tile } from "../model/tile";
 import { hatchSpace } from "./hatch-space";
 import { ReachabilityService } from "./reachability-service";
 import { TileIndex } from "./tile-index";
@@ -14,7 +15,8 @@ import { TileIndex } from "./tile-index";
 
 /**
  * Measures a finished map for tuning: how much of the walkable ground has
- * cover or a wall beside it, cover props per area, how furnished the
+ * cover or a wall beside it, how many of a tile's sides that cover
+ * actually holds against, cover props per area, how furnished the
  * interiors are, vertical connectors, and the hatch space every objective
  * gets. Pure; the preview panel shows the result and tests assert on it.
  */
@@ -24,6 +26,9 @@ export function computeMapMetrics(map: TacticalMap): MapMetrics {
   let openTiles = 0;
   let besideCover = 0;
   let besideWall = 0;
+  let coveredSides = 0;
+  let covered = 0;
+  let flankProof = 0;
   let high = 0;
   let low = 0;
   for (const tile of map.tiles) {
@@ -48,6 +53,10 @@ export function computeMapMetrics(map: TacticalMap): MapMetrics {
     if (DIRECTIONS.some((direction) => tile.walls[direction] !== undefined)) {
       besideWall++;
     }
+    const sides = coveredSidesOf(index, tile);
+    coveredSides += sides;
+    if (sides >= 1) covered++;
+    if (sides >= 2) flankProof++;
   }
 
   const interiorProps = map.props.filter(
@@ -73,6 +82,9 @@ export function computeMapMetrics(map: TacticalMap): MapMetrics {
     openTiles,
     coverAdjacency: ratio(besideCover, openTiles),
     wallAdjacency: ratio(besideWall, openTiles),
+    coveredSidesMean: ratio(coveredSides, openTiles),
+    coveredShare: ratio(covered, openTiles),
+    flankProofShare: ratio(flankProof, openTiles),
     highCoverPer100: 100 * ratio(high, groundTiles),
     lowCoverPer100: 100 * ratio(low, groundTiles),
     interiorPropsPerBuilding: ratio(interiorProps, map.buildings.length),
@@ -86,6 +98,29 @@ export function computeMapMetrics(map: TacticalMap): MapMetrics {
       spaces.length,
     ),
   };
+}
+
+/**
+ * How many of a tile's four sides give its occupant cover. A side counts
+ * when the tile carries a wall on that edge — every wall kind is worth at
+ * least low cover, and tactical grades which — or when the neighbour on
+ * that side, at the same level, provides cover. This is the shape
+ * `coverAgainst` reads for the one or two sides a shot arrives from, so
+ * two covered sides is a position that holds against a second direction.
+ *
+ * ```
+ *   . B .        B provides cover      sides = 2  (n from the boulder,
+ *   . T |        | is a wall on T's e             e from the wall)
+ *   . . .
+ * ```
+ */
+function coveredSidesOf(index: TileIndex, tile: Tile): number {
+  return DIRECTIONS.filter(
+    (direction) =>
+      tile.walls[direction] !== undefined ||
+      (index.neighbour(tile, direction)?.coverProvided ?? CoverLevel.NONE) >
+        CoverLevel.NONE,
+  ).length;
 }
 
 /** `numerator / denominator`, or 0 when the denominator is 0. */

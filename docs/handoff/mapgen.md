@@ -1,6 +1,6 @@
 # Handoff: Map Generation Specialist
 
-Last updated: 2026-09-04 06:55 UTC (session 3, update 3). Read `docs/process/roles/mapgen.md` and ADR 0004 first.
+Last updated: 2026-09-04 09:20 UTC (session 3, update 4). Read `docs/process/roles/mapgen.md` and ADR 0004 first.
 
 ## 1. Where things stand
 
@@ -31,6 +31,10 @@ Last updated: 2026-09-04 06:55 UTC (session 3, update 3). Read `docs/process/rol
   elevation on city maps), #446 (melee bugs invert the cover rules — tactical's), #447 (the M3
   archetype sketch, with two questions to answer before anything is built) and the ruling asked for
   on #465 (should `resolveParams` reject an over-constrained recipe outright).
+- **After the tag, three more mapgen changes merged.** #506 (#492) took `windowDensity` from 0.5–0.7
+  to 0.3 so buildings stop reading as glass towers; #547 (#544) made the egg-spawner placer prefer a
+  tile something can shoot; #535 (#512) gave city maps outdoor high ground for mechs, on the
+  Director's #444 ruling. §2a describes the new pass, §3b the numbers.
 - **Two bugs found outside mapgen while checking the release, both filed with evidence and neither
   mine to fix:** #488 (p0, eng-3) — `tactical-hud-view` sends `move(unit, [clickedTile])`, a
   one-element path, so a unit can only ever step to an orthogonally adjacent tile and every farther
@@ -69,6 +73,34 @@ Entry: `service/generate-tactical-map.ts`. Adapter: `service/mission-map-recipe-
 Hatch BFS: `service/hatch-space.ts`. Wide sweep: `MAPGEN_WIDE=1 pnpm exec vitest run generation-wide-sweep`
 (PR #245). Scratch measurements: a throwaway `src/mapgen/zz-debug.test.ts` (git-excluded; move it
 out before `pnpm typecheck`/`lint`).
+
+## 2a. The elevation pass (#512, merged as #535)
+
+City plats are graded flat and mechs cannot enter buildings or stand on roofs, so before this the
+only height on a city map was indoors and a mech never held ground above anything (#444). The pass
+runs **between lots and buildings** and stamps raised outdoor structures from
+`registries.elevatedFeatures`: a viaduct that lifts a run of carriageway, a podium, a plaza, a
+raised park, a causeway, a rail embankment, a terrace, a rubble mound. A new kind is a data entry,
+not a pass edit.
+
+Everything it builds is **exactly one level up**. That is the whole trick: the ramp pass already
+bridges one-level steps and treats two as cliffs, so ramps, reachability and I7 come for free.
+
+**Three rules it must keep, each of which was a bug first:**
+
+| rule | why | what broke without it |
+|---|---|---|
+| `EDGE_KEEPOUT` 5 columns from every map edge | deploy zones and edge spawns are placed *after* this pass, in the outer band | a plaza against the border boxed a squad into its own deploy zone: three `mission-driver` tests (#494) and the lurker flanking sweep |
+| `MIN_APPROACH_COLUMNS` 3 of open ground round the edge | ramps are built between *ground* components | a platform ringed by lots got no ramp and became tiles a unit can stand on and never reach, which the driver reports as `no-route` |
+| never the lot's frontage strip | the building pass puts the entrance on the frontage | a door opened onto a raised face and the building was unreachable |
+
+The other three sides of a lot are fair game — a terrace against a building is what a city looks
+like. Placement runs off a **summed-area table**: the free-rectangle test has to be O(1) or the
+property sweep blows its budget (it hit 60 s before, 8.8 s after; the pass costs about 40 ms on a
+medium map).
+
+The knob is `SETTLEMENT_DEFINITIONS.city.elevatedFeatures`, attempts rather than placements — the
+plat runs out of room around forty, so raising it only costs generation time.
 
 ## 3. Measurements (medium maps, 8 seeds per cell, `main` before #269; desert and ramps moved as noted below)
 
@@ -196,6 +228,28 @@ position, about 90 per spawner on average (worst seed 2), the nearest 20–44 me
 Two thirds of spawners are indoors and a mech can never stand on one — it shoots them through
 windows. The cause was #488.
 
+## 3b. The tables as they stand after #535 (2026-09-04 09:20)
+
+Everything above in §3a was measured before the elevation pass and the window and spawner changes.
+These are the current numbers, 6 seeds per biome × settlement through `computeMapMetrics` and
+`assessMap`. Shares are percentages; steps are infantry BFS steps from the deploy zone.
+
+| | covered ≥1 | flank-proof | approach | bug walk-in | firing positions | in cover | shooting down | mech reach | mech levels | ramps |
+|---|---|---|---|---|---|---|---|---|---|---|
+| small rural | 17 % | 3 % | 21 | 33 | 95 | 7 % | 20 % | 96 % | 2–4 | 13 |
+| small town | 23 % | 4 % | 22 | 32 | 74 | 9 % | 30 % | 82 % | 2–4 | 17 |
+| small city | 32 % | 5 % | 21 | 27 | 75 | 11 % | 35 % | 72 % | **2–2** | 15 |
+| medium rural | 17 % | 3 % | 32 | 51 | 82 | 8 % | 22 % | 97 % | 2–4 | 29 |
+| medium town | 23 % | 4 % | 32 | 50 | 80 | 9 % | 29 % | 84 % | 2–4 | 33 |
+| medium city | 30 % | 4 % | 29 | 41 | 77 | 12 % | 34 % | 74 % | **2–2** | 42 |
+
+**A mech reaches two levels on a city map where it reached one**, and positions that shoot down at
+an objective roughly doubled (16 % → 34 %), because the raised ground gives both classes somewhere
+above one to stand. City ramps went from none to 15 on a small map and 42 on a medium one.
+
+Cover is unmoved by all of this: 17–32 % of open ground has cover on one side, 3–5 % on two. #281 is
+still the open call, and #446 still says the sign is inverted while every bug is melee.
+
 ## 4. What M2 (tactical) consumes
 
 - `generateTacticalMap(missionToMapRecipe(mission, missionType).value)` → `TacticalMap` (plain JSON).
@@ -227,13 +281,21 @@ windows. The cause was #488.
 
 ## 6. What I would do next, in order
 
-1. Nothing of mine is in review except this handoff. When a mapgen PR does conflict on a rebase, the
+1. Nothing of mine is in review except this handoff. Open threads waiting on other people: #446
+   (melee bugs invert cover — tactical's, routed), #487 (deployment over 16 units cannot launch),
+   #447 (M3 archetypes, two questions for the Director), #281 (the cover call), and the turn-budget
+   finding noted in #547 (a worst-case mech needs 11 turns to a firing position on `town/medium/9`
+   against a budget of 10 — someone else's assertion, left at four seeds deliberately). When a mapgen PR does conflict on a rebase, the
    sweep goldens are the file to expect it in: take theirs and re-pin from the vitest diff. And if
    the Tech Lead has already merged `main` into your branch (they push the merge to your branch as
    part of the gate), reset to theirs rather than force-pushing a rebase over it.
-2. Get a decision on #444 (mechs never gain elevation in cities). Option 1 — a small mech-passable
-   platform at level + 1 with a ramp, placed per few city blocks by the lot or prop pass — is the
-   one I would build; it is a new generator feature, so it waits on the Director.
+2. **#444 is decided and built** (#512 → #535). Two things the Director may come back on: the mech
+   high-ground share sits at **0.19–0.21**, the floor of their 0.20–0.35 band rather than its
+   middle, because the border keep-out that makes deploy placement safe costs about 0.07; and a
+   mech-reachable vantage exists at **5–10 of 18** spawners rather than "most", because a sight line
+   into a building comes through a window whatever height it starts from. Getting past half needs
+   more windows (#506 moved the other way for the Art Director), a spawner placer that prefers
+   overlookable buildings, or accepting that spotting an indoor spawner is infantry work.
 3. Run `MAPGEN_WIDE=1` before merging any generator change (60–85 s); it is the check that found
    #221. Re-run the §3a audit after any tuning change: the numbers there are the M2 baseline.
 4. Answer map questions as the last M2 issues land — #426 (spawners as attack targets), #341 (the
@@ -272,5 +334,12 @@ windows. The cause was #488.
   the dev server by the PID on :5173 from `ss -ltnp`.
 - A worktree with symlinked `node_modules` cannot run `pnpm` scripts; use `node_modules/.bin/*`; run
   Playwright from the real checkout.
+- **A pass that runs before the hook placers must keep off the map's border band.** Deploy zones and
+  edge spawns land in the outer four columns and need flat ground to stand on and walk off; anything
+  raised there boxes units in and shows up as failures in other domains' tests, not mapgen's.
+- **A screenshot answers "does it read right"; a table cannot.** One Playwright spec against
+  `/mapgen-preview.html` at a 2400×1500 viewport shows a whole medium map; commit the PNG under
+  `docs/design/shots/` and link the `raw.githubusercontent.com` URL on the branch. That is how the
+  first version of #512 was caught paving every yard.
 - The Tech Lead merges minutes after a rebase; expect "stale info" on a push to mean "already merged".
 - Every GitHub comment starts with `**MapGen** · TUT agent`.

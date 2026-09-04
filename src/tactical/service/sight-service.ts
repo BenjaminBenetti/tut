@@ -23,6 +23,9 @@ export const EYE_HEIGHT = 0.5;
 /** Two traversal parameters closer than this cross a corner exactly. */
 const CORNER_EPSILON = 1e-9;
 
+/** Shared empty list for the orthogonal steps, which graze nothing. */
+const NO_GRAZED: readonly PlaneCell[] = [];
+
 // ===========================================
 // Types
 // ===========================================
@@ -52,6 +55,12 @@ export interface Crossing {
   readonly t: number;
   /** One edge for an orthogonal step; the four edges meeting at a corner otherwise. */
   readonly edges: readonly EdgeCrossing[];
+  /**
+   * The two cells a corner step passes between without entering, empty
+   * for an orthogonal step. Named here rather than re-derived from the
+   * edge order, which is geometry the caller should not have to know.
+   */
+  readonly grazed: readonly PlaneCell[];
 }
 
 /** The line between two tile centres, as the cells it visits and the edges it crosses. */
@@ -105,14 +114,16 @@ export function hasLineOfSight(
         return false;
       }
     }
+    if (seamIsSealed(index, crossing, level)) {
+      return false;
+    }
   }
   for (const cell of line.cells.slice(1, -1)) {
     const level = Math.floor(heightAt((cell.tEnter + cell.tExit) / 2));
-    const tile = index.get(cell.x, level, cell.z);
-    if (tile?.blocksLos === true) {
+    if (index.get(cell.x, level, cell.z)?.blocksLos === true) {
       return false;
     }
-    if (tile === undefined && isInsideTerrain(index, cell.x, level, cell.z)) {
+    if (isSolidAt(index, cell.x, level, cell.z)) {
       return false;
     }
   }
@@ -120,8 +131,13 @@ export function hasLineOfSight(
 }
 
 /**
- * Whether a cell with no tile is inside a hill rather than in the air
- * above one (#593).
+ * Whether a cell is solid rock: **no tile of its own**, and ground
+ * higher in the same column (#593). Shared by the cell rule and the
+ * corner rule, which ask the same question of different cells.
+ *
+ * Both halves matter. Asking only "is there ground above this level"
+ * calls ordinary walkable ground beside a hill solid, which blocked
+ * three times as many corner lines as the rule intends (#646).
  *
  * Terrain mass is the **absence** of a record — ADR 0004 §4.2, *"tiles
  * are sparse: air and solid rock have no record"* — so a line through
@@ -139,13 +155,51 @@ export function hasLineOfSight(
  * ground is untouched: the line's level rises with the shooter, so it
  * clears the columns it passes rather than tunnelling through them.
  */
-function isInsideTerrain(
+function isSolidAt(
   index: TileIndex,
   x: number,
   level: number,
   z: number,
 ): boolean {
-  return index.column(x, z).some((tile) => tile.y > level);
+  return (
+    index.get(x, level, z) === undefined &&
+    index.column(x, z).some((tile) => tile.y > level)
+  );
+}
+
+/**
+ * Whether a corner the line passes exactly through is sealed by rock on
+ * both sides (#646).
+ *
+ * A corner step moves diagonally and never enters the two cells it
+ * passes between, so the cell loop is never asked about them. Walls cope
+ * because the wall rule reads all four edges meeting at the corner;
+ * terrain did not, and a line could thread the diagonal seam between two
+ * hills that a wall in the same place would stop.
+ *
+ * ```
+ *   G1 │ B          B  entered next      ──► both G solid ──► blocked
+ *   ───┼───         A  left behind       ──► either open  ──► clear
+ *   A  │ G2         G1, G2  only grazed
+ * ```
+ *
+ * Both have to be solid. One hill touched at a single corner still
+ * leaves an open diagonal gap beside it, and sealing that would make
+ * terrain stricter than the masonry it is meant to agree with.
+ *
+ * Measured before it was written: 175 of 197,486 sight lines across 24
+ * generated maps threaded such a seam — 0.089 %, but on 17 of the 24
+ * maps.
+ */
+function seamIsSealed(
+  index: TileIndex,
+  crossing: Crossing,
+  level: number,
+): boolean {
+  return (
+    crossing.grazed.length > 0 &&
+    crossing.grazed.every((cell) => isSolidAt(index, cell.x, level, cell.z))
+  );
 }
 
 /**
@@ -182,6 +236,10 @@ export function traceLine(from: PlaneCell, to: PlaneCell): SightLine {
           { x: x + stepX, z: z + stepZ, side: stepX > 0 ? "w" : "e" },
           { x: x + stepX, z: z + stepZ, side: stepZ > 0 ? "n" : "s" },
         ],
+        grazed: [
+          { x: x + stepX, z },
+          { x, z: z + stepZ },
+        ],
       });
       x += stepX;
       z += stepZ;
@@ -191,14 +249,22 @@ export function traceLine(from: PlaneCell, to: PlaneCell): SightLine {
     } else if (nextX < nextZ) {
       const t = nextX;
       cells.push({ x, z, tEnter, tExit: t });
-      crossings.push({ t, edges: [{ x, z, side: stepX > 0 ? "e" : "w" }] });
+      crossings.push({
+        t,
+        edges: [{ x, z, side: stepX > 0 ? "e" : "w" }],
+        grazed: NO_GRAZED,
+      });
       x += stepX;
       nextX += deltaX;
       tEnter = t;
     } else {
       const t = nextZ;
       cells.push({ x, z, tEnter, tExit: t });
-      crossings.push({ t, edges: [{ x, z, side: stepZ > 0 ? "s" : "n" }] });
+      crossings.push({
+        t,
+        edges: [{ x, z, side: stepZ > 0 ? "s" : "n" }],
+        grazed: NO_GRAZED,
+      });
       z += stepZ;
       nextZ += deltaZ;
       tEnter = t;

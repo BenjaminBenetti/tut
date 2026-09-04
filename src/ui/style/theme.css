@@ -102,6 +102,20 @@ h3 {
   font-family: var(--font-mono);
 }
 
+/*
+ * One weapon's block in the unit card. The name sits on its own line
+ * above its numbers and the blocks are spaced apart, because the panel
+ * is narrow enough that each weapon wraps over three lines and two of
+ * them running together read as one paragraph (#641).
+ */
+.tut-card__entry + .tut-card__entry {
+  margin-top: 0.4em;
+}
+
+.tut-card__entry-name {
+  display: block;
+}
+
 .tut-dim {
   color: var(--ui-text-dim);
 }

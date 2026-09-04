@@ -53,6 +53,94 @@ describe("UnitCardView", () => {
   });
 });
 
+describe("UnitCardView weapon lines (#641)", () => {
+  /** A mech template carrying an arm gun and a back gun. */
+  function twoWeaponTemplate() {
+    const base = hudTemplate("mech", "Hammerhead");
+    const first = base.weapons[0]!;
+    return {
+      ...base,
+      weapons: [
+        {
+          ...first,
+          id: "arm-weapon",
+          name: "Autocannon",
+          charges: 4,
+          profile: { ...first.profile, range: 10 },
+        },
+        {
+          ...first,
+          id: "back-weapon",
+          name: "Missile Pod",
+          charges: 4,
+          profile: { ...first.profile, range: 14 },
+        },
+      ],
+    };
+  }
+
+  /** The blocks rendered into one card field. */
+  const blocks = (name: string): HTMLElement[] => [
+    ...(field(name)?.querySelectorAll<HTMLElement>(".tut-card__entry") ?? []),
+  ];
+
+  it("gives each weapon its own block, titled, so two do not run together", () => {
+    const view = new UnitCardView();
+    view.mount(root);
+    view.update(
+      hudUnit("m1", "tdf", "mech", 1, 1, { kind: "mech" }),
+      twoWeaponTemplate(),
+    );
+    // Two weapons, two blocks — a run-on string would be one, which is
+    // precisely what shipped and what nothing here was checking.
+    const weapons = blocks("weapon");
+    expect(weapons).toHaveLength(2);
+    expect(
+      weapons.map(
+        (b) =>
+          b.querySelector<HTMLElement>(".tut-card__entry-name")?.textContent,
+      ),
+    ).toEqual(["Autocannon", "Missile Pod"]);
+    expect(weapons[0]?.textContent).toContain("range 10");
+    expect(weapons[1]?.textContent).toContain("range 14");
+    // Charges are per weapon too, and read the same way.
+    expect(blocks("charges")).toHaveLength(2);
+  });
+
+  it("leaves a one-weapon card exactly as it was, with no name line", () => {
+    const view = new UnitCardView();
+    view.mount(root);
+    view.update(
+      hudUnit("s1", "tdf", "rifle", 1, 1),
+      hudTemplate("rifle", "Rifle Squad"),
+    );
+    expect(blocks("weapon")).toHaveLength(1);
+    expect(field("weapon")?.querySelector(".tut-card__entry-name")).toBeNull();
+    expect(field("weapon")?.textContent).toBe(
+      "range 8 · acc 65 · dmg 10 · pen 0",
+    );
+  });
+
+  it("comes back after a unit with no charges, rather than staying blank", () => {
+    const view = new UnitCardView();
+    view.mount(root);
+    const mech = hudUnit("m1", "tdf", "mech", 1, 1, { kind: "mech" });
+    const template = twoWeaponTemplate();
+    view.update(mech, template);
+    expect(blocks("charges")).toHaveLength(2);
+    // A squad carries no pool at all, so the field falls back.
+    view.update(
+      hudUnit("s1", "tdf", "rifle", 1, 1),
+      hudTemplate("rifle", "Rifle Squad"),
+    );
+    expect(field("charges")?.textContent).toBe("—");
+    // Selecting the mech again has to redraw it: the memo that skips an
+    // unchanged rebuild must not still be holding the old key.
+    view.update(mech, template);
+    expect(blocks("charges")).toHaveLength(2);
+  });
+});
+
 describe("ActionBarView", () => {
   it("enables unit actions only when the unit can act, marks the mode and reports presses", () => {
     const onAction = vi.fn<(action: ActionBarAction) => void>();

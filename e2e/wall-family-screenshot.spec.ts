@@ -2,14 +2,12 @@ import { expect, test } from "@playwright/test";
 
 import { wallFamilyFor } from "../src/graphics/data/map-model-table";
 import type { TacticalTestHooks } from "../src/ui/model/tactical-intent";
+import { launchMission, settleForShot } from "./mission-capture.helper";
 
 /** The page's global object as seen from `page.evaluate`. */
 interface HookGlobal {
   __tutTactical__?: TacticalTestHooks;
 }
-
-/** Days to advance before giving up on a mission appearing for the fixed seed. */
-const MAX_DAYS = 40;
 
 /** What the shot has to contain to be evidence of anything (#511). */
 const MIN_FAMILIES = 2;
@@ -33,36 +31,7 @@ test("captures a block of buildings for review", async ({ page }) => {
     process.env.CAPTURE === undefined,
     "set CAPTURE=1 to regenerate the wall-family screenshot",
   );
-  await page.goto("/");
-  const body = page.locator("body");
-  await expect(body).toHaveAttribute("data-app-state", "ready");
-  await page.locator('[data-field="seed"]').fill("4242");
-  await page.locator('[data-action="new-game"]').click();
-  await expect(body).toHaveAttribute("data-screen", "overworld");
-
-  const rows = page.locator('[data-role="mission-list"] [data-mission-id]');
-  const advance = page.locator('[data-action="advance-day"]');
-  const choice = page.locator('[data-role="event-dialog"] [data-choice-id]');
-  for (let day = 0; day < MAX_DAYS && (await rows.count()) === 0; day++) {
-    if (await choice.first().isVisible()) {
-      await choice.first().click();
-    }
-    await expect(advance).toBeEnabled();
-    await advance.click();
-  }
-  await rows.first().click();
-  await page
-    .locator('[data-role="mission-details"] [data-action="plan-deployment"]')
-    .click();
-  await expect(body).toHaveAttribute("data-screen", "deployment");
-  for (const box of await page
-    .locator('[data-role="deployment-picker"] input[type="checkbox"]')
-    .all()) {
-    await box.check();
-  }
-  await page.locator('[data-action="launch"]').click();
-  await expect(body).toHaveAttribute("data-screen", "tactical");
-  await expect(page.locator("#tactical-viewport canvas")).toBeVisible();
+  await launchMission(page, "4242");
 
   // Every building that actually has a wall face on it, from the map the
   // mission is being played on rather than from a regenerated copy.
@@ -106,12 +75,6 @@ test("captures a block of buildings for review", async ({ page }) => {
   await page.evaluate(() =>
     (globalThis as HookGlobal).__tutTactical__?.selectUnit("unit-1"),
   );
-  await expect
-    .poll(
-      async () => page.locator("#phase-banner").getAttribute("data-visible"),
-      { timeout: 15_000 },
-    )
-    .not.toBe("true");
-  await page.waitForTimeout(600);
+  await settleForShot(page);
   await page.screenshot({ path: "docs/design/tactical-wall-families.png" });
 });

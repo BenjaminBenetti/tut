@@ -4,6 +4,20 @@ import { iconUrl } from "../data/icon-manifest";
 import { formatWhole } from "../service/format";
 
 // ===========================================
+// Constants and model
+// ===========================================
+
+/** What a field with nothing to show reads as. */
+const EMPTY_FIELD = "—";
+
+/** One titled block in a card field: a weapon's name and its numbers. */
+interface CardEntry {
+  /** Omitted when the unit carries one of whatever this lists. */
+  readonly name?: string;
+  readonly value: string;
+}
+
+// ===========================================
 // UnitCardView
 // ===========================================
 
@@ -90,7 +104,7 @@ export class UnitCardView {
       const value = doc.createElement("dd");
       value.className = "tut-mono";
       value.dataset.field = field;
-      value.textContent = "—";
+      value.textContent = EMPTY_FIELD;
       grid.append(term, value);
       this.fields.set(field, value);
     }
@@ -128,38 +142,39 @@ export class UnitCardView {
     // attack costs one, a mech's commits the turn (#533).
     this.set(
       "attacks",
-      attacksLeft === undefined ? "—" : formatWhole(attacksLeft),
+      attacksLeft === undefined ? EMPTY_FIELD : formatWhole(attacksLeft),
     );
-    // One line per weapon (#532). A squad or a bug carries one and reads
-    // as it always did; a mech lists its arm and back weapons, which is
-    // the whole point — they differ in reach.
-    this.set(
+    // One block per weapon (#532). A squad or a bug carries one and
+    // reads as it always did; a mech lists its arm and back weapons,
+    // which is the whole point — they differ in reach.
+    this.setEntries(
       "weapon",
-      template.weapons
-        .map((weapon) => {
-          const p = weapon.profile;
-          const label = template.weapons.length > 1 ? `${weapon.name}: ` : "";
-          return `${label}range ${formatWhole(p.range)} · acc ${formatWhole(p.accuracy)} · dmg ${formatWhole(p.damage)} · pen ${formatWhole(p.armorPen)}`;
-        })
-        .join("\n"),
+      template.weapons.map((weapon) => {
+        const p = weapon.profile;
+        return {
+          name: template.weapons.length > 1 ? weapon.name : undefined,
+          value: `range ${formatWhole(p.range)} · acc ${formatWhole(p.accuracy)} · dmg ${formatWhole(p.damage)} · pen ${formatWhole(p.armorPen)}`,
+        };
+      }),
     );
     this.set("armor", formatWhole(template.armor));
     const pools = template.weapons.filter((w) => w.charges !== undefined);
-    this.set(
+    const kind = unit.kind === "mech" ? "heat" : "ammo";
+    this.setEntries(
       "charges",
-      pools.length === 0
-        ? "—"
-        : pools
-            .map((weapon) => {
-              const capacity = weapon.charges ?? 0;
-              const left = unit.charges?.[weapon.id] ?? capacity;
-              const label = pools.length > 1 ? `${weapon.name} ` : "";
-              const kind = unit.kind === "mech" ? "heat" : "ammo";
-              return `${label}${kind} ${formatWhole(left)} / ${formatWhole(capacity)}`;
-            })
-            .join("\n"),
+      pools.map((weapon) => {
+        const capacity = weapon.charges ?? 0;
+        const left = unit.charges?.[weapon.id] ?? capacity;
+        return {
+          name: pools.length > 1 ? weapon.name : undefined,
+          value: `${kind} ${formatWhole(left)} / ${formatWhole(capacity)}`,
+        };
+      }),
     );
-    this.set("status", unit.status.length === 0 ? "—" : unit.status.join(", "));
+    this.set(
+      "status",
+      unit.status.length === 0 ? EMPTY_FIELD : unit.status.join(", "),
+    );
     this.meter?.style.setProperty(
       "--value",
       `${String(unit.maxHp === 0 ? 0 : (100 * unit.hp) / unit.maxHp)}%`,
@@ -188,5 +203,61 @@ export class UnitCardView {
     if (el && el.textContent !== text) {
       el.textContent = text;
     }
+  }
+
+  /**
+   * Writes one block per entry into a field, each optionally titled.
+   *
+   * ```
+   *   WEAPON   Autocannon              ← name, dim, its own line
+   *            range 10 · acc 75 · …
+   *                                    ← gap, so the block is one thing
+   *            Missile Pod
+   *            range 14 · acc 70 · …
+   * ```
+   *
+   * A `\n` between the two would have done if the panel were wide, but
+   * each weapon wraps over three lines in it, so six near-identical
+   * lines ran together as one paragraph and the `·` separators could not
+   * mark the boundary (#641). An entry with no name renders as bare
+   * text, which is the single-weapon card that has always shipped.
+   */
+  private setEntries(field: string, entries: readonly CardEntry[]): void {
+    const el = this.fields.get(field);
+    if (!el) {
+      return;
+    }
+    if (entries.length === 0) {
+      delete el.dataset.entries;
+      this.set(field, EMPTY_FIELD);
+      return;
+    }
+    // Rebuild only on a real change: the card is refreshed on every
+    // store tick, and replacing these nodes each time would restart any
+    // transition on them.
+    const key = entries
+      .map((e) => `${e.name ?? ""}\u0000${e.value}`)
+      .join("\u0001");
+    if (el.dataset.entries === key) {
+      return;
+    }
+    el.dataset.entries = key;
+    const doc = el.ownerDocument;
+    el.replaceChildren(
+      ...entries.map((entry) => {
+        const block = doc.createElement("div");
+        block.className = "tut-card__entry";
+        if (entry.name !== undefined) {
+          const name = doc.createElement("span");
+          name.className = "tut-card__entry-name tut-dim";
+          name.textContent = entry.name;
+          block.appendChild(name);
+        }
+        const value = doc.createElement("span");
+        value.textContent = entry.value;
+        block.appendChild(value);
+        return block;
+      }),
+    );
   }
 }

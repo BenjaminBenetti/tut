@@ -86,6 +86,83 @@ export function tileDistance(a: TileCoord, b: TileCoord): number {
 }
 
 // ===========================================
+// Hunting
+// ===========================================
+
+/**
+ * Where a bug that can perceive no enemy should head (#559): the tile of
+ * the TDF landing zone nearest `from`, or undefined on a map with no
+ * deploy hook.
+ *
+ * Since ADR 0006 a behaviour is handed only what its side can see, and
+ * all three shipped behaviours were written as "find the best enemy,
+ * then act" — so a bug that saw nothing did nothing, and a player who
+ * stood still was never attacked at all. Measured on #559: bugs got no
+ * closer than 26 tiles in 25 turns and the squad finished untouched.
+ *
+ * The landing zone is the answer that restores pressure without
+ * restoring omniscience. It is **static map knowledge**, not a live
+ * enemy position: a bug does not learn where the squad *is*, only where
+ * something loud came down, which it would know from the noise. It also
+ * guarantees a mission resolves — a player who holds still is holding
+ * still near where they landed, so the map comes to them.
+ *
+ * The alternatives in #559 were weighed and rejected:
+ * - *its own spawner's hatch area* is a defensive posture, so a player
+ *   who never advances is never reached;
+ * - *the last place this side saw an enemy* is empty before first
+ *   contact, which is exactly the measured failure — no contact ever
+ *   happened. It is the right **second** layer once a side has seen
+ *   something, and is left for a follow-up.
+ */
+export function landingSite(
+  mission: TacticalState,
+  from: TileCoord,
+): TileCoord | undefined {
+  let best: TileCoord | undefined;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  for (const zone of mission.map.hooks.deployZones) {
+    for (const tile of zone.tiles) {
+      const distance = tileDistance(from, tile);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        best = tile;
+      }
+    }
+  }
+  return best;
+}
+
+/**
+ * A move toward `target` scored by `score`, or nothing when the bug is
+ * boxed in or already on the best tile it can reach. The shared half of
+ * every behaviour's hunt: each supplies its own `score` so a lurker
+ * still sneaks and a brute still lumbers rather than the three sharing
+ * one gait (#559).
+ */
+export function advanceToward(
+  mission: TacticalState,
+  unitId: UnitId,
+  score: (tile: TileCoord) => number,
+  graph: MoveGraph,
+  rng: Rng,
+): MoveCommand | undefined {
+  const unit = mission.units.find((u) => u.id === unitId);
+  if (unit === undefined) {
+    return undefined;
+  }
+  const best = bestBy(
+    reachableTiles(mission, unitId, graph),
+    (t) => score(t.tile),
+    rng,
+  );
+  if (best === undefined || score(best.tile) <= score(unit.pos)) {
+    return undefined;
+  }
+  return moveTowards(mission, unitId, best.tile, graph);
+}
+
+// ===========================================
 // Scores
 // ===========================================
 

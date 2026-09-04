@@ -50,8 +50,29 @@ interface SideVision {
   readonly explored: readonly TileKey[];
   /** Enemy units currently seen, by id. */
   readonly spotted: readonly UnitId[];
+  /**
+   * Where this side last saw each enemy it has ever spotted (#716).
+   * Accumulated like `explored`, never recomputed: losing sight must not
+   * erase it, which is the whole reason it exists.
+   */
+  readonly lastSeen: Readonly<Record<UnitId, TileCoord>>;
 }
 ```
+
+`lastSeen` is written **only from units currently in `spotted`**. Reading it from
+the event log or from `mission.units` would be cheaper and would record positions
+the side never observed — the same omniscience §2.3 exists to prevent, arriving
+through the back door. A migration that met a save without it seeds it **empty**
+rather than reconstructing: a save holds no history to rebuild a sighting from,
+and inventing entries hands a side knowledge it never had.
+
+It exists because a behaviour that cannot see its mark otherwise has no mark at
+all. #695 measured the consequence: raising the lurker's `exposureWeight` to any
+value that changed its route also ended the engagement permanently, because
+"prefer cover" resolved to "leave, and forget". Memory is **necessary and not
+sufficient** — with it in place the cliff did not move (#722), because there is
+also nowhere concealed to approach through (#685 measured 0% of contact tiles
+ever unseen).
 
 `visible` and `spotted` are derived: a pure `computeVision(mission, team)` in a
 new `tactical/service/vision-service.ts` returns them from unit positions,

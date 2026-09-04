@@ -312,15 +312,18 @@ export class ActionBarView {
     button.dataset.weaponId = weapon.id;
     // Attack keeps its digit whatever is selected (#532): the key arms
     // the first weapon and pressing it again cycles to the next, rather
-    // than renumbering the bar and moving Overwatch's key with it. Only
-    // the first button carries the hint, because there is one key.
-    if (first) {
-      const key = doc.createElement("span");
-      key.className = "tut-btn__key";
-      key.dataset.role = "shortcut";
-      key.textContent = String(ACTION_BAR_ORDER.indexOf("attack") + 1);
-      button.appendChild(key);
-    }
+    // than renumbering the bar and moving Overwatch's key with it.
+    //
+    // Every weapon button carries that digit, not just the first (#652).
+    // The bar documents the number row (#520), and a blank where the
+    // digit goes reads as a button no key reaches — when in fact the same
+    // key reaches them all. Two buttons showing `2` is the honest
+    // rendering of one key that cycles, and it teaches the cycle.
+    const key = doc.createElement("span");
+    key.className = "tut-btn__key";
+    key.dataset.role = "shortcut";
+    key.textContent = String(ACTION_BAR_ORDER.indexOf("attack") + 1);
+    button.appendChild(key);
     const icon = doc.createElement("span");
     icon.className = "tut-icon tut-icon--sm";
     icon.style.setProperty("--icon", iconUrl(ICONS.attack));
@@ -328,9 +331,10 @@ export class ActionBarView {
     text.className = "tut-btn__label";
     text.textContent = weapon.name;
     button.append(icon, text);
+    const digit = String(ACTION_BAR_ORDER.indexOf("attack") + 1);
     button.title = first
-      ? `${weapon.name} (${String(ACTION_BAR_ORDER.indexOf("attack") + 1)}, press again for the next weapon)`
-      : weapon.name;
+      ? `${weapon.name} (${digit}, press again for the next weapon)`
+      : `${weapon.name} (${digit} again)`;
     button.disabled = true;
     return button;
   }

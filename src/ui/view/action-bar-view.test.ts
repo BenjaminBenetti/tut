@@ -58,6 +58,40 @@ describe("ActionBarView weapons", () => {
     ).toEqual(["Autocannon", "Mortar"]);
   });
 
+  it("puts the shortcut digit on every weapon button (#652)", () => {
+    const view = new ActionBarView({ onAction: vi.fn() });
+    view.mount(root);
+    view.update({
+      canAct: true,
+      playerPhase: true,
+      mode: undefined,
+      weapons: [ARM, BACK],
+    });
+    // The bar documents the number row (#520). One key arms Attack and
+    // cycles the weapons (#532), so the same digit reaches both buttons
+    // — a blank on the second reads as a button no key can press.
+    expect(
+      attackButtons().map(
+        (b) => b.querySelector('[data-role="shortcut"]')?.textContent,
+      ),
+    ).toEqual(["2", "2"]);
+  });
+
+  it("says on the second weapon that its digit is pressed again", () => {
+    const view = new ActionBarView({ onAction: vi.fn() });
+    view.mount(root);
+    view.update({
+      canAct: true,
+      playerPhase: true,
+      mode: undefined,
+      weapons: [ARM, BACK],
+    });
+    expect(attackButtons().map((b) => b.title)).toEqual([
+      "Autocannon (2, press again for the next weapon)",
+      "Mortar (2 again)",
+    ]);
+  });
+
   it("reports which weapon was pressed", () => {
     const onAction = vi.fn();
     const view = new ActionBarView({ onAction });

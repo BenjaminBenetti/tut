@@ -207,6 +207,7 @@ export const STARTER_PARTS: readonly MechPart[] = [
       weight: 10,
     },
     description: "The workhorse. Reliable damage at any range that matters.",
+    weapon: { range: 10, armorPen: 2 },
   },
   {
     id: "arm-weapon-flamer",
@@ -224,6 +225,7 @@ export const STARTER_PARTS: readonly MechPart[] = [
       weight: 7,
     },
     description: "Hard to miss with, hard on the heat sinks. Swarmers hate it.",
+    weapon: { range: 3, armorPen: 0 },
   },
   {
     id: "arm-weapon-laser",
@@ -241,6 +243,7 @@ export const STARTER_PARTS: readonly MechPart[] = [
       weight: 5,
     },
     description: "Light and precise. Draws heavily on the reactor.",
+    weapon: { range: 12, armorPen: 1 },
   },
   {
     id: "arm-weapon-railgun",
@@ -279,6 +282,7 @@ export const STARTER_PARTS: readonly MechPart[] = [
       weight: 12,
     },
     description: "Shoulder-mounted salvo launcher. Loud, and the bugs notice.",
+    weapon: { range: 14, armorPen: 1 },
   },
   {
     id: "back-weapon-mortar",
@@ -297,6 +301,7 @@ export const STARTER_PARTS: readonly MechPart[] = [
     },
     description:
       "Indirect fire over the rooftops. Where it lands is a matter of faith.",
+    weapon: { range: 16, armorPen: 0 },
   },
   {
     id: "back-weapon-rotary-cannon",
@@ -314,6 +319,7 @@ export const STARTER_PARTS: readonly MechPart[] = [
       weight: 18,
     },
     description: "Six barrels of persuasion. Bring radiators.",
+    weapon: { range: 8, armorPen: 3 },
   },
 
   // ===========================================

@@ -22,6 +22,7 @@ describe("StatSheetView", () => {
         weight: 60,
         powerBalance: 10,
         totalCost: 1650,
+        weapons: [],
         combatRating: 127,
       }),
     );

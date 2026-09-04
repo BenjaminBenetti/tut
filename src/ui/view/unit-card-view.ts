@@ -119,17 +119,34 @@ export class UnitCardView {
     this.set("unit-side", `${unit.team} · ${unit.kind}`);
     this.set("hp", `${formatWhole(unit.hp)} / ${formatWhole(unit.maxHp)}`);
     this.set("ap", `${formatWhole(unit.ap)} / ${formatWhole(unit.maxAp)}`);
-    const w = template.weapon;
+    // One line per weapon (#532). A squad or a bug carries one and reads
+    // as it always did; a mech lists its arm and back weapons, which is
+    // the whole point — they differ in reach.
     this.set(
       "weapon",
-      `range ${formatWhole(w.range)} · acc ${formatWhole(w.accuracy)} · dmg ${formatWhole(w.damage)} · pen ${formatWhole(w.armorPen)}`,
+      template.weapons
+        .map((weapon) => {
+          const p = weapon.profile;
+          const label = template.weapons.length > 1 ? `${weapon.name}: ` : "";
+          return `${label}range ${formatWhole(p.range)} · acc ${formatWhole(p.accuracy)} · dmg ${formatWhole(p.damage)} · pen ${formatWhole(p.armorPen)}`;
+        })
+        .join("\n"),
     );
     this.set("armor", formatWhole(template.armor));
+    const pools = template.weapons.filter((w) => w.charges !== undefined);
     this.set(
       "charges",
-      template.charges === undefined || unit.charges === undefined
+      pools.length === 0
         ? "—"
-        : `${unit.kind === "mech" ? "heat" : "ammo"} ${formatWhole(unit.charges)} / ${formatWhole(template.charges)}`,
+        : pools
+            .map((weapon) => {
+              const capacity = weapon.charges ?? 0;
+              const left = unit.charges?.[weapon.id] ?? capacity;
+              const label = pools.length > 1 ? `${weapon.name} ` : "";
+              const kind = unit.kind === "mech" ? "heat" : "ammo";
+              return `${label}${kind} ${formatWhole(left)} / ${formatWhole(capacity)}`;
+            })
+            .join("\n"),
     );
     this.set("status", unit.status.length === 0 ? "—" : unit.status.join(", "));
     this.meter?.style.setProperty(

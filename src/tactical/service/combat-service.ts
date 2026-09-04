@@ -23,6 +23,8 @@ import { TEAM_FOR_PHASE } from "../model/tactical-state";
 import { UNIT_DIED } from "../model/unit-died-event";
 import type { Unit, UnitId } from "../model/unit";
 import type { UnitTemplate } from "../model/unit-template";
+import type { UnitWeapon, WeaponId } from "../model/unit-weapon";
+import { weaponOf } from "../model/unit-weapon";
 import type { WeaponProfile } from "../model/weapon-profile";
 import { isMelee } from "../model/weapon-profile";
 import { findAttackTarget } from "./attack-target-service";
@@ -42,6 +44,8 @@ import { damageSpawner } from "./spawner-damage-service";
 export interface AttackPair {
   readonly attacker: Unit;
   readonly attackerTemplate: UnitTemplate;
+  /** The weapon this attack is made with (#532); one of the template's. */
+  readonly weapon: UnitWeapon;
   readonly target: AttackTarget;
 }
 
@@ -192,6 +196,7 @@ export function validateAttack(
   attackerId: UnitId,
   targetId: UnitId,
   tuning: CombatTuning,
+  weaponId?: WeaponId,
 ): Result<AttackPair & { readonly terrain: AttackTerrain }, TacticalError> {
   const attacker = mission.units.find((u) => u.id === attackerId);
   if (attacker === undefined) {
@@ -214,10 +219,19 @@ export function validateAttack(
   if (attacker.ap < tuning.attackApCost) {
     return err({ kind: "no-action-points", unitId: attackerId });
   }
-  if (attacker.charges !== undefined && attacker.charges <= 0) {
+  const chosen = weaponOf(
+    mission.templates[attacker.templateId]?.weapons ?? [],
+    weaponId,
+  );
+  if (chosen === undefined) {
+    return err({ kind: "no-such-weapon", unitId: attackerId });
+  }
+  // Charges are per weapon (#532): an empty arm gun does not stop the
+  // one on the back.
+  if (chargesLeft(attacker, chosen) === 0) {
     return err({ kind: "no-charges", unitId: attackerId });
   }
-  return validateTargeting(mission, attackerId, targetId);
+  return validateTargeting(mission, attackerId, targetId, chosen.id);
 }
 
 /**
@@ -233,6 +247,7 @@ export function validateTargeting(
   mission: TacticalState,
   attackerId: UnitId,
   targetId: UnitId,
+  weaponId?: WeaponId,
 ): Result<AttackPair & { readonly terrain: AttackTerrain }, TacticalError> {
   const attacker = mission.units.find((u) => u.id === attackerId);
   if (attacker === undefined) {
@@ -261,22 +276,133 @@ export function validateTargeting(
       `Unit "${attackerId}" references a template missing from the mission`,
     );
   }
+  const weapon = weaponOf(attackerTemplate.weapons, weaponId);
+  if (weapon === undefined) {
+    return err({ kind: "no-such-weapon", unitId: attackerId });
+  }
   const index = new TileIndex(mission.map);
   const terrain = terrainForWeapon(
     attackTerrain(mission.map, attacker.pos, target.pos, index),
-    attackerTemplate.weapon,
+    weapon.profile,
   );
-  if (terrain.distance > attackerTemplate.weapon.range) {
+  if (terrain.distance > weapon.profile.range) {
     return err({
       kind: "out-of-range",
       distance: terrain.distance,
-      range: attackerTemplate.weapon.range,
+      range: weapon.profile.range,
     });
   }
   if (!hasLineOfSight(mission.map, attacker.pos, target.pos, index)) {
     return err({ kind: "no-line-of-sight", targetId });
   }
-  return ok({ attacker, attackerTemplate, target, terrain });
+  return ok({ attacker, attackerTemplate, weapon, target, terrain });
+}
+
+// ===========================================
+// Charges
+// ===========================================
+
+/**
+ * Shots left for `weapon`, or undefined when it has no pool at all. A
+ * unit whose `charges` record has no entry for a weapon that declares
+ * one is treated as full: that is a save written before the weapon
+ * existed, not an empty gun.
+ */
+export function chargesLeft(
+  unit: Unit,
+  weapon: UnitWeapon,
+): number | undefined {
+  if (weapon.charges === undefined) {
+    return undefined;
+  }
+  return unit.charges?.[weapon.id] ?? weapon.charges;
+}
+
+/** The `charges` patch for a unit that just fired `weapon`; empty when it has no pool. */
+function spendCharge(
+  unit: Unit,
+  weapon: UnitWeapon,
+): { charges?: Readonly<Record<WeaponId, number>> } {
+  const left = chargesLeft(unit, weapon);
+  if (left === undefined) {
+    return {};
+  }
+  return {
+    charges: { ...unit.charges, [weapon.id]: Math.max(0, left - 1) },
+  };
+}
+
+// ===========================================
+// Options
+// ===========================================
+
+/** One weapon a unit carries, and whether it can be fired right now. */
+export interface WeaponOption {
+  readonly weapon: UnitWeapon;
+  /** Shots left, or undefined for a weapon with no pool. */
+  readonly charges: number | undefined;
+  /** False when the unit could not attack with it at all this instant. */
+  readonly ready: boolean;
+  /** Why not, when `ready` is false. */
+  readonly refusal?: TacticalError;
+}
+
+/**
+ * Every weapon `unitId` carries, in template order, each with whether it
+ * could be fired this instant and why not (#532).
+ *
+ * The single list the action bar, the number keys and #529's right-click
+ * menu all read, so the three cannot disagree about what a unit can do.
+ * Entries are returned whether or not they are ready: a menu that hides
+ * an empty gun teaches the player nothing, and one that hides a weapon
+ * whose target is out of range looks broken.
+ *
+ * Readiness here is the unit's own state — phase, action points, charges
+ * — not a specific target, because the menu opens before a target is
+ * chosen. `previewAttack` answers the per-target question.
+ */
+export function weaponOptions(
+  mission: TacticalState,
+  unitId: UnitId,
+  tuning: CombatTuning,
+): readonly WeaponOption[] {
+  const unit = mission.units.find((u) => u.id === unitId);
+  const template = unit && mission.templates[unit.templateId];
+  if (unit === undefined || template === undefined) {
+    return [];
+  }
+  return template.weapons.map((weapon) => {
+    const charges = chargesLeft(unit, weapon);
+    const refusal = refuseWeapon(mission, unit, charges, tuning);
+    return {
+      weapon,
+      charges,
+      ready: refusal === undefined,
+      ...(refusal === undefined ? {} : { refusal }),
+    };
+  });
+}
+
+/** Why the unit cannot fire this weapon at all, target aside. */
+function refuseWeapon(
+  mission: TacticalState,
+  unit: Unit,
+  charges: number | undefined,
+  tuning: CombatTuning,
+): TacticalError | undefined {
+  if (unit.hp <= 0) {
+    return { kind: "unit-dead", unitId: unit.id };
+  }
+  if (unit.team !== TEAM_FOR_PHASE[mission.phase]) {
+    return { kind: "wrong-phase", unitId: unit.id };
+  }
+  if (unit.ap < tuning.attackApCost) {
+    return { kind: "no-action-points", unitId: unit.id };
+  }
+  if (charges === 0) {
+    return { kind: "no-charges", unitId: unit.id };
+  }
+  return undefined;
 }
 
 // ===========================================
@@ -293,15 +419,22 @@ export function previewAttack(
   attackerId: UnitId,
   targetId: UnitId,
   tuning: CombatTuning,
+  weaponId?: WeaponId,
 ): Result<AttackPreview, TacticalError> {
-  const checked = validateAttack(mission, attackerId, targetId, tuning);
+  const checked = validateAttack(
+    mission,
+    attackerId,
+    targetId,
+    tuning,
+    weaponId,
+  );
   if (!checked.ok) {
     return checked;
   }
-  const { attackerTemplate, target, terrain } = checked.value;
+  const { weapon, target, terrain } = checked.value;
   return ok({
-    hitChance: hitChance(attackerTemplate.weapon, terrain, tuning),
-    damage: damageRange(attackerTemplate.weapon, target.armor, tuning),
+    hitChance: hitChance(weapon.profile, terrain, tuning),
+    damage: damageRange(weapon.profile, target.armor, tuning),
     distance: terrain.distance,
     cover: terrain.cover,
     flanked: terrain.flanked,
@@ -343,9 +476,9 @@ export function rollAttack(
   tuning: CombatTuning,
   apAfter: number,
 ): TacticalApplied<TacticalState> {
-  const { attacker, attackerTemplate, target, terrain } = checked;
-  const chance = hitChance(attackerTemplate.weapon, terrain, tuning);
-  const band = damageRange(attackerTemplate.weapon, target.armor, tuning);
+  const { attacker, weapon, target, terrain } = checked;
+  const chance = hitChance(weapon.profile, terrain, tuning);
+  const band = damageRange(weapon.profile, target.armor, tuning);
   const hit = ctx.rng.chance(chance / 100);
   const damage = hit ? ctx.rng.nextInt(band[0], band[1]) : 0;
   const targetHp = Math.max(0, target.hp - damage);
@@ -358,9 +491,7 @@ export function rollAttack(
         ? {
             ...unit,
             ap: apAfter,
-            ...(unit.charges === undefined
-              ? {}
-              : { charges: unit.charges - 1 }),
+            ...spendCharge(unit, weapon),
           }
         : unit,
     ),

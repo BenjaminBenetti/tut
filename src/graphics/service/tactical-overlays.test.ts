@@ -284,7 +284,12 @@ describe("overlaysFor weapon range", () => {
         ...base.templates,
         [unit.templateId]: {
           ...template,
-          weapon: { ...template.weapon, range },
+          weapons: [
+            {
+              ...template.weapons[0]!,
+              profile: { ...template.weapons[0]!.profile, range },
+            },
+          ],
         },
       },
     };

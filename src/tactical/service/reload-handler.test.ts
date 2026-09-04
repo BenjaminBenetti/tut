@@ -9,6 +9,7 @@ import type { TacticalState } from "../model/tactical-state";
 import type { Unit } from "../model/unit";
 import { UNIT_RELOADED } from "../model/unit-reloaded-event";
 import type { UnitTemplate } from "../model/unit-template";
+import { DEFAULT_WEAPON_NAME, PRIMARY_WEAPON_ID } from "../model/unit-weapon";
 import { RELOAD_AP_COST, reloadHandler } from "./reload-handler";
 import { emptyVision } from "./vision-service";
 
@@ -24,12 +25,18 @@ function template(id: string, charges: number | undefined): UnitTemplate {
     maxHp: 20,
     maxAp: 2,
     move: 5,
-    weapon: { range: 8, accuracy: 65, damage: 10, armorPen: 0 },
+    weapons: [
+      {
+        id: PRIMARY_WEAPON_ID,
+        name: DEFAULT_WEAPON_NAME,
+        profile: { range: 8, accuracy: 65, damage: 10, armorPen: 0 },
+        ...(charges === undefined ? {} : { charges }),
+      },
+    ],
     sightRange: 12,
     armor: 0,
     passClass: "infantry",
     modelId: "tdf.infantry.rifle",
-    ...(charges === undefined ? {} : { charges }),
   };
 }
 
@@ -88,52 +95,68 @@ const ctx: TacticalContext = {
 
 describe("reloadHandler", () => {
   it("refills the pool for one action and emits UnitReloaded", () => {
-    const m = mission([unit("s1", "tdf", "rifle", { charges: 0 })]);
+    const m = mission([
+      unit("s1", "tdf", "rifle", { charges: { [PRIMARY_WEAPON_ID]: 0 } }),
+    ]);
     const result = reloadHandler(m, reload("s1"), ctx);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.value.state.units[0]).toMatchObject({
       ap: 2 - RELOAD_AP_COST,
-      charges: 3,
+      charges: { [PRIMARY_WEAPON_ID]: 3 },
     });
     expect(result.value.events).toEqual([
-      { type: UNIT_RELOADED, payload: { unitId: "s1", charges: 3 } },
+      {
+        type: UNIT_RELOADED,
+        payload: { unitId: "s1", charges: { [PRIMARY_WEAPON_ID]: 3 } },
+      },
     ]);
-    expect(m.units[0]?.charges).toBe(0);
+    // The input mission is untouched: the handler returns a new state.
+    expect(m.units[0]?.charges).toEqual({ [PRIMARY_WEAPON_ID]: 0 });
   });
 
   it.each([
     [
       "unknown unit",
-      [unit("s1", "tdf", "rifle", { charges: 1 })],
+      [unit("s1", "tdf", "rifle", { charges: { [PRIMARY_WEAPON_ID]: 1 } })],
       "ghost",
       "player",
       "unit-not-on-map",
     ],
     [
       "dead unit",
-      [unit("s1", "tdf", "rifle", { charges: 1, hp: 0 })],
+      [
+        unit("s1", "tdf", "rifle", {
+          charges: { [PRIMARY_WEAPON_ID]: 1 },
+          hp: 0,
+        }),
+      ],
       "s1",
       "player",
       "unit-dead",
     ],
     [
       "wrong phase",
-      [unit("s1", "tdf", "rifle", { charges: 1 })],
+      [unit("s1", "tdf", "rifle", { charges: { [PRIMARY_WEAPON_ID]: 1 } })],
       "s1",
       "bugs",
       "wrong-phase",
     ],
     [
       "no action points",
-      [unit("s1", "tdf", "rifle", { charges: 1, ap: 0 })],
+      [
+        unit("s1", "tdf", "rifle", {
+          charges: { [PRIMARY_WEAPON_ID]: 1 },
+          ap: 0,
+        }),
+      ],
       "s1",
       "player",
       "no-action-points",
     ],
     [
       "already full",
-      [unit("s1", "tdf", "rifle", { charges: 3 })],
+      [unit("s1", "tdf", "rifle", { charges: { [PRIMARY_WEAPON_ID]: 3 } })],
       "s1",
       "player",
       "charges-full",

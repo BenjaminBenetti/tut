@@ -1,3 +1,7 @@
+import {
+  DEFAULT_WEAPON_NAME,
+  PRIMARY_WEAPON_ID,
+} from "../../tactical/model/unit-weapon";
 import { PropKindIds } from "../../mapgen/data/props";
 import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
 import type { TacticalState } from "../../tactical/model/tactical-state";
@@ -17,7 +21,13 @@ export function hudTemplate(
     maxHp: 20,
     maxAp: 2,
     move: 5,
-    weapon: { range: 8, accuracy: 65, damage, armorPen: 0 },
+    weapons: [
+      {
+        id: PRIMARY_WEAPON_ID,
+        name: DEFAULT_WEAPON_NAME,
+        profile: { range: 8, accuracy: 65, damage, armorPen: 0 },
+      },
+    ],
     sightRange: 12,
     armor: 0,
     passClass: "infantry",

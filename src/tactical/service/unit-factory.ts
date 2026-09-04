@@ -10,6 +10,8 @@ import type { BugUnitSource } from "../model/bug-unit-source";
 import type { Unit, UnitKind } from "../model/unit";
 import { UNIT_ID_PREFIX } from "../model/unit";
 import type { UnitTemplate, UnitTemplateId } from "../model/unit-template";
+import type { UnitWeapon, WeaponId } from "../model/unit-weapon";
+import { DEFAULT_WEAPON_NAME, PRIMARY_WEAPON_ID } from "../model/unit-weapon";
 import type { UnitTuning } from "../model/unit-tuning";
 
 // ===========================================
@@ -72,18 +74,25 @@ export function squadUnit(
     maxHp: squad.maxStrength * infantry.hpPerSoldier,
     maxAp: infantry.maxAp,
     move: infantry.move,
-    weapon: {
-      ...infantry.weapon,
-      damage: Math.max(
-        1,
-        Math.ceil(squadType.combatRating * infantry.weapon.damage),
-      ),
-    },
+    weapons: [
+      {
+        id: PRIMARY_WEAPON_ID,
+        name: DEFAULT_WEAPON_NAME,
+        profile: {
+          ...infantry.weapon,
+          damage: Math.max(
+            1,
+            Math.ceil(squadType.combatRating * infantry.weapon.damage),
+          ),
+        },
+        charges:
+          infantry.chargesByType[squadType.id] ?? infantry.fallbackCharges,
+      },
+    ],
     sightRange: infantry.sightRange,
     armor: infantry.armor,
     passClass: "infantry",
     modelId: infantry.modelIdByType[squadType.id] ?? infantry.fallbackModelId,
-    charges: infantry.chargesByType[squadType.id] ?? infantry.fallbackCharges,
   };
   return build(
     "squad",
@@ -126,21 +135,11 @@ export function mechUnit(
       tuning.minMove,
       tuning.maxMove,
     ),
-    weapon: {
-      range: tuning.weapon.range,
-      accuracy: clamp(
-        Math.round(tuning.weapon.accuracy + sheet.accuracy),
-        0,
-        100,
-      ),
-      damage: Math.max(1, Math.round(sheet.firepower * tuning.weapon.damage)),
-      armorPen: tuning.weapon.armorPen,
-    },
+    weapons: mechWeapons(sheet, tuning),
     sightRange: tuning.sightRange,
     armor: Math.max(0, Math.round(sheet.armor * tuning.armorFactor)),
     passClass: "mech",
     modelId: tuning.modelId,
-    charges: tuning.charges,
   };
   const hp = Math.round(
     (maxHp * (MECH_MAX_DAMAGE - mech.damage)) / MECH_MAX_DAMAGE,
@@ -165,7 +164,13 @@ export function bugUnit(
     maxHp: species.hp,
     maxAp: species.ap,
     move: species.move,
-    weapon: species.weapon,
+    weapons: [
+      {
+        id: PRIMARY_WEAPON_ID,
+        name: DEFAULT_WEAPON_NAME,
+        profile: species.weapon,
+      },
+    ],
     sightRange: species.sightRange,
     armor: species.armor,
     passClass: "infantry",
@@ -210,9 +215,77 @@ function build(
     maxAp: template.maxAp,
     status: [],
     passClass: template.passClass,
-    ...(template.charges === undefined ? {} : { charges: template.charges }),
+    ...chargesFor(template),
   };
   return { unit, template };
+}
+
+/**
+ * Every weapon a mech's sheet fitted, as tactical attacks (#532). Each
+ * gets its own range and penetration from the part, its own damage from
+ * that part's firepower, and the mech's base accuracy adjusted by that
+ * part's own modifier — so an accurate laser and a wild mortar differ,
+ * where before every weapon fired at the sheet's average.
+ *
+ * A mech with no weapon fitted falls back to the tuning's profile, so a
+ * bare chassis is still a unit rather than a crash. That is a loadout
+ * the validator already refuses; this is belt and braces.
+ */
+function mechWeapons(
+  sheet: MechStatSheet,
+  tuning: UnitTuning["mech"],
+): readonly UnitWeapon[] {
+  if (sheet.weapons.length === 0) {
+    return [
+      {
+        id: PRIMARY_WEAPON_ID,
+        name: DEFAULT_WEAPON_NAME,
+        profile: { ...tuning.weapon },
+        charges: tuning.charges,
+      },
+    ];
+  }
+  // Every accuracy contribution except the *other* weapons'. The sheet
+  // total includes arms, legs and utility parts — a targeting computer
+  // has to keep working — but a mortar must not make the laser beside it
+  // wilder, so each weapon adds its own and drops its neighbours'.
+  const weaponAccuracy = sheet.weapons.reduce(
+    (sum, weapon) => sum + weapon.accuracy,
+    0,
+  );
+  return sheet.weapons.map((weapon) => ({
+    id: weapon.id,
+    name: weapon.name,
+    profile: {
+      range: weapon.range,
+      accuracy: clamp(
+        Math.round(
+          tuning.weapon.accuracy +
+            sheet.accuracy -
+            (weaponAccuracy - weapon.accuracy),
+        ),
+        0,
+        100,
+      ),
+      damage: Math.max(1, Math.round(weapon.firepower * tuning.weapon.damage)),
+      armorPen: weapon.armorPen,
+    },
+    charges: tuning.charges,
+  }));
+}
+
+/**
+ * The unit's starting charges, keyed by weapon (#409, per weapon since
+ * #532). Omitted entirely when no weapon has a pool, so a bug still
+ * carries no `charges` field at all.
+ */
+function chargesFor(template: UnitTemplate): {
+  charges?: Readonly<Record<WeaponId, number>>;
+} {
+  const entries = template.weapons.flatMap((weapon) =>
+    weapon.charges === undefined ? [] : [[weapon.id, weapon.charges] as const],
+  );
+  return entries.length === 0 ? {} : { charges: Object.fromEntries(entries) };
 }
 
 /** Clamps `value` into `[min, max]`. */

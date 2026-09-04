@@ -281,7 +281,7 @@ export function targetValue(
   combat: CombatTuning,
   index: TileIndex = new TileIndex(mission.map),
 ): Pick<AttackOption, "hitChance" | "meanDamage" | "value" | "canKill"> {
-  const weapon = mission.templates[attacker.templateId]?.weapon;
+  const weapon = mission.templates[attacker.templateId]?.weapons[0]?.profile;
   const armor = mission.templates[target.templateId]?.armor ?? 0;
   if (weapon === undefined) {
     return { hitChance: 0, meanDamage: 0, value: 0, canKill: false };

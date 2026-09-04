@@ -99,8 +99,30 @@ Until M2, tactical missions are **auto-resolved** by a placeholder resolver so t
 
 ### 6.2 Turn structure
 - Player phase → bug phase. Each unit has action points (move + act, XCOM-style two-action budget by default; mechs may have distinct budgets).
-- Actions: move, attack (arm weapon / back weapon / squad weapon), overwatch, reload/vent, abilities per unit type, interact with objective.
+- Actions: move, attack, overwatch, reload/vent, abilities per unit type, interact with objective.
+- **One attack action per weapon.** A unit does not have a single generic "attack". A mech carrying an arm weapon and a back weapon offers two distinct attacks, each with its own range, damage, accuracy and cost. Squad weapons work the same way.
+- **Infantry squads attack twice per turn.** Squads are the answer to numerous small bugs; mechs are the answer to armoured and large targets. This asymmetry is deliberate and is what makes both worth fielding.
 - Cover, line of sight, elevation bonuses, flanking. Hit chance and damage are visible before committing.
+
+### 6.2.1 Vision and fog of war
+Vision is a core system, not a presentation detail.
+
+- The player sees only what the deployed force can see. Bugs outside the squad's vision are not drawn and not listed.
+- Map area the force has not observed is obscured; ground already seen stays revealed as terrain but does not keep showing units that have moved out of sight.
+- Spotting is an event: a bug entering vision is announced, and it is a moment the player should notice.
+- The bug AI is bound by the same rule. Bugs act on what they could plausibly know, and must not path toward units they have not detected.
+- Line of sight for *targeting* and vision for *knowing* share the same geometry but are separate concerns; a unit may see a bug it cannot legally shoot.
+
+### 6.2.2 Presentation of combat
+The player's attention belongs on the battlefield, not on a side panel.
+
+- Move is the default action. Selecting a unit and clicking a reachable tile moves it, with no mode to enter first. Right click invokes actions; number keys select them.
+- The reach of one action point and of two are distinguishable before committing to a move, and a selected unit shows its weapon range without needing a target.
+- Attack confirmation appears at the target, not in a panel: hit chance, damage and the commit control presented on the enemy itself.
+- Building geometry between the camera and a unit fades in a soft radius so the player can always see their own force and the fight.
+- Every action produces visible feedback: animation, effect, and floating text for hits, misses and damage, rendered above the unit and never inside its model.
+- Turn transitions are unmistakable, and the end of the bug phase is obvious.
+- A collapsible event log records everything, reviewable at any time.
 
 ### 6.3 Spawning
 - **Egg spawners** are static objectives placed by map generation. They periodically hatch bugs. Destroying them is the baseline objective.
@@ -129,6 +151,7 @@ Until M2, tactical missions are **auto-resolved** by a placeholder resolver so t
 | M1 Overworld | Full overworld loop playable with auto-resolved missions. Economy, roster, mech customization, deployables, threat, lose condition, win stub. |
 | M1.5 Map Generation | Seeded, parameterized tactical map generator with elevation and buildings, plus a preview harness. |
 | M2 Basic Missions | Tactical combat playable end to end with three bug types; replaces auto-resolve for infestation missions. |
+| M2.5 Tactical Feel | Combat is enjoyable, not merely functional: fog of war, move-as-default controls, in-world attack UI, combat feedback and event log, building ghosting, per-weapon attacks, squads attack twice. |
 | M3 Mission Variety | Hives, spore crash sites, special events, new objectives, difficulty curve. |
 | M4 Final Mission | Space spore platform set-piece, new bug variant, victory. |
 | Track: Arsenal | Ongoing TDF unit and mech part variety. |

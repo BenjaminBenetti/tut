@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { startingCredits } from "../data/economy-tuning";
+import { ECONOMY_TUNING } from "../data/economy-tuning";
 import type { EconomyState } from "../model/economy-state";
 import { createInitialEconomyState } from "./economy-state-factory";
 
@@ -11,15 +11,15 @@ describe("createInitialEconomyState", () => {
   });
 
   it("accepts the default tuning value and zero", () => {
-    expect(createInitialEconomyState(startingCredits).credits).toBe(
-      startingCredits,
-    );
+    expect(
+      createInitialEconomyState(ECONOMY_TUNING.startingCredits).credits,
+    ).toBe(ECONOMY_TUNING.startingCredits);
     expect(createInitialEconomyState(0)).toEqual({ credits: 0, ledger: [] });
   });
 
   it("is deterministic and JSON-serializable", () => {
-    const a = createInitialEconomyState(startingCredits);
-    const b = createInitialEconomyState(startingCredits);
+    const a = createInitialEconomyState(ECONOMY_TUNING.startingCredits);
+    const b = createInitialEconomyState(ECONOMY_TUNING.startingCredits);
     expect(a).toEqual(b);
     expect(a).not.toBe(b);
     expect(JSON.parse(JSON.stringify(a)) as EconomyState).toEqual(a);

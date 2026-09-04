@@ -163,7 +163,9 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
       selected: undefined,
     };
     scene.start();
-    await this.placeUnits(mission);
+    // The map art and the unit models are independent fetches; running
+    // them together keeps the first frame from waiting on both in turn.
+    await Promise.all([builder.loadMapModels(), this.placeUnits(mission)]);
   }
 
   /** Plays `events`, then moves the units to match `mission` and refreshes the overlays. */

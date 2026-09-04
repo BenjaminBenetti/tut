@@ -370,6 +370,36 @@
 /* Game over                                   */
 /* =========================================== */
 
+/*
+ * The world behind the verdict.
+ *
+ * The game-over panel borrows `.tut-menu`, which is the title screen's
+ * treatment and deliberately shows Earth bright. On defeat that put
+ * "EARTH OVERRUN — could not hold the line" over a pristine blue-green
+ * world dotted with healthy city markers: the picture flatly denying
+ * the words. Draining the colour is the honest backdrop for a world
+ * that has been lost, and it is a channel nothing else on this screen
+ * uses.
+ *
+ * Victory keeps the world as it is: there the picture and the words
+ * already agree, and a bright Earth is the reward.
+ */
+.tut-game-over__scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.tut-game-over__scrim[data-tone="danger"] {
+  background: rgb(11 13 18 / 0.72);
+  backdrop-filter: saturate(0.25);
+}
+
+.tut-game-over {
+  z-index: 2;
+}
+
 .tut-game-over__title {
   margin: var(--space-2) 0;
   letter-spacing: 0.08em;

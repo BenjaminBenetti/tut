@@ -87,6 +87,23 @@ export class GameOverScreen implements Screen {
   /** Builds the panel from the session's outcome and wires the menu button. */
   mount(root: HTMLElement): void {
     const doc = root.ownerDocument;
+    const state: GameState | undefined = this.deps.session.state;
+    const outcome = state?.overworld.outcome;
+
+    // A scrim between the world and the verdict, toned by the outcome.
+    // The panel borrows `.tut-menu`, which is the *title screen's*
+    // treatment, so defeat was announced over a pristine blue-green
+    // Earth dotted with healthy city markers -- "Earth overrun" said
+    // over a picture of an Earth plainly not overrun. Victory keeps the
+    // world bright, because there the picture and the words agree.
+    const scrim = doc.createElement("div");
+    scrim.className = "tut-game-over__scrim";
+    scrim.dataset.tone = outcome ? OUTCOME_COPY[outcome.kind].tone : "ok";
+    root.appendChild(scrim);
+    this.disposers.push(() => {
+      scrim.remove();
+    });
+
     const panel = doc.createElement("section");
     panel.className = "tut-panel tut-menu tut-game-over";
     panel.dataset.screen = this.id;
@@ -95,8 +112,6 @@ export class GameOverScreen implements Screen {
     kicker.className = "tut-panel__title";
     kicker.textContent = "Campaign over";
 
-    const state: GameState | undefined = this.deps.session.state;
-    const outcome = state?.overworld.outcome;
     panel.append(kicker, ...this.createBody(doc, outcome));
 
     const menu = doc.createElement("button");

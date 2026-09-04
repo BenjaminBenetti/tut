@@ -73,7 +73,9 @@ test("captures a mission with fog of war for review", async ({ page }) => {
         activeMission?: {
           map: { tiles: unknown[] };
           units: { team: string }[];
-          vision: { tdf: { visible: number[]; explored: number[] } };
+          vision: {
+            tdf: { visible: number[]; explored: number[]; spotted: string[] };
+          };
         };
       };
     };
@@ -84,6 +86,7 @@ test("captures a mission with fog of war for review", async ({ page }) => {
       explored: m.vision.tdf.explored.length,
       visible: m.vision.tdf.visible.length,
       bugs: m.units.filter((u) => u.team === "bugs").length,
+      spottedBugs: m.vision.tdf.spotted.length,
     };
   });
   expect(known).not.toBeNull();
@@ -92,6 +95,12 @@ test("captures a mission with fog of war for review", async ({ page }) => {
   // not all of it.
   expect(known.explored).toBeGreaterThan(0);
   expect(known.explored).toBeLessThan(known.tiles);
+
+  // The shot has to show every unit the player is entitled to see, or it
+  // is evidence of a drawing bug rather than of fog. `data-tactical-units`
+  // is what the scene actually put on the board.
+  const drawn = await body.getAttribute("data-tactical-units");
+  expect(Number(drawn)).toBe(3 + known.spottedBugs);
 
   await page.waitForTimeout(400);
   await page.screenshot({ path: "docs/design/tactical-fog-of-war.png" });

@@ -97,7 +97,9 @@ test("the context menu opens on a right click and every way out closes it", asyn
     step.unitId,
   );
   // Arm Attack, so a right click on a tile is the gap the menu fills.
-  await page.locator('#action-bar [data-action="attack"]').click();
+  // Since #532 a mech carries one Attack button per weapon, so this has
+  // to name which: `first()` arms the same weapon the digit key does.
+  await page.locator('#action-bar [data-action="attack"]').first().click();
 
   // Escape closes it.
   await page.evaluate(
@@ -109,7 +111,7 @@ test("the context menu opens on a right click and every way out closes it", asyn
   await expect(menu).toBeHidden();
 
   // Choosing the item closes it and moves the unit — once.
-  await page.locator('#action-bar [data-action="attack"]').click();
+  await page.locator('#action-bar [data-action="attack"]').first().click();
   await page.evaluate(
     (tile) => (globalThis as HookGlobal).__tutTactical__?.invokeTile(tile),
     step.to,

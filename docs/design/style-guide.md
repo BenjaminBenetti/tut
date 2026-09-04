@@ -506,7 +506,47 @@ Applies to **every unit the player can currently see**, not only their own: hidi
 
 The numbers above are the second pass. The first were 0.25 alpha over a 2.5-tile radius, which the mock showed dissolving most of the building — the point of mocking a look before building it.
 
-### 12.5 What still has no art
+### 12.5 How the systems compose
+
+Fog of war, cast shadows, building ghosting and the overlay planes all
+landed within one build. Each is right on its own; what matters at this
+point is what they do to each other, because **the player sees the
+composite and never the parts**.
+
+The rule from §12.2 applies across systems, not just within one:
+**one channel per question.** A system that darkens the ground is
+answering "how lit is this?"; a system that darkens the ground is
+answering "can I see this?" — and they cannot both be right.
+
+![the same surface in four states](fog-shadow-ladder.png)
+
+| State | Multiplier | Means |
+|---|---|---|
+| Visible, lit | 1.00 | — |
+| Visible, in shadow | ~0.54, measured on concrete | Something is between this and the sun |
+| Remembered | 0.40, `VISION_DIM` | **You cannot see this any more** |
+| Remembered, in shadow | ~0.22 | Both |
+
+Both are **neutral multiplies on the same channel**, and the two middle
+states sit 1.35× apart — so the ladder interleaves and darkness stops
+meaning one thing. Tracked as a fix in the fog's colour rather than the
+shadow's, because shadow tone is doing the job §12.1 set for it.
+
+Two more that were *checked and are not problems*, recorded so nobody
+re-opens them on a hunch:
+
+- **Ghosting against shadows.** A cutaway opens a wall and the roofed
+  interior behind it is dark, which looks like the two fighting. Measured
+  on the same seed, unit and yaw either side of shadows landing, the
+  interior is **10 % darker** — it was already dark, because a roof
+  blocks the key by geometry. Not the shadow map's doing.
+- **Overlays in shadow.** The overlay planes are unlit `MeshBasicMaterial`
+  and stay out of the shadow pass (§12.2), so a move band inside a
+  shadowed building reads at full strength. That is deliberate: the
+  overlays are instrument, not world, and an instrument that dimmed when
+  a cloud went over would be worse.
+
+### 12.6 What still has no art
 
 - No suppression, overwatch-trigger or reload effect.
 - No decals: scorch marks, blood pools and rubble are geometry-free today, so a fought-over tile looks the same as an untouched one.

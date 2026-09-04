@@ -53,7 +53,14 @@ describe("MissionListView", () => {
     expect(first?.dataset.missionId).toBe("mission-1");
     expect(first?.dataset.cityId).toBe("cairo");
     expect(cell(first!, "city")).toBe("Cairo");
-    expect(cell(first!, "type")).toBe("Infestation Clearance");
+    // The type is a glyph, not a column of truncated text: it was the
+    // same on every row and never fitted (one mission type exists), so
+    // it kept its name in the tooltip and gave the width to the city.
+    const glyph = first?.querySelector<HTMLElement>('[data-field="type"]');
+    expect(glyph?.title).toBe("Infestation Clearance");
+    expect(glyph?.className).toContain("tut-icon");
+    expect(glyph?.style.getPropertyValue("--icon")).toContain("infestation");
+    expect(glyph?.textContent).toBe("");
     expect(cell(first!, "difficulty")).toBe("D2");
     expect(cell(first!, "reward")).toBe("¢600");
     expect(cell(first!, "days-left")).toBe("2 d");

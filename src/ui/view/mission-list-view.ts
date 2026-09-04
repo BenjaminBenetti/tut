@@ -1,8 +1,11 @@
+import type { MissionTypeId } from "../../content/model/mission-type-id";
 import type { CityId } from "../../overworld/model/city";
 import type { Mission, MissionId } from "../../overworld/model/mission";
 import { findCity } from "../../overworld/service/earth-map-query-service";
 import type { MissionTypeCatalogue } from "../../overworld/service/mission-generation-service";
 import type { GameState } from "../../save/model/game-state";
+import type { IconId } from "../data/icon-manifest";
+import { iconUrl } from "../data/icon-manifest";
 import type { OverworldSelectionSnapshot } from "../model/overworld-selection";
 import { formatCredits, formatWhole } from "../service/format";
 
@@ -169,7 +172,12 @@ export class MissionListView {
     for (const field of ["city", "type", "difficulty", "reward", "days-left"]) {
       const cell = doc.createElement("span");
       cell.dataset.field = field;
-      cell.className = field === "city" || field === "type" ? "" : "tut-data";
+      cell.className =
+        field === "type"
+          ? "tut-icon tut-icon--sm"
+          : field === "city"
+            ? ""
+            : "tut-data";
       row.appendChild(cell);
     }
     return row;
@@ -185,21 +193,58 @@ export class MissionListView {
       ? findCity(state.overworld.map, mission.cityId)
       : undefined;
     const day = state?.overworld.day ?? mission.createdDay;
+    const type = this.deps.missionTypes[mission.typeId];
     const values: Record<string, string> = {
       city: city?.name ?? mission.cityId,
-      type: this.deps.missionTypes[mission.typeId].name,
       difficulty: `D${formatWhole(mission.difficulty)}`,
       reward: formatCredits(mission.rewards.credits),
       "days-left": `${formatWhole(mission.expiresDay - day)} d`,
     };
     for (const cell of row.querySelectorAll<HTMLElement>("[data-field]")) {
-      const text = values[cell.dataset.field ?? ""] ?? "";
+      const field = cell.dataset.field ?? "";
+      if (field === "type") {
+        // The glyph carries it; the name stays in the tooltip, so the
+        // information is still there for anyone who wants it.
+        cell.style.setProperty(
+          "--icon",
+          iconUrl(TYPE_ICONS[mission.typeId] ?? "mission"),
+        );
+        if (cell.title !== type.name) {
+          cell.title = type.name;
+        }
+        continue;
+      }
+      const text = values[field] ?? "";
       if (cell.textContent !== text) {
         cell.textContent = text;
       }
     }
   }
 }
+
+// ===========================================
+// Type glyphs
+// ===========================================
+
+/**
+ * The glyph standing in for a mission's type in the list.
+ *
+ * The name used to be a text column, for a value that is the same on
+ * every row -- there is exactly one mission type. It never fitted, and
+ * because the row is laid out per row rather than as a table, each one
+ * ellipsised at a different point: "Infestation ...", "Infestat...",
+ * "Infestatio...", and for Johannesburg simply "I...". A column that is
+ * constant carries nothing; a column that is constant *and* illegible
+ * is noise with a ragged edge.
+ *
+ * A glyph says the same thing in a fixed 16 px, keeps the full name in
+ * its tooltip, and gives the flexible width back to the city -- which is
+ * the column a player actually reads. A second mission type takes its
+ * own glyph here and the list needs no other change.
+ */
+const TYPE_ICONS: Readonly<Record<MissionTypeId, IconId>> = {
+  "infestation-clearance": "infestation",
+};
 
 // ===========================================
 // Sorting

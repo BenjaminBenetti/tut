@@ -262,16 +262,20 @@ export class TacticalHudView {
     events: readonly TacticalEvent[] = [],
   ): void {
     // A new mission starts a new log; the same one appends to it (#525).
-    if (
-      mission !== undefined &&
-      this.mission?.missionId !== mission.missionId
-    ) {
+    // On arrival the log is replayed rather than appended to, because
+    // the handlers have already folded every event into `mission.log`
+    // (#573): a mission opened fresh shows the turn it starts on, and
+    // one resumed from a save shows everything that led to here, which
+    // it never used to.
+    const arrived =
+      mission !== undefined && this.mission?.missionId !== mission.missionId;
+    if (arrived) {
       this.log.clear();
     }
     this.mission = mission;
     this.view = mission === undefined ? undefined : viewFor(mission, "tdf");
     this.phases.announce(phaseChangesIn(events));
-    this.log.append(events, mission);
+    this.log.append(arrived && mission ? mission.log : events, mission);
     const aliveUnit = (id: UnitId | undefined): boolean =>
       id !== undefined &&
       (mission?.units.some((u) => u.id === id && u.hp > 0) ?? false);

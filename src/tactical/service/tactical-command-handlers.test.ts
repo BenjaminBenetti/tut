@@ -192,9 +192,12 @@ describe("registerTacticalCommands", () => {
     const mission = result.value.state.activeMission;
     expect(mission?.turn).toBe(2);
     expect(mission?.log).toEqual([
+      { type: TURN_STARTED, payload: { turn: 1, phase: "player" } },
       { type: TURN_STARTED, payload: { turn: 2, phase: "player" } },
     ]);
-    expect(result.value.events).toEqual(mission?.log);
+    // The command's events are what the log gained, not the whole of it:
+    // it opened with the mission's own announcement (#573).
+    expect(result.value.events).toEqual(mission?.log.slice(1));
     expect(result.value.state.overworld).toBe(state.overworld);
     expect(result.value.state.roster).toBe(state.roster);
     expect(state.activeMission?.turn).toBe(1);
@@ -241,6 +244,7 @@ describe("registerTacticalCommands", () => {
     expect(chained).toHaveLength(2);
     expect(chained[0]).not.toBe(chained[1]);
     expect(once.value.state.activeMission?.log.map((e) => e.type)).toEqual([
+      TURN_STARTED,
       UNIT_MOVED,
     ]);
   });

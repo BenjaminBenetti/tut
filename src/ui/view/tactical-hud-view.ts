@@ -30,6 +30,7 @@ import { reachableObjectives } from "../../tactical/service/objective-service";
 import type { TacticalIntent } from "../model/tactical-intent";
 import type { ActionBarAction } from "./action-bar-view";
 import { ActionBarView } from "./action-bar-view";
+import { EventLogView } from "./event-log-view";
 import { HitPreviewView } from "./hit-preview-view";
 import { ObjectiveTrackerView } from "./objective-tracker-view";
 import type {
@@ -118,6 +119,7 @@ export class TacticalHudView {
   private readonly card = new UnitCardView();
   private readonly preview: HitPreviewView;
   private readonly objectives = new ObjectiveTrackerView();
+  private readonly log = new EventLogView();
   private readonly actions: ActionBarView;
   private root: HTMLElement | undefined;
   private mission: TacticalState | undefined;
@@ -167,6 +169,7 @@ export class TacticalHudView {
     this.card.mount(side);
     this.preview.mount(side);
     this.objectives.mount(side);
+    this.log.mount(hud);
     this.actions.mount(bottom);
     hud.append(top, side, bottom);
     this.phases.mount(hud);
@@ -186,8 +189,16 @@ export class TacticalHudView {
     mission: TacticalState | undefined,
     events: readonly TacticalEvent[] = [],
   ): void {
+    // A new mission starts a new log; the same one appends to it (#525).
+    if (
+      mission !== undefined &&
+      this.mission?.missionId !== mission.missionId
+    ) {
+      this.log.clear();
+    }
     this.mission = mission;
     this.phases.announce(phaseChangesIn(events));
+    this.log.append(events, mission);
     const aliveUnit = (id: UnitId | undefined): boolean =>
       id !== undefined &&
       (mission?.units.some((u) => u.id === id && u.hp > 0) ?? false);
@@ -215,6 +226,7 @@ export class TacticalHudView {
   unmount(): void {
     this.phases.unmount();
     this.actions.unmount();
+    this.log.unmount();
     this.objectives.unmount();
     this.preview.unmount();
     this.card.unmount();

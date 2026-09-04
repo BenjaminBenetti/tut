@@ -261,16 +261,7 @@ class PerimeterRibbon implements Disposable {
         if (inside.has(`${tile.x + dx},${tile.z + dz}`)) {
           continue;
         }
-        pushEdgeQuad(
-          positions,
-          centre,
-          dx,
-          dz,
-          0.5,
-          half,
-          0,
-          centre.y + lift,
-        );
+        pushEdgeQuad(positions, centre, dx, dz, 0.5, half, 0, centre.y + lift);
       }
     }
     this.geometry.setAttribute(
@@ -362,8 +353,7 @@ class EdgeTickLayer implements Disposable {
   /** Ticks currently drawn, for tests and debug readouts. */
   tickCount(): number {
     const position = this.geometry.getAttribute("position") as
-      | BufferAttribute
-      | undefined;
+      BufferAttribute | undefined;
     return position === undefined ? 0 : position.count / 6;
   }
 

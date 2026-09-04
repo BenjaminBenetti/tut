@@ -68,6 +68,31 @@ const ICONS = {
     '<path d="M3 21 H21"/><path d="M5 21 V15 H9 V21"/><path d="M10 21 V10 H14 V21"/>',
   "infestation-high":
     '<path d="M3 21 H21"/><path d="M5 21 V15 H9 V21"/><path d="M10 21 V10 H14 V21"/><path d="M15 21 V4 H19 V21"/>',
+  // Tactical HUD, round 2 (#466). Stats and states the mission HUD shows as
+  // bare text today; same 2 px grid, square caps, no curves where a straight
+  // line reads as well.
+  "end-turn":
+    '<path d="M4 5 L12 12 L4 19 Z"/><path d="M11 5 L19 12 L11 19 Z"/><path d="M21 4 V20"/>',
+  interact: '<path d="M12 3 V11"/><path d="M6.6 6.2 A7.5 7.5 0 1 0 17.4 6.2"/>',
+  hidden:
+    '<path d="M2 12 C6 5 18 5 22 12 C18 19 6 19 2 12 Z"/><circle cx="12" cy="12" r="3"/><path d="M4 20 L20 4"/>',
+  suppressed:
+    '<path d="M6 3 L12 8 L18 3"/><path d="M6 9 L12 14 L18 9"/><path d="M4 19 H20"/>',
+  hp: '<path d="M2 12 H7 L10 5 L14 19 L17 12 H22"/>',
+  ap: '<circle cx="5" cy="12" r="2.6" fill="currentColor"/><circle cx="12" cy="12" r="2.6" fill="currentColor"/><circle cx="19" cy="12" r="2.6"/>',
+  armor:
+    '<path d="M12 2 L20 6 V12 C20 17 16 20.5 12 22 C8 20.5 4 17 4 12 V6 Z"/><path d="M12 7 V16"/>',
+  damage:
+    '<path d="M12 2 L15 9.5 L22 12 L15 14.5 L12 22 L9 14.5 L2 12 L9 9.5 Z"/>',
+  range:
+    '<path d="M3 12 H21"/><path d="M3 7 V17"/><path d="M21 7 V17"/><path d="M9 9 L12 12 L9 15"/>',
+  "cover-low":
+    '<path d="M2 21 H22"/><path d="M5 21 V14 H19 V21"/><circle cx="12" cy="9" r="2.5"/>',
+  "cover-high":
+    '<path d="M2 21 H22"/><path d="M5 21 V4 H19 V21"/><path d="M9 10 H15"/>',
+  elevation:
+    '<path d="M2 20 H8 V15 H14 V10 H20 V5"/><path d="M17 8 L20 5 L23 8"/>',
+  ammo: '<path d="M9 3 H15 V7 H9 Z"/><path d="M7 7 H17 V21 H7 Z"/><path d="M10 11 H14 M10 15 H14"/>',
 };
 
 // ===========================================

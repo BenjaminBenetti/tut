@@ -368,6 +368,22 @@ class Cell {
     for (let y = -r; y <= r; y++)
       for (let x = -r; x <= r; x++) this.mul(cx + x, cy + y, k);
   }
+
+  /**
+   * Fills an ellipse (clumps, patches, drifts). Coordinates wrap, so a blob
+   * that runs off one edge comes back on the other and the cell still tiles.
+   * @param {number} cx - Centre column.
+   * @param {number} cy - Centre row.
+   * @param {number} rx - Half width in px.
+   * @param {number} ry - Half height in px.
+   * @param {number} k - Multiplier.
+   */
+  blob(cx, cy, rx, ry, k) {
+    for (let y = -ry; y <= ry; y++) {
+      const span = rx * Math.sqrt(Math.max(0, 1 - (y / ry) * (y / ry)));
+      for (let x = -span; x <= span; x++) this.mul(cx + x, cy + y, k);
+    }
+  }
 }
 
 // ===========================================
@@ -563,8 +579,19 @@ function makeStreakNoise(rng, period, stretch) {
  * @param {Rng} rng - Seed.
  */
 function paintAsphalt(cell, rng) {
+  const patch = makeNoise(rng, 6);
   const noise = makeNoise(rng, 24);
-  cell.shade((x, y) => 0.92 + 0.14 * noise(x, y));
+  cell.shade(
+    (x, y) => (0.95 + 0.11 * patch(x, y)) * (0.94 + 0.12 * noise(x, y)),
+  );
+  for (let i = 0; i < 7; i++)
+    cell.blob(
+      rng.range(0, CELL),
+      rng.range(0, CELL),
+      rng.range(6, 14),
+      rng.range(4, 10),
+      i % 2 ? 0.92 : 1.08,
+    );
   let x = rng.range(0, CELL);
   let y = 0;
   while (y < CELL) {
@@ -608,21 +635,37 @@ function paintPaving(cell, rng) {
 }
 
 /**
- * Concrete slab: soft mottle, one hairline seam, small pits.
+ * Concrete slab: pour mottle with damp stains, one hairline seam, chipped
+ * edges and small pits.
  * @param {Cell} cell - Target.
  * @param {Rng} rng - Seed.
  */
 function paintSlab(cell, rng) {
-  const noise = makeNoise(rng, 5);
-  cell.shade((x, y) => 0.94 + 0.1 * noise(x, y));
+  const pour = makeNoise(rng, 6);
+  const grain = makeNoise(rng, 18);
+  cell.shade(
+    (x, y) => (0.92 + 0.15 * pour(x, y)) * (0.97 + 0.06 * grain(x, y)),
+  );
+  for (let i = 0; i < 9; i++)
+    cell.blob(
+      rng.range(0, CELL),
+      rng.range(0, CELL),
+      rng.range(6, 13),
+      rng.range(4, 9),
+      i % 2 ? 0.9 : 1.08,
+    );
   const sy = Math.round(rng.range(40, 90));
-  cell.line(0, sy, CELL - 1, sy, 0.8, 1);
-  for (let i = 0; i < 8; i++)
+  cell.line(0, sy, CELL - 1, sy, 0.78, 1);
+  for (let i = 0; i < 5; i++) {
+    const x = rng.range(0, CELL);
+    cell.dot(Math.round(x), i % 2 ? 1 : CELL - 2, 1, 0.82);
+  }
+  for (let i = 0; i < 14; i++)
     cell.dot(
       Math.round(rng.range(2, CELL - 3)),
       Math.round(rng.range(2, CELL - 3)),
       0,
-      0.8,
+      i % 3 ? 0.8 : 1.15,
     );
 }
 
@@ -656,18 +699,31 @@ function paintGlassPane(cell) {
 }
 
 /**
- * Gravel roof: dense mottle with light and dark specks.
+ * Gravel roof: patchy weathering under a dense stone scatter. Roofs are read
+ * from directly overhead, so this cell needs shape at the 8 px scale, not
+ * only per-pixel speckle.
  * @param {Cell} cell - Target.
  * @param {Rng} rng - Seed.
  */
 function paintGravel(cell, rng) {
+  const weather = makeNoise(rng, 7);
   const noise = makeNoise(rng, 32);
-  cell.shade((x, y) => 0.88 + 0.24 * noise(x, y));
-  for (let i = 0; i < 24; i++)
+  cell.shade(
+    (x, y) => (0.9 + 0.18 * weather(x, y)) * (0.92 + 0.16 * noise(x, y)),
+  );
+  for (let i = 0; i < 12; i++)
+    cell.blob(
+      rng.range(0, CELL),
+      rng.range(0, CELL),
+      rng.range(5, 12),
+      rng.range(4, 9),
+      i % 2 ? 0.9 : 1.09,
+    );
+  for (let i = 0; i < 44; i++)
     cell.dot(
       Math.round(rng.range(1, CELL - 2)),
       Math.round(rng.range(1, CELL - 2)),
-      0,
+      i % 4 ? 0 : 1,
       i % 2 ? 1.3 : 0.7,
     );
 }
@@ -702,71 +758,181 @@ function paintRust(cell, rng) {
 }
 
 /**
- * Grass: mottle with short blade strokes.
+ * Grass: patch tone at three scales so a whole tile never reads as one flat
+ * green, then clumps, tufts and blade strokes for close-up detail.
+ *
+ * ```
+ *   wide patches (period 3) ──► clumps ──► tufts ──► blades ──► earth flecks
+ * ```
  * @param {Cell} cell - Target.
  * @param {Rng} rng - Seed.
  */
 function paintGrass(cell, rng) {
-  const noise = makeNoise(rng, 7);
-  cell.shade((x, y) => 0.9 + 0.2 * noise(x, y));
-  for (let i = 0; i < 40; i++) {
+  const patch = makeNoise(rng, 6);
+  const clump = makeNoise(rng, 11);
+  const grain = makeNoise(rng, 24);
+  cell.shade(
+    (x, y) =>
+      (0.9 + 0.2 * patch(x, y)) *
+      (0.93 + 0.14 * clump(x, y)) *
+      (0.98 + 0.04 * grain(x, y)),
+  );
+  for (let i = 0; i < 26; i++)
+    cell.blob(
+      rng.range(0, CELL),
+      rng.range(0, CELL),
+      rng.range(4, 10),
+      rng.range(3, 7),
+      0.89,
+    );
+  for (let i = 0; i < 20; i++)
+    cell.blob(
+      rng.range(0, CELL),
+      rng.range(0, CELL),
+      rng.range(3, 8),
+      rng.range(2, 6),
+      1.11,
+    );
+  for (let i = 0; i < 70; i++) {
     const x = rng.range(0, CELL);
     const y = rng.range(0, CELL);
     cell.line(
       x,
       y,
-      x + rng.range(-1.5, 1.5),
-      y - rng.range(3, 7),
-      i % 3 ? 1.15 : 0.82,
+      x + rng.range(-2, 2),
+      y - rng.range(4, 9),
+      i % 3 ? 1.2 : 0.78,
       1,
     );
   }
+  for (let i = 0; i < 8; i++)
+    cell.dot(
+      Math.round(rng.range(2, CELL - 3)),
+      Math.round(rng.range(2, CELL - 3)),
+      1,
+      0.8,
+    );
 }
 
 /**
- * Dirt: patchy tone with pebbles.
+ * Dirt: damp and dry patches with real tone separation, pebbles and a few
+ * dried cracks.
  * @param {Cell} cell - Target.
  * @param {Rng} rng - Seed.
  */
 function paintDirt(cell, rng) {
-  const noise = makeNoise(rng, 5);
-  cell.shade((x, y) => 0.86 + 0.28 * noise(x, y));
-  for (let i = 0; i < 12; i++)
+  const patch = makeNoise(rng, 6);
+  const grain = makeNoise(rng, 20);
+  cell.shade(
+    (x, y) => (0.86 + 0.26 * patch(x, y)) * (0.97 + 0.06 * grain(x, y)),
+  );
+  for (let i = 0; i < 18; i++)
+    cell.blob(
+      rng.range(0, CELL),
+      rng.range(0, CELL),
+      rng.range(5, 12),
+      rng.range(4, 8),
+      0.88,
+    );
+  for (let i = 0; i < 14; i++)
+    cell.blob(
+      rng.range(0, CELL),
+      rng.range(0, CELL),
+      rng.range(4, 9),
+      rng.range(3, 7),
+      1.12,
+    );
+  for (let i = 0; i < 4; i++) {
+    let x = rng.range(0, CELL);
+    let y = rng.range(0, CELL);
+    for (let s = 0; s < 4; s++) {
+      const nx = x + rng.range(-9, 9);
+      const ny = y + rng.range(-9, 9);
+      cell.line(x, y, nx, ny, 0.8, 1);
+      x = nx;
+      y = ny;
+    }
+  }
+  for (let i = 0; i < 22; i++)
     cell.dot(
       Math.round(rng.range(2, CELL - 3)),
       Math.round(rng.range(2, CELL - 3)),
-      1,
-      i % 2 ? 0.8 : 1.15,
+      i % 3 ? 1 : 2,
+      i % 2 ? 0.78 : 1.2,
     );
 }
 
 /**
- * Sand: wind ripples with a little grain.
+ * Sand: dune shading under wind ripples, with scattered pebbles. The ripple
+ * amplitude is what makes a desert tile read at 64 px; the dune term keeps
+ * neighbouring tiles from looking like one flat sheet.
  * @param {Cell} cell - Target.
  * @param {Rng} rng - Seed.
  */
 function paintSand(cell, rng) {
-  const noise = makeNoise(rng, 6);
+  const dune = makeNoise(rng, 7);
+  const warp = makeNoise(rng, 6);
+  const grain = makeNoise(rng, 26);
   cell.shade(
     (x, y) =>
-      0.96 + 0.06 * Math.sin((y + 10 * noise(x, y)) * 0.6) + 0.04 * noise(y, x),
+      (0.93 + 0.14 * dune(x, y)) *
+      (1 + 0.075 * Math.sin((y + 16 * warp(x, y)) * 0.5)) *
+      (0.985 + 0.03 * grain(x, y)),
   );
+  for (let i = 0; i < 8; i++) {
+    const y = rng.range(0, CELL);
+    cell.line(0, y, CELL - 1, y + rng.range(-8, 8), i % 2 ? 1.07 : 0.93, 2);
+  }
+  for (let i = 0; i < 10; i++)
+    cell.dot(
+      Math.round(rng.range(2, CELL - 3)),
+      Math.round(rng.range(2, CELL - 3)),
+      i % 3 ? 0 : 1,
+      0.84,
+    );
 }
 
 /**
- * Snow: very soft mottle with sparkle.
+ * Snow: drifts read by their shadows, not their highlights — the base tone is
+ * already at 91 % luminance, so brightening clips while darkening the hollows
+ * gives the form. Wind ripples and a little grit finish it.
  * @param {Cell} cell - Target.
  * @param {Rng} rng - Seed.
  */
 function paintSnow(cell, rng) {
-  const noise = makeNoise(rng, 4);
-  cell.shade((x, y) => 0.95 + 0.06 * noise(x, y));
+  const drift = makeNoise(rng, 6);
+  const ripple = makeNoise(rng, 7);
+  cell.shade(
+    (x, y) =>
+      (0.88 + 0.14 * drift(x, y)) *
+      (1 + 0.035 * Math.sin((x + 18 * ripple(x, y)) * 0.42)),
+  );
+  for (let i = 0; i < 16; i++)
+    cell.blob(
+      rng.range(0, CELL),
+      rng.range(0, CELL),
+      rng.range(6, 13),
+      rng.range(4, 9),
+      0.92,
+    );
+  for (let i = 0; i < 12; i++)
+    cell.blob(
+      rng.range(0, CELL),
+      rng.range(0, CELL),
+      rng.range(4, 9),
+      rng.range(3, 7),
+      1.04,
+    );
+  for (let i = 0; i < 7; i++) {
+    const y = rng.range(0, CELL);
+    cell.line(0, y, CELL - 1, y + rng.range(-10, 10), 0.93, 1);
+  }
   for (let i = 0; i < 10; i++)
     cell.dot(
-      Math.round(rng.range(1, CELL - 2)),
-      Math.round(rng.range(1, CELL - 2)),
+      Math.round(rng.range(2, CELL - 3)),
+      Math.round(rng.range(2, CELL - 3)),
       0,
-      1.06,
+      i % 2 ? 0.78 : 1.04,
     );
 }
 
@@ -823,6 +989,14 @@ function paintWater(cell, rng) {
 function paintFoliage(cell, rng) {
   const noise = makeNoise(rng, 9);
   cell.shade((x, y) => 0.86 + 0.3 * noise(x, y));
+  for (let i = 0; i < 18; i++)
+    cell.blob(
+      rng.range(0, CELL),
+      rng.range(0, CELL),
+      rng.range(5, 11),
+      rng.range(4, 8),
+      i % 2 ? 0.85 : 1.13,
+    );
   for (let i = 0; i < 16; i++)
     cell.dot(
       Math.round(rng.range(1, CELL - 2)),

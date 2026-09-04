@@ -71,6 +71,31 @@ export const ICON_MANIFEST = {
     path: "assets/ui/icons/infestation-high.svg",
     label: "Infestation: high",
   },
+  "end-turn": { path: "assets/ui/icons/end-turn.svg", label: "End turn" },
+  interact: { path: "assets/ui/icons/interact.svg", label: "Interact" },
+  hidden: { path: "assets/ui/icons/hidden.svg", label: "Hidden" },
+  suppressed: {
+    path: "assets/ui/icons/suppressed.svg",
+    label: "Suppressed",
+  },
+  hp: { path: "assets/ui/icons/hp.svg", label: "Hit points" },
+  ap: { path: "assets/ui/icons/ap.svg", label: "Action points" },
+  armor: { path: "assets/ui/icons/armor.svg", label: "Armor" },
+  damage: { path: "assets/ui/icons/damage.svg", label: "Damage" },
+  range: { path: "assets/ui/icons/range.svg", label: "Range" },
+  "cover-low": {
+    path: "assets/ui/icons/cover-low.svg",
+    label: "Low cover",
+  },
+  "cover-high": {
+    path: "assets/ui/icons/cover-high.svg",
+    label: "High cover",
+  },
+  elevation: {
+    path: "assets/ui/icons/elevation.svg",
+    label: "Elevation",
+  },
+  ammo: { path: "assets/ui/icons/ammo.svg", label: "Ammunition / charges" },
 } as const satisfies Record<string, IconAssetEntry>;
 
 /** Union of registered icon ids. */

@@ -112,204 +112,6 @@
     "bytes": 2428
   },
   {
-    "id": "building.wall",
-    "category": "buildings",
-    "path": "assets/models/buildings/wall.glb",
-    "footprint": {
-      "w": 1,
-      "d": 0
-    },
-    "height": 1.5,
-    "sockets": [],
-    "quality": "placeholder",
-    "triangles": 24,
-    "bytes": 4480
-  },
-  {
-    "id": "building.wall-window",
-    "category": "buildings",
-    "path": "assets/models/buildings/wall-window.glb",
-    "footprint": {
-      "w": 1,
-      "d": 0
-    },
-    "height": 1.5,
-    "sockets": [],
-    "quality": "placeholder",
-    "triangles": 60,
-    "bytes": 10020
-  },
-  {
-    "id": "building.wall-door",
-    "category": "buildings",
-    "path": "assets/models/buildings/wall-door.glb",
-    "footprint": {
-      "w": 1,
-      "d": 0
-    },
-    "height": 1.5,
-    "sockets": [
-      "socket_door"
-    ],
-    "quality": "placeholder",
-    "triangles": 48,
-    "bytes": 8272
-  },
-  {
-    "id": "building.wall-half",
-    "category": "buildings",
-    "path": "assets/models/buildings/wall-half.glb",
-    "footprint": {
-      "w": 1,
-      "d": 0
-    },
-    "height": 0.5,
-    "sockets": [],
-    "quality": "placeholder",
-    "triangles": 12,
-    "bytes": 2436
-  },
-  {
-    "id": "building.floor",
-    "category": "buildings",
-    "path": "assets/models/buildings/floor.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 0.05,
-    "sockets": [],
-    "quality": "placeholder",
-    "triangles": 12,
-    "bytes": 2436
-  },
-  {
-    "id": "building.roof",
-    "category": "buildings",
-    "path": "assets/models/buildings/roof.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 0.05,
-    "sockets": [],
-    "quality": "placeholder",
-    "triangles": 12,
-    "bytes": 2432
-  },
-  {
-    "id": "building.roof-parapet",
-    "category": "buildings",
-    "path": "assets/models/buildings/roof-parapet.glb",
-    "footprint": {
-      "w": 1,
-      "d": 0
-    },
-    "height": 0.15,
-    "sockets": [],
-    "quality": "placeholder",
-    "triangles": 12,
-    "bytes": 2472
-  },
-  {
-    "id": "building.stairs",
-    "category": "buildings",
-    "path": "assets/models/buildings/stairs.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 1.5,
-    "sockets": [],
-    "quality": "placeholder",
-    "triangles": 96,
-    "bytes": 15816
-  },
-  {
-    "id": "prop.barrier-concrete",
-    "category": "props",
-    "path": "assets/models/props/barrier-concrete.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 0.5,
-    "sockets": [],
-    "quality": "placeholder",
-    "triangles": 36,
-    "bytes": 6488
-  },
-  {
-    "id": "prop.sandbags",
-    "category": "props",
-    "path": "assets/models/props/sandbags.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 0.48,
-    "sockets": [],
-    "quality": "placeholder",
-    "triangles": 96,
-    "bytes": 15576
-  },
-  {
-    "id": "prop.dumpster",
-    "category": "props",
-    "path": "assets/models/props/dumpster.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 1,
-    "sockets": [],
-    "quality": "placeholder",
-    "triangles": 36,
-    "bytes": 6684
-  },
-  {
-    "id": "prop.car-sedan",
-    "category": "props",
-    "path": "assets/models/props/car-sedan.glb",
-    "footprint": {
-      "w": 2,
-      "d": 1
-    },
-    "height": 0.82,
-    "sockets": [],
-    "quality": "placeholder",
-    "triangles": 164,
-    "bytes": 23156
-  },
-  {
-    "id": "prop.lamp-post",
-    "category": "props",
-    "path": "assets/models/props/lamp-post.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 2.65,
-    "sockets": [],
-    "quality": "placeholder",
-    "triangles": 80,
-    "bytes": 11820
-  },
-  {
-    "id": "prop.hydrant",
-    "category": "props",
-    "path": "assets/models/props/hydrant.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 0.6,
-    "sockets": [],
-    "quality": "placeholder",
-    "triangles": 76,
-    "bytes": 10464
-  },
-  {
     "id": "tile.ground.sand",
     "category": "tiles",
     "path": "assets/models/tiles/ground-sand.glb",
@@ -366,146 +168,6 @@
     "bytes": 4456
   },
   {
-    "id": "prop.crate",
-    "category": "props",
-    "path": "assets/models/props/crate.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 0.6,
-    "sockets": [],
-    "quality": "placeholder",
-    "triangles": 36,
-    "bytes": 6308
-  },
-  {
-    "id": "prop.shelving",
-    "category": "props",
-    "path": "assets/models/props/shelving.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 1,
-    "sockets": [],
-    "quality": "placeholder",
-    "triangles": 120,
-    "bytes": 19452
-  },
-  {
-    "id": "prop.fence",
-    "category": "props",
-    "path": "assets/models/props/fence.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 0.5,
-    "sockets": [],
-    "quality": "placeholder",
-    "triangles": 60,
-    "bytes": 9240
-  },
-  {
-    "id": "prop.boulder",
-    "category": "props",
-    "path": "assets/models/props/boulder.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 1.05,
-    "sockets": [],
-    "quality": "placeholder",
-    "triangles": 92,
-    "bytes": 11316
-  },
-  {
-    "id": "prop.cactus",
-    "category": "props",
-    "path": "assets/models/props/cactus.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 1.3,
-    "sockets": [],
-    "quality": "placeholder",
-    "triangles": 120,
-    "bytes": 16156
-  },
-  {
-    "id": "prop.car-compact",
-    "category": "props",
-    "path": "assets/models/props/car-compact.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 0.76,
-    "sockets": [],
-    "quality": "placeholder",
-    "triangles": 164,
-    "bytes": 23148
-  },
-  {
-    "id": "prop.tree-pine",
-    "category": "props",
-    "path": "assets/models/props/tree-pine.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 2.1,
-    "sockets": [],
-    "quality": "placeholder",
-    "triangles": 60,
-    "bytes": 10252
-  },
-  {
-    "id": "prop.tree-oak",
-    "category": "props",
-    "path": "assets/models/props/tree-oak.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 1.9,
-    "sockets": [],
-    "quality": "placeholder",
-    "triangles": 184,
-    "bytes": 21260
-  },
-  {
-    "id": "prop.tree-palm",
-    "category": "props",
-    "path": "assets/models/props/tree-palm.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 2,
-    "sockets": [],
-    "quality": "placeholder",
-    "triangles": 96,
-    "bytes": 16176
-  },
-  {
-    "id": "bug.brute",
-    "category": "bugs",
-    "path": "assets/models/bugs/bug-brute.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 1.95,
-    "sockets": [],
-    "quality": "final",
-    "triangles": 662,
-    "bytes": 64916
-  },
-  {
     "id": "bug.egg-spawner",
     "category": "props",
     "path": "assets/models/props/egg-spawner.glb",
@@ -522,32 +184,242 @@
     "bytes": 63784
   },
   {
-    "id": "bug.lurker",
-    "category": "bugs",
-    "path": "assets/models/bugs/bug-lurker.glb",
+    "id": "building.floor",
+    "category": "buildings",
+    "path": "assets/models/buildings/floor.glb",
     "footprint": {
       "w": 1,
       "d": 1
     },
-    "height": 1.35,
+    "height": 0.05,
     "sockets": [],
     "quality": "final",
-    "triangles": 720,
-    "bytes": 69868
+    "triangles": 60,
+    "bytes": 8452
   },
   {
-    "id": "bug.swarmer",
-    "category": "bugs",
-    "path": "assets/models/bugs/bug-swarmer.glb",
+    "id": "building.roof",
+    "category": "buildings",
+    "path": "assets/models/buildings/roof.glb",
     "footprint": {
       "w": 1,
       "d": 1
     },
-    "height": 0.54,
+    "height": 0.05,
     "sockets": [],
     "quality": "final",
-    "triangles": 530,
-    "bytes": 60712
+    "triangles": 12,
+    "bytes": 2220
+  },
+  {
+    "id": "building.roof-parapet",
+    "category": "buildings",
+    "path": "assets/models/buildings/roof-parapet.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 0.15,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 56,
+    "bytes": 6604
+  },
+  {
+    "id": "building.stairs",
+    "category": "buildings",
+    "path": "assets/models/buildings/stairs.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.5,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 120,
+    "bytes": 15400
+  },
+  {
+    "id": "building.wall-half",
+    "category": "buildings",
+    "path": "assets/models/buildings/wall-half.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 0.5,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 56,
+    "bytes": 6592
+  },
+  {
+    "id": "prop.barrier-concrete",
+    "category": "props",
+    "path": "assets/models/props/barrier-concrete.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.5,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 156,
+    "bytes": 15816
+  },
+  {
+    "id": "prop.boulder",
+    "category": "props",
+    "path": "assets/models/props/boulder.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.01,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 82,
+    "bytes": 8716
+  },
+  {
+    "id": "prop.cactus",
+    "category": "props",
+    "path": "assets/models/props/cactus.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.37,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 204,
+    "bytes": 21296
+  },
+  {
+    "id": "prop.car-compact",
+    "category": "props",
+    "path": "assets/models/props/car-compact.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.74,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 240,
+    "bytes": 26480
+  },
+  {
+    "id": "prop.car-sedan",
+    "category": "props",
+    "path": "assets/models/props/car-sedan.glb",
+    "footprint": {
+      "w": 2,
+      "d": 1
+    },
+    "height": 0.8,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 284,
+    "bytes": 30328
+  },
+  {
+    "id": "prop.crate",
+    "category": "props",
+    "path": "assets/models/props/crate.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.6,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 148,
+    "bytes": 16772
+  },
+  {
+    "id": "prop.dumpster",
+    "category": "props",
+    "path": "assets/models/props/dumpster.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.79,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 216,
+    "bytes": 23156
+  },
+  {
+    "id": "prop.fence",
+    "category": "props",
+    "path": "assets/models/props/fence.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.5,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 48,
+    "bytes": 6468
+  },
+  {
+    "id": "prop.hydrant",
+    "category": "props",
+    "path": "assets/models/props/hydrant.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.61,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 184,
+    "bytes": 18312
+  },
+  {
+    "id": "prop.lamp-post",
+    "category": "props",
+    "path": "assets/models/props/lamp-post.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 2.63,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 140,
+    "bytes": 14744
+  },
+  {
+    "id": "prop.sandbags",
+    "category": "props",
+    "path": "assets/models/props/sandbags.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.47,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 196,
+    "bytes": 23080
+  },
+  {
+    "id": "prop.shelving",
+    "category": "props",
+    "path": "assets/models/props/shelving.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 108,
+    "bytes": 14300
   },
   {
     "id": "prop.table",
@@ -562,6 +434,48 @@
     "quality": "final",
     "triangles": 140,
     "bytes": 17336
+  },
+  {
+    "id": "prop.tree-oak",
+    "category": "props",
+    "path": "assets/models/props/tree-oak.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.71,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 128,
+    "bytes": 13864
+  },
+  {
+    "id": "prop.tree-palm",
+    "category": "props",
+    "path": "assets/models/props/tree-palm.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.87,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 208,
+    "bytes": 23960
+  },
+  {
+    "id": "prop.tree-pine",
+    "category": "props",
+    "path": "assets/models/props/tree-pine.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 2.05,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 104,
+    "bytes": 9924
   },
   {
     "id": "tdf.infantry.engineer",
@@ -988,5 +902,179 @@
     "quality": "final",
     "triangles": 228,
     "bytes": 24780
+  },
+  {
+    "id": "building.wall",
+    "category": "buildings",
+    "path": "assets/models/buildings/wall.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.5,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 100,
+    "bytes": 10340
+  },
+  {
+    "id": "building.wall-window",
+    "category": "buildings",
+    "path": "assets/models/buildings/wall-window.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.5,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 216,
+    "bytes": 23396
+  },
+  {
+    "id": "building.wall-panel",
+    "category": "buildings",
+    "path": "assets/models/buildings/wall-panel.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.5,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 100,
+    "bytes": 10340
+  },
+  {
+    "id": "building.wall-window-panel",
+    "category": "buildings",
+    "path": "assets/models/buildings/wall-window-panel.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.5,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 216,
+    "bytes": 23392
+  },
+  {
+    "id": "building.wall-door",
+    "category": "buildings",
+    "path": "assets/models/buildings/wall-door.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.5,
+    "sockets": [
+      "socket_door"
+    ],
+    "quality": "final",
+    "triangles": 212,
+    "bytes": 21232
+  },
+  {
+    "id": "building.wall-door-panel",
+    "category": "buildings",
+    "path": "assets/models/buildings/wall-door-panel.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.5,
+    "sockets": [
+      "socket_door"
+    ],
+    "quality": "final",
+    "triangles": 212,
+    "bytes": 21032
+  },
+  {
+    "id": "building.wall-concrete",
+    "category": "buildings",
+    "path": "assets/models/buildings/wall-concrete.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.5,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 100,
+    "bytes": 10340
+  },
+  {
+    "id": "building.wall-window-concrete",
+    "category": "buildings",
+    "path": "assets/models/buildings/wall-window-concrete.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.5,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 216,
+    "bytes": 23396
+  },
+  {
+    "id": "building.wall-door-concrete",
+    "category": "buildings",
+    "path": "assets/models/buildings/wall-door-concrete.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.5,
+    "sockets": [
+      "socket_door"
+    ],
+    "quality": "final",
+    "triangles": 212,
+    "bytes": 21032
+  },
+  {
+    "id": "bug.swarmer",
+    "category": "bugs",
+    "path": "assets/models/bugs/bug-swarmer.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.55,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 590,
+    "bytes": 68168
+  },
+  {
+    "id": "bug.lurker",
+    "category": "bugs",
+    "path": "assets/models/bugs/bug-lurker.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.35,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 732,
+    "bytes": 71372
+  },
+  {
+    "id": "bug.brute",
+    "category": "bugs",
+    "path": "assets/models/bugs/bug-brute.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.95,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 746,
+    "bytes": 75428
   }
 ]

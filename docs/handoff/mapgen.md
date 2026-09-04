@@ -1,6 +1,6 @@
 # Handoff: Map Generation Specialist
 
-Last updated: 2026-09-04 06:20 UTC (session 3, update 2). Read `docs/process/roles/mapgen.md` and ADR 0004 first.
+Last updated: 2026-09-04 06:55 UTC (session 3, update 3). Read `docs/process/roles/mapgen.md` and ADR 0004 first.
 
 ## 1. Where things stand
 
@@ -31,6 +31,13 @@ Last updated: 2026-09-04 06:20 UTC (session 3, update 2). Read `docs/process/rol
   elevation on city maps), #446 (melee bugs invert the cover rules — tactical's), #447 (the M3
   archetype sketch, with two questions to answer before anything is built) and the ruling asked for
   on #465 (should `resolveParams` reject an over-constrained recipe outright).
+- **Two bugs found outside mapgen while checking the release, both filed with evidence and neither
+  mine to fix:** #488 (p0, eng-3) — `tactical-hud-view` sends `move(unit, [clickedTile])`, a
+  one-element path, so a unit can only ever step to an orthogonally adjacent tile and every farther
+  click is refused; `pathTo` has been in `movement-service` since #325 and nothing in `src/ui` or
+  `src/app` calls it. That, not tuning and not the map, is why QA's mech "closed 14 tiles to 12 in
+  40 turns". And #487 (p2) — a deployment over 16 units cannot launch, because a deploy zone is
+  exactly `TARGET_TILES` = 16 and nothing caps the roster or the deployment screen.
 - **M2 issues that consume the map** (#316–#345 filed by the Producer): I left the exact APIs as
   comments on #323 (mission start), #325 (movement), #326 (sight and cover), #329 (spawning). #337
   reuses `graphics/view/tactical-map-view.ts`; #343 (headless sim) needs nothing new.
@@ -90,6 +97,13 @@ takes ~260 ms. Heavy recipes (8 egg spawners, 6 edge spawns) generate on small a
 with zero relocations.
 
 ## 3a. The tactical audit (2026-09-04)
+
+**Read the size note first.** Missions do not all use their type's `mapSize`: `mapSizeFor` in
+`overworld/service/mission-generation-service.ts` picks by difficulty — `small` 32² below 4,
+`medium` 48² below 8, `large` 64² above — so an early campaign plays **small** maps and everything
+in this section except the last table is measured on **medium**. The small-map read-outs are at the
+end of §3a. The smallest map any mission can ask for is 32²; 16² is reachable only from a
+hand-built `MapDimensions`, which is why #465 could not bite the release.
 
 Everything below was measured on `main` at `9b15c69` through the real tactical services
 (`sight-service.hasLineOfSight`, `ReachabilityService`, `TileIndex`), medium maps, 6–8 seeds per
@@ -160,6 +174,27 @@ standing disadvantage with no counterplay. Filed as a design call with three opt
 outdoor feature per few blocks is the cheap one); not built, waiting on the Director. Also measured:
 8/18 coastal-rural and 11–12/18 desert/temperate-rural spawners have no elevated firing position at
 all, which reads as biome variety rather than a gap.
+
+**What a small map plays like (32², 6 seeds per biome × settlement, difficulty 1–3 recipes).** This
+is what the Executive Director actually sees early in a campaign; the walk-in is the friendlier end
+of the medium numbers.
+
+| small 32² | rural | town | city |
+|---|---|---|---|
+| steps to the nearest objective | 26 | 29 | 23 |
+| steps from the nearest edge spawn | 34 | 33 | 27 |
+| firing positions per objective | 90 | 92 | 80 |
+| of those, in cover / shooting down | 8 % / 15 % | 9 % / 22 % | 14 % / 16 % |
+| open ground with cover on ≥ 1 side / ≥ 2 | 18 % / 4 % | 22 % / 4 % | 32 % / 5 % |
+| mech levels reachable | 2–4 | 2–4 | 1 |
+
+600 small-map generations of the live difficulty-1–3 recipes: zero failures.
+
+**The map is not why a mech cannot close on a spawner.** Tiles a mech can reach from deploy, inside
+its range of 10, sight line clear: 0 of 18 spawners per biome × settlement had no mech firing
+position, about 90 per spawner on average (worst seed 2), the nearest 20–44 mech steps from deploy.
+Two thirds of spawners are indoors and a mech can never stand on one — it shoots them through
+windows. The cause was #488.
 
 ## 4. What M2 (tactical) consumes
 

@@ -18,6 +18,14 @@ const SIZES = ["small", "medium"] as const;
 const SEEDS = 4;
 
 /**
+ * Seeds for the firing-position sweep alone. Before #544 a spawner landed
+ * where no mech could shoot it on about one map in seventy-five, so four
+ * seeds passed that guarantee on luck; the other assertions here keep
+ * their original scope.
+ */
+const FIRING_SEEDS = 12;
+
+/**
  * Steps a class covers in one turn at its worst: infantry is fixed, and a
  * mech's move is `clamp(baseMove + mobility, minMove, maxMove)`, so the
  * floor is `minMove` however poor its legs.
@@ -116,6 +124,37 @@ describe("objective reachability on shipped mission maps (#345)", () => {
       }
     }
   });
+
+  it("keeps every spawner shootable across a wider spread of seeds (#544)", () => {
+    for (const settlement of SETTLEMENTS) {
+      for (const size of SIZES) {
+        for (let seed = 0; seed < FIRING_SEEDS; seed++) {
+          const label = `${settlement}/${size}/${String(seed)}`;
+          const recipe = missionToMapRecipe(
+            mission(`firing-${label}`, settlement, size),
+            MISSION_TYPES["infestation-clearance"],
+            createDefaultRegistries(),
+          );
+          expect(recipe.ok, `${label} recipe`).toBe(true);
+          if (!recipe.ok) continue;
+          const map = generateTacticalMap(recipe.value, {
+            registries: createDefaultRegistries(),
+          });
+          for (const approach of objectiveApproach(map)) {
+            const at = `${label} obj${String(approach.objective)}`;
+            expect(
+              approach.mechFiringSteps,
+              `${at} mech`,
+            ).toBeGreaterThanOrEqual(0);
+            expect(
+              approach.infantryFiringSteps,
+              `${at} infantry`,
+            ).toBeGreaterThanOrEqual(0);
+          }
+        }
+      }
+    }
+  }, 30_000);
 
   it("starts the nearest spawner inside a turn budget a player would sit through", () => {
     // The reported failure (#345) was a force that spent 40 turns without

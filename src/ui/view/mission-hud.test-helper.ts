@@ -3,6 +3,7 @@ import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { Unit } from "../../tactical/model/unit";
 import type { UnitTemplate } from "../../tactical/model/unit-template";
+import { emptyVision } from "../../tactical/service/vision-service";
 
 /** A template for HUD tests. */
 export function hudTemplate(
@@ -17,6 +18,7 @@ export function hudTemplate(
     maxAp: 2,
     move: 5,
     weapon: { range: 8, accuracy: 65, damage, armorPen: 0 },
+    sightRange: 12,
     armor: 0,
     passClass: "infantry",
     modelId: "tdf.infantry.rifle",
@@ -114,6 +116,7 @@ export function hudMission(
     edgeSpawn: { nextTurn: 3, wave: 0 },
     extraction: [{ x: 0, y: 0, z: 0 }],
     extracted: [],
+    vision: emptyVision(),
     log: [],
     ...overrides,
   };

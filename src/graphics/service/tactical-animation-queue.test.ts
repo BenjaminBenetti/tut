@@ -2,6 +2,7 @@ import { Object3D, Texture } from "three";
 import { describe, expect, it } from "vitest";
 
 import type { TileCoord } from "../../mapgen/model/tile-coord";
+import { MODEL_MANIFEST } from "../data/model-manifest";
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { SpriteSource } from "../model/sprite-source";
 import { tileTopCentre } from "../view/tactical-map-view";
@@ -28,6 +29,10 @@ function scene(): AnimationScene & { objects: Map<string, Object3D> } {
     objects,
     unitObject: (id) => objects.get(id),
     tileWorldPosition: (tile: TileCoord) => tileTopCentre(tile),
+    // A mech-sized unit: tall enough that a fixed lift above the feet would
+    // put its damage number inside the model, which is the bug #514 fixed.
+    unitHeight: (id) => (objects.has(id) ? 2.8 : undefined),
+    unitModelId: (id) => (objects.has(id) ? "tdf.mech.assembled-b" : undefined),
   };
 }
 
@@ -37,7 +42,9 @@ const sprites: SpriteSource = {
 
 const TIMING = {
   stepSeconds: 0.1,
-  attackSeconds: 0.2,
+  flashSeconds: 0.1,
+  tracerSeconds: 0.1,
+  impactSeconds: 0.1,
   floaterSeconds: 0.2,
   deathSeconds: 0.2,
 };
@@ -117,8 +124,8 @@ describe("TacticalAnimationQueue", () => {
     queue.update(0.2);
     expect(order).toEqual(["first"]);
     queue.update(0.05);
-    // The attack has spawned its billboards: flash, impact and floater.
-    expect(queue.root.children.length).toBe(3);
+    // The attack has spawned its billboards: flash, tracer, impact and floater.
+    expect(queue.root.children.length).toBe(4);
     queue.update(1);
     expect(order).toEqual(["first", "second"]);
     expect(queue.root.children).toHaveLength(0);
@@ -179,5 +186,108 @@ describe("TacticalAnimationQueue", () => {
       done = false;
     });
     expect(done).toBe(false);
+  });
+  it("floats the damage number above the unit, never inside it (#514)", () => {
+    const s = scene();
+    const queue = new TacticalAnimationQueue({
+      scene: s,
+      sprites,
+      timing: TIMING,
+    });
+    queue.enqueue([ATTACK]);
+    // Past the flash and the tracer, so the number is placed and visible.
+    queue.update(TIMING.flashSeconds + TIMING.tracerSeconds + 0.01);
+    const feet = s.objects.get("unit-2")?.position.y ?? 0;
+    const height = s.unitHeight("unit-2") ?? 0;
+    const floater = queue.root.children.find((child) =>
+      child.name.startsWith("vfx.floater"),
+    );
+    expect(floater).toBeDefined();
+    // The Executive Director's complaint: on a 2.8 u mech a fixed 0.6 u lift
+    // put the number in the legs. It has to clear the whole model.
+    expect(floater?.position.y).toBeGreaterThan(feet + height);
+  });
+
+  it("anchors text above the tallest unit model anyone can field", () => {
+    // The fixture's height is not special: nothing in the registry may poke
+    // through a damage number, so measure against the tallest of them.
+    const tallest = Math.max(
+      ...Object.values(MODEL_MANIFEST)
+        .filter(
+          (entry) => entry.category === "units" || entry.category === "bugs",
+        )
+        .map((entry) => entry.height),
+    );
+    const s = scene();
+    const heights: Record<string, number> = {
+      "unit-1": tallest,
+      "unit-2": tallest,
+    };
+    const tall: AnimationScene = { ...s, unitHeight: (id) => heights[id] };
+    const queue = new TacticalAnimationQueue({
+      scene: tall,
+      sprites,
+      timing: TIMING,
+    });
+    queue.enqueue([ATTACK]);
+    queue.update(TIMING.flashSeconds + TIMING.tracerSeconds + 0.01);
+    const feet = s.objects.get("unit-2")?.position.y ?? 0;
+    const floater = queue.root.children.find((child) =>
+      child.name.startsWith("vfx.floater"),
+    );
+    expect(floater?.position.y).toBeGreaterThan(feet + tallest);
+  });
+
+  it("shows one number at a time, so they never overlap", () => {
+    // #524 asks for overlapping numbers to stagger. They cannot overlap: the
+    // queue plays one event at a time and each attack clears its own
+    // billboards before the next starts. This test is here so that stays true.
+    const s = scene();
+    const queue = new TacticalAnimationQueue({
+      scene: s,
+      sprites,
+      timing: TIMING,
+    });
+    queue.enqueue([ATTACK, ATTACK]);
+    queue.update(TIMING.flashSeconds + TIMING.tracerSeconds + 0.01);
+    const floaters = () =>
+      queue.root.children.filter((child) =>
+        child.name.startsWith("vfx.floater"),
+      );
+    expect(floaters().length).toBe(1);
+    queue.update(5);
+    expect(floaters().length).toBe(0);
+  });
+
+  it("swings a claw instead of firing when the attacker is adjacent", () => {
+    const s = scene();
+    // Put the target one tile away: a melee strike, not a shot.
+    const next = tileTopCentre({ x: 1, y: 0, z: 0 });
+    s.objects.get("unit-2")?.position.set(next.x, next.y, next.z);
+    const queue = new TacticalAnimationQueue({
+      scene: s,
+      sprites,
+      timing: TIMING,
+    });
+    queue.enqueue([ATTACK]);
+    queue.update(0.01);
+    const names = queue.root.children.map((child) => child.name);
+    expect(names).toContain("vfx.claw-slash");
+    expect(names).not.toContain("vfx.tracer");
+    expect(names).not.toContain("vfx.muzzle-flash");
+  });
+
+  it("bursts a dying unit with the effect its model calls for", () => {
+    const s = scene();
+    const queue = new TacticalAnimationQueue({
+      scene: s,
+      sprites,
+      timing: TIMING,
+    });
+    queue.enqueue([DEATH]);
+    queue.update(0.01);
+    expect(queue.root.children.map((child) => child.name)).toContain(
+      "vfx.tdf-death",
+    );
   });
 });

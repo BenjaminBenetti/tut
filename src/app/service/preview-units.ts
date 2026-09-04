@@ -31,6 +31,7 @@ import {
   mechUnit,
   squadUnit,
 } from "../../tactical/service/unit-factory";
+import { emptyVision } from "../../tactical/service/vision-service";
 
 // ===========================================
 // Types
@@ -55,6 +56,7 @@ const PREVIEW_SWARMER: BugUnitSource = {
   move: 7,
   ap: 2,
   weapon: { range: 1, accuracy: 60, damage: 3, armorPen: 0 },
+  sightRange: 12,
   modelId: "bug.swarmer",
 };
 
@@ -163,6 +165,7 @@ export function previewMission(map: TacticalMap): TacticalState {
     edgeSpawn: { nextTurn: SPAWN_TUNING.firstWaveTurn, wave: 0 },
     extraction: map.hooks.extraction.tiles,
     extracted: [],
+    vision: emptyVision(),
     log: [],
   };
 }

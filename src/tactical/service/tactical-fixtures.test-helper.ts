@@ -8,6 +8,7 @@ import type { TacticalContext } from "../model/tactical-handler";
 import type { TacticalState } from "../model/tactical-state";
 import type { PassClass, Team, Unit, UnitStatus } from "../model/unit";
 import type { UnitTemplate } from "../model/unit-template";
+import { emptyVision } from "./vision-service";
 
 // ===========================================
 // Templates
@@ -42,6 +43,7 @@ function template(id: string, passClass: PassClass): UnitTemplate {
     maxAp: 2,
     move: 3,
     weapon: { range: 5, accuracy: 60, damage: 3, armorPen: 0 },
+    sightRange: 8,
     armor: 0,
     passClass,
     modelId:
@@ -129,6 +131,7 @@ export function missionWith(
     edgeSpawn: { nextTurn: 3, wave: 0 },
     extraction: [],
     extracted: [],
+    vision: emptyVision(),
     log: [],
     ...options,
   };

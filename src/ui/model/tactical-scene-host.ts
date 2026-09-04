@@ -43,6 +43,12 @@ export interface TacticalSceneHost {
   /** Shows the overlays for a selected unit, or clears them. */
   select(unitId: UnitId | undefined): void;
 
+  /**
+   * Shows or hides the weapon-range outline (#522). The screen owns the
+   * toggle so the state survives a re-selection; the scene only draws.
+   */
+  setWeaponRangeVisible(visible: boolean): void;
+
   /** Tears the scene down. Safe to call when not attached. */
   release(): void;
 }

@@ -8,12 +8,16 @@ import { PICKING_TUNING } from "../../graphics/controller/picking-controller";
 import type { SceneCamera } from "../../graphics/model/scene-camera";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { TacticalIntent } from "../model/tactical-intent";
+import { ACTION_BAR_ORDER } from "../model/tactical-intent";
 import type {
   CameraInput,
   TacticalInputSurface,
   TacticalPicker,
 } from "./tactical-input-controller";
-import { TacticalInputController } from "./tactical-input-controller";
+import {
+  TACTICAL_SHORTCUTS,
+  TacticalInputController,
+} from "./tactical-input-controller";
 
 type Listener = (event: unknown) => void;
 
@@ -212,6 +216,7 @@ describe("TacticalInputController", () => {
     key("Tab");
     key("Escape");
     key("t");
+    key("v");
     key("x");
     key("i");
     key("z");
@@ -223,6 +228,7 @@ describe("TacticalInputController", () => {
       { kind: "action", action: "next-unit" },
       { kind: "action", action: "cancel" },
       { kind: "action", action: "next-target" },
+      { kind: "action", action: "toggle-range" },
       { kind: "action", action: "extract" },
       { kind: "action", action: "interact" },
     ]);
@@ -288,5 +294,133 @@ describe("TacticalInputController", () => {
     expect(picker.selectedSpawner).toBe("spawner-1");
     expect(hooks.spawnerScreenPosition("spawner-1")).toBeDefined();
     expect(hooks.spawnerScreenPosition("nobody")).toBeUndefined();
+  });
+});
+
+// ===========================================
+// Right click invokes, number keys arm (#520)
+// ===========================================
+
+describe("TacticalInputController pointer buttons", () => {
+  /** A press and release of one button at a client position. */
+  function click(
+    surface: ReturnType<typeof setup>["surface"],
+    button: number,
+    clientX: number,
+  ): void {
+    surface.dispatch("pointerdown", { clientX, clientY: 200, button });
+    surface.dispatch("pointerup", { clientX, clientY: 200, button });
+  }
+
+  it("left click selects and never invokes", () => {
+    const { intents, surface } = setup();
+    click(surface, 0, 20);
+    click(surface, 0, 200);
+    expect(intents).toEqual([
+      { kind: "select-unit", unitId: "u1" },
+      { kind: "select-tile", tile: { x: 2, y: 0, z: 2 } },
+    ]);
+  });
+
+  it("right click invokes at the cursor and selects nothing", () => {
+    const { intents, picker, surface } = setup();
+    click(surface, 2, 200);
+    expect(intents).toEqual([
+      { kind: "invoke", target: { kind: "tile", tile: { x: 2, y: 0, z: 2 } } },
+    ]);
+    // Invoking must not move the selection highlight.
+    expect(picker.selected).toBeUndefined();
+  });
+
+  it("right click invokes on a unit and on an egg spawner too", () => {
+    const { intents, surface } = setup();
+    click(surface, 2, 20);
+    click(surface, 2, 320);
+    expect(intents).toEqual([
+      { kind: "invoke", target: { kind: "unit", unitId: "u1" } },
+      { kind: "invoke", target: { kind: "spawner", spawnerId: "spawner-1" } },
+    ]);
+  });
+
+  it("a right drag invokes nothing, like a left drag selects nothing", () => {
+    const { intents, surface } = setup();
+    surface.dispatch("pointerdown", { clientX: 200, clientY: 200, button: 2 });
+    surface.dispatch("pointerup", {
+      clientX: 200 + PICKING_TUNING.clickSlopPx + 5,
+      clientY: 200,
+      button: 2,
+    });
+    expect(intents).toEqual([]);
+  });
+
+  it("suppresses the browser menu on the viewport, and only while attached", () => {
+    const { controller, surface } = setup();
+    let prevented = 0;
+    surface.dispatch("contextmenu", {
+      preventDefault: () => {
+        prevented += 1;
+      },
+    });
+    expect(prevented).toBe(1);
+    // The listener is on the surface, not the document, so the rest of
+    // the app keeps its right-click menu.
+    expect(surface.ownerDocument.listeners.get("contextmenu")).toBeUndefined();
+    controller.detach();
+    surface.dispatch("contextmenu", {
+      preventDefault: () => {
+        prevented += 1;
+      },
+    });
+    expect(prevented).toBe(1);
+  });
+
+  it("binds the number row to the action bar in order", () => {
+    const { intents, surface } = setup();
+    for (const key of ["1", "2", "3", "4", "5", "6", "7"]) {
+      surface.ownerDocument.dispatch("keydown", {
+        key,
+        preventDefault: () => undefined,
+      });
+    }
+    expect(intents).toEqual([
+      { kind: "action", action: "move" },
+      { kind: "action", action: "attack" },
+      { kind: "action", action: "overwatch" },
+      { kind: "action", action: "reload" },
+      { kind: "action", action: "interact" },
+      { kind: "action", action: "extract" },
+      // The bar's last button is End turn, so its digit is End Turn.
+      { kind: "end-turn" },
+    ]);
+  });
+
+  it("keeps every letter shortcut from #340 working alongside the digits", () => {
+    const { intents, surface } = setup();
+    for (const key of ["m", "a", "o", "r", "i", "x", "enter"]) {
+      surface.ownerDocument.dispatch("keydown", {
+        key,
+        preventDefault: () => undefined,
+      });
+    }
+    expect(
+      intents.map((i) => (i.kind === "action" ? i.action : i.kind)),
+    ).toEqual([
+      "move",
+      "attack",
+      "overwatch",
+      "reload",
+      "interact",
+      "extract",
+      "end-turn",
+    ]);
+  });
+
+  it("has one digit per action-bar button, with no gaps", () => {
+    const digits = Object.keys(TACTICAL_SHORTCUTS).filter((key) =>
+      /^[0-9]$/.test(key),
+    );
+    expect(digits.sort()).toEqual(
+      ACTION_BAR_ORDER.map((_, i) => String(i + 1)).sort(),
+    );
   });
 });

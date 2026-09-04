@@ -15,6 +15,8 @@ export interface InfantryUnitTuning {
   readonly armor: number;
   /** Weapon shape; `damage` here is per point of the type's `combatRating`. */
   readonly weapon: WeaponProfile;
+  /** Tiles a unit of this class sees (ADR 0006); longer than its weapon range. */
+  readonly sightRange: number;
   /** Model per squad type; types missing here draw `fallbackModelId`. */
   readonly modelIdByType: Readonly<Record<SquadTypeId, ModelAssetId>>;
   readonly fallbackModelId: ModelAssetId;
@@ -43,6 +45,8 @@ export interface MechUnitTuning {
   readonly maxMove: number;
   /** Weapon shape; `damage` scales sheet `firepower`, `accuracy` is the base the sheet's modifier adds to. */
   readonly weapon: WeaponProfile;
+  /** Tiles a unit of this class sees (ADR 0006); longer than its weapon range. */
+  readonly sightRange: number;
   readonly modelId: ModelAssetId;
   /** Shots a mech fires before it must vent heat (#409). Positive integer. */
   readonly charges: number;

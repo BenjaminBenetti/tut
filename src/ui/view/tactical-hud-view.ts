@@ -12,6 +12,7 @@ import type { ObjectiveTuning } from "../../tactical/model/objective-tuning";
 import { reload } from "../../tactical/model/reload-command";
 import type { TacticalCommand } from "../../tactical/model/tactical-command";
 import type { TacticalError } from "../../tactical/model/tactical-error";
+import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { Team, Unit, UnitId } from "../../tactical/model/unit";
 import {
@@ -26,11 +27,21 @@ import {
 } from "../../tactical/service/movement-service";
 import type { ReachableObjective } from "../../tactical/service/objective-service";
 import { reachableObjectives } from "../../tactical/service/objective-service";
-import type { TacticalIntent } from "../model/tactical-intent";
-import type { ActionBarAction } from "./action-bar-view";
+import type {
+  ActionBarAction,
+  TacticalAction,
+  TacticalIntent,
+  TacticalInvokeTarget,
+} from "../model/tactical-intent";
 import { ActionBarView } from "./action-bar-view";
 import { HitPreviewView } from "./hit-preview-view";
 import { ObjectiveTrackerView } from "./objective-tracker-view";
+import type {
+  PhaseAnnouncement,
+  PhaseBannerOptions,
+} from "./phase-banner-view";
+import { PhaseBannerView } from "./phase-banner-view";
+import { TURN_STARTED } from "../../tactical/model/turn-started-event";
 import { TurnBannerView } from "./turn-banner-view";
 import { UnitCardView } from "./unit-card-view";
 
@@ -38,8 +49,16 @@ import { UnitCardView } from "./unit-card-view";
 // Types
 // ===========================================
 
-/** Which action is armed on the selected unit. */
-export type HudMode = "select" | "move" | "attack";
+/**
+ * Which action a click on the map performs. There is always one armed:
+ * moving is what a player does most, so it is the resting state and no
+ * mode has to be chosen before walking a unit (#519). Picking Attack
+ * arms it until it is used or cancelled, and then Move comes back.
+ */
+export type HudMode = "move" | "attack";
+
+/** The action the HUD falls back to: a click on a reachable tile walks there. */
+export const DEFAULT_HUD_MODE: HudMode = "move";
 
 /** What the HUD reports back to its owner. */
 export interface TacticalHudHandlers {
@@ -55,6 +74,8 @@ export interface TacticalHudDeps {
   readonly combatTuning: CombatTuning;
   /** Tuning handed to `reachableObjectives`; the HUD judges no distance itself. */
   readonly objectiveTuning: ObjectiveTuning;
+  /** Hold time and timers for the phase banner; the defaults are the DOM's. */
+  readonly phaseBanner?: PhaseBannerOptions;
 }
 
 /** Which team acts in which phase. */
@@ -97,6 +118,7 @@ export class TacticalHudView {
   /** The map `graph` was built from; a new mission's map rebuilds it. */
   private graphFor: TacticalState["map"] | undefined;
   private readonly banner: TurnBannerView;
+  private readonly phases: PhaseBannerView;
   private readonly card = new UnitCardView();
   private readonly preview: HitPreviewView;
   private readonly objectives = new ObjectiveTrackerView();
@@ -105,7 +127,8 @@ export class TacticalHudView {
   private mission: TacticalState | undefined;
   private selected: UnitId | undefined;
   private target: UnitId | undefined;
-  private mode: HudMode = "select";
+  private mode: HudMode = DEFAULT_HUD_MODE;
+  private weaponRangeVisible = true;
 
   // ===========================================
   // Constructor
@@ -116,6 +139,7 @@ export class TacticalHudView {
     this.handlers = handlers;
     this.deps = deps;
     this.banner = new TurnBannerView({ onBack: () => handlers.onBack() });
+    this.phases = new PhaseBannerView(deps.phaseBanner);
     this.preview = new HitPreviewView({
       onConfirm: () => {
         this.confirmAttack();
@@ -150,20 +174,31 @@ export class TacticalHudView {
     this.objectives.mount(side);
     this.actions.mount(bottom);
     hud.append(top, side, bottom);
+    this.phases.mount(hud);
     parent.appendChild(hud);
     this.root = hud;
     this.refresh();
   }
 
-  /** Renders `mission`, dropping a selection or target that is gone, dead or destroyed. */
-  update(mission: TacticalState | undefined): void {
+  /**
+   * Renders `mission`, dropping a selection or target that is gone, dead
+   * or destroyed, and announces any phase change in `events` (#523). One
+   * `EndTurn` can carry both the bug phase and the player's next turn,
+   * which is why the banner takes the whole batch in order rather than a
+   * diff of two states.
+   */
+  update(
+    mission: TacticalState | undefined,
+    events: readonly TacticalEvent[] = [],
+  ): void {
     this.mission = mission;
+    this.phases.announce(phaseChangesIn(events));
     const aliveUnit = (id: UnitId | undefined): boolean =>
       id !== undefined &&
       (mission?.units.some((u) => u.id === id && u.hp > 0) ?? false);
     if (!aliveUnit(this.selected)) {
       this.selected = undefined;
-      this.mode = "select";
+      this.mode = DEFAULT_HUD_MODE;
     }
     // The target may be an egg spawner (#426), which is not in `units`.
     const target =
@@ -183,6 +218,7 @@ export class TacticalHudView {
 
   /** Removes the HUD. */
   unmount(): void {
+    this.phases.unmount();
     this.actions.unmount();
     this.objectives.unmount();
     this.preview.unmount();
@@ -206,6 +242,11 @@ export class TacticalHudView {
     return this.mode;
   }
 
+  /** Whether the weapon-range outline should be drawn (#522); on by default. */
+  isWeaponRangeVisible(): boolean {
+    return this.weaponRangeVisible;
+  }
+
   /** The enemy being previewed — a unit or an egg spawner (#426) — if any. */
   getTargetUnitId(): UnitId | undefined {
     return this.target;
@@ -225,9 +266,11 @@ export class TacticalHudView {
         this.selectUnit(intent.spawnerId);
         return;
       case "select-tile":
-        if (this.mode === "move" && this.selected !== undefined) {
-          this.moveTo(intent.tile);
-        }
+        // Left click points, it never acts (#520). Invoking is the right
+        // button's job, below.
+        return;
+      case "invoke":
+        this.invokeAt(intent.target);
         return;
       case "action":
         this.handleAction(intent.action);
@@ -241,6 +284,40 @@ export class TacticalHudView {
   // ===========================================
   // Private Methods
   // ===========================================
+
+  /**
+   * Carries out the armed action wherever the right button landed
+   * (#520): Move walks to a tile, Attack fires on a unit or an egg
+   * spawner. A target the armed action cannot use is ignored rather than
+   * guessed at — right-clicking an enemy while Move is armed does not
+   * walk into it, and right-clicking bare ground while Attack is armed
+   * does not shoot the floor.
+   *
+   * ```
+   *   move   + tile           ──► moveTo(tile)
+   *   attack + unit/spawner   ──► fire on it
+   *   anything else           ──► ignored
+   * ```
+   *
+   * It invokes the *armed* action and nothing else. Since #519 made Move
+   * the resting state, that reads in play as "right click walks, unless
+   * you armed Attack" — the two issues meet here: #519 chose the default
+   * action, this one chose the button that commits it.
+   */
+  private invokeAt(target: TacticalInvokeTarget): void {
+    if (this.selected === undefined) {
+      return;
+    }
+    if (this.mode === "attack") {
+      if (target.kind !== "tile") {
+        this.fireAt(target.kind === "unit" ? target.unitId : target.spawnerId);
+      }
+      return;
+    }
+    if (this.mode === "move" && target.kind === "tile") {
+      this.moveTo(target.tile);
+    }
+  }
 
   /**
    * Walks the selected unit to a clicked tile (#488). The rules compute
@@ -262,6 +339,13 @@ export class TacticalHudView {
     if (!mission || this.selected === undefined) {
       return;
     }
+    // Move is armed by default now (#519), so a tile click reaches here
+    // with anything selected — including a bug the player tapped to read
+    // its card. Only the acting side walks; the rest is a quiet no-op
+    // rather than a refusal the player did not ask for.
+    if (!this.canAct()) {
+      return;
+    }
     const path = pathTo(
       mission,
       this.selected,
@@ -272,7 +356,7 @@ export class TacticalHudView {
       this.showStatus("That tile is out of reach this turn.");
       return;
     }
-    this.mode = "select";
+    this.mode = DEFAULT_HUD_MODE;
     if (path.length > 0) {
       this.handlers.onCommand(move(this.selected, path));
     }
@@ -318,19 +402,28 @@ export class TacticalHudView {
     }
     this.selected = unitId;
     this.target = undefined;
-    this.mode = "select";
+    this.mode = DEFAULT_HUD_MODE;
     this.refresh();
   }
 
-  /** Arms, cancels, cycles or dispatches per the action. */
-  private handleAction(
-    action: ActionBarAction | "next-unit" | "next-target" | "cancel",
-  ): void {
+  /**
+   * Arms, cancels, cycles or dispatches per the action.
+   *
+   * It takes **both** vocabularies, because neither contains the other:
+   * the bar has `end-turn` and no `toggle-range` (#522 gave that a key
+   * and no button), while the keyboard has `next-unit`, `next-target`
+   * and `cancel` and no button of their own. #520 binds the number row
+   * to `ACTION_BAR_ORDER` alone, so the two sets stay deliberately
+   * different and this is the one place they meet.
+   */
+  private handleAction(action: TacticalAction | ActionBarAction): void {
     switch (action) {
       case "move":
       case "attack":
         if (this.canAct()) {
-          this.mode = this.mode === action ? "select" : action;
+          // Pressing the armed action again disarms it, which for Move
+          // means staying on Move: there is nothing quieter to fall to.
+          this.mode = this.mode === action ? DEFAULT_HUD_MODE : action;
           this.target = undefined;
         }
         break;
@@ -360,7 +453,7 @@ export class TacticalHudView {
         this.handlers.onCommand(endTurn());
         break;
       case "cancel":
-        this.mode = "select";
+        this.mode = DEFAULT_HUD_MODE;
         this.target = undefined;
         break;
       case "next-unit":
@@ -369,8 +462,23 @@ export class TacticalHudView {
       case "next-target":
         this.selectNextTarget();
         break;
+      case "toggle-range":
+        this.weaponRangeVisible = !this.weaponRangeVisible;
+        break;
     }
     this.refresh();
+  }
+
+  /**
+   * Fires the armed attack at whatever the right button landed on,
+   * without needing the preview confirmed first: right click is the
+   * commit gesture (#520). An illegal shot is dispatched and refused by
+   * the rules, so the reason lands in the status line rather than the
+   * click being swallowed.
+   */
+  private fireAt(targetId: string): void {
+    this.target = targetId;
+    this.confirmAttack();
   }
 
   /** Dispatches the previewed attack and clears the preview. */
@@ -380,7 +488,7 @@ export class TacticalHudView {
     }
     this.handlers.onCommand(attack(this.selected, this.target));
     this.target = undefined;
-    this.mode = "select";
+    this.mode = DEFAULT_HUD_MODE;
     this.refresh();
   }
 
@@ -402,7 +510,7 @@ export class TacticalHudView {
     if (next) {
       this.selected = next.id;
       this.target = undefined;
-      this.mode = "select";
+      this.mode = DEFAULT_HUD_MODE;
     }
   }
 
@@ -556,7 +664,7 @@ export class TacticalHudView {
     this.actions.update({
       canAct: this.canAct(),
       playerPhase: mission.phase === "player",
-      mode: this.mode === "select" ? undefined : this.mode,
+      mode: this.mode,
       reloadLabel: selected?.kind === "mech" ? "Vent" : "Reload",
       canExtract: this.canExtract(),
       canInteract: inReach !== undefined,
@@ -571,4 +679,20 @@ export class TacticalHudView {
 /** Living units on one team. */
 function countAlive(mission: TacticalState, team: Team): number {
   return mission.units.filter((u) => u.team === team && u.hp > 0).length;
+}
+
+// ===========================================
+// Events
+// ===========================================
+
+/** The phase changes in a batch of tactical events, in the order they happened. */
+function phaseChangesIn(
+  events: readonly TacticalEvent[],
+): readonly PhaseAnnouncement[] {
+  return events
+    .filter((event) => event.type === TURN_STARTED)
+    .map((event) => ({
+      phase: event.payload.phase,
+      turn: event.payload.turn,
+    }));
 }

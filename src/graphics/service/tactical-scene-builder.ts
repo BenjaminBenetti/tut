@@ -1,5 +1,5 @@
 import type { Camera, Object3D } from "three";
-import { Group, Raycaster, Vector2 } from "three";
+import { Box3, Group, Raycaster, Vector2 } from "three";
 
 import type { Vec2, Vec3 } from "../../core/model/grid";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
@@ -80,6 +80,10 @@ export class TacticalSceneBuilder
   private readonly models: ModelLoader;
   private readonly unitsGroup: Group;
   private readonly meshes = new Map<UnitId, UnitMesh>();
+  /** Model id per placed unit, so a death burst can tell a machine from a bug. */
+  private readonly modelIds = new Map<UnitId, string>();
+  /** Height per placed unit in world units, measured once when it is placed. */
+  private readonly heights = new Map<UnitId, number>();
   private readonly targetToUnit = new Map<Object3D, UnitId>();
   /** Units the latest `update` asked for; a load that finishes for a unit no longer here is discarded. */
   private readonly wanted = new Set<UnitId>();
@@ -285,6 +289,22 @@ export class TacticalSceneBuilder
     return this.meshes.get(unitId)?.object;
   }
 
+  /**
+   * The unit's height in world units, measured from its placed model, or
+   * undefined while it loads. The animation queue anchors damage numbers and
+   * impacts off this instead of a fixed lift above the feet, which put them
+   * inside the legs of anything large (#514). Measured rather than read from
+   * the manifest so this class keeps depending on the injected loader alone.
+   */
+  unitHeight(unitId: UnitId): number | undefined {
+    return this.heights.get(unitId);
+  }
+
+  /** The unit's registered model id, or undefined while it loads. */
+  unitModelId(unitId: UnitId): string | undefined {
+    return this.modelIds.get(unitId);
+  }
+
   // ===========================================
   // SpawnerPicker
   // ===========================================
@@ -353,6 +373,8 @@ export class TacticalSceneBuilder
     const mesh = new UnitMesh(unit.id, model);
     mesh.setPose(unit.pos, unit.facing);
     this.meshes.set(unit.id, mesh);
+    this.modelIds.set(unit.id, template.modelId);
+    this.heights.set(unit.id, measureHeight(mesh.object));
     for (const target of mesh.pickTargets()) {
       this.targetToUnit.set(target, unit.id);
     }
@@ -416,6 +438,8 @@ export class TacticalSceneBuilder
       }
       mesh.dispose();
       this.meshes.delete(unitId);
+      this.modelIds.delete(unitId);
+      this.heights.delete(unitId);
     }
     if (this.hovered === unitId) {
       this.hovered = undefined;
@@ -434,4 +458,23 @@ export class TacticalSceneBuilder
       });
     }
   }
+}
+
+// ===========================================
+// Helpers
+// ===========================================
+
+/**
+ * The world-space height of a placed unit, measured from its bounding box.
+ * Taken once at placement: a dying unit shrinks, and an effect anchored to a
+ * shrinking box would slide down with it.
+ *
+ * @param object - The unit's scene object.
+ * @returns Height in world units, never negative.
+ */
+function measureHeight(object: Object3D): number {
+  const box = new Box3().setFromObject(object);
+  return Number.isFinite(box.max.y - box.min.y)
+    ? Math.max(0, box.max.y - box.min.y)
+    : 0;
 }

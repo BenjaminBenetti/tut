@@ -24,6 +24,7 @@ import { SPAWN_TUNING } from "../../tactical/data/spawn-tuning";
 import { ATTACK } from "../../tactical/model/attack-command";
 import { FINISH_MISSION } from "../../tactical/model/finish-mission-command";
 import { MISSION_ENDED } from "../../tactical/model/mission-ended-event";
+import { TURN_STARTED } from "../../tactical/model/turn-started-event";
 import { commandError } from "../../core/model/command-error";
 import { err, ok } from "../../core/model/result";
 import type { TacticalState } from "../../tactical/model/tactical-state";
@@ -168,6 +169,9 @@ class FakeHost implements TacticalSceneHost {
   }
   select(unitId: string | undefined): void {
     this.calls.push(`select:${unitId ?? "none"}`);
+  }
+  setWeaponRangeVisible(visible: boolean): void {
+    this.calls.push(`weapon-range:${String(visible)}`);
   }
   release(): void {
     this.calls.push("release");
@@ -392,7 +396,11 @@ describe("TacticalScreen", () => {
     expect(selects[0]).toBe(`select:${squad.id}`);
     expect(selects.at(-1)).toBe(`select:${squad.id}`);
     host.intents?.emit({ kind: "action", action: "cancel" });
-    expect(host.calls.at(-1)).toBe(`select:${squad.id}`);
+    // Every intent also pushes the weapon-range toggle (#522), so ask the
+    // selection calls rather than the last call of any kind.
+    expect(host.calls.filter((c) => c.startsWith("select:")).at(-1)).toBe(
+      `select:${squad.id}`,
+    );
   });
 
   it("mounts the HUD over the viewport and previews then dispatches an attack from the scene's intents", () => {
@@ -546,5 +554,115 @@ describe("TacticalScreen", () => {
       root.querySelector<HTMLElement>('#turn-banner [data-role="status"]')
         ?.textContent,
     ).toContain("still being fought");
+  });
+});
+
+// ===========================================
+// Phase banners (#523)
+// ===========================================
+
+describe("TacticalScreen phase banners", () => {
+  // The suite above keeps its own root in the document; clear it, or a
+  // stale `#turn-banner` shadows this one when an id selector is
+  // resolved document-wide.
+  beforeEach(() => {
+    document.body.innerHTML = "";
+  });
+
+  /** Timers the test fires by hand, so no banner waits on a wall clock. */
+  function manualTimers() {
+    const pending = new Map<number, () => void>();
+    let next = 1;
+    return {
+      options: {
+        holdMs: 1000,
+        setTimer: (run: () => void) => {
+          const handle = next++;
+          pending.set(handle, run);
+          return handle;
+        },
+        clearTimer: (handle: number) => {
+          pending.delete(handle);
+        },
+      },
+      fire: () => {
+        for (const [handle, run] of [...pending]) {
+          pending.delete(handle);
+          run();
+        }
+      },
+    };
+  }
+
+  it("announces the bug phase and then the player's turn from one EndTurn", () => {
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+    const state = inMission();
+    const store = new FakeStore(state);
+    const timers = manualTimers();
+    new TacticalScreen({
+      router: fakeRouter().router,
+      session: sessionWith(store),
+      combatTuning: COMBAT_TUNING,
+      objectiveTuning: OBJECTIVE_TUNING,
+      sceneHost: new FakeHost(),
+      phaseBanner: timers.options,
+    }).mount(root);
+
+    const banner = () =>
+      root.querySelector<HTMLElement>('[data-role="phase-banner"]');
+    expect(banner()?.hidden).toBe(true);
+
+    // The shipped EndTurn plays the whole bug phase and hands the turn
+    // back, so both TurnStarted events arrive in one store change.
+    const mission = state.activeMission!;
+    store.command(
+      {
+        ...state,
+        activeMission: { ...mission, phase: "player", turn: 2 },
+      },
+      [
+        { type: TURN_STARTED, payload: { turn: 1, phase: "bugs" } },
+        { type: TURN_STARTED, payload: { turn: 2, phase: "player" } },
+      ] as CampaignEvent[],
+    );
+
+    expect(banner()?.hidden).toBe(false);
+    expect(banner()?.dataset.phase).toBe("bugs");
+    timers.fire();
+    expect(banner()?.dataset.phase).toBe("player");
+    expect(
+      banner()?.querySelector('[data-field="detail"]')?.textContent,
+    ).toContain("The bugs have finished");
+    timers.fire();
+    expect(banner()?.hidden).toBe(true);
+
+    // The persistent readout is untouched by any of this.
+    const readout = root.querySelector<HTMLElement>(
+      '#turn-banner [data-field="phase"]',
+    );
+    expect(readout?.dataset.phase).toBe("player");
+    expect(readout?.textContent).toBe("player phase");
+    root.remove();
+  });
+
+  it("leaves the banner alone for a change that carried no phase", () => {
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+    const state = inMission();
+    const store = new FakeStore(state);
+    new TacticalScreen({
+      router: fakeRouter().router,
+      session: sessionWith(store),
+      combatTuning: COMBAT_TUNING,
+      objectiveTuning: OBJECTIVE_TUNING,
+      sceneHost: new FakeHost(),
+      phaseBanner: manualTimers().options,
+    }).mount(root);
+    store.replace(state);
+    expect(
+      root.querySelector<HTMLElement>('[data-role="phase-banner"]')?.hidden,
+    ).toBe(true);
+    root.remove();
   });
 });

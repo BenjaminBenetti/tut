@@ -20,6 +20,7 @@ import type { Unit } from "../model/unit";
 import { UNIT_DIED } from "../model/unit-died-event";
 import type { UnitTemplate } from "../model/unit-template";
 import type { WeaponProfile } from "../model/weapon-profile";
+import { emptyVision } from "./vision-service";
 import {
   attackTerrain,
   createAttackHandler,
@@ -68,6 +69,7 @@ function template(id: string, weapon: WeaponProfile, armor = 0): UnitTemplate {
     maxAp: 2,
     move: 5,
     weapon,
+    sightRange: 12,
     armor,
     passClass: "infantry",
     modelId: "tdf.infantry.rifle",
@@ -134,6 +136,7 @@ function mission(
     spawners: [],
     edgeSpawn: { nextTurn: 3, wave: 0 },
     extracted: [],
+    vision: emptyVision(),
     extraction: [],
     log: [],
     ...overrides,

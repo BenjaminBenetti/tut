@@ -11,6 +11,7 @@ import type { Screen, ScreenId } from "../model/screen";
 import type { ScreenRouter } from "../model/screen-router";
 import type { TacticalIntent } from "../model/tactical-intent";
 import type { TacticalSceneHost } from "../model/tactical-scene-host";
+import type { PhaseBannerOptions } from "../view/phase-banner-view";
 import { TacticalHudView } from "../view/tactical-hud-view";
 
 // ===========================================
@@ -25,6 +26,8 @@ export interface TacticalScreenDeps {
   readonly combatTuning: CombatTuning;
   /** Tuning the HUD hands to `reachableObjectives`; the screen judges no distance itself. */
   readonly objectiveTuning: ObjectiveTuning;
+  /** Hold time and timers for the phase banner (#523); the defaults are the DOM's. */
+  readonly phaseBanner?: PhaseBannerOptions;
   /** Builds and owns the three.js scene for the mission; absent in unit tests that only check the DOM. */
   readonly sceneHost?: TacticalSceneHost;
   /**
@@ -100,6 +103,7 @@ export class TacticalScreen implements Screen {
       {
         combatTuning: deps.combatTuning,
         objectiveTuning: deps.objectiveTuning,
+        phaseBanner: deps.phaseBanner,
       },
     );
   }
@@ -170,7 +174,7 @@ export class TacticalScreen implements Screen {
     if (this.note) {
       this.note.hidden = mission !== undefined;
     }
-    this.hud.update(mission);
+    this.hud.update(mission, events);
     if (!mission) {
       return;
     }
@@ -221,6 +225,7 @@ export class TacticalScreen implements Screen {
         // the preview target, not the selected unit, so the overlays
         // follow the unit whose card is up (#338).
         host.select(this.hud.getSelectedUnitId());
+        host.setWeaponRangeVisible(this.hud.isWeaponRangeVisible());
         this.recordIntent(intent);
         this.deps.onIntent?.(intent);
       },

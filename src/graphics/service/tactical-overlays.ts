@@ -9,12 +9,14 @@ import {
   RingGeometry,
 } from "three";
 
+import { manhattanDistance } from "../../core/service/grid-math";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { CoverLevel } from "../../mapgen/model/cover";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import type { TacticalState } from "../../tactical/model/tactical-state";
-import type { UnitId } from "../../tactical/model/unit";
+import type { Unit, UnitId } from "../../tactical/model/unit";
 import {
+  apCostOf,
   buildMoveGraph,
   searchMoves,
 } from "../../tactical/service/movement-service";
@@ -22,6 +24,24 @@ import {
   coverAgainst,
   hasLineOfSight,
 } from "../../tactical/service/sight-service";
+import {
+  COVER_HIGH_COLOUR,
+  COVER_LOW_COLOUR,
+  COVER_OPACITY,
+  LINE_OF_SIGHT_COLOUR,
+  LINE_OF_SIGHT_OPACITY,
+  MOVE_RANGE_ONE_AP_COLOUR,
+  MOVE_RANGE_ONE_AP_FOOTPRINT,
+  MOVE_RANGE_ONE_AP_OPACITY,
+  MOVE_RANGE_TWO_AP_COLOUR,
+  MOVE_RANGE_TWO_AP_FOOTPRINT,
+  MOVE_RANGE_TWO_AP_OPACITY,
+  OVERLAY_LIFT,
+  RANGE_THICKNESS,
+  WEAPON_RANGE_COLOUR,
+  WEAPON_RANGE_FOOTPRINT,
+  WEAPON_RANGE_OPACITY,
+} from "../data/tactical-overlay-palette";
 import type { Disposable } from "../model/disposable";
 import { tileTopCentre } from "../view/tactical-map-view";
 
@@ -35,14 +55,33 @@ export interface CoverMarker {
   readonly level: CoverLevel;
 }
 
+/**
+ * One tile the selected unit can reach, and what it costs to stand there
+ * (#521). `apCost` is the unit's real action-point cost from the
+ * movement service, not a distance band, so terrain, stairs and doors
+ * tier correctly.
+ */
+export interface MoveRangeTile {
+  readonly tile: TileCoord;
+  /** Action points spent to reach it: 1 for the near band, 2 for the far one. */
+  readonly apCost: number;
+}
+
 /** What the overlays draw for one selection; plain data so the screen can compute it. */
 export interface OverlayState {
-  /** Tiles the selected unit can reach this turn. */
-  readonly moveRange: readonly TileCoord[];
+  /** Tiles the selected unit can reach this turn, each with its action-point cost. */
+  readonly moveRange: readonly MoveRangeTile[];
   /** Reachable tiles with cover, and how much. */
   readonly cover: readonly CoverMarker[];
   /** Reachable tiles with a line of sight to at least one living enemy. */
   readonly lineOfSight: readonly TileCoord[];
+  /**
+   * Tiles the selected unit could fire on from where it stands (#522):
+   * inside its weapon's range and with the sight line clear — the same
+   * pair `validateTargeting` checks, so what is painted and what can be
+   * fired agree.
+   */
+  readonly weaponRange: readonly TileCoord[];
 }
 
 /** Nothing shown. */
@@ -50,26 +89,23 @@ export const EMPTY_OVERLAYS: OverlayState = {
   moveRange: [],
   cover: [],
   lineOfSight: [],
+  weaponRange: [],
 };
 
 // ===========================================
 // Constants
 // ===========================================
 
-/** Style-guide colours: `ui-info` for range, `ui-warn` / `ui-danger` for cover, `ui-accent` for LOS. */
-const RANGE_COLOUR = 0x7fd1ff;
-const COVER_LOW_COLOUR = 0xf0c63c;
-const COVER_HIGH_COLOUR = 0xe0453c;
-const LOS_COLOUR = 0xf08a24;
+/** The four cardinal steps, for tracing the edge of a region. */
+const CARDINALS: readonly (readonly [number, number])[] = [
+  [1, 0],
+  [-1, 0],
+  [0, 1],
+  [0, -1],
+];
 
 /** Tiles a mission may need at most before the instanced buffers grow. */
 const INITIAL_CAPACITY = 256;
-
-/** Lift above the tile top so the quads never z-fight with the map. */
-const OVERLAY_LIFT = 0.02;
-
-/** Slab thickness of the range quads. */
-const RANGE_THICKNESS = 0.02;
 
 // ===========================================
 // Layer
@@ -145,17 +181,22 @@ class OverlayLayer implements Disposable {
 
 /**
  * Movement-range, cover and line-of-sight overlays over the tactical map
- * (#338). Four instanced layers, each toggled by setting its instance
+ * (#338). Six instanced layers, each toggled by setting its instance
  * count from an `OverlayState`; no rule lives here, `overlaysFor` asks
  * the movement and sight services and hands the answer over as plain
  * tile lists.
  *
  * ```
  *   overlaysFor(mission, unitId) ──► OverlayState ──► show(state)
- *                                                       ├─ range:  flat quads, ui-info
- *                                                       ├─ cover:  rings, ui-warn (low) / ui-danger (high)
- *                                                       └─ los:    small rings, ui-accent
+ *                            ├─ range 1 AP: full quads, ui-info
+ *                            ├─ range 2 AP: inset quads, ui-info dimmed
+ *                            ├─ cover:      rings, ui-warn (low) / ui-danger (high)
+ *                            ├─ los:        small rings, ui-accent
+ *                            └─ weapon:     edge quads, ui-accent
  * ```
+ *
+ * The two move bands differ in tone *and* in footprint, so the boundary
+ * survives a colour-vision deficiency and needs no legend (#521).
  */
 export class TacticalOverlays implements Disposable {
   // ===========================================
@@ -164,10 +205,14 @@ export class TacticalOverlays implements Disposable {
 
   /** Add this to the scene; the layers live under it. */
   readonly root: Group;
-  private readonly range: OverlayLayer;
+  private readonly rangeOneAp: OverlayLayer;
+  private readonly rangeTwoAp: OverlayLayer;
   private readonly coverLow: OverlayLayer;
   private readonly coverHigh: OverlayLayer;
   private readonly los: OverlayLayer;
+  private readonly weaponRange: OverlayLayer;
+  private weaponRangeVisible = true;
+  private lastState: OverlayState = EMPTY_OVERLAYS;
 
   // ===========================================
   // Constructor
@@ -177,36 +222,64 @@ export class TacticalOverlays implements Disposable {
   constructor() {
     this.root = new Group();
     this.root.name = "tactical-overlays";
-    this.range = new OverlayLayer(
-      "overlay-move-range",
-      new BoxGeometry(0.92, RANGE_THICKNESS, 0.92),
-      RANGE_COLOUR,
-      0.35,
+    this.rangeOneAp = new OverlayLayer(
+      "overlay-move-range-1ap",
+      new BoxGeometry(
+        MOVE_RANGE_ONE_AP_FOOTPRINT,
+        RANGE_THICKNESS,
+        MOVE_RANGE_ONE_AP_FOOTPRINT,
+      ),
+      MOVE_RANGE_ONE_AP_COLOUR,
+      MOVE_RANGE_ONE_AP_OPACITY,
+      1,
+    );
+    this.rangeTwoAp = new OverlayLayer(
+      "overlay-move-range-2ap",
+      new BoxGeometry(
+        MOVE_RANGE_TWO_AP_FOOTPRINT,
+        RANGE_THICKNESS,
+        MOVE_RANGE_TWO_AP_FOOTPRINT,
+      ),
+      MOVE_RANGE_TWO_AP_COLOUR,
+      MOVE_RANGE_TWO_AP_OPACITY,
       1,
     );
     this.coverLow = new OverlayLayer(
       "overlay-cover-low",
       new RingGeometry(0.28, 0.4, 16),
       COVER_LOW_COLOUR,
-      0.85,
+      COVER_OPACITY,
       2,
     );
     this.coverHigh = new OverlayLayer(
       "overlay-cover-high",
       new RingGeometry(0.28, 0.4, 16),
       COVER_HIGH_COLOUR,
-      0.85,
+      COVER_OPACITY,
       2,
     );
     this.los = new OverlayLayer(
       "overlay-line-of-sight",
       new RingGeometry(0.12, 0.18, 12),
-      LOS_COLOUR,
-      0.9,
+      LINE_OF_SIGHT_COLOUR,
+      LINE_OF_SIGHT_OPACITY,
       3,
     );
+    this.weaponRange = new OverlayLayer(
+      "overlay-weapon-range",
+      new BoxGeometry(
+        WEAPON_RANGE_FOOTPRINT,
+        RANGE_THICKNESS,
+        WEAPON_RANGE_FOOTPRINT,
+      ),
+      WEAPON_RANGE_COLOUR,
+      WEAPON_RANGE_OPACITY,
+      4,
+    );
     this.root.add(
-      this.range.mesh,
+      this.weaponRange.mesh,
+      this.rangeOneAp.mesh,
+      this.rangeTwoAp.mesh,
       this.coverLow.mesh,
       this.coverHigh.mesh,
       this.los.mesh,
@@ -219,7 +292,18 @@ export class TacticalOverlays implements Disposable {
 
   /** Draws `state`; an empty state hides everything. */
   show(state: OverlayState): void {
-    this.range.setTiles(state.moveRange, OVERLAY_LIFT, false);
+    this.rangeOneAp.setTiles(
+      tilesCosting(state.moveRange, 1),
+      OVERLAY_LIFT,
+      false,
+    );
+    // The dearer band sits a hair higher so the inset quad reads on top
+    // where the two ever overlap.
+    this.rangeTwoAp.setTiles(
+      tilesCosting(state.moveRange, 2),
+      OVERLAY_LIFT * 1.5,
+      false,
+    );
     this.coverLow.setTiles(
       state.cover.filter((c) => c.level === CoverLevel.LOW).map((c) => c.tile),
       OVERLAY_LIFT * 2,
@@ -231,6 +315,24 @@ export class TacticalOverlays implements Disposable {
       true,
     );
     this.los.setTiles(state.lineOfSight, OVERLAY_LIFT * 3, true);
+    this.lastState = state;
+    this.drawWeaponRange();
+  }
+
+  /**
+   * Shows or hides the weapon-range outline without disturbing the other
+   * layers (#522). The indicator is on by default and shows nothing
+   * anyway while no unit is selected, because an empty state carries an
+   * empty envelope.
+   */
+  setWeaponRangeVisible(visible: boolean): void {
+    this.weaponRangeVisible = visible;
+    this.drawWeaponRange();
+  }
+
+  /** Whether the weapon-range outline is currently shown. */
+  isWeaponRangeVisible(): boolean {
+    return this.weaponRangeVisible;
   }
 
   /** Hides every layer. */
@@ -238,15 +340,40 @@ export class TacticalOverlays implements Disposable {
     this.show(EMPTY_OVERLAYS);
   }
 
+  /**
+   * Draws the edge of the weapon envelope: every tile in it with a
+   * cardinal neighbour on its level that is not, which is the outline of
+   * the region including the notches walls cut out of it.
+   */
+  private drawWeaponRange(): void {
+    if (!this.weaponRangeVisible) {
+      this.weaponRange.setTiles([], OVERLAY_LIFT, false);
+      return;
+    }
+    const inside = new Set(
+      this.lastState.weaponRange.map((t) => `${t.x},${t.y},${t.z}`),
+    );
+    const edge = this.lastState.weaponRange.filter((t) =>
+      CARDINALS.some(
+        ([dx, dz]) => !inside.has(`${t.x + dx},${t.y},${t.z + dz}`),
+      ),
+    );
+    this.weaponRange.setTiles(edge, OVERLAY_LIFT, false);
+  }
+
   /** Instances drawn per layer, for tests and debug readouts. */
   counts(): {
-    range: number;
+    weaponRange: number;
+    rangeOneAp: number;
+    rangeTwoAp: number;
     coverLow: number;
     coverHigh: number;
     los: number;
   } {
     return {
-      range: this.range.mesh.count,
+      weaponRange: this.weaponRange.mesh.count,
+      rangeOneAp: this.rangeOneAp.mesh.count,
+      rangeTwoAp: this.rangeTwoAp.mesh.count,
       coverLow: this.coverLow.mesh.count,
       coverHigh: this.coverHigh.mesh.count,
       los: this.los.mesh.count,
@@ -256,7 +383,9 @@ export class TacticalOverlays implements Disposable {
   /** The layer objects, for tests. */
   layers(): readonly Object3D[] {
     return [
-      this.range.mesh,
+      this.weaponRange.mesh,
+      this.rangeOneAp.mesh,
+      this.rangeTwoAp.mesh,
       this.coverLow.mesh,
       this.coverHigh.mesh,
       this.los.mesh,
@@ -265,7 +394,9 @@ export class TacticalOverlays implements Disposable {
 
   /** Frees every layer and detaches the root. */
   dispose(): void {
-    this.range.dispose();
+    this.weaponRange.dispose();
+    this.rangeOneAp.dispose();
+    this.rangeTwoAp.dispose();
     this.coverLow.dispose();
     this.coverHigh.dispose();
     this.los.dispose();
@@ -279,9 +410,15 @@ export class TacticalOverlays implements Disposable {
 
 /**
  * What to draw for a selected unit: its reachable tiles from the
- * movement service, the best cover each of those tiles offers against
- * any cardinal approach, and which of them see at least one living
- * enemy. An unknown or dead unit, or none, yields the empty state.
+ * movement service — each carrying the action points it costs to stand
+ * there — the best cover each offers against any cardinal approach, and
+ * which of them see at least one living enemy. An unknown or dead unit,
+ * or none, yields the empty state.
+ *
+ * A unit with one action point left reaches only tiles inside one
+ * action's move, so it shows one band and no second; that falls out of
+ * `searchMoves` budgeting by the action points the unit actually has,
+ * rather than being special-cased here (#521).
  */
 export function overlaysFor(
   mission: TacticalState,
@@ -295,16 +432,23 @@ export function overlaysFor(
   const index = new TileIndex(mission.map);
   const search = searchMoves(mission, unit, graph);
   const originKey = graph.index.keyOf(unit.pos);
-  const moveRange: TileCoord[] = [];
+  const moveRange: MoveRangeTile[] = [];
   for (const [key, tile] of search.tiles) {
-    if (key !== originKey) {
-      moveRange.push({ x: tile.x, y: tile.y, z: tile.z });
+    if (key === originKey) {
+      continue;
     }
+    // The tier is the movement service's own answer for these steps, so
+    // a stair or a door that costs more than its straight-line distance
+    // lands in the dearer band (#521).
+    moveRange.push({
+      tile: { x: tile.x, y: tile.y, z: tile.z },
+      apCost: apCostOf(mission, unit, search.costs.get(key) ?? 0),
+    });
   }
   const enemies = mission.units.filter((u) => u.team !== unit.team && u.hp > 0);
   const cover: CoverMarker[] = [];
   const lineOfSight: TileCoord[] = [];
-  for (const tile of moveRange) {
+  for (const { tile } of moveRange) {
     const level = bestCover(mission, tile, index);
     if (level !== CoverLevel.NONE) {
       cover.push({ tile, level });
@@ -313,7 +457,56 @@ export function overlaysFor(
       lineOfSight.push(tile);
     }
   }
-  return { moveRange, cover, lineOfSight };
+  return {
+    moveRange,
+    cover,
+    lineOfSight,
+    weaponRange: weaponRangeFrom(mission, unit, index),
+  };
+}
+
+/**
+ * The tiles `unit` could fire on without moving: inside its weapon's
+ * range by the same metric the hit chance uses, and with the sight line
+ * clear. A unit whose template has no weapon can fire on nothing.
+ *
+ * Deliberately the *whole* envelope rather than its outline: this is the
+ * honest answer to "what can I shoot", and how it is drawn — an edge
+ * line, not a fill — is the overlay's business, not the state's.
+ */
+function weaponRangeFrom(
+  mission: TacticalState,
+  unit: Unit,
+  index: TileIndex,
+): TileCoord[] {
+  const range = mission.templates[unit.templateId]?.weapon.range ?? 0;
+  if (range <= 0) {
+    return [];
+  }
+  const tiles: TileCoord[] = [];
+  for (let x = unit.pos.x - range; x <= unit.pos.x + range; x++) {
+    const spread = range - Math.abs(x - unit.pos.x);
+    for (let z = unit.pos.z - spread; z <= unit.pos.z + spread; z++) {
+      for (const tile of index.column(x, z)) {
+        if (manhattanDistance(tile, unit.pos) > range) {
+          continue;
+        }
+        if (!hasLineOfSight(mission.map, unit.pos, tile, index)) {
+          continue;
+        }
+        tiles.push({ x: tile.x, y: tile.y, z: tile.z });
+      }
+    }
+  }
+  return tiles;
+}
+
+/** The tiles of `range` costing exactly `apCost` action points. */
+function tilesCosting(
+  range: readonly MoveRangeTile[],
+  apCost: number,
+): TileCoord[] {
+  return range.filter((entry) => entry.apCost === apCost).map((e) => e.tile);
 }
 
 /** The best cover a tile offers against an attacker on any of its four sides. */

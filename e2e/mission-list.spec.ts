@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 /** Days to advance before giving up on a mission appearing for the fixed seed. */
 const MAX_DAYS = 40;
 
-test("a mission appears, opens a briefing, routes to deployment, launches and reaches the results", async ({
+test("a mission appears, opens a briefing, routes to deployment, auto-resolves and reaches the results", async ({
   page,
 }) => {
   const errors: string[] = [];
@@ -16,7 +16,11 @@ test("a mission appears, opens a briefing, routes to deployment, launches and re
     errors.push(error.message);
   });
 
-  await page.goto("/");
+  // `?autoResolve=1` keeps this session on the M1 auto-resolver (#341), so
+  // this spec stays the overworld loop's regression: Launch settles the
+  // mission where it stands. The tactical path is
+  // `tactical-mission-flow.spec.ts`.
+  await page.goto("/?autoResolve=1");
   const body = page.locator("body");
   await expect(body).toHaveAttribute("data-app-state", "ready");
   await page.locator('[data-field="seed"]').fill("4242");

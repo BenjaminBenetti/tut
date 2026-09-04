@@ -398,6 +398,12 @@ describe("OverworldScreen", () => {
     expect(root.children).toHaveLength(0);
   });
 
+  // `release` is also what takes `body[data-map-ready]` down (#473), so
+  // this ordering is what stops a spec waiting on the flag from being
+  // handed one left standing over a screen that has gone. That the host
+  // clears it there is pinned in `dom-map-viewport-host.test.ts`; the
+  // port is deliberately not imported here, so `ui` keeps depending on
+  // its own abstraction rather than on `app`'s implementation of it.
   it("borrows the map viewport into #map-area while mounted and returns it on unmount", () => {
     const log: string[] = [];
     const host: MapViewportHost = {

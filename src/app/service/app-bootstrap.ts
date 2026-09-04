@@ -221,6 +221,10 @@ export async function bootstrapApp(doc: Document): Promise<void> {
     (id) => startMissionForTests(id, game, router),
   );
   scene.start();
+  // The host raises `data-map-ready` whenever the scene has drawn at the
+  // size of the container the viewport is in (#473); it has to know the
+  // scene, which only exists now.
+  mapViewport.useScene(scene);
   await scene.whenFirstFrameRendered();
   doc.body.dataset.appState = "ready";
 }

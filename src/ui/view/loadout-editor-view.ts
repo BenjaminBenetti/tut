@@ -4,6 +4,8 @@ import { LOADOUT_FIELD_FOR_SLOT } from "../../roster/model/mech-loadout";
 import type { MechPart, PartId, PartSlot } from "../../roster/model/mech-part";
 import { isChassisPart } from "../../roster/model/mech-part";
 import type { PartCatalogue } from "../../roster/model/part-catalogue";
+import { partThumbnail } from "../data/part-thumbnail-table";
+import { thumbnailUrl } from "../data/thumbnail-manifest";
 import { formatCredits } from "../service/format";
 
 // ===========================================
@@ -28,6 +30,9 @@ const SLOT_LABELS: Readonly<Record<PartSlot, string>> = {
   "back-weapon": "Back weapon",
   utility: "Utility",
 };
+
+/** Edge of a part thumbnail in CSS pixels; the assets are 128 px square. */
+const THUMB_PX = 48;
 
 /** `value` of the picker option that leaves a utility slot empty. */
 const EMPTY_OPTION = "";
@@ -63,6 +68,8 @@ export class LoadoutEditorView {
 
   private readonly handlers: LoadoutEditorViewHandlers;
   private readonly parts: PartCatalogue;
+  /** One thumbnail per picker row, by the picker's key. */
+  private thumbs = new Map<string, HTMLImageElement>();
   private root: HTMLElement | undefined;
   private form: HTMLElement | undefined;
   private nameInput: HTMLInputElement | undefined;
@@ -272,13 +279,56 @@ export class LoadoutEditorView {
       picker.appendChild(missing);
     }
     picker.value = selected;
+    const thumb = this.thumbnail(doc, key, selected);
     this.listen(picker, "change", () => {
+      this.showThumbnail(key, picker.value);
       this.emit();
     });
     this.pickers.set(key, picker);
     const label =
       index === undefined ? SLOT_LABELS[slot] : `${SLOT_LABELS[slot]} ${index}`;
-    return this.row(doc, label, key, picker);
+    return this.row(doc, label, key, picker, thumb);
+  }
+
+  /**
+   * The picture of the part a picker has chosen (#495). A mech bay of
+   * seven dropdowns and a stat sheet gave no sense of what was being
+   * built; the thumbnails are already rendered from the same models the
+   * mech is assembled from.
+   */
+  private thumbnail(doc: Document, key: string, selected: PartId): HTMLElement {
+    const thumb = doc.createElement("img");
+    thumb.className = "tut-mech-bay__thumb";
+    thumb.dataset.role = "part-thumb";
+    thumb.dataset.field = key;
+    thumb.width = THUMB_PX;
+    thumb.height = THUMB_PX;
+    // Decorative: the picker beside it already names the part, so a
+    // screen reader announcing the picture twice would only be noise.
+    thumb.alt = "";
+    this.thumbs.set(key, thumb);
+    this.showThumbnail(key, selected);
+    return thumb;
+  }
+
+  /** Points one row's thumbnail at the chosen part, or hides it for a part with no picture. */
+  private showThumbnail(key: string, partId: string): void {
+    const thumb = this.thumbs.get(key);
+    if (thumb === undefined) {
+      return;
+    }
+    const id = partThumbnail(partId);
+    if (id === undefined) {
+      // A utility part has no picture. The cell stays, empty, so the
+      // pickers below it do not shift left out of alignment.
+      thumb.classList.add("is-empty");
+      thumb.removeAttribute("src");
+      delete thumb.dataset.thumb;
+      return;
+    }
+    thumb.classList.remove("is-empty");
+    thumb.src = thumbnailUrl(id);
+    thumb.dataset.thumb = id;
   }
 
   /** `Name · ¢cost` for a part. */
@@ -295,6 +345,7 @@ export class LoadoutEditorView {
     label: string,
     key: string,
     control: HTMLElement,
+    thumb?: HTMLElement,
   ): HTMLElement {
     const row = doc.createElement("div");
     row.className = "tut-mech-bay__row";
@@ -307,6 +358,11 @@ export class LoadoutEditorView {
     error.dataset.role = "slot-error";
     error.hidden = true;
     row.append(term, control, error);
+    if (thumb) {
+      row.insertBefore(thumb, control);
+    } else {
+      row.classList.add("tut-mech-bay__row--no-thumb");
+    }
     this.errorSlots.set(key, error);
     return row;
   }
@@ -323,6 +379,7 @@ export class LoadoutEditorView {
     }
     this.pickers = new Map();
     this.errorSlots = new Map();
+    this.thumbs = new Map();
     this.nameInput = undefined;
     this.form?.replaceChildren();
   }

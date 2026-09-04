@@ -296,14 +296,39 @@
 }
 .tut-mech-bay__row {
   display: grid;
-  grid-template-columns: 8em minmax(0, 1fr);
+  /* label · part thumbnail · picker (#495) */
+  grid-template-columns: 8em auto minmax(0, 1fr);
   gap: var(--space-2);
   align-items: center;
 }
+
+/* The name field has no part to picture, so its input takes both cells. */
+.tut-mech-bay__row--no-thumb > .tut-input,
+.tut-mech-bay__row--no-thumb > .tut-select {
+  grid-column: 2 / -1;
+}
+
 .tut-mech-bay__error {
-  grid-column: 2;
+  grid-column: 2 / -1;
   color: var(--ui-danger);
   font-size: 0.9em;
+}
+
+/*
+ * A part's picture beside its picker. Rendered from the same model the
+ * mech is assembled from, so the bay shows what is being built.
+ */
+.tut-mech-bay__thumb {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  background: var(--ui-panel);
+  border: var(--line) solid var(--ui-line);
+}
+
+/* A utility part has no picture; the cell stays so the pickers align. */
+.tut-mech-bay__thumb.is-empty {
+  visibility: hidden;
 }
 .tut-mech-bay__errors li {
   color: var(--ui-danger);

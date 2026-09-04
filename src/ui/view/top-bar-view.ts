@@ -1,3 +1,5 @@
+import type { IconId } from "../data/icon-manifest";
+import { iconUrl } from "../data/icon-manifest";
 import type { GameState } from "../../save/model/game-state";
 import { formatCredits, formatWhole } from "../service/format";
 import { threatTone } from "../service/threat-band";
@@ -66,9 +68,9 @@ export class TopBarView {
     bar.id = "top-bar";
     bar.className = "tut-topbar tut-overworld__bar";
 
-    const day = this.createStat(doc, "Day", "day");
-    const credits = this.createStat(doc, "Credits", "credits");
-    const threat = this.createStat(doc, "Threat", "threat");
+    const day = this.createStat(doc, "Day", "day", "day");
+    const credits = this.createStat(doc, "Credits", "credits", "credits");
+    const threat = this.createStat(doc, "Threat", "threat", "threat");
     const badge = doc.createElement("span");
     badge.className = "tut-badge";
     badge.dataset.field = "threat-tone";
@@ -192,6 +194,7 @@ export class TopBarView {
     doc: Document,
     label: string,
     field: string,
+    icon?: IconId,
   ): { stat: HTMLElement; value: HTMLElement } {
     const stat = doc.createElement("span");
     stat.className = "tut-topbar__stat";
@@ -202,7 +205,19 @@ export class TopBarView {
     value.className = "tut-data";
     value.dataset.field = field;
     value.textContent = "—";
-    stat.append(term, value);
+    if (icon === undefined) {
+      stat.append(term, value);
+      return { stat, value };
+    }
+    // The glyph carries the meaning and the word repeats it, so the
+    // glyph is decorative and the label stays the accessible name (#495).
+    const glyph = doc.createElement("span");
+    glyph.className = "tut-icon tut-icon--sm";
+    glyph.dataset.icon = icon;
+    glyph.setAttribute("aria-hidden", "true");
+    // `iconUrl` already returns `url(…)`; wrapping it again is invalid CSS.
+    glyph.style.setProperty("--icon", iconUrl(icon));
+    stat.append(glyph, term, value);
     return { stat, value };
   }
 

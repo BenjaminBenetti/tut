@@ -5,7 +5,7 @@ import {
   MAX_MAP_DIMENSION,
   MIN_MAP_DIMENSION,
 } from "../model/map-size-definition";
-import { createRegistry } from "../service/definition-registry";
+import { createRegistry } from "../../core/service/definition-registry";
 import { MAP_SIZE_DEFINITIONS } from "./map-sizes";
 
 describe("map size definitions", () => {

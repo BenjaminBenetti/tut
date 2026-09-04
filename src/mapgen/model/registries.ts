@@ -4,7 +4,7 @@ import type { ElevatedFeature } from "./elevated-feature";
 import type { HookPlacer } from "./hook-placer";
 import type { MapSizeDefinition } from "./map-size-definition";
 import type { PropDefinition } from "./prop";
-import type { Registry } from "./registry";
+import type { Registry } from "../../core/model/registry";
 import type { RoomFurnishing } from "./room-furnishing";
 import type { SettlementDefinition } from "./settlement-definition";
 import type { SurfaceDefinition } from "./surface";

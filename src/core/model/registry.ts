@@ -8,9 +8,15 @@ export interface Identified {
 }
 
 /**
- * Read-only lookup of data definitions by id (ADR 0004 §7.4). Registries
- * are the Open/Closed seam: a new biome, surface, prop or hook kind is a
- * new entry, never an edit to a pass.
+ * Read-only lookup of data definitions by id. Registries are the
+ * Open/Closed seam every catalogue in the game is built on: a new biome,
+ * surface, prop, hook kind, squad type, part, deployable or event type is
+ * a new entry in a data module, never an edit to the code that reads it.
+ *
+ * Introduced for map generation (ADR 0004 §7.4) and promoted here once
+ * the roster and overworld catalogues turned out to be the same thing
+ * (#108); it belongs beside `Result` and the id generator rather than in
+ * any one domain.
  */
 export interface Registry<T extends Identified> {
   /** Ids in registration order. */

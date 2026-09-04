@@ -18,7 +18,7 @@ import { TACTICAL_MAP_VERSION } from "../model/tactical-map";
 import type { Tile } from "../model/tile";
 import type { TileCoord } from "../model/tile-coord";
 import type { WallKind } from "../model/wall";
-import { createRegistry } from "./definition-registry";
+import { createRegistry } from "../../core/service/definition-registry";
 
 // ===========================================
 // Types

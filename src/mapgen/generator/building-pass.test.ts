@@ -25,7 +25,7 @@ import type { MapDraft } from "../model/map-draft";
 import type { MapGenParams } from "../model/map-recipe";
 import type { MapGenRegistries } from "../model/registries";
 import { createDefaultRegistries } from "../service/default-registries";
-import { createRegistry } from "../service/definition-registry";
+import { createRegistry } from "../../core/service/definition-registry";
 import { PipelineMapGenerator } from "../service/pipeline-map-generator";
 import { BuildingPass } from "./building-pass";
 import { LotPass } from "./lot-pass";

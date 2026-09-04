@@ -67,7 +67,8 @@ describe("StaticPartCatalogue", () => {
           component("legs-a", "legs"),
           component("legs-a", "legs"),
         ]),
-    ).toThrow(/legs-a/);
+      // The whole message: see the deployable catalogue's test (#108).
+    ).toThrow('Duplicate part id "legs-a"');
   });
 
   it("indexes every starter part", () => {

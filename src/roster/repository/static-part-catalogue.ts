@@ -1,3 +1,5 @@
+import type { Registry } from "../../core/model/registry";
+import { createRegistry } from "../../core/service/definition-registry";
 import type {
   MechPart,
   PartForSlot,
@@ -20,13 +22,17 @@ const NO_PARTS: readonly MechPart[] = [];
  * `PartCatalogue` over a fixed list of part definitions, indexed once at
  * construction. Back it with `STARTER_PARTS` for a campaign, or a
  * hand-built list in tests.
+ *
+ * The id lookup is core's `Registry` (#108). The slot buckets stay here:
+ * they are this catalogue's own question, not something every registry
+ * needs.
  */
 export class StaticPartCatalogue implements PartCatalogue {
   // ===========================================
   // Fields
   // ===========================================
 
-  private readonly byId: ReadonlyMap<PartId, MechPart>;
+  private readonly registry: Registry<MechPart>;
   private readonly bySlot: ReadonlyMap<PartSlot, readonly MechPart[]>;
 
   // ===========================================
@@ -35,13 +41,11 @@ export class StaticPartCatalogue implements PartCatalogue {
 
   /** Indexes the parts. Throws when two parts share an id, since that is a content bug. */
   constructor(parts: readonly MechPart[]) {
-    const byId = new Map<PartId, MechPart>();
+    // The registry rejects duplicate ids, so the bucketing pass below
+    // never sees one.
+    this.registry = createRegistry("part", parts);
     const bySlot = new Map<PartSlot, MechPart[]>();
     for (const part of parts) {
-      if (byId.has(part.id)) {
-        throw new Error(`Duplicate part id "${part.id}"`);
-      }
-      byId.set(part.id, part);
       const slotParts = bySlot.get(part.slot);
       if (slotParts === undefined) {
         bySlot.set(part.slot, [part]);
@@ -49,7 +53,6 @@ export class StaticPartCatalogue implements PartCatalogue {
         slotParts.push(part);
       }
     }
-    this.byId = byId;
     this.bySlot = bySlot;
   }
 
@@ -59,7 +62,7 @@ export class StaticPartCatalogue implements PartCatalogue {
 
   /** Looks a part up by id. */
   getPart(id: PartId): MechPart | undefined {
-    return this.byId.get(id);
+    return this.registry.find(id);
   }
 
   /** Lists the parts indexed under a slot, in the order they were given. */

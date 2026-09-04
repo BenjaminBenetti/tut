@@ -1,3 +1,5 @@
+import type { Registry } from "../../core/model/registry";
+import { createRegistry } from "../../core/service/definition-registry";
 import type { EventType, EventTypeId } from "../model/event-type";
 import type { EventTypeCatalogue } from "../model/event-type-catalogue";
 
@@ -15,8 +17,7 @@ export class DataEventTypeCatalogue implements EventTypeCatalogue {
   // Fields
   // ===========================================
 
-  private readonly byId: ReadonlyMap<EventTypeId, EventType>;
-  private readonly ordered: readonly EventType[];
+  private readonly registry: Registry<EventType>;
 
   // ===========================================
   // Construction
@@ -24,15 +25,7 @@ export class DataEventTypeCatalogue implements EventTypeCatalogue {
 
   /** Indexes the given types; throws if two share an id. */
   constructor(types: readonly EventType[]) {
-    const byId = new Map<EventTypeId, EventType>();
-    for (const type of types) {
-      if (byId.has(type.id)) {
-        throw new Error(`Duplicate event type id "${type.id}"`);
-      }
-      byId.set(type.id, type);
-    }
-    this.byId = byId;
-    this.ordered = [...types];
+    this.registry = createRegistry("event type", types);
   }
 
   // ===========================================
@@ -41,11 +34,11 @@ export class DataEventTypeCatalogue implements EventTypeCatalogue {
 
   /** Returns the type with the given id, or `undefined` if unknown. */
   getEventType(id: EventTypeId): EventType | undefined {
-    return this.byId.get(id);
+    return this.registry.find(id);
   }
 
   /** Returns every type in the order they were supplied. */
   listEventTypes(): readonly EventType[] {
-    return this.ordered;
+    return this.registry.values;
   }
 }

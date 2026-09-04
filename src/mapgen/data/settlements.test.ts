@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { SETTLEMENT_SCALES } from "../../content/model/settlement-scale";
 import type { IntRange } from "../model/settlement-definition";
-import { createRegistry } from "../service/definition-registry";
+import { createRegistry } from "../../core/service/definition-registry";
 import { SETTLEMENT_DEFINITIONS } from "./settlements";
 
 function expectRange(range: IntRange, label: string, floor: number): void {

@@ -3,6 +3,7 @@ import { Box3, Group, Raycaster, Vector2 } from "three";
 
 import type { Vec2, Vec3 } from "../../core/model/grid";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
+import type { SideVision } from "../../tactical/model/tactical-state";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { Spawner, SpawnerId } from "../../tactical/model/tactical-state";
 import type { Unit, UnitId } from "../../tactical/model/unit";
@@ -166,6 +167,15 @@ export class TacticalSceneBuilder
   /** Shows only map levels up to `maxLevel`; units are never hidden. */
   setMaxLevel(maxLevel: number | undefined): void {
     this.mapView.setMaxLevel(maxLevel);
+  }
+
+  /**
+   * Draws the map as one side knows it (#551): unexplored tiles absent,
+   * explored-but-unseen ones dimmed. `undefined` shows the whole map,
+   * which is what the mapgen preview wants.
+   */
+  setVision(vision: SideVision | undefined): void {
+    this.mapView.setVision(vision);
   }
 
   /**

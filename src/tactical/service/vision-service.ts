@@ -2,6 +2,7 @@ import { TileIndex } from "../../mapgen/service/tile-index";
 import type { TacticalApplied, TacticalEvent } from "../model/tactical-event";
 import type {
   SideVision,
+  Spawner,
   TacticalState,
   VisionTileKey,
 } from "../model/tactical-state";
@@ -213,6 +214,27 @@ export function canSee(
   unitId: UnitId,
 ): boolean {
   return (mission.vision[team]?.spotted ?? []).includes(unitId);
+}
+
+/**
+ * The egg spawners a side has laid eyes on: those standing on a tile in
+ * its `explored` set. A spawner is a fixed feature of the map, so once
+ * seen it stays known even when nothing is looking at it — unlike a
+ * unit, which is drawn only while `spotted`.
+ *
+ * Without this the renderer draws every spawner from the first frame,
+ * which hangs the mission's objectives in mid-air over unexplored black
+ * and tells the player where to go before they have scouted (#551).
+ */
+export function perceivedSpawners(
+  mission: TacticalState,
+  team: Team,
+  index: TileIndex = new TileIndex(mission.map),
+): readonly Spawner[] {
+  const explored = new Set(mission.vision[team]?.explored ?? []);
+  return mission.spawners.filter((spawner) =>
+    explored.has(index.keyOf(spawner.pos)),
+  );
 }
 
 /** Every unit of `team`, plus the enemies it can see. */

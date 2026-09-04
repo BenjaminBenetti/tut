@@ -1,6 +1,7 @@
 import type { BufferGeometry, Camera, Material, Object3D } from "three";
 import {
   BoxGeometry,
+  Color,
   Group,
   InstancedMesh,
   Matrix4,
@@ -22,6 +23,10 @@ import { allHooks } from "../../mapgen/model/hook";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { Tile } from "../../mapgen/model/tile";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
+import type {
+  SideVision,
+  VisionTileKey,
+} from "../../tactical/model/tactical-state";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import type { GhostUniforms } from "../service/ghost-cutaway";
 import { applyGhostCutaway } from "../service/ghost-cutaway";
@@ -54,6 +59,8 @@ interface Batch {
   readonly colour: number;
   readonly level: number;
   readonly matrices: Matrix4[];
+  /** The tile each instance belongs to, so vision can dim or drop it (#551). */
+  readonly keys: VisionTileKey[];
 }
 
 /** Footprint of a prop box within its tile. */
@@ -82,6 +89,53 @@ const TILES_GROUND = "tiles-ground";
 
 /** Placeholder label for building floor, roof and stairs slabs, which do not. */
 const TILES_SLAB = "tiles-slab";
+
+/** How much of its colour an explored-but-unseen tile keeps (#551). */
+export const VISION_DIM = 0.4;
+
+/** Multiplier for a tile in view. */
+const FULL_COLOUR = new Color(1, 1, 1);
+
+/** Multiplier for a tile remembered but not currently seen. */
+const DIM_COLOUR = new Color(VISION_DIM, VISION_DIM, VISION_DIM);
+
+/** Collapses an instance to nothing, which also takes it out of picking. */
+const ZERO_SCALE = new Matrix4().makeScale(0, 0, 0);
+
+/** What one side knows about a tile right now. */
+type TileVisionState = "visible" | "explored" | "hidden";
+
+/** An instanced mesh's untouched transforms and the tile behind each one. */
+interface InstanceTiles {
+  readonly matrices: readonly Matrix4[];
+  readonly keys: readonly VisionTileKey[];
+}
+
+/**
+ * `SideVision` as sets. Built once per `setVision` because vision changes
+ * on every move and a map carries thousands of instances: scanning the
+ * arrays per instance would be the product of the two.
+ */
+interface IndexedVision {
+  readonly visible: ReadonlySet<VisionTileKey>;
+  readonly explored: ReadonlySet<VisionTileKey>;
+}
+
+/** Indexes a side's vision for repeated lookup. */
+function indexVision(vision: SideVision): IndexedVision {
+  return {
+    visible: new Set(vision.visible),
+    explored: new Set(vision.explored),
+  };
+}
+
+/** Whether a side sees a tile, remembers it, or has never seen it. */
+function stateOf(vision: IndexedVision, key: VisionTileKey): TileVisionState {
+  if (vision.visible.has(key)) {
+    return "visible";
+  }
+  return vision.explored.has(key) ? "explored" : "hidden";
+}
 
 // ===========================================
 // TacticalMapView
@@ -132,6 +186,12 @@ export class TacticalMapView implements Disposable, TilePicker {
   private readonly raycaster = new Raycaster();
   /** Placeholder meshes by the category they stand in for, so models can retire them. */
   private readonly placeholders = new Map<string, Object3D[]>();
+  /** Every instanced mesh with the tile each of its instances belongs to (#551). */
+  private readonly instanceTiles = new Map<InstancedMesh, InstanceTiles>();
+  /** Connectors keyed by the tile they arrive on, so vision can hide them too. */
+  private readonly connectorTiles = new Map<Mesh, VisionTileKey>();
+  /** The vision last applied, indexed, and replayed onto anything built afterwards. */
+  private vision: IndexedVision | undefined;
   private modelled = false;
 
   // ===========================================
@@ -233,20 +293,28 @@ export class TacticalMapView implements Disposable, TilePicker {
   ): Promise<void> {
     const batches = new Map<
       string,
-      { modelId: ModelAssetId; level: number; matrices: Matrix4[] }
+      {
+        modelId: ModelAssetId;
+        level: number;
+        matrices: Matrix4[];
+        keys: VisionTileKey[];
+      }
     >();
     for (const placement of placements) {
       const key = `${placement.modelId}:${String(placement.level)}`;
       const matrix = placementMatrix(placement);
+      const tileKey = this.index.keyOf(placement.tile);
       const batch = batches.get(key);
       if (batch === undefined) {
         batches.set(key, {
           modelId: placement.modelId,
           level: placement.level,
           matrices: [matrix],
+          keys: [tileKey],
         });
       } else {
         batch.matrices.push(matrix);
+        batch.keys.push(tileKey);
       }
     }
     for (const [key, batch] of batches) {
@@ -279,6 +347,13 @@ export class TacticalMapView implements Disposable, TilePicker {
         });
         mesh.instanceMatrix.needsUpdate = true;
         mesh.name = `${label}-model:${key}:${String(i)}`;
+        this.trackInstances(
+          mesh,
+          batch.matrices.map((cell) =>
+            new Matrix4().multiplyMatrices(cell, part.local),
+          ),
+          batch.keys,
+        );
         // Geometry and materials belong to the loader's cached prototype
         // and are shared with every other clone, so only the instanced
         // wrapper is ours to free.
@@ -292,6 +367,75 @@ export class TacticalMapView implements Disposable, TilePicker {
   private retirePlaceholders(label: string): void {
     for (const mesh of this.placeholders.get(label) ?? []) {
       mesh.visible = false;
+    }
+  }
+
+  // ===========================================
+  // Vision (#551)
+  // ===========================================
+
+  /**
+   * Draws the player's view rather than the map (ADR 0006 §2.4):
+   * unexplored tiles are not there at all, and explored-but-not-visible
+   * ones are dimmed. Passing `undefined` shows everything, which is what
+   * the mapgen preview wants — it is a generation tool, not a mission.
+   *
+   * ```
+   *   visible   ──► full colour
+   *   explored  ──► × VISION_DIM
+   *   neither   ──► zero-scaled, so it draws nothing and no ray can hit it
+   * ```
+   *
+   * Instances are collapsed rather than skipped because an `InstancedMesh`
+   * has a fixed count: a zero-scale matrix removes it from the picture and
+   * from picking without rebuilding the buffer every time vision changes,
+   * which happens on every move.
+   *
+   * Applied to anything built later too, so calling this before the
+   * models load is safe.
+   */
+  setVision(vision: SideVision | undefined): void {
+    this.vision = vision === undefined ? undefined : indexVision(vision);
+    for (const [mesh, tiles] of this.instanceTiles) {
+      this.applyVisionTo(mesh, tiles);
+    }
+    const seenVision = this.vision;
+    for (const [mesh, key] of this.connectorTiles) {
+      mesh.visible =
+        seenVision === undefined || stateOf(seenVision, key) !== "hidden";
+    }
+  }
+
+  /** Remembers a mesh's instances and applies the current vision to them. */
+  private trackInstances(
+    mesh: InstancedMesh,
+    matrices: readonly Matrix4[],
+    keys: readonly VisionTileKey[],
+  ): void {
+    const tiles: InstanceTiles = {
+      matrices: matrices.map((m) => m.clone()),
+      keys: [...keys],
+    };
+    this.instanceTiles.set(mesh, tiles);
+    this.applyVisionTo(mesh, tiles);
+  }
+
+  /** Writes one mesh's instance matrices and colours for the current vision. */
+  private applyVisionTo(mesh: InstancedMesh, tiles: InstanceTiles): void {
+    const vision = this.vision;
+    for (let i = 0; i < tiles.keys.length; i++) {
+      const base = tiles.matrices[i];
+      const key = tiles.keys[i];
+      if (base === undefined || key === undefined) {
+        continue;
+      }
+      const state = vision === undefined ? "visible" : stateOf(vision, key);
+      mesh.setMatrixAt(i, state === "hidden" ? ZERO_SCALE : base);
+      mesh.setColorAt(i, state === "explored" ? DIM_COLOUR : FULL_COLOUR);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) {
+      mesh.instanceColor.needsUpdate = true;
     }
   }
 
@@ -378,6 +522,7 @@ export class TacticalMapView implements Disposable, TilePicker {
         colour,
         tile.y,
         matrix,
+        this.index.keyOf(tile),
       );
     }
     this.flushBatches(ground, TILES_GROUND);
@@ -427,6 +572,7 @@ export class TacticalMapView implements Disposable, TilePicker {
           WALL_COLOURS[kind],
           tile.y,
           matrix,
+          this.index.keyOf(tile),
         );
       }
     }
@@ -469,6 +615,7 @@ export class TacticalMapView implements Disposable, TilePicker {
         PROP_COLOURS[tile.coverProvided],
         tile.y,
         matrix,
+        this.index.keyOf(tile),
       );
     }
     this.flushBatches(batches, "props");
@@ -486,6 +633,7 @@ export class TacticalMapView implements Disposable, TilePicker {
           ? this.ladderMesh(connector)
           : this.plankMesh(connector);
       mesh.name = connector.id;
+      this.connectorTiles.set(mesh, this.index.keyOf(connector.to));
       this.groupFor(connector.to.y).add(mesh);
     }
   }
@@ -565,6 +713,7 @@ export class TacticalMapView implements Disposable, TilePicker {
           colour,
           coord.y,
           matrix,
+          this.index.keyOf(coord),
         );
       }
     }
@@ -593,6 +742,7 @@ export class TacticalMapView implements Disposable, TilePicker {
       mesh.name = `${label}:${key}`;
       this.disposables.push(mesh);
       this.groupFor(batch.level).add(mesh);
+      this.trackInstances(mesh, batch.matrices, batch.keys);
       const kept = this.placeholders.get(label);
       if (kept === undefined) {
         this.placeholders.set(label, [mesh]);
@@ -704,12 +854,19 @@ function pushBatch(
   colour: number,
   level: number,
   matrix: Matrix4,
+  tileKey: VisionTileKey,
 ): void {
   const batch = batches.get(key);
   if (batch === undefined) {
-    batches.set(key, { colour, level, matrices: [matrix] });
+    batches.set(key, {
+      colour,
+      level,
+      matrices: [matrix],
+      keys: [tileKey],
+    });
   } else {
     batch.matrices.push(matrix);
+    batch.keys.push(tileKey);
   }
 }
 

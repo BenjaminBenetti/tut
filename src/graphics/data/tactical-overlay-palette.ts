@@ -46,8 +46,15 @@ export const MOVE_RANGE_TWO_AP_OPACITY = 0.24;
  * differ in shape as well as in tone — the one channel no colour-vision
  * deficiency can take away, and what makes the boundary legible without
  * a legend, which is what #521 asks for.
+ *
+ * Neither band fills its tile. At 0.92 the near band was near enough to
+ * edge-to-edge that a run of them merged into one flat sheet of colour,
+ * which is how terrain is drawn — and players read it as a pond (#569).
+ * Inset far enough to leave a visible line of real ground between
+ * neighbours and the same tiles read as *marked*, because the map is
+ * still showing through them.
  */
-export const MOVE_RANGE_ONE_AP_FOOTPRINT = 0.92;
+export const MOVE_RANGE_ONE_AP_FOOTPRINT = 0.84;
 export const MOVE_RANGE_TWO_AP_FOOTPRINT = 0.66;
 
 /**

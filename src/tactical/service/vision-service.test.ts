@@ -12,11 +12,14 @@ import type { TacticalState } from "../model/tactical-state";
 import { NO_VISION } from "../model/tactical-state";
 import { UNIT_LOST } from "../model/unit-lost-event";
 import { UNIT_SPOTTED } from "../model/unit-spotted-event";
+import type { Spawner } from "../model/tactical-state";
+import type { TileCoord } from "../../mapgen/model/tile-coord";
 import {
   canSee,
   computeVision,
   emptyVision,
   initialVision,
+  perceivedSpawners,
   perceivedUnits,
   withVision,
 } from "./vision-service";
@@ -26,6 +29,11 @@ import {
   unitAt,
   walledField,
 } from "./tactical-fixtures.test-helper";
+
+/** An intact egg spawner on a tile, for the vision fixtures. */
+function spawnerAt(id: string, pos: TileCoord): Spawner {
+  return { id, pos, hatchRadius: 2, hp: 20, timer: 3, destroyed: false };
+}
 
 // ===========================================
 // Fixtures
@@ -386,5 +394,72 @@ describe("the lifting adapter recomputes vision", () => {
     });
     // And the spotting event is in the mission log with everything else.
     expect(after.log.some((event) => event.type === UNIT_SPOTTED)).toBe(true);
+  });
+});
+
+describe("perceivedSpawners", () => {
+  it("shows only the spawners standing on tiles the side has explored (#551)", () => {
+    const base = missionWith(
+      openField().build(),
+      [unitAt("u1", "infantry", { x: 1, y: 0, z: 1 })],
+      {
+        spawners: [
+          spawnerAt("near", { x: 2, y: 0, z: 2 }),
+          spawnerAt("far", { x: 7, y: 0, z: 7 }),
+        ],
+      },
+    );
+    const index = new TileIndex(base.map);
+    const mission: TacticalState = {
+      ...base,
+      vision: {
+        ...base.vision,
+        tdf: {
+          visible: [],
+          explored: [index.keyOf({ x: 2, y: 0, z: 2 })],
+          spotted: [],
+        },
+      },
+    };
+    expect(perceivedSpawners(mission, "tdf").map((s) => s.id)).toEqual([
+      "near",
+    ]);
+  });
+
+  it("keeps a spawner once explored, even with nothing looking at it", () => {
+    // A spawner is a fixed feature: unlike a unit it does not vanish
+    // when it leaves view, only before it is ever found.
+    const base = missionWith(
+      openField().build(),
+      [unitAt("u1", "infantry", { x: 1, y: 0, z: 1 })],
+      { spawners: [spawnerAt("seen", { x: 4, y: 0, z: 4 })] },
+    );
+    const index = new TileIndex(base.map);
+    const mission: TacticalState = {
+      ...base,
+      vision: {
+        ...base.vision,
+        tdf: {
+          visible: [],
+          explored: [index.keyOf({ x: 4, y: 0, z: 4 })],
+          spotted: [],
+        },
+      },
+    };
+    expect(perceivedSpawners(mission, "tdf")).toHaveLength(1);
+  });
+
+  it("shows none before anything is explored", () => {
+    const mission = missionWith(
+      openField().build(),
+      [unitAt("u1", "infantry", { x: 1, y: 0, z: 1 })],
+      { spawners: [spawnerAt("hidden", { x: 5, y: 0, z: 5 })] },
+    );
+    expect(
+      perceivedSpawners(
+        { ...mission, vision: { tdf: NO_VISION, bugs: NO_VISION } },
+        "tdf",
+      ),
+    ).toEqual([]);
   });
 });

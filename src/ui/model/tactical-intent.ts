@@ -11,7 +11,14 @@ import type { UnitId } from "../../tactical/model/unit";
  * they are the whole vocabulary the input layer speaks.
  */
 export type TacticalAction =
-  "move" | "attack" | "overwatch" | "reload" | "next-unit" | "cancel";
+  | "move"
+  | "attack"
+  | "overwatch"
+  | "reload"
+  | "extract"
+  | "next-unit"
+  | "next-target"
+  | "cancel";
 
 /** Every `TacticalAction`, in a fixed order. */
 export const TACTICAL_ACTIONS = [
@@ -19,7 +26,9 @@ export const TACTICAL_ACTIONS = [
   "attack",
   "overwatch",
   "reload",
+  "extract",
   "next-unit",
+  "next-target",
   "cancel",
 ] as const satisfies readonly TacticalAction[];
 

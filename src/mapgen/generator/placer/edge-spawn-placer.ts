@@ -45,23 +45,50 @@ const SPACING_RULES: readonly SpacingRule[] = [
   { gap: 2, minDistanceFromDeploy: 0 },
 ];
 
-/** Seeds are drawn from the farthest third of the candidates. */
-const FAR_SHARE = 1 / 3;
+/**
+ * A slice of the candidates, sorted farthest from deploy first, that one
+ * zone's seed is drawn from. Fractions of the list, not distances, so a
+ * band means the same thing on every map size.
+ */
+interface SeedBand {
+  readonly from: number;
+  readonly to: number;
+}
+
+/**
+ * The band each zone draws from, by the order zones are placed and then
+ * cycling. The first zone keeps the farthest third it has always used —
+ * the slow pressure source that arrives late in a long mission — and the
+ * second takes the middle third, so one wave flanks while the mission is
+ * still live (#433). Bugs walk two actions a turn (swarmer 14 tiles,
+ * brute 6), and on a medium map the far third sits 63 steps from deploy
+ * at the median against about 40 for the middle third.
+ */
+const SEED_BANDS: readonly SeedBand[] = [
+  { from: 0, to: 1 / 3 },
+  { from: 1 / 3, to: 2 / 3 },
+];
+
+/** Fallback band covering every candidate; only an empty `SEED_BANDS` uses it. */
+const WHOLE_RANGE: SeedBand = { from: 0, to: 1 };
 
 // ===========================================
 // EdgeSpawnPlacer
 // ===========================================
 
 /**
- * Places edge spawn zones (GDD §6.3): short runs of boundary tiles far
- * from the deploy zones, on passable ground, preferring tiles bugs can
- * walk from into the map. Zones sit on different stretches of edge; on a
- * map too small for that, the spacing relaxes step by step until the
- * count is met.
+ * Places edge spawn zones (GDD §6.3): short runs of boundary tiles well
+ * away from the deploy zones, on passable ground, preferring tiles bugs
+ * can walk from into the map. Zones sit on different stretches of edge
+ * and at different distances — the first far out, the next about half as
+ * far — so the waves that walk out of them do not all arrive together
+ * (#433). On a map too small for that, the spacing relaxes step by step
+ * until the count is met.
  *
  * ```
- *   SSSSS.............      north edge, far from D
+ *   SSSSS.............      far band, the late pressure
  *   .................
+ *   ......SSSSS......S      middle band, the flank that lands in time
  *   ...............DDD
  * ```
  */
@@ -144,7 +171,7 @@ function placeZones(
     if (candidates.length === 0) {
       break;
     }
-    const seed = pickFarSeed(draft, candidates, rng);
+    const seed = pickSeed(draft, candidates, rng, bandFor(draft));
     const size = rng.nextInt(ZONE_MIN, ZONE_MAX);
     const tiles = growAlongEdge(draft, seed, size, candidates);
     draft.addHook(
@@ -190,20 +217,36 @@ function boundaryCandidates(
   return out;
 }
 
-/** A random candidate among the farthest third from the deploy zones. */
-function pickFarSeed(
+/**
+ * The band the next zone draws from: the bands cycle in order, so zone 1
+ * is far, zone 2 middle, zone 3 far again.
+ */
+function bandFor(draft: MapDraft): SeedBand {
+  const band = SEED_BANDS[draft.hooks.edgeSpawns.length % SEED_BANDS.length];
+  return band ?? WHOLE_RANGE;
+}
+
+/**
+ * A random candidate inside the band, measured on the candidates sorted
+ * farthest from the deploy zones first. Draws exactly one number from the
+ * rng however wide the band is, and never returns nothing: a band that
+ * rounds to empty falls back to its first candidate.
+ */
+function pickSeed(
   draft: MapDraft,
   candidates: readonly TileCoord[],
   rng: Rng,
+  band: SeedBand,
 ): TileCoord {
   const sorted = [...candidates].sort(
     (a, b) => distanceToDeploy(draft, b) - distanceToDeploy(draft, a),
   );
-  const far = sorted.slice(
-    0,
-    Math.max(1, Math.ceil(sorted.length * FAR_SHARE)),
+  const start = Math.min(
+    Math.floor(sorted.length * band.from),
+    sorted.length - 1,
   );
-  return rng.pick(far);
+  const end = Math.max(start + 1, Math.ceil(sorted.length * band.to));
+  return rng.pick(sorted.slice(start, end));
 }
 
 /**

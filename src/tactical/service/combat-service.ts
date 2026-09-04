@@ -7,6 +7,7 @@ import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import type { AttackCommand } from "../model/attack-command";
+import type { AttackTarget } from "../model/attack-target";
 import type { AttackPreview } from "../model/attack-preview";
 import { ATTACK_RESOLVED } from "../model/attack-resolved-event";
 import type { CombatTuning } from "../model/combat-tuning";
@@ -23,18 +24,24 @@ import { UNIT_DIED } from "../model/unit-died-event";
 import type { Unit, UnitId } from "../model/unit";
 import type { UnitTemplate } from "../model/unit-template";
 import type { WeaponProfile } from "../model/weapon-profile";
+import { findAttackTarget } from "./attack-target-service";
+import { endIfOver } from "./mission-end-service";
 import { coverAgainst, elevationBonus, hasLineOfSight } from "./sight-service";
+import { damageSpawner } from "./spawner-damage-service";
 
 // ===========================================
 // Types
 // ===========================================
 
-/** The attacker, the target and their templates, validated for an attack. */
+/**
+ * The attacker, its stat block and what it is shooting at, validated for
+ * an attack. The target is an `AttackTarget` rather than a `Unit`, so
+ * the same pair carries a squad, a mech or an egg spawner (#426).
+ */
 export interface AttackPair {
   readonly attacker: Unit;
   readonly attackerTemplate: UnitTemplate;
-  readonly target: Unit;
-  readonly targetTemplate: UnitTemplate;
+  readonly target: AttackTarget;
 }
 
 /** What the hit-chance formula reads off the map. */
@@ -138,10 +145,26 @@ const SIDE_PROBES: readonly { x: number; z: number }[] = [
 // ===========================================
 
 /**
- * Checks an attack is legal for the acting unit: both units on the map
- * and alive, the attacker on the acting side with action points to spend,
- * and everything `validateTargeting` asks. Returns the pair for the
- * formulae.
+ * Why this target cannot be shot at because it is already down, or
+ * undefined while it still stands. Units die and spawners are destroyed,
+ * so the rejection names the right thing for the HUD to phrase.
+ */
+function targetDown(target: AttackTarget): TacticalError | undefined {
+  if (target.hp > 0) {
+    return undefined;
+  }
+  return target.kind === "spawner"
+    ? { kind: "target-destroyed", targetId: target.id }
+    : { kind: "unit-dead", unitId: target.id };
+}
+
+/**
+ * Checks an attack is legal for the acting unit: attacker and target
+ * both on the map and still standing, the attacker on the acting side
+ * with action points to spend, and everything `validateTargeting` asks.
+ * The target is whatever `findAttackTarget` resolves the id to, so a
+ * squad, a mech and an egg spawner are all legal to name (#426).
+ * Returns the pair for the formulae.
  */
 export function validateAttack(
   mission: TacticalState,
@@ -153,15 +176,16 @@ export function validateAttack(
   if (attacker === undefined) {
     return err({ kind: "unit-not-on-map", unitId: attackerId });
   }
-  const target = mission.units.find((u) => u.id === targetId);
+  const target = findAttackTarget(mission, targetId);
   if (target === undefined) {
     return err({ kind: "unit-not-on-map", unitId: targetId });
   }
   if (attacker.hp <= 0) {
     return err({ kind: "unit-dead", unitId: attackerId });
   }
-  if (target.hp <= 0) {
-    return err({ kind: "unit-dead", unitId: targetId });
+  const down = targetDown(target);
+  if (down !== undefined) {
+    return err(down);
   }
   if (attacker.team !== TEAM_FOR_PHASE[mission.phase]) {
     return err({ kind: "wrong-phase", unitId: attackerId });
@@ -177,10 +201,12 @@ export function validateAttack(
 
 /**
  * The targeting checks that hold whoever's phase it is and whatever the
- * attacker's action points: both units on the map and alive, the target
- * an enemy other than the attacker, in range and in sight. Overwatch
- * reactions (#328) fire on exactly these. Returns the pair and terrain
- * for the formulae.
+ * attacker's action points: attacker and target both on the map and
+ * still standing, the target an enemy other than the attacker, in range
+ * and in sight. Range, sight and cover are judged against the target's
+ * tile, so an egg spawner is shot at through exactly the rules a unit
+ * is. Overwatch reactions (#328) fire on exactly these. Returns the
+ * pair and terrain for the formulae.
  */
 export function validateTargeting(
   mission: TacticalState,
@@ -191,15 +217,16 @@ export function validateTargeting(
   if (attacker === undefined) {
     return err({ kind: "unit-not-on-map", unitId: attackerId });
   }
-  const target = mission.units.find((u) => u.id === targetId);
+  const target = findAttackTarget(mission, targetId);
   if (target === undefined) {
     return err({ kind: "unit-not-on-map", unitId: targetId });
   }
   if (attacker.hp <= 0) {
     return err({ kind: "unit-dead", unitId: attackerId });
   }
-  if (target.hp <= 0) {
-    return err({ kind: "unit-dead", unitId: targetId });
+  const down = targetDown(target);
+  if (down !== undefined) {
+    return err(down);
   }
   if (attackerId === targetId) {
     return err({ kind: "self-target", unitId: attackerId });
@@ -208,10 +235,9 @@ export function validateTargeting(
     return err({ kind: "friendly-target", targetId });
   }
   const attackerTemplate = mission.templates[attacker.templateId];
-  const targetTemplate = mission.templates[target.templateId];
-  if (attackerTemplate === undefined || targetTemplate === undefined) {
+  if (attackerTemplate === undefined) {
     throw new Error(
-      `Unit "${attackerTemplate === undefined ? attackerId : targetId}" references a template missing from the mission`,
+      `Unit "${attackerId}" references a template missing from the mission`,
     );
   }
   const index = new TileIndex(mission.map);
@@ -226,7 +252,7 @@ export function validateTargeting(
   if (!hasLineOfSight(mission.map, attacker.pos, target.pos, index)) {
     return err({ kind: "no-line-of-sight", targetId });
   }
-  return ok({ attacker, attackerTemplate, target, targetTemplate, terrain });
+  return ok({ attacker, attackerTemplate, target, terrain });
 }
 
 // ===========================================
@@ -248,10 +274,10 @@ export function previewAttack(
   if (!checked.ok) {
     return checked;
   }
-  const { attackerTemplate, targetTemplate, terrain } = checked.value;
+  const { attackerTemplate, target, terrain } = checked.value;
   return ok({
     hitChance: hitChance(attackerTemplate.weapon, terrain, tuning),
-    damage: damageRange(attackerTemplate.weapon, targetTemplate.armor, tuning),
+    damage: damageRange(attackerTemplate.weapon, target.armor, tuning),
     distance: terrain.distance,
     cover: terrain.cover,
     flanked: terrain.flanked,
@@ -278,6 +304,13 @@ export function previewAttack(
  * `AttackResolved` always and `UnitDied` (with the killer) when the
  * target's hit points reach zero; the corpse stays in `units` at zero
  * hit points for graphics to remove and the results to count.
+ *
+ * A shot at an egg spawner (#426) rolls identically and hands the damage
+ * to `damageSpawner`, the same rule planted charges use, so it emits
+ * `SpawnerDamaged` and — on the killing shot — destroys it and completes
+ * its objective. Whether that ended the mission is `resolveAttack`'s
+ * question, not this one's: an overwatch reaction never shoots a
+ * spawner and must not end anything.
  */
 export function rollAttack(
   mission: TacticalState,
@@ -286,31 +319,28 @@ export function rollAttack(
   tuning: CombatTuning,
   apAfter: number,
 ): TacticalApplied<TacticalState> {
-  const { attacker, attackerTemplate, target, targetTemplate, terrain } =
-    checked;
+  const { attacker, attackerTemplate, target, terrain } = checked;
   const chance = hitChance(attackerTemplate.weapon, terrain, tuning);
-  const band = damageRange(
-    attackerTemplate.weapon,
-    targetTemplate.armor,
-    tuning,
-  );
+  const band = damageRange(attackerTemplate.weapon, target.armor, tuning);
   const hit = ctx.rng.chance(chance / 100);
   const damage = hit ? ctx.rng.nextInt(band[0], band[1]) : 0;
   const targetHp = Math.max(0, target.hp - damage);
 
-  const units = mission.units.map((unit): Unit => {
-    if (unit.id === attacker.id) {
-      return {
-        ...unit,
-        ap: apAfter,
-        ...(unit.charges === undefined ? {} : { charges: unit.charges - 1 }),
-      };
-    }
-    if (unit.id === target.id && damage > 0) {
-      return { ...unit, hp: targetHp };
-    }
-    return unit;
-  });
+  // The attacker pays whatever the shot cost it, whatever it shot at.
+  const billed: TacticalState = {
+    ...mission,
+    units: mission.units.map((unit): Unit =>
+      unit.id === attacker.id
+        ? {
+            ...unit,
+            ap: apAfter,
+            ...(unit.charges === undefined
+              ? {}
+              : { charges: unit.charges - 1 }),
+          }
+        : unit,
+    ),
+  };
   const events: TacticalEvent[] = [
     {
       type: ATTACK_RESOLVED,
@@ -323,21 +353,37 @@ export function rollAttack(
       },
     },
   ];
+
+  // Where the damage lands is the one thing the target's kind decides.
+  if (target.kind === "spawner") {
+    const hurt = damageSpawner(billed, target.id, damage, attacker.id);
+    return { state: hurt.state, events: [...events, ...hurt.events] };
+  }
   if (target.hp > 0 && targetHp === 0) {
     events.push({
       type: UNIT_DIED,
       payload: { unitId: target.id, killerId: attacker.id },
     });
   }
-  return { state: { ...mission, units }, events };
+  return {
+    state: {
+      ...billed,
+      units: billed.units.map((unit): Unit =>
+        unit.id === target.id && damage > 0 ? { ...unit, hp: targetHp } : unit,
+      ),
+    },
+    events,
+  };
 }
 
 /**
  * Resolves an `Attack` command: validates it, then rolls it with the
  * attacker paying `attackApCost`, or every remaining action point when
  * attacks end the turn. Rolls against exactly the numbers
- * `previewAttack` shows. Pure: on any error the mission is returned
- * untouched.
+ * `previewAttack` shows. When the shot destroyed an egg spawner and that
+ * completed the last objective, the mission ends here rather than at the
+ * next turn boundary, the way `Interact` ends it (#426). Pure: on any
+ * error the mission is returned untouched.
  */
 export function resolveAttack(
   mission: TacticalState,
@@ -353,7 +399,15 @@ export function resolveAttack(
   const apAfter = tuning.attackEndsTurn
     ? 0
     : Math.max(0, checked.value.attacker.ap - tuning.attackApCost);
-  return ok(rollAttack(mission, checked.value, ctx, tuning, apAfter));
+  const applied = rollAttack(mission, checked.value, ctx, tuning, apAfter);
+  // Shooting the last spawner wins the mission there and then, exactly
+  // as planting charges on it does; a shot at a unit still waits for the
+  // turn boundary, which is where a squad wipe has always been noticed.
+  return ok(
+    checked.value.target.kind === "spawner"
+      ? endIfOver(applied.state, applied.events)
+      : applied,
+  );
 }
 
 /** The `Attack` handler for `registerTacticalCommands`, closed over the tuning. */

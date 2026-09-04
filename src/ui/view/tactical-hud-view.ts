@@ -5,11 +5,16 @@ import type { CombatTuning } from "../../tactical/model/combat-tuning";
 import { endTurn } from "../../tactical/model/end-turn-command";
 import { move } from "../../tactical/model/move-command";
 import { overwatch } from "../../tactical/model/overwatch-command";
+import { extract } from "../../tactical/model/extract-command";
 import { reload } from "../../tactical/model/reload-command";
 import type { TacticalCommand } from "../../tactical/model/tactical-command";
 import type { TacticalError } from "../../tactical/model/tactical-error";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { Team, Unit, UnitId } from "../../tactical/model/unit";
+import {
+  enemyAttackTargets,
+  findAttackTarget,
+} from "../../tactical/service/attack-target-service";
 import { previewAttack } from "../../tactical/service/combat-service";
 import type { TacticalIntent } from "../model/tactical-intent";
 import type { ActionBarAction } from "./action-bar-view";
@@ -60,7 +65,8 @@ const TEAM_FOR_PHASE: Readonly<Record<TacticalState["phase"], Team>> = {
  *   intent select-unit ──▶ attack mode + enemy? ──▶ preview target
  *                      └─▶ else select it (card follows)
  *   intent select-tile ──▶ move mode ──▶ onCommand(move(selected, [tile]))
- *   intent action      ──▶ move / attack arm the mode; overwatch / reload
+ *   intent action      ──▶ move / attack arm the mode; next-target cycles
+ *                          what is aimed at; overwatch / reload
  *                          ──▶ onCommand; cancel clears; next-unit cycles
  *   intent end-turn    ──▶ onCommand(endTurn())
  *   Fire               ──▶ onCommand(attack(selected, target))
@@ -132,17 +138,22 @@ export class TacticalHudView {
     this.refresh();
   }
 
-  /** Renders `mission`, dropping a selection or target that is gone or dead. */
+  /** Renders `mission`, dropping a selection or target that is gone, dead or destroyed. */
   update(mission: TacticalState | undefined): void {
     this.mission = mission;
-    const alive = (id: UnitId | undefined): boolean =>
+    const aliveUnit = (id: UnitId | undefined): boolean =>
       id !== undefined &&
       (mission?.units.some((u) => u.id === id && u.hp > 0) ?? false);
-    if (!alive(this.selected)) {
+    if (!aliveUnit(this.selected)) {
       this.selected = undefined;
       this.mode = "select";
     }
-    if (!alive(this.target)) {
+    // The target may be an egg spawner (#426), which is not in `units`.
+    const target =
+      mission && this.target !== undefined
+        ? findAttackTarget(mission, this.target)
+        : undefined;
+    if (target === undefined || target.hp <= 0) {
       this.target = undefined;
     }
     this.refresh();
@@ -178,7 +189,7 @@ export class TacticalHudView {
     return this.mode;
   }
 
-  /** The enemy being previewed, if any. */
+  /** The enemy being previewed — a unit or an egg spawner (#426) — if any. */
   getTargetUnitId(): UnitId | undefined {
     return this.target;
   }
@@ -213,16 +224,28 @@ export class TacticalHudView {
   // Private Methods
   // ===========================================
 
-  /** In attack mode an enemy becomes the preview target; otherwise the unit is selected. */
+  /**
+   * In attack mode anything on the other side becomes the preview target,
+   * resolved through the same port the combat rules use so an egg spawner
+   * is picked exactly as a unit is (#426); otherwise the unit is selected.
+   * An id that is not a unit can only ever be a target.
+   */
   private selectUnit(unitId: UnitId): void {
-    const unit = this.unit(unitId);
-    if (!unit) {
+    const mission = this.mission;
+    if (!mission) {
+      return;
+    }
+    const picked = findAttackTarget(mission, unitId);
+    if (!picked || picked.hp <= 0) {
       return;
     }
     const selected = this.unit(this.selected);
-    if (this.mode === "attack" && selected && unit.team !== selected.team) {
+    if (this.mode === "attack" && selected && picked.team !== selected.team) {
       this.target = unitId;
       this.refresh();
+      return;
+    }
+    if (picked.kind !== "unit") {
       return;
     }
     this.selected = unitId;
@@ -232,7 +255,9 @@ export class TacticalHudView {
   }
 
   /** Arms, cancels, cycles or dispatches per the action. */
-  private handleAction(action: ActionBarAction | "next-unit" | "cancel"): void {
+  private handleAction(
+    action: ActionBarAction | "next-unit" | "next-target" | "cancel",
+  ): void {
     switch (action) {
       case "move":
       case "attack":
@@ -251,6 +276,11 @@ export class TacticalHudView {
           this.handlers.onCommand(reload(this.selected));
         }
         break;
+      case "extract":
+        if (this.canExtract() && this.selected !== undefined) {
+          this.handlers.onCommand(extract(this.selected));
+        }
+        break;
       case "end-turn":
         this.handlers.onCommand(endTurn());
         break;
@@ -260,6 +290,9 @@ export class TacticalHudView {
         break;
       case "next-unit":
         this.selectNextActor();
+        break;
+      case "next-target":
+        this.selectNextTarget();
         break;
     }
     this.refresh();
@@ -311,6 +344,55 @@ export class TacticalHudView {
     );
   }
 
+  /**
+   * Arms attack mode and steps to the next thing the selected unit could
+   * shoot — enemy units and standing egg spawners alike, in
+   * `enemyAttackTargets` order, wrapping. A spawner has no mesh the
+   * pointer can hit yet, so this is how one is aimed at (#426); it is
+   * also how a target behind another is reached with the keyboard.
+   *
+   * Cycles every enemy rather than only the reachable ones, so the
+   * preview panel can explain why an out-of-range target cannot be
+   * fired on instead of the key silently skipping it.
+   */
+  private selectNextTarget(): void {
+    const mission = this.mission;
+    const selected = this.unit(this.selected);
+    if (!mission || !selected || !this.canAct()) {
+      return;
+    }
+    const targets = enemyAttackTargets(mission, selected.team);
+    if (targets.length === 0) {
+      return;
+    }
+    const at = targets.findIndex((t) => t.id === this.target);
+    this.mode = "attack";
+    this.target = targets[(at + 1) % targets.length]?.id;
+  }
+
+  /**
+   * True when the selected unit can leave the map: a living unit of the
+   * acting side standing on an extraction tile (#341). Action points do
+   * not matter — walking out is free, so a unit that spent its turn
+   * reaching the zone still leaves on the same turn.
+   */
+  private canExtract(): boolean {
+    const mission = this.mission;
+    const unit = this.unit(this.selected);
+    return (
+      mission !== undefined &&
+      unit !== undefined &&
+      unit.hp > 0 &&
+      unit.team === TEAM_FOR_PHASE[mission.phase] &&
+      mission.extraction.some(
+        (tile) =>
+          tile.x === unit.pos.x &&
+          tile.y === unit.pos.y &&
+          tile.z === unit.pos.z,
+      )
+    );
+  }
+
   /** A unit of the current mission by id. */
   private unit(id: UnitId | undefined): Unit | undefined {
     return id === undefined
@@ -347,6 +429,7 @@ export class TacticalHudView {
         canAct: false,
         playerPhase: false,
         mode: undefined,
+        canExtract: false,
       });
       return;
     }
@@ -362,15 +445,13 @@ export class TacticalHudView {
       selected,
       selected ? mission.templates[selected.templateId] : undefined,
     );
-    const target = this.unit(this.target);
+    const target =
+      this.target === undefined
+        ? undefined
+        : findAttackTarget(mission, this.target);
     const preview = this.currentPreview();
     this.preview.update(
-      target && preview
-        ? {
-            targetName: mission.templates[target.templateId]?.name ?? target.id,
-            preview,
-          }
-        : undefined,
+      target && preview ? { targetName: target.name, preview } : undefined,
     );
     this.objectives.update(mission.objectives, mission.spawners);
     this.actions.update({
@@ -378,6 +459,7 @@ export class TacticalHudView {
       playerPhase: mission.phase === "player",
       mode: this.mode === "select" ? undefined : this.mode,
       reloadLabel: selected?.kind === "mech" ? "Vent" : "Reload",
+      canExtract: this.canExtract(),
     });
   }
 }

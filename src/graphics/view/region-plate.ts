@@ -26,11 +26,8 @@ export const BIOME_PLATE_COLOUR: Readonly<Record<BiomeId, number>> = {
   coastal: 0xb5a276, // env-wet-sand
 };
 
-/** Plate outline and label placeholder: `ui-text-dim`. */
+/** Plate outline: `ui-text-dim`. */
 const OUTLINE_COLOUR = 0x8b94a6;
-
-/** Label placeholder bar size, in world units. */
-const LABEL_BAR = { maxWidth: 1.6, height: 0.04, depth: 0.3 };
 
 /** Plates draw first among transparent objects so marker sprites sit on top of them. */
 const PLATE_RENDER_ORDER = 1;
@@ -41,13 +38,12 @@ const PLATE_RENDER_ORDER = 1;
 
 /**
  * One region: a translucent slab tinted by biome so the Earth texture
- * shows through, an outline, and a small bar where the label will go.
+ * shows through, and an outline.
  * The tint reads as "this region's climate" over whatever the map
  * beneath it looks like, textured or flat (architecture §7).
  *
  * ```
  *     ┌──────────────────┐ ◀ outline (EdgesGeometry)
- *     │      ▬▬▬▬        │ ◀ label placeholder at region.layout
  *     │ ░░·░░░░░░░░·░░░░ │   translucent biome tint over the map
  *     └──────────────────┘   (city markers are separate objects)
  * ```
@@ -109,27 +105,15 @@ export class RegionPlate {
     outline.position.y = config.plateHeight / 2;
     this.object.add(outline);
 
-    const labelGeometry = new BoxGeometry(
-      Math.min(LABEL_BAR.maxWidth, extent.width * 0.5),
-      LABEL_BAR.height,
-      LABEL_BAR.depth,
-    );
-    const labelMaterial = new MeshStandardMaterial({
-      color: OUTLINE_COLOUR,
-      flatShading: true,
-    });
-    const label = new Mesh(labelGeometry, labelMaterial);
-    label.name = `region-label-${region.id}`;
-    label.position.y = config.plateHeight + LABEL_BAR.height / 2;
-    this.object.add(label);
-
+    // No label bar. It was a placeholder for text that never arrived, and
+    // seen straight down (#420) it is a solid grey rectangle floating at
+    // the region's label point, often on top of another city's marker
+    // (#439). City names are drawn by the marker itself now.
     this.disposables.push(
       slabGeometry,
       slabMaterial,
       outlineGeometry,
       outlineMaterial,
-      labelGeometry,
-      labelMaterial,
     );
   }
 

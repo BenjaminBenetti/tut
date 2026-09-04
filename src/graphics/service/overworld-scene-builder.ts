@@ -29,6 +29,7 @@ import type {
 import { CityMarker } from "../view/city-marker";
 import { RegionPlate } from "../view/region-plate";
 import {
+  cityMarkerLayout,
   layoutToWorld,
   mapCentre,
   regionPlateExtent,
@@ -166,7 +167,7 @@ export class OverworldSceneBuilder implements CityPicker, MapStateView {
       this.root.add(plate.object);
     }
     for (const city of map.cities) {
-      const ground = layoutToWorld(city.layout, this.config);
+      const ground = layoutToWorld(cityMarkerLayout(city), this.config);
       const base = { x: ground.x, y: this.config.plateHeight, z: ground.z };
       const marker = new CityMarker(
         city,
@@ -175,6 +176,7 @@ export class OverworldSceneBuilder implements CityPicker, MapStateView {
           geometry: this.markerGeometry,
           glyph: this.assets.markerGlyph,
           missionGlyph: this.assets.missionGlyph,
+          text: this.assets.text,
         },
         this.config,
       );

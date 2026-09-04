@@ -156,6 +156,7 @@ export async function bootstrapApp(doc: Document): Promise<void> {
             assessor: game.assessor,
             squadTypes: game.content.squadTypes,
             missionTypes: game.content.missionTypes,
+            autoResolve: game.autoResolve,
           }),
       ],
       [

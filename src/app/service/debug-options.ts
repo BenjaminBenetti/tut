@@ -7,6 +7,9 @@ import type { CampaignDebugOptions } from "../../overworld/model/campaign-debug"
 /** Query parameter that multiplies threat escalation: `/?threatEscalation=100`. */
 export const THREAT_ESCALATION_PARAM = "threatEscalation";
 
+/** Query parameter that puts missions back on the auto-resolver: `/?autoResolve=1`. */
+export const AUTO_RESOLVE_PARAM = "autoResolve";
+
 // ===========================================
 // Parsing
 // ===========================================
@@ -20,19 +23,33 @@ export const THREAT_ESCALATION_PARAM = "threatEscalation";
  * ```
  *   "?threatEscalation=100" ──► { threatEscalationMultiplier: 100 }
  *   "?threatEscalation=abc" ──► undefined
+ *   "?autoResolve=1"        ──► { autoResolve: true }
+ *   "?autoResolve=0"        ──► undefined
  * ```
  */
 export function parseDebugOptions(
   search: string,
 ): CampaignDebugOptions | undefined {
   const params = new URLSearchParams(search);
-  const raw = params.get(THREAT_ESCALATION_PARAM);
-  if (raw === null) {
-    return undefined;
+  const options: {
+    threatEscalationMultiplier?: number;
+    autoResolve?: boolean;
+  } = {};
+  const factor = Number(params.get(THREAT_ESCALATION_PARAM));
+  if (
+    params.get(THREAT_ESCALATION_PARAM) !== null &&
+    Number.isFinite(factor) &&
+    factor > 0
+  ) {
+    options.threatEscalationMultiplier = factor;
   }
-  const factor = Number(raw);
-  if (!Number.isFinite(factor) || factor <= 0) {
-    return undefined;
+  if (isTruthy(params.get(AUTO_RESOLVE_PARAM))) {
+    options.autoResolve = true;
   }
-  return { threatEscalationMultiplier: factor };
+  return Object.keys(options).length === 0 ? undefined : options;
+}
+
+/** A flag parameter is on for `1`, `true` or an empty value (`?autoResolve`). */
+function isTruthy(raw: string | null): boolean {
+  return raw === "" || raw === "1" || raw?.toLowerCase() === "true";
 }

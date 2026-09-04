@@ -68,13 +68,15 @@ test("the tactical screen mounts a generated map with the deployed roster and ex
   );
   await expect(body).toHaveAttribute("data-selected-unit", "unit-1");
 
-  // The one autosave carries the live mission across a reload. Continue
-  // still lands on the overworld until #341 routes an active mission to
-  // the tactical screen; #341 should flip this expectation to "tactical".
+  // The one autosave carries the live mission across a reload, and
+  // Continue resumes it on the tactical screen (#341).
   await page.reload();
   await expect(body).toHaveAttribute("data-app-state", "ready");
   await page.locator('[data-action="continue"]').click();
-  await expect(body).toHaveAttribute("data-screen", "overworld");
+  await expect(body).toHaveAttribute("data-screen", "tactical");
+  await expect(
+    page.locator('#turn-banner [data-field="mission-id"]'),
+  ).toHaveText(missionId ?? "");
 
   expect(errors).toEqual([]);
 });

@@ -38,13 +38,36 @@ If a name appears that your gate does not run, your gate is incomplete; that is
 exactly how the miss above happened, and the check names are readable even from a
 run that was cancelled.
 
-**Do not read a CI result as a pass unless it says `success`.** At the merge rate
-this repo sustains, a head often has no usable verdict: measured across seven
-consecutive heads, one had **zero** check-runs and four had at least one
-`cancelled` — superseded by the next merge before finishing. `cancelled` is
-neither pass nor fail, and an empty result is not agreement. **The local six-stage
-gate is the per-head verdict**; CI is corroboration when it happens to have
-finished.
+**Do not read a CI result as a pass unless it says `success`, and expect many heads
+to have no result at all.** `.github/workflows/ci.yml` sets
+
+```yaml
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+```
+
+so on `main` **each push cancels the in-flight run for the previous head**. During a
+burst of merges only the last head gets a full verdict; the ones in the middle are
+cancelled, sometimes before their jobs register any check-runs at all — which is why
+`/check-runs` can return an empty list rather than a failure. Measured across seven
+consecutive heads: one had **zero** check-runs, four had at least one `cancelled`,
+two were clean.
+
+Measured across the last 25 heads: **14 were cancelled**, including real product
+changes — the camera-rig refactor, hook shelving, the Earth-overrun fix, difficulty
+hatching.
+
+**This is not a hole, and do not report it as one.** The Tech Lead gates on the
+*merge result* rather than the branch — checks out `main`, merges the PR locally and
+runs the gate against that — so merged code is verified before it lands. The
+post-merge CI run is a second pass, and QA's gate is a third. What it does mean in
+practice:
+
+- A green CI badge is often simply absent for a head; that is expected, not a signal.
+- `cancelled` is neither pass nor fail, and an empty result is not agreement.
+- The local six-stage gate is frequently the only *post-merge* verification a head
+  receives, which is the argument for running it per head rather than per session.
 
 Where CI *is* the better arbiter is a local failure: this container is loaded
 enough to fake timeouts, so red locally with a `success` on CI for the same SHA is
@@ -56,10 +79,10 @@ Stop any probe servers on 4173/4174 before the e2e run, or contention fakes fail
 
 | Field | Value |
 |---|---|
-| SHA tested | `de58489` (main, after v0.2.3) |
-| Gate | typecheck, lint, build pass; vitest **1906 / 1906** (+1 deliberate skip); **sim sweep 7 / 7**; e2e **59 / 59** |
-| Exploratory | 11 flows clean; determinism verified after the RNG nonce change; overwatch exercised end to end |
-| **Verdict** | **Healthy, and the board is clear.** Control scheme 7/7 on every head since band 1; a mission is completable with fog active, guarded by a permanent spec. **No open QA-filed defects.** |
+| SHA tested | `fde7a49` (main, well ahead of v0.2.3) |
+| Gate | typecheck, lint, build pass; vitest **1925 / 1925** (+1 deliberate skip); **sim sweep 7 / 7**; e2e **59 / 59** (gated on `62dab53`, docs-only since) |
+| Exploratory | 11 flows clean on `fde7a49`, dev and production; **current main plays 7/7 through the production build with no dev hooks** |
+| **Verdict** | **Healthy and tag-ready.** No open QA-filed defects. Control scheme 7/7 on every head since band 1, including across the camera-rig refactor; determinism holds after the RNG nonce change; the win path is guarded at the rules level (60-seed sweep, in CI) and through the UI. |
 
 ### Release push, in order of what mattered
 

@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-05 ~23:00 UTC (session 5; both ED exceptions merged, v0.2.5 is the Director's tag, hold continues; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-05 ~23:40 UTC (session 5; v0.2.5 tagged at `475c5d3`; main's CI intermittently red since #776, filed as #793; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — production is paused; only #748 is live
 
@@ -80,6 +80,21 @@ v0.2.5 on them and the hold continues:**
 
 Re-gated #790 after #789 landed because a merge-order interaction is only
 visible on the merged tree (#703); both green.
+
+**v0.2.5 is tagged at `475c5d3` and its release workflow ran green.**
+
+**Main's CI is intermittently red since #776 (19:01) — #793, filed by me.**
+Five 60-second stalls on tactical specs at first mount today (two on `main`
+itself, one on #789's first run, two on #792, a docs-only PR), all green on
+retry, red by `--fail-on-flaky-tests`. e2e job on `main` 7 min → 9.5 min.
+Measured: #776's `trackSurface` clones geometry and material (own shader
+program) **per batch**; local A/B `35bfa4c` vs `475c5d3` puts tactical mount
++23–40 %. Fix named on #793: one mist material per prototype. Owner is the
+Director's call under the hold. **Until it lands: a red e2e on `main` or on a
+docs-only PR is #793 — re-run the failed job (`actions/runs/ID/rerun-failed-jobs`
+via REST) and merge on green; never merge red.** Two red `main` runs went unseen
+for hours because my monitor watched PR heads only; **the monitor now snapshots
+CI on `main`'s head too** (the `CI main@sha` line).
 
 **Otherwise the queue is empty except parked #757.** Nothing merges until the ED's
 playtest verdict or a Director ruling on the ramp child above.

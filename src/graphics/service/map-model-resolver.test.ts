@@ -436,7 +436,7 @@ describe("resolveMapModels stairs tiles", () => {
 // ===========================================
 
 describe("resolveMapModels parapets", () => {
-  it("draws a raised road's parapet in concrete, not brick", () => {
+  it("draws a raised road's parapet with the dedicated kerb and rail", () => {
     // Raised road tiles carry `half` walls and no building id (#607).
     const b = field();
     b.tile({ x: 2, y: 1, z: 2 }, SurfaceIds.ROAD);
@@ -446,7 +446,7 @@ describe("resolveMapModels parapets", () => {
     const parapets = walls.filter((w) => w.tile.x === 2 && w.tile.y === 1);
     expect(parapets.length).toBe(2);
     for (const p of parapets) {
-      expect(p.modelId).toBe("building.wall-half-concrete");
+      expect(p.modelId).toBe("building.viaduct-parapet");
     }
   });
 

@@ -23,7 +23,7 @@ import {
 /** Every wall model the table names, across all three families. */
 const allWallModels = [
   ...WALL_FAMILIES.flatMap((family) => Object.values(WALL_MODELS[family])),
-  HALF_WALL_MODEL,
+  ...Object.values(HALF_WALL_MODELS),
 ];
 
 describe("map model table", () => {
@@ -61,9 +61,16 @@ describe("map model table", () => {
     }
   });
 
-  it("draws a half wall in brick whatever the family, the only one modelled", () => {
-    for (const family of WALL_FAMILIES) {
-      expect(wallModel("half", family)).toBe(HALF_WALL_MODELS[family]);
+  it("keeps every building family's half wall and the building hash order unchanged", () => {
+    expect(WALL_FAMILIES).toEqual(["brick", "concrete", "panel"]);
+    expect(wallModel("half", "brick")).toBe("building.wall-half");
+    expect(wallModel("half", "concrete")).toBe("building.wall-half-concrete");
+    expect(wallModel("half", "panel")).toBe("building.wall-half-concrete");
+    for (let index = 0; index < 60; index++) {
+      const id = `building-${String(index)}`;
+      for (const kind of ["solid", "window", "door", "half"] as const) {
+        expect(wallFamilyForWall(kind, id)).toBe(wallFamilyFor(id));
+      }
     }
   });
 
@@ -85,13 +92,13 @@ describe("map model table", () => {
     // Brick where a wall belongs to no building: a building's own
     // ground-floor walls stand on untagged tiles (#766).
     expect(wallFamilyFor(undefined)).toBe("brick");
-    // The one civic exception is the parapet, which with no building is
-    // concrete — a viaduct's lip drew brick and read as a brick building
-    // the road sat on (#748, #766).
-    expect(wallFamilyForWall("half", undefined)).toBe("concrete");
+    // Only the unowned half wall takes the new road geometry (#782).
+    expect(wallFamilyForWall("half", undefined)).toBe("road");
     expect(wallFamilyForWall("solid", undefined)).toBe("brick");
+    expect(wallFamilyForWall("window", undefined)).toBe("brick");
+    expect(wallFamilyForWall("door", undefined)).toBe("brick");
     expect(wallModel("half", wallFamilyForWall("half", undefined))).toBe(
-      "building.wall-half-concrete",
+      "building.viaduct-parapet",
     );
     expect(wallModel("half", "brick")).toBe(HALF_WALL_MODEL);
   });

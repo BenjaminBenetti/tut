@@ -91,8 +91,11 @@ export const PROP_MODELS: Readonly<Record<KnownPropKindId, ModelAssetId>> = {
  */
 export type WallFamily = "brick" | "concrete" | "panel";
 
+/** Civic edges have their own geometry; buildings never draw this family. */
+export type WallPlacementFamily = WallFamily | "road";
+
 /**
- * Every family, in a fixed order. `wallFamilyFor` indexes into this, so
+ * Building families, in a fixed order. `wallFamilyFor` indexes into this, so
  * the order is part of what a building's family depends on: reordering
  * it redraws every map. Append rather than insert.
  */
@@ -136,17 +139,17 @@ export const WALL_MODELS: Readonly<
 };
 
 /**
- * The half-height wall, one per family (#766). #510 modelled it in brick
- * only and it was brick whatever the family, so a parapet on an asphalt
- * viaduct wore brick with a concrete cap and read, at a glance, as a low
- * brick building the road sat on (#748). Concrete and panel buildings —
- * and everything civic that belongs to no building — now take the same
- * mesh in the concrete material, and read as a low grey lip.
+ * Building half walls keep their existing brick/concrete meshes (#766).
+ * The road family uses an open steel rail on a concrete kerb (#782),
+ * sharing the half wall's bounds and base pivot without its silhouette.
  */
-export const HALF_WALL_MODELS: Readonly<Record<WallFamily, ModelAssetId>> = {
+export const HALF_WALL_MODELS: Readonly<
+  Record<WallPlacementFamily, ModelAssetId>
+> = {
   brick: "building.wall-half",
   concrete: "building.wall-half-concrete",
   panel: "building.wall-half-concrete",
+  road: "building.viaduct-parapet",
 };
 
 /** The brick half wall, kept for the brick family's own parapets. */
@@ -172,10 +175,17 @@ export function propModel(kind: PropKindId): ModelAssetId | undefined {
 
 /**
  * The model for a wall kind in one family. Every kind mapgen can emit
- * has one; `half` follows the family too, see `HALF_WALL_MODELS`.
+ * has one; `half` follows the family too, see `HALF_WALL_MODELS`. Road
+ * edges use concrete for full-height kinds, though only half walls are
+ * assigned the road family by `wallFamilyForWall`.
  */
-export function wallModel(kind: WallKind, family: WallFamily): ModelAssetId {
-  return kind === "half" ? HALF_WALL_MODELS[family] : WALL_MODELS[family][kind];
+export function wallModel(
+  kind: WallKind,
+  family: WallPlacementFamily,
+): ModelAssetId {
+  return kind === "half"
+    ? HALF_WALL_MODELS[family]
+    : WALL_MODELS[family === "road" ? "concrete" : family][kind];
 }
 
 /**
@@ -200,20 +210,19 @@ export function wallFamilyFor(buildingId: string | undefined): WallFamily {
 }
 
 /**
- * The family one wall draws in (#766). A building's walls take the
+ * The family one wall draws in (#766, #782). A building's walls take the
  * building's family. A wall that belongs to no building is brick — except
  * a `half` wall, which with no building is civic: the parapet along a
- * viaduct or the lip of a raised park, and it draws concrete so a road
- * reads as a low grey lip on a grey pillar rather than as a brick building
- * it sits on (#748). Only the parapet changes, because a building's own
+ * viaduct or the lip of a raised park, and takes the road's kerb and rail.
+ * Only the parapet changes, because a building's own
  * ground-floor walls also stand on untagged tiles.
  */
 export function wallFamilyForWall(
   kind: WallKind,
   buildingId: string | undefined,
-): WallFamily {
+): WallPlacementFamily {
   if (buildingId === undefined && kind === "half") {
-    return "concrete";
+    return "road";
   }
   return wallFamilyFor(buildingId);
 }

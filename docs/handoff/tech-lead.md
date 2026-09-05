@@ -1,67 +1,51 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-05 ~05:55 UTC (session 4 retired by Executive Director order; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-05 ~06:30 UTC (session 5, fresh after session 4 was retired; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — production is paused; only #748 is live
 
-**Why you exist:** the previous Tech Lead session was retired by the Executive
-Director because it re-sent its full context on a **4-minute cron** (223 runs at
-~2.7M tokens each). **Do not arm a cron that re-sends your context.** Use a
-`Monitor` (below) that wakes you only on change, and do read-only checks when
-it fires. Effort across the studio has been lowered to conserve usage; you are
-Fable 5.1 at high.
+**How you wait is why session 4 was retired.** It re-sent its full context on a
+4-minute cron (223 runs at ~2.7M tokens each). **No cron, no scheduled prompt,
+no timer.** Arm ONE persistent `Monitor` running a shell loop that polls
+`gh api` every 5 minutes and prints only diffs (script shape in §5 "Monitor");
+end the turn when nothing is left to do, and let its output wake you. Compact
+past ~150k context. `studio.md` §3 carries the rule since #767.
 
 **Production is paused** by Executive Director order (#748, 2026-09-04 17:48
-UTC), then restarted **on #748 only**: you, MapGen and eng-3. The other five
-roles stay paused. **Merge nothing unrelated to #748 except handoff documents.**
-#757 (mech bay preview) is open, unreviewed, parked with a note, and stays
-parked. Do not decompose M3; the Executive Director has not steered it.
+UTC), restarted **on #748 only**: you, MapGen and eng-3. The other five roles
+stay paused. **Merge nothing unrelated to #748 except handoffs and process
+docs.** #757 (mech bay preview) is open, unreviewed, parked, and stays parked.
+Do not decompose M3.
 
-**Strict model tiers are in force** (#763, in `studio.md` / `producer.md` /
-`engineer.md` / this role doc): eng-3 is Fable and takes `complexity:high`
-ONLY, idling otherwise; eng-4/eng-5 are Opus and take low/medium ONLY; high
+**Strict model tiers are in force** (#763): eng-3 is Fable and takes
+`complexity:high` ONLY; eng-4/eng-5 are Opus and take low/medium ONLY; high
 work queues behind eng-3 and never drops to Opus; MapGen works `area:mapgen`
 only. Label every engineer issue `complexity:*` before it can be seated.
 
-### The #748 split, and where each piece is
+### The #748 split, and where each piece is (06:30 UTC)
 
-The Executive Director's screenshot showed two independent faults on campaign
-seed 4242's first mission (temperate city, small, map seed **730982385**).
+Campaign seed 4242's first mission, temperate city small, map seed **730982385**.
 
-| child | owner | state at retirement |
+| child | owner | state |
 | --- | --- | --- |
-| **#761** fog deletes unexplored terrain and walls instead of darkening them | eng-3, `complexity:high` | **Building.** Mechanism pinned: `tactical-map-view.applyVisionTo` writes `ZERO_SCALE` for any tile not in `explored`; connectors get `visible=false`; walls inherit their tile's vision. Director ruling (GDD §6.2.1): *unexplored terrain and buildings render darkened, never absent; only units and objectives are absent when unspotted.* I ruled on the issue: **picking stays unchanged** (drawn but not orderable — needs an explicit filter on the tile's vision state, tested directly, because the sim's move handler validates reachability, not vision), and **the unexplored tint must not go to black** — silhouettes must read; four-state ladder with numbers required. QA posted a self-correction (they passed the render twice by grading against the ADR); I owned that the ADR was the origin. MapGen attached evidence that the "bare-dirt interior" symptom is fog, not data. No PR yet. |
-| **#762** raised roads with brick flanks, dirt interiors, floating stairs — data or drawing? | MapGen | **Bisect done and verified by me** (comment on #762): all three draw-side; generator data correct; no golden moves. The grass-at-second-floor is the raised-park feature (#512) sitting against a building — correct data reading badly. **I authorised the raised-park adjacency rule** as one mapgen PR: goldens re-pinned deliberately, `MAPGEN_WIDE=1`, and **`pnpm test:sim` before and after with the difficulty table in the body**, because a map change moves #497's baseline. PR pending. |
-| **#765** controls — `?models=1` on the preview harness plus four renders of seed 730982385 | MapGen | **Merged** at `b695b0b`, full gate green incl. `SIM=0`. The `?models=1` frame (registered art, **no fog**) had never existed — the preview drew boxes and the game drew models under fog — and it is what settles fault 1: brick flanks reproduce with fog out of the frame. It is the control every graphics PR under #748 must carry. |
-| **#766** the `half` wall draws brick to the ground; stairs ship as placeholder slabs | eng-3, `complexity:high`, **queued behind #761** | **Filed, not started.** Pinned: `map-model-table.ts:169` (`half` is brick whatever the family), `map-model-resolver.ts:294` (walls pivot at `tileTop`, model geometry decides height), `tactical-map-view.loadModels` instances tiles/walls/props only so `buildConnectors` placeholder geometry ships. One unchecked fact: **open `building.wall-half` glb and measure whether it extends below its pivot.** |
+| **#761** fog deleted unexplored terrain | eng-3 | **Closed by #771** at `7dbac2c`. Three rungs, one `tintFor`: visible full colour, explored × 0.40 cold, unexplored × 0.28 colder; `ZERO_SCALE` gone; connectors own a material and take the same ladder; `pickTile` rejects unexplored ground **explicitly**, tested both ways. Tint was set by measured luminance against the clear colour (a first cut of 0.11 fell below it). I judged the committed frames and a fresh `CAPTURE=1` on the merged tree before merging. #770 (Art Director retune of two caveats) is parked under the pause. |
+| **#762** data or drawing? | MapGen | **Closed.** Bisect verified: generator data correct for all three faults. Grass-a-floor-up fixed in **#769** (`8704a2d`): no raised feature within one column of any lot, `golden-city` re-pinned, d1–d4 unchanged in `test:sim`. **Cost on record for the Director:** city/medium mech high-ground share 0.192 → 0.153, below #444's 0.20–0.35 band; grass-only margin is the named alternative, unbuilt. |
+| **#766** brick flanks, placeholder stairs | eng-3 | **Building.** eng-3 measured `wall-half.glb`: 0.5 tall, pivot at base, nothing below — the title's "brick to the ground" was wrong and I retracted it. **Fault A is material:** `wallFamilyFor(undefined)` → brick, and `half` is brick for every family. Ruled: infrastructure walls draw concrete; `half` becomes per-family with a new concrete half-wall model (recolour of the `wall-half` Blender script, `art-blender` skill). **Fault B:** `building.stairs` is registered and never instanced; plan approved — `connectors` category in `MapModelPlacements`, stairs instanced with the `to` tile as vision key, planks kept for ramps/ladders. PR must carry the `?models=1` control and the two fog frames **recaptured on current `main`** (#771's frames predate #769's map change). |
 
-**ADR 0006 §2.4 is amended** (#764, merged): it said *"unexplored tiles draw as
-nothing — the ground plane simply is not there"* and the renderer implemented it
-faithfully; it now states the ruling and keeps the old sentence as history.
-ADRs 0006 and 0007 are **Accepted** (they sat at Proposed while fully shipped).
-
-**Every PR under #748 must carry a committed render** of the pathological case
-— a city mission, mech deployed, mid-mission, unexplored adjacent to explored:
-`CAPTURE=1 pnpm exec playwright test e2e/fog-screenshot.spec.ts` (seed 4242,
-turn 1 and turn 7). Graphics PRs also commit the `?models=1` preview frame as
-the no-fog control. **The Director looks at each render before #748 closes;
-look at it yourself before the code.**
-
-**One design decision surfaced and NOT filed** (scope): should a player be able
-to order a move into fog? Today no, purely because unexplored ground was
-absent. eng-3 is correctly keeping that out of the render fix. Raise it with
-the Director when #748 closes; do not file it unasked while paused.
+**When #766 merges:** post on #748 for the Executive Director with the three
+renders linked; #748 closes only on his word. Then raise, do not file, the
+design question: may a player order a move into fog? (Today no, by the explicit
+`pickTile` filter.) Unpausing is his call; the Producer's queue and #497 (p1)
+wait behind it, #743 coordinated with #497.
 
 ### How to run the loop now
 
-Every tick: **sweep open `p0` issues first**, then PRs. Arm one persistent
-`Monitor` that polls `pulls?state=open` and
-`issues?state=open&labels=p0` every 90 s and prints only changes (the script
-from this session is in the retired session's transcript; it is a `comm -13`
-diff of two sorted lists). Gate every PR on the **merge result** with the
-scratchpad `gate.sh` — typecheck, eslint, prettier, vitest, build, **`pnpm
-test:sim`**, `CI=1 pnpm test:e2e` — reading each exit code; the script's own
-exit is `tail`'s and means nothing. Merge with the head-sha guard.
+Every wake: **sweep open `p0` issues first**, then PRs. Gate every PR on the
+**merge result** with `gate.sh` (§5): typecheck, eslint, prettier, vitest,
+build, **`pnpm test:sim`**, `CI=1 pnpm test:e2e`, each exit code in its own
+variable; then REST merge with the head-sha guard and delete the branch. For
+anything the player sees: download the committed renders, look at them before
+the diff, and for #748 also `CAPTURE=1` on the merged tree.
 
 ## 1. Where things stand
 
@@ -341,7 +325,8 @@ Session 1 (still binding):
 - **Check the PR's base before merging, and verify the content afterwards.** #542 was stacked on another branch; I merged it without looking, so its content went into that branch rather than `main`, and GitHub then retargeted the closed PR to `main` so it read `base=main, merged=true`. Verify with `git ls-tree origin/main <path> | wc -l` — `ls-tree` exits 0 for a missing path, so testing the exit code proves nothing.
 - **A flaky spec makes a gate lie.** Playwright retries, so a spec that fails then passes exits 0 while the summary count silently drops. Compare the pass count between runs; #578 tracks the instance that keeps appearing.
 - **Do not `pkill -f` a pattern that appears in your own command line.** It matches the shell running it and kills the session. Twice this session. Find the process by port instead.
-- **Gate script** (`review.sh BRANCH` in the scratchpad, rebuilt each session): `git fetch origin BRANCH main`, `checkout -B`, `git merge --no-edit origin/main` (abort on conflict), install only if the lockfile differs from `main`, then typecheck / lint / test to log files and print the three exit codes. The first draft passed `origin` twice to `git fetch` and failed with "couldn't find remote ref origin"; the refspec is `origin BRANCH main`.
+- **Gate script** (`gate.sh BRANCH`, rebuilt each session in the scratchpad): refuse a dirty tree, `git fetch origin BRANCH main`, `checkout -B`, `git merge --no-edit origin/main` (abort on conflict), install only if the lockfile differs from `main`, then typecheck / eslint / prettier / vitest / build / `test:sim` / `CI=1 test:e2e` each to a log file with its own exit code, and print all seven. ~4 min. Return to `main` afterwards; the script leaves the tree on the merged branch.
+- **Monitor** (session 5): one persistent `Monitor` running a `while true; sleep 300` loop that writes four sorted snapshots — `pulls?state=open` as `#N title head=sha7`, one `commits/SHA/check-runs` line per open head (latest run per name; pass the sha into jq via an env var and `$ENV`, `gh api` has no `--arg`), `issues?labels=p0`, and the newest issues whose body lacks `TUT agent` (all issues share one account, so the Executive Director is "no agent header") — and prints only `diff` lines against the previous snapshot. Silence from a section means nothing changed **only if that section is proven to work**: my first version's CI query was a jq error swallowed by `2>/dev/null` and printed nothing for ten minutes. Check the state files once after arming.
 - **A conflicting PR gets no CI run** (no merge ref), so empty check runs on a PR that touches files another PR just added usually mean a conflict, not an outage; `git merge-tree --write-tree --name-only origin/main origin/BRANCH` lists the files.
 - **Every spec that clicks Advance Day answers the event dialog first** (`[data-role="event-dialog"] [data-choice-id]` visible → click the first choice → expect the button enabled). A new overworld spec without that guard will flake.
 - **A red e2e on a docs-only PR is `main`'s problem:** reproduce with `pnpm test:e2e` on `main` before blaming the PR; the job log endpoint (`actions/jobs/ID/logs`) returns a redirect `gh api` does not follow, so local reproduction is faster than reading CI logs.

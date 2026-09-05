@@ -10,7 +10,6 @@ import type {
   GenerationContext,
   GenerationPass,
 } from "../model/generation-pass";
-import type { Lot } from "../model/lot";
 import type { MapDraft } from "../model/map-draft";
 import type { SettlementDefinition } from "../model/settlement-definition";
 import { areaFactor } from "./lot-pass";
@@ -24,6 +23,15 @@ const FEATURE_HEIGHT = 1;
 
 /** Columns of clear ground kept between two features. */
 const FEATURE_GAP = 1;
+
+/**
+ * Columns kept clear around every lot, on all four sides (#762). A raised
+ * park hard against a house whose ground is one level up puts grass at
+ * exactly the height of its second floor, and the Executive Director read
+ * it as a floor with grass on it. Correct data that reads wrong is still
+ * wrong, so no feature stands within this of a lot.
+ */
+const LOT_MARGIN = 1;
 
 /**
  * Columns of the map border no feature touches. Deploy zones and edge
@@ -157,13 +165,15 @@ function featureTarget(
 
 /**
  * Ground a feature may stand on, as a column grid: everything that is not
- * a road, a sidewalk, water, a lot, or the strip a lot's door opens onto.
+ * a road, a sidewalk, water, a lot, or within `LOT_MARGIN` of a lot.
  *
- * A feature may sit against a lot's back or sides — a terrace abutting a
- * building is what a city looks like — but never across its frontage,
- * because that is where the building pass puts the entrance, and a door
- * that opens onto a raised face is a building nothing can walk into.
- * Placed features clear their own columns out of the grid as they go.
+ * It used to be allowed against a lot's back and sides, on the argument
+ * that a terrace abutting a building is what a city looks like. #762
+ * withdrew that: a plat one level up against a building whose ground is
+ * one level up sits at its second floor, and reads as a floor rather than
+ * as ground. The margin covers the frontage too, where a raised face
+ * across the door would be a building nothing can walk into. Placed
+ * features clear their own columns out of the grid as they go.
  */
 function freeColumns(draft: MapDraft): boolean[] {
   const free = new Array<boolean>(draft.width * draft.depth).fill(true);
@@ -186,13 +196,11 @@ function freeColumns(draft: MapDraft): boolean[] {
     }
   }
   for (const lot of draft.lots) {
-    for (let z = lot.rect.z; z < lot.rect.z + lot.rect.d; z++) {
-      for (let x = lot.rect.x; x < lot.rect.x + lot.rect.w; x++) {
-        block(x, z);
+    const { x, z, w, d } = lot.rect;
+    for (let zz = z - LOT_MARGIN; zz < z + d + LOT_MARGIN; zz++) {
+      for (let xx = x - LOT_MARGIN; xx < x + w + LOT_MARGIN; xx++) {
+        block(xx, zz);
       }
-    }
-    for (const column of frontageStrip(lot)) {
-      block(column.x, column.z);
     }
   }
   return free;
@@ -206,26 +214,6 @@ function isNearBorder(draft: MapDraft, x: number, z: number): boolean {
     x >= draft.width - EDGE_KEEPOUT ||
     z >= draft.depth - EDGE_KEEPOUT
   );
-}
-
-/** The columns immediately outside the lot on the side its door will face. */
-function frontageStrip(lot: Lot): { x: number; z: number }[] {
-  const { x, z, w, d } = lot.rect;
-  switch (lot.frontage) {
-    case "n":
-      return range(x, w).map((column) => ({ x: column, z: z - 1 }));
-    case "s":
-      return range(x, w).map((column) => ({ x: column, z: z + d }));
-    case "w":
-      return range(z, d).map((column) => ({ x: x - 1, z: column }));
-    default:
-      return range(z, d).map((column) => ({ x: x + w, z: column }));
-  }
-}
-
-/** `count` integers starting at `from`. */
-function range(from: number, count: number): number[] {
-  return Array.from({ length: count }, (_, index) => from + index);
 }
 
 /**

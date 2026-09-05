@@ -482,14 +482,17 @@ describe("TacticalMapView.setVision", () => {
     expect(remembered?.b).toBeGreaterThan(remembered!.g);
     expect(remembered?.g).toBeGreaterThan(remembered!.r);
 
-    // Never seen: still standing (#761), one rung darker than memory on
-    // the same cold cast, so it reads as neither shadow nor memory.
+    // Never seen: still standing (#761), with the same cold base as memory.
+    // Scene mist owns the distinction now (#770), not a darker tint.
     expect(at(3, 0)?.scale).toBeGreaterThan(0);
     const unseen = at(3, 0)?.tint;
     expect(unseen?.g).toBeCloseTo(VISION_UNEXPLORED);
-    expect(unseen!.g).toBeLessThan(remembered!.g);
+    expect(unseen).toEqual(remembered);
     expect(unseen?.b).toBeGreaterThan(unseen!.g);
     expect(unseen?.g).toBeGreaterThan(unseen!.r);
+    expect(view.root.getObjectByName("unexplored-fog-0")?.visible).toBe(true);
+    view.setVision(undefined);
+    expect(view.root.getObjectByName("unexplored-fog-0")?.visible).toBe(false);
     view.dispose();
   });
 

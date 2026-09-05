@@ -129,6 +129,11 @@ test("captures a mission with fog of war for review", async ({ page }) => {
     process.env.CAPTURE === undefined,
     "set CAPTURE=1 to regenerate the fog screenshots",
   );
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  page.on("console", (message) => {
+    if (message.type() === "error") errors.push(message.text());
+  });
   await page.goto("/");
   const body = page.locator("body");
   await expect(body).toHaveAttribute("data-app-state", "ready");
@@ -166,8 +171,8 @@ test("captures a mission with fog of war for review", async ({ page }) => {
   );
   await expect(body).toHaveAttribute("data-selected-unit", "unit-1");
 
-  // The map is drawn from the player's own vision, so what the shot
-  // shows is what the player knows: explored ground and nothing else.
+  // The shot shows the whole terrain, with the player's exploration
+  // history deciding its atmosphere.
   const known = await page.evaluate(() => {
     const raw = localStorage.getItem("tut:save:autosave");
     if (raw === null) return null;
@@ -212,8 +217,8 @@ test("captures a mission with fog of war for review", async ({ page }) => {
   await page.waitForTimeout(400);
   await page.screenshot({ path: "docs/design/tactical-fog-of-war.png" });
 
-  // Turn one only shows "black beyond the edge". Walk the force and let
-  // the bugs come on, so the second shot shows the parts that matter:
+  // Turn one separates visible ground from never-explored mist. Walk the
+  // force and let the bugs come on, so the second shot shows what matters:
   // ground the squad remembers but cannot currently see, and a bug that
   // has actually been spotted.
   const step = await page.evaluate(() => {
@@ -269,5 +274,34 @@ test("captures a mission with fog of war for review", async ({ page }) => {
     )
     .not.toBe("true");
   await page.waitForTimeout(600);
+  const states = await page.evaluate(() => {
+    const raw = localStorage.getItem("tut:save:autosave");
+    if (!raw) return null;
+    const save = JSON.parse(raw) as {
+      state: {
+        activeMission: {
+          turn: number;
+          map: { tiles: unknown[] };
+          vision: {
+            tdf: { visible: number[]; explored: number[] };
+          };
+        };
+      };
+    };
+    const mission = save.state.activeMission;
+    const vision = mission.vision.tdf;
+    const visible = new Set(vision.visible);
+    return {
+      turn: mission.turn,
+      visible: visible.size,
+      remembered: vision.explored.filter((key) => !visible.has(key)).length,
+      unexplored: mission.map.tiles.length - vision.explored.length,
+    };
+  });
+  expect(states?.turn).toBe(7);
+  expect(states?.visible).toBeGreaterThan(0);
+  expect(states?.remembered).toBeGreaterThan(0);
+  expect(states?.unexplored).toBeGreaterThan(0);
+  expect(errors).toEqual([]);
   await page.screenshot({ path: "docs/design/tactical-fog-of-war-turn7.png" });
 });

@@ -1,6 +1,46 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-05 (Codex takeover and environment proof)
+Last updated: 2026-09-05 (#770 scene fog exception)
+
+## Current work: #770, then hold
+
+The Director authorised **#770 only** during the production pause. Branch:
+`feat/770-unexplored-scene-fog`. Designed and implemented thin, stationary
+scene mist over never-explored terrain in `graphics/view/unexplored-fog.ts`.
+Visible stays full colour; remembered stays at its existing cold multiplier;
+never-explored now shares that legible base with mist as the distinguishing
+signal. No darker tint rung. Three depth-tested sheets per populated map
+level, maximum alpha 0.075 each, world-space noise and inward-feathered
+exploration masks. Solid geometry occludes them; they never intercept picking
+or write depth. GPU resources are freed on mission disposal.
+
+Seed 4242 captured with `CAPTURE=1 pnpm exec playwright test
+e2e/fog-screenshot.spec.ts`, at turns 1 and 7. Both frames were opened and
+visually inspected: faint haze in unknown streets and over roofs, complete
+buildings and road markings still readable, no return of the void. Frames:
+[`tactical-fog-of-war.png`](../design/tactical-fog-of-war.png) and
+[`tactical-fog-of-war-turn7.png`](../design/tactical-fog-of-war-turn7.png).
+The capture now rejects browser errors and confirms all three vision states
+exist at turn 7. A fresh before capture on this checkout was used for local
+comparison; older committed frames came from the predecessor's checkout.
+
+Tests cover clearing on exploration, remaining clear after sight is lost,
+separate roof history, sparse floors, preview reset, resource disposal, and
+the map view actually enabling the mist. Style guide §12.5 records the look.
+This is shallow mist, not full volumetric weather: upper facades retain cold
+shading above the nearest sheet. The Executive Director's play judgement is
+still the acceptance of the feel.
+
+Validation passed: `pnpm typecheck`, `pnpm lint`, `pnpm test` (1,930 passed,
+one skipped), `pnpm build`, and `pnpm test:e2e` (59 passed, four capture-only
+specs skipped). The fog capture was run separately and passed. Build retains
+the existing chunk-size warning. No simulation rules or runtime assets changed.
+
+Next: Tech Lead reviews and merges the PR. Address review on this branch when
+it arrives, then hold again. **No timer polling while waiting on review.**
+All other production remains paused; p0 #748 stays with Tech Lead / eng-3.
+The takeover pause text below is historical; this explicit #770 exception
+supersedes its instruction to leave #770 queued.
 
 ## Current seat and production pause
 

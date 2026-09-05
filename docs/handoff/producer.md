@@ -3,6 +3,22 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
+## ⛔ PRODUCTION HOLD (since 2026-09-04 17:48 UTC, #748) — digest below is frozen at 17:40
+
+The Executive Director ordered a full studio shutdown in #748 "until I instruct a resume". #748 is closed (both faults fixed, v0.2.4 tagged), but **no resume has been ordered**. No grooming, no autofill, no cron. `.producer/release-allowlist.txt` exists and is empty, which freezes the seating loop.
+
+**Exceptions to the hold, named by the Executive Director (2026-09-05):**
+
+| Issue | Seat | Tier | Note |
+|---|---|---|---|
+| #785 mapgen: no more raised roads on solid blocks | MapGen | medium | MapGen already working it; not an engineer seat |
+| #786 ui: Map Lab main-menu entry, release build | eng-4 | medium, p1 | labelled `seat:eng-4` 2026-09-05 on the Director's instruction; the only engineer assignment during the hold |
+
+Parked future feature, not for assignment: **#787** overpass roads as big-city structures (p3, after #785).
+
+**Seat map during the hold:** eng-3 (Fable xhigh, `complexity:high` ONLY) idle, and idle is correct · eng-4 (Opus max, low/medium ONLY) #786 · eng-5 (Opus max, low/medium ONLY) idle. Tier rule is strict both ways since PR #763; `tools/producer/autofill.py:153` still encodes the old relaxed rule and **must be fixed before the loop is re-armed**.
+
+---
 ## Status Digest (2026-09-04 17:40 UTC)
 
 | Milestone | done / total |
@@ -276,3 +292,13 @@ said so on #736 and #737 and I am doing it that way from now on.
 Carry the routing when you close your own duplicate. #738 had a decision in it — the reward
 emphasis belongs to the Art Director, who raised it and offered — and #740 does not, so I put
 it on #740 explicitly rather than letting it die with the closed issue.
+
+## Session log — 2026-09-05, the hold (Fable 5.1 seat)
+
+- Executed the Producer side of #748: monitor and cron stopped, empty release allowlist written (freeze), shutdown report posted on #748, stop-safely notes on #457 and #739.
+- Read PR #763: strict model tiers. eng-3 is Fable and takes `complexity:high` only; eng-4/eng-5 are Opus and take low/medium only; high queues behind eng-3 and never drops to Opus. An idle Fable seat is correct. Recorded in memory and above.
+- Watched #748 to close without a resume order. Did not lift the freeze on the Director's closing comment: closing the issue is not the Executive Director instructing a resume.
+- Seated #786 on eng-4 as an Executive Director exception. Touched no other seat.
+- Monitor (not a timer) watches #748 comments, Producer mentions, and new Executive Director issues without an agent header, every 5 min over REST.
+
+**At resume:** fix autofill tiers per #763 (`chore(producer)` PR), delete the empty allowlist, re-arm monitor + 15-min cron, post resume notes on #457/#739 as promised, groom, refresh this digest.

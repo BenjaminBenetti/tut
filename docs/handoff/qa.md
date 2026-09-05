@@ -1,6 +1,6 @@
 # Handoff: QA
 
-Last updated: 2026-09-04 (post-v0.2.0; win path settled on #317).
+Last updated: 2026-09-05 (main `24019d4`; production paused on #748, awaiting the Executive Director's playtest).
 
 ## The gate
 
@@ -79,10 +79,42 @@ Stop any probe servers on 4173/4174 before the e2e run, or contention fakes fail
 
 | Field | Value |
 |---|---|
-| SHA tested | `fde7a49` (main, well ahead of v0.2.3) |
-| Gate | typecheck, lint, build pass; vitest **1925 / 1925** (+1 deliberate skip); **sim sweep 7 / 7**; e2e **59 / 59** (gated on `62dab53`, docs-only since) |
-| Exploratory | 11 flows clean on `fde7a49`, dev and production; **current main plays 7/7 through the production build with no dev hooks** |
-| **Verdict** | **Healthy and tag-ready.** No open QA-filed defects. Control scheme 7/7 on every head since band 1, including across the camera-rig refactor; determinism holds after the RNG nonce change; the win path is guarded at the rules level (60-seed sweep, in CI) and through the UI. |
+| SHA tested | `24019d4` (main; `c63b1a5` = #777, the last code change) |
+| Gate | typecheck, lint, build pass; vitest **1933 / 1933** (+1 deliberate skip); **sim sweep 7 / 7**; e2e **59 / 59** |
+| Exploratory | Boot → overworld → deployment → tactical clean, dev build, 0 console errors; `?models=1` preview frames on three seeds |
+| **Verdict** | **Green, and the screen has one thing left on it.** #777's parapet fix is correct and complete. The placeholder plank #748 complained about is still drawn on **ramp** connectors — see below. Raised on #748, not filed: production is paused. |
+
+### #748's placeholder plank is still on screen — it moved from stairs to ramps
+
+**The fix landed on the half of the class you cannot see.** #775 retired the
+placeholder plank for `stairs`; `tactical-map-view.ts:392` says the rest stay
+by design — *"Ramps and ladders stay too, having no art."* So `buildConnectors()`
+still draws `plankMesh()` for every ramp and nothing retires it once the models
+load. Measured at `24019d4`:
+
+| | ramps per map | stairs per map |
+|---|---:|---:|
+| town, temperate, medium (8 seeds) | 29 – 48 | 8 – 21 |
+| city, temperate, medium (8 seeds) | 24 – 52 | 22 – 49 |
+
+Every ramp is outdoors at a raised-lot or viaduct edge. I projected all 22
+stairs tiles of one city map to screen: **every one landed behind a building's
+exterior wall.** The case that was fixed is the hidden one.
+
+`PLANK.length` is **1.2** against a rise-1 span of **√2 ≈ 1.414**, and
+`PLANK.width` is **0.6** on a 1.0 tile, so each plank floats ~0.1 clear of both
+ends with a 0.2 gap either side — it reads as a stray polygon stuck to a wall,
+not as a way up. Frames: branch `qa/748-ramp-plank-evidence` (`531356b`,
+pushed as a branch, not a PR).
+
+**#777 itself is right and I confirmed it two ways.** Across 24 generated maps
+**every half wall sits on an untagged tile**, so `wallFamilyForWall("half",
+undefined)` sends 100 % of parapets to concrete — no seed still wears brick, and
+town maps carry no half wall at all. `wall-half-concrete.glb` is the same mesh
+as `wall-half.glb` — identical bounds, node translations and vertex counts —
+with the body primitive on `env-concrete`. `stairs.glb` is likewise a real
+staircase (eight stepped boxes rising 0.09 → 0.75, two kerb rails), so #775's
+premise was sound too.
 
 ### Release push, in order of what mattered
 
@@ -247,11 +279,16 @@ Three times this session a control-scheme or rendering change silently invalidat
 - **A red probe does not prove the game broke.** #520 changed `selectTile` to select only and added **`invokeTile()`** for the right-click invoke. My walker kept calling `selectTile`, selected tiles for 31 turns, and reported "0 shots" — which I nearly filed as a fog regression. Patched, the same driver killed a spawner in five turns.
 - **Judge overlays by dose-response, not a binary diff.** A range-8 unit must paint less than a range-10 one. And exclude the side panel from any pixel comparison (`x < 985`) or you measure the HUD instead of the map.
 - **Check the diff before committing to a playthrough.** Asking whether `combat-service.ts` was even touched by the fog PR took seconds and reframed a twenty-minute test.
+- **When a fix closes a visual issue, ask which cases it covers, not whether it works.** #775 retired the placeholder plank and it genuinely did — for `stairs`, which mapgen only ever puts inside buildings. Ramps, 24–52 per map and all outdoors, kept theirs. Both the tests and my own first look at the frame said "fixed". The question that found it was *"how many of this thing are on the map, and where?"* — count the class, then locate it.
+- **Identify what you are looking at before you name it.** I spent three wrong guesses on that plank — stairs model, jersey barrier, ramp surface — before inverting the camera: project every candidate tile with `__tutTactical__.tileScreenPosition` (the preview exposes the hooks under `?units=1`) and find the nearest to the pixel. A glb's own geometry settles the rest: `stairs.glb` has eight stepped boxes, so the plank was never it.
 
 ### Run history
 
 | SHA | Build | Unit | e2e | Exploratory | Filed |
 |---|---|---|---|---|---|
+| `24019d4` | pass | 1933/1933 | 59/59 | tech-lead handoff, docs only | — |
+| `c63b1a5` | pass | 1933/1933 | 59/59 | **#777 parapets verified**; ramp plank raised on #748 | — (raised, pause) |
+| `4427cd5` | pass | 1931/1931 | 59/59 | #775 stairs turned by connector | — |
 | `8db18b5` | pass | 1902/1902 | 59/59 | worker cap steadies e2e | — |
 | `484f67b` | pass | 1891/1891 | 59/59 | same seed plays identically | — |
 | `c99a5d9` | pass | 1886/1886 | 59/59 | memory reads cold, darkness means unseen | — |
@@ -405,6 +442,9 @@ Commented on **#33** at `35857b2` (preview missing from the build); #209 fixed i
 - The map is fully interactive under the main menu (keys and clicks work before New game). Harmless now; the real menu (#72) may want to disable input.
 - `body[data-selected-city]` and the marker highlight persist across Back to menu → Continue while the panel label is empty; selection is not in `GameState`. The real overworld screen (#73) should decide.
 - Mapgen preview: `?size=huge`, `?biome=lava`, `?settlement=megacity` snap to the first select option and the URL is rewritten to the fallback with no notice. Dev tool only.
+- **Ramp and ladder connectors have no art** and draw the placeholder plank / rung in the finished render (see Latest run). Raised on #748 with frames rather than filed, because production is paused and it is the Director's call whether it belongs to #748, to #274 (placeholder tracking) or to a new art issue. If it is ever filed: one model — a concrete ramp wedge sized to the span — and adding `"connectors"` to the retire list then covers it, since that line already runs.
+- The `building.stairs` manifest entry declares `height: 1.5`; the glb's own geometry tops out near **0.84** (top step 0.75 + half its 0.188 thickness), with the kerb rails reaching higher. Nothing visibly wrong follows from it — the model is placed by its base pivot — but the number is not the model's height.
+- **The overworld Earth draws at a constant 960 × 481 px at every window size**; the tactical camera fits its bounds and scales properly. Measured on the deployed build at 1280 × 720, 1600 × 1000 and 1920 × 1080: the canvas grows to 960 × 679, 1280 × 959, 1600 × 1039, and the map stays 960 × 481 — **28 % of the canvas at 1920 × 1080**, black around it. Six wheel notches fill the canvas, so it is the default zoom that does not fit the window, not the camera. Polish; noted here rather than filed because production is paused. Worth remembering the next time someone reports that the graphics look wrong on a large monitor.
 - 480×320: the overworld panel covers most of the map and the taller #72 menu overflows. Desktop-only target per GDD; not filed.
 - Enter in the menu seed box does nothing (no form); the seed box shows a fresh random seed after Back to menu rather than the last one used. Both are polish for #72's owner, not defects.
 - After a failed autosave the overworld still shows nothing; the failure is now a `console.error` (#217 updated with the new cause).

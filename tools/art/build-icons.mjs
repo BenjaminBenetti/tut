@@ -93,6 +93,19 @@ const ICONS = {
   elevation:
     '<path d="M2 20 H8 V15 H14 V10 H20 V5"/><path d="M17 8 L20 5 L23 8"/>',
   ammo: '<path d="M9 3 H15 V7 H9 Z"/><path d="M7 7 H17 V21 H7 Z"/><path d="M10 11 H14 M10 15 H14"/>',
+  // Mech bay stat sheet (#673). Each avoids a shape the set already
+  // spends: `attack` and `mission` are both crosshairs, so accuracy is a
+  // bullseye with an arrow landing in it; `damage` is a hit (the star)
+  // and `ammo` a square-nubbed magazine, so firepower is an ogive shell
+  // -- what a mech throws, not what it lands; heat is the flame that
+  // `reload` ("Reload / vent") answers; weight is a kettlebell.
+  accuracy:
+    '<circle cx="11" cy="13" r="8"/><circle cx="11" cy="13" r="3"/><path d="M22 2 L13 11"/><path d="M13 7 V11 H17"/>',
+  firepower:
+    '<path d="M12 2 C15 5 16 8 16 12 V18 H8 V12 C8 8 9 5 12 2 Z"/><path d="M5 21 H19"/>',
+  heat: '<path d="M12 2 C16 7 18 10 18 15 A6 6 0 0 1 6 15 C6 10 8 7 12 2 Z"/><path d="M12 11 C14 13 15 14 15 16.5 A3 3 0 0 1 9 16.5 C9 14 10 13 12 11 Z"/>',
+  weight:
+    '<path d="M9 8 V7 A3 3 0 0 1 15 7 V8"/><path d="M5 8 H19 L21 21 H3 Z"/>',
 };
 
 // ===========================================

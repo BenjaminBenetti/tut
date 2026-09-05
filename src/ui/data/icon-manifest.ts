@@ -96,6 +96,11 @@ export const ICON_MANIFEST = {
     label: "Elevation",
   },
   ammo: { path: "assets/ui/icons/ammo.svg", label: "Ammunition / charges" },
+  // Mech bay stat sheet (#673).
+  accuracy: { path: "assets/ui/icons/accuracy.svg", label: "Accuracy" },
+  firepower: { path: "assets/ui/icons/firepower.svg", label: "Firepower" },
+  heat: { path: "assets/ui/icons/heat.svg", label: "Heat" },
+  weight: { path: "assets/ui/icons/weight.svg", label: "Weight" },
 } as const satisfies Record<string, IconAssetEntry>;
 
 /** Union of registered icon ids. */

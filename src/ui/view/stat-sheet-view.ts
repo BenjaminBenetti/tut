@@ -1,7 +1,9 @@
 import type { Result } from "../../core/model/result";
 import type { LoadoutError } from "../../roster/model/loadout-error";
 import type { MechStatSheet } from "../../roster/model/mech-stat-sheet";
+import type { IconId } from "../data/icon-manifest";
 import { formatCredits, formatWhole } from "../service/format";
+import { iconGlyph } from "./icon-glyph";
 
 // ===========================================
 // Constants
@@ -17,16 +19,26 @@ type StatKey = {
   [K in keyof MechStatSheet]: MechStatSheet[K] extends number ? K : never;
 }[keyof MechStatSheet];
 
-const ROWS: readonly [StatKey, string][] = [
-  ["armor", "Armor"],
-  ["mobility", "Mobility"],
-  ["heat", "Heat"],
-  ["accuracy", "Accuracy"],
-  ["firepower", "Firepower"],
-  ["weight", "Weight"],
-  ["powerBalance", "Power balance"],
-  ["combatRating", "Combat rating"],
-  ["totalCost", "Total cost"],
+/**
+ * Sheet rows in display order: key, label and the glyph beside it.
+ *
+ * Seven rows carry a glyph and two do not, on purpose (#595, #673).
+ * Power balance and combat rating are the sheet's derived figures, not
+ * a part's contribution, and a bare row under seven marked ones reads
+ * as the sum rather than as an omission. Give them a glyph only once
+ * there is one that means *that* -- `ability`'s bolt is already spent on
+ * the action bar, and a glyph with two meanings is worse than none.
+ */
+const ROWS: readonly [StatKey, string, IconId | undefined][] = [
+  ["armor", "Armor", "armor"],
+  ["mobility", "Mobility", "move"],
+  ["heat", "Heat", "heat"],
+  ["accuracy", "Accuracy", "accuracy"],
+  ["firepower", "Firepower", "firepower"],
+  ["weight", "Weight", "weight"],
+  ["powerBalance", "Power balance", undefined],
+  ["combatRating", "Combat rating", undefined],
+  ["totalCost", "Total cost", "credits"],
 ];
 
 // ===========================================
@@ -70,10 +82,17 @@ export class StatSheetView {
 
     const grid = doc.createElement("dl");
     grid.className = "tut-kv";
-    for (const [key, label] of ROWS) {
+    for (const [key, label, icon] of ROWS) {
       const term = doc.createElement("dt");
-      term.className = "tut-label";
-      term.textContent = label;
+      term.className = "tut-label tut-row";
+      // The glyph carries the row at a glance; the word stays for anyone
+      // who does not know the glyph yet (#495). Same shape as the unit
+      // card's rows, so the two sheets a player compares read alike.
+      if (icon) {
+        term.append(iconGlyph(doc, icon), doc.createTextNode(label));
+      } else {
+        term.textContent = label;
+      }
       const value = doc.createElement("dd");
       value.className = "tut-data";
       value.dataset.field = key;

@@ -54,4 +54,30 @@ describe("StatSheetView", () => {
     view.unmount();
     expect(root.childElementCount).toBe(0);
   });
+
+  it("marks seven rows with a glyph and leaves the two derived figures bare", () => {
+    // #673 unblocked the sheet's glyphs. Power balance and combat rating
+    // stay bare on purpose: they are sums, not a part's contribution,
+    // and there is no registered glyph that means either.
+    const root = document.createElement("div");
+    new StatSheetView().mount(root);
+    const glyphOf = (field: string): string | undefined =>
+      root
+        .querySelector<HTMLElement>(`[data-field="${field}"]`)
+        ?.previousElementSibling?.querySelector<HTMLElement>("[data-icon]")
+        ?.dataset.icon;
+    expect(glyphOf("armor")).toBe("armor");
+    expect(glyphOf("mobility")).toBe("move");
+    expect(glyphOf("heat")).toBe("heat");
+    expect(glyphOf("accuracy")).toBe("accuracy");
+    expect(glyphOf("firepower")).toBe("firepower");
+    expect(glyphOf("weight")).toBe("weight");
+    expect(glyphOf("totalCost")).toBe("credits");
+    expect(glyphOf("powerBalance")).toBeUndefined();
+    expect(glyphOf("combatRating")).toBeUndefined();
+    // Decorative: the label beside it is the accessible name.
+    for (const glyph of root.querySelectorAll("[data-icon]")) {
+      expect(glyph.getAttribute("aria-hidden")).toBe("true");
+    }
+  });
 });

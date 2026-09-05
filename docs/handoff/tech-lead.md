@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-05 ~22:45 UTC (session 5; two ED exceptions to the hold in review, #789 and #790; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-05 ~23:00 UTC (session 5; both ED exceptions merged, v0.2.5 is the Director's tag, hold continues; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — production is paused; only #748 is live
 
@@ -61,24 +61,25 @@ that buildings cannot hash into. It also added
 every graphics PR (#728). The ramp plank is still the last stray polygon on a
 raised-road edge (see above).
 
-**Two Executive Director exceptions to the hold are in review (22:45 UTC);
-each merges only after the Director judges its frames, CI is green and my gate
-on the merge result is green:**
+**Both Executive Director exceptions merged (23:00 UTC); the Director tags
+v0.2.5 on them and the hold continues:**
 
-- **#789** (MapGen, #785): elevated *road* features (viaduct, causeway)
-  disabled, terraces kept, and a sweep test pinning zero road level-steps
-  without a connector (was 234–781 per twelve city maps). Content approved by
-  me; frames read right. **CI red on `cf5c1ce`: `tactical-mission-flow.spec.ts`
-  flaky (Extract click never "stable" in 60 s on the 8-min CI runner; passed on
-  retry; `--fail-on-flaky-tests` makes it red).** Asked MapGen to repeat the
-  spec ×5 on the branch — the branch changes the map that spec plays — and to
-  merge current `main` for a fresh run. Do not merge on a red CI even with a
-  green gate. `test:sim` d1–d4 unchanged; #444 band further off, on record.
-- **#790** (eng-4, #786 Map Lab): main-menu button → `mapgen-preview.html`,
-  `Back to menu` link, `openMapLab` injected into the menu screen. Content
-  approved; **one change requested: the link must open with `?models=1`**, or
-  the ED's first Map Lab session is the placeholder-box view and produces a p0
-  about broken art. Screenshot to be recaptured; Director judges it.
+- **#789** (MapGen, #785) `b5e2401`: viaduct and causeway disabled (kept as
+  data, marked unplaced), terraces stay, sweep test pins zero road level-steps
+  without a connector. The first CI run was red on `tactical-mission-flow`
+  (Extract click never "stable" on the 8-min runner); MapGen showed the spec
+  deploys onto the extraction hook at turn 1 with nothing to animate and passed
+  it 15/15 on the merged head — the runner, as in #691/#700. A repeat goes to
+  #578 with the HUD's turn-1 layout as suspect. #444 band further off, on record.
+- **#790** (eng-4, #786 Map Lab) `475c5d3`: main-menu button → the harness
+  **with `?models=1`** (my change request: the default is the specialist's
+  placeholder-box view and would have produced a p0 about broken art), `models`
+  carried through `writeUrl` so a reroll/reload/shared link keeps the art,
+  `Back to menu` relative to the document for the `/tut/` Pages base. Follow-up
+  for the Director: the harness opens zoomed on a corner of the map.
+
+Re-gated #790 after #789 landed because a merge-order interaction is only
+visible on the merged tree (#703); both green.
 
 **Otherwise the queue is empty except parked #757.** Nothing merges until the ED's
 playtest verdict or a Director ruling on the ramp child above.

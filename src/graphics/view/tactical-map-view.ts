@@ -60,8 +60,15 @@ interface Batch {
   readonly colour: number;
   readonly level: number;
   readonly matrices: Matrix4[];
-  /** The tile each instance belongs to, so vision can dim or drop it (#551). */
+  /** The tile each instance belongs to, so vision can tint it (#551, #761). */
   readonly keys: VisionTileKey[];
+}
+
+/** One connector's tile, and the material and base colour vision tints. */
+interface ConnectorVision {
+  readonly key: VisionTileKey;
+  readonly material: MeshStandardMaterial;
+  readonly base: Color;
 }
 
 /** Footprint of a prop box within its tile. */
@@ -115,10 +122,10 @@ const TILES_SLAB = "tiles-slab";
  * darken a surface and warm or cool it a little; what it never does is
  * take the colour out. So memory takes that channel. The green and blue
  * are lifted relative to the red for a cold cast no light in the scene
- * produces, and the overall weight is unchanged, so fog still recedes
- * and unexplored black still dominates.
+ * produces, and the overall weight is unchanged, so fog still recedes.
  *
- * Dark and neutral is shadow. Dark and cold is memory.
+ * Dark and neutral is shadow. Dark and cold is memory. Darker and cold
+ * is ground never seen (#761) — see `VISION_UNEXPLORED` for that rung.
  */
 export const VISION_DIM = 0.4;
 const VISION_DIM_RED = 0.34;
@@ -130,11 +137,74 @@ const FULL_COLOUR = new Color(1, 1, 1);
 /** Multiplier for a tile remembered but not currently seen. */
 const DIM_COLOUR = new Color(VISION_DIM_RED, VISION_DIM, VISION_DIM_BLUE);
 
-/** Collapses an instance to nothing, which also takes it out of picking. */
-const ZERO_SCALE = new Matrix4().makeScale(0, 0, 0);
+/**
+ * How much of its colour a tile the side has **never** seen keeps (#761).
+ *
+ * Until #761 an unexplored instance was zero-scaled: it drew nothing and
+ * no ray could hit it. That was ADR 0006 §2.4 — written for enemy units,
+ * where absence is the only thing that prevents a wallhack — applied to
+ * terrain by extension. On the map it produced black voids with cliff
+ * edges cut along the seen area, and buildings missing whichever walls
+ * stood on tiles not yet seen (#748). Director ruling: unexplored
+ * terrain and buildings render darkened, never absent; only units and
+ * objectives are absent when unspotted.
+ *
+ * So unexplored is one more rung on the same ladder as memory, and the
+ * rule from #661 still holds — one channel per question. Lighting
+ * darkens neutrally; memory and the unseen both take the colour out and
+ * cast cold. What separates the two is weight **and how cold**: memory
+ * lifts blue over green by 1.3×, the unseen by 1.5×, so a remembered tile
+ * in shadow and an unexplored tile in light — close in weight — still
+ * read differently.
+ *
+ * The weight is set against the floor, not the ceiling. The clear colour
+ * `ui-bg` renders at luminance ≈ 0.05, and a first cut of 0.11 put
+ * unexplored grass *below* it — present by silhouette only, which is the
+ * Executive Director's black void again with the cliff filed off.
+ * Measured on the #761 evidence frame, seed 4242 at turn 7, grass tiles
+ * classified from the saved vision and located through
+ * `tileScreenPosition`:
+ *
+ * ```
+ *                    tint    rendered luminance    vs void
+ *   visible          1.00    0.39                  7.6×
+ *   remembered       0.40    0.28                  5.5×
+ *   unexplored       0.28    0.22                  4.3×
+ *   void (ui-bg)       —     0.05                  1.0×
+ * ```
+ *
+ * Legible against the void by a wide margin, so a building you have not
+ * reached stands as a dark whole shape at the edge of what you know rather
+ * than as a cliff. The trade is a narrow step down from memory (1.27×,
+ * tighter than #661 found comfortable), and on grass the colder cast does
+ * not show because the surface has little blue to lift. Both are recorded
+ * on #761 for the Art Director's eye; the value is a measured first cut.
+ */
+export const VISION_UNEXPLORED = 0.28;
+const VISION_UNEXPLORED_RED = 0.18;
+const VISION_UNEXPLORED_BLUE = 0.42;
+
+/** Multiplier for a tile the side has never seen: present, dark, cold. */
+const UNEXPLORED_COLOUR = new Color(
+  VISION_UNEXPLORED_RED,
+  VISION_UNEXPLORED,
+  VISION_UNEXPLORED_BLUE,
+);
+
+/** The colour multiplier for one vision state. */
+function tintFor(state: TileVisionState): Color {
+  switch (state) {
+    case "visible":
+      return FULL_COLOUR;
+    case "explored":
+      return DIM_COLOUR;
+    case "unexplored":
+      return UNEXPLORED_COLOUR;
+  }
+}
 
 /** What one side knows about a tile right now. */
-type TileVisionState = "visible" | "explored" | "hidden";
+type TileVisionState = "visible" | "explored" | "unexplored";
 
 /** An instanced mesh's untouched transforms and the tile behind each one. */
 interface InstanceTiles {
@@ -165,7 +235,7 @@ function stateOf(vision: IndexedVision, key: VisionTileKey): TileVisionState {
   if (vision.visible.has(key)) {
     return "visible";
   }
-  return vision.explored.has(key) ? "explored" : "hidden";
+  return vision.explored.has(key) ? "explored" : "unexplored";
 }
 
 // ===========================================
@@ -222,8 +292,13 @@ export class TacticalMapView implements Disposable, TilePicker {
   private readonly placeholders = new Map<string, Object3D[]>();
   /** Every instanced mesh with the tile each of its instances belongs to (#551). */
   private readonly instanceTiles = new Map<InstancedMesh, InstanceTiles>();
-  /** Connectors keyed by the tile they arrive on, so vision can hide them too. */
-  private readonly connectorTiles = new Map<Mesh, VisionTileKey>();
+  /**
+   * Connectors by the tile they arrive on, each with its own material so
+   * vision can tint it like the tiles it joins (#761). Until then they
+   * were only ever shown or hidden, and a remembered ramp drew at full
+   * colour beside dimmed ground.
+   */
+  private readonly connectorTiles = new Map<Mesh, ConnectorVision>();
   /** The vision last applied, indexed, and replayed onto anything built afterwards. */
   private vision: IndexedVision | undefined;
   private modelled = false;
@@ -411,21 +486,23 @@ export class TacticalMapView implements Disposable, TilePicker {
   // ===========================================
 
   /**
-   * Draws the player's view rather than the map (ADR 0006 §2.4):
-   * unexplored tiles are not there at all, and explored-but-not-visible
-   * ones are dimmed. Passing `undefined` shows everything, which is what
-   * the mapgen preview wants — it is a generation tool, not a mission.
+   * Draws the map as the player knows it (#551, #761): the whole map is
+   * always there, and how much of its colour each tile keeps says how well
+   * the side knows it. Passing `undefined` shows everything at full
+   * colour, which is what the mapgen preview wants — it is a generation
+   * tool, not a mission.
    *
    * ```
-   *   visible   ──► full colour
-   *   explored  ──► × VISION_DIM
-   *   neither   ──► zero-scaled, so it draws nothing and no ray can hit it
+   *   visible     ──► full colour
+   *   explored    ──► × VISION_DIM          remembered, cold
+   *   unexplored  ──► × VISION_UNEXPLORED   never seen, darker, cold
    * ```
    *
-   * Instances are collapsed rather than skipped because an `InstancedMesh`
-   * has a fixed count: a zero-scale matrix removes it from the picture and
-   * from picking without rebuilding the buffer every time vision changes,
-   * which happens on every move.
+   * Nothing is ever removed or zero-scaled for vision. Until #761 an
+   * unexplored instance was collapsed to nothing, and the map ended in a
+   * cliff wherever the seen area did, with buildings missing the walls on
+   * tiles not yet reached (#748). Units and objectives are the things fog
+   * makes absent (ADR 0006 §2.4), and the scene builder owns those.
    *
    * Applied to anything built later too, so calling this before the
    * models load is safe.
@@ -435,11 +512,17 @@ export class TacticalMapView implements Disposable, TilePicker {
     for (const [mesh, tiles] of this.instanceTiles) {
       this.applyVisionTo(mesh, tiles);
     }
-    const seenVision = this.vision;
-    for (const [mesh, key] of this.connectorTiles) {
-      mesh.visible =
-        seenVision === undefined || stateOf(seenVision, key) !== "hidden";
+    for (const connector of this.connectorTiles.values()) {
+      this.applyVisionToConnector(connector);
     }
+  }
+
+  /** Tints one connector's own material for the current vision. */
+  private applyVisionToConnector(connector: ConnectorVision): void {
+    const vision = this.vision;
+    const state =
+      vision === undefined ? "visible" : stateOf(vision, connector.key);
+    connector.material.color.copy(connector.base).multiply(tintFor(state));
   }
 
   /** Remembers a mesh's instances and applies the current vision to them. */
@@ -466,8 +549,8 @@ export class TacticalMapView implements Disposable, TilePicker {
         continue;
       }
       const state = vision === undefined ? "visible" : stateOf(vision, key);
-      mesh.setMatrixAt(i, state === "hidden" ? ZERO_SCALE : base);
-      mesh.setColorAt(i, state === "explored" ? DIM_COLOUR : FULL_COLOUR);
+      mesh.setMatrixAt(i, base);
+      mesh.setColorAt(i, tintFor(state));
     }
     mesh.instanceMatrix.needsUpdate = true;
     if (mesh.instanceColor) {
@@ -506,7 +589,22 @@ export class TacticalMapView implements Disposable, TilePicker {
       y: level,
       z: Math.floor(point.z),
     };
-    return this.index.has(coord) ? coord : undefined;
+    if (!this.index.has(coord)) {
+      return undefined;
+    }
+    // Unexplored ground is drawn now (#761) but stays out of picking on
+    // purpose. Until #761 it was unhittable only because it was
+    // zero-scaled; keeping it unhittable preserves what the player could
+    // do before the render fix, so a p0 about drawing does not decide on
+    // the side whether a move may be ordered into fog. That is a design
+    // call, recorded on #761, and this is where it would change.
+    if (
+      this.vision !== undefined &&
+      stateOf(this.vision, this.index.keyOf(coord)) === "unexplored"
+    ) {
+      return undefined;
+    }
+    return coord;
   }
 
   /** The world centre of a tile's top face, or undefined for a coordinate with no tile. */
@@ -674,7 +772,14 @@ export class TacticalMapView implements Disposable, TilePicker {
       mesh.name = connector.id;
       mesh.castShadow = true;
       mesh.receiveShadow = true;
-      this.connectorTiles.set(mesh, this.index.keyOf(connector.to));
+      const material = mesh.material as MeshStandardMaterial;
+      const tracked: ConnectorVision = {
+        key: this.index.keyOf(connector.to),
+        material,
+        base: new Color(CONNECTOR_COLOURS[connector.kind]),
+      };
+      this.connectorTiles.set(mesh, tracked);
+      this.applyVisionToConnector(tracked);
       this.groupFor(connector.to.y).add(mesh);
     }
   }
@@ -692,10 +797,7 @@ export class TacticalMapView implements Disposable, TilePicker {
       PLANK.width,
     );
     this.disposables.push(geometry);
-    const mesh = new Mesh(
-      geometry,
-      this.material(CONNECTOR_COLOURS[connector.kind]),
-    );
+    const mesh = new Mesh(geometry, this.connectorMaterial(connector.kind));
     mesh.position.set(
       (from.x + to.x) / 2,
       (from.y + to.y) / 2,
@@ -719,7 +821,7 @@ export class TacticalMapView implements Disposable, TilePicker {
       alongX ? LADDER.width : LADDER.thickness,
     );
     this.disposables.push(geometry);
-    const mesh = new Mesh(geometry, this.material(CONNECTOR_COLOURS.ladder));
+    const mesh = new Mesh(geometry, this.connectorMaterial("ladder"));
     mesh.position.set(
       (from.x + to.x) / 2,
       from.y + rise / 2,
@@ -831,7 +933,19 @@ export class TacticalMapView implements Disposable, TilePicker {
     return group;
   }
 
-  /** One material per colour, shared across meshes. */
+  /**
+   * A material of the connector's own, unlike the shared ones tiles use,
+   * because vision writes a per-connector tint into `color` (#761).
+   */
+  private connectorMaterial(kind: Connector["kind"]): MeshStandardMaterial {
+    const material = new MeshStandardMaterial({
+      color: CONNECTOR_COLOURS[kind],
+    });
+    this.disposables.push(material);
+    return material;
+  }
+
+  /** One shared material per colour, so tiles of a kind cost one draw call. */
   private material(colour: number): Material {
     const key = colour.toString(16);
     let material = this.materials.get(key);

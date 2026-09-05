@@ -63,7 +63,16 @@ function stateFromUrl(): PreviewControlsState {
   };
 }
 
-/** Mirrors the controls into the URL so a map can be shared by link. */
+/**
+ * Mirrors the controls into the URL so a map can be shared by link.
+ *
+ * `models` is carried across rather than rebuilt from the controls,
+ * which have no knob for it. Without that the flag survives exactly
+ * until the first generate: the art loads, the URL is rewritten without
+ * it, and the next reload or shared link comes back as placeholder
+ * boxes (#786). Map Lab opens with it on, so dropping it here would
+ * hand the Executive Director boxes one refresh into his first session.
+ */
 function writeUrl(state: PreviewControlsState): void {
   const query = new URLSearchParams({
     seed: state.seed,
@@ -72,6 +81,9 @@ function writeUrl(state: PreviewControlsState): void {
     size: state.size,
     archetype: state.archetype,
   });
+  if (new URLSearchParams(window.location.search).get("models") === "1") {
+    query.set("models", "1");
+  }
   window.history.replaceState(
     null,
     "",

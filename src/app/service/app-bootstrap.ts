@@ -130,6 +130,15 @@ export async function bootstrapApp(doc: Document): Promise<void> {
             createCampaign: game.createCampaign,
             newSeed: game.newSeed,
             clock: game.clock,
+            openMapLab: () => {
+              // A real navigation, not a route: the harness is its own
+              // page in the bundle (#786). Relative to the document so
+              // it resolves under the Pages sub-path as well as at the
+              // root — `TUT_BASE_PATH` makes those differ.
+              window.location.assign(
+                new URL("mapgen-preview.html", window.location.href).href,
+              );
+            },
           }),
       ],
       [

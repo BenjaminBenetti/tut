@@ -24,6 +24,13 @@ export interface MainMenuScreenDeps {
   readonly newSeed: () => number;
   /** Timestamp source for `createdAt`; the app passes the wall clock. */
   readonly clock: SaveClock;
+  /**
+   * Opens the map generation harness (#786). A function rather than a
+   * URL because the harness is a separate page in the bundle, not a
+   * router screen, so reaching it is a real navigation — and the screen
+   * should not know that, nor reach for `window.location` itself.
+   */
+  readonly openMapLab: () => void;
 }
 
 // ===========================================
@@ -43,7 +50,12 @@ export interface MainMenuScreenDeps {
  *                                                        └── activeMission? ──▶ tactical
  *   [Export]   ──▶ saves.loadGame(autosave) ──▶ saves.exportGame ──▶ text box
  *   [Import]   ──▶ saves.importGame(text box) ──▶ session.start ──▶ overworld
+ *   [Map Lab]  ──▶ openMapLab() ──▶ mapgen-preview.html
  * ```
+ *
+ * Map Lab leaves the app rather than routing within it: the map
+ * generation harness is its own page in the bundle (#786), so the menu
+ * is given a function to call rather than a screen to navigate to.
  */
 export class MainMenuScreen implements Screen {
   // ===========================================
@@ -97,9 +109,11 @@ export class MainMenuScreen implements Screen {
     const cont = this.createButton(doc, "continue", "Continue", false);
     cont.disabled = !hasSave;
 
+    const mapLab = this.createButton(doc, "map-lab", "Map Lab", false);
+
     const actions = doc.createElement("div");
     actions.className = "tut-stack";
-    actions.append(seedRow, newGame, cont);
+    actions.append(seedRow, newGame, cont, mapLab);
 
     const io = this.createSaveIo(doc, hasSave);
 
@@ -116,6 +130,9 @@ export class MainMenuScreen implements Screen {
     });
     this.listen(cont, () => {
       this.continueGame();
+    });
+    this.listen(mapLab, () => {
+      this.deps.openMapLab();
     });
     this.listen(io.exportButton, () => {
       this.exportSave();

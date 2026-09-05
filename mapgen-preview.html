@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>tut — map generation preview</title>
+    <title>tut — Map Lab</title>
     <style>
       html,
       body {
@@ -105,11 +105,42 @@
         color: var(--ui-info, #7fd1ff);
         margin-top: 6px;
       }
+      /*
+       * The panel header sits above everything the harness appends, so
+       * the way back to the menu is the first thing in the panel and
+       * survives a re-render (#786).
+       */
+      .mapgen-header {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+        padding: 12px 12px 0;
+      }
+      .mapgen-header h1 {
+        margin: 0;
+        font-size: 16px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .mapgen-header a {
+        margin-left: auto;
+        text-decoration: none;
+      }
     </style>
   </head>
   <body>
     <div id="layout">
-      <aside id="panel"></aside>
+      <aside id="panel">
+        <!--
+          Relative to the document, so it resolves both at the root and
+          under the Pages sub-path the release workflow builds with
+          (`TUT_BASE_PATH=/tut/`). An absolute "/" would leave the app.
+        -->
+        <div class="mapgen-header">
+          <h1>Map Lab</h1>
+          <a class="tut-btn" data-action="back" href="./">Back to menu</a>
+        </div>
+      </aside>
       <div id="map-viewport"></div>
     </div>
     <script type="module" src="/src/mapgen-preview.ts"></script>

@@ -25,6 +25,7 @@ import {
 import { PipelineMapGenerator } from "./pipeline-map-generator";
 import { ReachabilityService } from "./reachability-service";
 import { createSettlementPasses } from "./settlement-pipeline";
+import { SurfaceIds } from "../data/surfaces";
 import { TileIndex } from "./tile-index";
 
 const registries = createDefaultRegistries();
@@ -120,7 +121,7 @@ const GOLDENS: readonly Golden[] = [
     biome: "desert",
     settlement: "city",
     size: "large",
-    checksum: 1379561224,
+    checksum: 3653172638,
   },
 ];
 
@@ -139,6 +140,7 @@ describe("generation sweep", () => {
       let unreachableEntrances = 0;
       let hooks = 0;
       let relocations = 0;
+      let roadStepsWithoutConnector = 0;
       for (const size of MAP_SIZE_PRESETS) {
         for (const biome of BIOME_IDS) {
           for (const settlement of SETTLEMENT_SCALES) {
@@ -228,6 +230,41 @@ describe("generation sweep", () => {
                 (n) =>
                   n.pass === "connectivity" && n.message.includes("relocated"),
               ).length;
+              // #785: a road never dies into a higher face. Every pair of
+              // orthogonally adjacent road tiles on different levels is
+              // joined by a connector, or the lower one dead-ends into a
+              // wall — which is what a lifted carriageway did to the road
+              // it crossed. Towns step roads onto the plat and ramp them;
+              // cities used to fail this by the hundred.
+              const joined = new Set(
+                map.connectors.flatMap((c) => [
+                  `${String(c.from.x)},${String(c.from.z)}|${String(c.to.x)},${String(c.to.z)}`,
+                  `${String(c.to.x)},${String(c.to.z)}|${String(c.from.x)},${String(c.from.z)}`,
+                ]),
+              );
+              for (const tile of map.tiles) {
+                if (tile.surface !== SurfaceIds.ROAD) {
+                  continue;
+                }
+                for (const [dx, dz] of [
+                  [1, 0],
+                  [0, 1],
+                ] as const) {
+                  const next = index
+                    .column(tile.x + dx, tile.z + dz)
+                    .find((c) => c.surface === SurfaceIds.ROAD);
+                  if (next === undefined || next.y === tile.y) {
+                    continue;
+                  }
+                  if (
+                    !joined.has(
+                      `${String(tile.x)},${String(tile.z)}|${String(next.x)},${String(next.z)}`,
+                    )
+                  ) {
+                    roadStepsWithoutConnector++;
+                  }
+                }
+              }
             }
           }
         }
@@ -247,6 +284,10 @@ describe("generation sweep", () => {
         (tallMaps.town?.tall ?? 0) / (tallMaps.town?.maps ?? 1),
       ).toBeGreaterThanOrEqual(0.85);
       expect(relocations / hooks).toBeLessThanOrEqual(0.05);
+      // No road dead-ends into a raised face (#785). Measured 0 on every
+      // map of the matrix once road-surfaced features were disabled; the
+      // number was 234-781 per twelve city maps before.
+      expect(roadStepsWithoutConnector).toBe(0);
     },
     SWEEP_TIMEOUT_MS,
   );

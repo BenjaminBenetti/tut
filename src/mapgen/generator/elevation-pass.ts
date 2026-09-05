@@ -92,8 +92,15 @@ export class ElevationPass implements GenerationPass {
   run(context: GenerationContext): void {
     const { draft, params, registries, rng, diagnostics } = context;
     const { settlement } = params;
-    const eligible = registries.elevatedFeatures.values.filter((feature) =>
-      feature.scales.includes(settlement.id),
+    // No raised feature carries a road (#785). The simulation treats a
+    // raised tile as solid ground, so a lifted carriageway is a road on a
+    // column with a lower road dying into its face where they cross; a
+    // real overpass needs a passable underside and is M3's if it is
+    // anyone's. Terraces stay: a plaza with a retaining wall is a thing.
+    const eligible = registries.elevatedFeatures.values.filter(
+      (feature) =>
+        feature.scales.includes(settlement.id) &&
+        feature.surface !== SurfaceIds.ROAD,
     );
     const target = featureTarget(draft, settlement);
     if (eligible.length === 0 || target === 0) {

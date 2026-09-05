@@ -598,11 +598,23 @@ CAPTURE=1 pnpm exec playwright test e2e/fog-screenshot.spec.ts
 ![Turn 1: visible ground and never-explored mist](tactical-fog-of-war.png)
 ![Turn 7: visible, remembered, and never-explored terrain](tactical-fog-of-war-turn7.png)
 
-The spec checks all three states exist at turn 7 and rejects browser errors;
-it does not decide whether the mist feels right. The Director reviews these
-frames and the Executive Director judges the feel in play. These are shallow
-mist sheets, so tall facades retain their cold surface shading above the
-nearest sheet; this is not volumetric weather.
+The spec checks all three states exist at turn 7, rejects browser errors, and
+resumes the same turn-7 mission to clear the animation backlog; it does not decide
+whether the mist feels right. The Director reviews these frames and the
+Executive Director judges the feel in play.
+
+**Everything belonging to a never-explored tile takes the mist**, including
+walls, props and connectors (Director review of #776). Surface shaders carry
+the same wisps over faces rising through the air sheets: a high facade replaces
+the mist sheets it occludes, instead of staying a black silhouette inside pale
+ground. The ground keeps its accepted strength. Coverage follows the owning
+tile even when geometry extends into a neighbour; exploring the owner clears
+both its sheets and surfaces. Solid surfaces retain depth and shadow behaviour,
+and the wall cutaway shader still runs.
+
+Strength is one named constant, **`UNEXPLORED_FOG_STRENGTH = 0.075`**, in
+`src/graphics/data/unexplored-fog.ts`, shared by air and surfaces. Leave it at
+the Director-approved value until the Executive Director's play judgement.
 
 Two more that were *checked and are not problems*, recorded so nobody
 re-opens them on a hunch:

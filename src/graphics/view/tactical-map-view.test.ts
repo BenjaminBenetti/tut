@@ -270,6 +270,46 @@ function named(view: TacticalMapView, prefix: string): InstancedMesh[] {
 }
 
 describe("TacticalMapView.loadModels", () => {
+  it("mists walls, props, connectors and late-loaded models by their owning tile", async () => {
+    const map = fixture().build();
+    const view = new TacticalMapView(map);
+    view.setVision({ visible: [], explored: [], spotted: [], lastSeen: {} });
+    await view.loadModels(new FakeModelLoader());
+    const surfaces: Mesh[] = [];
+    view.root.traverse((object) => {
+      if (
+        object instanceof Mesh &&
+        (object.name.includes("-model:") || object.name === "c1")
+      ) {
+        surfaces.push(object as Mesh);
+      }
+    });
+    expect(surfaces.some((mesh) => mesh.name.startsWith("walls-model:"))).toBe(
+      true,
+    );
+    expect(surfaces.some((mesh) => mesh.name.startsWith("props-model:"))).toBe(
+      true,
+    );
+    expect(surfaces.some((mesh) => mesh.name === "c1")).toBe(true);
+    for (const mesh of surfaces) {
+      const coverage = mesh.geometry.getAttribute("unexploredMist");
+      expect(coverage, mesh.name).toBeDefined();
+      for (let i = 0; i < coverage.count; i++) expect(coverage.getW(i)).toBe(1);
+    }
+    const index = new TileIndex(map);
+    view.setVision({
+      visible: [],
+      explored: map.tiles.map((tile) => index.keyOf(tile)),
+      spotted: [],
+      lastSeen: {},
+    });
+    for (const mesh of surfaces) {
+      const coverage = mesh.geometry.getAttribute("unexploredMist");
+      for (let i = 0; i < coverage.count; i++) expect(coverage.getW(i)).toBe(0);
+    }
+    view.dispose();
+  });
+
   it("draws the registered art and retires the placeholder boxes it replaces", async () => {
     const view = new TacticalMapView(fixture().build());
     const models = new FakeModelLoader();

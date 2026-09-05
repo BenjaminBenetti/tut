@@ -1,5 +1,8 @@
 import {
+  BufferAttribute,
   Color,
+  InstancedBufferAttribute,
+  InstancedMesh,
   DataTexture,
   DoubleSide,
   Group,
@@ -12,6 +15,15 @@ import {
 } from "three";
 
 import type { TileGridSource } from "../../mapgen/model/tactical-map";
+import {
+  MIST_PATTERN,
+  withUnexploredMist,
+} from "../service/unexplored-fog-material";
+import {
+  UNEXPLORED_FOG_COLOUR,
+  UNEXPLORED_FOG_LAYERS,
+  UNEXPLORED_FOG_STRENGTH,
+} from "../data/unexplored-fog";
 import type { SideVision } from "../../tactical/model/tactical-state";
 import { gridKey } from "../../core/service/grid-math";
 import { LEVEL_HEIGHT, SLAB_HEIGHT } from "../data/mapgen-preview-palette";
@@ -20,11 +32,6 @@ import type { Disposable } from "../model/disposable";
 // ===========================================
 // Appearance
 // ===========================================
-
-/** Thin mist in world space; three offset sheets avoid a painted surface. */
-const FOG_LAYERS = [0.18, 0.52, 0.9] as const;
-const FOG_OPACITY = 0.075;
-const FOG_COLOUR = 0xb6c1c4;
 
 /** One level's sparse coverage; missing tiles must never grow fog. */
 interface FogLevel {
@@ -42,7 +49,9 @@ interface FogLevel {
  * Low, depth-tested mist over never-explored tiles only (#770).
  * Each storey has its own mask, so knowing the street does not clear a
  * roof. The map view attaches the sheets to its level groups for peeling.
- * Nothing writes depth, casts shadows, intercepts picking, or uses DOM.
+ * Air sheets never write depth, cast shadows, intercept picking, or use
+ * DOM. Terrain materials continue the mist above the sheets while keeping
+ * their existing depth, shadow, and picking behaviour.
  */
 export class UnexploredFog implements Disposable {
   // ===========================================
@@ -52,6 +61,12 @@ export class UnexploredFog implements Disposable {
   private readonly levels = new Map<number, FogLevel>();
   private readonly geometry: PlaneGeometry;
   private readonly materials: ShaderMaterial[] = [];
+  private readonly surfaces: {
+    coverage: BufferAttribute;
+    keys: readonly number[];
+  }[] = [];
+  private readonly surfaceResources: Disposable[] = [];
+  private known: ReadonlySet<number> | undefined;
 
   /** Builds three shared-geometry sheets per populated level, hidden until vision arrives. */
   constructor(private readonly map: TileGridSource) {
@@ -71,10 +86,48 @@ export class UnexploredFog implements Disposable {
     for (const [level, fog] of this.levels) groupFor(level).add(fog.root);
   }
 
+  /** Gives every terrain mesh its own coverage attribute and mist material. */
+  trackSurface(mesh: Mesh, keys: readonly number[]): void {
+    const geometry = mesh.geometry.clone();
+    const ownerKeys =
+      mesh instanceof InstancedMesh
+        ? keys
+        : Array.from(
+            { length: geometry.getAttribute("position").count },
+            () => keys[0]!,
+          );
+    const data = new Float32Array(ownerKeys.length * 4);
+    ownerKeys.forEach((key, i) => {
+      const level = Math.floor(key / (this.map.width * this.map.depth));
+      const x = key % this.map.width;
+      const z = Math.floor(key / this.map.width) % this.map.depth;
+      data.set(
+        [x + 0.5, z + 0.5, level * LEVEL_HEIGHT + SLAB_HEIGHT, 0],
+        i * 4,
+      );
+    });
+    const coverage =
+      mesh instanceof InstancedMesh
+        ? new InstancedBufferAttribute(data, 4)
+        : new BufferAttribute(data, 4);
+    geometry.setAttribute("unexploredMist", coverage);
+    mesh.geometry = geometry;
+    const materials = (
+      Array.isArray(mesh.material) ? mesh.material : [mesh.material]
+    ).map(withUnexploredMist);
+    mesh.material = Array.isArray(mesh.material) ? materials : materials[0]!;
+    this.surfaceResources.push(geometry, ...materials);
+    this.surfaces.push({ coverage, keys: ownerKeys });
+    this.updateSurface(coverage, ownerKeys);
+  }
+
   /** Clears mist permanently on explored tiles, including after they leave sight. */
   setVision(vision: SideVision | undefined): void {
     const known = new Set(vision?.explored);
     for (const key of vision?.visible ?? []) known.add(key);
+    this.known = vision === undefined ? undefined : known;
+    for (const surface of this.surfaces)
+      this.updateSurface(surface.coverage, surface.keys);
     for (const fog of this.levels.values()) {
       fog.data.fill(0);
       let count = 0;
@@ -99,11 +152,26 @@ export class UnexploredFog implements Disposable {
     }
     for (const material of this.materials) material.dispose();
     this.geometry.dispose();
+    for (const resource of this.surfaceResources) resource.dispose();
   }
 
   // ===========================================
   // Level construction
   // ===========================================
+
+  /** Writes per-owner exploration, also for geometry loaded after vision was set. */
+  private updateSurface(
+    coverage: BufferAttribute,
+    keys: readonly number[],
+  ): void {
+    keys.forEach((key, i) =>
+      coverage.setW(
+        i,
+        this.known !== undefined && !this.known.has(key) ? 1 : 0,
+      ),
+    );
+    coverage.needsUpdate = true;
+  }
 
   /** Creates a level's coverage texture and softly offset mist sheets. */
   private buildLevel(level: number): void {
@@ -116,13 +184,13 @@ export class UnexploredFog implements Disposable {
     const root = new Group();
     root.name = `unexplored-fog-${String(level)}`;
     root.visible = false;
-    for (const lift of FOG_LAYERS) {
+    for (const lift of UNEXPLORED_FOG_LAYERS) {
       const material = new ShaderMaterial({
         uniforms: {
           uMask: { value: mask },
           uSize: { value: new Vector2(width, depth) },
-          uColour: { value: new Color(FOG_COLOUR) },
-          uOpacity: { value: FOG_OPACITY },
+          uColour: { value: new Color(UNEXPLORED_FOG_COLOUR) },
+          uOpacity: { value: UNEXPLORED_FOG_STRENGTH },
           uOffset: { value: lift * 3.7 },
         },
         vertexShader: VERTEX_SHADER,
@@ -175,16 +243,7 @@ const FRAGMENT_SHADER = `
   uniform float uOffset;
   varying vec3 vWorld;
 
-  float hash(vec2 p) {
-    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
-  }
-  float noise(vec2 p) {
-    vec2 cell = floor(p);
-    vec2 f = fract(p);
-    f = f * f * (3.0 - 2.0 * f);
-    return mix(mix(hash(cell), hash(cell + vec2(1.0, 0.0)), f.x),
-               mix(hash(cell + vec2(0.0, 1.0)), hash(cell + vec2(1.0)), f.x), f.y);
-  }
+  ${MIST_PATTERN}
   void main() {
     vec2 uv = vWorld.xz / uSize;
     // Gate on the actual cell first: linear filtering must not fog known
@@ -196,9 +255,7 @@ const FRAGMENT_SHADER = `
     // would end the atmosphere in a straight opaque edge above the void.
     vec2 border = min(vWorld.xz, uSize - vWorld.xz);
     edge *= smoothstep(0.0, 0.7, min(border.x, border.y));
-    vec2 p = vec2(vWorld.x * 0.36 + vWorld.z * 0.13, vWorld.z * 0.8);
-    float wisp = noise(p + uOffset) * 0.7 + noise(p * 2.1 - uOffset) * 0.3;
-    float alpha = edge * uOpacity * smoothstep(0.18, 0.8, wisp);
+    float alpha = edge * uOpacity * mistWisp(vWorld.xz, uOffset);
     gl_FragColor = vec4(uColour, alpha);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>

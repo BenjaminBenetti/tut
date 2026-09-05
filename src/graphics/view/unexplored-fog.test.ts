@@ -1,4 +1,12 @@
-import { DataTexture, Group, Mesh, ShaderMaterial } from "three";
+import {
+  BoxGeometry,
+  DataTexture,
+  Group,
+  InstancedMesh,
+  Mesh,
+  MeshStandardMaterial,
+  ShaderMaterial,
+} from "three";
 import { describe, expect, it, vi } from "vitest";
 
 import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
@@ -17,6 +25,32 @@ function maskOf(group: Group): DataTexture {
 }
 
 describe("UnexploredFog", () => {
+  it("owns surface resources without altering or disposing loader prototypes", () => {
+    const map = new FixtureMapBuilder(1, 1, 1).fillGround().build();
+    const fog = new UnexploredFog(map);
+    const geometry = new BoxGeometry();
+    const material = new MeshStandardMaterial();
+    const mesh = new InstancedMesh(geometry, material, 1);
+    const sourceDisposed = vi.fn();
+    const ownedDisposed = vi.fn();
+    geometry.addEventListener("dispose", sourceDisposed);
+    material.addEventListener("dispose", sourceDisposed);
+    fog.setVision({ visible: [], explored: [], spotted: [], lastSeen: {} });
+    fog.trackSurface(mesh, [0]);
+    expect(mesh.geometry).not.toBe(geometry);
+    expect(mesh.material).not.toBe(material);
+    expect(geometry.getAttribute("unexploredMist")).toBeUndefined();
+    expect(mesh.geometry.getAttribute("unexploredMist").getW(0)).toBe(1);
+    mesh.geometry.addEventListener("dispose", ownedDisposed);
+    mesh.material.addEventListener("dispose", ownedDisposed);
+    fog.dispose();
+    expect(ownedDisposed).toHaveBeenCalledTimes(2);
+    expect(sourceDisposed).not.toHaveBeenCalled();
+    geometry.dispose();
+    material.dispose();
+    mesh.dispose();
+  });
+
   it("clears visible and remembered tiles, preserves sparse upper floors, and resets between views", () => {
     const map = new FixtureMapBuilder(3, 1, 2)
       .fillGround()

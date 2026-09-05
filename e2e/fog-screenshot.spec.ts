@@ -266,13 +266,17 @@ test("captures a mission with fog of war for review", async ({ page }) => {
   await page.evaluate(() =>
     (globalThis as HookGlobal).__tutTactical__?.selectUnit("unit-1"),
   );
-  // Let the phase banner finish before the shutter, or it covers the map.
-  await expect
-    .poll(
-      async () => page.locator("#phase-banner").getAttribute("data-visible"),
-      { timeout: 15_000 },
-    )
-    .not.toBe("true");
+  // Resume the same live mission to draw turn 7 from its settled state.
+  // The turn counter/phase banner can finish before the animation backlog,
+  // so a timed shutter otherwise captures terrain with stale vision.
+  await page.locator('#turn-banner [data-action="overworld"]').click();
+  await expect(body).toHaveAttribute("data-screen", "overworld");
+  await page.locator('#top-bar [data-action="resume-mission"]').click();
+  await expect(body).toHaveAttribute("data-screen", "tactical");
+  await expect(page.locator("#tactical-viewport canvas")).toBeVisible();
+  await page.evaluate(() =>
+    (globalThis as HookGlobal).__tutTactical__?.selectUnit("unit-1"),
+  );
   await page.waitForTimeout(600);
   const states = await page.evaluate(() => {
     const raw = localStorage.getItem("tut:save:autosave");

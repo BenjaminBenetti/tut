@@ -270,12 +270,12 @@ export class TacticalMapView implements Disposable, TilePicker {
     this.root = new Group();
     this.root.name = "tactical-map";
     this.disposables.push(this.unitBox);
+    this.unexploredFog = new UnexploredFog(map);
     this.buildTiles();
     this.buildWalls();
     this.buildProps();
     this.buildConnectors();
     this.buildHooks();
-    this.unexploredFog = new UnexploredFog(map);
     this.unexploredFog.attachTo((level) => this.groupFor(level));
     this.disposables.push(this.unexploredFog);
   }
@@ -424,9 +424,8 @@ export class TacticalMapView implements Disposable, TilePicker {
           ),
           batch.keys,
         );
-        // Geometry and materials belong to the loader's cached prototype
-        // and are shared with every other clone, so only the instanced
-        // wrapper is ours to free.
+        // The mist owns its geometry/material clones; loader prototypes
+        // stay untouched. This view owns the instanced wrapper.
         this.disposables.push(mesh);
         this.groupFor(batch.level).add(mesh);
       });
@@ -502,6 +501,8 @@ export class TacticalMapView implements Disposable, TilePicker {
       matrices: matrices.map((m) => m.clone()),
       keys: [...keys],
     };
+    if (!mesh.name.startsWith("hooks:"))
+      this.unexploredFog.trackSurface(mesh, keys);
     this.instanceTiles.set(mesh, tiles);
     this.applyVisionTo(mesh, tiles);
   }
@@ -737,6 +738,7 @@ export class TacticalMapView implements Disposable, TilePicker {
           ? this.ladderMesh(connector)
           : this.plankMesh(connector);
       mesh.name = connector.id;
+      this.unexploredFog.trackSurface(mesh, [this.index.keyOf(connector.to)]);
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       const material = mesh.material as MeshStandardMaterial;

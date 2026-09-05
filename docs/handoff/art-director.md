@@ -1,6 +1,6 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-05 (#770 scene fog exception)
+Last updated: 2026-09-05 (#776 Director review revision)
 
 ## Current work: #770, then hold
 
@@ -27,14 +27,28 @@ comparison; older committed frames came from the predecessor's checkout.
 Tests cover clearing on exploration, remaining clear after sight is lost,
 separate roof history, sparse floors, preview reset, resource disposal, and
 the map view actually enabling the mist. Style guide §12.5 records the look.
-This is shallow mist, not full volumetric weather: upper facades retain cold
-shading above the nearest sheet. The Executive Director's play judgement is
-still the acceptance of the feel.
+Director review revision on PR #776: extended the mist to walls, props,
+connectors, and tall model faces. Surface materials reuse the air's colour
+and wisps where geometry rises through a sheet, preserving the accepted
+strength on the ground. The single shared control is
+`UNEXPLORED_FOG_STRENGTH = 0.075` in `graphics/data/unexplored-fog.ts`.
+Coverage follows each instance's owning tile; the ghost cutaway remains intact.
+Geometry/material clones belong to the mist and leave loader prototypes alone.
+The Director's latest judgement approves the existing three-state read and
+strength; it supersedes the earlier request to restore the 0.28 tint rung.
 
-Validation passed: `pnpm typecheck`, `pnpm lint`, `pnpm test` (1,930 passed,
-one skipped), `pnpm build`, and `pnpm test:e2e` (59 passed, four capture-only
-specs skipped). The fog capture was run separately and passed. Build retains
-the existing chunk-size warning. No simulation rules or runtime assets changed.
+Merged current main (`4427cd5`) into this branch, resolving the binary-frame
+conflicts from #775. Both seed-4242 frames were regenerated and inspected.
+The capture now resumes the same turn-7 mission before the shutter so queued
+animations cannot leave the rendered vision behind the save. This also
+reframes on the current force, so turn 7's framing shifts slightly. Shader
+errors and all three vision states are still checked.
+
+Revision validation passed: `pnpm typecheck`, `pnpm lint`, `pnpm test`
+(1,937 passed, one skipped), `pnpm build`, and the fog capture. The original
+PR's full browser suite passed 59 tests; this revision reran the requested
+capture rather than the whole suite. Build retains the chunk-size warning.
+The Executive Director still judges the strength from play.
 
 Next: Tech Lead reviews and merges the PR. Address review on this branch when
 it arrives, then hold again. **No timer polling while waiting on review.**

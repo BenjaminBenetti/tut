@@ -13,10 +13,12 @@ import type { UpgradeTuning } from "../../roster/model/upgrade-tuning";
 import { validateLoadout } from "../../roster/service/loadout-validation-service";
 import type { GameState } from "../../save/model/game-state";
 import type { GameSession } from "../model/game-session";
+import type { MechPreviewHost } from "../model/mech-preview-host";
 import type { Screen, ScreenId } from "../model/screen";
 import type { ScreenRouter } from "../model/screen-router";
 import { formatCredits } from "../service/format";
 import { LoadoutEditorView } from "../view/loadout-editor-view";
+import { MechPreviewView } from "../view/mech-preview-view";
 import { SavedLoadoutsView } from "../view/saved-loadouts-view";
 import { StatSheetView } from "../view/stat-sheet-view";
 
@@ -34,6 +36,12 @@ export interface MechBayScreenDeps {
   readonly rating: MechRatingTuning;
   /** Upgrade multipliers for any levels the draft records. */
   readonly upgrades: UpgradeTuning;
+  /**
+   * Draws the draft as an assembled mech (#694). Optional: with none,
+   * the preview panel shows its empty note and the bay is unchanged,
+   * which is what the jsdom specs run against.
+   */
+  readonly preview?: MechPreviewHost;
 }
 
 /** Name a fresh draft gets when the campaign has no saved template to start from. */
@@ -82,6 +90,7 @@ export class MechBayScreen implements Screen {
   private readonly deps: MechBayScreenDeps;
   private readonly editor: LoadoutEditorView;
   private readonly sheet = new StatSheetView();
+  private readonly preview = new MechPreviewView();
   private readonly saved: SavedLoadoutsView;
   private root: HTMLElement | undefined;
   private credits: HTMLElement | undefined;
@@ -139,7 +148,13 @@ export class MechBayScreen implements Screen {
     this.editor.mount(left);
     this.saved.mount(left);
     body.appendChild(left);
-    this.sheet.mount(body);
+    // The sheet used to be the whole right column and ended 470 px shy
+    // of the bottom; the picture of the mech goes in that room (#694).
+    const right = doc.createElement("div");
+    right.className = "tut-stack";
+    this.sheet.mount(right);
+    this.preview.mount(right);
+    body.appendChild(right);
     layout.appendChild(body);
     root.appendChild(layout);
     this.root = layout;
@@ -150,6 +165,12 @@ export class MechBayScreen implements Screen {
     this.unsubscribe = store?.subscribe((change) => {
       this.render(change.state);
     });
+
+    const viewport = this.preview.viewport();
+    if (viewport && this.deps.preview) {
+      this.deps.preview.attach(viewport);
+      this.preview.markAttached();
+    }
 
     const draft = this.initialDraft(state);
     this.editor.setLoadout(draft);
@@ -163,9 +184,11 @@ export class MechBayScreen implements Screen {
     for (const dispose of this.disposers.splice(0)) {
       dispose();
     }
+    this.deps.preview?.release();
     this.editor.unmount();
     this.saved.unmount();
     this.sheet.unmount();
+    this.preview.unmount();
     this.root?.remove();
     this.root = undefined;
     this.credits = undefined;
@@ -189,6 +212,10 @@ export class MechBayScreen implements Screen {
       this.deps.upgrades,
     );
     this.sheet.update(this.result);
+    // Drawn from the draft, not from the sheet: an over-weight mech is
+    // still the mech the player is looking at, and hiding it on the
+    // frame it goes invalid is the one moment they need to see it.
+    void this.deps.preview?.show(loadout);
     this.editor.setErrors(this.result.ok ? [] : this.result.error);
     this.refreshButtons(this.deps.session.state);
   }

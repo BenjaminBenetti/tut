@@ -285,6 +285,10 @@ The roster's starter part catalogue (`src/roster/data/parts.ts`) maps to mech pa
 
 Reference assemblies: `tdf.mech.assembled-a` (Vanguard, Strider, Tracker, Autocannon, Missile Pod) and `tdf.mech.assembled-b` (Bulwark, Bastion, Brace, Railgun, Mortar).
 
+The mech bay assembles this table at runtime and shows the result (#694): `src/graphics/data/part-model-table.ts` holds it as code, `MechAssembler` hangs the parts on the §6 sockets, and `MechPreviewScene` draws them. See [`mech-bay-assembly.png`](mech-bay-assembly.png).
+
+**Frame a preview on the silhouette, not on a box.** Project the mesh vertices into camera space and take the extents there. A bounding box under an isometric tilt projects to a hexagon whose extreme corners are empty air above and below anything tall and thin, and a mech is tall and thin: measured, framing on the box put the *box* at 82 % of the view and the mech at **61 %**. The part thumbnails are still in the older version of this trap — their helper frames on the box's *diagonal*, which over-pads worse — and re-shooting all thirty is the cost of fixing them (#694).
+
 ## 8. Asset manifests
 
 Shipped in #10; this section describes what exists. Ids and registries are split so simulation data can name a model without importing the renderer (architecture §3, ADR 0002).

@@ -37,6 +37,7 @@ import { OverworldScreen } from "../../ui/screen/overworld-screen";
 import { TacticalScreen } from "../../ui/screen/tactical-screen";
 import { OverworldSelectionState } from "../../ui/service/overworld-selection-state";
 import { MechBayScreen } from "../../ui/screen/mech-bay-screen";
+import { DomMechPreviewHost } from "./mech-preview-host";
 import { MissionResultsScreen } from "../../ui/screen/mission-results-screen";
 import { RosterScreen } from "../../ui/screen/roster-screen";
 import { NoticeBarView } from "../../ui/view/notice-bar-view";
@@ -184,6 +185,9 @@ export async function bootstrapApp(doc: Document): Promise<void> {
             parts: game.content.parts,
             rating: game.content.rating,
             upgrades: game.content.upgrades,
+            preview: new DomMechPreviewHost({
+              baseUrl: import.meta.env.BASE_URL,
+            }),
           }),
       ],
       [

@@ -254,6 +254,20 @@
     "bytes": 6592
   },
   {
+    "id": "building.wall-half-concrete",
+    "category": "buildings",
+    "path": "assets/models/buildings/wall-half-concrete.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 0.5,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 56,
+    "bytes": 6812
+  },
+  {
     "id": "prop.barrier-concrete",
     "category": "props",
     "path": "assets/models/props/barrier-concrete.glb",

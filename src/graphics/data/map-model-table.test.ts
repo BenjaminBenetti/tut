@@ -16,6 +16,8 @@ import {
   wallFamilyFor,
   WALL_MODELS,
   HALF_WALL_MODEL,
+  HALF_WALL_MODELS,
+  wallFamilyForWall,
 } from "./map-model-table";
 
 /** Every wall model the table names, across all three families. */
@@ -61,7 +63,7 @@ describe("map model table", () => {
 
   it("draws a half wall in brick whatever the family, the only one modelled", () => {
     for (const family of WALL_FAMILIES) {
-      expect(wallModel("half", family)).toBe(HALF_WALL_MODEL);
+      expect(wallModel("half", family)).toBe(HALF_WALL_MODELS[family]);
     }
   });
 
@@ -72,7 +74,7 @@ describe("map model table", () => {
     }
   });
 
-  it("gives a building one family, and no building brick", () => {
+  it("gives a building one family, and no building brick — bar the civic parapet (#766)", () => {
     // Same id, same family, however often it is asked.
     const ids = ["building-1", "b-42", "block-a/3"];
     for (const id of ids) {
@@ -80,7 +82,18 @@ describe("map model table", () => {
       expect(wallFamilyFor(id), id).toBe(family);
       expect(WALL_FAMILIES, id).toContain(family);
     }
+    // Brick where a wall belongs to no building: a building's own
+    // ground-floor walls stand on untagged tiles (#766).
     expect(wallFamilyFor(undefined)).toBe("brick");
+    // The one civic exception is the parapet, which with no building is
+    // concrete — a viaduct's lip drew brick and read as a brick building
+    // the road sat on (#748, #766).
+    expect(wallFamilyForWall("half", undefined)).toBe("concrete");
+    expect(wallFamilyForWall("solid", undefined)).toBe("brick");
+    expect(wallModel("half", wallFamilyForWall("half", undefined))).toBe(
+      "building.wall-half-concrete",
+    );
+    expect(wallModel("half", "brick")).toBe(HALF_WALL_MODEL);
   });
 
   it("spreads buildings across all three families", () => {

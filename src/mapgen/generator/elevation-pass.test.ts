@@ -49,7 +49,19 @@ describe("ElevationPass", () => {
     expect(pass.provides).toEqual(["elevation"]);
   });
 
-  it("gives a city outdoor ground a mech can stand on above the plat", () => {
+  it("gives city outdoor ground a mech can stand on above the plat", () => {
+    // City plats are graded flat, so this was zero on every seed before
+    // the pass (#444). The point is that outdoor height exists and that a
+    // mech is allowed on it. It was asserted per seed at 60+ tiles while
+    // viaducts carried most of the share; #785 disabled every
+    // road-surfaced feature and #762 keeps the rest a column off every
+    // lot, and a medium city can now place no terrace at all on a given
+    // seed (coastal/0 does). So this is asserted over the set: most seeds
+    // still get height, and a mech can stand on it. The share sitting well
+    // under #444's band is recorded on #785 and #762, not hidden here.
+    let seeds = 0;
+    let seedsWithHeight = 0;
+    let mechHighTotal = 0;
     for (const biome of BIOME_IDS) {
       for (let i = 0; i < SEEDS; i++) {
         const label = `${biome}/${i}`;
@@ -71,13 +83,15 @@ describe("ElevationPass", () => {
             tile.y > base &&
             (tile.pass & PassMask.MECH) === PassMask.MECH,
         ).length;
-        // City plats are graded flat, so this was zero on every seed
-        // before the pass (#444). The share is tuned against the band in
-        // the sweep; here the point is that outdoor height exists at all
-        // and that a mech is allowed on it.
-        expect(mechHigh, label).toBeGreaterThan(60);
+        seeds++;
+        if (mechHigh > 0) {
+          seedsWithHeight++;
+        }
+        mechHighTotal += mechHigh;
       }
     }
+    expect(seedsWithHeight / seeds).toBeGreaterThanOrEqual(0.75);
+    expect(mechHighTotal).toBeGreaterThan(0);
   });
 
   it("leaves every step it makes climbable, never a cliff", () => {
@@ -113,16 +127,19 @@ describe("ElevationPass", () => {
     }
   });
 
-  it("lifts carriageway and leaves every footway at the level it was", () => {
-    // A door opens onto the footway, so lifting that would strand the
-    // frontages along the run. Compared against the same seed generated
-    // without the pass: each pass draws from its own rng fork, so the
-    // road pass lays exactly the same streets either way.
+  it("never lifts a road, and leaves every footway where it was (#785)", () => {
+    // Raised tiles are solid ground to the simulation, so a lifted
+    // carriageway was a road on a column with the road it crossed dying
+    // into its face. The pass now skips every feature whose surface is
+    // road; this holds the same seed with and without the pass side by
+    // side and asserts no road column moved. Footways were never lifted
+    // (a door opens onto one) and still are not.
     const without = new PipelineMapGenerator(
       createSettlementPasses().filter((pass) => pass.id !== "elevation"),
       registries,
     );
     let raisedRoad = 0;
+    let raisedAnything = 0;
     for (let i = 0; i < SEEDS; i++) {
       const seed = hashSeed(`street-${i}`);
       const flat = without.run(params("city"), new Mulberry32Rng(seed)).draft;
@@ -137,13 +154,18 @@ describe("ElevationPass", () => {
           if (flat.groundSurfaceAt(x, z) === SurfaceIds.SIDEWALK) {
             expect(after, `footway ${x},${z} seed ${i}`).toBe(before);
           }
-          if (flat.isRoad(x, z) && after > before) {
+          if (flat.isRoad(x, z) && after !== before) {
             raisedRoad++;
+          }
+          if (after > before) {
+            raisedAnything++;
           }
         }
       }
     }
-    expect(raisedRoad).toBeGreaterThan(0);
+    expect(raisedRoad).toBe(0);
+    // The pass still does its job on the ground it is allowed: terraces.
+    expect(raisedAnything).toBeGreaterThan(0);
   });
 
   it("rails the edge of what it raises, without shutting a mech out (#508)", () => {

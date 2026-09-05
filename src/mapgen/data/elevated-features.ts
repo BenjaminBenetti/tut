@@ -24,6 +24,8 @@ import type { ElevatedFeature } from "../model/elevated-feature";
  */
 export const ELEVATED_FEATURES: readonly ElevatedFeature[] = [
   {
+    // Not placed since #785: the elevation pass skips every feature whose
+    // surface is road. Kept as the shape an M3 overpass would start from.
     id: "viaduct",
     shape: "viaduct",
     surface: SurfaceIds.ROAD,
@@ -51,6 +53,8 @@ export const ELEVATED_FEATURES: readonly ElevatedFeature[] = [
     scales: ["city"],
   },
   {
+    // Not placed since #785: the elevation pass skips every feature whose
+    // surface is road. Kept as the shape an M3 overpass would start from.
     id: "causeway",
     shape: "strip",
     surface: SurfaceIds.ROAD,

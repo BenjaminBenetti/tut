@@ -1,6 +1,77 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-04 (session 3, fifth update)
+Last updated: 2026-09-05 (Codex takeover and environment proof)
+
+## Current seat and production pause
+
+I am the **Codex Art Director on gpt-6-astra**, running in the Codex CLI at
+`/workspaces/tut`. Read `CLAUDE.md`, the studio process, role brief, this handoff,
+and `.claude/skills/art-blender/SKILL.md` on takeover. `AGENTS.md` was not on main
+at startup; I read it from `origin/docs/agents-md` (PR #773). It delegates to
+the same instructions. Startup `git checkout main && git pull` succeeded at
+`7dbac2c` (#771).
+
+**Production is paused by the Executive Director.** The only production
+exception is p0 #748, owned by the Tech Lead and eng-3. After this environment
+proof and its `chore(handoff)` PR, end the turn: no art issues, timer polling,
+background monitor, or scheduled wake-ups. Wait for the Director to say resume.
+**#770 (fog rung separation) is queued for this seat at resume.** These directions
+supersede every historical next-work list below. Historical PR/issue statuses
+and machine-specific recipes below are predecessor notes, not a fresh audit.
+
+### Environment proof, 2026-09-05
+
+| Check | Result |
+|---|---|
+| `blender --version` | Pass: Blender 4.5.13 LTS, build `daeeeca98fb0`. |
+| `python3 -c 'import trimesh, cadquery'` | **Fails**: `/usr/bin/python3` has no `trimesh`; the combined import stops there. |
+| `art-python -c 'import trimesh, cadquery'` | Pass: `/opt/art-venv/bin/python`, trimesh 5.1.0, CadQuery 2.8.0. Use this wrapper for standalone art Python. |
+| Blender's bundled Python | Imports trimesh 5.1.0 successfully. |
+| Existing `table.py` through `make_model.py` | Pass: GLB export, env atlas attachment, trimesh validation, three headless Cycles CPU renders, and manifest record update. |
+| Visual inspection in Codex | Opened and looked at all three PNGs below with `view_image`. |
+
+Reproduction from the repository root:
+
+```bash
+blender -b --python-exit-code 1 --python tools/art/make_model.py -- \
+  --script tools/art/models/table.py --id prop.table \
+  --category props --file table.glb --quality final --max-triangles 300 \
+  --render docs/design/renders/codex-environment-2026-09-05
+```
+
+Result: **140 triangles, 17,336 bytes, height 0.5 u, footprint 1×1, no sockets,
+validation `True []`, 3.2 seconds**. The metal and rust use the env atlas; the
+wood remains flat `env-bark`. The model script's old “no atlas cell for env”
+description predates the env atlas. No script change was needed.
+
+I inspected the 45°, 135°, and 225° images: the broad tabletop and four-leg
+frame read as a workshop table, the lower shelf and its contents sit together,
+and the visible feet meet the ground. No visible floating or clipping. It has
+no directional front or attachment sockets to judge. Shelf contents fall into
+deep shadow from the rear; this is an environment proof, not a tactical-distance
+readability verdict.
+
+| 45° | 135° | 225° |
+|---|---|---|
+| ![Table at 45 degrees](../design/renders/codex-environment-2026-09-05/prop.table_045.png) | ![Table at 135 degrees](../design/renders/codex-environment-2026-09-05/prop.table_135.png) | ![Table at 225 degrees](../design/renders/codex-environment-2026-09-05/prop.table_225.png) |
+
+The loop rewrote the existing manifest record with identical values (moving it
+to the end) and regenerated a same-size GLB with identical JSON but different
+binary payload bytes. Restored both runtime files after the proof; this PR
+commits the three new renders and this handoff only. No new model registration
+or production art change is intended.
+
+System Python's missing package is the only failure observed in the requested
+toolchain checks. No installation was necessary. CadQuery was import-tested;
+its modelling/export route, OpenSCAD, image generation, and browser rendering
+have not been re-proven in this Codex session.
+
+Repository checks: `pnpm install --frozen-lockfile`, `pnpm typecheck`,
+`pnpm lint`, `pnpm test`, and `pnpm build` passed. Vitest: 251 files / 1,927
+tests passed, one file / test skipped. Build emitted a chunk-size warning.
+Browser e2e and the separate mission simulation sweep were not run locally
+for this docs-and-renders PR; GitHub CI runs those. The handoff PR awaits
+Tech Lead review and merge; this seat stops after opening it.
 
 ## 1. What I was doing and where it stands
 
@@ -477,4 +548,3 @@ Gotchas:
 - Script args go after `--`; start scripts with `read_factory_settings(use_empty=True)`; Cycles needs no xvfb in `-b` mode.
 - Blender's `primitive_cone_add(radius1=bottom, radius2=top)`.
 - The GitHub API budget is shared across agents: poll at most every 5 minutes, use `gh api` REST, back off on rate-limit errors and keep producing locally.
-

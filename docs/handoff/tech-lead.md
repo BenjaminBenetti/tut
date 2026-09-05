@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-05 ~19:05 UTC (session 5; #748 and #770 closed, queue empty, production held for the ED's playtest; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-05 ~20:40 UTC (session 5; #748, #770 and #782 closed, queue empty, production held for the ED's playtest; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — production is paused; only #748 is live
 
@@ -52,6 +52,15 @@ Director accepted the look (over my measured objection that remembered and
 never-explored grass share a tint at 2× — recorded, not held);
 `UNEXPLORED_FOG_STRENGTH` in `graphics/data/unexplored-fog.ts` is the ED's
 one-line retune. Its frames are of current `main` (concrete parapet included).
+**#783 (Art Director, #782) merged at `7f333c8`, #782 closed** — the Director's
+step 2 from #766: a dedicated viaduct parapet (concrete kerb, open two-rail
+guard) with its kit script, reached only through a new `road` placement family
+that buildings cannot hash into. It also added
+`e2e/viaduct-parapet-screenshot.spec.ts`, a `CAPTURE=1` capture of the no-fog
+`?models=1` control for seed 730982385 — use it as the standard control for
+every graphics PR (#728). The ramp plank is still the last stray polygon on a
+raised-road edge (see above).
+
 **The queue is empty except parked #757.** Nothing merges until the ED's
 playtest verdict or a Director ruling on the ramp child above.
 

@@ -1,6 +1,67 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-04 (session 4, ~17:30 UTC). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-05 ~05:55 UTC (session 4 retired by Executive Director order; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+
+## 0. READ THIS FIRST — production is paused; only #748 is live
+
+**Why you exist:** the previous Tech Lead session was retired by the Executive
+Director because it re-sent its full context on a **4-minute cron** (223 runs at
+~2.7M tokens each). **Do not arm a cron that re-sends your context.** Use a
+`Monitor` (below) that wakes you only on change, and do read-only checks when
+it fires. Effort across the studio has been lowered to conserve usage; you are
+Fable 5.1 at high.
+
+**Production is paused** by Executive Director order (#748, 2026-09-04 17:48
+UTC), then restarted **on #748 only**: you, MapGen and eng-3. The other five
+roles stay paused. **Merge nothing unrelated to #748 except handoff documents.**
+#757 (mech bay preview) is open, unreviewed, parked with a note, and stays
+parked. Do not decompose M3; the Executive Director has not steered it.
+
+**Strict model tiers are in force** (#763, in `studio.md` / `producer.md` /
+`engineer.md` / this role doc): eng-3 is Fable and takes `complexity:high`
+ONLY, idling otherwise; eng-4/eng-5 are Opus and take low/medium ONLY; high
+work queues behind eng-3 and never drops to Opus; MapGen works `area:mapgen`
+only. Label every engineer issue `complexity:*` before it can be seated.
+
+### The #748 split, and where each piece is
+
+The Executive Director's screenshot showed two independent faults on campaign
+seed 4242's first mission (temperate city, small, map seed **730982385**).
+
+| child | owner | state at retirement |
+| --- | --- | --- |
+| **#761** fog deletes unexplored terrain and walls instead of darkening them | eng-3, `complexity:high` | **Building.** Mechanism pinned: `tactical-map-view.applyVisionTo` writes `ZERO_SCALE` for any tile not in `explored`; connectors get `visible=false`; walls inherit their tile's vision. Director ruling (GDD §6.2.1): *unexplored terrain and buildings render darkened, never absent; only units and objectives are absent when unspotted.* I ruled on the issue: **picking stays unchanged** (drawn but not orderable — needs an explicit filter on the tile's vision state, tested directly, because the sim's move handler validates reachability, not vision), and **the unexplored tint must not go to black** — silhouettes must read; four-state ladder with numbers required. QA posted a self-correction (they passed the render twice by grading against the ADR); I owned that the ADR was the origin. MapGen attached evidence that the "bare-dirt interior" symptom is fog, not data. No PR yet. |
+| **#762** raised roads with brick flanks, dirt interiors, floating stairs — data or drawing? | MapGen | **Bisect done and verified by me** (comment on #762): all three draw-side; generator data correct; no golden moves. The grass-at-second-floor is the raised-park feature (#512) sitting against a building — correct data reading badly. **I authorised the raised-park adjacency rule** as one mapgen PR: goldens re-pinned deliberately, `MAPGEN_WIDE=1`, and **`pnpm test:sim` before and after with the difficulty table in the body**, because a map change moves #497's baseline. PR pending. |
+| **#765** controls — `?models=1` on the preview harness plus four renders of seed 730982385 | MapGen | **Merged** at `b695b0b`, full gate green incl. `SIM=0`. The `?models=1` frame (registered art, **no fog**) had never existed — the preview drew boxes and the game drew models under fog — and it is what settles fault 1: brick flanks reproduce with fog out of the frame. It is the control every graphics PR under #748 must carry. |
+| **#766** the `half` wall draws brick to the ground; stairs ship as placeholder slabs | eng-3, `complexity:high`, **queued behind #761** | **Filed, not started.** Pinned: `map-model-table.ts:169` (`half` is brick whatever the family), `map-model-resolver.ts:294` (walls pivot at `tileTop`, model geometry decides height), `tactical-map-view.loadModels` instances tiles/walls/props only so `buildConnectors` placeholder geometry ships. One unchecked fact: **open `building.wall-half` glb and measure whether it extends below its pivot.** |
+
+**ADR 0006 §2.4 is amended** (#764, merged): it said *"unexplored tiles draw as
+nothing — the ground plane simply is not there"* and the renderer implemented it
+faithfully; it now states the ruling and keeps the old sentence as history.
+ADRs 0006 and 0007 are **Accepted** (they sat at Proposed while fully shipped).
+
+**Every PR under #748 must carry a committed render** of the pathological case
+— a city mission, mech deployed, mid-mission, unexplored adjacent to explored:
+`CAPTURE=1 pnpm exec playwright test e2e/fog-screenshot.spec.ts` (seed 4242,
+turn 1 and turn 7). Graphics PRs also commit the `?models=1` preview frame as
+the no-fog control. **The Director looks at each render before #748 closes;
+look at it yourself before the code.**
+
+**One design decision surfaced and NOT filed** (scope): should a player be able
+to order a move into fog? Today no, purely because unexplored ground was
+absent. eng-3 is correctly keeping that out of the render fix. Raise it with
+the Director when #748 closes; do not file it unasked while paused.
+
+### How to run the loop now
+
+Every tick: **sweep open `p0` issues first**, then PRs. Arm one persistent
+`Monitor` that polls `pulls?state=open` and
+`issues?state=open&labels=p0` every 90 s and prints only changes (the script
+from this session is in the retired session's transcript; it is a `comm -13`
+diff of two sorted lists). Gate every PR on the **merge result** with the
+scratchpad `gate.sh` — typecheck, eslint, prettier, vitest, build, **`pnpm
+test:sim`**, `CI=1 pnpm test:e2e` — reading each exit code; the script's own
+exit is `tail`'s and means nothing. Merge with the head-sha guard.
 
 ## 1. Where things stand
 
@@ -238,16 +299,12 @@ Session 1 (still binding):
 
 ## 4. Next, in order
 
-0. **Session 4, still open at 17:30 UTC:** the PR queue is empty and `main` is green
-   on all three CI jobs. **#497 is the p1** — half the difficulty ladder cannot be
-   completed and the levers that look obvious are the wrong ones (see §1). Its seat is
-   contested: the measurement lives with eng-3, the issue is on eng-4, and I flagged
-   that to the Producer rather than deciding it. **#578** is still open but is now
-   two-thirds explained: #691 and #700 removed the two measurable causes (assertion
-   budget, worker contention) and it stays open until the sightings actually stop.
-   **#743** (nothing places the extraction hook) must be coordinated with #497, not
-   landed under it — a real extraction walk lengthens missions and moves the baseline.
-   **#739/#740** are small, authorised, and unseated.
+0. **At retirement (2026-09-05 ~05:55 UTC):** see §0. Live: #761 (eng-3, building),
+   #766 (eng-3, queued), #762's adjacency PR (MapGen, pending). Nothing else may
+   merge except handoffs. `main` is `b695b0b`, green on all seven checks.
+   #497 remains the p1 once the pause lifts; #743 (nothing places the extraction
+   hook) must be coordinated with it, not landed under it. #578 is two-thirds
+   explained (#691, #700) and stays open until sightings stop.
 1. **ADRs 0006 and 0007 are Accepted as of this update.** Both sat at *Proposed* while
    every part of them shipped — fog of war across six PRs and four schema versions, the
    radial and context menus in `v0.2.3`. An ADR that describes load-bearing architecture

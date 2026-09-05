@@ -130,6 +130,24 @@ export async function bootstrapApp(doc: Document): Promise<void> {
             createCampaign: game.createCampaign,
             newSeed: game.newSeed,
             clock: game.clock,
+            openMapLab: () => {
+              // A real navigation, not a route: the harness is its own
+              // page in the bundle (#786). Relative to the document so
+              // it resolves under the Pages sub-path as well as at the
+              // root — `TUT_BASE_PATH` makes those differ.
+              //
+              // `models=1` because Map Lab exists to judge map
+              // *generation*, and the harness's default is the mapgen
+              // specialist's placeholder-box view — grey boxes for
+              // props, flat slabs for buildings. Opening that would
+              // invite a bug report about the art instead (#765 exists
+              // because boxes, fog and models took a day to tell apart).
+              // The bare URL keeps its boxes for whoever wants them.
+              window.location.assign(
+                new URL("mapgen-preview.html?models=1", window.location.href)
+                  .href,
+              );
+            },
           }),
       ],
       [

@@ -77,6 +77,7 @@ describe("MainMenuScreen", () => {
 
   const mountWith = (store: KeyValueStore = new MemoryKeyValueStore()) => {
     const { router, navigate } = fakeRouter();
+    const openMapLab = vi.fn();
     const session = new FakeSession();
     const saves = savesOver(store);
     const screen = new MainMenuScreen({
@@ -86,9 +87,10 @@ describe("MainMenuScreen", () => {
       createCampaign,
       newSeed: () => 42,
       clock: { now: () => NOW },
+      openMapLab,
     });
     screen.mount(root);
-    return { navigate, session, saves, screen };
+    return { navigate, session, saves, screen, openMapLab };
   };
 
   const button = (action: string): HTMLButtonElement => {
@@ -118,6 +120,15 @@ describe("MainMenuScreen", () => {
     savesOver(store).saveGame(AUTOSAVE_SLOT_ID, existing);
     return { store, existing };
   };
+
+  it("offers Map Lab and opens the harness rather than routing to it (#786)", () => {
+    const { openMapLab, navigate } = mountWith();
+    button("map-lab").click();
+    expect(openMapLab).toHaveBeenCalledTimes(1);
+    // Not a screen: the harness is its own page in the bundle, so the
+    // router must not be asked to navigate anywhere for it.
+    expect(navigate).not.toHaveBeenCalled();
+  });
 
   it("renders the controls with Continue and Export disabled when there is no autosave", () => {
     mountWith();

@@ -1090,5 +1090,19 @@
     "quality": "final",
     "triangles": 1112,
     "bytes": 122736
+  },
+  {
+    "id": "building.viaduct-parapet",
+    "category": "buildings",
+    "path": "assets/models/buildings/city-viaduct-parapet.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 0.5,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 124,
+    "bytes": 13380
   }
 ]

@@ -1,8 +1,57 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-05 (#776 Director review revision)
+Last updated: 2026-09-05 (#782 viaduct parapet)
 
-## Current work: #770, then hold
+## Current work: #782, then hold
+
+The Director authorised **#782** as another exception to the production pause.
+Branch: `feat/782-viaduct-parapet`, based on main `6d92d1c`. I remain the
+Codex Art Director on gpt-6-astra. #776 is merged; its mist strength and
+renderer are unchanged by this task.
+
+Built `building.viaduct-parapet` through the Blender loop: a low concrete
+kerb with two open grey steel rails. Source: `tools/art/models/city-viaduct-parapet.py`.
+Export: `public/assets/models/buildings/city-viaduct-parapet.glb`, 124 triangles,
+13,380 bytes; all meshes validate watertight. Bounds match the old half wall
+within floating-point precision: 1 u long, 0.18 u deep, 0.5 u high, base at
+zero, centred on X/Z. Footprint remains `1 × 0`. Opened and inspected all
+three committed `building.viaduct-parapet_{045,135,225}.png` renders.
+
+The model table now gives unowned half walls the `road` placement family.
+It is separate from the three hashed building families. Building models,
+family hash order, and placement matrices stay unchanged. This preserves
+the existing civic selection, including raised-park/rubble-platform edges;
+no map generation change. The `building.*` asset prefix preserves the
+existing cutaway treatment.
+
+Regenerated and inspected all requested frames:
+
+- [No-fog seed 730982385](../design/shots/782-preview-models-seed730982385-parapets.png),
+  temperate/city/small, all levels, 2400 × 1500, `models=1`.
+- [Fog seed 4242, turn 1](../design/tactical-fog-of-war.png).
+- [Fog seed 4242, turn 7](../design/tactical-fog-of-war-turn7.png).
+
+The kerb and open rails read as bridge edges in the actual scene. A fresh
+before/after no-fog capture changed 51,302 map pixels (excluding panel timing
+text), around civic parapets and their shadows. Building wall art stays
+intact. The Director judges the frames; this is ready for review, not a
+claim of visual acceptance.
+
+Reproduce both controls with `CAPTURE=1 pnpm exec playwright test
+e2e/viaduct-parapet-screenshot.spec.ts e2e/fog-screenshot.spec.ts` (2 passed).
+The added preview capture waits for real models and rejects browser errors.
+`pnpm typecheck`, `pnpm lint`, `pnpm test` (1,939 passed, one skipped), and
+`pnpm build` pass. Tests cover
+road routing, unchanged building families, and asset-manifest registration.
+Build retains its existing chunk-size warning. Model recipe and dimensions
+are documented in `docs/design/kits/city-building-kit.md`.
+
+Next: Tech Lead reviews this branch; address arriving review here. Then
+**hold again, with no timer polling or background review monitor**. All
+other production remains paused. Earlier task/queue instructions below are
+historical and do not authorise taking another issue.
+
+## Previous work: #770 / #776 (merged)
 
 The Director authorised **#770 only** during the production pause. Branch:
 `feat/770-unexplored-scene-fog`. Designed and implemented thin, stationary

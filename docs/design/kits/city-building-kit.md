@@ -33,9 +33,38 @@ The band is lighter than the body on brick and darker than it on concrete. What 
 
 **How a building picks one** (for whoever wires it — `map-model-resolver`, #474): tiles carry `buildingId`, so hash it and take that family for every wall of that building. One family per building, never per wall; a building that changes material halfway up reads as a bug. Walls with no `buildingId` — free-standing garden walls, compound walls — stay brick.
 
-Only the three full-height pieces have families. `building.wall-half`, the floor, roof, parapet and stairs are shared: a low garden wall, a concrete floor slab and a gravel roof look the same whatever the building above them is made of, and tripling them would triple the id count for nothing.
+Building half walls use `building.wall-half` for brick and `building.wall-half-concrete` for concrete and panel (#766). The floor, roof, roof parapet and stairs remain shared.
 
 The threshold plate on every door stays `env-metal` in all three families — a door gets walked on, and a worn steel plate is what that looks like whatever the wall is made of.
+
+## Viaduct parapet (#782)
+
+![Concrete kerb and steel rail](../renders/building.viaduct-parapet_045.png)
+
+`building.viaduct-parapet` is a dedicated bridge edge: a 0.16 u concrete kerb
+supporting two grey steel rails, with daylight between them. It replaces the
+solid half-wall silhouette for civic edges only. The road family's half-wall
+entry selects it for walls with no `buildingId`; this includes the existing
+viaduct and raised-park lips. Buildings retain their three material families,
+their fixed hash order, and all existing wall meshes.
+
+The bounds match the half wall: 1 u along X, 0.18 u maximum depth, 0.5 u high;
+footprint `1 × 0`, base midpoint at the origin. Rails reach both ends of the
+module to join runs. No placement or rotation change. The model is 124
+triangles / 13,380 bytes, with the existing `env-concrete` and `env-metal`
+atlas cells, and all meshes pass watertight validation.
+
+```bash
+blender -b --python-exit-code 1 --python tools/art/make_model.py -- \
+  --script tools/art/models/city-viaduct-parapet.py --id building.viaduct-parapet \
+  --category buildings --file city-viaduct-parapet.glb --quality final --max-triangles 800
+CAPTURE=1 pnpm exec playwright test e2e/viaduct-parapet-screenshot.spec.ts e2e/fog-screenshot.spec.ts
+```
+
+The no-fog control is [seed 730982385](../shots/782-preview-models-seed730982385-parapets.png),
+temperate / city / small, all levels, `models=1`, 2400 × 1500. Tactical fog
+controls remain seed 4242, turns 1 and 7. All three model angles are under
+`docs/design/renders/building.viaduct-parapet_{045,135,225}.png`.
 
 ## Rules the kit follows
 

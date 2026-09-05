@@ -1,6 +1,6 @@
 # ADR 0006: Fog of war is per-side knowledge in the mission state
 
-- **Status:** Accepted (Tech Lead). Shipped across six PRs and in tags `v0.2.2`/`v0.2.3`; `SideVision` reached its current shape in #722, recorded here in #732. Retrospective: it sat at Proposed while the whole of it was implemented, which is the failure this line now fixes.
+- **Status:** Accepted (Tech Lead); §2.4 amended 2026-09-05 on the Director's #748 ruling. Shipped across six PRs and in tags `v0.2.2`/`v0.2.3`; `SideVision` reached its current shape in #722, recorded here in #732. Retrospective: it sat at Proposed while the whole of it was implemented, which is the failure this line now fixes.
 - **Date:** 2026-09-04
 - **Author:** Tech Lead
 - **Requested by:** Executive Director (#514, band 4 item 11): *"No line of sight system! This is one of the core things that makes XCOM good! We need the fog of war!"*
@@ -117,16 +117,33 @@ alternative — filtering at each call site — leaves the door open on every ne
 behaviour, and #332, #333 and #334 show behaviours arrive one per issue from
 different seats.
 
-### 2.4 The renderer draws the view, and nothing else
+### 2.4 The renderer draws the view: units withheld, terrain always present
 
 `tactical-scene-builder` takes the TDF `MissionView`. An enemy not in
 `spotted` has no object in the scene at all, rather than a hidden one: an
 invisible-but-present object is one `visible = true` away from a wallhack, and
-picking would still find it.
+picking would still find it. **That rule is for units and objectives, and for
+nothing else.**
 
-Explored-but-not-visible tiles draw dimmed; unexplored tiles draw as nothing —
-the ground plane simply is not there. This is also why `explored` is per side
-and stored: it is what makes scouting feel like uncovering a map.
+Terrain, walls, connectors and props are **always drawn**, in three states:
+visible at full colour, explored-but-not-visible dimmed, and unexplored
+**darkened further — never absent.** (Director ruling on #748, 2026-09-05,
+recorded in GDD §6.2.1.)
+
+This section originally said _"unexplored tiles draw as nothing — the ground
+plane simply is not there"_, and the renderer implemented it faithfully:
+`applyVisionTo` zero-scaled every unexplored instance and hid unexplored
+connectors, and a wall inherited its tile's vision. The Executive Director's
+first playtest of it (#748) saw black voids with hard cliff edges cut along the
+seen area, and buildings fragmentary wherever a wall's tile had not been seen.
+The wallhack argument that justifies absence for a unit does not transfer to a
+wall: nobody gains an advantage from seeing that a building exists, and ground
+that is missing reads as a rendering fault rather than as fog. Fixed under
+#761.
+
+`explored` stays per side and stored, for the same reason as before —
+uncovering ground is the feel of scouting. It is expressed as brightening
+rather than as appearing.
 
 ### 2.5 Save: one migration, and `visible`/`spotted` are not trusted
 

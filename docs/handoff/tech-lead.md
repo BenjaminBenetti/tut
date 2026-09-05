@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-05 ~18:45 UTC (session 5; #748 closed by the Director, v0.2.4 for playtest; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-05 ~19:05 UTC (session 5; #748 and #770 closed, queue empty, production held for the ED's playtest; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — production is paused; only #748 is live
 
@@ -46,17 +46,14 @@ plank retired as for stairs, `complexity:medium` by the rubric (which lands on
 the paused Opus seats — the Director must rule on the exception). **No ruling
 yet.** Nothing merges on it until there is one.
 
-**#776 (Art Director, #770, authorised by the Director as the one exception to
-the pause):** very slight mist over never-explored terrain. State at 18:45:
-the Director judged the first frames as three states and accepted the strength
-(over my measured objection — at 2× remembered and never-explored grass render
-the same tint, mist the only tell; recorded, not held). The Director's change
-(mist over walls/props/connectors too) is in the revision `371959b`, which is
-sound code (`withUnexploredMist` clones the material, keeps the cutaway hook,
-per-instance coverage attribute). **Blocked on a mechanical fix I requested:**
-the branch merged `main` before #777, so both fog PNGs conflict and its frames
-show a brick parapet. Author merges current `main`, recaptures, pushes; then
-gate the merge result, CI, merge. That closes #770.
+**#776 (Art Director, #770) merged at `e228fdf`, #770 closed.** Very slight
+mist over never-explored terrain, ground and walls/props/connectors alike;
+Director accepted the look (over my measured objection that remembered and
+never-explored grass share a tint at 2× — recorded, not held);
+`UNEXPLORED_FOG_STRENGTH` in `graphics/data/unexplored-fog.ts` is the ED's
+one-line retune. Its frames are of current `main` (concrete parapet included).
+**The queue is empty except parked #757.** Nothing merges until the ED's
+playtest verdict or a Director ruling on the ramp child above.
 
 **Follow-ups on record, not filed while paused:** the ramp wedge above; a
 proper viaduct parapet / guard-rail model replacing the recoloured half wall

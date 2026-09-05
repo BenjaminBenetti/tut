@@ -120,7 +120,7 @@ const GOLDENS: readonly Golden[] = [
     biome: "desert",
     settlement: "city",
     size: "large",
-    checksum: 1707955910,
+    checksum: 1379561224,
   },
 ];
 

@@ -15,6 +15,10 @@ import { generateTacticalMap } from "../service/generate-tactical-map";
 import { PipelineMapGenerator } from "../service/pipeline-map-generator";
 import { createSettlementPasses } from "../service/settlement-pipeline";
 import { ElevationPass } from "./elevation-pass";
+import { LotPass } from "./lot-pass";
+import { RoadPass } from "./road-pass";
+import { TerrainPass } from "./terrain-pass";
+import { WaterPass } from "./water-pass";
 
 const registries = createDefaultRegistries();
 const generator = new PipelineMapGenerator(
@@ -204,5 +208,53 @@ describe("ElevationPass", () => {
       ).toEqual([]);
       expect(draft.lots.length).toBeGreaterThan(0);
     }
+  });
+
+  /**
+   * #762: a raised plat against a house whose ground is a level up sits at
+   * its second floor and reads as a floor with grass on it. So no feature
+   * stands within a column of any lot, on any side. Exact rather than
+   * inferred: the same seed with and without the pass must agree on the
+   * ground level of every column in the ring around every lot.
+   */
+  it("keeps every raised feature at least one column clear of every lot", () => {
+    const upToLots = [
+      new TerrainPass(),
+      new WaterPass(),
+      new RoadPass(),
+      new LotPass(),
+    ];
+    const before = new PipelineMapGenerator(upToLots, registries);
+    const after = new PipelineMapGenerator(
+      [...upToLots, new ElevationPass()],
+      registries,
+    );
+    let checked = 0;
+    for (const biome of BIOME_IDS) {
+      for (let i = 0; i < SEEDS; i++) {
+        const seed = new Mulberry32Rng(
+          hashSeed(`lot-margin-${biome}-${String(i)}`),
+        );
+        const seedAgain = new Mulberry32Rng(
+          hashSeed(`lot-margin-${biome}-${String(i)}`),
+        );
+        const flat = before.run(params("city", biome), seed).draft;
+        const raised = after.run(params("city", biome), seedAgain).draft;
+        for (const lot of raised.lots) {
+          const { x, z, w, d } = lot.rect;
+          for (let zz = z - 1; zz < z + d + 1; zz++) {
+            for (let xx = x - 1; xx < x + w + 1; xx++) {
+              if (!raised.inBounds(xx, zz)) continue;
+              checked++;
+              expect(
+                raised.groundLevelAt(xx, zz),
+                `${biome}/${String(i)} column (${String(xx)},${String(zz)}) beside ${lot.id}`,
+              ).toBe(flat.groundLevelAt(xx, zz));
+            }
+          }
+        }
+      }
+    }
+    expect(checked).toBeGreaterThan(0);
   });
 });

@@ -8,9 +8,9 @@ You are an Engineer on Terra Under Threat. You occupy a named **seat** (`eng-1` 
 gh issue list --label seat:<your-seat> --state open --json number,title
 ```
 
-Seats run at different effort levels (see your seat label's description on GitHub). If you are a medium-effort seat and the issue labeled for you carries `complexity:high`, do not start it: comment asking the Producer to re-route it, and keep polling.
+Seats run on different models and effort levels (see your seat label's description on GitHub), and the tiers are strict in both directions. The Fable seat (`eng-3`) works `complexity:high` only; the Opus seats (`eng-4`, `eng-5`) work `complexity:low` and `complexity:medium` only. If the issue labeled for you is outside your tier, do not start it: comment asking the Producer to re-route it, and go back to waiting. This is an Executive Director rule. A Fable seat spending itself on routine work is the waste the tiers exist to prevent; an Opus seat taking high work is the quality risk they exist to prevent.
 
-If exactly one issue is labeled for you, that is your issue. If none: wait, polling every 3 minutes, without doing anything else (do not pick unlabeled issues). If more than one: take the lowest number and comment on the other asking the Producer to re-sequence.
+If exactly one issue is labeled for you, that is your issue. If none: wait without doing anything else (do not pick unlabeled issues). Opus seats poll every 3 minutes. The Fable seat does not poll: arm a monitor on the seat label and stop, because every wake-up on Fable spends the budget the tier is meant to protect. If more than one: take the lowest number and comment on the other asking the Producer to re-sequence.
 
 ## Procedure
 

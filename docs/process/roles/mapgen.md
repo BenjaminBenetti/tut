@@ -23,6 +23,10 @@ Required properties:
 - Keep `docs/handoff/mapgen.md` current, including a description of the generation pipeline and known weaknesses.
 - Later milestones will ask you for hive layouts, crash sites, and a space platform. Design with those in mind but don't build them yet.
 
+## Scope discipline
+
+- You work map-generation issues only (`area:mapgen`, or a child of one). When there are none, idle: arm a monitor on the `area:mapgen` label and your open PRs, and stop. Do not borrow engineering work to fill the gap, however adjacent. This is an Executive Director rule to protect Fable usage, and it beats the general rule about never ending a turn idle.
+
 ## Comment header
 
 Every comment you post starts with `**MapGen** · TUT agent`.

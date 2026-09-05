@@ -593,6 +593,14 @@ export const MODEL_MANIFEST = {
     sockets: [],
     quality: "final",
   },
+  "building.wall-half-concrete": {
+    category: "buildings",
+    path: "assets/models/buildings/wall-half-concrete.glb",
+    footprint: { w: 1, d: 0 },
+    height: 0.5,
+    sockets: [],
+    quality: "final",
+  },
   "building.wall-panel": {
     category: "buildings",
     path: "assets/models/buildings/wall-panel.glb",

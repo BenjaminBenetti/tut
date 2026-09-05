@@ -212,10 +212,14 @@ describe("resolveMapModels — walls", () => {
     b.wall(at(2, 2), "n", "solid");
     b.wall(at(5, 5), "w", "window");
     const { walls } = resolveMapModels(b.build());
-    const north = walls.find((w) => w.modelId === "building.wall");
+    const north = walls.find(
+      (w) => w.modelId === wallModel("solid", wallFamilyFor(undefined)),
+    );
     expect(north?.position).toEqual({ x: 2.5, y: tileTop(0), z: 2 });
     expect(north?.turns).toBe(0);
-    const west = walls.find((w) => w.modelId === "building.wall-window");
+    const west = walls.find(
+      (w) => w.modelId === wallModel("window", wallFamilyFor(undefined)),
+    );
     expect(west?.position).toEqual({ x: 5, y: tileTop(0), z: 5.5 });
     expect(west?.turns).toBe(1);
   });
@@ -224,7 +228,9 @@ describe("resolveMapModels — walls", () => {
     const b = field();
     b.wall(at(2, 2), "s", "door");
     const { walls } = resolveMapModels(b.build());
-    const doors = walls.filter((w) => w.modelId === "building.wall-door");
+    const doors = walls.filter(
+      (w) => w.modelId === wallModel("door", wallFamilyFor(undefined)),
+    );
     expect(doors).toHaveLength(1);
     // (2,3)'s north edge is the same edge as (2,2)'s south.
     expect(doors[0]?.position).toEqual({ x: 2.5, y: tileTop(0), z: 3 });
@@ -272,7 +278,7 @@ describe("resolveMapModels — walls", () => {
     expect(at22?.modelId).not.toBe(at66?.modelId);
   });
 
-  it("draws a wall belonging to no building in brick", () => {
+  it("draws a wall belonging to no building in brick, so a tower is brick to the pavement", () => {
     const b = field();
     b.wall(at(2, 2), "n", "solid");
     const { walls } = resolveMapModels(b.build());
@@ -339,7 +345,7 @@ describe("mapModelIds", () => {
     const ids = mapModelIds(resolveMapModels(b.build()));
     expect(new Set(ids).size).toBe(ids.length);
     expect(ids).toContain("tile.ground.grass");
-    expect(ids).toContain("building.wall");
+    expect(ids).toContain(wallModel("solid", wallFamilyFor(undefined)));
     expect(ids).toContain("prop.crate");
   });
 });
@@ -422,5 +428,43 @@ describe("resolveMapModels stairs tiles", () => {
     const placed = stairsAt(b.build());
     expect(placed?.modelId).toBe("building.stairs");
     expect(placed?.turns).toBe(0);
+  });
+});
+
+// ===========================================
+// Civic parapets (#766)
+// ===========================================
+
+describe("resolveMapModels parapets", () => {
+  it("draws a raised road's parapet in concrete, not brick", () => {
+    // Raised road tiles carry `half` walls and no building id (#607).
+    const b = field();
+    b.tile({ x: 2, y: 1, z: 2 }, SurfaceIds.ROAD);
+    b.wall({ x: 2, y: 1, z: 2 }, "n", "half");
+    b.wall({ x: 2, y: 1, z: 2 }, "w", "half");
+    const { walls } = resolveMapModels(b.build());
+    const parapets = walls.filter((w) => w.tile.x === 2 && w.tile.y === 1);
+    expect(parapets.length).toBe(2);
+    for (const p of parapets) {
+      expect(p.modelId).toBe("building.wall-half-concrete");
+    }
+  });
+
+  it("keeps a brick building's own parapet in brick", () => {
+    const b = field();
+    const brick = Array.from({ length: 200 }, (_, i) => `b${String(i)}`).find(
+      (id) => wallFamilyFor(id) === "brick",
+    );
+    if (brick === undefined)
+      throw new Error("no id in b0..b199 hashes to brick");
+    b.tile({ x: 2, y: 1, z: 2 }, SurfaceIds.ROOF, {
+      buildingId: brick,
+      floorIndex: 1,
+    });
+    b.wall({ x: 2, y: 1, z: 2 }, "n", "half");
+    const { walls } = resolveMapModels(b.build());
+    expect(walls.find((w) => w.tile.x === 2 && w.tile.y === 1)?.modelId).toBe(
+      "building.wall-half",
+    );
   });
 });

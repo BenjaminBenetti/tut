@@ -136,15 +136,21 @@ export const WALL_MODELS: Readonly<
 };
 
 /**
- * The half-height wall, which #510 models in brick only.
- *
- * It is a low parapet rather than a wall face — a course or two above
- * the floor — so it carries little of the material read the three
- * families exist to vary, and a concrete building with a brick parapet
- * costs the player nothing they can see. Modelling the missing two is
- * the Art Director's call, not something to fake by tinting.
+ * The half-height wall, one per family (#766). #510 modelled it in brick
+ * only and it was brick whatever the family, so a parapet on an asphalt
+ * viaduct wore brick with a concrete cap and read, at a glance, as a low
+ * brick building the road sat on (#748). Concrete and panel buildings —
+ * and everything civic that belongs to no building — now take the same
+ * mesh in the concrete material, and read as a low grey lip.
  */
-export const HALF_WALL_MODEL: ModelAssetId = "building.wall-half";
+export const HALF_WALL_MODELS: Readonly<Record<WallFamily, ModelAssetId>> = {
+  brick: "building.wall-half",
+  concrete: "building.wall-half-concrete",
+  panel: "building.wall-half-concrete",
+};
+
+/** The brick half wall, kept for the brick family's own parapets. */
+export const HALF_WALL_MODEL: ModelAssetId = HALF_WALL_MODELS.brick;
 
 // ===========================================
 // Lookups
@@ -166,16 +172,19 @@ export function propModel(kind: PropKindId): ModelAssetId | undefined {
 
 /**
  * The model for a wall kind in one family. Every kind mapgen can emit
- * has one; `half` is brick whatever the family, see `HALF_WALL_MODEL`.
+ * has one; `half` follows the family too, see `HALF_WALL_MODELS`.
  */
 export function wallModel(kind: WallKind, family: WallFamily): ModelAssetId {
-  return kind === "half" ? HALF_WALL_MODEL : WALL_MODELS[family][kind];
+  return kind === "half" ? HALF_WALL_MODELS[family] : WALL_MODELS[family][kind];
 }
 
 /**
  * The family a building draws in: one per `buildingId`, so a building
  * is a single material rather than a patchwork, and brick where a wall
- * belongs to no building.
+ * belongs to no building — a building's own ground-floor walls stand on
+ * untagged tiles, so this default is what keeps a brick tower brick to
+ * the pavement. The one civic exception is the parapet: see
+ * `wallFamilyForWall`.
  *
  * Hashed rather than drawn from the mission's `Rng`. Graphics observes
  * simulation state and never draws from its stream, and the same map
@@ -188,4 +197,23 @@ export function wallFamilyFor(buildingId: string | undefined): WallFamily {
   }
   const index = hashSeed(buildingId) % WALL_FAMILIES.length;
   return WALL_FAMILIES[index] ?? "brick";
+}
+
+/**
+ * The family one wall draws in (#766). A building's walls take the
+ * building's family. A wall that belongs to no building is brick — except
+ * a `half` wall, which with no building is civic: the parapet along a
+ * viaduct or the lip of a raised park, and it draws concrete so a road
+ * reads as a low grey lip on a grey pillar rather than as a brick building
+ * it sits on (#748). Only the parapet changes, because a building's own
+ * ground-floor walls also stand on untagged tiles.
+ */
+export function wallFamilyForWall(
+  kind: WallKind,
+  buildingId: string | undefined,
+): WallFamily {
+  if (buildingId === undefined && kind === "half") {
+    return "concrete";
+  }
+  return wallFamilyFor(buildingId);
 }

@@ -14,8 +14,8 @@ import {
   ROAD_VARIANTS,
   SIDEWALK_VARIANTS,
   surfaceModel,
-  wallFamilyFor,
   wallModel,
+  wallFamilyForWall,
 } from "../data/map-model-table";
 import { GROUND_SLAB_THICKNESS } from "../data/tactical-overlay-palette";
 import { tileTop } from "../view/tactical-map-view";
@@ -313,7 +313,7 @@ function resolveWalls(
         continue;
       }
       placements.push({
-        modelId: wallModel(kind, wallFamilyFor(tile.buildingId)),
+        modelId: wallModel(kind, wallFamilyForWall(kind, tile.buildingId)),
         level: tile.y,
         position: wallCentre(tile, side),
         // A wall is authored along +X, so north and south edges are

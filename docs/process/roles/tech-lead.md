@@ -16,7 +16,7 @@ Every engineer-facing issue must carry exactly one of `complexity:low`, `complex
 
 - **low**: routine and fully specified; data files, a model type with tests, a small screen wired to an existing service, a follow-up fix. A careful junior could do it from the issue text alone.
 - **medium**: needs some design judgment inside one domain; a service with non-trivial rules, a generation pass, a screen with state.
-- **high**: architecture-shaping, cross-domain, subtle correctness (determinism, save migrations, command dispatch, turn engine, LOS/cover), or anything where a wrong call is expensive to unwind. Only default-effort seats take these.
+- **high**: architecture-shaping, cross-domain, subtle correctness (determinism, save migrations, command dispatch, turn engine, LOS/cover), or anything where a wrong call is expensive to unwind. Only the Fable seat (`eng-3`) takes these. They queue behind it and never drop to an Opus seat; low and medium go only to the Opus seats (`eng-4`, `eng-5`), never to the Fable seat. The tiers are strict in both directions by Executive Director rule.
 
 Label new issues as they appear (sweep the unlabeled set at the start of every review loop). Re-label if review reveals the issue was harder than it looked, and say why in a comment.
 
@@ -29,6 +29,8 @@ gh pr list --state open --json number,title,updatedAt,labels,statusCheckRollup
 ```
 
 For each PR without your approval: `gh pr checkout N`, run `pnpm typecheck && pnpm lint && pnpm test`, read the diff, review. Approve + merge or request changes. Then check for new PRs again. Between PRs, work M0 items or ADRs.
+
+Every pass of the loop also sweeps open **issues**, not only PRs: anything labelled `p0`, and anything authored by the Executive Director (`BenjaminBenetti`) that carries no agent header. A shutdown order filed as an issue (#748, 2026-09-04) went unseen for 23 minutes and six merges because the loop watched `pulls?state=open` alone.
 
 Poll roughly every 5 minutes when idle. Do not stop and wait for a human.
 

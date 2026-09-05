@@ -111,6 +111,7 @@ Vision is a core system, not a presentation detail.
 
 - The player sees only what the deployed force can see. Bugs outside the squad's vision are not drawn and not listed.
 - Map area the force has not observed is obscured; ground already seen stays revealed as terrain but does not keep showing units that have moved out of sight.
+- **Obscured means darkened, never absent.** Unexplored terrain and buildings are drawn dimmed, so the map reads as one place with the lights off rather than islands in a void. Only units and objectives are withheld until spotted. (Director ruling on #748, 2026-09-05.)
 - Spotting is an event: a bug entering vision is announced, and it is a moment the player should notice.
 - The bug AI is bound by the same rule. Bugs act on what they could plausibly know, and must not path toward units they have not detected.
 - Line of sight for *targeting* and vision for *knowing* share the same geometry but are separate concerns; a unit may see a bug it cannot legally shoot.

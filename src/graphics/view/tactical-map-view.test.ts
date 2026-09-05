@@ -18,9 +18,17 @@ import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
 import type { ModelAssetId } from "../../content/data/model-ids";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import { TileIndex } from "../../mapgen/service/tile-index";
-import { LEVEL_HEIGHT, SLAB_HEIGHT } from "../data/mapgen-preview-palette";
+import {
+  CONNECTOR_COLOURS,
+  LEVEL_HEIGHT,
+  SLAB_HEIGHT,
+} from "../data/mapgen-preview-palette";
 import type { ModelLoader } from "../model/model-loader";
-import { TacticalMapView, VISION_DIM } from "./tactical-map-view";
+import {
+  TacticalMapView,
+  VISION_DIM,
+  VISION_UNEXPLORED,
+} from "./tactical-map-view";
 
 /**
  * 4×3, two levels: grass ground, a road, a ledge at level 1 with a ramp,
@@ -389,7 +397,7 @@ describe("TacticalMapView.setVision", () => {
     return (coord: { x: number; y: number; z: number }) => index.keyOf(coord);
   }
 
-  /** Scale of instance `i`, which is zero for a tile drawn as nothing. */
+  /** Scale of instance `i`; a tile keeps it whatever the side knows (#761). */
   function scaleOf(mesh: InstancedMesh, i: number): number {
     const matrix = new Matrix4();
     mesh.getMatrixAt(i, matrix);
@@ -422,7 +430,7 @@ describe("TacticalMapView.setVision", () => {
     view.dispose();
   });
 
-  it("hides the unexplored, dims the remembered and shows what is in view", () => {
+  it("darkens the unexplored, dims the remembered and shows what is in view", () => {
     const map = fixture().build();
     const key = keysOf(map);
     const view = new TacticalMapView(map);
@@ -473,10 +481,22 @@ describe("TacticalMapView.setVision", () => {
     // Cold, and unmistakably so: blue above green above red.
     expect(remembered?.b).toBeGreaterThan(remembered!.g);
     expect(remembered?.g).toBeGreaterThan(remembered!.r);
+
+    // Never seen: still standing (#761), one rung darker than memory on
+    // the same cold cast, so it reads as neither shadow nor memory.
+    expect(at(3, 0)?.scale).toBeGreaterThan(0);
+    const unseen = at(3, 0)?.tint;
+    expect(unseen?.g).toBeCloseTo(VISION_UNEXPLORED);
+    expect(unseen!.g).toBeLessThan(remembered!.g);
+    expect(unseen?.b).toBeGreaterThan(unseen!.g);
+    expect(unseen?.g).toBeGreaterThan(unseen!.r);
     view.dispose();
   });
 
-  it("collapses every tile the side has never seen", () => {
+  it("draws every tile the side has never seen, darkened rather than gone", () => {
+    // The fault behind #748: these used to be zero-scaled, so the map
+    // ended in a cliff along the seen area and buildings lost the walls
+    // on tiles not yet reached.
     const map = fixture().build();
     const view = new TacticalMapView(map);
     view.setVision({ visible: [], explored: [], spotted: [], lastSeen: {} });
@@ -484,13 +504,15 @@ describe("TacticalMapView.setVision", () => {
       m.name.startsWith("tiles-"),
     )) {
       for (let i = 0; i < mesh.count; i++) {
-        expect(scaleOf(mesh, i), `${mesh.name}#${String(i)}`).toBe(0);
+        const label = `${mesh.name}#${String(i)}`;
+        expect(scaleOf(mesh, i), label).toBeGreaterThan(0);
+        expect(tintOf(mesh, i).g, label).toBeCloseTo(VISION_UNEXPLORED);
       }
     }
     view.dispose();
   });
 
-  it("takes a hidden tile out of picking, not just out of the picture", () => {
+  it("keeps an unexplored tile out of picking even though it is drawn", () => {
     const map = fixture().build();
     const view = new TacticalMapView(map);
     const camera = new OrthographicCamera(0, 4, 0, -3, 0.1, 100);
@@ -509,9 +531,66 @@ describe("TacticalMapView.setVision", () => {
       y: 0,
       z: 0,
     });
-    // ...and gone once it is unexplored.
+    // ...still a target when merely remembered: it is drawn, and a move
+    // onto ground the side knows is an order it could always give...
+    const key = keysOf(map);
+    view.setVision({
+      visible: [],
+      explored: [key({ x: 1, y: 0, z: 0 })],
+      spotted: [],
+      lastSeen: {},
+    });
+    expect(view.pickTile(ndcAt(1.5, 0.5), camera)).toEqual({
+      x: 1,
+      y: 0,
+      z: 0,
+    });
+    // ...and, although drawn since #761, deliberately not once unexplored.
+    // It was unhittable before only because it was zero-scaled; keeping
+    // it so means a render fix does not decide whether a move may be
+    // ordered into fog. Change this here, on purpose, if that is decided.
     view.setVision({ visible: [], explored: [], spotted: [], lastSeen: {} });
     expect(view.pickTile(ndcAt(1.5, 0.5), camera)).toBeUndefined();
+    view.dispose();
+  });
+
+  it("tints a connector with the tile it arrives on instead of hiding it", () => {
+    // Until #761 a connector was shown or hidden, and a remembered ramp
+    // drew at full colour beside dimmed ground. Same three rungs now.
+    const map = fixture().build();
+    const key = keysOf(map);
+    const view = new TacticalMapView(map);
+    const ramp = map.connectors[0];
+    if (!ramp) throw new Error("fixture has no connector");
+    let hit: Mesh | undefined;
+    view.root.traverse((o) => {
+      if (o instanceof Mesh && o.name === ramp.id) hit = o;
+    });
+    const mesh = hit;
+    if (!mesh) throw new Error("no connector mesh");
+    const base = new Color(CONNECTOR_COLOURS.ramp);
+    const green = () => (mesh.material as MeshStandardMaterial).color.g;
+
+    view.setVision({
+      visible: [],
+      explored: [key(ramp.to)],
+      spotted: [],
+      lastSeen: {},
+    });
+    expect(mesh.visible).toBe(true);
+    expect(green()).toBeCloseTo(base.g * VISION_DIM);
+
+    view.setVision({ visible: [], explored: [], spotted: [], lastSeen: {} });
+    expect(mesh.visible).toBe(true);
+    expect(green()).toBeCloseTo(base.g * VISION_UNEXPLORED);
+
+    view.setVision({
+      visible: [key(ramp.to)],
+      explored: [key(ramp.to)],
+      spotted: [],
+      lastSeen: {},
+    });
+    expect(green()).toBeCloseTo(base.g);
     view.dispose();
   });
 
@@ -524,7 +603,8 @@ describe("TacticalMapView.setVision", () => {
       m.name.includes("-model:"),
     )) {
       for (let i = 0; i < mesh.count; i++) {
-        expect(scaleOf(mesh, i), mesh.name).toBe(0);
+        expect(scaleOf(mesh, i), mesh.name).toBeGreaterThan(0);
+        expect(tintOf(mesh, i).g, mesh.name).toBeCloseTo(VISION_UNEXPLORED);
       }
     }
     view.dispose();

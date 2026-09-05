@@ -174,9 +174,11 @@ export class TacticalSceneBuilder
   }
 
   /**
-   * Draws the map as one side knows it (#551): unexplored tiles absent,
-   * explored-but-unseen ones dimmed. `undefined` shows the whole map,
-   * which is what the mapgen preview wants.
+   * Draws the map as one side knows it (#551, #761): the whole map is
+   * always present; explored-but-unseen tiles are dimmed and never-seen
+   * ones darkened further. Only units and objectives are absent when
+   * unspotted (ADR 0006 §2.4). `undefined` shows the whole map at full
+   * colour, which is what the mapgen preview wants.
    */
   setVision(vision: SideVision | undefined): void {
     this.mapView.setVision(vision);

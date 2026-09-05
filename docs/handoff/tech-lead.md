@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-05 ~07:30 UTC (session 5; #748's children all closed, see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-05 ~18:45 UTC (session 5; #748 closed by the Director, v0.2.4 for playtest; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — production is paused; only #748 is live
 
@@ -34,22 +34,34 @@ Production is held to that playtest; after #776 merges there is nothing else.
 | **#762** data or drawing? | Generator data correct for all three faults (MapGen's bisect, verified). Grass-a-floor-up fixed in **#769** `8704a2d`: no raised feature within one column of any lot; `golden-city` re-pinned; d1–d4 unchanged. **On record for the ED:** city/medium mech high-ground share 0.192 → 0.153, below #444's 0.20–0.35 band; grass-only margin is the unbuilt alternative. | `docs/design/shots/762-*.png` |
 | **#766** brick flanks, placeholder stairs | Both premises were wrong and eng-3 measured them down. **#775** `4427cd5`: stairs always had a model, it faced +Z regardless of connector with the placeholder plank drawn through it; now turned by `stairsTurns`, plank retired. **#777** `c63b1a5`: the half wall is 0.5 tall on the deck; the fault was material — `wallFamilyForWall("half", undefined)` → concrete, `HALF_WALL_MODELS` per family, new `building.wall-half-concrete` with its kit script. #775's squash closed #766 early through the PR link; I reopened it, and #777's `Closes` closed it for good. | `docs/design/shots/766-*.png` |
 
-**#776 (Art Director, #770, authorised by the Director as the one exception to
-the pause):** very slight mist over never-explored terrain. Changes requested,
-twice: mine — the PR set `VISION_UNEXPLORED = VISION_DIM`, so remembered and
-never-explored grass rendered the same and the mist was invisible at 1280×720
-(three states became two; measured by 2× crops against #775's frame); keep the
-0.28 rung under the mist until the mist alone measurably separates the states,
-and report a three-state luminance table like #761's. The Director's — the mist
-must cover walls, props and connectors, not only the ground. Also conflicts on
-both fog PNGs (branch predates #775): rebase and recapture. Review after its
-next push: renders first, crops at 2× on the top-left grass at turn 7.
+**#748 is closed** (Director, 07:33) and **v0.2.4 tagged** for the Executive
+Director's playtest. **But QA found (07:48, on #748 and in `qa.md`) that the
+tilted slabs in the ED's frame were RAMP placeholder planks, not stairs**: #775
+retired planks for `stairs` only; ramps (24–52 per city map, all outdoors) have
+no model and `buildConnectors` still draws a 1.2 × 0.6 plank that floats clear
+of both tile tops. The stairs #775 fixed are all indoors. I confirmed it against
+the ED's screenshot and recommended on #748 a fourth child: a surface-matched
+wedge built from the two connector tiles' `tileTop` planes, full tile width,
+plank retired as for stairs, `complexity:medium` by the rubric (which lands on
+the paused Opus seats — the Director must rule on the exception). **No ruling
+yet.** Nothing merges on it until there is one.
 
-**Follow-ups on record, not filed while paused:** a proper viaduct parapet /
-guard-rail model replacing the recoloured half wall (Art Director, `area:art`,
-after #770); the design question whether a move may be ordered into fog; #728
-(fog captures go stale with every map change — #769 changed seed 4242's map
-under #771's committed frames).
+**#776 (Art Director, #770, authorised by the Director as the one exception to
+the pause):** very slight mist over never-explored terrain. State at 18:45:
+the Director judged the first frames as three states and accepted the strength
+(over my measured objection — at 2× remembered and never-explored grass render
+the same tint, mist the only tell; recorded, not held). The Director's change
+(mist over walls/props/connectors too) is in the revision `371959b`, which is
+sound code (`withUnexploredMist` clones the material, keeps the cutaway hook,
+per-instance coverage attribute). **Blocked on a mechanical fix I requested:**
+the branch merged `main` before #777, so both fog PNGs conflict and its frames
+show a brick parapet. Author merges current `main`, recaptures, pushes; then
+gate the merge result, CI, merge. That closes #770.
+
+**Follow-ups on record, not filed while paused:** the ramp wedge above; a
+proper viaduct parapet / guard-rail model replacing the recoloured half wall
+(Art Director, `area:art`, after #770); the design question whether a move may
+be ordered into fog; #728 (fog captures go stale with every map change).
 
 ### How to run the loop now
 

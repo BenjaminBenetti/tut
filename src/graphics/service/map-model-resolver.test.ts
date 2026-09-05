@@ -380,3 +380,47 @@ describe("everything placed on a tile measures from one plane", () => {
     }
   });
 });
+
+// ===========================================
+// Stairs face their connector (#766)
+// ===========================================
+
+describe("resolveMapModels stairs tiles", () => {
+  /** A stairs tile at (2, 0, 2) climbing to a raised tile one step `d` away. */
+  function climb(d: { x: number; z: number }): TacticalMap {
+    const b = new FixtureMapBuilder(5, 5, 2).fillGround();
+    b.tile({ x: 2, y: 0, z: 2 }, SurfaceIds.STAIRS);
+    b.tile({ x: 2 + d.x, y: 1, z: 2 + d.z }, SurfaceIds.ROCK);
+    b.connector(
+      "stairs",
+      { x: 2, y: 0, z: 2 },
+      { x: 2 + d.x, y: 1, z: 2 + d.z },
+    );
+    return b.build();
+  }
+  const stairsAt = (map: TacticalMap) =>
+    resolveMapModels(map).tiles.find((p) => p.tile.x === 2 && p.tile.z === 2);
+
+  it("turns the model up its connector: south 0, west 1, north 2, east 3", () => {
+    // `placementMatrix` rotates -turns·π/2 about Y, so +Z lands on
+    // south / west / north / east for turns 0 / 1 / 2 / 3.
+    expect(stairsAt(climb({ x: 0, z: 1 }))?.turns).toBe(0);
+    expect(stairsAt(climb({ x: -1, z: 0 }))?.turns).toBe(1);
+    expect(stairsAt(climb({ x: 0, z: -1 }))?.turns).toBe(2);
+    expect(stairsAt(climb({ x: 1, z: 0 }))?.turns).toBe(3);
+  });
+
+  it("stands the stairs on the tile top, pivot at its base, not half a slab down", () => {
+    const placed = stairsAt(climb({ x: 1, z: 0 }));
+    expect(placed?.modelId).toBe("building.stairs");
+    expect(placed?.position).toEqual({ x: 2.5, y: tileTop(0), z: 2.5 });
+  });
+
+  it("keeps a stairs tile with no connector unturned rather than dropping it", () => {
+    const b = new FixtureMapBuilder(5, 5, 2).fillGround();
+    b.tile({ x: 2, y: 0, z: 2 }, SurfaceIds.STAIRS);
+    const placed = stairsAt(b.build());
+    expect(placed?.modelId).toBe("building.stairs");
+    expect(placed?.turns).toBe(0);
+  });
+});

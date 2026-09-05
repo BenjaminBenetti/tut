@@ -126,6 +126,44 @@ export function mapModelIds(
 }
 
 // ===========================================
+// Stairs
+// ===========================================
+
+/**
+ * Quarter turns that point a stairs tile's model up its connector (#766).
+ *
+ * A `stairs` surface already resolves to `building.stairs` like any other
+ * surface, but a surface slab is unturned, so every staircase climbed
+ * along +Z whichever way its connector actually went — the "tilted slab"
+ * of #748, with the placeholder plank still drawn through it. The model
+ * is authored with its steps rising along +Z from a base pivot, so it
+ * turns to face the connector's upper end.
+ *
+ * `placementMatrix` rotates by `-turns × π/2` about Y, so +Z maps to
+ * `(sin θ, cos θ)` in (x, z): turns 0 → south (+z), 1 → west (−x),
+ * 2 → north (−z), 3 → east (+x). A tile with no stairs connector of its
+ * own keeps 0, so a stray `stairs` surface still draws something.
+ */
+function stairsTurns(tile: Tile, map: TacticalMap): Rotation {
+  const up = map.connectors.find(
+    (c) =>
+      c.kind === "stairs" &&
+      c.from.x === tile.x &&
+      c.from.y === tile.y &&
+      c.from.z === tile.z,
+  );
+  if (up === undefined) {
+    return 0;
+  }
+  const dx = up.to.x - up.from.x;
+  const dz = up.to.z - up.from.z;
+  if (dz > 0) return 0;
+  if (dx < 0) return 1;
+  if (dz < 0) return 2;
+  return 3;
+}
+
+// ===========================================
 // Tiles
 // ===========================================
 
@@ -144,17 +182,21 @@ function resolveTiles(
 ): readonly ModelPlacement[] {
   const placements: ModelPlacement[] = [];
   for (const tile of map.tiles) {
-    const fitted = fitSurface(tile, index);
+    const fitted = fitSurface(tile, index, map);
     if (fitted === undefined) {
       continue;
     }
     const drop = tile.surface === SurfaceIds.WATER ? WATER_RECESS : 0;
+    // A slab is pivoted at its centre and sits half a thickness below the
+    // top; the stairs model is pivoted at its base and stands on it (#766).
+    const lift =
+      tile.surface === SurfaceIds.STAIRS ? 0 : GROUND_SLAB_THICKNESS / 2;
     placements.push({
       modelId: fitted.modelId,
       level: tile.y,
       position: {
         x: tile.x + 0.5,
-        y: tileTop(tile.y) - GROUND_SLAB_THICKNESS / 2 - drop,
+        y: tileTop(tile.y) - lift - drop,
         z: tile.z + 0.5,
       },
       turns: fitted.turns,
@@ -172,6 +214,7 @@ function resolveTiles(
 function fitSurface(
   tile: Tile,
   index: TileIndex,
+  map: TacticalMap,
 ): { modelId: ModelAssetId; turns: Rotation } | undefined {
   if (tile.surface === SurfaceIds.ROAD) {
     return fitJunction(tile, index, ROAD_VARIANTS.straight, ROAD_VARIANTS);
@@ -186,7 +229,13 @@ function fitSurface(
     });
   }
   const modelId = surfaceModel(tile.surface);
-  return modelId === undefined ? undefined : { modelId, turns: 0 };
+  if (modelId === undefined) {
+    return undefined;
+  }
+  return {
+    modelId,
+    turns: tile.surface === SurfaceIds.STAIRS ? stairsTurns(tile, map) : 0,
+  };
 }
 
 /**

@@ -651,3 +651,48 @@ describe("overlapping hook markers", () => {
     expect(names).toContain("hooks:hook:extraction:0");
   });
 });
+
+// ===========================================
+// Stairs get their model (#766)
+// ===========================================
+
+describe("TacticalMapView stairs", () => {
+  it("replaces the stairs plank with the stairs model and keeps the ramp's", async () => {
+    const b = fixture();
+    b.tile({ x: 0, y: 0, z: 0 }, SurfaceIds.STAIRS);
+    b.tile({ x: 1, y: 1, z: 0 }, SurfaceIds.ROCK);
+    b.connector("stairs", { x: 0, y: 0, z: 0 }, { x: 1, y: 1, z: 0 });
+    const map = b.build();
+    const stairs = map.connectors.find((c) => c.kind === "stairs");
+    const ramp = map.connectors.find((c) => c.kind === "ramp");
+    if (!stairs || !ramp) throw new Error("fixture needs a stairs and a ramp");
+    const view = new TacticalMapView(map);
+    const plankOf = (id: string) => {
+      let hit: Mesh | undefined;
+      view.root.traverse((o) => {
+        if (o instanceof Mesh && o.name === id) hit = o;
+      });
+      return hit;
+    };
+    // Before the models: both connectors are placeholder planks.
+    expect(plankOf(stairs.id)?.visible).toBe(true);
+    expect(plankOf(ramp.id)?.visible).toBe(true);
+
+    await view.loadModels(new FakeModelLoader());
+
+    // The stairs plank retires: the stairs tile's own model draws the
+    // staircase now, through the tile path like any other surface...
+    expect(plankOf(stairs.id)?.visible).toBe(false);
+    expect(
+      allInstanced(view).some((m) => m.name.includes("building.stairs")),
+    ).toBe(true);
+    // ...and the ramp, which has no art, keeps its plank.
+    expect(plankOf(ramp.id)?.visible).toBe(true);
+
+    // Vision must not bring the retired plank back (#766): it used to
+    // toggle every connector's visibility on each call.
+    view.setVision({ visible: [], explored: [], spotted: [], lastSeen: {} });
+    expect(plankOf(stairs.id)?.visible).toBe(false);
+    view.dispose();
+  });
+});

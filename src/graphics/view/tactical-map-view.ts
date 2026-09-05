@@ -365,11 +365,10 @@ export class TacticalMapView implements Disposable, TilePicker {
    *          └─► placeholder boxes for that category hidden
    * ```
    *
-   * Hooks and connectors keep their placeholder geometry: they are
-   * diagnostic markers and ramps and ladders have no registered model.
-   * Safe to call once; a second call is a no-op. `ModelLoader` never
-   * rejects for a registered id, so a failed fetch shows that model's
-   * placeholder rather than losing the map.
+   * Hooks keep their placeholder geometry, and so do ramps and ladders,
+   * which have no registered art; a stairs plank retires once the stairs
+   * tile's model is up (#766). A model that fails to load leaves its placeholder rather than
+   * losing the map.
    */
   async loadModels(models: ModelLoader): Promise<void> {
     if (this.modelled) {
@@ -386,10 +385,12 @@ export class TacticalMapView implements Disposable, TilePicker {
     for (const [label, list] of categories) {
       await this.instanceCategory(label, list, models);
     }
-    // Building slabs, walls and props are replaced one for one. Ground
-    // pillars stay: they are the earth beneath the surface slab, not a
-    // stand-in for it.
-    for (const label of [TILES_SLAB, "walls", "props"]) {
+    // Building slabs, walls and props are replaced one for one, and the
+    // stairs plank retires because the stairs tile's own model now draws
+    // the staircase (#766). Ground pillars stay: they are the earth
+    // beneath the surface slab, not a stand-in for it. Ramps and ladders
+    // stay too, having no art.
+    for (const label of [TILES_SLAB, "walls", "props", "connectors"]) {
       this.retirePlaceholders(label);
     }
   }
@@ -478,6 +479,13 @@ export class TacticalMapView implements Disposable, TilePicker {
   private retirePlaceholders(label: string): void {
     for (const mesh of this.placeholders.get(label) ?? []) {
       mesh.visible = false;
+      // A retired stairs plank must also leave the vision map, or the
+      // next setVision would switch it back on (#766).
+      for (const tracked of this.connectorTiles.keys()) {
+        if (tracked === mesh) {
+          this.connectorTiles.delete(tracked);
+        }
+      }
     }
   }
 
@@ -781,6 +789,15 @@ export class TacticalMapView implements Disposable, TilePicker {
       this.connectorTiles.set(mesh, tracked);
       this.applyVisionToConnector(tracked);
       this.groupFor(connector.to.y).add(mesh);
+      if (connector.kind === "stairs") {
+        // A placeholder until the stairs tile's model is up (#766).
+        const kept = this.placeholders.get("connectors");
+        if (kept === undefined) {
+          this.placeholders.set("connectors", [mesh]);
+        } else {
+          kept.push(mesh);
+        }
+      }
     }
   }
 

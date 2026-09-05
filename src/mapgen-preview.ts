@@ -123,6 +123,12 @@ async function main(): Promise<void> {
   // `?units=1` drops a few sample units on the map (#337's smoke test).
   const showUnits =
     new URLSearchParams(window.location.search).get("units") === "1";
+  // `?models=1` swaps the placeholder boxes for the registered art the
+  // tactical scene draws (#474), so a map can be looked at the way the
+  // game shows it, with no fog. Added for #748: the preview is the only
+  // place that renders a map with nothing else in the frame.
+  const showModels =
+    new URLSearchParams(window.location.search).get("models") === "1";
   let view: TacticalSceneBuilder | undefined;
   let input: TacticalInputController | undefined;
   let hud: TacticalHudView | undefined;
@@ -153,6 +159,23 @@ async function main(): Promise<void> {
       rig.setBounds({ x: 0, z: 0, w: map.width, d: map.depth });
       rig.lookAt(builder.centre);
       delete document.body.dataset.previewReady;
+      delete document.body.dataset.modelsReady;
+      if (showModels) {
+        // Same shape as the unit load below: a terminal attribute either
+        // way, so a spec can wait on it and know which way it went.
+        void builder
+          .loadMapModels()
+          .then(() => {
+            if (view === builder) {
+              document.body.dataset.modelsReady = "true";
+            }
+          })
+          .catch(() => {
+            if (view === builder) {
+              document.body.dataset.modelsReady = "error";
+            }
+          });
+      }
       if (showUnits) {
         delete document.body.dataset.units;
         const mission = previewMission(map);

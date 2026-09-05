@@ -1,0 +1,91 @@
+map 32x32x7, tiles 1214, buildings 8, connectors 35, props 88
+
+=== ASCII ===
+""""-==-""""""-==-,,,,,,,,,-==-"
+"E""-==-""_>__-==-,,,o,,,,o-==-o
+""""-==-""____-==-",,O,,,,,-==-o
+""""-==-""_o_o-==-O"OO##>,o-==-o
+""""-=O-"""",,-==-""""###,,-==-"
+""o"-==-""",,,-/=-"oO"###,,-O=-"
+-----/=--------=o-----------==--
+=====================o==========
+==============o=================
+-----==--------==/----------==-S
+,,"o-==/"""OO,-==-#E#"o__,,-==-S
+,,,"-O=-o"OO""-==-###"_>_,,-O=-S
+,,,"-==-""____/==->##"___,"-==-S
+,,,"/==-"o_>_o-==-###"/"","-=O-S
+,,,"-=O-""____-o=-"""o"""""/==-"
+S,,"-==-""""""-==/____"""""-==-"
+S,,"-==/""""""-==-_>o_"""""-==-"
+S,,o-==-"""""o-==-____"""""-==-"
+S,,"-==-""""""/==-o""/""""o-==-,
+----/==--------==-----------==--
+===O=========o==================
+================================
+-----O=/-------==-/----/----==--
+"o"o-==-o##>"O-==---------,-==-,
+"""o-==-,###OO/==---------,-==-,
+""""-==-o###""-==---------/-==-o
+""""-==-,###""-==---------,-o=-o
+""""-==-o###""D==-_____,,,o-==-,
+""""-==-,,o""DDD=-_>__oo"""-==-,
+""""-==-""""DDDDD-o____""""-=o-o
+""""-==-""""DDDDD-o""""""""-==-o
+""""-==-"""",oDD=-"""""""""-==-"
+
+=== FAULT 1: raised road tiles and the walls they carry ===
+raised road tiles: 296; wall kinds on their edges: [["half",82]]
+  road (5,1,0) walls={} buildingId=undefined
+  road (6,1,0) walls={} buildingId=undefined
+  road (15,1,0) walls={} buildingId=undefined
+  road (16,1,0) walls={} buildingId=undefined
+  road (28,1,0) walls={} buildingId=undefined
+  road (29,1,0) walls={} buildingId=undefined
+
+=== FAULT 2: building interiors ===
+  building-1 kind=house ground=1 floors=2 roof=pitched/no fp=4x3@(18,15) tiles=[["floor@y1",11],["floor@y2",11],["stairs@y1",1]] nonBuildingTilesInFootprint=0
+  building-2 kind=house ground=1 floors=2 roof=pitched/no fp=5x3@(18,27) tiles=[["floor@y1",14],["floor@y2",14],["stairs@y1",1]] nonBuildingTilesInFootprint=0
+  building-3 kind=tower ground=1 floors=5 roof=flat/walkable fp=3x5@(9,23) tiles=[["floor@y1",14],["floor@y2",13],["floor@y3",13],["floor@y4",13],["floor@y5",13],["roof@y6",14],["stairs@y5",1],["stairs@y2",1],["stairs@y1",1],["stairs@y3",1],["stairs@y4",1]] nonBuildingTilesInFootprint=0
+  building-4 kind=apartment ground=1 floors=3 roof=flat/walkable fp=3x4@(18,10) tiles=[["floor@y1",11],["floor@y2",10],["floor@y3",10],["roof@y4",11],["stairs@y2",1],["stairs@y1",1],["stairs@y3",1]] nonBuildingTilesInFootprint=0
+  building-5 kind=house ground=1 floors=2 roof=pitched/no fp=3x3@(22,10) tiles=[["floor@y1",8],["floor@y2",8],["stairs@y1",1]] nonBuildingTilesInFootprint=0
+  building-6 kind=house ground=1 floors=2 roof=pitched/no fp=4x3@(10,1) tiles=[["floor@y1",11],["floor@y2",11],["stairs@y1",1]] nonBuildingTilesInFootprint=0
+  building-7 kind=apartment ground=1 floors=4 roof=flat/walkable fp=3x3@(22,3) tiles=[["floor@y1",8],["floor@y2",7],["floor@y3",7],["floor@y4",7],["roof@y5",8],["stairs@y4",1],["stairs@y1",1],["stairs@y3",1],["stairs@y2",1]] nonBuildingTilesInFootprint=0
+  building-8 kind=house ground=1 floors=2 roof=pitched/no fp=4x3@(10,12) tiles=[["floor@y1",11],["floor@y2",11],["stairs@y1",1]] nonBuildingTilesInFootprint=0
+
+=== FAULT 3: connectors ===
+  stairs-1 stairs from (19,1,16) to (18,2,16)
+  stairs-2 stairs from (19,1,28) to (18,2,28)
+  stairs-3 stairs from (10,1,26) to (10,2,27)
+  stairs-4 stairs from (10,2,24) to (9,3,24)
+  stairs-5 stairs from (10,3,26) to (9,4,26)
+  stairs-6 stairs from (9,4,27) to (9,5,26)
+  stairs-7 stairs from (11,5,23) to (10,6,23)
+  stairs-8 stairs from (20,1,11) to (20,2,12)
+  stairs-9 stairs from (20,2,10) to (20,3,11)
+  stairs-10 stairs from (18,3,12) to (19,4,12)
+  stairs-11 stairs from (23,1,11) to (23,2,12)
+  stairs-12 stairs from (11,1,1) to (10,2,1)
+  stairs-13 stairs from (23,1,4) to (22,2,4)
+  stairs-14 stairs from (22,2,5) to (23,3,5)
+  stairs-15 stairs from (23,3,4) to (23,4,5)
+  stairs-16 stairs from (24,4,3) to (24,5,4)
+  stairs-17 stairs from (11,1,13) to (10,2,13)
+  ramp-1 ramp from (15,1,5) to (15,2,6)
+  ramp-2 ramp from (5,1,6) to (5,2,7)
+  ramp-3 ramp from (22,1,13) to (22,2,14)
+  ramp-4 ramp from (18,1,22) to (18,2,23)
+  ramp-5 ramp from (17,1,9) to (16,2,9)
+  ramp-6 ramp from (7,1,10) to (6,2,10)
+  ramp-7 ramp from (14,1,12) to (15,2,12)
+  ramp-8 ramp from (4,1,13) to (5,2,13)
+  ramp-9 ramp from (17,1,15) to (16,2,15)
+  ramp-10 ramp from (7,1,16) to (6,2,16)
+  ramp-11 ramp from (14,1,18) to (15,2,18)
+  ramp-12 ramp from (4,1,19) to (5,2,19)
+  ramp-13 ramp from (7,1,22) to (6,2,22)
+  ramp-14 ramp from (14,1,24) to (15,2,24)
+  ramp-15 ramp from (27,1,14) to (26,2,14)
+  ramp-16 ramp from (21,1,18) to (22,2,18)
+  ramp-17 ramp from (23,1,22) to (23,2,23)
+  ramp-18 ramp from (26,1,25) to (25,2,25)

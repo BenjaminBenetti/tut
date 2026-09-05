@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-05 ~06:30 UTC (session 5, fresh after session 4 was retired; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-05 ~07:30 UTC (session 5; #748's children all closed, see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — production is paused; only #748 is live
 
@@ -22,21 +22,34 @@ Do not decompose M3.
 work queues behind eng-3 and never drops to Opus; MapGen works `area:mapgen`
 only. Label every engineer issue `complexity:*` before it can be seated.
 
-### The #748 split, and where each piece is (06:30 UTC)
+### The #748 split — all three children closed (07:30 UTC)
 
 Campaign seed 4242's first mission, temperate city small, map seed **730982385**.
+**#748 itself stays open for the Executive Director to close after playtest.**
+Production is held to that playtest; after #776 merges there is nothing else.
 
-| child | owner | state |
+| child | what shipped | where |
 | --- | --- | --- |
-| **#761** fog deleted unexplored terrain | eng-3 | **Closed by #771** at `7dbac2c`. Three rungs, one `tintFor`: visible full colour, explored × 0.40 cold, unexplored × 0.28 colder; `ZERO_SCALE` gone; connectors own a material and take the same ladder; `pickTile` rejects unexplored ground **explicitly**, tested both ways. Tint was set by measured luminance against the clear colour (a first cut of 0.11 fell below it). I judged the committed frames and a fresh `CAPTURE=1` on the merged tree before merging. #770 (Art Director retune of two caveats) is parked under the pause. |
-| **#762** data or drawing? | MapGen | **Closed.** Bisect verified: generator data correct for all three faults. Grass-a-floor-up fixed in **#769** (`8704a2d`): no raised feature within one column of any lot, `golden-city` re-pinned, d1–d4 unchanged in `test:sim`. **Cost on record for the Director:** city/medium mech high-ground share 0.192 → 0.153, below #444's 0.20–0.35 band; grass-only margin is the named alternative, unbuilt. |
-| **#766** brick flanks, placeholder stairs | eng-3 | **Building.** eng-3 measured `wall-half.glb`: 0.5 tall, pivot at base, nothing below — the title's "brick to the ground" was wrong and I retracted it. **Fault A is material:** `wallFamilyFor(undefined)` → brick, and `half` is brick for every family. Ruled: infrastructure walls draw concrete; `half` becomes per-family with a new concrete half-wall model (recolour of the `wall-half` Blender script, `art-blender` skill). **Fault B:** `building.stairs` is registered and never instanced; plan approved — `connectors` category in `MapModelPlacements`, stairs instanced with the `to` tile as vision key, planks kept for ramps/ladders. PR must carry the `?models=1` control and the two fog frames **recaptured on current `main`** (#771's frames predate #769's map change). |
+| **#761** fog deleted unexplored terrain | **#771** `7dbac2c`. Three rungs, one `tintFor`: visible full, explored × 0.40 cold, unexplored × 0.28 colder; `ZERO_SCALE` gone; connectors own a material and take the ladder; `pickTile` rejects unexplored ground explicitly, tested both ways. Director accepted the renders. | `docs/design/tactical-fog-of-war*.png` |
+| **#762** data or drawing? | Generator data correct for all three faults (MapGen's bisect, verified). Grass-a-floor-up fixed in **#769** `8704a2d`: no raised feature within one column of any lot; `golden-city` re-pinned; d1–d4 unchanged. **On record for the ED:** city/medium mech high-ground share 0.192 → 0.153, below #444's 0.20–0.35 band; grass-only margin is the unbuilt alternative. | `docs/design/shots/762-*.png` |
+| **#766** brick flanks, placeholder stairs | Both premises were wrong and eng-3 measured them down. **#775** `4427cd5`: stairs always had a model, it faced +Z regardless of connector with the placeholder plank drawn through it; now turned by `stairsTurns`, plank retired. **#777** `c63b1a5`: the half wall is 0.5 tall on the deck; the fault was material — `wallFamilyForWall("half", undefined)` → concrete, `HALF_WALL_MODELS` per family, new `building.wall-half-concrete` with its kit script. #775's squash closed #766 early through the PR link; I reopened it, and #777's `Closes` closed it for good. | `docs/design/shots/766-*.png` |
 
-**When #766 merges:** post on #748 for the Executive Director with the three
-renders linked; #748 closes only on his word. Then raise, do not file, the
-design question: may a player order a move into fog? (Today no, by the explicit
-`pickTile` filter.) Unpausing is his call; the Producer's queue and #497 (p1)
-wait behind it, #743 coordinated with #497.
+**#776 (Art Director, #770, authorised by the Director as the one exception to
+the pause):** very slight mist over never-explored terrain. Changes requested,
+twice: mine — the PR set `VISION_UNEXPLORED = VISION_DIM`, so remembered and
+never-explored grass rendered the same and the mist was invisible at 1280×720
+(three states became two; measured by 2× crops against #775's frame); keep the
+0.28 rung under the mist until the mist alone measurably separates the states,
+and report a three-state luminance table like #761's. The Director's — the mist
+must cover walls, props and connectors, not only the ground. Also conflicts on
+both fog PNGs (branch predates #775): rebase and recapture. Review after its
+next push: renders first, crops at 2× on the top-left grass at turn 7.
+
+**Follow-ups on record, not filed while paused:** a proper viaduct parapet /
+guard-rail model replacing the recoloured half wall (Art Director, `area:art`,
+after #770); the design question whether a move may be ordered into fog; #728
+(fog captures go stale with every map change — #769 changed seed 4242's map
+under #771's committed frames).
 
 ### How to run the loop now
 

@@ -270,6 +270,46 @@ function named(view: TacticalMapView, prefix: string): InstancedMesh[] {
 }
 
 describe("TacticalMapView.loadModels", () => {
+  it("mists walls, props, connectors and late-loaded models by their owning tile", async () => {
+    const map = fixture().build();
+    const view = new TacticalMapView(map);
+    view.setVision({ visible: [], explored: [], spotted: [], lastSeen: {} });
+    await view.loadModels(new FakeModelLoader());
+    const surfaces: Mesh[] = [];
+    view.root.traverse((object) => {
+      if (
+        object instanceof Mesh &&
+        (object.name.includes("-model:") || object.name === "c1")
+      ) {
+        surfaces.push(object as Mesh);
+      }
+    });
+    expect(surfaces.some((mesh) => mesh.name.startsWith("walls-model:"))).toBe(
+      true,
+    );
+    expect(surfaces.some((mesh) => mesh.name.startsWith("props-model:"))).toBe(
+      true,
+    );
+    expect(surfaces.some((mesh) => mesh.name === "c1")).toBe(true);
+    for (const mesh of surfaces) {
+      const coverage = mesh.geometry.getAttribute("unexploredMist");
+      expect(coverage, mesh.name).toBeDefined();
+      for (let i = 0; i < coverage.count; i++) expect(coverage.getW(i)).toBe(1);
+    }
+    const index = new TileIndex(map);
+    view.setVision({
+      visible: [],
+      explored: map.tiles.map((tile) => index.keyOf(tile)),
+      spotted: [],
+      lastSeen: {},
+    });
+    for (const mesh of surfaces) {
+      const coverage = mesh.geometry.getAttribute("unexploredMist");
+      for (let i = 0; i < coverage.count; i++) expect(coverage.getW(i)).toBe(0);
+    }
+    view.dispose();
+  });
+
   it("draws the registered art and retires the placeholder boxes it replaces", async () => {
     const view = new TacticalMapView(fixture().build());
     const models = new FakeModelLoader();
@@ -482,14 +522,17 @@ describe("TacticalMapView.setVision", () => {
     expect(remembered?.b).toBeGreaterThan(remembered!.g);
     expect(remembered?.g).toBeGreaterThan(remembered!.r);
 
-    // Never seen: still standing (#761), one rung darker than memory on
-    // the same cold cast, so it reads as neither shadow nor memory.
+    // Never seen: still standing (#761), with the same cold base as memory.
+    // Scene mist owns the distinction now (#770), not a darker tint.
     expect(at(3, 0)?.scale).toBeGreaterThan(0);
     const unseen = at(3, 0)?.tint;
     expect(unseen?.g).toBeCloseTo(VISION_UNEXPLORED);
-    expect(unseen!.g).toBeLessThan(remembered!.g);
+    expect(unseen).toEqual(remembered);
     expect(unseen?.b).toBeGreaterThan(unseen!.g);
     expect(unseen?.g).toBeGreaterThan(unseen!.r);
+    expect(view.root.getObjectByName("unexplored-fog-0")?.visible).toBe(true);
+    view.setVision(undefined);
+    expect(view.root.getObjectByName("unexplored-fog-0")?.visible).toBe(false);
     view.dispose();
   });
 

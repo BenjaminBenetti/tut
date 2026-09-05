@@ -1,6 +1,60 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-05 (Codex takeover and environment proof)
+Last updated: 2026-09-05 (#776 Director review revision)
+
+## Current work: #770, then hold
+
+The Director authorised **#770 only** during the production pause. Branch:
+`feat/770-unexplored-scene-fog`. Designed and implemented thin, stationary
+scene mist over never-explored terrain in `graphics/view/unexplored-fog.ts`.
+Visible stays full colour; remembered stays at its existing cold multiplier;
+never-explored now shares that legible base with mist as the distinguishing
+signal. No darker tint rung. Three depth-tested sheets per populated map
+level, maximum alpha 0.075 each, world-space noise and inward-feathered
+exploration masks. Solid geometry occludes them; they never intercept picking
+or write depth. GPU resources are freed on mission disposal.
+
+Seed 4242 captured with `CAPTURE=1 pnpm exec playwright test
+e2e/fog-screenshot.spec.ts`, at turns 1 and 7. Both frames were opened and
+visually inspected: faint haze in unknown streets and over roofs, complete
+buildings and road markings still readable, no return of the void. Frames:
+[`tactical-fog-of-war.png`](../design/tactical-fog-of-war.png) and
+[`tactical-fog-of-war-turn7.png`](../design/tactical-fog-of-war-turn7.png).
+The capture now rejects browser errors and confirms all three vision states
+exist at turn 7. A fresh before capture on this checkout was used for local
+comparison; older committed frames came from the predecessor's checkout.
+
+Tests cover clearing on exploration, remaining clear after sight is lost,
+separate roof history, sparse floors, preview reset, resource disposal, and
+the map view actually enabling the mist. Style guide §12.5 records the look.
+Director review revision on PR #776: extended the mist to walls, props,
+connectors, and tall model faces. Surface materials reuse the air's colour
+and wisps where geometry rises through a sheet, preserving the accepted
+strength on the ground. The single shared control is
+`UNEXPLORED_FOG_STRENGTH = 0.075` in `graphics/data/unexplored-fog.ts`.
+Coverage follows each instance's owning tile; the ghost cutaway remains intact.
+Geometry/material clones belong to the mist and leave loader prototypes alone.
+The Director's latest judgement approves the existing three-state read and
+strength; it supersedes the earlier request to restore the 0.28 tint rung.
+
+Merged current main (`4427cd5`) into this branch, resolving the binary-frame
+conflicts from #775. Both seed-4242 frames were regenerated and inspected.
+The capture now resumes the same turn-7 mission before the shutter so queued
+animations cannot leave the rendered vision behind the save. This also
+reframes on the current force, so turn 7's framing shifts slightly. Shader
+errors and all three vision states are still checked.
+
+Revision validation passed: `pnpm typecheck`, `pnpm lint`, `pnpm test`
+(1,937 passed, one skipped), `pnpm build`, and the fog capture. The original
+PR's full browser suite passed 59 tests; this revision reran the requested
+capture rather than the whole suite. Build retains the chunk-size warning.
+The Executive Director still judges the strength from play.
+
+Next: Tech Lead reviews and merges the PR. Address review on this branch when
+it arrives, then hold again. **No timer polling while waiting on review.**
+All other production remains paused; p0 #748 stays with Tech Lead / eng-3.
+The takeover pause text below is historical; this explicit #770 exception
+supersedes its instruction to leave #770 queued.
 
 ## Current seat and production pause
 

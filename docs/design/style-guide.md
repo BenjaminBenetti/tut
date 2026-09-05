@@ -568,6 +568,54 @@ tile in shadow, against 7.4 before.
 Dark and neutral is shadow. Dark and cold is memory. The shadow tone is
 left alone: §12.1 sets it deliberately and it is doing that job.
 
+**Never-explored terrain has a thin mist above it** (#770, Executive Director
+direction). Visible stays full colour; remembered stays at the cold multiplier
+above. Never-explored uses that same legible cold base, with softly mottled
+grey mist in the scene. The tell is atmosphere, not another darker tint: the
+old 0.28 multiplier was only 1.27× below memory on rendered grass (#761).
+
+The mist is three stationary, world-aligned sheets, 0.18 / 0.52 / 0.90 u above
+each populated level's surface. Each has maximum alpha 0.075, modulated by
+broad, offset noise, with colour `#B6C1C4`. It stays quiet enough to see road
+markings, ground textures, and complete buildings through it. Depth testing
+lets solid buildings occlude it. It neither casts shadows nor writes depth;
+the existing cutaway still owns keeping units visible.
+
+Exploration removes mist, and losing sight does not restore it. Masks are per
+level, including sparse roofs, with an inward feather at the known boundary
+and a fade at the real map edge. No tile-sized billboards, drifting particle
+system, or HTML veil. The stationary wisps hold their place when the camera
+turns and make captures reproducible. `graphics/view/unexplored-fog.ts` owns
+the appearance and resource lifetime; `TacticalMapView.setVision` supplies
+the player's actual exploration history.
+
+Judge it in the live mission, seed **4242**, turns **1 and 7**:
+
+```bash
+CAPTURE=1 pnpm exec playwright test e2e/fog-screenshot.spec.ts
+```
+
+![Turn 1: visible ground and never-explored mist](tactical-fog-of-war.png)
+![Turn 7: visible, remembered, and never-explored terrain](tactical-fog-of-war-turn7.png)
+
+The spec checks all three states exist at turn 7, rejects browser errors, and
+resumes the same turn-7 mission to clear the animation backlog; it does not decide
+whether the mist feels right. The Director reviews these frames and the
+Executive Director judges the feel in play.
+
+**Everything belonging to a never-explored tile takes the mist**, including
+walls, props and connectors (Director review of #776). Surface shaders carry
+the same wisps over faces rising through the air sheets: a high facade replaces
+the mist sheets it occludes, instead of staying a black silhouette inside pale
+ground. The ground keeps its accepted strength. Coverage follows the owning
+tile even when geometry extends into a neighbour; exploring the owner clears
+both its sheets and surfaces. Solid surfaces retain depth and shadow behaviour,
+and the wall cutaway shader still runs.
+
+Strength is one named constant, **`UNEXPLORED_FOG_STRENGTH = 0.075`**, in
+`src/graphics/data/unexplored-fog.ts`, shared by air and surfaces. Leave it at
+the Director-approved value until the Executive Director's play judgement.
+
 Two more that were *checked and are not problems*, recorded so nobody
 re-opens them on a hunch:
 

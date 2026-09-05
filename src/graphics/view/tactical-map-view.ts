@@ -50,6 +50,7 @@ import type { ModelPlacement } from "../service/map-model-resolver";
 import type { Disposable } from "../model/disposable";
 import type { ModelLoader } from "../model/model-loader";
 import type { TilePicker } from "../model/tile-picker";
+import { UnexploredFog } from "./unexplored-fog";
 
 // ===========================================
 // Types
@@ -124,8 +125,8 @@ const TILES_SLAB = "tiles-slab";
  * are lifted relative to the red for a cold cast no light in the scene
  * produces, and the overall weight is unchanged, so fog still recedes.
  *
- * Dark and neutral is shadow. Dark and cold is memory. Darker and cold
- * is ground never seen (#761) — see `VISION_UNEXPLORED` for that rung.
+ * Dark and neutral is shadow. Dark and cold is memory. Never-explored
+ * terrain carries the same cold base with scene mist above it (#770).
  */
 export const VISION_DIM = 0.4;
 const VISION_DIM_RED = 0.34;
@@ -138,58 +139,11 @@ const FULL_COLOUR = new Color(1, 1, 1);
 const DIM_COLOUR = new Color(VISION_DIM_RED, VISION_DIM, VISION_DIM_BLUE);
 
 /**
- * How much of its colour a tile the side has **never** seen keeps (#761).
- *
- * Until #761 an unexplored instance was zero-scaled: it drew nothing and
- * no ray could hit it. That was ADR 0006 §2.4 — written for enemy units,
- * where absence is the only thing that prevents a wallhack — applied to
- * terrain by extension. On the map it produced black voids with cliff
- * edges cut along the seen area, and buildings missing whichever walls
- * stood on tiles not yet seen (#748). Director ruling: unexplored
- * terrain and buildings render darkened, never absent; only units and
- * objectives are absent when unspotted.
- *
- * So unexplored is one more rung on the same ladder as memory, and the
- * rule from #661 still holds — one channel per question. Lighting
- * darkens neutrally; memory and the unseen both take the colour out and
- * cast cold. What separates the two is weight **and how cold**: memory
- * lifts blue over green by 1.3×, the unseen by 1.5×, so a remembered tile
- * in shadow and an unexplored tile in light — close in weight — still
- * read differently.
- *
- * The weight is set against the floor, not the ceiling. The clear colour
- * `ui-bg` renders at luminance ≈ 0.05, and a first cut of 0.11 put
- * unexplored grass *below* it — present by silhouette only, which is the
- * Executive Director's black void again with the cliff filed off.
- * Measured on the #761 evidence frame, seed 4242 at turn 7, grass tiles
- * classified from the saved vision and located through
- * `tileScreenPosition`:
- *
- * ```
- *                    tint    rendered luminance    vs void
- *   visible          1.00    0.39                  7.6×
- *   remembered       0.40    0.28                  5.5×
- *   unexplored       0.28    0.22                  4.3×
- *   void (ui-bg)       —     0.05                  1.0×
- * ```
- *
- * Legible against the void by a wide margin, so a building you have not
- * reached stands as a dark whole shape at the edge of what you know rather
- * than as a cliff. The trade is a narrow step down from memory (1.27×,
- * tighter than #661 found comfortable), and on grass the colder cast does
- * not show because the surface has little blue to lift. Both are recorded
- * on #761 for the Art Director's eye; the value is a measured first cut.
+ * Never-explored terrain keeps memory's legible base (#770). Thin scene
+ * mist is the distinction, rather than a still darker multiplier. The
+ * old 0.28 rung rendered only 1.27× below memory on grass (#761).
  */
-export const VISION_UNEXPLORED = 0.28;
-const VISION_UNEXPLORED_RED = 0.18;
-const VISION_UNEXPLORED_BLUE = 0.42;
-
-/** Multiplier for a tile the side has never seen: present, dark, cold. */
-const UNEXPLORED_COLOUR = new Color(
-  VISION_UNEXPLORED_RED,
-  VISION_UNEXPLORED,
-  VISION_UNEXPLORED_BLUE,
-);
+export const VISION_UNEXPLORED = VISION_DIM;
 
 /** The colour multiplier for one vision state. */
 function tintFor(state: TileVisionState): Color {
@@ -199,7 +153,7 @@ function tintFor(state: TileVisionState): Color {
     case "explored":
       return DIM_COLOUR;
     case "unexplored":
-      return UNEXPLORED_COLOUR;
+      return DIM_COLOUR;
   }
 }
 
@@ -302,6 +256,7 @@ export class TacticalMapView implements Disposable, TilePicker {
   /** The vision last applied, indexed, and replayed onto anything built afterwards. */
   private vision: IndexedVision | undefined;
   private modelled = false;
+  private readonly unexploredFog: UnexploredFog;
 
   // ===========================================
   // Constructor
@@ -315,11 +270,14 @@ export class TacticalMapView implements Disposable, TilePicker {
     this.root = new Group();
     this.root.name = "tactical-map";
     this.disposables.push(this.unitBox);
+    this.unexploredFog = new UnexploredFog(map);
     this.buildTiles();
     this.buildWalls();
     this.buildProps();
     this.buildConnectors();
     this.buildHooks();
+    this.unexploredFog.attachTo((level) => this.groupFor(level));
+    this.disposables.push(this.unexploredFog);
   }
 
   // ===========================================
@@ -466,9 +424,8 @@ export class TacticalMapView implements Disposable, TilePicker {
           ),
           batch.keys,
         );
-        // Geometry and materials belong to the loader's cached prototype
-        // and are shared with every other clone, so only the instanced
-        // wrapper is ours to free.
+        // The mist owns its geometry/material clones; loader prototypes
+        // stay untouched. This view owns the instanced wrapper.
         this.disposables.push(mesh);
         this.groupFor(batch.level).add(mesh);
       });
@@ -503,7 +460,7 @@ export class TacticalMapView implements Disposable, TilePicker {
    * ```
    *   visible     ──► full colour
    *   explored    ──► × VISION_DIM          remembered, cold
-   *   unexplored  ──► × VISION_UNEXPLORED   never seen, darker, cold
+   *   unexplored  ──► same cold base + thin scene mist, never seen
    * ```
    *
    * Nothing is ever removed or zero-scaled for vision. Until #761 an
@@ -517,6 +474,7 @@ export class TacticalMapView implements Disposable, TilePicker {
    */
   setVision(vision: SideVision | undefined): void {
     this.vision = vision === undefined ? undefined : indexVision(vision);
+    this.unexploredFog.setVision(vision);
     for (const [mesh, tiles] of this.instanceTiles) {
       this.applyVisionTo(mesh, tiles);
     }
@@ -543,6 +501,8 @@ export class TacticalMapView implements Disposable, TilePicker {
       matrices: matrices.map((m) => m.clone()),
       keys: [...keys],
     };
+    if (!mesh.name.startsWith("hooks:"))
+      this.unexploredFog.trackSurface(mesh, keys);
     this.instanceTiles.set(mesh, tiles);
     this.applyVisionTo(mesh, tiles);
   }
@@ -778,6 +738,7 @@ export class TacticalMapView implements Disposable, TilePicker {
           ? this.ladderMesh(connector)
           : this.plankMesh(connector);
       mesh.name = connector.id;
+      this.unexploredFog.trackSurface(mesh, [this.index.keyOf(connector.to)]);
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       const material = mesh.material as MeshStandardMaterial;

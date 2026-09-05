@@ -25,14 +25,14 @@ Label new issues as they appear (sweep the unlabeled set at the start of every r
 Run this loop continuously while you have context budget:
 
 ```
-gh pr list --state open --json number,title,updatedAt,labels,statusCheckRollup
+gh api repos/BenjaminBenetti/tut/pulls?state=open
 ```
 
 For each PR without your approval: `gh pr checkout N`, run `pnpm typecheck && pnpm lint && pnpm test`, read the diff, review. Approve + merge or request changes. Then check for new PRs again. Between PRs, work M0 items or ADRs.
 
 Every pass of the loop also sweeps open **issues**, not only PRs: anything labelled `p0`, and anything authored by the Executive Director (`BenjaminBenetti`) that carries no agent header. A shutdown order filed as an issue (#748, 2026-09-04) went unseen for 23 minutes and six merges because the loop watched `pulls?state=open` alone.
 
-Poll roughly every 5 minutes when idle. Do not stop and wait for a human.
+Waiting is event-driven, never timer-driven. Do not schedule a prompt or cron to run this loop: every scheduled wake-up re-sends your entire context, and the session retired on 2026-09-05 had run its 4-minute cron 223 times at about 2.7M tokens each. Arm one background monitor, a shell loop that polls `gh api` at most every 5 minutes and prints only on change (a new PR, a new head, a CI conclusion, a new `p0` or Executive Director issue), then end your turn; the monitor wakes you when there is work. Do not stop and wait for a human, and do not spin either.
 
 ## What you don't do
 

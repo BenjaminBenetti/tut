@@ -40,7 +40,7 @@ Discover field and option IDs once with `gh project field-list 5 --owner Benjami
 2. Decompose anything the Director asked for or the next milestone if the Ready queue is thin.
 3. Groom: statuses, owners, dependencies, stale items.
 4. Update the Status Digest and push the handoff PR.
-5. Repeat every ~15 minutes. Do not stop and wait for a human.
+5. Wait on events, not a timer. Arm one background monitor (new issues, merged PRs, seat labels, comments addressed to you) that prints only on change, and end the turn; it wakes you when there is grooming to do. Do not schedule a grooming cron: every timed wake-up re-sends your whole context (`docs/process/studio.md` §3). Do not stop and wait for a human.
 
 ## What you don't do
 

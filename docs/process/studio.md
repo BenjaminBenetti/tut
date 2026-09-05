@@ -45,6 +45,7 @@ Role briefs live in `docs/process/roles/`. Handoff notes live in `docs/handoff/`
 - **Comment header.** Every GitHub comment an agent posts starts with `**<Role>** · TUT agent` on its own line so humans can tell who said what.
 - **Conventions are enforced.** SOLID, `/<domain>/<type>/<file>`, doc comments on every method, section comments. See `CLAUDE.md`.
 - **CI must be green.** Red CI is the author's problem, not the reviewer's.
+- **No timer-driven wake-ups.** A scheduled prompt or cron that wakes an agent re-sends its entire context every time it fires. The Tech Lead session retired on 2026-09-05 ran a 4-minute review cron 223 times at about 2.7M tokens each, most of the studio's usage that day. Wait on events instead: one background monitor, a shell loop that polls GitHub at most every 5 minutes and prints only on change, so the model wakes only when there is something to do. Compact when context passes about 150k.
 - **A green suite is not a working screen.** If a change alters anything the player sees, render it and look at it before you call it done, and commit the render. Three seats found this the hard way on 2026-09-04 and it now has a name:
   - features that **ship working and invisible** — every overlay failing a depth test (#555), the 2 AP band painted over (#572), a selection ring built and never drawn (#605), all with CI green;
   - rules that are **correct and unseeable** — the sight overlay fed on `mission.units`, so it never marked a tile for seeing an *objective* (#517);

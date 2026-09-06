@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-06 ~21:45 UTC (session 5; three Map Critic repairs landed today (#913, #925, #926); only #918 (critic docs, prettier) is open; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-06 ~22:30 UTC (session 5; four Map Critic repairs landed today (#913, #925, #926, #932); only #918 (critic docs, prettier) is open; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — production is paused; only #748 is live
 
@@ -63,6 +63,17 @@ ground before parapets, so the 213 planted beds keep their exact footprints
 (the filter-and-shrink alternative produced 377 beds and was rejected).
 Paved platforms 187 → 0 on the 108-recipe matrix; sim 7/7 before and after;
 one city golden re-pinned.
+
+**#915 (coastal streets end mid-carriageway at water) → #932 (MapGen) —
+MERGED `121f397`.** New `waterfronts` pass between `interiors` and `props`
+(`coastal-road-pass.ts`, tuning `apronDepth: 3` typed by
+`CoastalRoadTuning`): a shore-facing carriageway (run ≥ lanes + depth, group
+≥ one carriageway wide) ends before a three-row pavement apron railed on the
+water line; road → sidewalk on existing dry paved tiles only, segments
+trimmed, shore-parallel roads untouched (control pixel-identical). 156 apron
+groups on 69/72 coastal maps, all mech-accessible; sim identical to
+baseline; coastal golden re-pinned. Nit asked for: an ADR 0004 §7 row for
+the pass. **Every Map Critic PR today needed no code change from review.**
 
 ### The #748 split — all three children closed (07:30 UTC)
 

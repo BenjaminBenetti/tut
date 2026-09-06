@@ -1,6 +1,25 @@
 # Handoff: Map Critic
 
-2026-09-06 — calibrated; five active findings, including Director-filed #910.
+2026-09-06 — further calibration: raised vegetated beds are also defects (#936).
+
+**Latest ruling supersedes earlier preservation advice.** Criterion one
+(real place) outranks criterion three (tactical value). Planting and useful
+height do not make an implausible settlement plinth acceptable. #936 owns
+the raised vegetated beds; do not duplicate it. Earlier praise must not
+prevent reporting a defect after the Executive Director overturns it.
+
+After #936, look for believable settlements and usable vertical variety:
+multi-storey buildings, interiors, roofs, stairs, ladders, and natural rising
+land. A tall silhouette alone is not evidence of usable height. If cities
+read tactically flat, file that with usable building height/roof access as
+the intended improvement; never recommend restoring the mounds. Keep the
+deliberate infantry/mech access rules and natural rural terrain.
+
+**#937 is the next interior-readability check.** Art owns the roughly doubled
+cutaway radius. Compare the same interior and camera at the old and merged
+radius, including two separated units with overlapping reveals. Look for
+readable squads, room boundaries, furniture and routes while the remaining
+roof still reads as shelter. Judge the picture; do not retune the shader here.
 
 The Executive Director raised the cap from three to **five** and authorised
 working down findings without default taste holds. The standing bar is
@@ -47,58 +66,65 @@ fence or missing-roof duplicate before filing.
 Preserve the clear carriageway/pavement/door proportions, readable rooms off
 corridors, warehouse/small-building contrast, materialled ladders, and real
 changes in hills, vegetation, height and coast orientation between seeds.
-Some irregular planted/stone city beds are useful counterexamples to blank
-paved platforms; do not treat every raised area as empty.
+The earlier praise of raised planted/stone city beds is withdrawn under
+#936. Preserve appropriate vegetation and natural terrain, not those plinths.
 
-## Ranked active queue
+## Current work and queue
 
-1. **[#906](https://github.com/BenjaminBenetti/tut/issues/906), p1: building-base gaps — Art Director.**
-   D01/D02: `mc-opening-01`, snowy/town/small, `(37,3,39)`, two angles.
-   D05: `mc-opening-02`, desert/town/small, `(32,0,18)`, beside a ladder.
-   Both persist with units off and all levels. Art and MapGen agreed the
-   owner. Art's repair is [PR #913](https://github.com/BenjaminBenetti/tut/pull/913),
-   awaiting Director visual judgement and Tech Lead merge when checked.
-   A documentation PR accidentally
-   closed the issue; Producer reopened it. That closure was not a fix.
-2. **Filed [#915](https://github.com/BenjaminBenetti/tut/issues/915), p1: waterfront street endings — MapGen.**
-   D09: `mc-opening-03`, coastal/city/medium, `(51,1,40)`, marked road against
-   water inside the board. Fresh W01 verifies it from one E turn. D03:
-   `mc-opening-01`, coastal/town/small, `(37,2,14)`, a raised railed stub.
-   D03 has a railing; do not claim every end is unguarded. Director ruled
-   the road endings a defect and authorised filing.
-3. **[#910](https://github.com/BenjaminBenetti/tut/issues/910), p1: empty raised paved platforms — MapGen.**
-   Director filed the survey's third-ranked finding. D04: `mc-opening-01`,
-   temperate/city/small, `(33,5,30)`. **Generation defect, not taste:** why
-   are these emitted here at all? The old recommendation to give them a
-   purpose is superseded. Do not decorate them to justify keeping them.
-   Preserve useful soil/vegetation beds.
-4. **Filed [#916](https://github.com/BenjaminBenetti/tut/issues/916), p1: missing visible roofs — MapGen + Art for ownership triage.**
-   R01/R02: `mc-opening-01`, temperate/rural/small, `(24,4,15)`, two angles,
-   55 px/tile. Furnished upper rooms remain open to the sky with all levels
-   shown. Units-off temperate and snowy controls retain the absence. R05,
-   `mc-opening-02`, temperate/town/small, preserves working visible roofs.
-   Keep interior readability and deliberate local ghosting; visible shelter
-   does not imply making a roof walkable. Separate from #906.
-5. **Filed [#917](https://github.com/BenjaminBenetti/tut/issues/917), p2: isolated fence panels — MapGen.**
-   F01/F02 revisit D07: `mc-opening-01`, coastal/rural/small, `(5,2,22)`, two
-   angles, 45 px/tile. Panels describe no boundary from either side. Keep
-   the readable wooden silhouette and rural low-cover role; #281 stands.
+1. **[#936](https://github.com/BenjaminBenetti/tut/issues/936), p1 — MapGen:**
+   remove raised vegetated settlement beds. The preservation exception is
+   overruled. Re-check a city and town for plausibility and usable vertical
+   variety; preserve real hills and rural terrain. Do not restore plinths
+   to satisfy the older outdoor-height target.
+2. **[#937](https://github.com/BenjaminBenetti/tut/issues/937), p1 — Art:**
+   roughly double the cutaway reveal radius. Check the same room and camera,
+   a meaningful radius alternative, and two units whose reveals overlap.
+   The room should become understandable while the roof remains shelter.
+3. **[#917](https://github.com/BenjaminBenetti/tut/issues/917), p2 — MapGen:**
+   isolated fence panels. F01/F02: `mc-opening-01`, coastal/rural/small,
+   `(5,2,22)`, two angles, 45 px/tile. Keep a recognisable fence and useful
+   low cover in plausible boundaries; usefulness is not an exception.
 
-This fills the cap: count #906, #915, #910, #916 and #917, including #910
-conservatively although the Director filed it. #905 is closed. Do not file
-a sixth finding until a slot frees. The three new tickets are in M1.5 Map
-Generation and carry committed evidence and observable acceptance criteria.
+Track these three conservatively against the five-ticket cap; no new issue
+is needed for #936 or #937. #911 remains the separately owned dropship gap.
+Next filing candidate is hard material borders / temperate path ambiguity,
+then broader building and plot variety. These are not default taste holds;
+this session prioritises the merged-repair checks and the new rulings.
 
-## Held for capacity
+## Earlier fixes now merged
 
-Next: **hard material outlines and temperate trail/dirt ambiguity**. Director
-already called the hard material borders a defect. Then broader weak plot/prop
-relationships and repeated built identity/seasonal context. The fence-specific
-part now belongs to #917. These wait for capacity, not default taste approval.
-D11's exposed green lawn in snow is the strongest seasonal example. D12's
-desert planting does respond to the biome; an irrigated garden can be plausible,
-so do not declare all desert grass wrong. #869 already owns the ramp/parapet
-false affordance.
+- **#906 / #913:** foundations merged as `24bdd8f`. Fresh snowy and desert
+  views from both angles show the former black opening filled by visible
+  support meeting the terrain. The already-grounded desert control still
+  reads as seated in its surrounding land. Picture improved.
+- **#916 / #925:** roofs and the local cutaway repair merged as `0d4a168`.
+  The actual cutaway control on current main now reveals the squad and
+  nearby floor, and closes the pitched roof when the squad leaves. The
+  current radius is the baseline for #937, not its eventual verdict.
+- **#910 / #926:** paved platforms merged as `fd032fd`. Its soil/vegetation
+  exception is superseded by #936. The original tall paved enclosure at
+  `(33,5,30)` is now an ordinary ground-level plot at `(33,3,30)`.
+  Picture improved; scattered fences remain under #917.
+- **#915 / #932:** waterfront treatment merged as `121f397`. City asphalt
+  now stops before a paved, railed waterfront; both angles read more
+  coherently. The town gains a modest paved lookout between road and rail.
+  Picture improved, more strongly in the city. D03 already had a railing;
+  the clearer street termination is the improvement.
+
+The original baseline crops remain in the opening/calibration directories.
+Fresh checks use main `2878dfc` (all four fixes present, #936/#937 still open
+when fetched). The [re-check record](../design/diagnostics/map-critic-recheck-936/README.md)
+contains 16 Map Lab captures and five actual cutaway-control frames, all
+visually inspected, with reproduction metadata. The current reveal shows
+the squad and nearby floor but leaves most of the room hidden. No closed
+issue alone establishes a visual improvement.
+
+The #936 candidate is now [PR #940](https://github.com/BenjaminBenetti/tut/pull/940),
+head `c736206` when reported, awaiting frame judgement. MapGen reports
+unchanged stock town maps and a natural-bank control in a different coastal
+recipe. Our temperate C02 is a preservation control, not a claimed removal. The city cases supply the removal comparison.
+MapGen also flags the loss of mech outdoor high ground; inspect usable
+building height after merge without reopening the deliberate access rules.
 
 ## Rulings and gotchas
 
@@ -132,26 +158,33 @@ to this documentation work.
 The [one opening survey comment](https://github.com/BenjaminBenetti/tut/issues/905#issuecomment-5561538405)
 is preserved as history; its platform taste framing is superseded by the
 calibration above. [PR #907](https://github.com/BenjaminBenetti/tut/pull/907)
-merged and #905 is closed. The three new issues publish the authorised next
-findings; no duplicate platform or dropship issue was opened.
+merged and #905 is closed. The initial follow-up issues published the authorised findings. No duplicate
+platform or dropship issue was opened.
 
 The **one bounded opening watch finished**. It ran from 2026-09-06 19:20:46 UTC
 to the first poll at 19:25:48 UTC, at 300-second intervals with a hard stop
 scheduled for 22:20:46 UTC. It exited on [Producer routing](https://github.com/BenjaminBenetti/tut/issues/906#issuecomment-5561567038)
 and the [Art Director's claim](https://github.com/BenjaminBenetti/tut/issues/906#issuecomment-5561572589).
 It reported no merged visual fix. The [Critic response](https://github.com/BenjaminBenetti/tut/issues/906#issuecomment-5561595914)
-records the pending visual re-check. No improved frame has been accepted here.
+records the pending visual re-check. That was the opening-watch outcome; merged-repair verdicts are recorded above.
 
 Do not restart that completed opening watch. Background terminal `52713`
 finished; `watch-start.json`, `watch-result.json` and `watch.log` remain in
 `.scratch/map-critic-opening/`. No cron or concurrent watcher was installed.
 
-When a #906 repair merges, generate the exact snowy and desert recipes,
-compare both angles with D01/D02/D05 and include a currently correct building.
-The ownership comments provide navigation coordinates if useful; preserve
-the original crops for comparison. Then say plainly whether the picture
-improved. Apply the same visual re-check to the other active findings as
-repairs land. An ownership claim or green suite supplies no visual verdict.
+The Director's latest request had its own **single bounded watch**, session
+`99123`, in `.scratch/map-critic-936/`: started 2026-09-06 22:52:35 UTC,
+300-second polls, deadline 2026-09-07 01:52:35 UTC. It **exited at 23:12:36 UTC**
+on [MapGen's #940 candidate report](https://github.com/BenjaminBenetti/tut/issues/936#issuecomment-5562862262).
+No merged visual repair was reported by that watch. Its `watch-result.json`
+and `watch.log` preserve the event. Do not restart it or install a concurrent
+watcher. A candidate or green suite supplies no post-merge visual verdict.
+
+PR #918 had a sidecar-formatting review. The three JSON sidecars were
+formatted as requested. Local ESLint and Prettier pass for repository files;
+the commands explicitly excluded Git-ignored `.scratch` capture scripts,
+which the raw `pnpm lint` command otherwise scans locally. CI has no scratch
+files. No lint configuration or game code was changed.
 
 Never push main; only the Tech Lead merges. Every GitHub comment starts with
 `**Map Critic** · TUT agent` on its own line. A model-capacity error is

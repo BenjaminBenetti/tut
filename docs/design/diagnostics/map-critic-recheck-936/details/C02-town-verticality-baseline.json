@@ -1,0 +1,29 @@
+{
+  "id": "C02-town-verticality-baseline",
+  "seed": "mc-opening-02",
+  "biome": "temperate",
+  "settlement": "town",
+  "size": "small",
+  "url": "http://localhost:4173/mapgen-preview.html?seed=mc-opening-02&biome=temperate&settlement=town&size=small&models=1&units=0&slope=100",
+  "baseline": "2878dfc3e3e8d85e3e2ff82a3e3b8ea998f22a2e",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "clip": {
+    "x": 380,
+    "y": 0,
+    "width": 2020,
+    "height": 1500
+  },
+  "camera": "initial framing, no pan/zoom/rotation",
+  "mapBounds": {
+    "x": [0, 47],
+    "z": [0, 47]
+  },
+  "levels": {
+    "value": "10",
+    "max": "10"
+  },
+  "levelSelection": "initial all; no floor parameter or level input"
+}

@@ -1,0 +1,38 @@
+{
+  "id": "R01-rural-roof",
+  "seed": "mc-opening-01",
+  "biome": "temperate",
+  "settlement": "rural",
+  "size": "small",
+  "tile": {
+    "x": 24,
+    "y": 4,
+    "z": 15
+  },
+  "pitch": 55,
+  "rotation": 0,
+  "width": 1200,
+  "height": 950,
+  "actualPitch": 54.999999721384675,
+  "url": "http://localhost:4173/mapgen-preview.html?seed=mc-opening-01&biome=temperate&settlement=rural&size=small&models=1&units=1&slope=100",
+  "levels": {
+    "value": "6",
+    "max": "6"
+  },
+  "baseline": "2878dfc3e3e8d85e3e2ff82a3e3b8ea998f22a2e",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "pixel": {
+    "x": 1384.0578653288867,
+    "y": 725.6760402082917
+  },
+  "clip": {
+    "x": 784,
+    "y": 251,
+    "width": 1200,
+    "height": 950
+  },
+  "levelSelection": "initial all; no floor parameter or level input"
+}

@@ -8,6 +8,13 @@ visual baseline. No game code or assets were changed for these captures.
 
 ## Calibration now in force
 
+**Later ruling, #936:** the vegetated-bed preservation exception is
+withdrawn. Raised planted settlement plinths are the same plausibility
+defect as bare paved platforms. Tactical usefulness does not override the
+real-place criterion. City verticality should come from usable buildings
+and real terrain. Earlier praise does not protect a feature after an
+Executive Director ruling supersedes it. See [#936](https://github.com/BenjaminBenetti/tut/issues/936).
+
 The Executive Director's standing bar is that maps should "look more like
 the world, more like the earth": somewhere people built and live in, with
 varied buildings and coherent, beautiful surroundings.
@@ -25,7 +32,8 @@ varied buildings and coherent, beautiful surroundings.
   paved platforms are a generation defect.** The opening assessment's taste
   framing and recommendation to give them a purpose are superseded. Ask why
   they occur there at all. Do not decorate them just to justify keeping them.
-  Useful soil/vegetation beds remain worth preserving.
+  The original exception for soil/vegetation beds was subsequently overruled
+  in #936; those raised settlement features are also defects.
 - **[#911](https://github.com/BenjaminBenetti/tut/issues/911): the TDF
   dropship is the owned arrival/extraction landmark gap.** Extraction stays
   on the deploy zone deliberately. Do not file bare marked deploy rectangles
@@ -46,7 +54,7 @@ The [handoff](../../../handoff/map-critic.md) holds the live ticket queue.
 Filed from this evidence: [waterfront #915](https://github.com/BenjaminBenetti/tut/issues/915)
 (`p1`, MapGen), [roofs #916](https://github.com/BenjaminBenetti/tut/issues/916)
 (`p1`, MapGen + Art), and [fences #917](https://github.com/BenjaminBenetti/tut/issues/917)
-(`p2`, MapGen). Together with #906 and #910, these fill the five-ticket cap.
+(`p2`, MapGen). At filing, together with #906 and #910, these filled the five-ticket cap.
 Hard material borders and the remaining building/plot variety findings stay
 in the handoff for capacity.
 

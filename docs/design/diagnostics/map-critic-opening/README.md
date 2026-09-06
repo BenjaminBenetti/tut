@@ -16,6 +16,11 @@ platforms are the generation defect #910; their original taste framing is
 superseded. See the [calibration and fresh evidence](../map-critic-calibration/README.md)
 and [live handoff](../../../handoff/map-critic.md).
 
+The later [#936 ruling](https://github.com/BenjaminBenetti/tut/issues/936)
+also withdraws the recommendation to preserve raised vegetated settlement
+beds. Both planted and paved plinths are implausible; tactical usefulness
+does not override the real-place criterion.
+
 ## Method
 
 The survey covers every combination of:

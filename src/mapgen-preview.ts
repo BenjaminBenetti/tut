@@ -25,6 +25,7 @@ import type { PreviewControlsState } from "./ui/screen/mapgen-preview-screen";
 import { TacticalInputController } from "./ui/controller/tactical-input-controller";
 import type { TacticalIntent } from "./ui/model/tactical-intent";
 import { MapgenPreviewScreen } from "./ui/screen/mapgen-preview-screen";
+import { LAYER_HEIGHT } from "./graphics/data/mapgen-preview-palette";
 
 // ===========================================
 // Query string
@@ -186,6 +187,15 @@ async function main(): Promise<void> {
       view = builder;
       content.add(builder.root);
       rig.setBounds({ x: 0, z: 0, w: map.width, d: map.depth });
+      // Map Lab exists to judge whole maps, so the far end of the zoom
+      // range is sized to this one (#828). Without it the harness opens
+      // framed on a corner and the Executive Director's first view of a
+      // generated map is a quarter of it.
+      rig.setMapExtent({
+        width: map.width,
+        depth: map.depth,
+        height: map.levels * LAYER_HEIGHT,
+      });
       rig.lookAt(builder.centre);
       delete document.body.dataset.previewReady;
       delete document.body.dataset.modelsReady;

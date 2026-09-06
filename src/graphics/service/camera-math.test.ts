@@ -3,9 +3,11 @@ import { describe, expect, it } from "vitest";
 import type { YawIndex } from "../model/camera-state";
 import {
   CAMERA_ZOOM,
+  DEFAULT_CAMERA_STATE,
   ISOMETRIC_ELEVATION_RAD,
   ISOMETRIC_PROJECTION,
   TOP_DOWN_PROJECTION,
+  ZOOM_FIT_FLOOR,
 } from "../model/camera-state";
 import {
   cameraPosition,
@@ -19,7 +21,9 @@ import {
   rotateYaw,
   screenUpVector,
   withBounds,
+  withZoomRange,
   zoomBy,
+  zoomRangeFor,
 } from "./camera-math";
 
 const YAWS: readonly YawIndex[] = [0, 1, 2, 3];
@@ -429,5 +433,76 @@ describe("the top-down projection", () => {
       moved.target.z - TARGET.z,
     );
     expect(walked).toBeCloseTo(1 / Math.sin(ISOMETRIC_ELEVATION_RAD));
+  });
+});
+
+describe("map-aware zoom range (#828)", () => {
+  const VIEWPORT = { width: 1280, height: 720 };
+
+  /** World height of a map with `levels` half-height layers (ADR 0008). */
+  const relief = (levels: number) => levels * 0.75;
+
+  it("fits a 96-tile map in a 1280x720 viewport at its minimum zoom", () => {
+    const extent = { width: 96, depth: 96, height: relief(6) };
+    const { min } = zoomRangeFor(extent, VIEWPORT);
+
+    // The frustum spans viewport / zoom world units, and the map's
+    // diagonal is (w + d) / sqrt(2) across with the up axis foreshortened
+    // by sin(elevation) plus its relief. At `min` both must still fit.
+    const diagonal = (extent.width + extent.depth) / Math.SQRT2;
+    const sin = Math.sin(ISOMETRIC_PROJECTION.elevationRad);
+    const cos = Math.cos(ISOMETRIC_PROJECTION.elevationRad);
+    expect(VIEWPORT.width / min).toBeGreaterThanOrEqual(diagonal);
+    expect(VIEWPORT.height / min).toBeGreaterThanOrEqual(
+      diagonal * sin + extent.height * cos,
+    );
+  });
+
+  it("does not zoom a 32-tile map out past legibility", () => {
+    const { min } = zoomRangeFor(
+      { width: 32, depth: 32, height: relief(6) },
+      VIEWPORT,
+    );
+    expect(min).toBeGreaterThanOrEqual(ZOOM_FIT_FLOOR);
+    // And a small map does not go further out than it needs to: it fits
+    // well inside the default minimum, so the range stops there rather
+    // than pulling back into empty ground.
+    expect(min).toBeLessThanOrEqual(CAMERA_ZOOM.min);
+  });
+
+  it("floors a map too large to fit rather than zooming out for ever", () => {
+    const { min } = zoomRangeFor(
+      { width: 512, depth: 512, height: relief(6) },
+      VIEWPORT,
+    );
+    expect(min).toBe(ZOOM_FIT_FLOOR);
+  });
+
+  it("keeps the default minimum for a map that already fits", () => {
+    const { min } = zoomRangeFor(
+      { width: 8, depth: 8, height: relief(2) },
+      VIEWPORT,
+    );
+    expect(min).toBe(CAMERA_ZOOM.min);
+  });
+
+  it("fits less map in a narrower viewport", () => {
+    const extent = { width: 96, depth: 96, height: relief(6) };
+    const wide = zoomRangeFor(extent, { width: 1920, height: 1080 });
+    const narrow = zoomRangeFor(extent, VIEWPORT);
+    // More pixels, more pixels per tile at the same coverage.
+    expect(wide.min).toBeGreaterThan(narrow.min);
+  });
+
+  it("clamps into the range a state carries, not the fixed one", () => {
+    const range = { min: 9, max: 192 };
+    const state = withZoomRange({ ...DEFAULT_CAMERA_STATE, zoom: 64 }, range);
+    // Zooming out past the default 40 is exactly the point.
+    expect(zoomBy(state, 0.1).zoom).toBe(9);
+    expect(zoomBy(state, 100).zoom).toBe(192);
+    // Dropping the range pulls the camera back into the fixed limits.
+    expect(withZoomRange(zoomBy(state, 0.1), undefined).zoom).toBe(
+      CAMERA_ZOOM.min,
+    );
   });
 });

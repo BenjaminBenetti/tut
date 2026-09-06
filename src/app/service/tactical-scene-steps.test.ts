@@ -18,6 +18,7 @@ import {
   frameMission,
   playAroundRedraw,
 } from "./tactical-scene-steps";
+import type { MapExtent } from "../../graphics/service/camera-math";
 
 // ===========================================
 // Recorders
@@ -58,10 +59,16 @@ class StageRecorder {
 class FramingRecorder {
   bounds: Rect | undefined;
   target: Vec3 | undefined;
+  extent: MapExtent | undefined;
 
   /** Records the pan bounds. */
   setBounds(bounds: Rect | undefined): void {
     this.bounds = bounds;
+  }
+
+  /** Records the map the zoom range was sized to. */
+  setMapExtent(extent: MapExtent | undefined): void {
+    this.extent = extent;
   }
 
   /** Records the point the camera was centred on. */

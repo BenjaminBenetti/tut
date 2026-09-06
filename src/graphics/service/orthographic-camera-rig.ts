@@ -4,7 +4,7 @@ import type { Rect, Vec3 } from "../../core/model/grid";
 import type { CameraControls } from "../model/camera-controls";
 import type { CameraState } from "../model/camera-state";
 import type { SceneCamera } from "../model/scene-camera";
-import type { Viewport } from "./camera-math";
+import type { MapExtent, Viewport } from "./camera-math";
 import {
   cameraPosition,
   createCameraState,
@@ -14,7 +14,10 @@ import {
   rotateYaw,
   screenUpVector,
   withBounds,
+  projectionOf,
+  withZoomRange,
   zoomBy,
+  zoomRangeFor,
 } from "./camera-math";
 
 // ===========================================
@@ -52,6 +55,8 @@ export class OrthographicCameraRig implements CameraControls, SceneCamera {
   readonly camera: OrthographicCamera;
   private state: CameraState;
   private viewport: Viewport = { width: 1, height: 1 };
+  /** Map the zoom range is sized to, if a scene has set one (#828). */
+  private mapExtent: MapExtent | undefined;
 
   // ===========================================
   // Constructor
@@ -117,11 +122,43 @@ export class OrthographicCameraRig implements CameraControls, SceneCamera {
   }
 
   /**
+   * Sizes the zoom range to a map from now on, or back to `CAMERA_ZOOM`
+   * with `undefined` (#828). The scene that owns the content sets this,
+   * as it does `setBounds`.
+   *
+   * The extent is kept rather than the range so a `resize` re-derives
+   * it: how far out fits the whole map depends on the viewport as much
+   * as on the map, and a caller that had to recompute on every resize
+   * would eventually not.
+   */
+  setMapExtent(extent: MapExtent | undefined): void {
+    this.mapExtent = extent;
+    this.applyZoomRange();
+  }
+
+  /**
    * Records a new viewport size. The frustum is refitted on the next
    * `apply`, so one tile still spans `zoom` pixels at any size.
    */
   resize(widthPx: number, heightPx: number): void {
     this.viewport = { width: widthPx, height: heightPx };
+    // A narrower viewport fits less map, so the far end of the range
+    // moves with it (#828).
+    this.applyZoomRange();
+  }
+
+  // ===========================================
+  // Private Methods
+  // ===========================================
+
+  /** Re-derives the zoom clamp from the current map extent and viewport. */
+  private applyZoomRange(): void {
+    this.state = withZoomRange(
+      this.state,
+      this.mapExtent === undefined
+        ? undefined
+        : zoomRangeFor(this.mapExtent, this.viewport, projectionOf(this.state)),
+    );
   }
 
   /**

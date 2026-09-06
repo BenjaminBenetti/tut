@@ -5,6 +5,7 @@ import { BIOME_IDS } from "../../content/model/biome-id";
 import { DIRECTIONS } from "../../core/model/direction";
 import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import { hashSeed } from "../../core/service/seed-hash";
+import { createRegistry } from "../../core/service/definition-registry";
 import { DEFAULT_MISSION_HOOKS } from "../data/hook-requirements";
 import { SurfaceIds } from "../data/surfaces";
 import type { MapGenParams } from "../model/map-recipe";
@@ -233,6 +234,70 @@ describe("ElevationPass", () => {
       ).toEqual([]);
       expect(draft.lots.length).toBeGreaterThan(0);
     }
+  });
+
+  it("keeps planted elevation without stamping freestanding paved platforms (#910)", () => {
+    const passes = [
+      new TerrainPass(),
+      new WaterPass(),
+      new RoadPass(),
+      new LotPass(),
+    ];
+    const before = new PipelineMapGenerator(passes, registries);
+    const after = new PipelineMapGenerator(
+      [...passes, new ElevationPass()],
+      registries,
+    );
+    const legacy = new PipelineMapGenerator([...passes, new ElevationPass()], {
+      ...registries,
+      elevatedFeatures: createRegistry(
+        "elevated feature",
+        registries.elevatedFeatures.values.map((feature) => ({
+          ...feature,
+          maxPerMap: Number.POSITIVE_INFINITY,
+        })),
+      ),
+    });
+    let plantedColumns = 0;
+    for (const biome of BIOME_IDS) {
+      for (const seed of ["mc-opening-01", "mc-opening-02", "mc-opening-03"]) {
+        const recipe = { ...params("city", biome), size: "small" as const };
+        const flat = before.run(
+          recipe,
+          new Mulberry32Rng(hashSeed(seed)),
+        ).draft;
+        const raised = after.run(
+          recipe,
+          new Mulberry32Rng(hashSeed(seed)),
+        ).draft;
+        const original = legacy.run(
+          recipe,
+          new Mulberry32Rng(hashSeed(seed)),
+        ).draft;
+        for (let z = 0; z < raised.depth; z++) {
+          for (let x = 0; x < raised.width; x++) {
+            if (original.groundSurfaceAt(x, z) !== SurfaceIds.SIDEWALK) {
+              expect(raised.groundLevelAt(x, z)).toBe(
+                original.groundLevelAt(x, z),
+              );
+              expect(raised.groundSurfaceAt(x, z)).toBe(
+                original.groundSurfaceAt(x, z),
+              );
+            }
+            if (raised.groundLevelAt(x, z) === flat.groundLevelAt(x, z))
+              continue;
+            const surface = raised.groundSurfaceAt(x, z);
+            expect(surface, `${biome}/${seed} raised (${x},${z})`).not.toBe(
+              SurfaceIds.SIDEWALK,
+            );
+            if (surface === SurfaceIds.GRASS || surface === SurfaceIds.DIRT) {
+              plantedColumns++;
+            }
+          }
+        }
+      }
+    }
+    expect(plantedColumns).toBeGreaterThan(0);
   });
 
   /**

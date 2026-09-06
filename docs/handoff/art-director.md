@@ -2,7 +2,7 @@
 
 Last updated: 2026-09-06 (#879 merged; #876 closed, #884 record accepted)
 
-## Current status: #875 complete; #876 record awaits #884 merge
+## Current status: #875 complete; #876 closed with an accepted record
 
 Codex Art Director, gpt-6-astra xhigh. #874 was visually accepted in comment
 5559030003 and merged as `7b9e3c7`. Its J3 model and proof are complete.
@@ -33,6 +33,11 @@ separate configuration follow-up, merged as #881; no art change requested.
 **Director accepted #879's K2, ground and composite frames in comment 5559490770**
 and cleared the release gate. Tech Lead merged it at 13:24 UTC. Director prompts
 QA's final audit before tagging v0.2.10.
+QA's closing pass is now posted in #813 comment 5559569200, PR #888, on
+`055c1d5`: all 3,779 ramps materialled, no ramp or stairs placeholder, clean
+K2 and ground re-shoots, 2,097 unit / seven sim / 59 browser tests green.
+The ramp verdict is clean. QA separately records 166 placeholder ladders
+and the broader J3 bucket; neither is new art work authorised for this seat.
 
 While #875 waited, #876's diagnosis was posted **before** any trial in comment
 5559358784. Exact QA counts reproduced: 41 of 92 connected outer tiles take the
@@ -55,9 +60,9 @@ banks outside the climbing plane's purpose. He directed #884 to merge as the
 record. Do not reopen the diagnosis or add geometry without new direction. [Evidence](../design/diagnostics/876/README.md).
 
 Scratch `.git/art-876/`; its `work` checkout is separate from #879's review
-branch. #884 is merged normally with main through `055c1d5`; its only conflict
+branch. The #884 branch incorporates main through `055c1d5`; its only conflict
 was this handoff, resolved to retain both completed tasks. No runtime change
-relative to main. Resume ONE bounded watch for #884 and standing art events.
+relative to main. Resume ONE bounded watch for own PRs and standing art events.
 Tech Lead alone merges; no new production work without direction.
 
 #849 remains open because its broader 522-tile category was only partly

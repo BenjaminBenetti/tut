@@ -1,0 +1,36 @@
+[
+  {
+    "id": "road-k2",
+    "seed": "qa813-temperate-town-small-0",
+    "biome": "temperate",
+    "settlement": "town",
+    "size": "small",
+    "tile": {
+      "x": 32,
+      "y": 2,
+      "z": 12
+    },
+    "pitch": 139.999999696735,
+    "pixel": {
+      "x": 944.2309470744965,
+      "y": 431.37135854688023
+    }
+  },
+  {
+    "id": "ground-ramp",
+    "seed": "qa813-temperate-rural-small-0",
+    "biome": "temperate",
+    "settlement": "rural",
+    "size": "small",
+    "tile": {
+      "x": 8,
+      "y": 2,
+      "z": 8
+    },
+    "pitch": 139.99999969673422,
+    "pixel": {
+      "x": 989.9999999999973,
+      "y": 482.2055942489798
+    }
+  }
+]

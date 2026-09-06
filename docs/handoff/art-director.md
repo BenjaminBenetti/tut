@@ -1,35 +1,37 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-06 (#849 in PR #874; waiting on review)
+Last updated: 2026-09-06 (#874 merged; #875 in PR #879)
 
-## Current status: #849 in review, PR #874
+## Current status: #875 in review, PR #879
 
-Codex Art Director, gpt-6-astra xhigh. #840 and #848 are complete. The Director
-authorised #849 conditionally: re-render J3 on current main, post comparison
-first, then cut a piece only if the seam remains. That condition is met:
-[comparison posted before model edits](https://github.com/BenjaminBenetti/tut/issues/849#issuecomment-5558888199).
-Main `4244675` includes #862 and #866; J3 has no diagonal appearance anywhere
-on its map. QA's final audit #873 independently calls J3 unchanged.
+Codex Art Director, gpt-6-astra xhigh. #874 was visually accepted in comment
+5559030003 and merged as `7b9e3c7`. Its J3 model and proof are complete.
+The Director immediately assigned **#875**, blocking v0.2.10, followed by
+**#876** (diagnose skipped two-corner chains before any geometry or fix).
 
-[PR #874](https://github.com/BenjaminBenetti/tut/pull/874) is open. Branch
-`feat/849-three-sided-slope-kit`, initial proof `7af3a73`, final visual proof
-`9087e16`. Main through `e9f022e` merged normally (handoff-only delta). New concave
-end at shared RISE 0.75: 14 triangles, 2,252 bytes, three angles opened. The
-opening uses two existing outer-corner halves. Live scene selects the J3
-end `(10,3,29)` and mouth `(11,3,29)`; after crop opened and full-perimeter
-real-GLB ray tests pass in all four rotations in grass/snow. Composite in grass/snow opened; refusal tests and verification complete.
-Typecheck, lint, build, 2,057 unit tests (one skipped), seven simulation
-tests and all 59 browser tests pass (zero flaky; 25 opt-in captures skipped).
-The composite/fog capture specs pass separately. Both fog frames match fresh
-main byte-for-byte; main’s tracked PNGs were stale after #866, so refreshed
-frames are included. The 108-map sweep fits 173 of 495 three-high ends and
-173 mouths; the 27 four-high pits and unmatched/protected exits are outside
-this bounded shape. Do not claim the whole QA 522-tile bucket is solved.
-All requested assets and diagnostics are committed/pushed. #849 stays open
-because the broad audit bucket is only partly covered. ONE bounded watch
-resumes for Tech Lead review and the Director’s visual judgement; no new
-production issue has been taken. QA’s #873 also reports remaining diagonal
-creases and ramp/parapet art concerns outside this PR.
+[PR #879](https://github.com/BenjaminBenetti/tut/pull/879) is open.
+Branch `feat/875-ramp-connector-kit`, proof `567648e`: model checkpoint `8c02777`, normal merge
+of #874 `0967700`. The ramp uses the shared straight-wedge builder and its
+single RISE 0.75: 8 triangles, 1,792 bytes, watertight; all three angles opened.
+It spans the lower tile to meet the upper terrace edge and borrows the support
+material, including dirt for rural trails. The source and both manifests have
+a live instanced scene consumer; prototypes and mist materials share across
+rises and levels. Three surveyed shared feet use half-length ramps to retain
+a low centre. Gray placeholders retire permanently after loading.
+
+K2 (three-lane asphalt) and an unwalled dirt ramp are captured before/after and
+opened, alongside the one/two-layer asphalt/grass composite and
+both refreshed fog frames. All 3,779 ramps in QA's 108-map matrix resolve to
+art. There are 21 new real-GLB geometry/material/vision/cache tests; full unit
+suite passes 2,078 tests (one skipped). All 59 browser tests pass (zero flaky, 26 opt-in captures skipped), as do
+seven simulation tests and the two composite/fog capture tests. Completing
+the handoff; the final lint/format check also passes. Everything is committed
+and pushed. Scratch `.git/art-875/`; resume ONE bounded watch for review.
+Finish #875 through review, then #876 diagnosis before cutting.
+
+#849 remains open because its broader 522-tile category was only partly
+covered: 173 ends plus 173 mouths fit the new shape, preserving four-high pits
+and protected/unmatched boundaries. [Accepted proof and contract](../design/diagnostics/849/README.md).
 
 ## Completed: #848 diagonal slope kit, PR #862
 

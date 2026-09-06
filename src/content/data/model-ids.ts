@@ -102,6 +102,7 @@ export const MODEL_IDS = [
   "tile.slope.outer",
   "tile.slope.diagonal",
   "tile.slope.three-sided",
+  "tile.ramp.connector",
 ] as const;
 
 /** A registered model id. */

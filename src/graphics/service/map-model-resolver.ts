@@ -12,6 +12,8 @@ import { TileIndex } from "../../mapgen/service/tile-index";
 import { terrainSlopeRise } from "./terrain-slope-rise";
 import type { RoadAppearance } from "../model/road-appearance";
 import type { TerrainSlopeAppearance } from "../model/terrain-slope-appearance";
+import type { RampAppearance } from "../model/ramp-appearance";
+import { resolveRampModels } from "./ramp-model-resolver";
 import { resolveTerrainSlopeAppearances } from "./terrain-slope-resolver";
 import { resolveRoadAppearances, roadModelId } from "./road-model-resolver";
 import {
@@ -49,10 +51,14 @@ export interface ModelPlacement {
   readonly turns: Rotation;
   /** Vertical fit for one-layer slope art; other models retain their authored size. */
   readonly scaleY?: number;
+  /** Authored forward-axis fit, used when two ramps share a lower tile. */
+  readonly scaleZ?: number;
   /** Modular road surface/details; shared by every instance with the same appearance. */
   readonly road?: RoadAppearance;
   /** A diagonal plane or adjacent surface fitted to its shared corner heights. */
   readonly terrain?: TerrainSlopeAppearance;
+  /** A full-tile ramp borrows its lower support's surface and retires that slab. */
+  readonly ramp?: RampAppearance;
   /**
    * The tile this belongs to. Carried so the renderer can dim or drop it
    * with that tile's vision (#551) — a wall is only ever as visible as
@@ -66,6 +72,7 @@ export interface MapModelPlacements {
   readonly tiles: readonly ModelPlacement[];
   readonly walls: readonly ModelPlacement[];
   readonly props: readonly ModelPlacement[];
+  readonly connectors: readonly ModelPlacement[];
 }
 
 // ===========================================
@@ -129,10 +136,18 @@ export function resolveMapModels(
   map: TacticalMap,
   index: TileIndex = new TileIndex(map),
 ): MapModelPlacements {
+  const roads = resolveRoadAppearances(map, index);
+  const connectors = resolveRampModels(map, index, roads);
+  const rampFeet = new Set(
+    connectors
+      .filter((p) => p.ramp!.replacesGround)
+      .map((p) => index.keyOf(p.ramp!.from)),
+  );
   return {
-    tiles: resolveTiles(map, index),
+    tiles: resolveTiles(map, index, rampFeet, roads),
     walls: resolveWalls(map, index),
     props: resolveProps(map, index),
+    connectors,
   };
 }
 
@@ -141,11 +156,17 @@ export function mapModelIds(
   placements: MapModelPlacements,
 ): readonly ModelAssetId[] {
   const ids = new Set<ModelAssetId>();
-  for (const group of [placements.tiles, placements.walls, placements.props]) {
+  for (const group of [
+    placements.tiles,
+    placements.walls,
+    placements.props,
+    placements.connectors,
+  ]) {
     for (const placement of group) {
       ids.add(placement.modelId);
       if (placement.road)
         for (const id of Object.values(ROAD_MODELS)) ids.add(id);
+      if (placement.ramp) ids.add(surfaceModel(placement.ramp.surface)!);
     }
   }
   return [...ids];
@@ -205,11 +226,13 @@ function stairsTurns(tile: Tile, map: TacticalMap): Rotation {
 function resolveTiles(
   map: TacticalMap,
   index: TileIndex,
+  rampFeet: ReadonlySet<number>,
+  roads: ReadonlyMap<number, RoadAppearance>,
 ): readonly ModelPlacement[] {
   const placements: ModelPlacement[] = [];
-  const roads = resolveRoadAppearances(map, index);
   const terrain = resolveTerrainSlopeAppearances(map, index);
   for (const tile of map.tiles) {
+    if (rampFeet.has(index.keyOf(tile))) continue;
     const appearance = terrain.get(index.keyOf(tile));
     if (appearance) {
       placements.push({

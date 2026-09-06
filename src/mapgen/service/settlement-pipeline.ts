@@ -1,4 +1,5 @@
 import { BuildingPass } from "../generator/building-pass";
+import { CoastalRoadPass } from "../generator/coastal-road-pass";
 import { ConnectivityPass } from "../generator/connectivity-pass";
 import { CraterPass } from "../generator/crater-pass";
 import { DebrisPass } from "../generator/debris-pass";
@@ -37,6 +38,7 @@ export function createSettlementPasses(): GenerationPass[] {
     new ElevationPass(),
     new BuildingPass(),
     new InteriorPass(),
+    new CoastalRoadPass(),
     new PropPass(),
     new SlopePass(),
     new RampPass(),

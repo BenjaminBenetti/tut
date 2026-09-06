@@ -1,0 +1,32 @@
+{
+  "id": "D03-coastal-road-end",
+  "seed": "mc-opening-01",
+  "biome": "coastal",
+  "settlement": "town",
+  "size": "small",
+  "tile": {
+    "x": 37,
+    "y": 2,
+    "z": 14
+  },
+  "pitch": 60,
+  "width": 1200,
+  "height": 1000,
+  "actualPitch": 59.7605434795569,
+  "url": "http://localhost:4173/mapgen-preview.html?seed=mc-opening-01&biome=coastal&settlement=town&size=small&models=1&units=1&slope=100",
+  "baseline": "cafd9ff",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "pixel": {
+    "x": 1399.735928981663,
+    "y": 732.019879768592
+  },
+  "clip": {
+    "x": 800,
+    "y": 232,
+    "width": 1200,
+    "height": 1000
+  }
+}

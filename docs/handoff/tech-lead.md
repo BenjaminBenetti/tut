@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-06 ~22:30 UTC (session 5; four Map Critic repairs landed today (#913, #925, #926, #932); only #918 (critic docs, prettier) is open; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-06 ~22:50 UTC (session 5; v0.2.12 tagged at `121f397`; four Map Critic repairs in; only #918 (critic docs, prettier) is open; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — production is paused; only #748 is live
 
@@ -74,6 +74,10 @@ trimmed, shore-parallel roads untouched (control pixel-identical). 156 apron
 groups on 69/72 coastal maps, all mech-accessible; sim identical to
 baseline; coastal golden re-pinned. Nit asked for: an ADR 0004 §7 row for
 the pass. **Every Map Critic PR today needed no code change from review.**
+
+**Tags today:** v0.2.10 `fe7872c` (ramps), v0.2.11 `58e6c9e` (ladders),
+**v0.2.12 `121f397`** (waterfronts, with roofs, platforms and foundations
+in between). The Director tags after each accepted visual change lands.
 
 ### The #748 split — all three children closed (07:30 UTC)
 

@@ -3,7 +3,7 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-06 12:08 UTC)
+## Status Digest (2026-09-06 12:17 UTC)
 
 **Production ON HOLD** (#748). The Executive Director tunes Map Lab; only his named exceptions proceed. No M3 decomposition or Ready growth beyond those exceptions. **v0.2.9** is tagged (main 148b179; scale plus road kit); general production has not resumed.
 
@@ -35,7 +35,7 @@
 
 **Follow-up #869:** **Backlog, MapGen, p2**, no seat or Ready promotion. Ordering repair remains opportunistic. **QA confirmed item 2 is a visual defect**, 2,046 ramps crossing plat parapets on its seeds; V8 plus data/code establishes no gap (ramp itself hidden in that camera). QA-first prerequisite cleared; MapGen owns timing under the Director's brief.
 
-**Other open PRs:** #757/#694 mech-bay preview remains In Review under the Director's exception, content approved, awaiting final merge/frame gates. Existing Art Director ownership retained; route an author update only if the gate requires one. Tech Lead handoff #851 closed unmerged; replacement #855 merged / Done; #859 merged / Done; #865 merged / Done, recording J1 completion; Art handoff #867 Done; Tech Lead handoff #871 merged / Done; #878 In Review. **#856 Done**: measured 120-second CI unit-test budget (20 seconds locally); Tech Lead self-merged with CI and all seven merge-result checks green. **#852 Done**: firing-sweep CI timeout fixed (four runner seeds, full twelve locally, measured 120-second budget); Tech Lead self-merged with CI and gate green. Producer handoff #872 merged; this pass opens its successor.
+**Other open PRs:** #757/#694 mech-bay preview remains In Review under the Director's exception, content approved, awaiting final merge/frame gates. Existing Art Director ownership retained; route an author update only if the gate requires one. Tech Lead handoff #851 closed unmerged; replacement #855 merged / Done; #859 merged / Done; #865 merged / Done, recording J1 completion; Art handoff #867 Done; Tech Lead handoff #871 merged / Done; #878 merged / Done. **#856 Done**: measured 120-second CI unit-test budget (20 seconds locally); Tech Lead self-merged with CI and all seven merge-result checks green. **#852 Done**: firing-sweep CI timeout fixed (four runner seeds, full twelve locally, measured 120-second budget); Tech Lead self-merged with CI and gate green. Producer handoff #872 merged; this pass opens its successor.
 
 **Blocked / parked:** v0.2.10 waits for #875 and a clean QA confirmation. #874 is merged; #849 stays open for its broader category. #869 and #876 stay Backlog, nonblocking. General production and M3 held; #787 parked; #793 p3. All engineer seats idle; Ready-high audit found only held M3 #447.
 

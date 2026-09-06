@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-06 ~20:35 UTC (session 5; first Map Critic ticket #906 delivered via #913; critic cap is five (#912); see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-06 ~21:45 UTC (session 5; three Map Critic repairs landed today (#913, #925, #926); only #918 (critic docs, prettier) is open; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — production is paused; only #748 is live
 
@@ -43,6 +43,26 @@ render. Its calibration evidence PR #918 is red on prettier (three JSON
 sidecars); the critic was told the exact command and it fast-tracks on green.
 Review shape for these: gate, fog hashes from my own render, frames viewed
 at 1.5×, one comment, merge on the verdict.
+
+**#916 (no roofs on intact houses) → #925 (Art Director) — MERGED
+`0d4a168`.** A pitched non-walkable roof cap fitted per profile
+(`pitched-roof-model-resolver` / `-factory`, style knob in
+`data/pitched-roof-style.ts`), plus a real pre-existing cutaway bug:
+`uGhostStrength` was declared and read in the shader but never bound in
+`applyGhostCutaway`, so the local reveal never worked; one line fixes it.
+Fog frames change in the rightmost 16-px UI strip only (I split the diff by
+column: 0 map-region pixels) and my render of the merged tree matched the
+committed PNGs byte for byte. The Director called it the best piece of work
+of the day.
+
+**#910 (blank railed paved platforms, ED ruling: a defect) → #926 (MapGen) —
+MERGED `fd032fd`.** `maxPerMap: 0` on podium and plaza (data knob typed
+through `ElevatedFeature`); proposals are still planned on the occupied grid
+with the same RNG draws and the over-limit plots are restored to original
+ground before parapets, so the 213 planted beds keep their exact footprints
+(the filter-and-shrink alternative produced 377 beds and was rejected).
+Paved platforms 187 → 0 on the 108-recipe matrix; sim 7/7 before and after;
+one city golden re-pinned.
 
 ### The #748 split — all three children closed (07:30 UTC)
 

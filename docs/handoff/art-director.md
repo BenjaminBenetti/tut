@@ -32,13 +32,20 @@ it lands, merge main on the art branch and regenerate that control and
 both fog frames on the combined tree before merge. The Director judges
 visual acceptance and the Tech Lead merges.
 
-QA's #813 catalogue arrived and merged in #839. It is checked out/read and
-six key crops were opened, but no ramp implementation has started. The
-Director was told: finish #840 first. QA separates diagonal outer-corner
-chains (J1), excluded lot-margin tiles (J2), three-high-neighbour slots (J3)
-and faithful narrow channels (N1). After roads, establish each geometry or
-classification contract with MapGen before making a fix. See
-`docs/design/diagnostics/813/README.md` and QA comment 5557734569.
+QA's #813 catalogue arrived and merged in #839. It is read and six key
+crops were opened. The Director judged it in comment 5557976144 and QA split
+the work: **#848** diagonal chains belongs here **after #840**; **#847**
+unwalled lot margins belongs to MapGen; **#849** is a check against #848's
+piece, accepted for now. Do not cut a second piece speculatively. N1 narrow
+channels are not a defect. The audit will be rerun after #838's rescale.
+
+#848 requires a diagonal-rise piece in the RISE 0.75 kit, three angles,
+a two-chain/three-chain composite and before/after controls for four chains.
+Keep isolated outer corners unchanged. Read #848/#849 in full before that
+work; their bodies are cached in the watch event. No ramp implementation
+has started: #840 still gates the release. QA corrected the exclusion
+count: 514 walled and 3,590 wall-less out of 4,104 excluded tiles (12.5%
+walled), not 514 of 3,590. Source: #813 comment 5557989577.
 
 #809 and #817 are complete; their evidence remains below. After publishing
 #840, address review on its branch and use the standing bounded watch.

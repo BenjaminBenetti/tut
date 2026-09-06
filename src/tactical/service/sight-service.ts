@@ -1,4 +1,5 @@
 import type { Direction } from "../../core/model/direction";
+import { STOREY_LAYERS } from "../../core/model/elevation";
 import { oppositeDirection, stepGridPos } from "../../core/service/grid-math";
 import type { CoverLevel } from "../../mapgen/model/cover";
 import { CoverLevel as Cover } from "../../mapgen/model/cover";
@@ -13,12 +14,12 @@ import { TileIndex } from "../../mapgen/service/tile-index";
 // ===========================================
 
 /**
- * Height above a tile's level a unit sees and is seen at, in levels. Half
- * a storey: a same-level shot passes through anything on its tiles, while
- * a shooter one level up looks over a prop near its own feet and is still
+ * Height above a tile at which units see and are seen, in vertical coordinates.
+ * Half a storey: a same-height shot passes through anything on its tiles, while
+ * a shooter one storey up looks over a prop near its own feet and is still
  * blocked by one next to the target.
  */
-export const EYE_HEIGHT = 0.5;
+export const EYE_HEIGHT = STOREY_LAYERS / 2;
 
 /** Two traversal parameters closer than this cross a corner exactly. */
 const CORNER_EPSILON = 1e-9;
@@ -87,7 +88,7 @@ export interface SightLine {
  *   corner hit    ──► any of the four edges meeting there, as above
  *
  *   height(t) = (from.y + EYE) + ((to.y + EYE) − (from.y + EYE)) · t
- *   level(t)  = ⌊height(t)⌋      walls and props fill [level, level + 1)
+ *   walls and props fill [tile.y, tile.y + STOREY_LAYERS)
  * ```
  *
  * The endpoint tiles never block, a missing tile with only sky above it
@@ -159,7 +160,7 @@ function isSolidAt(
   z: number,
 ): boolean {
   return (
-    index.get(x, level, z) === undefined &&
+    tileAtHeight(index, x, level, z) === undefined &&
     index.column(x, z).some((tile) => tile.y > level)
   );
 }
@@ -183,7 +184,8 @@ function blocksSightAt(
   z: number,
 ): boolean {
   return (
-    index.get(x, level, z)?.blocksLos === true || isSolidAt(index, x, level, z)
+    tileAtHeight(index, x, level, z)?.blocksLos === true ||
+    isSolidAt(index, x, level, z)
   );
 }
 
@@ -342,12 +344,12 @@ export function coverAgainst(
 }
 
 /**
- * Levels the attacker stands above the target: positive when shooting
- * down, negative when shooting up, `0` on the same level. The hit-chance
- * rule (#327) turns it into a modifier; this just measures it.
+ * Whole storeys the attacker stands above the target, truncated toward zero.
+ * A partial storey grants no bonus in either direction (ADR 0008 §2.4).
+ * The hit-chance rule turns this measure into a modifier.
  */
 export function elevationBonus(from: TileCoord, to: TileCoord): number {
-  return from.y - to.y;
+  return Math.trunc((from.y - to.y) / STOREY_LAYERS) || 0;
 }
 
 // ===========================================
@@ -394,20 +396,40 @@ function heightFunction(from: TileCoord, to: TileCoord): (t: number) => number {
   return (t) => start + (end - start) * t;
 }
 
-/** True when an opaque wall sits on the edge at the given level, on either tile. */
+/** True when a storey-tall opaque wall occupies the ray's layer on either side. */
 function wallBlocksAt(
   index: TileIndex,
   edge: EdgeCrossing,
   level: number,
 ): boolean {
-  const here = index.get(edge.x, level, edge.z);
-  const there = index.getAt(
-    stepGridPos({ x: edge.x, y: level, z: edge.z }, edge.side),
-  );
+  const here = tileAtHeight(index, edge.x, level, edge.z);
+  const next = stepGridPos({ x: edge.x, y: level, z: edge.z }, edge.side);
+  const there = tileAtHeight(index, next.x, level, next.z);
   return (
     wallIsOpaque(here?.walls[edge.side]) ||
     wallIsOpaque(there?.walls[oppositeDirection(edge.side)])
   );
+}
+
+/** Tile whose storey of walls/props contains the sampled ray height. */
+function tileAtHeight(
+  index: TileIndex,
+  x: number,
+  height: number,
+  z: number,
+): Tile | undefined {
+  const column = index.column(x, z);
+  for (let i = column.length - 1; i >= 0; i--) {
+    const tile = column[i];
+    if (
+      tile !== undefined &&
+      tile.y <= height &&
+      height < tile.y + STOREY_LAYERS
+    ) {
+      return tile;
+    }
+  }
+  return undefined;
 }
 
 /**

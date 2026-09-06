@@ -18,7 +18,7 @@ import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
 import type { Spawner } from "../../tactical/model/tactical-state";
 import type { Unit } from "../../tactical/model/unit";
 import type { UnitTemplate } from "../../tactical/model/unit-template";
-import { LEVEL_HEIGHT, SLAB_HEIGHT } from "../data/mapgen-preview-palette";
+import { LAYER_HEIGHT, SLAB_HEIGHT } from "../data/mapgen-preview-palette";
 import type { ModelLoader } from "../model/model-loader";
 import {
   SPAWNER_MODEL_ID,
@@ -175,7 +175,7 @@ describe("TacticalSceneBuilder", () => {
       z: 2.5,
     });
     expect(builder.root.getObjectByName("units")?.children).toHaveLength(2);
-    expect(LEVEL_HEIGHT).toBeGreaterThan(0);
+    expect(LAYER_HEIGHT).toBeGreaterThan(0);
   });
 
   it("re-poses moved units without reloading, and removes gone or dead units", async () => {

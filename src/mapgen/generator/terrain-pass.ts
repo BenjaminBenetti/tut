@@ -1,3 +1,4 @@
+import { STOREY_LAYERS } from "../../core/model/elevation";
 import type { WeightedSurface } from "../model/biome-definition";
 import type {
   DraftCapability,
@@ -32,7 +33,7 @@ const CONTRAST = 2.2;
 /**
  * Pass 1 of the settlement archetype (ADR 0004 §7.3). Samples fractal
  * value noise at the biome's frequency, quantises it to integer levels
- * up to `amplitudeLevels`, and paints ground surfaces in contiguous
+ * up to `amplitudeLayers`, and paints ground surfaces in contiguous
  * patches by thresholding a second, slower noise field against the
  * biome's surface weights.
  *
@@ -72,10 +73,13 @@ export class TerrainPass implements GenerationPass {
           terrain.octaves,
           terrain.roughness,
         );
-        const level = Math.min(
-          terrain.amplitudeLevels,
-          Math.floor(stretch(h) * (terrain.amplitudeLevels + 1)),
-        );
+        const amplitudeStoreys = terrain.amplitudeLayers / STOREY_LAYERS;
+        const level =
+          STOREY_LAYERS *
+          Math.min(
+            amplitudeStoreys,
+            Math.floor(stretch(h) * (amplitudeStoreys + 1)),
+          );
         draft.setGroundLevel(x, z, level);
         // Remembered so a later pass can tell a natural step from a graded
         // one; only natural steps become slopes (#799).
@@ -92,7 +96,7 @@ export class TerrainPass implements GenerationPass {
       }
     }
     context.diagnostics.note(
-      `terrain up to level ${highest} of ${terrain.amplitudeLevels}, ` +
+      `terrain up to level ${highest} of ${terrain.amplitudeLayers}, ` +
         `${bands.length} surface bands`,
     );
   }

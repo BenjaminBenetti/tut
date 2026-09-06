@@ -1,3 +1,4 @@
+import { STOREY_LAYERS } from "../../core/model/elevation";
 import { DIRECTIONS } from "../../core/model/direction";
 import { SurfaceIds } from "../data/surfaces";
 import type { DiagnosticSink } from "../model/diagnostics";
@@ -259,7 +260,7 @@ function levelLine(
     const head = chunk[0];
     if (previous !== undefined && head !== undefined) {
       const rise = level - previous.level;
-      if (Math.abs(rise) === 1) {
+      if (Math.abs(rise) === STOREY_LAYERS) {
         const lower = rise > 0 ? previous.last : head;
         const upper = rise > 0 ? head : previous.last;
         draft.addConnector(
@@ -304,11 +305,14 @@ function chooseChunkLevel(
   const mean =
     chunk.reduce((sum, c) => sum + draft.groundLevelAt(c.x, c.z), 0) /
     chunk.length;
-  const level = Math.round(mean);
+  const level = Math.round(mean / STOREY_LAYERS) * STOREY_LAYERS;
   if (anchor === undefined) {
     return level;
   }
-  return Math.max(anchor - 1, Math.min(anchor + 1, level));
+  return Math.max(
+    anchor - STOREY_LAYERS,
+    Math.min(anchor + STOREY_LAYERS, level),
+  );
 }
 
 /** Level of a road column 4-adjacent to the column, if any. */

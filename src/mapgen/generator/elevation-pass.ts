@@ -1,3 +1,4 @@
+import { STOREY_LAYERS } from "../../core/model/elevation";
 import { DIRECTIONS } from "../../core/model/direction";
 import type { Rect } from "../../core/model/grid";
 import type { Rng } from "../../core/model/rng";
@@ -19,7 +20,7 @@ import { areaFactor } from "./lot-pass";
 // ===========================================
 
 /** Levels a feature stands above the ground it is stamped on. */
-const FEATURE_HEIGHT = 1;
+const FEATURE_HEIGHT = STOREY_LAYERS;
 
 /** Columns of clear ground kept between two features. */
 const FEATURE_GAP = 1;

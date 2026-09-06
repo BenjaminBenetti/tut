@@ -1,3 +1,4 @@
+import { STOREY_LAYERS } from "../../core/model/elevation";
 import { DIRECTIONS } from "../../core/model/direction";
 import type { Rect } from "../../core/model/grid";
 import type { Rng } from "../../core/model/rng";
@@ -26,7 +27,7 @@ import { placeStairs } from "./interior/stair-placer";
 const MAX_LADDER_FLOORS = 2;
 
 /** Most levels a ladder climbs from the ground column outside the wall. */
-const MAX_LADDER_CLIMB = 2;
+const MAX_LADDER_CLIMB = 2 * STOREY_LAYERS;
 
 // ===========================================
 // InteriorPass
@@ -106,7 +107,7 @@ function furnish(
   const floors = building.floors.map((floor) =>
     withRooms(draft, building, template, floor, footprint, entrance.tile, rng),
   );
-  const roofY = building.groundLevel + building.floors.length;
+  const roofY = building.groundLevel + building.floors.length * STOREY_LAYERS;
   if (building.roof.walkable) {
     addRoof(draft, building.id, footprint, roofY);
   }

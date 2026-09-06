@@ -1,3 +1,4 @@
+import { STOREY_LAYERS } from "../../core/model/elevation";
 import { DIRECTIONS, type Direction } from "../../core/model/direction";
 import { stepGridPos } from "../../core/service/grid-math";
 import type {
@@ -241,7 +242,8 @@ function outerCorner(
     const diagonalKey = diagonal.z * draft.width + diagonal.x;
     if (!nodes.has(diagonalKey) || !isNatural(draft, diagonal.x, diagonal.z))
       continue;
-    if (draft.groundLevelAt(diagonal.x, diagonal.z) !== here.y + 1) continue;
+    if (draft.groundLevelAt(diagonal.x, diagonal.z) !== here.y + STOREY_LAYERS)
+      continue;
     // Both flanks must climb onto the same terrace as the diagonal.
     if (draft.groundLevelAt(sideA.x, sideA.z) !== here.y) continue;
     if (draft.groundLevelAt(sideB.x, sideB.z) !== here.y) continue;
@@ -331,7 +333,7 @@ function isNaturalStepUp(
   if (!draft.inBounds(next.x, next.z)) return false;
   if (!nodes.has(next.z * draft.width + next.x)) return false;
   if (!isNatural(draft, next.x, next.z)) return false;
-  return draft.groundLevelAt(next.x, next.z) === here.y + 1;
+  return draft.groundLevelAt(next.x, next.z) === here.y + STOREY_LAYERS;
 }
 
 /** Lower tiles of natural steps, whatever piece (or none) they get: the knob's denominator. */

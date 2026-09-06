@@ -17,7 +17,7 @@ import type { CoverLevel } from "../../mapgen/model/cover";
  *               − rangePenaltyPerTile × max(0, distance − 1)
  *               + coverModifier[cover]        (cover the target has against this attacker)
  *               + flankBonus                  (target has cover elsewhere but none here)
- *               + elevationPerLevel × levels  (attacker above: +, below: −, capped)
+ *               + elevationPerStorey × levels  (attacker above: +, below: −, capped)
  *               , minHitChance, maxHitChance )
  *
  *   damage  = roll in [damage × (1 − spread), damage × (1 + spread)]
@@ -32,7 +32,7 @@ export interface CombatTuning {
   /** Accuracy gained when the target has cover on some side but none against this attacker. Non-negative. */
   readonly flankBonus: number;
   /** Accuracy per level the attacker stands above the target (negative below). Non-negative. */
-  readonly elevationPerLevel: number;
+  readonly elevationPerStorey: number;
   /** Largest elevation modifier in either direction. Non-negative. */
   readonly maxElevationModifier: number;
   /** Floor and ceiling of any hit chance, in percent. `0 ≤ min ≤ max ≤ 100`. */

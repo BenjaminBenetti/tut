@@ -2,7 +2,6 @@ import { BoxGeometry, Group, Mesh, MeshStandardMaterial } from "three";
 
 import { MODEL_MANIFEST } from "../../../src/graphics/data/model-manifest";
 import {
-  LEVEL_HEIGHT,
   SLAB_HEIGHT,
   SURFACE_COLOURS,
 } from "../../../src/graphics/data/mapgen-preview-palette";
@@ -66,7 +65,8 @@ async function terrace(
       ];
       const flat = heights.every((height) => height === heights[0]);
       const level = flat ? heights[0]! : 0;
-      const height = SLAB_HEIGHT + LEVEL_HEIGHT * level;
+      const height =
+        SLAB_HEIGHT + MODEL_MANIFEST[SLOPE_MODELS.straight].height * level;
       // Butt the slab onto its pillar; coincident top faces would z-fight.
       const pillarHeight = flat ? height - 0.05 : height;
       const pillar = new Mesh(

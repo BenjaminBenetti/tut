@@ -8,11 +8,11 @@ import type { WallKind } from "../../mapgen/model/wall";
 // ===========================================
 
 /** World units per map level: one building floor (style guide §3). */
-export const LEVEL_HEIGHT = 1.5;
+export const LAYER_HEIGHT = 1.5;
 
 /**
  * Thickness of the **placeholder box** a tile is drawn as before its
- * model loads, and — because `tileTop` is `level * LEVEL_HEIGHT +
+ * model loads, and — because `tileTop` is `level * LAYER_HEIGHT +
  * SLAB_HEIGHT` — the number that defines where the world's ground
  * surface actually is.
  *

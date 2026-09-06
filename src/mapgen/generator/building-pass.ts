@@ -1,3 +1,4 @@
+import { STOREY_LAYERS } from "../../core/model/elevation";
 import type { Direction } from "../../core/model/direction";
 import type { Rect } from "../../core/model/grid";
 import type { Rng } from "../../core/model/rng";
@@ -226,7 +227,7 @@ function raiseShell(
   const { footprint, template, floorCount } = plan;
   const floors: Floor[] = [];
   for (let index = 0; index < floorCount; index++) {
-    const y = lot.level + index;
+    const y = lot.level + index * STOREY_LAYERS;
     floors.push({ index, y, rooms: [] });
     forEachColumn(footprint, (x, z) => {
       draft.addTile({

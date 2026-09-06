@@ -1,3 +1,4 @@
+import { STOREY_LAYERS } from "../../core/model/elevation";
 import { describe, expect, it } from "vitest";
 
 import { BIOME_IDS } from "../../content/model/biome-id";
@@ -247,9 +248,9 @@ describe("RoadPass", () => {
             if (!draft.inBounds(nx, nz) || !draft.isRoad(nx, nz)) continue;
             const diff = Math.abs(draft.groundLevelAt(nx, nz) - level);
             expect(diff, `${settlement}/${i} at ${x},${z}`).toBeLessThanOrEqual(
-              1,
+              STOREY_LAYERS,
             );
-            if (diff === 1) {
+            if (diff === STOREY_LAYERS) {
               expect(
                 hasRampBetween(draft, { x, z }, { x: nx, z: nz }),
                 `${settlement}/${i} ramp at ${x},${z}`,

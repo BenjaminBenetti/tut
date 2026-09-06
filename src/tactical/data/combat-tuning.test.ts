@@ -24,8 +24,8 @@ describe("combat tuning", () => {
   it("uses non-negative range, flank and elevation knobs with a cap", () => {
     expect(T.rangePenaltyPerTile).toBeGreaterThanOrEqual(0);
     expect(T.flankBonus).toBeGreaterThanOrEqual(0);
-    expect(T.elevationPerLevel).toBeGreaterThanOrEqual(0);
-    expect(T.maxElevationModifier).toBeGreaterThanOrEqual(T.elevationPerLevel);
+    expect(T.elevationPerStorey).toBeGreaterThanOrEqual(0);
+    expect(T.maxElevationModifier).toBeGreaterThanOrEqual(T.elevationPerStorey);
   });
 
   it("rolls damage in a sane band and costs whole action points", () => {

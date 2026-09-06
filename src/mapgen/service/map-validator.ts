@@ -1,3 +1,4 @@
+import { STOREY_LAYERS } from "../../core/model/elevation";
 import { DIRECTIONS } from "../../core/model/direction";
 import {
   manhattanDistance,
@@ -378,14 +379,18 @@ class MapValidator {
       this.fail("I5", `${label} has no footprint`);
     }
     building.floors.forEach((floor, i) => {
-      if (floor.index !== i || floor.y !== building.groundLevel + i) {
+      if (
+        floor.index !== i ||
+        floor.y !== building.groundLevel + i * STOREY_LAYERS
+      ) {
         this.fail(
           "I5",
           `${label} floor ${i} is mis-numbered or at the wrong level`,
         );
       }
     });
-    const roofLevel = building.groundLevel + building.floors.length;
+    const roofLevel =
+      building.groundLevel + building.floors.length * STOREY_LAYERS;
 
     if (building.entrances.length === 0) {
       this.fail("I5", `${label} has no entrance`);
@@ -438,7 +443,7 @@ class MapValidator {
       }
       if (
         tile.floorIndex === undefined ||
-        tile.y !== building.groundLevel + tile.floorIndex
+        tile.y !== building.groundLevel + tile.floorIndex * STOREY_LAYERS
       ) {
         this.fail(
           "I5",

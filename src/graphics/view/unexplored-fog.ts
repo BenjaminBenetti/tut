@@ -28,7 +28,7 @@ import {
 } from "../data/unexplored-fog";
 import type { SideVision } from "../../tactical/model/tactical-state";
 import { gridKey } from "../../core/service/grid-math";
-import { LEVEL_HEIGHT, SLAB_HEIGHT } from "../data/mapgen-preview-palette";
+import { LAYER_HEIGHT, SLAB_HEIGHT } from "../data/mapgen-preview-palette";
 import type { Disposable } from "../model/disposable";
 
 // ===========================================
@@ -126,7 +126,7 @@ export class UnexploredFog implements Disposable {
       const x = key % this.map.width;
       const z = Math.floor(key / this.map.width) % this.map.depth;
       data.set(
-        [x + 0.5, z + 0.5, level * LEVEL_HEIGHT + SLAB_HEIGHT, 0],
+        [x + 0.5, z + 0.5, level * LAYER_HEIGHT + SLAB_HEIGHT, 0],
         i * 4,
       );
     });
@@ -270,7 +270,7 @@ export class UnexploredFog implements Disposable {
       const mesh = new Mesh(this.geometry, material);
       mesh.position.set(
         width / 2,
-        level * LEVEL_HEIGHT + SLAB_HEIGHT + lift,
+        level * LAYER_HEIGHT + SLAB_HEIGHT + lift,
         depth / 2,
       );
       // Fog is atmosphere, never a target, even while a level is peeled.

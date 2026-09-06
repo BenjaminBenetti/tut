@@ -1,3 +1,4 @@
+import { STOREY_LAYERS } from "../../core/model/elevation";
 import { describe, expect, it } from "vitest";
 
 import { BIOME_IDS } from "../../content/model/biome-id";
@@ -50,7 +51,7 @@ function unwalledSteps(
     for (const side of DIRECTIONS) {
       if (tile.walls[side] !== undefined) continue;
       const next = stepGridPos(tile, side);
-      const upper = index.get(next.x, tile.y + 1, next.z);
+      const upper = index.get(next.x, tile.y + STOREY_LAYERS, next.z);
       if (upper !== undefined && upper.buildingId === undefined) {
         steps.push({ lower: tile, upper });
       }

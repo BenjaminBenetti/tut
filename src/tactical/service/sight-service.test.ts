@@ -1,3 +1,4 @@
+import { STOREY_LAYERS } from "../../core/model/elevation";
 import { describe, expect, it } from "vitest";
 
 import { PropKindIds } from "../../mapgen/data/props";
@@ -19,11 +20,15 @@ import {
 // Fixtures
 // ===========================================
 
-const at = (x: number, z: number, y = 0): TileCoord => ({ x, y, z });
+const at = (x: number, z: number, y = 0): TileCoord => ({
+  x,
+  y: y * STOREY_LAYERS,
+  z,
+});
 
 /** An open 8×8 field on the ground level. */
 function field(): FixtureMapBuilder {
-  return new FixtureMapBuilder(8, 8, 3).fillGround();
+  return new FixtureMapBuilder(8, 8, 3 * STOREY_LAYERS).fillGround();
 }
 
 /** Line of sight both ways, so every rule is checked for symmetry. */
@@ -242,11 +247,11 @@ describe("half walls", () => {
  * ```
  */
 function ridge(): TacticalMap {
-  const builder = new FixtureMapBuilder(9, 3, 3).fillGround();
+  const builder = new FixtureMapBuilder(9, 3, 3 * STOREY_LAYERS).fillGround();
   for (const x of [4, 5]) {
     for (let z = 0; z < 3; z++) {
       builder.removeTile({ x, y: 0, z });
-      builder.tile({ x, y: 2, z }, SurfaceIds.ROCK);
+      builder.tile({ x, y: 2 * STOREY_LAYERS, z }, SurfaceIds.ROCK);
     }
   }
   return builder.build();
@@ -264,31 +269,39 @@ describe("terrain", () => {
     // rather than tunnelling on through it: high ground stays worth
     // taking.
     const map = ridge();
-    expect(los(map, { x: 4, y: 2, z: 1 }, at(0, 1))).toBe(true);
-    expect(los(map, { x: 4, y: 2, z: 1 }, at(8, 1))).toBe(true);
+    expect(los(map, { x: 4, y: 2 * STOREY_LAYERS, z: 1 }, at(0, 1))).toBe(true);
+    expect(los(map, { x: 4, y: 2 * STOREY_LAYERS, z: 1 }, at(8, 1))).toBe(true);
   });
 
   it("does not block on the open sky above lower ground", () => {
     // Same missing tile, nothing above it: two units on facing ledges
     // see across the valley between them.
-    const map = new FixtureMapBuilder(9, 3, 3)
+    const map = new FixtureMapBuilder(9, 3, 3 * STOREY_LAYERS)
       .fillGround()
-      .tile({ x: 0, y: 2, z: 1 }, SurfaceIds.ROCK)
-      .tile({ x: 8, y: 2, z: 1 }, SurfaceIds.ROCK)
+      .tile({ x: 0, y: 2 * STOREY_LAYERS, z: 1 }, SurfaceIds.ROCK)
+      .tile({ x: 8, y: 2 * STOREY_LAYERS, z: 1 }, SurfaceIds.ROCK)
       .build();
-    expect(los(map, { x: 0, y: 2, z: 1 }, { x: 8, y: 2, z: 1 })).toBe(true);
+    expect(
+      los(
+        map,
+        { x: 0, y: 2 * STOREY_LAYERS, z: 1 },
+        { x: 8, y: 2 * STOREY_LAYERS, z: 1 },
+      ),
+    ).toBe(true);
   });
 
   it("blocks the line through the void a staircase occupies", () => {
     // A stairs tile spans a storey, so the level above it holds no
     // record either; that void was a free firing lane between floors.
-    const map = new FixtureMapBuilder(3, 3, 3)
+    const map = new FixtureMapBuilder(3, 3, 3 * STOREY_LAYERS)
       .fillGround(0, SurfaceIds.FLOOR)
       .tile({ x: 1, y: 0, z: 1 }, SurfaceIds.STAIRS)
-      .tile({ x: 1, y: 2, z: 1 }, SurfaceIds.FLOOR)
-      .tile({ x: 2, y: 2, z: 1 }, SurfaceIds.FLOOR)
+      .tile({ x: 1, y: 2 * STOREY_LAYERS, z: 1 }, SurfaceIds.FLOOR)
+      .tile({ x: 2, y: 2 * STOREY_LAYERS, z: 1 }, SurfaceIds.FLOOR)
       .build();
-    expect(los(map, at(0, 1), { x: 2, y: 2, z: 1 })).toBe(false);
+    expect(los(map, at(0, 1), { x: 2, y: 2 * STOREY_LAYERS, z: 1 })).toBe(
+      false,
+    );
   });
 });
 
@@ -308,10 +321,13 @@ describe("terrain", () => {
  * ```
  */
 function cornerHills(...raised: readonly PlaneCell[]): TacticalMap {
-  const builder = new FixtureMapBuilder(5, 5, 3).fillGround();
+  const builder = new FixtureMapBuilder(5, 5, 3 * STOREY_LAYERS).fillGround();
   for (const cell of raised) {
     builder.removeTile({ x: cell.x, y: 0, z: cell.z });
-    builder.tile({ x: cell.x, y: 2, z: cell.z }, SurfaceIds.ROCK);
+    builder.tile(
+      { x: cell.x, y: 2 * STOREY_LAYERS, z: cell.z },
+      SurfaceIds.ROCK,
+    );
   }
   return builder.build();
 }
@@ -327,7 +343,7 @@ function cornerHills(...raised: readonly PlaneCell[]): TacticalMap {
  * ```
  */
 function cornerProps(...occupied: readonly PlaneCell[]): TacticalMap {
-  const builder = new FixtureMapBuilder(5, 5, 3).fillGround();
+  const builder = new FixtureMapBuilder(5, 5, 3 * STOREY_LAYERS).fillGround();
   for (const cell of occupied) {
     builder.prop(PropKindIds.CAR, at(cell.x, cell.z));
   }
@@ -352,7 +368,7 @@ describe("corner seams", () => {
   it("agrees with what a wall on the same corner already did", () => {
     // The wall rule reads all four edges meeting at the corner, which is
     // why it never had this hole. Terrain now matches it.
-    const walled = new FixtureMapBuilder(5, 5, 3)
+    const walled = new FixtureMapBuilder(5, 5, 3 * STOREY_LAYERS)
       .fillGround()
       .wall({ x: 1, y: 0, z: 2 }, "n", "solid")
       .build();
@@ -371,9 +387,9 @@ describe("corner seams", () => {
     // The mixed pair is the case worth naming: the gap a soldier would
     // be looking through is the same gap whichever side is which, so
     // both sides seal it.
-    const builder = new FixtureMapBuilder(5, 5, 3).fillGround();
+    const builder = new FixtureMapBuilder(5, 5, 3 * STOREY_LAYERS).fillGround();
     builder.removeTile({ x: 1, y: 0, z: 2 });
-    builder.tile({ x: 1, y: 2, z: 2 }, SurfaceIds.ROCK);
+    builder.tile({ x: 1, y: 2 * STOREY_LAYERS, z: 2 }, SurfaceIds.ROCK);
     builder.prop(PropKindIds.CAR, at(2, 1));
     expect(los(builder.build(), at(1, 1), at(2, 2))).toBe(false);
   });
@@ -388,7 +404,7 @@ describe("corner seams", () => {
   it("leaves the diagonal open when the props do not block sight", () => {
     // `blocksLos` is what the rule reads, not the presence of a prop:
     // two crates at the same corner are see-through and stay so.
-    const map = new FixtureMapBuilder(5, 5, 3)
+    const map = new FixtureMapBuilder(5, 5, 3 * STOREY_LAYERS)
       .fillGround()
       .prop(PropKindIds.CRATE, at(1, 2))
       .prop(PropKindIds.CRATE, at(2, 1))
@@ -401,10 +417,10 @@ describe("corner seams", () => {
     // higher in this column" makes any tile under a storey read as solid,
     // and a corner between two building floors seals for no reason. It
     // blocked three times as many lines as the rule intends.
-    const map = new FixtureMapBuilder(5, 5, 3)
+    const map = new FixtureMapBuilder(5, 5, 3 * STOREY_LAYERS)
       .fillGround()
-      .tile({ x: 1, y: 1, z: 2 }, SurfaceIds.FLOOR)
-      .tile({ x: 2, y: 1, z: 1 }, SurfaceIds.FLOOR)
+      .tile({ x: 1, y: STOREY_LAYERS, z: 2 }, SurfaceIds.FLOOR)
+      .tile({ x: 2, y: STOREY_LAYERS, z: 1 }, SurfaceIds.FLOOR)
       .build();
     expect(los(map, at(1, 1), at(2, 2))).toBe(true);
   });

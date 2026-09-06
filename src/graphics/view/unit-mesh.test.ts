@@ -2,7 +2,7 @@ import type { MeshBasicMaterial } from "three";
 import { BoxGeometry, Group, Mesh, MeshStandardMaterial } from "three";
 import { describe, expect, it } from "vitest";
 
-import { LEVEL_HEIGHT, SLAB_HEIGHT } from "../data/mapgen-preview-palette";
+import { LAYER_HEIGHT, SLAB_HEIGHT } from "../data/mapgen-preview-palette";
 import { FACING_YAW, UnitMesh } from "./unit-mesh";
 
 /** A stand-in model: one box mesh, pivot at base centre. */
@@ -28,7 +28,7 @@ describe("UnitMesh", () => {
     mesh.setPose({ x: 3, y: 1, z: 5 }, "e");
     expect(mesh.worldPosition()).toEqual({
       x: 3.5,
-      y: LEVEL_HEIGHT + SLAB_HEIGHT,
+      y: LAYER_HEIGHT + SLAB_HEIGHT,
       z: 5.5,
     });
     expect(mesh.object.rotation.y).toBe(FACING_YAW.e);

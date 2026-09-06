@@ -1,3 +1,4 @@
+import { STOREY_LAYERS } from "../../core/model/elevation";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import { attack } from "../../tactical/model/attack-command";
@@ -232,7 +233,7 @@ export class BruteBehaviour implements BugBehaviour {
     const distance = tileDistance(tile, focus.pos);
     const crowd = clumpScore(tile, enemies, t.clumpRadius);
     const watched = overwatchScore(mission, tile, enemies, index);
-    const levels = Math.abs(tile.y - focus.pos.y);
+    const levels = Math.abs(tile.y - focus.pos.y) / STOREY_LAYERS;
     return (
       adjacent * t.adjacentWeight -
       distance * t.approachWeight +

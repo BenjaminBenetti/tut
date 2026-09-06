@@ -1,3 +1,4 @@
+import { STOREY_LAYERS } from "../../core/model/elevation";
 import { describe, expect, it } from "vitest";
 
 import { BIOME_IDS } from "../../content/model/biome-id";
@@ -158,9 +159,10 @@ describe("InteriorPass", () => {
             draft.getTile({ ...flight.from, y: flight.to.y }),
             building.id,
           ).toBeUndefined();
-          expect(flight.to.y - flight.from.y).toBe(1);
+          expect(flight.to.y - flight.from.y).toBe(STOREY_LAYERS);
         }
-        const roofY = building.groundLevel + building.floors.length;
+        const roofY =
+          building.groundLevel + building.floors.length * STOREY_LAYERS;
         const roofTiles = draft
           .tilesOfBuilding(building.id)
           .filter((t) => t.surface === SurfaceIds.ROOF);
@@ -191,7 +193,9 @@ describe("InteriorPass", () => {
       for (const ladder of draft.connectors) {
         if (ladder.kind !== "ladder") continue;
         ladders++;
-        expect(ladder.to.y - ladder.from.y, ladder.id).toBeLessThanOrEqual(2);
+        expect(ladder.to.y - ladder.from.y, ladder.id).toBeLessThanOrEqual(
+          2 * STOREY_LAYERS,
+        );
         expect(
           draft.groundLevelAt(ladder.from.x, ladder.from.z),
           ladder.id,

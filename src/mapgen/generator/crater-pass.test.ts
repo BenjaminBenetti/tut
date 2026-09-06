@@ -1,3 +1,4 @@
+import { STOREY_LAYERS } from "../../core/model/elevation";
 import { describe, expect, it } from "vitest";
 
 import { BIOME_IDS } from "../../content/model/biome-id";
@@ -82,7 +83,7 @@ describe("crash-site archetype (prototype)", () => {
       for (let z = 0; z < draft.depth; z++) {
         for (let x = 0; x < draft.width; x++) {
           const level = draft.groundLevelAt(x, z);
-          if (level < CRATER_RIM) {
+          if (level < CRATER_RIM * STOREY_LAYERS) {
             sunk++;
           }
           for (const [dx, dz] of [
@@ -96,7 +97,7 @@ describe("crash-site archetype (prototype)", () => {
             expect(
               Math.abs(other - level),
               `seed ${String(seed)} at ${String(x)},${String(z)}`,
-            ).toBeLessThanOrEqual(1);
+            ).toBeLessThanOrEqual(STOREY_LAYERS);
           }
         }
       }

@@ -1,3 +1,4 @@
+import { STOREY_LAYERS } from "../../core/model/elevation";
 import { describe, expect, it } from "vitest";
 
 import { BIOME_IDS } from "../../content/model/biome-id";
@@ -115,7 +116,7 @@ function checkShell(draft: MapDraft, building: Building, label: string): void {
   );
   building.floors.forEach((floor, i) => {
     expect(floor.index, label).toBe(i);
-    expect(floor.y, label).toBe(building.groundLevel + i);
+    expect(floor.y, label).toBe(building.groundLevel + i * STOREY_LAYERS);
     for (let z = footprint.z; z < footprint.z + footprint.d; z++) {
       for (let x = footprint.x; x < footprint.x + footprint.w; x++) {
         const tile = draft.getTile({ x, y: floor.y, z });

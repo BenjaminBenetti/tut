@@ -1,3 +1,4 @@
+import { STOREY_LAYERS } from "../../core/model/elevation";
 import { describe, expect, it } from "vitest";
 
 import { BIOME_IDS } from "../../content/model/biome-id";
@@ -53,11 +54,13 @@ function smoothEdgeFraction(draft: MapDraft): number {
       const here = draft.groundLevelAt(x, z);
       if (x + 1 < draft.width) {
         edges++;
-        if (Math.abs(here - draft.groundLevelAt(x + 1, z)) <= 1) smooth++;
+        if (Math.abs(here - draft.groundLevelAt(x + 1, z)) <= STOREY_LAYERS)
+          smooth++;
       }
       if (z + 1 < draft.depth) {
         edges++;
-        if (Math.abs(here - draft.groundLevelAt(x, z + 1)) <= 1) smooth++;
+        if (Math.abs(here - draft.groundLevelAt(x, z + 1)) <= STOREY_LAYERS)
+          smooth++;
       }
     }
   }
@@ -76,7 +79,7 @@ describe("TerrainPass", () => {
             const level = draft.groundLevelAt(x, z);
             expect(level).toBeGreaterThanOrEqual(0);
             expect(level).toBeLessThanOrEqual(
-              definition.terrain.amplitudeLevels,
+              definition.terrain.amplitudeLayers,
             );
             expect(palette.has(draft.groundSurfaceAt(x, z))).toBe(true);
           }
@@ -119,7 +122,7 @@ describe("TerrainPass", () => {
     const flat: BiomeDefinition = {
       ...BIOME_DEFINITIONS.temperate,
       id: "temperate",
-      terrain: { ...BIOME_DEFINITIONS.temperate.terrain, amplitudeLevels: 0 },
+      terrain: { ...BIOME_DEFINITIONS.temperate.terrain, amplitudeLayers: 0 },
     };
     const regs: MapGenRegistries = {
       ...registries,

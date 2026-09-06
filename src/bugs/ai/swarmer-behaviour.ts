@@ -1,3 +1,4 @@
+import { STOREY_LAYERS } from "../../core/model/elevation";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { attack } from "../../tactical/model/attack-command";
 import type { MissionView } from "../../tactical/model/mission-view";
@@ -192,7 +193,7 @@ export class SwarmerBehaviour implements BugBehaviour {
     const distance = tileDistance(tile, target.pos);
     const adjacent = distance === 1 && tile.y === target.pos.y ? 1 : 0;
     const company = clumpScore(tile, kin, t.swarmRadius);
-    const levels = Math.abs(tile.y - target.pos.y);
+    const levels = Math.abs(tile.y - target.pos.y) / STOREY_LAYERS;
     return (
       -distance * t.approachWeight +
       adjacent * t.adjacentWeight +

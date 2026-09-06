@@ -1,3 +1,4 @@
+import { STOREY_LAYERS } from "../../core/model/elevation";
 import type { BiomeId } from "../../content/model/biome-id";
 import type { BiomeDefinition } from "../model/biome-definition";
 import { BuildingKindIds } from "./building-kind-ids";
@@ -21,7 +22,7 @@ export const BIOME_DEFINITIONS: Readonly<Record<BiomeId, BiomeDefinition>> = {
       { surface: SurfaceIds.DIRT, weight: 2 },
     ],
     terrain: {
-      amplitudeLevels: 2,
+      amplitudeLayers: 2 * STOREY_LAYERS,
       frequency: 0.08,
       octaves: 2,
       roughness: 0.5,
@@ -50,7 +51,7 @@ export const BIOME_DEFINITIONS: Readonly<Record<BiomeId, BiomeDefinition>> = {
       { surface: SurfaceIds.ROCK, weight: 1.5 },
     ],
     terrain: {
-      amplitudeLevels: 3,
+      amplitudeLayers: 3 * STOREY_LAYERS,
       frequency: 0.07,
       octaves: 2,
       roughness: 0.55,
@@ -77,7 +78,7 @@ export const BIOME_DEFINITIONS: Readonly<Record<BiomeId, BiomeDefinition>> = {
       { surface: SurfaceIds.ROCK, weight: 2 },
     ],
     terrain: {
-      amplitudeLevels: 2,
+      amplitudeLayers: 2 * STOREY_LAYERS,
       frequency: 0.06,
       octaves: 2,
       roughness: 0.45,
@@ -106,7 +107,7 @@ export const BIOME_DEFINITIONS: Readonly<Record<BiomeId, BiomeDefinition>> = {
       { surface: SurfaceIds.DIRT, weight: 1.5 },
     ],
     terrain: {
-      amplitudeLevels: 1,
+      amplitudeLayers: 1 * STOREY_LAYERS,
       frequency: 0.07,
       octaves: 2,
       roughness: 0.5,

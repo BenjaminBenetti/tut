@@ -1,0 +1,44 @@
+{
+  "id": "04-rural-natural-hills",
+  "seed": "mc-opening-01",
+  "biome": "coastal",
+  "settlement": "rural",
+  "size": "small",
+  "focus": {
+    "x": 8,
+    "y": 2,
+    "z": 24
+  },
+  "pitch": 35,
+  "cropHeight": 1000,
+  "url": "http://127.0.0.1:5173/mapgen-preview.html?seed=mc-opening-01&biome=coastal&settlement=rural&size=small&models=1&units=1&slope=100",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "clip": {
+    "x": 790,
+    "y": 250,
+    "width": 1200,
+    "height": 1000
+  },
+  "camera": {
+    "yawIndex": 0,
+    "zoom": 42.86607049870555,
+    "target": {
+      "x": 8.5,
+      "y": 1.65,
+      "z": 24.5
+    },
+    "bounds": {
+      "x": 0,
+      "z": 0,
+      "w": 48,
+      "d": 48
+    },
+    "zoomRange": {
+      "min": 29.757410374933876,
+      "max": 192
+    }
+  }
+}

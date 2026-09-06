@@ -1,0 +1,44 @@
+{
+  "id": "02-city-raised-park",
+  "seed": "mc-opening-02",
+  "biome": "snowy",
+  "settlement": "city",
+  "size": "medium",
+  "focus": {
+    "x": 56,
+    "y": 4,
+    "z": 62
+  },
+  "pitch": 45,
+  "cropHeight": 1000,
+  "url": "http://127.0.0.1:5173/mapgen-preview.html?seed=mc-opening-02&biome=snowy&settlement=city&size=medium&models=1&units=1&slope=100",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "clip": {
+    "x": 790,
+    "y": 250,
+    "width": 1200,
+    "height": 1000
+  },
+  "camera": {
+    "yawIndex": 0,
+    "zoom": 55.11351921262162,
+    "target": {
+      "x": 56.5,
+      "y": 3.15,
+      "z": 62.5
+    },
+    "bounds": {
+      "x": 0,
+      "z": 0,
+      "w": 72,
+      "d": 72
+    },
+    "zoomRange": {
+      "min": 19.83827358328925,
+      "max": 192
+    }
+  }
+}

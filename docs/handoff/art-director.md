@@ -1,18 +1,58 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-06 (#809 and #817 complete)
+Last updated: 2026-09-06 (#840 accepted; final integration in review)
 
-## Current status: on the bounded watch
+## Current status: #840 is the release gate
 
-#809 and #817 are closed. The Director accepted the rebased textured
-hills-1 frame, and the Tech Lead merged [PR #822](https://github.com/BenjaminBenetti/tut/pull/822)
-at `66548ed` after CI and the merge-result gate passed. No art implementation
-is in progress. #813 is now p1: QA must first catalogue the failing ramp
-neighbourhoods with committed crops. After that catalogue, scope geometry
-work here and classification/placement work with MapGen. Do not design a
-fix before QA reports; watch #813 comments for that dependency.
-Follow the standing event rule below; earlier pause-only
-notes remain historical. This seat is Codex Art Director, gpt-6-astra xhigh.
+Review: [PR #850](https://github.com/BenjaminBenetti/tut/pull/850), branch
+`feat/840-carriageway-kit`. This seat is Codex Art Director, gpt-6-astra xhigh.
+The Director accepted the composite and large-city control in comment
+5558027018; the Tech Lead approved the content in comment 5558014418.
+
+#838 is merged as `aa6eedf`. Main is merged into this art branch, with the
+large-city binary conflict resolved by regenerating it on the combined tree.
+Both seed-4242 fog frames and the live composite were also regenerated.
+All four frames were opened and inspected. The city scene is pixel-identical
+to the accepted integration control to the right of x=400; only panel timing
+text changes. The composite picks up #838's wide-pavement fitting. Fog now
+uses #838's larger generated map. The Director judges these integration
+frames before the Tech Lead's merge gate and the release tag.
+
+Four Blender modules are built, validated and manifest-registered: plain
+lane slab, straight kerb, corner kerb and centre-line slab. All twelve fixed
+angles were opened. [Contract and renders](../design/kits/carriageways.md).
+The consumer places one surface per tile, perimeter kerbs, one divider across
+the carriageway and at most one mark per junction. Trails stay unpainted;
+street/grid styles use asphalt. Prototype and mist materials stay shared.
+
+The merge replaces #838's two old-kit assertions with the same 8 × 8
+neighbourhoods checking one divider, plain interior and one central mark.
+Those cases also cover a short approach and a two-lane mouth on a four-lane
+avenue. Count road beyond the junction boundary to recognise an arm; a
+second minimum-length test would incorrectly discard short approaches.
+
+Typecheck, lint, 2,000 unit tests (one skipped), build and all three capture
+tests pass. `CI=1 pnpm test:e2e` passes all 59 browser tests (19 opt-in captures
+skipped), with zero flakes, in 2.5 minutes. The existing build
+chunk-size warning remains. Final integration is not yet merged.
+
+QA's #813 catalogue arrived and merged in #839. It is read and six key
+crops were opened. The Director judged it in comment 5557976144 and QA split
+the work: **#848** diagonal chains belongs here **after #840**; **#847**
+unwalled lot margins belongs to MapGen; **#849** is a check against #848's
+piece, accepted for now. Do not cut a second piece speculatively. N1 narrow
+channels are not a defect. The audit will be rerun after #838's rescale.
+
+#848 requires a diagonal-rise piece in the RISE 0.75 kit, three angles,
+a two-chain/three-chain composite and before/after controls for four chains.
+Keep isolated outer corners unchanged. Read #848/#849 in full before that
+work; their bodies are cached in the watch event. No ramp implementation
+has started: #840 still gates the release. QA corrected the exclusion
+count: 514 walled and 3,590 wall-less out of 4,104 excluded tiles (12.5%
+walled), not 514 of 3,590. Source: #813 comment 5557989577.
+
+#809 and #817 are complete; their evidence remains below. After publishing
+#840, address review on its branch and use the standing bounded watch.
 
 ## Completed: #809 half-rise slopes
 

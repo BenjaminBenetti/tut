@@ -10,9 +10,12 @@ import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { Tile } from "../../mapgen/model/tile";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import { terrainSlopeRise } from "./terrain-slope-rise";
+import type { RoadAppearance } from "../model/road-appearance";
+import { resolveRoadAppearances, roadModelId } from "./road-model-resolver";
 import {
   propModel,
   ROAD_VARIANTS,
+  ROAD_MODELS,
   SIDEWALK_VARIANTS,
   SLOPE_MODELS,
   surfaceModel,
@@ -41,6 +44,8 @@ export interface ModelPlacement {
   readonly turns: Rotation;
   /** Vertical fit for one-layer slope art; other models retain their authored size. */
   readonly scaleY?: number;
+  /** Modular road surface/details; shared by every instance with the same appearance. */
+  readonly road?: RoadAppearance;
   /**
    * The tile this belongs to. Carried so the renderer can dim or drop it
    * with that tile's vision (#551) — a wall is only ever as visible as
@@ -132,6 +137,8 @@ export function mapModelIds(
   for (const group of [placements.tiles, placements.walls, placements.props]) {
     for (const placement of group) {
       ids.add(placement.modelId);
+      if (placement.road)
+        for (const id of Object.values(ROAD_MODELS)) ids.add(id);
     }
   }
   return [...ids];
@@ -193,6 +200,7 @@ function resolveTiles(
   index: TileIndex,
 ): readonly ModelPlacement[] {
   const placements: ModelPlacement[] = [];
+  const roads = resolveRoadAppearances(map, index);
   for (const tile of map.tiles) {
     if (tile.slope !== undefined) {
       placements.push({
@@ -207,7 +215,10 @@ function resolveTiles(
       });
       continue;
     }
-    const fitted = fitSurface(tile, index, map);
+    const road = roads.get(index.keyOf(tile));
+    const fitted = road
+      ? { modelId: roadModelId(road), turns: 0 as Rotation }
+      : fitSurface(tile, index, map);
     if (fitted === undefined) {
       continue;
     }
@@ -225,6 +236,7 @@ function resolveTiles(
         z: tile.z + 0.5,
       },
       turns: fitted.turns,
+      ...(road ? { road } : {}),
       tile: { x: tile.x, y: tile.y, z: tile.z },
     });
   }

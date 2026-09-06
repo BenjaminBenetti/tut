@@ -413,6 +413,38 @@ export const MODEL_MANIFEST = {
   // ===========================================
   // Tiles
   // ===========================================
+  "tile.city.road-lane": {
+    category: "tiles",
+    path: "assets/models/tiles/city-road-lane.glb",
+    footprint: { w: 1, d: 1 },
+    height: 0.05,
+    sockets: [],
+    quality: "final",
+  },
+  "tile.city.road-kerb": {
+    category: "tiles",
+    path: "assets/models/tiles/city-road-kerb.glb",
+    footprint: { w: 1, d: 1 },
+    height: 0.11,
+    sockets: [],
+    quality: "final",
+  },
+  "tile.city.road-kerb-corner": {
+    category: "tiles",
+    path: "assets/models/tiles/city-road-kerb-corner.glb",
+    footprint: { w: 1, d: 1 },
+    height: 0.11,
+    sockets: [],
+    quality: "final",
+  },
+  "tile.city.road-centre-line": {
+    category: "tiles",
+    path: "assets/models/tiles/city-road-centre-line.glb",
+    footprint: { w: 1, d: 1 },
+    height: 0.05,
+    sockets: [],
+    quality: "final",
+  },
   "tile.city.road-corner": {
     category: "tiles",
     path: "assets/models/tiles/city-road-corner.glb",

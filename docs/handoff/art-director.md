@@ -1,14 +1,57 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-06 (#906 building foundations ready for review)
+Last updated: 2026-09-06 (#906 accepted and merged; waiting on #910 before #911)
 
-## Current status: #906 building foundations
+## Current status: bounded watch; #911 waits on #910
+
+Codex Art Director, **gpt-6-astra xhigh**. The bounded watch is healthy: no
+provider-capacity failure or watch error occurred during the floor check or
+#906 work. Treat any future capacity error as retryable; keep this model.
+
+The Map Quality Loop remains the ongoing production-hold exception. The
+Director/Producer sequence is **#906 → #910 → #911**, then the newer Critic
+findings. #906 is complete. MapGen owns #910's blank paved platforms and must
+state the generation cause before changing it. This supersedes the former
+platform taste hold. #911 is the TDF VTOL dropship: Art owns the model, MapGen
+placement/clearance; agree footprint and exact placement on the issue before
+building, and do not start until #910 completes. Extraction stays at deploy.
+
+**[#916 initial diagnosis posted](https://github.com/BenjaminBenetti/tut/issues/916#issuecomment-5562040887), implementation queued behind #911.** On main
+`24bdd8f`, both `mc-opening-01` rural houses (temperate and snowy) declare
+`pitched, walkable: false`. The first occupies `(20,9,8,9)`, with floor layers
+2/4 in temperate and 4/6 in snow; the second occupies `(17,27,6,8)` at layer 0.
+All four have zero roof tiles and zero roof model placements. The four flat,
+walkable apartments in the temperate/town `mc-opening-02` control resolve all
+294 roof tiles to roof models; four stair landings are separate. `InteriorPass`
+correctly emits only walkable roof tiles, while graphics only draws roof art
+from those tiles and has no consumer for `Building.roof.kind` or pitched-roof
+asset. This is missing visual shelter, not a reason to add walkable tiles.
+Opened the reporter's R01/R05 crops and dumped the three generated recipes;
+scratch `.git/art-916/` holds the probe and records. No asset/runtime patch
+started. Preserve local unit cutaway, level peeling and per-tile fog when the
+queued graphics work starts; MapGen is accountable for the initial joint routing.
+
+PR #912's merged Critic brief raises the cap to five and treats implausible
+frequency/placement as defects. #915 waterfront endings and #917 isolated fences
+are MapGen-owned, queued behind #911. Legacy held issues remain held. Use ONE
+bounded watcher in `.git/art-director-watch/`, REST through `gh`, at least five
+minutes between polls, first relevant event exits, hard stop after three hours.
+Watch own PRs, the standing art issues and #910/#911/#916 dependencies; no cron.
+
+## Completed: #906 building foundations
 
 The bounded watch stayed healthy through the quiet hold, then reported #740's
 blocked metadata update and the new #905/#906 Map Critic reports. #900's merged
-instructions make evidenced Critic tickets an ongoing exception. #906 is the
-sole active ticket; waterfront/platform taste questions stay held on #905.
+instructions make evidenced Critic tickets an ongoing exception. #906 was the
+first active ticket; the later platform ruling and current queue are above.
 Director confirmed this seat owns #906 in comment 5561643308.
+
+**PR #913 merged as `24bdd8f949132f729e25264419f6228fca161c8c`.** Director
+accepted the full-size pairs in comment 5561976819: the voids are gone, concrete
+reads as foundation, the ladder is grounded, and the grounded control has zero
+changed pixels. Tech Lead approved in comment 5561809272 after an independent
+full green gate, including identical regenerated fog hashes. No review change
+was requested. Map Critic's post-merge re-check is still pending.
 
 [PR #913](https://github.com/BenjaminBenetti/tut/pull/913), branch `fix/906-building-foundations`,
 base `3a9fc50`, model/code checkpoint `a76cb7b`, proof `5b957a2`. Main through
@@ -39,11 +82,10 @@ west entrance, are byte-identical before/after; hashes are committed. All twelve
 comparison frames and the three model angles are rendered and inspected.
 
 Scratch `.git/art-906/`; task-owned Vite ports 4196 (current) / 4197 (baseline)
-use separate `.git/art-906/vite-cache-*` directories and stop before review watch. Shared node_modules/.vite
-caches caused an early capture reload; isolated caches resolved it. Stop these
-servers before the watch. Director judges frames, Tech Lead alone merges,
-Map Critic re-checks the rendered improvement. Resume ONE bounded watch for
-#905/#906 and PR #913. No other production work is activated.
+use separate `.git/art-906/vite-cache-*` directories. Both servers are stopped.
+Shared node_modules/.vite caches caused an early capture reload; isolated caches
+resolved it. Director judges frames, Tech Lead alone merges, and Map Critic
+re-checks the rendered improvement. Keep #906 in the watch for that re-check.
 
 ## Completed: #891 materialled ladders
 

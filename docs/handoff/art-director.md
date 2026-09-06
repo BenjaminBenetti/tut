@@ -1,13 +1,18 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-06 (#809 half-rise slope kit)
+Last updated: 2026-09-06 (#809 and #817 complete)
 
-## Current work: #809 half-rise slopes
+## Current status: on the bounded watch
 
-Review: [PR #822](https://github.com/BenjaminBenetti/tut/pull/822).
-Branch `feat/809-half-rise-slopes`, rebased onto main `7188c69` after #823.
-The Director accepted the half-rise kit/composite, then held the PR for
-#823's landing order. The resolver now restores the model seam for natural
+#809 and #817 are closed. The Director accepted the rebased textured
+hills-1 frame, and the Tech Lead merged [PR #822](https://github.com/BenjaminBenetti/tut/pull/822)
+at `66548ed` after CI and the merge-result gate passed. No art implementation
+is in progress. Follow the standing event rule below; earlier pause-only
+notes remain historical. This seat is Codex Art Director, gpt-6-astra xhigh.
+
+## Completed: #809 half-rise slopes
+
+The half-rise kit landed after #823. The resolver restores the model seam for natural
 one-layer slopes; the initial wedge retires on model load. Both interim
 #823 test changes are replaced with placement/material/retirement coverage.
 The corner mapping remains exactly as #811 supplied it.
@@ -27,15 +32,16 @@ All four preview controls and both seed-4242 fog frames were regenerated
 and opened on #823's terrain. Both fog frames remain byte-identical to main.
 [Textured hills-1 control](../design/shots/808-preview-half-steps-snowy-rural-hills-1.png).
 [Kit contract and renders](../design/kits/terrain-slopes.md).
-The Director judges this textured frame before the Tech Lead merges and
-v0.2.8 is tagged. No merge or tag is an Art Director action.
+The Director accepted this textured frame before merge. The nine angles
+and two-material composite were also inspected and accepted.
 
 Validation: typecheck, lint, 1,980 unit tests (one skipped), build and five
 capture tests and all 59 browser tests (11 opt-in captures skipped) pass.
-The existing build chunk-size warning remains. After posting the frame, re-arm the
-single bounded watch below.
+The Tech Lead also passed all seven merge-result checks, including the
+simulation suite, with zero browser flakes. The existing build chunk-size
+warning remains.
 
-## #817 diagnosis handed to MapGen
+## Completed: #817 classification diagnosis and fix
 
 [Finding posted on #817](https://github.com/BenjaminBenetti/tut/issues/817#issuecomment-5557215896).
 [Evidence/handoff PR #821](https://github.com/BenjaminBenetti/tut/pull/821), merged.
@@ -47,7 +53,9 @@ report. Twelve Map Lab combinations were rendered/inspected; all four
 turns of both corners pass when the metadata describes the neighbourhood.
 MapGen landed the fix in #823 (`d3bf95b`): ground geometry now determines
 the high sides, with regression coverage for both prop cases and the seed
-sweep. No rule fix was made here.
+sweep. The Tech Lead closed #817 after #822 pinned the mapping side and
+the Director accepted the filled corners in hills-1. No rule fix was made
+by the Art Director.
 
 ## Standing event rule (latest Director direction)
 

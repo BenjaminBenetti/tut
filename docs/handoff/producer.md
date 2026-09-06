@@ -3,7 +3,7 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-06 09:17 UTC)
+## Status Digest (2026-09-06 09:33 UTC)
 
 **Production ON HOLD** (#748). The Executive Director tunes Map Lab; only his named exceptions proceed. No M3 decomposition or Ready growth beyond those exceptions. **v0.2.9** is tagged (main 148b179; scale plus road kit); general production has not resumed.
 
@@ -17,7 +17,7 @@
 
 **Milestones** (closed / total, 04:09 UTC API snapshot): M0 14/14 · M1 64/64 · M1.5 33/34 · M2 48/50 · M2.5 25/27 · M3 1/2 (held). Counts do not declare milestone completion.
 
-**Completed / board:** half-height engine, generator, real slope kit and ramp-gap fix (#807/#808/#809/#817) Done. **#828/#835 camera zoom Done**; both screens frame the map and zoom in to a readable squad. Lurker fixture #842/#843, Producer handoff #854 and QA catalogue #839 merged and Done.
+**Completed / board:** half-height engine, generator, real slope kit and ramp-gap fix (#807/#808/#809/#817) Done. **#828/#835 camera zoom Done**; both screens frame the map and zoom in to a readable squad. Lurker fixture #842/#843, Producer handoff #857 and QA catalogue #839 merged and Done.
 
 **Scale exception (#826):** all children delivered; parent remains open pending Director closure; **#829 / PR #838 Done**, merged as aa6eedf with green CI and all seven Tech Lead merge-result checks green (59 e2e, no flakes). **ADR 0009 Accepted**. The enabled lurker fixture remains; the sweep budget and tactical harness assumptions are fixed. Road kit #840/#850 and CI follow-up #852 are also merged; v0.2.9 is tagged.
 
@@ -29,7 +29,7 @@
 
 **QA at the new scale:** bucket table and issue coordinates remeasured after #838; full audit/frames still await the Director's prompt. Frozen-map baseline: wedge share 87.2%, J2 population 9.6%, longest J1 chain **4**, J3 0.7%. Use refreshed issue coordinates, including the four-chain composite target. Director judges fix frames.
 
-**Other open PRs:** #757/#694 mech-bay preview remains In Review under the Director's exception, content approved, awaiting final merge/frame gates. Existing Art Director ownership retained; route an author update only if the gate requires one. Tech Lead handoff #851 closed unmerged; replacement #855 In Review. **#856 Done**: measured 120-second CI unit-test budget (20 seconds locally); Tech Lead self-merged with CI and all seven merge-result checks green. **#852 Done**: firing-sweep CI timeout fixed (four runner seeds, full twelve locally, measured 120-second budget); Tech Lead self-merged with CI and gate green. Producer handoff #854 merged; this pass opens its successor.
+**Other open PRs:** #757/#694 mech-bay preview remains In Review under the Director's exception, content approved, awaiting final merge/frame gates. Existing Art Director ownership retained; route an author update only if the gate requires one. Tech Lead handoff #851 closed unmerged; replacement #855 merged / Done. **#856 Done**: measured 120-second CI unit-test budget (20 seconds locally); Tech Lead self-merged with CI and all seven merge-result checks green. **#852 Done**: firing-sweep CI timeout fixed (four runner seeds, full twelve locally, measured 120-second budget); Tech Lead self-merged with CI and gate green. Producer handoff #857 merged; this pass opens its successor.
 
 **Blocked / parked:** #849 waits for #848; full QA audit/frames await the Director's prompt. #853 awaits Director judgment and final merge gates. General production and M3 held; #787 parked; #793 p3. All engineer seats idle; Ready-high audit found only held M3 #447.
 

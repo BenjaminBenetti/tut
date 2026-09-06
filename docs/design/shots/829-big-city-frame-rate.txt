@@ -1,7 +1,7 @@
 seed=big-city&biome=temperate&settlement=city&size=large (models=1, 2400×1500, headless chromium on the runner's software renderer)
 3 frames in 3000 ms = 1.0 fps
-Map
-Tiles
-Buildings
-Props
-Generated in
+Map: 96×96×12
+Tiles: 11642
+Buildings: 20
+Props: 680
+Generated in: 511.2 ms (passes 417.9 ms)

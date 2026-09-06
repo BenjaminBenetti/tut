@@ -1,4 +1,4 @@
-# Kit: terrain slopes (#798)
+# Kit: terrain slopes (#798, half rise #809)
 
 ![Grass and sand terraces](terrain-slopes-terrace.png)
 
@@ -12,12 +12,11 @@ pillars. There is no bevel, skirt, inset, or gap at the shared edges.
 ## Shape contract for #799
 
 All three footprints are **1 × 1**, centred on local X/Z, with bounds
-`[-0.5, 0, -0.5]` to `[0.5, 1.5, 0.5]` in glTF/three coordinates. The origin
+`[-0.5, 0, -0.5]` to `[0.5, 0.75, 0.5]` in glTF/three coordinates. The origin
 is the **base centre at the low surface plane**, not the centre of the wedge.
-One current elevation layer is 1.5 world units. The single authoring control
-is `RISE = 1.5` in `tools/art/models/terrain_slope_parts.py`. The separate
-layer-height follow-up can change that parameter and re-emit all three assets;
-this PR deliberately retains today's scale.
+One elevation layer is 0.75 world units under ADR 0008. The single authoring
+control is `RISE = 0.75` in `tools/art/models/terrain_slope_parts.py`. #809
+re-emits all three meshes at this height; a building storey remains 1.5 u.
 
 For local `u = x + 0.5`, `v = z + 0.5`:
 
@@ -30,16 +29,24 @@ For local `u = x + 0.5`, `v = z + 0.5`:
 Corners split along the (−X, −Z) → (+X, +Z) diagonal. All sloping faces have
 upward normals, every exported mesh is watertight, and each is below the
 60-triangle / 20 KB ground-piece budget. Rotate the **whole group** around Y
-by multiples of π/2. No scale adjustment is needed at today's layer height.
+by multiples of π/2. A one-layer step uses the authored dimensions directly.
 The resolver follows #799's clockwise `slope.turns`: straight uses that value;
 inner and outer use `(turns + 1) % 4` because the map-data corner starts high
 to the west/south, while the exported corner starts high to the east/south.
 
 For a tile at lower level `y`, place the pivot at
-`(tile.x + 0.5, y * LEVEL_HEIGHT + SLAB_HEIGHT, tile.z + 0.5)`.
-The high endpoint then meets the next level's surface. A slope replaces the
+`(tile.x + 0.5, y * LAYER_HEIGHT + SLAB_HEIGHT, tile.z + 0.5)`.
+The high endpoint then meets the next layer's surface. A slope replaces the
 flat top at that cell; keep the ground pillar beneath the low plane. The
 flat ground model's centre-pivot slab offset does not apply to this wedge.
+
+`terrainSlopeRise` is the high-neighbour measurement already used by the
+#815 placeholder wedge, now shared with the model resolver. It fits loaded
+art to the existing map's vertical gap with `ModelPlacement.scaleY`: 1 for
+one-layer terrain, 2 for the two-layer steps generated before #808. This is
+an instance transform, so prototypes, materials and footprint are shared.
+It neither selects nor repairs a corner kind; #817's classification rule
+fix belongs to MapGen's #808.
 
 ## Material consumer
 
@@ -103,16 +110,24 @@ CAPTURE=1 pnpm exec playwright test e2e/terrain-slope-screenshot.spec.ts e2e/slo
 
 After a future rise change, copy the emitted heights into the TypeScript
 manifest along with the generated JSON metadata. The geometry tests compare
-the actual exported bounds to `LEVEL_HEIGHT`, so stale exports fail.
+the actual exported bounds to `LAYER_HEIGHT`, so stale exports fail.
 
 The browser harness is `/tools/art/preview/terrain-slopes.html` on the Vite
 server. Its 1440 × 880 composite uses two matching L-shaped terraces, including
 a straight run, concave and convex turns, and a slope side abutting a sheer
 cliff. All nine angles and the final composite were opened and inspected.
 
-Validation on the integrated tree: all three Blender/trimesh loops, manifest
-guard, typecheck, lint, 1,954 unit tests, build, all four capture tests and
-59 browser tests pass (one unit test and nine opt-in captures skipped in
-the ordinary suites). The regenerated seed-4242 turn-1 and turn-7 PNGs are
-byte-identical to main. The city control's only pixel changes are timing
-text; the snowy control shows the slope kit in generated terrain.
+Validation for #809: all three Blender/trimesh loops, manifest guard,
+typecheck, lint, 1,978 unit tests and build pass (one unit test skipped).
+The new neighbourhood test loads the real GLBs through the tactical view
+and checks all four turns of both corner kinds at both one- and two-layer
+rises: 16 cases, 320 shared-edge comparisons.
+
+The composite and all four map captures were regenerated and opened. Both
+seed-4242 fog frames remain byte-identical to main. The city control's only
+changes are timing text; the snowy control has 228 changed scene pixels,
+with a maximum difference of one channel value out of 255, from rendering
+the re-exported normals through the vertical fit. Its terrain shape remains
+as generated on main, including the classification gaps reported in #817.
+The composite is the new half-rise visual acceptance frame. All four capture
+tests and the full browser suite pass: 59 tests, nine opt-in captures skipped.

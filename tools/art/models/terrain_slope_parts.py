@@ -7,8 +7,8 @@ All top UVs use footprint projection so corners continue adjacent wedges.
 import bpy
 from bpy_kit import material
 
-# Today's LEVEL_HEIGHT. Re-emit the family after the separate layer-height ruling.
-RISE = 1.5
+# One elevation layer under ADR 0008; re-emit all three shapes from this parameter.
+RISE = 0.75
 
 
 def build_slope(kind: str) -> None:

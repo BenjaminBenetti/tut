@@ -15,7 +15,6 @@ import { describe, expect, it } from "vitest";
 
 import { MODEL_MANIFEST } from "../data/model-manifest";
 import { SLOPE_MODELS } from "../data/map-model-table";
-import { STOREY_LAYERS } from "../../core/model/elevation";
 import { LAYER_HEIGHT } from "../data/mapgen-preview-palette";
 import {
   TerrainSlopeModelFactory,
@@ -39,14 +38,14 @@ async function prototype(kind: keyof typeof SLOPE_MODELS): Promise<Object3D> {
   return (await new GLTFLoader().parseAsync(data, "")).scene;
 }
 
-/** Full-storey art remains until ADR 0008 child c replaces the kit. */
-const SLOPE_RISE = STOREY_LAYERS * LAYER_HEIGHT;
+/** One layer, matching the single Blender RISE parameter. */
+const SLOPE_RISE = LAYER_HEIGHT;
 
 describe("terrain slope kit", () => {
   for (const kind of Object.keys(
     SLOPE_MODELS,
   ) as (keyof typeof SLOPE_MODELS)[]) {
-    it(`${kind} covers one whole tile, joins at the current full-storey rise, and borrows both ground materials`, async () => {
+    it(`${kind} covers one whole tile, joins at the current one-layer rise, and borrows both ground materials`, async () => {
       const source = await prototype(kind);
       const loader = {
         load: () => Promise.resolve(source.clone(true)),

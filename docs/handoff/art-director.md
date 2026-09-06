@@ -1,28 +1,56 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-06 (#817 diagnosis; #809 next)
+Last updated: 2026-09-06 (#809 half-rise slope kit)
 
-## Current work: #817 diagnosis, then #809
+## Current work: #809 half-rise slopes
 
-The #817 gap is confirmed on the classification side. Read
-[the diagnosis and exact neighbourhoods](../design/diagnostics/817-slope-gap.md).
-A high-neighbour prop removes that column from the classifier's walkable
-node set, changing an inner corner into a straight without changing heights.
-The shipped scene mapping passes all four turns of both corner kinds against
-hand-built neighbourhoods. Twelve Map Lab combinations were rendered and
-inspected; the diagnosis includes crops and the 16 passing diagnostic cases.
-MapGen owns the rule fix in #808. No graphics/model/classifier fix was made.
+Review: [PR #822](https://github.com/BenjaminBenetti/tut/pull/822).
+Branch `feat/809-half-rise-slopes`, with main `0e40747` merged after #815 and #821.
+Tech Lead approved the content; the handoff conflict is resolved. The
+Director judges the composite, then CI and the Tech Lead gate the merge.
+The single Blender authoring parameter is now `RISE = 0.75`. All three GLBs
+were re-emitted and validated; all nine angles and the grass/sand terrace
+composite were rendered and opened. Footprint, pivot, UV/material contract
+and triangle counts are unchanged. No other model was re-emitted.
 
-Latest Director direction: post the finding on #817, then start #809 without
-waiting for another prompt. Re-emit the set with `RISE = 0.75` per ADR 0008;
-read the current issue before working. Earlier pause-only notes are superseded.
+The renderer shares #815's existing high-neighbour measurement between its
+placeholder and its loaded slope instances. A one-layer step uses the GLB
+at scale 1; a two-layer step uses vertical scale 2. This lets the kit land
+before #808 changes natural terrain without opening a new vertical gap.
+Prototypes remain shared. Sixteen neighbourhood cases cover both rises,
+both corners and all turns through the final instanced scene.
 
-New standing event rule: when otherwise waiting for the Director, run ONE
-bounded background watch: GitHub every five minutes, one line and exit at
-first relevant event, hard stop after three hours. Relevant: Tech Lead
-comment/review/merge on own PRs, a new comment on #817 or #809, any new or
-relabelled area:art issue. Act and re-arm; timeout with no event means report
-one line and stop. Never cron and never more than one watch.
+Both seed-4242 fog frames remain byte-identical to main. The city control's
+scene is identical; the snowy control differs at 228 pixels by at most one
+channel value out of 255. Existing classification gaps remain for #808.
+[Kit contract and renders](../design/kits/terrain-slopes.md).
+Validation: typecheck, lint, 1,978 unit tests (one skipped), build, four
+capture tests and 59 browser tests (nine opt-in captures skipped) pass.
+The existing build chunk-size warning remains.
+
+## #817 diagnosis handed to MapGen
+
+[Finding posted on #817](https://github.com/BenjaminBenetti/tut/issues/817#issuecomment-5557215896).
+[Evidence/handoff PR #821](https://github.com/BenjaminBenetti/tut/pull/821), merged.
+[Diagnosis and exact neighbourhoods](../design/diagnostics/817-slope-gap.md).
+On v0.2.7, a high-neighbour prop removes that column from the walkability
+set used to choose the visual corner. An inner can become a straight;
+outer corners can disappear too. Exact 3 × 3 dumps and crops are in the
+report. Twelve Map Lab combinations were rendered/inspected; all four
+turns of both corners pass when the metadata describes the neighbourhood.
+MapGen confirmed the fix on the #808 branch: ground geometry now determines
+the high sides, with regression coverage for both prop cases and the seed
+sweep. Final visual acceptance belongs to #808. No rule fix was made here.
+
+## Standing event rule (latest Director direction)
+
+When otherwise waiting for the Director, run ONE bounded background watch:
+GitHub every five minutes; print one line and exit on the first relevant
+change; hard stop after three hours. Relevant: Tech Lead comment, review or
+merge on any own PR; a new comment on #817 or #809; any new or relabelled
+area:art issue. Act and re-arm. If no event before timeout, report one line
+and stop. Never a cron and never more than one watch. Earlier pause-only
+notes below are historical.
 
 ## Previous work: #798 / PR #811 (merged)
 

@@ -1113,7 +1113,7 @@
       "w": 1,
       "d": 1
     },
-    "height": 1.5,
+    "height": 0.75,
     "sockets": [],
     "quality": "final",
     "triangles": 8,
@@ -1127,7 +1127,7 @@
       "w": 1,
       "d": 1
     },
-    "height": 1.5,
+    "height": 0.75,
     "sockets": [],
     "quality": "final",
     "triangles": 10,
@@ -1141,7 +1141,7 @@
       "w": 1,
       "d": 1
     },
-    "height": 1.5,
+    "height": 0.75,
     "sockets": [],
     "quality": "final",
     "triangles": 6,

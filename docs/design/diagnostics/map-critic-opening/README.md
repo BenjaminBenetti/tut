@@ -4,7 +4,10 @@ Baseline: `cafd9ff` (2026-09-06), after the map-scale work, the ramp ruling,
 and materialled ladders. This is a visual assessment of Map Lab, not a
 statistical QA audit or a generator implementation review.
 
-**Checkpoint: 60 of 108 maps inspected; survey still in progress.**
+**Complete: 108 maps visually inspected, with 27 comparison sheets and 13 detail/control views.**
+
+Read the [ranked opening assessment](assessment.md) and the
+[visual ledger](visual-ledger.md).
 
 ## Method
 
@@ -24,6 +27,7 @@ uncertain details are revisited by panning, zooming, rotating, or cutting to
 an interior floor. The blue and red tiles are the preview's deployment and
 spawn overlays, and the green tiles are objective markers.
 
+All 36 large-map whole views were also inspected at native resolution.
 Comparison sheets put the whole-map view on the left and the closer view on
 the right. They are labelled, reduced copies of unaltered screenshots. Detail
 PNG crops retain their captured pixels. Their JSON sidecars record the exact
@@ -54,8 +58,24 @@ is claimed.
 - #281: the Executive Director ruled to retain current cover density.
 
 The opening assessment ranks new findings separately from existing
-work. Only one new actionable ticket will be filed on day one; the remaining
+work. Only one new actionable ticket is selected for day one; the remaining
 queue stays in the Map Critic handoff.
+
+## Comparison sheets
+
+Each link contains all four biomes, labelled in the frame.
+
+| Settlement / size | Seed 01 | Seed 02 | Seed 03 |
+| --- | --- | --- | --- |
+| rural / small | [01](sheets/rural-small-01.jpg) | [02](sheets/rural-small-02.jpg) | [03](sheets/rural-small-03.jpg) |
+| town / small | [01](sheets/town-small-01.jpg) | [02](sheets/town-small-02.jpg) | [03](sheets/town-small-03.jpg) |
+| city / small | [01](sheets/city-small-01.jpg) | [02](sheets/city-small-02.jpg) | [03](sheets/city-small-03.jpg) |
+| rural / medium | [01](sheets/rural-medium-01.jpg) | [02](sheets/rural-medium-02.jpg) | [03](sheets/rural-medium-03.jpg) |
+| town / medium | [01](sheets/town-medium-01.jpg) | [02](sheets/town-medium-02.jpg) | [03](sheets/town-medium-03.jpg) |
+| city / medium | [01](sheets/city-medium-01.jpg) | [02](sheets/city-medium-02.jpg) | [03](sheets/city-medium-03.jpg) |
+| rural / large | [01](sheets/rural-large-01.jpg) | [02](sheets/rural-large-02.jpg) | [03](sheets/rural-large-03.jpg) |
+| town / large | [01](sheets/town-large-01.jpg) | [02](sheets/town-large-02.jpg) | [03](sheets/town-large-03.jpg) |
+| city / large | [01](sheets/city-large-01.jpg) | [02](sheets/city-large-02.jpg) | [03](sheets/city-large-03.jpg) |
 
 ## Detail index
 
@@ -68,6 +88,9 @@ queue stays in the Map Critic handoff.
 | [D07](details/D07-coastal-fences.png) | `mc-opening-01`, coastal/rural/small | `(5,2,22)` | Fence fragments and hard material borders |
 | [D08](details/D08-rural-floor-cut.png) | `mc-opening-01`, temperate/rural/small, **floor=0** | `(24,2,15)` | Positive interior example; higher terrain is intentionally hidden |
 | [D09](details/D09-medium-coastal-road-end.png) | `mc-opening-03`, coastal/city/medium | `(51,1,40)` | Marked road ending against open water |
+| [D10](details/D10-city-street-scale.png) | `mc-opening-02`, temperate/city/medium | `(37,1,37)` | Positive street/pavement proportions |
+| [D11](details/D11-snowy-city-green-bed.png) | `mc-opening-02`, snowy/city/medium | `(56,4,62)` | Exposed green bed between snowy plots |
+| [D12](details/D12-desert-city-green-bed.png) | `mc-opening-02`, desert/city/medium | `(55,3,61)` | Same neighborhood with desert planting and green top |
 
 D06 was an exploratory frame and is omitted because its framing did not
 clearly support the observation. Image numbering preserves the capture log.

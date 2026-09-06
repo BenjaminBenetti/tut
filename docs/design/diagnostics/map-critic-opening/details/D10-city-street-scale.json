@@ -1,0 +1,32 @@
+{
+  "id": "D10-city-street-scale",
+  "seed": "mc-opening-02",
+  "biome": "temperate",
+  "settlement": "city",
+  "size": "medium",
+  "tile": {
+    "x": 37,
+    "y": 1,
+    "z": 37
+  },
+  "pitch": 45,
+  "width": 1200,
+  "height": 900,
+  "actualPitch": 44.99999985638314,
+  "url": "http://localhost:4173/mapgen-preview.html?seed=mc-opening-02&biome=temperate&settlement=city&size=medium&models=1&units=1&slope=100",
+  "baseline": "cafd9ff",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "pixel": {
+    "x": 1390,
+    "y": 733.0663140054425
+  },
+  "clip": {
+    "x": 790,
+    "y": 283,
+    "width": 1200,
+    "height": 900
+  }
+}

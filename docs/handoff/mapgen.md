@@ -701,7 +701,9 @@ re-derived.
   counts road neighbours; use run extents, and remember side-street mouths are wider than one column
   when levelling. Golden re-pinning: `scratchpad/repin.py` pairs the `- "checksum": N` /
   `+ "checksum": N` lines of the sweep's diff (numbers, not strings). The lurker seed-sweep test in
-  `src/bugs/ai/` runs on the shipped `mission-2:map` and moves with any generator change; it was
-  left red on #829 for the bug-AI owner rather than edited. The `objective-reachability` engagement
+  `src/bugs/ai/` ran on the shipped `mission-2:map` and moved with any generator change; #829 left
+  it for the bug-AI owner rather than edit it, and #843 gave it a stated fixture. The tactical e2e
+  specs walk the map through `nearestSightPosition` / `pathBetween` (map-assessment-service) since
+  #829: a spawner deep in a big building or a vantage up a ramp defeats any hop-toward heuristic. The `objective-reachability` engagement
   budget (10 mech turns at 4 steps a turn) is the pin that scale trips first — check the nearest
   spawner before the sweep.

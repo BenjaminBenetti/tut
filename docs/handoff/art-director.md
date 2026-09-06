@@ -5,7 +5,7 @@ Last updated: 2026-09-06 (#798 terrain slope kit)
 ## Current work: #798, then hold
 
 The Director authorised the slope set as an exception to production hold.
-Branch: `feat/798-terrain-slope-kit`, based on main `d3dd806`. Continue this
+Branch: `feat/798-terrain-slope-kit`, with main `0b72476` merged. Continue this
 branch for review. I remain the Codex Art Director on gpt-6-astra; the latest
 Director instruction sets this seat to xhigh and removes the credit limit.
 
@@ -30,10 +30,27 @@ and inspected: straight runs and inner/outer corners join without geometric
 gaps; side faces match adjoining cliff pillars. Reproduce with
 `CAPTURE=1 pnpm exec playwright test e2e/terrain-slope-screenshot.spec.ts`.
 
-#799 owns the tactical scene mapping, map data and traversal. It can use this
-factory and table when the kit lands; the composite is the consumer before
-that integration. Do not claim slopes already appear in generated Map Lab
-maps. The existing tactical renderer and seed-4242 frames are untouched.
+#799's scene mapping merged in #801 while this kit was in progress. This
+branch now connects its slope metadata to the three GLBs in the resolver
+and tactical view. Straight follows the stored rotation; corners add one
+quarter turn to match #799's west/south starting orientation. One prototype
+per shape/surface is reused across levels and rotations, with the existing
+mist and visibility path for both top and sides. Placeholder wedges retire
+after loading; their ground pillars remain. Map data, generation and
+traversal stay as #799 supplied them.
+
+The composite, both #799 preview controls and both seed-4242 fog frames are
+regenerated on this merged tree for visual review. Tests sample the exported
+height fields and all four map-data rotations, material borrowing, batching
+by surface, placeholder retirement and fog updates. Both fog PNGs are
+byte-identical to main. The city control differs only in timing text; the
+snowy control shows the new textured slopes.
+
+Validation: Blender/trimesh passes for all three assets; `pnpm typecheck`,
+`pnpm lint`, `pnpm test` (1,954 pass, one skipped), `pnpm build`, the four
+capture tests and the full browser suite (59 pass, nine opt-in captures
+skipped) pass locally. Existing build chunk-size warning remains.
+ADR 0008 landed as docs only; today's runtime height is still 1.5, as requested.
 
 Next: Tech Lead reviews; address arriving feedback on this branch, then
 **hold again with no timer polling or background review monitor**. All other

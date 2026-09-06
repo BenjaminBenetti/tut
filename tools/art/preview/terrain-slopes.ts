@@ -14,7 +14,10 @@ import { GltfModelLoader } from "../../../src/graphics/service/gltf-model-loader
 import { PlaceholderModelFactory } from "../../../src/graphics/service/placeholder-model-factory";
 import { OrthographicCameraRig } from "../../../src/graphics/service/orthographic-camera-rig";
 import { SceneService } from "../../../src/graphics/service/scene-service";
-import { TerrainSlopeModelFactory } from "../../../src/graphics/service/terrain-slope-model-factory";
+import {
+  TerrainSlopeModelFactory,
+  slopeMaterialsFromGround,
+} from "../../../src/graphics/service/terrain-slope-model-factory";
 
 const models = new GltfModelLoader({
   manifest: MODEL_MANIFEST,
@@ -43,25 +46,10 @@ async function terrace(
   offset: number,
 ): Promise<void> {
   const ground = await models.load(surfaceModel(surface)!);
-  let top: Mesh | undefined;
-  ground.traverse((node) => {
-    if (node instanceof Mesh) top = node;
-  });
-  if (!top || Array.isArray(top.material))
-    throw new Error("Expected a single-material ground slab");
-  const uv = top.geometry.getAttribute("uv");
-  const us = Array.from({ length: uv.count }, (_, i) => uv.getX(i));
-  const vs = Array.from({ length: uv.count }, (_, i) => uv.getY(i));
-  const materials = {
-    surface: top.material,
-    sides: new MeshStandardMaterial({ color: SURFACE_COLOURS[surface] }),
-    uv: {
-      u0: Math.min(...us),
-      v0: Math.min(...vs),
-      u1: Math.max(...us),
-      v1: Math.max(...vs),
-    },
-  };
+  const materials = slopeMaterialsFromGround(
+    ground,
+    new MeshStandardMaterial({ color: SURFACE_COLOURS[surface] }),
+  );
   const prototypes = new Map<keyof typeof SLOPE_MODELS, Group>();
   for (const kind of Object.keys(
     SLOPE_MODELS,

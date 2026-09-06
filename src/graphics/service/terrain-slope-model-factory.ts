@@ -1,8 +1,12 @@
 import { BufferGeometry, Float32BufferAttribute, Group, Mesh } from "three";
-import type { Material } from "three";
+import type { Material, Object3D } from "three";
 
 import { SLOPE_MODELS } from "../data/map-model-table";
 import type { ModelLoader } from "../model/model-loader";
+
+// ===========================================
+// Materials
+// ===========================================
 
 /** Texture region of the existing ground material; ordinary UVs default to the whole map. */
 export interface SlopeUvRegion {
@@ -18,6 +22,62 @@ export interface SlopeMaterials {
   readonly sides: Material;
   readonly uv?: SlopeUvRegion;
 }
+
+/**
+ * Borrows the broadest upward face's material and UV region from existing
+ * ground art. This picks the asphalt deck over small road markings, and
+ * the rock slab over its lumps. Cliff material comes from the scene.
+ */
+export function slopeMaterialsFromGround(
+  ground: Object3D,
+  sides: Material,
+): SlopeMaterials {
+  let selected: SlopeMaterials = { surface: sides, sides };
+  let largest = 0;
+  ground.traverse((object) => {
+    if (!(object instanceof Mesh)) return;
+    const mesh = object as Mesh;
+    if (Array.isArray(mesh.material)) return;
+    const geometry = mesh.geometry;
+    const position = geometry.getAttribute("position");
+    const normal = geometry.getAttribute("normal");
+    const uv = geometry.getAttribute("uv");
+    if (!position || !normal || !uv) return;
+    const index = geometry.index;
+    let area = 0;
+    let u0 = Infinity,
+      v0 = Infinity,
+      u1 = -Infinity,
+      v1 = -Infinity;
+    for (let i = 0; i < (index?.count ?? position.count); i += 3) {
+      const a = index ? index.getX(i) : i;
+      const b = index ? index.getX(i + 1) : i + 1;
+      const c = index ? index.getX(i + 2) : i + 2;
+      if (normal.getY(a) < 0.5) continue;
+      area += Math.abs(
+        (position.getX(b) - position.getX(a)) *
+          (position.getZ(c) - position.getZ(a)) -
+          (position.getX(c) - position.getX(a)) *
+            (position.getZ(b) - position.getZ(a)),
+      );
+      for (const vertex of [a, b, c]) {
+        u0 = Math.min(u0, uv.getX(vertex));
+        v0 = Math.min(v0, uv.getY(vertex));
+        u1 = Math.max(u1, uv.getX(vertex));
+        v1 = Math.max(v1, uv.getY(vertex));
+      }
+    }
+    if (area > largest) {
+      largest = area;
+      selected = { surface: mesh.material, sides, uv: { u0, v0, u1, v1 } };
+    }
+  });
+  return selected;
+}
+
+// ===========================================
+// TerrainSlopeModelFactory
+// ===========================================
 
 /**
  * Consumes #798's three registered meshes with the ground material chosen

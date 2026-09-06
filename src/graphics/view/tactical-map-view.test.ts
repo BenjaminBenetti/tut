@@ -271,6 +271,53 @@ function named(view: TacticalMapView, prefix: string): InstancedMesh[] {
 }
 
 describe("TacticalMapView.loadModels", () => {
+  it("replaces slope placeholders, batches by surface, and shares mist materials across levels", async () => {
+    const base = new FixtureMapBuilder(3, 1, 2).fillGround().build();
+    const map: TacticalMap = {
+      ...base,
+      tiles: base.tiles.map((tile) => ({
+        ...tile,
+        y: tile.x === 1 ? 1 : 0,
+        surface: tile.x === 2 ? SurfaceIds.SAND : SurfaceIds.GRASS,
+        slope: { kind: "inner", turns: 0 },
+      })),
+    };
+    const view = new TacticalMapView(map);
+    view.setVision({ visible: [], explored: [], spotted: [], lastSeen: {} });
+    const models = new FakeModelLoader();
+    await view.loadModels(models);
+    // Two parts per batch, including the same shape in two materials on level 0.
+    const grass = named(view, "tiles-model:tile.slope.inner:").filter((mesh) =>
+      mesh.name.includes(":grass:"),
+    );
+    const sand = named(view, "tiles-model:tile.slope.inner:").filter((mesh) =>
+      mesh.name.includes(":sand:"),
+    );
+    expect(grass).toHaveLength(8); // fake GLB has two meshes, each split into two parts
+    expect(sand).toHaveLength(4);
+    expect(grass[0]!.material).toBe(grass[4]!.material);
+    expect(grass[0]!.material).not.toBe(sand[0]!.material);
+    expect(
+      models.loaded.filter((id) => id === "tile.slope.inner"),
+    ).toHaveLength(2);
+    for (const mesh of [...grass, ...sand])
+      expect(mesh.geometry.getAttribute("unexploredMist").getW(0)).toBe(1);
+    const index = new TileIndex(map);
+    view.setVision({
+      visible: map.tiles.map((tile) => index.keyOf(tile)),
+      explored: [],
+      spotted: [],
+      lastSeen: {},
+    });
+    for (const mesh of [...grass, ...sand])
+      expect(mesh.geometry.getAttribute("unexploredMist").getW(0)).toBe(0);
+    for (const tile of map.tiles)
+      expect(
+        view.root.getObjectByName(`slope:${tile.x},${tile.z}`)!.visible,
+      ).toBe(false);
+    view.dispose();
+  });
+
   it("shares a prototype's ghosted mist material across levels, isolated from plain terrain and other scenes", async () => {
     const b = new FixtureMapBuilder(2, 1, 2).fillGround();
     b.tile({ x: 0, y: 1, z: 0 }, SurfaceIds.FLOOR, { buildingId: "b" });

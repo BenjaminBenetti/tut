@@ -17,6 +17,7 @@ def build_slope(kind: str) -> None:
     vertices = []
 
     def vertex(point):
+        """Share low corners with the base so every exported wedge is closed."""
         if point not in vertices:
             vertices.append(point)
         return vertices.index(point)

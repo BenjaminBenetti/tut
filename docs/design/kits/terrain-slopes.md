@@ -31,6 +31,9 @@ Corners split along the (−X, −Z) → (+X, +Z) diagonal. All sloping faces ha
 upward normals, every exported mesh is watertight, and each is below the
 60-triangle / 20 KB ground-piece budget. Rotate the **whole group** around Y
 by multiples of π/2. No scale adjustment is needed at today's layer height.
+The resolver follows #799's clockwise `slope.turns`: straight uses that value;
+inner and outer use `(turns + 1) % 4` because the map-data corner starts high
+to the west/south, while the exported corner starts high to the east/south.
 
 For a tile at lower level `y`, place the pivot at
 `(tile.x + 0.5, y * LEVEL_HEIGHT + SLAB_HEIGHT, tile.z + 0.5)`.
@@ -62,12 +65,21 @@ The GLBs have neutral materials and projected 0–1 top UVs, with **no embedded
 texture or material variant files**. Grass, dirt, sand, snow, rock, and asphalt
 all use the same three meshes. Pass the chosen top material/atlas region and
 the existing cliff material; road markings are a separate renderer decision.
-The region is read from the existing grass/sand slab UVs in the composite
-harness, so no atlas-cell coordinates are duplicated in production data.
+`slopeMaterialsFromGround` borrows the broadest upward face's material and
+UV region from the existing surface model. It selects the road deck over
+small road markings, or the rock slab over its lumps. The composite uses
+the same helper, so no atlas-cell coordinates are duplicated.
 
-The live consumer in this PR is the composite harness. #799 owns the tactical
-map-data selection, orientation, traversal, and scene integration. This PR
-does not change generation or claim the new slopes already appear in Map Lab.
+#799's scene mapping landed while this kit was being built. `resolveMapModels`
+now maps its slope metadata to these assets; `TacticalMapView` replaces the
+initial wedges with the materialised art and retires those placeholders.
+It caches one prototype per shape/surface, batches instances by level and
+surface, and applies the existing visibility and mist treatment to both
+parts. The ground pillars remain. Generation, map data and traversal remain
+as supplied by #799.
+
+In-game review controls: [city seed 730982385](../shots/799-preview-control-seed730982385.png)
+and [snowy rural hills-1](../shots/799-preview-terrain-heavy-snowy-rural-hills-1.png).
 
 ## Review and reproduce
 
@@ -86,7 +98,7 @@ for shape in straight inner outer; do
     --category tiles --file terrain-slope-$shape.glb --quality final \
     --max-triangles 60 --no-textured
 done
-CAPTURE=1 pnpm exec playwright test e2e/terrain-slope-screenshot.spec.ts
+CAPTURE=1 pnpm exec playwright test e2e/terrain-slope-screenshot.spec.ts e2e/slope-screenshot.spec.ts e2e/fog-screenshot.spec.ts
 ```
 
 After a future rise change, copy the emitted heights into the TypeScript
@@ -97,3 +109,10 @@ The browser harness is `/tools/art/preview/terrain-slopes.html` on the Vite
 server. Its 1440 × 880 composite uses two matching L-shaped terraces, including
 a straight run, concave and convex turns, and a slope side abutting a sheer
 cliff. All nine angles and the final composite were opened and inspected.
+
+Validation on the integrated tree: all three Blender/trimesh loops, manifest
+guard, typecheck, lint, 1,954 unit tests, build, all four capture tests and
+59 browser tests pass (one unit test and nine opt-in captures skipped in
+the ordinary suites). The regenerated seed-4242 turn-1 and turn-7 PNGs are
+byte-identical to main. The city control's only pixel changes are timing
+text; the snowy control shows the slope kit in generated terrain.

@@ -18,14 +18,8 @@
   },
   "camera": "initial framing, no pan/zoom/rotation",
   "mapBounds": {
-    "x": [
-      0,
-      47
-    ],
-    "z": [
-      0,
-      47
-    ]
+    "x": [0, 47],
+    "z": [0, 47]
   },
   "levels": {
     "value": "6",

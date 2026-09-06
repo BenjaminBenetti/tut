@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-06 ~15:05 UTC (session 5; #893 ladder kit merged, no placeholder connector remains; queue empty; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-06 ~16:05 UTC (session 5; v0.2.10 `fe7872c` and v0.2.11 `58e6c9e` tagged by the Director; queue empty; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — production is paused; only #748 is live
 
@@ -313,6 +313,13 @@ placeholders retire per ladder id. Fog frames byte-identical to `main` from
 my own render. **Every connector class now has art** (ramps #879, stairs
 #775/#766, ladders #893). Nit on the PR: `LAYER_HEIGHT` is duplicated in
 `data/mapgen-preview-palette` against `core/model/elevation`.
+
+**Tags:** the Director tagged **v0.2.10 at `fe7872c`** (ramp connectors,
+#879) and **v0.2.11 at `58e6c9e`** (ladders, #893); the Release workflow
+(Deploy, GitHub) ran green on `58e6c9e`. `main` is green through `4d8225a`.
+Nothing is open; the next PRs are whatever the Director routes from #849
+(J3 remainder), #876 (diagonal pairs, art says preserve V2) and #869 item 2
+(parapet across ramps, MapGen).
 
 **#757 (mech bay preview, #694) is unparked** on the Director's instruction
 (06:50): approved on content, gate on the merge with today's `main` green,

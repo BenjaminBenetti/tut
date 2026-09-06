@@ -1,0 +1,32 @@
+{
+  "id": "D04-city-platform",
+  "seed": "mc-opening-01",
+  "biome": "temperate",
+  "settlement": "city",
+  "size": "small",
+  "tile": {
+    "x": 33,
+    "y": 5,
+    "z": 30
+  },
+  "pitch": 60,
+  "width": 1200,
+  "height": 1000,
+  "actualPitch": 59.76054347955709,
+  "url": "http://localhost:4173/mapgen-preview.html?seed=mc-opening-01&biome=temperate&settlement=city&size=small&models=1&units=1&slope=100",
+  "baseline": "cafd9ff",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "pixel": {
+    "x": 1350.7401715185079,
+    "y": 720.000019145863
+  },
+  "clip": {
+    "x": 751,
+    "y": 220,
+    "width": 1200,
+    "height": 1000
+  }
+}

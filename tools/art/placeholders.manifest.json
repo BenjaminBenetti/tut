@@ -1258,5 +1258,19 @@
     "quality": "final",
     "triangles": 132,
     "bytes": 10712
+  },
+  {
+    "id": "tile.foundation.concrete",
+    "category": "tiles",
+    "path": "assets/models/tiles/tile-foundation-concrete.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.75,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 12,
+    "bytes": 2212
   }
 ]

@@ -14,6 +14,7 @@ import type { RoadAppearance } from "../model/road-appearance";
 import type { TerrainSlopeAppearance } from "../model/terrain-slope-appearance";
 import type { LadderAppearance } from "../model/ladder-appearance";
 import { resolveLadderModels } from "./ladder-model-resolver";
+import { resolveFoundationModels } from "./foundation-model-resolver";
 import type { RampAppearance } from "../model/ramp-appearance";
 import { resolveRampModels } from "./ramp-model-resolver";
 import { resolveTerrainSlopeAppearances } from "./terrain-slope-resolver";
@@ -74,6 +75,7 @@ export interface ModelPlacement {
 /** Everything on a map that resolves to a model, split by what it replaces. */
 export interface MapModelPlacements {
   readonly tiles: readonly ModelPlacement[];
+  readonly foundations: readonly ModelPlacement[];
   readonly walls: readonly ModelPlacement[];
   readonly props: readonly ModelPlacement[];
   readonly connectors: readonly ModelPlacement[];
@@ -151,6 +153,7 @@ export function resolveMapModels(
   );
   return {
     tiles: resolveTiles(map, index, rampFeet, roads),
+    foundations: resolveFoundationModels(map),
     walls,
     props: resolveProps(map, index),
     connectors,
@@ -164,6 +167,7 @@ export function mapModelIds(
   const ids = new Set<ModelAssetId>();
   for (const group of [
     placements.tiles,
+    placements.foundations,
     placements.walls,
     placements.props,
     placements.connectors,

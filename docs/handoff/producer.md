@@ -3,7 +3,7 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-06 09:33 UTC)
+## Status Digest (2026-09-06 09:43 UTC)
 
 **Production ON HOLD** (#748). The Executive Director tunes Map Lab; only his named exceptions proceed. No M3 decomposition or Ready growth beyond those exceptions. **v0.2.9** is tagged (main 148b179; scale plus road kit); general production has not resumed.
 
@@ -25,15 +25,15 @@
 
 **Road-kit #840 / PR #850:** **Done**. Refreshed integration frames accepted independently by Director; CI and all seven Tech Lead merge-result checks green. **v0.2.9** is tagged at 148b179, clearing the road-first gate for #813 work. No specialist engineer seat labels.
 
-**Ramp parent #813:** In Progress, Producer coordination. **#847 J2 / PR #853 In Review, MapGen**: content approved by Tech Lead, including deliberate connector relocation; Director frame judgment, CI and merge-result gate remain. Draft audit reports wedge share 88.7→95.6% and sixteen coordinate regressions. **#848 J1 In Progress, Art Director's next geometry task**, road gate cleared. **#849 J3 Blocked on #848**, accepted for now, no speculative second piece. N1 channels are not a defect.
+**Ramp parent #813:** In Progress, Producer coordination. **#847 J2 / PR #853 Done**: Director accepted all three frames; CI and all seven Tech Lead merge-result checks green (2001 unit tests, 59 e2e, no flakes). Draft audit reports wedge share 88.7→95.6% and sixteen coordinate regressions. **#848 J1 In Progress, Art Director cutting the diagonal piece**. **#849 J3 Blocked on #848**, accepted for now, no speculative second piece. N1 channels are not a defect.
 
-**QA at the new scale:** bucket table and issue coordinates remeasured after #838; full audit/frames still await the Director's prompt. Frozen-map baseline: wedge share 87.2%, J2 population 9.6%, longest J1 chain **4**, J3 0.7%. Use refreshed issue coordinates, including the four-chain composite target. Director judges fix frames.
+**QA at the new scale:** **Full audit in progress**, confirmed by Director comment 5558374659; bucket table and issue coordinates were remeasured after #838. Frozen-map baseline: wedge share 87.2%, J2 population 9.6%, longest J1 chain **4**, J3 0.7%. Use refreshed issue coordinates, including the four-chain composite target. Director judges fix frames.
 
-**Other open PRs:** #757/#694 mech-bay preview remains In Review under the Director's exception, content approved, awaiting final merge/frame gates. Existing Art Director ownership retained; route an author update only if the gate requires one. Tech Lead handoff #851 closed unmerged; replacement #855 merged / Done. **#856 Done**: measured 120-second CI unit-test budget (20 seconds locally); Tech Lead self-merged with CI and all seven merge-result checks green. **#852 Done**: firing-sweep CI timeout fixed (four runner seeds, full twelve locally, measured 120-second budget); Tech Lead self-merged with CI and gate green. Producer handoff #857 merged; this pass opens its successor.
+**Other open PRs:** #757/#694 mech-bay preview remains In Review under the Director's exception, content approved, awaiting final merge/frame gates. Existing Art Director ownership retained; route an author update only if the gate requires one. Tech Lead handoff #851 closed unmerged; replacement #855 merged / Done; #859 In Review, recording J2 completion. **#856 Done**: measured 120-second CI unit-test budget (20 seconds locally); Tech Lead self-merged with CI and all seven merge-result checks green. **#852 Done**: firing-sweep CI timeout fixed (four runner seeds, full twelve locally, measured 120-second budget); Tech Lead self-merged with CI and gate green. Producer handoff #857 merged; this pass opens its successor.
 
-**Blocked / parked:** #849 waits for #848; full QA audit/frames await the Director's prompt. #853 awaits Director judgment and final merge gates. General production and M3 held; #787 parked; #793 p3. All engineer seats idle; Ready-high audit found only held M3 #447.
+**Blocked / parked:** #849 waits for #848; full QA audit/frames are in progress. General production and M3 held; #787 parked; #793 p3. All engineer seats idle; Ready-high audit found only held M3 #447.
 
-**Risks:** #856 resolves the recorded runner timeout budget; per-test CI matrix reductions remain a possible improvement, not newly queued work. #853's connector placement change has Tech Lead content approval but still needs final gates and Director frame judgment. Use new-scale issue coordinates and do not mix draft/frozen-map audit denominators. Full new-scale frames remain outstanding. A 96² city save is reported at 1.5 MB; balance changes stay on #734. Inherited autofill permits wrong tiers; do not run it.
+**Risks:** #856 resolves the recorded runner timeout budget; per-test CI matrix reductions remain a possible improvement, not newly queued work. J2 is gated and merged; QA must confirm the remaining ramp gaps on the new scale. Use new-scale issue coordinates and do not mix draft/frozen-map audit denominators. Full QA results remain outstanding. A 96² city save is reported at 1.5 MB; balance changes stay on #734. Inherited autofill permits wrong tiers; do not run it.
 
 **Next routing:** a Ready, unowned high-complexity engineer issue within an Executive Director exception goes to free eng-3; low/medium stay on Opus. Preserve specialist ownership and one open issue per seat. Record the exception and cleared prerequisites before labeling. Groom the next event, then re-arm one watch.
 <!-- digest:end -->

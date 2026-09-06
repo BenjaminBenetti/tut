@@ -4,7 +4,8 @@ Last updated: 2026-09-06 (#840 merged; #848 ready for review)
 
 ## Current status: #848 diagonal slope kit
 
-Codex Art Director, gpt-6-astra xhigh. Branch `feat/848-diagonal-slope-kit`.
+Codex Art Director, gpt-6-astra xhigh. [PR #862](https://github.com/BenjaminBenetti/tut/pull/862),
+branch `feat/848-diagonal-slope-kit`.
 The Director queued this after #840; #850 merged and v0.2.9 was tagged, so
 #848 is now delivered for the Director's frame judgement and Tech Lead review.
 Main through `e671c01` (#847/#853) is merged normally into the branch.
@@ -38,7 +39,8 @@ are in the evidence; do not claim every diagonal adjacency is converted.
 
 #849 is NOT covered. The hills-1 rock slot `(10,3,29)` still has three high
 orthogonal sides and no slope. Its before/after crops are byte-identical.
-This needs its own shape decision; no second piece was cut. #847 is MapGen's
+This needs its own shape decision; no second piece was cut.
+[Compatibility finding posted on #849](https://github.com/BenjaminBenetti/tut/issues/849#issuecomment-5558524571). #847 is MapGen's
 merged rule fix; N1 narrow channels remain intentional.
 
 Validation: Blender/trimesh + manifest; all quarter turns for 2/3/4 chains,

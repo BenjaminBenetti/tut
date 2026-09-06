@@ -60,13 +60,17 @@ export class RampPass implements GenerationPass {
 
     // Natural steps are one layer and a free walk (ADR 0008 §2.3), so a
     // ramp is only ever for a man-made two-layer edge.
-    // A ramp never stands on a slope tile (ADR 0004 I10): a wedge is the
-    // shape of a natural half step, and a plank rising from it would be
-    // one thing drawn as two. Plat edges have flat feet to choose from.
+    // A ramp never stands on or lands on a slope tile (ADR 0004 I10): a
+    // wedge is the shape of a natural half step, and a plank rising from
+    // it or arriving onto it would be one thing drawn as two. Since #847
+    // graded ground beside a plat takes wedges too, so the head is
+    // checked as well as the foot; plat edges have flat tiles to choose
+    // from.
     const steps = collectSteps(draft, nodes).filter(
       (step) =>
         !hasConnector(draft, step.lower, step.upper) &&
-        draft.slopeAt(step.lower.x, step.lower.z) === undefined,
+        draft.slopeAt(step.lower.x, step.lower.z) === undefined &&
+        draft.slopeAt(step.upper.x, step.upper.z) === undefined,
     );
     let joined = 0;
     for (const step of steps) {

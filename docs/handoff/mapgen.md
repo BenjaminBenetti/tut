@@ -707,3 +707,11 @@ re-derived.
   #829: a spawner deep in a big building or a vantage up a ramp defeats any hop-toward heuristic. The `objective-reachability` engagement
   budget (10 mech turns at 4 steps a turn) is the pin that scale trips first — check the nearest
   spawner before the sweep.
+- **Lot-margin wedges (#847, from QA's #813 catalogue).** `SlopePass` no longer asks whether a
+  column is at its natural level or a column clear of a lot; `isWedgeGround` asks only whether the
+  lower tile is unpaved, unwalled and free of a connector. A wall is the man-made edge. Over the
+  108 `qa813` maps the wedge share went 88.7 % → 95.6 %; what is left bare is paved lower tiles
+  (~1.6 %, a road meeting higher ground — the kerb question, not a wedge) and one-wide channels
+  (opposite high sides, catalogue N1). The ramp pass now keeps both ends off wedge tiles. The
+  audit probe that reproduces the bucket table lives in the #847 PR thread; regenerate it with a
+  draft-side walk, not the frozen map, when the buckets need a reason column.

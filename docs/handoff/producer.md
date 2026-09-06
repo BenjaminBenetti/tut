@@ -3,7 +3,7 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-06 22:36 UTC)
+## Status Digest (2026-09-06 22:53 UTC)
 
 **Production held; Map Quality Loop live.** Await the Executive Director's next taste call outside the authorized loop. Map Critic (Astra 6, new seat) files evidenced tickets; MapGen (Astra 6 / xhigh) works generation and Art Director (Astra 6 / xhigh) handles assets. At most three open Critic tickets. Those tickets are live specialist work, not automatically held Backlog. No M3 decomposition or Ready growth beyond Executive Director exceptions.
 
@@ -11,12 +11,16 @@
 
 | Issue | Status / dependency | Accountable specialist |
 | --- | --- | --- |
-| #911 p2 TDF dropship | In Progress — footprint claim 5562423843 | Art Director; proposed 5×7 envelope awaits MapGen agreement before geometry |
+| #936 p1 raised vegetated beds | In Progress — cause/claim 5562738987 | MapGen; withdraw artificial stamps, preserve natural terrain |
+| #937 p1 cutaway radius | In Progress — claim 5562725533 | Art Director; compare 2/3/4/5 radii with one/two squads; M2.5 |
+| #911 p2 TDF dropship | Blocked — MapGen agreement outstanding | Art Director; proposed 5×7 envelope awaits MapGen agreement before geometry |
 | #917 p2 isolated rural fences | Queued behind #911 | MapGen |
+
+**New ruling:** #936 supersedes the Director's earlier insistence on preserving raised vegetated beds: those settlement plinths must also stop. Natural terrain stays; building height and real hills supply verticality. #937 is the first radius-tuning pass on the now-working cutaway. #911 remains gated on agreement before modeling.
 
 **Map Quality Loop completions — tagged v0.2.12 (`121f397`):** #906/#913 foundations, #910/#926 paved platforms, #916/#925 pitched roofs/cutaway, and #915/#932 waterfront endpoints are closed/Done after Director acceptance and Tech Lead gates. Tag ancestry verified for all four PRs. Platforms fell 187 → 0 with all 213 planted beds retained; roof controls and the restored local reveal passed review. Critic re-checks of all four repairs remain pending; the Director's interior-darkness note is a later play/sweep observation, not a merge block.
 
-**Critic queue:** one origin ticket remains open (#917); #911 is a separate Executive Director feature. Merged #912 raised the documented cap to five after the Director's latest three-ticket instruction; clarification remains pending, with the actual count below both. Evidence/handoff PR #918 remains Blocked on Critic formatting corrections to three JSON sidecars (5561864176); sim/e2e passed, review owner Tech Lead. Opening survey #905/#907 is Done.
+**Critic queue:** two survey-origin tickets are counted open (#917/#936, counting the new ruling conservatively); #911/#937 are separate Executive Director features. Merged #912 raised the documented cap to five after the Director's latest three-ticket instruction; clarification remains pending, with the actual count below both. Evidence/handoff PR #918 remains Blocked on Critic formatting corrections to three JSON sidecars (5561864176); sim/e2e passed, review owner Tech Lead. Opening survey #905/#907 is Done.
 
 **Earlier releases:** v0.2.8 half-height (#804), v0.2.9 scale (#826), v0.2.10 ramp ruling (#813), v0.2.11 materialled ladders (#891/#893, 58e6c9e). All four issues closed/Done. #849 also closed/Done. #876 deliberately closed: correctly classified same-level saddles remain because the trial fit looked worse.
 
@@ -34,9 +38,11 @@
 
 **Other retained work:** #869 remains MapGen Backlog at its prior timing; #787/#760 held. Director decisions #591/#712/#734/#751; Art Director #450/#594/#673/#740; Engineer follow-ups **#735/#753 now complexity:medium**, approved by Tech Lead but held, with no seat. #753 needs persisted cityId, schema-v17 migration and a rendered-banner test; #735 inventories guards first, splits above 40 entries by Tech Lead selection, excludes intentional fallbacks/retired autofill, and preserves sim/fog output. These legacy items do not become active merely because their metadata is repaired.
 
-**Milestones (closed / total items, computed from issue state, including new Critic issues/PR):** M0 14/14 · M1 64/65 · M1.5 41/47 · M2 49/50 · M2.5 26/31 · M3 1/4 · Arsenal 1/3 · Bestiary 1/1 · Tech Debt 6/8. Assignment to a milestone is not a declaration that it is active or complete.
+**Milestones (closed / total items, computed from issue state, including new Critic issues/PR):** M0 14/14 · M1 64/65 · M1.5 41/48 · M2 49/50 · M2.5 26/32 · M3 1/4 · Arsenal 1/3 · Bestiary 1/1 · Tech Debt 6/8. Assignment to a milestone is not a declaration that it is active or complete.
 
 **Board correction:** #908 merged the routing handoff but accidentally auto-closed #906 because GitHub parsed a negated closing phrase in its body. Producer reopened #906 and removed the link; its subsequent closure is now backed by accepted repair PR #913. Future handoff PRs must have no closing references to live work.
+
+**Town evidence:** MapGen reports zero elevation stamps in all shipped town presets and has asked the Director for the intended town seed on #936. City repros, unchanged town controls and natural/rural preservation work proceed; do not invent a town defect to satisfy the requested frame.
 
 **Documentation follow-through:** MapGen owes the nonblocking ADR 0004 §7 `waterfronts` pass-table row requested in 5562578286; tracked in closed #915 until the follow-up docs PR lands. The waterfront repair is accepted (5562615417) and tagged; the larger shoreline-shape question remains a separate Critic assessment/Director brief.
 

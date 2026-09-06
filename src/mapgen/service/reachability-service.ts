@@ -1,6 +1,6 @@
 import type { Direction } from "../../core/model/direction";
 import { DIRECTIONS } from "../../core/model/direction";
-import { oppositeDirection } from "../../core/service/grid-math";
+import { oppositeDirection, stepGridPos } from "../../core/service/grid-math";
 import type { Connector } from "../model/connector";
 import type { PassMask, UnitClass } from "../model/pass-mask";
 import { allows, PassMask as Pass } from "../model/pass-mask";
@@ -31,7 +31,7 @@ interface ConnectorLink {
  * ```
  *   canStep(class, A, B):
  *     both tiles allow the class
- *     and ( same level, orthogonal neighbours, no blocking wall on the edge
+ *     and ( at most one layer apart, orthogonal neighbours, no blocking wall
  *           (doors block everything but infantry)
  *        or a connector joins A and B and allows the class )
  * ```
@@ -82,7 +82,7 @@ export class ReachabilityService {
     if (!allows(from.pass, unitClass) || !allows(to.pass, unitClass)) {
       return false;
     }
-    if (from.y === to.y) {
+    if (Math.abs(from.y - to.y) <= 1) {
       const direction = horizontalDirection(from, to);
       if (
         direction !== undefined &&
@@ -100,7 +100,8 @@ export class ReachabilityService {
 
   /**
    * Returns every tile a unit of the class can step to from the tile:
-   * same-level orthogonal neighbours plus connector endpoints.
+   * Orthogonal neighbours within one layer, plus connector endpoints.
+   * All have the normal flat movement cost (ADR 0008 §2.3).
    */
   neighbours(from: Tile, unitClass: UnitClass): Tile[] {
     if (!allows(from.pass, unitClass)) {
@@ -108,17 +109,24 @@ export class ReachabilityService {
     }
     const result: Tile[] = [];
     for (const direction of DIRECTIONS) {
-      const to = this.index.neighbour(from, direction);
-      if (
-        to !== undefined &&
-        allows(to.pass, unitClass) &&
-        !this.wallBlocks(from, to, direction, unitClass)
-      ) {
-        result.push(to);
+      const next = stepGridPos(from, direction);
+      for (const dy of [0, -1, 1]) {
+        const to = this.index.get(next.x, from.y + dy, next.z);
+        if (
+          to !== undefined &&
+          allows(to.pass, unitClass) &&
+          !this.wallBlocks(from, to, direction, unitClass)
+        ) {
+          result.push(to);
+        }
       }
     }
     for (const link of this.links.get(this.index.keyOf(from)) ?? []) {
-      if (allows(link.pass, unitClass) && allows(link.to.pass, unitClass)) {
+      if (
+        allows(link.pass, unitClass) &&
+        allows(link.to.pass, unitClass) &&
+        !result.includes(link.to)
+      ) {
         result.push(link.to);
       }
     }

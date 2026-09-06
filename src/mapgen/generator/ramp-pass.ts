@@ -62,7 +62,7 @@ export class RampPass implements GenerationPass {
     // is for what is left, which is the man-made edges. Fold the slopes
     // into the components so those steps are not bridged twice.
     for (const connector of draft.connectors) {
-      if (connector.kind === "slope") {
+      if (connector.kind === "ramp") {
         components.union(
           columnKey(draft, connector.from),
           columnKey(draft, connector.to),
@@ -142,7 +142,7 @@ function rampWithin(
 ): boolean {
   return draft.connectors.some(
     (connector) =>
-      (connector.kind === "ramp" || connector.kind === "slope") &&
+      connector.kind === "ramp" &&
       (manhattanDistance(connector.from, coord) <= distance ||
         manhattanDistance(connector.to, coord) <= distance),
   );

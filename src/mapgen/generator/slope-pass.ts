@@ -77,9 +77,11 @@ const CORNER_TURNS: Readonly<Record<string, Rotation>> = {
  *   anything else              ─► left as it was
  * ```
  *
- * A straight or inner piece is a `slope` connector to each high tile it
- * meets — same rule as a ramp, both classes, one level. An outer piece is
- * shape only: its two flanking straights already carry the traversal.
+ * Transitional engine conversion (#807): terrain still steps by a whole
+ * storey, so straight and inner pieces retain ramps to their upper tiles.
+ * The mapgen child of ADR 0008 replaces these with natural one-layer steps
+ * and removes the ramps; ReachabilityService already walks those freely.
+ * Outer pieces are shape only: the two flanking straights carry traversal.
  *
  * `slopeShare` (the Map Lab knob) is drawn per run — a connected group
  * of candidate tiles along one edge — never per tile, so a run is all
@@ -124,7 +126,7 @@ export class SlopePass implements GenerationPass {
       for (const candidate of run) {
         draft.setSlope(candidate.lower.x, candidate.lower.z, candidate.slope);
         for (const upper of candidate.uppers) {
-          draft.addConnector("slope", candidate.lower, upper);
+          draft.addConnector("ramp", candidate.lower, upper);
         }
         counts[candidate.slope.kind]++;
       }

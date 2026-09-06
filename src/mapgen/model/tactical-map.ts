@@ -10,7 +10,7 @@ import type { Tile } from "./tile";
 // ===========================================
 
 /** Bumped when the shape of `TacticalMap` changes incompatibly. */
-export const TACTICAL_MAP_VERSION = 1;
+export const TACTICAL_MAP_VERSION = 2;
 
 /**
  * The map contract (architecture §5, ADR 0004). Mapgen produces it,
@@ -32,7 +32,7 @@ export interface TacticalMap {
   readonly width: number;
   /** Tiles along `z`, exclusive upper bound. */
   readonly depth: number;
-  /** Levels along `y`, exclusive upper bound; covers the highest roof. */
+  /** Half-height layers along `y`, exclusive upper bound; covers the highest roof. */
   readonly levels: number;
   /** Sparse: one record per standable surface. */
   readonly tiles: readonly Tile[];

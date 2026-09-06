@@ -292,7 +292,7 @@ export class MapgenPreviewScreen {
   /** Slider read-out text. */
   private describeLevel(): string {
     const max = this.currentMaxLevel();
-    return max === undefined ? "all" : `≤ ${max}`;
+    return max === undefined ? "all" : `≤ ${max / STOREY_LAYERS}`;
   }
 
   /** Rewrites the stats definition list. */

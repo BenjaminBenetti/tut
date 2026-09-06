@@ -8,7 +8,7 @@ import type { WallKind } from "../../mapgen/model/wall";
 // ===========================================
 
 /** World units per map level: one building floor (style guide §3). */
-export const LAYER_HEIGHT = 1.5;
+export const LAYER_HEIGHT = 0.75;
 
 /**
  * Thickness of the **placeholder box** a tile is drawn as before its
@@ -112,7 +112,6 @@ export const PROP_HEIGHTS: Readonly<Record<CoverLevel, number>> = {
 /** Vertical links: concrete ramp, a hillside in dirt, paved steps, steel ladder. */
 export const CONNECTOR_COLOURS: Readonly<Record<ConnectorKind, number>> = {
   ramp: 0x8e8a82,
-  slope: 0x7a6045,
   stairs: 0xa7a297,
   ladder: 0x6f7378,
 };

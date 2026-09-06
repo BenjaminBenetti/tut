@@ -1,4 +1,4 @@
-"""Three neutral, watertight terrain shapes; materials are chosen by the consumer.
+"""Four neutral, watertight terrain shapes; materials are chosen by the consumer.
 
 Blender Z-up, high edge towards -Y (glTF +Z), base-centred 1 x 1 footprint.
 All top UVs use footprint projection so corners continue adjacent wedges.
@@ -7,7 +7,7 @@ All top UVs use footprint projection so corners continue adjacent wedges.
 import bpy
 from bpy_kit import material
 
-# One elevation layer under ADR 0008; re-emit all three shapes from this parameter.
+# One elevation layer under ADR 0008; re-emit all four shapes from this parameter.
 RISE = 0.75
 
 
@@ -27,6 +27,8 @@ def build_slope(kind: str) -> None:
     for x, y in corners:
         u, v = x + 0.5, 0.5 - y
         height = v if kind == "straight" else (max(u, v) if kind == "inner" else min(u, v))
+        if kind == "diagonal":
+            height = (u + v) / 2
         top.append(vertex((x, y, height * RISE)))
     faces = [(top[3], top[0], top[1]), (top[3], top[1], top[2]), tuple(reversed(bottom))]
     for i in range(4):

@@ -1,0 +1,121 @@
+[
+  {
+    "id": "snowy-three-se",
+    "seed": "qa813-snowy-rural-large-1",
+    "biome": "snowy",
+    "settlement": "rural",
+    "size": "large",
+    "tile": {
+      "x": 11,
+      "y": 4,
+      "z": 11
+    },
+    "pitch": 139.99999992619124,
+    "pixel": {
+      "x": 990.0000000000014,
+      "y": 421.32325419014967
+    }
+  },
+  {
+    "id": "snowy-three-nw",
+    "seed": "qa813-snowy-rural-large-1",
+    "biome": "snowy",
+    "settlement": "rural",
+    "size": "large",
+    "tile": {
+      "x": 23,
+      "y": 3,
+      "z": 46
+    },
+    "pitch": 139.99999992619115,
+    "pixel": {
+      "x": 1031.7201032662101,
+      "y": 441.399618014512
+    }
+  },
+  {
+    "id": "grass-three-sw",
+    "seed": "hunt-temperate-large-1",
+    "biome": "temperate",
+    "settlement": "rural",
+    "size": "large",
+    "tile": {
+      "x": 21,
+      "y": 1,
+      "z": 4
+    },
+    "pitch": 139.99999992619163,
+    "pixel": {
+      "x": 1026.8168700431174,
+      "y": 465.57493405849436
+    }
+  },
+  {
+    "id": "grass-mixed-three",
+    "seed": "hunt-temperate-large-3",
+    "biome": "temperate",
+    "settlement": "rural",
+    "size": "large",
+    "tile": {
+      "x": 53,
+      "y": 1,
+      "z": 4
+    },
+    "pitch": 139.99999992619254,
+    "pixel": {
+      "x": 944.2565588546819,
+      "y": 467.90751552858654
+    }
+  },
+  {
+    "id": "snowy-four-ne",
+    "seed": "qa813-snowy-town-large-0",
+    "biome": "snowy",
+    "settlement": "town",
+    "size": "large",
+    "tile": {
+      "x": 24,
+      "y": 3,
+      "z": 90
+    },
+    "pitch": 139.99999992619158,
+    "pixel": {
+      "x": 1036.931138906625,
+      "y": 454.8534131019264
+    }
+  },
+  {
+    "id": "isolated-outer-s2",
+    "seed": "qa813-temperate-rural-large-0",
+    "biome": "temperate",
+    "settlement": "rural",
+    "size": "large",
+    "tile": {
+      "x": 52,
+      "y": 2,
+      "z": 32
+    },
+    "pitch": 139.99999992619215,
+    "pixel": {
+      "x": 941.4830969151208,
+      "y": 461.15627847990913
+    }
+  },
+  {
+    "id": "three-high-j3",
+    "seed": "hills-1",
+    "biome": "snowy",
+    "settlement": "rural",
+    "size": "medium",
+    "tile": {
+      "x": 10,
+      "y": 3,
+      "z": 29
+    },
+    "pitch": 139.99999992619155,
+    "pixel": {
+      "x": 942.559507467888,
+      "y": 476.5655493173052
+    }
+  }
+]

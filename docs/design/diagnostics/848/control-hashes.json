@@ -1,0 +1,22 @@
+{
+  "isolated-outer-s2": {
+    "before": "604154f3e02c8ef55617780016eaa3d178e6ccef894923384d37d9f467607035",
+    "after": "604154f3e02c8ef55617780016eaa3d178e6ccef894923384d37d9f467607035",
+    "byteIdentical": true
+  },
+  "three-high-j3": {
+    "before": "27a1004ba31add0ae69ca8d026ac4d7628a01e56f428e4205fd1042c80659eda",
+    "after": "27a1004ba31add0ae69ca8d026ac4d7628a01e56f428e4205fd1042c80659eda",
+    "byteIdentical": true
+  },
+  "tactical-fog-of-war-turn7.png": {
+    "main": "6204236d7b8e213fe62be60e312f113adf5f174569651d9a0e29b948cf0b86b9",
+    "branch": "6204236d7b8e213fe62be60e312f113adf5f174569651d9a0e29b948cf0b86b9",
+    "byteIdentical": true
+  },
+  "tactical-fog-of-war.png": {
+    "main": "f09356ff87ce5fc2a8376f2bfdac9c1865e2067108ed9a4a8f7f4d65faa475bf",
+    "branch": "f09356ff87ce5fc2a8376f2bfdac9c1865e2067108ed9a4a8f7f4d65faa475bf",
+    "byteIdentical": true
+  }
+}

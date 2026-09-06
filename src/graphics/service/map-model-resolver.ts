@@ -11,6 +11,8 @@ import type { Tile } from "../../mapgen/model/tile";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import { terrainSlopeRise } from "./terrain-slope-rise";
 import type { RoadAppearance } from "../model/road-appearance";
+import type { TerrainSlopeAppearance } from "../model/terrain-slope-appearance";
+import { resolveDiagonalSlopeAppearances } from "./diagonal-slope-resolver";
 import { resolveRoadAppearances, roadModelId } from "./road-model-resolver";
 import {
   propModel,
@@ -18,6 +20,8 @@ import {
   ROAD_MODELS,
   SIDEWALK_VARIANTS,
   SLOPE_MODELS,
+  DIAGONAL_SLOPE_MODEL,
+  TERRAIN_TRANSITION_SOURCE,
   surfaceModel,
   wallModel,
   wallFamilyForWall,
@@ -46,6 +50,8 @@ export interface ModelPlacement {
   readonly scaleY?: number;
   /** Modular road surface/details; shared by every instance with the same appearance. */
   readonly road?: RoadAppearance;
+  /** A diagonal plane or adjacent surface fitted to its shared corner heights. */
+  readonly terrain?: TerrainSlopeAppearance;
   /**
    * The tile this belongs to. Carried so the renderer can dim or drop it
    * with that tile's vision (#551) — a wall is only ever as visible as
@@ -201,7 +207,26 @@ function resolveTiles(
 ): readonly ModelPlacement[] {
   const placements: ModelPlacement[] = [];
   const roads = resolveRoadAppearances(map, index);
+  const terrain = resolveDiagonalSlopeAppearances(map, index);
   for (const tile of map.tiles) {
+    const appearance = terrain.get(index.keyOf(tile));
+    if (appearance) {
+      placements.push({
+        modelId:
+          appearance.kind === "diagonal"
+            ? DIAGONAL_SLOPE_MODEL
+            : TERRAIN_TRANSITION_SOURCE,
+        level: tile.y,
+        position: { x: tile.x + 0.5, y: tileTop(tile.y), z: tile.z + 0.5 },
+        turns:
+          appearance.kind === "diagonal"
+            ? (((appearance.turns + 1) % 4) as Rotation)
+            : 0,
+        tile,
+        terrain: appearance,
+      });
+      continue;
+    }
     if (tile.slope !== undefined) {
       placements.push({
         modelId: SLOPE_MODELS[tile.slope.kind],

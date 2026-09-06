@@ -3,7 +3,7 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-06 08:18 UTC)
+## Status Digest (2026-09-06 08:24 UTC)
 
 **Production ON HOLD** (#748). The Executive Director tunes Map Lab; only his named exceptions proceed. No M3 decomposition or Ready growth beyond those exceptions. **v0.2.8** is tagged; general production has not resumed.
 
@@ -19,19 +19,19 @@
 
 **Completed / board:** half-height engine, generator, real slope kit and ramp-gap fix (#807/#808/#809/#817) Done. **#828/#835 camera zoom Done**; both screens frame the map and zoom in to a readable squad. Lurker fixture #842/#843, Producer handoff #844 and QA catalogue #839 merged and Done.
 
-**Scale exception (#826):** parent In Progress; ADR 0009 merged and camera prerequisite #835 satisfied. **#829 / PR #838 Blocked, MapGen-owned**: Director accepted the frames and approved all three rulings, applied in c48ae4b. Remaining blockers are the CI generation-sweep timeout at 120 seconds and three tactical e2e failures on rescaled harness maps. MapGen fixes and runs the local CI gate; Tech Lead re-gates the merge result and merges on green. **Next release waits for #840**, by Director ruling.
+**Scale exception (#826):** parent In Progress; **#829 / PR #838 In Review, MapGen**. Director accepted frames and rulings. Push 4339bfb merges main, retains #843's enabled fixture, removes the skip, and addresses the CI sweep budget plus three tactical e2e assumptions. Author reports merged-tree checks green, including 59 CI-mode e2e tests in 2.4 minutes. Await CI and Tech Lead's independent re-gate. **Next release waits for #840**, by Director ruling.
 
-**AI follow-up #842 / PR #843:** **Done**; merged to main as c84769d after CI and the Tech Lead's seven-check merge-result gate passed. eng-3 is free. **#838 must merge main and retain its enabled lurker fixture**, removing the temporary skip; Tech Lead has explicitly told MapGen which version to keep. The old sweep's low attack count is recorded on #497 as a harness finding, not proof of a balance defect.
+**AI follow-up #842 / PR #843:** **Done**; merged to main as c84769d after CI and the Tech Lead's seven-check merge-result gate passed. eng-3 is free. MapGen reports #838 now retains the enabled fixture and removes the skip in 4339bfb; independent re-gate remains. The old sweep's low attack count is recorded on #497 as a harness finding, not proof of a balance defect.
 
-**Road-kit child #840:** **In Progress, Art Director**, in parallel with #838 gate fixes. MapGen identified the kit limitation that authorizes this child: lane-interior slab, kerb edge and centre-line pieces so wide avenues stop reading as parallel single-lane roads. No engineer seat label.
+**Road-kit #840 / PR #850:** **In Review, Art Director**. Four Blender modules and the resolver render broad roads as one carriageway. Composite and 96² integration frame delivered; after #838 merges, Art Director merges main and regenerates city plus both fog controls before merge. Director judges frames; Tech Lead gates and merges. No engineer seat label.
 
-**Ramp defect #813:** **In Progress, QA filing children** from merged catalogue #839, per Director judgment 5557976144. QA files J1/J2/J3 with acceptance and coordinates, then parks. **#840 first, then J1 geometry (Art Director) and J2 placement (MapGen) in parallel**; no engineer seat labels. J1 needs a continuous diagonal plane at RISE 0.75 and two-/three-chain composites. J2 narrows exclusions to actual man-made edges and separates lot, border and inland cases. J3 accepted for now, reassess after J1 without speculative geometry. N1 narrow channels are not a defect. QA reruns the audit at the new scale after #838 merges; Director judges fix frames before merge.
+**Ramp parent #813:** **In Progress, Producer coordination**; QA catalogue #839 merged, Director judged it and QA filed all three children, then parked. **#847 J2 placement: Blocked on #840, MapGen. #848 J1 diagonal geometry: Blocked on #840, Art Director.** They proceed in parallel after road art, per the Director's final sequencing. **#849 J3 seam: Blocked on #848**, Art Director reassesses against the new piece; accepted for now, no speculative second piece. No engineer seat labels. QA reruns the audit at the new scale after #838; Director judges fix frames. N1 narrow channels are not a defect.
 
-**Other open PRs:** #757/#694 mech-bay preview remains In Review under the Director's exception, content approved, awaiting final merge/frame gates. Existing Art Director ownership retained; route an author update only if the gate requires one. Tech Lead handoff #845 is In Review. Producer handoff #844 merged; this pass opens its successor.
+**Other open PRs:** #757/#694 mech-bay preview remains In Review under the Director's exception, content approved, awaiting final merge/frame gates. Existing Art Director ownership retained; route an author update only if the gate requires one. Tech Lead handoff #845 merged / Done. Producer handoff #844 merged; this pass opens its successor.
 
-**Blocked / parked:** #838's generation-sweep timeout and three tactical e2e failures; #813's J1/J2 fixes wait for #840, J3 reassessment for J1; next release on road art #840. General production and M3 held; #787 parked; #793 p3. All engineer seats idle; the last Ready-high audit found only held M3 #447.
+**Blocked / parked:** #847/#848 wait for road art #840; #849 waits for #848. #850's final integration frames wait for #838 to merge. General production and M3 held; #787 parked; #793 p3. All engineer seats idle; Ready-high audit found only held M3 #447.
 
-**Risks:** green CI and merge-result gates remain required. #843 is on main; #838 must keep its enabled lurker fixture and remove the temporary skip; scale's recorded walkover baseline shift is on #734, with balance retuning out of scope. #840 must integrate with #838's resolver; QA's ramp findings must be rechecked on the new scale. Inherited autofill still permits the wrong tiers; do not run it.
+**Risks:** author-green checks are awaiting independent #838 re-gate. #850 must recapture on the final scale tree. QA corrected the ramp exclusion denominator: **514 walled / 4,104 excluded (12.5%)**, with 3,590 wall-less; use #847's corrected evidence. Audit findings must be rechecked at the new scale. A 96² city save is reported at 1.5 MB; balance baseline changes stay on #734. Inherited autofill permits wrong tiers; do not run it.
 
 **Next routing:** a Ready, unowned high-complexity engineer issue within an Executive Director exception goes to free eng-3; low/medium stay on Opus. Preserve specialist ownership and one open issue per seat. Record the exception and cleared prerequisites before labeling. Groom the next event, then re-arm one watch.
 <!-- digest:end -->

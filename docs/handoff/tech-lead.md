@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-06 ~11:30 UTC (session 5; #866 kerb walls merged (#863); only #757 awaits the Director's frame; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-06 ~12:05 UTC (session 5; #874 three-sided gully merged (#849, #813 J3 partial); QA's #813 verdict is #873; only #757 awaits the Director's frame; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — production is paused; only #748 is live
 
@@ -246,6 +246,27 @@ through a railing; measured zero delta on the 108-map matrix (2,112 ramps
 across half walls on both trees, all pre-existing city parapets; repairs
 fired on none). I read the verdict 25 min late: it was posted before my gate
 comment and my wait baselined on the existing count (§5 "Verdicts").
+
+**#873 (QA, docs) — MERGED `997945b`**: `docs/design/diagnostics/813/final/`
+is the verdict per ramp class on `main@4244675`: J1 partly fixed (41 of 92
+chain tiles carry the diagonal), J2 fixed (5,371 → 141), J3 unchanged as
+ruled, K1 untouched, K2 fixed (`barePavedEdges` 0 on the 108 `qa813` seeds),
+N1 not a defect. It confirms the parapet-across-ramp finding (2,046 ramps;
+the Director's #869 item 2) and names a **routing gap**: ramp connectors
+still draw the placeholder plank, raised on #748 in September and never
+routed; #866's full-span plank puts three grey slabs across the K2
+carriageway. Flagged to the Director as an Art Director item.
+
+**#874 (Art Director, #849, #813 J3) — MERGED `7b9e3c7`**, Director accepted
+(11:52, on the PR before my gate comment; read it this time): a 14-triangle
+concave gully mesh for a natural one-layer pocket high on three sides, its
+mouth two half-width outer corners; `terrain-slope-resolver` composes the
+diagonal map first and passes it as `occupied`. Covers 173 of 495 three-high
+tiles on the matrix; #849 stays open for the Director. Fog frames refreshed
+because main's tracked PNGs were stale after #866 — **I re-rendered them on
+`main@997945b` and the hashes match the PR's `freshMain` exactly**, so it is
+not a fog change. Follow-up on the PR: `NATURAL` duplicates the diagonal
+resolver's `NATURAL_SURFACES`.
 
 **#757 (mech bay preview, #694) is unparked** on the Director's instruction
 (06:50): approved on content, gate on the merge with today's `main` green,

@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-06 ~12:05 UTC (session 5; #874 three-sided gully merged (#849, #813 J3 partial); QA's #813 verdict is #873; only #757 awaits the Director's frame; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-06 ~13:10 UTC (session 5; #757 merged; #879 ramp connector art (#875, release blocker) gate+CI green, awaiting the Director's frame verdict; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — production is paused; only #748 is live
 
@@ -267,6 +267,27 @@ because main's tracked PNGs were stale after #866 — **I re-rendered them on
 `main@997945b` and the hashes match the PR's `freshMain` exactly**, so it is
 not a fog change. Follow-up on the PR: `NATURAL` duplicates the diagonal
 resolver's `NATURAL_SURFACES`.
+
+**#757 (mech bay preview, #694) — MERGED `f883a6f`** (13:40 floor check): the
+Director confirmed the frame in session and instructed the merge; no verdict
+was ever posted on the PR, so I recorded the instruction there, re-gated on
+`main@9338f49` (2076 unit, 59 e2e) and merged with the sha guard. #694 closed.
+
+**#879 (Art Director, #875, release blocker for v0.2.10) — gate GREEN on
+`6c084da` + `main@f883a6f` (2097 unit, 59 e2e), CI green after a rerun,
+approved on code; merges on the Director's frame verdict.** `tile.ramp.connector`
+is an 8-triangle wedge fitted by `ramp-model-resolver`: full width on the
+low tile, `scaleY` = rise, surface from the road style else the low tile,
+shared feet keep the slab with half-length approaches (`scaleZ` 0.5);
+placeholders retire per ramp id; fog frames change by ramp pixels only
+(2,850 by `compare -metric AE`). Frames: `docs/design/diagnostics/875/`
+before/after and `docs/design/kits/ramp-connectors-composite.png`.
+
+**#881 (mine) — MERGED `b8752bf`**: #879's CI red was
+`connectivity-pass.test.ts` "all eight invariants" timing out at a hardcoded
+30 s on the shared runner (8.4 s locally over 72 maps). Now 3 seeds on CI
+under the 120 s budget, in the `vitest.config.ts` table. Same class as
+#852/#856; every generated-map test with its own literal timeout is suspect.
 
 **#757 (mech bay preview, #694) is unparked** on the Director's instruction
 (06:50): approved on content, gate on the merge with today's `main` green,

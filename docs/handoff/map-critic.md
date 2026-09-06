@@ -34,7 +34,8 @@ add eight inspected PNGs with JSON sidecars on main `f43f73c`: waterfront
 second angle, two fence angles, two roof angles, units-off roof controls in
 temperate and snow, and a roofed building control. Evidence is published at
 `46270e9a6f369b09334730673989ac1f8f20b38b`. Current documentation branch:
-`docs/910-map-critic-calibration`. The Director's role amendment is #912;
+`docs/910-map-critic-calibration`, [PR #918](https://github.com/BenjaminBenetti/tut/pull/918).
+The Director's role amendment #912 is merged;
 this branch leaves that contract to its own PR. Only diagnostic
 documents/images and this handoff change. No generator implementation was read;
 no prevalence, movement, LOS, balance or performance sign-off is claimed.

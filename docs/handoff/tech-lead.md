@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-06 ~01:10 UTC (session 5; slopes #798/#799 are the newest ED exception; #795 pending; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-06 ~02:15 UTC (session 5; #801 slopes data path and #795 merged; #799 open for the #798 model mapping; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — production is paused; only #748 is live
 
@@ -121,6 +121,22 @@ cover/LOS rule stated and tested; the knob is a `GenerationParams`/recipe field;
 sweep test for man-made edges keeping walls and no orphan corners; goldens,
 `MAPGEN_WIDE=1`, `test:sim` before/after; controls captured through a spec.
 Director judges frames before merge.
+
+**Merged 02:10 UTC.** #795 (`ee943fb`) — mist resources shared by prototype;
+merged as a **documented exception to never-merge-red**: its three CI reds were
+the #793 stall on a branch predating #796, gate on the merge with `main` green,
+frames byte-identical, Director-verified. #801 (`61eb835`) — #799's data path:
+`Tile.slope?`/`naturalEdge?` optional (no migration), `slope` connector kind,
+`SlopePass`, `slopeShare` on the recipe, Map Lab knob + metric reading the knob
+back by construction, ADR 0004 amended (I10), `e2e/slope-screenshot.spec.ts`
+captures both controls, placeholder wedge under the `slopes` label. Director
+accepted both controls and ruled: slope = open ground, high edge keeps the
+bonus. `test:sim` identical (the sim's city seed has no natural steps).
+**#799 stays open** for the `(surface, kind, turns)` → #798 model mapping in
+`map-model-resolver.ts` once the Art Director's meshes land (#798 PR pending);
+review it against the placeholder seam comment there. Follow-ups noted by the
+Director: outer-corner notches with the placeholder; crater terraces stay
+man-made until the ED sees one.
 
 **Otherwise the queue is empty except parked #757.** Nothing merges until the ED's
 playtest verdict or a Director ruling on the ramp child above.

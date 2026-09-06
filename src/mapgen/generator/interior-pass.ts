@@ -7,7 +7,7 @@ import { RoomKindIds } from "../data/room-kind-ids";
 import { SurfaceIds } from "../data/surfaces";
 import type { Building, Floor, Room } from "../model/building";
 import type { BuildingTemplate } from "../model/building-template";
-import type { Connector } from "../model/connector";
+import { CONNECTOR_RULES, type Connector } from "../model/connector";
 import type { DiagnosticSink } from "../model/diagnostics";
 import type {
   DraftCapability,
@@ -244,7 +244,11 @@ function addLadder(
           !draft.inBounds(outside.x, outside.z) ||
           draft.isCovered(outside.x, outside.z) ||
           draft.groundSurfaceAt(outside.x, outside.z) === SurfaceIds.WATER ||
-          draft.groundLevelAt(outside.x, outside.z) >= roofY ||
+          // A ladder rises at least its rule's minimum (two layers): natural
+          // ground can now sit one layer under a roof (#808), and a rung
+          // that short breaks I4.
+          roofY - draft.groundLevelAt(outside.x, outside.z) <
+            CONNECTOR_RULES.ladder.minRise ||
           roofY - draft.groundLevelAt(outside.x, outside.z) > MAX_LADDER_CLIMB
         ) {
           continue;

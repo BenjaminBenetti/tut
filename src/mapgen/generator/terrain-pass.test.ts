@@ -139,6 +139,6 @@ describe("TerrainPass", () => {
       new Mulberry32Rng(hashSeed("note")),
     );
     expect(diagnostics.notes[0]?.pass).toBe("terrain");
-    expect(diagnostics.notes[0]?.message).toMatch(/terrain up to level/);
+    expect(diagnostics.notes[0]?.message).toMatch(/terrain up to layer/);
   });
 });

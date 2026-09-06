@@ -25,9 +25,10 @@ import {
 import { PipelineMapGenerator } from "./pipeline-map-generator";
 import { ReachabilityService } from "./reachability-service";
 import { createSettlementPasses } from "./settlement-pipeline";
-import { DIRECTIONS } from "../../core/model/direction";
+import { DIRECTIONS, type Direction } from "../../core/model/direction";
 import { stepGridPos } from "../../core/service/grid-math";
 import { SurfaceIds } from "../data/surfaces";
+import type { Tile } from "../model/tile";
 import { TileIndex } from "./tile-index";
 
 const registries = createDefaultRegistries();
@@ -88,42 +89,42 @@ const GOLDENS: readonly Golden[] = [
     biome: "temperate",
     settlement: "town",
     size: "medium",
-    checksum: 2288975501,
+    checksum: 3256776069,
   },
   {
     seed: "golden-snowy",
     biome: "snowy",
     settlement: "town",
     size: "medium",
-    checksum: 2369789076,
+    checksum: 950310651,
   },
   {
     seed: "golden-desert",
     biome: "desert",
     settlement: "town",
     size: "medium",
-    checksum: 2319165908,
+    checksum: 3390636375,
   },
   {
     seed: "golden-coastal",
     biome: "coastal",
     settlement: "town",
     size: "medium",
-    checksum: 2376744036,
+    checksum: 676707611,
   },
   {
     seed: "golden-rural",
     biome: "temperate",
     settlement: "rural",
     size: "small",
-    checksum: 3107225177,
+    checksum: 3352166638,
   },
   {
     seed: "golden-city",
     biome: "desert",
     settlement: "city",
     size: "large",
-    checksum: 3562889357,
+    checksum: 2615439665,
   },
 ];
 
@@ -144,7 +145,10 @@ describe("generation sweep", () => {
       let relocations = 0;
       let roadStepsWithoutConnector = 0;
       let slopeTiles = 0;
-      let slopeConnectorsNotWalkable = 0;
+      let slopeStepsNotWalkable = 0;
+      let connectorsFromSlopes = 0;
+      let naturalStepsOverOne = 0;
+      let concaveLeftStraight = 0;
       let slopesWithWalls = 0;
       let orphanCorners = 0;
       let slopeRunsUnder100 = 0;
@@ -237,12 +241,20 @@ describe("generation sweep", () => {
                 (n) =>
                   n.pass === "connectivity" && n.message.includes("relocated"),
               ).length;
-              // #799: every natural level change is a slope at the default
-              // knob — the pass reports its own share, and at slopeShare 1
-              // (the sweep's default) it must be 100 % on every map. Every
-              // straight or inner slope walks both ways for both classes;
-              // no slope carries a wall (a wall marks a man-made edge); and
-              // no outer corner stands without two straights beside it.
+              // ADR 0008 §2.5 (#808): the terrain pass reports its largest
+              // natural step and it is one layer (I11); every slope tile's
+              // high neighbour is exactly one layer up and reached by the
+              // free step both ways for both classes; no connector starts
+              // on a slope tile (shape only, one derivation); no slope
+              // carries a wall; no outer corner stands without two
+              // straights; and the pass reports 100 % at the default knob.
+              const terrainNote =
+                diagnostics.notes.find((n) => n.pass === "terrain")?.message ??
+                "";
+              const stepMatch = /max natural step (\d+)/.exec(terrainNote);
+              if (stepMatch === null || Number(stepMatch[1]) > 1) {
+                naturalStepsOverOne++;
+              }
               const slopeNote =
                 diagnostics.notes.find((n) => n.pass === "slopes")?.message ??
                 "";
@@ -250,13 +262,34 @@ describe("generation sweep", () => {
               if (shareMatch !== null && Number(shareMatch[1]) < 100) {
                 slopeRunsUnder100++;
               }
+              const slopeColumns = new Set<string>();
               for (const tile of map.tiles) {
                 if (tile.slope === undefined) {
                   continue;
                 }
                 slopeTiles++;
+                slopeColumns.add(`${String(tile.x)},${String(tile.z)}`);
                 if (Object.keys(tile.walls).length > 0) {
                   slopesWithWalls++;
+                }
+                if (tile.slope.kind === "straight") {
+                  // #817: a concave corner is never left as a straight. Two
+                  // adjacent high ground neighbours — prop or no prop — make
+                  // it an inner corner, because the classifier reads levels.
+                  const highs = DIRECTIONS.filter((d) => {
+                    if (tile.walls[d] !== undefined) {
+                      return false;
+                    }
+                    const s = stepGridPos(tile, d);
+                    const up = index.get(s.x, tile.y + 1, s.z);
+                    return up !== undefined && up.buildingId === undefined;
+                  });
+                  const opposite =
+                    (highs.includes("n") && highs.includes("s")) ||
+                    (highs.includes("e") && highs.includes("w"));
+                  if (highs.length === 2 && !opposite) {
+                    concaveLeftStraight++;
+                  }
                 }
                 if (tile.slope.kind === "outer") {
                   const straights = DIRECTIONS.map((d) => {
@@ -266,28 +299,36 @@ describe("generation sweep", () => {
                   if (straights < 2) {
                     orphanCorners++;
                   }
+                  continue;
+                }
+                for (const side of highSides(tile.slope)) {
+                  const step = stepGridPos(tile, side);
+                  const upper = index.get(step.x, tile.y + 1, step.z);
+                  if (upper === undefined) {
+                    slopeStepsNotWalkable++;
+                    continue;
+                  }
+                  for (const mask of [PassMask.INFANTRY, PassMask.MECH]) {
+                    // A prop on either tile takes it out of the graph for
+                    // everyone; the shape is still right (#817), the walk
+                    // is simply not through that tile.
+                    if ((tile.pass & mask) === 0 || (upper.pass & mask) === 0) {
+                      continue;
+                    }
+                    if (
+                      !reach.neighbours(tile, mask).includes(upper) ||
+                      !reach.neighbours(upper, mask).includes(tile)
+                    ) {
+                      slopeStepsNotWalkable++;
+                    }
+                  }
                 }
               }
               for (const c of map.connectors) {
                 if (
-                  c.kind !== "ramp" ||
-                  index.getAt(c.from)?.slope === undefined
+                  slopeColumns.has(`${String(c.from.x)},${String(c.from.z)}`)
                 ) {
-                  continue;
-                }
-                const lower = index.getAt(c.from);
-                const upper = index.getAt(c.to);
-                if (lower === undefined || upper === undefined) {
-                  slopeConnectorsNotWalkable++;
-                  continue;
-                }
-                for (const mask of [PassMask.INFANTRY, PassMask.MECH]) {
-                  if (
-                    !reach.neighbours(lower, mask).includes(upper) ||
-                    !reach.neighbours(upper, mask).includes(lower)
-                  ) {
-                    slopeConnectorsNotWalkable++;
-                  }
+                  connectorsFromSlopes++;
                 }
               }
 
@@ -349,14 +390,19 @@ describe("generation sweep", () => {
       // map of the matrix once road-surfaced features were disabled; the
       // number was 234-781 per twelve city maps before.
       expect(roadStepsWithoutConnector).toBe(0);
-      // Natural edges are hillsides (#799): the pass slopes every one at
-      // the default knob, every slope walks both ways for both classes, a
-      // slope never carries a wall, and a corner never stands alone.
+      // Natural edges are hillsides in half steps (#799, ADR 0008 §2.5):
+      // I11 holds on every map, the pass slopes every run at the default
+      // knob, every slope's high side is a free walk both ways for both
+      // classes, a slope is shape only, never carries a wall, and a corner
+      // never stands alone.
       expect(slopeTiles).toBeGreaterThan(0);
+      expect(naturalStepsOverOne).toBe(0);
       expect(slopeRunsUnder100).toBe(0);
-      expect(slopeConnectorsNotWalkable).toBe(0);
+      expect(slopeStepsNotWalkable).toBe(0);
+      expect(connectorsFromSlopes).toBe(0);
       expect(slopesWithWalls).toBe(0);
       expect(orphanCorners).toBe(0);
+      expect(concaveLeftStraight).toBe(0);
     },
     SWEEP_TIMEOUT_MS,
   );
@@ -367,8 +413,8 @@ describe("generation sweep", () => {
         recipe(g.seed, g.biome, g.settlement, g.size),
         { registries },
       );
-      expect(map.levels % 2).toBe(0);
-      expect(map.tiles.every((tile) => tile.y % 2 === 0)).toBe(true);
+      // Half steps (#808) put natural ground on odd layers; the even-`y`
+      // guard the engine child carried no longer applies.
       // Include each layer: a composite alone cannot catch a vertical unit regression.
       const layers = Array.from(
         { length: map.levels },
@@ -408,3 +454,18 @@ describe("generation sweep", () => {
     );
   });
 });
+
+/**
+ * The sides a straight or inner slope rises onto, from its quarter turns
+ * (south 0, west 1, north 2, east 3; an inner corner's second side is the
+ * next turn clockwise). Mirrors `STRAIGHT_TURNS` / `CORNER_TURNS` in the
+ * slope pass, on purpose: this is the sweep's own reading of the contract.
+ */
+function highSides(slope: NonNullable<Tile["slope"]>): readonly Direction[] {
+  const ring: readonly Direction[] = ["s", "w", "n", "e"];
+  const first = ring[slope.turns] ?? "s";
+  if (slope.kind === "straight") {
+    return [first];
+  }
+  return [first, ring[(slope.turns + 1) % 4] ?? "w"];
+}

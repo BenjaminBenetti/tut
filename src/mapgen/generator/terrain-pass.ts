@@ -1,5 +1,5 @@
-import { STOREY_LAYERS } from "../../core/model/elevation";
 import type { WeightedSurface } from "../model/biome-definition";
+import type { MapDraft } from "../model/map-draft";
 import type {
   DraftCapability,
   GenerationContext,
@@ -73,17 +73,13 @@ export class TerrainPass implements GenerationPass {
           terrain.octaves,
           terrain.roughness,
         );
-        const amplitudeStoreys = terrain.amplitudeLayers / STOREY_LAYERS;
-        const level =
-          STOREY_LAYERS *
-          Math.min(
-            amplitudeStoreys,
-            Math.floor(stretch(h) * (amplitudeStoreys + 1)),
-          );
+        // Quantised in layers (ADR 0008 §2.5): a hill climbs by half
+        // storeys, and smoothing below keeps every natural step to one.
+        const level = Math.min(
+          terrain.amplitudeLayers,
+          Math.floor(stretch(h) * (terrain.amplitudeLayers + 1)),
+        );
         draft.setGroundLevel(x, z, level);
-        // Remembered so a later pass can tell a natural step from a graded
-        // one; only natural steps become slopes (#799).
-        draft.setNaturalLevel(x, z, level);
         highest = Math.max(highest, level);
 
         const p = patchNoise.fbm(
@@ -95,11 +91,82 @@ export class TerrainPass implements GenerationPass {
         draft.setGroundSurface(x, z, surfaceFor(bands, stretch(p)));
       }
     }
+    const smoothed = smoothToOneLayerSteps(draft);
+    // Remembered so a later pass can tell a natural step from a graded
+    // one; only natural steps become slopes (#799). Recorded after
+    // smoothing, so the natural level is the one that obeys I11.
+    for (let z = 0; z < draft.depth; z++) {
+      for (let x = 0; x < draft.width; x++) {
+        draft.setNaturalLevel(x, z, draft.groundLevelAt(x, z));
+      }
+    }
     context.diagnostics.note(
-      `terrain up to level ${highest} of ${terrain.amplitudeLayers}, ` +
-        `${bands.length} surface bands`,
+      `terrain up to layer ${String(highest)} of ${String(terrain.amplitudeLayers)}, ` +
+        `${String(bands.length)} surface bands, ${String(smoothed)} columns lowered ` +
+        `for I11 (max natural step ${String(maxStep(draft))})`,
     );
   }
+}
+
+// ===========================================
+// Smoothing (I11)
+// ===========================================
+
+/**
+ * Invariant I11 (ADR 0008 §2.5): no two orthogonally adjacent columns
+ * differ by more than one layer. Relaxes by lowering the higher column of
+ * any offending pair to one layer above the lower, repeating until stable.
+ * Lowering only, so a valley is never filled and the pass converges in at
+ * most `amplitude` sweeps; peaks flatten into terraces, which is the look
+ * the Executive Director asked for. Returns how many columns moved.
+ */
+function smoothToOneLayerSteps(draft: MapDraft): number {
+  let moved = 0;
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (let z = 0; z < draft.depth; z++) {
+      for (let x = 0; x < draft.width; x++) {
+        const here = draft.groundLevelAt(x, z);
+        for (const [dx, dz] of [
+          [1, 0],
+          [0, 1],
+        ] as const) {
+          const nx = x + dx;
+          const nz = z + dz;
+          if (!draft.inBounds(nx, nz)) continue;
+          const there = draft.groundLevelAt(nx, nz);
+          if (there - here > 1) {
+            draft.setGroundLevel(nx, nz, here + 1);
+            moved++;
+            changed = true;
+          } else if (here - there > 1) {
+            draft.setGroundLevel(x, z, there + 1);
+            moved++;
+            changed = true;
+          }
+        }
+      }
+    }
+  }
+  return moved;
+}
+
+/** The largest level difference between any two orthogonal neighbours. */
+function maxStep(draft: MapDraft): number {
+  let max = 0;
+  for (let z = 0; z < draft.depth; z++) {
+    for (let x = 0; x < draft.width; x++) {
+      const here = draft.groundLevelAt(x, z);
+      if (x + 1 < draft.width) {
+        max = Math.max(max, Math.abs(draft.groundLevelAt(x + 1, z) - here));
+      }
+      if (z + 1 < draft.depth) {
+        max = Math.max(max, Math.abs(draft.groundLevelAt(x, z + 1) - here));
+      }
+    }
+  }
+  return max;
 }
 
 // ===========================================

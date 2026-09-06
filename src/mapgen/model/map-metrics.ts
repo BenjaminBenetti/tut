@@ -64,6 +64,17 @@ export interface MapMetrics {
    * reads the Map Lab knob back. 1 when a map has no natural edge.
    */
   readonly slopeShare: number;
+  /**
+   * Ground edges by rise (ADR 0008 §2.5): every orthogonal pair of
+   * ground tiles counted once — `flat` at the same layer, `half` one
+   * layer apart (a free walk), `cliff` two or more (a wall, unless a
+   * connector crosses it). How gradual a map is, in one line.
+   */
+  readonly steps: {
+    readonly flat: number;
+    readonly half: number;
+    readonly cliff: number;
+  };
   readonly ramps: number;
   readonly stairs: number;
   readonly ladders: number;

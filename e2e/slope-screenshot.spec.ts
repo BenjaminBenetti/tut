@@ -19,10 +19,22 @@ const CONTROLS = [
     seed: "hills-1",
     file: "docs/design/shots/799-preview-terrain-heavy-snowy-rural-hills-1.png",
   },
+  // #808: the same hillside in half steps, and a big city so the graded
+  // plat, its buildings and its man-made edges are judged at the new unit.
+  {
+    query: "seed=hills-1&biome=snowy&settlement=rural&size=medium",
+    seed: "hills-1",
+    file: "docs/design/shots/808-preview-half-steps-snowy-rural-hills-1.png",
+  },
+  {
+    query: "seed=big-city&biome=temperate&settlement=city&size=large",
+    seed: "big-city",
+    file: "docs/design/shots/808-preview-big-city-temperate-large.png",
+  },
 ] as const;
 
 for (const control of CONTROLS) {
-  test(`captures the slope control ${control.seed} without fog for review`, async ({
+  test(`captures ${control.file.split("/").pop() ?? control.seed} without fog for review`, async ({
     page,
   }) => {
     test.skip(process.env.CAPTURE === undefined, "set CAPTURE=1 to capture");

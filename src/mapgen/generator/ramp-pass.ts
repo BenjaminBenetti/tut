@@ -58,22 +58,15 @@ export class RampPass implements GenerationPass {
     const { draft, params, diagnostics } = context;
     const { nodes, components } = buildGroundComponents(draft);
 
-    // Slopes (#799) run first and already join every natural step; a ramp
-    // is for what is left, which is the man-made edges. Fold the slopes
-    // into the components so those steps are not bridged twice.
-    for (const connector of draft.connectors) {
-      if (
-        connector.kind === "ramp" &&
-        draft.slopeAt(connector.from.x, connector.from.z) !== undefined
-      ) {
-        components.union(
-          columnKey(draft, connector.from),
-          columnKey(draft, connector.to),
-        );
-      }
-    }
+    // Natural steps are one layer and a free walk (ADR 0008 §2.3), so a
+    // ramp is only ever for a man-made two-layer edge.
+    // A ramp never stands on a slope tile (ADR 0004 I10): a wedge is the
+    // shape of a natural half step, and a plank rising from it would be
+    // one thing drawn as two. Plat edges have flat feet to choose from.
     const steps = collectSteps(draft, nodes).filter(
-      (step) => !hasConnector(draft, step.lower, step.upper),
+      (step) =>
+        !hasConnector(draft, step.lower, step.upper) &&
+        draft.slopeAt(step.lower.x, step.lower.z) === undefined,
     );
     let joined = 0;
     for (const step of steps) {

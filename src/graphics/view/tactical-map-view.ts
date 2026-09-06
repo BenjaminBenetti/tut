@@ -361,14 +361,14 @@ export class TacticalMapView implements Disposable, TilePicker {
     // the staircase (#766). Ground pillars stay: they are the earth
     // beneath the surface slab, not a stand-in for it. Ramps and ladders
     // stay too, having no art.
-    for (const label of [
-      TILES_SLAB,
-      "walls",
-      "props",
-      "connectors",
-      "slopes",
-    ]) {
+    for (const label of [TILES_SLAB, "walls", "props", "connectors"]) {
       this.retirePlaceholders(label);
+    }
+    // The slope wedge stays until the slope kit is re-emitted at one layer
+    // of rise (#809): until then the resolver places no slope model, and a
+    // wedge with nothing behind it must not retire (ADR 0008 §3, child b).
+    if (placements.tiles.some((p) => p.modelId.startsWith("tile.slope."))) {
+      this.retirePlaceholders("slopes");
     }
   }
 

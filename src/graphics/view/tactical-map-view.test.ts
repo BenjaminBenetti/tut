@@ -265,13 +265,26 @@ function allInstanced(view: TacticalMapView): InstancedMesh[] {
   return found;
 }
 
+/** Every object under the view's root, depth first. */
+function allObjects(view: TacticalMapView): Object3D[] {
+  const out: Object3D[] = [];
+  view.root.traverse((o) => {
+    out.push(o);
+  });
+  return out;
+}
+
 /** Instanced meshes whose name starts with a prefix. */
 function named(view: TacticalMapView, prefix: string): InstancedMesh[] {
   return allInstanced(view).filter((m) => m.name.startsWith(prefix));
 }
 
 describe("TacticalMapView.loadModels", () => {
-  it("replaces slope placeholders, batches by surface, and shares mist materials across levels", async () => {
+  it("keeps the slope placeholder wedge and places no slope model until #809", async () => {
+    // ADR 0008 §3: child (b) draws natural half steps with the view's
+    // wedge, which rises one layer, until child (c) re-emits the kit at
+    // that rise. The #811 kit rises a whole storey, so mapping it here
+    // would stand a full wedge on a half step.
     const base = new FixtureMapBuilder(3, 1, 2).fillGround().build();
     const map: TacticalMap = {
       ...base,
@@ -286,37 +299,17 @@ describe("TacticalMapView.loadModels", () => {
     view.setVision({ visible: [], explored: [], spotted: [], lastSeen: {} });
     const models = new FakeModelLoader();
     await view.loadModels(models);
-    // Two parts per batch, including the same shape in two materials on level 0.
-    const grass = named(view, "tiles-model:tile.slope.inner:").filter((mesh) =>
-      mesh.name.includes(":grass:"),
-    );
-    const sand = named(view, "tiles-model:tile.slope.inner:").filter((mesh) =>
-      mesh.name.includes(":sand:"),
-    );
-    expect(grass).toHaveLength(8); // fake GLB has two meshes, each split into two parts
-    expect(sand).toHaveLength(4);
-    expect(grass[0]!.material).toBe(grass[4]!.material);
-    expect(grass[0]!.material).not.toBe(sand[0]!.material);
-    expect(
-      models.loaded.filter((id) => id === "tile.slope.inner"),
-    ).toHaveLength(2);
-    for (const mesh of [...grass, ...sand])
-      expect(mesh.geometry.getAttribute("unexploredMist").getW(0)).toBe(1);
-    const index = new TileIndex(map);
-    view.setVision({
-      visible: map.tiles.map((tile) => index.keyOf(tile)),
-      explored: [],
-      spotted: [],
-      lastSeen: {},
-    });
-    for (const mesh of [...grass, ...sand])
-      expect(mesh.geometry.getAttribute("unexploredMist").getW(0)).toBe(0);
-    for (const tile of map.tiles)
-      expect(
-        view.root.getObjectByName(`slope:${tile.x},${tile.z}`)!.visible,
-      ).toBe(false);
-    view.dispose();
+    expect(named(view, "tiles-model:tile.slope.")).toHaveLength(0);
+    const wedges = allObjects(view).filter((o) => o.name.startsWith("slope:"));
+    expect(wedges.length).toBeGreaterThan(0);
+    for (const wedge of wedges) {
+      expect(wedge.visible, wedge.name).toBe(true);
+    }
   });
+
+  it.todo(
+    "#809: replaces slope placeholders with the half-rise kit, batches by surface, and shares mist materials across levels",
+  );
 
   it("shares a prototype's ghosted mist material across levels, isolated from plain terrain and other scenes", async () => {
     const b = new FixtureMapBuilder(2, 1, 2).fillGround();

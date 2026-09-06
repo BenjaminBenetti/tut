@@ -3,7 +3,7 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-06 22:07 UTC)
+## Status Digest (2026-09-06 22:22 UTC)
 
 **Production held; Map Quality Loop live.** Await the Executive Director's next taste call outside the authorized loop. Map Critic (Astra 6, new seat) files evidenced tickets; MapGen (Astra 6 / xhigh) works generation and Art Director (Astra 6 / xhigh) handles assets. At most three open Critic tickets. Those tickets are live specialist work, not automatically held Backlog. No M3 decomposition or Ready growth beyond Executive Director exceptions.
 
@@ -12,7 +12,7 @@
 | Issue | Status / dependency | Accountable specialist |
 | --- | --- | --- |
 | #911 p2 TDF dropship | In Progress — footprint claim 5562423843 | Art Director; proposed 5×7 envelope awaits MapGen agreement before geometry |
-| #915 p1 waterfront endings | In Progress — claim/cause 5562411459 | MapGen; existing dry-footprint quay/apron, wider coast redesign excluded |
+| #915 p1 waterfront endings | In Review — PR #932, Tech Lead gate green | MapGen; Director frames/merge pending; wider coast redesign excluded |
 | #917 p2 isolated rural fences | Queued behind #911 | MapGen |
 
 **Map Quality Loop completions on main:** #906/#913 foundations, #910/#926 paved platforms, and #916/#925 pitched roofs/cutaway are closed/Done after Director acceptance and Tech Lead gates. Platforms fell 187 → 0 with all 213 planted beds retained; roof controls and the restored local reveal passed review. No new release tag yet: v0.2.11 remains latest. Critic re-checks of all three repairs remain pending; the Director's interior-darkness note is a later play/sweep observation, not a merge block.
@@ -38,6 +38,8 @@
 **Milestones (closed / total items, computed from issue state, including new Critic issues/PR):** M0 14/14 · M1 64/65 · M1.5 40/47 · M2 49/50 · M2.5 26/31 · M3 1/4 · Arsenal 1/3 · Bestiary 1/1 · Tech Debt 6/8. Assignment to a milestone is not a declaration that it is active or complete.
 
 **Board correction:** #908 merged the routing handoff but accidentally auto-closed #906 because GitHub parsed a negated closing phrase in its body. Producer reopened #906 and removed the link; its subsequent closure is now backed by accepted repair PR #913. Future handoff PRs must have no closing references to live work.
+
+**Waterfront review:** Tech Lead verified 156 accessible apron groups on 69/72 coastal maps, unchanged planted-ground reachability, and the unchanged shore-parallel control (5562578286). MapGen owes a nonblocking ADR 0004 §7 `waterfronts` pass-table row in a follow-up docs PR; tracked in #915.
 
 **Dropship gate:** agree footprint, exact placement and clearance before Art models. The hull must sit outside the clear unit-start/boarding tiles; preserve shared deploy/extraction and real ground contact. MapGen keeps #915 first while coordinating the contract.
 

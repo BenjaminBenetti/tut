@@ -1,4 +1,4 @@
-"""Three neutral, watertight terrain shapes; materials are chosen by the consumer.
+"""Four neutral, watertight terrain shapes; materials are chosen by the consumer.
 
 Blender Z-up, high edge towards -Y (glTF +Z), base-centred 1 x 1 footprint.
 All top UVs use footprint projection so corners continue adjacent wedges.
@@ -7,7 +7,7 @@ All top UVs use footprint projection so corners continue adjacent wedges.
 import bpy
 from bpy_kit import material
 
-# One elevation layer under ADR 0008; re-emit all three shapes from this parameter.
+# One elevation layer under ADR 0008; re-emit all four shapes from this parameter.
 RISE = 0.75
 
 

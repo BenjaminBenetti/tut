@@ -96,7 +96,10 @@ export function resolveDiagonalSlopeAppearances(
   const cornerAt = (tile: Tile, vx: number, vz: number): number =>
     CORNERS.findIndex(([dx, dz]) => tile.x + dx === vx && tile.z + dz === vz);
   const result = new Map<number, TerrainSlopeAppearance>();
-  const changes = new Map<number, { x: number; z: number; height: number }>();
+  const changes = new Map<
+    number,
+    { x: number; z: number; height: number; diagonal: 0 | 1 }
+  >();
   const fixedCorners = new Map<number, number>();
   const seen = new Set<number>();
   for (const tile of ground.values()) {
@@ -125,7 +128,11 @@ export function resolveDiagonalSlopeAppearances(
       const upper = at(next.x + dx, next.z + dz);
       next = matches(upper, next.y + 1) ? upper : undefined;
     }
-    if (chain.length < 2 || chain.some((t) => !editable(t))) continue;
+    if (
+      chain.length < 2 ||
+      chain.some((t) => !editable(t) || terrainSlopeRise(t, index) !== 1)
+    )
+      continue;
     const chainKeys = new Set(chain.map((t) => key(t.x, t.z)));
     const proposals = new Map<
       number,
@@ -178,16 +185,24 @@ export function resolveDiagonalSlopeAppearances(
         );
       }
     }
-    for (const [k, proposal] of proposals) changes.set(k, proposal);
+    for (const [k, proposal] of proposals)
+      changes.set(k, { ...proposal, diagonal: ((turns + 1) % 2) as 0 | 1 });
   }
-  const caps = new Map<number, { tile: Tile; corners: number[] }>();
+  const caps = new Map<
+    number,
+    { tile: Tile; corners: number[]; diagonal: 0 | 1 }
+  >();
   for (const change of changes.values())
     for (const neighbour of incident(change.x, change.z)) {
       if (!neighbour || result.has(index.keyOf(neighbour))) continue;
       const k = index.keyOf(neighbour);
       let cap = caps.get(k);
       if (!cap) {
-        cap = { tile: neighbour, corners: [...corners(neighbour)] };
+        cap = {
+          tile: neighbour,
+          corners: [...corners(neighbour)],
+          diagonal: change.diagonal,
+        };
         caps.set(k, cap);
       }
       cap.corners[cornerAt(neighbour, change.x, change.z)] = change.height;
@@ -195,6 +210,7 @@ export function resolveDiagonalSlopeAppearances(
   for (const [k, cap] of caps)
     result.set(k, {
       kind: "transition",
+      diagonal: cap.diagonal,
       corners: cap.corners.map(
         (height) => height - cap.tile.y,
       ) as unknown as TerrainCornerHeights,

@@ -563,6 +563,7 @@ export class TacticalMapView implements Disposable, TilePicker {
           : await new TerrainTransitionModelFactory(models).create(
               appearance.corners,
               materials,
+              appearance.diagonal,
             );
       prototype.traverse((object) => {
         if (object instanceof Mesh)
@@ -1191,7 +1192,7 @@ function terrainPrototypeKey(
   appearance: TerrainSlopeAppearance,
   surface: string,
 ): string {
-  return `${surface}:${appearance.kind}${appearance.kind === "transition" ? `:${appearance.corners.join(",")}` : ""}`;
+  return `${surface}:${appearance.kind}${appearance.kind === "transition" ? `:${appearance.diagonal}:${appearance.corners.join(",")}` : ""}`;
 }
 
 /**

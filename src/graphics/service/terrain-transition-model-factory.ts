@@ -23,6 +23,7 @@ export class TerrainTransitionModelFactory {
   async create(
     corners: TerrainCornerHeights,
     materials: SlopeMaterials,
+    diagonal: 0 | 1,
   ): Promise<Group> {
     const slab = await this.models.load(TERRAIN_TRANSITION_SOURCE);
     slab.updateMatrixWorld(true);
@@ -46,10 +47,15 @@ export class TerrainTransitionModelFactory {
     for (let i = 0; i < position.count; i++)
       if (normal.getY(i) > 0.5)
         occurrences[cornerIndex(position.getX(i), position.getZ(i))]!++;
-    const highest = corners.indexOf(Math.max(...corners));
-    // Put the top diagonal through the highest vertex. Both triangles then
-    // rise above the pillar; no flat half-cap competes with its top face.
-    if (occurrences[highest] !== 2) geometry.rotateY(Math.PI / 2);
+    // Keep the shared top edge aligned with the chain. Its outer half then
+    // continues the next tile's plane instead of creating a row of teeth.
+    // Only the flat foot cap uses the other split, to avoid a zero-height
+    // triangle competing with the original pillar's top face.
+    const shared =
+      corners[diagonal] === 0 && corners[diagonal + 2] === 0
+        ? 1 - diagonal
+        : diagonal;
+    if (occurrences[shared] !== 2) geometry.rotateY(Math.PI / 2);
     const result = new Group();
     const region = materials.uv ?? { u0: 0, v0: 0, u1: 1, v1: 1 };
     for (const top of [true, false]) {

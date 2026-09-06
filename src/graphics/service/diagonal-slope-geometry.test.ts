@@ -89,24 +89,40 @@ describe("shipped diagonal terrain geometry (#848)", () => {
           return hit!.point.y;
         }
         const placements = resolveMapModels(map).tiles;
-        for (const placement of placements.filter(
-          (p) => p.terrain?.kind === "diagonal",
-        )) {
+        for (const placement of placements) {
+          const appearance = placement.terrain;
+          if (appearance?.kind !== "diagonal") continue;
           const { x, y, z } = placement.tile;
-          const [[dx, dz]] = [
+          const [dx, dz] = (
             [
               [-1, 1],
               [-1, -1],
               [1, -1],
               [1, 1],
-            ][(placement.terrain as { turns: number }).turns]!,
-          ];
+            ] as const
+          )[appearance.turns];
+          const epsilon = 0.00001;
+          for (const f of [0.01, 0.25, 0.5, 0.75, 0.99]) {
+            for (const border of [x, x + 1])
+              expect(
+                Math.abs(
+                  height(border - epsilon, z + f) -
+                    height(border + epsilon, z + f),
+                ),
+              ).toBeLessThan(0.0001);
+            for (const border of [z, z + 1])
+              expect(
+                Math.abs(
+                  height(x + f, border - epsilon) -
+                    height(x + f, border + epsilon),
+                ),
+              ).toBeLessThan(0.0001);
+          }
           for (const u of [0.01, 0.3, 0.7, 0.99])
             for (const v of [0.01, 0.3, 0.7, 0.99]) {
               const expected =
                 tileTop(y) +
-                (LAYER_HEIGHT *
-                  ((dx! > 0 ? u : 1 - u) + (dz! > 0 ? v : 1 - v))) /
+                (LAYER_HEIGHT * ((dx > 0 ? u : 1 - u) + (dz > 0 ? v : 1 - v))) /
                   2;
               expect(
                 height(x + u, z + v),
@@ -114,10 +130,27 @@ describe("shipped diagonal terrain geometry (#848)", () => {
               ).toBeCloseTo(expected, 5);
             }
         }
+        // The transition's outer strip is also one plane. Choosing each slab's
+        // highest corner as its triangulation creates teeth here despite closed
+        // borders; this off-edge sample catches that visual regression.
+        if (length >= 3)
+          for (const along of [-0.2, 0.2])
+            for (const across of [-1.85, -1.5, -1.15, 1.15, 1.5, 1.85]) {
+              const centre = (length + 2) / 2 + along;
+              let x = centre + across / 2,
+                z = centre - across / 2;
+              const expected =
+                tileTop(0) + LAYER_HEIGHT * (centre - Math.abs(across));
+              for (let i = 0; i < turns; i++) [x, z] = [map.width - z, x];
+              expect(
+                height(x, z),
+                `outer plane ${along},${across}`,
+              ).toBeCloseTo(expected, 5);
+            }
         // Every internal border, including caps against untouched flat/straight tiles.
         // The shipped base-pivot ground slab sits 0.025 u above tileTop in the
         // existing centre-pivot placement. Allow that inherited lip at flat edges;
-        // diagonal-plane and slope-to-cap samples below use 0.0001 u.
+        // diagonal-plane and slope-to-cap samples above use 0.0001 u.
         // Sampling just inside each face detects holes, winding errors and raised lips.
         const epsilon = 0.00001;
         for (const tile of map.tiles)

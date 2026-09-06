@@ -14,8 +14,8 @@ to MapGen in #863, with graphics coordination through the Director/Tech Lead.
 [PR #862](https://github.com/BenjaminBenetti/tut/pull/862) merged as
 `74d13fc87504deda32e485dd5e4bc648b13389dd`. The Director accepted the composite
 and current-main four-chain before/after in comment 5558549001. The Tech
-Lead approved the content, answered the cache review through the follow-up,
-and merged after CI and all seven local merge checks, including `test:sim`,
+Lead approved the content; I answered his cache question in a follow-up.
+He merged after CI and all seven local merge checks, including `test:sim`,
 passed. The Director explicitly accepted all three cliff-boundary refusals.
 Branch `feat/848-diagonal-slope-kit` ended at `362fba6`; proof commit is
 `03b29d6`. Main through #847/#853 was merged normally before the final frames.

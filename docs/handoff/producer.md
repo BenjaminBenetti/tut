@@ -3,7 +3,7 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-06 06:04 UTC)
+## Status Digest (2026-09-06 06:08 UTC)
 
 **Production ON HOLD** by the Executive Director (#748); he is tuning map generation personally in Map Lab. No resume ordered. No M3 decomposition, new seat assignments without the Director's request, or Ready queue growth. **v0.2.7** is tagged from main.
 
@@ -22,6 +22,8 @@
 **Live exceptions / board:** #804 remains **In Progress**. **#809 and PR #822 are Blocked**, Art Director-owned: Tech Lead's Director-ordered hold requires rebasing onto #823, restoring the half-rise model placement, dropping temporary tests, regenerating preview frames and Director judgment before the merge gate. **#817 remains open/In Progress with MapGen**: #823 fixed its classification defect, but final visual acceptance is unresolved. No specialist issue takes an engineer seat label.
 
 **Open PRs** (06:01 UTC watch snapshot): #822 half-rise slope set, about 15 min old, held for the work above; #824 Tech Lead handoff, newly opened, In Review; #757 mech-bay preview remains unrelated and waiting (last confirmed open at 05:47 UTC). #819/#823 are **Done** on the board.
+
+**Next authorized exception:** #826 map-scale doubling is **Backlog** (Producer tracks), queued behind v0.2.8. Tech Lead writes the ADR and files tiered children first; MapGen leads the implementation and camera work is sized separately. No engineer assignment or Ready promotion yet. Horizontal footprints, roads, interiors, map sizes and zoom change; elevation layers stay unchanged and balance retuning is excluded.
 
 **Blocked / parked:** #809/#822 wait on rebase, integration and frame judgment. #813 diagonal terrace teeth remains **Backlog and unowned**, not Ready until the Executive Director calls it. General production and M3 remain held; #787 parked; #793 remains p3. Ready-high audit found only #447 (held M3); no eligible unowned Ready high issue to seat.
 

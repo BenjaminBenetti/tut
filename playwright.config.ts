@@ -19,7 +19,19 @@ export default defineConfig({
    * a harness budget, not an assertion, and `--fail-on-flaky-tests`
    * (#584) still fails a spec that is genuinely unreliable.
    */
-  timeout: 60_000,
+  timeout: IS_CI ? 120_000 : 60_000,
+  /*
+   * 120 s on CI (#793). On 2026-09-05 seven e2e jobs went red on the
+   * same shape — a tactical spec's first mount blowing the 60 s budget,
+   * then passing on retry — four of them on `main` itself, two on a
+   * docs-only PR. The suite's own wall time had gone from ~7 to ~9.5 min
+   * on the runner after #776 made the first tactical mount heavier, and
+   * a 60 s budget that was 4-5x local headroom no longer was. The budget
+   * is the harness's, not an assertion's: `--fail-on-flaky-tests` still
+   * fails a spec that needs its retry, and a genuine hang still fails,
+   * at 120 s instead of 60. Locally the 60 s stays: a stall here is a
+   * bug to look at, not a runner to wait for.
+   */
   /*
    * Assertions get the same allowance the test timeout above already
    * makes for the runner (#690). Playwright's default is 5 s and is
@@ -52,10 +64,17 @@ export default defineConfig({
    * shared Vite server rather than by CPU. Three seconds to stop
    * twelve browsers competing for cores that are already gone.
    *
-   * CI keeps the default: a GitHub runner has 2-4 cores, so half of
-   * them is already 1-2, and pinning 4 there would oversubscribe it.
+   * CI runs one worker, pinned rather than "half the cores" (#793). A
+   * GitHub runner has 2-4 cores, so the default was already 1 or 2 and
+   * the suite's 8-9 minute wall time says it was mostly 1 — but "mostly"
+   * is the problem: two headless Chromiums each rendering a tactical
+   * first mount on SwiftShader is exactly the CPU contention #700 removed
+   * locally, and the runner has no spare core to absorb it. Pinning to 1
+   * costs nothing when the default was 1 and removes the case where it
+   * was not. The stall this guards against is first-mount CPU work, not
+   * per-spec setup, so the local reasoning above does not transfer.
    */
-  workers: IS_CI ? undefined : 4,
+  workers: IS_CI ? 1 : 4,
   forbidOnly: IS_CI,
   retries: IS_CI ? 1 : 0,
   reporter: IS_CI ? [["github"], ["html", { open: "never" }]] : "list",

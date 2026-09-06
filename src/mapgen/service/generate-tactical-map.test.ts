@@ -69,6 +69,7 @@ describe("generateTacticalMap", () => {
       "buildings",
       "interiors",
       "props",
+      "slopes",
       "ramps",
       "hooks",
       "connectivity",

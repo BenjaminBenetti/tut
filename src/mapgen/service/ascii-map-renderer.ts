@@ -45,6 +45,7 @@ const EMPTY_GLYPH = ".";
 const UNKNOWN_SURFACE_GLYPH = "?";
 const UNKNOWN_HOOK_GLYPH = "!";
 const RAMP_GLYPH = "/";
+const SLOPE_GLYPH = "\\";
 const LADDER_GLYPH = "L";
 
 /** Human-readable legend for the glyphs, for the preview and debug output. */
@@ -52,7 +53,7 @@ export const ASCII_LEGEND = [
   'surfaces  " grass  , dirt  : sand  * snow  ^ rock  = road  - sidewalk  ~ water',
   "          _ floor  # roof  > stairs  . nothing  ? unknown",
   "props     O high cover  o low cover  i no cover",
-  "links     / ramp (lower end)  L ladder (lower end)",
+  "links     / ramp (lower end)  \\ slope (lower tile)  L ladder (lower end)",
   "hooks     D deploy  E egg spawner  S edge spawn  X extraction  ! other",
   "north is up; x grows to the right, z grows downward",
 ].join("\n");
@@ -110,7 +111,11 @@ function buildOverlays(
     }
     overlays.set(
       columnKey(map, connector.from.x, connector.from.z),
-      connector.kind === "ramp" ? RAMP_GLYPH : LADDER_GLYPH,
+      connector.kind === "ramp"
+        ? RAMP_GLYPH
+        : connector.kind === "slope"
+          ? SLOPE_GLYPH
+          : LADDER_GLYPH,
     );
   }
   // Later groups win: extraction < deploy < edge spawns < objectives.

@@ -73,6 +73,7 @@ export function computeMapMetrics(map: TacticalMap): MapMetrics {
     map.connectors.filter((c) => c.kind === kind).length;
 
   const reach = new ReachabilityService(index, map.connectors);
+  const slopes = slopeMetrics(map);
   const spaces: number[] = [];
   for (const objective of map.hooks.objectives) {
     const origin = objective.tiles[0];
@@ -98,6 +99,8 @@ export function computeMapMetrics(map: TacticalMap): MapMetrics {
     highCoverPer100: 100 * ratio(high, groundTiles),
     lowCoverPer100: 100 * ratio(low, groundTiles),
     interiorPropsPerBuilding: ratio(interiorProps, map.buildings.length),
+    slopes: slopes.slopes,
+    slopeShare: slopes.share,
     ramps: count("ramp"),
     stairs: count("stairs"),
     ladders: count("ladder"),
@@ -162,4 +165,28 @@ function closedSidesOf(index: TileIndex, tile: Tile): number {
 /** `numerator / denominator`, or 0 when the denominator is 0. */
 function ratio(numerator: number, denominator: number): number {
   return denominator === 0 ? 0 : numerator / denominator;
+}
+
+// ===========================================
+// Slopes (#799)
+// ===========================================
+
+/**
+ * Slopes over natural edges, exactly as the pass saw them (#799): every
+ * tile the pass could piece is frozen with `naturalEdge`, sloped or not,
+ * so the share reads the knob back with no guess about which cliffs were
+ * graded. A map with no natural edge reads 1.
+ */
+function slopeMetrics(map: TacticalMap): { slopes: number; share: number } {
+  let slopes = 0;
+  let naturalEdges = 0;
+  for (const tile of map.tiles) {
+    if (tile.naturalEdge === true) {
+      naturalEdges++;
+      if (tile.slope !== undefined) {
+        slopes++;
+      }
+    }
+  }
+  return { slopes, share: naturalEdges === 0 ? 1 : slopes / naturalEdges };
 }

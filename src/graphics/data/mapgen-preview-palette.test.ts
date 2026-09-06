@@ -101,6 +101,7 @@ describe("mapgen preview palette", () => {
     expect(Object.keys(CONNECTOR_COLOURS).sort()).toEqual([
       "ladder",
       "ramp",
+      "slope",
       "stairs",
     ]);
   });

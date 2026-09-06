@@ -14,7 +14,12 @@ import type { TileCoord } from "./tile-coord";
  *   ladder  ground/roof ↔ roof rise ≥ 1  infantry
  * ```
  */
-export type ConnectorKind = "ramp" | "stairs" | "ladder";
+/**
+ * `slope` is a natural hillside (#799): same rule as a ramp, but the
+ * lower tile carries a `Tile.slope` describing the wedge. Ramps stay for
+ * man-made edges and stairs and ladders for buildings.
+ */
+export type ConnectorKind = "ramp" | "slope" | "stairs" | "ladder";
 
 /**
  * The only way to change level. Always bidirectional. `from` is the lower
@@ -44,6 +49,7 @@ export interface ConnectorRule {
 /** Rules per connector kind, from ADR 0004 §4.3. */
 export const CONNECTOR_RULES: Readonly<Record<ConnectorKind, ConnectorRule>> = {
   ramp: { pass: PassMask.ALL, minRise: 1, maxRise: 1 },
+  slope: { pass: PassMask.ALL, minRise: 1, maxRise: 1 },
   stairs: { pass: PassMask.INFANTRY, minRise: 1, maxRise: 1 },
   ladder: {
     pass: PassMask.INFANTRY,

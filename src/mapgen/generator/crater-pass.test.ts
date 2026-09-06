@@ -70,6 +70,7 @@ describe("crash-site archetype (prototype)", () => {
           biome: BIOME_DEFINITIONS.temperate,
           settlement: SETTLEMENT_DEFINITIONS.rural,
           hooks: [],
+          slopeShare: 1,
         },
         rng: new Mulberry32Rng(hashSeed(`bowl-${String(seed)}`)),
         draft,

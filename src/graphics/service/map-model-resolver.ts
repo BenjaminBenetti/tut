@@ -182,6 +182,15 @@ function resolveTiles(
 ): readonly ModelPlacement[] {
   const placements: ModelPlacement[] = [];
   for (const tile of map.tiles) {
+    // A slope tile is drawn by the view's placeholder wedge until the
+    // slope block set lands (#798); a flat slab here would cap the wedge.
+    // This is the seam for that mapping: resolve
+    // `(surface, slope.kind, slope.turns)` to the slope model here, and
+    // retire the view's "slopes" placeholder label the way the slab and
+    // stairs planks are retired, and nothing else needs to move.
+    if (tile.slope !== undefined) {
+      continue;
+    }
     const fitted = fitSurface(tile, index, map);
     if (fitted === undefined) {
       continue;

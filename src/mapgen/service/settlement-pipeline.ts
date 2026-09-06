@@ -8,6 +8,7 @@ import { InteriorPass } from "../generator/interior-pass";
 import { LotPass } from "../generator/lot-pass";
 import { PropPass } from "../generator/prop-pass";
 import { RampPass } from "../generator/ramp-pass";
+import { SlopePass } from "../generator/slope-pass";
 import { RoadPass } from "../generator/road-pass";
 import { TerrainPass } from "../generator/terrain-pass";
 import { WaterPass } from "../generator/water-pass";
@@ -36,6 +37,7 @@ export function createSettlementPasses(): GenerationPass[] {
     new BuildingPass(),
     new InteriorPass(),
     new PropPass(),
+    new SlopePass(),
     new RampPass(),
     new HookPass(),
     new ConnectivityPass(),
@@ -70,6 +72,7 @@ export function createCrashSitePasses(): GenerationPass[] {
     new WaterPass(),
     new CraterPass(),
     new DebrisPass(),
+    new SlopePass(),
     new RampPass(),
     new HookPass(),
     new ConnectivityPass(),

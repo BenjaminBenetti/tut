@@ -3,11 +3,11 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-06 19:22 UTC)
+## Status Digest (2026-09-06 19:37 UTC)
 
 **Production held; Map Quality Loop live.** Await the Executive Director's next taste call outside the authorized loop. Map Critic (Astra 6, new seat) files evidenced tickets; MapGen (Astra 6 / xhigh) works generation and Art Director (Astra 6 / xhigh) handles assets. At most three open Critic tickets. Those tickets are live specialist work, not automatically held Backlog. No M3 decomposition or Ready growth beyond Executive Director exceptions.
 
-**Map Quality Loop now active:** #906 (p1, building bases over black gaps) is Ready for MapGen, with Art Director support and no engineer seat. Two biomes, rotated views and no-unit controls support the finding; implementation remains with the specialists. #905 is In Review with Director for calibration; #907 is the Critic's draft evidence/handoff PR and closes only #905. One actionable Critic ticket is open (maximum three); waterfront endings and empty platform identity remain held in the Critic handoff.
+**Map Quality Loop active:** #906 (p1, building support gaps) is In Progress with Art Director, per Director 5561643308. Diagnosis: the renderer omits implicit solid support under elevated building ground floors. MapGen supplies a second opinion on generation contribution, then stands down from duplicate implementation. Acceptance: D01/D02/D05 plus one already-correct building; Director judges frames, Tech Lead merges, Critic re-checks. #905 survey accepted/calibrated (5561612917), In Review pending evidence PR #907 (now ready for review). Waterfront road endings are authorized next when a slot frees; platform identity stays held for Executive Director taste. One actionable Critic ticket open; cap three.
 
 **Released:** v0.2.8 half-height (#804), v0.2.9 scale (#826), v0.2.10 ramp ruling (#813), v0.2.11 materialled ladders (#891/#893, 58e6c9e). All four issues closed/Done. #849 also closed/Done. #876 deliberately closed: correctly classified same-level saddles remain because the trial fit looked worse.
 
@@ -26,6 +26,8 @@
 **Other retained work:** #869 remains MapGen Backlog at its prior timing; #787/#760 held. Director decisions #591/#712/#734/#751; Art Director #450/#594/#673/#740; Engineer follow-ups **#735/#753 now complexity:medium**, approved by Tech Lead but held, with no seat. #753 needs persisted cityId, schema-v17 migration and a rendered-banner test; #735 inventories guards first, splits above 40 entries by Tech Lead selection, excludes intentional fallbacks/retired autofill, and preserves sim/fog output. These legacy items do not become active merely because their metadata is repaired.
 
 **Milestones (closed / total items, computed from issue state, including new Critic issues/PR):** M0 14/14 · M1 64/65 · M1.5 34/42 · M2 49/50 · M2.5 25/31 · M3 1/4 · Arsenal 1/3 · Bestiary 1/1 · Tech Debt 6/8. Assignment to a milestone is not a declaration that it is active or complete.
+
+**Board correction:** #908 merged the routing handoff but accidentally auto-closed #906 because GitHub parsed a negated closing phrase in its body. Producer reopened #906, removed the link and verified In Progress / Art Director. No repair is merged or visually accepted. Future handoff PRs must have no closing references to live work.
 
 **Risks / operation:** old visibility, walkover and pre-scale measurements are historical; issue bodies now say so. Check delivered code and release ancestry, including reverts, before closing; close epics in the same grooming pass as the last child closes (Director standing rule 5561387468). Producer is Codex Astra 6 / high. Publish one fixed handoff head through CI/merge and batch later updates. Return to one bounded five-minute watch (three-hour hard stop), groom events and re-arm; no cron. Capacity interruptions mean retry the same model, never infer a quota or switch models.
 <!-- digest:end -->

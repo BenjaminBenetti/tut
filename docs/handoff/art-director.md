@@ -9,6 +9,8 @@ in the CLI after the initial diagnosis, overriding the earlier #911 queue hold.
 [Claim and routing](https://github.com/BenjaminBenetti/tut/issues/916#issuecomment-5562110698).
 Branch `fix/916-nonwalkable-roofs`, baseline `e093702`, model/runtime checkpoint
 `a5f4deb`. Main through `5adfd12` merged normally (handoffs only, including #922).
+[PR #925](https://github.com/BenjaminBenetti/tut/pull/925) is open for review;
+the complete rendered proof is committed at `9159421`.
 
 [Complete before/after, controls, kit and reproduction](../design/diagnostics/916/README.md).
 [Cause stated before building](https://github.com/BenjaminBenetti/tut/issues/916#issuecomment-5562040887):
@@ -52,8 +54,8 @@ tests / 27 opt-in skips / zero flaky. Two standard capture specs pass. The
 cutaway capture also asserts a real pixel change and closure after the unit
 leaves. Final `pnpm lint` passes with the complete evidence set.
 
-Scratch `.git/art-916/`. Baseline worktree at `e093702`, Vite 4198; current4199,
-separate cache directories. Stop both before re-arming ONE watch. No model or
+Scratch `.git/art-916/`. Baseline worktree at `e093702`; the isolated Vite 4198
+and 4199 capture servers are stopped before re-arming ONE watch. No model or
 provider-capacity error has occurred. The watch already detects newly created
 and newly labelled/relabelled `area:art` issues; the earlier wait was the
 Producer's explicit dependency order, now superseded for #916. Never stop or

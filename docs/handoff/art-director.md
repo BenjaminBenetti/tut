@@ -1,11 +1,33 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-06 (#798 terrain slope kit)
+Last updated: 2026-09-06 (#817 diagnosis; #809 next)
 
-## Current work: #798 / PR #811, then hold
+## Current work: #817 diagnosis, then #809
+
+The #817 gap is confirmed on the classification side. Read
+[the diagnosis and exact neighbourhoods](../design/diagnostics/817-slope-gap.md).
+A high-neighbour prop removes that column from the classifier's walkable
+node set, changing an inner corner into a straight without changing heights.
+The shipped scene mapping passes all four turns of both corner kinds against
+hand-built neighbourhoods. Twelve Map Lab combinations were rendered and
+inspected; the diagnosis includes crops and the 16 passing diagnostic cases.
+MapGen owns the rule fix in #808. No graphics/model/classifier fix was made.
+
+Latest Director direction: post the finding on #817, then start #809 without
+waiting for another prompt. Re-emit the set with `RISE = 0.75` per ADR 0008;
+read the current issue before working. Earlier pause-only notes are superseded.
+
+New standing event rule: when otherwise waiting for the Director, run ONE
+bounded background watch: GitHub every five minutes, one line and exit at
+first relevant event, hard stop after three hours. Relevant: Tech Lead
+comment/review/merge on own PRs, a new comment on #817 or #809, any new or
+relabelled area:art issue. Act and re-arm; timeout with no event means report
+one line and stop. Never cron and never more than one watch.
+
+## Previous work: #798 / PR #811 (merged)
 
 The Director authorised the slope set as an exception to production hold.
-Review: [PR #811](https://github.com/BenjaminBenetti/tut/pull/811), open.
+Review: [PR #811](https://github.com/BenjaminBenetti/tut/pull/811), merged.
 Branch: `feat/798-terrain-slope-kit`, with main `0b72476` merged. Continue this
 branch for review. I remain the Codex Art Director on gpt-6-astra; the latest
 Director instruction sets this seat to xhigh and removes the credit limit.

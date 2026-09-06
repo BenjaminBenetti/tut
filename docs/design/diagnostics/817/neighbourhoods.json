@@ -1,0 +1,416 @@
+[
+  {
+    "seed": "hills-1",
+    "biome": "temperate",
+    "settlement": "rural",
+    "size": "medium",
+    "x": 36,
+    "z": 22,
+    "pixel": {
+      "x": 1545.979797464466,
+      "y": 750.2353708907013
+    },
+    "neighbours": [
+      {
+        "x": 35,
+        "z": 21,
+        "y": 1,
+        "naturalLevel": 1,
+        "walkable": true,
+        "slope": null,
+        "prop": null,
+        "walls": {},
+        "nearLot": false
+      },
+      {
+        "x": 36,
+        "z": 21,
+        "y": 1,
+        "naturalLevel": 1,
+        "walkable": false,
+        "slope": null,
+        "prop": {
+          "id": "prop-68",
+          "kind": "tree-pine",
+          "tile": {
+            "x": 36,
+            "y": 1,
+            "z": 21
+          },
+          "rotation": 1
+        },
+        "walls": {},
+        "nearLot": false
+      },
+      {
+        "x": 37,
+        "z": 21,
+        "y": 1,
+        "naturalLevel": 1,
+        "walkable": true,
+        "slope": {
+          "kind": "straight",
+          "turns": 2
+        },
+        "prop": null,
+        "walls": {},
+        "nearLot": false
+      },
+      {
+        "x": 35,
+        "z": 22,
+        "y": 0,
+        "naturalLevel": 0,
+        "walkable": true,
+        "slope": {
+          "kind": "straight",
+          "turns": 2
+        },
+        "prop": null,
+        "walls": {},
+        "nearLot": false
+      },
+      {
+        "x": 36,
+        "z": 22,
+        "y": 0,
+        "naturalLevel": 0,
+        "walkable": true,
+        "slope": {
+          "kind": "straight",
+          "turns": 3
+        },
+        "prop": null,
+        "walls": {},
+        "nearLot": false
+      },
+      {
+        "x": 37,
+        "z": 22,
+        "y": 1,
+        "naturalLevel": 1,
+        "walkable": true,
+        "slope": null,
+        "prop": null,
+        "walls": {},
+        "nearLot": false
+      },
+      {
+        "x": 35,
+        "z": 23,
+        "y": 0,
+        "naturalLevel": 0,
+        "walkable": true,
+        "slope": null,
+        "prop": null,
+        "walls": {},
+        "nearLot": false
+      },
+      {
+        "x": 36,
+        "z": 23,
+        "y": 0,
+        "naturalLevel": 0,
+        "walkable": false,
+        "slope": null,
+        "prop": {
+          "id": "prop-70",
+          "kind": "tree-pine",
+          "tile": {
+            "x": 36,
+            "y": 0,
+            "z": 23
+          },
+          "rotation": 1
+        },
+        "walls": {},
+        "nearLot": false
+      },
+      {
+        "x": 37,
+        "z": 23,
+        "y": 0,
+        "naturalLevel": 0,
+        "walkable": true,
+        "slope": {
+          "kind": "straight",
+          "turns": 2
+        },
+        "prop": null,
+        "walls": {},
+        "nearLot": false
+      }
+    ]
+  },
+  {
+    "seed": "hills-1",
+    "biome": "temperate",
+    "settlement": "rural",
+    "size": "medium",
+    "x": 6,
+    "z": 27,
+    "pixel": {
+      "x": 556.0303038032994,
+      "y": 292.9972855711749
+    },
+    "neighbours": [
+      {
+        "x": 5,
+        "z": 26,
+        "y": 2,
+        "naturalLevel": 2,
+        "walkable": true,
+        "slope": null,
+        "prop": null,
+        "walls": {},
+        "nearLot": false
+      },
+      {
+        "x": 6,
+        "z": 26,
+        "y": 1,
+        "naturalLevel": 1,
+        "walkable": true,
+        "slope": {
+          "kind": "straight",
+          "turns": 1
+        },
+        "prop": null,
+        "walls": {},
+        "nearLot": false
+      },
+      {
+        "x": 7,
+        "z": 26,
+        "y": 1,
+        "naturalLevel": 1,
+        "walkable": true,
+        "slope": null,
+        "prop": null,
+        "walls": {},
+        "nearLot": false
+      },
+      {
+        "x": 5,
+        "z": 27,
+        "y": 2,
+        "naturalLevel": 2,
+        "walkable": false,
+        "slope": null,
+        "prop": {
+          "id": "prop-92",
+          "kind": "fence",
+          "tile": {
+            "x": 5,
+            "y": 2,
+            "z": 27
+          },
+          "rotation": 0
+        },
+        "walls": {},
+        "nearLot": false
+      },
+      {
+        "x": 6,
+        "z": 27,
+        "y": 1,
+        "naturalLevel": 1,
+        "walkable": true,
+        "slope": {
+          "kind": "straight",
+          "turns": 0
+        },
+        "prop": null,
+        "walls": {},
+        "nearLot": false
+      },
+      {
+        "x": 7,
+        "z": 27,
+        "y": 1,
+        "naturalLevel": 1,
+        "walkable": true,
+        "slope": null,
+        "prop": null,
+        "walls": {},
+        "nearLot": false
+      },
+      {
+        "x": 5,
+        "z": 28,
+        "y": 2,
+        "naturalLevel": 2,
+        "walkable": true,
+        "slope": null,
+        "prop": null,
+        "walls": {},
+        "nearLot": false
+      },
+      {
+        "x": 6,
+        "z": 28,
+        "y": 2,
+        "naturalLevel": 2,
+        "walkable": true,
+        "slope": null,
+        "prop": null,
+        "walls": {},
+        "nearLot": false
+      },
+      {
+        "x": 7,
+        "z": 28,
+        "y": 1,
+        "naturalLevel": 1,
+        "walkable": true,
+        "slope": {
+          "kind": "inner",
+          "turns": 0
+        },
+        "prop": null,
+        "walls": {},
+        "nearLot": false
+      }
+    ]
+  },
+  {
+    "seed": "817-0",
+    "biome": "temperate",
+    "settlement": "rural",
+    "size": "medium",
+    "x": 23,
+    "z": 41,
+    "pixel": {
+      "x": 640.8831175456851,
+      "y": 848.2149606020286
+    },
+    "neighbours": [
+      {
+        "x": 22,
+        "z": 40,
+        "y": 0,
+        "naturalLevel": 0,
+        "walkable": true,
+        "slope": {
+          "kind": "straight",
+          "turns": 1
+        },
+        "prop": null,
+        "walls": {},
+        "nearLot": false
+      },
+      {
+        "x": 23,
+        "z": 40,
+        "y": 0,
+        "naturalLevel": 0,
+        "walkable": true,
+        "slope": null,
+        "prop": null,
+        "walls": {},
+        "nearLot": false
+      },
+      {
+        "x": 24,
+        "z": 40,
+        "y": 0,
+        "naturalLevel": 0,
+        "walkable": true,
+        "slope": null,
+        "prop": null,
+        "walls": {},
+        "nearLot": false
+      },
+      {
+        "x": 22,
+        "z": 41,
+        "y": 1,
+        "naturalLevel": 1,
+        "walkable": false,
+        "slope": null,
+        "prop": {
+          "id": "prop-130",
+          "kind": "fence",
+          "tile": {
+            "x": 22,
+            "y": 1,
+            "z": 41
+          },
+          "rotation": 0
+        },
+        "walls": {},
+        "nearLot": false
+      },
+      {
+        "x": 23,
+        "z": 41,
+        "y": 0,
+        "naturalLevel": 0,
+        "walkable": true,
+        "slope": {
+          "kind": "straight",
+          "turns": 0
+        },
+        "prop": null,
+        "walls": {},
+        "nearLot": false
+      },
+      {
+        "x": 24,
+        "z": 41,
+        "y": 0,
+        "naturalLevel": 0,
+        "walkable": true,
+        "slope": {
+          "kind": "straight",
+          "turns": 0
+        },
+        "prop": null,
+        "walls": {},
+        "nearLot": false
+      },
+      {
+        "x": 22,
+        "z": 42,
+        "y": 1,
+        "naturalLevel": 1,
+        "walkable": true,
+        "slope": {
+          "kind": "inner",
+          "turns": 0
+        },
+        "prop": null,
+        "walls": {},
+        "nearLot": false
+      },
+      {
+        "x": 23,
+        "z": 42,
+        "y": 1,
+        "naturalLevel": 1,
+        "walkable": true,
+        "slope": {
+          "kind": "straight",
+          "turns": 0
+        },
+        "prop": null,
+        "walls": {},
+        "nearLot": false
+      },
+      {
+        "x": 24,
+        "z": 42,
+        "y": 1,
+        "naturalLevel": 1,
+        "walkable": true,
+        "slope": {
+          "kind": "straight",
+          "turns": 0
+        },
+        "prop": null,
+        "walls": {},
+        "nearLot": false
+      }
+    ]
+  }
+]

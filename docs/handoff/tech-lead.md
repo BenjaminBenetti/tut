@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-05 ~23:40 UTC (session 5; v0.2.5 tagged at `475c5d3`; main's CI intermittently red since #776, filed as #793; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-06 ~00:45 UTC (session 5; v0.2.5 tagged; CI stall fixed by configuration in #796, #793 at p3; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — production is paused; only #748 is live
 
@@ -83,18 +83,30 @@ visible on the merged tree (#703); both green.
 
 **v0.2.5 is tagged at `475c5d3` and its release workflow ran green.**
 
-**Main's CI is intermittently red since #776 (19:01) — #793, filed by me.**
-Five 60-second stalls on tactical specs at first mount today (two on `main`
-itself, one on #789's first run, two on #792, a docs-only PR), all green on
-retry, red by `--fail-on-flaky-tests`. e2e job on `main` 7 min → 9.5 min.
-Measured: #776's `trackSurface` clones geometry and material (own shader
-program) **per batch**; local A/B `35bfa4c` vs `475c5d3` puts tactical mount
-+23–40 %. Fix named on #793: one mist material per prototype. Owner is the
-Director's call under the hold. **Until it lands: a red e2e on `main` or on a
-docs-only PR is #793 — re-run the failed job (`actions/runs/ID/rerun-failed-jobs`
-via REST) and merge on green; never merge red.** Two red `main` runs went unseen
-for hours because my monitor watched PR heads only; **the monitor now snapshots
-CI on `main`'s head too** (the `CI main@sha` line).
+**CI first-mount stalls (#793) — eight red e2e jobs on 2026-09-05, fixed by
+configuration in #796 (`8177415`), cost left at p3 for the resume.** The
+shape: a tactical spec's first mount blowing the 60 s harness budget on the
+2-vCPU SwiftShader runner, green on retry, red by `--fail-on-flaky-tests`;
+four of seven `main` runs after #776, two of them docs-only. **My mechanism
+was wrong** — I said #776's per-batch material clones doubled compiled
+programs; the Art Director measured 21 linked programs on both trees (three
+shares programs by cache key). #795 (Art Director) fixes the allocation defect
+anyway — one mist material and one buffer copy per prototype, explicit render
+order so wall seams keep their depth winner, byte-identical frames, opt-in
+`e2e/tactical-mount-benchmark.spec.ts` and `docs/design/793-mist-allocation.md`
+— approved by me on code merits, **merge pending its CI re-run**; it does not
+close #793. #796: `workers: IS_CI ? 1 : 4`, `timeout: IS_CI ? 120_000 :
+60_000`, own CI 59 passed / 0 flaky / 8.3 min. Open measurement on #793:
+program count and per-link time on `35bfa4c` vs `main`, else a sheets-off /
+surface-mist-off bisect.
+
+**Two operational lessons from tonight.** (1) Re-running an *older* `main`
+run cancels the newer in-progress one through the workflow's concurrency
+group — re-run the head's own run id. (2) `gate.sh` does `checkout -B` in the
+main tree, so a branch checked out in a `git worktree` makes it fail with
+`CHECKOUT_FAIL`; remove the worktree before gating that branch. The monitor now
+snapshots CI on `main`'s head (`CI main@sha`), which is how two red `main`
+runs stopped being invisible.
 
 **Otherwise the queue is empty except parked #757.** Nothing merges until the ED's
 playtest verdict or a Director ruling on the ramp child above.

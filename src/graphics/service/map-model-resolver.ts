@@ -12,6 +12,8 @@ import { TileIndex } from "../../mapgen/service/tile-index";
 import { terrainSlopeRise } from "./terrain-slope-rise";
 import type { RoadAppearance } from "../model/road-appearance";
 import type { TerrainSlopeAppearance } from "../model/terrain-slope-appearance";
+import type { LadderAppearance } from "../model/ladder-appearance";
+import { resolveLadderModels } from "./ladder-model-resolver";
 import type { RampAppearance } from "../model/ramp-appearance";
 import { resolveRampModels } from "./ramp-model-resolver";
 import { resolveTerrainSlopeAppearances } from "./terrain-slope-resolver";
@@ -59,6 +61,8 @@ export interface ModelPlacement {
   readonly terrain?: TerrainSlopeAppearance;
   /** A full-tile ramp borrows its lower support's surface and retires that slab. */
   readonly ramp?: RampAppearance;
+  /** A repeated wall-mounted section with a finish shared by the whole ladder. */
+  readonly ladder?: LadderAppearance;
   /**
    * The tile this belongs to. Carried so the renderer can dim or drop it
    * with that tile's vision (#551) — a wall is only ever as visible as
@@ -137,15 +141,17 @@ export function resolveMapModels(
   index: TileIndex = new TileIndex(map),
 ): MapModelPlacements {
   const roads = resolveRoadAppearances(map, index);
-  const connectors = resolveRampModels(map, index, roads);
+  const walls = resolveWalls(map, index);
+  const ramps = resolveRampModels(map, index, roads);
+  const connectors = [...ramps, ...resolveLadderModels(map, index, walls)];
   const rampFeet = new Set(
-    connectors
+    ramps
       .filter((p) => p.ramp!.replacesGround)
       .map((p) => index.keyOf(p.ramp!.from)),
   );
   return {
     tiles: resolveTiles(map, index, rampFeet, roads),
-    walls: resolveWalls(map, index),
+    walls,
     props: resolveProps(map, index),
     connectors,
   };

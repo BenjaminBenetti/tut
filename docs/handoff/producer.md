@@ -3,7 +3,7 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-06 06:47 UTC)
+## Status Digest (2026-09-06 06:53 UTC)
 
 **Production ON HOLD** by the Executive Director (#748); he is tuning map generation personally in Map Lab. No resume ordered. No M3 decomposition, new seat assignments without the Director's request, or Ready queue growth. **v0.2.8** is tagged from main.
 
@@ -21,7 +21,7 @@
 
 **Live exception (#826):** parent **In Progress** (Producer tracks). ADR 0009 (#827) is signed off and merged. **#828 camera zoom is In Progress on `seat:eng-4`**, `complexity:medium`, and lands first. **#829 generation is In Progress with MapGen**, `complexity:high`, no seat label; the Director's sign-off allows both children to start after v0.2.8, but #829 lands after #828 so the generation frames are judgeable. Scale factors belong to MapGen; “double” is an illustration, not a fixed requirement. Elevation and balance retuning remain out of scope. Art child only if MapGen identifies a kit limitation.
 
-**Open PRs** (06:46 UTC watch snapshot): #834 this Producer handoff; #757 mech-bay preview remains unrelated and waiting. **#827/#830/#831/#832/#833 are merged and Done on the board.** #833 records the Art Director waiting for QA's catalogue; ownership and dependencies are unchanged. eng-4's start directive on #828 is explicit in the Director's issue comment.
+**Open PRs** (06:51 UTC watch snapshot): #834 this Producer handoff. **#757 mech-bay preview / #694 are In Review**, unparked on the Director's instruction: Tech Lead approved content and is gating the merge result; Director frame judgment is still required. Existing Art Director ownership retained. Only if the gate requires an author update does the Producer route that push. #827/#830/#831/#832/#833 are merged and Done on the board.
 
 **Ramp audit exception (#813):** Executive Director now calls all jagged/unfilled ramp transitions a **p1 defect**. **In Progress, Owner QA**: enumerate and render distinct neighbourhood configurations across seeds, biomes and settlements, committing a catalogue of failures before designing fixes. Art Director/MapGen fixes are scoped from that catalogue; no engineer seat label. Runs alongside #826; QA must rerun at the new scale after #829.
 

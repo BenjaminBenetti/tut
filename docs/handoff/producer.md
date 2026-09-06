@@ -3,7 +3,7 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-06 21:16 UTC)
+## Status Digest (2026-09-06 21:32 UTC)
 
 **Production held; Map Quality Loop live.** Await the Executive Director's next taste call outside the authorized loop. Map Critic (Astra 6, new seat) files evidenced tickets; MapGen (Astra 6 / xhigh) works generation and Art Director (Astra 6 / xhigh) handles assets. At most three open Critic tickets. Those tickets are live specialist work, not automatically held Backlog. No M3 decomposition or Ready growth beyond Executive Director exceptions.
 
@@ -11,10 +11,10 @@
 
 | Issue | Status / dependency | Accountable specialist |
 | --- | --- | --- |
-| #910 p1 blank paved platforms | In Progress — claim/cause 5562126199 | MapGen; 187 paved placements in all 36 city recipes, preserve vegetated high ground |
+| #910 p1 blank paved platforms | In Review — PR #926 | MapGen reports 187 → 0 paved platforms, all 213 soil/grass beds preserved |
 | #911 p2 TDF dropship | Blocked by #910 | Art Director model/footprint; MapGen placement/clearance |
 | #915 p1 waterfront endings | Blocked by #910 — next MapGen task per reported Director order | MapGen |
-| #916 p1 missing visible roofs | In Progress — Director promotion reported in 5562110698 | Art Director; branch `fix/916-nonwalkable-roofs`, art/display only |
+| #916 p1 missing visible roofs | In Review — PR #925 | Art Director; pitched shelter and restored local cutaway, map data unchanged |
 | #917 p2 isolated rural fences | Queued behind #911 | MapGen |
 
 #910 supersedes the former platform taste hold: Executive Director ruled it a generation bug. Both new issues have M1.5. Four Critic-origin tickets are now open (#910/#915/#916/#917); #911 is a separate Executive Director feature. PR #912 merged a five-ticket cap after the Director's latest three-ticket instruction; clarification is pending before recording the new cap. The new findings have evidence/priority/area/M1.5; #916's claimed Director promotion supersedes its earlier hold, while MapGen's reported Director order now places #915 immediately after #910 and #917 remains queued behind #911; their evidence/handoff PR #918 is Blocked on Critic formatting corrections to three JSON sidecars (Tech Lead 5561864176); sim/e2e passed, review owner Tech Lead. Opening survey #905/#907 is Done. #906/#913 are closed/Done after Director acceptance (5561976819) and Tech Lead merge. The Critic's independent visual re-check remains pending. Foundation repair is on main, not in a new release yet; latest tag remains v0.2.11.
@@ -39,7 +39,7 @@
 
 **Board correction:** #908 merged the routing handoff but accidentally auto-closed #906 because GitHub parsed a negated closing phrase in its body. Producer reopened #906 and removed the link; its subsequent closure is now backed by accepted repair PR #913. Future handoff PRs must have no closing references to live work.
 
-**Roof verification:** Art reports a pre-existing unbound ghost-strength uniform (5562204710): actual squad/controller off/on renders show no cutaway. #916 includes restoring that binding and proving the intended local effect, while flat-roof controls remain unchanged. Director frames and Tech Lead review still gate merge.
+**Review gates:** Director frame judgments and Tech Lead review/merge are pending on #925/#926. MapGen reports a passing 1,200-map sweep and documents downstream prop/reachability differences despite preserved beds. Art reports 22 frames, restored ghost-strength binding, local reveal/closure proof and three unchanged controls; standard fog differences are confined to the UI strip and await Tech Lead verification. Neither repair is merged.
 
 **Risks / operation:** old visibility, walkover and pre-scale measurements are historical; issue bodies now say so. Check delivered code and release ancestry, including reverts, before closing; close epics in the same grooming pass as the last child closes (Director standing rule 5561387468). Producer is Codex Astra 6 / high. Publish one fixed handoff head through CI/merge and batch later updates. Return to one bounded five-minute watch (three-hour hard stop), groom events and re-arm; no cron. Local watcher overlaps reads by one minute and deduplicates events to catch merges near polling boundaries; checks passed. Capacity interruptions mean retry the same model, never infer a quota or switch models.
 <!-- digest:end -->

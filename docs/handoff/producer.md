@@ -23,7 +23,9 @@
 
 **Open PRs** (06:31 UTC watch snapshot): #831 this Producer handoff; #832 Art Director completion handoff (opened during the previous watch interval); #757 mech-bay preview remains unrelated and waiting. **#827 ADR 0009 and #830 Tech Lead handoff merged; both board cards are Done.** eng-4's start directive on #828 is explicit in the Director's issue comment.
 
-**Blocked / parked:** #829 has a landing dependency on #828, not a start block. #813 diagonal terrace teeth remains **Backlog and unowned** until the Executive Director calls it; the Director reports the teeth look gentler at half rise. General production and M3 remain held; #787 parked; #793 remains p3. eng-3 and eng-5 idle.
+**Ramp audit exception (#813):** Executive Director now calls all jagged/unfilled ramp transitions a **p1 defect**. **In Progress, Owner QA**: enumerate and render distinct neighbourhood configurations across seeds, biomes and settlements, committing a catalogue of failures before designing fixes. Art Director/MapGen fixes are scoped from that catalogue; no engineer seat label. Runs alongside #826; QA must rerun at the new scale after #829.
+
+**Blocked / parked:** #829 lands after #828. Fix design for #813 waits on QA's catalogue. General production and M3 remain held; #787 parked; #793 remains p3. eng-3/eng-5 idle.
 
 **Risks:** camera must frame the larger maps before generation acceptance. MapGen must report largest-settlement generation/frame budgets and chosen scale factors; do not hide costs by capping size. Simulation results can move with the new footprint; report them without balance retuning. Autofill's relaxed tiers remain obsolete; do not run it. The empty release allowlist stays in place.
 

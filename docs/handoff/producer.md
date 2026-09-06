@@ -3,7 +3,7 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-06 23:27 UTC)
+## Status Digest (2026-09-06 23:41 UTC)
 
 **Production held; Map Quality Loop live.** Await the Executive Director's next taste call outside the authorized loop. Map Critic (Astra 6, new seat) files evidenced tickets; MapGen (Astra 6 / xhigh) works generation and Art Director (Astra 6 / xhigh) handles assets. At most three open Critic tickets. Those tickets are live specialist work, not automatically held Backlog. No M3 decomposition or Ready growth beyond Executive Director exceptions.
 
@@ -11,15 +11,15 @@
 
 | Issue | Status / dependency | Accountable specialist |
 | --- | --- | --- |
-| #937 p1 cutaway radius | In Progress — claim 5562725533 | Art Director; compare 2/3/4/5 radii with one/two squads; M2.5 |
+| #937 p1 cutaway radius | In Progress — #943 revision | Art Director; ED chose radius 4 and more transparency; final frames pending |
 | #911 p2 TDF dropship | Blocked — MapGen agreement outstanding | Art Director; proposed 5×7 envelope awaits MapGen agreement before geometry |
 | #917 p2 isolated rural fences | Queued behind #911 | MapGen |
 
-**Latest completion:** #936/#940 is closed/Done on main (`900d9a3`), after Director acceptance 5562961166 and Tech Lead green gate 5562938060; no release tag yet contains it. All 298 artificial blocks are removed, restoring 10,437 columns. Natural terrain, town/rural controls and building records are preserved. #936 supersedes the Director's earlier insistence on preserving raised vegetated beds: those settlement plinths must also stop. Natural terrain stays; building height and real hills supply verticality. #937 is the first radius-tuning pass on the now-working cutaway. #911 remains gated on agreement before modeling.
+**Latest completion:** #936/#940 is closed/Done on main (`900d9a3`), after Director acceptance 5562961166 and Tech Lead green gate 5562938060; no release tag yet contains it. All 298 artificial blocks are removed, restoring 10,437 columns. Natural terrain, town/rural controls and building records are preserved. #936 supersedes the Director's earlier insistence on preserving raised vegetated beds: those settlement plinths must also stop. Natural terrain stays; building height and real hills supply verticality. #937 is the first radius-tuning pass on the now-working cutaway. Executive Director chose radius 4 over Art's recommendation of 3 and asked for doubled transparency (5563047496); Art proposes opacity floor 0.175 (half the retained opacity of 0.35), with a zero-opacity alternative to show the literal-transparency interpretation (5563083495). Final frames and Director judgment remain pending. #911 remains gated on agreement before modeling.
 
 **Map Quality Loop completions — tagged v0.2.12 (`121f397`):** #906/#913 foundations, #910/#926 paved platforms, #916/#925 pitched roofs/cutaway, and #915/#932 waterfront endpoints are closed/Done after Director acceptance and Tech Lead gates. Tag ancestry verified for all four PRs. Platforms fell 187 → 0 with all 213 planted beds retained; roof controls and the restored local reveal passed review. Critic re-checks now confirm improved pictures for all four repairs (5562936624/5562936864/5562936788/5562936697). The Director's interior-darkness note remains a later play/sweep observation, not a merge block.
 
-**Critic queue:** one survey-origin ticket remains open (#917); #911/#937 are separate Executive Director features. Merged #912 raised the documented cap to five after the Director's latest three-ticket instruction; clarification remains pending, with the actual count below both. Evidence/handoff PR #918 is back In Review after the Critic formatted the rejected sidecars and published fresh re-check evidence (5562937029); CI is running on the new head, review owner Tech Lead. Opening survey #905/#907 is Done.
+**Critic queue:** one survey-origin ticket remains open (#917); #911/#937 are separate Executive Director features. Merged #912 raised the documented cap to five after the Director's latest three-ticket instruction; clarification remains pending, with the actual count below both. Evidence/handoff PR #918 merged (`f655dbe`), Done after the Critic formatted the rejected sidecars and all CI passed; the fresh four-repair visual verdicts and calibration correction are committed. Opening survey #905/#907 is Done.
 
 **Earlier releases:** v0.2.8 half-height (#804), v0.2.9 scale (#826), v0.2.10 ramp ruling (#813), v0.2.11 materialled ladders (#891/#893, 58e6c9e). All four issues closed/Done. #849 also closed/Done. #876 deliberately closed: correctly classified same-level saddles remain because the trial fit looked worse.
 

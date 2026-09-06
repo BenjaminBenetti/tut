@@ -1,0 +1,30 @@
+[
+  {
+    "id": "pitched-ghost-0",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=pitched&ghost=0",
+    "ready": "true",
+    "ghostCount": "0",
+    "unit": "{\"x\":24,\"y\":4,\"z\":15}"
+  },
+  {
+    "id": "pitched-ghost-1",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=pitched&ghost=1",
+    "ready": "true",
+    "ghostCount": "1",
+    "unit": "{\"x\":24,\"y\":4,\"z\":15}"
+  },
+  {
+    "id": "flat-ghost-0",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=flat&ghost=0",
+    "ready": "true",
+    "ghostCount": "0",
+    "unit": "{\"x\":25,\"y\":6,\"z\":14}"
+  },
+  {
+    "id": "flat-ghost-1",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=flat&ghost=1",
+    "ready": "true",
+    "ghostCount": "1",
+    "unit": "{\"x\":25,\"y\":6,\"z\":14}"
+  }
+]

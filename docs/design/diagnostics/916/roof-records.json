@@ -1,0 +1,202 @@
+{
+  "mapDataBaseline": "e093702",
+  "recipes": [
+    {
+      "seed": "mc-opening-01",
+      "biome": "temperate",
+      "settlement": "rural",
+      "buildings": [
+        {
+          "id": "building-1",
+          "kind": "house",
+          "footprint": [
+            {
+              "x": 20,
+              "z": 9,
+              "w": 8,
+              "d": 9
+            }
+          ],
+          "groundLevel": 2,
+          "floorLevels": [2, 4],
+          "roof": {
+            "kind": "pitched",
+            "walkable": false
+          },
+          "intendedRoofLevel": 6,
+          "roofTileCount": 0,
+          "walkableRoofModelCount": 0,
+          "pitchedCapsAfter": 72
+        },
+        {
+          "id": "building-2",
+          "kind": "house",
+          "footprint": [
+            {
+              "x": 17,
+              "z": 27,
+              "w": 6,
+              "d": 8
+            }
+          ],
+          "groundLevel": 0,
+          "floorLevels": [0],
+          "roof": {
+            "kind": "pitched",
+            "walkable": false
+          },
+          "intendedRoofLevel": 2,
+          "roofTileCount": 0,
+          "walkableRoofModelCount": 0,
+          "pitchedCapsAfter": 48
+        }
+      ]
+    },
+    {
+      "seed": "mc-opening-01",
+      "biome": "snowy",
+      "settlement": "rural",
+      "buildings": [
+        {
+          "id": "building-1",
+          "kind": "house",
+          "footprint": [
+            {
+              "x": 20,
+              "z": 9,
+              "w": 8,
+              "d": 9
+            }
+          ],
+          "groundLevel": 4,
+          "floorLevels": [4, 6],
+          "roof": {
+            "kind": "pitched",
+            "walkable": false
+          },
+          "intendedRoofLevel": 8,
+          "roofTileCount": 0,
+          "walkableRoofModelCount": 0,
+          "pitchedCapsAfter": 72
+        },
+        {
+          "id": "building-2",
+          "kind": "house",
+          "footprint": [
+            {
+              "x": 17,
+              "z": 27,
+              "w": 6,
+              "d": 8
+            }
+          ],
+          "groundLevel": 0,
+          "floorLevels": [0],
+          "roof": {
+            "kind": "pitched",
+            "walkable": false
+          },
+          "intendedRoofLevel": 2,
+          "roofTileCount": 0,
+          "walkableRoofModelCount": 0,
+          "pitchedCapsAfter": 48
+        }
+      ]
+    },
+    {
+      "seed": "mc-opening-02",
+      "biome": "temperate",
+      "settlement": "town",
+      "buildings": [
+        {
+          "id": "building-1",
+          "kind": "apartment",
+          "footprint": [
+            {
+              "x": 21,
+              "z": 9,
+              "w": 9,
+              "d": 9
+            }
+          ],
+          "groundLevel": 2,
+          "floorLevels": [2, 4, 6],
+          "roof": {
+            "kind": "flat",
+            "walkable": true
+          },
+          "intendedRoofLevel": 8,
+          "roofTileCount": 80,
+          "walkableRoofModelCount": 80,
+          "pitchedCapsAfter": 0
+        },
+        {
+          "id": "building-2",
+          "kind": "apartment",
+          "footprint": [
+            {
+              "x": 33,
+              "z": 28,
+              "w": 10,
+              "d": 8
+            }
+          ],
+          "groundLevel": 2,
+          "floorLevels": [2, 4, 6],
+          "roof": {
+            "kind": "flat",
+            "walkable": true
+          },
+          "intendedRoofLevel": 8,
+          "roofTileCount": 79,
+          "walkableRoofModelCount": 79,
+          "pitchedCapsAfter": 0
+        },
+        {
+          "id": "building-3",
+          "kind": "apartment",
+          "footprint": [
+            {
+              "x": 10,
+              "z": 23,
+              "w": 8,
+              "d": 7
+            }
+          ],
+          "groundLevel": 2,
+          "floorLevels": [2, 4, 6],
+          "roof": {
+            "kind": "flat",
+            "walkable": true
+          },
+          "intendedRoofLevel": 8,
+          "roofTileCount": 55,
+          "walkableRoofModelCount": 55,
+          "pitchedCapsAfter": 0
+        },
+        {
+          "id": "building-4",
+          "kind": "apartment",
+          "footprint": [
+            {
+              "x": 9,
+              "z": 35,
+              "w": 9,
+              "d": 9
+            }
+          ],
+          "groundLevel": 0,
+          "floorLevels": [0, 2, 4],
+          "roof": {
+            "kind": "flat",
+            "walkable": true
+          },
+          "intendedRoofLevel": 6,
+          "roofTileCount": 80,
+          "walkableRoofModelCount": 80,
+          "pitchedCapsAfter": 0
+        }
+      ]
+    }
+  ]
+}

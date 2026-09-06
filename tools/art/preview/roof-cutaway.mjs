@@ -1,0 +1,74 @@
+/* global document, location, requestAnimationFrame */
+import { previewUnits } from "../../../src/app/service/preview-units";
+import { MODEL_MANIFEST } from "../../../src/graphics/data/model-manifest";
+import { GhostController } from "../../../src/graphics/service/ghost-controller";
+import { GltfModelLoader } from "../../../src/graphics/service/gltf-model-loader";
+import { OrthographicCameraRig } from "../../../src/graphics/service/orthographic-camera-rig";
+import { PlaceholderModelFactory } from "../../../src/graphics/service/placeholder-model-factory";
+import { SceneService } from "../../../src/graphics/service/scene-service";
+import { TacticalSceneBuilder } from "../../../src/graphics/service/tactical-scene-builder";
+import { tileTop } from "../../../src/graphics/view/tactical-map-view";
+import { DEFAULT_MISSION_HOOKS } from "../../../src/mapgen/data/hook-requirements";
+import { generateTacticalMap } from "../../../src/mapgen/service/generate-tactical-map";
+/** A visible indoor squad through the same builder/controller as TacticalSceneHost. */
+async function main() {
+  const query = new URLSearchParams(location.search);
+  const flat = query.get("roof") === "flat";
+  const map = generateTacticalMap({
+    seed: flat ? "mc-opening-02" : "mc-opening-01",
+    params: {
+      archetype: "settlement",
+      biome: "temperate",
+      settlement: flat ? "town" : "rural",
+      size: "small",
+      hooks: DEFAULT_MISSION_HOOKS,
+      slopeShare: 1,
+    },
+  });
+  const models = new GltfModelLoader({
+    manifest: MODEL_MANIFEST,
+    baseUrl: "/",
+    fallback: new PlaceholderModelFactory(),
+    logger: {
+      warn: (message) => {
+        throw new Error(message);
+      },
+    },
+  });
+  const builder = new TacticalSceneBuilder({ map, models });
+  const sample = previewUnits(map);
+  const pos = flat ? { x: 25, y: 6, z: 14 } : { x: 24, y: 4, z: 15 };
+  const unit = { ...sample.units[0], pos };
+  await builder.loadMapModels();
+  await builder.update([unit], sample.templates);
+  const rig = new OrthographicCameraRig({
+    zoom: 80,
+    target: { x: pos.x + 0.5, y: tileTop(pos.y) + 0.7, z: pos.z + 0.5 },
+  });
+  const ghost = new GhostController(
+    rig.camera,
+    () => builder.ghostTargets(),
+    builder.ghosting,
+  );
+  const scene = new SceneService(document.querySelector("#scene"), {
+    camera: rig,
+    content: builder.root,
+    updatables: query.get("ghost") === "0" ? [] : [ghost],
+  });
+  scene.start();
+  await scene.whenFirstFrameRendered();
+  // Let the production 150-ms ramp reach full strength before declaring the frame ready.
+  for (let i = 0; i < 20; i++)
+    await new Promise((resolve) => requestAnimationFrame(() => resolve()));
+  document.body.dataset.ready = "true";
+  document.body.dataset.ghostCount = String(builder.ghosting.uGhostCount.value);
+  document.body.dataset.unit = JSON.stringify(pos);
+  // A second captured state proves the cutaway closes after the visible unit leaves.
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "l") return;
+    void builder.update([], sample.templates).then(() => {
+      document.body.dataset.left = "true";
+    });
+  });
+}
+void main();

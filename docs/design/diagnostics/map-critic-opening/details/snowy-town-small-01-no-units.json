@@ -1,0 +1,21 @@
+{
+  "url": "http://localhost:4173/mapgen-preview.html?seed=mc-opening-01&biome=snowy&settlement=town&size=small&models=1&units=0&slope=100",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "baseline": "cafd9ff",
+  "clip": {
+    "x": 380,
+    "y": 0,
+    "width": 2020,
+    "height": 1500
+  },
+  "affected_neighborhood": {
+    "x": 37,
+    "y": 3,
+    "z": 39
+  },
+  "camera": "initial",
+  "levels": "all"
+}

@@ -1,0 +1,32 @@
+{
+  "id": "D09-medium-coastal-road-end",
+  "seed": "mc-opening-03",
+  "biome": "coastal",
+  "settlement": "city",
+  "size": "medium",
+  "tile": {
+    "x": 51,
+    "y": 1,
+    "z": 40
+  },
+  "pitch": 55,
+  "width": 1200,
+  "height": 950,
+  "actualPitch": 54.99999986826957,
+  "url": "http://localhost:4173/mapgen-preview.html?seed=mc-opening-03&biome=coastal&settlement=city&size=medium&models=1&units=1&slope=100",
+  "baseline": "cafd9ff",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "pixel": {
+    "x": 1436.3056985320711,
+    "y": 731.0918508984457
+  },
+  "clip": {
+    "x": 836,
+    "y": 256,
+    "width": 1200,
+    "height": 950
+  }
+}

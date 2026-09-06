@@ -1,0 +1,32 @@
+{
+  "id": "D12-desert-city-green-bed",
+  "seed": "mc-opening-02",
+  "biome": "desert",
+  "settlement": "city",
+  "size": "medium",
+  "tile": {
+    "x": 55,
+    "y": 3,
+    "z": 61
+  },
+  "pitch": 45,
+  "width": 1200,
+  "height": 900,
+  "actualPitch": 44.99999985638291,
+  "url": "http://localhost:4173/mapgen-preview.html?seed=mc-opening-02&biome=desert&settlement=city&size=medium&models=1&units=1&slope=100",
+  "baseline": "cafd9ff",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "pixel": {
+    "x": 1422.874667203096,
+    "y": 743.1137430768971
+  },
+  "clip": {
+    "x": 823,
+    "y": 293,
+    "width": 1200,
+    "height": 900
+  }
+}

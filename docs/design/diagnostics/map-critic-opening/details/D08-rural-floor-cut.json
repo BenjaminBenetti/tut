@@ -1,0 +1,33 @@
+{
+  "id": "D08-rural-floor-cut",
+  "seed": "mc-opening-01",
+  "biome": "temperate",
+  "settlement": "rural",
+  "size": "small",
+  "floor": 0,
+  "tile": {
+    "x": 24,
+    "y": 2,
+    "z": 15
+  },
+  "pitch": 50,
+  "width": 1200,
+  "height": 900,
+  "actualPitch": 49.91620178622231,
+  "url": "http://localhost:4173/mapgen-preview.html?seed=mc-opening-01&biome=temperate&settlement=rural&size=small&models=1&units=1&slope=100&floor=0",
+  "baseline": "cafd9ff",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "pixel": {
+    "x": 1384.6071128220597,
+    "y": 665.1990481296591
+  },
+  "clip": {
+    "x": 785,
+    "y": 215,
+    "width": 1200,
+    "height": 900
+  }
+}

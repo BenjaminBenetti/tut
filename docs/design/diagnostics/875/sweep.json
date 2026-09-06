@@ -1,0 +1,157 @@
+{
+  "baseMain": "7b9e3c7",
+  "matrix": "qa813-{temperate,snowy,desert,coastal}-{rural,town,city}-{small,medium,large}-{0,1,2}",
+  "slopeShare": 1,
+  "maps": 108,
+  "ramps": 3779,
+  "slopeSupported": 0,
+  "rises": {
+    "2": 3779
+  },
+  "surfaces": {
+    "dirt -> dirt": 335,
+    "grass -> grass": 177,
+    "grass -> dirt": 63,
+    "dirt -> grass": 41,
+    "road -> road": 936,
+    "sidewalk -> grass": 220,
+    "grass -> sidewalk": 133,
+    "sidewalk -> dirt": 163,
+    "dirt -> sidewalk": 60,
+    "sidewalk -> rock": 210,
+    "sidewalk -> sidewalk": 352,
+    "grass -> rock": 92,
+    "dirt -> rock": 44,
+    "snow -> dirt": 62,
+    "dirt -> snow": 8,
+    "snow -> snow": 72,
+    "rock -> dirt": 40,
+    "rock -> rock": 85,
+    "sidewalk -> snow": 17,
+    "snow -> sidewalk": 101,
+    "snow -> rock": 54,
+    "rock -> sidewalk": 46,
+    "rock -> snow": 1,
+    "snow -> grass": 48,
+    "rock -> grass": 23,
+    "sand -> dirt": 66,
+    "dirt -> sand": 6,
+    "rock -> sand": 3,
+    "sand -> sand": 82,
+    "sand -> rock": 54,
+    "sand -> sidewalk": 117,
+    "sidewalk -> sand": 13,
+    "sand -> grass": 52,
+    "grass -> sand": 3
+  },
+  "multipleFrom": 3,
+  "multipleFromExamples": [
+    {
+      "seed": "qa813-temperate-city-medium-0",
+      "connectors": [
+        {
+          "id": "ramp-7",
+          "kind": "ramp",
+          "from": {
+            "x": 58,
+            "y": 2,
+            "z": 24
+          },
+          "to": {
+            "x": 58,
+            "y": 4,
+            "z": 23
+          },
+          "pass": 3
+        },
+        {
+          "id": "ramp-8",
+          "kind": "ramp",
+          "from": {
+            "x": 58,
+            "y": 2,
+            "z": 24
+          },
+          "to": {
+            "x": 58,
+            "y": 4,
+            "z": 25
+          },
+          "pass": 3
+        }
+      ]
+    },
+    {
+      "seed": "qa813-temperate-city-large-0",
+      "connectors": [
+        {
+          "id": "ramp-15",
+          "kind": "ramp",
+          "from": {
+            "x": 90,
+            "y": 2,
+            "z": 34
+          },
+          "to": {
+            "x": 90,
+            "y": 4,
+            "z": 35
+          },
+          "pass": 3
+        },
+        {
+          "id": "ramp-16",
+          "kind": "ramp",
+          "from": {
+            "x": 90,
+            "y": 2,
+            "z": 34
+          },
+          "to": {
+            "x": 89,
+            "y": 4,
+            "z": 34
+          },
+          "pass": 3
+        }
+      ]
+    },
+    {
+      "seed": "qa813-snowy-city-small-0",
+      "connectors": [
+        {
+          "id": "ramp-3",
+          "kind": "ramp",
+          "from": {
+            "x": 20,
+            "y": 2,
+            "z": 26
+          },
+          "to": {
+            "x": 20,
+            "y": 4,
+            "z": 25
+          },
+          "pass": 3
+        },
+        {
+          "id": "ramp-4",
+          "kind": "ramp",
+          "from": {
+            "x": 20,
+            "y": 2,
+            "z": 26
+          },
+          "to": {
+            "x": 20,
+            "y": 4,
+            "z": 27
+          },
+          "pass": 3
+        }
+      ]
+    }
+  ],
+  "resolved": 3779,
+  "unresolved": []
+}

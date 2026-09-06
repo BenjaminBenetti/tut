@@ -1,11 +1,7 @@
 import { BufferGeometry, Float32BufferAttribute, Group, Mesh } from "three";
 import type { Material, Object3D } from "three";
 
-import {
-  DIAGONAL_SLOPE_MODEL,
-  THREE_SIDED_SLOPE_MODEL,
-  SLOPE_MODELS,
-} from "../data/map-model-table";
+import { PARAMETERISED_TERRAIN_MODELS } from "../data/map-model-table";
 import type { ModelLoader } from "../model/model-loader";
 
 // ===========================================
@@ -96,15 +92,11 @@ export class TerrainSlopeModelFactory {
 
   /** Builds a base-centred slope; rotate around Y and place at the low tile's surface plane. */
   async create(
-    kind: keyof typeof SLOPE_MODELS | "diagonal" | "three-sided",
+    kind: keyof typeof PARAMETERISED_TERRAIN_MODELS,
     materials: SlopeMaterials,
   ): Promise<Group> {
     const prototype = await this.models.load(
-      kind === "diagonal"
-        ? DIAGONAL_SLOPE_MODEL
-        : kind === "three-sided"
-          ? THREE_SIDED_SLOPE_MODEL
-          : SLOPE_MODELS[kind],
+      PARAMETERISED_TERRAIN_MODELS[kind],
     );
     const result = new Group();
     result.name = `terrain-slope-${kind}`;

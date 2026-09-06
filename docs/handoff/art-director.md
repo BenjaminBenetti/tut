@@ -1,15 +1,16 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-06 (#879 visually accepted; #876 closed)
+Last updated: 2026-09-06 (#879 merged; #876 closed, #884 record accepted)
 
-## Current status: #879 and #884 accepted, awaiting Tech Lead merges
+## Current status: #875 complete; #876 record awaits #884 merge
 
 Codex Art Director, gpt-6-astra xhigh. #874 was visually accepted in comment
 5559030003 and merged as `7b9e3c7`. Its J3 model and proof are complete.
 The Director immediately assigned **#875**, blocking v0.2.10, followed by
 **#876** (diagnose skipped two-corner chains before any geometry or fix).
 
-[PR #879](https://github.com/BenjaminBenetti/tut/pull/879) is open.
+[PR #879](https://github.com/BenjaminBenetti/tut/pull/879) merged as
+`6b8bbeb67f12cee86164ef2ea5b23bb003a5e65b`.
 Branch `feat/875-ramp-connector-kit`, proof `567648e`: model checkpoint `8c02777`, normal merge
 of #874 `0967700`. The ramp uses the shared straight-wedge builder and its
 single RISE 0.75: 8 triangles, 1,792 bytes, watertight; all three angles opened.
@@ -30,7 +31,7 @@ Tech Lead approved #879 on `6c084da` in comment 5559322225: independent full
 merge gate green against main including #757. The CI runner timeout is his
 separate configuration follow-up, merged as #881; no art change requested.
 **Director accepted #879's K2, ground and composite frames in comment 5559490770**
-and cleared the release gate. Tech Lead merges on his gate; Director then prompts
+and cleared the release gate. Tech Lead merged it at 13:24 UTC. Director prompts
 QA's final audit before tagging v0.2.10.
 
 While #875 waited, #876's diagnosis was posted **before** any trial in comment
@@ -54,8 +55,10 @@ banks outside the climbing plane's purpose. He directed #884 to merge as the
 record. Do not reopen the diagnosis or add geometry without new direction. [Evidence](../design/diagnostics/876/README.md).
 
 Scratch `.git/art-876/`; its `work` checkout is separate from #879's review
-branch. ONE bounded watch remains active for #879 and the standing art events.
-Do not merge either branch; Tech Lead alone merges.
+branch. #884 is merged normally with main through `055c1d5`; its only conflict
+was this handoff, resolved to retain both completed tasks. No runtime change
+relative to main. Resume ONE bounded watch for #884 and standing art events.
+Tech Lead alone merges; no new production work without direction.
 
 #849 remains open because its broader 522-tile category was only partly
 covered: 173 ends plus 173 mouths fit the new shape, preserving four-high pits

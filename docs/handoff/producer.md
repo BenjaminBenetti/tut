@@ -3,7 +3,7 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-06 12:39 UTC)
+## Status Digest (2026-09-06 13:14 UTC)
 
 **Production ON HOLD** (#748). The Executive Director tunes Map Lab; only his named exceptions proceed. No M3 decomposition or Ready growth beyond those exceptions. **v0.2.9** is tagged (main 148b179; scale plus road kit); general production has not resumed.
 
@@ -17,7 +17,7 @@
 
 **Milestones** (closed / total, 04:09 UTC API snapshot): M0 14/14 · M1 64/64 · M1.5 33/34 · M2 48/50 · M2.5 25/27 · M3 1/2 (held). Counts do not declare milestone completion.
 
-**Completed / board:** half-height engine, generator, real slope kit and ramp-gap fix (#807/#808/#809/#817) Done. **#828/#835 camera zoom Done**; both screens frame the map and zoom in to a readable squad. Director re-verified the 96² map at 1280×720 after rescaling (5559261742), with no camera code change. Lurker fixture #842/#843, Producer handoff #877 and QA catalogue #839 merged and Done.
+**Completed / board:** half-height engine, generator, real slope kit and ramp-gap fix (#807/#808/#809/#817) Done. **#828/#835 camera zoom Done**; both screens frame the map and zoom in to a readable squad. Director re-verified the 96² map at 1280×720 after rescaling (5559261742), with no camera code change. Lurker fixture #842/#843, Producer handoff #882 and QA catalogue #839 merged and Done.
 
 **Scale exception (#826):** all children delivered; parent remains open pending Director closure; **#829 / PR #838 Done**, merged as aa6eedf with green CI and all seven Tech Lead merge-result checks green (59 e2e, no flakes). **ADR 0009 Accepted**. The enabled lurker fixture remains; the sweep budget and tactical harness assumptions are fixed. Road kit #840/#850 and CI follow-up #852 are also merged; v0.2.9 is tagged.
 
@@ -29,17 +29,19 @@
 
 **QA report #873:** **Done / merged and Director accepted**, with the release explicitly held by judgment 5559037317. J2/K2 fixed, K1 correct, N1 not a defect; J3's named exhibit accepted in #874. **#875 blocks v0.2.10.** QA parks until Director prompts the next audit once **#875 is on main** (#874 is merged); no parent closure or next tag yet.
 
-**New Art Director work:** **#875 / PR #879 In Review, p1**, Art Director; explicit release blocker. Asphalt and ground controls plus one/two-layer composite delivered; 3,779/3,779 connectors resolve to registered art in the reported sweep, which is resolver coverage rather than a whole-map visual audit. Director frame judgment, Tech Lead gate and post-merge QA remain. **#876 Backlog, p2/nonblocking**, diagnose why two-corner chains fail the existing resolver before any fix or new geometry; hand to MapGen if classification is the cause. No engineer seat labels and no Ready promotion.
+**New Art Director work:** **#875 / PR #879 In Review, p1**, Art Director; explicit release blocker. Asphalt and ground controls plus one/two-layer composite delivered; 3,779/3,779 connectors resolve to registered art in the reported sweep, which is resolver coverage rather than a whole-map visual audit. Local merge-result gate green (2097 units, 59 e2e, no flakes) and head CI rerun now green; #881 budget fix merged. Director frame judgment, Tech Lead merge and post-merge QA remain. **#876 In Progress, p2/nonblocking, Art Director investigation**. Cause posted in 5559358784 before code/geometry changes: 42 skipped two-chain tiles are same-level mixed-turn pairs; six are the already accepted cliff-boundary refusals. V2 classification is correct, not MapGen work or a minimum-length bug. Investigate existing-mesh fitting without new geometry; #875 stays first. No engineer seat labels and no Ready promotion.
 
 **K2 #863 / PR #866:** **Done / merged**, with Director-accepted seam/detail frames, green CI and green Tech Lead merge-result gate (2032 units, 59 e2e, no flakes). Existing connectors keep their routes and render full-span planks; bare paved edges get kerb walls. MapGen reports **5,582 bare edges → 0**, K1 unchanged. **Director judged final QA and holds the next release on connector art #875 plus the subsequent audit.**
 
 **Follow-up #869:** **Backlog, MapGen, p2**, no seat or Ready promotion. Ordering repair remains opportunistic. **QA confirmed item 2 is a visual defect**, 2,046 ramps crossing plat parapets on its seeds; V8 plus data/code establishes no gap (ramp itself hidden in that camera). QA-first prerequisite cleared; MapGen owns timing under the Director's brief.
 
-**Other open PRs:** #757/#694 mech-bay preview remains In Review under the Director's exception, content approved, awaiting final merge/frame gates. Existing Art Director ownership retained; route an author update only if the gate requires one. Tech Lead handoff #851 closed unmerged; replacement #855 merged / Done; #859 merged / Done; #865 merged / Done, recording J1 completion; Art handoff #867 Done; Tech Lead handoff #871 merged / Done; #878 merged / Done. **#856 Done**: measured 120-second CI unit-test budget (20 seconds locally); Tech Lead self-merged with CI and all seven merge-result checks green. **#852 Done**: firing-sweep CI timeout fixed (four runner seeds, full twelve locally, measured 120-second budget); Tech Lead self-merged with CI and gate green. Producer handoff #877 merged; this pass opens its successor.
+**CI follow-up #881:** **Done / merged**; connectivity invariants use three CI seeds (36 maps) and a 120-second runner budget, retaining six seeds / 30 seconds locally. This addresses #879's hardcoded 30-second timeout, measured as a runner-budget issue.
 
-**Blocked / parked:** v0.2.10 waits for #879 review/merge and a clean QA confirmation. #874 is merged; #849 stays open for its broader category. #869 and #876 stay Backlog, nonblocking. General production and M3 held; #787 parked; #793 p3. All engineer seats idle; Ready-high audit found only held M3 #447.
+**Other tracked work:** #757/#694 mech-bay preview Done under the Director's exception. Tech Lead handoff #883 In Review; Producer handoff #882 merged.
 
-**Risks:** #873's broader chain count and #862's aligned-chain coverage use different populations; reconcile remaining creases rather than call them a regression from counts alone. The road hole is fixed but ramp art remains a placeholder until #875; do not tag v0.2.10 before its gate. Kerb walls add cover (K2 covered share 18.2→19.3%), recorded without retuning. #869's visual defect is now evidenced; its repair-order hazard remains unobserved. Use corrected border-safe counts. A 96² city save is reported at 1.5 MB; balance changes stay on #734. Do not run inherited autofill with wrong tiers.
+**Blocked / parked:** v0.2.10 waits for #879's Director frame judgment/merge and a clean QA confirmation; CI and local gate are green, #881 is merged. #874 is merged; #849 stays open for its broader category. #869 stays Backlog; #876 investigation is active and nonblocking. General production and M3 held; #787 parked; #793 p3. All engineer seats idle; Ready-high audit found only held M3 #447.
+
+**Risks:** #879's CI and local gate are green; visual acceptance and final QA still remain. #876 now reconciles the chain populations: V2 is a same-level mixed-turn pair, not a missed climbing chain or bad classification. Quarter-turned pairs can disagree at proposed vertices; preserve their boundaries while investigating. The road hole is fixed but ramp art remains a placeholder until #875; do not tag v0.2.10 before its gate. Kerb walls add cover (K2 covered share 18.2→19.3%), recorded without retuning. #869's visual defect is now evidenced; its repair-order hazard remains unobserved. Use corrected border-safe counts. A 96² city save is reported at 1.5 MB; balance changes stay on #734. Do not run inherited autofill with wrong tiers.
 
 **Next routing:** a Ready, unowned high-complexity engineer issue within an Executive Director exception goes to free eng-3; low/medium stay on Opus. Preserve specialist ownership and one open issue per seat. Record the exception and cleared prerequisites before labeling. Groom the next event, then re-arm one watch.
 <!-- digest:end -->

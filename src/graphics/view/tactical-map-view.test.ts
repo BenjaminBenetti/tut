@@ -421,13 +421,14 @@ describe("TacticalMapView.loadModels", () => {
     view.dispose();
   });
 
-  it("keeps the hook markers and connectors, which have no models", async () => {
+  it("keeps the hook markers and retires the ramp placeholder", async () => {
     const view = new TacticalMapView(fixture().build());
     await view.loadModels(new FakeModelLoader());
     const hooks = named(view, "hooks:");
     expect(hooks.length).toBeGreaterThan(0);
     expect(hooks.every((m) => m.visible)).toBe(true);
     expect(view.root.getObjectByName("c1")).toBeDefined();
+    expect(view.root.getObjectByName("c1")?.visible).toBe(false);
     view.dispose();
   });
 
@@ -437,10 +438,14 @@ describe("TacticalMapView.loadModels", () => {
     const models = new FakeModelLoader();
     await view.loadModels(models);
 
-    // One preload pass covering every distinct id, then one load per id.
+    // One preload pass; each model loads once, with one extra ground lookup
+    // supplying the ramp's borrowed surface material (#875).
     expect(models.preloaded).toHaveLength(1);
     const distinct = new Set(models.loaded);
-    expect(models.loaded.length).toBe(distinct.size);
+    expect(models.loaded.length).toBe(distinct.size + 1);
+    expect(
+      models.loaded.filter((id) => id === "tile.ramp.connector"),
+    ).toHaveLength(1);
     // Far fewer draw calls than tiles: the grass field is one instanced
     // mesh per part, not one object per tile.
     const grass = named(view, "tiles-model:tile.ground.grass:");
@@ -779,7 +784,7 @@ describe("overlapping hook markers", () => {
 // ===========================================
 
 describe("TacticalMapView stairs", () => {
-  it("replaces the stairs plank with the stairs model and keeps the ramp's", async () => {
+  it("replaces stairs and ramp planks and keeps them retired when vision changes", async () => {
     const b = fixture();
     b.tile({ x: 0, y: 0, z: 0 }, SurfaceIds.STAIRS);
     b.tile({ x: 1, y: 1, z: 0 }, SurfaceIds.ROCK);
@@ -808,13 +813,17 @@ describe("TacticalMapView stairs", () => {
     expect(
       allInstanced(view).some((m) => m.name.includes("building.stairs")),
     ).toBe(true);
-    // ...and the ramp, which has no art, keeps its plank.
-    expect(plankOf(ramp.id)?.visible).toBe(true);
+    // ...and the ramp's own materialled model replaces its plank (#875).
+    expect(plankOf(ramp.id)?.visible).toBe(false);
+    expect(
+      allInstanced(view).some((m) => m.name.includes("tile.ramp.connector")),
+    ).toBe(true);
 
     // Vision must not bring the retired plank back (#766): it used to
     // toggle every connector's visibility on each call.
     view.setVision({ visible: [], explored: [], spotted: [], lastSeen: {} });
     expect(plankOf(stairs.id)?.visible).toBe(false);
+    expect(plankOf(ramp.id)?.visible).toBe(false);
     view.dispose();
   });
 });

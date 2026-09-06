@@ -1230,5 +1230,19 @@
     "quality": "final",
     "triangles": 14,
     "bytes": 2252
+  },
+  {
+    "id": "tile.ramp.connector",
+    "category": "tiles",
+    "path": "assets/models/tiles/terrain-ramp-connector.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.75,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 8,
+    "bytes": 1792
   }
 ]

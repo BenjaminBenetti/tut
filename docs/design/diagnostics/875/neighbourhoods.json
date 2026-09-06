@@ -1,0 +1,344 @@
+{
+  "beforeMain": "997945b",
+  "integratedMain": "7b9e3c7",
+  "road": {
+    "seed": "qa813-temperate-town-small-0",
+    "connectors": [
+      {
+        "id": "ramp-1",
+        "kind": "ramp",
+        "from": {
+          "x": 32,
+          "y": 2,
+          "z": 11
+        },
+        "to": {
+          "x": 31,
+          "y": 4,
+          "z": 11
+        },
+        "pass": 3
+      },
+      {
+        "id": "ramp-2",
+        "kind": "ramp",
+        "from": {
+          "x": 32,
+          "y": 2,
+          "z": 12
+        },
+        "to": {
+          "x": 31,
+          "y": 4,
+          "z": 12
+        },
+        "pass": 3
+      },
+      {
+        "id": "ramp-3",
+        "kind": "ramp",
+        "from": {
+          "x": 32,
+          "y": 2,
+          "z": 13
+        },
+        "to": {
+          "x": 31,
+          "y": 4,
+          "z": 13
+        },
+        "pass": 3
+      }
+    ],
+    "tiles": [
+      {
+        "x": 30,
+        "y": 4,
+        "z": 10,
+        "surface": "sidewalk",
+        "pass": 3,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 31,
+        "y": 4,
+        "z": 10,
+        "surface": "sidewalk",
+        "pass": 3,
+        "walls": {
+          "e": "half"
+        },
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 32,
+        "y": 2,
+        "z": 10,
+        "surface": "sidewalk",
+        "pass": 3,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 33,
+        "y": 2,
+        "z": 10,
+        "surface": "sidewalk",
+        "pass": 3,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 30,
+        "y": 4,
+        "z": 11,
+        "surface": "road",
+        "pass": 3,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 31,
+        "y": 4,
+        "z": 11,
+        "surface": "road",
+        "pass": 3,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 32,
+        "y": 2,
+        "z": 11,
+        "surface": "road",
+        "pass": 3,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 33,
+        "y": 2,
+        "z": 11,
+        "surface": "road",
+        "pass": 3,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 30,
+        "y": 4,
+        "z": 12,
+        "surface": "road",
+        "pass": 3,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 31,
+        "y": 4,
+        "z": 12,
+        "surface": "road",
+        "pass": 3,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 32,
+        "y": 2,
+        "z": 12,
+        "surface": "road",
+        "pass": 3,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 33,
+        "y": 2,
+        "z": 12,
+        "surface": "road",
+        "pass": 3,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 30,
+        "y": 4,
+        "z": 13,
+        "surface": "road",
+        "pass": 3,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 31,
+        "y": 4,
+        "z": 13,
+        "surface": "road",
+        "pass": 3,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 32,
+        "y": 2,
+        "z": 13,
+        "surface": "road",
+        "pass": 3,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 33,
+        "y": 2,
+        "z": 13,
+        "surface": "road",
+        "pass": 3,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 30,
+        "y": 4,
+        "z": 14,
+        "surface": "sidewalk",
+        "pass": 3,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 31,
+        "y": 4,
+        "z": 14,
+        "surface": "sidewalk",
+        "pass": 3,
+        "walls": {
+          "e": "half"
+        },
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 32,
+        "y": 2,
+        "z": 14,
+        "surface": "sidewalk",
+        "pass": 3,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 33,
+        "y": 2,
+        "z": 14,
+        "surface": "sidewalk",
+        "pass": 3,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      }
+    ]
+  },
+  "ground": [
+    {
+      "seed": "qa813-temperate-rural-small-0",
+      "biome": "temperate",
+      "settlement": "rural",
+      "size": "small",
+      "connector": {
+        "id": "ramp-1",
+        "kind": "ramp",
+        "from": {
+          "x": 8,
+          "y": 2,
+          "z": 8
+        },
+        "to": {
+          "x": 8,
+          "y": 4,
+          "z": 7
+        },
+        "pass": 3
+      },
+      "from": {
+        "x": 8,
+        "y": 2,
+        "z": 8,
+        "surface": "dirt",
+        "pass": 3,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      "to": {
+        "x": 8,
+        "y": 4,
+        "z": 7,
+        "surface": "dirt",
+        "pass": 3,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      }
+    },
+    {
+      "seed": "qa813-temperate-rural-small-0",
+      "biome": "temperate",
+      "settlement": "rural",
+      "size": "small",
+      "connector": {
+        "id": "ramp-2",
+        "kind": "ramp",
+        "from": {
+          "x": 9,
+          "y": 2,
+          "z": 8
+        },
+        "to": {
+          "x": 9,
+          "y": 4,
+          "z": 7
+        },
+        "pass": 3
+      },
+      "from": {
+        "x": 9,
+        "y": 2,
+        "z": 8,
+        "surface": "dirt",
+        "pass": 3,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      "to": {
+        "x": 9,
+        "y": 4,
+        "z": 7,
+        "surface": "dirt",
+        "pass": 3,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      }
+    }
+  ]
+}

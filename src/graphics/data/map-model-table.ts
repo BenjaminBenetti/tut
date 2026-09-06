@@ -78,6 +78,18 @@ export const DIAGONAL_SLOPE_MODEL =
 export const THREE_SIDED_SLOPE_MODEL =
   "tile.slope.three-sided" satisfies ModelAssetId;
 
+/** Full-width connector wedge, placed across the low tile and fitted to its rise. */
+export const RAMP_CONNECTOR_MODEL =
+  "tile.ramp.connector" satisfies ModelAssetId;
+
+/** Neutral shapes that borrow ground/terrace materials in the shared factory. */
+export const PARAMETERISED_TERRAIN_MODELS = {
+  ...SLOPE_MODELS,
+  diagonal: DIAGONAL_SLOPE_MODEL,
+  "three-sided": THREE_SIDED_SLOPE_MODEL,
+  ramp: RAMP_CONNECTOR_MODEL,
+} as const;
+
 /** Existing closed ground topology fitted to a diagonal chain's neighbouring corners. */
 export const TERRAIN_TRANSITION_SOURCE =
   "tile.ground.grass" satisfies ModelAssetId;

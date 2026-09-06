@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-06 ~08:05 UTC (session 5; #838 map scale in review with the Director's merge-but-no-tag ruling, #840 road kit filed, #843 lurker fixture merged; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-06 ~09:05 UTC (session 5; v0.2.9 tagged — map scale + carriageways; #853 and #757 await the Director's frames; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — production is paused; only #748 is live
 
@@ -194,20 +194,35 @@ max(ZOOM_FIT_FLOOR 6, zoomToFit))`, `max` 192, range as plain data on
 accepted all four frames. **#829 (MapGen) is next**, the numbers are theirs;
 `ZOOM_FIT_FLOOR = 6` is the value #829 tests if maps pass ~96 tiles.
 
-**#838 (MapGen, #829) — generation at the new scale — Director'"'"'s ruling on
-the PR (07:33): interiors and rural ACCEPTED; roads right in data, wrong in art
-(a four-lane avenue renders as four dashed one-lane roads — the kit has no
-slab/kerb/centre line); **merge #838, but no release tag until #840 lands**.
-#840 (Art Director, `area:art`) filed by me on MapGen'"'"'s word. Rulings applied
-in `c48ae4b`: `WALKOVER_FLOOR` 23 with the `sweep-22` record, spawner reach
-bound kept. **Still red, MapGen'"'"'s to fix:** the generation sweep times out at
-120 s on the CI runner (cut the matrix under `CI` or set an explicit measured
-timeout), and three tactical e2e specs fail deterministically on the rescaled
-harness maps (`tactical-input:95` picks unit-2, `tactical-objective-destroyed:267`
-never reaches spawner-1, `tactical-spawners:75` finds no spawner); e2e wall
-time 10 min vs 2. Lurker sweep: **#843 (eng-3, #842) merged `c84769d`** with a
-stated fixture; #838 drops its `it.skip` on merging `main`. Re-gate on the push;
-merge on green; ADR 0009 → Accepted with §5 factors.
+**#838 (MapGen, #829) — generation at the new scale — MERGED `aa6eedf`,
+#829 closed, ADR 0009 Accepted with §5 factors** (48²/72²/96² presets, lanes
+2/3/4, sidewalk width 1/2, block pitch 26, doubled lots and footprints,
+room-size and corridor targets per template, interior cover per room kind,
+nearest spawner within 30, `WALKOVER_FLOOR` 23 with the `sweep-22` record).
+The Director's ruling: interiors ACCEPTED; roads right in data, wrong in art;
+merge, no tag until the road kit. My gate caught three deterministic tactical
+e2e failures MapGen had left to CI and a 120 s sweep timeout on the runner;
+MapGen fixed the specs by reading sight/path from the map
+(`nearestSightPosition`, `pathBetween` in `map-assessment-service`) and cut the
+CI sweep to three seeds per cell in a 240 s budget. A 96² city save is 1.5 MB.
+**Insist every PR runs `CI=1 pnpm test:e2e` before opening.**
+
+**#850 (Art Director, #840) — carriageway kit — MERGED `148b179`**, #840
+closed: one slab per tile, kerbs on non-road edges, one centre divider, one
+junction mark per crossing; the Director verified the regenerated frames and
+**tagged v0.2.9**. **#852 (mine, `fffad9a`)**: the #544 firing sweep runs four
+seeds on CI in a 120 s budget (twelve locally) after the runner went red by
+luck on a docs-only PR once #838's presets scaled its 72 maps. **After any
+map-size change, every generated-map test's budget is suspect on the runner.**
+#843 (eng-3, #842) `c84769d`: lurker sweep on a stated fixture.
+
+**#853 (MapGen, #847, #813 J2) — approved on content, gate and CI green, waits
+on the Director's judgement of its three frames**: `isWedgeGround` = unpaved,
+unwalled, no connector, so graded-but-unwalled ground beside lots and the plat
+takes wedges (88.7 % → 95.6 % of one-layer steps wedged on QA's 108 maps);
+ramps avoid wedge tiles at both ends; ADR 0004 I10 reworded; sweep pin plus a
+QA-seed regression. Merge on the verdict with the sha guard. #848/#849 (art,
+J1/J3) are the Director's to route.
 
 **#757 (mech bay preview, #694) is unparked** on the Director's instruction
 (06:50): approved on content, gate on the merge with today's `main` green,

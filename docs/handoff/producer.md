@@ -3,7 +3,7 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-06 06:19 UTC)
+## Status Digest (2026-09-06 06:32 UTC)
 
 **Production ON HOLD** by the Executive Director (#748); he is tuning map generation personally in Map Lab. No resume ordered. No M3 decomposition, new seat assignments without the Director's request, or Ready queue growth. **v0.2.8** is tagged from main.
 
@@ -19,9 +19,9 @@
 
 **Completed / board:** #807/#808/#809 and #817 are **Done**; #822 merged and **v0.2.8** is tagged at `66548ed`. Half-height terrain, the real slope kit and ramp-gap fix are delivered. Tech Lead handoff #824 and Producer handoff #825 merged; this pass opens a fresh handoff PR.
 
-**Live exception (#826):** parent **In Progress** (Producer tracks). Director signed off ADR 0009 in #827. **#828 camera zoom is In Progress on `seat:eng-4`**, `complexity:medium`, and lands first. **#829 generation is In Progress with MapGen**, `complexity:high`, no seat label; the Director's sign-off allows both children to start after v0.2.8, but #829 lands after #828 so the generation frames are judgeable. Scale factors belong to MapGen; “double” is an illustration, not a fixed requirement. Elevation and balance retuning remain out of scope. Art child only if MapGen identifies a kit limitation.
+**Live exception (#826):** parent **In Progress** (Producer tracks). ADR 0009 (#827) is signed off and merged. **#828 camera zoom is In Progress on `seat:eng-4`**, `complexity:medium`, and lands first. **#829 generation is In Progress with MapGen**, `complexity:high`, no seat label; the Director's sign-off allows both children to start after v0.2.8, but #829 lands after #828 so the generation frames are judgeable. Scale factors belong to MapGen; “double” is an illustration, not a fixed requirement. Elevation and balance retuning remain out of scope. Art child only if MapGen identifies a kit limitation.
 
-**Open PRs** (06:18 UTC snapshot): #827 ADR 0009, about 3 min old, Director signed off / In Review; #830 Tech Lead handoff, about 1 min old, In Review; #757 mech-bay preview remains unrelated and waiting, about 36 h old. #822/#824/#825 are **Done** on the board.
+**Open PRs** (06:31 UTC watch snapshot): #831 this Producer handoff; #832 Art Director completion handoff (opened during the previous watch interval); #757 mech-bay preview remains unrelated and waiting. **#827 ADR 0009 and #830 Tech Lead handoff merged; both board cards are Done.** eng-4's start directive on #828 is explicit in the Director's issue comment.
 
 **Blocked / parked:** #829 has a landing dependency on #828, not a start block. #813 diagonal terrace teeth remains **Backlog and unowned** until the Executive Director calls it; the Director reports the teeth look gentler at half rise. General production and M3 remain held; #787 parked; #793 remains p3. eng-3 and eng-5 idle.
 

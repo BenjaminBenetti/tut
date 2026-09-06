@@ -227,6 +227,14 @@ Map generation assembles maps from these pieces (GDD §7, architecture §5 map c
 - **Ground tiles** are 1×1 u, 0.05 u thick slabs, pivot at centre. Variants: `<biome>-ground-a/b/c`, `city-road-straight`, `city-road-corner`, `city-road-cross`, `city-road-t`, `city-sidewalk`, `city-sidewalk-corner`.
 - **Walls** are 1 u long, 1.5 u tall, 0.1 u thick, pivot at the wall's base midpoint, running along local +X. Placed on tile edges. Variants: `wall`, `wall-window`, `wall-door` (door 1.2 × 0.6 opening), `wall-half` (0.5 u high, low cover).
 - **Floors** are 1×1 u slabs at y = 0 of their level; **stairs** occupy one tile and rise 1.5 u along local +Z; **ramps** are outdoor stairs' terrain cousin, same rise, biome-textured; **roofs** are 1×1 caps with a 0.1 u parapet.
+
+**Pitched shelter (#916).** Non-walkable pitched roof records use `building.roof-pitched`,
+a closed 1×1 cap in `env-roof`, fitted across the short axis of each rectangular
+building. A 0.12-u eave and 0.25-u rise per tile keep the pitch shallow; the ridge
+follows the longer axis. Caps meet the top-storey wall line and share the existing
+building cutaway. Their visibility follows the highest real building tile below,
+including the lower landing beneath a stairwell. They add no walkable surface.
+Walkable flat roofs keep their existing deck and access rules.
 - **Props** are ≤ 1×1, pivot at base centre: `barrier-concrete`, `sandbags`, `dumpster`, `car-sedan` (2×1, pivot at centre of the 2-tile footprint), `lamp-post`, `hydrant`.
 - Every kit ships a doc listing pieces, footprints and which edge they snap to. The city building kit is [`kits/city-building-kit.md`](kits/city-building-kit.md) and the props are [`kits/cover-props.md`](kits/cover-props.md).
 

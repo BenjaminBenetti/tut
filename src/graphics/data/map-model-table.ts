@@ -89,6 +89,10 @@ export const LADDER_CONNECTOR_MODEL = "building.ladder" satisfies ModelAssetId;
 export const FOUNDATION_MODEL =
   "tile.foundation.concrete" satisfies ModelAssetId;
 
+/** Visual shelter for pitched roof records, which deliberately have no walkable roof tile. */
+export const PITCHED_ROOF_MODEL =
+  "building.roof-pitched" satisfies ModelAssetId;
+
 /** Neutral shapes that borrow ground/terrace materials in the shared factory. */
 export const PARAMETERISED_TERRAIN_MODELS = {
   ...SLOPE_MODELS,

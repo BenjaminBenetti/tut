@@ -1,42 +1,81 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-06 (#906 accepted and merged; waiting on #910 before #911)
+Last updated: 2026-09-06 (#916 roof shelter and cutaway ready for Director review)
 
-## Current status: bounded watch; #911 waits on #910
+## Current status: #916 roof shelter
 
-Codex Art Director, **gpt-6-astra xhigh**. The bounded watch is healthy: no
-provider-capacity failure or watch error occurred during the floor check or
-#906 work. Treat any future capacity error as retryable; keep this model.
+Codex Art Director, **gpt-6-astra xhigh**. The Director explicitly promoted #916
+in the CLI after the initial diagnosis, overriding the earlier #911 queue hold.
+[Claim and routing](https://github.com/BenjaminBenetti/tut/issues/916#issuecomment-5562110698).
+Branch `fix/916-nonwalkable-roofs`, baseline `e093702`, model/runtime checkpoint
+`a5f4deb`. Main through `5adfd12` merged normally (handoffs only, including #922).
+[PR #925](https://github.com/BenjaminBenetti/tut/pull/925) is open for review;
+the complete rendered proof is committed at `9159421`.
 
-The Map Quality Loop remains the ongoing production-hold exception. The
-Director/Producer sequence is **#906 → #910 → #911**, then the newer Critic
-findings. #906 is complete. MapGen owns #910's blank paved platforms and must
-state the generation cause before changing it. This supersedes the former
-platform taste hold. #911 is the TDF VTOL dropship: Art owns the model, MapGen
-placement/clearance; agree footprint and exact placement on the issue before
-building, and do not start until #910 completes. Extraction stays at deploy.
+[Complete before/after, controls, kit and reproduction](../design/diagnostics/916/README.md).
+[Cause stated before building](https://github.com/BenjaminBenetti/tut/issues/916#issuecomment-5562040887):
+pitched non-walkable houses have a roof record but correctly no walkable roof
+tiles; graphics previously drew only the latter. Furnishing/occupancy is not
+the trigger. Each reported rural recipe now gets 120 visual caps over its two
+houses. The flat-roof control retains all 294 slabs and four stair landings.
+No map-generation or gameplay data changes.
 
-**[#916 initial diagnosis posted](https://github.com/BenjaminBenetti/tut/issues/916#issuecomment-5562040887), implementation queued behind #911.** On main
-`24bdd8f`, both `mc-opening-01` rural houses (temperate and snowy) declare
-`pitched, walkable: false`. The first occupies `(20,9,8,9)`, with floor layers
-2/4 in temperate and 4/6 in snow; the second occupies `(17,27,6,8)` at layer 0.
-All four have zero roof tiles and zero roof model placements. The four flat,
-walkable apartments in the temperate/town `mc-opening-02` control resolve all
-294 roof tiles to roof models; four stair landings are separate. `InteriorPass`
-correctly emits only walkable roof tiles, while graphics only draws roof art
-from those tiles and has no consumer for `Building.roof.kind` or pitched-roof
-asset. This is missing visual shelter, not a reason to add walkable tiles.
-Opened the reporter's R01/R05 crops and dumped the three generated recipes;
-scratch `.git/art-916/` holds the probe and records. No asset/runtime patch
-started. Preserve local unit cutaway, level peeling and per-tile fog when the
-queued graphics work starts; MapGen is accountable for the initial joint routing.
+`building.roof-pitched`: Blender loop, 20 triangles / 2,744 bytes / watertight,
+1×1 base-centred cap in the shared roof atlas. All three angles opened and
+committed. The consumer fits three profile heights, including an odd-width
+ridge, and closes gables at the top-storey wall line. Profiles share materials
+and mist across buildings/levels. Each cap follows the highest real building
+tile below for fog, including stairwell holes. Early level cuts remain applied
+when asynchronous art introduces a new visual level.
 
-PR #912's merged Critic brief raises the cap to five and treats implausible
-frequency/placement as defects. #915 waterfront endings and #917 isolated fences
-are MapGen-owned, queued behind #911. Legacy held issues remain held. Use ONE
-bounded watcher in `.git/art-director-watch/`, REST through `gh`, at least five
-minutes between polls, first relevant event exits, hard stop after three hours.
-Watch own PRs, the standing art issues and #910/#911/#916 dependencies; no cron.
+**The required cutaway render found a pre-existing missing uniform binding.**
+[Finding stated before the shader repair](https://github.com/BenjaminBenetti/tut/issues/916#issuecomment-5562204710).
+`GhostController` updated `uGhostStrength` and GLSL used it, but
+`applyGhostCutaway` never bound it. On baseline, controller on/off changed zero
+pixels even under an existing flat roof. The fix is the missing binding; the
+radius, opacity floor, fade timing, depth test and visible-unit source stay as
+specified. Map Lab does not drive that controller, so the committed indoor
+controls use real TacticalSceneBuilder/GhostController/SceneService assembly.
+The squad is now revealed locally; after it leaves the roof returns to the
+byte-identical closed frame. Do not claim the old controller actually revealed
+indoor units: the rendered control disproved that assumption.
+
+Preservation proof: **zero changed pixels and byte-identical** for the existing
+flat-roof overview, fixed-camera flat-roof close-up with controller off, and
+reported house's top-floor cut. Main house at two angles, temperate/snowy
+units-off overviews, indoor off/on/leave controls and three Blender angles are
+rendered and inspected. Both fog frames and the standard no-fog overview are
+refreshed and inspected. The fog differences are confined to the rightmost
+16-pixel UI strip, outside the map region; comparison bounds/hashes committed.
+
+Validation: eight actual-GLB roof regressions, shared-uniform regression,
+2,154 unit tests / one skipped, seven sim tests, typecheck/build, and 59 browser
+tests / 27 opt-in skips / zero flaky. Two standard capture specs pass. The
+cutaway capture also asserts a real pixel change and closure after the unit
+leaves. Final `pnpm lint` passes with the complete evidence set.
+
+Scratch `.git/art-916/`. Baseline worktree at `e093702`; the isolated Vite 4198
+and 4199 capture servers are stopped before re-arming ONE watch. No model or
+provider-capacity error has occurred. The watch already detects newly created
+and newly labelled/relabelled `area:art` issues; the earlier wait was the
+Producer's explicit dependency order, now superseded for #916. Never stop or
+switch model for a transient capacity failure; retry it.
+
+## Next after #916
+
+Director judges frames, Tech Lead alone merges, Map Critic re-checks afterward.
+#906/#913 is accepted and merged; Critic re-check remains pending. Handoff #922
+merged as `8cb60cb`. MapGen owns #910 blank paved platforms, superseding the old
+taste hold. #911 TDF dropship remains behind #910: Art owns model/footprint,
+MapGen placement/clearance; agree the footprint and exact placement on the
+issue before building. Extraction deliberately stays at deploy. #915 waterfront
+endings and #917 isolated fences are MapGen-owned. Legacy production stays held.
+PR #912 establishes the five-ticket Critic cap and defect test.
+
+When otherwise waiting, use ONE bounded watcher in `.git/art-director-watch/`:
+REST through `gh`, at least five minutes between polls, first relevant event
+exits, hard stop after three hours. Watch own PRs, standing art issues and
+#910/#911/#916 dependencies; no cron. Timeout with no event: say so and stop.
 
 ## Completed: #906 building foundations
 

@@ -83,6 +83,7 @@ export const MODEL_IDS = [
   // Buildings
   "building.floor",
   "building.roof",
+  "building.roof-pitched",
   "building.roof-parapet",
   "building.stairs",
   "building.ladder",

@@ -394,6 +394,15 @@ describe("seeded tactical sweep", () => {
     const started = performance.now();
     runs = SEEDS.map((entry) => play(entry.seed, entry.difficulty, TURN_CAP));
     elapsedMs = performance.now() - started;
+    // Opt-in deterministic evidence for unit conversions and balance PRs.
+    if (process.env.SIM_REPORT !== undefined) {
+      console.info(
+        "SIM_REPORT " +
+          JSON.stringify(
+            runs.map(({ startMs: _start, driveMs: _drive, ...run }) => run),
+          ),
+      );
+    }
   });
 
   it("breaks no invariant on any turn of any seed", () => {

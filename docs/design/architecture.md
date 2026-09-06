@@ -104,3 +104,4 @@ Any change to §2, §3, or a new library goes in `docs/adr/NNNN-title.md` with c
 | [0006](../adr/0006-fog-of-war-is-per-side-knowledge.md) | Fog of war is per-side knowledge in the mission state |
 | [0007](../adr/0007-in-world-ui-is-dom-anchored-to-world-points.md) | In-world UI is DOM anchored to projected world points |
 | [0008](../adr/0008-half-height-elevation-layers.md) | Elevation is measured in half-height layers; a one-layer step is a free walk |
+| [0009](../adr/0009-map-scale-for-tactical-room.md) | Map scale opens up for tactical room: knobs not a multiplier, interiors as structures, map-aware zoom |

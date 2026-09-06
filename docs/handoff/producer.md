@@ -3,7 +3,7 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-06 05:48 UTC)
+## Status Digest (2026-09-06 06:08 UTC)
 
 **Production ON HOLD** by the Executive Director (#748); he is tuning map generation personally in Map Lab. No resume ordered. No M3 decomposition, new seat assignments without the Director's request, or Ready queue growth. **v0.2.7** is tagged from main.
 
@@ -17,17 +17,19 @@
 
 **Milestones** (closed / total issues, API snapshot at 04:09 UTC): M0 14/14 · M1 64/64 · M1.5 33/34 · M2 48/50 · M2.5 25/27 · M3 1/2 (held). These counts do not declare milestone completion.
 
-**Completed / board:** #807 is **Done**: all three engine slices merged (#810 migration preparation, #812 explicit storey units, #815 activation). eng-3 has no open assignment. #798/#799 remain **Done** through #811. Tech Lead handoffs #816/#818, Producer handoff #814, process PR #820, and Art Director diagnosis #821 merged; v0.2.7 remains the latest recorded tag.
+**Completed / board:** #807 engine is **Done** through #810/#812/#815. **#808 is Done via #823**: natural half steps, smoothing, slope classification and Map Lab step readout landed. #798/#799 remain Done. Producer handoff #819 merged; this pass opens its successor. v0.2.7 remains the latest recorded tag; v0.2.8 follows #822 per Tech Lead.
 
-**Live exceptions / board:** #804 remains **In Progress**. MapGen owns **#808 and #817, In Progress**: Art Director diagnosed ramp gaps as classification-side and handed the fix to MapGen under #808. **#809 is In Review with the Art Director**, via #822. The #817 diagnosis gate was cleared in comment 5557215896; #821 records that diagnosis and leaves the fix to MapGen. All specialist issues remain without engineer seat labels.
+**Live exceptions / board:** #804 remains **In Progress**. **#809 and PR #822 are Blocked**, Art Director-owned: Tech Lead's Director-ordered hold requires rebasing onto #823, restoring the half-rise model placement, dropping temporary tests, regenerating preview frames and Director judgment before the merge gate. **#817 remains open/In Progress with MapGen**: #823 fixed its classification defect, but final visual acceptance is unresolved. No specialist issue takes an engineer seat label.
 
-**Open PRs** (05:47 UTC snapshot): #822 half-rise slope set for #809, just opened, In Review; #819 this Producer handoff, about 18 min old; #757 mech-bay preview, about 35 h old, unrelated and waiting. #818/#820/#821 merged and their board cards are **Done**.
+**Open PRs** (06:01 UTC watch snapshot): #822 half-rise slope set, about 15 min old, held for the work above; #824 Tech Lead handoff, newly opened, In Review; #757 mech-bay preview remains unrelated and waiting (last confirmed open at 05:47 UTC). #819/#823 are **Done** on the board.
 
-**Blocked / parked:** #813 diagonal terrace teeth remains **Backlog and unowned**, not Ready until the Executive Director calls it. General production and M3 remain held; #787 parked; #793 remains p3. Ready-high audit found only #447 (held M3); no eligible unowned Ready high issue to seat.
+**Next authorized exception:** #826 map-scale doubling is **Backlog** (Producer tracks), queued behind v0.2.8. Tech Lead writes the ADR and files tiered children first; MapGen leads the implementation and camera work is sized separately. No engineer assignment or Ready promotion yet. Horizontal footprints, roads, interiors, map sizes and zoom change; elevation layers stay unchanged and balance retuning is excluded.
 
-**Risks:** #817 diagnosis is not a fix: prop-occupied natural high neighbours are omitted from classification, leaving missing or wrong corners. MapGen must fix classification and supply the before/after evidence under #808/#817. The separate #813 diagonal-edge decision remains open. Autofill still permits Opus high-tier work contrary to strict routing; do not run it. Historical monitor/seating instructions below remain obsolete; the empty release allowlist stays in place.
+**Blocked / parked:** #809/#822 wait on rebase, integration and frame judgment. #813 diagonal terrace teeth remains **Backlog and unowned**, not Ready until the Executive Director calls it. General production and M3 remain held; #787 parked; #793 remains p3. Ready-high audit found only #447 (held M3); no eligible unowned Ready high issue to seat.
 
-**Routing / next event:** all engineer seats idle; MapGen works #808/#817 and the Art Director works #809. A Ready, unowned `complexity:high` engineer issue within an Executive Director exception goes to free `seat:eng-3` without another Director prompt. Keep strict tiers, one open issue per seat, specialist ownership, and the hold: no M3 decomposition or Ready queue growth beyond Executive Director exceptions. Groom relevant watch events and re-arm once.
+**Risks:** main temporarily uses placeholder wedges after #823; #822 must restore the real half-rise kit against that main. #817's requested same-seed before/after crop has not been supplied: MapGen reports terrain changes prevent matching the original scene and provides exact regression tests instead; the Director resolves acceptance. The unchanged 60-seed simulation table covers graded city maps, not the changed rural/town reachability. Autofill's relaxed tiers remain obsolete; do not run it. The empty release allowlist stays in place.
+
+**Routing / next event:** all engineer seats idle; MapGen owns #817 acceptance and the Art Director addresses #822 for #809. A Ready, unowned `complexity:high` engineer issue within an Executive Director exception goes to free `seat:eng-3` without another Director prompt. Keep strict tiers, one open issue per seat, specialist ownership, and the hold: no M3 decomposition or Ready queue growth beyond Executive Director exceptions. Groom relevant watch events and re-arm once.
 <!-- digest:end -->
 
 

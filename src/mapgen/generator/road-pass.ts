@@ -21,7 +21,7 @@ import { TrailRoadBuilder } from "./road/trail-road-builder";
 // Constants
 // ===========================================
 
-/** Columns per levelled chunk when a road follows the terrain. */
+/** Positions along the road per levelled chunk when it follows the terrain. */
 const CHUNK_LENGTH = 8;
 
 /** Columns beyond the outermost road that plat grading covers (the sidewalk). */
@@ -98,7 +98,14 @@ export class RoadPass implements GenerationPass {
     const flatLevel =
       builder.levelling === "flat" ? medianLevel(draft, lines) : undefined;
     for (const line of lines) {
-      levelLine(draft, line, surface, flatLevel, diagnostics);
+      levelLine(
+        draft,
+        line,
+        surface,
+        flatLevel,
+        mouths(lines, line),
+        diagnostics,
+      );
     }
     if (flatLevel !== undefined) {
       const graded = gradePlat(draft, lines, flatLevel);
@@ -106,8 +113,8 @@ export class RoadPass implements GenerationPass {
         `graded ${graded} columns inside the plat to level ${flatLevel}`,
       );
     }
-    if (settlement.sidewalks) {
-      paintSidewalks(draft);
+    if (settlement.sidewalkWidth > 0) {
+      paintSidewalks(draft, settlement.sidewalkWidth);
     }
     diagnostics.note(
       `${lines.length} road lines, ${draft.roads.length} segments, ` +
@@ -222,23 +229,26 @@ function medianLevel(draft: MapDraft, lines: readonly RoadLine[]): number {
 /**
  * Levels one line chunk by chunk, marks its columns as road, paints the
  * surface, records segments and adds ramps between chunks of different
- * level. A line that starts beside an existing road adopts that road's
- * level so junctions are flat.
+ * level, one per lane. A line that starts beside an existing road adopts
+ * that road's level so junctions are flat; a chunk never ends inside
+ * another line's mouth, so every lane of a side road meets the same level.
  */
 function levelLine(
   draft: MapDraft,
   line: RoadLine,
   surface: SurfaceId,
   flatLevel: number | undefined,
+  otherMouths: readonly (readonly ColumnCoord[])[],
   diagnostics: DiagnosticSink,
 ): void {
-  let previous: { level: number; last: ColumnCoord } | undefined;
-  const first = line.columns[0];
-  const junction =
-    first === undefined ? undefined : adjacentRoadLevel(draft, first);
+  let previous: { level: number; columns: readonly ColumnCoord[] } | undefined;
+  const positions = groupByPosition(line.columns);
+  const mouth = positions[0] ?? [];
+  const junction = mouth
+    .map((column) => adjacentRoadLevel(draft, column))
+    .find((level) => level !== undefined);
 
-  for (let start = 0; start < line.columns.length; start += CHUNK_LENGTH) {
-    const chunk = line.columns.slice(start, start + CHUNK_LENGTH);
+  for (const chunk of chunkPositions(positions, otherMouths)) {
     const level =
       previous === undefined &&
       junction !== undefined &&
@@ -256,18 +266,20 @@ function levelLine(
       level,
     } satisfies RoadSegment);
 
-    const last = chunk[chunk.length - 1];
     const head = chunk[0];
     if (previous !== undefined && head !== undefined) {
       const rise = level - previous.level;
       if (Math.abs(rise) === STOREY_LAYERS) {
-        const lower = rise > 0 ? previous.last : head;
-        const upper = rise > 0 ? head : previous.last;
-        draft.addConnector(
-          "ramp",
-          { x: lower.x, y: Math.min(level, previous.level), z: lower.z },
-          { x: upper.x, y: Math.max(level, previous.level), z: upper.z },
-        );
+        // One ramp per lane, so the whole carriageway climbs together.
+        for (const [back, front] of adjacentPairs(previous.columns, chunk)) {
+          const lower = rise > 0 ? back : front;
+          const upper = rise > 0 ? front : back;
+          draft.addConnector(
+            "ramp",
+            { x: lower.x, y: Math.min(level, previous.level), z: lower.z },
+            { x: upper.x, y: Math.max(level, previous.level), z: upper.z },
+          );
+        }
       } else if (rise !== 0) {
         diagnostics.note(`road chunk steps ${rise} levels`, {
           x: head.x,
@@ -276,10 +288,117 @@ function levelLine(
         });
       }
     }
-    if (last !== undefined) {
-      previous = { level, last };
+    if (chunk.length > 0) {
+      previous = { level, columns: chunk };
     }
   }
+}
+
+/** The first position of every line but `line`: where side roads meet it. */
+function mouths(
+  lines: readonly RoadLine[],
+  line: RoadLine,
+): (readonly ColumnCoord[])[] {
+  return lines
+    .filter((other) => other !== line)
+    .map((other) => groupByPosition(other.columns)[0] ?? []);
+}
+
+/**
+ * Groups positions into chunks of `CHUNK_LENGTH`, every lane of a
+ * position together so a level change crosses the whole carriageway at
+ * once. A chunk runs on past `CHUNK_LENGTH` rather than end between two
+ * positions that both touch one of `mouths`: a side road two lanes wide
+ * would otherwise straddle a step in the road it joins.
+ */
+function chunkPositions(
+  positions: readonly (readonly ColumnCoord[])[],
+  mouths: readonly (readonly ColumnCoord[])[],
+): ColumnCoord[][] {
+  const chunks: ColumnCoord[][] = [];
+  let current: ColumnCoord[] = [];
+  let count = 0;
+  positions.forEach((position, i) => {
+    current.push(...position);
+    count++;
+    const next = positions[i + 1];
+    const straddles =
+      next !== undefined &&
+      mouths.some((m) => touches(position, m) && touches(next, m));
+    if (next === undefined || (count >= CHUNK_LENGTH && !straddles)) {
+      chunks.push(current);
+      current = [];
+      count = 0;
+    }
+  });
+  return chunks;
+}
+
+/** True when some column of `a` is 4-adjacent to some column of `b`. */
+function touches(
+  a: readonly ColumnCoord[],
+  b: readonly ColumnCoord[],
+): boolean {
+  return a.some((p) =>
+    b.some((q) => Math.abs(p.x - q.x) + Math.abs(p.z - q.z) === 1),
+  );
+}
+
+/**
+ * Splits a line's columns into its positions along the road: runs of
+ * consecutive columns sharing the coordinate on the line's long axis.
+ * A one-lane line is one column per position.
+ */
+function groupByPosition(
+  columns: readonly ColumnCoord[],
+): readonly (readonly ColumnCoord[])[] {
+  const first = columns[0];
+  const last = columns[columns.length - 1];
+  if (first === undefined || last === undefined) {
+    return [];
+  }
+  const along =
+    Math.abs(last.x - first.x) >= Math.abs(last.z - first.z)
+      ? (column: ColumnCoord) => column.x
+      : (column: ColumnCoord) => column.z;
+  const positions: ColumnCoord[][] = [];
+  let current: ColumnCoord[] = [];
+  for (const column of columns) {
+    const head = current[0];
+    if (head !== undefined && along(head) !== along(column)) {
+      positions.push(current);
+      current = [];
+    }
+    current.push(column);
+  }
+  positions.push(current);
+  return positions;
+}
+
+/**
+ * Pairs each column of `front` with one 4-adjacent column of `back`, each
+ * back column used at most once: the seam between two chunks of a
+ * carriageway, one pair per lane.
+ */
+function adjacentPairs(
+  back: readonly ColumnCoord[],
+  front: readonly ColumnCoord[],
+): [ColumnCoord, ColumnCoord][] {
+  const pairs: [ColumnCoord, ColumnCoord][] = [];
+  const used = new Set<ColumnCoord>();
+  for (const column of front) {
+    const partner = back.find(
+      (candidate) =>
+        !used.has(candidate) &&
+        Math.abs(candidate.x - column.x) + Math.abs(candidate.z - column.z) ===
+          1,
+    );
+    if (partner !== undefined) {
+      used.add(partner);
+      pairs.push([partner, column]);
+    }
+  }
+  return pairs;
 }
 
 /**
@@ -381,25 +500,38 @@ function gradePlat(
  * Turns every dry, non-road column beside a road into sidewalk at the
  * road's level, widening the flat corridor lots front onto.
  */
-function paintSidewalks(draft: MapDraft): void {
-  for (let z = 0; z < draft.depth; z++) {
-    for (let x = 0; x < draft.width; x++) {
-      if (!draft.isRoad(x, z)) {
-        continue;
-      }
-      const level = draft.groundLevelAt(x, z);
-      for (const direction of DIRECTIONS) {
-        const nx = x + (direction === "e" ? 1 : direction === "w" ? -1 : 0);
-        const nz = z + (direction === "s" ? 1 : direction === "n" ? -1 : 0);
-        if (
-          isDry(draft, nx, nz) &&
-          !draft.isRoad(nx, nz) &&
-          draft.groundSurfaceAt(nx, nz) !== SurfaceIds.SIDEWALK
-        ) {
-          draft.setGroundSurface(nx, nz, SurfaceIds.SIDEWALK);
-          draft.setGroundLevel(nx, nz, level);
+function paintSidewalks(draft: MapDraft, width: number): void {
+  // Ring by ring: the first ring flanks the road, each later ring flanks
+  // the previous one, so every road gets `width` columns of pavement a
+  // side and rings never leapfrog each other.
+  for (let ring = 0; ring < width; ring++) {
+    const next: { x: number; z: number; level: number }[] = [];
+    for (let z = 0; z < draft.depth; z++) {
+      for (let x = 0; x < draft.width; x++) {
+        const kerb =
+          ring === 0
+            ? draft.isRoad(x, z)
+            : draft.groundSurfaceAt(x, z) === SurfaceIds.SIDEWALK;
+        if (!kerb) {
+          continue;
+        }
+        const level = draft.groundLevelAt(x, z);
+        for (const direction of DIRECTIONS) {
+          const nx = x + (direction === "e" ? 1 : direction === "w" ? -1 : 0);
+          const nz = z + (direction === "s" ? 1 : direction === "n" ? -1 : 0);
+          if (
+            isDry(draft, nx, nz) &&
+            !draft.isRoad(nx, nz) &&
+            draft.groundSurfaceAt(nx, nz) !== SurfaceIds.SIDEWALK
+          ) {
+            next.push({ x: nx, z: nz, level });
+          }
         }
       }
+    }
+    for (const { x, z, level } of next) {
+      draft.setGroundSurface(x, z, SurfaceIds.SIDEWALK);
+      draft.setGroundLevel(x, z, level);
     }
   }
 }

@@ -23,16 +23,16 @@ import { isRoadAt } from "../service/draft-queries";
 // ===========================================
 
 /** Columns kept free between a lot and the map edge. */
-const EDGE_MARGIN = 1;
+const EDGE_MARGIN = 2;
 
 /** Columns kept free between neighbouring lots. */
-const LOT_GAP = 1;
+const LOT_GAP = 2;
 
 /** Attempts per anchor before giving up on it. */
 const SIZE_ATTEMPTS = 3;
 
-/** Map area the settlement's building counts are written for (medium, 48²). */
-const REFERENCE_AREA = 48 * 48;
+/** Map area the settlement's building counts are written for (medium, 72²). */
+const REFERENCE_AREA = 72 * 72;
 
 /** Bounds on the area scaling so extreme sizes stay sane. */
 const AREA_FACTOR_MIN = 0.5;
@@ -53,8 +53,9 @@ interface Anchor {
  * Pass 4 of the settlement archetype (ADR 0004 §7.3). Parcels the land
  * beside roads into rectangular lots sized from the settlement (the count
  * scaled by map area against a medium map), never
- * overlapping roads, sidewalks, water, other lots or a one-column margin
- * at the map edge, with a one-column gap between lots. Each lot is
+ * overlapping roads, sidewalks, water, other lots or a two-column margin
+ * at the map edge, with a two-column gap between lots (ADR 0009 §2.3).
+ * Each lot is
  * flattened to the level of the corridor column in front of it and
  * records which side faces the road.
  *
@@ -92,7 +93,7 @@ export class LotPass implements GenerationPass {
     );
     const anchors = rng.shuffle(collectAnchors(draft));
     const occupied = new Set<number>();
-    const setback = settlement.sidewalks ? 1 : 0;
+    const setback = settlement.sidewalkWidth;
 
     for (const anchor of anchors) {
       if (draft.lots.length >= target) {
@@ -118,8 +119,8 @@ export class LotPass implements GenerationPass {
 
 /**
  * How much bigger or smaller the map is than the medium map the building
- * counts are tuned for, clamped so a 32² map still gets a hamlet and a
- * 64² map is not wall to wall.
+ * counts are tuned for, clamped so a 48² map still gets a hamlet and a
+ * 96² map is not wall to wall.
  */
 export function areaFactor(width: number, depth: number): number {
   const factor = (width * depth) / REFERENCE_AREA;

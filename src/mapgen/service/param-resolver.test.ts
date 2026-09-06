@@ -27,8 +27,8 @@ const BASE: MapGenParams = {
 describe("resolveMapGenParams", () => {
   it("expands a size preset and looks up definitions", () => {
     const resolved = resolveMapGenParams(BASE, registries);
-    expect(resolved.width).toBe(48);
-    expect(resolved.depth).toBe(48);
+    expect(resolved.width).toBe(72);
+    expect(resolved.depth).toBe(72);
     expect(resolved.biome.id).toBe("temperate");
     expect(resolved.settlement.id).toBe("town");
     expect(resolved.hooks).toBe(BASE.hooks);

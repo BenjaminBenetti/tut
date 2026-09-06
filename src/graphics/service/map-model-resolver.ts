@@ -85,6 +85,14 @@ const STRAIGHT_AXIS: readonly Direction[] = ["e", "w"];
 const CORNER_AT_ZERO: readonly Direction[] = ["e", "s"];
 const T_MISSING_AT_ZERO: Direction = "n";
 
+/**
+ * A same-surface run at least this long through a tile on both axes makes
+ * the tile a junction rather than a slab inside a wide carriageway. Roads
+ * are at most four lanes wide (ADR 0009 §2.2), so a run of six always
+ * crosses into another road.
+ */
+const JUNCTION_EXTENT = 6;
+
 // ===========================================
 // Resolution
 // ===========================================
@@ -281,10 +289,19 @@ function fitJunction(
   const linked = DIRECTIONS.filter(
     (side) => index.getAt(stepGridPos(tile, side))?.surface === tile.surface,
   );
-  if (linked.length === 4) {
-    return { modelId: variants.cross, turns: 0 };
-  }
-  if (linked.length === 3) {
+  if (linked.length >= 3) {
+    // Inside a carriageway more than one lane wide every tile has three
+    // or four road neighbours; it is a junction only when the run through
+    // it is long on both axes (ADR 0009 §2.2). Otherwise it is a slab of
+    // the road along the longer run.
+    const alongX = runExtent(tile, index, "e") + runExtent(tile, index, "w");
+    const alongZ = runExtent(tile, index, "n") + runExtent(tile, index, "s");
+    if (Math.min(alongX, alongZ) < JUNCTION_EXTENT - 1) {
+      return { modelId: variants.straight, turns: alongX >= alongZ ? 0 : 1 };
+    }
+    if (linked.length === 4) {
+      return { modelId: variants.cross, turns: 0 };
+    }
     const missing = DIRECTIONS.find((side) => !linked.includes(side));
     return {
       modelId: variants.t,
@@ -396,6 +413,19 @@ function resolveProps(
 // ===========================================
 
 /** The direction opposite this one. */
+/** Same-surface tiles from `tile` outward along `side`, not counting it. */
+function runExtent(tile: Tile, index: TileIndex, side: Direction): number {
+  let count = 0;
+  let here: Tile | undefined = tile;
+  for (;;) {
+    here = index.getAt(stepGridPos(here, side));
+    if (here?.surface !== tile.surface) {
+      return count;
+    }
+    count++;
+  }
+}
+
 function opposite(side: Direction): Direction {
   return side === "n" ? "s" : side === "s" ? "n" : side === "e" ? "w" : "e";
 }

@@ -26,8 +26,8 @@ export const BUILDING_TEMPLATES: Readonly<
 > = {
   house: {
     id: "house",
-    footprintWidth: { min: 3, max: 5 },
-    footprintDepth: { min: 3, max: 5 },
+    footprintWidth: { min: 6, max: 10 },
+    footprintDepth: { min: 6, max: 10 },
     floors: { min: 1, max: 2 },
     roof: "pitched",
     roofWalkable: false,
@@ -37,8 +37,8 @@ export const BUILDING_TEMPLATES: Readonly<
   },
   shop: {
     id: "shop",
-    footprintWidth: { min: 4, max: 6 },
-    footprintDepth: { min: 3, max: 5 },
+    footprintWidth: { min: 8, max: 12 },
+    footprintDepth: { min: 6, max: 10 },
     floors: { min: 1, max: 2 },
     roof: "flat",
     roofWalkable: true,
@@ -48,8 +48,8 @@ export const BUILDING_TEMPLATES: Readonly<
   },
   warehouse: {
     id: "warehouse",
-    footprintWidth: { min: 5, max: 8 },
-    footprintDepth: { min: 5, max: 8 },
+    footprintWidth: { min: 10, max: 16 },
+    footprintDepth: { min: 10, max: 16 },
     floors: { min: 1, max: 1 },
     roof: "flat",
     roofWalkable: true,
@@ -59,8 +59,8 @@ export const BUILDING_TEMPLATES: Readonly<
   },
   apartment: {
     id: "apartment",
-    footprintWidth: { min: 3, max: 6 },
-    footprintDepth: { min: 3, max: 6 },
+    footprintWidth: { min: 6, max: 12 },
+    footprintDepth: { min: 6, max: 12 },
     floors: { min: 3, max: 4 },
     roof: "flat",
     roofWalkable: true,
@@ -70,8 +70,8 @@ export const BUILDING_TEMPLATES: Readonly<
   },
   tower: {
     id: "tower",
-    footprintWidth: { min: 3, max: 5 },
-    footprintDepth: { min: 3, max: 5 },
+    footprintWidth: { min: 6, max: 10 },
+    footprintDepth: { min: 6, max: 10 },
     floors: { min: 3, max: 5 },
     roof: "flat",
     roofWalkable: true,

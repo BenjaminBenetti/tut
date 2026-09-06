@@ -9,7 +9,9 @@ new #891 assignment, explicitly authorised whenever the art queue is clear.
 #875 and #876 are complete; #884 merged as `fe7872c`. QA's final #813 audit
 is accepted and v0.2.10 is tagged. The ladder is a separate p2 follow-up.
 
-Branch `feat/891-ladder-connector-kit`, base `fe7872c`, model checkpoint `85ffe19`.
+[PR #893](https://github.com/BenjaminBenetti/tut/pull/893), branch `feat/891-ladder-connector-kit`,
+base `fe7872c`, model checkpoint `85ffe19`, proof `3a1dd8c`. Main through
+`fc5f928` merged normally as `e663446` (other-role handoffs only).
 `building.ladder` is 132 triangles / 10,712 bytes / watertight, emitted through
 Blender with the shared `RISE = 0.75`. One section has two rails, five rungs,
 stand-offs and back plates. All three fixed angles were opened after correcting
@@ -40,9 +42,9 @@ height, source/material ownership and cache/vision behavior. Full unit suite:
 2,134 pass, one skipped. Seven simulation tests, typecheck and build pass.
 All 59 browser tests pass, zero flaky, 27 opt-in captures skipped. The final
 lint/format check passes, as do the separate composite and fog capture specs.
-Scratch `.git/art-891/`; current and baseline Vite ports 4196/4197 are owned by
-this task and should stop before the event watch. Tech Lead reviews/merges;
-Director judges the frames. Resume ONE bounded watch when the PR is posted.
+Scratch `.git/art-891/`; the task-owned Vite ports 4196/4197 stop before the
+event watch. Tech Lead reviews/merges; Director judges the frames. PR #893 and
+#891 are on the ONE bounded watch, alongside standing art events.
 
 ## Completed: #875 ramps; #876 diagnosis accepted and closed
 

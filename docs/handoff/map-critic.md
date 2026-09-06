@@ -13,6 +13,9 @@ changed. Baseline and method are in
 yet. Scratch captures, recipe sidecars, browser scripts, and cached issue
 history are in `.scratch/map-critic-opening/` (excluded from Git).
 
+At this checkpoint 60 maps have been visually inspected. Both snowy and
+desert building-gap examples persist with preview units removed.
+
 Initial candidates are provisional: a black opening beneath a building in
 `mc-opening-01`, snowy/town/small; abrupt coastal street endings; and
 large empty raised city platforms whose purpose is unclear. Complete the

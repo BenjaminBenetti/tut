@@ -1,0 +1,32 @@
+{
+  "id": "D05-desert-town-foundation",
+  "seed": "mc-opening-02",
+  "biome": "desert",
+  "settlement": "town",
+  "size": "small",
+  "tile": {
+    "x": 32,
+    "y": 0,
+    "z": 18
+  },
+  "pitch": 70,
+  "width": 1200,
+  "height": 1000,
+  "actualPitch": 70.0000003871493,
+  "url": "http://localhost:4173/mapgen-preview.html?seed=mc-opening-02&biome=desert&settlement=town&size=small&models=1&units=1&slope=100",
+  "baseline": "cafd9ff",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "pixel": {
+    "x": 1408.966813898674,
+    "y": 729.0967783007658
+  },
+  "clip": {
+    "x": 809,
+    "y": 229,
+    "width": 1200,
+    "height": 1000
+  }
+}

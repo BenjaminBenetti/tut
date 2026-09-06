@@ -42,12 +42,12 @@ scope. No MapGen rule defect was found.
 An isolated trial reused the existing diagonal for opposite-facing pairs and
 raised coverage to 59/92 (46/76 pair tiles). Geometry joins passed, but the
 new caps created triangular ridges in the V2 frame. Both splits looked worse;
-the trial was discarded and runtime files restored. Diagnostic branch
+the trial was discarded and runtime files restored. [PR #884](https://github.com/BenjaminBenetti/tut/pull/884), branch
 `chore/876-diagonal-coverage`, main base `f2dbae0`, contains the before/trial
 comparison, neighbourhoods, exact counts and archived unapplied patch. No
 new mesh or live resolver change. Recommend preserving V2 unless the Director
 wants the two banks regraded over a larger area. #876 remains open for that
-judgement. [Evidence](../design/diagnostics/876/README.md).
+judgement; comparison posted in comment 5559458581. [Evidence](../design/diagnostics/876/README.md).
 
 Scratch `.git/art-876/`; its `work` checkout is separate from #879's review
 branch. ONE bounded watch remains active for #879 and the standing art events.

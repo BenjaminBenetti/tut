@@ -2,9 +2,10 @@
 
 Last updated: 2026-09-06 (#798 terrain slope kit)
 
-## Current work: #798, then hold
+## Current work: #798 / PR #811, then hold
 
 The Director authorised the slope set as an exception to production hold.
+Review: [PR #811](https://github.com/BenjaminBenetti/tut/pull/811), open.
 Branch: `feat/798-terrain-slope-kit`, with main `0b72476` merged. Continue this
 branch for review. I remain the Codex Art Director on gpt-6-astra; the latest
 Director instruction sets this seat to xhigh and removes the credit limit.

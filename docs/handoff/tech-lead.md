@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-06 ~02:15 UTC (session 5; #801 slopes data path and #795 merged; #799 open for the #798 model mapping; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-06 ~05:20 UTC (session 5; studio re-tooled to Codex seats, ADR 0008 half-height layers in flight, #815 activation pending a rebase; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — production is paused; only #748 is live
 
@@ -137,6 +137,37 @@ bonus. `test:sim` identical (the sim's city seed has no natural steps).
 review it against the placeholder seam comment there. Follow-ups noted by the
 Director: outer-corner notches with the placeholder; crater terraces stay
 man-made until the ED sees one.
+
+**Studio re-tool (#803, 04:15 UTC).** Producer, Art Director and eng-3 run on
+Codex (Astra 6); they hold no monitors and are prompted by the Director, so a
+PR from them that needs a fix waits until the Director prompts the seat — say so
+in this session when you ask. You and MapGen stay Fable. Staffing table in
+`studio.md`. **The usage gate is gone.**
+
+**ADR 0008 — half-height elevation layers (#804, ED ruling), the live work:**
+- **ADR 0008** `docs/adr/0008-half-height-elevation-layers.md` merged (#806,
+  `0b72476`), Director signed off §2 on #804. `LAYER_HEIGHT = 0.75`,
+  `STOREY_LAYERS = 2`, free one-layer step in `ReachabilityService`, connector
+  rises 2, `slope` connector retired, bonus threshold one storey, v16 migration.
+- **Children:** #807 engine (eng-3, high) → #808 mapgen half steps (MapGen,
+  after #807) ∥ #809 art slope set at `RISE = 0.75` (Art Director).
+- **#807 slices merged:** #810 `942d9a4` (v15→v16 migration, staged
+  unregistered; v16 reserved), #812 `9a36bf7` (explicit `STOREY_LAYERS = 1`
+  everywhere, behaviour-preserving with four-frame + sim proof). **#815 is the
+  activation** (`STOREY_LAYERS = 2`, `LAYER_HEIGHT = 0.75`, map v2, schema 16,
+  migration registered, ADR 0004 amended, ADR 0008 → Accepted); content read
+  and sound; four frames byte-identical/sidebar-only and `test:sim` identical
+  are in the body. **Blocked on eng-3 rebasing onto `main`** — the branch still
+  carries #812'"'"'s commits, conflicting with the squash (stacked-PR shape). When
+  it merges: #808 and #809 go.
+- Slopes: #801 data path and #811 kit (`306a562`, #798 closed) landed; **#799
+  closed**. #811 is at `RISE = 1.5`; #809 re-emits at 0.75.
+
+**Operational, learned 04:40–05:15:** merging a stacked PR'"'"'s base deletes the
+branch and **GitHub closes the stacked PR**; restore the ref at its old head via
+`git/refs`, reopen, `PATCH base=main`, delete the ref again — metadata only,
+never the author'"'"'s branch. A `git pull` in the main tree while `gate.sh` runs
+invalidates that gate (did it once more; stopped, reset, re-ran).
 
 **Otherwise the queue is empty except parked #757.** Nothing merges until the ED's
 playtest verdict or a Director ruling on the ramp child above.

@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-06 ~07:05 UTC (session 5; ADR 0009 merged, #835 camera zoom merged (#828 closed), #829 next; #757 unparked and awaiting the Director's frame; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-06 ~08:05 UTC (session 5; #838 map scale in review with the Director's merge-but-no-tag ruling, #840 road kit filed, #843 lurker fixture merged; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — production is paused; only #748 is live
 
@@ -193,6 +193,21 @@ max(ZOOM_FIT_FLOOR 6, zoomToFit))`, `max` 192, range as plain data on
 `CameraState`, the rig keeps the map extent and re-fits on resize; the Director
 accepted all four frames. **#829 (MapGen) is next**, the numbers are theirs;
 `ZOOM_FIT_FLOOR = 6` is the value #829 tests if maps pass ~96 tiles.
+
+**#838 (MapGen, #829) — generation at the new scale — Director'"'"'s ruling on
+the PR (07:33): interiors and rural ACCEPTED; roads right in data, wrong in art
+(a four-lane avenue renders as four dashed one-lane roads — the kit has no
+slab/kerb/centre line); **merge #838, but no release tag until #840 lands**.
+#840 (Art Director, `area:art`) filed by me on MapGen'"'"'s word. Rulings applied
+in `c48ae4b`: `WALKOVER_FLOOR` 23 with the `sweep-22` record, spawner reach
+bound kept. **Still red, MapGen'"'"'s to fix:** the generation sweep times out at
+120 s on the CI runner (cut the matrix under `CI` or set an explicit measured
+timeout), and three tactical e2e specs fail deterministically on the rescaled
+harness maps (`tactical-input:95` picks unit-2, `tactical-objective-destroyed:267`
+never reaches spawner-1, `tactical-spawners:75` finds no spawner); e2e wall
+time 10 min vs 2. Lurker sweep: **#843 (eng-3, #842) merged `c84769d`** with a
+stated fixture; #838 drops its `it.skip` on merging `main`. Re-gate on the push;
+merge on green; ADR 0009 → Accepted with §5 factors.
 
 **#757 (mech bay preview, #694) is unparked** on the Director's instruction
 (06:50): approved on content, gate on the merge with today's `main` green,

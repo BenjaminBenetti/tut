@@ -216,7 +216,7 @@ function stateOf(vision: IndexedVision, key: VisionTileKey): TileVisionState {
  *   tile (x, y, z) covers [x, x+1) × [z, z+1); its top is at y · LAYER_HEIGHT + SLAB
  *
  *        ┌──────┐ ← roof slab (level 2)
- *   ▌    │      │   walls stand LAYER_HEIGHT tall on the tile top
+ *   ▌    │      │   walls stand STOREY_LAYERS × LAYER_HEIGHT tall on the tile top
  *   ▌    └──────┘ ← floor slab (level 1)
  *   ▌▒▒▒▒▒▒▒▒▒▒▒▒ ← ground pillar rises from world y = 0
  * ```

@@ -6,7 +6,7 @@ import type { Rotation } from "./prop";
 
 /**
  * The three pieces a hillside is built from (#799, #798). A slope tile is
- * the *lower* tile of a one-level natural step: its top surface rises
+ * the *lower* tile of a natural step: its top surface rises
  * from the low edge to the high edge, so a unit standing on it is at the
  * low level and walks up onto the high neighbour.
  *

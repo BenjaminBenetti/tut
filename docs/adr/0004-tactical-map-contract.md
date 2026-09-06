@@ -1,6 +1,6 @@
 # ADR 0004: Tactical map contract and generation pipeline
 
-- **Status:** Accepted (Tech Lead, PR #14); wording aligned with the implementation after M1.5 landed
+- **Status:** Accepted (Tech Lead, PR #14); amended by ADR 0008 for half-height layers
 - **Date:** 2026-09-02
 - **Author:** MapGen (Map Generation Specialist)
 - **Numbering note:** 0001–0003 are reserved by #11 (toolchain, layering, state/command); this is 0004.
@@ -27,13 +27,13 @@ that mapgen's connectivity guarantees mean something, and (c) the shape of the g
 1. **Sparse tile records, not a dense voxel grid.** `tiles[]` holds one `Tile` per *standable surface*
    (ground, floor, roof, stairs). Air and solid rock are implicit. A map of 64×64 with a dozen buildings
    is roughly 5–8k records: plain JSON, readable in tests, cheap to index.
-2. **Uniform vertical levels.** `y` is an integer level index (one level ≈ one storey). Ground elevation,
-   building floors and roofs all live on the same level axis. `levels` is the exclusive upper bound of `y`.
+2. **Uniform vertical layers.** `y` is an integer half-storey layer index (ADR 0008). Ground elevation,
+   building floors and roofs all live on the same layer axis. `levels` is the exclusive upper bound of `y`.
 3. **Thin walls on tile edges** (`n/e/s/w`), each `solid | window | door | half`. Walls are stored on both
    adjacent tiles; symmetry is an invariant.
-4. **All vertical movement is explicit.** A `Connector` record (`ramp | slope | stairs | ladder`) is the
-   *only* way to change `y`. No connector ⇒ cliff. This makes connectivity a property mapgen can prove.
-   A `slope` is a natural hillside (#799): the lower tile carries a `Tile.slope` describing the wedge.
+4. **One-layer steps are free; larger rises are explicit.** Orthogonal neighbours within one layer
+   are walkable at flat cost for both classes. A `Connector` (`ramp | stairs | ladder`) is required
+   for rises of two or more layers. `Tile.slope` describes shape, never a second traversal rule.
 5. **Passability is a per-tile bitmask** (`INFANTRY | MECH`), denormalised by the final pass. Tactical
    never re-derives "can a mech stand here" from geometry.
 6. **Props occupy tiles and provide cover.** Cover is a property of *what occupies a tile*
@@ -57,11 +57,11 @@ that mapgen's connectivity guarantees mean something, and (c) the shape of the g
 ## 3. Coordinate system
 
 ```
-            y (level, up)
+            y (layer, up)
             │
-            │      ┌───────────┐  y = 3  roof (walkable if flat)
-            │      │  floor 2  │  y = 2
-            │      │  floor 1  │  y = 1
+            │      ┌───────────┐  y = 6  roof (walkable if flat)
+            │      │  floor 2  │  y = 4
+            │      │  floor 1  │  y = 2
    ─────────┼──────┤  floor 0  ├──────────  y = 0  ground elevation here is 0
             │      └───────────┘
             └──────────────────────── x (width, east →)
@@ -72,10 +72,12 @@ that mapgen's connectivity guarantees mean something, and (c) the shape of the g
 - `x ∈ [0, width)`, `z ∈ [0, depth)`, `y ∈ [0, levels)`.
 - Directions: `n = -z`, `s = +z`, `e = +x`, `w = -x`. Diagonal movement is a tactical rule, not a map
   property; mapgen guarantees connectivity using orthogonal moves only.
-- `y` is a **level**, not metres. Graphics decides how tall a level is (one storey). Ground terrain is
-  quantised to whole levels; a one-level ground step is a wall-height ledge and is a cliff unless a `ramp`
-  or `slope` connector crosses it. Every *natural* one-level step — one the terrain pass made and nothing
-  graded since — is a `slope` by default (#799); man-made steps keep their walls.
+- `y` counts **half-height layers**, not metres: `LAYER_HEIGHT = 0.75` world units and
+  `STOREY_LAYERS = 2`. Buildings and man-made features retain their 1.5 u storeys.
+- Orthogonal steps of one layer need no connector; rises of two or more layers are cliffs without
+  one. `Tile.slope` remains the natural hillside shape; the `slope` connector kind is retired.
+- The engine conversion doubles existing terrain heights without adding half steps. ADR 0008's
+  mapgen child later smooths natural terrain to one-layer steps; man-made edges keep their walls.
 - Tile key for indexing: `key = (y * depth + z) * width + x`.
 
 ## 4. Data model
@@ -126,7 +128,7 @@ export interface WallSet {
 
 // src/mapgen/model/tile.ts
 export interface Tile {
-  readonly x: number; readonly y: number; readonly z: number;
+  readonly x: number; readonly y: number; readonly z: number; // y in half-height layers
   readonly surface: SurfaceId;
   /** Who may stand here. Denormalised by the finalize pass from surface, props, walls and buildings. */
   readonly pass: PassMask;
@@ -159,15 +161,13 @@ typed-array caches without changing the contract.
 
 ```ts
 // src/mapgen/model/connector.ts
-export type ConnectorKind = 'ramp' | 'slope' | 'stairs' | 'ladder';
+export type ConnectorKind = 'ramp' | 'stairs' | 'ladder';
 
 /**
- * The only way to change level. Always bidirectional.
- *   ramp   : ground ↔ ground, to.y === from.y + 1, horizontally adjacent, PassMask.ALL
- *   slope  : ground ↔ ground, to.y === from.y + 1, horizontally adjacent, PassMask.ALL; natural edges only,
- *            from is the tile carrying `Tile.slope` (#799); an outer corner has no connector of its own
- *   stairs : floor  ↔ floor,  to.y === from.y + 1, horizontally adjacent, PassMask.INFANTRY
- *   ladder : ground/roof ↔ roof, to.y >= from.y + 1, horizontally adjacent (across a wall), INFANTRY
+ * Required for rises of two or more layers; always bidirectional.
+ *   ramp   : ground ↔ ground, to.y === from.y + 2, horizontally adjacent, PassMask.ALL
+ *   stairs : floor  ↔ floor,  to.y === from.y + 2, horizontally adjacent, PassMask.INFANTRY
+ *   ladder : ground/roof ↔ roof, to.y >= from.y + 2, horizontally adjacent, INFANTRY
  */
 export interface Connector {
   readonly id: string;
@@ -179,11 +179,11 @@ export interface Connector {
 }
 ```
 
-Stairs geometry (side view). The stair tile is walkable at the lower level; the cell directly above it is
-the stairwell hole (no tile), and the connector lands on the horizontally adjacent upper tile:
+Stairs geometry (side view). The stair tile starts on the lower layer and spans a storey; the cell
+two layers directly above it is the stairwell hole (no tile), and the connector lands on the horizontally adjacent upper tile:
 
 ```
-   y+1   [floor][floor][ to ][hole ][floor]
+   y+2   [floor][floor][ to ][hole ][floor]
                               ▲
    y     [floor][floor][floor][from ][floor]     from.surface = 'stairs'
                               stairs
@@ -246,7 +246,7 @@ export interface Room {
 
 export interface Floor {
   readonly index: number;              // 0 = ground floor
-  readonly y: number;                  // groundLevel + index
+  readonly y: number;                  // groundLevel + 2 * index
   readonly rooms: readonly Room[];
 }
 
@@ -268,8 +268,8 @@ export interface Building {
 ```
 
 Interior tiles are `surface: 'floor'` (or `'stairs'`) with `buildingId` set and `pass` restricted to
-`INFANTRY`. A walkable flat roof contributes `surface: 'roof'` tiles at `y = groundLevel + floors.length`
-reachable by a ladder or a stair to roof; `levels` must include that level.
+`INFANTRY`. A walkable flat roof contributes `surface: 'roof'` tiles at `y = groundLevel + 2 * floors.length`
+reachable by a ladder or a stair to roof; `levels` must include that layer.
 
 ### 4.6 Placement hooks
 
@@ -333,7 +333,7 @@ export interface MapRecipe {
 
 // src/mapgen/model/tactical-map.ts
 export interface TacticalMap {
-  readonly version: 1;
+  readonly version: 2;
   readonly recipe: MapRecipe;
   readonly width: number;
   readonly depth: number;
@@ -359,18 +359,22 @@ forbids, or the generator's promises are void.
 canStep(unitClass, A, B):
   A.pass & unitClass  and  B.pass & unitClass          -- both standable for the class
   and (
-    -- same level, orthogonal neighbour, no blocking wall on the shared edge
-    A.y == B.y and adjacent4(A, B)
+    -- at most one layer apart, orthogonal neighbour, no blocking wall on the shared edge
+    abs(A.y - B.y) <= 1 and adjacent4(A, B)
       and wallBetween(A, B) in { none, door, half }     -- doors and parapets are infantry-only
       and (wallBetween(A, B) in { none } or unitClass == INFANTRY)
     or
-    -- level change through an explicit connector
+    -- larger layer change through an explicit connector
     exists c in connectors: {c.from, c.to} == {A, B} and c.pass & unitClass
   )
 ```
 
-A "cliff" (adjacent ground tiles with different `y` and no ramp) is impassable both ways. Dropping down
-is deliberately **not** in the contract; if M2 wants it, it is additive and only widens reachability.
+A "cliff" has a rise of at least two layers and no connector; it is impassable both ways. A one-layer
+step is walkable both ways at flat cost through `ReachabilityService`, shared by tactical and mapgen.
+
+Combat measures whole storeys: `trunc((from.y - to.y) / STOREY_LAYERS) * elevationPerStorey`.
+The eye is one layer above the tile. LOS samples the ray in layers; walls and opaque props still
+occupy a full storey, while a bare half step grants no cover. Cover remains walls/props (§4.4).
 
 ## 6. Invariants
 
@@ -389,7 +393,7 @@ map is a bug, never a runtime fallback.
 | I7 | Reachability: for each hook `h` and each class `c` in `h.requiredPass`, some tile of `h` is reachable under §5 from some tile of some deploy zone by class `c`. |
 | I8 | Recipe satisfaction: for each `HookRequirement`, exactly `count` hooks of that kind exist, and `minDistanceFromDeploy` holds. |
 | I9 | Determinism: `generate(recipe)` twice gives deep-equal maps (tested, not validated). |
-| I10 | Slopes (#799): every natural one-level step between ground tiles is a `slope`, or a cliff only by `slopeShare`, decided per connected edge run; an inner or outer corner never stands without its flanking straights; man-made edges (graded plats, elevated features, lots, and any column carrying a wall) keep their walls and are never slopes. Pinned in the generation sweep, not validated per map. |
+| I10 | Natural slope shapes have no orphan corners; man-made edges (graded plats, elevated features, lots, and walled columns) keep their walls and never become natural slopes. During the engine conversion, old full-storey natural steps retain rise-2 ramps. The mapgen child supplies the one-layer smoothing invariant I11 and makes `slopeShare` visual only (ADR 0008 §2.5). Pinned in the generation sweep. |
 
 ## 7. Generation pipeline
 
@@ -477,16 +481,16 @@ RNG fork, records diagnostics, then runs `validateTacticalMap`.
 
 | # | Pass id | Requires | Provides | What it does |
 |---|---|---|---|---|
-| 1 | `terrain` | – | `heightmap` | Value noise (permutation table seeded from the pass RNG) quantised to levels using the biome's amplitude; assigns ground surfaces from the biome palette. |
+| 1 | `terrain` | – | `heightmap` | Value noise (permutation table seeded from the pass RNG) quantised to layers using the biome's amplitude; assigns ground surfaces from the biome palette. |
 | 2 | `water` | `heightmap` | `water` | Coastal biome only: carves a shoreline along one map edge, tiles become `water` (impassable). No-op elsewhere. |
 | 3 | `roads` | `heightmap`,`water` | `roads` | Road network by settlement scale (rural: one meandering trail; town: main street + side streets; city: a grid of `roadWidth`-lane streets). Levels each road; a flat-graded network (cities) also grades the whole plat it encloses to one level, so a city's verticality comes from its buildings. |
 | 4 | `lots` | `roads` | `lots` | Parcels land adjacent to roads into rectangular lots sized by settlement scale; flattens each lot to one level. |
 | 5a | `buildings` | `lots` | `buildings` | Picks a building template per lot (biome + settlement weights), emits floors, exterior walls, doors and windows; guarantees a multi-storey building where the settlement allows one. |
 | 5b | `interiors` | `buildings` | `interiors` | Bisects floors into rooms with a door per cut, places stairs (verified to keep the building connected), roof tiles and exterior ladders. |
 | 6 | `props` | `interiors` | `props` | Vegetation from the biome's prop table (kinds with a `cluster` range grow copses and boulder fields at the same expected density); street props on straight, bypassable road columns of any lane count; yard clutter beside buildings; every room furnished from its kind's `RoomFurnishing` entry, each placement verified not to cut the building off. Never blocks doors or connector ends. |
-| 7 | `ramps` | `props` | `ramps` | Ensures ground-level connectivity: BFS over ground columns; where a 1-level step separates components, emits ramps; ≥ 2-level steps stay cliffs (routes go around). |
+| 7 | `ramps` | `props` | `ramps` | Ensures ground-level connectivity: BFS over ground columns; where a two-layer step separates components, emits ramps; larger steps stay cliffs (routes go around). |
 | 8 | `hooks` | `ramps` | `hooks` | For each `HookRequirement`, resolves a `HookPlacer` from the registry and runs it (§7.4). Placers share one frozen snapshot of the draft to prefer reachable tiles; egg spawners also keep at least six infantry-reachable tiles within their hatch radius. |
-| 9 | `connectivity` | `hooks` | `connected` | Checks I7. Repairs along the route needing the fewest changes (remove a blocking prop, open a door in a building wall, add a ramp across a one-level step); relocates the hook only when no repairable route exists. Logs every repair to diagnostics so the preview shows them. |
+| 9 | `connectivity` | `hooks` | `connected` | Checks I7. Repairs along the route needing the fewest changes (remove a blocking prop, open a door in a building wall, add a ramp across a two-layer step); relocates the hook only when no repairable route exists. Logs every repair to diagnostics so the preview shows them. |
 | 10 | freeze + validate | `connected` | – | Not a pass: `generateTacticalMap` denormalises `pass` and `coverProvided`, computes `levels`, freezes the draft into `TacticalMap` and validates (a `GenerationPass` cannot return a map). |
 
 Hive, crash-site and platform archetypes reuse `props`, `hooks`, `connectivity` and `finalize`
@@ -517,7 +521,7 @@ export interface HookPlacer {
 export interface BiomeDefinition {
   readonly id: BiomeId;
   readonly groundSurfaces: readonly { surface: SurfaceId; weight: number }[];
-  readonly terrain: { amplitudeLevels: number; frequency: number; roughness: number };
+  readonly terrain: { amplitudeLayers: number; frequency: number; roughness: number };
   readonly hasShoreline: boolean;
   readonly vegetation: readonly { prop: PropKindId; density: number; cluster?: IntRange }[];
   readonly buildingKinds: readonly { template: string; weight: number }[];
@@ -550,7 +554,7 @@ src/mapgen/
               mission-map-recipe-adapter, generation-sweep.test (property sweep + golden seeds)
 ```
 
-`ascii-map-renderer` is pure TS and doubles as the fastest preview: one character per column per level,
+`ascii-map-renderer` is pure TS and doubles as the fastest preview: one character per column per layer,
 used in tests and printable from a script. The graphical harness is a second Vite HTML entry,
 `mapgen-preview.html` at the repo root next to `index.html`, with entry script `src/mapgen-preview.ts`
 (one entry script per page at the `src/` root, mirroring `src/main.ts`). Behind the entry: the map view

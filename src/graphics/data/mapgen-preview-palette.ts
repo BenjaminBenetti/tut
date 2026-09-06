@@ -7,7 +7,7 @@ import type { WallKind } from "../../mapgen/model/wall";
 // Scale
 // ===========================================
 
-/** World units per map level: one building floor (style guide §3). */
+/** World units per half-height layer; two layers span one building storey. */
 export const LAYER_HEIGHT = 0.75;
 
 /**
@@ -109,7 +109,7 @@ export const PROP_HEIGHTS: Readonly<Record<CoverLevel, number>> = {
   2: 1.2,
 };
 
-/** Vertical links: concrete ramp, a hillside in dirt, paved steps, steel ladder. */
+/** Vertical links: concrete ramp, paved steps, steel ladder. */
 export const CONNECTOR_COLOURS: Readonly<Record<ConnectorKind, number>> = {
   ramp: 0x8e8a82,
   stairs: 0xa7a297,

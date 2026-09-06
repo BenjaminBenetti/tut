@@ -19,7 +19,7 @@ export interface Room {
 export interface Floor {
   /** 0 is the ground floor. */
   readonly index: number;
-  /** Level of this floor: `groundLevel + index`. */
+  /** Layer of this floor: `groundLevel + 2 * index`. */
   readonly y: number;
   readonly rooms: readonly Room[];
 }
@@ -35,7 +35,7 @@ export interface Entrance {
 /** Roof shape. Only flat roofs can be walkable. */
 export interface Roof {
   readonly kind: "flat" | "pitched";
-  /** True when `roof` tiles exist at `groundLevel + floors.length`. */
+  /** True when `roof` tiles exist at `groundLevel + 2 * floors.length`. */
   readonly walkable: boolean;
 }
 
@@ -45,8 +45,8 @@ export interface Roof {
  * entrances and the connectors that serve it.
  *
  * ```
- *   y = groundLevel + floors.length   roof tiles (if walkable)
- *   y = groundLevel + 1               floor 1
+ *   y = groundLevel + 2 * floors.length   roof tiles (if walkable)
+ *   y = groundLevel + 2               floor 1
  *   y = groundLevel                   floor 0, entrances on the perimeter
  * ```
  */
@@ -56,7 +56,7 @@ export interface Building {
   readonly kind: string;
   /** Union of rectangles. M1.5 emits one; the model allows L and T shapes. */
   readonly footprint: readonly Rect[];
-  /** Level of the flattened terrain under the building. */
+  /** Layer of the flattened terrain under the building. */
   readonly groundLevel: number;
   /** At least one floor. */
   readonly floors: readonly Floor[];

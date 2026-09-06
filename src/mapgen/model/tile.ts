@@ -15,8 +15,8 @@ import type { WallSet } from "./wall";
  * walkable roofs all appear here on the same level axis.
  *
  * ```
- *   y=2   [roof ][roof ]
- *   y=1   [floor][floor]            ← building tiles carry buildingId
+ *   y=4   [roof ][roof ]
+ *   y=2   [floor][floor]            ← building tiles carry buildingId
  *   y=0   [grass][floor][road]      ← ground and floor 0 share a level
  * ```
  */

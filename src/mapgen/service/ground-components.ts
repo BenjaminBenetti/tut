@@ -78,10 +78,10 @@ export interface GroundComponents {
 }
 
 /**
- * Builds the connectivity of passable exterior ground under the §5 rule
- * as it stands on the draft: 4-neighbours at the same level with no wall
- * between them, plus the ends of ramps already placed. Steps of one or
- * more levels without a ramp separate components.
+ * Groups flat exterior ground and man-made ramps for deploy placement.
+ * Natural wedges are excluded to preserve the existing seed selection
+ * through the layer conversion; the ramp pass joins their endpoints too.
+ * Actual traversal, including free half steps, uses ReachabilityService.
  */
 export function buildGroundComponents(draft: MapDraft): GroundComponents {
   const nodes = new Set<number>();
@@ -116,7 +116,10 @@ export function buildGroundComponents(draft: MapDraft): GroundComponents {
     }
   }
   for (const connector of draft.connectors) {
-    if (connector.kind !== "ramp") {
+    if (
+      connector.kind !== "ramp" ||
+      draft.slopeAt(connector.from.x, connector.from.z) !== undefined
+    ) {
       continue;
     }
     const a = columnKey(draft, connector.from.x, connector.from.z);

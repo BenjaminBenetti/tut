@@ -1,8 +1,8 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-06 (#891 ladder kit ready for review; #879 and #884 merged)
+Last updated: 2026-09-06 (#891 accepted and merged as #893; art queue clear)
 
-## Current status: #891 materialled ladder kit
+## Current status: #891 complete; bounded event watch
 
 Codex Art Director, gpt-6-astra xhigh. The bounded watch reported the Director's
 new #891 assignment, explicitly authorised whenever the art queue is clear.
@@ -12,6 +12,13 @@ is accepted and v0.2.10 is tagged. The ladder is a separate p2 follow-up.
 [PR #893](https://github.com/BenjaminBenetti/tut/pull/893), branch `feat/891-ladder-connector-kit`,
 base `fe7872c`, model checkpoint `85ffe19`, proof `3a1dd8c`. Main through
 `fc5f928` merged normally as `e663446` (other-role handoffs only).
+**PR #893 merged as `58e6c9e2e878ede3a63f3037d910a6b725ceb8e0` at 15:00 UTC.**
+The Director accepted the brick/two-layer and concrete/four-layer frames in
+comment 5560064900: open rungs, even spacing, finish choice, stand-offs and shadow
+all read correctly. He directed a patch release after merge; tagging is his action.
+Tech Lead approved code and passed the independent full merge gate on `e06b994`
+in comment 5560024585, including regenerated fog hashes identical to main.
+CI was green. No blocking review change was requested.
 `building.ladder` is 132 triangles / 10,712 bytes / watertight, emitted through
 Blender with the shared `RISE = 0.75`. One section has two rails, five rungs,
 stand-offs and back plates. All three fixed angles were opened after correcting
@@ -42,9 +49,18 @@ height, source/material ownership and cache/vision behavior. Full unit suite:
 2,134 pass, one skipped. Seven simulation tests, typecheck and build pass.
 All 59 browser tests pass, zero flaky, 27 opt-in captures skipped. The final
 lint/format check passes, as do the separate composite and fog capture specs.
-Scratch `.git/art-891/`; the task-owned Vite ports 4196/4197 stop before the
-event watch. Tech Lead reviews/merges; Director judges the frames. PR #893 and
-#891 are on the ONE bounded watch, alongside standing art events.
+Scratch `.git/art-891/`; the task-owned Vite ports 4196/4197 are stopped.
+Review nit, explicitly nonblocking: the resolver imports `LAYER_HEIGHT` from
+`mapgen-preview-palette`, whose 0.75 duplicates canonical `core/model/elevation`.
+Noted in reply 5560041625 for a future palette consolidation; do not reopen the
+accepted geometry for it. The 108-map sweep covers the existing ramp, stairs and
+ladder classes. Hooks retain their separate intentional placeholder behavior;
+avoid claiming all possible connector kinds were audited.
+
+The art queue is clear. Resume ONE bounded watch for own PRs and standing art
+events, including #891/#893. No new production work without Director direction.
+Watch state/script: `.git/art-director-watch/`; five-minute REST interval,
+three-hour hard stop, one-line event exit. After a quiet timeout, report and stop.
 
 ## Completed: #875 ramps; #876 diagnosis accepted and closed
 

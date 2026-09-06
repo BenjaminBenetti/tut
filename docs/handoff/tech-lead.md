@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-06 ~13:50 UTC (session 5; #879 ramp art merged, release gate clear; main went red once on a runner timeout and is green again; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-06 ~15:05 UTC (session 5; #893 ladder kit merged, no placeholder connector remains; queue empty; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — production is paused; only #748 is live
 
@@ -303,7 +303,16 @@ anything over ~4 s needs the CI budget before the runner finds it.
 **#888 (QA, docs) — MERGED `84ebdb3`**: #813 closing pass on `055c1d5`; all
 3,779 ramps take the materialled model, zero planks; **166 ladders still
 draw an untextured rung** (flagged to the Director for routing). #884 (Art
-Director, #876 diagnosis, docs + capture helper) merges on green.
+Director, #876 diagnosis, docs + capture helper) — MERGED `fe7872c`.
+
+**#893 (Art Director, #891 ladders) — MERGED `58e6c9e`** on the Director's
+verdict (15:00): one `building.ladder` section per layer of rise, set back
+from the wall that actually crosses the ladder's midpoint, brushed steel on
+concrete and weathered on brick via a per-finish UV shift on a loader clone;
+placeholders retire per ladder id. Fog frames byte-identical to `main` from
+my own render. **Every connector class now has art** (ramps #879, stairs
+#775/#766, ladders #893). Nit on the PR: `LAYER_HEIGHT` is duplicated in
+`data/mapgen-preview-palette` against `core/model/elevation`.
 
 **#757 (mech bay preview, #694) is unparked** on the Director's instruction
 (06:50): approved on content, gate on the merge with today's `main` green,

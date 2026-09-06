@@ -1,0 +1,3670 @@
+{
+  "maps": 108,
+  "ladders": 166,
+  "rises": {
+    "2": 64,
+    "3": 12,
+    "4": 90
+  },
+  "sections": 524,
+  "unresolved": [],
+  "finishes": {
+    "brushed": 98,
+    "weathered": 68
+  },
+  "baseline": "fe7872c",
+  "connectors": [
+    {
+      "seed": "qa813-temperate-rural-medium-2",
+      "biome": "temperate",
+      "settlement": "rural",
+      "size": "medium",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 44,
+          "y": 4,
+          "z": 10
+        },
+        "to": {
+          "x": 45,
+          "y": 6,
+          "z": 10
+        },
+        "pass": 1,
+        "buildingId": "building-3"
+      }
+    },
+    {
+      "seed": "qa813-temperate-town-small-0",
+      "biome": "temperate",
+      "settlement": "town",
+      "size": "small",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 30,
+          "y": 4,
+          "z": 36
+        },
+        "to": {
+          "x": 30,
+          "y": 6,
+          "z": 35
+        },
+        "pass": 1,
+        "buildingId": "building-4"
+      }
+    },
+    {
+      "seed": "qa813-temperate-town-small-1",
+      "biome": "temperate",
+      "settlement": "town",
+      "size": "small",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 12,
+          "y": 3,
+          "z": 3
+        },
+        "to": {
+          "x": 12,
+          "y": 6,
+          "z": 4
+        },
+        "pass": 1,
+        "buildingId": "building-4"
+      }
+    },
+    {
+      "seed": "qa813-temperate-town-medium-0",
+      "biome": "temperate",
+      "settlement": "town",
+      "size": "medium",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 67,
+          "y": 2,
+          "z": 31
+        },
+        "to": {
+          "x": 67,
+          "y": 4,
+          "z": 30
+        },
+        "pass": 1,
+        "buildingId": "building-8"
+      }
+    },
+    {
+      "seed": "qa813-temperate-town-medium-1",
+      "biome": "temperate",
+      "settlement": "town",
+      "size": "medium",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 50,
+          "y": 0,
+          "z": 19
+        },
+        "to": {
+          "x": 50,
+          "y": 4,
+          "z": 20
+        },
+        "pass": 1,
+        "buildingId": "building-8"
+      }
+    },
+    {
+      "seed": "qa813-temperate-town-large-0",
+      "biome": "temperate",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 68,
+          "y": 0,
+          "z": 67
+        },
+        "to": {
+          "x": 68,
+          "y": 2,
+          "z": 68
+        },
+        "pass": 1,
+        "buildingId": "building-3"
+      }
+    },
+    {
+      "seed": "qa813-temperate-town-large-0",
+      "biome": "temperate",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-2",
+        "kind": "ladder",
+        "from": {
+          "x": 51,
+          "y": 0,
+          "z": 42
+        },
+        "to": {
+          "x": 51,
+          "y": 2,
+          "z": 41
+        },
+        "pass": 1,
+        "buildingId": "building-4"
+      }
+    },
+    {
+      "seed": "qa813-temperate-town-large-0",
+      "biome": "temperate",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-3",
+        "kind": "ladder",
+        "from": {
+          "x": 64,
+          "y": 2,
+          "z": 22
+        },
+        "to": {
+          "x": 64,
+          "y": 4,
+          "z": 23
+        },
+        "pass": 1,
+        "buildingId": "building-9"
+      }
+    },
+    {
+      "seed": "qa813-temperate-town-large-0",
+      "biome": "temperate",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-4",
+        "kind": "ladder",
+        "from": {
+          "x": 50,
+          "y": 2,
+          "z": 58
+        },
+        "to": {
+          "x": 49,
+          "y": 6,
+          "z": 58
+        },
+        "pass": 1,
+        "buildingId": "building-10"
+      }
+    },
+    {
+      "seed": "qa813-temperate-town-large-0",
+      "biome": "temperate",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-5",
+        "kind": "ladder",
+        "from": {
+          "x": 45,
+          "y": 2,
+          "z": 24
+        },
+        "to": {
+          "x": 45,
+          "y": 4,
+          "z": 23
+        },
+        "pass": 1,
+        "buildingId": "building-12"
+      }
+    },
+    {
+      "seed": "qa813-temperate-town-large-0",
+      "biome": "temperate",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-6",
+        "kind": "ladder",
+        "from": {
+          "x": 71,
+          "y": 2,
+          "z": 17
+        },
+        "to": {
+          "x": 70,
+          "y": 4,
+          "z": 17
+        },
+        "pass": 1,
+        "buildingId": "building-13"
+      }
+    },
+    {
+      "seed": "qa813-temperate-town-large-0",
+      "biome": "temperate",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-7",
+        "kind": "ladder",
+        "from": {
+          "x": 36,
+          "y": 0,
+          "z": 18
+        },
+        "to": {
+          "x": 36,
+          "y": 2,
+          "z": 19
+        },
+        "pass": 1,
+        "buildingId": "building-16"
+      }
+    },
+    {
+      "seed": "qa813-temperate-town-large-0",
+      "biome": "temperate",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-8",
+        "kind": "ladder",
+        "from": {
+          "x": 79,
+          "y": 2,
+          "z": 54
+        },
+        "to": {
+          "x": 79,
+          "y": 4,
+          "z": 55
+        },
+        "pass": 1,
+        "buildingId": "building-18"
+      }
+    },
+    {
+      "seed": "qa813-temperate-town-large-1",
+      "biome": "temperate",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 50,
+          "y": 0,
+          "z": 55
+        },
+        "to": {
+          "x": 49,
+          "y": 2,
+          "z": 55
+        },
+        "pass": 1,
+        "buildingId": "building-7"
+      }
+    },
+    {
+      "seed": "qa813-temperate-town-large-1",
+      "biome": "temperate",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-2",
+        "kind": "ladder",
+        "from": {
+          "x": 34,
+          "y": 2,
+          "z": 10
+        },
+        "to": {
+          "x": 34,
+          "y": 6,
+          "z": 9
+        },
+        "pass": 1,
+        "buildingId": "building-10"
+      }
+    },
+    {
+      "seed": "qa813-temperate-town-large-1",
+      "biome": "temperate",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-3",
+        "kind": "ladder",
+        "from": {
+          "x": 55,
+          "y": 0,
+          "z": 24
+        },
+        "to": {
+          "x": 54,
+          "y": 2,
+          "z": 24
+        },
+        "pass": 1,
+        "buildingId": "building-11"
+      }
+    },
+    {
+      "seed": "qa813-temperate-town-large-1",
+      "biome": "temperate",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-4",
+        "kind": "ladder",
+        "from": {
+          "x": 82,
+          "y": 2,
+          "z": 74
+        },
+        "to": {
+          "x": 82,
+          "y": 4,
+          "z": 75
+        },
+        "pass": 1,
+        "buildingId": "building-16"
+      }
+    },
+    {
+      "seed": "qa813-temperate-town-large-1",
+      "biome": "temperate",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-5",
+        "kind": "ladder",
+        "from": {
+          "x": 70,
+          "y": 2,
+          "z": 5
+        },
+        "to": {
+          "x": 69,
+          "y": 4,
+          "z": 5
+        },
+        "pass": 1,
+        "buildingId": "building-18"
+      }
+    },
+    {
+      "seed": "qa813-temperate-town-large-1",
+      "biome": "temperate",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-6",
+        "kind": "ladder",
+        "from": {
+          "x": 39,
+          "y": 0,
+          "z": 44
+        },
+        "to": {
+          "x": 38,
+          "y": 4,
+          "z": 44
+        },
+        "pass": 1,
+        "buildingId": "building-21"
+      }
+    },
+    {
+      "seed": "qa813-temperate-town-large-2",
+      "biome": "temperate",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 90,
+          "y": 2,
+          "z": 14
+        },
+        "to": {
+          "x": 89,
+          "y": 6,
+          "z": 14
+        },
+        "pass": 1,
+        "buildingId": "building-2"
+      }
+    },
+    {
+      "seed": "qa813-temperate-town-large-2",
+      "biome": "temperate",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-2",
+        "kind": "ladder",
+        "from": {
+          "x": 31,
+          "y": 4,
+          "z": 21
+        },
+        "to": {
+          "x": 32,
+          "y": 8,
+          "z": 21
+        },
+        "pass": 1,
+        "buildingId": "building-12"
+      }
+    },
+    {
+      "seed": "qa813-temperate-city-small-0",
+      "biome": "temperate",
+      "settlement": "city",
+      "size": "small",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 5,
+          "y": 2,
+          "z": 34
+        },
+        "to": {
+          "x": 5,
+          "y": 6,
+          "z": 33
+        },
+        "pass": 1,
+        "buildingId": "building-3"
+      }
+    },
+    {
+      "seed": "qa813-temperate-city-small-0",
+      "biome": "temperate",
+      "settlement": "city",
+      "size": "small",
+      "connector": {
+        "id": "ladder-2",
+        "kind": "ladder",
+        "from": {
+          "x": 9,
+          "y": 2,
+          "z": 11
+        },
+        "to": {
+          "x": 9,
+          "y": 6,
+          "z": 10
+        },
+        "pass": 1,
+        "buildingId": "building-4"
+      }
+    },
+    {
+      "seed": "qa813-temperate-city-small-1",
+      "biome": "temperate",
+      "settlement": "city",
+      "size": "small",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 19,
+          "y": 2,
+          "z": 23
+        },
+        "to": {
+          "x": 20,
+          "y": 6,
+          "z": 23
+        },
+        "pass": 1,
+        "buildingId": "building-2"
+      }
+    },
+    {
+      "seed": "qa813-temperate-city-large-0",
+      "biome": "temperate",
+      "settlement": "city",
+      "size": "large",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 35,
+          "y": 2,
+          "z": 87
+        },
+        "to": {
+          "x": 35,
+          "y": 6,
+          "z": 86
+        },
+        "pass": 1,
+        "buildingId": "building-6"
+      }
+    },
+    {
+      "seed": "qa813-temperate-city-large-0",
+      "biome": "temperate",
+      "settlement": "city",
+      "size": "large",
+      "connector": {
+        "id": "ladder-2",
+        "kind": "ladder",
+        "from": {
+          "x": 8,
+          "y": 2,
+          "z": 72
+        },
+        "to": {
+          "x": 8,
+          "y": 6,
+          "z": 73
+        },
+        "pass": 1,
+        "buildingId": "building-14"
+      }
+    },
+    {
+      "seed": "qa813-temperate-city-large-0",
+      "biome": "temperate",
+      "settlement": "city",
+      "size": "large",
+      "connector": {
+        "id": "ladder-3",
+        "kind": "ladder",
+        "from": {
+          "x": 5,
+          "y": 2,
+          "z": 19
+        },
+        "to": {
+          "x": 5,
+          "y": 6,
+          "z": 20
+        },
+        "pass": 1,
+        "buildingId": "building-23"
+      }
+    },
+    {
+      "seed": "qa813-temperate-city-large-0",
+      "biome": "temperate",
+      "settlement": "city",
+      "size": "large",
+      "connector": {
+        "id": "ladder-4",
+        "kind": "ladder",
+        "from": {
+          "x": 67,
+          "y": 2,
+          "z": 55
+        },
+        "to": {
+          "x": 66,
+          "y": 6,
+          "z": 55
+        },
+        "pass": 1,
+        "buildingId": "building-24"
+      }
+    },
+    {
+      "seed": "qa813-temperate-city-large-1",
+      "biome": "temperate",
+      "settlement": "city",
+      "size": "large",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 52,
+          "y": 2,
+          "z": 68
+        },
+        "to": {
+          "x": 53,
+          "y": 6,
+          "z": 68
+        },
+        "pass": 1,
+        "buildingId": "building-16"
+      }
+    },
+    {
+      "seed": "qa813-temperate-city-large-2",
+      "biome": "temperate",
+      "settlement": "city",
+      "size": "large",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 29,
+          "y": 2,
+          "z": 63
+        },
+        "to": {
+          "x": 29,
+          "y": 6,
+          "z": 62
+        },
+        "pass": 1,
+        "buildingId": "building-8"
+      }
+    },
+    {
+      "seed": "qa813-temperate-city-large-2",
+      "biome": "temperate",
+      "settlement": "city",
+      "size": "large",
+      "connector": {
+        "id": "ladder-2",
+        "kind": "ladder",
+        "from": {
+          "x": 28,
+          "y": 2,
+          "z": 84
+        },
+        "to": {
+          "x": 27,
+          "y": 6,
+          "z": 84
+        },
+        "pass": 1,
+        "buildingId": "building-19"
+      }
+    },
+    {
+      "seed": "qa813-snowy-rural-medium-1",
+      "biome": "snowy",
+      "settlement": "rural",
+      "size": "medium",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 18,
+          "y": 2,
+          "z": 30
+        },
+        "to": {
+          "x": 18,
+          "y": 4,
+          "z": 31
+        },
+        "pass": 1,
+        "buildingId": "building-1"
+      }
+    },
+    {
+      "seed": "qa813-snowy-rural-medium-2",
+      "biome": "snowy",
+      "settlement": "rural",
+      "size": "medium",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 26,
+          "y": 3,
+          "z": 48
+        },
+        "to": {
+          "x": 27,
+          "y": 6,
+          "z": 48
+        },
+        "pass": 1,
+        "buildingId": "building-2"
+      }
+    },
+    {
+      "seed": "qa813-snowy-rural-large-0",
+      "biome": "snowy",
+      "settlement": "rural",
+      "size": "large",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 79,
+          "y": 6,
+          "z": 34
+        },
+        "to": {
+          "x": 80,
+          "y": 8,
+          "z": 34
+        },
+        "pass": 1,
+        "buildingId": "building-2"
+      }
+    },
+    {
+      "seed": "qa813-snowy-rural-large-1",
+      "biome": "snowy",
+      "settlement": "rural",
+      "size": "large",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 38,
+          "y": 4,
+          "z": 24
+        },
+        "to": {
+          "x": 38,
+          "y": 6,
+          "z": 25
+        },
+        "pass": 1,
+        "buildingId": "building-2"
+      }
+    },
+    {
+      "seed": "qa813-snowy-town-small-2",
+      "biome": "snowy",
+      "settlement": "town",
+      "size": "small",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 30,
+          "y": 4,
+          "z": 34
+        },
+        "to": {
+          "x": 31,
+          "y": 6,
+          "z": 34
+        },
+        "pass": 1,
+        "buildingId": "building-3"
+      }
+    },
+    {
+      "seed": "qa813-snowy-town-medium-0",
+      "biome": "snowy",
+      "settlement": "town",
+      "size": "medium",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 19,
+          "y": 4,
+          "z": 55
+        },
+        "to": {
+          "x": 18,
+          "y": 6,
+          "z": 55
+        },
+        "pass": 1,
+        "buildingId": "building-7"
+      }
+    },
+    {
+      "seed": "qa813-snowy-town-medium-1",
+      "biome": "snowy",
+      "settlement": "town",
+      "size": "medium",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 46,
+          "y": 4,
+          "z": 13
+        },
+        "to": {
+          "x": 47,
+          "y": 6,
+          "z": 13
+        },
+        "pass": 1,
+        "buildingId": "building-6"
+      }
+    },
+    {
+      "seed": "qa813-snowy-town-medium-2",
+      "biome": "snowy",
+      "settlement": "town",
+      "size": "medium",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 20,
+          "y": 4,
+          "z": 56
+        },
+        "to": {
+          "x": 20,
+          "y": 6,
+          "z": 55
+        },
+        "pass": 1,
+        "buildingId": "building-5"
+      }
+    },
+    {
+      "seed": "qa813-snowy-town-medium-2",
+      "biome": "snowy",
+      "settlement": "town",
+      "size": "medium",
+      "connector": {
+        "id": "ladder-2",
+        "kind": "ladder",
+        "from": {
+          "x": 13,
+          "y": 4,
+          "z": 49
+        },
+        "to": {
+          "x": 12,
+          "y": 6,
+          "z": 49
+        },
+        "pass": 1,
+        "buildingId": "building-7"
+      }
+    },
+    {
+      "seed": "qa813-snowy-town-medium-2",
+      "biome": "snowy",
+      "settlement": "town",
+      "size": "medium",
+      "connector": {
+        "id": "ladder-3",
+        "kind": "ladder",
+        "from": {
+          "x": 29,
+          "y": 4,
+          "z": 13
+        },
+        "to": {
+          "x": 29,
+          "y": 6,
+          "z": 12
+        },
+        "pass": 1,
+        "buildingId": "building-9"
+      }
+    },
+    {
+      "seed": "qa813-snowy-town-large-0",
+      "biome": "snowy",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 16,
+          "y": 0,
+          "z": 34
+        },
+        "to": {
+          "x": 16,
+          "y": 2,
+          "z": 35
+        },
+        "pass": 1,
+        "buildingId": "building-2"
+      }
+    },
+    {
+      "seed": "qa813-snowy-town-large-0",
+      "biome": "snowy",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-2",
+        "kind": "ladder",
+        "from": {
+          "x": 81,
+          "y": 3,
+          "z": 44
+        },
+        "to": {
+          "x": 81,
+          "y": 6,
+          "z": 45
+        },
+        "pass": 1,
+        "buildingId": "building-6"
+      }
+    },
+    {
+      "seed": "qa813-snowy-town-large-0",
+      "biome": "snowy",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-3",
+        "kind": "ladder",
+        "from": {
+          "x": 73,
+          "y": 1,
+          "z": 69
+        },
+        "to": {
+          "x": 74,
+          "y": 4,
+          "z": 69
+        },
+        "pass": 1,
+        "buildingId": "building-9"
+      }
+    },
+    {
+      "seed": "qa813-snowy-town-large-0",
+      "biome": "snowy",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-4",
+        "kind": "ladder",
+        "from": {
+          "x": 81,
+          "y": 2,
+          "z": 30
+        },
+        "to": {
+          "x": 81,
+          "y": 6,
+          "z": 29
+        },
+        "pass": 1,
+        "buildingId": "building-11"
+      }
+    },
+    {
+      "seed": "qa813-snowy-town-large-1",
+      "biome": "snowy",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 26,
+          "y": 2,
+          "z": 21
+        },
+        "to": {
+          "x": 27,
+          "y": 6,
+          "z": 21
+        },
+        "pass": 1,
+        "buildingId": "building-2"
+      }
+    },
+    {
+      "seed": "qa813-snowy-town-large-1",
+      "biome": "snowy",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-2",
+        "kind": "ladder",
+        "from": {
+          "x": 70,
+          "y": 2,
+          "z": 47
+        },
+        "to": {
+          "x": 69,
+          "y": 4,
+          "z": 47
+        },
+        "pass": 1,
+        "buildingId": "building-3"
+      }
+    },
+    {
+      "seed": "qa813-snowy-town-large-1",
+      "biome": "snowy",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-3",
+        "kind": "ladder",
+        "from": {
+          "x": 52,
+          "y": 2,
+          "z": 51
+        },
+        "to": {
+          "x": 53,
+          "y": 6,
+          "z": 51
+        },
+        "pass": 1,
+        "buildingId": "building-4"
+      }
+    },
+    {
+      "seed": "qa813-snowy-town-large-1",
+      "biome": "snowy",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-4",
+        "kind": "ladder",
+        "from": {
+          "x": 8,
+          "y": 6,
+          "z": 52
+        },
+        "to": {
+          "x": 8,
+          "y": 10,
+          "z": 51
+        },
+        "pass": 1,
+        "buildingId": "building-5"
+      }
+    },
+    {
+      "seed": "qa813-snowy-town-large-1",
+      "biome": "snowy",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-5",
+        "kind": "ladder",
+        "from": {
+          "x": 34,
+          "y": 2,
+          "z": 4
+        },
+        "to": {
+          "x": 33,
+          "y": 4,
+          "z": 4
+        },
+        "pass": 1,
+        "buildingId": "building-11"
+      }
+    },
+    {
+      "seed": "qa813-snowy-town-large-1",
+      "biome": "snowy",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-6",
+        "kind": "ladder",
+        "from": {
+          "x": 62,
+          "y": 0,
+          "z": 20
+        },
+        "to": {
+          "x": 63,
+          "y": 2,
+          "z": 20
+        },
+        "pass": 1,
+        "buildingId": "building-15"
+      }
+    },
+    {
+      "seed": "qa813-snowy-town-large-1",
+      "biome": "snowy",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-7",
+        "kind": "ladder",
+        "from": {
+          "x": 14,
+          "y": 6,
+          "z": 20
+        },
+        "to": {
+          "x": 13,
+          "y": 8,
+          "z": 20
+        },
+        "pass": 1,
+        "buildingId": "building-20"
+      }
+    },
+    {
+      "seed": "qa813-snowy-town-large-2",
+      "biome": "snowy",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 11,
+          "y": 6,
+          "z": 56
+        },
+        "to": {
+          "x": 12,
+          "y": 10,
+          "z": 56
+        },
+        "pass": 1,
+        "buildingId": "building-1"
+      }
+    },
+    {
+      "seed": "qa813-snowy-town-large-2",
+      "biome": "snowy",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-2",
+        "kind": "ladder",
+        "from": {
+          "x": 23,
+          "y": 4,
+          "z": 74
+        },
+        "to": {
+          "x": 24,
+          "y": 8,
+          "z": 74
+        },
+        "pass": 1,
+        "buildingId": "building-4"
+      }
+    },
+    {
+      "seed": "qa813-snowy-town-large-2",
+      "biome": "snowy",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-3",
+        "kind": "ladder",
+        "from": {
+          "x": 23,
+          "y": 4,
+          "z": 65
+        },
+        "to": {
+          "x": 24,
+          "y": 8,
+          "z": 65
+        },
+        "pass": 1,
+        "buildingId": "building-6"
+      }
+    },
+    {
+      "seed": "qa813-snowy-town-large-2",
+      "biome": "snowy",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-4",
+        "kind": "ladder",
+        "from": {
+          "x": 59,
+          "y": 2,
+          "z": 13
+        },
+        "to": {
+          "x": 60,
+          "y": 4,
+          "z": 13
+        },
+        "pass": 1,
+        "buildingId": "building-7"
+      }
+    },
+    {
+      "seed": "qa813-snowy-town-large-2",
+      "biome": "snowy",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-5",
+        "kind": "ladder",
+        "from": {
+          "x": 48,
+          "y": 2,
+          "z": 14
+        },
+        "to": {
+          "x": 49,
+          "y": 4,
+          "z": 14
+        },
+        "pass": 1,
+        "buildingId": "building-16"
+      }
+    },
+    {
+      "seed": "qa813-snowy-city-medium-1",
+      "biome": "snowy",
+      "settlement": "city",
+      "size": "medium",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 58,
+          "y": 4,
+          "z": 58
+        },
+        "to": {
+          "x": 58,
+          "y": 8,
+          "z": 57
+        },
+        "pass": 1,
+        "buildingId": "building-12"
+      }
+    },
+    {
+      "seed": "qa813-snowy-city-large-1",
+      "biome": "snowy",
+      "settlement": "city",
+      "size": "large",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 19,
+          "y": 2,
+          "z": 85
+        },
+        "to": {
+          "x": 19,
+          "y": 6,
+          "z": 84
+        },
+        "pass": 1,
+        "buildingId": "building-7"
+      }
+    },
+    {
+      "seed": "qa813-snowy-city-large-2",
+      "biome": "snowy",
+      "settlement": "city",
+      "size": "large",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 57,
+          "y": 3,
+          "z": 7
+        },
+        "to": {
+          "x": 58,
+          "y": 7,
+          "z": 7
+        },
+        "pass": 1,
+        "buildingId": "building-21"
+      }
+    },
+    {
+      "seed": "qa813-snowy-city-large-2",
+      "biome": "snowy",
+      "settlement": "city",
+      "size": "large",
+      "connector": {
+        "id": "ladder-2",
+        "kind": "ladder",
+        "from": {
+          "x": 11,
+          "y": 3,
+          "z": 60
+        },
+        "to": {
+          "x": 10,
+          "y": 7,
+          "z": 60
+        },
+        "pass": 1,
+        "buildingId": "building-28"
+      }
+    },
+    {
+      "seed": "qa813-desert-rural-small-2",
+      "biome": "desert",
+      "settlement": "rural",
+      "size": "small",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 33,
+          "y": 0,
+          "z": 24
+        },
+        "to": {
+          "x": 33,
+          "y": 2,
+          "z": 23
+        },
+        "pass": 1,
+        "buildingId": "building-1"
+      }
+    },
+    {
+      "seed": "qa813-desert-rural-medium-1",
+      "biome": "desert",
+      "settlement": "rural",
+      "size": "medium",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 16,
+          "y": 2,
+          "z": 15
+        },
+        "to": {
+          "x": 16,
+          "y": 4,
+          "z": 16
+        },
+        "pass": 1,
+        "buildingId": "building-2"
+      }
+    },
+    {
+      "seed": "qa813-desert-rural-large-0",
+      "biome": "desert",
+      "settlement": "rural",
+      "size": "large",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 70,
+          "y": 4,
+          "z": 57
+        },
+        "to": {
+          "x": 70,
+          "y": 6,
+          "z": 56
+        },
+        "pass": 1,
+        "buildingId": "building-3"
+      }
+    },
+    {
+      "seed": "qa813-desert-rural-large-0",
+      "biome": "desert",
+      "settlement": "rural",
+      "size": "large",
+      "connector": {
+        "id": "ladder-2",
+        "kind": "ladder",
+        "from": {
+          "x": 70,
+          "y": 3,
+          "z": 30
+        },
+        "to": {
+          "x": 69,
+          "y": 6,
+          "z": 30
+        },
+        "pass": 1,
+        "buildingId": "building-4"
+      }
+    },
+    {
+      "seed": "qa813-desert-rural-large-1",
+      "biome": "desert",
+      "settlement": "rural",
+      "size": "large",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 51,
+          "y": 0,
+          "z": 82
+        },
+        "to": {
+          "x": 51,
+          "y": 2,
+          "z": 81
+        },
+        "pass": 1,
+        "buildingId": "building-1"
+      }
+    },
+    {
+      "seed": "qa813-desert-rural-large-2",
+      "biome": "desert",
+      "settlement": "rural",
+      "size": "large",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 13,
+          "y": 1,
+          "z": 28
+        },
+        "to": {
+          "x": 14,
+          "y": 4,
+          "z": 28
+        },
+        "pass": 1,
+        "buildingId": "building-3"
+      }
+    },
+    {
+      "seed": "qa813-desert-rural-large-2",
+      "biome": "desert",
+      "settlement": "rural",
+      "size": "large",
+      "connector": {
+        "id": "ladder-2",
+        "kind": "ladder",
+        "from": {
+          "x": 31,
+          "y": 2,
+          "z": 59
+        },
+        "to": {
+          "x": 30,
+          "y": 4,
+          "z": 59
+        },
+        "pass": 1,
+        "buildingId": "building-4"
+      }
+    },
+    {
+      "seed": "qa813-desert-town-small-0",
+      "biome": "desert",
+      "settlement": "town",
+      "size": "small",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 25,
+          "y": 4,
+          "z": 26
+        },
+        "to": {
+          "x": 25,
+          "y": 8,
+          "z": 27
+        },
+        "pass": 1,
+        "buildingId": "building-1"
+      }
+    },
+    {
+      "seed": "qa813-desert-town-small-0",
+      "biome": "desert",
+      "settlement": "town",
+      "size": "small",
+      "connector": {
+        "id": "ladder-2",
+        "kind": "ladder",
+        "from": {
+          "x": 13,
+          "y": 4,
+          "z": 34
+        },
+        "to": {
+          "x": 12,
+          "y": 6,
+          "z": 34
+        },
+        "pass": 1,
+        "buildingId": "building-5"
+      }
+    },
+    {
+      "seed": "qa813-desert-town-small-2",
+      "biome": "desert",
+      "settlement": "town",
+      "size": "small",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 40,
+          "y": 4,
+          "z": 26
+        },
+        "to": {
+          "x": 40,
+          "y": 8,
+          "z": 27
+        },
+        "pass": 1,
+        "buildingId": "building-2"
+      }
+    },
+    {
+      "seed": "qa813-desert-town-small-2",
+      "biome": "desert",
+      "settlement": "town",
+      "size": "small",
+      "connector": {
+        "id": "ladder-2",
+        "kind": "ladder",
+        "from": {
+          "x": 33,
+          "y": 4,
+          "z": 28
+        },
+        "to": {
+          "x": 32,
+          "y": 6,
+          "z": 28
+        },
+        "pass": 1,
+        "buildingId": "building-3"
+      }
+    },
+    {
+      "seed": "qa813-desert-town-small-2",
+      "biome": "desert",
+      "settlement": "town",
+      "size": "small",
+      "connector": {
+        "id": "ladder-3",
+        "kind": "ladder",
+        "from": {
+          "x": 32,
+          "y": 4,
+          "z": 4
+        },
+        "to": {
+          "x": 32,
+          "y": 6,
+          "z": 5
+        },
+        "pass": 1,
+        "buildingId": "building-4"
+      }
+    },
+    {
+      "seed": "qa813-desert-town-medium-1",
+      "biome": "desert",
+      "settlement": "town",
+      "size": "medium",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 5,
+          "y": 0,
+          "z": 40
+        },
+        "to": {
+          "x": 5,
+          "y": 2,
+          "z": 41
+        },
+        "pass": 1,
+        "buildingId": "building-1"
+      }
+    },
+    {
+      "seed": "qa813-desert-town-medium-1",
+      "biome": "desert",
+      "settlement": "town",
+      "size": "medium",
+      "connector": {
+        "id": "ladder-2",
+        "kind": "ladder",
+        "from": {
+          "x": 28,
+          "y": 2,
+          "z": 40
+        },
+        "to": {
+          "x": 28,
+          "y": 4,
+          "z": 41
+        },
+        "pass": 1,
+        "buildingId": "building-4"
+      }
+    },
+    {
+      "seed": "qa813-desert-town-medium-1",
+      "biome": "desert",
+      "settlement": "town",
+      "size": "medium",
+      "connector": {
+        "id": "ladder-3",
+        "kind": "ladder",
+        "from": {
+          "x": 46,
+          "y": 2,
+          "z": 61
+        },
+        "to": {
+          "x": 45,
+          "y": 4,
+          "z": 61
+        },
+        "pass": 1,
+        "buildingId": "building-5"
+      }
+    },
+    {
+      "seed": "qa813-desert-town-medium-2",
+      "biome": "desert",
+      "settlement": "town",
+      "size": "medium",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 54,
+          "y": 0,
+          "z": 65
+        },
+        "to": {
+          "x": 54,
+          "y": 4,
+          "z": 64
+        },
+        "pass": 1,
+        "buildingId": "building-1"
+      }
+    },
+    {
+      "seed": "qa813-desert-town-large-0",
+      "biome": "desert",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 32,
+          "y": 2,
+          "z": 66
+        },
+        "to": {
+          "x": 32,
+          "y": 4,
+          "z": 65
+        },
+        "pass": 1,
+        "buildingId": "building-1"
+      }
+    },
+    {
+      "seed": "qa813-desert-town-large-0",
+      "biome": "desert",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-2",
+        "kind": "ladder",
+        "from": {
+          "x": 45,
+          "y": 0,
+          "z": 16
+        },
+        "to": {
+          "x": 46,
+          "y": 2,
+          "z": 16
+        },
+        "pass": 1,
+        "buildingId": "building-9"
+      }
+    },
+    {
+      "seed": "qa813-desert-town-large-0",
+      "biome": "desert",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-3",
+        "kind": "ladder",
+        "from": {
+          "x": 62,
+          "y": 0,
+          "z": 47
+        },
+        "to": {
+          "x": 63,
+          "y": 4,
+          "z": 47
+        },
+        "pass": 1,
+        "buildingId": "building-16"
+      }
+    },
+    {
+      "seed": "qa813-desert-town-large-1",
+      "biome": "desert",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 33,
+          "y": 4,
+          "z": 58
+        },
+        "to": {
+          "x": 32,
+          "y": 6,
+          "z": 58
+        },
+        "pass": 1,
+        "buildingId": "building-2"
+      }
+    },
+    {
+      "seed": "qa813-desert-town-large-1",
+      "biome": "desert",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-2",
+        "kind": "ladder",
+        "from": {
+          "x": 46,
+          "y": 2,
+          "z": 22
+        },
+        "to": {
+          "x": 46,
+          "y": 4,
+          "z": 21
+        },
+        "pass": 1,
+        "buildingId": "building-3"
+      }
+    },
+    {
+      "seed": "qa813-desert-town-large-1",
+      "biome": "desert",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-3",
+        "kind": "ladder",
+        "from": {
+          "x": 30,
+          "y": 3,
+          "z": 37
+        },
+        "to": {
+          "x": 30,
+          "y": 6,
+          "z": 38
+        },
+        "pass": 1,
+        "buildingId": "building-4"
+      }
+    },
+    {
+      "seed": "qa813-desert-town-large-1",
+      "biome": "desert",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-4",
+        "kind": "ladder",
+        "from": {
+          "x": 19,
+          "y": 2,
+          "z": 75
+        },
+        "to": {
+          "x": 18,
+          "y": 6,
+          "z": 75
+        },
+        "pass": 1,
+        "buildingId": "building-5"
+      }
+    },
+    {
+      "seed": "qa813-desert-town-large-1",
+      "biome": "desert",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-5",
+        "kind": "ladder",
+        "from": {
+          "x": 31,
+          "y": 2,
+          "z": 76
+        },
+        "to": {
+          "x": 32,
+          "y": 6,
+          "z": 76
+        },
+        "pass": 1,
+        "buildingId": "building-7"
+      }
+    },
+    {
+      "seed": "qa813-desert-town-large-1",
+      "biome": "desert",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-6",
+        "kind": "ladder",
+        "from": {
+          "x": 67,
+          "y": 2,
+          "z": 93
+        },
+        "to": {
+          "x": 67,
+          "y": 4,
+          "z": 92
+        },
+        "pass": 1,
+        "buildingId": "building-11"
+      }
+    },
+    {
+      "seed": "qa813-desert-town-large-2",
+      "biome": "desert",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 74,
+          "y": 2,
+          "z": 13
+        },
+        "to": {
+          "x": 73,
+          "y": 4,
+          "z": 13
+        },
+        "pass": 1,
+        "buildingId": "building-2"
+      }
+    },
+    {
+      "seed": "qa813-desert-town-large-2",
+      "biome": "desert",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-2",
+        "kind": "ladder",
+        "from": {
+          "x": 22,
+          "y": 2,
+          "z": 28
+        },
+        "to": {
+          "x": 21,
+          "y": 6,
+          "z": 28
+        },
+        "pass": 1,
+        "buildingId": "building-7"
+      }
+    },
+    {
+      "seed": "qa813-desert-town-large-2",
+      "biome": "desert",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-3",
+        "kind": "ladder",
+        "from": {
+          "x": 78,
+          "y": 2,
+          "z": 18
+        },
+        "to": {
+          "x": 79,
+          "y": 6,
+          "z": 18
+        },
+        "pass": 1,
+        "buildingId": "building-12"
+      }
+    },
+    {
+      "seed": "qa813-desert-city-small-0",
+      "biome": "desert",
+      "settlement": "city",
+      "size": "small",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 39,
+          "y": 3,
+          "z": 23
+        },
+        "to": {
+          "x": 38,
+          "y": 7,
+          "z": 23
+        },
+        "pass": 1,
+        "buildingId": "building-3"
+      }
+    },
+    {
+      "seed": "qa813-desert-city-small-1",
+      "biome": "desert",
+      "settlement": "city",
+      "size": "small",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 26,
+          "y": 2,
+          "z": 12
+        },
+        "to": {
+          "x": 26,
+          "y": 6,
+          "z": 11
+        },
+        "pass": 1,
+        "buildingId": "building-3"
+      }
+    },
+    {
+      "seed": "qa813-desert-city-small-2",
+      "biome": "desert",
+      "settlement": "city",
+      "size": "small",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 5,
+          "y": 1,
+          "z": 11
+        },
+        "to": {
+          "x": 5,
+          "y": 5,
+          "z": 10
+        },
+        "pass": 1,
+        "buildingId": "building-2"
+      }
+    },
+    {
+      "seed": "qa813-desert-city-medium-0",
+      "biome": "desert",
+      "settlement": "city",
+      "size": "medium",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 25,
+          "y": 1,
+          "z": 49
+        },
+        "to": {
+          "x": 25,
+          "y": 5,
+          "z": 48
+        },
+        "pass": 1,
+        "buildingId": "building-2"
+      }
+    },
+    {
+      "seed": "qa813-desert-city-medium-0",
+      "biome": "desert",
+      "settlement": "city",
+      "size": "medium",
+      "connector": {
+        "id": "ladder-2",
+        "kind": "ladder",
+        "from": {
+          "x": 3,
+          "y": 1,
+          "z": 52
+        },
+        "to": {
+          "x": 4,
+          "y": 5,
+          "z": 52
+        },
+        "pass": 1,
+        "buildingId": "building-6"
+      }
+    },
+    {
+      "seed": "qa813-desert-city-medium-1",
+      "biome": "desert",
+      "settlement": "city",
+      "size": "medium",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 24,
+          "y": 1,
+          "z": 54
+        },
+        "to": {
+          "x": 24,
+          "y": 5,
+          "z": 53
+        },
+        "pass": 1,
+        "buildingId": "building-1"
+      }
+    },
+    {
+      "seed": "qa813-desert-city-medium-2",
+      "biome": "desert",
+      "settlement": "city",
+      "size": "medium",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 63,
+          "y": 3,
+          "z": 52
+        },
+        "to": {
+          "x": 62,
+          "y": 7,
+          "z": 52
+        },
+        "pass": 1,
+        "buildingId": "building-2"
+      }
+    },
+    {
+      "seed": "qa813-desert-city-medium-2",
+      "biome": "desert",
+      "settlement": "city",
+      "size": "medium",
+      "connector": {
+        "id": "ladder-2",
+        "kind": "ladder",
+        "from": {
+          "x": 20,
+          "y": 3,
+          "z": 57
+        },
+        "to": {
+          "x": 20,
+          "y": 7,
+          "z": 56
+        },
+        "pass": 1,
+        "buildingId": "building-3"
+      }
+    },
+    {
+      "seed": "qa813-desert-city-medium-2",
+      "biome": "desert",
+      "settlement": "city",
+      "size": "medium",
+      "connector": {
+        "id": "ladder-3",
+        "kind": "ladder",
+        "from": {
+          "x": 63,
+          "y": 3,
+          "z": 24
+        },
+        "to": {
+          "x": 62,
+          "y": 5,
+          "z": 24
+        },
+        "pass": 1,
+        "buildingId": "building-8"
+      }
+    },
+    {
+      "seed": "qa813-desert-city-medium-2",
+      "biome": "desert",
+      "settlement": "city",
+      "size": "medium",
+      "connector": {
+        "id": "ladder-4",
+        "kind": "ladder",
+        "from": {
+          "x": 30,
+          "y": 3,
+          "z": 11
+        },
+        "to": {
+          "x": 30,
+          "y": 7,
+          "z": 10
+        },
+        "pass": 1,
+        "buildingId": "building-11"
+      }
+    },
+    {
+      "seed": "qa813-desert-city-large-0",
+      "biome": "desert",
+      "settlement": "city",
+      "size": "large",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 52,
+          "y": 1,
+          "z": 60
+        },
+        "to": {
+          "x": 52,
+          "y": 5,
+          "z": 61
+        },
+        "pass": 1,
+        "buildingId": "building-1"
+      }
+    },
+    {
+      "seed": "qa813-desert-city-large-0",
+      "biome": "desert",
+      "settlement": "city",
+      "size": "large",
+      "connector": {
+        "id": "ladder-2",
+        "kind": "ladder",
+        "from": {
+          "x": 18,
+          "y": 1,
+          "z": 31
+        },
+        "to": {
+          "x": 19,
+          "y": 5,
+          "z": 31
+        },
+        "pass": 1,
+        "buildingId": "building-7"
+      }
+    },
+    {
+      "seed": "qa813-desert-city-large-0",
+      "biome": "desert",
+      "settlement": "city",
+      "size": "large",
+      "connector": {
+        "id": "ladder-3",
+        "kind": "ladder",
+        "from": {
+          "x": 3,
+          "y": 1,
+          "z": 3
+        },
+        "to": {
+          "x": 4,
+          "y": 5,
+          "z": 3
+        },
+        "pass": 1,
+        "buildingId": "building-14"
+      }
+    },
+    {
+      "seed": "qa813-desert-city-large-0",
+      "biome": "desert",
+      "settlement": "city",
+      "size": "large",
+      "connector": {
+        "id": "ladder-4",
+        "kind": "ladder",
+        "from": {
+          "x": 4,
+          "y": 1,
+          "z": 25
+        },
+        "to": {
+          "x": 5,
+          "y": 5,
+          "z": 25
+        },
+        "pass": 1,
+        "buildingId": "building-18"
+      }
+    },
+    {
+      "seed": "qa813-desert-city-large-0",
+      "biome": "desert",
+      "settlement": "city",
+      "size": "large",
+      "connector": {
+        "id": "ladder-5",
+        "kind": "ladder",
+        "from": {
+          "x": 92,
+          "y": 1,
+          "z": 62
+        },
+        "to": {
+          "x": 91,
+          "y": 5,
+          "z": 62
+        },
+        "pass": 1,
+        "buildingId": "building-20"
+      }
+    },
+    {
+      "seed": "qa813-desert-city-large-0",
+      "biome": "desert",
+      "settlement": "city",
+      "size": "large",
+      "connector": {
+        "id": "ladder-6",
+        "kind": "ladder",
+        "from": {
+          "x": 88,
+          "y": 1,
+          "z": 75
+        },
+        "to": {
+          "x": 88,
+          "y": 5,
+          "z": 76
+        },
+        "pass": 1,
+        "buildingId": "building-22"
+      }
+    },
+    {
+      "seed": "qa813-desert-city-large-1",
+      "biome": "desert",
+      "settlement": "city",
+      "size": "large",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 81,
+          "y": 2,
+          "z": 25
+        },
+        "to": {
+          "x": 82,
+          "y": 6,
+          "z": 25
+        },
+        "pass": 1,
+        "buildingId": "building-4"
+      }
+    },
+    {
+      "seed": "qa813-desert-city-large-1",
+      "biome": "desert",
+      "settlement": "city",
+      "size": "large",
+      "connector": {
+        "id": "ladder-2",
+        "kind": "ladder",
+        "from": {
+          "x": 40,
+          "y": 2,
+          "z": 48
+        },
+        "to": {
+          "x": 41,
+          "y": 6,
+          "z": 48
+        },
+        "pass": 1,
+        "buildingId": "building-5"
+      }
+    },
+    {
+      "seed": "qa813-desert-city-large-1",
+      "biome": "desert",
+      "settlement": "city",
+      "size": "large",
+      "connector": {
+        "id": "ladder-3",
+        "kind": "ladder",
+        "from": {
+          "x": 62,
+          "y": 2,
+          "z": 78
+        },
+        "to": {
+          "x": 61,
+          "y": 6,
+          "z": 78
+        },
+        "pass": 1,
+        "buildingId": "building-6"
+      }
+    },
+    {
+      "seed": "qa813-desert-city-large-1",
+      "biome": "desert",
+      "settlement": "city",
+      "size": "large",
+      "connector": {
+        "id": "ladder-4",
+        "kind": "ladder",
+        "from": {
+          "x": 45,
+          "y": 2,
+          "z": 33
+        },
+        "to": {
+          "x": 45,
+          "y": 6,
+          "z": 32
+        },
+        "pass": 1,
+        "buildingId": "building-13"
+      }
+    },
+    {
+      "seed": "qa813-desert-city-large-1",
+      "biome": "desert",
+      "settlement": "city",
+      "size": "large",
+      "connector": {
+        "id": "ladder-5",
+        "kind": "ladder",
+        "from": {
+          "x": 75,
+          "y": 2,
+          "z": 10
+        },
+        "to": {
+          "x": 75,
+          "y": 6,
+          "z": 9
+        },
+        "pass": 1,
+        "buildingId": "building-23"
+      }
+    },
+    {
+      "seed": "qa813-desert-city-large-2",
+      "biome": "desert",
+      "settlement": "city",
+      "size": "large",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 27,
+          "y": 3,
+          "z": 47
+        },
+        "to": {
+          "x": 27,
+          "y": 7,
+          "z": 48
+        },
+        "pass": 1,
+        "buildingId": "building-2"
+      }
+    },
+    {
+      "seed": "qa813-desert-city-large-2",
+      "biome": "desert",
+      "settlement": "city",
+      "size": "large",
+      "connector": {
+        "id": "ladder-2",
+        "kind": "ladder",
+        "from": {
+          "x": 17,
+          "y": 3,
+          "z": 80
+        },
+        "to": {
+          "x": 18,
+          "y": 7,
+          "z": 80
+        },
+        "pass": 1,
+        "buildingId": "building-6"
+      }
+    },
+    {
+      "seed": "qa813-desert-city-large-2",
+      "biome": "desert",
+      "settlement": "city",
+      "size": "large",
+      "connector": {
+        "id": "ladder-3",
+        "kind": "ladder",
+        "from": {
+          "x": 10,
+          "y": 3,
+          "z": 35
+        },
+        "to": {
+          "x": 9,
+          "y": 7,
+          "z": 35
+        },
+        "pass": 1,
+        "buildingId": "building-7"
+      }
+    },
+    {
+      "seed": "qa813-desert-city-large-2",
+      "biome": "desert",
+      "settlement": "city",
+      "size": "large",
+      "connector": {
+        "id": "ladder-4",
+        "kind": "ladder",
+        "from": {
+          "x": 57,
+          "y": 3,
+          "z": 22
+        },
+        "to": {
+          "x": 58,
+          "y": 7,
+          "z": 22
+        },
+        "pass": 1,
+        "buildingId": "building-13"
+      }
+    },
+    {
+      "seed": "qa813-coastal-rural-medium-2",
+      "biome": "coastal",
+      "settlement": "rural",
+      "size": "medium",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 48,
+          "y": 0,
+          "z": 59
+        },
+        "to": {
+          "x": 48,
+          "y": 2,
+          "z": 58
+        },
+        "pass": 1,
+        "buildingId": "building-2"
+      }
+    },
+    {
+      "seed": "qa813-coastal-rural-large-0",
+      "biome": "coastal",
+      "settlement": "rural",
+      "size": "large",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 40,
+          "y": 0,
+          "z": 62
+        },
+        "to": {
+          "x": 41,
+          "y": 2,
+          "z": 62
+        },
+        "pass": 1,
+        "buildingId": "building-1"
+      }
+    },
+    {
+      "seed": "qa813-coastal-rural-large-0",
+      "biome": "coastal",
+      "settlement": "rural",
+      "size": "large",
+      "connector": {
+        "id": "ladder-2",
+        "kind": "ladder",
+        "from": {
+          "x": 37,
+          "y": 1,
+          "z": 36
+        },
+        "to": {
+          "x": 36,
+          "y": 4,
+          "z": 36
+        },
+        "pass": 1,
+        "buildingId": "building-3"
+      }
+    },
+    {
+      "seed": "qa813-coastal-rural-large-0",
+      "biome": "coastal",
+      "settlement": "rural",
+      "size": "large",
+      "connector": {
+        "id": "ladder-3",
+        "kind": "ladder",
+        "from": {
+          "x": 53,
+          "y": 2,
+          "z": 87
+        },
+        "to": {
+          "x": 52,
+          "y": 4,
+          "z": 87
+        },
+        "pass": 1,
+        "buildingId": "building-4"
+      }
+    },
+    {
+      "seed": "qa813-coastal-rural-large-1",
+      "biome": "coastal",
+      "settlement": "rural",
+      "size": "large",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 29,
+          "y": 0,
+          "z": 80
+        },
+        "to": {
+          "x": 29,
+          "y": 2,
+          "z": 79
+        },
+        "pass": 1,
+        "buildingId": "building-2"
+      }
+    },
+    {
+      "seed": "qa813-coastal-rural-large-1",
+      "biome": "coastal",
+      "settlement": "rural",
+      "size": "large",
+      "connector": {
+        "id": "ladder-2",
+        "kind": "ladder",
+        "from": {
+          "x": 24,
+          "y": 0,
+          "z": 11
+        },
+        "to": {
+          "x": 24,
+          "y": 2,
+          "z": 12
+        },
+        "pass": 1,
+        "buildingId": "building-3"
+      }
+    },
+    {
+      "seed": "qa813-coastal-town-small-2",
+      "biome": "coastal",
+      "settlement": "town",
+      "size": "small",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 32,
+          "y": 0,
+          "z": 10
+        },
+        "to": {
+          "x": 31,
+          "y": 4,
+          "z": 10
+        },
+        "pass": 1,
+        "buildingId": "building-2"
+      }
+    },
+    {
+      "seed": "qa813-coastal-town-medium-0",
+      "biome": "coastal",
+      "settlement": "town",
+      "size": "medium",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 62,
+          "y": 1,
+          "z": 34
+        },
+        "to": {
+          "x": 62,
+          "y": 4,
+          "z": 35
+        },
+        "pass": 1,
+        "buildingId": "building-3"
+      }
+    },
+    {
+      "seed": "qa813-coastal-town-medium-0",
+      "biome": "coastal",
+      "settlement": "town",
+      "size": "medium",
+      "connector": {
+        "id": "ladder-2",
+        "kind": "ladder",
+        "from": {
+          "x": 50,
+          "y": 0,
+          "z": 15
+        },
+        "to": {
+          "x": 50,
+          "y": 2,
+          "z": 14
+        },
+        "pass": 1,
+        "buildingId": "building-4"
+      }
+    },
+    {
+      "seed": "qa813-coastal-town-medium-0",
+      "biome": "coastal",
+      "settlement": "town",
+      "size": "medium",
+      "connector": {
+        "id": "ladder-3",
+        "kind": "ladder",
+        "from": {
+          "x": 57,
+          "y": 2,
+          "z": 24
+        },
+        "to": {
+          "x": 58,
+          "y": 6,
+          "z": 24
+        },
+        "pass": 1,
+        "buildingId": "building-8"
+      }
+    },
+    {
+      "seed": "qa813-coastal-town-medium-1",
+      "biome": "coastal",
+      "settlement": "town",
+      "size": "medium",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 22,
+          "y": 2,
+          "z": 42
+        },
+        "to": {
+          "x": 22,
+          "y": 4,
+          "z": 43
+        },
+        "pass": 1,
+        "buildingId": "building-2"
+      }
+    },
+    {
+      "seed": "qa813-coastal-town-medium-1",
+      "biome": "coastal",
+      "settlement": "town",
+      "size": "medium",
+      "connector": {
+        "id": "ladder-2",
+        "kind": "ladder",
+        "from": {
+          "x": 45,
+          "y": 0,
+          "z": 50
+        },
+        "to": {
+          "x": 45,
+          "y": 2,
+          "z": 51
+        },
+        "pass": 1,
+        "buildingId": "building-3"
+      }
+    },
+    {
+      "seed": "qa813-coastal-town-medium-1",
+      "biome": "coastal",
+      "settlement": "town",
+      "size": "medium",
+      "connector": {
+        "id": "ladder-3",
+        "kind": "ladder",
+        "from": {
+          "x": 8,
+          "y": 2,
+          "z": 42
+        },
+        "to": {
+          "x": 8,
+          "y": 4,
+          "z": 43
+        },
+        "pass": 1,
+        "buildingId": "building-7"
+      }
+    },
+    {
+      "seed": "qa813-coastal-town-medium-2",
+      "biome": "coastal",
+      "settlement": "town",
+      "size": "medium",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 26,
+          "y": 1,
+          "z": 6
+        },
+        "to": {
+          "x": 26,
+          "y": 4,
+          "z": 7
+        },
+        "pass": 1,
+        "buildingId": "building-1"
+      }
+    },
+    {
+      "seed": "qa813-coastal-town-medium-2",
+      "biome": "coastal",
+      "settlement": "town",
+      "size": "medium",
+      "connector": {
+        "id": "ladder-2",
+        "kind": "ladder",
+        "from": {
+          "x": 14,
+          "y": 2,
+          "z": 8
+        },
+        "to": {
+          "x": 13,
+          "y": 6,
+          "z": 8
+        },
+        "pass": 1,
+        "buildingId": "building-6"
+      }
+    },
+    {
+      "seed": "qa813-coastal-town-medium-2",
+      "biome": "coastal",
+      "settlement": "town",
+      "size": "medium",
+      "connector": {
+        "id": "ladder-3",
+        "kind": "ladder",
+        "from": {
+          "x": 39,
+          "y": 2,
+          "z": 21
+        },
+        "to": {
+          "x": 39,
+          "y": 4,
+          "z": 22
+        },
+        "pass": 1,
+        "buildingId": "building-7"
+      }
+    },
+    {
+      "seed": "qa813-coastal-town-medium-2",
+      "biome": "coastal",
+      "settlement": "town",
+      "size": "medium",
+      "connector": {
+        "id": "ladder-4",
+        "kind": "ladder",
+        "from": {
+          "x": 41,
+          "y": 2,
+          "z": 41
+        },
+        "to": {
+          "x": 40,
+          "y": 6,
+          "z": 41
+        },
+        "pass": 1,
+        "buildingId": "building-8"
+      }
+    },
+    {
+      "seed": "qa813-coastal-town-large-0",
+      "biome": "coastal",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 36,
+          "y": 1,
+          "z": 47
+        },
+        "to": {
+          "x": 37,
+          "y": 4,
+          "z": 47
+        },
+        "pass": 1,
+        "buildingId": "building-10"
+      }
+    },
+    {
+      "seed": "qa813-coastal-town-large-0",
+      "biome": "coastal",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-2",
+        "kind": "ladder",
+        "from": {
+          "x": 36,
+          "y": 0,
+          "z": 30
+        },
+        "to": {
+          "x": 37,
+          "y": 2,
+          "z": 30
+        },
+        "pass": 1,
+        "buildingId": "building-13"
+      }
+    },
+    {
+      "seed": "qa813-coastal-town-large-1",
+      "biome": "coastal",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 46,
+          "y": 2,
+          "z": 31
+        },
+        "to": {
+          "x": 45,
+          "y": 6,
+          "z": 31
+        },
+        "pass": 1,
+        "buildingId": "building-1"
+      }
+    },
+    {
+      "seed": "qa813-coastal-town-large-1",
+      "biome": "coastal",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-2",
+        "kind": "ladder",
+        "from": {
+          "x": 50,
+          "y": 2,
+          "z": 6
+        },
+        "to": {
+          "x": 51,
+          "y": 6,
+          "z": 6
+        },
+        "pass": 1,
+        "buildingId": "building-2"
+      }
+    },
+    {
+      "seed": "qa813-coastal-town-large-1",
+      "biome": "coastal",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-3",
+        "kind": "ladder",
+        "from": {
+          "x": 45,
+          "y": 2,
+          "z": 50
+        },
+        "to": {
+          "x": 45,
+          "y": 4,
+          "z": 49
+        },
+        "pass": 1,
+        "buildingId": "building-6"
+      }
+    },
+    {
+      "seed": "qa813-coastal-town-large-1",
+      "biome": "coastal",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-4",
+        "kind": "ladder",
+        "from": {
+          "x": 57,
+          "y": 2,
+          "z": 83
+        },
+        "to": {
+          "x": 56,
+          "y": 4,
+          "z": 83
+        },
+        "pass": 1,
+        "buildingId": "building-9"
+      }
+    },
+    {
+      "seed": "qa813-coastal-town-large-1",
+      "biome": "coastal",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-5",
+        "kind": "ladder",
+        "from": {
+          "x": 38,
+          "y": 2,
+          "z": 64
+        },
+        "to": {
+          "x": 39,
+          "y": 6,
+          "z": 64
+        },
+        "pass": 1,
+        "buildingId": "building-10"
+      }
+    },
+    {
+      "seed": "qa813-coastal-town-large-1",
+      "biome": "coastal",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-6",
+        "kind": "ladder",
+        "from": {
+          "x": 59,
+          "y": 2,
+          "z": 78
+        },
+        "to": {
+          "x": 58,
+          "y": 6,
+          "z": 78
+        },
+        "pass": 1,
+        "buildingId": "building-11"
+      }
+    },
+    {
+      "seed": "qa813-coastal-town-large-1",
+      "biome": "coastal",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-7",
+        "kind": "ladder",
+        "from": {
+          "x": 50,
+          "y": 2,
+          "z": 61
+        },
+        "to": {
+          "x": 51,
+          "y": 4,
+          "z": 61
+        },
+        "pass": 1,
+        "buildingId": "building-12"
+      }
+    },
+    {
+      "seed": "qa813-coastal-town-large-1",
+      "biome": "coastal",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-8",
+        "kind": "ladder",
+        "from": {
+          "x": 86,
+          "y": 0,
+          "z": 19
+        },
+        "to": {
+          "x": 86,
+          "y": 2,
+          "z": 20
+        },
+        "pass": 1,
+        "buildingId": "building-13"
+      }
+    },
+    {
+      "seed": "qa813-coastal-town-large-1",
+      "biome": "coastal",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-9",
+        "kind": "ladder",
+        "from": {
+          "x": 55,
+          "y": 2,
+          "z": 45
+        },
+        "to": {
+          "x": 55,
+          "y": 6,
+          "z": 46
+        },
+        "pass": 1,
+        "buildingId": "building-15"
+      }
+    },
+    {
+      "seed": "qa813-coastal-town-large-1",
+      "biome": "coastal",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-10",
+        "kind": "ladder",
+        "from": {
+          "x": 27,
+          "y": 2,
+          "z": 67
+        },
+        "to": {
+          "x": 27,
+          "y": 6,
+          "z": 66
+        },
+        "pass": 1,
+        "buildingId": "building-16"
+      }
+    },
+    {
+      "seed": "qa813-coastal-town-large-2",
+      "biome": "coastal",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 24,
+          "y": 2,
+          "z": 8
+        },
+        "to": {
+          "x": 25,
+          "y": 6,
+          "z": 8
+        },
+        "pass": 1,
+        "buildingId": "building-1"
+      }
+    },
+    {
+      "seed": "qa813-coastal-town-large-2",
+      "biome": "coastal",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-2",
+        "kind": "ladder",
+        "from": {
+          "x": 10,
+          "y": 2,
+          "z": 24
+        },
+        "to": {
+          "x": 10,
+          "y": 6,
+          "z": 23
+        },
+        "pass": 1,
+        "buildingId": "building-7"
+      }
+    },
+    {
+      "seed": "qa813-coastal-town-large-2",
+      "biome": "coastal",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-3",
+        "kind": "ladder",
+        "from": {
+          "x": 8,
+          "y": 2,
+          "z": 37
+        },
+        "to": {
+          "x": 8,
+          "y": 4,
+          "z": 36
+        },
+        "pass": 1,
+        "buildingId": "building-8"
+      }
+    },
+    {
+      "seed": "qa813-coastal-town-large-2",
+      "biome": "coastal",
+      "settlement": "town",
+      "size": "large",
+      "connector": {
+        "id": "ladder-4",
+        "kind": "ladder",
+        "from": {
+          "x": 45,
+          "y": 1,
+          "z": 35
+        },
+        "to": {
+          "x": 46,
+          "y": 4,
+          "z": 35
+        },
+        "pass": 1,
+        "buildingId": "building-9"
+      }
+    },
+    {
+      "seed": "qa813-coastal-city-small-0",
+      "biome": "coastal",
+      "settlement": "city",
+      "size": "small",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 19,
+          "y": 2,
+          "z": 21
+        },
+        "to": {
+          "x": 19,
+          "y": 6,
+          "z": 22
+        },
+        "pass": 1,
+        "buildingId": "building-2"
+      }
+    },
+    {
+      "seed": "qa813-coastal-city-small-0",
+      "biome": "coastal",
+      "settlement": "city",
+      "size": "small",
+      "connector": {
+        "id": "ladder-2",
+        "kind": "ladder",
+        "from": {
+          "x": 2,
+          "y": 2,
+          "z": 30
+        },
+        "to": {
+          "x": 3,
+          "y": 6,
+          "z": 30
+        },
+        "pass": 1,
+        "buildingId": "building-3"
+      }
+    },
+    {
+      "seed": "qa813-coastal-city-small-1",
+      "biome": "coastal",
+      "settlement": "city",
+      "size": "small",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 28,
+          "y": 2,
+          "z": 3
+        },
+        "to": {
+          "x": 28,
+          "y": 6,
+          "z": 4
+        },
+        "pass": 1,
+        "buildingId": "building-4"
+      }
+    },
+    {
+      "seed": "qa813-coastal-city-small-1",
+      "biome": "coastal",
+      "settlement": "city",
+      "size": "small",
+      "connector": {
+        "id": "ladder-2",
+        "kind": "ladder",
+        "from": {
+          "x": 11,
+          "y": 2,
+          "z": 4
+        },
+        "to": {
+          "x": 10,
+          "y": 6,
+          "z": 4
+        },
+        "pass": 1,
+        "buildingId": "building-5"
+      }
+    },
+    {
+      "seed": "qa813-coastal-city-medium-0",
+      "biome": "coastal",
+      "settlement": "city",
+      "size": "medium",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 65,
+          "y": 2,
+          "z": 51
+        },
+        "to": {
+          "x": 65,
+          "y": 6,
+          "z": 50
+        },
+        "pass": 1,
+        "buildingId": "building-1"
+      }
+    },
+    {
+      "seed": "qa813-coastal-city-medium-0",
+      "biome": "coastal",
+      "settlement": "city",
+      "size": "medium",
+      "connector": {
+        "id": "ladder-2",
+        "kind": "ladder",
+        "from": {
+          "x": 47,
+          "y": 2,
+          "z": 31
+        },
+        "to": {
+          "x": 48,
+          "y": 6,
+          "z": 31
+        },
+        "pass": 1,
+        "buildingId": "building-4"
+      }
+    },
+    {
+      "seed": "qa813-coastal-city-medium-0",
+      "biome": "coastal",
+      "settlement": "city",
+      "size": "medium",
+      "connector": {
+        "id": "ladder-3",
+        "kind": "ladder",
+        "from": {
+          "x": 19,
+          "y": 2,
+          "z": 5
+        },
+        "to": {
+          "x": 20,
+          "y": 6,
+          "z": 5
+        },
+        "pass": 1,
+        "buildingId": "building-7"
+      }
+    },
+    {
+      "seed": "qa813-coastal-city-medium-2",
+      "biome": "coastal",
+      "settlement": "city",
+      "size": "medium",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 25,
+          "y": 1,
+          "z": 54
+        },
+        "to": {
+          "x": 25,
+          "y": 5,
+          "z": 55
+        },
+        "pass": 1,
+        "buildingId": "building-3"
+      }
+    },
+    {
+      "seed": "qa813-coastal-city-medium-2",
+      "biome": "coastal",
+      "settlement": "city",
+      "size": "medium",
+      "connector": {
+        "id": "ladder-2",
+        "kind": "ladder",
+        "from": {
+          "x": 10,
+          "y": 1,
+          "z": 8
+        },
+        "to": {
+          "x": 9,
+          "y": 5,
+          "z": 8
+        },
+        "pass": 1,
+        "buildingId": "building-8"
+      }
+    },
+    {
+      "seed": "qa813-coastal-city-large-0",
+      "biome": "coastal",
+      "settlement": "city",
+      "size": "large",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 30,
+          "y": 1,
+          "z": 51
+        },
+        "to": {
+          "x": 30,
+          "y": 5,
+          "z": 52
+        },
+        "pass": 1,
+        "buildingId": "building-5"
+      }
+    },
+    {
+      "seed": "qa813-coastal-city-large-0",
+      "biome": "coastal",
+      "settlement": "city",
+      "size": "large",
+      "connector": {
+        "id": "ladder-2",
+        "kind": "ladder",
+        "from": {
+          "x": 57,
+          "y": 1,
+          "z": 48
+        },
+        "to": {
+          "x": 56,
+          "y": 5,
+          "z": 48
+        },
+        "pass": 1,
+        "buildingId": "building-7"
+      }
+    },
+    {
+      "seed": "qa813-coastal-city-large-1",
+      "biome": "coastal",
+      "settlement": "city",
+      "size": "large",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 66,
+          "y": 2,
+          "z": 29
+        },
+        "to": {
+          "x": 65,
+          "y": 6,
+          "z": 29
+        },
+        "pass": 1,
+        "buildingId": "building-1"
+      }
+    },
+    {
+      "seed": "qa813-coastal-city-large-1",
+      "biome": "coastal",
+      "settlement": "city",
+      "size": "large",
+      "connector": {
+        "id": "ladder-2",
+        "kind": "ladder",
+        "from": {
+          "x": 26,
+          "y": 2,
+          "z": 50
+        },
+        "to": {
+          "x": 27,
+          "y": 6,
+          "z": 50
+        },
+        "pass": 1,
+        "buildingId": "building-7"
+      }
+    },
+    {
+      "seed": "qa813-coastal-city-large-1",
+      "biome": "coastal",
+      "settlement": "city",
+      "size": "large",
+      "connector": {
+        "id": "ladder-3",
+        "kind": "ladder",
+        "from": {
+          "x": 80,
+          "y": 2,
+          "z": 72
+        },
+        "to": {
+          "x": 81,
+          "y": 6,
+          "z": 72
+        },
+        "pass": 1,
+        "buildingId": "building-10"
+      }
+    },
+    {
+      "seed": "qa813-coastal-city-large-1",
+      "biome": "coastal",
+      "settlement": "city",
+      "size": "large",
+      "connector": {
+        "id": "ladder-4",
+        "kind": "ladder",
+        "from": {
+          "x": 88,
+          "y": 2,
+          "z": 27
+        },
+        "to": {
+          "x": 88,
+          "y": 6,
+          "z": 26
+        },
+        "pass": 1,
+        "buildingId": "building-16"
+      }
+    },
+    {
+      "seed": "qa813-coastal-city-large-2",
+      "biome": "coastal",
+      "settlement": "city",
+      "size": "large",
+      "connector": {
+        "id": "ladder-1",
+        "kind": "ladder",
+        "from": {
+          "x": 92,
+          "y": 0,
+          "z": 28
+        },
+        "to": {
+          "x": 91,
+          "y": 4,
+          "z": 28
+        },
+        "pass": 1,
+        "buildingId": "building-3"
+      }
+    },
+    {
+      "seed": "qa813-coastal-city-large-2",
+      "biome": "coastal",
+      "settlement": "city",
+      "size": "large",
+      "connector": {
+        "id": "ladder-2",
+        "kind": "ladder",
+        "from": {
+          "x": 45,
+          "y": 0,
+          "z": 55
+        },
+        "to": {
+          "x": 46,
+          "y": 4,
+          "z": 55
+        },
+        "pass": 1,
+        "buildingId": "building-7"
+      }
+    },
+    {
+      "seed": "qa813-coastal-city-large-2",
+      "biome": "coastal",
+      "settlement": "city",
+      "size": "large",
+      "connector": {
+        "id": "ladder-3",
+        "kind": "ladder",
+        "from": {
+          "x": 83,
+          "y": 0,
+          "z": 46
+        },
+        "to": {
+          "x": 83,
+          "y": 4,
+          "z": 47
+        },
+        "pass": 1,
+        "buildingId": "building-10"
+      }
+    },
+    {
+      "seed": "qa813-coastal-city-large-2",
+      "biome": "coastal",
+      "settlement": "city",
+      "size": "large",
+      "connector": {
+        "id": "ladder-4",
+        "kind": "ladder",
+        "from": {
+          "x": 63,
+          "y": 0,
+          "z": 33
+        },
+        "to": {
+          "x": 62,
+          "y": 4,
+          "z": 33
+        },
+        "pass": 1,
+        "buildingId": "building-11"
+      }
+    }
+  ]
+}

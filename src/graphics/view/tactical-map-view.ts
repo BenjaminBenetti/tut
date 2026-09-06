@@ -34,6 +34,11 @@ import type {
 import { TileIndex } from "../../mapgen/service/tile-index";
 import { terrainSlopeRise } from "../service/terrain-slope-rise";
 import type { RoadAppearance } from "../model/road-appearance";
+import type {
+  LadderAppearance,
+  LadderFinish,
+} from "../model/ladder-appearance";
+import { LadderModelFactory } from "../service/ladder-model-factory";
 import type { RampAppearance } from "../model/ramp-appearance";
 import type { TerrainSlopeAppearance } from "../model/terrain-slope-appearance";
 import { TerrainTransitionModelFactory } from "../service/terrain-transition-model-factory";
@@ -263,6 +268,7 @@ export class TacticalMapView implements Disposable, TilePicker {
   private readonly ghostMaterials = new Map<Material, Material>();
   /** Materialised slope/ramp prototypes shared across levels and rotations. */
   private readonly slopeModels = new Map<string, Group>();
+  private readonly ladderModels = new Map<LadderFinish, Group>();
   private readonly roadModels = new Map<string, Group>();
   private readonly terrainModels = new Map<string, Group>();
   private readonly disposables: Disposable[] = [];
@@ -349,8 +355,8 @@ export class TacticalMapView implements Disposable, TilePicker {
    *          └─► placeholder boxes for that category hidden
    * ```
    *
-   * Hooks and ladders keep their placeholder geometry; ramps have their
-   * own materialled kit (#875); a stairs plank retires once the stairs
+   * Hooks keep their placeholder geometry. Ramps (#875) and ladders (#891)
+   * have materialled connector kits; a stairs plank retires once the stairs
    * tile's model is up (#766). A model that fails to load leaves its placeholder rather than
    * losing the map.
    */
@@ -365,7 +371,8 @@ export class TacticalMapView implements Disposable, TilePicker {
       ["tiles", placements.tiles],
       ["walls", placements.walls],
       ["props", placements.props],
-      ["ramps", placements.connectors],
+      ["ramps", placements.connectors.filter((p) => p.ramp !== undefined)],
+      ["ladders", placements.connectors.filter((p) => p.ladder !== undefined)],
     ];
     for (const [label, list] of categories) {
       await this.instanceCategory(label, list, models);
@@ -373,12 +380,15 @@ export class TacticalMapView implements Disposable, TilePicker {
     // Building slabs, walls and props are replaced one for one, and the
     // stairs plank retires because the stairs tile's own model now draws
     // the staircase (#766). Ground pillars stay: they are the earth
-    // beneath the surface slab, not a stand-in for it. Ladders stay.
+    // beneath the surface slab, not a stand-in for it.
     for (const label of [TILES_SLAB, "walls", "props", "connectors"]) {
       this.retirePlaceholders(label);
     }
-    for (const placement of placements.connectors)
-      this.retirePlaceholders(`ramp:${placement.ramp!.id}`);
+    for (const placement of placements.connectors) {
+      if (placement.ramp) this.retirePlaceholders(`ramp:${placement.ramp.id}`);
+      if (placement.ladder)
+        this.retirePlaceholders(`ladder:${placement.ladder.id}`);
+    }
     // The half-rise kit replaces the initial wedges once its models are placed.
     if (placements.tiles.some((p) => p.modelId.startsWith("tile.slope."))) {
       this.retirePlaceholders("slopes");
@@ -401,6 +411,7 @@ export class TacticalMapView implements Disposable, TilePicker {
         slopeTile?: Tile;
         road?: RoadAppearance;
         ramp?: RampAppearance;
+        ladder?: LadderAppearance;
         terrain?: { appearance: TerrainSlopeAppearance; tile: Tile };
       }
     >();
@@ -410,11 +421,12 @@ export class TacticalMapView implements Disposable, TilePicker {
       const slopeTile = tile?.slope === undefined ? undefined : tile;
       const road = placement.road;
       const ramp = placement.ramp;
+      const ladder = placement.ladder;
       const terrain =
         placement.terrain && tile
           ? { appearance: placement.terrain, tile }
           : undefined;
-      const key = `${placement.modelId}:${String(placement.level)}${slopeTile ? `:${slopeTile.surface}` : ""}${road ? `:road:${roadAppearanceKey(road)}` : ""}${ramp ? `:ramp:${ramp.surface}` : ""}${terrain ? `:terrain:${terrainPrototypeKey(terrain.appearance, tile!.surface)}` : ""}`;
+      const key = `${placement.modelId}:${String(placement.level)}${slopeTile ? `:${slopeTile.surface}` : ""}${road ? `:road:${roadAppearanceKey(road)}` : ""}${ramp ? `:ramp:${ramp.surface}` : ""}${ladder ? `:ladder:${ladder.finish}` : ""}${terrain ? `:terrain:${terrainPrototypeKey(terrain.appearance, tile!.surface)}` : ""}`;
       const matrix = placementMatrix(placement);
       const tileKey = this.index.keyOf(placement.tile);
       const batch = batches.get(key);
@@ -427,6 +439,7 @@ export class TacticalMapView implements Disposable, TilePicker {
           slopeTile,
           road,
           ramp,
+          ladder,
           terrain,
         });
       } else {
@@ -435,23 +448,29 @@ export class TacticalMapView implements Disposable, TilePicker {
       }
     }
     for (const [key, batch] of batches) {
-      const prototype = batch.ramp
-        ? await this.parameterisedPrototype("ramp", batch.ramp.surface, models)
-        : batch.terrain
-          ? await this.terrainPrototype(
-              batch.terrain.appearance,
-              batch.terrain.tile,
+      const prototype = batch.ladder
+        ? await this.ladderPrototype(batch.ladder.finish, models)
+        : batch.ramp
+          ? await this.parameterisedPrototype(
+              "ramp",
+              batch.ramp.surface,
               models,
             )
-          : batch.road
-            ? await this.roadPrototype(batch.road, models)
-            : batch.slopeTile
-              ? await this.parameterisedPrototype(
-                  batch.slopeTile.slope!.kind,
-                  batch.slopeTile.surface,
-                  models,
-                )
-              : await models.load(batch.modelId);
+          : batch.terrain
+            ? await this.terrainPrototype(
+                batch.terrain.appearance,
+                batch.terrain.tile,
+                models,
+              )
+            : batch.road
+              ? await this.roadPrototype(batch.road, models)
+              : batch.slopeTile
+                ? await this.parameterisedPrototype(
+                    batch.slopeTile.slope!.kind,
+                    batch.slopeTile.surface,
+                    models,
+                  )
+                : await models.load(batch.modelId);
       prototype.updateMatrixWorld(true);
       meshPartsOf(prototype).forEach((part, i) => {
         // Walls are what stands between the camera and a unit, so they
@@ -492,6 +511,23 @@ export class TacticalMapView implements Disposable, TilePicker {
         this.groupFor(batch.level).add(mesh);
       });
     }
+  }
+
+  /** Shares one textured section per finish across all ladders, rises and level batches. */
+  private async ladderPrototype(
+    finish: LadderFinish,
+    models: ModelLoader,
+  ): Promise<Group> {
+    let prototype = this.ladderModels.get(finish);
+    if (prototype === undefined) {
+      prototype = await new LadderModelFactory(models).create(finish);
+      prototype.traverse((object) => {
+        if (object instanceof Mesh)
+          this.disposables.push((object as Mesh).geometry);
+      });
+      this.ladderModels.set(finish, prototype);
+    }
+    return prototype;
   }
 
   /** Applies ground materials once per shape/surface, leaving loader prototypes untouched. */
@@ -751,6 +787,7 @@ export class TacticalMapView implements Disposable, TilePicker {
     }
     this.ghostMaterials.clear();
     this.slopeModels.clear();
+    this.ladderModels.clear();
     this.roadModels.clear();
     this.terrainModels.clear();
     this.root.removeFromParent();
@@ -941,17 +978,16 @@ export class TacticalMapView implements Disposable, TilePicker {
       this.connectorTiles.set(mesh, tracked);
       this.applyVisionToConnector(tracked);
       this.groupFor(connector.to.y).add(mesh);
-      if (connector.kind !== "ladder") {
-        // Stairs use their tile model; ramps now have their own materialled kit.
-        const label =
-          connector.kind === "ramp" ? `ramp:${connector.id}` : "connectors";
-        const kept = this.placeholders.get(label);
-        if (kept === undefined) {
-          this.placeholders.set(label, [mesh]);
-        } else {
-          kept.push(mesh);
-        }
-      }
+      // Retire each ladder/ramp only after its own kit placement resolves.
+      const label =
+        connector.kind === "ramp"
+          ? `ramp:${connector.id}`
+          : connector.kind === "ladder"
+            ? `ladder:${connector.id}`
+            : "connectors";
+      const kept = this.placeholders.get(label);
+      if (kept === undefined) this.placeholders.set(label, [mesh]);
+      else kept.push(mesh);
     }
   }
 

@@ -26,6 +26,7 @@
     "tools/art/preview/carriageways-fixture.ts",
     "tools/art/preview/diagonal-slopes.ts",
     "tools/art/preview/three-sided-slopes.ts",
-    "tools/art/preview/ramp-connectors.ts"
+    "tools/art/preview/ramp-connectors.ts",
+    "tools/art/preview/ladder-connectors.ts"
   ]
 }

@@ -1,0 +1,17 @@
+{
+  "main": "fe7872c",
+  "seed": 4242,
+  "turns": [1, 7],
+  "frames": {
+    "tactical-fog-of-war.png": {
+      "main": "60000d873eac5c2ef037b356f8adabde91b1a447485f91fb6abd08f7e5eb159d",
+      "regenerated": "60000d873eac5c2ef037b356f8adabde91b1a447485f91fb6abd08f7e5eb159d",
+      "identical": true
+    },
+    "tactical-fog-of-war-turn7.png": {
+      "main": "f637c99b2702224728b7ecace0585702f043acc79a3b01fb18377d89b452f4bd",
+      "regenerated": "f637c99b2702224728b7ecace0585702f043acc79a3b01fb18377d89b452f4bd",
+      "identical": true
+    }
+  }
+}

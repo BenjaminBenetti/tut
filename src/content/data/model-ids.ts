@@ -85,6 +85,7 @@ export const MODEL_IDS = [
   "building.roof",
   "building.roof-parapet",
   "building.stairs",
+  "building.ladder",
   "building.wall",
   "building.wall-concrete",
   "building.wall-door",

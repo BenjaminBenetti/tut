@@ -1,0 +1,46 @@
+[
+  {
+    "id": "brick-two-layers",
+    "seed": "qa813-temperate-town-small-0",
+    "biome": "temperate",
+    "settlement": "town",
+    "size": "small",
+    "tile": {
+      "x": 30,
+      "y": 4,
+      "z": 36
+    },
+    "upper": {
+      "x": 30,
+      "y": 6,
+      "z": 35
+    },
+    "pitch": 139.99999969673482,
+    "pixel": {
+      "x": 1032.8556503145846,
+      "y": 459.56989565594773
+    }
+  },
+  {
+    "id": "concrete-four-layers",
+    "seed": "qa813-temperate-city-small-0",
+    "biome": "temperate",
+    "settlement": "city",
+    "size": "small",
+    "tile": {
+      "x": 5,
+      "y": 2,
+      "z": 34
+    },
+    "upper": {
+      "x": 5,
+      "y": 6,
+      "z": 33
+    },
+    "pitch": 139.99999969673445,
+    "pixel": {
+      "x": 1033.6517179709074,
+      "y": 446.0108438435161
+    }
+  }
+]

@@ -1,8 +1,52 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-06 (#879 merged; #876 closed, #884 record accepted)
+Last updated: 2026-09-06 (#891 ladder kit ready for review; #879 and #884 merged)
 
-## Current status: #875 complete; #876 closed with an accepted record
+## Current status: #891 materialled ladder kit
+
+Codex Art Director, gpt-6-astra xhigh. The bounded watch reported the Director's
+new #891 assignment, explicitly authorised whenever the art queue is clear.
+#875 and #876 are complete; #884 merged as `fe7872c`. QA's final #813 audit
+is accepted and v0.2.10 is tagged. The ladder is a separate p2 follow-up.
+
+[PR #893](https://github.com/BenjaminBenetti/tut/pull/893), branch `feat/891-ladder-connector-kit`,
+base `fe7872c`, model checkpoint `85ffe19`, proof `3a1dd8c`. Main through
+`fc5f928` merged normally as `e663446` (other-role handoffs only).
+`building.ladder` is 132 triangles / 10,712 bytes / watertight, emitted through
+Blender with the shared `RISE = 0.75`. One section has two rails, five rungs,
+stand-offs and back plates. All three fixed angles were opened after correcting
+the stand-off/back-plate intersection. The consumer repeats a section per layer,
+keeping the 0.15-u rung spacing and reaching both endpoint tile tops exactly.
+
+The actual resolved wall behind the ladder's midpoint selects brushed steel for
+concrete/panel or weathered steel for brick. An owning building id alone is not
+enough: generated untagged ground-floor walls can be brick below concrete upper
+floors. One regression preserves that distinction. UV-only finish variants borrow
+the same atlas material; one prototype per finish and one mist material share
+across connector ids, repeated sections and elevation batches. The stand-offs
+put back plates on the outer wall face. Placeholder retirement, arrival vision,
+level peeling and lower-ground retention are tested; no map data changes.
+
+[Kit, three angles and two/four-layer composite](../design/kits/ladder-connectors.md).
+[Seeded before/after, exact coordinates and survey](../design/diagnostics/891/README.md).
+Both seeded controls (brick two-layer and concrete four-layer) and the lit
+four-panel composite were rendered and opened. Both seed-4242 fog controls
+were regenerated, opened and are byte-identical to main; committed hash record.
+The exact 108-map QA matrix resolves **all 166 ladders**, 524 sections, zero
+unresolved: 64 two-layer, 12 three-layer, 90 four-layer; 98 brushed / 68 weathered.
+Visual claims are limited to the committed frames, not all 108 maps.
+
+37 actual-GLB tests cover both finishes, all turns and 2/3/4/8-layer spans,
+ray hits on every rung and misses through the gaps, exact wall contact and total
+height, source/material ownership and cache/vision behavior. Full unit suite:
+2,134 pass, one skipped. Seven simulation tests, typecheck and build pass.
+All 59 browser tests pass, zero flaky, 27 opt-in captures skipped. The final
+lint/format check passes, as do the separate composite and fog capture specs.
+Scratch `.git/art-891/`; the task-owned Vite ports 4196/4197 stop before the
+event watch. Tech Lead reviews/merges; Director judges the frames. PR #893 and
+#891 are on the ONE bounded watch, alongside standing art events.
+
+## Completed: #875 ramps; #876 diagnosis accepted and closed
 
 Codex Art Director, gpt-6-astra xhigh. #874 was visually accepted in comment
 5559030003 and merged as `7b9e3c7`. Its J3 model and proof are complete.
@@ -37,7 +81,8 @@ QA's closing pass is now posted in #813 comment 5559569200, PR #888, on
 `055c1d5`: all 3,779 ramps materialled, no ramp or stairs placeholder, clean
 K2 and ground re-shoots, 2,097 unit / seven sim / 59 browser tests green.
 The ramp verdict is clean. QA separately records 166 placeholder ladders
-and the broader J3 bucket; neither is new art work authorised for this seat.
+and the broader J3 bucket. The Director subsequently assigned the ladders as
+#891; the broader J3 bucket has no further work authorised for this seat.
 
 While #875 waited, #876's diagnosis was posted **before** any trial in comment
 5559358784. Exact QA counts reproduced: 41 of 92 connected outer tiles take the
@@ -60,7 +105,7 @@ banks outside the climbing plane's purpose. He directed #884 to merge as the
 record. Do not reopen the diagnosis or add geometry without new direction. [Evidence](../design/diagnostics/876/README.md).
 
 Scratch `.git/art-876/`; its `work` checkout is separate from #879's review
-branch. The #884 branch incorporates main through `055c1d5`; its only conflict
+branch. The #884 branch incorporated main through `055c1d5` and merged as `fe7872c`; its only conflict
 was this handoff, resolved to retain both completed tasks. No runtime change
 relative to main. Resume ONE bounded watch for own PRs and standing art events.
 Tech Lead alone merges; no new production work without direction.

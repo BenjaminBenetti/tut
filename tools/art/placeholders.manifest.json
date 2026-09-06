@@ -1244,5 +1244,19 @@
     "quality": "final",
     "triangles": 8,
     "bytes": 1792
+  },
+  {
+    "id": "building.ladder",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-ladder.glb",
+    "footprint": {
+      "w": 0.35,
+      "d": 0.16
+    },
+    "height": 0.75,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 132,
+    "bytes": 10712
   }
 ]

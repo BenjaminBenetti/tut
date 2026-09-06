@@ -1,8 +1,7 @@
-# Engineer eng-3 — #807 half-height layers
+# Engineer eng-3 — #842 lurker flank fixture
 
-- ADR 0008 is the contract. The save migration is in #810; explicit storey consumers and fixtures are in #812. The final activation branch is `feat/807-half-height-layers`.
-- A storey is two 0.75 u layers. Free orthogonal half steps live in `ReachabilityService`; larger rises require connectors. Schema 16 migrates v1 maps and mission coordinates to map version 2.
-- Engine conversion keeps terrain quantized to full storeys. Natural slope shapes temporarily retain rise-2 ramps; the mapgen child removes those when it adds one-layer smoothing. Deploy placement still excludes natural wedges from its mainland grouping to preserve seeds.
-- The #798 slope assets remain 1.5 u until the art child changes their rise. The fallback wedge derives its upper neighbour's height.
-- Goldens render every layer, including empty odd layers. The final PR body records the 60-seed before/after simulation and all four reference-frame comparisons.
-- Director instruction: eng-3 stops when the final PR is open and CI is green. The Tech Lead reviews from its monitor; the Director prompts review follow-ups. Do not arm a monitor or take another issue.
+- eng-3 works only `seat:eng-3` / `complexity:high`. Current branch: `test/842-lurker-flank-fixture`, from main. #807's half-height engine work is merged through #810, #812 and #815.
+- #842 replaces the lurker sweep's generated `mission-2:map` with a stated `FixtureMapBuilder` premise: one visible north-facing mark, west-side low cover, four start quadrants, and reachable front and rear tiles. The 24 seeds, four-turn limit, `behind > front`, and positive attack count remain.
+- The positioning probe refreshes vision and AP between turns; it stops at the first proposed attack without resolving damage or enemy turns. It measures approach preference, not mission engagement or balance. Runtime AI and tuning are unchanged.
+- #838 temporarily skips this case for the ADR 0009 scale change. Keep the fixture case enabled when integrating that PR; no generated-map dimensions belong in this assertion.
+- Director standing rule: whenever waiting, arm one bounded background watch for seat assignments and Tech Lead comments, reviews or merges on this seat's PRs. Poll every five minutes, exit on the first relevant change, act, then re-arm. Hard stop after three hours; on timeout say `eng-3 idle`. No cron and never two loops.

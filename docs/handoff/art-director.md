@@ -1,6 +1,6 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-06 (#840 carriageway kit in progress)
+Last updated: 2026-09-06 (#840 carriageway kit ready for review)
 
 ## Current status: #840 is the release gate
 
@@ -17,8 +17,19 @@ one divider across its width and at most one existing mark at each junction
 centre. Styles select dirt/unmarked trails or asphalt/kerbs/paint. Prototype
 and mist materials are shared across levels. Eight new tests cover road
 widths, turns, junction ownership, real GLB bounds, composition and sharing.
-Large-city integration and final checks are still in progress. #838 remains
-open at the last check; the Director's review must use its ADR 0009 scale.
+Typecheck, lint, 1,994 unit tests (one skipped), build and all 59 browser
+tests (16 opt-in captures skipped) pass. The twelve Blender angles, live
+composite, 96 × 96 big-city control and both seed-4242 fog frames were
+rendered and opened. The current-main fog frames show the new road fit.
+
+#838 remains open at the last check. The committed
+[large-city control](../design/shots/829-preview-big-city-temperate-large.png)
+comes from an isolated integration tree: #838 `c48ae4b` plus this kit's
+`b2cad8f`. It has 11,642 tiles, 20 buildings and 680 props. No MapGen code is
+included in this PR. Watch #838's merge as well as this PR's review; once
+it lands, merge main on the art branch and regenerate that control and
+both fog frames on the combined tree before merge. The Director judges
+visual acceptance and the Tech Lead merges.
 
 QA's #813 catalogue arrived and merged in #839. It is checked out/read and
 six key crops were opened, but no ramp implementation has started. The

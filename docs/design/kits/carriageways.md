@@ -55,6 +55,34 @@ parts. `RoadModelFactory` borrows materials and owns only its cloned geometry.
 `TacticalMapView` caches each appearance independent of elevation and uses
 the existing shared mist path. No material is allocated per road instance.
 
+## Large-city integration and validation
+
+![ADR 0009 big-city control](../shots/829-preview-big-city-temperate-large.png)
+
+This control uses seed `big-city`, temperate/city/large, all levels,
+`models=1`, 2400 × 1500. It contains 96 × 96 × 12 cells, 11,642 tiles,
+20 buildings and 680 props. The source is an isolated integration tree:
+#838 `c48ae4b` plus kit commit `b2cad8f`. #838 was still open at capture time;
+its generator changes are not part of this art PR. The only local harness
+adjustments selected a separate dev-server port and allowed that scratch
+worktree to be served. Capture:
+
+```sh
+CAPTURE=1 pnpm exec playwright test e2e/slope-screenshot.spec.ts -g 829-preview-big-city-temperate-large
+```
+
+The frame was opened and inspected: one divider per avenue and an open
+crossing, with continuous pavement edges. Regenerate it on the merged tree
+when #838 lands. The frame-rate probe counted 5 frames over 3,000 ms (1.7
+fps) on headless Chromium/SwiftShader while the browser suite was also
+running; this is capture provenance, not a hardware performance benchmark.
+
+On the main-based kit branch, typecheck, lint, 1,994 unit tests (one skipped),
+build and all 59 browser tests (16 opt-in captures skipped) pass. The build
+retains its existing chunk-size warning. The composite capture, big-city
+integration capture and seed-4242 fog capture pass. Both fog frames were
+opened and inspected; their roads now use the carriageway fit.
+
 ## Three fixed angles
 
 | Piece | 45° | 135° | 225° |

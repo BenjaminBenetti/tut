@@ -39,6 +39,7 @@ import type {
   LadderFinish,
 } from "../model/ladder-appearance";
 import { LadderModelFactory } from "../service/ladder-model-factory";
+import { foundationHeight } from "../service/foundation-model-resolver";
 import type { RampAppearance } from "../model/ramp-appearance";
 import type { TerrainSlopeAppearance } from "../model/terrain-slope-appearance";
 import { TerrainTransitionModelFactory } from "../service/terrain-transition-model-factory";
@@ -369,6 +370,7 @@ export class TacticalMapView implements Disposable, TilePicker {
     await models.preload(mapModelIds(placements));
     const categories: readonly [string, readonly ModelPlacement[]][] = [
       ["tiles", placements.tiles],
+      ["foundations", placements.foundations],
       ["walls", placements.walls],
       ["props", placements.props],
       ["ramps", placements.connectors.filter((p) => p.ramp !== undefined)],
@@ -381,7 +383,13 @@ export class TacticalMapView implements Disposable, TilePicker {
     // stairs plank retires because the stairs tile's own model now draws
     // the staircase (#766). Ground pillars stay: they are the earth
     // beneath the surface slab, not a stand-in for it.
-    for (const label of [TILES_SLAB, "walls", "props", "connectors"]) {
+    for (const label of [
+      TILES_SLAB,
+      "foundations",
+      "walls",
+      "props",
+      "connectors",
+    ]) {
       this.retirePlaceholders(label);
     }
     for (const placement of placements.connectors) {
@@ -807,10 +815,24 @@ export class TacticalMapView implements Disposable, TilePicker {
   private buildTiles(): void {
     const ground = new Map<string, Batch>();
     const slabs = new Map<string, Batch>();
+    const foundations = new Map<string, Batch>();
     for (const tile of this.map.tiles) {
       const colour = SURFACE_COLOURS[tile.surface] ?? FALLBACK_SURFACE_COLOUR;
       const top = tileTop(tile.y);
       const isGround = tile.buildingId === undefined;
+      const support = foundationHeight(tile);
+      if (support > 0) {
+        // Floor zero also owns the implicit solid below it (#906). The
+        // textured foundation kit retires this support box after loading.
+        pushBatch(
+          foundations,
+          `foundation:${tile.y}`,
+          colour,
+          tile.y,
+          boxMatrix(tile.x + 0.5, support / 2, tile.z + 0.5, 1, support, 1),
+          this.index.keyOf(tile),
+        );
+      }
       if (tile.slope !== undefined) {
         // A hillside piece (#799): the column below stays a ground box and
         // a wedge rises from this tile's top to the next level. A straight
@@ -846,6 +868,7 @@ export class TacticalMapView implements Disposable, TilePicker {
     }
     this.flushBatches(ground, TILES_GROUND);
     this.flushBatches(slabs, TILES_SLAB);
+    this.flushBatches(foundations, "foundations");
   }
 
   // ===========================================

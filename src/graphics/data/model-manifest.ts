@@ -713,6 +713,14 @@ export const MODEL_MANIFEST = {
     sockets: [],
     quality: "final",
   },
+  "tile.foundation.concrete": {
+    category: "tiles",
+    path: "assets/models/tiles/tile-foundation-concrete.glb",
+    footprint: { w: 1, d: 1 },
+    height: 0.75,
+    sockets: [],
+    quality: "final",
+  },
   "tile.ramp.connector": {
     category: "tiles",
     path: "assets/models/tiles/terrain-ramp-connector.glb",

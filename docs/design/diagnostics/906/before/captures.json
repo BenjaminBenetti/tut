@@ -1,0 +1,110 @@
+[
+  {
+    "id": "snowy",
+    "seed": "mc-opening-01",
+    "biome": "snowy",
+    "settlement": "town",
+    "size": "small",
+    "tile": {
+      "x": 37,
+      "y": 3,
+      "z": 39
+    },
+    "rotation": 0,
+    "pitch": 78.00000015410266,
+    "pixel": {
+      "x": 1383.492198189952,
+      "y": 769.2347087613141
+    }
+  },
+  {
+    "id": "snowy-rotated",
+    "seed": "mc-opening-01",
+    "biome": "snowy",
+    "settlement": "town",
+    "size": "small",
+    "tile": {
+      "x": 37,
+      "y": 3,
+      "z": 39
+    },
+    "rotation": 1,
+    "pitch": 78.00000015410224,
+    "pixel": {
+      "x": 1395.1594687891597,
+      "y": 694.8114138510376
+    }
+  },
+  {
+    "id": "desert",
+    "seed": "mc-opening-02",
+    "biome": "desert",
+    "settlement": "town",
+    "size": "small",
+    "tile": {
+      "x": 32,
+      "y": 0,
+      "z": 18
+    },
+    "rotation": 0,
+    "pitch": 78.00000015410285,
+    "pixel": {
+      "x": 1411.1344496976747,
+      "y": 788.1838080399818
+    }
+  },
+  {
+    "id": "desert-rotated",
+    "seed": "mc-opening-02",
+    "biome": "desert",
+    "settlement": "town",
+    "size": "small",
+    "tile": {
+      "x": 32,
+      "y": 0,
+      "z": 18
+    },
+    "rotation": 1,
+    "pitch": 78.00000015410272,
+    "pixel": {
+      "x": 1398.2748258910547,
+      "y": 788.0362076602198
+    }
+  },
+  {
+    "id": "desert-grounded",
+    "seed": "mc-opening-02",
+    "biome": "desert",
+    "settlement": "town",
+    "size": "small",
+    "tile": {
+      "x": 38,
+      "y": 0,
+      "z": 35
+    },
+    "rotation": 0,
+    "pitch": 78.00000015410312,
+    "pixel": {
+      "x": 1398.2748258910544,
+      "y": 693.4904411216381
+    }
+  },
+  {
+    "id": "desert-grounded-entrance",
+    "seed": "mc-opening-02",
+    "biome": "desert",
+    "settlement": "town",
+    "size": "small",
+    "tile": {
+      "x": 33,
+      "y": 0,
+      "z": 29
+    },
+    "rotation": 2,
+    "pitch": 78.00000015410272,
+    "pixel": {
+      "x": 1427.9885045198714,
+      "y": 769.6768608899994
+    }
+  }
+]

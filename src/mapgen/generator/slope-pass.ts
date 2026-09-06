@@ -56,11 +56,12 @@ const CORNER_TURNS: Readonly<Record<string, Rotation>> = {
 /**
  * Turns every natural one-level step into a walkable hillside (#799).
  *
- * The terrain pass records the level it gave each column; a step is
- * natural when both columns still sit at that level and neither lies
- * in a lot. Everything a later pass graded, lifted or dug — road plats,
- * plazas, embankments, lots — keeps its retaining wall, and the ramp pass
- * bridges those as before.
+ * A step is one layer between two ground columns, and its lower tile
+ * takes the wedge whenever that tile is unpaved and carries no wall
+ * (#847): a wall is what makes an edge man-made, and everything with
+ * one — a building's mirrored wall, a parapet on a raised feature — keeps
+ * it. Roads and pavements carry no wedge; the ramp pass bridges the
+ * two-layer steps as before.
  *
  * The lower tile of a natural step becomes the slope piece, chosen from
  * its neighbourhood the way marching squares would:
@@ -276,41 +277,37 @@ function groupRuns(
 // ===========================================
 
 /**
- * A column still at its terrain level, clear of every lot by a column, and
- * carrying no wall. A building at its lot's edge mirrors its wall onto the
- * ground tile outside (I3), and a step against a lot is a retaining wall by
- * the ruling, so both count as man-made here.
+ * Ground that carries a wedge when it faces a one-layer step: any unpaved
+ * ground column with no wall on it and no connector standing on it.
+ *
+ * This used to demand terrain still at its natural level and a column's
+ * clearance from every lot, on the premise that graded ground keeps a
+ * retaining wall. QA's #813 catalogue measured the premise: of the tiles
+ * the rule excluded, one in eight had a wall, and the rest were bare
+ * blocks of earth beside plots, yards and the city plat, in runs of up
+ * to forty-one (#847). A wall is the man-made edge; where there is none,
+ * a wedge is the geometry the hillside already has a few tiles away.
+ * Roads and pavements stay out: the kit has no paved wedge, and a road
+ * that meets higher ground is the road pass's kerb to draw.
  */
-function isNatural(draft: MapDraft, x: number, z: number): boolean {
-  const natural = draft.naturalLevelAt(x, z);
-  if (natural < 0 || natural !== draft.groundLevelAt(x, z)) {
+function isWedgeGround(draft: MapDraft, x: number, z: number): boolean {
+  const surface = draft.groundSurfaceAt(x, z);
+  if (
+    surface === SurfaceIds.WATER ||
+    surface === SurfaceIds.ROAD ||
+    surface === SurfaceIds.SIDEWALK
+  ) {
     return false;
   }
   if (Object.keys(draft.wallsAt(draft.groundCoord(x, z))).length > 0) {
     return false;
   }
-  if (draft.groundSurfaceAt(x, z) === SurfaceIds.WATER) {
-    return false;
-  }
   // A connector's foot or head is a man-made thing standing here — a
   // ladder placed before this pass, say — and no connector ever starts
   // on a slope tile (ADR 0004 I10).
-  if (
-    draft.connectors.some(
-      (c) =>
-        (c.from.x === x && c.from.z === z) || (c.to.x === x && c.to.z === z),
-    )
-  ) {
-    return false;
-  }
-  return !draft.lots.some(({ rect }) => {
-    return (
-      x >= rect.x - 1 &&
-      x <= rect.x + rect.w &&
-      z >= rect.z - 1 &&
-      z <= rect.z + rect.d
-    );
-  });
+  return !draft.connectors.some(
+    (c) => (c.from.x === x && c.from.z === z) || (c.to.x === x && c.to.z === z),
+  );
 }
 
 /**
@@ -318,7 +315,7 @@ function isNatural(draft: MapDraft, x: number, z: number): boolean {
  * only (#817): a prop on it does not unmake the terrace, and neither does
  * a graded plat — a natural tile half a step under a road plat still
  * meets it with a wedge. Only water and a building's footprint are not
- * ground to climb onto. Which tiles *carry* a wedge is `isNatural`'s
+ * ground to climb onto. Which tiles *carry* a wedge is `isWedgeGround`'s
  * call, made about the lower tile alone.
  */
 function isStepUp(
@@ -338,7 +335,7 @@ function naturalColumns(draft: MapDraft): number[] {
   const keys: number[] = [];
   for (let z = 0; z < draft.depth; z++) {
     for (let x = 0; x < draft.width; x++) {
-      if (isNatural(draft, x, z)) keys.push(z * draft.width + x);
+      if (isWedgeGround(draft, x, z)) keys.push(z * draft.width + x);
     }
   }
   return keys;

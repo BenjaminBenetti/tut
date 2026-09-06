@@ -103,35 +103,35 @@ const GOLDENS: readonly Golden[] = [
     biome: "temperate",
     settlement: "town",
     size: "medium",
-    checksum: 1154821948,
+    checksum: 234061464,
   },
   {
     seed: "golden-snowy",
     biome: "snowy",
     settlement: "town",
     size: "medium",
-    checksum: 2625536021,
+    checksum: 4132806389,
   },
   {
     seed: "golden-desert",
     biome: "desert",
     settlement: "town",
     size: "medium",
-    checksum: 782344913,
+    checksum: 972340691,
   },
   {
     seed: "golden-coastal",
     biome: "coastal",
     settlement: "town",
     size: "medium",
-    checksum: 3211728060,
+    checksum: 3479640814,
   },
   {
     seed: "golden-rural",
     biome: "temperate",
     settlement: "rural",
     size: "small",
-    checksum: 1029124660,
+    checksum: 3029796126,
   },
   {
     seed: "golden-city",
@@ -166,6 +166,7 @@ describe("generation sweep", () => {
       let slopesWithWalls = 0;
       let orphanCorners = 0;
       let slopeRunsUnder100 = 0;
+      let bareSteps = 0;
       for (const size of MAP_SIZE_PRESETS) {
         for (const biome of BIOME_IDS) {
           for (const settlement of SETTLEMENT_SCALES) {
@@ -275,6 +276,62 @@ describe("generation sweep", () => {
               const shareMatch = /\((\d+) %\)/.exec(slopeNote);
               if (shareMatch !== null && Number(shareMatch[1]) < 100) {
                 slopeRunsUnder100++;
+              }
+              // #847: the lower tile of a one-layer step carries a wedge or a
+              // wall. Unpaved ground, water not adjacent, no connector on it,
+              // one high side or two adjacent (the shapes the pass always
+              // has a piece for): a bare block of earth here is the defect
+              // QA catalogued as J2.
+              const connectorFeet = new Set(
+                map.connectors.flatMap((c) => [
+                  `${String(c.from.x)},${String(c.from.z)}`,
+                  `${String(c.to.x)},${String(c.to.z)}`,
+                ]),
+              );
+              for (const tile of map.tiles) {
+                if (
+                  tile.buildingId !== undefined ||
+                  tile.slope !== undefined ||
+                  Object.keys(tile.walls).length > 0 ||
+                  tile.surface === SurfaceIds.ROAD ||
+                  tile.surface === SurfaceIds.SIDEWALK ||
+                  tile.surface === SurfaceIds.WATER ||
+                  tile.surface === SurfaceIds.FLOOR ||
+                  tile.surface === SurfaceIds.ROOF ||
+                  tile.surface === SurfaceIds.STAIRS ||
+                  connectorFeet.has(`${String(tile.x)},${String(tile.z)}`) ||
+                  index.get(tile.x, tile.y + 1, tile.z) !== undefined
+                ) {
+                  continue;
+                }
+                let waterNear = false;
+                for (let dz = -1; dz <= 1; dz++) {
+                  for (let dx = -1; dx <= 1; dx++) {
+                    const column = index
+                      .column(tile.x + dx, tile.z + dz)
+                      .find((t) => t.surface === SurfaceIds.WATER);
+                    if (column !== undefined) waterNear = true;
+                  }
+                }
+                if (waterNear) continue;
+                const highs = DIRECTIONS.filter((d) => {
+                  const s = stepGridPos(tile, d);
+                  const up = index.get(s.x, tile.y + 1, s.z);
+                  return (
+                    up !== undefined &&
+                    up.buildingId === undefined &&
+                    up.surface !== SurfaceIds.WATER
+                  );
+                });
+                const adjacentPair =
+                  highs.length === 2 &&
+                  !(
+                    (highs.includes("n") && highs.includes("s")) ||
+                    (highs.includes("e") && highs.includes("w"))
+                  );
+                if (highs.length === 1 || adjacentPair) {
+                  bareSteps++;
+                }
               }
               const slopeColumns = new Set<string>();
               for (const tile of map.tiles) {
@@ -412,6 +469,7 @@ describe("generation sweep", () => {
       expect(slopeTiles).toBeGreaterThan(0);
       expect(naturalStepsOverOne).toBe(0);
       expect(slopeRunsUnder100).toBe(0);
+      expect(bareSteps).toBe(0);
       expect(slopeStepsNotWalkable).toBe(0);
       expect(connectorsFromSlopes).toBe(0);
       expect(slopesWithWalls).toBe(0);

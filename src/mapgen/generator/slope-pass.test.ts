@@ -394,4 +394,35 @@ describe("SlopePass", () => {
     }
     expect(b.props).toEqual(a.props);
   });
+
+  it("wedges the bare blocks beside a plot QA catalogued as J2 (#847, #813)", () => {
+    // QA's seed, at the ADR 0009 scale (its 32² coordinates from f4557b4 do
+    // not survive the resize): a lot-ring tile still at its natural level,
+    // a graded yard tile inside the lot, and a graded tile away from any
+    // lot, each the lower tile of a one-layer step and bare before the
+    // fix. Each now carries a wedge or a wall — the acceptance on #847.
+    const map = generateTacticalMap(
+      {
+        seed: "qa813-temperate-rural-small-0",
+        params: { ...params("rural", "temperate"), size: "small" },
+      },
+      { registries },
+    );
+    const index = new TileIndex(map);
+    for (const at of [
+      { x: 17, y: 1, z: 16 },
+      { x: 19, y: 0, z: 18 },
+      { x: 4, y: 0, z: 23 },
+    ]) {
+      const tile = index.get(at.x, at.y, at.z);
+      expect(
+        tile,
+        `${String(at.x)},${String(at.y)},${String(at.z)}`,
+      ).toBeDefined();
+      expect(
+        tile?.slope !== undefined || Object.keys(tile?.walls ?? {}).length > 0,
+        `${String(at.x)},${String(at.y)},${String(at.z)} carries a wedge or a wall`,
+      ).toBe(true);
+    }
+  });
 });

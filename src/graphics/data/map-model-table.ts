@@ -49,6 +49,14 @@ export const ROAD_VARIANTS = {
   cross: "tile.city.road-cross",
 } as const satisfies Record<string, ModelAssetId>;
 
+/** Modular carriageway art; the road factory combines one slab with its edge/paint parts. */
+export const ROAD_MODELS = {
+  lane: "tile.city.road-lane",
+  kerb: "tile.city.road-kerb",
+  corner: "tile.city.road-kerb-corner",
+  centre: "tile.city.road-centre-line",
+} as const satisfies Record<string, ModelAssetId>;
+
 /** Sidewalk ships a straight and a corner only; anything else uses the straight. */
 export const SIDEWALK_VARIANTS = {
   straight: "tile.city.sidewalk",

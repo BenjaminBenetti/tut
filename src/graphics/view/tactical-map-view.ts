@@ -33,6 +33,10 @@ import type {
 } from "../../tactical/model/tactical-state";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import { terrainSlopeRise } from "../service/terrain-slope-rise";
+import type { RoadAppearance } from "../model/road-appearance";
+import { roadAppearanceKey } from "../service/road-model-resolver";
+import { RoadModelFactory } from "../service/road-model-factory";
+import { ROAD_STYLES } from "../data/road-styles";
 import type { GhostUniforms } from "../service/ghost-cutaway";
 import { applyGhostCutaway } from "../service/ghost-cutaway";
 import {
@@ -253,6 +257,7 @@ export class TacticalMapView implements Disposable, TilePicker {
   private readonly ghostMaterials = new Map<Material, Material>();
   /** Materialised slope prototypes shared across levels and rotations. */
   private readonly slopeModels = new Map<string, Group>();
+  private readonly roadModels = new Map<string, Group>();
   private readonly disposables: Disposable[] = [];
   private readonly unitBox = new BoxGeometry(1, 1, 1);
   private readonly raycaster = new Raycaster();
@@ -385,13 +390,15 @@ export class TacticalMapView implements Disposable, TilePicker {
         matrices: Matrix4[];
         keys: VisionTileKey[];
         slopeTile?: Tile;
+        road?: RoadAppearance;
       }
     >();
     for (const placement of placements) {
       const tile =
         label === "tiles" ? this.index.getAt(placement.tile) : undefined;
       const slopeTile = tile?.slope === undefined ? undefined : tile;
-      const key = `${placement.modelId}:${String(placement.level)}${slopeTile ? `:${slopeTile.surface}` : ""}`;
+      const road = placement.road;
+      const key = `${placement.modelId}:${String(placement.level)}${slopeTile ? `:${slopeTile.surface}` : ""}${road ? `:road:${roadAppearanceKey(road)}` : ""}`;
       const matrix = placementMatrix(placement);
       const tileKey = this.index.keyOf(placement.tile);
       const batch = batches.get(key);
@@ -402,6 +409,7 @@ export class TacticalMapView implements Disposable, TilePicker {
           matrices: [matrix],
           keys: [tileKey],
           slopeTile,
+          road,
         });
       } else {
         batch.matrices.push(matrix);
@@ -409,9 +417,11 @@ export class TacticalMapView implements Disposable, TilePicker {
       }
     }
     for (const [key, batch] of batches) {
-      const prototype = batch.slopeTile
-        ? await this.slopePrototype(batch.slopeTile, models)
-        : await models.load(batch.modelId);
+      const prototype = batch.road
+        ? await this.roadPrototype(batch.road, models)
+        : batch.slopeTile
+          ? await this.slopePrototype(batch.slopeTile, models)
+          : await models.load(batch.modelId);
       prototype.updateMatrixWorld(true);
       meshPartsOf(prototype).forEach((part, i) => {
         // Walls are what stands between the camera and a unit, so they
@@ -480,6 +490,35 @@ export class TacticalMapView implements Disposable, TilePicker {
           this.disposables.push((object as Mesh).geometry);
       });
       this.slopeModels.set(key, prototype);
+    }
+    return prototype;
+  }
+
+  /** Borrows the road style's material once per appearance, shared across every level. */
+  private async roadPrototype(
+    appearance: RoadAppearance,
+    models: ModelLoader,
+  ): Promise<Group> {
+    const key = roadAppearanceKey(appearance);
+    let prototype = this.roadModels.get(key);
+    if (prototype === undefined) {
+      const surface = ROAD_STYLES[appearance.style].surface;
+      const sides = this.material(
+        SURFACE_COLOURS[surface] ?? FALLBACK_SURFACE_COLOUR,
+      );
+      const materials = slopeMaterialsFromGround(
+        await models.load(surfaceModel(surface)!),
+        sides,
+      );
+      prototype = await new RoadModelFactory(models).create(
+        appearance,
+        materials,
+      );
+      prototype.traverse((object) => {
+        if (object instanceof Mesh)
+          this.disposables.push((object as Mesh).geometry);
+      });
+      this.roadModels.set(key, prototype);
     }
     return prototype;
   }
@@ -642,6 +681,7 @@ export class TacticalMapView implements Disposable, TilePicker {
     }
     this.ghostMaterials.clear();
     this.slopeModels.clear();
+    this.roadModels.clear();
     this.root.removeFromParent();
   }
 

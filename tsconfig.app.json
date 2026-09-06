@@ -21,6 +21,8 @@
     "src",
     "tools/art/preview/vfx-harness.ts",
     "tools/art/preview/radial-harness.ts",
-    "tools/art/preview/terrain-slopes.ts"
+    "tools/art/preview/terrain-slopes.ts",
+    "tools/art/preview/carriageways.ts",
+    "tools/art/preview/carriageways-fixture.ts"
   ]
 }

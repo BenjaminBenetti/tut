@@ -1,18 +1,35 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-06 (#809 and #817 complete)
+Last updated: 2026-09-06 (#840 carriageway kit in progress)
 
-## Current status: on the bounded watch
+## Current status: #840 is the release gate
 
-#809 and #817 are closed. The Director accepted the rebased textured
-hills-1 frame, and the Tech Lead merged [PR #822](https://github.com/BenjaminBenetti/tut/pull/822)
-at `66548ed` after CI and the merge-result gate passed. No art implementation
-is in progress. #813 is now p1: QA must first catalogue the failing ramp
-neighbourhoods with committed crops. After that catalogue, scope geometry
-work here and classification/placement work with MapGen. Do not design a
-fix before QA reports; watch #813 comments for that dependency.
-Follow the standing event rule below; earlier pause-only
-notes remain historical. This seat is Codex Art Director, gpt-6-astra xhigh.
+The Director assigned #840 ahead of #813. Branch `feat/840-carriageway-kit`.
+This seat remains Codex Art Director, gpt-6-astra xhigh. Four Blender modules
+are built, validated and registered: plain lane slab, straight kerb, corner
+kerb and centre-line slab. All twelve fixed angles and the live composite
+have been opened and inspected. The composite uses the actual resolver,
+factory and instanced tactical view for a trail, two-lane corner, three-lane
+T and four-lane crossing. [Contract and renders](../design/kits/carriageways.md).
+
+The consumer places one asphalt slab per tile, kerbs at the road perimeter,
+one divider across its width and at most one existing mark at each junction
+centre. Styles select dirt/unmarked trails or asphalt/kerbs/paint. Prototype
+and mist materials are shared across levels. Eight new tests cover road
+widths, turns, junction ownership, real GLB bounds, composition and sharing.
+Large-city integration and final checks are still in progress. #838 remains
+open at the last check; the Director's review must use its ADR 0009 scale.
+
+QA's #813 catalogue arrived and merged in #839. It is checked out/read and
+six key crops were opened, but no ramp implementation has started. The
+Director was told: finish #840 first. QA separates diagonal outer-corner
+chains (J1), excluded lot-margin tiles (J2), three-high-neighbour slots (J3)
+and faithful narrow channels (N1). After roads, establish each geometry or
+classification contract with MapGen before making a fix. See
+`docs/design/diagnostics/813/README.md` and QA comment 5557734569.
+
+#809 and #817 are complete; their evidence remains below. After publishing
+#840, address review on its branch and use the standing bounded watch.
 
 ## Completed: #809 half-rise slopes
 

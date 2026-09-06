@@ -1146,5 +1146,61 @@
     "quality": "final",
     "triangles": 6,
     "bytes": 1712
+  },
+  {
+    "id": "tile.city.road-lane",
+    "category": "tiles",
+    "path": "assets/models/tiles/city-road-lane.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.05,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 12,
+    "bytes": 2020
+  },
+  {
+    "id": "tile.city.road-kerb",
+    "category": "tiles",
+    "path": "assets/models/tiles/city-road-kerb.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.11,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 24,
+    "bytes": 3688
+  },
+  {
+    "id": "tile.city.road-kerb-corner",
+    "category": "tiles",
+    "path": "assets/models/tiles/city-road-kerb-corner.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.11,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 36,
+    "bytes": 5216
+  },
+  {
+    "id": "tile.city.road-centre-line",
+    "category": "tiles",
+    "path": "assets/models/tiles/city-road-centre-line.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.05,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 24,
+    "bytes": 3732
   }
 ]

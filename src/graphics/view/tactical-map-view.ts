@@ -34,6 +34,8 @@ import type {
 import { TileIndex } from "../../mapgen/service/tile-index";
 import { terrainSlopeRise } from "../service/terrain-slope-rise";
 import type { RoadAppearance } from "../model/road-appearance";
+import type { TerrainSlopeAppearance } from "../model/terrain-slope-appearance";
+import { TerrainTransitionModelFactory } from "../service/terrain-transition-model-factory";
 import { roadAppearanceKey } from "../service/road-model-resolver";
 import { RoadModelFactory } from "../service/road-model-factory";
 import { ROAD_STYLES } from "../data/road-styles";
@@ -258,6 +260,7 @@ export class TacticalMapView implements Disposable, TilePicker {
   /** Materialised slope prototypes shared across levels and rotations. */
   private readonly slopeModels = new Map<string, Group>();
   private readonly roadModels = new Map<string, Group>();
+  private readonly terrainModels = new Map<string, Group>();
   private readonly disposables: Disposable[] = [];
   private readonly unitBox = new BoxGeometry(1, 1, 1);
   private readonly raycaster = new Raycaster();
@@ -391,6 +394,7 @@ export class TacticalMapView implements Disposable, TilePicker {
         keys: VisionTileKey[];
         slopeTile?: Tile;
         road?: RoadAppearance;
+        terrain?: { appearance: TerrainSlopeAppearance; tile: Tile };
       }
     >();
     for (const placement of placements) {
@@ -398,7 +402,11 @@ export class TacticalMapView implements Disposable, TilePicker {
         label === "tiles" ? this.index.getAt(placement.tile) : undefined;
       const slopeTile = tile?.slope === undefined ? undefined : tile;
       const road = placement.road;
-      const key = `${placement.modelId}:${String(placement.level)}${slopeTile ? `:${slopeTile.surface}` : ""}${road ? `:road:${roadAppearanceKey(road)}` : ""}`;
+      const terrain =
+        placement.terrain && tile
+          ? { appearance: placement.terrain, tile }
+          : undefined;
+      const key = `${placement.modelId}:${String(placement.level)}${slopeTile ? `:${slopeTile.surface}` : ""}${road ? `:road:${roadAppearanceKey(road)}` : ""}${terrain ? `:terrain:${terrainPrototypeKey(terrain.appearance, tile!.surface)}` : ""}`;
       const matrix = placementMatrix(placement);
       const tileKey = this.index.keyOf(placement.tile);
       const batch = batches.get(key);
@@ -410,6 +418,7 @@ export class TacticalMapView implements Disposable, TilePicker {
           keys: [tileKey],
           slopeTile,
           road,
+          terrain,
         });
       } else {
         batch.matrices.push(matrix);
@@ -417,11 +426,17 @@ export class TacticalMapView implements Disposable, TilePicker {
       }
     }
     for (const [key, batch] of batches) {
-      const prototype = batch.road
-        ? await this.roadPrototype(batch.road, models)
-        : batch.slopeTile
-          ? await this.slopePrototype(batch.slopeTile, models)
-          : await models.load(batch.modelId);
+      const prototype = batch.terrain
+        ? await this.terrainPrototype(
+            batch.terrain.appearance,
+            batch.terrain.tile,
+            models,
+          )
+        : batch.road
+          ? await this.roadPrototype(batch.road, models)
+          : batch.slopeTile
+            ? await this.slopePrototype(batch.slopeTile, models)
+            : await models.load(batch.modelId);
       prototype.updateMatrixWorld(true);
       meshPartsOf(prototype).forEach((part, i) => {
         // Walls are what stands between the camera and a unit, so they
@@ -519,6 +534,41 @@ export class TacticalMapView implements Disposable, TilePicker {
           this.disposables.push((object as Mesh).geometry);
       });
       this.roadModels.set(key, prototype);
+    }
+    return prototype;
+  }
+
+  /** Shares fitted terrain geometry and borrowed materials across levels and rotations. */
+  private async terrainPrototype(
+    appearance: TerrainSlopeAppearance,
+    tile: Tile,
+    models: ModelLoader,
+  ): Promise<Group> {
+    const key = terrainPrototypeKey(appearance, tile.surface);
+    let prototype = this.terrainModels.get(key);
+    if (!prototype) {
+      const sides = this.material(
+        SURFACE_COLOURS[tile.surface] ?? FALLBACK_SURFACE_COLOUR,
+      );
+      const materials = slopeMaterialsFromGround(
+        await models.load(surfaceModel(tile.surface)!),
+        sides,
+      );
+      prototype =
+        appearance.kind === "diagonal"
+          ? await new TerrainSlopeModelFactory(models).create(
+              "diagonal",
+              materials,
+            )
+          : await new TerrainTransitionModelFactory(models).create(
+              appearance.corners,
+              materials,
+            );
+      prototype.traverse((object) => {
+        if (object instanceof Mesh)
+          this.disposables.push((object as Mesh).geometry);
+      });
+      this.terrainModels.set(key, prototype);
     }
     return prototype;
   }
@@ -682,6 +732,7 @@ export class TacticalMapView implements Disposable, TilePicker {
     this.ghostMaterials.clear();
     this.slopeModels.clear();
     this.roadModels.clear();
+    this.terrainModels.clear();
     this.root.removeFromParent();
   }
 
@@ -1134,6 +1185,14 @@ export class TacticalMapView implements Disposable, TilePicker {
 // ===========================================
 // Geometry helpers
 // ===========================================
+
+/** Prototype identity excludes placement and elevation, preserving material sharing. */
+function terrainPrototypeKey(
+  appearance: TerrainSlopeAppearance,
+  surface: string,
+): string {
+  return `${surface}:${appearance.kind}${appearance.kind === "transition" ? `:${appearance.corners.join(",")}` : ""}`;
+}
 
 /**
  * The world height of a tile's **top surface** — the plane a unit stands

@@ -74,6 +74,10 @@ export const SLOPE_MODELS = {
 export const DIAGONAL_SLOPE_MODEL =
   "tile.slope.diagonal" satisfies ModelAssetId;
 
+/** Existing closed ground topology fitted to a diagonal chain's neighbouring corners. */
+export const TERRAIN_TRANSITION_SOURCE =
+  "tile.ground.grass" satisfies ModelAssetId;
+
 // ===========================================
 // Props
 // ===========================================

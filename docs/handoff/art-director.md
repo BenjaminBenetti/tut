@@ -1,16 +1,31 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-06 (#916 roof shelter and cutaway ready for Director review)
+Last updated: 2026-09-06 (#916 accepted and merged; #911 footprint next)
 
-## Current status: #916 roof shelter
+## Current status: #916 complete; #911 footprint next
+
+**PR #925 merged as `0d4a168be4b1639dbe634a51e6fc4b6442c93bc4`.**
+[Director acceptance](https://github.com/BenjaminBenetti/tut/pull/925#issuecomment-5562347058)
+covers the house, rotated view, indoor ghost frames and unchanged flat-roof
+control. No revision requested. The revealed interior is dark; the Director
+wants the Critic to assess that during play, not an immediate lighting retune.
+[Tech Lead's independent green gate](https://github.com/BenjaminBenetti/tut/pull/925#issuecomment-5562331141)
+confirmed deterministic fog captures, zero map-region differences, the missing
+uniform binding and the full validation below. Map Critic's merged-picture
+re-check is pending.
+
+#910 also merged through #926 as `fd032fdf01d18abcbc65390e47ecbf06d5a91340`.
+The standing #911 dropship assignment is now unblocked for footprint and
+placement agreement; no dropship asset has been started. MapGen owns clearance
+and is also assigned #915 next. Agree the contract on #911 before modelling.
 
 Codex Art Director, **gpt-6-astra xhigh**. The Director explicitly promoted #916
 in the CLI after the initial diagnosis, overriding the earlier #911 queue hold.
 [Claim and routing](https://github.com/BenjaminBenetti/tut/issues/916#issuecomment-5562110698).
 Branch `fix/916-nonwalkable-roofs`, baseline `e093702`, model/runtime checkpoint
 `a5f4deb`. Main through `5adfd12` merged normally (handoffs only, including #922).
-[PR #925](https://github.com/BenjaminBenetti/tut/pull/925) is open for review;
-the complete rendered proof is committed at `9159421`.
+The complete rendered proof is committed at `9159421`; final head `e3d049f`
+adds only the handoff link.
 
 [Complete before/after, controls, kit and reproduction](../design/diagnostics/916/README.md).
 [Cause stated before building](https://github.com/BenjaminBenetti/tut/issues/916#issuecomment-5562040887):
@@ -65,11 +80,11 @@ switch model for a transient capacity failure; retry it.
 
 Director judges frames, Tech Lead alone merges, Map Critic re-checks afterward.
 #906/#913 is accepted and merged; Critic re-check remains pending. Handoff #922
-merged as `8cb60cb`. MapGen owns #910 blank paved platforms, superseding the old
-taste hold. #911 TDF dropship remains behind #910: Art owns model/footprint,
-MapGen placement/clearance; agree the footprint and exact placement on the
-issue before building. Extraction deliberately stays at deploy. #915 waterfront
-endings and #917 isolated fences are MapGen-owned. Legacy production stays held.
+merged as `8cb60cb`. #910's merged fix supersedes the old platform taste hold.
+#911 TDF dropship: Art owns model/footprint, MapGen placement/clearance; agree
+the footprint and exact placement on the issue before building. Extraction
+deliberately stays at deploy. #915 waterfront endings and #917 isolated fences
+are MapGen-owned. Legacy production stays held.
 PR #912 establishes the five-ticket Critic cap and defect test.
 
 When otherwise waiting, use ONE bounded watcher in `.git/art-director-watch/`:

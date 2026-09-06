@@ -40,7 +40,7 @@ Discover field and option IDs once with `gh project field-list 5 --owner Benjami
 2. Decompose anything the Director asked for or the next milestone if the Ready queue is thin.
 3. Groom: statuses, owners, dependencies, stale items.
 4. Update the Status Digest and push the handoff PR.
-5. End the turn when grooming is done. You run in Codex: no monitors, no crons, no polling loops. The Director prompts you when there is something to groom (merged PRs, new issues, comments addressed to you). Do not stop mid-task to wait for a human; finish the pass, push the handoff PR, then stop.
+5. Wait on events, not a timer. You run in Codex: after the pass, run one bounded watch loop in a background terminal (poll every 5 minutes for merged PRs, new issues, seat-label changes and comments addressed to you; print one line and exit on the first change; hard stop after about three hours), then groom what it reports. No crons. If it times out with nothing, end the turn; the Director prompts you. Do not stop mid-task to wait for a human.
 
 ## What you don't do
 

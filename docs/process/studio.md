@@ -23,14 +23,14 @@ Role briefs live in `docs/process/roles/`. Handoff notes live in `docs/handoff/`
 |---|---|---|---|
 | Director | Claude Fable 5.1 | xhigh | managed directly by the Executive Director |
 | Tech Lead | Claude Fable 5.1 | high | |
-| Producer | Codex, Astra 6 | high | no monitors or timers; the Director prompts it |
+| Producer | Codex, Astra 6 | high | waits on one bounded watch loop (background terminal) |
 | MapGen | Claude Fable 5.1 | high | `area:mapgen` only, idles otherwise |
 | Art Director | Codex, Astra 6 | xhigh | |
 | QA | Claude Opus 5 | max | |
 | eng-3 (the high seat) | Codex, Astra 6 | xhigh | `complexity:high` only |
 | eng-4, eng-5 (the Opus seats) | Claude Opus 5 | max | `complexity:low` and `complexity:medium` only |
 
-Codex seats have no background monitor or scheduler. They finish the prompted task, end the turn, and are prompted again by the Director when there is new work. Claude seats wait on one event monitor (§3).
+Codex seats have no Monitor tool but do have background terminals. When a Codex seat would otherwise stop and wait, it runs **one bounded watch loop** as a background terminal: poll GitHub every 5 minutes, print one line and exit on the first relevant change, hard stop after about three hours. It acts on what the loop reports and repeats. If the loop times out with nothing, the seat ends its turn and the Director prompts it. Claude seats wait on one event monitor (§3). Either way: one watcher per seat, no crons, no busy loops, and the Director is never the only path for an event to reach a seat.
 
 ## 2. Work item lifecycle
 

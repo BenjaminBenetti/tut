@@ -3,7 +3,7 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-06 20:57 UTC)
+## Status Digest (2026-09-06 21:16 UTC)
 
 **Production held; Map Quality Loop live.** Await the Executive Director's next taste call outside the authorized loop. Map Critic (Astra 6, new seat) files evidenced tickets; MapGen (Astra 6 / xhigh) works generation and Art Director (Astra 6 / xhigh) handles assets. At most three open Critic tickets. Those tickets are live specialist work, not automatically held Backlog. No M3 decomposition or Ready growth beyond Executive Director exceptions.
 
@@ -11,13 +11,13 @@
 
 | Issue | Status / dependency | Accountable specialist |
 | --- | --- | --- |
-| #910 p1 blank paved platforms | Ready — #906 complete | MapGen; state cause before building, preserve vegetated high ground |
+| #910 p1 blank paved platforms | In Progress — claim/cause 5562126199 | MapGen; 187 paved placements in all 36 city recipes, preserve vegetated high ground |
 | #911 p2 TDF dropship | Blocked by #910 | Art Director model/footprint; MapGen placement/clearance |
-| #915 p1 waterfront endings | Queued behind #911 | MapGen |
+| #915 p1 waterfront endings | Blocked by #910 — next MapGen task per reported Director order | MapGen |
 | #916 p1 missing visible roofs | In Progress — Director promotion reported in 5562110698 | Art Director; branch `fix/916-nonwalkable-roofs`, art/display only |
 | #917 p2 isolated rural fences | Queued behind #911 | MapGen |
 
-#910 supersedes the former platform taste hold: Executive Director ruled it a generation bug. Both new issues have M1.5. Four Critic-origin tickets are now open (#910/#915/#916/#917); #911 is a separate Executive Director feature. PR #912 merged a five-ticket cap after the Director's latest three-ticket instruction; clarification is pending before recording the new cap. The new findings have evidence/priority/area/M1.5; #916's claimed Director promotion supersedes its earlier hold, while #915/#917 remain queued behind #911; their evidence/handoff PR #918 is Blocked on Critic formatting corrections to three JSON sidecars (Tech Lead 5561864176); sim/e2e passed, review owner Tech Lead. Opening survey #905/#907 is Done. #906/#913 are closed/Done after Director acceptance (5561976819) and Tech Lead merge. The Critic's independent visual re-check remains pending. Foundation repair is on main, not in a new release yet; latest tag remains v0.2.11.
+#910 supersedes the former platform taste hold: Executive Director ruled it a generation bug. Both new issues have M1.5. Four Critic-origin tickets are now open (#910/#915/#916/#917); #911 is a separate Executive Director feature. PR #912 merged a five-ticket cap after the Director's latest three-ticket instruction; clarification is pending before recording the new cap. The new findings have evidence/priority/area/M1.5; #916's claimed Director promotion supersedes its earlier hold, while MapGen's reported Director order now places #915 immediately after #910 and #917 remains queued behind #911; their evidence/handoff PR #918 is Blocked on Critic formatting corrections to three JSON sidecars (Tech Lead 5561864176); sim/e2e passed, review owner Tech Lead. Opening survey #905/#907 is Done. #906/#913 are closed/Done after Director acceptance (5561976819) and Tech Lead merge. The Critic's independent visual re-check remains pending. Foundation repair is on main, not in a new release yet; latest tag remains v0.2.11.
 
 **Released:** v0.2.8 half-height (#804), v0.2.9 scale (#826), v0.2.10 ramp ruling (#813), v0.2.11 materialled ladders (#891/#893, 58e6c9e). All four issues closed/Done. #849 also closed/Done. #876 deliberately closed: correctly classified same-level saddles remain because the trial fit looked worse.
 
@@ -38,6 +38,8 @@
 **Milestones (closed / total items, computed from issue state, including new Critic issues/PR):** M0 14/14 · M1 64/65 · M1.5 38/47 · M2 49/50 · M2.5 26/31 · M3 1/4 · Arsenal 1/3 · Bestiary 1/1 · Tech Debt 6/8. Assignment to a milestone is not a declaration that it is active or complete.
 
 **Board correction:** #908 merged the routing handoff but accidentally auto-closed #906 because GitHub parsed a negated closing phrase in its body. Producer reopened #906 and removed the link; its subsequent closure is now backed by accepted repair PR #913. Future handoff PRs must have no closing references to live work.
+
+**Roof verification:** Art reports a pre-existing unbound ghost-strength uniform (5562204710): actual squad/controller off/on renders show no cutaway. #916 includes restoring that binding and proving the intended local effect, while flat-roof controls remain unchanged. Director frames and Tech Lead review still gate merge.
 
 **Risks / operation:** old visibility, walkover and pre-scale measurements are historical; issue bodies now say so. Check delivered code and release ancestry, including reverts, before closing; close epics in the same grooming pass as the last child closes (Director standing rule 5561387468). Producer is Codex Astra 6 / high. Publish one fixed handoff head through CI/merge and batch later updates. Return to one bounded five-minute watch (three-hour hard stop), groom events and re-arm; no cron. Local watcher overlaps reads by one minute and deduplicates events to catch merges near polling boundaries; checks passed. Capacity interruptions mean retry the same model, never infer a quota or switch models.
 <!-- digest:end -->

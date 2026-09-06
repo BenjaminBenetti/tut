@@ -23,6 +23,7 @@ import { defineConfig } from "vitest/config";
  *   slope-pass                 11.1 s
  *   objective-reachability      9.8 s   (already cut to four seeds on CI, #852)
  *   connectivity-pass           8.4 s   (72 maps; cut to three seeds on CI, #879 red)
+ *   hook-pass placement         5.5 s   (60 maps; CI budget only, seeds feed statistics; main@055c1d5 red)
  *   elevation-pass              8.7 s
  *   map-assessment-service      7.9 s
  *   ramp-pass                   6.1 s

@@ -107,18 +107,23 @@ for (const control of CONTROLS) {
           }),
         FRAME_SAMPLE_MS,
       );
-      const stats = await page.locator("#stats").innerText();
+      const stats = await page
+        .locator("#stats")
+        .evaluate((list) =>
+          [...list.querySelectorAll("dt")].map(
+            (term) =>
+              `${term.textContent ?? ""}: ${term.nextElementSibling?.textContent ?? ""}`,
+          ),
+        );
       const fps = (frames * 1000) / FRAME_SAMPLE_MS;
       writeFileSync(
         FRAME_RATE_FILE,
         [
           `${control.query} (models=1, 2400×1500, headless chromium on the runner's software renderer)`,
           `${String(frames)} frames in ${String(FRAME_SAMPLE_MS)} ms = ${fps.toFixed(1)} fps`,
-          ...stats
-            .split("\n")
-            .filter((line) =>
-              /^(Map|Tiles|Buildings|Props|Generated in)/.test(line),
-            ),
+          ...stats.filter((line) =>
+            /^(Map|Tiles|Buildings|Props|Generated in)/.test(line),
+          ),
         ].join("\n") + "\n",
       );
     }

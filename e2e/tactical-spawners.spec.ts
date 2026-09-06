@@ -1,4 +1,12 @@
 import type { Page } from "@playwright/test";
+
+import type { TacticalMap } from "../src/mapgen/model/tactical-map";
+import { PassMask } from "../src/mapgen/model/pass-mask";
+import { UNIT_TUNING } from "../src/tactical/data/unit-tuning";
+import {
+  nearestSightPosition,
+  pathBetween,
+} from "../src/tactical/service/map-assessment-service";
 import { expect, test } from "@playwright/test";
 
 import type { TacticalTestHooks } from "../src/ui/model/tactical-intent";
@@ -119,6 +127,7 @@ test("egg spawners are drawn on the tactical map and can be targeted by clicking
 
 /** The mission as the autosave holds it. */
 interface SavedMission {
+  map: TacticalMap;
   units: {
     id: string;
     team: string;
@@ -162,7 +171,18 @@ async function scoutToASpawner(page: Page): Promise<string | undefined> {
     const spawner = nearestSpawner(mission, unit);
     if (!mission || !unit || !spawner) return undefined;
 
-    const moved = await stepToward(page, unit, spawner.pos);
+    // Walk to where the squad can see it, not to it: since ADR 0009 (#829)
+    // a spawner may sit deep inside a building, and the wall beside it
+    // shows nothing. The game says which reachable tile has the sight line.
+    const vantage =
+      nearestSightPosition(
+        mission.map,
+        unit.pos,
+        spawner.pos,
+        PassMask.INFANTRY,
+        UNIT_TUNING.infantry.sightRange,
+      ) ?? spawner.pos;
+    const moved = await stepToward(page, unit, vantage, mission.map);
     const found = await drawnSpawnerId(page);
     if (found !== undefined) return found;
     if (!moved) {
@@ -205,7 +225,27 @@ async function stepToward(
   page: Page,
   unit: SavedMission["units"][number],
   target: { x: number; y: number; z: number },
+  map: TacticalMap,
 ): Promise<boolean> {
+  // Follow the walk the game says exists, a few tiles at a time: the
+  // vantage may be a storey up a ramp the offsets below would never find.
+  const path = pathBetween(map, unit.pos, target, PassMask.INFANTRY);
+  if (path !== undefined && path.length > 0) {
+    for (const hop of [6, 5, 4, 3, 2, 1]) {
+      const tile = path[Math.min(hop, path.length) - 1];
+      if (tile === undefined) continue;
+      await page.evaluate(
+        (args: { id: string; tile: { x: number; y: number; z: number } }) => {
+          (globalThis as HookGlobal).__tutTactical__?.selectUnit(args.id);
+          (globalThis as HookGlobal).__tutTactical__?.invokeTile(args.tile);
+        },
+        { id: unit.id, tile },
+      );
+      if (await movedFrom(page, unit.id, unit.pos)) {
+        return true;
+      }
+    }
+  }
   const offsets: { x: number; z: number }[] = [];
   for (const radius of [3, 2, 1]) {
     for (const [dx, dz] of [

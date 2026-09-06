@@ -8,6 +8,7 @@ import { SurfaceIds } from "../../mapgen/data/surfaces";
 import { HookKinds } from "../../mapgen/model/hook";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import { PassMask } from "../../mapgen/model/pass-mask";
+import { nearestSightPosition, pathBetween } from "./map-assessment-service";
 import type { MapRecipe } from "../../mapgen/model/map-recipe";
 import { createDefaultRegistries } from "../../mapgen/service/default-registries";
 import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
@@ -223,5 +224,68 @@ describe("objectiveApproach", () => {
     expect(approach.mechSteps).toBe(-1);
     expect(approach.infantryFiringSteps).toBe(-1);
     expect(approach.mechFiringSteps).toBe(-1);
+  });
+});
+
+describe("nearestSightPosition", () => {
+  it("walks to the closest reachable tile that sees the target inside the range (#829)", () => {
+    const map = new FixtureMapBuilder(12, 3, 1).fillGround().build();
+    const found = nearestSightPosition(
+      map,
+      { x: 0, y: 0, z: 1 },
+      { x: 11, y: 0, z: 1 },
+      PassMask.INFANTRY,
+      4,
+    );
+    expect(found).toEqual({ x: 7, y: 0, z: 1 });
+  });
+
+  it("is undefined when nothing in range can be reached", () => {
+    // A column of water walls the target's side of the field off.
+    const b = new FixtureMapBuilder(5, 3, 1).fillGround();
+    for (let z = 0; z < 3; z++) {
+      b.tile({ x: 2, y: 0, z }, SurfaceIds.WATER);
+    }
+    expect(
+      nearestSightPosition(
+        b.build(),
+        { x: 0, y: 0, z: 1 },
+        { x: 4, y: 0, z: 1 },
+        PassMask.INFANTRY,
+        1,
+      ),
+    ).toBeUndefined();
+  });
+});
+
+describe("pathBetween", () => {
+  it("returns the tiles after the start up to the goal, around water (#829)", () => {
+    // Water across the middle column except one gap at z = 0.
+    const b = new FixtureMapBuilder(5, 3, 1).fillGround();
+    b.tile({ x: 2, y: 0, z: 1 }, SurfaceIds.WATER);
+    b.tile({ x: 2, y: 0, z: 2 }, SurfaceIds.WATER);
+    const path = pathBetween(
+      b.build(),
+      { x: 0, y: 0, z: 2 },
+      { x: 4, y: 0, z: 2 },
+      PassMask.INFANTRY,
+    );
+    expect(path).toBeDefined();
+    expect(path?.[path.length - 1]).toEqual({ x: 4, y: 0, z: 2 });
+    expect(path?.some((t) => t.x === 2 && t.z === 0)).toBe(true);
+    expect(path?.length).toBe(8);
+  });
+
+  it("is undefined when the goal is cut off", () => {
+    const b = new FixtureMapBuilder(5, 3, 1).fillGround();
+    for (let z = 0; z < 3; z++) b.tile({ x: 2, y: 0, z }, SurfaceIds.WATER);
+    expect(
+      pathBetween(
+        b.build(),
+        { x: 0, y: 0, z: 1 },
+        { x: 4, y: 0, z: 1 },
+        PassMask.INFANTRY,
+      ),
+    ).toBeUndefined();
   });
 });

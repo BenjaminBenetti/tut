@@ -266,6 +266,91 @@ function tilesWithin(
   return tiles;
 }
 
+/**
+ * The closest tile a unit of `unitClass` can walk to from `from` that
+ * lies within `range` of `target` and has a line of sight to it, or
+ * undefined when no such tile is reachable. The e2e mission specs walk
+ * to this rather than guessing a spot beside the target: since ADR 0009
+ * (#829) a spawner may sit deep inside a building, and standing against
+ * its wall gives no shot.
+ */
+export function nearestSightPosition(
+  map: TacticalMap,
+  from: TileCoord,
+  target: TileCoord,
+  unitClass: UnitClass,
+  range: number,
+): TileCoord | undefined {
+  const index = new TileIndex(map);
+  const reach = new ReachabilityService(index, map.connectors);
+  const steps = walkFrom(index, reach, [from], unitClass);
+  let best: { tile: Tile; steps: number } | undefined;
+  for (const tile of tilesWithin(index, target, range)) {
+    const walked = steps.get(index.keyOf(tile));
+    if (
+      walked === undefined ||
+      (best !== undefined && walked >= best.steps) ||
+      manhattanDistance(tile, target) > range ||
+      !hasLineOfSight(map, tile, target, index)
+    ) {
+      continue;
+    }
+    best = { tile, steps: walked };
+  }
+  return best === undefined
+    ? undefined
+    : { x: best.tile.x, y: best.tile.y, z: best.tile.z };
+}
+
+/**
+ * The shortest walk for a unit of `unitClass` from `from` to `to`, as the
+ * tiles after `from`, or undefined when `to` cannot be reached. Steps
+ * follow the reachability rules (connectors included), so an e2e spec
+ * that walks a unit can follow it instead of hopping toward a target on
+ * its own level and stalling under a raised one (#829).
+ */
+export function pathBetween(
+  map: TacticalMap,
+  from: TileCoord,
+  to: TileCoord,
+  unitClass: UnitClass,
+): TileCoord[] | undefined {
+  const index = new TileIndex(map);
+  const reach = new ReachabilityService(index, map.connectors);
+  const start = index.getAt(from);
+  const goal = index.getAt(to);
+  if (start === undefined || goal === undefined) {
+    return undefined;
+  }
+  const parents = new Map<number, Tile | undefined>();
+  parents.set(index.keyOf(start), undefined);
+  const frontier: Tile[] = [start];
+  for (const current of frontier) {
+    if (current === goal) {
+      break;
+    }
+    for (const next of reach.neighbours(current, unitClass)) {
+      const key = index.keyOf(next);
+      if (!parents.has(key)) {
+        parents.set(key, current);
+        frontier.push(next);
+      }
+    }
+  }
+  if (!parents.has(index.keyOf(goal))) {
+    return undefined;
+  }
+  const path: TileCoord[] = [];
+  for (
+    let tile: Tile | undefined = goal;
+    tile !== undefined && tile !== start;
+    tile = parents.get(index.keyOf(tile))
+  ) {
+    path.push({ x: tile.x, y: tile.y, z: tile.z });
+  }
+  return path.reverse();
+}
+
 // ===========================================
 // Distances
 // ===========================================

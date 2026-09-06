@@ -25,6 +25,8 @@ import {
 import { PipelineMapGenerator } from "./pipeline-map-generator";
 import { ReachabilityService } from "./reachability-service";
 import { createSettlementPasses } from "./settlement-pipeline";
+import { DIRECTIONS } from "../../core/model/direction";
+import { stepGridPos } from "../../core/service/grid-math";
 import { SurfaceIds } from "../data/surfaces";
 import { TileIndex } from "./tile-index";
 
@@ -86,35 +88,35 @@ const GOLDENS: readonly Golden[] = [
     biome: "temperate",
     settlement: "town",
     size: "medium",
-    checksum: 1082981430,
+    checksum: 721498291,
   },
   {
     seed: "golden-snowy",
     biome: "snowy",
     settlement: "town",
     size: "medium",
-    checksum: 3131471386,
+    checksum: 4265621186,
   },
   {
     seed: "golden-desert",
     biome: "desert",
     settlement: "town",
     size: "medium",
-    checksum: 3214762569,
+    checksum: 2701505561,
   },
   {
     seed: "golden-coastal",
     biome: "coastal",
     settlement: "town",
     size: "medium",
-    checksum: 2958251522,
+    checksum: 1017312214,
   },
   {
     seed: "golden-rural",
     biome: "temperate",
     settlement: "rural",
     size: "small",
-    checksum: 1299759451,
+    checksum: 3476428387,
   },
   {
     seed: "golden-city",
@@ -141,6 +143,11 @@ describe("generation sweep", () => {
       let hooks = 0;
       let relocations = 0;
       let roadStepsWithoutConnector = 0;
+      let slopeTiles = 0;
+      let slopeConnectorsNotWalkable = 0;
+      let slopesWithWalls = 0;
+      let orphanCorners = 0;
+      let slopeRunsUnder100 = 0;
       for (const size of MAP_SIZE_PRESETS) {
         for (const biome of BIOME_IDS) {
           for (const settlement of SETTLEMENT_SCALES) {
@@ -230,6 +237,57 @@ describe("generation sweep", () => {
                 (n) =>
                   n.pass === "connectivity" && n.message.includes("relocated"),
               ).length;
+              // #799: every natural level change is a slope at the default
+              // knob — the pass reports its own share, and at slopeShare 1
+              // (the sweep's default) it must be 100 % on every map. Every
+              // straight or inner slope walks both ways for both classes;
+              // no slope carries a wall (a wall marks a man-made edge); and
+              // no outer corner stands without two straights beside it.
+              const slopeNote =
+                diagnostics.notes.find((n) => n.pass === "slopes")?.message ??
+                "";
+              const shareMatch = /\((\d+) %\)/.exec(slopeNote);
+              if (shareMatch !== null && Number(shareMatch[1]) < 100) {
+                slopeRunsUnder100++;
+              }
+              for (const tile of map.tiles) {
+                if (tile.slope === undefined) {
+                  continue;
+                }
+                slopeTiles++;
+                if (Object.keys(tile.walls).length > 0) {
+                  slopesWithWalls++;
+                }
+                if (tile.slope.kind === "outer") {
+                  const straights = DIRECTIONS.map((d) => {
+                    const s = stepGridPos(tile, d);
+                    return index.get(s.x, tile.y, s.z);
+                  }).filter((t) => t?.slope?.kind === "straight").length;
+                  if (straights < 2) {
+                    orphanCorners++;
+                  }
+                }
+              }
+              for (const c of map.connectors) {
+                if (c.kind !== "slope") {
+                  continue;
+                }
+                const lower = index.getAt(c.from);
+                const upper = index.getAt(c.to);
+                if (lower === undefined || upper === undefined) {
+                  slopeConnectorsNotWalkable++;
+                  continue;
+                }
+                for (const mask of [PassMask.INFANTRY, PassMask.MECH]) {
+                  if (
+                    !reach.neighbours(lower, mask).includes(upper) ||
+                    !reach.neighbours(upper, mask).includes(lower)
+                  ) {
+                    slopeConnectorsNotWalkable++;
+                  }
+                }
+              }
+
               // #785: a road never dies into a higher face. Every pair of
               // orthogonally adjacent road tiles on different levels is
               // joined by a connector, or the lower one dead-ends into a
@@ -288,6 +346,14 @@ describe("generation sweep", () => {
       // map of the matrix once road-surfaced features were disabled; the
       // number was 234-781 per twelve city maps before.
       expect(roadStepsWithoutConnector).toBe(0);
+      // Natural edges are hillsides (#799): the pass slopes every one at
+      // the default knob, every slope walks both ways for both classes, a
+      // slope never carries a wall, and a corner never stands alone.
+      expect(slopeTiles).toBeGreaterThan(0);
+      expect(slopeRunsUnder100).toBe(0);
+      expect(slopeConnectorsNotWalkable).toBe(0);
+      expect(slopesWithWalls).toBe(0);
+      expect(orphanCorners).toBe(0);
     },
     SWEEP_TIMEOUT_MS,
   );

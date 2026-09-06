@@ -38,6 +38,7 @@ describe("MapgenPreviewScreen", () => {
         settlement: "town",
         size: "medium",
         archetype: "settlement",
+        slopeShare: 1,
       },
       { onGenerate, onLevelChange: vi.fn() },
     );
@@ -59,6 +60,7 @@ describe("MapgenPreviewScreen", () => {
         settlement: "town",
         size: "medium",
         archetype: "settlement",
+        slopeShare: 1,
       },
       { onGenerate: vi.fn(), onLevelChange: vi.fn() },
     );

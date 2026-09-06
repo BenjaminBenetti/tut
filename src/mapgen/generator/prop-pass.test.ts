@@ -62,6 +62,7 @@ function run(
     settlement,
     size: "medium",
     hooks: [],
+    slopeShare: 1,
   };
   const recipe: MapRecipe = { seed, params };
   const { draft } = generator.run(params, new Mulberry32Rng(hashSeed(seed)));
@@ -261,6 +262,7 @@ describe("PropPass", () => {
         biome: BIOME_DEFINITIONS.temperate,
         settlement,
         hooks: [],
+        slopeShare: 1,
       },
       rng: new Mulberry32Rng(hashSeed("edge-trail")),
       draft,

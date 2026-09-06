@@ -182,6 +182,11 @@ function resolveTiles(
 ): readonly ModelPlacement[] {
   const placements: ModelPlacement[] = [];
   for (const tile of map.tiles) {
+    // A slope tile is drawn by the view's placeholder wedge until the
+    // slope block set lands (#798); a flat slab here would cap the wedge.
+    if (tile.slope !== undefined) {
+      continue;
+    }
     const fitted = fitSurface(tile, index, map);
     if (fitted === undefined) {
       continue;

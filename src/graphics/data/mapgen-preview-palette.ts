@@ -109,9 +109,10 @@ export const PROP_HEIGHTS: Readonly<Record<CoverLevel, number>> = {
   2: 1.2,
 };
 
-/** Vertical links: concrete ramp, paved steps, steel ladder. */
+/** Vertical links: concrete ramp, a hillside in dirt, paved steps, steel ladder. */
 export const CONNECTOR_COLOURS: Readonly<Record<ConnectorKind, number>> = {
   ramp: 0x8e8a82,
+  slope: 0x7a6045,
   stairs: 0xa7a297,
   ladder: 0x6f7378,
 };

@@ -57,7 +57,20 @@ export class RampPass implements GenerationPass {
     const { draft, params, diagnostics } = context;
     const { nodes, components } = buildGroundComponents(draft);
 
-    const steps = collectSteps(draft, nodes);
+    // Slopes (#799) run first and already join every natural step; a ramp
+    // is for what is left, which is the man-made edges. Fold the slopes
+    // into the components so those steps are not bridged twice.
+    for (const connector of draft.connectors) {
+      if (connector.kind === "slope") {
+        components.union(
+          columnKey(draft, connector.from),
+          columnKey(draft, connector.to),
+        );
+      }
+    }
+    const steps = collectSteps(draft, nodes).filter(
+      (step) => !hasConnector(draft, step.lower, step.upper),
+    );
     let joined = 0;
     for (const step of steps) {
       const a = columnKey(draft, step.lower);
@@ -128,7 +141,7 @@ function rampWithin(
 ): boolean {
   return draft.connectors.some(
     (connector) =>
-      connector.kind === "ramp" &&
+      (connector.kind === "ramp" || connector.kind === "slope") &&
       (manhattanDistance(connector.from, coord) <= distance ||
         manhattanDistance(connector.to, coord) <= distance),
   );
@@ -146,6 +159,17 @@ function addRamp(
 }
 
 /** Column key of an on-map coordinate; callers check bounds first. */
+/** True when any connector already joins the two columns, either way round. */
+function hasConnector(draft: MapDraft, a: TileCoord, b: TileCoord): boolean {
+  const same = (p: TileCoord, q: TileCoord): boolean =>
+    p.x === q.x && p.z === q.z;
+  return draft.connectors.some(
+    (c) =>
+      (same(c.from, a) && same(c.to, b)) || (same(c.from, b) && same(c.to, a)),
+  );
+}
+
+/** A column's key in the ground graph: row-major over the plat. */
 function columnKey(draft: MapDraft, coord: TileCoord): number {
   return coord.z * draft.width + coord.x;
 }

@@ -56,6 +56,15 @@ export interface MapMetrics {
   readonly lowCoverPer100: number;
   /** Props inside buildings divided by buildings (0 with none). */
   readonly interiorPropsPerBuilding: number;
+  /** Natural hillside pieces (#799): lower tiles carrying a `slope`. */
+  readonly slopes: number;
+  /**
+   * Share of natural edge tiles that are slopes, 0–1 (#799). A natural edge
+   * is a one-level ground step with no wall on the shared edge and no
+   * building within a tile: man-made edges carry a parapet (#607) or sit
+   * against a lot, so they fall out of the denominator.
+   */
+  readonly slopeShare: number;
   readonly ramps: number;
   readonly stairs: number;
   readonly ladders: number;

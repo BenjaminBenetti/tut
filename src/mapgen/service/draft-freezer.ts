@@ -8,6 +8,7 @@ import type { MapGenRegistries } from "../model/registries";
 import type { SurfaceId } from "../model/surface";
 import type { TacticalMap } from "../model/tactical-map";
 import { TACTICAL_MAP_VERSION } from "../model/tactical-map";
+import type { Slope } from "../model/slope";
 import type { Tile } from "../model/tile";
 import type { TileCoord } from "../model/tile-coord";
 
@@ -112,6 +113,7 @@ function materialise(
       ? {}
       : { floorIndex: ownership.floorIndex }),
     ...(ownership.roomId === undefined ? {} : { roomId: ownership.roomId }),
+    ...slopeOf(draft, coord, ownership),
   };
   return tile;
 }
@@ -133,4 +135,17 @@ function freezeHooks(draft: MapDraft): PlacementHooks {
     edgeSpawns: [...draft.hooks.edgeSpawns],
     extraction,
   };
+}
+
+/** The slope piece for a ground column; sparse (building) tiles never slope. */
+function slopeOf(
+  draft: MapDraft,
+  coord: TileCoord,
+  ownership: TileOwnership,
+): { slope: Slope } | Record<string, never> {
+  if (ownership.buildingId !== undefined) {
+    return {};
+  }
+  const slope = draft.slopeAt(coord.x, coord.z);
+  return slope === undefined ? {} : { slope };
 }

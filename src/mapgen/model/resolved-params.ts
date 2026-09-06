@@ -17,4 +17,6 @@ export interface ResolvedMapGenParams {
   readonly biome: BiomeDefinition;
   readonly settlement: SettlementDefinition;
   readonly hooks: readonly HookRequirement[];
+  /** Natural-edge slope share, 0–1, defaulted (#799). */
+  readonly slopeShare: number;
 }

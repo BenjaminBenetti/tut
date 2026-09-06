@@ -64,6 +64,13 @@ export interface MapGenParams {
   readonly size: MapSize;
   /** From the mission type definition. */
   readonly hooks: readonly HookRequirement[];
+  /**
+   * Share of natural terrain edges that become walkable slopes rather
+   * than cliffs, 0–1 (#799). Decided per connected run of edge tiles so a
+   * corner is never left without its straights. Defaults to 1: every
+   * natural edge is a hillside. Man-made edges are never slopes.
+   */
+  readonly slopeShare?: number;
 }
 
 /**

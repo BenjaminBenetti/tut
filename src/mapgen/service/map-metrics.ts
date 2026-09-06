@@ -6,6 +6,7 @@ import { PassMask } from "../model/pass-mask";
 import type { TacticalMap } from "../model/tactical-map";
 import type { Tile } from "../model/tile";
 import { hatchSpace } from "./hatch-space";
+import { oppositeDirection, stepGridPos } from "../../core/service/grid-math";
 import { ReachabilityService } from "./reachability-service";
 import { TileIndex } from "./tile-index";
 
@@ -73,6 +74,7 @@ export function computeMapMetrics(map: TacticalMap): MapMetrics {
     map.connectors.filter((c) => c.kind === kind).length;
 
   const reach = new ReachabilityService(index, map.connectors);
+  const slopes = slopeMetrics(map, index);
   const spaces: number[] = [];
   for (const objective of map.hooks.objectives) {
     const origin = objective.tiles[0];
@@ -98,6 +100,8 @@ export function computeMapMetrics(map: TacticalMap): MapMetrics {
     highCoverPer100: 100 * ratio(high, groundTiles),
     lowCoverPer100: 100 * ratio(low, groundTiles),
     interiorPropsPerBuilding: ratio(interiorProps, map.buildings.length),
+    slopes: slopes.slopes,
+    slopeShare: slopes.share,
     ramps: count("ramp"),
     stairs: count("stairs"),
     ladders: count("ladder"),
@@ -162,4 +166,53 @@ function closedSidesOf(index: TileIndex, tile: Tile): number {
 /** `numerator / denominator`, or 0 when the denominator is 0. */
 function ratio(numerator: number, denominator: number): number {
   return denominator === 0 ? 0 : numerator / denominator;
+}
+
+// ===========================================
+// Slopes (#799)
+// ===========================================
+
+/**
+ * Counts slope pieces against every natural edge tile: a ground tile with
+ * a ground neighbour exactly one level up, no wall between them, and no
+ * building within one tile of either. That is what the slope pass slopes
+ * when the knob is at 1, so the share reads the knob back.
+ */
+function slopeMetrics(
+  map: TacticalMap,
+  index: TileIndex,
+): { slopes: number; share: number } {
+  const nearBuilding = new Set<string>();
+  for (const b of map.buildings) {
+    const fp = b.footprint[0];
+    if (fp === undefined) continue;
+    for (let z = fp.z - 1; z <= fp.z + fp.d; z++) {
+      for (let x = fp.x - 1; x <= fp.x + fp.w; x++)
+        nearBuilding.add(`${String(x)},${String(z)}`);
+    }
+  }
+  let slopes = 0;
+  let naturalEdges = 0;
+  for (const tile of map.tiles) {
+    if (tile.buildingId !== undefined) continue;
+    if (tile.slope !== undefined) {
+      slopes++;
+      naturalEdges++;
+      continue;
+    }
+    if (nearBuilding.has(`${String(tile.x)},${String(tile.z)}`)) continue;
+    const isEdge = DIRECTIONS.some((side) => {
+      if (tile.walls[side] !== undefined) return false;
+      const step = stepGridPos(tile, side);
+      const up = index.get(step.x, tile.y + 1, step.z);
+      return (
+        up !== undefined &&
+        up.buildingId === undefined &&
+        up.walls[oppositeDirection(side)] === undefined &&
+        !nearBuilding.has(`${String(up.x)},${String(up.z)}`)
+      );
+    });
+    if (isEdge) naturalEdges++;
+  }
+  return { slopes, share: naturalEdges === 0 ? 1 : slopes / naturalEdges };
 }

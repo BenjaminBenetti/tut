@@ -12,6 +12,7 @@ import type { Prop, PropKindId, Rotation } from "./prop";
 import type { RoadSegment } from "./road";
 import type { SurfaceId } from "./surface";
 import type { TileCoord } from "./tile-coord";
+import type { Slope } from "./slope";
 import type { WallKind, WallSet } from "./wall";
 
 // ===========================================
@@ -92,6 +93,10 @@ export class MapDraft {
   };
 
   private readonly groundLevel: Int8Array;
+  /** The level the terrain pass gave each column, before anything graded it (#799). */
+  private readonly naturalLevel: Int8Array;
+  /** Slope pieces by column key; only ground tiles carry one (#799). */
+  private readonly slopes = new Map<number, Slope>();
   private readonly groundSurface: SurfaceId[];
   private readonly roadMask: Uint8Array;
   private readonly coveredMask: Uint8Array;
@@ -117,6 +122,7 @@ export class MapDraft {
     this.ids = ids;
     const columns = width * depth;
     this.groundLevel = new Int8Array(columns);
+    this.naturalLevel = new Int8Array(columns).fill(-1);
     this.groundSurface = new Array<SurfaceId>(columns).fill(defaultSurface);
     this.roadMask = new Uint8Array(columns);
     this.coveredMask = new Uint8Array(columns);
@@ -142,6 +148,36 @@ export class MapDraft {
   }
 
   /** Ground surface of the column. Throws off-map. */
+  /**
+   * The level the terrain pass set, or -1 if it never did. A column whose
+   * current level differs was graded, lifted or dug by a later pass, and
+   * an edge touching it is man-made (#799).
+   */
+  naturalLevelAt(x: number, z: number): number {
+    return this.naturalLevel[this.columnIndex(x, z)] ?? -1;
+  }
+
+  /** Records the terrain pass's level for a column. */
+  setNaturalLevel(x: number, z: number, level: number): void {
+    this.naturalLevel[this.columnIndex(x, z)] = level;
+  }
+
+  /** The slope piece on a ground column, if any (#799). */
+  slopeAt(x: number, z: number): Slope | undefined {
+    return this.slopes.get(this.columnIndex(x, z));
+  }
+
+  /** Marks a ground column as a slope piece, or clears it. */
+  setSlope(x: number, z: number, slope: Slope | undefined): void {
+    const key = this.columnIndex(x, z);
+    if (slope === undefined) {
+      this.slopes.delete(key);
+    } else {
+      this.slopes.set(key, slope);
+    }
+  }
+
+  /** The surface of a ground column. */
   groundSurfaceAt(x: number, z: number): SurfaceId {
     return this.groundSurface[this.columnIndex(x, z)] ?? "";
   }

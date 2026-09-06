@@ -77,6 +77,9 @@ export class TerrainPass implements GenerationPass {
           Math.floor(stretch(h) * (terrain.amplitudeLevels + 1)),
         );
         draft.setGroundLevel(x, z, level);
+        // Remembered so a later pass can tell a natural step from a graded
+        // one; only natural steps become slopes (#799).
+        draft.setNaturalLevel(x, z, level);
         highest = Math.max(highest, level);
 
         const p = patchNoise.fbm(

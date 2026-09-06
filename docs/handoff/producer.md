@@ -3,33 +3,33 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-06 06:53 UTC)
+## Status Digest (2026-09-06 07:09 UTC)
 
-**Production ON HOLD** by the Executive Director (#748); he is tuning map generation personally in Map Lab. No resume ordered. No M3 decomposition, new seat assignments without the Director's request, or Ready queue growth. **v0.2.8** is tagged from main.
+**Production ON HOLD** (#748). The Executive Director tunes Map Lab; only his named exceptions proceed. No M3 decomposition or Ready growth beyond those exceptions. **v0.2.8** is tagged; general production has not resumed.
 
-**Producer:** Codex, Astra 6, effort high. Executive Director standing rule via the Director (2026-09-06): after grooming, arm **one bounded background watch**; poll GitHub every 5 minutes, print one line and exit on the first merged PR, new issue, seat-label change, or comment addressed to the Producer. Groom the event, then re-arm. Hard stop after 3 hours without an event: report timeout in one line and stop. Never a cron or concurrent watcher. This supersedes PR #803's Director-prompt-only cadence; merged #820 now records the bounded watch in the process docs.
+**Producer:** Codex, Astra 6 / high. Standing rule (#820): one background watcher, GitHub every 5 minutes, exit on first merged PR/new issue/seat-label change/Producer comment; groom and re-arm. Hard timeout after 3 hours, report once and stop. No cron or concurrent watcher.
 
 | Engineer seat | Runtime / effort | Tier | Assignment |
 |---|---|---|---|
-| eng-3 | Codex, Astra 6 / xhigh | high only | Idle — #807 Done; #810/#812/#815 merged |
-| eng-4 | Claude Opus 5 / max | low / medium only | #828 camera zoom — In Progress |
+| eng-3 | Codex, Astra 6 / xhigh | high only | Idle; #807 Done |
+| eng-4 | Claude Opus 5 / max | low / medium only | Idle; #828 Done via #835 |
 | eng-5 | Claude Opus 5 / max | low / medium only | Idle |
 
-**Milestones** (closed / total issues, API snapshot at 04:09 UTC): M0 14/14 · M1 64/64 · M1.5 33/34 · M2 48/50 · M2.5 25/27 · M3 1/2 (held). These counts do not declare milestone completion.
+**Milestones** (closed / total, 04:09 UTC API snapshot): M0 14/14 · M1 64/64 · M1.5 33/34 · M2 48/50 · M2.5 25/27 · M3 1/2 (held). Counts do not declare milestone completion.
 
-**Completed / board:** #807/#808/#809 and #817 are **Done**; #822 merged and **v0.2.8** is tagged at `66548ed`. Half-height terrain, the real slope kit and ramp-gap fix are delivered. Tech Lead handoff #824 and Producer handoff #825 merged; this pass opens a fresh handoff PR.
+**Completed / board:** half-height engine, generator, real slope kit and ramp-gap fix (#807/#808/#809/#817) Done. **#828/#835 camera zoom Done**; both screens frame the map and zoom in to a readable squad. Producer handoff #834 merged and Done.
 
-**Live exception (#826):** parent **In Progress** (Producer tracks). ADR 0009 (#827) is signed off and merged. **#828 camera zoom is In Progress on `seat:eng-4`**, `complexity:medium`, and lands first. **#829 generation is In Progress with MapGen**, `complexity:high`, no seat label; the Director's sign-off allows both children to start after v0.2.8, but #829 lands after #828 so the generation frames are judgeable. Scale factors belong to MapGen; “double” is an illustration, not a fixed requirement. Elevation and balance retuning remain out of scope. Art child only if MapGen identifies a kit limitation.
+**Scale exception (#826):** In Progress; ADR 0009 (#827) merged. **#829 In Progress with MapGen**, no engineer seat label. Its camera landing dependency is satisfied by #835. MapGen chooses the factors and larger structures; “double” is illustrative. Elevation and balance retuning stay out of scope. Art child only if the chosen geometry needs one.
 
-**Open PRs** (06:51 UTC watch snapshot): #834 this Producer handoff. **#757 mech-bay preview / #694 are In Review**, unparked on the Director's instruction: Tech Lead approved content and is gating the merge result; Director frame judgment is still required. Existing Art Director ownership retained. Only if the gate requires an author update does the Producer route that push. #827/#830/#831/#832/#833 are merged and Done on the board.
+**Ramp audit (#813):** p1, **In Progress with QA**. Commit a catalogue of failing slope neighbourhoods across seeds/biomes/settlements before art or MapGen fix design. Runs alongside #826; rerun after #829 changes scale.
 
-**Ramp audit exception (#813):** Executive Director now calls all jagged/unfilled ramp transitions a **p1 defect**. **In Progress, Owner QA**: enumerate and render distinct neighbourhood configurations across seeds, biomes and settlements, committing a catalogue of failures before designing fixes. Art Director/MapGen fixes are scoped from that catalogue; no engineer seat label. Runs alongside #826; QA must rerun at the new scale after #829.
+**In review / open PRs** (07:06 UTC watch): #836 Tech Lead handoff, newly opened; **#757/#694 mech-bay preview**, unparked by Director, content approved, awaiting Tech Lead merge gate and Director frame judgment. Existing Art Director ownership retained; route an author update only if the gate requires one. This pass opens the successor to #834.
 
-**Blocked / parked:** #829 lands after #828. Fix design for #813 waits on QA's catalogue. General production and M3 remain held; #787 parked; #793 remains p3. eng-3/eng-5 idle.
+**Blocked / parked:** #813 fix design waits for QA's catalogue. M3 and general production held; #787 parked; #793 p3. Ready-high audit at 07:08 UTC found only held M3 #447; all three engineer seats have no open assignment.
 
-**Risks:** camera must frame the larger maps before generation acceptance. MapGen must report largest-settlement generation/frame budgets and chosen scale factors; do not hide costs by capping size. Simulation results can move with the new footprint; report them without balance retuning. Autofill's relaxed tiers remain obsolete; do not run it. The empty release allowlist stays in place.
+**Risks:** #829 must recheck largest-map framing at 1280×720, including relief; revisit the camera's six-pixel zoom floor if needed. Report generation/frame budgets and changed simulation results without quiet caps or balance retuning. Inherited autofill permits the wrong tiers: do not run it; the empty release allowlist stays in place.
 
-**Routing / next event:** eng-4 owns #828 and MapGen owns #829; eng-3/eng-5 idle. A Ready, unowned `complexity:high` engineer issue within an Executive Director exception goes to free `seat:eng-3` without another Director prompt. Keep strict tiers, one open issue per seat, specialist ownership, and the hold: no M3 decomposition or Ready queue growth beyond Executive Director exceptions. Groom relevant watch events and re-arm once.
+**Next routing:** a Ready, unowned high-complexity engineer issue within an Executive Director exception goes to free eng-3; low/medium stay on Opus. Preserve specialist ownership and one open issue per seat. Record the exception and cleared prerequisites before labeling. Groom the next event, then re-arm one watch.
 <!-- digest:end -->
 
 

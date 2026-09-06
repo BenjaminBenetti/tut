@@ -66,20 +66,18 @@ const MIN_APPROACH_COLUMNS = 3;
 // ===========================================
 
 /**
- * Raises outdoor structures on a graded plat so a mech has height to hold
- * (#512). City plats are flat by construction (#206) and mechs cannot
- * enter buildings or stand on roofs, so before this pass the only
- * elevation on a city map was indoors and the mech's fire-support role
- * (GDD §6.1) had nowhere to stand.
+ * Plans artificial features on free ground, then realises only the
+ * placements allowed by each family's cap. #910 and #936 cap all shipped
+ * plinths at zero; their plots retain the pre-feature height and surface.
  *
  * ```
  *   ═══════════  street stays where it is
- *   ░░▓▓▓▓▓░░░░  a plaza one level up, inside the block
- *   ░░▓▓▓▓▓░░██  ██ lot, untouched: buildings keep flat ground
+ *   ░░░░░░░░░░░  a withdrawn proposal remains at ground grade
+ *   ░░░░░░░░░██  ██ lot, untouched: buildings keep flat ground
  *   ═══════════
  * ```
  *
- * Each feature is exactly `FEATURE_HEIGHT` above its surroundings, which
+ * Each realised feature is exactly `FEATURE_HEIGHT` above its surroundings, which
  * is what makes it reachable: the ramp pass joins one-level steps and
  * skips cliffs, so both classes walk up and neither needs a stair. Runs
  * after lots and before buildings, and never touches a road, a sidewalk,
@@ -106,7 +104,7 @@ export class ElevationPass implements GenerationPass {
     // raised tile as solid ground, so a lifted carriageway is a road on a
     // column with a lower road dying into its face where they cross; a
     // real overpass needs a passable underside and is M3's if it is
-    // anyone's. Terraces stay: a plaza with a retaining wall is a thing.
+    // anyone's. The remaining families obey their realisation caps below.
     const eligible = registries.elevatedFeatures.values.filter(
       (feature) =>
         feature.scales.includes(settlement.id) &&
@@ -142,8 +140,8 @@ export class ElevationPass implements GenerationPass {
         rememberGround(draft, rect, feature, openGround);
       }
       // Plan every proposal on the same occupied grid, including ones
-      // that will remain open. Otherwise removing a paved family moves
-      // the planted beds or fills its old plots with more raised ground.
+      // that will remain open. Otherwise withdrawing a family moves
+      // other proposals or fills its old plots with more raised ground.
       const area = raise(draft, rect, feature, free, raised);
       sums = freeSums(draft, free);
       if (omit) {

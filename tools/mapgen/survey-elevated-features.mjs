@@ -3,6 +3,12 @@ import { writeFileSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 const output = process.argv[2] ?? ".git/mapgen-910/survey.jsonl";
 const uncapped = process.argv.includes("--uncapped");
+const restored = new Set(
+  (process.argv.find((arg) => arg.startsWith("--restore=")) ?? "--restore=")
+    .slice("--restore=".length)
+    .split(",")
+    .filter(Boolean),
+);
 const server = await createServer({
   server: { middlewareMode: true },
   appType: "custom",
@@ -48,12 +54,15 @@ try {
             slopeShare: 1,
           };
           const registries = createDefaultRegistries();
-          if (uncapped)
+          if (uncapped || restored.size > 0)
             registries.elevatedFeatures = createRegistry(
               "elevated feature",
               registries.elevatedFeatures.values.map((f) => ({
                 ...f,
-                maxPerMap: Number.MAX_SAFE_INTEGER,
+                maxPerMap:
+                  uncapped || restored.has(f.id)
+                    ? Number.MAX_SAFE_INTEGER
+                    : f.maxPerMap,
               })),
             );
           const features = [];

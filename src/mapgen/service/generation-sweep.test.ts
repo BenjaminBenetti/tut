@@ -42,14 +42,16 @@ const SEEDS_PER_COMBO = 6;
  * that speed. Thirty seconds was written when the sweep was smaller and
  * stopped being enough — it timed out on CI (#671) with no cost
  * regression behind it, measured at 12 s on the branch against 12 s on
- * `main`.
+ * `main`. At the ADR 0009 scale (#829: ×2.25 area, wide roads, bigger
+ * interiors) the same 216 maps take ~55 s on a loaded box, so the budget
+ * doubled again to 120 s.
  *
  * The budget moves rather than the coverage: `generations` is asserted
  * at 200 or more precisely so nobody buys time by quietly sweeping
  * fewer maps, and that guard is right. What catches a generator that
  * has become slower is the wide sweep's runtime, not this number.
  */
-const SWEEP_TIMEOUT_MS = 60_000;
+const SWEEP_TIMEOUT_MS = 120_000;
 
 function recipe(
   seed: string,

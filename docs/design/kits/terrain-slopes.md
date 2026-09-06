@@ -125,7 +125,7 @@ is scene-owned and disposed; atlas and mist materials stay shared.
 [Before/after controls and exact neighbourhoods](../diagnostics/848/README.md)
 include all four filed chains, QA's new four-chain, the isolated S2 control
 and #849's three-high slot. #849 is **not covered** by a monotone diagonal
-plane: it still requires its own geometry decision. No second piece is cut.
+plane. The separately authorised three-sided piece below addresses that case.
 
 The diagonal geometry tests load the shipped GLBs through `TacticalMapView`:
 2/3/4-step chains × all four rotations, 16 interior samples per diagonal,
@@ -137,9 +137,57 @@ contract. A pure neighbourhood test also checks every incident vertex, the
 rescaled four-chain and the isolated/walled controls. Mist sharing across
 levels is asserted against the final instanced meshes.
 
+## Three-sided gully (#849)
+
+![Concave end and fitted mouth in grass and snow](three-sided-slopes-composite.png)
+
+`tile.slope.three-sided` is a fifth neutral Blender mesh: **14 triangles,
+2,252 bytes**, watertight, the same 1 × 1 base-centred footprint and shared
+`RISE = 0.75`. In glTF footprint coordinates `u=x+0.5, v=z+0.5`, its top is
+`RISE × max(abs(2u−1), v)`. Three planar faces meet a low midpoint on the
+north opening; west, east and south meet the high terrace. It borrows the
+selected ground atlas and the adjoining terrace's side material, like the
+existing kit. No new terrain texture or rise parameter is introduced.
+
+The mouth tile uses two half-width instances of the existing outer-corner
+mesh, with a low centreline and top `RISE × min(abs(2u−1), v)`. This joins
+the pocket's V edge to the low flat exit and both existing inner flanks.
+The left mesh rotates inside its scaled parent so the half-tile footprint
+is preserved. Each half owns geometry; both borrow materials. The scene
+caches pocket and mouth prototypes by surface, independently of elevation
+and rotation, and shares their mist materials across batches.
+
+`resolveThreeSidedSlopeAppearances` selects the pocket and mouth together
+only when their entire unchanged outer perimeter matches. Opening turns
+N/E/S/W are 0/1/2/3 directly; the old corner quarter-turn correction remains
+as before. Walls, connectors, props on either replacement, conflicting
+fitted geometry, cliffs, and unmatched exits keep their existing surface.
+The mouth flanks must already be selected slopes, so it honours slope
+selection; zero slope share yields no replacements. Opposite-high channels
+without a three-sided end and four-high pits are outside this shape.
+Map heights, `Tile.slope`, traversal, walls and connectors remain unchanged.
+
+The real J3 exhibit is repaired at `(10,3,29)` plus opening `(11,3,29)`.
+The 108-map QA matrix contains 495 unmarked natural three-high tiles and
+27 four-high tiles. This bounded fit places **173 ends plus 173 mouths**
+across all four biomes; it does not claim to fill the entire 522-tile bucket.
+[Initial comparison, repair crop, neighbourhood and sweep](../diagnostics/849/README.md).
+
+The geometry regression loads the actual GLBs through `TacticalMapView`
+in all four turns, in grass and snow. It samples both piece interiors,
+every neighbourhood border, and the shared mouth midpoint; the new join
+is within 0.0001 u. Untouched flat slabs retain their inherited 0.025 u lip.
+Separate checks cover protected boundaries, the exact generated J3,
+immutable map data and mist material sharing across elevation batches.
+
+```bash
+CAPTURE=1 pnpm exec playwright test e2e/three-sided-slope-screenshot.spec.ts
+CAPTURE_BASE_URL=http://localhost:4173 node tools/art/preview/capture-three-sided-controls.mjs after
+```
+
 ## Review and reproduce
 
-The twelve neutral renders show the geometry independently of material choice:
+The fifteen neutral renders show the geometry independently of material choice:
 
 | Shape | 45° | 135° | 225° |
 | --- | --- | --- | --- |
@@ -147,9 +195,10 @@ The twelve neutral renders show the geometry independently of material choice:
 | Inner | [view](../renders/tile.slope.inner_045.png) | [view](../renders/tile.slope.inner_135.png) | [view](../renders/tile.slope.inner_225.png) |
 | Outer | [view](../renders/tile.slope.outer_045.png) | [view](../renders/tile.slope.outer_135.png) | [view](../renders/tile.slope.outer_225.png) |
 | Diagonal | [view](../renders/tile.slope.diagonal_045.png) | [view](../renders/tile.slope.diagonal_135.png) | [view](../renders/tile.slope.diagonal_225.png) |
+| Three-sided | [view](../renders/tile.slope.three-sided_045.png) | [view](../renders/tile.slope.three-sided_135.png) | [view](../renders/tile.slope.three-sided_225.png) |
 
 ```bash
-for shape in straight inner outer diagonal; do
+for shape in straight inner outer diagonal three-sided; do
   blender -b --python-exit-code 1 --python tools/art/make_model.py -- \
     --script tools/art/models/terrain-slope-$shape.py --id tile.slope.$shape \
     --category tiles --file terrain-slope-$shape.glb --quality final \

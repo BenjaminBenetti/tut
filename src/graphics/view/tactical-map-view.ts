@@ -555,16 +555,20 @@ export class TacticalMapView implements Disposable, TilePicker {
         sides,
       );
       prototype =
-        appearance.kind === "diagonal"
-          ? await new TerrainSlopeModelFactory(models).create(
-              "diagonal",
-              materials,
-            )
-          : await new TerrainTransitionModelFactory(models).create(
+        appearance.kind === "transition"
+          ? await new TerrainTransitionModelFactory(models).create(
               appearance.corners,
               materials,
               appearance.diagonal,
-            );
+            )
+          : appearance.kind === "three-sided-mouth"
+            ? await new TerrainSlopeModelFactory(models).createThreeSidedMouth(
+                materials,
+              )
+            : await new TerrainSlopeModelFactory(models).create(
+                appearance.kind,
+                materials,
+              );
       prototype.traverse((object) => {
         if (object instanceof Mesh)
           this.disposables.push((object as Mesh).geometry);

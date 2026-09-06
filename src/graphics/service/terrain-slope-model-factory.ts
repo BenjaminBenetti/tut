@@ -1,7 +1,11 @@
 import { BufferGeometry, Float32BufferAttribute, Group, Mesh } from "three";
 import type { Material, Object3D } from "three";
 
-import { DIAGONAL_SLOPE_MODEL, SLOPE_MODELS } from "../data/map-model-table";
+import {
+  DIAGONAL_SLOPE_MODEL,
+  THREE_SIDED_SLOPE_MODEL,
+  SLOPE_MODELS,
+} from "../data/map-model-table";
 import type { ModelLoader } from "../model/model-loader";
 
 // ===========================================
@@ -92,11 +96,15 @@ export class TerrainSlopeModelFactory {
 
   /** Builds a base-centred slope; rotate around Y and place at the low tile's surface plane. */
   async create(
-    kind: keyof typeof SLOPE_MODELS | "diagonal",
+    kind: keyof typeof SLOPE_MODELS | "diagonal" | "three-sided",
     materials: SlopeMaterials,
   ): Promise<Group> {
     const prototype = await this.models.load(
-      kind === "diagonal" ? DIAGONAL_SLOPE_MODEL : SLOPE_MODELS[kind],
+      kind === "diagonal"
+        ? DIAGONAL_SLOPE_MODEL
+        : kind === "three-sided"
+          ? THREE_SIDED_SLOPE_MODEL
+          : SLOPE_MODELS[kind],
     );
     const result = new Group();
     result.name = `terrain-slope-${kind}`;
@@ -150,6 +158,27 @@ export class TerrainSlopeModelFactory {
       }
       source.dispose();
     });
+    return result;
+  }
+
+  /**
+   * Opens the pocket into flat ground using two existing outer-corner halves.
+   * Scale in the parent after rotating the left half: both footprints remain
+   * half a tile wide, with a shared low centreline and a V at the south edge.
+   * Each half owns geometry, while both borrow the same surface/side materials.
+   */
+  async createThreeSidedMouth(materials: SlopeMaterials): Promise<Group> {
+    const result = new Group();
+    result.name = "terrain-slope-three-sided-mouth";
+    for (const side of [-1, 1]) {
+      const half = new Group();
+      half.scale.x = 0.5;
+      half.position.x = side * 0.25;
+      const outer = await this.create("outer", materials);
+      if (side < 0) outer.rotation.y = -Math.PI / 2;
+      half.add(outer);
+      result.add(half);
+    }
     return result;
   }
 }

@@ -1,0 +1,19 @@
+[
+  {
+    "id": "three-high-j3",
+    "seed": "hills-1",
+    "biome": "snowy",
+    "settlement": "rural",
+    "size": "medium",
+    "tile": {
+      "x": 10,
+      "y": 3,
+      "z": 29
+    },
+    "pitch": 139.99999992619155,
+    "pixel": {
+      "x": 942.559507467888,
+      "y": 476.5655493173052
+    }
+  }
+]

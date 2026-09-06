@@ -1,4 +1,4 @@
-"""Four neutral, watertight terrain shapes; materials are chosen by the consumer.
+"""Five neutral, watertight terrain shapes; materials are chosen by the consumer.
 
 Blender Z-up, high edge towards -Y (glTF +Z), base-centred 1 x 1 footprint.
 All top UVs use footprint projection so corners continue adjacent wedges.
@@ -7,12 +7,15 @@ All top UVs use footprint projection so corners continue adjacent wedges.
 import bpy
 from bpy_kit import material
 
-# One elevation layer under ADR 0008; re-emit all four shapes from this parameter.
+# One elevation layer under ADR 0008; re-emit all five shapes from this parameter.
 RISE = 0.75
 
 
 def build_slope(kind: str) -> None:
-    """Build a straight, concave max(x,z), or convex min(x,z) height field."""
+    """Build one of the parameterised terrain height fields."""
+    if kind == "three-sided":
+        build_three_sided()
+        return
     corners = [(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)]
     vertices = []
 
@@ -36,6 +39,41 @@ def build_slope(kind: str) -> None:
         face = tuple(dict.fromkeys((bottom[i], bottom[j], top[j], top[i])))
         if len(face) >= 3:
             faces.append(face)
+    finish_mesh(kind, vertices, faces)
+
+
+def build_three_sided() -> None:
+    """Three high sides around a low mouth: max(abs(2*u-1), v)."""
+    # Counter-clockwise boundary in Blender XY. The extra point is the
+    # low midpoint of the mouth (+Y here, -Z after the glTF conversion).
+    boundary = [(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (0.0, 0.5), (-0.5, 0.5)]
+    vertices = [(x, y, 0.0) for x, y in boundary]
+    bottom = list(range(5))
+    top = []
+    for i, (x, y) in enumerate(boundary):
+        if i == 3:
+            top.append(bottom[i])
+        else:
+            top.append(len(vertices))
+            vertices.append((x, y, RISE))
+    faces = [
+        (top[0], top[1], top[3]),
+        (top[1], top[2], top[3]),
+        (top[3], top[4], top[0]),
+        (bottom[0], bottom[2], bottom[1]),
+        (bottom[0], bottom[3], bottom[2]),
+        (bottom[0], bottom[4], bottom[3]),
+    ]
+    for i in range(5):
+        j = (i + 1) % 5
+        face = tuple(dict.fromkeys((bottom[i], bottom[j], top[j], top[i])))
+        if len(face) >= 3:
+            faces.append(face)
+    finish_mesh("three-sided", vertices, faces)
+
+
+def finish_mesh(kind, vertices, faces) -> None:
+    """Apply the shared neutral material, flat normals and projected atlas UVs."""
     mesh = bpy.data.meshes.new("terrain-slope-" + kind)
     mesh.from_pydata(vertices, [], faces)
     mesh.update()

@@ -3,7 +3,7 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-06 07:17 UTC)
+## Status Digest (2026-09-06 07:33 UTC)
 
 **Production ON HOLD** (#748). The Executive Director tunes Map Lab; only his named exceptions proceed. No M3 decomposition or Ready growth beyond those exceptions. **v0.2.8** is tagged; general production has not resumed.
 
@@ -17,17 +17,19 @@
 
 **Milestones** (closed / total, 04:09 UTC API snapshot): M0 14/14 · M1 64/64 · M1.5 33/34 · M2 48/50 · M2.5 25/27 · M3 1/2 (held). Counts do not declare milestone completion.
 
-**Completed / board:** half-height engine, generator, real slope kit and ramp-gap fix (#807/#808/#809/#817) Done. **#828/#835 camera zoom Done**; both screens frame the map and zoom in to a readable squad. Producer handoff #834 merged and Done.
+**Completed / board:** half-height engine, generator, real slope kit and ramp-gap fix (#807/#808/#809/#817) Done. **#828/#835 camera zoom Done**; both screens frame the map and zoom in to a readable squad. Producer handoff #837 merged and Done; this pass opens its successor.
 
-**Scale exception (#826):** In Progress; ADR 0009 (#827) merged. **#829 In Progress with MapGen**, no engineer seat label. Its camera landing dependency is satisfied by #835. MapGen chooses the factors and larger structures; “double” is illustrative. Elevation and balance retuning stay out of scope. Art child only if the chosen geometry needs one.
+**Scale exception (#826):** parent In Progress; ADR 0009 merged and camera prerequisite #835 satisfied. **#829 / PR #838 Blocked, MapGen-owned**: Tech Lead approved content but needs Director rulings on `WALKOVER_FLOOR` 24→23, an issue-linked lurker-test skip/follow-up, and `maxNearestDistanceFromDeploy = 30`, then commits, green CI, merge-result gate and frame judgment. The AI follow-up is proposed, not yet filed or seatable.
 
-**Ramp audit (#813):** p1, **In Progress with QA**. Commit a catalogue of failing slope neighbourhoods across seeds/biomes/settlements before art or MapGen fix design. Runs alongside #826; rerun after #829 changes scale.
+**Road-kit child #840:** **In Progress, Art Director**, in parallel with #838 rulings. MapGen identified the kit limitation that authorizes this child: lane-interior slab, kerb edge and centre-line pieces so wide avenues stop reading as parallel single-lane roads. No engineer seat label.
 
-**In review / open PRs** (07:16 UTC watch): #837 this Producer handoff; #836 Tech Lead handoff merged and Done; **#757/#694 mech-bay preview**, unparked by Director, content approved, awaiting Tech Lead merge gate and Director frame judgment. Existing Art Director ownership retained; route an author update only if the gate requires one. This pass opens the successor to #834.
+**Ramp audit #813 / PR #839:** **In Review, QA**; catalogue delivered. QA separates J1 consecutive diagonal corners (geometry), J2 unwalled lot/border exclusions (placement, largest area), and J3 three-sided shapes (needs judgment); narrow-channel battlements are not a missing-piece defect. Scope fixes from this catalogue and obtain Director frame judgment before merge; rerun the audit after #829 changes scale.
 
-**Blocked / parked:** #813 fix design waits for QA's catalogue. M3 and general production held; #787 parked; #793 p3. Ready-high audit at 07:08 UTC found only held M3 #447; all three engineer seats have no open assignment.
+**Other open PRs:** #757/#694 mech-bay preview remains In Review under the Director's exception, content approved, awaiting final merge/frame gates. Existing Art Director ownership retained; route an author update only if the gate requires one. This pass opens the successor to #837.
 
-**Risks:** #829 must recheck largest-map framing at 1280×720, including relief; revisit the camera's six-pixel zoom floor if needed. Report generation/frame budgets and changed simulation results without quiet caps or balance retuning. Inherited autofill permits the wrong tiers: do not run it; the empty release allowlist stays in place.
+**Blocked / parked:** #838's two failing test pins and three rulings; #813's fixes remain open, with J3 needing a judgment call. General production and M3 held; #787 parked; #793 p3. All engineer seats idle; the last Ready-high audit found only held M3 #447.
+
+**Risks:** do not merge red or silently skip a test to accommodate scale. Do not route the proposed high-complexity AI follow-up before it exists with scope, tier and cleared dependencies. #840 must integrate with #838's resolver; QA's ramp findings must be rechecked on the new scale. Inherited autofill still permits the wrong tiers; do not run it.
 
 **Next routing:** a Ready, unowned high-complexity engineer issue within an Executive Director exception goes to free eng-3; low/medium stay on Opus. Preserve specialist ownership and one open issue per seat. Record the exception and cleared prerequisites before labeling. Groom the next event, then re-arm one watch.
 <!-- digest:end -->

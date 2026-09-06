@@ -10,8 +10,9 @@ instructions make evidenced Critic tickets an ongoing exception. #906 is the
 sole active ticket; waterfront/platform taste questions stay held on #905.
 Director confirmed this seat owns #906 in comment 5561643308.
 
-Branch `fix/906-building-foundations`, base `3a9fc50`, model/code checkpoint
-`a76cb7b` pushed. The graphics diagnosis was posted **before modelling** in
+[PR #913](https://github.com/BenjaminBenetti/tut/pull/913), branch `fix/906-building-foundations`,
+base `3a9fc50`, model/code checkpoint `a76cb7b`, proof `5b957a2`. Main through
+`75c1068` merged normally as `e54bf46` (Critic evidence and handoffs only). The graphics diagnosis was posted **before modelling** in
 comment 5561572589: `buildTiles` drew ground pillars only without `buildingId`,
 so elevated floor-zero tiles had no visible solid support. MapGen independently
 agreed, checking all 669 footprint columns in both maps (5561657314): graded
@@ -38,11 +39,11 @@ west entrance, are byte-identical before/after; hashes are committed. All twelve
 comparison frames and the three model angles are rendered and inspected.
 
 Scratch `.git/art-906/`; task-owned Vite ports 4196 (current) / 4197 (baseline)
-use separate `.git/art-906/vite-cache-*` directories. Shared node_modules/.vite
+use separate `.git/art-906/vite-cache-*` directories and stop before review watch. Shared node_modules/.vite
 caches caused an early capture reload; isolated caches resolved it. Stop these
 servers before the watch. Director judges frames, Tech Lead alone merges,
 Map Critic re-checks the rendered improvement. Resume ONE bounded watch for
-#905/#906 and the PR when posted. No other production work is activated.
+#905/#906 and PR #913. No other production work is activated.
 
 ## Completed: #891 materialled ladders
 
@@ -169,8 +170,8 @@ was this handoff, resolved to retain both completed tasks. No runtime change
 relative to main. Resume ONE bounded watch for own PRs and standing art events.
 Tech Lead alone merges; no new production work without direction.
 
-#849 remains open because its broader 522-tile category was only partly
-covered: 173 ends plus 173 mouths fit the new shape, preserving four-high pits
+#849 is closed following the #902 board audit; its broader 522-tile category
+was only partly covered by design: 173 ends plus 173 mouths fit the new shape, preserving four-high pits
 and protected/unmatched boundaries. [Accepted proof and contract](../design/diagnostics/849/README.md).
 
 ## Completed: #848 diagonal slope kit, PR #862

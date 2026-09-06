@@ -7,6 +7,8 @@ Last updated: 2026-09-06 (#937 cutaway tuning in progress; #911 follows)
 Director promoted #937, the Executive Director's first tuning pass after seeing
 the working cutaway in v0.2.12. Branch `fix/937-cutaway-radius`, baseline
 `2878dfc`; main through `e014ab1` brought in by fast-forward (handoffs only).
+[PR #943](https://github.com/BenjaminBenetti/tut/pull/943) is open for Director
+frame judgment and Tech Lead review; code and complete proof are at `15c25c7`.
 
 **Recommendation implemented: radius 3**, up from 2. All other shader settings
 stay fixed: floor 0.35, soft edge 0.65 inward, fade 0.15 s, depth comparison,

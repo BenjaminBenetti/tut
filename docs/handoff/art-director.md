@@ -15,7 +15,8 @@ base `fe7872c`, model checkpoint `85ffe19`, proof `3a1dd8c`. Main through
 **PR #893 merged as `58e6c9e2e878ede3a63f3037d910a6b725ceb8e0` at 15:00 UTC.**
 The Director accepted the brick/two-layer and concrete/four-layer frames in
 comment 5560064900: open rungs, even spacing, finish choice, stand-offs and shadow
-all read correctly. He directed a patch release after merge; tagging is his action.
+all read correctly. The Director tagged **v0.2.11** on the same merge commit;
+the fetched annotated tag confirms the ladder kit is in that release.
 Tech Lead approved code and passed the independent full merge gate on `e06b994`
 in comment 5560024585, including regenerated fog hashes identical to main.
 CI was green. No blocking review change was requested.

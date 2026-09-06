@@ -27,6 +27,8 @@ def build_slope(kind: str) -> None:
     for x, y in corners:
         u, v = x + 0.5, 0.5 - y
         height = v if kind == "straight" else (max(u, v) if kind == "inner" else min(u, v))
+        if kind == "diagonal":
+            height = (u + v) / 2
         top.append(vertex((x, y, height * RISE)))
     faces = [(top[3], top[0], top[1]), (top[3], top[1], top[2]), tuple(reversed(bottom))]
     for i in range(4):

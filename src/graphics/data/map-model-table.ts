@@ -70,6 +70,10 @@ export const SLOPE_MODELS = {
   outer: "tile.slope.outer",
 } as const satisfies Record<string, ModelAssetId>;
 
+/** A planar diagonal rise; graphics selects it for aligned corner chains. */
+export const DIAGONAL_SLOPE_MODEL =
+  "tile.slope.diagonal" satisfies ModelAssetId;
+
 // ===========================================
 // Props
 // ===========================================

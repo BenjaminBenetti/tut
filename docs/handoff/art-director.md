@@ -1,58 +1,70 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-06 (#840 accepted; final integration in review)
+Last updated: 2026-09-06 (#840 complete; #848 in progress)
 
-## Current status: #840 is the release gate
+## Current status: #848 diagonal slope kit
 
-Review: [PR #850](https://github.com/BenjaminBenetti/tut/pull/850), branch
-`feat/840-carriageway-kit`. This seat is Codex Art Director, gpt-6-astra xhigh.
-The Director accepted the composite and large-city control in comment
-5558027018; the Tech Lead approved the content in comment 5558014418.
+The Director's next task is #848, after the road-art release gate. Branch
+`feat/848-diagonal-slope-kit`, based on main `148b179` (v0.2.9). This seat
+remains Codex Art Director, gpt-6-astra xhigh. #848 and #849 were read in
+full including QA's rescale update. The four-chain target is now
+`qa813-snowy-town-large-0`: `(23,2,91)` → `(26,5,88)`, all outer turn 2.
+The two original snowy three-chains still reproduce; the mixed-turn grass
+chain needs its actual high directions respected. Keep isolated corners.
 
-#838 is merged as `aa6eedf`. Main is merged into this art branch, with the
-large-city binary conflict resolved by regenerating it on the combined tree.
-Both seed-4242 fog frames and the live composite were also regenerated.
-All four frames were opened and inspected. The city scene is pixel-identical
-to the accepted integration control to the right of x=400; only panel timing
-text changes. The composite picks up #838's wide-pavement fitting. Fog now
-uses #838's larger generated map. The Director judges these integration
-frames before the Tech Lead's merge gate and the release tag.
+A candidate `tile.slope.diagonal` is emitted through the Blender loop:
+`RISE × (u + v) / 2`, same 1 × 1 base-centred contract and shared RISE 0.75.
+10 triangles, 1,932 bytes, watertight. All three angles were opened. The
+material factory can consume it, but scene placement and transitions are
+still in progress; do not claim the issue fixed from the standalone mesh.
 
-Four Blender modules are built, validated and manifest-registered: plain
-lane slab, straight kerb, corner kerb and centre-line slab. All twelve fixed
-angles were opened. [Contract and renders](../design/kits/carriageways.md).
-The consumer places one surface per tile, perimeter kerbs, one divider across
-the carriageway and at most one mark per junction. Trails stay unpainted;
-street/grid styles use asphalt. Prototype and mist materials stay shared.
+Important geometry check: the shipped first snowy three-chain's actual
+meshes already meet their four flanks within 0.000015 u in ray samples.
+The new plane raises its two side corners by half a rise, so a direct swap
+needs those shared vertices reconciled with adjacent tiles. Check the
+whole neighbourhood before committing a look. Scratch reports, scripts and
+current-map dumps live in `.git/art-848/`; before crops are being captured
+in `docs/design/diagnostics/848/before/` at 140 px/tile. Capture waits for
+rendered frames between camera inputs; short sleeps overshoot on SwiftShader.
 
-The merge replaces #838's two old-kit assertions with the same 8 × 8
-neighbourhoods checking one divider, plain interior and one central mark.
-Those cases also cover a short approach and a two-lane mouth on a four-lane
-avenue. Count road beyond the junction boundary to recognise an arm; a
-second minimum-length test would incorrectly discard short approaches.
+#849 remains a compatibility check, not a second speculative piece. Its
+three-high-side slot at hills-1 `(10,3,29)` is separate from a monotone
+diagonal rise. Prove/report whether the completed geometry covers it.
+#847 unwalled lot margins belongs to MapGen. N1 narrow channels are not a
+defect. QA's new-scale audit: 75,865 one-layer edges; 7,299 unwalled excluded
+steps; longest outer chain 4; J3 524 tiles (0.7%). Issue bodies have current
+coordinates; the original catalogue frames are older-scale illustrations.
 
-Typecheck, lint, 2,000 unit tests (one skipped), build and all three capture
-tests pass. `CI=1 pnpm test:e2e` passes all 59 browser tests (19 opt-in captures
-skipped), with zero flakes, in 2.5 minutes. The existing build
-chunk-size warning remains. Final integration is not yet merged.
+## Completed: #840 carriageways, PR #850
 
-QA's #813 catalogue arrived and merged in #839. It is read and six key
-crops were opened. The Director judged it in comment 5557976144 and QA split
-the work: **#848** diagonal chains belongs here **after #840**; **#847**
-unwalled lot margins belongs to MapGen; **#849** is a check against #848's
-piece, accepted for now. Do not cut a second piece speculatively. N1 narrow
-channels are not a defect. The audit will be rerun after #838's rescale.
+[PR #850](https://github.com/BenjaminBenetti/tut/pull/850) merged by the Tech
+Lead as `148b179daf65a5dd4b8e2b6098de5546ce95246f`. v0.2.9 is tagged. Director
+acceptance of the original composite/city: comment 5558027018; independent
+acceptance of the final merged-tree frames: 5558101389. Tech Lead's final
+gate and merge verdict: 5558143324. The road release gate is closed.
 
-#848 requires a diagonal-rise piece in the RISE 0.75 kit, three angles,
-a two-chain/three-chain composite and before/after controls for four chains.
-Keep isolated outer corners unchanged. Read #848/#849 in full before that
-work; their bodies are cached in the watch event. No ramp implementation
-has started: #840 still gates the release. QA corrected the exclusion
-count: 514 walled and 3,590 wall-less out of 4,104 excluded tiles (12.5%
-walled), not 514 of 3,590. Source: #813 comment 5557989577.
+Four Blender modules (plain interior, kerb, corner kerb, centre line), twelve
+angles, live trail/street/avenue composite, 96 × 96 large-city control and
+both seed-4242 fog frames are committed and inspected. Main from #838 was
+merged, its binary conflict resolved by regeneration, and the two old-kit
+assertions updated to the accepted carriageway fit. Count junction arms
+beyond the crossing boundary so short and unequal-width approaches work.
+[Contract, consumer, tests and renders](../design/kits/carriageways.md).
 
-#809 and #817 are complete; their evidence remains below. After publishing
-#840, address review on its branch and use the standing bounded watch.
+Local final validation: typecheck, lint, 2,000 unit tests (one skipped),
+build, three capture tests, CI-mode browser suite 59 pass / 19 captures
+skipped / zero flakes in 2.5 minutes. Tech Lead passed all seven merge-result
+checks including `test:sim`. The existing build chunk-size warning remains.
+
+## Standing event rule (latest Director direction)
+
+When otherwise waiting, run ONE bounded background watch: GitHub every five
+minutes; one line and exit at the first relevant event; hard stop at three
+hours. Watch Tech Lead comments/reviews/merges on own PRs; #817/#809 comments;
+new or relabelled area:art issues; and the current task/dependency comments
+(#813, #848/#849). Act and re-arm. Timeout with no event: one-line report and
+stop. Never cron, never two loops. Scratch watch: `.git/art-director-watch/`.
+Earlier pause-only directions below are historical.
 
 ## Completed: #809 half-rise slopes
 
@@ -100,17 +112,6 @@ the high sides, with regression coverage for both prop cases and the seed
 sweep. The Tech Lead closed #817 after #822 pinned the mapping side and
 the Director accepted the filled corners in hills-1. No rule fix was made
 by the Art Director.
-
-## Standing event rule (latest Director direction)
-
-When otherwise waiting for the Director, run ONE bounded background watch:
-GitHub every five minutes; print one line and exit on the first relevant
-change; hard stop after three hours. Relevant: Tech Lead comment, review or
-merge on any own PR; a new comment on #817 or #809; any new or relabelled
-area:art issue. Also watch #813 comments for the required QA catalogue.
-Act and re-arm. If no event before timeout, report one line
-and stop. Never a cron and never more than one watch. Earlier pause-only
-notes below are historical.
 
 ## Previous work: #798 / PR #811 (merged)
 

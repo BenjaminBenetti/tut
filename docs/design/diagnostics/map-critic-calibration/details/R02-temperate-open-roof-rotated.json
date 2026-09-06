@@ -1,0 +1,38 @@
+{
+  "id": "R02-temperate-open-roof-rotated",
+  "seed": "mc-opening-01",
+  "biome": "temperate",
+  "settlement": "rural",
+  "size": "small",
+  "tile": {
+    "x": 24,
+    "y": 4,
+    "z": 15
+  },
+  "pitch": 55,
+  "width": 1200,
+  "height": 950,
+  "units": 1,
+  "rotation": 1,
+  "actualPitch": 54.99999972138434,
+  "url": "http://localhost:4173/mapgen-preview.html?seed=mc-opening-01&biome=temperate&settlement=rural&size=small&models=1&units=1&slope=100",
+  "levels": {
+    "value": "6",
+    "max": "6"
+  },
+  "baseline": "f43f73c98525bb4fe7927670dce7b09d52321a77",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "pixel": {
+    "x": 1347.5735316379682,
+    "y": 728.0768914237449
+  },
+  "clip": {
+    "x": 748,
+    "y": 253,
+    "width": 1200,
+    "height": 950
+  }
+}

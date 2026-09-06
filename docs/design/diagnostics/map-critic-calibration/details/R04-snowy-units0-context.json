@@ -1,0 +1,34 @@
+{
+  "id": "R04-snowy-units0-context",
+  "seed": "mc-opening-01",
+  "biome": "snowy",
+  "settlement": "rural",
+  "size": "small",
+  "url": "http://localhost:4173/mapgen-preview.html?seed=mc-opening-01&biome=snowy&settlement=rural&size=small&models=1&units=0&slope=100",
+  "baseline": "f43f73c98525bb4fe7927670dce7b09d52321a77",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "clip": {
+    "x": 380,
+    "y": 0,
+    "width": 2020,
+    "height": 1500
+  },
+  "camera": "initial framing, no pan/zoom/rotation",
+  "mapBounds": {
+    "x": [
+      0,
+      47
+    ],
+    "z": [
+      0,
+      47
+    ]
+  },
+  "levels": {
+    "value": "8",
+    "max": "8"
+  }
+}

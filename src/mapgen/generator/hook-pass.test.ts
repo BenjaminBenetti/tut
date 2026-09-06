@@ -89,27 +89,40 @@ function violationsOf(map: TacticalMap, ids: readonly InvariantId[]): string[] {
 
 const SEEDS = 5;
 
+/**
+ * The 60-map placement matrix takes 5.5 s on an idle box; the runner is four
+ * to five times slower and shared, and it timed out at a literal 20 s on
+ * `main@055c1d5` (2026-09-06) with no regression behind it. `SEEDS` stays:
+ * the sibling tests make statistical claims on it. The budget follows
+ * `vitest.config.ts`: 20 s locally, the 120 s runner budget on CI (#856).
+ */
+const PLACEMENT_BUDGET_MS = process.env.CI === undefined ? 20_000 : 120_000;
+
 describe("HookPass", () => {
-  it("satisfies the recipe and places every hook on a legal tile (I6, I8)", () => {
-    let maps = 0;
-    let unreachable = 0;
-    for (const settlement of SETTLEMENT_SCALES) {
-      for (const biome of BIOME_IDS) {
-        for (let i = 0; i < SEEDS; i++) {
-          const label = `${settlement}/${biome}/${i}`;
-          const { map } = run(biome, settlement, `hooks-${i}`);
-          expect(
-            violationsOf(map, ["I1", "I2", "I3", "I4", "I5", "I6", "I8"]),
-            label,
-          ).toEqual([]);
-          maps++;
-          if (violationsOf(map, ["I7"]).length > 0) unreachable++;
+  it(
+    "satisfies the recipe and places every hook on a legal tile (I6, I8)",
+    () => {
+      let maps = 0;
+      let unreachable = 0;
+      for (const settlement of SETTLEMENT_SCALES) {
+        for (const biome of BIOME_IDS) {
+          for (let i = 0; i < SEEDS; i++) {
+            const label = `${settlement}/${biome}/${i}`;
+            const { map } = run(biome, settlement, `hooks-${i}`);
+            expect(
+              violationsOf(map, ["I1", "I2", "I3", "I4", "I5", "I6", "I8"]),
+              label,
+            ).toEqual([]);
+            maps++;
+            if (violationsOf(map, ["I7"]).length > 0) unreachable++;
+          }
         }
       }
-    }
-    // Placers prefer reachable tiles; the connectivity pass (#29) closes the gap.
-    expect(unreachable / maps).toBeLessThanOrEqual(0.15);
-  }, 20_000);
+      // Placers prefer reachable tiles; the connectivity pass (#29) closes the gap.
+      expect(unreachable / maps).toBeLessThanOrEqual(0.15);
+    },
+    PLACEMENT_BUDGET_MS,
+  );
 
   it("puts egg spawners indoors often, far from deploy and apart from each other", () => {
     let indoors = 0;

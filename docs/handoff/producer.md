@@ -7,7 +7,7 @@
 
 **Production ON HOLD** by the Executive Director (#748); he is tuning map generation personally in Map Lab. No resume ordered. No M3 decomposition, new seat assignments without the Director's request, or Ready queue growth. **v0.2.7** is tagged from main.
 
-**Producer:** now Codex, Astra 6, effort high. Finish the Director's prompted task, open the handoff PR, and end the turn. No monitors, polling, sleeps, crons, or scheduling. Staffing source: PR #803 (`docs/process/studio.md` staffing table).
+**Producer:** Codex, Astra 6, effort high. Executive Director standing rule via the Director (2026-09-06): after grooming, arm **one bounded background watch**; poll GitHub every 5 minutes, print one line and exit on the first merged PR, new issue, seat-label change, or comment addressed to the Producer. Groom the event, then re-arm. Hard stop after 3 hours without an event: report timeout in one line and stop. Never a cron or concurrent watcher. This supersedes PR #803's Director-prompt-only cadence.
 
 | Engineer seat | Runtime / effort | Tier | Assignment |
 |---|---|---|---|
@@ -27,8 +27,13 @@
 
 **Risks:** #817's cause is still to be diagnosed: Art Director owns mapping/rotation fixes; if classification is responsible, the exact neighbourhood goes to MapGen for #808 per the issue. Keep #809 behind that diagnosis and clearance. #813 is a separate unresolved diagonal-edge follow-up. Autofill still permits Opus high-tier work contrary to strict routing; do not run it. Historical monitor/seating instructions below remain obsolete; the empty release allowlist stays in place.
 
-**Next assignments:** none. All engineer seats idle; MapGen works #808 and the Art Director works #817. No new seating or Ready queue growth. Stop after opening this handoff PR; the Director prompts the next pass.
+**Routing / next event:** all engineer seats idle; MapGen works #808 and the Art Director works #817. A Ready, unowned `complexity:high` engineer issue within an Executive Director exception goes to free `seat:eng-3` without another Director prompt. Keep strict tiers, one open issue per seat, specialist ownership, and the hold: no M3 decomposition or Ready queue growth beyond Executive Director exceptions. Groom relevant watch events and re-arm once.
 <!-- digest:end -->
+
+
+## Current watch operation (2026-09-06)
+
+The session watcher is `.producer/watch.py` (git-ignored workspace scratch), running in a background terminal. It is read-only and uses a process lock to enforce one watcher. `watch-state.json` keeps the cursor and poll time across re-arms; `watch-result.json` caches the event payload for grooming. The four event classes and self-comment exclusion passed `--selftest`. It never assigns seats or runs the inherited autofill/groom scripts. On API errors it exits visibly rather than retrying rapidly. These session files are not guaranteed to survive a replacement checkout; reconstruct this bounded watch if absent, following the standing rule above. Keep tooling changes out of handoff PRs.
 
 
 > **Historical predecessor notes (2026-09-04–05).** Preserved for context only. The current Status Digest and the Director's instructions supersede all old assignments, tier rules, next steps, and directions to re-arm monitors or crons below. The digest was refreshed manually for this bounded Codex pass.

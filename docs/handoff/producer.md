@@ -3,7 +3,7 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-06 08:17 UTC)
+## Status Digest (2026-09-06 08:18 UTC)
 
 **Production ON HOLD** (#748). The Executive Director tunes Map Lab; only his named exceptions proceed. No M3 decomposition or Ready growth beyond those exceptions. **v0.2.8** is tagged; general production has not resumed.
 
@@ -25,11 +25,11 @@
 
 **Road-kit child #840:** **In Progress, Art Director**, in parallel with #838 gate fixes. MapGen identified the kit limitation that authorizes this child: lane-interior slab, kerb edge and centre-line pieces so wide avenues stop reading as parallel single-lane roads. No engineer seat label.
 
-**Ramp audit #813:** **In Review, QA**; catalogue **#839 merged / Done**, while the defect remains open for fix scope and judgment. QA separates J1 consecutive diagonal corners (geometry), J2 unwalled lot/border exclusions (placement, largest area), and J3 three-sided shapes (needs judgment); narrow-channel battlements are not a missing-piece defect. Scope fixes from this catalogue and obtain Director frame judgment before merge; rerun the audit after #829 changes scale.
+**Ramp defect #813:** **In Progress, QA filing children** from merged catalogue #839, per Director judgment 5557976144. QA files J1/J2/J3 with acceptance and coordinates, then parks. **#840 first, then J1 geometry (Art Director) and J2 placement (MapGen) in parallel**; no engineer seat labels. J1 needs a continuous diagonal plane at RISE 0.75 and two-/three-chain composites. J2 narrows exclusions to actual man-made edges and separates lot, border and inland cases. J3 accepted for now, reassess after J1 without speculative geometry. N1 narrow channels are not a defect. QA reruns the audit at the new scale after #838 merges; Director judges fix frames before merge.
 
 **Other open PRs:** #757/#694 mech-bay preview remains In Review under the Director's exception, content approved, awaiting final merge/frame gates. Existing Art Director ownership retained; route an author update only if the gate requires one. Tech Lead handoff #845 is In Review. Producer handoff #844 merged; this pass opens its successor.
 
-**Blocked / parked:** #838's generation-sweep timeout and three tactical e2e failures; #813's fix scope and J3 judgment; next release on road art #840. General production and M3 held; #787 parked; #793 p3. All engineer seats idle; the last Ready-high audit found only held M3 #447.
+**Blocked / parked:** #838's generation-sweep timeout and three tactical e2e failures; #813's J1/J2 fixes wait for #840, J3 reassessment for J1; next release on road art #840. General production and M3 held; #787 parked; #793 p3. All engineer seats idle; the last Ready-high audit found only held M3 #447.
 
 **Risks:** green CI and merge-result gates remain required. #843 is on main; #838 must keep its enabled lurker fixture and remove the temporary skip; scale's recorded walkover baseline shift is on #734, with balance retuning out of scope. #840 must integrate with #838's resolver; QA's ramp findings must be rechecked on the new scale. Inherited autofill still permits the wrong tiers; do not run it.
 

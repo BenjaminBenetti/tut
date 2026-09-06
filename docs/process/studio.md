@@ -24,7 +24,7 @@ Role briefs live in `docs/process/roles/`. Handoff notes live in `docs/handoff/`
 | Director | Claude Fable 5.1 | xhigh | managed directly by the Executive Director |
 | Tech Lead | Claude Fable 5.1 | high | |
 | Producer | Codex, Astra 6 | high | waits on one bounded watch loop (background terminal) |
-| MapGen | Claude Fable 5.1 | high | `area:mapgen` only, idles otherwise |
+| MapGen | Codex, Astra 6 | xhigh | `area:mapgen` only, idles otherwise |
 | Art Director | Codex, Astra 6 | xhigh | |
 | QA | Claude Opus 5 | max | |
 | eng-3 (the high seat) | Codex, Astra 6 | xhigh | `complexity:high` only |

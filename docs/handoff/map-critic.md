@@ -1,6 +1,6 @@
 # Handoff: Map Critic
 
-2026-09-06 — opening survey complete; assessment and sole action ticket filed.
+2026-09-06 — opening survey and single bounded watch complete.
 
 The Executive Director requested this first survey for calibration. Exactly
 one new actionable ticket is selected. The opening assessment is a separate
@@ -69,33 +69,38 @@ cover density. The prop-context concern is not a request for more cover.
 The final pre-filing issue search found no building-base-gap duplicate.
 Recent merged PRs since the survey baseline changed process/handoffs only.
 
-## Publication and watch
+## Publication and watch outcome
 
-- [Opening assessment #905](https://github.com/BenjaminBenetti/tut/issues/905) — one survey comment: [full assessment](https://github.com/BenjaminBenetti/tut/issues/905#issuecomment-5561538405).
-- [Sole action ticket #906](https://github.com/BenjaminBenetti/tut/issues/906) — `area:mapgen`, `area:art`, `type:bug`, `p1`, M1.5 Map Generation.
-- Two owned issues open at filing, below the hard cap of three.
+- [Opening assessment #905](https://github.com/BenjaminBenetti/tut/issues/905): [the one survey comment](https://github.com/BenjaminBenetti/tut/issues/905#issuecomment-5561538405).
+- [Sole action ticket #906](https://github.com/BenjaminBenetti/tut/issues/906): both areas, `type:bug`, `p1`, M1.5 Map Generation.
+- [Diagnostic evidence PR #907](https://github.com/BenjaminBenetti/tut/pull/907): documents/images only; closes the survey record, not #906.
+- Two owned issues filed. No other actionable tickets; queue positions two and three remain held.
 
-[Diagnostic evidence PR #907](https://github.com/BenjaminBenetti/tut/pull/907)
-is draft while this watch runs. The **one watch is active**, started
-2026-09-06 19:20:46 UTC, with a deadline of 2026-09-06 22:20:46 UTC.
-Background terminal session: `52713`; poll interval: 300 seconds.
-Scratch state: `watch-start.json`, `watch-health.json`, `watch-result.json`,
-and `watch.log` under `.scratch/map-critic-opening/`. Do not start another
-watch after resuming this seat.
+The **one bounded watch has finished**. It ran from 2026-09-06 19:20:46 UTC
+to its first poll at 19:25:48 UTC, with a 300-second interval and a hard
+stop scheduled for 22:20:46 UTC. It exited successfully on two #906 comments:
 
-Run **one** background terminal watch, every five minutes, for a newly
-merged MapGen/Art PR or a comment on either owned issue. Resolve area from
-the PR labels or its explicitly linked work issue because recent PRs often
-have no area labels. Documentation-only PRs are not visual fixes. Exit on
-the first change; hard stop after three hours. The prepared scratch
-`watch.py` records its start and result in JSON and emits only on change,
-timeout or API trouble. No cron and no second loop.
+- [Producer routing](https://github.com/BenjaminBenetti/tut/issues/906#issuecomment-5561567038): Ready under the live Map Quality Loop; other findings stay held.
+- [Art Director claim](https://github.com/BenjaminBenetti/tut/issues/906#issuecomment-5561572589): taking the building-support fix and same-seed before/after renders, preserving ladders, street treatment and interiors.
 
-Re-render a merged visual fix at the exact affected recipe, compare it with
-the committed baseline crops and say plainly whether the picture improved.
-If the trigger is only a comment, handle the feedback and do not imply a fix
-has landed. Keep the evidence PR draft while the watch outcome is pending;
-append the outcome and mark it ready when this bounded task finishes.
+The watch reported **no merged visual fix**. No improved frame has been
+accepted by this seat. The [Critic response](https://github.com/BenjaminBenetti/tut/issues/906#issuecomment-5561595914)
+records ownership and the pending visual re-check without reviewing an
+implementation. The Art Director's comment identifies the affected building
+columns more precisely than the original camera-focus coordinates; use it
+for navigation if helpful, while retaining the original crops for comparison.
+
+Do **not** start a second watch for this task. The completed background
+terminal was session `52713`; `watch-start.json`, `watch-result.json` and
+`watch.log` remain in `.scratch/map-critic-opening/`. PR areas were resolved
+from direct labels or explicitly linked work issues; documentation-only PRs
+were excluded from that fallback. No cron was installed.
+
+Next time this seat is resumed with a merged #906 fix: generate the exact
+snowy and desert recipes, look at the bases from both angles, compare with
+D01/D02/D05 and say plainly whether the picture improved. An ownership
+claim or green test suite does not supply that visual verdict. Director
+calibration of the held waterfront/platform queue is still outstanding.
 
 Never push main; only the Tech Lead merges. Every GitHub comment starts with
 `**Map Critic** · TUT agent` on its own line. A model-capacity error is

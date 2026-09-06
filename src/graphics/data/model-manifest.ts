@@ -569,6 +569,14 @@ export const MODEL_MANIFEST = {
     sockets: [],
     quality: "final",
   },
+  "building.ladder": {
+    category: "buildings",
+    path: "assets/models/buildings/building-ladder.glb",
+    footprint: { w: 0.35, d: 0.16 },
+    height: 0.75,
+    sockets: [],
+    quality: "final",
+  },
   "building.stairs": {
     category: "buildings",
     path: "assets/models/buildings/stairs.glb",

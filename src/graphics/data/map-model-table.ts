@@ -82,6 +82,9 @@ export const THREE_SIDED_SLOPE_MODEL =
 export const RAMP_CONNECTOR_MODEL =
   "tile.ramp.connector" satisfies ModelAssetId;
 
+/** A repeatable, wall-mounted steel ladder section spanning one shared RISE. */
+export const LADDER_CONNECTOR_MODEL = "building.ladder" satisfies ModelAssetId;
+
 /** Neutral shapes that borrow ground/terrace materials in the shared factory. */
 export const PARAMETERISED_TERRAIN_MODELS = {
   ...SLOPE_MODELS,

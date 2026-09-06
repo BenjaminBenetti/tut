@@ -1,0 +1,2128 @@
+{
+  "baseline": "f2dbae0",
+  "maps": 108,
+  "method": "Top ground outer tiles, connected by any diagonal adjacency regardless of turns or elevation; exact QA #813 final definition.",
+  "current": {
+    "1": {
+      "chains": 1694,
+      "tiles": 1694,
+      "covered": 0
+    },
+    "2": {
+      "chains": 38,
+      "tiles": 76,
+      "covered": 28
+    },
+    "3": {
+      "chains": 4,
+      "tiles": 12,
+      "covered": 9
+    },
+    "4": {
+      "chains": 1,
+      "tiles": 4,
+      "covered": 4
+    }
+  },
+  "rejectedTrial": {
+    "1": {
+      "chains": 1694,
+      "tiles": 1694,
+      "covered": 0
+    },
+    "2": {
+      "chains": 38,
+      "tiles": 76,
+      "covered": 46
+    },
+    "3": {
+      "chains": 4,
+      "tiles": 12,
+      "covered": 9
+    },
+    "4": {
+      "chains": 1,
+      "tiles": 4,
+      "covered": 4
+    }
+  },
+  "chains": [
+    {
+      "seed": "qa813-temperate-rural-small-0",
+      "biome": "temperate",
+      "settlement": "rural",
+      "size": "small",
+      "covered": 0,
+      "tiles": [
+        {
+          "x": 4,
+          "y": 0,
+          "z": 22,
+          "surface": "grass",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 0
+          },
+          "naturalEdge": true,
+          "corners": [0, 0, 0, 1],
+          "appearance": null
+        },
+        {
+          "x": 5,
+          "y": 0,
+          "z": 23,
+          "surface": "dirt",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 3
+          },
+          "naturalEdge": true,
+          "corners": [0, 0, 1, 0],
+          "appearance": null
+        }
+      ]
+    },
+    {
+      "seed": "qa813-temperate-rural-medium-1",
+      "biome": "temperate",
+      "settlement": "rural",
+      "size": "medium",
+      "covered": 2,
+      "tiles": [
+        {
+          "x": 60,
+          "y": 1,
+          "z": 28,
+          "surface": "grass",
+          "pass": 0,
+          "walls": {},
+          "coverProvided": 2,
+          "blocksLos": false,
+          "propId": "prop-162",
+          "slope": {
+            "kind": "outer",
+            "turns": 0
+          },
+          "naturalEdge": true,
+          "corners": [1, 1, 1, 2],
+          "appearance": {
+            "kind": "diagonal",
+            "turns": 0
+          }
+        },
+        {
+          "x": 59,
+          "y": 2,
+          "z": 29,
+          "surface": "grass",
+          "pass": 0,
+          "walls": {},
+          "coverProvided": 2,
+          "blocksLos": false,
+          "propId": "prop-165",
+          "slope": {
+            "kind": "outer",
+            "turns": 0
+          },
+          "naturalEdge": true,
+          "corners": [2, 2, 2, 3],
+          "appearance": {
+            "kind": "diagonal",
+            "turns": 0
+          }
+        }
+      ]
+    },
+    {
+      "seed": "qa813-temperate-rural-medium-1",
+      "biome": "temperate",
+      "settlement": "rural",
+      "size": "medium",
+      "covered": 0,
+      "tiles": [
+        {
+          "x": 7,
+          "y": 2,
+          "z": 31,
+          "surface": "grass",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 2
+          },
+          "naturalEdge": true,
+          "corners": [2, 3, 2, 2],
+          "appearance": null
+        },
+        {
+          "x": 6,
+          "y": 2,
+          "z": 32,
+          "surface": "grass",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 0
+          },
+          "naturalEdge": true,
+          "corners": [2, 2, 2, 3],
+          "appearance": null
+        }
+      ]
+    },
+    {
+      "seed": "qa813-temperate-rural-medium-1",
+      "biome": "temperate",
+      "settlement": "rural",
+      "size": "medium",
+      "covered": 0,
+      "tiles": [
+        {
+          "x": 21,
+          "y": 2,
+          "z": 67,
+          "surface": "grass",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 3
+          },
+          "naturalEdge": true,
+          "corners": [2, 2, 3, 2],
+          "appearance": null
+        },
+        {
+          "x": 22,
+          "y": 3,
+          "z": 68,
+          "surface": "grass",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 3
+          },
+          "naturalEdge": true,
+          "corners": [3, 3, 4, 3],
+          "appearance": null
+        }
+      ]
+    },
+    {
+      "seed": "qa813-temperate-rural-large-0",
+      "biome": "temperate",
+      "settlement": "rural",
+      "size": "large",
+      "covered": 2,
+      "tiles": [
+        {
+          "x": 35,
+          "y": 3,
+          "z": 45,
+          "surface": "grass",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 2
+          },
+          "naturalEdge": true,
+          "corners": [3, 4, 3, 3],
+          "appearance": {
+            "kind": "diagonal",
+            "turns": 2
+          }
+        },
+        {
+          "x": 34,
+          "y": 2,
+          "z": 46,
+          "surface": "grass",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 2
+          },
+          "naturalEdge": true,
+          "corners": [2, 3, 2, 2],
+          "appearance": {
+            "kind": "diagonal",
+            "turns": 2
+          }
+        }
+      ]
+    },
+    {
+      "seed": "qa813-temperate-rural-large-0",
+      "biome": "temperate",
+      "settlement": "rural",
+      "size": "large",
+      "covered": 2,
+      "tiles": [
+        {
+          "x": 80,
+          "y": 2,
+          "z": 83,
+          "surface": "grass",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 0
+          },
+          "naturalEdge": true,
+          "corners": [2, 2, 2, 3],
+          "appearance": {
+            "kind": "diagonal",
+            "turns": 0
+          }
+        },
+        {
+          "x": 79,
+          "y": 3,
+          "z": 84,
+          "surface": "grass",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 0
+          },
+          "naturalEdge": true,
+          "corners": [3, 3, 3, 4],
+          "appearance": {
+            "kind": "diagonal",
+            "turns": 0
+          }
+        }
+      ]
+    },
+    {
+      "seed": "qa813-temperate-rural-large-1",
+      "biome": "temperate",
+      "settlement": "rural",
+      "size": "large",
+      "covered": 2,
+      "tiles": [
+        {
+          "x": 79,
+          "y": 1,
+          "z": 84,
+          "surface": "grass",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 2
+          },
+          "naturalEdge": true,
+          "corners": [1, 2, 1, 1],
+          "appearance": {
+            "kind": "diagonal",
+            "turns": 2
+          }
+        },
+        {
+          "x": 78,
+          "y": 0,
+          "z": 85,
+          "surface": "grass",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 2
+          },
+          "naturalEdge": true,
+          "corners": [0, 1, 0, 0],
+          "appearance": {
+            "kind": "diagonal",
+            "turns": 2
+          }
+        }
+      ]
+    },
+    {
+      "seed": "qa813-temperate-rural-large-2",
+      "biome": "temperate",
+      "settlement": "rural",
+      "size": "large",
+      "covered": 0,
+      "tiles": [
+        {
+          "x": 55,
+          "y": 2,
+          "z": 3,
+          "surface": "dirt",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 3
+          },
+          "naturalEdge": true,
+          "corners": [2, 2, 3, 2],
+          "appearance": null
+        },
+        {
+          "x": 54,
+          "y": 2,
+          "z": 4,
+          "surface": "dirt",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 0
+          },
+          "naturalEdge": true,
+          "corners": [2, 2, 2, 3],
+          "appearance": null
+        }
+      ]
+    },
+    {
+      "seed": "qa813-temperate-rural-large-2",
+      "biome": "temperate",
+      "settlement": "rural",
+      "size": "large",
+      "covered": 2,
+      "tiles": [
+        {
+          "x": 93,
+          "y": 3,
+          "z": 3,
+          "surface": "grass",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 1
+          },
+          "naturalEdge": true,
+          "corners": [4, 3, 3, 3],
+          "appearance": {
+            "kind": "diagonal",
+            "turns": 1
+          }
+        },
+        {
+          "x": 94,
+          "y": 2,
+          "z": 4,
+          "surface": "dirt",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 1
+          },
+          "naturalEdge": true,
+          "corners": [3, 2, 2, 2],
+          "appearance": {
+            "kind": "diagonal",
+            "turns": 1
+          }
+        }
+      ]
+    },
+    {
+      "seed": "qa813-temperate-rural-large-2",
+      "biome": "temperate",
+      "settlement": "rural",
+      "size": "large",
+      "covered": 2,
+      "tiles": [
+        {
+          "x": 16,
+          "y": 3,
+          "z": 79,
+          "surface": "grass",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 1
+          },
+          "naturalEdge": true,
+          "corners": [4, 3, 3, 3],
+          "appearance": {
+            "kind": "diagonal",
+            "turns": 1
+          }
+        },
+        {
+          "x": 17,
+          "y": 2,
+          "z": 80,
+          "surface": "grass",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 1
+          },
+          "naturalEdge": true,
+          "corners": [3, 2, 2, 2],
+          "appearance": {
+            "kind": "diagonal",
+            "turns": 1
+          }
+        }
+      ]
+    },
+    {
+      "seed": "qa813-temperate-rural-large-2",
+      "biome": "temperate",
+      "settlement": "rural",
+      "size": "large",
+      "covered": 0,
+      "tiles": [
+        {
+          "x": 84,
+          "y": 0,
+          "z": 91,
+          "surface": "grass",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 1
+          },
+          "naturalEdge": true,
+          "corners": [1, 0, 0, 0],
+          "appearance": null
+        },
+        {
+          "x": 85,
+          "y": 0,
+          "z": 92,
+          "surface": "grass",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 3
+          },
+          "naturalEdge": true,
+          "corners": [0, 0, 1, 0],
+          "appearance": null
+        }
+      ]
+    },
+    {
+      "seed": "qa813-temperate-town-medium-2",
+      "biome": "temperate",
+      "settlement": "town",
+      "size": "medium",
+      "covered": 2,
+      "tiles": [
+        {
+          "x": 22,
+          "y": 1,
+          "z": 59,
+          "surface": "grass",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 0
+          },
+          "naturalEdge": true,
+          "corners": [1, 1, 1, 2],
+          "appearance": {
+            "kind": "diagonal",
+            "turns": 0
+          }
+        },
+        {
+          "x": 21,
+          "y": 2,
+          "z": 60,
+          "surface": "dirt",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 0
+          },
+          "naturalEdge": true,
+          "corners": [2, 2, 2, 3],
+          "appearance": {
+            "kind": "diagonal",
+            "turns": 0
+          }
+        }
+      ]
+    },
+    {
+      "seed": "qa813-temperate-town-large-0",
+      "biome": "temperate",
+      "settlement": "town",
+      "size": "large",
+      "covered": 2,
+      "tiles": [
+        {
+          "x": 59,
+          "y": 3,
+          "z": 78,
+          "surface": "dirt",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 2
+          },
+          "naturalEdge": true,
+          "corners": [3, 4, 3, 3],
+          "appearance": {
+            "kind": "diagonal",
+            "turns": 2
+          }
+        },
+        {
+          "x": 58,
+          "y": 2,
+          "z": 79,
+          "surface": "grass",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 2
+          },
+          "naturalEdge": true,
+          "corners": [2, 3, 2, 2],
+          "appearance": {
+            "kind": "diagonal",
+            "turns": 2
+          }
+        }
+      ]
+    },
+    {
+      "seed": "qa813-temperate-town-large-1",
+      "biome": "temperate",
+      "settlement": "town",
+      "size": "large",
+      "covered": 0,
+      "tiles": [
+        {
+          "x": 71,
+          "y": 2,
+          "z": 3,
+          "surface": "grass",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 0
+          },
+          "naturalEdge": true,
+          "corners": [2, 2, 2, 3],
+          "appearance": null
+        },
+        {
+          "x": 72,
+          "y": 2,
+          "z": 4,
+          "surface": "grass",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 3
+          },
+          "naturalEdge": true,
+          "corners": [2, 2, 3, 2],
+          "appearance": null
+        }
+      ]
+    },
+    {
+      "seed": "qa813-temperate-town-large-1",
+      "biome": "temperate",
+      "settlement": "town",
+      "size": "large",
+      "covered": 2,
+      "tiles": [
+        {
+          "x": 46,
+          "y": 1,
+          "z": 91,
+          "surface": "grass",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 1
+          },
+          "naturalEdge": true,
+          "corners": [2, 1, 1, 1],
+          "appearance": {
+            "kind": "diagonal",
+            "turns": 1
+          }
+        },
+        {
+          "x": 47,
+          "y": 0,
+          "z": 92,
+          "surface": "dirt",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 1
+          },
+          "naturalEdge": true,
+          "corners": [1, 0, 0, 0],
+          "appearance": {
+            "kind": "diagonal",
+            "turns": 1
+          }
+        }
+      ]
+    },
+    {
+      "seed": "qa813-snowy-rural-medium-0",
+      "biome": "snowy",
+      "settlement": "rural",
+      "size": "medium",
+      "covered": 3,
+      "tiles": [
+        {
+          "x": 8,
+          "y": 3,
+          "z": 23,
+          "surface": "snow",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 3
+          },
+          "naturalEdge": true,
+          "corners": [3, 3, 4, 3],
+          "appearance": {
+            "kind": "diagonal",
+            "turns": 3
+          }
+        },
+        {
+          "x": 9,
+          "y": 4,
+          "z": 24,
+          "surface": "snow",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 3
+          },
+          "naturalEdge": true,
+          "corners": [4, 4, 5, 4],
+          "appearance": {
+            "kind": "diagonal",
+            "turns": 3
+          }
+        },
+        {
+          "x": 10,
+          "y": 5,
+          "z": 25,
+          "surface": "snow",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 3
+          },
+          "naturalEdge": true,
+          "corners": [5, 5, 6, 5],
+          "appearance": {
+            "kind": "diagonal",
+            "turns": 3
+          }
+        }
+      ]
+    },
+    {
+      "seed": "qa813-snowy-rural-medium-1",
+      "biome": "snowy",
+      "settlement": "rural",
+      "size": "medium",
+      "covered": 0,
+      "tiles": [
+        {
+          "x": 51,
+          "y": 4,
+          "z": 47,
+          "surface": "dirt",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 2
+          },
+          "naturalEdge": true,
+          "corners": [4, 5, 4, 4],
+          "appearance": null
+        },
+        {
+          "x": 52,
+          "y": 4,
+          "z": 48,
+          "surface": "dirt",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 3
+          },
+          "naturalEdge": true,
+          "corners": [4, 4, 5, 4],
+          "appearance": null
+        }
+      ]
+    },
+    {
+      "seed": "qa813-snowy-rural-medium-2",
+      "biome": "snowy",
+      "settlement": "rural",
+      "size": "medium",
+      "covered": 2,
+      "tiles": [
+        {
+          "x": 2,
+          "y": 2,
+          "z": 3,
+          "surface": "rock",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 1
+          },
+          "naturalEdge": true,
+          "corners": [3, 2, 2, 2],
+          "appearance": {
+            "kind": "diagonal",
+            "turns": 1
+          }
+        },
+        {
+          "x": 3,
+          "y": 1,
+          "z": 4,
+          "surface": "rock",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 1
+          },
+          "naturalEdge": true,
+          "corners": [2, 1, 1, 1],
+          "appearance": {
+            "kind": "diagonal",
+            "turns": 1
+          }
+        }
+      ]
+    },
+    {
+      "seed": "qa813-snowy-rural-medium-2",
+      "biome": "snowy",
+      "settlement": "rural",
+      "size": "medium",
+      "covered": 2,
+      "tiles": [
+        {
+          "x": 52,
+          "y": 3,
+          "z": 31,
+          "surface": "rock",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 1
+          },
+          "naturalEdge": true,
+          "corners": [4, 3, 3, 3],
+          "appearance": {
+            "kind": "diagonal",
+            "turns": 1
+          }
+        },
+        {
+          "x": 53,
+          "y": 2,
+          "z": 32,
+          "surface": "rock",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 1
+          },
+          "naturalEdge": true,
+          "corners": [3, 2, 2, 2],
+          "appearance": {
+            "kind": "diagonal",
+            "turns": 1
+          }
+        }
+      ]
+    },
+    {
+      "seed": "qa813-snowy-rural-medium-2",
+      "biome": "snowy",
+      "settlement": "rural",
+      "size": "medium",
+      "covered": 0,
+      "tiles": [
+        {
+          "x": 36,
+          "y": 4,
+          "z": 45,
+          "surface": "dirt",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 2
+          },
+          "naturalEdge": true,
+          "corners": [4, 5, 4, 4],
+          "appearance": null
+        },
+        {
+          "x": 37,
+          "y": 4,
+          "z": 46,
+          "surface": "dirt",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 0
+          },
+          "naturalEdge": true,
+          "corners": [4, 4, 4, 5],
+          "appearance": null
+        }
+      ]
+    },
+    {
+      "seed": "qa813-snowy-rural-large-0",
+      "biome": "snowy",
+      "settlement": "rural",
+      "size": "large",
+      "covered": 0,
+      "tiles": [
+        {
+          "x": 13,
+          "y": 2,
+          "z": 48,
+          "surface": "dirt",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 3
+          },
+          "naturalEdge": true,
+          "corners": [2, 2, 3, 2],
+          "appearance": null
+        },
+        {
+          "x": 12,
+          "y": 2,
+          "z": 49,
+          "surface": "dirt",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 1
+          },
+          "naturalEdge": true,
+          "corners": [3, 2, 2, 2],
+          "appearance": null
+        },
+        {
+          "x": 13,
+          "y": 2,
+          "z": 50,
+          "surface": "snow",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 2
+          },
+          "naturalEdge": true,
+          "corners": [2, 3, 2, 2],
+          "appearance": null
+        }
+      ]
+    },
+    {
+      "seed": "qa813-snowy-rural-large-1",
+      "biome": "snowy",
+      "settlement": "rural",
+      "size": "large",
+      "covered": 3,
+      "tiles": [
+        {
+          "x": 10,
+          "y": 3,
+          "z": 10,
+          "surface": "snow",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 3
+          },
+          "naturalEdge": true,
+          "corners": [3, 3, 4, 3],
+          "appearance": {
+            "kind": "diagonal",
+            "turns": 3
+          }
+        },
+        {
+          "x": 11,
+          "y": 4,
+          "z": 11,
+          "surface": "snow",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 3
+          },
+          "naturalEdge": true,
+          "corners": [4, 4, 5, 4],
+          "appearance": {
+            "kind": "diagonal",
+            "turns": 3
+          }
+        },
+        {
+          "x": 12,
+          "y": 5,
+          "z": 12,
+          "surface": "snow",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 3
+          },
+          "naturalEdge": true,
+          "corners": [5, 5, 6, 5],
+          "appearance": {
+            "kind": "diagonal",
+            "turns": 3
+          }
+        }
+      ]
+    },
+    {
+      "seed": "qa813-snowy-rural-large-1",
+      "biome": "snowy",
+      "settlement": "rural",
+      "size": "large",
+      "covered": 0,
+      "tiles": [
+        {
+          "x": 24,
+          "y": 5,
+          "z": 23,
+          "surface": "snow",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 1
+          },
+          "naturalEdge": true,
+          "corners": [6, 5, 5, 5],
+          "appearance": null
+        },
+        {
+          "x": 25,
+          "y": 5,
+          "z": 24,
+          "surface": "snow",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 3
+          },
+          "naturalEdge": true,
+          "corners": [5, 5, 6, 5],
+          "appearance": null
+        }
+      ]
+    },
+    {
+      "seed": "qa813-snowy-rural-large-1",
+      "biome": "snowy",
+      "settlement": "rural",
+      "size": "large",
+      "covered": 0,
+      "tiles": [
+        {
+          "x": 18,
+          "y": 4,
+          "z": 39,
+          "surface": "dirt",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 2
+          },
+          "naturalEdge": true,
+          "corners": [4, 5, 4, 4],
+          "appearance": null
+        },
+        {
+          "x": 17,
+          "y": 4,
+          "z": 40,
+          "surface": "dirt",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 3
+          },
+          "naturalEdge": true,
+          "corners": [4, 4, 5, 4],
+          "appearance": null
+        }
+      ]
+    },
+    {
+      "seed": "qa813-snowy-rural-large-1",
+      "biome": "snowy",
+      "settlement": "rural",
+      "size": "large",
+      "covered": 0,
+      "tiles": [
+        {
+          "x": 95,
+          "y": 0,
+          "z": 41,
+          "surface": "dirt",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 1
+          },
+          "naturalEdge": true,
+          "corners": [1, 0, 0, 0],
+          "appearance": null
+        },
+        {
+          "x": 94,
+          "y": 0,
+          "z": 42,
+          "surface": "dirt",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 3
+          },
+          "naturalEdge": true,
+          "corners": [0, 0, 1, 0],
+          "appearance": null
+        }
+      ]
+    },
+    {
+      "seed": "qa813-snowy-rural-large-1",
+      "biome": "snowy",
+      "settlement": "rural",
+      "size": "large",
+      "covered": 3,
+      "tiles": [
+        {
+          "x": 22,
+          "y": 4,
+          "z": 45,
+          "surface": "snow",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 1
+          },
+          "naturalEdge": true,
+          "corners": [5, 4, 4, 4],
+          "appearance": {
+            "kind": "diagonal",
+            "turns": 1
+          }
+        },
+        {
+          "x": 23,
+          "y": 3,
+          "z": 46,
+          "surface": "snow",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 1
+          },
+          "naturalEdge": true,
+          "corners": [4, 3, 3, 3],
+          "appearance": {
+            "kind": "diagonal",
+            "turns": 1
+          }
+        },
+        {
+          "x": 24,
+          "y": 2,
+          "z": 47,
+          "surface": "snow",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 1
+          },
+          "naturalEdge": true,
+          "corners": [3, 2, 2, 2],
+          "appearance": {
+            "kind": "diagonal",
+            "turns": 1
+          }
+        }
+      ]
+    },
+    {
+      "seed": "qa813-snowy-rural-large-1",
+      "biome": "snowy",
+      "settlement": "rural",
+      "size": "large",
+      "covered": 2,
+      "tiles": [
+        {
+          "x": 61,
+          "y": 2,
+          "z": 48,
+          "surface": "snow",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 0
+          },
+          "naturalEdge": true,
+          "corners": [2, 2, 2, 3],
+          "appearance": {
+            "kind": "diagonal",
+            "turns": 0
+          }
+        },
+        {
+          "x": 60,
+          "y": 3,
+          "z": 49,
+          "surface": "snow",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 0
+          },
+          "naturalEdge": true,
+          "corners": [3, 3, 3, 4],
+          "appearance": {
+            "kind": "diagonal",
+            "turns": 0
+          }
+        }
+      ]
+    },
+    {
+      "seed": "qa813-snowy-rural-large-1",
+      "biome": "snowy",
+      "settlement": "rural",
+      "size": "large",
+      "covered": 0,
+      "tiles": [
+        {
+          "x": 23,
+          "y": 1,
+          "z": 79,
+          "surface": "rock",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 1
+          },
+          "naturalEdge": true,
+          "corners": [2, 1, 1, 1],
+          "appearance": null
+        },
+        {
+          "x": 22,
+          "y": 1,
+          "z": 80,
+          "surface": "rock",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 0
+          },
+          "naturalEdge": true,
+          "corners": [1, 1, 1, 2],
+          "appearance": null
+        }
+      ]
+    },
+    {
+      "seed": "qa813-snowy-rural-large-2",
+      "biome": "snowy",
+      "settlement": "rural",
+      "size": "large",
+      "covered": 0,
+      "tiles": [
+        {
+          "x": 3,
+          "y": 2,
+          "z": 4,
+          "surface": "rock",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 1
+          },
+          "naturalEdge": true,
+          "corners": [3, 2, 2, 2],
+          "appearance": null
+        },
+        {
+          "x": 4,
+          "y": 2,
+          "z": 5,
+          "surface": "rock",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 3
+          },
+          "naturalEdge": true,
+          "corners": [2, 2, 3, 2],
+          "appearance": null
+        }
+      ]
+    },
+    {
+      "seed": "qa813-snowy-town-medium-0",
+      "biome": "snowy",
+      "settlement": "town",
+      "size": "medium",
+      "covered": 2,
+      "tiles": [
+        {
+          "x": 70,
+          "y": 2,
+          "z": 2,
+          "surface": "snow",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 2
+          },
+          "naturalEdge": true,
+          "corners": [2, 3, 2, 2],
+          "appearance": {
+            "kind": "diagonal",
+            "turns": 2
+          }
+        },
+        {
+          "x": 69,
+          "y": 1,
+          "z": 3,
+          "surface": "snow",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 2
+          },
+          "naturalEdge": true,
+          "corners": [1, 2, 1, 1],
+          "appearance": {
+            "kind": "diagonal",
+            "turns": 2
+          }
+        }
+      ]
+    },
+    {
+      "seed": "qa813-snowy-town-medium-0",
+      "biome": "snowy",
+      "settlement": "town",
+      "size": "medium",
+      "covered": 0,
+      "tiles": [
+        {
+          "x": 32,
+          "y": 4,
+          "z": 10,
+          "surface": "snow",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 0
+          },
+          "naturalEdge": true,
+          "corners": [4, 4, 4, 5],
+          "appearance": null
+        },
+        {
+          "x": 31,
+          "y": 5,
+          "z": 11,
+          "surface": "snow",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 0
+          },
+          "naturalEdge": true,
+          "corners": [5, 5, 5, 6],
+          "appearance": null
+        }
+      ]
+    },
+    {
+      "seed": "qa813-snowy-town-large-0",
+      "biome": "snowy",
+      "settlement": "town",
+      "size": "large",
+      "covered": 0,
+      "tiles": [
+        {
+          "x": 39,
+          "y": 0,
+          "z": 12,
+          "surface": "snow",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 1
+          },
+          "naturalEdge": true,
+          "corners": [1, 0, 0, 0],
+          "appearance": null
+        },
+        {
+          "x": 40,
+          "y": 0,
+          "z": 13,
+          "surface": "snow",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 3
+          },
+          "naturalEdge": true,
+          "corners": [0, 0, 1, 0],
+          "appearance": null
+        }
+      ]
+    },
+    {
+      "seed": "qa813-snowy-town-large-0",
+      "biome": "snowy",
+      "settlement": "town",
+      "size": "large",
+      "covered": 2,
+      "tiles": [
+        {
+          "x": 46,
+          "y": 2,
+          "z": 37,
+          "surface": "snow",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 1
+          },
+          "naturalEdge": true,
+          "corners": [3, 2, 2, 2],
+          "appearance": {
+            "kind": "diagonal",
+            "turns": 1
+          }
+        },
+        {
+          "x": 47,
+          "y": 1,
+          "z": 38,
+          "surface": "snow",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 1
+          },
+          "naturalEdge": true,
+          "corners": [2, 1, 1, 1],
+          "appearance": {
+            "kind": "diagonal",
+            "turns": 1
+          }
+        }
+      ]
+    },
+    {
+      "seed": "qa813-snowy-town-large-0",
+      "biome": "snowy",
+      "settlement": "town",
+      "size": "large",
+      "covered": 4,
+      "tiles": [
+        {
+          "x": 26,
+          "y": 5,
+          "z": 88,
+          "surface": "snow",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 2
+          },
+          "naturalEdge": true,
+          "corners": [5, 6, 5, 5],
+          "appearance": {
+            "kind": "diagonal",
+            "turns": 2
+          }
+        },
+        {
+          "x": 25,
+          "y": 4,
+          "z": 89,
+          "surface": "snow",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 2
+          },
+          "naturalEdge": true,
+          "corners": [4, 5, 4, 4],
+          "appearance": {
+            "kind": "diagonal",
+            "turns": 2
+          }
+        },
+        {
+          "x": 24,
+          "y": 3,
+          "z": 90,
+          "surface": "snow",
+          "pass": 0,
+          "walls": {},
+          "coverProvided": 2,
+          "blocksLos": false,
+          "propId": "prop-448",
+          "slope": {
+            "kind": "outer",
+            "turns": 2
+          },
+          "naturalEdge": true,
+          "corners": [3, 4, 3, 3],
+          "appearance": {
+            "kind": "diagonal",
+            "turns": 2
+          }
+        },
+        {
+          "x": 23,
+          "y": 2,
+          "z": 91,
+          "surface": "rock",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 2
+          },
+          "naturalEdge": true,
+          "corners": [2, 3, 2, 2],
+          "appearance": {
+            "kind": "diagonal",
+            "turns": 2
+          }
+        }
+      ]
+    },
+    {
+      "seed": "qa813-snowy-town-large-2",
+      "biome": "snowy",
+      "settlement": "town",
+      "size": "large",
+      "covered": 0,
+      "tiles": [
+        {
+          "x": 69,
+          "y": 4,
+          "z": 62,
+          "surface": "snow",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 3
+          },
+          "naturalEdge": true,
+          "corners": [4, 4, 5, 4],
+          "appearance": null
+        },
+        {
+          "x": 70,
+          "y": 5,
+          "z": 63,
+          "surface": "snow",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 3
+          },
+          "naturalEdge": true,
+          "corners": [5, 5, 6, 5],
+          "appearance": null
+        }
+      ]
+    },
+    {
+      "seed": "qa813-snowy-town-large-2",
+      "biome": "snowy",
+      "settlement": "town",
+      "size": "large",
+      "covered": 0,
+      "tiles": [
+        {
+          "x": 25,
+          "y": 0,
+          "z": 83,
+          "surface": "snow",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 1
+          },
+          "naturalEdge": true,
+          "corners": [1, 0, 0, 0],
+          "appearance": null
+        },
+        {
+          "x": 26,
+          "y": 0,
+          "z": 84,
+          "surface": "snow",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 3
+          },
+          "naturalEdge": true,
+          "corners": [0, 0, 1, 0],
+          "appearance": null
+        }
+      ]
+    },
+    {
+      "seed": "qa813-desert-rural-medium-0",
+      "biome": "desert",
+      "settlement": "rural",
+      "size": "medium",
+      "covered": 0,
+      "tiles": [
+        {
+          "x": 63,
+          "y": 2,
+          "z": 42,
+          "surface": "dirt",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 2
+          },
+          "naturalEdge": true,
+          "corners": [2, 3, 2, 2],
+          "appearance": null
+        },
+        {
+          "x": 64,
+          "y": 2,
+          "z": 43,
+          "surface": "dirt",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 3
+          },
+          "naturalEdge": true,
+          "corners": [2, 2, 3, 2],
+          "appearance": null
+        }
+      ]
+    },
+    {
+      "seed": "qa813-desert-rural-large-1",
+      "biome": "desert",
+      "settlement": "rural",
+      "size": "large",
+      "covered": 0,
+      "tiles": [
+        {
+          "x": 20,
+          "y": 2,
+          "z": 82,
+          "surface": "dirt",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 1
+          },
+          "naturalEdge": true,
+          "corners": [3, 2, 2, 2],
+          "appearance": null
+        },
+        {
+          "x": 21,
+          "y": 2,
+          "z": 83,
+          "surface": "dirt",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 0
+          },
+          "naturalEdge": true,
+          "corners": [2, 2, 2, 3],
+          "appearance": null
+        }
+      ]
+    },
+    {
+      "seed": "qa813-desert-rural-large-2",
+      "biome": "desert",
+      "settlement": "rural",
+      "size": "large",
+      "covered": 0,
+      "tiles": [
+        {
+          "x": 64,
+          "y": 2,
+          "z": 36,
+          "surface": "sand",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 1
+          },
+          "naturalEdge": true,
+          "corners": [3, 2, 2, 2],
+          "appearance": null
+        },
+        {
+          "x": 65,
+          "y": 2,
+          "z": 37,
+          "surface": "sand",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 3
+          },
+          "naturalEdge": true,
+          "corners": [2, 2, 3, 2],
+          "appearance": null
+        }
+      ]
+    },
+    {
+      "seed": "qa813-desert-town-large-0",
+      "biome": "desert",
+      "settlement": "town",
+      "size": "large",
+      "covered": 0,
+      "tiles": [
+        {
+          "x": 37,
+          "y": 2,
+          "z": 41,
+          "surface": "sand",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 1
+          },
+          "naturalEdge": true,
+          "corners": [3, 2, 2, 2],
+          "appearance": null
+        },
+        {
+          "x": 38,
+          "y": 2,
+          "z": 42,
+          "surface": "sand",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 3
+          },
+          "naturalEdge": true,
+          "corners": [2, 2, 3, 2],
+          "appearance": null
+        }
+      ]
+    },
+    {
+      "seed": "qa813-coastal-town-medium-1",
+      "biome": "coastal",
+      "settlement": "town",
+      "size": "medium",
+      "covered": 0,
+      "tiles": [
+        {
+          "x": 24,
+          "y": 0,
+          "z": 59,
+          "surface": "dirt",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 1
+          },
+          "naturalEdge": true,
+          "corners": [1, 0, 0, 0],
+          "appearance": null
+        },
+        {
+          "x": 25,
+          "y": 0,
+          "z": 60,
+          "surface": "dirt",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 3
+          },
+          "naturalEdge": true,
+          "corners": [0, 0, 1, 0],
+          "appearance": null
+        }
+      ]
+    },
+    {
+      "seed": "qa813-coastal-town-large-1",
+      "biome": "coastal",
+      "settlement": "town",
+      "size": "large",
+      "covered": 0,
+      "tiles": [
+        {
+          "x": 61,
+          "y": 1,
+          "z": 57,
+          "surface": "dirt",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 1
+          },
+          "naturalEdge": true,
+          "corners": [2, 1, 1, 1],
+          "appearance": null
+        },
+        {
+          "x": 62,
+          "y": 1,
+          "z": 58,
+          "surface": "dirt",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 0
+          },
+          "naturalEdge": true,
+          "corners": [1, 1, 1, 2],
+          "appearance": null
+        }
+      ]
+    },
+    {
+      "seed": "qa813-coastal-town-large-2",
+      "biome": "coastal",
+      "settlement": "town",
+      "size": "large",
+      "covered": 0,
+      "tiles": [
+        {
+          "x": 51,
+          "y": 1,
+          "z": 2,
+          "surface": "grass",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 0
+          },
+          "naturalEdge": true,
+          "corners": [1, 1, 1, 2],
+          "appearance": null
+        },
+        {
+          "x": 52,
+          "y": 1,
+          "z": 3,
+          "surface": "sand",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "slope": {
+            "kind": "outer",
+            "turns": 2
+          },
+          "naturalEdge": true,
+          "corners": [1, 2, 1, 1],
+          "appearance": null
+        }
+      ]
+    }
+  ]
+}

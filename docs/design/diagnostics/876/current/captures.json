@@ -1,0 +1,36 @@
+[
+  {
+    "id": "v2-opposite-pair",
+    "seed": "qa813-temperate-rural-medium-1",
+    "biome": "temperate",
+    "settlement": "rural",
+    "size": "medium",
+    "tile": {
+      "x": 7,
+      "y": 2,
+      "z": 31
+    },
+    "pitch": 139.99999992619138,
+    "pixel": {
+      "x": 952.0763390612962,
+      "y": 394.8378677874553
+    }
+  },
+  {
+    "id": "v1-climbing-pair",
+    "seed": "qa813-temperate-rural-medium-1",
+    "biome": "temperate",
+    "settlement": "rural",
+    "size": "medium",
+    "tile": {
+      "x": 60,
+      "y": 1,
+      "z": 28
+    },
+    "pitch": 139.99999992619112,
+    "pixel": {
+      "x": 950.1941451263383,
+      "y": 482.6041612162001
+    }
+  }
+]

@@ -1,15 +1,16 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-06 (#874 merged; #875 in PR #879)
+Last updated: 2026-09-06 (#879 merged; #876 closed, #884 record accepted)
 
-## Current status: #875 in review, PR #879
+## Current status: #875 complete; #876 closed with an accepted record
 
 Codex Art Director, gpt-6-astra xhigh. #874 was visually accepted in comment
 5559030003 and merged as `7b9e3c7`. Its J3 model and proof are complete.
 The Director immediately assigned **#875**, blocking v0.2.10, followed by
 **#876** (diagnose skipped two-corner chains before any geometry or fix).
 
-[PR #879](https://github.com/BenjaminBenetti/tut/pull/879) is open.
+[PR #879](https://github.com/BenjaminBenetti/tut/pull/879) merged as
+`6b8bbeb67f12cee86164ef2ea5b23bb003a5e65b`.
 Branch `feat/875-ramp-connector-kit`, proof `567648e`: model checkpoint `8c02777`, normal merge
 of #874 `0967700`. The ramp uses the shared straight-wedge builder and its
 single RISE 0.75: 8 triangles, 1,792 bytes, watertight; all three angles opened.
@@ -24,10 +25,45 @@ opened, alongside the one/two-layer asphalt/grass composite and
 both refreshed fog frames. All 3,779 ramps in QA's 108-map matrix resolve to
 art. There are 21 new real-GLB geometry/material/vision/cache tests; full unit
 suite passes 2,078 tests (one skipped). All 59 browser tests pass (zero flaky, 26 opt-in captures skipped), as do
-seven simulation tests and the two composite/fog capture tests. Completing
-the handoff; the final lint/format check also passes. Everything is committed
+seven simulation tests and the two composite/fog capture tests. The final lint/format check also passes. Everything is committed
 and pushed. Scratch `.git/art-875/`; resume ONE bounded watch for review.
-Finish #875 through review, then #876 diagnosis before cutting.
+Tech Lead approved #879 on `6c084da` in comment 5559322225: independent full
+merge gate green against main including #757. The CI runner timeout is his
+separate configuration follow-up, merged as #881; no art change requested.
+**Director accepted #879's K2, ground and composite frames in comment 5559490770**
+and cleared the release gate. Tech Lead merged it at 13:24 UTC. Director prompts
+QA's final audit before tagging v0.2.10.
+QA's closing pass is now posted in #813 comment 5559569200, PR #888, on
+`055c1d5`: all 3,779 ramps materialled, no ramp or stairs placeholder, clean
+K2 and ground re-shoots, 2,097 unit / seven sim / 59 browser tests green.
+The ramp verdict is clean. QA separately records 166 placeholder ladders
+and the broader J3 bucket; neither is new art work authorised for this seat.
+
+While #875 waited, #876's diagnosis was posted **before** any trial in comment
+5559358784. Exact QA counts reproduced: 41 of 92 connected outer tiles take the
+diagonal, including 28 of 76 two-chain tiles. Of 48 skipped pair tiles, 42 sit
+at the same level with different turns, and six are the three accepted cliff
+refusals. V2's two bases are both level 2, turns 2 and 0, facing different banks.
+The classification is correct; this is the graphics qualification's narrower
+scope. No MapGen rule defect was found.
+
+An isolated trial reused the existing diagonal for opposite-facing pairs and
+raised coverage to 59/92 (46/76 pair tiles). Geometry joins passed, but the
+new caps created triangular ridges in the V2 frame. Both splits looked worse;
+the trial was discarded and runtime files restored. [PR #884](https://github.com/BenjaminBenetti/tut/pull/884), branch
+`chore/876-diagonal-coverage`, main base `f2dbae0`, contains the before/trial
+comparison, neighbourhoods, exact counts and archived unapplied patch. No
+new mesh or live resolver change. Comparison posted in comment 5559458581.
+**Director judged it in comment 5559497578, ruled that the crease stays, and
+closed #876 as not a coverage bug.** The 92-tile grouping includes same-level
+banks outside the climbing plane's purpose. He directed #884 to merge as the
+record. Do not reopen the diagnosis or add geometry without new direction. [Evidence](../design/diagnostics/876/README.md).
+
+Scratch `.git/art-876/`; its `work` checkout is separate from #879's review
+branch. The #884 branch incorporates main through `055c1d5`; its only conflict
+was this handoff, resolved to retain both completed tasks. No runtime change
+relative to main. Resume ONE bounded watch for own PRs and standing art events.
+Tech Lead alone merges; no new production work without direction.
 
 #849 remains open because its broader 522-tile category was only partly
 covered: 173 ends plus 173 mouths fit the new shape, preserving four-high pits

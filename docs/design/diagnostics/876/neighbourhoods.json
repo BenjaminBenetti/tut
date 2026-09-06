@@ -1,0 +1,504 @@
+{
+  "seed": "qa813-temperate-rural-medium-1",
+  "tiles": [
+    {
+      "x": 4,
+      "y": 1,
+      "z": 29,
+      "surface": "grass",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false,
+      "slope": {
+        "kind": "inner",
+        "turns": 3
+      },
+      "naturalEdge": true,
+      "corners": [1, 2, 2, 2],
+      "appearance": null
+    },
+    {
+      "x": 5,
+      "y": 2,
+      "z": 29,
+      "surface": "grass",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false,
+      "corners": [2, 2, 2, 2],
+      "appearance": null
+    },
+    {
+      "x": 6,
+      "y": 2,
+      "z": 29,
+      "surface": "grass",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false,
+      "corners": [2, 2, 2, 2],
+      "appearance": null
+    },
+    {
+      "x": 7,
+      "y": 2,
+      "z": 29,
+      "surface": "grass",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false,
+      "slope": {
+        "kind": "straight",
+        "turns": 3
+      },
+      "naturalEdge": true,
+      "corners": [2, 3, 3, 2],
+      "appearance": null
+    },
+    {
+      "x": 8,
+      "y": 3,
+      "z": 29,
+      "surface": "grass",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false,
+      "corners": [3, 3, 3, 3],
+      "appearance": null
+    },
+    {
+      "x": 9,
+      "y": 3,
+      "z": 29,
+      "surface": "grass",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false,
+      "slope": {
+        "kind": "outer",
+        "turns": 2
+      },
+      "naturalEdge": true,
+      "corners": [3, 4, 3, 3],
+      "appearance": null
+    },
+    {
+      "x": 4,
+      "y": 2,
+      "z": 30,
+      "surface": "grass",
+      "pass": 0,
+      "walls": {},
+      "coverProvided": 1,
+      "blocksLos": false,
+      "propId": "prop-175",
+      "corners": [2, 2, 2, 2],
+      "appearance": null
+    },
+    {
+      "x": 5,
+      "y": 2,
+      "z": 30,
+      "surface": "grass",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false,
+      "corners": [2, 2, 2, 2],
+      "appearance": null
+    },
+    {
+      "x": 6,
+      "y": 2,
+      "z": 30,
+      "surface": "grass",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false,
+      "corners": [2, 2, 2, 2],
+      "appearance": null
+    },
+    {
+      "x": 7,
+      "y": 2,
+      "z": 30,
+      "surface": "grass",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false,
+      "slope": {
+        "kind": "straight",
+        "turns": 3
+      },
+      "naturalEdge": true,
+      "corners": [2, 3, 3, 2],
+      "appearance": null
+    },
+    {
+      "x": 8,
+      "y": 3,
+      "z": 30,
+      "surface": "grass",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false,
+      "corners": [3, 3, 3, 3],
+      "appearance": null
+    },
+    {
+      "x": 9,
+      "y": 3,
+      "z": 30,
+      "surface": "grass",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false,
+      "corners": [3, 3, 3, 3],
+      "appearance": null
+    },
+    {
+      "x": 4,
+      "y": 2,
+      "z": 31,
+      "surface": "grass",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false,
+      "corners": [2, 2, 2, 2],
+      "appearance": null
+    },
+    {
+      "x": 5,
+      "y": 2,
+      "z": 31,
+      "surface": "grass",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false,
+      "corners": [2, 2, 2, 2],
+      "appearance": null
+    },
+    {
+      "x": 6,
+      "y": 2,
+      "z": 31,
+      "surface": "grass",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false,
+      "corners": [2, 2, 2, 2],
+      "appearance": null
+    },
+    {
+      "x": 7,
+      "y": 2,
+      "z": 31,
+      "surface": "grass",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false,
+      "slope": {
+        "kind": "outer",
+        "turns": 2
+      },
+      "naturalEdge": true,
+      "corners": [2, 3, 2, 2],
+      "appearance": null
+    },
+    {
+      "x": 8,
+      "y": 2,
+      "z": 31,
+      "surface": "grass",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false,
+      "slope": {
+        "kind": "straight",
+        "turns": 2
+      },
+      "naturalEdge": true,
+      "corners": [3, 3, 2, 2],
+      "appearance": null
+    },
+    {
+      "x": 9,
+      "y": 2,
+      "z": 31,
+      "surface": "grass",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false,
+      "slope": {
+        "kind": "straight",
+        "turns": 2
+      },
+      "naturalEdge": true,
+      "corners": [3, 3, 2, 2],
+      "appearance": null
+    },
+    {
+      "x": 4,
+      "y": 2,
+      "z": 32,
+      "surface": "grass",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false,
+      "slope": {
+        "kind": "straight",
+        "turns": 0
+      },
+      "naturalEdge": true,
+      "corners": [2, 2, 3, 3],
+      "appearance": null
+    },
+    {
+      "x": 5,
+      "y": 2,
+      "z": 32,
+      "surface": "grass",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false,
+      "slope": {
+        "kind": "straight",
+        "turns": 0
+      },
+      "naturalEdge": true,
+      "corners": [2, 2, 3, 3],
+      "appearance": null
+    },
+    {
+      "x": 6,
+      "y": 2,
+      "z": 32,
+      "surface": "grass",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false,
+      "slope": {
+        "kind": "outer",
+        "turns": 0
+      },
+      "naturalEdge": true,
+      "corners": [2, 2, 2, 3],
+      "appearance": null
+    },
+    {
+      "x": 7,
+      "y": 2,
+      "z": 32,
+      "surface": "grass",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false,
+      "corners": [2, 2, 2, 2],
+      "appearance": null
+    },
+    {
+      "x": 8,
+      "y": 2,
+      "z": 32,
+      "surface": "grass",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false,
+      "corners": [2, 2, 2, 2],
+      "appearance": null
+    },
+    {
+      "x": 9,
+      "y": 2,
+      "z": 32,
+      "surface": "grass",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false,
+      "corners": [2, 2, 2, 2],
+      "appearance": null
+    },
+    {
+      "x": 4,
+      "y": 3,
+      "z": 33,
+      "surface": "grass",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false,
+      "corners": [3, 3, 3, 3],
+      "appearance": null
+    },
+    {
+      "x": 5,
+      "y": 3,
+      "z": 33,
+      "surface": "grass",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false,
+      "corners": [3, 3, 3, 3],
+      "appearance": null
+    },
+    {
+      "x": 6,
+      "y": 2,
+      "z": 33,
+      "surface": "grass",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false,
+      "slope": {
+        "kind": "straight",
+        "turns": 1
+      },
+      "naturalEdge": true,
+      "corners": [3, 2, 2, 3],
+      "appearance": null
+    },
+    {
+      "x": 7,
+      "y": 2,
+      "z": 33,
+      "surface": "grass",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false,
+      "corners": [2, 2, 2, 2],
+      "appearance": null
+    },
+    {
+      "x": 8,
+      "y": 2,
+      "z": 33,
+      "surface": "grass",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false,
+      "corners": [2, 2, 2, 2],
+      "appearance": null
+    },
+    {
+      "x": 9,
+      "y": 2,
+      "z": 33,
+      "surface": "grass",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false,
+      "corners": [2, 2, 2, 2],
+      "appearance": null
+    },
+    {
+      "x": 4,
+      "y": 3,
+      "z": 34,
+      "surface": "grass",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false,
+      "corners": [3, 3, 3, 3],
+      "appearance": null
+    },
+    {
+      "x": 5,
+      "y": 3,
+      "z": 34,
+      "surface": "grass",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false,
+      "corners": [3, 3, 3, 3],
+      "appearance": null
+    },
+    {
+      "x": 6,
+      "y": 2,
+      "z": 34,
+      "surface": "grass",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false,
+      "slope": {
+        "kind": "straight",
+        "turns": 1
+      },
+      "naturalEdge": true,
+      "corners": [3, 2, 2, 3],
+      "appearance": null
+    },
+    {
+      "x": 7,
+      "y": 2,
+      "z": 34,
+      "surface": "grass",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false,
+      "corners": [2, 2, 2, 2],
+      "appearance": null
+    },
+    {
+      "x": 8,
+      "y": 2,
+      "z": 34,
+      "surface": "grass",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false,
+      "corners": [2, 2, 2, 2],
+      "appearance": null
+    },
+    {
+      "x": 9,
+      "y": 1,
+      "z": 34,
+      "surface": "grass",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false,
+      "slope": {
+        "kind": "inner",
+        "turns": 1
+      },
+      "naturalEdge": true,
+      "corners": [2, 2, 1, 2],
+      "appearance": null
+    }
+  ],
+  "connectors": []
+}

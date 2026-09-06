@@ -1,6 +1,6 @@
 # Handoff: Map Generation Specialist
 
-Last updated: 2026-09-06 07:05 UTC (session 4, #829 open). Read `docs/process/roles/mapgen.md` and ADR 0004 first.
+Last updated: 2026-09-06 (session 4 close; seat moving to Astra 6). Nothing of mine is open. Read `docs/process/roles/mapgen.md` and ADR 0004 first.
 
 ## 1. Where things stand
 
@@ -73,6 +73,31 @@ Last updated: 2026-09-06 07:05 UTC (session 4, #829 open). Read `docs/process/ro
   room, interior cover tables, stairs ranked to land in the corridor), a three-floor guarantee, and
   the nearest egg spawner within 30 of deploy. §2d has the shape, §7 the gotchas. Earlier in the
   session: #765 (`?models=1`), #769, #789, #801, #823 (half steps, I11, #817 classification).
+
+- **Session 4 close (2026-09-06).** Merged on my output: #838 (#829 scale, ADR 0009 Accepted),
+  #853 (#847 lot-margin wedges), #866 (#863 kerb walls on paved two-layer edges, ramp planks
+  spanning their rise). The #813 ramp audit is closed by the Director and v0.2.9–v0.2.11 tagged.
+  **Where the rest stands for whoever takes this seat:**
+  - **#849 (J3, a tile low on three sides)** is the Art Director's; its piece merged in #874 and
+    the issue is still open. **Caveat before anyone cuts more geometry:** QA's J3 bucket is
+    "three or more high orthogonal sides" (522 tiles on the 108 `qa813` maps), which is wider
+    than the one configuration the piece targets (three high sides with a low opening). Four
+    high sides, three-high with a high diagonal, and so on sit in the same bucket. **Re-measure
+    the bucket per canonical mask (`docs/design/diagnostics/813/method.md`) against the piece's
+    fit boundary first**, and classify only what the piece covers; do not take the 522 as the
+    target. Any placement or classification change is mapgen's (`SlopePass` never emits a
+    three-sided piece today; that is the resolver's or a new pass's call).
+  - **#869 (MapGen-owned, backlog p2, not promoted).** Two items: `kerbs` runs before
+    `connectivity`, so a connectivity ramp repair could bridge a kerb wall it never clears
+    (latent: zero repairs fire on the CI matrix); and ~2,000 pre-existing ramps on city plats
+    pass through raised-feature parapets, which QA confirmed is drawn across the ramp (a visual
+    defect). My proposed fix is on the issue: move `kerbs` after `connectivity` requiring
+    `connected`; have the ramp pass and the repair clear the `half` wall on the exact edge a ramp
+    crosses; pin that no connector crosses a walled edge. About twenty lines; wait for the
+    Director to promote it.
+  - Measurement probes for the ramp audit (draft-side bucket table with a reason column; paved
+    two-layer edge classifier) are pasted into #847 and #863 as `zz-*.test.ts` bodies; drop one
+    into `src/mapgen/service/`, run it with `OUT=` set, delete it before lint.
 
 ## 2. Pipeline as built
 

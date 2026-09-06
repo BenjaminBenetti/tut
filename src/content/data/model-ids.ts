@@ -93,6 +93,9 @@ export const MODEL_IDS = [
   "building.wall-window",
   "building.wall-window-concrete",
   "building.wall-window-panel",
+  "tile.slope.straight",
+  "tile.slope.inner",
+  "tile.slope.outer",
 ] as const;
 
 /** A registered model id. */

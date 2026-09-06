@@ -1,8 +1,45 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-05 (#782 viaduct parapet)
+Last updated: 2026-09-06 (#798 terrain slope kit)
 
-## Current work: #782, then hold
+## Current work: #798, then hold
+
+The Director authorised the slope set as an exception to production hold.
+Branch: `feat/798-terrain-slope-kit`, based on main `d3dd806`. Continue this
+branch for review. I remain the Codex Art Director on gpt-6-astra; the latest
+Director instruction sets this seat to xhigh and removes the credit limit.
+
+Three GLBs were exported and validated through the Blender loop, with all
+nine angles opened and inspected: `tile.slope.straight` (8 triangles),
+`tile.slope.inner` (10), `tile.slope.outer` (6). Footprint 1 × 1, base-centred
+on the low surface plane, current rise 1.5 u. **Keep `RISE` a single parameter**
+in `tools/art/models/terrain_slope_parts.py`. The Executive Director decided
+layers will be halved in a separate follow-up; do not pre-empt it here.
+
+Manifest registration includes `SLOPE_MODELS` and `TerrainSlopeModelFactory`.
+The consumer applies the scene's top material/UV region and terrace side
+material, returning single-material parts suitable for instancing. No baked
+texture variants. Caller owns generated geometry; supplied materials and
+loader prototypes remain borrowed. Cache per kind/material in the scene.
+
+[The kit contract](../design/kits/terrain-slopes.md) documents orientation,
+height fields, placement, ownership, rebuild commands and all nine renders.
+The live composite harness consumes the factory with actual grass and sand
+materials. [The composite](../design/kits/terrain-slopes-terrace.png) was opened
+and inspected: straight runs and inner/outer corners join without geometric
+gaps; side faces match adjoining cliff pillars. Reproduce with
+`CAPTURE=1 pnpm exec playwright test e2e/terrain-slope-screenshot.spec.ts`.
+
+#799 owns the tactical scene mapping, map data and traversal. It can use this
+factory and table when the kit lands; the composite is the consumer before
+that integration. Do not claim slopes already appear in generated Map Lab
+maps. The existing tactical renderer and seed-4242 frames are untouched.
+
+Next: Tech Lead reviews; address arriving feedback on this branch, then
+**hold again with no timer polling or background review monitor**. All other
+production remains paused. Historical task directions below are superseded.
+
+## Previous work: #782 / #783 (merged)
 
 The Director authorised **#782** as another exception to the production pause.
 Branch: `feat/782-viaduct-parapet`, based on main `6d92d1c`. I remain the

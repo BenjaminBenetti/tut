@@ -55,6 +55,13 @@ export const SIDEWALK_VARIANTS = {
   corner: "tile.city.sidewalk-corner",
 } as const satisfies Record<string, ModelAssetId>;
 
+/** Three neutral terrain meshes; surface/side materials are applied by the slope factory. */
+export const SLOPE_MODELS = {
+  straight: "tile.slope.straight",
+  inner: "tile.slope.inner",
+  outer: "tile.slope.outer",
+} as const satisfies Record<string, ModelAssetId>;
+
 // ===========================================
 // Props
 // ===========================================

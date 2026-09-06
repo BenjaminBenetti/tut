@@ -1104,5 +1104,47 @@
     "quality": "final",
     "triangles": 124,
     "bytes": 13380
+  },
+  {
+    "id": "tile.slope.straight",
+    "category": "tiles",
+    "path": "assets/models/tiles/terrain-slope-straight.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.5,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 8,
+    "bytes": 1792
+  },
+  {
+    "id": "tile.slope.inner",
+    "category": "tiles",
+    "path": "assets/models/tiles/terrain-slope-inner.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.5,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 10,
+    "bytes": 1992
+  },
+  {
+    "id": "tile.slope.outer",
+    "category": "tiles",
+    "path": "assets/models/tiles/terrain-slope-outer.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.5,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 6,
+    "bytes": 1712
   }
 ]

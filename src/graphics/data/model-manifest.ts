@@ -641,4 +641,28 @@ export const MODEL_MANIFEST = {
     sockets: [],
     quality: "final",
   },
+  "tile.slope.straight": {
+    category: "tiles",
+    path: "assets/models/tiles/terrain-slope-straight.glb",
+    footprint: { w: 1, d: 1 },
+    height: 1.5,
+    sockets: [],
+    quality: "final",
+  },
+  "tile.slope.inner": {
+    category: "tiles",
+    path: "assets/models/tiles/terrain-slope-inner.glb",
+    footprint: { w: 1, d: 1 },
+    height: 1.5,
+    sockets: [],
+    quality: "final",
+  },
+  "tile.slope.outer": {
+    category: "tiles",
+    path: "assets/models/tiles/terrain-slope-outer.glb",
+    footprint: { w: 1, d: 1 },
+    height: 1.5,
+    sockets: [],
+    quality: "final",
+  },
 } as const satisfies ModelManifest;

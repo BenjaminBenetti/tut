@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-06 ~22:50 UTC (session 5; v0.2.12 tagged at `121f397`; four Map Critic repairs in; only #918 (critic docs, prettier) is open; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-06 ~23:30 UTC (session 5; five Map Critic repairs in, #940 removed all artificial city plinths; only #918 (critic docs) is open; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — production is paused; only #748 is live
 
@@ -78,6 +78,19 @@ the pass. **Every Map Critic PR today needed no code change from review.**
 **Tags today:** v0.2.10 `fe7872c` (ramps), v0.2.11 `58e6c9e` (ladders),
 **v0.2.12 `121f397`** (waterfronts, with roofs, platforms and foundations
 in between). The Director tags after each accepted visual change lands.
+
+**#936 (ED: raised vegetated beds are the same defect) → #940 (MapGen) —
+MERGED `900d9a3`.** Four more `maxPerMap: 0` caps (terrace, raised-park,
+rail-embankment, rubble-mound) on the #926 mechanism; 298 artificial
+blocks → 0, 10,437 columns restored, natural terrain and rural/town maps
+identical, city golden re-pinned, sim 7/7 (45 → 46 wins of 60).
+**Consequence on the record:** `ElevationPass` now realises nothing in
+production and deployed-mech-reachable outdoor tiles above road height in
+cities fall 9,271 → 5. No tactical pin trips, but the #444/#512 premise
+(a mech needs outdoor height in a city) is unmet by design; flagged to the
+Director as a ladder item (real city height: car parks, raised roads,
+terrain under the plat). #937 (double the cutaway radius, Art) is the next
+ED ruling in flight.
 
 ### The #748 split — all three children closed (07:30 UTC)
 

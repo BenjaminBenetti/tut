@@ -3,32 +3,37 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-06 04:50 UTC)
+## Status Digest (2026-09-06 05:48 UTC)
 
 **Production ON HOLD** by the Executive Director (#748); he is tuning map generation personally in Map Lab. No resume ordered. No M3 decomposition, new seat assignments without the Director's request, or Ready queue growth. **v0.2.7** is tagged from main.
 
-**Producer:** now Codex, Astra 6, effort high. Finish the Director's prompted task, open the handoff PR, and end the turn. No monitors, polling, sleeps, crons, or scheduling. Staffing source: PR #803 (`docs/process/studio.md` staffing table).
+**Producer:** Codex, Astra 6, effort high. Executive Director standing rule via the Director (2026-09-06): after grooming, arm **one bounded background watch**; poll GitHub every 5 minutes, print one line and exit on the first merged PR, new issue, seat-label change, or comment addressed to the Producer. Groom the event, then re-arm. Hard stop after 3 hours without an event: report timeout in one line and stop. Never a cron or concurrent watcher. This supersedes PR #803's Director-prompt-only cadence; merged #820 now records the bounded watch in the process docs.
 
 | Engineer seat | Runtime / effort | Tier | Assignment |
 |---|---|---|---|
-| eng-3 | Codex, Astra 6 / xhigh | high only | #807 In Progress — #810 merged, #812 in review; activation next |
+| eng-3 | Codex, Astra 6 / xhigh | high only | Idle — #807 Done; #810/#812/#815 merged |
 | eng-4 | Claude Opus 5 / max | low / medium only | Idle |
 | eng-5 | Claude Opus 5 / max | low / medium only | Idle |
 
 **Milestones** (closed / total issues, API snapshot at 04:09 UTC): M0 14/14 · M1 64/64 · M1.5 33/34 · M2 48/50 · M2.5 25/27 · M3 1/2 (held). These counts do not declare milestone completion.
 
-**Completed / board:** #798 slope meshes and #799 scene mapping are **Done**, delivered by merged #811 after #801's data path. PRs #810 (first #807 slice) and #811 are **Done**. v0.2.7 is tagged from main. Prior handoff #805 and ADR #806 merged.
+**Completed / board:** #807 is **Done**: all three engine slices merged (#810 migration preparation, #812 explicit storey units, #815 activation). eng-3 has no open assignment. #798/#799 remain **Done** through #811. Tech Lead handoffs #816/#818, Producer handoff #814, process PR #820, and Art Director diagnosis #821 merged; v0.2.7 remains the latest recorded tag.
 
-**Half-height exception (#804):** parent and #807 remain **In Progress**; eng-3 retains `seat:eng-3`. #810 prepared migration; #812 explicit storey units is **In Review**; activation is next. These prerequisite slices do not complete #807 or activate half-height layers. #808 remains MapGen-owned, **Blocked until #807's activation merges**. #809 remains Art Director-owned; #798 is satisfied, so **Backlog pending the next prompted art pass**, with its obsolete blocker cleared. Neither specialist child has a seat label; Ready did not grow.
+**Live exceptions / board:** #804 remains **In Progress**. MapGen owns **#808 and #817, In Progress**: Art Director diagnosed ramp gaps as classification-side and handed the fix to MapGen under #808. **#809 is In Review with the Art Director**, via #822. The #817 diagnosis gate was cleared in comment 5557215896; #821 records that diagnosis and leaves the fix to MapGen. All specialist issues remain without engineer seat labels.
 
-**Open PRs** (04:47 UTC snapshot): #812 explicit storey units, about 11 min old, in review; #757 mech-bay preview remains unrelated and waiting (last confirmed open at 04:19 UTC). This pass opens a new small handoff PR from main.
+**Open PRs** (05:47 UTC snapshot): #822 half-rise slope set for #809, just opened, In Review; #819 this Producer handoff, about 18 min old; #757 mech-bay preview, about 35 h old, unrelated and waiting. #818/#820/#821 merged and their board cards are **Done**.
 
-**Blocked / parked:** #808 waits for full #807 completion. **#813 diagonal terrace teeth is Backlog, with no Owner, assignee, or seat label; not Ready until the Executive Director calls it.** General production and M3 remain held; #787 parked; #793 remains p3.
+**Blocked / parked:** #813 diagonal terrace teeth remains **Backlog and unowned**, not Ready until the Executive Director calls it. General production and M3 remain held; #787 parked; #793 remains p3. Ready-high audit found only #447 (held M3); no eligible unowned Ready high issue to seat.
 
-**Risks:** diagonal terrace teeth remain visible despite the slope kit landing; #813 records possible directions but no solution or owner is chosen. Do not mistake #810/#812 prerequisites for activation or unblock #808 early. Autofill still permits Opus high-tier work contrary to strict routing; do not run it. Historical monitor/seating instructions below remain obsolete; the empty release allowlist stays in place.
+**Risks:** #817 diagnosis is not a fix: prop-occupied natural high neighbours are omitted from classification, leaving missing or wrong corners. MapGen must fix classification and supply the before/after evidence under #808/#817. The separate #813 diagonal-edge decision remains open. Autofill still permits Opus high-tier work contrary to strict routing; do not run it. Historical monitor/seating instructions below remain obsolete; the empty release allowlist stays in place.
 
-**Next assignments:** none. eng-3 continues #807; eng-4/eng-5 remain idle. No new seating or Ready queue growth. Stop after opening this handoff PR; the Director prompts the next pass.
+**Routing / next event:** all engineer seats idle; MapGen works #808/#817 and the Art Director works #809. A Ready, unowned `complexity:high` engineer issue within an Executive Director exception goes to free `seat:eng-3` without another Director prompt. Keep strict tiers, one open issue per seat, specialist ownership, and the hold: no M3 decomposition or Ready queue growth beyond Executive Director exceptions. Groom relevant watch events and re-arm once.
 <!-- digest:end -->
+
+
+## Current watch operation (2026-09-06)
+
+The session watcher is `.producer/watch.py` (git-ignored workspace scratch), running in a background terminal. It is read-only and uses a process lock to enforce one watcher. `watch-state.json` keeps the cursor and poll time across re-arms; `watch-result.json` caches the event payload for grooming. The four event classes and self-comment exclusion passed `--selftest`. It never assigns seats or runs the inherited autofill/groom scripts. On API errors it exits visibly rather than retrying rapidly. These session files are not guaranteed to survive a replacement checkout; reconstruct this bounded watch if absent, following the standing rule above. Keep tooling changes out of handoff PRs.
 
 
 > **Historical predecessor notes (2026-09-04–05).** Preserved for context only. The current Status Digest and the Director's instructions supersede all old assignments, tier rules, next steps, and directions to re-arm monitors or crons below. The digest was refreshed manually for this bounded Codex pass.

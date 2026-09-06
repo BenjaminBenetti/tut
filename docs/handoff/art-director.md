@@ -1,15 +1,16 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-06 (#874 merged; #875 ramp connector in progress)
+Last updated: 2026-09-06 (#874 merged; #875 in PR #879)
 
-## Current status: #875 ramp connector, release blocker
+## Current status: #875 in review, PR #879
 
 Codex Art Director, gpt-6-astra xhigh. #874 was visually accepted in comment
 5559030003 and merged as `7b9e3c7`. Its J3 model and proof are complete.
 The Director immediately assigned **#875**, blocking v0.2.10, followed by
 **#876** (diagnose skipped two-corner chains before any geometry or fix).
 
-Branch `feat/875-ramp-connector-kit`: model checkpoint `8c02777`, normal merge
+[PR #879](https://github.com/BenjaminBenetti/tut/pull/879) is open.
+Branch `feat/875-ramp-connector-kit`, proof `567648e`: model checkpoint `8c02777`, normal merge
 of #874 `0967700`. The ramp uses the shared straight-wedge builder and its
 single RISE 0.75: 8 triangles, 1,792 bytes, watertight; all three angles opened.
 It spans the lower tile to meet the upper terrace edge and borrows the support
@@ -24,8 +25,9 @@ both refreshed fog frames. All 3,779 ramps in QA's 108-map matrix resolve to
 art. There are 21 new real-GLB geometry/material/vision/cache tests; full unit
 suite passes 2,078 tests (one skipped). All 59 browser tests pass (zero flaky, 26 opt-in captures skipped), as do
 seven simulation tests and the two composite/fog capture tests. Completing
-the final format check and opening the PR. Current Vite is :4193; scratch `.git/art-875/`. No event watch runs
-while working. Finish #875 through review, then #876 diagnosis before cutting.
+the handoff; the final lint/format check also passes. Everything is committed
+and pushed. Scratch `.git/art-875/`; resume ONE bounded watch for review.
+Finish #875 through review, then #876 diagnosis before cutting.
 
 #849 remains open because its broader 522-tile category was only partly
 covered: 173 ends plus 173 mouths fit the new shape, preserving four-high pits

@@ -1,8 +1,8 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-06 (#875 code approved in #879; #876 diagnosed)
+Last updated: 2026-09-06 (#879 visually accepted; #876 closed)
 
-## Current status: #875 awaits frame verdict; #876 diagnosis
+## Current status: #879 and #884 accepted, awaiting Tech Lead merges
 
 Codex Art Director, gpt-6-astra xhigh. #874 was visually accepted in comment
 5559030003 and merged as `7b9e3c7`. Its J3 model and proof are complete.
@@ -28,8 +28,10 @@ seven simulation tests and the two composite/fog capture tests. The final lint/f
 and pushed. Scratch `.git/art-875/`; resume ONE bounded watch for review.
 Tech Lead approved #879 on `6c084da` in comment 5559322225: independent full
 merge gate green against main including #757. The CI runner timeout is his
-separate configuration follow-up; no art change requested. Director frame
-verdict pending.
+separate configuration follow-up, merged as #881; no art change requested.
+**Director accepted #879's K2, ground and composite frames in comment 5559490770**
+and cleared the release gate. Tech Lead merges on his gate; Director then prompts
+QA's final audit before tagging v0.2.10.
 
 While #875 waited, #876's diagnosis was posted **before** any trial in comment
 5559358784. Exact QA counts reproduced: 41 of 92 connected outer tiles take the
@@ -45,9 +47,11 @@ new caps created triangular ridges in the V2 frame. Both splits looked worse;
 the trial was discarded and runtime files restored. [PR #884](https://github.com/BenjaminBenetti/tut/pull/884), branch
 `chore/876-diagonal-coverage`, main base `f2dbae0`, contains the before/trial
 comparison, neighbourhoods, exact counts and archived unapplied patch. No
-new mesh or live resolver change. Recommend preserving V2 unless the Director
-wants the two banks regraded over a larger area. #876 remains open for that
-judgement; comparison posted in comment 5559458581. [Evidence](../design/diagnostics/876/README.md).
+new mesh or live resolver change. Comparison posted in comment 5559458581.
+**Director judged it in comment 5559497578, ruled that the crease stays, and
+closed #876 as not a coverage bug.** The 92-tile grouping includes same-level
+banks outside the climbing plane's purpose. He directed #884 to merge as the
+record. Do not reopen the diagnosis or add geometry without new direction. [Evidence](../design/diagnostics/876/README.md).
 
 Scratch `.git/art-876/`; its `work` checkout is separate from #879's review
 branch. ONE bounded watch remains active for #879 and the standing art events.

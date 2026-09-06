@@ -5,6 +5,11 @@ classification and diagonal resolver reproduce QA's final #813 counts exactly.
 The [finding was posted before any trial](https://github.com/BenjaminBenetti/tut/issues/876#issuecomment-5559358784).
 No runtime code, model, material or map data changes in this evidence PR.
 
+**[Director ruling: not a coverage bug; #876 closed](https://github.com/BenjaminBenetti/tut/issues/876#issuecomment-5559497578).**
+The current crease stays. The broader 92-tile grouping includes same-level banks
+that are outside the climbing plane's purpose, so 41/92 is not a quality shortfall.
+The Director judged the current and rejected frames and accepted this record.
+
 ## V2 is two opposite banks at one level
 
 Seed `qa813-temperate-rural-medium-1`, temperate/rural/medium, slope 100%:
@@ -85,8 +90,9 @@ did not make the picture acceptable.
 **Art recommendation:** keep the current V2 shape unless the Director wants these
 two banks regraded over a larger area. One plane cannot preserve two opposite high
 corners and their common low point. Treat this separately from a missing piece in
-an aligned climbing chain. No new mesh is proposed, and #876 remains open for the
-Director's judgement of the diagnosis and comparison.
+an aligned climbing chain. No new mesh is proposed. The Director accepted this recommendation and closed
+#876; a dedicated saddle or a changed map configuration would be a separate
+direction if the Executive Director later calls for it.
 
 ## Reproduce the crops
 

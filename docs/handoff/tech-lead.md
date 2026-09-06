@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-06 ~05:30 UTC (session 5; ADR 0008 engine activation #815 merged, #807 closed; #808/#809 next; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-06 ~06:05 UTC (session 5; #823 half steps merged, #808 closed; #822 half-rise kit held for its rebase, then v0.2.8; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — production is paused; only #748 is live
 
@@ -158,10 +158,19 @@ in this session when you ask. You and MapGen stay Fable. Staffing table in
   migration registered, ADR 0004 amended, ADR 0008 → Accepted); content read
   and sound; four frames byte-identical/sidebar-only and `test:sim` identical
   in the body; **merged `5fff54d`, #807 closed.** `main` is now in layers:
-  `STOREY_LAYERS = 2`, `LAYER_HEIGHT = 0.75`, map v2, schema 16. **Next: #808**
-  (MapGen: `amplitudeLayers`, I11 smoothing, slope tiles without ramps, step
-  readout, `test:sim` before/after — the baseline WILL move) and **#809** (Art:
-  slope set at `RISE = 0.75`); Director judges both frames before merge.
+  `STOREY_LAYERS = 2`, `LAYER_HEIGHT = 0.75`, map v2, schema 16.
+- **#823 (MapGen, #808) merged `d3bf95b`**: terrain quantised to layers with
+  **I11** lowering-only smoothing (max natural step 1, pinned in the sweep),
+  slope tiles shape-only with no connector, ramps never on a slope tile, the
+  #817 classification fix (shape read from geometry, not the walkable set),
+  Map Lab Steps readout, `test:sim` identical on the city seed (rural
+  reachability did change — #734 reads that). #808 closed; #817 closes when
+  #822 lands with the Art Director's mapping-side tests.
+- **#822 (Art Director, #809) HELD by the Director'"'"'s landing order**: it must
+  be rebased onto `main` with #823, the resolver seam flipped back to place
+  the 0.75-rise kit on one-layer steps and retire the `slopes` placeholder,
+  and a regenerated `hills-1` frame; the Director judges that frame, then gate,
+  merge, and the Director tags **v0.2.8**. Conditions posted on the PR (06:05).
 - Slopes: #801 data path and #811 kit (`306a562`, #798 closed) landed; **#799
   closed**. #811 is at `RISE = 1.5`; #809 re-emits at 0.75.
 

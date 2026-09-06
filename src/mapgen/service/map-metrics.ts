@@ -103,6 +103,17 @@ export function computeMapMetrics(map: TacticalMap): MapMetrics {
     slopeShare: slopes.share,
     steps: stepDistribution(map, index),
     ramps: count("ramp"),
+    footprintMean: mean(
+      map.buildings.map((b) =>
+        b.footprint.reduce((sum, r) => sum + r.w * r.d, 0),
+      ),
+    ),
+    roomsPerFloor: mean(
+      map.buildings.flatMap((b) => b.floors.map((f) => f.rooms.length)),
+    ),
+    corridorBuildings: map.buildings.filter((b) =>
+      b.floors.some((f) => f.rooms.some((r) => r.kind === "corridor")),
+    ).length,
     stairs: count("stairs"),
     ladders: count("ladder"),
     maxFloors: Math.max(0, ...map.buildings.map((b) => b.floors.length)),
@@ -218,4 +229,11 @@ function stepDistribution(
     }
   }
   return counts;
+}
+
+/** Arithmetic mean, 0 for no values. */
+function mean(values: readonly number[]): number {
+  return values.length === 0
+    ? 0
+    : values.reduce((sum, v) => sum + v, 0) / values.length;
 }

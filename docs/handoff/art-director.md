@@ -1,36 +1,40 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-06 (#840 carriageway kit ready for review)
+Last updated: 2026-09-06 (#840 accepted; final integration in review)
 
 ## Current status: #840 is the release gate
 
-The Director assigned #840 ahead of #813. Review: [PR #850](https://github.com/BenjaminBenetti/tut/pull/850).
-Branch `feat/840-carriageway-kit`.
-This seat remains Codex Art Director, gpt-6-astra xhigh. Four Blender modules
-are built, validated and registered: plain lane slab, straight kerb, corner
-kerb and centre-line slab. All twelve fixed angles and the live composite
-have been opened and inspected. The composite uses the actual resolver,
-factory and instanced tactical view for a trail, two-lane corner, three-lane
-T and four-lane crossing. [Contract and renders](../design/kits/carriageways.md).
+Review: [PR #850](https://github.com/BenjaminBenetti/tut/pull/850), branch
+`feat/840-carriageway-kit`. This seat is Codex Art Director, gpt-6-astra xhigh.
+The Director accepted the composite and large-city control in comment
+5558027018; the Tech Lead approved the content in comment 5558014418.
 
-The consumer places one asphalt slab per tile, kerbs at the road perimeter,
-one divider across its width and at most one existing mark at each junction
-centre. Styles select dirt/unmarked trails or asphalt/kerbs/paint. Prototype
-and mist materials are shared across levels. Eight new tests cover road
-widths, turns, junction ownership, real GLB bounds, composition and sharing.
-Typecheck, lint, 1,994 unit tests (one skipped), build and all 59 browser
-tests (16 opt-in captures skipped) pass. The twelve Blender angles, live
-composite, 96 × 96 big-city control and both seed-4242 fog frames were
-rendered and opened. The current-main fog frames show the new road fit.
+#838 is merged as `aa6eedf`. Main is merged into this art branch, with the
+large-city binary conflict resolved by regenerating it on the combined tree.
+Both seed-4242 fog frames and the live composite were also regenerated.
+All four frames were opened and inspected. The city scene is pixel-identical
+to the accepted integration control to the right of x=400; only panel timing
+text changes. The composite picks up #838's wide-pavement fitting. Fog now
+uses #838's larger generated map. The Director judges these integration
+frames before the Tech Lead's merge gate and the release tag.
 
-#838 remains open at the last check. The committed
-[large-city control](../design/shots/829-preview-big-city-temperate-large.png)
-comes from an isolated integration tree: #838 `c48ae4b` plus this kit's
-`b2cad8f`. It has 11,642 tiles, 20 buildings and 680 props. No MapGen code is
-included in this PR. Watch #838's merge as well as this PR's review; once
-it lands, merge main on the art branch and regenerate that control and
-both fog frames on the combined tree before merge. The Director judges
-visual acceptance and the Tech Lead merges.
+Four Blender modules are built, validated and manifest-registered: plain
+lane slab, straight kerb, corner kerb and centre-line slab. All twelve fixed
+angles were opened. [Contract and renders](../design/kits/carriageways.md).
+The consumer places one surface per tile, perimeter kerbs, one divider across
+the carriageway and at most one mark per junction. Trails stay unpainted;
+street/grid styles use asphalt. Prototype and mist materials stay shared.
+
+The merge replaces #838's two old-kit assertions with the same 8 × 8
+neighbourhoods checking one divider, plain interior and one central mark.
+Those cases also cover a short approach and a two-lane mouth on a four-lane
+avenue. Count road beyond the junction boundary to recognise an arm; a
+second minimum-length test would incorrectly discard short approaches.
+
+Typecheck, lint, 2,000 unit tests (one skipped), build and all three capture
+tests pass. `CI=1 pnpm test:e2e` passes all 59 browser tests (19 opt-in captures
+skipped), with zero flakes, in 2.5 minutes. The existing build
+chunk-size warning remains. Final integration is not yet merged.
 
 QA's #813 catalogue arrived and merged in #839. It is read and six key
 crops were opened. The Director judged it in comment 5557976144 and QA split

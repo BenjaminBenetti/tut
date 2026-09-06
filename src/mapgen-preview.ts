@@ -8,6 +8,7 @@ import { OBJECTIVE_TUNING } from "./tactical/data/objective-tuning";
 import { TacticalHudView } from "./ui/view/tactical-hud-view";
 import { CameraInputController } from "./graphics/controller/camera-input-controller";
 import { MODEL_MANIFEST } from "./graphics/data/model-manifest";
+import { STOREY_LAYERS } from "./core/model/elevation";
 import { CAMERA_ZOOM } from "./graphics/model/camera-state";
 import { GltfModelLoader } from "./graphics/service/gltf-model-loader";
 import { OrthographicCameraRig } from "./graphics/service/orthographic-camera-rig";
@@ -16,6 +17,7 @@ import { SceneService } from "./graphics/service/scene-service";
 import { TacticalSceneBuilder } from "./graphics/service/tactical-scene-builder";
 import { DEFAULT_MISSION_HOOKS } from "./mapgen/data/hook-requirements";
 import type { MapRecipe } from "./mapgen/model/map-recipe";
+import type { TacticalMap } from "./mapgen/model/tactical-map";
 import { renderAscii } from "./mapgen/service/ascii-map-renderer";
 import { createDefaultRegistries } from "./mapgen/service/default-registries";
 import { generateTacticalMapWithDiagnostics } from "./mapgen/service/generate-tactical-map";
@@ -77,6 +79,22 @@ function stateFromUrl(): PreviewControlsState {
     // `?slope=` is a percent, the way the slider shows it (#799).
     slopeShare: clampShare(query.get("slope")),
   };
+}
+
+/**
+ * `?floor=N` cuts the view through building floor N (0 is the ground
+ * floor): the highest layer shown is the top layer of that floor on the
+ * lowest-standing building, so interiors are judged as structures (#829).
+ * Undefined without the parameter or without buildings.
+ */
+function floorCutFromUrl(map: TacticalMap): number | undefined {
+  const raw = new URLSearchParams(window.location.search).get("floor");
+  const floor = raw === null ? Number.NaN : Number(raw);
+  if (!Number.isInteger(floor) || floor < 0 || map.buildings.length === 0) {
+    return undefined;
+  }
+  const ground = Math.min(...map.buildings.map((b) => b.groundLevel));
+  return ground + (floor + 1) * STOREY_LAYERS - 1;
 }
 
 /**
@@ -290,6 +308,10 @@ async function main(): Promise<void> {
         elapsedMs,
       });
       document.body.dataset.mapSeed = state.seed;
+      const floorCut = floorCutFromUrl(map);
+      if (floorCut !== undefined) {
+        screen.showLevelCut(floorCut);
+      }
       // Without units there is nothing async to wait for, so this render
       // is already done. Set unconditionally so `data-preview-ready`
       // means the same thing on both paths (#688).

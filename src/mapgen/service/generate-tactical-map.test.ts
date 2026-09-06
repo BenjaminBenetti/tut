@@ -35,8 +35,8 @@ describe("generateTacticalMap", () => {
     const r = recipe("entry");
     const map = generateTacticalMap(r);
     expect(map.recipe).toBe(r);
-    expect(map.width).toBe(32);
-    expect(map.depth).toBe(32);
+    expect(map.width).toBe(48);
+    expect(map.depth).toBe(48);
     expect(map.levels).toBeGreaterThanOrEqual(2);
     expect(validateTacticalMap(map, registries)).toEqual([]);
     expect(map.buildings.length).toBeGreaterThan(0);

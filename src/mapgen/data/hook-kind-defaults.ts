@@ -16,6 +16,8 @@ import { PassMask as Pass } from "../model/pass-mask";
 export interface HookKindDefaults {
   readonly requiredPass: PassMask;
   readonly minDistanceFromDeploy?: number;
+  /** See `HookRequirement.maxNearestDistanceFromDeploy`. */
+  readonly maxNearestDistanceFromDeploy?: number;
   readonly meta?: HookMeta;
 }
 
@@ -26,6 +28,9 @@ export const HOOK_KIND_DEFAULTS: Readonly<Record<HookKind, HookKindDefaults>> =
     [HookKinds.EGG_SPAWNER]: {
       requiredPass: Pass.INFANTRY,
       minDistanceFromDeploy: 12,
+      // A mech at its slowest walks 40 tiles in the ten turns the #345
+      // pin allows; 30 manhattan leaves room for the route to wind.
+      maxNearestDistanceFromDeploy: 30,
       meta: { hatchRadius: 3 },
     },
     [HookKinds.EDGE_SPAWN]: { requiredPass: Pass.INFANTRY },

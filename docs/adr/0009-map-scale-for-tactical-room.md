@@ -1,6 +1,6 @@
 # ADR 0009: Map scale opens up for tactical room
 
-- **Status:** Proposed (Tech Lead); becomes Accepted when the generation child ships.
+- **Status:** Accepted (#829 shipped the generation child; the factors it chose are in §5).
 - **Date:** 2026-09-06
 - **Author:** Tech Lead
 - **Requested by:** Executive Director (#826, from Map Lab play): *"the buildings are just too small. There's not enough internal space… the roads are one tile wide… just generally scale the map up so that there is more space to maneuver… make sure the max zoom level is higher."* His doubling and two-tile road are **illustrations, not a specification**; MapGen owns the factors.
@@ -122,3 +122,25 @@ play decides the next pass.
   (frontage detection by adjacent road column), `prop-pass` (street props on
   the flanking column) and `elevation-pass` (frontage strip) are the places
   that will break first and are named so the generation child finds them.
+
+## 5. Factors chosen (#829, MapGen)
+
+Recorded here so later passes react to numbers, not to a diff. Every one
+is a knob in `mapgen/data/`; none is a multiplier.
+
+| Knob | Was | Now | Why |
+| --- | --- | --- | --- |
+| Map presets small / medium / large | 32² / 48² / 72² | 48² / 72² / 96² | ×1.5 a side (×2.25 area) holds structures twice the size without the ×4 area that a doubled side costs every flood fill; 96 is what the camera child (#828) fits at its widest zoom. Ids unchanged. |
+| Road lanes trail / streets / grid | 1 / 1 / 2 | 2 / 3 / 4 | A dirt track two abreast, a high street a mech and two soldiers wide, an avenue a full squad line can cross under fire. Every style lays its lanes, the grid no longer alone. |
+| Sidewalk width town / city | 1 / 1 (boolean) | 1 / 2 | Pavement that reads as a strip beside a four-lane avenue, and the first cover-free band a squad crosses leaving a doorway. |
+| City block pitch | 12 ± 2 | 26 ± 3 | Road 4 + pavement 2 + 2 leaves 18 columns for two rows of lots of depth 7 to 8 with the two-column gap between them. |
+| Lot width × depth rural / town / city | 5–8 / 4–7 / 3–6 (square) | 10–16² / 8–14² / 7–12 × 7–10 | Doubled, so the doubled footprints below still leave a yard; city depth capped so both sides of a block get a row. Building counts are unchanged and now tuned against 72². |
+| Lot gap, edge margin | 1, 1 | 2, 2 | A soldier passes between two houses without brushing both walls; the same for the map edge. |
+| Footprints house / shop / warehouse / apartment / tower | 3–5² / 4–6×3–5 / 5–8² / 3–6² / 3–5² | 6–10² / 8–12×6–10 / 10–16² / 6–12² / 6–10² | Doubled, so a floor holds at least two rooms of the size below plus a corridor. |
+| Room size (min–max edge) | one `minRoomSize` 2–4 | house 3–5, shop 4–7, warehouse 6–10, apartment / tower 3–5 | A fireteam of four plus cover in the smallest room; a shop floor and a warehouse bay open enough for a firefight. |
+| Corridor width | none | house 1, apartment / tower 2, shop / warehouse 0 | The spine every room opens onto and every flight of stairs lands in; narrow houses get a hallway, blocks of flats a corridor two abreast, shops and warehouses stay open plan. |
+| Interior cover (tiles per prop / max) hall / room / storage / corridor | 8/2, 6/2, 5/3, – | 7/3, 6/4, 4/8, 10/2 | A 4×5 room holds three pieces of cover, a bay up to eight, a corridor a crate. Every placement is still verified not to cut the building off. |
+| Elevated feature footprints, densities per area | – | unchanged | Features are placed by attempts against the plat and already scale with it; per-100-column densities self-scale. Re-verified across the sweep, not retuned (balance is out of scope, #826). |
+| Nearest egg spawner from deploy | random beyond 12 | **within 30** (`maxNearestDistanceFromDeploy`), the rest anywhere | Spawners drawn at random beyond a minimum drift outward with the board: on 72² a mech at its slowest needed 11–17 turns to its first shot on five of twelve shipped maps. A placement rule, not a count or wave change. |
+| Tallest building | two floors guaranteed | **three** where the settlement allows three | A small city at this scale holds four or five buildings, so the biome weights alone no longer promise an apartment on every map. |
+

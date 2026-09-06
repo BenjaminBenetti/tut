@@ -15,6 +15,11 @@ import type { SettlementDefinition } from "../../model/settlement-definition";
  * surfaces and sidewalks, and records segments.
  */
 export interface RoadLine {
+  /**
+   * Columns in along-the-road order. A line wider than one lane lists
+   * every column of one position along the road together, so the road
+   * pass can level a stretch of the whole carriageway at once.
+   */
   readonly columns: readonly ColumnCoord[];
 }
 

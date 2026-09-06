@@ -53,12 +53,15 @@ export class TrailRoadBuilder implements RoadBuilder {
 
   /** Lays one trail; returns nothing when no dry crossing exists. */
   build(context: RoadBuilderContext): RoadLine[] {
-    const { draft, rng } = context;
+    const { draft, settlement, rng } = context;
+    const lanes = Math.max(1, settlement.roadWidth);
     const axis = crossingAxis(draft, rng.pick(["x", "z"]));
-    const { lo, hi } = dryLateralRange(draft, axis);
-    if (lo === -1) {
+    const { lo, hi: dryHi } = dryLateralRange(draft, axis);
+    if (lo === -1 || dryHi - lo + 1 < lanes) {
       return [];
     }
+    // `lateral` is the first lane; the band reaches `lanes - 1` further.
+    const hi = dryHi - (lanes - 1);
     const alongLength = axis === "z" ? draft.depth : draft.width;
     const margin = Math.min(2, Math.floor((hi - lo) / 4));
     const centre = rng.nextInt(lo + margin, hi - margin);
@@ -66,12 +69,22 @@ export class TrailRoadBuilder implements RoadBuilder {
     const noise = new ValueNoise(rng.fork("meander"));
 
     const columns: ColumnCoord[] = [];
+    const seen = new Set<string>();
+    const push = (column: ColumnCoord): void => {
+      const key = `${column.x},${column.z}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        columns.push(column);
+      }
+    };
     let lateral = clampInt(
       centre + (noise.sample(0, 0.5) - 0.5) * 2 * amplitude,
       lo,
       hi,
     );
-    columns.push(toColumn(axis, 0, lateral));
+    for (let lane = 0; lane < lanes; lane++) {
+      push(toColumn(axis, 0, lateral + lane));
+    }
     for (let along = 1; along < alongLength; along++) {
       const target = clampInt(
         centre +
@@ -80,7 +93,11 @@ export class TrailRoadBuilder implements RoadBuilder {
         hi,
       );
       const next = clampInt(target, lateral - MAX_STEP, lateral + MAX_STEP);
-      appendStep(columns, axis, along, lateral, next);
+      const step: ColumnCoord[] = [];
+      for (let lane = 0; lane < lanes; lane++) {
+        appendStep(step, axis, along, lateral + lane, next + lane);
+      }
+      step.forEach(push);
       lateral = next;
     }
     return [{ columns }];

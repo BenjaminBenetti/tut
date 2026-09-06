@@ -1,6 +1,7 @@
 import { DIRECTIONS } from "../../../core/model/direction";
 import type { Rng } from "../../../core/model/rng";
 import { stepGridPos } from "../../../core/service/grid-math";
+import { RoomKindIds } from "../../data/room-kind-ids";
 import { SurfaceIds } from "../../data/surfaces";
 import type { Room } from "../../model/building";
 import type { Connector } from "../../model/connector";
@@ -51,19 +52,27 @@ export function placeStairs(
   fromY: number,
   toY: number,
   rooms: readonly Room[],
+  upperRooms: readonly Room[],
   entrance: TileCoord,
   rng: Rng,
 ): Connector | undefined {
   const roomsById = new Map(rooms.map((room) => [room.id, room]));
+  const upperById = new Map(upperRooms.map((room) => [room.id, room]));
   const shuffled = rng.shuffle(
     collectCandidates(draft, buildingId, fromY, toY, roomsById, entrance),
   );
-  // Interior holes first: a hole on the perimeter takes the facade wall
-  // on that column with it.
-  const candidates = [
-    ...shuffled.filter((c) => !onPerimeter(draft, c.hole)),
-    ...shuffled.filter((c) => onPerimeter(draft, c.hole)),
-  ];
+  // Interior holes first, since a hole on the perimeter takes the facade
+  // wall on that column with it; among those, stairs that lead somewhere
+  // (#829): a flight landing in the corridor or hall above, then one
+  // rising from a corridor or hall.
+  const rank = (c: StairCandidate): number =>
+    (onPerimeter(draft, c.hole) ? 0 : 4) +
+    (isSpine(upperById.get(c.landing.roomId ?? "")) ? 2 : 0) +
+    (isSpine(roomsById.get(c.from.roomId ?? "")) ? 1 : 0);
+  const candidates = shuffled
+    .map((candidate, order) => ({ candidate, order, rank: rank(candidate) }))
+    .sort((a, b) => b.rank - a.rank || a.order - b.order)
+    .map((entry) => entry.candidate);
   for (const candidate of candidates.slice(0, MAX_ATTEMPTS)) {
     const connector = tryCandidate(
       draft,
@@ -104,7 +113,11 @@ function collectCandidates(
     }
     const room =
       from.roomId === undefined ? undefined : roomsById.get(from.roomId);
-    if (room !== undefined && (room.rect.w < 2 || room.rect.d < 2)) {
+    if (
+      room !== undefined &&
+      room.kind !== RoomKindIds.CORRIDOR &&
+      (room.rect.w < 2 || room.rect.d < 2)
+    ) {
       continue;
     }
     const hole = draft.getTile({ x: from.x, y: toY, z: from.z });
@@ -157,6 +170,11 @@ function tryCandidate(
   from.surface = SurfaceIds.FLOOR;
   draft.addTile(hole);
   return undefined;
+}
+
+/** Corridors and halls: the rooms a flight should start or land in. */
+function isSpine(room: Room | undefined): boolean {
+  return room?.kind === RoomKindIds.CORRIDOR || room?.kind === RoomKindIds.HALL;
 }
 
 /**

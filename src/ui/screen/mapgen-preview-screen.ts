@@ -238,6 +238,20 @@ export class MapgenPreviewScreen {
     };
   }
 
+  /**
+   * Cuts the view at a layer, the way dragging the Levels slider does:
+   * `?floor=` in Map Lab uses it to show buildings through one floor.
+   */
+  showLevelCut(maxLevel: number): void {
+    const clamped = Math.max(
+      0,
+      Math.min(Number(this.levelSlider.max), maxLevel),
+    );
+    this.levelSlider.value = String(clamped);
+    this.options.onLevelChange(this.currentMaxLevel());
+    this.levelLabel.textContent = this.describeLevel();
+  }
+
   /** Describes a generated map in the read-outs. */
   showResult(result: PreviewResult): void {
     const { map, diagnostics, metrics, assessment } = result;
@@ -495,6 +509,10 @@ function metricRows(
     [
       "Vertical",
       `${delta((m) => m.ramps, whole)} ramps, ${metrics.stairs} stairs, ${metrics.ladders} ladders, ${metrics.maxFloors} floors max`,
+    ],
+    [
+      "Interiors",
+      `${metrics.footprintMean.toFixed(0)} tiles mean footprint, ${metrics.roomsPerFloor.toFixed(1)} rooms per floor, ${String(metrics.corridorBuildings)} with a corridor`,
     ],
     [
       "Slopes",

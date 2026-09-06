@@ -100,7 +100,9 @@ export function resolveRoadAppearances(
       }
       const w = region.w + region.e + 1;
       const d = region.n + region.s + 1;
-      const arms = DIRECTIONS.filter((side) => p[side] >= JUNCTION_EXTENT - 1);
+      // A mouth can have a short approach: count road beyond the junction
+      // box, rather than requiring another full carriageway width of run.
+      const arms = DIRECTIONS.filter((side) => p[side] > region[side]);
       if (
         arms.length >= 3 &&
         region.w === Math.floor((w - 1) / 2) &&

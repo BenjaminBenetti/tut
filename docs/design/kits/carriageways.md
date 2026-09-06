@@ -61,27 +61,34 @@ the existing shared mist path. No material is allocated per road instance.
 
 This control uses seed `big-city`, temperate/city/large, all levels,
 `models=1`, 2400 × 1500. It contains 96 × 96 × 12 cells, 11,642 tiles,
-20 buildings and 680 props. The source is an isolated integration tree:
-#838 `c48ae4b` plus kit commit `b2cad8f`. #838 was still open at capture time;
-its generator changes are not part of this art PR. The only local harness
-adjustments selected a separate dev-server port and allowed that scratch
-worktree to be served. Capture:
+20 buildings and 680 props. It was regenerated on this branch after merging
+#838's final `aa6eedf` main, resolving the binary conflict with that capture.
+The city scene to the right of x=400 is pixel-identical to the Director's
+accepted integration control; changes are confined to panel timing text.
+The refreshed composite also includes #838's wide-pavement fitting. All four
+current scene frames (composite, city, fog turns 1/7) were opened and inspected.
 
 ```sh
-CAPTURE=1 pnpm exec playwright test e2e/slope-screenshot.spec.ts -g 829-preview-big-city-temperate-large
+CAPTURE=1 pnpm exec playwright test e2e/carriageway-screenshot.spec.ts e2e/slope-screenshot.spec.ts e2e/fog-screenshot.spec.ts -g '829-preview-big-city-temperate-large|captures a mission with fog|carriageway' --workers=1
 ```
 
-The frame was opened and inspected: one divider per avenue and an open
-crossing, with continuous pavement edges. Regenerate it on the merged tree
-when #838 lands. The frame-rate probe counted 5 frames over 3,000 ms (1.7
-fps) on headless Chromium/SwiftShader while the browser suite was also
-running; this is capture provenance, not a hardware performance benchmark.
+The frame-rate probe counted 6 frames over 3,000 ms (2.0 fps) on headless
+Chromium/SwiftShader while unit tests were running. The raw record is
+[beside the capture](../shots/829-big-city-frame-rate.txt); this is capture
+provenance, not a hardware performance benchmark.
 
-On the main-based kit branch, typecheck, lint, 1,994 unit tests (one skipped),
-build and all 59 browser tests (16 opt-in captures skipped) pass. The build
-retains its existing chunk-size warning. The composite capture, big-city
-integration capture and seed-4242 fog capture pass. Both fog frames were
-opened and inspected; their roads now use the carriageway fit.
+Typecheck, lint, 2,000 unit tests (one skipped), build and all three capture
+tests pass. `CI=1 pnpm test:e2e` passes all 59 browser tests (19 opt-in captures
+skipped), with zero flakes, in 2.5 minutes. The build retains its
+existing chunk-size warning. The merge updates #838's two repeated-piece
+assertions to the accepted carriageway behaviour on the same neighbourhoods.
+Short approaches and unequal-width T mouths each own exactly one central
+mark: an arm is road continuing beyond the junction boundary, with no
+second minimum-length threshold.
+
+The Director accepted the original twelve-angle kit, composite and staged
+large-city control on #850. These refreshed integration frames return for
+judgement before merge.
 
 ## Three fixed angles
 

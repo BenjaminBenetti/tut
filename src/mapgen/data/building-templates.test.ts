@@ -33,7 +33,18 @@ describe("building templates", () => {
       expect(template.windowDensity).toBeGreaterThanOrEqual(0);
       expect(template.windowDensity).toBeLessThanOrEqual(1);
       expect(template.scales.length, template.id).toBeGreaterThan(0);
-      expect(template.minRoomSize).toBeGreaterThanOrEqual(2);
+      expect(
+        template.interior.roomSize.min,
+        template.id,
+      ).toBeGreaterThanOrEqual(3);
+      expect(
+        template.interior.roomSize.max,
+        template.id,
+      ).toBeGreaterThanOrEqual(template.interior.roomSize.min);
+      expect(
+        template.interior.corridorWidth,
+        template.id,
+      ).toBeGreaterThanOrEqual(0);
       if (template.roofWalkable) {
         expect(template.roof, template.id).toBe("flat");
       }

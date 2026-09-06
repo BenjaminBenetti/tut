@@ -4,6 +4,7 @@ import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import { PropKindIds } from "../../mapgen/data/props";
 import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
 import { TileIndex } from "../../mapgen/service/tile-index";
+import { attackTerrain } from "../../tactical/service/combat-service";
 import {
   missionWith,
   unitAt,
@@ -14,6 +15,7 @@ import { MOVE } from "../../tactical/model/move-command";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { Unit } from "../../tactical/model/unit";
 import { buildMoveGraph } from "../../tactical/service/movement-service";
+import { withVision } from "../../tactical/service/vision-service";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { TacticalCommand } from "../../tactical/model/tactical-command";
 import type { MoveCommand } from "../../tactical/model/move-command";
@@ -29,7 +31,7 @@ import {
   withBug,
   bugView,
 } from "./bug-mission.test-helper";
-import { exposureScore, tileDistance } from "./utility";
+import { exposureScore, reachableTiles, tileDistance } from "./utility";
 
 // ===========================================
 // Fixtures
@@ -41,7 +43,44 @@ const ctx = (mission: TacticalState, seed: number): BehaviourContext => ({
   graph: buildMoveGraph(mission.map),
 });
 
-/** Runs up to `turns` lurker turns from `start`, returning where it ends and whether it attacked. */
+/**
+ * An isolated north-facing mark with low cover to its west. Front and
+ * rear remain open, with room to approach from all four quadrants. The
+ * crate blocks one side approach but never sight; neither front nor rear
+ * is forced by terrain. This premise must survive generated-map changes
+ * such as ADR 0009 (#842).
+ *
+ * ```
+ *       x=2     6    10
+ * z=3    L      .     L
+ * z=5           F
+ * z=6          C^          C crate, ^ mark facing north
+ * z=7           B          F front, B behind
+ * z=9    L      .     L     L possible lurker starts
+ * ```
+ */
+function flankCoverMap() {
+  const map = new FixtureMapBuilder(13, 13, 1)
+    .fillGround()
+    .prop(PropKindIds.CRATE, { x: 5, y: 0, z: 6 })
+    .build();
+  const mark = unitAt("mark", "infantry", { x: 6, y: 0, z: 6 });
+  return {
+    mission: missionWith(map, [mark], { phase: "bugs" }),
+    mark,
+    starts: [
+      { x: 2, y: 0, z: 3 },
+      { x: 10, y: 0, z: 3 },
+      { x: 2, y: 0, z: 9 },
+      { x: 10, y: 0, z: 9 },
+    ],
+  };
+}
+
+/**
+ * A positioning probe: refresh AP and vision between turns and stop at
+ * the first proposed attack. It does not resolve damage or enemy turns.
+ */
 function stalk(
   start: TacticalState,
   bugId: string,
@@ -60,7 +99,10 @@ function stalk(
     );
     for (const command of commands) {
       if (command.type === MOVE) {
-        mission = applyMoveTo(mission, bugId, command.payload.path);
+        mission = withVision({
+          state: applyMoveTo(mission, bugId, command.payload.path),
+          events: [],
+        }).state;
         moved++;
       }
       if (command.type === ATTACK) {
@@ -88,28 +130,26 @@ function relation(bug: Unit, mark: Unit): "behind" | "front" | "side" | "away" {
 
 describe("LurkerBehaviour", () => {
   it("ends adjacent-behind its mark more often than in front across a seed sweep on a cover map", () => {
-    const base = startedMission("bugs");
-    const squads = base.units.filter((u) => u.kind === "squad");
-    expect(squads.length).toBeGreaterThan(0);
+    const { mission: base, mark, starts } = flankCoverMap();
+    const front = { x: 6, y: 0, z: 5 };
+    const behind = { x: 6, y: 0, z: 7 };
+    expect(
+      attackTerrain(base.map, { x: 5, y: 0, z: 6 }, mark.pos).cover,
+    ).toBeGreaterThan(0);
     const tally = { behind: 0, front: 0, side: 0, away: 0 };
     let attacks = 0;
     const seeds = 24;
     for (let seed = 0; seed < seeds; seed++) {
-      // Start the lurker a few tiles off, alternating sides, on the ground level.
-      const mark = squads[seed % squads.length]!;
-      const dx = seed % 2 === 0 ? 4 : -4;
-      const dz = seed % 3 === 0 ? 3 : -3;
-      const start = walkableTileNear(base, {
-        x: Math.min(base.map.width - 1, Math.max(0, mark.pos.x + dx)),
-        y: mark.pos.y,
-        z: Math.min(base.map.depth - 1, Math.max(0, mark.pos.z + dz)),
-      });
+      const start = starts[seed % starts.length]!;
       const { mission, bug } = withBug(base, LURKER, start);
+      // The behaviour must see its mark and have a real choice. In
+      // particular, cover must not make a front approach impossible.
+      expect(bugView(mission).units).toContainEqual(mark);
+      const reachable = reachableTiles(mission, bug.id).map((t) => t.tile);
+      expect(reachable).toContainEqual(front);
+      expect(reachable).toContainEqual(behind);
       const result = stalk(mission, bug.id, seed, 4);
-      const nearest = squads
-        .map((s) => ({ s, d: tileDistance(result.end.pos, s.pos) }))
-        .sort((a, b) => a.d - b.d)[0]!.s;
-      tally[relation(result.end, nearest)]++;
+      tally[relation(result.end, mark)]++;
       if (result.attacked) attacks++;
     }
     expect(tally.behind + tally.side + tally.front + tally.away).toBe(seeds);

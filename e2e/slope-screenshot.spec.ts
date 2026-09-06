@@ -1,3 +1,5 @@
+import { writeFileSync } from "node:fs";
+
 import { expect, test } from "@playwright/test";
 
 /**
@@ -31,13 +33,40 @@ const CONTROLS = [
     seed: "big-city",
     file: "docs/design/shots/808-preview-big-city-temperate-large.png",
   },
+  // #829: the same big city and a rural map at the ADR 0009 scale.
+  {
+    query: "seed=big-city&biome=temperate&settlement=city&size=large",
+    seed: "big-city",
+    file: "docs/design/shots/829-preview-big-city-temperate-large.png",
+  },
+  {
+    query: "seed=hills-1&biome=temperate&settlement=rural&size=medium",
+    seed: "hills-1",
+    file: "docs/design/shots/829-preview-rural-temperate-medium-hills-1.png",
+  },
+  // The same city cut at its ground floors (`?floor=0`), so the interiors
+  // are judged as structures: corridors, doorways, cover, stairs.
+  {
+    query: "seed=big-city&biome=temperate&settlement=city&size=large&floor=0",
+    seed: "big-city",
+    file: "docs/design/shots/829-preview-big-city-ground-floor-cut.png",
+  },
 ] as const;
+
+/** Frames counted over this long give the big city's frame rate. */
+const FRAME_SAMPLE_MS = 3000;
+
+/** Where the large city's frame rate is written beside its capture. */
+const FRAME_RATE_FILE = "docs/design/shots/829-big-city-frame-rate.txt";
 
 for (const control of CONTROLS) {
   test(`captures ${control.file.split("/").pop() ?? control.seed} without fog for review`, async ({
     page,
   }) => {
     test.skip(process.env.CAPTURE === undefined, "set CAPTURE=1 to capture");
+    // A large city at the ADR 0009 scale needs well over the default
+    // minute on the runner's software renderer (#829).
+    test.setTimeout(300_000);
     const errors: string[] = [];
     page.on("pageerror", (error) => errors.push(error.message));
     page.on("console", (message) => {
@@ -57,5 +86,46 @@ for (const control of CONTROLS) {
     await page.waitForTimeout(400);
     expect(errors).toEqual([]);
     await page.screenshot({ path: control.file });
+    if (
+      control.query.includes("size=large") &&
+      !control.query.includes("floor=")
+    ) {
+      const frames = await page.evaluate(
+        (sampleMs) =>
+          new Promise<number>((resolve) => {
+            let count = 0;
+            const start = performance.now();
+            const tick = (): void => {
+              count++;
+              if (performance.now() - start < sampleMs) {
+                requestAnimationFrame(tick);
+              } else {
+                resolve(count);
+              }
+            };
+            requestAnimationFrame(tick);
+          }),
+        FRAME_SAMPLE_MS,
+      );
+      const stats = await page
+        .locator("#stats")
+        .evaluate((list) =>
+          [...list.querySelectorAll("dt")].map(
+            (term) =>
+              `${term.textContent ?? ""}: ${term.nextElementSibling?.textContent ?? ""}`,
+          ),
+        );
+      const fps = (frames * 1000) / FRAME_SAMPLE_MS;
+      writeFileSync(
+        FRAME_RATE_FILE,
+        [
+          `${control.query} (models=1, 2400×1500, headless chromium on the runner's software renderer)`,
+          `${String(frames)} frames in ${String(FRAME_SAMPLE_MS)} ms = ${fps.toFixed(1)} fps`,
+          ...stats.filter((line) =>
+            /^(Map|Tiles|Buildings|Props|Generated in)/.test(line),
+          ),
+        ].join("\n") + "\n",
+      );
+    }
   });
 }

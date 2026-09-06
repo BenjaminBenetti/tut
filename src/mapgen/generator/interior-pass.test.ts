@@ -232,7 +232,7 @@ describe("InteriorPass", () => {
       roofWalkable: false,
       windowDensity: 0.5,
       scales: ["rural", "town", "city"],
-      minRoomSize: 2,
+      interior: { roomSize: { min: 2, max: 3 }, corridorWidth: 0 },
     };
     const regs: MapGenRegistries = {
       ...registries,

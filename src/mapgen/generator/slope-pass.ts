@@ -113,6 +113,9 @@ export class SlopePass implements GenerationPass {
     let cliffRuns = 0;
     const draw = rng.fork("runs");
     for (const run of runs) {
+      for (const candidate of run) {
+        draft.markNaturalEdge(candidate.lower.x, candidate.lower.z);
+      }
       if (params.slopeShare < 1 && !draw.chance(params.slopeShare)) {
         cliffRuns++;
         continue;

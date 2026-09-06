@@ -17,6 +17,7 @@ import {
 import { PipelineMapGenerator } from "../service/pipeline-map-generator";
 import { ReachabilityService } from "../service/reachability-service";
 import { createSettlementPasses } from "../service/settlement-pipeline";
+import { computeMapMetrics } from "../service/map-metrics";
 import { TileIndex } from "../service/tile-index";
 import { SlopePass } from "./slope-pass";
 
@@ -123,6 +124,17 @@ describe("SlopePass", () => {
           none.connectors.filter((c) => c.kind === "slope"),
           `${seed} at share 0`,
         ).toHaveLength(0);
+        // The Map Lab metric reads the knob back exactly (#801 review):
+        // every natural edge is frozen as one whether sloped or not.
+        expect(computeMapMetrics(all).slopeShare, `${seed} metric at 1`).toBe(
+          1,
+        );
+        if (all.tiles.some((t) => t.naturalEdge === true)) {
+          expect(
+            computeMapMetrics(none).slopeShare,
+            `${seed} metric at 0`,
+          ).toBe(0);
+        }
       }
     }
   });

@@ -496,7 +496,7 @@ function metricRows(
     ],
     [
       "Slopes",
-      `${delta((m) => m.slopes, whole)} slope tiles, ${String(Math.round(metrics.slopeShare * 100))} % of walkable natural steps`,
+      `${delta((m) => m.slopes, whole)} slope tiles, ${String(Math.round(metrics.slopeShare * 100))} % of natural edges (the knob)`,
     ],
     [
       "Hatch space",

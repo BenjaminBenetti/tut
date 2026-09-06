@@ -52,4 +52,13 @@ export interface Tile extends TileCoord {
    * `slope` connector; this is what the renderer and the metrics read.
    */
   readonly slope?: Slope;
+  /**
+   * Set on every natural edge tile that has a wedge shape — the lower tile
+   * of a natural one-level step the slope pass could piece — whether or
+   * not the knob sloped it (#799). `slope` set ⇒ this is set. It is what
+   * lets the Map Lab metric read the knob back from the frozen map
+   * exactly: slopes over natural edges, with no guess about which cliffs
+   * were graded.
+   */
+  readonly naturalEdge?: true;
 }

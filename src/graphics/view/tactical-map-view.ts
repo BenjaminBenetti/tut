@@ -823,10 +823,12 @@ export class TacticalMapView implements Disposable, TilePicker {
     geometry.setAttribute("position", new BufferAttribute(vertices, 3));
     geometry.setIndex(indices);
     geometry.computeVertexNormals();
-    const mesh = new Mesh(
-      geometry,
-      new MeshStandardMaterial({ color: colour, side: DoubleSide }),
-    );
+    const material = new MeshStandardMaterial({
+      color: colour,
+      side: DoubleSide,
+    });
+    this.disposables.push(geometry, material);
+    const mesh = new Mesh(geometry, material);
     mesh.position.set(tile.x + 0.5, low, tile.z + 0.5);
     mesh.rotation.y = -slope.turns * (Math.PI / 2);
     mesh.name = `slope:${String(tile.x)},${String(tile.z)}`;

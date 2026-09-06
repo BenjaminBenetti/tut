@@ -97,6 +97,8 @@ export class MapDraft {
   private readonly naturalLevel: Int8Array;
   /** Slope pieces by column key; only ground tiles carry one (#799). */
   private readonly slopes = new Map<number, Slope>();
+  /** Columns the slope pass could piece, sloped or not (#799). */
+  private readonly naturalEdges = new Set<number>();
   private readonly groundSurface: SurfaceId[];
   private readonly roadMask: Uint8Array;
   private readonly coveredMask: Uint8Array;
@@ -160,6 +162,16 @@ export class MapDraft {
   /** Records the terrain pass's level for a column. */
   setNaturalLevel(x: number, z: number, level: number): void {
     this.naturalLevel[this.columnIndex(x, z)] = level;
+  }
+
+  /** Whether the slope pass found a wedge shape for this column (#799). */
+  isNaturalEdge(x: number, z: number): boolean {
+    return this.naturalEdges.has(this.columnIndex(x, z));
+  }
+
+  /** Records that a column is a natural edge with a wedge shape. */
+  markNaturalEdge(x: number, z: number): void {
+    this.naturalEdges.add(this.columnIndex(x, z));
   }
 
   /** The slope piece on a ground column, if any (#799). */

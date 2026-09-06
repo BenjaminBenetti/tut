@@ -59,10 +59,9 @@ export interface MapMetrics {
   /** Natural hillside pieces (#799): lower tiles carrying a `slope`. */
   readonly slopes: number;
   /**
-   * Share of natural edge tiles that are slopes, 0–1 (#799). A natural edge
-   * is a one-level ground step with no wall on the shared edge and no
-   * building within a tile: man-made edges carry a parapet (#607) or sit
-   * against a lot, so they fall out of the denominator.
+   * Share of natural edge tiles that are slopes, 0–1 (#799): `slope` tiles
+   * over `naturalEdge` tiles, the exact denominator the pass used, so this
+   * reads the Map Lab knob back. 1 when a map has no natural edge.
    */
   readonly slopeShare: number;
   readonly ramps: number;

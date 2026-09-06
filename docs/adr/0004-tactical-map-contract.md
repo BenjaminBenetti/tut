@@ -31,8 +31,9 @@ that mapgen's connectivity guarantees mean something, and (c) the shape of the g
    building floors and roofs all live on the same level axis. `levels` is the exclusive upper bound of `y`.
 3. **Thin walls on tile edges** (`n/e/s/w`), each `solid | window | door | half`. Walls are stored on both
    adjacent tiles; symmetry is an invariant.
-4. **All vertical movement is explicit.** A `Connector` record (`ramp | stairs | ladder`) is the *only*
-   way to change `y`. No connector ⇒ cliff. This makes connectivity a property mapgen can prove.
+4. **All vertical movement is explicit.** A `Connector` record (`ramp | slope | stairs | ladder`) is the
+   *only* way to change `y`. No connector ⇒ cliff. This makes connectivity a property mapgen can prove.
+   A `slope` is a natural hillside (#799): the lower tile carries a `Tile.slope` describing the wedge.
 5. **Passability is a per-tile bitmask** (`INFANTRY | MECH`), denormalised by the final pass. Tactical
    never re-derives "can a mech stand here" from geometry.
 6. **Props occupy tiles and provide cover.** Cover is a property of *what occupies a tile*
@@ -73,7 +74,8 @@ that mapgen's connectivity guarantees mean something, and (c) the shape of the g
   property; mapgen guarantees connectivity using orthogonal moves only.
 - `y` is a **level**, not metres. Graphics decides how tall a level is (one storey). Ground terrain is
   quantised to whole levels; a one-level ground step is a wall-height ledge and is a cliff unless a `ramp`
-  connector crosses it.
+  or `slope` connector crosses it. Every *natural* one-level step — one the terrain pass made and nothing
+  graded since — is a `slope` by default (#799); man-made steps keep their walls.
 - Tile key for indexing: `key = (y * depth + z) * width + x`.
 
 ## 4. Data model
@@ -140,6 +142,10 @@ export interface Tile {
   readonly buildingId?: string;
   readonly floorIndex?: number;
   readonly roomId?: string;
+  /** #799: the lower tile of a natural step, rising to the high neighbour. */
+  readonly slope?: { kind: 'straight' | 'inner' | 'outer'; turns: 0 | 1 | 2 | 3 };
+  /** #799: set on every natural edge tile with a wedge shape, sloped or not. */
+  readonly naturalEdge?: true;
 }
 ```
 
@@ -153,11 +159,13 @@ typed-array caches without changing the contract.
 
 ```ts
 // src/mapgen/model/connector.ts
-export type ConnectorKind = 'ramp' | 'stairs' | 'ladder';
+export type ConnectorKind = 'ramp' | 'slope' | 'stairs' | 'ladder';
 
 /**
  * The only way to change level. Always bidirectional.
  *   ramp   : ground ↔ ground, to.y === from.y + 1, horizontally adjacent, PassMask.ALL
+ *   slope  : ground ↔ ground, to.y === from.y + 1, horizontally adjacent, PassMask.ALL; natural edges only,
+ *            from is the tile carrying `Tile.slope` (#799); an outer corner has no connector of its own
  *   stairs : floor  ↔ floor,  to.y === from.y + 1, horizontally adjacent, PassMask.INFANTRY
  *   ladder : ground/roof ↔ roof, to.y >= from.y + 1, horizontally adjacent (across a wall), INFANTRY
  */
@@ -381,6 +389,7 @@ map is a bug, never a runtime fallback.
 | I7 | Reachability: for each hook `h` and each class `c` in `h.requiredPass`, some tile of `h` is reachable under §5 from some tile of some deploy zone by class `c`. |
 | I8 | Recipe satisfaction: for each `HookRequirement`, exactly `count` hooks of that kind exist, and `minDistanceFromDeploy` holds. |
 | I9 | Determinism: `generate(recipe)` twice gives deep-equal maps (tested, not validated). |
+| I10 | Slopes (#799): every natural one-level step between ground tiles is a `slope`, or a cliff only by `slopeShare`, decided per connected edge run; an inner or outer corner never stands without its flanking straights; man-made edges (graded plats, elevated features, lots, and any column carrying a wall) keep their walls and are never slopes. Pinned in the generation sweep, not validated per map. |
 
 ## 7. Generation pipeline
 

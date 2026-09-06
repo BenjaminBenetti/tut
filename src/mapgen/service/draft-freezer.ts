@@ -142,10 +142,14 @@ function slopeOf(
   draft: MapDraft,
   coord: TileCoord,
   ownership: TileOwnership,
-): { slope: Slope } | Record<string, never> {
+): { slope?: Slope; naturalEdge?: true } {
   if (ownership.buildingId !== undefined) {
     return {};
   }
   const slope = draft.slopeAt(coord.x, coord.z);
-  return slope === undefined ? {} : { slope };
+  const natural = draft.isNaturalEdge(coord.x, coord.z);
+  return {
+    ...(slope === undefined ? {} : { slope }),
+    ...(natural ? { naturalEdge: true as const } : {}),
+  };
 }

@@ -6,7 +6,6 @@ import { PassMask } from "../model/pass-mask";
 import type { TacticalMap } from "../model/tactical-map";
 import type { Tile } from "../model/tile";
 import { hatchSpace } from "./hatch-space";
-import { oppositeDirection, stepGridPos } from "../../core/service/grid-math";
 import { ReachabilityService } from "./reachability-service";
 import { TileIndex } from "./tile-index";
 
@@ -74,7 +73,7 @@ export function computeMapMetrics(map: TacticalMap): MapMetrics {
     map.connectors.filter((c) => c.kind === kind).length;
 
   const reach = new ReachabilityService(index, map.connectors);
-  const slopes = slopeMetrics(map, index);
+  const slopes = slopeMetrics(map);
   const spaces: number[] = [];
   for (const objective of map.hooks.objectives) {
     const origin = objective.tiles[0];
@@ -173,46 +172,21 @@ function ratio(numerator: number, denominator: number): number {
 // ===========================================
 
 /**
- * Counts slope pieces against every natural edge tile: a ground tile with
- * a ground neighbour exactly one level up, no wall between them, and no
- * building within one tile of either. That is what the slope pass slopes
- * when the knob is at 1, so the share reads the knob back.
+ * Slopes over natural edges, exactly as the pass saw them (#799): every
+ * tile the pass could piece is frozen with `naturalEdge`, sloped or not,
+ * so the share reads the knob back with no guess about which cliffs were
+ * graded. A map with no natural edge reads 1.
  */
-function slopeMetrics(
-  map: TacticalMap,
-  index: TileIndex,
-): { slopes: number; share: number } {
-  const nearBuilding = new Set<string>();
-  for (const b of map.buildings) {
-    const fp = b.footprint[0];
-    if (fp === undefined) continue;
-    for (let z = fp.z - 1; z <= fp.z + fp.d; z++) {
-      for (let x = fp.x - 1; x <= fp.x + fp.w; x++)
-        nearBuilding.add(`${String(x)},${String(z)}`);
-    }
-  }
+function slopeMetrics(map: TacticalMap): { slopes: number; share: number } {
   let slopes = 0;
   let naturalEdges = 0;
   for (const tile of map.tiles) {
-    if (tile.buildingId !== undefined) continue;
-    if (tile.slope !== undefined) {
-      slopes++;
+    if (tile.naturalEdge === true) {
       naturalEdges++;
-      continue;
+      if (tile.slope !== undefined) {
+        slopes++;
+      }
     }
-    if (nearBuilding.has(`${String(tile.x)},${String(tile.z)}`)) continue;
-    const isEdge = DIRECTIONS.some((side) => {
-      if (tile.walls[side] !== undefined) return false;
-      const step = stepGridPos(tile, side);
-      const up = index.get(step.x, tile.y + 1, step.z);
-      return (
-        up !== undefined &&
-        up.buildingId === undefined &&
-        up.walls[oppositeDirection(side)] === undefined &&
-        !nearBuilding.has(`${String(up.x)},${String(up.z)}`)
-      );
-    });
-    if (isEdge) naturalEdges++;
   }
   return { slopes, share: naturalEdges === 0 ? 1 : slopes / naturalEdges };
 }

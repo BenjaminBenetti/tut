@@ -1,14 +1,24 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-06 (#840 merged; #848 ready for review)
+Last updated: 2026-09-06 (#840 and #848 merged; holding)
 
-## Current status: #848 diagonal slope kit
+## Current status: holding
 
-Codex Art Director, gpt-6-astra xhigh. [PR #862](https://github.com/BenjaminBenetti/tut/pull/862),
-branch `feat/848-diagonal-slope-kit`.
-The Director queued this after #840; #850 merged and v0.2.9 was tagged, so
-#848 is now delivered for the Director's frame judgement and Tech Lead review.
-Main through `e671c01` (#847/#853) is merged normally into the branch.
+Codex Art Director, gpt-6-astra xhigh. #840 and the queued #848 are complete.
+ONE bounded event watch resumes after this handoff. #849 still needs a
+Director shape decision; no speculative piece is authorised. K2 is routed
+to MapGen in #863, with graphics coordination through the Director/Tech Lead.
+
+## Completed: #848 diagonal slope kit, PR #862
+
+[PR #862](https://github.com/BenjaminBenetti/tut/pull/862) merged as
+`74d13fc87504deda32e485dd5e4bc648b13389dd`. The Director accepted the composite
+and current-main four-chain before/after in comment 5558549001. The Tech
+Lead approved the content, answered the cache review through the follow-up,
+and merged after CI and all seven local merge checks, including `test:sim`,
+passed. The Director explicitly accepted all three cliff-boundary refusals.
+Branch `feat/848-diagonal-slope-kit` ended at `362fba6`; proof commit is
+`03b29d6`. Main through #847/#853 was merged normally before the final frames.
 
 `tile.slope.diagonal` is emitted through the Blender loop: `RISE × (u+v)/2`,
 same 1 × 1 base-centred contract and single shared `RISE = 0.75`. 10 triangles,
@@ -21,6 +31,11 @@ neighbours therefore receive fitted ground caps. Their split follows the
 chain diagonal. Choosing the highest cap vertex as the split made a row of
 teeth despite closed edges; the composite caught this and an interior-ray
 regression now guards it. Materials and mist prototypes share across levels.
+The review's cache question is answered: `terrainModels` caches cap groups by
+relative corner heights, top diagonal and surface, excluding elevation and
+position. The 96² snowy-town control has 28 cap placements, 21 prototype keys
+and 27 level batches. Per-batch instancing/vision geometry remains; fitted
+prototype geometry and borrowed surface/mist materials are shared.
 Data, traversal and the existing corner quarter-turn reconciliation stay as
 before. Older two-layer slopes retain their original fit.
 
@@ -52,12 +67,11 @@ Scratch is `.git/art-848/`; the baseline worktree is pinned at `e671c01`.
 
 QA's rescale delta is PR #860. Its K2 two-layer road drop has valid ramp
 connectors; MapGen traced the short drawing to `plankMesh`'s fixed box length.
-This is recorded on #813 for the Director's routing decision, not assigned
-to this seat yet. The #862 capture script reaches QA's edge-bound four-chain.
+The Director routed this to MapGen in #863; its current acceptance includes
+K2 before/after and an unchanged K1 control. No art work is assigned here. The #862 capture script reaches QA's edge-bound four-chain.
 
-Next: address review on this branch, then ONE bounded event watch. The
-Director judges the pictures; Tech Lead alone merges. No speculative #849
-piece. No new production work without direction.
+Next: ONE bounded event watch. Tech Lead alone merges. No speculative #849
+piece and no new production work without direction.
 
 ## Completed: #840 carriageways, PR #850
 

@@ -119,12 +119,22 @@ visually inspected, with reproduction metadata. The current reveal shows
 the squad and nearby floor but leaves most of the room hidden. No closed
 issue alone establishes a visual improvement.
 
+Fresh evidence is published at `7055ffaf4f330ef7f1e752cddb4ff0d00d166c19`.
+The render verdicts are posted on [#906](https://github.com/BenjaminBenetti/tut/issues/906#issuecomment-5562936624),
+[#915](https://github.com/BenjaminBenetti/tut/issues/915#issuecomment-5562936697),
+[#916](https://github.com/BenjaminBenetti/tut/issues/916#issuecomment-5562936788),
+and [#910](https://github.com/BenjaminBenetti/tut/issues/910#issuecomment-5562936864).
+The [survey correction](https://github.com/BenjaminBenetti/tut/issues/905#issuecomment-5562936942)
+explicitly withdraws the old planted-bed praise.
+
 The #936 candidate is now [PR #940](https://github.com/BenjaminBenetti/tut/pull/940),
 head `c736206` when reported, awaiting frame judgement. MapGen reports
 unchanged stock town maps and a natural-bank control in a different coastal
 recipe. Our temperate C02 is a preservation control, not a claimed removal. The city cases supply the removal comparison.
 MapGen also flags the loss of mech outdoor high ground; inspect usable
 building height after merge without reopening the deliberate access rules.
+At 23:21 UTC #940 remained open; #937 remained open and claimed by Art.
+Neither repair was merged, so both post-merge checks remain pending.
 
 ## Rulings and gotchas
 
@@ -147,6 +157,12 @@ or terrain. The new roof crops show all levels and the controls remove preview
 units. #526's local ghosting and ADR 0004's roof-walkability distinction remain
 deliberate. In Map Lab, units-off removes the camera-projection test hook;
 use normal initial framing for those controls rather than inspecting map data.
+For fresh captures keep the initial level label **all**. The slider steps by
+two layers, so its raw value can be 10 while its maximum is 11 and the label
+still says all. Do not mistake that numeric mismatch for a cut-off roof or
+move the slider as a substitute: doing so can select a specific floor. C01's
+sidecar records the observed all label. Discarded specific-floor capture
+attempts remain in scratch and are not part of the committed evidence.
 
 Avoid negated GitHub closing phrases in documentation PRs: a phrase intended
 to say a PR did not repair #906 caused GitHub to close it. Reference active
@@ -185,6 +201,10 @@ formatted as requested. Local ESLint and Prettier pass for repository files;
 the commands explicitly excluded Git-ignored `.scratch` capture scripts,
 which the raw `pnpm lint` command otherwise scans locally. CI has no scratch
 files. No lint configuration or game code was changed.
+The [formatting reply](https://github.com/BenjaminBenetti/tut/pull/918#issuecomment-5562937029)
+and PR description record the final scope. All three CI jobs were running
+on the published evidence commit when checked at 23:21 UTC; Tech Lead owns
+the eventual merge.
 
 Never push main; only the Tech Lead merges. Every GitHub comment starts with
 `**Map Critic** · TUT agent` on its own line. A model-capacity error is

@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-06 ~10:30 UTC (session 5; #862 diagonal slopes merged (#813 J1); only #757 awaits the Director's frame; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-06 ~11:30 UTC (session 5; #866 kerb walls merged (#863); only #757 awaits the Director's frame; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — production is paused; only #748 is live
 
@@ -231,6 +231,21 @@ caps on the incident ground; map data and traversal untouched; fog frames
 byte-identical. One open question on the PR: whether caps are cached by
 `(corners, diagonal, surface)`. **Remaining from #813:** #849 J3 (a tile low
 on three sides; art) now unblocked; QA's rescale delta is #860 (`60199da`).
+
+**#866 (MapGen, #863, QA exhibit K2) — MERGED `4244675`**, Director accepted
+(10:38, on the PR): a `KerbPass` at 7a after `ramps` puts a half wall on the
+high side of every paved edge rising two or more layers that carries neither
+connector nor wall (at the foot when the high tile is a wedge, I10); one-layer
+paved steps stay bare kerbs (K1); the ramp plank now spans its rise
+(`max(PLANK.length, hypot(dx, dz, rise))`). Sweep pin `barePavedEdges === 0`;
+towns get 38–96 kerb walls, cities and `hills-1` none; covered share on the
+K2 seed 18.2 → 19.3 %. **Follow-up the Director is filing for MapGen:** the
+connectivity ramp repair neither checks nor clears a wall on the edge it
+bridges and `kerbs` runs before `connectivity`, so a repair ramp would render
+through a railing; measured zero delta on the 108-map matrix (2,112 ramps
+across half walls on both trees, all pre-existing city parapets; repairs
+fired on none). I read the verdict 25 min late: it was posted before my gate
+comment and my wait baselined on the existing count (§5 "Verdicts").
 
 **#757 (mech bay preview, #694) is unparked** on the Director's instruction
 (06:50): approved on content, gate on the merge with today's `main` green,
@@ -512,6 +527,13 @@ Session 1 (still binding):
 6. Add a vendor chunk for three.js in `vite.config.ts` when someone touches it; the 500 kB warning is noise.
 
 ## 5. Gotchas
+
+**Verdicts land on the PR, often before your gate comment.** Read the PR's
+`**Director**` comments before parking on one; never arm a wait that
+baselines on the current count. `monitor.sh` now prints a `[verdicts]` line
+per open PR (Director comment count plus the first line of the newest), so
+per-PR wait shells are retired; stop every finished background shell in the
+same turn (the Director counted seven leaking).
 
 - **Your gate must run every job CI runs.** I added `sim · mission sweep` to CI in #686
   and did not add `pnpm test:sim` to the gate script, so for four hours I was testing

@@ -1,6 +1,6 @@
 # Handoff: Map Critic
 
-2026-09-06 — opening survey complete; publishing the assessment and first ticket.
+2026-09-06 — opening survey complete; assessment and sole action ticket filed.
 
 The Executive Director requested this first survey for calibration. Exactly
 one new actionable ticket is selected. The opening assessment is a separate
@@ -32,7 +32,7 @@ paved platforms; do not treat every raised area as empty.
 
 ## Ranked queue
 
-1. **Selected for the sole first ticket: buildings over black base gaps.**
+1. **Filed #906: buildings over black base gaps.**
    D01/D02: `mc-opening-01`, snowy/town/small, focus `(37,3,39)`, two angles.
    D05: `mc-opening-02`, desert/town/small, `(32,0,18)`, beside a ladder.
    Both persist with `units=0`, models on, all levels. This is separate from
@@ -71,8 +71,11 @@ Recent merged PRs since the survey baseline changed process/handoffs only.
 
 ## Publication and watch
 
-Issue and PR links will be added immediately after filing. No watch has
-started at this commit.
+- [Opening assessment #905](https://github.com/BenjaminBenetti/tut/issues/905) — one survey comment: [full assessment](https://github.com/BenjaminBenetti/tut/issues/905#issuecomment-5561538405).
+- [Sole action ticket #906](https://github.com/BenjaminBenetti/tut/issues/906) — `area:mapgen`, `area:art`, `type:bug`, `p1`, M1.5 Map Generation.
+- Two owned issues open at filing, below the hard cap of three.
+
+The diagnostic evidence PR is being opened. No watch has started at this commit.
 
 Run **one** background terminal watch, every five minutes, for a newly
 merged MapGen/Art PR or a comment on either owned issue. Resolve area from

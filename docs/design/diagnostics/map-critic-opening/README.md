@@ -7,7 +7,8 @@ statistical QA audit or a generator implementation review.
 **Complete: 108 maps visually inspected, with 27 comparison sheets and 13 detail/control views.**
 
 Read the [ranked opening assessment](assessment.md) and the
-[visual ledger](visual-ledger.md).
+[visual ledger](visual-ledger.md). Published as [survey #905](https://github.com/BenjaminBenetti/tut/issues/905#issuecomment-5561538405);
+the sole first action ticket is [#906](https://github.com/BenjaminBenetti/tut/issues/906).
 
 ## Method
 

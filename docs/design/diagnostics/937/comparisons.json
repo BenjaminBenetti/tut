@@ -1,0 +1,128 @@
+{
+  "method": "Exact decoded RGBA equality, no tolerance or alignment. Changed pixels measure image impact, not percent of roof geometry.",
+  "acceptedControls": [
+    {
+      "accepted916": "docs/design/diagnostics/916/after/pitched-ghost-0.png",
+      "current937": "pitched-1-radius-off.png",
+      "byteIdentical": true,
+      "changedPixels": 0
+    },
+    {
+      "accepted916": "docs/design/diagnostics/916/after/pitched-ghost-1.png",
+      "current937": "pitched-1-radius-2.png",
+      "byteIdentical": true,
+      "changedPixels": 0
+    },
+    {
+      "accepted916": "docs/design/diagnostics/916/after/flat-ghost-0.png",
+      "current937": "flat-1-radius-off.png",
+      "byteIdentical": true,
+      "changedPixels": 0
+    },
+    {
+      "accepted916": "docs/design/diagnostics/916/after/flat-ghost-1.png",
+      "current937": "flat-1-radius-2.png",
+      "byteIdentical": true,
+      "changedPixels": 0
+    }
+  ],
+  "doubledClosesByteIdentically": true,
+  "frames": [
+    {
+      "file": "pitched-1-radius-2.png",
+      "sha256": "45ac79314bbe0a2d159b6443a34b1e2819df7c9b4804512c57b2c5453647aef7",
+      "changedPixelsFromOpaque": 35932,
+      "changeBounds": [448, 370, 753, 671]
+    },
+    {
+      "file": "pitched-1-radius-3.png",
+      "sha256": "b0a70a1adb12dbcb555eb07415212fd5b0640812098b2c81bc521eb70ebd1089",
+      "changedPixelsFromOpaque": 89346,
+      "changeBounds": [368, 290, 833, 751]
+    },
+    {
+      "file": "pitched-1-radius-4.png",
+      "sha256": "dd6d196843a925f4a2190178ca47330814630e74392030031266815d8915321e",
+      "changedPixelsFromOpaque": 140353,
+      "changeBounds": [292, 264, 913, 799]
+    },
+    {
+      "file": "pitched-1-radius-5.png",
+      "sha256": "2ae927e758ec5f3eb487c2d8e32610108b9b3998937d98b4abed399e47ad28b0",
+      "changedPixelsFromOpaque": 166673,
+      "changeBounds": [232, 264, 993, 799]
+    },
+    {
+      "file": "pitched-2-radius-2.png",
+      "sha256": "a44199701d8c7f6262d8e1ce9a10525b27dbb7c78481b6bef2e991bfee96347e",
+      "changedPixelsFromOpaque": 69547,
+      "changeBounds": [448, 142, 809, 671]
+    },
+    {
+      "file": "pitched-2-radius-3.png",
+      "sha256": "fb4bc2c53480af59cd31a75b413cd1fdd5020b37866b33ba817e0f6688172128",
+      "changedPixelsFromOpaque": 142874,
+      "changeBounds": [368, 96, 889, 751]
+    },
+    {
+      "file": "pitched-2-radius-4.png",
+      "sha256": "05b1cee9a4e2c35f295157a6769717894a59d85e41e5644d4cc8189509ba0efb",
+      "changedPixelsFromOpaque": 202760,
+      "changeBounds": [292, 63, 969, 799]
+    },
+    {
+      "file": "pitched-2-radius-5.png",
+      "sha256": "f21bac91bd7fad8567a6c4fe2fd62220c0dac8bfe6172e634a045427712cdbd5",
+      "changedPixelsFromOpaque": 239924,
+      "changeBounds": [232, 63, 1049, 799]
+    },
+    {
+      "file": "flat-1-radius-2.png",
+      "sha256": "41c7c2d4a556d07942c10dbcaff508d597014cd37ae1efca0a3c63e706968fa1",
+      "changedPixelsFromOpaque": 35887,
+      "changeBounds": [448, 374, 753, 671]
+    },
+    {
+      "file": "flat-1-radius-3.png",
+      "sha256": "a75d91440da4717e37f331eb898fd8198a9bddd932e145de22bb0ae7eb8627a4",
+      "changedPixelsFromOpaque": 81956,
+      "changeBounds": [368, 353, 833, 751]
+    },
+    {
+      "file": "flat-1-radius-4.png",
+      "sha256": "34b7dbcd817ef2a2bbdfe1816d6e569ecbca95cd65b9f090b9dbc67e86f32602",
+      "changedPixelsFromOpaque": 138012,
+      "changeBounds": [288, 294, 913, 831]
+    },
+    {
+      "file": "flat-1-radius-5.png",
+      "sha256": "0b119bcded541921cce29a615776a3df4fbe4842021f25bb5cb702fadec4bd5e",
+      "changedPixelsFromOpaque": 201020,
+      "changeBounds": [208, 294, 993, 911]
+    },
+    {
+      "file": "flat-2-radius-2.png",
+      "sha256": "6fe03dd8bd0758cf534fb3722fd5c1b4eb374008c2f501844a221afe1bdb0623",
+      "changedPixelsFromOpaque": 62821,
+      "changeBounds": [448, 210, 809, 671]
+    },
+    {
+      "file": "flat-2-radius-3.png",
+      "sha256": "6ad93e8322e3629bc280c36170893cc67892b738d6656809725b0a759b92fcf9",
+      "changedPixelsFromOpaque": 127024,
+      "changeBounds": [368, 130, 889, 751]
+    },
+    {
+      "file": "flat-2-radius-4.png",
+      "sha256": "df5b2911d70e14ab69b3210919720c354d35aa6d90b25f0cc22ade9e2414393f",
+      "changedPixelsFromOpaque": 199048,
+      "changeBounds": [288, 130, 969, 831]
+    },
+    {
+      "file": "flat-2-radius-5.png",
+      "sha256": "c50e751144a29fe2d4ef736c4cc1eded083e940275fac84d6c1b90cb2da75f45",
+      "changedPixelsFromOpaque": 271618,
+      "changeBounds": [208, 130, 1049, 911]
+    }
+  ]
+}

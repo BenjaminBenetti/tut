@@ -1,8 +1,52 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-06 (#916 accepted and merged; #911 footprint next)
+Last updated: 2026-09-06 (#937 cutaway tuning in progress; #911 follows)
 
-## Current status: #916 complete; #911 footprint next
+## Current status: #937 cutaway tuning
+
+Director promoted #937, the Executive Director's first tuning pass after seeing
+the working cutaway in v0.2.12. Branch `fix/937-cutaway-radius`, baseline
+`2878dfc`; main through `e014ab1` brought in by fast-forward (handoffs only).
+
+**Recommendation implemented: radius 3**, up from 2. All other shader settings
+stay fixed: floor 0.35, soft edge 0.65 inward, fade 0.15 s, depth comparison,
+visible-unit source and eight-centre capacity. Only `GHOST_RADIUS` changes in
+runtime code. Radius 3 shows room context while retaining substantial solid
+roof sections around two separated squads. At 4, their overlapping windows
+reveal most of the house's upper floor; 5 loses more roof for little useful
+information. Both roof kinds and opposite camera yaws were inspected. Director
+judges before Tech Lead merge; no lighting retune is part of this issue.
+
+[Complete radius comparison and reproduction](../design/diagnostics/937/README.md):
+30 diagnostic frames plus both refreshed fog frames, all opened. Radii 2/3/4/5,
+one/two squads, pitched/flat roofs; two-squad yaw-2 checks at 2/3/4; closed and
+unit-leaves controls. Four old-radius/controller-off frames are byte-identical
+to the accepted #916 proof. The unoverridden runtime matches all four chosen
+radius-3 frames byte for byte and closes exactly to empty-building controls.
+Closure needs equal occupancy: the second flat-roof squad contributes one
+pixel even with ghosting off; comparing its removal to a frame still holding
+it was an invalid reference, not a cutaway failure. No tolerance was added.
+
+Both seed-4242 fog frames match fresh `e014ab1` baseline captures byte for byte.
+The previously tracked PNGs predated later generation changes, so the refreshed
+files change substantially; do not attribute that drift to the radius. Hashes
+and both comparisons are committed. Validation: 2,167 unit tests / one skipped,
+seven sims, typecheck, lint/build, 59 browser tests / 27 opt-in skips / zero
+flaky. Current and baseline fog captures pass; final runtime and rotated
+capture commands exit cleanly.
+
+Scratch `.git/art-937/`, baseline worktree `e014ab1`. Initial long capture
+terminals returned SIGTERM; subsequent PTY captures completed. A later
+screenshot timeout coincided with shared pnpm-store updates forcing Vite page
+reloads. `tools/art/preview/capture-vite.config.mjs` disables watching/HMR for
+stable evidence. This was not a provider capacity error. Our 4199 capture
+server is stopped; 4198 was managed and stopped by the baseline spec. Re-arm
+ONE bounded watch after opening the PR.
+
+#911 follows #937 on the Director's latest CLI instruction. The footprint
+proposal below remains pending MapGen agreement; no geometry has begun.
+
+## Completed: #916 roof shelter and cutaway repair
 
 **PR #925 merged as `0d4a168be4b1639dbe634a51e6fc4b6442c93bc4`.**
 [Director acceptance](https://github.com/BenjaminBenetti/tut/pull/925#issuecomment-5562347058)

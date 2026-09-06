@@ -75,7 +75,13 @@ Recent merged PRs since the survey baseline changed process/handoffs only.
 - [Sole action ticket #906](https://github.com/BenjaminBenetti/tut/issues/906) — `area:mapgen`, `area:art`, `type:bug`, `p1`, M1.5 Map Generation.
 - Two owned issues open at filing, below the hard cap of three.
 
-The diagnostic evidence PR is being opened. No watch has started at this commit.
+[Diagnostic evidence PR #907](https://github.com/BenjaminBenetti/tut/pull/907)
+is draft while this watch runs. The **one watch is active**, started
+2026-09-06 19:20:46 UTC, with a deadline of 2026-09-06 22:20:46 UTC.
+Background terminal session: `52713`; poll interval: 300 seconds.
+Scratch state: `watch-start.json`, `watch-health.json`, `watch-result.json`,
+and `watch.log` under `.scratch/map-critic-opening/`. Do not start another
+watch after resuming this seat.
 
 Run **one** background terminal watch, every five minutes, for a newly
 merged MapGen/Art PR or a comment on either owned issue. Resolve area from

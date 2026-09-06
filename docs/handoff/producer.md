@@ -3,31 +3,31 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-06 04:20 UTC)
+## Status Digest (2026-09-06 04:50 UTC)
 
-**Production ON HOLD** by the Executive Director (#748); he is tuning map generation personally in Map Lab. No resume ordered. No M3 decomposition, new seat assignments without the Director's request, or Ready queue growth. **v0.2.6** is tagged from main.
+**Production ON HOLD** by the Executive Director (#748); he is tuning map generation personally in Map Lab. No resume ordered. No M3 decomposition, new seat assignments without the Director's request, or Ready queue growth. **v0.2.7** is tagged from main.
 
 **Producer:** now Codex, Astra 6, effort high. Finish the Director's prompted task, open the handoff PR, and end the turn. No monitors, polling, sleeps, crons, or scheduling. Staffing source: PR #803 (`docs/process/studio.md` staffing table).
 
 | Engineer seat | Runtime / effort | Tier | Assignment |
 |---|---|---|---|
-| eng-3 | Codex, Astra 6 / xhigh | high only | #807 engine half-height layers — In Progress; first job |
+| eng-3 | Codex, Astra 6 / xhigh | high only | #807 In Progress — #810 merged, #812 in review; activation next |
 | eng-4 | Claude Opus 5 / max | low / medium only | Idle |
 | eng-5 | Claude Opus 5 / max | low / medium only | Idle |
 
 **Milestones** (closed / total issues, API snapshot at 04:09 UTC): M0 14/14 · M1 64/64 · M1.5 33/34 · M2 48/50 · M2.5 25/27 · M3 1/2 (held). These counts do not declare milestone completion.
 
-**Live exceptions / board:** #798 slope meshes — Art Director, **In Progress**. #799 slope data/traversal/scene mapping — MapGen, **In Progress**; #801 merged the data path, remaining model mapping follows #798. PRs **#801 and #795 are Done** on Project #5 (both merged). All four cards added and statuses verified in the preceding pass.
+**Completed / board:** #798 slope meshes and #799 scene mapping are **Done**, delivered by merged #811 after #801's data path. PRs #810 (first #807 slice) and #811 are **Done**. v0.2.7 is tagged from main. Prior handoff #805 and ADR #806 merged.
 
-**Half-height exception (#804):** Director signed off ADR 0008 (#806). Parent #804 is **In Progress** (Producer tracks). #807 engine (`complexity:high`) is labeled `seat:eng-3`, **In Progress**. #808 is MapGen-owned, **Blocked by #807 merging**; #809 is Art Director-owned, **Blocked by #798 landing**, then may run in parallel with #808. Both specialist children have no seat label. All four cards added to Project #5 with Status and Owner; blocker reasons recorded in the child issue bodies.
+**Half-height exception (#804):** parent and #807 remain **In Progress**; eng-3 retains `seat:eng-3`. #810 prepared migration; #812 explicit storey units is **In Review**; activation is next. These prerequisite slices do not complete #807 or activate half-height layers. #808 remains MapGen-owned, **Blocked until #807's activation merges**. #809 remains Art Director-owned; #798 is satisfied, so **Backlog pending the next prompted art pass**, with its obsolete blocker cleared. Neither specialist child has a seat label; Ready did not grow.
 
-**Open PRs** (snapshot at 04:19 UTC; approximate age): #806 ADR 0008, 6 min, Director approved the contract; #805 this Producer handoff, 8 min, updated on the existing branch; #757 mech-bay preview, 34 h, unrelated and waiting. #802/#803 are no longer open.
+**Open PRs** (04:47 UTC snapshot): #812 explicit storey units, about 11 min old, in review; #757 mech-bay preview remains unrelated and waiting (last confirmed open at 04:19 UTC). This pass opens a new small handoff PR from main.
 
-**Blocked / parked:** #799 model mapping and #809 half-rise art wait for #798; #808 waits for #807 to merge. General production and M3 remain held. #787 overpass roads parked; #793 mist performance follow-up remains p3 despite #795 merging.
+**Blocked / parked:** #808 waits for full #807 completion. **#813 diagonal terrace teeth is Backlog, with no Owner, assignee, or seat label; not Ready until the Executive Director calls it.** General production and M3 remain held; #787 parked; #793 remains p3.
 
-**Risks:** the inherited autofill script still permits Opus high-tier work, contrary to strict routing; do not run it. Historical notes below contain obsolete seating and monitor instructions. The empty `.producer/release-allowlist.txt` remains in place. Slope completion depends on the art-to-MapGen handoff; the merged data path does not complete #799.
+**Risks:** diagonal terrace teeth remain visible despite the slope kit landing; #813 records possible directions but no solution or owner is chosen. Do not mistake #810/#812 prerequisites for activation or unblock #808 early. Autofill still permits Opus high-tier work contrary to strict routing; do not run it. Historical monitor/seating instructions below remain obsolete; the empty release allowlist stays in place.
 
-**Next assignments:** none beyond the Director-authorized #807. eng-4/eng-5 remain idle; no Ready queue growth. Stop after pushing this update to #805; the Director prompts the next pass.
+**Next assignments:** none. eng-3 continues #807; eng-4/eng-5 remain idle. No new seating or Ready queue growth. Stop after opening this handoff PR; the Director prompts the next pass.
 <!-- digest:end -->
 
 

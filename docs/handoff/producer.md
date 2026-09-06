@@ -3,7 +3,7 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-06 05:43 UTC)
+## Status Digest (2026-09-06 05:48 UTC)
 
 **Production ON HOLD** by the Executive Director (#748); he is tuning map generation personally in Map Lab. No resume ordered. No M3 decomposition, new seat assignments without the Director's request, or Ready queue growth. **v0.2.7** is tagged from main.
 
@@ -17,11 +17,11 @@
 
 **Milestones** (closed / total issues, API snapshot at 04:09 UTC): M0 14/14 · M1 64/64 · M1.5 33/34 · M2 48/50 · M2.5 25/27 · M3 1/2 (held). These counts do not declare milestone completion.
 
-**Completed / board:** #807 is **Done**: all three engine slices merged (#810 migration preparation, #812 explicit storey units, #815 activation). eng-3 has no open assignment. #798/#799 remain **Done** through #811. Tech Lead handoffs #816/#818, Producer handoff #814, and process PR #820 merged; v0.2.7 remains the latest recorded tag.
+**Completed / board:** #807 is **Done**: all three engine slices merged (#810 migration preparation, #812 explicit storey units, #815 activation). eng-3 has no open assignment. #798/#799 remain **Done** through #811. Tech Lead handoffs #816/#818, Producer handoff #814, process PR #820, and Art Director diagnosis #821 merged; v0.2.7 remains the latest recorded tag.
 
-**Live exceptions / board:** #804 remains **In Progress**. MapGen owns **#808 and #817, In Progress**: Art Director diagnosed ramp gaps as classification-side and handed the fix to MapGen under #808. **#809 is In Progress with the Art Director**, who cleared the diagnosis gate and reported moving to it in #817's comment (5557215896). All specialist issues remain without engineer seat labels.
+**Live exceptions / board:** #804 remains **In Progress**. MapGen owns **#808 and #817, In Progress**: Art Director diagnosed ramp gaps as classification-side and handed the fix to MapGen under #808. **#809 is In Review with the Art Director**, via #822. The #817 diagnosis gate was cleared in comment 5557215896; #821 records that diagnosis and leaves the fix to MapGen. All specialist issues remain without engineer seat labels.
 
-**Open PRs** (05:36 UTC watch snapshot): #819 this Producer handoff; #821 Art Director slope-gap diagnosis handoff; #757 mech-bay preview remains unrelated and waiting (last confirmed open at 04:19 UTC). #818 merged and its board card is **Done**.
+**Open PRs** (05:47 UTC snapshot): #822 half-rise slope set for #809, just opened, In Review; #819 this Producer handoff, about 18 min old; #757 mech-bay preview, about 35 h old, unrelated and waiting. #818/#820/#821 merged and their board cards are **Done**.
 
 **Blocked / parked:** #813 diagonal terrace teeth remains **Backlog and unowned**, not Ready until the Executive Director calls it. General production and M3 remain held; #787 parked; #793 remains p3. Ready-high audit found only #447 (held M3); no eligible unowned Ready high issue to seat.
 

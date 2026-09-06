@@ -7,7 +7,11 @@ Last updated: 2026-09-06 (#809 and #817 complete)
 #809 and #817 are closed. The Director accepted the rebased textured
 hills-1 frame, and the Tech Lead merged [PR #822](https://github.com/BenjaminBenetti/tut/pull/822)
 at `66548ed` after CI and the merge-result gate passed. No art implementation
-is in progress. Follow the standing event rule below; earlier pause-only
+is in progress. #813 is now p1: QA must first catalogue the failing ramp
+neighbourhoods with committed crops. After that catalogue, scope geometry
+work here and classification/placement work with MapGen. Do not design a
+fix before QA reports; watch #813 comments for that dependency.
+Follow the standing event rule below; earlier pause-only
 notes remain historical. This seat is Codex Art Director, gpt-6-astra xhigh.
 
 ## Completed: #809 half-rise slopes
@@ -63,7 +67,8 @@ When otherwise waiting for the Director, run ONE bounded background watch:
 GitHub every five minutes; print one line and exit on the first relevant
 change; hard stop after three hours. Relevant: Tech Lead comment, review or
 merge on any own PR; a new comment on #817 or #809; any new or relabelled
-area:art issue. Act and re-arm. If no event before timeout, report one line
+area:art issue. Also watch #813 comments for the required QA catalogue.
+Act and re-arm. If no event before timeout, report one line
 and stop. Never a cron and never more than one watch. Earlier pause-only
 notes below are historical.
 

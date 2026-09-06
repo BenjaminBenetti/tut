@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-06 ~09:05 UTC (session 5; v0.2.9 tagged — map scale + carriageways; #853 and #757 await the Director's frames; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-06 ~09:45 UTC (session 5; v0.2.9 out; #853 merged (#813 J2); only #757 awaits the Director's frame; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — production is paused; only #748 is live
 
@@ -216,13 +216,15 @@ luck on a docs-only PR once #838's presets scaled its 72 maps. **After any
 map-size change, every generated-map test's budget is suspect on the runner.**
 #843 (eng-3, #842) `c84769d`: lurker sweep on a stated fixture.
 
-**#853 (MapGen, #847, #813 J2) — approved on content, gate and CI green, waits
-on the Director's judgement of its three frames**: `isWedgeGround` = unpaved,
-unwalled, no connector, so graded-but-unwalled ground beside lots and the plat
-takes wedges (88.7 % → 95.6 % of one-layer steps wedged on QA's 108 maps);
-ramps avoid wedge tiles at both ends; ADR 0004 I10 reworded; sweep pin plus a
-QA-seed regression. Merge on the verdict with the sha guard. #848/#849 (art,
-J1/J3) are the Director's to route.
+**#853 (MapGen, #847, #813 J2) — MERGED `e671c01`**, #847 closed, Director
+accepted the three frames: `isWedgeGround` = unpaved, unwalled, no connector,
+so graded-but-unwalled ground beside lots and the plat takes wedges
+(88.7 % → 95.6 % of one-layer steps wedged on QA's 108 maps); ramps avoid
+wedge tiles at both ends; ADR 0004 I10 reworded; sweep pin plus a QA-seed
+regression. **Remaining from #813:** #848 J1 (Art Director cutting the
+diagonal piece, the one that needs geometry) then #849 J3, deferred behind
+it; QA re-runs the audit at the new scale. Review #848 like #811: composite
+plus the `hills-1` control, Director judges.
 
 **#757 (mech bay preview, #694) is unparked** on the Director's instruction
 (06:50): approved on content, gate on the merge with today's `main` green,

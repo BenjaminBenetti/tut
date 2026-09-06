@@ -12,11 +12,14 @@ import type { Object3D } from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { describe, expect, it } from "vitest";
 import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
+import { generateTacticalMap } from "../../mapgen/service/generate-tactical-map";
+import { DEFAULT_MISSION_HOOKS } from "../../mapgen/data/hook-requirements";
 import type { Rotation } from "../../mapgen/model/prop";
 import type { Tile } from "../../mapgen/model/tile";
 import type { ModelAssetId } from "../../content/data/model-ids";
 import { MODEL_MANIFEST } from "../data/model-manifest";
 import { TacticalMapView } from "../view/tactical-map-view";
+import { resolveMapModels } from "./map-model-resolver";
 
 /** West/south corner and its two flanking straights, rotated together. */
 function neighbourhood(kind: "inner" | "outer", turns: Rotation, rise: number) {
@@ -91,6 +94,32 @@ function loader() {
 }
 
 describe("terrain slope neighbourhoods (#809, #817)", () => {
+  it("places every hills-1 half step with the unscaled kit after #808", () => {
+    const map = generateTacticalMap({
+      seed: "hills-1",
+      params: {
+        archetype: "settlement",
+        biome: "snowy",
+        settlement: "rural",
+        size: "medium",
+        hooks: DEFAULT_MISSION_HOOKS,
+        slopeShare: 1,
+      },
+    });
+    const tiles = map.tiles.filter((tile) => tile.slope !== undefined);
+    const models = resolveMapModels(map).tiles.filter((placement) =>
+      placement.modelId.startsWith("tile.slope."),
+    );
+    expect(tiles.length).toBeGreaterThan(0);
+    expect(models).toHaveLength(tiles.length);
+    expect(new Set(models.map((placement) => placement.scaleY))).toEqual(
+      new Set([1]),
+    );
+    expect(new Set(models.map((placement) => placement.modelId))).toEqual(
+      new Set(["tile.slope.straight", "tile.slope.inner", "tile.slope.outer"]),
+    );
+  });
+
   for (const rise of [1, 2])
     for (const kind of ["inner", "outer"] as const)
       for (const turns of [0, 1, 2, 3] as const) {

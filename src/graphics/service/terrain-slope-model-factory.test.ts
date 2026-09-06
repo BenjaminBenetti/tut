@@ -21,7 +21,6 @@ import {
   slopeMaterialsFromGround,
 } from "./terrain-slope-model-factory";
 import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
-import { tileTop } from "../view/tactical-map-view";
 import { resolveMapModels } from "./map-model-resolver";
 
 /** Parses the real, texture-neutral GLB, so tests exercise the exported art contract. */
@@ -105,23 +104,8 @@ describe("terrain slope kit", () => {
             slope: { kind, turns },
           })),
         };
-        // Interim (ADR 0008 §3 child b): the resolver places no slope model
-        // until #809 re-emits the kit at one layer of rise, so the
-        // placement is built here the way the resolver did in #811 —
-        // corner assets add a quarter turn to reconcile their east/south
-        // high corner with map data's west/south. #809 restores the
-        // resolver call.
-        expect(
-          resolveMapModels(map).tiles.some((p) =>
-            p.modelId.startsWith("tile.slope."),
-          ),
-        ).toBe(false);
-        const tile = map.tiles[0]!;
-        const placement = {
-          modelId: SLOPE_MODELS[kind],
-          position: { x: tile.x + 0.5, y: tileTop(tile.y), z: tile.z + 0.5 },
-          turns: ((turns + (kind === "straight" ? 0 : 1)) % 4) as 0 | 1 | 2 | 3,
-        };
+        const placement = resolveMapModels(map).tiles[0]!;
+        expect(placement.modelId).toBe(SLOPE_MODELS[kind]);
         node.position.copy(placement.position);
         node.rotation.y = (-placement.turns * Math.PI) / 2;
         node.updateMatrixWorld(true);

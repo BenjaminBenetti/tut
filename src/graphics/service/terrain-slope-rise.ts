@@ -4,8 +4,8 @@ import { stepGridPos } from "../../core/service/grid-math";
 
 /**
  * Rise in layers to the high neighbour named by the existing slope metadata.
- * Shared by placeholder and loaded art; accommodates the two-layer terrain
- * emitted before #808 as well as its one-layer steps. Does not choose a shape.
+ * Shared by placeholder and loaded art. Natural terrain uses one layer after
+ * #808; older two-layer maps still fit the same kit. Does not choose a shape.
  */
 export function terrainSlopeRise(tile: Tile, index: TileIndex): number {
   const slope = tile.slope;

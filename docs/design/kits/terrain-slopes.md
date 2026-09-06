@@ -45,8 +45,10 @@ flat ground model's centre-pivot slab offset does not apply to this wedge.
 art to the existing map's vertical gap with `ModelPlacement.scaleY`: 1 for
 one-layer terrain, 2 for the two-layer steps generated before #808. This is
 an instance transform, so prototypes, materials and footprint are shared.
-It neither selects nor repairs a corner kind; #817's classification rule
-fix belongs to MapGen's #808.
+It neither selects nor repairs a corner kind. #808/#823 now emits one-layer
+natural steps and includes the #817 classification fix. The vertical fit
+remains a guard for older maps; the hills-1 test requires every slope to use
+scale 1.
 
 ## Material consumer
 
@@ -83,7 +85,8 @@ initial wedges with the materialised art and retires those placeholders.
 It caches one prototype per shape/surface, batches instances by level and
 surface, and applies the existing visibility and mist treatment to both
 parts. The ground pillars remain. Generation, map data and traversal remain
-as supplied by #799.
+as supplied by #808/#823. The resolver restores the model seam that #823
+left temporarily disabled; the corner quarter-turn mapping is unchanged.
 
 In-game review controls: [city seed 730982385](../shots/799-preview-control-seed730982385.png)
 and [snowy rural hills-1](../shots/799-preview-terrain-heavy-snowy-rural-hills-1.png).
@@ -117,17 +120,20 @@ server. Its 1440 × 880 composite uses two matching L-shaped terraces, including
 a straight run, concave and convex turns, and a slope side abutting a sheer
 cliff. All nine angles and the final composite were opened and inspected.
 
-Validation for #809: all three Blender/trimesh loops, manifest guard,
-typecheck, lint, 1,978 unit tests and build pass (one unit test skipped).
-The new neighbourhood test loads the real GLBs through the tactical view
-and checks all four turns of both corner kinds at both one- and two-layer
-rises: 16 cases, 320 shared-edge comparisons.
+Validation for #809: all three Blender/trimesh loops and the manifest guard
+pass. The new neighbourhood test loads the real GLBs through the tactical
+view and checks all four turns of both corner kinds at both one- and
+two-layer rises: 16 cases, 320 shared-edge comparisons. A generated hills-1
+case checks all 767 slopes resolve to the kit at scale 1 and exercises
+all three kinds. Placement, placeholder retirement and material-sharing
+coverage disabled by #823 is restored.
 
-The composite and all four map captures were regenerated and opened. Both
-seed-4242 fog frames remain byte-identical to main. The city control's only
-changes are timing text; the snowy control has 228 changed scene pixels,
-with a maximum difference of one channel value out of 255, from rendering
-the re-exported normals through the vertical fit. Its terrain shape remains
-as generated on main, including the classification gaps reported in #817.
-The composite is the new half-rise visual acceptance frame. All four capture
-tests and the full browser suite pass: 59 tests, nine opt-in captures skipped.
+The four preview controls and both seed-4242 fog frames are regenerated
+on #823's half-step terrain and opened for review. The hills-1 frame now
+shows the textured 0.75-rise kit. The grass/sand composite and all nine
+neutral angles retain the accepted half-rise geometry. The Director judges
+the textured hills-1 frame before the Tech Lead merges.
+
+Typecheck, lint, 1,980 unit tests (one skipped), build and five capture tests
+pass. The full browser suite passes: 59 tests, 11 opt-in captures skipped.
+Both seed-4242 fog PNGs are byte-identical to main.

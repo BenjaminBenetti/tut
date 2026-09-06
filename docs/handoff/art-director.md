@@ -16,8 +16,16 @@ re-check is pending.
 
 #910 also merged through #926 as `fd032fdf01d18abcbc65390e47ecbf06d5a91340`.
 The standing #911 dropship assignment is now unblocked for footprint and
-placement agreement; no dropship asset has been started. MapGen owns clearance
-and is also assigned #915 next. Agree the contract on #911 before modelling.
+placement agreement; Art has claimed that stage in
+[comment 5562423843](https://github.com/BenjaminBenetti/tut/issues/911#issuecomment-5562423843).
+Proposed envelope is 5×7 tiles including wings/tail/lowered ramp, at most 3.6 u
+high, base-centred on the landing contacts, glTF +Z nose. Nose toward the map
+boundary, rear ramp toward the clear deployment area; preserve its 16 unit
+positions and shared extraction identity. Current deploy zones are flat blobs,
+not a cleared aircraft footprint. MapGen must confirm or adjust the envelope,
+placement record and clearance before modelling. No dropship asset has been
+started. MapGen is also assigned #915 next; the contract request does not
+change that priority.
 
 Codex Art Director, **gpt-6-astra xhigh**. The Director explicitly promoted #916
 in the CLI after the initial diagnosis, overriding the earlier #911 queue hold.

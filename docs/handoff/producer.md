@@ -3,7 +3,7 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-06 04:12 UTC)
+## Status Digest (2026-09-06 04:20 UTC)
 
 **Production ON HOLD** by the Executive Director (#748); he is tuning map generation personally in Map Lab. No resume ordered. No M3 decomposition, new seat assignments without the Director's request, or Ready queue growth. **v0.2.6** is tagged from main.
 
@@ -11,23 +11,23 @@
 
 | Engineer seat | Runtime / effort | Tier | Assignment |
 |---|---|---|---|
-| eng-3 | Codex, Astra 6 / xhigh | high only | Idle |
+| eng-3 | Codex, Astra 6 / xhigh | high only | #807 engine half-height layers — In Progress; first job |
 | eng-4 | Claude Opus 5 / max | low / medium only | Idle |
 | eng-5 | Claude Opus 5 / max | low / medium only | Idle |
 
-**Milestones** (closed / total issues, live API): M0 14/14 · M1 64/64 · M1.5 33/34 · M2 48/50 · M2.5 25/27 · M3 1/2 (held). These counts do not declare milestone completion.
+**Milestones** (closed / total issues, API snapshot at 04:09 UTC): M0 14/14 · M1 64/64 · M1.5 33/34 · M2 48/50 · M2.5 25/27 · M3 1/2 (held). These counts do not declare milestone completion.
 
-**Live exceptions / board:** #798 slope meshes — Art Director, **In Progress**. #799 slope data/traversal/scene mapping — MapGen, **In Progress**; #801 merged the data path, remaining model mapping follows #798. PRs **#801 and #795 are Done** on Project #5 (both merged). All four cards added and statuses verified this pass.
+**Live exceptions / board:** #798 slope meshes — Art Director, **In Progress**. #799 slope data/traversal/scene mapping — MapGen, **In Progress**; #801 merged the data path, remaining model mapping follows #798. PRs **#801 and #795 are Done** on Project #5 (both merged). All four cards added and statuses verified in the preceding pass.
 
-**Forthcoming exception:** the Director will file half-height elevation; the Tech Lead turns it into an ADR plus child issues. Await that issue and direction; no Producer decomposition or seating now.
+**Half-height exception (#804):** Director signed off ADR 0008 (#806). Parent #804 is **In Progress** (Producer tracks). #807 engine (`complexity:high`) is labeled `seat:eng-3`, **In Progress**. #808 is MapGen-owned, **Blocked by #807 merging**; #809 is Art Director-owned, **Blocked by #798 landing**, then may run in parallel with #808. Both specialist children have no seat label. All four cards added to Project #5 with Status and Owner; blocker reasons recorded in the child issue bodies.
 
-**Open PRs** (snapshot at 04:08 UTC; approximate age): #803 roster/process update, 1 min, about to merge per Director; #802 Tech Lead handoff, 2 h; #757 mech-bay preview, 34 h, unrelated and waiting. This Producer handoff is the only PR opened by this pass.
+**Open PRs** (snapshot at 04:19 UTC; approximate age): #806 ADR 0008, 6 min, Director approved the contract; #805 this Producer handoff, 8 min, updated on the existing branch; #757 mech-bay preview, 34 h, unrelated and waiting. #802/#803 are no longer open.
 
-**Blocked / parked:** #799's final model mapping waits for #798; half-height work awaits the Director's issue and Tech Lead ADR. General production and M3 remain held. #787 overpass roads parked; #793 mist performance follow-up remains p3 despite #795 merging.
+**Blocked / parked:** #799 model mapping and #809 half-rise art wait for #798; #808 waits for #807 to merge. General production and M3 remain held. #787 overpass roads parked; #793 mist performance follow-up remains p3 despite #795 merging.
 
 **Risks:** the inherited autofill script still permits Opus high-tier work, contrary to strict routing; do not run it. Historical notes below contain obsolete seating and monitor instructions. The empty `.producer/release-allowlist.txt` remains in place. Slope completion depends on the art-to-MapGen handoff; the merged data path does not complete #799.
 
-**Next assignments:** none. All engineer seats idle intentionally. Stop after opening this handoff PR; the Director prompts the next pass.
+**Next assignments:** none beyond the Director-authorized #807. eng-4/eng-5 remain idle; no Ready queue growth. Stop after pushing this update to #805; the Director prompts the next pass.
 <!-- digest:end -->
 
 

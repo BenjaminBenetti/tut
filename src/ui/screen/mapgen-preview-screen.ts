@@ -30,6 +30,12 @@ export interface PreviewControlsState {
    * offers one (#447) — so it rides through the state untouched.
    */
   readonly archetype: MapArchetype;
+  /**
+   * Natural-edge slope share, 0–1 (#799). The Map Lab knob: at 1 every
+   * natural terrain step is a hillside, lower dials cliffs back in by
+   * whole edge runs.
+   */
+  readonly slopeShare: number;
 }
 
 /** A finished generation for the panel to describe. */
@@ -86,6 +92,8 @@ export class MapgenPreviewScreen {
   private readonly levelSlider: HTMLInputElement;
   private readonly levelLabel: HTMLSpanElement;
   private readonly stats: HTMLElement;
+  private readonly slopeSlider: HTMLInputElement;
+  private readonly slopeLabel: HTMLElement;
   private readonly ascii: HTMLPreElement;
   private readonly notes: HTMLElement;
   private readonly status: HTMLElement;
@@ -150,6 +158,27 @@ export class MapgenPreviewScreen {
     form.appendChild(labelled(doc, "Settlement", this.settlementSelect));
     form.appendChild(labelled(doc, "Size", this.sizeSelect));
 
+    // Slope-to-cliff ratio for natural terrain edges (#799), as a percent.
+    this.slopeSlider = el(doc, "input");
+    this.slopeSlider.type = "range";
+    this.slopeSlider.id = "slope";
+    this.slopeSlider.dataset.field = "slope";
+    this.slopeSlider.min = "0";
+    this.slopeSlider.max = "100";
+    this.slopeSlider.step = "5";
+    this.slopeSlider.value = String(Math.round(initial.slopeShare * 100));
+    this.slopeLabel = el(doc, "span", "mapgen-level-label");
+    this.slopeLabel.textContent = `${this.slopeSlider.value} %`;
+    this.slopeSlider.addEventListener("input", () => {
+      this.slopeLabel.textContent = `${this.slopeSlider.value} %`;
+    });
+    this.slopeSlider.addEventListener("change", () => {
+      this.options.onGenerate(this.getState());
+    });
+    form.appendChild(
+      labelled(doc, "Slopes", this.slopeSlider, this.slopeLabel),
+    );
+
     const generate = el(doc, "button", "tut-btn tut-btn-accent");
     generate.type = "submit";
     generate.id = "generate";
@@ -203,6 +232,7 @@ export class MapgenPreviewScreen {
       settlement: this.settlementSelect.value as SettlementScale,
       size: this.sizeSelect.value as MapSizePreset,
       archetype: this.archetype,
+      slopeShare: Number(this.slopeSlider.value) / 100,
     };
   }
 
@@ -463,6 +493,10 @@ function metricRows(
     [
       "Vertical",
       `${delta((m) => m.ramps, whole)} ramps, ${metrics.stairs} stairs, ${metrics.ladders} ladders, ${metrics.maxFloors} floors max`,
+    ],
+    [
+      "Slopes",
+      `${delta((m) => m.slopes, whole)} slope tiles, ${String(Math.round(metrics.slopeShare * 100))} % of natural edges (the knob)`,
     ],
     [
       "Hatch space",

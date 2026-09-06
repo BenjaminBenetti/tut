@@ -24,6 +24,7 @@ import {
   SLAB_HEIGHT,
 } from "../data/mapgen-preview-palette";
 import type { ModelLoader } from "../model/model-loader";
+import { createGhostUniforms } from "../service/ghost-cutaway";
 import {
   TacticalMapView,
   VISION_DIM,
@@ -270,6 +271,37 @@ function named(view: TacticalMapView, prefix: string): InstancedMesh[] {
 }
 
 describe("TacticalMapView.loadModels", () => {
+  it("shares a prototype's ghosted mist material across levels, isolated from plain terrain and other scenes", async () => {
+    const b = new FixtureMapBuilder(2, 1, 2).fillGround();
+    b.tile({ x: 0, y: 1, z: 0 }, SurfaceIds.FLOOR, { buildingId: "b" });
+    b.wall({ x: 0, y: 0, z: 0 }, "n", "solid");
+    b.wall({ x: 0, y: 1, z: 0 }, "n", "solid");
+    const prototype = new Mesh(new BoxGeometry(), new MeshStandardMaterial());
+    // Loader clones share the source material/geometry, as the GLTF loader does.
+    const models: ModelLoader = {
+      preload: () => Promise.resolve(),
+      load: () => Promise.resolve(prototype.clone()),
+    };
+    const view = new TacticalMapView(b.build(), createGhostUniforms(2, 0.15));
+    const other = new TacticalMapView(b.build(), createGhostUniforms(3, 0.2));
+    await view.loadModels(models);
+    await other.loadModels(models);
+    const walls = named(view, "walls-model:");
+    expect(walls).toHaveLength(2);
+    expect(walls[0]!.material).toBe(walls[1]!.material);
+    expect(walls[0]!.material).not.toBe(
+      named(view, "tiles-model:tile.ground")[0]!.material,
+    );
+    expect(walls[0]!.material).not.toBe(
+      named(other, "walls-model:")[0]!.material,
+    );
+    expect(prototype.material.name).not.toContain("ghosted");
+    view.dispose();
+    other.dispose();
+    prototype.material.dispose();
+    prototype.geometry.dispose();
+  });
+
   it("mists walls, props, connectors and late-loaded models by their owning tile", async () => {
     const map = fixture().build();
     const view = new TacticalMapView(map);

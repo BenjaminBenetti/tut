@@ -17,6 +17,21 @@ How work moves through the Terra Under Threat project. Every agent reads this be
 
 Role briefs live in `docs/process/roles/`. Handoff notes live in `docs/handoff/`.
 
+**Staffing (Executive Director, 2026-09-06).** Each seat runs on a fixed model and effort; the Director launches every session with those set explicitly.
+
+| Seat | Runtime | Effort | Notes |
+|---|---|---|---|
+| Director | Claude Fable 5.1 | xhigh | managed directly by the Executive Director |
+| Tech Lead | Claude Fable 5.1 | high | |
+| Producer | Codex, Astra 6 | high | no monitors or timers; the Director prompts it |
+| MapGen | Claude Fable 5.1 | high | `area:mapgen` only, idles otherwise |
+| Art Director | Codex, Astra 6 | xhigh | |
+| QA | Claude Opus 5 | max | |
+| eng-3 (the high seat) | Codex, Astra 6 | xhigh | `complexity:high` only |
+| eng-4, eng-5 (the Opus seats) | Claude Opus 5 | max | `complexity:low` and `complexity:medium` only |
+
+Codex seats have no background monitor or scheduler. They finish the prompted task, end the turn, and are prompted again by the Director when there is new work. Claude seats wait on one event monitor (§3).
+
 ## 2. Work item lifecycle
 
 ```
@@ -28,7 +43,7 @@ Role briefs live in `docs/process/roles/`. Handoff notes live in `docs/handoff/`
 1. **Issue.** Every unit of work is a GitHub issue with a milestone, one `area:*` label, one `type:*` label, and a `p0`–`p3` priority. Epics (`type:epic`) list child issues as a task list.
 2. **Ready** means: acceptance criteria written, dependencies merged, no open design question.
    **Assignment**: the Producer labels a Ready issue `seat:eng-N`; that seat's engineer picks it up. Management is layered: the Director manages the Producer, Tech Lead, and Art Director; the Producer (with Tech Lead input) manages engineer assignments; the Director only sizes the engineer pool.
-   **Complexity tiers**: the Tech Lead labels every engineer issue `complexity:low|medium|high`. Engineer seats run on different models and effort levels (recorded in each `seat:eng-N` label description), and the tiers are strict in both directions: `complexity:high` goes only to the Fable seat and queues behind it; low and medium go only to the Opus seats. A seat with no work in its tier idles rather than reaching across. This keeps the hardest problems with the most capable agent and keeps that agent's budget for them.
+   **Complexity tiers**: the Tech Lead labels every engineer issue `complexity:low|medium|high`. Engineer seats run on different models and effort levels (recorded in each `seat:eng-N` label description), and the tiers are strict in both directions: `complexity:high` goes only to the high seat (`eng-3`) and queues behind it; low and medium go only to the Opus seats. A seat with no work in its tier idles rather than reaching across. This keeps the hardest problems with the most capable agent and keeps that agent's budget for them.
 3. **Branch.** `<type>/<issue-number>-<short-slug>`, e.g. `feat/42-infestation-tick`. Branch from `main`.
 4. **PR.** Title `<type>(<area>): <summary> (#<issue>)`. Body follows the template. Link the issue with `Closes #N`. Keep PRs under ~500 changed lines where possible; split otherwise.
 5. **Review.** Tech Lead reviews. Engineers address comments on the same branch. Tech Lead merges with squash when CI is green and the PR is approved.

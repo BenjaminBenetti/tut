@@ -1,6 +1,9 @@
-import type { BufferGeometry, Camera, Material, Object3D } from "three";
+import type { Camera, Material, Object3D } from "three";
 import {
   BoxGeometry,
+  BufferAttribute,
+  BufferGeometry,
+  DoubleSide,
   Color,
   Group,
   InstancedMesh,
@@ -239,6 +242,8 @@ export class TacticalMapView implements Disposable, TilePicker {
   private readonly index: TileIndex;
   private readonly levelGroups = new Map<number, Group>();
   private readonly materials = new Map<string, Material>();
+  /** One scene-specific cutaway per prototype, also shared by the mist cache. */
+  private readonly ghostMaterials = new Map<Material, Material>();
   private readonly disposables: Disposable[] = [];
   private readonly unitBox = new BoxGeometry(1, 1, 1);
   private readonly raycaster = new Raycaster();
@@ -400,16 +405,13 @@ export class TacticalMapView implements Disposable, TilePicker {
           this.ghostUniforms !== undefined &&
           batch.modelId.startsWith(GHOSTED_MODEL_PREFIX) &&
           prototypeMaterial !== undefined
-            ? applyGhostCutaway(prototypeMaterial, this.ghostUniforms)
+            ? this.ghostMaterial(prototypeMaterial)
             : part.material;
         const mesh = new InstancedMesh(
           part.geometry,
           material,
           batch.matrices.length,
         );
-        if (material !== part.material && !Array.isArray(material)) {
-          this.disposables.push(material);
-        }
         batch.matrices.forEach((cell, j) => {
           mesh.setMatrixAt(j, new Matrix4().multiplyMatrices(cell, part.local));
         });
@@ -588,6 +590,7 @@ export class TacticalMapView implements Disposable, TilePicker {
     for (const material of this.materials.values()) {
       material.dispose();
     }
+    this.ghostMaterials.clear();
     this.root.removeFromParent();
   }
 
@@ -609,6 +612,22 @@ export class TacticalMapView implements Disposable, TilePicker {
       const colour = SURFACE_COLOURS[tile.surface] ?? FALLBACK_SURFACE_COLOUR;
       const top = tileTop(tile.y);
       const isGround = tile.buildingId === undefined;
+      if (tile.slope !== undefined) {
+        // A hillside piece (#799): the column below stays a ground box and
+        // a wedge rises from this tile's top to the next level. Placeholder
+        // until the slope block set lands (#798); every kind is drawn as
+        // the straight wedge, turned to face its high side.
+        pushBatch(
+          ground,
+          `tile:${tile.surface}:${tile.y}`,
+          colour,
+          tile.y,
+          boxMatrix(tile.x + 0.5, top - top / 2, tile.z + 0.5, 1, top, 1),
+          this.index.keyOf(tile),
+        );
+        this.wedgeMesh(tile, colour);
+        continue;
+      }
       const height = isGround ? top : SLAB_HEIGHT;
       const matrix = boxMatrix(
         tile.x + 0.5,
@@ -733,12 +752,20 @@ export class TacticalMapView implements Disposable, TilePicker {
   /** Planks for ramps and stairs, an upright rung for ladders. */
   private buildConnectors(): void {
     for (const connector of this.map.connectors) {
+      if (connector.kind === "slope") {
+        // The slope tile's own wedge is the connector's shape (#799).
+        continue;
+      }
       const mesh =
         connector.kind === "ladder"
           ? this.ladderMesh(connector)
           : this.plankMesh(connector);
       mesh.name = connector.id;
-      this.unexploredFog.trackSurface(mesh, [this.index.keyOf(connector.to)]);
+      this.unexploredFog.trackSurface(
+        mesh,
+        [this.index.keyOf(connector.to)],
+        "exclusive",
+      );
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       const material = mesh.material as MeshStandardMaterial;
@@ -759,6 +786,72 @@ export class TacticalMapView implements Disposable, TilePicker {
           kept.push(mesh);
         }
       }
+    }
+  }
+
+  /**
+   * The placeholder wedge for a slope tile (#799): a right prism whose
+   * top face rises one level across the tile from the low edge to the
+   * high edge, turned by the slope's quarter turns. Tracked for vision as
+   * the tile it stands on, and kept under its own label so retiring the
+   * slab placeholders (#474) leaves it standing until #798's models take
+   * over.
+   */
+  private wedgeMesh(tile: Tile, colour: number): void {
+    const slope = tile.slope;
+    if (slope === undefined) {
+      return;
+    }
+    const low = tileTop(tile.y);
+    const high = tileTop(tile.y + 1);
+    const rise = high - low;
+    // Built rising towards +z (south), which is `turns` 0; a quarter turn
+    // clockwise about +y for each further turn matches the stairs model.
+    const geometry = new BufferGeometry();
+    const h = 0.5;
+    // prettier-ignore
+    const vertices = new Float32Array([
+      // low edge at z = -h (y = 0), high edge at z = +h (y = rise)
+      -h, 0, -h,   h, 0, -h,   h, rise, h,   -h, rise, h, // top face
+      -h, 0, -h,  -h, 0,  h,  -h, rise, h,                // west face
+       h, 0, -h,   h, rise, h,   h, 0,  h,                // east face
+      -h, 0,  h,   h, 0,  h,   h, rise, h,   -h, rise, h, // high (south) face
+    ]);
+    // prettier-ignore
+    const indices = [
+      0, 2, 1,  0, 3, 2,       // top
+      4, 5, 6,                 // west
+      7, 8, 9,                 // east
+      10, 11, 12,  10, 12, 13, // high face
+    ];
+    geometry.setAttribute("position", new BufferAttribute(vertices, 3));
+    geometry.setIndex(indices);
+    geometry.computeVertexNormals();
+    const material = new MeshStandardMaterial({
+      color: colour,
+      side: DoubleSide,
+    });
+    this.disposables.push(geometry, material);
+    const mesh = new Mesh(geometry, material);
+    mesh.position.set(tile.x + 0.5, low, tile.z + 0.5);
+    mesh.rotation.y = -slope.turns * (Math.PI / 2);
+    mesh.name = `slope:${String(tile.x)},${String(tile.z)}`;
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    this.unexploredFog.trackSurface(mesh, [this.index.keyOf(tile)]);
+    const tracked: ConnectorVision = {
+      key: this.index.keyOf(tile),
+      material: mesh.material,
+      base: new Color(colour),
+    };
+    this.connectorTiles.set(mesh, tracked);
+    this.applyVisionToConnector(tracked);
+    this.groupFor(tile.y).add(mesh);
+    const kept = this.placeholders.get("slopes");
+    if (kept === undefined) {
+      this.placeholders.set("slopes", [mesh]);
+    } else {
+      kept.push(mesh);
     }
   }
 
@@ -865,6 +958,17 @@ export class TacticalMapView implements Disposable, TilePicker {
   // ===========================================
   // Shared helpers
   // ===========================================
+
+  /** Keeps building cutaway clones stable across levels of the same model. */
+  private ghostMaterial(prototype: Material): Material {
+    let material = this.ghostMaterials.get(prototype);
+    if (material === undefined) {
+      material = applyGhostCutaway(prototype, this.ghostUniforms!);
+      this.ghostMaterials.set(prototype, material);
+      this.disposables.push(material);
+    }
+    return material;
+  }
 
   /** Turns accumulated batches into one `InstancedMesh` each, hung on their level. */
   private flushBatches(

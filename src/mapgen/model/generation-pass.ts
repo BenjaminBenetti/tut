@@ -22,6 +22,7 @@ export type DraftCapability =
   | "buildings"
   | "interiors"
   | "props"
+  | "slopes"
   | "ramps"
   | "hooks"
   | "connected";

@@ -37,7 +37,20 @@ const DEFAULT_STATE: PreviewControlsState = {
   settlement: "town",
   size: "medium",
   archetype: "settlement",
+  slopeShare: 1,
 };
+
+/** A percent from the URL as a 0–1 share; missing or malformed means all slope. */
+function clampShare(raw: string | null): number {
+  if (raw === null) {
+    return DEFAULT_STATE.slopeShare;
+  }
+  const percent = Number(raw);
+  if (!Number.isFinite(percent)) {
+    return DEFAULT_STATE.slopeShare;
+  }
+  return Math.min(1, Math.max(0, percent / 100));
+}
 
 /**
  * Reads `?seed=&biome=&settlement=&size=&archetype=` with defaults for
@@ -60,6 +73,8 @@ function stateFromUrl(): PreviewControlsState {
     archetype:
       (query.get("archetype") as PreviewControlsState["archetype"] | null) ??
       DEFAULT_STATE.archetype,
+    // `?slope=` is a percent, the way the slider shows it (#799).
+    slopeShare: clampShare(query.get("slope")),
   };
 }
 
@@ -80,6 +95,7 @@ function writeUrl(state: PreviewControlsState): void {
     settlement: state.settlement,
     size: state.size,
     archetype: state.archetype,
+    slope: String(Math.round(state.slopeShare * 100)),
   });
   if (new URLSearchParams(window.location.search).get("models") === "1") {
     query.set("models", "1");
@@ -154,6 +170,7 @@ async function main(): Promise<void> {
         settlement: state.settlement,
         size: state.size,
         hooks: DEFAULT_MISSION_HOOKS,
+        slopeShare: state.slopeShare,
       },
     };
     const started = performance.now();

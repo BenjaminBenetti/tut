@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-06 ~00:45 UTC (session 5; v0.2.5 tagged; CI stall fixed by configuration in #796, #793 at p3; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-06 ~02:15 UTC (session 5; #801 slopes data path and #795 merged; #799 open for the #798 model mapping; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — production is paused; only #748 is live
 
@@ -107,6 +107,36 @@ main tree, so a branch checked out in a `git worktree` makes it fail with
 `CHECKOUT_FAIL`; remove the worktree before gating that branch. The monitor now
 snapshots CI on `main`'s head (`CI main@sha`), which is how two red `main`
 runs stopped being invisible.
+
+**Newest Executive Director exception (01:00 UTC): natural terrain edges
+become walkable slopes.** #799 (MapGen, `complexity:high`): slope tiles as map
+data (kind straight/inner/outer + orientation + material), slopes as connectors,
+man-made edges keep walls, a Map Lab slope-to-cliff knob and metric, scene
+mapping with a placeholder wedge until art lands. #798 (Art Director): the
+three slope meshes, material-parameterised. My review constraints are posted on
+#799 (01:08): ADR 0004 amended in the same PR; new tile fields **optional**
+(absent = not a slope) or a v15 migration, never a bare required field; slopes
+are a `Connector` kind so movement/reachability/AI change by a kind, not a rule;
+cover/LOS rule stated and tested; the knob is a `GenerationParams`/recipe field;
+sweep test for man-made edges keeping walls and no orphan corners; goldens,
+`MAPGEN_WIDE=1`, `test:sim` before/after; controls captured through a spec.
+Director judges frames before merge.
+
+**Merged 02:10 UTC.** #795 (`ee943fb`) — mist resources shared by prototype;
+merged as a **documented exception to never-merge-red**: its three CI reds were
+the #793 stall on a branch predating #796, gate on the merge with `main` green,
+frames byte-identical, Director-verified. #801 (`61eb835`) — #799's data path:
+`Tile.slope?`/`naturalEdge?` optional (no migration), `slope` connector kind,
+`SlopePass`, `slopeShare` on the recipe, Map Lab knob + metric reading the knob
+back by construction, ADR 0004 amended (I10), `e2e/slope-screenshot.spec.ts`
+captures both controls, placeholder wedge under the `slopes` label. Director
+accepted both controls and ruled: slope = open ground, high edge keeps the
+bonus. `test:sim` identical (the sim's city seed has no natural steps).
+**#799 stays open** for the `(surface, kind, turns)` → #798 model mapping in
+`map-model-resolver.ts` once the Art Director's meshes land (#798 PR pending);
+review it against the placeholder seam comment there. Follow-ups noted by the
+Director: outer-corner notches with the placeholder; crater terraces stay
+man-made until the ED sees one.
 
 **Otherwise the queue is empty except parked #757.** Nothing merges until the ED's
 playtest verdict or a Director ruling on the ramp child above.

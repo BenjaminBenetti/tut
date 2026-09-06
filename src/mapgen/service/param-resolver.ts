@@ -43,6 +43,7 @@ export function resolveMapGenParams(
   const biome = registries.biomes.get(params.biome);
   const settlement = registries.settlements.get(params.settlement);
   validateHooks(params);
+  const slopeShare = resolveSlopeShare(params.slopeShare);
   return {
     archetype: params.archetype,
     width,
@@ -50,7 +51,19 @@ export function resolveMapGenParams(
     biome,
     settlement,
     hooks: params.hooks,
+    slopeShare,
   };
+}
+
+/** A slope share is a proportion; anything else is a programmer error. */
+function resolveSlopeShare(value: number | undefined): number {
+  if (value === undefined) {
+    return 1;
+  }
+  if (!Number.isFinite(value) || value < 0 || value > 1) {
+    throw new Error(`slopeShare must be within 0..1, got ${String(value)}`);
+  }
+  return value;
 }
 
 // ===========================================

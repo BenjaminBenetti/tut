@@ -16,7 +16,7 @@ Every engineer-facing issue must carry exactly one of `complexity:low`, `complex
 
 - **low**: routine and fully specified; data files, a model type with tests, a small screen wired to an existing service, a follow-up fix. A careful junior could do it from the issue text alone.
 - **medium**: needs some design judgment inside one domain; a service with non-trivial rules, a generation pass, a screen with state.
-- **high**: architecture-shaping, cross-domain, subtle correctness (determinism, save migrations, command dispatch, turn engine, LOS/cover), or anything where a wrong call is expensive to unwind. Only the Fable seat (`eng-3`) takes these. They queue behind it and never drop to an Opus seat; low and medium go only to the Opus seats (`eng-4`, `eng-5`), never to the Fable seat. The tiers are strict in both directions by Executive Director rule.
+- **high**: architecture-shaping, cross-domain, subtle correctness (determinism, save migrations, command dispatch, turn engine, LOS/cover), or anything where a wrong call is expensive to unwind. Only the high seat (`eng-3`, Astra 6 via Codex at xhigh) takes these. They queue behind it and never drop to an Opus seat; low and medium go only to the Opus seats (`eng-4`, `eng-5`), never to the high seat. The tiers are strict in both directions by Executive Director rule.
 
 Label new issues as they appear (sweep the unlabeled set at the start of every review loop). Re-label if review reveals the issue was harder than it looked, and say why in a comment.
 

@@ -25,6 +25,89 @@ function maskOf(group: Group): DataTexture {
 }
 
 describe("UnexploredFog", () => {
+  it("shares prototype resources across batches but keeps coverage independent", () => {
+    const map = new FixtureMapBuilder(3, 1, 1).fillGround().build();
+    const fog = new UnexploredFog(map);
+    const geometry = new BoxGeometry();
+    const material = new MeshStandardMaterial();
+    const clone = vi.spyOn(geometry, "clone");
+    const a = new InstancedMesh(geometry, material, 1);
+    const b = new InstancedMesh(geometry, material, 2);
+    fog.setVision({ visible: [0], explored: [0], spotted: [], lastSeen: {} });
+    fog.trackSurface(a, [0]);
+    fog.trackSurface(b, [1, 2]);
+    expect(a.material).toBe(b.material);
+    expect(a.material).not.toBe(material);
+    expect(a.renderOrder).toBeLessThan(b.renderOrder);
+    expect(b.renderOrder).toBeLessThan(1);
+    expect(clone).toHaveBeenCalledTimes(1);
+    expect(a.geometry.getAttribute("position")).toBe(
+      b.geometry.getAttribute("position"),
+    );
+    expect(a.geometry.getAttribute("position")).not.toBe(
+      geometry.getAttribute("position"),
+    );
+    const coverageA = a.geometry.getAttribute("unexploredMist");
+    const coverageB = b.geometry.getAttribute("unexploredMist");
+    expect(coverageA).not.toBe(coverageB);
+    expect(coverageA.count).toBe(1);
+    expect(coverageB.count).toBe(2);
+    expect(coverageA.getW(0)).toBe(0);
+    expect(coverageB.getW(0)).toBe(1);
+    fog.setVision({
+      visible: [1],
+      explored: [0, 1],
+      spotted: [],
+      lastSeen: {},
+    });
+    expect(coverageA.getW(0)).toBe(0);
+    expect(coverageB.getW(0)).toBe(0);
+    expect(coverageB.getW(1)).toBe(1);
+    const disposed = vi.fn();
+    a.material.addEventListener("dispose", disposed);
+    fog.dispose();
+    expect(disposed).toHaveBeenCalledTimes(1);
+    geometry.dispose();
+    material.dispose();
+    a.dispose();
+    b.dispose();
+  });
+
+  it("isolates prototypes and missions and reuses an exclusively owned connector geometry", () => {
+    const map = new FixtureMapBuilder(1, 1, 1).fillGround().build();
+    const fog = new UnexploredFog(map);
+    const otherFog = new UnexploredFog(map);
+    const geometry = new BoxGeometry();
+    const red = new MeshStandardMaterial({ color: 0xff0000 });
+    const blue = new MeshStandardMaterial({ color: 0x0000ff });
+    const first = new Mesh(geometry, [red, blue, red]);
+    fog.trackSurface(first, [0], "exclusive");
+    expect(first.geometry).toBe(geometry);
+    expect(first.material[0]).toBe(first.material[2]);
+    expect(first.material[0]).not.toBe(first.material[1]);
+    expect(first.material[0]!.color).toEqual(red.color);
+    expect(first.material[1]!.color).toEqual(blue.color);
+    const second = new Mesh(new BoxGeometry(), red);
+    otherFog.trackSurface(second, [0], "exclusive");
+    expect(second.material).not.toBe(first.material[0]);
+    const disposed = vi.fn();
+    geometry.addEventListener("dispose", disposed);
+    fog.dispose();
+    expect(disposed).not.toHaveBeenCalled();
+    otherFog.setVision({
+      visible: [],
+      explored: [],
+      spotted: [],
+      lastSeen: {},
+    });
+    expect(second.geometry.getAttribute("unexploredMist").getW(0)).toBe(1);
+    otherFog.dispose();
+    geometry.dispose();
+    second.geometry.dispose();
+    red.dispose();
+    blue.dispose();
+  });
+
   it("owns surface resources without altering or disposing loader prototypes", () => {
     const map = new FixtureMapBuilder(1, 1, 1).fillGround().build();
     const fog = new UnexploredFog(map);

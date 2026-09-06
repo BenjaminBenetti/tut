@@ -39,6 +39,41 @@ Next: Tech Lead reviews; address arriving feedback on this branch, then
 **hold again with no timer polling or background review monitor**. All other
 production remains paused. Historical task directions below are superseded.
 
+## Previous work: #793 / #795 (allocation PR merged; performance target unmet)
+
+The Director authorised #793 during the hold. Branch:
+`fix/793-mist-prototype-allocation`, based on main `a735baa`. I remain the
+Codex Art Director on gpt-6-astra. #782 / PR #783 is now merged.
+
+The mist now memoises materials per source prototype per scene. Building
+cutaway clones are cached too, so they do not defeat that memoisation across
+levels. Geometry buffers are cloned once per shared prototype; each batch
+keeps an independent coverage attribute. Exclusive connector geometry is
+used directly. Tests cover source ownership, independent vision, material
+arrays, separate missions/ghost uniforms, and shared-material disposal.
+
+Regenerated and inspected both seed-4242 frames. They match main byte for
+byte; their hashes and reproduction commands are in
+[the measurement report](../design/793-mist-allocation.md). No PNG diff is
+expected. Explicit batch render order preserves the old winners at coplanar
+wall seams; without it, material sharing changed a handful of pixels.
+
+**Do not claim #793's performance regression is resolved.** Unrestricted
+first-mount medians are 396 ms before / 387 ms after. With CPU affinity set
+to two cores, five samples give 1686 ms pre-#776, 2180 ms main, 2416 ms fix.
+The issue's 12-test comparison gives 36.920 s pre-#776, 44.129 s main,
+44.369 s fix. The ~10% target is unmet. Raw samples are in the report.
+
+A separate WebGL diagnostic finds 21 linked programs on both main and this
+fix. Three already reuses compiled programs across matching cache keys;
+per-batch material clones duplicate setup, not necessarily GPU programs.
+Further profiling is needed for the CI stalls. The allocation fix is ready
+for review, but leave #793 open for that remaining work.
+
+Next: Tech Lead reviews this branch; address arriving review here, then
+hold again. **No timer polling or background review monitor.** Other
+production remains paused. Earlier task instructions below are historical.
+
 ## Previous work: #782 / #783 (merged)
 
 The Director authorised **#782** as another exception to the production pause.

@@ -56,6 +56,14 @@ export interface MapMetrics {
   readonly lowCoverPer100: number;
   /** Props inside buildings divided by buildings (0 with none). */
   readonly interiorPropsPerBuilding: number;
+  /** Natural hillside pieces (#799): lower tiles carrying a `slope`. */
+  readonly slopes: number;
+  /**
+   * Share of natural edge tiles that are slopes, 0–1 (#799): `slope` tiles
+   * over `naturalEdge` tiles, the exact denominator the pass used, so this
+   * reads the Map Lab knob back. 1 when a map has no natural edge.
+   */
+  readonly slopeShare: number;
   readonly ramps: number;
   readonly stairs: number;
   readonly ladders: number;

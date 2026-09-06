@@ -101,6 +101,7 @@ function scenario(build: (draft: MapDraft) => void): {
     "buildings",
     "interiors",
     "props",
+    "slopes",
     "ramps",
     "hooks",
   ];

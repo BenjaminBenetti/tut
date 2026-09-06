@@ -1,13 +1,35 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-06 (#840 and #848 merged; holding)
+Last updated: 2026-09-06 (#849 in PR #874; waiting on review)
 
-## Current status: holding
+## Current status: #849 in review, PR #874
 
-Codex Art Director, gpt-6-astra xhigh. #840 and the queued #848 are complete.
-ONE bounded event watch resumes after this handoff. #849 still needs a
-Director shape decision; no speculative piece is authorised. K2 is routed
-to MapGen in #863, with graphics coordination through the Director/Tech Lead.
+Codex Art Director, gpt-6-astra xhigh. #840 and #848 are complete. The Director
+authorised #849 conditionally: re-render J3 on current main, post comparison
+first, then cut a piece only if the seam remains. That condition is met:
+[comparison posted before model edits](https://github.com/BenjaminBenetti/tut/issues/849#issuecomment-5558888199).
+Main `4244675` includes #862 and #866; J3 has no diagonal appearance anywhere
+on its map. QA's final audit #873 independently calls J3 unchanged.
+
+[PR #874](https://github.com/BenjaminBenetti/tut/pull/874) is open. Branch
+`feat/849-three-sided-slope-kit`, initial proof `7af3a73`, final visual proof
+`9087e16`. Main through `e9f022e` merged normally (handoff-only delta). New concave
+end at shared RISE 0.75: 14 triangles, 2,252 bytes, three angles opened. The
+opening uses two existing outer-corner halves. Live scene selects the J3
+end `(10,3,29)` and mouth `(11,3,29)`; after crop opened and full-perimeter
+real-GLB ray tests pass in all four rotations in grass/snow. Composite in grass/snow opened; refusal tests and verification complete.
+Typecheck, lint, build, 2,057 unit tests (one skipped), seven simulation
+tests and all 59 browser tests pass (zero flaky; 25 opt-in captures skipped).
+The composite/fog capture specs pass separately. Both fog frames match fresh
+main byte-for-byte; main’s tracked PNGs were stale after #866, so refreshed
+frames are included. The 108-map sweep fits 173 of 495 three-high ends and
+173 mouths; the 27 four-high pits and unmatched/protected exits are outside
+this bounded shape. Do not claim the whole QA 522-tile bucket is solved.
+All requested assets and diagnostics are committed/pushed. #849 stays open
+because the broad audit bucket is only partly covered. ONE bounded watch
+resumes for Tech Lead review and the Director’s visual judgement; no new
+production issue has been taken. QA’s #873 also reports remaining diagonal
+creases and ramp/parapet art concerns outside this PR.
 
 ## Completed: #848 diagonal slope kit, PR #862
 

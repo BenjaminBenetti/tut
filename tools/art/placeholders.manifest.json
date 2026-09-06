@@ -1216,5 +1216,19 @@
     "quality": "final",
     "triangles": 10,
     "bytes": 1932
+  },
+  {
+    "id": "tile.slope.three-sided",
+    "category": "tiles",
+    "path": "assets/models/tiles/terrain-slope-three-sided.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.75,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 14,
+    "bytes": 2252
   }
 ]

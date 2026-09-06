@@ -697,6 +697,14 @@ export const MODEL_MANIFEST = {
     sockets: [],
     quality: "final",
   },
+  "tile.slope.three-sided": {
+    category: "tiles",
+    path: "assets/models/tiles/terrain-slope-three-sided.glb",
+    footprint: { w: 1, d: 1 },
+    height: 0.75,
+    sockets: [],
+    quality: "final",
+  },
   "tile.slope.diagonal": {
     category: "tiles",
     path: "assets/models/tiles/terrain-slope-diagonal.glb",

@@ -12,7 +12,7 @@ import { TileIndex } from "../../mapgen/service/tile-index";
 import { terrainSlopeRise } from "./terrain-slope-rise";
 import type { RoadAppearance } from "../model/road-appearance";
 import type { TerrainSlopeAppearance } from "../model/terrain-slope-appearance";
-import { resolveDiagonalSlopeAppearances } from "./diagonal-slope-resolver";
+import { resolveTerrainSlopeAppearances } from "./terrain-slope-resolver";
 import { resolveRoadAppearances, roadModelId } from "./road-model-resolver";
 import {
   propModel,
@@ -21,6 +21,7 @@ import {
   SIDEWALK_VARIANTS,
   SLOPE_MODELS,
   DIAGONAL_SLOPE_MODEL,
+  THREE_SIDED_SLOPE_MODEL,
   TERRAIN_TRANSITION_SOURCE,
   surfaceModel,
   wallModel,
@@ -207,7 +208,7 @@ function resolveTiles(
 ): readonly ModelPlacement[] {
   const placements: ModelPlacement[] = [];
   const roads = resolveRoadAppearances(map, index);
-  const terrain = resolveDiagonalSlopeAppearances(map, index);
+  const terrain = resolveTerrainSlopeAppearances(map, index);
   for (const tile of map.tiles) {
     const appearance = terrain.get(index.keyOf(tile));
     if (appearance) {
@@ -215,13 +216,19 @@ function resolveTiles(
         modelId:
           appearance.kind === "diagonal"
             ? DIAGONAL_SLOPE_MODEL
-            : TERRAIN_TRANSITION_SOURCE,
+            : appearance.kind === "three-sided"
+              ? THREE_SIDED_SLOPE_MODEL
+              : appearance.kind === "three-sided-mouth"
+                ? SLOPE_MODELS.outer
+                : TERRAIN_TRANSITION_SOURCE,
         level: tile.y,
         position: { x: tile.x + 0.5, y: tileTop(tile.y), z: tile.z + 0.5 },
         turns:
           appearance.kind === "diagonal"
             ? (((appearance.turns + 1) % 4) as Rotation)
-            : 0,
+            : appearance.kind === "transition"
+              ? 0
+              : appearance.turns,
         tile,
         terrain: appearance,
       });

@@ -1,0 +1,15 @@
+{
+  "baseMain": "4244675c4a80027c6fbccfe256c380c1897fa525",
+  "maps": 108,
+  "threeHighNaturalUnmarked": 495,
+  "fourHighNaturalUnmarked": 27,
+  "fittedEnds": 173,
+  "fittedMouths": 173,
+  "byBiome": {
+    "temperate": 62,
+    "snowy": 64,
+    "desert": 30,
+    "coastal": 17
+  },
+  "fittedCoordinates": "fitted-ends.csv"
+}

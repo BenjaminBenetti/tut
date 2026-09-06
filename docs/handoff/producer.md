@@ -3,13 +3,15 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-06 18:56 UTC)
+## Status Digest (2026-09-06 19:22 UTC)
 
 **Production held; Map Quality Loop live.** Await the Executive Director's next taste call outside the authorized loop. Map Critic (Astra 6, new seat) files evidenced tickets; MapGen (Astra 6 / xhigh) works generation and Art Director (Astra 6 / xhigh) handles assets. At most three open Critic tickets. Those tickets are live specialist work, not automatically held Backlog. No M3 decomposition or Ready growth beyond Executive Director exceptions.
 
+**Map Quality Loop now active:** #906 (p1, building bases over black gaps) is Ready for MapGen, with Art Director support and no engineer seat. Two biomes, rotated views and no-unit controls support the finding; implementation remains with the specialists. #905 is In Review with Director for calibration; #907 is the Critic's draft evidence/handoff PR and closes only #905. One actionable Critic ticket is open (maximum three); waterfront endings and empty platform identity remain held in the Critic handoff.
+
 **Released:** v0.2.8 half-height (#804), v0.2.9 scale (#826), v0.2.10 ramp ruling (#813), v0.2.11 materialled ladders (#891/#893, 58e6c9e). All four issues closed/Done. #849 also closed/Done. #876 deliberately closed: correctly classified same-level saddles remain because the trial fit looked worse.
 
-**Full board audit [#902](https://github.com/BenjaminBenetti/tut/issues/902#issuecomment-5561213567):** all 25 starting open issues assessed; **5 done and closed** (#32/#274/#320/#502/#728), **4 partial**, **14 still real**, **2 re-scoped by Director**. Director accepted the audit (5561387468); #902 is Done/closed and handoff #903 merged. Repaired 12 already-closed/merged cards, added five missing cards, filled 18 missing milestones, and verified every retained issue's priority, area, owner and current scope. No ownerless audited issue; no engineer seat assigned. 20 audited issues remain open; the audit record is closed. No engineer assignments resulted.
+**Full board audit [#902](https://github.com/BenjaminBenetti/tut/issues/902#issuecomment-5561213567):** all 25 starting open issues assessed; **5 done and closed** (#32/#274/#320/#502/#728), **4 partial**, **14 still real**, **2 re-scoped by Director**. Director accepted the audit (5561387468); #902 is Done/closed and handoffs #903/#904 merged. Repaired 12 already-closed/merged cards, added five missing cards, filled 18 missing milestones, and verified every retained issue's priority, area, owner and current scope. No ownerless audited issue; no engineer seat assigned. 20 audited issues remain open; the audit record is closed. No engineer assignments resulted. New #905/#906 are outside that audit snapshot.
 
 **Executive Director taste calls:** Director retired the false defect claims and kept both issues open/Blocked. **#743** now asks whether separate extraction should create a route home, retaining shared deploy as a fallback (5561385397). **#685** now asks from play whether ambush happens often enough and feels right; any future brief concerns arrival/vision, not speculative scenery (5561385474). Titles and bodies carry the surviving questions. No implementation before the Executive Director rules.
 
@@ -21,9 +23,9 @@
 | eng-4 | Claude Opus 5 / max | low / medium only | Idle |
 | eng-5 | Claude Opus 5 / max | low / medium only | Idle |
 
-**Other retained work:** #869 remains MapGen Backlog at its prior timing; #787/#760 held. Director decisions #591/#712/#734/#751; Art Director #450/#594/#673/#740; Engineer follow-ups **#735/#753 now complexity:medium**, approved by Tech Lead but held, with no seat. #753 needs persisted cityId, schema-v17 migration and a rendered-banner test; #735 inventories guards first, splits above 40 entries by Tech Lead selection, excludes intentional fallbacks/retired autofill, and preserves sim/fog output. These legacy items do not become active merely because their metadata is repaired. No Critic ticket existed at audit readback.
+**Other retained work:** #869 remains MapGen Backlog at its prior timing; #787/#760 held. Director decisions #591/#712/#734/#751; Art Director #450/#594/#673/#740; Engineer follow-ups **#735/#753 now complexity:medium**, approved by Tech Lead but held, with no seat. #753 needs persisted cityId, schema-v17 migration and a rendered-banner test; #735 inventories guards first, splits above 40 entries by Tech Lead selection, excludes intentional fallbacks/retired autofill, and preserves sim/fog output. These legacy items do not become active merely because their metadata is repaired.
 
-**Milestones (closed / total items, computed from issue state after audit):** M0 14/14 · M1 64/65 · M1.5 34/39 · M2 49/50 · M2.5 25/31 · M3 1/4 · Arsenal 1/3 · Bestiary 1/1 · Tech Debt 6/8. Assignment to a milestone is not a declaration that it is active or complete.
+**Milestones (closed / total items, computed from issue state, including new Critic issues/PR):** M0 14/14 · M1 64/65 · M1.5 34/42 · M2 49/50 · M2.5 25/31 · M3 1/4 · Arsenal 1/3 · Bestiary 1/1 · Tech Debt 6/8. Assignment to a milestone is not a declaration that it is active or complete.
 
 **Risks / operation:** old visibility, walkover and pre-scale measurements are historical; issue bodies now say so. Check delivered code and release ancestry, including reverts, before closing; close epics in the same grooming pass as the last child closes (Director standing rule 5561387468). Producer is Codex Astra 6 / high. Publish one fixed handoff head through CI/merge and batch later updates. Return to one bounded five-minute watch (three-hour hard stop), groom events and re-arm; no cron. Capacity interruptions mean retry the same model, never infer a quota or switch models.
 <!-- digest:end -->

@@ -121,10 +121,6 @@ describe("SlopePass", () => {
           none.tiles.filter((t) => t.slope !== undefined),
           `${seed} at share 0`,
         ).toHaveLength(0);
-        expect(
-          none.connectors.filter((c) => c.kind === "slope"),
-          `${seed} at share 0`,
-        ).toHaveLength(0);
         // The Map Lab metric reads the knob back exactly (#801 review):
         // every natural edge is frozen as one whether sloped or not.
         expect(computeMapMetrics(all).slopeShare, `${seed} metric at 1`).toBe(
@@ -153,7 +149,7 @@ describe("SlopePass", () => {
         if (tile.slope === undefined || tile.slope.kind === "outer") continue;
         const ups = map.connectors.filter(
           (c) =>
-            c.kind === "slope" &&
+            c.kind === "ramp" &&
             c.from.x === tile.x &&
             c.from.z === tile.z &&
             c.from.y === tile.y,

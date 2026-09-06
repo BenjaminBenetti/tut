@@ -1,3 +1,4 @@
+import { STOREY_LAYERS } from "../../core/model/elevation";
 import { BIOME_IDS } from "../../content/model/biome-id";
 import type { BiomeId } from "../../content/model/biome-id";
 import { SETTLEMENT_SCALES } from "../../content/model/settlement-scale";
@@ -292,7 +293,7 @@ export class MapgenPreviewScreen {
   /** Slider read-out text. */
   private describeLevel(): string {
     const max = this.currentMaxLevel();
-    return max === undefined ? "all" : `≤ ${max}`;
+    return max === undefined ? "all" : `≤ ${max / STOREY_LAYERS}`;
   }
 
   /** Rewrites the stats definition list. */
@@ -505,4 +506,3 @@ function metricRows(
     ],
   ];
 }
-import { STOREY_LAYERS } from "../../core/model/elevation";

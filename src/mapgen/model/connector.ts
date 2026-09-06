@@ -10,22 +10,17 @@ import type { TileCoord } from "./tile-coord";
  * Kinds of vertical link (ADR 0004 §4.3).
  *
  * ```
- *   ramp    ground ↔ ground   rise 1     both classes
- *   stairs  floor  ↔ floor    rise 1     infantry
- *   ladder  ground/roof ↔ roof rise ≥ 1  infantry
+ *   ramp    ground ↔ ground   rise 2 layers     both classes
+ *   stairs  floor  ↔ floor    rise 2 layers     infantry
+ *   ladder  ground/roof ↔ roof rise ≥ 2 layers  infantry
  * ```
  */
-/**
- * `slope` is a natural hillside (#799): same rule as a ramp, but the
- * lower tile carries a `Tile.slope` describing the wedge. Ramps stay for
- * man-made edges and stairs and ladders for buildings.
- */
-export type ConnectorKind = "ramp" | "slope" | "stairs" | "ladder";
+export type ConnectorKind = "ramp" | "stairs" | "ladder";
 
 /**
- * The only way to change level. Always bidirectional. `from` is the lower
+ * The only way to cross two or more layers. Always bidirectional. `from` is the lower
  * tile and `to` the upper; they are horizontal neighbours. No connector
- * between two tiles of different level means a cliff.
+ * across such a rise means a cliff. One-layer steps are freely walkable.
  */
 export interface Connector {
   readonly id: string;
@@ -50,7 +45,6 @@ export interface ConnectorRule {
 /** Rules per connector kind, from ADR 0004 §4.3. */
 export const CONNECTOR_RULES: Readonly<Record<ConnectorKind, ConnectorRule>> = {
   ramp: { pass: PassMask.ALL, minRise: STOREY_LAYERS, maxRise: STOREY_LAYERS },
-  slope: { pass: PassMask.ALL, minRise: STOREY_LAYERS, maxRise: STOREY_LAYERS },
   stairs: {
     pass: PassMask.INFANTRY,
     minRise: STOREY_LAYERS,

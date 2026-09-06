@@ -2,6 +2,7 @@ import { STOREY_LAYERS } from "../../core/model/elevation";
 import { describe, expect, it } from "vitest";
 
 import { SurfaceIds } from "../../mapgen/data/surfaces";
+import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { manhattanDistance } from "../../core/service/grid-math";
 import {
@@ -27,6 +28,39 @@ const at = (x: number, z: number, y = 0): TileCoord => ({
   x,
   y: y * STOREY_LAYERS,
   z,
+});
+
+describe("half-height traversal (ADR 0008)", () => {
+  for (const kind of ["infantry", "mech"] as const) {
+    it(`${kind} walks one-layer steps both ways at flat cost, but needs a connector for two`, () => {
+      const low = { x: 0, y: 0, z: 0 };
+      const half = { x: 1, y: 1, z: 0 };
+      const upper = { x: 2, y: 3, z: 0 };
+      const builder = new FixtureMapBuilder(3, 1, 4)
+        .tile(low, SurfaceIds.GRASS)
+        .tile(half, SurfaceIds.GRASS)
+        .tile(upper, SurfaceIds.GRASS);
+      const map = builder.build();
+      const graph = buildMoveGraph(map);
+      const up = missionWith(map, [unitAt("u", kind, low)]);
+      const down = missionWith(map, [unitAt("u", kind, half)]);
+      expect(reachable(up, "u", graph).get(graph.index.keyOf(half))).toBe(1);
+      expect(pathTo(up, "u", half, graph)).toEqual([half]);
+      expect(pathTo(down, "u", low, graph)).toEqual([low]);
+      expect(pathTo(up, "u", upper, graph)).toBeUndefined();
+      expect(
+        pathTo(missionWith(map, [unitAt("u", kind, upper)]), "u", half),
+      ).toBeUndefined();
+      builder.connector("ramp", half, upper);
+      expect(
+        pathTo(
+          missionWith(builder.build(), [unitAt("u", kind, low)]),
+          "u",
+          upper,
+        ),
+      ).toEqual([half, upper]);
+    });
+  }
 });
 
 // ===========================================

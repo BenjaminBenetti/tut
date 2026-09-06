@@ -12,7 +12,7 @@ import { TileIndex } from "./tile-index";
 /** How to render. */
 export interface AsciiRenderOptions {
   /**
-   * Render exactly this level; columns with no tile there show `.`.
+   * Render exactly this half-height layer; columns with no tile there show `.`.
    * Omit for a top-down composite showing each column's highest tile.
    */
   readonly level?: number;
@@ -56,6 +56,7 @@ export const ASCII_LEGEND = [
   "links     / ramp (lower end)  \\ slope (lower tile)  L ladder (lower end)",
   "hooks     D deploy  E egg spawner  S edge spawn  X extraction  ! other",
   "north is up; x grows to the right, z grows downward",
+  "y counts half-height layers; two layers make one storey",
 ].join("\n");
 
 // ===========================================
@@ -111,12 +112,13 @@ function buildOverlays(
     }
     overlays.set(
       columnKey(map, connector.from.x, connector.from.z),
-      connector.kind === "ramp"
-        ? RAMP_GLYPH
-        : connector.kind === "slope"
-          ? SLOPE_GLYPH
-          : LADDER_GLYPH,
+      connector.kind === "ramp" ? RAMP_GLYPH : LADDER_GLYPH,
     );
+  }
+  for (const tile of map.tiles) {
+    if (tile.slope !== undefined && visible(tile)) {
+      overlays.set(columnKey(map, tile.x, tile.z), SLOPE_GLYPH);
+    }
   }
   // Later groups win: extraction < deploy < edge spawns < objectives.
   const hooks = [

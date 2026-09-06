@@ -207,6 +207,41 @@ describe("coverAgainst", () => {
 // ===========================================
 
 describe("elevationBonus", () => {
+  it("grants no bonus or cover for a bare half step, and one bonus per full storey", () => {
+    const low = { x: 0, y: 0, z: 0 };
+    const half = { x: 1, y: 1, z: 0 };
+    const full = { x: 2, y: 2, z: 0 };
+    const map = new FixtureMapBuilder(3, 1, 4)
+      .tile(low, SurfaceIds.GRASS)
+      .tile(half, SurfaceIds.GRASS)
+      .tile(full, SurfaceIds.GRASS)
+      .build();
+    expect(elevationBonus(half, low)).toBe(0);
+    expect(elevationBonus(low, half)).toBe(0);
+    expect(elevationBonus(full, low)).toBe(1);
+    expect(elevationBonus(low, full)).toBe(-1);
+    expect(coverAgainst(map, half, low)).toBe(CoverLevel.NONE);
+    expect(coverAgainst(map, low, half)).toBe(CoverLevel.NONE);
+    expect(los(map, low, full)).toBe(true);
+  });
+
+  it("keeps storey-tall walls and props opaque from an odd layer", () => {
+    const eye = { x: 0, y: 1, z: 1 };
+    const target = { x: 4, y: 0, z: 1 };
+    const wall = new FixtureMapBuilder(5, 3, 4)
+      .fillGround()
+      .tile(eye, SurfaceIds.GRASS)
+      .wall({ x: 2, y: 0, z: 1 }, "e", "solid")
+      .build();
+    const prop = new FixtureMapBuilder(5, 3, 4)
+      .fillGround()
+      .tile(eye, SurfaceIds.GRASS)
+      .prop(PropKindIds.BOULDER, { x: 2, y: 0, z: 1 })
+      .build();
+    expect(los(wall, eye, target)).toBe(false);
+    expect(los(prop, eye, target)).toBe(false);
+  });
+
   it("measures levels the attacker stands above the target", () => {
     expect(elevationBonus(at(0, 0, 2), at(3, 3, 0))).toBe(2);
     expect(elevationBonus(at(0, 0, 0), at(3, 3, 1))).toBe(-1);

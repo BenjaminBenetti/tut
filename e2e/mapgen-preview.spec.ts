@@ -29,5 +29,12 @@ test("mapgen preview renders a fixed seed without console errors", async ({
   await expect(page.locator("#status")).toBeEmpty();
   await expect(page.locator("#ascii")).not.toBeEmpty();
   await expect(page.locator("#stats")).toContainText("Buildings");
+  const levels = page.locator("#level");
+  await expect(levels).toHaveAttribute("step", "2");
+  await levels.fill("2");
+  await expect(levels.locator("..")).toContainText("≤ 1");
+  await levels.fill("0");
+  await expect(levels.locator("..")).toContainText("≤ 0");
+  await expect(page.locator("#status")).toBeEmpty();
   expect(errors).toEqual([]);
 });

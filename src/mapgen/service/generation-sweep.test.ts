@@ -69,7 +69,7 @@ function recipe(
 }
 
 /**
- * Golden seeds: the checksum of the ASCII render is pinned so an
+ * Golden seeds: the checksum of the ASCII renders of every half-height layer is pinned so an
  * unintended change in generator output fails loudly. To update after a
  * deliberate change, run this file, copy the "actual" checksums from the
  * failure into `checksum` below, and say so in the PR.
@@ -88,42 +88,42 @@ const GOLDENS: readonly Golden[] = [
     biome: "temperate",
     settlement: "town",
     size: "medium",
-    checksum: 721498291,
+    checksum: 2288975501,
   },
   {
     seed: "golden-snowy",
     biome: "snowy",
     settlement: "town",
     size: "medium",
-    checksum: 4265621186,
+    checksum: 2369789076,
   },
   {
     seed: "golden-desert",
     biome: "desert",
     settlement: "town",
     size: "medium",
-    checksum: 2701505561,
+    checksum: 2319165908,
   },
   {
     seed: "golden-coastal",
     biome: "coastal",
     settlement: "town",
     size: "medium",
-    checksum: 1017312214,
+    checksum: 2376744036,
   },
   {
     seed: "golden-rural",
     biome: "temperate",
     settlement: "rural",
     size: "small",
-    checksum: 3476428387,
+    checksum: 3107225177,
   },
   {
     seed: "golden-city",
     biome: "desert",
     settlement: "city",
     size: "large",
-    checksum: 3653172638,
+    checksum: 3562889357,
   },
 ];
 
@@ -269,7 +269,10 @@ describe("generation sweep", () => {
                 }
               }
               for (const c of map.connectors) {
-                if (c.kind !== "slope") {
+                if (
+                  c.kind !== "ramp" ||
+                  index.getAt(c.from)?.slope === undefined
+                ) {
                   continue;
                 }
                 const lower = index.getAt(c.from);
@@ -359,16 +362,20 @@ describe("generation sweep", () => {
   );
 
   it("matches the golden seeds", () => {
-    const actual = GOLDENS.map((g) => ({
-      seed: g.seed,
-      checksum: hashSeed(
-        renderAscii(
-          generateTacticalMap(recipe(g.seed, g.biome, g.settlement, g.size), {
-            registries,
-          }),
-        ),
-      ),
-    }));
+    const actual = GOLDENS.map((g) => {
+      const map = generateTacticalMap(
+        recipe(g.seed, g.biome, g.settlement, g.size),
+        { registries },
+      );
+      expect(map.levels % 2).toBe(0);
+      expect(map.tiles.every((tile) => tile.y % 2 === 0)).toBe(true);
+      // Include each layer: a composite alone cannot catch a vertical unit regression.
+      const layers = Array.from(
+        { length: map.levels },
+        (_, level) => `layer ${level}\n${renderAscii(map, { level })}`,
+      ).join("\n");
+      return { seed: g.seed, checksum: hashSeed(layers) };
+    });
     expect(actual).toEqual(
       GOLDENS.map((g) => ({ seed: g.seed, checksum: g.checksum })),
     );

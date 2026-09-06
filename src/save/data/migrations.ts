@@ -7,6 +7,7 @@ import { EARTH_MAP } from "../../overworld/data/earth-map";
 import { DEFAULT_CITY_SCALE } from "../../overworld/service/earth-map-builder";
 import type { Migration } from "../model/migration";
 import { isRecord } from "../../core/model/record-guard";
+import { HALF_HEIGHT_LAYERS } from "../service/half-height-layer-migration";
 
 // ===========================================
 // Steps
@@ -463,4 +464,5 @@ export const GAME_STATE_MIGRATIONS: readonly Migration[] = [
   ADD_COMMAND_SEQ,
   ADD_VISION_LAST_SEEN,
   ADD_RESULT_CITY,
+  HALF_HEIGHT_LAYERS,
 ];

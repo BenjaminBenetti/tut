@@ -1,6 +1,6 @@
 # ADR 0008: Elevation is measured in half-height layers
 
-- **Status:** Proposed (Tech Lead); becomes Accepted when the engine child ships.
+- **Status:** Accepted (engine conversion, #807); natural half-step generation and slope art follow as children b/c.
 - **Date:** 2026-09-06
 - **Author:** Tech Lead
 - **Requested by:** Executive Director (#804, from Map Lab play): *"the height change is too big. We should allow half-height jumps, or basically make layers half the height … be careful because many items will need to be adjusted to be two layers tall."*

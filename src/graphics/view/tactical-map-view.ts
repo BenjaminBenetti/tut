@@ -216,7 +216,7 @@ function stateOf(vision: IndexedVision, key: VisionTileKey): TileVisionState {
  *   tile (x, y, z) covers [x, x+1) × [z, z+1); its top is at y · LAYER_HEIGHT + SLAB
  *
  *        ┌──────┐ ← roof slab (level 2)
- *   ▌    │      │   walls stand LAYER_HEIGHT tall on the tile top
+ *   ▌    │      │   walls stand STOREY_LAYERS × LAYER_HEIGHT tall on the tile top
  *   ▌    └──────┘ ← floor slab (level 1)
  *   ▌▒▒▒▒▒▒▒▒▒▒▒▒ ← ground pillar rises from world y = 0
  * ```
@@ -803,7 +803,10 @@ export class TacticalMapView implements Disposable, TilePicker {
   /** Planks for ramps and stairs, an upright rung for ladders. */
   private buildConnectors(): void {
     for (const connector of this.map.connectors) {
-      if (connector.kind === "slope") {
+      if (
+        connector.kind === "ramp" &&
+        this.index.getAt(connector.from)?.slope !== undefined
+      ) {
         // The slope tile's own wedge is the connector's shape (#799).
         continue;
       }
@@ -842,7 +845,7 @@ export class TacticalMapView implements Disposable, TilePicker {
 
   /**
    * The placeholder wedge for a slope tile (#799): a right prism whose
-   * top face rises one level across the tile from the low edge to the
+   * top face rises to its natural upper neighbour from the low edge to the
    * high edge, turned by the slope's quarter turns. Tracked for vision as
    * the tile it stands on, and kept under its own label so retiring the
    * slab placeholders (#474) leaves it standing until #798's models take
@@ -854,7 +857,18 @@ export class TacticalMapView implements Disposable, TilePicker {
       return;
     }
     const low = tileTop(tile.y);
-    const high = tileTop(tile.y + STOREY_LAYERS);
+    const highSides = ["s", "w", "n", "e"] as const;
+    let highColumn = stepGridPos(tile, highSides[slope.turns]);
+    if (slope.kind === "outer") {
+      highColumn = stepGridPos(
+        highColumn,
+        highSides[(slope.turns + 1) % 4] ?? "s",
+      );
+    }
+    const upper = this.index.column(highColumn.x, highColumn.z)[0];
+    const high = tileTop(
+      upper !== undefined && upper.y > tile.y ? upper.y : tile.y + 1,
+    );
     const rise = high - low;
     // Built rising towards +z (south), which is `turns` 0; a quarter turn
     // clockwise about +y for each further turn matches the stairs model.

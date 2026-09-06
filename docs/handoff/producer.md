@@ -3,7 +3,7 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-06 06:19 UTC)
+## Status Digest (2026-09-06 06:53 UTC)
 
 **Production ON HOLD** by the Executive Director (#748); he is tuning map generation personally in Map Lab. No resume ordered. No M3 decomposition, new seat assignments without the Director's request, or Ready queue growth. **v0.2.8** is tagged from main.
 
@@ -19,11 +19,13 @@
 
 **Completed / board:** #807/#808/#809 and #817 are **Done**; #822 merged and **v0.2.8** is tagged at `66548ed`. Half-height terrain, the real slope kit and ramp-gap fix are delivered. Tech Lead handoff #824 and Producer handoff #825 merged; this pass opens a fresh handoff PR.
 
-**Live exception (#826):** parent **In Progress** (Producer tracks). Director signed off ADR 0009 in #827. **#828 camera zoom is In Progress on `seat:eng-4`**, `complexity:medium`, and lands first. **#829 generation is In Progress with MapGen**, `complexity:high`, no seat label; the Director's sign-off allows both children to start after v0.2.8, but #829 lands after #828 so the generation frames are judgeable. Scale factors belong to MapGen; “double” is an illustration, not a fixed requirement. Elevation and balance retuning remain out of scope. Art child only if MapGen identifies a kit limitation.
+**Live exception (#826):** parent **In Progress** (Producer tracks). ADR 0009 (#827) is signed off and merged. **#828 camera zoom is In Progress on `seat:eng-4`**, `complexity:medium`, and lands first. **#829 generation is In Progress with MapGen**, `complexity:high`, no seat label; the Director's sign-off allows both children to start after v0.2.8, but #829 lands after #828 so the generation frames are judgeable. Scale factors belong to MapGen; “double” is an illustration, not a fixed requirement. Elevation and balance retuning remain out of scope. Art child only if MapGen identifies a kit limitation.
 
-**Open PRs** (06:18 UTC snapshot): #827 ADR 0009, about 3 min old, Director signed off / In Review; #830 Tech Lead handoff, about 1 min old, In Review; #757 mech-bay preview remains unrelated and waiting, about 36 h old. #822/#824/#825 are **Done** on the board.
+**Open PRs** (06:51 UTC watch snapshot): #834 this Producer handoff. **#757 mech-bay preview / #694 are In Review**, unparked on the Director's instruction: Tech Lead approved content and is gating the merge result; Director frame judgment is still required. Existing Art Director ownership retained. Only if the gate requires an author update does the Producer route that push. #827/#830/#831/#832/#833 are merged and Done on the board.
 
-**Blocked / parked:** #829 has a landing dependency on #828, not a start block. #813 diagonal terrace teeth remains **Backlog and unowned** until the Executive Director calls it; the Director reports the teeth look gentler at half rise. General production and M3 remain held; #787 parked; #793 remains p3. eng-3 and eng-5 idle.
+**Ramp audit exception (#813):** Executive Director now calls all jagged/unfilled ramp transitions a **p1 defect**. **In Progress, Owner QA**: enumerate and render distinct neighbourhood configurations across seeds, biomes and settlements, committing a catalogue of failures before designing fixes. Art Director/MapGen fixes are scoped from that catalogue; no engineer seat label. Runs alongside #826; QA must rerun at the new scale after #829.
+
+**Blocked / parked:** #829 lands after #828. Fix design for #813 waits on QA's catalogue. General production and M3 remain held; #787 parked; #793 remains p3. eng-3/eng-5 idle.
 
 **Risks:** camera must frame the larger maps before generation acceptance. MapGen must report largest-settlement generation/frame budgets and chosen scale factors; do not hide costs by capping size. Simulation results can move with the new footprint; report them without balance retuning. Autofill's relaxed tiers remain obsolete; do not run it. The empty release allowlist stays in place.
 

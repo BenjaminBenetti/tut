@@ -396,11 +396,11 @@ describe("SlopePass", () => {
   });
 
   it("wedges the bare blocks beside a plot QA catalogued as J2 (#847, #813)", () => {
-    // QA's seed, at the ADR 0009 scale (its 32² coordinates from f4557b4 do
-    // not survive the resize): a lot-ring tile still at its natural level,
-    // a graded yard tile inside the lot, and a graded tile away from any
-    // lot, each the lower tile of a one-layer step and bare before the
-    // fix. Each now carries a wedge or a wall — the acceptance on #847.
+    // QA's seed at the ADR 0009 scale, with the coordinates QA re-measured
+    // after #838: lot-ring tiles at their natural level, graded yard tiles
+    // inside the lot, graded tiles away from any lot, and border tiles,
+    // each the lower tile of a one-layer step and bare before the fix.
+    // Each now carries a wedge or a wall — the acceptance on #847.
     const map = generateTacticalMap(
       {
         seed: "qa813-temperate-rural-small-0",
@@ -409,11 +409,51 @@ describe("SlopePass", () => {
       { registries },
     );
     const index = new TileIndex(map);
-    for (const at of [
-      { x: 17, y: 1, z: 16 },
-      { x: 19, y: 0, z: 18 },
-      { x: 4, y: 0, z: 23 },
-    ]) {
+    // QA's re-measured coordinates on #847, by its buckets: F the lot
+    // margin, G inland and unwalled (one population, the lot ring, once
+    // read from the draft), E the map border.
+    const F = [
+      [17, 1, 16],
+      [19, 2, 16],
+      [19, 0, 18],
+      [19, 0, 19],
+      [6, 0, 23],
+      [5, 0, 24],
+    ];
+    const G = [
+      [20, 2, 17],
+      [20, 1, 18],
+      [20, 0, 20],
+      [4, 0, 23],
+      [4, 0, 24],
+      [4, 0, 25],
+    ];
+    const E = [
+      [0, 2, 8],
+      [0, 2, 9],
+      [0, 2, 10],
+      [0, 1, 14],
+    ];
+    // E is not a step at all: every in-bounds neighbour of those tiles is
+    // level or lower, and the sheer face QA saw is the map's own edge.
+    for (const [x, y, z] of E) {
+      const at = { x: x ?? 0, y: y ?? 0, z: z ?? 0 };
+      const tile = index.get(at.x, at.y, at.z);
+      expect(
+        tile,
+        `${String(at.x)},${String(at.y)},${String(at.z)}`,
+      ).toBeDefined();
+      const higher = DIRECTIONS.filter((d) => {
+        const n = stepGridPos(at, d);
+        return index.get(n.x, at.y + 1, n.z) !== undefined;
+      });
+      expect(
+        higher,
+        `${String(at.x)},${String(at.y)},${String(at.z)} faces no one-layer step`,
+      ).toEqual([]);
+    }
+    for (const [x, y, z] of [...F, ...G]) {
+      const at = { x: x ?? 0, y: y ?? 0, z: z ?? 0 };
       const tile = index.get(at.x, at.y, at.z);
       expect(
         tile,

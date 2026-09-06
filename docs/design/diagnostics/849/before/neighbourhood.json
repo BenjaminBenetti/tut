@@ -1,0 +1,145 @@
+{
+  "main": "4244675c4a80027c6fbccfe256c380c1897fa525",
+  "seed": "hills-1",
+  "dimensions": [72, 72, 8],
+  "target": {
+    "x": 10,
+    "y": 3,
+    "z": 29,
+    "surface": "rock",
+    "pass": 3,
+    "walls": {},
+    "coverProvided": 0,
+    "blocksLos": false
+  },
+  "mouth": {
+    "x": 11,
+    "y": 3,
+    "z": 29,
+    "surface": "rock",
+    "pass": 3,
+    "walls": {},
+    "coverProvided": 0,
+    "blocksLos": false
+  },
+  "diagonalAppearancesOnMap": 0,
+  "targetAppearance": null,
+  "mouthAppearance": null,
+  "targetPlacement": {
+    "modelId": "tile.ground.rock",
+    "level": 3,
+    "position": {
+      "x": 10.5,
+      "y": 2.375,
+      "z": 29.5
+    },
+    "turns": 0,
+    "tile": {
+      "x": 10,
+      "y": 3,
+      "z": 29
+    }
+  },
+  "neighbours": [
+    {
+      "x": 9,
+      "y": 4,
+      "z": 28,
+      "surface": "rock",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false
+    },
+    {
+      "x": 10,
+      "y": 4,
+      "z": 28,
+      "surface": "rock",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false
+    },
+    {
+      "x": 11,
+      "y": 3,
+      "z": 28,
+      "surface": "rock",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false,
+      "slope": {
+        "kind": "inner",
+        "turns": 1
+      },
+      "naturalEdge": true
+    },
+    {
+      "x": 9,
+      "y": 4,
+      "z": 29,
+      "surface": "rock",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false
+    },
+    {
+      "x": 10,
+      "y": 3,
+      "z": 29,
+      "surface": "rock",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false
+    },
+    {
+      "x": 11,
+      "y": 3,
+      "z": 29,
+      "surface": "rock",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false
+    },
+    {
+      "x": 9,
+      "y": 4,
+      "z": 30,
+      "surface": "rock",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false
+    },
+    {
+      "x": 10,
+      "y": 4,
+      "z": 30,
+      "surface": "rock",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false
+    },
+    {
+      "x": 11,
+      "y": 3,
+      "z": 30,
+      "surface": "rock",
+      "pass": 3,
+      "walls": {},
+      "coverProvided": 0,
+      "blocksLos": false,
+      "slope": {
+        "kind": "inner",
+        "turns": 0
+      },
+      "naturalEdge": true
+    }
+  ]
+}

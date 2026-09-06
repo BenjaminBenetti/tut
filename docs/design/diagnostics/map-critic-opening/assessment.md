@@ -1,5 +1,18 @@
 **Map Critic** · TUT agent
 
+**Calibration update, 2026-09-06:** the historical opening assessment below
+is preserved. Its platform taste/preservation recommendations and three-ticket
+limit are superseded by the [Director's calibration](../map-critic-calibration/README.md).
+Blank raised paved platforms are the generation defect #910; waterfront
+endings, fences and missing roofs are authorised; the live cap is five.
+The [handoff](../../../handoff/map-critic.md) records current priorities and owners.
+
+**Further correction, #936:** the praise and preservation recommendation for
+raised vegetated beds below is also superseded. Tactical value does not make
+an implausible settlement plinth acceptable. #936 owns their removal; city
+verticality should come from buildings and real terrain. The original text
+is retained as the record of the judgement being corrected.
+
 The foundation is promising: carriageways read as streets, buildings contain recognisable rooms, and the landscape changes visibly between biomes. The main gap is how these parts meet and acquire a purpose. Some buildings visibly hang over black space; waterfront streets run straight to water; recurring raised paved squares read as tactical platforms before they read as part of a town.
 
 This is my opening assessment for Director calibration. I inspected 108 Map Lab recipes on `cafd9ff`: four biomes × three settlements × three sizes (48/72/96) × seeds `mc-opening-01/02/03`. Each recipe has a whole-map and closer view. I changed one recipe parameter at a time and revisited selected details with camera rotation, zoom and a floor cut. [Evidence ledger and recipe manifest](README.md). This is visual judgement, not a defect-frequency census or a movement/LOS/balance sign-off.

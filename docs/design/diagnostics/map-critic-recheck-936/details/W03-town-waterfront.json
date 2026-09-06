@@ -1,0 +1,38 @@
+{
+  "id": "W03-town-waterfront",
+  "seed": "mc-opening-01",
+  "biome": "coastal",
+  "settlement": "town",
+  "size": "small",
+  "tile": {
+    "x": 37,
+    "y": 2,
+    "z": 14
+  },
+  "pitch": 60,
+  "rotation": 0,
+  "width": 1200,
+  "height": 1000,
+  "actualPitch": 59.7605434795569,
+  "url": "http://localhost:4173/mapgen-preview.html?seed=mc-opening-01&biome=coastal&settlement=town&size=small&models=1&units=1&slope=100",
+  "levels": {
+    "value": "10",
+    "max": "10"
+  },
+  "baseline": "2878dfc3e3e8d85e3e2ff82a3e3b8ea998f22a2e",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "pixel": {
+    "x": 1399.735928981663,
+    "y": 732.019879768592
+  },
+  "clip": {
+    "x": 800,
+    "y": 232,
+    "width": 1200,
+    "height": 1000
+  },
+  "levelSelection": "initial all; no floor parameter or level input"
+}

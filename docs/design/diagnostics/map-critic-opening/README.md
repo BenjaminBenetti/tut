@@ -10,6 +10,17 @@ Read the [ranked opening assessment](assessment.md) and the
 [visual ledger](visual-ledger.md). Published as [survey #905](https://github.com/BenjaminBenetti/tut/issues/905#issuecomment-5561538405);
 the sole first action ticket is [#906](https://github.com/BenjaminBenetti/tut/issues/906).
 
+**After calibration:** the Executive Director raised the cap to five and
+authorised waterfront, fence and missing-roof tickets. Empty raised paved
+platforms are the generation defect #910; their original taste framing is
+superseded. See the [calibration and fresh evidence](../map-critic-calibration/README.md)
+and [live handoff](../../../handoff/map-critic.md).
+
+The later [#936 ruling](https://github.com/BenjaminBenetti/tut/issues/936)
+also withdraws the recommendation to preserve raised vegetated settlement
+beds. Both planted and paved plinths are implausible; tactical usefulness
+does not override the real-place criterion.
+
 ## Method
 
 The survey covers every combination of:

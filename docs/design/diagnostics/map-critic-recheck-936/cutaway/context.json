@@ -1,0 +1,33 @@
+{
+  "baseline": "2878dfc3e3e8d85e3e2ff82a3e3b8ea998f22a2e",
+  "viewport": {
+    "width": 1200,
+    "height": 950
+  },
+  "allLevels": true,
+  "models": true,
+  "camera": "fixed diagnostic camera, 80 px per world unit",
+  "pitched": {
+    "seed": "mc-opening-01",
+    "biome": "temperate",
+    "settlement": "rural",
+    "size": "small",
+    "unit": {
+      "x": 24,
+      "y": 4,
+      "z": 15
+    }
+  },
+  "flat": {
+    "seed": "mc-opening-02",
+    "biome": "temperate",
+    "settlement": "town",
+    "size": "small",
+    "unit": {
+      "x": 25,
+      "y": 6,
+      "z": 14
+    }
+  },
+  "description": "Actual scene and cutaway controller in the committed Art preview harness. Map Lab sample units do not run that controller. Current radius, before #937; no settings edited."
+}

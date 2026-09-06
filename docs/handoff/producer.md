@@ -3,7 +3,7 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-06 22:22 UTC)
+## Status Digest (2026-09-06 22:36 UTC)
 
 **Production held; Map Quality Loop live.** Await the Executive Director's next taste call outside the authorized loop. Map Critic (Astra 6, new seat) files evidenced tickets; MapGen (Astra 6 / xhigh) works generation and Art Director (Astra 6 / xhigh) handles assets. At most three open Critic tickets. Those tickets are live specialist work, not automatically held Backlog. No M3 decomposition or Ready growth beyond Executive Director exceptions.
 
@@ -12,14 +12,13 @@
 | Issue | Status / dependency | Accountable specialist |
 | --- | --- | --- |
 | #911 p2 TDF dropship | In Progress — footprint claim 5562423843 | Art Director; proposed 5×7 envelope awaits MapGen agreement before geometry |
-| #915 p1 waterfront endings | In Review — PR #932, Tech Lead gate green | MapGen; Director frames/merge pending; wider coast redesign excluded |
 | #917 p2 isolated rural fences | Queued behind #911 | MapGen |
 
-**Map Quality Loop completions on main:** #906/#913 foundations, #910/#926 paved platforms, and #916/#925 pitched roofs/cutaway are closed/Done after Director acceptance and Tech Lead gates. Platforms fell 187 → 0 with all 213 planted beds retained; roof controls and the restored local reveal passed review. No new release tag yet: v0.2.11 remains latest. Critic re-checks of all three repairs remain pending; the Director's interior-darkness note is a later play/sweep observation, not a merge block.
+**Map Quality Loop completions — tagged v0.2.12 (`121f397`):** #906/#913 foundations, #910/#926 paved platforms, #916/#925 pitched roofs/cutaway, and #915/#932 waterfront endpoints are closed/Done after Director acceptance and Tech Lead gates. Tag ancestry verified for all four PRs. Platforms fell 187 → 0 with all 213 planted beds retained; roof controls and the restored local reveal passed review. Critic re-checks of all four repairs remain pending; the Director's interior-darkness note is a later play/sweep observation, not a merge block.
 
-**Critic queue:** two origin tickets remain open (#915/#917); #911 is a separate Executive Director feature. Merged #912 raised the documented cap to five after the Director's latest three-ticket instruction; clarification remains pending, with the actual count below both. Evidence/handoff PR #918 remains Blocked on Critic formatting corrections to three JSON sidecars (5561864176); sim/e2e passed, review owner Tech Lead. Opening survey #905/#907 is Done.
+**Critic queue:** one origin ticket remains open (#917); #911 is a separate Executive Director feature. Merged #912 raised the documented cap to five after the Director's latest three-ticket instruction; clarification remains pending, with the actual count below both. Evidence/handoff PR #918 remains Blocked on Critic formatting corrections to three JSON sidecars (5561864176); sim/e2e passed, review owner Tech Lead. Opening survey #905/#907 is Done.
 
-**Released:** v0.2.8 half-height (#804), v0.2.9 scale (#826), v0.2.10 ramp ruling (#813), v0.2.11 materialled ladders (#891/#893, 58e6c9e). All four issues closed/Done. #849 also closed/Done. #876 deliberately closed: correctly classified same-level saddles remain because the trial fit looked worse.
+**Earlier releases:** v0.2.8 half-height (#804), v0.2.9 scale (#826), v0.2.10 ramp ruling (#813), v0.2.11 materialled ladders (#891/#893, 58e6c9e). All four issues closed/Done. #849 also closed/Done. #876 deliberately closed: correctly classified same-level saddles remain because the trial fit looked worse.
 
 **Full board audit [#902](https://github.com/BenjaminBenetti/tut/issues/902#issuecomment-5561213567):** all 25 starting open issues assessed; **5 done and closed** (#32/#274/#320/#502/#728), **4 partial**, **14 still real**, **2 subsequently closed by Director on Executive Director rulings**. Director accepted the audit (5561387468); #902 is Done/closed and handoffs #903/#904 merged. Repaired 12 already-closed/merged cards, added five missing cards, filled 18 missing milestones, and verified every retained issue's priority, area, owner and current scope. No ownerless audited issue; no engineer seat assigned. 18 audited issues remain open; the audit record is closed. No engineer assignments resulted. New Map Quality Loop issues are outside that audit snapshot.
 
@@ -35,13 +34,13 @@
 
 **Other retained work:** #869 remains MapGen Backlog at its prior timing; #787/#760 held. Director decisions #591/#712/#734/#751; Art Director #450/#594/#673/#740; Engineer follow-ups **#735/#753 now complexity:medium**, approved by Tech Lead but held, with no seat. #753 needs persisted cityId, schema-v17 migration and a rendered-banner test; #735 inventories guards first, splits above 40 entries by Tech Lead selection, excludes intentional fallbacks/retired autofill, and preserves sim/fog output. These legacy items do not become active merely because their metadata is repaired.
 
-**Milestones (closed / total items, computed from issue state, including new Critic issues/PR):** M0 14/14 · M1 64/65 · M1.5 40/47 · M2 49/50 · M2.5 26/31 · M3 1/4 · Arsenal 1/3 · Bestiary 1/1 · Tech Debt 6/8. Assignment to a milestone is not a declaration that it is active or complete.
+**Milestones (closed / total items, computed from issue state, including new Critic issues/PR):** M0 14/14 · M1 64/65 · M1.5 41/47 · M2 49/50 · M2.5 26/31 · M3 1/4 · Arsenal 1/3 · Bestiary 1/1 · Tech Debt 6/8. Assignment to a milestone is not a declaration that it is active or complete.
 
 **Board correction:** #908 merged the routing handoff but accidentally auto-closed #906 because GitHub parsed a negated closing phrase in its body. Producer reopened #906 and removed the link; its subsequent closure is now backed by accepted repair PR #913. Future handoff PRs must have no closing references to live work.
 
-**Waterfront review:** Tech Lead verified 156 accessible apron groups on 69/72 coastal maps, unchanged planted-ground reachability, and the unchanged shore-parallel control (5562578286). MapGen owes a nonblocking ADR 0004 §7 `waterfronts` pass-table row in a follow-up docs PR; tracked in #915.
+**Documentation follow-through:** MapGen owes the nonblocking ADR 0004 §7 `waterfronts` pass-table row requested in 5562578286; tracked in closed #915 until the follow-up docs PR lands. The waterfront repair is accepted (5562615417) and tagged; the larger shoreline-shape question remains a separate Critic assessment/Director brief.
 
-**Dropship gate:** agree footprint, exact placement and clearance before Art models. The hull must sit outside the clear unit-start/boarding tiles; preserve shared deploy/extraction and real ground contact. MapGen keeps #915 first while coordinating the contract.
+**Dropship gate:** agree footprint, exact placement and clearance before Art models. The hull must sit outside the clear unit-start/boarding tiles; preserve shared deploy/extraction and real ground contact. #915 is complete, so its priority dependency no longer delays the MapGen agreement.
 
 **Risks / operation:** old visibility, walkover and pre-scale measurements are historical; issue bodies now say so. Check delivered code and release ancestry, including reverts, before closing; close epics in the same grooming pass as the last child closes (Director standing rule 5561387468). Producer is Codex Astra 6 / high. Publish one fixed handoff head through CI/merge and batch later updates. Return to one bounded five-minute watch (three-hour hard stop), groom events and re-arm; no cron. Local watcher overlaps reads by one minute and deduplicates events to catch merges near polling boundaries; checks passed. Capacity interruptions mean retry the same model, never infer a quota or switch models.
 <!-- digest:end -->

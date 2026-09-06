@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-06 ~06:25 UTC (session 5; half-height release complete — #822 merged, #809/#817 closed, v0.2.8 is the Director's tag; ADR 0009 map scale #827 up with children #828/#829; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-06 ~07:05 UTC (session 5; ADR 0009 merged, #835 camera zoom merged (#828 closed), #829 next; #757 unparked and awaiting the Director's frame; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — production is paused; only #748 is live
 
@@ -187,7 +187,20 @@ adjacent road column), `prop-pass` (flanking column) and `elevation-pass`
 (frontage strip) are where it breaks first; goldens re-pin; Director judges
 the big-city, rural and interior controls.
 
-**Otherwise the queue is empty except parked #757.** Nothing merges until the ED's
+**Map scale (#826) progress.** ADR 0009 merged (`94cf946`). **#835 (eng-4,
+#828) merged `6347c29`**: map-aware zoom — `zoomRangeFor` = `min(40,
+max(ZOOM_FIT_FLOOR 6, zoomToFit))`, `max` 192, range as plain data on
+`CameraState`, the rig keeps the map extent and re-fits on resize; the Director
+accepted all four frames. **#829 (MapGen) is next**, the numbers are theirs;
+`ZOOM_FIT_FLOOR = 6` is the value #829 tests if maps pass ~96 tiles.
+
+**#757 (mech bay preview, #694) is unparked** on the Director's instruction
+(06:50): approved on content, gate on the merge with today's `main` green,
+CI green on `a5b71d6`; **merges on the Director's judgement of
+`docs/design/mech-bay-assembly.png`**. #813 (diagonal-edge sawtooth) is a
+QA-owned audit by ED ruling; its PR, if any, arrives on the monitor.
+
+**Otherwise the queue is empty (#757 is the one open review, above).** Nothing merges until the ED's
 playtest verdict or a Director ruling on the ramp child above.
 
 **Follow-ups on record, not filed while paused:** the ramp wedge above; a

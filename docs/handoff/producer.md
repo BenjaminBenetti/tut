@@ -3,92 +3,35 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## ⛔ PRODUCTION HOLD (since 2026-09-04 17:48 UTC, #748) — digest below is frozen at 17:40
+## Status Digest (2026-09-06 04:12 UTC)
 
-The Executive Director ordered a full studio shutdown in #748 "until I instruct a resume". #748 is closed (both faults fixed, v0.2.4 tagged), but **no resume has been ordered**. No grooming, no autofill, no cron. `.producer/release-allowlist.txt` exists and is empty, which freezes the seating loop.
+**Production ON HOLD** by the Executive Director (#748); he is tuning map generation personally in Map Lab. No resume ordered. No M3 decomposition, new seat assignments without the Director's request, or Ready queue growth. **v0.2.6** is tagged from main.
 
-**Exceptions to the hold, named by the Executive Director (2026-09-05):**
+**Producer:** now Codex, Astra 6, effort high. Finish the Director's prompted task, open the handoff PR, and end the turn. No monitors, polling, sleeps, crons, or scheduling. Staffing source: PR #803 (`docs/process/studio.md` staffing table).
 
-| Issue | Seat | Tier | Note |
+| Engineer seat | Runtime / effort | Tier | Assignment |
 |---|---|---|---|
-| #785 mapgen: no more raised roads on solid blocks | MapGen | medium | MapGen already working it; not an engineer seat |
-| #786 ui: Map Lab main-menu entry, release build | eng-4 | medium, p1 | labelled `seat:eng-4` 2026-09-05 on the Director's instruction; the only engineer assignment during the hold |
+| eng-3 | Codex, Astra 6 / xhigh | high only | Idle |
+| eng-4 | Claude Opus 5 / max | low / medium only | Idle |
+| eng-5 | Claude Opus 5 / max | low / medium only | Idle |
 
-Parked future feature, not for assignment: **#787** overpass roads as big-city structures (p3, after #785).
+**Milestones** (closed / total issues, live API): M0 14/14 · M1 64/64 · M1.5 33/34 · M2 48/50 · M2.5 25/27 · M3 1/2 (held). These counts do not declare milestone completion.
 
-**Seat map during the hold:** eng-3 (Fable xhigh, `complexity:high` ONLY) idle, and idle is correct · eng-4 (Opus max, low/medium ONLY) #786 · eng-5 (Opus max, low/medium ONLY) idle. Tier rule is strict both ways since PR #763; `tools/producer/autofill.py:153` still encodes the old relaxed rule and **must be fixed before the loop is re-armed**.
+**Live exceptions / board:** #798 slope meshes — Art Director, **In Progress**. #799 slope data/traversal/scene mapping — MapGen, **In Progress**; #801 merged the data path, remaining model mapping follows #798. PRs **#801 and #795 are Done** on Project #5 (both merged). All four cards added and statuses verified this pass.
 
----
-## Status Digest (2026-09-04 17:40 UTC)
+**Forthcoming exception:** the Director will file half-height elevation; the Tech Lead turns it into an ADR plus child issues. Await that issue and direction; no Producer decomposition or seating now.
 
-| Milestone | done / total |
-|---|---|
-| M0 Foundation | 13 / 13 |
-| M1 Overworld | 64 / 64 |
-| M1.5 Map Generation | 33 / 34 |
+**Open PRs** (snapshot at 04:08 UTC; approximate age): #803 roster/process update, 1 min, about to merge per Director; #802 Tech Lead handoff, 2 h; #757 mech-bay preview, 34 h, unrelated and waiting. This Producer handoff is the only PR opened by this pass.
 
-Board: Backlog 5 · Ready 17 · In Progress 3 · In Review 0 · Blocked 0 · Done 279
+**Blocked / parked:** #799's final model mapping waits for #798; half-height work awaits the Director's issue and Tech Lead ADR. General production and M3 remain held. #787 overpass roads parked; #793 mist performance follow-up remains p3 despite #795 merging.
 
-**Engineer seats** (one open issue per seat; Producer assigns via `seat:eng-N`; route by `complexity:*` — high → default-effort seats only, low → medium-effort seats first):
+**Risks:** the inherited autofill script still permits Opus high-tier work, contrary to strict routing; do not run it. Historical notes below contain obsolete seating and monitor instructions. The empty `.producer/release-allowlist.txt` remains in place. Slope completion depends on the art-to-MapGen handoff; the merged data path does not complete #799.
 
-| Seat | Effort | Current | Status | Last merged |
-|---|---|---|---|---|
-| eng-3 | high | #457 Tactical VFX playback: tracer between shooter and target, claw slash for melee, burst on bug death | Ready | #424 |
-| eng-4 | low | #497 tactical: difficulty tuning pass against auto-resolve expectations (re-files #345) | In Progress | #595 |
-| eng-5 | low | #626 graphics: SLAB_HEIGHT and GROUND_SLAB_THICKNESS are two answers to "how thick is a ground tile" | Ready | #477 |
-
-⚠ unassigned Ready: #447 (high), #594 (low), #673 (low), #734 (no complexity label), #737 (no complexity label), #739 (low), #740 (low), #743 (medium) · need Tech Lead complexity label before assignment: #734, #737
-
-**Ready now** (no unmerged dependencies):
-
-- #457 (engineer) Tactical VFX playback: tracer between shooter and target, claw slash for melee, burst on bug death
-- #447 (engineer) mapgen: M3 archetypes — hive and spore crash site, design sketch
-- #450 (art-director) Art: redraw the Earth map as a true equirectangular projection
-- #594 (engineer) ui(mech-bay): a utility slot reads as a missing thumbnail rather than a part with no picture
-- #615 (art-director) art: the sight cue needs its own treatment, not a reused line-of-sight ring
-- #626 (engineer) graphics: SLAB_HEIGHT and GROUND_SLAB_THICKNESS are two answers to "how thick is a ground tile"
-- #673 (engineer) art(ui): four stat-sheet icons — firepower, accuracy, heat, weight
-- #694 (art-director) feat(ui): the mech bay has no picture of the mech you are building
-- #712 (mapgen) chore(mapgen): temperate is the only biome whose boulders are not clustered — record the intent either way
-- #728 (art-director) chore(design): the fog review captures have no refresh trigger left, and are 29 commits stale
-- #734 (engineer) tactical: calibrate the difficulty ladder once the Executive Director has steered (split from #497)
-- #735 (tech-lead) infra: audit for guards that cannot fire — two were found inert today
-- #737 (engineer) bug(ui): the debrief names the mission `mission-1`, an internal id where the player expects a place
-- #738 (art-director) ui(debrief): the reward is the quietest line on the screen, and it is the payoff
-- #739 (engineer) fix(ui): the debrief names the mission `mission-1` instead of the city
-- #740 (engineer) design(ui): the debrief whispers the reward it exists to pay out
-- #743 (engineer) feat(mapgen): nothing places the extraction hook, so it is always the deploy zone
-
-**In-flight PRs** (age h / idle h / review):
-
-- #742 0.1h / 0.1h / n/a — fix(ui): the event dialog recommended a choice that was not the default
-
-**In progress** (branch pushed?):
-
-- #497 yes — tactical: difficulty tuning pass against auto-resolve expectations (re-files #345)
-- #502 yes — Art: bugs read as dark blobs on dark ground — the chitin silhouette has no edge at 64 px
-- #701 yes — fix(mapgen): desert palms are the only tree in the game placed singly — the cluster is missing from the biome entry
-
-**Blocked**:
-
-- none
-
-**Next assignments for idle engineers** (Ready first, then what unblocks next):
-
-1. #457 — Tactical VFX playback: tracer between shooter and target, claw slash for melee, burst on bug death
-2. #447 — mapgen: M3 archetypes — hive and spore crash site, design sketch
-3. #594 — ui(mech-bay): a utility slot reads as a missing thumbnail rather than a part with no picture
-4. #626 — graphics: SLAB_HEIGHT and GROUND_SLAB_THICKNESS are two answers to "how thick is a ground tile"
-5. #673 — art(ui): four stat-sheet icons — firepower, accuracy, heat, weight
-6. #734 — tactical: calibrate the difficulty ladder once the Executive Director has steered (split from #497)
-7. #737 — bug(ui): the debrief names the mission `mission-1`, an internal id where the player expects a place
-8. #739 — fix(ui): the debrief names the mission `mission-1` instead of the city
-9. #740 — design(ui): the debrief whispers the reward it exists to pay out
-10. #743 — feat(mapgen): nothing places the extraction hook, so it is always the deploy zone
+**Next assignments:** none. All engineer seats idle intentionally. Stop after opening this handoff PR; the Director prompts the next pass.
 <!-- digest:end -->
 
 
-> Everything below the digest is hand-written. The digest above is regenerated; this is not.
+> **Historical predecessor notes (2026-09-04–05).** Preserved for context only. The current Status Digest and the Director's instructions supersede all old assignments, tier rules, next steps, and directions to re-arm monitors or crons below. The digest was refreshed manually for this bounded Codex pass.
 
 ## Read this first
 

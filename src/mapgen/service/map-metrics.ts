@@ -101,6 +101,7 @@ export function computeMapMetrics(map: TacticalMap): MapMetrics {
     interiorPropsPerBuilding: ratio(interiorProps, map.buildings.length),
     slopes: slopes.slopes,
     slopeShare: slopes.share,
+    steps: stepDistribution(map, index),
     ramps: count("ramp"),
     stairs: count("stairs"),
     ladders: count("ladder"),
@@ -189,4 +190,32 @@ function slopeMetrics(map: TacticalMap): { slopes: number; share: number } {
     }
   }
   return { slopes, share: naturalEdges === 0 ? 1 : slopes / naturalEdges };
+}
+
+// ===========================================
+// Steps (ADR 0008)
+// ===========================================
+
+/** Orthogonal ground-tile pairs by rise: 0, 1, or 2 and more layers. */
+function stepDistribution(
+  map: TacticalMap,
+  index: TileIndex,
+): { flat: number; half: number; cliff: number } {
+  const counts = { flat: 0, half: 0, cliff: 0 };
+  for (const tile of map.tiles) {
+    if (tile.buildingId !== undefined) continue;
+    for (const [dx, dz] of [
+      [1, 0],
+      [0, 1],
+    ] as const) {
+      const column = index.column(tile.x + dx, tile.z + dz);
+      const next = column.find((t) => t.buildingId === undefined);
+      if (next === undefined) continue;
+      const rise = Math.abs(next.y - tile.y);
+      if (rise === 0) counts.flat++;
+      else if (rise === 1) counts.half++;
+      else counts.cliff++;
+    }
+  }
+  return counts;
 }

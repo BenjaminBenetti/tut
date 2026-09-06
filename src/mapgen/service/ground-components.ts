@@ -106,9 +106,12 @@ export function buildGroundComponents(draft: MapDraft): GroundComponents {
         continue;
       }
       const nextKey = columnKey(draft, next.x, next.z);
+      // A one-layer step is a free walk (ADR 0008 §2.3), so it joins the
+      // components exactly as flat ground does; two or more layers is a
+      // cliff until a connector crosses it.
       if (
         nodes.has(nextKey) &&
-        draft.groundLevelAt(next.x, next.z) === here.y &&
+        Math.abs(draft.groundLevelAt(next.x, next.z) - here.y) <= 1 &&
         draft.wallAt(here, direction) === undefined
       ) {
         components.union(key, nextKey);
@@ -116,10 +119,7 @@ export function buildGroundComponents(draft: MapDraft): GroundComponents {
     }
   }
   for (const connector of draft.connectors) {
-    if (
-      connector.kind !== "ramp" ||
-      draft.slopeAt(connector.from.x, connector.from.z) !== undefined
-    ) {
+    if (connector.kind !== "ramp") {
       continue;
     }
     const a = columnKey(draft, connector.from.x, connector.from.z);

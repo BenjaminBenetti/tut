@@ -1,12 +1,13 @@
-import { STOREY_LAYERS } from "../../core/model/elevation";
 import { describe, expect, it } from "vitest";
 
 import { BIOME_IDS } from "../../content/model/biome-id";
-import { DIRECTIONS } from "../../core/model/direction";
+import { DIRECTIONS, type Direction } from "../../core/model/direction";
 import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import { hashSeed } from "../../core/service/seed-hash";
 import { stepGridPos } from "../../core/service/grid-math";
 import { DEFAULT_MISSION_HOOKS } from "../data/hook-requirements";
+import { SurfaceIds } from "../data/surfaces";
+import type { GenerationPass } from "../model/generation-pass";
 import type { MapGenParams } from "../model/map-recipe";
 import { PassMask } from "../model/pass-mask";
 import type { Tile } from "../model/tile";
@@ -51,7 +52,7 @@ function unwalledSteps(
     for (const side of DIRECTIONS) {
       if (tile.walls[side] !== undefined) continue;
       const next = stepGridPos(tile, side);
-      const upper = index.get(next.x, tile.y + STOREY_LAYERS, next.z);
+      const upper = index.get(next.x, tile.y + 1, next.z);
       if (upper !== undefined && upper.buildingId === undefined) {
         steps.push({ lower: tile, upper });
       }
@@ -109,7 +110,7 @@ describe("SlopePass", () => {
         const sloped = steps.filter(({ lower }) => lower.slope !== undefined);
         expect(
           sloped.length / steps.length,
-          `${seed} share`,
+          `${seed} share ${String(sloped.length)}/${String(steps.length)}`,
         ).toBeGreaterThanOrEqual(0.6);
         const note =
           generateTacticalMapWithDiagnostics(
@@ -136,7 +137,8 @@ describe("SlopePass", () => {
     }
   });
 
-  it("gives every straight and inner slope a connector both classes can walk both ways", () => {
+  it("makes every straight and inner slope a free walk both ways for both classes, with no connector", () => {
+    const ring: readonly Direction[] = ["s", "w", "n", "e"];
     for (const biome of BIOME_IDS) {
       const map = generateTacticalMap(
         { seed: `walk-${biome}`, params: params("town", biome) },
@@ -147,28 +149,39 @@ describe("SlopePass", () => {
       let checked = 0;
       for (const tile of map.tiles) {
         if (tile.slope === undefined || tile.slope.kind === "outer") continue;
-        const ups = map.connectors.filter(
-          (c) =>
-            c.kind === "ramp" &&
-            c.from.x === tile.x &&
-            c.from.z === tile.z &&
-            c.from.y === tile.y,
-        );
-        expect(ups.length, `${biome} slope at ${tile.x},${tile.z}`).toBe(
-          tile.slope.kind === "inner" ? 2 : 1,
-        );
-        for (const up of ups) {
-          const upper = index.getAt(up.to);
-          expect(upper, `${biome} upper ${up.id}`).toBeDefined();
+        // Shape only (ADR 0008 §2.3): nothing starts on a slope tile.
+        expect(
+          map.connectors.some(
+            (c) => c.from.x === tile.x && c.from.z === tile.z,
+          ),
+          `${biome} connector from slope at ${tile.x},${tile.z}`,
+        ).toBe(false);
+        const sides =
+          tile.slope.kind === "straight"
+            ? [ring[tile.slope.turns]]
+            : [ring[tile.slope.turns], ring[(tile.slope.turns + 1) % 4]];
+        for (const side of sides) {
+          if (side === undefined) continue;
+          const step = stepGridPos(tile, side);
+          const upper = index.get(step.x, tile.y + 1, step.z);
+          expect(
+            upper,
+            `${biome} high side ${side} of ${tile.x},${tile.z}`,
+          ).toBeDefined();
           if (upper === undefined) continue;
           for (const mask of [PassMask.INFANTRY, PassMask.MECH]) {
+            // A prop on either tile takes it out of the graph; the shape
+            // is still right (#817), the walk is around it.
+            if ((tile.pass & mask) === 0 || (upper.pass & mask) === 0) {
+              continue;
+            }
             expect(
               reach.neighbours(tile, mask).some((n) => n === upper),
-              `${biome} ${up.id} up`,
+              `${biome} up ${side} at ${tile.x},${tile.z}`,
             ).toBe(true);
             expect(
               reach.neighbours(upper, mask).some((n) => n === tile),
-              `${biome} ${up.id} down`,
+              `${biome} down ${side} at ${tile.x},${tile.z}`,
             ).toBe(true);
           }
           checked++;
@@ -176,6 +189,127 @@ describe("SlopePass", () => {
       }
       expect(checked).toBeGreaterThan(0);
     }
+  });
+
+  /**
+   * #817: the Executive Director saw concave corners left unfilled. The
+   * case the Director named: a high neighbour carrying a prop. A prop
+   * takes the tile out of the walkable graph, and the old classification
+   * read walkability, so the corner tile saw one high side and became a
+   * straight, leaving the notch open. Shape is read from levels now.
+   */
+  it("classifies a concave corner as inner even when a high neighbour carries a prop (#817)", () => {
+    const registries = createDefaultRegistries();
+    /** A 16×16 plat at layer 0 with a raised L: the north row and east column at layer 1. */
+    const shapePass: GenerationPass = {
+      id: "shape",
+      requires: [],
+      provides: [
+        "heightmap",
+        "water",
+        "roads",
+        "lots",
+        "elevation",
+        "buildings",
+        "interiors",
+        "props",
+      ],
+      run: ({ draft }) => {
+        for (let z = 0; z < 16; z++) {
+          for (let x = 0; x < 16; x++) {
+            const high = z === 0 || x === 15;
+            draft.setGroundLevel(x, z, high ? 1 : 0);
+            draft.setNaturalLevel(x, z, high ? 1 : 0);
+            draft.setGroundSurface(x, z, SurfaceIds.GRASS);
+          }
+        }
+        // The boulder stands on the high tile east of the corner tile.
+        draft.addProp("boulder", draft.groundCoord(15, 1));
+      },
+    };
+    const pipeline = new PipelineMapGenerator(
+      [shapePass, new SlopePass()],
+      registries,
+    );
+    const { draft } = pipeline.run(
+      {
+        archetype: "settlement",
+        biome: "temperate",
+        settlement: "rural",
+        size: { width: 16, depth: 16 },
+        hooks: [],
+      },
+      new Mulberry32Rng(hashSeed("817")),
+    );
+    // (14,1) has high ground north (14,0) and east (15,1) — the east tile
+    // carries the boulder. It is the concave corner and must be `inner`.
+    expect(draft.slopeAt(14, 1)).toEqual({ kind: "inner", turns: 2 });
+    // Its neighbours along each run are straights facing their high side.
+    expect(draft.slopeAt(13, 1)?.kind).toBe("straight");
+    expect(draft.slopeAt(14, 2)?.kind).toBe("straight");
+    // And a boulder on the *lower* tile does not unmake the wedge either.
+    const withLowProp: GenerationPass = {
+      ...shapePass,
+      id: "shape2",
+      run: (ctx) => {
+        shapePass.run(ctx);
+        ctx.draft.addProp("boulder", ctx.draft.groundCoord(3, 1));
+      },
+    };
+    const again = new PipelineMapGenerator(
+      [withLowProp, new SlopePass()],
+      registries,
+    ).run(
+      {
+        archetype: "settlement",
+        biome: "temperate",
+        settlement: "rural",
+        size: { width: 16, depth: 16 },
+        hooks: [],
+      },
+      new Mulberry32Rng(hashSeed("817b")),
+    ).draft;
+    expect(again.slopeAt(3, 1)?.kind).toBe("straight");
+    // The Art Director's second finding: a pine on the high *diagonal*
+    // removed every outer corner. Here the raised L's convex corner is the
+    // high tile (15,0); the outer piece belongs on (14,1)'s diagonal
+    // partner across it — build a jut instead: a single high tile.
+    const jut: GenerationPass = {
+      id: "jut",
+      requires: [],
+      provides: shapePass.provides,
+      run: ({ draft }) => {
+        for (let z = 0; z < 16; z++) {
+          for (let x = 0; x < 16; x++) {
+            const high = z <= 1 && x >= 8;
+            draft.setGroundLevel(x, z, high ? 1 : 0);
+            draft.setNaturalLevel(x, z, high ? 1 : 0);
+            draft.setGroundSurface(x, z, SurfaceIds.GRASS);
+          }
+        }
+        // The pine stands on the high corner tile itself.
+        draft.addProp("tree-pine", draft.groundCoord(8, 1));
+      },
+    };
+    const jutted = new PipelineMapGenerator(
+      [jut, new SlopePass()],
+      registries,
+    ).run(
+      {
+        archetype: "settlement",
+        biome: "temperate",
+        settlement: "rural",
+        size: { width: 16, depth: 16 },
+        hooks: [],
+      },
+      new Mulberry32Rng(hashSeed("817c")),
+    ).draft;
+    // (7,2) has no high orthogonal neighbour, a high diagonal at (8,1)
+    // carrying the pine, and straights either side: (7,1) climbs east and
+    // (8,2) climbs north. It is the outer corner.
+    expect(jutted.slopeAt(7, 1)?.kind).toBe("straight");
+    expect(jutted.slopeAt(8, 2)?.kind).toBe("straight");
+    expect(jutted.slopeAt(7, 2)).toEqual({ kind: "outer", turns: 2 });
   });
 
   it("never slopes a man-made edge: plats, features and lots keep their walls", () => {

@@ -501,6 +501,10 @@ function metricRows(
       `${delta((m) => m.slopes, whole)} slope tiles, ${String(Math.round(metrics.slopeShare * 100))} % of natural edges (the knob)`,
     ],
     [
+      "Steps",
+      `${String(metrics.steps.half)} half, ${String(metrics.steps.cliff)} cliff, ${String(metrics.steps.flat)} flat ground edges`,
+    ],
+    [
       "Hatch space",
       `${delta((m) => m.hatchSpaceMin, whole)} min, ${delta((m) => m.hatchSpaceMean, one)} mean`,
     ],

@@ -13,7 +13,6 @@ import {
   propModel,
   ROAD_VARIANTS,
   SIDEWALK_VARIANTS,
-  SLOPE_MODELS,
   surfaceModel,
   wallModel,
   wallFamilyForWall,
@@ -184,15 +183,12 @@ function resolveTiles(
   const placements: ModelPlacement[] = [];
   for (const tile of map.tiles) {
     if (tile.slope !== undefined) {
-      placements.push({
-        modelId: SLOPE_MODELS[tile.slope.kind],
-        level: tile.y,
-        position: { x: tile.x + 0.5, y: tileTop(tile.y), z: tile.z + 0.5 },
-        // The corner assets peak at +X/+Z; map-data turn 0 peaks at -X/+Z.
-        turns: ((tile.slope.turns + (tile.slope.kind === "straight" ? 0 : 1)) %
-          4) as Rotation,
-        tile,
-      });
+      // A natural step is one layer now (ADR 0008) and the #811 slope kit
+      // rises a whole storey; drawing it here would stand a full wedge on
+      // a half step. The view's placeholder wedge rises exactly one layer,
+      // so slope tiles keep it until #809 re-emits the kit at RISE 0.75 —
+      // then this branch maps `(surface, kind, turns)` to the models again
+      // and retires the view's "slopes" placeholder label.
       continue;
     }
     const fitted = fitSurface(tile, index, map);

@@ -393,7 +393,8 @@ map is a bug, never a runtime fallback.
 | I7 | Reachability: for each hook `h` and each class `c` in `h.requiredPass`, some tile of `h` is reachable under §5 from some tile of some deploy zone by class `c`. |
 | I8 | Recipe satisfaction: for each `HookRequirement`, exactly `count` hooks of that kind exist, and `minDistanceFromDeploy` holds. |
 | I9 | Determinism: `generate(recipe)` twice gives deep-equal maps (tested, not validated). |
-| I10 | Natural slope shapes have no orphan corners; man-made edges (graded plats, elevated features, lots, and walled columns) keep their walls and never become natural slopes. During the engine conversion, old full-storey natural steps retain rise-2 ramps. The mapgen child supplies the one-layer smoothing invariant I11 and makes `slopeShare` visual only (ADR 0008 §2.5). Pinned in the generation sweep. |
+| I10 | Natural slope shapes have no orphan corners; man-made edges (graded plats, elevated features, lots, and walled columns) keep their walls and never become natural slopes. `Tile.slope` is shape only — no connector ever starts on a slope tile — and `slopeShare` is visual: a natural step left bare is walked exactly as a sloped one (ADR 0008 §2.5). Pinned in the generation sweep. |
+| I11 | Natural terrain steps by one layer: after the terrain pass no two orthogonally adjacent natural ground columns differ by more than one layer, so a natural edge is always a free walk and never needs a connector (ADR 0008 §2.5). The terrain pass reports the largest natural step; the sweep asserts it is one. |
 
 ## 7. Generation pipeline
 

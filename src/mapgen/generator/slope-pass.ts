@@ -1,4 +1,3 @@
-import { STOREY_LAYERS } from "../../core/model/elevation";
 import { DIRECTIONS, type Direction } from "../../core/model/direction";
 import { stepGridPos } from "../../core/service/grid-math";
 import type {
@@ -6,11 +5,11 @@ import type {
   GenerationContext,
   GenerationPass,
 } from "../model/generation-pass";
+import { SurfaceIds } from "../data/surfaces";
 import type { MapDraft } from "../model/map-draft";
 import type { Rotation } from "../model/prop";
 import type { Slope, SlopeKind } from "../model/slope";
 import type { TileCoord } from "../model/tile-coord";
-import { buildGroundComponents } from "../service/ground-components";
 
 // ===========================================
 // Types
@@ -20,8 +19,6 @@ import { buildGroundComponents } from "../service/ground-components";
 interface Candidate {
   readonly lower: TileCoord;
   readonly slope: Slope;
-  /** Upper tiles the piece walks onto; empty for an outer corner. */
-  readonly uppers: readonly TileCoord[];
 }
 
 // ===========================================
@@ -77,11 +74,15 @@ const CORNER_TURNS: Readonly<Record<string, Rotation>> = {
  *   anything else              ─► left as it was
  * ```
  *
- * Transitional engine conversion (#807): terrain still steps by a whole
- * storey, so straight and inner pieces retain ramps to their upper tiles.
- * The mapgen child of ADR 0008 replaces these with natural one-layer steps
- * and removes the ramps; ReachabilityService already walks those freely.
- * Outer pieces are shape only: the two flanking straights carry traversal.
+ * A natural step is one layer (ADR 0008 §2.5): the terrain pass keeps
+ * every natural edge to a single layer (I11), and a one-layer step is a
+ * free walk for both classes, so a slope piece is shape only — no
+ * connector, one derivation of walkability. `slopeShare` is therefore
+ * visual: a run left bare is still walked, it just shows no wedge.
+ *
+ * Shape is read from geometry alone (#817): a high neighbour that carries
+ * a prop is still high ground, and the terrace still turns there, so the
+ * piece is chosen from levels and not from what can be stood on.
  *
  * `slopeShare` (the Map Lab knob) is drawn per run — a connected group
  * of candidate tiles along one edge — never per tile, so a run is all
@@ -100,12 +101,11 @@ export class SlopePass implements GenerationPass {
   // Public Methods
   // ===========================================
 
-  /** Marks the slope pieces and adds their connectors. */
+  /** Marks the slope pieces on every natural one-layer step. */
   run(context: GenerationContext): void {
     const { draft, params, rng, diagnostics } = context;
-    const { nodes } = buildGroundComponents(draft);
-    const candidates = collectCandidates(draft, nodes);
-    const naturalEdges = countNaturalEdgeTiles(draft, nodes);
+    const candidates = collectCandidates(draft);
+    const naturalEdges = countNaturalEdgeTiles(draft);
     const runs = groupRuns(draft, candidates);
 
     const counts: Record<SlopeKind, number> = {
@@ -125,9 +125,6 @@ export class SlopePass implements GenerationPass {
       }
       for (const candidate of run) {
         draft.setSlope(candidate.lower.x, candidate.lower.z, candidate.slope);
-        for (const upper of candidate.uppers) {
-          draft.addConnector("ramp", candidate.lower, upper);
-        }
         counts[candidate.slope.kind]++;
       }
     }
@@ -154,57 +151,37 @@ export class SlopePass implements GenerationPass {
 // ===========================================
 
 /** Every lower tile of a natural step, with the piece its neighbourhood implies. */
-function collectCandidates(
-  draft: MapDraft,
-  nodes: ReadonlySet<number>,
-): Candidate[] {
+function collectCandidates(draft: MapDraft): Candidate[] {
   const straightAt = new Map<number, Candidate>();
   const rest: Candidate[] = [];
-  for (const key of nodes) {
+  for (const key of naturalColumns(draft)) {
     const x = key % draft.width;
     const z = Math.floor(key / draft.width);
-    if (!isNatural(draft, x, z)) {
-      continue;
-    }
     const here = draft.groundCoord(x, z);
     const high = DIRECTIONS.filter((direction) =>
-      isNaturalStepUp(draft, nodes, here, direction),
+      isStepUp(draft, here, direction),
     );
     if (high.length === 1) {
       const direction = high[0];
       if (direction === undefined) continue;
-      const upper = draft.groundCoord(
-        stepGridPos(here, direction).x,
-        stepGridPos(here, direction).z,
-      );
       straightAt.set(key, {
         lower: here,
         slope: { kind: "straight", turns: STRAIGHT_TURNS[direction] },
-        uppers: [upper],
       });
     } else if (high.length === 2 && adjacentPair(high)) {
       const turns = CORNER_TURNS[pairKey(high)];
       if (turns === undefined) continue;
-      rest.push({
-        lower: here,
-        slope: { kind: "inner", turns },
-        uppers: high.map((direction) => {
-          const step = stepGridPos(here, direction);
-          return draft.groundCoord(step.x, step.z);
-        }),
-      });
+      rest.push({ lower: here, slope: { kind: "inner", turns } });
     }
   }
   // Outer corners need their flanking straights to exist first.
-  for (const key of nodes) {
+  for (const key of naturalColumns(draft)) {
     if (straightAt.has(key)) continue;
     const x = key % draft.width;
     const z = Math.floor(key / draft.width);
-    if (!isNatural(draft, x, z)) continue;
     const here = draft.groundCoord(x, z);
-    if (DIRECTIONS.some((d) => isNaturalStepUp(draft, nodes, here, d)))
-      continue;
-    const corner = outerCorner(draft, nodes, straightAt, here);
+    if (DIRECTIONS.some((d) => isStepUp(draft, here, d))) continue;
+    const corner = outerCorner(draft, straightAt, here);
     if (corner !== undefined) rest.push(corner);
   }
   return [...straightAt.values(), ...rest];
@@ -217,7 +194,6 @@ function collectCandidates(
  */
 function outerCorner(
   draft: MapDraft,
-  nodes: ReadonlySet<number>,
   straightAt: ReadonlyMap<number, Candidate>,
   here: TileCoord,
 ): Candidate | undefined {
@@ -241,18 +217,17 @@ function outerCorner(
     );
     const flankB = straightAt.get(sideB.z * draft.width + sideB.x);
     if (flankA === undefined || flankB === undefined) continue;
-    const diagonalKey = diagonal.z * draft.width + diagonal.x;
-    if (!nodes.has(diagonalKey) || !isNatural(draft, diagonal.x, diagonal.z))
+    if (draft.isCovered(diagonal.x, diagonal.z)) continue;
+    if (draft.groundSurfaceAt(diagonal.x, diagonal.z) === SurfaceIds.WATER)
       continue;
-    if (draft.groundLevelAt(diagonal.x, diagonal.z) !== here.y + STOREY_LAYERS)
-      continue;
+    if (draft.groundLevelAt(diagonal.x, diagonal.z) !== here.y + 1) continue;
     // Both flanks must climb onto the same terrace as the diagonal.
     if (draft.groundLevelAt(sideA.x, sideA.z) !== here.y) continue;
     if (draft.groundLevelAt(sideB.x, sideB.z) !== here.y) continue;
     const turns = CORNER_TURNS[pairKey([a, b])];
     if (turns === undefined) continue;
     if (found !== undefined) return undefined;
-    found = { lower: here, slope: { kind: "outer", turns }, uppers: [] };
+    found = { lower: here, slope: { kind: "outer", turns } };
   }
   return found;
 }
@@ -314,6 +289,20 @@ function isNatural(draft: MapDraft, x: number, z: number): boolean {
   if (Object.keys(draft.wallsAt(draft.groundCoord(x, z))).length > 0) {
     return false;
   }
+  if (draft.groundSurfaceAt(x, z) === SurfaceIds.WATER) {
+    return false;
+  }
+  // A connector's foot or head is a man-made thing standing here — a
+  // ladder placed before this pass, say — and no connector ever starts
+  // on a slope tile (ADR 0004 I10).
+  if (
+    draft.connectors.some(
+      (c) =>
+        (c.from.x === x && c.from.z === z) || (c.to.x === x && c.to.z === z),
+    )
+  ) {
+    return false;
+  }
   return !draft.lots.some(({ rect }) => {
     return (
       x >= rect.x - 1 &&
@@ -324,32 +313,45 @@ function isNatural(draft: MapDraft, x: number, z: number): boolean {
   });
 }
 
-/** The neighbour in `direction` is walkable, natural and exactly one level up. */
-function isNaturalStepUp(
+/**
+ * The neighbour in `direction` is ground exactly one layer up. Geometry
+ * only (#817): a prop on it does not unmake the terrace, and neither does
+ * a graded plat — a natural tile half a step under a road plat still
+ * meets it with a wedge. Only water and a building's footprint are not
+ * ground to climb onto. Which tiles *carry* a wedge is `isNatural`'s
+ * call, made about the lower tile alone.
+ */
+function isStepUp(
   draft: MapDraft,
-  nodes: ReadonlySet<number>,
   here: TileCoord,
   direction: Direction,
 ): boolean {
   const next = stepGridPos(here, direction);
   if (!draft.inBounds(next.x, next.z)) return false;
-  if (!nodes.has(next.z * draft.width + next.x)) return false;
-  if (!isNatural(draft, next.x, next.z)) return false;
-  return draft.groundLevelAt(next.x, next.z) === here.y + STOREY_LAYERS;
+  if (draft.isCovered(next.x, next.z)) return false;
+  if (draft.groundSurfaceAt(next.x, next.z) === SurfaceIds.WATER) return false;
+  return draft.groundLevelAt(next.x, next.z) === here.y + 1;
+}
+
+/** Every natural column, as ground-graph keys. */
+function naturalColumns(draft: MapDraft): number[] {
+  const keys: number[] = [];
+  for (let z = 0; z < draft.depth; z++) {
+    for (let x = 0; x < draft.width; x++) {
+      if (isNatural(draft, x, z)) keys.push(z * draft.width + x);
+    }
+  }
+  return keys;
 }
 
 /** Lower tiles of natural steps, whatever piece (or none) they get: the knob's denominator. */
-function countNaturalEdgeTiles(
-  draft: MapDraft,
-  nodes: ReadonlySet<number>,
-): number {
+function countNaturalEdgeTiles(draft: MapDraft): number {
   let count = 0;
-  for (const key of nodes) {
+  for (const key of naturalColumns(draft)) {
     const x = key % draft.width;
     const z = Math.floor(key / draft.width);
-    if (!isNatural(draft, x, z)) continue;
     const here = draft.groundCoord(x, z);
-    if (DIRECTIONS.some((d) => isNaturalStepUp(draft, nodes, here, d))) count++;
+    if (DIRECTIONS.some((d) => isStepUp(draft, here, d))) count++;
   }
   return count;
 }

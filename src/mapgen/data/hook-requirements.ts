@@ -19,6 +19,7 @@ export const DEFAULT_MISSION_HOOKS: readonly HookRequirement[] = [
     count: 3,
     requiredPass: PassMask.INFANTRY,
     minDistanceFromDeploy: 12,
+    maxNearestDistanceFromDeploy: 30,
     meta: { hatchRadius: 3 },
   },
   { kind: HookKinds.EDGE_SPAWN, count: 2, requiredPass: PassMask.INFANTRY },

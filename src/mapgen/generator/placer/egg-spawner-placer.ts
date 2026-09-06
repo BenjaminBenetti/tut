@@ -122,10 +122,20 @@ export class EggSpawnerPlacer implements HookPlacer {
           break;
         }
       }
+      // The first spawner starts within reach of the deploy zone when
+      // any candidate does (#829): the rest may sit anywhere on the board.
+      const maxNearest = requirement.maxNearestDistanceFromDeploy;
+      const withinReach = (c: Candidate): boolean =>
+        maxNearest === undefined ||
+        distanceToDeploy(draft, c.coord) <= maxNearest;
+      const reachable0 =
+        i === 0 && remaining.some(withinReach)
+          ? remaining.filter(withinReach)
+          : remaining;
       const wantInterior = i < Math.ceil(requirement.count * INTERIOR_SHARE);
-      const interior = remaining.filter((c) => c.interior);
+      const interior = reachable0.filter((c) => c.interior);
       const ordered =
-        wantInterior && interior.length > 0 ? interior : remaining;
+        wantInterior && interior.length > 0 ? interior : reachable0;
       // Both checks are measured lazily, in draw order, so only a handful
       // of candidates per map are walked; a cramped pool falls back to
       // hatch space alone and then to its head, so the count is still met.

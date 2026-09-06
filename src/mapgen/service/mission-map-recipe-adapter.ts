@@ -123,6 +123,11 @@ function toHookRequirement(
     count: scaledHookCount(requirement, difficulty),
     requiredPass: defaults?.requiredPass ?? 1,
     ...(distance === undefined ? {} : { minDistanceFromDeploy: distance }),
+    ...(defaults?.maxNearestDistanceFromDeploy === undefined
+      ? {}
+      : {
+          maxNearestDistanceFromDeploy: defaults.maxNearestDistanceFromDeploy,
+        }),
     ...(defaults?.meta === undefined ? {} : { meta: defaults.meta }),
   };
 }

@@ -46,6 +46,25 @@ export interface CameraState {
    * {@link TOP_DOWN_PROJECTION} (#420).
    */
   readonly projection?: CameraProjection;
+  /**
+   * Pixels-per-tile the zoom is clamped into, in place of the fixed
+   * {@link CAMERA_ZOOM} (#828, ADR 0009 §2.3). Set by the scene that
+   * owns the content, the same way `bounds` is: how far out is far
+   * enough depends on how big the map is and how large the viewport is,
+   * and only the scene knows both. Absent means `CAMERA_ZOOM`, as
+   * before.
+   */
+  readonly zoomRange?: ZoomRange;
+}
+
+/**
+ * Pixels-per-tile limits for a particular map in a particular viewport.
+ * Built by `zoomRangeFor`; carried on the state so the clamp stays in
+ * `camera-math` and the rig keeps clamping as it always has.
+ */
+export interface ZoomRange {
+  readonly min: number;
+  readonly max: number;
 }
 
 /**
@@ -97,8 +116,30 @@ export const TOP_DOWN_PROJECTION: CameraProjection = {
   yawOffsetRad: Math.PI / 2,
 };
 
-/** Zoom limits in pixels per tile (style guide §2). */
-export const CAMERA_ZOOM = { min: 40, max: 128, initial: 64 } as const;
+/**
+ * Zoom limits in pixels per tile (style guide §2), used when a scene
+ * sets no map-aware {@link ZoomRange}.
+ *
+ * `max` is 192 rather than 128 since #828: at 128 a rifle squad is a
+ * small figure in a wide field, and the near end of the range is
+ * supposed to be a squad you can read. `min` stays the legibility floor
+ * — `zoomRangeFor` lowers a map's own minimum below it only as far as
+ * {@link ZOOM_FIT_FLOOR}.
+ */
+export const CAMERA_ZOOM = { min: 40, max: 192, initial: 64 } as const;
+
+/**
+ * How far out `zoomRangeFor` may go to fit a whole map, in pixels per
+ * tile, whatever the arithmetic asks for.
+ *
+ * A 96-tile map in a 1280×720 viewport needs roughly 9 px per tile to
+ * fit its diagonal, which is legible as *shape* — roads, blocks, the
+ * spread of buildings, which is what "can I see the whole map" is for —
+ * and not as detail. Below about 6 a tile stops being a tile, so a map
+ * large enough to need that is framed as far out as this and panned
+ * rather than shown whole (#828).
+ */
+export const ZOOM_FIT_FLOOR = 6;
 
 /** Number of yaw orientations; `YawIndex` runs from 0 to this minus one. */
 export const YAW_COUNT = 4;

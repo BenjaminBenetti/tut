@@ -3,12 +3,14 @@ import type {
   CameraProjection,
   CameraState,
   YawIndex,
+  ZoomRange,
 } from "../model/camera-state";
 import {
   CAMERA_ZOOM,
   DEFAULT_CAMERA_STATE,
   ISOMETRIC_PROJECTION,
   YAW_COUNT,
+  ZOOM_FIT_FLOOR,
 } from "../model/camera-state";
 
 // ===========================================
@@ -30,6 +32,16 @@ export interface OrthoFrustum {
   readonly right: number;
   readonly top: number;
   readonly bottom: number;
+}
+
+/** How much map there is to frame, in tiles and levels. */
+export interface MapExtent {
+  /** Tiles along `+x`. */
+  readonly width: number;
+  /** Tiles along `+z`. */
+  readonly depth: number;
+  /** Levels of vertical relief above the ground plane; 0 for a flat plate. */
+  readonly height: number;
 }
 
 /** Unit vectors on the ground plane matching the camera's screen axes. */
@@ -197,9 +209,97 @@ export function groundScreenAxes(
 // Zoom
 // ===========================================
 
-/** Clamps a zoom value into `CAMERA_ZOOM`'s range. */
-export function clampZoom(zoom: number): number {
-  return Math.min(CAMERA_ZOOM.max, Math.max(CAMERA_ZOOM.min, zoom));
+/** Clamps a zoom value into `range`, or into `CAMERA_ZOOM` without one. */
+export function clampZoom(zoom: number, range?: ZoomRange): number {
+  const limits = range ?? CAMERA_ZOOM;
+  return Math.min(limits.max, Math.max(limits.min, zoom));
+}
+
+/**
+ * The largest pixels-per-tile at which the whole of `extent` still fits
+ * inside `viewport` (#828, ADR 0009 §2.3).
+ *
+ * The frustum spans `viewport.width / zoom` world units across the view
+ * (`orthoFrustum`), so fitting is a question of how much of the image
+ * plane the map covers at one unit per tile.
+ *
+ * ```
+ *   camera on a diagonal, elevation θ
+ *
+ *   screen-right  ── the (x − z) ground diagonal, unforeshortened
+ *   screen-up     ── the (x + z) ground diagonal, × sin θ
+ *                    plus relief, × cos θ
+ *
+ *   a w × d map spans (w + d) / √2 along each diagonal
+ * ```
+ *
+ * Both diagonals matter: a square map is as wide as it is tall in tiles
+ * but its screen height is foreshortened, so the width usually binds on
+ * a 16:9 viewport and the height binds on a tall one. Relief is added
+ * rather than ignored, or a map of towers would fit on paper and have
+ * its roofs cut off.
+ *
+ * @param extent - Map size in tiles and levels.
+ * @param viewport - Render surface in CSS pixels.
+ * @param projection - Camera projection; defaults to the isometric one.
+ * @returns Pixels per tile, unclamped — callers apply their own floor.
+ */
+export function zoomToFit(
+  extent: MapExtent,
+  viewport: Viewport,
+  projection: CameraProjection = ISOMETRIC_PROJECTION,
+): number {
+  const diagonal = (extent.width + extent.depth) / Math.SQRT2;
+  const sin = Math.sin(projection.elevationRad);
+  const cos = Math.cos(projection.elevationRad);
+  const acrossUnits = diagonal;
+  const upUnits = diagonal * sin + Math.max(0, extent.height) * cos;
+  if (acrossUnits <= 0 || upUnits <= 0) {
+    return CAMERA_ZOOM.max;
+  }
+  return Math.min(viewport.width / acrossUnits, viewport.height / upUnits);
+}
+
+/**
+ * Zoom limits for one map in one viewport: out far enough to see the
+ * whole thing, in close enough to read a squad.
+ *
+ * The far end is `zoomToFit` floored at {@link ZOOM_FIT_FLOOR}, and
+ * never zooms *out* past `CAMERA_ZOOM.min` on a small map — a 32-tile
+ * map already fits at the default minimum, and letting it go further
+ * would zoom out into empty space rather than show more map.
+ *
+ * @param extent - Map size in tiles and levels.
+ * @param viewport - Render surface in CSS pixels.
+ * @param projection - Camera projection; defaults to the isometric one.
+ * @returns The range to clamp this scene's zoom into.
+ */
+export function zoomRangeFor(
+  extent: MapExtent,
+  viewport: Viewport,
+  projection: CameraProjection = ISOMETRIC_PROJECTION,
+): ZoomRange {
+  const fit = zoomToFit(extent, viewport, projection);
+  const min = Math.min(CAMERA_ZOOM.min, Math.max(ZOOM_FIT_FLOOR, fit));
+  return { min, max: CAMERA_ZOOM.max };
+}
+
+/**
+ * Returns a state clamped into `range` from now on, or back to
+ * `CAMERA_ZOOM` with `undefined`. The current zoom is re-clamped, so a
+ * viewport resize that narrows the range pulls the camera into it
+ * rather than leaving it outside.
+ */
+export function withZoomRange(
+  state: CameraState,
+  range: ZoomRange | undefined,
+): CameraState {
+  if (range === undefined) {
+    const { zoomRange: _dropped, ...rest } = state;
+    return { ...rest, zoom: clampZoom(state.zoom) };
+  }
+  const copy: ZoomRange = { min: range.min, max: range.max };
+  return { ...state, zoomRange: copy, zoom: clampZoom(state.zoom, copy) };
 }
 
 /**
@@ -214,7 +314,7 @@ export function zoomBy(state: CameraState, factor: number): CameraState {
       `Zoom factor must be a positive finite number, got ${factor}`,
     );
   }
-  return { ...state, zoom: clampZoom(state.zoom * factor) };
+  return { ...state, zoom: clampZoom(state.zoom * factor, state.zoomRange) };
 }
 
 // ===========================================

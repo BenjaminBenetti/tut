@@ -10,6 +10,8 @@ import {
   perceivedSpawners,
   perceivedUnits,
 } from "../../tactical/service/vision-service";
+import { LAYER_HEIGHT } from "../../graphics/data/mapgen-preview-palette";
+import type { MapExtent } from "../../graphics/service/camera-math";
 
 // ===========================================
 // Types
@@ -34,6 +36,8 @@ export interface PerceivedStage {
 export interface SceneFraming {
   /** Limits how far the camera may be panned. */
   setBounds(bounds: Rect | undefined): void;
+  /** Sizes the zoom range so the whole map fits at the far end (#828). */
+  setMapExtent(extent: MapExtent | undefined): void;
   /** Centres the camera on a world point. */
   lookAt(target: Vec3): void;
 }
@@ -102,6 +106,14 @@ export function frameMission(
     z: 0,
     w: mission.map.width,
     d: mission.map.depth,
+  });
+  // Levels are half-height layers (ADR 0008); the camera wants world
+  // units, and relief is what would otherwise put roofs off the top of
+  // the frame at the far end (#828).
+  framing.setMapExtent({
+    width: mission.map.width,
+    depth: mission.map.depth,
+    height: mission.map.levels * LAYER_HEIGHT,
   });
   framing.lookAt(missionFocus(mission));
 }

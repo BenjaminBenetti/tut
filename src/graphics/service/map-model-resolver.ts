@@ -412,7 +412,6 @@ function resolveProps(
 // Turning
 // ===========================================
 
-/** The direction opposite this one. */
 /** Same-surface tiles from `tile` outward along `side`, not counting it. */
 function runExtent(tile: Tile, index: TileIndex, side: Direction): number {
   let count = 0;
@@ -426,6 +425,7 @@ function runExtent(tile: Tile, index: TileIndex, side: Direction): number {
   }
 }
 
+/** The direction opposite this one. */
 function opposite(side: Direction): Direction {
   return side === "n" ? "s" : side === "s" ? "n" : side === "e" ? "w" : "e";
 }

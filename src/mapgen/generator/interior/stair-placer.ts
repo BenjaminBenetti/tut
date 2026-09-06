@@ -172,15 +172,15 @@ function tryCandidate(
   return undefined;
 }
 
-/**
- * True when the tile has a wall on a side with no tile beyond it at the
- * same level, i.e. it sits on the building's outer edge.
- */
 /** Corridors and halls: the rooms a flight should start or land in. */
 function isSpine(room: Room | undefined): boolean {
   return room?.kind === RoomKindIds.CORRIDOR || room?.kind === RoomKindIds.HALL;
 }
 
+/**
+ * True when the tile has a wall on a side with no tile beyond it at the
+ * same level, i.e. it sits on the building's outer edge.
+ */
 function onPerimeter(draft: MapDraft, tile: TileCoord): boolean {
   return DIRECTIONS.some(
     (direction) =>

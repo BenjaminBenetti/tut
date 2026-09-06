@@ -56,6 +56,12 @@ export interface MapMetrics {
   readonly lowCoverPer100: number;
   /** Props inside buildings divided by buildings (0 with none). */
   readonly interiorPropsPerBuilding: number;
+  /** Mean building footprint area in tiles (ADR 0009 §2.3). */
+  readonly footprintMean: number;
+  /** Mean rooms per floor across every building, corridors included. */
+  readonly roomsPerFloor: number;
+  /** Buildings whose plan has a corridor (#829). */
+  readonly corridorBuildings: number;
   /** Natural hillside pieces (#799): lower tiles carrying a `slope`. */
   readonly slopes: number;
   /**

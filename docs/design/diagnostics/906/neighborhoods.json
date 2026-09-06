@@ -1,0 +1,636 @@
+{
+  "baseline": "3a9fc50",
+  "cases": [
+    {
+      "seed": "mc-opening-01",
+      "biome": "snowy",
+      "settlement": "town",
+      "size": "small",
+      "slopeShare": 1,
+      "building": {
+        "id": "building-1",
+        "kind": "apartment",
+        "footprint": [
+          {
+            "x": 29,
+            "z": 35,
+            "w": 8,
+            "d": 8
+          }
+        ],
+        "groundLevel": 4,
+        "entrances": [
+          {
+            "tile": {
+              "x": 29,
+              "y": 4,
+              "z": 38
+            },
+            "side": "w"
+          }
+        ],
+        "connectorIds": ["stairs-1", "stairs-2", "stairs-3"]
+      },
+      "floors": [
+        {
+          "index": 0,
+          "y": 4
+        },
+        {
+          "index": 1,
+          "y": 6
+        },
+        {
+          "index": 2,
+          "y": 8
+        }
+      ],
+      "floorColumn": {
+        "x": 36,
+        "z": 39
+      },
+      "tiles": [
+        {
+          "x": 37,
+          "y": 3,
+          "z": 38,
+          "surface": "snow",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false
+        },
+        {
+          "x": 37,
+          "y": 3,
+          "z": 39,
+          "surface": "rock",
+          "pass": 0,
+          "walls": {},
+          "coverProvided": 1,
+          "blocksLos": false,
+          "propId": "prop-55"
+        },
+        {
+          "x": 37,
+          "y": 2,
+          "z": 40,
+          "surface": "rock",
+          "pass": 0,
+          "walls": {},
+          "coverProvided": 2,
+          "blocksLos": false,
+          "propId": "prop-61",
+          "slope": {
+            "kind": "straight",
+            "turns": 2
+          },
+          "naturalEdge": true
+        },
+        {
+          "x": 35,
+          "y": 4,
+          "z": 38,
+          "surface": "floor",
+          "pass": 1,
+          "walls": {
+            "n": "door"
+          },
+          "coverProvided": 0,
+          "blocksLos": false,
+          "buildingId": "building-1",
+          "floorIndex": 0,
+          "roomId": "room-1"
+        },
+        {
+          "x": 36,
+          "y": 4,
+          "z": 38,
+          "surface": "floor",
+          "pass": 1,
+          "walls": {
+            "n": "solid",
+            "e": "window"
+          },
+          "coverProvided": 0,
+          "blocksLos": false,
+          "buildingId": "building-1",
+          "floorIndex": 0,
+          "roomId": "room-1"
+        },
+        {
+          "x": 35,
+          "y": 4,
+          "z": 39,
+          "surface": "floor",
+          "pass": 0,
+          "walls": {
+            "s": "solid"
+          },
+          "coverProvided": 1,
+          "blocksLos": false,
+          "propId": "prop-118",
+          "buildingId": "building-1",
+          "floorIndex": 0,
+          "roomId": "room-1"
+        },
+        {
+          "x": 36,
+          "y": 4,
+          "z": 39,
+          "surface": "floor",
+          "pass": 1,
+          "walls": {
+            "e": "window",
+            "s": "solid"
+          },
+          "coverProvided": 0,
+          "blocksLos": false,
+          "buildingId": "building-1",
+          "floorIndex": 0,
+          "roomId": "room-1"
+        },
+        {
+          "x": 35,
+          "y": 4,
+          "z": 40,
+          "surface": "floor",
+          "pass": 1,
+          "walls": {
+            "n": "solid"
+          },
+          "coverProvided": 0,
+          "blocksLos": false,
+          "buildingId": "building-1",
+          "floorIndex": 0,
+          "roomId": "room-5"
+        },
+        {
+          "x": 36,
+          "y": 4,
+          "z": 40,
+          "surface": "floor",
+          "pass": 1,
+          "walls": {
+            "n": "solid",
+            "e": "solid"
+          },
+          "coverProvided": 0,
+          "blocksLos": false,
+          "buildingId": "building-1",
+          "floorIndex": 0,
+          "roomId": "room-5"
+        },
+        {
+          "x": 35,
+          "y": 6,
+          "z": 38,
+          "surface": "floor",
+          "pass": 1,
+          "walls": {
+            "n": "solid"
+          },
+          "coverProvided": 0,
+          "blocksLos": false,
+          "buildingId": "building-1",
+          "floorIndex": 1,
+          "roomId": "room-6"
+        },
+        {
+          "x": 36,
+          "y": 6,
+          "z": 38,
+          "surface": "floor",
+          "pass": 1,
+          "walls": {
+            "n": "door",
+            "e": "solid"
+          },
+          "coverProvided": 0,
+          "blocksLos": false,
+          "buildingId": "building-1",
+          "floorIndex": 1,
+          "roomId": "room-6"
+        },
+        {
+          "x": 35,
+          "y": 6,
+          "z": 39,
+          "surface": "floor",
+          "pass": 1,
+          "walls": {
+            "s": "solid"
+          },
+          "coverProvided": 0,
+          "blocksLos": false,
+          "buildingId": "building-1",
+          "floorIndex": 1,
+          "roomId": "room-6"
+        },
+        {
+          "x": 36,
+          "y": 6,
+          "z": 39,
+          "surface": "floor",
+          "pass": 1,
+          "walls": {
+            "e": "solid",
+            "s": "solid"
+          },
+          "coverProvided": 0,
+          "blocksLos": false,
+          "buildingId": "building-1",
+          "floorIndex": 1,
+          "roomId": "room-6"
+        },
+        {
+          "x": 35,
+          "y": 6,
+          "z": 40,
+          "surface": "floor",
+          "pass": 1,
+          "walls": {
+            "n": "solid"
+          },
+          "coverProvided": 0,
+          "blocksLos": false,
+          "buildingId": "building-1",
+          "floorIndex": 1,
+          "roomId": "room-10"
+        },
+        {
+          "x": 36,
+          "y": 6,
+          "z": 40,
+          "surface": "floor",
+          "pass": 1,
+          "walls": {
+            "n": "solid",
+            "e": "window"
+          },
+          "coverProvided": 0,
+          "blocksLos": false,
+          "buildingId": "building-1",
+          "floorIndex": 1,
+          "roomId": "room-10"
+        },
+        {
+          "x": 35,
+          "y": 8,
+          "z": 38,
+          "surface": "floor",
+          "pass": 1,
+          "walls": {
+            "n": "door"
+          },
+          "coverProvided": 0,
+          "blocksLos": false,
+          "buildingId": "building-1",
+          "floorIndex": 2,
+          "roomId": "room-11"
+        },
+        {
+          "x": 36,
+          "y": 8,
+          "z": 38,
+          "surface": "floor",
+          "pass": 1,
+          "walls": {
+            "n": "solid",
+            "e": "solid"
+          },
+          "coverProvided": 0,
+          "blocksLos": false,
+          "buildingId": "building-1",
+          "floorIndex": 2,
+          "roomId": "room-11"
+        },
+        {
+          "x": 35,
+          "y": 8,
+          "z": 39,
+          "surface": "floor",
+          "pass": 1,
+          "walls": {
+            "s": "solid"
+          },
+          "coverProvided": 0,
+          "blocksLos": false,
+          "buildingId": "building-1",
+          "floorIndex": 2,
+          "roomId": "room-11"
+        },
+        {
+          "x": 36,
+          "y": 8,
+          "z": 39,
+          "surface": "floor",
+          "pass": 1,
+          "walls": {
+            "e": "window",
+            "s": "solid"
+          },
+          "coverProvided": 0,
+          "blocksLos": false,
+          "buildingId": "building-1",
+          "floorIndex": 2,
+          "roomId": "room-11"
+        },
+        {
+          "x": 35,
+          "y": 8,
+          "z": 40,
+          "surface": "floor",
+          "pass": 1,
+          "walls": {
+            "n": "solid"
+          },
+          "coverProvided": 0,
+          "blocksLos": false,
+          "buildingId": "building-1",
+          "floorIndex": 2,
+          "roomId": "room-15"
+        },
+        {
+          "x": 36,
+          "y": 8,
+          "z": 40,
+          "surface": "floor",
+          "pass": 0,
+          "walls": {
+            "n": "solid",
+            "e": "solid"
+          },
+          "coverProvided": 2,
+          "blocksLos": true,
+          "propId": "prop-140",
+          "buildingId": "building-1",
+          "floorIndex": 2,
+          "roomId": "room-15"
+        },
+        {
+          "x": 35,
+          "y": 10,
+          "z": 38,
+          "surface": "roof",
+          "pass": 1,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "buildingId": "building-1"
+        },
+        {
+          "x": 36,
+          "y": 10,
+          "z": 38,
+          "surface": "roof",
+          "pass": 1,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "buildingId": "building-1"
+        },
+        {
+          "x": 35,
+          "y": 10,
+          "z": 39,
+          "surface": "roof",
+          "pass": 1,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "buildingId": "building-1"
+        },
+        {
+          "x": 36,
+          "y": 10,
+          "z": 39,
+          "surface": "roof",
+          "pass": 1,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "buildingId": "building-1"
+        },
+        {
+          "x": 35,
+          "y": 10,
+          "z": 40,
+          "surface": "roof",
+          "pass": 1,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "buildingId": "building-1"
+        },
+        {
+          "x": 36,
+          "y": 10,
+          "z": 40,
+          "surface": "roof",
+          "pass": 1,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "buildingId": "building-1"
+        }
+      ]
+    },
+    {
+      "seed": "mc-opening-02",
+      "biome": "desert",
+      "settlement": "town",
+      "size": "small",
+      "slopeShare": 1,
+      "building": {
+        "id": "building-1",
+        "kind": "warehouse",
+        "footprint": [
+          {
+            "x": 21,
+            "z": 6,
+            "w": 11,
+            "d": 12
+          }
+        ],
+        "groundLevel": 2,
+        "entrances": [
+          {
+            "tile": {
+              "x": 22,
+              "y": 2,
+              "z": 17
+            },
+            "side": "s"
+          }
+        ],
+        "connectorIds": ["stairs-1", "ladder-1"]
+      },
+      "floors": [
+        {
+          "index": 0,
+          "y": 2
+        }
+      ],
+      "floorColumn": {
+        "x": 31,
+        "z": 17
+      },
+      "tiles": [
+        {
+          "x": 32,
+          "y": 0,
+          "z": 16,
+          "surface": "rock",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false
+        },
+        {
+          "x": 32,
+          "y": 0,
+          "z": 17,
+          "surface": "rock",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false
+        },
+        {
+          "x": 30,
+          "y": 0,
+          "z": 18,
+          "surface": "sidewalk",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false
+        },
+        {
+          "x": 31,
+          "y": 0,
+          "z": 18,
+          "surface": "sidewalk",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false
+        },
+        {
+          "x": 32,
+          "y": 0,
+          "z": 18,
+          "surface": "sidewalk",
+          "pass": 3,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false
+        },
+        {
+          "x": 30,
+          "y": 2,
+          "z": 16,
+          "surface": "floor",
+          "pass": 1,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "buildingId": "building-1",
+          "floorIndex": 0,
+          "roomId": "room-2"
+        },
+        {
+          "x": 31,
+          "y": 2,
+          "z": 16,
+          "surface": "floor",
+          "pass": 1,
+          "walls": {
+            "e": "solid"
+          },
+          "coverProvided": 0,
+          "blocksLos": false,
+          "buildingId": "building-1",
+          "floorIndex": 0,
+          "roomId": "room-2"
+        },
+        {
+          "x": 30,
+          "y": 2,
+          "z": 17,
+          "surface": "floor",
+          "pass": 1,
+          "walls": {
+            "s": "solid"
+          },
+          "coverProvided": 0,
+          "blocksLos": false,
+          "buildingId": "building-1",
+          "floorIndex": 0,
+          "roomId": "room-2"
+        },
+        {
+          "x": 31,
+          "y": 2,
+          "z": 17,
+          "surface": "floor",
+          "pass": 1,
+          "walls": {
+            "e": "solid",
+            "s": "solid"
+          },
+          "coverProvided": 0,
+          "blocksLos": false,
+          "buildingId": "building-1",
+          "floorIndex": 0,
+          "roomId": "room-2"
+        },
+        {
+          "x": 30,
+          "y": 4,
+          "z": 16,
+          "surface": "roof",
+          "pass": 1,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "buildingId": "building-1"
+        },
+        {
+          "x": 31,
+          "y": 4,
+          "z": 16,
+          "surface": "roof",
+          "pass": 1,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "buildingId": "building-1"
+        },
+        {
+          "x": 30,
+          "y": 4,
+          "z": 17,
+          "surface": "roof",
+          "pass": 1,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "buildingId": "building-1"
+        },
+        {
+          "x": 31,
+          "y": 4,
+          "z": 17,
+          "surface": "roof",
+          "pass": 1,
+          "walls": {},
+          "coverProvided": 0,
+          "blocksLos": false,
+          "buildingId": "building-1"
+        }
+      ]
+    }
+  ]
+}

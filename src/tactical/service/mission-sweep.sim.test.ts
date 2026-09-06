@@ -1,4 +1,5 @@
 /// <reference types="node" />
+import { writeFileSync } from "node:fs";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { MISSION_TYPES } from "../../content/data/mission-types";
@@ -396,11 +397,13 @@ describe("seeded tactical sweep", () => {
     elapsedMs = performance.now() - started;
     // Opt-in deterministic evidence for unit conversions and balance PRs.
     if (process.env.SIM_REPORT !== undefined) {
-      console.info(
-        "SIM_REPORT " +
-          JSON.stringify(
-            runs.map(({ startMs: _start, driveMs: _drive, ...run }) => run),
-          ),
+      writeFileSync(
+        process.env.SIM_REPORT,
+        JSON.stringify(
+          runs.map(({ startMs: _start, driveMs: _drive, ...run }) => run),
+          null,
+          2,
+        ) + "\n",
       );
     }
   });

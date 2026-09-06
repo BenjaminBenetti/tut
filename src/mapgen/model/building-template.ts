@@ -27,6 +27,34 @@ export interface BuildingTemplate {
   readonly windowDensity: number;
   /** Settlement scales the kind appears in. Never empty. */
   readonly scales: readonly SettlementScale[];
-  /** Smallest room edge the room partitioner may produce. */
-  readonly minRoomSize: number;
+  /** How the interior pass cuts each floor into rooms (ADR 0009 §2.4). */
+  readonly interior: InteriorPlan;
+}
+
+/**
+ * The shape of a building's interior as a structure a squad fights
+ * through (#829): rooms of a target size opening onto a corridor, or,
+ * where the footprint is too narrow for one, rooms opening into each
+ * other.
+ *
+ * ```
+ *   +------+---+----------+
+ *   | room | c | room     |    corridorWidth = 1, roomSize 3..5
+ *   +--D---+ o +----D-----+    D = door onto the corridor
+ *   | room | r | room     |
+ *   +------+---+----------+
+ * ```
+ */
+export interface InteriorPlan {
+  /**
+   * Room edge the partitioner aims for, in tiles: no room edge is shorter
+   * than `min`, and a room is cut again while an edge exceeds `max`.
+   */
+  readonly roomSize: IntRange;
+  /**
+   * Corridor width in tiles along the footprint's long axis, shared by
+   * every floor so stairs land in it; 0 means no corridor. Narrowed or
+   * dropped when the footprint cannot hold a room on both sides.
+   */
+  readonly corridorWidth: number;
 }

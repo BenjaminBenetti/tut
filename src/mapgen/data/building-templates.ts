@@ -33,7 +33,7 @@ export const BUILDING_TEMPLATES: Readonly<
     roofWalkable: false,
     windowDensity: 0.3,
     scales: ["rural", "town", "city"],
-    minRoomSize: 2,
+    interior: { roomSize: { min: 3, max: 5 }, corridorWidth: 1 },
   },
   shop: {
     id: "shop",
@@ -44,7 +44,8 @@ export const BUILDING_TEMPLATES: Readonly<
     roofWalkable: true,
     windowDensity: 0.3,
     scales: ["town", "city"],
-    minRoomSize: 3,
+    // A shop is its floor and the rooms behind it; no corridor.
+    interior: { roomSize: { min: 4, max: 7 }, corridorWidth: 0 },
   },
   warehouse: {
     id: "warehouse",
@@ -55,7 +56,8 @@ export const BUILDING_TEMPLATES: Readonly<
     roofWalkable: true,
     windowDensity: 0.15,
     scales: ["rural", "town", "city"],
-    minRoomSize: 4,
+    // Bays, not rooms: wide and open, cover comes from the shelving.
+    interior: { roomSize: { min: 6, max: 10 }, corridorWidth: 0 },
   },
   apartment: {
     id: "apartment",
@@ -66,7 +68,7 @@ export const BUILDING_TEMPLATES: Readonly<
     roofWalkable: true,
     windowDensity: 0.3,
     scales: ["town", "city"],
-    minRoomSize: 2,
+    interior: { roomSize: { min: 3, max: 5 }, corridorWidth: 2 },
   },
   tower: {
     id: "tower",
@@ -77,6 +79,6 @@ export const BUILDING_TEMPLATES: Readonly<
     roofWalkable: true,
     windowDensity: 0.6,
     scales: ["town", "city"],
-    minRoomSize: 2,
+    interior: { roomSize: { min: 3, max: 5 }, corridorWidth: 2 },
   },
 };

@@ -180,7 +180,9 @@ describe("shipped three-sided terrain geometry (#849)", () => {
     });
     expect(tops).toHaveLength(2);
     expect(mouthTops).toHaveLength(4);
-    expect(new Set([...tops, ...mouthTops].map((m) => m.material)).size).toBe(1);
+    expect(new Set([...tops, ...mouthTops].map((m) => m.material)).size).toBe(
+      1,
+    );
     view.dispose();
   });
 });

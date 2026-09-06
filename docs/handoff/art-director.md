@@ -1,8 +1,155 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-06 (#891 accepted and merged as #893; art queue clear)
+Last updated: 2026-09-06 (#916 accepted and merged; #911 footprint next)
 
-## Current status: #891 complete; bounded event watch
+## Current status: #916 complete; #911 footprint next
+
+**PR #925 merged as `0d4a168be4b1639dbe634a51e6fc4b6442c93bc4`.**
+[Director acceptance](https://github.com/BenjaminBenetti/tut/pull/925#issuecomment-5562347058)
+covers the house, rotated view, indoor ghost frames and unchanged flat-roof
+control. No revision requested. The revealed interior is dark; the Director
+wants the Critic to assess that during play, not an immediate lighting retune.
+[Tech Lead's independent green gate](https://github.com/BenjaminBenetti/tut/pull/925#issuecomment-5562331141)
+confirmed deterministic fog captures, zero map-region differences, the missing
+uniform binding and the full validation below. Map Critic's merged-picture
+re-check is pending.
+
+#910 also merged through #926 as `fd032fdf01d18abcbc65390e47ecbf06d5a91340`.
+The standing #911 dropship assignment is now unblocked for footprint and
+placement agreement; Art has claimed that stage in
+[comment 5562423843](https://github.com/BenjaminBenetti/tut/issues/911#issuecomment-5562423843).
+Proposed envelope is 5×7 tiles including wings/tail/lowered ramp, at most 3.6 u
+high, base-centred on the landing contacts, glTF +Z nose. Nose toward the map
+boundary, rear ramp toward the clear deployment area; preserve its 16 unit
+positions and shared extraction identity. Current deploy zones are flat blobs,
+not a cleared aircraft footprint. MapGen must confirm or adjust the envelope,
+placement record and clearance before modelling. No dropship asset has been
+started. MapGen is also assigned #915 next; the contract request does not
+change that priority.
+
+Codex Art Director, **gpt-6-astra xhigh**. The Director explicitly promoted #916
+in the CLI after the initial diagnosis, overriding the earlier #911 queue hold.
+[Claim and routing](https://github.com/BenjaminBenetti/tut/issues/916#issuecomment-5562110698).
+Branch `fix/916-nonwalkable-roofs`, baseline `e093702`, model/runtime checkpoint
+`a5f4deb`. Main through `5adfd12` merged normally (handoffs only, including #922).
+The complete rendered proof is committed at `9159421`; final head `e3d049f`
+adds only the handoff link.
+
+[Complete before/after, controls, kit and reproduction](../design/diagnostics/916/README.md).
+[Cause stated before building](https://github.com/BenjaminBenetti/tut/issues/916#issuecomment-5562040887):
+pitched non-walkable houses have a roof record but correctly no walkable roof
+tiles; graphics previously drew only the latter. Furnishing/occupancy is not
+the trigger. Each reported rural recipe now gets 120 visual caps over its two
+houses. The flat-roof control retains all 294 slabs and four stair landings.
+No map-generation or gameplay data changes.
+
+`building.roof-pitched`: Blender loop, 20 triangles / 2,744 bytes / watertight,
+1×1 base-centred cap in the shared roof atlas. All three angles opened and
+committed. The consumer fits three profile heights, including an odd-width
+ridge, and closes gables at the top-storey wall line. Profiles share materials
+and mist across buildings/levels. Each cap follows the highest real building
+tile below for fog, including stairwell holes. Early level cuts remain applied
+when asynchronous art introduces a new visual level.
+
+**The required cutaway render found a pre-existing missing uniform binding.**
+[Finding stated before the shader repair](https://github.com/BenjaminBenetti/tut/issues/916#issuecomment-5562204710).
+`GhostController` updated `uGhostStrength` and GLSL used it, but
+`applyGhostCutaway` never bound it. On baseline, controller on/off changed zero
+pixels even under an existing flat roof. The fix is the missing binding; the
+radius, opacity floor, fade timing, depth test and visible-unit source stay as
+specified. Map Lab does not drive that controller, so the committed indoor
+controls use real TacticalSceneBuilder/GhostController/SceneService assembly.
+The squad is now revealed locally; after it leaves the roof returns to the
+byte-identical closed frame. Do not claim the old controller actually revealed
+indoor units: the rendered control disproved that assumption.
+
+Preservation proof: **zero changed pixels and byte-identical** for the existing
+flat-roof overview, fixed-camera flat-roof close-up with controller off, and
+reported house's top-floor cut. Main house at two angles, temperate/snowy
+units-off overviews, indoor off/on/leave controls and three Blender angles are
+rendered and inspected. Both fog frames and the standard no-fog overview are
+refreshed and inspected. The fog differences are confined to the rightmost
+16-pixel UI strip, outside the map region; comparison bounds/hashes committed.
+
+Validation: eight actual-GLB roof regressions, shared-uniform regression,
+2,154 unit tests / one skipped, seven sim tests, typecheck/build, and 59 browser
+tests / 27 opt-in skips / zero flaky. Two standard capture specs pass. The
+cutaway capture also asserts a real pixel change and closure after the unit
+leaves. Final `pnpm lint` passes with the complete evidence set.
+
+Scratch `.git/art-916/`. Baseline worktree at `e093702`; the isolated Vite 4198
+and 4199 capture servers are stopped before re-arming ONE watch. No model or
+provider-capacity error has occurred. The watch already detects newly created
+and newly labelled/relabelled `area:art` issues; the earlier wait was the
+Producer's explicit dependency order, now superseded for #916. Never stop or
+switch model for a transient capacity failure; retry it.
+
+## Next after #916
+
+Director judges frames, Tech Lead alone merges, Map Critic re-checks afterward.
+#906/#913 is accepted and merged; Critic re-check remains pending. Handoff #922
+merged as `8cb60cb`. #910's merged fix supersedes the old platform taste hold.
+#911 TDF dropship: Art owns model/footprint, MapGen placement/clearance; agree
+the footprint and exact placement on the issue before building. Extraction
+deliberately stays at deploy. #915 waterfront endings and #917 isolated fences
+are MapGen-owned. Legacy production stays held.
+PR #912 establishes the five-ticket Critic cap and defect test.
+
+When otherwise waiting, use ONE bounded watcher in `.git/art-director-watch/`:
+REST through `gh`, at least five minutes between polls, first relevant event
+exits, hard stop after three hours. Watch own PRs, standing art issues and
+#910/#911/#916 dependencies; no cron. Timeout with no event: say so and stop.
+
+## Completed: #906 building foundations
+
+The bounded watch stayed healthy through the quiet hold, then reported #740's
+blocked metadata update and the new #905/#906 Map Critic reports. #900's merged
+instructions make evidenced Critic tickets an ongoing exception. #906 was the
+first active ticket; the later platform ruling and current queue are above.
+Director confirmed this seat owns #906 in comment 5561643308.
+
+**PR #913 merged as `24bdd8f949132f729e25264419f6228fca161c8c`.** Director
+accepted the full-size pairs in comment 5561976819: the voids are gone, concrete
+reads as foundation, the ladder is grounded, and the grounded control has zero
+changed pixels. Tech Lead approved in comment 5561809272 after an independent
+full green gate, including identical regenerated fog hashes. No review change
+was requested. Map Critic's post-merge re-check is still pending.
+
+[PR #913](https://github.com/BenjaminBenetti/tut/pull/913), branch `fix/906-building-foundations`,
+base `3a9fc50`, model/code checkpoint `a76cb7b`, proof `5b957a2`. Main through
+`75c1068` merged normally as `e54bf46` (Critic evidence and handoffs only). The graphics diagnosis was posted **before modelling** in
+comment 5561572589: `buildTiles` drew ground pillars only without `buildingId`,
+so elevated floor-zero tiles had no visible solid support. MapGen independently
+agreed, checking all 669 footprint columns in both maps (5561657314): graded
+correctly, no missing ground-floor tiles. Map data remains untouched.
+
+`tile.foundation.concrete` is a Blender-authored concrete course, 12 triangles,
+2,212 bytes, watertight, 1×1 footprint and shared `RISE = 0.75`. All three angles
+were opened. The live consumer repeats courses below floor zero and fits the
+last to the actual floor/stair base. The real floor GLB is base-centred despite
+the older resolver comment describing a centred slab; its base is at the
+half-slab placement drop. Real-GLB tests caught and closed a 0.025-u trial slit.
+Foundation ids use the terrain prefix so unit cutaways never delete the support;
+loader and mist materials share across level batches. Upper storeys stay hollow.
+
+[Before/after, control, three angles, cause and contract](../design/diagnostics/906/README.md).
+Final snowy and desert examples use both angles, plus the Director's already
+grounded building control in the same desert seed. Both fog frames are refreshed
+and byte-identical to main; the standard no-fog control is refreshed too. All
+frames are opened before committing. Twelve actual-GLB regressions pass, plus
+2,146 unit tests / one skipped, seven sim tests, typecheck, ESLint and build.
+All 59 browser tests pass, 27 opt-in captures skipped, zero flaky. Final
+`pnpm lint` passes. Both views of the already-grounded building, including its
+west entrance, are byte-identical before/after; hashes are committed. All twelve
+comparison frames and the three model angles are rendered and inspected.
+
+Scratch `.git/art-906/`; task-owned Vite ports 4196 (current) / 4197 (baseline)
+use separate `.git/art-906/vite-cache-*` directories. Both servers are stopped.
+Shared node_modules/.vite caches caused an early capture reload; isolated caches
+resolved it. Director judges frames, Tech Lead alone merges, and Map Critic
+re-checks the rendered improvement. Keep #906 in the watch for that re-check.
+
+## Completed: #891 materialled ladders
 
 Codex Art Director, gpt-6-astra xhigh. The bounded watch reported the Director's
 new #891 assignment, explicitly authorised whenever the art queue is clear.
@@ -127,8 +274,8 @@ was this handoff, resolved to retain both completed tasks. No runtime change
 relative to main. Resume ONE bounded watch for own PRs and standing art events.
 Tech Lead alone merges; no new production work without direction.
 
-#849 remains open because its broader 522-tile category was only partly
-covered: 173 ends plus 173 mouths fit the new shape, preserving four-high pits
+#849 is closed following the #902 board audit; its broader 522-tile category
+was only partly covered by design: 173 ends plus 173 mouths fit the new shape, preserving four-high pits
 and protected/unmatched boundaries. [Accepted proof and contract](../design/diagnostics/849/README.md).
 
 ## Completed: #848 diagonal slope kit, PR #862

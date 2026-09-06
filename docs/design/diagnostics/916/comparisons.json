@@ -1,0 +1,86 @@
+{
+  "baseline": "e093702",
+  "method": "Raw PNG SHA-256 and decoded RGBA pixel equality; no tolerance or image edits.",
+  "comparisons": [
+    {
+      "id": "house-floor",
+      "beforeSha256": "a56bd3fcdb003f495eac121d52c1458413c258f5d027865d5e09d974272a5936",
+      "afterSha256": "a56bd3fcdb003f495eac121d52c1458413c258f5d027865d5e09d974272a5936",
+      "byteIdentical": true,
+      "changedPixels": 0,
+      "changeBounds": null
+    },
+    {
+      "id": "flat-roof-control",
+      "beforeSha256": "4b218c8ce832b6c8680a4355b558aa3899e0602ee6e9775be202a624fada6cac",
+      "afterSha256": "4b218c8ce832b6c8680a4355b558aa3899e0602ee6e9775be202a624fada6cac",
+      "byteIdentical": true,
+      "changedPixels": 0,
+      "changeBounds": null
+    },
+    {
+      "id": "flat-ghost-0",
+      "beforeSha256": "ea9ea5f2c3ca4b6cae72f3146dc972e63c888830dda40bc59771849d4d7d389b",
+      "afterSha256": "ea9ea5f2c3ca4b6cae72f3146dc972e63c888830dda40bc59771849d4d7d389b",
+      "byteIdentical": true,
+      "changedPixels": 0,
+      "changeBounds": null
+    },
+    {
+      "id": "before-pitched-ghost-off-on",
+      "beforeSha256": "a76d06974717c44f7f3395cdc89f0a54f593edd74b0d05cc573d1c01b49742db",
+      "afterSha256": "a76d06974717c44f7f3395cdc89f0a54f593edd74b0d05cc573d1c01b49742db",
+      "byteIdentical": true,
+      "changedPixels": 0,
+      "changeBounds": null
+    },
+    {
+      "id": "before-flat-ghost-off-on",
+      "beforeSha256": "ea9ea5f2c3ca4b6cae72f3146dc972e63c888830dda40bc59771849d4d7d389b",
+      "afterSha256": "ea9ea5f2c3ca4b6cae72f3146dc972e63c888830dda40bc59771849d4d7d389b",
+      "byteIdentical": true,
+      "changedPixels": 0,
+      "changeBounds": null
+    },
+    {
+      "id": "after-pitched-ghost-off-on",
+      "beforeSha256": "52bb89a8f8a4d1e7659bb0bb68c62229144fb8ff132db36fa7cdb65c6107f111",
+      "afterSha256": "45ac79314bbe0a2d159b6443a34b1e2819df7c9b4804512c57b2c5453647aef7",
+      "byteIdentical": false,
+      "changedPixels": 35932,
+      "changeBounds": [448, 370, 753, 671]
+    },
+    {
+      "id": "after-flat-ghost-off-on",
+      "beforeSha256": "ea9ea5f2c3ca4b6cae72f3146dc972e63c888830dda40bc59771849d4d7d389b",
+      "afterSha256": "41c7c2d4a556d07942c10dbcaff508d597014cd37ae1efca0a3c63e706968fa1",
+      "byteIdentical": false,
+      "changedPixels": 35887,
+      "changeBounds": [448, 374, 753, 671]
+    },
+    {
+      "id": "after-pitched-closed-unit-left",
+      "beforeSha256": "52bb89a8f8a4d1e7659bb0bb68c62229144fb8ff132db36fa7cdb65c6107f111",
+      "afterSha256": "52bb89a8f8a4d1e7659bb0bb68c62229144fb8ff132db36fa7cdb65c6107f111",
+      "byteIdentical": true,
+      "changedPixels": 0,
+      "changeBounds": null
+    },
+    {
+      "id": "docs/design/tactical-fog-of-war.png",
+      "beforeSha256": "60000d873eac5c2ef037b356f8adabde91b1a447485f91fb6abd08f7e5eb159d",
+      "afterSha256": "a0cee3575ba698bf24c600da0b16b5d29a09cdf7ecf5e159bee5adc2cf01a5c2",
+      "byteIdentical": false,
+      "changedPixels": 1822,
+      "changeBounds": [1264, 215, 1280, 338]
+    },
+    {
+      "id": "docs/design/tactical-fog-of-war-turn7.png",
+      "beforeSha256": "f637c99b2702224728b7ecace0585702f043acc79a3b01fb18377d89b452f4bd",
+      "afterSha256": "6e704bcfa6f5731cc5456b2f6c060e950dcb708b4579bc73016a7b08dd1c99c4",
+      "byteIdentical": false,
+      "changedPixels": 2606,
+      "changeBounds": [1264, 215, 1280, 387]
+    }
+  ]
+}

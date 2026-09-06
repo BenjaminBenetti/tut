@@ -39,6 +39,10 @@ import type {
   LadderFinish,
 } from "../model/ladder-appearance";
 import { LadderModelFactory } from "../service/ladder-model-factory";
+import type { PitchedRoofAppearance } from "../model/pitched-roof-appearance";
+import { PitchedRoofModelFactory } from "../service/pitched-roof-model-factory";
+import { pitchedRoofKey } from "../service/pitched-roof-model-resolver";
+import { foundationHeight } from "../service/foundation-model-resolver";
 import type { RampAppearance } from "../model/ramp-appearance";
 import type { TerrainSlopeAppearance } from "../model/terrain-slope-appearance";
 import { TerrainTransitionModelFactory } from "../service/terrain-transition-model-factory";
@@ -269,6 +273,7 @@ export class TacticalMapView implements Disposable, TilePicker {
   /** Materialised slope/ramp prototypes shared across levels and rotations. */
   private readonly slopeModels = new Map<string, Group>();
   private readonly ladderModels = new Map<LadderFinish, Group>();
+  private readonly roofModels = new Map<string, Group>();
   private readonly roadModels = new Map<string, Group>();
   private readonly terrainModels = new Map<string, Group>();
   private readonly disposables: Disposable[] = [];
@@ -288,6 +293,8 @@ export class TacticalMapView implements Disposable, TilePicker {
   /** The vision last applied, indexed, and replayed onto anything built afterwards. */
   private vision: IndexedVision | undefined;
   private modelled = false;
+  /** Retain an early floor cut when asynchronously loaded art adds a new visual level. */
+  private maxLevel: number | undefined;
   private readonly unexploredFog: UnexploredFog;
 
   // ===========================================
@@ -331,6 +338,7 @@ export class TacticalMapView implements Disposable, TilePicker {
    * everything. Used by the preview's level slider.
    */
   setMaxLevel(maxLevel: number | undefined): void {
+    this.maxLevel = maxLevel;
     for (const [level, group] of this.levelGroups) {
       group.visible = maxLevel === undefined || level <= maxLevel;
     }
@@ -369,6 +377,8 @@ export class TacticalMapView implements Disposable, TilePicker {
     await models.preload(mapModelIds(placements));
     const categories: readonly [string, readonly ModelPlacement[]][] = [
       ["tiles", placements.tiles],
+      ["foundations", placements.foundations],
+      ["roofs", placements.roofs],
       ["walls", placements.walls],
       ["props", placements.props],
       ["ramps", placements.connectors.filter((p) => p.ramp !== undefined)],
@@ -381,7 +391,13 @@ export class TacticalMapView implements Disposable, TilePicker {
     // stairs plank retires because the stairs tile's own model now draws
     // the staircase (#766). Ground pillars stay: they are the earth
     // beneath the surface slab, not a stand-in for it.
-    for (const label of [TILES_SLAB, "walls", "props", "connectors"]) {
+    for (const label of [
+      TILES_SLAB,
+      "foundations",
+      "walls",
+      "props",
+      "connectors",
+    ]) {
       this.retirePlaceholders(label);
     }
     for (const placement of placements.connectors) {
@@ -412,6 +428,7 @@ export class TacticalMapView implements Disposable, TilePicker {
         road?: RoadAppearance;
         ramp?: RampAppearance;
         ladder?: LadderAppearance;
+        roof?: PitchedRoofAppearance;
         terrain?: { appearance: TerrainSlopeAppearance; tile: Tile };
       }
     >();
@@ -422,11 +439,12 @@ export class TacticalMapView implements Disposable, TilePicker {
       const road = placement.road;
       const ramp = placement.ramp;
       const ladder = placement.ladder;
+      const roof = placement.roof;
       const terrain =
         placement.terrain && tile
           ? { appearance: placement.terrain, tile }
           : undefined;
-      const key = `${placement.modelId}:${String(placement.level)}${slopeTile ? `:${slopeTile.surface}` : ""}${road ? `:road:${roadAppearanceKey(road)}` : ""}${ramp ? `:ramp:${ramp.surface}` : ""}${ladder ? `:ladder:${ladder.finish}` : ""}${terrain ? `:terrain:${terrainPrototypeKey(terrain.appearance, tile!.surface)}` : ""}`;
+      const key = `${placement.modelId}:${String(placement.level)}${slopeTile ? `:${slopeTile.surface}` : ""}${road ? `:road:${roadAppearanceKey(road)}` : ""}${ramp ? `:ramp:${ramp.surface}` : ""}${ladder ? `:ladder:${ladder.finish}` : ""}${roof ? `:roof:${pitchedRoofKey(roof)}` : ""}${terrain ? `:terrain:${terrainPrototypeKey(terrain.appearance, tile!.surface)}` : ""}`;
       const matrix = placementMatrix(placement);
       const tileKey = this.index.keyOf(placement.tile);
       const batch = batches.get(key);
@@ -440,6 +458,7 @@ export class TacticalMapView implements Disposable, TilePicker {
           road,
           ramp,
           ladder,
+          roof,
           terrain,
         });
       } else {
@@ -448,29 +467,31 @@ export class TacticalMapView implements Disposable, TilePicker {
       }
     }
     for (const [key, batch] of batches) {
-      const prototype = batch.ladder
-        ? await this.ladderPrototype(batch.ladder.finish, models)
-        : batch.ramp
-          ? await this.parameterisedPrototype(
-              "ramp",
-              batch.ramp.surface,
-              models,
-            )
-          : batch.terrain
-            ? await this.terrainPrototype(
-                batch.terrain.appearance,
-                batch.terrain.tile,
+      const prototype = batch.roof
+        ? await this.roofPrototype(batch.roof, models)
+        : batch.ladder
+          ? await this.ladderPrototype(batch.ladder.finish, models)
+          : batch.ramp
+            ? await this.parameterisedPrototype(
+                "ramp",
+                batch.ramp.surface,
                 models,
               )
-            : batch.road
-              ? await this.roadPrototype(batch.road, models)
-              : batch.slopeTile
-                ? await this.parameterisedPrototype(
-                    batch.slopeTile.slope!.kind,
-                    batch.slopeTile.surface,
-                    models,
-                  )
-                : await models.load(batch.modelId);
+            : batch.terrain
+              ? await this.terrainPrototype(
+                  batch.terrain.appearance,
+                  batch.terrain.tile,
+                  models,
+                )
+              : batch.road
+                ? await this.roadPrototype(batch.road, models)
+                : batch.slopeTile
+                  ? await this.parameterisedPrototype(
+                      batch.slopeTile.slope!.kind,
+                      batch.slopeTile.surface,
+                      models,
+                    )
+                  : await models.load(batch.modelId);
       prototype.updateMatrixWorld(true);
       meshPartsOf(prototype).forEach((part, i) => {
         // Walls are what stands between the camera and a unit, so they
@@ -526,6 +547,24 @@ export class TacticalMapView implements Disposable, TilePicker {
           this.disposables.push((object as Mesh).geometry);
       });
       this.ladderModels.set(finish, prototype);
+    }
+    return prototype;
+  }
+
+  /** Shares fitted roof geometry and its borrowed material across buildings and levels. */
+  private async roofPrototype(
+    roof: PitchedRoofAppearance,
+    models: ModelLoader,
+  ): Promise<Group> {
+    const key = pitchedRoofKey(roof);
+    let prototype = this.roofModels.get(key);
+    if (prototype === undefined) {
+      prototype = await new PitchedRoofModelFactory(models).create(roof);
+      prototype.traverse((object) => {
+        if (object instanceof Mesh)
+          this.disposables.push((object as Mesh).geometry);
+      });
+      this.roofModels.set(key, prototype);
     }
     return prototype;
   }
@@ -786,6 +825,7 @@ export class TacticalMapView implements Disposable, TilePicker {
       material.dispose();
     }
     this.ghostMaterials.clear();
+    this.roofModels.clear();
     this.slopeModels.clear();
     this.ladderModels.clear();
     this.roadModels.clear();
@@ -807,10 +847,24 @@ export class TacticalMapView implements Disposable, TilePicker {
   private buildTiles(): void {
     const ground = new Map<string, Batch>();
     const slabs = new Map<string, Batch>();
+    const foundations = new Map<string, Batch>();
     for (const tile of this.map.tiles) {
       const colour = SURFACE_COLOURS[tile.surface] ?? FALLBACK_SURFACE_COLOUR;
       const top = tileTop(tile.y);
       const isGround = tile.buildingId === undefined;
+      const support = foundationHeight(tile);
+      if (support > 0) {
+        // Floor zero also owns the implicit solid below it (#906). The
+        // textured foundation kit retires this support box after loading.
+        pushBatch(
+          foundations,
+          `foundation:${tile.y}`,
+          colour,
+          tile.y,
+          boxMatrix(tile.x + 0.5, support / 2, tile.z + 0.5, 1, support, 1),
+          this.index.keyOf(tile),
+        );
+      }
       if (tile.slope !== undefined) {
         // A hillside piece (#799): the column below stays a ground box and
         // a wedge rises from this tile's top to the next level. A straight
@@ -846,6 +900,7 @@ export class TacticalMapView implements Disposable, TilePicker {
     }
     this.flushBatches(ground, TILES_GROUND);
     this.flushBatches(slabs, TILES_SLAB);
+    this.flushBatches(foundations, "foundations");
   }
 
   // ===========================================
@@ -1213,6 +1268,7 @@ export class TacticalMapView implements Disposable, TilePicker {
     if (group === undefined) {
       group = new Group();
       group.name = `level-${level}`;
+      group.visible = this.maxLevel === undefined || level <= this.maxLevel;
       this.levelGroups.set(level, group);
       this.root.add(group);
     }

@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-06 ~18:05 UTC (session 5; Map Critic seat stood up (#900), MapGen on Astra 6 xhigh (#899); expect a trickle of area:mapgen/area:art PRs as the ongoing exception; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-06 ~22:30 UTC (session 5; four Map Critic repairs landed today (#913, #925, #926, #932); only #918 (critic docs, prettier) is open; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — production is paused; only #748 is live
 
@@ -30,7 +30,50 @@ fleet instance `map-critic`. Looks at rendered maps, files evidenced
 opens behaviour PRs (diagnostic crops are fine). Its tickets flow to MapGen
 and the Art Director as an **ongoing exception to the production hold**; the
 Director judges every frame before you merge, as usual. Role doc
-`docs/process/roles/map-critic.md`.
+`docs/process/roles/map-critic.md`. **#912** raised the cap to five and ruled
+that something generated where a real place would not have one is a defect.
+
+**Map Critic loop so far:** opening survey #907 `f43f73c` (108 recipes,
+docs); first ticket **#906 (buildings over black gaps) → #913 (Art
+Director) — MERGED `24bdd8f`** on the Director's verdict: a concrete
+foundation course per layer under every floor-zero building tile
+(`foundation-model-resolver`), placeholder box retires under `foundations`,
+grounded buildings byte-identical, fog frames byte-identical from my own
+render. Its calibration evidence PR #918 is red on prettier (three JSON
+sidecars); the critic was told the exact command and it fast-tracks on green.
+Review shape for these: gate, fog hashes from my own render, frames viewed
+at 1.5×, one comment, merge on the verdict.
+
+**#916 (no roofs on intact houses) → #925 (Art Director) — MERGED
+`0d4a168`.** A pitched non-walkable roof cap fitted per profile
+(`pitched-roof-model-resolver` / `-factory`, style knob in
+`data/pitched-roof-style.ts`), plus a real pre-existing cutaway bug:
+`uGhostStrength` was declared and read in the shader but never bound in
+`applyGhostCutaway`, so the local reveal never worked; one line fixes it.
+Fog frames change in the rightmost 16-px UI strip only (I split the diff by
+column: 0 map-region pixels) and my render of the merged tree matched the
+committed PNGs byte for byte. The Director called it the best piece of work
+of the day.
+
+**#910 (blank railed paved platforms, ED ruling: a defect) → #926 (MapGen) —
+MERGED `fd032fd`.** `maxPerMap: 0` on podium and plaza (data knob typed
+through `ElevatedFeature`); proposals are still planned on the occupied grid
+with the same RNG draws and the over-limit plots are restored to original
+ground before parapets, so the 213 planted beds keep their exact footprints
+(the filter-and-shrink alternative produced 377 beds and was rejected).
+Paved platforms 187 → 0 on the 108-recipe matrix; sim 7/7 before and after;
+one city golden re-pinned.
+
+**#915 (coastal streets end mid-carriageway at water) → #932 (MapGen) —
+MERGED `121f397`.** New `waterfronts` pass between `interiors` and `props`
+(`coastal-road-pass.ts`, tuning `apronDepth: 3` typed by
+`CoastalRoadTuning`): a shore-facing carriageway (run ≥ lanes + depth, group
+≥ one carriageway wide) ends before a three-row pavement apron railed on the
+water line; road → sidewalk on existing dry paved tiles only, segments
+trimmed, shore-parallel roads untouched (control pixel-identical). 156 apron
+groups on 69/72 coastal maps, all mech-accessible; sim identical to
+baseline; coastal golden re-pinned. Nit asked for: an ADR 0004 §7 row for
+the pass. **Every Map Critic PR today needed no code change from review.**
 
 ### The #748 split — all three children closed (07:30 UTC)
 

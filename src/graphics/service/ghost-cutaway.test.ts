@@ -53,6 +53,10 @@ describe("ghost cutaway (#526)", () => {
 
     expect(shaderA.uniforms.uGhostCentres).toBe(shaderB.uniforms.uGhostCentres);
     expect(shaderA.uniforms.uGhostCount).toBe(uniforms.uGhostCount);
+    // The controller updates this live array; without its binding the GPU
+    // keeps every centre at zero strength, so an indoor unit stays hidden.
+    expect(shaderA.uniforms.uGhostStrength).toBe(uniforms.uGhostStrength);
+    expect(shaderB.uniforms.uGhostStrength).toBe(uniforms.uGhostStrength);
   });
 
   it("declares the loop bound as a constant and reads view position", () => {

@@ -561,6 +561,14 @@ export const MODEL_MANIFEST = {
     sockets: [],
     quality: "final",
   },
+  "building.roof-pitched": {
+    category: "buildings",
+    path: "assets/models/buildings/building-roof-pitched.glb",
+    footprint: { w: 1, d: 1 },
+    height: 0.37,
+    sockets: [],
+    quality: "final",
+  },
   "building.roof-parapet": {
     category: "buildings",
     path: "assets/models/buildings/roof-parapet.glb",
@@ -708,6 +716,14 @@ export const MODEL_MANIFEST = {
   "tile.slope.three-sided": {
     category: "tiles",
     path: "assets/models/tiles/terrain-slope-three-sided.glb",
+    footprint: { w: 1, d: 1 },
+    height: 0.75,
+    sockets: [],
+    quality: "final",
+  },
+  "tile.foundation.concrete": {
+    category: "tiles",
+    path: "assets/models/tiles/tile-foundation-concrete.glb",
     footprint: { w: 1, d: 1 },
     height: 0.75,
     sockets: [],

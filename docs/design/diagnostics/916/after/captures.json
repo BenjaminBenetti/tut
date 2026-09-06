@@ -1,0 +1,96 @@
+[
+  {
+    "id": "house",
+    "seed": "mc-opening-01",
+    "biome": "temperate",
+    "settlement": "rural",
+    "size": "small",
+    "tile": {
+      "x": 24,
+      "y": 4,
+      "z": 15
+    },
+    "rotation": 0,
+    "pitch": 54.999999721384675,
+    "pixel": {
+      "x": 1384.0578653288867,
+      "y": 695.3747093649177
+    },
+    "url": "http://localhost:4199/mapgen-preview.html?seed=mc-opening-01&biome=temperate&settlement=rural&size=small&archetype=settlement&slope=100&models=1",
+    "levels": "all"
+  },
+  {
+    "id": "house-rotated",
+    "seed": "mc-opening-01",
+    "biome": "temperate",
+    "settlement": "rural",
+    "size": "small",
+    "tile": {
+      "x": 24,
+      "y": 4,
+      "z": 15
+    },
+    "rotation": 1,
+    "pitch": 54.99999972138434,
+    "pixel": {
+      "x": 1443.5735316379678,
+      "y": 763.8747095042257
+    },
+    "url": "http://localhost:4199/mapgen-preview.html?seed=mc-opening-01&biome=temperate&settlement=rural&size=small&archetype=settlement&slope=100&models=1",
+    "levels": "all"
+  },
+  {
+    "id": "house-floor",
+    "seed": "mc-opening-01",
+    "biome": "temperate",
+    "settlement": "rural",
+    "size": "small",
+    "tile": {
+      "x": 24,
+      "y": 4,
+      "z": 15
+    },
+    "rotation": 0,
+    "maxLevel": 4,
+    "pitch": 54.999999721384675,
+    "pixel": {
+      "x": 1384.0578653288867,
+      "y": 695.3747093649177
+    },
+    "url": "http://localhost:4199/mapgen-preview.html?seed=mc-opening-01&biome=temperate&settlement=rural&size=small&archetype=settlement&slope=100&models=1",
+    "levels": 4
+  },
+  {
+    "id": "temperate-units0",
+    "seed": "mc-opening-01",
+    "biome": "temperate",
+    "settlement": "rural",
+    "size": "small",
+    "units": 0,
+    "url": "http://localhost:4199/mapgen-preview.html?seed=mc-opening-01&biome=temperate&settlement=rural&size=small&archetype=settlement&slope=100&models=1",
+    "camera": "initial framing",
+    "levels": "all"
+  },
+  {
+    "id": "snowy-units0",
+    "seed": "mc-opening-01",
+    "biome": "snowy",
+    "settlement": "rural",
+    "size": "small",
+    "units": 0,
+    "url": "http://localhost:4199/mapgen-preview.html?seed=mc-opening-01&biome=snowy&settlement=rural&size=small&archetype=settlement&slope=100&models=1",
+    "camera": "initial framing",
+    "levels": "all"
+  },
+  {
+    "id": "flat-roof-control",
+    "seed": "mc-opening-02",
+    "biome": "temperate",
+    "settlement": "town",
+    "size": "small",
+    "units": 0,
+    "url": "http://localhost:4199/mapgen-preview.html?seed=mc-opening-02&biome=temperate&settlement=town&size=small&archetype=settlement&slope=100&models=1",
+    "camera": "initial framing",
+    "levels": "all"
+  }
+]

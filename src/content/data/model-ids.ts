@@ -83,6 +83,7 @@ export const MODEL_IDS = [
   // Buildings
   "building.floor",
   "building.roof",
+  "building.roof-pitched",
   "building.roof-parapet",
   "building.stairs",
   "building.ladder",
@@ -104,6 +105,7 @@ export const MODEL_IDS = [
   "tile.slope.diagonal",
   "tile.slope.three-sided",
   "tile.ramp.connector",
+  "tile.foundation.concrete",
 ] as const;
 
 /** A registered model id. */

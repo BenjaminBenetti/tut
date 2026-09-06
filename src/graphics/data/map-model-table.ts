@@ -85,6 +85,14 @@ export const RAMP_CONNECTOR_MODEL =
 /** A repeatable, wall-mounted steel ladder section spanning one shared RISE. */
 export const LADDER_CONNECTOR_MODEL = "building.ladder" satisfies ModelAssetId;
 
+/** A solid concrete course under floor zero; terrain ids never receive wall cutaways. */
+export const FOUNDATION_MODEL =
+  "tile.foundation.concrete" satisfies ModelAssetId;
+
+/** Visual shelter for pitched roof records, which deliberately have no walkable roof tile. */
+export const PITCHED_ROOF_MODEL =
+  "building.roof-pitched" satisfies ModelAssetId;
+
 /** Neutral shapes that borrow ground/terrace materials in the shared factory. */
 export const PARAMETERISED_TERRAIN_MODELS = {
   ...SLOPE_MODELS,

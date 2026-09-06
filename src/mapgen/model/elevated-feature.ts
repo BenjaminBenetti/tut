@@ -46,4 +46,10 @@ export interface ElevatedFeature {
   readonly weight: number;
   /** Settlement scales the feature belongs in. */
   readonly scales: readonly SettlementScale[];
+  /**
+   * Maximum realised placements per map; absent means unlimited. Excess
+   * proposals leave open ground while reserving their footprint in the
+   * placement plan, so withdrawing a family does not displace the others.
+   */
+  readonly maxPerMap?: number;
 }

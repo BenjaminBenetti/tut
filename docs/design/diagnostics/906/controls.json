@@ -1,0 +1,31 @@
+{
+  "baselineCommit": "3a9fc50",
+  "fog": [
+    {
+      "file": "docs/design/tactical-fog-of-war.png",
+      "baseline": "60000d873eac5c2ef037b356f8adabde91b1a447485f91fb6abd08f7e5eb159d",
+      "actual": "60000d873eac5c2ef037b356f8adabde91b1a447485f91fb6abd08f7e5eb159d",
+      "identical": true
+    },
+    {
+      "file": "docs/design/tactical-fog-of-war-turn7.png",
+      "baseline": "f637c99b2702224728b7ecace0585702f043acc79a3b01fb18377d89b452f4bd",
+      "actual": "f637c99b2702224728b7ecace0585702f043acc79a3b01fb18377d89b452f4bd",
+      "identical": true
+    }
+  ],
+  "grounded": [
+    {
+      "name": "desert-grounded",
+      "before": "41ae8b6c4c847392571b0c8505b6f0f14a5c71e02e44b05d4de7a7fe88a7f437",
+      "after": "41ae8b6c4c847392571b0c8505b6f0f14a5c71e02e44b05d4de7a7fe88a7f437",
+      "identical": true
+    },
+    {
+      "name": "desert-grounded-entrance",
+      "before": "fb893eee41fa3bf0b9bf2edf5200ee4dbd86ed0af0eafb24730f3c5dd836e74d",
+      "after": "fb893eee41fa3bf0b9bf2edf5200ee4dbd86ed0af0eafb24730f3c5dd836e74d",
+      "identical": true
+    }
+  ]
+}

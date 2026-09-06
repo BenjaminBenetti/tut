@@ -13,7 +13,10 @@ import { terrainSlopeRise } from "./terrain-slope-rise";
 import type { RoadAppearance } from "../model/road-appearance";
 import type { TerrainSlopeAppearance } from "../model/terrain-slope-appearance";
 import type { LadderAppearance } from "../model/ladder-appearance";
+import type { PitchedRoofAppearance } from "../model/pitched-roof-appearance";
+import { resolvePitchedRoofModels } from "./pitched-roof-model-resolver";
 import { resolveLadderModels } from "./ladder-model-resolver";
+import { resolveFoundationModels } from "./foundation-model-resolver";
 import type { RampAppearance } from "../model/ramp-appearance";
 import { resolveRampModels } from "./ramp-model-resolver";
 import { resolveTerrainSlopeAppearances } from "./terrain-slope-resolver";
@@ -63,6 +66,8 @@ export interface ModelPlacement {
   readonly ramp?: RampAppearance;
   /** A repeated wall-mounted section with a finish shared by the whole ladder. */
   readonly ladder?: LadderAppearance;
+  /** A non-walkable roof cap, fitted and cached by its upper profile. */
+  readonly roof?: PitchedRoofAppearance;
   /**
    * The tile this belongs to. Carried so the renderer can dim or drop it
    * with that tile's vision (#551) — a wall is only ever as visible as
@@ -74,6 +79,8 @@ export interface ModelPlacement {
 /** Everything on a map that resolves to a model, split by what it replaces. */
 export interface MapModelPlacements {
   readonly tiles: readonly ModelPlacement[];
+  readonly foundations: readonly ModelPlacement[];
+  readonly roofs: readonly ModelPlacement[];
   readonly walls: readonly ModelPlacement[];
   readonly props: readonly ModelPlacement[];
   readonly connectors: readonly ModelPlacement[];
@@ -151,6 +158,8 @@ export function resolveMapModels(
   );
   return {
     tiles: resolveTiles(map, index, rampFeet, roads),
+    foundations: resolveFoundationModels(map),
+    roofs: resolvePitchedRoofModels(map, index),
     walls,
     props: resolveProps(map, index),
     connectors,
@@ -164,6 +173,8 @@ export function mapModelIds(
   const ids = new Set<ModelAssetId>();
   for (const group of [
     placements.tiles,
+    placements.foundations,
+    placements.roofs,
     placements.walls,
     placements.props,
     placements.connectors,

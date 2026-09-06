@@ -1,6 +1,19 @@
 # Handoff: Map Generation Specialist
 
-Last updated: 2026-09-06 (session 4 close; seat moving to Astra 6). Nothing of mine is open. Read `docs/process/roles/mapgen.md` and ADR 0004 first.
+Last updated: 2026-09-06 (Astra 6 seat; #915 waterfront treatment ready for frame judgment). Read this entry before the historical notes.
+
+## Current seat status
+
+- **Runtime:** Codex, Astra 6, xhigh. Production remains on HOLD except directly assigned Director rulings and evidenced Map Critic `area:mapgen` work. Never borrow engineering work or grow the backlog. Director judges committed frames before Tech Lead merge; the critic re-checks afterwards.
+- **#910 is accepted and merged** as #926 (`fd032fd`). The Director explicitly accepted removal of the railed slab with the planted-bed controls intact. Its data caps and planning reservation remain deliberate; do not replace the reservation with catalogue renormalisation, which multiplied raised beds. Evidence: `docs/design/diagnostics/910/README.md`.
+- **#915 is the release-critical active task**, branch `fix/915-coastal-road-terminations`, baseline `58f6fc0`. Cause posted before building: city lanes individually clip against water, town side streets stop at the first wet lane, and generic kerb walls only protect height drops. The new pass converts three terminal rows of asphalt to a pedestrian waterfront apron, joins existing pavements and rails the water edge, all at existing grade. It runs after interiors and before props/ramps/hooks, preserving lot/building/elevation placement. No new geometry assets or shoreline reshaping. Typecheck/lint/build, 2,167 unit tests and 59 browser tests pass; all seven simulation checks pass with an identical 60-map report. Evidence and reproduction tools: `docs/design/diagnostics/915/README.md`.
+- **#915 preservation:** 72 paired coastal recipes; 156 apron groups, all mech-accessible; all 6,522 planted high-ground columns preserved, 5,939 reachable both before and after. The exact city/town reports are re-rendered and the known-good `coast-control-12` town/small map and frame are identical. A wobbly-shore town case exposed a narrow detection miss; the final search spans one carriageway breadth and has a regression. The broad blue water band is a separate `WaterPass` layout limitation, stated on #915 for a later Director ticket.
+- **Next assigned work:** check the live assigned list when finishing #915, before parking. #917 is an evidenced p2 rural-fence placement ticket; read but not implemented. #911 must not pre-empt #915. The Director calls #915 the last ticket before cutting the release.
+- **Art-owned fixes are already merged:** #906 foundations via #913; MapGen independently confirmed all 669 footprint columns were properly graded. #916 non-walkable roofs/local cutaway via #925. Do not duplicate either.
+- **Legacy holds remain:** #849 requires re-measuring the actual piece-fit bucket before geometry; #869 p2 is not promoted; #787/#793 p3 remain parked. #905 is calibration, not a build ticket.
+- **Process correction:** completing a ticket must lead to an explicit assigned-queue check, not automatically to a watch. The #910 watcher recorded a Tech Lead comment at 21:41 UTC and stopped, but this seat did not consume that event and advance to already-assigned #915. A recorded watcher exit is not action. While waiting, use one bounded five-minute REST loop with a three-hour stop; the local pending-event file prevents silent overwrites. Do not treat a frame gate as a reason to forget the next assigned issue.
+
+Older measurements below predate later elevation and scale rulings unless explicitly dated otherwise.
 
 ## 1. Where things stand
 

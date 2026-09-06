@@ -42,6 +42,9 @@ export const ELEVATED_FEATURES: readonly ElevatedFeature[] = [
     breadth: { min: 6, max: 9 },
     weight: 3,
     scales: ["city"],
+    // #910: leave these proposals as open ground. Keep their planning
+    // draws so the accepted planted beds retain their positions and sizes.
+    maxPerMap: 0,
   },
   {
     id: "plaza",
@@ -51,6 +54,7 @@ export const ELEVATED_FEATURES: readonly ElevatedFeature[] = [
     breadth: { min: 4, max: 7 },
     weight: 4,
     scales: ["city"],
+    maxPerMap: 0,
   },
   {
     // Not placed since #785: the elevation pass skips every feature whose

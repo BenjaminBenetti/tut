@@ -21,6 +21,7 @@ export type DraftCapability =
   | "elevation"
   | "buildings"
   | "interiors"
+  | "waterfronts"
   | "props"
   | "slopes"
   | "ramps"

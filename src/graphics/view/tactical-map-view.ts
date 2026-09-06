@@ -239,6 +239,8 @@ export class TacticalMapView implements Disposable, TilePicker {
   private readonly index: TileIndex;
   private readonly levelGroups = new Map<number, Group>();
   private readonly materials = new Map<string, Material>();
+  /** One scene-specific cutaway per prototype, also shared by the mist cache. */
+  private readonly ghostMaterials = new Map<Material, Material>();
   private readonly disposables: Disposable[] = [];
   private readonly unitBox = new BoxGeometry(1, 1, 1);
   private readonly raycaster = new Raycaster();
@@ -400,16 +402,13 @@ export class TacticalMapView implements Disposable, TilePicker {
           this.ghostUniforms !== undefined &&
           batch.modelId.startsWith(GHOSTED_MODEL_PREFIX) &&
           prototypeMaterial !== undefined
-            ? applyGhostCutaway(prototypeMaterial, this.ghostUniforms)
+            ? this.ghostMaterial(prototypeMaterial)
             : part.material;
         const mesh = new InstancedMesh(
           part.geometry,
           material,
           batch.matrices.length,
         );
-        if (material !== part.material && !Array.isArray(material)) {
-          this.disposables.push(material);
-        }
         batch.matrices.forEach((cell, j) => {
           mesh.setMatrixAt(j, new Matrix4().multiplyMatrices(cell, part.local));
         });
@@ -588,6 +587,7 @@ export class TacticalMapView implements Disposable, TilePicker {
     for (const material of this.materials.values()) {
       material.dispose();
     }
+    this.ghostMaterials.clear();
     this.root.removeFromParent();
   }
 
@@ -738,7 +738,11 @@ export class TacticalMapView implements Disposable, TilePicker {
           ? this.ladderMesh(connector)
           : this.plankMesh(connector);
       mesh.name = connector.id;
-      this.unexploredFog.trackSurface(mesh, [this.index.keyOf(connector.to)]);
+      this.unexploredFog.trackSurface(
+        mesh,
+        [this.index.keyOf(connector.to)],
+        "exclusive",
+      );
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       const material = mesh.material as MeshStandardMaterial;
@@ -865,6 +869,17 @@ export class TacticalMapView implements Disposable, TilePicker {
   // ===========================================
   // Shared helpers
   // ===========================================
+
+  /** Keeps building cutaway clones stable across levels of the same model. */
+  private ghostMaterial(prototype: Material): Material {
+    let material = this.ghostMaterials.get(prototype);
+    if (material === undefined) {
+      material = applyGhostCutaway(prototype, this.ghostUniforms!);
+      this.ghostMaterials.set(prototype, material);
+      this.disposables.push(material);
+    }
+    return material;
+  }
 
   /** Turns accumulated batches into one `InstancedMesh` each, hung on their level. */
   private flushBatches(

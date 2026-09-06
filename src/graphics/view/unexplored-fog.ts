@@ -1,5 +1,6 @@
 import {
   BufferAttribute,
+  BufferGeometry,
   Color,
   InstancedBufferAttribute,
   InstancedMesh,
@@ -13,6 +14,7 @@ import {
   ShaderMaterial,
   Vector2,
 } from "three";
+import type { Material } from "three";
 
 import type { TileGridSource } from "../../mapgen/model/tactical-map";
 import {
@@ -66,6 +68,13 @@ export class UnexploredFog implements Disposable {
     keys: readonly number[];
   }[] = [];
   private readonly surfaceResources: Disposable[] = [];
+  /** Scene-owned augmentations: batch count must not multiply material setup. */
+  private readonly surfaceMaterials = new Map<Material, Material>();
+  /** One private copy of vertex/index buffers per loader prototype. */
+  private readonly surfaceGeometries = new Map<
+    BufferGeometry,
+    BufferGeometry
+  >();
   private known: ReadonlySet<number> | undefined;
 
   /** Builds three shared-geometry sheets per populated level, hidden until vision arrives. */
@@ -86,9 +95,24 @@ export class UnexploredFog implements Disposable {
     for (const [level, fog] of this.levels) groupFor(level).add(fog.root);
   }
 
-  /** Gives every terrain mesh its own coverage attribute and mist material. */
-  trackSurface(mesh: Mesh, keys: readonly number[]): void {
-    const geometry = mesh.geometry.clone();
+  /**
+   * Gives each batch independent coverage, sharing the augmented prototype
+   * material and vertex buffers. Exclusive geometry already belongs to the
+   * caller (connectors); attach coverage in place and leave disposal to it.
+   */
+  trackSurface(
+    mesh: Mesh,
+    keys: readonly number[],
+    ownership: "shared" | "exclusive" = "shared",
+  ): void {
+    // Unique material IDs used to draw batches in construction order. Keep
+    // that order explicitly when materials are shared: coincident wall seams
+    // must retain the same depth-test winner. Terrain stays below overlay 1.
+    mesh.renderOrder = 1 - 1 / (this.surfaces.length + 2);
+    const geometry =
+      ownership === "exclusive"
+        ? mesh.geometry
+        : this.surfaceGeometry(mesh.geometry);
     const ownerKeys =
       mesh instanceof InstancedMesh
         ? keys
@@ -114,9 +138,8 @@ export class UnexploredFog implements Disposable {
     mesh.geometry = geometry;
     const materials = (
       Array.isArray(mesh.material) ? mesh.material : [mesh.material]
-    ).map(withUnexploredMist);
+    ).map((base) => this.surfaceMaterial(base));
     mesh.material = Array.isArray(mesh.material) ? materials : materials[0]!;
-    this.surfaceResources.push(geometry, ...materials);
     this.surfaces.push({ coverage, keys: ownerKeys });
     this.updateSurface(coverage, ownerKeys);
   }
@@ -153,10 +176,53 @@ export class UnexploredFog implements Disposable {
     for (const material of this.materials) material.dispose();
     this.geometry.dispose();
     for (const resource of this.surfaceResources) resource.dispose();
+    for (const material of this.surfaceMaterials.values()) material.dispose();
+    this.surfaceMaterials.clear();
+    this.surfaceGeometries.clear();
   }
 
   // ===========================================
-  // Level construction
+  // Surface resources
+  // ===========================================
+
+  /** Memoises by source identity, preserving each prototype's shader hooks. */
+  private surfaceMaterial(base: Material): Material {
+    let material = this.surfaceMaterials.get(base);
+    if (material === undefined) {
+      material = withUnexploredMist(base);
+      this.surfaceMaterials.set(base, material);
+    }
+    return material;
+  }
+
+  /**
+   * Copies prototype buffers once, then gives each batch a lightweight
+   * geometry wrapper. A shared wrapper would overwrite another batch's
+   * coverage attribute; sharing loader-owned buffers would dispose them
+   * with this scene. Only the private vertex/index buffers are shared.
+   */
+  private surfaceGeometry(base: BufferGeometry): BufferGeometry {
+    let prototype = this.surfaceGeometries.get(base);
+    if (prototype === undefined) {
+      prototype = base.clone();
+      this.surfaceGeometries.set(base, prototype);
+      this.surfaceResources.push(prototype);
+    }
+    const geometry = new BufferGeometry();
+    geometry.index = prototype.index;
+    geometry.attributes = { ...prototype.attributes };
+    geometry.morphAttributes = prototype.morphAttributes;
+    geometry.morphTargetsRelative = prototype.morphTargetsRelative;
+    geometry.groups = prototype.groups;
+    geometry.drawRange = prototype.drawRange;
+    geometry.boundingBox = prototype.boundingBox;
+    geometry.boundingSphere = prototype.boundingSphere;
+    this.surfaceResources.push(geometry);
+    return geometry;
+  }
+
+  // ===========================================
+  // Coverage and levels
   // ===========================================
 
   /** Writes per-owner exploration, also for geometry loaded after vision was set. */

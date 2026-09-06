@@ -3,7 +3,7 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-06 09:59 UTC)
+## Status Digest (2026-09-06 10:03 UTC)
 
 **Production ON HOLD** (#748). The Executive Director tunes Map Lab; only his named exceptions proceed. No M3 decomposition or Ready growth beyond those exceptions. **v0.2.9** is tagged (main 148b179; scale plus road kit); general production has not resumed.
 
@@ -27,13 +27,13 @@
 
 **Ramp parent #813:** In Progress, Producer coordination. **#847 J2 / PR #853 Done**: Director accepted all three frames; CI and all seven Tech Lead merge-result checks green (2001 unit tests, 59 e2e, no flakes). Draft audit reports wedge share 88.7→95.6% and sixteen coordinate regressions. **#848 J1 In Progress, Art Director cutting the diagonal piece**. **#849 J3 Blocked on #848**, accepted for now, no speculative second piece. N1 channels are not a defect.
 
-**QA rerun #860:** **In Review, QA**, delta delivered against the tree before J2 merged. Corrected an unchecked border lookup that wrapped into the next/previous row: original baseline **36,830 steps / 87.1% wedged / 95 border tiles**; new-scale baseline **74,627 / 88.7% / 60**, now matching MapGen exactly. J2 held its shape and share (8.3→8.5%); J1's longest chain grew to **4**; J3 stayed 0.7%. Four-chain and fresh lot-margin crops remain missing because the capture harness cannot centre those border locations.
+**QA rerun #860:** **Done / merged**, delta delivered against the tree before J2 merged. Corrected an unchecked border lookup that wrapped into the next/previous row: original baseline **36,830 steps / 87.1% wedged / 95 border tiles**; new-scale baseline **74,627 / 88.7% / 60**, now matching MapGen exactly. J2 held its shape and share (8.3→8.5%); J1's longest chain grew to **4**; J3 stayed 0.7%. Four-chain and fresh lot-margin crops remain missing because the capture harness cannot centre those border locations.
 
 **New K2 finding, unfiled:** MapGen reproduced the two-layer road drop with valid, bidirectional ramp connectors. The fixed-length rendered plank is too short for the 1.5-unit rise; candidate fix is graphics span sizing or art integration. **Await Director routing/issue and tier**, not seatable yet. QA's 7,360 paved two-layer tiles are a population, not a count of missing connectors or rendering defects; measure short planks. One-layer paved steps read as kerbs and remain intentionally excluded from dirt wedges.
 
 **Other open PRs:** #757/#694 mech-bay preview remains In Review under the Director's exception, content approved, awaiting final merge/frame gates. Existing Art Director ownership retained; route an author update only if the gate requires one. Tech Lead handoff #851 closed unmerged; replacement #855 merged / Done; #859 merged / Done, recording J2 completion. **#856 Done**: measured 120-second CI unit-test budget (20 seconds locally); Tech Lead self-merged with CI and all seven merge-result checks green. **#852 Done**: firing-sweep CI timeout fixed (four runner seeds, full twelve locally, measured 120-second budget); Tech Lead self-merged with CI and gate green. Producer handoff #858 merged; this pass opens its successor.
 
-**Blocked / parked:** #849 waits for #848; #860 awaits review, with two missing exhibits; K2 awaits Director routing. General production and M3 held; #787 parked; #793 p3. All engineer seats idle; Ready-high audit found only held M3 #447.
+**Blocked / parked:** #849 waits for #848; the audit delta is merged, with two missing exhibits; K2 awaits Director routing. General production and M3 held; #787 parked; #793 p3. All engineer seats idle; Ready-high audit found only held M3 #447.
 
 **Risks:** #856 resolves the recorded runner timeout budget; per-test CI matrix reductions remain a possible improvement, not newly queued work. J2 is gated and merged. Use #860's corrected audit counts and updated issue coordinates; old border counts are invalid. K2 is a graphics finding awaiting a scoped issue, not authorization to alter generation or cut speculative art. A 96² city save is reported at 1.5 MB; balance changes stay on #734. Inherited autofill permits wrong tiers; do not run it.
 

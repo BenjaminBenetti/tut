@@ -3,7 +3,7 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-06 07:09 UTC)
+## Status Digest (2026-09-06 07:17 UTC)
 
 **Production ON HOLD** (#748). The Executive Director tunes Map Lab; only his named exceptions proceed. No M3 decomposition or Ready growth beyond those exceptions. **v0.2.8** is tagged; general production has not resumed.
 
@@ -23,7 +23,7 @@
 
 **Ramp audit (#813):** p1, **In Progress with QA**. Commit a catalogue of failing slope neighbourhoods across seeds/biomes/settlements before art or MapGen fix design. Runs alongside #826; rerun after #829 changes scale.
 
-**In review / open PRs** (07:06 UTC watch): #836 Tech Lead handoff, newly opened; **#757/#694 mech-bay preview**, unparked by Director, content approved, awaiting Tech Lead merge gate and Director frame judgment. Existing Art Director ownership retained; route an author update only if the gate requires one. This pass opens the successor to #834.
+**In review / open PRs** (07:16 UTC watch): #837 this Producer handoff; #836 Tech Lead handoff merged and Done; **#757/#694 mech-bay preview**, unparked by Director, content approved, awaiting Tech Lead merge gate and Director frame judgment. Existing Art Director ownership retained; route an author update only if the gate requires one. This pass opens the successor to #834.
 
 **Blocked / parked:** #813 fix design waits for QA's catalogue. M3 and general production held; #787 parked; #793 p3. Ready-high audit at 07:08 UTC found only held M3 #447; all three engineer seats have no open assignment.
 

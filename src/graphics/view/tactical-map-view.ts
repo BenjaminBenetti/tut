@@ -954,8 +954,11 @@ export class TacticalMapView implements Disposable, TilePicker {
     const rise = to.y - from.y;
     const dx = to.x - from.x;
     const dz = to.z - from.z;
+    // The plank spans the whole climb: a fixed length reached only half
+    // way up a two-layer rise and left the road seam reading as a void
+    // with a stub at its foot (#863, exhibit K2).
     const geometry = new BoxGeometry(
-      PLANK.length,
+      Math.max(PLANK.length, Math.hypot(dx, dz, rise)),
       PLANK.thickness,
       PLANK.width,
     );

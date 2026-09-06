@@ -18,6 +18,7 @@ describe("settlement pipeline", () => {
       "props",
       "slopes",
       "ramps",
+      "kerbs",
       "hooks",
       "connectivity",
     ]);

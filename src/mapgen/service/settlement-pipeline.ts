@@ -8,6 +8,7 @@ import { InteriorPass } from "../generator/interior-pass";
 import { LotPass } from "../generator/lot-pass";
 import { PropPass } from "../generator/prop-pass";
 import { RampPass } from "../generator/ramp-pass";
+import { KerbPass } from "../generator/kerb-pass";
 import { SlopePass } from "../generator/slope-pass";
 import { RoadPass } from "../generator/road-pass";
 import { TerrainPass } from "../generator/terrain-pass";
@@ -39,6 +40,7 @@ export function createSettlementPasses(): GenerationPass[] {
     new PropPass(),
     new SlopePass(),
     new RampPass(),
+    new KerbPass(),
     new HookPass(),
     new ConnectivityPass(),
   ];

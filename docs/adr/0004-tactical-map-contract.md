@@ -490,6 +490,7 @@ RNG fork, records diagnostics, then runs `validateTacticalMap`.
 | 5b | `interiors` | `buildings` | `interiors` | Lays one plan per building (ADR 0009 §2.4): a corridor along the long axis, shared by every floor, with a strip of rooms of the template's target size on each side, one door per room onto it and deep strips bisected again behind their front room; a footprint too narrow for a corridor is bisected with a door per cut. Places stairs (interior holes first, landing in the corridor above when one exists; verified to keep the building connected), roof tiles and exterior ladders. |
 | 6 | `props` | `interiors` | `props` | Vegetation from the biome's prop table (kinds with a `cluster` range grow copses and boulder fields at the same expected density); street props on straight, bypassable road columns of any lane count; yard clutter beside buildings; every room furnished from its kind's `RoomFurnishing` entry, each placement verified not to cut the building off. Never blocks doors or connector ends. |
 | 7 | `ramps` | `props` | `ramps` | Ensures ground-level connectivity: BFS over ground columns; where a two-layer step separates components, emits ramps; larger steps stay cliffs (routes go around). |
+| 7a | `kerbs` | `ramps` | `kerbs` | Walls every paved edge that drops two or more layers and carries neither a connector nor a wall: a half wall on the high side, mirrored (#863). A one-layer paved step stays a bare kerb by design. |
 | 8 | `hooks` | `ramps` | `hooks` | For each `HookRequirement`, resolves a `HookPlacer` from the registry and runs it (§7.4). Placers share one frozen snapshot of the draft to prefer reachable tiles; egg spawners also keep at least six infantry-reachable tiles within their hatch radius. |
 | 9 | `connectivity` | `hooks` | `connected` | Checks I7. Repairs along the route needing the fewest changes (remove a blocking prop, open a door in a building wall, add a ramp across a two-layer step); relocates the hook only when no repairable route exists. Logs every repair to diagnostics so the preview shows them. |
 | 10 | freeze + validate | `connected` | – | Not a pass: `generateTacticalMap` denormalises `pass` and `coverProvided`, computes `levels`, freezes the draft into `TacticalMap` and validates (a `GenerationPass` cannot return a map). |
@@ -547,7 +548,7 @@ src/mapgen/
               map-recipe, tactical-map, map-draft, generation-pass, registries
   data/       surfaces, props, biomes, settlements, building-templates, map-sizes, hook-placers
   generator/  terrain-pass, water-pass, road-pass (+ road/ builders), lot-pass, building-pass,
-              interior-pass (+ interior/ partitioner, stair placer), prop-pass, ramp-pass, hook-pass,
+              interior-pass (+ interior/ partitioner, stair placer), prop-pass, ramp-pass, kerb-pass, hook-pass,
               connectivity-pass, placer/{deploy,egg-spawner,edge-spawn,extraction,default-hook-placers}
   service/    generate-tactical-map (entry), pipeline-map-generator, settlement-pipeline (factory),
               draft-freezer, draft-queries, ground-components, tile-index, reachability-service,

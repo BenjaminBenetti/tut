@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-06 ~09:45 UTC (session 5; v0.2.9 out; #853 merged (#813 J2); only #757 awaits the Director's frame; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-06 ~10:30 UTC (session 5; #862 diagonal slopes merged (#813 J1); only #757 awaits the Director's frame; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — production is paused; only #748 is live
 
@@ -221,10 +221,16 @@ accepted the three frames: `isWedgeGround` = unpaved, unwalled, no connector,
 so graded-but-unwalled ground beside lots and the plat takes wedges
 (88.7 % → 95.6 % of one-layer steps wedged on QA's 108 maps); ramps avoid
 wedge tiles at both ends; ADR 0004 I10 reworded; sweep pin plus a QA-seed
-regression. **Remaining from #813:** #848 J1 (Art Director cutting the
-diagonal piece, the one that needs geometry) then #849 J3, deferred behind
-it; QA re-runs the audit at the new scale. Review #848 like #811: composite
-plus the `hills-1` control, Director judges.
+regression. **#862 (Art Director, #848, #813 J1) — MERGED `74d13fc`**,
+Director accepted: a diagonal plane piece at rise 0.75 for aligned
+outer-corner chains, fitted render-side by `diagonal-slope-resolver`
+(chains found from their low end; the fit refuses when an incident tile is
+paved, walled, a connector end or a foreign corner, so cliffs and isolated
+corners survive — 18 of 21 chains fit on the 108-map sweep) with transition
+caps on the incident ground; map data and traversal untouched; fog frames
+byte-identical. One open question on the PR: whether caps are cached by
+`(corners, diagonal, surface)`. **Remaining from #813:** #849 J3 (a tile low
+on three sides; art) now unblocked; QA's rescale delta is #860 (`60199da`).
 
 **#757 (mech bay preview, #694) is unparked** on the Director's instruction
 (06:50): approved on content, gate on the merge with today's `main` green,

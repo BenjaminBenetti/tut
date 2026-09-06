@@ -50,6 +50,11 @@ captures skipped, zero retries (2.6 minutes). Composite capture passes. Both
 seed-4242 fog frames are regenerated, opened and byte-identical to main.
 Scratch is `.git/art-848/`; the baseline worktree is pinned at `e671c01`.
 
+QA's rescale delta is PR #860. Its K2 two-layer road drop has valid ramp
+connectors; MapGen traced the short drawing to `plankMesh`'s fixed box length.
+This is recorded on #813 for the Director's routing decision, not assigned
+to this seat yet. The #862 capture script reaches QA's edge-bound four-chain.
+
 Next: address review on this branch, then ONE bounded event watch. The
 Director judges the pictures; Tech Lead alone merges. No speculative #849
 piece. No new production work without direction.

@@ -1,6 +1,6 @@
 # Handoff: Map Generation Specialist
 
-Last updated: 2026-09-04 17:20 UTC (session 3, update 8). Read `docs/process/roles/mapgen.md` and ADR 0004 first.
+Last updated: 2026-09-06 07:05 UTC (session 4, #829 open). Read `docs/process/roles/mapgen.md` and ADR 0004 first.
 
 ## 1. Where things stand
 
@@ -66,6 +66,13 @@ Last updated: 2026-09-04 17:20 UTC (session 3, update 8). Read `docs/process/rol
   #281** and my option 2 is the recommendation of record, pre-checked clean against the sweep (§3e).
   Measured and posted: the **emergence** half of #685 and the visibility-break numbers (§3d), and
   two findings handed to #497 (§3g).
+
+- **Session 4 (2026-09-06) — scale (#829, epic #826, ADR 0009).** Maps 48²/72²/96², roads as
+  carriageways (trail 2 / streets 3 / grid 4 lanes, `sidewalkWidth` 1 / 2), lots and footprints
+  doubled, interiors as structures (one corridor plan per building, room-size targets, a door per
+  room, interior cover tables, stairs ranked to land in the corridor), a three-floor guarantee, and
+  the nearest egg spawner within 30 of deploy. §2d has the shape, §7 the gotchas. Earlier in the
+  session: #765 (`?models=1`), #769, #789, #801, #823 (half steps, I11, #817 classification).
 
 ## 2. Pipeline as built
 
@@ -173,6 +180,41 @@ Two things it settled that the sketch in #447 could not:
 Known gaps, listed rather than papered over: no wreck (wants art), and no vegetation — but note that
 the earlier claim here, that its cover deficit "follows from the missing vegetation", was wrong. The
 prototype sits at 137 props and 18.2 % beside cover, which is a rural settlement's range already.
+
+## 2d. Scale (#829, ADR 0009, 2026-09-06)
+
+Every factor is a knob in `mapgen/data/`, recorded with its reason in ADR 0009 §5 and the PR body.
+The shape of the change, pass by pass:
+
+- **Roads.** `RoadLine.columns` lists every column of one position along the road together; the
+  road pass groups them by position (`groupByPosition`), chunks `CHUNK_LENGTH` *positions*, and
+  never ends a chunk between two positions that both touch another line's mouth (`chunkPositions`
+  / `mouths`), so a three-lane side street meets one level. A step gets one ramp per lane
+  (`adjacentPairs`). Sidewalks paint ring by ring to `sidewalkWidth`. Trail and streets stamp lanes
+  themselves; the grid still lays one line per lane (flat levelling makes that safe).
+- **Resolver.** `fitJunction` classifies a tile with three or four same-surface neighbours as a
+  junction only when the run through it is at least `JUNCTION_EXTENT` (6) on both axes; otherwise
+  it is a straight along the longer run. A 4×4 crossing is a box of cross pieces. The kit has no
+  slab, kerb or centre-line piece — that is the art child (ADR 0009 §3c).
+- **Lots.** `LOT_GAP` 2, `EDGE_MARGIN` 2, `REFERENCE_AREA` 72², setback = `sidewalkWidth`.
+- **Buildings.** `ensureMultiStorey` re-plans one lot with the tallest fitting template so some
+  building reaches `TALL_FLOORS` (3) where the settlement allows it (`fittingTemplates` /
+  `sizePlan` are the shared halves of `planBuilding`).
+- **Interiors.** `BuildingTemplate.interior: InteriorPlan` (`roomSize`, `corridorWidth`) replaces
+  `minRoomSize`. `planFloor` lays the corridor once per building (narrowing, then dropping it, when
+  the footprint cannot hold a room on both sides); `partitionFloor` cuts each strip beside it into
+  segments of `roomSize` with one door onto the corridor each, a door between neighbours by
+  `SUITE_DOOR_CHANCE`, and bisects a strip deep enough for two rooms. Without a corridor the old
+  recursive split runs, but now cuts while an edge exceeds `roomSize.max`. Room kind `corridor`
+  furnishes with a crate or two; the entrance room stays `hall` even when it is the corridor.
+  `placeStairs` takes the upper floor's rooms and ranks candidates interior-hole → landing in a
+  corridor/hall → rising from one.
+- **Hooks.** `HookRequirement.maxNearestDistanceFromDeploy` (egg spawner 30): the first spawner is
+  drawn from candidates within it when any exist. Without it a 72² map put the nearest spawner 11–17
+  mech turns out on five of twelve shipped maps.
+- **Map Lab.** `?floor=N` cuts the view through building floor N (`showLevelCut`); an Interiors
+  stats row (`footprintMean`, `roomsPerFloor`, `corridorBuildings`). The capture spec has a 300 s
+  budget and writes the large city's frame rate beside its shot.
 
 ## 3. Measurements (medium maps, 8 seeds per cell, `main` before #269; desert and ramps moved as noted below)
 
@@ -655,3 +697,11 @@ re-derived.
   first version of #512 was caught paving every yard.
 - The Tech Lead merges minutes after a rebase; expect "stale info" on a push to mean "already merged".
 - Every GitHub comment starts with `**MapGen** · TUT agent`.
+- **Scale (#829).** A wide road makes every tile inside it look like a junction to any rule that
+  counts road neighbours; use run extents, and remember side-street mouths are wider than one column
+  when levelling. Golden re-pinning: `scratchpad/repin.py` pairs the `- "checksum": N` /
+  `+ "checksum": N` lines of the sweep's diff (numbers, not strings). The lurker seed-sweep test in
+  `src/bugs/ai/` runs on the shipped `mission-2:map` and moves with any generator change; it was
+  left red on #829 for the bug-AI owner rather than edited. The `objective-reachability` engagement
+  budget (10 mech turns at 4 steps a turn) is the pin that scale trips first — check the nearest
+  spawner before the sweep.

@@ -1,6 +1,17 @@
 # Handoff: Map Generation Specialist
 
-Last updated: 2026-09-06 (session 4 close; seat moving to Astra 6). Nothing of mine is open. Read `docs/process/roles/mapgen.md` and ADR 0004 first.
+Last updated: 2026-09-06 (Astra 6 seat; #910 ready for Director frame judgment). Read the current entry below before the historical session notes.
+
+## Current seat status
+
+- **Runtime:** Codex, Astra 6, xhigh. Production stays on HOLD except directly routed Director rulings and evidenced Map Critic `area:mapgen` tickets. Work one at a time; do not borrow engineering work or grow the backlog. Every visible change needs committed frames, Director judgment before Tech Lead merge, and the critic's subsequent visual re-check.
+- **#910 first**, on the Director's explicit order. Branch `fix/910-limit-paved-platforms`, based on `e093702`. Cause posted on the issue before implementation: city-only podium/plaza proposals filled all 36 city maps in the 108-recipe opening matrix with 187 paved platforms. Final caps are zero; proposals reserve their normal planning footprint but become original, unraised ground before walls/props/ramps. This preserves all 213 soil/grass beds at exactly their old footprints, heights and surfaces. All remain mech-accessible (7,081 → 7,010 reachable bed tiles). Do not replace the reservation with filtering/renormalising the catalogue: that trial grew the bed count to 377 and rendered another raised platform in the criticised location. Evidence and reproduction tools are in `docs/design/diagnostics/910/README.md`: five before/after frame pairs and 108-recipe records. Typecheck, lint, build, 2,147 unit tests, seven simulation checks, 59 browser tests and the 1,200-map wide sweep pass. Director frame judgment and Tech Lead review/merge remain pending.
+- **#915 next**, coastal street endings. This direct order supersedes the older #911 sequencing in its body; stated on #915. Reproductions: coastal/city/medium `mc-opening-03`, focus `(51,1,40)`, and coastal/town/small `mc-opening-01`, focus `(37,2,14)`. No implementation started while #910 is active.
+- **#906 is Art's completed graphics fix (#913).** MapGen independently agreed on the issue: all 669 footprint columns in both reported recipes were graded correctly; `TacticalMapView` omitted the implicit solid under building ground floors. No generation repair was needed.
+- **Other work stays parked:** #849 requires re-measuring canonical masks against the piece's actual fit boundary before geometry; #869 p2 is not promoted; #787/#793 p3 stay parked. #905 is calibration, not a build ticket. Do not start #911 ahead of the explicitly assigned #915.
+- **Watch discipline:** one five-minute REST loop, three-hour limit, no cron. Check the existing issue queue before waiting, including Director-authored rulings, and consume a watcher exit before arming another. The previous loop actually recorded #915 at 20:00 UTC but the seat failed to act on its exit. The local watcher now persists unconsumed events and refuses to overwrite them; `.git/mapgen-watch-work.json` records the active issue, next issue and held items. A pending review is not permission to forget the next assigned ticket.
+
+Older measurements below predate later elevation and scale rulings unless explicitly dated otherwise.
 
 ## 1. Where things stand
 

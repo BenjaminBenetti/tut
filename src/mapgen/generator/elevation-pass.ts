@@ -13,7 +13,16 @@ import type {
 } from "../model/generation-pass";
 import type { MapDraft } from "../model/map-draft";
 import type { SettlementDefinition } from "../model/settlement-definition";
+import type { SurfaceId } from "../model/surface";
 import { areaFactor } from "./lot-pass";
+
+/** Original ground beneath a proposal that will remain open after planning. */
+interface OpenGroundColumn {
+  readonly x: number;
+  readonly z: number;
+  readonly y: number;
+  readonly surface: SurfaceId;
+}
 
 // ===========================================
 // Constants
@@ -115,6 +124,8 @@ export class ElevationPass implements GenerationPass {
     let columns = 0;
     const byId = new Map<string, number>();
     const missed = new Map<string, number>();
+    const omitted = new Map<string, number>();
+    const openGround: OpenGroundColumn[] = [];
     for (let i = 0; i < target; i++) {
       const feature = rng.pickWeighted(eligible, (entry) => entry.weight);
       const rect =
@@ -125,10 +136,31 @@ export class ElevationPass implements GenerationPass {
         missed.set(feature.id, (missed.get(feature.id) ?? 0) + 1);
         continue;
       }
-      columns += raise(draft, rect, feature, free, raised);
+      const count = byId.get(feature.id) ?? 0;
+      const omit = count >= (feature.maxPerMap ?? Number.POSITIVE_INFINITY);
+      if (omit) {
+        rememberGround(draft, rect, feature, openGround);
+      }
+      // Plan every proposal on the same occupied grid, including ones
+      // that will remain open. Otherwise removing a paved family moves
+      // the planted beds or fills its old plots with more raised ground.
+      const area = raise(draft, rect, feature, free, raised);
       sums = freeSums(draft, free);
-      byId.set(feature.id, (byId.get(feature.id) ?? 0) + 1);
+      if (omit) {
+        omitted.set(feature.id, (omitted.get(feature.id) ?? 0) + 1);
+        continue;
+      }
+      columns += area;
+      byId.set(feature.id, count + 1);
       placed++;
+    }
+    // Realise the plan before walls or any later pass sees it. Withdrawn
+    // proposals recover their original height and biome surface; only
+    // retained features receive parapets and subsequent ramps.
+    for (const tile of openGround) {
+      draft.setGroundLevel(tile.x, tile.z, tile.y);
+      draft.setGroundSurface(tile.x, tile.z, tile.surface);
+      raised[tile.z * draft.width + tile.x] = false;
     }
     const parapets = railRaisedEdges(draft, raised);
     const tally = [...byId.entries()]
@@ -137,11 +169,15 @@ export class ElevationPass implements GenerationPass {
     const misses = [...missed.entries()]
       .map(([id, count]) => `${id} ${count}`)
       .join(", ");
+    const vacancies = [...omitted.entries()]
+      .map(([id, count]) => `${id} ${count}`)
+      .join(", ");
     diagnostics.note(
       `${placed}/${target} elevated features, ${columns} columns raised, ` +
         `${parapets} parapets` +
         (tally === "" ? "" : ` (${tally})`) +
-        (misses === "" ? "" : ` · no room for ${misses}`),
+        (misses === "" ? "" : ` · no room for ${misses}`) +
+        (vacancies === "" ? "" : ` · left open: ${vacancies}`),
     );
   }
 }
@@ -613,6 +649,26 @@ function isLiftable(
 // ===========================================
 // Stamping
 // ===========================================
+
+/** Records only the columns a proposal stamps, so its plot can remain open. */
+function rememberGround(
+  draft: MapDraft,
+  rect: Rect,
+  feature: ElevatedFeature,
+  ground: OpenGroundColumn[],
+): void {
+  for (let z = rect.z; z < rect.z + rect.d; z++) {
+    for (let x = rect.x; x < rect.x + rect.w; x++) {
+      if (feature.shape === "mound" && isCorner(rect, x, z)) continue;
+      ground.push({
+        x,
+        z,
+        y: draft.groundLevelAt(x, z),
+        surface: draft.groundSurfaceAt(x, z),
+      });
+    }
+  }
+}
 
 /**
  * Raises the feature's columns and marks them taken; returns how many

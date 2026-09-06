@@ -1,0 +1,42 @@
+{
+  "id": "02-second-seed",
+  "seed": "mc-opening-02",
+  "biome": "temperate",
+  "size": "small",
+  "focus": {
+    "x": 32,
+    "y": 3,
+    "z": 34
+  },
+  "pitch": 55,
+  "url": "http://127.0.0.1:5173/mapgen-preview.html?seed=mc-opening-02&biome=temperate&settlement=city&size=small&models=1&units=1&slope=100",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "clip": {
+    "x": 790,
+    "y": 250,
+    "width": 1200,
+    "height": 1000
+  },
+  "camera": {
+    "yawIndex": 0,
+    "zoom": 67.36096792653689,
+    "target": {
+      "x": 32.5,
+      "y": 2.4,
+      "z": 34.5
+    },
+    "bounds": {
+      "x": 0,
+      "z": 0,
+      "w": 48,
+      "d": 48
+    },
+    "zoomRange": {
+      "min": 29.757410374933876,
+      "max": 192
+    }
+  }
+}

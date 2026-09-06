@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Terrain slope kit</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: #0b0d12;
+        color: #d8dde5;
+        font: 14px monospace;
+      }
+      #viewport {
+        width: 1440px;
+        height: 880px;
+      }
+      .caption {
+        position: absolute;
+        top: 24px;
+        left: 32px;
+      }
+      .materials {
+        position: absolute;
+        bottom: 28px;
+        left: 32px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="viewport"></div>
+    <div class="caption">
+      TERRAIN SLOPES · straight run / concave notch / convex corner
+    </div>
+    <div class="materials">
+      GRASS + SAND · shared terrain textures and cliff colours · one current
+      layer
+    </div>
+    <script type="module" src="./terrain-slopes.ts"></script>
+  </body>
+</html>

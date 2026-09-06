@@ -20,6 +20,7 @@
   "include": [
     "src",
     "tools/art/preview/vfx-harness.ts",
-    "tools/art/preview/radial-harness.ts"
+    "tools/art/preview/radial-harness.ts",
+    "tools/art/preview/terrain-slopes.ts"
   ]
 }

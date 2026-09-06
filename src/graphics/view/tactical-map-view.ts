@@ -55,6 +55,11 @@ import type { Disposable } from "../model/disposable";
 import type { ModelLoader } from "../model/model-loader";
 import type { TilePicker } from "../model/tile-picker";
 import { UnexploredFog } from "./unexplored-fog";
+import { surfaceModel } from "../data/map-model-table";
+import {
+  TerrainSlopeModelFactory,
+  slopeMaterialsFromGround,
+} from "../service/terrain-slope-model-factory";
 
 // ===========================================
 // Types
@@ -245,6 +250,8 @@ export class TacticalMapView implements Disposable, TilePicker {
   private readonly materials = new Map<string, Material>();
   /** One scene-specific cutaway per prototype, also shared by the mist cache. */
   private readonly ghostMaterials = new Map<Material, Material>();
+  /** Materialised slope prototypes shared across levels and rotations. */
+  private readonly slopeModels = new Map<string, Group>();
   private readonly disposables: Disposable[] = [];
   private readonly unitBox = new BoxGeometry(1, 1, 1);
   private readonly raycaster = new Raycaster();
@@ -354,7 +361,13 @@ export class TacticalMapView implements Disposable, TilePicker {
     // the staircase (#766). Ground pillars stay: they are the earth
     // beneath the surface slab, not a stand-in for it. Ramps and ladders
     // stay too, having no art.
-    for (const label of [TILES_SLAB, "walls", "props", "connectors"]) {
+    for (const label of [
+      TILES_SLAB,
+      "walls",
+      "props",
+      "connectors",
+      "slopes",
+    ]) {
       this.retirePlaceholders(label);
     }
   }
@@ -372,10 +385,14 @@ export class TacticalMapView implements Disposable, TilePicker {
         level: number;
         matrices: Matrix4[];
         keys: VisionTileKey[];
+        slopeTile?: Tile;
       }
     >();
     for (const placement of placements) {
-      const key = `${placement.modelId}:${String(placement.level)}`;
+      const tile =
+        label === "tiles" ? this.index.getAt(placement.tile) : undefined;
+      const slopeTile = tile?.slope === undefined ? undefined : tile;
+      const key = `${placement.modelId}:${String(placement.level)}${slopeTile ? `:${slopeTile.surface}` : ""}`;
       const matrix = placementMatrix(placement);
       const tileKey = this.index.keyOf(placement.tile);
       const batch = batches.get(key);
@@ -385,6 +402,7 @@ export class TacticalMapView implements Disposable, TilePicker {
           level: placement.level,
           matrices: [matrix],
           keys: [tileKey],
+          slopeTile,
         });
       } else {
         batch.matrices.push(matrix);
@@ -392,7 +410,9 @@ export class TacticalMapView implements Disposable, TilePicker {
       }
     }
     for (const [key, batch] of batches) {
-      const prototype = await models.load(batch.modelId);
+      const prototype = batch.slopeTile
+        ? await this.slopePrototype(batch.slopeTile, models)
+        : await models.load(batch.modelId);
       prototype.updateMatrixWorld(true);
       meshPartsOf(prototype).forEach((part, i) => {
         // Walls are what stands between the camera and a unit, so they
@@ -433,6 +453,36 @@ export class TacticalMapView implements Disposable, TilePicker {
         this.groupFor(batch.level).add(mesh);
       });
     }
+  }
+
+  /** Applies existing ground materials once per slope kind/surface, leaving loader prototypes untouched. */
+  private async slopePrototype(
+    tile: Tile,
+    models: ModelLoader,
+  ): Promise<Group> {
+    const kind = tile.slope!.kind;
+    const key = `${kind}:${tile.surface}`;
+    let prototype = this.slopeModels.get(key);
+    if (prototype === undefined) {
+      const sides = this.material(
+        SURFACE_COLOURS[tile.surface] ?? FALLBACK_SURFACE_COLOUR,
+      );
+      const groundId = surfaceModel(tile.surface);
+      const materials =
+        groundId === undefined
+          ? { surface: sides, sides }
+          : slopeMaterialsFromGround(await models.load(groundId), sides);
+      prototype = await new TerrainSlopeModelFactory(models).create(
+        kind,
+        materials,
+      );
+      prototype.traverse((object) => {
+        if (object instanceof Mesh)
+          this.disposables.push((object as Mesh).geometry);
+      });
+      this.slopeModels.set(key, prototype);
+    }
+    return prototype;
   }
 
   /** Hides the placeholder boxes a category's models have taken over from. */
@@ -592,6 +642,7 @@ export class TacticalMapView implements Disposable, TilePicker {
       material.dispose();
     }
     this.ghostMaterials.clear();
+    this.slopeModels.clear();
     this.root.removeFromParent();
   }
 
@@ -615,9 +666,8 @@ export class TacticalMapView implements Disposable, TilePicker {
       const isGround = tile.buildingId === undefined;
       if (tile.slope !== undefined) {
         // A hillside piece (#799): the column below stays a ground box and
-        // a wedge rises from this tile's top to the next level. Placeholder
-        // until the slope block set lands (#798); every kind is drawn as
-        // the straight wedge, turned to face its high side.
+        // a wedge rises from this tile's top to the next level. A straight
+        // placeholder stands here until loadModels applies the #798 kit.
         pushBatch(
           ground,
           `tile:${tile.surface}:${tile.y}`,

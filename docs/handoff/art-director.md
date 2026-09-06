@@ -1,8 +1,63 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-06 (#793 mist allocation)
+Last updated: 2026-09-06 (#798 terrain slope kit)
 
-## Current work: #793, allocation fix ready for review; performance target unmet
+## Current work: #798 / PR #811, then hold
+
+The Director authorised the slope set as an exception to production hold.
+Review: [PR #811](https://github.com/BenjaminBenetti/tut/pull/811), open.
+Branch: `feat/798-terrain-slope-kit`, with main `0b72476` merged. Continue this
+branch for review. I remain the Codex Art Director on gpt-6-astra; the latest
+Director instruction sets this seat to xhigh and removes the credit limit.
+
+Three GLBs were exported and validated through the Blender loop, with all
+nine angles opened and inspected: `tile.slope.straight` (8 triangles),
+`tile.slope.inner` (10), `tile.slope.outer` (6). Footprint 1 × 1, base-centred
+on the low surface plane, current rise 1.5 u. **Keep `RISE` a single parameter**
+in `tools/art/models/terrain_slope_parts.py`. The Executive Director decided
+layers will be halved in a separate follow-up; do not pre-empt it here.
+
+Manifest registration includes `SLOPE_MODELS` and `TerrainSlopeModelFactory`.
+The consumer applies the scene's top material/UV region and terrace side
+material, returning single-material parts suitable for instancing. No baked
+texture variants. Caller owns generated geometry; supplied materials and
+loader prototypes remain borrowed. Cache per kind/material in the scene.
+
+[The kit contract](../design/kits/terrain-slopes.md) documents orientation,
+height fields, placement, ownership, rebuild commands and all nine renders.
+The live composite harness consumes the factory with actual grass and sand
+materials. [The composite](../design/kits/terrain-slopes-terrace.png) was opened
+and inspected: straight runs and inner/outer corners join without geometric
+gaps; side faces match adjoining cliff pillars. Reproduce with
+`CAPTURE=1 pnpm exec playwright test e2e/terrain-slope-screenshot.spec.ts`.
+
+#799's scene mapping merged in #801 while this kit was in progress. This
+branch now connects its slope metadata to the three GLBs in the resolver
+and tactical view. Straight follows the stored rotation; corners add one
+quarter turn to match #799's west/south starting orientation. One prototype
+per shape/surface is reused across levels and rotations, with the existing
+mist and visibility path for both top and sides. Placeholder wedges retire
+after loading; their ground pillars remain. Map data, generation and
+traversal stay as #799 supplied them.
+
+The composite, both #799 preview controls and both seed-4242 fog frames are
+regenerated on this merged tree for visual review. Tests sample the exported
+height fields and all four map-data rotations, material borrowing, batching
+by surface, placeholder retirement and fog updates. Both fog PNGs are
+byte-identical to main. The city control differs only in timing text; the
+snowy control shows the new textured slopes.
+
+Validation: Blender/trimesh passes for all three assets; `pnpm typecheck`,
+`pnpm lint`, `pnpm test` (1,954 pass, one skipped), `pnpm build`, the four
+capture tests and the full browser suite (59 pass, nine opt-in captures
+skipped) pass locally. Existing build chunk-size warning remains.
+ADR 0008 landed as docs only; today's runtime height is still 1.5, as requested.
+
+Next: Tech Lead reviews; address arriving feedback on this branch, then
+**hold again with no timer polling or background review monitor**. All other
+production remains paused. Historical task directions below are superseded.
+
+## Previous work: #793 / #795 (allocation PR merged; performance target unmet)
 
 The Director authorised #793 during the hold. Branch:
 `fix/793-mist-prototype-allocation`, based on main `a735baa`. I remain the

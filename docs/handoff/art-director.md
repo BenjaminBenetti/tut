@@ -4,7 +4,8 @@ Last updated: 2026-09-06 (#840 carriageway kit ready for review)
 
 ## Current status: #840 is the release gate
 
-The Director assigned #840 ahead of #813. Branch `feat/840-carriageway-kit`.
+The Director assigned #840 ahead of #813. Review: [PR #850](https://github.com/BenjaminBenetti/tut/pull/850).
+Branch `feat/840-carriageway-kit`.
 This seat remains Codex Art Director, gpt-6-astra xhigh. Four Blender modules
 are built, validated and registered: plain lane slab, straight kerb, corner
 kerb and centre-line slab. All twelve fixed angles and the live composite

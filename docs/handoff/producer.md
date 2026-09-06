@@ -3,7 +3,7 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-06 05:29 UTC)
+## Status Digest (2026-09-06 05:39 UTC)
 
 **Production ON HOLD** by the Executive Director (#748); he is tuning map generation personally in Map Lab. No resume ordered. No M3 decomposition, new seat assignments without the Director's request, or Ready queue growth. **v0.2.7** is tagged from main.
 
@@ -17,17 +17,17 @@
 
 **Milestones** (closed / total issues, API snapshot at 04:09 UTC): M0 14/14 · M1 64/64 · M1.5 33/34 · M2 48/50 · M2.5 25/27 · M3 1/2 (held). These counts do not declare milestone completion.
 
-**Completed / board:** #807 is **Done**: all three engine slices merged (#810 migration preparation, #812 explicit storey units, #815 activation). eng-3 has no open assignment. #798/#799 remain **Done** through #811. Tech Lead handoff #816 and Producer handoff #814 merged; v0.2.7 remains the latest recorded tag.
+**Completed / board:** #807 is **Done**: all three engine slices merged (#810 migration preparation, #812 explicit storey units, #815 activation). eng-3 has no open assignment. #798/#799 remain **Done** through #811. Tech Lead handoffs #816/#818 and Producer handoff #814 merged; v0.2.7 remains the latest recorded tag.
 
-**Live exceptions / board:** #804 remains **In Progress**. #808 natural half-step terrain is **In Progress**, owned by MapGen from the Director's instruction; the #807 dependency is satisfied. **#817 p1 ramp gaps**, an Executive Director bug, is **In Progress**, owned by the Art Director. #809 half-rise slope set is **Blocked on #817 until the Art Director clears it**. All three specialist issues have no engineer seat label; their owners and statuses are recorded on Project #5, with #808/#809 dependency text updated.
+**Live exceptions / board:** #804 remains **In Progress**. MapGen owns **#808 and #817, In Progress**: Art Director diagnosed ramp gaps as classification-side and handed the fix to MapGen under #808. **#809 is In Progress with the Art Director**, who cleared the diagnosis gate and reported moving to it in #817's comment (5557215896). All specialist issues remain without engineer seat labels.
 
-**Open PRs** (05:28 UTC snapshot): #818 Tech Lead handoff, about 2 min old, **In Review**; #757 mech-bay preview remains unrelated and waiting (last confirmed open at 04:19 UTC). #815/#816 are **Done** on the board. This pass opens a new small handoff PR from main.
+**Open PRs** (05:36 UTC watch snapshot): #819 this Producer handoff; #821 Art Director slope-gap diagnosis handoff; #757 mech-bay preview remains unrelated and waiting (last confirmed open at 04:19 UTC). #818 merged and its board card is **Done**.
 
-**Blocked / parked:** #809 waits on #817 clearance. #813 diagonal terrace teeth remains **Backlog and unowned**, not Ready until the Executive Director calls it. General production and M3 remain held; #787 parked; #793 remains p3.
+**Blocked / parked:** #813 diagonal terrace teeth remains **Backlog and unowned**, not Ready until the Executive Director calls it. General production and M3 remain held; #787 parked; #793 remains p3. Ready-high audit found only #447 (held M3); no eligible unowned Ready high issue to seat.
 
-**Risks:** #817's cause is still to be diagnosed: Art Director owns mapping/rotation fixes; if classification is responsible, the exact neighbourhood goes to MapGen for #808 per the issue. Keep #809 behind that diagnosis and clearance. #813 is a separate unresolved diagonal-edge follow-up. Autofill still permits Opus high-tier work contrary to strict routing; do not run it. Historical monitor/seating instructions below remain obsolete; the empty release allowlist stays in place.
+**Risks:** #817 diagnosis is not a fix: prop-occupied natural high neighbours are omitted from classification, leaving missing or wrong corners. MapGen must fix classification and supply the before/after evidence under #808/#817. The separate #813 diagonal-edge decision remains open. Autofill still permits Opus high-tier work contrary to strict routing; do not run it. Historical monitor/seating instructions below remain obsolete; the empty release allowlist stays in place.
 
-**Routing / next event:** all engineer seats idle; MapGen works #808 and the Art Director works #817. A Ready, unowned `complexity:high` engineer issue within an Executive Director exception goes to free `seat:eng-3` without another Director prompt. Keep strict tiers, one open issue per seat, specialist ownership, and the hold: no M3 decomposition or Ready queue growth beyond Executive Director exceptions. Groom relevant watch events and re-arm once.
+**Routing / next event:** all engineer seats idle; MapGen works #808/#817 and the Art Director works #809. A Ready, unowned `complexity:high` engineer issue within an Executive Director exception goes to free `seat:eng-3` without another Director prompt. Keep strict tiers, one open issue per seat, specialist ownership, and the hold: no M3 decomposition or Ready queue growth beyond Executive Director exceptions. Groom relevant watch events and re-arm once.
 <!-- digest:end -->
 
 

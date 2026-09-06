@@ -39,8 +39,16 @@ varied buildings and coherent, beautiful surroundings.
   correctly. The old D08 `floor=0` interior cut must not illustrate missing
   roofs or terrain. The roof evidence below uses **all levels**.
 
-These instructions are recorded in the [role brief](../../../process/roles/map-critic.md).
+The Director's [role amendment #912](https://github.com/BenjaminBenetti/tut/pull/912)
+records the cap and defect test in the [role brief](../../../process/roles/map-critic.md).
 The [handoff](../../../handoff/map-critic.md) holds the live ticket queue.
+
+Filed from this evidence: [waterfront #915](https://github.com/BenjaminBenetti/tut/issues/915)
+(`p1`, MapGen), [roofs #916](https://github.com/BenjaminBenetti/tut/issues/916)
+(`p1`, MapGen + Art), and [fences #917](https://github.com/BenjaminBenetti/tut/issues/917)
+(`p2`, MapGen). Together with #906 and #910, these fill the five-ticket cap.
+Hard material borders and the remaining building/plot variety findings stay
+in the handoff for capacity.
 
 ## Capture and visual ledger
 

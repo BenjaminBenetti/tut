@@ -1,3 +1,4 @@
+import { STOREY_LAYERS } from "../../core/model/elevation";
 import { DIRECTIONS } from "../../core/model/direction";
 import { manhattanDistance, stepGridPos } from "../../core/service/grid-math";
 import type {
@@ -121,7 +122,7 @@ function collectSteps(draft: MapDraft, nodes: ReadonlySet<number>): Step[] {
         continue;
       }
       const there = draft.groundCoord(next.x, next.z);
-      if (there.y - here.y === 1) {
+      if (there.y - here.y === STOREY_LAYERS) {
         steps.push({
           lower: here,
           upper: there,

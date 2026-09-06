@@ -1,3 +1,4 @@
+import { STOREY_LAYERS } from "../../core/model/elevation";
 import type { Rng } from "../../core/model/rng";
 import { SurfaceIds } from "../data/surfaces";
 import type {
@@ -63,7 +64,7 @@ export class CraterPass implements GenerationPass {
     // The grid has no level below zero, so the plat rises by the depth of
     // the bowl before anything is dug. Levels are relative, so lifting
     // everything together changes nothing except where the floor can go.
-    raiseAll(draft, CRATER_DEPTH);
+    raiseAll(draft, CRATER_DEPTH * STOREY_LAYERS);
     const shorter = Math.min(draft.width, draft.depth);
     const radius = Math.round(
       shorter *
@@ -91,7 +92,7 @@ export class CraterPass implements GenerationPass {
         if (step === 0) {
           continue;
         }
-        draft.setGroundLevel(x, z, rim - step);
+        draft.setGroundLevel(x, z, rim - step * STOREY_LAYERS);
         draft.setGroundSurface(
           x,
           z,

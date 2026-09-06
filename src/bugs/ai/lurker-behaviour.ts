@@ -1,3 +1,4 @@
+import { STOREY_LAYERS } from "../../core/model/elevation";
 import { oppositeDirection, stepGridPos } from "../../core/service/grid-math";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { TileIndex } from "../../mapgen/service/tile-index";
@@ -271,7 +272,7 @@ export class LurkerBehaviour implements BugBehaviour {
       tileDistance(tile, mark.pos) === 1 && tile.y === mark.pos.y ? 1 : 0;
     const exposure = exposureScore(mission, tile, others, index);
     const approach = distanceScore(tile, mark.pos, t.approachHorizon);
-    const levels = Math.abs(tile.y - mark.pos.y);
+    const levels = Math.abs(tile.y - mark.pos.y) / STOREY_LAYERS;
     return (
       flank * t.flankWeight +
       isBehind * t.behindWeight +

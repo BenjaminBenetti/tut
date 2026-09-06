@@ -80,7 +80,7 @@ export function hitChance(
     -tuning.maxElevationModifier,
     Math.min(
       tuning.maxElevationModifier,
-      terrain.elevation * tuning.elevationPerLevel,
+      terrain.elevation * tuning.elevationPerStorey,
     ),
   );
   const raw = weapon.accuracy + range + cover + flank + elevation;

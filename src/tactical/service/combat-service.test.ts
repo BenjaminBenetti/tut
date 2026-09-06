@@ -177,10 +177,10 @@ describe("hitChance", () => {
       65 + T.flankBonus,
     );
     expect(hitChance(RIFLE, { ...NO_TERRAIN, elevation: 1 }, T)).toBe(
-      65 + T.elevationPerLevel,
+      65 + T.elevationPerStorey,
     );
     expect(hitChance(RIFLE, { ...NO_TERRAIN, elevation: -1 }, T)).toBe(
-      65 - T.elevationPerLevel,
+      65 - T.elevationPerStorey,
     );
     expect(hitChance(RIFLE, { ...NO_TERRAIN, elevation: 5 }, T)).toBe(
       65 + T.maxElevationModifier,

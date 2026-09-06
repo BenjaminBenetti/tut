@@ -17,7 +17,7 @@ export interface WeightedSurface {
 /** Shape of the ground noise the terrain pass samples. */
 export interface TerrainProfile {
   /** Highest ground level; 0 flattens the map. */
-  readonly amplitudeLevels: number;
+  readonly amplitudeLayers: number;
   /** Noise cycles per tile; smaller is smoother. */
   readonly frequency: number;
   /** Octaves of detail layered on the base noise. */

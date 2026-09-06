@@ -1,3 +1,4 @@
+import { STOREY_LAYERS } from "../../core/model/elevation";
 import type { BiomeId } from "../../content/model/biome-id";
 import { DIRECTIONS } from "../../core/model/direction";
 import type { Rng } from "../../core/model/rng";
@@ -531,7 +532,8 @@ function placeInteriorProps(
     const own = draft.connectors.filter((c) =>
       building.connectorIds.includes(c.id),
     );
-    const topLevel = building.groundLevel + building.floors.length;
+    const topLevel =
+      building.groundLevel + building.floors.length * STOREY_LAYERS;
     for (const floor of building.floors) {
       for (const room of floor.rooms) {
         const furnishing =

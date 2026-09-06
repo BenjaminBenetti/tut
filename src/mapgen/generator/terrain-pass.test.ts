@@ -76,7 +76,7 @@ describe("TerrainPass", () => {
             const level = draft.groundLevelAt(x, z);
             expect(level).toBeGreaterThanOrEqual(0);
             expect(level).toBeLessThanOrEqual(
-              definition.terrain.amplitudeLevels,
+              definition.terrain.amplitudeLayers,
             );
             expect(palette.has(draft.groundSurfaceAt(x, z))).toBe(true);
           }
@@ -119,7 +119,7 @@ describe("TerrainPass", () => {
     const flat: BiomeDefinition = {
       ...BIOME_DEFINITIONS.temperate,
       id: "temperate",
-      terrain: { ...BIOME_DEFINITIONS.temperate.terrain, amplitudeLevels: 0 },
+      terrain: { ...BIOME_DEFINITIONS.temperate.terrain, amplitudeLayers: 0 },
     };
     const regs: MapGenRegistries = {
       ...registries,

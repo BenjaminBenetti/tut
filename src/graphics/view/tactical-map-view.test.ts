@@ -20,7 +20,7 @@ import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import {
   CONNECTOR_COLOURS,
-  LEVEL_HEIGHT,
+  LAYER_HEIGHT,
   SLAB_HEIGHT,
 } from "../data/mapgen-preview-palette";
 import type { ModelLoader } from "../model/model-loader";
@@ -104,7 +104,7 @@ describe("TacticalMapView", () => {
     expect(rock).toBeDefined();
     expect(floor).toBeDefined();
     if (rock === undefined || floor === undefined) return;
-    const top = LEVEL_HEIGHT + SLAB_HEIGHT;
+    const top = LAYER_HEIGHT + SLAB_HEIGHT;
     const rockScale = rock.instanceMatrix.array[5];
     const floorScale = floor.instanceMatrix.array[5];
     expect(rockScale).toBeCloseTo(top);

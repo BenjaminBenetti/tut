@@ -189,6 +189,7 @@ export class MapgenPreviewScreen {
     this.levelSlider.type = "range";
     this.levelSlider.id = "level";
     this.levelSlider.min = "0";
+    this.levelSlider.step = String(STOREY_LAYERS);
     this.levelSlider.max = "0";
     this.levelSlider.value = "0";
     this.levelLabel = el(doc, "span", "mapgen-level-label");
@@ -504,3 +505,4 @@ function metricRows(
     ],
   ];
 }
+import { STOREY_LAYERS } from "../../core/model/elevation";

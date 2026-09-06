@@ -1,3 +1,4 @@
+import { STOREY_LAYERS } from "../../core/model/elevation";
 import type { Camera, Material, Object3D } from "three";
 import {
   BoxGeometry,
@@ -38,7 +39,7 @@ import {
   FALLBACK_HOOK_COLOUR,
   FALLBACK_SURFACE_COLOUR,
   HOOK_COLOURS,
-  LEVEL_HEIGHT,
+  LAYER_HEIGHT,
   PROP_COLOURS,
   PROP_HEIGHTS,
   SLAB_HEIGHT,
@@ -207,10 +208,10 @@ function stateOf(vision: IndexedVision, key: VisionTileKey): TileVisionState {
  * slider can peel floors off. No generation logic lives here.
  *
  * ```
- *   tile (x, y, z) covers [x, x+1) × [z, z+1); its top is at y · LEVEL_HEIGHT + SLAB
+ *   tile (x, y, z) covers [x, x+1) × [z, z+1); its top is at y · LAYER_HEIGHT + SLAB
  *
  *        ┌──────┐ ← roof slab (level 2)
- *   ▌    │      │   walls stand LEVEL_HEIGHT tall on the tile top
+ *   ▌    │      │   walls stand LAYER_HEIGHT tall on the tile top
  *   ▌    └──────┘ ← floor slab (level 1)
  *   ▌▒▒▒▒▒▒▒▒▒▒▒▒ ← ground pillar rises from world y = 0
  * ```
@@ -670,7 +671,7 @@ export class TacticalMapView implements Disposable, TilePicker {
         const top = tileTop(tile.y);
         // A parapet stands half a storey, so it sits on the floor rather
         // than filling the opening (#508).
-        const height = LEVEL_HEIGHT * WALL_HEIGHTS[kind];
+        const height = STOREY_LAYERS * LAYER_HEIGHT * WALL_HEIGHTS[kind];
         const centreY = top + height / 2;
         const matrix =
           side === "n" || side === "s"
@@ -803,7 +804,7 @@ export class TacticalMapView implements Disposable, TilePicker {
       return;
     }
     const low = tileTop(tile.y);
-    const high = tileTop(tile.y + 1);
+    const high = tileTop(tile.y + STOREY_LAYERS);
     const rise = high - low;
     // Built rising towards +z (south), which is `turns` 0; a quarter turn
     // clockwise about +y for each further turn matches the stairs model.
@@ -1051,7 +1052,7 @@ export class TacticalMapView implements Disposable, TilePicker {
  *   ── tileTop(y) ─────────────  surface: units, walls, props, overlays
  *      ▒▒▒▒▒▒▒▒▒▒  ground slab, pivot at its centre, so it is placed
  *                  GROUND_SLAB_THICKNESS / 2 below this line
- *   ── y · LEVEL_HEIGHT ───────  the level's base
+ *   ── y · LAYER_HEIGHT ───────  the level's base
  * ```
  *
  * One definition, and everything measures from it: the preview box puts
@@ -1062,7 +1063,7 @@ export class TacticalMapView implements Disposable, TilePicker {
  * half a slab high and everything on it half a slab low.
  */
 export function tileTop(level: number): number {
-  return level * LEVEL_HEIGHT + SLAB_HEIGHT;
+  return level * LAYER_HEIGHT + SLAB_HEIGHT;
 }
 
 /** World-space centre of a tile's top face. Shared with the unit meshes. */

@@ -24,7 +24,7 @@ export const COMBAT_TUNING: CombatTuning = {
   rangePenaltyPerTile: 2,
   coverModifier: { 0: 0, 1: -20, 2: -40 },
   flankBonus: 15,
-  elevationPerLevel: 10,
+  elevationPerStorey: 10,
   maxElevationModifier: 20,
   minHitChance: 5,
   maxHitChance: 95,

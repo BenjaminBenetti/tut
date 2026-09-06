@@ -1,3 +1,4 @@
+import { STOREY_LAYERS } from "../../core/model/elevation";
 import type { Direction } from "../../core/model/direction";
 import { DIRECTIONS } from "../../core/model/direction";
 import {
@@ -335,7 +336,7 @@ function edgesFrom(
         });
       }
     }
-    for (const dy of [1, -1]) {
+    for (const dy of [STOREY_LAYERS, -STOREY_LAYERS]) {
       const stepped = index.getAt(
         stepGridPos({ ...from, y: from.y + dy }, direction),
       );

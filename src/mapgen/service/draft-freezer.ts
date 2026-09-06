@@ -1,3 +1,4 @@
+import { STOREY_LAYERS } from "../../core/model/elevation";
 import { CoverLevel } from "../model/cover";
 import type { Hook, PlacementHooks } from "../model/hook";
 import { HookKinds } from "../model/hook";
@@ -69,7 +70,7 @@ export function freezeDraft(
     recipe,
     width: draft.width,
     depth: draft.depth,
-    levels: draft.maxLevel() + 1,
+    levels: draft.maxLevel() + STOREY_LAYERS,
     tiles,
     buildings: [...draft.buildings],
     connectors: [...draft.connectors],

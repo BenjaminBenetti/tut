@@ -1,3 +1,4 @@
+import { STOREY_LAYERS } from "../../core/model/elevation";
 import { PassMask } from "./pass-mask";
 import type { TileCoord } from "./tile-coord";
 
@@ -48,12 +49,16 @@ export interface ConnectorRule {
 
 /** Rules per connector kind, from ADR 0004 §4.3. */
 export const CONNECTOR_RULES: Readonly<Record<ConnectorKind, ConnectorRule>> = {
-  ramp: { pass: PassMask.ALL, minRise: 1, maxRise: 1 },
-  slope: { pass: PassMask.ALL, minRise: 1, maxRise: 1 },
-  stairs: { pass: PassMask.INFANTRY, minRise: 1, maxRise: 1 },
+  ramp: { pass: PassMask.ALL, minRise: STOREY_LAYERS, maxRise: STOREY_LAYERS },
+  slope: { pass: PassMask.ALL, minRise: STOREY_LAYERS, maxRise: STOREY_LAYERS },
+  stairs: {
+    pass: PassMask.INFANTRY,
+    minRise: STOREY_LAYERS,
+    maxRise: STOREY_LAYERS,
+  },
   ladder: {
     pass: PassMask.INFANTRY,
-    minRise: 1,
+    minRise: STOREY_LAYERS,
     maxRise: Number.POSITIVE_INFINITY,
   },
 };

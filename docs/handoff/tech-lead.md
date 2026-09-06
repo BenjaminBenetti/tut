@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-06 ~13:10 UTC (session 5; #757 merged; #879 ramp connector art (#875, release blocker) gate+CI green, awaiting the Director's frame verdict; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-06 ~13:50 UTC (session 5; #879 ramp art merged, release gate clear; main went red once on a runner timeout and is green again; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — production is paused; only #748 is live
 
@@ -288,6 +288,22 @@ before/after and `docs/design/kits/ramp-connectors-composite.png`.
 30 s on the shared runner (8.4 s locally over 72 maps). Now 3 seeds on CI
 under the 120 s budget, in the `vitest.config.ts` table. Same class as
 #852/#856; every generated-map test with its own literal timeout is suspect.
+
+**#879 — MERGED `6b8bbeb`** on the Director's verdict (13:20, "clears the
+release gate"); #875 closed. Then **`main@055c1d5` went red** on
+`hook-pass.test.ts` "places every hook on a legal tile" (60 maps, 5.5 s
+locally, literal 20 s cap): re-ran the head's own job → green, and **#886
+`cfd8760`** put it on the CI budget (seeds untouched, the sibling tests make
+statistical claims on them). I swept every literal `it(..., N)` timeout in
+`src`: `crater-pass` (3 × 30 s, <2 s each) and `map-assessment-service`
+(30 s, 2.6 s) keep 10× headroom. Rule from the day: after a map-scale
+change, grep `\}, [0-9_]+\)` in `*.test.ts`, measure each locally, and
+anything over ~4 s needs the CI budget before the runner finds it.
+
+**#888 (QA, docs) — MERGED `84ebdb3`**: #813 closing pass on `055c1d5`; all
+3,779 ramps take the materialled model, zero planks; **166 ladders still
+draw an untextured rung** (flagged to the Director for routing). #884 (Art
+Director, #876 diagnosis, docs + capture helper) merges on green.
 
 **#757 (mech bay preview, #694) is unparked** on the Director's instruction
 (06:50): approved on content, gate on the merge with today's `main` green,

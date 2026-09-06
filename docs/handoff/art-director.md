@@ -1,8 +1,8 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-06 (#849 complete on branch; opening review)
+Last updated: 2026-09-06 (#849 in PR #874; waiting on review)
 
-## Current status: #849 ready for review
+## Current status: #849 in review, PR #874
 
 Codex Art Director, gpt-6-astra xhigh. #840 and #848 are complete. The Director
 authorised #849 conditionally: re-render J3 on current main, post comparison
@@ -11,7 +11,9 @@ first, then cut a piece only if the seam remains. That condition is met:
 Main `4244675` includes #862 and #866; J3 has no diagonal appearance anywhere
 on its map. QA's final audit #873 independently calls J3 unchanged.
 
-Branch `feat/849-three-sided-slope-kit`, initial proof `7af3a73`. New concave
+[PR #874](https://github.com/BenjaminBenetti/tut/pull/874) is open. Branch
+`feat/849-three-sided-slope-kit`, initial proof `7af3a73`, final visual proof
+`9087e16`. Main through `e9f022e` merged normally (handoff-only delta). New concave
 end at shared RISE 0.75: 14 triangles, 2,252 bytes, three angles opened. The
 opening uses two existing outer-corner halves. Live scene selects the J3
 end `(10,3,29)` and mouth `(11,3,29)`; after crop opened and full-perimeter
@@ -23,7 +25,11 @@ main byte-for-byte; main’s tracked PNGs were stale after #866, so refreshed
 frames are included. The 108-map sweep fits 173 of 495 three-high ends and
 173 mouths; the 27 four-high pits and unmatched/protected exits are outside
 this bounded shape. Do not claim the whole QA 522-tile bucket is solved.
-No event watch runs while working; resume ONE bounded loop for review.
+All requested assets and diagnostics are committed/pushed. #849 stays open
+because the broad audit bucket is only partly covered. ONE bounded watch
+resumes for Tech Lead review and the Director’s visual judgement; no new
+production issue has been taken. QA’s #873 also reports remaining diagonal
+creases and ramp/parapet art concerns outside this PR.
 
 ## Completed: #848 diagonal slope kit, PR #862
 

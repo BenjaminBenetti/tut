@@ -87,7 +87,11 @@ function relation(bug: Unit, mark: Unit): "behind" | "front" | "side" | "away" {
 // ===========================================
 
 describe("LurkerBehaviour", () => {
-  it("ends adjacent-behind its mark more often than in front across a seed sweep on a cover map", () => {
+  // Skipped on the Director's ruling in #838: the case borrows the shipped
+  // small city's shape, which ADR 0009 (#829) regenerated under it, and an AI
+  // behaviour assertion is not edited to make a map change pass. #842 unskips
+  // it against a fixture that states its own premise.
+  it.skip("ends adjacent-behind its mark more often than in front across a seed sweep on a cover map (skipped: #842)", () => {
     const base = startedMission("bugs");
     const squads = base.units.filter((u) => u.kind === "squad");
     expect(squads.length).toBeGreaterThan(0);

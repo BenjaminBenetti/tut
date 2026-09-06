@@ -1272,5 +1272,19 @@
     "quality": "final",
     "triangles": 12,
     "bytes": 2212
+  },
+  {
+    "id": "building.roof-pitched",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-roof-pitched.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.37,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 20,
+    "bytes": 2744
   }
 ]

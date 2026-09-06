@@ -561,6 +561,14 @@ export const MODEL_MANIFEST = {
     sockets: [],
     quality: "final",
   },
+  "building.roof-pitched": {
+    category: "buildings",
+    path: "assets/models/buildings/building-roof-pitched.glb",
+    footprint: { w: 1, d: 1 },
+    height: 0.37,
+    sockets: [],
+    quality: "final",
+  },
   "building.roof-parapet": {
     category: "buildings",
     path: "assets/models/buildings/roof-parapet.glb",

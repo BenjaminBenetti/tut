@@ -117,6 +117,7 @@ export function applyGhostCutaway(
     shader.uniforms.uGhostCentres = uniforms.uGhostCentres;
     shader.uniforms.uGhostRadius = uniforms.uGhostRadius;
     shader.uniforms.uGhostFloor = uniforms.uGhostFloor;
+    shader.uniforms.uGhostStrength = uniforms.uGhostStrength;
     shader.vertexShader = shader.vertexShader
       .replace("#include <common>", `#include <common>\n${VERTEX_HEAD}`)
       // After project_vertex, so instanced transforms are already applied.

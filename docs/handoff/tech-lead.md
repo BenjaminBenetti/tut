@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-06 ~00:45 UTC (session 5; v0.2.5 tagged; CI stall fixed by configuration in #796, #793 at p3; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-06 ~01:10 UTC (session 5; slopes #798/#799 are the newest ED exception; #795 pending; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — production is paused; only #748 is live
 
@@ -107,6 +107,20 @@ main tree, so a branch checked out in a `git worktree` makes it fail with
 `CHECKOUT_FAIL`; remove the worktree before gating that branch. The monitor now
 snapshots CI on `main`'s head (`CI main@sha`), which is how two red `main`
 runs stopped being invisible.
+
+**Newest Executive Director exception (01:00 UTC): natural terrain edges
+become walkable slopes.** #799 (MapGen, `complexity:high`): slope tiles as map
+data (kind straight/inner/outer + orientation + material), slopes as connectors,
+man-made edges keep walls, a Map Lab slope-to-cliff knob and metric, scene
+mapping with a placeholder wedge until art lands. #798 (Art Director): the
+three slope meshes, material-parameterised. My review constraints are posted on
+#799 (01:08): ADR 0004 amended in the same PR; new tile fields **optional**
+(absent = not a slope) or a v15 migration, never a bare required field; slopes
+are a `Connector` kind so movement/reachability/AI change by a kind, not a rule;
+cover/LOS rule stated and tested; the knob is a `GenerationParams`/recipe field;
+sweep test for man-made edges keeping walls and no orphan corners; goldens,
+`MAPGEN_WIDE=1`, `test:sim` before/after; controls captured through a spec.
+Director judges frames before merge.
 
 **Otherwise the queue is empty except parked #757.** Nothing merges until the ED's
 playtest verdict or a Director ruling on the ramp child above.

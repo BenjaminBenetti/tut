@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-06 ~16:05 UTC (session 5; v0.2.10 `fe7872c` and v0.2.11 `58e6c9e` tagged by the Director; queue empty; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-06 ~18:05 UTC (session 5; Map Critic seat stood up (#900), MapGen on Astra 6 xhigh (#899); expect a trickle of area:mapgen/area:art PRs as the ongoing exception; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — production is paused; only #748 is live
 
@@ -17,10 +17,20 @@ stay paused. **Merge nothing unrelated to #748 except handoffs and process
 docs.** #757 (mech bay preview) is open, unreviewed, parked, and stays parked.
 Do not decompose M3.
 
-**Strict model tiers are in force** (#763): eng-3 is Fable and takes
-`complexity:high` ONLY; eng-4/eng-5 are Opus and take low/medium ONLY; high
-work queues behind eng-3 and never drops to Opus; MapGen works `area:mapgen`
-only. Label every engineer issue `complexity:*` before it can be seated.
+**Strict model tiers are in force** (#763): eng-3 (Codex Astra 6 since
+#803) takes `complexity:high` ONLY; eng-4/eng-5 are Opus and take low/medium
+ONLY; high work queues behind eng-3 and never drops to Opus; MapGen works
+`area:mapgen` only and **runs on Codex Astra 6 xhigh since #899** (Fable now
+carries only the Director and you). Label every engineer issue `complexity:*`
+before it can be seated.
+
+**Map Critic seat (#900, 2026-09-06, Executive Director):** Astra 6 xhigh,
+fleet instance `map-critic`. Looks at rendered maps, files evidenced
+`area:mapgen` / `area:art` tickets (cap three open), never writes code or
+opens behaviour PRs (diagnostic crops are fine). Its tickets flow to MapGen
+and the Art Director as an **ongoing exception to the production hold**; the
+Director judges every frame before you merge, as usual. Role doc
+`docs/process/roles/map-critic.md`.
 
 ### The #748 split — all three children closed (07:30 UTC)
 

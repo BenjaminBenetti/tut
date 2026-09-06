@@ -1,0 +1,20 @@
+{
+  "baseMain": "4244675c4a80027c6fbccfe256c380c1897fa525",
+  "seed": 4242,
+  "frames": [
+    {
+      "file": "docs/design/tactical-fog-of-war.png",
+      "trackedMain": "f09356ff87ce5fc2a8376f2bfdac9c1865e2067108ed9a4a8f7f4d65faa475bf",
+      "freshMain": "2387224510d13f8d9c3e7d9517de6dc448bf8e13d733e0e266ae99fc464ceea8",
+      "branch": "2387224510d13f8d9c3e7d9517de6dc448bf8e13d733e0e266ae99fc464ceea8",
+      "matchesFreshMain": true
+    },
+    {
+      "file": "docs/design/tactical-fog-of-war-turn7.png",
+      "trackedMain": "6204236d7b8e213fe62be60e312f113adf5f174569651d9a0e29b948cf0b86b9",
+      "freshMain": "69c9aa573fd0774150691caf64c20c20b818f7d0568d39e86696f43c0acf9441",
+      "branch": "69c9aa573fd0774150691caf64c20c20b818f7d0568d39e86696f43c0acf9441",
+      "matchesFreshMain": true
+    }
+  ]
+}

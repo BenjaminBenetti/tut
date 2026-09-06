@@ -107,8 +107,11 @@ describe("terrain slope neighbourhoods (#809, #817)", () => {
       },
     });
     const tiles = map.tiles.filter((tile) => tile.slope !== undefined);
-    const models = resolveMapModels(map).tiles.filter((placement) =>
-      placement.modelId.startsWith("tile.slope."),
+    // #849 adds fitted art on previously unmarked tiles; this assertion
+    // continues to cover every original Tile.slope and its one-layer scale.
+    const models = resolveMapModels(map).tiles.filter(
+      (placement) =>
+        placement.modelId.startsWith("tile.slope.") && !placement.terrain,
     );
     expect(tiles.length).toBeGreaterThan(0);
     expect(models).toHaveLength(tiles.length);

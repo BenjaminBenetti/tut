@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Three-sided slope kit</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #11151b;
+        color: #d9dde3;
+        font:
+          18px system-ui,
+          sans-serif;
+      }
+      header {
+        height: 82px;
+        padding: 22px 34px 0;
+      }
+      h1 {
+        margin: 0;
+        font-size: 27px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+      }
+      header p {
+        margin: 4px 0 0;
+        color: #8e99a6;
+        font-size: 16px;
+      }
+      main {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2px;
+        background: #252c35;
+      }
+      section {
+        position: relative;
+        height: 760px;
+        background: #0c0f14;
+      }
+      h2 {
+        position: absolute;
+        top: 18px;
+        left: 30px;
+        margin: 0;
+        z-index: 1;
+        font-size: 21px;
+        font-weight: 500;
+      }
+      .viewport {
+        position: absolute;
+        inset: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>THREE-SIDED GULLY</h1>
+      <p>Concave end and fitted mouth · grass and snow · rise 0.75</p>
+    </header>
+    <main id="controls"></main>
+    <script type="module" src="./three-sided-slopes.ts"></script>
+  </body>
+</html>

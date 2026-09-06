@@ -3,11 +3,11 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-06 05:39 UTC)
+## Status Digest (2026-09-06 05:43 UTC)
 
 **Production ON HOLD** by the Executive Director (#748); he is tuning map generation personally in Map Lab. No resume ordered. No M3 decomposition, new seat assignments without the Director's request, or Ready queue growth. **v0.2.7** is tagged from main.
 
-**Producer:** Codex, Astra 6, effort high. Executive Director standing rule via the Director (2026-09-06): after grooming, arm **one bounded background watch**; poll GitHub every 5 minutes, print one line and exit on the first merged PR, new issue, seat-label change, or comment addressed to the Producer. Groom the event, then re-arm. Hard stop after 3 hours without an event: report timeout in one line and stop. Never a cron or concurrent watcher. This supersedes PR #803's Director-prompt-only cadence.
+**Producer:** Codex, Astra 6, effort high. Executive Director standing rule via the Director (2026-09-06): after grooming, arm **one bounded background watch**; poll GitHub every 5 minutes, print one line and exit on the first merged PR, new issue, seat-label change, or comment addressed to the Producer. Groom the event, then re-arm. Hard stop after 3 hours without an event: report timeout in one line and stop. Never a cron or concurrent watcher. This supersedes PR #803's Director-prompt-only cadence; merged #820 now records the bounded watch in the process docs.
 
 | Engineer seat | Runtime / effort | Tier | Assignment |
 |---|---|---|---|
@@ -17,7 +17,7 @@
 
 **Milestones** (closed / total issues, API snapshot at 04:09 UTC): M0 14/14 · M1 64/64 · M1.5 33/34 · M2 48/50 · M2.5 25/27 · M3 1/2 (held). These counts do not declare milestone completion.
 
-**Completed / board:** #807 is **Done**: all three engine slices merged (#810 migration preparation, #812 explicit storey units, #815 activation). eng-3 has no open assignment. #798/#799 remain **Done** through #811. Tech Lead handoffs #816/#818 and Producer handoff #814 merged; v0.2.7 remains the latest recorded tag.
+**Completed / board:** #807 is **Done**: all three engine slices merged (#810 migration preparation, #812 explicit storey units, #815 activation). eng-3 has no open assignment. #798/#799 remain **Done** through #811. Tech Lead handoffs #816/#818, Producer handoff #814, and process PR #820 merged; v0.2.7 remains the latest recorded tag.
 
 **Live exceptions / board:** #804 remains **In Progress**. MapGen owns **#808 and #817, In Progress**: Art Director diagnosed ramp gaps as classification-side and handed the fix to MapGen under #808. **#809 is In Progress with the Art Director**, who cleared the diagnosis gate and reported moving to it in #817's comment (5557215896). All specialist issues remain without engineer seat labels.
 

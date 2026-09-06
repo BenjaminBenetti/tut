@@ -1,39 +1,56 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-06 (#840 complete; #848 in progress)
+Last updated: 2026-09-06 (#840 merged; #848 ready for review)
 
 ## Current status: #848 diagonal slope kit
 
-The Director's next task is #848, after the road-art release gate. Branch
-`feat/848-diagonal-slope-kit`, based on main `148b179` (v0.2.9). This seat
-remains Codex Art Director, gpt-6-astra xhigh. #848 and #849 were read in
-full including QA's rescale update. The four-chain target is now
-`qa813-snowy-town-large-0`: `(23,2,91)` → `(26,5,88)`, all outer turn 2.
-The two original snowy three-chains still reproduce; the mixed-turn grass
-chain needs its actual high directions respected. Keep isolated corners.
+Codex Art Director, gpt-6-astra xhigh. Branch `feat/848-diagonal-slope-kit`.
+The Director queued this after #840; #850 merged and v0.2.9 was tagged, so
+#848 is now delivered for the Director's frame judgement and Tech Lead review.
+Main through `e671c01` (#847/#853) is merged normally into the branch.
 
-A candidate `tile.slope.diagonal` is emitted through the Blender loop:
-`RISE × (u + v) / 2`, same 1 × 1 base-centred contract and shared RISE 0.75.
-10 triangles, 1,932 bytes, watertight. All three angles were opened. The
-material factory can consume it, but scene placement and transitions are
-still in progress; do not claim the issue fixed from the standalone mesh.
+`tile.slope.diagonal` is emitted through the Blender loop: `RISE × (u+v)/2`,
+same 1 × 1 base-centred contract and single shared `RISE = 0.75`. 10 triangles,
+1,932 bytes, watertight. All three angles were opened. The model id, both
+manifests, model table and live scene consumer are registered.
 
-Important geometry check: the shipped first snowy three-chain's actual
-meshes already meet their four flanks within 0.000015 u in ray samples.
-The new plane raises its two side corners by half a rise, so a direct swap
-needs those shared vertices reconciled with adjacent tiles. Check the
-whole neighbourhood before committing a look. Scratch reports, scripts and
-current-map dumps live in `.git/art-848/`; before crops are being captured
-in `docs/design/diagnostics/848/before/` at 140 px/tile. Capture waits for
-rendered frames between camera inputs; short sleeps overshoot on SwiftShader.
+The graphics resolver selects matching outer-corner chains climbing one
+layer per tile. The plane raises the two side corners by half a rise; its
+neighbours therefore receive fitted ground caps. Their split follows the
+chain diagonal. Choosing the highest cap vertex as the split made a row of
+teeth despite closed edges; the composite caught this and an interior-ray
+regression now guards it. Materials and mist prototypes share across levels.
+Data, traversal and the existing corner quarter-turn reconciliation stay as
+before. Older two-layer slopes retain their original fit.
 
-#849 remains a compatibility check, not a second speculative piece. Its
-three-high-side slot at hills-1 `(10,3,29)` is separate from a monotone
-diagonal rise. Prove/report whether the completed geometry covers it.
-#847 unwalled lot margins belongs to MapGen. N1 narrow channels are not a
-defect. QA's new-scale audit: 75,865 one-layer edges; 7,299 unwalled excluded
-steps; longest outer chain 4; J3 524 tiles (0.7%). Issue bodies have current
-coordinates; the original catalogue frames are older-scale illustrations.
+[Composite, contract and angles](../design/kits/terrain-slopes.md).
+[Fourteen same-seed crops, neighbourhoods and fit boundary](../design/diagnostics/848/README.md).
+All are rendered and opened. The comparison baseline is current main
+`e671c01`, so #847's surrounding slope changes appear on both sides. The
+four filed chains plus the newer four-chain fit. The mixed-turn case keeps
+its reversed first corner and fits its aligned final pair. The isolated S2
+control is byte-identical before/after.
+
+A 108-map QA-seed sweep finds 21 aligned chains (47 tiles): 18 chains / 41
+tiles fit; no isolated corner changes. Three chains retain the old model
+beside existing cliff/retaining boundaries. Exact seeds, vertices and reasons
+are in the evidence; do not claim every diagonal adjacency is converted.
+
+#849 is NOT covered. The hills-1 rock slot `(10,3,29)` still has three high
+orthogonal sides and no slope. Its before/after crops are byte-identical.
+This needs its own shape decision; no second piece was cut. #847 is MapGen's
+merged rule fix; N1 narrow channels remain intentional.
+
+Validation: Blender/trimesh + manifest; all quarter turns for 2/3/4 chains,
+core and outer-plane ray samples, material sharing, isolated/walled/cliff
+fallbacks; typecheck, lint, 2,030 unit tests (one skipped), build; 59 browser tests pass, 23
+captures skipped, zero retries (2.6 minutes). Composite capture passes. Both
+seed-4242 fog frames are regenerated, opened and byte-identical to main.
+Scratch is `.git/art-848/`; the baseline worktree is pinned at `e671c01`.
+
+Next: address review on this branch, then ONE bounded event watch. The
+Director judges the pictures; Tech Lead alone merges. No speculative #849
+piece. No new production work without direction.
 
 ## Completed: #840 carriageways, PR #850
 

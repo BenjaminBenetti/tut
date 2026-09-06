@@ -72,6 +72,20 @@ describe("diagonal chain fitting (#848)", () => {
       resolveDiagonalSlopeAppearances(walled, new TileIndex(walled)).size,
     ).toBe(0);
   });
+  for (const level of [0, 2])
+    it(`preserves a chain beside an existing cliff at adjacent level ${level}`, () => {
+      const field = diagonalTerrace(3);
+      const map = {
+        ...field,
+        tiles: field.tiles.map((t) => ({
+          ...t,
+          y: t.x === 0 && t.z === 1 ? level : t.y + 1,
+        })),
+      };
+      expect(
+        resolveDiagonalSlopeAppearances(map, new TileIndex(map)).size,
+      ).toBe(0);
+    });
   it("fits the rescaled four-chain and leaves #849's three-high slot outside this shape", () => {
     const make = (
       seed: string,

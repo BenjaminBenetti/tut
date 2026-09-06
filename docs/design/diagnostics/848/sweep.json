@@ -1,0 +1,155 @@
+{
+  "maps": 108,
+  "chains": 21,
+  "tiles": 47,
+  "fittedChains": 18,
+  "fittedTiles": 41,
+  "isolatedChanged": 0,
+  "base": "e671c01",
+  "fallbacks": [
+    {
+      "seed": "qa813-temperate-rural-medium-1",
+      "chain": [
+        {
+          "x": 21,
+          "y": 2,
+          "z": 67,
+          "surface": "grass",
+          "slope": {
+            "kind": "outer",
+            "turns": 3
+          },
+          "walls": {}
+        },
+        {
+          "x": 22,
+          "y": 3,
+          "z": 68,
+          "surface": "grass",
+          "slope": {
+            "kind": "outer",
+            "turns": 3
+          },
+          "walls": {}
+        }
+      ],
+      "covered": 0,
+      "reasons": [
+        {
+          "vertex": [21, 68],
+          "previous": 2,
+          "proposed": 2.5,
+          "other": {
+            "x": 20,
+            "y": 1,
+            "z": 67,
+            "surface": "grass",
+            "pass": 3,
+            "walls": {},
+            "coverProvided": 0,
+            "blocksLos": false
+          },
+          "why": ["existing cliff at shared vertex"]
+        }
+      ]
+    },
+    {
+      "seed": "qa813-snowy-town-medium-0",
+      "chain": [
+        {
+          "x": 32,
+          "y": 4,
+          "z": 10,
+          "surface": "snow",
+          "slope": {
+            "kind": "outer",
+            "turns": 0
+          },
+          "walls": {}
+        },
+        {
+          "x": 31,
+          "y": 5,
+          "z": 11,
+          "surface": "snow",
+          "slope": {
+            "kind": "outer",
+            "turns": 0
+          },
+          "walls": {}
+        }
+      ],
+      "covered": 0,
+      "reasons": [
+        {
+          "vertex": [32, 12],
+          "previous": 5,
+          "proposed": 5.5,
+          "other": {
+            "x": 32,
+            "y": 4,
+            "z": 12,
+            "surface": "snow",
+            "pass": 0,
+            "walls": {
+              "s": "solid"
+            },
+            "coverProvided": 2,
+            "blocksLos": true,
+            "propId": "prop-46"
+          },
+          "why": ["wall", "existing cliff at shared vertex"]
+        }
+      ]
+    },
+    {
+      "seed": "qa813-snowy-town-large-2",
+      "chain": [
+        {
+          "x": 69,
+          "y": 4,
+          "z": 62,
+          "surface": "snow",
+          "slope": {
+            "kind": "outer",
+            "turns": 3
+          },
+          "walls": {}
+        },
+        {
+          "x": 70,
+          "y": 5,
+          "z": 63,
+          "surface": "snow",
+          "slope": {
+            "kind": "outer",
+            "turns": 3
+          },
+          "walls": {}
+        }
+      ],
+      "covered": 0,
+      "reasons": [
+        {
+          "vertex": [69, 63],
+          "previous": 4,
+          "proposed": 4.5,
+          "other": {
+            "x": 68,
+            "y": 6,
+            "z": 62,
+            "surface": "snow",
+            "pass": 3,
+            "walls": {},
+            "coverProvided": 0,
+            "blocksLos": false
+          },
+          "why": [
+            "existing cliff at shared vertex",
+            "neighbour base above plane"
+          ]
+        }
+      ]
+    }
+  ]
+}

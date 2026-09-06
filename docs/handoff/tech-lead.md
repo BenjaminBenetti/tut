@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-06 ~05:20 UTC (session 5; studio re-tooled to Codex seats, ADR 0008 half-height layers in flight, #815 activation pending a rebase; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-06 ~05:30 UTC (session 5; ADR 0008 engine activation #815 merged, #807 closed; #808/#809 next; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — production is paused; only #748 is live
 
@@ -157,9 +157,11 @@ in this session when you ask. You and MapGen stay Fable. Staffing table in
   activation** (`STOREY_LAYERS = 2`, `LAYER_HEIGHT = 0.75`, map v2, schema 16,
   migration registered, ADR 0004 amended, ADR 0008 → Accepted); content read
   and sound; four frames byte-identical/sidebar-only and `test:sim` identical
-  are in the body. **Blocked on eng-3 rebasing onto `main`** — the branch still
-  carries #812'"'"'s commits, conflicting with the squash (stacked-PR shape). When
-  it merges: #808 and #809 go.
+  in the body; **merged `5fff54d`, #807 closed.** `main` is now in layers:
+  `STOREY_LAYERS = 2`, `LAYER_HEIGHT = 0.75`, map v2, schema 16. **Next: #808**
+  (MapGen: `amplitudeLayers`, I11 smoothing, slope tiles without ramps, step
+  readout, `test:sim` before/after — the baseline WILL move) and **#809** (Art:
+  slope set at `RISE = 0.75`); Director judges both frames before merge.
 - Slopes: #801 data path and #811 kit (`306a562`, #798 closed) landed; **#799
   closed**. #811 is at `RISE = 1.5`; #809 re-emits at 0.75.
 

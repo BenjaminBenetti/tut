@@ -6,21 +6,14 @@ import type { ElevatedFeature } from "../model/elevated-feature";
 // ===========================================
 
 /**
- * The raised outdoor structures a city plat can carry. City blocks are
- * graded flat and mechs cannot use roofs, so without these a mech never
- * holds height on a city map (#444); each of these is one level up and
- * reachable by both classes over the ramps the ramp pass adds.
+ * Legacy artificial features, with dimensions in columns. Road-bearing
+ * stamps were disabled by #785, paved plinths by #910, and the remaining
+ * soil/grass/rock plinths by #936. City height comes from buildings and
+ * actual terrain; planting belongs at the surrounding ground grade.
  *
- * They are city vocabulary on purpose — a viaduct, a plaza, a rail
- * embankment — rather than terrain: a hill dropped into a downtown reads
- * as a mistake. Sizes are in columns, and the ranges are what fits
- * between a 12-column block grid and the lots inside it.
- *
- * The viaduct earns its weight: about seven in ten walkable columns of a
- * city are street or sidewalk, so lifting a run of the grid is the only
- * feature that moves the high-ground share much, and an elevated roadway
- * is the piece of real city that does it. `breadth` is ignored for it —
- * a viaduct takes the corridor it is laid on, sidewalk to sidewalk.
+ * Definitions retain their planning weights and footprints. Per-family
+ * caps withdraw their realisation without redistributing those attempts
+ * into replacement blocks. Natural terrain is generated independently.
  */
 export const ELEVATED_FEATURES: readonly ElevatedFeature[] = [
   {
@@ -42,8 +35,8 @@ export const ELEVATED_FEATURES: readonly ElevatedFeature[] = [
     breadth: { min: 6, max: 9 },
     weight: 3,
     scales: ["city"],
-    // #910: leave these proposals as open ground. Keep their planning
-    // draws so the accepted planted beds retain their positions and sizes.
+    // #910/#936: keep the planning draws; withdrawn plots become open
+    // ground instead of feeding more placements of another family.
     maxPerMap: 0,
   },
   {
@@ -75,6 +68,7 @@ export const ELEVATED_FEATURES: readonly ElevatedFeature[] = [
     breadth: { min: 2, max: 2 },
     weight: 2,
     scales: ["city"],
+    maxPerMap: 0,
   },
   {
     id: "terrace",
@@ -84,6 +78,7 @@ export const ELEVATED_FEATURES: readonly ElevatedFeature[] = [
     breadth: { min: 3, max: 4 },
     weight: 2,
     scales: ["city", "town"],
+    maxPerMap: 0,
   },
   {
     id: "raised-park",
@@ -93,6 +88,7 @@ export const ELEVATED_FEATURES: readonly ElevatedFeature[] = [
     breadth: { min: 4, max: 7 },
     weight: 3,
     scales: ["city"],
+    maxPerMap: 0,
   },
   {
     id: "rubble-mound",
@@ -102,5 +98,6 @@ export const ELEVATED_FEATURES: readonly ElevatedFeature[] = [
     breadth: { min: 4, max: 6 },
     weight: 2,
     scales: ["city", "town"],
+    maxPerMap: 0,
   },
 ];

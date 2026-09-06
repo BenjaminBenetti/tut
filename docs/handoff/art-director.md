@@ -1,28 +1,63 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-06 (#817 diagnosis; #809 next)
+Last updated: 2026-09-06 (#809 half-rise slope kit)
 
-## Current work: #817 diagnosis, then #809
+## Current work: #809 half-rise slopes
 
-The #817 gap is confirmed on the classification side. Read
-[the diagnosis and exact neighbourhoods](../design/diagnostics/817-slope-gap.md).
-A high-neighbour prop removes that column from the classifier's walkable
-node set, changing an inner corner into a straight without changing heights.
-The shipped scene mapping passes all four turns of both corner kinds against
-hand-built neighbourhoods. Twelve Map Lab combinations were rendered and
-inspected; the diagnosis includes crops and the 16 passing diagnostic cases.
-MapGen owns the rule fix in #808. No graphics/model/classifier fix was made.
+Review: [PR #822](https://github.com/BenjaminBenetti/tut/pull/822).
+Branch `feat/809-half-rise-slopes`, rebased onto main `7188c69` after #823.
+The Director accepted the half-rise kit/composite, then held the PR for
+#823's landing order. The resolver now restores the model seam for natural
+one-layer slopes; the initial wedge retires on model load. Both interim
+#823 test changes are replaced with placement/material/retirement coverage.
+The corner mapping remains exactly as #811 supplied it.
 
-Latest Director direction: post the finding on #817, then start #809 without
-waiting for another prompt. Re-emit the set with `RISE = 0.75` per ADR 0008;
-read the current issue before working. Earlier pause-only notes are superseded.
+The single Blender authoring parameter remains `RISE = 0.75`. All three
+GLBs were re-emitted and validated; all nine angles and the grass/sand
+terrace composite were rendered and opened. Footprint, pivot, UV/material
+contract and triangle counts are unchanged. No other model was re-emitted.
 
-New standing event rule: when otherwise waiting for the Director, run ONE
-bounded background watch: GitHub every five minutes, one line and exit at
-first relevant event, hard stop after three hours. Relevant: Tech Lead
-comment/review/merge on own PRs, a new comment on #817 or #809, any new or
-relabelled area:art issue. Act and re-arm; timeout with no event means report
-one line and stop. Never cron and never more than one watch.
+`terrainSlopeRise`/`scaleY` remain a guard for older maps. All **767** slopes
+in the snowy rural medium hills-1 control use **scale 1**; a generation
+integration test checks every slope is placed, all three kinds occur and
+no instance stretches. Sixteen neighbourhood cases cover both rises, both
+corners and all turns through the final instanced scene (320 edge checks).
+
+All four preview controls and both seed-4242 fog frames were regenerated
+and opened on #823's terrain. Both fog frames remain byte-identical to main.
+[Textured hills-1 control](../design/shots/808-preview-half-steps-snowy-rural-hills-1.png).
+[Kit contract and renders](../design/kits/terrain-slopes.md).
+The Director judges this textured frame before the Tech Lead merges and
+v0.2.8 is tagged. No merge or tag is an Art Director action.
+
+Validation: typecheck, lint, 1,980 unit tests (one skipped), build and five
+capture tests and all 59 browser tests (11 opt-in captures skipped) pass.
+The existing build chunk-size warning remains. After posting the frame, re-arm the
+single bounded watch below.
+
+## #817 diagnosis handed to MapGen
+
+[Finding posted on #817](https://github.com/BenjaminBenetti/tut/issues/817#issuecomment-5557215896).
+[Evidence/handoff PR #821](https://github.com/BenjaminBenetti/tut/pull/821), merged.
+[Diagnosis and exact neighbourhoods](../design/diagnostics/817-slope-gap.md).
+On v0.2.7, a high-neighbour prop removes that column from the walkability
+set used to choose the visual corner. An inner can become a straight;
+outer corners can disappear too. Exact 3 × 3 dumps and crops are in the
+report. Twelve Map Lab combinations were rendered/inspected; all four
+turns of both corners pass when the metadata describes the neighbourhood.
+MapGen landed the fix in #823 (`d3bf95b`): ground geometry now determines
+the high sides, with regression coverage for both prop cases and the seed
+sweep. No rule fix was made here.
+
+## Standing event rule (latest Director direction)
+
+When otherwise waiting for the Director, run ONE bounded background watch:
+GitHub every five minutes; print one line and exit on the first relevant
+change; hard stop after three hours. Relevant: Tech Lead comment, review or
+merge on any own PR; a new comment on #817 or #809; any new or relabelled
+area:art issue. Act and re-arm. If no event before timeout, report one line
+and stop. Never a cron and never more than one watch. Earlier pause-only
+notes below are historical.
 
 ## Previous work: #798 / PR #811 (merged)
 

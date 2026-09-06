@@ -32,6 +32,7 @@ import type {
   VisionTileKey,
 } from "../../tactical/model/tactical-state";
 import { TileIndex } from "../../mapgen/service/tile-index";
+import { terrainSlopeRise } from "../service/terrain-slope-rise";
 import type { GhostUniforms } from "../service/ghost-cutaway";
 import { applyGhostCutaway } from "../service/ghost-cutaway";
 import {
@@ -364,9 +365,7 @@ export class TacticalMapView implements Disposable, TilePicker {
     for (const label of [TILES_SLAB, "walls", "props", "connectors"]) {
       this.retirePlaceholders(label);
     }
-    // The slope wedge stays until the slope kit is re-emitted at one layer
-    // of rise (#809): until then the resolver places no slope model, and a
-    // wedge with nothing behind it must not retire (ADR 0008 §3, child b).
+    // The half-rise kit replaces the initial wedges once its models are placed.
     if (placements.tiles.some((p) => p.modelId.startsWith("tile.slope."))) {
       this.retirePlaceholders("slopes");
     }
@@ -857,19 +856,7 @@ export class TacticalMapView implements Disposable, TilePicker {
       return;
     }
     const low = tileTop(tile.y);
-    const highSides = ["s", "w", "n", "e"] as const;
-    let highColumn = stepGridPos(tile, highSides[slope.turns]);
-    if (slope.kind === "outer") {
-      highColumn = stepGridPos(
-        highColumn,
-        highSides[(slope.turns + 1) % 4] ?? "s",
-      );
-    }
-    const upper = this.index.column(highColumn.x, highColumn.z)[0];
-    const high = tileTop(
-      upper !== undefined && upper.y > tile.y ? upper.y : tile.y + 1,
-    );
-    const rise = high - low;
+    const rise = terrainSlopeRise(tile, this.index) * LAYER_HEIGHT;
     // Built rising towards +z (south), which is `turns` 0; a quarter turn
     // clockwise about +y for each further turn matches the stairs model.
     const geometry = new BufferGeometry();
@@ -1172,7 +1159,7 @@ function placementMatrix(placement: ModelPlacement): Matrix4 {
   return new Matrix4().compose(
     new Vector3(x, y, z),
     new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), yaw),
-    new Vector3(1, 1, 1),
+    new Vector3(1, placement.scaleY ?? 1, 1),
   );
 }
 

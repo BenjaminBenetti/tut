@@ -15,14 +15,12 @@ import { describe, expect, it } from "vitest";
 
 import { MODEL_MANIFEST } from "../data/model-manifest";
 import { SLOPE_MODELS } from "../data/map-model-table";
-import { STOREY_LAYERS } from "../../core/model/elevation";
 import { LAYER_HEIGHT } from "../data/mapgen-preview-palette";
 import {
   TerrainSlopeModelFactory,
   slopeMaterialsFromGround,
 } from "./terrain-slope-model-factory";
 import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
-import { tileTop } from "../view/tactical-map-view";
 import { resolveMapModels } from "./map-model-resolver";
 
 /** Parses the real, texture-neutral GLB, so tests exercise the exported art contract. */
@@ -39,14 +37,14 @@ async function prototype(kind: keyof typeof SLOPE_MODELS): Promise<Object3D> {
   return (await new GLTFLoader().parseAsync(data, "")).scene;
 }
 
-/** Full-storey art remains until ADR 0008 child c replaces the kit. */
-const SLOPE_RISE = STOREY_LAYERS * LAYER_HEIGHT;
+/** One layer, matching the single Blender RISE parameter. */
+const SLOPE_RISE = LAYER_HEIGHT;
 
 describe("terrain slope kit", () => {
   for (const kind of Object.keys(
     SLOPE_MODELS,
   ) as (keyof typeof SLOPE_MODELS)[]) {
-    it(`${kind} covers one whole tile, joins at the current full-storey rise, and borrows both ground materials`, async () => {
+    it(`${kind} covers one whole tile, joins at the current one-layer rise, and borrows both ground materials`, async () => {
       const source = await prototype(kind);
       const loader = {
         load: () => Promise.resolve(source.clone(true)),
@@ -106,23 +104,8 @@ describe("terrain slope kit", () => {
             slope: { kind, turns },
           })),
         };
-        // Interim (ADR 0008 §3 child b): the resolver places no slope model
-        // until #809 re-emits the kit at one layer of rise, so the
-        // placement is built here the way the resolver did in #811 —
-        // corner assets add a quarter turn to reconcile their east/south
-        // high corner with map data's west/south. #809 restores the
-        // resolver call.
-        expect(
-          resolveMapModels(map).tiles.some((p) =>
-            p.modelId.startsWith("tile.slope."),
-          ),
-        ).toBe(false);
-        const tile = map.tiles[0]!;
-        const placement = {
-          modelId: SLOPE_MODELS[kind],
-          position: { x: tile.x + 0.5, y: tileTop(tile.y), z: tile.z + 0.5 },
-          turns: ((turns + (kind === "straight" ? 0 : 1)) % 4) as 0 | 1 | 2 | 3,
-        };
+        const placement = resolveMapModels(map).tiles[0]!;
+        expect(placement.modelId).toBe(SLOPE_MODELS[kind]);
         node.position.copy(placement.position);
         node.rotation.y = (-placement.turns * Math.PI) / 2;
         node.updateMatrixWorld(true);

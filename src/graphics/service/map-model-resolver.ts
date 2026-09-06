@@ -9,10 +9,12 @@ import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { Tile } from "../../mapgen/model/tile";
 import { TileIndex } from "../../mapgen/service/tile-index";
+import { terrainSlopeRise } from "./terrain-slope-rise";
 import {
   propModel,
   ROAD_VARIANTS,
   SIDEWALK_VARIANTS,
+  SLOPE_MODELS,
   surfaceModel,
   wallModel,
   wallFamilyForWall,
@@ -37,6 +39,8 @@ export interface ModelPlacement {
   readonly position: Vec3;
   /** Quarter turns clockwise seen from above, matching `Prop.rotation`. */
   readonly turns: Rotation;
+  /** Vertical fit for one-layer slope art; other models retain their authored size. */
+  readonly scaleY?: number;
   /**
    * The tile this belongs to. Carried so the renderer can dim or drop it
    * with that tile's vision (#551) — a wall is only ever as visible as
@@ -183,12 +187,16 @@ function resolveTiles(
   const placements: ModelPlacement[] = [];
   for (const tile of map.tiles) {
     if (tile.slope !== undefined) {
-      // A natural step is one layer now (ADR 0008) and the #811 slope kit
-      // rises a whole storey; drawing it here would stand a full wedge on
-      // a half step. The view's placeholder wedge rises exactly one layer,
-      // so slope tiles keep it until #809 re-emits the kit at RISE 0.75 —
-      // then this branch maps `(surface, kind, turns)` to the models again
-      // and retires the view's "slopes" placeholder label.
+      placements.push({
+        modelId: SLOPE_MODELS[tile.slope.kind],
+        level: tile.y,
+        position: { x: tile.x + 0.5, y: tileTop(tile.y), z: tile.z + 0.5 },
+        scaleY: terrainSlopeRise(tile, index),
+        // The corner assets peak at +X/+Z; map-data turn 0 peaks at -X/+Z.
+        turns: ((tile.slope.turns + (tile.slope.kind === "straight" ? 0 : 1)) %
+          4) as Rotation,
+        tile,
+      });
       continue;
     }
     const fitted = fitSurface(tile, index, map);

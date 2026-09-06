@@ -44,6 +44,24 @@ const CONTROLS = [
     seed: "hills-1",
     file: "docs/design/shots/829-preview-rural-temperate-medium-hills-1.png",
   },
+  // #847: QA's J2 seed from the #813 catalogue, where a terrace stopped
+  // ramping beside a plot, and the two #799 controls at the new scale.
+  {
+    query:
+      "seed=qa813-temperate-rural-small-0&biome=temperate&settlement=rural&size=small",
+    seed: "qa813-temperate-rural-small-0",
+    file: "docs/design/shots/847-preview-lot-margin-qa813-temperate-rural-small-0.png",
+  },
+  {
+    query: "seed=730982385&biome=temperate&settlement=city&size=small",
+    seed: "730982385",
+    file: "docs/design/shots/847-preview-control-seed730982385.png",
+  },
+  {
+    query: "seed=hills-1&biome=snowy&settlement=rural&size=medium",
+    seed: "hills-1",
+    file: "docs/design/shots/847-preview-terrain-heavy-snowy-rural-hills-1.png",
+  },
   // The same city cut at its ground floors (`?floor=0`), so the interiors
   // are judged as structures: corridors, doorways, cover, stairs.
   {

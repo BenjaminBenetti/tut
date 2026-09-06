@@ -1,3 +1,4 @@
+import { STOREY_LAYERS } from "../../core/model/elevation";
 import { describe, expect, it } from "vitest";
 
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
@@ -46,7 +47,7 @@ describe("freezeDraft", () => {
     const map = freezeDraft(d, recipe, registries);
     const index = new TileIndex(map);
     expect(map.tiles).toHaveLength(7);
-    expect(map.levels).toBe(3);
+    expect(map.levels).toBe(2 + STOREY_LAYERS);
     expect(index.get(1, 2, 0)?.surface).toBe(SurfaceIds.GRASS);
     expect(index.get(1, 0, 0)).toBeUndefined();
     expect(index.get(2, 0, 1)?.pass).toBe(PassMask.NONE);

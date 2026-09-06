@@ -1,3 +1,4 @@
+import { STOREY_LAYERS } from "../../core/model/elevation";
 import { describe, expect, it } from "vitest";
 
 import { PropKindIds } from "../data/props";
@@ -18,9 +19,9 @@ const BUILDING_ID = "b1";
 const FOOTPRINT = { x: 2, z: 1, w: 3, d: 2 };
 const DOOR_TILE: TileCoord = { x: 3, y: 0, z: 2 };
 const STAIR_FROM: TileCoord = { x: 2, y: 0, z: 1 };
-const STAIR_TO: TileCoord = { x: 3, y: 1, z: 1 };
-const HOLE: TileCoord = { x: 2, y: 1, z: 1 };
-const OBJECTIVE: TileCoord = { x: 4, y: 1, z: 1 };
+const STAIR_TO: TileCoord = { x: 3, y: STOREY_LAYERS, z: 1 };
+const HOLE: TileCoord = { x: 2, y: STOREY_LAYERS, z: 1 };
+const OBJECTIVE: TileCoord = { x: 4, y: STOREY_LAYERS, z: 1 };
 const CRATE: TileCoord = { x: 0, y: 0, z: 5 };
 const OUTSIDE_DOOR: TileCoord = { x: 3, y: 0, z: 3 };
 
@@ -50,7 +51,7 @@ function deployTiles(): TileCoord[] {
  * ```
  */
 function validFixture(): FixtureMapBuilder {
-  const b = new FixtureMapBuilder(8, 6, 3).fillGround();
+  const b = new FixtureMapBuilder(8, 6, 3 * STOREY_LAYERS).fillGround();
   for (let z = 1; z <= 2; z++) {
     for (let x = 2; x <= 4; x++) {
       b.tile({ x, y: 0, z }, SurfaceIds.FLOOR, {
@@ -58,7 +59,7 @@ function validFixture(): FixtureMapBuilder {
         floorIndex: 0,
       });
       if (x !== HOLE.x || z !== HOLE.z) {
-        b.tile({ x, y: 1, z }, SurfaceIds.FLOOR, {
+        b.tile({ x, y: STOREY_LAYERS, z }, SurfaceIds.FLOOR, {
           buildingId: BUILDING_ID,
           floorIndex: 1,
         });
@@ -66,7 +67,7 @@ function validFixture(): FixtureMapBuilder {
     }
   }
   b.patchTile(STAIR_FROM, { surface: SurfaceIds.STAIRS });
-  for (const y of [0, 1]) {
+  for (const y of [0, STOREY_LAYERS]) {
     for (let z = 1; z <= 2; z++) {
       for (let x = 2; x <= 4; x++) {
         if (y === HOLE.y && x === HOLE.x && z === HOLE.z) {
@@ -89,7 +90,7 @@ function validFixture(): FixtureMapBuilder {
     groundLevel: 0,
     floors: [
       { index: 0, y: 0, rooms: [] },
-      { index: 1, y: 1, rooms: [] },
+      { index: 1, y: STOREY_LAYERS, rooms: [] },
     ],
     roof: { kind: "pitched", walkable: false },
     entrances: [{ tile: DOOR_TILE, side: "s" }],
@@ -268,7 +269,7 @@ describe("validateTacticalMap", () => {
     const missing = validFixture()
       .objective(
         HookKinds.EGG_SPAWNER,
-        [{ x: 7, y: 2, z: 5 }],
+        [{ x: 7, y: 2 * STOREY_LAYERS, z: 5 }],
         PassMask.INFANTRY,
       )
       .build();

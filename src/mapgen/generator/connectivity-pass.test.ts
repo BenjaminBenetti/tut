@@ -1,3 +1,4 @@
+import { STOREY_LAYERS } from "../../core/model/elevation";
 import { describe, expect, it } from "vitest";
 
 import { BIOME_IDS } from "../../content/model/biome-id";
@@ -223,11 +224,11 @@ describe("ConnectivityPass", () => {
   it("bridges a cliff with a ramp for both classes", () => {
     const { map, notes } = scenario((draft) => {
       for (let z = 0; z < 20; z++)
-        for (let x = 10; x < 20; x++) draft.setGroundLevel(x, z, 1);
+        for (let x = 10; x < 20; x++) draft.setGroundLevel(x, z, STOREY_LAYERS);
       draft.addHook(
         "objectives",
         HookKinds.EGG_SPAWNER,
-        [{ x: 15, y: 1, z: 10 }],
+        [{ x: 15, y: STOREY_LAYERS, z: 10 }],
         PassMask.ALL,
       );
     });

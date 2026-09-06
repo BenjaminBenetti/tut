@@ -1,3 +1,4 @@
+import { STOREY_LAYERS } from "../../core/model/elevation";
 import { describe, expect, it } from "vitest";
 
 import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
@@ -55,10 +56,10 @@ const NO_TERRAIN = {
  * at (9,1,0).
  */
 function fixtureMap(): TacticalMap {
-  const b = new FixtureMapBuilder(10, 6, 2).fillGround();
+  const b = new FixtureMapBuilder(10, 6, 2 * STOREY_LAYERS).fillGround();
   b.prop(PropKindIds.CRATE, { x: 4, y: 0, z: 2 });
   b.wall({ x: 7, y: 0, z: 3 }, "w", "solid");
-  b.tile({ x: 9, y: 1, z: 0 }, SurfaceIds.ROCK);
+  b.tile({ x: 9, y: STOREY_LAYERS, z: 0 }, SurfaceIds.ROCK);
   return b.build();
 }
 
@@ -233,7 +234,8 @@ describe("attackTerrain", () => {
       elevation: 0,
     });
     expect(
-      attackTerrain(map, { x: 9, y: 1, z: 0 }, { x: 5, y: 0, z: 0 }).elevation,
+      attackTerrain(map, { x: 9, y: STOREY_LAYERS, z: 0 }, { x: 5, y: 0, z: 0 })
+        .elevation,
     ).toBe(1);
   });
 

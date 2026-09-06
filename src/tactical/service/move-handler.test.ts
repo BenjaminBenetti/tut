@@ -1,3 +1,4 @@
+import { STOREY_LAYERS } from "../../core/model/elevation";
 import { describe, expect, it } from "vitest";
 
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
@@ -20,7 +21,11 @@ import {
 // Fixtures
 // ===========================================
 
-const at = (x: number, z: number, y = 0): TileCoord => ({ x, y, z });
+const at = (x: number, z: number, y = 0): TileCoord => ({
+  x,
+  y: y * STOREY_LAYERS,
+  z,
+});
 
 const moveHandler = createMoveHandler();
 

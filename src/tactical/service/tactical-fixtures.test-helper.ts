@@ -1,3 +1,4 @@
+import { STOREY_LAYERS } from "../../core/model/elevation";
 import { DEFAULT_WEAPON_NAME, PRIMARY_WEAPON_ID } from "../model/unit-weapon";
 import type { Rng, RngState } from "../../core/model/rng";
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
@@ -129,7 +130,7 @@ export function missionWith(
     map,
     units,
     templates: TEMPLATES,
-    difficulty: 1,
+    difficulty: STOREY_LAYERS,
     threat: 0,
     turn: 1,
     phase: "player",
@@ -187,7 +188,7 @@ export function ctxWith(rng: Rng): TacticalContext {
 
 /** An open 8×8 grass field with three levels of headroom. */
 export function openField(): FixtureMapBuilder {
-  return new FixtureMapBuilder(8, 8, 3).fillGround();
+  return new FixtureMapBuilder(8, 8, 3 * STOREY_LAYERS).fillGround();
 }
 
 /**
@@ -250,9 +251,9 @@ export function twoFloorBuilding(): TacticalMap {
     .tile({ x: 6, y: 0, z: 5 }, SurfaceIds.FLOOR)
     .tile({ x: 6, y: 0, z: 6 }, SurfaceIds.FLOOR)
     .tile({ x: 5, y: 0, z: 6 }, SurfaceIds.STAIRS)
-    .tile({ x: 5, y: 1, z: 5 }, SurfaceIds.FLOOR)
-    .tile({ x: 6, y: 1, z: 5 }, SurfaceIds.FLOOR)
-    .tile({ x: 6, y: 1, z: 6 }, SurfaceIds.FLOOR)
+    .tile({ x: 5, y: STOREY_LAYERS, z: 5 }, SurfaceIds.FLOOR)
+    .tile({ x: 6, y: STOREY_LAYERS, z: 5 }, SurfaceIds.FLOOR)
+    .tile({ x: 6, y: STOREY_LAYERS, z: 6 }, SurfaceIds.FLOOR)
     .wall({ x: 4, y: 0, z: 5 }, "e", "door")
     .wall({ x: 5, y: 0, z: 5 }, "n", "solid")
     .wall({ x: 6, y: 0, z: 5 }, "n", "solid")
@@ -261,6 +262,10 @@ export function twoFloorBuilding(): TacticalMap {
     .wall({ x: 6, y: 0, z: 6 }, "s", "solid")
     .wall({ x: 5, y: 0, z: 6 }, "s", "solid")
     .wall({ x: 5, y: 0, z: 6 }, "w", "solid");
-  builder.connector("stairs", { x: 5, y: 0, z: 6 }, { x: 5, y: 1, z: 5 });
+  builder.connector(
+    "stairs",
+    { x: 5, y: 0, z: 6 },
+    { x: 5, y: STOREY_LAYERS, z: 5 },
+  );
   return builder.build();
 }

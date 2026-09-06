@@ -1,3 +1,4 @@
+import { STOREY_LAYERS } from "../../core/model/elevation";
 import { describe, expect, it } from "vitest";
 
 import { BIOME_IDS } from "../../content/model/biome-id";
@@ -75,7 +76,7 @@ describe("biome definitions", () => {
       const terrain = biome.terrain;
       expect(Number.isInteger(terrain.amplitudeLayers), biome.id).toBe(true);
       expect(terrain.amplitudeLayers).toBeGreaterThanOrEqual(0);
-      expect(terrain.amplitudeLayers).toBeLessThanOrEqual(4);
+      expect(terrain.amplitudeLayers).toBeLessThanOrEqual(4 * STOREY_LAYERS);
       expect(terrain.frequency).toBeGreaterThan(0);
       expect(terrain.frequency).toBeLessThan(1);
       expect(terrain.octaves).toBeGreaterThanOrEqual(1);

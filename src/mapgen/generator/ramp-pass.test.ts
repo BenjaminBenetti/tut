@@ -1,3 +1,4 @@
+import { STOREY_LAYERS } from "../../core/model/elevation";
 import { describe, expect, it } from "vitest";
 
 import { BIOME_IDS } from "../../content/model/biome-id";
@@ -101,7 +102,7 @@ function componentsAgree(map: TacticalMap): boolean {
       const current = stack.pop();
       if (current === undefined) break;
       for (const direction of DIRECTIONS) {
-        for (const dy of [-1, 0, 1]) {
+        for (const dy of [-STOREY_LAYERS, 0, STOREY_LAYERS]) {
           const next = index.getAt(
             stepGridPos({ ...current, y: current.y + dy }, direction),
           );
@@ -161,7 +162,7 @@ describe("RampPass", () => {
       expect(to?.buildingId, ramp.id).toBeUndefined();
       expect(from?.propId, ramp.id).toBeUndefined();
       expect(to?.propId, ramp.id).toBeUndefined();
-      expect(ramp.to.y - ramp.from.y, ramp.id).toBe(1);
+      expect(ramp.to.y - ramp.from.y, ramp.id).toBe(STOREY_LAYERS);
       expect(manhattanDistance(ramp.from, ramp.to), ramp.id).toBe(1);
     }
   });
@@ -176,7 +177,7 @@ describe("RampPass", () => {
         for (const tile of mechGround(map)) {
           for (const direction of DIRECTIONS) {
             const upper = index.getAt(
-              stepGridPos({ ...tile, y: tile.y + 1 }, direction),
+              stepGridPos({ ...tile, y: tile.y + STOREY_LAYERS }, direction),
             );
             if (
               upper === undefined ||

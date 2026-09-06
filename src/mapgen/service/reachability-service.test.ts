@@ -1,3 +1,4 @@
+import { STOREY_LAYERS } from "../../core/model/elevation";
 import { describe, expect, it } from "vitest";
 
 import { PropKindIds } from "../data/props";
@@ -10,7 +11,7 @@ import { TileIndex } from "./tile-index";
 
 /** A 5×1 strip of grass, two levels tall. */
 function strip(): FixtureMapBuilder {
-  return new FixtureMapBuilder(5, 1, 2).fillGround();
+  return new FixtureMapBuilder(5, 1, 2 * STOREY_LAYERS).fillGround();
 }
 
 function service(map: TacticalMap): {
@@ -63,7 +64,7 @@ describe("ReachabilityService", () => {
   it("treats a level change without a connector as a cliff", () => {
     const map = strip()
       .removeTile({ x: 3, y: 0, z: 0 })
-      .tile({ x: 3, y: 1, z: 0 }, SurfaceIds.ROCK)
+      .tile({ x: 3, y: STOREY_LAYERS, z: 0 }, SurfaceIds.ROCK)
       .build();
     expect(reachableXs(map, PassMask.INFANTRY)).toEqual([0, 1, 2]);
     expect(reachableXs(map, PassMask.MECH)).toEqual([0, 1, 2]);
@@ -72,8 +73,12 @@ describe("ReachabilityService", () => {
   it("crosses ramps with both classes and stairs with infantry only", () => {
     const builder = strip()
       .removeTile({ x: 3, y: 0, z: 0 })
-      .tile({ x: 3, y: 1, z: 0 }, SurfaceIds.ROCK);
-    builder.connector("ramp", { x: 2, y: 0, z: 0 }, { x: 3, y: 1, z: 0 });
+      .tile({ x: 3, y: STOREY_LAYERS, z: 0 }, SurfaceIds.ROCK);
+    builder.connector(
+      "ramp",
+      { x: 2, y: 0, z: 0 },
+      { x: 3, y: STOREY_LAYERS, z: 0 },
+    );
     const ramped = builder.build();
     // (4,0,0) stays cut off: dropping from level 1 needs a connector too.
     expect(reachableXs(ramped, PassMask.INFANTRY)).toEqual([0, 1, 2, 3]);
@@ -81,9 +86,13 @@ describe("ReachabilityService", () => {
 
     const stairs = strip()
       .removeTile({ x: 3, y: 0, z: 0 })
-      .tile({ x: 3, y: 1, z: 0 }, SurfaceIds.FLOOR)
+      .tile({ x: 3, y: STOREY_LAYERS, z: 0 }, SurfaceIds.FLOOR)
       .tile({ x: 2, y: 0, z: 0 }, SurfaceIds.STAIRS, { pass: PassMask.ALL });
-    stairs.connector("stairs", { x: 2, y: 0, z: 0 }, { x: 3, y: 1, z: 0 });
+    stairs.connector(
+      "stairs",
+      { x: 2, y: 0, z: 0 },
+      { x: 3, y: STOREY_LAYERS, z: 0 },
+    );
     const stairMap = stairs.build();
     expect(reachableXs(stairMap, PassMask.INFANTRY)).toEqual([0, 1, 2, 3]);
     expect(reachableXs(stairMap, PassMask.MECH)).toEqual([0, 1, 2]);
@@ -129,7 +138,11 @@ describe("ReachabilityService", () => {
 
   it("ignores connectors whose endpoints are missing", () => {
     const builder = strip();
-    builder.connector("ramp", { x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 1 });
+    builder.connector(
+      "ramp",
+      { x: 0, y: 0, z: 0 },
+      { x: 0, y: STOREY_LAYERS, z: 1 },
+    );
     const map = builder.build();
     expect(() => service(map)).not.toThrow();
     expect(reachableXs(map, PassMask.INFANTRY)).toEqual([0, 1, 2, 3, 4]);

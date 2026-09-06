@@ -1,3 +1,4 @@
+import { STOREY_LAYERS } from "../../core/model/elevation";
 import { describe, expect, it } from "vitest";
 
 import { BIOME_IDS } from "../../content/model/biome-id";
@@ -105,7 +106,9 @@ describe("ElevationPass", () => {
           const rise = Math.abs(
             draft.groundLevelAt(x, z) - draft.groundLevelAt(x + 1, z),
           );
-          expect(rise, `${x},${z} seed ${i}`).toBeLessThanOrEqual(1);
+          expect(rise, `${x},${z} seed ${i}`).toBeLessThanOrEqual(
+            STOREY_LAYERS,
+          );
         }
       }
     }

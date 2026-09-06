@@ -1,3 +1,4 @@
+import { STOREY_LAYERS } from "../../core/model/elevation";
 import { BIOME_IDS } from "../../content/model/biome-id";
 import type { BiomeId } from "../../content/model/biome-id";
 import { SETTLEMENT_SCALES } from "../../content/model/settlement-scale";
@@ -505,4 +506,3 @@ function metricRows(
     ],
   ];
 }
-import { STOREY_LAYERS } from "../../core/model/elevation";

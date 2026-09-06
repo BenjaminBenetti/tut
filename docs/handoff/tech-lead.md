@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-06 ~06:05 UTC (session 5; #823 half steps merged, #808 closed; #822 half-rise kit held for its rebase, then v0.2.8; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-06 ~06:25 UTC (session 5; half-height release complete — #822 merged, #809/#817 closed, v0.2.8 is the Director's tag; ADR 0009 map scale #827 up with children #828/#829; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — production is paused; only #748 is live
 
@@ -166,19 +166,26 @@ in this session when you ask. You and MapGen stay Fable. Staffing table in
   Map Lab Steps readout, `test:sim` identical on the city seed (rural
   reachability did change — #734 reads that). #808 closed; #817 closes when
   #822 lands with the Art Director's mapping-side tests.
-- **#822 (Art Director, #809) HELD by the Director'"'"'s landing order**: it must
-  be rebased onto `main` with #823, the resolver seam flipped back to place
-  the 0.75-rise kit on one-layer steps and retire the `slopes` placeholder,
-  and a regenerated `hills-1` frame; the Director judges that frame, then gate,
-  merge, and the Director tags **v0.2.8**. Conditions posted on the PR (06:05).
-- Slopes: #801 data path and #811 kit (`306a562`, #798 closed) landed; **#799
-  closed**. #811 is at `RISE = 1.5`; #809 re-emits at 0.75.
+- **#822 (Art Director, #809) merged `66548ed`** after its rebase onto #823:
+  0.75-rise kit placed on every one-layer step, corners filled, placeholder
+  retired, mapping pinned by a 16-case neighbourhood test. #809 and #817 closed.
+  **The half-height release is complete: ADR 0008 Accepted, #804's children all
+  landed; the Director tags v0.2.8.**
 
-**Operational, learned 04:40–05:15:** merging a stacked PR'"'"'s base deletes the
-branch and **GitHub closes the stacked PR**; restore the ref at its old head via
-`git/refs`, reopen, `PATCH base=main`, delete the ref again — metadata only,
-never the author'"'"'s branch. A `git pull` in the main tree while `gate.sh` runs
-invalidates that gate (did it once more; stopped, reset, re-ran).
+**Next Executive Director ruling: map scale (#826).** ADR 0009
+`docs/adr/0009-map-scale-for-tactical-room.md` is **#827** (self-merge on CI;
+Director §2 sign-off requested on #826): scale is a set of typed knobs, not a
+multiplier; interiors become structures; roads become carriageways with
+width-aware junction fitting; camera zoom becomes map-aware and lands first;
+no save migration; `test:sim` reported and expected to move; budgets on the
+largest city reported, never capped. **The numbers are MapGen's** (ED
+instruction). Children: **#828** camera zoom (Opus seat, `complexity:medium`,
+first) → **#829** generation (MapGen, `complexity:high`) → art child filed
+only on #829's word. Review #829 as a map-contract-adjacent change: knobs in
+`mapgen/model`/`data`, "one-tile road" assumptions in `lot-pass` (frontage by
+adjacent road column), `prop-pass` (flanking column) and `elevation-pass`
+(frontage strip) are where it breaks first; goldens re-pin; Director judges
+the big-city, rural and interior controls.
 
 **Otherwise the queue is empty except parked #757.** Nothing merges until the ED's
 playtest verdict or a Director ruling on the ramp child above.

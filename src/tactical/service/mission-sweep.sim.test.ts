@@ -382,8 +382,14 @@ const WALKOVER_CEILING = 4;
  * curve reddens the next PR and has to be updated deliberately, which
  * #710 did. That is the trade, and today it has been on both sides of
  * it in a few hours.
+ *
+ * Lowered to 23 by #829 (ADR 0009 scale), deliberately and on the
+ * Director's ruling in #838: `sweep-22` at difficulty 3 won on turn 6 on
+ * a 32² Istanbul city and loses on turn 54 on the 48² one (replayed with
+ * `SIM_TURN_CAP=90`, so it is the curve, not the cap). The seed is noted
+ * on #734 for the tuning pass; this file does not retune.
  */
-const WALKOVER_FLOOR = 24;
+const WALKOVER_FLOOR = 23;
 
 describe("seeded tactical sweep", () => {
   // Played in `beforeAll`, not in the describe body: work there runs at

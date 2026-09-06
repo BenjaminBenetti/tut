@@ -53,6 +53,13 @@ export interface HookRequirement {
   readonly requiredPass: PassMask;
   /** Minimum manhattan distance from any deploy zone tile. */
   readonly minDistanceFromDeploy?: number;
+  /**
+   * Manhattan distance from the deploy zone the nearest hook of this
+   * kind starts within, when any candidate allows it. Keeps the first
+   * shot inside a turn budget however large the map (ADR 0009, #829):
+   * hooks drawn at random beyond a minimum drift outward with the board.
+   */
+  readonly maxNearestDistanceFromDeploy?: number;
   readonly meta?: HookMeta;
 }
 

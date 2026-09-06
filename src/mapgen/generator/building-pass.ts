@@ -20,6 +20,13 @@ import type { TileCoord } from "../model/tile-coord";
 import type { WallKind } from "../model/wall";
 
 // ===========================================
+// Constants
+// ===========================================
+
+/** Floors the tallest building on a map reaches where the settlement allows it. */
+const TALL_FLOORS = 3;
+
+// ===========================================
 // Types
 // ===========================================
 
@@ -86,7 +93,7 @@ export class BuildingPass implements GenerationPass {
       }
       planned.push({ lot, rng: lotRng, plan });
     }
-    ensureMultiStorey(planned, params, diagnostics);
+    ensureMultiStorey(planned, params, registries, diagnostics);
     for (const { lot, rng: lotRng, plan } of planned) {
       draft.buildings.push(raiseShell(draft, lot, plan, lotRng));
     }
@@ -112,9 +119,26 @@ function planBuilding(
   registries: GenerationContext["registries"],
   rng: Rng,
 ): BuildingPlan | undefined {
+  const candidates = fittingTemplates(lot, params, registries);
+  if (candidates.length === 0) {
+    return undefined;
+  }
+  const { template } = rng.pickWeighted(candidates, (c) => c.weight);
+  return sizePlan(lot, template, params, rng);
+}
+
+/**
+ * The biome's templates allowed at this settlement scale whose smallest
+ * footprint fits the lot, with their weights.
+ */
+function fittingTemplates(
+  lot: Lot,
+  params: ResolvedMapGenParams,
+  registries: GenerationContext["registries"],
+): { template: BuildingTemplate; weight: number }[] {
   const alongLot = frontageIsNorthSouth(lot.frontage) ? lot.rect.w : lot.rect.d;
   const deepLot = frontageIsNorthSouth(lot.frontage) ? lot.rect.d : lot.rect.w;
-  const candidates = params.biome.buildingKinds
+  return params.biome.buildingKinds
     .map((entry) => ({
       template: registries.buildingTemplates.get(entry.template),
       weight: entry.weight,
@@ -125,10 +149,17 @@ function planBuilding(
         template.footprintWidth.min <= alongLot &&
         template.footprintDepth.min <= deepLot,
     );
-  if (candidates.length === 0) {
-    return undefined;
-  }
-  const { template } = rng.pickWeighted(candidates, (c) => c.weight);
+}
+
+/** Sizes a template's footprint inside the lot and draws its floor count. */
+function sizePlan(
+  lot: Lot,
+  template: BuildingTemplate,
+  params: ResolvedMapGenParams,
+  rng: Rng,
+): BuildingPlan {
+  const alongLot = frontageIsNorthSouth(lot.frontage) ? lot.rect.w : lot.rect.d;
+  const deepLot = frontageIsNorthSouth(lot.frontage) ? lot.rect.d : lot.rect.w;
   const along = rng.nextInt(
     template.footprintWidth.min,
     Math.min(template.footprintWidth.max, alongLot),
@@ -147,29 +178,42 @@ function planBuilding(
 }
 
 /**
- * When the settlement allows two or more floors but every plan is
- * single-storey, raises the first plan whose template allows it to two
- * floors so towns and cities always offer some verticality.
+ * Guarantees the verticality the settlement allows: where it allows
+ * `TALL_FLOORS` or more floors, some building has that many; where it
+ * allows two, some building has two. A plan already there is kept; else
+ * the first lot that can hold a template tall enough is re-planned with
+ * the tallest such template. Cities at the ADR 0009 scale hold few
+ * enough buildings that the biome's weights alone no longer promise an
+ * apartment on every map (#829).
  */
 function ensureMultiStorey(
   planned: { lot: Lot; rng: Rng; plan: BuildingPlan }[],
   params: ResolvedMapGenParams,
+  registries: GenerationContext["registries"],
   diagnostics: DiagnosticSink,
 ): void {
-  if (
-    params.settlement.floorCount.max < 2 ||
-    planned.some((p) => p.plan.floorCount >= 2)
-  ) {
+  const want = Math.min(TALL_FLOORS, params.settlement.floorCount.max);
+  if (want < 2 || planned.some((p) => p.plan.floorCount >= want)) {
     return;
   }
-  const candidate = planned.find((p) => p.plan.template.floors.max >= 2);
-  if (candidate === undefined) {
+  for (const entry of planned) {
+    const tall = fittingTemplates(entry.lot, params, registries)
+      .map((c) => c.template)
+      .filter((t) => t.floors.max >= want)
+      .sort((a, b) => b.floors.max - a.floors.max)[0];
+    if (tall === undefined) {
+      continue;
+    }
+    const plan = sizePlan(entry.lot, tall, params, entry.rng.fork("tall"));
+    entry.plan = {
+      ...plan,
+      floorCount: Math.max(plan.floorCount, Math.max(want, tall.floors.min)),
+    };
+    diagnostics.note(
+      `re-planned ${entry.lot.id} as a ${tall.id} of ${String(entry.plan.floorCount)} floors for verticality`,
+    );
     return;
   }
-  candidate.plan = { ...candidate.plan, floorCount: 2 };
-  diagnostics.note(
-    `raised ${candidate.plan.template.id} on ${candidate.lot.id} to two floors`,
-  );
 }
 
 /**

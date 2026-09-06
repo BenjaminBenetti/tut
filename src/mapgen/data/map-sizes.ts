@@ -9,7 +9,7 @@ import type { MapSizeDefinition } from "../model/map-size-definition";
 export const MAP_SIZE_DEFINITIONS: Readonly<
   Record<MapSizePreset, MapSizeDefinition>
 > = {
-  small: { id: "small", width: 32, depth: 32 },
-  medium: { id: "medium", width: 48, depth: 48 },
-  large: { id: "large", width: 64, depth: 64 },
+  small: { id: "small", width: 48, depth: 48 },
+  medium: { id: "medium", width: 72, depth: 72 },
+  large: { id: "large", width: 96, depth: 96 },
 };

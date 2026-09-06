@@ -39,20 +39,22 @@ export interface SettlementDefinition {
    */
   readonly blockJitter: number;
   /**
-   * Lanes per road. The `grid` builder lays this many adjacent lines per
-   * grid line; `trail` and `streets` are always one lane wide.
+   * Lanes per road, for every style (ADR 0009 §2.2): the carriageway is
+   * this many columns across. The `grid` builder lays this many adjacent
+   * lines per grid line; `trail` and `streets` stamp this many lanes side
+   * by side along their centreline.
    */
   readonly roadWidth: number;
   /** True when roads use the biome's paved surface, else its trail surface. */
   readonly pavedRoads: boolean;
-  /** True when road-flanking columns become sidewalk. */
-  readonly sidewalks: boolean;
+  /** Sidewalk columns painted along each side of every road; 0 means none. */
+  readonly sidewalkWidth: number;
   /** Width (along the road) of a lot. */
   readonly lotWidth: IntRange;
   /** Depth (away from the road) of a lot. */
   readonly lotDepth: IntRange;
   /**
-   * Buildings the lot pass aims for on a medium (48²) map; the target is
+   * Buildings the lot pass aims for on a medium (72²) map; the target is
    * scaled by map area so large maps are not empty and small ones are
    * not crammed.
    */
@@ -67,7 +69,7 @@ export interface SettlementDefinition {
   readonly rampSpacing: number;
   /**
    * Raised outdoor features the elevation pass aims for on a medium
-   * (48²) map, scaled by area like `buildingCount`. Unset means none: a
+   * (72²) map, scaled by area like `buildingCount`. Unset means none: a
    * settlement whose terrain already carries height does not need them
    * (#512).
    */

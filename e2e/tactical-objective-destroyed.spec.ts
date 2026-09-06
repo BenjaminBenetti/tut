@@ -1,4 +1,9 @@
 import type { Page } from "@playwright/test";
+
+import type { TacticalMap } from "../src/mapgen/model/tactical-map";
+import { PassMask } from "../src/mapgen/model/pass-mask";
+import { UNIT_TUNING } from "../src/tactical/data/unit-tuning";
+import { nearestSightPosition } from "../src/tactical/service/map-assessment-service";
 import { expect, test } from "@playwright/test";
 
 import type { TacticalTestHooks } from "../src/ui/model/tactical-intent";
@@ -32,6 +37,7 @@ const SEED = "f2";
 /** What the mission looks like from outside: just enough to drive and assert. */
 interface MissionSnapshot {
   readonly phase: string;
+  readonly map: TacticalMap;
   readonly units: readonly {
     readonly id: string;
     readonly team: string;
@@ -144,10 +150,16 @@ test("a mech can destroy an egg spawner, so a mission can be won", async ({
     (unit) => unit.team === "tdf" && unit.kind === "mech",
   );
   expect(mech, "the deployed force includes a mech").toBeDefined();
-  const objective = start?.spawners[0];
+  // The nearest spawner by ground distance, not the first placed: since
+  // ADR 0009 (#829) the generator keeps the nearest one within reach of the
+  // deploy zone, and the others may sit anywhere on a board half again as
+  // wide, beyond what this spec's turn budget walks.
+  const objective = [...(start?.spawners ?? [])].sort(
+    (a, b) => manhattan(a.pos, mech!.pos) - manhattan(b.pos, mech!.pos),
+  )[0];
   expect(objective, "the mission has an egg spawner to destroy").toBeDefined();
   const mechId = mech!.id;
-  const spawnerId = objective!.id;
+  const spawnerId = objective.id;
 
   /** Arms Attack on the mech and targets the spawner, returning the preview. */
   const aim = async (): Promise<{ error: string | null; ready: boolean }> => {
@@ -206,25 +218,37 @@ test("a mech can destroy an egg spawner, so a mission can be won", async ({
       const now = await snapshot(page);
       const self = now?.units.find((u) => u.id === mechId);
       const target = now?.spawners.find((s) => s.id === spawnerId);
-      if (self === undefined || target === undefined || self.hp <= 0) {
+      if (
+        now === null ||
+        self === undefined ||
+        target === undefined ||
+        self.hp <= 0
+      ) {
         break;
       }
-      // One move action covers several tiles, so aim near the objective first
-      // and fall back to shorter hops; a single step is the last resort.
-      const stepX = Math.sign(target.pos.x - self.pos.x);
-      const stepZ = Math.sign(target.pos.z - self.pos.z);
-      const nearX = Math.sign(self.pos.x - target.pos.x) || 1;
-      const nearZ = Math.sign(self.pos.z - target.pos.z) || 1;
+      // Walk to a tile the game says has a shot: the nearest reachable one
+      // inside weapon range with a line of sight. Since ADR 0009 (#829) the
+      // spawner may sit deep in a building, and a spot beside it is a wall.
+      // One move action covers several tiles, so try the firing tile first
+      // and fall back to shorter hops toward it; a single step is the last
+      // resort.
+      const firing =
+        nearestSightPosition(
+          now.map,
+          self.pos,
+          target.pos,
+          PassMask.MECH,
+          UNIT_TUNING.mech.weapon.range,
+        ) ?? target.pos;
+      const stepX = Math.sign(firing.x - self.pos.x);
+      const stepZ = Math.sign(firing.z - self.pos.z);
       const goals = [
-        {
-          x: target.pos.x + nearX * 4,
-          y: self.pos.y,
-          z: target.pos.z + nearZ * 4,
-        },
-        { x: target.pos.x + nearX * 5, y: self.pos.y, z: target.pos.z },
-        { x: target.pos.x, y: self.pos.y, z: target.pos.z + nearZ * 5 },
+        firing,
         { x: self.pos.x + stepX * 5, y: self.pos.y, z: self.pos.z },
         { x: self.pos.x, y: self.pos.y, z: self.pos.z + stepZ * 5 },
+        { x: self.pos.x + stepX * 3, y: self.pos.y, z: self.pos.z + stepZ * 3 },
+        { x: self.pos.x + stepX * 2, y: self.pos.y, z: self.pos.z },
+        { x: self.pos.x, y: self.pos.y, z: self.pos.z + stepZ * 2 },
         { x: self.pos.x + stepX, y: self.pos.y, z: self.pos.z },
         { x: self.pos.x, y: self.pos.y, z: self.pos.z + stepZ },
       ].filter((goal) => goal.x !== self.pos.x || goal.z !== self.pos.z);

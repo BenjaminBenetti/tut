@@ -160,11 +160,11 @@ describe("LotPass", () => {
         const small = run("coastal", settlement, `small-${i}`, "small");
         expect(small.lots.length, `${settlement}/${i}`).toBeGreaterThan(0);
         expect(small.lots.length, `${settlement}/${i}`).toBeLessThanOrEqual(
-          Math.round(range.max * areaFactor(32, 32)),
+          Math.round(range.max * areaFactor(48, 48)),
         );
         const large = run("temperate", settlement, `large-${i}`, "large");
         expect(large.lots.length, `${settlement}/${i}`).toBeLessThanOrEqual(
-          Math.round(range.max * areaFactor(64, 64)),
+          Math.round(range.max * areaFactor(96, 96)),
         );
         if (settlement !== "rural") {
           expect(large.lots.length, `${settlement}/${i}`).toBeGreaterThan(
@@ -173,9 +173,9 @@ describe("LotPass", () => {
         }
       }
     }
-    expect(areaFactor(48, 48)).toBe(1);
-    expect(areaFactor(32, 32)).toBe(0.5);
-    expect(areaFactor(64, 64)).toBeCloseTo(1.778, 2);
+    expect(areaFactor(72, 72)).toBe(1);
+    expect(areaFactor(48, 48)).toBe(0.5);
+    expect(areaFactor(96, 96)).toBeCloseTo(1.778, 2);
     expect(areaFactor(256, 256)).toBe(2);
     expect(areaFactor(16, 16)).toBe(0.5);
   });

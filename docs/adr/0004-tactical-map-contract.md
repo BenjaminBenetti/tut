@@ -303,7 +303,7 @@ that radius guaranteed by the placer), and in the pipeline's hook-placer registr
 // src/content/model/{biome-id,settlement-scale,map-size-id}.ts  (shared vocabulary; see §11.2)
 export type BiomeId = 'temperate' | 'snowy' | 'desert' | 'coastal';
 export type SettlementScale = 'rural' | 'town' | 'city';
-export type MapSizeId = 'small' | 'medium' | 'large';        // 32², 48², 64² by default
+export type MapSizeId = 'small' | 'medium' | 'large';        // 48², 72², 96² by default (ADR 0009)
 
 // src/mapgen/model/map-recipe.ts
 export type MapArchetype = 'settlement';            // M3: 'hive' | 'crash-site'; M4: 'platform'
@@ -484,10 +484,10 @@ RNG fork, records diagnostics, then runs `validateTacticalMap`.
 |---|---|---|---|---|
 | 1 | `terrain` | – | `heightmap` | Value noise (permutation table seeded from the pass RNG) quantised to layers using the biome's amplitude; assigns ground surfaces from the biome palette. |
 | 2 | `water` | `heightmap` | `water` | Coastal biome only: carves a shoreline along one map edge, tiles become `water` (impassable). No-op elsewhere. |
-| 3 | `roads` | `heightmap`,`water` | `roads` | Road network by settlement scale (rural: one meandering trail; town: main street + side streets; city: a grid of `roadWidth`-lane streets). Levels each road; a flat-graded network (cities) also grades the whole plat it encloses to one level, so a city's verticality comes from its buildings. |
-| 4 | `lots` | `roads` | `lots` | Parcels land adjacent to roads into rectangular lots sized by settlement scale; flattens each lot to one level. |
+| 3 | `roads` | `heightmap`,`water` | `roads` | Road network by settlement scale (rural: one meandering trail; town: main street + side streets; city: a grid), every style `roadWidth` lanes across (2 / 3 / 4 by default, ADR 0009 §2.2) with `sidewalkWidth` columns of pavement a side. Levels each road a stretch of the whole carriageway at a time, one ramp per lane at a step, and never steps inside a side road's mouth; a flat-graded network (cities) also grades the whole plat it encloses to one level, so a city's verticality comes from its buildings. |
+| 4 | `lots` | `roads` | `lots` | Parcels land adjacent to roads (beyond the sidewalk) into rectangular lots sized by settlement scale, two columns apart; flattens each lot to one level. |
 | 5a | `buildings` | `lots` | `buildings` | Picks a building template per lot (biome + settlement weights), emits floors, exterior walls, doors and windows; guarantees a multi-storey building where the settlement allows one. |
-| 5b | `interiors` | `buildings` | `interiors` | Bisects floors into rooms with a door per cut, places stairs (verified to keep the building connected), roof tiles and exterior ladders. |
+| 5b | `interiors` | `buildings` | `interiors` | Lays one plan per building (ADR 0009 §2.4): a corridor along the long axis, shared by every floor, with a strip of rooms of the template's target size on each side, one door per room onto it and deep strips bisected again behind their front room; a footprint too narrow for a corridor is bisected with a door per cut. Places stairs (interior holes first, landing in the corridor above when one exists; verified to keep the building connected), roof tiles and exterior ladders. |
 | 6 | `props` | `interiors` | `props` | Vegetation from the biome's prop table (kinds with a `cluster` range grow copses and boulder fields at the same expected density); street props on straight, bypassable road columns of any lane count; yard clutter beside buildings; every room furnished from its kind's `RoomFurnishing` entry, each placement verified not to cut the building off. Never blocks doors or connector ends. |
 | 7 | `ramps` | `props` | `ramps` | Ensures ground-level connectivity: BFS over ground columns; where a two-layer step separates components, emits ramps; larger steps stay cliffs (routes go around). |
 | 8 | `hooks` | `ramps` | `hooks` | For each `HookRequirement`, resolves a `HookPlacer` from the registry and runs it (§7.4). Placers share one frozen snapshot of the draft to prefer reachable tiles; egg spawners also keep at least six infantry-reachable tiles within their hatch radius. |

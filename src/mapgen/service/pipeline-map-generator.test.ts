@@ -94,7 +94,7 @@ describe("PipelineMapGenerator", () => {
           order.push("terrain");
           ctx.draft.setGroundLevel(0, 0, 2);
           expect(ctx.params.biome.id).toBe("desert");
-          expect(ctx.params.width).toBe(32);
+          expect(ctx.params.width).toBe(48);
         }),
         pass("roads", ["heightmap"], ["roads"], (ctx) => {
           order.push("roads");

@@ -57,14 +57,23 @@ export class StreetsRoadBuilder implements RoadBuilder {
     if (lo === -1) {
       return [];
     }
+    const lanes = Math.max(1, settlement.roadWidth);
+    if (hi - lo + 1 < lanes) {
+      return [];
+    }
     const alongLength = axis === "z" ? draft.depth : draft.width;
     const lateralLength = axis === "z" ? draft.width : draft.depth;
     const margin = Math.floor((hi - lo) / 4);
-    const mainLateral = rng.nextInt(lo + margin, hi - margin);
+    const mainLateral = rng.nextInt(
+      lo + margin,
+      Math.max(lo + margin, hi - margin - (lanes - 1)),
+    );
 
     const main: ColumnCoord[] = [];
     for (let along = 0; along < alongLength; along++) {
-      main.push(toColumn(axis, along, mainLateral));
+      for (let lane = 0; lane < lanes; lane++) {
+        main.push(toColumn(axis, along, mainLateral + lane));
+      }
     }
     const lines: RoadLine[] = [{ columns: main }];
 
@@ -78,24 +87,27 @@ export class StreetsRoadBuilder implements RoadBuilder {
       const along = clampInt(
         slot * (i + 1) + (rng.next() - 0.5) * slot * SLOT_JITTER,
         1,
-        alongLength - 2,
+        alongLength - 1 - lanes,
       );
       if (rng.chance(ALTERNATE_CHANCE)) {
         side = -side;
       }
       const columns: ColumnCoord[] = [];
       for (
-        let lateral = mainLateral + side;
+        let lateral = side > 0 ? mainLateral + lanes : mainLateral - 1;
         lateral >= 0 && lateral < lateralLength;
         lateral += side
       ) {
-        const column = toColumn(axis, along, lateral);
-        if (!isDry(draft, column.x, column.z)) {
+        const step: ColumnCoord[] = [];
+        for (let lane = 0; lane < lanes; lane++) {
+          step.push(toColumn(axis, along + lane, lateral));
+        }
+        if (step.some((column) => !isDry(draft, column.x, column.z))) {
           break;
         }
-        columns.push(column);
+        columns.push(...step);
       }
-      if (columns.length >= MIN_SIDE_STREET) {
+      if (columns.length >= MIN_SIDE_STREET * lanes) {
         lines.push({ columns });
       }
     }

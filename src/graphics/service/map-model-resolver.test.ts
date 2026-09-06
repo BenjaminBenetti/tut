@@ -42,6 +42,17 @@ function tileAt(
   );
 }
 
+/** Ground coordinates of the rectangle `x0..x1` by `z0..z1`, inclusive. */
+function span(x0: number, z0: number, x1: number, z1: number): TileCoord[] {
+  const coords: TileCoord[] = [];
+  for (let z = z0; z <= z1; z++) {
+    for (let x = x0; x <= x1; x++) {
+      coords.push(at(x, z));
+    }
+  }
+  return coords;
+}
+
 /** Paints every coordinate with the surface and returns the built map. */
 function painted(surface: string, coords: readonly TileCoord[]): TacticalMap {
   const b = field();
@@ -115,12 +126,10 @@ describe("resolveMapModels — road junctions", () => {
   });
 
   it("uses the cross piece where four roads meet", () => {
+    // Two one-lane roads the width of the field crossing at (3,3).
     const map = painted(SurfaceIds.ROAD, [
-      at(3, 3),
-      at(2, 3),
-      at(4, 3),
-      at(3, 2),
-      at(3, 4),
+      ...span(0, 3, 7, 3),
+      ...span(3, 0, 3, 7),
     ]);
     expect(tileAt(map, at(3, 3))).toMatchObject({
       modelId: "tile.city.road-cross",
@@ -129,29 +138,74 @@ describe("resolveMapModels — road junctions", () => {
   });
 
   it("turns the T so its closed side faces the gap", () => {
-    // Roads east, south and west of (3,3); nothing north. The piece is
-    // authored with its gap north, so it stays unturned.
+    // A road along z = 1 with a side road running south from (3,1);
+    // nothing north. The piece is authored with its gap north, so it
+    // stays unturned.
     const openNorth = painted(SurfaceIds.ROAD, [
-      at(3, 3),
-      at(2, 3),
-      at(4, 3),
-      at(3, 4),
+      ...span(0, 1, 7, 1),
+      ...span(3, 2, 3, 7),
     ]);
-    expect(tileAt(openNorth, at(3, 3))).toMatchObject({
+    expect(tileAt(openNorth, at(3, 1))).toMatchObject({
       modelId: "tile.city.road-t",
       turns: 0,
     });
     // Gap to the east instead: one quarter turn clockwise.
     const openEast = painted(SurfaceIds.ROAD, [
-      at(3, 3),
-      at(2, 3),
-      at(3, 2),
-      at(3, 4),
+      ...span(5, 0, 5, 7),
+      ...span(0, 3, 4, 3),
     ]);
-    expect(tileAt(openEast, at(3, 3))).toMatchObject({
+    expect(tileAt(openEast, at(5, 3))).toMatchObject({
       modelId: "tile.city.road-t",
       turns: 1,
     });
+  });
+
+  it("lays a wide carriageway as straights along its run, not junctions (#829)", () => {
+    // Four lanes east-west across the field: every inner tile has road on
+    // all four sides, and every kerb tile on three, yet none is a junction.
+    const avenue = painted(SurfaceIds.ROAD, span(0, 2, 7, 5));
+    for (const coord of [at(3, 3), at(4, 4), at(3, 2), at(3, 5)]) {
+      expect(tileAt(avenue, coord)).toMatchObject({
+        modelId: "tile.city.road-straight",
+        turns: 0,
+      });
+    }
+    // The end of a four-lane stub is a corner at the kerbs and straights
+    // between them, like a one-lane dead end.
+    expect(tileAt(avenue, at(0, 3))).toMatchObject({
+      modelId: "tile.city.road-straight",
+      turns: 0,
+    });
+    // Three lanes north-south turn the slabs a quarter.
+    const street = painted(SurfaceIds.ROAD, span(2, 0, 4, 7));
+    expect(tileAt(street, at(3, 3))).toMatchObject({
+      modelId: "tile.city.road-straight",
+      turns: 1,
+    });
+  });
+
+  it("makes a crossing of two wide carriageways all cross pieces (#829)", () => {
+    const crossing = painted(SurfaceIds.ROAD, [
+      ...span(0, 2, 7, 5),
+      ...span(2, 0, 5, 7),
+    ]);
+    for (const coord of [at(2, 2), at(3, 3), at(5, 5), at(2, 5)]) {
+      expect(tileAt(crossing, coord)).toMatchObject({
+        modelId: "tile.city.road-cross",
+      });
+    }
+    // Where a side street half the avenue's width joins, the junction box
+    // (the mouth's lanes across the avenue's full width) is crossings while
+    // the kerb beside the mouth and the rest of the avenue stay straight:
+    // T pieces belong to one-lane roads.
+    const tee = painted(SurfaceIds.ROAD, [
+      ...span(0, 0, 7, 3),
+      ...span(3, 4, 4, 7),
+    ]);
+    expect(tileAt(tee, at(3, 3))?.modelId).toBe("tile.city.road-cross");
+    expect(tileAt(tee, at(3, 1))?.modelId).toBe("tile.city.road-cross");
+    expect(tileAt(tee, at(2, 3))?.modelId).toBe("tile.city.road-straight");
+    expect(tileAt(tee, at(1, 1))?.modelId).toBe("tile.city.road-straight");
   });
 
   it("turns the corner onto the pair it joins", () => {

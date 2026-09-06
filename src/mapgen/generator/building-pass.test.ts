@@ -67,29 +67,26 @@ function oneLotPass(frontage: "n" | "e" | "s" | "w"): GenerationPass {
     run: (ctx: GenerationContext): void => {
       const { draft } = ctx;
       // A road ring around the lot so every frontage has a corridor.
-      for (let i = 4; i <= 15; i++) {
+      for (let i = 6; i <= 29; i++) {
         for (const [x, z] of [
-          [i, 4],
-          [i, 15],
-          [4, i],
-          [15, i],
+          [i, 6],
+          [i, 29],
+          [6, i],
+          [29, i],
         ] as const) {
           draft.setRoad(x, z);
           draft.setGroundLevel(x, z, 1);
         }
       }
-      for (let z = 5; z < 15; z++) {
-        for (let x = 5; x < 15; x++) draft.setGroundLevel(x, z, 1);
+      for (let z = 7; z < 29; z++) {
+        for (let x = 7; x < 29; x++) draft.setGroundLevel(x, z, 1);
       }
       draft.lots.push({
         id: "lot-1",
-        rect: { x: 6, z: 6, w: 8, d: 8 },
+        rect: { x: 8, z: 8, w: 20, d: 20 },
         level: 1,
         frontage,
       });
-      for (let z = 6; z < 14; z++) {
-        for (let x = 6; x < 14; x++) draft.setGroundLevel(x, z, 1);
-      }
     },
   };
 }
@@ -187,7 +184,7 @@ describe("BuildingPass", () => {
             archetype: "settlement",
             biome: "temperate",
             settlement: "city",
-            size: { width: 20, depth: 20 },
+            size: { width: 36, depth: 36 },
             hooks: [],
           },
           new Mulberry32Rng(hashSeed(`${kind}-${frontage}`)),

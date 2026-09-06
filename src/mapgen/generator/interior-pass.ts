@@ -16,7 +16,11 @@ import type {
 } from "../model/generation-pass";
 import type { MapDraft } from "../model/map-draft";
 import type { TileCoord } from "../model/tile-coord";
-import { partitionFloor } from "./interior/room-partitioner";
+import {
+  type FloorPlan,
+  partitionFloor,
+  planFloor,
+} from "./interior/room-partitioner";
 import { placeStairs } from "./interior/stair-placer";
 
 // ===========================================
@@ -104,8 +108,20 @@ function furnish(
   if (footprint === undefined || entrance === undefined) {
     return building;
   }
+  // One plan per building: every floor shares the corridor, so the
+  // stairs from one floor land in the corridor of the next (#829).
+  const plan = planFloor(footprint, template.interior, rng.fork("plan"));
   const floors = building.floors.map((floor) =>
-    withRooms(draft, building, template, floor, footprint, entrance.tile, rng),
+    withRooms(
+      draft,
+      building,
+      template,
+      floor,
+      footprint,
+      plan,
+      entrance.tile,
+      rng,
+    ),
   );
   const roofY = building.groundLevel + building.floors.length * STOREY_LAYERS;
   if (building.roof.walkable) {
@@ -124,6 +140,7 @@ function furnish(
       break;
     }
     const rooms = floors[i]?.rooms ?? [];
+    const upperRooms = floors[i + 1]?.rooms ?? [];
     const flight = placeStairs(
       draft,
       building.id,
@@ -131,6 +148,7 @@ function furnish(
       fromY,
       toY,
       rooms,
+      upperRooms,
       entrance.tile,
       rng.fork(`stairs-${i}`),
     );
@@ -166,6 +184,7 @@ function withRooms(
   template: BuildingTemplate,
   floor: Floor,
   footprint: Rect,
+  plan: FloorPlan,
   entrance: TileCoord,
   rng: Rng,
 ): Floor {
@@ -175,7 +194,7 @@ function withRooms(
     floor.index,
     floor.y,
     footprint,
-    template.minRoomSize,
+    plan,
     rng.fork(`rooms-${floor.index}`),
   ).map((room): Room => ({
     ...room,
@@ -186,7 +205,8 @@ function withRooms(
 
 /**
  * Warehouses are storage throughout; elsewhere the entrance room is the
- * hall, a shop's other ground-floor rooms are storage, the rest are rooms.
+ * hall (a corridor the door opens into included), a corridor keeps its
+ * kind, a shop's other ground-floor rooms are storage, the rest are rooms.
  */
 function roomKind(
   room: Room,
@@ -200,6 +220,9 @@ function roomKind(
   const groundFloor = floor.y === entrance.y;
   if (groundFloor && rectContains(room.rect, entrance.x, entrance.z)) {
     return RoomKindIds.HALL;
+  }
+  if (room.kind !== undefined) {
+    return room.kind;
   }
   return groundFloor && template.id === "shop"
     ? RoomKindIds.STORAGE

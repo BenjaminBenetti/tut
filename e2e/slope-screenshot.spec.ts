@@ -69,7 +69,19 @@ const CONTROLS = [
     seed: "big-city",
     file: "docs/design/shots/829-preview-big-city-ground-floor-cut.png",
   },
+  // #863: QA's K2 seed, the carriageway seam at (32, 2, 11..13) with a
+  // detail crop around it; K1's one-layer kerb at (33, 2, 10) is in frame.
+  {
+    query:
+      "seed=qa813-temperate-town-small-0&biome=temperate&settlement=town&size=small&units=1",
+    seed: "qa813-temperate-town-small-0",
+    file: "docs/design/shots/863-preview-k2-carriageway-seam-qa813-temperate-town-small-0.png",
+    detail: { x: 32, y: 2, z: 12 },
+  },
 ] as const;
+
+/** Client-pixel crop around a tile, for a detail frame. */
+const DETAIL = { width: 700, height: 500 };
 
 /** Frames counted over this long give the big city's frame rate. */
 const FRAME_SAMPLE_MS = 3000;
@@ -104,6 +116,36 @@ for (const control of CONTROLS) {
     await page.waitForTimeout(400);
     expect(errors).toEqual([]);
     await page.screenshot({ path: control.file });
+    if ("detail" in control) {
+      // `units=1` in the query is what exposes the tile-position hook.
+      const at = await page.evaluate(
+        (tile) =>
+          (
+            globalThis as {
+              __tutTactical__?: {
+                tileScreenPosition(t: {
+                  x: number;
+                  y: number;
+                  z: number;
+                }): { x: number; y: number } | undefined;
+              };
+            }
+          ).__tutTactical__?.tileScreenPosition(tile),
+        control.detail,
+      );
+      expect(at, "the detail tile projects on screen").toBeDefined();
+      if (at) {
+        await page.screenshot({
+          path: control.file.replace(/\.png$/, "-detail.png"),
+          clip: {
+            x: Math.max(0, at.x - DETAIL.width / 2),
+            y: Math.max(0, at.y - DETAIL.height / 2),
+            width: DETAIL.width,
+            height: DETAIL.height,
+          },
+        });
+      }
+    }
     if (
       control.query.includes("size=large") &&
       !control.query.includes("floor=")

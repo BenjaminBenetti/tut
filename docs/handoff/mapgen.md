@@ -715,3 +715,12 @@ re-derived.
   (opposite high sides, catalogue N1). The ramp pass now keeps both ends off wedge tiles. The
   audit probe that reproduces the bucket table lives in the #847 PR thread; regenerate it with a
   draft-side walk, not the frozen map, when the buckets need a reason column.
+- **Kerb walls on paved two-layer edges (#863, QA's rescale exhibit K2).** New `KerbPass` after
+  `ramps`: any edge with a paved tile on either side that rises two or more layers and carries
+  neither a connector nor a wall gets a `half` wall on the high side (at the foot when the high
+  tile is a wedge, so I10 holds). One-layer paved steps are kerbs by design (K1) and untouched.
+  Two gotchas: the draft mirrors a wall only onto the neighbour at the *same layer*, so across a
+  two-layer edge the wall lives on one tile and every reader of an edge must look from both
+  sides (`wallAt(low, d) ?? wallAt(high, opposite(d))`); and the ramp *plank* in
+  `tactical-map-view` was a fixed 1.2 u box, which reached half way up a two-layer rise — it now
+  spans `hypot(run, rise)`. The K2 seam itself always had one ramp per lane in data.

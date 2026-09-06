@@ -26,7 +26,7 @@ import { PipelineMapGenerator } from "./pipeline-map-generator";
 import { ReachabilityService } from "./reachability-service";
 import { createSettlementPasses } from "./settlement-pipeline";
 import { DIRECTIONS, type Direction } from "../../core/model/direction";
-import { stepGridPos } from "../../core/service/grid-math";
+import { oppositeDirection, stepGridPos } from "../../core/service/grid-math";
 import { SurfaceIds } from "../data/surfaces";
 import type { Tile } from "../model/tile";
 import { TileIndex } from "./tile-index";
@@ -167,6 +167,7 @@ describe("generation sweep", () => {
       let orphanCorners = 0;
       let slopeRunsUnder100 = 0;
       let bareSteps = 0;
+      let barePavedEdges = 0;
       for (const size of MAP_SIZE_PRESETS) {
         for (const biome of BIOME_IDS) {
           for (const settlement of SETTLEMENT_SCALES) {
@@ -333,6 +334,42 @@ describe("generation sweep", () => {
                   bareSteps++;
                 }
               }
+              // #863: a paved edge of two or more layers carries a wall or a
+              // connector; a one-layer paved step is a kerb and stays bare.
+              const joinedPairs = new Set(
+                map.connectors.map(
+                  (c) =>
+                    `${String(c.from.x)},${String(c.from.z)}|${String(c.to.x)},${String(c.to.z)}`,
+                ),
+              );
+              for (const tile of map.tiles) {
+                if (
+                  tile.buildingId !== undefined ||
+                  (tile.surface !== SurfaceIds.ROAD &&
+                    tile.surface !== SurfaceIds.SIDEWALK)
+                ) {
+                  continue;
+                }
+                for (const d of DIRECTIONS) {
+                  const s = stepGridPos(tile, d);
+                  const other = index
+                    .column(s.x, s.z)
+                    .find((t) => t.buildingId === undefined);
+                  if (other === undefined || Math.abs(other.y - tile.y) < 2) {
+                    continue;
+                  }
+                  const a = `${String(tile.x)},${String(tile.z)}|${String(other.x)},${String(other.z)}`;
+                  const b = `${String(other.x)},${String(other.z)}|${String(tile.x)},${String(tile.z)}`;
+                  if (
+                    tile.walls[d] === undefined &&
+                    other.walls[oppositeDirection(d)] === undefined &&
+                    !joinedPairs.has(a) &&
+                    !joinedPairs.has(b)
+                  ) {
+                    barePavedEdges++;
+                  }
+                }
+              }
               const slopeColumns = new Set<string>();
               for (const tile of map.tiles) {
                 if (tile.slope === undefined) {
@@ -470,6 +507,7 @@ describe("generation sweep", () => {
       expect(naturalStepsOverOne).toBe(0);
       expect(slopeRunsUnder100).toBe(0);
       expect(bareSteps).toBe(0);
+      expect(barePavedEdges).toBe(0);
       expect(slopeStepsNotWalkable).toBe(0);
       expect(connectorsFromSlopes).toBe(0);
       expect(slopesWithWalls).toBe(0);

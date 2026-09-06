@@ -15,7 +15,8 @@ import { describe, expect, it } from "vitest";
 
 import { MODEL_MANIFEST } from "../data/model-manifest";
 import { SLOPE_MODELS } from "../data/map-model-table";
-import { LEVEL_HEIGHT } from "../data/mapgen-preview-palette";
+import { STOREY_LAYERS } from "../../core/model/elevation";
+import { LAYER_HEIGHT } from "../data/mapgen-preview-palette";
 import {
   TerrainSlopeModelFactory,
   slopeMaterialsFromGround,
@@ -58,8 +59,14 @@ describe("terrain slope kit", () => {
       node.updateMatrixWorld(true);
       const bounds = new Box3().setFromObject(node);
       expect(bounds.min.toArray()).toEqual([-0.5, 0, -0.5]);
-      expect(bounds.max.toArray()).toEqual([0.5, LEVEL_HEIGHT, 0.5]);
-      expect(MODEL_MANIFEST[SLOPE_MODELS[kind]].height).toBe(LEVEL_HEIGHT);
+      expect(bounds.max.toArray()).toEqual([
+        0.5,
+        STOREY_LAYERS * LAYER_HEIGHT,
+        0.5,
+      ]);
+      expect(MODEL_MANIFEST[SLOPE_MODELS[kind]].height).toBe(
+        STOREY_LAYERS * LAYER_HEIGHT,
+      );
       const top = node.getObjectByName("slope-surface") as Mesh;
       const side = node.getObjectByName("slope-sides") as Mesh;
       expect(top.material).toBe(surface);
@@ -77,7 +84,7 @@ describe("terrain slope kit", () => {
       for (const x of [-0.49, 0, 0.49])
         for (const z of [-0.49, 0, 0.49]) {
           const ray = new Raycaster(
-            new Vector3(x, LEVEL_HEIGHT + 1, z),
+            new Vector3(x, LAYER_HEIGHT + 1, z),
             new Vector3(0, -1, 0),
           );
           const hit = ray.intersectObject(top)[0];
@@ -88,7 +95,7 @@ describe("terrain slope kit", () => {
                 ? Math.max(x + 0.5, z + 0.5)
                 : Math.min(x + 0.5, z + 0.5);
           expect(hit, `${kind} at ${x},${z}`).toBeDefined();
-          expect(hit!.point.y).toBeCloseTo(fraction * LEVEL_HEIGHT);
+          expect(hit!.point.y).toBeCloseTo(fraction * LAYER_HEIGHT);
         }
       // Exercise the actual asset with #799's map-data convention through the
       // resolver: corners start high to the west/south, unlike the asset's east/south.
@@ -119,12 +126,12 @@ describe("terrain slope kit", () => {
                   ? Math.max(0.5 - local.x, local.z + 0.5)
                   : Math.min(0.5 - local.x, local.z + 0.5);
             const hit = new Raycaster(
-              new Vector3(x + 0.5, LEVEL_HEIGHT + 1, z + 0.5),
+              new Vector3(x + 0.5, LAYER_HEIGHT + 1, z + 0.5),
               new Vector3(0, -1, 0),
             ).intersectObject(top)[0];
             expect(hit, `${kind} turn ${turns} at ${x},${z}`).toBeDefined();
             expect(hit!.point.y).toBeCloseTo(
-              placement.position.y + fraction * LEVEL_HEIGHT,
+              placement.position.y + fraction * LAYER_HEIGHT,
             );
           }
       }

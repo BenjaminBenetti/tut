@@ -130,7 +130,7 @@ export function missionWith(
     map,
     units,
     templates: TEMPLATES,
-    difficulty: STOREY_LAYERS,
+    difficulty: 1,
     threat: 0,
     turn: 1,
     phase: "player",

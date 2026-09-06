@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-06 ~18:05 UTC (session 5; Map Critic seat stood up (#900), MapGen on Astra 6 xhigh (#899); expect a trickle of area:mapgen/area:art PRs as the ongoing exception; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-06 ~20:35 UTC (session 5; first Map Critic ticket #906 delivered via #913; critic cap is five (#912); see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — production is paused; only #748 is live
 
@@ -30,7 +30,19 @@ fleet instance `map-critic`. Looks at rendered maps, files evidenced
 opens behaviour PRs (diagnostic crops are fine). Its tickets flow to MapGen
 and the Art Director as an **ongoing exception to the production hold**; the
 Director judges every frame before you merge, as usual. Role doc
-`docs/process/roles/map-critic.md`.
+`docs/process/roles/map-critic.md`. **#912** raised the cap to five and ruled
+that something generated where a real place would not have one is a defect.
+
+**Map Critic loop so far:** opening survey #907 `f43f73c` (108 recipes,
+docs); first ticket **#906 (buildings over black gaps) → #913 (Art
+Director) — MERGED `24bdd8f`** on the Director's verdict: a concrete
+foundation course per layer under every floor-zero building tile
+(`foundation-model-resolver`), placeholder box retires under `foundations`,
+grounded buildings byte-identical, fog frames byte-identical from my own
+render. Its calibration evidence PR #918 is red on prettier (three JSON
+sidecars); the critic was told the exact command and it fast-tracks on green.
+Review shape for these: gate, fog hashes from my own render, frames viewed
+at 1.5×, one comment, merge on the verdict.
 
 ### The #748 split — all three children closed (07:30 UTC)
 

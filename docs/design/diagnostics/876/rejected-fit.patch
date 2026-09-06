@@ -1,0 +1,73 @@
+diff --git a/src/graphics/service/diagonal-slope-resolver.ts b/src/graphics/service/diagonal-slope-resolver.ts
+index 37ab030..a2c53b9 100644
+--- a/src/graphics/service/diagonal-slope-resolver.ts
++++ b/src/graphics/service/diagonal-slope-resolver.ts
+@@ -50,7 +50,8 @@ export function terrainCornerLevels(
+ }
+ 
+ /**
+- * Replaces aligned outer-corner chains by one diagonal plane. Its two
++ * Fits diagonal planes to aligned climbing chains and opposite-facing
++ * same-level pairs. Each plane's two
+  * half-height side vertices are shared with the incident ground tiles,
+  * so those tiles receive transition caps instead of exposing new seams.
+  * Map heights, slope metadata and traversal remain unchanged.
+@@ -128,6 +129,32 @@ export function resolveDiagonalSlopeAppearances(
+       const upper = at(next.x + dx, next.z + dz);
+       next = matches(upper, next.y + 1) ? upper : undefined;
+     }
++    // Two same-level banks can meet at their low corner. Fit their
++    // opposite-facing planes together; neither bank belongs to a climbing
++    // chain, whose accepted coverage must take precedence.
++    if (chain.length === 1) {
++      const opposite = at(start.x - dx, start.z - dz);
++      if (
++        opposite?.y === start.y &&
++        opposite.slope?.kind === "outer" &&
++        opposite.slope.turns === (turns + 2) % 4 &&
++        !seen.has(key(opposite.x, opposite.z))
++      ) {
++        const [ox, oz] = HIGH_DIAGONALS[opposite.slope.turns];
++        const continues = (sign: number): boolean => {
++          const neighbour = at(opposite.x + sign * ox, opposite.z + sign * oz);
++          return (
++            neighbour?.y === opposite.y + sign &&
++            neighbour.slope?.kind === "outer" &&
++            neighbour.slope.turns === opposite.slope!.turns
++          );
++        };
++        if (!continues(-1) && !continues(1)) {
++          chain.push(opposite);
++          seen.add(key(opposite.x, opposite.z));
++        }
++      }
++    }
+     if (
+       chain.length < 2 ||
+       chain.some((t) => !editable(t) || terrainSlopeRise(t, index) !== 1)
+@@ -140,6 +167,7 @@ export function resolveDiagonalSlopeAppearances(
+     >();
+     let valid = true;
+     for (const core of chain) {
++      const [dx, dz] = HIGH_DIAGONALS[core.slope!.turns];
+       const old = corners(core);
+       for (const [i, [cx, cz]] of CORNERS.entries()) {
+         const vx = core.x + cx,
+@@ -176,6 +204,8 @@ export function resolveDiagonalSlopeAppearances(
+     }
+     if (!valid) continue;
+     for (const core of chain) {
++      const turns = core.slope!.turns;
++      const [dx, dz] = HIGH_DIAGONALS[turns];
+       result.set(index.keyOf(core), { kind: "diagonal", turns });
+       for (const [cx, cz] of CORNERS) {
+         const fraction = ((dx > 0 ? cx : 1 - cx) + (dz > 0 ? cz : 1 - cz)) / 2;
+@@ -186,7 +216,7 @@ export function resolveDiagonalSlopeAppearances(
+       }
+     }
+     for (const [k, proposal] of proposals)
+-      changes.set(k, { ...proposal, diagonal: ((turns + 1) % 2) as 0 | 1 });
++      changes.set(k, { ...proposal, diagonal: ((turns + (chain[0]!.y === chain[1]!.y ? 0 : 1)) % 2) as 0 | 1 });
+   }
+   const caps = new Map<
+     number,

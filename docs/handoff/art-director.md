@@ -1,35 +1,61 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-06 (#849 in PR #874; waiting on review)
+Last updated: 2026-09-06 (#875 code approved in #879; #876 diagnosed)
 
-## Current status: #849 in review, PR #874
+## Current status: #875 awaits frame verdict; #876 diagnosis
 
-Codex Art Director, gpt-6-astra xhigh. #840 and #848 are complete. The Director
-authorised #849 conditionally: re-render J3 on current main, post comparison
-first, then cut a piece only if the seam remains. That condition is met:
-[comparison posted before model edits](https://github.com/BenjaminBenetti/tut/issues/849#issuecomment-5558888199).
-Main `4244675` includes #862 and #866; J3 has no diagonal appearance anywhere
-on its map. QA's final audit #873 independently calls J3 unchanged.
+Codex Art Director, gpt-6-astra xhigh. #874 was visually accepted in comment
+5559030003 and merged as `7b9e3c7`. Its J3 model and proof are complete.
+The Director immediately assigned **#875**, blocking v0.2.10, followed by
+**#876** (diagnose skipped two-corner chains before any geometry or fix).
 
-[PR #874](https://github.com/BenjaminBenetti/tut/pull/874) is open. Branch
-`feat/849-three-sided-slope-kit`, initial proof `7af3a73`, final visual proof
-`9087e16`. Main through `e9f022e` merged normally (handoff-only delta). New concave
-end at shared RISE 0.75: 14 triangles, 2,252 bytes, three angles opened. The
-opening uses two existing outer-corner halves. Live scene selects the J3
-end `(10,3,29)` and mouth `(11,3,29)`; after crop opened and full-perimeter
-real-GLB ray tests pass in all four rotations in grass/snow. Composite in grass/snow opened; refusal tests and verification complete.
-Typecheck, lint, build, 2,057 unit tests (one skipped), seven simulation
-tests and all 59 browser tests pass (zero flaky; 25 opt-in captures skipped).
-The composite/fog capture specs pass separately. Both fog frames match fresh
-main byte-for-byte; main’s tracked PNGs were stale after #866, so refreshed
-frames are included. The 108-map sweep fits 173 of 495 three-high ends and
-173 mouths; the 27 four-high pits and unmatched/protected exits are outside
-this bounded shape. Do not claim the whole QA 522-tile bucket is solved.
-All requested assets and diagnostics are committed/pushed. #849 stays open
-because the broad audit bucket is only partly covered. ONE bounded watch
-resumes for Tech Lead review and the Director’s visual judgement; no new
-production issue has been taken. QA’s #873 also reports remaining diagonal
-creases and ramp/parapet art concerns outside this PR.
+[PR #879](https://github.com/BenjaminBenetti/tut/pull/879) is open.
+Branch `feat/875-ramp-connector-kit`, proof `567648e`: model checkpoint `8c02777`, normal merge
+of #874 `0967700`. The ramp uses the shared straight-wedge builder and its
+single RISE 0.75: 8 triangles, 1,792 bytes, watertight; all three angles opened.
+It spans the lower tile to meet the upper terrace edge and borrows the support
+material, including dirt for rural trails. The source and both manifests have
+a live instanced scene consumer; prototypes and mist materials share across
+rises and levels. Three surveyed shared feet use half-length ramps to retain
+a low centre. Gray placeholders retire permanently after loading.
+
+K2 (three-lane asphalt) and an unwalled dirt ramp are captured before/after and
+opened, alongside the one/two-layer asphalt/grass composite and
+both refreshed fog frames. All 3,779 ramps in QA's 108-map matrix resolve to
+art. There are 21 new real-GLB geometry/material/vision/cache tests; full unit
+suite passes 2,078 tests (one skipped). All 59 browser tests pass (zero flaky, 26 opt-in captures skipped), as do
+seven simulation tests and the two composite/fog capture tests. The final lint/format check also passes. Everything is committed
+and pushed. Scratch `.git/art-875/`; resume ONE bounded watch for review.
+Tech Lead approved #879 on `6c084da` in comment 5559322225: independent full
+merge gate green against main including #757. The CI runner timeout is his
+separate configuration follow-up; no art change requested. Director frame
+verdict pending.
+
+While #875 waited, #876's diagnosis was posted **before** any trial in comment
+5559358784. Exact QA counts reproduced: 41 of 92 connected outer tiles take the
+diagonal, including 28 of 76 two-chain tiles. Of 48 skipped pair tiles, 42 sit
+at the same level with different turns, and six are the three accepted cliff
+refusals. V2's two bases are both level 2, turns 2 and 0, facing different banks.
+The classification is correct; this is the graphics qualification's narrower
+scope. No MapGen rule defect was found.
+
+An isolated trial reused the existing diagonal for opposite-facing pairs and
+raised coverage to 59/92 (46/76 pair tiles). Geometry joins passed, but the
+new caps created triangular ridges in the V2 frame. Both splits looked worse;
+the trial was discarded and runtime files restored. Diagnostic branch
+`chore/876-diagonal-coverage`, main base `f2dbae0`, contains the before/trial
+comparison, neighbourhoods, exact counts and archived unapplied patch. No
+new mesh or live resolver change. Recommend preserving V2 unless the Director
+wants the two banks regraded over a larger area. #876 remains open for that
+judgement. [Evidence](../design/diagnostics/876/README.md).
+
+Scratch `.git/art-876/`; its `work` checkout is separate from #879's review
+branch. ONE bounded watch remains active for #879 and the standing art events.
+Do not merge either branch; Tech Lead alone merges.
+
+#849 remains open because its broader 522-tile category was only partly
+covered: 173 ends plus 173 mouths fit the new shape, preserving four-high pits
+and protected/unmatched boundaries. [Accepted proof and contract](../design/diagnostics/849/README.md).
 
 ## Completed: #848 diagonal slope kit, PR #862
 

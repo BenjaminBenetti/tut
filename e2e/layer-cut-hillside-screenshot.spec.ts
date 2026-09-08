@@ -1,6 +1,12 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "@playwright/test";
 
+import {
+  drawnFrame,
+  tacticalModelsReady,
+  tapCameraKey,
+} from "./capture-frame.helper";
+
 import type { TacticalTestHooks } from "../src/ui/model/tactical-intent";
 
 /** The page's global object as seen from `page.evaluate`. */
@@ -56,6 +62,7 @@ async function launch(page: Page, seed: string): Promise<number> {
   await expect(page.locator("#tactical-viewport canvas")).toBeVisible();
   await expect(body).toHaveAttribute("data-tactical-units", /^[1-9]\d*$/);
   await expect(body).toHaveAttribute("data-tactical-storeys", /^[1-9]\d*$/);
+  await tacticalModelsReady(page);
   return Number(await body.getAttribute("data-tactical-storeys"));
 }
 
@@ -113,22 +120,7 @@ async function tileAt(page: Page, tile: Tile): Promise<Point | undefined> {
   );
 }
 
-/**
- * Presses `key` once and returns how far the view moved.
- *
- * **Presses once and fails rather than retrying.** The first version of
- * this retried until it saw movement, which looked robust and was the
- * opposite: a press that registered slowly got pressed again, and both
- * eventually landed, so the camera moved two taps instead of one and
- * the frame came out somewhere else. Two runs of identical code differed
- * by 27 % of their pixels that way. A press that genuinely does not
- * arrive is a broken capture and should say so, not be compensated for.
- *
- * @param page - The page holding the live mission.
- * @param key - The pan key to press.
- * @param at - Where the framed thing is, in client pixels.
- * @returns How far the view moved.
- */
+/** Delivers one atomic camera tap, then verifies the rendered movement. */
 async function tapOnce(
   page: Page,
   key: string,
@@ -138,15 +130,12 @@ async function tapOnce(
   if (!before) {
     throw new Error(`cannot pan: nothing to measure before pressing ${key}`);
   }
-  await page.keyboard.press(key);
-  for (let frame = 0; frame < 40; frame++) {
-    await page.waitForTimeout(50);
-    const now = await at();
-    if (now && Math.hypot(now.x - before.x, now.y - before.y) > 1) {
-      return { x: now.x - before.x, y: now.y - before.y };
-    }
+  await tapCameraKey(page, key);
+  const now = await at();
+  if (!now || Math.hypot(now.x - before.x, now.y - before.y) <= 1) {
+    throw new Error(`pressing ${key} moved the camera nowhere`);
   }
-  throw new Error(`pressing ${key} moved the camera nowhere in 2 s`);
+  return { x: now.x - before.x, y: now.y - before.y };
 }
 
 /**
@@ -202,32 +191,11 @@ async function centreOn(page: Page, tile: Tile): Promise<void> {
         : "w";
     await tapOnce(page, key, at);
   }
-  // Settle before anyone screenshots. The rig eases toward its target
-  // rather than jumping, so returning the moment the loop is inside its
-  // tolerance shoots a moving camera: dropping this wait is what made
-  // the two "top" frames — the same view either side of a keypress that
-  // does nothing — stop being byte-identical.
-  await expect
-    .poll(
-      async () => {
-        const a = await at();
-        await page.waitForTimeout(120);
-        const b = await at();
-        return a && b ? Math.hypot(a.x - b.x, a.y - b.y) < 0.5 : false;
-      },
-      { timeout: 5000 },
-    )
-    .toBe(true);
 }
 
 /** Screenshots the viewport once the scene has drawn the change. */
 async function shoot(page: Page, path: string): Promise<void> {
-  await page.evaluate(
-    () =>
-      new Promise<void>((resolve) => {
-        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
-      }),
-  );
+  await drawnFrame(page);
   await page.locator("#tactical-viewport").screenshot({ path });
 }
 

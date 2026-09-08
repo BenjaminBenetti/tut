@@ -1,0 +1,44 @@
+{
+  "id": "V01-snowy-raised-bed",
+  "seed": "mc-opening-02",
+  "biome": "snowy",
+  "settlement": "city",
+  "size": "medium",
+  "tile": {
+    "x": 56,
+    "y": 2,
+    "z": 62
+  },
+  "pitch": 45,
+  "rotation": 0,
+  "width": 1200,
+  "height": 900,
+  "requestedTile": {
+    "x": 56,
+    "y": 4,
+    "z": 62
+  },
+  "actualPitch": 44.999999856382715,
+  "url": "http://localhost:4173/mapgen-preview.html?seed=mc-opening-02&biome=snowy&settlement=city&size=medium&models=1&units=1&slope=100",
+  "levels": {
+    "value": "12",
+    "max": "12",
+    "step": "2",
+    "label": "all"
+  },
+  "baseline": "900d9a33a0990d9872a283acde8da805ec218452",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "pixel": {
+    "x": 1422.8746672030957,
+    "y": 666.443894947413
+  },
+  "clip": {
+    "x": 823,
+    "y": 216,
+    "width": 1200,
+    "height": 900
+  }
+}

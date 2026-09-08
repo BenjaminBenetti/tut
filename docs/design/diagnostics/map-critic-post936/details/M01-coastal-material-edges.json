@@ -1,0 +1,38 @@
+{
+  "id": "M01-coastal-material-edges",
+  "seed": "mc-opening-01",
+  "biome": "coastal",
+  "settlement": "rural",
+  "size": "small",
+  "tile": {
+    "x": 5,
+    "y": 2,
+    "z": 22
+  },
+  "pitch": 45,
+  "width": 1200,
+  "height": 1000,
+  "actualPitch": 44.99999999369618,
+  "url": "http://localhost:4173/mapgen-preview.html?seed=mc-opening-01&biome=coastal&settlement=rural&size=small&models=1&units=1&slope=100",
+  "levels": {
+    "value": "4",
+    "max": "4",
+    "step": "2",
+    "label": "all"
+  },
+  "baseline": "900d9a33a0990d9872a283acde8da805ec218452",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "pixel": {
+    "x": 1438.6946363109196,
+    "y": 729.8639286300473
+  },
+  "clip": {
+    "x": 839,
+    "y": 230,
+    "width": 1200,
+    "height": 1000
+  }
+}

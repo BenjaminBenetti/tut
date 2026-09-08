@@ -1,0 +1,630 @@
+[
+  {
+    "id": "pitched-1-yaw0-old",
+    "baseline": "5040bd001a5c54f4ba16597a3a5b101f63cbc4ab",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=pitched&units=1&yaw=0&radius=2&floor=0.35",
+    "roof": "pitched",
+    "units": 1,
+    "yaw": 0,
+    "variant": "old",
+    "dataset": {
+      "ready": "true",
+      "ghostCount": "1",
+      "unit": "{\"x\":24,\"y\":4,\"z\":15}",
+      "units": "[{\"x\":24,\"y\":4,\"z\":15}]",
+      "radius": "2",
+      "floor": "0.35",
+      "yaw": "0"
+    },
+    "viewport": {
+      "width": 1200,
+      "height": 950
+    },
+    "sha256": "45ac79314bbe0a2d159b6443a34b1e2819df7c9b4804512c57b2c5453647aef7",
+    "errors": [],
+    "scene": {
+      "seed": "mc-opening-01",
+      "biome": "temperate",
+      "settlement": "rural",
+      "size": "small",
+      "dimensions": {
+        "width": 48,
+        "depth": 48
+      },
+      "slopePercent": 100,
+      "models": "production",
+      "levels": "all",
+      "pixelsPerWorldUnit": 80,
+      "cameraTarget": "primary squad tile centre, tileTop(y) + 0.7"
+    }
+  },
+  {
+    "id": "pitched-1-yaw0-runtime",
+    "baseline": "5040bd001a5c54f4ba16597a3a5b101f63cbc4ab",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=pitched&units=1&yaw=0",
+    "roof": "pitched",
+    "units": 1,
+    "yaw": 0,
+    "variant": "runtime",
+    "dataset": {
+      "ready": "true",
+      "ghostCount": "1",
+      "unit": "{\"x\":24,\"y\":4,\"z\":15}",
+      "units": "[{\"x\":24,\"y\":4,\"z\":15}]",
+      "radius": "4",
+      "floor": "0.175",
+      "yaw": "0"
+    },
+    "viewport": {
+      "width": 1200,
+      "height": 950
+    },
+    "sha256": "63843c8a8f40cf8f0cf6a8003c36aa940c93e1ec175b0c60143039227d97158d",
+    "errors": [],
+    "scene": {
+      "seed": "mc-opening-01",
+      "biome": "temperate",
+      "settlement": "rural",
+      "size": "small",
+      "dimensions": {
+        "width": 48,
+        "depth": 48
+      },
+      "slopePercent": 100,
+      "models": "production",
+      "levels": "all",
+      "pixelsPerWorldUnit": 80,
+      "cameraTarget": "primary squad tile centre, tileTop(y) + 0.7"
+    }
+  },
+  {
+    "id": "pitched-2-yaw0-old",
+    "baseline": "5040bd001a5c54f4ba16597a3a5b101f63cbc4ab",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=pitched&units=2&yaw=0&radius=2&floor=0.35",
+    "roof": "pitched",
+    "units": 2,
+    "yaw": 0,
+    "variant": "old",
+    "dataset": {
+      "ready": "true",
+      "ghostCount": "2",
+      "unit": "{\"x\":24,\"y\":4,\"z\":15}",
+      "units": "[{\"x\":24,\"y\":4,\"z\":15},{\"x\":21,\"y\":4,\"z\":11}]",
+      "radius": "2",
+      "floor": "0.35",
+      "yaw": "0"
+    },
+    "viewport": {
+      "width": 1200,
+      "height": 950
+    },
+    "sha256": "a44199701d8c7f6262d8e1ce9a10525b27dbb7c78481b6bef2e991bfee96347e",
+    "errors": [],
+    "scene": {
+      "seed": "mc-opening-01",
+      "biome": "temperate",
+      "settlement": "rural",
+      "size": "small",
+      "dimensions": {
+        "width": 48,
+        "depth": 48
+      },
+      "slopePercent": 100,
+      "models": "production",
+      "levels": "all",
+      "pixelsPerWorldUnit": 80,
+      "cameraTarget": "primary squad tile centre, tileTop(y) + 0.7"
+    }
+  },
+  {
+    "id": "pitched-2-yaw0-runtime",
+    "baseline": "5040bd001a5c54f4ba16597a3a5b101f63cbc4ab",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=pitched&units=2&yaw=0",
+    "roof": "pitched",
+    "units": 2,
+    "yaw": 0,
+    "variant": "runtime",
+    "dataset": {
+      "ready": "true",
+      "ghostCount": "2",
+      "unit": "{\"x\":24,\"y\":4,\"z\":15}",
+      "units": "[{\"x\":24,\"y\":4,\"z\":15},{\"x\":21,\"y\":4,\"z\":11}]",
+      "radius": "4",
+      "floor": "0.175",
+      "yaw": "0"
+    },
+    "viewport": {
+      "width": 1200,
+      "height": 950
+    },
+    "sha256": "e740b8251a9e8e970838123da890f7c45eff32913b0de1ebbec21a18c5f517fe",
+    "errors": [],
+    "scene": {
+      "seed": "mc-opening-01",
+      "biome": "temperate",
+      "settlement": "rural",
+      "size": "small",
+      "dimensions": {
+        "width": 48,
+        "depth": 48
+      },
+      "slopePercent": 100,
+      "models": "production",
+      "levels": "all",
+      "pixelsPerWorldUnit": 80,
+      "cameraTarget": "primary squad tile centre, tileTop(y) + 0.7"
+    }
+  },
+  {
+    "id": "pitched-2-yaw0-runtime-closed",
+    "baseline": "5040bd001a5c54f4ba16597a3a5b101f63cbc4ab",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=pitched&units=2&yaw=0",
+    "roof": "pitched",
+    "units": 0,
+    "yaw": 0,
+    "variant": "units-left",
+    "dataset": {
+      "ready": "true",
+      "ghostCount": "2",
+      "unit": "{\"x\":24,\"y\":4,\"z\":15}",
+      "units": "[{\"x\":24,\"y\":4,\"z\":15},{\"x\":21,\"y\":4,\"z\":11}]",
+      "radius": "4",
+      "floor": "0.175",
+      "yaw": "0",
+      "left": "true"
+    },
+    "viewport": {
+      "width": 1200,
+      "height": 950
+    },
+    "sha256": "52bb89a8f8a4d1e7659bb0bb68c62229144fb8ff132db36fa7cdb65c6107f111",
+    "errors": [],
+    "scene": {
+      "seed": "mc-opening-01",
+      "biome": "temperate",
+      "settlement": "rural",
+      "size": "small",
+      "dimensions": {
+        "width": 48,
+        "depth": 48
+      },
+      "slopePercent": 100,
+      "models": "production",
+      "levels": "all",
+      "pixelsPerWorldUnit": 80,
+      "cameraTarget": "primary squad tile centre, tileTop(y) + 0.7"
+    }
+  },
+  {
+    "id": "pitched-2-yaw2-old",
+    "baseline": "5040bd001a5c54f4ba16597a3a5b101f63cbc4ab",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=pitched&units=2&yaw=2&radius=2&floor=0.35",
+    "roof": "pitched",
+    "units": 2,
+    "yaw": 2,
+    "variant": "old",
+    "dataset": {
+      "ready": "true",
+      "ghostCount": "2",
+      "unit": "{\"x\":24,\"y\":4,\"z\":15}",
+      "units": "[{\"x\":24,\"y\":4,\"z\":15},{\"x\":21,\"y\":4,\"z\":11}]",
+      "radius": "2",
+      "floor": "0.35",
+      "yaw": "2"
+    },
+    "viewport": {
+      "width": 1200,
+      "height": 950
+    },
+    "sha256": "8f3c4d7c506f7c0366a5bf6d6354c66660e5fec6e97bc1f039a62423745d829f",
+    "errors": [],
+    "scene": {
+      "seed": "mc-opening-01",
+      "biome": "temperate",
+      "settlement": "rural",
+      "size": "small",
+      "dimensions": {
+        "width": 48,
+        "depth": 48
+      },
+      "slopePercent": 100,
+      "models": "production",
+      "levels": "all",
+      "pixelsPerWorldUnit": 80,
+      "cameraTarget": "primary squad tile centre, tileTop(y) + 0.7"
+    }
+  },
+  {
+    "id": "pitched-2-yaw2-runtime",
+    "baseline": "5040bd001a5c54f4ba16597a3a5b101f63cbc4ab",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=pitched&units=2&yaw=2",
+    "roof": "pitched",
+    "units": 2,
+    "yaw": 2,
+    "variant": "runtime",
+    "dataset": {
+      "ready": "true",
+      "ghostCount": "2",
+      "unit": "{\"x\":24,\"y\":4,\"z\":15}",
+      "units": "[{\"x\":24,\"y\":4,\"z\":15},{\"x\":21,\"y\":4,\"z\":11}]",
+      "radius": "4",
+      "floor": "0.175",
+      "yaw": "2"
+    },
+    "viewport": {
+      "width": 1200,
+      "height": 950
+    },
+    "sha256": "af6cd2ebb801d0c5bbb611cd314b07ffb4f1f0648948392f5d854a0f561d9189",
+    "errors": [],
+    "scene": {
+      "seed": "mc-opening-01",
+      "biome": "temperate",
+      "settlement": "rural",
+      "size": "small",
+      "dimensions": {
+        "width": 48,
+        "depth": 48
+      },
+      "slopePercent": 100,
+      "models": "production",
+      "levels": "all",
+      "pixelsPerWorldUnit": 80,
+      "cameraTarget": "primary squad tile centre, tileTop(y) + 0.7"
+    }
+  },
+  {
+    "id": "pitched-2-yaw2-runtime-closed",
+    "baseline": "5040bd001a5c54f4ba16597a3a5b101f63cbc4ab",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=pitched&units=2&yaw=2",
+    "roof": "pitched",
+    "units": 0,
+    "yaw": 2,
+    "variant": "units-left",
+    "dataset": {
+      "ready": "true",
+      "ghostCount": "2",
+      "unit": "{\"x\":24,\"y\":4,\"z\":15}",
+      "units": "[{\"x\":24,\"y\":4,\"z\":15},{\"x\":21,\"y\":4,\"z\":11}]",
+      "radius": "4",
+      "floor": "0.175",
+      "yaw": "2",
+      "left": "true"
+    },
+    "viewport": {
+      "width": 1200,
+      "height": 950
+    },
+    "sha256": "afd3512d6cdfcf3bb7e9edbf5849866c7c4195ee11e00594ab0b52b5ee68a036",
+    "errors": [],
+    "scene": {
+      "seed": "mc-opening-01",
+      "biome": "temperate",
+      "settlement": "rural",
+      "size": "small",
+      "dimensions": {
+        "width": 48,
+        "depth": 48
+      },
+      "slopePercent": 100,
+      "models": "production",
+      "levels": "all",
+      "pixelsPerWorldUnit": 80,
+      "cameraTarget": "primary squad tile centre, tileTop(y) + 0.7"
+    }
+  },
+  {
+    "id": "flat-1-yaw0-old",
+    "baseline": "5040bd001a5c54f4ba16597a3a5b101f63cbc4ab",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=flat&units=1&yaw=0&radius=2&floor=0.35",
+    "roof": "flat",
+    "units": 1,
+    "yaw": 0,
+    "variant": "old",
+    "dataset": {
+      "ready": "true",
+      "ghostCount": "1",
+      "unit": "{\"x\":25,\"y\":6,\"z\":14}",
+      "units": "[{\"x\":25,\"y\":6,\"z\":14}]",
+      "radius": "2",
+      "floor": "0.35",
+      "yaw": "0"
+    },
+    "viewport": {
+      "width": 1200,
+      "height": 950
+    },
+    "sha256": "41c7c2d4a556d07942c10dbcaff508d597014cd37ae1efca0a3c63e706968fa1",
+    "errors": [],
+    "scene": {
+      "seed": "mc-opening-02",
+      "biome": "temperate",
+      "settlement": "town",
+      "size": "small",
+      "dimensions": {
+        "width": 48,
+        "depth": 48
+      },
+      "slopePercent": 100,
+      "models": "production",
+      "levels": "all",
+      "pixelsPerWorldUnit": 80,
+      "cameraTarget": "primary squad tile centre, tileTop(y) + 0.7"
+    }
+  },
+  {
+    "id": "flat-1-yaw0-runtime",
+    "baseline": "5040bd001a5c54f4ba16597a3a5b101f63cbc4ab",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=flat&units=1&yaw=0",
+    "roof": "flat",
+    "units": 1,
+    "yaw": 0,
+    "variant": "runtime",
+    "dataset": {
+      "ready": "true",
+      "ghostCount": "1",
+      "unit": "{\"x\":25,\"y\":6,\"z\":14}",
+      "units": "[{\"x\":25,\"y\":6,\"z\":14}]",
+      "radius": "4",
+      "floor": "0.175",
+      "yaw": "0"
+    },
+    "viewport": {
+      "width": 1200,
+      "height": 950
+    },
+    "sha256": "36b79057374373f50225bfac75c0eb63966ae8018e40cffb19446ac35b9c7f6e",
+    "errors": [],
+    "scene": {
+      "seed": "mc-opening-02",
+      "biome": "temperate",
+      "settlement": "town",
+      "size": "small",
+      "dimensions": {
+        "width": 48,
+        "depth": 48
+      },
+      "slopePercent": 100,
+      "models": "production",
+      "levels": "all",
+      "pixelsPerWorldUnit": 80,
+      "cameraTarget": "primary squad tile centre, tileTop(y) + 0.7"
+    }
+  },
+  {
+    "id": "flat-2-yaw0-old",
+    "baseline": "5040bd001a5c54f4ba16597a3a5b101f63cbc4ab",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=flat&units=2&yaw=0&radius=2&floor=0.35",
+    "roof": "flat",
+    "units": 2,
+    "yaw": 0,
+    "variant": "old",
+    "dataset": {
+      "ready": "true",
+      "ghostCount": "2",
+      "unit": "{\"x\":25,\"y\":6,\"z\":14}",
+      "units": "[{\"x\":25,\"y\":6,\"z\":14},{\"x\":23,\"y\":6,\"z\":11}]",
+      "radius": "2",
+      "floor": "0.35",
+      "yaw": "0"
+    },
+    "viewport": {
+      "width": 1200,
+      "height": 950
+    },
+    "sha256": "6fe03dd8bd0758cf534fb3722fd5c1b4eb374008c2f501844a221afe1bdb0623",
+    "errors": [],
+    "scene": {
+      "seed": "mc-opening-02",
+      "biome": "temperate",
+      "settlement": "town",
+      "size": "small",
+      "dimensions": {
+        "width": 48,
+        "depth": 48
+      },
+      "slopePercent": 100,
+      "models": "production",
+      "levels": "all",
+      "pixelsPerWorldUnit": 80,
+      "cameraTarget": "primary squad tile centre, tileTop(y) + 0.7"
+    }
+  },
+  {
+    "id": "flat-2-yaw0-runtime",
+    "baseline": "5040bd001a5c54f4ba16597a3a5b101f63cbc4ab",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=flat&units=2&yaw=0",
+    "roof": "flat",
+    "units": 2,
+    "yaw": 0,
+    "variant": "runtime",
+    "dataset": {
+      "ready": "true",
+      "ghostCount": "2",
+      "unit": "{\"x\":25,\"y\":6,\"z\":14}",
+      "units": "[{\"x\":25,\"y\":6,\"z\":14},{\"x\":23,\"y\":6,\"z\":11}]",
+      "radius": "4",
+      "floor": "0.175",
+      "yaw": "0"
+    },
+    "viewport": {
+      "width": 1200,
+      "height": 950
+    },
+    "sha256": "4387f69e988cee6e153f54ab94c8cf538748ce9f7d7e921f303cfc10bb46b7ba",
+    "errors": [],
+    "scene": {
+      "seed": "mc-opening-02",
+      "biome": "temperate",
+      "settlement": "town",
+      "size": "small",
+      "dimensions": {
+        "width": 48,
+        "depth": 48
+      },
+      "slopePercent": 100,
+      "models": "production",
+      "levels": "all",
+      "pixelsPerWorldUnit": 80,
+      "cameraTarget": "primary squad tile centre, tileTop(y) + 0.7"
+    }
+  },
+  {
+    "id": "flat-2-yaw0-runtime-closed",
+    "baseline": "5040bd001a5c54f4ba16597a3a5b101f63cbc4ab",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=flat&units=2&yaw=0",
+    "roof": "flat",
+    "units": 0,
+    "yaw": 0,
+    "variant": "units-left",
+    "dataset": {
+      "ready": "true",
+      "ghostCount": "2",
+      "unit": "{\"x\":25,\"y\":6,\"z\":14}",
+      "units": "[{\"x\":25,\"y\":6,\"z\":14},{\"x\":23,\"y\":6,\"z\":11}]",
+      "radius": "4",
+      "floor": "0.175",
+      "yaw": "0",
+      "left": "true"
+    },
+    "viewport": {
+      "width": 1200,
+      "height": 950
+    },
+    "sha256": "ea9ea5f2c3ca4b6cae72f3146dc972e63c888830dda40bc59771849d4d7d389b",
+    "errors": [],
+    "scene": {
+      "seed": "mc-opening-02",
+      "biome": "temperate",
+      "settlement": "town",
+      "size": "small",
+      "dimensions": {
+        "width": 48,
+        "depth": 48
+      },
+      "slopePercent": 100,
+      "models": "production",
+      "levels": "all",
+      "pixelsPerWorldUnit": 80,
+      "cameraTarget": "primary squad tile centre, tileTop(y) + 0.7"
+    }
+  },
+  {
+    "id": "flat-2-yaw2-old",
+    "baseline": "5040bd001a5c54f4ba16597a3a5b101f63cbc4ab",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=flat&units=2&yaw=2&radius=2&floor=0.35",
+    "roof": "flat",
+    "units": 2,
+    "yaw": 2,
+    "variant": "old",
+    "dataset": {
+      "ready": "true",
+      "ghostCount": "2",
+      "unit": "{\"x\":25,\"y\":6,\"z\":14}",
+      "units": "[{\"x\":25,\"y\":6,\"z\":14},{\"x\":23,\"y\":6,\"z\":11}]",
+      "radius": "2",
+      "floor": "0.35",
+      "yaw": "2"
+    },
+    "viewport": {
+      "width": 1200,
+      "height": 950
+    },
+    "sha256": "1c92ad1261dad44171c6acf21d28c4fe472952937a3310cc084b7a537899aeaf",
+    "errors": [],
+    "scene": {
+      "seed": "mc-opening-02",
+      "biome": "temperate",
+      "settlement": "town",
+      "size": "small",
+      "dimensions": {
+        "width": 48,
+        "depth": 48
+      },
+      "slopePercent": 100,
+      "models": "production",
+      "levels": "all",
+      "pixelsPerWorldUnit": 80,
+      "cameraTarget": "primary squad tile centre, tileTop(y) + 0.7"
+    }
+  },
+  {
+    "id": "flat-2-yaw2-runtime",
+    "baseline": "5040bd001a5c54f4ba16597a3a5b101f63cbc4ab",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=flat&units=2&yaw=2",
+    "roof": "flat",
+    "units": 2,
+    "yaw": 2,
+    "variant": "runtime",
+    "dataset": {
+      "ready": "true",
+      "ghostCount": "2",
+      "unit": "{\"x\":25,\"y\":6,\"z\":14}",
+      "units": "[{\"x\":25,\"y\":6,\"z\":14},{\"x\":23,\"y\":6,\"z\":11}]",
+      "radius": "4",
+      "floor": "0.175",
+      "yaw": "2"
+    },
+    "viewport": {
+      "width": 1200,
+      "height": 950
+    },
+    "sha256": "3dcdef6455d172045fee8d8fa85343ec37ee04b06c150e73c0e5240ee16ff8fb",
+    "errors": [],
+    "scene": {
+      "seed": "mc-opening-02",
+      "biome": "temperate",
+      "settlement": "town",
+      "size": "small",
+      "dimensions": {
+        "width": 48,
+        "depth": 48
+      },
+      "slopePercent": 100,
+      "models": "production",
+      "levels": "all",
+      "pixelsPerWorldUnit": 80,
+      "cameraTarget": "primary squad tile centre, tileTop(y) + 0.7"
+    }
+  },
+  {
+    "id": "flat-2-yaw2-runtime-closed",
+    "baseline": "5040bd001a5c54f4ba16597a3a5b101f63cbc4ab",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=flat&units=2&yaw=2",
+    "roof": "flat",
+    "units": 0,
+    "yaw": 2,
+    "variant": "units-left",
+    "dataset": {
+      "ready": "true",
+      "ghostCount": "2",
+      "unit": "{\"x\":25,\"y\":6,\"z\":14}",
+      "units": "[{\"x\":25,\"y\":6,\"z\":14},{\"x\":23,\"y\":6,\"z\":11}]",
+      "radius": "4",
+      "floor": "0.175",
+      "yaw": "2",
+      "left": "true"
+    },
+    "viewport": {
+      "width": 1200,
+      "height": 950
+    },
+    "sha256": "de9da6d8e56e39d4c57de9e4949fdf428d14cd6de926cb26556ccd1e49c8ff6e",
+    "errors": [],
+    "scene": {
+      "seed": "mc-opening-02",
+      "biome": "temperate",
+      "settlement": "town",
+      "size": "small",
+      "dimensions": {
+        "width": 48,
+        "depth": 48
+      },
+      "slopePercent": 100,
+      "models": "production",
+      "levels": "all",
+      "pixelsPerWorldUnit": 80,
+      "cameraTarget": "primary squad tile centre, tileTop(y) + 0.7"
+    }
+  }
+]

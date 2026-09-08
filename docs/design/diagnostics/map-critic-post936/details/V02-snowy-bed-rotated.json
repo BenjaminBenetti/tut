@@ -1,0 +1,44 @@
+{
+  "id": "V02-snowy-bed-rotated",
+  "seed": "mc-opening-02",
+  "biome": "snowy",
+  "settlement": "city",
+  "size": "medium",
+  "tile": {
+    "x": 56,
+    "y": 2,
+    "z": 62
+  },
+  "pitch": 45,
+  "rotation": 1,
+  "width": 1200,
+  "height": 900,
+  "requestedTile": {
+    "x": 56,
+    "y": 4,
+    "z": 62
+  },
+  "actualPitch": 44.99999985638342,
+  "url": "http://localhost:4173/mapgen-preview.html?seed=mc-opening-02&biome=snowy&settlement=city&size=medium&models=1&units=1&slope=100",
+  "levels": {
+    "value": "12",
+    "max": "12",
+    "step": "2",
+    "label": "all"
+  },
+  "baseline": "900d9a33a0990d9872a283acde8da805ec218452",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "pixel": {
+    "x": 1354.7330448079442,
+    "y": 730.1198147809549
+  },
+  "clip": {
+    "x": 755,
+    "y": 280,
+    "width": 1200,
+    "height": 900
+  }
+}

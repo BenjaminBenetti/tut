@@ -1,0 +1,37 @@
+{
+  "id": "H07-city-upper-level4",
+  "seed": "mc-opening-02",
+  "biome": "temperate",
+  "settlement": "city",
+  "size": "medium",
+  "levelInput": 4,
+  "url": "http://localhost:4173/mapgen-preview.html?seed=mc-opening-02&biome=temperate&settlement=city&size=medium&models=1&units=0&slope=100",
+  "levels": {
+    "value": "4",
+    "max": "11",
+    "step": "2",
+    "label": "\u2264 2"
+  },
+  "baseline": "900d9a33a0990d9872a283acde8da805ec218452",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "clip": {
+    "x": 380,
+    "y": 0,
+    "width": 2020,
+    "height": 1500
+  },
+  "camera": "initial framing; no pan or zoom",
+  "units": 0,
+  "buildingReference": {
+    "x": 23,
+    "y": 1,
+    "z": 34
+  },
+  "mapBounds": {
+    "x": [0, 71],
+    "z": [0, 71]
+  }
+}

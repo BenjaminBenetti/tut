@@ -560,10 +560,16 @@
 .tut-mission-results__payout {
   margin: var(--space-3) 0;
 }
-.tut-mission-results__payout dd {
-  color: var(--ui-ok);
+.tut-mission-results__payout-value {
   font-size: 1.6em;
   line-height: 1.2;
+}
+/* Colour carries valence, size carries importance -- never the reverse. */
+.tut-mission-results__payout-value--good {
+  color: var(--ui-ok);
+}
+.tut-mission-results__payout-value--bad {
+  color: var(--ui-warn);
 }
 
 /*

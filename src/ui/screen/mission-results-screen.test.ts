@@ -501,6 +501,44 @@ describe("MissionResultsScreen payout prominence", () => {
     );
   });
 
+  // Size says "this matters", colour says whether it is good news. A
+  // mission can cost nothing and still leave the city worse, and a rise
+  // shouted in the winning green would be the screen lying pleasantly.
+  it("colours a promoted infestation rise as bad news, not good", () => {
+    const worse = mountWith({
+      squadCasualties: [],
+      squadsWiped: [],
+      mechsDestroyed: [],
+      mechDamage: [],
+      infestationDelta: 5,
+    });
+    expect(
+      worse
+        .querySelector('[data-field="infestation-delta"]')
+        ?.className.includes("payout-value--bad"),
+    ).toBe(true);
+    // The payment beside it is still good news.
+    expect(
+      worse
+        .querySelector('[data-field="credits"]')
+        ?.className.includes("payout-value--good"),
+    ).toBe(true);
+    root.innerHTML = "";
+
+    const better = mountWith({
+      squadCasualties: [],
+      squadsWiped: [],
+      mechsDestroyed: [],
+      mechDamage: [],
+      infestationDelta: -16,
+    });
+    expect(
+      better
+        .querySelector('[data-field="infestation-delta"]')
+        ?.className.includes("payout-value--good"),
+    ).toBe(true);
+  });
+
   it("shows the same numbers either way", () => {
     const clean = mountWith({
       squadCasualties: [],

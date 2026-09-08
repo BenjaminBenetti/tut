@@ -362,7 +362,16 @@ export class MissionResultsScreen implements Screen {
       term.className = "tut-label";
       term.textContent = label;
       const detail = doc.createElement("dd");
-      detail.className = "tut-mono";
+      // Size says "this matters"; colour says whether it is good news.
+      // Credits are a payment and always good. Infestation is not: a
+      // mission can cost nothing and still leave the city worse, and a
+      // rise shouted in the winning green would be the screen lying
+      // pleasantly. So the sign picks the colour.
+      const valence =
+        field === "credits" || result.infestationDelta <= 0 ? "good" : "bad";
+      detail.className = promoted
+        ? `tut-mono tut-mission-results__payout-value tut-mission-results__payout-value--${valence}`
+        : "tut-mono";
       detail.dataset.field = field;
       detail.textContent = value;
       rewards.append(term, detail);

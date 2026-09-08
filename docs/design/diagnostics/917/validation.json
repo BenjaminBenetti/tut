@@ -1,0 +1,42 @@
+{
+  "runtimeCommit": "75bb5e3",
+  "baselineCommit": "360778a",
+  "typecheck": "pass",
+  "lint": "pass",
+  "build": "pass",
+  "unit": {
+    "command": "pnpm test --maxWorkers=4",
+    "passed": 2172,
+    "skipped": 1,
+    "seconds": 68.5,
+    "note": "Default parallel run hit three timeout limits under concurrent load; full bounded-worker rerun passed."
+  },
+  "browser": {
+    "passed": 59,
+    "skipped": 27
+  },
+  "wideSweep": {
+    "maps": 1200,
+    "violations": 0,
+    "hookRelocations": 0,
+    "seconds": 424.56
+  },
+  "simulation": {
+    "checksPassed": 7,
+    "recordsIdentical": true,
+    "missions": 60,
+    "winsBefore": 46,
+    "winsAfter": 46
+  },
+  "pairedSurvey": {
+    "maps": 108,
+    "ruralMaps": 36,
+    "unchangedCompleteUrbanMaps": 72,
+    "ruralPanelsBefore": 1331,
+    "ruralPanelsAfter": 1273,
+    "isolatedBefore": 1327,
+    "isolatedAfter": 0
+  },
+  "knownGoodRuralControl": "building-2 entrance and open yard approach on the affected recipe; before/after frames 06 and entrance-control.json",
+  "additionalWaterfrontControlPngSha256": "346d3186f3dbe420f56025ab308ab0773274e9a5f80871e1c16b49dde84b0761"
+}

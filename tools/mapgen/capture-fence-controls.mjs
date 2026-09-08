@@ -61,6 +61,17 @@ const controls = [
     rotation: 0,
     cropHeight: 1000,
   },
+  {
+    id: "06-rural-entrance-control",
+    seed: "mc-opening-01",
+    biome: "coastal",
+    settlement: "rural",
+    size: "small",
+    focus: { x: 34, y: 2, z: 24 },
+    pitch: 55,
+    rotation: 0,
+    cropHeight: 1000,
+  },
 ];
 const browser = await chromium.launch({
   headless: true,

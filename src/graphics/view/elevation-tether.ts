@@ -15,11 +15,16 @@ import type { Disposable } from "../model/disposable";
  */
 export const TETHER_COLOUR = 0x8fa3b8;
 
-/** Thin enough to read as scaffolding rather than as a wall. */
-const TETHER_WIDTH = 0.06;
+/**
+ * Thin enough to read as scaffolding rather than as a wall, wide enough
+ * to register at a glance. 0.06 was the first try and rendered as a
+ * hairline: legible when looked for, which is the wrong test for
+ * something the player passes while changing floors constantly.
+ */
+const TETHER_WIDTH = 0.09;
 
 /** Faint: it is an explanation, not a thing to look at. */
-const TETHER_OPACITY = 0.55;
+const TETHER_OPACITY = 0.7;
 
 // ===========================================
 // Types

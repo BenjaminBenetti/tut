@@ -7,9 +7,11 @@ const candidate = process.env.CAPTURE_BASE_URL ?? "http://localhost:4199";
 const baseline = process.env.BASELINE_BASE_URL ?? "http://localhost:4198";
 const output = "docs/design/diagnostics/947";
 mkdirSync(output, { recursive: true });
-const records = process.argv.includes("--resume")
-  ? JSON.parse(readFileSync(`${output}/captures.json`, "utf8")).records
-  : [];
+const verify = process.argv.includes("--verify");
+const records =
+  process.argv.includes("--resume") || verify
+    ? JSON.parse(readFileSync(`${output}/captures.json`, "utf8")).records
+    : [];
 for (const record of records) {
   const bytes = readFileSync(`${output}/${record.filename}`);
   if (
@@ -70,13 +72,18 @@ async function capture(filename, pointer, control) {
   const state = await page.evaluate(() => globalThis.__cutawayState());
   if (state.pointerRadius !== 3) throw new Error("Wrong pointer radius");
   const completed = records.find((record) => record.filename === filename);
-  const bytes = completed
-    ? readFileSync(`${output}/${filename}`)
-    : await page.screenshot({ timeout: 120000 });
+  const bytes =
+    completed && !verify
+      ? readFileSync(`${output}/${filename}`)
+      : await page.screenshot({ timeout: 120000 });
   if (control && !bytes.equals(control))
     throw new Error(`Control changed: ${filename}`);
   if (completed) {
-    console.log(`${filename}: retained verified capture`);
+    if (!bytes.equals(readFileSync(`${output}/${filename}`)))
+      throw new Error(`Current runtime changed: ${filename}`);
+    console.log(
+      `${filename}: ${verify ? "current runtime byte-identical" : "retained verified capture"}`,
+    );
     return bytes;
   }
   writeFileSync(`${output}/${filename}`, bytes);
@@ -109,6 +116,7 @@ try {
     for (const yaw of [0, 2]) {
       const prefix = `${roof}-yaw${yaw}`;
       if (
+        !verify &&
         [
           "open-ground",
           "hover",
@@ -124,10 +132,16 @@ try {
         )
       )
         continue;
-      await load(baseline, roof, yaw, 0);
-      const empty = await page.screenshot({ timeout: 120000 });
-      await load(baseline, roof, yaw, 1);
-      const squad = await page.screenshot({ timeout: 120000 });
+      let empty, squad;
+      if (verify) {
+        empty = readFileSync(`${output}/${prefix}-open-ground.png`);
+        squad = readFileSync(`${output}/${prefix}-squad-only.png`);
+      } else {
+        await load(baseline, roof, yaw, 0);
+        empty = await page.screenshot({ timeout: 120000 });
+        await load(baseline, roof, yaw, 1);
+        squad = await page.screenshot({ timeout: 120000 });
+      }
 
       await load(candidate, roof, yaw, 0);
       await move(15, 475, 0);

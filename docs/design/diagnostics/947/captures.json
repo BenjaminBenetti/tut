@@ -1,0 +1,441 @@
+{
+  "baselineCommit": "3c04481",
+  "records": [
+    {
+      "filename": "pitched-yaw0-open-ground.png",
+      "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=pitched&yaw=0&units=0&pointer=1",
+      "pointer": [15, 475],
+      "state": {
+        "pointerStrength": 0,
+        "pointerRadius": 3,
+        "pointerCentre": [0, 0, 0],
+        "ghostCount": 0,
+        "ghostStrength": [0, 0, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "52bb89a8f8a4d1e7659bb0bb68c62229144fb8ff132db36fa7cdb65c6107f111",
+      "controlSha256": "52bb89a8f8a4d1e7659bb0bb68c62229144fb8ff132db36fa7cdb65c6107f111",
+      "byteIdenticalToControl": true
+    },
+    {
+      "filename": "pitched-yaw0-hover.png",
+      "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=pitched&yaw=0&units=0&pointer=1",
+      "pointer": [600, 475],
+      "state": {
+        "pointerStrength": 1,
+        "pointerRadius": 3,
+        "pointerCentre": [7.105427357601e-15, 1.598721155460225e-14, -100],
+        "ghostCount": 0,
+        "ghostStrength": [0, 0, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "6279ef02734b9f304dd350a5dc2a58cd011e0475e6efc70fe38285d94cd80234"
+    },
+    {
+      "filename": "pitched-yaw0-hover-shifted.png",
+      "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=pitched&yaw=0&units=0&pointer=1",
+      "pointer": [760, 405],
+      "state": {
+        "pointerStrength": 1,
+        "pointerRadius": 3,
+        "pointerCentre": [
+          2.0000000000000084, 0.8750000000000122, -101.23743686707647
+        ],
+        "ghostCount": 0,
+        "ghostStrength": [0, 0, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "fcde6a99181100e2e48888962ef1253bba0a5300812cb5f032e9e6173bab33b0"
+    },
+    {
+      "filename": "pitched-yaw0-pointer-left.png",
+      "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=pitched&yaw=0&units=0&pointer=1",
+      "pointer": [-10, -10],
+      "state": {
+        "pointerStrength": 0,
+        "pointerRadius": 3,
+        "pointerCentre": [
+          2.0000000000000084, 0.8750000000000122, -101.23743686707647
+        ],
+        "ghostCount": 0,
+        "ghostStrength": [0, 0, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "52bb89a8f8a4d1e7659bb0bb68c62229144fb8ff132db36fa7cdb65c6107f111",
+      "controlSha256": "52bb89a8f8a4d1e7659bb0bb68c62229144fb8ff132db36fa7cdb65c6107f111",
+      "byteIdenticalToControl": true
+    },
+    {
+      "filename": "pitched-yaw0-squad-only.png",
+      "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=pitched&yaw=0&units=1&pointer=1",
+      "pointer": [15, 475],
+      "state": {
+        "pointerStrength": 0,
+        "pointerRadius": 3,
+        "pointerCentre": [0, 0, 0],
+        "ghostCount": 1,
+        "ghostStrength": [1, 0, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "63843c8a8f40cf8f0cf6a8003c36aa940c93e1ec175b0c60143039227d97158d",
+      "controlSha256": "63843c8a8f40cf8f0cf6a8003c36aa940c93e1ec175b0c60143039227d97158d",
+      "byteIdenticalToControl": true
+    },
+    {
+      "filename": "pitched-yaw0-overlap.png",
+      "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=pitched&yaw=0&units=1&pointer=1",
+      "pointer": [760, 405],
+      "state": {
+        "pointerStrength": 1,
+        "pointerRadius": 3,
+        "pointerCentre": [
+          2.0000000000000084, 0.8750000000000122, -101.23743686707647
+        ],
+        "ghostCount": 1,
+        "ghostStrength": [1, 0, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "74d811e0fb42e135d96362be9415ce6deb1ed1342e8626cc43d1f0dc62d96c94"
+    },
+    {
+      "filename": "pitched-yaw0-overlap-left.png",
+      "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=pitched&yaw=0&units=1&pointer=1",
+      "pointer": [-10, -10],
+      "state": {
+        "pointerStrength": 0,
+        "pointerRadius": 3,
+        "pointerCentre": [
+          2.0000000000000084, 0.8750000000000122, -101.23743686707647
+        ],
+        "ghostCount": 1,
+        "ghostStrength": [1, 0, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "63843c8a8f40cf8f0cf6a8003c36aa940c93e1ec175b0c60143039227d97158d",
+      "controlSha256": "63843c8a8f40cf8f0cf6a8003c36aa940c93e1ec175b0c60143039227d97158d",
+      "byteIdenticalToControl": true
+    },
+    {
+      "filename": "pitched-yaw2-open-ground.png",
+      "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=pitched&yaw=2&units=0&pointer=1",
+      "pointer": [15, 475],
+      "state": {
+        "pointerStrength": 0,
+        "pointerRadius": 3,
+        "pointerCentre": [0, 0, 0],
+        "ghostCount": 0,
+        "ghostStrength": [0, 0, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "afd3512d6cdfcf3bb7e9edbf5849866c7c4195ee11e00594ab0b52b5ee68a036",
+      "controlSha256": "afd3512d6cdfcf3bb7e9edbf5849866c7c4195ee11e00594ab0b52b5ee68a036",
+      "byteIdenticalToControl": true
+    },
+    {
+      "filename": "pitched-yaw2-hover.png",
+      "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=pitched&yaw=2&units=0&pointer=1",
+      "pointer": [600, 475],
+      "state": {
+        "pointerStrength": 1,
+        "pointerRadius": 3,
+        "pointerCentre": [
+          -1.0658141036401503e-14, -3.552713678800501e-15, -99.99999999999999
+        ],
+        "ghostCount": 0,
+        "ghostStrength": [0, 0, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "0782efa39a0098378102b1ebf3a31458ee7f10e8e720fffb74bc009d73abbbef"
+    },
+    {
+      "filename": "pitched-yaw2-hover-shifted.png",
+      "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=pitched&yaw=2&units=0&pointer=1",
+      "pointer": [760, 405],
+      "state": {
+        "pointerStrength": 1,
+        "pointerRadius": 3,
+        "pointerCentre": [
+          1.9999999999999947, 0.8749999999999964, -101.2119188426008
+        ],
+        "ghostCount": 0,
+        "ghostStrength": [0, 0, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "0f189d2d44d6e47b9661366b42972204e6be4df1f3c7f9acaae79aa0a0066500"
+    },
+    {
+      "filename": "pitched-yaw2-pointer-left.png",
+      "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=pitched&yaw=2&units=0&pointer=1",
+      "pointer": [-10, -10],
+      "state": {
+        "pointerStrength": 0,
+        "pointerRadius": 3,
+        "pointerCentre": [
+          1.9999999999999947, 0.8749999999999964, -101.2119188426008
+        ],
+        "ghostCount": 0,
+        "ghostStrength": [0, 0, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "afd3512d6cdfcf3bb7e9edbf5849866c7c4195ee11e00594ab0b52b5ee68a036",
+      "controlSha256": "afd3512d6cdfcf3bb7e9edbf5849866c7c4195ee11e00594ab0b52b5ee68a036",
+      "byteIdenticalToControl": true
+    },
+    {
+      "filename": "pitched-yaw2-squad-only.png",
+      "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=pitched&yaw=2&units=1&pointer=1",
+      "pointer": [15, 475],
+      "state": {
+        "pointerStrength": 0,
+        "pointerRadius": 3,
+        "pointerCentre": [0, 0, 0],
+        "ghostCount": 1,
+        "ghostStrength": [1, 0, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "8d4e626e931545f175357b7a3bd4dd06d25c73ffd21c2835db75639ed3930059",
+      "controlSha256": "8d4e626e931545f175357b7a3bd4dd06d25c73ffd21c2835db75639ed3930059",
+      "byteIdenticalToControl": true
+    },
+    {
+      "filename": "pitched-yaw2-overlap.png",
+      "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=pitched&yaw=2&units=1&pointer=1",
+      "pointer": [760, 405],
+      "state": {
+        "pointerStrength": 1,
+        "pointerRadius": 3,
+        "pointerCentre": [
+          1.9999999999999947, 0.8749999999999964, -101.2119188426008
+        ],
+        "ghostCount": 1,
+        "ghostStrength": [1, 0, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "d42d17cef3a454613bb74869fef58caf7c4eed29d126bc9b4438716fa388c6ea"
+    },
+    {
+      "filename": "pitched-yaw2-overlap-left.png",
+      "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=pitched&yaw=2&units=1&pointer=1",
+      "pointer": [-10, -10],
+      "state": {
+        "pointerStrength": 0,
+        "pointerRadius": 3,
+        "pointerCentre": [
+          1.9999999999999947, 0.8749999999999964, -101.2119188426008
+        ],
+        "ghostCount": 1,
+        "ghostStrength": [1, 0, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "8d4e626e931545f175357b7a3bd4dd06d25c73ffd21c2835db75639ed3930059",
+      "controlSha256": "8d4e626e931545f175357b7a3bd4dd06d25c73ffd21c2835db75639ed3930059",
+      "byteIdenticalToControl": true
+    },
+    {
+      "filename": "flat-yaw0-open-ground.png",
+      "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=flat&yaw=0&units=0&pointer=1",
+      "pointer": [15, 475],
+      "state": {
+        "pointerStrength": 0,
+        "pointerRadius": 3,
+        "pointerCentre": [0, 0, 0],
+        "ghostCount": 0,
+        "ghostStrength": [0, 0, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "ea9ea5f2c3ca4b6cae72f3146dc972e63c888830dda40bc59771849d4d7d389b",
+      "controlSha256": "ea9ea5f2c3ca4b6cae72f3146dc972e63c888830dda40bc59771849d4d7d389b",
+      "byteIdenticalToControl": true
+    },
+    {
+      "filename": "flat-yaw0-hover.png",
+      "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=flat&yaw=0&units=0&pointer=1",
+      "pointer": [600, 475],
+      "state": {
+        "pointerStrength": 1,
+        "pointerRadius": 3,
+        "pointerCentre": [
+          3.5527136788005e-15, 1.06581410364015e-14, -100.00000000000001
+        ],
+        "ghostCount": 0,
+        "ghostStrength": [0, 0, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "350046f6e4bb5d7de4e7d13f6180748bcd3be4c42d7d0ad8cb4b971f21f7bc22"
+    },
+    {
+      "filename": "flat-yaw0-hover-shifted.png",
+      "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=flat&yaw=0&units=0&pointer=1",
+      "pointer": [760, 405],
+      "state": {
+        "pointerStrength": 1,
+        "pointerRadius": 3,
+        "pointerCentre": [
+          2.0000000000000013, 0.8750000000000069, -101.23743686707647
+        ],
+        "ghostCount": 0,
+        "ghostStrength": [0, 0, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "129859ff230e6b320e4b6c9a01fe0e4ddb8efd700b99f7bbfd716f2ed43bb2a2"
+    },
+    {
+      "filename": "flat-yaw0-pointer-left.png",
+      "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=flat&yaw=0&units=0&pointer=1",
+      "pointer": [-10, -10],
+      "state": {
+        "pointerStrength": 0,
+        "pointerRadius": 3,
+        "pointerCentre": [
+          2.0000000000000013, 0.8750000000000069, -101.23743686707647
+        ],
+        "ghostCount": 0,
+        "ghostStrength": [0, 0, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "ea9ea5f2c3ca4b6cae72f3146dc972e63c888830dda40bc59771849d4d7d389b",
+      "controlSha256": "ea9ea5f2c3ca4b6cae72f3146dc972e63c888830dda40bc59771849d4d7d389b",
+      "byteIdenticalToControl": true
+    },
+    {
+      "filename": "flat-yaw0-squad-only.png",
+      "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=flat&yaw=0&units=1&pointer=1",
+      "pointer": [15, 475],
+      "state": {
+        "pointerStrength": 0,
+        "pointerRadius": 3,
+        "pointerCentre": [0, 0, 0],
+        "ghostCount": 1,
+        "ghostStrength": [1, 0, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "36b79057374373f50225bfac75c0eb63966ae8018e40cffb19446ac35b9c7f6e",
+      "controlSha256": "36b79057374373f50225bfac75c0eb63966ae8018e40cffb19446ac35b9c7f6e",
+      "byteIdenticalToControl": true
+    },
+    {
+      "filename": "flat-yaw0-overlap.png",
+      "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=flat&yaw=0&units=1&pointer=1",
+      "pointer": [760, 405],
+      "state": {
+        "pointerStrength": 1,
+        "pointerRadius": 3,
+        "pointerCentre": [
+          2.0000000000000013, 0.8750000000000069, -101.23743686707647
+        ],
+        "ghostCount": 1,
+        "ghostStrength": [1, 0, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "183f2bdabddcb19a5afc3aa40d5738442ec9c50a9926e4182d040a987d802880"
+    },
+    {
+      "filename": "flat-yaw0-overlap-left.png",
+      "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=flat&yaw=0&units=1&pointer=1",
+      "pointer": [-10, -10],
+      "state": {
+        "pointerStrength": 0,
+        "pointerRadius": 3,
+        "pointerCentre": [
+          2.0000000000000013, 0.8750000000000069, -101.23743686707647
+        ],
+        "ghostCount": 1,
+        "ghostStrength": [1, 0, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "36b79057374373f50225bfac75c0eb63966ae8018e40cffb19446ac35b9c7f6e",
+      "controlSha256": "36b79057374373f50225bfac75c0eb63966ae8018e40cffb19446ac35b9c7f6e",
+      "byteIdenticalToControl": true
+    },
+    {
+      "filename": "flat-yaw2-open-ground.png",
+      "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=flat&yaw=2&units=0&pointer=1",
+      "pointer": [15, 475],
+      "state": {
+        "pointerStrength": 0,
+        "pointerRadius": 3,
+        "pointerCentre": [0, 0, 0],
+        "ghostCount": 0,
+        "ghostStrength": [0, 0, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "de9da6d8e56e39d4c57de9e4949fdf428d14cd6de926cb26556ccd1e49c8ff6e",
+      "controlSha256": "de9da6d8e56e39d4c57de9e4949fdf428d14cd6de926cb26556ccd1e49c8ff6e",
+      "byteIdenticalToControl": true
+    },
+    {
+      "filename": "flat-yaw2-hover.png",
+      "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=flat&yaw=2&units=0&pointer=1",
+      "pointer": [600, 475],
+      "state": {
+        "pointerStrength": 1,
+        "pointerRadius": 3,
+        "pointerCentre": [
+          -9.769962616701378e-15, -1.4210854715202004e-14, -99.99999999999997
+        ],
+        "ghostCount": 0,
+        "ghostStrength": [0, 0, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "9b68fadeee9d1b2aec619e3678e723ae05f609216cc2232ed4e258c3f54472b4"
+    },
+    {
+      "filename": "flat-yaw2-hover-shifted.png",
+      "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=flat&yaw=2&units=0&pointer=1",
+      "pointer": [760, 405],
+      "state": {
+        "pointerStrength": 1,
+        "pointerRadius": 3,
+        "pointerCentre": [
+          1.9999999999999938, 0.8749999999999893, -101.23743686707644
+        ],
+        "ghostCount": 0,
+        "ghostStrength": [0, 0, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "9d7eda1fcfc36e8621b9cd846495223675cb6924da26fc5e496dbc7643396d7f"
+    },
+    {
+      "filename": "flat-yaw2-pointer-left.png",
+      "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=flat&yaw=2&units=0&pointer=1",
+      "pointer": [-10, -10],
+      "state": {
+        "pointerStrength": 0,
+        "pointerRadius": 3,
+        "pointerCentre": [
+          1.9999999999999938, 0.8749999999999893, -101.23743686707644
+        ],
+        "ghostCount": 0,
+        "ghostStrength": [0, 0, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "de9da6d8e56e39d4c57de9e4949fdf428d14cd6de926cb26556ccd1e49c8ff6e",
+      "controlSha256": "de9da6d8e56e39d4c57de9e4949fdf428d14cd6de926cb26556ccd1e49c8ff6e",
+      "byteIdenticalToControl": true
+    },
+    {
+      "filename": "flat-yaw2-squad-only.png",
+      "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=flat&yaw=2&units=1&pointer=1",
+      "pointer": [15, 475],
+      "state": {
+        "pointerStrength": 0,
+        "pointerRadius": 3,
+        "pointerCentre": [0, 0, 0],
+        "ghostCount": 1,
+        "ghostStrength": [1, 0, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "c8d3070dec8303857c03df74f85cdcc459c1fa65ec0ff6b47825a021e570cb68",
+      "controlSha256": "c8d3070dec8303857c03df74f85cdcc459c1fa65ec0ff6b47825a021e570cb68",
+      "byteIdenticalToControl": true
+    },
+    {
+      "filename": "flat-yaw2-overlap.png",
+      "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=flat&yaw=2&units=1&pointer=1",
+      "pointer": [760, 405],
+      "state": {
+        "pointerStrength": 1,
+        "pointerRadius": 3,
+        "pointerCentre": [
+          1.9999999999999938, 0.8749999999999893, -101.23743686707644
+        ],
+        "ghostCount": 1,
+        "ghostStrength": [1, 0, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "00d0fb45e9ce79f5a6c960bd6747a23320c149c5d1e0e3ad0120d45783bc1631"
+    },
+    {
+      "filename": "flat-yaw2-overlap-left.png",
+      "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=flat&yaw=2&units=1&pointer=1",
+      "pointer": [-10, -10],
+      "state": {
+        "pointerStrength": 0,
+        "pointerRadius": 3,
+        "pointerCentre": [
+          1.9999999999999938, 0.8749999999999893, -101.23743686707644
+        ],
+        "ghostCount": 1,
+        "ghostStrength": [1, 0, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "c8d3070dec8303857c03df74f85cdcc459c1fa65ec0ff6b47825a021e570cb68",
+      "controlSha256": "c8d3070dec8303857c03df74f85cdcc459c1fa65ec0ff6b47825a021e570cb68",
+      "byteIdenticalToControl": true
+    }
+  ],
+  "captureRuntimeCommit": "0af63ba",
+  "integratedMainCommit": "b6928d0"
+}

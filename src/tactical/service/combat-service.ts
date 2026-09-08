@@ -183,21 +183,33 @@ function targetDown(target: AttackTarget): TacticalError | undefined {
     : { kind: "unit-dead", unitId: target.id };
 }
 
+/** Attacker and target, both resolved and both still standing. */
+interface LivePair {
+  readonly attacker: Unit;
+  readonly target: AttackTarget;
+}
+
 /**
- * Checks an attack is legal for the acting unit: attacker and target
- * both on the map and still standing, the attacker on the acting side
- * with action points to spend, and everything `validateTargeting` asks.
- * The target is whatever `findAttackTarget` resolves the id to, so a
- * squad, a mech and an egg spawner are all legal to name (#426).
- * Returns the pair for the formulae.
+ * The four refusals `validateAttack` and `validateTargeting` both open
+ * with: attacker on the map, target resolvable, attacker still standing,
+ * target not already down.
+ *
+ * One implementation rather than two (#992). They were written out twice
+ * in the same order, and the #735 audit found that only the copy behind
+ * `validateAttack` had ever run in a test — `validateTargeting`'s, which
+ * is what a real shot and an overwatch reaction go through, had not. Two
+ * copies of one rule drift independently and nothing notices; the pair
+ * that matters is the one nobody was watching.
+ *
+ * The order is load-bearing and is preserved exactly: a missing attacker
+ * is reported before a missing target, and both before either is checked
+ * for being down, so the error a caller sees never changes.
  */
-export function validateAttack(
+function liveTargetingPair(
   mission: TacticalState,
   attackerId: UnitId,
   targetId: UnitId,
-  tuning: CombatTuning,
-  weaponId?: WeaponId,
-): Result<AttackPair & { readonly terrain: AttackTerrain }, TacticalError> {
+): Result<LivePair, TacticalError> {
   const attacker = mission.units.find((u) => u.id === attackerId);
   if (attacker === undefined) {
     return err({ kind: "unit-not-on-map", unitId: attackerId });
@@ -213,6 +225,31 @@ export function validateAttack(
   if (down !== undefined) {
     return err(down);
   }
+  return ok({ attacker, target });
+}
+
+/**
+ * Checks an attack is legal for the acting unit: attacker and target
+ * both on the map and still standing, the attacker on the acting side
+ * with action points to spend, and everything `validateTargeting` asks.
+ * The target is whatever `findAttackTarget` resolves the id to, so a
+ * squad, a mech and an egg spawner are all legal to name (#426).
+ * Returns the pair for the formulae.
+ */
+export function validateAttack(
+  mission: TacticalState,
+  attackerId: UnitId,
+  targetId: UnitId,
+  tuning: CombatTuning,
+  weaponId?: WeaponId,
+): Result<AttackPair & { readonly terrain: AttackTerrain }, TacticalError> {
+  const pair = liveTargetingPair(mission, attackerId, targetId);
+  if (!pair.ok) {
+    return pair;
+  }
+  // `validateTargeting` below resolves the target again; this entry
+  // point only needs the attacker.
+  const { attacker } = pair.value;
   if (attacker.team !== TEAM_FOR_PHASE[mission.phase]) {
     return err({ kind: "wrong-phase", unitId: attackerId });
   }
@@ -249,21 +286,11 @@ export function validateTargeting(
   targetId: UnitId,
   weaponId?: WeaponId,
 ): Result<AttackPair & { readonly terrain: AttackTerrain }, TacticalError> {
-  const attacker = mission.units.find((u) => u.id === attackerId);
-  if (attacker === undefined) {
-    return err({ kind: "unit-not-on-map", unitId: attackerId });
+  const pair = liveTargetingPair(mission, attackerId, targetId);
+  if (!pair.ok) {
+    return pair;
   }
-  const target = findAttackTarget(mission, targetId);
-  if (target === undefined) {
-    return err({ kind: "unit-not-on-map", unitId: targetId });
-  }
-  if (attacker.hp <= 0) {
-    return err({ kind: "unit-dead", unitId: attackerId });
-  }
-  const down = targetDown(target);
-  if (down !== undefined) {
-    return err(down);
-  }
+  const { attacker, target } = pair.value;
   if (attackerId === targetId) {
     return err({ kind: "self-target", unitId: attackerId });
   }

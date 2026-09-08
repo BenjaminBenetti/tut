@@ -29,7 +29,6 @@ The critic's original baseline predates the shipped roof fix. These paired frame
 | Where six panels went — same map, trail beside the house, focus (20,2,43), 45 px/tile | ![Trail before](before/03-rural-trail-context.png) | ![Trail after](after/03-rural-trail-context.png) |
 | Where ten panels went — same map, building plot edge, focus (40,2,18), 45 px/tile | ![Plot before](before/05-garden-boundary.png) | ![Plot after](after/05-garden-boundary.png) |
 | Additional boundary control — accepted #915 waterfront, coastal/city/medium, `mc-opening-03`, focus (51,1,40), 55 px/tile | ![Accepted waterfront before](before/04-waterfront-boundary-control.png) | ![Accepted waterfront after](after/04-waterfront-boundary-control.png) |
-
 | Known-good rural entrance control — same affected map, focus (34,2,24), 55 px/tile | ![Rural entrance before](before/06-rural-entrance-control.png) | ![Rural entrance after](after/06-rural-entrance-control.png) |
 
 The reported map retains **all 16 panels**, in runs of **10 at (43,2,13–22)** and **6 at (17–22,2,44)**. The original beach/palm views lose the unrelated fragments; the extra views show their destination rather than implying that deleting every fence was the fix. Both runs have clear ends and align with surrounding land use. Deploy and edge-spawn hooks can move because their placement runs after props; the unit markers in these frames reflect that real change.

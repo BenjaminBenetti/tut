@@ -24,7 +24,7 @@ for (const roof of ["pitched", "flat"]) {
       const ghost = radius === 0 ? "0" : "1";
       const id = `${roof}-${units}-radius-${radius || "off"}${rotated ? "-yaw2" : ""}`;
       await page.goto(
-        `${baseUrl}/tools/art/preview/roof-cutaway.html?roof=${roof}&units=${units}&radius=${radius || 2}&ghost=${ghost}&yaw=${rotated ? 2 : 0}`,
+        `${baseUrl}/tools/art/preview/roof-cutaway.html?roof=${roof}&units=${units}&radius=${radius || 2}&floor=0.35&ghost=${ghost}&yaw=${rotated ? 2 : 0}`,
       );
       await page
         .locator('body[data-ready="true"]')

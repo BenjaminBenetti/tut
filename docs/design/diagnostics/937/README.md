@@ -8,9 +8,14 @@ the functioning effect. The comparison uses the accepted #916 interior scene
 and camera, with the production TacticalSceneBuilder, GhostController and
 SceneService; Map Lab sample units do not run the controller.
 
-## Recommendation
+## Executive Director ruling and final opacity comparison
 
-**Ship radius 3**, up from 2. It reveals the squad's room edges, nearby furniture
+The Executive Director selected **radius 4** from this set and requested twice
+the transparency. [The final 4 / 0.175 setting and its 0.35 / 0.175 / 0 comparison](transparency/README.md) supersede the original recommendation below.
+
+## Original radius recommendation (superseded)
+
+The original Art recommendation was **radius 3**, up from 2. It reveals the squad's room edges, nearby furniture
 and corridor context while retaining substantial solid roof sections. The
 radius grows by 50%; the circular window's area grows by 125% before clipping
 against geometry. This is a visible enlargement even though it stops short of
@@ -22,9 +27,9 @@ the roof becomes chiefly an outer strip and corners. Radius 5 loses more roof
 and facade for little extra tactical information. Radius 3 gives the better
 balance in both roof kinds and from the opposite camera. The overlapping
 windows form one readable area without an extra-transparent intersection.
-The Director judges these frames before Tech Lead merge.
+The Executive Director judged these frames and chose radius 4.
 
-This changes only the runtime radius, held in `GHOST_RADIUS` in
+The original comparison changed only the runtime radius, held in `GHOST_RADIUS` in
 `TacticalSceneBuilder`. Lighting stays as accepted in #916; the Director's
 request to assess interior brightness during play remains separate.
 
@@ -62,12 +67,12 @@ multiplying transparency at the intersection.
 
 Opposite camera (yaw 2), same two units and zoom:
 
-| Roof | Current 2 | Chosen 3 | Doubled 4 |
+| Roof | Current 2 | Alternative 3 | Doubled 4 |
 | --- | --- | --- | --- |
 | Pitched | [2](pitched-2-radius-2-yaw2.png) | [3](pitched-2-radius-3-yaw2.png) | [4](pitched-2-radius-4-yaw2.png) |
 | Flat | [2](flat-2-radius-2-yaw2.png) | [3](flat-2-radius-3-yaw2.png) | [4](flat-2-radius-4-yaw2.png) |
 
-[Chosen radius after the squad leaves](pitched-1-radius-3-unit-left.png).
+[Original radius-3 recommendation after the squad leaves](pitched-1-radius-3-unit-left.png).
 [Empty pitched control](pitched-empty-closed.png), [empty flat control](flat-empty-closed.png).
 
 [Doubled-radius roof after the squad leaves](pitched-1-radius-4-unit-left.png).
@@ -79,17 +84,19 @@ The capture asserts that it returns to the byte-identical controller-off frame.
 pnpm exec vite --config tools/art/preview/capture-vite.config.mjs --host 127.0.0.1 --port 4199 --strictPort
 node tools/art/preview/capture-cutaway-radius.mjs
 node tools/art/preview/capture-cutaway-radius.mjs --rotated
-node tools/art/preview/verify-cutaway-radius.mjs 3
+node tools/art/preview/capture-cutaway-transparency.mjs
+node tools/art/preview/verify-cutaway-radius.mjs 4 0.175
 ```
 
 `CAPTURE_BASE_URL` may point at another local Vite port. The capture-only page
-accepts `roof=pitched|flat`, `units=0|1|2`, `radius=N`, `yaw=0|2`, and `ghost=0|1`; without a
-radius override it uses the runtime default. No product controls are added.
+accepts `roof=pitched|flat`, `units=0|1|2`, `radius=N`, `floor=0..1`, `yaw=0|2`, and `ghost=0|1`; without a
+uniform override it uses the runtime defaults. The original radius capture
+explicitly fixes floor 0.35; the transparency script verifies the final settings. No product controls are added.
 [captures.json](captures.json) records the exact URLs, positions, live radius
 and active ghost count. The script fails if an active controller changes no
 pixels, a squad stands on a prop, or the doubled reveal fails to close.
 
-## Verification
+## Original radius-pass verification
 
 The four single-unit baseline controls (radius 2 and controller off, for both
 roofs) are byte-identical to the accepted #916 frames: zero changed pixels.
@@ -110,9 +117,9 @@ byte equality; [runtime.json](runtime.json) records each result. Both final
 runtime and rotated capture commands exit cleanly.
 
 Both seed-4242 fog frames are regenerated and opened. They are byte-identical
-to fresh captures from current main `e014ab1`, which contains generation changes
+to fresh captures from baseline `e014ab1`, which contains generation changes
 landed after the previously tracked fog frames. The refreshed tracked PNGs
-therefore change, but radius 2 versus 3 on the same current map changes zero
+therefore change, but radius 2 versus 3 on the same baseline map changes zero
 pixels in these open-street controls. [Tracked and fresh-baseline comparisons](fog-comparisons.json).
 
 Long diagnostic captures use a dedicated Vite server with file watching/HMR

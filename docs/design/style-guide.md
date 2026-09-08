@@ -513,7 +513,7 @@ It runs the real animation queue against stand-in units at exactly 64 px per til
 
 ### 12.4 Building ghosting
 
-![two squads at radius 3](diagnostics/937/pitched-2-radius-3.png)
+![two squads at radius 4, opacity floor 0.175](diagnostics/937/transparency/pitched-2-floor-0.175-yaw0.png)
 
 XCOM-style ghosting (#526): geometry between the camera and a unit fades in a soft radius so the player never loses the fight behind a wall.
 
@@ -533,8 +533,8 @@ The case to check is a squad behind building geometry, with the surrounding map 
 
 | Property | Value | Why |
 |---|---|---|
-| Fade target | **0.35 alpha**, never 0 | The wall has to stay legible as a wall; cover the player cannot see is cover they will forget. At 0.25 the brick nearly disappears. |
-| Radius | **3.0 tiles** around the unit | Room context with solid roof sections retained around two separated squads; the 4.0 trial revealed most of the upper floor when windows overlapped (#937). |
+| Fade target | **0.175 opacity floor** | Half the retained opacity of 0.35: the Bayer centre keeps 3/16 fragments instead of 6/16. A light material trace remains over the room; floor 0 removes it entirely. |
+| Radius | **4.0 tiles** around the unit | Executive Director selected this from the #937 comparison, including the two-squad overlap that reveals most of the upper floor. |
 | Soft edge | **0.65 tiles**, measured inward from the radius | A hard circle reads as a stencil; a soft one reads as the building giving way. Measured inward rather than as a fraction of the radius, so softness does not change when the radius does. |
 | Fade in / out | **0.15 s** | Instant flickers as units move; longer lags the camera. |
 | What fades | Walls, floors, roofs, parapets and tall props between the camera and the unit | Anything that can stand in the way. |
@@ -542,7 +542,7 @@ The case to check is a squad behind building geometry, with the surrounding map 
 
 Applies to **every unit the player can currently see**, not only their own: hiding a spotted bug behind a wall undoes the spotting. That is the same question fog of war answers (#531), so it wants one predicate, not two.
 
-**First tuning pass on the working shader (#937).** The older mock studies above informed the initial 2.0 radius, but #916 found that `uGhostStrength` had never been bound to the shader. Only then did the reveal work in play. [The real 2/3/4/5 comparison](diagnostics/937/README.md) uses the accepted indoor camera, both pitched and flat roofs, and two separated squads at opposite camera yaws. Radius 3 shows room context while leaving broader roof sections solid; 4 opens most of the upper floor under two overlapping reveals, and 5 removes more shelter for little useful gain. Opacity, depth comparison, softness and fade timing stay unchanged. Overlap takes minimum alpha, so windows merge without their intersection becoming more transparent.
+**First tuning pass on the working shader (#937).** The older mock studies above informed the initial 2.0 radius, but #916 found that `uGhostStrength` had never been bound to the shader. Only then did the reveal work in play. [The real 2/3/4/5 comparison](diagnostics/937/README.md) uses the accepted indoor camera, both pitched and flat roofs, and two separated squads at opposite camera yaws. The Executive Director chose **4** after seeing the overlapping windows, then requested twice the transparency. [The opacity comparison](diagnostics/937/transparency/README.md) holds radius 4 and compares floors 0.35, 0.175 and 0. Halving retained opacity implements that direction without removing every central roof fragment; literal doubled transparency would exceed 100% and clamp to floor 0. Depth comparison, softness and fade timing stay unchanged. Overlap takes minimum alpha, so windows merge without their intersection becoming more transparent.
 
 ### 12.5 How the systems compose
 

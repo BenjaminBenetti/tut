@@ -4,8 +4,9 @@ import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
 
 const baseUrl = process.env.CAPTURE_BASE_URL ?? "http://localhost:4199";
-const output = "docs/design/diagnostics/937";
-const chosenRadius = Number(process.argv[2] ?? 3);
+const chosenRadius = Number(process.argv[2] ?? 4);
+const chosenFloor = Number(process.argv[3] ?? 0.175);
+const output = `docs/design/diagnostics/937${chosenFloor === 0.35 ? "" : "/transparency"}`;
 const browser = await chromium.launch({
   args: [
     "--use-angle=swiftshader",
@@ -35,7 +36,7 @@ for (const roof of ["pitched", "flat"]) {
       Number(process.env.CAPTURE_UNITS) !== units
     )
       continue;
-    // No radius override: this must use the chosen production default.
+    // No uniform overrides: this must use the chosen production defaults.
     await page.goto(
       `${baseUrl}/tools/art/preview/roof-cutaway.html?roof=${roof}&units=${units}`,
     );
@@ -43,11 +44,15 @@ for (const roof of ["pitched", "flat"]) {
     const record = await page.evaluate(() => ({ ...document.body.dataset }));
     if (
       Number(record.radius) !== chosenRadius ||
+      Number(record.floor) !== chosenFloor ||
       Number(record.ghostCount) !== units
     )
       throw new Error("Production default or active unit count is wrong");
     const pixels = await page.screenshot();
-    const candidate = `${roof}-${units}-radius-${chosenRadius}.png`;
+    const candidate =
+      chosenFloor === 0.35
+        ? `${roof}-${units}-radius-${chosenRadius}.png`
+        : `${roof}-${units}-floor-${chosenFloor}-yaw0.png`;
     if (!pixels.equals(readFileSync(`${output}/${candidate}`)))
       throw new Error(
         `Production frame differs from reviewed candidate ${candidate}`,

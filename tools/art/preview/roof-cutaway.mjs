@@ -40,6 +40,9 @@ async function main() {
   const radius = Number(query.get("radius"));
   if (Number.isFinite(radius) && radius > 0)
     builder.ghosting.uGhostRadius.value = radius;
+  const floor = Number(query.get("floor"));
+  if (query.has("floor") && Number.isFinite(floor) && floor >= 0 && floor <= 1)
+    builder.ghosting.uGhostFloor.value = floor;
   const sample = previewUnits(map);
   const pos = flat ? { x: 25, y: 6, z: 14 } : { x: 24, y: 4, z: 15 };
   const unit = { ...sample.units[0], pos };
@@ -86,6 +89,7 @@ async function main() {
   document.body.dataset.unit = JSON.stringify(pos);
   document.body.dataset.units = JSON.stringify(positions);
   document.body.dataset.radius = String(builder.ghosting.uGhostRadius.value);
+  document.body.dataset.floor = String(builder.ghosting.uGhostFloor.value);
   document.body.dataset.yaw = String(rig.getState().yawIndex);
   // A second captured state proves the cutaway closes after the visible unit leaves.
   document.addEventListener("keydown", (event) => {

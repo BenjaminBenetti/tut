@@ -23,6 +23,7 @@ export type DraftCapability =
   | "interiors"
   | "waterfronts"
   | "props"
+  | "boundaries"
   | "slopes"
   | "ramps"
   | "kerbs"

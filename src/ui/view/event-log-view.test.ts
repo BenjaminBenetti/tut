@@ -31,6 +31,7 @@ const HIT: TacticalEvent = {
     targetId: "unit-2",
     hit: true,
     damage: 4,
+    weaponRange: 8,
     targetHp: 2,
   },
 };
@@ -41,6 +42,7 @@ const MISS: TacticalEvent = {
     targetId: "unit-1",
     hit: false,
     damage: 0,
+    weaponRange: 8,
     targetHp: 10,
   },
 };

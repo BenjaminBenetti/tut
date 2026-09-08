@@ -29,6 +29,7 @@ import type { Disposable } from "../model/disposable";
 import type { FrameUpdatable } from "../model/frame-updatable";
 import type { SpriteSource } from "../model/sprite-source";
 import { tileTopCentre } from "../view/tactical-map-view";
+import { isMeleeRange } from "../../tactical/model/weapon-profile";
 
 // ===========================================
 // Types
@@ -164,14 +165,6 @@ const FLOATER_RISE = 1;
 
 /** Height for a unit whose model is not registered; keeps effects on screen. */
 const FALLBACK_HEIGHT = 1;
-
-/**
- * Attacks at or under this world distance are melee, so they get the claw
- * slash instead of a muzzle flash and a tracer. Adjacent tiles are 1 u apart
- * and diagonals 1.41, so 1.6 covers a strike from any neighbouring tile
- * without catching a shot from two tiles away.
- */
-const MELEE_RANGE = 1.6;
 
 /** Egg burst size in tiles, and how far it swells as it fades (#697). */
 const BURST_SIZE = 1.6;
@@ -369,6 +362,7 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
           event.payload.targetId,
           event.payload.hit,
           event.payload.damage,
+          event.payload.weaponRange,
         );
       case UNIT_DIED:
         return this.fade(event.payload.unitId);
@@ -449,6 +443,7 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
     targetId: UnitId,
     hit: boolean,
     damage: number,
+    weaponRange: number,
   ): Animation | undefined {
     const attacker = this.scene.unitObject(attackerId);
     const target = this.scene.unitObject(targetId);
@@ -457,10 +452,12 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
     }
     const muzzle = this.anchor(attackerId, MUZZLE_FRACTION);
     const body = this.anchor(targetId, BODY_FRACTION);
-    const melee =
-      muzzle !== undefined && body !== undefined
-        ? distance(muzzle, body) <= MELEE_RANGE
-        : false;
+    // The weapon, not the gap between the models (#457). Measuring the
+    // gap answers "are they close", and that is a different question:
+    // a rifle squad firing at the tile next door is close and is not
+    // melee, and a swarmer biting a mech on a roof is a storey and a
+    // half away and is.
+    const melee = isMeleeRange(weaponRange);
 
     const flash = this.openingFlash(muzzle, body, melee);
     const tracer =
@@ -928,11 +925,6 @@ function showFrame(texture: Texture, sheet: SpriteSheet, index: number): void {
   const column = index % sheet.columns;
   const row = Math.floor(index / sheet.columns);
   texture.offset.set(column / sheet.columns, 1 - (row + 1) / sheet.rows);
-}
-
-/** Straight-line distance between two world points. */
-function distance(a: Vec3, b: Vec3): number {
-  return Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
 }
 
 /** True when two points coincide. */

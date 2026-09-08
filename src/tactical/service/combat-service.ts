@@ -505,6 +505,7 @@ export function rollAttack(
         hit,
         damage,
         targetHp,
+        weaponRange: weapon.profile.range,
       },
     },
   ];

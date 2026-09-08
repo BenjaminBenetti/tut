@@ -4,7 +4,7 @@
  * and timing can be judged without playing a mission to contact.
  *
  * ```
- *   ?case=ranged|melee|death|burst   which sequence
+ *   ?case=ranged|melee|adjacent-rifle|tall-melee|death|burst
  *   ?px=64                     pixels per tile, the game's default zoom
  *   window.__vfx__.step(dt)    advance deterministically, then screenshot
  * ```
@@ -44,7 +44,7 @@ const SPAWNER_HEIGHT = 1.4;
 const size = 720;
 
 /** Stand-in unit: a box the height of the real thing, in its faction's grey. */
-function unit(x: number, height: number, colour: number): Object3D {
+function unit(x: number, height: number, colour: number, lift = 0): Object3D {
   const mesh = new Mesh(
     new BoxGeometry(0.6, height, 0.6),
     new MeshStandardMaterial({ color: colour }),
@@ -52,13 +52,30 @@ function unit(x: number, height: number, colour: number): Object3D {
   const holder = new Object3D();
   mesh.position.y = height / 2;
   holder.add(mesh);
-  holder.position.set(x, 0, 0);
+  holder.position.set(x, lift, 0);
   return holder;
 }
 
+/** How far above the ground `tall-melee` puts the attacker: a storey and a half. */
+const ROOFTOP_LIFT = 4;
+
+/**
+ * Cases where the geometry and the weapon disagree, which is what #457
+ * fixed: `adjacent-rifle` is a ranged shot at the tile next door, and
+ * `tall-melee` is a bite delivered from a rooftop. The old queue chose
+ * the effect by measuring the gap between the two models and got both
+ * of them backwards.
+ */
+const CONTACT = which === "melee" || which === "adjacent-rifle";
+const ELEVATED = which === "tall-melee";
+
+/** Tiles the attacker's weapon reaches, as `AttackResolvedEvent` carries it. */
+const RIFLE_RANGE = 8;
+const CLAW_RANGE = 1;
+
 const HEIGHTS: Record<string, number> = {
   "unit-1": 2.79,
-  "unit-2": which === "melee" ? 0.55 : 1.95,
+  "unit-2": CONTACT ? 0.55 : 1.95,
 };
 const MODELS: Record<string, string> = {
   "unit-1": "tdf.mech.assembled-b",
@@ -76,9 +93,10 @@ scene.add(ground);
 
 const objects = new Map<string, Object3D>();
 objects.set("unit-1", unit(0, HEIGHTS["unit-1"]!, 0x5b6573));
+const attackerLift = ELEVATED ? ROOFTOP_LIFT : 0;
 objects.set(
   "unit-2",
-  unit(which === "melee" ? 1 : 5, HEIGHTS["unit-2"]!, 0x2b2436),
+  unit(CONTACT || ELEVATED ? 1 : 5, HEIGHTS["unit-2"]!, 0x2b2436, attackerLift),
 );
 for (const object of objects.values()) {
   scene.add(object);
@@ -148,6 +166,7 @@ const EVENTS: Record<string, TacticalEvent> = {
       hit: true,
       damage: 12,
       targetHp: 6,
+      weaponRange: RIFLE_RANGE,
     },
   },
   melee: {
@@ -158,6 +177,33 @@ const EVENTS: Record<string, TacticalEvent> = {
       hit: false,
       damage: 0,
       targetHp: 20,
+      weaponRange: CLAW_RANGE,
+    },
+  },
+  // A rifle fired at the tile next door: close enough that the old
+  // distance test called it melee. Must show the flash and the tracer.
+  "adjacent-rifle": {
+    type: "tactical:attack-resolved",
+    payload: {
+      attackerId: "unit-1",
+      targetId: "unit-2",
+      hit: true,
+      damage: 9,
+      targetHp: 11,
+      weaponRange: RIFLE_RANGE,
+    },
+  },
+  // A bite delivered from a rooftop: far enough apart in world units
+  // that the old distance test called it ranged. Must show the claw.
+  "tall-melee": {
+    type: "tactical:attack-resolved",
+    payload: {
+      attackerId: "unit-2",
+      targetId: "unit-1",
+      hit: true,
+      damage: 4,
+      targetHp: 16,
+      weaponRange: CLAW_RANGE,
     },
   },
   death: {

@@ -22,7 +22,26 @@ import { RoadPass } from "./road-pass";
 import { TerrainPass } from "./terrain-pass";
 import { WaterPass } from "./water-pass";
 
-const registries = createDefaultRegistries();
+const shippedRegistries = createDefaultRegistries();
+// Explicitly enabled fixture content keeps the generic stamping, railing,
+// ramp and lot-clearance mechanics exercised after the #936 withdrawal.
+const registries = {
+  ...shippedRegistries,
+  elevatedFeatures: createRegistry(
+    "elevated feature",
+    shippedRegistries.elevatedFeatures.values.map((feature) => ({
+      ...feature,
+      maxPerMap: [
+        "terrace",
+        "raised-park",
+        "rail-embankment",
+        "rubble-mound",
+      ].includes(feature.id)
+        ? Number.POSITIVE_INFINITY
+        : feature.maxPerMap,
+    })),
+  ),
+};
 const generator = new PipelineMapGenerator(
   createSettlementPasses(),
   registries,
@@ -51,7 +70,7 @@ describe("ElevationPass", () => {
     expect(pass.provides).toEqual(["elevation"]);
   });
 
-  it("gives city outdoor ground a mech can stand on above the plat", () => {
+  it("makes explicitly enabled fixture features usable by a mech", () => {
     // City plats are graded flat, so this was zero on every seed before
     // the pass (#444). The point is that outdoor height exists and that a
     // mech is allowed on it. It was asserted per seed at 60+ tiles while
@@ -236,68 +255,57 @@ describe("ElevationPass", () => {
     }
   });
 
-  it("keeps planted elevation without stamping freestanding paved platforms (#910)", () => {
+  it("leaves shipped settlement ground at its pre-feature grade and surface (#910, #936)", () => {
     const passes = [
       new TerrainPass(),
       new WaterPass(),
       new RoadPass(),
       new LotPass(),
     ];
-    const before = new PipelineMapGenerator(passes, registries);
+    const before = new PipelineMapGenerator(passes, shippedRegistries);
     const after = new PipelineMapGenerator(
       [...passes, new ElevationPass()],
-      registries,
+      shippedRegistries,
     );
-    const legacy = new PipelineMapGenerator([...passes, new ElevationPass()], {
-      ...registries,
-      elevatedFeatures: createRegistry(
-        "elevated feature",
-        registries.elevatedFeatures.values.map((feature) => ({
-          ...feature,
-          maxPerMap: Number.POSITIVE_INFINITY,
-        })),
-      ),
-    });
-    let plantedColumns = 0;
     for (const biome of BIOME_IDS) {
-      for (const seed of ["mc-opening-01", "mc-opening-02", "mc-opening-03"]) {
-        const recipe = { ...params("city", biome), size: "small" as const };
-        const flat = before.run(
-          recipe,
-          new Mulberry32Rng(hashSeed(seed)),
-        ).draft;
-        const raised = after.run(
-          recipe,
-          new Mulberry32Rng(hashSeed(seed)),
-        ).draft;
-        const original = legacy.run(
-          recipe,
-          new Mulberry32Rng(hashSeed(seed)),
-        ).draft;
-        for (let z = 0; z < raised.depth; z++) {
-          for (let x = 0; x < raised.width; x++) {
-            if (original.groundSurfaceAt(x, z) !== SurfaceIds.SIDEWALK) {
-              expect(raised.groundLevelAt(x, z)).toBe(
-                original.groundLevelAt(x, z),
-              );
-              expect(raised.groundSurfaceAt(x, z)).toBe(
-                original.groundSurfaceAt(x, z),
-              );
-            }
-            if (raised.groundLevelAt(x, z) === flat.groundLevelAt(x, z))
-              continue;
-            const surface = raised.groundSurfaceAt(x, z);
-            expect(surface, `${biome}/${seed} raised (${x},${z})`).not.toBe(
-              SurfaceIds.SIDEWALK,
-            );
-            if (surface === SurfaceIds.GRASS || surface === SurfaceIds.DIRT) {
-              plantedColumns++;
+      for (const settlement of ["rural", "town", "city"] as const) {
+        for (const seed of [
+          "mc-opening-01",
+          "mc-opening-02",
+          "mc-opening-03",
+        ]) {
+          const recipe = {
+            ...params(settlement, biome),
+            size: "small" as const,
+          };
+          const flat = before.run(
+            recipe,
+            new Mulberry32Rng(hashSeed(seed)),
+          ).draft;
+          const final = after.run(
+            recipe,
+            new Mulberry32Rng(hashSeed(seed)),
+          ).draft;
+          const expected = [];
+          const actual = [];
+          for (let z = 0; z < flat.depth; z++) {
+            for (let x = 0; x < flat.width; x++) {
+              expected.push([
+                flat.groundLevelAt(x, z),
+                flat.groundSurfaceAt(x, z),
+                flat.wallsAt(flat.groundCoord(x, z)),
+              ]);
+              actual.push([
+                final.groundLevelAt(x, z),
+                final.groundSurfaceAt(x, z),
+                final.wallsAt(final.groundCoord(x, z)),
+              ]);
             }
           }
+          expect(actual, `${biome}/${settlement}/${seed}`).toEqual(expected);
         }
       }
     }
-    expect(plantedColumns).toBeGreaterThan(0);
   });
 
   /**

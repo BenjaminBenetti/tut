@@ -1,0 +1,43 @@
+{
+  "id": "P01-former-paved-platform",
+  "seed": "mc-opening-01",
+  "biome": "temperate",
+  "settlement": "city",
+  "size": "small",
+  "tile": {
+    "x": 33,
+    "y": 3,
+    "z": 30
+  },
+  "pitch": 60,
+  "rotation": 0,
+  "width": 1200,
+  "height": 1000,
+  "requestedTile": {
+    "x": 33,
+    "y": 5,
+    "z": 30
+  },
+  "actualPitch": 59.7605434795569,
+  "url": "http://localhost:4173/mapgen-preview.html?seed=mc-opening-01&biome=temperate&settlement=city&size=small&models=1&units=1&slope=100",
+  "levels": {
+    "value": "10",
+    "max": "11"
+  },
+  "baseline": "2878dfc3e3e8d85e3e2ff82a3e3b8ea998f22a2e",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "pixel": {
+    "x": 1350.7401715185076,
+    "y": 727.3481130030789
+  },
+  "clip": {
+    "x": 751,
+    "y": 227,
+    "width": 1200,
+    "height": 1000
+  },
+  "levelSelection": "initial all; no floor parameter or level input"
+}

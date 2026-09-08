@@ -1,0 +1,33 @@
+{
+  "id": "F02-coastal-fences-rotated",
+  "seed": "mc-opening-01",
+  "biome": "coastal",
+  "settlement": "rural",
+  "size": "small",
+  "tile": {
+    "x": 5,
+    "y": 2,
+    "z": 22
+  },
+  "pitch": 45,
+  "width": 1200,
+  "height": 1000,
+  "rotation": 1,
+  "actualPitch": 44.99999999369599,
+  "url": "http://localhost:4173/mapgen-preview.html?seed=mc-opening-01&biome=coastal&settlement=rural&size=small&models=1&units=1&slope=100",
+  "baseline": "f43f73c98525bb4fe7927670dce7b09d52321a77",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "pixel": {
+    "x": 1342.215535262299,
+    "y": 702.6479649002154
+  },
+  "clip": {
+    "x": 742,
+    "y": 203,
+    "width": 1200,
+    "height": 1000
+  }
+}

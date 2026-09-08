@@ -1,0 +1,154 @@
+{
+  "rows": [
+    {
+      "x": 33,
+      "y": 2,
+      "z": 13,
+      "surface": "grass",
+      "walls": {
+        "e": "half"
+      },
+      "terrain": 2,
+      "roads": 2,
+      "lots": 2,
+      "elevation": 2
+    },
+    {
+      "x": 33,
+      "y": 2,
+      "z": 14,
+      "surface": "grass",
+      "walls": {
+        "e": "half"
+      },
+      "terrain": 2,
+      "roads": 2,
+      "lots": 2,
+      "elevation": 2
+    },
+    {
+      "x": 33,
+      "y": 2,
+      "z": 15,
+      "surface": "grass",
+      "walls": {
+        "e": "half"
+      },
+      "terrain": 2,
+      "roads": 2,
+      "lots": 2,
+      "elevation": 2
+    },
+    {
+      "x": 33,
+      "y": 2,
+      "z": 16,
+      "surface": "grass",
+      "walls": {
+        "e": "half"
+      },
+      "terrain": 2,
+      "roads": 2,
+      "lots": 2,
+      "elevation": 2
+    },
+    {
+      "x": 32,
+      "y": 2,
+      "z": 17,
+      "surface": "grass",
+      "walls": {
+        "s": "half"
+      },
+      "terrain": 2,
+      "roads": 2,
+      "lots": 2,
+      "elevation": 2
+    },
+    {
+      "x": 40,
+      "y": 2,
+      "z": 23,
+      "surface": "grass",
+      "walls": {
+        "n": "half"
+      },
+      "terrain": 0,
+      "roads": 0,
+      "lots": 2,
+      "elevation": 2,
+      "lot": "lot-2"
+    },
+    {
+      "x": 41,
+      "y": 2,
+      "z": 23,
+      "surface": "grass",
+      "walls": {
+        "n": "half"
+      },
+      "terrain": 0,
+      "roads": 0,
+      "lots": 2,
+      "elevation": 2,
+      "lot": "lot-2"
+    }
+  ],
+  "lots": [
+    {
+      "id": "lot-1",
+      "rect": {
+        "x": 7,
+        "z": 23,
+        "w": 8,
+        "d": 9
+      },
+      "level": 0,
+      "frontage": "n"
+    },
+    {
+      "id": "lot-2",
+      "rect": {
+        "x": 31,
+        "z": 23,
+        "w": 11,
+        "d": 10
+      },
+      "level": 2,
+      "frontage": "n"
+    },
+    {
+      "id": "lot-3",
+      "rect": {
+        "x": 17,
+        "z": 4,
+        "w": 9,
+        "d": 14
+      },
+      "level": 0,
+      "frontage": "w"
+    },
+    {
+      "id": "lot-4",
+      "rect": {
+        "x": 2,
+        "z": 7,
+        "w": 10,
+        "d": 10
+      },
+      "level": 0,
+      "frontage": "e"
+    },
+    {
+      "id": "lot-5",
+      "rect": {
+        "x": 21,
+        "z": 23,
+        "w": 8,
+        "d": 9
+      },
+      "level": 0,
+      "frontage": "n"
+    }
+  ]
+}

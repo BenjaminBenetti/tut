@@ -1,0 +1,38 @@
+{
+  "id": "B01-snowy-foundation",
+  "seed": "mc-opening-01",
+  "biome": "snowy",
+  "settlement": "town",
+  "size": "small",
+  "tile": {
+    "x": 37,
+    "y": 3,
+    "z": 39
+  },
+  "pitch": 78,
+  "rotation": 0,
+  "width": 1200,
+  "height": 1000,
+  "actualPitch": 78.00000015410292,
+  "url": "http://localhost:4173/mapgen-preview.html?seed=mc-opening-01&biome=snowy&settlement=town&size=small&models=1&units=1&slope=100",
+  "levels": {
+    "value": "12",
+    "max": "12"
+  },
+  "baseline": "2878dfc3e3e8d85e3e2ff82a3e3b8ea998f22a2e",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "pixel": {
+    "x": 1431.54914814091,
+    "y": 718.4668936715187
+  },
+  "clip": {
+    "x": 832,
+    "y": 218,
+    "width": 1200,
+    "height": 1000
+  },
+  "levelSelection": "initial all; no floor parameter or level input"
+}

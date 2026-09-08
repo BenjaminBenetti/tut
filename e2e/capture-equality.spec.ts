@@ -29,7 +29,10 @@ test("capture taps and a no-op reproduce the same rendered bytes", async ({
         "true",
       );
       await page.mouse.move(0, 0);
-      for (const key of ["d", "s", "a", "w"]) await tapCameraKey(page, key);
+      // Seed 4242's tallest roof must be visible: the deploy-zone view
+      // missed the top-focus roof regression introduced by #978.
+      for (const key of ["d", "s", "w", "w", "w", "w", "w", "w", "w", "w"])
+        await tapCameraKey(page, key);
       const viewport = page.locator("#tactical-viewport");
       const top = await viewport.screenshot({
         path: test.info().outputPath(`${run}-top.png`),

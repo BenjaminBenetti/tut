@@ -966,14 +966,22 @@ describe("TacticalMapView.setLayerFocus", () => {
     expect(drawnLevels(byStorey)).toEqual([0]);
   });
 
-  it("draws all of it at the top storey", () => {
-    const map = hillside(4).build();
-    const view = new TacticalMapView(map);
-    view.setLayerFocus({ storey: 1, storeyCount: 2, cutLevel: undefined });
+  it("keeps roofs above the last floor at the top storey, including after a cut", () => {
+    const fixture = hillside(4);
+    // Generated roof tiles have a building id but no floorIndex, and sit
+    // one storey above the final interior floor. The old fixture omitted them.
+    fixture.tile({ x: 2, y: 8, z: 2 }, SurfaceIds.ROOF, { buildingId: "high" });
+    const view = new TacticalMapView(fixture.build());
     const all = drawnLevels(view);
-    view.setLayerFocus(undefined);
-    expect(all).toEqual(drawnLevels(view));
-    expect(all).toEqual([0, 2, 4, 6]);
+    expect(all).toEqual([0, 2, 4, 6, 8]);
+    const top = { storey: 1, storeyCount: 2, cutLevel: undefined };
+    view.setLayerFocus(top);
+    expect(drawnLevels(view)).toEqual(all);
+    view.setLayerFocus({ storey: 0, storeyCount: 2, cutLevel: 1 });
+    expect(drawnLevels(view)).toEqual([0, 4]);
+    view.setLayerFocus(top);
+    expect(drawnLevels(view)).toEqual(all);
+    view.dispose();
   });
 
   // A connector is its own mesh, not an instance in a batch, so it needs

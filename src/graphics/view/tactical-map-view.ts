@@ -1401,7 +1401,8 @@ export class TacticalMapView implements Disposable, TilePicker {
    */
   private hiddenByCut(key: VisionTileKey): boolean {
     const focus = this.focus;
-    if (focus === undefined) {
+    // The top focus is uncut, including roofs above its last interior floor.
+    if (focus?.cutLevel === undefined) {
       return false;
     }
     const cut = this.tileCutIndex().get(key);

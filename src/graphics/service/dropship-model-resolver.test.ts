@@ -20,8 +20,8 @@ function contactSockets(): readonly {
 }[] {
   const glb = readFileSync(
     new URL(
-      "../../../public/assets/models/props/tdf-dropship.glb",
-      import.meta.url,
+      MODEL_MANIFEST["tdf.dropship"].path,
+      new URL("../../../public/", import.meta.url),
     ),
   );
   const length = glb.readUInt32LE(12);
@@ -41,8 +41,8 @@ describe("dropship scene mapping", () => {
       const clearance = {
         x: 4,
         z: 5,
-        w: vertical ? 7 : 12,
-        d: vertical ? 12 : 7,
+        w: vertical ? 7 : 13,
+        d: vertical ? 13 : 7,
       };
       const footprint = dropshipFootprint(clearance, facing);
       const tiles = dropshipBoardingTiles(clearance, facing, 2);
@@ -93,7 +93,7 @@ describe("dropship scene mapping", () => {
         if (socket.name.startsWith("socket_ramp")) {
           const inward = { n: [0, 1], s: [0, -1], e: [-1, 0], w: [1, 0] }[
             facing
-          ]!;
+          ];
           expect(
             tiles.some(
               (p) =>

@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { DEFAULT_MISSION_HOOKS } from "../data/hook-requirements";
+import type { MapGenParams } from "../model/map-recipe";
 import { PassMask } from "../model/pass-mask";
 import type { TacticalMap } from "../model/tactical-map";
 import { generateTacticalMap } from "./generate-tactical-map";
@@ -74,6 +75,73 @@ describe("dropship final support validation", () => {
     const { dropships: _dropships, ...old } = map;
     expect(check(old)).toEqual([]);
   });
+
+  it.each([
+    {
+      seed: 'wide-"small"/snowy/rural/5',
+      biome: "snowy",
+      settlement: "rural",
+      size: "small",
+    },
+    {
+      seed: 'wide-"small"/snowy/town/18',
+      biome: "snowy",
+      settlement: "town",
+      size: "small",
+    },
+    {
+      seed: 'wide-{"width":40,"depth":56}/snowy/rural/1',
+      biome: "snowy",
+      settlement: "rural",
+      size: { width: 40, depth: 56 },
+    },
+    {
+      seed: 'wide-{"width":40,"depth":56}/snowy/rural/17',
+      biome: "snowy",
+      settlement: "rural",
+      size: { width: 40, depth: 56 },
+    },
+    {
+      seed: 'wide-{"width":40,"depth":56}/snowy/town/3',
+      biome: "snowy",
+      settlement: "town",
+      size: { width: 40, depth: 56 },
+    },
+    {
+      seed: 'wide-{"width":40,"depth":56}/snowy/town/5',
+      biome: "snowy",
+      settlement: "town",
+      size: { width: 40, depth: 56 },
+    },
+    {
+      seed: 'wide-{"width":40,"depth":56}/snowy/town/9',
+      biome: "snowy",
+      settlement: "town",
+      size: { width: 40, depth: 56 },
+    },
+    {
+      seed: 'wide-{"width":40,"depth":56}/snowy/town/10',
+      biome: "snowy",
+      settlement: "town",
+      size: { width: 40, depth: 56 },
+    },
+    { seed: "mc-resume-03", biome: "snowy", settlement: "town", size: "small" },
+  ])(
+    "supports the measured snowy fallback $settlement / $seed",
+    ({ seed, settlement, size }) => {
+      const changed = generateTacticalMap({
+        seed,
+        params: {
+          ...map.recipe.params,
+          biome: "snowy",
+          settlement: settlement as MapGenParams["settlement"],
+          size: size as MapGenParams["size"],
+        },
+      });
+      expect(changed.dropships).toHaveLength(1);
+      expect(check(changed)).toEqual([]);
+    },
+  );
 
   it("keeps hatch room when the new boarding origin exposes a cramped indoor preference", () => {
     const changed = generateTacticalMap({

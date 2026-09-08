@@ -27,10 +27,10 @@ function fixture(facing: Direction): {
   );
   const vertical = facing === "n" || facing === "s";
   const land = {
-    x: vertical ? 10 : facing === "w" ? 0 : 20,
-    z: !vertical ? 10 : facing === "n" ? 0 : 20,
-    w: vertical ? 7 : 12,
-    d: vertical ? 12 : 7,
+    x: vertical ? 10 : facing === "w" ? 0 : 19,
+    z: !vertical ? 10 : facing === "n" ? 0 : 19,
+    w: vertical ? 7 : 13,
+    d: vertical ? 13 : 7,
   };
   for (let z = land.z; z < land.z + land.d; z++)
     for (let x = land.x; x < land.x + land.w; x++) {

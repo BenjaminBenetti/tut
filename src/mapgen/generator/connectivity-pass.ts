@@ -4,6 +4,7 @@ import { DIRECTIONS } from "../../core/model/direction";
 import {
   manhattanDistance,
   oppositeDirection,
+  rectContains,
   stepGridPos,
 } from "../../core/service/grid-math";
 import type { DiagnosticSink } from "../model/diagnostics";
@@ -346,6 +347,11 @@ function edgesFrom(
         stepped.buildingId !== undefined ||
         from.propId !== undefined ||
         !allows(stepped.pass, unitClass) ||
+        (snapshot.map.dropships ?? []).some(
+          (site) =>
+            rectContains(site.clearance, from.x, from.z) ||
+            rectContains(site.clearance, stepped.x, stepped.z),
+        ) ||
         reach.canStep(from, stepped, unitClass)
       ) {
         continue;

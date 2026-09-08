@@ -51,6 +51,7 @@ import { TerrainTransitionModelFactory } from "../service/terrain-transition-mod
 import { roadAppearanceKey } from "../service/road-model-resolver";
 import { RoadModelFactory } from "../service/road-model-factory";
 import { ROAD_STYLES } from "../data/road-styles";
+import { MODEL_MANIFEST } from "../data/model-manifest";
 import type { GhostUniforms } from "../service/ghost-cutaway";
 import { applyGhostCutaway } from "../service/ghost-cutaway";
 import {
@@ -1126,7 +1127,7 @@ export class TacticalMapView implements Disposable, TilePicker {
       )?.tiles[0];
       if (!boarding) continue;
       const { footprint, level } = site;
-      const height = 3.54;
+      const height = MODEL_MANIFEST["tdf.dropship"].height;
       pushBatch(
         batches,
         `dropship:${level}`,

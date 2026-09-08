@@ -291,7 +291,6 @@ function groupRuns(
  * that meets higher ground is the road pass's kerb to draw.
  */
 function isWedgeGround(draft: MapDraft, x: number, z: number): boolean {
-  if (draft.isLandingReserved(x, z)) return false;
   const surface = draft.groundSurfaceAt(x, z);
   if (
     surface === SurfaceIds.WATER ||

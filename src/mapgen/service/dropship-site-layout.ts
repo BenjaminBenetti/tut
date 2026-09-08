@@ -40,6 +40,27 @@ export function dropshipFootprint(clearance: Rect, facing: Direction): Rect {
   };
 }
 
+/** The extra inward access row may meet an existing street; the aircraft and starts may not. */
+export function dropshipApproachRect(clearance: Rect, facing: Direction): Rect {
+  if (facing === "n")
+    return {
+      x: clearance.x,
+      z: clearance.z + clearance.d - 1,
+      w: clearance.w,
+      d: 1,
+    };
+  if (facing === "s")
+    return { x: clearance.x, z: clearance.z, w: clearance.w, d: 1 };
+  if (facing === "w")
+    return {
+      x: clearance.x + clearance.w - 1,
+      z: clearance.z,
+      w: 1,
+      d: clearance.d,
+    };
+  return { x: clearance.x, z: clearance.z, w: 1, d: clearance.d };
+}
+
 /** Grid-aligned boarding patch touching the rear ramp, outside the full hull. */
 export function dropshipBoardingTiles(
   clearance: Rect,

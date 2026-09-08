@@ -6,7 +6,7 @@ export interface DropshipSite {
   readonly deployZoneId: string;
   /** Complete aircraft envelope, including the lowered ramp. */
   readonly footprint: Rect;
-  /** Level ground reserved around the aircraft and its boarding patch. */
+  /** Clear circulation and approach margin; its outside edge may slope into the terrain. */
   readonly clearance: Rect;
   readonly level: number;
   /** Nose toward this map edge; boarding is on the opposite side. */
@@ -19,6 +19,9 @@ export interface DropshipSiteRules {
   readonly length: number;
   readonly margin: number;
   readonly boardingSide: number;
-  readonly edgeBand: number;
-  readonly maxCut: number;
+  /** Ordered fallbacks; a later search cannot move an already-supported placement. */
+  readonly searches: readonly {
+    readonly edgeBand: number;
+    readonly maxCut: number;
+  }[];
 }

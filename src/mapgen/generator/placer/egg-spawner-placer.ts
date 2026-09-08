@@ -146,6 +146,8 @@ export class EggSpawnerPlacer implements HookPlacer {
       // outranks hatch space when a map cannot give both — and a map
       // whose rooms are all blind gives the spawner up to the open air
       // rather than hiding it somewhere unbeatable.
+      // A roomy, shootable outdoor candidate still outranks a cramped
+      // indoor preference: reserving a dropship exposed that fallback (#911).
       const pick =
         ordered.find((c) => roomy(c) && shootable(c)) ??
         remaining.find((c) => !c.interior && roomy(c) && shootable(c)) ??

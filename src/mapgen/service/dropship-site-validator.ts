@@ -1,6 +1,6 @@
 import { DIRECTIONS } from "../../core/model/direction";
 import type { Rect } from "../../core/model/grid";
-import { rectContains } from "../../core/service/grid-math";
+import { rectContains, stepGridPos } from "../../core/service/grid-math";
 import { DROPSHIP_SITE_RULES } from "../data/dropship-site";
 import { SurfaceIds } from "../data/surfaces";
 import { PassMask } from "../model/pass-mask";
@@ -8,6 +8,7 @@ import type { TacticalMap } from "../model/tactical-map";
 import {
   dropshipBoardingTiles,
   dropshipFootprint,
+  dropshipApproachRect,
 } from "./dropship-site-layout";
 import type { Violation } from "./map-validator";
 import type { TileIndex } from "./tile-index";
@@ -44,10 +45,10 @@ export function validateDropshipSites(
       clearance.w !==
         (vertical
           ? rules.width + rules.margin * 2
-          : rules.margin + rules.length + rules.boardingSide) ||
+          : 2 * rules.margin + rules.length + rules.boardingSide) ||
       clearance.d !==
         (vertical
-          ? rules.margin + rules.length + rules.boardingSide
+          ? 2 * rules.margin + rules.length + rules.boardingSide
           : rules.width + rules.margin * 2) ||
       !sameRect(footprint, dropshipFootprint(clearance, facing))
     )
@@ -62,8 +63,7 @@ export function validateDropshipSites(
       index.keyOf(p),
     );
     if (
-      !zone ||
-      zone.tiles.length !== 16 ||
+      zone?.tiles.length !== 16 ||
       new Set(zone.tiles.map((p) => index.keyOf(p))).size !== 16 ||
       !zone.tiles.every((p) => expected.includes(index.keyOf(p)))
     )
@@ -82,10 +82,22 @@ export function validateDropshipSites(
           column.length !== 1 ||
           tile.buildingId !== undefined ||
           tile.surface === SurfaceIds.WATER ||
-          tile.surface === SurfaceIds.ROAD ||
-          tile.slope !== undefined ||
+          (tile.surface === SurfaceIds.ROAD &&
+            !rectContains(dropshipApproachRect(clearance, facing), x, z)) ||
+          (tile.slope !== undefined &&
+            (rectContains(footprint, x, z) ||
+              expected.includes(index.keyOf(tile)))) ||
           tile.propId !== undefined ||
-          Object.keys(tile.walls).length > 0
+          DIRECTIONS.some((side) => {
+            const wall = tile.walls[side];
+            const beyond = stepGridPos(tile, side);
+            // A quay/kerb railing at the outside edge bounds the clearing;
+            // it does not cross the aircraft, boarding or circulation route.
+            return (
+              wall !== undefined &&
+              (wall !== "half" || rectContains(clearance, beyond.x, beyond.z))
+            );
+          })
         ) {
           fail(`support/clearance is obstructed at ${x},${level},${z}`);
           continue;

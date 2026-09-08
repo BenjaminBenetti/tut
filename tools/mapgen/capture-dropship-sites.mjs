@@ -9,7 +9,7 @@ const out =
   `docs/design/diagnostics/911/generated/${phase}`;
 mkdirSync(out, { recursive: true });
 const controls = JSON.parse(
-  readFileSync(".git/mapgen-911/capture-cases.json", "utf8"),
+  readFileSync("docs/design/diagnostics/911/generated/cases.json", "utf8"),
 );
 const browser = await chromium.launch({
   headless: true,
@@ -21,6 +21,29 @@ const browser = await chromium.launch({
 });
 const page = await browser.newPage({ viewport: { width: 2400, height: 1500 } });
 const errors = [];
+let captureSize;
+// The Map Lab controls expose presets only. For the measured 40×56 regression,
+// feed its exact dimensions into the real recipe construction. No pass, tile,
+// model or scene result is replaced. The metadata records this input override.
+await page.route("**/src/mapgen-preview.ts*", async (route) => {
+  if (typeof captureSize !== "object") return route.continue();
+  const response = await route.fetch();
+  const body = await response.text();
+  // writeUrl and the real generation recipe both carry the control value;
+  // replace only the recipe next to hooks, leaving the shipped UI untouched.
+  const recipeMarker = /size: state\.size,\s*hooks: DEFAULT_MISSION_HOOKS,/;
+  if (!recipeMarker.test(body))
+    throw new Error("Recipe capture marker changed");
+  await route.fulfill({
+    response,
+    body: body.replace(
+      recipeMarker,
+      "size: " +
+        JSON.stringify(captureSize) +
+        ",\n        hooks: DEFAULT_MISSION_HOOKS,",
+    ),
+  });
+});
 page.on("pageerror", (e) => errors.push(e.message));
 page.on("console", (m) => {
   if (m.type() === "error") {
@@ -65,11 +88,12 @@ try {
       !process.env.CAPTURE_ONLY.split(",").includes(c.id)
     )
       continue;
+    captureSize = c.size;
     const query = new URLSearchParams({
       seed: c.seed,
       biome: c.biome,
       settlement: c.settlement,
-      size: c.size,
+      size: typeof c.size === "string" ? c.size : "small",
       models: "1",
       units: "1",
       slope: "100",
@@ -144,6 +168,10 @@ try {
           {
             ...c,
             url,
+            recipeInput:
+              typeof c.size === "object"
+                ? "Capture supplies exact custom dimensions to Map Lab's real recipe; the preset URL alone does not reproduce this case."
+                : "Unmodified Map Lab URL",
             viewport: { width: 2400, height: 1500 },
             clip: c.clip,
             camera,

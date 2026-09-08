@@ -15,6 +15,7 @@ import type { TileCoord } from "../model/tile-coord";
 import {
   dropshipBoardingTiles,
   dropshipFootprint,
+  dropshipApproachRect,
 } from "../service/dropship-site-layout";
 import {
   buildGroundComponents,
@@ -54,16 +55,23 @@ export class DropshipSitePass implements GenerationPass {
           ...rng.shuffle(DIRECTIONS.filter((d) => !used.has(d))),
           ...DIRECTIONS.filter((d) => used.has(d)),
         ];
-        const plan = findSite(
-          draft,
-          edges,
-          rng.shuffle(
-            Array.from(
-              { length: Math.max(draft.width, draft.depth) },
-              (_, n) => n,
-            ),
+        const positions = rng.shuffle(
+          Array.from(
+            { length: Math.max(draft.width, draft.depth) },
+            (_, n) => n,
           ),
         );
+        let plan: SitePlan | undefined;
+        for (const search of DROPSHIP_SITE_RULES.searches) {
+          plan = findSite(
+            draft,
+            edges,
+            positions,
+            search.edgeBand,
+            search.maxCut,
+          );
+          if (plan) break;
+        }
         if (!plan) {
           diagnostics.note(
             "no supported dropship site: aircraft/deploy placement cannot be satisfied",
@@ -100,6 +108,8 @@ function findSite(
   draft: MapDraft,
   edges: readonly Direction[],
   positions: readonly number[],
+  edgeBand: number,
+  maxCut: number,
 ): SitePlan | undefined {
   const ground = buildGroundComponents(draft);
   const mainland = largestGroundComponent(ground);
@@ -110,9 +120,9 @@ function findSite(
     ]),
   );
   let best: SitePlan | undefined;
-  const { width, length, margin, boardingSide, edgeBand } = DROPSHIP_SITE_RULES;
+  const { width, length, margin, boardingSide } = DROPSHIP_SITE_RULES;
   const across = width + 2 * margin;
-  const inward = margin + length + boardingSide;
+  const inward = 2 * margin + length + boardingSide;
   for (const facing of edges) {
     const vertical = facing === "n" || facing === "s";
     const axis = vertical ? draft.width : draft.depth;
@@ -150,7 +160,13 @@ function findSite(
           )
         )
           continue;
-        const plan = planSite(draft, clearance, facing, connectorColumns);
+        const plan = planSite(
+          draft,
+          clearance,
+          facing,
+          connectorColumns,
+          maxCut,
+        );
         if (plan && (!best || plan.cost < best.cost)) best = plan;
         if (best?.cost === 0) return best;
       }
@@ -165,18 +181,21 @@ function planSite(
   clearance: Rect,
   facing: Direction,
   connectors: ReadonlySet<number>,
+  maxCut: number,
 ): SitePlan | undefined {
   let level = Infinity;
   let high = -Infinity;
+  const approach = dropshipApproachRect(clearance, facing);
   for (let z = clearance.z; z < clearance.z + clearance.d; z++) {
     for (let x = clearance.x; x < clearance.x + clearance.w; x++) {
-      if (!canReserve(draft, x, z, connectors)) return undefined;
+      if (!canReserve(draft, x, z, connectors, rectContains(approach, x, z)))
+        return undefined;
       const y = draft.groundLevelAt(x, z);
       level = Math.min(level, y);
       high = Math.max(high, y);
     }
   }
-  if (high - level > DROPSHIP_SITE_RULES.maxCut) return undefined;
+  if (high - level > maxCut) return undefined;
   if (high === level) return { clearance, facing, level, cuts: [], cost: 0 };
   const cuts: TileCoord[] = [];
   let cost = 0;
@@ -198,6 +217,7 @@ function planSite(
       const before = draft.groundLevelAt(x, z);
       const y = Math.min(before, level + distance);
       if (y === before) continue;
+      if (before - y > maxCut) return undefined;
       if (
         !canReserve(draft, x, z, connectors) ||
         draft.groundSurfaceAt(x, z) === SurfaceIds.SIDEWALK
@@ -216,9 +236,10 @@ function canReserve(
   x: number,
   z: number,
   connectors: ReadonlySet<number>,
+  allowRoad = false,
 ): boolean {
   return (
-    !draft.isRoad(x, z) &&
+    (allowRoad || !draft.isRoad(x, z)) &&
     !draft.isCovered(x, z) &&
     draft.groundSurfaceAt(x, z) !== SurfaceIds.WATER &&
     !draft.isLandingReserved(x, z) &&

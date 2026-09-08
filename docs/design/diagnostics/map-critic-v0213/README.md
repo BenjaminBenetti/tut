@@ -1,7 +1,8 @@
 # Map Critic — current-main repair check, 2026-09-08
 
 Capture baseline: **`5cead6e9d5ec656ddba95b41c63ec29d77818ade`**.
-This is current main after v0.2.13 and also includes pointer inspection #947.
+This was main at the start of the pass, after v0.2.13 and pointer inspection
+#947. The later layer check uses its separately pinned `d0837c6` baseline.
 
 ## Rural fences #917 / #973
 
@@ -59,5 +60,20 @@ hover inspection opens adjacent room context and both closure paths restore
 the roof. Dim interiors, stipple and accepted near-wall exposure remain
 visible limitations.
 
-The 12-map `mc-resume-02` continuation and layer-control frames are still in
-progress. Their baseline and inspected coverage will be recorded separately.
+[The completed continuation](survey/README.md) covers `mc-resume-02` across
+all four biomes and three settlement scales at medium 72². All 24 whole/near
+source frames and three published sheets were opened. It corroborates the
+existing ranked findings, including town instances of #1006; it adds no
+sixth ticket. This capture baseline precedes the proposed #945 repair.
+
+[Eight later-main layer-control frames](layers/README.md), all opened, show
+useful rooms and stairs but also a failed top-limit control: pressing Up at
+initial 5/5 removes the tall roof while leaving the readout unchanged. Both
+initial camera-side frames retain their roofs. This corroborates the owned
+#978 correction; it is not a claim that every initial roof is absent.
+
+The watch subsequently caught the #1008 model merge. Art's three model
+angles and four constructed grass/paving views were opened at merge
+`a5efc99`; the ship and boarding ramp read well. [The model-only verdict](https://github.com/BenjaminBenetti/tut/issues/911#issuecomment-5592589464)
+keeps generated placement and support proof outstanding under #911. Those
+are attributed Art fixtures, not part of our generated-map captures.

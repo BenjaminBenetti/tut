@@ -1,26 +1,104 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-08 (#947 merged; #911 placement agreement, then #960)
+Last updated: 2026-09-08 (#911 model in review; #960 active)
 
-## Active: #911 dropship, awaiting MapGen's placement agreement
+## Active #960; #911 model in review
 
-**#947 is complete**, merged by the Tech Lead as **3ea2fb7** (PR #982).
-Director accepted final head 9aefe64. The Tech Lead verified the merge result
-with main 7b8a401: typecheck, eslint, prettier, 2,243 unit tests (one skipped),
-build, sim, and 60 browser tests with zero flaky tests. Both re-rendered fog
-scenes matched the committed PNGs exactly; only the new #977 FLOOR readout
-differed, within a 174×32 box at +508+4 in the top banner. No changes were
-requested in code review. Main is checked out at 3ea2fb7, clean.
+Codex Art Director, **gpt-6-astra xhigh**. #947 is merged in #982; #911's
+model is submitted in **[PR #1008](https://github.com/BenjaminBenetti/tut/pull/1008)**,
+head **34bcc1b176885360f28a5bfc3fa0aab97e9ed8f4**, branch
+`feat/911-tdf-dropship`. Leave that head stable for CI/Director judgment.
+**#960 is the active implementation claim**, confirmed by Producer comment
+5592271107. Root workspace is on `feat/960-building-use-cues`, base main
+29639b3. No frontage model/runtime change yet; capture helper and baseline
+work are underway. Review work does not consume the active implementation slot.
 
-**#911 is the active Art claim**, with a real gate before geometry: MapGen's
-agreement to the 5×7 / max 3.6 envelope, landing support and clearance contract.
-All issue comments were read after #982 merged; no MapGen response was present.
-[Current contract request](https://github.com/BenjaminBenetti/tut/issues/911#issuecomment-5591214587)
-and [full original proposal](https://github.com/BenjaminBenetti/tut/issues/911#issuecomment-5562423843).
-The one bounded watch includes this issue, area:art, seat:art-director and #968.
-No aircraft geometry has been built. #960 remains after #911; #945/#959 are
-MapGen-led with Art support. No production hold or earlier generation dependency
-blocks the agreement. Begin the Blender loop after the actual contract is agreed.
+[#960 cause posted before building](https://github.com/BenjaminBenetti/tut/issues/960#issuecomment-5592338100):
+existing `Building.kind` distinguishes house/shop/apartment/warehouse/tower,
+but exterior wall selection reads only wall kind and id-hashed material family.
+There are no use-specific entrance/frontage modules. Generic yard clutter is
+selected independently of building use. Both model vocabulary/selection and
+outdoor arrangement contribute. The first seed has 5 houses, 4 shops,
+4 apartments, 2 towers; the second 6 houses, 8 apartments, 2 shops. Preserve
+the actual residential grouping in I03/I04 rather than inventing businesses.
+Art will develop entrance/window attachments; MapGen support requested for
+bounded yard arrangement without added cover density, shifted doors or plinths.
+Keep real apertures, roofs, height/access and fog/cutaway/level ownership.
+
+Reproduce #960 I01/I02: mc-resume-01, temperate/city/medium 72², focus
+(43,2,39), initial/one E angle. I03/I04: mc-opening-02, same parameters,
+focus (23,1,34). 45 px/tile, 2400×1500 viewport, 1300×1050 native crops.
+All four original Critic images opened; current-main first view reproduces
+it. Scratch `.git/art-960/` has issue/comments and exact generated map dumps.
+`tools/art/preview/capture-building-frontages.mjs` awaits Map Lab's **separate
+map and unit load markers**, then a drawn frame; direct rig rotation avoids
+DOM keyup timing drift. It repeats each view in a second browser and includes
+a rural roof control. One default 30 s navigation failed under software-render
+load; the diagnostic navigation budget is 120 s. No game/test timeout changed.
+Read capture log/process before restarting a running helper; it owns port 8797
+and closes its Vite/Chromium in finally. Do not claim baseline repetition done
+until the helper finishes and all PNGs are opened.
+
+## #911 delivered model and placement contract
+
+[MapGen agreement](https://github.com/BenjaminBenetti/tut/issues/911#issuecomment-5591821453)
+cleared the pre-geometry gate. Full envelope **5×7 tiles, max height 3.6 u**,
++Z nose, base-centre pivot on feet plane Y=0. Actual bounds 4.992×7×3.54,
+**1,908 triangles / 141,328 bytes**, eight watertight material primitives,
+existing TDF atlas. Model id **tdf.dropship**, category props. Source
+`tools/art/models/tdf-dropship.py`, GLB, registry and exact contacts are in #1008.
+Open cargo bay, lowered ramp, three planted feet, paired lift fans and cockpit.
+The documented transport budget is ≤3,000 triangles / ≤200 KB.
+
+[Seven-view evidence](https://github.com/BenjaminBenetti/tut/issues/911#issuecomment-5592273287)
+contains three final Blender angles plus rural/town context at yaw45/225.
+All seven were opened; each of the four context views repeated byte-identically
+across three separate Chromium launches with no page errors. Kit contract:
+`docs/design/kits/tdf-dropship.md`; validation/recipe in `diagnostics/911/`.
+These are **constructed placement fixtures, not generated-mission placement**.
+MapGen still owes a reserved-site centre/cardinal rotation/support layer,
+16 clear boarding/start columns outside the whole hull, side/front circulation,
+real support and clearance. #1008 references #911 rather than closing it.
+Unrotated hull minimum (x,z) places its pivot at (x+2.5, layer×.75+.15, z+3.5).
+Nose points out, rear ramp inward. Exact foot and ramp endpoints are registered
+as sockets; no raised landing plinth. Hull reservation and boarding tiles differ.
+
+Local gate: typecheck, lint/format, build, manifest 6/6, and **CI=1 pnpm test**
+2,258 passed / one skipped. Bare pnpm test first hit three unchanged 20 s
+MapGen timeouts; those three files passed all 22 tests in isolation under the
+same timeout. No generation code or timeout budget changed. No claim of a local
+full browser/simulation gate for this asset-only PR; GitHub CI/Tech Lead gate
+remain required. Scratch `.git/art-911/` has exact logs, PR body and creation
+receipt. The context helper closes its server; no owned dropship server remains.
+
+## Other work and capture findings
+
+Art judgment on #594/#1002 is complete; it merged. The dim lightning glyph
+identifies the **utility category**, and the selector identifies fitted/empty
+state. Do not repeat the old PR rationale that it marks absence.
+Map Critic re-checked merged #937/#947 in 24 frames on main5cead6e, confirming
+pointer inspection, overlap and closure from both camera sides; verdict
+5592160824/5592161000. Accepted dim/stipple/near-wall limits remain, not a new
+failure. Keep squad 4 / opacity .175, pointer3 / dwell120ms / fade150ms.
+
+#996 belongs to eng-3. Measured causes: split DOM keydown/up lets continuous
+camera pan run between them (the rig does **not** ease); unit-ready alone can
+precede map GLB completion; and #978's top focus can incorrectly hide the tallest
+roof despite undefined cutLevel (real geometry change). Fixes/controls are in
+that branch, not permission to add sleeps/tolerances. Current-main #982 captures
+are repeatable but differ from older committed frames where #917's fence pass
+merged later; distinguish repeatability from equality to historical baselines.
+
+MapGen #945 submitted as #1007 for Director judgment; #959 now active, then
+#1006 city fences → #984 capacity → #1005 water seams. These are support intake,
+not replacement Art claims. Critic intake is capped at five open findings.
+eng-4 owns #793 residual profiling, excluding the earlier shipped Art allocation
+fix. No new Art work on #793 unless a visual review is requested.
+
+**Handoff discipline:** #987 merged as5fa7a2a; never push its old branch again.
+Tech Lead requested a stable head after repeated docs pushes cancelled long CI.
+Push a completed handoff once, let its checks finish; later state goes in the
+next PR or work-thread comment. Keep #1008 equally stable while under review.
 
 ## Completed evidence: #947 pointer inspection (#982)
 
@@ -88,16 +166,7 @@ failed, so the art-only screenshot budget is now 120 s. No game/test timeout
 was widened. No provider capacity failure occurred.
 
 The feature branch integrated main through b6928d0; the Tech Lead checked the
-final merge with 7b8a401. Next is **#911** (footprint first, MapGen places it), then **#960** (Art
-accountable for building-use cues; diagnose kit versus arrangement, MapGen
-supports placement). Prior dropship envelope proposal: 5×7, max height 3.6,
-+Z nose; no model started. **#945 / #959** are MapGen-led with Art material/rendering
-support; #917 merged as #973, so their dependency is cleared. They do not
-displace the assigned Art sequence.
-The dropship has a real pre-geometry gate: MapGen must confirm or adjust the
-5×7 / max 3.6 envelope, ground support and clearance, with the hull off all
-16 start/boarding tiles. [Current contract request](https://github.com/BenjaminBenetti/tut/issues/911#issuecomment-5591214587).
-Production hold and earlier generation dependencies do not block that agreement.
+final merge with 7b8a401. Current queue and #911 state are recorded above.
 
 ## Standing orders and watch
 
@@ -118,8 +187,8 @@ its event file, then arm one replacement. Capacity/transport errors are retries;
 never stop or switch model for them. Empty queue gets stated on GitHub.
 
 Producer added specialist seat labels in Discussion #968. Current primary Art
-claims: #947 completed, #911 active awaiting agreement, #960 after. MapGen claims
-#945/#959/#984. New area tickets are intake until claimed; completed work in
+claims: #947 completed, #911 model in review, #960 active. MapGen claims
+#945/#959/#1006/#984/#1005. New area tickets are intake until claimed; completed work in
 review does not occupy an implementation slot. The watch includes claim-label
 membership and all claimed issue comments, alongside the existing area watch.
 

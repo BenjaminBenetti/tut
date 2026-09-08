@@ -9,6 +9,12 @@ import { formatWhole } from "../service/format";
 export interface TurnBannerHandlers {
   /** The player asked to leave the mission screen. */
   readonly onBack: () => void;
+  /**
+   * The player asked to move the view `delta` storeys (#961). The
+   * keyboard is the fast path — `]` and `[` — and these buttons are the
+   * discoverable one; both end up here.
+   */
+  readonly onLayerStep: (delta: number) => void;
 }
 
 // ===========================================
@@ -29,6 +35,15 @@ export interface TurnBannerModel {
   readonly tdfUnits: number;
   /** Living bugs. */
   readonly bugUnits: number;
+  /**
+   * Which storey the scene is drawing, one-based, and how many there are
+   * (#961); `undefined` before a scene is attached.
+   *
+   * The player is changing this constantly, so it is a banner stat and
+   * not a menu: it has to be readable without being looked for.
+   */
+  readonly layer:
+    { readonly storey: number; readonly storeyCount: number } | undefined;
 }
 
 /**
@@ -37,7 +52,7 @@ export interface TurnBannerModel {
  * rejected commands and the way back to the overworld.
  *
  * ```
- *   ┌ MISSION mission-4 · TURN 3 · PLAYER PHASE · TDF 3 · BUGS 1 ── status ── [Overworld] ┐
+ *   ┌ MISSION Lagos · TURN 3 · PLAYER PHASE · TDF 3 · BUGS 1 · FLOOR [-] 2/3 [+] ── status ── [Overworld] ┐
  * ```
  */
 export class TurnBannerView {
@@ -50,6 +65,8 @@ export class TurnBannerView {
   private fields = new Map<string, HTMLElement>();
   private phase: HTMLElement | undefined;
   private status: HTMLElement | undefined;
+  private layerDown: HTMLButtonElement | undefined;
+  private layerUp: HTMLButtonElement | undefined;
   private dispose: (() => void) | undefined;
 
   // ===========================================
@@ -90,14 +107,25 @@ export class TurnBannerView {
     back.textContent = "Overworld";
     const tdf = this.createStat(doc, "TDF", "tdf-units");
     const bugs = this.createStat(doc, "Bugs", "bug-units");
-    bar.append(mission, turn, phase, tdf, bugs, spacer, status, back);
+    const layer = this.createLayerControl(doc);
+    bar.append(mission, turn, phase, tdf, bugs, layer, spacer, status, back);
     parent.appendChild(bar);
     const onBack = (): void => {
       this.handlers.onBack();
     };
     back.addEventListener("click", onBack);
+    const onDown = (): void => {
+      this.handlers.onLayerStep(-1);
+    };
+    const onUp = (): void => {
+      this.handlers.onLayerStep(1);
+    };
+    this.layerDown?.addEventListener("click", onDown);
+    this.layerUp?.addEventListener("click", onUp);
     this.dispose = () => {
       back.removeEventListener("click", onBack);
+      this.layerDown?.removeEventListener("click", onDown);
+      this.layerUp?.removeEventListener("click", onUp);
     };
     this.root = bar;
     this.phase = phase;
@@ -114,12 +142,14 @@ export class TurnBannerView {
         this.phase.textContent = "—";
         delete this.phase.dataset.phase;
       }
+      this.setLayer(undefined);
       return;
     }
     this.setField("mission-name", model.missionName);
     this.setField("turn", formatWhole(model.turn));
     this.setField("tdf-units", formatWhole(model.tdfUnits));
     this.setField("bug-units", formatWhole(model.bugUnits));
+    this.setLayer(model.layer);
     if (this.phase) {
       this.phase.textContent =
         model.phase === "player" ? "player phase" : "bug phase";
@@ -166,6 +196,81 @@ export class TurnBannerView {
     stat.append(term, value);
     this.fields.set(field, value);
     return stat;
+  }
+
+  /**
+   * The storey readout and its two buttons.
+   *
+   * Both buttons are always present, and disabled rather than removed
+   * when there is nowhere to go: a control that appears and disappears
+   * with the map is harder to learn than one that is visibly inert on
+   * open ground, and the player is meant to reach for this without
+   * looking.
+   */
+  private createLayerControl(doc: Document): HTMLElement {
+    const stat = doc.createElement("span");
+    stat.className = "tut-topbar__stat";
+    stat.dataset.role = "layer-control";
+    const term = doc.createElement("span");
+    term.className = "tut-label";
+    term.textContent = "Floor";
+    const down = this.createLayerButton(
+      doc,
+      "layer-down",
+      "−",
+      "Down a floor ([)",
+    );
+    const value = doc.createElement("span");
+    value.className = "tut-data";
+    value.dataset.field = "floor";
+    value.textContent = "—";
+    const up = this.createLayerButton(doc, "layer-up", "+", "Up a floor (])");
+    this.fields.set("floor", value);
+    this.layerDown = down;
+    this.layerUp = up;
+    stat.append(term, down, value, up);
+    return stat;
+  }
+
+  /** One step button, labelled for a pointer and titled for its key. */
+  private createLayerButton(
+    doc: Document,
+    action: string,
+    glyph: string,
+    title: string,
+  ): HTMLButtonElement {
+    const button = doc.createElement("button");
+    button.type = "button";
+    button.className = "tut-btn tut-btn--icon";
+    button.dataset.action = action;
+    button.title = title;
+    button.textContent = glyph;
+    button.disabled = true;
+    return button;
+  }
+
+  /** Writes the storey readout and enables each button only where it can go. */
+  private setLayer(layer: TurnBannerModel["layer"] | undefined): void {
+    if (!layer) {
+      this.setField("floor", "—");
+      if (this.layerDown) {
+        this.layerDown.disabled = true;
+      }
+      if (this.layerUp) {
+        this.layerUp.disabled = true;
+      }
+      return;
+    }
+    this.setField(
+      "floor",
+      `${formatWhole(layer.storey)} / ${formatWhole(layer.storeyCount)}`,
+    );
+    if (this.layerDown) {
+      this.layerDown.disabled = layer.storey <= 1;
+    }
+    if (this.layerUp) {
+      this.layerUp.disabled = layer.storey >= layer.storeyCount;
+    }
   }
 
   /** Writes a field's text when it changed. */

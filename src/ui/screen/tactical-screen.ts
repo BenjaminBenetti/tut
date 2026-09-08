@@ -141,6 +141,12 @@ export class TacticalScreen implements Screen {
         onViewChange: () => {
           this.syncOverlays();
         },
+        // The banner's buttons take the same route the keys do (#961):
+        // the scene clamps the step and reports where it landed, and
+        // the readout follows that rather than the request.
+        onLayerStep: (delta) => {
+          this.hud.setLayerFocus(deps.sceneHost?.stepLayerFocus(delta));
+        },
         // The scene owns the camera, so it is what can answer where a
         // world thing is on screen (ADR 0007 §2.1). The HUD anchors the
         // context menu to that point rather than to the click.
@@ -311,6 +317,16 @@ export class TacticalScreen implements Screen {
     }
     const intents = {
       emit: (intent: TacticalIntent): void => {
+        if (intent.kind === "layer-step") {
+          // A view change, not a mission one: it never reaches the HUD's
+          // intent handling or the overlays (#961). The focus comes back
+          // from the scene because clamping means the step the player
+          // asked for is not always the one they get.
+          this.hud.setLayerFocus(host.stepLayerFocus(intent.delta));
+          this.recordIntent(intent);
+          this.deps.onIntent?.(intent);
+          return;
+        }
         this.hud.handleIntent(intent);
         // The HUD owns selection: in attack mode a click on an enemy is
         // the preview target, not the selected unit, so the overlays
@@ -337,6 +353,10 @@ export class TacticalScreen implements Screen {
     }
     this.attachedMissionId = mission.missionId;
     this.syncOverlays();
+    // A fresh scene opens on the top storey; show it before the player
+    // touches a key, so the readout is never blank while the control is
+    // live.
+    this.hud.setLayerFocus(host.layerFocus());
     void pending.catch((error: unknown) => {
       console.error("Tactical scene failed", error);
     });

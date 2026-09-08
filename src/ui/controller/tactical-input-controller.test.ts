@@ -234,6 +234,40 @@ describe("TacticalInputController", () => {
     ]);
   });
 
+  // #961: the layer keys ask the scene for a view, not the mission for
+  // an action, so they are their own table and their own intent.
+  it("maps the layer keys to storey steps, and leaves the action keys alone", () => {
+    const { intents, surface } = setup();
+    const doc = surface.ownerDocument;
+    const key = (k: string, extra: Record<string, unknown> = {}) =>
+      doc.dispatch("keydown", {
+        key: k,
+        repeat: false,
+        preventDefault: () => undefined,
+        target: null,
+        ...extra,
+      });
+    key("]");
+    key("[");
+    key("PageUp");
+    key("PageDown");
+    // Still typing-safe and repeat-safe, like every other binding.
+    key("]", { repeat: true });
+    key("[", { target: { tagName: "INPUT" } });
+    expect(intents).toEqual([
+      { kind: "layer-step", delta: 1 },
+      { kind: "layer-step", delta: -1 },
+      { kind: "layer-step", delta: 1 },
+      { kind: "layer-step", delta: -1 },
+    ]);
+  });
+
+  it("exposes a hook for the layer step, so a spec can drive it without keys", () => {
+    const { controller, intents } = setup();
+    controller.hooks().stepLayer(-1);
+    expect(intents).toEqual([{ kind: "layer-step", delta: -1 }]);
+  });
+
   it("exposes hooks that select and project through the live camera", () => {
     const { controller, intents, picker } = setup();
     const hooks = controller.hooks();

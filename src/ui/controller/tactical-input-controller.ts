@@ -106,6 +106,26 @@ export const TACTICAL_SHORTCUTS: Readonly<
   end: "end-turn",
 };
 
+/**
+ * View keys: which storey of the map is drawn (#961). Separate from
+ * `TACTICAL_SHORTCUTS` because these ask the *scene* for something and
+ * never the mission — nothing here can be refused, cost AP or end a turn.
+ *
+ * `]` and `[` are the primary pair: adjacent, unshifted, no modifier, so
+ * going up a floor and back down is two keystrokes. `PageUp`/`PageDown`
+ * are aliases for the same thing; the table above already carries
+ * aliases (`a`/`f` both attack, `enter`/`end` both end the turn).
+ *
+ * The value is the number of storeys to move, so a future "jump to the
+ * top" needs a binding rather than a new mechanism.
+ */
+export const TACTICAL_VIEW_SHORTCUTS: Readonly<Record<string, number>> = {
+  "]": 1,
+  "[": -1,
+  pageup: 1,
+  pagedown: -1,
+};
+
 // ===========================================
 // Target picker
 // ===========================================
@@ -370,6 +390,9 @@ export class TacticalInputController implements FrameUpdatable {
       spawnerScreenPosition: (spawnerId) =>
         this.spawnerScreenPosition(spawnerId),
       tileScreenPosition: (tile) => this.tileScreenPosition(tile),
+      stepLayer: (delta) => {
+        this.deps.intents.emit({ kind: "layer-step", delta });
+      },
     };
   }
 
@@ -405,7 +428,14 @@ export class TacticalInputController implements FrameUpdatable {
     if (event.repeat || isTyping(event.target)) {
       return;
     }
-    const bound = TACTICAL_SHORTCUTS[event.key.toLowerCase()];
+    const key = event.key.toLowerCase();
+    const step = TACTICAL_VIEW_SHORTCUTS[key];
+    if (step !== undefined) {
+      event.preventDefault();
+      this.deps.intents.emit({ kind: "layer-step", delta: step });
+      return;
+    }
+    const bound = TACTICAL_SHORTCUTS[key];
     if (bound === undefined) {
       return;
     }

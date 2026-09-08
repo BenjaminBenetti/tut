@@ -442,10 +442,11 @@ describe("TacticalMapView.loadModels", () => {
     await view.loadModels(models);
 
     // One preload pass; each model loads once, with one extra ground lookup
-    // supplying the ramp's borrowed surface material (#875).
+    // supplying the ramp's borrowed surface material (#875), and one lookup
+    // per natural surface to read its authored atlas region (#945).
     expect(models.preloaded).toHaveLength(1);
     const distinct = new Set(models.loaded);
-    expect(models.loaded.length).toBe(distinct.size + 1);
+    expect(models.loaded.length).toBe(distinct.size + 3);
     expect(
       models.loaded.filter((id) => id === "tile.ramp.connector"),
     ).toHaveLength(1);

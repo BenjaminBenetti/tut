@@ -1,0 +1,362 @@
+[
+  {
+    "contactField": {
+      "bakeMs": 284.7123849999998,
+      "bytes": 2368512,
+      "sourceUnchanged": true
+    },
+    "recipe": {
+      "seed": "mc-opening-01",
+      "params": {
+        "archetype": "settlement",
+        "biome": "coastal",
+        "settlement": "rural",
+        "size": "small",
+        "hooks": [
+          {
+            "kind": "deploy",
+            "count": 1,
+            "requiredPass": 3
+          },
+          {
+            "kind": "egg-spawner",
+            "count": 3,
+            "requiredPass": 1,
+            "minDistanceFromDeploy": 12,
+            "maxNearestDistanceFromDeploy": 30,
+            "meta": {
+              "hatchRadius": 3
+            }
+          },
+          {
+            "kind": "edge-spawn",
+            "count": 2,
+            "requiredPass": 1
+          },
+          {
+            "kind": "extraction",
+            "count": 1,
+            "requiredPass": 3
+          }
+        ],
+        "slopeShare": 1
+      }
+    },
+    "changes": [
+      {
+        "pass": "terrain",
+        "painted": 2304
+      },
+      {
+        "pass": "water",
+        "painted": 632
+      },
+      {
+        "pass": "roads",
+        "painted": 55
+      },
+      {
+        "pass": "lots",
+        "painted": 0
+      },
+      {
+        "pass": "elevation",
+        "painted": 0
+      },
+      {
+        "pass": "buildings",
+        "painted": 0
+      },
+      {
+        "pass": "interiors",
+        "painted": 0
+      },
+      {
+        "pass": "waterfronts",
+        "painted": 0
+      },
+      {
+        "pass": "props",
+        "painted": 0
+      },
+      {
+        "pass": "slopes",
+        "painted": 0
+      },
+      {
+        "pass": "ramps",
+        "painted": 0
+      },
+      {
+        "pass": "kerbs",
+        "painted": 0
+      },
+      {
+        "pass": "rural-fences",
+        "painted": 0
+      },
+      {
+        "pass": "hooks",
+        "painted": 0
+      },
+      {
+        "pass": "connectivity",
+        "painted": 0
+      }
+    ],
+    "naturalMaterialEdges": 524,
+    "lastPaintPassPairs": {
+      "terrain/water": 27,
+      "terrain/terrain": 445,
+      "roads/terrain": 52
+    },
+    "focusRegionPassPairs": {
+      "terrain/water": 6,
+      "terrain/terrain": 125,
+      "roads/terrain": 13
+    },
+    "mapHash": "ada35da41b60e6590daf32ea34d73830b23541e619a31ef11f6d1b6fadc9c988",
+    "tiles": 2375,
+    "props": 103,
+    "buildings": 2,
+    "connectors": 10
+  },
+  {
+    "contactField": {
+      "bakeMs": 347.4583799999996,
+      "bytes": 5329152,
+      "sourceUnchanged": true
+    },
+    "recipe": {
+      "seed": "mc-opening-02",
+      "params": {
+        "archetype": "settlement",
+        "biome": "snowy",
+        "settlement": "city",
+        "size": "medium",
+        "hooks": [
+          {
+            "kind": "deploy",
+            "count": 1,
+            "requiredPass": 3
+          },
+          {
+            "kind": "egg-spawner",
+            "count": 3,
+            "requiredPass": 1,
+            "minDistanceFromDeploy": 12,
+            "maxNearestDistanceFromDeploy": 30,
+            "meta": {
+              "hatchRadius": 3
+            }
+          },
+          {
+            "kind": "edge-spawn",
+            "count": 2,
+            "requiredPass": 1
+          },
+          {
+            "kind": "extraction",
+            "count": 1,
+            "requiredPass": 3
+          }
+        ],
+        "slopeShare": 1
+      }
+    },
+    "changes": [
+      {
+        "pass": "terrain",
+        "painted": 5184
+      },
+      {
+        "pass": "water",
+        "painted": 0
+      },
+      {
+        "pass": "roads",
+        "painted": 2736
+      },
+      {
+        "pass": "lots",
+        "painted": 0
+      },
+      {
+        "pass": "elevation",
+        "painted": 0
+      },
+      {
+        "pass": "buildings",
+        "painted": 0
+      },
+      {
+        "pass": "interiors",
+        "painted": 0
+      },
+      {
+        "pass": "waterfronts",
+        "painted": 0
+      },
+      {
+        "pass": "props",
+        "painted": 0
+      },
+      {
+        "pass": "slopes",
+        "painted": 0
+      },
+      {
+        "pass": "ramps",
+        "painted": 0
+      },
+      {
+        "pass": "kerbs",
+        "painted": 0
+      },
+      {
+        "pass": "rural-fences",
+        "painted": 0
+      },
+      {
+        "pass": "hooks",
+        "painted": 0
+      },
+      {
+        "pass": "connectivity",
+        "painted": 0
+      }
+    ],
+    "naturalMaterialEdges": 142,
+    "lastPaintPassPairs": {
+      "terrain/terrain": 142
+    },
+    "focusRegionPassPairs": {
+      "terrain/terrain": 21
+    },
+    "mapHash": "ac49e47b4bd9f019fdcb6b418593b1539d2443fe4921d22efff619e2a91b0315",
+    "tiles": 7117,
+    "props": 483,
+    "buildings": 16,
+    "connectors": 35
+  },
+  {
+    "contactField": {
+      "bakeMs": 130.61435900000015,
+      "bytes": 2368512,
+      "sourceUnchanged": true
+    },
+    "recipe": {
+      "seed": "mc-resume-01",
+      "params": {
+        "archetype": "settlement",
+        "biome": "snowy",
+        "settlement": "rural",
+        "size": "small",
+        "hooks": [
+          {
+            "kind": "deploy",
+            "count": 1,
+            "requiredPass": 3
+          },
+          {
+            "kind": "egg-spawner",
+            "count": 3,
+            "requiredPass": 1,
+            "minDistanceFromDeploy": 12,
+            "maxNearestDistanceFromDeploy": 30,
+            "meta": {
+              "hatchRadius": 3
+            }
+          },
+          {
+            "kind": "edge-spawn",
+            "count": 2,
+            "requiredPass": 1
+          },
+          {
+            "kind": "extraction",
+            "count": 1,
+            "requiredPass": 3
+          }
+        ],
+        "slopeShare": 1
+      }
+    },
+    "changes": [
+      {
+        "pass": "terrain",
+        "painted": 2304
+      },
+      {
+        "pass": "water",
+        "painted": 0
+      },
+      {
+        "pass": "roads",
+        "painted": 113
+      },
+      {
+        "pass": "lots",
+        "painted": 0
+      },
+      {
+        "pass": "elevation",
+        "painted": 0
+      },
+      {
+        "pass": "buildings",
+        "painted": 0
+      },
+      {
+        "pass": "interiors",
+        "painted": 0
+      },
+      {
+        "pass": "waterfronts",
+        "painted": 0
+      },
+      {
+        "pass": "props",
+        "painted": 0
+      },
+      {
+        "pass": "slopes",
+        "painted": 0
+      },
+      {
+        "pass": "ramps",
+        "painted": 0
+      },
+      {
+        "pass": "kerbs",
+        "painted": 0
+      },
+      {
+        "pass": "rural-fences",
+        "painted": 0
+      },
+      {
+        "pass": "hooks",
+        "painted": 0
+      },
+      {
+        "pass": "connectivity",
+        "painted": 0
+      }
+    ],
+    "naturalMaterialEdges": 405,
+    "lastPaintPassPairs": {
+      "terrain/terrain": 279,
+      "roads/terrain": 126
+    },
+    "focusRegionPassPairs": {
+      "terrain/terrain": 72,
+      "roads/terrain": 64
+    },
+    "mapHash": "9bdb33894528c72136937e8086853ecbe1c2222140616bd4c3affeac661f6dcd",
+    "tiles": 2383,
+    "props": 198,
+    "buildings": 1,
+    "connectors": 11
+  }
+]

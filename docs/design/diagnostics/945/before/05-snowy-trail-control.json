@@ -1,0 +1,70 @@
+{
+  "id": "05-snowy-trail-control",
+  "seed": "mc-resume-01",
+  "biome": "snowy",
+  "settlement": "rural",
+  "size": "small",
+  "pitch": 45,
+  "clip": {
+    "x": 695,
+    "y": 218,
+    "width": 1300,
+    "height": 1050
+  },
+  "rotation": 0,
+  "focus": {
+    "x": 13,
+    "y": 3,
+    "z": 24
+  },
+  "url": "http://127.0.0.1:5178/mapgen-preview.html?seed=mc-resume-01&biome=snowy&settlement=rural&size=small&models=1&units=1&slope=100",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "camera": {
+    "yawIndex": 0,
+    "zoom": 55.11351921262153,
+    "target": {
+      "x": 13.5,
+      "y": 2.4,
+      "z": 24.5
+    },
+    "bounds": {
+      "x": 0,
+      "z": 0,
+      "w": 48,
+      "d": 48
+    },
+    "zoomRange": {
+      "min": 29.757410374933876,
+      "max": 192
+    }
+  },
+  "rendering": {
+    "timingMethod": "RAF interval with gl.finish(), discard first four of twelve frames; software renderer, not a hardware FPS claim",
+    "frameMs": [
+      10.799999952316284,
+      242.20000004768372,
+      231.90000009536743,
+      703.0999999046326,
+      1405,
+      806.4000000953674,
+      1082.2000000476837,
+      661.0999999046326
+    ],
+    "render": {
+      "frame": 30,
+      "calls": 713,
+      "triangles": 278392,
+      "points": 0,
+      "lines": 0
+    },
+    "memory": {
+      "geometries": 1256,
+      "textures": 25
+    },
+    "programs": 16
+  },
+  "elapsedMs": 33336.403282
+}

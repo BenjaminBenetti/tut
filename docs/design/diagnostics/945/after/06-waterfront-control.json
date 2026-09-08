@@ -1,0 +1,70 @@
+{
+  "id": "06-waterfront-control",
+  "seed": "mc-opening-03",
+  "biome": "coastal",
+  "settlement": "city",
+  "size": "medium",
+  "pitch": 55,
+  "rotation": 0,
+  "clip": {
+    "x": 790,
+    "y": 250,
+    "width": 1200,
+    "height": 1000
+  },
+  "focus": {
+    "x": 51,
+    "y": 1,
+    "z": 40
+  },
+  "url": "http://127.0.0.1:5177/mapgen-preview.html?seed=mc-opening-03&biome=coastal&settlement=city&size=medium&models=1&units=1&slope=100",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "camera": {
+    "yawIndex": 0,
+    "zoom": 67.36096792653728,
+    "target": {
+      "x": 51.5,
+      "y": 0.9,
+      "z": 40.5
+    },
+    "bounds": {
+      "x": 0,
+      "z": 0,
+      "w": 72,
+      "d": 72
+    },
+    "zoomRange": {
+      "min": 19.83827358328925,
+      "max": 192
+    }
+  },
+  "rendering": {
+    "timingMethod": "RAF interval with gl.finish(), discard first four of twelve frames; software renderer, not a hardware FPS claim",
+    "frameMs": [
+      973.6000001430511,
+      1851,
+      1036.2000000476837,
+      2101.699999809265,
+      1944.4000000953674,
+      2135.7000000476837,
+      2069.5,
+      1079.7999999523163
+    ],
+    "render": {
+      "frame": 39,
+      "calls": 846,
+      "triangles": 878170,
+      "points": 0,
+      "lines": 0
+    },
+    "memory": {
+      "geometries": 665,
+      "textures": 42
+    },
+    "programs": 14
+  },
+  "elapsedMs": 63374.433759
+}

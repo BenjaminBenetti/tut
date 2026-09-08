@@ -17,6 +17,8 @@ try {
     { hashSeed },
     { DEFAULT_MISSION_HOOKS },
     { freezeDraft },
+    { naturalMaterialField },
+    { naturalMaterialWeights },
   ] = await Promise.all(
     [
       "mapgen/service/settlement-pipeline",
@@ -26,6 +28,8 @@ try {
       "core/service/seed-hash",
       "mapgen/data/hook-requirements",
       "mapgen/service/draft-freezer",
+      "graphics/service/natural-material-field",
+      "graphics/service/natural-material-weights",
     ].map(load),
   );
   const result = [];
@@ -88,10 +92,10 @@ try {
     };
     delete recipe.params.focus;
     delete recipe.params.seed;
-    const { draft } = new PipelineMapGenerator(
-      passes,
-      registries,
-    ).run(recipe.params, new Mulberry32Rng(hashSeed(c.seed)));
+    const { draft } = new PipelineMapGenerator(passes, registries).run(
+      recipe.params,
+      new Mulberry32Rng(hashSeed(c.seed)),
+    );
     const map = freezeDraft(draft, recipe, registries);
     const natural = new Set(["grass", "sand", "dirt", "rock", "snow"]);
     const edges = {};
@@ -125,7 +129,22 @@ try {
     const mapHash = createHash("sha256")
       .update(JSON.stringify(map))
       .digest("hex");
+    const source = JSON.stringify(map);
+    const field = naturalMaterialField(map);
+    const started = performance.now();
+    const weights = naturalMaterialWeights(
+      field,
+      map.width,
+      map.depth,
+      map.recipe.seed,
+    );
+    const contactField = {
+      bakeMs: performance.now() - started,
+      bytes: field.byteLength + weights.byteLength,
+      sourceUnchanged: JSON.stringify(map) === source,
+    };
     result.push({
+      contactField,
       recipe,
       changes,
       naturalMaterialEdges: count,
@@ -138,8 +157,11 @@ try {
       connectors: map.connectors.length,
     });
   }
-  writeFileSync(out + "/provenance.json", JSON.stringify(result, null, 2));
-  console.log(JSON.stringify(result, null, 2));
+  writeFileSync(
+    out + "/provenance.json",
+    JSON.stringify(result, null, 2) + "\n",
+  );
+  console.log(JSON.stringify(result, null, 2) + "\n");
 } finally {
   await server.close();
 }

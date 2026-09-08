@@ -1,0 +1,70 @@
+{
+  "id": "03-snowy",
+  "seed": "mc-opening-02",
+  "biome": "snowy",
+  "settlement": "city",
+  "size": "medium",
+  "pitch": 45,
+  "clip": {
+    "x": 823,
+    "y": 216,
+    "width": 1200,
+    "height": 900
+  },
+  "rotation": 0,
+  "focus": {
+    "x": 56,
+    "y": 2,
+    "z": 62
+  },
+  "url": "http://127.0.0.1:5178/mapgen-preview.html?seed=mc-opening-02&biome=snowy&settlement=city&size=medium&models=1&units=1&slope=100",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "camera": {
+    "yawIndex": 0,
+    "zoom": 55.11351921262146,
+    "target": {
+      "x": 56.5,
+      "y": 1.65,
+      "z": 62.5
+    },
+    "bounds": {
+      "x": 0,
+      "z": 0,
+      "w": 72,
+      "d": 72
+    },
+    "zoomRange": {
+      "min": 19.83827358328925,
+      "max": 192
+    }
+  },
+  "rendering": {
+    "timingMethod": "RAF interval with gl.finish(), discard first four of twelve frames; software renderer, not a hardware FPS claim",
+    "frameMs": [
+      14.5,
+      17.09999990463257,
+      277.10000014305115,
+      613.5,
+      713.5999999046326,
+      1229.0999999046326,
+      987.3000001907349,
+      562.8999998569489
+    ],
+    "render": {
+      "frame": 32,
+      "calls": 980,
+      "triangles": 1385808,
+      "points": 0,
+      "lines": 0
+    },
+    "memory": {
+      "geometries": 645,
+      "textures": 34
+    },
+    "programs": 12
+  },
+  "elapsedMs": 47638.167763
+}

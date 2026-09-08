@@ -1,0 +1,70 @@
+{
+  "id": "01-coastal",
+  "seed": "mc-opening-01",
+  "biome": "coastal",
+  "settlement": "rural",
+  "size": "small",
+  "pitch": 45,
+  "clip": {
+    "x": 839,
+    "y": 230,
+    "width": 1200,
+    "height": 1000
+  },
+  "rotation": 0,
+  "focus": {
+    "x": 5,
+    "y": 2,
+    "z": 22
+  },
+  "url": "http://127.0.0.1:5178/mapgen-preview.html?seed=mc-opening-01&biome=coastal&settlement=rural&size=small&models=1&units=1&slope=100",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "camera": {
+    "yawIndex": 0,
+    "zoom": 55.11351921262141,
+    "target": {
+      "x": 5.5,
+      "y": 1.65,
+      "z": 22.5
+    },
+    "bounds": {
+      "x": 0,
+      "z": 0,
+      "w": 48,
+      "d": 48
+    },
+    "zoomRange": {
+      "min": 29.757410374933876,
+      "max": 192
+    }
+  },
+  "rendering": {
+    "timingMethod": "RAF interval with gl.finish(), discard first four of twelve frames; software renderer, not a hardware FPS claim",
+    "frameMs": [
+      9.100000143051147,
+      18.399999856948853,
+      14.400000095367432,
+      63,
+      168.29999995231628,
+      306.09999990463257,
+      569.4000000953674,
+      371.7000000476837
+    ],
+    "render": {
+      "frame": 31,
+      "calls": 668,
+      "triangles": 223208,
+      "points": 0,
+      "lines": 0
+    },
+    "memory": {
+      "geometries": 748,
+      "textures": 30
+    },
+    "programs": 16
+  },
+  "elapsedMs": 16500.708734
+}

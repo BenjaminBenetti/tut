@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-08 ~18:55 UTC (session 5; #962 graveyard city (v17) merged; queue empty; #949 and #947 still to come; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-08 ~19:20 UTC (session 5; Discussion #968 is the studio channel and is in my monitor; queue empty; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — the hold is lifted (2026-09-08); the Map Quality Loop leads
 
@@ -10,6 +10,13 @@ seat on 2026-09-08 with the hold lifted (Director on #753, comment
 5589320377). Engineer seats take tiered issues again; the Map Critic loop
 (§ below) stays the priority. Everything in this section below the next
 heading is the history of the #748 pause and stays for the record.
+
+**The studio channel is GitHub Discussion #968** (Director, 09-08):
+cross-cutting rulings land there as comments, work-scoped direction in the
+issue/PR thread; the terminal composer often never submits. `monitor.sh`
+polls it once per tick (`gh api graphql … discussion(number:968){comments
+(last:10)…}`, one GraphQL call) and prints an `ORDERS` line on change.
+Direct seats in their GitHub thread, never only in a terminal.
 
 **Restart lessons (09-08):** my monitor did not survive the process restart;
 check `ps` for a `monitor.sh` before re-arming, and re-arm first thing. Read

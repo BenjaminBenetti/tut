@@ -220,6 +220,50 @@ describe("TacticalMapView.pickTile", () => {
       z: 1,
     });
   });
+
+  it("picks a highlighted floor through roof geometry, nearest highlighted storey first", () => {
+    const floor = { x: 1, y: 0, z: 1 };
+    const roof = { x: 1, y: 2, z: 1 };
+    const map = new FixtureMapBuilder(4, 3, 3)
+      .fillGround()
+      .tile(roof, SurfaceIds.ROOF)
+      .build();
+    const view = new TacticalMapView(map);
+    const camera = topDown();
+    const pointer = ndcOf(camera, 1.5, 1.5);
+    expect(view.pickTile(pointer, camera)).toEqual(roof);
+    expect(view.pickTile(pointer, camera, [floor])).toEqual(floor);
+    expect(view.pickTile(pointer, camera, [floor, roof])).toEqual(roof);
+    view.setMaxLevel(0);
+    expect(view.pickTile(pointer, camera, [roof, floor])).toEqual(floor);
+    view.setVision({ visible: [], explored: [], spotted: [], lastSeen: {} });
+    expect(view.pickTile(pointer, camera)).toBeUndefined();
+    expect(view.pickTile(pointer, camera, [floor])).toEqual(floor);
+    expect(
+      view.pickTile(ndcOf(camera, 2.5, 1.5), camera, [floor]),
+    ).toBeUndefined();
+    view.dispose();
+  });
+
+  it("ignores retired geometry inside a visible level group", () => {
+    const view = new TacticalMapView(fixture().build());
+    const retired = new Mesh(
+      new BoxGeometry(4, 0.1, 3),
+      new MeshStandardMaterial(),
+    );
+    retired.position.set(2, 2, 1.5);
+    retired.visible = false;
+    view.root.getObjectByName("level-1")!.add(retired);
+    const camera = topDown();
+    expect(view.pickTile(ndcOf(camera, 1.5, 0.5), camera)).toEqual({
+      x: 1,
+      y: 0,
+      z: 0,
+    });
+    retired.geometry.dispose();
+    retired.material.dispose();
+    view.dispose();
+  });
 });
 
 // ===========================================

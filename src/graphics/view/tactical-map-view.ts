@@ -1410,6 +1410,41 @@ export class TacticalMapView implements Disposable, TilePicker {
   }
 
   /**
+   * Whether the layer cut is hiding the tile at `coord` — that is,
+   * whether a unit standing there has no floor drawn under it (#981).
+   *
+   * @param coord - The tile to ask about.
+   * @returns True when the cut is below it.
+   */
+  isCut(coord: TileCoord): boolean {
+    return this.hiddenByCut(this.index.keyOf(coord));
+  }
+
+  /**
+   * The level of the nearest surface still drawn below `coord` in its
+   * own column, or undefined when the cut has taken everything under it.
+   *
+   * What a tether from an unsupported unit lands on (#981). Terrain
+   * qualifies: it is cut by height rather than by storey, so on a map
+   * with any ground at all there is normally something to land on.
+   *
+   * @param coord - The tile the unit is standing on.
+   * @returns The level below it that is drawn, or undefined.
+   */
+  supportBelow(coord: TileCoord): number | undefined {
+    let best: number | undefined;
+    for (const tile of this.index.column(coord.x, coord.z)) {
+      if (tile.y >= coord.y || this.hiddenByCut(this.index.keyOf(tile))) {
+        continue;
+      }
+      if (best === undefined || tile.y > best) {
+        best = tile.y;
+      }
+    }
+    return best;
+  }
+
+  /**
    * Whether the layer cut hides the tile behind `key`.
    *
    * A tile inside a building is judged on its own floor number, so

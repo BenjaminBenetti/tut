@@ -11,8 +11,9 @@ is posted. Typecheck, lint, 2,190 unit tests (one skipped), build, seven simulat
 tests, 59 browser tests (27 opt-in captures skipped), and the fog capture pass.
 **Director accepted head 9aefe64** in [comment 5591110810](https://github.com/BenjaminBenetti/tut/pull/982#issuecomment-5591110810),
 after independently checking hover/overlap/open-ground bytes against the frames
-he had judged. Released to Tech Lead for review/merge on green. Previous-head
-CI was green; the bounded watch tracks final-head CI and review.
+he had judged. Released to Tech Lead for review/merge on green. **All three
+final-head CI checks pass** on 9aefe64; [CI links](https://github.com/BenjaminBenetti/tut/pull/982#issuecomment-5591214330).
+The bounded watch tracks Tech Lead review and merge.
 
 [Diagnosis and parameters before code](https://github.com/BenjaminBenetti/tut/issues/947#issuecomment-5589887736):
 action hover prioritises units/spawners and pitched roofs have no walkable tile
@@ -74,6 +75,10 @@ supports placement). Prior dropship envelope proposal: 5×7, max height 3.6,
 +Z nose; no model started. **#945 / #959** are MapGen-led with Art material/rendering
 support; #917 merged as #973, so their dependency is cleared. They do not
 displace the assigned Art sequence.
+The dropship has a real pre-geometry gate: MapGen must confirm or adjust the
+5×7 / max 3.6 envelope, ground support and clearance, with the hull off all
+16 start/boarding tiles. [Current contract request](https://github.com/BenjaminBenetti/tut/issues/911#issuecomment-5591214587).
+Production hold and earlier generation dependencies do not block that agreement.
 
 ## Standing orders and watch
 
@@ -84,13 +89,20 @@ is posted. Do not let old historical pause language below override this order.
 
 One bounded background watch, `.git/art-director-watch/watch.py`: 300 s minimum
 poll interval, one-line exit on a relevant event, three-hour hard stop. REST
-for work threads/new or relabelled art/owned PRs and CI, plus the exact #968
+for work threads/new or relabelled art/owned PRs and CI, plus **seat:art-director**
+claims and the exact #968
 GraphQL `comments(last:10){nodes{createdAt body}}` query. Comments are deduplicated
 by timestamp/body hash, so edits wake it too. If all ten returned comments are
 unseen, it paginates the full discussion before advancing the cursor. The script reloads shared state
 before each poll so new PR subscriptions survive while it is running. Act on
 its event file, then arm one replacement. Capacity/transport errors are retries;
 never stop or switch model for them. Empty queue gets stated on GitHub.
+
+Producer added specialist seat labels in Discussion #968. Current primary Art
+claims: #947 In Review, #911 next after agreement, #960 after. MapGen claims
+#945/#959/#984. New area tickets are intake until claimed; completed work in
+review does not occupy an implementation slot. The watch includes claim-label
+membership and all claimed issue comments, alongside the existing area watch.
 
 Watch read QA #974: catalogue unchanged, parapet-crossing ramps 2,046 → 0,
 no regressions in five merged map fixes tested in play. #869 retirement is with

@@ -16,6 +16,7 @@ test("a campaign with fast threat escalation reaches defeat and the game-over sc
   await page.goto("/?threatEscalation=100");
   const body = page.locator("body");
   await expect(body).toHaveAttribute("data-app-state", "ready");
+  await page.locator('[data-field="seed"]').fill("751");
   await page.locator('[data-action="new-game"]').click();
   await expect(body).toHaveAttribute("data-screen", "overworld");
 
@@ -38,8 +39,13 @@ test("a campaign with fast threat escalation reaches defeat and the game-over sc
     "defeat",
   );
   await expect(page.locator('[data-field="outcome-kind"]')).toHaveText(
-    "Earth overrun",
+    "Threat limit reached",
   );
+  await expect(page.locator('[data-field="outcome-tagline"]')).toHaveText(
+    "Global threat reached 100, ending the campaign.",
+  );
+  // The threat threshold can end a campaign before any city reaches 100 infestation.
+  await expect(page.locator('[data-field="cities-lost"]')).toHaveText("0 / 37");
   await expect(page.locator('[data-field="final-threat"]')).toHaveText("100");
   const day = Number(await page.locator('[data-field="day"]').textContent());
   expect(day).toBeGreaterThan(1);

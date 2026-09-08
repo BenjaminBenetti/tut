@@ -8,6 +8,8 @@ import { EARTH_MAP } from "../../overworld/data/earth-map";
 import { NEW_GAME_TUNING } from "../../overworld/data/new-game-tuning";
 import { THREAT_TUNING } from "../../overworld/data/threat-tuning";
 import type { GameOutcome } from "../../overworld/model/game-outcome";
+import { applyOutcome } from "../../overworld/service/outcome-service";
+import { computeThreat } from "../../overworld/service/threat-service";
 import { SQUAD_TYPES } from "../../roster/data/squad-types";
 import { STARTER_ROSTER } from "../../roster/data/starter-roster";
 import { DataSquadTypeCatalogue } from "../../roster/repository/squad-type-catalogue";
@@ -87,7 +89,7 @@ describe("GameOverScreen", () => {
       session: sessionWith(ended("defeat")),
     }).mount(root);
     expect(root.querySelector('[data-screen="game-over"]')).not.toBeNull();
-    expect(field("outcome-kind")?.textContent).toBe("Earth overrun");
+    expect(field("outcome-kind")?.textContent).toBe("Threat limit reached");
     expect(field("outcome-kind")?.dataset.kind).toBe("defeat");
     expect(field("day")?.textContent).toBe("41");
     expect(field("cities-lost")?.textContent).toBe(
@@ -97,6 +99,45 @@ describe("GameOverScreen", () => {
       `7 / ${String(EARTH_MAP.cities.length)}`,
     );
     expect(field("missions-run")?.textContent).toBe("5");
+    expect(field("final-threat")?.textContent).toBe("100");
+  });
+
+  it("explains a real threat-limit defeat with no cities lost", () => {
+    const base = newGame();
+    const map = {
+      ...base.overworld.map,
+      cities: base.overworld.map.cities.map((city) => ({
+        ...city,
+        infestation: 70,
+      })),
+    };
+    /** Default tuning reaches 100 at day 300 while every city is below 100. */
+    const atDay = (day: number): GameState => ({
+      ...base,
+      overworld: {
+        ...base.overworld,
+        map,
+        day,
+        threat: computeThreat(map, day, THREAT_TUNING),
+      },
+    });
+    expect(applyOutcome(atDay(299)).state.overworld.outcome).toBeUndefined();
+    const ended = applyOutcome(atDay(300)).state;
+    expect(ended.overworld.outcome).toMatchObject({
+      kind: "defeat",
+      summary: { citiesLost: 0, finalThreat: 100 },
+    });
+
+    new GameOverScreen({
+      router: fakeRouter().router,
+      session: sessionWith(ended),
+    }).mount(root);
+    expect(field("outcome-kind")?.textContent).toBe("Threat limit reached");
+    expect(field("outcome-tagline")?.textContent).toBe(
+      "Global threat reached 100, ending the campaign.",
+    );
+    expect(field("cities-lost")?.textContent).toBe("0 / 37");
+    expect(field("cities-infested")?.textContent).toBe("37 / 37");
     expect(field("final-threat")?.textContent).toBe("100");
   });
 

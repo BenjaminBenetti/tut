@@ -16,6 +16,7 @@ import { ManifestSpriteLoader } from "../../graphics/service/manifest-sprite-loa
 import { OrthographicCameraRig } from "../../graphics/service/orthographic-camera-rig";
 import { PlaceholderModelFactory } from "../../graphics/service/placeholder-model-factory";
 import { GhostController } from "../../graphics/service/ghost-controller";
+import { PointerCutawayController } from "../../graphics/controller/pointer-cutaway-controller";
 import { SceneService } from "../../graphics/service/scene-service";
 import { TacticalAnimationQueue } from "../../graphics/service/tactical-animation-queue";
 import {
@@ -60,6 +61,7 @@ export interface DomTacticalSceneHostDeps {
 
 /** Everything one attached scene owns, released together. */
 interface AttachedScene {
+  readonly pointerCutaway: PointerCutawayController;
   readonly builder: TacticalSceneBuilder;
   readonly input: TacticalInputController;
   readonly scene: SceneService;
@@ -171,14 +173,21 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
       () => builder.ghostTargets(),
       builder.ghosting,
     );
+    const pointerCutaway = new PointerCutawayController(
+      builder,
+      rig.camera,
+      builder.ghosting,
+    );
     const scene = new SceneService(container, {
       camera: rig,
       content,
-      updatables: [input, animations, ghosting],
+      updatables: [input, animations, ghosting, pointerCutaway],
     });
+    pointerCutaway.attach(scene.canvas);
     input.attach(container);
     this.deps.onHooks?.(input.hooks());
     this.attached = {
+      pointerCutaway,
       builder,
       input,
       scene,
@@ -305,6 +314,7 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
     }
     this.attached = undefined;
     attached.input.detach();
+    attached.pointerCutaway.detach();
     attached.scene.dispose();
     attached.animations.dispose();
     attached.overlays.dispose();

@@ -1,0 +1,25 @@
+{
+  "url": "http://localhost:4200/mapgen-preview.html?seed=mc-opening-01&biome=temperate&settlement=rural&size=small&archetype=settlement&slope=100&models=1",
+  "viewport": {
+    "width": 1200,
+    "height": 950
+  },
+  "wheelDeltaY": -900,
+  "pointer": {
+    "x": 1094.7617857663745,
+    "y": 115.27121082921389
+  },
+  "hoverChangesPixels": true,
+  "closesByteIdentically": true,
+  "errors": [],
+  "picks": [null, null, "building-1"],
+  "radius": 3,
+  "opacityFloor": 0.175,
+  "camera": {
+    "position": [81.73502691896257, 57.735026918962575, 81.73502691896257],
+    "left": -8.561519666965538,
+    "right": 8.561519666965538,
+    "top": 9.918833760508855,
+    "bottom": -9.918833760508855
+  }
+}

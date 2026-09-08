@@ -16,6 +16,7 @@ import type { ModelLoader } from "../model/model-loader";
 import type { SpawnerPicker } from "../model/spawner-picker";
 import type { TilePicker } from "../model/tile-picker";
 import type { UnitPicker } from "../model/unit-picker";
+import type { PointerCutawayTarget } from "../model/pointer-cutaway";
 import type { GhostUniforms } from "./ghost-cutaway";
 import { createGhostUniforms } from "./ghost-cutaway";
 import { TacticalMapView } from "../view/tactical-map-view";
@@ -156,6 +157,16 @@ export class TacticalSceneBuilder
   /** The cutaway uniforms, for the frame controller that updates them. */
   get ghosting(): GhostUniforms {
     return this.ghostUniforms;
+  }
+
+  /** Version of map geometry used by the cached pointer inspection. */
+  get cutawayRevision(): number {
+    return this.mapView.cutawayRevision;
+  }
+
+  /** Inspect a visible building surface independently of action picking. */
+  pickCutaway(ndc: Vec2, camera: Camera): PointerCutawayTarget | undefined {
+    return this.mapView.pickCutaway(ndc, camera);
   }
 
   /** Ground-plane centre of the map, where the camera should look. */

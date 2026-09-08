@@ -559,6 +559,18 @@ Applies to **every unit the player can currently see**, not only their own: hidi
 
 **First tuning pass on the working shader (#937).** The older mock studies above informed the initial 2.0 radius, but #916 found that `uGhostStrength` had never been bound to the shader. Only then did the reveal work in play. [The real 2/3/4/5 comparison](diagnostics/937/README.md) uses the accepted indoor camera, both pitched and flat roofs, and two separated squads at opposite camera yaws. The Executive Director chose **4** after seeing the overlapping windows, then requested twice the transparency. [The opacity comparison](diagnostics/937/transparency/README.md) holds radius 4 and compares floors 0.35, 0.175 and 0. Halving retained opacity implements that direction without removing every central roof fragment; literal doubled transparency would exceed 100% and clamp to floor 0. Depth comparison, softness and fade timing stay unchanged. Overlap takes minimum alpha, so windows merge without their intersection becoming more transparent.
 
+**Pointer inspection (#947).** Hovering a building opens a separate **3.0-tile**
+window at the raw cursor, after a **0.12 s building dwell** and the same **0.15 s
+fade**. The smaller, movable window lets the player inspect empty rooms while
+keeping the surrounding roof present. It shares the **0.175 opacity floor** and
+**0.65 inward soft edge**; pointer and unit sources take minimum opacity, so their
+intersection is no more transparent. The pointer does not use a unit slot.
+Open ground, leaving the canvas or dragging closes the inspection; moving to a
+different building closes the previous source before opening the next. The
+cursor ray targets 0.70 u above the room floor beneath the hovered physical
+surface (or just below a lower hit), capped before the far shell. Pitched roofs are identified by their model's owner tile,
+not a walkable tile at roof height. [Real-map evidence and controls](diagnostics/947/README.md).
+
 ### 12.5 How the systems compose
 
 Fog of war, cast shadows, building ghosting and the overlay planes all

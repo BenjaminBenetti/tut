@@ -20,6 +20,10 @@ export interface GhostUniforms {
   readonly uGhostFloor: { value: number };
   /** Per-centre ramp in `[0, 1]`, so a cutaway fades in and out rather than snapping. */
   readonly uGhostStrength: { value: number[] };
+  /** Independent inspection source; it never consumes a force slot. */
+  readonly uPointerCentre: { value: Vector3 };
+  readonly uPointerRadius: { value: number };
+  readonly uPointerStrength: { value: number };
 }
 
 // ===========================================
@@ -59,6 +63,9 @@ export function createGhostUniforms(
     uGhostRadius: { value: radius },
     uGhostFloor: { value: floor },
     uGhostStrength: { value: Array.from({ length: MAX_GHOSTS }, () => 0) },
+    uPointerCentre: { value: new Vector3() },
+    uPointerRadius: { value: 0 },
+    uPointerStrength: { value: 0 },
   };
 }
 
@@ -118,6 +125,9 @@ export function applyGhostCutaway(
     shader.uniforms.uGhostRadius = uniforms.uGhostRadius;
     shader.uniforms.uGhostFloor = uniforms.uGhostFloor;
     shader.uniforms.uGhostStrength = uniforms.uGhostStrength;
+    shader.uniforms.uPointerCentre = uniforms.uPointerCentre;
+    shader.uniforms.uPointerRadius = uniforms.uPointerRadius;
+    shader.uniforms.uPointerStrength = uniforms.uPointerStrength;
     shader.vertexShader = shader.vertexShader
       .replace("#include <common>", `#include <common>\n${VERTEX_HEAD}`)
       // After project_vertex, so instanced transforms are already applied.
@@ -161,6 +171,11 @@ const FRAGMENT_BODY = `
       ghostAlpha = min(ghostAlpha, mix(1.0, uGhostFloor, f));
     }
   }
+  if (uPointerStrength > 0.0 && vGhostView.z > uPointerCentre.z) {
+    float d = length(vGhostView.xy - uPointerCentre.xy);
+    float f = smoothstep(uPointerRadius, uPointerRadius - ${SOFT_EDGE_UNITS.toFixed(2)}, d);
+    ghostAlpha = min(ghostAlpha, mix(1.0, uGhostFloor, f * uPointerStrength));
+  }
   if (ghostAlpha < 1.0 && ghostAlpha < ghostDither(gl_FragCoord.xy)) discard;
 `;
 
@@ -180,6 +195,9 @@ function fragmentHead(): string {
     uniform float uGhostRadius;
     uniform float uGhostFloor;
     uniform float uGhostStrength[MAX_GHOSTS];
+    uniform vec3 uPointerCentre;
+    uniform float uPointerRadius;
+    uniform float uPointerStrength;
 
     float ghostDither(vec2 fragment) {
       int x = int(mod(fragment.x, 4.0));

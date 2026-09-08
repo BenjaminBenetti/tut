@@ -1,0 +1,30 @@
+{
+  "captureHead": "1a81bf34f9f9de5ab89e23a7e3b43f23e6a7c8c8",
+  "runtimeCommit": "bc2f47fb98aea8584ca68a990487b878f8f36d0d",
+  "baseline": "committed PNGs at main b6928d0",
+  "seed": 4242,
+  "command": "CAPTURE=1 pnpm exec playwright test e2e/fog-screenshot.spec.ts",
+  "note": "Committed main PNGs predate the merged #948 city-name banner refresh. Differences are confined to the top banner. No full-frame byte-equality claim.",
+  "frames": [
+    {
+      "turn": 1,
+      "file": "docs/design/tactical-fog-of-war.png",
+      "baselineSha256": "480b4516103298fbd7ca5657ba540c6b819e351747811defbb9c0d1ab121448a",
+      "candidateSha256": "9c1228ad8958061600a6bd48c661934a5ac2b500a9bcbc5ff44803b9eb9007fa",
+      "changedPixels": 2002,
+      "changedBoundsInclusive": [72, 10, 482, 29],
+      "changedPixelsBelowTopBanner": 0,
+      "topBannerHeight": 41
+    },
+    {
+      "turn": 7,
+      "file": "docs/design/tactical-fog-of-war-turn7.png",
+      "baselineSha256": "97d42868bc4c4c4f8433dbf70d70726aa7a240d8a64900f48e15d570c9bef4ee",
+      "candidateSha256": "e1b73f8a7460d66969e6341ca7f533abcde7270059753be0b77bf37992f256f0",
+      "changedPixels": 1984,
+      "changedBoundsInclusive": [72, 10, 482, 29],
+      "changedPixelsBelowTopBanner": 0,
+      "topBannerHeight": 41
+    }
+  ]
+}

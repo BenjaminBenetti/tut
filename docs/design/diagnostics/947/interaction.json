@@ -1,0 +1,244 @@
+{
+  "briefSweepMilliseconds": 60,
+  "briefSweepActualMilliseconds": 65.89999985694885,
+  "briefSweepStrengths": [
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+  ],
+  "briefSweepClosedByteIdentical": true,
+  "stationaryCounts": {
+    "before": 27,
+    "after": 27
+  },
+  "dragClosesAndReleaseReopens": true,
+  "pickSamples": [
+    {
+      "milliseconds": 6.8999998569488525,
+      "buildingId": "building-1",
+      "point": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "milliseconds": 2.1000001430511475,
+      "point": {
+        "x": -0.975,
+        "y": 0
+      }
+    },
+    {
+      "milliseconds": 2,
+      "buildingId": "building-1",
+      "point": {
+        "x": -0.08333333333333337,
+        "y": 0
+      }
+    },
+    {
+      "milliseconds": 3.799999952316284,
+      "buildingId": "building-1",
+      "point": {
+        "x": -0.06999999999999995,
+        "y": 0.004210526315789442
+      }
+    },
+    {
+      "milliseconds": 3.8000001907348633,
+      "buildingId": "building-1",
+      "point": {
+        "x": -0.05666666666666664,
+        "y": 0.008421052631578996
+      }
+    },
+    {
+      "milliseconds": 2.5,
+      "buildingId": "building-1",
+      "point": {
+        "x": -0.043333333333333335,
+        "y": 0.012631578947368438
+      }
+    },
+    {
+      "milliseconds": 2.9000000953674316,
+      "buildingId": "building-1",
+      "point": {
+        "x": -0.030000000000000027,
+        "y": 0.01684210526315788
+      }
+    },
+    {
+      "milliseconds": 1.9000000953674316,
+      "buildingId": "building-1",
+      "point": {
+        "x": -0.01666666666666672,
+        "y": 0.021052631578947323
+      }
+    },
+    {
+      "milliseconds": 2.6000001430511475,
+      "buildingId": "building-1",
+      "point": {
+        "x": -0.0033333333333332993,
+        "y": 0.025263157894736876
+      }
+    },
+    {
+      "milliseconds": 1.5,
+      "buildingId": "building-1",
+      "point": {
+        "x": 0.010000000000000009,
+        "y": 0.02947368421052632
+      }
+    },
+    {
+      "milliseconds": 4,
+      "buildingId": "building-1",
+      "point": {
+        "x": 0.023333333333333428,
+        "y": 0.03368421052631576
+      }
+    },
+    {
+      "milliseconds": 1.7000000476837158,
+      "buildingId": "building-1",
+      "point": {
+        "x": 0.036666666666666625,
+        "y": 0.037894736842105314
+      }
+    },
+    {
+      "milliseconds": 1.9000000953674316,
+      "buildingId": "building-1",
+      "point": {
+        "x": 0.050000000000000044,
+        "y": 0.04210526315789476
+      }
+    },
+    {
+      "milliseconds": 1.7000000476837158,
+      "buildingId": "building-1",
+      "point": {
+        "x": 0.06333333333333324,
+        "y": 0.0463157894736842
+      }
+    },
+    {
+      "milliseconds": 1.7999999523162842,
+      "buildingId": "building-1",
+      "point": {
+        "x": 0.07666666666666666,
+        "y": 0.05052631578947364
+      }
+    },
+    {
+      "milliseconds": 2.200000047683716,
+      "buildingId": "building-1",
+      "point": {
+        "x": 0.09000000000000008,
+        "y": 0.054736842105263195
+      }
+    },
+    {
+      "milliseconds": 2.0999999046325684,
+      "buildingId": "building-1",
+      "point": {
+        "x": 0.10333333333333328,
+        "y": 0.05894736842105264
+      }
+    },
+    {
+      "milliseconds": 2.299999952316284,
+      "buildingId": "building-1",
+      "point": {
+        "x": 0.1166666666666667,
+        "y": 0.06315789473684208
+      }
+    },
+    {
+      "milliseconds": 2.700000047683716,
+      "buildingId": "building-1",
+      "point": {
+        "x": 0.1299999999999999,
+        "y": 0.06736842105263163
+      }
+    },
+    {
+      "milliseconds": 3.0999999046325684,
+      "buildingId": "building-1",
+      "point": {
+        "x": 0.1433333333333333,
+        "y": 0.07157894736842108
+      }
+    },
+    {
+      "milliseconds": 2.1999998092651367,
+      "buildingId": "building-1",
+      "point": {
+        "x": 0.15666666666666673,
+        "y": 0.07578947368421052
+      }
+    },
+    {
+      "milliseconds": 1.4000000953674316,
+      "buildingId": "building-1",
+      "point": {
+        "x": 0.16999999999999993,
+        "y": 0.07999999999999996
+      }
+    },
+    {
+      "milliseconds": 1.6000001430511475,
+      "buildingId": "building-1",
+      "point": {
+        "x": 0.18333333333333335,
+        "y": 0.08421052631578951
+      }
+    },
+    {
+      "milliseconds": 1.4000000953674316,
+      "buildingId": "building-1",
+      "point": {
+        "x": 0.19666666666666677,
+        "y": 0.08842105263157896
+      }
+    },
+    {
+      "milliseconds": 2,
+      "buildingId": "building-1",
+      "point": {
+        "x": 0.20999999999999996,
+        "y": 0.0926315789473684
+      }
+    },
+    {
+      "milliseconds": 2,
+      "buildingId": "building-1",
+      "point": {
+        "x": 0.22333333333333338,
+        "y": 0.09684210526315784
+      }
+    },
+    {
+      "milliseconds": 2.200000047683716,
+      "buildingId": "building-1",
+      "point": {
+        "x": 0.23666666666666658,
+        "y": 0.1010526315789474
+      }
+    },
+    {
+      "milliseconds": 1.6000001430511475,
+      "buildingId": "building-1",
+      "point": {
+        "x": 0.23666666666666658,
+        "y": 0.1010526315789474
+      }
+    }
+  ],
+  "pickTimeMilliseconds": {
+    "median": 2.1000001430511475,
+    "p95": 4,
+    "max": 6.8999998569488525
+  },
+  "errors": []
+}

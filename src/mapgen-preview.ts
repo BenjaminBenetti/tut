@@ -7,6 +7,7 @@ import { COMBAT_TUNING } from "./tactical/data/combat-tuning";
 import { OBJECTIVE_TUNING } from "./tactical/data/objective-tuning";
 import { TacticalHudView } from "./ui/view/tactical-hud-view";
 import { CameraInputController } from "./graphics/controller/camera-input-controller";
+import { PointerCutawayController } from "./graphics/controller/pointer-cutaway-controller";
 import { MODEL_MANIFEST } from "./graphics/data/model-manifest";
 import { STOREY_LAYERS } from "./core/model/elevation";
 import { CAMERA_ZOOM } from "./graphics/model/camera-state";
@@ -178,6 +179,7 @@ async function main(): Promise<void> {
     new URLSearchParams(window.location.search).get("models") === "1";
   let view: TacticalSceneBuilder | undefined;
   let input: TacticalInputController | undefined;
+  let pointerCutaway: PointerCutawayController | undefined;
   let hud: TacticalHudView | undefined;
 
   const regenerate = (state: PreviewControlsState): void => {
@@ -199,9 +201,16 @@ async function main(): Promise<void> {
       });
       const elapsedMs = performance.now() - started;
       input?.detach();
+      pointerCutaway?.detach();
       hud?.unmount();
       view?.dispose();
       const builder = new TacticalSceneBuilder({ map, models });
+      pointerCutaway = new PointerCutawayController(
+        builder,
+        rig.camera,
+        builder.ghosting,
+      );
+      pointerCutaway.attach(scene.canvas);
       view = builder;
       content.add(builder.root);
       rig.setBounds({ x: 0, z: 0, w: map.width, d: map.depth });
@@ -336,6 +345,7 @@ async function main(): Promise<void> {
       {
         update: (dt) => {
           (input ?? cameraInput).update(dt);
+          pointerCutaway?.update(dt);
         },
       },
     ],

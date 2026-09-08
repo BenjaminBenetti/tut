@@ -64,8 +64,9 @@ async function shootDebrief(page: Page, path: string): Promise<void> {
 }
 
 /**
- * The #740 pair: the debrief after a mission that cost nothing, and
- * after one that cost a mech.
+ * The #740 frames: a win with no mech destroyed and no squad wiped —
+ * which can still report a squad casualty and mech damage, and does —
+ * and a mission that lost a mech.
  *
  * The debrief is DOM rather than a WebGL canvas, so unlike the tactical
  * captures (#996) it does not depend on a camera and reproduces across
@@ -90,15 +91,33 @@ test("captures the debrief payout, clean and after a mech loss", async ({
   const body = page.locator("body");
 
   // Clean: the auto-resolver wins this mission outright on seed 4242.
+  // DEBRIEF_FRAME=before captures the same winning debrief against the
+  // baseline tree, so the relocation is directly visible rather than
+  // inferred from two different outcomes after the change.
+  const baseline = process.env.DEBRIEF_FRAME === "before";
   await toDeployment(page, "?autoResolve=1");
   await page.locator('[data-action="launch"]').click();
-  await shootDebrief(page, `${FRAMES}-clean.png`);
+  await shootDebrief(
+    page,
+    baseline ? `${FRAMES}-clean-before.png` : `${FRAMES}-clean.png`,
+  );
   const clean = page.locator('section[data-screen="mission-results"]');
   expect(
     await clean
       .locator('[data-field="mechs-destroyed"]')
       .getAttribute("data-count"),
   ).toBe("0");
+  expect(
+    await clean
+      .locator('[data-field="squads-wiped"]')
+      .getAttribute("data-count"),
+  ).toBe("0");
+  if (baseline) {
+    // Nothing else to shoot against the baseline: the loss case is
+    // unchanged by this work, and the point of a baseline run is the
+    // winning debrief's ordering before the payout moved.
+    return;
+  }
   expect(
     await clean.locator('[data-field="rewards"]').getAttribute("data-promoted"),
   ).toBe("true");

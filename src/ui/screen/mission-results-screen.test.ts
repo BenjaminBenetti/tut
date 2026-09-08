@@ -502,7 +502,7 @@ describe("MissionResultsScreen payout prominence", () => {
   });
 
   // Size says "this matters", colour says whether it is good news. A
-  // mission can cost nothing and still leave the city worse, and a rise
+  // mission can lose nobody and still leave the city worse, and a rise
   // shouted in the winning green would be the screen lying pleasantly.
   it("colours a promoted infestation rise as bad news, not good", () => {
     const worse = mountWith({

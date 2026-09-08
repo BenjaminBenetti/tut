@@ -1,42 +1,85 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-08 (#943 merged; #947 pointer reveal next; #911 follows)
+Last updated: 2026-09-08 (#947 draft PR #982; #911 then #960)
 
-## Current status: #947 pointer cutaway, ahead of #911
+## Current status: #947 pointer inspection, draft PR #982
 
-Codex Art Director, **gpt-6-astra xhigh**. #943 is accepted and merged. The
-bounded watch delivered Director/Executive Director **#947**, p1: the reveal
-also follows the pointer. The issue explicitly goes ahead of the dropship.
-Art has claimed and stated the input diagnosis/parameters on #947 before code.
+Codex Art Director, **gpt-6-astra xhigh**. [PR #982](https://github.com/BenjaminBenetti/tut/pull/982),
+branch `feat/947-pointer-cutaway`, has the implementation and 28-frame matrix at
+`1a81bf3`. It is a **draft** while final browser input/Map Lab/fog checks run.
+Typecheck, lint, 2,190 unit tests (one skipped), build and seven simulation tests
+pass. Do not call the feature accepted: Director frame judgment and Tech Lead
+review/merge are still required.
 
-Diagnosis: action hover prioritises units/spawners, and pitched roofs have no
-walkable Tile at their visual roof level. A graphics hit-test must use the
-visible model instance's owning tile/building rather than borrow action hover.
-Graphics controller + `app/service/tactical-scene-host.ts` composition suffice;
-no tactical/UI command dependency identified.
+[Diagnosis and parameters before code](https://github.com/BenjaminBenetti/tut/issues/947#issuecomment-5589887736):
+action hover prioritises units/spawners and pitched roofs have no walkable tile
+at their visual height. The new graphics picker uses the foremost visible
+model instance's owner tile/building. It excludes hidden levels and retired
+placeholders; shader discard does not alter the CPU raycast, preventing a
+stationary hover from losing its own opened roof.
 
-Initial choice: pointer radius 3, raw cursor in camera plane, 120 ms building
-dwell then 150 ms fade; track continuously within a building. Keep squad radius
-4, floor 0.175, soft edge 0.65 and all eight unit centres. Separate pointer
-source composes by minimum opacity. Open ground, leaving canvas and camera
-drag close it. Depth targets the floor under the picked surface and keeps the
-far shell. Render and judge before calling those parameters final.
+Chosen behaviour: **pointer radius 3**, raw client position reprojected through
+the canvas, **120 ms building dwell**, **150 ms fade**. A separate source keeps
+all eight squad slots. Unit radius stays **4**, shared opacity floor **0.175**,
+soft edge **0.65 inward**, minimum-opacity composition. Ground/leave/focus loss/
+drag closes inspection; a new building closes the old source before opening.
+Stationary picks are cached until pointer, camera or model/level changes.
+Both tactical missions and Map Lab's separate scene loop compose the controller;
+Map Lab detaches it when regenerating. No action command or vision-state change.
 
-Acceptance: hovered empty building, pointer/squad overlap, open-ground roofs
-closed; Director judges committed frames before Tech Lead merge. Also inspect
-both roof types, pointer-leaves closure and a sweep to check flashing. No new
-model or Blender work is needed for #947. Scratch `.git/art-947/`; no code yet.
+[Depth revision and comparison](https://github.com/BenjaminBenetti/tut/issues/947#issuecomment-5590566639)
+were posted before the final pass. Floor + 0.05 exposed lower brickwork/ground
+through the near floor at opposite yaw; **floor + 0.70 u** retains more of that
+room plan. Cap below a lower hit and before the footprint exit. This remains a
+view-plane cutaway, so an edge window can include nearer floor/front-wall parts;
+it is not a mask that isolates one storey. Squad depth is unchanged.
 
-Queue: **#911 after #947**, footprint first, then MapGen places it. Prior 5×7 /
-3.6-high transport envelope proposal stands; no geometry has begun. **#945**
-is MapGen-led material-boundary diagnosis behind #917, with Art support. Preserve
-palette and judged slope geometry; state cause before choosing a fix.
+[The frame matrix](../design/diagnostics/947/README.md) covers pitched/flat roofs,
+yaws 0/2, empty hover, shifted hover, one squad plus shifted pointer, open ground
+and pointer leave. Sixteen baseline/closure checks matched byte for byte.
+Initial final matrix source `0af63ba`, main integrated through `b6928d0`; fresh
+baseline is main `3c04481`, which contains #943. The older #937 indoor matrix
+predates #936 and is not this baseline. Runtime `bc2f47f` adds viewport resize
+handling and Map Lab composition; `capture-pointer-cutaway.mjs --verify` is
+currently re-rendering all 28 cases and requiring their bytes to stay exact.
 
-Only one bounded event watch when waiting: REST at most every 300 seconds,
-3-hour hard stop, no cron. Includes new/relabelled area:art issues, own PR
-comments/reviews/merges/CI completion and relevant issue comments. No watcher
-is running during implementation. Capacity errors are retries, not a reason
-to stop or switch model.
+Scratch `.git/art-947/`; runtime Vite on **4200**, stable no-watcher config.
+Old 4199 and baseline 4198 servers are stopped. The detached baseline worktree
+remains `.git/art-947/baseline`; its local Vite config permits `.git` paths and
+uses a separate cache. Restart capture servers after code changes: disabling
+watch/HMR also disables module invalidation. Capture supports `--resume`, checks
+completed hashes, and always closes Chromium; one initial 30 s screenshot
+failed, so the art-only screenshot budget is now 120 s. No game/test timeout
+was widened. No provider capacity failure occurred.
+
+Next: finish live sweep/drag/cache/Map Lab proof, both fog captures and browser
+gate; post final evidence on #982 and mark it ready. Address review on this
+branch. Then **#911** (footprint first, MapGen places it), then **#960** (Art
+accountable for building-use cues; diagnose kit versus arrangement, MapGen
+supports placement). Prior dropship envelope proposal: 5×7, max height 3.6,
++Z nose; no model started. **#945 / #959** are MapGen-led after #917, with Art
+material/rendering support; do not displace the assigned Art sequence.
+
+## Standing orders and watch
+
+**No production hold remains.** [Discussion #968](https://github.com/BenjaminBenetti/tut/discussions/968)
+is the cross-cutting channel; work-scoped direction belongs in the issue/PR.
+The terminal is for CLI starts/resumes. [Watch confirmation](https://github.com/BenjaminBenetti/tut/discussions/968#discussioncomment-18355528)
+is posted. Do not let old historical pause language below override this order.
+
+One bounded background watch, `.git/art-director-watch/watch.py`: 300 s minimum
+poll interval, one-line exit on a relevant event, three-hour hard stop. REST
+for work threads/new or relabelled art/owned PRs and CI, plus the exact #968
+GraphQL `comments(last:10){nodes{createdAt body}}` query. Comments are deduplicated
+by timestamp/body hash, so edits wake it too. The script reloads shared state
+before each poll so new PR subscriptions survive while it is running. Act on
+its event file, then arm one replacement. Capacity/transport errors are retries;
+never stop or switch model for them. Empty queue gets stated on GitHub.
+
+Watch read QA #974: catalogue unchanged, parapet-crossing ramps 2,046 → 0,
+no regressions in five merged map fixes tested in play. #869 retirement is with
+its owner, not a new Art geometry task. Critic's merged #937 re-check in comment
+5590284474 says the picture improved; retain the accepted 4 / 0.175 settings.
 
 ## Completed: #937 / #943 radius and opacity tuning
 

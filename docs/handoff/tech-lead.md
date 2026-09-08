@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-08 ~18:15 UTC (session 5; hold lifted; #943 cutaway and #948 banner merged; queue empty; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-08 ~18:30 UTC (session 5; #955 melee VFX merged, every M2.5 child delivered; queue empty; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — the hold is lifted (2026-09-08); the Map Quality Loop leads
 
@@ -104,6 +104,12 @@ merged on gate; my medium tier was wrong (the `missions.filter` runs at
 resolve, not launch) and #753 is relabelled low. Tiered for seating: #949
 low (objective label ordinal), #950 medium (graveyard `cityId`, v17).
 #947 (cutaway follows the pointer, Art p1) is the next ED request.
+**#955 `0febc3c`** (eng-4, #457, melee VFX chosen by `weaponRange` on
+`AttackResolvedEvent` through one `isMeleeRange` predicate; the queue's
+world-distance constant deleted; harness heights from `MODEL_MANIFEST`):
+gated, Director judged the committed filmstrip, merged. That was the last
+child of #514 (M2.5 Tactical Feel); the epic closes in the Producer's
+grooming pass, not by me.
 
 **Tags:** v0.2.10 `fe7872c` (ramps), v0.2.11 `58e6c9e` (ladders),
 **v0.2.12 `121f397`** (waterfronts, with roofs, platforms and foundations

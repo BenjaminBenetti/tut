@@ -1,0 +1,66 @@
+{
+  "id": "05-temperate-medium",
+  "seed": "mc-resume-01",
+  "biome": "temperate",
+  "settlement": "rural",
+  "size": "medium",
+  "pitch": 14,
+  "clip": {
+    "x": 380,
+    "y": 0,
+    "width": 2020,
+    "height": 1500
+  },
+  "rotation": 0,
+  "focus": {
+    "x": 35.5,
+    "y": 2,
+    "z": 35.5
+  },
+  "url": "http://127.0.0.1:5177/mapgen-preview.html?seed=mc-resume-01&biome=temperate&settlement=rural&size=medium&models=1&units=1&slope=100",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "camera": {
+    "yawIndex": 0,
+    "zoom": 19.83827358328925,
+    "target": {
+      "x": 36,
+      "y": 1.65,
+      "z": 36
+    },
+    "bounds": {
+      "x": 0,
+      "z": 0,
+      "w": 72,
+      "d": 72
+    },
+    "zoomRange": {
+      "min": 19.83827358328925,
+      "max": 192
+    }
+  },
+  "rendering": {
+    "timingMethod": "RAF interval with gl.finish(), discard first four of twelve frames; software renderer, not a hardware FPS claim",
+    "frameMs": [
+      14.099999904632568, 15.400000095367432, 12.400000095367432,
+      16.09999990463257, 30.299999952316284, 5.400000095367432,
+      981.2000000476837, 2576.5999999046326
+    ],
+    "render": {
+      "frame": 27,
+      "calls": 825,
+      "triangles": 403806,
+      "points": 0,
+      "lines": 0
+    },
+    "memory": {
+      "geometries": 1604,
+      "textures": 28
+    },
+    "programs": 15
+  },
+  "elapsedMs": 43446.05089,
+  "actualPitch": 16.197882552264502
+}

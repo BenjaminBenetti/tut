@@ -1,0 +1,134 @@
+[
+  {
+    "case": "01-temperate",
+    "cameraIdentical": true,
+    "pngByteIdentical": false,
+    "beforeRender": {
+      "frame": 34,
+      "calls": 591,
+      "triangles": 216670,
+      "points": 0,
+      "lines": 0
+    },
+    "afterRender": {
+      "frame": 33,
+      "calls": 633,
+      "triangles": 227686,
+      "points": 0,
+      "lines": 0
+    },
+    "beforeTextures": 27,
+    "afterTextures": 28,
+    "sha256": "cd51fcd02f4f36a778ed1419d52c5f5c7d03d7dd37db80145bb1b3c90bb666fa"
+  },
+  {
+    "case": "02-temperate-rotated",
+    "cameraIdentical": true,
+    "pngByteIdentical": false,
+    "beforeRender": {
+      "frame": 30,
+      "calls": 600,
+      "triangles": 217224,
+      "points": 0,
+      "lines": 0
+    },
+    "afterRender": {
+      "frame": 34,
+      "calls": 644,
+      "triangles": 228246,
+      "points": 0,
+      "lines": 0
+    },
+    "beforeTextures": 27,
+    "afterTextures": 28,
+    "sha256": "a97dfdd22dddfa9ec1ba10f35a7d7884b574b1d6da96b6862c02dc93cdeceacf"
+  },
+  {
+    "case": "03-snowy-control",
+    "cameraIdentical": true,
+    "pngByteIdentical": true,
+    "beforeRender": {
+      "frame": 31,
+      "calls": 713,
+      "triangles": 278392,
+      "points": 0,
+      "lines": 0
+    },
+    "afterRender": {
+      "frame": 33,
+      "calls": 713,
+      "triangles": 278392,
+      "points": 0,
+      "lines": 0
+    },
+    "beforeTextures": 27,
+    "afterTextures": 27,
+    "sha256": "37ae292ab0eaf2200b062ab155da6d18ca4f5b28602582a6b1cc24006ed667d6"
+  },
+  {
+    "case": "04-desert-control",
+    "cameraIdentical": true,
+    "pngByteIdentical": true,
+    "beforeRender": {
+      "frame": 28,
+      "calls": 666,
+      "triangles": 319980,
+      "points": 0,
+      "lines": 0
+    },
+    "afterRender": {
+      "frame": 35,
+      "calls": 666,
+      "triangles": 319980,
+      "points": 0,
+      "lines": 0
+    },
+    "beforeTextures": 27,
+    "afterTextures": 27,
+    "sha256": "f48bed200c572038118784f049df0551fa1d3b66da5ca59dd0eac0f368c12461"
+  },
+  {
+    "case": "05-temperate-medium",
+    "cameraIdentical": true,
+    "pngByteIdentical": false,
+    "beforeRender": {
+      "frame": 27,
+      "calls": 825,
+      "triangles": 403806,
+      "points": 0,
+      "lines": 0
+    },
+    "afterRender": {
+      "frame": 32,
+      "calls": 873,
+      "triangles": 421662,
+      "points": 0,
+      "lines": 0
+    },
+    "beforeTextures": 28,
+    "afterTextures": 29,
+    "sha256": "cf7537b07e69b8245ee04129d377c99cd62523e79a1a6f0670dca035754baef5"
+  },
+  {
+    "case": "06-temperate-large",
+    "cameraIdentical": true,
+    "pngByteIdentical": false,
+    "beforeRender": {
+      "frame": 32,
+      "calls": 857,
+      "triangles": 662248,
+      "points": 0,
+      "lines": 0
+    },
+    "afterRender": {
+      "frame": 27,
+      "calls": 905,
+      "triangles": 685144,
+      "points": 0,
+      "lines": 0
+    },
+    "beforeTextures": 32,
+    "afterTextures": 33,
+    "sha256": "41cb4408acae78f1cf4efdb070f921579a107b9cc4415566ee24163ba75ae138"
+  }
+]

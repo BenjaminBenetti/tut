@@ -220,9 +220,10 @@ The survey, repair crops and ranked queue are now on main.
 
 PR **#971 merged** as `4148dca`; its standing-orders handoff is complete.
 Current branch is **`docs/917-map-critic-v0213`**, based on main `5cead6e`.
-All diagnostic evidence is committed and pushed. The combined docs-only PR
-is being opened with this final handoff; its number is recorded in the #905
-survey thread and #968 status message. Normal CI applies.
+All diagnostic evidence is committed and pushed in docs-only
+[PR #1015](https://github.com/BenjaminBenetti/tut/pull/1015). Normal CI is
+pending at this publication checkpoint; the PR thread records its final result.
+Tech Lead owns review/merge.
 Capture scripts and raw frames remain under ignored
 `.scratch/map-critic-v0213/`; older scratch directories retain prior recipes.
 No scene was retouched or generated to demonstrate a finding.

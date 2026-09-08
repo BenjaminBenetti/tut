@@ -32,6 +32,7 @@ import {
   DEPLOYMENT_MISMATCH,
   DUPLICATE_UNIT,
   EMPTY_DEPLOYMENT,
+  MISSION_CITY_MISSING,
   MISSION_EXPIRED,
   MISSION_NOT_FOUND,
   OVERSIZED_DEPLOYMENT,
@@ -267,6 +268,27 @@ describe("validateLaunch", () => {
       expect(result.error.code).toBe(code);
     },
   );
+
+  /**
+   * The last check in `validateLaunch`, and the one #735 found had never
+   * fired: a mission whose host city is not on the map. Every other
+   * refusal returns before it, so nothing had ever reached it.
+   */
+  it("refuses a mission attached to a city the map does not have", () => {
+    const state = campaign();
+    const orphaned = {
+      ...state,
+      overworld: {
+        ...state.overworld,
+        missions: [{ ...MISSION, cityId: "atlantis" }],
+      },
+    };
+    const result = validateLaunch(orphaned, "mission-1", DEPLOYMENT);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.code).toBe(MISSION_CITY_MISSING);
+    expect(result.error.message).toContain("atlantis");
+  });
 
   it("accepts a launch the day before expiry with the host city resolved", () => {
     const result = validateLaunch(

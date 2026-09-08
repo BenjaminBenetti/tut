@@ -42,6 +42,25 @@ describe("MigrationRunner", () => {
     }
   });
 
+  /**
+   * The constructor only guarantees a chain from the *lowest* registered
+   * `from`, so a save older than that reaches the second
+   * `unsupported-version` — the one for pruned migrations, which the
+   * newer-than-target test above never touches (#735).
+   */
+  it("refuses a save older than the oldest migration the build still carries", () => {
+    const runner = new MigrationRunner([addField(2, "b")], 3);
+    const result = runner.migrate({
+      schemaVersion: 1,
+      savedAt: "t",
+      state: {},
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.kind).toBe("unsupported-version");
+    expect(result.error.message).toContain("No migration path from schema v1");
+  });
+
   it("rejects gaps, duplicates, and multi-step migrations at construction", () => {
     expect(() => new MigrationRunner([addField(1, "a")], 3)).toThrow(/Missing/);
     expect(

@@ -227,9 +227,17 @@ async function main(): Promise<void> {
               document.body.dataset.modelsReady = "true";
             }
           })
-          .catch(() => {
+          .catch((error: unknown) => {
             if (view === builder) {
               document.body.dataset.modelsReady = "error";
+              // Report it the way the sibling `update` path does (#735).
+              // This used to take no argument at all, so a model load
+              // that failed set an attribute and vanished: nothing in
+              // the console, nothing on the panel, and the harness
+              // looked like it had simply drawn an empty map.
+              screen.showError(
+                error instanceof Error ? error.message : String(error),
+              );
             }
           });
       }

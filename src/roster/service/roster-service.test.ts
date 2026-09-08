@@ -210,6 +210,26 @@ describe("reinforceSquad", () => {
     expect(slices).toEqual(snapshot);
   });
 
+  /**
+   * A squad on the roster whose *type* the catalogue no longer lists —
+   * distinct from the unknown-squad case below, and the guard #735 found
+   * had never fired. It is what a squad type removed from content leaves
+   * behind on an existing save.
+   */
+  it("rejects a squad whose type the catalogue no longer lists", () => {
+    const { deps, slices } = setup();
+    const forgetful: RosterServiceDeps = {
+      ...deps,
+      squadTypes: { getSquadType: () => undefined, listSquadTypes: () => [] },
+    };
+    expect(
+      expectErr(reinforceSquad(slices, "squad-1", 2, DAY, forgetful)),
+    ).toEqual({
+      code: "unknown-squad-type",
+      typeId: DEPLETED.typeId,
+    });
+  });
+
   it("rejects an unknown squad", () => {
     const { deps, slices } = setup();
     expect(expectErr(reinforceSquad(slices, "squad-9", 1, DAY, deps))).toEqual({

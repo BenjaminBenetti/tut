@@ -302,6 +302,32 @@ describe("TacticalScreen", () => {
     expect(field("floor")).toBe("3 / 3");
   });
 
+  /**
+   * The scene host builds asynchronously, so a failure arrives as a
+   * rejected promise long after `mount` returns. The catch that reports
+   * it had never fired in any suite (#735): a scene that failed to build
+   * left the screen up and said nothing anywhere.
+   */
+  it("reports a scene that fails to build instead of dropping the rejection", async () => {
+    const failing = new FakeHost();
+    const boom = new Error("no webgl");
+    failing.attach = () => Promise.reject(boom);
+    const logged = vi.spyOn(console, "error").mockImplementation(() => {
+      // Swallow it: the assertion below is what this test is about.
+    });
+    new TacticalScreen({
+      router: fakeRouter().router,
+      session: sessionWith(new FakeStore(inMission())),
+      combatTuning: COMBAT_TUNING,
+      objectiveTuning: OBJECTIVE_TUNING,
+      sceneHost: failing,
+    }).mount(root);
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(logged).toHaveBeenCalledWith("Tactical scene failed", boom);
+    logged.mockRestore();
+  });
+
   it("mounts the banner and viewport from the active mission and attaches the scene host", () => {
     const state = inMission();
     const host = new FakeHost();

@@ -1,4 +1,4 @@
-/* global requestAnimationFrame */
+/* global document, window, requestAnimationFrame */
 import { chromium } from "@playwright/test";
 import { createServer } from "vite";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -53,37 +53,97 @@ try {
         )
           errors.push(message.text());
       });
-      for (const units of [0, 1]) {
+      // Expose the real builder only in this diagnostic response, for level controls.
+      await page.route(
+        "**/tools/art/preview/roof-cutaway.mjs*",
+        async (route) => {
+          const response = await route.fetch();
+          const body = await response.text();
+          const marker = body.match(
+            /const builder = new TacticalSceneBuilder\(\{[\s\S]*?\}\);/,
+          )?.[0];
+          if (!marker)
+            throw new Error("Roof fixture builder constructor changed");
+          await route.fulfill({
+            response,
+            body: body.replace(
+              marker,
+              `${marker} window.__frontageBuilder = builder; window.__frontageMap = map;`,
+            ),
+          });
+        },
+      );
+      let closed;
+      for (const units of [0, 1, 2]) {
         await page.mouse.move(-10, -10);
         await page.goto(
-          `http://127.0.0.1:8797/tools/art/preview/roof-cutaway.html?roof=flat&yaw=2&units=${units}&pointer=1`,
+          `http://127.0.0.1:8797/tools/art/preview/roof-cutaway.html?roof=flat&yaw=2&units=${units}`,
           { timeout: 120000 },
         );
         await page
           .locator('body[data-ready="true"]')
           .waitFor({ timeout: 120000 });
-        const control = await capture(`flat-${units ? "squad" : "closed"}`);
-        if (phase === "after") {
-          await page.mouse.move(760, 405);
-          await settled(1);
-          await capture(`flat-${units ? "overlap" : "hover"}`);
-          await page.mouse.move(-10, -10);
-          await settled(0);
-          const restored = await capture(
-            `flat-${units ? "squad-restored" : "closed-restored"}`,
+        await settled(units);
+        const defaults = await page.evaluate(() => ({
+          radius: document.body.dataset.radius,
+          floor: document.body.dataset.floor,
+        }));
+        if (defaults.radius !== "4" || defaults.floor !== "0.175")
+          throw new Error("Accepted unit reveal defaults changed");
+        const name = units === 2 ? "two-squads" : units ? "squad" : "closed";
+        const control = await capture(`flat-${name}`);
+        if (units === 0) {
+          closed = control;
+          await page.evaluate(() => {
+            const map = window.__frontageMap;
+            const tile = map.tiles.find(
+              (t) => t.x === 25 && t.y === 6 && t.z === 14,
+            );
+            const building = map.buildings.find(
+              (b) => b.id === tile.buildingId,
+            );
+            window.__frontageBuilder.setLayerFocus({
+              storey: 0,
+              storeyCount: Math.max(
+                ...map.buildings.map((b) => b.floors.length),
+              ),
+              cutLevel: building.groundLevel + 1,
+            });
+          });
+          await drawn();
+          await capture("flat-ground-storey");
+          await page.evaluate(() =>
+            window.__frontageBuilder.setLayerFocus(undefined),
           );
-          if (!restored.equals(control))
-            throw new Error("Frontage cutaway did not close exactly");
+          await drawn();
+          const restored = await capture("flat-levels-restored");
+          if (!restored.equals(closed))
+            throw new Error("Restoring levels changed the complete roof");
+        } else {
+          await page.keyboard.press("l");
+          await page.locator('body[data-left="true"]').waitFor();
+          await settled(0);
+          const restored = await capture(`flat-${name}-left`);
+          if (!restored.equals(closed))
+            throw new Error("Frontages did not close exactly after units left");
         }
       }
       if (errors.length) throw new Error(errors.join("\n"));
 
       /** Wait for the real fade to finish and for that state to be drawn. */
-      async function settled(strength) {
-        await page.waitForFunction(
-          (s) => globalThis.__cutawayState().pointerStrength === s,
-          strength,
-        );
+      async function settled(count) {
+        await page.waitForFunction((n) => {
+          const state = globalThis.__cutawayState();
+          return (
+            state.ghostCount === n &&
+            state.ghostStrength.slice(0, n).every((s) => s === 1)
+          );
+        }, count);
+        await drawn();
+      }
+
+      /** Capture only after the production renderer has drawn the requested state. */
+      async function drawn() {
         await page.evaluate(async () => {
           await new Promise((r) =>
             requestAnimationFrame(() => requestAnimationFrame(r)),
@@ -93,7 +153,10 @@ try {
 
       /** Record the live shader state and require exact second-browser reproduction. */
       async function capture(id) {
+        if (errors.length) throw new Error(errors.join("\n"));
         const state = await page.evaluate(() => globalThis.__cutawayState());
+        if (state.ghostStrength.length !== 8)
+          throw new Error("Accepted unit slot count changed");
         const bytes = await page.screenshot({ timeout: 120000 });
         const path = `${output}/${id}.png`;
         if (repeat) {

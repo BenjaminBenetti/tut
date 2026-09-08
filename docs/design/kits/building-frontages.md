@@ -43,7 +43,7 @@ retain their original positions and clearance.
 Placement rejects a canopy that crosses a building corner, an internal edge
 inside a union footprint, another building/raised ground, or the vertical route
 of an exterior ladder. A taller prop in an outward column also rejects a mount.
-Every attachment belongs to a real interior tile at its floor: fog, inspection,
+Every attachment belongs to a real interior tile at its floor: fog, unit
 cutaway and level cuts follow that tile. The `building.` id prefix applies the
 existing cutaway material; these add no new shader or material allocation path.
 
@@ -51,11 +51,22 @@ The flat cloth palette is `env-awning-green #56735F` and
 `env-awning-cream #D8D0B8`. Other surfaces reuse the environment atlas. An early
 awning sampled grass/snow texels; the flat cloth version is the intended asset.
 
+The native Blender inspection angles are committed for every module:
+
+| Module | 45° | 135° | 225° |
+| --- | --- | --- | --- |
+| shop-awning | [45°](../renders/building.shop-awning_045.png) | [135°](../renders/building.shop-awning_135.png) | [225°](../renders/building.shop-awning_225.png) |
+| shop-awning-narrow | [45°](../renders/building.shop-awning-narrow_045.png) | [135°](../renders/building.shop-awning-narrow_135.png) | [225°](../renders/building.shop-awning-narrow_225.png) |
+| residential-entry | [45°](../renders/building.residential-entry_045.png) | [135°](../renders/building.residential-entry_135.png) | [225°](../renders/building.residential-entry_225.png) |
+| residential-window | [45°](../renders/building.residential-window_045.png) | [135°](../renders/building.residential-window_135.png) | [225°](../renders/building.residential-window_225.png) |
+| mailbox-bank | [45°](../renders/building.mailbox-bank_045.png) | [135°](../renders/building.mailbox-bank_135.png) | [225°](../renders/building.mailbox-bank_225.png) |
+| workplace-entry | [45°](../renders/building.workplace-entry_045.png) | [135°](../renders/building.workplace-entry_135.png) | [225°](../renders/building.workplace-entry_225.png) |
+
 Sources are `tools/art/models/building-*.py` wrappers over `frontage_parts.py`.
 Rebuild one with:
 
 ```sh
-blender -b --threads 4 --python tools/art/make_model.py -- \
+blender -b --threads 4 --python-exit-code 1 --python tools/art/make_model.py -- \
   --script tools/art/models/building-shop-awning.py \
   --id building.shop-awning --category buildings \
   --file building-shop-awning.glb --quality final --max-triangles 800

@@ -29,7 +29,7 @@ const OUTWARD_TURNS: Readonly<Record<Direction, Rotation>> = {
 /**
  * Adds use cues to existing exterior walls. It does not alter the map, replace
  * a wall, create cover or invent a doorway. Owner tiles carry the attachment
- * through fog, building inspection and per-storey cuts like the wall itself.
+ * through fog, unit reveal and per-storey cuts like the wall itself.
  */
 export function resolveBuildingFrontages(
   map: TacticalMap,

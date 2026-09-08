@@ -43,7 +43,7 @@ Codex seats have no Monitor tool but do have background terminals. When a Codex 
 1. **Issue.** Every unit of work is a GitHub issue with a milestone, one `area:*` label, one `type:*` label, and a `p0`–`p3` priority. Epics (`type:epic`) list child issues as a task list.
 2. **Ready** means: acceptance criteria written, dependencies merged, no open design question.
    **Assignment**: the Producer labels a Ready issue `seat:eng-N`; that seat's engineer picks it up. Management is layered: the Director manages the Producer, Tech Lead, and Art Director; the Producer (with Tech Lead input) manages engineer assignments; the Director only sizes the engineer pool.
-   **Complexity tiers**: the Tech Lead labels every engineer issue `complexity:low|medium|high`. Engineer seats run on different models and effort levels (recorded in each `seat:eng-N` label description), and the tiers are strict in both directions: `complexity:high` goes only to the high seat (`eng-3`) and queues behind it; low and medium go only to the Opus seats. A seat with no work in its tier idles rather than reaching across. This keeps the hardest problems with the most capable agent and keeps that agent's budget for them.
+   **Complexity tiers**: `complexity:low|medium|high` describes scope and guides normal routing. There is no pre-start Tech Lead sizing gate; explicit Director routing takes precedence over historical tier labels. If work is bigger than expected, the engineer reports evidence in the issue for Director re-scoping. Engineer seats run on different models and effort levels (recorded in each `seat:eng-N` label description), and the tiers are strict in both directions: `complexity:high` goes only to the high seat (`eng-3`) and queues behind it; low and medium go only to the Opus seats. A seat with no work in its tier idles rather than reaching across. This keeps the hardest problems with the most capable agent and keeps that agent's budget for them.
 3. **Branch.** `<type>/<issue-number>-<short-slug>`, e.g. `feat/42-infestation-tick`. Branch from `main`.
 4. **PR.** Title `<type>(<area>): <summary> (#<issue>)`. Body follows the template. Link the issue with `Closes #N`. Keep PRs under ~500 changed lines where possible; split otherwise.
 5. **Review.** Tech Lead reviews. Engineers address comments on the same branch. Tech Lead merges with squash when CI is green and the PR is approved.
@@ -70,10 +70,22 @@ Codex seats have no Monitor tool but do have background terminals. When a Codex 
 
 ## 4. Communication
 
-- Agents cannot message the Director. The Director reads your session screen and your handoff, and may type questions into your session. Answer them in the session and, if it matters, in your handoff.
-- Engineer ↔ Tech Lead: PR comments.
-- Engineer ↔ Producer: issue comments.
-- Anything needing the Executive Director: open or label an issue `design-decision` with a crisp question and a recommended default.
+**Anything that matters goes on GitHub.** The terminal is for starting or resuming a CLI; a message in its composer can remain unsubmitted while looking sent. Do not rely on it to deliver direction.
+
+- Work-scoped direction, claims, questions, review and evidence belong in the relevant issue or PR thread.
+- Cross-cutting rulings, process changes and status affecting multiple seats belong in [Discussion #968: Studio standing orders](https://github.com/BenjaminBenetti/tut/discussions/968). Every comment there is addressed to every seat.
+- Read the discussion at startup and after a refresh. Add it to the **existing** event watch, including when waiting for work or review. Keep one watcher, poll at most every five minutes, and retain the bounded terminal's three-hour deadline. Do not add a separate loop or cron.
+- Poll using the Director's query:
+
+```sh
+gh api graphql -f query='{repository(owner:"BenjaminBenetti",name:"tut"){discussion(number:968){comments(last:10){nodes{createdAt body}}}}}'
+```
+
+Remember which comments have been read; a new comment is relevant even without a role mention. Exit the watch, read and apply the direction, then re-arm. The query returns only the latest ten comments: on restart or if more may have arrived, page through the discussion to catch up before advancing the cursor. The Producer watch also detects edits and replies so an update does not disappear behind a timestamp-only cursor.
+
+Use the normal `**<Role>** · TUT agent` comment header in discussions too. If your queue is empty, say so in your last work thread or the standing-orders discussion before waiting; an idle seat must be visible. Map design questions go to the Map Critic and MapGen; escalate a conflict with an Executive Director ruling in its work thread.
+
+**Standing orders at the 8 September restart:** the production hold is lifted; Blocked requires a real dependency. The Map Critic → MapGen → Art loop does not consume engineer seats. GitHub Assignees identify only the Executive Director; `seat:` labels claim work, and an issue without one is unowned. Board Owner still records the responsible role. Only engineer seat labels currently exist; specialist area labels do not resolve that ownership inconsistency. Read the discussion for subsequent rulings rather than treating this snapshot as permanent.
 
 ## 5. Status digest (Producer)
 

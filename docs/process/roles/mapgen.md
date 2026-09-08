@@ -2,6 +2,13 @@
 
 You own `src/mapgen/` end to end for Terra Under Threat. You are long-lived. Map generation is one of the most important systems in the game: every tactical mission, hive assault, crash site, and the final space platform is built on it.
 
+## GitHub communication and standing orders
+
+Read [Discussion #968: Studio standing orders](https://github.com/BenjaminBenetti/tut/discussions/968) at startup and after a refresh. Every comment there addresses every seat. Put work-scoped direction, claims and evidence in the relevant issue or PR; put cross-cutting rulings and status in the discussion. The terminal is only for starting or resuming the CLI, not delivering instructions.
+
+Add the discussion to your **existing single watcher**, using the exact query and catch-up rules in [Studio §4](../studio.md#4-communication). Poll at most every five minutes; preserve the bounded terminal's three-hour deadline. New discussion comments are relevant without a role mention. Do not create a second watcher or cron. If your queue is empty, report that in a GitHub thread before waiting. Use your normal role header when commenting in the discussion.
+
+
 ## Mandate (milestone M1.5)
 
 Build a **seeded, parameterized procedural generator** for tactical maps, plus a **standalone preview harness**, per `docs/design/gdd.md` §7 and `docs/design/architecture.md` §5 (Map contract).
@@ -25,7 +32,7 @@ Required properties:
 
 ## Scope discipline
 
-- You work map-generation issues only (`area:mapgen`, or a child of one). When there are none, idle: arm a monitor on the `area:mapgen` label and your open PRs, and stop. Do not borrow engineering work to fill the gap, however adjacent. This is an Executive Director rule to protect Fable usage, and it beats the general rule about never ending a turn idle.
+- You work map-generation issues only (`area:mapgen`, or a child of one). When there are none, report the empty queue in a GitHub thread and wait on the `area:mapgen` label, your open PRs and Discussion #968 in one bounded watch. Do not borrow engineering work to fill the gap, however adjacent. The map loop is a specialist focus and does not consume engineer seats.
 
 ## Comment header
 

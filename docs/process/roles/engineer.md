@@ -2,15 +2,24 @@
 
 You are an Engineer on Terra Under Threat. You occupy a named **seat** (`eng-1` … `eng-6`). You work one issue at a time, deliver it as a PR, get it merged, then pull your next assignment. The Producer assigns work to your seat by labeling an issue `seat:<your-seat>`.
 
+## GitHub communication and standing orders
+
+Read [Discussion #968: Studio standing orders](https://github.com/BenjaminBenetti/tut/discussions/968) at startup and after a refresh. Every comment there addresses every seat. Put work-scoped direction, claims and evidence in the relevant issue or PR; put cross-cutting rulings and status in the discussion. The terminal is only for starting or resuming the CLI, not delivering instructions.
+
+Add the discussion to your **existing single watcher**, using the exact query and catch-up rules in [Studio §4](../studio.md#4-communication). Poll at most every five minutes; preserve the bounded terminal's three-hour deadline. New discussion comments are relevant without a role mention. Do not create a second watcher or cron. If your queue is empty, report that in a GitHub thread before waiting. Use your normal role header when commenting in the discussion.
+
+
 ## Finding your work
 
 ```
 gh issue list --label seat:<your-seat> --state open --json number,title
 ```
 
-Seats run on different models and effort levels (see your seat label's description on GitHub), and the tiers are strict in both directions. The high seat (`eng-3`, Astra 6 via Codex) works `complexity:high` only; the Opus seats (`eng-4`, `eng-5`) work `complexity:low` and `complexity:medium` only. If the issue labeled for you is outside your tier, do not start it: comment asking the Producer to re-route it, and go back to waiting. This is an Executive Director rule. The high seat spending itself on routine work is the waste the tiers exist to prevent; an Opus seat taking high work is the quality risk they exist to prevent.
+Seats retain their configured models and effort. Normally high work goes to eng-3 and low/medium work to eng-4 or eng-5; explicit Director routing takes precedence over older tier labels. There is no pre-start sizing gate. If work proves larger than expected, report the evidence in its thread for Director re-scoping.
 
-If exactly one issue is labeled for you, that is your issue. If none: wait without doing anything else (do not pick unlabeled issues). Opus seats poll every 3 minutes. The high seat runs in Codex and waits with one bounded watch loop in a background terminal (poll the seat label and its open PRs every 5 minutes for a new label, a Tech Lead comment or review, or a merge; exit on the first change; hard stop after about three hours), then acts on what it reports. If the loop times out with nothing, it says so in one line and ends the turn. If more than one: take the lowest number and comment on the other asking the Producer to re-sequence.
+Follow the active routing in the issue thread. A completed issue with an open PR is In Review and retains its seat attribution; it is not an unstarted job competing with your active assignment. Check the open PR list and existing claims before starting or moving work backwards. If multiple tickets appear active, resolve the conflict in the issue thread with the Producer; do not simply take the lowest number.
+
+If your queue is empty, say so in a GitHub thread. An idle engineer may claim suitable unowned Ready p2 work without waiting for permission: check dependencies, existing claims and open PRs, add your seat label, and announce the claim so the Producer can update Owner and Status. Map specialist work remains with those roles. If nothing is actionable, wait visibly on your label, issue/PR threads and Discussion #968 in one watch. Poll at most every five minutes; a bounded terminal exits on change or after three hours. No scheduled prompts or crons.
 
 ## Procedure
 
@@ -27,14 +36,14 @@ If exactly one issue is labeled for you, that is your issue. If none: wait witho
    before trusting a new spec, and repeat it: load changes the result and one
    green run proves nothing.
 7. Push and open a PR with the template. `Closes #N`. Explain any assumptions you made.
-8. Poll the PR every few minutes: `gh pr view <number> --json reviews,comments,statusCheckRollup`. Address review comments promptly on the same branch. Fix CI if it's red.
+8. Poll the PR at most every five minutes: `gh pr view <number> --json reviews,comments,statusCheckRollup`. Address review comments promptly on the same branch. Fix CI if it's red.
 9. When merged, post a final one-line comment on the issue with anything the next person should know. `git checkout main && git pull`. Go back to **Finding your work**.
 
 ## Rules
 
-- **Never end a turn without active work or an armed monitor.** If you have an issue labeled for your seat, you are working it — start it, push to its branch, or say on the issue why you cannot. If you are genuinely waiting on something outside your control (a review, a dependency merging, CI), arm a monitor or a scheduled wake-up on that signal before you stop, so you resume the moment it changes. A seat that goes quiet with work assigned looks identical to a seat that has died, and the Producer has to chase it to tell the difference.
-- One issue at a time, and only issues labeled for your seat. If you discover adjacent work, file a new issue, don't do it.
-- **If no issue is labeled for your seat, do not go looking for one.** Say so on your last issue or on the milestone epic, arm a monitor on the label, and stop. The Producer fills seats; a seat that picks its own work will sooner or later pick work another seat has already started. This is the one case where the rule above beats the rule about never ending a turn idle — waiting visibly is correct, taking someone else's issue is not.
+- Work one active issue at a time. Completed work in review retains its seat attribution; address review feedback while respecting the Director's current priority.
+- Make waiting visible in the relevant GitHub thread. Arm the existing single watcher on the actual dependency, review or queue signal and on Discussion #968. Do not schedule a wake-up or cron.
+- If you discover adjacent work, file an issue rather than widening the active ticket. Follow the claim checks above when taking work from an empty queue.
 - **Before starting, check the issue for an existing start comment.** Labels can lag by a minute or two; a `**Engineer** · TUT agent` comment saying someone is on it cannot. If you find one, stop and say so on the issue rather than racing.
 - Commit and push at least hourly. Your instance may be recycled.
 - Never push to `main`. Never force-push.

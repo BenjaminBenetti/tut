@@ -3,26 +3,27 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-08 19:01 UTC)
+## Status Digest (2026-09-08 19:18 UTC)
 
-**Production is running; the hold ended at restart.** Map seats focus on the Map Quality Loop; engineers work alongside it. Against main `297b770`: **23 open issues, 2 seat-owned and 21 unowned**. GitHub Assignees remain empty. A board Owner role records responsibility but does not replace a `seat:` label as ownership.
+**Production is running; the hold ended at restart.** Map seats focus on the Map Quality Loop; engineers work alongside it. Against main `d85ecd9`: **23 open issues, 3 seat-owned and 20 unowned**. GitHub Assignees remain empty. A board Owner role records responsibility but does not replace a `seat:` label as ownership.
 
 | Active work | Seat ownership / board Owner | Status |
 |---|---|---|
 | #961 p1 layer controls | `seat:eng-5`, Opus 5/max / Engineer | In Progress; direct Executive Director job, no sizing prerequisite |
-| #735 p2 guard audit | `seat:eng-4`, Opus 5/max / Engineer | In Progress; inventory first, existing scope splits above 40 entries |
+| #735 p2 guard audit | `seat:eng-4`, Opus 5/max / Engineer | In Progress; inventory complete, Slice A active (25 validator guards); B/C remain |
+| #751 p2 defeat panel | `seat:eng-3`, Astra 6/xhigh / Engineer | In Progress, Director assignment; factual correction against existing defeat rule |
 | #947 p1 cursor cutaway | Unowned / Art Director | In Progress; claimed by Art, before #911 |
 | #917 p2 rural fences | Unowned / MapGen | In Progress; aligned boundary repair |
 
 **#950 is Done through #962 (`54cdb1c`), retaining `seat:eng-5`.** It was complete and In Review before #961 became active; it never returned to the queue. One active job per seat does not erase attribution on completed work. Check open PRs and claim threads before moving any ticket backwards. No pre-start Tech Lead sizing gate; Tech Lead reviews and merges. #961 steps **one storey = two engine layers** (`STOREY_LAYERS = 2`) per keypress, with no half-storey stops; engine coordinates retain half-layer units.
 
-**Unowned — every open issue without a seat label:** #447, #450, #591, #594, #673, #701, #712, #734, #740, #751, #760, #787, #793, #869, #911, #917, #945, #947, #949, #959, #960. Specialist role claims remain visible in Owner; they do not make these seat-owned. #949 is Ready for the next free Opus seat. eng-3 (Astra 6/xhigh) is idle; the available high issue #447 needs hive design answers. No new M3 decomposition.
+**Unowned — every open issue without a seat label:** #447, #450, #591, #594, #673, #701, #712, #734, #740, #760, #787, #793, #869, #911, #917, #945, #947, #949, #959, #960. Specialist role claims remain visible in Owner; they do not make these seat-owned. #949 is Ready for the next free Opus seat. eng-3 (Astra 6/xhigh) now has Director-assigned #751; #447 still needs hive design answers. No new M3 decomposition.
 
-**Real dependencies:** #945 follows #917; #959 follows related #945; Art #911 follows #947 and needs MapGen agreement on footprint/16 clear start-and-boarding tiles; #960 follows Art #911. #760 awaits #447; design decisions remain on #447/#591/#594/#712/#734/#751. #787/#869 are Backlog, not pause-blocked. Other Ready work: Art #450/#673/#740/#793, MapGen #701. Four Critic tickets (#917/#945/#959/#960), cap five under merged #912.
+**Real dependencies:** #945 follows #917; #959 follows related #945; Art #911 follows #947 and needs MapGen agreement on footprint/16 clear start-and-boarding tiles; #960 follows Art #911. #760 awaits #447; design decisions remain on #447/#591/#594/#712/#734. #787/#869 are Backlog, not pause-blocked. Other Ready work: Art #450/#673/#740/#793, MapGen #701. Four Critic tickets (#917/#945/#959/#960), cap five under merged #912.
 
-**Stale / delivered:** #869's old parapet examples predate #926/#940; retiring that subclaim awaits a Director ruling, while the latent wall-crossing hazard remains. #514 is Done: all 16 children closed after #457/#955. Board repairs include merged #944 and now #950/#962/#963 → Done. Open PR #964 is a fresh Tech Lead handoff (~9 minutes old); this update adds the Producer handoff. No other remaining open issue proved fully delivered in the audit.
+**Stale / delivered:** #869's old parapet examples predate #926/#940; retiring that subclaim awaits a Director ruling, while the latent wall-crossing hazard remains. #514 is Done: all 16 children closed after #457/#955. Board repairs include merged #944 and now #950/#962/#963 → Done. Open PR #969 is the fresh Tech Lead channel handoff; this process/handoff update is next. #965 and Critic evidence #966 have merged and are Done. No other remaining open issue proved fully delivered in the audit.
 
-**Release / risks:** latest tag v0.2.12 (`121f397`). Subsequent #936/#940, #753/#948, #937/#943, #457/#955 and #950/#962 are merged but untagged. MapGen still owes ADR 0004 §7's waterfront row. Critic accepted improved settlements/infantry height in inspected blocks; mech outdoor-height loss (9,271→5 tiles) remains. #947/#961 share the tactical scene host: coordinate integration without inventing a blocking dependency.
+**Release / risks:** latest tag v0.2.12 (`121f397`). Subsequent #936/#940, #753/#948, #937/#943, #457/#955 and #950/#962 are merged but untagged. MapGen still owes ADR 0004 §7's waterfront row. Critic evidence #966 also confirms #937 room visibility and roof reclosure, with stipple/dim interiors remaining. Critic accepted improved settlements/infantry height in inspected blocks; mech outdoor-height loss (9,271→5 tiles) remains. #947/#961 share the tactical scene host: coordinate integration without inventing a blocking dependency.
 
 **Milestones, closed/total issues:** M0 13/13 · M1 64/65 · M1.5 41/50 · M2 49/50 · M2.5 31/36 · M3 1/4 · Arsenal 1/3 · Bestiary 1/1 · Tech Debt 6/8. Producer Astra 6/high; MapGen/Art Astra 6/xhigh; Critic Astra 6. One bounded five-minute watch, three-hour stop; one fixed head per handoff PR.
 <!-- digest:end -->
@@ -51,12 +52,12 @@ The role column below records routing responsibility; only rows with a `seat:` l
 | #949 p2 | Tech Lead, next free Opus seat | Ready / low; objective labels and meaningful overflow fixture |
 | #950 p2 | `seat:eng-5`, completed | Done via #962; retained attribution, schema-v17 migration and city-name rendering |
 | #961 p1 | `seat:eng-5` | In Progress; one storey/two engine layers per keypress, no sizing gate; Director-approved in 5590139352 |
-| #735 p2 | eng-4 | In Progress: bounded guard inventory; TL selects slices if above 40 entries |
+| #735 p2 | `seat:eng-4` | Inventory complete; Slice A (25 validators) active, B (10)/C (8) remain |
 | #450 p2 | Art Director | Ready: true Earth-coordinate texture, remove eleven marker nudges |
 | #594 p2 | Art Director | Blocked on utility-thumbnail row design choice |
 | #591 p2 | Director | Blocked on tree sight-blocking decision using current-scale evidence |
 | #734 p2 | Director | Blocked on Executive Director difficulty targets |
-| #751 p2 | Director | Blocked on defeat-condition versus Earth-overrun copy decision |
+| #751 p2 | `seat:eng-3` | In Progress; existing defeat rule/factual panel correction; wider campaign decisions do not block |
 | #869 p2 | MapGen | Backlog latent kerb/connectivity hazard; old parapet visual subclaim requires reproduction or retirement ruling |
 | #514 epic | Producer, completed | Done: all 16 children verified closed after #955 |
 | #793 p3 | Art Director | Ready residual mist-cost profiling; allocation/CI repairs already shipped |
@@ -72,9 +73,11 @@ The role column below records routing responsibility; only rows with a `seat:` l
 
 **Evidence limits.** The 1.6-unit VFX heuristic is gone through #955; the separate kerb/connectivity repair hazard remains. The old parapet examples are not asserted to reproduce after all artificial feature families were disabled. Main now has radius 4 / opacity 0.175 through #943; cursor-driven reveal is the remaining #947 feature. The Critic's post-#936 height verdict is bounded to the inspected infantry-accessible blocks; it does not erase MapGen's measured loss of mech-accessible outdoor height. This pass changes process records only, not game code or visual acceptance. Historical measurements and shutdown instructions below are superseded by this restart record.
 
-## Current watch operation (2026-09-06)
+## Current watch operation (2026-09-08)
 
-The session watcher is `.producer/watch.py` (git-ignored workspace scratch). The pre-pause process was gone at restart; one bounded background terminal is re-armed after grooming. It is read-only and uses a process lock to enforce one watcher. `watch-state.json` keeps the cursor and poll time across re-arms; `watch-result.json` caches the event payload for grooming. The four event classes and self-comment exclusion passed `--selftest`. It never assigns seats or runs the inherited autofill/groom scripts. On API errors it exits visibly rather than retrying rapidly. These session files are not guaranteed to survive a replacement checkout; reconstruct this bounded watch if absent, following the standing rule above. Keep tooling changes out of handoff PRs.
+[Discussion #968](https://github.com/BenjaminBenetti/tut/discussions/968) is the standing-orders channel: all comments are relevant to every seat. Work-scoped direction stays in issue/PR threads; the terminal starts or resumes the CLI. The studio process and every role brief now carry the channel.
+
+The session watcher is `.producer/watch.py` (git-ignored workspace scratch). The pre-pause process was gone at restart; one bounded background terminal is re-armed after grooming. It is read-only and uses a process lock to enforce one watcher. `watch-state.json` keeps the cursor and poll time across re-arms; `watch-result.json` caches the event payload for grooming. The original four event classes plus discussion comments/edits/replies and self-comment exclusion passed `--selftest`; a paginated catch-up check retained older comments and reply continuation. Discussion polling extends the Director’s last-ten-comments GraphQL query with identity, edit and reply fields. All comment pages are read so bursts and edits are not lost. The live query passed. It remains one five-minute poller with a three-hour deadline. It never assigns seats or runs the inherited autofill/groom scripts. On API errors it exits visibly rather than retrying rapidly. These session files are not guaranteed to survive a replacement checkout; reconstruct this bounded watch if absent, following the standing rule above. Keep tooling changes out of handoff PRs.
 
 **Publication cadence:** push a handoff PR once and leave its head fixed until CI finishes and Tech Lead merges it. Batch subsequent digest changes for the next PR; groom the board immediately. Tech Lead [comment 5559186098](https://github.com/BenjaminBenetti/tut/pull/877#issuecomment-5559186098) identified four pushes in 25 minutes cancelling near-finished e2e runs. On #877, e2e took 9m53s; allow roughly 12 minutes for the full CI path instead of restarting it. A CI failure requiring a fix is different from a routine status update. Record publication state and pending notes in `.producer/` scratch; do not commit that tooling.
 

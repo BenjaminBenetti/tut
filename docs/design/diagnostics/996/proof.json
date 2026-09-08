@@ -1,0 +1,44 @@
+{
+  "captureCodeCommit": "31f90c0ea4fe6879d5251743885f07d17acafe3c",
+  "baseCommit": "81c9c5dcbdd3e0030472d67c1cc84ea104363931",
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "renderer": "Playwright Chromium / SwiftShader; unmodified PNGs",
+  "repeatedFilesByteIdentical": true,
+  "sha256OfBothRuns": {
+    "hillside.png": "175c34a2f5d14f23c7bb425d8512dd313bf744b1203660804ab75627e0b6cefd",
+    "layer-ground.png": "d259e4b05e9ec1ebc954d82f565c826e4c06526c9c9f4924879d3d330ec4ad6d",
+    "layer-one-down.png": "f16ac8d15011ad48f5753aeb4c9fab54322d801daf75f44e3f40924b822d22f0",
+    "layer-top-after-up.png": "38ba3c7b7237e67648ff6dcb69b75ecd2155f900649e2c433a61553481f262ff",
+    "layer-top.png": "38ba3c7b7237e67648ff6dcb69b75ecd2155f900649e2c433a61553481f262ff",
+    "layer-unit-above-cut.png": "45e7be4f507fd91a70d1e259ed10d2b57297a889a0cc9354d3ae60e6e1a93d29"
+  },
+  "bothTopNoOpPairsByteIdentical": true,
+  "initialTopPreservedAcrossRoofFix": true,
+  "baselineHarnessCommit": "5cead6e",
+  "baselineRepeatControlsByteIdentical": true,
+  "baselineControlSha256": {
+    "map-lab/04-waterfront-boundary-control.png": "346d3186f3dbe420f56025ab308ab0773274e9a5f80871e1c16b49dde84b0761",
+    "art/943-flat-empty-closed.png": "ea9ea5f2c3ca4b6cae72f3146dc972e63c888830dda40bc59771849d4d7d389b",
+    "art/982-hover.png": "589a055131389b5c11462ef171ac693f7c4c4efd43b740bf1d9943b5a36870d9",
+    "art/982-open-ground.png": "4b38773ddbe968750ba5f536d35756219d8d8e4084300e29181c552c583c3f90",
+    "art/982-overlap.png": "8aeebdb1c6f240cce1c7081e705718c3c90b4f5840059879b0ca0a1df70dfc86",
+    "game-over/defeat.png": "2a1747801f6fb6fa4cc79654d45821ef43aacf46c69d63a8da47698a18ca85c5",
+    "game-over/victory-stub.png": "368d10e994f7b7ecb7d23d18475a388ec5c7166db2125f32b76842f72c155bba"
+  },
+  "historicalControlsAlsoExact": [
+    "#917 waterfront boundary",
+    "#943 flat empty/closed roof",
+    "#751 victory"
+  ],
+  "historical982Difference": "3.292%: rural fences merged after the recorded bc2f47f runtime; current repetitions are exact",
+  "validation": {
+    "unit": "2258 passed, 1 existing skip; --maxWorkers=4",
+    "browser": "CI=1 new regressions repeated twice: 4 passed, no flaky or retries",
+    "sim": "7 passed",
+    "other": "typecheck, lint/format, build passed"
+  },
+  "evidenceDebt": "#961 top/no-op pair regenerated here; eng-5 owes #978 flat-map control after merge"
+}

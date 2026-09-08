@@ -211,6 +211,10 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
     // The map art and the unit models are independent fetches; running
     // them together keeps the first frame from waiting on both in turn.
     await Promise.all([builder.loadMapModels(), this.placeUnits(mission)]);
+    // Unit count is available before map art. Captures need both (#996).
+    if (this.attached?.scene === scene) {
+      document.body.dataset.tacticalReady = "true";
+    }
   }
 
   /** Plays `events`, then moves the units to match `mission` and refreshes the overlays. */
@@ -329,6 +333,7 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
     attached.builder.dispose();
     this.deps.onHooks?.(undefined);
     delete document.body.dataset.tacticalUnits;
+    delete document.body.dataset.tacticalReady;
     delete document.body.dataset.tacticalStorey;
     delete document.body.dataset.tacticalStoreys;
   }

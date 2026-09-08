@@ -1,6 +1,12 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "@playwright/test";
 
+import {
+  drawnFrame,
+  tacticalModelsReady,
+  tapCameraKey,
+} from "./capture-frame.helper";
+
 import type { TacticalTestHooks } from "../src/ui/model/tactical-intent";
 
 /** The page's global object as seen from `page.evaluate`. */
@@ -10,7 +16,8 @@ interface HookGlobal {
 }
 
 /** Where the frames go. */
-const FRAMES = "docs/design/tactical-layer-cut-hillside";
+const FRAMES =
+  process.env.LAYER_FRAMES ?? "docs/design/tactical-layer-cut-hillside";
 
 /** A tile in the mission's map. */
 interface Tile {
@@ -59,6 +66,7 @@ async function launch(page: Page, seed: string): Promise<number> {
   await expect(page.locator("#tactical-viewport canvas")).toBeVisible();
   await expect(body).toHaveAttribute("data-tactical-units", /^[1-9]\d*$/);
   await expect(body).toHaveAttribute("data-tactical-storeys", /^[1-9]\d*$/);
+  await tacticalModelsReady(page);
   return Number(await body.getAttribute("data-tactical-storeys"));
 }
 
@@ -122,22 +130,7 @@ async function tileAt(page: Page, tile: Tile): Promise<Point | undefined> {
   );
 }
 
-/**
- * Presses `key` once and returns how far the view moved.
- *
- * **Presses once and fails rather than retrying.** The first version of
- * this retried until it saw movement, which looked robust and was the
- * opposite: a press that registered slowly got pressed again, and both
- * eventually landed, so the camera moved two taps instead of one and
- * the frame came out somewhere else. Two runs of identical code differed
- * by 27 % of their pixels that way. A press that genuinely does not
- * arrive is a broken capture and should say so, not be compensated for.
- *
- * @param page - The page holding the live mission.
- * @param key - The pan key to press.
- * @param at - Where the framed thing is, in client pixels.
- * @returns How far the view moved.
- */
+/** Delivers one atomic camera tap, then verifies the rendered movement. */
 async function tapOnce(
   page: Page,
   key: string,
@@ -147,27 +140,12 @@ async function tapOnce(
   if (!before) {
     throw new Error(`cannot pan: nothing to measure before pressing ${key}`);
   }
-  await page.keyboard.press(key);
-  // Wait for the rig to STOP, not merely to start. It eases toward its
-  // target, so returning on the first pixel of movement hands the caller
-  // a mid-ease reading; the loop above then decides its next tap from a
-  // position the camera is still leaving, and takes a different path on
-  // every run.
-  let last: Point | undefined;
-  for (let frame = 0; frame < 60; frame++) {
-    await page.waitForTimeout(50);
-    const now = await at();
-    if (!now) {
-      continue;
-    }
-    const movedAtAll = Math.hypot(now.x - before.x, now.y - before.y) > 1;
-    const stopped = last && Math.hypot(now.x - last.x, now.y - last.y) < 0.01;
-    last = now;
-    if (movedAtAll && stopped) {
-      return { x: now.x - before.x, y: now.y - before.y };
-    }
+  await tapCameraKey(page, key);
+  const now = await at();
+  if (!now || Math.hypot(now.x - before.x, now.y - before.y) <= 1) {
+    throw new Error(`pressing ${key} moved the camera nowhere`);
   }
-  throw new Error(`pressing ${key} never settled within 3 s`);
+  return { x: now.x - before.x, y: now.y - before.y };
 }
 
 /**
@@ -223,32 +201,11 @@ async function centreOn(page: Page, tile: Tile): Promise<void> {
         : "w";
     await tapOnce(page, key, at);
   }
-  // Settle before anyone screenshots. The rig eases toward its target
-  // rather than jumping, so returning the moment the loop is inside its
-  // tolerance shoots a moving camera: dropping this wait is what made
-  // the two "top" frames — the same view either side of a keypress that
-  // does nothing — stop being byte-identical.
-  await expect
-    .poll(
-      async () => {
-        const a = await at();
-        await page.waitForTimeout(120);
-        const b = await at();
-        return a && b ? Math.hypot(a.x - b.x, a.y - b.y) < 0.5 : false;
-      },
-      { timeout: 5000 },
-    )
-    .toBe(true);
 }
 
 /** Screenshots the viewport once the scene has drawn the change. */
 async function shoot(page: Page, path: string): Promise<void> {
-  await page.evaluate(
-    () =>
-      new Promise<void>((resolve) => {
-        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
-      }),
-  );
+  await drawnFrame(page);
   await page.locator("#tactical-viewport").screenshot({ path });
 }
 
@@ -256,16 +213,9 @@ async function shoot(page: Page, path: string): Promise<void> {
  * The #978 pair: a map whose buildings stand at different heights, cut
  * to the ground floor, framed on the building standing highest.
  *
- * **Both frames are drawn in one run**, on one camera, seconds apart.
- * That is deliberate and it is the Director's condition for accepting
- * this evidence: the capture harness is not reproducible across runs
- * (#996), so a pair taken in two runs cannot tell a change from the
- * harness. Taken together they share whatever noise this run has, and
- * the difference between them is the change.
- *
- * `before` is the old rule reproduced through `applyHeightCut` — one
- * height for the whole map, anchored to the lowest building — not a
- * mock of it. `after` is what the build actually does.
+ * Both frames share one camera and complete model loading. The first
+ * applies the old height cut; the second restores the per-building cut.
+ * The shared capture helper also makes both reproducible across runs.
  *
  *   CAPTURE=1 pnpm exec playwright test e2e/layer-cut-hillside-screenshot.spec.ts
  */

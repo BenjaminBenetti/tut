@@ -1,6 +1,12 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "@playwright/test";
 
+import {
+  drawnFrame,
+  tacticalModelsReady,
+  tapCameraKey,
+} from "./capture-frame.helper";
+
 import type { TacticalTestHooks } from "../src/ui/model/tactical-intent";
 
 /** The page's global object as seen from `page.evaluate`. */
@@ -32,7 +38,7 @@ interface Anchor {
 const MAX_DAYS = 40;
 
 /** Where the committed frames go. */
-const FRAMES = "docs/design/tactical-layer-control";
+const FRAMES = process.env.LAYER_FRAMES ?? "docs/design/tactical-layer-control";
 
 /** The autosave slot every write below goes through. */
 const SAVE_KEY = "tut:save:autosave";
@@ -72,6 +78,7 @@ async function launch(page: Page, seed: string): Promise<number> {
   await expect(page.locator("#tactical-viewport canvas")).toBeVisible();
   await expect(body).toHaveAttribute("data-tactical-units", /^[1-9]\d*$/);
   await expect(body).toHaveAttribute("data-tactical-storeys", /^[1-9]\d*$/);
+  await tacticalModelsReady(page);
   return Number(await body.getAttribute("data-tactical-storeys"));
 }
 
@@ -87,14 +94,9 @@ async function launch(page: Page, seed: string): Promise<number> {
  * @param page - The page holding the live mission.
  * @param path - Where to write the PNG.
  */
-async function shoot(page: Page, path: string): Promise<void> {
-  await page.evaluate(
-    () =>
-      new Promise<void>((resolve) => {
-        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
-      }),
-  );
-  await page.locator("#tactical-viewport").screenshot({ path });
+async function shoot(page: Page, path: string): Promise<Buffer> {
+  await drawnFrame(page);
+  return page.locator("#tactical-viewport").screenshot({ path });
 }
 
 /** Steps the view `delta` storeys through the same path the keys take. */
@@ -222,10 +224,7 @@ async function panTo(
     x: box.x + box.width * where.x,
     y: box.y + box.height * where.y,
   };
-  const tap = async (key: string): Promise<void> => {
-    await page.keyboard.press(key);
-    await page.waitForTimeout(60);
-  };
+  const tap = (key: string): Promise<void> => tapCameraKey(page, key);
   await tap("d");
   const afterD = await at();
   await tap("s");
@@ -248,22 +247,6 @@ async function panTo(
       await tap(taps > 0 ? "s" : "w");
     }
   }
-  // Settle before anyone screenshots. The rig eases toward its target
-  // rather than jumping, so a fixed wait after the last tap is a guess:
-  // the first capture of this spec came back with the "one storey down"
-  // frame shot from a different camera than the one above it, because
-  // the pan was still arriving. Wait for the projection to stop moving.
-  await expect
-    .poll(
-      async () => {
-        const a = await at();
-        await page.waitForTimeout(120);
-        const b = await at();
-        return a && b ? Math.hypot(a.x - b.x, a.y - b.y) < 0.5 : false;
-      },
-      { timeout: 5000 },
-    )
-    .toBe(true);
 }
 
 /**
@@ -312,6 +295,7 @@ async function placeUnit(
   await expect(body).toHaveAttribute("data-screen", "tactical");
   await expect(page.locator("#tactical-viewport canvas")).toBeVisible();
   await expect(body).toHaveAttribute("data-tactical-units", /^[1-9]\d*$/);
+  await tacticalModelsReady(page);
 }
 
 /**
@@ -366,14 +350,17 @@ test("captures the layer control for review", async ({ page }) => {
   await expect(readout).toHaveText(`${storeys} / ${storeys}`);
 
   // Uncut: the map as it has always looked.
-  await shoot(page, `${FRAMES}-top.png`);
+  const top = await shoot(page, `${FRAMES}-top.png`);
 
   // The known-good. Up from the top cannot go anywhere, so the frame
   // either matches the one above exactly or the control is changing
   // something it should not.
   await step(page, 1);
   await expect(readout).toHaveText(`${storeys} / ${storeys}`);
-  await shoot(page, `${FRAMES}-top-after-up.png`);
+  const unchanged = await shoot(page, `${FRAMES}-top-after-up.png`);
+  expect(unchanged.equals(top), "a no-op must preserve exact PNG bytes").toBe(
+    true,
+  );
 
   // One storey down: the transition off the top.
   await step(page, -1);

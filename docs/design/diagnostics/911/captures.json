@@ -1,0 +1,71 @@
+{
+  "fixture": "Constructed art fixture; site reservation remains MapGen work",
+  "source": "tools/art/preview/capture-dropship.mjs",
+  "supportLayer": 0,
+  "groundTop": 0.15,
+  "hull": {
+    "minX": -2,
+    "minZ": -2,
+    "width": 5,
+    "depth": 7,
+    "pivot": [0.5, 0.15, 1.5],
+    "yaw": 0
+  },
+  "boarding": {
+    "minX": -1,
+    "minZ": -6,
+    "width": 4,
+    "depth": 4,
+    "count": 16
+  },
+  "viewport": [960, 960],
+  "pixelsPerUnit": 64,
+  "captures": [
+    {
+      "file": "rural-yaw45.png",
+      "kind": "rural",
+      "yaw": 45,
+      "runs": [
+        "746b20e7588f240f23e11252a4628d90bff7fa7a28ab607298ccd6f4325590ca",
+        "746b20e7588f240f23e11252a4628d90bff7fa7a28ab607298ccd6f4325590ca",
+        "746b20e7588f240f23e11252a4628d90bff7fa7a28ab607298ccd6f4325590ca"
+      ],
+      "byteIdentical": true
+    },
+    {
+      "file": "rural-yaw225.png",
+      "kind": "rural",
+      "yaw": 225,
+      "runs": [
+        "67d65617cdd44a87852cbd575e4cbcf300d8db20a57db10b8b8e9e592a2150fa",
+        "67d65617cdd44a87852cbd575e4cbcf300d8db20a57db10b8b8e9e592a2150fa",
+        "67d65617cdd44a87852cbd575e4cbcf300d8db20a57db10b8b8e9e592a2150fa"
+      ],
+      "byteIdentical": true
+    },
+    {
+      "file": "town-yaw45.png",
+      "kind": "town",
+      "yaw": 45,
+      "runs": [
+        "b1fb267468e81343f8c610b9b05f203ac44326e0cacf8b2151f8554a553ffc12",
+        "b1fb267468e81343f8c610b9b05f203ac44326e0cacf8b2151f8554a553ffc12",
+        "b1fb267468e81343f8c610b9b05f203ac44326e0cacf8b2151f8554a553ffc12"
+      ],
+      "byteIdentical": true
+    },
+    {
+      "file": "town-yaw225.png",
+      "kind": "town",
+      "yaw": 225,
+      "runs": [
+        "0e0aa67c9889ae5e26cf1b9b0bdbd1f3ae4541711095a997617d2599515a592a",
+        "0e0aa67c9889ae5e26cf1b9b0bdbd1f3ae4541711095a997617d2599515a592a",
+        "0e0aa67c9889ae5e26cf1b9b0bdbd1f3ae4541711095a997617d2599515a592a"
+      ],
+      "byteIdentical": true
+    }
+  ],
+  "modelSha256": "2034ded38848cd27e4d0872657bf8db9180314d29b95f00faa824bf89a60e238",
+  "baseCommit": "3ec7e267743c1ffd520e2b15026d851d3dcec536"
+}

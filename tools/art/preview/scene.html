@@ -24,7 +24,7 @@
   <body>
     <script type="module">
       // Composite scene review: ?layout=<url of a JSON file> lists placements
-      // { model: "assets/models/...glb", x, z, yaw? , y? }, plus optional
+      // { model: "assets/models/...glb", x, z, yaw? , y?, scale?: {x,y,z} }, plus optional
       // { px, yaw, cx, cz, size }. Isometric camera at 35.264°, same lights as harness.html.
       import * as THREE from "three";
       import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
@@ -101,6 +101,7 @@
         const node = gltf.scene.clone(true);
         node.position.set(p.x, p.y ?? 0, p.z);
         node.rotation.y = ((p.yaw ?? 0) * Math.PI) / 180;
+        if (p.scale) node.scale.set(p.scale.x, p.scale.y, p.scale.z);
         node.traverse((c) => {
           if (c.isMesh) {
             c.castShadow = true;

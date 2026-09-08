@@ -1,7 +1,8 @@
 # Handoff: Map Critic
 
-2026-09-08 — resumed after the two-day pause; 36 fresh maps reviewed,
-#936 visually accepted, #937 merged during the bounded watch and re-checked.
+2026-09-08, v0.2.13 follow-up — #917 visually accepted on current main;
+three open Critic tickets. Cutaway/layer re-check and the next seed survey
+are in progress; completed proof is committed before further surveying.
 
 ## Calibration and boundaries
 
@@ -12,9 +13,10 @@ orders in #968. Terminal messages can remain unsubmitted. Read the thread
 on refresh and include its exact query in each authorised watch. Map design
 belongs to Map Critic and MapGen; the Director routes Executive Director
 rulings, sets acceptance criteria and judges frames. Existing deliberate
-rulings still stand. Ownership uses seat labels for engineers and role/area
-for specialists; the Executive Director's assignable account is not an agent
-claim. There is no production hold.
+rulings still stand. Ownership uses `seat:mapgen` and `seat:art-director` for the existing
+specialists as well as engineer seat labels; area labels remain intake/domain
+and Board Owner remains role accountability. The Executive Director’s
+assignable account is not an agent claim. There is no production hold.
 
 The Executive Director trusts this seat to file evidenced findings. Cap:
 **five open Critic tickets**. File rather than park for taste. Escalate only
@@ -39,27 +41,21 @@ explain a picture. Route to both areas when cause cannot be assigned by eye.
 
 ## Current ranked queue
 
-Four open Critic tickets at this checkpoint:
+Three open Critic tickets at this checkpoint:
 
-1. **[#917](https://github.com/BenjaminBenetti/tut/issues/917), p2 — MapGen:**
-   isolated rural fence panels describe no boundary. MapGen claimed this
-   repair on resumed main `360778a`; it is active work. Its #968 update
-   reports implementation and real before/after frames prepared, final
-   validation running; no merged repair has been inspected yet. Re-check the original
-   coastal/rural/small `mc-opening-01`, `(5,2,22)`, two angles after merge.
-   Preserve recognisable timber fences and low cover in plausible boundaries.
-2. **[#945](https://github.com/BenjaminBenetti/tut/issues/945), p2 — MapGen + Art:**
+1. **[#945](https://github.com/BenjaminBenetti/tut/issues/945), p2 — MapGen + Art:**
    natural ground materials meet in conspicuous squares/right angles.
    Filed this turn with coastal two-angle and snowy corroborating evidence.
-   Producer queued it behind active #917. This concerns material contact,
+   MapGen has claimed it and posted a cause assessment; #917 has merged.
+   Producer’s earlier uncertainty about pickup was explicitly cleared in #968. This concerns material contact,
    not the settled slope/crease geometry.
-3. **[#959](https://github.com/BenjaminBenetti/tut/issues/959), p2 — MapGen + Art:**
+2. **[#959](https://github.com/BenjaminBenetti/tut/issues/959), p2 — MapGen + Art:**
    temperate rural trails disappear into broad dirt patches. Fresh P01/P02,
    `mc-resume-01`, temperate/rural/small, focus `(13,2,24)`, 45 px/tile,
    initial/one E turn; P03 snowy contrast control. Focus is the camera
    reference on the ridge above the trail. #204's snow/desert repair is
    preserved. Coordinate with #945 if one repair serves both outcomes.
-4. **[#960](https://github.com/BenjaminBenetti/tut/issues/960), p2 — Art + MapGen:**
+3. **[#960](https://github.com/BenjaminBenetti/tut/issues/960), p2 — Art + MapGen:**
    city frontages and plots lack recognisable differences in everyday use.
    I01/I02 `mc-resume-01`, temperate/city/medium, `(43,2,39)`;
    I03/I04 `mc-opening-02`, same settings, `(23,1,34)`, both pairs at
@@ -75,17 +71,26 @@ ladder. That is a bounded visual judgement, not proof that every route works.
 MapGen's mech outdoor-height cost is distinct from infantry building access;
 #787 already owns future big-city overpasses. Do not duplicate it.
 
-Continue by checking #917 when merged and the ranked repairs above. A fifth
-slot is available; do not invent a defect to fill it. Interior lighting is
+Continue the ranked repairs above. Two slots are available; do not invent a defect to fill it. Interior lighting is
 still a future play observation requested by the Director in #916 history:
 current control interiors are dim, but this pass establishes the cutaway
 improvement, not a general lighting failure or sign-off. Wider prop/plot
 context is now included in #960 rather than held as a taste question.
 Report if either owner begins queueing instead of working. At restart,
-MapGen actively claimed #917 and Art completed #937; a queued successor is
+MapGen is on #945; Art awaits the #911 placement agreement before modeling
+(#960 follows), and #947 has merged; a queued successor is
 not evidence that either seat has stalled.
 
 ## Merged fixes: render verdicts
+
+- **#917 / #973**, merge `07b40cd`: **picture improved** on main `5cead6e`.
+  Nine fresh frames show the beach fragments gone, trail/plot runs in context,
+  clear entrance approaches and preserved waterfront. [Posted verdict](https://github.com/BenjaminBenetti/tut/issues/917#issuecomment-5591954741).
+  [Evidence](../design/diagnostics/map-critic-v0213/README.md), immutable
+  `132a5cb8305156947e30ca1c90b536e1dc6a06e9`. The visible open garden end
+  ranks below all three live tickets: it marks one legible plot edge and
+  does not require a separate defect ticket in this case. This is not a
+  blanket exemption for arbitrary stubs, nor a request to enclose every plot.
 
 - **#906 / #913:** snowy/desert bases now have visible support meeting the
   land, checked from two angles and against an already-grounded control.
@@ -168,10 +173,10 @@ owns isolated desert palms; #712 records temperate boulder intent; #281's
 cover-density ruling stands. Trees' visible boundaries do not establish
 LOS protection (#591).
 
-**#947 is the owned cursor-cutaway gap**, active with Art ahead of #911.
+**#947 / #982 is merged** as `3ea2fb7`, before Art’s #911 work.
 The Executive Director wants hover to reveal interiors without a squad
-inside. After merge, judge hovered, pointer/squad overlap and open-ground
-roof-preservation controls. Art owns the parameters; the Director judges
+inside. Current-main hovered, pointer/squad overlap and open-ground
+roof-preservation controls are being captured and judged now. Art owns the parameters; the Director judges
 the frames. The accepted #937 verdict is squad-only and does not certify
 this new pointer behavior. Do not re-file its absence.
 
@@ -207,7 +212,7 @@ closed survey #905 with the template's closing keyword. Never push main or
 merge. Every GitHub comment starts with `**Map Critic** · TUT agent` alone.
 A model-capacity error is transient: wait/retry, never change model.
 
-## Watches — repair watch completed; standing-orders watch active
+## Watches — prior events consumed; current bounded re-arm below
 
 The resumed watch was session `72679`: **17:47:49–18:07:51 UTC on 2026-09-08**,
 300-second polls, hard deadline **20:47:49 UTC**. It exited on #943's
@@ -230,7 +235,9 @@ standing-orders documentation PR #970. No visual repair merged in that batch.
 The exact query ran successfully.
 
 The same bounded subscription was re-armed from that consumed snapshot at
-19:22:13, **active session `59079`**. Its deadline was not extended; the old
+19:22:13, **session `59079`**, which exited at 19:27:18 on #917’s
+prepared-frames report, #960’s Art queue acknowledgement and #968 updates.
+Those events have been read; this session is completed. Its deadline was not extended; the old
 terminal is finished, so only one is active. It uses 300-second polls and
 exits on the first new
 standing-orders comment, work-thread comment or merged map/art PR. It watches
@@ -253,3 +260,39 @@ up the event in its GitHub thread, inspect any merged visual repair, and
 retain #968 in future authorised watches. No cron was installed. Capacity,
 websocket and transport failures remain retryable weather; do not change
 model or redesign the loop in response.
+
+## Current work checkpoint — 21:15 UTC
+
+PR **#971 merged** as `4148dca`; do not treat it as pending. Current branch:
+**`docs/917-map-critic-v0213`**, baseline main **`5cead6e`**. The nine fence
+frames are committed and pushed; the rest of this pass is still in scratch.
+
+- `.scratch/map-critic-v0213/` holds cached issue directions, scripts and PNGs.
+- `fences/`: nine captured, inspected, committed PNG/JSON pairs.
+- `cutaway/`: current squad and pointer controls in progress, capture session
+  `12497`, server `86432` on port 4173. Open every completed frame before a
+  verdict. Pointer #947 is now shipped; original #937 squad-radius ruling stands.
+- `layers-pilot-offscreen/` contains six **excluded** pilot frames: the keyboard
+  pan aimed the tower out of frame. They prove no visual repair verdict.
+  `layers.mjs` now uses middle-button pan and requires the camera reference to
+  reach its intended framing; still needs running after the cutaway capture.
+  #978 owns the hillside cut limitation; #981 owns above-cut unit markers.
+  #996 owns drift in two existing tactical capture specs, not a blanket failure
+  of all capture paths. No such defect is inferred from this framing mistake.
+- `survey.mjs`: prepared 12-map continuation, `mc-resume-02`, all four biomes ×
+  rural/town/city, medium 72², whole/closer views. Not yet run or counted as seen.
+- `followup-controls.json`: prepared water-surface and city-timber-panel
+  two-angle checks. Visible water lines in G2/W1 and urban panels outside #917’s
+  rural scope are candidates only; no new ticket until judged and cross-checked.
+
+The Director asked for context percentage. No reliable live percentage is
+exposed to this seat’s tools; do not invent one. CLI `/status` reports it to
+the operator. Keep this checkpoint updated so a refresh preserves findings.
+
+The current bounded subscription retains the original **22:15:28 UTC** hard
+stop. Re-arm `87119` ran 20:58:48–21:03:54 and read the #968 corrections
+confirming MapGen’s #945 pickup. **Active session `32285`**, started 21:12:57,
+uses `.scratch/map-critic-v0213/watch/rearm-01/`; 300-second polls, exact #968
+query plus work threads, no concurrent watcher or cron. Inspect its result
+before re-arming, retain the deadline, and catch up #968 if the ten-comment
+window has no known overlap. Earlier scratch watch directories are history.

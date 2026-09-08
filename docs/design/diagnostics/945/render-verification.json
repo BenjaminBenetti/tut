@@ -1,0 +1,92 @@
+{
+  "baseline": "b315d5c",
+  "firstRuntime": "4b45c46",
+  "finalRuntime": "5af0cb5",
+  "finalBase": "5655eca",
+  "cases": [
+    {
+      "case": "01-coastal",
+      "cameraUnchanged": true,
+      "drawCallsBefore": 668,
+      "drawCallsAfter": 668,
+      "trianglesBefore": 223208,
+      "trianglesAfter": 223208,
+      "texturesBefore": 30,
+      "texturesAfter": 32,
+      "programsBefore": 16,
+      "programsAfter": 17,
+      "repeatPngBytesEqualAfterRebase": true,
+      "pngSha256": "879efdf8c1f587dd5e3886f5b96c17b602529b49e6daf40a0c75a294eaa9d18d"
+    },
+    {
+      "case": "02-coastal-rotated",
+      "cameraUnchanged": true,
+      "drawCallsBefore": 540,
+      "drawCallsAfter": 540,
+      "trianglesBefore": 220646,
+      "trianglesAfter": 220646,
+      "texturesBefore": 31,
+      "texturesAfter": 33,
+      "programsBefore": 16,
+      "programsAfter": 17,
+      "repeatPngBytesEqualAfterRebase": true,
+      "pngSha256": "e76c3b6b83e709a4f11856811dc4da2e403816abf714dcfd333dfe816df8e776"
+    },
+    {
+      "case": "03-snowy",
+      "cameraUnchanged": true,
+      "drawCallsBefore": 980,
+      "drawCallsAfter": 980,
+      "trianglesBefore": 1385808,
+      "trianglesAfter": 1385808,
+      "texturesBefore": 34,
+      "texturesAfter": 36,
+      "programsBefore": 12,
+      "programsAfter": 13,
+      "repeatPngBytesEqualAfterRebase": true,
+      "pngSha256": "a979be45c0e192059eeb1613838aad483b10a78ad65b5eaedb2598c51bd629d9"
+    },
+    {
+      "case": "04-snowy-rotated",
+      "cameraUnchanged": true,
+      "drawCallsBefore": 924,
+      "drawCallsAfter": 924,
+      "trianglesBefore": 1351260,
+      "trianglesAfter": 1351260,
+      "texturesBefore": 34,
+      "texturesAfter": 36,
+      "programsBefore": 12,
+      "programsAfter": 13,
+      "repeatPngBytesEqualAfterRebase": true,
+      "pngSha256": "54817c3fa6b39890b9ef68f7f158dfac4727c62fefc4fd410cb6e4592bb523b4"
+    },
+    {
+      "case": "05-snowy-trail-control",
+      "cameraUnchanged": true,
+      "drawCallsBefore": 713,
+      "drawCallsAfter": 713,
+      "trianglesBefore": 278392,
+      "trianglesAfter": 278392,
+      "texturesBefore": 25,
+      "texturesAfter": 27,
+      "programsBefore": 16,
+      "programsAfter": 16,
+      "repeatPngBytesEqualAfterRebase": true,
+      "pngSha256": "37ae292ab0eaf2200b062ab155da6d18ca4f5b28602582a6b1cc24006ed667d6"
+    },
+    {
+      "case": "06-waterfront-control",
+      "cameraUnchanged": true,
+      "drawCallsBefore": 846,
+      "drawCallsAfter": 846,
+      "trianglesBefore": 878170,
+      "trianglesAfter": 878170,
+      "texturesBefore": 40,
+      "texturesAfter": 42,
+      "programsBefore": 13,
+      "programsAfter": 14,
+      "repeatPngBytesEqualAfterRebase": true,
+      "pngSha256": "4d7b05abb5515131bc34c15f530e43221f1ec64631cf820ae6435850a67517bd"
+    }
+  ]
+}

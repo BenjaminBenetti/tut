@@ -1,6 +1,7 @@
 /* global window, requestAnimationFrame */
 import { chromium } from "@playwright/test";
 import { mkdirSync, writeFileSync } from "node:fs";
+import { format } from "prettier";
 // Run against the baseline checkout for before, then the fix for after.
 const phase = process.argv[2] ?? "after";
 const out = `docs/design/diagnostics/945/${phase}`;
@@ -255,19 +256,22 @@ try {
     });
     writeFileSync(
       `${out}/${c.id}.json`,
-      JSON.stringify(
-        {
-          ...c,
-          url,
-          viewport: { width: 2400, height: 1500 },
-          clip: c.clip,
-          camera,
-          rendering,
-          elapsedMs: performance.now() - started,
-        },
-        null,
-        2,
-      ) + "\n",
+      await format(
+        JSON.stringify(
+          {
+            ...c,
+            url,
+            viewport: { width: 2400, height: 1500 },
+            clip: c.clip,
+            camera,
+            rendering,
+            elapsedMs: performance.now() - started,
+          },
+          null,
+          2,
+        ),
+        { parser: "json" },
+      ),
     );
     console.log(c.id + " captured");
   }

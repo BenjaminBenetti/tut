@@ -44,14 +44,8 @@
   "rendering": {
     "timingMethod": "RAF interval with gl.finish(), discard first four of twelve frames; software renderer, not a hardware FPS claim",
     "frameMs": [
-      14.5,
-      17.09999990463257,
-      277.10000014305115,
-      613.5,
-      713.5999999046326,
-      1229.0999999046326,
-      987.3000001907349,
-      562.8999998569489
+      14.5, 17.09999990463257, 277.10000014305115, 613.5, 713.5999999046326,
+      1229.0999999046326, 987.3000001907349, 562.8999998569489
     ],
     "render": {
       "frame": 32,

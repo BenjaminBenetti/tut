@@ -14,7 +14,7 @@ No generator, surface ownership, height, slope, road width, cover, hook, prop or
 
 ## Committed before/after
 
-Baseline: `b315d5c`. Runtime: `4b45c46`. Both use the real Map Lab scene at 2400×1500, models and units on, slopes 100%, all levels. Each PNG has its recipe, URL, crop, exact camera state and renderer counts in the adjacent JSON. The second view is one E turn at the same focus. Pointer is moved off the scene after framing, preventing the new pointer cutaway from changing the subject.
+Baseline: `b315d5c`. Runtime: `5af0cb5`, rebased onto `5655eca` including #978’s building floor cuts. Both use the real Map Lab scene at 2400×1500, models and units on, slopes 100%, all levels. Each PNG has its recipe, URL, crop, exact camera state and renderer counts in the adjacent JSON. The second view is one E turn at the same focus. Pointer is moved off the scene after framing, preventing the new pointer cutaway from changing the subject.
 
 | Case | Before | After |
 | --- | --- | --- |
@@ -31,7 +31,7 @@ The primary control is the already distinct brown trail through snow in the crit
 
 The material field adds two textures: 2.26 MiB at 48², 5.08 MiB at 72², 9.04 MiB at 96², plus small shared material clones. The weights are allocated only for modelled views. Baking the three recipes measured roughly 150–320 ms on this shared host; this is a load cost, not a per-frame calculation. The reproducible diagnostic records its own timing with no timing assertion.
 
-Capture sidecars record geometry, draw counts, programs and twelve RAF intervals with explicit `gl.finish()`, discarding the first four. SwiftShader completion times are heavily affected by shared CPU load and are **not hardware FPS benchmarks**. The previous unsynchronized RAF timing could report 16 ms while queued work stalled later; it is not used to claim this shader is free. The baked version avoids per-fragment noise and categorical interpolation. Final paired render counts and complete verification are recorded with the PR.
+Capture sidecars record geometry, draw counts, programs and twelve RAF intervals with explicit `gl.finish()`, discarding the first four. SwiftShader completion times are heavily affected by shared CPU load and are **not hardware FPS benchmarks**. The previous unsynchronized RAF timing could report 16 ms while queued work stalled later; it is not used to claim this shader is free. The baked version avoids per-fragment noise and categorical interpolation. Final paired render counts and complete verification are recorded below and with the PR.
 
 Reproduce the cause and the current map hashes:
 
@@ -47,3 +47,8 @@ CAPTURE_BASE_URL=http://127.0.0.1:5177 node tools/mapgen/capture-material-bounda
 ```
 
 `CAPTURE_ONLY=01-coastal` selects an individual case; the final sweep uses a fresh browser per case, alternating before and after. All captures use the actual camera rig and renderer, exposed only by capture-time instrumentation. No map data, geometry, lighting or gameplay module is substituted. Director frame judgment is required before the Tech Lead merges; the Map Critic re-checks afterwards.
+
+
+All six after PNGs are **byte-identical** between the initial runtime and the complete recapture after integrating #978. The six before/after pairs also have identical camera states, draw-call counts and triangle counts. `render-verification.json` records each comparison and final PNG SHA-256. The coastal example uses 668 calls / 223,208 triangles; the snowy city uses 980 / 1,385,808; the trail control uses 713 / 278,392; the waterfront uses 846 / 878,170. Each view adds two textures and one shader program. The new p3 #1005 water-grid finding is separate and is visible unchanged in the water control.
+
+Local validation on the integrated code: `pnpm typecheck`, `pnpm lint`, `pnpm test --maxWorkers=4` (**2,263 passed**, one existing skip), `pnpm build`, and `pnpm test:e2e --workers=2` (**60 passed**, 30 opt-in captures/benchmarks skipped) all pass. The unit tests exercise map immutability, deterministic irregular contacts, no invented palette entry at three-way joins, resource ownership/disposal and fog/vision hook composition. The Map Lab captures complete without page or shader errors.

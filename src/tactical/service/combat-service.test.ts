@@ -878,6 +878,39 @@ describe("attacks per turn by unit kind", () => {
  * and an overwatch reaction go through, so they are the copies that
  * matter.
  */
+/**
+ * The four refusals both entry points open with have one implementation
+ * (#992). This is the test that would notice if they were ever written
+ * out twice again: for the same bad input, the preview a player sees and
+ * the validation a real shot goes through must answer the *same payload*,
+ * not merely the same kind. Two copies drifting apart is exactly how
+ * #735 found one of them had never run.
+ */
+describe("the refusals shared by preview and attack", () => {
+  const board = () =>
+    mission([
+      unit("s1", "tdf", "rifle", 1, 1),
+      unit("dead", "tdf", "rifle", 1, 2, { hp: 0 }),
+      unit("b1", "bugs", "armoured", 3, 1),
+      unit("corpse", "bugs", "swarmer", 3, 2, { hp: 0 }),
+    ]);
+
+  it.each([
+    ["an attacker who is not on the map", "ghost", "b1"],
+    ["a target who is not on the map", "s1", "ghost"],
+    ["an attacker who is already dead", "dead", "b1"],
+    ["a target who is already down", "s1", "corpse"],
+  ] as const)("answers alike for %s", (_name, attackerId, targetId) => {
+    const m = board();
+    const preview = previewAttack(m, attackerId, targetId, T);
+    const targeting = validateTargeting(m, attackerId, targetId);
+    expect(preview.ok).toBe(false);
+    expect(targeting.ok).toBe(false);
+    if (preview.ok || targeting.ok) return;
+    expect(preview.error).toEqual(targeting.error);
+  });
+});
+
 describe("validateTargeting", () => {
   const pair = () =>
     mission([

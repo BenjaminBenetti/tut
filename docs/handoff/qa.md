@@ -1,6 +1,33 @@
 # Handoff: QA
 
-Last updated: 2026-09-05 (main `24019d4`; production paused on #748, awaiting the Executive Director's playtest).
+Last updated: 2026-09-08 (main `9cc4abc`).
+
+## READ THIS FIRST
+
+**There is no production hold.** It was lifted at the 8 September restart. An older
+version of this file said production was paused on #748 and I acted on that for a
+day and a half, parking between prompts. Do not.
+
+**GitHub is the channel, not the terminal.** A message typed into a seat's composer
+can sit unsubmitted indefinitely while looking sent — that is how a re-measurement
+instruction reached me hours late. Work-scoped direction lives in the issue or PR
+thread; anything cross-cutting lives in **Discussion #968**, the studio
+standing-orders thread. **Poll it**, alongside the `main` head and the p0 set:
+
+```
+gh api graphql -f query='{repository(owner:"BenjaminBenetti",name:"tut"){discussion(number:968){comments(last:10){nodes{createdAt body}}}}}'
+```
+
+One watcher, not two — `TaskStop` the old monitor before arming a replacement or
+both poll and the shared budget pays twice. Note it will also wake you on your own
+comments unless you filter by author.
+
+**Do not go quiet with an empty queue.** Say so in a thread. Taking an unowned p2
+off the board needs nobody's permission.
+
+**Evidence discipline for anything that changes what the player sees:** state the
+cause before building, deliver the reported case *and* a known-good control that
+can actually fail, and commit the frames at the head sha.
 
 ## The gate
 
@@ -79,10 +106,35 @@ Stop any probe servers on 4173/4174 before the e2e run, or contention fakes fail
 
 | Field | Value |
 |---|---|
-| SHA tested | `24019d4` (main; `c63b1a5` = #777, the last code change) |
-| Gate | typecheck, lint, build pass; vitest **1933 / 1933** (+1 deliberate skip); **sim sweep 7 / 7**; e2e **59 / 59** |
-| Exploratory | Boot → overworld → deployment → tactical clean, dev build, 0 console errors; `?models=1` preview frames on three seeds |
-| **Verdict** | **Green, and the screen has one thing left on it.** #777's parapet fix is correct and complete. The placeholder plank #748 complained about is still drawn on **ramp** connectors — see below. Raised on #748, not filed: production is paused. |
+| SHA tested | `cd412f5` (layer controls, #961) and `389c1c2` (map-validator guards, #735) |
+| Gate | typecheck, lint, build pass; vitest **2222**; **sim sweep 7 / 7**; e2e **59 / 59** — now 60 with #976 |
+| Exploratory | Full campaign → mission → play, real pointer input, 0 console errors on every run |
+| **Verdict** | **Green.** The whole #813 ramp thread is closed and verified in play; no placeholder connector of any kind still renders. |
+
+### Where the #813 thread ended (2026-09-08)
+
+Four documents on `main` as a series — `docs/design/diagnostics/813/`
+(catalogue, `rescale/`, `final/`, `closing/`) plus
+`docs/design/diagnostics/2026-09-08-map-fixes/`. The last re-measure found the
+one-layer-step table **identical to the tile** across the plinth removal and
+v0.2.12: 74,627 steps, **95.6 %** carrying a wedge, chains 1694/38/4/1, 55 masks.
+I predicted the plinth removal would move it and said so; it did not, because the
+mapgen changes act on **multi-layer paved** geometry while the catalogue counts
+**one-layer** steps. What moved instead: ramp connectors 3,779 → 1,733, paved
+tiles facing a 2+ layer drop 7,700 → 2,625, and **ramps crossing a parapet
+2,046 → 0**, which closed #869 item 2 as a side effect.
+
+**Two facts that will save the next seat a wrong conclusion:**
+
+- **City maps contain no buildings standing proud of their neighbouring ground.**
+  Town has 197 of 368, rural 40 of 75 — and the Earth map has **no rural cities**.
+  So #906's foundation case is only ever reachable in Novosibirsk, Almaty,
+  Ulaanbaatar, Perth and Auckland. Seven campaign samples showed nothing because
+  they were all cities and I nearly reported the case as no longer occurring.
+- **`unitScreenPosition` returns a unit's feet.** A click there lands on the ground
+  under a mech and selects the *tile*, leaving the action bar disabled; aim half a
+  tile pitch higher. `e2e/tactical-unit-click.spec.ts` (#976) now guards it —
+  before that, the game screen's only selection path had no coverage at all.
 
 ### #748's placeholder plank is still on screen — it moved from stairs to ramps
 
@@ -286,6 +338,10 @@ Three times this session a control-scheme or rendering change silently invalidat
 
 | SHA | Build | Unit | e2e | Exploratory | Filed |
 |---|---|---|---|---|---|
+| `cd412f5` | pass | 2222 | 59/59 | layer controls used in play: 5/5 → 1/5, render follows | — |
+| `389c1c2` | pass | 2204 | 59/59 | 25 validator guards made to fire (#735), spec read | — |
+| `54463bf` | pass | 2173 | 59/59 | **five map fixes verified in play**; catalogue re-measured, unmoved | — |
+| `055c1d5` | pass | 2097 | 59/59 | #813 closing pass: no placeholder connector ships | — |
 | `24019d4` | pass | 1933/1933 | 59/59 | tech-lead handoff, docs only | — |
 | `c63b1a5` | pass | 1933/1933 | 59/59 | **#777 parapets verified**; ramp plank raised on #748 | — (raised, pause) |
 | `4427cd5` | pass | 1931/1931 | 59/59 | #775 stairs turned by connector | — |

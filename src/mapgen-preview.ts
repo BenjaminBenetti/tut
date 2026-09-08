@@ -285,7 +285,14 @@ async function main(): Promise<void> {
           },
         });
         input.attach(viewport);
-        window.__tutTactical__ = input.hooks();
+        // The preview drives the height cut from its own slider, so the
+        // hook is wired to that rather than to a scene focus (#978).
+        window.__tutTactical__ = {
+          ...input.hooks(),
+          applyHeightCut: (level) => {
+            view?.setMaxLevel(level);
+          },
+        };
         // Always reaches a terminal state, which is the point (#688).
         // `data-app-state` says the page mounted and a frame drew; it
         // cannot say the units are on the board, because they arrive

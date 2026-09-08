@@ -3,29 +3,28 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-08 17:52 UTC)
+## Status Digest (2026-09-08 18:10 UTC)
 
-**Production resumed; Map Quality Loop is the standing focus.** Director correction [5589320377](https://github.com/BenjaminBenetti/tut/issues/753#issuecomment-5589320377) lifts the studio hold and explicitly authorizes engineer work alongside the specialist loop. Current-main audit baseline `360778a`: 25 open issues. GitHub Assignees are intentionally empty: the sole account is the Executive Director's. Engineer ownership uses `seat:` labels; specialists retain explicit role/area and project Owner.
+**Production resumed; Map Quality Loop is the standing focus.** Director correction [5589320377](https://github.com/BenjaminBenetti/tut/issues/753#issuecomment-5589320377) lifts the studio hold and explicitly authorizes engineer work alongside the specialist loop. Current-main digest `5e4ea1a`: 23 open issues. GitHub Assignees are intentionally empty: the sole account is the Executive Director's. Engineer ownership uses `seat:` labels; specialists retain explicit role/area and project Owner.
 
 | Active / next work | Owner | State / next gate |
 |---|---|---|
-| #753 p2 / PR #948 | **eng-5**, Opus 5/max | In Review; city-name lookup and reload proof, no migration proposed |
+| #950 p2 graveyard names | **eng-5**, Opus 5/max | In Progress, medium; city identity and honest legacy-save migration |
 | #457 p1 weapon-based VFX | **eng-4**, Opus 5/max | In Progress; last child of #514 |
-| #937 p1 / PR #943 | Art Director | Fix stale fog captures (5589385371); cutaway accepted, code gate green |
-| #947 p1 cursor cutaway | Art Director | New ED feature, after #943 and ahead of #911; M2.5 |
+| #947 p1 cursor cutaway | Art Director | Ready now #943 merged; next p1 ahead of #911 |
 | #917 p2 rural fences | MapGen | In Progress, cause-first claim 5589244991; restart ordering precedes #911 |
 | #945 p2 material boundaries | MapGen, Art support | Blocked behind #917 |
 | #911 p2 dropship | Art Director; MapGen placement | Footprint/clearance agreement before geometry; Art follows #947 |
 
-**New unseated intake:** #949 objective labels and #950 graveyard location names are p2/M2.5, Backlog with Tech Lead for required complexity sizing.
+**Latest completions:** #937/#943 (`5e4ea1a`) is Done: radius 4 / opacity 0.175 accepted, fog captures independently matched, CI green. #947 is now Ready. #753/#948 is merged/Done; no schema migration needed after live/reload proof. eng-5 now takes #950 (medium, TL 5589522272). #949 is low (5589521863), Ready alongside medium #735 for the next free Opus seat.
 
-**Unseated Ready work:** #735 medium is next for a free Opus seat (TL accountable). Art queue #450/#673/#740/#793 and MapGen #701 are Ready behind live map priorities. **eng-3 Astra 6/xhigh is idle:** the only open high issue, #447, needs hive design answers. No new M3 decomposition. #787/#869 are Backlog scheduling, not blocked by a pause. Genuine blocks: #514→#457; #760→#447; decisions #447/#591/#594/#712/#734/#751; #911/#945/#947 dependencies above.
+**Unseated Ready work:** #735 medium is next for a free Opus seat (TL accountable). Art queue #450/#673/#740/#793 and MapGen #701 are Ready behind live map priorities. **eng-3 Astra 6/xhigh is idle:** the only open high issue, #447, needs hive design answers. No new M3 decomposition. #787/#869 are Backlog scheduling, not blocked by a pause. Genuine blocks: #514→#457; #760→#447; decisions #447/#591/#594/#712/#734/#751; #911/#945 dependencies above.
 
 **Stale / board repairs:** checked all 453 starting cards. Merged #944 was still In Review; corrected to Done. No other open issue proved fully delivered. #869's old parapet counts predate #926/#940: recommend retiring that visual subclaim unless reproduced, Director ruling pending; its separate wall-crossing repair hazard remains real. Initial handoff #946 was withdrawn for carrying the old hold and mistaken account assignments; those assignments were removed and all affected bodies/board states corrected.
 
-**Release / follow-through:** latest tag v0.2.12 (`121f397`); #936/#940 removal is merged (`900d9a3`) but untagged. Critic re-check 5589275662 accepts improved settlements and readable infantry height in inspected blocks; the separate mech outdoor-height cost (9,271→5 tiles) remains. MapGen still owes ADR 0004 §7's `waterfronts` row. Two open Critic tickets (#917/#945), below either previously recorded cap (3/5); cap clarification remains pending.
+**Release / follow-through:** latest tag v0.2.12 (`121f397`); #936/#940 removal (`900d9a3`), #753/#948 names (`b94a57b`) and #937/#943 cutaway (`5e4ea1a`) are merged but untagged. Critic re-check 5589275662 accepts improved settlements and readable infantry height in inspected blocks; the separate mech outdoor-height cost (9,271→5 tiles) remains. MapGen still owes ADR 0004 §7's `waterfronts` row. Two open Critic tickets (#917/#945), below either previously recorded cap (3/5); cap clarification remains pending.
 
-**Milestones, closed / total non-PR issues:** M0 13/13 · M1 64/65 · M1.5 41/48 · M2 49/50 · M2.5 26/35 · M3 1/4 · Arsenal 1/3 · Bestiary 1/1 · Tech Debt 6/8. Producer Astra 6/high; MapGen/Art Astra 6/xhigh; Critic Astra 6. One bounded five-minute watch, three-hour stop; one fixed head per handoff PR.
+**Milestones, closed / total non-PR issues:** M0 13/13 · M1 64/65 · M1.5 41/48 · M2 49/50 · M2.5 28/35 · M3 1/4 · Arsenal 1/3 · Bestiary 1/1 · Tech Debt 6/8. Producer Astra 6/high; MapGen/Art Astra 6/xhigh; Critic Astra 6. One bounded five-minute watch, three-hour stop; one fixed head per handoff PR.
 <!-- digest:end -->
 
 
@@ -36,16 +35,17 @@ The initial audit compared every open issue and all 453 project cards against ma
 
 **Correction, not a new hold.** Producer initially carried the old pause forward and populated GitHub Assignees after the Director's assignment request. Director comment 5589320377 clarified that the hold had already lifted at restart and the sole GitHub account belongs to the Executive Director. Producer withdrew the pause request on #753, removed all 22 issue assignments plus #943's PR assignment, closed inaccurate handoff #946 without merging it, and used engineer seat labels. #753's existing claimant is eng-5 by their own #739 follow-up and its recorded seat assignment; #457 goes to free eng-4. Both are complexity:medium, with one open issue per seat. No specialist takes an engineer seat.
 
-| Open issue(s) | Accountable agent | Remaining work / real gate |
+| Issue(s), including audit completions | Accountable agent | Remaining work / real gate |
 |---|---|---|
-| #937 p1 | Art Director | Cutaway accepted and code gate green; fix stale fog captures on #943 before merge |
-| #947 p1 | Art Director | Cursor cutaway after #943, ahead of #911; parameters belong to Art |
+| #937 / #943 | Art Director, completed | Done; corrected fog frames independently verified, acceptance and CI green |
+| #947 p1 | Art Director | Ready cursor cutaway ahead of #911; parameters belong to Art |
 | #917 p2 | MapGen | Active rural boundary repair under Director restart ordering |
 | #945 p2 | MapGen, Art support | Natural material boundaries; cause assessment after #917 |
 | #911 p2 | Art Director, MapGen placement | Model after #947; agree proposed 5×7 / max-height 3.6 envelope, real support, rotation and 16 clear boarding/start tiles before modeling |
 | #457 p1 | eng-4 | Weapon-range event and melee/ranged VFX distinction; playback already shipped |
-| #753 p2 | eng-5 | #948 in review; author demonstrates live mission lookup survives reload, correcting the old migration premise; deployment already names city |
-| #949/#950 p2 | Tech Lead | New UI follow-ups; Backlog pending complexity sizing, then seat by tier |
+| #753 / #948 | eng-5, completed | Merged/Done; live and reload city lookup proved, correcting the migration premise |
+| #949 p2 | Tech Lead, next free Opus seat | Ready / low; objective labels and meaningful overflow fixture |
+| #950 p2 | eng-5 | In Progress / medium; persisted graveyard city and honest schema-v17 migration |
 | #735 p2 | Tech Lead, next free Opus seat | Ready: bounded guard inventory; TL selects slices if above 40 entries |
 | #450 p2 | Art Director | Ready: true Earth-coordinate texture, remove eleven marker nudges |
 | #594 p2 | Art Director | Blocked on utility-thumbnail row design choice |
@@ -63,9 +63,9 @@ The initial audit compared every open issue and all 453 project cards against ma
 | #760 p3 | MapGen | Blocked on #447 hive decisions before prototype |
 | #447 p3 | MapGen, Director decisions | Crash-site prototype shipped; hive dimensions/passability still needed |
 
-**Scope correction:** PR #948 distinguishes StartMission from FinishMission and reports live/reload render proof; the old #753 migration premise was incorrect according to that evidence. Tech Lead verifies it before merge.
+**Scope correction:** PR #948 distinguishes StartMission from FinishMission and reports live/reload render proof; the old #753 migration premise was incorrect according to that evidence. Tech Lead accepted it in merged #948.
 
-**Evidence limits.** Current source confirms the 1.6-unit VFX heuristic and the kerb/connectivity repair hazard remain. The old parapet examples are not asserted to reproduce after all artificial feature families were disabled. Main still has ghost radius 2; the radius-4/opacity-0.175 work is an unmerged PR. The Critic's post-#936 height verdict is bounded to the inspected infantry-accessible blocks; it does not erase MapGen's measured loss of mech-accessible outdoor height. This pass changes process records only, not game code or visual acceptance. Historical measurements and shutdown instructions below are superseded by this restart record.
+**Evidence limits.** Current source confirms the 1.6-unit VFX heuristic and the kerb/connectivity repair hazard remain. The old parapet examples are not asserted to reproduce after all artificial feature families were disabled. Main now has radius 4 / opacity 0.175 through #943; cursor-driven reveal is the remaining #947 feature. The Critic's post-#936 height verdict is bounded to the inspected infantry-accessible blocks; it does not erase MapGen's measured loss of mech-accessible outdoor height. This pass changes process records only, not game code or visual acceptance. Historical measurements and shutdown instructions below are superseded by this restart record.
 
 ## Current watch operation (2026-09-06)
 

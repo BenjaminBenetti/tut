@@ -24,7 +24,9 @@ export interface LayerFocus {
   /** Storeys the map offers, at least `1`. */
   readonly storeyCount: number;
   /**
-   * Highest engine layer to draw, or `undefined` to draw everything.
+   * Highest engine layer to draw **outside a building**, or `undefined`
+   * to draw everything. Building geometry is cut by `storey` against
+   * each building's own floor numbers instead (#978).
    *
    * The top storey is always `undefined` rather than a number above the
    * roof: "show all of it" is the map's normal appearance, and it must

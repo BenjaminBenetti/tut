@@ -1,7 +1,8 @@
-import type { InstancedMesh, Object3D } from "three";
+import type { Object3D } from "three";
 import {
   BoxGeometry,
   Group,
+  InstancedMesh,
   Color,
   Matrix4,
   Mesh,
@@ -11,11 +12,13 @@ import {
 } from "three";
 import { describe, expect, it } from "vitest";
 
+import { STOREY_LAYERS } from "../../core/model/elevation";
 import { PropKindIds } from "../../mapgen/data/props";
 import { SurfaceIds } from "../../mapgen/data/surfaces";
 import { HookKinds } from "../../mapgen/model/hook";
 import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
 import type { ModelAssetId } from "../../content/data/model-ids";
+import type { Building } from "../../mapgen/model/building";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import {
@@ -825,5 +828,191 @@ describe("TacticalMapView stairs", () => {
     expect(plankOf(stairs.id)?.visible).toBe(false);
     expect(plankOf(ramp.id)?.visible).toBe(false);
     view.dispose();
+  });
+});
+
+// ===========================================
+// Layer focus (#961, #978)
+// ===========================================
+
+/** A building record with only what the cut reads filled in honestly. */
+function building(id: string, groundLevel: number, floors: number): Building {
+  return {
+    id,
+    kind: "test",
+    footprint: [{ x: 0, z: 0, w: 1, d: 1 }],
+    groundLevel,
+    floors: Array.from({ length: floors }, (_, index) => ({
+      index,
+      y: groundLevel + index * STOREY_LAYERS,
+      rooms: [],
+    })),
+    roof: { kind: "flat", walkable: false },
+    entrances: [],
+    connectorIds: [],
+  };
+}
+
+/**
+ * Two one-tile buildings on the same map, `low` on the ground and `high`
+ * up a step, each two storeys. The shape #978 is about: 43 % of
+ * generated maps have buildings a whole storey or more apart.
+ */
+function hillside(highGround: number): FixtureMapBuilder {
+  const b = new FixtureMapBuilder(4, 3, highGround + 6).fillGround();
+  b.building(building("low", 0, 2));
+  b.building(building("high", highGround, 2));
+  for (let floor = 0; floor < 2; floor++) {
+    b.tile({ x: 0, y: floor * STOREY_LAYERS, z: 0 }, SurfaceIds.FLOOR, {
+      buildingId: "low",
+      floorIndex: floor,
+    });
+    b.tile(
+      { x: 2, y: highGround + floor * STOREY_LAYERS, z: 2 },
+      SurfaceIds.FLOOR,
+      { buildingId: "high", floorIndex: floor },
+    );
+  }
+  // The stair up to the LOW building's first floor. It has to be this
+  // one: the high building's stair lands in a level group the coarse
+  // cut already hides, so a test on it passes whether or not connectors
+  // have a rule of their own. This one lands inside a visible group and
+  // is only hidden if the connector rule works.
+  b.connector("ladder", { x: 0, y: 0, z: 0 }, { x: 0, y: STOREY_LAYERS, z: 0 });
+  return b;
+}
+
+/** Whether the group for an engine level is showing at all. */
+function levelGroupVisible(view: TacticalMapView, level: number): boolean {
+  return view.root.children.some(
+    (child) => child.name === `level-${String(level)}` && child.visible,
+  );
+}
+
+/**
+ * Whether the map's one connector is drawn. Matched by the id the map
+ * gives it — connector meshes are named after the connector, so this
+ * cannot pass by finding some other mesh.
+ */
+function connectorDrawn(view: TacticalMapView, map: TacticalMap): boolean {
+  const id = map.connectors[0]?.id;
+  let drawn = false;
+  view.root.traverse((object) => {
+    if (object.name === id && object.visible && object.parent?.visible) {
+      drawn = true;
+    }
+  });
+  return drawn;
+}
+
+/**
+ * The engine layers that still have something drawn on them: a group
+ * that is visible, holding at least one instance that has not been
+ * collapsed by the cut.
+ *
+ * Read off the group rather than matched in a mesh name, so the
+ * assertion cannot pass on a coincidence in a model id.
+ */
+function drawnLevels(view: TacticalMapView): number[] {
+  const levels = new Set<number>();
+  const matrix = new Matrix4();
+  view.root.traverse((object) => {
+    if (!(object instanceof InstancedMesh)) {
+      return;
+    }
+    const group = object.parent;
+    if (!group?.visible || !group.name.startsWith("level-")) {
+      return;
+    }
+    for (let i = 0; i < object.count; i++) {
+      object.getMatrixAt(i, matrix);
+      // A collapsed instance has a zero determinant; a drawn one does not.
+      if (matrix.determinant() !== 0) {
+        levels.add(Number(group.name.slice("level-".length)));
+      }
+    }
+  });
+  return [...levels].sort((a, b) => a - b);
+}
+
+describe("TacticalMapView.setLayerFocus", () => {
+  // The reported case. Before #978 the cut was one height taken from the
+  // lowest building, so at floor 1 the building up the step had its
+  // ground floor above the cut and vanished entirely.
+  it("opens every building at its own floor, however high it stands", () => {
+    const map = hillside(4).build();
+    const view = new TacticalMapView(map);
+    view.setLayerFocus({ storey: 0, storeyCount: 2, cutLevel: 1 });
+
+    // Level 0 is the low building's ground floor, level 4 the high
+    // one's -- four layers above the cut the low building takes, and
+    // drawn. Level 2 and level 6 are the two first floors, and neither
+    // is. Before #978 this was `[0]`: the high building was gone.
+    expect(drawnLevels(view)).toEqual([0, 4]);
+  });
+
+  // The known-good control. On a map whose buildings share a ground
+  // level the two rules are the same number, so nothing may change --
+  // 57 % of generated maps are this case, including the seed #977's
+  // frames come from.
+  it("draws exactly what the height cut drew when every building is level", () => {
+    const flat = hillside(0).build();
+    const byHeight = new TacticalMapView(flat);
+    byHeight.setMaxLevel(1);
+    const byStorey = new TacticalMapView(flat);
+    byStorey.setLayerFocus({ storey: 0, storeyCount: 2, cutLevel: 1 });
+    expect(drawnLevels(byStorey)).toEqual(drawnLevels(byHeight));
+    // And it is not vacuous: the cut is doing something on this map.
+    expect(drawnLevels(byStorey)).toEqual([0]);
+  });
+
+  it("draws all of it at the top storey", () => {
+    const map = hillside(4).build();
+    const view = new TacticalMapView(map);
+    view.setLayerFocus({ storey: 1, storeyCount: 2, cutLevel: undefined });
+    const all = drawnLevels(view);
+    view.setLayerFocus(undefined);
+    expect(all).toEqual(drawnLevels(view));
+    expect(all).toEqual([0, 2, 4, 6]);
+  });
+
+  // A connector is its own mesh, not an instance in a batch, so it needs
+  // its own rule. Without one a staircase hangs in the air above a
+  // building whose upper floors have been cut away.
+  it("hides a staircase that climbs above the cut", () => {
+    const map = hillside(4).build();
+    const view = new TacticalMapView(map);
+    expect(map.connectors).toHaveLength(1);
+    const stair = map.connectors[0];
+    // The guard that keeps this test honest: the stair lands on a level
+    // the coarse group cut still shows, so only the connector's own
+    // rule can hide it. Deleting that rule must turn this red.
+    expect(stair?.to.y).toBe(STOREY_LAYERS);
+
+    view.setLayerFocus(undefined);
+    expect(connectorDrawn(view, map)).toBe(true);
+    view.setLayerFocus({ storey: 0, storeyCount: 2, cutLevel: 1 });
+    expect(levelGroupVisible(view, STOREY_LAYERS)).toBe(true);
+    expect(connectorDrawn(view, map)).toBe(false);
+    view.setLayerFocus({ storey: 1, storeyCount: 2, cutLevel: undefined });
+    expect(connectorDrawn(view, map)).toBe(true);
+  });
+
+  // Fog and the cut share one loop and one matrix write. They must not
+  // share a reason: vision decides tint, the cut decides existence.
+  it("keeps a cut tile hidden whatever vision says about it", () => {
+    const map = hillside(4).build();
+    const view = new TacticalMapView(map);
+    view.setLayerFocus({ storey: 0, storeyCount: 2, cutLevel: 1 });
+    const cut = drawnLevels(view);
+    const index = new TileIndex(map);
+    view.setVision({
+      visible: map.tiles.map((t) => index.keyOf(t)),
+      explored: map.tiles.map((t) => index.keyOf(t)),
+      spotted: [],
+      lastSeen: {},
+    });
+    expect(drawnLevels(view)).toEqual(cut);
+    expect(cut).toEqual([0, 4]);
   });
 });

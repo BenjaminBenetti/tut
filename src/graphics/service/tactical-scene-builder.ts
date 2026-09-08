@@ -1,3 +1,4 @@
+import type { LayerFocus } from "../model/layer-focus";
 import type { Camera, Object3D } from "three";
 import { Box3, Group, Raycaster, Vector2 } from "three";
 
@@ -177,6 +178,17 @@ export class TacticalSceneBuilder
   /** Levels present, ascending. */
   get levels(): readonly number[] {
     return this.mapView.levels;
+  }
+
+  /**
+   * Shows every building up to the focused storey of its own floors, and
+   * terrain up to the focus's height cut (#961, #978). Units and
+   * spawners are never hidden — they are the mission, not the scenery.
+   *
+   * @param focus - Where the player is looking, or undefined for all of it.
+   */
+  setLayerFocus(focus: LayerFocus | undefined): void {
+    this.mapView.setLayerFocus(focus);
   }
 
   /** Shows only map levels up to `maxLevel`; units are never hidden. */

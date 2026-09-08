@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-08 ~20:35 UTC (session 5; fourteen merges since the restart, guard audit #735 complete; only #987 (Art handoff) open; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-08 ~21:00 UTC (session 5; #999 per-building layer cut merged; only #998 (rail-width fix) open on the Director's verdict; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — the hold is lifted (2026-09-08); the Map Quality Loop leads
 
@@ -33,6 +33,18 @@ frames scene-identical to my render, banner box from #977 only); #989
 `1c8a86f` objective ordinal (#949; the rail-width wrap is a separate
 low-tier layout follow-up the engineer measured). Docs/handoffs #970,
 #971, #974, #980, #986, #988, #990, #993.
+
+**Evening:** #994 `d2117cf` shared targeting refusals (#992, eng-4, the
+dedupe I asked for on #979); **#999 `906c6a9`** per-building layer cut
+(#978, eng-5) — the Director accepted a weaker control (fixture test +
+same-run pair) because the capture spec is non-deterministic (**#996**,
+p1/high, eng-3; my fog captures are byte-deterministic, so it is specific to
+that spec's camera work), and asked why the readout went `1/4 → 1/3`: I
+answered from the diff (`storeyCount` was map height above the lowest
+building, which counted the hill's storey; now the tallest building's floor
+count) and merged. The pixel control for #978 is owed retroactively when
+#996 lands. #998 (objective row fits the rail, #991) gate green, awaiting
+the Director's frame verdict. Handoffs #987, #997.
 
 **Review lessons today:** a stacked-file conflict (#983 vs #977 in
 `tactical-screen.test.ts`) shows up as `MERGE_CONFLICT` from the gate; abort

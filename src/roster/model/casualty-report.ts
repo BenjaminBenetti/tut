@@ -45,6 +45,8 @@ export interface MechDamageCasualtyReport {
 export interface CasualtyReport {
   /** The mission that was resolved. */
   readonly missionId: string;
+  /** The city it was fought over, so the graveyard can name it (#950). */
+  readonly cityId: string;
   /** Losses per deployed squad; squads with no losses may be omitted. */
   readonly squadCasualties: readonly SquadCasualtyReport[];
   /** Squads whose strength reached zero; removed from the roster. */

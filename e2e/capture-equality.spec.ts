@@ -12,6 +12,8 @@ test("capture taps and a no-op reproduce the same rendered bytes", async ({
   browser,
   baseURL,
 }) => {
+  // Two complete mission mounts, each with the ordinary per-test allowance.
+  test.setTimeout(test.info().timeout * 2);
   const reference: Buffer[] = [];
   for (let run = 0; run < 2; run++) {
     const context = await browser.newContext({
@@ -47,24 +49,23 @@ test("capture taps and a no-op reproduce the same rendered bytes", async ({
       expect(unchanged.equals(top), "upper-bound no-op changed the PNG").toBe(
         true,
       );
-      await page.evaluate(() => window.__tutTactical__!.stepLayer(-1));
-      await drawnFrame(page);
-      const cut = await viewport.screenshot({
-        path: test.info().outputPath(`${run}-cut.png`),
+      await tapCameraKey(page, "d");
+      const panned = await viewport.screenshot({
+        path: test.info().outputPath(`${run}-panned.png`),
       });
       expect(
-        cut.equals(top),
+        panned.equals(top),
         "the control must also observe a real change",
       ).toBe(false);
-      if (run === 0) reference.push(top, cut);
+      if (run === 0) reference.push(top, panned);
       else {
         expect(
           top.equals(reference[0]),
           "fresh launch changed the top PNG",
         ).toBe(true);
         expect(
-          cut.equals(reference[1]),
-          "fresh launch changed the cut PNG",
+          panned.equals(reference[1]),
+          "fresh launch changed the panned PNG",
         ).toBe(true);
       }
     } finally {
@@ -96,7 +97,7 @@ test("capture readiness waits for map art as well as units", async ({
       "data-tactical-units",
       /^[1-9]\d*$/,
     );
-    expect(requested).toBe(true);
+    await expect.poll(() => requested).toBe(true);
     await expect(page.locator("body")).not.toHaveAttribute(
       "data-tactical-ready",
       "true",

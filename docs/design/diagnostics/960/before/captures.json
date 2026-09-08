@@ -1,5 +1,5 @@
 {
-  "baseCommit": "29639b3e2289b6f42f50f9497c688a1c1e17e0f4",
+  "baseCommit": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
   "repeatedBrowsers": 2,
   "records": [
     {
@@ -48,7 +48,7 @@
         "width": 2400,
         "height": 1500
       },
-      "sha256": "f58415b3d8d1bcffb5f96937dac1e0fc0e58451fd9ca52f58849ce027536952d"
+      "sha256": "99a838eb9eeb5cc0664134ec0c043fcac434f02e1e48b91bce15597b21f3fdaa"
     },
     {
       "id": "I02-city-frontages-rotated",
@@ -96,7 +96,55 @@
         "width": 2400,
         "height": 1500
       },
-      "sha256": "18771a2e4274e3f14cf164e7b4c15ba0bcded6abe3bea38f699e1dfc5cf25b84"
+      "sha256": "92b988b13752b974fca9fdcb5a45093fd529e655362364e85760aa54f8fbb744"
+    },
+    {
+      "id": "S01-nearby-shop-workplace-home",
+      "seed": "mc-resume-01",
+      "biome": "temperate",
+      "settlement": "city",
+      "size": "medium",
+      "focus": {
+        "x": 24,
+        "y": 2,
+        "z": 37
+      },
+      "rotation": 0,
+      "camera": {
+        "yawIndex": 0,
+        "zoom": 55.11351921262185,
+        "target": {
+          "x": 24.5,
+          "y": 1.65,
+          "z": 37.5
+        },
+        "bounds": {
+          "x": 0,
+          "z": 0,
+          "w": 72,
+          "d": 72
+        },
+        "zoomRange": {
+          "min": 19.83827358328925,
+          "max": 192
+        }
+      },
+      "actualPitch": 45.000000000000405,
+      "pixel": {
+        "x": 1389.999999999999,
+        "y": 749.9999999999999
+      },
+      "clip": {
+        "x": 740,
+        "y": 225,
+        "width": 1300,
+        "height": 1050
+      },
+      "viewport": {
+        "width": 2400,
+        "height": 1500
+      },
+      "sha256": "eef6af5f20ad71b8bc8ad4c3dfd6bc3a18c03830cd76f27630dc6ea1ab2690ba"
     },
     {
       "id": "I03-second-seed",
@@ -144,7 +192,7 @@
         "width": 2400,
         "height": 1500
       },
-      "sha256": "104630a6ae3e8f8906682e530f6fdd7556139cbd12b3bb87183a7710cb047926"
+      "sha256": "4727486f3a37f8b30161f9712a50ad0fb5fe6fff2e394625685c90c2d450135c"
     },
     {
       "id": "I04-second-seed-rotated",
@@ -192,7 +240,7 @@
         "width": 2400,
         "height": 1500
       },
-      "sha256": "126191366a1997b07928c196f3d8fce8b28bd9333f95030cf31d4feb6a2d5729"
+      "sha256": "24c78faf3380188bda3092ad1a8f5d90ec1671ed1774f547d5611367ce0e40e2"
     },
     {
       "id": "C01-rural-roof-control",
@@ -240,7 +288,7 @@
         "width": 2400,
         "height": 1500
       },
-      "sha256": "28c61a33c2f71208ea493d63b27286510226c9d5b3b3f965cf96b462dd34c1fe"
+      "sha256": "5ee845a569d00950133657bccd5b8e90dbcfe3a09cf3f364c9c2da641b029aa5"
     }
   ]
 }

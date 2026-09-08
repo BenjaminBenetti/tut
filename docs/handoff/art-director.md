@@ -1,8 +1,28 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-08 (#947 ready PR #982; #911 then #960)
+Last updated: 2026-09-08 (#947 merged; #911 placement agreement, then #960)
 
-## Current status: #947 pointer inspection, ready PR #982
+## Active: #911 dropship, awaiting MapGen's placement agreement
+
+**#947 is complete**, merged by the Tech Lead as **3ea2fb7** (PR #982).
+Director accepted final head 9aefe64. The Tech Lead verified the merge result
+with main 7b8a401: typecheck, eslint, prettier, 2,243 unit tests (one skipped),
+build, sim, and 60 browser tests with zero flaky tests. Both re-rendered fog
+scenes matched the committed PNGs exactly; only the new #977 FLOOR readout
+differed, within a 174×32 box at +508+4 in the top banner. No changes were
+requested in code review. Main is checked out at 3ea2fb7, clean.
+
+**#911 is the active Art claim**, with a real gate before geometry: MapGen's
+agreement to the 5×7 / max 3.6 envelope, landing support and clearance contract.
+All issue comments were read after #982 merged; no MapGen response was present.
+[Current contract request](https://github.com/BenjaminBenetti/tut/issues/911#issuecomment-5591214587)
+and [full original proposal](https://github.com/BenjaminBenetti/tut/issues/911#issuecomment-5562423843).
+The one bounded watch includes this issue, area:art, seat:art-director and #968.
+No aircraft geometry has been built. #960 remains after #911; #945/#959 are
+MapGen-led with Art support. No production hold or earlier generation dependency
+blocks the agreement. Begin the Blender loop after the actual contract is agreed.
+
+## Completed evidence: #947 pointer inspection (#982)
 
 Codex Art Director, **gpt-6-astra xhigh**. [PR #982](https://github.com/BenjaminBenetti/tut/pull/982),
 branch `feat/947-pointer-cutaway`, has the implementation and 28-frame matrix at

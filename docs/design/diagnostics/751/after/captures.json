@@ -1,0 +1,52 @@
+{
+  "source": "ff939e3d703a7b920b38c1b50ff1530b33e6eab6",
+  "baseUrl": "http://localhost:4184",
+  "records": [
+    {
+      "kind": "defeat",
+      "seed": 751,
+      "day": 300,
+      "infestation": 70,
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "outcome": {
+        "kind": "defeat",
+        "day": 300,
+        "summary": {
+          "citiesLost": 0,
+          "citiesInfested": 37,
+          "citiesTotal": 37,
+          "missionsRun": 0,
+          "daysSurvived": 300,
+          "finalThreat": 100
+        }
+      },
+      "sha256": "033e667ea0780a9f884d98279c452b803c8378105fe429ead6ec626c33e568f9"
+    },
+    {
+      "kind": "victory-stub",
+      "seed": 751,
+      "day": 41,
+      "infestation": 0,
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "outcome": {
+        "kind": "victory-stub",
+        "day": 41,
+        "summary": {
+          "citiesLost": 0,
+          "citiesInfested": 0,
+          "citiesTotal": 37,
+          "missionsRun": 0,
+          "daysSurvived": 41,
+          "finalThreat": 4.1000000000000005
+        }
+      },
+      "sha256": "368d10e994f7b7ecb7d23d18475a388ec5c7166db2125f32b76842f72c155bba"
+    }
+  ]
+}

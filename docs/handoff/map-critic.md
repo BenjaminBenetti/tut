@@ -5,6 +5,17 @@
 
 ## Calibration and boundaries
 
+[Studio standing orders, Discussion #968](https://github.com/BenjaminBenetti/tut/discussions/968)
+are now an explicit subscription for this seat. Anything that matters goes
+on GitHub: work-scoped direction in the relevant issue/PR, cross-cutting
+orders in #968. Terminal messages can remain unsubmitted. Read the thread
+on refresh and include its exact query in each authorised watch. Map design
+belongs to Map Critic and MapGen; the Director routes Executive Director
+rulings, sets acceptance criteria and judges frames. Existing deliberate
+rulings still stand. Ownership uses seat labels for engineers and role/area
+for specialists; the Executive Director's assignable account is not an agent
+claim. There is no production hold.
+
 The Executive Director trusts this seat to file evidenced findings. Cap:
 **five open Critic tickets**. File rather than park for taste. Escalate only
 a genuine fork that would produce materially different games, or a conflict
@@ -32,7 +43,9 @@ Four open Critic tickets at this checkpoint:
 
 1. **[#917](https://github.com/BenjaminBenetti/tut/issues/917), p2 — MapGen:**
    isolated rural fence panels describe no boundary. MapGen claimed this
-   repair on resumed main `360778a`; it is active work. Re-check the original
+   repair on resumed main `360778a`; it is active work. Its #968 update
+   reports implementation and real before/after frames prepared, final
+   validation running; no merged repair has been inspected yet. Re-check the original
    coastal/rural/small `mc-opening-01`, `(5,2,22)`, two angles after merge.
    Preserve recognisable timber fences and low cover in plausible boundaries.
 2. **[#945](https://github.com/BenjaminBenetti/tut/issues/945), p2 — MapGen + Art:**
@@ -132,10 +145,15 @@ not evidence that either seat has stalled.
   current-main scene; they are not represented as old-build captures.
   Evidence `37290a6f89c4fd2e9c0f538d1fd04929baafc87d`.
 
-Publication PR: **[#966](https://github.com/BenjaminBenetti/tut/pull/966)**, open for Tech Lead review.
-Local ESLint/format and evidence metadata/link checks passed; normal PR CI applies.
-Current branch: **`docs/936-map-critic-postmerge`**, pushed. It contains only
-Critic diagnostic records and this handoff relative to integrated main.
+Evidence PR **[#966](https://github.com/BenjaminBenetti/tut/pull/966) merged**
+at 19:14:53 UTC as `d85ecd9`, after all three CI jobs passed at `91ed16b`.
+The survey, repair crops and ranked queue are now on main.
+
+The Director’s #968 subscription arrived during that merge. Its follow-up
+is **[PR #971](https://github.com/BenjaminBenetti/tut/pull/971), handoff-only**,
+on branch **`chore/968-map-critic-standing-orders`**
+based on `d85ecd9`; no additional survey or game changes are included.
+Local whitespace/link checks passed; normal PR CI applies to the follow-up.
 Capture scripts/source frames, GH cache and watch result live under ignored
 `.scratch/map-critic-resume-0908/`; earlier scratch directories remain useful.
 No image was generated or retouched to show a defect. Comparison sheets
@@ -149,6 +167,13 @@ coverage-bucket caveat. #869 owns ramps crossing continuous parapets. #701
 owns isolated desert palms; #712 records temperate boulder intent; #281's
 cover-density ruling stands. Trees' visible boundaries do not establish
 LOS protection (#591).
+
+**#947 is the owned cursor-cutaway gap**, active with Art ahead of #911.
+The Executive Director wants hover to reveal interiors without a squad
+inside. After merge, judge hovered, pointer/squad overlap and open-ground
+roof-preservation controls. Art owns the parameters; the Director judges
+the frames. The accepted #937 verdict is squad-only and does not certify
+this new pointer behavior. Do not re-file its absence.
 
 **#911 is the known dropship gap.** Extraction intentionally stays at deploy;
 the TDF dropship is the arrival/return landmark. Art owns the model, MapGen
@@ -182,14 +207,49 @@ closed survey #905 with the template's closing keyword. Never push main or
 merge. Every GitHub comment starts with `**Map Critic** · TUT agent` alone.
 A model-capacity error is transient: wait/retry, never change model.
 
-## Bounded watch — completed
+## Watches — repair watch completed; standing-orders watch active
 
 The resumed watch was session `72679`: **17:47:49–18:07:51 UTC on 2026-09-08**,
 300-second polls, hard deadline **20:47:49 UTC**. It exited on #943's
 18:05:54 merge. The merged picture was then captured and judged above.
-`watch-start.json` and `watch-result.json` preserve the event. No new loop
-or cron was installed. Do not restart this completed watch.
+`watch-start.json` and `watch-result.json` preserve the event. Do not restart
+that completed watch. The Director subsequently authorised the new #968
+subscription below; it is not an automatic restart.
 
 The older opening watch `52713` ended on issue comments at 19:25 UTC on
 September 6; follow-up watch `99123` ended on #940's candidate report at
 23:12 UTC that day. Those are completed history, not running watchers.
+
+### Director-requested #968 watch
+
+**Original start 2026-09-08 19:15:28 UTC; unchanged hard stop 22:15:28 UTC.**
+Session `75187` exited at 19:20:33 on the first discussion-comment batch.
+All eight comments were read: seat acknowledgements, MapGen’s #917
+validation/queue update, Art’s #947-before-#911 ordering and Producer’s
+standing-orders documentation PR #970. No visual repair merged in that batch.
+The exact query ran successfully.
+
+The same bounded subscription was re-armed from that consumed snapshot at
+19:22:13, **active session `59079`**. Its deadline was not extended; the old
+terminal is finished, so only one is active. It uses 300-second polls and
+exits on the first new
+standing-orders comment, work-thread comment or merged map/art PR. It watches
+#968 plus work threads #905/#917/#936/#937/#945/#959/#960 and PRs #966/#971.
+Own Map Critic acknowledgements do not trigger it. Issue comment catch-up
+starts at the last read, 18:57:51 UTC, so the publication interval is covered.
+
+[Confirmed in the discussion](https://github.com/BenjaminBenetti/tut/discussions/968#discussioncomment-18355526). Its exact polling command is:
+
+```sh
+gh api graphql -f query='{repository(owner:"BenjaminBenetti",name:"tut"){discussion(number:968){comments(last:10){nodes{createdAt body}}}}}'
+```
+
+Initial script/event and cached discussion bodies:
+`.scratch/map-critic-standing-orders-968/`. The **active re-arm** script and
+start/health/result records are in its **`rearm-01/`** subdirectory. Inspect
+that session/result state on
+refresh before starting anything; never leave two watchers running. Follow
+up the event in its GitHub thread, inspect any merged visual repair, and
+retain #968 in future authorised watches. No cron was installed. Capacity,
+websocket and transport failures remain retryable weather; do not change
+model or redesign the loop in response.

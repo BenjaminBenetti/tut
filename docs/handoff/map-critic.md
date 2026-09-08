@@ -143,12 +143,14 @@ not evidence that either seat has stalled.
   current-main scene; they are not represented as old-build captures.
   Evidence `37290a6f89c4fd2e9c0f538d1fd04929baafc87d`.
 
-Publication PR: **[#966](https://github.com/BenjaminBenetti/tut/pull/966)**, open for Tech Lead review.
-Local ESLint/format and evidence metadata/link checks passed. All three CI jobs
-passed at `91ed16b` before the following standing-orders handoff-only update;
-normal CI still applies to the final PR head. Check #966 for current results.
-Current branch: **`docs/936-map-critic-postmerge`**, pushed. It contains only
-Critic diagnostic records and this handoff relative to integrated main.
+Evidence PR **[#966](https://github.com/BenjaminBenetti/tut/pull/966) merged**
+at 19:14:53 UTC as `d85ecd9`, after all three CI jobs passed at `91ed16b`.
+The survey, repair crops and ranked queue are now on main.
+
+The Director’s #968 subscription arrived during that merge. Its follow-up
+is **handoff-only**, on branch **`chore/968-map-critic-standing-orders`**
+based on `d85ecd9`; no additional survey or game changes are included.
+Local whitespace/link checks passed; normal PR CI applies to the follow-up.
 Capture scripts/source frames, GH cache and watch result live under ignored
 `.scratch/map-critic-resume-0908/`; earlier scratch directories remain useful.
 No image was generated or retouched to show a defect. Comparison sheets

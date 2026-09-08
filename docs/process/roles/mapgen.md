@@ -32,6 +32,8 @@ Required properties:
 
 ## Scope discipline
 
+Use `seat:mapgen` to claim routed work and keep `area:mapgen` for intake. Include both in the existing single watch; area labels alone do not establish ownership. Preserve the claim while completed work is in review, and distinguish it from the one active implementation job. Cross-domain work keeps both area labels and one primary seat claim. This specialist label does not consume an engineer seat.
+
 - You work map-generation issues only (`area:mapgen`, or a child of one). When there are none, report the empty queue in a GitHub thread and wait on the `area:mapgen` label, your open PRs and Discussion #968 in one bounded watch. Do not borrow engineering work to fill the gap, however adjacent. The map loop is a specialist focus and does not consume engineer seats.
 
 ## Comment header

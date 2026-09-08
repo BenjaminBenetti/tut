@@ -45,8 +45,19 @@ fence stubs. A run lacking a legible boundary in another seed remains a
 valid finding. No requirement for enclosed fields, gates or a particular
 layout is prescribed.
 
-## Continuing work
+## Continuing findings and cutaway confirmation
 
-Layer-control and current cutaway frames are being checked separately;
-only completed, inspected controls will be added. The 12-map `mc-resume-02`
-continuation and focused water/urban-fence checks are not yet verdicts.
+The two-angle [follow-up findings](followups/README.md) are filed as
+[#1006, isolated city fence panels](https://github.com/BenjaminBenetti/tut/issues/1006)
+and [#1005, open-water seams](https://github.com/BenjaminBenetti/tut/issues/1005).
+They rank fourth and fifth after #945/#959/#960; the Critic's five-ticket
+cap is reached. The successful rural #917 repair remains accepted.
+
+[Current squad/pointer cutaways](cutaway/README.md) were checked in 24 fresh
+frames, all opened. The chosen radius-4 squad reveal remains useful; shipped
+hover inspection opens adjacent room context and both closure paths restore
+the roof. Dim interiors, stipple and accepted near-wall exposure remain
+visible limitations.
+
+The 12-map `mc-resume-02` continuation and layer-control frames are still in
+progress. Their baseline and inspected coverage will be recorded separately.

@@ -77,7 +77,7 @@ export class ObjectiveTrackerView {
     this.summary.textContent = `${formatWhole(done)} / ${formatWhole(objectives.length)}`;
     const doc = this.list.ownerDocument;
     this.list.replaceChildren();
-    for (const objective of objectives) {
+    for (const [index, objective] of objectives.entries()) {
       const row = doc.createElement("li");
       row.dataset.objectiveId = objective.id;
       // The spawner the objective tracks, so a test can name the thing on
@@ -94,7 +94,15 @@ export class ObjectiveTrackerView {
       const label = doc.createElement("span");
       // The word still carries the state for a screen reader, since the
       // glyph beside it is decorative.
-      label.textContent = `${objective.complete ? "Destroyed" : "Destroy"} spawner ${objective.targetId}`;
+      //
+      // The ordinal, not the target id (#949). "Destroy spawner
+      // spawner-1" said nothing about *which* nest it was — the only
+      // question the label could usefully answer — and it wrapped onto a
+      // second line, so every objective cost two rows of the rail
+      // instead of one. The index is stable for the length of the
+      // mission because a finished objective stays in the array; the id
+      // is still on `data-target-id` for the scene and for tests.
+      label.textContent = `${objective.complete ? "Destroyed" : "Destroy"} spawner ${String(index + 1)}`;
       row.append(glyph, label);
       const spawner = spawners.find((s) => s.id === objective.targetId);
       if (spawner && !spawner.destroyed) {

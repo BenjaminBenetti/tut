@@ -223,6 +223,33 @@ describe("ObjectiveTrackerView", () => {
     expect(rows[0]?.textContent).toContain("20 hp");
     expect(rows[1]?.textContent).not.toContain("hp");
   });
+
+  /**
+   * The label is what the player reads for the whole mission, so it is
+   * asserted as rendered text rather than through `data-target-id`
+   * (#949). The id stays on the dataset for the scene and for tests.
+   */
+  it("labels objectives by ordinal and never puts the spawner id in the text", () => {
+    const view = new ObjectiveTrackerView();
+    view.mount(root);
+    const mission = hudMission();
+    view.update(mission.objectives, mission.spawners);
+    const rows = [...root.querySelectorAll<HTMLElement>("[data-objective-id]")];
+    const labels = rows.map(
+      (row) =>
+        [...row.querySelectorAll("span")]
+          .map((span) => span.textContent ?? "")
+          .find((text) => text.startsWith("Destro")) ?? "",
+    );
+    expect(labels).toEqual(["Destroy spawner 1", "Destroyed spawner 2"]);
+    expect(rows.map((row) => row.dataset.targetId)).toEqual([
+      "spawner-1",
+      "spawner-2",
+    ]);
+    for (const row of rows) {
+      expect(row.textContent).not.toMatch(/spawner-\d/);
+    }
+  });
 });
 
 describe("TurnBannerView", () => {

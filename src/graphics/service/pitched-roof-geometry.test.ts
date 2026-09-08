@@ -108,8 +108,7 @@ describe("pitched roof shelter (#916)", () => {
     expect(map.tiles.some((tile) => tile.y === 4)).toBe(false);
     const target = view.pickCutaway({ x: 0, y: 0 }, camera);
     expect(target?.buildingId).toBe("house");
-    expect(target?.centre.y).toBeGreaterThan(tileTop(2));
-    expect(target?.centre.y).toBeLessThan(tileTop(2) + 0.1);
+    expect(target?.centre.y).toBeCloseTo(tileTop(2) + 0.7);
     // The same ray remains stable after the fragment shader opens the cap.
     expect(view.pickCutaway({ x: 0, y: 0 }, camera)).toEqual(target);
     camera.position.set(0.5, 20, 0.5);

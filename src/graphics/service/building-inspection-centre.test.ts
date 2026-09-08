@@ -31,8 +31,7 @@ describe("building inspection depth", () => {
       hit,
       new Ray(camera.position, direction),
     )!;
-    expect(centre.y).toBeGreaterThan(tileTop(2));
-    expect(centre.y).toBeLessThan(tileTop(2) + 0.1);
+    expect(centre.y).toBeCloseTo(tileTop(2) + 0.7);
     const screenHit = hit.clone().project(camera),
       screenCentre = centre.clone().project(camera);
     expect(screenCentre.x).toBeCloseTo(screenHit.x, 10);
@@ -66,5 +65,16 @@ describe("building inspection depth", () => {
         new Ray(new Vector3(), new Vector3(0, 1, 0)),
       ),
     ).toBeUndefined();
+  });
+
+  it("keeps the centre just under a hit that is lower than the inspection height", () => {
+    const hit = new Vector3(4, tileTop(0) + 0.4, 4);
+    const centre = buildingInspectionCentre(
+      building,
+      hit,
+      new Ray(new Vector3(), new Vector3(0, -1, 0)),
+    )!;
+    expect(centre.y).toBeCloseTo(hit.y - 0.05);
+    expect(centre.y).toBeGreaterThan(tileTop(0));
   });
 });

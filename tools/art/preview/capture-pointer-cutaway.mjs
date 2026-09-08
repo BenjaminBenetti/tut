@@ -1,13 +1,23 @@
 /* global requestAnimationFrame */
 import { chromium } from "@playwright/test";
 import { createHash } from "node:crypto";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 const candidate = process.env.CAPTURE_BASE_URL ?? "http://localhost:4199";
 const baseline = process.env.BASELINE_BASE_URL ?? "http://localhost:4198";
 const output = "docs/design/diagnostics/947";
 mkdirSync(output, { recursive: true });
-const records = [];
+const records = process.argv.includes("--resume")
+  ? JSON.parse(readFileSync(`${output}/captures.json`, "utf8")).records
+  : [];
+for (const record of records) {
+  const bytes = readFileSync(`${output}/${record.filename}`);
+  if (
+    sha256(bytes) !== record.sha256 ||
+    (record.controlSha256 && sha256(bytes) !== record.controlSha256)
+  )
+    throw new Error(`Completed capture changed: ${record.filename}`);
+}
 const errors = [];
 const browser = await chromium.launch({
   args: [
@@ -59,9 +69,16 @@ async function move(x, y, strength) {
 async function capture(filename, pointer, control) {
   const state = await page.evaluate(() => globalThis.__cutawayState());
   if (state.pointerRadius !== 3) throw new Error("Wrong pointer radius");
-  const bytes = await page.screenshot();
+  const completed = records.find((record) => record.filename === filename);
+  const bytes = completed
+    ? readFileSync(`${output}/${filename}`)
+    : await page.screenshot({ timeout: 120000 });
   if (control && !bytes.equals(control))
     throw new Error(`Control changed: ${filename}`);
+  if (completed) {
+    console.log(`${filename}: retained verified capture`);
+    return bytes;
+  }
   writeFileSync(`${output}/${filename}`, bytes);
   records.push({
     filename,
@@ -87,34 +104,53 @@ async function capture(filename, pointer, control) {
   return bytes;
 }
 
-for (const roof of ["pitched", "flat"]) {
-  for (const yaw of [0, 2]) {
-    const prefix = `${roof}-yaw${yaw}`;
-    await load(baseline, roof, yaw, 0);
-    const empty = await page.screenshot();
-    await load(baseline, roof, yaw, 1);
-    const squad = await page.screenshot();
+try {
+  for (const roof of ["pitched", "flat"]) {
+    for (const yaw of [0, 2]) {
+      const prefix = `${roof}-yaw${yaw}`;
+      if (
+        [
+          "open-ground",
+          "hover",
+          "hover-shifted",
+          "pointer-left",
+          "squad-only",
+          "overlap",
+          "overlap-left",
+        ].every((suffix) =>
+          records.some(
+            (record) => record.filename === `${prefix}-${suffix}.png`,
+          ),
+        )
+      )
+        continue;
+      await load(baseline, roof, yaw, 0);
+      const empty = await page.screenshot({ timeout: 120000 });
+      await load(baseline, roof, yaw, 1);
+      const squad = await page.screenshot({ timeout: 120000 });
 
-    await load(candidate, roof, yaw, 0);
-    await move(15, 475, 0);
-    await capture(`${prefix}-open-ground.png`, [15, 475], empty);
-    await move(600, 475, 1);
-    await capture(`${prefix}-hover.png`, [600, 475]);
-    await move(760, 405, 1);
-    await capture(`${prefix}-hover-shifted.png`, [760, 405]);
-    await move(-10, -10, 0);
-    await capture(`${prefix}-pointer-left.png`, [-10, -10], empty);
+      await load(candidate, roof, yaw, 0);
+      await move(15, 475, 0);
+      await capture(`${prefix}-open-ground.png`, [15, 475], empty);
+      await move(600, 475, 1);
+      await capture(`${prefix}-hover.png`, [600, 475]);
+      await move(760, 405, 1);
+      await capture(`${prefix}-hover-shifted.png`, [760, 405]);
+      await move(-10, -10, 0);
+      await capture(`${prefix}-pointer-left.png`, [-10, -10], empty);
 
-    await load(candidate, roof, yaw, 1);
-    await move(15, 475, 0);
-    await capture(`${prefix}-squad-only.png`, [15, 475], squad);
-    await move(760, 405, 1);
-    await capture(`${prefix}-overlap.png`, [760, 405]);
-    await move(-10, -10, 0);
-    await capture(`${prefix}-overlap-left.png`, [-10, -10], squad);
+      await load(candidate, roof, yaw, 1);
+      await move(15, 475, 0);
+      await capture(`${prefix}-squad-only.png`, [15, 475], squad);
+      await move(760, 405, 1);
+      await capture(`${prefix}-overlap.png`, [760, 405]);
+      await move(-10, -10, 0);
+      await capture(`${prefix}-overlap-left.png`, [-10, -10], squad);
+    }
   }
+} finally {
+  await browser.close();
 }
-await browser.close();
 if (errors.length) throw new Error(errors.join("\n"));
 console.log(
   "Pointer, overlap and exact closure controls verified against current main",

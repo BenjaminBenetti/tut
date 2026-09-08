@@ -5,8 +5,11 @@ import { LAYER_HEIGHT, SLAB_HEIGHT } from "../data/mapgen-preview-palette";
 /** Clearance above an interior floor and in front of the far shell. */
 const DEPTH_CLEARANCE = 0.05;
 
+/** Mid-room inspection height: retains the near floor in the opposite-camera study. */
+const HEIGHT_ABOVE_FLOOR = 0.7;
+
 /**
- * Follows the raw cursor ray down to the floor under the hit surface.
+ * Follows the raw cursor ray into the room under the hit surface.
  * Stops just before that footprint rectangle's far wall so inspection
  * retains its shell instead of cutting through another building behind it.
  */
@@ -19,7 +22,10 @@ export function buildingInspectionCentre(
     .map((floor) => floor.y * LAYER_HEIGHT + SLAB_HEIGHT)
     .filter((height) => height < hit.y - DEPTH_CLEARANCE);
   if (floorHeights.length === 0 || ray.direction.y >= 0) return undefined;
-  const floorY = Math.max(...floorHeights) + DEPTH_CLEARANCE;
+  const floorY = Math.min(
+    Math.max(...floorHeights) + HEIGHT_ABOVE_FLOOR,
+    hit.y - DEPTH_CLEARANCE,
+  );
   const floorDistance = (floorY - hit.y) / ray.direction.y;
   // Art currently emits rectangular buildings. For a union, retain the
   // containing rectangle's far edge rather than tunnelling across its void.

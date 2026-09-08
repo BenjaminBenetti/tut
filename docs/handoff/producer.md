@@ -3,27 +3,29 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-08 20:19 UTC)
+## Status Digest (2026-09-08 20:40 UTC)
 
-**Production is running.** [Discussion #968](https://github.com/BenjaminBenetti/tut/discussions/968) is the standing-orders channel; work direction stays in issue/PR threads. #970 put it in Studio and every role brief; #980 removed obsolete predecessor instructions. Main `3ea2fb7`: **24 open issues, 9 seat-owned and 15 unowned**. No GitHub account assignees.
+**Production is running.** [Discussion #968](https://github.com/BenjaminBenetti/tut/discussions/968) is the standing-orders channel; work direction stays in issue/PR threads. Studio/all role briefs inherit it, and specialist claims are documented in merged #990. Main `b315d5c`: **22 open issues, 8 seat-owned and 14 unowned**. No GitHub account assignees.
 
 | Seat / work | Current state |
 |---|---|
-| eng-4, Opus 5/max | #992 low targeting cleanup In Progress; #983 rebase resolved, back In Review. #949/#989 and parent #735 remain In Review with attribution retained |
-| eng-5, Opus 5/max | #978 p1 hillside cut In Progress; #981 p3 follows |
-| `seat:mapgen`, Astra 6/xhigh | #945 p2 active; #959 next; #984 capacity contract queued after map-quality work |
-| `seat:art-director`, Astra 6/xhigh | #947/#982 Done; #911 next but blocked on MapGen footprint/clearance response; #960 follows |
+| eng-4, Opus 5/max | #991 low rail-layout fix active; #992/#994 In Review, attribution retained |
+| eng-5, Opus 5/max | #978 p1 hillside cut active; #981 p3 follows |
+| `seat:mapgen`, Astra 6/xhigh | #945 Ready and first assigned; pickup unverified (no claim, branch or PR found); #959 then #984 queued |
+| `seat:art-director`, Astra 6/xhigh | #911 next, blocked on MapGen footprint/support/clearance reply; #960 follows; #947 delivered |
 | eng-3, Astra 6/xhigh | Visibly idle; no suitable Ready high issue |
 
-**Ownership fixed for the live specialist queue:** existing MapGen/Art seats now have claim labels on #945/#959/#984 and #911/#960 (completed #947 retains attribution). Process clarification is PR #990. Area labels remain intake/domain, Owner remains role responsibility; neither substitutes for a seat claim. One active job, not one non-Done label; no sizing gate.
+**Floor-check risk:** do not equate assignment with observed activity. #945's dependency cleared at 19:55, but its pickup has not been demonstrated; request is in its thread and Director/session check is flagged in #968. Art confirms it is waiting on the same MapGen seat's #911 agreement. Neither issue is blocked by a production hold.
 
-**Unowned, no seat label:** #447, #450, #591, #594, #673, #701, #712, #734, #740, #760, #787, #793, #869, #981, #991. #991 is the p3 rail-layout follow-up, blocked on #989; keep “spawner”. Other actual gates: #959→#945; #960→#911; #981→#978; #760→#447; decisions #447/#591/#594/#712/#734. #787/#869 are Backlog, not pause-blocked. Other Ready: Art #450/#673/#740/#793, MapGen #701. No new M3 decomposition.
+**Unowned, no seat label:** #447, #450, #591, #594, #673, #701, #712, #734, #740, #760, #787, #793, #869, #981. Owner/area fields do not substitute for claims. Queued work and completed review work may retain a label; only one active implementation job. No sizing gate.
 
-**Review / partial completion:** #735 A/#975 and B/#979 merged: 177/187 guards exercised. Tech Lead accepted retaining two capacity guards with property tests; #983 is rebased and awaits final disposition for three page-entry catches. 182/187 is still the combined-branch claim. #989's labels are Director-accepted but still wrap; #991 owns layout. Open handoffs/process: #987/#988/#990, all under an hour old, plus this update.
+**Delivered / review:** #735 is **Done**, all three slices #975/#979/#983 merged: **182/187 guards exercised, up from 144/187**. Tech Lead accepted five retained exceptions (two capacity refusals with property tests; three reporting page-entry catches). #984 tracks the capacity defect; #992 the separate targeting duplication. Final closure/counts: 5591497998. #949 is Done; its remaining wrap is #991, which must preserve “spawner”. Open PRs: #994 implementation, #987 Art and #995 Tech Lead handoffs, all under an hour, plus this update.
 
-**Release / risks:** verified release **v0.2.13**, published 19:57:45 UTC, targets `cd412f5`; it includes #936/#753/#937/#457/#950/#751/#917/#961 and completes original epic #514 in a release. Pointer reveal #947/#982 (`3ea2fb7`) is newer and untagged. Fetch tags and check the release API; the earlier local tag cache was stale. #869's old crossings measured 2,046→0 in QA #974; subclaim-retirement ruling remains requested, latent hazard remains. ADR 0004 §7 owes waterfront/rural-fence rows. Critic re-check of fences and pointer reveal remains due; three Critic tickets open, cap five.
+**Dependencies / queue:** #959→#945; #960→#911; #981→#978; #760→#447; decisions #447/#591/#594/#712/#734. Backlog #787/#869 is not pause-blocked. Other Ready: Art #450/#673/#740/#793, MapGen #701/#984. Three Critic findings open, cap five. No new M3 decomposition.
 
-**Milestones, closed/total:** M0 13/13 · M1 65/65 · M1.5 42/50 · M2 49/50 · M2.5 33/39 · M3 1/4 · Arsenal 1/3 · Bestiary 1/1 · Tech Debt 6/10. Director closes milestones. Producer Astra 6/high; Critic Astra 6. One five-minute discussion/work watch, three-hour deadline; fixed head per PR.
+**Release / residuals:** verified **v0.2.14** (20:27:58 UTC, `07acbfc`) includes pointer reveal #947, labels #949, and guard slices A/B. Slice C/#983 (`b315d5c`) merged afterward. #869's old crossings measured 2,046→0 in QA #974; subclaim-retirement ruling requested, latent hazard remains. ADR 0004 §7 owes waterfront/rural-fence rows. Critic re-check of fences/pointer reveal remains due. Fetch tags and check the release API before reporting shipped status.
+
+**Milestones, closed/total:** M0 13/13 · M1 65/65 · M1.5 42/50 · M2 49/50 · M2.5 34/39 · M3 1/4 · Arsenal 1/3 · Bestiary 1/1 · Tech Debt 7/10. Director closes milestones. Producer Astra 6/high; Critic Astra 6. One five-minute discussion/work watch, three-hour deadline; fixed head per PR.
 <!-- digest:end -->
 
 
@@ -41,21 +43,21 @@ The role column below records routing responsibility; only rows with a `seat:` l
 | #937 / #943 | Art Director, completed | Done; corrected fog frames independently verified, acceptance and CI green |
 | #947 p1 | `seat:art-director`, completed | Done via #982; accepted pointer reveal, floor+0.70 anchor |
 | #917 p2 | MapGen, completed | Done via #973; Critic re-check due |
-| #945 p2 | `seat:mapgen`, Art support | In Progress: natural material boundaries; #917 dependency cleared |
+| #945 p2 | `seat:mapgen`, Art support | Ready, first assigned; pickup unverified, request in issue/Discussion; no dependency |
 | #959 p2 | `seat:mapgen`, Art support | Trail identity after related #945, not merely smooth material contacts |
 | #960 p2 | `seat:art-director`, MapGen support | Recognisable building uses after #947/#911; live Critic work, not a taste hold |
 | #911 p2 | `seat:art-director`, MapGen placement | Model after #947; agree proposed 5×7 / max-height 3.6 envelope, real support, rotation and 16 clear boarding/start tiles before modeling |
 | #457 / #955 | eng-4, completed | Done; Director accepted the opposite-failure controls and the green gate passed |
 | #753 / #948 | eng-5, completed | Merged/Done; live and reload city lookup proved, correcting the migration premise |
-| #949 p2 | `seat:eng-4` | In Review #989; id removal accepted, layout separate in #991 |
-| #991 p3 | Engineer, no claim | Blocked on #989; rail layout, not vocabulary |
-| #992 p3 | `seat:eng-4` | In Progress after #983 rebase; low shared-targeting-guard cleanup |
+| #949 p2 | `seat:eng-4`, completed | Done via #989; layout separate in #991 |
+| #991 p3 | `seat:eng-4` | In Progress; rail layout and accurate wrap comment, preserve vocabulary |
+| #992 p3 | `seat:eng-4` | In Review #994; shared-targeting-guard cleanup |
 | #950 p2 | `seat:eng-5`, completed | Done via #962; retained attribution, schema-v17 migration and city-name rendering |
 | #961 p1 | `seat:eng-5`, completed | Done via #977; one storey/two engine layers; hillside limit in #978 |
 | #978 p1 | `seat:eng-5` | In Progress after #977; hillside floor/readout correction |
 | #981 p3 | Engineer, no claim | Blocked after #978; above-cut-unit treatment, never hide units |
 | #984 p2 | `seat:mapgen` | Ready after live map work; align map/deployment capacity contract, failing minimal-map test |
-| #735 p2 | `seat:eng-4`, In Review | A/B merged; C/#983 rebased/In Review; two retained guards accepted, three page-entry dispositions pending |
+| #735 p2 | `seat:eng-4`, completed | Done after A/B/C merges; 182/187, all five exceptions accepted; C post-v0.2.14 |
 | #450 p2 | Art Director | Ready: true Earth-coordinate texture, remove eleven marker nudges |
 | #594 p2 | Art Director | Blocked on utility-thumbnail row design choice |
 | #591 p2 | Director | Blocked on tree sight-blocking decision using current-scale evidence |

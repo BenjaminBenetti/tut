@@ -7,6 +7,7 @@ import type { PartCatalogue } from "../../roster/model/part-catalogue";
 import { partThumbnail } from "../data/part-thumbnail-table";
 import { thumbnailUrl } from "../data/thumbnail-manifest";
 import { formatCredits } from "../service/format";
+import { iconGlyph } from "./icon-glyph";
 
 // ===========================================
 // Types
@@ -70,6 +71,8 @@ export class LoadoutEditorView {
   private readonly parts: PartCatalogue;
   /** One thumbnail per picker row, by the picker's key. */
   private thumbs = new Map<string, HTMLImageElement>();
+  /** The no-picture glyph beside each thumbnail, shown when a part has no model (#594). */
+  private thumbNone = new Map<string, HTMLElement>();
   private root: HTMLElement | undefined;
   private form: HTMLElement | undefined;
   private nameInput: HTMLInputElement | undefined;
@@ -297,8 +300,13 @@ export class LoadoutEditorView {
    * mech is assembled from.
    */
   private thumbnail(doc: Document, key: string, selected: PartId): HTMLElement {
+    // The cell is the bordered box; the picture and the no-picture glyph
+    // take turns inside it (#594). Keeping the box on the outside is what
+    // holds every picker at the same width whichever one is showing.
+    const cell = doc.createElement("span");
+    cell.className = "tut-mech-bay__thumb";
     const thumb = doc.createElement("img");
-    thumb.className = "tut-mech-bay__thumb";
+    thumb.className = "tut-mech-bay__thumb-img";
     thumb.dataset.role = "part-thumb";
     thumb.dataset.field = key;
     thumb.width = THUMB_PX;
@@ -306,9 +314,18 @@ export class LoadoutEditorView {
     // Decorative: the picker beside it already names the part, so a
     // screen reader announcing the picture twice would only be noise.
     thumb.alt = "";
+    // A utility is an ability, and that is the icon the set already has.
+    // Decorative for the same reason the picture is: the picker names
+    // the part, and "no picture" is not a fact worth announcing.
+    const none = iconGlyph(doc, "ability");
+    none.classList.add("tut-mech-bay__thumb-none");
+    none.dataset.role = "part-thumb-none";
+    none.dataset.field = key;
+    cell.append(thumb, none);
     this.thumbs.set(key, thumb);
+    this.thumbNone.set(key, none);
     this.showThumbnail(key, selected);
-    return thumb;
+    return cell;
   }
 
   /** Points one row's thumbnail at the chosen part, or hides it for a part with no picture. */
@@ -317,18 +334,28 @@ export class LoadoutEditorView {
     if (thumb === undefined) {
       return;
     }
+    const none = this.thumbNone.get(key);
     const id = partThumbnail(partId);
     if (id === undefined) {
-      // A utility part has no picture. The cell stays, empty, so the
-      // pickers below it do not shift left out of alignment.
+      // A utility part has no picture, and an empty cell read as one
+      // that failed to load (#594). The box stays — so the pickers below
+      // do not shift left — and the ability glyph fills it, which says
+      // "this kind of part has no picture" rather than "picture
+      // missing".
       thumb.classList.add("is-empty");
       thumb.removeAttribute("src");
       delete thumb.dataset.thumb;
+      if (none !== undefined) {
+        none.hidden = false;
+      }
       return;
     }
     thumb.classList.remove("is-empty");
     thumb.src = thumbnailUrl(id);
     thumb.dataset.thumb = id;
+    if (none !== undefined) {
+      none.hidden = true;
+    }
   }
 
   /** `Name · ¢cost` for a part. */
@@ -380,6 +407,7 @@ export class LoadoutEditorView {
     this.pickers = new Map();
     this.errorSlots = new Map();
     this.thumbs = new Map();
+    this.thumbNone = new Map();
     this.nameInput = undefined;
     this.form?.replaceChildren();
   }

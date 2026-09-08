@@ -2,7 +2,8 @@
 
 2026-09-08, v0.2.13 follow-up — #917 visually accepted on current main;
 five open Critic tickets (cap reached). Squad/pointer cutaway re-check is
-complete; layer framing and the next seed survey remain in progress.
+complete. Layers have useful floor views but fail the top-limit roof control;
+that regression is already owned under #978. The next seed survey continues.
 
 ## Calibration and boundaries
 
@@ -46,7 +47,8 @@ Five open Critic tickets at this checkpoint (cap reached):
 1. **[#945](https://github.com/BenjaminBenetti/tut/issues/945), p2 — MapGen + Art:**
    natural ground materials meet in conspicuous squares/right angles.
    Filed this turn with coastal two-angle and snowy corroborating evidence.
-   MapGen has claimed it and posted a cause assessment; #917 has merged.
+   MapGen has submitted the Director-accepted #1007; the Tech Lead requested
+   refreshed fog frames before merge. #959 is now MapGen’s active job.
    Producer’s earlier uncertainty about pickup was explicitly cleared in #968. This concerns material contact,
    not the settled slope/crease geometry.
 2. **[#959](https://github.com/BenjaminBenetti/tut/issues/959), p2 — MapGen + Art:**
@@ -92,12 +94,26 @@ current control interiors are dim, but this pass establishes the cutaway
 improvement, not a general lighting failure or sign-off. Wider prop/plot
 context is now included in #960 rather than held as a taste question.
 Report if either owner begins queueing instead of working. At restart,
-MapGen is on #945 and has pushed an implementation checkpoint, with #959 next.
-The #911 placement agreement is now on its issue for Art (#960 follows).
+MapGen is on #959 with #945 In Review (#1007).
+Art is now active on #960, with the #911 model In Review (#1008).
 #947 has merged; a queued successor is
 not evidence that either seat has stalled.
 
 ## Merged fixes: render verdicts
+
+- **#961 / #978:** useful floor views, **failed top-limit preservation control**
+  on later main `d0837c6`. Eight fresh frames show 1/5 and 2/5 rooms/stairs
+  from two sides, but `]` at initial 5/5 removes the tall roof without changing
+  the readout. [Posted on the owning #978 thread](https://github.com/BenjaminBenetti/tut/issues/978#issuecomment-5592433008)
+  and cross-referenced from #961. [Evidence](../design/diagnostics/map-critic-v0213/layers/README.md),
+  `22d1cad`. #968 confirmed eng-3 already owns the correction; do not open a
+  duplicate or claim discovery priority. Both initial frames had their roofs:
+  the precise trigger is applying the top focus, including a clamped Up.
+  The engineer’s separately attributed same-run hillside pair in merged #1003
+  was also opened: the missing building becomes readable ground-floor rooms,
+  an actual improvement. The proper flat-map preservation control remains
+  owed under #996/#978; our view is not a substitute for that reproducibility work.
+
 
 - **#937 / #947, current-main confirmation:** 24 fresh pitched/flat, two-angle
   squad/pointer/overlap/closure frames opened. Broad radius-4 room context
@@ -234,25 +250,24 @@ closed survey #905 with the template's closing keyword. Never push main or
 merge. Every GitHub comment starts with `**Map Critic** · TUT agent` alone.
 A model-capacity error is transient: wait/retry, never change model.
 
-## Watch and current work checkpoint — 21:33 UTC
+## Watch and current work checkpoint — 22:00 UTC
 
 Original #968 subscription: **19:15:28–22:15:28 UTC, 2026-09-08**, 300-second
 polls. [Confirmed in the discussion](https://github.com/BenjaminBenetti/tut/discussions/968#discussioncomment-18355526).
-All earlier sessions are completed or explicitly replaced; no cron exists.
+All prior sessions are completed or explicitly replaced; no cron exists.
 
-The prior `32285` re-arm exited at 21:18:04. Read/applied: MapGen's #945
-implementation checkpoint; #911 placement agreement available to Art;
-Producer's correction that #978/#999 merged before its evidence was complete,
-with #1003 supplying the missing hillside pair and #996 still owning the flat
-control's repeatability work. No new defect is inferred from closed state.
+Most recent consumed event: `87543` exited at 21:59:26. Read/applied eng-3 and
+eng-5's precise roof correction: initial frames are intact; the fault requires
+applying the top focus and affects the tallest/tied roofs, not every roof.
+This matches our two-angle observation. Do not repeat the earlier overstated
+warning. Tech Lead routed a separate roof repair ahead of #996 capture work;
+#1009 tether waits for it. #1003's hillside evidence is merged (`29639b3`).
 
-Session `93491` polled quietly at 21:28:53 and was stopped before replacement
-to add the new owned tickets. **Active singleton `92529`**, started 21:32:38,
-uses `.scratch/map-critic-v0213/watch/rearm-03/watch.py`, exact #968 query and
-work threads including #1005/#1006. Its original hard stop remains **22:15:28**.
-Inspect result/health and read new comments before re-arming; never extend the
-deadline or run two watchers. Catch up discussion pagination if latest-ten
-comments have no overlap with the read cursor.
+Current singleton uses `.scratch/map-critic-v0213/watch/rearm-07/watch.py`,
+started around 22:00, with exact #968 query and owned work threads/PR #1007.
+The hard stop remains **22:15:28**. Inspect health/result before re-arming;
+never extend the deadline or run two watchers. Catch up discussion pagination
+if latest-ten comments have no overlap with the read cursor.
 
 ```sh
 gh api graphql -f query='{repository(owner:"BenjaminBenetti",name:"tut"){discussion(number:968){comments(last:10){nodes{createdAt body}}}}}'
@@ -260,24 +275,33 @@ gh api graphql -f query='{repository(owner:"BenjaminBenetti",name:"tut"){discuss
 
 Current runtime/capture state:
 
-- Server `86432`, port 4173, baseline `5cead6e`; docs-only branch changes.
-- `fences/`: 9 inspected and committed PNG/JSON pairs; #917 accepted.
-- `followups/`: 6 inspected and committed pairs (two water crops, two whole-UI
-  views, two city-panel crops); tickets #1005 and #1006 filed.
-- `cutaway/`: all 24 inspected and committed pairs; #937/#947 verdict posted.
-- `layers-pilot-offscreen/`: six excluded bad-framing frames. The subsequent
-  middle-drag pilot did not move the camera and was stopped without a verdict.
-  `layers.mjs` now calibrates ordinary `d`/`s` keyboard taps against the live
-  camera projection, following the public layer screenshot recipe. Session
-  **`29299`** is still framing; inspect before any verdict. Do not mistake a
-  capture-camera failure for broken layers. #978 owns the hillside case;
-  #981 owns above-cut unit visibility and #996 owns known capture drift.
-- `survey.mjs` is now running as **`97179`**: `mc-resume-02`, all four biomes ×
-  rural/town/city, medium 72², whole/closer pairs. Only completed and opened
-  maps count as seen; the survey ledger has not yet been written.
+- Main workspace remains `docs/917-map-critic-v0213`, baseline `5cead6e`;
+  Vite server `86432` on 4173. Only evidence/docs have changed.
+- Read-only detached current-main worktree is
+  `.scratch/map-critic-v0213/current-main`, `d0837c6`; server `75288` on 4174.
+  Its untracked `node_modules` is a symlink to the shared install, not a product edit.
+- `fences/`: 9 inspected/committed pairs, #917 accepted.
+- `followups/`: 6 inspected/committed pairs, #1005/#1006 filed and claimed MapGen.
+- `cutaway/`: 24 inspected/committed pairs, #937/#947 verdict posted.
+- `layers-latest/` and `layers-top-angle/`: five plus three valid frames,
+  all inspected and committed under `layers/`; #978/#961 verdict posted.
+  Completed capture sessions include `45499` (stopped before its unneeded
+  rotated continuation) and `40140` (three rotated frames, exit 0).
+  Excluded pilots/calibration failures remain scratch only. For fresh repeats,
+  use single settled keyboard taps as in `layers-top-angle.mjs`; middle drag
+  does not pan this scene, and batch pan calibration near the map edge oscillated.
+- `survey.mjs` continues as **`97179`**: `mc-resume-02`, four biomes ×
+  rural/town/city, medium 72², whole/closer pairs. All eight rural/town pairs
+  are captured and opened; city captures are in progress. Observations live
+  in `survey-observations.json`. `survey-sheets.py` arranges captures with labels
+  outside the scene; rural/town sheets exist but need opening before publication.
+  Town views corroborate #1006 on another seed; add them to its thread after
+  the evidence is committed, explicitly noting only one camera side there.
 
 The Director asked for context percentage. No reliable live percentage is
 exposed to this seat’s tools; do not invent one. CLI `/status` reports it to
-the operator. This pushed checkpoint preserves filed findings before more
-survey work. Next: finish layer framing/verdict, inspect the 12-map continuation,
-update this checkpoint again, and open the docs-only PR with evidence/CI status.
+the operator. Completed findings/verdicts are pushed. Next: finish inspecting
+four city pairs, commit the continuation/ledger and town corroboration, make
+this handoff final and open the docs-only PR. Re-check #945/roof correction
+if they merge; do not accept merely on closure. Observe normal CI and finish
+the bounded watch without another three-hour extension.

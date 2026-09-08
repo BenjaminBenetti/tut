@@ -73,6 +73,7 @@ describe("generateTacticalMap", () => {
       "slopes",
       "ramps",
       "kerbs",
+      "rural-fences",
       "hooks",
       "connectivity",
     ]);

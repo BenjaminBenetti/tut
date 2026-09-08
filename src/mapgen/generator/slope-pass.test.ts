@@ -373,8 +373,13 @@ describe("SlopePass", () => {
   });
 
   it("is deterministic per seed and rerolls nothing else", () => {
+    // Boundary placement consumes slope classification. Exclude that consumer
+    // from both sides to isolate what the slope pass itself changes (#917).
+    const passes = createSettlementPasses().filter(
+      (p) => p.id !== "rural-fences",
+    );
     const without = new PipelineMapGenerator(
-      createSettlementPasses().filter((p) => p.id !== "slopes"),
+      passes.filter((p) => p.id !== "slopes"),
       registries,
     );
     const seed = hashSeed("slopes-det");
@@ -382,10 +387,10 @@ describe("SlopePass", () => {
       params("rural", "temperate"),
       new Mulberry32Rng(seed),
     ).draft;
-    const b = new PipelineMapGenerator(
-      createSettlementPasses(),
-      registries,
-    ).run(params("rural", "temperate"), new Mulberry32Rng(seed)).draft;
+    const b = new PipelineMapGenerator(passes, registries).run(
+      params("rural", "temperate"),
+      new Mulberry32Rng(seed),
+    ).draft;
     // Slopes add connectors and pieces; they move no ground and no prop.
     for (let z = 0; z < a.depth; z++) {
       for (let x = 0; x < a.width; x++) {

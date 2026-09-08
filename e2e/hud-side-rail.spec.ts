@@ -79,8 +79,18 @@ test("the side rail stays clear of the action bar, and says when it has more to 
   // The overflow itself is asserted rather than guarded on. `if (hidden
   // > 1)` looks careful and is the opposite: on any build where the rail
   // fits, it asserts nothing at all, so deleting `watchSideOverflow`
-  // outright would leave this spec green. #674 names the change that
-  // would do it — shortening "Destroy spawner spawner-1" buys 40 px.
+  // outright would leave this spec green.
+  //
+  // That shortening has now happened — #949 replaced "Destroy spawner
+  // spawner-1" with "Destroy spawner 1" — and it bought **nothing**
+  // here, so this fixture is untouched. Measured at this viewport:
+  // `hidden` is 64 px before and after, because the rail is a fixed
+  // 268 px and the label wraps to two lines either way (195 px of text
+  // before, 132 px after, into a 130 px slot). The 40 px in the old note
+  // was an estimate that assumed the shorter label would unwrap; it does
+  // not. If a future change does make the rail fit, widen the fixture
+  // (more objectives, a shorter viewport) rather than weakening the
+  // assertion below.
   const hidden = await rail.evaluate((el) => el.scrollHeight - el.clientHeight);
   expect(
     hidden,

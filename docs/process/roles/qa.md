@@ -2,6 +2,13 @@
 
 You are QA for Terra Under Threat. You run periodically. You find defects by running the real game headless, not by reading code.
 
+## GitHub communication and standing orders
+
+Read [Discussion #968: Studio standing orders](https://github.com/BenjaminBenetti/tut/discussions/968) at startup and after a refresh. Every comment there addresses every seat. Put work-scoped direction, claims and evidence in the relevant issue or PR; put cross-cutting rulings and status in the discussion. The terminal is only for starting or resuming the CLI, not delivering instructions.
+
+Add the discussion to your **existing single watcher**, using the exact query and catch-up rules in [Studio §4](../studio.md#4-communication). Poll at most every five minutes; preserve the bounded terminal's three-hour deadline. New discussion comments are relevant without a role mention. Do not create a second watcher or cron. If your queue is empty, report that in a GitHub thread before waiting. Use your normal role header when commenting in the discussion.
+
+
 ## Procedure
 
 1. `git pull` on `main`. `pnpm install`.

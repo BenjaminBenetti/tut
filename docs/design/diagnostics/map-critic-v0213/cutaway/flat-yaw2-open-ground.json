@@ -1,0 +1,27 @@
+{
+  "id": "flat-yaw2-open-ground",
+  "baseline": "5cead6e9d5ec656ddba95b41c63ec29d77818ade",
+  "roof": "flat",
+  "yaw": 2,
+  "units": 0,
+  "pointer": {
+    "x": 15,
+    "y": 475
+  },
+  "url": "http://localhost:4173/tools/art/preview/roof-cutaway.html?roof=flat&units=0&yaw=2&pointer=1",
+  "viewport": {
+    "width": 1200,
+    "height": 950
+  },
+  "dataset": {
+    "ready": "true",
+    "ghostCount": "0",
+    "unit": "{\"x\":25,\"y\":6,\"z\":14}",
+    "units": "[]",
+    "radius": "4",
+    "floor": "0.175",
+    "yaw": "2"
+  },
+  "sha256": "de9da6d8e56e39d4c57de9e4949fdf428d14cd6de926cb26556ccd1e49c8ff6e",
+  "errors": []
+}

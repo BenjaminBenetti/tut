@@ -1,0 +1,27 @@
+{
+  "id": "pitched-yaw0-squad-two",
+  "baseline": "5cead6e9d5ec656ddba95b41c63ec29d77818ade",
+  "roof": "pitched",
+  "yaw": 0,
+  "units": 2,
+  "pointer": {
+    "x": 15,
+    "y": 475
+  },
+  "url": "http://localhost:4173/tools/art/preview/roof-cutaway.html?roof=pitched&units=2&yaw=0&pointer=1",
+  "viewport": {
+    "width": 1200,
+    "height": 950
+  },
+  "dataset": {
+    "ready": "true",
+    "ghostCount": "2",
+    "unit": "{\"x\":24,\"y\":4,\"z\":15}",
+    "units": "[{\"x\":24,\"y\":4,\"z\":15},{\"x\":21,\"y\":4,\"z\":11}]",
+    "radius": "4",
+    "floor": "0.175",
+    "yaw": "0"
+  },
+  "sha256": "5833322c768544b8266a4813d2fda8a8e96bccbbf7caa576bb27d491e88f3a13",
+  "errors": []
+}

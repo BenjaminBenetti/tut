@@ -746,6 +746,41 @@
   );
 }
 
+/*
+ * The objective row, made to fit the rail it lives in (#991).
+ *
+ * Measured at 1280x720 before this: the rail is 268 px, the row 236 px,
+ * and after 24 px of padding, a 16 px glyph and two 12 px gaps the label
+ * and the hp chip share 172 px. They need 132 px and 40 px — 172 px
+ * exactly — so the flex row shrank both by a hair and *both* wrapped,
+ * costing every objective two lines. #949 removed the duplicated id from
+ * the label and could not fix this: the row does not fit the rail.
+ *
+ * Three changes, none of which touch the shared `.tut-list > li` used by
+ * every other list in the game:
+ *   - a tighter gap here, which buys 8 px;
+ *   - the label takes the width the chip is not using, rather than being
+ *     shrunk in proportion with it;
+ *   - the chip never wraps, because "20 / hp" over two lines is the
+ *     thing that made the row look broken.
+ */
+.tut-hud__objectives .tut-list > li {
+  gap: var(--space-2);
+}
+
+.tut-hud__objectives .tut-list > li > span:not(.tut-icon) {
+  min-width: 0;
+}
+
+.tut-hud__objectives .tut-list > li > span:nth-child(2) {
+  flex: 1 1 auto;
+}
+
+.tut-hud__objectives .tut-list > li > .tut-mono {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
 .tut-hud__bottom {
   grid-area: bottom;
   padding: var(--space-3) var(--space-4);

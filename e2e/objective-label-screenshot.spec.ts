@@ -26,7 +26,8 @@ test("captures the objective tracker and the banner beside it", async ({
     "set CAPTURE=1 to regenerate the objective label screenshots",
   );
   test.setTimeout(180_000);
-  await page.setViewportSize({ width: 1280, height: 720 });
+  const vw = Number(process.env.VW ?? 1280);
+  await page.setViewportSize({ width: vw, height: 720 });
   await launchMission(page, "4242");
   await settleForShot(page);
 
@@ -59,6 +60,10 @@ test("captures the objective tracker and the banner beside it", async ({
   await expect(missionName).not.toBeEmpty();
 
   const rail = page.locator(".tut-hud__side");
-  await rail.screenshot({ path: "docs/design/ui-objective-tracker.png" });
-  await page.screenshot({ path: "docs/design/ui-objective-tracker-hud.png" });
+  await rail.screenshot({
+    path: process.env.RAIL_PNG ?? "docs/design/ui-objective-tracker.png",
+  });
+  await page.screenshot({
+    path: process.env.HUD_PNG ?? "docs/design/ui-objective-tracker-hud.png",
+  });
 });

@@ -441,6 +441,7 @@ export class TacticalMapView implements Disposable, TilePicker {
       ["foundations", placements.foundations],
       ["roofs", placements.roofs],
       ["walls", placements.walls],
+      ["frontages", placements.frontages],
       ["props", placements.props],
       ["ramps", placements.connectors.filter((p) => p.ramp !== undefined)],
       ["ladders", placements.connectors.filter((p) => p.ladder !== undefined)],

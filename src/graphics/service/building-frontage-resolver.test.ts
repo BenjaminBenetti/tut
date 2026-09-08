@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { Vector3 } from "three";
+import {
+  BoxGeometry,
+  InstancedMesh,
+  Matrix4,
+  Mesh,
+  MeshStandardMaterial,
+  Vector3,
+} from "three";
 import { DIRECTIONS } from "../../core/model/direction";
 import type { Direction } from "../../core/model/direction";
 import { stepGridPos } from "../../core/service/grid-math";
@@ -9,6 +16,8 @@ import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import { resolveBuildingFrontages } from "./building-frontage-resolver";
+import { TacticalMapView } from "../view/tactical-map-view";
+import { createGhostUniforms } from "./ghost-cutaway";
 
 /** A real perimeter, two floors, roof and central door, with room outside all four sides. */
 function fixture(kind = "apartment", side: Direction = "s"): TacticalMap {
@@ -189,5 +198,64 @@ describe("building use cues", () => {
       },
     };
     expect(resolve(rural)).toEqual([]);
+  });
+
+  it("loads the attachments through the real scene consumer with owner fog and storey cuts", async () => {
+    const map = fixture();
+    const index = new TileIndex(map);
+    const prototype = new Mesh(new BoxGeometry(), new MeshStandardMaterial());
+    const view = new TacticalMapView(map, createGhostUniforms(4, 0.175));
+    view.setVision({ visible: [], explored: [], spotted: [], lastSeen: {} });
+    await view.loadModels({
+      preload: () => Promise.resolve(),
+      load: () => Promise.resolve(prototype.clone()),
+    });
+    const frontages: InstancedMesh[] = [];
+    view.root.traverse((object) => {
+      if (
+        object instanceof InstancedMesh &&
+        object.name.startsWith("frontages-model:")
+      )
+        frontages.push(object);
+    });
+    expect(frontages).toHaveLength(3);
+    for (const mesh of frontages) {
+      expect((mesh.material as MeshStandardMaterial).name).toContain("ghosted");
+      const mist = mesh.geometry.getAttribute("unexploredMist");
+      expect(
+        Array.from({ length: mist.count }, (_, i) => mist.getW(i)),
+      ).toEqual(Array.from({ length: mist.count }, () => 1));
+    }
+    view.setVision({
+      visible: map.tiles.map((tile) => index.keyOf(tile)),
+      explored: [],
+      spotted: [],
+      lastSeen: {},
+    });
+    for (const mesh of frontages) {
+      const mist = mesh.geometry.getAttribute("unexploredMist");
+      expect(
+        Array.from({ length: mist.count }, (_, i) => mist.getW(i)),
+      ).toEqual(Array.from({ length: mist.count }, () => 0));
+    }
+    const window = frontages.find((mesh) =>
+      mesh.name.includes("residential-window"),
+    )!;
+    const entry = frontages.find((mesh) =>
+      mesh.name.includes("residential-entry"),
+    )!;
+    const matrix = new Matrix4();
+    view.setLayerFocus({ storey: 0, storeyCount: 2, cutLevel: 3 });
+    window.getMatrixAt(0, matrix);
+    expect(matrix.determinant()).toBe(0);
+    entry.getMatrixAt(0, matrix);
+    expect(matrix.determinant()).not.toBe(0);
+    view.setLayerFocus(undefined);
+    window.getMatrixAt(0, matrix);
+    expect(matrix.determinant()).not.toBe(0);
+    expect(prototype.material.name).not.toContain("ghosted");
+    view.dispose();
+    prototype.geometry.dispose();
+    prototype.material.dispose();
   });
 });

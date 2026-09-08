@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-08 ~21:00 UTC (session 5; #999 per-building layer cut merged; only #998 (rail-width fix) open on the Director's verdict; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-08 ~22:10 UTC (session 5; roof regression from #999 awaiting eng-3's fix, revert fallback armed; gate hardened after I merged a red gate on #1003; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — the hold is lifted (2026-09-08); the Map Quality Loop leads
 
@@ -45,6 +45,28 @@ building, which counted the hill's storey; now the tallest building's floor
 count) and merged. The pixel control for #978 is owed retroactively when
 #996 lands. #998 (objective row fits the rail, #991) gate green, awaiting
 the Director's frame verdict. Handoffs #987, #997.
+
+**Late evening (read this):**
+- **I merged a RED gate on #1003.** Three known local-budget timeouts at
+  host load ~110; main is healthy (all three pass on merged main in both
+  shapes) but the process failed. `gate.sh` now runs `CI=1 pnpm test --
+  --maxWorkers=3` (CI shape, capped workers so the loaded host does not
+  OOM-kill it), exits 1 on RED, and `gate-ok.sh <task-output>` must pass
+  before any merge command. Never write GATE=GREEN from habit.
+- **Regression on `main` since #999 (`906c6a9`):** at the top-storey
+  focus, roofs whose derived storey exceeds the focus are cut away (the
+  tallest roof in seed 4242), because `cutLevel === undefined` was treated
+  as "no cut" for terrain only. Routed on #978: eng-3 lands the predicate
+  fix with a roof fixture (their #996 branch has it red/green); **#1009
+  holds** until it is on main; **fallback: revert `906c6a9` if the fix is
+  not up by ~22:52 UTC.** #999's fixtures had no roof; a fixture that
+  cannot exhibit the case is a test that cannot fail.
+- Merged: #1002 `68cc952` (#594), #1003 `29639b3` (#978 same-run pair),
+  #1008 (dropship model, #911 stays open for placement), handoffs #1004,
+  #1010, #1011. **#1007** (#945 natural material contours, Director
+  accepted, gate green) waits on one push regenerating the two fog frames
+  (its renderer change moves ~5,000 scene px per frame; the committed
+  frames must represent the head).
 
 **Review lessons today:** a stacked-file conflict (#983 vs #977 in
 `tactical-screen.test.ts`) shows up as `MERGE_CONFLICT` from the gate; abort

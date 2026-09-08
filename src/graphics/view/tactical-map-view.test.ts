@@ -873,14 +873,20 @@ function hillside(highGround: number): FixtureMapBuilder {
       { buildingId: "high", floorIndex: floor },
     );
   }
-  // The stair up to the high building's first floor, so the cut has a
-  // connector to get wrong.
-  b.connector(
-    "ladder",
-    { x: 2, y: highGround, z: 2 },
-    { x: 2, y: highGround + STOREY_LAYERS, z: 2 },
-  );
+  // The stair up to the LOW building's first floor. It has to be this
+  // one: the high building's stair lands in a level group the coarse
+  // cut already hides, so a test on it passes whether or not connectors
+  // have a rule of their own. This one lands inside a visible group and
+  // is only hidden if the connector rule works.
+  b.connector("ladder", { x: 0, y: 0, z: 0 }, { x: 0, y: STOREY_LAYERS, z: 0 });
   return b;
+}
+
+/** Whether the group for an engine level is showing at all. */
+function levelGroupVisible(view: TacticalMapView, level: number): boolean {
+  return view.root.children.some(
+    (child) => child.name === `level-${String(level)}` && child.visible,
+  );
 }
 
 /**
@@ -977,9 +983,16 @@ describe("TacticalMapView.setLayerFocus", () => {
     const map = hillside(4).build();
     const view = new TacticalMapView(map);
     expect(map.connectors).toHaveLength(1);
+    const stair = map.connectors[0];
+    // The guard that keeps this test honest: the stair lands on a level
+    // the coarse group cut still shows, so only the connector's own
+    // rule can hide it. Deleting that rule must turn this red.
+    expect(stair?.to.y).toBe(STOREY_LAYERS);
+
     view.setLayerFocus(undefined);
     expect(connectorDrawn(view, map)).toBe(true);
     view.setLayerFocus({ storey: 0, storeyCount: 2, cutLevel: 1 });
+    expect(levelGroupVisible(view, STOREY_LAYERS)).toBe(true);
     expect(connectorDrawn(view, map)).toBe(false);
     view.setLayerFocus({ storey: 1, storeyCount: 2, cutLevel: undefined });
     expect(connectorDrawn(view, map)).toBe(true);

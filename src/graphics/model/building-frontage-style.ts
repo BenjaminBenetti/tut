@@ -11,7 +11,8 @@ export interface BuildingFrontageModule {
 
 /** Exterior use cues; the building record remains the authority on its use. */
 export interface BuildingFrontageStyle {
-  readonly entrance: BuildingFrontageModule;
+  /** First clear fit wins; a narrow retail awning keeps adjacent ladders clear. */
+  readonly entrances: readonly BuildingFrontageModule[];
   readonly domesticWindows?: boolean;
   readonly sharedMail?: boolean;
 }

@@ -9,6 +9,7 @@ cover, entrances or pathfinding.
 | Module id | Use | Width × outward reach | Mount above floor |
 | --- | --- | --- | --- |
 | `building.shop-awning` | Striped retail awning over an existing entrance | 3 × 0.66 u | 1.21 u |
+| `building.shop-awning-narrow` | One-bay fallback beside a ladder or corner | 1 × 0.66 u | 1.21 u |
 | `building.residential-entry` | Small porch roof and paired lights | 1.35 × 0.43 u | 1.10 u |
 | `building.residential-window` | Shallow window guard and sill planter | 0.74 × 0.29 u | 0.40 u |
 | `building.mailbox-bank` | Six shared apartment mailboxes on a solid wall bay | 0.62 × 0.12 u | 0.42 u |
@@ -33,6 +34,12 @@ receive a broad work entrance. Unknown kinds and warehouses retain their
 existing shells. Selection follows `Building.kind`; it never relabels the
 second reported seed's apartments as different businesses merely for variety.
 
+Entrances try the wide module first, then the narrow retail module if needed.
+On `mc-resume-01`, shop `building-12` has its door at `(24,2,36)` and an exterior
+ladder from `(25,2,37)` to `(25,6,36)`. The three-bay awning would cover that
+ladder; the one-bay version stays over the door. The ladder and the doorway
+retain their original positions and clearance.
+
 Placement rejects a canopy that crosses a building corner, an internal edge
 inside a union footprint, another building/raised ground, or the vertical route
 of an exterior ladder. A taller prop in an outward column also rejects a mount.
@@ -55,7 +62,7 @@ blender -b --threads 4 --python tools/art/make_model.py -- \
 ```
 
 The Blender loop writes three fixed angles under `docs/design/renders/` and
-updates the art manifest. The content/graphics manifests register all five ids.
+updates the art manifest. The content/graphics manifests register all six ids.
 The scene consumer is `resolveBuildingFrontages`; generated before/after
 frames use the normal Map Lab entry point and the existing renderer.
 

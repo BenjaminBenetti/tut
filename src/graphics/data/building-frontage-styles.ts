@@ -14,21 +14,26 @@ const RESIDENTIAL_ENTRANCE: BuildingFrontageModule = {
 export const BUILDING_FRONTAGE_STYLES: Readonly<
   Record<string, BuildingFrontageStyle>
 > = {
-  house: { entrance: RESIDENTIAL_ENTRANCE, domesticWindows: true },
+  house: { entrances: [RESIDENTIAL_ENTRANCE], domesticWindows: true },
   apartment: {
-    entrance: RESIDENTIAL_ENTRANCE,
+    entrances: [RESIDENTIAL_ENTRANCE],
     domesticWindows: true,
     sharedMail: true,
   },
   shop: {
-    entrance: { modelId: "building.shop-awning", width: 3, mountHeight: 1.21 },
+    entrances: [
+      { modelId: "building.shop-awning", width: 3, mountHeight: 1.21 },
+      { modelId: "building.shop-awning-narrow", width: 1, mountHeight: 1.21 },
+    ],
   },
   tower: {
-    entrance: {
-      modelId: "building.workplace-entry",
-      width: 2.4,
-      mountHeight: 1.12,
-    },
+    entrances: [
+      {
+        modelId: "building.workplace-entry",
+        width: 2.4,
+        mountHeight: 1.12,
+      },
+    ],
   },
 };
 

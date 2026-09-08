@@ -185,7 +185,38 @@ describe("building use cues", () => {
           : t,
       ),
     };
-    expect(resolve(next)).toEqual([]);
+    expect(resolve(next).map((p) => p.modelId)).toEqual([
+      "building.shop-awning-narrow",
+    ]);
+  });
+
+  it("fits a one-bay shop awning beside an exterior ladder without occupying its column", () => {
+    const map = fixture("shop");
+    const next: TacticalMap = {
+      ...map,
+      connectors: [
+        {
+          id: "adjacent-ladder",
+          kind: "ladder",
+          pass: 1,
+          buildingId: "home",
+          from: { x: 6, y: 2, z: 8 },
+          to: { x: 6, y: 6, z: 7 },
+        },
+      ],
+    };
+    expect(resolve(next).map((p) => p.modelId)).toEqual([
+      "building.shop-awning-narrow",
+    ]);
+    const acrossDoor: TacticalMap = {
+      ...next,
+      connectors: next.connectors.map((c) => ({
+        ...c,
+        from: { ...c.from, x: 5 },
+        to: { ...c.to, x: 5 },
+      })),
+    };
+    expect(resolve(acrossDoor)).toEqual([]);
   });
 
   it("preserves the rural control", () => {

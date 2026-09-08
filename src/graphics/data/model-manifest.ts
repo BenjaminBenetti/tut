@@ -770,6 +770,14 @@ export const MODEL_MANIFEST = {
     sockets: ["socket_wall"],
     quality: "final",
   },
+  "building.shop-awning-narrow": {
+    category: "buildings",
+    path: "assets/models/buildings/building-shop-awning-narrow.glb",
+    footprint: { w: 1, d: 0.66 },
+    height: 0.28,
+    sockets: ["socket_wall"],
+    quality: "final",
+  },
   "building.residential-entry": {
     category: "buildings",
     path: "assets/models/buildings/building-residential-entry.glb",

@@ -1352,22 +1352,6 @@
     "bytes": 13620
   },
   {
-    "id": "building.shop-awning",
-    "category": "buildings",
-    "path": "assets/models/buildings/building-shop-awning.glb",
-    "footprint": {
-      "w": 3,
-      "d": 0.66
-    },
-    "height": 0.28,
-    "sockets": [
-      "socket_wall"
-    ],
-    "quality": "final",
-    "triangles": 324,
-    "bytes": 24932
-  },
-  {
     "id": "tdf.dropship",
     "category": "props",
     "path": "assets/models/props/tdf-dropship.glb",
@@ -1386,5 +1370,37 @@
     "quality": "final",
     "triangles": 1908,
     "bytes": 141328
+  },
+  {
+    "id": "building.shop-awning-narrow",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-shop-awning-narrow.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0.66
+    },
+    "height": 0.28,
+    "sockets": [
+      "socket_wall"
+    ],
+    "quality": "final",
+    "triangles": 132,
+    "bytes": 12024
+  },
+  {
+    "id": "building.shop-awning",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-shop-awning.glb",
+    "footprint": {
+      "w": 3,
+      "d": 0.66
+    },
+    "height": 0.28,
+    "sockets": [
+      "socket_wall"
+    ],
+    "quality": "final",
+    "triangles": 324,
+    "bytes": 24932
   }
 ]

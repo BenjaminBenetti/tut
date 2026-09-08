@@ -3,18 +3,30 @@ import { chromium } from "@playwright/test";
 import { createServer } from "vite";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
+import { execFileSync } from "node:child_process";
 import captureConfig from "./capture-vite.config.mjs";
 
 const phase = process.argv[2] ?? "after";
+const projectRoot = process.env.FRONTAGE_ROOT ?? process.cwd();
+const baseCommit = execFileSync("git", ["rev-parse", "HEAD"], {
+  cwd: projectRoot,
+  encoding: "utf8",
+}).trim();
 const output = `docs/design/diagnostics/960/${phase}`;
 mkdirSync(output, { recursive: true });
 const server = await createServer({
   ...captureConfig,
+  root: projectRoot,
   server: {
     ...captureConfig.server,
     port: 8797,
     strictPort: true,
     host: "127.0.0.1",
+    // The detached comparison tree lives below .git; serve only it and dependencies.
+    fs: {
+      allow: [projectRoot, `${process.cwd()}/node_modules`],
+      deny: ["**/.env", "**/.env.*", "**/*.{crt,pem}"],
+    },
   },
 });
 await server.listen();
@@ -34,6 +46,13 @@ try {
       });
       const errors = [];
       page.on("pageerror", (e) => errors.push(e.message));
+      page.on("console", (message) => {
+        if (
+          message.type() === "error" ||
+          /\[assets\].*failed to load/i.test(message.text())
+        )
+          errors.push(message.text());
+      });
       for (const units of [0, 1]) {
         await page.mouse.move(-10, -10);
         await page.goto(
@@ -99,7 +118,8 @@ try {
   }
   writeFileSync(
     `${output}/cutaway.json`,
-    JSON.stringify({ repeatedBrowsers: 2, records }, null, 2) + "\n",
+    JSON.stringify({ baseCommit, repeatedBrowsers: 2, records }, null, 2) +
+      "\n",
   );
 } finally {
   await server.close();

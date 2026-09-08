@@ -7,6 +7,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import captureConfig from "./capture-vite.config.mjs";
 
 const phase = process.argv[2] ?? "after";
+const projectRoot = process.env.FRONTAGE_ROOT ?? process.cwd();
 const out = `docs/design/diagnostics/960/${phase}`;
 mkdirSync(out, { recursive: true });
 const controls = [
@@ -25,6 +26,14 @@ const controls = [
     "medium",
     { x: 43, y: 2, z: 39 },
     1,
+  ],
+  [
+    "S01-nearby-shop-workplace-home",
+    "mc-resume-01",
+    "city",
+    "medium",
+    { x: 24, y: 2, z: 37 },
+    0,
   ],
   [
     "I03-second-seed",
@@ -53,14 +62,21 @@ const controls = [
 ];
 const baseCommit = execFileSync("git", ["rev-parse", "HEAD"], {
   encoding: "utf8",
+  cwd: projectRoot,
 }).trim();
 const server = await createServer({
   ...captureConfig,
+  root: projectRoot,
   server: {
     ...captureConfig.server,
     port: 8797,
     strictPort: true,
     host: "127.0.0.1",
+    // The detached comparison tree lives below .git; serve only it and dependencies.
+    fs: {
+      allow: [projectRoot, `${process.cwd()}/node_modules`],
+      deny: ["**/.env", "**/.env.*", "**/*.{crt,pem}"],
+    },
   },
 });
 await server.listen();
@@ -80,6 +96,13 @@ try {
       });
       const errors = [];
       page.on("pageerror", (error) => errors.push(error.message));
+      page.on("console", (message) => {
+        if (
+          message.type() === "error" ||
+          /\[assets\].*failed to load/i.test(message.text())
+        )
+          errors.push(message.text());
+      });
       // Diagnostic access only; use the production generator, renderer and rig.
       await page.route(
         "**/src/graphics/service/orthographic-camera-rig.ts*",
@@ -130,7 +153,7 @@ try {
         const info = await page.evaluate(
           async ({ focus, rotation }) => {
             const rig = window.__frontageRig;
-            for (let i = 0; i < rotation; i++) rig.rotateRight();
+            while (rig.getState().yawIndex !== rotation) rig.rotateRight();
             rig.apply();
             const target = {
               x: focus.x + 0.5,

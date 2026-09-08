@@ -57,18 +57,21 @@ export function resolveBuildingFrontages(
     for (const entrance of building.entrances) {
       const tile = index.getAt(entrance.tile);
       if (tile?.walls[entrance.side] !== "door") continue;
-      if (
-        clearMount(
-          building,
-          tile,
-          entrance.side,
-          style.entrance,
-          index,
-          ladders,
-          propTops,
-        )
-      ) {
-        result.push(mount(style.entrance, tile, entrance.side));
+      for (const module of style.entrances) {
+        if (
+          clearMount(
+            building,
+            tile,
+            entrance.side,
+            module,
+            index,
+            ladders,
+            propTops,
+          )
+        ) {
+          result.push(mount(module, tile, entrance.side));
+          break;
+        }
       }
       if (style.sharedMail) {
         for (const offset of [-1, 1, -2, 2]) {

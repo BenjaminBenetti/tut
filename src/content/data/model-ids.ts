@@ -108,6 +108,7 @@ export const MODEL_IDS = [
   "tile.ramp.connector",
   "tile.foundation.concrete",
   "building.shop-awning",
+  "building.shop-awning-narrow",
   "building.residential-entry",
   "building.residential-window",
   "building.workplace-entry",

@@ -29,17 +29,18 @@ def finish() -> None:
     socket("wall", (0, 0, 0))
 
 
-def shop_awning() -> None:
-    """Three-tile striped fabric awning, mounting at 1.21 u above the floor."""
+def shop_awning(width: float = 3.0, stripes: int = 12) -> None:
+    """Striped fabric awning, wide or one bay, mounting at 1.21 u above the floor."""
     # The fabric falls towards the street. The lowest valance stays above heads.
-    for i in range(12):
-        x = -1.375 + i * 0.25
+    stripe_width = width / stripes
+    for i in range(stripes):
+        x = -width / 2 + (i + 0.5) * stripe_width
         token = "env-awning-green" if i % 2 == 0 else "env-awning-cream"
-        box(f"fabric_{i}", (0.25, 0.64, 0.045), (x, -0.32, 0.145), token,
+        box(f"fabric_{i}", (stripe_width, 0.64, 0.045), (x, -0.32, 0.145), token,
             rot=(math.radians(12), 0, 0))
-        box(f"valance_{i}", (0.25, 0.045, 0.08), (x, -0.63, 0.04), token)
-    box("wall_rail", (3, 0.07, 0.08), (0, -0.035, 0.24), "env-metal")
-    for x in (-1.35, 1.35):
+        box(f"valance_{i}", (stripe_width, 0.045, 0.08), (x, -0.63, 0.04), token)
+    box("wall_rail", (width, 0.07, 0.08), (0, -0.035, 0.24), "env-metal")
+    for x in (-width / 2 + 0.15, width / 2 - 0.15):
         box("bracket", (0.035, 0.60, 0.035), (x, -0.30, 0.10), "env-metal",
             rot=(math.radians(9), 0, 0))
     finish()

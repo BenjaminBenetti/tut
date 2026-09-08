@@ -1,0 +1,182 @@
+[
+  {
+    "id": "pitched-1-radius-off",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=pitched&units=1&radius=2&ghost=0",
+    "ready": "true",
+    "ghostCount": "0",
+    "unit": "{\"x\":24,\"y\":4,\"z\":15}",
+    "units": "[{\"x\":24,\"y\":4,\"z\":15}]",
+    "radius": "2"
+  },
+  {
+    "id": "pitched-1-radius-2",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=pitched&units=1&radius=2&ghost=1",
+    "ready": "true",
+    "ghostCount": "1",
+    "unit": "{\"x\":24,\"y\":4,\"z\":15}",
+    "units": "[{\"x\":24,\"y\":4,\"z\":15}]",
+    "radius": "2"
+  },
+  {
+    "id": "pitched-1-radius-3",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=pitched&units=1&radius=3&ghost=1",
+    "ready": "true",
+    "ghostCount": "1",
+    "unit": "{\"x\":24,\"y\":4,\"z\":15}",
+    "units": "[{\"x\":24,\"y\":4,\"z\":15}]",
+    "radius": "3"
+  },
+  {
+    "id": "pitched-1-radius-4",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=pitched&units=1&radius=4&ghost=1",
+    "ready": "true",
+    "ghostCount": "1",
+    "unit": "{\"x\":24,\"y\":4,\"z\":15}",
+    "units": "[{\"x\":24,\"y\":4,\"z\":15}]",
+    "radius": "4"
+  },
+  {
+    "id": "pitched-1-radius-5",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=pitched&units=1&radius=5&ghost=1",
+    "ready": "true",
+    "ghostCount": "1",
+    "unit": "{\"x\":24,\"y\":4,\"z\":15}",
+    "units": "[{\"x\":24,\"y\":4,\"z\":15}]",
+    "radius": "5"
+  },
+  {
+    "id": "pitched-2-radius-off",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=pitched&units=2&radius=2&ghost=0",
+    "ready": "true",
+    "ghostCount": "0",
+    "unit": "{\"x\":24,\"y\":4,\"z\":15}",
+    "units": "[{\"x\":24,\"y\":4,\"z\":15},{\"x\":21,\"y\":4,\"z\":11}]",
+    "radius": "2"
+  },
+  {
+    "id": "pitched-2-radius-2",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=pitched&units=2&radius=2&ghost=1",
+    "ready": "true",
+    "ghostCount": "2",
+    "unit": "{\"x\":24,\"y\":4,\"z\":15}",
+    "units": "[{\"x\":24,\"y\":4,\"z\":15},{\"x\":21,\"y\":4,\"z\":11}]",
+    "radius": "2"
+  },
+  {
+    "id": "pitched-2-radius-3",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=pitched&units=2&radius=3&ghost=1",
+    "ready": "true",
+    "ghostCount": "2",
+    "unit": "{\"x\":24,\"y\":4,\"z\":15}",
+    "units": "[{\"x\":24,\"y\":4,\"z\":15},{\"x\":21,\"y\":4,\"z\":11}]",
+    "radius": "3"
+  },
+  {
+    "id": "pitched-2-radius-4",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=pitched&units=2&radius=4&ghost=1",
+    "ready": "true",
+    "ghostCount": "2",
+    "unit": "{\"x\":24,\"y\":4,\"z\":15}",
+    "units": "[{\"x\":24,\"y\":4,\"z\":15},{\"x\":21,\"y\":4,\"z\":11}]",
+    "radius": "4"
+  },
+  {
+    "id": "pitched-2-radius-5",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=pitched&units=2&radius=5&ghost=1",
+    "ready": "true",
+    "ghostCount": "2",
+    "unit": "{\"x\":24,\"y\":4,\"z\":15}",
+    "units": "[{\"x\":24,\"y\":4,\"z\":15},{\"x\":21,\"y\":4,\"z\":11}]",
+    "radius": "5"
+  },
+  {
+    "id": "flat-1-radius-off",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=flat&units=1&radius=2&ghost=0",
+    "ready": "true",
+    "ghostCount": "0",
+    "unit": "{\"x\":25,\"y\":6,\"z\":14}",
+    "units": "[{\"x\":25,\"y\":6,\"z\":14}]",
+    "radius": "2"
+  },
+  {
+    "id": "flat-1-radius-2",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=flat&units=1&radius=2&ghost=1",
+    "ready": "true",
+    "ghostCount": "1",
+    "unit": "{\"x\":25,\"y\":6,\"z\":14}",
+    "units": "[{\"x\":25,\"y\":6,\"z\":14}]",
+    "radius": "2"
+  },
+  {
+    "id": "flat-1-radius-3",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=flat&units=1&radius=3&ghost=1",
+    "ready": "true",
+    "ghostCount": "1",
+    "unit": "{\"x\":25,\"y\":6,\"z\":14}",
+    "units": "[{\"x\":25,\"y\":6,\"z\":14}]",
+    "radius": "3"
+  },
+  {
+    "id": "flat-1-radius-4",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=flat&units=1&radius=4&ghost=1",
+    "ready": "true",
+    "ghostCount": "1",
+    "unit": "{\"x\":25,\"y\":6,\"z\":14}",
+    "units": "[{\"x\":25,\"y\":6,\"z\":14}]",
+    "radius": "4"
+  },
+  {
+    "id": "flat-1-radius-5",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=flat&units=1&radius=5&ghost=1",
+    "ready": "true",
+    "ghostCount": "1",
+    "unit": "{\"x\":25,\"y\":6,\"z\":14}",
+    "units": "[{\"x\":25,\"y\":6,\"z\":14}]",
+    "radius": "5"
+  },
+  {
+    "id": "flat-2-radius-off",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=flat&units=2&radius=2&ghost=0",
+    "ready": "true",
+    "ghostCount": "0",
+    "unit": "{\"x\":25,\"y\":6,\"z\":14}",
+    "units": "[{\"x\":25,\"y\":6,\"z\":14},{\"x\":23,\"y\":6,\"z\":11}]",
+    "radius": "2"
+  },
+  {
+    "id": "flat-2-radius-2",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=flat&units=2&radius=2&ghost=1",
+    "ready": "true",
+    "ghostCount": "2",
+    "unit": "{\"x\":25,\"y\":6,\"z\":14}",
+    "units": "[{\"x\":25,\"y\":6,\"z\":14},{\"x\":23,\"y\":6,\"z\":11}]",
+    "radius": "2"
+  },
+  {
+    "id": "flat-2-radius-3",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=flat&units=2&radius=3&ghost=1",
+    "ready": "true",
+    "ghostCount": "2",
+    "unit": "{\"x\":25,\"y\":6,\"z\":14}",
+    "units": "[{\"x\":25,\"y\":6,\"z\":14},{\"x\":23,\"y\":6,\"z\":11}]",
+    "radius": "3"
+  },
+  {
+    "id": "flat-2-radius-4",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=flat&units=2&radius=4&ghost=1",
+    "ready": "true",
+    "ghostCount": "2",
+    "unit": "{\"x\":25,\"y\":6,\"z\":14}",
+    "units": "[{\"x\":25,\"y\":6,\"z\":14},{\"x\":23,\"y\":6,\"z\":11}]",
+    "radius": "4"
+  },
+  {
+    "id": "flat-2-radius-5",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=flat&units=2&radius=5&ghost=1",
+    "ready": "true",
+    "ghostCount": "2",
+    "unit": "{\"x\":25,\"y\":6,\"z\":14}",
+    "units": "[{\"x\":25,\"y\":6,\"z\":14},{\"x\":23,\"y\":6,\"z\":11}]",
+    "radius": "5"
+  }
+]

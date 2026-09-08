@@ -231,13 +231,14 @@ describe("TurnBannerView", () => {
     const view = new TurnBannerView({ onBack });
     view.mount(root);
     view.update({
-      missionId: "mission-7",
+      missionName: "Seoul",
       turn: 3,
       phase: "bugs",
       tdfUnits: 2,
       bugUnits: 5,
     });
-    expect(field("mission-id")?.textContent).toBe("mission-7");
+    // The banner names the city, never the id (#753).
+    expect(field("mission-name")?.textContent).toBe("Seoul");
     expect(field("tdf-units")?.textContent).toBe("2");
     expect(field("bug-units")?.textContent).toBe("5");
     expect(field("turn")?.textContent).toBe("3");

@@ -17,7 +17,12 @@ export interface TurnBannerHandlers {
 
 /** What the banner shows; every value is copied from the mission state. */
 export interface TurnBannerModel {
-  readonly missionId: string;
+  /**
+   * What to call the mission: the city it is fought over, not its id
+   * (#753). The banner sat over the whole fight reading `mission-1`
+   * while the list the player chose from called it Seoul.
+   */
+  readonly missionName: string;
   readonly turn: number;
   readonly phase: TacticalPhase;
   /** Living TDF units. */
@@ -27,8 +32,8 @@ export interface TurnBannerModel {
 }
 
 /**
- * The one strip across the top of the mission (GDD §6.2, #403): mission
- * id, turn, whose phase it is, the living unit counts, a status line for
+ * The one strip across the top of the mission (GDD §6.2, #403): the
+ * city, turn, whose phase it is, the living unit counts, a status line for
  * rejected commands and the way back to the overworld.
  *
  * ```
@@ -66,7 +71,7 @@ export class TurnBannerView {
     const bar = doc.createElement("header");
     bar.id = "turn-banner";
     bar.className = "tut-topbar tut-hud__banner";
-    const mission = this.createStat(doc, "Mission", "mission-id");
+    const mission = this.createStat(doc, "Mission", "mission-name");
     const turn = this.createStat(doc, "Turn", "turn");
     const phase = doc.createElement("span");
     phase.className = "tut-badge tut-badge--info";
@@ -111,7 +116,7 @@ export class TurnBannerView {
       }
       return;
     }
-    this.setField("mission-id", model.missionId);
+    this.setField("mission-name", model.missionName);
     this.setField("turn", formatWhole(model.turn));
     this.setField("tdf-units", formatWhole(model.tdfUnits));
     this.setField("bug-units", formatWhole(model.bugUnits));

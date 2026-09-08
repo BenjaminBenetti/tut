@@ -53,6 +53,11 @@ test("Launch plays the mission out, extraction ends it, and the debrief comes fr
   await expect(rows.first()).toBeVisible();
   const missionId = await rows.first().getAttribute("data-mission-id");
   expect(missionId).toMatch(/^mission-\d+$/);
+  // What the list calls this mission, to hold the banner to below (#753).
+  const cityName = (
+    await rows.first().locator('[data-field="city"]').textContent()
+  )?.trim();
+  expect(cityName).toBeTruthy();
 
   // Deploy one squad and launch into the mission itself.
   await rows.first().click();
@@ -68,9 +73,11 @@ test("Launch plays the mission out, extraction ends it, and the debrief comes fr
 
   await expect(body).toHaveAttribute("data-screen", "tactical");
   await expect(page.locator("#tactical-viewport canvas")).toBeVisible();
+  // The banner names the city being fought over, not the id (#753).
   await expect(
-    page.locator('#turn-banner [data-field="mission-id"]'),
-  ).toHaveText(missionId ?? "");
+    page.locator('#turn-banner [data-field="mission-name"]'),
+  ).toHaveText(cityName ?? "");
+  await expect(page.locator("#turn-banner")).not.toContainText(missionId ?? "");
   await expect(page.locator('#turn-banner [data-field="turn"]')).toHaveText(
     "1",
   );
@@ -98,8 +105,8 @@ test("Launch plays the mission out, extraction ends it, and the debrief comes fr
   await page.locator('[data-action="continue"]').click();
   await expect(body).toHaveAttribute("data-screen", "tactical");
   await expect(
-    page.locator('#turn-banner [data-field="mission-id"]'),
-  ).toHaveText(missionId ?? "");
+    page.locator('#turn-banner [data-field="mission-name"]'),
+  ).toHaveText(cityName ?? "");
 
   // Walk the squad off the map. It deployed on the extraction hook, so
   // Extract is offered as soon as it is selected.

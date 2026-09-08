@@ -1,0 +1,32 @@
+[
+  {
+    "file": "docs/design/tactical-fog-of-war.png",
+    "beforeCommit": "e014ab1",
+    "byteIdentical": false,
+    "changedPixels": 352024,
+    "changeBounds": [102, 41, 1280, 663],
+    "sha256": "203c5f7b29be004d271c71f408a372fb44610a687483b26d742b737115bd106d",
+    "freshBaseline": {
+      "commit": "e014ab1",
+      "sha256": "203c5f7b29be004d271c71f408a372fb44610a687483b26d742b737115bd106d",
+      "byteIdentical": true,
+      "changedPixels": 0,
+      "changeBounds": null
+    }
+  },
+  {
+    "file": "docs/design/tactical-fog-of-war-turn7.png",
+    "beforeCommit": "e014ab1",
+    "byteIdentical": false,
+    "changedPixels": 376861,
+    "changeBounds": [44, 15, 1280, 663],
+    "sha256": "d95e3ea3d22d54d2a5bdd082461725c40e291a1d08210d2853edec8bf9bcf799",
+    "freshBaseline": {
+      "commit": "e014ab1",
+      "sha256": "d95e3ea3d22d54d2a5bdd082461725c40e291a1d08210d2853edec8bf9bcf799",
+      "byteIdentical": true,
+      "changedPixels": 0,
+      "changeBounds": null
+    }
+  }
+]

@@ -1,4 +1,5 @@
 import type { Unsubscribe } from "../../core/model/event-bus";
+import { findCity } from "../../overworld/service/earth-map-query-service";
 import type { GameState } from "../../save/model/game-state";
 import type { CombatTuning } from "../../tactical/model/combat-tuning";
 import { finishMission } from "../../tactical/model/finish-mission-command";
@@ -37,6 +38,34 @@ export interface TacticalScreenDeps {
    * Playwright specs.
    */
   readonly onIntent?: (intent: TacticalIntent) => void;
+}
+
+/**
+ * The name of the city the active mission is fought over, or `undefined`
+ * when there is no mission or its city cannot be found (#753).
+ *
+ * ```
+ *   activeMission.missionId ──► overworld.missions ──► cityId ──► city.name
+ * ```
+ *
+ * Returns `undefined` rather than falling back to the id: a banner
+ * reading an em dash is a visible gap, while one reading `mission-1`
+ * again is the defect wearing a fallback.
+ *
+ * @param state - The current game state.
+ * @returns The city's name, or `undefined`.
+ */
+function missionCityName(state: GameState): string | undefined {
+  const active = state.activeMission;
+  if (active === undefined) {
+    return undefined;
+  }
+  const mission = state.overworld.missions.find(
+    (m) => m.id === active.missionId,
+  );
+  return mission === undefined
+    ? undefined
+    : findCity(state.overworld.map, mission.cityId)?.name;
 }
 
 // ===========================================
@@ -193,6 +222,15 @@ export class TacticalScreen implements Screen {
     if (this.note) {
       this.note.hidden = mission !== undefined;
     }
+    // The banner names the city, not the mission id (#753). Only this
+    // layer can resolve it: the HUD is handed a `TacticalState`, which
+    // carries no city, and the mission itself is still in the offers
+    // because `launch-mission-service` removes it only when the result
+    // is stored — which is why this needs no persisted field, unlike the
+    // debrief in #739.
+    this.hud.setMissionName(
+      state === undefined ? undefined : missionCityName(state),
+    );
     this.hud.update(mission, events);
     if (!mission) {
       return;

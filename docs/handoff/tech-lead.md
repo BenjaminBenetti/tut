@@ -1,8 +1,25 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-06 ~23:30 UTC (session 5; five Map Critic repairs in, #940 removed all artificial city plinths; only #918 (critic docs) is open; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-08 ~18:15 UTC (session 5; hold lifted; #943 cutaway and #948 banner merged; queue empty; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
-## 0. READ THIS FIRST — production is paused; only #748 is live
+## 0. READ THIS FIRST — the hold is lifted (2026-09-08); the Map Quality Loop leads
+
+**The production hold is over.** The Director stopped the whole studio on
+2026-09-06 (it was pinning the Executive Director's CPU) and resumed every
+seat on 2026-09-08 with the hold lifted (Director on #753, comment
+5589320377). Engineer seats take tiered issues again; the Map Critic loop
+(§ below) stays the priority. Everything in this section below the next
+heading is the history of the #748 pause and stays for the record.
+
+**Restart lessons (09-08):** my monitor did not survive the process restart;
+check `ps` for a `monitor.sh` before re-arming, and re-arm first thing. Read
+the Director's comments on the live issues before acting on old state: the
+hold was lifted in a comment on #753, not in a message to me. Tier every new
+engineer issue on evidence and say what you read; #753 I tiered medium on a
+misread of where `missions.filter` runs (resolve, not launch) and the
+engineer corrected it in #948 — I relabelled it low.
+
+### History — the #748 pause (2026-09-04 → 09-08)
 
 **How you wait is why session 4 was retired.** It re-sent its full context on a
 4-minute cron (223 runs at ~2.7M tokens each). **No cron, no scheduled prompt,
@@ -75,7 +92,20 @@ groups on 69/72 coastal maps, all mech-accessible; sim identical to
 baseline; coastal golden re-pinned. Nit asked for: an ADR 0004 §7 row for
 the pass. **Every Map Critic PR today needed no code change from review.**
 
-**Tags today:** v0.2.10 `fe7872c` (ramps), v0.2.11 `58e6c9e` (ladders),
+**09-08 merges:** **#943 `5e4ea1a`** (cutaway radius 4 / opacity floor
+0.175, #937, Art): gated at `3dfea65`; its committed fog frames were the
+radius-2 render (my render of the merged tree differed by 895 map pixels at
+turn 7), the Art Director regenerated them at `e24edc6` byte-identical to
+mine, and the Director carried the acceptance to the new head explicitly.
+Lesson: a verdict does not travel with a moved head unless the Director
+says so; a "byte-identical" fog claim must name the constants it was
+rendered with. **#948 `b94a57b`** (banner names the city, #753, eng-5):
+merged on gate; my medium tier was wrong (the `missions.filter` runs at
+resolve, not launch) and #753 is relabelled low. Tiered for seating: #949
+low (objective label ordinal), #950 medium (graveyard `cityId`, v17).
+#947 (cutaway follows the pointer, Art p1) is the next ED request.
+
+**Tags:** v0.2.10 `fe7872c` (ramps), v0.2.11 `58e6c9e` (ladders),
 **v0.2.12 `121f397`** (waterfronts, with roofs, platforms and foundations
 in between). The Director tags after each accepted visual change lands.
 

@@ -1,0 +1,62 @@
+[
+  {
+    "id": "pitched-2-radius-2-yaw2",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=pitched&units=2&radius=2&ghost=1&yaw=2",
+    "ready": "true",
+    "ghostCount": "2",
+    "unit": "{\"x\":24,\"y\":4,\"z\":15}",
+    "units": "[{\"x\":24,\"y\":4,\"z\":15},{\"x\":21,\"y\":4,\"z\":11}]",
+    "radius": "2",
+    "yaw": "2"
+  },
+  {
+    "id": "pitched-2-radius-3-yaw2",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=pitched&units=2&radius=3&ghost=1&yaw=2",
+    "ready": "true",
+    "ghostCount": "2",
+    "unit": "{\"x\":24,\"y\":4,\"z\":15}",
+    "units": "[{\"x\":24,\"y\":4,\"z\":15},{\"x\":21,\"y\":4,\"z\":11}]",
+    "radius": "3",
+    "yaw": "2"
+  },
+  {
+    "id": "pitched-2-radius-4-yaw2",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=pitched&units=2&radius=4&ghost=1&yaw=2",
+    "ready": "true",
+    "ghostCount": "2",
+    "unit": "{\"x\":24,\"y\":4,\"z\":15}",
+    "units": "[{\"x\":24,\"y\":4,\"z\":15},{\"x\":21,\"y\":4,\"z\":11}]",
+    "radius": "4",
+    "yaw": "2"
+  },
+  {
+    "id": "flat-2-radius-2-yaw2",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=flat&units=2&radius=2&ghost=1&yaw=2",
+    "ready": "true",
+    "ghostCount": "2",
+    "unit": "{\"x\":25,\"y\":6,\"z\":14}",
+    "units": "[{\"x\":25,\"y\":6,\"z\":14},{\"x\":23,\"y\":6,\"z\":11}]",
+    "radius": "2",
+    "yaw": "2"
+  },
+  {
+    "id": "flat-2-radius-3-yaw2",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=flat&units=2&radius=3&ghost=1&yaw=2",
+    "ready": "true",
+    "ghostCount": "2",
+    "unit": "{\"x\":25,\"y\":6,\"z\":14}",
+    "units": "[{\"x\":25,\"y\":6,\"z\":14},{\"x\":23,\"y\":6,\"z\":11}]",
+    "radius": "3",
+    "yaw": "2"
+  },
+  {
+    "id": "flat-2-radius-4-yaw2",
+    "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=flat&units=2&radius=4&ghost=1&yaw=2",
+    "ready": "true",
+    "ghostCount": "2",
+    "unit": "{\"x\":25,\"y\":6,\"z\":14}",
+    "units": "[{\"x\":25,\"y\":6,\"z\":14},{\"x\":23,\"y\":6,\"z\":11}]",
+    "radius": "4",
+    "yaw": "2"
+  }
+]

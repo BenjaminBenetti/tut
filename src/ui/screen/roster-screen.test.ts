@@ -73,7 +73,14 @@ function scenario(
           : m,
       ),
       graveyard: [
-        { kind: "squad", name: "Zulu", day: 3, missionId: "mission-1" },
+        {
+          kind: "squad",
+          name: "Zulu",
+          day: 3,
+          missionId: "mission-1",
+          cityId: "lagos",
+        },
+        // No city: a loss from before schema v17 (#950).
         { kind: "mech", name: "Rust", day: 5, missionId: "mission-2" },
       ],
     },
@@ -238,10 +245,13 @@ describe("RosterScreen", () => {
     ).toBe("Repair ¢400");
 
     const graves = [...root.querySelectorAll("#graveyard li")];
+    // The memorial says where, not which mission id (#950); a pre-v17
+    // entry has no city to say, so it says nothing rather than the id.
     expect(graves.map((g) => g.textContent)).toEqual([
-      "Rust · mech · day 5 · mission-2",
-      "Zulu · squad · day 3 · mission-1",
+      "Rust · mech · day 5",
+      "Zulu · squad · day 3 · Lagos",
     ]);
+    expect(q("#graveyard").textContent).not.toContain("mission-");
     expect(q('[data-role="no-losses"]').hidden).toBe(true);
     expect(q<HTMLButtonElement>('[data-action="mech-bay"]').disabled).toBe(
       false,

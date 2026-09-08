@@ -272,6 +272,7 @@ function toCasualtyReport(
 ): CasualtyReport {
   return {
     missionId: result.missionId,
+    cityId: result.cityId,
     squadCasualties: result.squadCasualties,
     squadsWiped: result.squadsWiped,
     mechsDestroyed: result.mechsDestroyed,

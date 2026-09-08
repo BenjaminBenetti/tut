@@ -98,7 +98,13 @@ function settleSquad(
   const losses = Math.min(squad.strength, Math.max(0, casualties?.losses ?? 0));
   const strength = squad.strength - losses;
   if (strength <= 0 || report.squadsWiped.includes(squad.id)) {
-    const grave = bury("squad", squad.name, day, report.missionId);
+    const grave = bury(
+      "squad",
+      squad.name,
+      day,
+      report.missionId,
+      report.cityId,
+    );
     graves.push(grave);
     events.push({ type: SQUAD_WIPED, payload: { squad, grave } });
     return [];
@@ -143,7 +149,7 @@ function settleMech(
   const added = Math.max(0, damageReport?.damage ?? 0);
   const damage = Math.min(MECH_MAX_DAMAGE, mech.damage + added);
   if (damage >= MECH_MAX_DAMAGE || report.mechsDestroyed.includes(mech.id)) {
-    const grave = bury("mech", mech.name, day, report.missionId);
+    const grave = bury("mech", mech.name, day, report.missionId, report.cityId);
     graves.push(grave);
     events.push({ type: MECH_DESTROYED, payload: { mech, grave } });
     return [];
@@ -165,12 +171,13 @@ function settleMech(
   ];
 }
 
-/** A graveyard entry for a unit lost on `day` in `missionId`. */
+/** A graveyard entry for a unit lost on `day` in `missionId`, over `cityId`. */
 function bury(
   kind: GraveyardEntry["kind"],
   name: string,
   day: number,
   missionId: string,
+  cityId: string,
 ): GraveyardEntry {
-  return { kind, name, day, missionId };
+  return { kind, name, day, missionId, cityId };
 }

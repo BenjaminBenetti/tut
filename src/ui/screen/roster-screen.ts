@@ -195,7 +195,7 @@ export class RosterScreen implements Screen {
     const model = { roster: state.roster, credits: state.economy.credits };
     this.squads.update(model);
     this.mechs.update(model);
-    this.graveyard.update(state.roster.graveyard);
+    this.graveyard.update(state.roster.graveyard, state.overworld.map);
   }
 
   /** The header: title, credits, status line and navigation. */

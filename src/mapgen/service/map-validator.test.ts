@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { PropKindIds } from "../data/props";
 import { SurfaceIds } from "../data/surfaces";
 import { CoverLevel } from "../model/cover";
+import type { Building } from "../model/building";
 import { HookKinds } from "../model/hook";
 import { PassMask } from "../model/pass-mask";
 import type { TacticalMap } from "../model/tactical-map";
@@ -323,5 +324,301 @@ describe("validateTacticalMap", () => {
       ])
       .build();
     expect(invariantsOf(map).sort()).toEqual(["I3", "I7", "I8"]);
+  });
+});
+
+// ===========================================
+// Checks no fixture had ever reached (#735)
+// ===========================================
+
+/**
+ * Every violation as `"<invariant> <message>"`. The existing suite asserts
+ * de-duplicated invariant ids, which one representative failure per
+ * invariant satisfies — that is why 25 of these checks had never run. A
+ * guard is only proven by the text it reports, so these name it.
+ */
+function reportOf(map: TacticalMap): string[] {
+  return validateTacticalMap(map, registries).map(
+    (v) => `${v.invariant} ${v.message}`,
+  );
+}
+
+/** The reference map, for tests that reshape it rather than rebuild it. */
+function valid(): TacticalMap {
+  return validFixture().build();
+}
+
+/** The fixture's only building record. */
+function theBuilding(map: TacticalMap): Building {
+  return first(map.buildings);
+}
+
+/** The reference map with its building replaced by a broken one. */
+function withBuilding(change: Partial<Building>): TacticalMap {
+  const map = valid();
+  return { ...map, buildings: [{ ...theBuilding(map), ...change }] };
+}
+
+describe("validateTacticalMap: checks that no fixture reached (#735)", () => {
+  it("I1: reports non-positive map dimensions", () => {
+    const map: TacticalMap = { ...valid(), width: 0 };
+    expect(reportOf(map)).toContain(
+      `I1 Map dimensions must be positive: 0\u00d76\u00d7${String(3 * STOREY_LAYERS)}`,
+    );
+  });
+
+  it("I2: reports a duplicate prop id", () => {
+    const map = valid();
+    const prop = first(map.props);
+    expect(reportOf({ ...map, props: [...map.props, { ...prop }] })).toContain(
+      "I2 Duplicate prop id",
+    );
+  });
+
+  it("I2: reports a prop standing on a tile that is not there", () => {
+    const map = validFixture().removeTile(CRATE).build();
+    expect(reportOf(map)).toContain(
+      `I2 Prop ${first(map.props).id} sits on a missing tile`,
+    );
+  });
+
+  it("I2: reports a prop whose tile does not point back at it", () => {
+    const map = valid();
+    const prop = first(map.props);
+    const moved: TacticalMap = {
+      ...map,
+      props: [{ ...prop, tile: { x: 7, y: 0, z: 0 } }],
+    };
+    expect(reportOf(moved)).toContain(
+      `I2 Prop ${prop.id}'s tile does not point back at it`,
+    );
+  });
+
+  it("I2: reports a tile still holding a prop that has moved away", () => {
+    const map = valid();
+    const prop = first(map.props);
+    const moved: TacticalMap = {
+      ...map,
+      props: [{ ...prop, tile: { x: 7, y: 0, z: 0 } }],
+    };
+    expect(reportOf(moved)).toContain(
+      `I2 Prop ${prop.id} is recorded on a different tile`,
+    );
+  });
+
+  it("I2: reports a tile pointing at a prop that does not exist", () => {
+    const map = validFixture()
+      .patchTile({ x: 7, y: 0, z: 0 }, { propId: "ghost" })
+      .build();
+    expect(reportOf(map)).toContain("I2 Tile references unknown prop ghost");
+  });
+
+  it("I2: reports a prop kind the registry does not know", () => {
+    const map = valid();
+    const prop = first(map.props);
+    const unknown: TacticalMap = {
+      ...map,
+      props: [{ ...prop, kind: "granite-obelisk" }],
+    };
+    expect(reportOf(unknown)).toContain(
+      'I2 Unknown prop kind "granite-obelisk"',
+    );
+  });
+
+  it("I4: reports a duplicate connector id", () => {
+    const map = valid();
+    const connector = first(map.connectors);
+    expect(
+      reportOf({ ...map, connectors: [...map.connectors, { ...connector }] }),
+    ).toContain(`I4 Duplicate connector id ${connector.id}`);
+  });
+
+  it("I4: reports a connector reaching a tile that is not there", () => {
+    const map = validFixture().removeTile(STAIR_TO).build();
+    expect(reportOf(map)).toContain(
+      `I4 Connector ${first(map.connectors).id} references a missing tile`,
+    );
+  });
+
+  it("I4: reports connector endpoints that are not adjacent", () => {
+    const map = valid();
+    const connector = first(map.connectors);
+    const stretched: TacticalMap = {
+      ...map,
+      connectors: [{ ...connector, to: { x: 4, y: STOREY_LAYERS, z: 1 } }],
+    };
+    expect(reportOf(stretched)).toContain(
+      `I4 Connector ${connector.id} endpoints are not adjacent`,
+    );
+  });
+
+  it("I4: reports a connector naming a building that does not exist", () => {
+    const map = valid();
+    const connector = first(map.connectors);
+    const orphaned: TacticalMap = {
+      ...map,
+      connectors: [{ ...connector, buildingId: "ghost" }],
+    };
+    expect(reportOf(orphaned)).toContain(
+      `I4 Connector ${connector.id} names unknown building ghost`,
+    );
+  });
+
+  it("I5: reports a duplicate building id", () => {
+    const map = valid();
+    expect(
+      reportOf({
+        ...map,
+        buildings: [...map.buildings, { ...theBuilding(map) }],
+      }),
+    ).toContain(`I5 Duplicate building id ${BUILDING_ID}`);
+  });
+
+  it("I5: reports a building with no floors", () => {
+    expect(reportOf(withBuilding({ floors: [] }))).toContain(
+      `I5 Building ${BUILDING_ID} has no floors`,
+    );
+  });
+
+  it("I5: reports a building with no footprint", () => {
+    expect(reportOf(withBuilding({ footprint: [] }))).toContain(
+      `I5 Building ${BUILDING_ID} has no footprint`,
+    );
+  });
+
+  it("I5: reports a floor at the wrong level", () => {
+    const map = valid();
+    const building = theBuilding(map);
+    const upper = building.floors[1];
+    if (upper === undefined) {
+      throw new Error("fixture building has no upper floor");
+    }
+    expect(
+      reportOf(
+        withBuilding({ floors: [first(building.floors), { ...upper, y: 99 }] }),
+      ),
+    ).toContain(
+      `I5 Building ${BUILDING_ID} floor 1 is mis-numbered or at the wrong level`,
+    );
+  });
+
+  it("I5: reports a building with no entrance", () => {
+    expect(reportOf(withBuilding({ entrances: [] }))).toContain(
+      `I5 Building ${BUILDING_ID} has no entrance`,
+    );
+  });
+
+  it("I5: reports an entrance that is not on one of the building's tiles", () => {
+    expect(
+      reportOf(
+        withBuilding({
+          entrances: [{ tile: { x: 7, y: 0, z: 0 }, side: "s" }],
+        }),
+      ),
+    ).toContain(
+      `I5 Building ${BUILDING_ID} entrance is not on one of its tiles`,
+    );
+  });
+
+  it("I5: reports an entrance above the ground floor", () => {
+    expect(
+      reportOf(
+        withBuilding({
+          entrances: [{ tile: { x: 3, y: STOREY_LAYERS, z: 2 }, side: "s" }],
+        }),
+      ),
+    ).toContain(
+      `I5 Building ${BUILDING_ID} entrance is not on the ground floor`,
+    );
+  });
+
+  it("I5: reports a building tile outside the footprint", () => {
+    const map = validFixture()
+      .patchTile(
+        { x: 7, y: 0, z: 0 },
+        { buildingId: BUILDING_ID, floorIndex: 0 },
+      )
+      .build();
+    expect(reportOf(map)).toContain(
+      `I5 Building ${BUILDING_ID} tile lies outside its footprint`,
+    );
+  });
+
+  it("I5: reports a roof tile on a building whose roof is not walkable", () => {
+    const map = validFixture()
+      .patchTile({ x: 2, y: 0, z: 1 }, { surface: SurfaceIds.ROOF })
+      .build();
+    expect(reportOf(map)).toContain(
+      `I5 Building ${BUILDING_ID} has a roof tile it should not have`,
+    );
+  });
+
+  it("I5: reports a floorIndex that disagrees with the tile's level", () => {
+    const map = validFixture()
+      .patchTile({ x: 2, y: 0, z: 1 }, { floorIndex: 1 })
+      .build();
+    expect(reportOf(map)).toContain(
+      `I5 Building ${BUILDING_ID} tile has a floorIndex inconsistent with its level`,
+    );
+  });
+
+  it("I5: reports a declared floor with no tiles on it", () => {
+    const map = valid();
+    const building = theBuilding(map);
+    expect(
+      reportOf(
+        withBuilding({
+          floors: [
+            ...building.floors,
+            { index: 2, y: 2 * STOREY_LAYERS, rooms: [] },
+          ],
+        }),
+      ),
+    ).toContain(`I5 Building ${BUILDING_ID} floor 2 has no tiles`);
+  });
+
+  it("I5: reports a walkable roof with no roof tiles", () => {
+    expect(
+      reportOf(withBuilding({ roof: { kind: "pitched", walkable: true } })),
+    ).toContain(
+      `I5 Building ${BUILDING_ID} claims a walkable roof but has no roof tiles`,
+    );
+  });
+
+  it("I6: reports a duplicate hook id", () => {
+    const map = valid();
+    const zone = first(map.hooks.deployZones);
+    expect(
+      reportOf({
+        ...map,
+        hooks: { ...map.hooks, deployZones: [zone, { ...zone }] },
+      }),
+    ).toContain(`I6 Duplicate hook id ${zone.id}`);
+  });
+
+  it("I6: reports a deploy zone split into unreachable parts", () => {
+    // (7,0,0) is the north-east corner, so walling south and west seals
+    // it off entirely: passable, and reachable from nowhere.
+    const built = validFixture()
+      .wall({ x: 7, y: 0, z: 0 }, "s", "solid")
+      .wall({ x: 7, y: 0, z: 0 }, "w", "solid")
+      .build();
+    const zone = first(built.hooks.deployZones);
+    const split: TacticalMap = {
+      ...built,
+      hooks: {
+        ...built.hooks,
+        deployZones: [
+          { ...zone, tiles: [...zone.tiles, { x: 7, y: 0, z: 0 }] },
+        ],
+      },
+    };
+    const report = reportOf(split);
+    expect(report).toContain(
+      `I6 Deploy zone ${zone.id} is not connected for class ${String(PassMask.INFANTRY)}`,
+    );
+    expect(report).toContain(
+      `I6 Deploy zone ${zone.id} is not connected for class ${String(PassMask.MECH)}`,
+    );
   });
 });

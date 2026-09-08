@@ -160,4 +160,17 @@ describe("pointer cutaway (#947)", () => {
     expect(f.picker.pickCutaway.mock.calls).toHaveLength(calls);
     expect(f.uniforms.uPointerStrength.value).toBe(0);
   });
+
+  it("reprojects client pixels when a resize changes the camera viewport", () => {
+    const f = fixture();
+    f.open();
+    vi.spyOn(f.canvas, "getBoundingClientRect").mockReturnValue(
+      new DOMRect(0, 0, 200, 100),
+    );
+    f.camera.right = 10;
+    f.camera.updateProjectionMatrix();
+    f.controller.update(0.02);
+    expect(f.picker.pickCutaway.mock.lastCall?.[0]).toEqual({ x: -0.5, y: 0 });
+    f.controller.detach();
+  });
 });

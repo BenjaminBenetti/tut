@@ -98,9 +98,17 @@ export class PointerCutawayController implements FrameUpdatable {
       !this.projection.equals(this.camera.projectionMatrix) ||
       this.revision !== this.picker.cutawayRevision;
     if (this.dirty || changed) {
+      const ndc =
+        this.pointer && this.surface
+          ? pointerToNdc(
+              this.surface.getBoundingClientRect(),
+              this.pointer.x,
+              this.pointer.y,
+            )
+          : undefined;
       const next =
-        this.pointer && !this.dragging
-          ? this.picker.pickCutaway(this.pointer, this.camera)
+        ndc && !this.dragging && Math.abs(ndc.x) <= 1 && Math.abs(ndc.y) <= 1
+          ? this.picker.pickCutaway(ndc, this.camera)
           : undefined;
       if (next?.buildingId !== this.target?.buildingId) {
         this.dwell = 0;
@@ -152,14 +160,10 @@ export class PointerCutawayController implements FrameUpdatable {
   // Pointer Events
   // ===========================================
 
-  /** Keep raw canvas coordinates; no tile snapping or additional spatial lag. */
+  /** Keep client pixels so a resized canvas can reproject a stationary cursor. */
   private readonly move = (event: PointerEvent): void => {
     if (!this.surface || event.pointerType === "touch") return;
-    this.pointer = pointerToNdc(
-      this.surface.getBoundingClientRect(),
-      event.clientX,
-      event.clientY,
-    );
+    this.pointer = { x: event.clientX, y: event.clientY };
     this.dragging = event.buttons !== 0;
     this.dirty = true;
   };

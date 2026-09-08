@@ -5,6 +5,17 @@
 
 ## Calibration and boundaries
 
+[Studio standing orders, Discussion #968](https://github.com/BenjaminBenetti/tut/discussions/968)
+are now an explicit subscription for this seat. Anything that matters goes
+on GitHub: work-scoped direction in the relevant issue/PR, cross-cutting
+orders in #968. Terminal messages can remain unsubmitted. Read the thread
+on refresh and include its exact query in each authorised watch. Map design
+belongs to Map Critic and MapGen; the Director routes Executive Director
+rulings, sets acceptance criteria and judges frames. Existing deliberate
+rulings still stand. Ownership uses seat labels for engineers and role/area
+for specialists; the Executive Director's assignable account is not an agent
+claim. There is no production hold.
+
 The Executive Director trusts this seat to file evidenced findings. Cap:
 **five open Critic tickets**. File rather than park for taste. Escalate only
 a genuine fork that would produce materially different games, or a conflict
@@ -133,7 +144,9 @@ not evidence that either seat has stalled.
   Evidence `37290a6f89c4fd2e9c0f538d1fd04929baafc87d`.
 
 Publication PR: **[#966](https://github.com/BenjaminBenetti/tut/pull/966)**, open for Tech Lead review.
-Local ESLint/format and evidence metadata/link checks passed; normal PR CI applies.
+Local ESLint/format and evidence metadata/link checks passed. All three CI jobs
+passed at `91ed16b` before the following standing-orders handoff-only update;
+normal CI still applies to the final PR head. Check #966 for current results.
 Current branch: **`docs/936-map-critic-postmerge`**, pushed. It contains only
 Critic diagnostic records and this handoff relative to integrated main.
 Capture scripts/source frames, GH cache and watch result live under ignored
@@ -182,14 +195,38 @@ closed survey #905 with the template's closing keyword. Never push main or
 merge. Every GitHub comment starts with `**Map Critic** · TUT agent` alone.
 A model-capacity error is transient: wait/retry, never change model.
 
-## Bounded watch — completed
+## Watches — repair watch completed; standing-orders watch active
 
 The resumed watch was session `72679`: **17:47:49–18:07:51 UTC on 2026-09-08**,
 300-second polls, hard deadline **20:47:49 UTC**. It exited on #943's
 18:05:54 merge. The merged picture was then captured and judged above.
-`watch-start.json` and `watch-result.json` preserve the event. No new loop
-or cron was installed. Do not restart this completed watch.
+`watch-start.json` and `watch-result.json` preserve the event. Do not restart
+that completed watch. The Director subsequently authorised the new #968
+subscription below; it is not an automatic restart.
 
 The older opening watch `52713` ended on issue comments at 19:25 UTC on
 September 6; follow-up watch `99123` ended on #940's candidate report at
 23:12 UTC that day. Those are completed history, not running watchers.
+
+### Director-requested #968 watch
+
+**Session `75187`, started 2026-09-08 19:15:28 UTC, hard stop 22:15:28 UTC.**
+One active background terminal, 300-second polls, exits on the first new
+standing-orders comment, work-thread comment or merged map/art PR. It watches
+#968 plus work threads #905/#917/#936/#937/#945/#959/#960 and PR #966.
+Own Map Critic acknowledgements do not trigger it. Issue comment catch-up
+starts at the last read, 18:57:51 UTC, so the publication interval is covered.
+
+[Confirmed in the discussion](https://github.com/BenjaminBenetti/tut/discussions/968#discussioncomment-18355526). Its exact polling command is:
+
+```sh
+gh api graphql -f query='{repository(owner:"BenjaminBenetti",name:"tut"){discussion(number:968){comments(last:10){nodes{createdAt body}}}}}'
+```
+
+Script, start/health/result records and cached discussion bodies:
+`.scratch/map-critic-standing-orders-968/`. Inspect session/result state on
+refresh before starting anything; never leave two watchers running. Follow
+up the event in its GitHub thread, inspect any merged visual repair, and
+retain #968 in future authorised watches. No cron was installed. Capacity,
+websocket and transport failures remain retryable weather; do not change
+model or redesign the loop in response.

@@ -57,6 +57,9 @@ describe("ghost cutaway (#526)", () => {
     // keeps every centre at zero strength, so an indoor unit stays hidden.
     expect(shaderA.uniforms.uGhostStrength).toBe(uniforms.uGhostStrength);
     expect(shaderB.uniforms.uGhostStrength).toBe(uniforms.uGhostStrength);
+    expect(shaderA.uniforms.uPointerCentre).toBe(uniforms.uPointerCentre);
+    expect(shaderB.uniforms.uPointerRadius).toBe(uniforms.uPointerRadius);
+    expect(shaderA.uniforms.uPointerStrength).toBe(uniforms.uPointerStrength);
   });
 
   it("declares the loop bound as a constant and reads view position", () => {

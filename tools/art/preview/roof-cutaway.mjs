@@ -2,6 +2,7 @@
 import { previewUnits } from "../../../src/app/service/preview-units";
 import { MODEL_MANIFEST } from "../../../src/graphics/data/model-manifest";
 import { GhostController } from "../../../src/graphics/service/ghost-controller";
+import { PointerCutawayController } from "../../../src/graphics/controller/pointer-cutaway-controller";
 import { GltfModelLoader } from "../../../src/graphics/service/gltf-model-loader";
 import { OrthographicCameraRig } from "../../../src/graphics/service/orthographic-camera-rig";
 import { PlaceholderModelFactory } from "../../../src/graphics/service/placeholder-model-factory";
@@ -74,10 +75,26 @@ async function main() {
     () => builder.ghostTargets(),
     builder.ghosting,
   );
+  const pointer =
+    query.get("pointer") === "1"
+      ? new PointerCutawayController(builder, rig.camera, builder.ghosting)
+      : undefined;
   const scene = new SceneService(document.querySelector("#scene"), {
     camera: rig,
     content: builder.root,
-    updatables: query.get("ghost") === "0" ? [] : [ghost],
+    updatables: [
+      ...(query.get("ghost") === "0" ? [] : [ghost]),
+      ...(pointer ? [pointer] : []),
+    ],
+  });
+  pointer?.attach(scene.canvas);
+  // Read live diagnostics on demand, without changing the production HUD.
+  globalThis.__cutawayState = () => ({
+    pointerStrength: builder.ghosting.uPointerStrength.value,
+    pointerRadius: builder.ghosting.uPointerRadius.value,
+    pointerCentre: builder.ghosting.uPointerCentre.value.toArray(),
+    ghostCount: builder.ghosting.uGhostCount.value,
+    ghostStrength: [...builder.ghosting.uGhostStrength.value],
   });
   scene.start();
   await scene.whenFirstFrameRendered();

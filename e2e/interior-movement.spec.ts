@@ -86,6 +86,7 @@ test("highlighted interior tiles move the squad through the doorway", async ({
     "data-visible",
     "true",
   );
+  expect(errors).toEqual([]);
   const attempts = [
     { id: "unit-2", to: ENTRY, cut: -999 },
     { id: "unit-2", to: { x: 8, y: 2, z: 29 }, cut: 0 },
@@ -121,6 +122,12 @@ test("highlighted interior tiles move the squad through the doorway", async ({
               )!.pos,
           )
           .toEqual(attempt.to);
+      } catch (error) {
+        if (CAPTURE)
+          await page.screenshot({
+            path: test.info().outputPath(`failed-move-${i + 1}.png`),
+          });
+        throw error;
       } finally {
         recorded.push({
           ...attempt,
@@ -151,6 +158,10 @@ test("highlighted interior tiles move the squad through the doorway", async ({
     }
     expect(errors).toEqual([]);
   } finally {
+    writeFileSync(
+      test.info().outputPath("browser-diagnostics.json"),
+      JSON.stringify(errors, null, 2),
+    );
     writeFileSync(
       test.info().outputPath("movement-attempts.json"),
       JSON.stringify(recorded, null, 2),

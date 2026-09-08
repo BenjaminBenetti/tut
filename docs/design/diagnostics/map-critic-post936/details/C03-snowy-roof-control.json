@@ -1,0 +1,31 @@
+{
+  "id": "C03-snowy-roof-control",
+  "seed": "mc-opening-01",
+  "biome": "snowy",
+  "settlement": "rural",
+  "size": "small",
+  "url": "http://localhost:4173/mapgen-preview.html?seed=mc-opening-01&biome=snowy&settlement=rural&size=small&models=1&units=0&slope=100",
+  "levels": {
+    "value": "8",
+    "max": "8",
+    "step": "2",
+    "label": "all"
+  },
+  "baseline": "900d9a33a0990d9872a283acde8da805ec218452",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "clip": {
+    "x": 380,
+    "y": 0,
+    "width": 2020,
+    "height": 1500
+  },
+  "camera": "initial framing; no pan or zoom",
+  "units": 0,
+  "mapBounds": {
+    "x": [0, 47],
+    "z": [0, 47]
+  }
+}

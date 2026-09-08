@@ -1,5 +1,9 @@
 # Pointer inspection (#947)
 
+Historical evidence: pointer inspection was removed in #1023. The commands and
+frames below describe the accepted #982 implementation; reproduce that version
+at commit `9aefe64eb01822e2a3955c3c546216b3364008c7`. Unit ghosting remains active.
+
 Hovering building geometry opens a local inspection window without a squad inside.
 The pointer uses **radius 3**, follows the **raw cursor**, and shares the accepted
 **0.175 opacity floor** and **0.65 inward soft edge**. Unit reveals stay at radius

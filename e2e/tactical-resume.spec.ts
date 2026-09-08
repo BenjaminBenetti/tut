@@ -11,8 +11,14 @@ interface HookGlobal {
 /** Days to advance before giving up on a mission appearing for the fixed seed. */
 const MAX_DAYS = 40;
 
+/** The mission a `launchMission` call played into: its id, and the city the list named it after. */
+interface LaunchedMission {
+  readonly missionId: string;
+  readonly cityName: string;
+}
+
 /** Plays into a live mission on the fixed seed with one squad deployed. */
-async function launchMission(page: Page): Promise<string> {
+async function launchMission(page: Page): Promise<LaunchedMission> {
   await page.goto("/");
   const body = page.locator("body");
   await expect(body).toHaveAttribute("data-app-state", "ready");
@@ -30,6 +36,9 @@ async function launchMission(page: Page): Promise<string> {
   }
   await expect(rows.first()).toBeVisible();
   const missionId = (await rows.first().getAttribute("data-mission-id")) ?? "";
+  const cityName =
+    (await rows.first().locator('[data-field="city"]').textContent())?.trim() ??
+    "";
   await rows.first().click();
   await page
     .locator('[data-role="mission-details"] [data-action="plan-deployment"]')
@@ -38,7 +47,7 @@ async function launchMission(page: Page): Promise<string> {
   await page.locator('#deploy-squads input[type="checkbox"]').first().check();
   await page.locator('[data-action="launch"]').click();
   await expect(body).toHaveAttribute("data-screen", "tactical");
-  return missionId;
+  return { missionId, cityName };
 }
 
 /**
@@ -52,7 +61,7 @@ test("a mission left through the HUD can be resumed from the overworld, and fini
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
 
-  const missionId = await launchMission(page);
+  const { missionId, cityName } = await launchMission(page);
   const body = page.locator("body");
   const resume = page.locator('#top-bar [data-action="resume-mission"]');
 
@@ -64,9 +73,11 @@ test("a mission left through the HUD can be resumed from the overworld, and fini
   await expect(resume).toBeVisible();
   await resume.click();
   await expect(body).toHaveAttribute("data-screen", "tactical");
+  // Named by its city, not its id (#753) — and it is the one that was left.
   await expect(
-    page.locator('#turn-banner [data-field="mission-id"]'),
-  ).toHaveText(missionId);
+    page.locator('#turn-banner [data-field="mission-name"]'),
+  ).toHaveText(cityName);
+  await expect(page.locator("#turn-banner")).not.toContainText(missionId);
 
   // And it can still be finished. Extract is offered for a selected unit
   // standing in the zone, and the force deployed on the extraction hook,

@@ -46,6 +46,12 @@ test("the tactical screen mounts a generated map with the deployed roster and ex
   await expect(rows.first()).toBeVisible();
   const missionId = await rows.first().getAttribute("data-mission-id");
   expect(missionId).toMatch(/^mission-\d+$/);
+  // What the list calls this mission, to hold the banner to below: the
+  // point of #753 is that both screens name the same city.
+  const cityName = (
+    await rows.first().locator('[data-field="city"]').textContent()
+  )?.trim();
+  expect(cityName).toBeTruthy();
 
   const problem = await page.evaluate(
     (id) => (globalThis as HookGlobal).__tut__?.startTacticalMission(id),
@@ -54,9 +60,12 @@ test("the tactical screen mounts a generated map with the deployed roster and ex
   expect(problem).toBeUndefined();
   await expect(body).toHaveAttribute("data-screen", "tactical");
   await expect(page.locator("#tactical-viewport canvas")).toBeVisible();
+  // The banner names the city being fought over, not the internal id
+  // (#753): it read "mission-1" over the whole battle.
   await expect(
-    page.locator('#turn-banner [data-field="mission-id"]'),
-  ).toHaveText(missionId ?? "");
+    page.locator('#turn-banner [data-field="mission-name"]'),
+  ).toHaveText(cityName ?? "");
+  await expect(page.locator("#turn-banner")).not.toContainText(missionId ?? "");
   await expect(page.locator('#turn-banner [data-field="turn"]')).toHaveText(
     "1",
   );
@@ -75,8 +84,8 @@ test("the tactical screen mounts a generated map with the deployed roster and ex
   await page.locator('[data-action="continue"]').click();
   await expect(body).toHaveAttribute("data-screen", "tactical");
   await expect(
-    page.locator('#turn-banner [data-field="mission-id"]'),
-  ).toHaveText(missionId ?? "");
+    page.locator('#turn-banner [data-field="mission-name"]'),
+  ).toHaveText(cityName ?? "");
 
   expect(errors).toEqual([]);
 });

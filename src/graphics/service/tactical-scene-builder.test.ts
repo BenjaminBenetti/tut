@@ -499,6 +499,39 @@ describe("TacticalSceneBuilder elevation tethers", () => {
     expect(tethersIn(builder).size).toBe(0);
   });
 
+  // Sabotage-driven: the first version of these tests passed with the
+  // support search ignoring the cut entirely, because the only thing
+  // under the unit was ground that is never hidden. Three storeys, unit
+  // on the second floor, cut to the ground: the line must skip the
+  // first floor, which is itself cut away, and land on the ground.
+  it("lands on the nearest surface the cut has NOT taken", async () => {
+    const b = new FixtureMapBuilder(6, 6, 8).fillGround();
+    b.building(tetherBuilding("b", 0, 3));
+    for (let floor = 0; floor < 3; floor++) {
+      b.tile({ x: 2, y: floor * STOREY_LAYERS, z: 2 }, SurfaceIds.FLOOR, {
+        buildingId: "b",
+        floorIndex: floor,
+      });
+    }
+    const builder = new TacticalSceneBuilder({
+      map: b.build(),
+      models: new FakeModelLoader(),
+    });
+    await builder.update(
+      [
+        {
+          ...unit("u1", "squad:squad-1", 2, 2),
+          pos: { x: 2, y: 2 * STOREY_LAYERS, z: 2 },
+        },
+      ],
+      TEMPLATES,
+    );
+    builder.setLayerFocus({ storey: 0, storeyCount: 3, cutLevel: 1 });
+    const line = tethersIn(builder).get("u1");
+    // Ground at layer 0, not the cut-away first floor at layer 2.
+    expect(line?.scale.y).toBeCloseTo(tileTop(2 * STOREY_LAYERS) - tileTop(0));
+  });
+
   it("retires the line when the cut rises back over the unit", async () => {
     const { builder } = tetherScene();
     await builder.update([upstairs()], TEMPLATES);

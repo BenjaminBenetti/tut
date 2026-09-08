@@ -69,6 +69,12 @@ export type TacticalInvokeTarget =
  * `select-*` and `invoke` are the two halves of #520: the left button
  * only ever points at something, and the right button asks for the armed
  * action to happen there.
+ *
+ * `layer-step` is the odd one out and stays here on purpose: it changes
+ * nothing in the mission, only which storeys the scene draws (#961). It
+ * is an intent rather than a direct call so the one key table keeps
+ * owning every binding, and so the screen can show the storey it landed
+ * on without the scene reaching into the HUD.
  */
 export type TacticalIntent =
   | { readonly kind: "select-unit"; readonly unitId: UnitId }
@@ -76,6 +82,7 @@ export type TacticalIntent =
   | { readonly kind: "select-tile"; readonly tile: TileCoord }
   | { readonly kind: "invoke"; readonly target: TacticalInvokeTarget }
   | { readonly kind: "action"; readonly action: TacticalAction }
+  | { readonly kind: "layer-step"; readonly delta: number }
   | { readonly kind: "end-turn" };
 
 /** Receives every intent the input layer produces. The tactical screen implements it. */
@@ -110,6 +117,8 @@ export interface TacticalTestHooks {
   ): { x: number; y: number } | undefined;
   /** Client-pixel position of a tile's top centre, for a real pointer click. */
   tileScreenPosition(tile: TileCoord): { x: number; y: number } | undefined;
+  /** Moves the view `delta` storeys, as the layer keys do (#961). */
+  stepLayer(delta: number): void;
 }
 
 declare global {

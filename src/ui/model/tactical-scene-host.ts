@@ -1,3 +1,4 @@
+import type { LayerFocus } from "../../graphics/model/layer-focus";
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { Vec2 } from "../../core/model/grid";
@@ -21,6 +22,7 @@ import type {
  *   screen.mount ──► host.attach(viewport, mission, intents)   builds scene + input
  *   store change ──► host.update(mission, events)               animates, then moves units
  *   selection    ──► host.select(unitId)                        range / cover / LOS overlays
+ *   layer keys   ──► host.stepLayerFocus(±1)                    peels storeys off the map
  *   screen.unmount ► host.release()                             disposes everything
  * ```
  */
@@ -73,6 +75,23 @@ export interface TacticalSceneHost {
    * @returns Client pixels, or undefined when nothing is drawn there.
    */
   screenPositionOf(target: TacticalInvokeTarget): Vec2 | undefined;
+
+  /**
+   * Moves the view `delta` storeys and returns where it landed (#961).
+   *
+   * The scene owns this rather than the mission: it changes which
+   * storeys are drawn and nothing else — no AP, no turn, no refusal.
+   * The focus is returned so the screen can show it without asking a
+   * second time, and because clamping means the caller cannot predict
+   * it from `delta` alone.
+   *
+   * @param delta - Storeys to move; `+1` is up.
+   * @returns The focus after the step, or undefined when no scene is attached.
+   */
+  stepLayerFocus(delta: number): LayerFocus | undefined;
+
+  /** Where the view is now, or undefined when no scene is attached. */
+  layerFocus(): LayerFocus | undefined;
 
   /** Tears the scene down. Safe to call when not attached. */
   release(): void;

@@ -22,6 +22,11 @@ import {
   TacticalOverlays,
   overlaysFor,
 } from "../../graphics/service/tactical-overlays";
+import type { LayerFocus } from "../../graphics/model/layer-focus";
+import {
+  stepFocus,
+  topFocus,
+} from "../../graphics/service/layer-focus-service";
 import { TacticalSceneBuilder } from "../../graphics/service/tactical-scene-builder";
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { TacticalState } from "../../tactical/model/tactical-state";
@@ -64,6 +69,8 @@ interface AttachedScene {
   selected: UnitId | undefined;
   /** The armed attack target, so the sight cue can narrow to it (#517). */
   target: string | undefined;
+  /** Which storeys are drawn (#961); starts at the top, the uncut map. */
+  layerFocus: LayerFocus;
 }
 
 // ===========================================
@@ -180,7 +187,9 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
       mission,
       selected: undefined,
       target: undefined,
+      layerFocus: topFocus(mission.map),
     };
+    this.publishLayerFocus();
     scene.start();
     // The map art and the unit models are independent fetches; running
     // them together keeps the first frame from waiting on both in turn.
@@ -258,6 +267,36 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
     }
   }
 
+  /**
+   * Moves the view `delta` storeys and returns where it landed (#961).
+   *
+   * Clamped at both ends by `stepFocus`, so holding a key at the top or
+   * bottom of a building does nothing rather than wrapping to the other
+   * end — the player is pressing without looking.
+   *
+   * @param delta - Storeys to move; `+1` is up.
+   * @returns The focus after the step, or undefined with no scene.
+   */
+  stepLayerFocus(delta: number): LayerFocus | undefined {
+    const attached = this.attached;
+    if (!attached) {
+      return undefined;
+    }
+    attached.layerFocus = stepFocus(
+      attached.mission.map,
+      attached.layerFocus,
+      delta,
+    );
+    attached.builder.setMaxLevel(attached.layerFocus.cutLevel);
+    this.publishLayerFocus();
+    return attached.layerFocus;
+  }
+
+  /** Where the view is now, or undefined when no scene is attached. */
+  layerFocus(): LayerFocus | undefined {
+    return this.attached?.layerFocus;
+  }
+
   /** Tears the scene down. Safe to call when not attached. */
   release(): void {
     const attached = this.attached;
@@ -272,6 +311,8 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
     attached.builder.dispose();
     this.deps.onHooks?.(undefined);
     delete document.body.dataset.tacticalUnits;
+    delete document.body.dataset.tacticalStorey;
+    delete document.body.dataset.tacticalStoreys;
   }
 
   // ===========================================
@@ -288,6 +329,20 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
       overlaysFor(attached.mission, attached.selected, attached.target),
     );
     document.body.dataset.tacticalSelected = attached.selected ?? "";
+  }
+
+  /**
+   * Records the focus on the body so an end-to-end test can read which
+   * storey is drawn without a hook. One-based, because that is what the
+   * player is shown.
+   */
+  private publishLayerFocus(): void {
+    const focus = this.attached?.layerFocus;
+    if (!focus) {
+      return;
+    }
+    document.body.dataset.tacticalStorey = String(focus.storey + 1);
+    document.body.dataset.tacticalStoreys = String(focus.storeyCount);
   }
 
   /** Places the mission's units and records the count on the body for tests. */

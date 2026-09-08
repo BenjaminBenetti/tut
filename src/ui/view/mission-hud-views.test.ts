@@ -228,7 +228,8 @@ describe("ObjectiveTrackerView", () => {
 describe("TurnBannerView", () => {
   it("shows turn and phase, a status line, and reports Back", () => {
     const onBack = vi.fn();
-    const view = new TurnBannerView({ onBack });
+    const onLayerStep = vi.fn();
+    const view = new TurnBannerView({ onBack, onLayerStep });
     view.mount(root);
     view.update({
       missionName: "Seoul",
@@ -236,6 +237,7 @@ describe("TurnBannerView", () => {
       phase: "bugs",
       tdfUnits: 2,
       bugUnits: 5,
+      layer: { storey: 2, storeyCount: 3 },
     });
     // The banner names the city, never the id (#753).
     expect(field("mission-name")?.textContent).toBe("Seoul");
@@ -250,6 +252,54 @@ describe("TurnBannerView", () => {
     expect(status?.hidden).toBe(true);
     root.querySelector<HTMLButtonElement>('[data-action="overworld"]')?.click();
     expect(onBack).toHaveBeenCalled();
+  });
+
+  // #961: the player is changing this constantly, so it is a banner stat
+  // with buttons beside it rather than something in a menu.
+  it("reads out the storey one-based and reports each button", () => {
+    const onBack = vi.fn();
+    const onLayerStep = vi.fn();
+    const view = new TurnBannerView({ onBack, onLayerStep });
+    view.mount(root);
+    const model = {
+      missionName: "Seoul",
+      turn: 1,
+      phase: "player",
+      tdfUnits: 2,
+      bugUnits: 0,
+    } as const;
+    view.update({ ...model, layer: { storey: 2, storeyCount: 3 } });
+    expect(field("floor")?.textContent).toBe("2 / 3");
+
+    const down = root.querySelector<HTMLButtonElement>(
+      '[data-action="layer-down"]',
+    );
+    const up = root.querySelector<HTMLButtonElement>(
+      '[data-action="layer-up"]',
+    );
+    down?.click();
+    up?.click();
+    expect(onLayerStep.mock.calls).toEqual([[-1], [1]]);
+
+    // Disabled where there is nowhere to go, rather than removed: an
+    // inert control is easier to learn than one that comes and goes.
+    view.update({ ...model, layer: { storey: 1, storeyCount: 3 } });
+    expect(down?.disabled).toBe(true);
+    expect(up?.disabled).toBe(false);
+    view.update({ ...model, layer: { storey: 3, storeyCount: 3 } });
+    expect(down?.disabled).toBe(false);
+    expect(up?.disabled).toBe(true);
+
+    // A single-storey map: both ends at once, and the control says so.
+    view.update({ ...model, layer: { storey: 1, storeyCount: 1 } });
+    expect(field("floor")?.textContent).toBe("1 / 1");
+    expect(down?.disabled).toBe(true);
+    expect(up?.disabled).toBe(true);
+
+    // No mission at all.
+    view.update(undefined);
+    expect(field("floor")?.textContent).toBe("—");
+    expect(down?.disabled).toBe(true);
   });
 });
 

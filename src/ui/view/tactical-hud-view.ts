@@ -13,6 +13,7 @@ import { reload } from "../../tactical/model/reload-command";
 import type { TacticalCommand } from "../../tactical/model/tactical-command";
 import type { TacticalError } from "../../tactical/model/tactical-error";
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
+import type { LayerFocus } from "../../graphics/model/layer-focus";
 import type { MissionView } from "../../tactical/model/mission-view";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { Team, Unit, UnitId } from "../../tactical/model/unit";
@@ -100,6 +101,14 @@ export interface TacticalHudHandlers {
    * a HUD built without a scene needs no stub.
    */
   readonly onViewChange?: () => void;
+  /**
+   * The player asked to move the view `delta` storeys (#961), from the
+   * banner's buttons rather than from the keys.
+   *
+   * Optional so a HUD built without a scene needs no stub; the readout
+   * still shows whatever `setLayerFocus` was last given.
+   */
+  readonly onLayerStep?: (delta: number) => void;
 }
 
 /** What the HUD needs injected. */
@@ -188,6 +197,8 @@ export class TacticalHudView {
   private selected: UnitId | undefined;
   /** The city the mission is fought over, set by the screen (#753). */
   private missionName: string | undefined;
+  /** Which storey the scene draws, set by the screen (#961). */
+  private layerFocus: LayerFocus | undefined;
   private target: UnitId | undefined;
   private mode: HudMode = DEFAULT_HUD_MODE;
   /**
@@ -207,7 +218,10 @@ export class TacticalHudView {
   constructor(handlers: TacticalHudHandlers, deps: TacticalHudDeps) {
     this.handlers = handlers;
     this.deps = deps;
-    this.banner = new TurnBannerView({ onBack: () => handlers.onBack() });
+    this.banner = new TurnBannerView({
+      onBack: () => handlers.onBack(),
+      onLayerStep: (delta) => handlers.onLayerStep?.(delta),
+    });
     this.phases = new PhaseBannerView(deps.phaseBanner);
     this.preview = new HitPreviewView({
       onConfirm: () => {
@@ -346,6 +360,21 @@ export class TacticalHudView {
    */
   setMissionName(name: string | undefined): void {
     this.missionName = name;
+    this.refresh();
+  }
+
+  /**
+   * Which storey the scene is drawing (#961).
+   *
+   * Handed in rather than derived: the cut is clamped against the map's
+   * height by the scene, so the storey the player lands on is not always
+   * the one the keypress asked for, and the HUD must show what happened
+   * rather than what was requested.
+   *
+   * @param focus - The scene's focus, or `undefined` when none is attached.
+   */
+  setLayerFocus(focus: LayerFocus | undefined): void {
+    this.layerFocus = focus;
     this.refresh();
   }
 
@@ -1033,6 +1062,15 @@ export class TacticalHudView {
       // Spotted bugs only: a count of every bug alive tells the player
       // how many are out there before anyone has seen one.
       bugUnits: this.view === undefined ? 0 : countAlive(this.view, "bugs"),
+      // One-based for the player: "floor 1" is the ground floor, not
+      // "floor 0". The scene counts storeys from zero.
+      layer:
+        this.layerFocus === undefined
+          ? undefined
+          : {
+              storey: this.layerFocus.storey + 1,
+              storeyCount: this.layerFocus.storeyCount,
+            },
     });
     const selected = this.unit(this.selected);
     this.card.update(

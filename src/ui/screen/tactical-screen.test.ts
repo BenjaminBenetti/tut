@@ -37,6 +37,7 @@ import type {
   TacticalIntent,
   TacticalIntentSink,
 } from "../model/tactical-intent";
+import type { LayerFocus } from "../../graphics/model/layer-focus";
 import type { TacticalSceneHost } from "../model/tactical-scene-host";
 import { campaignOnDay, missionAt } from "../view/mission-fixtures.test-helper";
 import { TacticalScreen } from "./tactical-screen";
@@ -149,6 +150,10 @@ class FakeStore implements CampaignStore {
 class FakeHost implements TacticalSceneHost {
   readonly calls: string[] = [];
   intents: TacticalIntentSink | undefined;
+  /** Every delta the screen asked for (#961). */
+  readonly layerSteps: number[] = [];
+  /** A three-storey map, so a step has somewhere to go and an end to clamp at. */
+  focus: LayerFocus = { storey: 2, storeyCount: 3, cutLevel: undefined };
   attach(
     _c: HTMLElement,
     mission: TacticalState,
@@ -176,6 +181,20 @@ class FakeHost implements TacticalSceneHost {
   screenPositionOf(): { x: number; y: number } | undefined {
     // The fake draws nothing, so nothing has a screen position.
     return undefined;
+  }
+
+  stepLayerFocus(delta: number): LayerFocus | undefined {
+    this.layerSteps.push(delta);
+    this.focus = {
+      storey: Math.min(2, Math.max(0, this.focus.storey + delta)),
+      storeyCount: 3,
+      cutLevel: undefined,
+    };
+    return this.focus;
+  }
+
+  layerFocus(): LayerFocus | undefined {
+    return this.focus;
   }
 
   release(): void {
@@ -229,6 +248,59 @@ describe("TacticalScreen", () => {
   const field = (name: string): string =>
     root.querySelector(`#turn-banner [data-field="${name}"]`)?.textContent ??
     "";
+
+  // #961: a layer step is a view change. It reaches the scene, the
+  // readout follows what the scene clamped to, and nothing about the
+  // mission moves.
+  it("steps the storey through the scene and shows where it landed", () => {
+    const state = inMission();
+    const host = new FakeHost();
+    new TacticalScreen({
+      router: fakeRouter().router,
+      session: sessionWith(new FakeStore(state)),
+      combatTuning: COMBAT_TUNING,
+      objectiveTuning: OBJECTIVE_TUNING,
+      sceneHost: host,
+    }).mount(root);
+    // Opens on the top storey without anyone pressing a key.
+    expect(field("floor")).toBe("3 / 3");
+
+    host.intents?.emit({ kind: "layer-step", delta: -1 });
+    expect(host.layerSteps).toEqual([-1]);
+    expect(field("floor")).toBe("2 / 3");
+    expect(document.body.dataset.lastIntent).toBe("layer-step");
+
+    // Clamped by the scene, and the readout follows the scene rather
+    // than the request: three presses down from storey 2 is one move.
+    host.intents?.emit({ kind: "layer-step", delta: -1 });
+    host.intents?.emit({ kind: "layer-step", delta: -1 });
+    host.intents?.emit({ kind: "layer-step", delta: -1 });
+    expect(field("floor")).toBe("1 / 3");
+
+    // The mission is untouched throughout.
+    expect(field("turn")).toBe("1");
+    expect(host.calls).toEqual(["attach:mission-2:1"]);
+  });
+
+  it("steps the storey from the banner buttons as well as the keys", () => {
+    const state = inMission();
+    const host = new FakeHost();
+    new TacticalScreen({
+      router: fakeRouter().router,
+      session: sessionWith(new FakeStore(state)),
+      combatTuning: COMBAT_TUNING,
+      objectiveTuning: OBJECTIVE_TUNING,
+      sceneHost: host,
+    }).mount(root);
+    root
+      .querySelector<HTMLButtonElement>('[data-action="layer-down"]')
+      ?.click();
+    expect(host.layerSteps).toEqual([-1]);
+    expect(field("floor")).toBe("2 / 3");
+    root.querySelector<HTMLButtonElement>('[data-action="layer-up"]')?.click();
+    expect(host.layerSteps).toEqual([-1, 1]);
+    expect(field("floor")).toBe("3 / 3");
+  });
 
   it("mounts the banner and viewport from the active mission and attaches the scene host", () => {
     const state = inMission();

@@ -4,6 +4,7 @@ import type { PlacementHooks } from "./hook";
 import type { MapRecipe } from "./map-recipe";
 import type { Prop } from "./prop";
 import type { Tile } from "./tile";
+import type { DropshipSite } from "./dropship-site";
 
 // ===========================================
 // Tactical map
@@ -40,6 +41,8 @@ export interface TacticalMap {
   readonly connectors: readonly Connector[];
   readonly props: readonly Prop[];
   readonly hooks: PlacementHooks;
+  /** Optional for existing saves and hand-built fixtures; generated boarding hooks own the start tiles. */
+  readonly dropships?: readonly DropshipSite[];
 }
 
 /** The subset of a map a tile index needs. */

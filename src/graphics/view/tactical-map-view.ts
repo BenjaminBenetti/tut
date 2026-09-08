@@ -1120,6 +1120,29 @@ export class TacticalMapView implements Disposable, TilePicker {
   /** A box per prop, taller and darker the more cover it gives. */
   private buildProps(): void {
     const batches = new Map<string, Batch>();
+    for (const site of this.map.dropships ?? []) {
+      const boarding = this.map.hooks.deployZones.find(
+        (zone) => zone.id === site.deployZoneId,
+      )?.tiles[0];
+      if (!boarding) continue;
+      const { footprint, level } = site;
+      const height = 3.54;
+      pushBatch(
+        batches,
+        `dropship:${level}`,
+        0x647266,
+        level,
+        boxMatrix(
+          footprint.x + footprint.w / 2,
+          tileTop(level) + height / 2,
+          footprint.z + footprint.d / 2,
+          footprint.w,
+          height,
+          footprint.d,
+        ),
+        this.index.keyOf(boarding),
+      );
+    }
     for (const prop of this.map.props) {
       const tile = this.index.getAt(prop.tile);
       if (tile === undefined) {

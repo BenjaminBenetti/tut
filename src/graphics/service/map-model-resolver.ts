@@ -37,6 +37,7 @@ import {
 } from "../data/map-model-table";
 import { GROUND_SLAB_THICKNESS } from "../data/tactical-overlay-palette";
 import { tileTop } from "../view/tactical-map-view";
+import { resolveDropshipModels } from "./dropship-model-resolver";
 
 // ===========================================
 // Types
@@ -164,7 +165,7 @@ export function resolveMapModels(
     roofs: resolvePitchedRoofModels(map, index),
     walls,
     frontages: resolveBuildingFrontages(map, index),
-    props: resolveProps(map, index),
+    props: [...resolveProps(map, index), ...resolveDropshipModels(map)],
     connectors,
   };
 }

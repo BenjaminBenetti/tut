@@ -20,6 +20,7 @@ import type { Tile } from "../model/tile";
 import type { TileCoord } from "../model/tile-coord";
 import { ReachabilityService } from "./reachability-service";
 import { TileIndex } from "./tile-index";
+import { validateDropshipSites } from "./dropship-site-validator";
 
 // ===========================================
 // Types
@@ -106,6 +107,7 @@ class MapValidator {
     this.checkHooks();
     this.checkReachability();
     this.checkRecipe();
+    this.violations.push(...validateDropshipSites(this.map, this.index));
     return this.violations;
   }
 
@@ -175,7 +177,13 @@ class MapValidator {
         if (tile.coverProvided !== CoverLevel.NONE) {
           this.fail("I2", "Tile without a prop provides cover", tile);
         }
-        if (tile.blocksLos) {
+        const hull =
+          this.map.dropships?.some(
+            (site) =>
+              tile.y === site.level &&
+              rectContains(site.footprint, tile.x, tile.z),
+          ) ?? false;
+        if (tile.blocksLos !== hull) {
           this.fail("I2", "Tile without a prop blocks line of sight", tile);
         }
         continue;

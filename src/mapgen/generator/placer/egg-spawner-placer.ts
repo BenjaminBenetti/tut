@@ -148,8 +148,8 @@ export class EggSpawnerPlacer implements HookPlacer {
       // rather than hiding it somewhere unbeatable.
       const pick =
         ordered.find((c) => roomy(c) && shootable(c)) ??
-        ordered.find(shootable) ??
         remaining.find((c) => !c.interior && roomy(c) && shootable(c)) ??
+        ordered.find(shootable) ??
         remaining.find((c) => !c.interior && shootable(c)) ??
         ordered.find(roomy) ??
         ordered[0];

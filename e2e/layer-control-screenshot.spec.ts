@@ -9,6 +9,25 @@ interface HookGlobal {
   __tutTactical__?: TacticalTestHooks;
 }
 
+/** A tile in the mission's map. */
+interface Tile {
+  x: number;
+  y: number;
+  z: number;
+}
+
+/** A point in client pixels, as the scene's projection hooks report them. */
+interface Point {
+  x: number;
+  y: number;
+}
+
+/** Where in the viewport to frame something, as fractions of its size. */
+interface Anchor {
+  x: number;
+  y: number;
+}
+
 /** Days to advance before giving up on a mission appearing for the fixed seed. */
 const MAX_DAYS = 40;
 
@@ -104,9 +123,7 @@ async function toGround(page: Page, storeys: number): Promise<void> {
  * @param page - The page holding the live mission.
  * @returns The tile, or null when the map is flat.
  */
-async function highestTile(
-  page: Page,
-): Promise<{ x: number; y: number; z: number } | null> {
+async function highestTile(page: Page): Promise<Tile | null> {
   return page.evaluate((key) => {
     const raw = localStorage.getItem(key);
     if (raw === null) {
@@ -120,7 +137,7 @@ async function highestTile(
       };
     };
     const tiles = save.state.activeMission?.map.tiles ?? [];
-    let best: { x: number; y: number; z: number } | null = null;
+    let best: Tile | null = null;
     for (const tile of tiles) {
       if (best === null || tile.y > best.y) {
         best = { x: tile.x, y: tile.y, z: tile.z };
@@ -142,9 +159,7 @@ async function highestTile(
  * @param page - The page holding the live mission.
  * @returns The tile, or null when the map is flat.
  */
-async function upperTile(
-  page: Page,
-): Promise<{ x: number; y: number; z: number } | null> {
+async function upperTile(page: Page): Promise<Tile | null> {
   return page.evaluate((key) => {
     const raw = localStorage.getItem(key);
     if (raw === null) {
@@ -165,10 +180,7 @@ async function upperTile(
 }
 
 /** Where a tile is drawn, in client pixels. */
-async function tileAt(
-  page: Page,
-  tile: { x: number; y: number; z: number },
-): Promise<{ x: number; y: number } | undefined> {
+async function tileAt(page: Page, tile: Tile): Promise<Point | undefined> {
   return page.evaluate(
     (t) => (globalThis as HookGlobal).__tutTactical__?.tileScreenPosition(t),
     tile,
@@ -176,10 +188,7 @@ async function tileAt(
 }
 
 /** Where a unit is drawn, in client pixels. */
-async function unitAt(
-  page: Page,
-  unitId: string,
-): Promise<{ x: number; y: number } | undefined> {
+async function unitAt(page: Page, unitId: string): Promise<Point | undefined> {
   return page.evaluate(
     (id) => (globalThis as HookGlobal).__tutTactical__?.unitScreenPosition(id),
     unitId,
@@ -201,9 +210,8 @@ async function unitAt(
  */
 async function panTo(
   page: Page,
-  at: () => Promise<{ x: number; y: number } | undefined>,
-  /** Where in the viewport to put it, as fractions of its size. */
-  where: { x: number; y: number } = { x: 0.5, y: 0.5 },
+  at: () => Promise<Point | undefined>,
+  where: Anchor = { x: 0.5, y: 0.5 },
 ): Promise<void> {
   const box = await page.locator("#tactical-viewport").boundingBox();
   const start = await at();
@@ -274,7 +282,7 @@ async function panTo(
 async function placeUnit(
   page: Page,
   unitId: string,
-  tile: { x: number; y: number; z: number },
+  tile: Tile,
 ): Promise<void> {
   await page.evaluate(
     ({ key, id, pos }) => {

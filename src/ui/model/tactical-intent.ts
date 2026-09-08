@@ -119,7 +119,28 @@ export interface TacticalTestHooks {
   tileScreenPosition(tile: TileCoord): { x: number; y: number } | undefined;
   /** Moves the view `delta` storeys, as the layer keys do (#961). */
   stepLayer(delta: number): void;
+  /**
+   * Puts the map back on the single height cut it used before #978, so a
+   * capture can show the defect and the fix **in one run**.
+   *
+   * Exposed because the two frames have to share a run to be comparable:
+   * the capture harness is not reproducible across runs (#996), so a
+   * before/after pair drawn in separate runs cannot tell a change from
+   * the harness. This drives view state that already exists — the
+   * height cut is still what `mapgen-preview`'s level slider uses — and
+   * adds no behaviour of its own.
+   *
+   * @param level - Highest engine layer to draw, or undefined for all.
+   */
+  applyHeightCut(level: number | undefined): void;
 }
+
+/**
+ * The part of {@link TacticalTestHooks} the input controller can supply
+ * on its own. The scene host completes it: the height cut is the
+ * scene's, and the controller has no handle on the map view.
+ */
+export type TacticalInputHooks = Omit<TacticalTestHooks, "applyHeightCut">;
 
 declare global {
   interface Window {

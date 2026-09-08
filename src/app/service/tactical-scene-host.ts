@@ -185,7 +185,15 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
     });
     pointerCutaway.attach(scene.canvas);
     input.attach(container);
-    this.deps.onHooks?.(input.hooks());
+    // The height cut is the scene's, not the input controller's, so the
+    // host supplies that one hook itself (#978).
+    this.deps.onHooks?.({
+      ...input.hooks(),
+      applyHeightCut: (level) => {
+        builder.setLayerFocus(undefined);
+        builder.setMaxLevel(level);
+      },
+    });
     this.attached = {
       pointerCutaway,
       builder,

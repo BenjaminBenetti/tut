@@ -9,6 +9,9 @@ interface HookGlobal {
   __tutTactical__?: TacticalTestHooks;
 }
 
+/** Where the frames go. */
+const FRAMES = "docs/design/tactical-layer-cut-hillside";
+
 /** A tile in the mission's map. */
 interface Tile {
   x: number;
@@ -72,7 +75,7 @@ async function launch(page: Page, seed: string): Promise<number> {
  */
 async function highestBuildingTile(
   page: Page,
-): Promise<{ tile: Tile; step: number } | null> {
+): Promise<{ tile: Tile; step: number; terrainCut: number } | null> {
   return page.evaluate((key) => {
     const raw = localStorage.getItem(key);
     if (raw === null) {
@@ -100,7 +103,13 @@ async function highestBuildingTile(
       (t) => t.buildingId === highest?.id && t.floorIndex === 0,
     );
     return tile
-      ? { tile: { x: tile.x, y: tile.y, z: tile.z }, step: top - bottom }
+      ? {
+          tile: { x: tile.x, y: tile.y, z: tile.z },
+          step: top - bottom,
+          // What the old rule cut at on floor 1: the lowest building's
+          // ground plus one layer, the top of its ground floor.
+          terrainCut: bottom + 1,
+        }
       : null;
   }, SAVE_KEY);
 }
@@ -139,14 +148,26 @@ async function tapOnce(
     throw new Error(`cannot pan: nothing to measure before pressing ${key}`);
   }
   await page.keyboard.press(key);
-  for (let frame = 0; frame < 40; frame++) {
+  // Wait for the rig to STOP, not merely to start. It eases toward its
+  // target, so returning on the first pixel of movement hands the caller
+  // a mid-ease reading; the loop above then decides its next tap from a
+  // position the camera is still leaving, and takes a different path on
+  // every run.
+  let last: Point | undefined;
+  for (let frame = 0; frame < 60; frame++) {
     await page.waitForTimeout(50);
     const now = await at();
-    if (now && Math.hypot(now.x - before.x, now.y - before.y) > 1) {
+    if (!now) {
+      continue;
+    }
+    const movedAtAll = Math.hypot(now.x - before.x, now.y - before.y) > 1;
+    const stopped = last && Math.hypot(now.x - last.x, now.y - last.y) < 0.01;
+    last = now;
+    if (movedAtAll && stopped) {
       return { x: now.x - before.x, y: now.y - before.y };
     }
   }
-  throw new Error(`pressing ${key} moved the camera nowhere in 2 s`);
+  throw new Error(`pressing ${key} never settled within 3 s`);
 }
 
 /**
@@ -232,21 +253,30 @@ async function shoot(page: Page, path: string): Promise<void> {
 }
 
 /**
- * The #978 frame: a map whose buildings stand at different heights, cut
+ * The #978 pair: a map whose buildings stand at different heights, cut
  * to the ground floor, framed on the building standing highest.
  *
- * Run twice, once per build, to make a before/after pair:
- *   CAPTURE=1 LAYER_SEED=555 LAYER_FRAME=docs/design/x.png \
- *     pnpm exec playwright test e2e/layer-cut-hillside-screenshot.spec.ts
+ * **Both frames are drawn in one run**, on one camera, seconds apart.
+ * That is deliberate and it is the Director's condition for accepting
+ * this evidence: the capture harness is not reproducible across runs
+ * (#996), so a pair taken in two runs cannot tell a change from the
+ * harness. Taken together they share whatever noise this run has, and
+ * the difference between them is the change.
+ *
+ * `before` is the old rule reproduced through `applyHeightCut` — one
+ * height for the whole map, anchored to the lowest building — not a
+ * mock of it. `after` is what the build actually does.
+ *
+ *   CAPTURE=1 pnpm exec playwright test e2e/layer-cut-hillside-screenshot.spec.ts
  */
-test("captures the hillside cut for review", async ({ page }) => {
+test("captures the hillside cut, before and after, in one run", async ({
+  page,
+}) => {
   test.skip(
     process.env.CAPTURE === undefined,
     "set CAPTURE=1 to regenerate the hillside frames",
   );
   const seed = process.env.LAYER_SEED ?? "555";
-  const frame =
-    process.env.LAYER_FRAME ?? "docs/design/tactical-layer-cut-hillside.png";
 
   const storeys = await launch(page, seed);
   const highest = await highestBuildingTile(page);
@@ -267,9 +297,21 @@ test("captures the hillside cut for review", async ({ page }) => {
       (globalThis as HookGlobal).__tutTactical__?.stepLayer(-1),
     );
   }
-  await expect(page.locator("body")).toHaveAttribute(
-    "data-tactical-storey",
-    "1",
+  const body = page.locator("body");
+  await expect(body).toHaveAttribute("data-tactical-storey", "1");
+
+  // Before: one height for the whole map, taken from the lowest
+  // building, which is what shipped in #961.
+  await page.evaluate(
+    (cut) => (globalThis as HookGlobal).__tutTactical__?.applyHeightCut(cut),
+    highest.terrainCut,
   );
-  await shoot(page, frame);
+  await shoot(page, `${FRAMES}-before.png`);
+
+  // After: back to the storey focus, which is what this build does.
+  await page.evaluate(() =>
+    (globalThis as HookGlobal).__tutTactical__?.stepLayer(0),
+  );
+  await expect(body).toHaveAttribute("data-tactical-storey", "1");
+  await shoot(page, `${FRAMES}-after.png`);
 });

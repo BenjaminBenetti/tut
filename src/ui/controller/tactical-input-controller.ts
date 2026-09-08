@@ -15,8 +15,8 @@ import type { SpawnerId } from "../../tactical/model/tactical-state";
 import type { UnitId } from "../../tactical/model/unit";
 import type {
   TacticalAction,
+  TacticalInputHooks,
   TacticalIntentSink,
-  TacticalTestHooks,
 } from "../model/tactical-intent";
 import { ACTION_BAR_ORDER } from "../model/tactical-intent";
 
@@ -372,7 +372,7 @@ export class TacticalInputController implements FrameUpdatable {
   }
 
   /** The end-to-end test hooks for this controller. */
-  hooks(): TacticalTestHooks {
+  hooks(): TacticalInputHooks {
     return {
       selectUnit: (unitId) => {
         this.selectUnit(unitId);

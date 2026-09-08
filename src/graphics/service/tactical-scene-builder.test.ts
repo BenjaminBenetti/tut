@@ -568,6 +568,43 @@ describe("TacticalSceneBuilder elevation tethers", () => {
     expect(line?.scale.y).toBeCloseTo(tileTop(2 * STOREY_LAYERS) - tileTop(0));
   });
 
+  // The interaction with #996/#1013's roof correction. Before that fix a
+  // roof's storey exceeded the top focus, so a unit standing on one was
+  // "unsupported" in the default view and drew a tether over a roof
+  // that was right there under its feet.
+  it("leaves a roof-standing unit alone at the top storey", async () => {
+    const b = new FixtureMapBuilder(6, 6, 8).fillGround();
+    b.building(tetherBuilding("b", 0, 2));
+    for (let floor = 0; floor < 2; floor++) {
+      b.tile({ x: 2, y: floor * STOREY_LAYERS, z: 2 }, SurfaceIds.FLOOR, {
+        buildingId: "b",
+        floorIndex: floor,
+      });
+    }
+    b.tile({ x: 2, y: 2 * STOREY_LAYERS, z: 2 }, SurfaceIds.FLOOR, {
+      buildingId: "b",
+    });
+    const builder = new TacticalSceneBuilder({
+      map: b.build(),
+      models: new FakeModelLoader(),
+    });
+    await builder.update(
+      [
+        {
+          ...unit("u1", "squad:squad-1", 2, 2),
+          pos: { x: 2, y: 2 * STOREY_LAYERS, z: 2 },
+        },
+      ],
+      TEMPLATES,
+    );
+    // The view the scene opens on: the roof is drawn, so no tether.
+    builder.setLayerFocus({ storey: 1, storeyCount: 2, cutLevel: undefined });
+    expect(tethersIn(builder).size).toBe(0);
+    // And one appears the moment the player actually cuts below it.
+    builder.setLayerFocus({ storey: 0, storeyCount: 2, cutLevel: 1 });
+    expect(tethersIn(builder).size).toBe(1);
+  });
+
   it("retires the line when the cut rises back over the unit", async () => {
     const { builder } = tetherScene();
     await builder.update([upstairs()], TEMPLATES);

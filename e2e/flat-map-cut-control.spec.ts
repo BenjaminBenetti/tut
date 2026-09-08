@@ -5,12 +5,29 @@ import type { Page } from "@playwright/test";
 import { expect, test } from "@playwright/test";
 
 import type { TacticalTestHooks } from "../src/ui/model/tactical-intent";
-import { drawnFrame, tacticalModelsReady } from "./capture-frame.helper";
+import {
+  drawnFrame,
+  tacticalModelsReady,
+  tapCameraKey,
+} from "./capture-frame.helper";
 import { launchMission, settleForShot } from "./mission-capture.helper";
 
 /** The page's global object as seen from `page.evaluate`. */
 interface HookGlobal {
   __tutTactical__?: TacticalTestHooks;
+}
+
+/** A tile in the mission's map. */
+interface Tile {
+  x: number;
+  y: number;
+  z: number;
+}
+
+/** A point in client pixels. */
+interface Point {
+  x: number;
+  y: number;
 }
 
 /** The autosave the fixture is examined through. */
@@ -62,6 +79,103 @@ async function mapShape(page: Page): Promise<MapShape> {
       roofLevels: [...new Set(roofs.map((t) => t.y))].sort((a, b) => a - b),
     };
   }, SAVE_KEY);
+}
+
+/** A tile of the tallest building's roof, which is the tile the fault hides. */
+async function tallestRoofTile(page: Page): Promise<Tile | null> {
+  return page.evaluate((key) => {
+    const raw = localStorage.getItem(key);
+    const save = JSON.parse(raw ?? "{}") as {
+      state: {
+        activeMission?: {
+          map: {
+            tiles: {
+              x: number;
+              y: number;
+              z: number;
+              buildingId?: string;
+              floorIndex?: number;
+            }[];
+            buildings: { id: string; floors: unknown[] }[];
+          };
+        };
+      };
+    };
+    const map = save.state.activeMission?.map;
+    if (!map) {
+      return null;
+    }
+    const tallest = [...map.buildings].sort(
+      (a, b) => b.floors.length - a.floors.length,
+    )[0];
+    return (
+      map.tiles.find(
+        (t) => t.buildingId === tallest?.id && t.floorIndex === undefined,
+      ) ?? null
+    );
+  }, SAVE_KEY);
+}
+
+/**
+ * Pans until `tile` is near the middle of the viewport, using the atomic
+ * tap helper from #1013.
+ *
+ * The control needs this. Without it the camera sits on the deploy zone
+ * where the tallest building's roof is off-screen, and the comparison
+ * comes back equal under the faulty rule as well as the correct one — a
+ * control that cannot fail, because its subject is not in shot.
+ *
+ * @param page - The page holding the live mission.
+ * @param tile - The tile to centre on.
+ */
+async function centreOn(page: Page, tile: Tile): Promise<void> {
+  const at = async (): Promise<Point | undefined> =>
+    page.evaluate(
+      (t) => (globalThis as HookGlobal).__tutTactical__?.tileScreenPosition(t),
+      tile,
+    );
+  const box = await page.locator("#tactical-viewport").boundingBox();
+  const start = await at();
+  if (!box || !start) {
+    return;
+  }
+  const centre = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+  const moved = { x: 0, y: 0 };
+  for (let step = 0; step < 40; step++) {
+    const now = await at();
+    if (!now) {
+      return;
+    }
+    const dx = centre.x - now.x;
+    const dy = centre.y - now.y;
+    if (Math.abs(dx) <= 48 && Math.abs(dy) <= 48) {
+      return;
+    }
+    const horizontal = Math.abs(dx) > Math.abs(dy);
+    const probe = horizontal ? "d" : "s";
+    if (horizontal && moved.x === 0) {
+      const before = now.x;
+      await tapCameraKey(page, probe);
+      moved.x = Math.sign(((await at())?.x ?? before) - before);
+      continue;
+    }
+    if (!horizontal && moved.y === 0) {
+      const before = now.y;
+      await tapCameraKey(page, probe);
+      moved.y = Math.sign(((await at())?.y ?? before) - before);
+      continue;
+    }
+    await tapCameraKey(
+      page,
+      horizontal
+        ? dx > 0 === moved.x > 0
+          ? "d"
+          : "a"
+        : dy > 0 === moved.y > 0
+          ? "s"
+          : "w",
+    );
+  }
 }
 
 /** Steps the view to `storey`, counting down from wherever it is. */
@@ -131,6 +245,13 @@ test("a flat map draws the same under the storey cut and the height cut", async 
   const ground = shape.grounds[0] ?? 0;
   const storeys = Number(await body.getAttribute("data-tactical-storeys"));
   expect(storeys).toBe(Math.max(...shape.floors));
+
+  // Frame the roof the fault hides, or the comparison is blind to it.
+  const roof = await tallestRoofTile(page);
+  expect(roof, "the control needs the tallest building's roof").not.toBeNull();
+  if (roof) {
+    await centreOn(page, roof);
+  }
 
   const heightCutFor = (storey: number): number | undefined =>
     storey === storeys - 1 ? undefined : ground + (storey + 1) * 2 - 1;

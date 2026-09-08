@@ -80,6 +80,10 @@ The capture asserts that it returns to the byte-identical controller-off frame.
 
 ## Reproduce
 
+The indoor matrix is pinned to **3dfea65** (before main's #936 merge).
+The [final fog correction](transparency/README.md#validation) uses the integrated
+tree; reproduce those two frames on the latest branch.
+
 ```sh
 pnpm exec vite --config tools/art/preview/capture-vite.config.mjs --host 127.0.0.1 --port 4199 --strictPort
 node tools/art/preview/capture-cutaway-radius.mjs

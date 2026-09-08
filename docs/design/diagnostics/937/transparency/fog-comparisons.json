@@ -1,24 +1,48 @@
 [
   {
     "file": "docs/design/tactical-fog-of-war.png",
+    "captureTreeCommit": "3d9df1b489d0eea1db6c3cc8d51ce06865c3b308",
+    "mainCommit": "360778a",
     "radius": 4,
     "floor": 0.175,
-    "sha256": "203c5f7b29be004d271c71f408a372fb44610a687483b26d742b737115bd106d",
-    "freshBaselineCommit": "e014ab1",
-    "freshBaselineRadius": 2,
-    "freshBaselineFloor": 0.35,
-    "byteIdentical": true,
-    "changedPixels": 0
+    "command": "CAPTURE=1 pnpm exec playwright test e2e/fog-screenshot.spec.ts --workers=1",
+    "sha256": "480b4516103298fbd7ca5657ba540c6b819e351747811defbb9c0d1ab121448a",
+    "mainTrackedSha256": "a0cee3575ba698bf24c600da0b16b5d29a09cdf7ecf5e159bee5adc2cf01a5c2",
+    "comparisonToMainTracked": {
+      "byteIdentical": false,
+      "changedPixels": 352025,
+      "changeBounds": [102, 41, 1280, 663]
+    },
+    "comparisonToPreviousPrCapture": {
+      "commit": "3dfea65",
+      "byteIdentical": false,
+      "changedPixels": 4368,
+      "changeBounds": [1264, 227, 1280, 509]
+    },
+    "matchesTechLeadIndependentCapture": true,
+    "note": "Fresh render on the branch after merging main@360778a. Main tracked PNGs predate subsequent generation changes; this is the requested whole-frame comparison, not an isolated opacity effect."
   },
   {
     "file": "docs/design/tactical-fog-of-war-turn7.png",
+    "captureTreeCommit": "3d9df1b489d0eea1db6c3cc8d51ce06865c3b308",
+    "mainCommit": "360778a",
     "radius": 4,
     "floor": 0.175,
-    "sha256": "d95e3ea3d22d54d2a5bdd082461725c40e291a1d08210d2853edec8bf9bcf799",
-    "freshBaselineCommit": "e014ab1",
-    "freshBaselineRadius": 2,
-    "freshBaselineFloor": 0.35,
-    "byteIdentical": true,
-    "changedPixels": 0
+    "command": "CAPTURE=1 pnpm exec playwright test e2e/fog-screenshot.spec.ts --workers=1",
+    "sha256": "97d42868bc4c4c4f8433dbf70d70726aa7a240d8a64900f48e15d570c9bef4ee",
+    "mainTrackedSha256": "6e704bcfa6f5731cc5456b2f6c060e950dcb708b4579bc73016a7b08dd1c99c4",
+    "comparisonToMainTracked": {
+      "byteIdentical": false,
+      "changedPixels": 376832,
+      "changeBounds": [44, 15, 1280, 663]
+    },
+    "comparisonToPreviousPrCapture": {
+      "commit": "3dfea65",
+      "byteIdentical": false,
+      "changedPixels": 5243,
+      "changeBounds": [211, 275, 1280, 560]
+    },
+    "matchesTechLeadIndependentCapture": true,
+    "note": "Fresh render on the branch after merging main@360778a. Main tracked PNGs predate subsequent generation changes; this is the requested whole-frame comparison, not an isolated opacity effect."
   }
 ]

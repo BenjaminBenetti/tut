@@ -35,13 +35,21 @@ byte for byte. Closure needs equal occupancy: the second flat-roof squad
 contributes one pixel even with ghosting off, so comparing its removal to a
 frame still holding it is invalid. No tolerance was added.
 
-Scratch `.git/art-937/`, fresh fog baseline worktree `e014ab1`. Its refreshed
-radius-2 fog frames match the original radius-3 proof exactly; the tracked-main
-frames predate later generation changes. Do not attribute that drift to the
-shader. The final radius-4/floor-0.175 fog frames were regenerated, opened and
-match that fresh baseline exactly too (zero pixels changed). Main subsequently
-removed vegetated plinths in #936/#940; these comparisons keep the original
-review map data fixed. The PR was mergeable/clean at the last REST check.
+**Director accepted `3dfea65`**, including the Bayer veil, two-squad view and
+closed control, in [comment 5589297413](https://github.com/BenjaminBenetti/tut/pull/943#issuecomment-5589297413).
+Tech Lead independently passed the full gate on `3dfea65 + main@360778a`, but
+required the fog evidence to represent that integrated tree. Main's #936/#940
+had landed after the original indoor proof baseline `e014ab1`.
+
+Main@360778a is now merged normally as `3d9df1b`. Both fog frames were regenerated
+on that tree at 4 / 0.175, opened, and match Tech Lead's independent hashes:
+`480b451…1448a` / `97d4286…ef4ee`. The corrected metadata compares against main's
+tracked PNGs: 352,025 / 376,832 changed pixels. Those tracked files are stale
+since earlier generation changes, so this is not an isolated opacity delta.
+Previous PR captures change by 4,368 / 5,243 pixels; the old zero-difference
+claim does not describe the merge candidate and is superseded. The 28 accepted
+indoor frames remain pinned to `3dfea65`; no constants or shader code changed.
+Scratch `.git/art-937/`; the old fresh-baseline worktree is historical only.
 
 Validation after the revision: typecheck, lint/build, 2,167 unit tests
 (one skipped) and 59 browser tests (27 opt-in skips, zero flaky) pass. Seven

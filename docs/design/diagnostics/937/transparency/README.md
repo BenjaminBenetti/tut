@@ -61,6 +61,9 @@ Yaw 2 is the opposite camera with the same target, zoom and two squads.
 
 ## Reproduce and verify
 
+The exact indoor matrix below was captured at commit **3dfea65**; use that
+revision to reproduce its unchanged map background and pixel controls.
+
 ```sh
 pnpm exec vite --config tools/art/preview/capture-vite.config.mjs --host 127.0.0.1 --port 4199 --strictPort
 node tools/art/preview/capture-cutaway-transparency.mjs
@@ -98,14 +101,25 @@ Typecheck, lint, build, **2,167 unit tests** (one skipped) and **59 browser test
 (27 opt-in skips, zero flaky) pass after the revision. Seven simulation tests
 passed in the original radius pass; this revision changes no simulation code.
 
-Both seed-4242 fog frames were regenerated and inspected at 4 / 0.175. They are
-byte-identical to the fresh **e014ab1** radius-2/floor-0.35 baseline, zero changed
-pixels: [hashes](fog-comparisons.json). They also match the PR's earlier radius-3
-fog frames. These open-street controls do not exercise an interior reveal.
-The PR's global fog PNGs were already refreshed in the original proof commit;
-[the older tracked-frame drift](../fog-comparisons.json) remains documented.
+Both seed-4242 fog frames were regenerated and inspected after merging
+**main@360778a** into the branch. Capture tree **3d9df1b**, radius **4 / floor
+0.175**, using the ordinary fog spec. Both hashes match Tech Lead's independent
+twice-repeated captures exactly:
 
-The comparison deliberately keeps the original review tree's map data. Main
-subsequently removed vegetated plinths in #936/#940. That separate generation
-change is not part of these opacity comparisons; baseline references identify
-**e014ab1**, rather than claiming to follow a moving main.
+- Turn 1: `480b4516103298fbd7ca5657ba540c6b819e351747811defbb9c0d1ab121448a`
+- Turn 7: `97d42868bc4c4c4f8433dbf70d70726aa7a240d8a64900f48e15d570c9bef4ee`
+
+[The corrected comparison record](fog-comparisons.json) compares these actual
+head renders against **main's tracked PNGs**: **352,025** changed pixels at
+turn 1 and **376,832** at turn 7. Main's tracked files predate later generation
+changes, so this large full-frame difference is expected; it is not an isolated
+measurement of the opacity change. Compared with the PR's earlier captures,
+the new frames change **4,368** and **5,243** pixels respectively.
+
+The earlier zero-difference fog claim used fresh **e014ab1** controls and did
+not represent the integrated tree after #936/#940. Tech Lead caught that during
+merge review; these renders and this record supersede that fog proof. The
+accepted indoor comparison remains pinned to **3dfea65**, which uses the
+original review tree's map data. Reproduce its exact matrix at that commit;
+the final fog captures use the newer integrated tree. Neither the cutaway
+constants nor the shader changed during this correction.

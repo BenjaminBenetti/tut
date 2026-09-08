@@ -1,15 +1,17 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-08 (#947 draft PR #982; #911 then #960)
+Last updated: 2026-09-08 (#947 ready PR #982; #911 then #960)
 
-## Current status: #947 pointer inspection, draft PR #982
+## Current status: #947 pointer inspection, ready PR #982
 
 Codex Art Director, **gpt-6-astra xhigh**. [PR #982](https://github.com/BenjaminBenetti/tut/pull/982),
 branch `feat/947-pointer-cutaway`, has the implementation and 28-frame matrix at
-`1a81bf3`. It is a **draft** while final browser input/Map Lab/fog checks run.
-Typecheck, lint, 2,190 unit tests (one skipped), build and seven simulation tests
-pass. Do not call the feature accepted: Director frame judgment and Tech Lead
-review/merge are still required.
+`9aefe64`. It is **ready for review**. [Final evidence](https://github.com/BenjaminBenetti/tut/pull/982#issuecomment-5591088585)
+is posted. Typecheck, lint, 2,190 unit tests (one skipped), build, seven simulation
+tests, 59 browser tests (27 opt-in captures skipped), and the fog capture pass.
+Director approved the early three-frame read in comment 5590890088; final
+judgment and Tech Lead review/merge are still required. Previous-head CI was
+green; the bounded watch tracks final-head CI and review.
 
 [Diagnosis and parameters before code](https://github.com/BenjaminBenetti/tut/issues/947#issuecomment-5589887736):
 action hover prioritises units/spawners and pitched roofs have no walkable tile
@@ -40,11 +42,22 @@ and pointer leave. Sixteen baseline/closure checks matched byte for byte.
 Initial final matrix source `0af63ba`, main integrated through `b6928d0`; fresh
 baseline is main `3c04481`, which contains #943. The older #937 indoor matrix
 predates #936 and is not this baseline. Runtime `bc2f47f` adds viewport resize
-handling and Map Lab composition; `capture-pointer-cutaway.mjs --verify` is
-currently re-rendering all 28 cases and requiring their bytes to stay exact.
+handling and Map Lab composition; `capture-pointer-cutaway.mjs --verify`
+re-rendered all 28 cases and **every PNG was byte-identical**.
 
-Scratch `.git/art-947/`; runtime Vite on **4200**, stable no-watcher config.
-Old 4199 and baseline 4198 servers are stopped. The detached baseline worktree
+Live browser proof: a 65.9 ms sweep kept all 25 sampled strengths at zero and
+matched the closed control. Drag closes/release opens. Twenty stationary
+frames add no map picks; 28 picks on this 48×48 fixture measured median 2.1 ms,
+p95 4.0 ms, max 6.9 ms CPU. Map Lab closed/hover/leave is committed too, with
+byte-exact closure. No page errors. Both seed-4242 fog frames are regenerated
+and inspected: zero changed pixels below the 41 px top banner against the PNGs
+committed on main b6928d0. Full frames differ only inside the banner updated by
+merged #948 (Johannesburg replaces mission id), by 2,002 / 1,984 pixels. Hashes
+and bounds are in `diagnostics/947/fog-comparisons.json`; do not claim full-frame
+equality. The indoor reference and fog reference are explicitly different.
+
+Scratch `.git/art-947/`; all owned Vite servers (4200, 4173, earlier 4199
+and baseline 4198) are stopped. The detached baseline worktree
 remains `.git/art-947/baseline`; its local Vite config permits `.git` paths and
 uses a separate cache. Restart capture servers after code changes: disabling
 watch/HMR also disables module invalidation. Capture supports `--resume`, checks
@@ -52,13 +65,14 @@ completed hashes, and always closes Chromium; one initial 30 s screenshot
 failed, so the art-only screenshot budget is now 120 s. No game/test timeout
 was widened. No provider capacity failure occurred.
 
-Next: finish live sweep/drag/cache/Map Lab proof, both fog captures and browser
-gate; post final evidence on #982 and mark it ready. Address review on this
-branch. Then **#911** (footprint first, MapGen places it), then **#960** (Art
+Next: act on final CI/review of #982 on the same branch. A read-only merge
+preview against main 9cc4abc was clean; the branch itself still integrates main
+through b6928d0. Then, after #982 lands, **#911** (footprint first, MapGen places it), then **#960** (Art
 accountable for building-use cues; diagnose kit versus arrangement, MapGen
 supports placement). Prior dropship envelope proposal: 5×7, max height 3.6,
-+Z nose; no model started. **#945 / #959** are MapGen-led after #917, with Art
-material/rendering support; do not displace the assigned Art sequence.
++Z nose; no model started. **#945 / #959** are MapGen-led with Art material/rendering
+support; #917 merged as #973, so their dependency is cleared. They do not
+displace the assigned Art sequence.
 
 ## Standing orders and watch
 

@@ -1,0 +1,16 @@
+{
+  "id": "town-sheet",
+  "baseline": "5cead6e9d5ec656ddba95b41c63ec29d77818ade",
+  "sha256": "ea0884230e1a0bbcdaf13973626d2e0ab04fa9378a98a26d413fe4caae2fc950",
+  "sourceImageDimensions": [2020, 1500],
+  "sourceResize": 0.5,
+  "labelHeight": 30,
+  "layout": "two columns: whole / near; four rows in traversal order",
+  "sceneTreatment": "Resize and arrange screenshots, captions outside the scene; no retouching",
+  "recipes": [
+    "coastal-town-medium-02",
+    "desert-town-medium-02",
+    "snowy-town-medium-02",
+    "temperate-town-medium-02"
+  ]
+}

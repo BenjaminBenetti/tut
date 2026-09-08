@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import { readFileSync } from "node:fs";
+import { readFileSync, rmSync } from "node:fs";
 
 import type { Page } from "@playwright/test";
 import { expect, test } from "@playwright/test";
@@ -154,12 +154,17 @@ test("captures the debrief payout, clean and after a mech loss", async ({
   ).toBe("false");
 
   // The debrief is DOM: it must reproduce. Shot again, same run, same
-  // state -- if this ever differs the frames are not evidence.
-  await shootDebrief(page, `${FRAMES}-mech-lost-again.png`);
+  // state -- if this ever differs the frames are not evidence. The
+  // duplicate is compared and then deleted rather than committed; the
+  // repository wants the evidence, not the control's scratch paper.
+  const again = `${FRAMES}-reproducibility-check.png`;
+  await shootDebrief(page, again);
+  const identical = readFileSync(`${FRAMES}-mech-lost.png`).equals(
+    readFileSync(again),
+  );
+  rmSync(again, { force: true });
   expect(
-    readFileSync(`${FRAMES}-mech-lost.png`).equals(
-      readFileSync(`${FRAMES}-mech-lost-again.png`),
-    ),
+    identical,
     "the debrief must render identically when nothing changed",
   ).toBe(true);
 });

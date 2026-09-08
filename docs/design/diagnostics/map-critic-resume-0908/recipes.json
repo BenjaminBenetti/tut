@@ -1,0 +1,1298 @@
+[
+  {
+    "index": 1,
+    "id": "temperate-rural-small-01",
+    "seed": "mc-resume-01",
+    "biome": "temperate",
+    "settlement": "rural",
+    "size": "small",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-01&biome=temperate&settlement=rural&size=small&models=1&units=1&slope=100",
+    "commit": "360778a4a0edbe5cfbc865af4006e5b9d0d92231",
+    "levels": {
+      "value": "6",
+      "max": "6",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "sourceSha256": {
+      "whole": "f833a22cfa3d61560acf2c38c6ea93c0e737e954090566de7ff6f0a7d3769a43",
+      "near": "f3dfde456b9c38164708663a6cfacad8f89e6340047909f74c31284fa4264596"
+    }
+  },
+  {
+    "index": 2,
+    "id": "snowy-rural-small-01",
+    "seed": "mc-resume-01",
+    "biome": "snowy",
+    "settlement": "rural",
+    "size": "small",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-01&biome=snowy&settlement=rural&size=small&models=1&units=1&slope=100",
+    "commit": "360778a4a0edbe5cfbc865af4006e5b9d0d92231",
+    "levels": {
+      "value": "8",
+      "max": "8",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "sourceSha256": {
+      "whole": "c5d0f71561f8f791eafc2b66e2fd1287d8ac3a899e9eb168c62743589b167921",
+      "near": "152f0dcd7e6945f1432e65d7cf6ff6f3291f8d3ec3fd97c956a07322060caa9e"
+    }
+  },
+  {
+    "index": 3,
+    "id": "desert-rural-small-01",
+    "seed": "mc-resume-01",
+    "biome": "desert",
+    "settlement": "rural",
+    "size": "small",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-01&biome=desert&settlement=rural&size=small&models=1&units=1&slope=100",
+    "commit": "360778a4a0edbe5cfbc865af4006e5b9d0d92231",
+    "levels": {
+      "value": "8",
+      "max": "8",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "sourceSha256": {
+      "whole": "aef110422de67d80a427ec39620852b59eebddf7d80bdcced4bee773adcd234c",
+      "near": "bc0ee0489bf7986e258dcc4c52a2f238a1ff75d1529e45c49843688469daa449"
+    }
+  },
+  {
+    "index": 4,
+    "id": "coastal-rural-small-01",
+    "seed": "mc-resume-01",
+    "biome": "coastal",
+    "settlement": "rural",
+    "size": "small",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-01&biome=coastal&settlement=rural&size=small&models=1&units=1&slope=100",
+    "commit": "360778a4a0edbe5cfbc865af4006e5b9d0d92231",
+    "levels": {
+      "value": "4",
+      "max": "4",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "sourceSha256": {
+      "whole": "bef49857adcec6dc626ac2c0a7f9eeccd2016f3aa12a0d18c212d15d0852b43a",
+      "near": "ebc22d0c3c39e57f41d2c6dfaac30e2b5aef6d3b358d96a3f575d9757f0e4eaf"
+    }
+  },
+  {
+    "index": 5,
+    "id": "coastal-town-small-01",
+    "seed": "mc-resume-01",
+    "biome": "coastal",
+    "settlement": "town",
+    "size": "small",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-01&biome=coastal&settlement=town&size=small&models=1&units=1&slope=100",
+    "commit": "360778a4a0edbe5cfbc865af4006e5b9d0d92231",
+    "levels": {
+      "value": "10",
+      "max": "10",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "sourceSha256": {
+      "whole": "857799cdd6aa392f2bce6ea15faf4a4f3be199584cf81db789a24c8e963000cc",
+      "near": "ed23bbad61bdbe75ca995eb1a55886ce75c6b7df930eeb4702e080475765a733"
+    }
+  },
+  {
+    "index": 6,
+    "id": "desert-town-small-01",
+    "seed": "mc-resume-01",
+    "biome": "desert",
+    "settlement": "town",
+    "size": "small",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-01&biome=desert&settlement=town&size=small&models=1&units=1&slope=100",
+    "commit": "360778a4a0edbe5cfbc865af4006e5b9d0d92231",
+    "levels": {
+      "value": "8",
+      "max": "8",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "sourceSha256": {
+      "whole": "c219f877786c7639d9d2a61c51ebd7e2ebed2f55d31af9f3a294680bf236f6e2",
+      "near": "3ec783fd9bca3cdc6936ab91083bf6e10af2695da936da59d8fc1008151072df"
+    }
+  },
+  {
+    "index": 7,
+    "id": "snowy-town-small-01",
+    "seed": "mc-resume-01",
+    "biome": "snowy",
+    "settlement": "town",
+    "size": "small",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-01&biome=snowy&settlement=town&size=small&models=1&units=1&slope=100",
+    "commit": "360778a4a0edbe5cfbc865af4006e5b9d0d92231",
+    "levels": {
+      "value": "8",
+      "max": "8",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "sourceSha256": {
+      "whole": "cc13d0f5b94c92f4c91cce3d392e2353374df48612e0b0eb104bebad345c9cdf",
+      "near": "2a8b6b2b2deeec6ce9ffc20de989e04e7ebb7eac33e132776517a121d7516151"
+    }
+  },
+  {
+    "index": 8,
+    "id": "temperate-town-small-01",
+    "seed": "mc-resume-01",
+    "biome": "temperate",
+    "settlement": "town",
+    "size": "small",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-01&biome=temperate&settlement=town&size=small&models=1&units=1&slope=100",
+    "commit": "360778a4a0edbe5cfbc865af4006e5b9d0d92231",
+    "levels": {
+      "value": "12",
+      "max": "12",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "sourceSha256": {
+      "whole": "0a1f4dc6f8ba32529108a5ec528eac65add62e432000354dfbaae6e5357e0395",
+      "near": "05500523c5c16af87091ef549d3af380e8897e146d0f3d9ccb9bfab6b23fa13d"
+    }
+  },
+  {
+    "index": 9,
+    "id": "temperate-city-small-01",
+    "seed": "mc-resume-01",
+    "biome": "temperate",
+    "settlement": "city",
+    "size": "small",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-01&biome=temperate&settlement=city&size=small&models=1&units=1&slope=100",
+    "commit": "360778a4a0edbe5cfbc865af4006e5b9d0d92231",
+    "levels": {
+      "value": "10",
+      "max": "10",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "sourceSha256": {
+      "whole": "38b38a2790c1a3734b187c711592c97f9583293a150303f24f45d75c45b9e712",
+      "near": "7368bc3c00b070220819c74a3f8c09ba45ca50c029139e04941f3ae37a1988e9"
+    }
+  },
+  {
+    "index": 10,
+    "id": "snowy-city-small-01",
+    "seed": "mc-resume-01",
+    "biome": "snowy",
+    "settlement": "city",
+    "size": "small",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-01&biome=snowy&settlement=city&size=small&models=1&units=1&slope=100",
+    "commit": "360778a4a0edbe5cfbc865af4006e5b9d0d92231",
+    "levels": {
+      "value": "10",
+      "max": "10",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "sourceSha256": {
+      "whole": "9d0148e1b4493c5bdcbf61220cf2f9305de4fdc502ad784fe668a5777526144f",
+      "near": "877e42b5374ef8776d9dd6381e9817cf4949a59e083563f64df68619a95d50cb"
+    }
+  },
+  {
+    "index": 11,
+    "id": "desert-city-small-01",
+    "seed": "mc-resume-01",
+    "biome": "desert",
+    "settlement": "city",
+    "size": "small",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-01&biome=desert&settlement=city&size=small&models=1&units=1&slope=100",
+    "commit": "360778a4a0edbe5cfbc865af4006e5b9d0d92231",
+    "levels": {
+      "value": "8",
+      "max": "9",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "sourceSha256": {
+      "whole": "12a312837988c5b17c4f707203fe569f136aaec116f31c0474193db62ce3fde7",
+      "near": "2bc1a4095a7be22f084f45c5e23f4a4faec9555da8b18eab1fabfd64065b9ab0"
+    }
+  },
+  {
+    "index": 12,
+    "id": "coastal-city-small-01",
+    "seed": "mc-resume-01",
+    "biome": "coastal",
+    "settlement": "city",
+    "size": "small",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-01&biome=coastal&settlement=city&size=small&models=1&units=1&slope=100",
+    "commit": "360778a4a0edbe5cfbc865af4006e5b9d0d92231",
+    "levels": {
+      "value": "8",
+      "max": "9",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "sourceSha256": {
+      "whole": "0e7f780bd6db38aa4d69afc4ec3a6c6c198a6eff624e63c64fdce8ed8de53c97",
+      "near": "8b25afd6fb921cd6c590c5a8b481fb84e923883f2cafea350bcfed4ed072bc26"
+    }
+  },
+  {
+    "index": 13,
+    "id": "coastal-city-medium-01",
+    "seed": "mc-resume-01",
+    "biome": "coastal",
+    "settlement": "city",
+    "size": "medium",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-01&biome=coastal&settlement=city&size=medium&models=1&units=1&slope=100",
+    "commit": "360778a4a0edbe5cfbc865af4006e5b9d0d92231",
+    "levels": {
+      "value": "10",
+      "max": "11",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "sourceSha256": {
+      "whole": "77079a3a67ac01174ec803bd6409f7874b7ca58e1d3378854e2cb194a34e2d0f",
+      "near": "c12f35b28b481551d75000ee48cc62d884b98b9acb1201819dbe7e79991241bd"
+    }
+  },
+  {
+    "index": 14,
+    "id": "desert-city-medium-01",
+    "seed": "mc-resume-01",
+    "biome": "desert",
+    "settlement": "city",
+    "size": "medium",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-01&biome=desert&settlement=city&size=medium&models=1&units=1&slope=100",
+    "commit": "360778a4a0edbe5cfbc865af4006e5b9d0d92231",
+    "levels": {
+      "value": "14",
+      "max": "14",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "sourceSha256": {
+      "whole": "0a60ede4bfb3cc052642a9a969c1fa99209bd06263ea32c95b6769a207275886",
+      "near": "2b56c4492d2ba9d89a6832549a14fac7cd4b679f8a926914cee95388fb668bfd"
+    }
+  },
+  {
+    "index": 15,
+    "id": "snowy-city-medium-01",
+    "seed": "mc-resume-01",
+    "biome": "snowy",
+    "settlement": "city",
+    "size": "medium",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-01&biome=snowy&settlement=city&size=medium&models=1&units=1&slope=100",
+    "commit": "360778a4a0edbe5cfbc865af4006e5b9d0d92231",
+    "levels": {
+      "value": "12",
+      "max": "13",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "sourceSha256": {
+      "whole": "1dc9138fa9978ebd7c34641eb09a4898c15919011531f3cd11f5160687193601",
+      "near": "88b70f91df6a3fddba1cca84dbf02b21d389a03bf189a064bda109079c1712c5"
+    }
+  },
+  {
+    "index": 16,
+    "id": "temperate-city-medium-01",
+    "seed": "mc-resume-01",
+    "biome": "temperate",
+    "settlement": "city",
+    "size": "medium",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-01&biome=temperate&settlement=city&size=medium&models=1&units=1&slope=100",
+    "commit": "360778a4a0edbe5cfbc865af4006e5b9d0d92231",
+    "levels": {
+      "value": "14",
+      "max": "14",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "sourceSha256": {
+      "whole": "9eda150e6a19c2326319ef5546ed094f8ab5f512d7fdc02b4ad756605a73c0cd",
+      "near": "0eae93fa351391b1c43341cc1e297674b9a6d8a85c4a66ff0cb130bc072d397a"
+    }
+  },
+  {
+    "index": 17,
+    "id": "temperate-town-medium-01",
+    "seed": "mc-resume-01",
+    "biome": "temperate",
+    "settlement": "town",
+    "size": "medium",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-01&biome=temperate&settlement=town&size=medium&models=1&units=1&slope=100",
+    "commit": "360778a4a0edbe5cfbc865af4006e5b9d0d92231",
+    "levels": {
+      "value": "10",
+      "max": "10",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "sourceSha256": {
+      "whole": "15b6dbf015ea5cc0d3ad46b4e7c5bc8ddbdad92dbff8368ee1e1f3b861cb3282",
+      "near": "02b711d399c5427cabacc1b5d6e7de47216d898edc828ede69e6f7acf8c0df92"
+    }
+  },
+  {
+    "index": 18,
+    "id": "snowy-town-medium-01",
+    "seed": "mc-resume-01",
+    "biome": "snowy",
+    "settlement": "town",
+    "size": "medium",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-01&biome=snowy&settlement=town&size=medium&models=1&units=1&slope=100",
+    "commit": "360778a4a0edbe5cfbc865af4006e5b9d0d92231",
+    "levels": {
+      "value": "12",
+      "max": "12",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "sourceSha256": {
+      "whole": "76b6e7ef45757e35058a11658dd047f2ef783e434d399e74e93079256ce2c512",
+      "near": "d60b32f6cff7f9f106e812b3474bda97eadf5de02c9790aa3057806f8a5b47c5"
+    }
+  },
+  {
+    "index": 19,
+    "id": "desert-town-medium-01",
+    "seed": "mc-resume-01",
+    "biome": "desert",
+    "settlement": "town",
+    "size": "medium",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-01&biome=desert&settlement=town&size=medium&models=1&units=1&slope=100",
+    "commit": "360778a4a0edbe5cfbc865af4006e5b9d0d92231",
+    "levels": {
+      "value": "10",
+      "max": "10",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "sourceSha256": {
+      "whole": "1a7607bab3ff3dba9a0c94113b91eec63e65505bca5bd220e359ae92887fcfae",
+      "near": "06ec34fd915052566d8ee3b94458ead31ae443dc74e7e0dc8258151f14e385db"
+    }
+  },
+  {
+    "index": 20,
+    "id": "coastal-town-medium-01",
+    "seed": "mc-resume-01",
+    "biome": "coastal",
+    "settlement": "town",
+    "size": "medium",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-01&biome=coastal&settlement=town&size=medium&models=1&units=1&slope=100",
+    "commit": "360778a4a0edbe5cfbc865af4006e5b9d0d92231",
+    "levels": {
+      "value": "10",
+      "max": "10",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "sourceSha256": {
+      "whole": "6c52cf71560d12d4381fcf396bc8e705a738b32202ccbd71e6e956b7a02f98af",
+      "near": "079aeac406d63b01dbb11b6fd7ab715ce2b4ce22b37081233f88bbdd16c82b31"
+    }
+  },
+  {
+    "index": 21,
+    "id": "coastal-rural-medium-01",
+    "seed": "mc-resume-01",
+    "biome": "coastal",
+    "settlement": "rural",
+    "size": "medium",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-01&biome=coastal&settlement=rural&size=medium&models=1&units=1&slope=100",
+    "commit": "360778a4a0edbe5cfbc865af4006e5b9d0d92231",
+    "levels": {
+      "value": "6",
+      "max": "6",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "sourceSha256": {
+      "whole": "25d806064dac7fb3ba9129ab6e1789d630cb943fcf099faa6eebf1cdb507d108",
+      "near": "35157dd5d049eee48542df0509e8dd4d7e8e323dab726710e478fd65c624d47a"
+    }
+  },
+  {
+    "index": 22,
+    "id": "desert-rural-medium-01",
+    "seed": "mc-resume-01",
+    "biome": "desert",
+    "settlement": "rural",
+    "size": "medium",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-01&biome=desert&settlement=rural&size=medium&models=1&units=1&slope=100",
+    "commit": "360778a4a0edbe5cfbc865af4006e5b9d0d92231",
+    "levels": {
+      "value": "6",
+      "max": "6",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "sourceSha256": {
+      "whole": "2eca1f00478b0b6856edfcea6fb3a42d9bbf272ef6be77c76ec548bd445e5615",
+      "near": "4534289069742bbc86b884abc9c95af961108ac1c6b87ff864a0c193fe5e1d10"
+    }
+  },
+  {
+    "index": 23,
+    "id": "snowy-rural-medium-01",
+    "seed": "mc-resume-01",
+    "biome": "snowy",
+    "settlement": "rural",
+    "size": "medium",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-01&biome=snowy&settlement=rural&size=medium&models=1&units=1&slope=100",
+    "commit": "360778a4a0edbe5cfbc865af4006e5b9d0d92231",
+    "levels": {
+      "value": "8",
+      "max": "8",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "sourceSha256": {
+      "whole": "44fc21d5416314be65a06f5319ec4d72a9eb89da5a106a56ffdad2e5aeaa10cc",
+      "near": "e3e7dd5a6afd70cdec807bdd04ea13d30fa0091914b4a97c27931e8645cafaef"
+    }
+  },
+  {
+    "index": 24,
+    "id": "temperate-rural-medium-01",
+    "seed": "mc-resume-01",
+    "biome": "temperate",
+    "settlement": "rural",
+    "size": "medium",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-01&biome=temperate&settlement=rural&size=medium&models=1&units=1&slope=100",
+    "commit": "360778a4a0edbe5cfbc865af4006e5b9d0d92231",
+    "levels": {
+      "value": "6",
+      "max": "6",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "sourceSha256": {
+      "whole": "901fa6e8dca888bd663477502fdc7e21157d90fabe4e91926b8e7de850ac29fa",
+      "near": "e31e50d8cc11dfc9f88725527594f626ee93a775b6d2875f9437ef6355bb0d6a"
+    }
+  },
+  {
+    "index": 25,
+    "id": "temperate-rural-large-01",
+    "seed": "mc-resume-01",
+    "biome": "temperate",
+    "settlement": "rural",
+    "size": "large",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-01&biome=temperate&settlement=rural&size=large&models=1&units=1&slope=100",
+    "commit": "360778a4a0edbe5cfbc865af4006e5b9d0d92231",
+    "levels": {
+      "value": "6",
+      "max": "6",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "sourceSha256": {
+      "whole": "063c5965708656b9d664f555d6e3e56e92de29af95a2cd794945f6327dc3a2e9",
+      "near": "0c49cce4547b2070f7240bc410df27dfde84e8fdeed8982287ba456a72d4a12b"
+    }
+  },
+  {
+    "index": 26,
+    "id": "snowy-rural-large-01",
+    "seed": "mc-resume-01",
+    "biome": "snowy",
+    "settlement": "rural",
+    "size": "large",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-01&biome=snowy&settlement=rural&size=large&models=1&units=1&slope=100",
+    "commit": "360778a4a0edbe5cfbc865af4006e5b9d0d92231",
+    "levels": {
+      "value": "8",
+      "max": "8",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "sourceSha256": {
+      "whole": "39e4ee207c6b34b580f26dbeb23ab20b08f7c9ad04c3679337d3d5fdbddba73b",
+      "near": "aad12ab84d5a6be743bbe6cd78971526ec889c9c1a9859f09ac82fe779fc4ce7"
+    }
+  },
+  {
+    "index": 27,
+    "id": "desert-rural-large-01",
+    "seed": "mc-resume-01",
+    "biome": "desert",
+    "settlement": "rural",
+    "size": "large",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-01&biome=desert&settlement=rural&size=large&models=1&units=1&slope=100",
+    "commit": "360778a4a0edbe5cfbc865af4006e5b9d0d92231",
+    "levels": {
+      "value": "8",
+      "max": "8",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "sourceSha256": {
+      "whole": "e634d470fc9f2cf1cd2eae3e0aa3ffcff069a9b88bfe6b2db690da5ca54f37f2",
+      "near": "ff992f8177bd76f6753b1c4378da00a3d5709888e6a8f9109df465a8ed1476aa"
+    }
+  },
+  {
+    "index": 28,
+    "id": "coastal-rural-large-01",
+    "seed": "mc-resume-01",
+    "biome": "coastal",
+    "settlement": "rural",
+    "size": "large",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-01&biome=coastal&settlement=rural&size=large&models=1&units=1&slope=100",
+    "commit": "360778a4a0edbe5cfbc865af4006e5b9d0d92231",
+    "levels": {
+      "value": "4",
+      "max": "4",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "sourceSha256": {
+      "whole": "8ed211d995b6bf63fdd7c838ad77a435bc63067c4a458ed4b22a29ed9d312416",
+      "near": "e3932cb30d1e6d057bc01526350bca151ac36e7c835fded82d1b74a58d5f78d9"
+    }
+  },
+  {
+    "index": 29,
+    "id": "coastal-town-large-01",
+    "seed": "mc-resume-01",
+    "biome": "coastal",
+    "settlement": "town",
+    "size": "large",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-01&biome=coastal&settlement=town&size=large&models=1&units=1&slope=100",
+    "commit": "360778a4a0edbe5cfbc865af4006e5b9d0d92231",
+    "levels": {
+      "value": "8",
+      "max": "8",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "sourceSha256": {
+      "whole": "8a15777221a18d0fc54fd4f1a3d090c189e253d6b82934722a1937de560bc36a",
+      "near": "f27375e14fcbda704df8e5761cad10f68b61f79e66c6c471759e33bfdfc8f3c7"
+    }
+  },
+  {
+    "index": 30,
+    "id": "desert-town-large-01",
+    "seed": "mc-resume-01",
+    "biome": "desert",
+    "settlement": "town",
+    "size": "large",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-01&biome=desert&settlement=town&size=large&models=1&units=1&slope=100",
+    "commit": "360778a4a0edbe5cfbc865af4006e5b9d0d92231",
+    "levels": {
+      "value": "10",
+      "max": "10",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "sourceSha256": {
+      "whole": "d5c3838e6d060ed44fc8855ca2d2a4114646f5883d4778fee03a7da581b7bd40",
+      "near": "c64370768595f8f002fe7bbfe1cc9826a75c97f8ab9af0f2b1c98bacd515aa1c"
+    }
+  },
+  {
+    "index": 31,
+    "id": "snowy-town-large-01",
+    "seed": "mc-resume-01",
+    "biome": "snowy",
+    "settlement": "town",
+    "size": "large",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-01&biome=snowy&settlement=town&size=large&models=1&units=1&slope=100",
+    "commit": "360778a4a0edbe5cfbc865af4006e5b9d0d92231",
+    "levels": {
+      "value": "12",
+      "max": "12",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "sourceSha256": {
+      "whole": "cb2982d8cbe8d9d4e7ad5c7a7ac3c4d633b6ff9fd2259e69ebad250a0a448de9",
+      "near": "0c7a672f2735720d0313100a37673211355db1c3e05e7882d146862f00f339e1"
+    }
+  },
+  {
+    "index": 32,
+    "id": "temperate-town-large-01",
+    "seed": "mc-resume-01",
+    "biome": "temperate",
+    "settlement": "town",
+    "size": "large",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-01&biome=temperate&settlement=town&size=large&models=1&units=1&slope=100",
+    "commit": "360778a4a0edbe5cfbc865af4006e5b9d0d92231",
+    "levels": {
+      "value": "12",
+      "max": "12",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "sourceSha256": {
+      "whole": "ae218b15a4cfd00fe5899558865c2ebcf465018bd994df2fbbeb961c049a956b",
+      "near": "045857301b5c1b672599a1fcfbff95e044e608d314e98a519c6769396b85dba4"
+    }
+  },
+  {
+    "index": 33,
+    "id": "temperate-city-large-01",
+    "seed": "mc-resume-01",
+    "biome": "temperate",
+    "settlement": "city",
+    "size": "large",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-01&biome=temperate&settlement=city&size=large&models=1&units=1&slope=100",
+    "commit": "360778a4a0edbe5cfbc865af4006e5b9d0d92231",
+    "levels": {
+      "value": "12",
+      "max": "12",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "sourceSha256": {
+      "whole": "c88ba0df997d8861500cd310c3b7f9591675a91f42b96f52d757cc1596bb6e52",
+      "near": "0d9ae880ba6e3fa814543f0663c1ebbb03d90a45578f95f0244c39ba42b43790"
+    }
+  },
+  {
+    "index": 34,
+    "id": "snowy-city-large-01",
+    "seed": "mc-resume-01",
+    "biome": "snowy",
+    "settlement": "city",
+    "size": "large",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-01&biome=snowy&settlement=city&size=large&models=1&units=1&slope=100",
+    "commit": "360778a4a0edbe5cfbc865af4006e5b9d0d92231",
+    "levels": {
+      "value": "12",
+      "max": "13",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "sourceSha256": {
+      "whole": "d7030c547666d1b1a43c663196725a477116b23c89ec8560df25af6e24f748f6",
+      "near": "0e3818caac1742dc550b9c23338d5365709b710e1b569350fe8302b48c9e79f7"
+    }
+  },
+  {
+    "index": 35,
+    "id": "desert-city-large-01",
+    "seed": "mc-resume-01",
+    "biome": "desert",
+    "settlement": "city",
+    "size": "large",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-01&biome=desert&settlement=city&size=large&models=1&units=1&slope=100",
+    "commit": "360778a4a0edbe5cfbc865af4006e5b9d0d92231",
+    "levels": {
+      "value": "14",
+      "max": "14",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "sourceSha256": {
+      "whole": "0d926ab150709f0a556f1685c155b00cdf1774369fdf0e200319584e52f12d1f",
+      "near": "5511c88ad2fa187d014b3c55ef1e28944c912c17e30034203440a6d132c0db54"
+    }
+  },
+  {
+    "index": 36,
+    "id": "coastal-city-large-01",
+    "seed": "mc-resume-01",
+    "biome": "coastal",
+    "settlement": "city",
+    "size": "large",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-01&biome=coastal&settlement=city&size=large&models=1&units=1&slope=100",
+    "commit": "360778a4a0edbe5cfbc865af4006e5b9d0d92231",
+    "levels": {
+      "value": "10",
+      "max": "11",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "sourceSha256": {
+      "whole": "3698dd5681e40f9e3159613b907648d02306090e661ad53d3a4b747cdc946d16",
+      "near": "a85aa4b662063e2f173e0c39c24eccc209275be9835f93756408a9bb5970bdc3"
+    }
+  }
+]

@@ -1,0 +1,39 @@
+{
+  "id": "P02-trail-merge-rotated",
+  "seed": "mc-resume-01",
+  "biome": "temperate",
+  "settlement": "rural",
+  "size": "small",
+  "tile": {
+    "x": 13,
+    "y": 2,
+    "z": 24
+  },
+  "pitch": 45,
+  "rotation": 1,
+  "width": 1300,
+  "height": 1050,
+  "actualPitch": 44.99999999369599,
+  "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-01&biome=temperate&settlement=rural&size=small&models=1&units=1&slope=100",
+  "levels": {
+    "value": "6",
+    "max": "6",
+    "step": "2",
+    "label": "all"
+  },
+  "baseline": "360778a4a0edbe5cfbc865af4006e5b9d0d92231",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "pixel": {
+    "x": 1355.8906034081983,
+    "y": 745.4489824474286
+  },
+  "clip": {
+    "x": 706,
+    "y": 220,
+    "width": 1300,
+    "height": 1050
+  }
+}

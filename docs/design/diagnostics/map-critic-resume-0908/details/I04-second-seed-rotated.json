@@ -1,0 +1,39 @@
+{
+  "id": "I04-second-seed-rotated",
+  "seed": "mc-opening-02",
+  "biome": "temperate",
+  "settlement": "city",
+  "size": "medium",
+  "tile": {
+    "x": 23,
+    "y": 1,
+    "z": 34
+  },
+  "pitch": 45,
+  "rotation": 1,
+  "width": 1300,
+  "height": 1050,
+  "actualPitch": 44.99999985638291,
+  "url": "http://localhost:4173/mapgen-preview.html?seed=mc-opening-02&biome=temperate&settlement=city&size=medium&models=1&units=1&slope=100",
+  "levels": {
+    "value": "10",
+    "max": "11",
+    "step": "2",
+    "label": "all"
+  },
+  "baseline": "360778a4a0edbe5cfbc865af4006e5b9d0d92231",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "pixel": {
+    "x": 1377.8070483143447,
+    "y": 690.2984738607234
+  },
+  "clip": {
+    "x": 728,
+    "y": 165,
+    "width": 1300,
+    "height": 1050
+  }
+}

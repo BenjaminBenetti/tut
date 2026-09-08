@@ -76,7 +76,7 @@ Fresh [first angle](details/M01-coastal-material-edges.png) and
 slopes 100%. The snowy city yard above supplies a second biome example:
 the exposed-rock patch meets snow in a similarly hard right-angled outline.
 
-This is opening-survey rank 5, now ready to file. It concerns surface
+This is opening-survey rank 5, filed as [#945](https://github.com/BenjaminBenetti/tut/issues/945) on 2026-09-08. It concerns surface
 boundaries, separate from the fence placement in #917 and the accepted
 #813/#876/N1 elevation geometry. The issue search found no existing ticket
 for this symptom; #394 supplied surface textures and #798 supplied slope

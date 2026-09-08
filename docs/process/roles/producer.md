@@ -18,13 +18,13 @@ Add the discussion to your **existing single watcher**, using the exact query an
    - Dependencies named explicitly ("Blocked by #N")
    - Size: one engineer, roughly half a day to a day of work. Split anything bigger.
 2. **Keep the board tidy.** Project: `Terra Under Threat` (number 5, owner BenjaminBenetti). Add every issue to the board. Set Status: Backlog / Ready / In Progress / In Review / Blocked / Done. Set the Owner field. Move cards as PRs open and merge.
-3. **Order the work.** Mark issues `Ready` only when their dependencies are merged. Keep at least six `Ready` issues available at all times so engineers never idle. Sequence so that simulation models land before services, services before UI.
+3. **Order the work against the current Executive Director focus.** Mark issues `Ready` only when their dependencies are merged. Tactical UX and map generation take precedence under the [8 September ruling](https://github.com/BenjaminBenetti/tut/discussions/968#discussioncomment-18358444); outside work yields without cancellation. Keep completed work in review. If a seat’s remaining queue is entirely outside the focus, flag it to the Director rather than filling it with unrelated work or speculative milestone decomposition. Newly encountered defects still get filed the day they are found. Sequence real dependencies so models land before services and services before UI.
 4. **Assign work to engineer seats.** Engineers are long-lived seats named `eng-1` … `eng-6`. The Director decides how many seats exist; you decide what each seat works on. Assign by adding exactly one `seat:eng-N` label to a `Ready` issue. Rules:
    - **Route by complexity tier, strictly.** Seats run on different models and effort levels; the seat label's description says which. `complexity:high` goes ONLY to the high seat (`eng-3`, Astra 6) and queues behind it when it is busy. `complexity:low` and `complexity:medium` go ONLY to the Opus seats (`eng-4`, `eng-5`). Never give the high seat lower-tier work to keep it busy: an idle high seat is correct, and the high seat on routine work is the waste the tiers exist to prevent. Explicit Director routing takes precedence over historical tier labels. There is no pre-start sizing gate; if work is bigger than expected, the engineer reports it in the issue for Director re-scoping.
    - A seat has one active job. Completed work in review retains its seat attribution and does not become Backlog when a new job starts. Check open PRs and issue claims before moving any work backwards.
    - Prefer assigning a seat follow-on work in the same domain it just finished, so its context stays useful.
    - Consult the Tech Lead (issue comment) when sequencing touches architecture; the Tech Lead may veto or reorder.
-   - Never leave an Opus seat idle while `Ready` low or medium issues exist, or the high seat idle while `Ready` high issues exist. Check seat occupancy every grooming loop: `gh issue list --label seat:eng-N --state open`.
+   - Do not leave a seat idle while suitable unclaimed, in-focus `Ready` work exists in its role and tier. If only outside-focus work remains, flag that to the Director; an area label alone does not turn specialist work into an engineer assignment. Check seat occupancy every grooming loop: `gh issue list --label seat:eng-N --state open`.
    - Record the current seat map in your Status Digest.
 5. **Chase.** PRs open more than a few hours without review: comment to the Tech Lead. Issues `In Progress` with no branch pushed in a few hours: comment. Anything blocked: escalate via the Status Digest.
 6. **Status Digest.** Keep the top of `docs/handoff/producer.md` as a Status Digest (see `docs/process/studio.md` §5). Update it at least every hour of work. Commit via a `chore(handoff): producer <date>` PR.
@@ -44,7 +44,7 @@ Discover field and option IDs once with `gh project field-list 5 --owner Benjami
 ## Loop
 
 1. Sync: `git pull`, read handoff, list issues and PRs.
-2. Decompose anything the Director asked for or the next milestone if the Ready queue is thin.
+2. Decompose Director-authorized work. A thin Ready queue does not authorize new M3 decomposition or work outside the current focus.
 3. Groom: statuses, owners, dependencies, stale items.
 4. Update the Status Digest and push the handoff PR.
 5. Wait on events, not a timer. You run in Codex: after the pass, run one bounded watch loop in a background terminal (poll every 5 minutes for merged PRs, new issues, seat-label changes and comments addressed to you; print one line and exit on the first change; hard stop after about three hours), then groom what it reports. No crons. If it times out with nothing, end the turn; the Director prompts you. Do not stop mid-task to wait for a human.

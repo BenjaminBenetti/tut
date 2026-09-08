@@ -282,7 +282,7 @@ describe("RoadPass", () => {
     const rural = run("temperate", "rural", "paint");
     expect(
       roadColumns(rural).every(
-        ({ x, z }) => rural.groundSurfaceAt(x, z) === SurfaceIds.DIRT,
+        ({ x, z }) => rural.groundSurfaceAt(x, z) === SurfaceIds.ROCK,
       ),
     ).toBe(true);
     for (let z = 0; z < rural.depth; z++) {

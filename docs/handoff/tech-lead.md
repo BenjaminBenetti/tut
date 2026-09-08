@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-08 ~22:10 UTC (session 5; roof regression from #999 awaiting eng-3's fix, revert fallback armed; gate hardened after I merged a red gate on #1003; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-08 ~22:30 UTC (session 5; roof regression fixed on main by #1013, revert withdrawn; #1007 contours merged; gate hardened; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — the hold is lifted (2026-09-08); the Map Quality Loop leads
 
@@ -45,6 +45,16 @@ building, which counted the hill's storey; now the tallest building's floor
 count) and merged. The pixel control for #978 is owed retroactively when
 #996 lands. #998 (objective row fits the rail, #991) gate green, awaiting
 the Director's frame verdict. Handoffs #987, #997.
+
+**Closed since:** the roof regression is fixed on `main` by **#1013
+`086cab1`** (eng-3, bundled with the #996 capture determinism work: one
+predicate line, roof fixture red→green, repeat frames byte-identical; I
+accepted the bundle because it beat the revert deadline; revert withdrawn).
+**#1007 `c6be260`** (natural material contours) merged after MapGen pushed
+regenerated fog frames byte-identical to my render. #1016 (#959 stone rural
+tracks) was auto-closed when I deleted #1007's branch under it (stacked PR);
+restored/reopened/retargeted, awaiting MapGen's rebase past a handoff
+conflict. #1009 hold lifted; rebases onto the fix.
 
 **Late evening (read this):**
 - **I merged a RED gate on #1003.** Three known local-budget timeouts at

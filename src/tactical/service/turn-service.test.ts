@@ -275,6 +275,9 @@ describe("overwatchReaction", () => {
           hit: true,
           damage: 2,
           targetHp: 8,
+          // An overwatch shot names its weapon's reach like any other, so
+          // the effect it plays is the watcher's weapon (#457).
+          weaponRange: 5,
         },
       },
       { type: UNIT_STATUS_CHANGED, payload: { unitId: "w", status: [] } },

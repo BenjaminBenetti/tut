@@ -37,5 +37,21 @@ export const MELEE_RANGE = 1;
  * approach rather than granting a percentage (Director's ruling, #446).
  */
 export function isMelee(weapon: WeaponProfile): boolean {
-  return weapon.range <= MELEE_RANGE;
+  return isMeleeRange(weapon.range);
+}
+
+/**
+ * True when a weapon of this reach has to be in contact to be used.
+ *
+ * The range alone, for callers that have the number without the profile
+ * — the presentation layer reads it off `AttackResolvedEvent` (#457).
+ * It exists so "was that melee" is answered in one place: the animation
+ * queue used to decide by measuring the world distance between the two
+ * models, which disagrees with the rules exactly where geometry and
+ * weapon part company. A rifle squad firing at the tile next door is
+ * within any distance threshold, and a melee attacker striking from a
+ * rooftop is outside one.
+ */
+export function isMeleeRange(range: number): boolean {
+  return range <= MELEE_RANGE;
 }

@@ -66,16 +66,28 @@ const MOVE: TacticalEvent = {
     ],
   },
 };
-const ATTACK: TacticalEvent = {
-  type: "tactical:attack-resolved",
-  payload: {
-    attackerId: "unit-1",
-    targetId: "unit-2",
-    hit: true,
-    damage: 7,
-    targetHp: 3,
-  },
-};
+/** Tiles a rifle reaches; anything past `MELEE_RANGE` picks the shot effects. */
+const RIFLE_RANGE = 8;
+
+/** Tiles a claw reaches: it has to be in contact. */
+const CLAW_RANGE = 1;
+
+/** An attack by a unit holding a rifle, wherever the two models happen to be. */
+function attack(weaponRange: number): TacticalEvent {
+  return {
+    type: "tactical:attack-resolved",
+    payload: {
+      attackerId: "unit-1",
+      targetId: "unit-2",
+      hit: true,
+      damage: 7,
+      targetHp: 3,
+      weaponRange,
+    },
+  };
+}
+
+const ATTACK: TacticalEvent = attack(RIFLE_RANGE);
 const DEATH: TacticalEvent = {
   type: "tactical:unit-died",
   payload: { unitId: "unit-2", killerId: "unit-1" },
@@ -264,9 +276,28 @@ describe("TacticalAnimationQueue", () => {
     expect(floaters().length).toBe(0);
   });
 
-  it("swings a claw instead of firing when the attacker is adjacent", () => {
+  it("swings a claw when the weapon has to be in contact", () => {
     const s = scene();
-    // Put the target one tile away: a melee strike, not a shot.
+    const queue = new TacticalAnimationQueue({
+      scene: s,
+      sprites,
+      timing: TIMING,
+    });
+    queue.enqueue([attack(CLAW_RANGE)]);
+    queue.update(0.01);
+    const names = queue.root.children.map((child) => child.name);
+    expect(names).toContain("vfx.claw-slash");
+    expect(names).not.toContain("vfx.tracer");
+    expect(names).not.toContain("vfx.muzzle-flash");
+  });
+
+  // The two cases the old heuristic got backwards (#457). It chose the
+  // effect by measuring the gap between the models, which answers "are
+  // they close" — a different question from "what is he holding".
+
+  it("fires, not claws, when a rifle shoots the tile next door", () => {
+    const s = scene();
+    // In contact, and still a shot: a rifle squad at point-blank range.
     const next = tileTopCentre({ x: 1, y: 0, z: 0 });
     s.objects.get("unit-2")?.position.set(next.x, next.y, next.z);
     const queue = new TacticalAnimationQueue({
@@ -274,7 +305,31 @@ describe("TacticalAnimationQueue", () => {
       sprites,
       timing: TIMING,
     });
-    queue.enqueue([ATTACK]);
+    queue.enqueue([attack(RIFLE_RANGE)]);
+    queue.update(0.01);
+    const names = queue.root.children.map((child) => child.name);
+    expect(names).toContain("vfx.muzzle-flash");
+    expect(names).toContain("vfx.tracer");
+    expect(names).not.toContain("vfx.claw-slash");
+  });
+
+  it("claws, not fires, when a melee attacker strikes from a rooftop", () => {
+    const s = scene();
+    // Adjacent on the ground and four layers up: three world units apart,
+    // well past any distance a contact weapon would pass.
+    const roof = tileTopCentre({ x: 1, y: 4, z: 0 });
+    s.objects.get("unit-2")?.position.set(roof.x, roof.y, roof.z);
+    expect(
+      s.objects
+        .get("unit-2")!
+        .position.distanceTo(s.objects.get("unit-1")!.position),
+    ).toBeGreaterThan(2);
+    const queue = new TacticalAnimationQueue({
+      scene: s,
+      sprites,
+      timing: TIMING,
+    });
+    queue.enqueue([attack(CLAW_RANGE)]);
     queue.update(0.01);
     const names = queue.root.children.map((child) => child.name);
     expect(names).toContain("vfx.claw-slash");

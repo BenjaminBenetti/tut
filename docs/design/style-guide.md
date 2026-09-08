@@ -500,7 +500,22 @@ Judge any change to these with the harness rather than by playing to contact —
 ```
 node tools/art/preview/shoot-vfx.mjs out.png ranged            # or melee, death, burst
 node tools/art/preview/shoot-vfx.mjs out.png ranged 64 0.02   # finer, to see frames
+node tools/art/preview/shoot-vfx.mjs out.png adjacent-rifle   # the two #457 cases
+node tools/art/preview/shoot-vfx.mjs out.png tall-melee
 ```
+
+**Which effect plays is decided by the weapon, not by the gap between the
+models** (#457). `AttackResolvedEvent` carries `weaponRange`, and
+`isMeleeRange` answers it in the one place the rules already use. The
+queue used to measure the distance between the two models against a
+1.6-world-unit threshold, which answers "are they close" — a different
+question, and it disagrees exactly where geometry and weapon part
+company. The harness has a control for each side of that disagreement:
+`adjacent-rifle` is a rifle fired at the tile next door and must show a
+flash and a tracer, `tall-melee` is a bite delivered from a rooftop and
+must show the claw.
+
+![a rifle at the tile next door, and a bite from a rooftop](vfx-sequence-weapon-not-distance.png)
 
 **Match the step to what you are judging.** The default 0.06 s suits an
 effect measured in tenths; a frame sheet runs at 40 ms, so sampling at

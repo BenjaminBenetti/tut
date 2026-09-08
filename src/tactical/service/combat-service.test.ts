@@ -30,6 +30,7 @@ import {
   hitChance,
   previewAttack,
   resolveAttack,
+  validateTargeting,
 } from "./combat-service";
 
 // ===========================================
@@ -863,5 +864,67 @@ describe("attacks per turn by unit kind", () => {
     expect(applied.ok).toBe(true);
     if (!applied.ok) return;
     expect(applied.value.state.units.find((u) => u.id === "b1")?.ap).toBe(0);
+  });
+});
+
+// ===========================================
+// validateTargeting's own refusals (#735)
+// ===========================================
+
+/**
+ * `previewAttack` and `validateTargeting` carry the same five refusals,
+ * and only the preview's copies had ever run: the audit on #735 found
+ * these five had never fired in any suite. They are the ones a real shot
+ * and an overwatch reaction go through, so they are the copies that
+ * matter.
+ */
+describe("validateTargeting", () => {
+  const pair = () =>
+    mission([
+      unit("s1", "tdf", "rifle", 1, 1),
+      unit("b1", "bugs", "swarmer", 2, 1, { hp: 6, maxHp: 6 }),
+    ]);
+
+  it("refuses an attacker that is not on the map", () => {
+    const result = validateTargeting(pair(), "ghost", "b1");
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error).toEqual({ kind: "unit-not-on-map", unitId: "ghost" });
+  });
+
+  it("refuses a target that is not on the map", () => {
+    const result = validateTargeting(pair(), "s1", "ghost");
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error).toEqual({ kind: "unit-not-on-map", unitId: "ghost" });
+  });
+
+  it("refuses an attacker that is already dead", () => {
+    const m = mission([
+      unit("s1", "tdf", "rifle", 1, 1, { hp: 0 }),
+      unit("b1", "bugs", "swarmer", 2, 1, { hp: 6, maxHp: 6 }),
+    ]);
+    const result = validateTargeting(m, "s1", "b1");
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error).toEqual({ kind: "unit-dead", unitId: "s1" });
+  });
+
+  it("refuses a target that is already down", () => {
+    const m = mission([
+      unit("s1", "tdf", "rifle", 1, 1),
+      unit("b1", "bugs", "swarmer", 2, 1, { hp: 0, maxHp: 6 }),
+    ]);
+    const result = validateTargeting(m, "s1", "b1");
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error).toEqual({ kind: "unit-dead", unitId: "b1" });
+  });
+
+  it("refuses a weapon the attacker does not carry", () => {
+    const result = validateTargeting(pair(), "s1", "b1", "no-such-weapon");
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error).toEqual({ kind: "no-such-weapon", unitId: "s1" });
   });
 });

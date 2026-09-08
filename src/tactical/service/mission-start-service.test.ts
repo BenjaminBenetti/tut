@@ -10,6 +10,7 @@ import { EARTH_MAP } from "../../overworld/data/earth-map";
 import { NEW_GAME_TUNING } from "../../overworld/data/new-game-tuning";
 import { THREAT_TUNING } from "../../overworld/data/threat-tuning";
 import type { Deployment } from "../../overworld/model/deployment";
+import type { BiomeId } from "../../content/model/biome-id";
 import type { Mission } from "../../overworld/model/mission";
 import { MECH_RATING_TUNING } from "../../roster/data/mech-rating-tuning";
 import { STARTER_PARTS } from "../../roster/data/parts";
@@ -332,5 +333,116 @@ describe("startTacticalMission", () => {
       size: MAX_DEPLOYED_UNITS + 1,
       max: MAX_DEPLOYED_UNITS,
     });
+  });
+});
+
+// ===========================================
+// Refusals no fixture had reached (#735)
+// ===========================================
+
+/**
+ * The audit on #735 found these five had never fired. `no-deploy-room` in
+ * particular is not the cap on how many units may launch — #487 covers
+ * that, and that test asserts it is *not* `no-deploy-room`. This one is
+ * the map letting the side down: a legal deployment the zone cannot seat.
+ */
+describe("startTacticalMission: refusals no fixture had reached", () => {
+  it("reports a map recipe the adapter cannot resolve", () => {
+    const { state, mission, deployment } = campaign();
+    const broken: GameState = {
+      ...state,
+      overworld: {
+        ...state.overworld,
+        missions: [
+          {
+            ...mission,
+            mapParams: {
+              ...mission.mapParams,
+              biome: "atlantis" as BiomeId,
+            },
+          },
+        ],
+      },
+    };
+    const result = startTacticalMission(broken, mission.id, deployment, deps());
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.kind).toBe("map-recipe");
+  });
+
+  it("reports a deployed mech that is not on the roster", () => {
+    const { state, mission, deployment } = campaign();
+    const result = startTacticalMission(
+      state,
+      mission.id,
+      { ...deployment, mechIds: ["mech-99"] },
+      deps(),
+    );
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error).toEqual({ kind: "unit-not-found", unitId: "mech-99" });
+  });
+
+  it("reports a squad whose type the catalogue no longer knows", () => {
+    const { state, mission, deployment } = campaign();
+    const squadId = state.roster.squads[0]?.id;
+    if (squadId === undefined) throw new Error("fixture needs a squad");
+    const forgetful: MissionStartDeps = {
+      ...deps(),
+      squadTypes: { getSquadType: () => undefined, listSquadTypes: () => [] },
+    };
+    const result = startTacticalMission(
+      state,
+      mission.id,
+      { ...deployment, mechIds: [], squadIds: [squadId] },
+      forgetful,
+    );
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error).toEqual({ kind: "unit-not-found", unitId: squadId });
+  });
+
+  /**
+   * `no-deploy-room` (both classes) is the one pair in this slice I could
+   * not force, and it is not dead code — so per the Producer's ruling on
+   * #735 it stays. `placeDeployment` is private and generates its own
+   * map, and every zone the placer emits seats a full deployment twice
+   * over, so no legal call reaches the refusal.
+   *
+   * The gap is real rather than theoretical: `placeDeployment`'s own doc
+   * relies on "at least four [mech tiles] per zone" from ADR 0004 I6,
+   * while `MAX_DEPLOYED_UNITS` is 8. A placer that tightened zones toward
+   * that floor would start refusing legal deployments at launch. This
+   * test pins the property that keeps the refusal unreachable, so it goes
+   * red exactly when those two guards begin to matter.
+   */
+  it("gives every deploy zone room for a full deployment of either class, which is why no-deploy-room cannot fire", () => {
+    const registries = createDefaultRegistries();
+    for (let seed = 1; seed <= 8; seed++) {
+      const { state, mission } = campaign(seed);
+      const started = unwrap(
+        startTacticalMission(
+          state,
+          mission.id,
+          {
+            missionId: mission.id,
+            squadIds: state.roster.squads.map((s) => s.id),
+            mechIds: state.roster.mechs.map((m) => m.id),
+          },
+          { ...deps(), registries },
+        ),
+      );
+      const map = started.activeMission?.map;
+      if (map === undefined) throw new Error("mission has no map");
+      const index = new TileIndex(map);
+      const tiles = map.hooks.deployZones.flatMap((zone) => zone.tiles);
+      for (const passClass of ["mech", "infantry"] as const) {
+        const room = tiles.filter((coord) => {
+          const tile = index.getAt(coord);
+          return tile !== undefined && tileAdmits(tile.pass, passClass);
+        }).length;
+        expect(room).toBeGreaterThanOrEqual(MAX_DEPLOYED_UNITS);
+      }
+    }
   });
 });

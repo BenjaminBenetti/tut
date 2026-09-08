@@ -1,0 +1,34 @@
+{
+  "path": "public/assets/models/props/tdf-dropship.glb",
+  "bytes": 141328,
+  "meshes": 8,
+  "triangles": 1908,
+  "watertight": {
+    "tdf_dropship": true,
+    "tdf_dropship_1": true,
+    "tdf_dropship_2": true,
+    "tdf_dropship_3": true,
+    "tdf_dropship_4": true,
+    "tdf_dropship_5": true,
+    "tdf_dropship_6": true,
+    "tdf_dropship_7": true
+  },
+  "bounds": [
+    [-2.496000051498413, 0.0, -3.5],
+    [2.496000051498413, 3.5399999618530273, 3.5]
+  ],
+  "extents": [4.992000102996826, 3.5399999618530273, 7.0],
+  "height": 3.5399999618530273,
+  "ok": true,
+  "problems": [],
+  "sha256": "2034ded38848cd27e4d0872657bf8db9180314d29b95f00faa824bf89a60e238",
+  "sockets": {
+    "socket_contact_nose": [0.0, 0.0, 2.3299999237060547],
+    "socket_contact_port": [-1.350000023841858, 0.0, -1.190000057220459],
+    "socket_contact_starboard": [1.350000023841858, 0.0, -1.190000057220459],
+    "socket_ramp_left": [-1.0499999523162842, 0.0, -3.5],
+    "socket_ramp_right": [1.0499999523162842, 0.0, -3.5]
+  },
+  "envelopeFits": true,
+  "allContactSocketsOnGround": true
+}

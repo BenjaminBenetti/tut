@@ -273,6 +273,20 @@ export const MODEL_MANIFEST = {
   // ===========================================
   // Props
   // ===========================================
+  "tdf.dropship": {
+    category: "props",
+    path: "assets/models/props/tdf-dropship.glb",
+    footprint: { w: 5, d: 7 },
+    height: 3.54,
+    sockets: [
+      "socket_contact_nose",
+      "socket_contact_port",
+      "socket_contact_starboard",
+      "socket_ramp_left",
+      "socket_ramp_right",
+    ],
+    quality: "final",
+  },
   "bug.egg-spawner": {
     category: "props",
     path: "assets/models/props/egg-spawner.glb",

@@ -1,0 +1,27 @@
+{
+  "id": "flat-yaw2-squad-two",
+  "baseline": "5cead6e9d5ec656ddba95b41c63ec29d77818ade",
+  "roof": "flat",
+  "yaw": 2,
+  "units": 2,
+  "pointer": {
+    "x": 15,
+    "y": 475
+  },
+  "url": "http://localhost:4173/tools/art/preview/roof-cutaway.html?roof=flat&units=2&yaw=2&pointer=1",
+  "viewport": {
+    "width": 1200,
+    "height": 950
+  },
+  "dataset": {
+    "ready": "true",
+    "ghostCount": "2",
+    "unit": "{\"x\":25,\"y\":6,\"z\":14}",
+    "units": "[{\"x\":25,\"y\":6,\"z\":14},{\"x\":23,\"y\":6,\"z\":11}]",
+    "radius": "4",
+    "floor": "0.175",
+    "yaw": "2"
+  },
+  "sha256": "3dcdef6455d172045fee8d8fa85343ec37ee04b06c150e73c0e5240ee16ff8fb",
+  "errors": []
+}

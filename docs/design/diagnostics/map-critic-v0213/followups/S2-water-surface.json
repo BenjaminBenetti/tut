@@ -1,0 +1,46 @@
+{
+  "id": "S2-water-surface",
+  "seed": "mc-opening-01",
+  "biome": "coastal",
+  "settlement": "rural",
+  "size": "small",
+  "tile": {
+    "x": 40,
+    "y": 0,
+    "z": 4
+  },
+  "pitch": 55,
+  "rotation": 1,
+  "width": 1200,
+  "height": 1000,
+  "uiControl": true,
+  "actualPitch": 54.99999972138453,
+  "url": "http://localhost:4173/mapgen-preview.html?seed=mc-opening-01&biome=coastal&settlement=rural&size=small&models=1&units=1&slope=100",
+  "levels": {
+    "value": "4",
+    "max": "4",
+    "step": "2",
+    "label": "all"
+  },
+  "baseline": "5cead6e9d5ec656ddba95b41c63ec29d77818ade",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "pixel": {
+    "x": 1433.7797684558068,
+    "y": 726.7766982073364
+  },
+  "clip": {
+    "x": 834,
+    "y": 227,
+    "width": 1200,
+    "height": 1000
+  },
+  "sha256": "05b68413635ce6de6de44db21fcd27b2d4d36ee6d4f534a66ed026c380e833f9",
+  "pointerDuringCapture": {
+    "x": 0,
+    "y": 0
+  },
+  "settleRenderedFrames": 40
+}

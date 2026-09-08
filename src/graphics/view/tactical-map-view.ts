@@ -75,6 +75,7 @@ import type { Disposable } from "../model/disposable";
 import type { ModelLoader } from "../model/model-loader";
 import type { TilePicker } from "../model/tile-picker";
 import { UnexploredFog } from "./unexplored-fog";
+import { NaturalMaterialTransitions } from "../service/natural-material-transitions";
 import {
   type PARAMETERISED_TERRAIN_MODELS,
   surfaceModel,
@@ -327,6 +328,7 @@ export class TacticalMapView implements Disposable, TilePicker {
   /** Retain an early floor cut when asynchronously loaded art adds a new visual level. */
   private maxLevel: number | undefined;
   private readonly unexploredFog: UnexploredFog;
+  private readonly naturalMaterials: NaturalMaterialTransitions;
 
   // ===========================================
   // Constructor
@@ -341,6 +343,8 @@ export class TacticalMapView implements Disposable, TilePicker {
     this.root.name = "tactical-map";
     this.disposables.push(this.unitBox);
     this.unexploredFog = new UnexploredFog(map);
+    this.naturalMaterials = new NaturalMaterialTransitions(map);
+    this.disposables.push(this.naturalMaterials);
     this.buildTiles();
     this.buildWalls();
     this.buildProps();
@@ -436,6 +440,7 @@ export class TacticalMapView implements Disposable, TilePicker {
     this.modelled = true;
     const placements = resolveMapModels(this.map, this.index);
     await models.preload(mapModelIds(placements));
+    await this.naturalMaterials.prepare(models);
     const categories: readonly [string, readonly ModelPlacement[]][] = [
       ["tiles", placements.tiles],
       ["foundations", placements.foundations],
@@ -492,6 +497,7 @@ export class TacticalMapView implements Disposable, TilePicker {
         ladder?: LadderAppearance;
         roof?: PitchedRoofAppearance;
         terrain?: { appearance: TerrainSlopeAppearance; tile: Tile };
+        naturalSurface?: Tile["surface"];
       }
     >();
     for (const placement of placements) {
@@ -522,6 +528,8 @@ export class TacticalMapView implements Disposable, TilePicker {
           ladder,
           roof,
           terrain,
+          naturalSurface:
+            tile?.buildingId === undefined ? tile?.surface : undefined,
         });
       } else {
         batch.matrices.push(matrix);
@@ -563,12 +571,24 @@ export class TacticalMapView implements Disposable, TilePicker {
         const prototypeMaterial = Array.isArray(part.material)
           ? part.material[0]
           : part.material;
-        const material =
+        const originalMaterial =
           this.ghostUniforms !== undefined &&
           batch.modelId.startsWith(GHOSTED_MODEL_PREFIX) &&
           prototypeMaterial !== undefined
             ? this.ghostMaterial(prototypeMaterial)
             : part.material;
+        const naturalSurface = batch.naturalSurface ?? batch.ramp?.surface;
+        const material =
+          naturalSurface === undefined
+            ? originalMaterial
+            : Array.isArray(originalMaterial)
+              ? originalMaterial.map((m) =>
+                  this.naturalMaterials.material(m, naturalSurface),
+                )
+              : this.naturalMaterials.material(
+                  originalMaterial,
+                  naturalSurface,
+                );
         const mesh = new InstancedMesh(
           part.geometry,
           material,
@@ -1402,7 +1422,8 @@ export class TacticalMapView implements Disposable, TilePicker {
    */
   private hiddenByCut(key: VisionTileKey): boolean {
     const focus = this.focus;
-    if (focus === undefined) {
+    // The top focus is uncut, including roofs above its last interior floor.
+    if (focus?.cutLevel === undefined) {
       return false;
     }
     const cut = this.tileCutIndex().get(key);

@@ -1,0 +1,39 @@
+{
+  "seed": "mc-opening-01",
+  "biome": "coastal",
+  "settlement": "rural",
+  "size": "small",
+  "pitch": 45,
+  "width": 1200,
+  "height": 1000,
+  "id": "T1-trail",
+  "tile": {
+    "x": 20,
+    "y": 2,
+    "z": 43
+  },
+  "rotation": 0,
+  "actualPitch": 44.99999999369618,
+  "url": "http://localhost:4173/mapgen-preview.html?seed=mc-opening-01&biome=coastal&settlement=rural&size=small&models=1&units=1&slope=100",
+  "levels": {
+    "value": "4",
+    "max": "4",
+    "step": "2",
+    "label": "all"
+  },
+  "baseline": "5cead6e9d5ec656ddba95b41c63ec29d77818ade",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "pixel": {
+    "x": 1382.6687948501788,
+    "y": 680.1479649033673
+  },
+  "clip": {
+    "x": 783,
+    "y": 180,
+    "width": 1200,
+    "height": 1000
+  }
+}

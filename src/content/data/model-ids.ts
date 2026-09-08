@@ -46,6 +46,7 @@ export const MODEL_IDS = [
   "bug.lurker",
   "bug.swarmer",
   // Props
+  "tdf.dropship",
   "bug.egg-spawner",
   "prop.barrier-concrete",
   "prop.boulder",

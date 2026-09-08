@@ -1,0 +1,482 @@
+[
+  {
+    "index": 1,
+    "id": "temperate-rural-medium-02",
+    "seed": "mc-resume-02",
+    "biome": "temperate",
+    "settlement": "rural",
+    "size": "medium",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-02&biome=temperate&settlement=rural&size=medium&models=1&units=1&slope=100",
+    "commit": "5cead6e9d5ec656ddba95b41c63ec29d77818ade",
+    "levels": {
+      "value": "8",
+      "max": "8",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "wholeSourceSha256": "f9c1372745a7c3df65e00c6916b54626b47065676ef1572c3198412af4f1b1b2",
+    "nearSourceSha256": "1f0e3a8b09cccb045f7c7395fddda70c583eb0b529e9ac7ca6ea80aa45f6eec2",
+    "sheet": "rural-sheet.png",
+    "observations": {
+      "looked": ["whole", "near"],
+      "preserve": "Wooded rolling land, a clustered hamlet and fence runs aligned to plot/trail edges. Complete pitched roofs make the structures read as buildings.",
+      "shortfall": "Broad brown patches still swallow the trail at the central junction (#959), with rectilinear grass/dirt contacts (#945). House-use repetition stays within the broader #960 concern, not a new ticket."
+    }
+  },
+  {
+    "index": 2,
+    "id": "snowy-rural-medium-02",
+    "seed": "mc-resume-02",
+    "biome": "snowy",
+    "settlement": "rural",
+    "size": "medium",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-02&biome=snowy&settlement=rural&size=medium&models=1&units=1&slope=100",
+    "commit": "5cead6e9d5ec656ddba95b41c63ec29d77818ade",
+    "levels": {
+      "value": "10",
+      "max": "10",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "wholeSourceSha256": "e72e4dfbc0f0f215215b900968609dbc65e79892320752f9cf99adde211d50c0",
+    "nearSourceSha256": "8d2b14218e5a3464d6eae5970a6d75d750ea79d3269508c18d08e595603bd424",
+    "sheet": "rural-sheet.png",
+    "observations": {
+      "looked": ["whole", "near"],
+      "preserve": "Snow, dark rock and conifers give an immediate cold-region identity; brown trail remains traceable across white ground. Plot fences make more sense than the previous scattered panels.",
+      "shortfall": "Large square rock/snow contacts reinforce #945. Abrupt bare natural grades are not re-filed as a ramp defect from these views."
+    }
+  },
+  {
+    "index": 3,
+    "id": "desert-rural-medium-02",
+    "seed": "mc-resume-02",
+    "biome": "desert",
+    "settlement": "rural",
+    "size": "medium",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-02&biome=desert&settlement=rural&size=medium&models=1&units=1&slope=100",
+    "commit": "5cead6e9d5ec656ddba95b41c63ec29d77818ade",
+    "levels": {
+      "value": "8",
+      "max": "8",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "wholeSourceSha256": "069595c08205f35e144caeedd59059587a73572f17671a2278a7060e46469535",
+    "nearSourceSha256": "118e9c5dedfc5256ab43305ea61585549fee1ed133d97cc8423c3c8a46f6cfd6",
+    "sheet": "rural-sheet.png",
+    "observations": {
+      "looked": ["whole", "near"],
+      "preserve": "Sand, exposed stone and sparse cactus silhouettes read as arid terrain. The brown trail stands out, and occupied building plots have visible support.",
+      "shortfall": "Square sand/rock contacts reinforce #945. Isolated palms remain the known #701 concern, not a fresh ticket."
+    }
+  },
+  {
+    "index": 4,
+    "id": "coastal-rural-medium-02",
+    "seed": "mc-resume-02",
+    "biome": "coastal",
+    "settlement": "rural",
+    "size": "medium",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-02&biome=coastal&settlement=rural&size=medium&models=1&units=1&slope=100",
+    "commit": "5cead6e9d5ec656ddba95b41c63ec29d77818ade",
+    "levels": {
+      "value": "6",
+      "max": "6",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "wholeSourceSha256": "0020cd221ee60dbd17e93ffc4a46311d4bf78b154f8b47a7fbeb97661751056e",
+    "nearSourceSha256": "d5d8428a287ac3315f3641ade00ecd9495662e7367672a854d91dcff28f4bd66",
+    "sheet": "rural-sheet.png",
+    "observations": {
+      "looked": ["whole", "near"],
+      "preserve": "Sandy shore and grass above it make a coherent coastal setting. Continuous fences now frame the occupied house plots instead of peppering the beach. Roofs remain complete.",
+      "shortfall": "The broad dirt contact again makes portions of the route ambiguous (#959), and large rectilinear sand/grass/dirt contacts support #945. Water seam is already #1005; no additional rural open-end defect follows from this view."
+    }
+  },
+  {
+    "index": 5,
+    "id": "coastal-town-medium-02",
+    "seed": "mc-resume-02",
+    "biome": "coastal",
+    "settlement": "town",
+    "size": "medium",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-02&biome=coastal&settlement=town&size=medium&models=1&units=1&slope=100",
+    "commit": "5cead6e9d5ec656ddba95b41c63ec29d77818ade",
+    "levels": {
+      "value": "10",
+      "max": "10",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "wholeSourceSha256": "67919f0f52761c67aecfb004b1aa61e1d21edd8617bdf4ab8eb516d8b970ecdd",
+    "nearSourceSha256": "5af0704b680d2ecb369f27e6c7031e6285cb4ea6ca4ee54169faa3614cc4cba7",
+    "sheet": "town-sheet.png",
+    "observations": {
+      "looked": ["whole", "near"],
+      "preserve": "Street network reaches a modest paved and railed shore ending; varied roof heights and visible roof openings give vertical building positions.",
+      "shortfall": "Scattered single timber panels are also visible around town plots on this seed (corroboration for #1006, one camera side here). Repeated anonymous windowed blocks reinforce #960. Natural ground contacts remain #945; the dramatic road grades are an existing judged feature."
+    }
+  },
+  {
+    "index": 6,
+    "id": "desert-town-medium-02",
+    "seed": "mc-resume-02",
+    "biome": "desert",
+    "settlement": "town",
+    "size": "medium",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-02&biome=desert&settlement=town&size=medium&models=1&units=1&slope=100",
+    "commit": "5cead6e9d5ec656ddba95b41c63ec29d77818ade",
+    "levels": {
+      "value": "12",
+      "max": "12",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "wholeSourceSha256": "509ae2ff8dfa3bc40e484d07825c264376a3cd9525cb2d65d2d488d3bbdd6393",
+    "nearSourceSha256": "48e563cc89499b7ed9517ddf93adc92a473bf580398a1a7745dce2bede5710a3",
+    "sheet": "town-sheet.png",
+    "observations": {
+      "looked": ["whole", "near"],
+      "preserve": "Broad streets, distinct roof heights, some brick/grey facade variation and visible roof openings organise the dry hillside town. Building support is visible against excavated plots.",
+      "shortfall": "Sand/rock edges remain conspicuously square (#945); anonymous building-use repetition remains #960. Separate timber pieces also occur here (#1006 corroboration, not a new count). Known dry palms stay #701."
+    }
+  },
+  {
+    "index": 7,
+    "id": "snowy-town-medium-02",
+    "seed": "mc-resume-02",
+    "biome": "snowy",
+    "settlement": "town",
+    "size": "medium",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-02&biome=snowy&settlement=town&size=medium&models=1&units=1&slope=100",
+    "commit": "5cead6e9d5ec656ddba95b41c63ec29d77818ade",
+    "levels": {
+      "value": "12",
+      "max": "12",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "wholeSourceSha256": "9f218cbda287d025fab384af954112eda4f543160155e8c46b507a2762be9533",
+    "nearSourceSha256": "5c534b16acea1c373e3c53159f24243ce028658abf931054e5d5132d6b359e2e",
+    "sheet": "town-sheet.png",
+    "observations": {
+      "looked": ["whole", "near"],
+      "preserve": "Dark streets contrast cleanly with snow; different occupied building heights and visible roof openings supply vertical landmarks.",
+      "shortfall": "Many visibly separate timber panels across snowy plots corroborate #1006 on a further biome (one camera side, no systematic count). Snow/rock contacts remain #945; uses behind repeated frontages remain #960."
+    }
+  },
+  {
+    "index": 8,
+    "id": "temperate-town-medium-02",
+    "seed": "mc-resume-02",
+    "biome": "temperate",
+    "settlement": "town",
+    "size": "medium",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-02&biome=temperate&settlement=town&size=medium&models=1&units=1&slope=100",
+    "commit": "5cead6e9d5ec656ddba95b41c63ec29d77818ade",
+    "levels": {
+      "value": "12",
+      "max": "12",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "wholeSourceSha256": "61262d8efc1c81ddbebdafb505f7a252f2edbadba44fb10c48d58cd29dbbf322",
+    "nearSourceSha256": "bcecbeb562ec0e81d3403a1261a1810d6a012d6d96e42995b0df4a57ab29cee6",
+    "sheet": "town-sheet.png",
+    "observations": {
+      "looked": ["whole", "near"],
+      "preserve": "The street spine, complete roofs, woodland and different occupied building heights give the town a clear layout. Broad street approaches remain easy to read.",
+      "shortfall": "Anonymous frontages repeat (#960), and unrelated individual timber panels remain visible away from the rural repair (#1006). Grass/dirt contacts remain #945. Occupied hillside supports are not treated as the removed decorative city-bed defect."
+    }
+  },
+  {
+    "index": 9,
+    "id": "temperate-city-medium-02",
+    "seed": "mc-resume-02",
+    "biome": "temperate",
+    "settlement": "city",
+    "size": "medium",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-02&biome=temperate&settlement=city&size=medium&models=1&units=1&slope=100",
+    "commit": "5cead6e9d5ec656ddba95b41c63ec29d77818ade",
+    "levels": {
+      "value": "12",
+      "max": "12",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "wholeSourceSha256": "fc2f792f9db3867c111ea870883bd330b4f6fb9d1e15d9a43f8504f13b65ca64",
+    "nearSourceSha256": "7eeb89aa15c3bd6c13a32dda981c50094ccb1b8ca0ad75b9e3cbc1e5787fff10",
+    "sheet": "city-sheet.png",
+    "observations": {
+      "looked": ["whole", "near"],
+      "preserve": "A legible street grid, wide paved approaches and varied occupied building heights. At-grade yards have replaced the implausible city beds; roofs and roof openings remain intact in the all-levels view.",
+      "shortfall": "Frontages still lack visible everyday uses (#960), with timber fragments and generic yard clutter (#1006 / #960). Brown ground patches have square edges (#945). No new flat-city ticket is justified by this overview plus the separate usable-floor controls."
+    }
+  },
+  {
+    "index": 10,
+    "id": "snowy-city-medium-02",
+    "seed": "mc-resume-02",
+    "biome": "snowy",
+    "settlement": "city",
+    "size": "medium",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-02&biome=snowy&settlement=city&size=medium&models=1&units=1&slope=100",
+    "commit": "5cead6e9d5ec656ddba95b41c63ec29d77818ade",
+    "levels": {
+      "value": "10",
+      "max": "11",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "wholeSourceSha256": "de4269bb91f14da94336a10fd0591f825380c0df61b6a98cbfbeb74258e0fc6d",
+    "nearSourceSha256": "63695093dd4370624ab1dbfae639d8af968d97546815f052bddb4d119ca49292",
+    "sheet": "city-sheet.png",
+    "observations": {
+      "looked": ["whole", "near"],
+      "preserve": "Dark roads, pale paving and white yards distinguish the city grid immediately; varied roof heights and complete wall silhouettes supply landmarks without decorative beds.",
+      "shortfall": "Rock patches still have squared snow boundaries (#945). Separate fence panels and anonymous frontages remain #1006/#960. This all-levels scene has intact roofs, distinct from the tactical top-focus regression."
+    }
+  },
+  {
+    "index": 11,
+    "id": "desert-city-medium-02",
+    "seed": "mc-resume-02",
+    "biome": "desert",
+    "settlement": "city",
+    "size": "medium",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-02&biome=desert&settlement=city&size=medium&models=1&units=1&slope=100",
+    "commit": "5cead6e9d5ec656ddba95b41c63ec29d77818ade",
+    "levels": {
+      "value": "12",
+      "max": "12",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "wholeSourceSha256": "e5b98002a5689add88e2c5401cfa940b3857e6ebe114347d824e3494c3e39828",
+    "nearSourceSha256": "cc017a676a567322bf9d1dbb020e467aedc9ed64dea8056ccf13462acb4020a1",
+    "sheet": "city-sheet.png",
+    "observations": {
+      "looked": ["whole", "near"],
+      "preserve": "Street and pavement hierarchy remains clear against the sandy yards; varied roof heights and complete supported buildings provide urban landmarks.",
+      "shortfall": "The anonymous exterior-use vocabulary (#960), isolated timber panels (#1006) and squared sand/rock contacts (#945) persist. Sparse dry palms remain #701. No decorative city beds need reinstating for variety."
+    }
+  },
+  {
+    "index": 12,
+    "id": "coastal-city-medium-02",
+    "seed": "mc-resume-02",
+    "biome": "coastal",
+    "settlement": "city",
+    "size": "medium",
+    "models": "1",
+    "units": "1",
+    "slope": "100",
+    "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-02&biome=coastal&settlement=city&size=medium&models=1&units=1&slope=100",
+    "commit": "5cead6e9d5ec656ddba95b41c63ec29d77818ade",
+    "levels": {
+      "value": "10",
+      "max": "11",
+      "step": "2",
+      "label": "all"
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    },
+    "nearCamera": "initial framing",
+    "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+    "errors": [],
+    "wholeSourceSha256": "bca7f4c919a6939a323fdf705e024adfd4347f6459d52464f0cd9a1499d9ae05",
+    "nearSourceSha256": "a58d0b03b91be37d7d7809c681f55178fc72e45e26ee3bb4b746c19006a13666",
+    "sheet": "city-sheet.png",
+    "observations": {
+      "looked": ["whole", "near"],
+      "preserve": "The street grid, broad pavement and railed shore endings read as built places. Different occupied roof heights, an external ladder and roof openings provide landmarks without the removed raised beds.",
+      "shortfall": "Anonymous frontages and generic yard clutter still limit everyday-use identity (#960). Separate timber panels remain visible in open plots (#1006); squared sand/grass contacts remain #945. Open water retains the already filed surface grid (#1005)."
+    }
+  }
+]

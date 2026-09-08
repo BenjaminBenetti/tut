@@ -1,0 +1,16 @@
+{
+  "id": "rural-sheet",
+  "baseline": "5cead6e9d5ec656ddba95b41c63ec29d77818ade",
+  "sha256": "b5fc79ed88115a9e538d23abad08baa0e585f6551da60c97fee2ba3d6d8c0349",
+  "sourceImageDimensions": [2020, 1500],
+  "sourceResize": 0.5,
+  "labelHeight": 30,
+  "layout": "two columns: whole / near; four rows in traversal order",
+  "sceneTreatment": "Resize and arrange screenshots, captions outside the scene; no retouching",
+  "recipes": [
+    "temperate-rural-medium-02",
+    "snowy-rural-medium-02",
+    "desert-rural-medium-02",
+    "coastal-rural-medium-02"
+  ]
+}

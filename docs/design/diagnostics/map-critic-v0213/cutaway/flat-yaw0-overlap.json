@@ -1,0 +1,27 @@
+{
+  "id": "flat-yaw0-overlap",
+  "baseline": "5cead6e9d5ec656ddba95b41c63ec29d77818ade",
+  "roof": "flat",
+  "yaw": 0,
+  "units": 2,
+  "pointer": {
+    "x": 760,
+    "y": 405
+  },
+  "url": "http://localhost:4173/tools/art/preview/roof-cutaway.html?roof=flat&units=2&yaw=0&pointer=1",
+  "viewport": {
+    "width": 1200,
+    "height": 950
+  },
+  "dataset": {
+    "ready": "true",
+    "ghostCount": "2",
+    "unit": "{\"x\":25,\"y\":6,\"z\":14}",
+    "units": "[{\"x\":25,\"y\":6,\"z\":14},{\"x\":23,\"y\":6,\"z\":11}]",
+    "radius": "4",
+    "floor": "0.175",
+    "yaw": "0"
+  },
+  "sha256": "4b243e7699ec4e9cce120613d02e1a1db69aab2c05f25b9ac88b6f28491d7f33",
+  "errors": []
+}

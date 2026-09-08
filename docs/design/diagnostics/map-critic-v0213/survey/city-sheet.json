@@ -1,0 +1,16 @@
+{
+  "id": "city-sheet",
+  "baseline": "5cead6e9d5ec656ddba95b41c63ec29d77818ade",
+  "sha256": "c7b0653d68f9d89b84d501488f421d56135dc91f016816e255d1923cafdd9b76",
+  "sourceImageDimensions": [2020, 1500],
+  "sourceResize": 0.5,
+  "labelHeight": 30,
+  "layout": "two columns: whole / near; four rows in traversal order",
+  "sceneTreatment": "Resize and arrange screenshots, captions outside the scene; no retouching",
+  "recipes": [
+    "temperate-city-medium-02",
+    "snowy-city-medium-02",
+    "desert-city-medium-02",
+    "coastal-city-medium-02"
+  ]
+}

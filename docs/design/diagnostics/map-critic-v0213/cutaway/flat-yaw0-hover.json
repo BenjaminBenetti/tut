@@ -1,0 +1,27 @@
+{
+  "id": "flat-yaw0-hover",
+  "baseline": "5cead6e9d5ec656ddba95b41c63ec29d77818ade",
+  "roof": "flat",
+  "yaw": 0,
+  "units": 0,
+  "pointer": {
+    "x": 600,
+    "y": 475
+  },
+  "url": "http://localhost:4173/tools/art/preview/roof-cutaway.html?roof=flat&units=0&yaw=0&pointer=1",
+  "viewport": {
+    "width": 1200,
+    "height": 950
+  },
+  "dataset": {
+    "ready": "true",
+    "ghostCount": "0",
+    "unit": "{\"x\":25,\"y\":6,\"z\":14}",
+    "units": "[]",
+    "radius": "4",
+    "floor": "0.175",
+    "yaw": "0"
+  },
+  "sha256": "350046f6e4bb5d7de4e7d13f6180748bcd3be4c42d7d0ad8cb4b971f21f7bc22",
+  "errors": []
+}

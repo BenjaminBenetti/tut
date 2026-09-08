@@ -1,0 +1,51 @@
+{
+  "id": "S1-water-surface-ui",
+  "baseline": "5cead6e9d5ec656ddba95b41c63ec29d77818ade",
+  "url": "http://localhost:4173/mapgen-preview.html?seed=mc-opening-01&biome=coastal&settlement=rural&size=small&models=1&units=1&slope=100",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "controls": [
+    {
+      "tag": "INPUT",
+      "id": "seed",
+      "type": "text",
+      "value": "mc-opening-01",
+      "checked": false
+    },
+    {
+      "tag": "SELECT",
+      "id": "biome",
+      "type": "select-one",
+      "value": "coastal"
+    },
+    {
+      "tag": "SELECT",
+      "id": "settlement",
+      "type": "select-one",
+      "value": "rural"
+    },
+    {
+      "tag": "SELECT",
+      "id": "size",
+      "type": "select-one",
+      "value": "small"
+    },
+    {
+      "tag": "INPUT",
+      "id": "slope",
+      "type": "range",
+      "value": "100",
+      "checked": false
+    },
+    {
+      "tag": "INPUT",
+      "id": "level",
+      "type": "range",
+      "value": "4",
+      "checked": false
+    }
+  ],
+  "sha256": "1d1fec61bef9e774da5d3d4da7fa78dc99b4013aa227f149cc14865103c05625"
+}

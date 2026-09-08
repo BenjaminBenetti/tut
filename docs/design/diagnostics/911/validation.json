@@ -1,0 +1,37 @@
+{
+  "typecheck": "pass",
+  "lint": "pass; browser globals declared in capture helper",
+  "build": "pass",
+  "manifestTests": {
+    "passed": 6
+  },
+  "modelLoop": {
+    "passed": true,
+    "triangles": 1908,
+    "bytes": 141328,
+    "watertightPrimitives": 8
+  },
+  "browserArtCaptures": {
+    "fixedViews": 4,
+    "separateLaunchesPerView": 3,
+    "allByteIdentical": true,
+    "pageErrors": 0
+  },
+  "unit": {
+    "command": "CI=1 pnpm test",
+    "passed": 2258,
+    "skipped": 1
+  },
+  "initialUnitRun": {
+    "command": "pnpm test",
+    "passed": 2255,
+    "skipped": 1,
+    "timedOut": 3,
+    "files": [
+      "src/mapgen/generator/hook-pass.test.ts",
+      "src/mapgen/generator/connectivity-pass.test.ts",
+      "src/mapgen/generator/slope-pass.test.ts"
+    ],
+    "note": "Only the existing 20-second local timeout failed. All 22 tests in these three files then passed with --maxWorkers=1 under that unchanged budget. The complete CI-configured suite passed under the repository existing CI configuration; no timeout or simulation changes made."
+  }
+}

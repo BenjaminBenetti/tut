@@ -29,6 +29,7 @@ import {
 import type { Texture } from "three";
 
 import type { TacticalEvent } from "../../../src/tactical/model/tactical-event";
+import { MODEL_MANIFEST } from "../../../src/graphics/data/model-manifest";
 import { SPRITE_MANIFEST } from "../../../src/graphics/data/sprite-manifest";
 import type { SpriteId } from "../../../src/graphics/data/sprite-manifest";
 import type { SpriteSource } from "../../../src/graphics/model/sprite-source";
@@ -60,26 +61,43 @@ function unit(x: number, height: number, colour: number, lift = 0): Object3D {
 const ROOFTOP_LIFT = 4;
 
 /**
- * Cases where the geometry and the weapon disagree, which is what #457
- * fixed: `adjacent-rifle` is a ranged shot at the tile next door, and
- * `tall-melee` is a bite delivered from a rooftop. The old queue chose
- * the effect by measuring the gap between the two models and got both
- * of them backwards.
+ * The two cases where the geometry and the weapon disagree, which is what
+ * #457 fixed: `adjacent-rifle` is a rifle fired at the tile next door,
+ * and `tall-melee` is a bite delivered from a rooftop. The old queue
+ * chose the effect by measuring the gap between the two models, and got
+ * both of these backwards.
  */
-const CONTACT = which === "melee" || which === "adjacent-rifle";
+const ADJACENT =
+  which === "melee" || which === "adjacent-rifle" || which === "tall-melee";
+/** Cases where the bug is the attacker, so the weapon is a claw. */
+const BUG_ATTACKS = which === "melee" || which === "tall-melee";
+/** `tall-melee` puts the attacker on a roof rather than on the ground. */
 const ELEVATED = which === "tall-melee";
 
 /** Tiles the attacker's weapon reaches, as `AttackResolvedEvent` carries it. */
 const RIFLE_RANGE = 8;
 const CLAW_RANGE = 1;
 
-const HEIGHTS: Record<string, number> = {
-  "unit-1": 2.79,
-  "unit-2": CONTACT ? 0.55 : 1.95,
+/**
+ * `adjacent-rifle` stands a rifle squad up rather than the mech, because
+ * the old distance rule's answer depended on how tall the two models
+ * were rather than on what the attacker was holding: a 2.79-unit mech
+ * firing at the tile next door clears a 1.6-unit threshold on height
+ * alone and looked right by accident, while the 0.97-unit squad that
+ * actually carries the rifle does not.
+ */
+type ModelId = keyof typeof MODEL_MANIFEST;
+
+const MODELS: Record<string, ModelId> = {
+  "unit-1":
+    which === "adjacent-rifle" ? "tdf.infantry.rifle" : "tdf.mech.assembled-b",
+  "unit-2": BUG_ATTACKS ? "bug.swarmer" : "bug.brute",
 };
-const MODELS: Record<string, string> = {
-  "unit-1": "tdf.mech.assembled-b",
-  "unit-2": "bug.brute",
+
+/** Model heights, read from the manifest so the harness matches the game. */
+const HEIGHTS: Record<string, number> = {
+  "unit-1": MODEL_MANIFEST[MODELS["unit-1"]!].height,
+  "unit-2": MODEL_MANIFEST[MODELS["unit-2"]!].height,
 };
 
 const scene = new Scene();
@@ -96,7 +114,7 @@ objects.set("unit-1", unit(0, HEIGHTS["unit-1"]!, 0x5b6573));
 const attackerLift = ELEVATED ? ROOFTOP_LIFT : 0;
 objects.set(
   "unit-2",
-  unit(CONTACT || ELEVATED ? 1 : 5, HEIGHTS["unit-2"]!, 0x2b2436, attackerLift),
+  unit(ADJACENT ? 1 : 5, HEIGHTS["unit-2"]!, 0x2b2436, attackerLift),
 );
 for (const object of objects.values()) {
   scene.add(object);

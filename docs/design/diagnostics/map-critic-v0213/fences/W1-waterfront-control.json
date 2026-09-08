@@ -1,0 +1,39 @@
+{
+  "seed": "mc-opening-03",
+  "biome": "coastal",
+  "settlement": "city",
+  "size": "medium",
+  "pitch": 55,
+  "width": 1200,
+  "height": 1000,
+  "id": "W1-waterfront-control",
+  "tile": {
+    "x": 51,
+    "y": 1,
+    "z": 40
+  },
+  "rotation": 0,
+  "actualPitch": 54.99999986826957,
+  "url": "http://localhost:4173/mapgen-preview.html?seed=mc-opening-03&biome=coastal&settlement=city&size=medium&models=1&units=1&slope=100",
+  "levels": {
+    "value": "10",
+    "max": "11",
+    "step": "2",
+    "label": "all"
+  },
+  "baseline": "5cead6e9d5ec656ddba95b41c63ec29d77818ade",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "pixel": {
+    "x": 1436.3056985320711,
+    "y": 731.0918508984457
+  },
+  "clip": {
+    "x": 836,
+    "y": 231,
+    "width": 1200,
+    "height": 1000
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "index": 5,
+  "id": "coastal-town-corroboration",
+  "seed": "mc-resume-02",
+  "biome": "coastal",
+  "settlement": "town",
+  "size": "medium",
+  "models": "1",
+  "units": "1",
+  "slope": "100",
+  "url": "http://localhost:4173/mapgen-preview.html?seed=mc-resume-02&biome=coastal&settlement=town&size=medium&models=1&units=1&slope=100",
+  "commit": "5cead6e9d5ec656ddba95b41c63ec29d77818ade",
+  "levels": {
+    "value": "10",
+    "max": "10",
+    "step": "2",
+    "label": "all"
+  },
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "clip": {
+    "x": 380,
+    "y": 0,
+    "width": 2020,
+    "height": 1500
+  },
+  "nearCamera": "initial framing",
+  "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+  "errors": [],
+  "wholeSourceSha256": "67919f0f52761c67aecfb004b1aa61e1d21edd8617bdf4ab8eb516d8b970ecdd",
+  "nearSourceSha256": "5af0704b680d2ecb369f27e6c7031e6285cb4ea6ca4ee54169faa3614cc4cba7",
+  "sheet": "town-sheet.png",
+  "observations": {
+    "looked": ["whole", "near"],
+    "preserve": "Street network reaches a modest paved and railed shore ending; varied roof heights and visible roof openings give vertical building positions.",
+    "shortfall": "Scattered single timber panels are also visible around town plots on this seed (corroboration for #1006, one camera side here). Repeated anonymous windowed blocks reinforce #960. Natural ground contacts remain #945; the dramatic road grades are an existing judged feature."
+  },
+  "sha256": "5af0704b680d2ecb369f27e6c7031e6285cb4ea6ca4ee54169faa3614cc4cba7",
+  "view": "initial near camera; only one camera side is claimed for this corroboration"
+}

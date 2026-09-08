@@ -1,0 +1,68 @@
+{
+  "id": "A1-top-rotated",
+  "baseline": "d0837c613c524e718697ed0f6c32c831e1b9aac3",
+  "campaignSeed": "4242",
+  "advances": 1,
+  "missionId": "mission-1",
+  "recipe": {
+    "version": 2,
+    "width": 48,
+    "depth": 48,
+    "levels": 14
+  },
+  "missionSeed": 1127010053,
+  "missionKeys": [
+    "missionId",
+    "seed",
+    "difficulty",
+    "threat",
+    "map",
+    "units",
+    "templates",
+    "turn",
+    "phase",
+    "objectives",
+    "spawners",
+    "edgeSpawn",
+    "extraction",
+    "extracted",
+    "log",
+    "commandSeq",
+    "vision"
+  ],
+  "roof": {
+    "x": 3,
+    "y": 12,
+    "z": 26
+  },
+  "viewport": {
+    "width": 1800,
+    "height": 1200
+  },
+  "cameraFocus": {
+    "x": 3,
+    "y": 2,
+    "z": 26
+  },
+  "pointer": {
+    "x": 0,
+    "y": 1199
+  },
+  "inputs": ["e"],
+  "dataset": {
+    "screen": "tactical",
+    "appState": "ready",
+    "tacticalStorey": "5",
+    "tacticalStoreys": "5",
+    "tacticalUnits": "3",
+    "tacticalSpawners": "0",
+    "lastIntent": "attack"
+  },
+  "readout": "5 / 5",
+  "cameraProjection": {
+    "x": 644.608947565991,
+    "y": 579.7108889587913
+  },
+  "errors": [],
+  "sha256": "48c271da4fcb8b08dd66091ead2e0e706e865f20bb87c6d6be5c8735c0790793"
+}

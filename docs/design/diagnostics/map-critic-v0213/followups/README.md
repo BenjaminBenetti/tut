@@ -38,3 +38,39 @@ seed, [W1 city waterfront](../fences/W1-waterfront-control.png).
 This does not duplicate #945: that issue concerns contacts between different
 natural ground materials; the lines here occur inside one expanse of water.
 No generator implementation was inspected and no prevalence count is claimed.
+
+## Urban timber panels still describe no boundary
+
+The timber itself has a legible silhouette; preserve it and the successful
+rural trail/plot runs from #917. The accepted railed quay also explains its
+purpose in both city views.
+
+Two separate timber panels stand on the grassy waterfront strip. One sits
+beside a crate, the other stands farther into the same grass. Neither marks
+a visible change of plot, a path margin, a building edge or a connected fence
+line. Turning the camera confirms these are separate pieces, with open grass
+around their ends; no hidden connection explains them. They read as scattered
+cover props instead of a boundary somebody built.
+
+This ranks fourth in the present queue, above the water seams and below
+#945/#959/#960. It is a **city follow-up** to the rural-only #917 repair,
+which remains visually accepted. It is not the finite garden run/open-end
+observation: that run marks a coherent edge, and these panels do not.
+A sensible finite boundary need not become a closed enclosure.
+
+Recipe: **`mc-opening-03`, coastal, city, medium (72 × 72)**. Open
+`/mapgen-preview.html?seed=mc-opening-03&biome=coastal&settlement=city&size=medium&models=1&units=1&slope=100`.
+Focus tile **(51, 1, 31)** at 55 pixels per tile. C1 uses the initial direction;
+C2 rotates clockwise once with `E`. The camera anchor locates the whole grassy
+strip containing both panels; it is not a claim that a panel occupies the
+anchor tile. Move the pointer away; retain **all** levels.
+
+| View | Render | Reproduction |
+|---|---|---|
+| C1, initial side | [PNG](C1-city-fences.png) | [JSON](C1-city-fences.json) |
+| C2, opposite shore view | [PNG](C2-city-fences.png) | [JSON](C2-city-fences.json) |
+
+The first angle includes the adjoining tall building and the second shows
+the whole strip between the paved ends. This is an evidenced placement
+finding on one recipe, not a claimed town/city prevalence count. Preserve
+clear walking approaches and the accepted rural boundaries when it is fixed.

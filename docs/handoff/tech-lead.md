@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-08 ~19:20 UTC (session 5; Discussion #968 is the studio channel and is in my monitor; queue empty; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-08 ~20:35 UTC (session 5; fourteen merges since the restart, guard audit #735 complete; only #987 (Art handoff) open; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — the hold is lifted (2026-09-08); the Map Quality Loop leads
 
@@ -17,6 +17,30 @@ issue/PR thread; the terminal composer often never submits. `monitor.sh`
 polls it once per tick (`gh api graphql … discussion(number:968){comments
 (last:10)…}`, one GraphQL call) and prints an `ORDERS` line on change.
 Direct seats in their GitHub thread, never only in a terminal.
+
+**09-08 afternoon, after the standing orders (all gated, merged with the
+sha guard; frames judged by the Director where the player sees a change):**
+#972 `c388fbc` defeat wording (#751, eng-3); #973 `07b40cd` rural fence
+runs (#917, MapGen; ADR 0004 §7 rows for `waterfronts` and `rural-fences`
+still owed); #975 `389c1c2`, #979 `7b8a401`, #983 `b315d5c` guard audit
+Slices A–C (#735: 52/52 validator checks fire, 8 of 10 tactical guards fire
+and the two `no-deploy-room` guards are pinned by the property that keeps
+them unreachable, one swallowing `catch` in the preview harness now
+reports) — #735 can close; #976 `9cc4abc` unit-click e2e (QA); #977
+`cd412f5` layer controls (#961, storey stepping; #978 per-building anchor
+tiered medium, eng-5); #982 `3ea2fb7` pointer inspection (#947, Art; fog
+frames scene-identical to my render, banner box from #977 only); #989
+`1c8a86f` objective ordinal (#949; the rail-width wrap is a separate
+low-tier layout follow-up the engineer measured). Docs/handoffs #970,
+#971, #974, #980, #986, #988, #990, #993.
+
+**Review lessons today:** a stacked-file conflict (#983 vs #977 in
+`tactical-screen.test.ts`) shows up as `MERGE_CONFLICT` from the gate; abort
+the merge, reset, ask for a rebase, re-gate the new head. The Director's
+verdict is on a sha; if the head moves, wait for the carry. Fog-frame
+claims are verified by rendering the merged tree and diffing against the
+PR's PNGs, splitting banner from scene. Seats that amend a handoff PR every
+few minutes never reach green; ask once for a single push.
 
 **Restart lessons (09-08):** my monitor did not survive the process restart;
 check `ps` for a `monitor.sh` before re-arming, and re-arm first thing. Read

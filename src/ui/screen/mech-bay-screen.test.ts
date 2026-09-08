@@ -306,15 +306,61 @@ describe("MechBayScreen", () => {
     expect(thumb.dataset.thumb).not.toBe(before);
   });
 
-  it("keeps the cell but no picture for a utility part, so the pickers stay aligned", () => {
+  it("marks a utility as a part with no picture rather than leaving the cell empty", () => {
     mountWith(newGame(), root);
     const utility = root.querySelector<HTMLImageElement>(
       '[data-role="part-thumb"][data-field="utility-0"]',
     );
-    // A utility has no visual slot, so there is nothing to show.
+    // A utility has no visual slot, so there is no picture to show.
     expect(utility).not.toBeNull();
     expect(utility?.classList.contains("is-empty")).toBe(true);
     expect(utility?.hasAttribute("src")).toBe(false);
+
+    // ...and the cell says so, instead of standing empty and reading as
+    // a picture that failed to load (#594).
+    const glyph = root.querySelector<HTMLElement>(
+      '[data-role="part-thumb-none"][data-field="utility-0"]',
+    );
+    expect(glyph).not.toBeNull();
+    expect(glyph?.hidden).toBe(false);
+    expect(glyph?.dataset.icon).toBe("ability");
+    // Decorative, like the picture it stands in for: the picker beside
+    // it names the part, and "no picture" is not worth announcing.
+    expect(glyph?.getAttribute("aria-hidden")).toBe("true");
+
+    // The picker rows stay aligned because the box is the same element
+    // either way: both live in one cell, and exactly one is showing.
+    const partGlyph = root.querySelector<HTMLElement>(
+      '[data-role="part-thumb-none"][data-field="chassis"]',
+    );
+    expect(partGlyph?.hidden).toBe(true);
+    expect(utility?.parentElement?.className).toBe(
+      root.querySelector<HTMLImageElement>(
+        '[data-role="part-thumb"][data-field="chassis"]',
+      )?.parentElement?.className,
+    );
+  });
+
+  it("swaps the glyph for the picture when a slot changes to a part that has one", () => {
+    mountWith(newGame(), root);
+    const select = picker("chassis");
+    const glyph = root.querySelector<HTMLElement>(
+      '[data-role="part-thumb-none"][data-field="chassis"]',
+    );
+    const thumb = root.querySelector<HTMLImageElement>(
+      '[data-role="part-thumb"][data-field="chassis"]',
+    );
+    expect(glyph?.hidden).toBe(true);
+    expect(thumb?.classList.contains("is-empty")).toBe(false);
+    const other = [...select.options]
+      .map((o) => o.value)
+      .find((v) => v !== select.value);
+    if (other === undefined) throw new Error("only one chassis to pick");
+    select.value = other;
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+    // Still a part with a picture, so still no glyph.
+    expect(glyph?.hidden).toBe(true);
+    expect(thumb?.classList.contains("is-empty")).toBe(false);
   });
 
   it("changing the chassis rebuilds the utility pickers to its slot count and keeps the rest", () => {

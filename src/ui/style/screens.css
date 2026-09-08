@@ -351,17 +351,40 @@
  * A part's picture beside its picker. Rendered from the same model the
  * mech is assembled from, so the bay shows what is being built.
  */
+/*
+ * The thumbnail cell (#495), which now holds either the part's picture
+ * or the glyph for a part that has none (#594).
+ *
+ * The box lives on the cell rather than on the image, so it stays the
+ * same size and keeps every picker aligned whichever of the two is
+ * showing. Before this the utility cell was `visibility: hidden`, which
+ * left a gap where the other rows have a bordered box — and a gap where
+ * a picture belongs reads as a picture that failed to load.
+ */
 .tut-mech-bay__thumb {
+  display: grid;
+  place-items: center;
   width: 48px;
   height: 48px;
-  object-fit: contain;
   background: var(--ui-panel);
   border: var(--line) solid var(--ui-line);
 }
 
-/* A utility part has no picture; the cell stays so the pickers align. */
-.tut-mech-bay__thumb.is-empty {
-  visibility: hidden;
+.tut-mech-bay__thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.tut-mech-bay__thumb-img.is-empty {
+  display: none;
+}
+
+/* Dimmed, because it marks an absence rather than showing a part. */
+.tut-mech-bay__thumb-none {
+  width: 24px;
+  height: 24px;
+  color: var(--ui-text-dim);
 }
 .tut-mech-bay__errors li {
   color: var(--ui-danger);

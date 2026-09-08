@@ -9,9 +9,10 @@ branch `feat/947-pointer-cutaway`, has the implementation and 28-frame matrix at
 `9aefe64`. It is **ready for review**. [Final evidence](https://github.com/BenjaminBenetti/tut/pull/982#issuecomment-5591088585)
 is posted. Typecheck, lint, 2,190 unit tests (one skipped), build, seven simulation
 tests, 59 browser tests (27 opt-in captures skipped), and the fog capture pass.
-Director approved the early three-frame read in comment 5590890088; final
-judgment and Tech Lead review/merge are still required. Previous-head CI was
-green; the bounded watch tracks final-head CI and review.
+**Director accepted head 9aefe64** in [comment 5591110810](https://github.com/BenjaminBenetti/tut/pull/982#issuecomment-5591110810),
+after independently checking hover/overlap/open-ground bytes against the frames
+he had judged. Released to Tech Lead for review/merge on green. Previous-head
+CI was green; the bounded watch tracks final-head CI and review.
 
 [Diagnosis and parameters before code](https://github.com/BenjaminBenetti/tut/issues/947#issuecomment-5589887736):
 action hover prioritises units/spawners and pitched roofs have no walkable tile
@@ -85,7 +86,8 @@ One bounded background watch, `.git/art-director-watch/watch.py`: 300 s minimum
 poll interval, one-line exit on a relevant event, three-hour hard stop. REST
 for work threads/new or relabelled art/owned PRs and CI, plus the exact #968
 GraphQL `comments(last:10){nodes{createdAt body}}` query. Comments are deduplicated
-by timestamp/body hash, so edits wake it too. The script reloads shared state
+by timestamp/body hash, so edits wake it too. If all ten returned comments are
+unseen, it paginates the full discussion before advancing the cursor. The script reloads shared state
 before each poll so new PR subscriptions survive while it is running. Act on
 its event file, then arm one replacement. Capacity/transport errors are retries;
 never stop or switch model for them. Empty queue gets stated on GitHub.

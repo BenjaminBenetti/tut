@@ -45,6 +45,47 @@ changes, so it is not the baseline for this feature. The baseline does not have
 a pointer controller; its `pointer=1` query is ignored. Closed-roof and squad-only
 candidate frames must match their equivalent baseline bytes, and pointer-leaves
 frames must return exactly to those same controls. No image tolerance is used.
+All **28 frames were rendered again on runtime bc2f47f**, which adds resize
+handling and Map Lab composition, and every PNG remained byte-identical.
+All 16 baseline/closure comparisons passed.
+
+## Live input and Map Lab
+
+[Input measurements](interaction.json) exercise the controller through browser
+events, without changing its uniforms. A requested 60 ms sweep actually spent
+65.9 ms over the building: all 25 sampled strengths remained zero, and the
+[closed frame](pitched-yaw0-brief-sweep-closed.png) matched the open-ground control
+byte for byte. Middle-button drag closes inspection; release opens it again.
+Twenty stationary frames added no raycasts (27 before and after). Across 28
+picks in this 48×48 fixture, median CPU time was 2.1 ms, p95 4.0 ms, maximum
+6.9 ms. This is a fixture measurement, not a large-map performance claim.
+
+Map Lab uses its own scene loop, so it has a separate live-entry check:
+[closed](map-lab-closed.png), [hovered](map-lab-hover.png), and
+[pointer leaves](map-lab-pointer-left.png). The last frame is byte-identical to
+the first. [The record](map-lab.json) contains the seed, URL, camera and exact
+pointer coordinates. Reproduce at 1200×950, apply wheel delta −900 at (800,450),
+then move to the recorded pointer position. No units are present. Both probes
+reported zero page errors.
+
+## Fog and validation
+
+The seed-4242 mission was captured at turns 1 and 7 using
+`CAPTURE=1 pnpm exec playwright test e2e/fog-screenshot.spec.ts`:
+[turn 1](../../tactical-fog-of-war.png), [turn 7](../../tactical-fog-of-war-turn7.png).
+Both were inspected. Compared with the PNGs committed on main **b6928d0**, the
+scene below the 41 px top banner has **zero changed pixels** in both frames.
+The full images differ in 2,002 and 1,984 pixels respectively, confined to
+x=72…482, y=10…29: the banner now names Johannesburg following merged #948.
+The previously committed controls predated that HUD refresh. This is not a claim
+of full-frame equality. [Hashes, bounds and pixel counts](fog-comparisons.json)
+record the exact comparison.
+
+Local validation: typecheck, lint, build, **2,190 unit tests** (one skipped),
+**seven simulation tests**, **59 browser tests** (27 opt-in captures skipped),
+and the fog capture all pass. Regression tests include actual shipped pitched
+roof geometry, hidden levels, open ground, source bindings, dwell, building
+handoff, drag/leave/focus, resize and stationary-pick invalidation.
 
 ## Depth and picking
 

@@ -437,5 +437,7 @@
     }
   ],
   "captureRuntimeCommit": "0af63ba",
-  "integratedMainCommit": "b6928d0"
+  "integratedMainCommit": "b6928d0",
+  "verifiedRuntimeCommit": "bc2f47fb98aea8584ca68a990487b878f8f36d0d",
+  "allCurrentRuntimeFramesByteIdentical": true
 }

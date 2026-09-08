@@ -264,6 +264,7 @@ try {
             viewport: { width: 2400, height: 1500 },
             clip: c.clip,
             camera,
+            actualPitch: camera.zoom * Math.sqrt(2 / 3),
             rendering,
             elapsedMs: performance.now() - started,
           },

@@ -434,3 +434,101 @@ describe("v14 → v15", () => {
     expect(step()?.apply({ meta: {} })).toEqual({ meta: {} });
   });
 });
+
+// ===========================================
+// v16 → v17: the memorial's city (#950)
+// ===========================================
+
+describe("v16 → v17", () => {
+  const step = () => GAME_STATE_MIGRATIONS.find((m) => m.to === 17);
+
+  it("fills the city on entries from the last mission and leaves older ones alone", () => {
+    // The result carries both ids since #739, so these entries can be
+    // repaired exactly. Nothing in the save maps mission-3 back to a
+    // city, so that row keeps none rather than borrowing Lagos.
+    const v16 = {
+      meta: {},
+      overworld: {
+        day: 9,
+        lastMissionResult: { missionId: "mission-7", cityId: "lagos" },
+      },
+      roster: {
+        squads: [],
+        graveyard: [
+          { kind: "squad", name: "Alpha", day: 2, missionId: "mission-3" },
+          { kind: "mech", name: "Anvil", day: 9, missionId: "mission-7" },
+        ],
+      },
+    };
+    const migrated = step()?.apply(v16) as typeof v16;
+    expect(migrated.roster.graveyard).toEqual([
+      { kind: "squad", name: "Alpha", day: 2, missionId: "mission-3" },
+      {
+        kind: "mech",
+        name: "Anvil",
+        day: 9,
+        missionId: "mission-7",
+        cityId: "lagos",
+      },
+    ]);
+    // The memorial is the permanent record: unlike v14 → v15 above,
+    // nothing is dropped for want of a city.
+    expect(migrated.roster.graveyard).toHaveLength(2);
+    expect(migrated.roster.squads).toEqual([]);
+    expect(migrated.overworld).toEqual(v16.overworld);
+  });
+
+  it("leaves every entry alone when there is nothing to recover from", () => {
+    const noResult = {
+      meta: {},
+      overworld: { day: 9 },
+      roster: {
+        graveyard: [
+          { kind: "squad", name: "Alpha", day: 2, missionId: "mission-3" },
+        ],
+      },
+    };
+    expect(step()?.apply(noResult)).toEqual(noResult);
+
+    // A result that never got a city (hand-edited: #739 drops these).
+    const noCity = {
+      meta: {},
+      overworld: { day: 9, lastMissionResult: { missionId: "mission-3" } },
+      roster: {
+        graveyard: [
+          { kind: "squad", name: "Alpha", day: 2, missionId: "mission-3" },
+        ],
+      },
+    };
+    expect(step()?.apply(noCity)).toEqual(noCity);
+  });
+
+  it("keeps a city that is already there and survives a save with no graveyard", () => {
+    const already = {
+      meta: {},
+      overworld: {
+        day: 9,
+        lastMissionResult: { missionId: "mission-7", cityId: "lagos" },
+      },
+      roster: {
+        graveyard: [
+          {
+            kind: "squad",
+            name: "Alpha",
+            day: 9,
+            missionId: "mission-7",
+            cityId: "vancouver",
+          },
+        ],
+      },
+    };
+    expect(step()?.apply(already)).toEqual(already);
+
+    expect(step()?.apply({ meta: {}, roster: {} })).toEqual({
+      meta: {},
+      roster: {},
+    });
+    expect(step()?.apply({ meta: {} })).toEqual({ meta: {} });
+    expect(step()?.apply("not a save")).toBe("not a save");
+  });
+});

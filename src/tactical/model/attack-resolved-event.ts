@@ -17,6 +17,13 @@ export interface AttackResolvedPayload {
   readonly damage: number;
   /** The target's hit points after the attack. */
   readonly targetHp: number;
+  /**
+   * Tiles the attacking weapon reaches (#457). Carried so the
+   * presentation layer can tell a claw from a rifle without measuring
+   * the distance between two models, which answers a different question
+   * — see `isMeleeRange`.
+   */
+  readonly weaponRange: number;
 }
 
 /** One attack was rolled and applied. */

@@ -380,6 +380,67 @@ const ADD_RESULT_CITY: Migration = {
 };
 
 // ===========================================
+// v16 → v17
+// ===========================================
+
+/**
+ * v16 → v17 (#950): graveyard entries gain `cityId`, so the memorial can
+ * say where a squad or mech was lost instead of naming a mission id the
+ * player can no longer look up.
+ *
+ * Unlike #739 above, an entry that predates the field is **kept**. The
+ * graveyard is the permanent record; losing a name to a schema upgrade
+ * is far worse than not knowing which city it fell over. Those entries
+ * keep no city and `GraveyardView` omits the segment for them.
+ *
+ * What can be recovered honestly is recovered: `lastMissionResult`
+ * carries both `missionId` and `cityId` (added by #739), so entries from
+ * the most recent mission are filled in exactly. Nothing else in the save
+ * maps an old `missionId` to a city, so everything older is left alone
+ * rather than guessed at.
+ *
+ * ```
+ *   lastMissionResult { missionId: "mission-7", cityId: "lagos" }
+ *        │
+ *        ├─ grave { missionId: "mission-7" } ──► + cityId: "lagos"
+ *        └─ grave { missionId: "mission-3" } ──► unchanged, no city
+ * ```
+ */
+const ADD_GRAVE_CITY: Migration = {
+  from: 16,
+  to: 17,
+  apply: (state) => {
+    if (!isRecord(state)) {
+      return state;
+    }
+    const roster = state.roster;
+    if (!isRecord(roster) || !Array.isArray(roster.graveyard)) {
+      return state;
+    }
+    const overworld = isRecord(state.overworld) ? state.overworld : undefined;
+    const result = isRecord(overworld?.lastMissionResult)
+      ? overworld.lastMissionResult
+      : undefined;
+    const missionId = result?.missionId;
+    const cityId = result?.cityId;
+    if (typeof missionId !== "string" || typeof cityId !== "string") {
+      return state;
+    }
+    const graveyard = roster.graveyard.map((entry: unknown) => {
+      if (
+        !isRecord(entry) ||
+        entry.missionId !== missionId ||
+        typeof entry.cityId === "string"
+      ) {
+        return entry;
+      }
+      return { ...entry, cityId };
+    });
+    return { ...state, roster: { ...roster, graveyard } };
+  },
+};
+
+// ===========================================
 // Chain
 // ===========================================
 
@@ -465,4 +526,5 @@ export const GAME_STATE_MIGRATIONS: readonly Migration[] = [
   ADD_VISION_LAST_SEEN,
   ADD_RESULT_CITY,
   HALF_HEIGHT_LAYERS,
+  ADD_GRAVE_CITY,
 ];

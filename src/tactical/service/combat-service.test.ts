@@ -371,6 +371,29 @@ describe("resolveAttack", () => {
     expect(hits).toBeLessThan(180);
   });
 
+  // The presentation layer picks the shot or the claw from this field, so
+  // it has to be the firing weapon's reach and not the distance covered
+  // (#457). Both weapons fire over one tile here: the geometry is
+  // identical and only the profile differs.
+  it("names the firing weapon's reach on the event, not the distance covered", () => {
+    for (const [templateId, range] of [
+      ["rifle", 8],
+      ["swarmer", 1],
+    ] as const) {
+      const m = mission([
+        unit("s1", "tdf", templateId, 1, 1),
+        unit("b1", "bugs", "swarmer", 2, 1, { hp: 6, maxHp: 6 }),
+      ]);
+      const result = resolveAttack(m, attack("s1", "b1"), ctx(3), T);
+      expect(result.ok).toBe(true);
+      if (!result.ok) continue;
+      const resolved = result.value.events[0];
+      expect(resolved?.type).toBe(ATTACK_RESOLVED);
+      if (resolved?.type !== ATTACK_RESOLVED) continue;
+      expect(resolved.payload.weaponRange).toBe(range);
+    }
+  });
+
   it("applies damage and kills at zero with the killer named, leaving a squad its second action", () => {
     const m = base();
     const hitSeed = [...Array(50).keys()]

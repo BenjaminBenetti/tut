@@ -72,6 +72,7 @@ const ROSTER: RosterState = {
 function report(overrides: Partial<CasualtyReport>): CasualtyReport {
   return {
     missionId: "mission-7",
+    cityId: "lagos",
     squadCasualties: [],
     squadsWiped: [],
     mechsDestroyed: [],
@@ -175,10 +176,25 @@ describe("applyCasualties", () => {
     );
     expect(roster.squads.map((s) => s.id)).toEqual(["s1", "s3"]);
     expect(roster.mechs.map((m) => m.id)).toEqual(["m1", "m3"]);
+    // The city rides along with the mission id (#950), so the memorial
+    // can say where the loss happened once the mission is gone from the
+    // offers.
     expect(roster.graveyard).toEqual([
       ...ROSTER.graveyard,
-      { kind: "squad", name: "S2", day: DAY, missionId: "mission-7" },
-      { kind: "mech", name: "M2", day: DAY, missionId: "mission-7" },
+      {
+        kind: "squad",
+        name: "S2",
+        day: DAY,
+        missionId: "mission-7",
+        cityId: "lagos",
+      },
+      {
+        kind: "mech",
+        name: "M2",
+        day: DAY,
+        missionId: "mission-7",
+        cityId: "lagos",
+      },
     ]);
     expect(events).toEqual([
       {

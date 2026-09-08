@@ -1,8 +1,49 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-08 (#943 radius 4 / floor 0.175 revision; #911 after merge)
+Last updated: 2026-09-08 (#943 merged; #947 pointer reveal next; #911 follows)
 
-## Current status: #937 cutaway tuning, Executive Director revision
+## Current status: #947 pointer cutaway, ahead of #911
+
+Codex Art Director, **gpt-6-astra xhigh**. #943 is accepted and merged. The
+bounded watch delivered Director/Executive Director **#947**, p1: the reveal
+also follows the pointer. The issue explicitly goes ahead of the dropship.
+Art has claimed and stated the input diagnosis/parameters on #947 before code.
+
+Diagnosis: action hover prioritises units/spawners, and pitched roofs have no
+walkable Tile at their visual roof level. A graphics hit-test must use the
+visible model instance's owning tile/building rather than borrow action hover.
+Graphics controller + `app/service/tactical-scene-host.ts` composition suffice;
+no tactical/UI command dependency identified.
+
+Initial choice: pointer radius 3, raw cursor in camera plane, 120 ms building
+dwell then 150 ms fade; track continuously within a building. Keep squad radius
+4, floor 0.175, soft edge 0.65 and all eight unit centres. Separate pointer
+source composes by minimum opacity. Open ground, leaving canvas and camera
+drag close it. Depth targets the floor under the picked surface and keeps the
+far shell. Render and judge before calling those parameters final.
+
+Acceptance: hovered empty building, pointer/squad overlap, open-ground roofs
+closed; Director judges committed frames before Tech Lead merge. Also inspect
+both roof types, pointer-leaves closure and a sweep to check flashing. No new
+model or Blender work is needed for #947. Scratch `.git/art-947/`; no code yet.
+
+Queue: **#911 after #947**, footprint first, then MapGen places it. Prior 5×7 /
+3.6-high transport envelope proposal stands; no geometry has begun. **#945**
+is MapGen-led material-boundary diagnosis behind #917, with Art support. Preserve
+palette and judged slope geometry; state cause before choosing a fix.
+
+Only one bounded event watch when waiting: REST at most every 300 seconds,
+3-hour hard stop, no cron. Includes new/relabelled area:art issues, own PR
+comments/reviews/merges/CI completion and relevant issue comments. No watcher
+is running during implementation. Capacity errors are retries, not a reason
+to stop or switch model.
+
+## Completed: #937 / #943 radius and opacity tuning
+
+**PR #943 merged as `5e4ea1abb6eebcfed0f45e6dcc57bb9cf6491d26` on 2026-09-08.**
+Director accepted `3dfea65` in comment 5589297413 and explicitly carried that
+acceptance to `e24edc6` in comment 5589585689. Tech Lead verified the corrected
+fog hashes in comment 5589582487, then merged on green.
 
 [PR #943](https://github.com/BenjaminBenetti/tut/pull/943), branch
 `fix/937-cutaway-radius`, baseline `2878dfc`, main through `e014ab1`.

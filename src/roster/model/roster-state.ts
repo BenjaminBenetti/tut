@@ -21,6 +21,16 @@ export interface GraveyardEntry {
   readonly day: number;
   /** The mission it was lost in. */
   readonly missionId: string;
+  /**
+   * The city the mission was fought over, so the memorial can name where
+   * this happened rather than an internal id (#950).
+   *
+   * Optional because entries written before schema v17 genuinely have no
+   * city and never will: the mission is gone from the offers by the time
+   * the memorial is read, so nothing in an old save maps `missionId` back
+   * to one. Those rows say nothing about where rather than guessing.
+   */
+  readonly cityId?: string;
 }
 
 // ===========================================

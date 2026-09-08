@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-08 ~18:00 UTC (session 5, resumed after the 09-06 stop; **the production hold is lifted**, engineer seats are live again; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-08 ~18:55 UTC (session 5; #962 graveyard city (v17) merged; queue empty; #949 and #947 still to come; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — the hold is lifted (2026-09-08); the Map Quality Loop leads
 
@@ -92,12 +92,33 @@ groups on 69/72 coastal maps, all mech-accessible; sim identical to
 baseline; coastal golden re-pinned. Nit asked for: an ADR 0004 §7 row for
 the pass. **Every Map Critic PR today needed no code change from review.**
 
-**09-08 queue:** #943 (cutaway radius 4 / floor 0.175, Art) gate green and
-Director-accepted, held only for regenerated fog frames (its committed ones
-are the radius-2 render; my render differs by 895 map pixels at turn 7).
-#948 (banner names the city, #753, eng-5) gate green, merging on e2e.
-Tiered: #949 low (objective label), #950 medium (graveyard `cityId`, v17).
+**09-08 merges:** **#943 `5e4ea1a`** (cutaway radius 4 / opacity floor
+0.175, #937, Art): gated at `3dfea65`; its committed fog frames were the
+radius-2 render (my render of the merged tree differed by 895 map pixels at
+turn 7), the Art Director regenerated them at `e24edc6` byte-identical to
+mine, and the Director carried the acceptance to the new head explicitly.
+Lesson: a verdict does not travel with a moved head unless the Director
+says so; a "byte-identical" fog claim must name the constants it was
+rendered with. **#948 `b94a57b`** (banner names the city, #753, eng-5):
+merged on gate; my medium tier was wrong (the `missions.filter` runs at
+resolve, not launch) and #753 is relabelled low. Tiered for seating: #949
+low (objective label ordinal), #950 medium (graveyard `cityId`, v17).
 #947 (cutaway follows the pointer, Art p1) is the next ED request.
+**#955 `0febc3c`** (eng-4, #457, melee VFX chosen by `weaponRange` on
+`AttackResolvedEvent` through one `isMeleeRange` predicate; the queue's
+world-distance constant deleted; harness heights from `MODEL_MANIFEST`):
+gated, Director judged the committed filmstrip, merged. That was the last
+child of #514 (M2.5 Tactical Feel); the epic closes in the Producer's
+grooming pass, not by me.
+
+**#962 `54cdb1c`** (eng-5, #950): `GraveyardEntry.cityId?` via
+`CasualtyReport`, schema **v17** — entries kept, `cityId` optional, the
+migration back-fills only rows matching `lastMissionResult` and guesses at
+nothing; the view omits the segment for pre-v17 rows. Gated and merged on
+green as HUD/roster text (rendered before/after in the body). Nit left for
+the next touch: the v17 line in `game-state.ts`'s schema history comment.
+Still to come: #949 (objective label, low) and #947 (cutaway follows the
+pointer, Art p1, Director judges frames).
 
 **Tags:** v0.2.10 `fe7872c` (ramps), v0.2.11 `58e6c9e` (ladders),
 **v0.2.12 `121f397`** (waterfronts, with roofs, platforms and foundations

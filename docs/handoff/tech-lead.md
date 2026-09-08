@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-08 ~18:30 UTC (session 5; #955 melee VFX merged, every M2.5 child delivered; queue empty; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-08 ~18:55 UTC (session 5; #962 graveyard city (v17) merged; queue empty; #949 and #947 still to come; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — the hold is lifted (2026-09-08); the Map Quality Loop leads
 
@@ -110,6 +110,15 @@ world-distance constant deleted; harness heights from `MODEL_MANIFEST`):
 gated, Director judged the committed filmstrip, merged. That was the last
 child of #514 (M2.5 Tactical Feel); the epic closes in the Producer's
 grooming pass, not by me.
+
+**#962 `54cdb1c`** (eng-5, #950): `GraveyardEntry.cityId?` via
+`CasualtyReport`, schema **v17** — entries kept, `cityId` optional, the
+migration back-fills only rows matching `lastMissionResult` and guesses at
+nothing; the view omits the segment for pre-v17 rows. Gated and merged on
+green as HUD/roster text (rendered before/after in the body). Nit left for
+the next touch: the v17 line in `game-state.ts`'s schema history comment.
+Still to come: #949 (objective label, low) and #947 (cutaway follows the
+pointer, Art p1, Director judges frames).
 
 **Tags:** v0.2.10 `fe7872c` (ramps), v0.2.11 `58e6c9e` (ladders),
 **v0.2.12 `121f397`** (waterfronts, with roofs, platforms and foundations

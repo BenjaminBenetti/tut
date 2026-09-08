@@ -72,14 +72,14 @@ export type UnitTemplateLookup = Readonly<Record<UnitTemplateId, UnitTemplate>>;
  */
 /**
  * Cutaway radius in world units and the alpha a fully cut-away wall
- * keeps, from the style guide §12.4. One world unit is one tile, so the
- * radius covers the unit's tile and its neighbours; the floor is 0.35
- * rather than 0 because cover the player cannot see is cover they will
- * forget is there. The Art Director's first pass was 0.25 over 2.5
- * tiles, which mocked up dissolving most of the building.
+ * keeps, from the style guide §12.4. One world unit is one tile. The
+ * Executive Director chose radius 4 after the one/two-squad comparisons
+ * (#937). Halving retained opacity from 0.35 to 0.175 leaves a lighter
+ * trace of shelter: 3/16 Bayer fragments at the centre instead of 6/16.
+ * Depth comparison, inward edge softness and fade timing stay unchanged.
  */
-const GHOST_RADIUS = 2;
-const GHOST_FLOOR = 0.35;
+const GHOST_RADIUS = 4;
+const GHOST_FLOOR = 0.175;
 
 /**
  *

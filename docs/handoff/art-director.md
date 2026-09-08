@@ -1,8 +1,77 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-06 (#916 accepted and merged; #911 footprint next)
+Last updated: 2026-09-08 (#943 radius 4 / floor 0.175 revision; #911 after merge)
 
-## Current status: #916 complete; #911 footprint next
+## Current status: #937 cutaway tuning, Executive Director revision
+
+[PR #943](https://github.com/BenjaminBenetti/tut/pull/943), branch
+`fix/937-cutaway-radius`, baseline `2878dfc`, main through `e014ab1`.
+The first radius proof is at `15c25c7` (30 diagnostic frames plus fog controls).
+The Executive Director chose **radius 4**, explicitly including the two-squad
+frame that led Art to recommend 3. That ruling supersedes the recommendation.
+He also requested twice the transparency.
+
+[Interpretation posted before implementation](https://github.com/BenjaminBenetti/tut/pull/943#issuecomment-5563083495):
+halve retained opacity **0.35 → 0.175**. The Bayer centre retains 3/16 fragments
+instead of 6/16. Literal doubled transparency would exceed 100% and clamp to
+floor 0; that alternative is included alongside 0.35 and 0.175, all at
+radius 4. Runtime now uses **4 / 0.175**. Soft edge 0.65 inward, fade 0.15 s,
+fragment depth comparison, visible-unit source, eight-centre capacity and
+lighting remain fixed. Overlap still takes minimum opacity. Director accepted
+the 0.175 interpretation in the CLI on 2026-09-08; final frame judgment is
+still required. Bayer stippling is visible at native zoom, especially pale
+facades, but the lighter veil improves room/furniture/squad readability; Art
+would ship this setting with the existing discard technique.
+
+[Final opacity comparison and recipe](../design/diagnostics/937/transparency/README.md)
+are complete: 28 new PNGs, all opened. The helper captures both roofs, one/two squads, two-squad
+opposite cameras and closure after all squads leave. It asserts six original
+0.35 controls unchanged, unoverridden runtime equals every chosen candidate,
+and all six closures equal empty-building controls exactly. Director judges
+the final frames before Tech Lead merge; Critic re-check follows.
+
+The original four radius-2/controller-off controls match accepted #916 frames
+byte for byte. Closure needs equal occupancy: the second flat-roof squad
+contributes one pixel even with ghosting off, so comparing its removal to a
+frame still holding it is invalid. No tolerance was added.
+
+**Director accepted `3dfea65`**, including the Bayer veil, two-squad view and
+closed control, in [comment 5589297413](https://github.com/BenjaminBenetti/tut/pull/943#issuecomment-5589297413).
+Tech Lead independently passed the full gate on `3dfea65 + main@360778a`, but
+required the fog evidence to represent that integrated tree. Main's #936/#940
+had landed after the original indoor proof baseline `e014ab1`.
+
+Main@360778a is now merged normally as `3d9df1b`. Both fog frames were regenerated
+on that tree at 4 / 0.175, opened, and match Tech Lead's independent hashes:
+`480b451…1448a` / `97d4286…ef4ee`. The corrected metadata compares against main's
+tracked PNGs: 352,025 / 376,832 changed pixels. Those tracked files are stale
+since earlier generation changes, so this is not an isolated opacity delta.
+Previous PR captures change by 4,368 / 5,243 pixels; the old zero-difference
+claim does not describe the merge candidate and is superseded. The 28 accepted
+indoor frames remain pinned to `3dfea65`; no constants or shader code changed.
+Scratch `.git/art-937/`; the old fresh-baseline worktree is historical only.
+
+Validation after the revision: typecheck, lint/build, 2,167 unit tests
+(one skipped) and 59 browser tests (27 opt-in skips, zero flaky) pass. Seven
+simulation tests passed in the original radius pass; no simulation code changed.
+
+Use `tools/art/preview/capture-vite.config.mjs` (watching/HMR disabled) and PTY
+terminals for long captures. Earlier shared pnpm-store updates caused reloads
+and one screenshot timeout; subsequent stable-config captures passed. This was
+not a provider capacity error. The two-day pause interrupted the opacity
+capture after 16 candidates; `--resume` checked their hashes/closure controls
+and finished the last two with exit 0 on 2026-09-08. The 4199 capture server
+is stopped. Re-arm ONE bounded watch for Director/Tech Lead review.
+The watch includes new/relabelled `area:art` issues, own PR reviews/comments/
+merges and relevant issue comments; no watcher runs during implementation.
+
+#911 starts **after #943 lands**, per the Director's 2026-09-08 instruction.
+Art owns the footprint first, then MapGen places it. The earlier 5×7 envelope
+(3.6 u maximum height, +Z nose) remains the proposed contract; no geometry
+has begun. Confirm it on #911 before modelling, and coordinate MapGen's
+placement/clearance consumer without guessing a location over the deploy tiles.
+
+## Completed: #916 roof shelter and cutaway repair
 
 **PR #925 merged as `0d4a168be4b1639dbe634a51e6fc4b6442c93bc4`.**
 [Director acceptance](https://github.com/BenjaminBenetti/tut/pull/925#issuecomment-5562347058)
@@ -11,8 +80,12 @@ control. No revision requested. The revealed interior is dark; the Director
 wants the Critic to assess that during play, not an immediate lighting retune.
 [Tech Lead's independent green gate](https://github.com/BenjaminBenetti/tut/pull/925#issuecomment-5562331141)
 confirmed deterministic fog captures, zero map-region differences, the missing
-uniform binding and the full validation below. Map Critic's merged-picture
-re-check is pending.
+uniform binding and the full validation below. [Map Critic's merged-picture re-check](https://github.com/BenjaminBenetti/tut/issues/916#issuecomment-5562936788)
+confirms complete shelter and a working local reveal at `2878dfc`. The window
+was tight; this is the baseline for the radius tuning, not its final verdict.
+The Critic also confirmed the foundations improvement on #906 and the paved
+platform removal on #910. Under #936 he withdrew the earlier exception for
+raised planted beds: planting does not excuse an implausible plinth.
 
 #910 also merged through #926 as `fd032fdf01d18abcbc65390e47ecbf06d5a91340`.
 The standing #911 dropship assignment is now unblocked for footprint and

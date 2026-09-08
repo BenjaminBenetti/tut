@@ -3,18 +3,20 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-08 18:10 UTC)
+## Status Digest (2026-09-08 18:24 UTC)
 
-**Production resumed; Map Quality Loop is the standing focus.** Director correction [5589320377](https://github.com/BenjaminBenetti/tut/issues/753#issuecomment-5589320377) lifts the studio hold and explicitly authorizes engineer work alongside the specialist loop. Current-main digest `5e4ea1a`: 23 open issues. GitHub Assignees are intentionally empty: the sole account is the Executive Director's. Engineer ownership uses `seat:` labels; specialists retain explicit role/area and project Owner.
+**Production resumed; Map Quality Loop is the standing focus.** Director correction [5589320377](https://github.com/BenjaminBenetti/tut/issues/753#issuecomment-5589320377) lifts the studio hold and explicitly authorizes engineer work alongside the specialist loop. Current-main digest `5040bd0`: 23 open issues. GitHub Assignees are intentionally empty: the sole account is the Executive Director's. Engineer ownership uses `seat:` labels; specialists retain explicit role/area and project Owner.
 
 | Active / next work | Owner | State / next gate |
 |---|---|---|
 | #950 p2 graveyard names | **eng-5**, Opus 5/max | In Progress, medium; city identity and honest legacy-save migration |
-| #457 p1 weapon-based VFX | **eng-4**, Opus 5/max | In Progress; last child of #514 |
+| #457 p1 / PR #955 | **eng-4**, Opus 5/max | In Review; TL gate green (5589838522), Director filmstrip verdict pending |
 | #947 p1 cursor cutaway | Art Director | Ready now #943 merged; next p1 ahead of #911 |
 | #917 p2 rural fences | MapGen | In Progress, cause-first claim 5589244991; restart ordering precedes #911 |
 | #945 p2 material boundaries | MapGen, Art support | Blocked behind #917 |
 | #911 p2 dropship | Art Director; MapGen placement | Footprint/clearance agreement before geometry; Art follows #947 |
+
+**Epic completion gate:** #955 is the last child delivery for #514. Tech Lead verified the no-migration reasoning, real adjacent-rifle/tall-melee controls and green gate. Await Director filmstrip judgment; close #514 in the same grooming pass as #457 after merge.
 
 **Latest completions:** #937/#943 (`5e4ea1a`) is Done: radius 4 / opacity 0.175 accepted, fog captures independently matched, CI green. #947 is now Ready. #753/#948 is merged/Done; no schema migration needed after live/reload proof. eng-5 now takes #950 (medium, TL 5589522272). #949 is low (5589521863), Ready alongside medium #735 for the next free Opus seat.
 
@@ -33,7 +35,7 @@
 
 The initial audit compared every open issue and all 453 project cards against main and release tags. It found 21 open issues, one open implementation PR (#943), and only merged handoff #944 incorrectly outside Done. Critic ticket #945 and Executive Director feature #947 arrived during the pass and were added; engineer follow-ups #949/#950 bring the current total to 25. The original accepted audit [#902](https://github.com/BenjaminBenetti/tut/issues/902#issuecomment-5561213567) remains resolved; no additional delivered issue closure was justified.
 
-**Correction, not a new hold.** Producer initially carried the old pause forward and populated GitHub Assignees after the Director's assignment request. Director comment 5589320377 clarified that the hold had already lifted at restart and the sole GitHub account belongs to the Executive Director. Producer withdrew the pause request on #753, removed all 22 issue assignments plus #943's PR assignment, closed inaccurate handoff #946 without merging it, and used engineer seat labels. #753's existing claimant is eng-5 by their own #739 follow-up and its recorded seat assignment; #457 goes to free eng-4. Both are complexity:medium, with one open issue per seat. No specialist takes an engineer seat.
+**Correction, not a new hold.** Producer initially carried the old pause forward and populated GitHub Assignees after the Director's assignment request. Director comment 5589320377 clarified that the hold had already lifted at restart and the sole GitHub account belongs to the Executive Director. Producer withdrew the pause request on #753, removed all 22 issue assignments plus #943's PR assignment, closed inaccurate handoff #946 without merging it, and used engineer seat labels. #753's existing claimant is eng-5 by their own #739 follow-up and its recorded seat assignment; #457 goes to free eng-4. Both were tiered medium at assignment; Tech Lead later corrected #753 to low after the evidence ruled out a migration. One open issue per occupied seat. No specialist takes an engineer seat.
 
 | Issue(s), including audit completions | Accountable agent | Remaining work / real gate |
 |---|---|---|
@@ -42,7 +44,7 @@ The initial audit compared every open issue and all 453 project cards against ma
 | #917 p2 | MapGen | Active rural boundary repair under Director restart ordering |
 | #945 p2 | MapGen, Art support | Natural material boundaries; cause assessment after #917 |
 | #911 p2 | Art Director, MapGen placement | Model after #947; agree proposed 5×7 / max-height 3.6 envelope, real support, rotation and 16 clear boarding/start tiles before modeling |
-| #457 p1 | eng-4 | Weapon-range event and melee/ranged VFX distinction; playback already shipped |
+| #457 p1 | eng-4 | #955 In Review; weapon-based effect with adjacent-rifle and tall-melee controls; playback unchanged |
 | #753 / #948 | eng-5, completed | Merged/Done; live and reload city lookup proved, correcting the migration premise |
 | #949 p2 | Tech Lead, next free Opus seat | Ready / low; objective labels and meaningful overflow fixture |
 | #950 p2 | eng-5 | In Progress / medium; persisted graveyard city and honest schema-v17 migration |

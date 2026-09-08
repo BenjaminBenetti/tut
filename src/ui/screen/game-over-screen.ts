@@ -1,4 +1,5 @@
 import type { GameOutcome } from "../../overworld/model/game-outcome";
+import { MAX_THREAT } from "../../overworld/model/threat";
 import type { GameState } from "../../save/model/game-state";
 import type { GameSession } from "../model/game-session";
 import type { Screen, ScreenId } from "../model/screen";
@@ -29,9 +30,8 @@ interface OutcomeCopy {
 /** Headline and explanation for each way a campaign ends (GDD §5.3). */
 const OUTCOME_COPY: Readonly<Record<GameOutcome["kind"], OutcomeCopy>> = {
   defeat: {
-    title: "Earth overrun",
-    tagline:
-      "The global threat reached its maximum. Terra Defence Force could not hold the line.",
+    title: "Threat limit reached",
+    tagline: `Global threat reached ${formatWhole(MAX_THREAT)}, ending the campaign.`,
     tone: "danger",
   },
   "victory-stub": {
@@ -54,8 +54,8 @@ const OUTCOME_COPY: Readonly<Record<GameOutcome["kind"], OutcomeCopy>> = {
  *
  * ```
  *   ┌ CAMPAIGN OVER ──────────────────────┐
- *   │ EARTH OVERRUN                        │
- *   │ The global threat reached …          │
+ *   │ THREAT LIMIT REACHED                 │
+ *   │ Global threat reached 100 …          │
  *   │ Day reached 41 · Cities lost 3/12 …  │
  *   │ [Return to main menu]                │
  *   └──────────────────────────────────────┘

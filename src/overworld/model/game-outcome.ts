@@ -3,9 +3,9 @@
 // ===========================================
 
 /**
- * How a campaign can end (GDD §5.3). `defeat` is Earth overrun: global
- * threat reached its maximum. `victory-stub` stands in for the M4 final
- * mission: every city is clean and no hive remains, so the campaign
+ * How a campaign can end (GDD §5.3). `defeat` means global threat reached
+ * its maximum, independently of cities lost. `victory-stub` stands in for
+ * the M4 final mission: every city is clean and no hive remains, so the campaign
  * shows a victory screen instead of launching the space platform assault.
  */
 export type GameOutcomeKind = "defeat" | "victory-stub";

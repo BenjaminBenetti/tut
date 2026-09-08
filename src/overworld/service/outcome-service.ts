@@ -12,7 +12,7 @@ import { MAX_THREAT } from "../model/threat";
 // Conditions
 // ===========================================
 
-/** True when global threat has reached its maximum: Earth overrun (GDD §5.3). */
+/** True when global threat has reached the defeat threshold (GDD §5.3). */
 export function isDefeat(overworld: OverworldState): boolean {
   return overworld.threat >= MAX_THREAT;
 }
@@ -36,8 +36,8 @@ export function isVictory(overworld: OverworldState): boolean {
  * The outcome the campaign is in, if any. Sticky: an outcome already
  * stored on the state is returned as is, so nothing downstream can
  * flip a defeat into a victory or restamp the day. Otherwise defeat is
- * checked before victory, since a maxed threat means Earth is overrun
- * whatever the map says.
+ * checked before victory: maximum threat ends the campaign independently
+ * of the number of cities lost.
  *
  * ```
  *   outcome set? ──yes──► that outcome

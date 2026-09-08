@@ -106,6 +106,11 @@ export const MODEL_IDS = [
   "tile.slope.three-sided",
   "tile.ramp.connector",
   "tile.foundation.concrete",
+  "building.shop-awning",
+  "building.residential-entry",
+  "building.residential-window",
+  "building.workplace-entry",
+  "building.mailbox-bank",
 ] as const;
 
 /** A registered model id. */

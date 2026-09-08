@@ -1,0 +1,112 @@
+[
+  {
+    "path": "public/assets/models/buildings/building-shop-awning.glb",
+    "bytes": 24932,
+    "meshes": 3,
+    "triangles": 324,
+    "watertight": {
+      "frontage": true,
+      "frontage_1": true,
+      "frontage_2": true
+    },
+    "bounds": [
+      [-1.5, 0.0, -1.862645149230957e-8],
+      [1.5000001192092896, 0.2800000011920929, 0.6525000333786011]
+    ],
+    "extents": [3.0000001192092896, 0.2800000011920929, 0.6525000520050526],
+    "height": 0.2800000011920929,
+    "ok": true,
+    "problems": [],
+    "sha256": "b99536e61360af0801cada2564644b755b1cf146cf6142145431b2c9e0e53b6b",
+    "mountHeight": 1.21,
+    "trianglesBelowDoorHeadWithinClearWidth": 0
+  },
+  {
+    "path": "public/assets/models/buildings/building-residential-entry.glb",
+    "bytes": 8744,
+    "meshes": 4,
+    "triangles": 72,
+    "watertight": {
+      "frontage": true,
+      "frontage_1": true,
+      "frontage_2": true,
+      "frontage_3": true
+    },
+    "bounds": [
+      [-0.675000011920929, 0.0, 0.0],
+      [0.675000011920929, 0.2574999928474426, 0.42250001430511475]
+    ],
+    "extents": [1.350000023841858, 0.2574999928474426, 0.42250001430511475],
+    "height": 0.2574999928474426,
+    "ok": true,
+    "problems": [],
+    "sha256": "42e1a5781bc8d4de8ee52f8085aa2d2425577890675823e37f7a9e119358753d",
+    "mountHeight": 1.1,
+    "trianglesBelowDoorHeadWithinClearWidth": 0
+  },
+  {
+    "path": "public/assets/models/buildings/building-residential-window.glb",
+    "bytes": 15768,
+    "meshes": 4,
+    "triangles": 168,
+    "watertight": {
+      "frontage": true,
+      "frontage_1": true,
+      "frontage_2": true,
+      "frontage_3": true
+    },
+    "bounds": [
+      [-0.3700000047683716, 0.0, 0.01000000536441803],
+      [0.3700000047683716, 0.4699999988079071, 0.28999999165534973]
+    ],
+    "extents": [0.7400000095367432, 0.4699999988079071, 0.2799999862909317],
+    "height": 0.4699999988079071,
+    "ok": true,
+    "problems": [],
+    "sha256": "7535c628382ba8389b8f1479ef23cab478e22e29c1aba23735b2414e70bf7dd4",
+    "mountHeight": 0.4
+  },
+  {
+    "path": "public/assets/models/buildings/building-workplace-entry.glb",
+    "bytes": 7228,
+    "meshes": 3,
+    "triangles": 60,
+    "watertight": {
+      "frontage": true,
+      "frontage_1": true,
+      "frontage_2": true
+    },
+    "bounds": [
+      [-1.2000000476837158, 0.0, 0.0],
+      [1.2000000476837158, 0.25, 0.5575000047683716]
+    ],
+    "extents": [2.4000000953674316, 0.25, 0.5575000047683716],
+    "height": 0.25,
+    "ok": true,
+    "problems": [],
+    "sha256": "01a52cdecd58daa093630990820196aefe107e5065ad418bb5f18df962501536",
+    "mountHeight": 1.12,
+    "trianglesBelowDoorHeadWithinClearWidth": 0
+  },
+  {
+    "path": "public/assets/models/buildings/building-mailbox-bank.glb",
+    "bytes": 13620,
+    "meshes": 3,
+    "triangles": 156,
+    "watertight": {
+      "frontage": true,
+      "frontage_1": true,
+      "frontage_2": true
+    },
+    "bounds": [
+      [-0.3100000023841858, 0.0, 0.0],
+      [0.3100000023841858, 0.46000000834465027, 0.11100000143051147]
+    ],
+    "extents": [0.6200000047683716, 0.46000000834465027, 0.11100000143051147],
+    "height": 0.46000000834465027,
+    "ok": true,
+    "problems": [],
+    "sha256": "2884ab825ea52b8256c36c45ec8632566df548028f645a4cdfb4cbf50aa6db13",
+    "mountHeight": 0.42
+  }
+]

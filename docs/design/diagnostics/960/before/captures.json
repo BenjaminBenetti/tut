@@ -1,0 +1,246 @@
+{
+  "baseCommit": "29639b3e2289b6f42f50f9497c688a1c1e17e0f4",
+  "repeatedBrowsers": 2,
+  "records": [
+    {
+      "id": "I01-city-frontages",
+      "seed": "mc-resume-01",
+      "biome": "temperate",
+      "settlement": "city",
+      "size": "medium",
+      "focus": {
+        "x": 43,
+        "y": 2,
+        "z": 39
+      },
+      "rotation": 0,
+      "camera": {
+        "yawIndex": 0,
+        "zoom": 55.11351921262162,
+        "target": {
+          "x": 43.5,
+          "y": 1.65,
+          "z": 39.5
+        },
+        "bounds": {
+          "x": 0,
+          "z": 0,
+          "w": 72,
+          "d": 72
+        },
+        "zoomRange": {
+          "min": 19.83827358328925,
+          "max": 192
+        }
+      },
+      "actualPitch": 45.00000000000009,
+      "pixel": {
+        "x": 1389.999999999999,
+        "y": 750.0000000000003
+      },
+      "clip": {
+        "x": 740,
+        "y": 225,
+        "width": 1300,
+        "height": 1050
+      },
+      "viewport": {
+        "width": 2400,
+        "height": 1500
+      },
+      "sha256": "f58415b3d8d1bcffb5f96937dac1e0fc0e58451fd9ca52f58849ce027536952d"
+    },
+    {
+      "id": "I02-city-frontages-rotated",
+      "seed": "mc-resume-01",
+      "biome": "temperate",
+      "settlement": "city",
+      "size": "medium",
+      "focus": {
+        "x": 43,
+        "y": 2,
+        "z": 39
+      },
+      "rotation": 1,
+      "camera": {
+        "yawIndex": 1,
+        "zoom": 55.11351921262119,
+        "target": {
+          "x": 43.5,
+          "y": 1.65,
+          "z": 39.5
+        },
+        "bounds": {
+          "x": 0,
+          "z": 0,
+          "w": 72,
+          "d": 72
+        },
+        "zoomRange": {
+          "min": 19.83827358328925,
+          "max": 192
+        }
+      },
+      "actualPitch": 44.99999999999995,
+      "pixel": {
+        "x": 1389.9999999999995,
+        "y": 750.0000000000007
+      },
+      "clip": {
+        "x": 740,
+        "y": 225,
+        "width": 1300,
+        "height": 1050
+      },
+      "viewport": {
+        "width": 2400,
+        "height": 1500
+      },
+      "sha256": "18771a2e4274e3f14cf164e7b4c15ba0bcded6abe3bea38f699e1dfc5cf25b84"
+    },
+    {
+      "id": "I03-second-seed",
+      "seed": "mc-opening-02",
+      "biome": "temperate",
+      "settlement": "city",
+      "size": "medium",
+      "focus": {
+        "x": 23,
+        "y": 1,
+        "z": 34
+      },
+      "rotation": 0,
+      "camera": {
+        "yawIndex": 0,
+        "zoom": 55.11351921262153,
+        "target": {
+          "x": 23.5,
+          "y": 0.9,
+          "z": 34.5
+        },
+        "bounds": {
+          "x": 0,
+          "z": 0,
+          "w": 72,
+          "d": 72
+        },
+        "zoomRange": {
+          "min": 19.83827358328925,
+          "max": 192
+        }
+      },
+      "actualPitch": 45.00000000000009,
+      "pixel": {
+        "x": 1389.999999999999,
+        "y": 750.0000000000001
+      },
+      "clip": {
+        "x": 740,
+        "y": 225,
+        "width": 1300,
+        "height": 1050
+      },
+      "viewport": {
+        "width": 2400,
+        "height": 1500
+      },
+      "sha256": "104630a6ae3e8f8906682e530f6fdd7556139cbd12b3bb87183a7710cb047926"
+    },
+    {
+      "id": "I04-second-seed-rotated",
+      "seed": "mc-opening-02",
+      "biome": "temperate",
+      "settlement": "city",
+      "size": "medium",
+      "focus": {
+        "x": 23,
+        "y": 1,
+        "z": 34
+      },
+      "rotation": 1,
+      "camera": {
+        "yawIndex": 1,
+        "zoom": 55.11351921262129,
+        "target": {
+          "x": 23.5,
+          "y": 0.9,
+          "z": 34.5
+        },
+        "bounds": {
+          "x": 0,
+          "z": 0,
+          "w": 72,
+          "d": 72
+        },
+        "zoomRange": {
+          "min": 19.83827358328925,
+          "max": 192
+        }
+      },
+      "actualPitch": 44.99999999999984,
+      "pixel": {
+        "x": 1389.9999999999995,
+        "y": 750.0000000000005
+      },
+      "clip": {
+        "x": 740,
+        "y": 225,
+        "width": 1300,
+        "height": 1050
+      },
+      "viewport": {
+        "width": 2400,
+        "height": 1500
+      },
+      "sha256": "126191366a1997b07928c196f3d8fce8b28bd9333f95030cf31d4feb6a2d5729"
+    },
+    {
+      "id": "C01-rural-roof-control",
+      "seed": "mc-opening-01",
+      "biome": "temperate",
+      "settlement": "rural",
+      "size": "small",
+      "focus": {
+        "x": 23,
+        "y": 4,
+        "z": 13
+      },
+      "rotation": 0,
+      "camera": {
+        "yawIndex": 0,
+        "zoom": 55.11351921262119,
+        "target": {
+          "x": 23.5,
+          "y": 3.15,
+          "z": 13.5
+        },
+        "bounds": {
+          "x": 0,
+          "z": 0,
+          "w": 48,
+          "d": 48
+        },
+        "zoomRange": {
+          "min": 29.757410374933876,
+          "max": 192
+        }
+      },
+      "actualPitch": 44.99999999999984,
+      "pixel": {
+        "x": 1389.999999999999,
+        "y": 749.9999999999999
+      },
+      "clip": {
+        "x": 740,
+        "y": 225,
+        "width": 1300,
+        "height": 1050
+      },
+      "viewport": {
+        "width": 2400,
+        "height": 1500
+      },
+      "sha256": "28c61a33c2f71208ea493d63b27286510226c9d5b3b3f965cf96b462dd34c1fe"
+    }
+  ]
+}

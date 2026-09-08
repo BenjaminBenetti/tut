@@ -1,0 +1,53 @@
+{
+  "repeatedBrowsers": 2,
+  "records": [
+    {
+      "id": "flat-closed",
+      "state": {
+        "pointerStrength": 0,
+        "pointerRadius": 3,
+        "pointerCentre": [
+          0,
+          0,
+          0
+        ],
+        "ghostCount": 0,
+        "ghostStrength": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "sha256": "de9da6d8e56e39d4c57de9e4949fdf428d14cd6de926cb26556ccd1e49c8ff6e"
+    },
+    {
+      "id": "flat-squad",
+      "state": {
+        "pointerStrength": 0,
+        "pointerRadius": 3,
+        "pointerCentre": [
+          0,
+          0,
+          0
+        ],
+        "ghostCount": 1,
+        "ghostStrength": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "sha256": "c8d3070dec8303857c03df74f85cdcc459c1fa65ec0ff6b47825a021e570cb68"
+    }
+  ]
+}

@@ -745,4 +745,59 @@ export const MODEL_MANIFEST = {
     sockets: [],
     quality: "final",
   },
+  "building.shop-awning": {
+    category: "buildings",
+    path: "assets/models/buildings/building-shop-awning.glb",
+    footprint: {
+      w: 3,
+      d: 0.66,
+    },
+    height: 0.28,
+    sockets: ["socket_wall"],
+    quality: "final",
+  },
+  "building.residential-entry": {
+    category: "buildings",
+    path: "assets/models/buildings/building-residential-entry.glb",
+    footprint: {
+      w: 1.35,
+      d: 0.43,
+    },
+    height: 0.26,
+    sockets: ["socket_wall"],
+    quality: "final",
+  },
+  "building.residential-window": {
+    category: "buildings",
+    path: "assets/models/buildings/building-residential-window.glb",
+    footprint: {
+      w: 0.74,
+      d: 0.29,
+    },
+    height: 0.47,
+    sockets: ["socket_wall"],
+    quality: "final",
+  },
+  "building.workplace-entry": {
+    category: "buildings",
+    path: "assets/models/buildings/building-workplace-entry.glb",
+    footprint: {
+      w: 2.4,
+      d: 0.56,
+    },
+    height: 0.25,
+    sockets: ["socket_wall"],
+    quality: "final",
+  },
+  "building.mailbox-bank": {
+    category: "buildings",
+    path: "assets/models/buildings/building-mailbox-bank.glb",
+    footprint: {
+      w: 0.62,
+      d: 0.12,
+    },
+    height: 0.46,
+    sockets: ["socket_wall"],
+    quality: "final",
+  },
 } as const satisfies ModelManifest;

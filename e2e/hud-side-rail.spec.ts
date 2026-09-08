@@ -81,22 +81,52 @@ test("the side rail stays clear of the action bar, and says when it has more to 
   // fits, it asserts nothing at all, so deleting `watchSideOverflow`
   // outright would leave this spec green.
   //
-  // That shortening has now happened — #949 replaced "Destroy spawner
-  // spawner-1" with "Destroy spawner 1" — and it bought **nothing**
-  // here, so this fixture is untouched. Measured at this viewport:
-  // `hidden` is 64 px before and after, because the rail is a fixed
-  // 268 px and the label wraps to two lines either way (195 px of text
-  // before, 132 px after, into a 130 px slot). The 40 px in the old note
-  // was an estimate that assumed the shorter label would unwrap; it does
-  // not. If a future change does make the rail fit, widen the fixture
-  // (more objectives, a shorter viewport) rather than weakening the
-  // assertion below.
+  // That shortening has now happened, in two steps, and the measurements
+  // are worth keeping because both were predicted wrongly once.
+  //
+  // #949 replaced "Destroy spawner spawner-1" with "Destroy spawner 1"
+  // and bought **nothing** here: `hidden` was 64 px before and after,
+  // because the label wrapped to two lines either way (195 px of text
+  // before, 132 px after, into a 130 px slot). The 40 px in the original
+  // note was an estimate that assumed the shorter label would unwrap.
+  //
+  // #991 then made the row actually fit — one line instead of two, 56 px
+  // to 37 px — and `hidden` is now **24 px**. The fixture still
+  // overflows, so it is left alone, but the margin is thin: one more row
+  // of saved height and this spec asserts nothing. If that happens,
+  // widen the fixture (more objectives, a shorter viewport) rather than
+  // weakening the assertion below.
   const hidden = await rail.evaluate((el) => el.scrollHeight - el.clientHeight);
   expect(
     hidden,
     "the fixture must overflow or the cue below is untested",
   ).toBeGreaterThan(1);
   await expect(rail).toHaveAttribute("data-overflow", "true");
+
+  // The row fits the rail (#991). Two lines per objective was the
+  // defect: the label and the hp chip each shrank by a hair and both
+  // wrapped, so every objective cost two rows of a rail that is already
+  // short. Asserted on the rendered line count rather than a height in
+  // pixels, so it says what it means and does not drift with the font.
+  const objectiveLines = await page
+    .locator("[data-objective-id]")
+    .evaluateAll((rows) =>
+      rows.map((row) =>
+        [...row.children]
+          .filter((child) => !child.classList.contains("tut-icon"))
+          .map((child) => {
+            const range = document.createRange();
+            range.selectNodeContents(child);
+            return range.getClientRects().length;
+          }),
+      ),
+    );
+  expect(objectiveLines.length).toBeGreaterThan(0);
+  for (const row of objectiveLines) {
+    expect(row, "an objective row wrapped onto a second line").toEqual(
+      row.map(() => 1),
+    );
+  }
 
   // And the cue is honest: scrolled to the end, it clears.
   await rail.evaluate((el) => {

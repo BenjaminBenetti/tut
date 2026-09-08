@@ -296,7 +296,7 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
       attached.layerFocus,
       delta,
     );
-    attached.builder.setMaxLevel(attached.layerFocus.cutLevel);
+    attached.builder.setLayerFocus(attached.layerFocus);
     this.publishLayerFocus();
     return attached.layerFocus;
   }

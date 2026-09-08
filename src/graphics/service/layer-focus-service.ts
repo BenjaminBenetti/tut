@@ -28,15 +28,19 @@ export interface LayerFocusSource {
 // ===========================================
 
 /**
- * The elevation the cut is measured from: the lowest ground any building
- * stands on, or `0` on a map with none.
+ * The elevation the **terrain** cut is measured from: the lowest ground
+ * any building stands on, or `0` on a map with none.
  *
- * The cut is a **height** expressed in storeys, not a per-building floor
- * number, so one number has to serve the whole map. Anchoring to the
- * lowest building means raising the focus reveals a building standing up
- * a hill later than one on the flat — which is what an elevation cut
- * should do. `mapgen-preview`'s `?floor=N` has anchored the same way
- * since #829.
+ * Since #978 this anchors only the ground, roads and anything else
+ * outside a building. Buildings are cut by their own floor numbers, so
+ * they no longer share an anchor — which is the whole of that fix: a
+ * building standing four layers up a hill used to have its ground floor
+ * above a cut taken from the building at the bottom, and vanished
+ * entirely at the moment the player asked to see inside it.
+ *
+ * Terrain keeps the height rule because it has no floors to count, and
+ * because hiding the hill a unit is standing on would remove the world
+ * rather than open it up.
  *
  * @param map - The map's buildings.
  * @returns The anchor layer.
@@ -48,27 +52,31 @@ export function focusGroundLevel(map: LayerFocusSource): number {
 }
 
 /**
- * How many distinct storey views the map offers, at least one.
+ * How many distinct storey views the map offers, at least one: the floor
+ * count of the tallest building.
  *
- * A map with no buildings, or whose tallest building is a single storey,
- * offers exactly one: there is nothing above the ground floor to peel,
- * so the control is inert rather than absent. That is deliberate — a key
- * that does nothing on open ground is easier to explain than a key that
+ * Counted per building rather than across the map's height (#978). The
+ * two agree on the 57 % of generated maps whose buildings all stand on
+ * one level, and disagree on the rest: measured over the 108-map matrix,
+ * 43 % have buildings a whole storey or more apart, and there the map's
+ * height counts elevation the player cannot act on. "Floor 3" has to
+ * mean the third floor of whatever they are looking at, not a height
+ * that is the third floor of one building and the first of another.
+ *
+ * A map with no buildings, or whose tallest is a single storey, offers
+ * exactly one: there is nothing above the ground floor to peel, so the
+ * control is inert rather than absent. That is deliberate — a key that
+ * does nothing on open ground is easier to explain than a key that
  * appears and disappears.
  *
  * @param map - The map's buildings.
  * @returns Storeys available, `>= 1`.
  */
 export function storeyCount(map: LayerFocusSource): number {
-  const ground = focusGroundLevel(map);
-  const top = Math.max(
-    ground,
-    ...map.buildings.map(
-      (building) =>
-        building.groundLevel + building.floors.length * STOREY_LAYERS,
-    ),
+  return Math.max(
+    1,
+    ...map.buildings.map((building) => building.floors.length),
   );
-  return Math.max(1, Math.ceil((top - ground) / STOREY_LAYERS));
 }
 
 /**

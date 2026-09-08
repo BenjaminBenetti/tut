@@ -35,9 +35,12 @@ describe("storeyCount", () => {
     expect(storeyCount(map(0, 1))).toBe(1);
   });
 
-  it("measures from the lowest building, not from zero", () => {
-    // Both two-storey, but standing four layers apart: the cut has to
-    // span ground 4 to the top of the higher one at 4 + 4 = 8.
+  // #978: counted per building, not across the map's height. Two
+  // two-storey buildings offer two floor views however far apart they
+  // stand — the four layers between them are elevation the player
+  // cannot act on, and counting them made "floor 3" mean the third
+  // floor of one building and the first of another.
+  it("counts the tallest building's floors, not the map's height", () => {
     expect(
       storeyCount({
         buildings: [
@@ -45,7 +48,21 @@ describe("storeyCount", () => {
           { groundLevel: 8, floors: [{}, {}] },
         ],
       }),
-    ).toBe(4);
+    ).toBe(2);
+    // The tallest wins, wherever it stands.
+    expect(
+      storeyCount({
+        buildings: [
+          { groundLevel: 8, floors: [{}] },
+          { groundLevel: 0, floors: [{}, {}, {}] },
+        ],
+      }),
+    ).toBe(3);
+  });
+
+  // The terrain anchor is unchanged: ground and roads have no floors to
+  // count, so they keep the height rule.
+  it("still anchors the terrain cut to the lowest building", () => {
     expect(
       focusGroundLevel({
         buildings: [
@@ -103,18 +120,27 @@ describe("focusAt", () => {
     expect(focus.cutLevel).toBeUndefined();
   });
 
-  // A hill building only appears once the cut is raised past its ground:
-  // the control is an elevation cut, not a per-building floor picker.
-  it("hides a building standing above the cut", () => {
+  // #978: the hill no longer costs the player storeys. Two two-storey
+  // buildings four layers apart offer two floors, and `cutLevel` — now
+  // the terrain cut alone — is measured from the lower ground. What
+  // happens to the buildings themselves is `TacticalMapView`'s job, by
+  // floor number, and is tested there.
+  it("gives a hillside map the same floors as a flat one", () => {
     const hill: LayerFocusSource = {
       buildings: [
         { groundLevel: 0, floors: [{}, {}] },
         { groundLevel: 4, floors: [{}, {}] },
       ],
     };
+    const flat: LayerFocusSource = {
+      buildings: [
+        { groundLevel: 0, floors: [{}, {}] },
+        { groundLevel: 0, floors: [{}, {}] },
+      ],
+    };
+    expect(storeyCount(hill)).toBe(storeyCount(flat));
+    expect(focusAt(hill, 0)).toEqual(focusAt(flat, 0));
     expect(focusAt(hill, 0).cutLevel).toBe(1);
-    expect(focusAt(hill, 1).cutLevel).toBe(3);
-    // Only from here up is any of the hill building (ground 4) drawn.
-    expect(focusAt(hill, 2).cutLevel).toBe(5);
+    expect(focusAt(hill, 1).cutLevel).toBeUndefined();
   });
 });

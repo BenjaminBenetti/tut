@@ -1,4 +1,5 @@
 import { STOREY_LAYERS } from "../../core/model/elevation";
+import type { LayerFocus } from "../model/layer-focus";
 import type { Camera, Material, Object3D } from "three";
 import {
   BoxGeometry,
@@ -106,6 +107,14 @@ interface ConnectorVision {
 /** Footprint of a prop box within its tile. */
 const PROP_FOOTPRINT = 0.6;
 
+/**
+ * The transform an instance gets when the layer cut is below it: scaled
+ * to nothing, which also takes it out of picking (measured — a ray
+ * through a collapsed ledge lands on the ground beneath it, with or
+ * without recomputed bounds).
+ */
+const COLLAPSED = new Matrix4().makeScale(0, 0, 0);
+
 /** Hook markers float just above the tile top. */
 const MARKER_LIFT = 0.08;
 
@@ -190,6 +199,20 @@ function tintFor(state: TileVisionState): Color {
 
 /** What one side knows about a tile right now. */
 type TileVisionState = "visible" | "explored" | "unexplored";
+
+/**
+ * Where a tile sits for the layer cut (#978): the floor it is on inside
+ * its own building, and the engine layer it is drawn at.
+ *
+ * `storey` is undefined for anything outside a building — ground, roads,
+ * exterior props — which is cut by height instead, because terrain has
+ * no floors to count and hiding the hill a unit stands on would remove
+ * the world rather than open it up.
+ */
+interface TileCut {
+  readonly storey: number | undefined;
+  readonly level: number;
+}
 
 /** An instanced mesh's untouched transforms and the tile behind each one. */
 interface InstanceTiles {
@@ -294,6 +317,10 @@ export class TacticalMapView implements Disposable, TilePicker {
   private readonly connectorTiles = new Map<Mesh, ConnectorVision>();
   /** The vision last applied, indexed, and replayed onto anything built afterwards. */
   private vision: IndexedVision | undefined;
+  /** The storey the player is looking at (#978), or undefined for all of them. */
+  private focus: LayerFocus | undefined;
+  /** Built once per map: where each tile sits for the cut. */
+  private tileCuts: Map<VisionTileKey, TileCut> | undefined;
   private modelled = false;
   /** Invalidates stationary pointer picks after model loading or floor cuts. */
   private inspectionRevision = 0;
@@ -346,6 +373,35 @@ export class TacticalMapView implements Disposable, TilePicker {
     this.inspectionRevision++;
     for (const [level, group] of this.levelGroups) {
       group.visible = maxLevel === undefined || level <= maxLevel;
+    }
+  }
+
+  /**
+   * Shows every building up to `focus.storey` **of its own floors**, and
+   * everything outside a building up to `focus.cutLevel` (#978).
+   *
+   * The two rules exist because a building knows what floor it is on and
+   * terrain does not. Before this the whole map was cut at one height
+   * taken from the lowest building, so on the 43 % of generated maps
+   * whose buildings stand at different levels, a building up a hill had
+   * its ground floor above the cut and **disappeared** at exactly the
+   * moment the player asked to see inside it.
+   *
+   * Level groups stay the coarse filter, raised to whatever the tallest
+   * standing building needs; the per-instance pass below does the rest.
+   * On a map whose buildings all share a ground level the two cuts are
+   * the same number and nothing changes at all, which is the control.
+   *
+   * @param focus - Where the player is looking, or undefined for the whole map.
+   */
+  setLayerFocus(focus: LayerFocus | undefined): void {
+    this.focus = focus;
+    this.setMaxLevel(this.groupCutFor(focus));
+    for (const [mesh, tiles] of this.instanceTiles) {
+      this.applyVisionTo(mesh, tiles);
+    }
+    for (const [mesh, connector] of this.connectorTiles) {
+      this.applyVisionToConnector(mesh, connector);
     }
   }
 
@@ -719,17 +775,26 @@ export class TacticalMapView implements Disposable, TilePicker {
     for (const [mesh, tiles] of this.instanceTiles) {
       this.applyVisionTo(mesh, tiles);
     }
-    for (const connector of this.connectorTiles.values()) {
-      this.applyVisionToConnector(connector);
+    for (const [mesh, connector] of this.connectorTiles) {
+      this.applyVisionToConnector(mesh, connector);
     }
   }
 
-  /** Tints one connector's own material for the current vision. */
-  private applyVisionToConnector(connector: ConnectorVision): void {
+  /**
+   * Tints one connector's own material for the current vision, and hides
+   * it outright when the layer cut is below it (#978).
+   *
+   * A connector is its own mesh rather than an instance in a batch, so
+   * unlike the walls and floors around it this is a plain `visible`
+   * flag. Without it a staircase hangs in the air above a building whose
+   * upper floors have been cut away.
+   */
+  private applyVisionToConnector(mesh: Mesh, connector: ConnectorVision): void {
     const vision = this.vision;
     const state =
       vision === undefined ? "visible" : stateOf(vision, connector.key);
     connector.material.color.copy(connector.base).multiply(tintFor(state));
+    mesh.visible = !this.hiddenByCut(connector.key);
   }
 
   /** Remembers a mesh's instances and applies the current vision to them. */
@@ -749,7 +814,19 @@ export class TacticalMapView implements Disposable, TilePicker {
     this.applyVisionTo(mesh, tiles);
   }
 
-  /** Writes one mesh's instance matrices and colours for the current vision. */
+  /**
+   * Writes one mesh's instance matrices and colours for the current
+   * vision, collapsing any instance the layer cut is below (#978).
+   *
+   * **Collapsing is for the cut, never for vision.** Until #761 an
+   * unexplored instance was zero-scaled and the map ended in a cliff
+   * wherever the seen area did, with buildings missing walls on tiles
+   * nobody had reached (#748); fog is about what the player knows, and
+   * knowledge does not remove architecture. The cut is the opposite — a
+   * deliberate request for the floor above to be gone — so collapsing is
+   * exactly what it wants. The two share this loop and must not share a
+   * reason: a tile hidden by the cut stays hidden whatever vision says.
+   */
   private applyVisionTo(mesh: InstancedMesh, tiles: InstanceTiles): void {
     const vision = this.vision;
     for (let i = 0; i < tiles.keys.length; i++) {
@@ -759,7 +836,7 @@ export class TacticalMapView implements Disposable, TilePicker {
         continue;
       }
       const state = vision === undefined ? "visible" : stateOf(vision, key);
-      mesh.setMatrixAt(i, base);
+      mesh.setMatrixAt(i, this.hiddenByCut(key) ? COLLAPSED : base);
       mesh.setColorAt(i, tintFor(state));
     }
     mesh.instanceMatrix.needsUpdate = true;
@@ -1081,7 +1158,7 @@ export class TacticalMapView implements Disposable, TilePicker {
         base: new Color(CONNECTOR_COLOURS[connector.kind]),
       };
       this.connectorTiles.set(mesh, tracked);
-      this.applyVisionToConnector(tracked);
+      this.applyVisionToConnector(mesh, tracked);
       this.groupFor(connector.to.y).add(mesh);
       // Retire each ladder/ramp only after its own kit placement resolves.
       const label =
@@ -1151,7 +1228,7 @@ export class TacticalMapView implements Disposable, TilePicker {
       base: new Color(colour),
     };
     this.connectorTiles.set(mesh, tracked);
-    this.applyVisionToConnector(tracked);
+    this.applyVisionToConnector(mesh, tracked);
     this.groupFor(tile.y).add(mesh);
     const kept = this.placeholders.get("slopes");
     if (kept === undefined) {
@@ -1310,6 +1387,85 @@ export class TacticalMapView implements Disposable, TilePicker {
         kept.push(mesh);
       }
     }
+  }
+
+  /**
+   * Whether the layer cut hides the tile behind `key`.
+   *
+   * A tile inside a building is judged on its own floor number, so
+   * "floor 1" is floor 1 of every building however high it stands.
+   * Anything else is judged on height, from the lowest building.
+   *
+   * @param key - The tile's vision key.
+   * @returns True when the cut is below it.
+   */
+  private hiddenByCut(key: VisionTileKey): boolean {
+    const focus = this.focus;
+    if (focus === undefined) {
+      return false;
+    }
+    const cut = this.tileCutIndex().get(key);
+    if (cut === undefined) {
+      return false;
+    }
+    return cut.storey === undefined
+      ? focus.cutLevel !== undefined && cut.level > focus.cutLevel
+      : cut.storey > focus.storey;
+  }
+
+  /**
+   * Where every tile sits for the cut, built once and kept.
+   *
+   * `Tile.buildingId` and `Tile.floorIndex` are already denormalised onto
+   * interior floor, stair and roof tiles by the finalize pass, so the
+   * floor a tile is on needs no footprint search. Roof tiles carry the
+   * building but no floor index — measured on a generated map, 101 of
+   * them — so the storey is derived from the height above that
+   * building's own ground, which agrees with `floorIndex` on every one
+   * of the 655 tiles that carry both.
+   */
+  private tileCutIndex(): Map<VisionTileKey, TileCut> {
+    if (this.tileCuts !== undefined) {
+      return this.tileCuts;
+    }
+    const grounds = new Map(
+      this.map.buildings.map((building) => [building.id, building.groundLevel]),
+    );
+    const cuts = new Map<VisionTileKey, TileCut>();
+    for (const tile of this.map.tiles) {
+      const ground =
+        tile.buildingId === undefined
+          ? undefined
+          : grounds.get(tile.buildingId);
+      cuts.set(this.index.keyOf(tile), {
+        storey:
+          ground === undefined
+            ? undefined
+            : Math.floor((tile.y - ground) / STOREY_LAYERS),
+        level: tile.y,
+      });
+    }
+    this.tileCuts = cuts;
+    return cuts;
+  }
+
+  /**
+   * The level below which whole groups can stay hidden: the highest any
+   * standing building needs at this storey, or the terrain cut, whichever
+   * is higher. Undefined shows everything.
+   */
+  private groupCutFor(focus: LayerFocus | undefined): number | undefined {
+    if (focus?.cutLevel === undefined) {
+      return undefined;
+    }
+    return this.map.buildings.reduce(
+      (cut, building) =>
+        Math.max(
+          cut,
+          building.groundLevel + (focus.storey + 1) * STOREY_LAYERS - 1,
+        ),
+      focus.cutLevel,
+    );
   }
 
   /** The group for a level, created on first use. */

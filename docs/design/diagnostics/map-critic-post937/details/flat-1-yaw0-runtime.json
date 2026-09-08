@@ -1,0 +1,39 @@
+{
+  "id": "flat-1-yaw0-runtime",
+  "baseline": "5040bd001a5c54f4ba16597a3a5b101f63cbc4ab",
+  "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=flat&units=1&yaw=0",
+  "roof": "flat",
+  "units": 1,
+  "yaw": 0,
+  "variant": "runtime",
+  "dataset": {
+    "ready": "true",
+    "ghostCount": "1",
+    "unit": "{\"x\":25,\"y\":6,\"z\":14}",
+    "units": "[{\"x\":25,\"y\":6,\"z\":14}]",
+    "radius": "4",
+    "floor": "0.175",
+    "yaw": "0"
+  },
+  "viewport": {
+    "width": 1200,
+    "height": 950
+  },
+  "sha256": "36b79057374373f50225bfac75c0eb63966ae8018e40cffb19446ac35b9c7f6e",
+  "errors": [],
+  "scene": {
+    "seed": "mc-opening-02",
+    "biome": "temperate",
+    "settlement": "town",
+    "size": "small",
+    "dimensions": {
+      "width": 48,
+      "depth": 48
+    },
+    "slopePercent": 100,
+    "models": "production",
+    "levels": "all",
+    "pixelsPerWorldUnit": 80,
+    "cameraTarget": "primary squad tile centre, tileTop(y) + 0.7"
+  }
+}

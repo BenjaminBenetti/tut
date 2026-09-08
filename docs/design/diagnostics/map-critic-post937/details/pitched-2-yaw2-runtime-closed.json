@@ -1,0 +1,40 @@
+{
+  "id": "pitched-2-yaw2-runtime-closed",
+  "baseline": "5040bd001a5c54f4ba16597a3a5b101f63cbc4ab",
+  "url": "http://localhost:4199/tools/art/preview/roof-cutaway.html?roof=pitched&units=2&yaw=2",
+  "roof": "pitched",
+  "units": 0,
+  "yaw": 2,
+  "variant": "units-left",
+  "dataset": {
+    "ready": "true",
+    "ghostCount": "2",
+    "unit": "{\"x\":24,\"y\":4,\"z\":15}",
+    "units": "[{\"x\":24,\"y\":4,\"z\":15},{\"x\":21,\"y\":4,\"z\":11}]",
+    "radius": "4",
+    "floor": "0.175",
+    "yaw": "2",
+    "left": "true"
+  },
+  "viewport": {
+    "width": 1200,
+    "height": 950
+  },
+  "sha256": "afd3512d6cdfcf3bb7e9edbf5849866c7c4195ee11e00594ab0b52b5ee68a036",
+  "errors": [],
+  "scene": {
+    "seed": "mc-opening-01",
+    "biome": "temperate",
+    "settlement": "rural",
+    "size": "small",
+    "dimensions": {
+      "width": 48,
+      "depth": 48
+    },
+    "slopePercent": 100,
+    "models": "production",
+    "levels": "all",
+    "pixelsPerWorldUnit": 80,
+    "cameraTarget": "primary squad tile centre, tileTop(y) + 0.7"
+  }
+}

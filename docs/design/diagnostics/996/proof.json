@@ -1,14 +1,15 @@
 {
-  "captureCodeCommit": "31f90c0ea4fe6879d5251743885f07d17acafe3c",
-  "baseCommit": "81c9c5dcbdd3e0030472d67c1cc84ea104363931",
+  "captureCodeCommit": "156ce08e690a0740408cf2527b2c67effd6e86e2",
+  "baseCommit": "29639b3e2289b6f42f50f9497c688a1c1e17e0f4",
   "viewport": {
     "width": 1280,
     "height": 720
   },
-  "renderer": "Playwright Chromium / SwiftShader; unmodified PNGs",
+  "renderer": "Playwright Chromium 151.0.7922.34 / SwiftShader; unmodified PNGs",
   "repeatedFilesByteIdentical": true,
   "sha256OfBothRuns": {
-    "hillside.png": "175c34a2f5d14f23c7bb425d8512dd313bf744b1203660804ab75627e0b6cefd",
+    "hillside-after.png": "175c34a2f5d14f23c7bb425d8512dd313bf744b1203660804ab75627e0b6cefd",
+    "hillside-before.png": "a772f84bddb3c8cd6999fa130095448d8de27a4faa8e881b90aef00b61bd3929",
     "layer-ground.png": "d259e4b05e9ec1ebc954d82f565c826e4c06526c9c9f4924879d3d330ec4ad6d",
     "layer-one-down.png": "f16ac8d15011ad48f5753aeb4c9fab54322d801daf75f44e3f40924b822d22f0",
     "layer-top-after-up.png": "38ba3c7b7237e67648ff6dcb69b75ecd2155f900649e2c433a61553481f262ff",
@@ -35,9 +36,9 @@
   ],
   "historical982Difference": "3.292%: rural fences merged after the recorded bc2f47f runtime; current repetitions are exact",
   "validation": {
-    "unit": "2258 passed, 1 existing skip; --maxWorkers=4",
-    "browser": "CI=1 new regressions repeated twice: 4 passed, no flaky or retries",
-    "sim": "7 passed",
+    "unit": "2259 passed, 1 existing skip; --maxWorkers=4",
+    "browser": "31f90c0: CI=1 new regressions repeated twice: 4 passed, no flaky or retries",
+    "sim": "7 passed; simulation code unchanged by integration",
     "other": "typecheck, lint/format, build passed"
   },
   "evidenceDebt": "#961 top/no-op pair regenerated here; eng-5 owes #978 flat-map control after merge"

@@ -66,21 +66,24 @@ The equality test has two ordinary test-time allowances for its two full mounts.
 ## Frames at the candidate
 
 The repeated frames and hashes below are generated from the candidate code.
-The old #961 and #978 accepted images remain historical evidence.
+The seven default capture PNGs are refreshed from repeat 0; their older versions
+remain in git history. These repay #961’s top/no-op proof; the flat-map debt
+for #978 remains with eng-5.
 
 Reproduce each capture twice on one checkout, with separate output prefixes:
 
 ```sh
 for run in 0 1; do
   CAPTURE=1 LAYER_FRAMES="docs/design/diagnostics/996/repeat-$run/layer" \
-    pnpm exec playwright test e2e/layer-control-screenshot.spec.ts --workers=1 --timeout=120000
-  CAPTURE=1 LAYER_FRAME="docs/design/diagnostics/996/repeat-$run/hillside.png" \
-    pnpm exec playwright test e2e/layer-cut-hillside-screenshot.spec.ts --workers=1 --timeout=120000
+    pnpm exec playwright test e2e/layer-control-screenshot.spec.ts --workers=1 --timeout=240000
+  CAPTURE=1 LAYER_FRAMES="docs/design/diagnostics/996/repeat-$run/hillside" \
+    pnpm exec playwright test e2e/layer-cut-hillside-screenshot.spec.ts --workers=1 --timeout=240000
 done
 ```
 
 [Exact frame proof](proof.json) records source commits, hashes and equality for
-both runs and each no-op pair. The frame files are ordinary unmodified browser
+both runs and each no-op pair. The integrated hillside spec retains #1003’s
+same-run old-height/new-floor pair. The frame files are ordinary unmodified browser
 screenshots. No-op equality is also asserted inside the layer-control spec.
 
 ## Reach of the defect

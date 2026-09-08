@@ -216,7 +216,7 @@ describe("building use cues", () => {
         object instanceof InstancedMesh &&
         object.name.startsWith("frontages-model:")
       )
-        frontages.push(object);
+        frontages.push(object as InstancedMesh);
     });
     expect(frontages).toHaveLength(3);
     for (const mesh of frontages) {

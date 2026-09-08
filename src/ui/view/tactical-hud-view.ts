@@ -186,6 +186,8 @@ export class TacticalHudView {
    */
   private view: MissionView | undefined;
   private selected: UnitId | undefined;
+  /** The city the mission is fought over, set by the screen (#753). */
+  private missionName: string | undefined;
   private target: UnitId | undefined;
   private mode: HudMode = DEFAULT_HUD_MODE;
   /**
@@ -329,6 +331,22 @@ export class TacticalHudView {
   /** The armed action. */
   getMode(): HudMode {
     return this.mode;
+  }
+
+  /**
+   * Names the mission for the banner — the city it is fought over,
+   * resolved by the screen, which is the only layer that can see the
+   * overworld (#753).
+   *
+   * Handed in rather than looked up: `TacticalState` carries no city,
+   * and giving a tactical view the whole overworld to search would be
+   * the wrong dependency for one string.
+   *
+   * @param name - The city's name, or `undefined` to clear it.
+   */
+  setMissionName(name: string | undefined): void {
+    this.missionName = name;
+    this.refresh();
   }
 
   /**
@@ -1003,7 +1021,12 @@ export class TacticalHudView {
       return;
     }
     this.banner.update({
-      missionId: mission.missionId,
+      // The name the screen resolved, never the id (#753). An em dash
+      // when it has not been set: a visible absence is honest, where a
+      // fallback to `mission.missionId` would be a permanent route back
+      // to the defect — the same reasoning that kept #739's migration
+      // from adding one.
+      missionName: this.missionName ?? "—",
       turn: mission.turn,
       phase: mission.phase,
       tdfUnits: countAlive(mission, "tdf"),

@@ -242,7 +242,10 @@ describe("TacticalScreen", () => {
     }).mount(root);
     expect(root.querySelector('[data-screen="tactical"]')).not.toBeNull();
     expect(root.querySelector("#tactical-viewport")).not.toBeNull();
-    expect(field("mission-id")).toBe("mission-2");
+    // The banner names the city the mission list named, not the id
+    // (#753). `missionAt` puts this one in Lagos.
+    expect(field("mission-name")).toBe("Lagos");
+    expect(root.textContent).not.toContain("mission-2");
     expect(field("turn")).toBe("1");
     expect(field("phase")).toBe("player phase");
     expect(field("tdf-units")).toBe(
@@ -306,7 +309,7 @@ describe("TacticalScreen", () => {
     expect(
       root.querySelector<HTMLElement>('[data-role="no-mission"]')?.hidden,
     ).toBe(false);
-    expect(field("mission-id")).toBe("—");
+    expect(field("mission-name")).toBe("—");
     expect(host.calls).toEqual([]);
   });
 

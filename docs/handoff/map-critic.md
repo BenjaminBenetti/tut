@@ -1,8 +1,8 @@
 # Handoff: Map Critic
 
 2026-09-08, v0.2.13 follow-up — #917 visually accepted on current main;
-three open Critic tickets. Cutaway/layer re-check and the next seed survey
-are in progress; completed proof is committed before further surveying.
+five open Critic tickets (cap reached). Squad/pointer cutaway re-check is
+complete; layer framing and the next seed survey remain in progress.
 
 ## Calibration and boundaries
 
@@ -41,7 +41,7 @@ explain a picture. Route to both areas when cause cannot be assigned by eye.
 
 ## Current ranked queue
 
-Three open Critic tickets at this checkpoint:
+Five open Critic tickets at this checkpoint (cap reached):
 
 1. **[#945](https://github.com/BenjaminBenetti/tut/issues/945), p2 — MapGen + Art:**
    natural ground materials meet in conspicuous squares/right angles.
@@ -64,6 +64,21 @@ Three open Critic tickets at this checkpoint:
    #509/#511 and #492 already delivered material/glazing work; this asks
    for building-use identity, not a repeat of those changes.
 
+4. **[#1006](https://github.com/BenjaminBenetti/tut/issues/1006), p2 — MapGen:**
+   city timber panels still describe no boundary. Two angles on
+   `mc-opening-03`, coastal/city/medium 72², camera anchor `(51,1,31)`,
+   55 px/tile. Rural #917 remains accepted; this extends the finding to
+   a city case and is distinct from the coherent finite garden run.
+5. **[#1005](https://github.com/BenjaminBenetti/tut/issues/1005), p3 — MapGen + Art:**
+   regular seams cross one continuous water surface. Two angles plus UI
+   controls on `mc-opening-01`, coastal/rural/small 48², `(40,0,4)`,
+   55 px/tile. Rotated view is stronger. Cause uncertain by eye; #945's
+   between-material contacts are a different acceptance target.
+
+Both new tickets have committed evidence in
+[the follow-up findings](../design/diagnostics/map-critic-v0213/followups/README.md),
+water `d8babd8` and city panels `ebf67d7`. No sixth ticket while five are open.
+
 No new city-flatness ticket is justified by the inspected views. The
 post-removal floor/roof controls show a usable-looking infantry vertical
 fight: successive furnished floors/stairs, roof openings and a neighbouring
@@ -71,17 +86,26 @@ ladder. That is a bounded visual judgement, not proof that every route works.
 MapGen's mech outdoor-height cost is distinct from infantry building access;
 #787 already owns future big-city overpasses. Do not duplicate it.
 
-Continue the ranked repairs above. Two slots are available; do not invent a defect to fill it. Interior lighting is
+Continue the ranked repairs above; hold further findings until a slot opens. Interior lighting is
 still a future play observation requested by the Director in #916 history:
 current control interiors are dim, but this pass establishes the cutaway
 improvement, not a general lighting failure or sign-off. Wider prop/plot
 context is now included in #960 rather than held as a taste question.
 Report if either owner begins queueing instead of working. At restart,
-MapGen is on #945; Art awaits the #911 placement agreement before modeling
-(#960 follows), and #947 has merged; a queued successor is
+MapGen is on #945 and has pushed an implementation checkpoint, with #959 next.
+The #911 placement agreement is now on its issue for Art (#960 follows).
+#947 has merged; a queued successor is
 not evidence that either seat has stalled.
 
 ## Merged fixes: render verdicts
+
+- **#937 / #947, current-main confirmation:** 24 fresh pitched/flat, two-angle
+  squad/pointer/overlap/closure frames opened. Broad radius-4 room context
+  remains useful; hover inspection extends it and both closure paths restore
+  the roof. [Posted combined verdict](https://github.com/BenjaminBenetti/tut/issues/937#issuecomment-5592160824)
+  and [evidence](../design/diagnostics/map-critic-v0213/cutaway/README.md).
+  Dim interiors, stipple and accepted near-wall edge exposure remain limitations.
+
 
 - **#917 / #973**, merge `07b40cd`: **picture improved** on main `5cead6e`.
   Nine fresh frames show the beach fragments gone, trail/plot runs in context,
@@ -154,15 +178,13 @@ Evidence PR **[#966](https://github.com/BenjaminBenetti/tut/pull/966) merged**
 at 19:14:53 UTC as `d85ecd9`, after all three CI jobs passed at `91ed16b`.
 The survey, repair crops and ranked queue are now on main.
 
-The Director’s #968 subscription arrived during that merge. Its follow-up
-is **[PR #971](https://github.com/BenjaminBenetti/tut/pull/971), handoff-only**,
-on branch **`chore/968-map-critic-standing-orders`**
-based on `d85ecd9`; no additional survey or game changes are included.
-Local whitespace/link checks passed; normal PR CI applies to the follow-up.
-Capture scripts/source frames, GH cache and watch result live under ignored
-`.scratch/map-critic-resume-0908/`; earlier scratch directories remain useful.
-No image was generated or retouched to show a defect. Comparison sheets
-only resize/arrange captures and add captions outside the scene.
+PR **#971 merged** as `4148dca`; its standing-orders handoff is complete.
+Current branch is **`docs/917-map-critic-v0213`**, based on main `5cead6e`.
+Fence, water, city-panel and cutaway evidence is committed and pushed. The
+combined evidence/handoff PR has not yet been opened at this checkpoint.
+Capture scripts and raw frames remain under ignored
+`.scratch/map-critic-v0213/`; older scratch directories retain prior recipes.
+No scene was retouched or generated to demonstrate a finding.
 
 ## Rulings and capture gotchas
 
@@ -176,8 +198,8 @@ LOS protection (#591).
 **#947 / #982 is merged** as `3ea2fb7`, before Art’s #911 work.
 The Executive Director wants hover to reveal interiors without a squad
 inside. Current-main hovered, pointer/squad overlap and open-ground
-roof-preservation controls are being captured and judged now. Art owns the parameters; the Director judges
-the frames. The accepted #937 verdict is squad-only and does not certify
+roof-preservation controls are now visually accepted in the 24-frame check above.
+Art owns the parameters; the Director judges visual changes before merge. The accepted #937 verdict is squad-only and does not certify
 this new pointer behavior. Do not re-file its absence.
 
 **#911 is the known dropship gap.** Extraction intentionally stays at deploy;
@@ -212,87 +234,50 @@ closed survey #905 with the template's closing keyword. Never push main or
 merge. Every GitHub comment starts with `**Map Critic** · TUT agent` alone.
 A model-capacity error is transient: wait/retry, never change model.
 
-## Watches — prior events consumed; current bounded re-arm below
+## Watch and current work checkpoint — 21:33 UTC
 
-The resumed watch was session `72679`: **17:47:49–18:07:51 UTC on 2026-09-08**,
-300-second polls, hard deadline **20:47:49 UTC**. It exited on #943's
-18:05:54 merge. The merged picture was then captured and judged above.
-`watch-start.json` and `watch-result.json` preserve the event. Do not restart
-that completed watch. The Director subsequently authorised the new #968
-subscription below; it is not an automatic restart.
+Original #968 subscription: **19:15:28–22:15:28 UTC, 2026-09-08**, 300-second
+polls. [Confirmed in the discussion](https://github.com/BenjaminBenetti/tut/discussions/968#discussioncomment-18355526).
+All earlier sessions are completed or explicitly replaced; no cron exists.
 
-The older opening watch `52713` ended on issue comments at 19:25 UTC on
-September 6; follow-up watch `99123` ended on #940's candidate report at
-23:12 UTC that day. Those are completed history, not running watchers.
+The prior `32285` re-arm exited at 21:18:04. Read/applied: MapGen's #945
+implementation checkpoint; #911 placement agreement available to Art;
+Producer's correction that #978/#999 merged before its evidence was complete,
+with #1003 supplying the missing hillside pair and #996 still owning the flat
+control's repeatability work. No new defect is inferred from closed state.
 
-### Director-requested #968 watch
-
-**Original start 2026-09-08 19:15:28 UTC; unchanged hard stop 22:15:28 UTC.**
-Session `75187` exited at 19:20:33 on the first discussion-comment batch.
-All eight comments were read: seat acknowledgements, MapGen’s #917
-validation/queue update, Art’s #947-before-#911 ordering and Producer’s
-standing-orders documentation PR #970. No visual repair merged in that batch.
-The exact query ran successfully.
-
-The same bounded subscription was re-armed from that consumed snapshot at
-19:22:13, **session `59079`**, which exited at 19:27:18 on #917’s
-prepared-frames report, #960’s Art queue acknowledgement and #968 updates.
-Those events have been read; this session is completed. Its deadline was not extended; the old
-terminal is finished, so only one is active. It uses 300-second polls and
-exits on the first new
-standing-orders comment, work-thread comment or merged map/art PR. It watches
-#968 plus work threads #905/#917/#936/#937/#945/#959/#960 and PRs #966/#971.
-Own Map Critic acknowledgements do not trigger it. Issue comment catch-up
-starts at the last read, 18:57:51 UTC, so the publication interval is covered.
-
-[Confirmed in the discussion](https://github.com/BenjaminBenetti/tut/discussions/968#discussioncomment-18355526). Its exact polling command is:
+Session `93491` polled quietly at 21:28:53 and was stopped before replacement
+to add the new owned tickets. **Active singleton `92529`**, started 21:32:38,
+uses `.scratch/map-critic-v0213/watch/rearm-03/watch.py`, exact #968 query and
+work threads including #1005/#1006. Its original hard stop remains **22:15:28**.
+Inspect result/health and read new comments before re-arming; never extend the
+deadline or run two watchers. Catch up discussion pagination if latest-ten
+comments have no overlap with the read cursor.
 
 ```sh
 gh api graphql -f query='{repository(owner:"BenjaminBenetti",name:"tut"){discussion(number:968){comments(last:10){nodes{createdAt body}}}}}'
 ```
 
-Initial script/event and cached discussion bodies:
-`.scratch/map-critic-standing-orders-968/`. The **active re-arm** script and
-start/health/result records are in its **`rearm-01/`** subdirectory. Inspect
-that session/result state on
-refresh before starting anything; never leave two watchers running. Follow
-up the event in its GitHub thread, inspect any merged visual repair, and
-retain #968 in future authorised watches. No cron was installed. Capacity,
-websocket and transport failures remain retryable weather; do not change
-model or redesign the loop in response.
+Current runtime/capture state:
 
-## Current work checkpoint — 21:15 UTC
-
-PR **#971 merged** as `4148dca`; do not treat it as pending. Current branch:
-**`docs/917-map-critic-v0213`**, baseline main **`5cead6e`**. The nine fence
-frames are committed and pushed; the rest of this pass is still in scratch.
-
-- `.scratch/map-critic-v0213/` holds cached issue directions, scripts and PNGs.
-- `fences/`: nine captured, inspected, committed PNG/JSON pairs.
-- `cutaway/`: current squad and pointer controls in progress, capture session
-  `12497`, server `86432` on port 4173. Open every completed frame before a
-  verdict. Pointer #947 is now shipped; original #937 squad-radius ruling stands.
-- `layers-pilot-offscreen/` contains six **excluded** pilot frames: the keyboard
-  pan aimed the tower out of frame. They prove no visual repair verdict.
-  `layers.mjs` now uses middle-button pan and requires the camera reference to
-  reach its intended framing; still needs running after the cutaway capture.
-  #978 owns the hillside cut limitation; #981 owns above-cut unit markers.
-  #996 owns drift in two existing tactical capture specs, not a blanket failure
-  of all capture paths. No such defect is inferred from this framing mistake.
-- `survey.mjs`: prepared 12-map continuation, `mc-resume-02`, all four biomes ×
-  rural/town/city, medium 72², whole/closer views. Not yet run or counted as seen.
-- `followup-controls.json`: prepared water-surface and city-timber-panel
-  two-angle checks. Visible water lines in G2/W1 and urban panels outside #917’s
-  rural scope are candidates only; no new ticket until judged and cross-checked.
+- Server `86432`, port 4173, baseline `5cead6e`; docs-only branch changes.
+- `fences/`: 9 inspected and committed PNG/JSON pairs; #917 accepted.
+- `followups/`: 6 inspected and committed pairs (two water crops, two whole-UI
+  views, two city-panel crops); tickets #1005 and #1006 filed.
+- `cutaway/`: all 24 inspected and committed pairs; #937/#947 verdict posted.
+- `layers-pilot-offscreen/`: six excluded bad-framing frames. The subsequent
+  middle-drag pilot did not move the camera and was stopped without a verdict.
+  `layers.mjs` now calibrates ordinary `d`/`s` keyboard taps against the live
+  camera projection, following the public layer screenshot recipe. Session
+  **`29299`** is still framing; inspect before any verdict. Do not mistake a
+  capture-camera failure for broken layers. #978 owns the hillside case;
+  #981 owns above-cut unit visibility and #996 owns known capture drift.
+- `survey.mjs` is now running as **`97179`**: `mc-resume-02`, all four biomes ×
+  rural/town/city, medium 72², whole/closer pairs. Only completed and opened
+  maps count as seen; the survey ledger has not yet been written.
 
 The Director asked for context percentage. No reliable live percentage is
 exposed to this seat’s tools; do not invent one. CLI `/status` reports it to
-the operator. Keep this checkpoint updated so a refresh preserves findings.
-
-The current bounded subscription retains the original **22:15:28 UTC** hard
-stop. Re-arm `87119` ran 20:58:48–21:03:54 and read the #968 corrections
-confirming MapGen’s #945 pickup. **Active session `32285`**, started 21:12:57,
-uses `.scratch/map-critic-v0213/watch/rearm-01/`; 300-second polls, exact #968
-query plus work threads, no concurrent watcher or cron. Inspect its result
-before re-arming, retain the deadline, and catch up #968 if the ten-comment
-window has no known overlap. Earlier scratch watch directories are history.
+the operator. This pushed checkpoint preserves filed findings before more
+survey work. Next: finish layer framing/verdict, inspect the 12-map continuation,
+update this checkpoint again, and open the docs-only PR with evidence/CI status.

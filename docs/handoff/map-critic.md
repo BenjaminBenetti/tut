@@ -132,6 +132,8 @@ not evidence that either seat has stalled.
   current-main scene; they are not represented as old-build captures.
   Evidence `37290a6f89c4fd2e9c0f538d1fd04929baafc87d`.
 
+Publication PR: **[#966](https://github.com/BenjaminBenetti/tut/pull/966)**, open for Tech Lead review.
+Local ESLint/format and evidence metadata/link checks passed; normal PR CI applies.
 Current branch: **`docs/936-map-critic-postmerge`**, pushed. It contains only
 Critic diagnostic records and this handoff relative to integrated main.
 Capture scripts/source frames, GH cache and watch result live under ignored

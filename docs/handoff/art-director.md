@@ -26,14 +26,14 @@ blocks the agreement. Begin the Blender loop after the actual contract is agreed
 
 Codex Art Director, **gpt-6-astra xhigh**. [PR #982](https://github.com/BenjaminBenetti/tut/pull/982),
 branch `feat/947-pointer-cutaway`, has the implementation and 28-frame matrix at
-`9aefe64`. It is **ready for review**. [Final evidence](https://github.com/BenjaminBenetti/tut/pull/982#issuecomment-5591088585)
+`9aefe64`, now merged as 3ea2fb7. [Final evidence](https://github.com/BenjaminBenetti/tut/pull/982#issuecomment-5591088585)
 is posted. Typecheck, lint, 2,190 unit tests (one skipped), build, seven simulation
 tests, 59 browser tests (27 opt-in captures skipped), and the fog capture pass.
 **Director accepted head 9aefe64** in [comment 5591110810](https://github.com/BenjaminBenetti/tut/pull/982#issuecomment-5591110810),
 after independently checking hover/overlap/open-ground bytes against the frames
-he had judged. Released to Tech Lead for review/merge on green. **All three
-final-head CI checks pass** on 9aefe64; [CI links](https://github.com/BenjaminBenetti/tut/pull/982#issuecomment-5591214330).
-The bounded watch tracks Tech Lead review and merge.
+he had judged. The Tech Lead merged after the independent gate above. **All three
+final-head CI checks passed** on 9aefe64; [CI links](https://github.com/BenjaminBenetti/tut/pull/982#issuecomment-5591214330).
+The bounded watch now follows the dropship contract and standing queue.
 
 [Diagnosis and parameters before code](https://github.com/BenjaminBenetti/tut/issues/947#issuecomment-5589887736):
 action hover prioritises units/spawners and pitched roofs have no walkable tile
@@ -87,9 +87,8 @@ completed hashes, and always closes Chromium; one initial 30 s screenshot
 failed, so the art-only screenshot budget is now 120 s. No game/test timeout
 was widened. No provider capacity failure occurred.
 
-Next: act on final CI/review of #982 on the same branch. A read-only merge
-preview against main 9cc4abc was clean; the branch itself still integrates main
-through b6928d0. Then, after #982 lands, **#911** (footprint first, MapGen places it), then **#960** (Art
+The feature branch integrated main through b6928d0; the Tech Lead checked the
+final merge with 7b8a401. Next is **#911** (footprint first, MapGen places it), then **#960** (Art
 accountable for building-use cues; diagnose kit versus arrangement, MapGen
 supports placement). Prior dropship envelope proposal: 5×7, max height 3.6,
 +Z nose; no model started. **#945 / #959** are MapGen-led with Art material/rendering
@@ -119,7 +118,7 @@ its event file, then arm one replacement. Capacity/transport errors are retries;
 never stop or switch model for them. Empty queue gets stated on GitHub.
 
 Producer added specialist seat labels in Discussion #968. Current primary Art
-claims: #947 In Review, #911 next after agreement, #960 after. MapGen claims
+claims: #947 completed, #911 active awaiting agreement, #960 after. MapGen claims
 #945/#959/#984. New area tickets are intake until claimed; completed work in
 review does not occupy an implementation slot. The watch includes claim-label
 membership and all claimed issue comments, alongside the existing area watch.

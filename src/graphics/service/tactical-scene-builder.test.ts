@@ -532,6 +532,42 @@ describe("TacticalSceneBuilder elevation tethers", () => {
     expect(line?.scale.y).toBeCloseTo(tileTop(2 * STOREY_LAYERS) - tileTop(0));
   });
 
+  // The case that bit #978: a roof tile carries its building and no
+  // `floorIndex`, and every fixture written for that change had floors
+  // and no roof. This code reads the same predicate, so it gets a roof.
+  it("tethers a unit standing on a roof the cut has taken away", async () => {
+    const b = new FixtureMapBuilder(6, 6, 8).fillGround();
+    b.building(tetherBuilding("b", 0, 2));
+    for (let floor = 0; floor < 2; floor++) {
+      b.tile({ x: 2, y: floor * STOREY_LAYERS, z: 2 }, SurfaceIds.FLOOR, {
+        buildingId: "b",
+        floorIndex: floor,
+      });
+    }
+    // Walkable roof: the building, no floor index, as generated maps emit.
+    b.tile({ x: 2, y: 2 * STOREY_LAYERS, z: 2 }, SurfaceIds.FLOOR, {
+      buildingId: "b",
+    });
+    const builder = new TacticalSceneBuilder({
+      map: b.build(),
+      models: new FakeModelLoader(),
+    });
+    await builder.update(
+      [
+        {
+          ...unit("u1", "squad:squad-1", 2, 2),
+          pos: { x: 2, y: 2 * STOREY_LAYERS, z: 2 },
+        },
+      ],
+      TEMPLATES,
+    );
+    // Cut to the ground floor: the roof is gone, so the unit on it is
+    // unsupported and the line lands on the ground.
+    builder.setLayerFocus({ storey: 0, storeyCount: 2, cutLevel: 1 });
+    const line = tethersIn(builder).get("u1");
+    expect(line?.scale.y).toBeCloseTo(tileTop(2 * STOREY_LAYERS) - tileTop(0));
+  });
+
   it("retires the line when the cut rises back over the unit", async () => {
     const { builder } = tetherScene();
     await builder.update([upstairs()], TEMPLATES);

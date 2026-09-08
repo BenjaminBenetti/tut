@@ -166,6 +166,20 @@ describe("missionToMapRecipe", () => {
       ok: false,
       error: { kind: "unknown-biome", id: "lunar" },
     });
+    // Between the two above in the source, and the only one of the four
+    // this test had ever missed (#735).
+    const badSettlement = missionToMapRecipe(
+      mission(
+        {},
+        { settlement: "arcology" as Mission["mapParams"]["settlement"] },
+      ),
+      INFESTATION_CLEARANCE,
+      registries,
+    );
+    expect(badSettlement).toEqual({
+      ok: false,
+      error: { kind: "unknown-settlement", id: "arcology" },
+    });
     const badSize = missionToMapRecipe(
       mission({}, { size: "huge" as Mission["mapParams"]["size"] }),
       INFESTATION_CLEARANCE,

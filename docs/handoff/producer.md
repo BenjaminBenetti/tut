@@ -3,57 +3,64 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-06 23:41 UTC)
+## Status Digest (2026-09-08 17:34 UTC)
 
-**Production held; Map Quality Loop live.** Await the Executive Director's next taste call outside the authorized loop. Map Critic (Astra 6, new seat) files evidenced tickets; MapGen (Astra 6 / xhigh) works generation and Art Director (Astra 6 / xhigh) handles assets. At most three open Critic tickets. Those tickets are live specialist work, not automatically held Backlog. No M3 decomposition or Ready growth beyond Executive Director exceptions.
+**Resumed against main `360778a`; production hold remains, Map Quality Loop active.** 21 open issues; one pre-existing open PR, #943. All 21 issues now have GitHub assignee `BenjaminBenetti` (the only assignable, shared studio account), a named role owner, priority, area and milestone. Assignment is accountability, not release from hold.
 
-**Active and sequenced map work:**
+| Live work | Owner / next action | Board |
+|---|---|---|
+| #937 p1 / PR #943 | Art Director: radius 4, proposed opacity 0.175; revised controls and Director verdict | In Progress |
+| #911 p2 dropship | Art Director: model after #937. **MapGen now:** agree 5×7 footprint, support and clearance before geometry | Blocked on agreement |
+| #917 p2 rural fences | MapGen, with Art support; follows #911 | Blocked on sequence |
 
-| Issue | Status / dependency | Accountable specialist |
-| --- | --- | --- |
-| #937 p1 cutaway radius | In Progress — #943 revision | Art Director; ED chose radius 4 and more transparency; final frames pending |
-| #911 p2 TDF dropship | Blocked — MapGen agreement outstanding | Art Director; proposed 5×7 envelope awaits MapGen agreement before geometry |
-| #917 p2 isolated rural fences | Queued behind #911 | MapGen |
+**Stale / incomplete:** #943 is ~42 hours old after the pause; CI is green on the old radius-3 head, not on the requested revision. Art resume comment 5589247062; MapGen agreement request 5589253500. #869's old raised-feature parapet counts are overtaken evidence after #926/#940; the separate kerb/connectivity hazard is still real (MapGen, Backlog). Body corrected; recommend retiring the old visual subclaim unless reproduced, with Director ruling pending. No other issue proved fully delivered; #514 still has #457 left.
 
-**Latest completion:** #936/#940 is closed/Done on main (`900d9a3`), after Director acceptance 5562961166 and Tech Lead green gate 5562938060; no release tag yet contains it. All 298 artificial blocks are removed, restoring 10,437 columns. Natural terrain, town/rural controls and building records are preserved. #936 supersedes the Director's earlier insistence on preserving raised vegetated beds: those settlement plinths must also stop. Natural terrain stays; building height and real hills supply verticality. #937 is the first radius-tuning pass on the now-working cutaway. Executive Director chose radius 4 over Art's recommendation of 3 and asked for doubled transparency (5563047496); Art proposes opacity floor 0.175 (half the retained opacity of 0.35), with a zero-opacity alternative to show the literal-transparency interpretation (5563083495). Final frames and Director judgment remain pending. #911 remains gated on agreement before modeling.
+**Board cleanup:** #944 had merged but remained In Review; now Done. All 453 existing cards compared with issue/PR state; no other closed item remained outside Done. No open issue lacks an accountable role or GitHub assignment. Generic engineer ownership on held #457/#753/#735 is now **Tech Lead**; proposed eng-4 execution when released, no seat labels.
 
-**Map Quality Loop completions — tagged v0.2.12 (`121f397`):** #906/#913 foundations, #910/#926 paved platforms, #916/#925 pitched roofs/cutaway, and #915/#932 waterfront endpoints are closed/Done after Director acceptance and Tech Lead gates. Tag ancestry verified for all four PRs. Platforms fell 187 → 0 with all 213 planted beds retained; roof controls and the restored local reveal passed review. Critic re-checks now confirm improved pictures for all four repairs (5562936624/5562936864/5562936788/5562936697). The Director's interior-darkness note remains a later play/sweep observation, not a merge block.
+**Shipped / release gap:** v0.2.12 remains latest (`121f397`): foundations, paved platforms, roofs/cutaway and waterfront ends; Critic re-checks accepted their pictures. #936/#940 vegetated-plinth removal is merged on main (`900d9a3`) but untagged. Critic still owes its post-removal height assessment: reachable elevated outdoor city tiles fell 9,271→5. MapGen still owes ADR 0004 §7's `waterfronts` row.
 
-**Critic queue:** one survey-origin ticket remains open (#917); #911/#937 are separate Executive Director features. Merged #912 raised the documented cap to five after the Director's latest three-ticket instruction; clarification remains pending, with the actual count below both. Evidence/handoff PR #918 merged (`f655dbe`), Done after the Critic formatted the rejected sidecars and all CI passed; the fresh four-repair visual verdicts and calibration correction are committed. Opening survey #905/#907 is Done.
+**Seats:** eng-3 Astra 6/xhigh (high only), eng-4/5 Opus 5/max (low/medium only): all idle. Producer Astra 6/high; MapGen and Art Astra 6/xhigh; Critic Astra 6. No M3 decomposition or Ready growth. One open Critic ticket (#917), below both the last session's cap 3 and later documented cap 5; clarification remains pending.
 
-**Earlier releases:** v0.2.8 half-height (#804), v0.2.9 scale (#826), v0.2.10 ramp ruling (#813), v0.2.11 materialled ladders (#891/#893, 58e6c9e). All four issues closed/Done. #849 also closed/Done. #876 deliberately closed: correctly classified same-level saddles remain because the trial fit looked worse.
-
-**Full board audit [#902](https://github.com/BenjaminBenetti/tut/issues/902#issuecomment-5561213567):** all 25 starting open issues assessed; **5 done and closed** (#32/#274/#320/#502/#728), **4 partial**, **14 still real**, **2 subsequently closed by Director on Executive Director rulings**. Director accepted the audit (5561387468); #902 is Done/closed and handoffs #903/#904 merged. Repaired 12 already-closed/merged cards, added five missing cards, filled 18 missing milestones, and verified every retained issue's priority, area, owner and current scope. No ownerless audited issue; no engineer seat assigned. 18 audited issues remain open; the audit record is closed. No engineer assignments resulted. New Map Quality Loop issues are outside that audit snapshot.
-
-**Audit rulings resolved:** #743 Done/closed: extraction stays on deploy deliberately (5561692727); the desired dropship is separate #911. #685 Done/closed as not planned: Executive Director will judge ambush feel from play, not through a map issue (5561692872). #902 is fully resolved, closed/Done, and its single audit comment now carries both final dispositions.
-
-**Partial / held:** #514 has only #457 left; playback ships, but melee VFX still uses anchor distance instead of weapon range. #447 has a shipped crash-site prototype; hive decisions/content and #760 remain held. #793's allocation and CI fixes shipped; only p3 profiling remains. Exact remaining scope is in each body and audit comment.
-
-| Engineer seat | Runtime / effort | Tier | Assignment |
-|---|---|---|---|
-| eng-3 | Codex, Astra 6 / xhigh | high only | Idle |
-| eng-4 | Claude Opus 5 / max | low / medium only | Idle |
-| eng-5 | Claude Opus 5 / max | low / medium only | Idle |
-
-**Other retained work:** #869 remains MapGen Backlog at its prior timing; #787/#760 held. Director decisions #591/#712/#734/#751; Art Director #450/#594/#673/#740; Engineer follow-ups **#735/#753 now complexity:medium**, approved by Tech Lead but held, with no seat. #753 needs persisted cityId, schema-v17 migration and a rendered-banner test; #735 inventories guards first, splits above 40 entries by Tech Lead selection, excludes intentional fallbacks/retired autofill, and preserves sim/fog output. These legacy items do not become active merely because their metadata is repaired.
-
-**Milestones (closed / total items, computed from issue state, including new Critic issues/PR):** M0 14/14 · M1 64/65 · M1.5 42/48 · M2 49/50 · M2.5 26/32 · M3 1/4 · Arsenal 1/3 · Bestiary 1/1 · Tech Debt 6/8. Assignment to a milestone is not a declaration that it is active or complete.
-
-**Board correction:** #908 merged the routing handoff but accidentally auto-closed #906 because GitHub parsed a negated closing phrase in its body. Producer reopened #906 and removed the link; its subsequent closure is now backed by accepted repair PR #913. Future handoff PRs must have no closing references to live work.
-
-**Post-removal height risk:** deployed-mech-reachable outdoor city tiles above road height fell 9,271 → 5 (30/36 cities → 1/36), despite unchanged building floors/roofs and a passing simulation. The Critic must re-check settlement plausibility and usable verticality after #940; any follow-up needs real-place evidence, not replacement plinths. Director acceptance resolved the town-frame gate: shipped town presets emit no such stamps, and the town natural-bank frame is honestly an unchanged control.
-
-**Documentation follow-through:** MapGen owes the nonblocking ADR 0004 §7 `waterfronts` pass-table row requested in 5562578286; tracked in closed #915 until the follow-up docs PR lands. The waterfront repair is accepted (5562615417) and tagged; the larger shoreline-shape question remains a separate Critic assessment/Director brief.
-
-**Dropship gate:** agree footprint, exact placement and clearance before Art models. The hull must sit outside the clear unit-start/boarding tiles; preserve shared deploy/extraction and real ground contact. #915 is complete, so its priority dependency no longer delays the MapGen agreement.
-
-**Risks / operation:** old visibility, walkover and pre-scale measurements are historical; issue bodies now say so. Check delivered code and release ancestry, including reverts, before closing; close epics in the same grooming pass as the last child closes (Director standing rule 5561387468). Producer is Codex Astra 6 / high. Publish one fixed handoff head through CI/merge and batch later updates. Return to one bounded five-minute watch (three-hour hard stop), groom events and re-arm; no cron. Local watcher overlaps reads by one minute and deduplicates events to catch merges near polling boundaries; checks passed. Capacity interruptions mean retry the same model, never infer a quota or switch models.
+**Milestones, closed / total non-PR issues:** M0 13/13 · M1 64/65 · M1.5 41/47 · M2 49/50 · M2.5 26/32 · M3 1/4 · Arsenal 1/3 · Bestiary 1/1 · Tech Debt 6/8. Counts now exclude PRs consistently.
 <!-- digest:end -->
 
 
+
+## Resume audit and owner ledger (2026-09-08)
+
+The Director requested a current-main audit after the two-day pause and actual GitHub assignments. The previous digest conflated the project's Owner field with GitHub Assignees: roles were populated, but every issue's Assignees field was empty. All 21 are now assigned to the shared `BenjaminBenetti` account, with the following accountable agents written into their bodies and project Owner field. No engineer seat was activated.
+
+| Open issue(s) | Accountable agent | Remaining work / timing |
+|---|---|---|
+| #937 p1 | Art Director | Finish #943's ED-selected radius 4 and transparency comparison; Director judges before Tech Lead merge |
+| #911 p2 | Art Director; MapGen owns placement agreement | Confirm proposed envelope and 16 clear start/boarding tiles now; model after #937 |
+| #917 p2 | MapGen | Rural fences must describe boundaries; live Critic work behind #911 |
+| #869 p2 | MapGen | Latent wall-crossing repair/order hazard remains Backlog; old parapet evidence needs current reproduction or retirement |
+| #457 p1 | Tech Lead | Held: carry weapon range into attack events and replace 1.6-unit VFX heuristic; eng-4 proposed after hold |
+| #753 p2 | Tech Lead | Held: persist mission city identity, migrate saves, render a meaningful tactical banner |
+| #735 p2 | Tech Lead | Held: bounded guard inventory and evidence; split above 40 entries by TL selection |
+| #450 p2 | Art Director | Held: accurate Earth texture to replace eleven marker nudges |
+| #594 p2 | Art Director | Held: decide utility-thumbnail row treatment, then verify it |
+| #591 p2 | Director | Tree sight-blocking choice on current terrain/scale; old visibility percentages are historical |
+| #734 p2 | Director | Executive Director difficulty targets and fresh paired-seed calibration |
+| #751 p2 | Director | Resolve threat-loss condition versus Earth-overrun copy |
+| #514 p0 epic | Producer | Historical milestone priority, held; 15/16 children complete, only #457 remains |
+| #793 p3 | Art Director | Allocation and CI fixes shipped; only parked mist-cost profiling remains |
+| #740 p3 | Art Director | Held: promote debrief rewards while genuine losses retain priority |
+| #673 p3 | Art Director | Held: four stat glyphs and their stat-sheet use |
+| #787 p3 | MapGen | Held M3 pillar overpass/underpass; disabled old viaducts did not implement it |
+| #760 p3 | MapGen | Held hive cavern prototype, after design answers |
+| #447 p3 | MapGen | Crash-site prototype shipped; hive dimensions/passability and content remain held |
+| #701 p3 | MapGen | Held palm clustering; earlier attempt reverted, needs authorized current-scale validation |
+| #712 p3 | Director | Temperate boulder clustering intent remains undecided |
+
+**Evidence and limits.** Full REST issue inventory and all 453 board cards were compared. Current main differs from the previous evidence baseline `2878dfc` only in the artificial-elevation catalogue/pass and their tests, plus docs. Readback verified all 21 assignments, role owners, priorities, areas and milestones, zero seat labels, and #944 Done. Main still uses ghost radius 2 and the melee-distance heuristic. PR #943 has green CI at `950074f` but its required revision is outstanding. No new game change or visual acceptance is claimed by this administrative audit. #869's wall-crossing hazard is confirmed in the current repair code; the old parapet frames are not asserted to reproduce today. Keep that issue open while the Director rules on its obsolete visual subclaim.
+
+The accepted full audit remains [#902](https://github.com/BenjaminBenetti/tut/issues/902#issuecomment-5561213567), closed/Done. Its five delivered closures and the Director's #743/#685 rulings stand; no new issue closure was justified this pass. Earlier release dispositions, including deliberately closed #876, remain unchanged.
+
 ## Current watch operation (2026-09-06)
 
-The session watcher is `.producer/watch.py` (git-ignored workspace scratch), running in a background terminal. It is read-only and uses a process lock to enforce one watcher. `watch-state.json` keeps the cursor and poll time across re-arms; `watch-result.json` caches the event payload for grooming. The four event classes and self-comment exclusion passed `--selftest`. It never assigns seats or runs the inherited autofill/groom scripts. On API errors it exits visibly rather than retrying rapidly. These session files are not guaranteed to survive a replacement checkout; reconstruct this bounded watch if absent, following the standing rule above. Keep tooling changes out of handoff PRs.
+The session watcher is `.producer/watch.py` (git-ignored workspace scratch). The pre-pause process was gone on resume; the Producer re-arms one bounded background terminal after this pass. It is read-only and uses a process lock to enforce one watcher. `watch-state.json` keeps the cursor and poll time across re-arms; `watch-result.json` caches the event payload for grooming. The four event classes and self-comment exclusion passed `--selftest`. It never assigns seats or runs the inherited autofill/groom scripts. On API errors it exits visibly rather than retrying rapidly. These session files are not guaranteed to survive a replacement checkout; reconstruct this bounded watch if absent, following the standing rule above. Keep tooling changes out of handoff PRs.
 
 **Publication cadence:** push a handoff PR once and leave its head fixed until CI finishes and Tech Lead merges it. Batch subsequent digest changes for the next PR; groom the board immediately. Tech Lead [comment 5559186098](https://github.com/BenjaminBenetti/tut/pull/877#issuecomment-5559186098) identified four pushes in 25 minutes cancelling near-finished e2e runs. On #877, e2e took 9m53s; allow roughly 12 minutes for the full CI path instead of restarting it. A CI failure requiring a fix is different from a routine status update. Record publication state and pending notes in `.producer/` scratch; do not commit that tooling.
 

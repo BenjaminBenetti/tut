@@ -1,5 +1,7 @@
 # Map Critic — resumed survey, 2026-09-08
 
+[Published resumed assessment](https://github.com/BenjaminBenetti/tut/issues/905#issuecomment-5590312244).
+
 Current-main baseline: `360778a4a0edbe5cfbc865af4006e5b9d0d92231`.
 Its game, asset and capture-tool trees match the post-#936 baseline `900d9a3`.
 The two-day pause added no visual change to that comparison.
@@ -42,17 +44,16 @@ Map Lab's preview units.
   fresh rural fragments belong to that issue.
 - Hard natural material boundaries are now [#945](https://github.com/BenjaminBenetti/tut/issues/945),
   routed to both MapGen and Art with committed two-angle evidence.
-- #937 is still a pending merged-frame check. Radius **4** is the Executive
-  Director's chosen coverage, including overlapping reveals. The Director
-  has accepted the Art Director's opacity interpretation of **0.175**;
-  PR #943 awaits final frames/merge. Do not re-file the chosen wide reveal.
+- #937 merged during the resumed watch. Radius **4** and opacity **0.175**
+  visibly improve room/squad readability; both roofs close again. The
+  [merged-frame verdict](../map-critic-post937/README.md) preserves the exact
+  comparisons. Do not re-file the Executive Director's chosen wide reveal.
 - #911 owns the dropship at the deliberately shared deploy/extract zone.
   #869 owns ramps meeting continuous parapets. #787 owns future big-city
   overpasses. #701, #712 and #591 retain their earlier context.
 
 The settled #813/#876/N1 geometry rulings stand. Hard material boundaries
 are a different finding. Useful cover does not excuse implausible placement.
-
 
 ## Survey evidence
 
@@ -80,3 +81,16 @@ contact shapes, a related but distinct visual outcome. #509/#511 supplied
 wall families and #492 addressed excessive glazing. Preserve their material
 contrast and restrained windows; building-use identity asks for more than
 another window-density or colour pass. Art and MapGen own the means.
+
+## Ranked follow-up tickets filed
+
+1. Existing #917 — rural fences, actively owned by MapGen.
+2. [#945](https://github.com/BenjaminBenetti/tut/issues/945) — natural material contacts.
+3. [#959](https://github.com/BenjaminBenetti/tut/issues/959) — temperate trail readability, P01–P03.
+4. [#960](https://github.com/BenjaminBenetti/tut/issues/960) — recognisable building uses/frontages, I01–I04.
+
+Four open Critic tickets, within the five-ticket cap. New tickets use both
+area labels because the render does not establish whether art, placement
+or both will supply the improvement. #937 is complete and no longer takes
+a queue slot. The six merged repair verdicts remain distinct from these
+next steps.

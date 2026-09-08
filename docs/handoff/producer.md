@@ -3,29 +3,26 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-08 19:36 UTC)
+## Status Digest (2026-09-08 19:57 UTC)
 
-**Production is running.** [Discussion #968](https://github.com/BenjaminBenetti/tut/discussions/968) is the standing-orders channel, now inherited through Studio and all seven role briefs in merged #970 (`5d7aa29`). Work direction stays in issue/PR threads; every discussion comment wakes the existing single watcher. Against main `e0e9941`: **23 open issues, 3 with seat labels and 20 unowned**. GitHub Assignees stay empty; Owner records responsibility, not a substitute claim.
+**Production is running.** Standing orders: [Discussion #968](https://github.com/BenjaminBenetti/tut/discussions/968); work direction: issue/PR threads. The channel is in Studio and every role brief through merged #970; #980 removed obsolete predecessor instructions. Main `cd412f5`: **23 open issues; 3 seat-owned, 20 unowned**. GitHub Assignees remain empty.
 
-| Work | Seat / board responsibility | Current state |
+| Active work | Seat / board responsibility | State |
 |---|---|---|
-| #735 p2 guard audit | `seat:eng-4`, Opus 5/max / Engineer | In Progress: A's 25 validators In Review #975; B's 10 command guards active; C's 8 remain |
-| #961 p1 layer controls | `seat:eng-5`, Opus 5/max / Engineer | In Review #977; Director judgment pending on above-cut units and hillside limitation |
-| #978 p1 hillside layer cut | `seat:eng-5` / Engineer | Blocked on #977 merge; claimed follow-through, not a second active job |
-| #947 p1 cursor cutaway | Unowned / Art Director | In Progress; revised pointer depth floor+0.70, real-runtime evidence being regenerated |
-| #917 p2 rural fences | Unowned / MapGen | In Review #973; Director accepted head `35575232`, Tech Lead merge pending |
+| #949 p2 objective labels | `seat:eng-4`, Opus 5/max / Engineer | In Progress; #735 attribution retained in review |
+| #978 p1 hillside layer cut | `seat:eng-5`, Opus 5/max / Engineer | In Progress; #977 merge cleared its dependency |
+| #945 p2 material contacts | Unowned / MapGen | In Progress after #917; Art supports diagnosis |
+| #947 p1 pointer cutaway | Unowned / Art | In Progress, draft #982; early visual approval, final live-input/fog/browser proof pending |
 
-**Ownership and routing:** #950 is Done via #962 with `seat:eng-5` retained; completed review work never returned to Backlog. #751 is Done via #972 (`c388fbc`), so eng-3 (Astra 6/xhigh) is free; #447 still needs hive decisions. #949 is Ready for the next available Opus seat. Check open PRs and claim threads before moving a ticket backwards. No pre-start sizing gate; Director routing takes precedence over older tier labels.
+**Unowned, no seat label:** #447, #450, #591, #594, #673, #701, #712, #734, #740, #760, #787, #793, #869, #911, #945, #947, #959, #960, #981, #984. Owner roles do not replace claims. eng-3 (Astra 6/xhigh) is visibly idle; no suitable Ready high issue. #984 is Ready/MapGen behind map-quality work, not a Director decision gate.
 
-**Unowned — all open issues without a seat label:** #447, #450, #591, #594, #673, #701, #712, #734, #740, #760, #787, #793, #869, #911, #917, #945, #947, #949, #959, #960. Map/Art role claims remain visible in Owner; specialist seat-label inconsistency remains explicit.
+**Review:** #735 keeps `seat:eng-4`: A/#975 merged (169/187 guards exercised); B/#979 and C/#983 await merge and disposition of five retained exceptions. Combined-branch claim is 182/187, not current main coverage. #976 is QA's selection test; #985 is Art's handoff. All open PRs are under an hour old; this update adds the Producer handoff.
 
-**Dependencies:** #945 follows #917; #959 follows related #945; Art #911 follows #947 and MapGen agreement on footprint/16 clear boarding-and-start tiles; #960 follows #911. #760 awaits #447; decisions remain on #447/#591/#594/#712/#734. #787/#869 are Backlog, not pause-blocked. Other Ready: Art #450/#673/#740/#793, MapGen #701. Four Critic tickets (#917/#945/#959/#960), cap five; engineer #978 is outside that cap.
+**Dependencies / queue:** #959 follows #945; Art #911 follows #947 plus footprint/16-clear-tile agreement, then #960; #981 follows #978. #760 awaits #447; decisions remain #447/#591/#594/#712/#734. Backlog #787/#869 is not pause-blocked. Other Ready: Art #450/#673/#740/#793, MapGen #701. Critic has three open tickets (#945/#959/#960), cap five. No new M3 decomposition.
 
-**Review / delivery:** open implementation/test PRs #973 (~18m), #975 (~13m), #976 (~11m), #977 (~10m), plus this handoff. QA evidence #974 and handoffs #969/#970/#971 are Done. #514 is Done with all 16 children closed. #751 completes M1's issue set; the milestone itself remains for the Director to close.
+**Delivered / risks:** #917/#973 and #961/#977 are Done. One storey means two engine layers; units above the cut deliberately stay visible. Hillside alignment is #978, cosmetic treatment #981. #869's old parapet crossings measured 2,046→0 in merged QA #974; subclaim-retirement ruling remains requested, latent wall hazard remains. ADR 0004 §7 needs waterfront and rural-fence rows. #984 tracks the latent four-mech minimum versus eight-unit cap. Critic re-check of merged fences remains due.
 
-**Risks / stale claims:** #961 steps one storey/two engine layers, but its global cut anchors to the lowest building: #978 reports 46/108 maps with building-ground spreads of 2–6 layers, potentially hiding hillside buildings. Flat-map frames do not prove that case; the release verdict belongs on #977. QA #974 measured #869's old parapet-crossing ramps **2,046→0**; retiring that subclaim awaits the ruling requested on #869, while the latent kerb/connectivity hazard remains. Critic #966 accepts room visibility/reclosure; stipple and dim interiors remain. QA town fixtures exercise foundations; city starts do not in the measured sample. MapGen still owes ADR 0004 §7's waterfront row.
-
-**Milestones, closed/total issues:** M0 13/13 · M1 65/65 · M1.5 41/50 · M2 49/50 · M2.5 31/37 · M3 1/4 · Arsenal 1/3 · Bestiary 1/1 · Tech Debt 6/8. Latest tag v0.2.12 (`121f397`); later #936/#753/#937/#457/#950/#751 deliveries remain untagged. Producer Astra 6/high; MapGen/Art Astra 6/xhigh; Critic Astra 6. One five-minute watch, three-hour deadline, fixed head per handoff PR.
+**Milestones, closed/total:** M0 13/13 · M1 65/65 · M1.5 42/50 · M2 49/50 · M2.5 32/38 · M3 1/4 · Arsenal 1/3 · Bestiary 1/1 · Tech Debt 6/9. Director closes milestones. Latest tag v0.2.12; later #936/#753/#937/#457/#950/#751/#917/#961 deliveries remain untagged. Producer Astra 6/high; MapGen/Art Astra 6/xhigh; Critic Astra 6. One five-minute discussion/work watch, three-hour deadline; one fixed head per PR.
 <!-- digest:end -->
 
 
@@ -41,19 +38,21 @@ The role column below records routing responsibility; only rows with a `seat:` l
 | Issue(s), including audit completions | Accountable agent | Remaining work / real gate |
 |---|---|---|
 | #937 / #943 | Art Director, completed | Done; corrected fog frames independently verified, acceptance and CI green |
-| #947 p1 | Art Director | In Progress: proposed radius3/rawpointer, 120ms dwell/150ms fade, separate graphics hit-test; parameters await evidence |
-| #917 p2 | MapGen | In Review #973; frames accepted, merge pending |
-| #945 p2 | MapGen, Art support | Natural material boundaries; cause assessment after #917 |
+| #947 p1 | Art Director | Draft #982, visual half approved; final input/fog/browser proof pending; floor+0.70 pointer anchor |
+| #917 p2 | MapGen, completed | Done via #973; Critic re-check due |
+| #945 p2 | MapGen, Art support | In Progress: natural material boundaries; #917 dependency cleared |
 | #959 p2 | MapGen, Art support | Trail identity after related #945, not merely smooth material contacts |
 | #960 p2 | Art Director, MapGen support | Recognisable building uses after #947/#911; live Critic work, not a taste hold |
 | #911 p2 | Art Director, MapGen placement | Model after #947; agree proposed 5×7 / max-height 3.6 envelope, real support, rotation and 16 clear boarding/start tiles before modeling |
 | #457 / #955 | eng-4, completed | Done; Director accepted the opposite-failure controls and the green gate passed |
 | #753 / #948 | eng-5, completed | Merged/Done; live and reload city lookup proved, correcting the migration premise |
-| #949 p2 | Tech Lead, next free Opus seat | Ready / low; objective labels and meaningful overflow fixture |
+| #949 p2 | `seat:eng-4` | In Progress / low; objective labels and meaningful overflow fixture |
 | #950 p2 | `seat:eng-5`, completed | Done via #962; retained attribution, schema-v17 migration and city-name rendering |
-| #961 p1 | `seat:eng-5` | In Review #977; one storey/two engine layers; hillside limit measured in #978 |
-| #978 p1 | `seat:eng-5` | Blocked on #977 merge; hillside floor/readout correction |
-| #735 p2 | `seat:eng-4` | A (25 validators) In Review #975; B (10) active; C (8) remains |
+| #961 p1 | `seat:eng-5`, completed | Done via #977; one storey/two engine layers; hillside limit in #978 |
+| #978 p1 | `seat:eng-5` | In Progress after #977; hillside floor/readout correction |
+| #981 p3 | Engineer, no claim | Blocked after #978; above-cut-unit treatment, never hide units |
+| #984 p2 | MapGen | Ready after live map work; align map/deployment capacity contract, failing minimal-map test |
+| #735 p2 | `seat:eng-4`, In Review | A merged; B/#979 and C/#983 in review; five retained-guard dispositions before closure |
 | #450 p2 | Art Director | Ready: true Earth-coordinate texture, remove eleven marker nudges |
 | #594 p2 | Art Director | Blocked on utility-thumbnail row design choice |
 | #591 p2 | Director | Blocked on tree sight-blocking decision using current-scale evidence |

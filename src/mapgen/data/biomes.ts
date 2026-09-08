@@ -42,7 +42,8 @@ export const BIOME_DEFINITIONS: Readonly<Record<BiomeId, BiomeDefinition>> = {
       { template: BuildingKindIds.TOWER, weight: 1 },
     ],
     roadSurface: SurfaceIds.ROAD,
-    trailSurface: SurfaceIds.DIRT,
+    // A stone track stays distinct from this biome's natural bare dirt (#959).
+    trailSurface: SurfaceIds.ROCK,
   },
   snowy: {
     id: "snowy",

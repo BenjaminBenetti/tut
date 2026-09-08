@@ -408,3 +408,113 @@ describe("MissionResultsScreen", () => {
     expect(root.children).toHaveLength(0);
   });
 });
+
+// ===========================================
+// Reward prominence (#740)
+// ===========================================
+
+describe("MissionResultsScreen payout prominence", () => {
+  let root: HTMLElement;
+
+  beforeEach(() => {
+    document.body.innerHTML = "";
+    root = document.createElement("div");
+    document.body.appendChild(root);
+  });
+
+  /** Mounts the screen over a result and returns the panel's field order. */
+  function mountWith(overrides: Partial<MissionResult>): HTMLElement {
+    const state = afterMission();
+    const store = new FakeStore({
+      ...state,
+      overworld: {
+        ...state.overworld,
+        lastMissionResult: { ...RESULT, outcome: "won", ...overrides },
+      },
+    });
+    new MissionResultsScreen({
+      router: fakeRouter().router,
+      session: sessionWith(store),
+    }).mount(root);
+    return root;
+  }
+
+  /** Index of a `data-field` block among the panel's children, in reading order. */
+  function orderOf(container: HTMLElement, field: string): number {
+    const blocks = [...container.querySelectorAll("[data-field]")];
+    return blocks.findIndex(
+      (block) => (block as HTMLElement).dataset.field === field,
+    );
+  }
+
+  // The reward is what the mission was for. On a mission that cost
+  // nothing it used to sit under four sections all reporting that
+  // nothing bad happened.
+  it("reads the payout before the loss sections when nothing was lost", () => {
+    const panel = mountWith({
+      squadCasualties: [],
+      squadsWiped: [],
+      mechsDestroyed: [],
+      mechDamage: [],
+    });
+    const rewards = panel.querySelector<HTMLElement>('[data-field="rewards"]');
+    expect(rewards?.dataset.promoted).toBe("true");
+    expect(orderOf(panel, "rewards")).toBeLessThan(
+      orderOf(panel, "mechs-destroyed"),
+    );
+    expect(orderOf(panel, "rewards")).toBeLessThan(
+      orderOf(panel, "casualties"),
+    );
+  });
+
+  // The case GDD §5.8 cares about, and the one a promotion could
+  // regress. Asserted rather than assumed, as the ticket asks.
+  it("keeps a destroyed mech ahead of the payout", () => {
+    const panel = mountWith({
+      squadsWiped: [],
+      mechsDestroyed: ["mech-1"],
+    });
+    const rewards = panel.querySelector<HTMLElement>('[data-field="rewards"]');
+    expect(rewards?.dataset.promoted).toBe("false");
+    expect(orderOf(panel, "mechs-destroyed")).toBeLessThan(
+      orderOf(panel, "rewards"),
+    );
+    // And the loss keeps its alarm.
+    expect(
+      panel
+        .querySelector('[data-field="mechs-destroyed"]')
+        ?.className.includes("--prominent"),
+    ).toBe(true);
+  });
+
+  // A wiped squad is a loss too. Promoting a payout over it would be
+  // the same inversion, smaller only because a squad is cheaper.
+  it("keeps a wiped squad ahead of the payout, with no mech lost", () => {
+    const panel = mountWith({
+      squadsWiped: ["squad-2"],
+      mechsDestroyed: [],
+    });
+    const rewards = panel.querySelector<HTMLElement>('[data-field="rewards"]');
+    expect(rewards?.dataset.promoted).toBe("false");
+    expect(orderOf(panel, "squads-wiped")).toBeLessThan(
+      orderOf(panel, "rewards"),
+    );
+  });
+
+  it("shows the same numbers either way", () => {
+    const clean = mountWith({
+      squadCasualties: [],
+      squadsWiped: [],
+      mechsDestroyed: [],
+      mechDamage: [],
+    });
+    const cleanCredits = clean.querySelector<HTMLElement>(
+      '[data-field="credits"]',
+    )?.textContent;
+    root.innerHTML = "";
+    const costly = mountWith({ mechsDestroyed: ["mech-1"] });
+    expect(
+      costly.querySelector<HTMLElement>('[data-field="credits"]')?.textContent,
+    ).toBe(cleanCredits);
+  });
+});

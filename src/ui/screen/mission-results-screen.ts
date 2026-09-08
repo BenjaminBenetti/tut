@@ -227,6 +227,12 @@ export class MissionResultsScreen implements Screen {
       (g) => g.missionId === result.missionId,
     );
     const roster = state.roster;
+    // "Cost nothing" means no mech destroyed **and** no squad wiped. A
+    // wiped squad is a loss too (GDD §5.8), and lifting a payout over it
+    // would be the same inversion in miniature that this issue exists to
+    // avoid — smaller only because a squad is cheaper than a mech.
+    const lossless =
+      result.mechsDestroyed.length === 0 && result.squadsWiped.length === 0;
 
     panel.appendChild(
       this.section(
@@ -303,8 +309,47 @@ export class MissionResultsScreen implements Screen {
       ),
     );
 
+    // The payout. On a mission that cost nothing it is promoted to the
+    // top of the panel; otherwise it stays at the foot, where it has
+    // always been (#740).
+    const rewards = this.payout(doc, result, lossless);
+    if (lossless) {
+      // After the mission line, before the four "nothing happened"
+      // sections. On a clean debrief those sections are the least
+      // informative content on the screen, and the reward was under all
+      // of them.
+      mission.after(rewards);
+    } else {
+      panel.appendChild(rewards);
+    }
+  }
+
+  /**
+   * Credits and infestation change.
+   *
+   * `promoted` gives it size and the winning green — deliberately **not**
+   * the alarm's channel. A destroyed mech speaks with a red left border
+   * and a danger heading; if good news borrowed the same means, the
+   * screen would be saying two opposite things the same way, which the
+   * style guide (§12.2) forbids and which is how #736's false alarm
+   * managed to read as a catastrophe.
+   *
+   * @param doc - Owning document.
+   * @param result - The mission that just ended.
+   * @param promoted - Whether this mission cost the player nothing.
+   * @returns The payout block.
+   */
+  private payout(
+    doc: Document,
+    result: MissionResult,
+    promoted: boolean,
+  ): HTMLElement {
     const rewards = doc.createElement("dl");
-    rewards.className = "tut-kv";
+    rewards.className = promoted
+      ? "tut-kv tut-mission-results__payout"
+      : "tut-kv";
+    rewards.dataset.field = "rewards";
+    rewards.dataset.promoted = promoted ? "true" : "false";
     for (const [label, field, value] of [
       ["Credits", "credits", formatCredits(result.creditsAwarded)],
       [
@@ -322,7 +367,7 @@ export class MissionResultsScreen implements Screen {
       detail.textContent = value;
       rewards.append(term, detail);
     }
-    panel.appendChild(rewards);
+    return rewards;
   }
 
   /** A titled list; `prominent` gives the destroyed-mechs block its top billing. */

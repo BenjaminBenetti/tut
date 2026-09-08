@@ -33,6 +33,8 @@ Add the discussion to your **existing single watcher**, using the exact query an
 
 ## Way of working
 
+Use `seat:art-director` to claim routed work and keep `area:art` for intake. Include both in the existing single watch; area labels alone do not establish ownership. Preserve the claim while completed work is in review, and distinguish it from the one active implementation job. Cross-domain work keeps both area labels and one primary seat claim. This specialist label does not consume an engineer seat.
+
 - Track deliverables as issues labeled `area:art`. The Producer will add them to the board.
 - Coordinate manifest format and integration points with the Tech Lead via issue comments.
 - Keep `docs/handoff/art-director.md` current: what exists, what's next, prompt recipes that worked.

@@ -1,15 +1,39 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-08 (#947 draft PR #982; #911 then #960)
+Last updated: 2026-09-08 (#947 merged; #911 placement agreement, then #960)
 
-## Current status: #947 pointer inspection, draft PR #982
+## Active: #911 dropship, awaiting MapGen's placement agreement
+
+**#947 is complete**, merged by the Tech Lead as **3ea2fb7** (PR #982).
+Director accepted final head 9aefe64. The Tech Lead verified the merge result
+with main 7b8a401: typecheck, eslint, prettier, 2,243 unit tests (one skipped),
+build, sim, and 60 browser tests with zero flaky tests. Both re-rendered fog
+scenes matched the committed PNGs exactly; only the new #977 FLOOR readout
+differed, within a 174×32 box at +508+4 in the top banner. No changes were
+requested in code review. Main is checked out at 3ea2fb7, clean.
+
+**#911 is the active Art claim**, with a real gate before geometry: MapGen's
+agreement to the 5×7 / max 3.6 envelope, landing support and clearance contract.
+All issue comments were read after #982 merged; no MapGen response was present.
+[Current contract request](https://github.com/BenjaminBenetti/tut/issues/911#issuecomment-5591214587)
+and [full original proposal](https://github.com/BenjaminBenetti/tut/issues/911#issuecomment-5562423843).
+The one bounded watch includes this issue, area:art, seat:art-director and #968.
+No aircraft geometry has been built. #960 remains after #911; #945/#959 are
+MapGen-led with Art support. No production hold or earlier generation dependency
+blocks the agreement. Begin the Blender loop after the actual contract is agreed.
+
+## Completed evidence: #947 pointer inspection (#982)
 
 Codex Art Director, **gpt-6-astra xhigh**. [PR #982](https://github.com/BenjaminBenetti/tut/pull/982),
 branch `feat/947-pointer-cutaway`, has the implementation and 28-frame matrix at
-`1a81bf3`. It is a **draft** while final browser input/Map Lab/fog checks run.
-Typecheck, lint, 2,190 unit tests (one skipped), build and seven simulation tests
-pass. Do not call the feature accepted: Director frame judgment and Tech Lead
-review/merge are still required.
+`9aefe64`, now merged as 3ea2fb7. [Final evidence](https://github.com/BenjaminBenetti/tut/pull/982#issuecomment-5591088585)
+is posted. Typecheck, lint, 2,190 unit tests (one skipped), build, seven simulation
+tests, 59 browser tests (27 opt-in captures skipped), and the fog capture pass.
+**Director accepted head 9aefe64** in [comment 5591110810](https://github.com/BenjaminBenetti/tut/pull/982#issuecomment-5591110810),
+after independently checking hover/overlap/open-ground bytes against the frames
+he had judged. The Tech Lead merged after the independent gate above. **All three
+final-head CI checks passed** on 9aefe64; [CI links](https://github.com/BenjaminBenetti/tut/pull/982#issuecomment-5591214330).
+The bounded watch now follows the dropship contract and standing queue.
 
 [Diagnosis and parameters before code](https://github.com/BenjaminBenetti/tut/issues/947#issuecomment-5589887736):
 action hover prioritises units/spawners and pitched roofs have no walkable tile
@@ -40,11 +64,22 @@ and pointer leave. Sixteen baseline/closure checks matched byte for byte.
 Initial final matrix source `0af63ba`, main integrated through `b6928d0`; fresh
 baseline is main `3c04481`, which contains #943. The older #937 indoor matrix
 predates #936 and is not this baseline. Runtime `bc2f47f` adds viewport resize
-handling and Map Lab composition; `capture-pointer-cutaway.mjs --verify` is
-currently re-rendering all 28 cases and requiring their bytes to stay exact.
+handling and Map Lab composition; `capture-pointer-cutaway.mjs --verify`
+re-rendered all 28 cases and **every PNG was byte-identical**.
 
-Scratch `.git/art-947/`; runtime Vite on **4200**, stable no-watcher config.
-Old 4199 and baseline 4198 servers are stopped. The detached baseline worktree
+Live browser proof: a 65.9 ms sweep kept all 25 sampled strengths at zero and
+matched the closed control. Drag closes/release opens. Twenty stationary
+frames add no map picks; 28 picks on this 48×48 fixture measured median 2.1 ms,
+p95 4.0 ms, max 6.9 ms CPU. Map Lab closed/hover/leave is committed too, with
+byte-exact closure. No page errors. Both seed-4242 fog frames are regenerated
+and inspected: zero changed pixels below the 41 px top banner against the PNGs
+committed on main b6928d0. Full frames differ only inside the banner updated by
+merged #948 (Johannesburg replaces mission id), by 2,002 / 1,984 pixels. Hashes
+and bounds are in `diagnostics/947/fog-comparisons.json`; do not claim full-frame
+equality. The indoor reference and fog reference are explicitly different.
+
+Scratch `.git/art-947/`; all owned Vite servers (4200, 4173, earlier 4199
+and baseline 4198) are stopped. The detached baseline worktree
 remains `.git/art-947/baseline`; its local Vite config permits `.git` paths and
 uses a separate cache. Restart capture servers after code changes: disabling
 watch/HMR also disables module invalidation. Capture supports `--resume`, checks
@@ -52,13 +87,17 @@ completed hashes, and always closes Chromium; one initial 30 s screenshot
 failed, so the art-only screenshot budget is now 120 s. No game/test timeout
 was widened. No provider capacity failure occurred.
 
-Next: finish live sweep/drag/cache/Map Lab proof, both fog captures and browser
-gate; post final evidence on #982 and mark it ready. Address review on this
-branch. Then **#911** (footprint first, MapGen places it), then **#960** (Art
+The feature branch integrated main through b6928d0; the Tech Lead checked the
+final merge with 7b8a401. Next is **#911** (footprint first, MapGen places it), then **#960** (Art
 accountable for building-use cues; diagnose kit versus arrangement, MapGen
 supports placement). Prior dropship envelope proposal: 5×7, max height 3.6,
-+Z nose; no model started. **#945 / #959** are MapGen-led after #917, with Art
-material/rendering support; do not displace the assigned Art sequence.
++Z nose; no model started. **#945 / #959** are MapGen-led with Art material/rendering
+support; #917 merged as #973, so their dependency is cleared. They do not
+displace the assigned Art sequence.
+The dropship has a real pre-geometry gate: MapGen must confirm or adjust the
+5×7 / max 3.6 envelope, ground support and clearance, with the hull off all
+16 start/boarding tiles. [Current contract request](https://github.com/BenjaminBenetti/tut/issues/911#issuecomment-5591214587).
+Production hold and earlier generation dependencies do not block that agreement.
 
 ## Standing orders and watch
 
@@ -69,12 +108,20 @@ is posted. Do not let old historical pause language below override this order.
 
 One bounded background watch, `.git/art-director-watch/watch.py`: 300 s minimum
 poll interval, one-line exit on a relevant event, three-hour hard stop. REST
-for work threads/new or relabelled art/owned PRs and CI, plus the exact #968
+for work threads/new or relabelled art/owned PRs and CI, plus **seat:art-director**
+claims and the exact #968
 GraphQL `comments(last:10){nodes{createdAt body}}` query. Comments are deduplicated
-by timestamp/body hash, so edits wake it too. The script reloads shared state
+by timestamp/body hash, so edits wake it too. If all ten returned comments are
+unseen, it paginates the full discussion before advancing the cursor. The script reloads shared state
 before each poll so new PR subscriptions survive while it is running. Act on
 its event file, then arm one replacement. Capacity/transport errors are retries;
 never stop or switch model for them. Empty queue gets stated on GitHub.
+
+Producer added specialist seat labels in Discussion #968. Current primary Art
+claims: #947 completed, #911 active awaiting agreement, #960 after. MapGen claims
+#945/#959/#984. New area tickets are intake until claimed; completed work in
+review does not occupy an implementation slot. The watch includes claim-label
+membership and all claimed issue comments, alongside the existing area watch.
 
 Watch read QA #974: catalogue unchanged, parapet-crossing ramps 2,046 → 0,
 no regressions in five merged map fixes tested in play. #869 retirement is with

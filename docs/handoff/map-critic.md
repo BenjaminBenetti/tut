@@ -43,7 +43,9 @@ Four open Critic tickets at this checkpoint:
 
 1. **[#917](https://github.com/BenjaminBenetti/tut/issues/917), p2 — MapGen:**
    isolated rural fence panels describe no boundary. MapGen claimed this
-   repair on resumed main `360778a`; it is active work. Re-check the original
+   repair on resumed main `360778a`; it is active work. Its #968 update
+   reports implementation and real before/after frames prepared, final
+   validation running; no merged repair has been inspected yet. Re-check the original
    coastal/rural/small `mc-opening-01`, `(5,2,22)`, two angles after merge.
    Preserve recognisable timber fences and low cover in plausible boundaries.
 2. **[#945](https://github.com/BenjaminBenetti/tut/issues/945), p2 — MapGen + Art:**
@@ -148,7 +150,8 @@ at 19:14:53 UTC as `d85ecd9`, after all three CI jobs passed at `91ed16b`.
 The survey, repair crops and ranked queue are now on main.
 
 The Director’s #968 subscription arrived during that merge. Its follow-up
-is **handoff-only**, on branch **`chore/968-map-critic-standing-orders`**
+is **[PR #971](https://github.com/BenjaminBenetti/tut/pull/971), handoff-only**,
+on branch **`chore/968-map-critic-standing-orders`**
 based on `d85ecd9`; no additional survey or game changes are included.
 Local whitespace/link checks passed; normal PR CI applies to the follow-up.
 Capture scripts/source frames, GH cache and watch result live under ignored
@@ -164,6 +167,13 @@ coverage-bucket caveat. #869 owns ramps crossing continuous parapets. #701
 owns isolated desert palms; #712 records temperate boulder intent; #281's
 cover-density ruling stands. Trees' visible boundaries do not establish
 LOS protection (#591).
+
+**#947 is the owned cursor-cutaway gap**, active with Art ahead of #911.
+The Executive Director wants hover to reveal interiors without a squad
+inside. After merge, judge hovered, pointer/squad overlap and open-ground
+roof-preservation controls. Art owns the parameters; the Director judges
+the frames. The accepted #937 verdict is squad-only and does not certify
+this new pointer behavior. Do not re-file its absence.
 
 **#911 is the known dropship gap.** Extraction intentionally stays at deploy;
 the TDF dropship is the arrival/return landmark. Art owns the model, MapGen
@@ -212,10 +222,19 @@ September 6; follow-up watch `99123` ended on #940's candidate report at
 
 ### Director-requested #968 watch
 
-**Session `75187`, started 2026-09-08 19:15:28 UTC, hard stop 22:15:28 UTC.**
-One active background terminal, 300-second polls, exits on the first new
+**Original start 2026-09-08 19:15:28 UTC; unchanged hard stop 22:15:28 UTC.**
+Session `75187` exited at 19:20:33 on the first discussion-comment batch.
+All eight comments were read: seat acknowledgements, MapGen’s #917
+validation/queue update, Art’s #947-before-#911 ordering and Producer’s
+standing-orders documentation PR #970. No visual repair merged in that batch.
+The exact query ran successfully.
+
+The same bounded subscription was re-armed from that consumed snapshot at
+19:22:13, **active session `59079`**. Its deadline was not extended; the old
+terminal is finished, so only one is active. It uses 300-second polls and
+exits on the first new
 standing-orders comment, work-thread comment or merged map/art PR. It watches
-#968 plus work threads #905/#917/#936/#937/#945/#959/#960 and PR #966.
+#968 plus work threads #905/#917/#936/#937/#945/#959/#960 and PRs #966/#971.
 Own Map Critic acknowledgements do not trigger it. Issue comment catch-up
 starts at the last read, 18:57:51 UTC, so the publication interval is covered.
 
@@ -225,8 +244,10 @@ starts at the last read, 18:57:51 UTC, so the publication interval is covered.
 gh api graphql -f query='{repository(owner:"BenjaminBenetti",name:"tut"){discussion(number:968){comments(last:10){nodes{createdAt body}}}}}'
 ```
 
-Script, start/health/result records and cached discussion bodies:
-`.scratch/map-critic-standing-orders-968/`. Inspect session/result state on
+Initial script/event and cached discussion bodies:
+`.scratch/map-critic-standing-orders-968/`. The **active re-arm** script and
+start/health/result records are in its **`rearm-01/`** subdirectory. Inspect
+that session/result state on
 refresh before starting anything; never leave two watchers running. Follow
 up the event in its GitHub thread, inspect any merged visual repair, and
 retain #968 in future authorised watches. No cron was installed. Capacity,

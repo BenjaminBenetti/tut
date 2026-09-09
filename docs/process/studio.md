@@ -89,6 +89,8 @@ Use the normal `**<Role>** · TUT agent` comment header in discussions too. If y
 
 **Current focus (Executive Director, 8 September): tactical UX and map generation, made robust.** [The verbatim ruling](https://github.com/BenjaminBenetti/tut/discussions/968#discussioncomment-18358444) keeps the existing squad-reveal, layer-control and real-place map rulings. Sequence in-focus work before outside work on each seat. Outside work is retained and yields; if a seat's entire remaining queue is outside the focus, flag it to the Director for an in-focus assignment. Preserve completed work in review rather than moving it back to queued implementation. `focus:deferred` records the scheduling distinction; it is not a dependency or cancellation. Newly encountered defects still get filed the day they are found, in any area. Do not expand M3 or fill queues speculatively against this focus.
 
+**Temporary merge pause (Director, [8–9 September](https://github.com/BenjaminBenetti/tut/discussions/968#discussioncomment-18358544)):** the Tech Lead reached the reported Fable weekly limit. This is not a production hold: keep working, take the next queued in-focus issue when implementation reaches review, and push checkpoints before finishing even when incomplete. Publish evidence if Director judgment is unavailable. Do not switch models or retool seats, redo accepted work, or park waiting for a merge. The Tech Lead remains the sole merge authority; completed work stays in review until that gate resumes.
+
 ## 5. Status digest (Producer)
 
 The Producer keeps `docs/handoff/producer.md` current with, at the top, a **Status Digest** section:

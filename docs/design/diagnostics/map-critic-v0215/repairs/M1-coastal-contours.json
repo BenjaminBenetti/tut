@@ -1,0 +1,58 @@
+{
+  "id": "M1-coastal-contours",
+  "seed": "mc-opening-01",
+  "biome": "coastal",
+  "settlement": "rural",
+  "size": "small",
+  "tile": {
+    "x": 5,
+    "y": 2,
+    "z": 22
+  },
+  "pitch": 45,
+  "rotation": 0,
+  "width": 1200,
+  "height": 1000,
+  "actualPitch": 44.99999999369618,
+  "url": "http://localhost:4175/mapgen-preview.html?seed=mc-opening-01&biome=coastal&settlement=rural&size=small&models=1&units=1&slope=100",
+  "errors": [],
+  "serverRuntime": {
+    "baseline": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+    "server": "http://localhost:4175",
+    "serverSession": 78445,
+    "recordedAt": "2026-09-08T23:54:44.203435+00:00",
+    "config": "tools/art/preview/capture-vite.config.mjs",
+    "watch": null,
+    "hmr": false,
+    "freshServerAfterCheckout": true,
+    "runtimeTrees": {
+      "src": "a40dc3470152eedf6c21ee8842926a558383ca35",
+      "public": "5e85567612436db764109379d0631edae38b7f77",
+      "tools": "9d64b17f164f5bc7c94ab0c12fd93ade1690591d"
+    }
+  },
+  "levels": {
+    "value": "4",
+    "max": "4",
+    "step": "2",
+    "label": "all"
+  },
+  "baseline": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "pixel": {
+    "x": 1438.6946363109196,
+    "y": 729.8639286300473
+  },
+  "clip": {
+    "x": 839,
+    "y": 230,
+    "width": 1200,
+    "height": 1000
+  },
+  "pngSha256": "32a1915def87cfd6be7cb3130943d6ccec259287370ca75365fabd8e095035f8",
+  "captureDateUTC": "2026-09-09",
+  "visuallyInspected": true
+}

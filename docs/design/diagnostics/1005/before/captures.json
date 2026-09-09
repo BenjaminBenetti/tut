@@ -1,0 +1,321 @@
+{
+  "baseCommit": "cd37ce973bdfd5d41af4529fd98efdc3dee30ece",
+  "repeatedBrowsers": 2,
+  "records": [
+    {
+      "id": "S1-water-surface",
+      "seed": "mc-opening-01",
+      "biome": "coastal",
+      "settlement": "rural",
+      "size": "small",
+      "focus": {
+        "x": 40,
+        "y": 0,
+        "z": 4
+      },
+      "rotation": 0,
+      "pitch": 55,
+      "camera": {
+        "yawIndex": 0,
+        "zoom": 67.36096792653728,
+        "target": {
+          "x": 40.5,
+          "y": 0.15,
+          "z": 4.5
+        },
+        "bounds": {
+          "x": 0,
+          "z": 0,
+          "w": 48,
+          "d": 48
+        },
+        "zoomRange": {
+          "min": 29.757410374933876,
+          "max": 192
+        }
+      },
+      "actualPitch": 55.000000000000185,
+      "pixel": {
+        "x": 1390.0000000000002,
+        "y": 750.0000000000001
+      },
+      "rendering": {
+        "render": {
+          "frame": 16,
+          "calls": 414,
+          "triangles": 211230,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 760,
+          "textures": 33
+        },
+        "programs": 17
+      },
+      "clip": {
+        "x": 790,
+        "y": 250,
+        "width": 1200,
+        "height": 1000
+      },
+      "viewport": {
+        "width": 2400,
+        "height": 1500
+      },
+      "sha256": "f4aef599e0b0501353ad357bc8b332587526e9d5c7b36905d767389714af8130"
+    },
+    {
+      "id": "S2-water-surface",
+      "seed": "mc-opening-01",
+      "biome": "coastal",
+      "settlement": "rural",
+      "size": "small",
+      "focus": {
+        "x": 40,
+        "y": 0,
+        "z": 4
+      },
+      "rotation": 1,
+      "pitch": 55,
+      "camera": {
+        "yawIndex": 1,
+        "zoom": 67.36096792653701,
+        "target": {
+          "x": 40.5,
+          "y": 0.15,
+          "z": 4.5
+        },
+        "bounds": {
+          "x": 0,
+          "z": 0,
+          "w": 48,
+          "d": 48
+        },
+        "zoomRange": {
+          "min": 29.757410374933876,
+          "max": 192
+        }
+      },
+      "actualPitch": 54.99999999999972,
+      "pixel": {
+        "x": 1389.9999999999993,
+        "y": 750.0000000000007
+      },
+      "rendering": {
+        "render": {
+          "frame": 14,
+          "calls": 443,
+          "triangles": 221230,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 760,
+          "textures": 33
+        },
+        "programs": 17
+      },
+      "clip": {
+        "x": 790,
+        "y": 250,
+        "width": 1200,
+        "height": 1000
+      },
+      "viewport": {
+        "width": 2400,
+        "height": 1500
+      },
+      "sha256": "2d9ffc207eddb5411ece1707f13d6ec3a183e34b02cad6b86943c6e9d49f098c"
+    },
+    {
+      "id": "W1-city-waterfront",
+      "seed": "mc-opening-03",
+      "biome": "coastal",
+      "settlement": "city",
+      "size": "medium",
+      "focus": {
+        "x": 51,
+        "y": 1,
+        "z": 40
+      },
+      "rotation": 0,
+      "pitch": 55,
+      "camera": {
+        "yawIndex": 0,
+        "zoom": 67.36096792653728,
+        "target": {
+          "x": 51.5,
+          "y": 0.9,
+          "z": 40.5
+        },
+        "bounds": {
+          "x": 0,
+          "z": 0,
+          "w": 72,
+          "d": 72
+        },
+        "zoomRange": {
+          "min": 19.83827358328925,
+          "max": 192
+        }
+      },
+      "actualPitch": 54.99999999999985,
+      "pixel": {
+        "x": 1389.9999999999989,
+        "y": 749.9999999999995
+      },
+      "rendering": {
+        "render": {
+          "frame": 22,
+          "calls": 890,
+          "triangles": 916810,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 547,
+          "textures": 44
+        },
+        "programs": 15
+      },
+      "clip": {
+        "x": 790,
+        "y": 275,
+        "width": 1200,
+        "height": 950
+      },
+      "viewport": {
+        "width": 2400,
+        "height": 1500
+      },
+      "sha256": "61f59dce18baf27b79e65f43e48dfe23bd1d7c8ab3a7471a125f974a2e86d6de"
+    },
+    {
+      "id": "W2-town-waterfront",
+      "seed": "mc-opening-01",
+      "biome": "coastal",
+      "settlement": "town",
+      "size": "small",
+      "focus": {
+        "x": 37,
+        "y": 2,
+        "z": 14
+      },
+      "rotation": 0,
+      "pitch": 60,
+      "camera": {
+        "yawIndex": 0,
+        "zoom": 73.4846922834948,
+        "target": {
+          "x": 37.5,
+          "y": 1.65,
+          "z": 14.5
+        },
+        "bounds": {
+          "x": 0,
+          "z": 0,
+          "w": 48,
+          "d": 48
+        },
+        "zoomRange": {
+          "min": 29.757410374933876,
+          "max": 192
+        }
+      },
+      "actualPitch": 59.99999999999982,
+      "pixel": {
+        "x": 1389.9999999999982,
+        "y": 750
+      },
+      "rendering": {
+        "render": {
+          "frame": 16,
+          "calls": 770,
+          "triangles": 332702,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 916,
+          "textures": 43
+        },
+        "programs": 18
+      },
+      "clip": {
+        "x": 790,
+        "y": 250,
+        "width": 1200,
+        "height": 1000
+      },
+      "viewport": {
+        "width": 2400,
+        "height": 1500
+      },
+      "sha256": "c802ef61f6b2510b7af22f6f6ae4912da15d0a25b81d9ce33a4382729acca4c2"
+    },
+    {
+      "id": "P1-dry-ground-control",
+      "seed": "mc-resume-01",
+      "biome": "temperate",
+      "settlement": "rural",
+      "size": "small",
+      "focus": {
+        "x": 13,
+        "y": 2,
+        "z": 24
+      },
+      "rotation": 0,
+      "pitch": 45,
+      "camera": {
+        "yawIndex": 0,
+        "zoom": 55.11351921262141,
+        "target": {
+          "x": 13.5,
+          "y": 1.65,
+          "z": 24.5
+        },
+        "bounds": {
+          "x": 0,
+          "z": 0,
+          "w": 48,
+          "d": 48
+        },
+        "zoomRange": {
+          "min": 29.757410374933876,
+          "max": 192
+        }
+      },
+      "actualPitch": 45.000000000000014,
+      "pixel": {
+        "x": 1389.9999999999995,
+        "y": 750.0000000000001
+      },
+      "rendering": {
+        "render": {
+          "frame": 15,
+          "calls": 633,
+          "triangles": 227686,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 1075,
+          "textures": 28
+        },
+        "programs": 16
+      },
+      "clip": {
+        "x": 790,
+        "y": 250,
+        "width": 1200,
+        "height": 1000
+      },
+      "viewport": {
+        "width": 2400,
+        "height": 1500
+      },
+      "sha256": "fe5b1132e149e1d7b24a598e87e0574ed41ab6bc57c9a93649a00f4e3a14fa8e"
+    }
+  ]
+}

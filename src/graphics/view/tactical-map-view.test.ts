@@ -4,10 +4,12 @@ import {
   Group,
   InstancedMesh,
   Color,
+  DoubleSide,
   Matrix4,
   Mesh,
   MeshStandardMaterial,
   OrthographicCamera,
+  Raycaster,
   Vector3,
 } from "three";
 import { describe, expect, it } from "vitest";
@@ -63,6 +65,55 @@ function meshesIn(view: TacticalMapView, level: number): InstancedMesh[] {
 }
 
 describe("TacticalMapView", () => {
+  it("keeps water's outer shell without internal faces across its continuous surface", () => {
+    const map = new FixtureMapBuilder(3, 3, 1)
+      .fillGround(0, SurfaceIds.WATER)
+      .build();
+    const view = new TacticalMapView(map);
+    const water = named(view, "tiles-ground:tile:water:");
+    for (const mesh of water) {
+      (mesh.material as MeshStandardMaterial).side = DoubleSide;
+    }
+    view.root.updateMatrixWorld(true);
+    const origin = new Vector3(1.5, SLAB_HEIGHT / 2, 1.5);
+    const boundaries = [
+      [new Vector3(1, 0, 0), new Vector3(3, origin.y, 1.5)],
+      [new Vector3(-1, 0, 0), new Vector3(0, origin.y, 1.5)],
+      [new Vector3(0, 0, 1), new Vector3(1.5, origin.y, 3)],
+      [new Vector3(0, 0, -1), new Vector3(1.5, origin.y, 0)],
+      [new Vector3(0, 1, 0), new Vector3(1.5, SLAB_HEIGHT, 1.5)],
+      [new Vector3(0, -1, 0), new Vector3(1.5, 0, 1.5)],
+    ] as const;
+    for (const [direction, boundary] of boundaries) {
+      const hits = new Raycaster(origin, direction).intersectObjects(water);
+      expect(hits.length).toBeGreaterThan(0);
+      expect(hits[0]!.point.distanceTo(boundary)).toBeLessThan(1e-6);
+    }
+    view.dispose();
+  });
+
+  it.each([
+    { neighbour: "shore", surface: SurfaceIds.SAND, level: 0 },
+    { neighbour: "higher water", surface: SurfaceIds.WATER, level: 1 },
+  ])("retains the water side against $neighbour", ({ surface, level }) => {
+    const builder = new FixtureMapBuilder(2, 1, 2);
+    builder.tile({ x: 0, y: 0, z: 0 }, SurfaceIds.WATER);
+    builder.tile({ x: 1, y: level, z: 0 }, surface);
+    const view = new TacticalMapView(builder.build());
+    const water = named(view, "tiles-ground:tile:water:0");
+    for (const mesh of water) {
+      (mesh.material as MeshStandardMaterial).side = DoubleSide;
+    }
+    view.root.updateMatrixWorld(true);
+    const hits = new Raycaster(
+      new Vector3(0.5, SLAB_HEIGHT / 2, 0.5),
+      new Vector3(1, 0, 0),
+    ).intersectObjects(water);
+    expect(hits.length).toBeGreaterThan(0);
+    expect(hits[0]!.point.x).toBeCloseTo(1, 6);
+    view.dispose();
+  });
+
   it("groups everything by level and centres on the map", () => {
     const view = new TacticalMapView(fixture().build());
     expect(view.levels).toEqual([0, 1]);

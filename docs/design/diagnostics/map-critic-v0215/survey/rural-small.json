@@ -1,0 +1,248 @@
+{
+  "id": "rural-small",
+  "sourceScale": 0.5,
+  "sourceDimensions": {
+    "width": 2020,
+    "height": 1500
+  },
+  "sheetDimensions": {
+    "width": 2020,
+    "height": 3160
+  },
+  "labels": "40px band outside each screenshot; no scene retouching",
+  "pngSha256": "ef29e883f704a182ba19e8c63ad4c00d0a64cb52102f031029d95f3435456d87",
+  "rows": [
+    {
+      "recipe": {
+        "index": 1,
+        "id": "temperate-rural-small-03",
+        "seed": "mc-resume-03",
+        "biome": "temperate",
+        "settlement": "rural",
+        "size": "small",
+        "models": "1",
+        "units": "1",
+        "slope": "100",
+        "url": "http://localhost:4175/mapgen-preview.html?seed=mc-resume-03&biome=temperate&settlement=rural&size=small&models=1&units=1&slope=100",
+        "serverRuntime": {
+          "baseline": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+          "server": "http://localhost:4175",
+          "serverSession": 78445,
+          "recordedAt": "2026-09-08T23:54:44.203435+00:00",
+          "config": "tools/art/preview/capture-vite.config.mjs",
+          "watch": null,
+          "hmr": false,
+          "freshServerAfterCheckout": true,
+          "runtimeTrees": {
+            "src": "a40dc3470152eedf6c21ee8842926a558383ca35",
+            "public": "5e85567612436db764109379d0631edae38b7f77",
+            "tools": "9d64b17f164f5bc7c94ab0c12fd93ade1690591d"
+          }
+        },
+        "commit": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+        "levels": {
+          "value": "6",
+          "max": "6",
+          "step": "2",
+          "label": "all"
+        },
+        "viewport": {
+          "width": 2400,
+          "height": 1500
+        },
+        "clip": {
+          "x": 380,
+          "y": 0,
+          "width": 2020,
+          "height": 1500
+        },
+        "nearCamera": "initial framing",
+        "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+        "errors": []
+      },
+      "sourcePngSha256": {
+        "whole": "a4a42ad5b59197f3a71b29abcb5d0f1d48700006583837836a63e158dd244d6c",
+        "near": "38f898502d58610fbb40a33091ab2f12519c57304db6991d626af2d092c57883"
+      },
+      "observations": {
+        "looked": ["whole", "near"],
+        "preserve": "A continuous grey stone lane connects occupied buildings through woodland and bare earth. Soft soil/grass contacts, complete roofs and plot-aligned rural fence runs read coherently.",
+        "shortfall": "No new defect established here. The lane reads as stone/cobble rather than a dirt footpath, but its connection to substantial rural buildings makes that a plausible surfaced access lane. Dramatic natural grades and excavated occupied plots do not re-file the settled cliff ruling."
+      }
+    },
+    {
+      "recipe": {
+        "index": 2,
+        "id": "snowy-rural-small-03",
+        "seed": "mc-resume-03",
+        "biome": "snowy",
+        "settlement": "rural",
+        "size": "small",
+        "models": "1",
+        "units": "1",
+        "slope": "100",
+        "url": "http://localhost:4175/mapgen-preview.html?seed=mc-resume-03&biome=snowy&settlement=rural&size=small&models=1&units=1&slope=100",
+        "serverRuntime": {
+          "baseline": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+          "server": "http://localhost:4175",
+          "serverSession": 78445,
+          "recordedAt": "2026-09-08T23:54:44.203435+00:00",
+          "config": "tools/art/preview/capture-vite.config.mjs",
+          "watch": null,
+          "hmr": false,
+          "freshServerAfterCheckout": true,
+          "runtimeTrees": {
+            "src": "a40dc3470152eedf6c21ee8842926a558383ca35",
+            "public": "5e85567612436db764109379d0631edae38b7f77",
+            "tools": "9d64b17f164f5bc7c94ab0c12fd93ade1690591d"
+          }
+        },
+        "commit": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+        "levels": {
+          "value": "8",
+          "max": "8",
+          "step": "2",
+          "label": "all"
+        },
+        "viewport": {
+          "width": 2400,
+          "height": 1500
+        },
+        "clip": {
+          "x": 380,
+          "y": 0,
+          "width": 2020,
+          "height": 1500
+        },
+        "nearCamera": "initial framing",
+        "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+        "errors": []
+      },
+      "sourcePngSha256": {
+        "whole": "0a2488a4f016cd913bc79095494b83f966522f7c504cbf4c3f8d0767bd3c57aa",
+        "near": "72c82286e94af91733e42d36946bb591be85dfc8d3403e3b7efdc12599cdab5c"
+      },
+      "observations": {
+        "looked": ["whole", "near"],
+        "preserve": "The brown route stays distinct across snow and exposed rock. Complete roofs, conifers and contextual rural fence runs retain cold-region identity. Snow/rock contacts now curve.",
+        "shortfall": "No new defect established. Tall natural and excavated terrain faces remain subject to the earlier cliff/lot rulings; these views do not reopen them."
+      }
+    },
+    {
+      "recipe": {
+        "index": 3,
+        "id": "desert-rural-small-03",
+        "seed": "mc-resume-03",
+        "biome": "desert",
+        "settlement": "rural",
+        "size": "small",
+        "models": "1",
+        "units": "1",
+        "slope": "100",
+        "url": "http://localhost:4175/mapgen-preview.html?seed=mc-resume-03&biome=desert&settlement=rural&size=small&models=1&units=1&slope=100",
+        "serverRuntime": {
+          "baseline": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+          "server": "http://localhost:4175",
+          "serverSession": 78445,
+          "recordedAt": "2026-09-08T23:54:44.203435+00:00",
+          "config": "tools/art/preview/capture-vite.config.mjs",
+          "watch": null,
+          "hmr": false,
+          "freshServerAfterCheckout": true,
+          "runtimeTrees": {
+            "src": "a40dc3470152eedf6c21ee8842926a558383ca35",
+            "public": "5e85567612436db764109379d0631edae38b7f77",
+            "tools": "9d64b17f164f5bc7c94ab0c12fd93ade1690591d"
+          }
+        },
+        "commit": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+        "levels": {
+          "value": "6",
+          "max": "6",
+          "step": "2",
+          "label": "all"
+        },
+        "viewport": {
+          "width": 2400,
+          "height": 1500
+        },
+        "clip": {
+          "x": 380,
+          "y": 0,
+          "width": 2020,
+          "height": 1500
+        },
+        "nearCamera": "initial framing",
+        "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+        "errors": []
+      },
+      "sourcePngSha256": {
+        "whole": "b2f234bf50a718c50fff7843484f6560d6fba183ab4e32341bd295484c0f0be8",
+        "near": "f8b6dfb89b561091192e7f8fd0c33b15fc8fb14a3e600c23ca68818bcb2b0f27"
+      },
+      "observations": {
+        "looked": ["whole", "near"],
+        "preserve": "The brown route is followable through sand and rock. Cactus/boulder groups and curved rock/sand contacts distinguish the setting.",
+        "shortfall": "Isolated palms remain #701. The current bare deploy marker and cramped-looking objects near it are not a new #911 placement finding while that feature is active."
+      }
+    },
+    {
+      "recipe": {
+        "index": 4,
+        "id": "coastal-rural-small-03",
+        "seed": "mc-resume-03",
+        "biome": "coastal",
+        "settlement": "rural",
+        "size": "small",
+        "models": "1",
+        "units": "1",
+        "slope": "100",
+        "url": "http://localhost:4175/mapgen-preview.html?seed=mc-resume-03&biome=coastal&settlement=rural&size=small&models=1&units=1&slope=100",
+        "serverRuntime": {
+          "baseline": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+          "server": "http://localhost:4175",
+          "serverSession": 78445,
+          "recordedAt": "2026-09-08T23:54:44.203435+00:00",
+          "config": "tools/art/preview/capture-vite.config.mjs",
+          "watch": null,
+          "hmr": false,
+          "freshServerAfterCheckout": true,
+          "runtimeTrees": {
+            "src": "a40dc3470152eedf6c21ee8842926a558383ca35",
+            "public": "5e85567612436db764109379d0631edae38b7f77",
+            "tools": "9d64b17f164f5bc7c94ab0c12fd93ade1690591d"
+          }
+        },
+        "commit": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+        "levels": {
+          "value": "6",
+          "max": "6",
+          "step": "2",
+          "label": "all"
+        },
+        "viewport": {
+          "width": 2400,
+          "height": 1500
+        },
+        "clip": {
+          "x": 380,
+          "y": 0,
+          "width": 2020,
+          "height": 1500
+        },
+        "nearCamera": "initial framing",
+        "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+        "errors": []
+      },
+      "sourcePngSha256": {
+        "whole": "3d78ddd48e267a70a85702ffe19912843411776cb029f6ddab89851fd364bfa6",
+        "near": "69b06cc8696830fac15d7d2541cfd7fd91e65bf12f43a6e881f683058201770b"
+      },
+      "observations": {
+        "looked": ["whole", "near"],
+        "preserve": "Rounded grass/sand/soil contacts and recognisable coastal planting. Rural fence runs have plot-edge context and buildings have complete supported silhouettes.",
+        "shortfall": "Confirmed at focused entrance/earth junction from two angles: the coastal brown approach loses a distinct onward used-route cue inside the broad bare-earth area. New follow-up prepared; #959 temperate repair remains accepted. Water grid remains #1005."
+      }
+    }
+  ]
+}

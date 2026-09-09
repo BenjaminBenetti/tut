@@ -1,7 +1,8 @@
 # Map Critic: v0.2.15 repair verdicts
 
 Nine fresh Map Lab frames, all individually opened. Runtime is merged main
-`9d9ea012e97292ae3f96e2500f1609a1cfdbf412` (v0.2.15), captured 9 September 2026 UTC.
+`9d9ea012e97292ae3f96e2500f1609a1cfdbf412` (v0.2.15), captured 23:55 UTC on 8 September through 00:09 UTC on
+9 September 2026. Sidecars record the original screenshot file times.
 These are new observations; earlier accepted images remain dated records.
 
 ## What improved

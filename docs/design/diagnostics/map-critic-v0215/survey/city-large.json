@@ -1,0 +1,248 @@
+{
+  "id": "city-large",
+  "sourceScale": 0.5,
+  "sourceDimensions": {
+    "width": 2020,
+    "height": 1500
+  },
+  "sheetDimensions": {
+    "width": 2020,
+    "height": 3160
+  },
+  "labels": "40px band outside each screenshot; no scene retouching",
+  "pngSha256": "7cb10961f73ffa3c096f251646c9e8388cf132eeabf7019e2e233b3797e4c967",
+  "rows": [
+    {
+      "recipe": {
+        "index": 16,
+        "id": "temperate-city-large-03",
+        "seed": "mc-resume-03",
+        "biome": "temperate",
+        "settlement": "city",
+        "size": "large",
+        "models": "1",
+        "units": "1",
+        "slope": "100",
+        "url": "http://localhost:4175/mapgen-preview.html?seed=mc-resume-03&biome=temperate&settlement=city&size=large&models=1&units=1&slope=100",
+        "serverRuntime": {
+          "baseline": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+          "server": "http://localhost:4175",
+          "serverSession": 78445,
+          "recordedAt": "2026-09-08T23:54:44.203435+00:00",
+          "config": "tools/art/preview/capture-vite.config.mjs",
+          "watch": null,
+          "hmr": false,
+          "freshServerAfterCheckout": true,
+          "runtimeTrees": {
+            "src": "a40dc3470152eedf6c21ee8842926a558383ca35",
+            "public": "5e85567612436db764109379d0631edae38b7f77",
+            "tools": "9d64b17f164f5bc7c94ab0c12fd93ade1690591d"
+          }
+        },
+        "commit": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+        "levels": {
+          "value": "14",
+          "max": "14",
+          "step": "2",
+          "label": "all"
+        },
+        "viewport": {
+          "width": 2400,
+          "height": 1500
+        },
+        "clip": {
+          "x": 380,
+          "y": 0,
+          "width": 2020,
+          "height": 1500
+        },
+        "nearCamera": "initial framing",
+        "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+        "errors": []
+      },
+      "sourcePngSha256": {
+        "whole": "fc989dd8e3063e94bc071cefecc99f1644fb6c345eb4b5d6d9cfa562f88ce446",
+        "near": "08f917ca6d9af690d2925b5612a25ad81692dfba53b7c57f3fd7c669741f7944"
+      },
+      "observations": {
+        "looked": ["whole", "near"],
+        "preserve": "A larger grid serves more buildings with varied heights, footprints, roofs and openings. Curved ground contacts and ordinary planted yards remain coherent.",
+        "shortfall": "Repeated unidentifiable building uses and generic outdoor clutter remain #960/#1006. No new city-flatness defect seen."
+      }
+    },
+    {
+      "recipe": {
+        "index": 15,
+        "id": "snowy-city-large-03",
+        "seed": "mc-resume-03",
+        "biome": "snowy",
+        "settlement": "city",
+        "size": "large",
+        "models": "1",
+        "units": "1",
+        "slope": "100",
+        "url": "http://localhost:4175/mapgen-preview.html?seed=mc-resume-03&biome=snowy&settlement=city&size=large&models=1&units=1&slope=100",
+        "serverRuntime": {
+          "baseline": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+          "server": "http://localhost:4175",
+          "serverSession": 78445,
+          "recordedAt": "2026-09-08T23:54:44.203435+00:00",
+          "config": "tools/art/preview/capture-vite.config.mjs",
+          "watch": null,
+          "hmr": false,
+          "freshServerAfterCheckout": true,
+          "runtimeTrees": {
+            "src": "a40dc3470152eedf6c21ee8842926a558383ca35",
+            "public": "5e85567612436db764109379d0631edae38b7f77",
+            "tools": "9d64b17f164f5bc7c94ab0c12fd93ade1690591d"
+          }
+        },
+        "commit": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+        "levels": {
+          "value": "12",
+          "max": "13",
+          "step": "2",
+          "label": "all"
+        },
+        "viewport": {
+          "width": 2400,
+          "height": 1500
+        },
+        "clip": {
+          "x": 380,
+          "y": 0,
+          "width": 2020,
+          "height": 1500
+        },
+        "nearCamera": "initial framing",
+        "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+        "errors": []
+      },
+      "sourcePngSha256": {
+        "whole": "bcc9def349d498f768226bedf0ff8da0abbfe786fb682b347df12e19ab470bc4",
+        "near": "f59ad41d32b586149194d83e3bb5e2e5b75b28bdeccc6a565c6a825ccc4aebe1"
+      },
+      "observations": {
+        "looked": ["whole", "near"],
+        "preserve": "Different building heights and complete flat/pitched roofs give useful occupied height; dark streets and curved rock/snow contacts remain legible.",
+        "shortfall": "Repeated anonymous frontage/yard props and isolated panels remain #960/#1006. Whole view confirms larger layout and occupied height variety; no additional defect established."
+      }
+    },
+    {
+      "recipe": {
+        "index": 14,
+        "id": "desert-city-large-03",
+        "seed": "mc-resume-03",
+        "biome": "desert",
+        "settlement": "city",
+        "size": "large",
+        "models": "1",
+        "units": "1",
+        "slope": "100",
+        "url": "http://localhost:4175/mapgen-preview.html?seed=mc-resume-03&biome=desert&settlement=city&size=large&models=1&units=1&slope=100",
+        "serverRuntime": {
+          "baseline": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+          "server": "http://localhost:4175",
+          "serverSession": 78445,
+          "recordedAt": "2026-09-08T23:54:44.203435+00:00",
+          "config": "tools/art/preview/capture-vite.config.mjs",
+          "watch": null,
+          "hmr": false,
+          "freshServerAfterCheckout": true,
+          "runtimeTrees": {
+            "src": "a40dc3470152eedf6c21ee8842926a558383ca35",
+            "public": "5e85567612436db764109379d0631edae38b7f77",
+            "tools": "9d64b17f164f5bc7c94ab0c12fd93ade1690591d"
+          }
+        },
+        "commit": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+        "levels": {
+          "value": "14",
+          "max": "14",
+          "step": "2",
+          "label": "all"
+        },
+        "viewport": {
+          "width": 2400,
+          "height": 1500
+        },
+        "clip": {
+          "x": 380,
+          "y": 0,
+          "width": 2020,
+          "height": 1500
+        },
+        "nearCamera": "initial framing",
+        "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+        "errors": []
+      },
+      "sourcePngSha256": {
+        "whole": "e1e9b953d297ac66785c3ab01948dc96b03d0fa71d25d97b949e4a478c3851d9",
+        "near": "a057c84fada34c03080a5703057abe8b0123c894de064b96f5eb37c9fe2fe2c4"
+      },
+      "observations": {
+        "looked": ["whole", "near"],
+        "preserve": "More blocks and occupied heights make a larger city; roof openings and broad streets remain legible. Sand/rock contacts curve and ordinary yards retain ground-level planting.",
+        "shortfall": "Repeated facade identity and arbitrary boxes/panels/boulder-yard arrangements remain #960/#1006; isolated palms remain #701. No additional flat-city or top-roof defect seen."
+      }
+    },
+    {
+      "recipe": {
+        "index": 13,
+        "id": "coastal-city-large-03",
+        "seed": "mc-resume-03",
+        "biome": "coastal",
+        "settlement": "city",
+        "size": "large",
+        "models": "1",
+        "units": "1",
+        "slope": "100",
+        "url": "http://localhost:4175/mapgen-preview.html?seed=mc-resume-03&biome=coastal&settlement=city&size=large&models=1&units=1&slope=100",
+        "serverRuntime": {
+          "baseline": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+          "server": "http://localhost:4175",
+          "serverSession": 78445,
+          "recordedAt": "2026-09-08T23:54:44.203435+00:00",
+          "config": "tools/art/preview/capture-vite.config.mjs",
+          "watch": null,
+          "hmr": false,
+          "freshServerAfterCheckout": true,
+          "runtimeTrees": {
+            "src": "a40dc3470152eedf6c21ee8842926a558383ca35",
+            "public": "5e85567612436db764109379d0631edae38b7f77",
+            "tools": "9d64b17f164f5bc7c94ab0c12fd93ade1690591d"
+          }
+        },
+        "commit": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+        "levels": {
+          "value": "10",
+          "max": "11",
+          "step": "2",
+          "label": "all"
+        },
+        "viewport": {
+          "width": 2400,
+          "height": 1500
+        },
+        "clip": {
+          "x": 380,
+          "y": 0,
+          "width": 2020,
+          "height": 1500
+        },
+        "nearCamera": "initial framing",
+        "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+        "errors": []
+      },
+      "sourcePngSha256": {
+        "whole": "451c331d41784a8c0268adc39ff846bfd878bcff8dbd5ca5101d8376597f0749",
+        "near": "86a483e4cf269a4daa9395e09f5ae7aec4b00a546cdf896f5028f1f66a07f137"
+      },
+      "observations": {
+        "looked": ["whole", "near"],
+        "preserve": "Larger street network supports more blocks, building groups and different heights. Shore carriageways meet paved railed ends and natural contacts remain curved.",
+        "shortfall": "More buildings make the repeated facade/yard vocabulary very evident: #960/#1006 remain priorities. Water grid remains #1005, no additional waterfront-end defect established."
+      }
+    }
+  ]
+}

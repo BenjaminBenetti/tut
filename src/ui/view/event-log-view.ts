@@ -313,7 +313,7 @@ export class EventLogView {
  * @param mission - Current mission state, if there is one.
  * @returns A name lookup.
  */
-function nameResolver(mission: TacticalState | undefined): NameOf {
+export function nameResolver(mission: TacticalState | undefined): NameOf {
   if (!mission) {
     return (unitId) => unitId;
   }

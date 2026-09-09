@@ -22,11 +22,11 @@ let root: HTMLElement;
 const field = (name: string): HTMLElement | null =>
   root.querySelector<HTMLElement>(`[data-field="${name}"]`);
 
-function setup() {
+function setup(extra: { onLookAt?: (unitId: string) => void } = {}) {
   const commands: TacticalCommand[] = [];
   const onBack = vi.fn();
   const hud = new TacticalHudView(
-    { onCommand: (c) => commands.push(c), onBack },
+    { onCommand: (c) => commands.push(c), onBack, ...extra },
     { combatTuning: COMBAT_TUNING, objectiveTuning: OBJECTIVE_TUNING },
   );
   hud.mount(root);
@@ -641,6 +641,81 @@ describe("TacticalHudView", () => {
       root.querySelector<HTMLButtonElement>('[data-action="interact"]')
         ?.disabled,
     ).toBe(true);
+  });
+
+  /**
+   * The force at a glance (#1041). Before this the interface knew the
+   * squad only through whichever unit was selected, so "who still has a
+   * turn" was answerable only by clicking each in turn.
+   */
+  it("lists the force with its readiness, and names how many have still to act", () => {
+    const { hud, mission } = setup();
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    const rows = () => [
+      ...root.querySelectorAll<HTMLElement>('[data-role="squad-list"] li'),
+    ];
+    expect(rows().length).toBeGreaterThan(1);
+    expect(rows()[0]?.dataset.selected).toBe("true");
+    // Read against the mission rather than an assumed fixture: the row
+    // marks a unit spent exactly when it has no action left.
+    const apOf = new Map(mission.units.map((u) => [u.id, u.ap]));
+    for (const row of rows()) {
+      const ap = apOf.get(row.dataset.unitId ?? "") ?? 0;
+      expect(row.dataset.spent).toBe(ap > 0 ? "false" : "true");
+    }
+    const count = root.querySelector<HTMLElement>(
+      '[data-field="squad-unspent"]',
+    );
+    const ready = rows().filter((row) => row.dataset.spent === "false").length;
+    expect(count?.textContent).toBe(
+      ready > 0 ? `${String(ready)} to act` : "all done",
+    );
+
+    // A spent unit is marked, and the count follows it down.
+    hud.update({
+      ...mission,
+      units: mission.units.map((u) => (u.id === "s1" ? { ...u, ap: 0 } : u)),
+    });
+    const spent = rows().find((row) => row.dataset.unitId === "s1");
+    expect(spent?.dataset.spent).toBe("true");
+    expect(count?.textContent).not.toBe(
+      ready > 0 ? `${String(ready)} to act` : "all done",
+    );
+  });
+
+  it("picks a unit from the strip and brings it on screen", () => {
+    const lookedAt: string[] = [];
+    const { hud } = setup({
+      onLookAt: (unitId: string) => lookedAt.push(unitId),
+    });
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    const other = [
+      ...root.querySelectorAll<HTMLElement>('[data-role="squad-list"] li'),
+    ].find((row) => row.dataset.unitId !== "s1");
+    if (!other) throw new Error("fixture needs a second unit");
+    const id = other.dataset.unitId ?? "";
+    other.click();
+    // Selected *and* recovered: the row is the affordance, so there is
+    // no separate control to find.
+    expect(hud.getSelectedUnitId()).toBe(id);
+    expect(lookedAt).toEqual([id]);
+  });
+
+  it("names how many units are unspent on End turn rather than ending silently", () => {
+    const { hud, mission } = setup();
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    const button = () =>
+      root.querySelector<HTMLElement>(
+        '[data-action="end-turn"] .tut-btn__label',
+      );
+    expect(button()?.textContent).toContain("unspent");
+
+    // Nobody left to act: the count goes, rather than reading "0 unspent".
+    hud.update({
+      ...mission,
+      units: mission.units.map((u) => ({ ...u, ap: 0 })),
+    });
+    expect(button()?.textContent).toBe("End turn");
   });
 
   it("offers Extract only to a unit standing in the extraction zone", () => {

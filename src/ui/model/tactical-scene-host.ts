@@ -77,6 +77,19 @@ export interface TacticalSceneHost {
   screenPositionOf(target: TacticalInvokeTarget): Vec2 | undefined;
 
   /**
+   * Centres the view on a unit.
+   *
+   * The camera rig has had `lookAt` since it was written, and until now
+   * `frameMission` called it once at mission start and nothing called it
+   * again — so a unit selected off screen could not be recovered except
+   * by panning until it turned up (#1041). This is the caller it was
+   * missing, not new machinery.
+   *
+   * @param unitId - The unit to centre on.
+   */
+  lookAtUnit(unitId: UnitId): void;
+
+  /**
    * Moves the view `delta` storeys and returns where it landed (#961).
    *
    * The scene owns this rather than the mission: it changes which

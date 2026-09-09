@@ -60,6 +60,10 @@ import { PhaseBannerView } from "./phase-banner-view";
 import { TURN_STARTED } from "../../tactical/model/turn-started-event";
 import { TurnBannerView } from "./turn-banner-view";
 import { UnitCardView } from "./unit-card-view";
+// One resolver, shared with the log. #1029 moves this into
+// `event-vocabulary`; when that lands the import moves with it.
+import { nameResolver } from "./event-log-view";
+import { SquadStripView, playerUnits } from "./squad-strip-view";
 
 // ===========================================
 // Types
@@ -82,6 +86,11 @@ export interface TacticalHudHandlers {
   readonly onCommand: (command: TacticalCommand) => void;
   /** The player asked to leave the mission screen. */
   readonly onBack: () => void;
+  /**
+   * Bring a unit on screen (#1041). Absent in headless callers, which
+   * then simply do not move the camera.
+   */
+  readonly onLookAt?: (unitId: UnitId) => void;
   /**
    * Where a world thing is on screen, for anchoring the context menu
    * (#529, ADR 0007 §2.1). The HUD projects nothing itself; the scene
@@ -166,6 +175,15 @@ export class TacticalHudView {
   private readonly card = new UnitCardView();
   private readonly preview: HitPreviewView;
   private readonly objectives = new ObjectiveTrackerView();
+  /** The force at a glance; a row selects and recovers a unit (#1041). */
+  private readonly squad = new SquadStripView({
+    onPick: (unitId) => {
+      this.handleIntent({ kind: "select-unit", unitId });
+      // Unconditional here: the player asked for this unit by name, so
+      // overriding their own panning is what they meant.
+      this.handlers.onLookAt?.(unitId);
+    },
+  });
   /** The in-world context menu (#529); opened by right click, closed by the world. */
   private readonly radial = new RadialMenuView({
     onSelect: (id) => {
@@ -257,6 +275,11 @@ export class TacticalHudView {
     bottom.className = "tut-hud__bottom";
     this.banner.mount(top);
     this.radial.mount(hud);
+    // The force first, then the selected unit's detail. The strip is the
+    // overview and the card is the close-up; putting the close-up first
+    // pushed the third unit below the fold, which the frame showed and
+    // which defeats "the force at a glance" (#1041).
+    this.squad.mount(side);
     this.card.mount(side);
     this.preview.mount(side);
     this.objectives.mount(side);
@@ -877,6 +900,17 @@ export class TacticalHudView {
   }
 
   /** True when the selected unit is on the acting side, alive, with action points. */
+  /** How many of the player's units still have an action to spend (#1041). */
+  private unspentCount(): number {
+    const mission = this.mission;
+    if (mission?.phase !== "player") {
+      return 0;
+    }
+    return playerUnits(mission).filter((unit) => unit.hp > 0 && unit.ap > 0)
+      .length;
+  }
+
+  /** Whether the selected unit may act at all. */
   private canAct(): boolean {
     const mission = this.mission;
     const unit = this.unit(this.selected);
@@ -1041,6 +1075,7 @@ export class TacticalHudView {
       this.card.update(undefined, undefined);
       this.preview.update(undefined);
       this.objectives.update([], []);
+      this.squad.update(undefined);
       this.actions.update({
         canAct: false,
         playerPhase: false,
@@ -1095,6 +1130,11 @@ export class TacticalHudView {
       mission.spawners,
       inReach?.objective.id,
     );
+    this.squad.update({
+      units: playerUnits(mission),
+      selectedId: this.selected,
+      nameOf: nameResolver(mission),
+    });
     this.actions.update({
       attacksLeft:
         selected === undefined
@@ -1114,6 +1154,7 @@ export class TacticalHudView {
       playerPhase: mission.phase === "player",
       mode: this.mode,
       reloadLabel: selected?.kind === "mech" ? "Vent" : "Reload",
+      unspent: this.unspentCount(),
       canExtract: this.canExtract(),
       canInteract: inReach !== undefined,
     });

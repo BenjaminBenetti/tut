@@ -826,6 +826,58 @@
   white-space: nowrap;
 }
 
+/*
+ * The squad strip (#1041): the player's own force, at a glance.
+ *
+ * Scoped to this panel rather than styling `.tut-list > li`, which every
+ * other list in the game shares — the lesson #991 left behind. The row
+ * is a button in all but name: it selects the unit and brings it on
+ * screen, so it has to read as pressable.
+ */
+/* "SQUAD" at one end, "3 to act" at the other, rather than run together. */
+.tut-hud__squad .tut-panel__title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.tut-hud__squad .tut-list > li {
+  gap: var(--space-2);
+  cursor: pointer;
+}
+
+.tut-hud__squad .tut-list > li > span:not(.tut-icon) {
+  min-width: 0;
+}
+
+.tut-squad__name {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tut-hud__squad .tut-list > li > .tut-mono {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+/* The unit being commanded, marked the way the scene marks it. */
+.tut-hud__squad .tut-list > li[data-selected="true"] {
+  background: var(--ui-panel-raised);
+  box-shadow: inset 2px 0 0 0 var(--ui-accent);
+}
+
+/*
+ * A unit with nothing left to do is dimmed rather than hidden: the
+ * question the strip answers is "who still has a turn", and an absent
+ * row would answer "who exists" instead.
+ */
+.tut-hud__squad .tut-list > li[data-spent="true"] {
+  opacity: 0.55;
+}
+
 .tut-hud__bottom {
   grid-area: bottom;
   padding: var(--space-3) var(--space-4);

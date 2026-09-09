@@ -41,6 +41,12 @@ export interface ActionBarModel {
   /** Label of the reload button: "Vent" for a mech, "Reload" otherwise (#409). */
   readonly reloadLabel?: string;
   /**
+   * How many of the player's units still have an action (#1041). Named
+   * on End turn, because ending a turn with units that have not acted
+   * used to be silent — the player found out on the next turn.
+   */
+  readonly unspent?: number;
+  /**
    * Shots the selected unit has left this turn (#533). Shown on the
    * Attack button when it is more than one, which is how a player sees
    * that a squad fires twice and a mech once.
@@ -249,6 +255,19 @@ export class ActionBarView {
           label.textContent = text;
         }
         button.title = `${text} (${String(ACTION_BAR_ORDER.indexOf(action) + 1)})`;
+      }
+      if (action === "end-turn") {
+        // Says what it is about to leave behind (#1041). Named rather
+        // than blocked: a confirmation would change the flow, and the
+        // player who means it should press once.
+        const label = button.querySelector<HTMLElement>(".tut-btn__label");
+        const unspent = model.unspent ?? 0;
+        const text =
+          unspent > 0 ? `End turn (${String(unspent)} unspent)` : "End turn";
+        if (label) {
+          label.textContent = text;
+        }
+        button.dataset.unspent = String(unspent);
       }
     }
   }

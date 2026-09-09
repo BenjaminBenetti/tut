@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
 
+import { DIRECTIONS, type Direction } from "../../core/model/direction";
+import { stepGridPos } from "../../core/service/grid-math";
+import {
+  dropshipBoardingTiles,
+  dropshipFootprint,
+} from "../../mapgen/service/dropship-site-layout";
+import { createCameraState, cameraPosition } from "./camera-math";
 import { SurfaceIds } from "../../mapgen/data/surfaces";
 import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
 import type { TacticalState } from "../../tactical/model/tactical-state";
@@ -8,7 +15,7 @@ import {
   unitAt,
 } from "../../tactical/service/tactical-fixtures.test-helper";
 import { tileTop } from "../view/tactical-map-view";
-import { mapCentre, missionFocus } from "./tactical-framing";
+import { mapCentre, missionFocus, missionArrivalYaw } from "./tactical-framing";
 
 // ===========================================
 // Fixtures
@@ -85,5 +92,90 @@ describe("missionFocus", () => {
     const mission = bigField([]);
     expect(missionFocus(mission)).toEqual(mapCentre(mission));
     expect(mapCentre(mission)).toEqual({ x: 20, y: 0, z: 20 });
+  });
+});
+
+/** A force on the real 4×4 boarding layout, with a remote enemy and dead ally. */
+function landingMission(facing: Direction): TacticalState {
+  const clearance = {
+    x: 2,
+    z: 2,
+    w: facing === "n" || facing === "s" ? 7 : 13,
+    d: facing === "n" || facing === "s" ? 13 : 7,
+  };
+  const tiles = dropshipBoardingTiles(clearance, facing, 0);
+  const base = bigField([
+    unitAt("u1", "infantry", tiles[0]!),
+    unitAt("u2", "infantry", tiles[1]!),
+    unitAt("enemy", "infantry", at(39, 39), { team: "bugs" }),
+    unitAt("dead", "infantry", at(0, 0), { hp: 0 }),
+  ]);
+  return {
+    ...base,
+    map: {
+      ...base.map,
+      dropships: [
+        {
+          deployZoneId: "landing",
+          clearance,
+          footprint: dropshipFootprint(clearance, facing),
+          level: 0,
+          facing,
+        },
+      ],
+      hooks: {
+        ...base.map.hooks,
+        deployZones: [
+          { id: "landing", kind: "deploy", requiredPass: 3, tiles },
+        ],
+      },
+    },
+  };
+}
+
+describe("missionArrivalYaw", () => {
+  it.each(DIRECTIONS)(
+    "views a %s-facing aircraft from the external boarding side",
+    (facing) => {
+      const mission = landingMission(facing);
+      const target = missionFocus(mission);
+      const camera = cameraPosition(
+        createCameraState({ target, yawIndex: missionArrivalYaw(mission) }),
+        100,
+      );
+      const nose = stepGridPos({ x: 0, y: 0, z: 0 }, facing);
+      // Geometry, not a duplicated yaw lookup: the viewer is behind the nose plane.
+      expect(
+        (camera.x - target.x) * nose.x + (camera.z - target.z) * nose.z,
+      ).toBeLessThan(0);
+    },
+  );
+
+  it("retains the normal view once part of the force has left boarding", () => {
+    const mission = landingMission("s");
+    expect(
+      missionArrivalYaw({
+        ...mission,
+        units: mission.units.map((unit) =>
+          unit.id === "u2" ? { ...unit, pos: at(30, 30) } : unit,
+        ),
+      }),
+    ).toBe(0);
+  });
+
+  it("retains the normal view for an old map without a recorded aircraft", () => {
+    const mission = landingMission("s");
+    const { dropships: _sites, ...oldMap } = mission.map;
+    expect(missionArrivalYaw({ ...mission, map: oldMap })).toBe(0);
+  });
+
+  it("does not aim at an aircraft when no living force remains", () => {
+    const mission = landingMission("s");
+    expect(
+      missionArrivalYaw({
+        ...mission,
+        units: mission.units.map((unit) => ({ ...unit, hp: 0 })),
+      }),
+    ).toBe(0);
   });
 });

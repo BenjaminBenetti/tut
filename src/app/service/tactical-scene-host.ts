@@ -3,6 +3,7 @@ import { Group } from "three";
 import { CameraInputController } from "../../graphics/controller/camera-input-controller";
 import { MODEL_MANIFEST } from "../../graphics/data/model-manifest";
 import { SPRITE_MANIFEST } from "../../graphics/data/sprite-manifest";
+import { missionArrivalYaw } from "../../graphics/service/tactical-framing";
 import { CAMERA_ZOOM } from "../../graphics/model/camera-state";
 import {
   drawPerceived,
@@ -151,7 +152,10 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
       models: this.models,
     });
     const overlays = new TacticalOverlays();
-    const rig = new OrthographicCameraRig({ zoom: CAMERA_ZOOM.min });
+    const rig = new OrthographicCameraRig({
+      zoom: CAMERA_ZOOM.min,
+      yawIndex: missionArrivalYaw(mission),
+    });
     const animations = new TacticalAnimationQueue({
       scene: builder,
       sprites: this.sprites,

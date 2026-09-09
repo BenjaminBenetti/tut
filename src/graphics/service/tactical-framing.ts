@@ -1,3 +1,4 @@
+import type { YawIndex } from "../model/camera-state";
 import type { Vec3 } from "../../core/model/grid";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { Unit } from "../../tactical/model/unit";
@@ -28,6 +29,35 @@ import { tileTopCentre } from "../view/tactical-map-view";
 export function missionFocus(mission: TacticalState): Vec3 {
   const force = mission.units.filter((u) => u.team === "tdf" && u.hp > 0);
   return force.length === 0 ? mapCentre(mission) : boundingCentre(force);
+}
+
+/**
+ * Opens a landing from the boarding side so the aircraft does not hide its force.
+ * A force that has left boarding, or an old map without a site, keeps the default view.
+ * This chooses the fresh camera's yaw; it never turns a camera during player input.
+ */
+export function missionArrivalYaw(mission: TacticalState): YawIndex {
+  const force = mission.units.filter(
+    (unit) => unit.team === "tdf" && unit.hp > 0,
+  );
+  if (force.length === 0) return 0;
+  const site = mission.map.dropships?.find((candidate) => {
+    const zone = mission.map.hooks.deployZones.find(
+      (hook) => hook.id === candidate.deployZoneId,
+    );
+    return (
+      zone !== undefined &&
+      force.every((unit) =>
+        zone.tiles.some(
+          (tile) =>
+            tile.x === unit.pos.x &&
+            tile.y === unit.pos.y &&
+            tile.z === unit.pos.z,
+        ),
+      )
+    );
+  });
+  return site?.facing === "s" || site?.facing === "e" ? 2 : 0;
 }
 
 /** The ground-plane centre of the map, the fallback when nothing is deployed. */

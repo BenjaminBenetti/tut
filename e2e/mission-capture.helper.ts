@@ -34,6 +34,11 @@ export async function launchMission(page: Page, seed: string): Promise<void> {
     await advance.click();
   }
   await expect(rows.first()).toBeVisible();
+  // A mission and an event can arrive on the same day; resolve that dialog
+  // through the same first-choice policy before selecting the mission.
+  if (await choice.first().isVisible()) {
+    await choice.first().click();
+  }
 
   await rows.first().click();
   await page

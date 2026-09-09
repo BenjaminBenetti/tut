@@ -25,17 +25,18 @@ interface BoundaryRun {
 }
 
 // ===========================================
-// RuralFencePass
+// BoundaryFencePass
 // ===========================================
 
 /**
- * Arranges the rural fence allocation into boundaries (#917). The prop
+ * Arranges settlement fence allocations into boundaries (#917, #1006). The prop
  * pass still makes its normal draws, so trees, rocks and yard clutter do
  * not move when fences cease to be isolated, randomly rotated points.
  * Runs follow existing plot edges or trails, never a random field shape.
  * No terrain is graded, and no extra panels are added to meet a quota.
  */
-export class RuralFencePass implements GenerationPass {
+export class BoundaryFencePass implements GenerationPass {
+  /** Keep the shipped RNG stream so the accepted rural layouts do not reroll. */
   readonly id = "rural-fences";
   readonly requires: readonly DraftCapability[] = [
     "props",
@@ -48,9 +49,8 @@ export class RuralFencePass implements GenerationPass {
   ];
   readonly provides: readonly DraftCapability[] = ["boundaries"];
 
-  /** Relocates rural panels after slope classification, before access repairs. */
-  run({ draft, params, rng, diagnostics }: GenerationContext): void {
-    if (params.settlement.id !== "rural") return;
+  /** Relocates panels after slope classification, before access repairs. */
+  run({ draft, rng, diagnostics }: GenerationContext): void {
     const fences = draft.props.filter((p) => p.kind === PropKindIds.FENCE);
     if (fences.length === 0) return;
     for (const fence of fences) draft.removeProp(fence.id);

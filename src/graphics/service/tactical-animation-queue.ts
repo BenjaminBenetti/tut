@@ -169,7 +169,17 @@ const NOTICE_WIDTH = 9;
 /** Canvas width for a notice's words: a sentence needs more room than a damage number. */
 const NOTICE_CHIP_WIDTH = 768;
 const NOTICE_ASPECT = 0.16;
-const NOTICE_COLOUR = 0xf0c14b;
+/**
+ * `--ui-warn`, and chosen rather than landed on (#1030).
+ *
+ * Not `--ui-accent` `0xf08a24`: that is `UNIT_HIGHLIGHT_COLOUR`, and it
+ * already means "the unit you are commanding" — a bar in that colour
+ * above that same unit would be read as part of the selection. Not
+ * `--ui-danger` `0xe0453c`, which the damage floater uses and so means
+ * harm taken. A refusal is neither; it is a warning that the thing asked
+ * for cannot happen, which is exactly what the warn token is for.
+ */
+const NOTICE_COLOUR = 0xf0c63c;
 
 /** A notice lasts this many floater-durations, and holds full opacity for this share of it. */
 const NOTICE_DWELL = 2.5;

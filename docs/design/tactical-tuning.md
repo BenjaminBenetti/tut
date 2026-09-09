@@ -232,7 +232,33 @@ playing when the cap arrived"* and nothing more.
 pnpm test:sim
 ```
 
-To reproduce the table above, raise `TURN_CAP` to 90 and `BUDGET_MS` with
-it, and play both seed sets — `sweep-${i}` with difficulty `(i % 10) + 1`,
-and `tune-${d}-${i}` for twelve seeds at each difficulty. About 20 minutes
-for the 180.
+The shipped sweep: sixty `sweep-${i}` seeds, each at difficulty
+`(i % 10) + 1`, at a 15-turn cap. It answers "do missions conclude", and
+is **unpaired** — one difficulty per seed — so it cannot answer what one
+step of difficulty does. Measured unpaired, the variance between maps is
+larger than the difficulty step.
+
+For the paired question, the same maps at every difficulty (#1014):
+
+```
+SIM_PAIRED=1 SIM_TURN_CAP=90 SIM_PAIRED_OUT=paired.tsv pnpm test:sim
+```
+
+Six `paired-${i}` maps × ten difficulties = sixty missions, every one
+resolved at that cap, about seven minutes. `SIM_PAIRED_OUT` writes a TSV
+of seed, difficulty, outcome, turns, TDF alive and bugs alive. Raising
+`SIM_TURN_CAP` scales the sweep's own time budget with it, so a deeper
+run is slower rather than failed.
+
+**Sampling limits.** Six maps per cell, one machine, campaign seed 7,
+`size: "small"`. Six seeds resolves a 6/6-versus-1/6 step and cannot
+resolve 5/6-versus-4/6. Read the **slack** columns, not only the win
+rate: a band can be flat at 5/6 while the surviving-unit median halves
+under it.
+
+> An earlier version of this section named a `tune-${d}-${i}` seed set.
+> That set is not in the tree, so those instructions were not followable;
+> the paired command above is what replaces them. The results recorded
+> earlier in this document remain a historical record of the tree they
+> were measured on, not a current baseline — see #746 and #838, which
+> superseded several of them.

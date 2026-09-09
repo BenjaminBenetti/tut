@@ -1,0 +1,34 @@
+[
+  {
+    "fresh": ".scratch/map-critic-v0216/dropship/mission/arrival.png",
+    "sha256": "ef2147f5232a239125c3b79ffb45561c669e4c9f9a88d85dbb96d4619ff7e32c",
+    "referenceCommit": "f44063a6d8f71171e225c623d6d26ee6c7502e66",
+    "referencePath": "docs/design/diagnostics/911/generated/mission/arrival.png",
+    "referenceSha256": "ef2147f5232a239125c3b79ffb45561c669e4c9f9a88d85dbb96d4619ff7e32c",
+    "byteIdentical": true
+  },
+  {
+    "fresh": ".scratch/map-critic-v0216/dropship/mission/arrival-opposite.png",
+    "sha256": "92ce087235e49647dd568c92585d82d20468e7c687045d7d5f68e31055a7ac37",
+    "referenceCommit": "f44063a6d8f71171e225c623d6d26ee6c7502e66",
+    "referencePath": "docs/design/diagnostics/911/generated/mission/arrival-opposite.png",
+    "referenceSha256": "92ce087235e49647dd568c92585d82d20468e7c687045d7d5f68e31055a7ac37",
+    "byteIdentical": true
+  },
+  {
+    "fresh": ".scratch/map-critic-v0216/dropship/mission-s/arrival.png",
+    "sha256": "fb68303cee4346c9999ff57118b9d4cf3c9f7cfe292fc03f213543521e51e3c7",
+    "referenceCommit": "f44063a6d8f71171e225c623d6d26ee6c7502e66",
+    "referencePath": "docs/design/diagnostics/911/generated/mission-s/arrival.png",
+    "referenceSha256": "fb68303cee4346c9999ff57118b9d4cf3c9f7cfe292fc03f213543521e51e3c7",
+    "byteIdentical": true
+  },
+  {
+    "fresh": ".scratch/map-critic-v0216/dropship/mission-s/arrival-opposite.png",
+    "sha256": "c3ec9e45a7711ff346607712d342daa25b9bf55b95a29199b67fa893f0e5132d",
+    "referenceCommit": "f44063a6d8f71171e225c623d6d26ee6c7502e66",
+    "referencePath": "docs/design/diagnostics/911/generated/mission-s/arrival-opposite.png",
+    "referenceSha256": "c3ec9e45a7711ff346607712d342daa25b9bf55b95a29199b67fa893f0e5132d",
+    "byteIdentical": true
+  }
+]

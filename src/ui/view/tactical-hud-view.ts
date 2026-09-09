@@ -64,6 +64,7 @@ import { UnitCardView } from "./unit-card-view";
 import { SquadStripView, playerUnits } from "./squad-strip-view";
 import { actingUnit } from "../../tactical/service/acting-unit";
 import { reloadPools } from "../../tactical/service/reload-handler";
+import { chargeRegisterFor } from "../service/charge-register";
 
 // ===========================================
 // Types
@@ -1326,7 +1327,7 @@ export class TacticalHudView {
       canAct: this.canAct(),
       playerPhase: mission.phase === "player",
       mode: this.mode,
-      reloadLabel: selected?.kind === "mech" ? "Vent" : "Reload",
+      reloadLabel: chargeRegisterFor(selected?.kind ?? "squad").actionLabel,
       unspent: this.unspentCount(),
       canExtract: this.canExtract(),
       unavailable: this.unavailableActions(),

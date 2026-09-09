@@ -665,6 +665,36 @@ describe("TacticalHudView", () => {
   });
 
   /**
+   * The third surface that names a unit's charges, and the one nothing
+   * was asserting (#1062): the bar said `Vent`, the card said `heat`,
+   * and the refusal said `charges`, each deciding separately. Now all
+   * three ask `chargeRegisterFor`, so this test is what stops the bar
+   * drifting back — removing the split reddens the card and the refusal
+   * already, but left the button label free to say anything.
+   */
+  it("names the reload action as the unit's own card does", () => {
+    const { hud } = setup();
+    // `hudUnit` derives kind from the team, so the two-weapon fixture's
+    // `m1` is a mech by template and a squad by kind. The register keys
+    // off kind, as the card does, so say so.
+    const base = twoWeaponMission();
+    hud.update({
+      ...base,
+      units: base.units.map((u) =>
+        u.id === "m1" ? { ...u, kind: "mech" as const } : u,
+      ),
+    });
+    const label = (): string | undefined =>
+      root.querySelector<HTMLElement>('[data-action="reload"] .tut-btn__label')
+        ?.textContent ?? undefined;
+
+    hud.handleIntent({ kind: "select-unit", unitId: "m1" });
+    expect(label()).toBe("Vent");
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    expect(label()).toBe("Reload");
+  });
+
+  /**
    * QA's corrected row (#1062): the Move **button** explains this
    * refusal, while the right click players actually move with says
    * nothing. `moveTo` opened with `if (!this.canAct()) return`, and

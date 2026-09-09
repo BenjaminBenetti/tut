@@ -7,6 +7,7 @@ import {
 } from "../../tactical/model/tactical-error";
 import type { TacticalNames } from "./tactical-error-text";
 import { describeRefusal, namesFor } from "./tactical-error-text";
+import { chargeRegisterFor } from "./charge-register";
 
 /**
  * A sentinel in every entity id a refusal can carry. If it reaches the
@@ -20,6 +21,7 @@ const NAMES: TacticalNames = {
   objective: () => "spawner 2",
   spawner: () => "spawner 2",
   target: () => "Rifle Squad",
+  charge: () => chargeRegisterFor("squad"),
   mech: () => "Hammerhead",
   mission: () => "Lagos",
 };
@@ -106,9 +108,21 @@ describe("describeRefusal", () => {
     expect(said({ kind: "no-action-points", unitId: "unit-1" })).toBe(
       "Rifle Squad has no action points left",
     );
+    // The register follows the unit, because the card and the bar do
+    // (#1062). A squad has no vent action, so the old wording named one
+    // it does not have; a mech has no magazine, so "out of ammo" would
+    // be the same mistake the other way.
     expect(said({ kind: "no-charges", unitId: "unit-1" })).toBe(
-      "Rifle Squad is out of charges; reload or vent first",
+      "Rifle Squad is out of ammo; reload first",
     );
+    const mechNames: TacticalNames = {
+      ...NAMES,
+      unit: () => "Hammerhead",
+      charge: () => chargeRegisterFor("mech"),
+    };
+    expect(
+      describeRefusal({ kind: "no-charges", unitId: "unit-2" }, mechNames),
+    ).toBe("Hammerhead must vent before firing again");
     expect(said({ kind: "target-destroyed", targetId: "spawner-2" })).toBe(
       "Spawner 2 is already destroyed",
     );

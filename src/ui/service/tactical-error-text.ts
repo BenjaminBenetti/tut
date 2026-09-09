@@ -7,6 +7,8 @@ import {
   tacticalCause,
 } from "../../tactical/model/tactical-error";
 import type { TacticalState } from "../../tactical/model/tactical-state";
+import type { ChargeRegister } from "./charge-register";
+import { chargeRegisterFor } from "./charge-register";
 
 // ===========================================
 // Types
@@ -64,6 +66,15 @@ export interface TacticalNames {
    * "Hammerhead hit that unit for 15".
    */
   target(id: string): string;
+  /**
+   * The words this unit uses for what its weapons spend (#1062).
+   *
+   * Here rather than inlined per case because the unit card and
+   * the action bar answer the same question, and the three used to
+   * answer it separately: `ammo 0 / 3` on the card beside "is out
+   * of charges; reload or vent first" in the refusal.
+   */
+  charge(id: string): ChargeRegister;
   /** A mech's name from the roster. */
   mech(id: string): string;
   /** A mission, named by the city it is fought over (#739, #753). */
@@ -151,6 +162,7 @@ export function namesFor(
       }
       return spawners.has(id) ? ANONYMOUS.spawner : ANONYMOUS.unit;
     },
+    charge: (id) => chargeRegisterFor(units.get(id)?.kind ?? "squad"),
     mech: (id) =>
       campaign?.roster.mechs.find((mech) => mech.id === id)?.name ??
       ANONYMOUS.mech,
@@ -215,7 +227,11 @@ export function describeRefusal(
     case "target-destroyed":
       return `${capitalise(names.spawner(error.targetId))} is already destroyed`;
     case "no-charges":
-      return `${names.unit(error.unitId)} is out of charges; reload or vent first`;
+      // `charges` is the field name; the player sees `ammo` or `heat`
+      // on the card and `Reload` or `Vent` on the bar. Offering a
+      // Rifle Squad a vent named an action its bar does not have
+      // (#1062, QA on `0a47be2`).
+      return `${names.unit(error.unitId)} ${names.charge(error.unitId).emptyPhrase}`;
     case "no-such-weapon":
       return `${names.unit(error.unitId)} is not carrying that weapon`;
     case "charges-full":

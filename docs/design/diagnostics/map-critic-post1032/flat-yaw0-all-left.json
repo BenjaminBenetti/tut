@@ -1,0 +1,44 @@
+{
+  "id": "flat-yaw0-all-left",
+  "baseline": "166876d670ddfdfa81bb03c65abd952a9aae3f5f",
+  "serverRuntime": {
+    "baseline": "166876d670ddfdfa81bb03c65abd952a9aae3f5f",
+    "server": "http://127.0.0.1:4177",
+    "serverSession": 20110,
+    "recordedAt": "2026-09-09T01:21:35.942444+00:00",
+    "config": ".scratch/map-critic-v0215/main-vite.config.mjs",
+    "watch": null,
+    "hmr": false,
+    "freshServerAfterCheckout": true,
+    "runtimeTrees": {
+      "src": "40a0f4c5809b2cb6b509773e19ab283fb3154222",
+      "public": "5e85567612436db764109379d0631edae38b7f77",
+      "tools": "2f4e0f35293bc6c3fad0d6ecaabeb005e5710c88"
+    }
+  },
+  "capturedAt": "2026-09-09T01:34:11.165Z",
+  "roof": "flat",
+  "yaw": 0,
+  "units": 0,
+  "pointer": {
+    "x": 15,
+    "y": 475
+  },
+  "url": "http://127.0.0.1:4177/tools/art/preview/roof-cutaway.html?roof=flat&units=2&yaw=0",
+  "viewport": {
+    "width": 1200,
+    "height": 950
+  },
+  "dataset": {
+    "ready": "true",
+    "ghostCount": "2",
+    "unit": "{\"x\":25,\"y\":6,\"z\":14}",
+    "units": "[{\"x\":25,\"y\":6,\"z\":14},{\"x\":23,\"y\":6,\"z\":11}]",
+    "radius": "4",
+    "floor": "0.175",
+    "yaw": "0",
+    "left": "true"
+  },
+  "sha256": "ca4493a61eca16d6dff17a66e14a43343323b8d28dccf2c1caee2f1a824fea86",
+  "errors": []
+}

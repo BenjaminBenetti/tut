@@ -40,7 +40,7 @@ import { defineConfig } from "vitest/config";
  */
 export default defineConfig({
   test: {
-    include: ["src/**/*.test.ts"],
+    include: ["src/**/*.test.ts", "tools/gpu/**/*.test.mjs"],
     // The seeded sweep (#343) plays whole missions and takes seconds per
     // seed; it runs under `pnpm test:sim` with its own config.
     exclude: ["**/node_modules/**", "src/**/*.sim.test.ts"],

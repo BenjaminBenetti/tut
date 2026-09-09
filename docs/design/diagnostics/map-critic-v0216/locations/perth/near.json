@@ -1,0 +1,72 @@
+{
+  "id": "perth",
+  "city": "Perth",
+  "campaignSeed": "4242",
+  "advanceSteps": 55,
+  "missionId": "mission-115",
+  "claimSource": ".scratch/map-critic-v0216/campaign-perth/Perth-briefing.json",
+  "biome": "coastal",
+  "settlement": "town",
+  "size": "medium",
+  "seed": "215428772",
+  "models": "1",
+  "units": "1",
+  "slope": "100",
+  "view": "near",
+  "url": "http://127.0.0.1:4178/mapgen-preview.html?seed=215428772&biome=coastal&settlement=town&size=medium&models=1&units=1&slope=100",
+  "baseline": "1131c9019f6dad4abf0a1b46dbfd78334daa9254",
+  "serverRuntime": {
+    "tag": "v0.2.16",
+    "baseline": "1131c9019f6dad4abf0a1b46dbfd78334daa9254",
+    "server": "http://127.0.0.1:4178",
+    "recordedAt": "2026-09-09T03:40:40.088535+00:00",
+    "config": ".scratch/map-critic-v0216/vite.config.mjs",
+    "watch": null,
+    "hmr": false,
+    "freshServerAfterCheckout": true,
+    "runtimeTrees": {
+      "src": "2b5a35ee3c27ae0373a3f57470447eba32734c63",
+      "public": "01e5c286dea273d9a7fae41d73bb3930b0347745",
+      "tools": "74e782320301f477ccef35031e695e4f038c4bbf"
+    },
+    "serverSession": 23504
+  },
+  "capturedAt": "2026-09-09T03:59:32.338Z",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "clip": {
+    "x": 380,
+    "y": 0,
+    "width": 2020,
+    "height": 1500
+  },
+  "camera": {
+    "yawIndex": 0,
+    "zoom": 40,
+    "target": {
+      "x": 36,
+      "y": 0,
+      "z": 36
+    },
+    "bounds": {
+      "x": 0,
+      "z": 0,
+      "w": 72,
+      "d": 72
+    },
+    "zoomRange": {
+      "min": 19.83827358328925,
+      "max": 192
+    }
+  },
+  "levels": {
+    "value": "8",
+    "max": "8",
+    "step": "2",
+    "label": "all"
+  },
+  "errors": [],
+  "sha256": "3c6a8ca593263cef642b027764839c3bcd4104043eaafeffed7ffef3510b9e00"
+}

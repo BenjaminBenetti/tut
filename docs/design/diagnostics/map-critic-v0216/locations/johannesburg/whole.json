@@ -1,0 +1,72 @@
+{
+  "id": "johannesburg",
+  "city": "Johannesburg",
+  "campaignSeed": "4242",
+  "advanceSteps": 1,
+  "missionId": "mission-1",
+  "claimSource": ".scratch/map-critic-v0216/campaign-claims/Johannesburg-briefing.json",
+  "biome": "temperate",
+  "settlement": "city",
+  "size": "small",
+  "seed": "730982385",
+  "models": "1",
+  "units": "1",
+  "slope": "100",
+  "view": "whole",
+  "url": "http://127.0.0.1:4178/mapgen-preview.html?seed=730982385&biome=temperate&settlement=city&size=small&models=1&units=1&slope=100",
+  "baseline": "1131c9019f6dad4abf0a1b46dbfd78334daa9254",
+  "serverRuntime": {
+    "tag": "v0.2.16",
+    "baseline": "1131c9019f6dad4abf0a1b46dbfd78334daa9254",
+    "server": "http://127.0.0.1:4178",
+    "recordedAt": "2026-09-09T03:40:40.088535+00:00",
+    "config": ".scratch/map-critic-v0216/vite.config.mjs",
+    "watch": null,
+    "hmr": false,
+    "freshServerAfterCheckout": true,
+    "runtimeTrees": {
+      "src": "2b5a35ee3c27ae0373a3f57470447eba32734c63",
+      "public": "01e5c286dea273d9a7fae41d73bb3930b0347745",
+      "tools": "74e782320301f477ccef35031e695e4f038c4bbf"
+    },
+    "serverSession": 23504
+  },
+  "capturedAt": "2026-09-09T03:50:07.341Z",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "clip": {
+    "x": 380,
+    "y": 0,
+    "width": 2020,
+    "height": 1500
+  },
+  "camera": {
+    "yawIndex": 0,
+    "zoom": 29.757410374933876,
+    "target": {
+      "x": 24,
+      "y": 0,
+      "z": 24
+    },
+    "bounds": {
+      "x": 0,
+      "z": 0,
+      "w": 48,
+      "d": 48
+    },
+    "zoomRange": {
+      "min": 29.757410374933876,
+      "max": 192
+    }
+  },
+  "levels": {
+    "value": "14",
+    "max": "14",
+    "step": "2",
+    "label": "all"
+  },
+  "errors": [],
+  "sha256": "57f683b12f732aaebbc2d1912e791725ae07d64c305defb01d89cad65237d6de"
+}

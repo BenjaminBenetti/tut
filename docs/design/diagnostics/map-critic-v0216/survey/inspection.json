@@ -1,0 +1,50 @@
+{
+  "V01-coastal-city/near": {
+    "openedAt": "2026-09-09T04:14:18.268982+00:00",
+    "observation": "Changing only Lagos recipe biome to coastal replaces conifer/lawn context with sandy/green plots, slender palm groups and a clear shoreline. Streets, purposeful quays, supported roofs and frontage differences remain legible. This is a warmer coastal identity, but repeated gray/red flat blocks and sparse similar planting still generic. Demonstrates partial improvement available in existing palette, not proof a biome switch alone delivers Lagos."
+  },
+  "V01-coastal-city/rotated": {
+    "openedAt": "2026-09-09T04:14:18.268982+00:00",
+    "observation": "Changing only Lagos recipe biome to coastal replaces conifer/lawn context with sandy/green plots, slender palm groups and a clear shoreline. Streets, purposeful quays, supported roofs and frontage differences remain legible. This is a warmer coastal identity, but repeated gray/red flat blocks and sparse similar planting still generic. Demonstrates partial improvement available in existing palette, not proof a biome switch alone delivers Lagos."
+  },
+  "V01-coastal-city/whole": {
+    "openedAt": "2026-09-09T04:14:18.268982+00:00",
+    "observation": "Changing only Lagos recipe biome to coastal replaces conifer/lawn context with sandy/green plots, slender palm groups and a clear shoreline. Streets, purposeful quays, supported roofs and frontage differences remain legible. This is a warmer coastal identity, but repeated gray/red flat blocks and sparse similar planting still generic. Demonstrates partial improvement available in existing palette, not proof a biome switch alone delivers Lagos."
+  },
+  "V02-coastal-town/near": {
+    "openedAt": "2026-09-09T04:17:29.951256+00:00",
+    "observation": "Settlement-only change city to town yields fewer streets/buildings and strong natural grades. Supported roofed blocks, purposeful waterfront terminus, contextual long plot fences and rounded surface contacts retain their read. Buildings still share gray/red flat-box family; palms/round small trees retain generic coastal identity. Steep accepted ramps are not a new finding."
+  },
+  "V02-coastal-town/rotated": {
+    "openedAt": "2026-09-09T04:17:29.951293+00:00",
+    "observation": "Settlement-only change city to town yields fewer streets/buildings and strong natural grades. Supported roofed blocks, purposeful waterfront terminus, contextual long plot fences and rounded surface contacts retain their read. Buildings still share gray/red flat-box family; palms/round small trees retain generic coastal identity. Steep accepted ramps are not a new finding."
+  },
+  "V02-coastal-town/whole": {
+    "openedAt": "2026-09-09T04:17:29.951295+00:00",
+    "observation": "Settlement-only change city to town yields fewer streets/buildings and strong natural grades. Supported roofed blocks, purposeful waterfront terminus, contextual long plot fences and rounded surface contacts retain their read. Buildings still share gray/red flat-box family; palms/round small trees retain generic coastal identity. Steep accepted ramps are not a new finding."
+  },
+  "V03-coastal-rural/near": {
+    "openedAt": "2026-09-09T04:20:45.867130+00:00",
+    "observation": "Settlement-only town to rural change produces a winding stone lane and isolated supported roofed home amid open graded shore ground. Route remains traceable on earth from both sides; finite fences belong beside route/home. Material contours stay smooth. Overall setting differs strongly from city; generic palms/round-tree motifs still recur. No new distinct defect established."
+  },
+  "V03-coastal-rural/rotated": {
+    "openedAt": "2026-09-09T04:20:45.867130+00:00",
+    "observation": "Settlement-only town to rural change produces a winding stone lane and isolated supported roofed home amid open graded shore ground. Route remains traceable on earth from both sides; finite fences belong beside route/home. Material contours stay smooth. Overall setting differs strongly from city; generic palms/round-tree motifs still recur. No new distinct defect established."
+  },
+  "V03-coastal-rural/whole": {
+    "openedAt": "2026-09-09T04:20:45.867130+00:00",
+    "observation": "Settlement-only town to rural change produces a winding stone lane and isolated supported roofed home amid open graded shore ground. Route remains traceable on earth from both sides; finite fences belong beside route/home. Material contours stay smooth. Overall setting differs strongly from city; generic palms/round-tree motifs still recur. No new distinct defect established."
+  },
+  "V04-temperate-rural/near": {
+    "openedAt": "2026-09-09T04:24:49.458200+00:00",
+    "observation": "Biome-only coast to temperate: more green land and conifer/round-canopy groups replace the sandy/palm shoreline. Winding stone lane remains legible through earth and accepted grades, home remains supported/roofed with plot boundary. Broad generic temperate character differs from coast. No new distinct defect established."
+  },
+  "V04-temperate-rural/rotated": {
+    "openedAt": "2026-09-09T04:24:49.458200+00:00",
+    "observation": "Biome-only coast to temperate: more green land and conifer/round-canopy groups replace the sandy/palm shoreline. Winding stone lane remains legible through earth and accepted grades, home remains supported/roofed with plot boundary. Broad generic temperate character differs from coast. No new distinct defect established."
+  },
+  "V04-temperate-rural/whole": {
+    "openedAt": "2026-09-09T04:24:49.458200+00:00",
+    "observation": "Biome-only coast to temperate: more green land and conifer/round-canopy groups replace the sandy/palm shoreline. Winding stone lane remains legible through earth and accepted grades, home remains supported/roofed with plot boundary. Broad generic temperate character differs from coast. No new distinct defect established."
+  }
+}

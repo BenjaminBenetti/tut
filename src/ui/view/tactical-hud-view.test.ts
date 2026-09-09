@@ -907,6 +907,70 @@ describe("TacticalHudView", () => {
   });
 
   /**
+   * QA reproduced this on shipped v0.2.16 (#1027 F2) and the Director
+   * sharpened the acceptance from it: one card reading `AP 1 / 2`,
+   * **`ATTACKS 1`** and `ammo 0 / 3` four lines apart, with the bar
+   * leaving ATTACK live while it correctly dimmed INTERACT in the same
+   * frame.
+   *
+   * Three derivations of one fact. `actingUnit` checks map, alive,
+   * phase and action points; `attacksRemaining` takes only `kind` and
+   * `ap`; and `weaponOptions` — which runs the rules' own
+   * `refuseWeapon` — was the only one that knew about ammunition, and
+   * nothing asked it.
+   */
+  it("stops offering Attack, and counting attacks, when the magazine is empty", () => {
+    const notices: string[] = [];
+    const { hud, mission } = setup({
+      onNotice: (_unitId: string, text: string) => {
+        notices.push(text);
+      },
+    });
+    const s1 = mission.units.find((unit) => unit.id === "s1");
+    const template = s1 && mission.templates[s1.templateId];
+    if (!s1 || !template)
+      throw new Error("fixture needs a unit with a template");
+    const weapon = {
+      ...template.weapons[0],
+      charges: 3,
+    } as (typeof template.weapons)[number];
+    const withAmmo = (left: number) => ({
+      ...mission,
+      templates: {
+        ...mission.templates,
+        [s1.templateId]: { ...template, weapons: [weapon] },
+      },
+      units: mission.units.map((unit) =>
+        unit.id === "s1" ? { ...unit, charges: { [weapon.id]: left } } : unit,
+      ),
+    });
+    const attack = () =>
+      root.querySelector<HTMLButtonElement>('[data-action="attack"]');
+    const attacks = () =>
+      root.querySelector<HTMLElement>('[data-field="attacks"]')?.textContent;
+
+    // Loaded: the control, so this cannot pass by always refusing.
+    hud.update(withAmmo(3));
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    expect(attack()?.getAttribute("aria-disabled")).toBe("false");
+    expect(Number(attacks())).toBeGreaterThan(0);
+
+    // Empty: the button goes, and the card stops advertising a shot the
+    // unit cannot take.
+    hud.update(withAmmo(0));
+    expect(attack()?.getAttribute("aria-disabled")).toBe("true");
+    expect(attacks()).toBe("0");
+
+    // ...and pressing it says why, in the register the card uses.
+    hud.handleIntent({ kind: "action", action: "attack" });
+    expect(notices).toHaveLength(1);
+    expect(notices[0]).toContain("out of ammo");
+    // A squad has no vent action, so the refusal must not offer one.
+    expect(notices[0]).not.toContain("vent");
+    expect(notices[0]).not.toContain("charges");
+  });
+
+  /**
    * Found by eng-5 on `6a552d6` and handed to this ticket: the bar
    * offered Reload to a mech at heat 4/4, and the player learned it was
    * not on offer by pressing it.

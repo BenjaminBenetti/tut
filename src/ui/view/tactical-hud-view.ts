@@ -974,7 +974,6 @@ export class TacticalHudView {
     }
   }
 
-  /** True when the selected unit is on the acting side, alive, with action points. */
   /** How many of the player's units still have an action to spend (#1041). */
   private unspentCount(): number {
     const mission = this.mission;
@@ -1018,6 +1017,29 @@ export class TacticalHudView {
     if (!acting.ok) {
       return acting.error;
     }
+    if (action === "attack") {
+      // The rules already answer this per weapon: `weaponOptions` runs
+      // `refuseWeapon`, which checks charges. Availability was coming
+      // from `actingUnit` alone, which checks map, alive, phase and
+      // action points and knows nothing about ammunition — so the bar
+      // left ATTACK live on a squad reading `ammo 0 / 3`, four lines
+      // from the card that said so (#1062, QA on v0.2.16).
+      //
+      // Every weapon, not the first: a mech with a dry autocannon and a
+      // loaded missile pod can still shoot, so the refusal only stands
+      // when nothing on the unit can fire.
+      const options = weaponOptions(
+        mission,
+        acting.value.id,
+        this.deps.combatTuning,
+      );
+      const spent =
+        options.length > 0 && options.every((option) => !option.ready);
+      const refusal = spent ? options[0]?.refusal : undefined;
+      if (refusal !== undefined) {
+        return refusal;
+      }
+    }
     if (action === "reload") {
       // The same question the command answers, asked once. eng-5 found
       // the bar offering Reload to a mech at heat 4/4 on `6a552d6`.
@@ -1035,6 +1057,24 @@ export class TacticalHudView {
       return { kind: "no-objective-in-reach", unitId: this.selected };
     }
     return undefined;
+  }
+
+  /**
+   * How many attacks the card and the bar should show.
+   *
+   * `attacksRemaining` takes `Pick<Unit, "kind" | "ap">` — it cannot see
+   * ammunition, so it answered `1` for a squad with an empty magazine
+   * and the card advertised `ATTACKS 1` beside `ammo 0 / 3`. Asking
+   * `refusalFor` first means the count, the button and the words are one
+   * answer rather than three (#1062).
+   *
+   * @param unit - The selected unit.
+   * @returns Attacks left, or zero when the unit cannot attack at all.
+   */
+  private attacksLeftFor(unit: Unit): number {
+    return this.refusalFor("attack") === undefined
+      ? attacksRemaining(unit, this.deps.combatTuning)
+      : 0;
   }
 
   /** Puts the refusal above the unit, and in the status line for the log. */
@@ -1269,7 +1309,7 @@ export class TacticalHudView {
     this.card.update(
       selected,
       selected ? mission.templates[selected.templateId] : undefined,
-      selected ? attacksRemaining(selected, this.deps.combatTuning) : undefined,
+      selected ? this.attacksLeftFor(selected) : undefined,
       selected ? namesFor(mission, this.campaign).unit(selected.id) : undefined,
     );
     const target =
@@ -1310,10 +1350,7 @@ export class TacticalHudView {
       nameOf: (unitId) => railNames.unit(unitId),
     });
     this.actions.update({
-      attacksLeft:
-        selected === undefined
-          ? 0
-          : attacksRemaining(selected, this.deps.combatTuning),
+      attacksLeft: selected === undefined ? 0 : this.attacksLeftFor(selected),
       weapons: selected
         ? weaponOptions(mission, selected.id, this.deps.combatTuning).map(
             (option) => ({

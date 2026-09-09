@@ -27,6 +27,10 @@ interface YardGroup {
   readonly side: Direction;
 }
 
+// ===========================================
+// Configuration
+// ===========================================
+
 const ROTATION: Readonly<Record<Direction, Rotation>> = {
   s: 0,
   e: 3,
@@ -38,6 +42,10 @@ const CLUTTER: ReadonlySet<string> = new Set([
   PropKindIds.SANDBAGS,
   PropKindIds.BARRIER,
 ]);
+
+// ===========================================
+// YardArrangementPass
+// ===========================================
 
 /**
  * Replaces urban generic yard clutter with small uses tied to real buildings.
@@ -119,6 +127,10 @@ export class YardArrangementPass implements GenerationPass {
     );
   }
 }
+
+// ===========================================
+// Placement and access
+// ===========================================
 
 /** Full groups aligned to an actual footprint wall, one tile outside the building. */
 function wallGroups(building: Building, profile: YardArrangement): YardGroup[] {

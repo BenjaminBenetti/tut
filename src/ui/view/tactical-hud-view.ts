@@ -42,7 +42,7 @@ import type {
   TacticalInvokeTarget,
 } from "../model/tactical-intent";
 import { ActionBarView } from "./action-bar-view";
-import { namesFor } from "../service/tactical-error-text";
+import { describeRefusal, namesFor } from "../service/tactical-error-text";
 import { EventLogView } from "./event-log-view";
 import { HitPreviewView } from "./hit-preview-view";
 import { ObjectiveTrackerView } from "./objective-tracker-view";
@@ -64,7 +64,6 @@ import { UnitCardView } from "./unit-card-view";
 // `event-vocabulary`; when that lands the import moves with it.
 import { nameResolver } from "./event-log-view";
 import { SquadStripView, playerUnits } from "./squad-strip-view";
-import { describeTacticalError } from "../../tactical/model/tactical-error";
 import { actingUnit } from "../../tactical/service/acting-unit";
 
 // ===========================================
@@ -778,8 +777,8 @@ export class TacticalHudView {
     // An attempted action that cannot happen says why, above the unit
     // that could not act (#1030). It used to return in silence, which is
     // what made silence unreadable: the player could not tell "fine"
-    // from "refused". The words come from `describeTacticalError`, so
-    // there is no second vocabulary beside the buttons.
+    // from "refused". The words come from the shared refusal
+    // vocabulary, so there is none beside the buttons.
     // Only the actions a unit performs; `next-unit`, `cancel` and the
     // rest are view controls with nothing to refuse.
     const refusal = REFUSABLE.has(action) ? this.refusalFor(action) : undefined;
@@ -986,7 +985,12 @@ export class TacticalHudView {
 
   /** Puts the refusal above the unit, and in the status line for the log. */
   private announceRefusal(error: TacticalError): void {
-    const words = describeTacticalError(error);
+    // Named, not id'd (#1035). The chip above the unit is the most
+    // prominent place a refusal has ever appeared, so `Unit "unit-1"`
+    // reads worse there than it ever did in the status line. eng-5's
+    // resolver is the one vocabulary for this; there is no second set
+    // of strings here.
+    const words = describeRefusal(error, namesFor(this.mission));
     this.showStatus(words);
     if (this.selected !== undefined) {
       this.handlers.onNotice?.(this.selected, words);

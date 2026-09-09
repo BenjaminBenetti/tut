@@ -17,10 +17,22 @@ import { TacticalHudView } from "./tactical-hud-view";
 import { withVision } from "../../tactical/service/vision-service";
 import type { TurnStartedEvent } from "../../tactical/model/turn-started-event";
 import { TURN_STARTED } from "../../tactical/model/turn-started-event";
+import type { TacticalState } from "../../tactical/model/tactical-state";
 
 let root: HTMLElement;
 const field = (name: string): HTMLElement | null =>
   root.querySelector<HTMLElement>(`[data-field="${name}"]`);
+
+/** The display name the player sees for a unit, from the mission's templates. */
+function nameOfUnit(mission: TacticalState, unitId: string): string {
+  const unit = mission.units.find((candidate) => candidate.id === unitId);
+  const template = unit ? mission.templates[unit.templateId] : undefined;
+  const name = template?.name;
+  if (name === undefined) {
+    throw new Error(`fixture unit ${unitId} has no template name`);
+  }
+  return name;
+}
 
 function setup(
   extra: {
@@ -686,8 +698,19 @@ describe("TacticalHudView", () => {
     expect(status?.hidden).toBe(false);
     expect(status?.textContent).toContain("no action points");
     expect(notices).toHaveLength(1);
-    expect(notices[0]).toContain("s1");
     expect(notices[0]).toContain("no action points");
+
+    // Named, never id'd (#1035). The chip above the unit is the most
+    // prominent place a refusal appears, so a raw id reads worse there
+    // than anywhere it has appeared before. Asserted as an absence and
+    // a presence: the id is gone *and* the name is there, because
+    // dropping the id without gaining a name would also pass an
+    // absence-only check.
+    const named = nameOfUnit(mission, "s1");
+    expect(notices[0]).toContain(named);
+    expect(notices[0]).not.toContain('"s1"');
+    expect(status?.textContent).toContain(named);
+    expect(status?.textContent).not.toContain('"s1"');
   });
 
   /**

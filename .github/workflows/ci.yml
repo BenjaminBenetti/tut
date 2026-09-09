@@ -5,9 +5,11 @@ on:
   push:
     branches: [main]
 
+# A newer push to the same PR supersedes its run. Pushes to main must not:
+# with a merge every few minutes, main never reached an e2e verdict.
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   CI: true

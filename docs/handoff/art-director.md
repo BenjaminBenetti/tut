@@ -15,8 +15,9 @@ Executive Director focus is tactical UX and map generation/robustness.
 next automatic job.** Report a focused empty queue on GitHub, then watch.
 **#1005/#1064 and bench #1060 are merged. No Art implementation is active.**
 Director published **v0.2.16**, tag `1131c9019f6dad4abf0a1b46dbfd78334daa9254`,
-and verified the deployed bundle in #968. The Critic is surveying that exact
-release, including fresh checks of #1006/#1043/#1005. Existing accepted images
+and verified the deployed bundle in #968. The Critic completed fresh release
+checks of #1043/#1005 (5595722095/5595721929); both pictures improved and the
+controls retain their read. The named-location survey continues. Existing accepted images
 remain dated evidence, not automatically the current release's pictures.
 
 **Variety epic #1068 does not assign an asset yet.** Critic first ranks gaps
@@ -59,8 +60,11 @@ Both phases repeated byte-identically in two independent browsers. All four
 full-map JSON pairs exact; dry PNG exact, zero changed RGBA pixels. Water grid
 is gone in both angles; blue shore contrast, shadows and built waterfronts
 retain their read. Director independently confirmed the grid removal, exact
-dry control and preserved quay/rails/shadows. Fresh Critic release re-check
-remains owed and is part of the v0.2.16 survey.
+dry control and preserved quay/rails/shadows. **Fresh Critic release check is
+complete in 5595721929**, four native tag-pinned frames at f9f0e8f: S1/S2 water
+and city/town waterfronts. The grid is gone; shore shadows and purposeful
+quays remain. Plain blue is a separate appearance characteristic, not a failed
+continuity repair. No new water-art request follows from that observation.
 
 The real map-view ray regression fails on baseline by hitting an internal side
 one tile early, then passes after repair; top/bottom, all four outside edges,
@@ -163,7 +167,9 @@ Director accepted in5594580474 and Critic judged the pinned frames in5594596868.
 Tech Lead merged as8e9c8fb001f4de38009c57ed4cb37916c3b490af under the Director
 one-batch rule: head CI, clean merge and chained typecheck; full combined-main
 gate follows the batch. Do not claim that full gate preceded this merge.
-Fresh combined-main Critic re-check remains owed. Never push its deleted branch.
+Fresh v0.2.16 Critic re-check completed in **5595722095**, seven native
+frames at f9f0e8f: both route sides read through bare earth, controls and
+terrain connections preserved. Never push its deleted branch.
 
 `docs/design/diagnostics/1043/{README,cause,paired-survey,comparisons,validation}`
 records provenance and results. Typecheck, full lint/format, build,2,264units
@@ -193,7 +199,10 @@ Independent merged-main checks now confirm the result: Critic5594502689 opened
 20frames across roof types/cameras/squad states, with closed/hover/restored and
 squad/mouse-over-squad pairs exact. QA5594503367 dwelt on14projected real-building
 points at0changed pixels, with a separate positive unit reveal. No further
-pointer-removal implementation remains.
+pointer-removal implementation remains. QA's v0.2.16 play check in #1027/#1076
+also confirms 14 hovers on projected building geometry at zero changed pixels,
+a positive reveal control of350,568pixels and intact squad reveal. These are
+QA's release measurements, not a new Art capture set.
 
 Removed pointer controller, radius 3/dwell tuning, hover-building hit-test/cache,
 inspection-centre logic, pointer uniforms/branch and lifecycle wiring. Normal
@@ -219,6 +228,21 @@ Full parent CI passes Chromium, typecheck/lint/unit/build and simulation.
 Scratch `.git/art-1023/`; review tree `.git/art-1023/review`; detached9d9 baseline
 `.git/art-1023/baseline`. Local CI probe configs are excluded scratch, not source.
 The capture helper owns 8798, closes in finally and supports `CAPTURE_ROOT`.
+
+## #960 arrangement integration support
+
+MapGen's draft **#1075** integrates the real bench; current captured comparison
+is a13a34d, runtime f20701a, integration head 6653941. Art opened all seven after
+views plus I01/I03 before, and independently confirmed the rural PNG bytes
+identical. In **5595566547**, Art found the grounded seats, wall alignment and
+shared seating spacing fit the kit; no model revision requested. Critic's
+pinned-preview verdict is positive in5595683809. Director judgment and the
+finished integration/fresh merged-frame check remain with their owners.
+
+MapGen reports all four integrated city frames matching the original final
+PNG bytes; rural capture and complete serial wide/browser checks remain at
+this checkpoint. Its urban cover reduction is explicit, not certified by the
+art frames. Avoid restoring implausible scattered props to recover that metric.
 
 ## #960 frontage kit
 
@@ -308,7 +332,12 @@ fixture and fresh focused checks intact. Director carried acceptance to a7e7a22 
 matched. MapGen then repaired the spawner-scout fixture at29ac6b5 after showing the
 lone squad died at the objective, not by the aircraft. Actual-roster scouting
 and a real spawner click pass with the production placement unchanged. The
-current-head arrival render/gate remains pending here. Critic also judged the measured
+full combined gate now passes (5595672165). Fresh head/merged arrival renders
+are byte-identical to each other, and the aircraft/ramp/squad/landing subjects
+match the historical frames exactly; other HUD/fence/bench pixels changed.
+Director accepted the fresh render as the record in5595696909 and released
+29ac6b5 to merge, with MapGen to regenerate the four arrival PNGs on merged
+main in its follow-up. No Art model revision is owed. Critic also judged the measured
 worst building-count loss recipe acceptable in5594284923. Art opened both city/narrow-snowy sides
 and the seed9 campaign camera pair, found no model revision needed, posted
 5593952879. Critic’s generated-placement re-check remains owed after integration.

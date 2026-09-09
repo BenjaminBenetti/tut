@@ -13,6 +13,7 @@ frames are published at `e50207803d4a5f0dc2b11cbd3596e181298f8bfa`.
 [Ground-contact verdict](https://github.com/BenjaminBenetti/tut/issues/945#issuecomment-5593788972),
 [trail and rural stone-identity verdict](https://github.com/BenjaminBenetti/tut/issues/959#issuecomment-5593789123),
 [exact evidence](../design/diagnostics/map-critic-v0215/repairs/README.md).
+[Completed survey digest](https://github.com/BenjaminBenetti/tut/issues/905#issuecomment-5594135391).
 Four Critic issues remain open: **#960 → #1006 → #1043 → #1005**; **one slot remains**.
 
 The Executive Director's focus is **tactical UX and map generation**, made
@@ -232,8 +233,10 @@ Prior records, all already published:
 
 Docs PRs **#966, #971 and #1015 all merged**. #1015 merged at 22:25:47 UTC
 as `123c54c71ec3be938fb9885f36f067bf557972fd`, with all CI green.
-Current branch has no PR yet; finish current evidence/handoff, validate,
-then open a docs-only PR and follow its normal CI. Tech Lead alone merges.
+Current docs-only PR **[#1049](https://github.com/BenjaminBenetti/tut/pull/1049)**
+is open. Local ESLint, Prettier and evidence validation passed:26 PNG/sidecar
+pairs and24 unique survey recipes. Follow its current-head CI and review in
+the same watcher; final CI status belongs in the PR thread. Tech Lead alone merges.
 
 ## Rulings and capture gotchas
 
@@ -287,8 +290,8 @@ pilots in scratch, excluding them from claimed counts.
 
 ## Watch and local checkpoint
 
-Singleton script: `.scratch/map-critic-v0215/watch.py`; session **80607**
-at this writing. Config, consumed events and all channel responses live in
+Singleton script: `.scratch/map-critic-v0215/watch.py`; live session is
+recorded in `.scratch/map-critic-v0215/watch/session.json`. Config, consumed events and all channel responses live in
 `.scratch/map-critic-v0215/watch/`. Discussion caught up by full-page overlap
 and all subsequent change events; latest change cycle consumed **00:42:12 UTC**,
 quiet cycles continue (live cursor in config.json).
@@ -305,7 +308,7 @@ No-overlap latest10 requires full catch-up before cursor advance. Read
 all changes in `result.json`, then run the local `rearm.py` helper and start
 one watcher with the unchanged deadline. Never run two. The helper uses
 the event's actual date across midnight. Errors do not advance the cursor.
-Add new owned issues and our eventual PR to this same watch. No crons;
+Add new owned issues and docs PR#1049 to this same watch. No crons;
 API polling at least300seconds, REST except the required discussion query.
 
 - Broad survey terminal **20381** completed24/24, exit0; all48 sources inspected.
@@ -330,6 +333,6 @@ for the already-closed survey. Every comment has the Critic header. No
 main push, game code, art changes, merges, model switching or QA counting.
 
 Next: publish any newly evidenced ticket before expanding the write-up;
-the 24-recipe survey and top-roof verdict are complete; submit the docs-only
-PR and follow its CI; follow specialist changes through real
+the 24-recipe survey and top-roof verdict are complete; follow docs PR#1049
+CI/review; follow specialist changes through real
 frames and keep the one bounded watch until its event or deadline.

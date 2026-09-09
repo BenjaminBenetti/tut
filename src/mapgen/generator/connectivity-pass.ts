@@ -405,10 +405,29 @@ function applyRepairs(
         break;
       case "ramp": {
         const ramp = draft.addConnector("ramp", repair.lower, repair.upper);
+        clearCrossedKerb(draft, repair.lower, repair.upper);
         diagnostics.note(`${hook.id}: added ${ramp.id}`, repair.lower);
         break;
       }
     }
+  }
+}
+
+/** Clears only half walls across a newly accepted ramp, checking both heights. */
+function clearCrossedKerb(
+  draft: MapDraft,
+  lower: TileCoord,
+  upper: TileCoord,
+): void {
+  for (const side of DIRECTIONS) {
+    const next = stepGridPos(lower, side);
+    if (next.x !== upper.x || next.z !== upper.z) continue;
+    if (draft.wallAt(lower, side) === "half")
+      draft.setWall(lower, side, undefined);
+    const opposite = oppositeDirection(side);
+    if (draft.wallAt(upper, opposite) === "half")
+      draft.setWall(upper, opposite, undefined);
+    return;
   }
 }
 

@@ -254,6 +254,11 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
     }
   }
 
+  /** Raises the words above the unit through the animation queue (#1030). */
+  notice(unitId: UnitId, text: string): void {
+    this.attached?.animations.notice(unitId, text);
+  }
+
   /** Shows or hides the weapon-range outline (#522). */
   setWeaponRangeVisible(visible: boolean): void {
     this.attached?.overlays.setWeaponRangeVisible(visible);

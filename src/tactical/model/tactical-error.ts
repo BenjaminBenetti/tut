@@ -79,6 +79,7 @@ export type TacticalError =
       readonly distance: number;
       readonly range: number;
     }
+  | { readonly kind: "no-objective-in-reach"; readonly unitId: string }
   | { readonly kind: "not-in-extraction-zone"; readonly unitId: string }
   | { readonly kind: "not-extractable"; readonly unitId: string }
   | { readonly kind: "mission-not-over"; readonly missionId: string }
@@ -150,6 +151,8 @@ export function describeTacticalError(error: TacticalError): string {
       return `Objective "${error.objectiveId}" tracks unknown target "${error.targetId}"`;
     case "objective-out-of-reach":
       return `Objective is ${String(error.distance)} tiles away; charges reach ${String(error.range)}`;
+    case "no-objective-in-reach":
+      return `Unit "${error.unitId}" has no objective within reach`;
     case "not-in-extraction-zone":
       return `Unit "${error.unitId}" is not standing in the extraction zone`;
     case "not-extractable":

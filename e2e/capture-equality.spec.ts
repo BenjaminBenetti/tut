@@ -1,9 +1,11 @@
 import { expect, test } from "@playwright/test";
 
 import {
+  assertNoAssetFallback,
   drawnFrame,
   tacticalModelsReady,
   tapCameraKey,
+  watchAssetFallback,
 } from "./capture-frame.helper";
 import { launchMission } from "./mission-capture.helper";
 
@@ -109,4 +111,64 @@ test("capture readiness waits for map art as well as units", async ({
     release();
   }
   await tacticalModelsReady(page);
+});
+
+/**
+ * The guard has to fire on a genuinely broken load, or it is exactly the
+ * thing #1021 was filed about: a control that always passes.
+ *
+ * A failed model fetch is *caught* by the loader — it logs one `[assets]`
+ * line and carries on with placeholder geometry — so the scene still
+ * reaches `data-tactical-ready`, and a capture would still write a
+ * perfectly reproducible PNG of art nobody meant to judge. Byte-exact
+ * repetition cannot reject that, because a placeholder repeats exactly
+ * too.
+ *
+ * So this aborts one real model response, proves the scene goes ready
+ * anyway, and proves the guard refuses the frame and names the asset.
+ * The clean half runs in the same test, so the guard cannot pass by
+ * being permanently red.
+ */
+test("a capture refuses a frame drawn with placeholder art", async ({
+  page,
+}) => {
+  watchAssetFallback(page);
+
+  // The clean half first, on the same page object: no fallback, so the
+  // guard is silent. If this ever throws, the guard is over-eager and
+  // the failure below would mean nothing.
+  await launchMission(page, "4242");
+  await tacticalModelsReady(page);
+  assertNoAssetFallback(page, "the unbroken capture");
+
+  // Now break one real model and remount. `abort` is a genuine network
+  // failure, not a stubbed warning.
+  const broken = "**/assets/models/tiles/city-road-straight.glb";
+  let aborted = false;
+  await page.route(broken, async (route) => {
+    aborted = true;
+    await route.abort();
+  });
+  await page.reload();
+  await expect(page.locator("body")).toHaveAttribute("data-app-state", "ready");
+  await launchMission(page, "4242");
+
+  // The scene reaches its ordinary ready state regardless — which is the
+  // whole problem, and why readiness alone cannot be the check.
+  await expect(page.locator("body")).toHaveAttribute(
+    "data-tactical-ready",
+    "true",
+  );
+  expect(aborted, "the model request was never made").toBe(true);
+
+  // And the capture is refused, naming what fell back.
+  let refusal = "";
+  try {
+    assertNoAssetFallback(page, "the broken capture");
+  } catch (error: unknown) {
+    refusal = error instanceof Error ? error.message : String(error);
+  }
+  expect(refusal, "the guard accepted a placeholder frame").not.toBe("");
+  expect(refusal).toContain("city-road-straight.glb");
+  expect(refusal).toContain("placeholder");
 });

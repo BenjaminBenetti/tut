@@ -17,6 +17,7 @@ import type { TacticalSceneHost } from "../model/tactical-scene-host";
 import type { PhaseBannerOptions } from "../view/phase-banner-view";
 import { namesFor, refusalText } from "../service/tactical-error-text";
 import { TacticalHudView } from "../view/tactical-hud-view";
+import { actorOf, describeEvent, nameResolver } from "../view/event-vocabulary";
 
 // ===========================================
 // Types
@@ -255,9 +256,48 @@ export class TacticalScreen implements Screen {
     if (!mission) {
       return;
     }
+    this.announce(mission, events, state);
     this.syncScene(mission, events);
     if (mission.outcome !== undefined) {
       this.finish(mission.missionId);
+    }
+  }
+
+  /**
+   * Puts every logged action above the unit that did it (#1029).
+   *
+   * Anything worth a line in the log is worth showing where it happened;
+   * the log at the edge of the screen becomes the record and the
+   * indicator becomes the notification. Movement is excluded — `actorOf`
+   * says why — and events belonging to nobody in particular stay in the
+   * log alone.
+   *
+   * The words are the log's own, from `event-vocabulary`, so the two can
+   * never say different things about the same event.
+   */
+  private announce(
+    mission: TacticalState,
+    events: readonly TacticalEvent[],
+    campaign: GameState | undefined,
+  ): void {
+    const host = this.deps.sceneHost;
+    if (!host) {
+      return;
+    }
+    // The campaign too, because the log resolves with it since #1047:
+    // without it the indicator says "Rifle Squad" while the log line it
+    // is meant to mirror says "Alpha", which is the one thing this
+    // mechanism exists to prevent.
+    const nameOf = nameResolver(mission, campaign);
+    for (const event of events) {
+      const unitId = actorOf(event);
+      if (unitId === undefined) {
+        continue;
+      }
+      const entry = describeEvent(event, nameOf);
+      if (entry !== undefined) {
+        host.notice(unitId, entry.text);
+      }
     }
   }
 

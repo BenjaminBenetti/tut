@@ -1,0 +1,55 @@
+{
+  "runtime": "6967394d024c516379dc16c4ae464a50fb6d82a0",
+  "date": "2026-09-09",
+  "request": "https://github.com/BenjaminBenetti/tut/pull/1042#issuecomment-5595696909",
+  "sourceTree": "d118b581c7e7e316ef8f499d276b2007852a46a5",
+  "productionSourceChanged": false,
+  "testSourceChanged": false,
+  "records": [
+    {
+      "file": "mission/arrival.png",
+      "sha256": "ef2147f5232a239125c3b79ffb45561c669e4c9f9a88d85dbb96d4619ff7e32c",
+      "previousSha256": "d90cb350ce9da45253fc81e4e5001492d903a44c966607ae4e1ef6ec6fc1496a",
+      "independentRepeatIdentical": true,
+      "inspected": true
+    },
+    {
+      "file": "mission/arrival-opposite.png",
+      "sha256": "92ce087235e49647dd568c92585d82d20468e7c687045d7d5f68e31055a7ac37",
+      "previousSha256": "0f1aa92ef6295590c7da056cbf36b1507b5ac3e7f81dbf5b2be992a366b1417e",
+      "independentRepeatIdentical": true,
+      "inspected": true
+    },
+    {
+      "file": "mission-s/arrival.png",
+      "sha256": "fb68303cee4346c9999ff57118b9d4cf3c9f7cfe292fc03f213543521e51e3c7",
+      "previousSha256": "ec51c65c1fe4f969920fb2807989b6a43cfb724d455a40b12c7524edc0309b2b",
+      "independentRepeatIdentical": true,
+      "inspected": true
+    },
+    {
+      "file": "mission-s/arrival-opposite.png",
+      "sha256": "c3ec9e45a7711ff346607712d342daa25b9bf55b95a29199b67fa893f0e5132d",
+      "previousSha256": "7ab495d8bec0c5486ec185ca00bad9ccbbd08c5f6fb782d4194f6a4b15e8e407",
+      "independentRepeatIdentical": true,
+      "inspected": true
+    }
+  ],
+  "validation": {
+    "firstCapture": {
+      "passed": 2,
+      "minutes": 1.4,
+      "exitCode": 0
+    },
+    "independentRepeat": {
+      "passed": 2,
+      "minutes": 2.1,
+      "exitCode": 0
+    },
+    "retries": 0,
+    "allFourPngsRepeatExactly": true,
+    "cameraRestoreChecksPassed": 4,
+    "recipeSiteBoardingExtractionForceAndYawMatchPreviousRecord": true
+  },
+  "scope": "Refresh only the four mission arrival PNGs at merged main, as explicitly requested; original location comparison frames remain untouched."
+}

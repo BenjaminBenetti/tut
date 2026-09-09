@@ -3,7 +3,24 @@
 Baseline: `main@9d9ea01` (v0.2.15, with Art's accepted aircraft already registered).
 Placement runtime: `a793060`; tactical arrival-camera correction: `2eaab51`. The actual model is unchanged: SHA-256
 `2034ded38848cd27e4d0872657bf8db9180314d29b95f00faa824bf89a60e238`.
-Director frame judgment and the Map Critic's generated-placement re-check are pending.
+The Director accepted placement and #1042 merged on 2026-09-09. The Map Critic's integrated generated-placement re-check remains pending.
+
+## Merged-main arrival record (2026-09-09)
+
+The Director [accepted the Tech Lead's integrated render and authorized merge](https://github.com/BenjaminBenetti/tut/pull/1042#issuecomment-5595696909), then explicitly requested refreshing the four `mission*/arrival*.png` on merged main. They now record **`6967394`**, the actual #1042 squash merge. The original location-pair PNGs above/below remain the dated placement comparison; their pixels are not refreshed by this follow-up.
+
+The refreshed campaign frames use the unchanged real `dropship-site.spec.ts`: campaign 4242 is the west-facing/yaw-0 control; campaign 9 is the south-facing/yaw-2 arrival. Each uses a 1600×1000 viewport, real campaign fog, full starting roster, the host-created camera and pointer at (0,0). Two E taps capture the opposite view; two more must restore the opening bytes exactly. The current HUD and surrounding map are present in the refreshed images.
+
+| Campaign | Opening | Opposite | Metadata |
+| --- | --- | --- | --- |
+| 4242, temperate city | [arrival](mission/arrival.png) | [opposite](mission/arrival-opposite.png) | [record](mission/arrival.json) |
+| 9, coastal town | [arrival](mission-s/arrival.png) | [opposite](mission-s/arrival-opposite.png) | [record](mission-s/arrival.json) |
+
+The original accepted four-frame record remains [pinned at `29ac6b5`](https://github.com/BenjaminBenetti/tut/tree/29ac6b5236ed4f6bb6fa201b27353ed41b69f4c1/docs/design/diagnostics/911/generated), with runtime `2eaab51` / placement `a793060`. Each refreshed sidecar retains that provenance and the prior PNG hashes under `previousRecord`; its top-level runtime/hash fields describe the new images. The original west-facing pre-camera byte-equality claim belongs to that older record. The executable fixture asserts same-run camera restoration; it does not compare a historical committed PNG.
+
+All four refreshed PNGs were opened and match an independent second-browser capture byte-for-byte. Both capture runs pass (two tests each, 1.4 and 2.1 minutes, zero retries, exit 0); all four camera-restoration checks pass. The recipe, aircraft site, boarding/extraction tiles, force positions and yaw metadata are identical to the previous record. [Refresh ledger](arrival-refresh.json) contains the old/new hashes and runtime.
+
+Reproduce at the stated revision with `CI=1 CAPTURE=1 pnpm exec playwright test e2e/dropship-site.spec.ts --workers=1 --retries=0 --fail-on-flaky-tests`. For an independent output, set `CAPTURE_OUTPUT=<another folder>` and compare the four PNG hashes. The local run used the same repository configuration with a direct Node Vite startup and an explicit source root for its isolated checkout; no production or test source was changed. The Tech Lead's full merge gate is recorded in [5595743549](https://github.com/BenjaminBenetti/tut/pull/1042#issuecomment-5595743549); this follow-up changes only the evidence record.
 
 ## Cause and placement decision
 
@@ -154,8 +171,9 @@ replacing only `yawIndex: missionArrivalYaw(mission)` with `yawIndex: 0` in the 
 `tactical-scene-host.ts` makes that exact seed-9 assertion fail: expected 2, received 0.
 The temporary mutation spec is removed; no sabotage switch exists in production.
 
-The existing west-facing campaign `4242` remains the control. Both its arrival PNGs match the
-pre-camera checkpoint `a8caeb6` byte-for-byte; the camera repair did not repaint that control.
+The existing west-facing campaign `4242` remains the control. At the original `2eaab51` checkpoint, both its arrival PNGs matched
+the pre-camera checkpoint `a8caeb6` byte-for-byte; the camera repair did not repaint that control.
+That historical relationship is preserved in the refreshed sidecar's `previousRecord`.
 These four campaign frames, twenty location-pair frames and two additional orientation
 checks make **26 committed frames**. They are dated evidence, not a claim of Director acceptance.
 
@@ -194,4 +212,4 @@ production logic or assertion changed to make a shutter fire.
 
 The Tech Lead's combined gate on `b54d55d` + `main@ed5d722` found that the interior-movement browser fixture still pinned the old seed-4242 building-3 doorway. Rebased onto main `6a552d6` and changed only that fixture: derive the actual entrance and its inward neighbor; place the two squads two tiles outside with one lateral separation and the mech three outside/four lateral away. Assert legal outdoor occupancy, the interior neighbor's building ownership and initially unexplored entry, then retain all three real right-click movements and layer changes. The measured current doorway is (22,2,11), south-facing; it is recorded here, not hardcoded in the test.
 
-`CI=1 pnpm exec playwright test e2e/interior-movement.spec.ts e2e/dropship-site.spec.ts --workers=1`: **3 passed, 1.1 minutes, zero retries**. Typecheck and changed-file ESLint/Prettier pass. An initial local edit used the wrong TileIndex lookup signature; typecheck and the test rejected it, corrected before this passing run. No game source changed for this review repair. Historical judged PNGs remain untouched; the Tech Lead's requested fresh combined-runtime arrival render is still owed before merge.
+`CI=1 pnpm exec playwright test e2e/interior-movement.spec.ts e2e/dropship-site.spec.ts --workers=1`: **3 passed, 1.1 minutes, zero retries**. Typecheck and changed-file ESLint/Prettier pass. An initial local edit used the wrong TileIndex lookup signature; typecheck and the test rejected it, corrected before this passing run. No game source changed for this review repair. At that repair checkpoint, historical judged PNGs remained untouched and the Tech Lead's requested combined-runtime arrival render was still owed. The merged-main record at the top supersedes that pending status.

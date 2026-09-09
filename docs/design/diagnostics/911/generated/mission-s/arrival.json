@@ -254,10 +254,20 @@
     "height": 1000
   },
   "framing": "Actual host-created arrival camera, then two synchronous E taps, then two more restore a byte-identical arrival. Seed 9 opposite is the old yaw-0 arrival defect on the same generated map. Real campaign fog, pointer at (0,0).",
-  "runtime": "2eaab51",
-  "mapgenRuntime": "a793060",
+  "runtime": "6967394d024c516379dc16c4ae464a50fb6d82a0",
+  "mapgenRuntime": "6967394d024c516379dc16c4ae464a50fb6d82a0",
   "pngSha256": {
-    "arrival.png": "ec51c65c1fe4f969920fb2807989b6a43cfb724d455a40b12c7524edc0309b2b",
-    "arrival-opposite.png": "7ab495d8bec0c5486ec185ca00bad9ccbbd08c5f6fb782d4194f6a4b15e8e407"
+    "arrival.png": "fb68303cee4346c9999ff57118b9d4cf3c9f7cfe292fc03f213543521e51e3c7",
+    "arrival-opposite.png": "c3ec9e45a7711ff346607712d342daa25b9bf55b95a29199b67fa893f0e5132d"
+  },
+  "independentBrowsers": 2,
+  "previousRecord": {
+    "commit": "29ac6b5236ed4f6bb6fa201b27353ed41b69f4c1",
+    "runtime": "2eaab51",
+    "mapgenRuntime": "a793060",
+    "pngSha256": {
+      "arrival.png": "ec51c65c1fe4f969920fb2807989b6a43cfb724d455a40b12c7524edc0309b2b",
+      "arrival-opposite.png": "7ab495d8bec0c5486ec185ca00bad9ccbbd08c5f6fb782d4194f6a4b15e8e407"
+    }
   }
 }

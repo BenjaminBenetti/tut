@@ -1,0 +1,138 @@
+{
+  "comparisonBase": "8d20dd4e5716ad6a789ef6ef6dd9ef6379c2ffd5",
+  "comparisonRuntime": "f20701a097ca33f55df6c280fb653d4e957a0b73",
+  "comparisonEvidenceCommit": "a13a34d254738b5c80f58288bf28c2a71414e3f3",
+  "integrationBase": "154f2c55ca5cdab34f2e070a8341b5972dab8b22",
+  "integrationRuntime": "6653941ef332c7cccbf30b795fd32ce28be5452a",
+  "integrationSourceTree": "9a708e974a89f02592af742c768216fce5088800",
+  "recordKind": "Dated acceptance measurements; no historical PNG is an asserted executable baseline.",
+  "comparisonChecks": {
+    "typecheck": "tsc -b: exit 0",
+    "lint": "full ESLint/Prettier: exit 0",
+    "build": "Vite production build: exit 0",
+    "units": {
+      "passed": 2272,
+      "optionalSkipped": 1,
+      "seconds": 168.28,
+      "exitCode": 0
+    },
+    "wide": {
+      "maps": 1200,
+      "relocations": 0,
+      "seconds": 442.05,
+      "exitCode": 0
+    },
+    "sim": {
+      "passed": 7,
+      "seconds": 194.47,
+      "exitCode": 0
+    },
+    "browser": {
+      "passed": 65,
+      "optionalSkipped": 31,
+      "retries": 0,
+      "processExitCode": 143,
+      "note": "Complete assertion report followed by abnormal process exit; standalone repeat was also terminated before completion."
+    }
+  },
+  "integrationChecks": {
+    "typecheck": {
+      "command": "node node_modules/typescript/bin/tsc -b",
+      "exitCode": 0
+    },
+    "lint": {
+      "command": "node node_modules/eslint/bin/eslint.js .",
+      "exitCode": 0
+    },
+    "format": {
+      "command": "node node_modules/prettier/bin/prettier.cjs --check .",
+      "exitCode": 0
+    },
+    "build": {
+      "command": "node node_modules/vite/bin/vite.js build",
+      "exitCode": 0
+    },
+    "units": {
+      "command": "node node_modules/vitest/vitest.mjs run --maxWorkers=2",
+      "passed": 2317,
+      "optionalSkipped": 1,
+      "seconds": 231.82,
+      "exitCode": 0
+    },
+    "sim": {
+      "command": "node node_modules/vitest/vitest.mjs run --config vitest.sim.config.ts --maxWorkers=1",
+      "passed": 7,
+      "optionalSkipped": 1,
+      "seconds": 192.52,
+      "exitCode": 0
+    },
+    "wide": {
+      "command": "MAPGEN_WIDE=1 node node_modules/vitest/vitest.mjs run src/mapgen/service/generation-wide-sweep.test.ts --maxWorkers=1",
+      "firstAttempt": {
+        "seconds": 642.39,
+        "exitCode": 1,
+        "failure": "Test timed out in 600000ms while rendering ran concurrently; no map assertion failure reported."
+      },
+      "isolatedRepeat": "running after all Chromium processes closed; unchanged timeout"
+    },
+    "browser": {
+      "command": "CI=1 node node_modules/@playwright/test/cli.js test --config .git/mapgen-960/playwright-gate.config.ts --workers=1 --retries=0 --fail-on-flaky-tests --shard=N/4 --reporter=list",
+      "configuration": "Standard repository config with direct node Vite startup to avoid pnpm store refresh; test limits/assertions unchanged.",
+      "shards": [
+        {
+          "shard": 1,
+          "passed": 14,
+          "optionalSkipped": 12,
+          "minutes": 5.5,
+          "exitCode": 0
+        },
+        {
+          "shard": 2,
+          "passed": 23,
+          "optionalSkipped": 3,
+          "minutes": 1.8,
+          "exitCode": 0
+        },
+        {
+          "shard": 3,
+          "passed": 14,
+          "optionalSkipped": 12,
+          "minutes": 1.8,
+          "exitCode": 0
+        },
+        {
+          "shard": 4,
+          "firstAttemptExitCode": 143,
+          "status": "repeat pending after captures and wide"
+        }
+      ]
+    }
+  },
+  "captures": {
+    "comparisonFrames": 14,
+    "integrationFrames": 5,
+    "independentBrowsersPerPhase": 2,
+    "allFramesInspected": true,
+    "integrationMatchesComparisonFinal": true,
+    "ruralBeforeAfterIntegrationIdentical": true,
+    "folders": [
+      "before",
+      "after",
+      "before-delivery",
+      "after-delivery",
+      "integrated-i01",
+      "integrated-i03",
+      "integrated-control"
+    ]
+  },
+  "preservation": {
+    "recipes": 108,
+    "ruralCompleteMapsUnchanged": 36,
+    "allHooksTerrainWallsBuildingsRoadsConnectorsNonTargetPropsPreserved": true,
+    "townTargetedProps": [1003, 325],
+    "cityTargetedProps": [2171, 529],
+    "townMeanCoverAdjacencyPercent": [13.708337744396049, 12.64706945075712],
+    "cityMeanCoverAdjacencyPercent": [11.63262673243289, 8.741788691399467]
+  },
+  "review": "Director frame judgment, TL merge and Critic integrated-main re-check pending."
+}

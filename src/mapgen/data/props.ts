@@ -14,6 +14,7 @@ export const PropKindIds = {
   DUMPSTER: "dumpster",
   SHELVING: "shelving",
   TABLE: "table",
+  BENCH: "bench",
   FENCE: "fence",
   BOULDER: "boulder",
   TREE_PINE: "tree-pine",
@@ -75,6 +76,13 @@ export const PROP_DEFINITIONS: readonly PropDefinition[] = [
     cover: CoverLevel.LOW,
     blocksLos: false,
     placements: ["interior"],
+  },
+  {
+    id: PropKindIds.BENCH,
+    cover: CoverLevel.LOW,
+    blocksLos: false,
+    // Contextual only: never part of the generic ground scatter.
+    placements: ["yard"],
   },
   {
     id: PropKindIds.FENCE,

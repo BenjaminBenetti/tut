@@ -25,6 +25,7 @@ export type DraftCapability =
   | "waterfronts"
   | "props"
   | "boundaries"
+  | "yards"
   | "slopes"
   | "ramps"
   | "kerbs"

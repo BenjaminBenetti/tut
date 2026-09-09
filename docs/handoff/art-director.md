@@ -1,175 +1,200 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-08 (#1023 removal in review; #960 resumes next)
+Last updated: 2026-09-09 (#1023 merged; #960 accepted/green; #1043 active)
 
-## Current work: #1023 pointer removal
+## Current seat and priorities
 
-Codex Art Director, **gpt-6-astra xhigh**. Executive Director ruling #1023
-preempted #960: remove pointer inspection, preserve the accepted unit reveal.
-[Cause/scope posted before editing](https://github.com/BenjaminBenetti/tut/issues/1023#issuecomment-5593023712).
-Implementation and evidence are in **[PR #1032](https://github.com/BenjaminBenetti/tut/pull/1032)**, branch
-`fix/1023-remove-pointer-cutaway`, head **cc80d054b78059a2af5dee5a582234d48a91aab9**.
-Director judges frames; Tech Lead alone merges. Leave the reviewed head stable
-for CI. No pointer feature should be restored from older handoff notes below.
+Codex Art Director, **gpt-6-astra xhigh**, BenjaminBenetti/tut only. Never push
+main or rewrite history; Tech Lead alone merges and Director judges committed
+frames. GitHub #968 carries all-seat standing orders; issues/PRs carry work
+requests. Merges resumed under Discussion 18359273; the Tech Lead is sweeping the accepted
+queue. Continue assigned focused work while prior PRs wait; never switch model.
 
-The pointer controller, radius-3/dwell tuning, hovered-building hit-test/cache,
-inspection-centre calculation, pointer uniforms/branch and lifecycle wiring in
-missions/Map Lab are removed. The normal raycaster remains for action picking.
-The production unit controller, unit shader loop and Bayer function are
-byte-identical to base main **9d9ea012e97292ae3f96e2500f1609a1cfdbf412**.
-Keep **radius 4, opacity floor .175, eight slots, .65 soft edge, depth comparison,
-minimum-opacity composition and 150 ms fade** untouched.
+Executive Director focus is tactical UX and map generation/robustness.
+**#450 is Backlog / focus:deferred, retaining the Art claim; it is no longer the
+next automatic job.** Report a focused empty queue on GitHub, then watch.
+**#1043 is now active / seat:art-director / Owner Art Director**, routed in
+5594217704. MapGen independently confirmed the cause and supports the one
+coastal trail-paint boundary in5594261619; it has no competing implementation.
+The old MapGen-primary queue note is superseded.
 
-Committed evidence: `docs/design/diagnostics/1023/README.md`, before/after PNGs,
-capture metadata and `controls.json`. Pitched yaw 0/one squad and flat yaw 2/two
-separated squads use the existing generated roof fixture and production defaults.
-The real mouse (760,405) opens both baseline roofs, proving the target. After
-removal it leaves both closed; squad, squad-hover and units-left cases all
-match their current-main controls. **16 frames repeated across two browsers;
-ten independent PNG/RGBA comparisons give identical bytes and zero changed
-pixels.** All distinct pictures were opened and inspected. Runtime source
-5ad7957; cc80d05 adds evidence only. No asset fallback/page error in these captures.
+## Active #1043: coastal trail material
 
-Local gate: typecheck, lint/format, build, **2,252 unit tests passed / one skipped**,
-**seven simulation tests passed**, **63 browser tests passed / 31 opt-in captures skipped, zero flaky retries**. New real-mouse browser
-regression checks both an empty and occupied pitched roof. No game or test
-loading timeout was widened.
+Branch `fix/1043-coastal-route-read`, pushed runtime **793099c**, based on main
+1b0ff8d (same runtime as reported9d9ea01). Cause before edits5594274929:
+coastal trail and natural bare earth both select `dirt` / `tile.ground.dirt`.
+Reported mc-resume-03 coastal/rural/small has108 road columns,29 already dirt
+before paint,41 indistinguishable roadside edges. At z10 road x14–15 is lost
+against natural x13/x16; camera focus(21,2,10) is natural ground, not road.
 
-Scratch `.git/art-1023/`; clean detached baseline `.git/art-1023/baseline` at 9d9ea01.
-`capture-pointer-removal.mjs` owns 8798 and closes browser/server in finally;
-optional `CAPTURE_ROOT` points at that base while outputs go to the calling tree.
-Model/unit readiness and fades use live completion state; the 500 ms hover
-observation deliberately exceeds the removed dwell+fade. No owned 8798 server remains.
+The only runtime edit is coastal `trailSurface: ROCK`; existing accepted stone
+asset, no new mesh/kerb/marking or map field. Strengthened the biome test from
+only the dominant natural material to every natural palette entry. All15
+focused biome/road tests pass. Existing108-map paired survey passes:99 full
+maps identical; nine coastal rural maps differ only in trail surface. Every
+non-surface map, off-road tile, road segment, metric and relocation control
+matches. Across changed maps1,462 road columns retain geometry;481 equal-material
+roadside edges become zero. These are data proofs, not visual acceptance.
 
-## #960 paused checkpoint; resume after #1023 submission
+`tools/art/preview/capture-coastal-trails.mjs` andcause.json/README are committed
+in6d74376. Before capture is RUNNING from `.git/art-1043/baseline` detached1b0ff8d,
+port8797, static HMR/watch off; inspect log `.git/art-1043/before-capture.log`
+and process before restarting. Seven views (D1,E1,E2; temperate2angles,snowy,
+desert) repeat in two browsers. First pass complete, repeat in progress at this
+snapshot. After views, inspection/judgment, final paired ledger, full gates and
+PR are still owed. Do not claim the repair’s visual read accepted yet. Root
+is this1043 branch; review worktrees preserve other heads.
 
-Producer preserves the Art claim and moves #960 to Ready during the p1.
-Branch **feat/960-building-use-cues**, pushed checkpoint **8e28fad** (later than
-the Producer's a3b3bfe reference), contains **six** native models, manifests,
-resolver/consumer and 17 passing focused tests. No PR yet. A preemption stash
-holds only unfinished refreshed evidence/docs and the reusable validation tool;
-**read `.git/art-960/pause-stash.txt` for its exact SHA before applying**. The
-interrupted final baseline has six first-pass frames and five repeat checks,
-but no completed metadata; do not claim that refresh finished.
 
-[Cause before geometry](https://github.com/BenjaminBenetti/tut/issues/960#issuecomment-5592338100):
-Building.kind already distinguishes uses; model selection lacked frontage cues,
-and generic yard clutter is independent of use. Art supplies bounded entrance/
-window modules; MapGen support requested for outdoor arrangement. Do not claim
-the unchanged generic yards are repaired. Preserve doors, room plan, wall-family
-variation, roofs, access, fog/cutaway/level ownership and actual residential grouping.
+## #1023 pointer removal: merged
 
-Six manifest-registered modules: shop awning, narrow shop awning, residential
-entry, residential window guard/planter, workplace entry and mailbox bank.
-Sources `tools/art/models/frontage_parts.py` plus wrappers; all 18 final fixed
-Blender angles rendered/opened. All 6 GLBs watertight: **912 triangles / 82,316
-bytes total**, each under 800 triangles / 100 KB. Native source uses the established atlas
-plus muted green/cream cloth. Width 3 awning falls back to width 1 when a nearby
-ladder blocks its span; direct door/ladder conflict rejects it. The final narrow
-model and fallback regression are already in 8e28fad, not work still to build.
-Four entrance variants have zero conservative triangle-AABB intrusions into
-the .60×1.20 doorway. `tools/art/validate-building-frontages.py` is in the stash;
-report `docs/design/diagnostics/960/model-validation.json`.
+**[PR #1032](https://github.com/BenjaminBenetti/tut/pull/1032)**, branch
+`fix/1023-remove-pointer-cutaway`, stable head **212f95309358037ce1debf6abfb81b343180b800**.
+Director accepted cc80d05 and explicitly carried acceptance to 212f953 in
+[5593751556](https://github.com/BenjaminBenetti/tut/pull/1032#issuecomment-5593751556).
+All three CI jobs passed. Tech Lead gated the merge result and merged as
+**166876d670ddfdfa81bb03c65abd952a9aae3f5f** at01:17 UTC. Do not push its deleted
+review branch or revise accepted production/PNGs.
 
-The resolver reads actual building kinds in town/city, not rural. Attachments
-have real owner tiles and use shared ghost/mist materials/per-level visibility.
-The integration test checks actual TacticalMapView rendering categories, mist
-state and upper-storey removal/restoration without mutating the prototype.
-This kit creates no gameplay cover, door shift or ground plinth.
+Removed pointer controller, radius 3/dwell tuning, hover-building hit-test/cache,
+inspection-centre logic, pointer uniforms/branch and lifecycle wiring. Normal
+raycasting remains for action picking. Unit controller, unit shader loop and
+Bayer function are byte-identical to main **9d9ea012e97292ae3f96e2500f1609a1cfdbf412**:
+**radius 4, floor .175, eight slots, .65 soft edge, depth comparison, minimum-opacity
+composition, 150 ms fade**. Never restore the obsolete pointer path from history.
 
-First complete five-view pair was on 29639b3, before #945's contact change; rural
-control and all map data were exact. That evidence is committed but is not the
-final integrated proof. Later main 123c54c is merged into the branch. On resume,
-merge current main and redo the final paired captures against that clean base.
-The source removal from #1023 must also reach #960: its old
-`capture-frontage-cutaway.mjs` expects pointerStrength and needs unit-only cases.
-Do not restore pointer machinery to satisfy an obsolete diagnostic helper.
+`docs/design/diagnostics/1023/` has 16 inspected frames, all repeated exactly in
+separate browsers. Ten independent control pairs are PNG-byte-identical and
+zero changed RGBA pixels. Real hover opens both baseline roofs, then leaves
+empty roofs closed after removal; squad/squad-hover/unit-departure comparisons
+match current-main controls. Runtime5ad7957, evidence-onlycc80d05.
 
-Final work still owed: six paired context views including **S01 nearby shop/
-workplace/home**, before/after unit-only and level controls, both seed 4242 fog
-frames, full local gates, final README/kit validation proof, PR and Director/
-Map Critic judgment. All native geometry is complete; inspect the new one-bay
-awning in the S01 scene before calling the use cues done.
+The final 212f953 changes only `e2e/unit-only-cutaway.spec.ts`. CI exposed the
+original single test exhausting its 120 s budget. The final spec reuses one real
+600 × 475 generated scene across occupied/empty mouse checks and waits on actual
+model/fade completion; no timeout or renderer parameter increased. Runner,
+Vite and Chromium together restricted to two CPUs pass both tests; the exact
+same test against untouched main fails both at pixel equality as intended.
+Full parent CI passes Chromium, typecheck/lint/unit/build and simulation.
 
-I01/I02: mc-resume-01, temperate/city/medium 72, focus (43,2,39), yaw 0/1.
-I03/I04: mc-opening-02, same recipe, focus (23,1,34), yaw 0/1. S01 first seed
-focus (24,2,37), yaw 0. C01 mc-opening-01 rural/small focus (23,4,13), yaw 0.
-45 px/tile, 2400×1500 viewport, 1300×1050 native crops. The helper waits for both
-map and unit markers, uses absolute camera yaw and repeats each view in a
-second browser. `FRONTAGE_ROOT` allows a clean detached comparison checkout;
-static server 8797 must be restarted after code changes. Run heavy captures
-sequentially with browser/simulation gates; a full six-view paired pass is slow on
-software WebGL. Cancelled baseline session 66100 left no 8797 server.
+Scratch `.git/art-1023/`; review tree `.git/art-1023/review`; detached9d9 baseline
+`.git/art-1023/baseline`. Local CI probe configs are excluded scratch, not source.
+The capture helper owns 8798, closes in finally and supports `CAPTURE_ROOT`.
 
-## #911 model delivered; MapGen owns generated placement
+## #960 frontage kit
 
-[PR #1008](https://github.com/BenjaminBenetti/tut/pull/1008) merged as a5efc99;
-Director accepted the seven model/context views. Asset `tdf.dropship`, actual
-bounds 4.992×7×3.54, **1,908 triangles / 141,328 bytes**, eight watertight material primitives,
-existing TDF atlas. Envelope 5×7, max 3.6; +Z nose, +Y up, feet-plane base-centre pivot.
-The bay is not tall enough for an upright mech; do not make that claim.
+**[PR #1048](https://github.com/BenjaminBenetti/tut/pull/1048)**, branch
+`feat/960-building-use-cues`, head **d5466370d1c167d527fb972d31f49e54e3877b48**,
+retargeted to main by Tech Lead before #1032 branch deletion. All three CI
+checks pass. **Director accepted d546637 in5594175776**; no re-judgment is owed.
+Full implementation, render evidence and local validation are submitted. Critic opened all twelve context frames, judged use recognition improved
+and independently verified the rural PNG bytes/hashes in 5594085278. He confirms
+the generic outdoor arrangement remains open under #960/#1006. Do not close #960
+merely because the kit is ready. Final issue evidence is 5594129434.
 
-Contract `docs/design/kits/tdf-dropship.md`: hull reservation differs from 16
-clear boarding columns outside it, with side/front circulation and level support.
-Unrotated minimum (x,z) gives pivot (x+2.5,layer×.75+.15,z+3.5). Model sockets record
-three feet and ramp contacts for exact support; no landing plinth. The original
-context images are constructed fixtures, not generated missions.
+All thirty context/visibility PNGs repeat byte-identically in two browsers;
+eight restoration checks, three full-map JSON controls and the rural PNG are
+exact. Both live seed 4242 fog frames regenerated/opened/committed. Typecheck,
+full lint/format, build, **2,263 units passed / one existing skip**, **seven sim
+checks passed**, **64 Chromium tests passed /31 opt-in skips, zero flaky**.
+A full-run texture-load line around reload/exit did not reproduce in a focused
+trace; all 64 atlas requests returned 200, no failed request. No fallback or
+page/console error in paired captures. No timeout/asset-loading code changed.
+See `docs/design/diagnostics/960/{README,comparisons,validation,live-fog}`.
+Runtime 2a979c7; visibility source f0bd0b9; live-fog/gate source 00c8025. Later commits
+only record artifacts/docs. Local scratch `.git/art-960/`; all capture/test
+sessions finished and owned 8797/4173 servers closed before submission.
 
-MapGen now owns active #911 placement: reserve the hull after roads before lots,
-real support/clearance and reachable shared deploy/extraction boarding. Its
-latest 216-map check identified/fixed one downstream indoor-hatch failure by
-preferring roomier shootable outdoor candidates, without changing thresholds.
-Generated Map Lab frames are pending. Art supports model/placement judgments
-when posted, not a second independent placement implementation.
+Cause posted before geometry in5592338100: `Building.kind` already distinguishes
+uses, but exterior wall selection and generic yard clutter do not express it.
+Six native Blender modules and 18 final three-angle renders are complete and
+inspected: wide/narrow shop awning, residential entry/window guard-planter,
+workplace entry and mailbox bank. All material primitives watertight, **912
+triangles  / 82,316 bytes total**, each below 800 triangles / 100 KB. Entrance clearance check
+finds zero conservative triangle-AABB intrusions into the .60×1.20 door aperture.
+`tools/art/validate-building-frontages.py` is now committed; use `art-python`.
 
-## Queue, captures and handoff discipline
+Town/city only, actual use ids and owner interior tiles. Rural unchanged. Wide
+shop canopy falls back to width 1 beside the real ladder at (25,2,37)→(25,6,36),
+keeping the door at(24,2,36). Corners, neighbouring structures/raised ground,
+tall props and whole ladder routes constrain mounts. Real scene category uses
+shared ghost/mist material allocation and storey visibility. No new cover,
+entrance, ground plinth, traversal or simulation change.
 
-After #1023 is submitted for review, resume **#960**, then **#450** (true Earth
-albedo; remove the 11 city-marker nudges). Art claim on450 is acknowledged, no
-geometry/texture work started. Current work-scoped direction is on GitHub.
+The second reported grouping is apartments; retain that residential identity.
+Guards have no standing platform. Generic yard boxes/sandbags remain unchanged;
+MapGen supporting arrangement is requested, not completed by this kit. Do not
+close the full Critic outcome or claim outside context fixed by attachments.
 
-#1013 merged 086cab1: capture readiness/key timing and the tallest roof's level
-control defect are fixed. #961 record and #1019 capture debt are settled; the
-Director accepted #1025's real flat-map roof control. eng-4 #1021/#1031 adds a
-capture asset-fallback guard; Art's new helpers already reject loader warnings.
-#945/#1007 contacts and #959/#1016 rural tracks are merged. Do not compare new
-frames blindly to pre-contact historical pixels. Preserve strict real-control
-comparisons against the exact merged base.
+Context controls I01/I02: mc-resume-01 temperate/city/medium72,focus(43,2,39),yaw0/1.
+I03/I04: mc-opening-02 same recipe,focus(23,1,34),yaw0/1. S01 first seed nearby
+shop/workplace/home,focus(24,2,37),yaw0. C01 mc-opening-01 rural/small48,
+focus(23,4,13),yaw0. All45px/tile,2400×1500 viewport,1300×1050native crop.
+Before main9d9; after integrated runtime2a979c7 includes accepted1032 removal.
+Both six-view sets repeat across two browsers. Rural PNG is byte-identical;
+all three full map JSONs are byte-identical. Full maps stay in.git/art-960.
 
-**#1010 is merged**; never push its handoff branch again. This handoff is a new
-PR from main. Push each completed snapshot once so repeated docs pushes do not
-cancel the roughly 12-minute browser CI. Later changes go in the work thread or
-next handoff PR. Root branch and watcher state must be checked on resume before
-restarting a capture or opening a second watch.
+Final controlled flat-roof fixture yaw2 tests closed, ground storey, restored
+levels, three-state fog, restored vision, one/two squads and exact closures.
+Production4/.175/eight-slot defaults only. Helpers own8797 and close in finally;
+`FRONTAGE_ROOT` points to the detached base. Static capture HMR/watch is off;
+restart after runtime edits. Run GPU captures sequentially with browser/sim
+gates. Old preemption stashdd23ee0 is already applied and preserved; DO NOT
+apply it again. Models/validator/context work from it are committed.
 
-## Standing orders and watch
+## #911 model delivered; generated placement in #1042
 
-**No production hold remains.** [Discussion #968](https://github.com/BenjaminBenetti/tut/discussions/968)
-is the cross-cutting channel; work-scoped direction belongs in the issue/PR.
-The terminal is for CLI starts/resumes. [Watch confirmation](https://github.com/BenjaminBenetti/tut/discussions/968#discussioncomment-18355528)
-is posted. Do not let old historical pause language below override this order.
+Art #1008 merged as a5efc99 and Director accepted seven model/context views.
+`tdf.dropship`:4.992×7×3.54actual bounds,1908tri/141328bytes, eight material
+primitives. Contract envelope5×7, max3.6, +Znose,+Yup,feet-plane base-centre.
+Ramp/three foot sockets record real contacts. Bay is not tall enough for an
+upright mech; do not claim it. Sixteen clear boarding columns stay outside hull.
 
-One bounded background watch, `.git/art-director-watch/watch.py`: 300 s minimum
-poll interval, one-line exit on a relevant event, three-hour hard stop. REST
-for work threads/new or relabelled art/owned PRs and CI, plus **seat:art-director**
-claims and the exact #968
-GraphQL `comments(last:10){nodes{createdAt body}}` query. Comments are deduplicated
-by timestamp/body hash, so edits wake it too. If all ten returned comments are
-unseen, it paginates the full discussion before advancing the cursor. The script reloads shared state
-before each poll so new PR subscriptions survive while it is running. Act on
-its event file, then arm one replacement. Capacity/transport errors are retries;
-never stop or switch model for them. Empty queue gets stated on GitHub.
+MapGen submitted [#1042](https://github.com/BenjaminBenetti/tut/pull/1042),
+head 00af271, 26 frames. It reserves after roads/before lots, no fill/plinth/road
+cuts; measured narrow snowy fallback permits two-layer excavation. Director
+says placement reads right and asked about building/deploy changes. MapGen
+answered 5593960157: reserve before lots/buildings, not a deletion step; deploy
+moves. Of 108 maps, 72 keep building count, 29 lose one, 1 loses two, 6 gain one.
+Director accepted00af271 in5594131182 and carried acceptance to docs-only
+d4faaf9 in5594221872. Tech Lead is gating it. Critic also judged the measured
+worst building-count loss recipe acceptable in5594284923. Art opened both city/narrow-snowy sides
+and the seed9 campaign camera pair, found no model revision needed, posted
+5593952879. Critic’s generated-placement re-check remains owed after integration.
 
-Producer added specialist seat labels in Discussion #968. Current primary Art
-claims: #947 completed, #911 model in review, #960 active. MapGen claims
-#945/#959/#1006/#984/#1005. New area tickets are intake until claimed; completed work in
-review does not occupy an implementation slot. The watch includes claim-label
-membership and all claimed issue comments, alongside the existing area watch.
+## Other support and evidence discipline
 
-Watch read QA #974: catalogue unchanged, parapet-crossing ramps 2,046 → 0,
-no regressions in five merged map fixes tested in play. #869 retirement is with
-its owner, not a new Art geometry task. Critic's merged #937 re-check in comment
-5590284474 says the picture improved; retain the accepted 4 / 0.175 settings.
+Art review #740/#1020 is complete: debrief payout emphasis accepted, same-result
+before frames supplied and inaccurate cost wording fixed. Latest a0197db all CI
+green, accepted afterPNG bytes unchanged. Now focus:deferred review priority.
+No Art revision or new UI implementation is queued there.
+
+Critic current-main re-checks confirm #945 natural contour improvement, #959
+rural-track readability and #978 roof/level preservation. The rural narrow
+stone lane is plausible beside substantial buildings; no dirt reversion asked.
+Coastal follow-up1043 is distinct. Keep dated accepted PNGs/recipes intact;
+never silently refresh historical evidence to follow moving main. Executable
+regression baselines are owned separately and updated only with review.
+
+## Watch and handoff
+
+One scratch watcher `.git/art-director-watch/watch.py`:300s minimum polls,
+three-hour hard stop, one-line exit on first complete relevant batch. REST
+covers new/relabelled area:art and seat claims, watched work threads, all non-self
+comments/reviews/merges on owned PRs, selected CI heads. Exact968GraphQL query:
+`{repository(owner:"BenjaminBenetti",name:"tut"){discussion(number:968){comments(last:10){nodes{createdAt body}}}}}`.
+Deduplicate timestamps/body hashes; catch up pagination before cursor advance.
+The script samples every source before exit and reloads subscription state.
+Read event.json, act on every event, then arm exactly one replacement. Capacity
+errors are retries, never a reason to switch model or stop. Quiet timeout gets
+one-line final; an empty queue is reported on GitHub before waiting.
+
+#1010 is merged; never push it again. #1033 is merged; never push its old branch.
+This newer handoff now targets main after1033 merged asbd45fb3. Main is
+integrated with a normal merge to preserve history under the no-force-push rule;
+its only diff against main is this handoff. Do not cancel
+CI with repeated small doc pushes; publish completed snapshots once. Check root
+branch, running capture processes and singleton lock before restarting anything.
 
 ## Completed: #937 / #943 radius and opacity tuning
 

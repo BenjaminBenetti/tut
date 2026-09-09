@@ -1,4 +1,5 @@
 import { STOREY_LAYERS } from "../../core/model/elevation";
+import { MAX_DEPLOYED_UNITS } from "../../overworld/model/deployment";
 import { DIRECTIONS } from "../../core/model/direction";
 import {
   manhattanDistance,
@@ -37,11 +38,11 @@ export interface Violation {
 /** The registries validation needs. */
 export type ValidatorRegistries = Pick<MapGenRegistries, "props">;
 
-/** Deploy zones need this many mech-passable tiles (I6). */
-export const MIN_DEPLOY_MECH_TILES = 4;
+/** I6 seats a legal deployment consisting entirely of mechs. */
+export const MIN_DEPLOY_MECH_TILES = MAX_DEPLOYED_UNITS;
 
-/** Deploy zones need this many infantry-passable tiles (I6). */
-export const MIN_DEPLOY_INFANTRY_TILES = 8;
+/** I6 seats a legal deployment consisting entirely of infantry. */
+export const MIN_DEPLOY_INFANTRY_TILES = MAX_DEPLOYED_UNITS;
 
 // ===========================================
 // Entry point
@@ -561,15 +562,21 @@ class MapValidator {
     }
   }
 
-  /** A deploy zone has enough tiles per class and each class's tiles connect. */
+  /** Enough distinct tiles per class to seat a legal deployment; each class connects. */
   private checkDeployZone(
     zone: Hook,
     index: TileIndex,
     reach: ReachabilityService,
   ): void {
-    const tiles = zone.tiles
-      .map((coord) => index.getAt(coord))
-      .filter((tile): tile is Tile => tile !== undefined);
+    // The index resolves repeated coordinates to the same tile. Placement
+    // claims a coordinate once, so repeated hook entries add no capacity.
+    const tiles = [
+      ...new Set(
+        zone.tiles
+          .map((coord) => index.getAt(coord))
+          .filter((tile): tile is Tile => tile !== undefined),
+      ),
+    ];
     const mech = tiles.filter((t) => allows(t.pass, PassMask.MECH)).length;
     const infantry = tiles.filter((t) =>
       allows(t.pass, PassMask.INFANTRY),

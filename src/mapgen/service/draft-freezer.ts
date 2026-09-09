@@ -76,6 +76,15 @@ export function freezeDraft(
     connectors: [...draft.connectors],
     props: draft.props.map((prop) => ({ ...prop, tile: { ...prop.tile } })),
     hooks: freezeHooks(draft),
+    ...(draft.dropships.length === 0
+      ? {}
+      : {
+          dropships: draft.dropships.map((site) => ({
+            ...site,
+            footprint: { ...site.footprint },
+            clearance: { ...site.clearance },
+          })),
+        }),
   };
 }
 
@@ -92,20 +101,25 @@ function materialise(
   ownership: TileOwnership,
 ): Tile {
   const prop = draft.propAt(coord);
+  const dropship =
+    ownership.buildingId === undefined &&
+    draft.isDropshipHull(coord.x, coord.z);
   const definition = registries.surfaces.get(surface);
   const tile: Tile = {
     x: coord.x,
     y: coord.y,
     z: coord.z,
     surface,
-    pass: prop === undefined ? definition.defaultPass : PassMask.NONE,
+    pass:
+      prop === undefined && !dropship ? definition.defaultPass : PassMask.NONE,
     walls: draft.wallsAt(coord),
     coverProvided:
       prop === undefined
         ? CoverLevel.NONE
         : registries.props.get(prop.kind).cover,
     blocksLos:
-      prop === undefined ? false : registries.props.get(prop.kind).blocksLos,
+      dropship ||
+      (prop === undefined ? false : registries.props.get(prop.kind).blocksLos),
     ...(prop === undefined ? {} : { propId: prop.id }),
     ...(ownership.buildingId === undefined
       ? {}

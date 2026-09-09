@@ -200,7 +200,8 @@ describe("BoundaryFencePass", () => {
     );
     const fences = maps.map((m) => m.props.filter((p) => p.kind === "fence"));
     expect(fences[0]).toEqual(fences[1]);
-    expect(fences[0]).toHaveLength(16);
+    // The #911 landing reservation changes this seed's available fence allocation.
+    expect(fences[0]).toHaveLength(15);
     expect(runSizes(fences[0]!).every((n) => n >= 3)).toBe(true);
     for (const p of fences[1]!)
       expect(

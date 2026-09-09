@@ -1,0 +1,8 @@
+=== PREVIEW CHIPS BASELINE on ffcf7ea ===
+  Hammerhead -> Swarmer: 69% hit, 14–23 damage, chips "4 tiles · no cover"
+  preview panel box {"x":1316,"y":700,"w":268,"h":136}
+  Rifle Squad -> Swarmer: 61% hit, 2–4 damage, chips "3 tiles · no cover"
+  Rifle Squad -> Swarmer: 57% hit, 2–4 damage, chips "5 tiles · no cover"
+  Hammerhead -> Swarmer: 73% hit, 14–23 damage, chips "2 tiles · no cover"
+
+captured 4 live previews

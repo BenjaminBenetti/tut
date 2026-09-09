@@ -1,7 +1,12 @@
 import type { Direction } from "../../core/model/direction";
 import { DIRECTIONS } from "../../core/model/direction";
 import type { IdGenerator } from "../../core/model/id-generator";
-import { oppositeDirection, stepGridPos } from "../../core/service/grid-math";
+import {
+  oppositeDirection,
+  rectContains,
+  stepGridPos,
+} from "../../core/service/grid-math";
+import type { DropshipSite } from "./dropship-site";
 import type { Building } from "./building";
 import type { Connector, ConnectorKind } from "./connector";
 import { CONNECTOR_RULES } from "./connector";
@@ -86,6 +91,9 @@ export class MapDraft {
   readonly buildings: Building[] = [];
   readonly connectors: Connector[] = [];
   readonly props: Prop[] = [];
+  readonly dropships: DropshipSite[] = [];
+  /** The production site pass ran; missing sites must not silently become legacy blobs. */
+  requiresDropships = false;
   readonly hooks: DraftHooks = {
     deployZones: [],
     objectives: [],
@@ -220,6 +228,16 @@ export class MapDraft {
    */
   isCovered(x: number, z: number): boolean {
     return this.coveredMask[this.columnIndex(x, z)] === 1;
+  }
+
+  /** Land reserved for the aircraft, its circulation margin and external boarding. */
+  isLandingReserved(x: number, z: number): boolean {
+    return this.dropships.some((site) => rectContains(site.clearance, x, z));
+  }
+
+  /** The full aircraft envelope is unavailable to units and hook placers. */
+  isDropshipHull(x: number, z: number): boolean {
+    return this.dropships.some((site) => rectContains(site.footprint, x, z));
   }
 
   /** Marks or clears the column as covered by a building. */

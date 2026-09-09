@@ -1,4 +1,3 @@
-import { commandError } from "../../core/model/command-error";
 import { err, ok } from "../../core/model/result";
 import type { CommandDispatcher } from "../../overworld/model/command-dispatcher";
 import type { CommandHandler } from "../../overworld/model/command-handler";
@@ -8,7 +7,7 @@ import type {
   TacticalCommandFor,
   TacticalCommandType,
 } from "../model/tactical-command";
-import { describeTacticalError } from "../model/tactical-error";
+import { tacticalRefusal } from "../model/tactical-error";
 import type {
   TacticalContext,
   TacticalHandler,
@@ -106,22 +105,11 @@ export function liftTacticalHandler<
   return (state, command, ctx) => {
     const mission = state.activeMission;
     if (mission === undefined) {
-      return err(
-        commandError(
-          NO_ACTIVE_MISSION,
-          describeTacticalError({ kind: "no-active-mission" }),
-        ),
-      );
+      return err(tacticalRefusal({ kind: "no-active-mission" }));
     }
     if (mission.outcome !== undefined) {
       return err(
-        commandError(
-          MISSION_OVER,
-          describeTacticalError({
-            kind: "mission-over",
-            outcome: mission.outcome,
-          }),
-        ),
+        tacticalRefusal({ kind: "mission-over", outcome: mission.outcome }),
       );
     }
     const label = [
@@ -137,9 +125,7 @@ export function liftTacticalHandler<
       ids: ctx.ids,
     });
     if (!outcome.ok) {
-      return err(
-        commandError(outcome.error.kind, describeTacticalError(outcome.error)),
-      );
+      return err(tacticalRefusal(outcome.error));
     }
     // Vision is recomputed here and nowhere else (ADR 0006 §2.2): this
     // is the one site every handler's result already passes through, so

@@ -1,0 +1,56 @@
+{
+  "runtime": "a793060",
+  "method": "Two independent browser captures with identical recipes, dimensions, camera states and native crops; compare PNG bytes without tolerance. The second also isolates aircraft draw calls and restores visibility before its shutter.",
+  "frames": [
+    {
+      "image": "after/city-opposite.png",
+      "sha256": "8662eed5900913ddc1e08045cf95a5697196708fc63f61d2bb2500899d786a87",
+      "repeatIdentical": true
+    },
+    {
+      "image": "after/city.png",
+      "sha256": "fc745e94d4310e71886b9b25d0cf1bdd4dfff90ff75a3b1cc49f69bac0ea8393",
+      "repeatIdentical": true
+    },
+    {
+      "image": "after/inset.png",
+      "sha256": "448d7eefb0675bc5c3a7a28bfc8fda52d50eba0bc19fa328b5c24b669bfd457b",
+      "repeatIdentical": true
+    },
+    {
+      "image": "after/narrow-cut-opposite.png",
+      "sha256": "70ab330f4923d43904b9524cca336e7f81e6fd7cc2cb4de202773cbfcbebfe0c",
+      "repeatIdentical": true
+    },
+    {
+      "image": "after/narrow-cut.png",
+      "sha256": "26f7e2ee113b72e4faa3a3c162f2c18338664a1a0be7f87de67d63b460dcd824",
+      "repeatIdentical": true
+    },
+    {
+      "image": "after/rural-opposite.png",
+      "sha256": "0e4cd285587e620eeb9625615dac5d32de7ea1e27a6e069d8161e90d6174b91a",
+      "repeatIdentical": true
+    },
+    {
+      "image": "after/rural.png",
+      "sha256": "808161e8f37f49f4f363ac3c9885be50838fac610b6161b47739883e61921e92",
+      "repeatIdentical": true
+    },
+    {
+      "image": "after/town-cut-opposite.png",
+      "sha256": "ab48e43faec51f7420328a08fca4534907d721b2aee073924ed0a27f944bcf59",
+      "repeatIdentical": true
+    },
+    {
+      "image": "after/town-cut.png",
+      "sha256": "2c6e3af060f0e81dda2805af7a8b812ec25ffe735858038378b151c13012039c",
+      "repeatIdentical": true
+    },
+    {
+      "image": "after/waterfront-control.png",
+      "sha256": "4d29af6651097fc5406db2ddcf0c41f55322ec344e1332508c8d4eec51aa77c9",
+      "repeatIdentical": true
+    }
+  ]
+}

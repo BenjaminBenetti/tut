@@ -55,6 +55,7 @@ import { TerrainTransitionModelFactory } from "../service/terrain-transition-mod
 import { roadAppearanceKey } from "../service/road-model-resolver";
 import { RoadModelFactory } from "../service/road-model-factory";
 import { ROAD_STYLES } from "../data/road-styles";
+import { MODEL_MANIFEST } from "../data/model-manifest";
 import type { GhostUniforms } from "../service/ghost-cutaway";
 import { applyGhostCutaway } from "../service/ghost-cutaway";
 import {
@@ -1138,6 +1139,29 @@ export class TacticalMapView implements Disposable, TilePicker {
   /** A box per prop, taller and darker the more cover it gives. */
   private buildProps(): void {
     const batches = new Map<string, Batch>();
+    for (const site of this.map.dropships ?? []) {
+      const boarding = this.map.hooks.deployZones.find(
+        (zone) => zone.id === site.deployZoneId,
+      )?.tiles[0];
+      if (!boarding) continue;
+      const { footprint, level } = site;
+      const height = MODEL_MANIFEST["tdf.dropship"].height;
+      pushBatch(
+        batches,
+        `dropship:${level}`,
+        0x647266,
+        level,
+        boxMatrix(
+          footprint.x + footprint.w / 2,
+          tileTop(level) + height / 2,
+          footprint.z + footprint.d / 2,
+          footprint.w,
+          height,
+          footprint.d,
+        ),
+        this.index.keyOf(boarding),
+      );
+    }
     for (const prop of this.map.props) {
       const tile = this.index.getAt(prop.tile);
       if (tile === undefined) {

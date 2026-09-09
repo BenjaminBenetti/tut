@@ -1,4 +1,3 @@
-import { commandError } from "../../core/model/command-error";
 import { err, ok } from "../../core/model/result";
 import type { CommandDispatcher } from "../../overworld/model/command-dispatcher";
 import type { CommandHandler } from "../../overworld/model/command-handler";
@@ -8,7 +7,7 @@ import { launchMission } from "../../overworld/model/launch-mission-command";
 import type { FinishMissionCommand } from "../model/finish-mission-command";
 import { FINISH_MISSION } from "../model/finish-mission-command";
 import type { MissionCampaignState } from "../model/mission-campaign-state";
-import { describeTacticalError } from "../model/tactical-error";
+import { tacticalRefusal } from "../model/tactical-error";
 import type { TacticalState } from "../model/tactical-state";
 
 // ===========================================
@@ -61,33 +60,20 @@ export function createFinishMissionHandler<TState extends MissionCampaignState>(
   return (state, command, ctx) => {
     const mission = state.activeMission;
     if (mission === undefined) {
-      return err(
-        commandError(
-          NO_ACTIVE_MISSION,
-          describeTacticalError({ kind: "no-active-mission" }),
-        ),
-      );
+      return err(tacticalRefusal({ kind: "no-active-mission" }));
     }
     const { missionId } = command.payload;
     if (mission.missionId !== missionId) {
       return err(
-        commandError(
-          "mission-mismatch",
-          describeTacticalError({
-            kind: "mission-mismatch",
-            expected: missionId,
-            active: mission.missionId,
-          }),
-        ),
+        tacticalRefusal({
+          kind: "mission-mismatch",
+          expected: missionId,
+          active: mission.missionId,
+        }),
       );
     }
     if (mission.outcome === undefined) {
-      return err(
-        commandError(
-          "mission-not-over",
-          describeTacticalError({ kind: "mission-not-over", missionId }),
-        ),
-      );
+      return err(tacticalRefusal({ kind: "mission-not-over", missionId }));
     }
     const applied = deps.launch(
       state,

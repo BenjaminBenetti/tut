@@ -1,0 +1,1290 @@
+[
+  {
+    "recipe": {
+      "seed": "wide-\"small\"/snowy/rural/5",
+      "params": {
+        "archetype": "settlement",
+        "biome": "snowy",
+        "settlement": "rural",
+        "size": "small",
+        "hooks": [
+          { "kind": "deploy", "count": 1, "requiredPass": 3 },
+          {
+            "kind": "egg-spawner",
+            "count": 3,
+            "requiredPass": 1,
+            "minDistanceFromDeploy": 12,
+            "maxNearestDistanceFromDeploy": 30,
+            "meta": { "hatchRadius": 3 }
+          },
+          { "kind": "edge-spawn", "count": 2, "requiredPass": 1 },
+          { "kind": "extraction", "count": 1, "requiredPass": 3 }
+        ],
+        "slopeShare": 1
+      }
+    },
+    "mapHash": "a55f6155d242d4624cc8a947da3d80dafca0a6607721ff2d57459527aa0eb19f",
+    "roadsPassHash": "1359a95cadbb9693ea7dda36aedfbd79209b7b71434161f243df4530c331d3de",
+    "roadSegmentsHash": "213def1eb923cd07fa26801cfc31847b2f295350880cc3f61a9964a231ceb866",
+    "roadPaintHash": "c6b4e4ce0f557a5110539e3c6a36132522537e308d3a3aac89c8cb4fae6ed37d",
+    "usedExistingGrade": false,
+    "reservationCuts": [
+      { "x": 23, "z": 8, "before": 5, "after": 4 },
+      { "x": 23, "z": 9, "before": 4, "after": 3 },
+      { "x": 23, "z": 10, "before": 3, "after": 2 },
+      { "x": 24, "z": 10, "before": 3, "after": 2 },
+      { "x": 23, "z": 11, "before": 2, "after": 1 },
+      { "x": 24, "z": 11, "before": 2, "after": 1 },
+      { "x": 25, "z": 11, "before": 2, "after": 1 },
+      { "x": 34, "z": 11, "before": 2, "after": 1 },
+      { "x": 35, "z": 11, "before": 2, "after": 1 },
+      { "x": 35, "z": 12, "before": 2, "after": 1 },
+      { "x": 35, "z": 13, "before": 2, "after": 1 },
+      { "x": 28, "z": 16, "before": 2, "after": 1 },
+      { "x": 29, "z": 16, "before": 2, "after": 1 },
+      { "x": 35, "z": 16, "before": 2, "after": 1 },
+      { "x": 26, "z": 17, "before": 2, "after": 1 },
+      { "x": 27, "z": 17, "before": 2, "after": 1 },
+      { "x": 28, "z": 17, "before": 2, "after": 1 },
+      { "x": 29, "z": 17, "before": 2, "after": 1 },
+      { "x": 30, "z": 17, "before": 2, "after": 1 },
+      { "x": 31, "z": 17, "before": 2, "after": 1 },
+      { "x": 32, "z": 17, "before": 2, "after": 1 },
+      { "x": 35, "z": 17, "before": 2, "after": 1 },
+      { "x": 28, "z": 18, "before": 3, "after": 2 },
+      { "x": 29, "z": 18, "before": 3, "after": 2 },
+      { "x": 30, "z": 18, "before": 3, "after": 2 }
+    ],
+    "sites": [
+      {
+        "deployZoneId": "hook-1",
+        "clearance": { "x": 23, "z": 11, "w": 13, "d": 7 },
+        "footprint": { "x": 28, "z": 12, "w": 7, "d": 5 },
+        "facing": "e",
+        "level": 1
+      }
+    ],
+    "deploy": [
+      {
+        "id": "hook-1",
+        "kind": "deploy",
+        "tiles": [
+          { "x": 27, "y": 1, "z": 12 },
+          { "x": 27, "y": 1, "z": 13 },
+          { "x": 27, "y": 1, "z": 14 },
+          { "x": 27, "y": 1, "z": 15 },
+          { "x": 26, "y": 1, "z": 12 },
+          { "x": 26, "y": 1, "z": 13 },
+          { "x": 26, "y": 1, "z": 14 },
+          { "x": 26, "y": 1, "z": 15 },
+          { "x": 25, "y": 1, "z": 12 },
+          { "x": 25, "y": 1, "z": 13 },
+          { "x": 25, "y": 1, "z": 14 },
+          { "x": 25, "y": 1, "z": 15 },
+          { "x": 24, "y": 1, "z": 12 },
+          { "x": 24, "y": 1, "z": 13 },
+          { "x": 24, "y": 1, "z": 14 },
+          { "x": 24, "y": 1, "z": 15 }
+        ],
+        "requiredPass": 3
+      }
+    ],
+    "metrics": {
+      "groundTiles": 2214,
+      "openTiles": 2075,
+      "coverAdjacency": 0.08963855421686746,
+      "wallAdjacency": 0.012048192771084338,
+      "coveredSidesMean": 0.12289156626506025,
+      "coveredShare": 0.10024096385542168,
+      "flankProofShare": 0.01927710843373494,
+      "closedSidesMean": 1.2655421686746988,
+      "shelteredShare": 0.7243373493975903,
+      "backToWallShare": 0.4351807228915663,
+      "highCoverPer100": 3.7488708220415536,
+      "lowCoverPer100": 0.9485094850948509,
+      "interiorPropsPerBuilding": 22,
+      "slopes": 804,
+      "slopeShare": 1,
+      "steps": { "flat": 3186, "half": 1071, "cliff": 56 },
+      "ramps": 10,
+      "footprintMean": 90,
+      "roomsPerFloor": 7,
+      "corridorBuildings": 1,
+      "stairs": 1,
+      "ladders": 0,
+      "maxFloors": 2,
+      "hatchSpaceMin": 12,
+      "hatchSpaceMean": 16.666666666666668
+    },
+    "minimumHatchSpace": 12,
+    "violations": [],
+    "notes": [
+      {
+        "pass": "dropship-sites",
+        "message": "dropship on e: 25 cut columns, 25 layer-columns excavated, 16 external boarding columns",
+        "at": { "x": 27, "y": 1, "z": 12 }
+      },
+      {
+        "pass": "connectivity",
+        "message": "5 hook/class checks, 0 repairs, 0 relocations"
+      }
+    ],
+    "buildings": 1,
+    "props": 126
+  },
+  {
+    "recipe": {
+      "seed": "wide-\"small\"/snowy/town/18",
+      "params": {
+        "archetype": "settlement",
+        "biome": "snowy",
+        "settlement": "town",
+        "size": "small",
+        "hooks": [
+          { "kind": "deploy", "count": 1, "requiredPass": 3 },
+          {
+            "kind": "egg-spawner",
+            "count": 3,
+            "requiredPass": 1,
+            "minDistanceFromDeploy": 12,
+            "maxNearestDistanceFromDeploy": 30,
+            "meta": { "hatchRadius": 3 }
+          },
+          { "kind": "edge-spawn", "count": 2, "requiredPass": 1 },
+          { "kind": "extraction", "count": 1, "requiredPass": 3 }
+        ],
+        "slopeShare": 1
+      }
+    },
+    "mapHash": "e391b5755e06c9cd9c6c3abf2a995aa0ff1e5e31daca16dbd3a91207ff2efc09",
+    "roadsPassHash": "0474a76d089fba2c411a7f7ed41b1e9165b7a49388ef32d9dd74a3af698a6e88",
+    "roadSegmentsHash": "8dfd80878a9ea19ec4fa5bd6c9d87238fe4ddd3754c80173c877cc2f705e825f",
+    "roadPaintHash": "a0668e165058036163c8d891621dbf3b38aed3de1d064bd5718f0a741a167edc",
+    "usedExistingGrade": false,
+    "reservationCuts": [
+      { "x": 12, "z": 26, "before": 1, "after": 0 },
+      { "x": 12, "z": 27, "before": 1, "after": 0 },
+      { "x": 12, "z": 28, "before": 1, "after": 0 },
+      { "x": 13, "z": 28, "before": 1, "after": 0 },
+      { "x": 12, "z": 29, "before": 1, "after": 0 },
+      { "x": 13, "z": 29, "before": 1, "after": 0 },
+      { "x": 12, "z": 30, "before": 1, "after": 0 },
+      { "x": 12, "z": 37, "before": 1, "after": 0 },
+      { "x": 13, "z": 37, "before": 1, "after": 0 },
+      { "x": 14, "z": 37, "before": 1, "after": 0 },
+      { "x": 15, "z": 37, "before": 1, "after": 0 },
+      { "x": 16, "z": 37, "before": 1, "after": 0 },
+      { "x": 17, "z": 37, "before": 1, "after": 0 },
+      { "x": 12, "z": 38, "before": 2, "after": 1 },
+      { "x": 13, "z": 38, "before": 2, "after": 1 },
+      { "x": 14, "z": 38, "before": 2, "after": 1 },
+      { "x": 15, "z": 38, "before": 2, "after": 1 },
+      { "x": 16, "z": 38, "before": 2, "after": 1 },
+      { "x": 17, "z": 38, "before": 2, "after": 1 },
+      { "x": 13, "z": 39, "before": 3, "after": 2 },
+      { "x": 14, "z": 39, "before": 3, "after": 2 },
+      { "x": 15, "z": 39, "before": 3, "after": 2 },
+      { "x": 16, "z": 39, "before": 3, "after": 2 },
+      { "x": 17, "z": 39, "before": 3, "after": 2 },
+      { "x": 13, "z": 40, "before": 4, "after": 3 },
+      { "x": 14, "z": 40, "before": 4, "after": 3 },
+      { "x": 15, "z": 40, "before": 4, "after": 3 },
+      { "x": 16, "z": 40, "before": 4, "after": 3 },
+      { "x": 17, "z": 40, "before": 4, "after": 3 },
+      { "x": 13, "z": 41, "before": 5, "after": 4 },
+      { "x": 14, "z": 41, "before": 5, "after": 4 },
+      { "x": 15, "z": 41, "before": 5, "after": 4 },
+      { "x": 16, "z": 41, "before": 5, "after": 4 },
+      { "x": 17, "z": 41, "before": 5, "after": 4 }
+    ],
+    "sites": [
+      {
+        "deployZoneId": "hook-1",
+        "clearance": { "x": 12, "z": 25, "w": 7, "d": 13 },
+        "footprint": { "x": 13, "z": 30, "w": 5, "d": 7 },
+        "facing": "s",
+        "level": 0
+      }
+    ],
+    "deploy": [
+      {
+        "id": "hook-1",
+        "kind": "deploy",
+        "tiles": [
+          { "x": 13, "y": 0, "z": 29 },
+          { "x": 14, "y": 0, "z": 29 },
+          { "x": 15, "y": 0, "z": 29 },
+          { "x": 16, "y": 0, "z": 29 },
+          { "x": 13, "y": 0, "z": 28 },
+          { "x": 14, "y": 0, "z": 28 },
+          { "x": 15, "y": 0, "z": 28 },
+          { "x": 16, "y": 0, "z": 28 },
+          { "x": 13, "y": 0, "z": 27 },
+          { "x": 14, "y": 0, "z": 27 },
+          { "x": 15, "y": 0, "z": 27 },
+          { "x": 16, "y": 0, "z": 27 },
+          { "x": 13, "y": 0, "z": 26 },
+          { "x": 14, "y": 0, "z": 26 },
+          { "x": 15, "y": 0, "z": 26 },
+          { "x": 16, "y": 0, "z": 26 }
+        ],
+        "requiredPass": 3
+      }
+    ],
+    "metrics": {
+      "groundTiles": 2011,
+      "openTiles": 1868,
+      "coverAdjacency": 0.10653104925053533,
+      "wallAdjacency": 0.09100642398286937,
+      "coveredSidesMean": 0.20717344753747324,
+      "coveredShare": 0.17987152034261242,
+      "flankProofShare": 0.02676659528907923,
+      "closedSidesMean": 1.0005353319057815,
+      "shelteredShare": 0.5963597430406852,
+      "backToWallShare": 0.30674518201284795,
+      "highCoverPer100": 3.431128791645947,
+      "lowCoverPer100": 1.9393336648433617,
+      "interiorPropsPerBuilding": 15.8,
+      "slopes": 458,
+      "slopeShare": 1,
+      "steps": { "flat": 3075, "half": 634, "cliff": 141 },
+      "ramps": 36,
+      "footprintMean": 58.6,
+      "roomsPerFloor": 5.090909090909091,
+      "corridorBuildings": 3,
+      "stairs": 8,
+      "ladders": 0,
+      "maxFloors": 3,
+      "hatchSpaceMin": 7,
+      "hatchSpaceMean": 13.666666666666666
+    },
+    "minimumHatchSpace": 7,
+    "violations": [],
+    "notes": [
+      {
+        "pass": "dropship-sites",
+        "message": "dropship on s: 34 cut columns, 34 layer-columns excavated, 16 external boarding columns",
+        "at": { "x": 13, "y": 0, "z": 29 }
+      },
+      {
+        "pass": "connectivity",
+        "message": "5 hook/class checks, 0 repairs, 0 relocations"
+      }
+    ],
+    "buildings": 5,
+    "props": 187
+  },
+  {
+    "recipe": {
+      "seed": "wide-{\"width\":40,\"depth\":56}/snowy/rural/1",
+      "params": {
+        "archetype": "settlement",
+        "biome": "snowy",
+        "settlement": "rural",
+        "size": { "width": 40, "depth": 56 },
+        "hooks": [
+          { "kind": "deploy", "count": 1, "requiredPass": 3 },
+          {
+            "kind": "egg-spawner",
+            "count": 3,
+            "requiredPass": 1,
+            "minDistanceFromDeploy": 12,
+            "maxNearestDistanceFromDeploy": 30,
+            "meta": { "hatchRadius": 3 }
+          },
+          { "kind": "edge-spawn", "count": 2, "requiredPass": 1 },
+          { "kind": "extraction", "count": 1, "requiredPass": 3 }
+        ],
+        "slopeShare": 1
+      }
+    },
+    "mapHash": "f50cb87a78a1473262c0ae6dba82acefaf6a6f5e77a9b8298a51b93ababca8a3",
+    "roadsPassHash": "b6371511db49b511ea56ba77530db2eedbc6fc056b4628198a3e6b9bdb78a281",
+    "roadSegmentsHash": "00ace3e13486268a8885c9b7731a71dc55d1668e5c623feddd3bf5e5bc008c8f",
+    "roadPaintHash": "3e3b442aeaa9ebcfdb3516a032b80efc89d03e6ab4f5b65f7650690426c41149",
+    "usedExistingGrade": false,
+    "reservationCuts": [
+      { "x": 13, "z": 39, "before": 6, "after": 5 },
+      { "x": 14, "z": 39, "before": 6, "after": 5 },
+      { "x": 15, "z": 39, "before": 6, "after": 5 },
+      { "x": 16, "z": 39, "before": 6, "after": 5 },
+      { "x": 17, "z": 39, "before": 6, "after": 5 },
+      { "x": 18, "z": 39, "before": 6, "after": 5 },
+      { "x": 19, "z": 39, "before": 6, "after": 5 },
+      { "x": 20, "z": 39, "before": 6, "after": 5 },
+      { "x": 21, "z": 39, "before": 6, "after": 5 },
+      { "x": 22, "z": 39, "before": 6, "after": 5 },
+      { "x": 12, "z": 40, "before": 6, "after": 5 },
+      { "x": 13, "z": 40, "before": 6, "after": 5 },
+      { "x": 14, "z": 40, "before": 6, "after": 5 },
+      { "x": 15, "z": 40, "before": 6, "after": 5 },
+      { "x": 16, "z": 40, "before": 6, "after": 5 },
+      { "x": 17, "z": 40, "before": 6, "after": 5 },
+      { "x": 18, "z": 40, "before": 6, "after": 5 },
+      { "x": 21, "z": 40, "before": 6, "after": 5 },
+      { "x": 22, "z": 40, "before": 6, "after": 5 },
+      { "x": 12, "z": 41, "before": 6, "after": 5 },
+      { "x": 13, "z": 41, "before": 6, "after": 5 },
+      { "x": 14, "z": 41, "before": 6, "after": 5 },
+      { "x": 15, "z": 41, "before": 6, "after": 5 },
+      { "x": 16, "z": 41, "before": 6, "after": 5 },
+      { "x": 17, "z": 41, "before": 6, "after": 5 },
+      { "x": 18, "z": 41, "before": 6, "after": 5 },
+      { "x": 11, "z": 42, "before": 6, "after": 5 },
+      { "x": 12, "z": 42, "before": 6, "after": 5 },
+      { "x": 13, "z": 42, "before": 6, "after": 5 },
+      { "x": 14, "z": 42, "before": 6, "after": 5 },
+      { "x": 15, "z": 42, "before": 6, "after": 5 },
+      { "x": 16, "z": 42, "before": 6, "after": 5 },
+      { "x": 17, "z": 42, "before": 6, "after": 5 },
+      { "x": 11, "z": 43, "before": 6, "after": 5 },
+      { "x": 12, "z": 43, "before": 6, "after": 5 },
+      { "x": 13, "z": 43, "before": 6, "after": 5 },
+      { "x": 14, "z": 43, "before": 6, "after": 5 },
+      { "x": 15, "z": 43, "before": 6, "after": 5 },
+      { "x": 16, "z": 43, "before": 6, "after": 5 },
+      { "x": 17, "z": 43, "before": 6, "after": 5 },
+      { "x": 11, "z": 44, "before": 6, "after": 5 },
+      { "x": 12, "z": 44, "before": 6, "after": 5 },
+      { "x": 13, "z": 44, "before": 6, "after": 5 },
+      { "x": 14, "z": 44, "before": 6, "after": 5 },
+      { "x": 15, "z": 44, "before": 6, "after": 5 },
+      { "x": 16, "z": 44, "before": 6, "after": 5 },
+      { "x": 17, "z": 44, "before": 6, "after": 5 },
+      { "x": 12, "z": 45, "before": 6, "after": 5 },
+      { "x": 13, "z": 45, "before": 6, "after": 5 },
+      { "x": 14, "z": 45, "before": 6, "after": 5 },
+      { "x": 15, "z": 45, "before": 6, "after": 5 },
+      { "x": 16, "z": 45, "before": 6, "after": 5 }
+    ],
+    "sites": [
+      {
+        "deployZoneId": "hook-1",
+        "clearance": { "x": 10, "z": 39, "w": 13, "d": 7 },
+        "footprint": { "x": 11, "z": 40, "w": 7, "d": 5 },
+        "facing": "w",
+        "level": 5
+      }
+    ],
+    "deploy": [
+      {
+        "id": "hook-1",
+        "kind": "deploy",
+        "tiles": [
+          { "x": 18, "y": 5, "z": 40 },
+          { "x": 18, "y": 5, "z": 41 },
+          { "x": 18, "y": 5, "z": 42 },
+          { "x": 18, "y": 5, "z": 43 },
+          { "x": 19, "y": 5, "z": 40 },
+          { "x": 19, "y": 5, "z": 41 },
+          { "x": 19, "y": 5, "z": 42 },
+          { "x": 19, "y": 5, "z": 43 },
+          { "x": 20, "y": 5, "z": 40 },
+          { "x": 20, "y": 5, "z": 41 },
+          { "x": 20, "y": 5, "z": 42 },
+          { "x": 20, "y": 5, "z": 43 },
+          { "x": 21, "y": 5, "z": 40 },
+          { "x": 21, "y": 5, "z": 41 },
+          { "x": 21, "y": 5, "z": 42 },
+          { "x": 21, "y": 5, "z": 43 }
+        ],
+        "requiredPass": 3
+      }
+    ],
+    "metrics": {
+      "groundTiles": 2106,
+      "openTiles": 1938,
+      "coverAdjacency": 0.11351909184726522,
+      "wallAdjacency": 0.023735810113519093,
+      "coveredSidesMean": 0.16408668730650156,
+      "coveredShare": 0.13261093911248711,
+      "flankProofShare": 0.025799793601651185,
+      "closedSidesMean": 1.2502579979360164,
+      "shelteredShare": 0.739938080495356,
+      "backToWallShare": 0.39473684210526316,
+      "highCoverPer100": 5.413105413105413,
+      "lowCoverPer100": 0.9021842355175688,
+      "interiorPropsPerBuilding": 11,
+      "slopes": 705,
+      "slopeShare": 1,
+      "steps": { "flat": 3053, "half": 954, "cliff": 76 },
+      "ramps": 9,
+      "footprintMean": 67,
+      "roomsPerFloor": 5.666666666666667,
+      "corridorBuildings": 2,
+      "stairs": 1,
+      "ladders": 0,
+      "maxFloors": 2,
+      "hatchSpaceMin": 7,
+      "hatchSpaceMean": 12.333333333333334
+    },
+    "minimumHatchSpace": 7,
+    "violations": [],
+    "notes": [
+      {
+        "pass": "dropship-sites",
+        "message": "dropship on w: 52 cut columns, 52 layer-columns excavated, 16 external boarding columns",
+        "at": { "x": 18, "y": 5, "z": 40 }
+      },
+      {
+        "pass": "connectivity",
+        "message": "5 hook/class checks, 0 repairs, 0 relocations"
+      }
+    ],
+    "buildings": 2,
+    "props": 155
+  },
+  {
+    "recipe": {
+      "seed": "wide-{\"width\":40,\"depth\":56}/snowy/rural/17",
+      "params": {
+        "archetype": "settlement",
+        "biome": "snowy",
+        "settlement": "rural",
+        "size": { "width": 40, "depth": 56 },
+        "hooks": [
+          { "kind": "deploy", "count": 1, "requiredPass": 3 },
+          {
+            "kind": "egg-spawner",
+            "count": 3,
+            "requiredPass": 1,
+            "minDistanceFromDeploy": 12,
+            "maxNearestDistanceFromDeploy": 30,
+            "meta": { "hatchRadius": 3 }
+          },
+          { "kind": "edge-spawn", "count": 2, "requiredPass": 1 },
+          { "kind": "extraction", "count": 1, "requiredPass": 3 }
+        ],
+        "slopeShare": 1
+      }
+    },
+    "mapHash": "03b2d96a23c2553da545f631d7322648e4bb01bb14f3dadaf619e04df18701d4",
+    "roadsPassHash": "6a23dc07d1c858608a141a04d233c72c2c2dd575bff15a8f27c614dc1f0df4b7",
+    "roadSegmentsHash": "019c8744fae0f1a86cdafa0a981cb46f46fdf7a01aea39eb076bfe922e11e2e8",
+    "roadPaintHash": "0a39bbaba8293495abb0aa1afcbcf345b85d9877f27764a2ef881fea2349e52e",
+    "usedExistingGrade": false,
+    "reservationCuts": [
+      { "x": 12, "z": 48, "before": 2, "after": 1 },
+      { "x": 24, "z": 48, "before": 2, "after": 1 },
+      { "x": 10, "z": 49, "before": 3, "after": 2 },
+      { "x": 11, "z": 49, "before": 2, "after": 1 },
+      { "x": 12, "z": 49, "before": 1, "after": 0 },
+      { "x": 13, "z": 49, "before": 1, "after": 0 },
+      { "x": 14, "z": 49, "before": 1, "after": 0 },
+      { "x": 15, "z": 49, "before": 1, "after": 0 },
+      { "x": 16, "z": 49, "before": 1, "after": 0 },
+      { "x": 24, "z": 49, "before": 1, "after": 0 },
+      { "x": 25, "z": 49, "before": 2, "after": 1 },
+      { "x": 26, "z": 49, "before": 3, "after": 2 },
+      { "x": 11, "z": 50, "before": 2, "after": 1 },
+      { "x": 12, "z": 50, "before": 1, "after": 0 },
+      { "x": 13, "z": 50, "before": 1, "after": 0 },
+      { "x": 24, "z": 50, "before": 1, "after": 0 },
+      { "x": 12, "z": 51, "before": 1, "after": 0 }
+    ],
+    "sites": [
+      {
+        "deployZoneId": "hook-1",
+        "clearance": { "x": 12, "z": 49, "w": 13, "d": 7 },
+        "footprint": { "x": 13, "z": 50, "w": 7, "d": 5 },
+        "facing": "w",
+        "level": 0
+      }
+    ],
+    "deploy": [
+      {
+        "id": "hook-1",
+        "kind": "deploy",
+        "tiles": [
+          { "x": 20, "y": 0, "z": 50 },
+          { "x": 20, "y": 0, "z": 51 },
+          { "x": 20, "y": 0, "z": 52 },
+          { "x": 20, "y": 0, "z": 53 },
+          { "x": 21, "y": 0, "z": 50 },
+          { "x": 21, "y": 0, "z": 51 },
+          { "x": 21, "y": 0, "z": 52 },
+          { "x": 21, "y": 0, "z": 53 },
+          { "x": 22, "y": 0, "z": 50 },
+          { "x": 22, "y": 0, "z": 51 },
+          { "x": 22, "y": 0, "z": 52 },
+          { "x": 22, "y": 0, "z": 53 },
+          { "x": 23, "y": 0, "z": 50 },
+          { "x": 23, "y": 0, "z": 51 },
+          { "x": 23, "y": 0, "z": 52 },
+          { "x": 23, "y": 0, "z": 53 }
+        ],
+        "requiredPass": 3
+      }
+    ],
+    "metrics": {
+      "groundTiles": 2184,
+      "openTiles": 2006,
+      "coverAdjacency": 0.11665004985044865,
+      "wallAdjacency": 0.010468594217347957,
+      "coveredSidesMean": 0.1585244267198405,
+      "coveredShare": 0.12362911266201396,
+      "flankProofShare": 0.028913260219341975,
+      "closedSidesMean": 1.2791625124626123,
+      "shelteredShare": 0.7323030907278165,
+      "backToWallShare": 0.43469591226321036,
+      "highCoverPer100": 5.586080586080587,
+      "lowCoverPer100": 0.9615384615384616,
+      "interiorPropsPerBuilding": 11,
+      "slopes": 781,
+      "slopeShare": 1,
+      "steps": { "flat": 3163, "half": 1066, "cliff": 28 },
+      "ramps": 8,
+      "footprintMean": 56,
+      "roomsPerFloor": 5,
+      "corridorBuildings": 1,
+      "stairs": 1,
+      "ladders": 0,
+      "maxFloors": 2,
+      "hatchSpaceMin": 11,
+      "hatchSpaceMean": 16
+    },
+    "minimumHatchSpace": 11,
+    "violations": [],
+    "notes": [
+      {
+        "pass": "dropship-sites",
+        "message": "dropship on w: 17 cut columns, 17 layer-columns excavated, 16 external boarding columns",
+        "at": { "x": 20, "y": 0, "z": 50 }
+      },
+      {
+        "pass": "connectivity",
+        "message": "5 hook/class checks, 0 repairs, 0 relocations"
+      }
+    ],
+    "buildings": 1,
+    "props": 154
+  },
+  {
+    "recipe": {
+      "seed": "wide-{\"width\":40,\"depth\":56}/snowy/town/3",
+      "params": {
+        "archetype": "settlement",
+        "biome": "snowy",
+        "settlement": "town",
+        "size": { "width": 40, "depth": 56 },
+        "hooks": [
+          { "kind": "deploy", "count": 1, "requiredPass": 3 },
+          {
+            "kind": "egg-spawner",
+            "count": 3,
+            "requiredPass": 1,
+            "minDistanceFromDeploy": 12,
+            "maxNearestDistanceFromDeploy": 30,
+            "meta": { "hatchRadius": 3 }
+          },
+          { "kind": "edge-spawn", "count": 2, "requiredPass": 1 },
+          { "kind": "extraction", "count": 1, "requiredPass": 3 }
+        ],
+        "slopeShare": 1
+      }
+    },
+    "mapHash": "3e4bd30b73ed1a8e9e168e6a6be2c87467c85fbaec50a63883957b44421b7b59",
+    "roadsPassHash": "f8ffe354b7e73d436d68b1a7fa9daeadeccc712e63fb41a0ae7d184b796d27b1",
+    "roadSegmentsHash": "954ff7604dfd5a2d9601f846e9c313ee23be85ce2fb0366ab5ad3905a675eadf",
+    "roadPaintHash": "3b95c6a3f0f31ab70fa94505e137183d318a7df410a83b04d108901d5a6694a3",
+    "usedExistingGrade": false,
+    "reservationCuts": [
+      { "x": 23, "z": 27, "before": 6, "after": 5 },
+      { "x": 24, "z": 27, "before": 5, "after": 4 },
+      { "x": 25, "z": 27, "before": 5, "after": 4 },
+      { "x": 22, "z": 28, "before": 6, "after": 5 },
+      { "x": 23, "z": 28, "before": 6, "after": 4 },
+      { "x": 24, "z": 28, "before": 5, "after": 3 },
+      { "x": 25, "z": 28, "before": 5, "after": 3 },
+      { "x": 26, "z": 28, "before": 4, "after": 3 },
+      { "x": 22, "z": 29, "before": 6, "after": 5 },
+      { "x": 23, "z": 29, "before": 6, "after": 4 },
+      { "x": 24, "z": 29, "before": 5, "after": 3 },
+      { "x": 25, "z": 29, "before": 5, "after": 3 },
+      { "x": 26, "z": 29, "before": 4, "after": 3 },
+      { "x": 22, "z": 30, "before": 6, "after": 5 },
+      { "x": 23, "z": 30, "before": 6, "after": 4 },
+      { "x": 24, "z": 30, "before": 5, "after": 3 },
+      { "x": 25, "z": 30, "before": 4, "after": 3 },
+      { "x": 26, "z": 30, "before": 4, "after": 3 },
+      { "x": 23, "z": 31, "before": 5, "after": 4 },
+      { "x": 24, "z": 31, "before": 5, "after": 3 },
+      { "x": 25, "z": 31, "before": 4, "after": 3 },
+      { "x": 26, "z": 31, "before": 4, "after": 3 },
+      { "x": 24, "z": 32, "before": 4, "after": 3 },
+      { "x": 25, "z": 32, "before": 4, "after": 3 },
+      { "x": 36, "z": 33, "before": 4, "after": 3 },
+      { "x": 34, "z": 34, "before": 4, "after": 3 },
+      { "x": 35, "z": 34, "before": 4, "after": 3 },
+      { "x": 36, "z": 34, "before": 4, "after": 3 }
+    ],
+    "sites": [
+      {
+        "deployZoneId": "hook-1",
+        "clearance": { "x": 24, "z": 28, "w": 13, "d": 7 },
+        "footprint": { "x": 29, "z": 29, "w": 7, "d": 5 },
+        "facing": "e",
+        "level": 3
+      }
+    ],
+    "deploy": [
+      {
+        "id": "hook-1",
+        "kind": "deploy",
+        "tiles": [
+          { "x": 28, "y": 3, "z": 29 },
+          { "x": 28, "y": 3, "z": 30 },
+          { "x": 28, "y": 3, "z": 31 },
+          { "x": 28, "y": 3, "z": 32 },
+          { "x": 27, "y": 3, "z": 29 },
+          { "x": 27, "y": 3, "z": 30 },
+          { "x": 27, "y": 3, "z": 31 },
+          { "x": 27, "y": 3, "z": 32 },
+          { "x": 26, "y": 3, "z": 29 },
+          { "x": 26, "y": 3, "z": 30 },
+          { "x": 26, "y": 3, "z": 31 },
+          { "x": 26, "y": 3, "z": 32 },
+          { "x": 25, "y": 3, "z": 29 },
+          { "x": 25, "y": 3, "z": 30 },
+          { "x": 25, "y": 3, "z": 31 },
+          { "x": 25, "y": 3, "z": 32 }
+        ],
+        "requiredPass": 3
+      }
+    ],
+    "metrics": {
+      "groundTiles": 2021,
+      "openTiles": 1890,
+      "coverAdjacency": 0.10105820105820106,
+      "wallAdjacency": 0.08095238095238096,
+      "coveredSidesMean": 0.19470899470899472,
+      "coveredShare": 0.1671957671957672,
+      "flankProofShare": 0.02486772486772487,
+      "closedSidesMean": 1.1656084656084655,
+      "shelteredShare": 0.6941798941798942,
+      "backToWallShare": 0.36507936507936506,
+      "highCoverPer100": 2.3255813953488373,
+      "lowCoverPer100": 2.4245423057892133,
+      "interiorPropsPerBuilding": 15,
+      "slopes": 544,
+      "slopeShare": 1,
+      "steps": { "flat": 2954, "half": 746, "cliff": 187 },
+      "ramps": 35,
+      "footprintMean": 54.75,
+      "roomsPerFloor": 4.666666666666667,
+      "corridorBuildings": 2,
+      "stairs": 6,
+      "ladders": 0,
+      "maxFloors": 3,
+      "hatchSpaceMin": 10,
+      "hatchSpaceMean": 23.333333333333332
+    },
+    "minimumHatchSpace": 10,
+    "violations": [],
+    "notes": [
+      {
+        "pass": "dropship-sites",
+        "message": "dropship on e: 28 cut columns, 37 layer-columns excavated, 16 external boarding columns",
+        "at": { "x": 28, "y": 3, "z": 29 }
+      },
+      {
+        "pass": "connectivity",
+        "message": "5 hook/class checks, 0 repairs, 0 relocations"
+      }
+    ],
+    "buildings": 4,
+    "props": 156
+  },
+  {
+    "recipe": {
+      "seed": "wide-{\"width\":40,\"depth\":56}/snowy/town/5",
+      "params": {
+        "archetype": "settlement",
+        "biome": "snowy",
+        "settlement": "town",
+        "size": { "width": 40, "depth": 56 },
+        "hooks": [
+          { "kind": "deploy", "count": 1, "requiredPass": 3 },
+          {
+            "kind": "egg-spawner",
+            "count": 3,
+            "requiredPass": 1,
+            "minDistanceFromDeploy": 12,
+            "maxNearestDistanceFromDeploy": 30,
+            "meta": { "hatchRadius": 3 }
+          },
+          { "kind": "edge-spawn", "count": 2, "requiredPass": 1 },
+          { "kind": "extraction", "count": 1, "requiredPass": 3 }
+        ],
+        "slopeShare": 1
+      }
+    },
+    "mapHash": "618b97244088062addcf1faa84f860b8ec3d88556d0085c929f6da972e1239cf",
+    "roadsPassHash": "b7ea895f34ae16091cc9728efc7858427f8a7408d5e8df3b451324ca5db4265e",
+    "roadSegmentsHash": "395051a3b90db55381b6c604ab65a656888aabcc81e8079e209549c88292311d",
+    "roadPaintHash": "8c424b81250b42a6e2de25f8cfd4022d12849d5f5c2aaf71209aea8792f9ec79",
+    "usedExistingGrade": false,
+    "reservationCuts": [
+      { "x": 27, "z": 14, "before": 4, "after": 3 },
+      { "x": 28, "z": 14, "before": 4, "after": 3 },
+      { "x": 29, "z": 14, "before": 4, "after": 3 },
+      { "x": 30, "z": 14, "before": 4, "after": 3 },
+      { "x": 38, "z": 14, "before": 4, "after": 3 },
+      { "x": 39, "z": 14, "before": 4, "after": 3 },
+      { "x": 27, "z": 15, "before": 4, "after": 2 },
+      { "x": 28, "z": 15, "before": 4, "after": 2 },
+      { "x": 29, "z": 15, "before": 4, "after": 2 },
+      { "x": 30, "z": 15, "before": 4, "after": 2 },
+      { "x": 31, "z": 15, "before": 3, "after": 2 },
+      { "x": 32, "z": 15, "before": 3, "after": 2 },
+      { "x": 33, "z": 15, "before": 3, "after": 2 },
+      { "x": 36, "z": 15, "before": 3, "after": 2 },
+      { "x": 37, "z": 15, "before": 3, "after": 2 },
+      { "x": 38, "z": 15, "before": 4, "after": 2 },
+      { "x": 39, "z": 15, "before": 4, "after": 2 },
+      { "x": 27, "z": 16, "before": 3, "after": 2 },
+      { "x": 28, "z": 16, "before": 4, "after": 2 },
+      { "x": 29, "z": 16, "before": 4, "after": 2 },
+      { "x": 30, "z": 16, "before": 3, "after": 2 },
+      { "x": 31, "z": 16, "before": 3, "after": 2 },
+      { "x": 32, "z": 16, "before": 3, "after": 2 },
+      { "x": 36, "z": 16, "before": 3, "after": 2 },
+      { "x": 37, "z": 16, "before": 3, "after": 2 },
+      { "x": 38, "z": 16, "before": 4, "after": 2 },
+      { "x": 39, "z": 16, "before": 4, "after": 2 },
+      { "x": 27, "z": 17, "before": 3, "after": 2 },
+      { "x": 28, "z": 17, "before": 3, "after": 2 },
+      { "x": 29, "z": 17, "before": 3, "after": 2 },
+      { "x": 30, "z": 17, "before": 3, "after": 2 },
+      { "x": 31, "z": 17, "before": 3, "after": 2 },
+      { "x": 36, "z": 17, "before": 3, "after": 2 },
+      { "x": 37, "z": 17, "before": 3, "after": 2 },
+      { "x": 38, "z": 17, "before": 3, "after": 2 },
+      { "x": 39, "z": 17, "before": 4, "after": 2 },
+      { "x": 27, "z": 18, "before": 3, "after": 2 },
+      { "x": 28, "z": 18, "before": 3, "after": 2 },
+      { "x": 29, "z": 18, "before": 3, "after": 2 },
+      { "x": 30, "z": 18, "before": 3, "after": 2 },
+      { "x": 37, "z": 18, "before": 3, "after": 2 },
+      { "x": 38, "z": 18, "before": 3, "after": 2 },
+      { "x": 39, "z": 18, "before": 3, "after": 2 },
+      { "x": 27, "z": 19, "before": 3, "after": 2 },
+      { "x": 38, "z": 19, "before": 3, "after": 2 },
+      { "x": 39, "z": 19, "before": 3, "after": 2 },
+      { "x": 27, "z": 21, "before": 3, "after": 2 },
+      { "x": 28, "z": 21, "before": 3, "after": 2 },
+      { "x": 29, "z": 21, "before": 3, "after": 2 },
+      { "x": 30, "z": 21, "before": 3, "after": 2 }
+    ],
+    "sites": [
+      {
+        "deployZoneId": "hook-1",
+        "clearance": { "x": 27, "z": 15, "w": 13, "d": 7 },
+        "footprint": { "x": 32, "z": 16, "w": 7, "d": 5 },
+        "facing": "e",
+        "level": 2
+      }
+    ],
+    "deploy": [
+      {
+        "id": "hook-1",
+        "kind": "deploy",
+        "tiles": [
+          { "x": 31, "y": 2, "z": 16 },
+          { "x": 31, "y": 2, "z": 17 },
+          { "x": 31, "y": 2, "z": 18 },
+          { "x": 31, "y": 2, "z": 19 },
+          { "x": 30, "y": 2, "z": 16 },
+          { "x": 30, "y": 2, "z": 17 },
+          { "x": 30, "y": 2, "z": 18 },
+          { "x": 30, "y": 2, "z": 19 },
+          { "x": 29, "y": 2, "z": 16 },
+          { "x": 29, "y": 2, "z": 17 },
+          { "x": 29, "y": 2, "z": 18 },
+          { "x": 29, "y": 2, "z": 19 },
+          { "x": 28, "y": 2, "z": 16 },
+          { "x": 28, "y": 2, "z": 17 },
+          { "x": 28, "y": 2, "z": 18 },
+          { "x": 28, "y": 2, "z": 19 }
+        ],
+        "requiredPass": 3
+      }
+    ],
+    "metrics": {
+      "groundTiles": 1994,
+      "openTiles": 1860,
+      "coverAdjacency": 0.09731182795698924,
+      "wallAdjacency": 0.06344086021505377,
+      "coveredSidesMean": 0.17204301075268819,
+      "coveredShare": 0.1446236559139785,
+      "flankProofShare": 0.025268817204301075,
+      "closedSidesMean": 1.1263440860215055,
+      "shelteredShare": 0.682258064516129,
+      "backToWallShare": 0.3575268817204301,
+      "highCoverPer100": 3.6108324974924777,
+      "lowCoverPer100": 1.354062186559679,
+      "interiorPropsPerBuilding": 14.25,
+      "slopes": 567,
+      "slopeShare": 1,
+      "steps": { "flat": 2951, "half": 778, "cliff": 100 },
+      "ramps": 18,
+      "footprintMean": 61.5,
+      "roomsPerFloor": 4.857142857142857,
+      "corridorBuildings": 2,
+      "stairs": 5,
+      "ladders": 1,
+      "maxFloors": 3,
+      "hatchSpaceMin": 8,
+      "hatchSpaceMean": 23.666666666666668
+    },
+    "minimumHatchSpace": 8,
+    "violations": [],
+    "notes": [
+      {
+        "pass": "dropship-sites",
+        "message": "dropship on e: 50 cut columns, 61 layer-columns excavated, 16 external boarding columns",
+        "at": { "x": 31, "y": 2, "z": 16 }
+      },
+      {
+        "pass": "connectivity",
+        "message": "5 hook/class checks, 0 repairs, 0 relocations"
+      }
+    ],
+    "buildings": 4,
+    "props": 156
+  },
+  {
+    "recipe": {
+      "seed": "wide-{\"width\":40,\"depth\":56}/snowy/town/9",
+      "params": {
+        "archetype": "settlement",
+        "biome": "snowy",
+        "settlement": "town",
+        "size": { "width": 40, "depth": 56 },
+        "hooks": [
+          { "kind": "deploy", "count": 1, "requiredPass": 3 },
+          {
+            "kind": "egg-spawner",
+            "count": 3,
+            "requiredPass": 1,
+            "minDistanceFromDeploy": 12,
+            "maxNearestDistanceFromDeploy": 30,
+            "meta": { "hatchRadius": 3 }
+          },
+          { "kind": "edge-spawn", "count": 2, "requiredPass": 1 },
+          { "kind": "extraction", "count": 1, "requiredPass": 3 }
+        ],
+        "slopeShare": 1
+      }
+    },
+    "mapHash": "24aae86db24eb4ec48f84ee3eae258fdd326a38ca267eb255a507a9319e02e2b",
+    "roadsPassHash": "fb38e4edac5bc5ace564a069c8036d4cd2c18736ebc37376b68b411ca76ac1b7",
+    "roadSegmentsHash": "839dc71910f00dfca4fd8bce3324beaebebf4c01f031c741f879a42d224f4e69",
+    "roadPaintHash": "e2acd62ed693104ef16814b77c22cbafe283700e6fbfebb6820547308ecff5ce",
+    "usedExistingGrade": false,
+    "reservationCuts": [
+      { "x": 26, "z": 14, "before": 4, "after": 3 },
+      { "x": 27, "z": 14, "before": 4, "after": 3 },
+      { "x": 24, "z": 15, "before": 3, "after": 2 },
+      { "x": 25, "z": 15, "before": 3, "after": 2 },
+      { "x": 26, "z": 15, "before": 4, "after": 2 },
+      { "x": 27, "z": 15, "before": 4, "after": 2 },
+      { "x": 28, "z": 15, "before": 4, "after": 3 },
+      { "x": 24, "z": 16, "before": 3, "after": 2 },
+      { "x": 25, "z": 16, "before": 3, "after": 2 },
+      { "x": 26, "z": 16, "before": 4, "after": 2 },
+      { "x": 27, "z": 16, "before": 4, "after": 2 },
+      { "x": 28, "z": 16, "before": 4, "after": 3 },
+      { "x": 24, "z": 17, "before": 3, "after": 2 },
+      { "x": 25, "z": 17, "before": 3, "after": 2 },
+      { "x": 26, "z": 17, "before": 4, "after": 2 },
+      { "x": 27, "z": 17, "before": 4, "after": 2 },
+      { "x": 28, "z": 17, "before": 4, "after": 3 },
+      { "x": 24, "z": 18, "before": 3, "after": 2 },
+      { "x": 25, "z": 18, "before": 3, "after": 2 },
+      { "x": 26, "z": 18, "before": 4, "after": 2 },
+      { "x": 27, "z": 18, "before": 4, "after": 2 },
+      { "x": 28, "z": 18, "before": 4, "after": 3 },
+      { "x": 24, "z": 19, "before": 3, "after": 2 },
+      { "x": 25, "z": 19, "before": 3, "after": 2 },
+      { "x": 26, "z": 19, "before": 4, "after": 2 },
+      { "x": 27, "z": 19, "before": 4, "after": 2 },
+      { "x": 28, "z": 19, "before": 4, "after": 3 },
+      { "x": 24, "z": 20, "before": 3, "after": 2 },
+      { "x": 25, "z": 20, "before": 3, "after": 2 },
+      { "x": 26, "z": 20, "before": 4, "after": 2 },
+      { "x": 27, "z": 20, "before": 4, "after": 2 },
+      { "x": 28, "z": 20, "before": 4, "after": 3 },
+      { "x": 24, "z": 21, "before": 3, "after": 2 },
+      { "x": 25, "z": 21, "before": 3, "after": 2 },
+      { "x": 26, "z": 21, "before": 3, "after": 2 },
+      { "x": 27, "z": 21, "before": 4, "after": 2 },
+      { "x": 28, "z": 21, "before": 4, "after": 3 },
+      { "x": 27, "z": 22, "before": 4, "after": 3 }
+    ],
+    "sites": [
+      {
+        "deployZoneId": "hook-1",
+        "clearance": { "x": 15, "z": 15, "w": 13, "d": 7 },
+        "footprint": { "x": 20, "z": 16, "w": 7, "d": 5 },
+        "facing": "e",
+        "level": 2
+      }
+    ],
+    "deploy": [
+      {
+        "id": "hook-1",
+        "kind": "deploy",
+        "tiles": [
+          { "x": 19, "y": 2, "z": 16 },
+          { "x": 19, "y": 2, "z": 17 },
+          { "x": 19, "y": 2, "z": 18 },
+          { "x": 19, "y": 2, "z": 19 },
+          { "x": 18, "y": 2, "z": 16 },
+          { "x": 18, "y": 2, "z": 17 },
+          { "x": 18, "y": 2, "z": 18 },
+          { "x": 18, "y": 2, "z": 19 },
+          { "x": 17, "y": 2, "z": 16 },
+          { "x": 17, "y": 2, "z": 17 },
+          { "x": 17, "y": 2, "z": 18 },
+          { "x": 17, "y": 2, "z": 19 },
+          { "x": 16, "y": 2, "z": 16 },
+          { "x": 16, "y": 2, "z": 17 },
+          { "x": 16, "y": 2, "z": 18 },
+          { "x": 16, "y": 2, "z": 19 }
+        ],
+        "requiredPass": 3
+      }
+    ],
+    "metrics": {
+      "groundTiles": 1946,
+      "openTiles": 1786,
+      "coverAdjacency": 0.11478163493840986,
+      "wallAdjacency": 0.09630459126539753,
+      "coveredSidesMean": 0.23908174692049272,
+      "coveredShare": 0.1959686450167973,
+      "flankProofShare": 0.03863381858902576,
+      "closedSidesMean": 1.0890257558790593,
+      "shelteredShare": 0.6466965285554311,
+      "backToWallShare": 0.32978723404255317,
+      "highCoverPer100": 4.367934224049332,
+      "lowCoverPer100": 2.055498458376156,
+      "interiorPropsPerBuilding": 15.6,
+      "slopes": 453,
+      "slopeShare": 1,
+      "steps": { "flat": 2947, "half": 627, "cliff": 146 },
+      "ramps": 32,
+      "footprintMean": 58.8,
+      "roomsPerFloor": 4.7,
+      "corridorBuildings": 2,
+      "stairs": 7,
+      "ladders": 1,
+      "maxFloors": 3,
+      "hatchSpaceMin": 13,
+      "hatchSpaceMean": 17
+    },
+    "minimumHatchSpace": 13,
+    "violations": [],
+    "notes": [
+      {
+        "pass": "dropship-sites",
+        "message": "dropship on e: 38 cut columns, 51 layer-columns excavated, 16 external boarding columns",
+        "at": { "x": 19, "y": 2, "z": 16 }
+      },
+      {
+        "pass": "connectivity",
+        "message": "5 hook/class checks, 0 repairs, 0 relocations"
+      }
+    ],
+    "buildings": 5,
+    "props": 203
+  },
+  {
+    "recipe": {
+      "seed": "wide-{\"width\":40,\"depth\":56}/snowy/town/10",
+      "params": {
+        "archetype": "settlement",
+        "biome": "snowy",
+        "settlement": "town",
+        "size": { "width": 40, "depth": 56 },
+        "hooks": [
+          { "kind": "deploy", "count": 1, "requiredPass": 3 },
+          {
+            "kind": "egg-spawner",
+            "count": 3,
+            "requiredPass": 1,
+            "minDistanceFromDeploy": 12,
+            "maxNearestDistanceFromDeploy": 30,
+            "meta": { "hatchRadius": 3 }
+          },
+          { "kind": "edge-spawn", "count": 2, "requiredPass": 1 },
+          { "kind": "extraction", "count": 1, "requiredPass": 3 }
+        ],
+        "slopeShare": 1
+      }
+    },
+    "mapHash": "cbc1aceb3af279d164e971b86469ff120a74b563554127517e73f6ca67582d03",
+    "roadsPassHash": "eb6bb30a032b454a6d94eee7a590523d9e8814bef4b0e01fa6c11b029c6b7ab4",
+    "roadSegmentsHash": "67f75e37c66bfa31ad046fe9cc71cc0ec22db62f36ef927bdbf44fcb3d887b0d",
+    "roadPaintHash": "909d10bc74da2f4afd1996f943cdbb7cb66726cccfe797b68f1f8aeee2acfa3e",
+    "usedExistingGrade": false,
+    "reservationCuts": [
+      { "x": 9, "z": 0, "before": 1, "after": 0 },
+      { "x": 9, "z": 1, "before": 1, "after": 0 },
+      { "x": 9, "z": 2, "before": 1, "after": 0 },
+      { "x": 13, "z": 3, "before": 1, "after": 0 },
+      { "x": 14, "z": 3, "before": 1, "after": 0 },
+      { "x": 15, "z": 3, "before": 1, "after": 0 },
+      { "x": 11, "z": 4, "before": 1, "after": 0 },
+      { "x": 12, "z": 4, "before": 1, "after": 0 },
+      { "x": 13, "z": 4, "before": 1, "after": 0 },
+      { "x": 14, "z": 4, "before": 1, "after": 0 },
+      { "x": 15, "z": 4, "before": 1, "after": 0 },
+      { "x": 10, "z": 5, "before": 1, "after": 0 },
+      { "x": 11, "z": 5, "before": 1, "after": 0 },
+      { "x": 12, "z": 5, "before": 1, "after": 0 },
+      { "x": 13, "z": 5, "before": 2, "after": 0 },
+      { "x": 14, "z": 5, "before": 2, "after": 0 },
+      { "x": 15, "z": 5, "before": 2, "after": 0 },
+      { "x": 16, "z": 5, "before": 2, "after": 1 },
+      { "x": 10, "z": 6, "before": 1, "after": 0 },
+      { "x": 11, "z": 6, "before": 1, "after": 0 },
+      { "x": 12, "z": 6, "before": 1, "after": 0 },
+      { "x": 13, "z": 6, "before": 2, "after": 0 },
+      { "x": 14, "z": 6, "before": 2, "after": 0 },
+      { "x": 15, "z": 6, "before": 2, "after": 0 },
+      { "x": 16, "z": 6, "before": 2, "after": 1 },
+      { "x": 10, "z": 7, "before": 1, "after": 0 },
+      { "x": 11, "z": 7, "before": 1, "after": 0 },
+      { "x": 12, "z": 7, "before": 2, "after": 0 },
+      { "x": 13, "z": 7, "before": 2, "after": 0 },
+      { "x": 14, "z": 7, "before": 2, "after": 0 },
+      { "x": 15, "z": 7, "before": 2, "after": 0 },
+      { "x": 16, "z": 7, "before": 2, "after": 1 },
+      { "x": 11, "z": 8, "before": 1, "after": 0 },
+      { "x": 12, "z": 8, "before": 1, "after": 0 },
+      { "x": 13, "z": 8, "before": 2, "after": 0 },
+      { "x": 14, "z": 8, "before": 2, "after": 0 },
+      { "x": 15, "z": 8, "before": 2, "after": 0 },
+      { "x": 16, "z": 8, "before": 2, "after": 1 },
+      { "x": 10, "z": 9, "before": 1, "after": 0 },
+      { "x": 11, "z": 9, "before": 1, "after": 0 },
+      { "x": 12, "z": 9, "before": 1, "after": 0 },
+      { "x": 13, "z": 9, "before": 1, "after": 0 },
+      { "x": 14, "z": 9, "before": 2, "after": 0 },
+      { "x": 15, "z": 9, "before": 2, "after": 0 },
+      { "x": 16, "z": 9, "before": 2, "after": 1 },
+      { "x": 9, "z": 10, "before": 1, "after": 0 },
+      { "x": 10, "z": 10, "before": 1, "after": 0 },
+      { "x": 11, "z": 10, "before": 1, "after": 0 },
+      { "x": 12, "z": 10, "before": 1, "after": 0 },
+      { "x": 13, "z": 10, "before": 1, "after": 0 },
+      { "x": 14, "z": 10, "before": 1, "after": 0 },
+      { "x": 15, "z": 10, "before": 1, "after": 0 },
+      { "x": 8, "z": 11, "before": 2, "after": 1 },
+      { "x": 9, "z": 11, "before": 1, "after": 0 },
+      { "x": 10, "z": 11, "before": 1, "after": 0 },
+      { "x": 11, "z": 11, "before": 1, "after": 0 },
+      { "x": 7, "z": 12, "before": 3, "after": 2 },
+      { "x": 8, "z": 12, "before": 2, "after": 1 },
+      { "x": 9, "z": 12, "before": 1, "after": 0 },
+      { "x": 10, "z": 12, "before": 1, "after": 0 },
+      { "x": 11, "z": 12, "before": 1, "after": 0 },
+      { "x": 9, "z": 13, "before": 2, "after": 1 }
+    ],
+    "sites": [
+      {
+        "deployZoneId": "hook-1",
+        "clearance": { "x": 9, "z": 0, "w": 7, "d": 13 },
+        "footprint": { "x": 10, "z": 1, "w": 5, "d": 7 },
+        "facing": "n",
+        "level": 0
+      }
+    ],
+    "deploy": [
+      {
+        "id": "hook-1",
+        "kind": "deploy",
+        "tiles": [
+          { "x": 10, "y": 0, "z": 8 },
+          { "x": 11, "y": 0, "z": 8 },
+          { "x": 12, "y": 0, "z": 8 },
+          { "x": 13, "y": 0, "z": 8 },
+          { "x": 10, "y": 0, "z": 9 },
+          { "x": 11, "y": 0, "z": 9 },
+          { "x": 12, "y": 0, "z": 9 },
+          { "x": 13, "y": 0, "z": 9 },
+          { "x": 10, "y": 0, "z": 10 },
+          { "x": 11, "y": 0, "z": 10 },
+          { "x": 12, "y": 0, "z": 10 },
+          { "x": 13, "y": 0, "z": 10 },
+          { "x": 10, "y": 0, "z": 11 },
+          { "x": 11, "y": 0, "z": 11 },
+          { "x": 12, "y": 0, "z": 11 },
+          { "x": 13, "y": 0, "z": 11 }
+        ],
+        "requiredPass": 3
+      }
+    ],
+    "metrics": {
+      "groundTiles": 2023,
+      "openTiles": 1860,
+      "coverAdjacency": 0.1064516129032258,
+      "wallAdjacency": 0.08817204301075268,
+      "coveredSidesMean": 0.21236559139784947,
+      "coveredShare": 0.17634408602150536,
+      "flankProofShare": 0.03333333333333333,
+      "closedSidesMean": 1.167741935483871,
+      "shelteredShare": 0.7075268817204301,
+      "backToWallShare": 0.3720430107526882,
+      "highCoverPer100": 4.5477014335145824,
+      "lowCoverPer100": 1.7795353435491843,
+      "interiorPropsPerBuilding": 13,
+      "slopes": 569,
+      "slopeShare": 1,
+      "steps": { "flat": 2966, "half": 754, "cliff": 170 },
+      "ramps": 30,
+      "footprintMean": 54.25,
+      "roomsPerFloor": 5.875,
+      "corridorBuildings": 1,
+      "stairs": 6,
+      "ladders": 0,
+      "maxFloors": 3,
+      "hatchSpaceMin": 7,
+      "hatchSpaceMean": 13.333333333333334
+    },
+    "minimumHatchSpace": 7,
+    "violations": [],
+    "notes": [
+      {
+        "pass": "dropship-sites",
+        "message": "dropship on n: 62 cut columns, 77 layer-columns excavated, 16 external boarding columns",
+        "at": { "x": 10, "y": 0, "z": 8 }
+      },
+      {
+        "pass": "connectivity",
+        "message": "5 hook/class checks, 0 repairs, 0 relocations"
+      }
+    ],
+    "buildings": 4,
+    "props": 180
+  },
+  {
+    "recipe": {
+      "seed": "mc-resume-03",
+      "params": {
+        "archetype": "settlement",
+        "biome": "snowy",
+        "settlement": "town",
+        "size": "small",
+        "hooks": [
+          { "kind": "deploy", "count": 1, "requiredPass": 3 },
+          {
+            "kind": "egg-spawner",
+            "count": 3,
+            "requiredPass": 1,
+            "minDistanceFromDeploy": 12,
+            "maxNearestDistanceFromDeploy": 30,
+            "meta": { "hatchRadius": 3 }
+          },
+          { "kind": "edge-spawn", "count": 2, "requiredPass": 1 },
+          { "kind": "extraction", "count": 1, "requiredPass": 3 }
+        ],
+        "slopeShare": 1
+      }
+    },
+    "mapHash": "c28bd2c38566a17b4928d8052c67a256dbdb1012e4a0ff3026cec39ae46c302b",
+    "roadsPassHash": "3b5da24b3ecc866604c43263204ed3506a806e3865a9f9ed90c130356f7219fd",
+    "roadSegmentsHash": "c8768a8f49052eafa52a125391c1c39f493b65eb8937caa2888e2b0551328062",
+    "roadPaintHash": "bffd3eb8ad96adfbdfd8e552542d2bf246699691d4f8e8059e59843366e78c9f",
+    "usedExistingGrade": false,
+    "reservationCuts": [
+      { "x": 21, "z": 40, "before": 1, "after": 0 },
+      { "x": 22, "z": 40, "before": 1, "after": 0 },
+      { "x": 23, "z": 40, "before": 1, "after": 0 },
+      { "x": 24, "z": 40, "before": 1, "after": 0 },
+      { "x": 21, "z": 45, "before": 1, "after": 0 },
+      { "x": 22, "z": 45, "before": 1, "after": 0 },
+      { "x": 20, "z": 46, "before": 1, "after": 0 },
+      { "x": 21, "z": 46, "before": 1, "after": 0 },
+      { "x": 22, "z": 46, "before": 1, "after": 0 },
+      { "x": 23, "z": 46, "before": 1, "after": 0 }
+    ],
+    "sites": [
+      {
+        "deployZoneId": "hook-1",
+        "clearance": { "x": 12, "z": 40, "w": 13, "d": 7 },
+        "footprint": { "x": 13, "z": 41, "w": 7, "d": 5 },
+        "facing": "w",
+        "level": 0
+      }
+    ],
+    "deploy": [
+      {
+        "id": "hook-1",
+        "kind": "deploy",
+        "tiles": [
+          { "x": 20, "y": 0, "z": 41 },
+          { "x": 20, "y": 0, "z": 42 },
+          { "x": 20, "y": 0, "z": 43 },
+          { "x": 20, "y": 0, "z": 44 },
+          { "x": 21, "y": 0, "z": 41 },
+          { "x": 21, "y": 0, "z": 42 },
+          { "x": 21, "y": 0, "z": 43 },
+          { "x": 21, "y": 0, "z": 44 },
+          { "x": 22, "y": 0, "z": 41 },
+          { "x": 22, "y": 0, "z": 42 },
+          { "x": 22, "y": 0, "z": 43 },
+          { "x": 22, "y": 0, "z": 44 },
+          { "x": 23, "y": 0, "z": 41 },
+          { "x": 23, "y": 0, "z": 42 },
+          { "x": 23, "y": 0, "z": 43 },
+          { "x": 23, "y": 0, "z": 44 }
+        ],
+        "requiredPass": 3
+      }
+    ],
+    "metrics": {
+      "groundTiles": 1976,
+      "openTiles": 1834,
+      "coverAdjacency": 0.10359869138495092,
+      "wallAdjacency": 0.09814612868047982,
+      "coveredSidesMean": 0.22464558342420937,
+      "coveredShare": 0.18920392584514723,
+      "flankProofShare": 0.03162486368593239,
+      "closedSidesMean": 1.0278080697928027,
+      "shelteredShare": 0.6406761177753544,
+      "backToWallShare": 0.3124318429661941,
+      "highCoverPer100": 3.54251012145749,
+      "lowCoverPer100": 1.8724696356275303,
+      "interiorPropsPerBuilding": 19,
+      "slopes": 461,
+      "slopeShare": 1,
+      "steps": { "flat": 3017, "half": 605, "cliff": 153 },
+      "ramps": 31,
+      "footprintMean": 65.6,
+      "roomsPerFloor": 5.363636363636363,
+      "corridorBuildings": 4,
+      "stairs": 9,
+      "ladders": 1,
+      "maxFloors": 3,
+      "hatchSpaceMin": 7,
+      "hatchSpaceMean": 17
+    },
+    "minimumHatchSpace": 7,
+    "violations": [],
+    "notes": [
+      {
+        "pass": "dropship-sites",
+        "message": "dropship on w: 10 cut columns, 10 layer-columns excavated, 16 external boarding columns",
+        "at": { "x": 20, "y": 0, "z": 41 }
+      },
+      {
+        "pass": "connectivity",
+        "message": "5 hook/class checks, 0 repairs, 0 relocations"
+      }
+    ],
+    "buildings": 5,
+    "props": 202
+  }
+]

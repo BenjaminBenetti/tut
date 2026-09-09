@@ -1,0 +1,41 @@
+{
+  "maps": 108,
+  "mismatches": {
+    "roadsPassHash": 0,
+    "roadSegmentsHash": 0,
+    "roadPaintHash": 0
+  },
+  "withAircraft": 108,
+  "ungraded": 98,
+  "cutColumns": 154,
+  "maxCut": 1,
+  "raisedColumns": 0,
+  "insetHistogram": { "4": 107, "8": 0, "12": 1 },
+  "failed": [],
+  "settlements": [
+    {
+      "scale": "rural",
+      "maps": 36,
+      "buildings": [96, 96],
+      "props": [13900, 13686],
+      "meanCoverAdjacency": [0.1494432115911748, 0.14754270755784057],
+      "meanOpenTiles": [4651.472222222223, 4622.944444444444]
+    },
+    {
+      "scale": "town",
+      "maps": 36,
+      "buildings": [377, 371],
+      "props": [17246, 17090],
+      "meanCoverAdjacency": [0.1516745131115652, 0.14874250329570737],
+      "meanOpenTiles": [4224.75, 4202.444444444444]
+    },
+    {
+      "scale": "city",
+      "maps": 36,
+      "buildings": [507, 488],
+      "props": [16409, 15666],
+      "meanCoverAdjacency": [0.12732332625565312, 0.12292812099751317],
+      "meanOpenTiles": [4265.583333333333, 4269.777777777777]
+    }
+  ]
+}

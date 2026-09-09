@@ -1,0 +1,184 @@
+{
+  "id": "narrow-cut",
+  "biome": "snowy",
+  "settlement": "town",
+  "size": {
+    "width": 40,
+    "depth": 56
+  },
+  "seed": "wide-{\"width\":40,\"depth\":56}/snowy/town/10",
+  "pitch": 60,
+  "rotation": 0,
+  "clip": {
+    "x": 750,
+    "y": 250,
+    "width": 1200,
+    "height": 1000
+  },
+  "focus": {
+    "x": 12,
+    "y": 0,
+    "z": 6
+  },
+  "site": {
+    "deployZoneId": "hook-1",
+    "clearance": {
+      "x": 9,
+      "z": 0,
+      "w": 7,
+      "d": 13
+    },
+    "footprint": {
+      "x": 10,
+      "z": 1,
+      "w": 5,
+      "d": 7
+    },
+    "facing": "n",
+    "level": 0
+  },
+  "deploy": {
+    "id": "hook-1",
+    "kind": "deploy",
+    "tiles": [
+      {
+        "x": 10,
+        "y": 0,
+        "z": 8
+      },
+      {
+        "x": 11,
+        "y": 0,
+        "z": 8
+      },
+      {
+        "x": 12,
+        "y": 0,
+        "z": 8
+      },
+      {
+        "x": 13,
+        "y": 0,
+        "z": 8
+      },
+      {
+        "x": 10,
+        "y": 0,
+        "z": 9
+      },
+      {
+        "x": 11,
+        "y": 0,
+        "z": 9
+      },
+      {
+        "x": 12,
+        "y": 0,
+        "z": 9
+      },
+      {
+        "x": 13,
+        "y": 0,
+        "z": 9
+      },
+      {
+        "x": 10,
+        "y": 0,
+        "z": 10
+      },
+      {
+        "x": 11,
+        "y": 0,
+        "z": 10
+      },
+      {
+        "x": 12,
+        "y": 0,
+        "z": 10
+      },
+      {
+        "x": 13,
+        "y": 0,
+        "z": 10
+      },
+      {
+        "x": 10,
+        "y": 0,
+        "z": 11
+      },
+      {
+        "x": 11,
+        "y": 0,
+        "z": 11
+      },
+      {
+        "x": 12,
+        "y": 0,
+        "z": 11
+      },
+      {
+        "x": 13,
+        "y": 0,
+        "z": 11
+      }
+    ],
+    "requiredPass": 3
+  },
+  "notes": [
+    {
+      "pass": "dropship-sites",
+      "message": "dropship on n: 62 cut columns, 77 layer-columns excavated, 16 external boarding columns",
+      "at": {
+        "x": 10,
+        "y": 0,
+        "z": 8
+      }
+    }
+  ],
+  "url": "http://127.0.0.1:5178/mapgen-preview.html?seed=wide-%7B%22width%22%3A40%2C%22depth%22%3A56%7D%2Fsnowy%2Ftown%2F10&biome=snowy&settlement=town&size=small&models=1&units=1&slope=100",
+  "recipeInput": "Capture supplies exact custom dimensions to Map Lab's real recipe; the preset URL alone does not reproduce this case.",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "camera": {
+    "yawIndex": 0,
+    "zoom": 73.48469228349515,
+    "target": {
+      "x": 12.5,
+      "y": 0.15,
+      "z": 6.5
+    },
+    "bounds": {
+      "x": 0,
+      "z": 0,
+      "w": 40,
+      "d": 56
+    },
+    "zoomRange": {
+      "min": 29.757410374933876,
+      "max": 192
+    }
+  },
+  "rendering": {
+    "timingMethod": "RAF interval with gl.finish(), discard first four of twelve frames; software renderer, not a hardware FPS claim",
+    "frameMs": [
+      2226.7999999523163, 1939.2000000476837, 1080.2000000476837,
+      5197.299999952316, 4371.700000047684, 1961.7999999523163,
+      4634.700000047684, 2862.4000000953674
+    ],
+    "render": {
+      "frame": 43,
+      "calls": 1325,
+      "triangles": 409074,
+      "points": 0,
+      "lines": 0
+    },
+    "memory": {
+      "geometries": 1484,
+      "textures": 39
+    },
+    "programs": 17
+  },
+  "elapsedMs": 64169.649473
+}

@@ -87,10 +87,11 @@ async function tilePitch(page: Page, x: number, z: number) {
  *      tile          ground under it, which selects the tile instead
  * ```
  *
- * A mech stands about a tile tall, so its feet sit on the tile the pick
- * ray reaches first; aiming half a tile pitch above them lands on the
- * model. The pitch is measured rather than hard-coded so this does not
- * quietly become a fixed-zoom test.
+ * The starter mech's visible torso is two projected ground-tile pitches
+ * above its feet at this fixture's scale and arrival view. Half a pitch
+ * shoots through the leg gap after #911 moves the landing. This is an
+ * authored-art target, not a generic body-position formula; the real click
+ * must hit the model, with pitch measured at the current zoom.
  */
 test("clicking a unit on the tactical map selects it and arms its actions", async ({
   page,
@@ -141,8 +142,8 @@ test("clicking a unit on the tactical map selects it and arms its actions", asyn
   const pitch = await tilePitch(page, 20, 20);
   expect(pitch, "could not measure the tile pitch").toBeDefined();
 
-  // The click under test: the unit's body, half a tile pitch above its feet.
-  await page.mouse.click(feet!.x, feet!.y - pitch! / 2);
+  // The click under test: the visible starter-mech torso, clear of its leg gap.
+  await page.mouse.click(feet!.x, feet!.y - pitch! * 2);
 
   await expect(body).toHaveAttribute("data-selected-unit", "unit-1");
   await expect(body).toHaveAttribute("data-last-intent", "select-unit");

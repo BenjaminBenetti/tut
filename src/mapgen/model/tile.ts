@@ -25,7 +25,7 @@ export interface Tile extends TileCoord {
   readonly surface: SurfaceId;
   /**
    * Who may stand here. Denormalised by the finalize pass from surface,
-   * props, walls and buildings; tactical never re-derives it.
+   * props, landed aircraft, walls and buildings; tactical never re-derives it.
    */
   readonly pass: PassMask;
   /** Thin walls on this tile's edges, mirrored on the neighbour (I3). */
@@ -36,8 +36,8 @@ export interface Tile extends TileCoord {
   readonly coverProvided: CoverLevel;
   /**
    * True when what occupies the tile blocks line of sight through it.
-   * Denormalised from the prop definition; false without a prop, so a
-   * sight rule never needs the prop registry.
+   * Denormalised from the prop definition or landed aircraft envelope,
+   * so a sight rule never needs the prop registry or a scene model.
    */
   readonly blocksLos: boolean;
   /** Set on interior floor, stair and roof tiles. */

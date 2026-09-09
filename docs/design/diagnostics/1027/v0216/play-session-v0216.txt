@@ -1,0 +1,41 @@
+=== v0.2.16 (1131c90) play session, seed 4242 ===
+units: unit-1=Hammerhead unit-2=Rifle Squad unit-3=Rifle Squad
+
+[TRAVEL on v0.2.16] unit-1 at 772,500
+  action bar 473 px | unit card 678 px | event log 675 px | squad strip 767 px
+  strip rows at y 120,156,193 — nearest row 745 px
+  strip says "3 to act"
+  t1 Hammerhead: preview refusal "Target is 16 tiles away; weapon reaches 10"
+  t1 Rifle Squad: preview refusal "Target is 15 tiles away; weapon reaches 8"
+
+*** CONTACT turn 4: 4 bugs
+  t7 Hammerhead fired at Swarmer (69% hit, 4 tiles · no cover) -> charges 3
+  t7 Rifle Squad fired at Swarmer (55% hit, 6 tiles · no cover) -> charges 2
+  t8 Hammerhead fired at Swarmer (73% hit, 2 tiles · no cover) -> charges 2
+  t8 Rifle Squad fired at Swarmer (65% hit, 1 tiles · no cover) -> charges 1
+  t8 Rifle Squad fired at Swarmer (65% hit, 1 tiles · no cover) -> charges 0
+  *** RAN DRY: unit-2 (Rifle Squad)
+      aiming again -> refusal "undefined"
+      status line: "Rifle Squad has no action points left"
+      action bar: move(unavail) | attack(unavail) | overwatch(unavail) | reload(unavail) | interact(unavail) | extract | end-turn
+      pressing ATTACK while dry -> status "Rifle Squad has no action points left"
+  t8 Rifle Squad fired at Swarmer (61% hit, 3 tiles · no cover) -> charges 2
+  t8 Rifle Squad fired at Swarmer (61% hit, 3 tiles · no cover) -> charges 1
+  t9 Hammerhead: preview refusal "Target is 13 tiles away; weapon reaches 10"
+  t9 Rifle Squad: preview refusal "Rifle Squad is out of charges; reload or vent first"
+  t9 Rifle Squad: preview refusal "Target is 14 tiles away; weapon reaches 8"
+  t10 Hammerhead fired at Lurker (63% hit, 7 tiles · no cover) -> charges 1
+  t10 Rifle Squad fired at Lurker (55% hit, 6 tiles · no cover) -> charges 0
+  t11 Hammerhead fired at Lurker (71% hit, 3 tiles · no cover) -> charges 0
+  t12 Hammerhead: preview refusal "Hammerhead is out of charges; reload or vent first"
+
+*** UNIT LOST turn 14: unit-3 (Rifle Squad)
+    log tail: ["Lurker hit Rifle Squad for 7","Rifle Squad destroyed","Swarmer hit Rifle Squad for 2","Swarmer missed Rifle Squad","Swarmer hit Rifle Squad for 2","Turn 14 — TDF phase"]
+    strip now: "2 to act" rows [{"id":"unit-1","spent":"false","text":"Hammerhead80 hp2 AP"},{"id":"unit-2","spent":"false","text":"Rifle Squad6 hp2 AP"}]
+
+reached every required state; playing two more turns then stopping
+
+reached every required state; playing two more turns then stopping
+
+END: turn 15, tdf alive 2, shots 10, ranDry true, lost true, contact true
+console/page errors: 0

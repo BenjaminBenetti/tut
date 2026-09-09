@@ -172,6 +172,11 @@ class FakeHost implements TacticalSceneHost {
     );
     return Promise.resolve();
   }
+  /** Units the screen asked to centre on (#1041). */
+  readonly lookedAt: string[] = [];
+  lookAtUnit(unitId: string): void {
+    this.lookedAt.push(unitId);
+  }
   select(unitId: string | undefined): void {
     this.calls.push(`select:${unitId ?? "none"}`);
   }

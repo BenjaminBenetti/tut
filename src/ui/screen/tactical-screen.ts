@@ -138,6 +138,12 @@ export class TacticalScreen implements Screen {
         onBack: () => {
           this.deps.router.navigate("overworld");
         },
+        // Bring a unit on screen (#1041). The camera rig has had
+        // `lookAt` all along; until now nothing called it after the
+        // opening frame, so a selected unit off screen had no way back.
+        onLookAt: (unitId) => {
+          this.deps.sceneHost?.lookAtUnit(unitId);
+        },
         onViewChange: () => {
           this.syncOverlays();
         },

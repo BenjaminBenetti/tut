@@ -1,0 +1,157 @@
+{
+  "frames": [
+    {
+      "case": "I01-city-frontages",
+      "beforeCommit": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+      "afterCommit": "2a979c7674ff87453a8637ad620426af7a8d8e65",
+      "byteIdentical": false,
+      "changedPixels": 35100,
+      "beforeSHA256": "99a838eb9eeb5cc0664134ec0c043fcac434f02e1e48b91bce15597b21f3fdaa",
+      "afterSHA256": "ac7a4e4f4ae107fc8fbbd3d7c18e2c8b9aa1bca486006675996cfdfa77cf0d02"
+    },
+    {
+      "case": "I02-city-frontages-rotated",
+      "beforeCommit": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+      "afterCommit": "2a979c7674ff87453a8637ad620426af7a8d8e65",
+      "byteIdentical": false,
+      "changedPixels": 29283,
+      "beforeSHA256": "92b988b13752b974fca9fdcb5a45093fd529e655362364e85760aa54f8fbb744",
+      "afterSHA256": "0d85cc58fa8664178ff80bfd3545a018c681302624ad71319031226c3944e5c0"
+    },
+    {
+      "case": "S01-nearby-shop-workplace-home",
+      "beforeCommit": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+      "afterCommit": "2a979c7674ff87453a8637ad620426af7a8d8e65",
+      "byteIdentical": false,
+      "changedPixels": 23980,
+      "beforeSHA256": "eef6af5f20ad71b8bc8ad4c3dfd6bc3a18c03830cd76f27630dc6ea1ab2690ba",
+      "afterSHA256": "8d150455c7b27825ccbdbe9a8dbda817521bb899053981664540d898d71d94df"
+    },
+    {
+      "case": "I03-second-seed",
+      "beforeCommit": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+      "afterCommit": "2a979c7674ff87453a8637ad620426af7a8d8e65",
+      "byteIdentical": false,
+      "changedPixels": 48275,
+      "beforeSHA256": "4727486f3a37f8b30161f9712a50ad0fb5fe6fff2e394625685c90c2d450135c",
+      "afterSHA256": "37c8f0d42e85a8f0f429a1cc9598016eac1bf925ba246a6fda6fb5db806bed4c"
+    },
+    {
+      "case": "I04-second-seed-rotated",
+      "beforeCommit": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+      "afterCommit": "2a979c7674ff87453a8637ad620426af7a8d8e65",
+      "byteIdentical": false,
+      "changedPixels": 42704,
+      "beforeSHA256": "24c78faf3380188bda3092ad1a8f5d90ec1671ed1774f547d5611367ce0e40e2",
+      "afterSHA256": "f56707438c7dcdb323ca928c6f9f4768b1e459fb62fc295861435033c50cf91f"
+    },
+    {
+      "case": "C01-rural-roof-control",
+      "beforeCommit": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+      "afterCommit": "2a979c7674ff87453a8637ad620426af7a8d8e65",
+      "byteIdentical": true,
+      "changedPixels": 0,
+      "beforeSHA256": "5ee845a569d00950133657bccd5b8e90dbcfe3a09cf3f364c9c2da641b029aa5",
+      "afterSHA256": "5ee845a569d00950133657bccd5b8e90dbcfe3a09cf3f364c9c2da641b029aa5"
+    },
+    {
+      "case": "flat-closed",
+      "beforeCommit": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+      "afterCommit": "f0bd0b9302cd4c3d5a1f39184332ce9992d63b7b",
+      "byteIdentical": false,
+      "changedPixels": 17055,
+      "beforeSHA256": "12c18fda1c716877aec0254a1b45cbf3926348944c25468d6522a3c2cdc0c382",
+      "afterSHA256": "99f0e9c9db831449ad730c0042991e2724ac516423526b19547a9e68752fa1bd"
+    },
+    {
+      "case": "flat-ground-storey",
+      "beforeCommit": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+      "afterCommit": "f0bd0b9302cd4c3d5a1f39184332ce9992d63b7b",
+      "byteIdentical": false,
+      "changedPixels": 5187,
+      "beforeSHA256": "bf02d9bfd61395156492f657ca765287c4a49cc9795454b99e5bd2656b3f94e2",
+      "afterSHA256": "59aeb0e9c5a18a073e9c3be7b55023ecf556c5804f68ff2e87a222dc74678b20"
+    },
+    {
+      "case": "flat-levels-restored",
+      "beforeCommit": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+      "afterCommit": "f0bd0b9302cd4c3d5a1f39184332ce9992d63b7b",
+      "byteIdentical": false,
+      "changedPixels": 17055,
+      "beforeSHA256": "12c18fda1c716877aec0254a1b45cbf3926348944c25468d6522a3c2cdc0c382",
+      "afterSHA256": "99f0e9c9db831449ad730c0042991e2724ac516423526b19547a9e68752fa1bd"
+    },
+    {
+      "case": "flat-fog-states",
+      "beforeCommit": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+      "afterCommit": "f0bd0b9302cd4c3d5a1f39184332ce9992d63b7b",
+      "byteIdentical": false,
+      "changedPixels": 17033,
+      "beforeSHA256": "b5056002bc8b346c28a574fac147f33c31f6db4144c7733b8507a0c610299aad",
+      "afterSHA256": "f373af9130ed002bfea21ef6a50cc0381500106721381d211ae43bac2567572f"
+    },
+    {
+      "case": "flat-vision-restored",
+      "beforeCommit": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+      "afterCommit": "f0bd0b9302cd4c3d5a1f39184332ce9992d63b7b",
+      "byteIdentical": false,
+      "changedPixels": 17055,
+      "beforeSHA256": "12c18fda1c716877aec0254a1b45cbf3926348944c25468d6522a3c2cdc0c382",
+      "afterSHA256": "99f0e9c9db831449ad730c0042991e2724ac516423526b19547a9e68752fa1bd"
+    },
+    {
+      "case": "flat-squad",
+      "beforeCommit": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+      "afterCommit": "f0bd0b9302cd4c3d5a1f39184332ce9992d63b7b",
+      "byteIdentical": false,
+      "changedPixels": 14649,
+      "beforeSHA256": "099e195d3dd7613687fbdccbe9f7528767c8284183d68bc6fb3911e15a13a8ce",
+      "afterSHA256": "793279e9bcae0987b5cc26854b23385832b835faadb9df1d67ac48d45955c36a"
+    },
+    {
+      "case": "flat-squad-left",
+      "beforeCommit": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+      "afterCommit": "f0bd0b9302cd4c3d5a1f39184332ce9992d63b7b",
+      "byteIdentical": false,
+      "changedPixels": 17055,
+      "beforeSHA256": "12c18fda1c716877aec0254a1b45cbf3926348944c25468d6522a3c2cdc0c382",
+      "afterSHA256": "99f0e9c9db831449ad730c0042991e2724ac516423526b19547a9e68752fa1bd"
+    },
+    {
+      "case": "flat-two-squads",
+      "beforeCommit": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+      "afterCommit": "f0bd0b9302cd4c3d5a1f39184332ce9992d63b7b",
+      "byteIdentical": false,
+      "changedPixels": 11220,
+      "beforeSHA256": "49728e7f21a2c091bac5876dc36fbbc00b6e78e20cfafe3b6bb433140981ecb8",
+      "afterSHA256": "eeed2fc071a5758241a5c90e5b5e4ed784bcef691aff0876e182d51fb8595e99"
+    },
+    {
+      "case": "flat-two-squads-left",
+      "beforeCommit": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+      "afterCommit": "f0bd0b9302cd4c3d5a1f39184332ce9992d63b7b",
+      "byteIdentical": false,
+      "changedPixels": 17055,
+      "beforeSHA256": "12c18fda1c716877aec0254a1b45cbf3926348944c25468d6522a3c2cdc0c382",
+      "afterSHA256": "99f0e9c9db831449ad730c0042991e2724ac516423526b19547a9e68752fa1bd"
+    }
+  ],
+  "maps": [
+    {
+      "seed": "mc-resume-01",
+      "byteIdentical": true,
+      "sha256": "0daccd791243a2d0e0174af720f53679f1a1068d21576783494019b508dec6e9"
+    },
+    {
+      "seed": "mc-opening-02",
+      "byteIdentical": true,
+      "sha256": "8aabfd432c6952a2dc1cee44f8f7f7e7e0bfae46142b2d55f29f48360dd9e72b"
+    },
+    {
+      "seed": "mc-opening-01",
+      "byteIdentical": true,
+      "sha256": "e06f78b06d838c08b47f5f4775e8c893aea678024b0b48825f2a74d6d7e67522"
+    }
+  ],
+  "closureChecks": "Restoring all levels, full vision and both unit departures equals each phase's closed roof."
+}

@@ -66,6 +66,22 @@ bounds. For each entrance canopy, a conservative triangle-bounds test finds
 zero triangles inside the 0.60 u clear door width below its 1.20 u head after
 mounting. The native source and three-angle renders accompany the kit.
 
-These baseline and model checks are evidence in progress. Final scene judgment,
-complete validation and the integrated after frames are required before this
-is a completed repair.
+All 30 paired context/visibility PNGs repeated byte-identically in separate
+browsers. The nine visibility cases per phase use baseline `9d9ea01` and after
+`f0bd0b9` (same runtime as the context after). All distinct views were opened.
+The attachments follow the wall’s fog and unit reveal, and upper-storey details
+leave with the real layer cut. In each phase, restoring levels, restoring full
+vision, and both unit departures reproduce the closed roof exactly: eight
+independent closure checks. `comparisons.json` records every pair’s SHA and
+changed-pixel count, plus the three exact full-map controls.
+
+My read: the domestic guards/planters and shared-entry mail make the apartment
+and house fronts less anonymous, while the nearby shop awning and broader work
+canopy supply a contrasting use where those kinds actually occur. Existing
+heights, restrained windows, roofs and roof access remain useful. The shallow
+guards are not standing balconies. The reported second group remains apartments.
+Generic yard boxes/sandbags/rocks are unchanged; MapGen’s supporting outdoor
+arrangement remains open. This is a frontage-kit submission for Director and
+Critic judgment, not a claim that the whole #960 outcome is complete.
+
+The live seed-4242 fog frames and final validation results accompany the PR.

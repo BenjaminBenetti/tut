@@ -1,0 +1,28 @@
+=== BASELINE on b4acf3f ===
+
+[TRAVEL] unit-1 at 772,500
+  action bar 473 px | unit card 678 px | event log 675 px
+  boxes {"actionBar":{"cx":800,"cy":972,"x":16,"y":956,"w":1568,"h":32},"side":{"cx":1450,"cy":492,"x":1316,"y":57,"w":268,"h":870},"log":{"cx":212,"cy":878,"x":16,"y":829,"w":392,"h":98},"preview":{"cx":0,"cy":0,"x":0,"y":0,"w":0,"h":0},"top":{"cx":800,"cy":21,"x":0,"y":0,"w":1600,"h":41}}
+
+[SELECTION] first-click select, per unit, at each floor
+  floor 5 / 5: unit-1:ok on offset 0 | unit-2:ok on offset 0 | unit-3:ok on offset 0
+  floor 4 / 5: unit-1:ok on offset 0 | unit-2:ok on offset 0 | unit-3:ok on offset 0
+  floor 3 / 5: unit-1:ok on offset 0 | unit-2:ok on offset 0 | unit-3:ok on offset 0
+  floor 2 / 5: unit-1:ok on offset 0 | unit-2:ok on offset 0 | unit-3:ok on offset 0
+  floor 1 / 5: unit-1:ok on offset 0 | unit-2:ok on offset 0 | unit-3:ok on offset 0
+
+[ROTATION] q / e
+
+[OVERLAY] arming Move on a squad
+  squad at 800,484; frame saved for colour/shape comparison
+
+[PREVIEW CHIPS]
+  {"target":"Egg spawner","hit":"—","dmg":"—","chips":""}
+
+[END TURN] with unspent units
+  AP before: unit-1 ap2 unit-2 ap2 unit-3 ap2
+  confirm dialogs 0 -> 0; status slot {"hidden":true,"text":""}
+
+[ROSTER] squad list present: false; elements carrying a unit id: 0
+
+page errors: 0

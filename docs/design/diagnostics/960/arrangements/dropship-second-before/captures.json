@@ -1,0 +1,102 @@
+{
+  "baseCommit": "f44063a6d8f71171e225c623d6d26ee6c7502e66",
+  "repeatedBrowsers": 2,
+  "records": [
+    {
+      "id": "I03-second-seed",
+      "seed": "mc-opening-02",
+      "biome": "temperate",
+      "settlement": "city",
+      "size": "medium",
+      "focus": {
+        "x": 23,
+        "y": 1,
+        "z": 34
+      },
+      "rotation": 0,
+      "camera": {
+        "yawIndex": 0,
+        "zoom": 55.11351921262153,
+        "target": {
+          "x": 23.5,
+          "y": 0.9,
+          "z": 34.5
+        },
+        "bounds": {
+          "x": 0,
+          "z": 0,
+          "w": 72,
+          "d": 72
+        },
+        "zoomRange": {
+          "min": 19.83827358328925,
+          "max": 192
+        }
+      },
+      "actualPitch": 45.00000000000009,
+      "pixel": {
+        "x": 1389.999999999999,
+        "y": 750.0000000000001
+      },
+      "clip": {
+        "x": 740,
+        "y": 225,
+        "width": 1300,
+        "height": 1050
+      },
+      "viewport": {
+        "width": 2400,
+        "height": 1500
+      },
+      "sha256": "013e8a2016874aca4065af51a12b7abcc21d05dc003db429235503ba9089e3d5"
+    },
+    {
+      "id": "I04-second-seed-rotated",
+      "seed": "mc-opening-02",
+      "biome": "temperate",
+      "settlement": "city",
+      "size": "medium",
+      "focus": {
+        "x": 23,
+        "y": 1,
+        "z": 34
+      },
+      "rotation": 1,
+      "camera": {
+        "yawIndex": 1,
+        "zoom": 55.11351921262129,
+        "target": {
+          "x": 23.5,
+          "y": 0.9,
+          "z": 34.5
+        },
+        "bounds": {
+          "x": 0,
+          "z": 0,
+          "w": 72,
+          "d": 72
+        },
+        "zoomRange": {
+          "min": 19.83827358328925,
+          "max": 192
+        }
+      },
+      "actualPitch": 44.99999999999984,
+      "pixel": {
+        "x": 1389.9999999999995,
+        "y": 750.0000000000005
+      },
+      "clip": {
+        "x": 740,
+        "y": 225,
+        "width": 1300,
+        "height": 1050
+      },
+      "viewport": {
+        "width": 2400,
+        "height": 1500
+      },
+      "sha256": "dd149d1f6b61b7aa9ae6c6ec46f30f3012afd12d74c732b0c251953462c11881"
+    }
+  ]
+}

@@ -170,10 +170,21 @@
         "relocations": 0,
         "seconds": 430.01,
         "exitCode": 0
+      },
+      "sim": {
+        "command": "node node_modules/vitest/vitest.mjs run --config vitest.sim.config.ts --maxWorkers=1",
+        "passed": 7,
+        "optionalSkipped": 1,
+        "seconds": 115.56,
+        "exitCode": 0
       }
     },
     "survey": "dropship-paired-survey.json",
-    "pending": ["sim", "browser", "fresh paired frames"],
+    "pending": [
+      "current combined browser gate / current-main integration",
+      "second reported pair and current supplemental context frames",
+      "Director judgment / TL merge / Critic merged-main re-check"
+    ],
     "captureFirstAttempt": {
       "exitCode": 143,
       "completedInitialViews": 2,
@@ -181,11 +192,23 @@
       "acceptedFrames": 0,
       "note": "Capture parent and helper terminated; leftover own Chromium closed. Restarted the same finite stage batch detached with persistent per-stage results."
     },
-    "status": "Paused for explicitly routed p1 #1089, draft #1095. Resume after submitting that fixture repair; studio checkpoint 2026-09-09 06:00 UTC.",
+    "status": "Resumed after submitting #1089/#1095; checkpoint before the 2026-09-09 06:00 UTC studio pause.",
     "captureSecondAttempt": {
       "status": "Author interrupted for #1089",
       "acceptedFrames": 0,
       "note": "Finite detached batch was stopped with all its browser descendants; incomplete captures retained only in scratch."
+    },
+    "captures": {
+      "frames": 6,
+      "independentBrowsersPerPhase": 2,
+      "allFramesInspected": true,
+      "ruralBeforeAfterPixelIdentical": true,
+      "folders": [
+        "dropship-first-and-control-before",
+        "dropship-first-and-control-after"
+      ],
+      "comparison": "dropship-frame-comparison.json",
+      "status": "First reported seed at both angles plus rural control complete; second reported pair and supplemental context remain."
     }
   }
 }

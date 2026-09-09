@@ -665,6 +665,61 @@ describe("TacticalHudView", () => {
   });
 
   /**
+   * QA's corrected row (#1062): the Move **button** explains this
+   * refusal, while the right click players actually move with says
+   * nothing. `moveTo` opened with `if (!this.canAct()) return`, and
+   * `canAct` is one boolean answering two questions — "this is not
+   * yours to move" and "this is yours and it cannot move now". Only the
+   * second is a refusal.
+   *
+   * The tapped bug is the control, and it is the point of the test: a
+   * change that made every stray click complain would pass the first
+   * half on its own.
+   */
+  it("a tile click by a spent unit says why; a tapped bug still says nothing", () => {
+    // Id and words kept apart, so "the words carry no id" is a real
+    // assertion rather than one defeated by the id this test prepended.
+    const notices: string[] = [];
+    const noticedUnits: string[] = [];
+    const { hud, commands } = setup({
+      onNotice: (unitId: string, text: string) => {
+        noticedUnits.push(unitId);
+        notices.push(text);
+      },
+    });
+    // s2 is the player's own squad, on the player's own turn, with no
+    // action points left. Move is armed by default (#519), so this is a
+    // plain right click on the tile beside it — no button pressed.
+    hud.handleIntent({ kind: "select-unit", unitId: "s2" });
+    hud.handleIntent({
+      kind: "invoke",
+      target: { kind: "tile", tile: { x: 2, y: 0, z: 3 } },
+    });
+    expect(commands).toEqual([]);
+    const status = root.querySelector<HTMLElement>('[data-role="status"]');
+    expect(status?.hidden).toBe(false);
+    expect(status?.textContent).toContain("no action points");
+    expect(notices).toHaveLength(1);
+    // Above the unit that could not act, not some other one.
+    expect(noticedUnits).toEqual(["s2"]);
+    // Named, not id'd, like every other refusal (#1035).
+    expect(notices[0]).toContain("Rifle Squad");
+    expect(notices[0]).not.toContain("s2");
+
+    // The control: a bug the player tapped to read its card never asked
+    // to walk, so the same click on it stays silent.
+    notices.length = 0;
+    noticedUnits.length = 0;
+    hud.handleIntent({ kind: "select-unit", unitId: "b1" });
+    hud.handleIntent({
+      kind: "invoke",
+      target: { kind: "tile", tile: { x: 5, y: 0, z: 1 } },
+    });
+    expect(commands).toEqual([]);
+    expect(notices).toEqual([]);
+  });
+
+  /**
    * The defect #1030 was filed for: an unavailable action used to return
    * in silence, so the player could not tell "fine" from "refused".
    *

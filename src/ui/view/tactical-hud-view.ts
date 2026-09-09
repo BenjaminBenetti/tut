@@ -716,9 +716,19 @@ export class TacticalHudView {
     }
     // Move is armed by default now (#519), so a tile click reaches here
     // with anything selected — including a bug the player tapped to read
-    // its card. Only the acting side walks; the rest is a quiet no-op
-    // rather than a refusal the player did not ask for.
-    if (!this.canAct()) {
+    // its card. That one stays a quiet no-op: the player did not ask it
+    // to walk, so there is nothing to refuse.
+    //
+    // Their own unit with no action points did ask, and used to get the
+    // same silence — QA measured it and traced it to this early return.
+    // The button already explains that refusal; the tile click is how a
+    // player actually moves, so it explaining nothing is the very
+    // inconsistency this ticket exists to remove.
+    const refusal = this.refusalFor("move");
+    if (refusal !== undefined) {
+      if (refusal.kind === "no-action-points") {
+        this.announceRefusal(refusal);
+      }
       return;
     }
     const path = pathTo(

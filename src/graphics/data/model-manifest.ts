@@ -391,6 +391,14 @@ export const MODEL_MANIFEST = {
     sockets: [],
     quality: "final",
   },
+  "prop.bench": {
+    category: "props",
+    path: "assets/models/props/prop-bench.glb",
+    footprint: { w: 1, d: 1 },
+    height: 0.45,
+    sockets: [],
+    quality: "final",
+  },
   "prop.table": {
     category: "props",
     path: "assets/models/props/table.glb",

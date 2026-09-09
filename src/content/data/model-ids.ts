@@ -49,6 +49,7 @@ export const MODEL_IDS = [
   "tdf.dropship",
   "bug.egg-spawner",
   "prop.barrier-concrete",
+  "prop.bench",
   "prop.boulder",
   "prop.cactus",
   "prop.car-compact",

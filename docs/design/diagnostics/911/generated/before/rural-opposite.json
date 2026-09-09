@@ -1,0 +1,180 @@
+{
+  "id": "rural-opposite",
+  "biome": "temperate",
+  "settlement": "rural",
+  "size": "small",
+  "seed": "mc-resume-01",
+  "pitch": 60,
+  "rotation": 2,
+  "clip": {
+    "x": 750,
+    "y": 250,
+    "width": 1200,
+    "height": 1000
+  },
+  "focus": {
+    "x": 6,
+    "y": 0,
+    "z": 32
+  },
+  "site": {
+    "deployZoneId": "hook-1",
+    "clearance": {
+      "x": 0,
+      "z": 29,
+      "w": 13,
+      "d": 7
+    },
+    "footprint": {
+      "x": 1,
+      "z": 30,
+      "w": 7,
+      "d": 5
+    },
+    "facing": "w",
+    "level": 0
+  },
+  "deploy": {
+    "id": "hook-1",
+    "kind": "deploy",
+    "tiles": [
+      {
+        "x": 8,
+        "y": 0,
+        "z": 30
+      },
+      {
+        "x": 8,
+        "y": 0,
+        "z": 31
+      },
+      {
+        "x": 8,
+        "y": 0,
+        "z": 32
+      },
+      {
+        "x": 8,
+        "y": 0,
+        "z": 33
+      },
+      {
+        "x": 9,
+        "y": 0,
+        "z": 30
+      },
+      {
+        "x": 9,
+        "y": 0,
+        "z": 31
+      },
+      {
+        "x": 9,
+        "y": 0,
+        "z": 32
+      },
+      {
+        "x": 9,
+        "y": 0,
+        "z": 33
+      },
+      {
+        "x": 10,
+        "y": 0,
+        "z": 30
+      },
+      {
+        "x": 10,
+        "y": 0,
+        "z": 31
+      },
+      {
+        "x": 10,
+        "y": 0,
+        "z": 32
+      },
+      {
+        "x": 10,
+        "y": 0,
+        "z": 33
+      },
+      {
+        "x": 11,
+        "y": 0,
+        "z": 30
+      },
+      {
+        "x": 11,
+        "y": 0,
+        "z": 31
+      },
+      {
+        "x": 11,
+        "y": 0,
+        "z": 32
+      },
+      {
+        "x": 11,
+        "y": 0,
+        "z": 33
+      }
+    ],
+    "requiredPass": 3
+  },
+  "notes": [
+    {
+      "pass": "dropship-sites",
+      "message": "dropship on w: 0 cut columns, 0 layer-columns excavated, 16 external boarding columns",
+      "at": {
+        "x": 8,
+        "y": 0,
+        "z": 30
+      }
+    }
+  ],
+  "url": "http://127.0.0.1:5178/mapgen-preview.html?seed=mc-resume-01&biome=temperate&settlement=rural&size=small&models=1&units=1&slope=100",
+  "recipeInput": "Unmodified Map Lab URL",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "camera": {
+    "yawIndex": 2,
+    "zoom": 73.48469228349558,
+    "target": {
+      "x": 6.5,
+      "y": 0.15,
+      "z": 32.5
+    },
+    "bounds": {
+      "x": 0,
+      "z": 0,
+      "w": 48,
+      "d": 48
+    },
+    "zoomRange": {
+      "min": 29.757410374933876,
+      "max": 192
+    }
+  },
+  "rendering": {
+    "timingMethod": "RAF interval with gl.finish(), discard first four of twelve frames; software renderer, not a hardware FPS claim",
+    "frameMs": [
+      19.59999990463257, 12, 19.600000143051147, 15.199999809265137,
+      14.900000095367432, 17, 16.700000047683716, 157
+    ],
+    "render": {
+      "frame": 30,
+      "calls": 490,
+      "triangles": 188532,
+      "points": 0,
+      "lines": 0
+    },
+    "memory": {
+      "geometries": 1075,
+      "textures": 28
+    },
+    "programs": 16
+  },
+  "elapsedMs": 27101.842665999997
+}

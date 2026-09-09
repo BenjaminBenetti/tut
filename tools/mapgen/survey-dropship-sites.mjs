@@ -1,5 +1,5 @@
 import { createServer } from "vite";
-import { writeFileSync, mkdirSync } from "node:fs";
+import { writeFileSync, mkdirSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { createHash } from "node:crypto";
 import { format } from "prettier";
@@ -49,92 +49,101 @@ try {
       road: d.isRoad(i % d.width, Math.floor(i / d.width)),
     }));
   const rows = [];
-  for (const biome of ["temperate", "snowy", "desert", "coastal"])
-    for (const settlement of ["rural", "town", "city"])
-      for (const size of ["small", "medium", "large"])
-        for (const seed of ["mc-resume-01", "mc-resume-02", "mc-resume-03"]) {
-          const recipe = {
-            seed,
-            params: {
-              archetype: "settlement",
+  const recipes = process.env.SURVEY_RECIPES
+    ? JSON.parse(readFileSync(process.env.SURVEY_RECIPES, "utf8"))
+    : ["temperate", "snowy", "desert", "coastal"].flatMap((biome) =>
+        ["rural", "town", "city"].flatMap((settlement) =>
+          ["small", "medium", "large"].flatMap((size) =>
+            ["mc-resume-01", "mc-resume-02", "mc-resume-03"].map((seed) => ({
               biome,
               settlement,
               size,
-              hooks: DEFAULT_MISSION_HOOKS,
-              slopeShare: 1,
-            },
-          };
-          let roadsHash,
-            roadsGround = [],
-            reservationCuts = [];
-          const passes = createSettlementPasses().map((pass) => ({
-            id: pass.id,
-            requires: pass.requires,
-            provides: pass.provides,
-            /** Observe the real pass boundary without replacing generation. */
-            run(context) {
-              pass.run(context);
-              if (pass.id === "roads") {
-                roadsGround = ground(context.draft);
-                roadsHash = digest({
-                  ground: roadsGround,
-                  roads: context.draft.roads,
-                  connectors: context.draft.connectors,
-                });
-              }
-              if (pass.id === "dropship-sites") {
-                reservationCuts = ground(context.draft).flatMap((p, i) =>
-                  p.y === roadsGround[i].y
-                    ? []
-                    : [
-                        {
-                          x: i % context.draft.width,
-                          z: Math.floor(i / context.draft.width),
-                          before: roadsGround[i].y,
-                          after: p.y,
-                        },
-                      ],
-                );
-              }
-            },
-          }));
-          const registries = createDefaultRegistries();
-          const { draft, diagnostics } = new PipelineMapGenerator(
-            passes,
-            registries,
-          ).run(recipe.params, new Mulberry32Rng(hashSeed(seed)));
-          const map = freezeDraft(draft, recipe, registries);
-          const violations = validateTacticalMap(map, registries);
-          const index = new TileIndex(map),
-            reach = new ReachabilityService(index, map.connectors);
-          rows.push({
-            recipe,
-            mapHash: digest(map),
-            roadsPassHash: roadsHash,
-            roadSegmentsHash: digest(draft.roads),
-            roadPaintHash: digest(
-              ground(draft).flatMap((p, i) =>
-                p.road ? [{ column: i, ...p }] : [],
-              ),
-            ),
-            usedExistingGrade: reservationCuts.length === 0,
-            reservationCuts,
-            sites: map.dropships ?? [],
-            deploy: map.hooks.deployZones,
-            metrics: computeMapMetrics(map),
-            minimumHatchSpace: Math.min(
-              ...map.hooks.objectives.map((h) =>
-                hatchSpace({ index, reach }, h.tiles[0], h.meta.hatchRadius, 1),
-              ),
-            ),
-            violations,
-            notes: diagnostics.notes.filter((n) =>
-              ["dropship-sites", "connectivity"].includes(n.pass),
-            ),
-            buildings: map.buildings.length,
-            props: map.props.length,
+              seed,
+            })),
+          ),
+        ),
+      );
+  for (const { biome, settlement, size, seed } of recipes) {
+    const recipe = {
+      seed,
+      params: {
+        archetype: "settlement",
+        biome,
+        settlement,
+        size,
+        hooks: DEFAULT_MISSION_HOOKS,
+        slopeShare: 1,
+      },
+    };
+    let roadsHash,
+      roadsGround = [],
+      reservationCuts = [];
+    const passes = createSettlementPasses().map((pass) => ({
+      id: pass.id,
+      requires: pass.requires,
+      provides: pass.provides,
+      /** Observe the real pass boundary without replacing generation. */
+      run(context) {
+        pass.run(context);
+        if (pass.id === "roads") {
+          roadsGround = ground(context.draft);
+          roadsHash = digest({
+            ground: roadsGround,
+            roads: context.draft.roads,
+            connectors: context.draft.connectors,
           });
         }
+        if (pass.id === "dropship-sites") {
+          reservationCuts = ground(context.draft).flatMap((p, i) =>
+            p.y === roadsGround[i].y
+              ? []
+              : [
+                  {
+                    x: i % context.draft.width,
+                    z: Math.floor(i / context.draft.width),
+                    before: roadsGround[i].y,
+                    after: p.y,
+                  },
+                ],
+          );
+        }
+      },
+    }));
+    const registries = createDefaultRegistries();
+    const { draft, diagnostics } = new PipelineMapGenerator(
+      passes,
+      registries,
+    ).run(recipe.params, new Mulberry32Rng(hashSeed(seed)));
+    const map = freezeDraft(draft, recipe, registries);
+    const violations = validateTacticalMap(map, registries);
+    const index = new TileIndex(map),
+      reach = new ReachabilityService(index, map.connectors);
+    rows.push({
+      recipe,
+      mapHash: digest(map),
+      roadsPassHash: roadsHash,
+      roadSegmentsHash: digest(draft.roads),
+      roadPaintHash: digest(
+        ground(draft).flatMap((p, i) => (p.road ? [{ column: i, ...p }] : [])),
+      ),
+      usedExistingGrade: reservationCuts.length === 0,
+      reservationCuts,
+      sites: map.dropships ?? [],
+      deploy: map.hooks.deployZones,
+      metrics: computeMapMetrics(map),
+      minimumHatchSpace: Math.min(
+        ...map.hooks.objectives.map((h) =>
+          hatchSpace({ index, reach }, h.tiles[0], h.meta.hatchRadius, 1),
+        ),
+      ),
+      violations,
+      notes: diagnostics.notes.filter((n) =>
+        ["dropship-sites", "connectivity"].includes(n.pass),
+      ),
+      buildings: map.buildings.length,
+      props: map.props.length,
+    });
+  }
   mkdirSync(dirname(output), { recursive: true });
   writeFileSync(output, await format(JSON.stringify(rows), { parser: "json" }));
   console.log(

@@ -1,0 +1,74 @@
+[
+  {
+    "seed": "wide-\"small\"/snowy/rural/5",
+    "biome": "snowy",
+    "settlement": "rural",
+    "size": "small"
+  },
+  {
+    "seed": "wide-\"small\"/snowy/town/18",
+    "biome": "snowy",
+    "settlement": "town",
+    "size": "small"
+  },
+  {
+    "seed": "wide-{\"width\":40,\"depth\":56}/snowy/rural/1",
+    "biome": "snowy",
+    "settlement": "rural",
+    "size": {
+      "width": 40,
+      "depth": 56
+    }
+  },
+  {
+    "seed": "wide-{\"width\":40,\"depth\":56}/snowy/rural/17",
+    "biome": "snowy",
+    "settlement": "rural",
+    "size": {
+      "width": 40,
+      "depth": 56
+    }
+  },
+  {
+    "seed": "wide-{\"width\":40,\"depth\":56}/snowy/town/3",
+    "biome": "snowy",
+    "settlement": "town",
+    "size": {
+      "width": 40,
+      "depth": 56
+    }
+  },
+  {
+    "seed": "wide-{\"width\":40,\"depth\":56}/snowy/town/5",
+    "biome": "snowy",
+    "settlement": "town",
+    "size": {
+      "width": 40,
+      "depth": 56
+    }
+  },
+  {
+    "seed": "wide-{\"width\":40,\"depth\":56}/snowy/town/9",
+    "biome": "snowy",
+    "settlement": "town",
+    "size": {
+      "width": 40,
+      "depth": 56
+    }
+  },
+  {
+    "seed": "wide-{\"width\":40,\"depth\":56}/snowy/town/10",
+    "biome": "snowy",
+    "settlement": "town",
+    "size": {
+      "width": 40,
+      "depth": 56
+    }
+  },
+  {
+    "seed": "mc-resume-03",
+    "biome": "snowy",
+    "settlement": "town",
+    "size": "small"
+  }
+]

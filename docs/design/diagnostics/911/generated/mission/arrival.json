@@ -1,0 +1,254 @@
+{
+  "campaignSeed": "4242",
+  "recipe": {
+    "seed": "730982385",
+    "params": {
+      "archetype": "settlement",
+      "biome": "temperate",
+      "settlement": "city",
+      "size": "small",
+      "hooks": [
+        {
+          "kind": "deploy",
+          "count": 1,
+          "requiredPass": 3
+        },
+        {
+          "kind": "egg-spawner",
+          "count": 2,
+          "requiredPass": 1,
+          "minDistanceFromDeploy": 12,
+          "maxNearestDistanceFromDeploy": 30,
+          "meta": {
+            "hatchRadius": 3
+          }
+        },
+        {
+          "kind": "edge-spawn",
+          "count": 2,
+          "requiredPass": 1
+        },
+        {
+          "kind": "extraction",
+          "count": 1,
+          "requiredPass": 3
+        }
+      ]
+    }
+  },
+  "site": {
+    "deployZoneId": "hook-1",
+    "clearance": {
+      "x": 0,
+      "z": 28,
+      "w": 13,
+      "d": 7
+    },
+    "footprint": {
+      "x": 1,
+      "z": 29,
+      "w": 7,
+      "d": 5
+    },
+    "facing": "w",
+    "level": 2
+  },
+  "boarding": [
+    {
+      "x": 8,
+      "y": 2,
+      "z": 29
+    },
+    {
+      "x": 8,
+      "y": 2,
+      "z": 30
+    },
+    {
+      "x": 8,
+      "y": 2,
+      "z": 31
+    },
+    {
+      "x": 8,
+      "y": 2,
+      "z": 32
+    },
+    {
+      "x": 9,
+      "y": 2,
+      "z": 29
+    },
+    {
+      "x": 9,
+      "y": 2,
+      "z": 30
+    },
+    {
+      "x": 9,
+      "y": 2,
+      "z": 31
+    },
+    {
+      "x": 9,
+      "y": 2,
+      "z": 32
+    },
+    {
+      "x": 10,
+      "y": 2,
+      "z": 29
+    },
+    {
+      "x": 10,
+      "y": 2,
+      "z": 30
+    },
+    {
+      "x": 10,
+      "y": 2,
+      "z": 31
+    },
+    {
+      "x": 10,
+      "y": 2,
+      "z": 32
+    },
+    {
+      "x": 11,
+      "y": 2,
+      "z": 29
+    },
+    {
+      "x": 11,
+      "y": 2,
+      "z": 30
+    },
+    {
+      "x": 11,
+      "y": 2,
+      "z": 31
+    },
+    {
+      "x": 11,
+      "y": 2,
+      "z": 32
+    }
+  ],
+  "extraction": [
+    {
+      "x": 8,
+      "y": 2,
+      "z": 29
+    },
+    {
+      "x": 8,
+      "y": 2,
+      "z": 30
+    },
+    {
+      "x": 8,
+      "y": 2,
+      "z": 31
+    },
+    {
+      "x": 8,
+      "y": 2,
+      "z": 32
+    },
+    {
+      "x": 9,
+      "y": 2,
+      "z": 29
+    },
+    {
+      "x": 9,
+      "y": 2,
+      "z": 30
+    },
+    {
+      "x": 9,
+      "y": 2,
+      "z": 31
+    },
+    {
+      "x": 9,
+      "y": 2,
+      "z": 32
+    },
+    {
+      "x": 10,
+      "y": 2,
+      "z": 29
+    },
+    {
+      "x": 10,
+      "y": 2,
+      "z": 30
+    },
+    {
+      "x": 10,
+      "y": 2,
+      "z": 31
+    },
+    {
+      "x": 10,
+      "y": 2,
+      "z": 32
+    },
+    {
+      "x": 11,
+      "y": 2,
+      "z": 29
+    },
+    {
+      "x": 11,
+      "y": 2,
+      "z": 30
+    },
+    {
+      "x": 11,
+      "y": 2,
+      "z": 31
+    },
+    {
+      "x": 11,
+      "y": 2,
+      "z": 32
+    }
+  ],
+  "force": [
+    {
+      "id": "unit-1",
+      "kind": "mech",
+      "pos": {
+        "x": 8,
+        "y": 2,
+        "z": 29
+      }
+    },
+    {
+      "id": "unit-2",
+      "kind": "squad",
+      "pos": {
+        "x": 8,
+        "y": 2,
+        "z": 30
+      }
+    },
+    {
+      "id": "unit-3",
+      "kind": "squad",
+      "pos": {
+        "x": 8,
+        "y": 2,
+        "z": 31
+      }
+    }
+  ],
+  "viewport": {
+    "width": 1600,
+    "height": 1000
+  },
+  "framing": "Actual arrival camera, then two synchronous E taps; real campaign fog, pointer at (0,0)."
+}

@@ -30,7 +30,7 @@ test("lands the campaign force beside its rendered transport", async ({
     return save.state.activeMission;
   });
   expect(mission.map.dropships).toHaveLength(1);
-  const site = mission.map.dropships![0]!;
+  const site = mission.map.dropships![0];
   const boarding = mission.map.hooks.deployZones.find(
     (zone) => zone.id === site.deployZoneId,
   )!;

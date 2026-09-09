@@ -1,0 +1,181 @@
+{
+  "id": "city",
+  "biome": "coastal",
+  "settlement": "city",
+  "size": "medium",
+  "seed": "mc-opening-03",
+  "pitch": 60,
+  "rotation": 0,
+  "clip": {
+    "x": 750,
+    "y": 250,
+    "width": 1200,
+    "height": 1000
+  },
+  "focus": {
+    "x": 7,
+    "y": 1,
+    "z": 6
+  },
+  "site": {
+    "deployZoneId": "hook-1",
+    "clearance": {
+      "x": 4,
+      "z": 0,
+      "w": 7,
+      "d": 13
+    },
+    "footprint": {
+      "x": 5,
+      "z": 1,
+      "w": 5,
+      "d": 7
+    },
+    "facing": "n",
+    "level": 1
+  },
+  "deploy": {
+    "id": "hook-1",
+    "kind": "deploy",
+    "tiles": [
+      {
+        "x": 5,
+        "y": 1,
+        "z": 8
+      },
+      {
+        "x": 6,
+        "y": 1,
+        "z": 8
+      },
+      {
+        "x": 7,
+        "y": 1,
+        "z": 8
+      },
+      {
+        "x": 8,
+        "y": 1,
+        "z": 8
+      },
+      {
+        "x": 5,
+        "y": 1,
+        "z": 9
+      },
+      {
+        "x": 6,
+        "y": 1,
+        "z": 9
+      },
+      {
+        "x": 7,
+        "y": 1,
+        "z": 9
+      },
+      {
+        "x": 8,
+        "y": 1,
+        "z": 9
+      },
+      {
+        "x": 5,
+        "y": 1,
+        "z": 10
+      },
+      {
+        "x": 6,
+        "y": 1,
+        "z": 10
+      },
+      {
+        "x": 7,
+        "y": 1,
+        "z": 10
+      },
+      {
+        "x": 8,
+        "y": 1,
+        "z": 10
+      },
+      {
+        "x": 5,
+        "y": 1,
+        "z": 11
+      },
+      {
+        "x": 6,
+        "y": 1,
+        "z": 11
+      },
+      {
+        "x": 7,
+        "y": 1,
+        "z": 11
+      },
+      {
+        "x": 8,
+        "y": 1,
+        "z": 11
+      }
+    ],
+    "requiredPass": 3
+  },
+  "notes": [
+    {
+      "pass": "dropship-sites",
+      "message": "dropship on n: 0 cut columns, 0 layer-columns excavated, 16 external boarding columns",
+      "at": {
+        "x": 5,
+        "y": 1,
+        "z": 8
+      }
+    }
+  ],
+  "url": "http://127.0.0.1:5178/mapgen-preview.html?seed=mc-opening-03&biome=coastal&settlement=city&size=medium&models=1&units=1&slope=100",
+  "recipeInput": "Unmodified Map Lab URL",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "camera": {
+    "yawIndex": 0,
+    "zoom": 73.48469228349515,
+    "target": {
+      "x": 7.5,
+      "y": 0.9,
+      "z": 6.5
+    },
+    "bounds": {
+      "x": 0,
+      "z": 0,
+      "w": 72,
+      "d": 72
+    },
+    "zoomRange": {
+      "min": 19.83827358328925,
+      "max": 192
+    }
+  },
+  "rendering": {
+    "timingMethod": "RAF interval with gl.finish(), discard first four of twelve frames; software renderer, not a hardware FPS claim",
+    "frameMs": [
+      795.4000000953674, 1708.5999999046326, 1804.6000001430511,
+      991.2999999523163, 2414.7000000476837, 2075.7000000476837,
+      3703.399999856949, 5722.200000047684
+    ],
+    "render": {
+      "frame": 44,
+      "calls": 737,
+      "triangles": 850488,
+      "points": 0,
+      "lines": 0
+    },
+    "memory": {
+      "geometries": 665,
+      "textures": 41
+    },
+    "programs": 14
+  },
+  "elapsedMs": 84428.966167
+}

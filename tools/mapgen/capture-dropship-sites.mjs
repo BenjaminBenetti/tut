@@ -9,7 +9,11 @@ const out =
   `docs/design/diagnostics/911/generated/${phase}`;
 mkdirSync(out, { recursive: true });
 const controls = JSON.parse(
-  readFileSync("docs/design/diagnostics/911/generated/cases.json", "utf8"),
+  readFileSync(
+    process.env.CAPTURE_CASES ??
+      "docs/design/diagnostics/911/generated/cases.json",
+    "utf8",
+  ),
 );
 const browser = await chromium.launch({
   headless: true,
@@ -59,10 +63,15 @@ await page.route("**/src/graphics/service/scene-service.ts*", async (route) => {
     throw new Error("Renderer capture marker changed");
   await route.fulfill({
     response,
-    body: body.replace(
-      marker,
-      marker + " window.__materialCaptureRenderer=this.renderer;",
-    ),
+    body: body
+      .replace(
+        marker,
+        marker + " window.__materialCaptureRenderer=this.renderer;",
+      )
+      .replace(
+        "this.scene = new Scene();",
+        "this.scene = new Scene(); window.__mapgenCaptureScene=this.scene;",
+      ),
   });
 });
 // Capture-only access to the existing rig, preserving the shipped scene,
@@ -100,10 +109,22 @@ try {
     });
     const url = `${process.env.CAPTURE_BASE_URL ?? "http://127.0.0.1:5177"}/mapgen-preview.html?${query}`;
     const started = performance.now();
-    await page.goto(url);
+    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 120000 });
     await page
       .locator('body[data-models-ready="true"][data-preview-ready="true"]')
       .waitFor({ timeout: 120000 });
+    const extent =
+      typeof c.size === "object"
+        ? c.size
+        : {
+            width: { small: 48, medium: 72, large: 96 }[c.size],
+            depth: { small: 48, medium: 72, large: 96 }[c.size],
+          };
+    const dimensions = page.getByText(
+      new RegExp(`^${extent.width}×${extent.depth}×\\d+$`),
+    );
+    await dimensions.waitFor();
+    const renderedDimensions = await dimensions.textContent();
     console.log(c.id + " loaded");
     const camera = await page.evaluate(async (c) => {
       const rig = window.__mapgenCaptureRig;
@@ -156,6 +177,45 @@ try {
         programs: r.info.programs.length,
       };
     });
+    // Paired on/off draw accounting in the same live scene: isolate the eight
+    // aircraft parts from relocated units, changed lots and frustum culling.
+    // Restore every visibility flag and draw again before the actual PNG.
+    const aircraftDraws = await page.evaluate(async () => {
+      const parts = [];
+      window.__mapgenCaptureScene.traverse((node) => {
+        if (node.name.startsWith("props-model:tdf.dropship:")) parts.push(node);
+      });
+      if (!parts.length) return null;
+      const r = window.__materialCaptureRenderer;
+      const draw = async () => {
+        await new Promise((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(resolve)),
+        );
+        r.getContext().finish();
+        return { ...r.info.render };
+      };
+      const visible = parts.map((part) => part.visible);
+      const withAircraft = await draw();
+      let withoutAircraft;
+      try {
+        parts.forEach((part) => {
+          part.visible = false;
+        });
+        withoutAircraft = await draw();
+      } finally {
+        parts.forEach((part, i) => {
+          part.visible = visible[i];
+        });
+        await draw();
+      }
+      return {
+        parts: parts.length,
+        withAircraft,
+        withoutAircraft,
+        calls: withAircraft.calls - withoutAircraft.calls,
+        triangles: withAircraft.triangles - withoutAircraft.triangles,
+      };
+    });
     await page.screenshot({
       path: `${out}/${c.id}.png`,
       clip: c.clip,
@@ -168,6 +228,7 @@ try {
           {
             ...c,
             url,
+            renderedDimensions,
             recipeInput:
               typeof c.size === "object"
                 ? "Capture supplies exact custom dimensions to Map Lab's real recipe; the preset URL alone does not reproduce this case."
@@ -176,6 +237,7 @@ try {
             clip: c.clip,
             camera,
             rendering,
+            aircraftDraws,
             elapsedMs: performance.now() - started,
           },
           null,

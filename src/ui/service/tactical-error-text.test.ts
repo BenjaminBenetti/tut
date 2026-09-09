@@ -140,12 +140,16 @@ describe("namesFor", () => {
   const twoRifleSquads = {
     mission: {
       units: [
-        { id: "unit-1", sourceId: "squad-1", templateId: "squad:rifle" },
-        { id: "unit-2", sourceId: "squad-2", templateId: "squad:rifle" },
+        { id: "unit-1", sourceId: "squad-1", templateId: "squad:squad-1" },
+        { id: "unit-2", sourceId: "squad-2", templateId: "squad:squad-2" },
         { id: "unit-9", sourceId: "bug:swarmer", templateId: "bug:swarmer" },
       ],
+      // Distinct templates, one display name: `unit-factory` names a
+      // squad's template after the squad *type*, so two rosters collide
+      // on the name rather than on the id.
       templates: {
-        "squad:rifle": { name: "Rifle Squad" },
+        "squad:squad-1": { name: "Rifle Squad" },
+        "squad:squad-2": { name: "Rifle Squad" },
         "bug:swarmer": { name: "Swarmer" },
       },
       objectives: [],

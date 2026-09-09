@@ -185,12 +185,17 @@ function twoSquads(): TacticalState {
   return {
     missionId: "mission-1",
     units: [
-      { id: "unit-1", sourceId: "squad-1", templateId: "rifle" },
-      { id: "unit-2", sourceId: "squad-2", templateId: "rifle" },
+      { id: "unit-1", sourceId: "squad-1", templateId: "squad:squad-1" },
+      { id: "unit-2", sourceId: "squad-2", templateId: "squad:squad-2" },
       { id: "unit-9", sourceId: "bug:swarmer", templateId: "swarmer" },
     ],
+    // Each squad gets its **own** template, both named after the squad
+    // *type* -- which is what `unit-factory` really builds. The
+    // collision is in the name, not the template id; a fixture with one
+    // shared template reproduces the symptom but not the mechanism.
     templates: {
-      rifle: { name: "Rifle Squad" },
+      "squad:squad-1": { name: "Rifle Squad" },
+      "squad:squad-2": { name: "Rifle Squad" },
       swarmer: { name: "Swarmer" },
     },
     objectives: [],

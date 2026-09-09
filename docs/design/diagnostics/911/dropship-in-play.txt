@@ -1,0 +1,10 @@
+dropships on this map: 1
+  {"deployZoneId":"hook-1","clearance":{"x":0,"z":28,"w":13,"d":7},"footprint":{"x":1,"z":29,"w":7,"d":5},"facing":"w","level":2}
+deploy zones: []
+units: unit-1@8,29 unit-2@8,30 unit-3@8,31
+
+centring on the dropship footprint centre 5,32 at level 2, facing w
+  on screen at 755,484
+  frame captured
+
+relevant console/page messages: 0

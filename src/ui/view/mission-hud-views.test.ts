@@ -8,6 +8,7 @@ import type { ActionBarAction } from "./action-bar-view";
 import { ActionBarView } from "./action-bar-view";
 import { HitPreviewView } from "./hit-preview-view";
 import { hudMission, hudTemplate, hudUnit } from "./mission-hud.test-helper";
+import { describeEvent } from "./event-vocabulary";
 import { ObjectiveTrackerView } from "./objective-tracker-view";
 import { TurnBannerView } from "./turn-banner-view";
 import { UnitCardView } from "./unit-card-view";
@@ -266,6 +267,35 @@ describe("ObjectiveTrackerView", () => {
     for (const row of rows) {
       expect(row.textContent).not.toMatch(/spawner-\d/);
     }
+  });
+});
+
+/**
+ * The status template used to interpolate the id as English, so a noun
+ * came out as "Rifle Squad is overwatch" (#1029). Pinned as rendered
+ * text, because the defect was grammar rather than data.
+ */
+describe("event vocabulary", () => {
+  it("gives each status a phrase rather than pasting its id into a sentence", () => {
+    const line = describeEvent(
+      {
+        type: "tactical:unit-status-changed",
+        payload: { unitId: "unit-2", status: ["overwatch"] },
+      } as never,
+      () => "Rifle Squad",
+    );
+    expect(line?.text).toBe("Rifle Squad is on overwatch");
+  });
+
+  it("still reads correctly for a status that happens to be an adjective", () => {
+    const line = describeEvent(
+      {
+        type: "tactical:unit-status-changed",
+        payload: { unitId: "unit-2", status: ["suppressed"] },
+      } as never,
+      () => "Rifle Squad",
+    );
+    expect(line?.text).toBe("Rifle Squad is suppressed");
   });
 });
 

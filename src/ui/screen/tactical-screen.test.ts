@@ -379,6 +379,76 @@ describe("TacticalScreen", () => {
     logged.mockRestore();
   });
 
+  /**
+   * Anything worth a line in the log is worth showing where it happened
+   * (#1029) — with movement the one exception, because the unit walking
+   * is already the indicator.
+   *
+   * The words are the log's own, from `event-vocabulary`, so the record
+   * at the edge of the screen and the notification above the unit can
+   * never say different things about the same event.
+   */
+  it("indicates every logged action above the unit that did it, except a move", () => {
+    const state = inMission();
+    const host = new FakeHost();
+    const store = new FakeStore(state);
+    new TacticalScreen({
+      router: fakeRouter().router,
+      session: sessionWith(store),
+      combatTuning: COMBAT_TUNING,
+      objectiveTuning: OBJECTIVE_TUNING,
+      sceneHost: host,
+    }).mount(root);
+    host.notices.length = 0;
+
+    store.command(state, [
+      {
+        type: "tactical:unit-reloaded",
+        payload: { unitId: "unit-1" },
+      },
+      {
+        type: "tactical:unit-status-changed",
+        payload: { unitId: "unit-2", status: ["overwatch"] },
+      },
+      // Excluded: the unit walking is already the indicator.
+      {
+        type: "tactical:unit-moved",
+        payload: {
+          unitId: "unit-1",
+          from: { x: 0, y: 0, z: 0 },
+          to: { x: 1, y: 0, z: 0 },
+          path: [{ x: 1, y: 0, z: 0 }],
+        },
+      },
+      // Belongs to the log, not to any unit.
+      { type: "tactical:turn-started", payload: { turn: 2, phase: "player" } },
+    ] as never);
+
+    // Two units acting in succession, each above its own unit.
+    expect(host.notices).toHaveLength(2);
+    expect(host.notices[0]).toContain("unit-1");
+    expect(host.notices[1]).toContain("unit-2");
+    // No move, no turn-start.
+    expect(host.notices.join(" ")).not.toContain("moved");
+    expect(host.notices.join(" ")).not.toContain("Turn");
+
+    // The property that matters, and the reason the vocabulary was
+    // lifted into one module: the words above the unit are the words in
+    // the log. Asserted against the log's *rendered* lines rather than
+    // against the same function that produced them, so this cannot pass
+    // by both readers being wrong together.
+    const logged = [
+      ...root.querySelectorAll<HTMLElement>('[data-role="event-log-list"] li'),
+    ].map((line) => line.textContent ?? "");
+    for (const notice of host.notices) {
+      const words = notice.slice(notice.indexOf(": ") + 2);
+      expect(
+        logged.some((line) => line.includes(words)),
+        `the log does not say what the indicator says: ${words}`,
+      ).toBe(true);
+    }
+  });
+
   it("mounts the banner and viewport from the active mission and attaches the scene host", () => {
     const state = inMission();
     const host = new FakeHost();

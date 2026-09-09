@@ -1,0 +1,58 @@
+{
+  "seed": "mc-resume-03",
+  "biome": "coastal",
+  "settlement": "rural",
+  "size": "small",
+  "tile": {
+    "x": 21,
+    "y": 2,
+    "z": 10
+  },
+  "pitch": 45,
+  "width": 1300,
+  "height": 1050,
+  "id": "E1-coastal-junction",
+  "rotation": 0,
+  "actualPitch": 44.99999999369613,
+  "url": "http://localhost:4175/mapgen-preview.html?seed=mc-resume-03&biome=coastal&settlement=rural&size=small&models=1&units=1&slope=100",
+  "errors": [],
+  "serverRuntime": {
+    "baseline": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+    "server": "http://localhost:4175",
+    "serverSession": 78445,
+    "recordedAt": "2026-09-08T23:54:44.203435+00:00",
+    "config": "tools/art/preview/capture-vite.config.mjs",
+    "watch": null,
+    "hmr": false,
+    "freshServerAfterCheckout": true,
+    "runtimeTrees": {
+      "src": "a40dc3470152eedf6c21ee8842926a558383ca35",
+      "public": "5e85567612436db764109379d0631edae38b7f77",
+      "tools": "9d64b17f164f5bc7c94ab0c12fd93ade1690591d"
+    }
+  },
+  "levels": {
+    "value": "6",
+    "max": "6",
+    "step": "2",
+    "label": "all"
+  },
+  "baseline": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "pixel": {
+    "x": 1435.0329790758035,
+    "y": 671.3520351174355
+  },
+  "clip": {
+    "x": 785,
+    "y": 146,
+    "width": 1300,
+    "height": 1050
+  },
+  "captureDateUTC": "2026-09-09",
+  "visuallyInspected": true,
+  "pngSha256": "6860d571f364a27ac82c5e5af541c978809bc98a470760e370e10b1dd63af201"
+}

@@ -1,0 +1,15 @@
+{
+  "baseline": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+  "server": "http://localhost:4175",
+  "serverSession": 78445,
+  "recordedAt": "2026-09-08T23:54:44.203435+00:00",
+  "config": "tools/art/preview/capture-vite.config.mjs",
+  "watch": null,
+  "hmr": false,
+  "freshServerAfterCheckout": true,
+  "runtimeTrees": {
+    "src": "a40dc3470152eedf6c21ee8842926a558383ca35",
+    "public": "5e85567612436db764109379d0631edae38b7f77",
+    "tools": "9d64b17f164f5bc7c94ab0c12fd93ade1690591d"
+  }
+}

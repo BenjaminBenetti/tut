@@ -1,0 +1,65 @@
+{
+  "id": "R0-top-up",
+  "baseline": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+  "serverRuntime": {
+    "baseline": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+    "server": "http://localhost:4175",
+    "serverSession": 78445,
+    "recordedAt": "2026-09-08T23:54:44.203435+00:00",
+    "config": "tools/art/preview/capture-vite.config.mjs",
+    "watch": null,
+    "hmr": false,
+    "freshServerAfterCheckout": true,
+    "runtimeTrees": {
+      "src": "a40dc3470152eedf6c21ee8842926a558383ca35",
+      "public": "5e85567612436db764109379d0631edae38b7f77",
+      "tools": "9d64b17f164f5bc7c94ab0c12fd93ade1690591d"
+    }
+  },
+  "campaignSeed": "4242",
+  "entry": "ordinary campaign, first mission, all available starter units selected",
+  "missionId": "mission-1",
+  "missionSeed": 1127010053,
+  "width": 48,
+  "depth": 48,
+  "levels": 14,
+  "viewport": {
+    "width": 1800,
+    "height": 1200
+  },
+  "cameraFocus": {
+    "x": 3,
+    "y": 2,
+    "z": 26
+  },
+  "roofReference": {
+    "x": 3,
+    "y": 12,
+    "z": 26
+  },
+  "pointer": {
+    "x": 0,
+    "y": 1199
+  },
+  "inputs": ["]"],
+  "readout": "5 / 5",
+  "cameraProjection": {
+    "x": 1075.6955262170038,
+    "y": 559.4217779175825
+  },
+  "dataset": {
+    "screen": "tactical",
+    "appState": "ready",
+    "selectedCity": "johannesburg",
+    "tacticalStorey": "5",
+    "tacticalStoreys": "5",
+    "tacticalUnits": "3",
+    "tacticalSpawners": "0",
+    "tacticalReady": "true",
+    "lastIntent": "layer-step"
+  },
+  "errors": [],
+  "sha256": "2274e0e0660e79c61115596f67d58cb19a1f709cec22a32a6e05cd90c97b0cee",
+  "captureDateUTC": "2026-09-09",
+  "visuallyInspected": true
+}

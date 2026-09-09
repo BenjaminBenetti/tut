@@ -1,0 +1,59 @@
+{
+  "id": "P2-temperate-trail",
+  "seed": "mc-resume-01",
+  "biome": "temperate",
+  "settlement": "rural",
+  "size": "small",
+  "tile": {
+    "x": 13,
+    "y": 2,
+    "z": 24
+  },
+  "pitch": 45,
+  "rotation": 1,
+  "width": 1300,
+  "height": 1050,
+  "actualPitch": 44.99999999369599,
+  "url": "http://localhost:4175/mapgen-preview.html?seed=mc-resume-01&biome=temperate&settlement=rural&size=small&models=1&units=1&slope=100",
+  "errors": [],
+  "serverRuntime": {
+    "baseline": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+    "server": "http://localhost:4175",
+    "serverSession": 78445,
+    "recordedAt": "2026-09-08T23:54:44.203435+00:00",
+    "config": "tools/art/preview/capture-vite.config.mjs",
+    "watch": null,
+    "hmr": false,
+    "freshServerAfterCheckout": true,
+    "runtimeTrees": {
+      "src": "a40dc3470152eedf6c21ee8842926a558383ca35",
+      "public": "5e85567612436db764109379d0631edae38b7f77",
+      "tools": "9d64b17f164f5bc7c94ab0c12fd93ade1690591d"
+    }
+  },
+  "levels": {
+    "value": "6",
+    "max": "6",
+    "step": "2",
+    "label": "all"
+  },
+  "baseline": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "pixel": {
+    "x": 1355.8906034081983,
+    "y": 745.4489824474286
+  },
+  "clip": {
+    "x": 706,
+    "y": 220,
+    "width": 1300,
+    "height": 1050
+  },
+  "pngSha256": "00c4e0d7a0f05984c694e0cee6f042828925536486945be30f9ba58b2da979e4",
+  "captureDateUTC": "2026-09-09",
+  "visuallyInspected": true,
+  "originalCaptureFileMtimeUTC": "2026-09-09T00:05:11.680433+00:00"
+}

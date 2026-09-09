@@ -1,0 +1,264 @@
+{
+  "id": "town-large",
+  "sourceScale": 0.5,
+  "sourceDimensions": {
+    "width": 2020,
+    "height": 1500
+  },
+  "sheetDimensions": {
+    "width": 2020,
+    "height": 3160
+  },
+  "labels": "40px band outside each screenshot; no scene retouching",
+  "pngSha256": "eaf2edc15142cdd63208ce5296dd5eae4df0dd1b6679541589ad772a1f5e00ad",
+  "rows": [
+    {
+      "recipe": {
+        "index": 17,
+        "id": "temperate-town-large-03",
+        "seed": "mc-resume-03",
+        "biome": "temperate",
+        "settlement": "town",
+        "size": "large",
+        "models": "1",
+        "units": "1",
+        "slope": "100",
+        "url": "http://localhost:4175/mapgen-preview.html?seed=mc-resume-03&biome=temperate&settlement=town&size=large&models=1&units=1&slope=100",
+        "serverRuntime": {
+          "baseline": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+          "server": "http://localhost:4175",
+          "serverSession": 78445,
+          "recordedAt": "2026-09-08T23:54:44.203435+00:00",
+          "config": "tools/art/preview/capture-vite.config.mjs",
+          "watch": null,
+          "hmr": false,
+          "freshServerAfterCheckout": true,
+          "runtimeTrees": {
+            "src": "a40dc3470152eedf6c21ee8842926a558383ca35",
+            "public": "5e85567612436db764109379d0631edae38b7f77",
+            "tools": "9d64b17f164f5bc7c94ab0c12fd93ade1690591d"
+          }
+        },
+        "commit": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+        "levels": {
+          "value": "12",
+          "max": "12",
+          "step": "2",
+          "label": "all"
+        },
+        "viewport": {
+          "width": 2400,
+          "height": 1500
+        },
+        "clip": {
+          "x": 380,
+          "y": 0,
+          "width": 2020,
+          "height": 1500
+        },
+        "nearCamera": "initial framing",
+        "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+        "errors": []
+      },
+      "sourcePngSha256": {
+        "whole": "8811804dc534523dfd88ee60647f71383e26d787dacbd09381ecf000bade4536",
+        "near": "32ce807f28a550cca00e5864b030399e0b1352d5bac981cbda7cfda113443ee6"
+      },
+      "observations": {
+        "looked": ["whole", "near"],
+        "preserve": "Settlement follows a broader road network through wooded rising land, with different occupied heights and supported road-facing buildings. Material contours and full roofs hold up.",
+        "shortfall": "Scattered outdoor timber panels and generic frontages remain #1006/#960. Dramatic terrain and graded roads are not a new claim against the settled #813 ruling."
+      },
+      "sourceFileMtimeUTC": {
+        "whole": "2026-09-09T00:35:40.428555+00:00",
+        "near": "2026-09-09T00:33:49.998282+00:00"
+      }
+    },
+    {
+      "recipe": {
+        "index": 18,
+        "id": "snowy-town-large-03",
+        "seed": "mc-resume-03",
+        "biome": "snowy",
+        "settlement": "town",
+        "size": "large",
+        "models": "1",
+        "units": "1",
+        "slope": "100",
+        "url": "http://localhost:4175/mapgen-preview.html?seed=mc-resume-03&biome=snowy&settlement=town&size=large&models=1&units=1&slope=100",
+        "serverRuntime": {
+          "baseline": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+          "server": "http://localhost:4175",
+          "serverSession": 78445,
+          "recordedAt": "2026-09-08T23:54:44.203435+00:00",
+          "config": "tools/art/preview/capture-vite.config.mjs",
+          "watch": null,
+          "hmr": false,
+          "freshServerAfterCheckout": true,
+          "runtimeTrees": {
+            "src": "a40dc3470152eedf6c21ee8842926a558383ca35",
+            "public": "5e85567612436db764109379d0631edae38b7f77",
+            "tools": "9d64b17f164f5bc7c94ab0c12fd93ade1690591d"
+          }
+        },
+        "commit": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+        "levels": {
+          "value": "14",
+          "max": "14",
+          "step": "2",
+          "label": "all"
+        },
+        "viewport": {
+          "width": 2400,
+          "height": 1500
+        },
+        "clip": {
+          "x": 380,
+          "y": 0,
+          "width": 2020,
+          "height": 1500
+        },
+        "nearCamera": "initial framing",
+        "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+        "errors": []
+      },
+      "sourcePngSha256": {
+        "whole": "21af0cd7ca765f03f7de8106d046fb5d7300196cef69e8f7c9883ebc8c381fd1",
+        "near": "aaca02cc1a58b76b322eedc168811f169c2bf19c8772aedb4a8d2519b94a43c3"
+      },
+      "observations": {
+        "looked": ["whole", "near"],
+        "preserve": "Cold terrain, conifer groups, complete roof shapes and varying occupied heights are readable. Streets remain distinct over the rising land, and natural rock/snow contacts curve.",
+        "shortfall": "Scattered panels remain #1006; anonymous frontages and generic yards remain #960. Natural/excavated high terrain is not a new decorative-bed claim."
+      },
+      "sourceFileMtimeUTC": {
+        "whole": "2026-09-09T00:38:30.845433+00:00",
+        "near": "2026-09-09T00:37:28.869841+00:00"
+      }
+    },
+    {
+      "recipe": {
+        "index": 19,
+        "id": "desert-town-large-03",
+        "seed": "mc-resume-03",
+        "biome": "desert",
+        "settlement": "town",
+        "size": "large",
+        "models": "1",
+        "units": "1",
+        "slope": "100",
+        "url": "http://localhost:4175/mapgen-preview.html?seed=mc-resume-03&biome=desert&settlement=town&size=large&models=1&units=1&slope=100",
+        "serverRuntime": {
+          "baseline": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+          "server": "http://localhost:4175",
+          "serverSession": 78445,
+          "recordedAt": "2026-09-08T23:54:44.203435+00:00",
+          "config": "tools/art/preview/capture-vite.config.mjs",
+          "watch": null,
+          "hmr": false,
+          "freshServerAfterCheckout": true,
+          "runtimeTrees": {
+            "src": "a40dc3470152eedf6c21ee8842926a558383ca35",
+            "public": "5e85567612436db764109379d0631edae38b7f77",
+            "tools": "9d64b17f164f5bc7c94ab0c12fd93ade1690591d"
+          }
+        },
+        "commit": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+        "levels": {
+          "value": "12",
+          "max": "12",
+          "step": "2",
+          "label": "all"
+        },
+        "viewport": {
+          "width": 2400,
+          "height": 1500
+        },
+        "clip": {
+          "x": 380,
+          "y": 0,
+          "width": 2020,
+          "height": 1500
+        },
+        "nearCamera": "initial framing",
+        "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+        "errors": []
+      },
+      "sourcePngSha256": {
+        "whole": "0fee8c53c5c6e54f22b8db7aeffdd38482ccd7722f520c87c5ed9d6b3e6dd50e",
+        "near": "f6f9d44d4bd244bc2083800168077d381afb53a8e862c1dcb86294f9b2ebe361"
+      },
+      "observations": {
+        "looked": ["whole", "near"],
+        "preserve": "Dry palette and cactus/rock groups distinguish the landscape; complete roofs, occupied heights and supported road approaches retain the settlement scale. Natural material contacts curve.",
+        "shortfall": "Generic frontages and scattered timber panels remain #960/#1006, isolated palms #701. High cut terrain around occupied plots remains within the earlier terrain ruling, not a newly evidenced empty decorative plinth."
+      },
+      "sourceFileMtimeUTC": {
+        "whole": "2026-09-09T00:42:04.870013+00:00",
+        "near": "2026-09-09T00:40:19.244720+00:00"
+      }
+    },
+    {
+      "recipe": {
+        "index": 20,
+        "id": "coastal-town-large-03",
+        "seed": "mc-resume-03",
+        "biome": "coastal",
+        "settlement": "town",
+        "size": "large",
+        "models": "1",
+        "units": "1",
+        "slope": "100",
+        "url": "http://localhost:4175/mapgen-preview.html?seed=mc-resume-03&biome=coastal&settlement=town&size=large&models=1&units=1&slope=100",
+        "serverRuntime": {
+          "baseline": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+          "server": "http://localhost:4175",
+          "serverSession": 78445,
+          "recordedAt": "2026-09-08T23:54:44.203435+00:00",
+          "config": "tools/art/preview/capture-vite.config.mjs",
+          "watch": null,
+          "hmr": false,
+          "freshServerAfterCheckout": true,
+          "runtimeTrees": {
+            "src": "a40dc3470152eedf6c21ee8842926a558383ca35",
+            "public": "5e85567612436db764109379d0631edae38b7f77",
+            "tools": "9d64b17f164f5bc7c94ab0c12fd93ade1690591d"
+          }
+        },
+        "commit": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+        "levels": {
+          "value": "10",
+          "max": "10",
+          "step": "2",
+          "label": "all"
+        },
+        "viewport": {
+          "width": 2400,
+          "height": 1500
+        },
+        "clip": {
+          "x": 380,
+          "y": 0,
+          "width": 2020,
+          "height": 1500
+        },
+        "nearCamera": "initial framing",
+        "wholeCamera": "16 positive 120 wheel increments, maximum zoom out",
+        "errors": []
+      },
+      "sourcePngSha256": {
+        "whole": "02b968ed6275bde21779aa43242ce7cb372a03f66e341a90c440495b7546b6d3",
+        "near": "2b6b0d37cc76d21a3f69cb9e628db587bb425ef02252e2e65bc34256a2e9c6a0"
+      },
+      "observations": {
+        "looked": ["whole", "near"],
+        "preserve": "More blocks, different occupied heights and complete roofs establish the larger town. Rounded grass/sand/soil contacts contrast with crisp streets and pavements.",
+        "shortfall": "Anonymous frontages and isolated timber panels remain #960/#1006. Open water grid remains #1005. No new waterfront-ending defect established."
+      },
+      "sourceFileMtimeUTC": {
+        "whole": "2026-09-09T00:44:50.102855+00:00",
+        "near": "2026-09-09T00:43:42.089332+00:00"
+      }
+    }
+  ]
+}

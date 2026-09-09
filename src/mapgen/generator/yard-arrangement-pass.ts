@@ -111,10 +111,16 @@ export class YardArrangementPass implements GenerationPass {
       const entrance = building.entrances[0];
       if (!entrance) continue;
       const candidates = rng.shuffle(wallGroups(building, profile));
+      const frontageRank = (side: Direction): number =>
+        side === entrance.side
+          ? 2
+          : side === oppositeDirection(entrance.side)
+            ? 0
+            : 1;
       candidates.sort(
         (a, b) =>
-          Number((b.side === entrance.side) === profile.frontage) -
-          Number((a.side === entrance.side) === profile.frontage),
+          (frontageRank(b.side) - frontageRank(a.side)) *
+          (profile.frontage ? 1 : -1),
       );
       const group = candidates.find(
         (candidate) =>

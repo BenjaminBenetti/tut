@@ -1,0 +1,1629 @@
+{
+  "baseline": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+  "method": "Observe the real PropPass.addProp call stacks to distinguish vegetation from yard clutter; no generation result is substituted.",
+  "cases": [
+    {
+      "recipe": {
+        "seed": "mc-opening-03",
+        "params": {
+          "archetype": "settlement",
+          "biome": "coastal",
+          "settlement": "city",
+          "size": "medium",
+          "hooks": [
+            {
+              "kind": "deploy",
+              "count": 1,
+              "requiredPass": 3
+            },
+            {
+              "kind": "egg-spawner",
+              "count": 3,
+              "requiredPass": 1,
+              "minDistanceFromDeploy": 12,
+              "maxNearestDistanceFromDeploy": 30,
+              "meta": {
+                "hatchRadius": 3
+              }
+            },
+            {
+              "kind": "edge-spawn",
+              "count": 2,
+              "requiredPass": 1
+            },
+            {
+              "kind": "extraction",
+              "count": 1,
+              "requiredPass": 3
+            }
+          ],
+          "slopeShare": 1
+        }
+      },
+      "origins": [
+        {
+          "id": "prop-1",
+          "tile": {
+            "x": 8,
+            "y": 1,
+            "z": 1
+          },
+          "rotation": 0,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-4",
+          "tile": {
+            "x": 4,
+            "y": 1,
+            "z": 3
+          },
+          "rotation": 0,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-10",
+          "tile": {
+            "x": 51,
+            "y": 1,
+            "z": 8
+          },
+          "rotation": 2,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-13",
+          "tile": {
+            "x": 35,
+            "y": 1,
+            "z": 22
+          },
+          "rotation": 1,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-14",
+          "tile": {
+            "x": 22,
+            "y": 1,
+            "z": 23
+          },
+          "rotation": 3,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-15",
+          "tile": {
+            "x": 1,
+            "y": 1,
+            "z": 24
+          },
+          "rotation": 0,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-23",
+          "tile": {
+            "x": 49,
+            "y": 1,
+            "z": 30
+          },
+          "rotation": 3,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-28",
+          "tile": {
+            "x": 26,
+            "y": 1,
+            "z": 34
+          },
+          "rotation": 2,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-42",
+          "tile": {
+            "x": 30,
+            "y": 1,
+            "z": 36
+          },
+          "rotation": 0,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-43",
+          "tile": {
+            "x": 27,
+            "y": 1,
+            "z": 45
+          },
+          "rotation": 0,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-44",
+          "tile": {
+            "x": 26,
+            "y": 1,
+            "z": 46
+          },
+          "rotation": 0,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-48",
+          "tile": {
+            "x": 32,
+            "y": 1,
+            "z": 54
+          },
+          "rotation": 2,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-49",
+          "tile": {
+            "x": 39,
+            "y": 1,
+            "z": 55
+          },
+          "rotation": 0,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-50",
+          "tile": {
+            "x": 3,
+            "y": 1,
+            "z": 56
+          },
+          "rotation": 2,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-51",
+          "tile": {
+            "x": 26,
+            "y": 1,
+            "z": 57
+          },
+          "rotation": 1,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-54",
+          "tile": {
+            "x": 3,
+            "y": 1,
+            "z": 60
+          },
+          "rotation": 0,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-57",
+          "tile": {
+            "x": 21,
+            "y": 1,
+            "z": 71
+          },
+          "rotation": 2,
+          "source": "yard"
+        },
+        {
+          "id": "prop-60",
+          "tile": {
+            "x": 48,
+            "y": 1,
+            "z": 56
+          },
+          "rotation": 3,
+          "source": "yard"
+        },
+        {
+          "id": "prop-71",
+          "tile": {
+            "x": 19,
+            "y": 1,
+            "z": 29
+          },
+          "rotation": 0,
+          "source": "yard"
+        },
+        {
+          "id": "prop-74",
+          "tile": {
+            "x": 25,
+            "y": 1,
+            "z": 20
+          },
+          "rotation": 0,
+          "source": "yard"
+        },
+        {
+          "id": "prop-77",
+          "tile": {
+            "x": 9,
+            "y": 1,
+            "z": 47
+          },
+          "rotation": 1,
+          "source": "yard"
+        },
+        {
+          "id": "prop-86",
+          "tile": {
+            "x": 23,
+            "y": 1,
+            "z": 9
+          },
+          "rotation": 0,
+          "source": "yard"
+        },
+        {
+          "id": "prop-89",
+          "tile": {
+            "x": 34,
+            "y": 1,
+            "z": 34
+          },
+          "rotation": 0,
+          "source": "yard"
+        },
+        {
+          "id": "prop-90",
+          "tile": {
+            "x": 20,
+            "y": 1,
+            "z": 53
+          },
+          "rotation": 1,
+          "source": "yard"
+        },
+        {
+          "id": "prop-92",
+          "tile": {
+            "x": 35,
+            "y": 1,
+            "z": 58
+          },
+          "rotation": 0,
+          "source": "yard"
+        },
+        {
+          "id": "prop-94",
+          "tile": {
+            "x": 34,
+            "y": 1,
+            "z": 24
+          },
+          "rotation": 3,
+          "source": "yard"
+        },
+        {
+          "id": "prop-98",
+          "tile": {
+            "x": 23,
+            "y": 1,
+            "z": 61
+          },
+          "rotation": 3,
+          "source": "yard"
+        },
+        {
+          "id": "prop-99",
+          "tile": {
+            "x": 48,
+            "y": 1,
+            "z": 28
+          },
+          "rotation": 3,
+          "source": "yard"
+        },
+        {
+          "id": "prop-111",
+          "tile": {
+            "x": 33,
+            "y": 1,
+            "z": 36
+          },
+          "rotation": 3,
+          "source": "yard"
+        }
+      ],
+      "boundaryPassChanged": false,
+      "fences": [
+        {
+          "id": "prop-1",
+          "kind": "fence",
+          "tile": {
+            "x": 8,
+            "y": 1,
+            "z": 1
+          },
+          "rotation": 0
+        },
+        {
+          "id": "prop-4",
+          "kind": "fence",
+          "tile": {
+            "x": 4,
+            "y": 1,
+            "z": 3
+          },
+          "rotation": 0
+        },
+        {
+          "id": "prop-10",
+          "kind": "fence",
+          "tile": {
+            "x": 51,
+            "y": 1,
+            "z": 8
+          },
+          "rotation": 2
+        },
+        {
+          "id": "prop-13",
+          "kind": "fence",
+          "tile": {
+            "x": 35,
+            "y": 1,
+            "z": 22
+          },
+          "rotation": 1
+        },
+        {
+          "id": "prop-14",
+          "kind": "fence",
+          "tile": {
+            "x": 22,
+            "y": 1,
+            "z": 23
+          },
+          "rotation": 3
+        },
+        {
+          "id": "prop-15",
+          "kind": "fence",
+          "tile": {
+            "x": 1,
+            "y": 1,
+            "z": 24
+          },
+          "rotation": 0
+        },
+        {
+          "id": "prop-23",
+          "kind": "fence",
+          "tile": {
+            "x": 49,
+            "y": 1,
+            "z": 30
+          },
+          "rotation": 3
+        },
+        {
+          "id": "prop-28",
+          "kind": "fence",
+          "tile": {
+            "x": 26,
+            "y": 1,
+            "z": 34
+          },
+          "rotation": 2
+        },
+        {
+          "id": "prop-42",
+          "kind": "fence",
+          "tile": {
+            "x": 30,
+            "y": 1,
+            "z": 36
+          },
+          "rotation": 0
+        },
+        {
+          "id": "prop-43",
+          "kind": "fence",
+          "tile": {
+            "x": 27,
+            "y": 1,
+            "z": 45
+          },
+          "rotation": 0
+        },
+        {
+          "id": "prop-44",
+          "kind": "fence",
+          "tile": {
+            "x": 26,
+            "y": 1,
+            "z": 46
+          },
+          "rotation": 0
+        },
+        {
+          "id": "prop-48",
+          "kind": "fence",
+          "tile": {
+            "x": 32,
+            "y": 1,
+            "z": 54
+          },
+          "rotation": 2
+        },
+        {
+          "id": "prop-49",
+          "kind": "fence",
+          "tile": {
+            "x": 39,
+            "y": 1,
+            "z": 55
+          },
+          "rotation": 0
+        },
+        {
+          "id": "prop-50",
+          "kind": "fence",
+          "tile": {
+            "x": 3,
+            "y": 1,
+            "z": 56
+          },
+          "rotation": 2
+        },
+        {
+          "id": "prop-51",
+          "kind": "fence",
+          "tile": {
+            "x": 26,
+            "y": 1,
+            "z": 57
+          },
+          "rotation": 1
+        },
+        {
+          "id": "prop-54",
+          "kind": "fence",
+          "tile": {
+            "x": 3,
+            "y": 1,
+            "z": 60
+          },
+          "rotation": 0
+        },
+        {
+          "id": "prop-57",
+          "kind": "fence",
+          "tile": {
+            "x": 21,
+            "y": 1,
+            "z": 71
+          },
+          "rotation": 2
+        },
+        {
+          "id": "prop-60",
+          "kind": "fence",
+          "tile": {
+            "x": 48,
+            "y": 1,
+            "z": 56
+          },
+          "rotation": 3
+        },
+        {
+          "id": "prop-71",
+          "kind": "fence",
+          "tile": {
+            "x": 19,
+            "y": 1,
+            "z": 29
+          },
+          "rotation": 0
+        },
+        {
+          "id": "prop-74",
+          "kind": "fence",
+          "tile": {
+            "x": 25,
+            "y": 1,
+            "z": 20
+          },
+          "rotation": 0
+        },
+        {
+          "id": "prop-77",
+          "kind": "fence",
+          "tile": {
+            "x": 9,
+            "y": 1,
+            "z": 47
+          },
+          "rotation": 1
+        },
+        {
+          "id": "prop-86",
+          "kind": "fence",
+          "tile": {
+            "x": 23,
+            "y": 1,
+            "z": 9
+          },
+          "rotation": 0
+        },
+        {
+          "id": "prop-89",
+          "kind": "fence",
+          "tile": {
+            "x": 34,
+            "y": 1,
+            "z": 34
+          },
+          "rotation": 0
+        },
+        {
+          "id": "prop-90",
+          "kind": "fence",
+          "tile": {
+            "x": 20,
+            "y": 1,
+            "z": 53
+          },
+          "rotation": 1
+        },
+        {
+          "id": "prop-92",
+          "kind": "fence",
+          "tile": {
+            "x": 35,
+            "y": 1,
+            "z": 58
+          },
+          "rotation": 0
+        },
+        {
+          "id": "prop-94",
+          "kind": "fence",
+          "tile": {
+            "x": 34,
+            "y": 1,
+            "z": 24
+          },
+          "rotation": 3
+        },
+        {
+          "id": "prop-98",
+          "kind": "fence",
+          "tile": {
+            "x": 23,
+            "y": 1,
+            "z": 61
+          },
+          "rotation": 3
+        },
+        {
+          "id": "prop-99",
+          "kind": "fence",
+          "tile": {
+            "x": 48,
+            "y": 1,
+            "z": 28
+          },
+          "rotation": 3
+        },
+        {
+          "id": "prop-111",
+          "kind": "fence",
+          "tile": {
+            "x": 33,
+            "y": 1,
+            "z": 36
+          },
+          "rotation": 3
+        }
+      ],
+      "lots": [
+        {
+          "id": "lot-1",
+          "rect": {
+            "x": 4,
+            "z": 48,
+            "w": 7,
+            "d": 10
+          },
+          "level": 1,
+          "frontage": "e"
+        },
+        {
+          "id": "lot-2",
+          "rect": {
+            "x": 29,
+            "z": 55,
+            "w": 9,
+            "d": 8
+          },
+          "level": 1,
+          "frontage": "s"
+        },
+        {
+          "id": "lot-3",
+          "rect": {
+            "x": 2,
+            "z": 20,
+            "w": 9,
+            "d": 8
+          },
+          "level": 1,
+          "frontage": "e"
+        },
+        {
+          "id": "lot-4",
+          "rect": {
+            "x": 19,
+            "z": 28,
+            "w": 12,
+            "d": 9
+          },
+          "level": 1,
+          "frontage": "s"
+        },
+        {
+          "id": "lot-5",
+          "rect": {
+            "x": 32,
+            "z": 45,
+            "w": 8,
+            "d": 7
+          },
+          "level": 1,
+          "frontage": "n"
+        },
+        {
+          "id": "lot-6",
+          "rect": {
+            "x": 24,
+            "z": 3,
+            "w": 12,
+            "d": 9
+          },
+          "level": 1,
+          "frontage": "s"
+        },
+        {
+          "id": "lot-7",
+          "rect": {
+            "x": 19,
+            "z": 54,
+            "w": 8,
+            "d": 9
+          },
+          "level": 1,
+          "frontage": "w"
+        },
+        {
+          "id": "lot-8",
+          "rect": {
+            "x": 19,
+            "z": 45,
+            "w": 7,
+            "d": 7
+          },
+          "level": 1,
+          "frontage": "w"
+        },
+        {
+          "id": "lot-9",
+          "rect": {
+            "x": 33,
+            "z": 25,
+            "w": 7,
+            "d": 9
+          },
+          "level": 1,
+          "frontage": "e"
+        },
+        {
+          "id": "lot-10",
+          "rect": {
+            "x": 3,
+            "z": 3,
+            "w": 8,
+            "d": 8
+          },
+          "level": 1,
+          "frontage": "e"
+        }
+      ]
+    },
+    {
+      "recipe": {
+        "seed": "mc-resume-02",
+        "params": {
+          "archetype": "settlement",
+          "biome": "coastal",
+          "settlement": "town",
+          "size": "medium",
+          "hooks": [
+            {
+              "kind": "deploy",
+              "count": 1,
+              "requiredPass": 3
+            },
+            {
+              "kind": "egg-spawner",
+              "count": 3,
+              "requiredPass": 1,
+              "minDistanceFromDeploy": 12,
+              "maxNearestDistanceFromDeploy": 30,
+              "meta": {
+                "hatchRadius": 3
+              }
+            },
+            {
+              "kind": "edge-spawn",
+              "count": 2,
+              "requiredPass": 1
+            },
+            {
+              "kind": "extraction",
+              "count": 1,
+              "requiredPass": 3
+            }
+          ],
+          "slopeShare": 1
+        }
+      },
+      "origins": [
+        {
+          "id": "prop-15",
+          "tile": {
+            "x": 23,
+            "y": 1,
+            "z": 3
+          },
+          "rotation": 3,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-16",
+          "tile": {
+            "x": 70,
+            "y": 2,
+            "z": 3
+          },
+          "rotation": 0,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-17",
+          "tile": {
+            "x": 15,
+            "y": 2,
+            "z": 4
+          },
+          "rotation": 2,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-46",
+          "tile": {
+            "x": 47,
+            "y": 0,
+            "z": 12
+          },
+          "rotation": 1,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-47",
+          "tile": {
+            "x": 49,
+            "y": 0,
+            "z": 12
+          },
+          "rotation": 2,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-51",
+          "tile": {
+            "x": 10,
+            "y": 2,
+            "z": 14
+          },
+          "rotation": 2,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-63",
+          "tile": {
+            "x": 45,
+            "y": 1,
+            "z": 18
+          },
+          "rotation": 0,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-68",
+          "tile": {
+            "x": 68,
+            "y": 0,
+            "z": 24
+          },
+          "rotation": 0,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-71",
+          "tile": {
+            "x": 26,
+            "y": 1,
+            "z": 25
+          },
+          "rotation": 0,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-81",
+          "tile": {
+            "x": 23,
+            "y": 2,
+            "z": 29
+          },
+          "rotation": 1,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-84",
+          "tile": {
+            "x": 22,
+            "y": 2,
+            "z": 31
+          },
+          "rotation": 1,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-85",
+          "tile": {
+            "x": 37,
+            "y": 2,
+            "z": 31
+          },
+          "rotation": 3,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-86",
+          "tile": {
+            "x": 11,
+            "y": 0,
+            "z": 32
+          },
+          "rotation": 1,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-116",
+          "tile": {
+            "x": 21,
+            "y": 2,
+            "z": 37
+          },
+          "rotation": 3,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-122",
+          "tile": {
+            "x": 49,
+            "y": 1,
+            "z": 37
+          },
+          "rotation": 3,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-130",
+          "tile": {
+            "x": 54,
+            "y": 0,
+            "z": 38
+          },
+          "rotation": 0,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-138",
+          "tile": {
+            "x": 57,
+            "y": 0,
+            "z": 39
+          },
+          "rotation": 1,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-139",
+          "tile": {
+            "x": 61,
+            "y": 0,
+            "z": 39
+          },
+          "rotation": 1,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-143",
+          "tile": {
+            "x": 24,
+            "y": 1,
+            "z": 40
+          },
+          "rotation": 3,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-159",
+          "tile": {
+            "x": 6,
+            "y": 2,
+            "z": 42
+          },
+          "rotation": 0,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-166",
+          "tile": {
+            "x": 52,
+            "y": 0,
+            "z": 44
+          },
+          "rotation": 1,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-167",
+          "tile": {
+            "x": 64,
+            "y": 0,
+            "z": 44
+          },
+          "rotation": 0,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-168",
+          "tile": {
+            "x": 15,
+            "y": 2,
+            "z": 45
+          },
+          "rotation": 3,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-171",
+          "tile": {
+            "x": 54,
+            "y": 0,
+            "z": 46
+          },
+          "rotation": 0,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-172",
+          "tile": {
+            "x": 17,
+            "y": 2,
+            "z": 47
+          },
+          "rotation": 2,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-176",
+          "tile": {
+            "x": 50,
+            "y": 0,
+            "z": 47
+          },
+          "rotation": 1,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-177",
+          "tile": {
+            "x": 18,
+            "y": 2,
+            "z": 48
+          },
+          "rotation": 0,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-181",
+          "tile": {
+            "x": 14,
+            "y": 2,
+            "z": 50
+          },
+          "rotation": 3,
+          "source": "vegetation"
+        },
+        {
+          "id": "prop-198",
+          "tile": {
+            "x": 23,
+            "y": 0,
+            "z": 48
+          },
+          "rotation": 3,
+          "source": "yard"
+        },
+        {
+          "id": "prop-211",
+          "tile": {
+            "x": 11,
+            "y": 2,
+            "z": 5
+          },
+          "rotation": 0,
+          "source": "yard"
+        },
+        {
+          "id": "prop-218",
+          "tile": {
+            "x": 27,
+            "y": 1,
+            "z": 6
+          },
+          "rotation": 0,
+          "source": "yard"
+        },
+        {
+          "id": "prop-224",
+          "tile": {
+            "x": 3,
+            "y": 0,
+            "z": 29
+          },
+          "rotation": 1,
+          "source": "yard"
+        },
+        {
+          "id": "prop-228",
+          "tile": {
+            "x": 67,
+            "y": 1,
+            "z": 10
+          },
+          "rotation": 2,
+          "source": "yard"
+        },
+        {
+          "id": "prop-229",
+          "tile": {
+            "x": 26,
+            "y": 1,
+            "z": 29
+          },
+          "rotation": 3,
+          "source": "yard"
+        },
+        {
+          "id": "prop-232",
+          "tile": {
+            "x": 35,
+            "y": 2,
+            "z": 18
+          },
+          "rotation": 3,
+          "source": "yard"
+        },
+        {
+          "id": "prop-233",
+          "tile": {
+            "x": 28,
+            "y": 0,
+            "z": 41
+          },
+          "rotation": 3,
+          "source": "yard"
+        }
+      ],
+      "boundaryPassChanged": false,
+      "fences": [
+        {
+          "id": "prop-15",
+          "kind": "fence",
+          "tile": {
+            "x": 23,
+            "y": 1,
+            "z": 3
+          },
+          "rotation": 3
+        },
+        {
+          "id": "prop-16",
+          "kind": "fence",
+          "tile": {
+            "x": 70,
+            "y": 2,
+            "z": 3
+          },
+          "rotation": 0
+        },
+        {
+          "id": "prop-17",
+          "kind": "fence",
+          "tile": {
+            "x": 15,
+            "y": 2,
+            "z": 4
+          },
+          "rotation": 2
+        },
+        {
+          "id": "prop-46",
+          "kind": "fence",
+          "tile": {
+            "x": 47,
+            "y": 0,
+            "z": 12
+          },
+          "rotation": 1
+        },
+        {
+          "id": "prop-47",
+          "kind": "fence",
+          "tile": {
+            "x": 49,
+            "y": 0,
+            "z": 12
+          },
+          "rotation": 2
+        },
+        {
+          "id": "prop-51",
+          "kind": "fence",
+          "tile": {
+            "x": 10,
+            "y": 2,
+            "z": 14
+          },
+          "rotation": 2
+        },
+        {
+          "id": "prop-63",
+          "kind": "fence",
+          "tile": {
+            "x": 45,
+            "y": 1,
+            "z": 18
+          },
+          "rotation": 0
+        },
+        {
+          "id": "prop-68",
+          "kind": "fence",
+          "tile": {
+            "x": 68,
+            "y": 0,
+            "z": 24
+          },
+          "rotation": 0
+        },
+        {
+          "id": "prop-71",
+          "kind": "fence",
+          "tile": {
+            "x": 26,
+            "y": 1,
+            "z": 25
+          },
+          "rotation": 0
+        },
+        {
+          "id": "prop-81",
+          "kind": "fence",
+          "tile": {
+            "x": 23,
+            "y": 2,
+            "z": 29
+          },
+          "rotation": 1
+        },
+        {
+          "id": "prop-84",
+          "kind": "fence",
+          "tile": {
+            "x": 22,
+            "y": 2,
+            "z": 31
+          },
+          "rotation": 1
+        },
+        {
+          "id": "prop-85",
+          "kind": "fence",
+          "tile": {
+            "x": 37,
+            "y": 2,
+            "z": 31
+          },
+          "rotation": 3
+        },
+        {
+          "id": "prop-86",
+          "kind": "fence",
+          "tile": {
+            "x": 11,
+            "y": 0,
+            "z": 32
+          },
+          "rotation": 1
+        },
+        {
+          "id": "prop-116",
+          "kind": "fence",
+          "tile": {
+            "x": 21,
+            "y": 2,
+            "z": 37
+          },
+          "rotation": 3
+        },
+        {
+          "id": "prop-122",
+          "kind": "fence",
+          "tile": {
+            "x": 49,
+            "y": 1,
+            "z": 37
+          },
+          "rotation": 3
+        },
+        {
+          "id": "prop-130",
+          "kind": "fence",
+          "tile": {
+            "x": 54,
+            "y": 0,
+            "z": 38
+          },
+          "rotation": 0
+        },
+        {
+          "id": "prop-138",
+          "kind": "fence",
+          "tile": {
+            "x": 57,
+            "y": 0,
+            "z": 39
+          },
+          "rotation": 1
+        },
+        {
+          "id": "prop-139",
+          "kind": "fence",
+          "tile": {
+            "x": 61,
+            "y": 0,
+            "z": 39
+          },
+          "rotation": 1
+        },
+        {
+          "id": "prop-143",
+          "kind": "fence",
+          "tile": {
+            "x": 24,
+            "y": 1,
+            "z": 40
+          },
+          "rotation": 3
+        },
+        {
+          "id": "prop-159",
+          "kind": "fence",
+          "tile": {
+            "x": 6,
+            "y": 2,
+            "z": 42
+          },
+          "rotation": 0
+        },
+        {
+          "id": "prop-166",
+          "kind": "fence",
+          "tile": {
+            "x": 52,
+            "y": 0,
+            "z": 44
+          },
+          "rotation": 1
+        },
+        {
+          "id": "prop-167",
+          "kind": "fence",
+          "tile": {
+            "x": 64,
+            "y": 0,
+            "z": 44
+          },
+          "rotation": 0
+        },
+        {
+          "id": "prop-168",
+          "kind": "fence",
+          "tile": {
+            "x": 15,
+            "y": 2,
+            "z": 45
+          },
+          "rotation": 3
+        },
+        {
+          "id": "prop-171",
+          "kind": "fence",
+          "tile": {
+            "x": 54,
+            "y": 0,
+            "z": 46
+          },
+          "rotation": 0
+        },
+        {
+          "id": "prop-172",
+          "kind": "fence",
+          "tile": {
+            "x": 17,
+            "y": 2,
+            "z": 47
+          },
+          "rotation": 2
+        },
+        {
+          "id": "prop-176",
+          "kind": "fence",
+          "tile": {
+            "x": 50,
+            "y": 0,
+            "z": 47
+          },
+          "rotation": 1
+        },
+        {
+          "id": "prop-177",
+          "kind": "fence",
+          "tile": {
+            "x": 18,
+            "y": 2,
+            "z": 48
+          },
+          "rotation": 0
+        },
+        {
+          "id": "prop-181",
+          "kind": "fence",
+          "tile": {
+            "x": 14,
+            "y": 2,
+            "z": 50
+          },
+          "rotation": 3
+        },
+        {
+          "id": "prop-198",
+          "kind": "fence",
+          "tile": {
+            "x": 23,
+            "y": 0,
+            "z": 48
+          },
+          "rotation": 3
+        },
+        {
+          "id": "prop-211",
+          "kind": "fence",
+          "tile": {
+            "x": 11,
+            "y": 2,
+            "z": 5
+          },
+          "rotation": 0
+        },
+        {
+          "id": "prop-218",
+          "kind": "fence",
+          "tile": {
+            "x": 27,
+            "y": 1,
+            "z": 6
+          },
+          "rotation": 0
+        },
+        {
+          "id": "prop-224",
+          "kind": "fence",
+          "tile": {
+            "x": 3,
+            "y": 0,
+            "z": 29
+          },
+          "rotation": 1
+        },
+        {
+          "id": "prop-228",
+          "kind": "fence",
+          "tile": {
+            "x": 67,
+            "y": 1,
+            "z": 10
+          },
+          "rotation": 2
+        },
+        {
+          "id": "prop-229",
+          "kind": "fence",
+          "tile": {
+            "x": 26,
+            "y": 1,
+            "z": 29
+          },
+          "rotation": 3
+        },
+        {
+          "id": "prop-232",
+          "kind": "fence",
+          "tile": {
+            "x": 35,
+            "y": 2,
+            "z": 18
+          },
+          "rotation": 3
+        },
+        {
+          "id": "prop-233",
+          "kind": "fence",
+          "tile": {
+            "x": 28,
+            "y": 0,
+            "z": 41
+          },
+          "rotation": 3
+        }
+      ],
+      "lots": [
+        {
+          "id": "lot-1",
+          "rect": {
+            "x": 45,
+            "z": 6,
+            "w": 9,
+            "d": 8
+          },
+          "level": 0,
+          "frontage": "e"
+        },
+        {
+          "id": "lot-2",
+          "rect": {
+            "x": 22,
+            "z": 7,
+            "w": 12,
+            "d": 9
+          },
+          "level": 2,
+          "frontage": "w"
+        },
+        {
+          "id": "lot-3",
+          "rect": {
+            "x": 23,
+            "z": 42,
+            "w": 8,
+            "d": 10
+          },
+          "level": 0,
+          "frontage": "e"
+        },
+        {
+          "id": "lot-4",
+          "rect": {
+            "x": 36,
+            "z": 38,
+            "w": 14,
+            "d": 11
+          },
+          "level": 0,
+          "frontage": "w"
+        },
+        {
+          "id": "lot-5",
+          "rect": {
+            "x": 59,
+            "z": 5,
+            "w": 8,
+            "d": 14
+          },
+          "level": 0,
+          "frontage": "s"
+        },
+        {
+          "id": "lot-6",
+          "rect": {
+            "x": 49,
+            "z": 24,
+            "w": 8,
+            "d": 12
+          },
+          "level": 2,
+          "frontage": "n"
+        },
+        {
+          "id": "lot-7",
+          "rect": {
+            "x": 4,
+            "z": 24,
+            "w": 10,
+            "d": 9
+          },
+          "level": 0,
+          "frontage": "n"
+        },
+        {
+          "id": "lot-8",
+          "rect": {
+            "x": 17,
+            "z": 30,
+            "w": 14,
+            "d": 8
+          },
+          "level": 2,
+          "frontage": "e"
+        },
+        {
+          "id": "lot-9",
+          "rect": {
+            "x": 3,
+            "z": 6,
+            "w": 14,
+            "d": 13
+          },
+          "level": 2,
+          "frontage": "e"
+        },
+        {
+          "id": "lot-10",
+          "rect": {
+            "x": 61,
+            "z": 24,
+            "w": 8,
+            "d": 10
+          },
+          "level": 0,
+          "frontage": "n"
+        },
+        {
+          "id": "lot-11",
+          "rect": {
+            "x": 37,
+            "z": 24,
+            "w": 8,
+            "d": 12
+          },
+          "level": 2,
+          "frontage": "n"
+        }
+      ]
+    }
+  ]
+}

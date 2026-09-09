@@ -1,0 +1,156 @@
+[
+  {
+    "id": "C1-city-fences",
+    "seed": "mc-opening-03",
+    "biome": "coastal",
+    "settlement": "city",
+    "size": "medium",
+    "pitch": 55,
+    "rotation": 0,
+    "clip": {
+      "x": 765,
+      "y": 177,
+      "width": 1200,
+      "height": 1000
+    },
+    "focus": {
+      "x": 51,
+      "y": 1,
+      "z": 31
+    }
+  },
+  {
+    "id": "C2-city-fences",
+    "seed": "mc-opening-03",
+    "biome": "coastal",
+    "settlement": "city",
+    "size": "medium",
+    "pitch": 55,
+    "rotation": 1,
+    "clip": {
+      "x": 836,
+      "y": 204,
+      "width": 1200,
+      "height": 1000
+    },
+    "focus": {
+      "x": 51,
+      "y": 1,
+      "z": 31
+    }
+  },
+  {
+    "id": "town-corroboration",
+    "seed": "mc-resume-02",
+    "biome": "coastal",
+    "settlement": "town",
+    "size": "medium",
+    "rotation": 0,
+    "clip": {
+      "x": 380,
+      "y": 0,
+      "width": 2020,
+      "height": 1500
+    }
+  },
+  {
+    "id": "rural-trail-control",
+    "seed": "mc-opening-01",
+    "biome": "coastal",
+    "settlement": "rural",
+    "size": "small",
+    "focus": {
+      "x": 20,
+      "y": 2,
+      "z": 43
+    },
+    "pitch": 45,
+    "rotation": 0,
+    "clip": {
+      "x": 790,
+      "y": 250,
+      "width": 1200,
+      "height": 1000
+    }
+  },
+  {
+    "id": "rural-plot-control",
+    "seed": "mc-opening-01",
+    "biome": "coastal",
+    "settlement": "rural",
+    "size": "small",
+    "focus": {
+      "x": 40,
+      "y": 2,
+      "z": 18
+    },
+    "pitch": 45,
+    "rotation": 0,
+    "clip": {
+      "x": 790,
+      "y": 250,
+      "width": 1200,
+      "height": 1000
+    }
+  },
+  {
+    "id": "waterfront-control",
+    "seed": "mc-opening-03",
+    "biome": "coastal",
+    "settlement": "city",
+    "size": "medium",
+    "focus": {
+      "x": 51,
+      "y": 1,
+      "z": 40
+    },
+    "pitch": 55,
+    "rotation": 0,
+    "clip": {
+      "x": 790,
+      "y": 250,
+      "width": 1200,
+      "height": 1000
+    }
+  },
+  {
+    "id": "city-plot-run-1",
+    "seed": "mc-opening-03",
+    "biome": "coastal",
+    "settlement": "city",
+    "size": "medium",
+    "focus": {
+      "x": 24,
+      "y": 1,
+      "z": 27
+    },
+    "pitch": 45,
+    "rotation": 1,
+    "clip": {
+      "x": 790,
+      "y": 200,
+      "width": 1200,
+      "height": 1050
+    }
+  },
+  {
+    "id": "city-plot-run-2",
+    "seed": "mc-opening-03",
+    "biome": "coastal",
+    "settlement": "city",
+    "size": "medium",
+    "focus": {
+      "x": 24,
+      "y": 1,
+      "z": 27
+    },
+    "pitch": 45,
+    "rotation": 2,
+    "clip": {
+      "x": 790,
+      "y": 200,
+      "width": 1200,
+      "height": 1050
+    }
+  }
+]

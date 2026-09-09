@@ -1,0 +1,42 @@
+[
+  {
+    "id": "S1-water-surface",
+    "seed": "mc-opening-01",
+    "biome": "coastal",
+    "settlement": "rural",
+    "size": "small",
+    "pitch": 55,
+    "clip": {
+      "x": 766,
+      "y": 159,
+      "width": 1200,
+      "height": 1000
+    },
+    "rotation": 0,
+    "focus": {
+      "x": 40,
+      "y": 0,
+      "z": 4
+    }
+  },
+  {
+    "id": "S2-water-surface",
+    "seed": "mc-opening-01",
+    "biome": "coastal",
+    "settlement": "rural",
+    "size": "small",
+    "pitch": 55,
+    "clip": {
+      "x": 834,
+      "y": 227,
+      "width": 1200,
+      "height": 1000
+    },
+    "rotation": 1,
+    "focus": {
+      "x": 40,
+      "y": 0,
+      "z": 4
+    }
+  }
+]

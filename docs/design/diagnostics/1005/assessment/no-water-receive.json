@@ -1,0 +1,5915 @@
+{
+  "id": "no-water-receive",
+  "seed": "mc-opening-01",
+  "biome": "coastal",
+  "settlement": "rural",
+  "size": "small",
+  "pitch": 55,
+  "clip": {
+    "x": 834,
+    "y": 227,
+    "width": 1200,
+    "height": 1000
+  },
+  "rotation": 1,
+  "focus": {
+    "x": 40,
+    "y": 0,
+    "z": 4
+  },
+  "probe": "no-water-receive",
+  "runtime": "ba4d7b1fb909d84f1c6a88f7d675415344df6155",
+  "water": {
+    "probe": "no-water-receive",
+    "meshes": [
+      {
+        "name": "tiles-ground:tile:water:0",
+        "count": 577,
+        "visible": true,
+        "castShadow": true,
+        "receiveShadow": true,
+        "bounds": {
+          "isBox3": true,
+          "min": {
+            "x": -0.5,
+            "y": -0.5,
+            "z": -0.5
+          },
+          "max": {
+            "x": 0.5,
+            "y": 0.5,
+            "z": 0.5
+          }
+        },
+        "matrix": [
+          1, 0, 0, 0, 0, 0.15000000596046448, 0, 0, 0, 0, 1, 0, 0.5,
+          0.07500000298023224, 0.5, 1
+        ]
+      },
+      {
+        "name": "tiles-model:tile.ground.water:0:0",
+        "count": 577,
+        "visible": true,
+        "castShadow": true,
+        "receiveShadow": true,
+        "bounds": {
+          "isBox3": true,
+          "min": {
+            "x": -0.5,
+            "y": -0.019999999552965164,
+            "z": -0.5
+          },
+          "max": {
+            "x": 0.5,
+            "y": 0.019999999552965164,
+            "z": 0.5
+          }
+        },
+        "matrix": [
+          1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0.5, 0.04500000178813934, 0.5, 1
+        ]
+      },
+      {
+        "name": "tiles-model:tile.ground.water:0:1",
+        "count": 577,
+        "visible": true,
+        "castShadow": true,
+        "receiveShadow": true,
+        "bounds": {
+          "isBox3": true,
+          "min": {
+            "x": -0.5,
+            "y": -0.009999999776482582,
+            "z": -0.5
+          },
+          "max": {
+            "x": 0.5,
+            "y": 0.009999999776482582,
+            "z": 0.5
+          }
+        },
+        "matrix": [
+          1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0.5, 0.07500000298023224, 0.5, 1
+        ]
+      }
+    ],
+    "waterTiles": [
+      {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 1,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 2,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 3,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 4,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 5,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 6,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 7,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 8,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 9,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 10,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 11,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 12,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 13,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 14,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 15,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 16,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 17,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 18,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 19,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 20,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 21,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 22,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 23,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 24,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 25,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 26,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 27,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 28,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 29,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 30,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 31,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 32,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 33,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 34,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 35,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 36,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 37,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 38,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 39,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 40,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 41,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 42,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 43,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 44,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 45,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 46,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 47,
+        "y": 0,
+        "z": 0,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 0,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 1,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 2,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 3,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 4,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 5,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 6,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 7,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 8,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 9,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 10,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 11,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 12,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 13,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 14,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 15,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 16,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 17,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 18,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 19,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 20,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 21,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 22,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 23,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 24,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 25,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 26,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 27,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 28,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 29,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 30,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 31,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 32,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 33,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 34,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 35,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 36,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 37,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 38,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 39,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 40,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 41,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 42,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 43,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 44,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 45,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 46,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 47,
+        "y": 0,
+        "z": 1,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 0,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 1,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 2,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 3,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 4,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 5,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 6,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 7,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 8,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 9,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 10,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 11,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 12,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 13,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 14,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 15,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 16,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 17,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 18,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 19,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 20,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 21,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 22,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 23,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 24,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 25,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 26,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 27,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 28,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 29,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 30,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 31,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 32,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 33,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 34,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 35,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 36,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 37,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 38,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 39,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 40,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 41,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 42,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 43,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 44,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 45,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 46,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 47,
+        "y": 0,
+        "z": 2,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 0,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 1,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 2,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 3,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 4,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 5,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 6,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 7,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 8,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 9,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 10,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 11,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 12,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 13,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 14,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 15,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 16,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 17,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 18,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 19,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 20,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 21,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 22,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 23,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 24,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 25,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 26,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 27,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 28,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 29,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 30,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 31,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 32,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 33,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 34,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 35,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 36,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 37,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 38,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 39,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 40,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 41,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 42,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 43,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 44,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 45,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 46,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 47,
+        "y": 0,
+        "z": 3,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 0,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 1,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 2,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 3,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 4,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 5,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 6,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 7,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 8,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 9,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 10,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 11,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 12,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 13,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 14,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 15,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 16,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 17,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 18,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 19,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 20,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 21,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 22,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 23,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 24,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 25,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 26,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 27,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 28,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 29,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 30,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 31,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 32,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 33,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 34,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 35,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 36,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 37,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 38,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 39,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 40,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 41,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 42,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 43,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 44,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 45,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 46,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 47,
+        "y": 0,
+        "z": 4,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 0,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 1,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 2,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 3,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 4,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 5,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 6,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 7,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 8,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 9,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 10,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 11,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 12,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 13,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 14,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 15,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 16,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 17,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 18,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 19,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 20,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 21,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 22,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 23,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 24,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 25,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 26,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 27,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 28,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 29,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 30,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 31,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 32,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 33,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 34,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 35,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 36,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 37,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 38,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 39,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 40,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 41,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 42,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 43,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 44,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 45,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 46,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 47,
+        "y": 0,
+        "z": 5,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 0,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 1,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 2,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 3,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 4,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 5,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 6,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 7,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 8,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 9,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 10,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 11,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 12,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 13,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 14,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 15,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 16,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 17,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 18,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 19,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 20,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 21,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 22,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 23,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 24,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 25,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 26,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 27,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 28,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 29,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 30,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 31,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 32,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 33,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 34,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 35,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 36,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 37,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 38,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 39,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 40,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 41,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 42,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 43,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 44,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 45,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 46,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 47,
+        "y": 0,
+        "z": 6,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 0,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 1,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 2,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 3,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 4,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 5,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 6,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 7,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 8,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 9,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 10,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 11,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 12,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 13,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 14,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 15,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 16,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 17,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 18,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 19,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 20,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 21,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 22,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 23,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 24,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 25,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 26,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 27,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 28,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 29,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 30,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 31,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 32,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 33,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 34,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 35,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 36,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 37,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 38,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 39,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 40,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 41,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 42,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 43,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 44,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 45,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 46,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 47,
+        "y": 0,
+        "z": 7,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 0,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 1,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 2,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 3,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 4,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 5,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 6,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 7,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 8,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 9,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 10,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 11,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 12,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 13,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 14,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 15,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 16,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 17,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 18,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 19,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 20,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 21,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 22,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 23,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 24,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 25,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 26,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 27,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 28,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 29,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 30,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 31,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 32,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 33,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 34,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 35,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 36,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 37,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 38,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 39,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 40,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 41,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 42,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 43,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 44,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 45,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 46,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 47,
+        "y": 0,
+        "z": 8,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 0,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 1,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 2,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 3,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 4,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 5,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 6,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 7,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 8,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 9,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 10,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 11,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 12,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 13,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 14,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 15,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 16,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 17,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 18,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 19,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 20,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 21,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 22,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 23,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 24,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 25,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 26,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 27,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 28,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 29,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 30,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 31,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 32,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 33,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 34,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 35,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 36,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 37,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 38,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 39,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 40,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 41,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 42,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 43,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 44,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 45,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 46,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 47,
+        "y": 0,
+        "z": 9,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 2,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 3,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 4,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 5,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 6,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 7,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 8,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 9,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 10,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 11,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 12,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 13,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 14,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 15,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 16,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 17,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 18,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 19,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 20,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 21,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 22,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 23,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 24,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 25,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 26,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 27,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 28,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 29,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 30,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 31,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 32,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 33,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 34,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 35,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 36,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 37,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 38,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 39,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 40,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 41,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 42,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 43,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 44,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 45,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 46,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 47,
+        "y": 0,
+        "z": 10,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 11,
+        "y": 0,
+        "z": 11,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 12,
+        "y": 0,
+        "z": 11,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 13,
+        "y": 0,
+        "z": 11,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 14,
+        "y": 0,
+        "z": 11,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 15,
+        "y": 0,
+        "z": 11,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 16,
+        "y": 0,
+        "z": 11,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 17,
+        "y": 0,
+        "z": 11,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 18,
+        "y": 0,
+        "z": 11,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 19,
+        "y": 0,
+        "z": 11,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 20,
+        "y": 0,
+        "z": 11,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 21,
+        "y": 0,
+        "z": 11,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 22,
+        "y": 0,
+        "z": 11,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 23,
+        "y": 0,
+        "z": 11,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 24,
+        "y": 0,
+        "z": 11,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 25,
+        "y": 0,
+        "z": 11,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 26,
+        "y": 0,
+        "z": 11,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 27,
+        "y": 0,
+        "z": 11,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 28,
+        "y": 0,
+        "z": 11,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 29,
+        "y": 0,
+        "z": 11,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 30,
+        "y": 0,
+        "z": 11,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 31,
+        "y": 0,
+        "z": 11,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 32,
+        "y": 0,
+        "z": 11,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 33,
+        "y": 0,
+        "z": 11,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 34,
+        "y": 0,
+        "z": 11,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 35,
+        "y": 0,
+        "z": 11,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 36,
+        "y": 0,
+        "z": 11,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 37,
+        "y": 0,
+        "z": 11,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 38,
+        "y": 0,
+        "z": 11,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 39,
+        "y": 0,
+        "z": 11,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 40,
+        "y": 0,
+        "z": 11,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 41,
+        "y": 0,
+        "z": 11,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 42,
+        "y": 0,
+        "z": 11,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 43,
+        "y": 0,
+        "z": 11,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 19,
+        "y": 0,
+        "z": 12,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 20,
+        "y": 0,
+        "z": 12,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 21,
+        "y": 0,
+        "z": 12,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 22,
+        "y": 0,
+        "z": 12,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 23,
+        "y": 0,
+        "z": 12,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 24,
+        "y": 0,
+        "z": 12,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 25,
+        "y": 0,
+        "z": 12,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 26,
+        "y": 0,
+        "z": 12,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 27,
+        "y": 0,
+        "z": 12,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 28,
+        "y": 0,
+        "z": 12,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 29,
+        "y": 0,
+        "z": 12,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 30,
+        "y": 0,
+        "z": 12,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 31,
+        "y": 0,
+        "z": 12,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 32,
+        "y": 0,
+        "z": 12,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 24,
+        "y": 0,
+        "z": 13,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 25,
+        "y": 0,
+        "z": 13,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 26,
+        "y": 0,
+        "z": 13,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      },
+      {
+        "x": 27,
+        "y": 0,
+        "z": 13,
+        "surface": "water",
+        "pass": 0,
+        "walls": {},
+        "coverProvided": 0,
+        "blocksLos": false
+      }
+    ]
+  },
+  "pngSha256": "54cd9f817d5756945ea705ab20071d244b26eda9da5167e0ae9bb5e42eeb2200",
+  "url": "http://127.0.0.1:5177/mapgen-preview.html?seed=mc-opening-01&biome=coastal&settlement=rural&size=small&models=1&units=1&slope=100",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "camera": {
+    "yawIndex": 1,
+    "zoom": 67.36096792653701,
+    "target": {
+      "x": 40.5,
+      "y": 0.15,
+      "z": 4.5
+    },
+    "bounds": {
+      "x": 0,
+      "z": 0,
+      "w": 48,
+      "d": 48
+    },
+    "zoomRange": {
+      "min": 29.757410374933876,
+      "max": 192
+    }
+  },
+  "actualPitch": 54.99999999999969,
+  "rendering": {
+    "timingMethod": "RAF interval with gl.finish(), discard first four of twelve frames; software renderer, not a hardware FPS claim",
+    "frameMs": [
+      11.099999904632568, 19, 14, 343.40000009536743, 311.7000000476837,
+      369.39999985694885, 1001.7999999523163, 729.6000001430511
+    ],
+    "render": {
+      "frame": 33,
+      "calls": 427,
+      "triangles": 207166,
+      "points": 0,
+      "lines": 0
+    },
+    "memory": {
+      "geometries": 748,
+      "textures": 32
+    },
+    "programs": 17
+  },
+  "elapsedMs": 35244.486940999996
+}

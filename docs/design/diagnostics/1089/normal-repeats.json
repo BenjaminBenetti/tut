@@ -1,0 +1,339 @@
+{
+  "runtime": "acf026b",
+  "retries": 0,
+  "runs": [
+    {
+      "status": "passed",
+      "milliseconds": 29856,
+      "progress": [
+        {
+          "attempt": 0,
+          "turn": 1,
+          "commandBefore": 0,
+          "commandAfter": 1,
+          "from": {
+            "x": 8,
+            "y": 2,
+            "z": 29
+          },
+          "to": {
+            "x": 8,
+            "y": 2,
+            "z": 23
+          },
+          "apBefore": 2,
+          "apAfter": 1,
+          "hp": 80,
+          "perceived": [],
+          "drawn": "0"
+        },
+        {
+          "attempt": 1,
+          "turn": 1,
+          "commandBefore": 1,
+          "commandAfter": 2,
+          "from": {
+            "x": 8,
+            "y": 2,
+            "z": 23
+          },
+          "to": {
+            "x": 8,
+            "y": 2,
+            "z": 17
+          },
+          "apBefore": 1,
+          "apAfter": 0,
+          "hp": 80,
+          "perceived": [],
+          "drawn": "0"
+        },
+        {
+          "attempt": 2,
+          "turn": 2,
+          "commandBefore": 3,
+          "commandAfter": 4,
+          "from": {
+            "x": 8,
+            "y": 2,
+            "z": 17
+          },
+          "to": {
+            "x": 9,
+            "y": 2,
+            "z": 12
+          },
+          "apBefore": 2,
+          "apAfter": 1,
+          "hp": 80,
+          "perceived": [],
+          "drawn": "0"
+        },
+        {
+          "attempt": 3,
+          "turn": 2,
+          "commandBefore": 4,
+          "commandAfter": 5,
+          "from": {
+            "x": 9,
+            "y": 2,
+            "z": 12
+          },
+          "to": {
+            "x": 10,
+            "y": 2,
+            "z": 7
+          },
+          "apBefore": 1,
+          "apAfter": 0,
+          "hp": 80,
+          "perceived": [],
+          "drawn": "0"
+        },
+        {
+          "attempt": 4,
+          "turn": 3,
+          "commandBefore": 6,
+          "commandAfter": 7,
+          "from": {
+            "x": 10,
+            "y": 2,
+            "z": 7
+          },
+          "to": {
+            "x": 10,
+            "y": 2,
+            "z": 6
+          },
+          "apBefore": 2,
+          "apAfter": 1,
+          "hp": 80,
+          "perceived": ["spawner-1"],
+          "drawn": "1"
+        }
+      ]
+    },
+    {
+      "status": "passed",
+      "milliseconds": 39634,
+      "progress": [
+        {
+          "attempt": 0,
+          "turn": 1,
+          "commandBefore": 0,
+          "commandAfter": 1,
+          "from": {
+            "x": 8,
+            "y": 2,
+            "z": 29
+          },
+          "to": {
+            "x": 8,
+            "y": 2,
+            "z": 23
+          },
+          "apBefore": 2,
+          "apAfter": 1,
+          "hp": 80,
+          "perceived": [],
+          "drawn": "0"
+        },
+        {
+          "attempt": 1,
+          "turn": 1,
+          "commandBefore": 1,
+          "commandAfter": 2,
+          "from": {
+            "x": 8,
+            "y": 2,
+            "z": 23
+          },
+          "to": {
+            "x": 8,
+            "y": 2,
+            "z": 17
+          },
+          "apBefore": 1,
+          "apAfter": 0,
+          "hp": 80,
+          "perceived": [],
+          "drawn": "0"
+        },
+        {
+          "attempt": 2,
+          "turn": 2,
+          "commandBefore": 3,
+          "commandAfter": 4,
+          "from": {
+            "x": 8,
+            "y": 2,
+            "z": 17
+          },
+          "to": {
+            "x": 9,
+            "y": 2,
+            "z": 12
+          },
+          "apBefore": 2,
+          "apAfter": 1,
+          "hp": 80,
+          "perceived": [],
+          "drawn": "0"
+        },
+        {
+          "attempt": 3,
+          "turn": 2,
+          "commandBefore": 4,
+          "commandAfter": 5,
+          "from": {
+            "x": 9,
+            "y": 2,
+            "z": 12
+          },
+          "to": {
+            "x": 10,
+            "y": 2,
+            "z": 7
+          },
+          "apBefore": 1,
+          "apAfter": 0,
+          "hp": 80,
+          "perceived": [],
+          "drawn": "0"
+        },
+        {
+          "attempt": 4,
+          "turn": 3,
+          "commandBefore": 6,
+          "commandAfter": 7,
+          "from": {
+            "x": 10,
+            "y": 2,
+            "z": 7
+          },
+          "to": {
+            "x": 10,
+            "y": 2,
+            "z": 6
+          },
+          "apBefore": 2,
+          "apAfter": 1,
+          "hp": 80,
+          "perceived": ["spawner-1"],
+          "drawn": "1"
+        }
+      ]
+    },
+    {
+      "status": "passed",
+      "milliseconds": 28495,
+      "progress": [
+        {
+          "attempt": 0,
+          "turn": 1,
+          "commandBefore": 0,
+          "commandAfter": 1,
+          "from": {
+            "x": 8,
+            "y": 2,
+            "z": 29
+          },
+          "to": {
+            "x": 8,
+            "y": 2,
+            "z": 23
+          },
+          "apBefore": 2,
+          "apAfter": 1,
+          "hp": 80,
+          "perceived": [],
+          "drawn": "0"
+        },
+        {
+          "attempt": 1,
+          "turn": 1,
+          "commandBefore": 1,
+          "commandAfter": 2,
+          "from": {
+            "x": 8,
+            "y": 2,
+            "z": 23
+          },
+          "to": {
+            "x": 8,
+            "y": 2,
+            "z": 17
+          },
+          "apBefore": 1,
+          "apAfter": 0,
+          "hp": 80,
+          "perceived": [],
+          "drawn": "0"
+        },
+        {
+          "attempt": 2,
+          "turn": 2,
+          "commandBefore": 3,
+          "commandAfter": 4,
+          "from": {
+            "x": 8,
+            "y": 2,
+            "z": 17
+          },
+          "to": {
+            "x": 9,
+            "y": 2,
+            "z": 12
+          },
+          "apBefore": 2,
+          "apAfter": 1,
+          "hp": 80,
+          "perceived": [],
+          "drawn": "0"
+        },
+        {
+          "attempt": 3,
+          "turn": 2,
+          "commandBefore": 4,
+          "commandAfter": 5,
+          "from": {
+            "x": 9,
+            "y": 2,
+            "z": 12
+          },
+          "to": {
+            "x": 10,
+            "y": 2,
+            "z": 7
+          },
+          "apBefore": 1,
+          "apAfter": 0,
+          "hp": 80,
+          "perceived": [],
+          "drawn": "0"
+        },
+        {
+          "attempt": 4,
+          "turn": 3,
+          "commandBefore": 6,
+          "commandAfter": 7,
+          "from": {
+            "x": 10,
+            "y": 2,
+            "z": 7
+          },
+          "to": {
+            "x": 10,
+            "y": 2,
+            "z": 6
+          },
+          "apBefore": 2,
+          "apAfter": 1,
+          "hp": 80,
+          "perceived": ["spawner-1"],
+          "drawn": "1"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,443 @@
+{
+  "source": "GitHub run 34312408328, shard 2 job 102341600047, retry trace for docs-only PR #1080: merge a640a8029ac721c3b328e8c3af93795c1848026b, head 49f01cedc289e81e609db197b766bd676400af41 into main 01c0f6597c4e87d19cbdb3229dbc6d4c9b2ceda9",
+  "artifactId": 10089181930,
+  "traceZipSha256": "9dfebc7d8c7e3dedf6361256e1e07ea27880563ef999e0c20b105d3fcb354808",
+  "recipe": {
+    "seed": "730982385",
+    "params": {
+      "archetype": "settlement",
+      "biome": "temperate",
+      "settlement": "city",
+      "size": "small",
+      "hooks": [
+        {
+          "kind": "deploy",
+          "count": 1,
+          "requiredPass": 3
+        },
+        {
+          "kind": "egg-spawner",
+          "count": 2,
+          "requiredPass": 1,
+          "minDistanceFromDeploy": 12,
+          "maxNearestDistanceFromDeploy": 30,
+          "meta": {
+            "hatchRadius": 3
+          }
+        },
+        {
+          "kind": "edge-spawn",
+          "count": 2,
+          "requiredPass": 1
+        },
+        {
+          "kind": "extraction",
+          "count": 1,
+          "requiredPass": 3
+        }
+      ]
+    }
+  },
+  "savedMissionReads": 58,
+  "records": [
+    {
+      "traceSeconds": 584.603,
+      "call": "call@55",
+      "turn": 1,
+      "commandSeq": 0,
+      "unit": {
+        "id": "unit-1",
+        "pos": {
+          "x": 8,
+          "y": 2,
+          "z": 29
+        },
+        "ap": 2,
+        "hp": 80
+      },
+      "perceivedSpawners": []
+    },
+    {
+      "traceSeconds": 592.94,
+      "call": "call@59",
+      "turn": 1,
+      "commandSeq": 1,
+      "unit": {
+        "id": "unit-1",
+        "pos": {
+          "x": 8,
+          "y": 2,
+          "z": 23
+        },
+        "ap": 1,
+        "hp": 80
+      },
+      "perceivedSpawners": []
+    },
+    {
+      "traceSeconds": 594.702,
+      "call": "call@69",
+      "turn": 1,
+      "commandSeq": 2,
+      "unit": {
+        "id": "unit-1",
+        "pos": {
+          "x": 8,
+          "y": 2,
+          "z": 17
+        },
+        "ap": 0,
+        "hp": 80
+      },
+      "perceivedSpawners": []
+    },
+    {
+      "traceSeconds": 597.061,
+      "call": "call@79",
+      "turn": 2,
+      "commandSeq": 3,
+      "unit": {
+        "id": "unit-1",
+        "pos": {
+          "x": 8,
+          "y": 2,
+          "z": 17
+        },
+        "ap": 2,
+        "hp": 80
+      },
+      "perceivedSpawners": []
+    },
+    {
+      "traceSeconds": 597.745,
+      "call": "call@83",
+      "turn": 2,
+      "commandSeq": 4,
+      "unit": {
+        "id": "unit-1",
+        "pos": {
+          "x": 9,
+          "y": 2,
+          "z": 12
+        },
+        "ap": 1,
+        "hp": 80
+      },
+      "perceivedSpawners": []
+    },
+    {
+      "traceSeconds": 599.514,
+      "call": "call@93",
+      "turn": 2,
+      "commandSeq": 5,
+      "unit": {
+        "id": "unit-1",
+        "pos": {
+          "x": 10,
+          "y": 2,
+          "z": 7
+        },
+        "ap": 0,
+        "hp": 80
+      },
+      "perceivedSpawners": []
+    },
+    {
+      "traceSeconds": 602.927,
+      "call": "call@103",
+      "turn": 3,
+      "commandSeq": 6,
+      "unit": {
+        "id": "unit-1",
+        "pos": {
+          "x": 10,
+          "y": 2,
+          "z": 7
+        },
+        "ap": 2,
+        "hp": 80
+      },
+      "perceivedSpawners": []
+    },
+    {
+      "traceSeconds": 603.515,
+      "call": "call@107",
+      "turn": 3,
+      "commandSeq": 7,
+      "unit": {
+        "id": "unit-1",
+        "pos": {
+          "x": 10,
+          "y": 2,
+          "z": 6
+        },
+        "ap": 1,
+        "hp": 80
+      },
+      "perceivedSpawners": ["spawner-1"]
+    },
+    {
+      "traceSeconds": 605.165,
+      "call": "call@117",
+      "turn": 3,
+      "commandSeq": 8,
+      "unit": {
+        "id": "unit-1",
+        "pos": {
+          "x": 11,
+          "y": 2,
+          "z": 6
+        },
+        "ap": 0,
+        "hp": 80
+      },
+      "perceivedSpawners": ["spawner-1"]
+    },
+    {
+      "traceSeconds": 610.626,
+      "call": "call@127",
+      "turn": 4,
+      "commandSeq": 9,
+      "unit": {
+        "id": "unit-1",
+        "pos": {
+          "x": 11,
+          "y": 2,
+          "z": 6
+        },
+        "ap": 2,
+        "hp": 80
+      },
+      "perceivedSpawners": ["spawner-1"]
+    },
+    {
+      "traceSeconds": 611.17,
+      "call": "call@131",
+      "turn": 4,
+      "commandSeq": 10,
+      "unit": {
+        "id": "unit-1",
+        "pos": {
+          "x": 12,
+          "y": 2,
+          "z": 6
+        },
+        "ap": 1,
+        "hp": 80
+      },
+      "perceivedSpawners": ["spawner-1"]
+    },
+    {
+      "traceSeconds": 612.964,
+      "call": "call@141",
+      "turn": 4,
+      "commandSeq": 11,
+      "unit": {
+        "id": "unit-1",
+        "pos": {
+          "x": 13,
+          "y": 2,
+          "z": 6
+        },
+        "ap": 0,
+        "hp": 80
+      },
+      "perceivedSpawners": ["spawner-1"]
+    },
+    {
+      "traceSeconds": 619.5,
+      "call": "call@151",
+      "turn": 5,
+      "commandSeq": 12,
+      "unit": {
+        "id": "unit-1",
+        "pos": {
+          "x": 13,
+          "y": 2,
+          "z": 6
+        },
+        "ap": 2,
+        "hp": 80
+      },
+      "perceivedSpawners": ["spawner-1"]
+    },
+    {
+      "traceSeconds": 620.046,
+      "call": "call@155",
+      "turn": 5,
+      "commandSeq": 13,
+      "unit": {
+        "id": "unit-1",
+        "pos": {
+          "x": 14,
+          "y": 2,
+          "z": 6
+        },
+        "ap": 1,
+        "hp": 80
+      },
+      "perceivedSpawners": ["spawner-1"]
+    },
+    {
+      "traceSeconds": 621.783,
+      "call": "call@165",
+      "turn": 5,
+      "commandSeq": 14,
+      "unit": {
+        "id": "unit-1",
+        "pos": {
+          "x": 15,
+          "y": 2,
+          "z": 6
+        },
+        "ap": 0,
+        "hp": 80
+      },
+      "perceivedSpawners": ["spawner-1"]
+    },
+    {
+      "traceSeconds": 627.063,
+      "call": "call@175",
+      "turn": 6,
+      "commandSeq": 15,
+      "unit": {
+        "id": "unit-1",
+        "pos": {
+          "x": 15,
+          "y": 2,
+          "z": 6
+        },
+        "ap": 2,
+        "hp": 80
+      },
+      "perceivedSpawners": ["spawner-1"]
+    },
+    {
+      "traceSeconds": 627.683,
+      "call": "call@179",
+      "turn": 6,
+      "commandSeq": 16,
+      "unit": {
+        "id": "unit-1",
+        "pos": {
+          "x": 16,
+          "y": 2,
+          "z": 6
+        },
+        "ap": 1,
+        "hp": 80
+      },
+      "perceivedSpawners": ["spawner-1"]
+    },
+    {
+      "traceSeconds": 629.56,
+      "call": "call@189",
+      "turn": 6,
+      "commandSeq": 17,
+      "unit": {
+        "id": "unit-1",
+        "pos": {
+          "x": 17,
+          "y": 2,
+          "z": 6
+        },
+        "ap": 0,
+        "hp": 80
+      },
+      "perceivedSpawners": ["spawner-1"]
+    },
+    {
+      "traceSeconds": 634.343,
+      "call": "call@199",
+      "turn": 7,
+      "commandSeq": 18,
+      "unit": {
+        "id": "unit-1",
+        "pos": {
+          "x": 17,
+          "y": 2,
+          "z": 6
+        },
+        "ap": 2,
+        "hp": 79
+      },
+      "perceivedSpawners": ["spawner-1"]
+    },
+    {
+      "traceSeconds": 644.457,
+      "call": "call@267",
+      "turn": 8,
+      "commandSeq": 19,
+      "unit": {
+        "id": "unit-1",
+        "pos": {
+          "x": 17,
+          "y": 2,
+          "z": 6
+        },
+        "ap": 2,
+        "hp": 77
+      },
+      "perceivedSpawners": ["spawner-1"]
+    }
+  ],
+  "drawnCountReads": [
+    {
+      "traceSeconds": 593.119,
+      "count": "0"
+    },
+    {
+      "traceSeconds": 594.841,
+      "count": "0"
+    },
+    {
+      "traceSeconds": 597.892,
+      "count": "0"
+    },
+    {
+      "traceSeconds": 599.686,
+      "count": "0"
+    },
+    {
+      "traceSeconds": 603.697,
+      "count": "0"
+    },
+    {
+      "traceSeconds": 605.329,
+      "count": "0"
+    },
+    {
+      "traceSeconds": 611.34,
+      "count": "0"
+    },
+    {
+      "traceSeconds": 613.137,
+      "count": "0"
+    },
+    {
+      "traceSeconds": 620.244,
+      "count": "0"
+    },
+    {
+      "traceSeconds": 621.955,
+      "count": "0"
+    },
+    {
+      "traceSeconds": 627.888,
+      "count": "0"
+    },
+    {
+      "traceSeconds": 629.759,
+      "count": "0"
+    },
+    {
+      "traceSeconds": 641.232,
+      "count": "0"
+    },
+    {
+      "traceSeconds": 651.845,
+      "count": "0"
+    }
+  ],
+  "finding": "At turn 3 command 7 the scout is at (10,2,6) and spawner-1 at (9,2,6) is already explored. The delayed rendered count remains 0; the old scout walks away until (17,2,6), is alive at 77 HP in the last saved sample (later final DOM: turn 9, 73 HP), and exhausts its loop."
+}

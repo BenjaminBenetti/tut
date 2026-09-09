@@ -821,6 +821,75 @@ describe("TacticalHudView", () => {
     expect(button()?.textContent).toBe("End turn");
   });
 
+  /**
+   * Found by eng-5 on `6a552d6` and handed to this ticket: the bar
+   * offered Reload to a mech at heat 4/4, and the player learned it was
+   * not on offer by pressing it.
+   *
+   * The bar now asks the same question the command answers —
+   * `reloadPools`, which the handler uses too — so the button and the
+   * rule cannot disagree about whether there is anything to reload.
+   */
+  it("does not offer Reload to a unit whose pools are already full", () => {
+    const notices: string[] = [];
+    const { hud, mission } = setup({
+      onNotice: (unitId: string, text: string) => {
+        notices.push(`${unitId}: ${text}`);
+      },
+    });
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    const reload = () =>
+      root.querySelector<HTMLButtonElement>('[data-action="reload"]');
+    // The fixture starts every pool full, which is the reported case.
+    expect(reload()?.getAttribute("aria-disabled")).toBe("true");
+
+    hud.handleIntent({ kind: "action", action: "reload" });
+    expect(notices).toHaveLength(1);
+    // This fixture's squad carries no pool at all, so the honest reason
+    // is "nothing to reload" rather than "already full". Asserted as the
+    // reason the rules give, not as the one I expected: the first
+    // version of this test guessed `charges-full` and was wrong about
+    // the fixture rather than about the behaviour.
+    expect(notices[0]).toContain("nothing to reload");
+    // Named, not id'd, like every other refusal.
+    expect(notices[0]).not.toContain('"s1"');
+
+    // Give the unit a pool and empty it, and the offer comes back — so
+    // the button is following the rule rather than always refusing.
+    const s1 = mission.units.find((unit) => unit.id === "s1");
+    if (!s1) throw new Error("fixture needs a unit");
+    const template = mission.templates[s1.templateId];
+    if (!template) throw new Error("fixture unit has no template");
+    const weapon = {
+      ...template.weapons[0],
+      charges: 3,
+    } as (typeof template.weapons)[number];
+    hud.update({
+      ...mission,
+      templates: {
+        ...mission.templates,
+        [s1.templateId]: { ...template, weapons: [weapon] },
+      },
+      units: mission.units.map((unit) =>
+        unit.id === "s1" ? { ...unit, charges: { [weapon.id]: 0 } } : unit,
+      ),
+    });
+    expect(reload()?.getAttribute("aria-disabled")).toBe("false");
+
+    // ...and full again, it is not on offer.
+    hud.update({
+      ...mission,
+      templates: {
+        ...mission.templates,
+        [s1.templateId]: { ...template, weapons: [weapon] },
+      },
+      units: mission.units.map((unit) =>
+        unit.id === "s1" ? { ...unit, charges: { [weapon.id]: 3 } } : unit,
+      ),
+    });
+    expect(reload()?.getAttribute("aria-disabled")).toBe("true");
+  });
+
   it("offers Extract only to a unit standing in the extraction zone", () => {
     const { hud, mission, commands } = setup();
     const button = (): HTMLButtonElement | null =>

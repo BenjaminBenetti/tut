@@ -63,6 +63,7 @@ import { TurnBannerView } from "./turn-banner-view";
 import { UnitCardView } from "./unit-card-view";
 import { SquadStripView, playerUnits } from "./squad-strip-view";
 import { actingUnit } from "../../tactical/service/acting-unit";
+import { reloadPools } from "../../tactical/service/reload-handler";
 
 // ===========================================
 // Types
@@ -1006,6 +1007,14 @@ export class TacticalHudView {
     if (!acting.ok) {
       return acting.error;
     }
+    if (action === "reload") {
+      // The same question the command answers, asked once. eng-5 found
+      // the bar offering Reload to a mech at heat 4/4 on `6a552d6`.
+      const pools = reloadPools(mission, acting.value);
+      if (!pools.ok) {
+        return pools.error;
+      }
+    }
     if (action === "interact" && this.interactTarget() === undefined) {
       // Its own kind, because none of the existing objective errors is
       // true here: nothing is missing or finished, there is simply
@@ -1029,6 +1038,22 @@ export class TacticalHudView {
     if (this.selected !== undefined) {
       this.handlers.onNotice?.(this.selected, words);
     }
+  }
+
+  /**
+   * The actions the selected unit cannot take, from the same query that
+   * produces the refusal, so a button and its reason agree (#1030).
+   */
+  private unavailableActions(): ActionBarAction[] {
+    const actions: ActionBarAction[] = [
+      "move",
+      "attack",
+      "overwatch",
+      "reload",
+      "interact",
+      "extract",
+    ];
+    return actions.filter((action) => this.refusalFor(action) !== undefined);
   }
 
   /** Whether the selected unit may act at all: alive, its phase, an action left. */
@@ -1294,6 +1319,7 @@ export class TacticalHudView {
       reloadLabel: selected?.kind === "mech" ? "Vent" : "Reload",
       unspent: this.unspentCount(),
       canExtract: this.canExtract(),
+      unavailable: this.unavailableActions(),
       canInteract: inReach !== undefined,
     });
     // Last, so the listener reads the state the refresh just settled.

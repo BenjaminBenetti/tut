@@ -1,0 +1,78 @@
+{
+  "seed": "mc-opening-03",
+  "biome": "coastal",
+  "settlement": "city",
+  "size": "medium",
+  "rotation": 0,
+  "id": "W1-city-waterfront",
+  "tile": {
+    "x": 51,
+    "y": 1,
+    "z": 40
+  },
+  "pitch": 55,
+  "width": 1200,
+  "height": 950,
+  "camera": {
+    "yawIndex": 0,
+    "zoom": 67.36096792653728,
+    "target": {
+      "x": 51.5,
+      "y": 0.9,
+      "z": 40.5
+    },
+    "bounds": {
+      "x": 0,
+      "z": 0,
+      "w": 72,
+      "d": 72
+    },
+    "zoomRange": {
+      "min": 19.83827358328925,
+      "max": 192
+    }
+  },
+  "actualPitch": 54.99999999999985,
+  "pixel": {
+    "x": 1389.9999999999989,
+    "y": 749.9999999999995
+  },
+  "url": "http://127.0.0.1:4178/mapgen-preview.html?seed=mc-opening-03&biome=coastal&settlement=city&size=medium&models=1&units=1&slope=100",
+  "baseline": "1131c9019f6dad4abf0a1b46dbfd78334daa9254",
+  "serverRuntime": {
+    "tag": "v0.2.16",
+    "baseline": "1131c9019f6dad4abf0a1b46dbfd78334daa9254",
+    "server": "http://127.0.0.1:4178",
+    "recordedAt": "2026-09-09T03:40:40.088535+00:00",
+    "config": ".scratch/map-critic-v0216/vite.config.mjs",
+    "watch": null,
+    "hmr": false,
+    "freshServerAfterCheckout": true,
+    "runtimeTrees": {
+      "src": "2b5a35ee3c27ae0373a3f57470447eba32734c63",
+      "public": "01e5c286dea273d9a7fae41d73bb3930b0347745",
+      "tools": "74e782320301f477ccef35031e695e4f038c4bbf"
+    },
+    "serverSession": 23504
+  },
+  "capturedAt": "2026-09-09T03:51:16.514Z",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "clip": {
+    "x": 790,
+    "y": 275,
+    "width": 1200,
+    "height": 950
+  },
+  "levels": {
+    "value": "10",
+    "max": "11",
+    "step": "2",
+    "label": "all"
+  },
+  "errors": [],
+  "sha256": "523c80ee06a87eee9a68c88b058400f5516248d1b0626e99ecb1ef3deefadc90",
+  "cameraMethod": "Production camera rig accessor, matching published Art camera; no map or scene substitution"
+}

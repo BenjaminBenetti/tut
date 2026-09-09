@@ -88,6 +88,11 @@ test("tactical input picks units and tiles at any camera yaw and maps shortcuts"
   // Rotate the camera a quarter turn, then click where a unit now
   // appears: picking must follow the camera.
   await page.locator("canvas").hover();
+  // #1006 changes the generated spawn position. At the old zoom the
+  // rifle projects 263 pixels outside this viewport after rotation.
+  // Frame the units with the real control, retaining the assertions below.
+  await page.mouse.wheel(0, 120);
+  await page.mouse.wheel(0, 120);
   await page.keyboard.press("e");
   // Wait for the projected positions to stop moving rather than for a
   // fixed span: the rig applies its new state on the next frame, and a

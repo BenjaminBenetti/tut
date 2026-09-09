@@ -75,7 +75,12 @@ The Director and Critic should judge the resulting boundaries and this tradeoff 
 
 Four new urban assertions fail on the original guard and pass with the extension. The
 existing rural and protected-access assertions remain. Five urban ASCII goldens change;
-the rural golden stays `1604470458`. Full final gates are recorded at submission.
+the rural golden stays `1604470458`. Typecheck/lint/build, **2,267 unit tests**, the
+**1,200-map wide sweep** (zero relocations), seven simulation checks and **62 browser
+tests** pass (31 optional captures skipped, zero flaky). The first browser run caught a
+fixture assumption: the relocated preview rifle projected 263 pixels offscreen after
+rotation. Two real wheel zoom steps frame it; the existing picking assertions are
+retained and pass. No camera or picker production code changes.
 
 ```sh
 SURVEY_SOURCE_ROOT=/absolute/path/to/baseline node tools/mapgen/survey-urban-fences.mjs before.jsonl

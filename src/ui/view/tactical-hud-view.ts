@@ -61,8 +61,6 @@ import { PhaseBannerView } from "./phase-banner-view";
 import { TURN_STARTED } from "../../tactical/model/turn-started-event";
 import { TurnBannerView } from "./turn-banner-view";
 import { UnitCardView } from "./unit-card-view";
-// One resolver, shared with the log. #1029 moves this into
-// `event-vocabulary`; when that lands the import moves with it.
 import { SquadStripView, playerUnits } from "./squad-strip-view";
 import { actingUnit } from "../../tactical/service/acting-unit";
 
@@ -1250,10 +1248,15 @@ export class TacticalHudView {
     );
     // The rail names units through the same resolver as the card, the
     // banner and the log (#1040). It arrived in #1041 using the log's
-    // old `nameResolver`, which answers with the *template* name --
-    // "Rifle Squad" for both Alpha and Bravo -- and falls back to the
-    // raw id. That is the defect this issue removes, so the rail is
-    // converted rather than the resolver kept alive for it.
+    // `nameResolver`, which then answered with the *template* name --
+    // "Rifle Squad" for both Alpha and Bravo -- and fell back to the raw
+    // id, which is the defect #1040 removed by converting the rail.
+    //
+    // Neither is true of `nameResolver` any more: #1029 moved it into
+    // `event-vocabulary` and it now delegates here, so the two agree by
+    // construction. The rail still calls `namesFor` directly because it
+    // wants the resolver object, not the `NameOf` function the log and
+    // the indicator share.
     const railNames = namesFor(mission, this.campaign);
     this.squad.update({
       units: playerUnits(mission),

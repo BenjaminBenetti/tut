@@ -118,6 +118,7 @@ describe("EventLogView", () => {
     // an expectation.
     view.append([HIT], undefined);
     expect(lines()).toEqual(["that unit hit that unit for 4"]);
+    expect(lines().join(" ")).not.toContain("unit-1");
   });
 
   it("collapses a run of identical lines into a count", () => {

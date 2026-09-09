@@ -117,7 +117,7 @@ there is no picking implementation change. Disabling `TacticalSceneBuilder.pickU
 the probe browser makes the corrected real-click test fail its selected-unit assertion, as
 required. This is an observed mutation failure, not a control assumed to work.
 
-The complete browser rerun passes **63 tests, zero flaky**. All ten independent Map Lab after
+The final browser rerun passes **64 tests, zero flaky** (31 optional captures skipped). All ten independent Map Lab after
 captures repeat byte-identically; [hashes and method](repeatability.json). No tolerance or
 historical-frame refresh is involved.
 

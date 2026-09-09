@@ -1,0 +1,86 @@
+{
+  "id": "waterfront-control",
+  "biome": "coastal",
+  "settlement": "city",
+  "size": "medium",
+  "seed": "mc-opening-03",
+  "focus": {
+    "x": 51,
+    "y": 1,
+    "z": 40
+  },
+  "pitch": 55,
+  "rotation": 0,
+  "clip": {
+    "x": 807,
+    "y": 250,
+    "width": 1200,
+    "height": 1000
+  },
+  "url": "http://127.0.0.1:5177/mapgen-preview.html?seed=mc-opening-03&biome=coastal&settlement=city&size=medium&models=1&units=1&slope=100",
+  "renderedDimensions": "72×72×11",
+  "recipeInput": "Unmodified Map Lab URL",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "camera": {
+    "yawIndex": 0,
+    "zoom": 67.36096792653728,
+    "target": {
+      "x": 51.5,
+      "y": 0.9,
+      "z": 40.5
+    },
+    "bounds": {
+      "x": 0,
+      "z": 0,
+      "w": 72,
+      "d": 72
+    },
+    "zoomRange": {
+      "min": 19.83827358328925,
+      "max": 192
+    }
+  },
+  "rendering": {
+    "timingMethod": "RAF interval with gl.finish(), discard first four of twelve frames; software renderer, not a hardware FPS claim",
+    "frameMs": [
+      1368.4000000953674, 2992.5999999046326, 3039.300000190735, 2853.5,
+      3207.199999809265, 3732.9000000953674, 4030.4000000953674,
+      4352.299999952316
+    ],
+    "render": {
+      "frame": 53,
+      "calls": 729,
+      "triangles": 787712,
+      "points": 0,
+      "lines": 0
+    },
+    "memory": {
+      "geometries": 638,
+      "textures": 40
+    },
+    "programs": 13
+  },
+  "aircraftDraws": {
+    "parts": 8,
+    "withAircraft": {
+      "frame": 55,
+      "calls": 729,
+      "triangles": 787712,
+      "points": 0,
+      "lines": 0
+    },
+    "withoutAircraft": {
+      "frame": 57,
+      "calls": 721,
+      "triangles": 785804,
+      "points": 0,
+      "lines": 0
+    },
+    "calls": 8,
+    "triangles": 1908
+  },
+  "elapsedMs": 85690.73568499996
+}

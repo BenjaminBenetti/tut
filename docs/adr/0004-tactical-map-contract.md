@@ -297,6 +297,31 @@ The four groups are kept because tactical and UI address them by role. Extensibi
 plus `meta` (e.g. egg spawner `{ hatchRadius: 3 }`, with at least six infantry-reachable tiles within
 that radius guaranteed by the placer), and in the pipeline's hook-placer registry (§7.4).
 
+**Landed dropships (#911).** New generated maps reserve the transport before lots and incidental
+props. `TacticalMap.dropships` is an optional array of `DropshipSite { deployZoneId, footprint,
+clearance, level, facing }` records. Rectangles use integer grid columns; `facing` points the nose
+toward its outer edge. The referenced deploy hook owns the sixteen clear 4×4 boarding tiles;
+extraction uses the first deploy hook's same tiles. There is no second unit-start list in the site.
+
+The full aircraft footprint is 5×7, including the rear ramp. A one-column side/front margin and
+an extra approach row around the boarding patch make the reservation 7×13 before rotation.
+The approach may meet an existing carriageway; the aircraft and boarding patch may not. Existing
+flat land is preferred within each search. Ordered searches allow four, eight, then twelve
+columns of inset with at most one layer cut per affected column; only if all fail may the
+last search cut two layers within the twelve-column band. Existing placements survive later
+fallback searches. Every cut keeps a one-layer terrain join and never raises a plinth. The outer margin retains natural slope pieces;
+the aircraft and boarding patch stay flat. Later lots, props and ramps respect the reservation.
+Existing half-height quay/kerb walls may bound its outside perimeter, but no wall crosses it.
+Final I6 checks validate the actual support, distinct boarding tiles, margins and connector
+clearance after all passes, rather than trusting the reservation alone.
+
+Aircraft footprint tiles have `pass: NONE` and `blocksLos: true`, using the existing tile sight
+convention, with no cover bonus or new aircraft mechanic. Graphics resolves one `tdf.dropship`
+from the recorded footprint centre and support top, cardinally rotated; it never infers placement
+from the deploy centroid. See [the Art contact contract](../design/kits/tdf-dropship.md).
+The optional field preserves old saves/fixtures as they stand; no aircraft is guessed into a
+previously generated map and no schema/version bump is needed for the additive field.
+
 ### 4.7 Root type and recipe
 
 ```ts
@@ -343,6 +368,7 @@ export interface TacticalMap {
   readonly connectors: readonly Connector[];
   readonly props: readonly Prop[];
   readonly hooks: PlacementHooks;
+  readonly dropships?: readonly DropshipSite[];
 }
 ```
 
@@ -385,11 +411,11 @@ map is a bug, never a runtime fallback.
 | # | Invariant |
 |---|---|
 | I1 | Every tile is in bounds and `(x,y,z)` is unique. `levels` ≥ max `y` + 1. |
-| I2 | A tile with `propId` has `pass == NONE`; its `coverProvided` and `blocksLos` equal the prop definition's. A tile without a prop provides no cover and blocks no sight. Every prop's tile exists and references it back. |
+| I2 | A tile with `propId` has `pass == NONE`; its `coverProvided` and `blocksLos` equal the prop definition's. A tile without a prop provides no cover and blocks no sight, except a recorded dropship footprint, which is impassable and opaque (§4.6). Every prop's tile exists and references it back. |
 | I3 | Wall symmetry: `tile.walls[d]` equals `neighbour(d).walls[opposite(d)]` whenever the neighbour tile exists at the same `y`. |
 | I4 | Every connector references two existing tiles with the kind's `Δy` and adjacency rule; `pass` matches the kind; stairs' `from` tile has `surface 'stairs'`. |
 | I5 | Buildings: ≥ 1 floor, ≥ 1 entrance whose door wall exists; every floor tile lies inside the footprint and carries `buildingId`; every floor `i > 0` is reachable from floor 0 via the building's own connectors; interior and roof tiles are not mech-passable. |
-| I6 | Hooks: every tile exists and satisfies `pass & requiredPass`; each edge-spawn tile lies on the map boundary; every deploy zone has ≥ `MAX_DEPLOYED_UNITS` distinct mech-passable and ≥ `MAX_DEPLOYED_UNITS` distinct infantry-passable tiles (currently eight each), mutually connected per class. Repeated hook coordinates add no capacity. Both floors derive from the existing deployment cap; sixteen is the current placer's target, not the invariant (#984). |
+| I6 | Hooks: every tile exists and satisfies `pass & requiredPass`; each edge-spawn tile lies on the map boundary; every deploy zone has ≥ `MAX_DEPLOYED_UNITS` distinct mech-passable and ≥ `MAX_DEPLOYED_UNITS` distinct infantry-passable tiles (currently eight each), mutually connected per class. Repeated hook coordinates add no capacity. Both floors derive from the existing deployment cap; sixteen is the current placer's target, not the invariant (#984). A recorded dropship additionally has the real support, clearance and sixteen distinct external boarding columns specified in §4.6. |
 | I7 | Reachability: for each hook `h` and each class `c` in `h.requiredPass`, some tile of `h` is reachable under §5 from some tile of some deploy zone by class `c`. |
 | I8 | Recipe satisfaction: for each `HookRequirement`, exactly `count` hooks of that kind exist, and `minDistanceFromDeploy` holds. |
 | I9 | Determinism: `generate(recipe)` twice gives deep-equal maps (tested, not validated). |
@@ -485,6 +511,7 @@ RNG fork, records diagnostics, then runs `validateTacticalMap`.
 | 1 | `terrain` | – | `heightmap` | Value noise (permutation table seeded from the pass RNG) quantised to layers using the biome's amplitude; assigns ground surfaces from the biome palette. |
 | 2 | `water` | `heightmap` | `water` | Coastal biome only: carves a shoreline along one map edge, tiles become `water` (impassable). No-op elsewhere. |
 | 3 | `roads` | `heightmap`,`water` | `roads` | Road network by settlement scale (rural: one meandering trail; town: main street + side streets; city: a grid), every style `roadWidth` lanes across (2 / 3 / 4 by default, ADR 0009 §2.2) with `sidewalkWidth` columns of pavement a side. Levels each road a stretch of the whole carriageway at a time, one ramp per lane at a step, and never steps inside a side road's mouth; a flat-graded network (cities) also grades the whole plat it encloses to one level, so a city's verticality comes from its buildings. |
+| 3a | `dropship-sites` | `heightmap`,`water`,`roads` | `landing-sites` | Reserves the complete aircraft and sixteen external boarding tiles before lots/props (§4.6). Uses existing flat land first, then a bounded local cut with a natural terrain join. The crash-site list runs the same pass after `elevation`. |
 | 4 | `lots` | `roads` | `lots` | Parcels land adjacent to roads (beyond the sidewalk) into rectangular lots sized by settlement scale, two columns apart; flattens each lot to one level. |
 | 5a | `buildings` | `lots` | `buildings` | Picks a building template per lot (biome + settlement weights), emits floors, exterior walls, doors and windows; guarantees a multi-storey building where the settlement allows one. |
 | 5b | `interiors` | `buildings` | `interiors` | Lays one plan per building (ADR 0009 §2.4): a corridor along the long axis, shared by every floor, with a strip of rooms of the template's target size on each side, one door per room onto it and deep strips bisected again behind their front room; a footprint too narrow for a corridor is bisected with a door per cut. Places stairs (interior holes first, landing in the corridor above when one exists; verified to keep the building connected), roof tiles and exterior ladders. |

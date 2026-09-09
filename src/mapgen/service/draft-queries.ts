@@ -19,6 +19,7 @@ export function isPassableGround(
   return (
     draft.inBounds(x, z) &&
     !draft.isCovered(x, z) &&
+    !draft.isDropshipHull(x, z) &&
     draft.groundSurfaceAt(x, z) !== SurfaceIds.WATER &&
     draft.propAt(draft.groundCoord(x, z)) === undefined
   );
@@ -28,6 +29,7 @@ export function isPassableGround(
 export function isOpenGround(draft: MapDraft, x: number, z: number): boolean {
   return (
     isPassableGround(draft, x, z) &&
+    !draft.isLandingReserved(x, z) &&
     !draft.isRoad(x, z) &&
     draft.groundSurfaceAt(x, z) !== SurfaceIds.SIDEWALK
   );

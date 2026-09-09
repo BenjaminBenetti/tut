@@ -1,0 +1,200 @@
+{
+  "id": "town-cut-opposite",
+  "biome": "snowy",
+  "settlement": "town",
+  "size": "small",
+  "seed": "mc-resume-01",
+  "pitch": 60,
+  "rotation": 2,
+  "clip": {
+    "x": 750,
+    "y": 250,
+    "width": 1200,
+    "height": 1000
+  },
+  "focus": {
+    "x": 6,
+    "y": 0,
+    "z": 37
+  },
+  "site": {
+    "deployZoneId": "hook-1",
+    "clearance": {
+      "x": 0,
+      "z": 34,
+      "w": 13,
+      "d": 7
+    },
+    "footprint": {
+      "x": 1,
+      "z": 35,
+      "w": 7,
+      "d": 5
+    },
+    "facing": "w",
+    "level": 0
+  },
+  "deploy": {
+    "id": "hook-1",
+    "kind": "deploy",
+    "tiles": [
+      {
+        "x": 8,
+        "y": 0,
+        "z": 35
+      },
+      {
+        "x": 8,
+        "y": 0,
+        "z": 36
+      },
+      {
+        "x": 8,
+        "y": 0,
+        "z": 37
+      },
+      {
+        "x": 8,
+        "y": 0,
+        "z": 38
+      },
+      {
+        "x": 9,
+        "y": 0,
+        "z": 35
+      },
+      {
+        "x": 9,
+        "y": 0,
+        "z": 36
+      },
+      {
+        "x": 9,
+        "y": 0,
+        "z": 37
+      },
+      {
+        "x": 9,
+        "y": 0,
+        "z": 38
+      },
+      {
+        "x": 10,
+        "y": 0,
+        "z": 35
+      },
+      {
+        "x": 10,
+        "y": 0,
+        "z": 36
+      },
+      {
+        "x": 10,
+        "y": 0,
+        "z": 37
+      },
+      {
+        "x": 10,
+        "y": 0,
+        "z": 38
+      },
+      {
+        "x": 11,
+        "y": 0,
+        "z": 35
+      },
+      {
+        "x": 11,
+        "y": 0,
+        "z": 36
+      },
+      {
+        "x": 11,
+        "y": 0,
+        "z": 37
+      },
+      {
+        "x": 11,
+        "y": 0,
+        "z": 38
+      }
+    ],
+    "requiredPass": 3
+  },
+  "notes": [
+    {
+      "pass": "dropship-sites",
+      "message": "dropship on w: 4 cut columns, 4 layer-columns excavated, 16 external boarding columns",
+      "at": {
+        "x": 8,
+        "y": 0,
+        "z": 35
+      }
+    }
+  ],
+  "url": "http://127.0.0.1:5177/mapgen-preview.html?seed=mc-resume-01&biome=snowy&settlement=town&size=small&models=1&units=1&slope=100",
+  "renderedDimensions": "48×48×8",
+  "recipeInput": "Unmodified Map Lab URL",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "camera": {
+    "yawIndex": 2,
+    "zoom": 73.48469228349545,
+    "target": {
+      "x": 6.5,
+      "y": 0.15,
+      "z": 37.5
+    },
+    "bounds": {
+      "x": 0,
+      "z": 0,
+      "w": 48,
+      "d": 48
+    },
+    "zoomRange": {
+      "min": 29.757410374933876,
+      "max": 192
+    }
+  },
+  "rendering": {
+    "timingMethod": "RAF interval with gl.finish(), discard first four of twelve frames; software renderer, not a hardware FPS claim",
+    "frameMs": [
+      211.09999990463257, 658.7000000476837, 1224.2000000476837,
+      703.5999999046326, 1404.4000000953674, 1130, 1071, 979.5
+    ],
+    "render": {
+      "frame": 36,
+      "calls": 1229,
+      "triangles": 316512,
+      "points": 0,
+      "lines": 0
+    },
+    "memory": {
+      "geometries": 1312,
+      "textures": 39
+    },
+    "programs": 17
+  },
+  "aircraftDraws": {
+    "parts": 8,
+    "withAircraft": {
+      "frame": 38,
+      "calls": 1229,
+      "triangles": 316512,
+      "points": 0,
+      "lines": 0
+    },
+    "withoutAircraft": {
+      "frame": 40,
+      "calls": 1213,
+      "triangles": 312696,
+      "points": 0,
+      "lines": 0
+    },
+    "calls": 16,
+    "triangles": 3816
+  },
+  "elapsedMs": 54974.243921999994
+}

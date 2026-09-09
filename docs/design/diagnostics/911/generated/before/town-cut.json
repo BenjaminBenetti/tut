@@ -1,0 +1,180 @@
+{
+  "id": "town-cut",
+  "biome": "snowy",
+  "settlement": "town",
+  "size": "small",
+  "seed": "mc-resume-01",
+  "pitch": 60,
+  "rotation": 0,
+  "clip": {
+    "x": 750,
+    "y": 250,
+    "width": 1200,
+    "height": 1000
+  },
+  "focus": {
+    "x": 6,
+    "y": 0,
+    "z": 37
+  },
+  "site": {
+    "deployZoneId": "hook-1",
+    "clearance": {
+      "x": 0,
+      "z": 34,
+      "w": 13,
+      "d": 7
+    },
+    "footprint": {
+      "x": 1,
+      "z": 35,
+      "w": 7,
+      "d": 5
+    },
+    "facing": "w",
+    "level": 0
+  },
+  "deploy": {
+    "id": "hook-1",
+    "kind": "deploy",
+    "tiles": [
+      {
+        "x": 8,
+        "y": 0,
+        "z": 35
+      },
+      {
+        "x": 8,
+        "y": 0,
+        "z": 36
+      },
+      {
+        "x": 8,
+        "y": 0,
+        "z": 37
+      },
+      {
+        "x": 8,
+        "y": 0,
+        "z": 38
+      },
+      {
+        "x": 9,
+        "y": 0,
+        "z": 35
+      },
+      {
+        "x": 9,
+        "y": 0,
+        "z": 36
+      },
+      {
+        "x": 9,
+        "y": 0,
+        "z": 37
+      },
+      {
+        "x": 9,
+        "y": 0,
+        "z": 38
+      },
+      {
+        "x": 10,
+        "y": 0,
+        "z": 35
+      },
+      {
+        "x": 10,
+        "y": 0,
+        "z": 36
+      },
+      {
+        "x": 10,
+        "y": 0,
+        "z": 37
+      },
+      {
+        "x": 10,
+        "y": 0,
+        "z": 38
+      },
+      {
+        "x": 11,
+        "y": 0,
+        "z": 35
+      },
+      {
+        "x": 11,
+        "y": 0,
+        "z": 36
+      },
+      {
+        "x": 11,
+        "y": 0,
+        "z": 37
+      },
+      {
+        "x": 11,
+        "y": 0,
+        "z": 38
+      }
+    ],
+    "requiredPass": 3
+  },
+  "notes": [
+    {
+      "pass": "dropship-sites",
+      "message": "dropship on w: 4 cut columns, 4 layer-columns excavated, 16 external boarding columns",
+      "at": {
+        "x": 8,
+        "y": 0,
+        "z": 35
+      }
+    }
+  ],
+  "url": "http://127.0.0.1:5178/mapgen-preview.html?seed=mc-resume-01&biome=snowy&settlement=town&size=small&models=1&units=1&slope=100",
+  "recipeInput": "Unmodified Map Lab URL",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "camera": {
+    "yawIndex": 0,
+    "zoom": 73.48469228349538,
+    "target": {
+      "x": 6.5,
+      "y": 0.15,
+      "z": 37.5
+    },
+    "bounds": {
+      "x": 0,
+      "z": 0,
+      "w": 48,
+      "d": 48
+    },
+    "zoomRange": {
+      "min": 29.757410374933876,
+      "max": 192
+    }
+  },
+  "rendering": {
+    "timingMethod": "RAF interval with gl.finish(), discard first four of twelve frames; software renderer, not a hardware FPS claim",
+    "frameMs": [
+      19.200000047683716, 13.099999904632568, 19, 11.600000143051147, 18.5,
+      13.199999809265137, 18.5, 205.70000004768372
+    ],
+    "render": {
+      "frame": 28,
+      "calls": 941,
+      "triangles": 309878,
+      "points": 0,
+      "lines": 0
+    },
+    "memory": {
+      "geometries": 1291,
+      "textures": 38
+    },
+    "programs": 17
+  },
+  "elapsedMs": 33511.97470399999
+}

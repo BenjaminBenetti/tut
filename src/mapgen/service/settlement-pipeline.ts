@@ -3,6 +3,7 @@ import { CoastalRoadPass } from "../generator/coastal-road-pass";
 import { ConnectivityPass } from "../generator/connectivity-pass";
 import { CraterPass } from "../generator/crater-pass";
 import { DebrisPass } from "../generator/debris-pass";
+import { DropshipSitePass } from "../generator/dropship-site-pass";
 import { ElevationPass } from "../generator/elevation-pass";
 import { HookPass } from "../generator/hook-pass";
 import { InteriorPass } from "../generator/interior-pass";
@@ -35,6 +36,7 @@ export function createSettlementPasses(): GenerationPass[] {
     new TerrainPass(),
     new WaterPass(),
     new RoadPass(),
+    new DropshipSitePass(),
     new LotPass(),
     new ElevationPass(),
     new BuildingPass(),
@@ -77,6 +79,7 @@ export function createCrashSitePasses(): GenerationPass[] {
     new TerrainPass(),
     new WaterPass(),
     new CraterPass(),
+    new DropshipSitePass("elevation"),
     new DebrisPass(),
     new SlopePass(),
     new RampPass(),

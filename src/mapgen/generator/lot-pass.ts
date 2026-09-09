@@ -205,7 +205,7 @@ function fits(
       if (!draft.inBounds(x, z)) {
         continue;
       }
-      if (occupied.has(z * draft.width + x)) {
+      if (occupied.has(z * draft.width + x) || draft.isLandingReserved(x, z)) {
         return false;
       }
       if (!rectContains(rect, x, z)) {

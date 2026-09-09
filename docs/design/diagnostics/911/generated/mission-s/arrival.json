@@ -1,0 +1,263 @@
+{
+  "campaignSeed": "9",
+  "initialYaw": 2,
+  "oppositeYaw": 0,
+  "restoredByteIdentical": true,
+  "recipe": {
+    "seed": "3677615265",
+    "params": {
+      "archetype": "settlement",
+      "biome": "coastal",
+      "settlement": "town",
+      "size": "small",
+      "hooks": [
+        {
+          "kind": "deploy",
+          "count": 1,
+          "requiredPass": 3
+        },
+        {
+          "kind": "egg-spawner",
+          "count": 2,
+          "requiredPass": 1,
+          "minDistanceFromDeploy": 12,
+          "maxNearestDistanceFromDeploy": 30,
+          "meta": {
+            "hatchRadius": 3
+          }
+        },
+        {
+          "kind": "edge-spawn",
+          "count": 2,
+          "requiredPass": 1
+        },
+        {
+          "kind": "extraction",
+          "count": 1,
+          "requiredPass": 3
+        }
+      ]
+    }
+  },
+  "site": {
+    "deployZoneId": "hook-1",
+    "clearance": {
+      "x": 41,
+      "z": 35,
+      "w": 7,
+      "d": 13
+    },
+    "footprint": {
+      "x": 42,
+      "z": 40,
+      "w": 5,
+      "d": 7
+    },
+    "facing": "s",
+    "level": 2
+  },
+  "boarding": [
+    {
+      "x": 42,
+      "y": 2,
+      "z": 39
+    },
+    {
+      "x": 43,
+      "y": 2,
+      "z": 39
+    },
+    {
+      "x": 44,
+      "y": 2,
+      "z": 39
+    },
+    {
+      "x": 45,
+      "y": 2,
+      "z": 39
+    },
+    {
+      "x": 42,
+      "y": 2,
+      "z": 38
+    },
+    {
+      "x": 43,
+      "y": 2,
+      "z": 38
+    },
+    {
+      "x": 44,
+      "y": 2,
+      "z": 38
+    },
+    {
+      "x": 45,
+      "y": 2,
+      "z": 38
+    },
+    {
+      "x": 42,
+      "y": 2,
+      "z": 37
+    },
+    {
+      "x": 43,
+      "y": 2,
+      "z": 37
+    },
+    {
+      "x": 44,
+      "y": 2,
+      "z": 37
+    },
+    {
+      "x": 45,
+      "y": 2,
+      "z": 37
+    },
+    {
+      "x": 42,
+      "y": 2,
+      "z": 36
+    },
+    {
+      "x": 43,
+      "y": 2,
+      "z": 36
+    },
+    {
+      "x": 44,
+      "y": 2,
+      "z": 36
+    },
+    {
+      "x": 45,
+      "y": 2,
+      "z": 36
+    }
+  ],
+  "extraction": [
+    {
+      "x": 42,
+      "y": 2,
+      "z": 39
+    },
+    {
+      "x": 43,
+      "y": 2,
+      "z": 39
+    },
+    {
+      "x": 44,
+      "y": 2,
+      "z": 39
+    },
+    {
+      "x": 45,
+      "y": 2,
+      "z": 39
+    },
+    {
+      "x": 42,
+      "y": 2,
+      "z": 38
+    },
+    {
+      "x": 43,
+      "y": 2,
+      "z": 38
+    },
+    {
+      "x": 44,
+      "y": 2,
+      "z": 38
+    },
+    {
+      "x": 45,
+      "y": 2,
+      "z": 38
+    },
+    {
+      "x": 42,
+      "y": 2,
+      "z": 37
+    },
+    {
+      "x": 43,
+      "y": 2,
+      "z": 37
+    },
+    {
+      "x": 44,
+      "y": 2,
+      "z": 37
+    },
+    {
+      "x": 45,
+      "y": 2,
+      "z": 37
+    },
+    {
+      "x": 42,
+      "y": 2,
+      "z": 36
+    },
+    {
+      "x": 43,
+      "y": 2,
+      "z": 36
+    },
+    {
+      "x": 44,
+      "y": 2,
+      "z": 36
+    },
+    {
+      "x": 45,
+      "y": 2,
+      "z": 36
+    }
+  ],
+  "force": [
+    {
+      "id": "unit-1",
+      "kind": "mech",
+      "pos": {
+        "x": 42,
+        "y": 2,
+        "z": 39
+      }
+    },
+    {
+      "id": "unit-2",
+      "kind": "squad",
+      "pos": {
+        "x": 43,
+        "y": 2,
+        "z": 39
+      }
+    },
+    {
+      "id": "unit-3",
+      "kind": "squad",
+      "pos": {
+        "x": 44,
+        "y": 2,
+        "z": 39
+      }
+    }
+  ],
+  "viewport": {
+    "width": 1600,
+    "height": 1000
+  },
+  "framing": "Actual host-created arrival camera, then two synchronous E taps, then two more restore a byte-identical arrival. Seed 9 opposite is the old yaw-0 arrival defect on the same generated map. Real campaign fog, pointer at (0,0).",
+  "runtime": "2eaab51",
+  "mapgenRuntime": "a793060",
+  "pngSha256": {
+    "arrival.png": "ec51c65c1fe4f969920fb2807989b6a43cfb724d455a40b12c7524edc0309b2b",
+    "arrival-opposite.png": "7ab495d8bec0c5486ec185ca00bad9ccbbd08c5f6fb782d4194f6a4b15e8e407"
+  }
+}

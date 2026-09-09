@@ -210,6 +210,10 @@ export class PropPass implements GenerationPass {
  */
 function collectBlockedTiles(draft: MapDraft): ReadonlySet<number> {
   const blocked = new Set<number>();
+  for (const { clearance } of draft.dropships)
+    for (let z = clearance.z; z < clearance.z + clearance.d; z++)
+      for (let x = clearance.x; x < clearance.x + clearance.w; x++)
+        blocked.add(draft.tileKey(draft.groundCoord(x, z)));
   for (const building of draft.buildings) {
     for (const entrance of building.entrances) {
       blocked.add(draft.tileKey(entrance.tile));

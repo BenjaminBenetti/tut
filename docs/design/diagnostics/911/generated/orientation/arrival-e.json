@@ -1,0 +1,204 @@
+{
+  "id": "arrival-e",
+  "seed": "mc-resume-02",
+  "biome": "coastal",
+  "settlement": "rural",
+  "size": "small",
+  "pitch": 60,
+  "rotation": 0,
+  "clip": {
+    "x": 750,
+    "y": 250,
+    "width": 1200,
+    "height": 1000
+  },
+  "focus": {
+    "x": 41,
+    "y": 2,
+    "z": 26
+  },
+  "site": {
+    "deployZoneId": "hook-1",
+    "clearance": {
+      "x": 35,
+      "z": 23,
+      "w": 13,
+      "d": 7
+    },
+    "footprint": {
+      "x": 40,
+      "z": 24,
+      "w": 7,
+      "d": 5
+    },
+    "facing": "e",
+    "level": 2
+  },
+  "deploy": {
+    "id": "hook-1",
+    "kind": "deploy",
+    "tiles": [
+      {
+        "x": 39,
+        "y": 2,
+        "z": 24
+      },
+      {
+        "x": 39,
+        "y": 2,
+        "z": 25
+      },
+      {
+        "x": 39,
+        "y": 2,
+        "z": 26
+      },
+      {
+        "x": 39,
+        "y": 2,
+        "z": 27
+      },
+      {
+        "x": 38,
+        "y": 2,
+        "z": 24
+      },
+      {
+        "x": 38,
+        "y": 2,
+        "z": 25
+      },
+      {
+        "x": 38,
+        "y": 2,
+        "z": 26
+      },
+      {
+        "x": 38,
+        "y": 2,
+        "z": 27
+      },
+      {
+        "x": 37,
+        "y": 2,
+        "z": 24
+      },
+      {
+        "x": 37,
+        "y": 2,
+        "z": 25
+      },
+      {
+        "x": 37,
+        "y": 2,
+        "z": 26
+      },
+      {
+        "x": 37,
+        "y": 2,
+        "z": 27
+      },
+      {
+        "x": 36,
+        "y": 2,
+        "z": 24
+      },
+      {
+        "x": 36,
+        "y": 2,
+        "z": 25
+      },
+      {
+        "x": 36,
+        "y": 2,
+        "z": 26
+      },
+      {
+        "x": 36,
+        "y": 2,
+        "z": 27
+      }
+    ],
+    "requiredPass": 3
+  },
+  "notes": [
+    {
+      "pass": "dropship-sites",
+      "message": "dropship on e: 0 cut columns, 0 layer-columns excavated, 16 external boarding columns",
+      "at": {
+        "x": 39,
+        "y": 2,
+        "z": 24
+      }
+    },
+    {
+      "pass": "connectivity",
+      "message": "5 hook/class checks, 0 repairs, 0 relocations"
+    }
+  ],
+  "url": "http://127.0.0.1:5177/mapgen-preview.html?seed=mc-resume-02&biome=coastal&settlement=rural&size=small&models=1&units=1&slope=100",
+  "renderedDimensions": "48×48×6",
+  "recipeInput": "Unmodified Map Lab URL",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "camera": {
+    "yawIndex": 0,
+    "zoom": 73.48469228349524,
+    "target": {
+      "x": 41.5,
+      "y": 1.65,
+      "z": 26.5
+    },
+    "bounds": {
+      "x": 0,
+      "z": 0,
+      "w": 48,
+      "d": 48
+    },
+    "zoomRange": {
+      "min": 29.757410374933876,
+      "max": 192
+    }
+  },
+  "rendering": {
+    "timingMethod": "RAF interval with gl.finish(), discard first four of twelve frames; software renderer, not a hardware FPS claim",
+    "frameMs": [
+      7.199999809265137, 18.600000143051147, 19.59999990463257,
+      17.40000009536743, 13.5, 17.5, 18.5, 582.7000000476837
+    ],
+    "render": {
+      "frame": 30,
+      "calls": 797,
+      "triangles": 214550,
+      "points": 0,
+      "lines": 0
+    },
+    "memory": {
+      "geometries": 738,
+      "textures": 34
+    },
+    "programs": 17
+  },
+  "aircraftDraws": {
+    "parts": 8,
+    "withAircraft": {
+      "frame": 32,
+      "calls": 797,
+      "triangles": 214550,
+      "points": 0,
+      "lines": 0
+    },
+    "withoutAircraft": {
+      "frame": 34,
+      "calls": 781,
+      "triangles": 210734,
+      "points": 0,
+      "lines": 0
+    },
+    "calls": 16,
+    "triangles": 3816
+  },
+  "elapsedMs": 31937.597693
+}

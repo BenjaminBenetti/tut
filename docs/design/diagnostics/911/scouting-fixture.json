@@ -1,0 +1,260 @@
+{
+  "date": "2026-09-09",
+  "review": "https://github.com/BenjaminBenetti/tut/pull/1042#issuecomment-5595166189",
+  "diagnosis": "https://github.com/BenjaminBenetti/tut/pull/1042#issuecomment-5595266537",
+  "reproducedBranch": "a7e7a22",
+  "reproducedMain": "ffcf7eae44ee110c9582081b1789dffc504836ee",
+  "campaignSeed": 4242,
+  "mapSeed": "730982385",
+  "recipe": "temperate/city/small",
+  "failure": {
+    "initial": {
+      "id": "unit-1",
+      "kind": "squad",
+      "team": "tdf",
+      "sourceId": "squad-1",
+      "templateId": "squad:squad-1",
+      "pos": {
+        "x": 8,
+        "y": 2,
+        "z": 29
+      },
+      "facing": "e",
+      "hp": 20,
+      "maxHp": 20,
+      "ap": 2,
+      "maxAp": 2,
+      "status": [],
+      "passClass": "infantry",
+      "charges": {
+        "primary": 3
+      }
+    },
+    "final": {
+      "id": "unit-1",
+      "kind": "squad",
+      "team": "tdf",
+      "sourceId": "squad-1",
+      "templateId": "squad:squad-1",
+      "pos": {
+        "x": 10,
+        "y": 2,
+        "z": 7
+      },
+      "facing": "n",
+      "hp": 0,
+      "maxHp": 20,
+      "ap": 2,
+      "maxAp": 2,
+      "status": [],
+      "passClass": "infantry",
+      "charges": {
+        "primary": 3
+      }
+    },
+    "events": [
+      {
+        "turn": 3,
+        "type": "tactical:bugs-spawned",
+        "payload": {
+          "unitIds": ["unit-2", "unit-3", "unit-4", "unit-5"],
+          "source": "edge",
+          "sourceId": "hook-7"
+        }
+      },
+      {
+        "turn": 4,
+        "type": "tactical:bugs-spawned",
+        "payload": {
+          "unitIds": ["unit-6", "unit-7"],
+          "source": "spawner",
+          "sourceId": "spawner-1"
+        }
+      },
+      {
+        "turn": 4,
+        "type": "tactical:bugs-spawned",
+        "payload": {
+          "unitIds": ["unit-8", "unit-9"],
+          "source": "spawner",
+          "sourceId": "spawner-2"
+        }
+      },
+      {
+        "turn": 5,
+        "type": "tactical:bugs-spawned",
+        "payload": {
+          "unitIds": ["unit-10", "unit-11", "unit-12", "unit-13"],
+          "source": "edge",
+          "sourceId": "hook-7"
+        }
+      },
+      {
+        "turn": 5,
+        "type": "tactical:attack-resolved",
+        "payload": {
+          "attackerId": "unit-2",
+          "targetId": "unit-1",
+          "hit": true,
+          "damage": 8,
+          "targetHp": 12,
+          "weaponRange": 1
+        }
+      },
+      {
+        "turn": 5,
+        "type": "tactical:attack-resolved",
+        "payload": {
+          "attackerId": "unit-4",
+          "targetId": "unit-1",
+          "hit": true,
+          "damage": 4,
+          "targetHp": 8,
+          "weaponRange": 1
+        }
+      },
+      {
+        "turn": 5,
+        "type": "tactical:attack-resolved",
+        "payload": {
+          "attackerId": "unit-5",
+          "targetId": "unit-1",
+          "hit": true,
+          "damage": 4,
+          "targetHp": 4,
+          "weaponRange": 1
+        }
+      },
+      {
+        "turn": 6,
+        "type": "tactical:attack-resolved",
+        "payload": {
+          "attackerId": "unit-2",
+          "targetId": "unit-1",
+          "hit": true,
+          "damage": 7,
+          "targetHp": 0,
+          "weaponRange": 1
+        }
+      },
+      {
+        "turn": 6,
+        "type": "tactical:unit-died",
+        "payload": {
+          "unitId": "unit-1",
+          "killerId": "unit-2"
+        }
+      },
+      {
+        "turn": 6,
+        "type": "tactical:mission-ended",
+        "payload": {
+          "outcome": "lost",
+          "turn": 6
+        }
+      }
+    ],
+    "edgeHooks": [
+      {
+        "id": "hook-6",
+        "kind": "edge-spawn",
+        "tiles": [
+          {
+            "x": 47,
+            "y": 2,
+            "z": 21
+          },
+          {
+            "x": 47,
+            "y": 2,
+            "z": 22
+          },
+          {
+            "x": 47,
+            "y": 2,
+            "z": 23
+          },
+          {
+            "x": 47,
+            "y": 2,
+            "z": 24
+          },
+          {
+            "x": 47,
+            "y": 2,
+            "z": 25
+          }
+        ],
+        "requiredPass": 1
+      },
+      {
+        "id": "hook-7",
+        "kind": "edge-spawn",
+        "tiles": [
+          {
+            "x": 12,
+            "y": 2,
+            "z": 0
+          },
+          {
+            "x": 13,
+            "y": 2,
+            "z": 0
+          },
+          {
+            "x": 14,
+            "y": 2,
+            "z": 0
+          },
+          {
+            "x": 15,
+            "y": 2,
+            "z": 0
+          }
+        ],
+        "requiredPass": 1
+      }
+    ]
+  },
+  "finding": "The squad walked 24 tiles toward an objective window; the required viewing square became occupied by a north-edge wave. The death was away from the boarding area. This fixture never fought and did not represent a supported lone-squad survival rule.",
+  "boardingToWaveMinimumOrthogonalDistance": 30,
+  "scoutStartToWaveMinimumOrthogonalDistance": 33,
+  "repair": {
+    "deployment": "Available initial roster: one mech, two rifle squads",
+    "scout": "Living unit with its actual pass class and template sight range",
+    "seedChanged": false,
+    "productionChanged": false,
+    "finalTurn": 7,
+    "scoutPosition": {
+      "x": 17,
+      "y": 2,
+      "z": 6
+    },
+    "scoutHp": 79,
+    "scoutMaxHp": 80,
+    "initialVisibleSpawners": 0,
+    "finalVisibleSpawners": 1,
+    "targeting": "Normal layer-down and wheel controls; onscreen bounds check; actual mouse click; selected scout retained",
+    "negativeControl": "Omitting the sole mouse click fails selected-spawner: expected spawner-1, received absent attribute"
+  },
+  "validation": {
+    "typecheck": "tsc -b: pass",
+    "changedFileLintAndFormat": "pass",
+    "browser": {
+      "tests": 6,
+      "durationMinutes": 2.3,
+      "retries": 0,
+      "exitCode": 0,
+      "specs": [
+        "dropship-site (campaigns4242/9)",
+        "interior-movement",
+        "tactical-input",
+        "tactical-spawners",
+        "tactical-unit-click"
+      ],
+      "harness": "Standard Playwright configuration on an isolated checkout/Vite port8798, CI=1, one worker"
+    },
+    "historicalPngs": "Unchanged",
+    "derivedInteriorFixture": "Byte-identical to9b8575c"
+  }
+}

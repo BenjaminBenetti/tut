@@ -67,6 +67,12 @@ export class DeployPlacer implements HookPlacer {
   /** Adds `count` zones, each on a fresh edge where possible. */
   place(requirement: HookRequirement, context: GenerationContext): void {
     const { draft, rng, diagnostics } = context;
+    if (draft.requiresDropships) {
+      diagnostics.note(
+        `${draft.dropships.length} reserved dropship boarding zones retained`,
+      );
+      return;
+    }
     const usedEdges = new Set<Direction>();
     for (let i = 0; i < requirement.count; i++) {
       const zone = findZone(draft, rng.fork(`zone-${i}`), usedEdges);

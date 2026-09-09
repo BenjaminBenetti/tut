@@ -4,10 +4,11 @@
 
 Reference: published **v0.2.16**, `1131c9019f6dad4abf0a1b46dbfd78334daa9254`.
 This pass extends the earlier broad surveys with actual mission location claims
-and one-parameter Map Lab comparisons. It does not assert every combination on
-this release. Each published scene has an individually opened native PNG and an
-exact recipe/camera/hash sidecar. The inspection JSON files distinguish looked-at
-frames from scratch work still in progress.
+and one-parameter Map Lab comparisons. The completed [breadth follow-up](survey/README.md)
+brings this to 18 recipes across all biomes and settlement scales, three sizes
+and multiple seeds; it does not assert every size/seed combination on this release. Each published scene has an individually opened native PNG and an
+exact recipe/camera/hash sidecar. The inspection JSON files record every opened
+frame in this completed pass.
 
 ## Preserve
 
@@ -34,7 +35,7 @@ are not a substitute for those tactical tests.
    and a fresh merged check. Do not create another yard-context issue.
 2. **Arrival/extraction still lacks its physical anchor in this release, #911.**
    Known Director-owned gap. #1042 is excluded from v0.2.16; it merged after the release as `6967394` (#1042), and its fresh merged
-   check remains separate from this release assessment. Do not re-file the bare marked deploy rectangle.
+   [check is complete and positive](../map-critic-post1042/README.md), separate from this release assessment. Do not re-file the bare marked deploy rectangle.
 
 No third distinct defect is established by the published frames so far. Open
 fence ends are credible where they mark a plot or trail extent. The stone lanes

@@ -1,0 +1,22 @@
+{
+  "mission/arrival": {
+    "openedAt": "2026-09-09T04:42:14.968407+00:00",
+    "observation": "Johannesburg arrival: grounded transport on open plot, ramp meets blue boarding area beside pavement; starting mech/squads visible, street onward clear. Reverse confirms supported feet and a credible parked craft; roof/plot/street context preserved.",
+    "sha256": "ef2147f5232a239125c3b79ffb45561c669e4c9f9a88d85dbb96d4619ff7e32c"
+  },
+  "mission/arrival-opposite": {
+    "openedAt": "2026-09-09T04:42:14.968407+00:00",
+    "observation": "Johannesburg arrival: grounded transport on open plot, ramp meets blue boarding area beside pavement; starting mech/squads visible, street onward clear. Reverse confirms supported feet and a credible parked craft; roof/plot/street context preserved.",
+    "sha256": "92ce087235e49647dd568c92585d82d20468e7c687045d7d5f68e31055a7ac37"
+  },
+  "mission-s/arrival": {
+    "openedAt": "2026-09-09T04:42:14.968407+00:00",
+    "observation": "Perth arrival: host chooses ramp-facing side, with ramp and starting force visible rather than concealed by aircraft. Reverse shows former obstructing-side view; return restores arrival. Grounded craft, open boarding area and adjoining town road remain coherent. Natural cut terrain elsewhere unchanged.",
+    "sha256": "fb68303cee4346c9999ff57118b9d4cf3c9f7cfe292fc03f213543521e51e3c7"
+  },
+  "mission-s/arrival-opposite": {
+    "openedAt": "2026-09-09T04:42:14.968407+00:00",
+    "observation": "Perth arrival: host chooses ramp-facing side, with ramp and starting force visible rather than concealed by aircraft. Reverse shows former obstructing-side view; return restores arrival. Grounded craft, open boarding area and adjoining town road remain coherent. Natural cut terrain elsewhere unchanged.",
+    "sha256": "c3ec9e45a7711ff346607712d342daa25b9bf55b95a29199b67fa893f0e5132d"
+  }
+}

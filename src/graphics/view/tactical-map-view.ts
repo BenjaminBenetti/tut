@@ -35,6 +35,10 @@ import type {
 } from "../../tactical/model/tactical-state";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import { terrainSlopeRise } from "../service/terrain-slope-rise";
+import {
+  createWaterBoundaryGeometry,
+  waterBoundaryMask,
+} from "../service/water-boundary-geometry";
 import type { RoadAppearance } from "../model/road-appearance";
 import type {
   LadderAppearance,
@@ -995,6 +999,7 @@ export class TacticalMapView implements Disposable, TilePicker {
    */
   private buildTiles(): void {
     const ground = new Map<string, Batch>();
+    const water = new Map<number, Map<string, Batch>>();
     const slabs = new Map<string, Batch>();
     const foundations = new Map<string, Batch>();
     for (const tile of this.map.tiles) {
@@ -1030,6 +1035,13 @@ export class TacticalMapView implements Disposable, TilePicker {
         continue;
       }
       const height = isGround ? top : SLAB_HEIGHT;
+      const waterMask = waterBoundaryMask(tile, this.index);
+      let batches = isGround ? ground : slabs;
+      if (waterMask !== undefined) {
+        const existing = water.get(waterMask);
+        batches = existing ?? new Map<string, Batch>();
+        if (existing === undefined) water.set(waterMask, batches);
+      }
       const matrix = boxMatrix(
         tile.x + 0.5,
         top - height / 2,
@@ -1039,8 +1051,8 @@ export class TacticalMapView implements Disposable, TilePicker {
         1,
       );
       pushBatch(
-        isGround ? ground : slabs,
-        `tile:${tile.surface}:${tile.y}`,
+        batches,
+        `tile:${tile.surface}:${tile.y}${waterMask === undefined ? "" : `:edges-${waterMask}`}`,
         colour,
         tile.y,
         matrix,
@@ -1048,6 +1060,12 @@ export class TacticalMapView implements Disposable, TilePicker {
       );
     }
     this.flushBatches(ground, TILES_GROUND);
+    for (const [mask, batches] of water) {
+      // One geometry per boundary shape, shared across its tiles and levels.
+      const geometry = createWaterBoundaryGeometry(mask);
+      this.disposables.push(geometry);
+      this.flushBatches(batches, TILES_GROUND, geometry);
+    }
     this.flushBatches(slabs, TILES_SLAB);
     this.flushBatches(foundations, "foundations");
   }
@@ -1382,10 +1400,11 @@ export class TacticalMapView implements Disposable, TilePicker {
   private flushBatches(
     batches: ReadonlyMap<string, Batch>,
     label: string,
+    geometry: BufferGeometry = this.unitBox,
   ): void {
     for (const [key, batch] of batches) {
       const mesh = new InstancedMesh(
-        this.unitBox,
+        geometry,
         this.material(batch.colour),
         batch.matrices.length,
       );

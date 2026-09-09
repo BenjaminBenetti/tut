@@ -1,0 +1,44 @@
+{
+  "runtimeSource": "d7403df5835d099efa3b8588399f37ba97e82cd6",
+  "baselineSource": "cd37ce973bdfd5d41af4529fd98efdc3dee30ece",
+  "typecheck": "pass",
+  "eslintAndPrettier": "pass",
+  "build": "pass",
+  "unit": {
+    "command": "pnpm test --maxWorkers=4",
+    "filesPassed": 278,
+    "filesSkipped": 1,
+    "testsPassed": 2292,
+    "testsSkipped": 1
+  },
+  "simulation": {
+    "command": "pnpm test:sim",
+    "testsPassed": 7,
+    "testsSkipped": 1
+  },
+  "browser": {
+    "command": "CI=true pnpm test:e2e --reporter=list",
+    "passed": 66,
+    "skipped": 35,
+    "failed": 0,
+    "flaky": 0,
+    "durationMinutes": 6.9,
+    "notes": "Two city-road-straight fetch warnings appeared in the full suite. The twenty paired capture executions had zero asset fallbacks or page/console errors."
+  },
+  "regression": {
+    "before": "fails by hitting an internal water wall one tile before the exterior boundary",
+    "after": "all 40 map-view tests pass, including all four external sides, top/bottom, shore and unequal-height cases"
+  },
+  "visual": {
+    "uniqueNativeFramesOpened": 10,
+    "viewsPerPhase": 5,
+    "independentBrowsersPerPhase": 2,
+    "eachPhasePngBytesReproduced": true,
+    "pairedCompleteMapsByteIdentical": 4,
+    "dryControlPngBytesIdentical": true,
+    "dryControlChangedRgbaPixels": 0,
+    "directorJudgment": "requested in PR",
+    "criticRecheck": "requested in PR"
+  },
+  "logs": ".git/art-1005/"
+}

@@ -189,3 +189,9 @@ focus/rotation/pixel pitch. The first custom-input capture exposed a whitespace-
 marker, which now accepts the served module's formatting. A navigation timeout was repaired at
 the harness by waiting for DOM content plus the existing model/preview readiness markers; no
 production logic or assertion changed to make a shutter fire.
+
+## #1036 integration repair (2026-09-09)
+
+The Tech Lead's combined gate on `b54d55d` + `main@ed5d722` found that the interior-movement browser fixture still pinned the old seed-4242 building-3 doorway. Rebased onto main `6a552d6` and changed only that fixture: derive the actual entrance and its inward neighbor; place the two squads two tiles outside with one lateral separation and the mech three outside/four lateral away. Assert legal outdoor occupancy, the interior neighbor's building ownership and initially unexplored entry, then retain all three real right-click movements and layer changes. The measured current doorway is (22,2,11), south-facing; it is recorded here, not hardcoded in the test.
+
+`CI=1 pnpm exec playwright test e2e/interior-movement.spec.ts e2e/dropship-site.spec.ts --workers=1`: **3 passed, 1.1 minutes, zero retries**. Typecheck and changed-file ESLint/Prettier pass. An initial local edit used the wrong TileIndex lookup signature; typecheck and the test rejected it, corrected before this passing run. No game source changed for this review repair. Historical judged PNGs remain untouched; the Tech Lead's requested fresh combined-runtime arrival render is still owed before merge.

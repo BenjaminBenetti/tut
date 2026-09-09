@@ -2,6 +2,12 @@ import { expect, test, type Page } from "@playwright/test";
 import { writeFileSync } from "node:fs";
 
 import { ASSET_WARNING_PREFIX } from "../src/graphics/model/asset-logger";
+import {
+  directionOffset,
+  oppositeDirection,
+  stepGridPos,
+} from "../src/core/service/grid-math";
+import { allows, PassMask } from "../src/mapgen/model/pass-mask";
 import type { TileCoord } from "../src/mapgen/model/tile-coord";
 import { TileIndex } from "../src/mapgen/service/tile-index";
 import type { GameState } from "../src/save/model/game-state";
@@ -15,7 +21,6 @@ import { drawnFrame, tacticalModelsReady } from "./capture-frame.helper";
 import { launchMission } from "./mission-capture.helper";
 
 const SAVE_KEY = "tut:save:autosave";
-const ENTRY = { x: 9, y: 2, z: 29 };
 const CAPTURE = process.env.CAPTURE !== undefined;
 if (process.env.REPRO_BASE_URL)
   test.use({ baseURL: process.env.REPRO_BASE_URL });
@@ -51,26 +56,42 @@ test("highlighted interior tiles move the squad through the doorway", async ({
   await tacticalModelsReady(page);
   const save = await saveIn(page);
   const original = save.state.activeMission!;
-  expect(
-    original.map.buildings.find((b) => b.id === "building-3")?.entrances[0],
-  ).toEqual({
-    tile: ENTRY,
-    side: "e",
+  const building = original.map.buildings.find((b) => b.id === "building-3");
+  expect(building).toBeDefined();
+  const entrance = building!.entrances[0]!;
+  const entry = entrance.tile;
+  const inward = stepGridPos(entry, oppositeDirection(entrance.side));
+  const outward = directionOffset(entrance.side);
+  /** Positions on the real entrance's exterior apron, in door-relative coordinates. */
+  const outside = (distance: number, lateral = 0): TileCoord => ({
+    x: entry.x + outward.x * distance - outward.z * lateral,
+    y: entry.y,
+    z: entry.z + outward.z * distance + outward.x * lateral,
   });
   const positions: Record<string, TileCoord> = {
     // Keep the unrelated mech out of the doorway ray; units still win picks.
-    "unit-1": { x: 12, y: 2, z: 25 },
-    "unit-2": { x: 10, y: 2, z: 29 },
-    "unit-3": { x: 10, y: 2, z: 28 },
+    "unit-1": outside(3, -4),
+    "unit-2": outside(2),
+    "unit-3": outside(2, -1),
   };
+  const index = new TileIndex(original.map);
+  expect(index.getAt(inward)?.buildingId).toBe(building!.id);
+  for (const [id, pos] of Object.entries(positions)) {
+    const tile = index.getAt(pos);
+    expect(tile?.buildingId).toBeUndefined();
+    expect(
+      allows(
+        tile?.pass ?? PassMask.NONE,
+        id === "unit-1" ? PassMask.MECH : PassMask.INFANTRY,
+      ),
+    ).toBe(true);
+  }
   const positioned = {
     ...original,
     units: original.units.map((u) => ({ ...u, pos: positions[u.id] ?? u.pos })),
   };
   const mission = { ...positioned, vision: initialVision(positioned) };
-  expect(mission.vision.tdf.explored).not.toContain(
-    new TileIndex(mission.map).keyOf(ENTRY),
-  );
+  expect(mission.vision.tdf.explored).not.toContain(index.keyOf(entry));
   const prepared = {
     ...save,
     state: { ...save.state, activeMission: mission },
@@ -88,9 +109,9 @@ test("highlighted interior tiles move the squad through the doorway", async ({
   );
   expect(errors).toEqual([]);
   const attempts = [
-    { id: "unit-2", to: ENTRY, cut: -999 },
-    { id: "unit-2", to: { x: 8, y: 2, z: 29 }, cut: 0 },
-    { id: "unit-3", to: ENTRY, cut: 999 },
+    { id: "unit-2", to: entry, cut: -999 },
+    { id: "unit-2", to: inward, cut: 0 },
+    { id: "unit-3", to: entry, cut: 999 },
   ];
   const recorded: unknown[] = [];
   try {

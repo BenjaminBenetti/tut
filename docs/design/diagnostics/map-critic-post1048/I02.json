@@ -1,0 +1,78 @@
+{
+  "id": "I02",
+  "seed": "mc-resume-01",
+  "biome": "temperate",
+  "settlement": "city",
+  "size": "medium",
+  "tile": {
+    "x": 43,
+    "y": 2,
+    "z": 39
+  },
+  "rotation": 1,
+  "pitch": 45,
+  "width": 1300,
+  "height": 1050,
+  "camera": {
+    "yawIndex": 1,
+    "zoom": 55.11351921262119,
+    "target": {
+      "x": 43.5,
+      "y": 1.65,
+      "z": 39.5
+    },
+    "bounds": {
+      "x": 0,
+      "z": 0,
+      "w": 72,
+      "d": 72
+    },
+    "zoomRange": {
+      "min": 19.83827358328925,
+      "max": 192
+    }
+  },
+  "actualPitch": 44.99999999999995,
+  "pixel": {
+    "x": 1389.9999999999995,
+    "y": 750.0000000000007
+  },
+  "url": "http://127.0.0.1:4176/mapgen-preview.html?seed=mc-resume-01&biome=temperate&settlement=city&size=medium&models=1&units=1&slope=100",
+  "baseline": "8451a080e5328b98f82f8b1016dc6ca52ecafe06",
+  "serverRuntime": {
+    "baseline": "8451a080e5328b98f82f8b1016dc6ca52ecafe06",
+    "server": "http://127.0.0.1:4176",
+    "serverSession": 77234,
+    "recordedAt": "2026-09-09T01:44:11.760864+00:00",
+    "config": ".scratch/map-critic-v0215/landing-vite.config.mjs",
+    "watch": null,
+    "hmr": false,
+    "freshServerAfterCheckout": true,
+    "runtimeTrees": {
+      "src": "950175a2773cef9f50cefa457a63c6875b036ec0",
+      "public": "b375081ffc3e9b2791df1f154df49d537321cde1",
+      "tools": "9b9bf2304fe437219b94610d825f7ccbda6ba39d"
+    },
+    "restartNote": "Same pinned8451a08 after prior server SIGTERM143. Prior I01 manual-camera pilot retained separately."
+  },
+  "capturedAt": "2026-09-09T01:47:00.679Z",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "clip": {
+    "x": 740,
+    "y": 225,
+    "width": 1300,
+    "height": 1050
+  },
+  "levels": {
+    "value": "14",
+    "max": "14",
+    "step": "2",
+    "label": "all"
+  },
+  "errors": [],
+  "sha256": "0d85cc58fa8664178ff80bfd3545a018c681302624ad71319031226c3944e5c0",
+  "cameraMethod": "Production camera rig accessor, matching published Art camera; no map or scene substitution"
+}

@@ -1,39 +1,29 @@
 # Handoff: Map Critic
 
-2026-09-08, **v0.2.15 resumed pass in progress**. The Director reports
-**67% context remaining**, checked through `/status`; continue this seat.
-The Executive Director's focus is tactical UX and map generation, made robust.
-#945/#1007 and #959/#1016 are merged; fresh post-merge verdicts are in progress.
-Three Critic tickets remain open: **#960 → #1006 → #1005**; two slots remain.
+9 September 2026 UTC, **v0.2.15 resumed pass in progress**. Current runtime
+is main `9d9ea012e97292ae3f96e2500f1609a1cfdbf412`; branch
+`docs/945-map-critic-v0215`. The Director reported **67% context remaining**
+through `/status` on resume. That is an operator measurement at that time,
+not a live percentage exposed to these tools. Continue the authorised work.
 
-Current branch `docs/945-map-critic-v0215`, baseline
-`9d9ea012e97292ae3f96e2500f1609a1cfdbf412` (v0.2.15). Prior docs PR #1015
-merged as `123c54c`; do not leave it awaiting review. Fresh capture server
-`78445` on **4175** started after checkout; use that server for this pass.
-Scratch root `.scratch/map-critic-v0215/` records its startup identity and
-runtime tree hashes. The inherited 4173 server had watching/HMR disabled
-and retained old code after checkout changed: its first two pilot frames
-are quarantined under `excluded-stale-server/`, never evidence for v0.2.15.
-**Restart the capture server for every changed runtime baseline.** Reading
-HEAD alone cannot certify the code an already-running server has cached.
+**#945 and #959 both improve the picture on merged main.** Nine fresh native
+frames are published at `e50207803d4a5f0dc2b11cbd3596e181298f8bfa`.
+[Ground-contact verdict](https://github.com/BenjaminBenetti/tut/issues/945#issuecomment-5593788972),
+[trail and rural stone-identity verdict](https://github.com/BenjaminBenetti/tut/issues/959#issuecomment-5593789123),
+[exact evidence](../design/diagnostics/map-critic-v0215/repairs/README.md).
+Three Critic issues remain open: **#960 → #1006 → #1005**; **two slots remain**.
 
-Standing orders are caught up through 23:46:02, including every intervening
-comment (full-page overlap checked). [Resume acknowledgement](https://github.com/BenjaminBenetti/tut/discussions/968#discussioncomment-18358507).
-The new singleton watch is `19147`, `.scratch/map-critic-v0215/watch.py`,
-**23:52:12–02:52:12 UTC** with five-minute polling. It samples every channel
-before deciding to exit. Do not extend that deadline on re-arm.
+The Executive Director's focus is **tactical UX and map generation**, made
+robust. #968 says merges are temporarily paused because the Tech Lead hit
+Fable's weekly cap. **Work and pushing continue; no model switch, retooling
+or production hold.** Director may go quiet too. No waiting for a merge to
+finish evidence or file an independently actionable finding.
 
-**New ruling #1023 supersedes the pointer-follow reveal:** preserve squad
-radius 4 / 0.175, remove pointer reveal. Art submitted #1032 and resumed #960;
-the earlier Critic pointer verdict is historical, not a case for retention.
-The top-focus roof correction is merged in #1013; its current-main re-check
-will follow the two requested material/trail cases. The #978 flat-map proof
-debt was separately accepted under #1019/#1025; do not keep it listed as owed.
-
-Accepted images are dated evidence at their named code/capture identity;
-new-main frames are separate measurements. Never silently replace accepted
-historical PNGs to follow a later rendering change. Executable screenshot
-baselines have their own reviewed test-owner maintenance contract.
+The singleton watcher uses the authorised **23:52:12–02:52:12 UTC** window,
+8–9 September, every five minutes. Do not reset its deadline on re-arm.
+[Resume acknowledgement](https://github.com/BenjaminBenetti/tut/discussions/968#discussioncomment-18358507).
+Runtime/scratch and the exact watch protocol are below. This handoff has no
+remaining claim that #1015 awaits merge or that #945/#959 remain open.
 
 ## Calibration and boundaries
 
@@ -72,108 +62,85 @@ explain a picture. Route to both areas when cause cannot be assigned by eye.
 
 ## Current ranked queue
 
-Five open Critic tickets at this checkpoint (cap reached):
+1. **[#960](https://github.com/BenjaminBenetti/tut/issues/960), p2, Art + MapGen:**
+   frontages and plots lack recognisable everyday uses. Art is actively
+   finishing six frontage modules; baseline frames `182d2ef`, after pass
+   `2a979c7`, planned PR stacked on #1032 during the merge pause. Do not
+   re-file generic boxes or force residential kinds to change to obtain
+   variety. Exterior cues and MapGen's outdoor arrangement are distinct
+   remaining work. Preserve wall-family identity, restrained glazing,
+   different heights/footprints and roof access. Original evidence is in
+   [the resumed survey](../design/diagnostics/map-critic-resume-0908/README.md).
+2. **[#1006](https://github.com/BenjaminBenetti/tut/issues/1006), p2, MapGen:**
+   city/town timber panels describe no visible boundary. Two-angle city
+   evidence: `mc-opening-03`, coastal/city/medium72, (51,1,31), 55px/tile.
+   Town corroboration is posted. Rural #917 remains accepted and the
+   coherent finite garden run is not this finding.
+3. **[#1005](https://github.com/BenjaminBenetti/tut/issues/1005), p3, MapGen + Art:**
+   a regular grid crosses continuous open water. `mc-opening-01`,
+   coastal/rural/small48, (40,0,4), 55px/tile, two angles and UI controls.
+   Cause uncertain by eye; distinct from #945's between-material contacts.
 
-1. **[#945](https://github.com/BenjaminBenetti/tut/issues/945), p2 — MapGen + Art:**
-   natural ground materials meet in conspicuous squares/right angles.
-   Filed in the prior resumed survey with coastal two-angle and snowy corroborating evidence.
-   MapGen has submitted the Director-accepted #1007; the Tech Lead requested
-   refreshed fog frames before merge. #959 is now MapGen’s active job.
-   Producer’s earlier uncertainty about pickup was explicitly cleared in #968. This concerns material contact,
-   not the settled slope/crease geometry.
-2. **[#959](https://github.com/BenjaminBenetti/tut/issues/959), p2 — MapGen + Art:**
-   temperate rural trails disappear into broad dirt patches. Fresh P01/P02,
-   `mc-resume-01`, temperate/rural/small, focus `(13,2,24)`, 45 px/tile,
-   initial/one E turn; P03 snowy contrast control. Focus is the camera
-   reference on the ridge above the trail. #204's snow/desert repair is
-   preserved. Coordinate with #945 if one repair serves both outcomes.
-3. **[#960](https://github.com/BenjaminBenetti/tut/issues/960), p2 — Art + MapGen:**
-   city frontages and plots lack recognisable differences in everyday use.
-   I01/I02 `mc-resume-01`, temperate/city/medium, `(43,2,39)`;
-   I03/I04 `mc-opening-02`, same settings, `(23,1,34)`, both pairs at
-   45 px/tile, initial/one E turn. Preserve wall-family appearances,
-   restrained windows, different heights/footprints and roof access.
-   #509/#511 and #492 already delivered material/glazing work; this asks
-   for building-use identity, not a repeat of those changes.
+[#1006/#1005 evidence](../design/diagnostics/map-critic-v0213/followups/README.md)
+is already committed and posted (city `ebf67d7`, water `d8babd8`).
+MapGen's routed sequence is #911 active → #1006 → #984 → #1005 → #591.
+Art's #450 is deferred by the focus order, not an automatic successor.
+Do not change specialists' primary ownership claims simply because both
+area labels appear. Tell the Director if the queue grows without work.
 
-4. **[#1006](https://github.com/BenjaminBenetti/tut/issues/1006), p2 — MapGen:**
-   city timber panels still describe no boundary. Two angles on
-   `mc-opening-03`, coastal/city/medium 72², camera anchor `(51,1,31)`,
-   55 px/tile. Rural #917 remains accepted; this extends the finding to
-   a city case and is distinct from the coherent finite garden run.
-   [Town corroboration on the new seed](https://github.com/BenjaminBenetti/tut/issues/1006#issuecomment-5592577890)
-   is also posted, with one camera side explicitly claimed for that addition.
-5. **[#1005](https://github.com/BenjaminBenetti/tut/issues/1005), p3 — MapGen + Art:**
-   regular seams cross one continuous water surface. Two angles plus UI
-   controls on `mc-opening-01`, coastal/rural/small 48², `(40,0,4)`,
-   55 px/tile. Rotated view is stronger. Cause uncertain by eye; #945's
-   between-material contacts are a different acceptance target.
+**Candidate under examination:** coastal rural brown trail identity can
+merge into broader bare-earth patches (`mc-resume-03`, small). Four first
+focused views were opened but frame the wrong patch or leave it at the
+edge; reframe the actual route/earth junction, inspect the second angle,
+then file if demonstrated. Cross-reference the accepted temperate-only
+#959 repair. Do not describe a movement failure from an ambiguous render.
+There is room to file; this is evidence preparation, not a taste hold.
 
-Both new tickets have committed evidence in
-[the follow-up findings](../design/diagnostics/map-critic-v0213/followups/README.md),
-water `d8babd8` and city panels `ebf67d7`. No sixth ticket while five are open.
+**No stone-identity defect established:** the reported temperate route and
+new small rural seed read as plausible surfaced access lanes serving
+substantial buildings. They are visibly stone/cobble, not dirt footpaths.
+Retain the route's distinction in future variety work; do not demand a
+particular material for all rural tracks. Check the new large rural case too.
 
-No new city-flatness ticket is justified by the inspected views. The
-post-removal floor/roof controls show a usable-looking infantry vertical
-fight: successive furnished floors/stairs, roof openings and a neighbouring
-ladder. That is a bounded visual judgement, not proof that every route works.
-MapGen's mech outdoor-height cost is distinct from infantry building access;
-#787 already owns future big-city overpasses. Do not duplicate it.
+**No new flat-city finding established:** different occupied heights,
+roof openings, stairs and exterior access remain visible after the plinths
+were removed. This is a bounded picture judgement, not movement/LOS or
+mech access certification. #787 already owns future big-city overpasses.
 
-Continue the ranked repairs above; hold further findings until a slot opens. Interior lighting is
-still a future play observation requested by the Director in #916 history:
-current control interiors are dim, but this pass establishes the cutaway
-improvement, not a general lighting failure or sign-off. Wider prop/plot
-context is now included in #960 rather than held as a taste question.
-Report if either owner begins queueing instead of working. At restart,
-MapGen is on #959 with #945 In Review (#1007).
-Art is now active on #960; the #911 model merged in #1008 at 22:07:18 UTC,
-while MapGen placement remains outstanding. Producer’s current MapGen queue
-is #959 active → #1006 → #984 → #1005 → #591, with #945 In Review.
-#450 is claimed for Art after #960. These are queued claims, not second active jobs.
-#947 has merged; a queued successor is
-not evidence that either seat has stalled.
+## Repair verdicts and superseding decisions
 
-## Merged fixes: render verdicts
-
-- **#911 / #1008, model stage:** merged `a5efc99`; I opened Art's three model
-  angles and four grass/paving fixture views after the merge event. The broad
-  hull, lift fans, cockpit and rear ramp read as a grounded TDF transport.
-  [Model-only verdict](https://github.com/BenjaminBenetti/tut/issues/911#issuecomment-5592589464).
-  These are attributed constructed Art fixtures, not generated placement
-  proof. MapGen still owes the reserved site, support and boarding clearance.
-
-
-- **#961 / #978:** useful floor views, **failed top-limit preservation control**
-  on later main `d0837c6`. Eight fresh frames show 1/5 and 2/5 rooms/stairs
-  from two sides, but `]` at initial 5/5 removes the tall roof without changing
-  the readout. [Posted on the owning #978 thread](https://github.com/BenjaminBenetti/tut/issues/978#issuecomment-5592433008)
-  and cross-referenced from #961. [Evidence](../design/diagnostics/map-critic-v0213/layers/README.md),
-  `22d1cad`. #968 confirmed eng-3 already owns the correction; do not open a
-  duplicate or claim discovery priority. Both initial frames had their roofs:
-  the precise trigger is applying the top focus, including a clamped Up.
-  The engineer’s separately attributed same-run hillside pair in merged #1003
-  was also opened: the missing building becomes readable ground-floor rooms,
-  an actual improvement. The proper flat-map preservation control remains
-  owed under #996/#978; our view is not a substitute for that reproducibility work.
-
-
-- **#937 / #947, current-main confirmation:** 24 fresh pitched/flat, two-angle
-  squad/pointer/overlap/closure frames opened. Broad radius-4 room context
-  remains useful; hover inspection extends it and both closure paths restore
-  the roof. [Posted combined verdict](https://github.com/BenjaminBenetti/tut/issues/937#issuecomment-5592160824)
-  and [evidence](../design/diagnostics/map-critic-v0213/cutaway/README.md).
-  Dim interiors, stipple and accepted near-wall edge exposure remain limitations.
-
-
-- **#917 / #973**, merge `07b40cd`: **picture improved** on main `5cead6e`.
-  Nine fresh frames show the beach fragments gone, trail/plot runs in context,
-  clear entrance approaches and preserved waterfront. [Posted verdict](https://github.com/BenjaminBenetti/tut/issues/917#issuecomment-5591954741).
-  [Evidence](../design/diagnostics/map-critic-v0213/README.md), immutable
-  `132a5cb8305156947e30ca1c90b536e1dc6a06e9`. The visible open garden end
-  ranks below #945, #959 and #960: it marks one legible plot edge and
-  does not require a separate defect ticket in this case. This is not a
-  blanket exemption for arbitrary stubs, nor a request to enclose every plot.
+- **#945 / #1007**, merged `c6be260`: irregular coastal material contacts
+  and rounded snowy rock margins hold up from both sides. Built waterfront
+  edges and the snowy trail retain readability. New baseline `9d9ea01`;
+  old images are dated records, not silently refreshed comparison controls.
+- **#959 / #1016**, merged `ad72e5d`: the temperate track stays continuous
+  across bare earth in both directions. Snowy/desert controls remain clear.
+  Our current-main images are visual preservation checks, not the separate
+  isolated-change byte comparisons that the author provided.
+- **#961 / #978 / #996**, top-limit correction merged in **#1013**, `086cab1`.
+  Prior Critic `d0837c6` evidence showed the exact trigger: initial 5/5 roof
+  intact, clamped `]` removes the tallest roof while still displaying 5/5.
+  It never showed all roofs missing by default. Fresh eight-frame re-check
+  is capturing the same ordinary campaign4242 mission from both camera
+  sides; publish the visual verdict after opening all frames. Eng-3's
+  separate flat-map/hillside proof was accepted under #1019/#1025 and is
+  no longer owed. Historical [Critic layers](../design/diagnostics/map-critic-v0213/layers/README.md)
+  remain at their recorded identity.
+- **#1023 now removes pointer-follow reveal deliberately.** Art #1032 is
+  Director-accepted at `212f953`, runtime/16 images unchanged from accepted
+  `cc80d05`; only its browser spec changed. Preserve **squad radius4 / .175**.
+  The earlier 24-frame Critic pointer/squad/closure acceptance under
+  #937/#947 was true of its then-current build. It does not argue against
+  the new Executive Director ruling. Do not re-file absent hover reveal
+  after #1032 merges. Current-main roof controls keep the pointer offscene.
+- **#917 / #973**, merged `07b40cd`: fresh v0.2.13 nine-frame check confirmed
+  beach fragments removed, contextual trail/plot runs, clear approaches
+  and preserved waterfront. [Verdict](https://github.com/BenjaminBenetti/tut/issues/917#issuecomment-5591954741),
+  [frames](../design/diagnostics/map-critic-v0213/README.md), `132a5cb`.
+  The visible open garden end marks a legible plot boundary; no separate
+  ticket for that case. This is not blanket permission for arbitrary stubs
+  and not a demand that every plot be enclosed. New rural frames retain
+  the context; urban isolated panels remain the open #1006.
 
 - **#906 / #913:** snowy/desert bases now have visible support meeting the
   land, checked from two angles and against an already-grounded control.
@@ -207,170 +174,127 @@ not evidence that either seat has stalled.
 
 ## Evidence and publication
 
-[Latest continuation and repair digest](https://github.com/BenjaminBenetti/tut/issues/905#issuecomment-5592589635)
-is posted on #905. [The v0.2.13 record](../design/diagnostics/map-critic-v0213/README.md)
-contains 9 fence, 6 finding, 24 cutaway and 8 layer PNG/sidecar pairs, plus
-3 survey sheets and one native town corroboration (51 PNG/sidecar pairs total).
-The new survey covers 12 recipes / 24 individually opened source views;
-all three assembled sheets were also opened. Its seed is `mc-resume-02`,
-four biomes × three settlement scales, medium 72², baseline `5cead6e`.
-This follows the prior all-size sweep, not another full size/seed matrix.
-Evidence commit `355ff6a`; each record pins its own runtime baseline.
+Current [v0.2.15 repair record](../design/diagnostics/map-critic-v0215/repairs/README.md):
+nine native PNG/JSON pairs, all opened, evidence `e502078`. Sidecars contain
+exact recipes, actual camera pitch/crop, all-level readout, PNG hashes,
+error lists and a fresh-server runtime identity.
 
-[Resumed survey and ranked queue](https://github.com/BenjaminBenetti/tut/issues/905#issuecomment-5590312244) are posted on the existing #905 survey record.
+Current broad survey is **24 recipes planned**: four biomes × three
+settlements × small48/large96, new seed `mc-resume-03`; whole and near
+views, changing one parameter between recipes. It extends the prior
+all-size/all-seed work, not a claim of every combination on v0.2.15.
+At this checkpoint 13 recipes are captured and individually inspected
+(all small plus coastal/city/large). Per-recipe observations are in scratch;
+finish the remaining frames before publishing final coverage claims.
+
+Prior records, all already published:
 
 - [Opening assessment](../design/diagnostics/map-critic-opening/assessment.md):
-  108 recipes, four biomes × three settlements × three sizes × three seeds,
-  baseline `cafd9ff`, all inspected. Immutable evidence `dfbf26df4a43360bfd68fa614e2a7d520c56b1ed`.
-  PR #907 merged; survey record #905 closed. Original taste/planted-bed
-  framing is historical and explicitly superseded.
+  108 recipes, baseline `cafd9ff`, all inspected, evidence `dfbf26d`; #907 merged.
+  Survey issue #905 is the continuing record, closed rather than a cap slot.
 - [Calibration](../design/diagnostics/map-critic-calibration/README.md): eight
-  frames on `f43f73c`, evidence `46270e9a6f369b09334730673989ac1f8f20b38b`.
-- [Pre-#936 repair checks](../design/diagnostics/map-critic-recheck-936/README.md):
-  21 frames on `2878dfc`, evidence `7055ffaf4f330ef7f1e752cddb4ff0d00d166c19`.
-  PR **#918 merged** after all three CI jobs passed; its sidecar formatting
-  review was resolved. Do not keep it listed as awaiting merge.
-- [Post-#936 check](../design/diagnostics/map-critic-post936/README.md): 15
-  frames on `900d9a3`, evidence `29399f9a5543c8b5a0d2aa268c5a682ba3b3baba`.
-- [Resumed survey](../design/diagnostics/map-critic-resume-0908/README.md):
-  36 fresh `mc-resume-01` recipes on main `360778a`, whole/closer pairs in
-  nine sheets, a per-recipe ledger and exact manifest, plus seven focused
-  PNGs. All 12 large whole views also opened at native resolution.
-  Includes a second-seed building check. Evidence `3547686590364cd1d3735b598e26c8ecb72e3a97`.
-- [Post-#937 check](../design/diagnostics/map-critic-post937/README.md): 16
-  captures on main `5040bd0`, six previous-setting/runtime pairs and four
-  closure frames. Old-setting frames use diagnostic overrides on the same
-  current-main scene; they are not represented as old-build captures.
-  Evidence `37290a6f89c4fd2e9c0f538d1fd04929baafc87d`.
+  frames, `f43f73c`, evidence `46270e9`; old planted-bed praise superseded.
+- [Pre-#936 check](../design/diagnostics/map-critic-recheck-936/README.md):
+  21 frames, `2878dfc`, evidence `7055ffa`; #918 merged, CI/review resolved.
+- [Post-#936 check](../design/diagnostics/map-critic-post936/README.md):
+  15 frames, `900d9a3`, evidence `29399f9`.
+- [8 September survey](../design/diagnostics/map-critic-resume-0908/README.md):
+  36 recipes, `mc-resume-01`, all sizes/biomes/settlements, `360778a`,
+  evidence `3547686`; plus a second-seed building check.
+- [Post-#937 check](../design/diagnostics/map-critic-post937/README.md):
+  16 captures on `5040bd0`, evidence `37290a6`; old-setting controls were
+  diagnostic overrides on the same scene, not old-build screenshots.
+- [v0.2.13 pass](../design/diagnostics/map-critic-v0213/README.md):
+  9 fence, 6 finding, 24 cutaway, 8 layer PNG pairs, three survey sheets
+  and a native town corroboration; 51 PNG/sidecar pairs. 12 medium72 recipes,
+  seed `mc-resume-02`, 24 source views all opened. Each record pins its runtime.
+  [Digest](https://github.com/BenjaminBenetti/tut/issues/905#issuecomment-5592589635).
 
-Evidence PR **[#966](https://github.com/BenjaminBenetti/tut/pull/966) merged**
-at 19:14:53 UTC as `d85ecd9`, after all three CI jobs passed at `91ed16b`.
-The survey, repair crops and ranked queue are now on main.
-
-PR **#971 merged** as `4148dca`; its standing-orders handoff is complete.
-Current branch is **`docs/917-map-critic-v0213`**, based on main `5cead6e`.
-All diagnostic evidence is committed and pushed in docs-only
-[PR #1015](https://github.com/BenjaminBenetti/tut/pull/1015). Normal CI is
-pending at this publication checkpoint; the PR thread records its final result.
-Tech Lead owns review/merge.
-Capture scripts and raw frames remain under ignored
-`.scratch/map-critic-v0213/`; older scratch directories retain prior recipes.
-No scene was retouched or generated to demonstrate a finding.
+Docs PRs **#966, #971 and #1015 all merged**. #1015 merged at 22:25:47 UTC
+as `123c54c71ec3be938fb9885f36f067bf557972fd`, with all CI green.
+Current branch has no PR yet; finish current evidence/handoff, validate,
+then open a docs-only PR and follow its normal CI. Tech Lead alone merges.
 
 ## Rulings and capture gotchas
 
-Do not re-file #876 or N1. #813 permits bare unpaved cliffs; dramatic town
-road grades do not reopen judged connectors. #849 was closed with its wider
-coverage-bucket caveat. #869 owns ramps crossing continuous parapets. #701
-owns isolated desert palms; #712 records temperate boulder intent; #281's
-cover-density ruling stands. Trees' visible boundaries do not establish
-LOS protection (#591).
+Do not re-file **#876 or N1 narrow channels**. #813 permits bare natural
+cliffs; dramatic town grades do not reopen judged connectors. #849 closed
+with its wider coverage-bucket caveat. #869 owns parapet/ramp intersections;
+the earlier measured population was zero, pending its normal disposition.
+#701 owns isolated desert palms; #712 records temperate boulder intent;
+#281 cover density stands. Tree boundaries do not establish LOS protection (#591).
 
-**#947 / #982 is merged** as `3ea2fb7`, before Art’s #911 work.
-The Executive Director wants hover to reveal interiors without a squad
-inside. Current-main hovered, pointer/squad overlap and open-ground
-roof-preservation controls are now visually accepted in the 24-frame check above.
-Art owns the parameters; the Director judges visual changes before merge.
-The older post-#937 record is squad-only; the current 24-frame record above
-separately confirms pointer behavior. Do not re-file its absence.
+**#911 owns deploy/extraction dressing and placement.** Extraction stays
+at deploy deliberately. The merged TDF dropship art was inspected as
+constructed Art fixtures; it does not prove generated placement. MapGen
+is finishing real placement/boarding clearance and the initial tactical
+camera view from the ramp side after finding the south-facing craft hid
+the starting rifle squad. Do not re-file the bare marker or that active
+framing problem. Map Lab retains its common survey orientation.
 
-**#911 is the known dropship gap.** Extraction intentionally stays at deploy;
-the TDF dropship is the arrival/return landmark. Art owns the model, MapGen
-placement/clearance. Do not re-file a bare marked zone or separate extraction.
+**Restart the capture server for every changed runtime baseline.** The
+stable capture configuration disables watching/HMR, so an inherited server
+can retain old modules after git checkout changes. The first two resumed
+pilot frames from old port4173 were quarantined before judgement under
+`excluded-stale-server/`; never publish them as v0.2.15. Fresh **port4175,
+session78445** serves this pass. `runtime.json` records its startup and
+src/public/tools hashes. Reading git HEAD alone cannot certify cached code.
 
-In Map Lab, units-off removes the camera-projection hook; use initial framing
-for those controls. Keep the initial level label **all** for complete-building
-views. Raw slider value 10/max 11 can still mean all. Moving it can select a
-floor instead. Explicit floor controls use the observed slider value and
-label, not an assumed mapping from the `floor` URL. The misnamed old H02
-higher-storey attempt stays in scratch and is excluded from evidence.
+Map Lab: units-off removes coordinate projection; use initial framing.
+Keep the **all** label for complete-building views; raw slider values can
+mislead. Camera pitch means ground-axis pixels/tile. Actual cutaway uses
+the roof-cutaway fixture; Map Lab preview presence alone is not its proof.
+Tactical layers use ordinary campaign entry, no scene substitution. Use
+settled individual keyboard taps; batch pan/edge clamping caused bad
+framing before. Capture helper readiness is not itself visual acceptance.
 
-The actual cutaway is exercised through `tools/art/preview/roof-cutaway.html`,
-not Map Lab preview-unit presence. Its capture-only controls support roof,
-units, yaw, radius and opacity floor. Use the stable capture Vite configuration.
-Long terminal capture jobs have sometimes disappeared locally; TTY helped
-but did not eliminate interruption. Preserve completed PNG/JSON pairs,
-restart only the incomplete captures and verify the served baseline.
+Accepted PNGs are dated evidence at their named code/capture identity.
+Never silently refresh them to follow later main. Same-run comparisons and
+executable test baselines have distinct declared maintenance contracts.
+No retouching or generated imagery is evidence. Retain incomplete/framing
+pilots in scratch, excluding them from claimed counts.
 
-Local `pnpm lint` scans ignored `.scratch` scripts. Applicable checks exclude
-that scratch tree without changing repo configuration:
-`pnpm exec eslint . --ignore-pattern '.scratch/**'` and
-`pnpm exec prettier --check . --ignore-path .prettierignore --ignore-path .gitignore --ignore-path .git/info/exclude`.
-Format all new sidecar JSON. No game suites are needed for diagnostic-only
-changes; normal PR CI still applies. Validate image dimensions, metadata,
-links and the actual scope.
+## Watch and local checkpoint
 
-Avoid negated GitHub closing phrases: one unintentionally closed #906.
-Use `References` for active findings; documentation PRs may link the already
-closed survey #905 with the template's closing keyword. Never push main or
-merge. Every GitHub comment starts with `**Map Critic** · TUT agent` alone.
-A model-capacity error is transient: wait/retry, never change model.
-
-## Watch and final checkpoint — 22:15 UTC
-
-Original #968 subscription: **19:15:28–22:15:28 UTC, 2026-09-08**, 300-second
-polls. [Confirmed in the discussion](https://github.com/BenjaminBenetti/tut/discussions/968#discussioncomment-18355526).
-There was only one live watcher at a time; each re-arm retained that deadline.
-No cron exists. Final singleton: session `59848`,
-`.scratch/map-critic-v0213/watch/rearm-09/watch.py`; it exited normally with
-`timeout` at **22:15:28.620971 UTC**, saved in `watch-result.json`. No watcher
-remains active. Do not re-arm without a new Director resume.
-
-Last change poll: **22:11:35** (`79010`, complete). Consumed #1008's merged
-model and inspected its seven committed views; posted the bounded verdict
-above. Read eng-4's empty engineer queue/supply statement in #968; it does
-not change specialist ownership or authorise an engineer assignment here.
-#1007's last update says MapGen is taking the two requested fog captures in
-an isolated checkout. No #945 or top-limit roof repair merge was reported
-by this final change poll; neither is visually accepted on closure alone.
-
-Earlier consumed standing orders clarify the roof regression: initial frames
-are intact; applying the top focus affects the tallest/tied roofs, not every
-roof. This matches our two-angle observation. Tech Lead routed a separate
-roof repair ahead of #996 capture work; #1009 tether waits for it. #1003's
-hillside evidence is merged (`29639b3`) and was independently opened with
-its same-run old-rule/new-rule provenance stated.
+Singleton script: `.scratch/map-critic-v0215/watch.py`; session **83297**
+at this writing. Config, consumed events and all channel responses live in
+`.scratch/map-critic-v0215/watch/`. Discussion caught up by full-page overlap
+and all subsequent change events, latest consumed cycle **00:17:12 UTC**.
+The resume window is **23:52:12 Sept8 → 02:52:12 Sept9**; re-arms preserve it.
+The prior 19:15–22:15 watch timed out normally and stays finished.
 
 ```sh
 gh api graphql -f query='{repository(owner:"BenjaminBenetti",name:"tut"){discussion(number:968){comments(last:10){nodes{createdAt body}}}}}'
 ```
 
-On refresh, read/catch up #968; paginate if latest-ten comments do not overlap
-the stored read cursor. Work scope stays in issue/PR threads.
+Sample **all channels before exit**: discussion, open issue/body/label
+updates, relevant merged PRs, issue comments, PR review comments/reviews.
+No-overlap latest10 requires full catch-up before cursor advance. Read
+all changes in `result.json`, then run the local `rearm.py` helper and start
+one watcher with the unchanged deadline. Never run two. The helper uses
+the event's actual date across midnight. Errors do not advance the cursor.
+Add new owned issues and our eventual PR to this same watch. No crons;
+API polling at least300seconds, REST except the required discussion query.
 
-Runtime and scratch state:
+- Broad survey terminal **20381**, `.scratch/map-critic-v0215/survey.mjs`.
+- Roof re-check terminal **10932**, `roof-controls.mjs`; four yaw0 states
+  and yaw1 initial captured so far. Open all eight before verdict.
+- Focused coastal C1/C2/D1/D2 capture finished; all four opened. They need
+  a better trail-junction focus, as recorded in `observations.json`.
+- Old ports4173/4174 are stale or older-baseline servers, not this pass.
+  Older raw captures remain under `.scratch/map-critic-v0213/` and prior roots.
+- Applicable docs checks exclude ignored scratch without changing config:
+  `pnpm exec eslint . --ignore-pattern '.scratch/**'` and
+  `pnpm exec prettier --check . --ignore-path .prettierignore --ignore-path .gitignore --ignore-path .git/info/exclude`.
+  Format new JSON; validate dimensions, hashes, recipes, links and scope;
+  `git diff --check`. No game tests for diagnostic-only edits; normal PR CI applies.
 
-- Main workspace: `docs/917-map-critic-v0213`, baseline `5cead6e`; Vite server
-  `86432` on 4173. Only evidence/docs changed.
-- Read-only detached worktree: `.scratch/map-critic-v0213/current-main`,
-  `d0837c6`; server `75288` on 4174. Its untracked `node_modules` is a symlink
-  to the shared install. It predates the dropship model merge.
-- Survey capture `97179` completed 12/12, exit 0. Raw 24 PNGs, exact recipes
-  and observations remain in `survey/` and `survey-observations.json` under
-  `.scratch/map-critic-v0213/`; published sheets resize screenshots to 50%
-  with labels outside the scene. No generated or retouched evidence.
-- All fence/finding/cutaway/layer captures are complete. Excluded pilots and
-  failed camera calibrations remain scratch only. For fresh tactical repeats,
-  use `layers-top-angle.mjs` and single settled keyboard taps: middle drag
-  does not pan that scene, and batch pan near the edge oscillated.
-- Applicable ESLint and global Prettier checks pass; all 51 PNG/sidecar pairs,
-  recorded image hashes, manifest coverage and relative README links were
-  validated. `git diff --check` passes. No game code or new tests changed.
-  Normal PR CI is separate and must be green before Tech Lead merge.
+Avoid negated GitHub closing phrases: one once closed #906 accidentally.
+Use `References` for live findings; a docs PR may use template `Closes #905`
+for the already-closed survey. Every comment has the Critic header. No
+main push, game code, art changes, merges, model switching or QA counting.
 
-The Director asked for context percentage. No reliable live percentage is
-exposed to this seat’s tools; do not invent one. CLI `/status` reports it to
-the operator. Completed findings/verdicts and the survey are pushed; this
-handoff is the refresh point.
-
-Next on resume, in order:
-
-1. Check this docs PR's review/CI/merge state and catch up #968.
-2. Re-check #945's natural contacts and straight built-edge controls once
-   #1007 merges. Re-check the clamped-top roof control when eng-3's repair
-   lands, preserving useful hillside and lower-floor visibility.
-3. Follow #959, #960, #1006 and #1005 through actual frames, and #911 through
-   real generated placement. Do not create a sixth Critic ticket.
-4. Continue the survey only after those repairs/posted follow-ups; keep the
-   handoff current before another long capture job. Keep a fresh watch bounded
-   if the Director resumes it; this turn's three-hour window is finished.
+Next: publish any newly evidenced ticket before expanding the write-up;
+finish/review the 24-recipe survey and top-roof controls; bring this checkpoint
+forward and submit the docs-only PR; follow specialist changes through real
+frames and keep the one bounded watch until its event or deadline.

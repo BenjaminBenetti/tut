@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-09 ~02:30 UTC (session 5; the 22-PR sweep, batch gating, the #1036/#1042 integration break; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-09 ~04:30 UTC (session 5; v0.2.16 shipped, CI e2e timeout (#1070/#1071), batch gating; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — the hold is lifted (2026-09-08); the Map Quality Loop leads
 
@@ -17,6 +17,43 @@ issue/PR thread; the terminal composer often never submits. `monitor.sh`
 polls it once per tick (`gh api graphql … discussion(number:968){comments
 (last:10)…}`, one GraphQL call) and prints an `ORDERS` line on change.
 Direct seats in their GitHub thread, never only in a terminal.
+
+**09-09 03:00–04:30 (read this too; v0.2.16 shipped at 03:40):**
+- **Merged:** #1053 `b3d324b`, #1046 `c78812b`, #1058 `b4acf3f`, #1054
+  `e7530ed` squad strip, #1060 `eb96d5a` bench, #1057 `ffcf7ea`, #1063
+  `c9b5631` kerbs, #1064 `bb28b8d` water seams, **#1044 `1131c90`** refusal
+  notices (third rebase; frames byte-identical across all heads), #1059,
+  #1065, #1061, #1074, #1076 docs, **#1042 `6967394`** dropship sites.
+- **CI e2e timed out at 20 min on every head from ~03:00 (#1070):** GitHub
+  records a timed-out job as `cancelled`, indistinguishable from a
+  superseded run. Diagnose with `actions/runs/ID/jobs` start/end times.
+  Fix: #1071 shards the job two ways (`e2e · chromium (1/2)`, `(2/2)`,
+  30 min ceiling; `pnpm exec playwright test … --shard=N/2`, never
+  `pnpm test:e2e -- --shard` because pnpm forwards the literal `--`).
+  First sharded run: 15.1 and 10.3 min; shard 1 red only on
+  `capture-equality.spec.ts` flaking once (eng-3's follow-up). Until it
+  lands, docs-only PRs fast-track on typecheck+sim green with the
+  Director's cancelled-as-timed-out reading disclosed in the merge note.
+- **#1042 render verdict:** rendered `dropship-site.spec.ts` on the merged
+  tree and on the head alone (byte-identical to each other); vs the
+  committed frames ~80k px differ, all in the HUD rail (#1054), fence runs
+  (#1052/#1063) and benches (#1060); zero in the dropship/landing area.
+  Director ruled my render the record (option a) and I merged; MapGen
+  regenerates the four mission frames in a docs push.
+- **Stale gate rule:** if `main` moves under a gate with something that
+  can interact (a mapgen change under a PR with a seed-pinned e2e spec),
+  re-gate; I re-gated #1047 in a batch rather than merge on the stale
+  result.
+- **Stacked children of a squashed parent** show add/add conflicts on the
+  parent's files; the author runs `git rebase --onto origin/main
+  <parent-last-head> <branch>`. `merge-one.sh` now retargets children
+  before the branch delete.
+- **#1066's total-Record guard fired on the merge** (`no-objective-in-reach`
+  added by #1044): head green, main green, merge red on typecheck. That is
+  the guard working; the fix is one line in the author's rebase.
+- **Open at 04:30:** batch gate on #1047/#1071/#1066/#1078; #1051 and
+  #1077 await Director frames; #1067 held on defect-3 frame; #1075 draft;
+  #1079/#1080 handoffs on CI.
 
 **09-09 early morning sweep (read this; the queue was 22 PRs at 01:00):**
 - **Merged, all with the sha guard:** #1018, #1033, #1038, #1039, **#1032

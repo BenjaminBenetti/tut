@@ -1,0 +1,33 @@
+{
+  "recordedAt": "2026-09-08T23:53:00Z",
+  "beforeRuntime": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+  "afterRuntime": "e872b1714994065e5ee97b7aa9e401ac7eee5aab",
+  "testCommit": "e872b1714994065e5ee97b7aa9e401ac7eee5aab",
+  "node": "24.19.0",
+  "playwright": "1.62.1",
+  "three": "0.185.1",
+  "before": {
+    "repeats": 2,
+    "wrongPositionFailures": 2,
+    "setupFailures": 0,
+    "retries": 0
+  },
+  "after": {
+    "repeats": 2,
+    "passed": 2,
+    "retries": 0,
+    "flaky": 0
+  },
+  "allAfterFramesByteIdenticalAcrossRepeats": true,
+  "initialControlByteIdenticalBeforeAfter": true,
+  "sha256": {
+    "before/before.png": "d3f9cd4521d10e09adf3886b35848371f6d43430813d96c57bb7a5775286bf58",
+    "before/failed-move-1.png": "a1def7af8f8b019ada81942d93161e9aa57b0a1910e9158400e9e1e878a51d6f",
+    "before/video.webm": "36cf49806d8c79d1f21f22c2637a775926eecec56995e826d286be5f79027af2",
+    "after/before.png": "d3f9cd4521d10e09adf3886b35848371f6d43430813d96c57bb7a5775286bf58",
+    "after/move-1.png": "2279211efad678d9750d1dc8aa5ffe28940e14c35aed4fe2b735a0d7f03dec10",
+    "after/move-2.png": "7a101733b4d21281f3659340bfb4f7d9d16290ce6a6a0b5fbb67b976a05adae6",
+    "after/move-3.png": "3b8f0aabed34abef2d18df124a8de08a8edf604ae78399f40271bb4e94f78a69",
+    "after/video.webm": "a405cd1b7e1f391e9e301d9ed78d7df615bda5ef2b46a71fe7d7a6ceede1ceb5"
+  }
+}

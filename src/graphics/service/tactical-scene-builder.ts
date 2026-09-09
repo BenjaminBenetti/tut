@@ -119,6 +119,7 @@ export class TacticalSceneBuilder
   private selected: UnitId | undefined;
   private hoveredSpawner: SpawnerId | undefined;
   private selectedSpawner: SpawnerId | undefined;
+  private movementTiles: readonly TileCoord[] = [];
 
   // ===========================================
   // Constructor
@@ -417,9 +418,14 @@ export class TacticalSceneBuilder
   // TilePicker
   // ===========================================
 
-  /** The map tile under a normalised device coordinate; units do not occlude it. */
+  /** Updates picking from the same reachable tiles used to draw the move highlights. */
+  setMovementTiles(tiles: readonly TileCoord[]): void {
+    this.movementTiles = tiles;
+  }
+
+  /** A highlighted movement tile first, otherwise the physical map; units do not occlude it. */
   pickTile(ndc: Vec2, camera: Camera): TileCoord | undefined {
-    return this.mapView.pickTile(ndc, camera);
+    return this.mapView.pickTile(ndc, camera, this.movementTiles);
   }
 
   /** The world centre of a tile's top face, or undefined off the map. */

@@ -12,6 +12,7 @@ import {
   Matrix4,
   Mesh,
   MeshStandardMaterial,
+  Plane,
   Quaternion,
   Raycaster,
   Vector2,
@@ -303,6 +304,8 @@ export class TacticalMapView implements Disposable, TilePicker {
   private readonly disposables: Disposable[] = [];
   private readonly unitBox = new BoxGeometry(1, 1, 1);
   private readonly raycaster = new Raycaster();
+  private readonly pickPlane = new Plane(new Vector3(0, 1, 0));
+  private readonly pickPoint = new Vector3();
   /** Placeholder meshes by the category they stand in for, so models can retire them. */
   private readonly placeholders = new Map<string, Object3D[]>();
   /** Every instanced mesh with the tile each of its instances belongs to (#551). */
@@ -865,17 +868,29 @@ export class TacticalMapView implements Disposable, TilePicker {
   // ===========================================
 
   /**
-   * The tile under a normalised device coordinate: the nearest hit on
-   * any visible map mesh, nudged a hair along the ray so a hit on a
+   * A highlighted movement tile under the ray takes precedence over
+   * decorative geometry. Otherwise, the nearest visible map mesh is
+   * nudged a hair along the ray so a hit on a
    * box's side floors into that box, with the level read off the group
    * the mesh hangs on. Undefined when the ray misses the map or lands on
    * a coordinate with no tile.
    */
-  pickTile(ndc: Vec2, camera: Camera): TileCoord | undefined {
+  pickTile(
+    ndc: Vec2,
+    camera: Camera,
+    movementTiles: readonly TileCoord[] = [],
+  ): TileCoord | undefined {
     this.root.updateMatrixWorld(true);
     this.raycaster.setFromCamera(new Vector2(ndc.x, ndc.y), camera);
-    const visible = [...this.levelGroups.values()].filter((g) => g.visible);
-    const hit = this.raycaster.intersectObjects(visible, true)[0];
+    const movement = this.pickMovementTile(movementTiles);
+    if (movement !== undefined) return movement;
+    // Raycaster does not honor visibility: retired placeholders must be
+    // excluded explicitly, along with children of hidden level groups.
+    const visible: Object3D[] = [];
+    this.root.traverseVisible((object) => {
+      if (object instanceof Mesh) visible.push(object);
+    });
+    const hit = this.raycaster.intersectObjects(visible, false)[0];
     if (hit === undefined) {
       return undefined;
     }
@@ -894,12 +909,10 @@ export class TacticalMapView implements Disposable, TilePicker {
     if (!this.index.has(coord)) {
       return undefined;
     }
-    // Unexplored ground is drawn now (#761) but stays out of picking on
-    // purpose. Until #761 it was unhittable only because it was
-    // zero-scaled; keeping it unhittable preserves what the player could
-    // do before the render fix, so a p0 about drawing does not decide on
-    // the side whether a move may be ordered into fog. That is a design
-    // call, recorded on #761, and this is where it would change.
+    // #761 still forbids ordinary picks into unhighlighted fog. A move
+    // highlight is different: the movement rules already promise that
+    // destination is reachable, even through an opaque doorway (#1024).
+    // Those targets were handled above; walking reveals them normally.
     if (
       this.vision !== undefined &&
       stateOf(this.vision, this.index.keyOf(coord)) === "unexplored"
@@ -907,6 +920,44 @@ export class TacticalMapView implements Disposable, TilePicker {
       return undefined;
     }
     return coord;
+  }
+
+  /**
+   * Intersects the full tile surfaces represented by the move highlights.
+   * Walls and shader-cut roofs cannot intercept these logical surfaces.
+   * The nearest eligible storey wins; hidden floors stay restricted.
+   * Highlighted unexplored tiles are allowed by the #1024 ruling; the
+   * ordinary geometry-pick fallback retains #761's fog restriction.
+   */
+  private pickMovementTile(tiles: readonly TileCoord[]): TileCoord | undefined {
+    let nearest: TileCoord | undefined;
+    let distance = Infinity;
+    const ray = this.raycaster.ray;
+    for (const tile of tiles) {
+      const key = this.index.keyOf(tile);
+      if (
+        !this.index.has(tile) ||
+        this.levelGroups.get(tile.y)?.visible === false ||
+        this.hiddenByCut(key)
+      )
+        continue;
+      this.pickPlane.constant = -tileTopCentre(tile).y;
+      const point = ray.intersectPlane(this.pickPlane, this.pickPoint);
+      if (
+        point === null ||
+        point.x < tile.x ||
+        point.x >= tile.x + 1 ||
+        point.z < tile.z ||
+        point.z >= tile.z + 1
+      )
+        continue;
+      const next = ray.origin.distanceToSquared(point);
+      if (next < distance) {
+        nearest = tile;
+        distance = next;
+      }
+    }
+    return nearest;
   }
 
   /** The world centre of a tile's top face, or undefined for a coordinate with no tile. */

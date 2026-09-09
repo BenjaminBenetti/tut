@@ -338,9 +338,13 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
     if (!attached) {
       return;
     }
-    attached.overlays.show(
-      overlaysFor(attached.mission, attached.selected, attached.target),
+    const state = overlaysFor(
+      attached.mission,
+      attached.selected,
+      attached.target,
     );
+    attached.overlays.show(state);
+    attached.builder.setMovementTiles(state.moveRange.map(({ tile }) => tile));
     document.body.dataset.tacticalSelected = attached.selected ?? "";
   }
 

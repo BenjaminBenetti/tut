@@ -144,6 +144,11 @@ export class TacticalScreen implements Screen {
         onLookAt: (unitId) => {
           this.deps.sceneHost?.lookAtUnit(unitId);
         },
+        // A refusal is spoken above the unit that could not act (#1030),
+        // through the same floater the damage numbers use.
+        onNotice: (unitId, text) => {
+          this.deps.sceneHost?.notice(unitId, text);
+        },
         onViewChange: () => {
           this.syncOverlays();
         },

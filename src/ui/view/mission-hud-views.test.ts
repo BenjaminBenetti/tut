@@ -176,24 +176,40 @@ describe("ActionBarView", () => {
     expect(weapons[1]?.title).toContain("press again");
   });
 
-  it("enables unit actions only when the unit can act, marks the mode and reports presses", () => {
+  /**
+   * The bar marks what is unavailable and still reports the press
+   * (#1030). It used to `disable` the button, which is why clicking an
+   * unavailable action taught the player nothing: the click never
+   * happened, so nothing could explain it. Availability is now
+   * `aria-disabled` — announced, styled, and still reachable — and the
+   * HUD refuses with words above the unit.
+   */
+  it("marks unavailable actions, reports the press anyway, and marks the mode", () => {
     const onAction = vi.fn<(action: ActionBarAction) => void>();
     const view = new ActionBarView({ onAction });
     view.mount(root);
     const button = (a: string) =>
       root.querySelector<HTMLButtonElement>(`[data-action="${a}"]`);
-    expect(button("attack")?.disabled).toBe(true);
+    expect(button("attack")?.getAttribute("aria-disabled")).toBe("true");
     view.update({ canAct: true, playerPhase: true, mode: "attack" });
-    expect(button("attack")?.disabled).toBe(false);
+    expect(button("attack")?.getAttribute("aria-disabled")).toBe("false");
     expect(button("attack")?.getAttribute("aria-pressed")).toBe("true");
     expect(button("move")?.getAttribute("aria-pressed")).toBe("false");
     button("move")?.click();
     button("end-turn")?.click();
     expect(onAction.mock.calls.map((c) => c[0])).toEqual(["move", "end-turn"]);
+
+    // Unavailable: marked, and the press still reaches the HUD, which is
+    // what lets a refusal say why instead of the click vanishing.
     view.update({ canAct: false, playerPhase: false, mode: undefined });
-    expect(button("end-turn")?.disabled).toBe(true);
+    expect(button("end-turn")?.getAttribute("aria-disabled")).toBe("true");
+    expect(button("end-turn")?.classList.contains("is-unavailable")).toBe(true);
     button("end-turn")?.click();
-    expect(onAction).toHaveBeenCalledTimes(2);
+    expect(onAction.mock.calls.map((c) => c[0])).toEqual([
+      "move",
+      "end-turn",
+      "end-turn",
+    ]);
   });
 
   it("marks every button with its icon", () => {

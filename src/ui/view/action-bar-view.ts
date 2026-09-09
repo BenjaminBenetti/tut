@@ -184,7 +184,10 @@ export class ActionBarView {
       text.textContent = label;
       button.append(key, icon, text);
       button.title = `${label} (${key.textContent})`;
-      button.disabled = true;
+      // Unavailable until `update` says otherwise — marked rather than
+      // blocked, so a press still reaches the HUD to be explained (#1030).
+      button.classList.add("is-unavailable");
+      button.setAttribute("aria-disabled", "true");
       if (action === "attack") {
         // The attack slot is rebuilt per selection: one button per weapon
         // when the unit carries several (#532).
@@ -233,7 +236,14 @@ export class ActionBarView {
         // Replaced by per-weapon buttons, which carry their own state.
         continue;
       }
-      button.disabled = !isEnabled(action, model);
+      // Unavailable rather than `disabled` (#1030). A disabled button
+      // cannot be clicked, so the player who clicks it learns nothing —
+      // which is the complaint. This one still looks unavailable and
+      // still refuses, but the refusal now says why, above the unit.
+      const available = isEnabled(action, model);
+      button.classList.toggle("is-unavailable", !available);
+      button.setAttribute("aria-disabled", available ? "false" : "true");
+      button.disabled = false;
       const pressed = action === model.mode;
       button.classList.toggle("is-selected", pressed);
       button.setAttribute("aria-pressed", pressed ? "true" : "false");

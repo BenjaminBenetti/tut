@@ -177,6 +177,10 @@ export function describeRefusal(
       return `${names.unit(error.unitId)} is not on the side whose objective that is`;
     case "objective-target-missing":
       return `${capitalise(names.objective(error.objectiveId))} has lost track of its target`;
+    case "no-objective-in-reach":
+      // Added with the kind itself (#1030). It names a unit, so it
+      // cannot fall through to the developer wording below.
+      return `${names.unit(error.unitId)} has no objective within reach`;
     case "not-in-extraction-zone":
       return `${names.unit(error.unitId)} is not standing in the extraction zone`;
     case "not-extractable":

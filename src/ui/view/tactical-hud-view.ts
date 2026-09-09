@@ -42,7 +42,7 @@ import type {
   TacticalInvokeTarget,
 } from "../model/tactical-intent";
 import { ActionBarView } from "./action-bar-view";
-import { namesFor } from "../service/tactical-error-text";
+import { describeRefusal, namesFor } from "../service/tactical-error-text";
 import { EventLogView } from "./event-log-view";
 import { HitPreviewView } from "./hit-preview-view";
 import { ObjectiveTrackerView } from "./objective-tracker-view";
@@ -64,6 +64,7 @@ import { UnitCardView } from "./unit-card-view";
 // `event-vocabulary`; when that lands the import moves with it.
 import { nameResolver } from "./event-log-view";
 import { SquadStripView, playerUnits } from "./squad-strip-view";
+import { actingUnit } from "../../tactical/service/acting-unit";
 
 // ===========================================
 // Types
@@ -91,6 +92,12 @@ export interface TacticalHudHandlers {
    * then simply do not move the camera.
    */
   readonly onLookAt?: (unitId: UnitId) => void;
+  /**
+   * Words to raise above a unit — why an action was refused (#1030), and
+   * in time what one did (#1029). Absent in headless callers, which then
+   * still get the status line.
+   */
+  readonly onNotice?: (unitId: UnitId, text: string) => void;
   /**
    * Where a world thing is on screen, for anchoring the context menu
    * (#529, ADR 0007 §2.1). The HUD projects nothing itself; the scene
@@ -132,6 +139,16 @@ export interface TacticalHudDeps {
 }
 
 /** Which team acts in which phase. */
+/** Actions a unit performs, and so the ones that can be refused (#1030). */
+const REFUSABLE = new Set<string>([
+  "move",
+  "attack",
+  "overwatch",
+  "reload",
+  "interact",
+  "extract",
+]);
+
 const TEAM_FOR_PHASE: Readonly<Record<TacticalState["phase"], Team>> = {
   player: "tdf",
   bugs: "bugs",
@@ -757,6 +774,18 @@ export class TacticalHudView {
     // Arming, cancelling, ending the turn: all of them move on from
     // whatever the ring was asking about (#627).
     this.closeMenu();
+    // An attempted action that cannot happen says why, above the unit
+    // that could not act (#1030). It used to return in silence, which is
+    // what made silence unreadable: the player could not tell "fine"
+    // from "refused". The words come from the shared refusal
+    // vocabulary, so there is none beside the buttons.
+    // Only the actions a unit performs; `next-unit`, `cancel` and the
+    // rest are view controls with nothing to refuse.
+    const refusal = REFUSABLE.has(action) ? this.refusalFor(action) : undefined;
+    if (refusal !== undefined) {
+      this.announceRefusal(refusal);
+      return;
+    }
     switch (action) {
       case "move":
         if (this.canAct()) {
@@ -911,6 +940,64 @@ export class TacticalHudView {
   }
 
   /** Whether the selected unit may act at all. */
+  /**
+   * Why this action cannot happen for the selected unit, or `undefined`
+   * when it can.
+   *
+   * Asks the rules rather than a boolean of its own: `actingUnit` is the
+   * same precondition `overwatchHandler` and `reloadHandler` run, so the
+   * button and the command cannot disagree about who may act. The
+   * action-specific refusals stay where they already are — the aim
+   * preview owns range and sight, and the move path owns reachability.
+   */
+  private refusalFor(action: string): TacticalError | undefined {
+    const mission = this.mission;
+    if (mission === undefined || this.selected === undefined) {
+      return undefined;
+    }
+    if (action === "end-turn") {
+      return undefined;
+    }
+    if (action === "extract") {
+      // Leaving is free, so it does not spend an action point.
+      const acting = actingUnit(mission, this.selected, 0);
+      if (!acting.ok) {
+        return acting.error;
+      }
+      return this.canExtract()
+        ? undefined
+        : { kind: "not-in-extraction-zone", unitId: this.selected };
+    }
+    const acting = actingUnit(mission, this.selected, 1);
+    if (!acting.ok) {
+      return acting.error;
+    }
+    if (action === "interact" && this.interactTarget() === undefined) {
+      // Its own kind, because none of the existing objective errors is
+      // true here: nothing is missing or finished, there is simply
+      // nothing within reach. The first version of this borrowed
+      // `objective-not-found` with an empty id and the frame said
+      // `No objective "" is in this mission`, which is how I found out.
+      return { kind: "no-objective-in-reach", unitId: this.selected };
+    }
+    return undefined;
+  }
+
+  /** Puts the refusal above the unit, and in the status line for the log. */
+  private announceRefusal(error: TacticalError): void {
+    // Named, not id'd (#1035). The chip above the unit is the most
+    // prominent place a refusal has ever appeared, so `Unit "unit-1"`
+    // reads worse there than it ever did in the status line. eng-5's
+    // resolver is the one vocabulary for this; there is no second set
+    // of strings here.
+    const words = describeRefusal(error, namesFor(this.mission));
+    this.showStatus(words);
+    if (this.selected !== undefined) {
+      this.handlers.onNotice?.(this.selected, words);
+    }
+  }
+
+  /** Whether the selected unit may act at all: alive, its phase, an action left. */
   private canAct(): boolean {
     const mission = this.mission;
     const unit = this.unit(this.selected);

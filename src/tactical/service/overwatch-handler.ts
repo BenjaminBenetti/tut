@@ -1,7 +1,7 @@
-import { err, ok } from "../../core/model/result";
+import { ok } from "../../core/model/result";
+import { actingUnit } from "./acting-unit";
 import type { OverwatchCommand } from "../model/overwatch-command";
 import type { TacticalHandler } from "../model/tactical-handler";
-import { TEAM_FOR_PHASE } from "../model/tactical-state";
 import type { UnitStatus } from "../model/unit";
 import { UNIT_STATUS_CHANGED } from "../model/unit-status-changed-event";
 
@@ -26,19 +26,11 @@ export const overwatchHandler: TacticalHandler<OverwatchCommand> = (
   command,
 ) => {
   const { unitId } = command.payload;
-  const unit = mission.units.find((candidate) => candidate.id === unitId);
-  if (unit === undefined) {
-    return err({ kind: "unit-not-on-map", unitId });
+  const acting = actingUnit(mission, unitId, 1);
+  if (!acting.ok) {
+    return acting;
   }
-  if (unit.hp <= 0) {
-    return err({ kind: "unit-dead", unitId });
-  }
-  if (unit.team !== TEAM_FOR_PHASE[mission.phase]) {
-    return err({ kind: "wrong-phase", unitId });
-  }
-  if (unit.ap <= 0) {
-    return err({ kind: "no-action-points", unitId });
-  }
+  const unit = acting.value;
   const status: readonly UnitStatus[] = unit.status.includes("overwatch")
     ? unit.status
     : [...unit.status, "overwatch"];

@@ -1,0 +1,31 @@
+=== refusal coverage on v0.2.16, every action button pressed while unavailable ===
+
+-- a unit at FULL AP and full charges (actions that refuse for their own reason) --
+  bar: move | attack | overwatch | reload | interact(unavail) | extract | end-turn
+  reload     | full charges               | AVAILABLE | "Unit "unit-2" is already fully loaded"
+  interact   | no objective in reach      | unavail | "Rifle Squad has no objective within reach"
+  extract     | skipped deliberately — it is AVAILABLE here and succeeds, removing the unit
+
+-- the same unit with ZERO action points --
+  unit-2 now ap 0, status null
+  bar: move(unavail) | attack(unavail) | overwatch(unavail) | reload(unavail) | interact(unavail) | extract | end-turn
+  move       | zero action points         | unavail | "Rifle Squad has no action points left"
+  attack     | zero action points         | unavail | "Rifle Squad has no action points left"
+  overwatch  | zero action points         | unavail | "Rifle Squad has no action points left"
+  reload     | zero action points         | unavail | "Rifle Squad has no action points left"
+  interact   | zero action points         | unavail | "Rifle Squad has no action points left"
+
+-- a right-click move while at zero AP (not a bar press) --
+  move (rmb) | zero AP, adjacent tile     | AVAILABLE | *** NOTHING SAID ***
+
+-- a right-click move BEYOND the budget while AP remains (the case I flagged) --
+  move (rmb) | 16 tiles, ap 2, moved=false | AVAILABLE | *** NOTHING SAID ***
+
+-- reload at full charges, mech (the #1066 id leak) --
+  reload     | full charges (mech)        | AVAILABLE | "Unit "unit-1" is already fully loaded"
+
+=== SUMMARY: 10 refusals attempted ===
+  spoke        : 10
+  SILENT       : 0
+  leaked an id : 2 -> "Unit "unit-2" is already fully loaded", "Unit "unit-1" is already fully loaded"
+page errors: 0

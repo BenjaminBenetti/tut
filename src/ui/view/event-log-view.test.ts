@@ -210,18 +210,17 @@ const ROSTER = {
 } as unknown as GameState;
 
 /** One squad firing at the bug. */
-const shotBy = (attackerId: string): TacticalEvent =>
-  ({
-    type: "tactical:attack-resolved",
-    payload: {
-      attackerId,
-      targetId: "unit-9",
-      hit: true,
-      damage: 4,
-      weaponRange: 8,
-      targetHp: 2,
-    },
-  }) as TacticalEvent;
+const shotBy = (attackerId: string): TacticalEvent => ({
+  type: "tactical:attack-resolved",
+  payload: {
+    attackerId,
+    targetId: "unit-9",
+    hit: true,
+    damage: 4,
+    weaponRange: 8,
+    targetHp: 2,
+  },
+});
 
 describe("EventLogView squad identity", () => {
   let host: HTMLElement;

@@ -236,7 +236,11 @@ export class EventLogView {
     if (!list || events.length === 0) {
       return;
     }
-    const nameOf = namesFor(mission, campaign).unit;
+    // Wrapped rather than detached: pulling `.unit` off the resolver
+    // separates a method from its object, which the linter is right to
+    // flag even where the implementation does not use `this`.
+    const names = namesFor(mission, campaign);
+    const nameOf = (unitId: string): string => names.unit(unitId);
     const doc = list.ownerDocument;
     for (const event of events) {
       const entry = describe(event, nameOf);

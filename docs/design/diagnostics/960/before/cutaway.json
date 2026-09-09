@@ -1,0 +1,118 @@
+{
+  "baseCommit": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+  "repeatedBrowsers": 2,
+  "records": [
+    {
+      "id": "flat-closed",
+      "state": {
+        "pointerStrength": 0,
+        "pointerRadius": 0,
+        "pointerCentre": [0, 0, 0],
+        "ghostCount": 0,
+        "ghostStrength": [0, 0, 0, 0, 0, 0, 0, 0],
+        "vision": "full"
+      },
+      "sha256": "12c18fda1c716877aec0254a1b45cbf3926348944c25468d6522a3c2cdc0c382"
+    },
+    {
+      "id": "flat-ground-storey",
+      "state": {
+        "pointerStrength": 0,
+        "pointerRadius": 0,
+        "pointerCentre": [0, 0, 0],
+        "ghostCount": 0,
+        "ghostStrength": [0, 0, 0, 0, 0, 0, 0, 0],
+        "vision": "full"
+      },
+      "sha256": "bf02d9bfd61395156492f657ca765287c4a49cc9795454b99e5bd2656b3f94e2"
+    },
+    {
+      "id": "flat-levels-restored",
+      "state": {
+        "pointerStrength": 0,
+        "pointerRadius": 0,
+        "pointerCentre": [0, 0, 0],
+        "ghostCount": 0,
+        "ghostStrength": [0, 0, 0, 0, 0, 0, 0, 0],
+        "vision": "full"
+      },
+      "sha256": "12c18fda1c716877aec0254a1b45cbf3926348944c25468d6522a3c2cdc0c382"
+    },
+    {
+      "id": "flat-fog-states",
+      "state": {
+        "pointerStrength": 0,
+        "pointerRadius": 0,
+        "pointerCentre": [0, 0, 0],
+        "ghostCount": 0,
+        "ghostStrength": [0, 0, 0, 0, 0, 0, 0, 0],
+        "vision": {
+          "visible": 1637,
+          "remembered": 224,
+          "unexplored": 1325
+        }
+      },
+      "sha256": "b5056002bc8b346c28a574fac147f33c31f6db4144c7733b8507a0c610299aad"
+    },
+    {
+      "id": "flat-vision-restored",
+      "state": {
+        "pointerStrength": 0,
+        "pointerRadius": 0,
+        "pointerCentre": [0, 0, 0],
+        "ghostCount": 0,
+        "ghostStrength": [0, 0, 0, 0, 0, 0, 0, 0],
+        "vision": "full"
+      },
+      "sha256": "12c18fda1c716877aec0254a1b45cbf3926348944c25468d6522a3c2cdc0c382"
+    },
+    {
+      "id": "flat-squad",
+      "state": {
+        "pointerStrength": 0,
+        "pointerRadius": 0,
+        "pointerCentre": [0, 0, 0],
+        "ghostCount": 1,
+        "ghostStrength": [1, 0, 0, 0, 0, 0, 0, 0],
+        "vision": "full"
+      },
+      "sha256": "099e195d3dd7613687fbdccbe9f7528767c8284183d68bc6fb3911e15a13a8ce"
+    },
+    {
+      "id": "flat-squad-left",
+      "state": {
+        "pointerStrength": 0,
+        "pointerRadius": 0,
+        "pointerCentre": [0, 0, 0],
+        "ghostCount": 0,
+        "ghostStrength": [0, 0, 0, 0, 0, 0, 0, 0],
+        "vision": "full"
+      },
+      "sha256": "12c18fda1c716877aec0254a1b45cbf3926348944c25468d6522a3c2cdc0c382"
+    },
+    {
+      "id": "flat-two-squads",
+      "state": {
+        "pointerStrength": 0,
+        "pointerRadius": 0,
+        "pointerCentre": [0, 0, 0],
+        "ghostCount": 2,
+        "ghostStrength": [1, 1, 0, 0, 0, 0, 0, 0],
+        "vision": "full"
+      },
+      "sha256": "49728e7f21a2c091bac5876dc36fbbc00b6e78e20cfafe3b6bb433140981ecb8"
+    },
+    {
+      "id": "flat-two-squads-left",
+      "state": {
+        "pointerStrength": 0,
+        "pointerRadius": 0,
+        "pointerCentre": [0, 0, 0],
+        "ghostCount": 0,
+        "ghostStrength": [0, 0, 0, 0, 0, 0, 0, 0],
+        "vision": "full"
+      },
+      "sha256": "12c18fda1c716877aec0254a1b45cbf3926348944c25468d6522a3c2cdc0c382"
+    }
+  ]
+}

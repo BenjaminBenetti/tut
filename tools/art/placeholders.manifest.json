@@ -1288,6 +1288,70 @@
     "bytes": 2744
   },
   {
+    "id": "building.residential-entry",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-residential-entry.glb",
+    "footprint": {
+      "w": 1.35,
+      "d": 0.43
+    },
+    "height": 0.26,
+    "sockets": [
+      "socket_wall"
+    ],
+    "quality": "final",
+    "triangles": 72,
+    "bytes": 8744
+  },
+  {
+    "id": "building.residential-window",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-residential-window.glb",
+    "footprint": {
+      "w": 0.74,
+      "d": 0.29
+    },
+    "height": 0.47,
+    "sockets": [
+      "socket_wall"
+    ],
+    "quality": "final",
+    "triangles": 168,
+    "bytes": 15768
+  },
+  {
+    "id": "building.workplace-entry",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-workplace-entry.glb",
+    "footprint": {
+      "w": 2.4,
+      "d": 0.56
+    },
+    "height": 0.25,
+    "sockets": [
+      "socket_wall"
+    ],
+    "quality": "final",
+    "triangles": 60,
+    "bytes": 7228
+  },
+  {
+    "id": "building.mailbox-bank",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-mailbox-bank.glb",
+    "footprint": {
+      "w": 0.62,
+      "d": 0.12
+    },
+    "height": 0.46,
+    "sockets": [
+      "socket_wall"
+    ],
+    "quality": "final",
+    "triangles": 156,
+    "bytes": 13620
+  },
+  {
     "id": "tdf.dropship",
     "category": "props",
     "path": "assets/models/props/tdf-dropship.glb",
@@ -1306,5 +1370,37 @@
     "quality": "final",
     "triangles": 1908,
     "bytes": 141328
+  },
+  {
+    "id": "building.shop-awning-narrow",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-shop-awning-narrow.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0.66
+    },
+    "height": 0.28,
+    "sockets": [
+      "socket_wall"
+    ],
+    "quality": "final",
+    "triangles": 132,
+    "bytes": 12024
+  },
+  {
+    "id": "building.shop-awning",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-shop-awning.glb",
+    "footprint": {
+      "w": 3,
+      "d": 0.66
+    },
+    "height": 0.28,
+    "sockets": [
+      "socket_wall"
+    ],
+    "quality": "final",
+    "triangles": 324,
+    "bytes": 24932
   }
 ]

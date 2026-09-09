@@ -151,6 +151,11 @@ Shared: `env-asphalt #3A3D42`, `env-concrete #8E8A82`, `env-sidewalk #A7A297`, `
 | Desert | `env-sand #D9B87A` | `env-sandstone #B58A5A` | `env-scrub #8A8A4A` |
 | Coastal | `env-wet-sand #B5A276` | `env-water-shallow #3F8FA8` | `env-water-deep #1F5C73`, `env-seawall #7E7F7A` |
 
+Building frontage fabric uses flat `env-awning-green #56735F` and
+`env-awning-cream #D8D0B8`. These are untextured cloth colours; the grass and
+snow atlas cells would read as terrain painted onto the awning. Other frontage
+materials reuse the existing environment atlas.
+
 Infested ground overlays use `bug-flesh` and `bug-bio-green-dim`; never recolour the base tile.
 
 ### 4.4 UI

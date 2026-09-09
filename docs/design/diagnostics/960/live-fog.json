@@ -1,0 +1,18 @@
+{
+  "sourceCommit": "f96c023b9083ca9a287932a294d6f294fc543c6d",
+  "command": "CI=true CAPTURE=1 pnpm exec playwright test e2e/fog-screenshot.spec.ts --reporter=list",
+  "seed": 4242,
+  "turns": [1, 7],
+  "inspected": true,
+  "checks": "Real UI-launched mission; all three vision states asserted at turn7; force moves; no page/console errors. The controlled flat-fog-states frame separately exposes frontage attachments.",
+  "frames": [
+    {
+      "path": "docs/design/tactical-fog-of-war.png",
+      "sha256": "68c976e8b358ccf94f6b0c5cdc92955386692b8594f74925103b96091050164d"
+    },
+    {
+      "path": "docs/design/tactical-fog-of-war-turn7.png",
+      "sha256": "888607bd3fe39156ad056bb5a76dae4f9c8fccd1bf56f0e06636d3baf6050123"
+    }
+  ]
+}

@@ -1,0 +1,91 @@
+{
+  "baseCommit": "f0bd0b9302cd4c3d5a1f39184332ce9992d63b7b",
+  "repeatedBrowsers": 2,
+  "records": [
+    {
+      "id": "flat-closed",
+      "state": {
+        "ghostCount": 0,
+        "ghostStrength": [0, 0, 0, 0, 0, 0, 0, 0],
+        "vision": "full"
+      },
+      "sha256": "99f0e9c9db831449ad730c0042991e2724ac516423526b19547a9e68752fa1bd"
+    },
+    {
+      "id": "flat-ground-storey",
+      "state": {
+        "ghostCount": 0,
+        "ghostStrength": [0, 0, 0, 0, 0, 0, 0, 0],
+        "vision": "full"
+      },
+      "sha256": "59aeb0e9c5a18a073e9c3be7b55023ecf556c5804f68ff2e87a222dc74678b20"
+    },
+    {
+      "id": "flat-levels-restored",
+      "state": {
+        "ghostCount": 0,
+        "ghostStrength": [0, 0, 0, 0, 0, 0, 0, 0],
+        "vision": "full"
+      },
+      "sha256": "99f0e9c9db831449ad730c0042991e2724ac516423526b19547a9e68752fa1bd"
+    },
+    {
+      "id": "flat-fog-states",
+      "state": {
+        "ghostCount": 0,
+        "ghostStrength": [0, 0, 0, 0, 0, 0, 0, 0],
+        "vision": {
+          "visible": 1637,
+          "remembered": 224,
+          "unexplored": 1325
+        }
+      },
+      "sha256": "f373af9130ed002bfea21ef6a50cc0381500106721381d211ae43bac2567572f"
+    },
+    {
+      "id": "flat-vision-restored",
+      "state": {
+        "ghostCount": 0,
+        "ghostStrength": [0, 0, 0, 0, 0, 0, 0, 0],
+        "vision": "full"
+      },
+      "sha256": "99f0e9c9db831449ad730c0042991e2724ac516423526b19547a9e68752fa1bd"
+    },
+    {
+      "id": "flat-squad",
+      "state": {
+        "ghostCount": 1,
+        "ghostStrength": [1, 0, 0, 0, 0, 0, 0, 0],
+        "vision": "full"
+      },
+      "sha256": "793279e9bcae0987b5cc26854b23385832b835faadb9df1d67ac48d45955c36a"
+    },
+    {
+      "id": "flat-squad-left",
+      "state": {
+        "ghostCount": 0,
+        "ghostStrength": [0, 0, 0, 0, 0, 0, 0, 0],
+        "vision": "full"
+      },
+      "sha256": "99f0e9c9db831449ad730c0042991e2724ac516423526b19547a9e68752fa1bd"
+    },
+    {
+      "id": "flat-two-squads",
+      "state": {
+        "ghostCount": 2,
+        "ghostStrength": [1, 1, 0, 0, 0, 0, 0, 0],
+        "vision": "full"
+      },
+      "sha256": "eeed2fc071a5758241a5c90e5b5e4ed784bcef691aff0876e182d51fb8595e99"
+    },
+    {
+      "id": "flat-two-squads-left",
+      "state": {
+        "ghostCount": 0,
+        "ghostStrength": [0, 0, 0, 0, 0, 0, 0, 0],
+        "vision": "full"
+      },
+      "sha256": "99f0e9c9db831449ad730c0042991e2724ac516423526b19547a9e68752fa1bd"
+    }
+  ]
+}

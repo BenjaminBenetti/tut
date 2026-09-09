@@ -14,6 +14,7 @@ import type { RoadAppearance } from "../model/road-appearance";
 import type { TerrainSlopeAppearance } from "../model/terrain-slope-appearance";
 import type { LadderAppearance } from "../model/ladder-appearance";
 import type { PitchedRoofAppearance } from "../model/pitched-roof-appearance";
+import { resolveBuildingFrontages } from "./building-frontage-resolver";
 import { resolvePitchedRoofModels } from "./pitched-roof-model-resolver";
 import { resolveLadderModels } from "./ladder-model-resolver";
 import { resolveFoundationModels } from "./foundation-model-resolver";
@@ -82,6 +83,7 @@ export interface MapModelPlacements {
   readonly foundations: readonly ModelPlacement[];
   readonly roofs: readonly ModelPlacement[];
   readonly walls: readonly ModelPlacement[];
+  readonly frontages: readonly ModelPlacement[];
   readonly props: readonly ModelPlacement[];
   readonly connectors: readonly ModelPlacement[];
 }
@@ -161,6 +163,7 @@ export function resolveMapModels(
     foundations: resolveFoundationModels(map),
     roofs: resolvePitchedRoofModels(map, index),
     walls,
+    frontages: resolveBuildingFrontages(map, index),
     props: resolveProps(map, index),
     connectors,
   };
@@ -176,6 +179,7 @@ export function mapModelIds(
     placements.foundations,
     placements.roofs,
     placements.walls,
+    placements.frontages,
     placements.props,
     placements.connectors,
   ]) {

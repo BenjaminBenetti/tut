@@ -40,7 +40,14 @@ another move. It passes **all three identical controlled slowdown runs**:
 after five accepted moves at (10,2,6), turn 3 / command 7, then waits for the
 specific spawner and passes the real click. `slow-redraw.json` records those
 actual state transitions. Typecheck and scoped lint/format pass. Final ordinary
-repetitions and an omitted-command negative control remain before readiness.
+repetitions also pass: **29.856 / 39.634 / 28.495 seconds**, 109.42 seconds
+process time, zero retries, exit 0. All three take the same five moves and
+finish discovery on turn 3 with 80 HP. `normal-repeats.json` preserves the
+progress. Omitting `invokeTile` fails at the first attempted move: command stays
+0 rather than 1, z stays 29 rather than 23, and AP is unspent. That negative
+control exits 1 in 22.05 seconds, at the intended existing 15-second predicate.
+Both temporary diagnostic copies are removed; current-head CI and Tech Lead
+review remain. Runtime/fixture source for the final measurements is `acf026b`.
 
 ```sh
 CI=1 pnpm exec playwright test e2e/tactical-spawners.spec.ts \

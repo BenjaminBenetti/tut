@@ -56,9 +56,45 @@
     "seconds": 126.42
   },
   "pacedChange": "Wait until rendered unit feet are within 0.1 pixel of the projected saved destination after every accepted move; unit and tile hooks project through the same rig. No timeout change.",
-  "remaining": [
-    "final ordinary three repetitions",
-    "omitted-move negative control",
-    "current-head CI / Tech Lead review"
-  ]
+  "remaining": ["current-head CI / Tech Lead review"],
+  "verifiedRuntime": "acf026b",
+  "finalNormal": {
+    "command": [
+      "node",
+      "/workspaces/tut/node_modules/@playwright/test/cli.js",
+      "test",
+      "tactical-spawners.spec.ts",
+      "--config",
+      "/workspaces/tut/.git/mapgen-1089/playwright.config.ts",
+      "--workers=1",
+      "--retries=0",
+      "--repeat-each=3",
+      "--fail-on-flaky-tests",
+      "--reporter=json"
+    ],
+    "startedAt": "2026-09-09T05:33:32.114707+00:00",
+    "status": "passed",
+    "exitCode": 0,
+    "seconds": 109.42
+  },
+  "negativeControl": {
+    "command": [
+      "node",
+      "/workspaces/tut/node_modules/@playwright/test/cli.js",
+      "test",
+      "scout-omitted-move-diagnostic.spec.ts",
+      "--config",
+      "/workspaces/tut/.git/mapgen-1089/playwright.config.ts",
+      "--workers=1",
+      "--retries=0",
+      "--repeat-each=1",
+      "--fail-on-flaky-tests",
+      "--reporter=json"
+    ],
+    "startedAt": "2026-09-09T05:35:21.549250+00:00",
+    "status": "failed",
+    "exitCode": 1,
+    "seconds": 22.05,
+    "expectedFailure": "Omit invokeTile; exact saved-progress predicate sees command 0 instead of 1, z29 instead of z23 and unspent AP. Fails at the first attempted move under the existing 15-second assertion budget."
+  }
 }

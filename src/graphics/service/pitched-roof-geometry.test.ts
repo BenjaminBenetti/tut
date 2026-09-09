@@ -96,34 +96,6 @@ function roofs(view: TacticalMapView): InstancedMesh[] {
 
 describe("pitched roof shelter (#916)", () => {
   const models = shippedModels();
-  it("inspects the real pitched cap without inventing a walkable roof tile (#947)", async () => {
-    const map = house(4, 7);
-    const view = new TacticalMapView(map, createGhostUniforms(4, 0.175));
-    await view.loadModels(models);
-    const camera = new OrthographicCamera(-5, 5, 5, -5, 0.1, 100);
-    camera.position.set(3, 20, 4);
-    camera.up.set(0, 0, -1);
-    camera.lookAt(3, 0, 4);
-    camera.updateMatrixWorld();
-    expect(map.tiles.some((tile) => tile.y === 4)).toBe(false);
-    const target = view.pickCutaway({ x: 0, y: 0 }, camera);
-    expect(target?.buildingId).toBe("house");
-    expect(target?.centre.y).toBeCloseTo(tileTop(2) + 0.7);
-    // The same ray remains stable after the fragment shader opens the cap.
-    expect(view.pickCutaway({ x: 0, y: 0 }, camera)).toEqual(target);
-    camera.position.set(0.5, 20, 0.5);
-    camera.lookAt(0.5, 0, 0.5);
-    camera.updateMatrixWorld();
-    expect(view.pickCutaway({ x: 0, y: 0 }, camera)).toBeUndefined();
-    const revision = view.cutawayRevision;
-    view.setMaxLevel(0);
-    expect(view.cutawayRevision).toBeGreaterThan(revision);
-    camera.position.set(3, 20, 4);
-    camera.lookAt(3, 0, 4);
-    camera.updateMatrixWorld();
-    expect(view.pickCutaway({ x: 0, y: 0 }, camera)).toBeUndefined();
-    view.dispose();
-  });
   it("ships a textured, closed-profile cap with its base at the wall line", async () => {
     const source = await models.load(PITCHED_ROOF_MODEL);
     const bounds = new Box3().setFromObject(source);

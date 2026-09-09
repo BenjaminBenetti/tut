@@ -1,6 +1,6 @@
 # Handoff: QA
 
-Last updated: 2026-09-08 (main `9cc4abc`).
+Last updated: 2026-09-09 (main `9d9ea01`).
 
 ## READ THIS FIRST
 
@@ -101,6 +101,74 @@ enough to fake timeouts, so red locally with a `success` on CI for the same SHA 
 a measurement problem, not a finding.
 
 Stop any probe servers on 4173/4174 before the e2e run, or contention fakes failures.
+
+## The tactical UX critique (#1027, delivered 2026-09-09)
+
+**A different kind of job from the usual, and the pattern is worth keeping.** The
+Executive Director asked QA to *play* the tactical layer and critique it, not test
+it — the Map Critic pattern applied to interface. Findings live on **#1027**; the
+write-up and five frames are `docs/design/diagnostics/1027/` (PR #1038).
+
+**How it was scoped, because the constraints did the work.** Ranked, most damaging
+first; each finding labelled **defect** (misinforms) or **friction** (costs a beat);
+capped at five; say what already works; **do not propose the redesign**. I filed
+three rather than five — everything else was already covered by #1028/#1029/#1030,
+so that evidence went into those threads instead of new issue numbers. Filing fewer
+than the cap was the right call and was accepted as such.
+
+**The three findings, in one line each:**
+
+1. *friction* — no squad-level view in a mission: no roster, Tab selects a unit
+   without bringing the camera to it, and End turn never mentions unspent units.
+2. *defect* — one squad has four names (`RIFLE SQUAD` / `Unit "unit-2"` /
+   `Rifle Squad` / `Alpha`), two of them database keys, and both squads share the
+   third. `Rifle Squad destroyed` printed twice in one mission for two different units.
+3. *defect* — a dry weapon is only discoverable by trying to fire it: the card reads
+   `ATTACKS 1` and `ammo 0 / 3` four lines apart and ATTACK stays lit.
+
+### Tactical save and HUD facts that cost me runs
+
+- **`unit.hp` is a plain number**, not `{current,max}`. `u.hp.current` yields
+  `undefined` silently, so a "unit was wounded"/"unit died" trigger written that way
+  never fires and the whole run looks uneventful. Two of my play sessions were wasted
+  on exactly this.
+- **Dead units stay in `mission.units` with `hp: 0`.** Count with `u.hp > 0` — that is
+  what the HUD's own `countAlive` does. A `units.length` diff never detects a death.
+- **Bugs are `team === "bugs"`; `team !== "tdf"` is not a synonym** and over-counts
+  against the top bar.
+- **Unit display names come from `mission.templates[u.templateId].name`** — the *type*
+  ("Rifle Squad"), never the roster name ("Alpha", `squad.ts:28`). Two units routinely
+  share one name; that is finding 2.
+- **The event log is not the only feedback channel.** `tactical-animation-queue.ts`
+  draws a floating `-N` damage number, a `MISS` label and a death burst. I had a
+  finding drafted that a collapsed log means no feedback at all; the floaters refute
+  it. Check the graphics layer for `ATTACK_RESOLVED`/`UNIT_DIED` as well as `src/ui`.
+- **Do not dedupe log lines by their text when reading them.** A `Set` of line text
+  hid a second `Rifle Squad destroyed` and nearly produced a "deaths are not logged"
+  finding. The game's own log collapses identical adjacent rows into `×N` for the
+  same reason — read `data-repeat`, not just `textContent`.
+- **`Tab` (`next-unit`) changes the selection without emitting the `select-unit`
+  intent**, so `body[data-selected-unit]` goes stale after a Tab. Do not use that
+  attribute to assert what Tab did; read the action bar or the card instead.
+- **A camera focus capability exists**: `orthographic-camera-rig.ts` has `lookAt`, and
+  `tactical-scene-steps.ts` calls it once at mission start. It is not on the
+  `CameraControls` interface and no key reaches it. I nearly published "no such
+  affordance exists in `src/`" after grepping for names I had invented — enumerate a
+  module's public surface instead of guessing identifiers.
+
+### What already works, and is worth defending in review
+
+The critique's §5 lists these in full; the ones most at risk from a HUD rewrite:
+**the in-scene move and cover overlay** (reachable tiles blue, high cover red
+chevrons, low cover yellow ticks, two-AP reach encoded in *footprint* not hue, so
+colour-vision deficiency cannot take it away — `tactical-overlay-palette.ts`) and
+**the shot preview's chips** (`3 tiles · no cover · flanked`), which turn a hit
+number into an explanation. Both are guarded: the palette by
+`tactical-overlay-palette.test.ts`, the chips by `glyph-screenshot.spec.ts:153` and
+`mission-hud-views.test.ts:354`. **Overwatch has no e2e coverage at all** — it is
+pinned only at unit level (`overwatch-handler.test.ts`,
+`mission-hud-views.test.ts:47`) — and it is the one action that reports its state
+correctly on three surfaces, so it is the thin spot to watch as #1029/#1030 land.
 
 ## Latest run
 

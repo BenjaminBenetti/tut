@@ -181,7 +181,9 @@ export function describeTacticalError(error: TacticalError): string {
  * status line would quietly go back to showing raw ids, which is the
  * defect this whole path exists to remove.
  */
-const TACTICAL_ERROR_KINDS: Readonly<Record<TacticalError["kind"], true>> = {
+export const TACTICAL_ERROR_KINDS: Readonly<
+  Record<TacticalError["kind"], true>
+> = {
   "no-active-mission": true,
   "mission-active": true,
   "mission-not-found": true,
@@ -211,6 +213,7 @@ const TACTICAL_ERROR_KINDS: Readonly<Record<TacticalError["kind"], true>> = {
   "objective-not-yours": true,
   "objective-target-missing": true,
   "objective-out-of-reach": true,
+  "no-objective-in-reach": true,
   "not-in-extraction-zone": true,
   "not-extractable": true,
   "mission-not-over": true,

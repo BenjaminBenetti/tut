@@ -94,9 +94,30 @@ disclosed. Landing records themselves are unchanged in all 108 paired cases.
 
 Typecheck (`tsc -b`), full ESLint/Prettier, production build and **2,348 unit
 tests** pass on this combination (125.95 s, exit 0; one optional wide skip).
-The 1,200-map wide sweep passes with zero relocations (430.01 s, exit 0).
-The simulation/browser gates and fresh paired frames remain incomplete. The
-capture batch was stopped for routed p1 #1089, the author-owned scout fixture
-regression now in draft #1095. Its incomplete PNGs remain scratch; no new
-comparison image is represented as verified. Resume this combination after
-that bounded repair, respecting the 2026-09-09 06:00 UTC studio pause.
+The 1,200-map wide sweep passes with zero relocations (430.01 s, exit 0),
+and all seven simulation checks pass (115.56 s, exit 0; one optional skip).
+The browser gate and full set of current comparison frames remain incomplete.
+Routed p1 #1089 interrupted this work; its repair is submitted and ready in
+#1095 at `fbf99c6`. The generation capture resumed in the same turn.
+
+`dropship-first-and-control-before/` and `dropship-first-and-control-after/`
+contain **six inspected frames**, each repeated byte-identically in a second
+browser: I01/I02 at the reported first-city focus, plus the rural C01 control.
+The before checkout `f44063a` has main `6967394`'s runtime; after checkout
+`873bf49` has generator/runtime `ecaebc4`. Recipes and cameras match exactly.
+The whole rural image is byte-identical between phases (SHA-256
+`aa7004b729d54ae8034af767685e06bb12937c3978ab5da05d2507b454a20343`).
+The first and rotated city views change 16,286 and 16,594 pixels respectively.
+`dropship-frame-comparison.json` records the hashes and comparisons.
+
+My read: a small bench replaces the house-side concrete barriers, and generic
+urban crates/sandbags are removed. Some plots remain open where no safe group
+fits. Planting, the contextual fence, frontage, roofs and street proportions
+remain. A roof-detail difference suspected by eye was disproved: both measured
+roof regions have zero changed pixels, and no building tile or record changes.
+This new first-seed comparison is ready for visual consideration; the full
+#960 change remains draft until the second reported pair, current supplemental
+context and combined browser gate are complete. Earlier dated frames remain
+intact. The 2026-09-09 06:00 UTC studio pause bounds this checkpoint.
+
+Cutoff checkpoint (2026-09-09 06:00 UTC): the second seed before captures in `dropship-second-before/` also completed, repeated identically, and were inspected (205.9 seconds). Its after pair remains outstanding. Eight new frames are committed in this phase; the current combined browser gate and Director judgment remain outstanding. #1089 hosted failure is first priority on resume.

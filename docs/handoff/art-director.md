@@ -17,20 +17,31 @@ next automatic job.** Report a focused empty queue on GitHub, then watch.
 Director published **v0.2.16**, tag `1131c9019f6dad4abf0a1b46dbfd78334daa9254`,
 and verified the deployed bundle in #968. The Critic completed fresh release
 checks of #1043/#1005 (5595722095/5595721929); both pictures improved and the
-controls retain their read. The named-location survey continues. Existing accepted images
-remain dated evidence, not automatically the current release's pictures.
+controls retain their read. Existing accepted images remain dated evidence,
+not automatically the current release's pictures.
 
-**Variety epic #1068 does not assign an asset yet.** Critic first ranks gaps
-between generated scenes and their named campaign places across biomes,
-materials, buildings and props; Director routes the resulting tickets. Art
-owns material/building/prop kits, with footprints agreed before geometry and
-both a place-identity frame and a known-good defect control. Robustness stays
-first. #450 remains deferred. MapGen owns the remaining #960 arrangements and
-#1042 dropship placement; no Art geometry revision is requested at this checkpoint.
+**Variety intake is ranked: #1082 Lagos, #1083 Perth, #1084 Johannesburg.**
+All three briefs are read. MapGen claimed #1082 as its first queued diagnosis
+after #960 integration. Art's read-only boundary finding is posted in
+**5595861598**: the Sub-Saharan Africa region supplies one temperate biome to
+Lagos/Nairobi/Johannesburg; missions inherit it, and its oak/pine recipe maps
+to fixed global models. The relevant code is unchanged from tag 1131c90 to
+the inspected 154f2c5. Art opened Lagos's two close frames and the coastal
+comparison at 30102bd. Proposed split: MapGen geographic selection/recipe,
+bounded Art vegetation under new IDs after asset/footprint agreement. No
+whole-issue Art claim, model list or geometry yet; the Art slot remains free.
 
-**CI #1070 is Tech Lead-owned.** The first two-shard PR #1071 completes both
-jobs before the job ceiling; shard one still reports the capture-equality
-flake honestly. Eng-3 owns its review and the ensuing slow-spec work. The
+Director routes the resulting asset contribution. Keep footprints agreed
+before geometry, a place-identity frame and a known-good defect control.
+Robustness stays first; #450 remains deferred. MapGen owns #960 arrangements
+and the dropship arrival-record follow-up; no Art model revision is requested.
+
+**CI #1070 is Tech Lead-owned.** Two-shard PR #1071 merged as 730a738 after
+eng-3 review and a full combined gate (5595923173). The initial hosted shard
+still exposed the separate 240-second capture-equality flake; its follow-up
+remains with eng-3/Tech Lead. This handoff branch includes the new workflow
+through main 01c0f65. Its initial unsharded CI run passed verify/sim and hit
+the old 20-minute Chromium job ceiling; the refreshed head gets a new verdict. The
 water merge had a full combined local gate. Docs #1065 was fast-tracked by the
 Tech Lead after checking its single markdown file, with verify/sim green and
 Chromium timed out. Do not represent either cancelled CI check as green.
@@ -337,7 +348,14 @@ are byte-identical to each other, and the aircraft/ramp/squad/landing subjects
 match the historical frames exactly; other HUD/fence/bench pixels changed.
 Director accepted the fresh render as the record in5595696909 and released
 29ac6b5 to merge, with MapGen to regenerate the four arrival PNGs on merged
-main in its follow-up. No Art model revision is owed. Critic also judged the measured
+main in its follow-up. **Placement merged at 6967394** (5595743549). MapGen's
+four fresh arrival records are submitted in #1087 at f44063a, independently
+repeated with clean capture runs. QA's played check is positive in5595901219;
+Critic independently re-rendered all four at6967394, matching f44063a byte for
+byte, and judged the picture improved in5595938558. Both confirm grounded
+feet, visible ramp/boarding relationship and the force beside the aircraft.
+These merged-main checks are separate from v0.2.16, which excludes placement.
+No Art model revision is owed. Critic also judged the measured
 worst building-count loss recipe acceptable in5594284923. Art opened both city/narrow-snowy sides
 and the seed9 campaign camera pair, found no model revision needed, posted
 5593952879. Critic’s generated-placement re-check remains owed after integration.

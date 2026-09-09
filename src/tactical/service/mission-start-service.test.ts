@@ -1,10 +1,15 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { MISSION_TYPES } from "../../content/data/mission-types";
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
 import { ECONOMY_TUNING } from "../../economy/data/economy-tuning";
 import { HookKinds } from "../../mapgen/model/hook";
 import { createDefaultRegistries } from "../../mapgen/service/default-registries";
+import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
+import * as mapGeneration from "../../mapgen/service/generate-tactical-map";
+import { validateTacticalMap } from "../../mapgen/service/map-validator";
+import { PassMask } from "../../mapgen/model/pass-mask";
+import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import { EARTH_MAP } from "../../overworld/data/earth-map";
 import { NEW_GAME_TUNING } from "../../overworld/data/new-game-tuning";
@@ -115,11 +120,175 @@ function unwrap<T, E>(
   return result.value;
 }
 
+/** Small connected zone at the legal unit cap, with limited mech support. */
+function capacityFixture(
+  mechTiles: number,
+  repeatCoordinates = false,
+): TacticalMap {
+  const coords = Array.from({ length: MAX_DEPLOYED_UNITS }, (_, x) => ({
+    x,
+    y: 0,
+    z: 1,
+  }));
+  const builder = new FixtureMapBuilder(MAX_DEPLOYED_UNITS, 2, 1).fillGround();
+  for (const coord of coords.slice(mechTiles)) {
+    builder.patchTile(coord, { pass: PassMask.INFANTRY });
+  }
+  const zone = repeatCoordinates
+    ? coords.map((_, i) => coords[i % 4]!)
+    : coords;
+  const map = builder
+    .deploy(zone)
+    .extraction([coords[0]!])
+    .edgeSpawn([{ x: 0, y: 0, z: 0 }])
+    .build();
+  return {
+    ...map,
+    hooks: {
+      ...map.hooks,
+      deployZones: map.hooks.deployZones.map((hook) => ({
+        ...hook,
+        requiredPass: PassMask.INFANTRY,
+      })),
+    },
+  };
+}
+
+/** Legal full roster/deployment of any class mix, using real starter loadouts. */
+function capacityCampaign(mechCount: number) {
+  const { state, mission } = campaign();
+  const mech = state.roster.mechs[0];
+  const squad = state.roster.squads[0];
+  if (!mech || !squad) throw new Error("fixture needs both starter classes");
+  const mechs = Array.from({ length: mechCount }, (_, i) => ({
+    ...mech,
+    id: `capacity-mech-${String(i)}`,
+  }));
+  const squads = Array.from(
+    { length: MAX_DEPLOYED_UNITS - mechCount },
+    (_, i) => ({ ...squad, id: `capacity-squad-${String(i)}` }),
+  );
+  return {
+    state: { ...state, roster: { ...state.roster, mechs, squads } },
+    mission,
+    deployment: {
+      missionId: mission.id,
+      mechIds: mechs.map((unit) => unit.id),
+      squadIds: squads.map((unit) => unit.id),
+    },
+  };
+}
+
 // ===========================================
 // Tests
 // ===========================================
 
 describe("startTacticalMission", () => {
+  it("rejects the old I6 minimum that cannot seat a legal eight-mech deployment (#984)", () => {
+    const map = capacityFixture(4);
+    const { state, mission, deployment } = capacityCampaign(MAX_DEPLOYED_UNITS);
+    const generate = vi
+      .spyOn(mapGeneration, "generateTacticalMap")
+      .mockReturnValue(map);
+    try {
+      // Bypass generation only to expose the launch guard on this exact map.
+      expect(
+        startTacticalMission(state, mission.id, deployment, deps()),
+      ).toEqual({
+        ok: false,
+        error: {
+          kind: "no-deploy-room",
+          unitId: "capacity-mech-4",
+          passClass: "mech",
+        },
+      });
+      expect(validateTacticalMap(map, createDefaultRegistries())).toEqual([
+        {
+          invariant: "I6",
+          message: `Deploy zone ${map.hooks.deployZones[0]!.id} has 4 mech tiles, needs ${String(MAX_DEPLOYED_UNITS)}`,
+        },
+      ]);
+    } finally {
+      generate.mockRestore();
+    }
+  });
+
+  it("does not count repeated hook coordinates as extra deployment capacity (#984)", () => {
+    const map = capacityFixture(MAX_DEPLOYED_UNITS, true);
+    const violations = validateTacticalMap(map, createDefaultRegistries());
+    expect(violations).toEqual([
+      {
+        invariant: "I6",
+        message: `Deploy zone ${map.hooks.deployZones[0]!.id} has 4 mech tiles, needs ${String(MAX_DEPLOYED_UNITS)}`,
+      },
+      {
+        invariant: "I6",
+        message: `Deploy zone ${map.hooks.deployZones[0]!.id} has 4 infantry tiles, needs ${String(MAX_DEPLOYED_UNITS)}`,
+      },
+    ]);
+  });
+
+  it.each([
+    [PassMask.MECH, PassMask.INFANTRY, "mech"],
+    [PassMask.INFANTRY, PassMask.MECH, "infantry"],
+  ] as const)(
+    "rejects a zone one space short for class %i (#984)",
+    (missing, remaining, label) => {
+      const source = capacityFixture(MAX_DEPLOYED_UNITS);
+      const last = source.hooks.deployZones[0]!.tiles.at(-1)!;
+      const map: TacticalMap = {
+        ...source,
+        tiles: source.tiles.map((tile) =>
+          tile.x === last.x && tile.z === last.z
+            ? { ...tile, pass: remaining }
+            : tile,
+        ),
+        hooks: {
+          ...source.hooks,
+          deployZones: source.hooks.deployZones.map((zone) => ({
+            ...zone,
+            requiredPass: remaining,
+          })),
+        },
+      };
+      expect(
+        tileAdmits(remaining, missing === PassMask.MECH ? "mech" : "infantry"),
+      ).toBe(false);
+      expect(validateTacticalMap(map, createDefaultRegistries())).toEqual([
+        {
+          invariant: "I6",
+          message: `Deploy zone ${map.hooks.deployZones[0]!.id} has ${String(MAX_DEPLOYED_UNITS - 1)} ${label} tiles, needs ${String(MAX_DEPLOYED_UNITS)}`,
+        },
+      ]);
+    },
+  );
+
+  it.each(Array.from({ length: MAX_DEPLOYED_UNITS + 1 }, (_, i) => i))(
+    "a minimally valid zone seats a full legal deployment with %i mechs (#984)",
+    (mechCount) => {
+      const map = capacityFixture(MAX_DEPLOYED_UNITS);
+      const { state, mission, deployment } = capacityCampaign(mechCount);
+      expect(validateTacticalMap(map, createDefaultRegistries())).toEqual([]);
+      const generate = vi
+        .spyOn(mapGeneration, "generateTacticalMap")
+        .mockReturnValue(map);
+      try {
+        const started = unwrap(
+          startTacticalMission(state, mission.id, deployment, deps()),
+        );
+        const units = started.activeMission!.units;
+        expect(units).toHaveLength(MAX_DEPLOYED_UNITS);
+        expect(
+          new Set(
+            units.map((unit) => `${unit.pos.x},${unit.pos.y},${unit.pos.z}`),
+          ).size,
+        ).toBe(MAX_DEPLOYED_UNITS);
+      } finally {
+        generate.mockRestore();
+      }
+    },
+  );
+
   it("stores a tactical state on the campaign with the mission's map and clock at the first player turn", () => {
     const { state, mission, deployment } = campaign();
     const next = unwrap(
@@ -403,18 +572,13 @@ describe("startTacticalMission: refusals no fixture had reached", () => {
   });
 
   /**
-   * `no-deploy-room` (both classes) is the one pair in this slice I could
-   * not force, and it is not dead code — so per the Producer's ruling on
-   * #735 it stays. `placeDeployment` is private and generates its own
-   * map, and every zone the placer emits seats a full deployment twice
-   * over, so no legal call reaches the refusal.
+   * Preserve #735/#979's generated-capacity control. Every current zone
+   * seats a full deployment twice over, so generated legal deployments
+   * do not approach the defensive `no-deploy-room` guards.
    *
-   * The gap is real rather than theoretical: `placeDeployment`'s own doc
-   * relies on "at least four [mech tiles] per zone" from ADR 0004 I6,
-   * while `MAX_DEPLOYED_UNITS` is 8. A placer that tightened zones toward
-   * that floor would start refusing legal deployments at launch. This
-   * test pins the property that keeps the refusal unreachable, so it goes
-   * red exactly when those two guards begin to matter.
+   * #984's minimal fixtures above expose the old four-mech guarantee and
+   * pin its repair. I6 now derives both class floors from the deployment
+   * cap; this separate real-generation path continues checking capacity.
    */
   it("gives every deploy zone room for a full deployment of either class, which is why no-deploy-room cannot fire", () => {
     const registries = createDefaultRegistries();

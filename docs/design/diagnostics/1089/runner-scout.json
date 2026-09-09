@@ -1,5 +1,5 @@
 {
-  "source": "GitHub run 34312408328, shard 2 job 102341600047, retry trace for docs-only PR #1080 at 49f01ce / merged main 799948f",
+  "source": "GitHub run 34312408328, shard 2 job 102341600047, retry trace for docs-only PR #1080: merge a640a8029ac721c3b328e8c3af93795c1848026b, head 49f01cedc289e81e609db197b766bd676400af41 into main 01c0f6597c4e87d19cbdb3229dbc6d4c9b2ceda9",
   "artifactId": 10089181930,
   "traceZipSha256": "9dfebc7d8c7e3dedf6361256e1e07ea27880563ef999e0c20b105d3fcb354808",
   "recipe": {
@@ -439,5 +439,5 @@
       "count": "0"
     }
   ],
-  "finding": "At turn 3 command 7 the scout is at (10,2,6) and spawner-1 at (9,2,6) is already explored. The delayed rendered count remains 0; the old scout walks away until (17,2,6), ends alive at 77 HP, and exhausts its loop."
+  "finding": "At turn 3 command 7 the scout is at (10,2,6) and spawner-1 at (9,2,6) is already explored. The delayed rendered count remains 0; the old scout walks away until (17,2,6), is alive at 77 HP in the last saved sample (later final DOM: turn 9, 73 HP), and exhausts its loop."
 }

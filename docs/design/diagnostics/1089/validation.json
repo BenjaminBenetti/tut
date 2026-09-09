@@ -1,0 +1,64 @@
+{
+  "baseline": "69c44eb",
+  "firstCandidate": "fb91df445c27de09dae79f59abcb84846ac20f96",
+  "firstCandidateNormal": {
+    "command": [
+      "node",
+      "/workspaces/tut/node_modules/@playwright/test/cli.js",
+      "test",
+      "tactical-spawners.spec.ts",
+      "--config",
+      "/workspaces/tut/.git/mapgen-1089/playwright.config.ts",
+      "--workers=1",
+      "--retries=0",
+      "--repeat-each=3",
+      "--fail-on-flaky-tests",
+      "--reporter=list"
+    ],
+    "startedAt": "2026-09-09T05:21:29.324777+00:00",
+    "status": "passed",
+    "exitCode": 0,
+    "seconds": 125.16
+  },
+  "firstCandidateControlled": {
+    "cpuRate": 2,
+    "delayMs": 6000,
+    "passed": 0,
+    "failed": 3,
+    "exitCode": 1,
+    "seconds": 107.34,
+    "failure": "All discovered the spawner after five accepted moves but exceeded the existing 15-second mesh wait; awaiting only saved moves still permitted animation backlog."
+  },
+  "errorInspection": {
+    "passed": 0,
+    "failed": 1,
+    "exitCode": 1,
+    "browserErrors": [],
+    "failure": "Same mesh-wait timeout; no diagnostic injection exception or page/console error."
+  },
+  "pacedCandidateControlled": {
+    "command": [
+      "node",
+      "/workspaces/tut/node_modules/@playwright/test/cli.js",
+      "test",
+      "scout-slow-diagnostic.spec.ts",
+      "--config",
+      "/workspaces/tut/.git/mapgen-1089/playwright.config.ts",
+      "--workers=1",
+      "--retries=0",
+      "--repeat-each=3",
+      "--fail-on-flaky-tests",
+      "--reporter=json"
+    ],
+    "startedAt": "2026-09-09T05:30:00.432278+00:00",
+    "status": "passed",
+    "exitCode": 0,
+    "seconds": 126.42
+  },
+  "pacedChange": "Wait until rendered unit feet are within 0.1 pixel of the projected saved destination after every accepted move; unit and tile hooks project through the same rig. No timeout change.",
+  "remaining": [
+    "final ordinary three repetitions",
+    "omitted-move negative control",
+    "current-head CI / Tech Lead review"
+  ]
+}

@@ -394,6 +394,27 @@ async function moveAndWait(
       pos: tile,
       spentAp: true,
     });
+  // The renderer consumes an animation queue after the synchronous save. Let
+  // this visible move finish before adding another command to that queue.
+  await expect
+    .poll(
+      () =>
+        page.evaluate(
+          (args: { id: string; tile: TileCoord }) => {
+            const hooks = (globalThis as HookGlobal).__tutTactical__;
+            const unit = hooks?.unitScreenPosition(args.id);
+            const destination = hooks?.tileScreenPosition(args.tile);
+            return unit && destination
+              ? Math.hypot(unit.x - destination.x, unit.y - destination.y)
+              : Infinity;
+          },
+          { id: unit.id, tile },
+        ),
+      {
+        message: `saved scout move reached ${JSON.stringify(tile)}; waiting for its rendered feet`,
+      },
+    )
+    .toBeLessThan(0.1);
   return true;
 }
 

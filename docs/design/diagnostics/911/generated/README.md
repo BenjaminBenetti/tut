@@ -1,7 +1,7 @@
 # #911 — generated dropship landings
 
 Baseline: `main@9d9ea01` (v0.2.15, with Art's accepted aircraft already registered).
-After runtime: `a793060`. The actual model is unchanged: SHA-256
+Placement runtime: `a793060`; tactical arrival-camera correction: `2eaab51`. The actual model is unchanged: SHA-256
 `2034ded38848cd27e4d0872657bf8db9180314d29b95f00faa824bf89a60e238`.
 Director frame judgment and the Map Critic's generated-placement re-check are pending.
 
@@ -104,9 +104,9 @@ Whole-frame totals also reflect relocated units entering the crop and changed lo
 they must not be attributed wholly to the aircraft. The per-frame counters and isolation
 measurements are in the JSON sidecars. Software RAF/gl.finish timings are not hardware FPS.
 
-Typecheck, lint, build, all 2,288 unit tests and the 216-map terrain/playability matrix pass.
+Typecheck, lint, build, all 2,295 unit tests and the 216-map terrain/playability matrix pass.
 The unit run uses four workers with unchanged assertions and time limits: the earlier concurrent
-run timed out one slope matrix at 20.5 seconds; the complete rerun passes in 86.1 seconds.
+run timed out one slope matrix at 20.5 seconds; the final four-worker run passes in 101.7 seconds.
 Seven mission-simulation checks pass; this is not a claim of identical before/after outcomes.
 
 The browser sweep initially caught two fixture assumptions. The relocated preview swarmer was
@@ -121,14 +121,38 @@ The complete browser rerun passes **63 tests, zero flaky**. All ten independent 
 captures repeat byte-identically; [hashes and method](repeatability.json). No tolerance or
 historical-frame refresh is involved.
 
-### Arrival orientation finding still being repaired
+### Arrival orientation and actual campaign control
 
 Two extra default-angle checks ([south](orientation/arrival-s.png),
-[east](orientation/arrival-e.png)) found a coverage gap in the original north/west-facing gallery:
+[east](orientation/arrival-e.png)) exposed a gap in the original north/west-facing gallery:
 the aircraft can hide the rifle squad from yaw 0. Ground/support validation cannot catch that.
-The scoped correction is to view S/E landings from the ramp side when the living force is still
-on the boarding tiles. Map Lab retains its common inspection orientation, and no squad cutaway
-setting changes. Real campaign before/after proof and the final camera gate are pending.
+The tactical host now opens S/E landings at yaw 2, viewed from the boarding side, when every
+living TDF unit is still on that site's boarding tiles. No turn occurs during player input.
+N/W landings, old maps without a recorded site, and forces that have left boarding keep yaw 0.
+Map Lab retains its common inspection orientation; no squad cutaway setting changes.
+
+The additional real campaign `9` has a south-facing landing at Perth, coastal/town/small,
+map seed `3677615265`. [Old yaw-0 view](mission-s/arrival-opposite.png) and
+[actual corrected arrival](mission-s/arrival.png) show the same generated map with real fog,
+launched through the UI. This pair isolates **camera orientation**, not generation against
+main: the former view is obtained with two synchronous E taps after recording the actual
+host-created opening camera. Two more taps reproduce the opening PNG byte-identically.
+[Metadata](mission-s/arrival.json) records yaw, recipe, site and the deployed force.
+The normal browser test asserts the host-created yaw before rotating. In a separate probe,
+replacing only `yawIndex: missionArrivalYaw(mission)` with `yawIndex: 0` in the served
+`tactical-scene-host.ts` makes that exact seed-9 assertion fail: expected 2, received 0.
+The temporary mutation spec is removed; no sabotage switch exists in production.
+
+The existing west-facing campaign `4242` remains the control. Both its arrival PNGs match the
+pre-camera checkpoint `a8caeb6` byte-for-byte; the camera repair did not repaint that control.
+These four campaign frames, twenty location-pair frames and two additional orientation
+checks make **26 committed frames**. They are dated evidence, not a claim of Director acceptance.
+
+The capture helper now resolves an event dialog if it appears on the same day as the first
+mission; a seed-2 probe identified the modal intercepting the mission click. This uses the
+existing first-choice policy. The first three-shutter control run exceeded the ordinary
+60-second budget at its final screenshot; optional `CAPTURE=1` has a 120-second budget,
+while the regular integration tests keep the suite's existing timeout and all assertions.
 
 ## Reproduce
 

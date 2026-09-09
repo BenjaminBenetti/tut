@@ -20,8 +20,8 @@ import type { MissionId } from "./mission";
  * comfortably above the starter roster of three, leaves room to grow into,
  * and is half the current generator's sixteen-tile target. ADR 0004 I6
  * guarantees this cap in distinct tiles for each class; map validation
- * derives both floors from this constant (#984). The number is a design call the GDD does not
- * make — it is one constant with its own test, so it is cheap to move.
+ * derives both floors from this constant (#984). The number is a design
+ * call the GDD does not make — one constant with its own test.
  */
 export const MAX_DEPLOYED_UNITS = 8;
 

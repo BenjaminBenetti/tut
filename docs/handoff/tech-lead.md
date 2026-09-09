@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-09 ~04:30 UTC (session 5; v0.2.16 shipped, CI e2e timeout (#1070/#1071), batch gating; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-09 06:00 UTC pause checkpoint (session 5). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — the hold is lifted (2026-09-08); the Map Quality Loop leads
 
@@ -17,6 +17,28 @@ issue/PR thread; the terminal composer often never submits. `monitor.sh`
 polls it once per tick (`gh api graphql … discussion(number:968){comments
 (last:10)…}`, one GraphQL call) and prints an `ORDERS` line on change.
 Direct seats in their GitHub thread, never only in a terminal.
+
+**06:00 UTC 2026-09-09 studio pause — resume checkpoint (read first on resume):**
+- **State of `main` at the pause:** every code PR accepted by the Director
+  before 05:30 is merged (last: #1088 `5c6fb11`, #1090 CI concurrency fix, #1093
+  producer checkpoint; see §0 above for the list). Open at the
+  pause: **#1051** (accepted at `0f25a6f`; rebased head `88cfa39` gated
+  or pending, see the PR), **#1077** (accepted `8a1816a`, needs `git
+  rebase --onto origin/main 02d9d04` past the #1047 squash), **#1067**
+  (defects 1–2 accepted, defect 3 held on one frame), **#1075** draft,
+  **#1093** producer handoff. Director's merge order: #1051 → #1077 → #1067.
+- **CI on resume:** (1) #1071 sharded e2e is live (`e2e · chromium (1/2)`,
+  `(2/2)`); (2) `tactical-spawners.spec.ts` fails on the runner only
+  (#1089, p1, MapGen+QA) so shard 2 is red on every head until it lands —
+  read that one red as #1089 when the local gate passes the spec, and say
+  so in the merge note; (3) #1090 is on `main`, so `main` runs now complete;
+  (4) #1092 is eng-3's capture-equality budget follow-up.
+- **First actions on resume:** re-arm `monitor.sh` (one process); run
+  `git checkout -f main && git reset --hard origin/main`; kill nothing
+  unless `ps aux | grep "vites[t]\|playwrigh[t]"` shows leftovers; sweep
+  open PRs in the Director's order with `gate-batch.sh` for independent
+  accepted heads and `gate.sh` for the rest; docs-only PRs fast-track on
+  typecheck+sim green with the e2e caveat disclosed.
 
 **09-09 03:00–04:30 (read this too; v0.2.16 shipped at 03:40):**
 - **Merged:** #1053 `b3d324b`, #1046 `c78812b`, #1058 `b4acf3f`, #1054

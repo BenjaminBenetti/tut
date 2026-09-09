@@ -48,8 +48,8 @@ export function createSettlementPasses(): GenerationPass[] {
     new RampPass(),
     new KerbPass(),
     new BoundaryFencePass(),
-    new YardArrangementPass(),
     new HookPass(),
+    new YardArrangementPass(),
     new ConnectivityPass(),
   ];
 }

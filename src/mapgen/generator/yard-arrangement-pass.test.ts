@@ -72,6 +72,7 @@ describe("building-use yards", () => {
       const otherIds = new Set(other.map((p) => p.id));
       expect(after.map.props.filter((p) => otherIds.has(p.id))).toEqual(other);
       expect(after.map.buildings).toEqual(before.map.buildings);
+      expect(after.map.hooks).toEqual(before.map.hooks);
       expect(after.map.connectors).toEqual(before.map.connectors);
       expect(after.draft.roads).toEqual(before.draft.roads);
       expect(

@@ -76,6 +76,7 @@ describe("generateTacticalMap", () => {
       "kerbs",
       "rural-fences",
       "hooks",
+      "yard-arrangements",
       "connectivity",
     ]);
     expect(diagnostics.notes.length).toBeGreaterThan(passes.length);

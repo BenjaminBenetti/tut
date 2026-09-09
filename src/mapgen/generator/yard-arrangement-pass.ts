@@ -2,6 +2,7 @@ import type { Direction } from "../../core/model/direction";
 import { DIRECTIONS } from "../../core/model/direction";
 import {
   directionOffset,
+  oppositeDirection,
   rectContains,
   stepGridPos,
 } from "../../core/service/grid-math";
@@ -16,10 +17,13 @@ import type {
 } from "../model/generation-pass";
 import type { Lot } from "../model/lot";
 import type { MapDraft } from "../model/map-draft";
+import { PassMask } from "../model/pass-mask";
 import type { Rotation } from "../model/prop";
+import type { Tile } from "../model/tile";
 import type { TileCoord } from "../model/tile-coord";
 import type { YardArrangement } from "../model/yard-arrangement";
 import { isOpenGround, isPassableGround } from "../service/draft-queries";
+import { snapshotDraft, type DraftSnapshot } from "./placer/placer-support";
 
 /** Geometry for one coherent, wall-aligned group with clear space in front. */
 interface YardGroup {
@@ -49,7 +53,8 @@ const CLUTTER: ReadonlySet<string> = new Set([
 
 /**
  * Replaces urban generic yard clutter with small uses tied to real buildings.
- * Runs after boundaries so fences are inputs, before hooks/access repair.
+ * Runs after boundaries and hooks, before access repair, preserving the
+ * mission placers' original candidate pools and protecting their clearances.
  * Existing low-cover allocation is a ceiling, never a quota to fill. Does not
  * grade/repaint ground, alter vegetation, or touch street/interior props.
  */
@@ -62,6 +67,7 @@ export class YardArrangementPass implements GenerationPass {
     "boundaries",
     "slopes",
     "ramps",
+    "hooks",
   ];
   readonly provides: readonly DraftCapability[] = ["yards"];
 
@@ -80,6 +86,8 @@ export class YardArrangementPass implements GenerationPass {
     if (clutter.length === 0) return;
     for (const prop of clutter) draft.removeProp(prop.id);
     const blocked = protectedGround(draft);
+    const snapshot = snapshotDraft(draft, params, registries);
+    const occupied = new Set<number>();
     let used = 0;
     let groups = 0;
     for (const building of rng.shuffle(draft.buildings)) {
@@ -108,14 +116,16 @@ export class YardArrangementPass implements GenerationPass {
           Number((b.side === entrance.side) === profile.frontage) -
           Number((a.side === entrance.side) === profile.frontage),
       );
-      const group = candidates.find((candidate) =>
-        candidate.tiles.every((tile) =>
-          available(draft, lot, tile, candidate.side, blocked),
-        ),
+      const group = candidates.find(
+        (candidate) =>
+          candidate.tiles.every((tile) =>
+            available(draft, lot, tile, candidate.side, blocked),
+          ) && preservesLocalRoutes(snapshot, candidate.tiles, occupied),
       );
       if (!group) continue;
       for (const tile of group.tiles) {
         draft.addProp(profile.prop, tile, ROTATION[group.side]);
+        occupied.add(draft.tileKey(tile));
         // Other buildings cannot occupy this group's walking/seating apron.
         blocked.add(draft.tileKey(stepGridPos(tile, group.side)));
       }
@@ -174,7 +184,9 @@ function available(
     !isOpenGround(draft, tile.x, tile.z) ||
     draft.groundLevelAt(tile.x, tile.z) !== tile.y ||
     draft.isNaturalEdge(tile.x, tile.z) ||
-    blocked.has(draft.tileKey(tile))
+    blocked.has(draft.tileKey(tile)) ||
+    // Keep exterior window firing positions clear for units outside the building.
+    draft.wallAt(tile, oppositeDirection(side)) !== "solid"
   )
     return false;
   const front = stepGridPos(tile, side);
@@ -187,9 +199,73 @@ function available(
   );
 }
 
-/** Door approaches and connector landings stay clear before the final access repair. */
+/** Each approach retains a short path around the whole group for both unit classes. */
+function preservesLocalRoutes(
+  { index, reach }: DraftSnapshot,
+  tiles: readonly TileCoord[],
+  occupied: ReadonlySet<number>,
+): boolean {
+  const removed = new Set([
+    ...occupied,
+    ...tiles.map((tile) => index.keyOf(tile)),
+  ]);
+  const minX = Math.min(...tiles.map((tile) => tile.x)) - 1;
+  const maxX = Math.max(...tiles.map((tile) => tile.x)) + 1;
+  const minZ = Math.min(...tiles.map((tile) => tile.z)) - 1;
+  const maxZ = Math.max(...tiles.map((tile) => tile.z)) + 1;
+  for (const unitClass of [PassMask.INFANTRY, PassMask.MECH] as const) {
+    const neighbours = tiles
+      .flatMap((coord) => {
+        const tile = index.getAt(coord);
+        return tile ? reach.neighbours(tile, unitClass) : [];
+      })
+      .filter((tile) => !removed.has(index.keyOf(tile)));
+    const first = neighbours[0];
+    if (!first) return false;
+    const seen = new Set([index.keyOf(first)]);
+    const queue: Tile[] = [first];
+    for (const tile of queue)
+      for (const next of reach.neighbours(tile, unitClass)) {
+        const key = index.keyOf(next);
+        if (
+          next.x < minX ||
+          next.x > maxX ||
+          next.z < minZ ||
+          next.z > maxZ ||
+          removed.has(key) ||
+          seen.has(key)
+        )
+          continue;
+        seen.add(key);
+        queue.push(next);
+      }
+    if (neighbours.some((tile) => !seen.has(index.keyOf(tile)))) return false;
+  }
+  return true;
+}
+
+/** Door, connector and mission clearances stay open before final access repair. */
 function protectedGround(draft: MapDraft): Set<number> {
   const blocked = new Set<number>();
+  const hooks = [
+    ...draft.hooks.deployZones,
+    ...draft.hooks.objectives,
+    ...draft.hooks.edgeSpawns,
+    ...(draft.hooks.extraction ? [draft.hooks.extraction] : []),
+  ];
+  for (const hook of hooks) {
+    const hatchRadius = hook.meta?.hatchRadius;
+    const radius = typeof hatchRadius === "number" ? hatchRadius : 1;
+    for (const tile of hook.tiles)
+      for (let dx = -radius; dx <= radius; dx++)
+        for (let dz = -radius; dz <= radius; dz++) {
+          if (Math.abs(dx) + Math.abs(dz) > radius) continue;
+          const x = tile.x + dx;
+          const z = tile.z + dz;
+          if (draft.inBounds(x, z))
+            blocked.add(draft.tileKey(draft.groundCoord(x, z)));
+        }
+  }
   for (const building of draft.buildings)
     for (const entrance of building.entrances) {
       const offset = directionOffset(entrance.side);

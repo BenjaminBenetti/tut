@@ -36,8 +36,8 @@ describe("settlement pipeline", () => {
       "ramps",
       "kerbs",
       "rural-fences",
-      "yard-arrangements",
       "hooks",
+      "yard-arrangements",
       "connectivity",
     ]);
     expect(() => {

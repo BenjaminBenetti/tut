@@ -55,7 +55,9 @@ try {
           };
           const registries = createDefaultRegistries();
           const { draft, diagnostics } = new PipelineMapGenerator(
-            createSettlementPasses(),
+            createSettlementPasses().filter(
+              (pass) => phase !== "before" || pass.id !== "yard-arrangements",
+            ),
             registries,
           ).run(recipe.params, new Mulberry32Rng(hashSeed(seed)));
           const map = freezeDraft(draft, recipe, registries);
@@ -92,6 +94,7 @@ try {
             id,
             recipe,
             mapHash: hash(map),
+            hooks: hash(map.hooks),
             terrain: hash(terrain),
             buildings: hash(map.buildings),
             roads: hash(draft.roads),
@@ -137,6 +140,7 @@ try {
         id: a.id,
         mapUnchanged: a.mapHash === b.mapHash,
         terrainUnchanged: a.terrain === b.terrain,
+        hooksUnchanged: a.hooks === b.hooks,
         buildingsUnchanged: a.buildings === b.buildings,
         roadsUnchanged: a.roads === b.roads,
         connectorsUnchanged: a.connectors === b.connectors,

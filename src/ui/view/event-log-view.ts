@@ -1,7 +1,8 @@
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { TacticalState } from "../../tactical/model/tactical-state";
-import type { UnitId } from "../../tactical/model/unit";
 import type { IconId } from "../data/icon-manifest";
+import type { GameState } from "../../save/model/game-state";
+import { namesFor } from "../service/tactical-error-text";
 import { formatWhole } from "../service/format";
 import { iconGlyph } from "./icon-glyph";
 
@@ -16,9 +17,6 @@ interface LogEntry {
   /** Style-guide tone; `plain` is body text. */
   readonly tone: "plain" | "danger" | "ok" | "accent" | "bug" | "dim";
 }
-
-/** Reads a unit's display name out of the mission, falling back to its id. */
-type NameOf = (unitId: UnitId) => string;
 
 // ===========================================
 // Constants
@@ -44,7 +42,10 @@ let collapsedForSession = false;
  * @param nameOf - Resolves a unit id to its display name.
  * @returns The line to show, or undefined to skip it.
  */
-function describe(event: TacticalEvent, nameOf: NameOf): LogEntry | undefined {
+function describe(
+  event: TacticalEvent,
+  nameOf: (unitId: string) => string,
+): LogEntry | undefined {
   switch (event.type) {
     case "tactical:turn-started":
       return {
@@ -229,12 +230,13 @@ export class EventLogView {
   append(
     events: readonly TacticalEvent[],
     mission: TacticalState | undefined,
+    campaign?: GameState,
   ): void {
     const list = this.list;
     if (!list || events.length === 0) {
       return;
     }
-    const nameOf = nameResolver(mission);
+    const nameOf = namesFor(mission, campaign).unit;
     const doc = list.ownerDocument;
     for (const event of events) {
       const entry = describe(event, nameOf);
@@ -305,22 +307,3 @@ export class EventLogView {
 // ===========================================
 // Helpers
 // ===========================================
-
-/**
- * Resolves unit ids to the names a player recognises, from the mission's
- * templates. Falls back to the id so a log line never reads as blank.
- *
- * @param mission - Current mission state, if there is one.
- * @returns A name lookup.
- */
-export function nameResolver(mission: TacticalState | undefined): NameOf {
-  if (!mission) {
-    return (unitId) => unitId;
-  }
-  const byId = new Map(mission.units.map((unit) => [unit.id, unit]));
-  return (unitId) => {
-    const unit = byId.get(unitId);
-    const template = unit ? mission.templates[unit.templateId] : undefined;
-    return template?.name ?? unitId;
-  };
-}

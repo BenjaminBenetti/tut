@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
+import type { GameState } from "../../save/model/game-state";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import { EventLogView } from "./event-log-view";
 
@@ -108,11 +109,15 @@ describe("EventLogView", () => {
       ?.click();
   });
 
-  it("falls back to the unit id when the mission has no name for it", () => {
+  it("names nothing after an id when the mission has no name for it", () => {
     const view = new EventLogView();
     view.mount(host);
+    // Without a mission there is nothing to name from — and the answer
+    // is still never the id (#1035). This assertion used to pin
+    // `unit-1 hit unit-2 for 4`, which was the defect written down as
+    // an expectation.
     view.append([HIT], undefined);
-    expect(lines()).toEqual(["unit-1 hit unit-2 for 4"]);
+    expect(lines()).toEqual(["that unit hit that unit for 4"]);
   });
 
   it("collapses a run of identical lines into a count", () => {
@@ -168,5 +173,99 @@ describe("EventLogView", () => {
     expect(lines().length).toBe(1);
     view.clear();
     expect(lines()).toEqual([]);
+  });
+});
+
+// ===========================================
+// Squad identity in the log (#1040)
+// ===========================================
+
+/** Two roster squads sharing a template, plus a bug, as deployed. */
+function twoSquads(): TacticalState {
+  return {
+    missionId: "mission-1",
+    units: [
+      { id: "unit-1", sourceId: "squad-1", templateId: "rifle" },
+      { id: "unit-2", sourceId: "squad-2", templateId: "rifle" },
+      { id: "unit-9", sourceId: "bug:swarmer", templateId: "swarmer" },
+    ],
+    templates: {
+      rifle: { name: "Rifle Squad" },
+      swarmer: { name: "Swarmer" },
+    },
+    objectives: [],
+  } as unknown as TacticalState;
+}
+
+/** Alpha and Bravo, as the debrief names them. */
+const ROSTER = {
+  roster: {
+    squads: [
+      { id: "squad-1", name: "Alpha" },
+      { id: "squad-2", name: "Bravo" },
+    ],
+    mechs: [],
+  },
+  overworld: { missions: [], map: { cities: [], regions: [] } },
+} as unknown as GameState;
+
+/** One squad firing at the bug. */
+const shotBy = (attackerId: string): TacticalEvent =>
+  ({
+    type: "tactical:attack-resolved",
+    payload: {
+      attackerId,
+      targetId: "unit-9",
+      hit: true,
+      damage: 4,
+      weaponRange: 8,
+      targetHp: 2,
+    },
+  }) as TacticalEvent;
+
+describe("EventLogView squad identity", () => {
+  let host: HTMLElement;
+
+  beforeEach(() => {
+    document.body.innerHTML = "";
+    host = document.createElement("div");
+    document.body.appendChild(host);
+  });
+
+  /** The rendered rows, including any repeat tail. */
+  const lines = (): string[] =>
+    [...host.querySelectorAll('[data-role="event-log-list"] li')].map(
+      (li) => li.textContent ?? "",
+    );
+
+  // The reproduction the ticket asks for before any claim: two
+  // different squads firing produce one collapsed row, because the
+  // template name makes both sentences identical.
+  it("reproduces the lost attribution when names come from the template", () => {
+    const view = new EventLogView();
+    view.mount(host);
+    view.append([shotBy("unit-1"), shotBy("unit-2")], twoSquads());
+    expect(lines()).toEqual(["Rifle Squad hit Swarmer for 4 ×2"]);
+  });
+
+  // And the repair: with the roster identity the two squads say
+  // different things, so nothing collapses and the attribution survives.
+  it("keeps two squads apart once they carry their roster names", () => {
+    const view = new EventLogView();
+    view.mount(host);
+    view.append([shotBy("unit-1"), shotBy("unit-2")], twoSquads(), ROSTER);
+    expect(lines()).toEqual([
+      "Alpha hit Swarmer for 4",
+      "Bravo hit Swarmer for 4",
+    ]);
+  });
+
+  // The control: a legitimate repeat by the *same* squad still collapses,
+  // which is what #525 added collapsing for.
+  it("still collapses a genuine repeat by one squad", () => {
+    const view = new EventLogView();
+    view.mount(host);
+    view.append([shotBy("unit-1"), shotBy("unit-1")], twoSquads(), ROSTER);
+    expect(lines()).toEqual(["Alpha hit Swarmer for 4 ×2"]);
   });
 });

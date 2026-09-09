@@ -3,7 +3,7 @@
 Only `/dev/dri/renderD129` (AMD Granite Ridge, `1002:13c0`) is passed through.
 `renderD128` is the discrete RX 9070 and must remain absent. The image adds
 container-local RADV and Vulkan/EGL diagnostics. No host configuration changes.
-The Director requests the Executive Director's fleet rebuild timing **after merge**.
+The Director coordinates fleet rebuild timing **after merge**, with a ten-minute warning on #968.
 This checkout has no DRM node or Docker endpoint; hardware results are pending.
 
 ## Evidence boundary
@@ -87,3 +87,10 @@ Sources: [Chromium headless GPU support](https://chromium.googlesource.com/chrom
 [Playwright new headless](https://playwright.dev/docs/browsers#chromium-new-headless-mode),
 [Mesa per-process device selection](https://docs.mesa3d.org/envvars.html),
 [Blender 4.5 Eevee backends](https://developer.blender.org/docs/release_notes/4.5/eevee/).
+
+[Recorded frames and measurements](../../docs/design/diagnostics/1069/) include
+the inspected pre-change/head SwiftShader control and non-evidence benchmark PNGs.
+The control and a fresh head repeat with `TUT_GPU=1 CI=1` share SHA-256
+`d693e4d272a772309b87fd9cbe589e0378355a6537b858145069655cbb3496df`.
+JSONL records preserve the runtime, recipe and measurement limits. Benchmark
+PNGs show their respective workloads; they are not byte-equality controls.

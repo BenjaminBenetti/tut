@@ -1,0 +1,46 @@
+{
+  "id": "C2-city-fences",
+  "seed": "mc-opening-03",
+  "biome": "coastal",
+  "settlement": "city",
+  "size": "medium",
+  "pitch": 55,
+  "rotation": 1,
+  "clip": {
+    "x": 836,
+    "y": 204,
+    "width": 1200,
+    "height": 1000
+  },
+  "focus": {
+    "x": 51,
+    "y": 1,
+    "z": 31
+  },
+  "url": "http://127.0.0.1:5177/mapgen-preview.html?seed=mc-opening-03&biome=coastal&settlement=city&size=medium&models=1&units=1&slope=100",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "camera": {
+    "yawIndex": 1,
+    "zoom": 67.3609679265377,
+    "target": {
+      "x": 51.5,
+      "y": 0.9,
+      "z": 31.5
+    },
+    "bounds": {
+      "x": 0,
+      "z": 0,
+      "w": 72,
+      "d": 72
+    },
+    "zoomRange": {
+      "min": 19.83827358328925,
+      "max": 192
+    }
+  },
+  "runtime": "03569fb",
+  "pngSha256": "598507d3480d79cf8c5c0afc5bb67ccb2591dcf09e9968dbbd21b734f170c59a"
+}

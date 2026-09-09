@@ -6,9 +6,12 @@ clutter do not express it. This work develops wall-mounted use cues and tests
 them against both reported seeds. MapGen supports the outdoor arrangement.
 
 The final paired baseline is main `9d9ea012e97292ae3f96e2500f1609a1cfdbf412`,
-including the material-contact, rural-track and roof-control repairs. The
-refresh is in progress; completed sidecars identify the exact source commits.
-Each of the six views must repeat byte-identically in a second browser launch.
+including the material-contact, rural-track and roof-control repairs. All six
+baseline views repeated byte-identically in a second browser and were inspected.
+All six after views also repeated byte-identically and were inspected, on
+`2a979c7` with the accepted #1032 unit-only reveal integrated. The rural PNG
+is byte-identical to its current-main control (zero changed pixels), and all
+three complete map JSONs are unchanged. Sidecars identify the source commits.
 The camera focuses on the reported coordinate before computing the native
 crop so Map Lab's timing panel cannot enter the scene comparison. These retain
 the reported 45 px/tile, viewport, focus and two angles; this is a fresh
@@ -49,7 +52,11 @@ The flat-roof cutaway check uses the existing #943/#947 scene at yaw 2, with no
 parameter overrides. Following #1023, only units reveal the interior: one squad
 and two separated squads, then exact closure after they leave. A ground-storey
 view and exact all-level restoration check attachments against the real layer
-API. Every case repeats in a second browser. Shader state is recorded beside
+API. A separate controlled vision view divides the building into visible,
+remembered and never-explored columns, using the real tile index and vision API;
+restoring full vision must reproduce the closed control exactly. This checks
+the new attachments themselves, alongside the separate live seed-4242 mission
+frames. Every case repeats in a second browser. Shader state is recorded beside
 the frames; no pointer source is introduced for this evidence.
 
 [Kit and mount contract](../../kits/building-frontages.md).

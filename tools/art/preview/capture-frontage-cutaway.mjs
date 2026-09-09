@@ -119,6 +119,45 @@ try {
           const restored = await capture("flat-levels-restored");
           if (!restored.equals(closed))
             throw new Error("Restoring levels changed the complete roof");
+          await page.evaluate(async () => {
+            const { TileIndex } =
+              await import("/src/mapgen/service/tile-index.ts");
+            const map = window.__frontageMap;
+            const index = new TileIndex(map);
+            const owner = map.tiles.find(
+              (t) => t.x === 25 && t.y === 6 && t.z === 14,
+            ).buildingId;
+            const building = map.buildings.find((b) => b.id === owner);
+            const left = Math.min(...building.footprint.map((r) => r.x));
+            const right = Math.max(...building.footprint.map((r) => r.x + r.w));
+            const visible = map.tiles
+              .filter((t) => t.x < left + (right - left) / 3)
+              .map((t) => index.keyOf(t));
+            const explored = map.tiles
+              .filter((t) => t.x < left + (2 * (right - left)) / 3)
+              .map((t) => index.keyOf(t));
+            window.__frontageBuilder.setVision({
+              visible,
+              explored,
+              spotted: [],
+              lastSeen: {},
+            });
+            window.__frontageVision = {
+              visible: visible.length,
+              remembered: explored.length - visible.length,
+              unexplored: map.tiles.length - explored.length,
+            };
+          });
+          await drawn();
+          await capture("flat-fog-states");
+          await page.evaluate(() => {
+            window.__frontageBuilder.setVision(undefined);
+            window.__frontageVision = undefined;
+          });
+          await drawn();
+          const visionRestored = await capture("flat-vision-restored");
+          if (!visionRestored.equals(closed))
+            throw new Error("Restoring vision changed the complete building");
         } else {
           await page.keyboard.press("l");
           await page.locator('body[data-left="true"]').waitFor();
@@ -154,7 +193,10 @@ try {
       /** Record the live shader state and require exact second-browser reproduction. */
       async function capture(id) {
         if (errors.length) throw new Error(errors.join("\n"));
-        const state = await page.evaluate(() => globalThis.__cutawayState());
+        const state = await page.evaluate(() => ({
+          ...globalThis.__cutawayState(),
+          vision: window.__frontageVision ?? "full",
+        }));
         if (state.ghostStrength.length !== 8)
           throw new Error("Accepted unit slot count changed");
         const bytes = await page.screenshot({ timeout: 120000 });

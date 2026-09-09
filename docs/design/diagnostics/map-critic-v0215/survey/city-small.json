@@ -68,6 +68,10 @@
         "looked": ["whole", "near"],
         "preserve": "Broad roads, complete roofs and different occupied heights remain legible. Ordinary yards replace decorative plinths; grass/soil margins curve.",
         "shortfall": "Generic building-use cues, repeated boxes/sandbags and scattered panels remain #960/#1006. No new flat-city finding."
+      },
+      "sourceFileMtimeUTC": {
+        "whole": "2026-09-09T00:07:40.786480+00:00",
+        "near": "2026-09-09T00:07:03.189722+00:00"
       }
     },
     {
@@ -126,6 +130,10 @@
         "looked": ["whole", "near"],
         "preserve": "Dark streets, complete roofs and different building heights contrast with snow; exposed rock margins curve.",
         "shortfall": "Repeated anonymous structures and many isolated yard panels remain #960/#1006."
+      },
+      "sourceFileMtimeUTC": {
+        "whole": "2026-09-09T00:08:55.894995+00:00",
+        "near": "2026-09-09T00:08:20.412224+00:00"
       }
     },
     {
@@ -184,6 +192,10 @@
         "looked": ["whole", "near"],
         "preserve": "Clear broad streets, complete buildings at different heights, rounded sand/rock contacts, cactus and boulder groups.",
         "shortfall": "Anonymous buildings and uncontextualised yard props remain #960/#1006. Isolated palms remain #701."
+      },
+      "sourceFileMtimeUTC": {
+        "whole": "2026-09-09T00:10:16.917472+00:00",
+        "near": "2026-09-09T00:09:38.947717+00:00"
       }
     },
     {
@@ -242,6 +254,10 @@
         "looked": ["whole", "near"],
         "preserve": "Paved railed waterfront endpoints hold up beside natural grass/sand/soil contours. Roof silhouettes, height differences and openings remain complete.",
         "shortfall": "Repeated buildings and scattered panels remain #960/#1006; water grid remains #1005."
+      },
+      "sourceFileMtimeUTC": {
+        "whole": "2026-09-09T00:11:48.443882+00:00",
+        "near": "2026-09-09T00:11:05.912156+00:00"
       }
     }
   ]

@@ -68,6 +68,10 @@
         "looked": ["whole", "near"],
         "preserve": "Rising streets, different building heights, roof openings and external access provide vertical variety; natural soil/grass margins curve.",
         "shortfall": "Anonymous frontages and isolated town fence panels remain #960/#1006."
+      },
+      "sourceFileMtimeUTC": {
+        "whole": "2026-09-09T00:06:10.329059+00:00",
+        "near": "2026-09-09T00:05:33.505294+00:00"
       }
     },
     {
@@ -126,6 +130,10 @@
         "looked": ["whole", "near"],
         "preserve": "Dark streets and complete roofs remain legible against the snowy terrain, with different building heights and curved exposed-rock contacts.",
         "shortfall": "Urban panels and repeated frontage/yard vocabulary remain #1006/#960; no new defect established by these two overview scales."
+      },
+      "sourceFileMtimeUTC": {
+        "whole": "2026-09-09T00:04:34.387671+00:00",
+        "near": "2026-09-09T00:03:34.839251+00:00"
       }
     },
     {
@@ -184,6 +192,10 @@
         "looked": ["whole", "near"],
         "preserve": "Different occupied building heights, roof openings, external ladders and materialled road grades create distinct positions in the dry terrain. Natural sand/rock contacts now curve.",
         "shortfall": "Anonymous building use and isolated urban panels remain #960/#1006. Dry palms are #701. No new connector/terrain-ticket claim."
+      },
+      "sourceFileMtimeUTC": {
+        "whole": "2026-09-09T00:02:36.592422+00:00",
+        "near": "2026-09-09T00:01:32.074833+00:00"
       }
     },
     {
@@ -242,6 +254,10 @@
         "looked": ["whole", "near"],
         "preserve": "Paved street and shore lookout retain crisp edges beside newly curved natural contacts. Roof heights and external access remain visible.",
         "shortfall": "Isolated panels and anonymous frontages remain #1006/#960; no new ticket for the accepted road connectors or waterfront endpoint."
+      },
+      "sourceFileMtimeUTC": {
+        "whole": "2026-09-09T00:00:27.638244+00:00",
+        "near": "2026-09-08T23:59:43.086528+00:00"
       }
     }
   ]

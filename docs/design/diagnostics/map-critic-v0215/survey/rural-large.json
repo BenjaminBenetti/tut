@@ -1,5 +1,5 @@
 {
-  "id": "city-large",
+  "id": "rural-large",
   "sourceScale": 0.5,
   "sourceDimensions": {
     "width": 2020,
@@ -10,20 +10,20 @@
     "height": 3160
   },
   "labels": "40px band outside each screenshot; no scene retouching",
-  "pngSha256": "7cb10961f73ffa3c096f251646c9e8388cf132eeabf7019e2e233b3797e4c967",
+  "pngSha256": "78d855a727f44832559ea7d208ea415e336abc9bcfa01fc412d55e701d131b87",
   "rows": [
     {
       "recipe": {
-        "index": 16,
-        "id": "temperate-city-large-03",
+        "index": 24,
+        "id": "temperate-rural-large-03",
         "seed": "mc-resume-03",
         "biome": "temperate",
-        "settlement": "city",
+        "settlement": "rural",
         "size": "large",
         "models": "1",
         "units": "1",
         "slope": "100",
-        "url": "http://localhost:4175/mapgen-preview.html?seed=mc-resume-03&biome=temperate&settlement=city&size=large&models=1&units=1&slope=100",
+        "url": "http://localhost:4175/mapgen-preview.html?seed=mc-resume-03&biome=temperate&settlement=rural&size=large&models=1&units=1&slope=100",
         "serverRuntime": {
           "baseline": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
           "server": "http://localhost:4175",
@@ -41,8 +41,8 @@
         },
         "commit": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
         "levels": {
-          "value": "14",
-          "max": "14",
+          "value": "8",
+          "max": "8",
           "step": "2",
           "label": "all"
         },
@@ -61,31 +61,31 @@
         "errors": []
       },
       "sourcePngSha256": {
-        "whole": "fc989dd8e3063e94bc071cefecc99f1644fb6c345eb4b5d6d9cfa562f88ce446",
-        "near": "08f917ca6d9af690d2925b5612a25ad81692dfba53b7c57f3fd7c669741f7944"
+        "whole": "8f493ad430c68123599420ea5a867a4afa90aab80af3b71edd6b6b5a9feb307b",
+        "near": "1667595c854d11c9135b9572f0989a488106487209c57cd10fd48b462b24778a"
       },
       "observations": {
         "looked": ["whole", "near"],
-        "preserve": "A larger grid serves more buildings with varied heights, footprints, roofs and openings. Curved ground contacts and ordinary planted yards remain coherent.",
-        "shortfall": "Repeated unidentifiable building uses and generic outdoor clutter remain #960/#1006. No new city-flatness defect seen."
+        "preserve": "The grey stone lane remains continuous across broad earth and connects the complete building group. Long contextual fence runs, woodland and curved grass/soil contacts preserve the rural setting.",
+        "shortfall": "Stone/cobble reads as a surfaced access lane to substantial occupied buildings here too; no implausible placement established and no dirt-material reversion requested. Natural grades and occupied-plot excavation do not reopen #813."
       },
       "sourceFileMtimeUTC": {
-        "whole": "2026-09-09T00:31:44.848105+00:00",
-        "near": "2026-09-09T00:30:04.171768+00:00"
+        "whole": "2026-09-09T00:52:28.684643+00:00",
+        "near": "2026-09-09T00:51:49.552917+00:00"
       }
     },
     {
       "recipe": {
-        "index": 15,
-        "id": "snowy-city-large-03",
+        "index": 23,
+        "id": "snowy-rural-large-03",
         "seed": "mc-resume-03",
         "biome": "snowy",
-        "settlement": "city",
+        "settlement": "rural",
         "size": "large",
         "models": "1",
         "units": "1",
         "slope": "100",
-        "url": "http://localhost:4175/mapgen-preview.html?seed=mc-resume-03&biome=snowy&settlement=city&size=large&models=1&units=1&slope=100",
+        "url": "http://localhost:4175/mapgen-preview.html?seed=mc-resume-03&biome=snowy&settlement=rural&size=large&models=1&units=1&slope=100",
         "serverRuntime": {
           "baseline": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
           "server": "http://localhost:4175",
@@ -103,8 +103,8 @@
         },
         "commit": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
         "levels": {
-          "value": "12",
-          "max": "13",
+          "value": "8",
+          "max": "8",
           "step": "2",
           "label": "all"
         },
@@ -123,31 +123,31 @@
         "errors": []
       },
       "sourcePngSha256": {
-        "whole": "bcc9def349d498f768226bedf0ff8da0abbfe786fb682b347df12e19ab470bc4",
-        "near": "f59ad41d32b586149194d83e3bb5e2e5b75b28bdeccc6a565c6a825ccc4aebe1"
+        "whole": "b92c6fd85663febd0c58f49b27b73dbf6ea5e18a555b53dfd5e3fcbb0753e26b",
+        "near": "83a748d7a247b13cedc86bf07e3139ade0facaf5125039fcd50d143f9d29320b"
       },
       "observations": {
         "looked": ["whole", "near"],
-        "preserve": "Different building heights and complete flat/pitched roofs give useful occupied height; dark streets and curved rock/snow contacts remain legible.",
-        "shortfall": "Repeated anonymous frontage/yard props and isolated panels remain #960/#1006. Whole view confirms larger layout and occupied height variety; no additional defect established."
+        "preserve": "Brown access stays visible over snow and rock. Rural fences follow plot/approach edges, and complete roofs and conifers retain the cold rural setting.",
+        "shortfall": "No new route-material failure established. High cut terrain around buildings and the graded route remain subject to existing #813/lot rulings, not an empty decorative-bed finding."
       },
       "sourceFileMtimeUTC": {
-        "whole": "2026-09-09T00:28:25.006421+00:00",
-        "near": "2026-09-09T00:26:01.648365+00:00"
+        "whole": "2026-09-09T00:50:49.663337+00:00",
+        "near": "2026-09-09T00:50:11.081607+00:00"
       }
     },
     {
       "recipe": {
-        "index": 14,
-        "id": "desert-city-large-03",
+        "index": 22,
+        "id": "desert-rural-large-03",
         "seed": "mc-resume-03",
         "biome": "desert",
-        "settlement": "city",
+        "settlement": "rural",
         "size": "large",
         "models": "1",
         "units": "1",
         "slope": "100",
-        "url": "http://localhost:4175/mapgen-preview.html?seed=mc-resume-03&biome=desert&settlement=city&size=large&models=1&units=1&slope=100",
+        "url": "http://localhost:4175/mapgen-preview.html?seed=mc-resume-03&biome=desert&settlement=rural&size=large&models=1&units=1&slope=100",
         "serverRuntime": {
           "baseline": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
           "server": "http://localhost:4175",
@@ -165,8 +165,8 @@
         },
         "commit": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
         "levels": {
-          "value": "14",
-          "max": "14",
+          "value": "6",
+          "max": "6",
           "step": "2",
           "label": "all"
         },
@@ -185,31 +185,31 @@
         "errors": []
       },
       "sourcePngSha256": {
-        "whole": "e1e9b953d297ac66785c3ab01948dc96b03d0fa71d25d97b949e4a478c3851d9",
-        "near": "a057c84fada34c03080a5703057abe8b0123c894de064b96f5eb37c9fe2fe2c4"
+        "whole": "afc0cae2d303889f2e8c615dc0ffb9ba7fe287944b129f8c699dc7f5a942d14e",
+        "near": "f13bbf7dd6d446d205f294b273a5329db7c165d3ad8bea0a691b2733c7416c18"
       },
       "observations": {
         "looked": ["whole", "near"],
-        "preserve": "More blocks and occupied heights make a larger city; roof openings and broad streets remain legible. Sand/rock contacts curve and ordinary yards retain ground-level planting.",
-        "shortfall": "Repeated facade identity and arbitrary boxes/panels/boulder-yard arrangements remain #960/#1006; isolated palms remain #701. No additional flat-city or top-roof defect seen."
+        "preserve": "Brown access remains distinct against sand and rock across the larger setting. Complete roofs, cactus groups and contour-shaped rock margins retain the dry biome.",
+        "shortfall": "Isolated palms remain #701. Severe natural and occupied-plot grades are not a new claim against settled #813; no new access failure established from the overview."
       },
       "sourceFileMtimeUTC": {
-        "whole": "2026-09-09T00:22:53.143594+00:00",
-        "near": "2026-09-09T00:20:10.372644+00:00"
+        "whole": "2026-09-09T00:49:19.595968+00:00",
+        "near": "2026-09-09T00:48:31.279306+00:00"
       }
     },
     {
       "recipe": {
-        "index": 13,
-        "id": "coastal-city-large-03",
+        "index": 21,
+        "id": "coastal-rural-large-03",
         "seed": "mc-resume-03",
         "biome": "coastal",
-        "settlement": "city",
+        "settlement": "rural",
         "size": "large",
         "models": "1",
         "units": "1",
         "slope": "100",
-        "url": "http://localhost:4175/mapgen-preview.html?seed=mc-resume-03&biome=coastal&settlement=city&size=large&models=1&units=1&slope=100",
+        "url": "http://localhost:4175/mapgen-preview.html?seed=mc-resume-03&biome=coastal&settlement=rural&size=large&models=1&units=1&slope=100",
         "serverRuntime": {
           "baseline": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
           "server": "http://localhost:4175",
@@ -227,8 +227,8 @@
         },
         "commit": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
         "levels": {
-          "value": "10",
-          "max": "11",
+          "value": "6",
+          "max": "6",
           "step": "2",
           "label": "all"
         },
@@ -247,17 +247,17 @@
         "errors": []
       },
       "sourcePngSha256": {
-        "whole": "451c331d41784a8c0268adc39ff846bfd878bcff8dbd5ca5101d8376597f0749",
-        "near": "86a483e4cf269a4daa9395e09f5ae7aec4b00a546cdf896f5028f1f66a07f137"
+        "whole": "9c49965ccbb7e92b24342382f3d91aa8cacf67b8af4555f5e0541473e1df2cb3",
+        "near": "eeef9ca0934b1450ca4661972b2fff999736b395ccf6c0f62d5fe0afb055a726"
       },
       "observations": {
         "looked": ["whole", "near"],
-        "preserve": "Larger street network supports more blocks, building groups and different heights. Shore carriageways meet paved railed ends and natural contacts remain curved.",
-        "shortfall": "More buildings make the repeated facade/yard vocabulary very evident: #960/#1006 remain priorities. Water grid remains #1005, no additional waterfront-end defect established."
+        "preserve": "A small cluster of complete buildings amid coastal planting remains visibly rural. Longer fences follow plot and approach margins; natural material contacts curve.",
+        "shortfall": "Brown approaches again lose distinct route identity inside broad earth areas, consistent with #1043. This overview is corroborating context, not an additional two-angle junction proof. Water grid remains #1005."
       },
       "sourceFileMtimeUTC": {
-        "whole": "2026-09-09T00:16:34.333037+00:00",
-        "near": "2026-09-09T00:14:05.939995+00:00"
+        "whole": "2026-09-09T00:46:49.154022+00:00",
+        "near": "2026-09-09T00:45:58.683375+00:00"
       }
     }
   ]

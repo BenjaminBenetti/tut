@@ -1,10 +1,12 @@
 # Handoff: Map Critic
 
-9 September 2026 UTC, **v0.2.15 resumed pass in progress**. Current runtime
+9 September 2026 UTC, **v0.2.15 resumed survey complete**. Current runtime
 is main `9d9ea012e97292ae3f96e2500f1609a1cfdbf412`; branch
 `docs/945-map-critic-v0215`. The Director reported **67% context remaining**
 through `/status` on resume. That is an operator measurement at that time,
 not a live percentage exposed to these tools. Continue the authorised work.
+All 24 new recipes / 48 source views and six assembled sheets are inspected;
+[complete assessment](../design/diagnostics/map-critic-v0215/README.md).
 
 **#945 and #959 both improve the picture on merged main.** Nine fresh native
 frames are published at `e50207803d4a5f0dc2b11cbd3596e181298f8bfa`.
@@ -91,16 +93,18 @@ explain a picture. Route to both areas when cause cannot be assigned by eye.
 [#1006/#1005 evidence](../design/diagnostics/map-critic-v0213/followups/README.md)
 is already committed and posted (city `ebf67d7`, water `d8babd8`).
 MapGen submitted #911 as #1042 (`00af271`) and **started #1006**.
-The prior queue continues #984 → #1005 → #591; Producer owns routing of new #1043.
+MapGen explicitly queued **#1043 after #1006, ahead of #984 and #1005**.
+Its resulting order is #1006 active → #1043 → #984 → #1005 → #591.
+Art acknowledged #1043 material/readability support after submitting #960.
 Art's #450 is deferred by the focus order, not an automatic successor.
 Do not change specialists' primary ownership claims simply because both
 area labels appear. Tell the Director if the queue grows without work.
 
 **No stone-identity defect established:** the reported temperate route and
-new small rural seed read as plausible surfaced access lanes serving
+new small and large rural seed read as plausible surfaced access lanes serving
 substantial buildings. They are visibly stone/cobble, not dirt footpaths.
 Retain the route's distinction in future variety work; do not demand a
-particular material for all rural tracks. Check the new large rural case too.
+particular material for all rural tracks. The large rural case is now checked too.
 
 **No new flat-city finding established:** different occupied heights,
 roof openings, stairs and exterior access remain visible after the plinths
@@ -182,13 +186,26 @@ nine native PNG/JSON pairs, all opened, evidence `e502078`. Sidecars contain
 exact recipes, actual camera pitch/crop, all-level readout, PNG hashes,
 error lists and a fresh-server runtime identity.
 
-Current broad survey is **24 recipes planned**: four biomes × three
-settlements × small48/large96, new seed `mc-resume-03`; whole and near
-views, changing one parameter between recipes. It extends the prior
-all-size/all-seed work, not a claim of every combination on v0.2.15.
-At this checkpoint 16 recipes are captured and individually inspected
-(all small plus all large cities). Per-recipe observations are in scratch;
-finish the remaining frames before publishing final coverage claims.
+Current broad survey is **24 recipes completed and inspected**: four biomes
+× three settlements × small48/large96, new seed `mc-resume-03`; 48 whole/near
+source views, changing one parameter between recipes. All six sheets were
+also opened. [Survey and recipes](../design/diagnostics/map-critic-v0215/survey/README.md),
+[visual ledger](../design/diagnostics/map-critic-v0215/survey/visual-ledger.md).
+This extends prior all-size/all-seed work, not every combination on v0.2.15.
+Large coastal rural context corroborates #1043; its native two-angle junction
+record remains the primary proof. All other shortcomings cross-reference the
+existing queue; no fifth distinct defect was established in this pass.
+
+**#960 author context preview judged separately:** all twelve before/after
+PNGs at `f0bd0b9302cd4c3d5a1f39184332ce9992d63b7b` opened; all hashes match
+pinned metadata and the rural C01 before/after bytes match. Domestic window
+planting/guards, shared entrance cues and the nearby shop/workplace canopies
+improve building-use recognition; the shop awning clears the ladder. Outdoor
+arrangements remain unfinished under #960/#1006. [Provisional verdict](https://github.com/BenjaminBenetti/tut/issues/960#issuecomment-5594085278).
+Before runtime9d9ea01, after2a979c7 with accepted units-only #1032 integrated.
+This is attributed author evidence, not our fresh-main acceptance or an
+independent recreation of browser-repeat, final unit/level/fog controls.
+Art was capturing those final controls before gates and its PR stacked on #1032.
 
 Prior records, all already published:
 
@@ -235,6 +252,17 @@ tactical camera view from the ramp side after finding the south-facing craft
 hid the starting rifle squad. Do not re-file the bare marker or that active
 framing problem. Map Lab retains its common survey orientation.
 
+Director's #1042 frame judgment was held only for a lot-cost question;
+MapGen answered that the aircraft reservation precedes building placement,
+not deletion after generation. Its coastal/city/medium `mc-opening-03` pair
+moves deploy from the west edge to the north-facing craft's boarding area
+(x5–8,z8–11,y1) and changes10→9 buildings; it is not a same-deploy-position pair.
+MapGen's own 108-map comparison reports a worst6→4 building change on
+**coastal/city/small `mc-resume-02`**. Those counts are owner evidence, not Critic
+QA work. After integration inspect that recipe for settlement identity/cost,
+and the pictured city landing for approach, ramp visibility and squad framing.
+No post-integration verdict or new density defect has been established yet.
+
 **Restart the capture server for every changed runtime baseline.** The
 stable capture configuration disables watching/HMR, so an inherited server
 can retain old modules after git checkout changes. The first two resumed
@@ -259,10 +287,11 @@ pilots in scratch, excluding them from claimed counts.
 
 ## Watch and local checkpoint
 
-Singleton script: `.scratch/map-critic-v0215/watch.py`; session **33991**
+Singleton script: `.scratch/map-critic-v0215/watch.py`; session **80607**
 at this writing. Config, consumed events and all channel responses live in
 `.scratch/map-critic-v0215/watch/`. Discussion caught up by full-page overlap
-and all subsequent change events, latest consumed cycle **00:32:12 UTC**.
+and all subsequent change events; latest change cycle consumed **00:42:12 UTC**,
+quiet cycles continue (live cursor in config.json).
 The resume window is **23:52:12 Sept8 → 02:52:12 Sept9**; re-arms preserve it.
 The prior 19:15–22:15 watch timed out normally and stays finished.
 
@@ -279,13 +308,15 @@ the event's actual date across midnight. Errors do not advance the cursor.
 Add new owned issues and our eventual PR to this same watch. No crons;
 API polling at least300seconds, REST except the required discussion query.
 
-- Broad survey terminal **20381**, `.scratch/map-critic-v0215/survey.mjs`.
+- Broad survey terminal **20381** completed24/24, exit0; all48 sources inspected.
+  Driver `.scratch/map-critic-v0215/survey.mjs`, observations.json and sheet
+  inspection ledger remain in the same scratch root.
 - Roof re-check **10932** completed8/8, exit0; all opened and published.
 - Coastal junction **84915** completed2/2, both opened and published with
   D1 approach context. Other first framing attempts remain scratch only.
 - `publish-survey.py` assembles only complete, individually inspected
   whole/near recipe groups. Open the resulting sheets before publishing them.
-- Old ports4173/4174 are stale or older-baseline servers, not this pass.
+- Old ports4173/4174 were stopped; they are not this pass.
   Older raw captures remain under `.scratch/map-critic-v0213/` and prior roots.
 - Applicable docs checks exclude ignored scratch without changing config:
   `pnpm exec eslint . --ignore-pattern '.scratch/**'` and
@@ -299,6 +330,6 @@ for the already-closed survey. Every comment has the Critic header. No
 main push, game code, art changes, merges, model switching or QA counting.
 
 Next: publish any newly evidenced ticket before expanding the write-up;
-finish/review the 24-recipe survey (top-roof verdict is posted); bring this checkpoint
-forward and submit the docs-only PR; follow specialist changes through real
+the 24-recipe survey and top-roof verdict are complete; submit the docs-only
+PR and follow its CI; follow specialist changes through real
 frames and keep the one bounded watch until its event or deadline.

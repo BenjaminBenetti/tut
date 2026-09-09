@@ -68,6 +68,10 @@
         "looked": ["whole", "near"],
         "preserve": "A continuous grey stone lane connects occupied buildings through woodland and bare earth. Soft soil/grass contacts, complete roofs and plot-aligned rural fence runs read coherently.",
         "shortfall": "No new defect established here. The lane reads as stone/cobble rather than a dirt footpath, but its connection to substantial rural buildings makes that a plausible surfaced access lane. Dramatic natural grades and excavated occupied plots do not re-file the settled cliff ruling."
+      },
+      "sourceFileMtimeUTC": {
+        "whole": "2026-09-08T23:56:04.338923+00:00",
+        "near": "2026-09-08T23:55:37.020097+00:00"
       }
     },
     {
@@ -126,6 +130,10 @@
         "looked": ["whole", "near"],
         "preserve": "The brown route stays distinct across snow and exposed rock. Complete roofs, conifers and contextual rural fence runs retain cold-region identity. Snow/rock contacts now curve.",
         "shortfall": "No new defect established. Tall natural and excavated terrain faces remain subject to the earlier cliff/lot rulings; these views do not reopen them."
+      },
+      "sourceFileMtimeUTC": {
+        "whole": "2026-09-08T23:57:02.453552+00:00",
+        "near": "2026-09-08T23:56:35.505724+00:00"
       }
     },
     {
@@ -184,6 +192,10 @@
         "looked": ["whole", "near"],
         "preserve": "The brown route is followable through sand and rock. Cactus/boulder groups and curved rock/sand contacts distinguish the setting.",
         "shortfall": "Isolated palms remain #701. The current bare deploy marker and cramped-looking objects near it are not a new #911 placement finding while that feature is active."
+      },
+      "sourceFileMtimeUTC": {
+        "whole": "2026-09-08T23:57:57.016204+00:00",
+        "near": "2026-09-08T23:57:33.055357+00:00"
       }
     },
     {
@@ -241,7 +253,11 @@
       "observations": {
         "looked": ["whole", "near"],
         "preserve": "Rounded grass/sand/soil contacts and recognisable coastal planting. Rural fence runs have plot-edge context and buildings have complete supported silhouettes.",
-        "shortfall": "Confirmed at focused entrance/earth junction from two angles: the coastal brown approach loses a distinct onward used-route cue inside the broad bare-earth area. New follow-up prepared; #959 temperate repair remains accepted. Water grid remains #1005."
+        "shortfall": "Confirmed at focused entrance/earth junction from two angles: the coastal brown approach loses a distinct onward used-route cue inside the broad bare-earth area. Filed as #1043; #959 temperate repair remains accepted. Water grid remains #1005."
+      },
+      "sourceFileMtimeUTC": {
+        "whole": "2026-09-08T23:58:55.008834+00:00",
+        "near": "2026-09-08T23:58:22.811040+00:00"
       }
     }
   ]

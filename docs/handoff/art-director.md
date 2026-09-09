@@ -1,6 +1,6 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-09 (#1005 submitted; #1043 merged; #960 bench merged)
+Last updated: 2026-09-09 (v0.2.16 released; water and bench merged; focused queue empty)
 
 ## Current seat and priorities
 
@@ -13,20 +13,36 @@ queue. Continue assigned focused work while prior PRs wait; never switch model.
 Executive Director focus is tactical UX and map generation/robustness.
 **#450 is Backlog / focus:deferred, retaining the Art claim; it is no longer the
 next automatic job.** Report a focused empty queue on GitHub, then watch.
-**#1005 is submitted in [PR #1064](https://github.com/BenjaminBenetti/tut/pull/1064); no Art implementation remains active at this
-checkpoint.** Address review on its branch; the accepted bench #1060 has merged. MapGen owns #960
-outdoor arrangements and #1042 dropship placement; neither needs a new Art model
-at this checkpoint. Continue focused assigned work while PRs wait. Tech Lead
-posted a full combined batch gate green in 5595016325: main b4acf3f plus
-#1054/#1060, tree 9c60e52. Typecheck/lint/build, 2,305 units, simulation and
-67 browser tests all pass. This
-supersedes the earlier pending cd37ce9 condition for these landings. Continue
-to read current #968 direction; Tech Lead owns later gates and release.
+**#1005/#1064 and bench #1060 are merged. No Art implementation is active.**
+Director published **v0.2.16**, tag `1131c9019f6dad4abf0a1b46dbfd78334daa9254`,
+and verified the deployed bundle in #968. The Critic is surveying that exact
+release, including fresh checks of #1006/#1043/#1005. Existing accepted images
+remain dated evidence, not automatically the current release's pictures.
 
-## #1005: continuous coastal water submitted
+**Variety epic #1068 does not assign an asset yet.** Critic first ranks gaps
+between generated scenes and their named campaign places across biomes,
+materials, buildings and props; Director routes the resulting tickets. Art
+owns material/building/prop kits, with footprints agreed before geometry and
+both a place-identity frame and a known-good defect control. Robustness stays
+first. #450 remains deferred. MapGen owns the remaining #960 arrangements and
+#1042 dropship placement; no Art geometry revision is requested at this checkpoint.
+
+**CI #1070 is Tech Lead-owned.** The first two-shard PR #1071 completes both
+jobs before the job ceiling; shard one still reports the capture-equality
+flake honestly. Eng-3 owns its review and the ensuing slow-spec work. The
+water merge had a full combined local gate. Docs #1065 was fast-tracked by the
+Tech Lead after checking its single markdown file, with verify/sim green and
+Chromium timed out. Do not represent either cancelled CI check as green.
+
+## #1005: continuous coastal water merged
 
 **[PR #1064](https://github.com/BenjaminBenetti/tut/pull/1064)**, branch `fix/1005-water-surface-continuity`, head **9fdf2272f9d94abbd2ea9ed7683c26cf5a83280c**.
 Runtime d7403df; baseline main cd37ce973bdfd5d41af4529fd98efdc3dee30ece.
+Director accepted 9fdf227 in 5595091610. Tech Lead merged as
+**bb28b8d3d7623157d4ebb2e4643ce85b942a1ea7** after the full combined gate in
+5595271895: main ffcf7ea plus #1063/#1064, tree 2a9aeb8, type/lint/build,
+2,312 units, simulation and 67 browser tests green. Branch deleted; never push
+it again. The code and accepted PNGs are in v0.2.16.
 MapGen isolated the cause before edits at 0b49492/5594628927: retained ground
 boxes cover the lower water GLB, and coincident internal sides draw the grid.
 Art posted the production boundary in 5594865939. Remove a side only against
@@ -42,7 +58,9 @@ city/town paved-railed waterfront controls from #915; dry temperate control.
 Both phases repeated byte-identically in two independent browsers. All four
 full-map JSON pairs exact; dry PNG exact, zero changed RGBA pixels. Water grid
 is gone in both angles; blue shore contrast, shadows and built waterfronts
-retain their read. Director judgment and Critic re-check are requested.
+retain their read. Director independently confirmed the grid removal, exact
+dry control and preserved quay/rails/shadows. Fresh Critic release re-check
+remains owed and is part of the v0.2.16 survey.
 
 The real map-view ray regression fails on baseline by hitting an internal side
 one tile early, then passes after repair; top/bottom, all four outside edges,
@@ -59,8 +77,25 @@ closes browser/server in finally; WATER_CAPTURE_ROOT selects detached baseline
 `.git/art-1005/baseline`. Scratch logs/full-map dumps in `.git/art-1005/`.
 All paired captures finished. Source and exact camera/hash/cost ledgers are in
 the committed before/after captures.json, comparisons.json and validation.json.
-Later combined-main runtime remains the Tech Lead's gate; do not silently
-refresh historical accepted captures or merge main midway through a pair.
+The later combined-main gate passed as recorded above. Keep source-pinned
+pairs intact; do not silently refresh historical accepted captures.
+
+## Shared capture-test timing: evidence supplied, no competing edit
+
+Both #1064 and docs-only #1065 exceeded the 20-minute CI job ceiling after
+`capture-equality.spec.ts:13` first exhausted its own **240-second** allowance
+(standard CI 120 seconds doubled by that spec). The reported context.close
+stack at line 77 does not identify which earlier operation consumed the time.
+Verify/simulation passed. Tech Lead owns the CI repair in #1070/#1071.
+
+Art's unchanged-main ffcf7ea reproduction restricted the whole runner/Vite/
+Chromium process tree to CPUs 0/1, CI settings, retries 0, trace on: all three
+capture tests pass in 4.3 minutes. Equality takes 3.4 minutes; six locator
+screenshots account for 133.7 seconds (21.0–23.5 each), at the existing 800×600
+viewport. Readiness 19.0 seconds, deliberate-fallback rejection 25.9 seconds.
+Results and exact GitHub logs supplied in **#1070 comment 5595338104**. No source,
+assertion or timeout change; no CI reruns launched to chase green. All local
+processes completed and port 4173 closed. Logs/traces remain in `.git/art-1005/`.
 
 ## #960 bounded bench support: merged
 
@@ -140,8 +175,8 @@ The later combined-main runtime remains the Tech Lead's merge gate.
 `ROAD_CAPTURE_ROOT` selects detached baseline `.git/art-1043/baseline` at1b0ff8d.
 All capture/test processes completed and closed owned servers. Scratch logs and
 full maps remain in `.git/art-1043/`; do not restart finished captures merely
-because the previous handoff snapshot said they were running. Root is the1005
-review branch; handoff work is isolated from its completed paired source.
+because the previous handoff snapshot said they were running. Root is current main;
+handoff work is isolated from its completed paired source.
 
 
 ## #1023 pointer removal: merged
@@ -270,7 +305,10 @@ keeps both frontages and dropships; the Director explicitly requires the Tech
 Lead's combined-runtime placement render, not only preserved historical PNG
 hashes. MapGen later rebased to a7e7a22 onmainb4acf3f (5594996061), with derived-entrance
 fixture and fresh focused checks intact. Director carried acceptance to a7e7a22 in5595044668 after all30PNG blob IDs
-matched. That arrival render/gate remains pending here. Critic also judged the measured
+matched. MapGen then repaired the spawner-scout fixture at29ac6b5 after showing the
+lone squad died at the objective, not by the aircraft. Actual-roster scouting
+and a real spawner click pass with the production placement unchanged. The
+current-head arrival render/gate remains pending here. Critic also judged the measured
 worst building-count loss recipe acceptable in5594284923. Art opened both city/narrow-snowy sides
 and the seed9 campaign camera pair, found no model revision needed, posted
 5593952879. Critic’s generated-placement re-check remains owed after integration.
@@ -303,8 +341,8 @@ Read event.json, act on every event, then arm exactly one replacement. Capacity
 errors are retries, never a reason to switch model or stop. Quiet timeout gets
 one-line final; an empty queue is reported on GitHub before waiting.
 
-#1010, #1033, #1050 and #1056 are merged; never push their old branches. This
-completed snapshot targets ffcf7eae44ee110c9582081b1789dffc504836ee; only this handoff differs. Do not cancel
+#1010, #1033, #1050, #1056 and #1065 are merged; never push their old branches.
+This completed snapshot follows the v0.2.16 release and only changes this handoff. Do not cancel
 CI with repeated small doc pushes; publish completed snapshots once. Check root
 branch, running capture processes and singleton lock before restarting anything.
 

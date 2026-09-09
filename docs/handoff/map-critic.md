@@ -11,7 +11,7 @@ frames are published at `e50207803d4a5f0dc2b11cbd3596e181298f8bfa`.
 [Ground-contact verdict](https://github.com/BenjaminBenetti/tut/issues/945#issuecomment-5593788972),
 [trail and rural stone-identity verdict](https://github.com/BenjaminBenetti/tut/issues/959#issuecomment-5593789123),
 [exact evidence](../design/diagnostics/map-critic-v0215/repairs/README.md).
-Three Critic issues remain open: **#960 → #1006 → #1005**; **two slots remain**.
+Four Critic issues remain open: **#960 → #1006 → #1043 → #1005**; **one slot remains**.
 
 The Executive Director's focus is **tactical UX and map generation**, made
 robust. #968 says merges are temporarily paused because the Tech Lead hit
@@ -76,25 +76,25 @@ explain a picture. Route to both areas when cause cannot be assigned by eye.
    evidence: `mc-opening-03`, coastal/city/medium72, (51,1,31), 55px/tile.
    Town corroboration is posted. Rural #917 remains accepted and the
    coherent finite garden run is not this finding.
-3. **[#1005](https://github.com/BenjaminBenetti/tut/issues/1005), p3, MapGen + Art:**
+3. **[#1043](https://github.com/BenjaminBenetti/tut/issues/1043), p2, MapGen + Art:**
+   coastal rural brown approach loses route identity in broad bare earth.
+   New `mc-resume-03`, coastal/rural/small48, junction focus (21,2,10),
+   initial/one E turn; entrance context (13,2,24), 45px/tile. Three native
+   images inspected and posted, [evidence](../design/diagnostics/map-critic-v0215/coastal-trail/README.md),
+   `ce1ea0c`. Cause uncertain by eye; no movement failure claimed. #959's
+   temperate repair remains accepted. This is the fourth Critic slot.
+4. **[#1005](https://github.com/BenjaminBenetti/tut/issues/1005), p3, MapGen + Art:**
    a regular grid crosses continuous open water. `mc-opening-01`,
    coastal/rural/small48, (40,0,4), 55px/tile, two angles and UI controls.
    Cause uncertain by eye; distinct from #945's between-material contacts.
 
 [#1006/#1005 evidence](../design/diagnostics/map-critic-v0213/followups/README.md)
 is already committed and posted (city `ebf67d7`, water `d8babd8`).
-MapGen's routed sequence is #911 active → #1006 → #984 → #1005 → #591.
+MapGen submitted #911 as #1042 (`00af271`) and **started #1006**.
+The prior queue continues #984 → #1005 → #591; Producer owns routing of new #1043.
 Art's #450 is deferred by the focus order, not an automatic successor.
 Do not change specialists' primary ownership claims simply because both
 area labels appear. Tell the Director if the queue grows without work.
-
-**Candidate under examination:** coastal rural brown trail identity can
-merge into broader bare-earth patches (`mc-resume-03`, small). Four first
-focused views were opened but frame the wrong patch or leave it at the
-edge; reframe the actual route/earth junction, inspect the second angle,
-then file if demonstrated. Cross-reference the accepted temperate-only
-#959 repair. Do not describe a movement failure from an ambiguous render.
-There is room to file; this is evidence preparation, not a taste hold.
 
 **No stone-identity defect established:** the reported temperate route and
 new small rural seed read as plausible surfaced access lanes serving
@@ -120,9 +120,12 @@ mech access certification. #787 already owns future big-city overpasses.
 - **#961 / #978 / #996**, top-limit correction merged in **#1013**, `086cab1`.
   Prior Critic `d0837c6` evidence showed the exact trigger: initial 5/5 roof
   intact, clamped `]` removes the tallest roof while still displaying 5/5.
-  It never showed all roofs missing by default. Fresh eight-frame re-check
-  is capturing the same ordinary campaign4242 mission from both camera
-  sides; publish the visual verdict after opening all frames. Eng-3's
+  It never showed all roofs missing by default. **Picture improved** on
+  `9d9ea01`: both clamped-top frames keep the roof, and both initial/top
+  pairs are byte-identical within their runs. Lower-floor views retain
+  rooms/corridors/stairs. [Posted verdict](https://github.com/BenjaminBenetti/tut/issues/978#issuecomment-5593853528),
+  [eight opened frames](../design/diagnostics/map-critic-v0215/layers/README.md),
+  `5368629`. Ordinary campaign4242, mission1127010053, same reported tower. Eng-3's
   separate flat-map/hillside proof was accepted under #1019/#1025 and is
   no longer owed. Historical [Critic layers](../design/diagnostics/map-critic-v0213/layers/README.md)
   remain at their recorded identity.
@@ -183,8 +186,8 @@ Current broad survey is **24 recipes planned**: four biomes × three
 settlements × small48/large96, new seed `mc-resume-03`; whole and near
 views, changing one parameter between recipes. It extends the prior
 all-size/all-seed work, not a claim of every combination on v0.2.15.
-At this checkpoint 13 recipes are captured and individually inspected
-(all small plus coastal/city/large). Per-recipe observations are in scratch;
+At this checkpoint 16 recipes are captured and individually inspected
+(all small plus all large cities). Per-recipe observations are in scratch;
 finish the remaining frames before publishing final coverage claims.
 
 Prior records, all already published:
@@ -227,9 +230,9 @@ the earlier measured population was zero, pending its normal disposition.
 **#911 owns deploy/extraction dressing and placement.** Extraction stays
 at deploy deliberately. The merged TDF dropship art was inspected as
 constructed Art fixtures; it does not prove generated placement. MapGen
-is finishing real placement/boarding clearance and the initial tactical
-camera view from the ramp side after finding the south-facing craft hid
-the starting rifle squad. Do not re-file the bare marker or that active
+submitted real placement/boarding clearance in #1042, including an initial
+tactical camera view from the ramp side after finding the south-facing craft
+hid the starting rifle squad. Do not re-file the bare marker or that active
 framing problem. Map Lab retains its common survey orientation.
 
 **Restart the capture server for every changed runtime baseline.** The
@@ -256,10 +259,10 @@ pilots in scratch, excluding them from claimed counts.
 
 ## Watch and local checkpoint
 
-Singleton script: `.scratch/map-critic-v0215/watch.py`; session **83297**
+Singleton script: `.scratch/map-critic-v0215/watch.py`; session **33991**
 at this writing. Config, consumed events and all channel responses live in
 `.scratch/map-critic-v0215/watch/`. Discussion caught up by full-page overlap
-and all subsequent change events, latest consumed cycle **00:17:12 UTC**.
+and all subsequent change events, latest consumed cycle **00:32:12 UTC**.
 The resume window is **23:52:12 Sept8 → 02:52:12 Sept9**; re-arms preserve it.
 The prior 19:15–22:15 watch timed out normally and stays finished.
 
@@ -277,10 +280,11 @@ Add new owned issues and our eventual PR to this same watch. No crons;
 API polling at least300seconds, REST except the required discussion query.
 
 - Broad survey terminal **20381**, `.scratch/map-critic-v0215/survey.mjs`.
-- Roof re-check terminal **10932**, `roof-controls.mjs`; four yaw0 states
-  and yaw1 initial captured so far. Open all eight before verdict.
-- Focused coastal C1/C2/D1/D2 capture finished; all four opened. They need
-  a better trail-junction focus, as recorded in `observations.json`.
+- Roof re-check **10932** completed8/8, exit0; all opened and published.
+- Coastal junction **84915** completed2/2, both opened and published with
+  D1 approach context. Other first framing attempts remain scratch only.
+- `publish-survey.py` assembles only complete, individually inspected
+  whole/near recipe groups. Open the resulting sheets before publishing them.
 - Old ports4173/4174 are stale or older-baseline servers, not this pass.
   Older raw captures remain under `.scratch/map-critic-v0213/` and prior roots.
 - Applicable docs checks exclude ignored scratch without changing config:
@@ -295,6 +299,6 @@ for the already-closed survey. Every comment has the Critic header. No
 main push, game code, art changes, merges, model switching or QA counting.
 
 Next: publish any newly evidenced ticket before expanding the write-up;
-finish/review the 24-recipe survey and top-roof controls; bring this checkpoint
+finish/review the 24-recipe survey (top-roof verdict is posted); bring this checkpoint
 forward and submit the docs-only PR; follow specialist changes through real
 frames and keep the one bounded watch until its event or deadline.

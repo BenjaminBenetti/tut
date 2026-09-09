@@ -1,6 +1,6 @@
 # Handoff: QA
 
-Last updated: 2026-09-09 (main `9d9ea01`).
+Last updated: 2026-09-09 (main `407f182`, release v0.2.16).
 
 ## READ THIS FIRST
 
@@ -169,6 +169,61 @@ number into an explanation. Both are guarded: the palette by
 pinned only at unit level (`overwatch-handler.test.ts`,
 `mission-hud-views.test.ts:47`) — and it is the one action that reports its state
 correctly on three surfaces, so it is the thin spot to watch as #1029/#1030 land.
+
+### Second pass, on v0.2.16 (2026-09-09)
+
+**The loop is meant to be re-run per release, and the Director asked for exactly that** —
+the first critique was against a build three releases old. Findings for v0.2.16 are the
+second comment block on #1027; frames and logs in #1076, first-pass artefacts on main under
+`docs/design/diagnostics/1027/`.
+
+**The two questions the Executive Director asked by name, and the answers:**
+
+- **Does the squad strip cut the 473 px travel? No.** Action bar 473 px, unit card 678 px,
+  event log 675 px — all three unchanged from v0.2.15 — and the strip is the *furthest*
+  panel at 767 px. It removed the **number** of round trips, not their length.
+- **Do the refusal words cover every action? Every action-bar button, yes; movement, no.**
+  Five actions at zero AP each said `Rifle Squad has no action points left`. Right-click
+  movement said **nothing**, both at zero AP on an adjacent tile and at 2 AP on a tile 16
+  away.
+
+**The most useful thing I learned, and it generalises:** a partial fix can make things
+*worse* in the gap it leaves. Before #1044 nothing explained itself, so silence carried no
+information; after it, a player learns the interface talks and then reads silence as "that
+worked" — on movement, the action they use most. Look for that shape whenever a
+consistency fix lands: the exception becomes more expensive, not less.
+
+### The probe set, and what each one is for
+
+All in the session scratchpad, all throwaway, all reusable — rebuild them from here rather
+than from scratch:
+
+| probe | what it establishes |
+|---|---|
+| `baseline.mjs` | the preserve-list controls: travel numbers, first-click selection at every floor, `q`/`e` rotation frames, the reach-overlay frame, end-turn silence, roster presence |
+| `coverage.mjs` | presses every action-bar button while unavailable and records what was said — the refusal-coverage table |
+| `reveal2.mjs` | pointer reveal gone / squad reveal intact, by projecting **building footprint tiles** and hovering those |
+| `interior5.mjs` | click-versus-`invokeTile` adjudication, which separates "the picker lost the click" from "the tile is unreachable" |
+| `v16play.mjs` | a full play session driven through the squad strip: contact, ran dry, unit lost |
+
+**Take a baseline before a HUD change lands, not after.** #1041's acceptance said to preserve
+selection, rotation and the in-scene overlays; because I had measured them on the head before,
+I could show the overlay was **byte-identical** afterwards rather than asserting it looked fine.
+That is the whole value of the control set.
+
+### Traps this pass, all mine
+
+- **Do not press an action that is actually available and call the result a refusal.** I
+  pressed EXTRACT expecting "not in the zone"; the unit *was* in the zone, extracted, and left
+  the map — which crashed the probe and would have been a false "silent refusal" finding.
+  Check `is-unavailable` **before** pressing.
+- **A fix verified on one surface is not verified for the class** — see
+  [[verify-the-class-not-the-path]]. I confirmed #1035 on the hit-preview path and reported
+  the naming half closed; the command path still leaked `Unit "unit-1"`.
+- **Interiors are infantry-only by design** (`movement-service.ts:99`). Driving the Hammerhead
+  at a doorway gives 0 of 18 refusals that look exactly like the #1024 bug and are correct.
+- **`git reset --hard origin/main` resets whatever branch you are standing on.** I did it while
+  on my verification branch and lost the local pointer; the remote saved it.
 
 ## Latest run
 

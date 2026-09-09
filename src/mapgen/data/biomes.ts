@@ -127,6 +127,7 @@ export const BIOME_DEFINITIONS: Readonly<Record<BiomeId, BiomeDefinition>> = {
       { template: BuildingKindIds.WAREHOUSE, weight: 2 },
     ],
     roadSurface: SurfaceIds.ROAD,
-    trailSurface: SurfaceIds.DIRT,
+    // Stone keeps the rural route visible through natural sand, grass and dirt (#1043).
+    trailSurface: SurfaceIds.ROCK,
   },
 };

@@ -1,0 +1,65 @@
+{
+  "runtimeRepairCommit": "793099cdcc96cb4c9c12e28f05c2ba8eac4130af",
+  "testedCommit": "e5236339b060b3e3230f9b81121528414f70c41a",
+  "validationDate": "2026-09-09",
+  "checks": [
+    {
+      "command": "pnpm typecheck",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm lint",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm build",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm test --maxWorkers=4",
+      "exitCode": 0,
+      "passed": 2264,
+      "skipped": 1
+    },
+    {
+      "command": "pnpm test:sim",
+      "exitCode": 0,
+      "passed": 7
+    },
+    {
+      "command": "CI=true pnpm test:e2e --reporter=list",
+      "exitCode": 0,
+      "passed": 62,
+      "skippedOptInCapturesAndBenchmarks": 31,
+      "flaky": 0,
+      "durationMinutes": 4.8
+    }
+  ],
+  "renders": {
+    "viewsPerPhase": 7,
+    "phases": 2,
+    "independentBrowsersPerPhase": 2,
+    "allOpened": true,
+    "allRepeatedPngBytesEqual": true,
+    "beforeAfterControlPngsByteIdentical": 4,
+    "pageErrors": 0,
+    "assetFallbackWarnings": 0
+  },
+  "survey": {
+    "maps": 108,
+    "identicalCompleteMaps": 99,
+    "paintOnlyCoastalRuralMaps": 9,
+    "unchangedNonSurfaceMaps": 108,
+    "unchangedCompleteOffRoadTiles": 108,
+    "unchangedRoadSegments": 108,
+    "unchangedMetricsAndRelocations": 108,
+    "changedMapsRoadColumns": 1462,
+    "equalMaterialRoadsideEdgesBefore": 481,
+    "equalMaterialRoadsideEdgesAfter": 0
+  },
+  "notes": [
+    "The browser autosave-notice spec deliberately exhausts storage and logs its expected quota failure; no asset fallback was observed.",
+    "The checked runtime and test suite are the recorded branch source. Later main integration requires the Tech Lead merge-result gate.",
+    "Only evidence files are added after the tested commit; runtime, tests and capture helper are unchanged."
+  ]
+}

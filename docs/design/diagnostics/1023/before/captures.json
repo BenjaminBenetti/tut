@@ -1,0 +1,82 @@
+{
+  "sourceCommit": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+  "repeatedBrowsers": 2,
+  "records": [
+    {
+      "id": "pitched-yaw0-closed",
+      "pointer": [-10, -10],
+      "state": {
+        "pointerStrength": 0,
+        "pointerRadius": 3,
+        "pointerCentre": [0, 0, 0],
+        "ghostCount": 0,
+        "ghostStrength": [0, 0, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "9b11c1753fec1457cbb1ac7ebec000e3415aa8f214de9cdb40685829ed26ad50"
+    },
+    {
+      "id": "pitched-yaw0-hover",
+      "pointer": [760, 405],
+      "state": {
+        "pointerStrength": 1,
+        "pointerRadius": 3,
+        "pointerCentre": [
+          2.0000000000000084, 0.8750000000000122, -101.23743686707647
+        ],
+        "ghostCount": 0,
+        "ghostStrength": [0, 0, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "f181185205139d45f3ca3f2f85d7669242ef1f87a3fb7de861104f3b1acb18d9"
+    },
+    {
+      "id": "pitched-yaw0-squad",
+      "pointer": [-10, -10],
+      "state": {
+        "pointerStrength": 0,
+        "pointerRadius": 3,
+        "pointerCentre": [0, 0, 0],
+        "ghostCount": 1,
+        "ghostStrength": [1, 0, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "8252ee24f3c90830812434ca3dac5e25b450d7d324c47426bff97817c9e60f0f"
+    },
+    {
+      "id": "flat-yaw2-closed",
+      "pointer": [-10, -10],
+      "state": {
+        "pointerStrength": 0,
+        "pointerRadius": 3,
+        "pointerCentre": [0, 0, 0],
+        "ghostCount": 0,
+        "ghostStrength": [0, 0, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "12c18fda1c716877aec0254a1b45cbf3926348944c25468d6522a3c2cdc0c382"
+    },
+    {
+      "id": "flat-yaw2-hover",
+      "pointer": [760, 405],
+      "state": {
+        "pointerStrength": 1,
+        "pointerRadius": 3,
+        "pointerCentre": [
+          1.9999999999999938, 0.8749999999999893, -101.23743686707644
+        ],
+        "ghostCount": 0,
+        "ghostStrength": [0, 0, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "0ba2f3864216eec1acee81d1c52cee48a7ab63cfa8502c7ea41510ed82bea00b"
+    },
+    {
+      "id": "flat-yaw2-squad",
+      "pointer": [-10, -10],
+      "state": {
+        "pointerStrength": 0,
+        "pointerRadius": 3,
+        "pointerCentre": [0, 0, 0],
+        "ghostCount": 2,
+        "ghostStrength": [1, 1, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "49728e7f21a2c091bac5876dc36fbbc00b6e78e20cfafe3b6bb433140981ecb8"
+    }
+  ]
+}

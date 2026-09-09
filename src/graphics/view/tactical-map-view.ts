@@ -52,8 +52,6 @@ import { RoadModelFactory } from "../service/road-model-factory";
 import { ROAD_STYLES } from "../data/road-styles";
 import type { GhostUniforms } from "../service/ghost-cutaway";
 import { applyGhostCutaway } from "../service/ghost-cutaway";
-import type { PointerCutawayTarget } from "../model/pointer-cutaway";
-import { buildingInspectionCentre } from "../service/building-inspection-centre";
 import {
   CONNECTOR_COLOURS,
   FALLBACK_HOOK_COLOUR,
@@ -323,8 +321,6 @@ export class TacticalMapView implements Disposable, TilePicker {
   /** Built once per map: where each tile sits for the cut. */
   private tileCuts: Map<VisionTileKey, TileCut> | undefined;
   private modelled = false;
-  /** Invalidates stationary pointer picks after model loading or floor cuts. */
-  private inspectionRevision = 0;
   /** Retain an early floor cut when asynchronously loaded art adds a new visual level. */
   private maxLevel: number | undefined;
   private readonly unexploredFog: UnexploredFog;
@@ -374,7 +370,6 @@ export class TacticalMapView implements Disposable, TilePicker {
    */
   setMaxLevel(maxLevel: number | undefined): void {
     this.maxLevel = maxLevel;
-    this.inspectionRevision++;
     for (const [level, group] of this.levelGroups) {
       group.visible = maxLevel === undefined || level <= maxLevel;
     }
@@ -824,7 +819,6 @@ export class TacticalMapView implements Disposable, TilePicker {
     matrices: readonly Matrix4[],
     keys: readonly VisionTileKey[],
   ): void {
-    this.inspectionRevision++;
     const tiles: InstanceTiles = {
       matrices: matrices.map((m) => m.clone()),
       keys: [...keys],
@@ -869,50 +863,6 @@ export class TacticalMapView implements Disposable, TilePicker {
   // ===========================================
   // TilePicker
   // ===========================================
-
-  /** The version of the geometry/level visibility used for inspection picking. */
-  get cutawayRevision(): number {
-    return this.inspectionRevision;
-  }
-
-  /**
-   * Pick the foremost visible physical map surface, using model ownership
-   * rather than a walkable roof coordinate. Retired placeholders and hidden
-   * levels must not intercept the ray; raycasting ignores shader discards,
-   * so opening a roof cannot make the same stationary pointer lose its target.
-   */
-  pickCutaway(ndc: Vec2, camera: Camera): PointerCutawayTarget | undefined {
-    this.root.updateMatrixWorld(true);
-    this.raycaster.setFromCamera(new Vector2(ndc.x, ndc.y), camera);
-    const meshes: Object3D[] = [];
-    this.root.traverseVisible((object) => {
-      if (object instanceof Mesh) meshes.push(object);
-    });
-    const hit = this.raycaster.intersectObjects(meshes, false)[0];
-    if (
-      !hit ||
-      !(hit.object instanceof InstancedMesh) ||
-      hit.instanceId === undefined
-    )
-      return undefined;
-    const key = this.instanceTiles.get(hit.object as InstancedMesh)?.keys[
-      hit.instanceId
-    ];
-    if (key === undefined) return undefined;
-    const tile = this.index.get(
-      key % this.map.width,
-      Math.floor(key / (this.map.width * this.map.depth)),
-      Math.floor(key / this.map.width) % this.map.depth,
-    );
-    const building = this.map.buildings.find((b) => b.id === tile?.buildingId);
-    if (!building) return undefined;
-    const centre = buildingInspectionCentre(
-      building,
-      hit.point,
-      this.raycaster.ray,
-    );
-    return centre ? { buildingId: building.id, centre } : undefined;
-  }
 
   /**
    * The tile under a normalised device coordinate: the nearest hit on

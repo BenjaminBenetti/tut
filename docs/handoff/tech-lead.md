@@ -1,6 +1,6 @@
 # Handoff: Tech Lead
 
-Last updated: 2026-09-08 ~22:30 UTC (session 5; roof regression fixed on main by #1013, revert withdrawn; #1007 contours merged; gate hardened; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
+Last updated: 2026-09-09 ~02:30 UTC (session 5; the 22-PR sweep, batch gating, the #1036/#1042 integration break; see §0). Read `docs/process/roles/tech-lead.md` first; the complexity rubric is in it since #189.
 
 ## 0. READ THIS FIRST — the hold is lifted (2026-09-08); the Map Quality Loop leads
 
@@ -17,6 +17,64 @@ issue/PR thread; the terminal composer often never submits. `monitor.sh`
 polls it once per tick (`gh api graphql … discussion(number:968){comments
 (last:10)…}`, one GraphQL call) and prints an `ORDERS` line on change.
 Direct seats in their GitHub thread, never only in a terminal.
+
+**09-09 early morning sweep (read this; the queue was 22 PRs at 01:00):**
+- **Merged, all with the sha guard:** #1018, #1033, #1038, #1039, **#1032
+  `166876d`** (Executive Director ruling: pointer cutaway removed, squad
+  reveal kept), **#1048 `8451a08`** frontage modules (fog frames byte-
+  identical to my render), #1037, #1049 `ba4d7b1`, #1036 `ed5d722`
+  interior-movement real-click spec, #1050 `6a552d6`, **#1052 `8d20dd4`**
+  urban fences, #1025 `cd37ce9` flat-map/roof control (#978), and on the
+  Director's instruction while #1025's e2e ran: #1020 `5a1700b` debrief
+  payout, #1034 `6f5be35` quiet movement log, #1009 `22594db` drop line
+  under cut units, #1031 `10d3225` placeholder-art refusal, #1022 `938837a`
+  paired difficulty rig, #1055 `8e9c8fb` coastal trails, **#1045 `0a47be2`**
+  refusal names; handoff #1056 `4788ed0`.
+- **Two accepted PRs broke each other.** #1036 pinned seed 4242's
+  `building-3` doorway `{9,2,29} e`; #1042 reserves the dropship site before
+  lots, so the same seed's `building-3` moved to `{22,2,11} s`. Head CI on
+  both was green (each predates the other on `main`); only the merged-tree
+  gate saw it. MapGen fixed it the right way (spec derives the entrance at
+  runtime, positions door-relative) rather than re-pinning. Lesson: **gate on
+  the merge result, always**, and prefer fixtures that derive from the map
+  over pinned coordinates.
+- **Batch gating** (`gate-batch.sh B1 B2 …`): merges `main` + every listed
+  branch in order into one throwaway branch and runs the full gate once. The
+  tree it tests is the tree `main` has after the sequential squashes, so it
+  is no weaker than one gate per PR and catches cross-PR breaks. Truly
+  parallel gates are NOT safe: each tests against a `main` missing the
+  others, and two e2e runs collide on the preview port. Probe conflicts
+  without touching the tree: `git merge-tree --write-tree origin/main
+  origin/B`, chained with `git commit-tree` for a batch.
+- **Landing ungated on the Director's word:** the seven above landed on
+  head-CI green + clean merge + `tsc -b` on the chained merge in a scratch
+  worktree (symlinked `node_modules`, call `.bin/tsc` directly), with the
+  full gate run on `main` immediately after. That was the Director's
+  explicit call to shrink the queue during a wait; it is not the default.
+- **I did it again: deleted #1045's branch before retargeting #1044 and
+  #1047**, which auto-closed both. Restore the ref (`POST git/refs`),
+  reopen, `PATCH base=main`, delete again. Children of a squashed parent
+  then show add/add conflicts on the parent's files: the author rebases with
+  `git rebase --onto origin/main <parent-head> <branch>`. **Retarget first,
+  delete second**, every time.
+- **`merge-one.sh PR SHA "note"`** re-reads the head, refuses if it moved,
+  squash-merges with the sha guard, deletes the branch, posts the record.
+- **Open at handoff time:** #1042 (dropship sites, Director accepted
+  `9b8575c`, conflicts after #1052; MapGen rebases after #1053; on the new
+  head run `CAPTURE=1 pnpm exec playwright test e2e/dropship-site.spec.ts
+  --workers=1` on the merged tree and compare `mission/arrival.png` with the
+  committed frame before merging — the Director's explicit ask); #1053 and
+  #1046 in the batch gate; #1054 (squad strip, accepted `56c2f77`, conflicts
+  in `tactical-scene-host.ts`, author rebases); #1044 (refusal notices,
+  accepted `0429ab0` after eng-4 rerouted through `describeRefusal`,
+  rebase owed); #1047 (stacked, red on `tactical-hud-view.ts:1108`
+  TS2554 4 args, rebase owed); #1051 (stacked on #1044); #1057 docs, merge
+  on CI green.
+- **Still on my list:** the local browser-test budget (third overrun today,
+  Director on #1053), and the cross-domain import nit on #1053
+  (`mapgen/service/map-validator.ts` importing `overworld/model/deployment`;
+  the Director accepted the derivation, so note it for the next ADR pass,
+  not a block).
 
 **09-08 afternoon, after the standing orders (all gated, merged with the
 sha guard; frames judged by the Director where the player sees a change):**

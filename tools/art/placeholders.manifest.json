@@ -1402,5 +1402,19 @@
     "quality": "final",
     "triangles": 324,
     "bytes": 24932
+  },
+  {
+    "id": "prop.bench",
+    "category": "props",
+    "path": "assets/models/props/prop-bench.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.45,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 180,
+    "bytes": 14932
   }
 ]

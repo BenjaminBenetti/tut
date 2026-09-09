@@ -113,6 +113,7 @@ export const TERRAIN_TRANSITION_SOURCE =
  * Style guide §7, `prop kind → model id`. `car` takes the 1×1 compact;
  * the 2×1 `prop.car-sedan` is for hand-placed wrecks and mapgen never
  * emits it.
+ * Benches use the contextual yard definition, so they never enter the generic ground pool.
  */
 export const PROP_MODELS: Readonly<Record<KnownPropKindId, ModelAssetId>> = {
   [PropKindIds.CAR]: "prop.car-compact",
@@ -122,8 +123,7 @@ export const PROP_MODELS: Readonly<Record<KnownPropKindId, ModelAssetId>> = {
   [PropKindIds.DUMPSTER]: "prop.dumpster",
   [PropKindIds.SHELVING]: "prop.shelving",
   [PropKindIds.TABLE]: "prop.table",
-  // Development placeholder; final #960 evidence requires Art's outdoor bench.
-  [PropKindIds.BENCH]: "prop.table",
+  [PropKindIds.BENCH]: "prop.bench",
   [PropKindIds.FENCE]: "prop.fence",
   [PropKindIds.BOULDER]: "prop.boulder",
   [PropKindIds.TREE_PINE]: "prop.tree-pine",
@@ -221,7 +221,7 @@ export function surfaceModel(surface: SurfaceId): ModelAssetId | undefined {
 /** The model for a prop kind, or undefined for one with no art registered. */
 export function propModel(kind: PropKindId): ModelAssetId | undefined {
   return Object.hasOwn(PROP_MODELS, kind)
-    ? PROP_MODELS[kind as KnownPropKindId]
+    ? PROP_MODELS[kind as keyof typeof PROP_MODELS]
     : undefined;
 }
 

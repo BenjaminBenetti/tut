@@ -3,39 +3,45 @@
 > Long-lived role. Replacement: read this top to bottom, then `docs/process/roles/producer.md`.
 
 <!-- digest:start -->
-## Status Digest (2026-09-09 01:15 UTC)
+## Status Digest (2026-09-09 02:24 UTC)
 
-**Normal sequencing resumed; focus remains robust tactical UX and map generation.** The Tech Lead is sweeping the 22-PR queue under [Director order 18359273](https://github.com/BenjaminBenetti/tut/discussions/968#discussioncomment-18359273). Latest release remains **v0.2.15**; new merges are unreleased. First confirmed sweep merges: **#1018, #1033, #1038**. The Producer is tracking the original queue for the Director's release digest; this is an interim snapshot, not a completed sweep.
+**Focus: robust tactical UX and map generation; normal sequencing, no hold.** The 02:12 board audit is reconciled with merges through 02:20 UTC. Main is **cd37ce9**; latest tag remains **v0.2.15**. The restarted sweep has merged **17/22 original PRs plus #1052, #1055 and #1056**. The Director's post-sweep release digest remains due; these new main changes are not yet tagged. **20 open issues: 13 seat-owned, seven unowned.** The 564-card audit found no closed item outside Done, open item in Done, missing open issue or seat/Owner mismatch.
 
-| Seat | Active / next / review |
+| Seat | Current work |
 |---|---|
-| eng-3 · Astra 6/xhigh | #1024/#1036 In Review; available for suitable high-complexity work |
-| eng-4 · Opus 5/max | **#1041 In Progress**, Director-bounded squad readiness/off-screen recovery; #1030/#1044 and #1029/#1051 submitted |
-| eng-5 · Opus 5/max | #1035/#1045 and #1040/#1047 submitted; implementation slot available, review follow-ups remain |
-| MapGen · Astra 6/xhigh | #1006 active, repair/evidence pushed; #1043 supporting cause assessment next, then latent #984/#1005/#591. #911/#1042 submitted; #960 outdoor arrangement still owed |
-| Art · Astra 6/xhigh | **#1043 In Progress / primary claim**, material/readability side; #960 frontage kit #1048 accepted/In Review. **#450 stays deferred** |
-| QA / Critic | QA #1027 delivered through #1038; overwatch guard #1046 In Review. Critic active, four findings open of five: #960/#1006/#1043/#1005 |
+| eng-3 · Astra 6/xhigh | **#869 In Progress**, explicit Director routing; [MapGen approved](https://github.com/BenjaminBenetti/tut/issues/869#issuecomment-5594641108): preserve pass order, clear only the exact crossed half-wall, retain fence/paved-edge controls |
+| eng-4 · Opus 5/max | #1044 repair **accepted at 0429ab0**, now needs rebase after #1045 squash; #1051 follows. #1030/#1044, #1029/#1051 and #1041/#1054 are built/In Review |
+| eng-5 · Opus 5/max | **#1035 In Progress, partial**: typed command-refusal cause still needs carrying to the UI; formatter/hit-preview #1045 merged; squad identity #1047 remains In Review |
+| MapGen · Astra 6/xhigh | **#960 outdoor arrangements In Progress**, #1042 rebase follows #1053, then the combined gate. #984/#1053 submitted; #1006/#1052 Done |
+| Art · Astra 6/xhigh | **#1005 In Progress**, pickup confirmed for the water-box repair; one bench supports MapGen #960. #1043/#1055 Done; #450 stays deferred |
+| QA / Critic | QA critique #1027 Done, overwatch guard #1046 In Review. Critic has **two** open findings: #960/#1005; merged-main cutaway/frontage checks delivered |
 
-**Unowned (no seat):** #447, #673, #701, #712, #734, #760, #787, #869. #1041 is now claimed following the Director's scope ruling, not waiting for a sizing gate. **Real blocks:** #447 hive decisions; #734 ED difficulty targets; #760 behind #447. #787/#869 are Backlog; #701/#712 specialist Ready; #450/#673 deferred. No production hold or new M3 decomposition.
+**Unowned:** #447, #673, #701, #712, #734, #760, #787. **Real blocks:** #447 hive decisions; #760 behind #447; #734 ED difficulty targets and deferred focus. #701/#712 are specialist Ready work; #787 Backlog; #673 deferred. #869's specialist approval is satisfied, not a remaining block. No account assignees, sizing gate or new M3 decomposition.
 
-**Release risks:** stacks must integrate onto main in order: #1032→#1048, #1045→#1047, #1044→#1051; #1037 is being rebased/retargeted after merged #1018. #960 remains partial after the frontage kit: outdoor arrangement is not delivered by #1048. #1006 changes cover distribution; no claim of equal tactical value. Accepted PRs still require current-head gates; the Director cuts the tag after the sweep.
+**Delivery / risks:** main now has pointer removal, frontage kit, reliable interior clicks and urban fence boundaries. #1042's doorway fixture is repaired; a new conflict requires rebasing after #1053, then Tech Lead re-gates and renders arrival. #1044's name repair is accepted; #1035's separate command-error path remains. #960 stays partial after its kit merge. See the ledger below for pending PRs and measured map costs.
 
-**Sequencing:** take the next suitable in-focus ticket after submission; keep review attribution and one active implementation. #793 is Done; difficulty #734/#1014, #450/#673 and post-mission #740 yield without cancellation. Defects found in passing are filed that day. Producer Astra 6/high coordinates #1026 and one bounded watch.
+**Milestones, non-PR closed/total:** Map Generation 46/53 · Tactical Feel 44/51 · Tech Debt 11/12. Outside-focus work yields without cancellation; #793 is already Done. Newly encountered defects still get filed that day. Producer Astra 6/high owns #1026 and one bounded watch.
 
 **Executive Director:** “So I think things are going well. Just keep at it.”
 <!-- digest:end -->
 
-## Delivery and evidence detail
+## Merge sweep and evidence ledger — interim 02:24 UTC
 
-**Map loop:** the Critic's current-main re-checks accept #945's natural contours, #959's temperate trails and #978's intact clamped-top roof. New coastal #1043 preserves those controls rather than reopening them. Art now carries its material/readability work; MapGen's supporting assessment follows active #1006. The urban-fence repair has 16 published before/after frames, accepted rural byte-identical controls, and a 108-map comparison: urban singletons 2,454→0, panels 2,496→2,494. Mean cover adjacency falls 14.05%→13.23% in towns and 11.50%→10.90% in cities; equal-looking panel totals do not imply equal tactical value. Director judgment and merged-main Critic re-check remain required.
+The initial cohort is the 22 PRs present at the [resume order 18359273](https://github.com/BenjaminBenetti/tut/discussions/968#discussioncomment-18359273). Count later arrivals separately so a moving queue does not obscure what happened. Verify main ancestry and the actual tag before calling anything released.
 
-**Partial delivery:** #1048 submits the six-module frontage kit for #960, Director-accepted at d546637, with the real scene/fog/layer controls and exact rural control. It deliberately does not close #960: use-specific outdoor arrangement remains due from MapGen. #911 generated placement is submitted in #1042; its model alone was already in v0.2.15. Consult the final placement PR for wider-sweep evidence rather than treating the earlier nine snowy fallback cases as outstanding by assumption.
+**Merged original cohort (17):** #1009, #1018, #1020, #1022, #1025, #1031, #1032, #1033, #1034, #1036, #1037, #1038, #1039, #1045, #1048, #1049, #1050. Runtime changes include above-cut unit tethers, casualty-free payout emphasis, movement-free event logs, readable refusal names/hit previews, pointer removal with squad reveal retained, the frontage kit and reliable highlighted interior movement. Capture fallback rejection, paired difficulty measurement, the flat-map/roof control and handoff/critique records also landed. **Additional merged:** #1052 urban fence boundaries, #1055 coastal trail readability and #1056 Art handoff. Every observed sweep merge commit is verified as an ancestor of main cd37ce9; no new release tag is claimed.
 
-**Tactical UX:** QA #1027's critique has merged in #1038; three findings remain tracked across #1041, #1035/#1040 and #1030, separate from the Critic cap. The Director has bounded #1041: see unspent AP without inspecting each unit, recover an off-screen selection, and make unspent-unit end turn non-silent. Eng-4 owns implementation and design choice, with no additional gate. #1044/#1051 submit the shared refusal/completed-action notification path; #1045/#1047 submit readable names and distinct squad attribution. #1034 removes movement from the log. Integrate the naming work before declaring the final legibility pass shipped.
+**Original cohort still pending:** #1042, #1044, #1046, #1047, #1051 (roughly 79–117 minutes old at 02:24). **Additional submitted:** #1053 capacity contract, #1054 squad readiness/recovery, #1057 merged-main Critic evidence. This handoff is a further docs publication. The Director's final release digest remains due after the Tech Lead finishes the sweep.
 
-**Accepted evidence:** #1032's pointer-removal acceptance carries to repaired spec head 212f953; production code and accepted frames are unchanged, and CI passed. #1036's movement proof establishes three right-click orders/final destinations (four tile steps), not four orders. #961's no-op and #978's distinct flat-map/roof control are delivered and accepted; #1019 is closed by Director order even while #1025 awaits merge. #1009's tether, #1020's corrected payout treatment and #1022's difficulty measurement preparation remain submitted review work until the sweep lands them. #1031 rejects placeholder-art captures while retaining gameplay fallback.
+**Specific gates:** #1042's rebase preserves frontages and dropships, but its combined gate with #1036 failed because seed 4242's building moved. Director comment 5594605022 requires deriving the actual entrance/relative positions, preserving the three legal moves, unexplored entry and floor controls. That fix is pushed at 9b8575c and Director acceptance carries; #1052 then introduced new conflicts, so Tech Lead requires another rebase after #1053, followed by the combined-runtime arrival frame and full gate. Unchanged historical PNGs are evidence-file preservation, not a re-render of the new runtime. #1044 now uses the shared resolver, includes its new Interact error kind, and has all four refreshed frames accepted at 0429ab0. After #1045 squash-merged, Tech Lead retargeted #1044 to main and requested rebasing only its own commits to resolve conflicts; eng-4 then owes the #1051 rebase. The fixed-list formatter guard missed the newly added naming kind; the Director requested stronger coverage from eng-5. #1045 merged but deliberately covers only formatter/hit preview: #1035 remains open for the live command-error/status-line leak. Eng-5 is authorized to finish that portion with a backward-compatible typed-cause boundary; core stays independent of tactical types, with Tech Lead review. #1047 now includes the initially missed tactical-card identity; its live two-squad collapse reproduction and corrected distinct-template fixtures are recorded.
 
-**Unowned and residuals:** #447/#734 decisions and #760's dependency remain real. #701/#712 are specialist Ready work; #787/#869 are Backlog. The #869 parapet-crossing subclaim measured 2,046→0 but retirement still needs a ruling. #735 is Done at 182/187 guards with five accepted exceptions; #793 is Done with its profiling limits retained. No new M3 decomposition. Milestone totals in the historical audit below are dated records; recompute non-PR closed/total counts for the final post-sweep digest rather than using milestone API counters.
+**New reviewed work:** Director accepted #1053's nonvisual capacity proof (four-mech old-valid map cannot seat eight; duplicate coordinates also inflated capacity). All 108 complete maps stay identical and zones retain sixteen spaces; the local browser timing limits are disclosed, not a clean full-run claim. #1054 meets all three squad-awareness criteria; whether the strip eventually moves closer to the scene is an Executive Director taste question explicitly not blocking this PR. Verify shared naming/import integration against #1047/#1051. #1055's coastal stone trail is Director-accepted and Critic-positive: fourteen frames repeat, four control pairs are byte-identical, 99/108 maps identical and nine coastal rural maps differ only in route paint. Its inspected coastal render costs +20 draw calls/+12,960 triangles/+one texture, with no extra shader program.
+
+**Current map work:** #960's merged frontage kit is independently re-checked on main; surrounding yard objects still need use-specific arrangement. MapGen has started that remaining work, handling #1042's integration rebase after #1053. #1005's completed diagnosis at 0b49492 isolates internal ground-box faces; the retained water boxes sit above the water GLB, and a diagnostic top-only surface removes the grid while preserving coast/shadow. No generation grading or new asset was established as necessary. Art has confirmed pickup of the minimal graphics repair and final reported/control frames. Its bounded bench support for #960 is a separate asset PR: MapGen retains the prop definition and controlled placement so registration alone cannot reroll generic yards. #869 is eng-3's explicit Director assignment: MapGen comment 5594641108 supersedes the old ordering proposal because the contextual fence pass requires kerbs. Preserve order, clear only an accepted ramp's exact crossed half-wall at the relevant endpoint heights, retain flanking/full walls and the paved-edge guarantee, and preserve the now-merged urban fence behavior. The old raised-platform parapet population measured 2,046→0; do not present it as current broken ramps.
+
+**Map costs and retained evidence:** #1052 removes 2,454 urban singletons while retaining 2,494/2,496 panels; mean cover adjacency changes 14.05%→13.23% town and 11.50%→10.90% city. Both rural controls are byte-identical; the waterfront frame contains repaired fragments, while its quay/rail/kerb remain preserved. #1042's landing space reduces buildings/props and cover: the Critic independently accepts the largest-loss coastal example (six→four buildings), without certifying the population or post-integration image. #961's no-op and #978's flat-map/roof control are accepted; #1019 was explicitly closed before #1025, whose evidence PR has now also merged. #735 is Done with five accepted guard exceptions; #793 is Done with its profile's limits retained.
+
+**Other milestone totals, non-PR closed/total:** M0 Foundation 13/13 · M1 Overworld 65/65 · M2 Basic Missions 49/50 · M3 Mission Variety 1/4 · Arsenal 2/3 · Bestiary 1/1. Counts were enumerated from repository issue records, excluding PRs; no open issue lacks a milestone. Director closes milestones.
 
 ## Restart audit and owner ledger (2026-09-08)
 
@@ -43,63 +49,19 @@ The restart audit compared all open issues and 453 starting project cards agains
 
 **Director corrections govern this record.** The hold ended at restart. GitHub account assignments were removed; ownership is a `seat:` label, with board Owner retained as the responsible role. The Director routed #961 directly to eng-5 with no sizing prerequisite. [Correction 5590197490](https://github.com/BenjaminBenetti/tut/issues/950#issuecomment-5590197490) establishes that #950 was finished and In Review, not queued behind #961; #962 has since merged. Retain its seat attribution. Check the open PR list before moving work backwards. Completed work in review does not compete for the active slot. Older process text requiring a pre-start tier or only one non-Done label is superseded by these explicit instructions.
 
-The role column below records routing responsibility; only rows with a `seat:` label count as owned. Specialist work does not take an engineer seat: the existing specialist roles use `seat:mapgen`, `seat:art-director` and `seat:qa`; Producer coordination uses `seat:producer`.
+Current ownership, queued work and review dependencies are recorded above. The former restart table is removed because its changing rows contradicted the live digest; Git history preserves that dated audit.
 
-| Issue(s), including audit completions | Accountable agent | Remaining work / real gate |
-|---|---|---|
-| #937 / #943 | Art Director, completed | Done; corrected fog frames independently verified, acceptance and CI green |
-| #947 p1 | `seat:art-director`, completed | Done via #982; accepted pointer reveal, floor+0.70 anchor |
-| #917 p2 | MapGen, completed | Done via #973; Critic nine-frame re-check reports improvement, 5591954741 |
-| #945 p2 | `seat:mapgen`, completed | Done via #1007 at c6be260; Critic merged-code re-check due |
-| #959 p2 | `seat:mapgen`, completed | Done via #1016, released v0.2.15; Critic re-check due |
-| #960 p2 | `seat:art-director`, MapGen support | Resumed In Progress at 8e28fad (six modules); #1032 submitted/accepted, final integration/arrangements remain |
-| #911 p2 | `seat:mapgen`, Art model delivered | Partly complete, placement In Progress; #1008 model merged, generated support/site proof still owed |
-| #457 / #955 | eng-4, completed | Done; Director accepted the opposite-failure controls and the green gate passed |
-| #753 / #948 | eng-5, completed | Merged/Done; live and reload city lookup proved, correcting the migration premise |
-| #949 p2 | `seat:eng-4`, completed | Done via #989; layout separate in #991 |
-| #991 p3 | `seat:eng-4`, completed | Done via #998; rail layout corrected without renaming spawner |
-| #992 p3 | `seat:eng-4`, completed | Done via #994; shared-targeting-guard cleanup |
-| #950 p2 | `seat:eng-5`, completed | Done via #962; retained attribution, schema-v17 migration and city-name rendering |
-| #961 p1 | `seat:eng-5`, completed | Done via #977; one storey/two engine layers; hillside limit in #978 |
-| #978 p1 | `seat:eng-5`, completed | Done via #999 under explicit Director control substitution; flat-map/roof control Director-accepted in #1025; #1019 Done, evidence PR merge pending |
-| #981 p3 | `seat:eng-5` | In Review #1009; rebased 88278c0, Director accepted, local TL gate green, merge pending |
-| #996 p1 | `seat:eng-3`, completed | Done via #1013 at 086cab1, released v0.2.15; roof correction and reliable captures |
-| #984 p2 | `seat:mapgen` | Ready after #1006; align map/deployment capacity contract, failing minimal-map test |
-| #1006 p2 | `seat:mapgen` | Ready after #911; isolated urban panels, city proof and town corroboration, preserve rural boundaries |
-| #1005 p3 | `seat:mapgen`, Art support | Ready after #984; water-surface seam diagnosis, separate from #945 |
-| #735 p2 | `seat:eng-4`, completed | Done after A/B/C merges; 182/187, all five exceptions accepted; released through v0.2.15 |
-| #450 p2 | `seat:art-director` | Backlog / focus:deferred; true-coordinate overworld Earth redraw, retained claim, not automatic after #960 |
-| #594 p2 | `seat:eng-4`, completed | Done via #1002; Art settled glyph as utility category, selector carries fitted/empty state |
-| #591 p2 | `seat:mapgen` | Ready after live queue; current-scale evidence and MapGen/Critic tree-opacity choice, separate from ED ambush ruling |
-| #734 p2 | Director, no seat claim | Blocked on Executive Director difficulty targets, also focus:deferred; no calibration authorization |
-| #751 p2 | `seat:eng-3`, completed | Done via #972; truthful defeat copy, existing rule preserved |
-| #869 p2 | MapGen | Backlog latent kerb/connectivity hazard; old parapet crossing population now measured zero by QA #974; retirement ruling pending |
-| #514 epic | Producer, completed | Done: all 16 children verified closed after #955 |
-| #793 p3 | `seat:eng-4`, completed | Done; residual profile 5592431547 delivered, allocation/CI repairs shipped v0.2.6 |
-| #1014 p3 | `seat:eng-4` | In Review #1022 at 5e530e1; completed preparation, focus:deferred, #734 stays ED-blocked |
-| #740 p3 | `seat:eng-5` | In Review #1020, focus:deferred; treatment accepted at 377ccb5, new a0197db before frame, factual prose correction verified |
-| #1019 p2 | `seat:eng-5`, completed | Done by Director acceptance of #1025; real flat-map/roof control delivered, evidence PR merge pending |
-| #1021 p2 | `seat:eng-4` | In Review #1031 at 6c0656a: fail capture acceptance on actual asset fallback |
-| #1023 p1 | `seat:art-director` | In Review #1032; Director accepted cc80d05, capture-CI repair before merge |
-| #1024 p2 | `seat:eng-3` | In Review #1036 at e6cd466; Director accepted, three recorded legal moves plus fog/priority controls, merge paused |
-| #1026 p2 epic | `seat:producer` | In Progress coordination; five native children #1027–#1030 and #1035; close only when all scope delivered |
-| #1027 p2 | `seat:qa` | In Progress assigned; actual mission play critique, ranked evidence, five open findings cap; pickup unconfirmed |
-| #1028 p2 | `seat:eng-5` | In Review #1034 at de0b758; real movement removed from log, consequence events retained |
-| #1030 p2 | `seat:eng-4` | In Progress, medium; refusal inventory and explicit feedback contract |
-| #1029 p2 | `seat:eng-4` | Ready after #1030 contract, medium; above-unit action indicators, no movement notification |
-| #1035 p2 | `seat:eng-5` | In Progress, medium; canonical refusal text with UI names, typed diagnostic ids preserved, coordinate #1030 integration |
-| #673 p3 | Art Director, no seat claim | Backlog / focus:deferred; four mech-bay stat glyphs plus stat-sheet use |
-| #701 p3 | MapGen | Ready palm clustering follow-up; respect prior revert and refresh paired validation |
-| #712 p3 | MapGen, no claim | Ready after live queue; MapGen/Critic decide and record temperate-boulder intent |
-| #787 p3 | MapGen | Backlog future M3/ED overpass brief; scheduling is not a technical block |
-| #760 p3 | MapGen | Blocked on #447 hive decisions before prototype |
-| #447 p3 | MapGen, Director decisions | Crash-site prototype shipped; hive dimensions/passability still needed |
+**Retained completion record:** #937→#943; #917→#973; #945→#1007; #959→#1016; #457→#955; #753→#948; #949→#989; #991→#998; #992→#994; #950→#962; #961→#977; #978→#999; #996→#1013; #594→#1002; #751→#972. #514 closed after all sixteen children were verified closed. Later completions and evidence limits are in the sweep ledger above.
+
+**Layer vocabulary:** #961 resolved the ADR 0008 fork: one storey is **two engine layers** (`STOREY_LAYERS=2`). Subsequent tickets must distinguish storeys from layers. The hillside limit was separate #978 work.
+
+**Queued specialist work:** #591 remains MapGen's current-scale tree-opacity assessment after live repairs, separate from the Executive Director's ambush ruling. Unclaimed #701 is the palm-clustering follow-up, #712 needs a recorded temperate-boulder decision, and #787 awaits a future M3/Executive Director overpass brief. #450 and #673 are deferred art work. #1014/#1022 difficulty measurement preparation and #740/#1020 payout treatment have merged; #734 still needs Executive Director targets and is deferred.
 
 **Scope correction:** PR #948 distinguishes StartMission from FinishMission and reports live/reload render proof; the old #753 migration premise was incorrect according to that evidence. Tech Lead accepted it in merged #948.
 
-**Evidence limits.** The 1.6-unit VFX heuristic is gone through #955; the separate kerb/connectivity repair hazard remains. QA #974 measured the old parapet-crossing population at zero after platform removal; retirement ruling is requested on #869. Main now has radius 4 / opacity 0.175 through #943; cursor-driven reveal #947 has also shipped through #982 in v0.2.14. The Critic's post-#936 height verdict is bounded to the inspected infantry-accessible blocks; it does not erase MapGen's measured loss of mech-accessible outdoor height. This pass changes process records only, not game code or visual acceptance. Historical measurements and shutdown instructions below are superseded by this restart record.
+**Evidence limits.** The 1.6-unit VFX heuristic is gone through #955; the separate kerb/connectivity repair hazard remains. QA #974 measured the old parapet-crossing population at zero after platform removal; the Director has now routed the distinct surviving repair hazard in #869 to eng-3 with MapGen approval. Main now has radius 4 / opacity 0.175 through #943; cursor-driven reveal #947 shipped through #982 in v0.2.14 and is now removed by #1032; squad reveal remains. The Critic's post-#936 height verdict is bounded to the inspected infantry-accessible blocks; it does not erase MapGen's measured loss of mech-accessible outdoor height. This pass changes process records only, not game code or visual acceptance. Historical measurements remain attributed to the revision that produced them.
 
-## Current watch operation (2026-09-08)
+## Current watch operation (2026-09-09)
 
 [Discussion #968](https://github.com/BenjaminBenetti/tut/discussions/968) is the standing-orders channel: all comments are relevant to every seat. Work-scoped direction stays in issue/PR threads; the terminal starts or resumes the CLI. The studio process and every role brief now carry the channel.
 
@@ -109,4 +71,6 @@ The session watcher is `.producer/watch.py` (git-ignored workspace scratch). The
 
 **Publication cadence:** normally push a handoff PR once and leave its head fixed until CI finishes and Tech Lead merges it. Batch subsequent digest changes for the next PR; groom the board immediately. Tech Lead [comment 5559186098](https://github.com/BenjaminBenetti/tut/pull/877#issuecomment-5559186098) identified four pushes in 25 minutes cancelling near-finished e2e runs. On #877, e2e took 9m53s; allow roughly 12 minutes for the full CI path instead of restarting it. A CI failure requiring a fix is different from a routine status update. Record publication state and pending notes in `.producer/` scratch; do not commit that tooling.
 
-**Merge sweep resumed (Director, [18359273](https://github.com/BenjaminBenetti/tut/discussions/968#discussioncomment-18359273)):** the wind-down is withdrawn. Normal next-ticket sequencing continues; accepted work is not re-judged. Track the 22 PRs present at restart through actual merge, preserve stack order, and prepare the release digest once the Tech Lead is through the queue. #1018 has merged; rebase/retarget #1037 onto main before its merge. Do not treat pending work as released or the partial #960 frontage delivery as completion of outdoor arrangement.
+**Merge sweep resumed (Director, [18359273](https://github.com/BenjaminBenetti/tut/discussions/968#discussioncomment-18359273)):** the wind-down is withdrawn. Normal next-ticket sequencing continues; accepted work is not re-judged. Track the 22 PRs present at restart through actual merge, preserve stack order, and prepare the release digest once the Tech Lead is through the queue. #1018 and the rebased #1037 have both merged; publish subsequent handoffs from main. Do not treat pending work as released or the partial #960 frontage delivery as completion of outdoor arrangement.
+
+**Current followed work threads:** the singleton also follows replies in #869, #1035, #1042, #1044 and #1005 even when they omit the literal word Producer. These are active implementation, contract and integration threads addressed to this seat by context. `.producer/followed-threads.json` configures that set; it uses the existing REST sample, adds no poller or API calls, and retains the five-minute interval/three-hour deadline. Self-tests cover a MapGen approval without a role mention, unrelated threads, self-comment exclusion and the original event classes.

@@ -1,0 +1,23 @@
+{
+  "sourceCommit": "00c8025eedc18f60ef6e3acb9ba9a049698d30d4",
+  "typecheck": "passed",
+  "lintAndFormat": "passed",
+  "build": "passed",
+  "unit": {
+    "command": "pnpm test --maxWorkers=4",
+    "passed": 2263,
+    "skipped": 1
+  },
+  "simulation": {
+    "command": "pnpm test:sim",
+    "passed": 7
+  },
+  "browser": {
+    "command": "CI=true pnpm test:e2e --reporter=list",
+    "passed": 64,
+    "skipped": 31,
+    "flakyRetries": 0
+  },
+  "capture": "30 paired context/visibility PNGs reproduce across two browsers; rural bytes exact; eight closure checks; three map JSONs exact; two live fog frames captured and inspected",
+  "browserLogNote": "One GLTFLoader texture-load message appeared around the reload/exit mission-flow case in the full passing run. A focused traced run passed without that message: all 64 environment-atlas requests returned 200 and no network request failed. No asset fallback or console/page error occurred in the paired frontage captures. The transient message was not reproduced; no timeout or asset-loading code was changed."
+}

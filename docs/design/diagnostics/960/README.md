@@ -84,4 +84,11 @@ Generic yard boxes/sandbags/rocks are unchanged; MapGen’s supporting outdoor
 arrangement remains open. This is a frontage-kit submission for Director and
 Critic judgment, not a claim that the whole #960 outcome is complete.
 
-The live seed-4242 fog frames and final validation results accompany the PR.
+Both live seed-4242 fog frames were regenerated, opened and committed;
+`live-fog.json` pins the runtime, command and hashes. Final typecheck, lint/format,
+build, 2,263 unit tests (one existing skip), seven simulation checks and 64 browser
+tests (31 opt-in skips, zero flaky retries) pass. `validation.json` records the
+commands and a transient texture-load log line in the passing reload/exit case:
+a focused traced run did not reproduce it, all atlas requests returned 200,
+and the paired frontage captures reported no fallback or console/page errors.
+No test budget or asset-loading code was changed.

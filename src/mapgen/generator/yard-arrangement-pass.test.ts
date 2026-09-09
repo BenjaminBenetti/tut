@@ -11,6 +11,7 @@ import { freezeDraft } from "../service/draft-freezer";
 import { validateTacticalMap } from "../service/map-validator";
 import { PipelineMapGenerator } from "../service/pipeline-map-generator";
 import { createSettlementPasses } from "../service/settlement-pipeline";
+import { ReachabilityService } from "../service/reachability-service";
 import { TileIndex } from "../service/tile-index";
 import { allows, PassMask } from "../model/pass-mask";
 
@@ -95,6 +96,13 @@ describe("building-use yards", () => {
         ),
       );
       const index = new TileIndex(after.map);
+      const reachable = new ReachabilityService(
+        index,
+        after.map.connectors,
+      ).reachableFrom(
+        after.map.hooks.deployZones.flatMap((zone) => zone.tiles),
+        PassMask.INFANTRY,
+      );
       // Renderer quarter-turns are negative Y: authored +Z faces W after one turn.
       const offsets = [
         { x: 0, z: 1 },
@@ -112,6 +120,7 @@ describe("building-use yards", () => {
         expect(front?.buildingId).toBeUndefined();
         expect(allows(front?.pass ?? 0, PassMask.INFANTRY)).toBe(true);
         expect(front?.naturalEdge).toBeUndefined();
+        expect(reachable.has(index.keyOf(front!))).toBe(true);
         const rear = index.get(
           prop.tile.x - d.x,
           prop.tile.y,

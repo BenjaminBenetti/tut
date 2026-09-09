@@ -73,7 +73,13 @@
         "exitCode": 1,
         "failure": "Test timed out in 600000ms while rendering ran concurrently; no map assertion failure reported."
       },
-      "isolatedRepeat": "running after all Chromium processes closed; unchanged timeout"
+      "isolatedRepeat": {
+        "maps": 1200,
+        "relocations": 0,
+        "seconds": 428.95,
+        "exitCode": 0,
+        "condition": "All Chromium processes closed; unchanged 600-second timeout."
+      }
     },
     "browser": {
       "command": "CI=1 node node_modules/@playwright/test/cli.js test --config .git/mapgen-960/playwright-gate.config.ts --workers=1 --retries=0 --fail-on-flaky-tests --shard=N/4 --reporter=list",
@@ -103,9 +109,17 @@
         {
           "shard": 4,
           "firstAttemptExitCode": 143,
-          "status": "repeat pending after captures and wide"
+          "status": "passed in isolation",
+          "passed": 16,
+          "optionalSkipped": 10,
+          "minutes": 2.7,
+          "exitCode": 0
         }
-      ]
+      ],
+      "totalPassed": 67,
+      "totalOptionalSkipped": 37,
+      "retries": 0,
+      "allShardsExitZero": true
     }
   },
   "captures": {
@@ -134,5 +148,6 @@
     "townMeanCoverAdjacencyPercent": [13.708337744396049, 12.64706945075712],
     "cityMeanCoverAdjacencyPercent": [11.63262673243289, 8.741788691399467]
   },
-  "review": "Director frame judgment, TL merge and Critic integrated-main re-check pending."
+  "review": "Director frame judgment, TL merge and Critic integrated-main re-check pending.",
+  "nextIntegration": "#1042 merged at 6967394 after this validated record. Latest-main integration remains to resolve on PR #1075; this record is preserved at its stated revisions."
 }

@@ -80,10 +80,27 @@ units by their **template** — the type — so:
   are both named `Rifle Squad`. In one mission the log printed **`Rifle Squad destroyed`
   twice, on turns 10 and 14, for two different units.** Nothing anywhere in the tactical
   interface distinguishes them.
-- **The log merges rows about different units.** `event-log-view.ts` collapses a repeat when
-  `last.dataset.text === entry.text`. Because the text is identical for both squads,
-  `Swarmer hit Rifle Squad for 2 ×2` may be one Swarmer hitting one squad twice or two
-  Swarmers hitting two different squads, and it renders the same either way.
+- **The log can merge rows about different units, and #1028 is what will start it.**
+  `event-log-view.ts` collapses a repeat when `last.dataset.text === entry.text`, so
+  `Swarmer hit Rifle Squad for 2 ×2` carries no attribution. **I tried to reproduce a merged
+  row spanning two units and could not** — see the raw DOM order below. Two identical rows,
+  `Swarmer hit Rifle Squad for 4`, sat one apart in the same bug phase and did **not**
+  collapse, because a movement row was between them and `append` compares only against
+  `lastElementChild`:
+
+  ```
+  Turn 10 — bug phase
+  Swarmer hit Rifle Squad for 2
+  Swarmer hit Rifle Squad for 4
+  Lurker moved 1 tile [x18]        <- defeats the collapse
+  Swarmer hit Rifle Squad for 4
+  Rifle Squad destroyed
+  ```
+
+  (2 + 4 + 4 = 10 = unit-2's loss that phase, so even these two are the same squad.)
+  **Movement rows are currently the only thing keeping identical combat rows apart, and
+  #1028 removes them.** The merged-attribution case is latent today and activated by that
+  deletion, which is a sequencing fact for whoever takes both. Recorded on #1040.
 - **Ids reach the player.** `describeTacticalError` (`src/tactical/model/tactical-error.ts`)
   is a diagnostic table — every message that names a unit names it `Unit "<id>"`, and
   `hit-preview-view.ts:165` prints it verbatim in the HUD.

@@ -35,13 +35,12 @@ describe("biome definitions", () => {
     }
   });
 
-  it("paint trails in a surface that reads against the dominant ground", () => {
+  it("paint trails in a surface distinct from every natural ground material", () => {
     for (const biome of biomes.values) {
-      const dominant = [...biome.groundSurfaces].sort(
-        (a, b) => b.weight - a.weight,
-      )[0];
-      expect(dominant, biome.id).toBeDefined();
-      expect(biome.trailSurface, biome.id).not.toBe(dominant?.surface);
+      const naturalSurfaces = biome.groundSurfaces.map(
+        (entry) => entry.surface,
+      );
+      expect(naturalSurfaces, biome.id).not.toContain(biome.trailSurface);
     }
   });
 

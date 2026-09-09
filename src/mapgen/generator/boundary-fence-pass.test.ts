@@ -12,7 +12,7 @@ import type { Prop } from "../model/prop";
 import { createDefaultRegistries } from "../service/default-registries";
 import { DiagnosticsCollector } from "../service/diagnostics-collector";
 import { generateTacticalMap } from "../service/generate-tactical-map";
-import { RuralFencePass } from "./rural-fence-pass";
+import { BoundaryFencePass } from "./boundary-fence-pass";
 
 /** A flat yard beside a two-lane trail, with a scattered allocation of panels. */
 function fixture(): GenerationContext {
@@ -75,12 +75,12 @@ function runSizes(fences: readonly Prop[]): number[] {
   return sizes;
 }
 
-describe("RuralFencePass", () => {
+describe("BoundaryFencePass", () => {
   it("uses the existing allocation for supported, aligned boundaries while preserving other props and the trail", () => {
     const context = fixture();
     const { draft } = context;
     const other = draft.props.filter((p) => p.kind !== "fence");
-    new RuralFencePass().run(context);
+    new BoundaryFencePass().run(context);
     const fences = draft.props.filter((p) => p.kind === "fence");
     expect(fences).toHaveLength(13);
     expect(runSizes(fences).every((n) => n >= 3 && n <= 10)).toBe(true);
@@ -116,7 +116,7 @@ describe("RuralFencePass", () => {
     draft.addConnector("ramp", { x: 7, y: 0, z: 5 }, { x: 6, y: 2, z: 5 });
     // Outer corners can slope even without a higher orthogonal neighbour.
     draft.markNaturalEdge(19, 5);
-    new RuralFencePass().run(context);
+    new BoundaryFencePass().run(context);
     for (let x = 13; x <= 15; x++)
       for (let z = 7; z <= 9; z++)
         expect(draft.propAt({ x, y: 0, z })?.kind).not.toBe("fence");
@@ -135,25 +135,54 @@ describe("RuralFencePass", () => {
     context.draft.lots.length = 0;
     for (let x = 0; x < context.draft.width; x++)
       for (const z of [10, 11]) context.draft.setRoad(x, z, false);
-    new RuralFencePass().run(context);
+    new BoundaryFencePass().run(context);
     expect(context.draft.props.filter((p) => p.kind === "fence")).toEqual([]);
     expect(context.draft.props.map((p) => p.kind)).toEqual(["boulder"]);
   });
 
-  it("leaves town and city props untouched", () => {
-    for (const settlement of ["town", "city"] as const) {
+  it.each(["town", "city"] as const)(
+    "arranges %s panels along existing boundaries while preserving other props",
+    (settlement) => {
       const context = fixture();
-      const original = [...context.draft.props];
-      new RuralFencePass().run({
+      const original = context.draft.props.filter((p) => p.kind !== "fence");
+      new BoundaryFencePass().run({
         ...context,
         params: {
           ...context.params,
           settlement: SETTLEMENT_DEFINITIONS[settlement],
         },
       });
-      expect(context.draft.props).toEqual(original);
-    }
-  });
+      const fences = context.draft.props.filter((p) => p.kind === "fence");
+      expect(fences).toHaveLength(13);
+      expect(runSizes(fences).every((n) => n >= 3 && n <= 10)).toBe(true);
+      expect(context.draft.props.filter((p) => p.kind !== "fence")).toEqual(
+        original,
+      );
+    },
+  );
+
+  it.each([
+    { settlement: "city", seed: "mc-opening-03" },
+    { settlement: "town", seed: "mc-resume-02" },
+  ] as const)(
+    "removes single-panel fragments from the reported $settlement map",
+    ({ settlement, seed }) => {
+      const map = generateTacticalMap({
+        seed,
+        params: {
+          archetype: "settlement",
+          biome: "coastal",
+          settlement,
+          size: "medium",
+          hooks: DEFAULT_MISSION_HOOKS,
+          slopeShare: 1,
+        },
+      });
+      const fences = map.props.filter((p) => p.kind === "fence");
+      expect(fences.length).toBeGreaterThan(0);
+      expect(runSizes(fences).every((n) => n >= 3 && n <= 10)).toBe(true);
+    },
+  );
 
   it("keeps the reported map's fence layout independent of the visual slope knob", () => {
     const maps = [0, 1].map((slopeShare) =>

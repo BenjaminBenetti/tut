@@ -1,4 +1,4 @@
-/** Dimensions of rural boundary runs, measured in ground columns. */
+/** Dimensions of settlement boundary runs, measured in ground columns. */
 export interface FencePlacementTuning {
   readonly minRun: number;
   readonly maxRun: number;

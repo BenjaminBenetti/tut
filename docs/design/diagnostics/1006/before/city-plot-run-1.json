@@ -1,0 +1,46 @@
+{
+  "id": "city-plot-run-1",
+  "seed": "mc-opening-03",
+  "biome": "coastal",
+  "settlement": "city",
+  "size": "medium",
+  "focus": {
+    "x": 24,
+    "y": 1,
+    "z": 27
+  },
+  "pitch": 45,
+  "rotation": 1,
+  "clip": {
+    "x": 790,
+    "y": 200,
+    "width": 1200,
+    "height": 1050
+  },
+  "url": "http://127.0.0.1:5178/mapgen-preview.html?seed=mc-opening-03&biome=coastal&settlement=city&size=medium&models=1&units=1&slope=100",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "camera": {
+    "yawIndex": 1,
+    "zoom": 55.11351921262103,
+    "target": {
+      "x": 24.5,
+      "y": 0.9,
+      "z": 27.5
+    },
+    "bounds": {
+      "x": 0,
+      "z": 0,
+      "w": 72,
+      "d": 72
+    },
+    "zoomRange": {
+      "min": 19.83827358328925,
+      "max": 192
+    }
+  },
+  "runtime": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+  "pngSha256": "c84ac527a3dd1641839d773c47e12160761eb765483bba9778101a0cd7a3b791"
+}

@@ -1,0 +1,976 @@
+{
+  "beforeCaptureCommit": "1b0ff8dccfba082cd785c9130dfecf4d1e15af6c",
+  "afterCaptureCommit": "e5236339b060b3e3230f9b81121528414f70c41a",
+  "repeatedBrowsersPerPhase": 2,
+  "pngByteIdenticalControls": 4,
+  "records": [
+    {
+      "id": "D1-coastal-approach",
+      "cameraIdentical": true,
+      "pngByteIdentical": false,
+      "changedPixels": 102029,
+      "totalPixels": 1365000,
+      "beforeSha256": "6f6e76abfd26322d408eb8a30a73699e761f526a1ea4cacc3f1893e645bc0ce1",
+      "afterSha256": "0c43afbce1e8293fc813e917d6dfd93586bb151cca4829238f03b2439b3215fa",
+      "beforeRendering": {
+        "render": {
+          "calls": 788,
+          "triangles": 245026,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 657,
+          "textures": 35
+        },
+        "programs": 17
+      },
+      "afterRendering": {
+        "render": {
+          "calls": 808,
+          "triangles": 257986,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 667,
+          "textures": 36
+        },
+        "programs": 17
+      }
+    },
+    {
+      "id": "E1-coastal-junction",
+      "cameraIdentical": true,
+      "pngByteIdentical": false,
+      "changedPixels": 97836,
+      "totalPixels": 1365000,
+      "beforeSha256": "0be18adea0e2b3f1270e7c6775bea690832c5baa4badaaaf5e3bf130deb81fdf",
+      "afterSha256": "f7422cb7499f2cd4d7a676639a6c4523a2db3ab25a953cbe457b15701ab58d69",
+      "beforeRendering": {
+        "render": {
+          "calls": 576,
+          "triangles": 233538,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 657,
+          "textures": 35
+        },
+        "programs": 17
+      },
+      "afterRendering": {
+        "render": {
+          "calls": 596,
+          "triangles": 246498,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 667,
+          "textures": 36
+        },
+        "programs": 17
+      }
+    },
+    {
+      "id": "E2-coastal-junction",
+      "cameraIdentical": true,
+      "pngByteIdentical": false,
+      "changedPixels": 86694,
+      "totalPixels": 1365000,
+      "beforeSha256": "59fc0a16df2df2b5cc60a73ea16d39bd12659395e05c2b73f77a11a9c65d2361",
+      "afterSha256": "eedd05e4eaa3fe76c39646ec6f9538f21b82dfdf948cdc603544b3404dae1f40",
+      "beforeRendering": {
+        "render": {
+          "calls": 557,
+          "triangles": 234582,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 657,
+          "textures": 35
+        },
+        "programs": 17
+      },
+      "afterRendering": {
+        "render": {
+          "calls": 577,
+          "triangles": 247542,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 667,
+          "textures": 36
+        },
+        "programs": 17
+      }
+    },
+    {
+      "id": "P1-temperate-control",
+      "cameraIdentical": true,
+      "pngByteIdentical": true,
+      "changedPixels": 0,
+      "totalPixels": 1365000,
+      "beforeSha256": "d4ef781c61a17a451c2a0abf31e8e975f62cbb164a3a87d80d2c2e87318b0aab",
+      "afterSha256": "d4ef781c61a17a451c2a0abf31e8e975f62cbb164a3a87d80d2c2e87318b0aab",
+      "beforeRendering": {
+        "render": {
+          "calls": 633,
+          "triangles": 227686,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 1075,
+          "textures": 28
+        },
+        "programs": 16
+      },
+      "afterRendering": {
+        "render": {
+          "calls": 633,
+          "triangles": 227686,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 1075,
+          "textures": 28
+        },
+        "programs": 16
+      }
+    },
+    {
+      "id": "P2-temperate-control",
+      "cameraIdentical": true,
+      "pngByteIdentical": true,
+      "changedPixels": 0,
+      "totalPixels": 1365000,
+      "beforeSha256": "c54e8e2ba3e72ac54ca550b5fed6eb41c5c0fc0ebb77db7d27bd48258dafcf27",
+      "afterSha256": "c54e8e2ba3e72ac54ca550b5fed6eb41c5c0fc0ebb77db7d27bd48258dafcf27",
+      "beforeRendering": {
+        "render": {
+          "calls": 644,
+          "triangles": 228246,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 1075,
+          "textures": 28
+        },
+        "programs": 16
+      },
+      "afterRendering": {
+        "render": {
+          "calls": 644,
+          "triangles": 228246,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 1075,
+          "textures": 28
+        },
+        "programs": 16
+      }
+    },
+    {
+      "id": "P3-snowy-control",
+      "cameraIdentical": true,
+      "pngByteIdentical": true,
+      "changedPixels": 0,
+      "totalPixels": 1365000,
+      "beforeSha256": "5e3ccfeee3db1387dc0e88d41ac5ee6bdcb5ecf8bc15482595f5730f25933f86",
+      "afterSha256": "5e3ccfeee3db1387dc0e88d41ac5ee6bdcb5ecf8bc15482595f5730f25933f86",
+      "beforeRendering": {
+        "render": {
+          "calls": 713,
+          "triangles": 278392,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 1256,
+          "textures": 27
+        },
+        "programs": 16
+      },
+      "afterRendering": {
+        "render": {
+          "calls": 713,
+          "triangles": 278392,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 1256,
+          "textures": 27
+        },
+        "programs": 16
+      }
+    },
+    {
+      "id": "P4-desert-control",
+      "cameraIdentical": true,
+      "pngByteIdentical": true,
+      "changedPixels": 0,
+      "totalPixels": 1365000,
+      "beforeSha256": "dbd59386547b1a15b83f7f3cd0cf1e26091defdaca7f05e527e34cbb63345b18",
+      "afterSha256": "dbd59386547b1a15b83f7f3cd0cf1e26091defdaca7f05e527e34cbb63345b18",
+      "beforeRendering": {
+        "render": {
+          "calls": 666,
+          "triangles": 319980,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 930,
+          "textures": 27
+        },
+        "programs": 16
+      },
+      "afterRendering": {
+        "render": {
+          "calls": 666,
+          "triangles": 319980,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 930,
+          "textures": 27
+        },
+        "programs": 16
+      }
+    }
+  ],
+  "capturedMaps": [
+    {
+      "recipe": {
+        "seed": "mc-resume-03",
+        "params": {
+          "archetype": "settlement",
+          "biome": "coastal",
+          "settlement": "rural",
+          "size": "small",
+          "hooks": [
+            {
+              "kind": "deploy",
+              "count": 1,
+              "requiredPass": 3
+            },
+            {
+              "kind": "egg-spawner",
+              "count": 3,
+              "requiredPass": 1,
+              "minDistanceFromDeploy": 12,
+              "maxNearestDistanceFromDeploy": 30,
+              "meta": {
+                "hatchRadius": 3
+              }
+            },
+            {
+              "kind": "edge-spawn",
+              "count": 2,
+              "requiredPass": 1
+            },
+            {
+              "kind": "extraction",
+              "count": 1,
+              "requiredPass": 3
+            }
+          ],
+          "slopeShare": 1
+        }
+      },
+      "completeMapEqual": false,
+      "nonSurfaceMapEqual": true,
+      "beforeMapSha256": "fc9d8366c7d30adb12c2958d4f5d19b0b26c765ce92a5d62728c03f12332194a",
+      "afterMapSha256": "e3f1ab542baca3535f71ea63ee29a3cd282549c945da715abdced2fa19bc5905",
+      "nonSurfaceMapSha256": "217e52b282cc42c0736485f0d4b091d46c8326d138a91006371eeeec45758e47",
+      "changedSurfaceTiles": [
+        {
+          "x": 15,
+          "y": 0,
+          "z": 0
+        },
+        {
+          "x": 16,
+          "y": 0,
+          "z": 0
+        },
+        {
+          "x": 15,
+          "y": 0,
+          "z": 1
+        },
+        {
+          "x": 16,
+          "y": 0,
+          "z": 1
+        },
+        {
+          "x": 14,
+          "y": 0,
+          "z": 2
+        },
+        {
+          "x": 15,
+          "y": 0,
+          "z": 2
+        },
+        {
+          "x": 16,
+          "y": 0,
+          "z": 2
+        },
+        {
+          "x": 14,
+          "y": 0,
+          "z": 3
+        },
+        {
+          "x": 15,
+          "y": 0,
+          "z": 3
+        },
+        {
+          "x": 14,
+          "y": 0,
+          "z": 4
+        },
+        {
+          "x": 15,
+          "y": 0,
+          "z": 4
+        },
+        {
+          "x": 14,
+          "y": 0,
+          "z": 5
+        },
+        {
+          "x": 15,
+          "y": 0,
+          "z": 5
+        },
+        {
+          "x": 14,
+          "y": 0,
+          "z": 6
+        },
+        {
+          "x": 15,
+          "y": 0,
+          "z": 6
+        },
+        {
+          "x": 14,
+          "y": 0,
+          "z": 7
+        },
+        {
+          "x": 15,
+          "y": 0,
+          "z": 7
+        },
+        {
+          "x": 13,
+          "y": 2,
+          "z": 8
+        },
+        {
+          "x": 14,
+          "y": 2,
+          "z": 8
+        },
+        {
+          "x": 15,
+          "y": 2,
+          "z": 8
+        },
+        {
+          "x": 13,
+          "y": 2,
+          "z": 9
+        },
+        {
+          "x": 14,
+          "y": 2,
+          "z": 9
+        },
+        {
+          "x": 15,
+          "y": 2,
+          "z": 9
+        },
+        {
+          "x": 14,
+          "y": 2,
+          "z": 10
+        },
+        {
+          "x": 15,
+          "y": 2,
+          "z": 10
+        },
+        {
+          "x": 14,
+          "y": 2,
+          "z": 11
+        },
+        {
+          "x": 15,
+          "y": 2,
+          "z": 11
+        },
+        {
+          "x": 16,
+          "y": 2,
+          "z": 11
+        },
+        {
+          "x": 15,
+          "y": 2,
+          "z": 12
+        },
+        {
+          "x": 16,
+          "y": 2,
+          "z": 12
+        },
+        {
+          "x": 15,
+          "y": 2,
+          "z": 13
+        },
+        {
+          "x": 16,
+          "y": 2,
+          "z": 13
+        },
+        {
+          "x": 17,
+          "y": 2,
+          "z": 13
+        },
+        {
+          "x": 16,
+          "y": 2,
+          "z": 14
+        },
+        {
+          "x": 17,
+          "y": 2,
+          "z": 14
+        },
+        {
+          "x": 18,
+          "y": 2,
+          "z": 14
+        },
+        {
+          "x": 17,
+          "y": 2,
+          "z": 15
+        },
+        {
+          "x": 18,
+          "y": 2,
+          "z": 15
+        },
+        {
+          "x": 19,
+          "y": 2,
+          "z": 15
+        },
+        {
+          "x": 18,
+          "y": 2,
+          "z": 16
+        },
+        {
+          "x": 19,
+          "y": 2,
+          "z": 16
+        },
+        {
+          "x": 18,
+          "y": 2,
+          "z": 17
+        },
+        {
+          "x": 19,
+          "y": 2,
+          "z": 17
+        },
+        {
+          "x": 18,
+          "y": 2,
+          "z": 18
+        },
+        {
+          "x": 19,
+          "y": 2,
+          "z": 18
+        },
+        {
+          "x": 18,
+          "y": 2,
+          "z": 19
+        },
+        {
+          "x": 19,
+          "y": 2,
+          "z": 19
+        },
+        {
+          "x": 18,
+          "y": 2,
+          "z": 20
+        },
+        {
+          "x": 19,
+          "y": 2,
+          "z": 20
+        },
+        {
+          "x": 18,
+          "y": 2,
+          "z": 21
+        },
+        {
+          "x": 19,
+          "y": 2,
+          "z": 21
+        },
+        {
+          "x": 17,
+          "y": 2,
+          "z": 22
+        },
+        {
+          "x": 18,
+          "y": 2,
+          "z": 22
+        },
+        {
+          "x": 19,
+          "y": 2,
+          "z": 22
+        },
+        {
+          "x": 17,
+          "y": 2,
+          "z": 23
+        },
+        {
+          "x": 18,
+          "y": 2,
+          "z": 23
+        },
+        {
+          "x": 17,
+          "y": 0,
+          "z": 24
+        },
+        {
+          "x": 18,
+          "y": 0,
+          "z": 24
+        },
+        {
+          "x": 17,
+          "y": 0,
+          "z": 25
+        },
+        {
+          "x": 18,
+          "y": 0,
+          "z": 25
+        },
+        {
+          "x": 17,
+          "y": 0,
+          "z": 26
+        },
+        {
+          "x": 18,
+          "y": 0,
+          "z": 26
+        },
+        {
+          "x": 16,
+          "y": 0,
+          "z": 27
+        },
+        {
+          "x": 17,
+          "y": 0,
+          "z": 27
+        },
+        {
+          "x": 18,
+          "y": 0,
+          "z": 27
+        },
+        {
+          "x": 16,
+          "y": 0,
+          "z": 28
+        },
+        {
+          "x": 17,
+          "y": 0,
+          "z": 28
+        },
+        {
+          "x": 16,
+          "y": 0,
+          "z": 29
+        },
+        {
+          "x": 17,
+          "y": 0,
+          "z": 29
+        },
+        {
+          "x": 15,
+          "y": 0,
+          "z": 30
+        },
+        {
+          "x": 16,
+          "y": 0,
+          "z": 30
+        },
+        {
+          "x": 17,
+          "y": 0,
+          "z": 30
+        },
+        {
+          "x": 15,
+          "y": 0,
+          "z": 31
+        },
+        {
+          "x": 16,
+          "y": 0,
+          "z": 31
+        },
+        {
+          "x": 15,
+          "y": 0,
+          "z": 32
+        },
+        {
+          "x": 16,
+          "y": 0,
+          "z": 32
+        },
+        {
+          "x": 15,
+          "y": 0,
+          "z": 33
+        },
+        {
+          "x": 16,
+          "y": 0,
+          "z": 33
+        },
+        {
+          "x": 15,
+          "y": 0,
+          "z": 34
+        },
+        {
+          "x": 16,
+          "y": 0,
+          "z": 34
+        },
+        {
+          "x": 14,
+          "y": 0,
+          "z": 35
+        },
+        {
+          "x": 15,
+          "y": 0,
+          "z": 35
+        },
+        {
+          "x": 16,
+          "y": 0,
+          "z": 35
+        },
+        {
+          "x": 14,
+          "y": 0,
+          "z": 36
+        },
+        {
+          "x": 15,
+          "y": 0,
+          "z": 36
+        },
+        {
+          "x": 14,
+          "y": 0,
+          "z": 37
+        },
+        {
+          "x": 15,
+          "y": 0,
+          "z": 37
+        },
+        {
+          "x": 14,
+          "y": 0,
+          "z": 38
+        },
+        {
+          "x": 15,
+          "y": 0,
+          "z": 38
+        },
+        {
+          "x": 14,
+          "y": 0,
+          "z": 39
+        },
+        {
+          "x": 15,
+          "y": 0,
+          "z": 39
+        },
+        {
+          "x": 14,
+          "y": 0,
+          "z": 40
+        },
+        {
+          "x": 15,
+          "y": 0,
+          "z": 40
+        },
+        {
+          "x": 14,
+          "y": 0,
+          "z": 41
+        },
+        {
+          "x": 15,
+          "y": 0,
+          "z": 41
+        },
+        {
+          "x": 14,
+          "y": 0,
+          "z": 42
+        },
+        {
+          "x": 15,
+          "y": 0,
+          "z": 42
+        },
+        {
+          "x": 14,
+          "y": 0,
+          "z": 43
+        },
+        {
+          "x": 15,
+          "y": 0,
+          "z": 43
+        },
+        {
+          "x": 14,
+          "y": 0,
+          "z": 44
+        },
+        {
+          "x": 15,
+          "y": 0,
+          "z": 44
+        },
+        {
+          "x": 14,
+          "y": 0,
+          "z": 45
+        },
+        {
+          "x": 15,
+          "y": 0,
+          "z": 45
+        },
+        {
+          "x": 14,
+          "y": 0,
+          "z": 46
+        },
+        {
+          "x": 15,
+          "y": 0,
+          "z": 46
+        },
+        {
+          "x": 16,
+          "y": 0,
+          "z": 46
+        },
+        {
+          "x": 15,
+          "y": 0,
+          "z": 47
+        },
+        {
+          "x": 16,
+          "y": 0,
+          "z": 47
+        }
+      ]
+    },
+    {
+      "recipe": {
+        "seed": "mc-resume-01",
+        "params": {
+          "archetype": "settlement",
+          "biome": "desert",
+          "settlement": "rural",
+          "size": "small",
+          "hooks": [
+            {
+              "kind": "deploy",
+              "count": 1,
+              "requiredPass": 3
+            },
+            {
+              "kind": "egg-spawner",
+              "count": 3,
+              "requiredPass": 1,
+              "minDistanceFromDeploy": 12,
+              "maxNearestDistanceFromDeploy": 30,
+              "meta": {
+                "hatchRadius": 3
+              }
+            },
+            {
+              "kind": "edge-spawn",
+              "count": 2,
+              "requiredPass": 1
+            },
+            {
+              "kind": "extraction",
+              "count": 1,
+              "requiredPass": 3
+            }
+          ],
+          "slopeShare": 1
+        }
+      },
+      "completeMapEqual": true,
+      "nonSurfaceMapEqual": true,
+      "beforeMapSha256": "eeb3fab4a5989a3e3b3eadac51ffc6d4df9850e9a16a15b09493acfbb39dc8af",
+      "afterMapSha256": "eeb3fab4a5989a3e3b3eadac51ffc6d4df9850e9a16a15b09493acfbb39dc8af",
+      "nonSurfaceMapSha256": "4b975f6b0c3a1666356f1693045ee85b293fa785bb2e2cb1b36d8c0ab24c8c44",
+      "changedSurfaceTiles": []
+    },
+    {
+      "recipe": {
+        "seed": "mc-resume-01",
+        "params": {
+          "archetype": "settlement",
+          "biome": "snowy",
+          "settlement": "rural",
+          "size": "small",
+          "hooks": [
+            {
+              "kind": "deploy",
+              "count": 1,
+              "requiredPass": 3
+            },
+            {
+              "kind": "egg-spawner",
+              "count": 3,
+              "requiredPass": 1,
+              "minDistanceFromDeploy": 12,
+              "maxNearestDistanceFromDeploy": 30,
+              "meta": {
+                "hatchRadius": 3
+              }
+            },
+            {
+              "kind": "edge-spawn",
+              "count": 2,
+              "requiredPass": 1
+            },
+            {
+              "kind": "extraction",
+              "count": 1,
+              "requiredPass": 3
+            }
+          ],
+          "slopeShare": 1
+        }
+      },
+      "completeMapEqual": true,
+      "nonSurfaceMapEqual": true,
+      "beforeMapSha256": "c363f60cc6138029cad986e136a519bc0f83bbcf3c83ddd14fcfb32a999e5356",
+      "afterMapSha256": "c363f60cc6138029cad986e136a519bc0f83bbcf3c83ddd14fcfb32a999e5356",
+      "nonSurfaceMapSha256": "fd9554b58dc820237034bbdf86097d97b4685d4899ba95a018ccdfc7876e6a2c",
+      "changedSurfaceTiles": []
+    },
+    {
+      "recipe": {
+        "seed": "mc-resume-01",
+        "params": {
+          "archetype": "settlement",
+          "biome": "temperate",
+          "settlement": "rural",
+          "size": "small",
+          "hooks": [
+            {
+              "kind": "deploy",
+              "count": 1,
+              "requiredPass": 3
+            },
+            {
+              "kind": "egg-spawner",
+              "count": 3,
+              "requiredPass": 1,
+              "minDistanceFromDeploy": 12,
+              "maxNearestDistanceFromDeploy": 30,
+              "meta": {
+                "hatchRadius": 3
+              }
+            },
+            {
+              "kind": "edge-spawn",
+              "count": 2,
+              "requiredPass": 1
+            },
+            {
+              "kind": "extraction",
+              "count": 1,
+              "requiredPass": 3
+            }
+          ],
+          "slopeShare": 1
+        }
+      },
+      "completeMapEqual": true,
+      "nonSurfaceMapEqual": true,
+      "beforeMapSha256": "520bd25f4691b750b0ca71ccb722aec659b7080ae8a961dafa247542f2fd6623",
+      "afterMapSha256": "520bd25f4691b750b0ca71ccb722aec659b7080ae8a961dafa247542f2fd6623",
+      "nonSurfaceMapSha256": "cedc65c8e1b441d4078cc0bd07807fc8eeed9b37e2dc6a52b74ab2a6a40b7a42",
+      "changedSurfaceTiles": []
+    }
+  ]
+}

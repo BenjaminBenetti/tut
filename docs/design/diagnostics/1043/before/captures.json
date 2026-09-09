@@ -1,0 +1,440 @@
+{
+  "baseCommit": "1b0ff8dccfba082cd785c9130dfecf4d1e15af6c",
+  "repeatedBrowsers": 2,
+  "records": [
+    {
+      "id": "D1-coastal-approach",
+      "seed": "mc-resume-03",
+      "biome": "coastal",
+      "settlement": "rural",
+      "size": "small",
+      "focus": {
+        "x": 13,
+        "y": 2,
+        "z": 24
+      },
+      "rotation": 0,
+      "camera": {
+        "yawIndex": 0,
+        "zoom": 55.11351921262141,
+        "target": {
+          "x": 13.5,
+          "y": 1.65,
+          "z": 24.5
+        },
+        "bounds": {
+          "x": 0,
+          "z": 0,
+          "w": 48,
+          "d": 48
+        },
+        "zoomRange": {
+          "min": 29.757410374933876,
+          "max": 192
+        }
+      },
+      "actualPitch": 45.000000000000014,
+      "pixel": {
+        "x": 1389.9999999999995,
+        "y": 750.0000000000001
+      },
+      "rendering": {
+        "render": {
+          "frame": 13,
+          "calls": 788,
+          "triangles": 245026,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 657,
+          "textures": 35
+        },
+        "programs": 17
+      },
+      "clip": {
+        "x": 740,
+        "y": 225,
+        "width": 1300,
+        "height": 1050
+      },
+      "viewport": {
+        "width": 2400,
+        "height": 1500
+      },
+      "sha256": "6f6e76abfd26322d408eb8a30a73699e761f526a1ea4cacc3f1893e645bc0ce1"
+    },
+    {
+      "id": "E1-coastal-junction",
+      "seed": "mc-resume-03",
+      "biome": "coastal",
+      "settlement": "rural",
+      "size": "small",
+      "focus": {
+        "x": 21,
+        "y": 2,
+        "z": 10
+      },
+      "rotation": 0,
+      "camera": {
+        "yawIndex": 0,
+        "zoom": 55.11351921262141,
+        "target": {
+          "x": 21.5,
+          "y": 1.65,
+          "z": 10.5
+        },
+        "bounds": {
+          "x": 0,
+          "z": 0,
+          "w": 48,
+          "d": 48
+        },
+        "zoomRange": {
+          "min": 29.757410374933876,
+          "max": 192
+        }
+      },
+      "actualPitch": 44.99999999999995,
+      "pixel": {
+        "x": 1389.999999999999,
+        "y": 750
+      },
+      "rendering": {
+        "render": {
+          "frame": 15,
+          "calls": 576,
+          "triangles": 233538,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 657,
+          "textures": 35
+        },
+        "programs": 17
+      },
+      "clip": {
+        "x": 740,
+        "y": 225,
+        "width": 1300,
+        "height": 1050
+      },
+      "viewport": {
+        "width": 2400,
+        "height": 1500
+      },
+      "sha256": "0be18adea0e2b3f1270e7c6775bea690832c5baa4badaaaf5e3bf130deb81fdf"
+    },
+    {
+      "id": "E2-coastal-junction",
+      "seed": "mc-resume-03",
+      "biome": "coastal",
+      "settlement": "rural",
+      "size": "small",
+      "focus": {
+        "x": 21,
+        "y": 2,
+        "z": 10
+      },
+      "rotation": 1,
+      "camera": {
+        "yawIndex": 1,
+        "zoom": 55.11351921262141,
+        "target": {
+          "x": 21.5,
+          "y": 1.65,
+          "z": 10.5
+        },
+        "bounds": {
+          "x": 0,
+          "z": 0,
+          "w": 48,
+          "d": 48
+        },
+        "zoomRange": {
+          "min": 29.757410374933876,
+          "max": 192
+        }
+      },
+      "actualPitch": 45.00000000000015,
+      "pixel": {
+        "x": 1389.999999999999,
+        "y": 750.0000000000003
+      },
+      "rendering": {
+        "render": {
+          "frame": 12,
+          "calls": 557,
+          "triangles": 234582,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 657,
+          "textures": 35
+        },
+        "programs": 17
+      },
+      "clip": {
+        "x": 740,
+        "y": 225,
+        "width": 1300,
+        "height": 1050
+      },
+      "viewport": {
+        "width": 2400,
+        "height": 1500
+      },
+      "sha256": "59fc0a16df2df2b5cc60a73ea16d39bd12659395e05c2b73f77a11a9c65d2361"
+    },
+    {
+      "id": "P1-temperate-control",
+      "seed": "mc-resume-01",
+      "biome": "temperate",
+      "settlement": "rural",
+      "size": "small",
+      "focus": {
+        "x": 13,
+        "y": 2,
+        "z": 24
+      },
+      "rotation": 0,
+      "camera": {
+        "yawIndex": 0,
+        "zoom": 55.11351921262141,
+        "target": {
+          "x": 13.5,
+          "y": 1.65,
+          "z": 24.5
+        },
+        "bounds": {
+          "x": 0,
+          "z": 0,
+          "w": 48,
+          "d": 48
+        },
+        "zoomRange": {
+          "min": 29.757410374933876,
+          "max": 192
+        }
+      },
+      "actualPitch": 45.000000000000014,
+      "pixel": {
+        "x": 1389.9999999999995,
+        "y": 750.0000000000001
+      },
+      "rendering": {
+        "render": {
+          "frame": 19,
+          "calls": 633,
+          "triangles": 227686,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 1075,
+          "textures": 28
+        },
+        "programs": 16
+      },
+      "clip": {
+        "x": 740,
+        "y": 225,
+        "width": 1300,
+        "height": 1050
+      },
+      "viewport": {
+        "width": 2400,
+        "height": 1500
+      },
+      "sha256": "d4ef781c61a17a451c2a0abf31e8e975f62cbb164a3a87d80d2c2e87318b0aab"
+    },
+    {
+      "id": "P2-temperate-control",
+      "seed": "mc-resume-01",
+      "biome": "temperate",
+      "settlement": "rural",
+      "size": "small",
+      "focus": {
+        "x": 13,
+        "y": 2,
+        "z": 24
+      },
+      "rotation": 1,
+      "camera": {
+        "yawIndex": 1,
+        "zoom": 55.11351921262119,
+        "target": {
+          "x": 13.5,
+          "y": 1.65,
+          "z": 24.5
+        },
+        "bounds": {
+          "x": 0,
+          "z": 0,
+          "w": 48,
+          "d": 48
+        },
+        "zoomRange": {
+          "min": 29.757410374933876,
+          "max": 192
+        }
+      },
+      "actualPitch": 44.99999999999984,
+      "pixel": {
+        "x": 1389.9999999999995,
+        "y": 750.0000000000005
+      },
+      "rendering": {
+        "render": {
+          "frame": 14,
+          "calls": 644,
+          "triangles": 228246,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 1075,
+          "textures": 28
+        },
+        "programs": 16
+      },
+      "clip": {
+        "x": 740,
+        "y": 225,
+        "width": 1300,
+        "height": 1050
+      },
+      "viewport": {
+        "width": 2400,
+        "height": 1500
+      },
+      "sha256": "c54e8e2ba3e72ac54ca550b5fed6eb41c5c0fc0ebb77db7d27bd48258dafcf27"
+    },
+    {
+      "id": "P3-snowy-control",
+      "seed": "mc-resume-01",
+      "biome": "snowy",
+      "settlement": "rural",
+      "size": "small",
+      "focus": {
+        "x": 13,
+        "y": 3,
+        "z": 24
+      },
+      "rotation": 0,
+      "camera": {
+        "yawIndex": 0,
+        "zoom": 55.11351921262153,
+        "target": {
+          "x": 13.5,
+          "y": 2.4,
+          "z": 24.5
+        },
+        "bounds": {
+          "x": 0,
+          "z": 0,
+          "w": 48,
+          "d": 48
+        },
+        "zoomRange": {
+          "min": 29.757410374933876,
+          "max": 192
+        }
+      },
+      "actualPitch": 44.99999999999995,
+      "pixel": {
+        "x": 1389.9999999999995,
+        "y": 749.9999999999999
+      },
+      "rendering": {
+        "render": {
+          "frame": 12,
+          "calls": 713,
+          "triangles": 278392,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 1256,
+          "textures": 27
+        },
+        "programs": 16
+      },
+      "clip": {
+        "x": 740,
+        "y": 225,
+        "width": 1300,
+        "height": 1050
+      },
+      "viewport": {
+        "width": 2400,
+        "height": 1500
+      },
+      "sha256": "5e3ccfeee3db1387dc0e88d41ac5ee6bdcb5ecf8bc15482595f5730f25933f86"
+    },
+    {
+      "id": "P4-desert-control",
+      "seed": "mc-resume-01",
+      "biome": "desert",
+      "settlement": "rural",
+      "size": "small",
+      "focus": {
+        "x": 13,
+        "y": 2,
+        "z": 24
+      },
+      "rotation": 0,
+      "camera": {
+        "yawIndex": 0,
+        "zoom": 55.11351921262141,
+        "target": {
+          "x": 13.5,
+          "y": 1.65,
+          "z": 24.5
+        },
+        "bounds": {
+          "x": 0,
+          "z": 0,
+          "w": 48,
+          "d": 48
+        },
+        "zoomRange": {
+          "min": 29.757410374933876,
+          "max": 192
+        }
+      },
+      "actualPitch": 45.000000000000014,
+      "pixel": {
+        "x": 1389.9999999999995,
+        "y": 750.0000000000001
+      },
+      "rendering": {
+        "render": {
+          "frame": 19,
+          "calls": 666,
+          "triangles": 319980,
+          "points": 0,
+          "lines": 0
+        },
+        "memory": {
+          "geometries": 930,
+          "textures": 27
+        },
+        "programs": 16
+      },
+      "clip": {
+        "x": 740,
+        "y": 225,
+        "width": 1300,
+        "height": 1050
+      },
+      "viewport": {
+        "width": 2400,
+        "height": 1500
+      },
+      "sha256": "dbd59386547b1a15b83f7f3cd0cf1e26091defdaca7f05e527e34cbb63345b18"
+    }
+  ]
+}

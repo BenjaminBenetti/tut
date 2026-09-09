@@ -1069,3 +1069,73 @@ describe("TacticalMapView.setLayerFocus", () => {
     expect(cut).toEqual([0, 4]);
   });
 });
+
+// ===========================================
+// The flat-map control owed for #978 (#1019)
+// ===========================================
+
+/**
+ * Two buildings sharing a ground level, each with floors **and a real
+ * roof tile** — the `buildingId`-without-`floorIndex` shape every
+ * fixture written for #978 omitted, which is how the roof omission
+ * survived four sabotage checks.
+ *
+ * Flat is the case #978 promised not to change: with every building on
+ * one ground level the per-building storey cut and the old single height
+ * cut are the same number, so the two must draw the same map at every
+ * step of the range — including the top, where "no cut" has to mean no
+ * cut for buildings as well as for terrain.
+ */
+function flatWithRoofs(): FixtureMapBuilder {
+  const b = new FixtureMapBuilder(8, 8, 10).fillGround();
+  b.building(building("tall", 0, 3));
+  b.building(building("short", 0, 1));
+  for (let floor = 0; floor < 3; floor++) {
+    b.tile({ x: 1, y: floor * STOREY_LAYERS, z: 1 }, SurfaceIds.FLOOR, {
+      buildingId: "tall",
+      floorIndex: floor,
+    });
+  }
+  b.tile({ x: 1, y: 3 * STOREY_LAYERS, z: 1 }, SurfaceIds.FLOOR, {
+    buildingId: "tall",
+  });
+  b.tile({ x: 5, y: 0, z: 5 }, SurfaceIds.FLOOR, {
+    buildingId: "short",
+    floorIndex: 0,
+  });
+  b.tile({ x: 5, y: 1 * STOREY_LAYERS, z: 5 }, SurfaceIds.FLOOR, {
+    buildingId: "short",
+  });
+  return b;
+}
+
+describe("the flat-map control for #978", () => {
+  it("draws exactly what the old height cut drew, at every storey", () => {
+    const map = flatWithRoofs().build();
+    // Three storeys, from the tallest building's floor count.
+    const storeys = 3;
+    for (let storey = 0; storey < storeys; storey++) {
+      const cutLevel = storey === storeys - 1 ? undefined : storey * 2 + 1;
+      const byHeight = new TacticalMapView(map);
+      byHeight.setMaxLevel(cutLevel);
+      const byStorey = new TacticalMapView(map);
+      byStorey.setLayerFocus({ storey, storeyCount: storeys, cutLevel });
+      expect(
+        drawnLevels(byStorey),
+        `storey ${String(storey)} must draw what the height cut drew`,
+      ).toEqual(drawnLevels(byHeight));
+    }
+  });
+
+  // The specific omission, stated as its own expectation so a reader
+  // does not have to infer it from the loop above: at the top of the
+  // range every roof is drawn, including the tallest building's, whose
+  // storey is one above the top floor index.
+  it("draws both roofs at the top of the range", () => {
+    const view = new TacticalMapView(flatWithRoofs().build());
+    view.setLayerFocus({ storey: 2, storeyCount: 3, cutLevel: undefined });
+    // Level 6 is the tall roof, level 2 the short one.
+    expect(drawnLevels(view)).toContain(6);
+    expect(drawnLevels(view)).toContain(2);
+  });
+});

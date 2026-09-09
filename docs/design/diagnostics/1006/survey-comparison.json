@@ -1,0 +1,236 @@
+{
+  "maps": 108,
+  "allTerrainBuildingsAndNonFencePropsMatch": true,
+  "all36RuralMapsMatch": true,
+  "allPanelsSupportedInRuns": true,
+  "groups": [
+    {
+      "settlement": "rural",
+      "biome": "temperate",
+      "maps": 9,
+      "before": {
+        "fences": 453,
+        "singletons": 0,
+        "coverAdjacency": 0.1342937582796113,
+        "withAccessibleCover": 447,
+        "relocations": 0
+      },
+      "after": {
+        "fences": 453,
+        "singletons": 0,
+        "coverAdjacency": 0.1342937582796113,
+        "withAccessibleCover": 447,
+        "relocations": 0
+      }
+    },
+    {
+      "settlement": "rural",
+      "biome": "snowy",
+      "maps": 9,
+      "before": {
+        "fences": 456,
+        "singletons": 0,
+        "coverAdjacency": 0.11495561116252508,
+        "withAccessibleCover": 420,
+        "relocations": 0
+      },
+      "after": {
+        "fences": 456,
+        "singletons": 0,
+        "coverAdjacency": 0.11495561116252508,
+        "withAccessibleCover": 420,
+        "relocations": 0
+      }
+    },
+    {
+      "settlement": "rural",
+      "biome": "desert",
+      "maps": 9,
+      "before": {
+        "fences": 0,
+        "singletons": 0,
+        "coverAdjacency": 0.18536186897592585,
+        "withAccessibleCover": 0,
+        "relocations": 0
+      },
+      "after": {
+        "fences": 0,
+        "singletons": 0,
+        "coverAdjacency": 0.18536186897592585,
+        "withAccessibleCover": 0,
+        "relocations": 0
+      }
+    },
+    {
+      "settlement": "rural",
+      "biome": "coastal",
+      "maps": 9,
+      "before": {
+        "fences": 364,
+        "singletons": 0,
+        "coverAdjacency": 0.12260842287946246,
+        "withAccessibleCover": 362,
+        "relocations": 0
+      },
+      "after": {
+        "fences": 364,
+        "singletons": 0,
+        "coverAdjacency": 0.12260842287946246,
+        "withAccessibleCover": 362,
+        "relocations": 0
+      }
+    },
+    {
+      "settlement": "town",
+      "biome": "temperate",
+      "maps": 9,
+      "before": {
+        "fences": 461,
+        "singletons": 455,
+        "coverAdjacency": 0.13535958908557472,
+        "withAccessibleCover": 451,
+        "relocations": 0
+      },
+      "after": {
+        "fences": 461,
+        "singletons": 0,
+        "coverAdjacency": 0.12451649981004843,
+        "withAccessibleCover": 442,
+        "relocations": 0
+      }
+    },
+    {
+      "settlement": "town",
+      "biome": "snowy",
+      "maps": 9,
+      "before": {
+        "fences": 468,
+        "singletons": 462,
+        "coverAdjacency": 0.12179736774378708,
+        "withAccessibleCover": 452,
+        "relocations": 0
+      },
+      "after": {
+        "fences": 468,
+        "singletons": 0,
+        "coverAdjacency": 0.11303293690570132,
+        "withAccessibleCover": 412,
+        "relocations": 0
+      }
+    },
+    {
+      "settlement": "town",
+      "biome": "desert",
+      "maps": 9,
+      "before": {
+        "fences": 75,
+        "singletons": 75,
+        "coverAdjacency": 0.17315396704242386,
+        "withAccessibleCover": 74,
+        "relocations": 0
+      },
+      "after": {
+        "fences": 73,
+        "singletons": 0,
+        "coverAdjacency": 0.17143545128481566,
+        "withAccessibleCover": 71,
+        "relocations": 0
+      }
+    },
+    {
+      "settlement": "town",
+      "biome": "coastal",
+      "maps": 9,
+      "before": {
+        "fences": 347,
+        "singletons": 341,
+        "coverAdjacency": 0.13158476995136445,
+        "withAccessibleCover": 347,
+        "relocations": 0
+      },
+      "after": {
+        "fences": 347,
+        "singletons": 0,
+        "coverAdjacency": 0.12001508224927065,
+        "withAccessibleCover": 340,
+        "relocations": 0
+      }
+    },
+    {
+      "settlement": "city",
+      "biome": "temperate",
+      "maps": 9,
+      "before": {
+        "fences": 365,
+        "singletons": 351,
+        "coverAdjacency": 0.11472032353864764,
+        "withAccessibleCover": 364,
+        "relocations": 0
+      },
+      "after": {
+        "fences": 365,
+        "singletons": 0,
+        "coverAdjacency": 0.10717035289310035,
+        "withAccessibleCover": 362,
+        "relocations": 0
+      }
+    },
+    {
+      "settlement": "city",
+      "biome": "snowy",
+      "maps": 9,
+      "before": {
+        "fences": 361,
+        "singletons": 357,
+        "coverAdjacency": 0.10711488140508459,
+        "withAccessibleCover": 361,
+        "relocations": 0
+      },
+      "after": {
+        "fences": 361,
+        "singletons": 0,
+        "coverAdjacency": 0.10119703212035341,
+        "withAccessibleCover": 359,
+        "relocations": 0
+      }
+    },
+    {
+      "settlement": "city",
+      "biome": "desert",
+      "maps": 9,
+      "before": {
+        "fences": 149,
+        "singletons": 147,
+        "coverAdjacency": 0.13010582755721323,
+        "withAccessibleCover": 149,
+        "relocations": 0
+      },
+      "after": {
+        "fences": 149,
+        "singletons": 0,
+        "coverAdjacency": 0.12671087099485112,
+        "withAccessibleCover": 143,
+        "relocations": 0
+      }
+    },
+    {
+      "settlement": "city",
+      "biome": "coastal",
+      "maps": 9,
+      "before": {
+        "fences": 270,
+        "singletons": 266,
+        "coverAdjacency": 0.10804275493670819,
+        "withAccessibleCover": 270,
+        "relocations": 0
+      },
+      "after": {
+        "fences": 270,
+        "singletons": 0,
+        "coverAdjacency": 0.10072961366948165,
+        "withAccessibleCover": 267,
+        "relocations": 0
+      }
+    }
+  ]
+}

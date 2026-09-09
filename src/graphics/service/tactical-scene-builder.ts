@@ -12,6 +12,8 @@ import type {
   UnitTemplate,
   UnitTemplateId,
 } from "../../tactical/model/unit-template";
+import type { Tether } from "../view/elevation-tether";
+import { ElevationTether } from "../view/elevation-tether";
 import type { Disposable } from "../model/disposable";
 import type { ModelLoader } from "../model/model-loader";
 import type { SpawnerPicker } from "../model/spawner-picker";
@@ -19,7 +21,7 @@ import type { TilePicker } from "../model/tile-picker";
 import type { UnitPicker } from "../model/unit-picker";
 import type { GhostUniforms } from "./ghost-cutaway";
 import { createGhostUniforms } from "./ghost-cutaway";
-import { TacticalMapView } from "../view/tactical-map-view";
+import { TacticalMapView, tileTop } from "../view/tactical-map-view";
 import { UnitMesh } from "../view/unit-mesh";
 
 // ===========================================
@@ -100,6 +102,9 @@ export class TacticalSceneBuilder
   private readonly models: ModelLoader;
   private readonly unitsGroup: Group;
   private readonly meshes = new Map<UnitId, UnitMesh>();
+  /** Where each unit stands, so the tethers can be redrawn when the cut moves (#981). */
+  private readonly positions = new Map<UnitId, TileCoord>();
+  private readonly tethers = new ElevationTether();
   /** Model id per placed unit, so a death burst can tell a machine from a bug. */
   private readonly modelIds = new Map<UnitId, string>();
   /** Height per placed unit in world units, measured once when it is placed. */
@@ -136,7 +141,12 @@ export class TacticalSceneBuilder
     this.spawnersGroup.name = "spawners";
     this.root = new Group();
     this.root.name = "tactical-scene";
-    this.root.add(this.mapView.root, this.spawnersGroup, this.unitsGroup);
+    this.root.add(
+      this.mapView.root,
+      this.spawnersGroup,
+      this.unitsGroup,
+      this.tethers.root,
+    );
   }
 
   // ===========================================
@@ -179,6 +189,7 @@ export class TacticalSceneBuilder
    */
   setLayerFocus(focus: LayerFocus | undefined): void {
     this.mapView.setLayerFocus(focus);
+    this.drawTethers();
   }
 
   /** Shows only map levels up to `maxLevel`; units are never hidden. */
@@ -232,6 +243,7 @@ export class TacticalSceneBuilder
     const loads: Promise<void>[] = [];
     for (const unit of living) {
       const existing = this.meshes.get(unit.id);
+      this.positions.set(unit.id, unit.pos);
       if (existing) {
         existing.setPose(unit.pos, unit.facing);
         continue;
@@ -249,6 +261,7 @@ export class TacticalSceneBuilder
       loads.push(this.place(unit, template));
     }
     await Promise.all(loads);
+    this.drawTethers();
   }
 
   /** Ids of the spawners currently drawn or loading, in insertion order. */
@@ -436,6 +449,36 @@ export class TacticalSceneBuilder
   // ===========================================
   // Private Methods
   // ===========================================
+
+  /**
+   * Draws a drop line under every unit the cut has left unsupported, and
+   * none under the rest (#981).
+   *
+   * A unit is unsupported when the tile it is standing on is hidden: the
+   * cut removes floors but never units, so what is left is a figure in
+   * the air. The line lands on the nearest surface still drawn in that
+   * column, which on any map with ground is normally the terrain.
+   */
+  private drawTethers(): void {
+    const tethers: Tether[] = [];
+    for (const [unitId, pos] of this.positions) {
+      if (!this.meshes.has(unitId) || !this.mapView.isCut(pos)) {
+        continue;
+      }
+      const below = this.mapView.supportBelow(pos);
+      if (below === undefined) {
+        continue;
+      }
+      tethers.push({
+        unitId,
+        x: pos.x + 0.5,
+        z: pos.z + 0.5,
+        top: tileTop(pos.y),
+        bottom: tileTop(below),
+      });
+    }
+    this.tethers.show(tethers);
+  }
 
   /** Loads the template's model and places the unit, unless it was removed while loading. */
   private async place(unit: Unit, template: UnitTemplate): Promise<void> {

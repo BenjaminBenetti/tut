@@ -1,0 +1,40 @@
+{
+  "id": "town-corroboration",
+  "seed": "mc-resume-02",
+  "biome": "coastal",
+  "settlement": "town",
+  "size": "medium",
+  "rotation": 0,
+  "clip": {
+    "x": 380,
+    "y": 0,
+    "width": 2020,
+    "height": 1500
+  },
+  "url": "http://127.0.0.1:5177/mapgen-preview.html?seed=mc-resume-02&biome=coastal&settlement=town&size=medium&models=1&units=1&slope=100",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "camera": {
+    "yawIndex": 0,
+    "zoom": 40,
+    "target": {
+      "x": 36,
+      "y": 0,
+      "z": 36
+    },
+    "bounds": {
+      "x": 0,
+      "z": 0,
+      "w": 72,
+      "d": 72
+    },
+    "zoomRange": {
+      "min": 19.83827358328925,
+      "max": 192
+    }
+  },
+  "runtime": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+  "pngSha256": "434634e727d922f8784d6c31319d6f7de50b33649fac27212a3f900ace3bf101"
+}

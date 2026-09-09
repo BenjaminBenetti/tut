@@ -1,0 +1,46 @@
+{
+  "id": "waterfront-control",
+  "seed": "mc-opening-03",
+  "biome": "coastal",
+  "settlement": "city",
+  "size": "medium",
+  "focus": {
+    "x": 51,
+    "y": 1,
+    "z": 40
+  },
+  "pitch": 55,
+  "rotation": 0,
+  "clip": {
+    "x": 790,
+    "y": 250,
+    "width": 1200,
+    "height": 1000
+  },
+  "url": "http://127.0.0.1:5177/mapgen-preview.html?seed=mc-opening-03&biome=coastal&settlement=city&size=medium&models=1&units=1&slope=100",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "camera": {
+    "yawIndex": 0,
+    "zoom": 67.36096792653728,
+    "target": {
+      "x": 51.5,
+      "y": 0.9,
+      "z": 40.5
+    },
+    "bounds": {
+      "x": 0,
+      "z": 0,
+      "w": 72,
+      "d": 72
+    },
+    "zoomRange": {
+      "min": 19.83827358328925,
+      "max": 192
+    }
+  },
+  "runtime": "03569fb",
+  "pngSha256": "d2faa1793279e006e7a2aa18364c0c223c16306a6cdd43ef66efc98324082164"
+}

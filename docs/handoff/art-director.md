@@ -1,6 +1,6 @@
 # Handoff: Art Director
 
-Last updated: 2026-09-09 (#1023 merged; #960 accepted/green; #1043 active)
+Last updated: 2026-09-09 (#1023 and #960 kit merged; #1043 submitted)
 
 ## Current seat and priorities
 
@@ -13,14 +13,18 @@ queue. Continue assigned focused work while prior PRs wait; never switch model.
 Executive Director focus is tactical UX and map generation/robustness.
 **#450 is Backlog / focus:deferred, retaining the Art claim; it is no longer the
 next automatic job.** Report a focused empty queue on GitHub, then watch.
-**#1043 is now active / seat:art-director / Owner Art Director**, routed in
-5594217704. MapGen independently confirmed the cause and supports the one
-coastal trail-paint boundary in5594261619; it has no competing implementation.
-The old MapGen-primary queue note is superseded.
+**#1043 is submitted in #1055 / seat:art-director / Owner Art Director**.
+No Art implementation is active at this checkpoint. Address review on #1055;
+do not treat its pending merge as an occupied implementation slot. MapGen owns
+the remaining #960 outdoor arrangements after its #1005 cause trace. The old
+MapGen-primary #1043 note is superseded; it independently confirmed and supported
+Art's bounded coastal trail-paint repair in5594261619/5594306496.
 
-## Active #1043: coastal trail material
+## #1043: coastal trail material submitted
 
-Branch `fix/1043-coastal-route-read`, pushed runtime **793099c**, based on main
+**[PR #1055](https://github.com/BenjaminBenetti/tut/pull/1055)**, branch
+`fix/1043-coastal-route-read`, stable head **1746cb996abb5d7eda78435efad1e6123282e571**.
+Runtime **793099c**, based on main
 1b0ff8d (same runtime as reported9d9ea01). Cause before edits5594274929:
 coastal trail and natural bare earth both select `dirt` / `tile.ground.dirt`.
 Reported mc-resume-03 coastal/rural/small has108 road columns,29 already dirt
@@ -36,14 +40,33 @@ non-surface map, off-road tile, road segment, metric and relocation control
 matches. Across changed maps1,462 road columns retain geometry;481 equal-material
 roadside edges become zero. These are data proofs, not visual acceptance.
 
-`tools/art/preview/capture-coastal-trails.mjs` andcause.json/README are committed
-in6d74376. Before capture is RUNNING from `.git/art-1043/baseline` detached1b0ff8d,
-port8797, static HMR/watch off; inspect log `.git/art-1043/before-capture.log`
-and process before restarting. Seven views (D1,E1,E2; temperate2angles,snowy,
-desert) repeat in two browsers. First pass complete, repeat in progress at this
-snapshot. After views, inspection/judgment, final paired ledger, full gates and
-PR are still owed. Do not claim the repair’s visual read accepted yet. Root
-is this1043 branch; review worktrees preserve other heads.
+All fourteen before/after PNGs are committed and opened. Seven views per phase
+(D1 approach, E1/E2 junction, temperate two angles, snowy, desert) reproduce
+byte-for-byte in two independent browsers. **Four control pairs are PNG-byte-
+identical, zero changed pixels**. The coastal map changes exactly108 dirt road
+tiles to rock; all other map data matches, and the other three captured maps
+are completely identical. The original Critic crops were opened; these are a
+fresh pair on the reported recipe, not identical copies of the older images.
+
+Art recommends the narrow stone approach: it reads through the earth field
+while retaining the coastal palette and building identity. Existing two-layer
+crossing(14–15,0,7)→(14–15,2,8) remains visible in both junction views; no height,
+ramp or bank regrade is mixed in. Cost per coastal view:+20draw calls,+12,960
+triangles,+10geometries,+1texture, no extra program. Control costs match.
+Director/Critic judgment and current-head CI are pending; do not claim acceptance.
+
+`docs/design/diagnostics/1043/{README,cause,paired-survey,comparisons,validation}`
+records provenance and results. Typecheck, full lint/format, build,2,264units
+(one skip),7sim and62Chromium tests(31opt-in skips,zero flaky) pass on e523633.
+Final1746cb9 adds evidence only. Issue5594562408 embeds all three paired views.
+The later combined-main runtime remains the Tech Lead's merge gate.
+
+`tools/art/preview/capture-coastal-trails.mjs` owns8797; static HMR/watch off,
+`ROAD_CAPTURE_ROOT` selects detached baseline `.git/art-1043/baseline` at1b0ff8d.
+All capture/test processes completed and closed owned servers. Scratch logs and
+full maps remain in `.git/art-1043/`; do not restart finished captures merely
+because the previous handoff snapshot said they were running. Root is the1043
+review branch; handoff worktree `.git/art-947/handoff` preserves a separate branch.
 
 
 ## #1023 pointer removal: merged
@@ -55,6 +78,12 @@ Director accepted cc80d05 and explicitly carried acceptance to 212f953 in
 All three CI jobs passed. Tech Lead gated the merge result and merged as
 **166876d670ddfdfa81bb03c65abd952a9aae3f5f** at01:17 UTC. Do not push its deleted
 review branch or revise accepted production/PNGs.
+
+Independent merged-main checks now confirm the result: Critic5594502689 opened
+20frames across roof types/cameras/squad states, with closed/hover/restored and
+squad/mouse-over-squad pairs exact. QA5594503367 dwelt on14projected real-building
+points at0changed pixels, with a separate positive unit reveal. No further
+pointer-removal implementation remains.
 
 Removed pointer controller, radius 3/dwell tuning, hover-building hit-test/cache,
 inspection-centre logic, pointer uniforms/branch and lifecycle wiring. Normal
@@ -86,7 +115,10 @@ The capture helper owns 8798, closes in finally and supports `CAPTURE_ROOT`.
 **[PR #1048](https://github.com/BenjaminBenetti/tut/pull/1048)**, branch
 `feat/960-building-use-cues`, head **d5466370d1c167d527fb972d31f49e54e3877b48**,
 retargeted to main by Tech Lead before #1032 branch deletion. All three CI
-checks pass. **Director accepted d546637 in5594175776**; no re-judgment is owed.
+checks pass. **Director accepted d546637 in5594175776**. Tech Lead merged as
+**8451a080e5328b98f82f8b1016dc6ca52ecafe06** after a green combined-runtime gate;
+both independently re-rendered fog PNGs matched the committed bytes(5594384521).
+Never push its merged review branch. No re-judgment is owed.
 Full implementation, render evidence and local validation are submitted. Critic opened all twelve context frames, judged use recognition improved
 and independently verified the rural PNG bytes/hashes in 5594085278. He confirms
 the generic outdoor arrangement remains open under #960/#1006. Do not close #960
@@ -123,7 +155,8 @@ entrance, ground plinth, traversal or simulation change.
 
 The second reported grouping is apartments; retain that residential identity.
 Guards have no standing platform. Generic yard boxes/sandbags remain unchanged;
-MapGen supporting arrangement is requested, not completed by this kit. Do not
+MapGen now owns the remaining arrangement under #960(Producer5594402028),
+queued after its active cause work. It is not completed by this kit. Do not
 close the full Critic outcome or claim outside context fixed by attachments.
 
 Context controls I01/I02: mc-resume-01 temperate/city/medium72,focus(43,2,39),yaw0/1.
@@ -157,7 +190,10 @@ says placement reads right and asked about building/deploy changes. MapGen
 answered 5593960157: reserve before lots/buildings, not a deletion step; deploy
 moves. Of 108 maps, 72 keep building count, 29 lose one, 1 loses two, 6 gain one.
 Director accepted00af271 in5594131182 and carried acceptance to docs-only
-d4faaf9 in5594221872. Tech Lead is gating it. Critic also judged the measured
+d4faaf9 in5594221872, then rebasedb54d55d in5594446205. The manual resolver conflict
+keeps both frontages and dropships; the Director explicitly requires the Tech
+Lead's combined-runtime placement render, not only preserved historical PNG
+hashes. That render/gate remains pending here. Critic also judged the measured
 worst building-count loss recipe acceptable in5594284923. Art opened both city/narrow-snowy sides
 and the seed9 campaign camera pair, found no model revision needed, posted
 5593952879. Critic’s generated-placement re-check remains owed after integration.
@@ -189,10 +225,8 @@ Read event.json, act on every event, then arm exactly one replacement. Capacity
 errors are retries, never a reason to switch model or stop. Quiet timeout gets
 one-line final; an empty queue is reported on GitHub before waiting.
 
-#1010 is merged; never push it again. #1033 is merged; never push its old branch.
-This newer handoff now targets main after1033 merged asbd45fb3. Main is
-integrated with a normal merge to preserve history under the no-force-push rule;
-its only diff against main is this handoff. Do not cancel
+#1010, #1033 and #1050 are merged; never push their old branches. This completed
+snapshot targets main6a552d6 after1050; only this handoff differs. Do not cancel
 CI with repeated small doc pushes; publish completed snapshots once. Check root
 branch, running capture processes and singleton lock before restarting anything.
 

@@ -1,0 +1,573 @@
+{
+  "sourceCommit": "1b0ff8dccfba082cd785c9130dfecf4d1e15af6c",
+  "recipe": {
+    "seed": "mc-resume-03",
+    "params": {
+      "archetype": "settlement",
+      "biome": "coastal",
+      "settlement": "rural",
+      "size": "small",
+      "hooks": [
+        {
+          "kind": "deploy",
+          "count": 1,
+          "requiredPass": 3
+        },
+        {
+          "kind": "egg-spawner",
+          "count": 3,
+          "requiredPass": 1,
+          "minDistanceFromDeploy": 12,
+          "maxNearestDistanceFromDeploy": 30,
+          "meta": {
+            "hatchRadius": 3
+          }
+        },
+        {
+          "kind": "edge-spawn",
+          "count": 2,
+          "requiredPass": 1
+        },
+        {
+          "kind": "extraction",
+          "count": 1,
+          "requiredPass": 3
+        }
+      ],
+      "slopeShare": 1
+    }
+  },
+  "roadColumns": 108,
+  "roadPaintAlreadyMatched": 29,
+  "indistinguishableEdges": 41,
+  "edges": [
+    {
+      "road": {
+        "x": 16,
+        "z": 0
+      },
+      "ground": {
+        "x": 17,
+        "z": 0
+      },
+      "surface": "dirt"
+    },
+    {
+      "road": {
+        "x": 16,
+        "z": 1
+      },
+      "ground": {
+        "x": 17,
+        "z": 1
+      },
+      "surface": "dirt"
+    },
+    {
+      "road": {
+        "x": 16,
+        "z": 2
+      },
+      "ground": {
+        "x": 17,
+        "z": 2
+      },
+      "surface": "dirt"
+    },
+    {
+      "road": {
+        "x": 15,
+        "z": 5
+      },
+      "ground": {
+        "x": 16,
+        "z": 5
+      },
+      "surface": "dirt"
+    },
+    {
+      "road": {
+        "x": 14,
+        "z": 6
+      },
+      "ground": {
+        "x": 13,
+        "z": 6
+      },
+      "surface": "dirt"
+    },
+    {
+      "road": {
+        "x": 15,
+        "z": 6
+      },
+      "ground": {
+        "x": 16,
+        "z": 6
+      },
+      "surface": "dirt"
+    },
+    {
+      "road": {
+        "x": 14,
+        "z": 7
+      },
+      "ground": {
+        "x": 13,
+        "z": 7
+      },
+      "surface": "dirt"
+    },
+    {
+      "road": {
+        "x": 15,
+        "z": 7
+      },
+      "ground": {
+        "x": 16,
+        "z": 7
+      },
+      "surface": "dirt"
+    },
+    {
+      "road": {
+        "x": 13,
+        "z": 8
+      },
+      "ground": {
+        "x": 12,
+        "z": 8
+      },
+      "surface": "dirt"
+    },
+    {
+      "road": {
+        "x": 13,
+        "z": 8
+      },
+      "ground": {
+        "x": 13,
+        "z": 7
+      },
+      "surface": "dirt"
+    },
+    {
+      "road": {
+        "x": 15,
+        "z": 8
+      },
+      "ground": {
+        "x": 16,
+        "z": 8
+      },
+      "surface": "dirt"
+    },
+    {
+      "road": {
+        "x": 13,
+        "z": 9
+      },
+      "ground": {
+        "x": 12,
+        "z": 9
+      },
+      "surface": "dirt"
+    },
+    {
+      "road": {
+        "x": 13,
+        "z": 9
+      },
+      "ground": {
+        "x": 13,
+        "z": 10
+      },
+      "surface": "dirt"
+    },
+    {
+      "road": {
+        "x": 15,
+        "z": 9
+      },
+      "ground": {
+        "x": 16,
+        "z": 9
+      },
+      "surface": "dirt"
+    },
+    {
+      "road": {
+        "x": 14,
+        "z": 10
+      },
+      "ground": {
+        "x": 13,
+        "z": 10
+      },
+      "surface": "dirt"
+    },
+    {
+      "road": {
+        "x": 15,
+        "z": 10
+      },
+      "ground": {
+        "x": 16,
+        "z": 10
+      },
+      "surface": "dirt"
+    },
+    {
+      "road": {
+        "x": 14,
+        "z": 11
+      },
+      "ground": {
+        "x": 13,
+        "z": 11
+      },
+      "surface": "dirt"
+    },
+    {
+      "road": {
+        "x": 14,
+        "z": 11
+      },
+      "ground": {
+        "x": 14,
+        "z": 12
+      },
+      "surface": "dirt"
+    },
+    {
+      "road": {
+        "x": 16,
+        "z": 11
+      },
+      "ground": {
+        "x": 17,
+        "z": 11
+      },
+      "surface": "dirt"
+    },
+    {
+      "road": {
+        "x": 16,
+        "z": 11
+      },
+      "ground": {
+        "x": 16,
+        "z": 10
+      },
+      "surface": "dirt"
+    },
+    {
+      "road": {
+        "x": 15,
+        "z": 12
+      },
+      "ground": {
+        "x": 14,
+        "z": 12
+      },
+      "surface": "dirt"
+    },
+    {
+      "road": {
+        "x": 16,
+        "z": 12
+      },
+      "ground": {
+        "x": 17,
+        "z": 12
+      },
+      "surface": "dirt"
+    },
+    {
+      "road": {
+        "x": 15,
+        "z": 13
+      },
+      "ground": {
+        "x": 14,
+        "z": 13
+      },
+      "surface": "dirt"
+    },
+    {
+      "road": {
+        "x": 15,
+        "z": 13
+      },
+      "ground": {
+        "x": 15,
+        "z": 14
+      },
+      "surface": "dirt"
+    },
+    {
+      "road": {
+        "x": 17,
+        "z": 13
+      },
+      "ground": {
+        "x": 18,
+        "z": 13
+      },
+      "surface": "dirt"
+    },
+    {
+      "road": {
+        "x": 17,
+        "z": 13
+      },
+      "ground": {
+        "x": 17,
+        "z": 12
+      },
+      "surface": "dirt"
+    },
+    {
+      "road": {
+        "x": 16,
+        "z": 14
+      },
+      "ground": {
+        "x": 15,
+        "z": 14
+      },
+      "surface": "dirt"
+    },
+    {
+      "road": {
+        "x": 18,
+        "z": 14
+      },
+      "ground": {
+        "x": 19,
+        "z": 14
+      },
+      "surface": "dirt"
+    },
+    {
+      "road": {
+        "x": 18,
+        "z": 14
+      },
+      "ground": {
+        "x": 18,
+        "z": 13
+      },
+      "surface": "dirt"
+    },
+    {
+      "road": {
+        "x": 17,
+        "z": 15
+      },
+      "ground": {
+        "x": 17,
+        "z": 16
+      },
+      "surface": "dirt"
+    },
+    {
+      "road": {
+        "x": 19,
+        "z": 15
+      },
+      "ground": {
+        "x": 20,
+        "z": 15
+      },
+      "surface": "dirt"
+    },
+    {
+      "road": {
+        "x": 19,
+        "z": 15
+      },
+      "ground": {
+        "x": 19,
+        "z": 14
+      },
+      "surface": "dirt"
+    },
+    {
+      "road": {
+        "x": 18,
+        "z": 16
+      },
+      "ground": {
+        "x": 17,
+        "z": 16
+      },
+      "surface": "dirt"
+    },
+    {
+      "road": {
+        "x": 19,
+        "z": 16
+      },
+      "ground": {
+        "x": 20,
+        "z": 16
+      },
+      "surface": "dirt"
+    },
+    {
+      "road": {
+        "x": 18,
+        "z": 17
+      },
+      "ground": {
+        "x": 17,
+        "z": 17
+      },
+      "surface": "dirt"
+    },
+    {
+      "road": {
+        "x": 15,
+        "z": 41
+      },
+      "ground": {
+        "x": 16,
+        "z": 41
+      },
+      "surface": "dirt"
+    },
+    {
+      "road": {
+        "x": 14,
+        "z": 42
+      },
+      "ground": {
+        "x": 13,
+        "z": 42
+      },
+      "surface": "dirt"
+    },
+    {
+      "road": {
+        "x": 15,
+        "z": 42
+      },
+      "ground": {
+        "x": 16,
+        "z": 42
+      },
+      "surface": "dirt"
+    },
+    {
+      "road": {
+        "x": 14,
+        "z": 43
+      },
+      "ground": {
+        "x": 13,
+        "z": 43
+      },
+      "surface": "dirt"
+    },
+    {
+      "road": {
+        "x": 15,
+        "z": 43
+      },
+      "ground": {
+        "x": 16,
+        "z": 43
+      },
+      "surface": "dirt"
+    },
+    {
+      "road": {
+        "x": 15,
+        "z": 44
+      },
+      "ground": {
+        "x": 16,
+        "z": 44
+      },
+      "surface": "dirt"
+    }
+  ],
+  "sampleColumns": [
+    {
+      "x": 13,
+      "z": 10,
+      "road": false,
+      "covered": false,
+      "surface": "dirt",
+      "tiles": [
+        {
+          "y": 2,
+          "surface": "dirt",
+          "model": "tile.ground.dirt",
+          "pass": 3
+        }
+      ]
+    },
+    {
+      "x": 14,
+      "z": 10,
+      "road": true,
+      "covered": false,
+      "surface": "dirt",
+      "tiles": [
+        {
+          "y": 2,
+          "surface": "dirt",
+          "model": "tile.ground.dirt",
+          "pass": 3
+        }
+      ]
+    },
+    {
+      "x": 15,
+      "z": 10,
+      "road": true,
+      "covered": false,
+      "surface": "dirt",
+      "tiles": [
+        {
+          "y": 2,
+          "surface": "dirt",
+          "model": "tile.ground.dirt",
+          "pass": 3
+        }
+      ]
+    },
+    {
+      "x": 16,
+      "z": 10,
+      "road": false,
+      "covered": false,
+      "surface": "dirt",
+      "tiles": [
+        {
+          "y": 2,
+          "surface": "dirt",
+          "model": "tile.ground.dirt",
+          "pass": 3
+        }
+      ]
+    },
+    {
+      "x": 21,
+      "z": 10,
+      "road": false,
+      "covered": false,
+      "surface": "dirt",
+      "tiles": [
+        {
+          "y": 2,
+          "surface": "dirt",
+          "model": "tile.ground.dirt",
+          "pass": 3
+        }
+      ]
+    }
+  ]
+}

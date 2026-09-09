@@ -13,8 +13,12 @@ import {
 } from "three";
 import { describe, expect, it } from "vitest";
 
+import { STOREY_LAYERS } from "../../core/model/elevation";
 import type { ModelAssetId } from "../../content/data/model-ids";
+import { SurfaceIds } from "../../mapgen/data/surfaces";
+import type { Building } from "../../mapgen/model/building";
 import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
+import { tileTop } from "../view/tactical-map-view";
 import type { Spawner } from "../../tactical/model/tactical-state";
 import type { Unit } from "../../tactical/model/unit";
 import type { UnitTemplate } from "../../tactical/model/unit-template";
@@ -398,5 +402,224 @@ describe("TacticalSceneBuilder.loadMapModels", () => {
     await builder.loadMapModels();
     expect(models.loads).toHaveLength(after);
     builder.dispose();
+  });
+});
+
+// ===========================================
+// Elevation tethers (#981)
+// ===========================================
+
+/** A building record with only what the cut and the tether read. */
+function tetherBuilding(
+  id: string,
+  groundLevel: number,
+  floors: number,
+): Building {
+  return {
+    id,
+    kind: "test",
+    footprint: [{ x: 0, z: 0, w: 1, d: 1 }],
+    groundLevel,
+    floors: Array.from({ length: floors }, (_, index) => ({
+      index,
+      y: groundLevel + index * STOREY_LAYERS,
+      rooms: [],
+    })),
+    roof: { kind: "flat", walkable: false },
+    entrances: [],
+    connectorIds: [],
+  };
+}
+
+/**
+ * A two-storey building on ground at (2, 2), so a unit can stand on its
+ * first floor with the cut below.
+ */
+function tetherScene(): {
+  builder: TacticalSceneBuilder;
+  models: FakeModelLoader;
+} {
+  const b = new FixtureMapBuilder(6, 6, 6).fillGround();
+  b.building(tetherBuilding("b", 0, 2));
+  for (let floor = 0; floor < 2; floor++) {
+    b.tile({ x: 2, y: floor * STOREY_LAYERS, z: 2 }, SurfaceIds.FLOOR, {
+      buildingId: "b",
+      floorIndex: floor,
+    });
+  }
+  const models = new FakeModelLoader();
+  return {
+    builder: new TacticalSceneBuilder({ map: b.build(), models }),
+    models,
+  };
+}
+
+/** The tether meshes currently in the scene, by unit id. */
+function tethersIn(builder: TacticalSceneBuilder): Map<string, Object3D> {
+  const found = new Map<string, Object3D>();
+  builder.root.traverse((object) => {
+    if (object.name.startsWith("tether:")) {
+      found.set(object.name.slice("tether:".length), object);
+    }
+  });
+  return found;
+}
+
+describe("TacticalSceneBuilder elevation tethers", () => {
+  const upstairs = (): Unit => ({
+    ...unit("u1", "squad:squad-1", 2, 2),
+    pos: { x: 2, y: STOREY_LAYERS, z: 2 },
+  });
+
+  // The reported case: the cut takes the first floor away and the unit
+  // standing on it is left in the air.
+  it("draws a line from a unit above the cut down to what is still drawn", async () => {
+    const { builder } = tetherScene();
+    await builder.update([upstairs()], TEMPLATES);
+    // Uncut: the unit is standing on drawn floor, so no line.
+    expect(tethersIn(builder).size).toBe(0);
+
+    builder.setLayerFocus({ storey: 0, storeyCount: 2, cutLevel: 1 });
+    const drawn = tethersIn(builder);
+    expect([...drawn.keys()]).toEqual(["u1"]);
+    // It spans from the ground it lands on to the unit's feet: the
+    // first floor is at layer 2, the ground below it at layer 0.
+    const line = drawn.get("u1");
+    expect(line?.scale.y).toBeCloseTo(tileTop(STOREY_LAYERS) - tileTop(0));
+    expect(line?.position.x).toBeCloseTo(2.5);
+    expect(line?.position.z).toBeCloseTo(2.5);
+  });
+
+  // The control the ticket asks for: a unit below the cut must be
+  // exactly as it was, which means no tether at all.
+  it("draws nothing for a unit standing on floor the cut still shows", async () => {
+    const { builder } = tetherScene();
+    await builder.update([unit("u1", "squad:squad-1", 2, 2)], TEMPLATES);
+    builder.setLayerFocus({ storey: 0, storeyCount: 2, cutLevel: 1 });
+    expect(tethersIn(builder).size).toBe(0);
+  });
+
+  // Sabotage-driven: the first version of these tests passed with the
+  // support search ignoring the cut entirely, because the only thing
+  // under the unit was ground that is never hidden. Three storeys, unit
+  // on the second floor, cut to the ground: the line must skip the
+  // first floor, which is itself cut away, and land on the ground.
+  it("lands on the nearest surface the cut has NOT taken", async () => {
+    const b = new FixtureMapBuilder(6, 6, 8).fillGround();
+    b.building(tetherBuilding("b", 0, 3));
+    for (let floor = 0; floor < 3; floor++) {
+      b.tile({ x: 2, y: floor * STOREY_LAYERS, z: 2 }, SurfaceIds.FLOOR, {
+        buildingId: "b",
+        floorIndex: floor,
+      });
+    }
+    const builder = new TacticalSceneBuilder({
+      map: b.build(),
+      models: new FakeModelLoader(),
+    });
+    await builder.update(
+      [
+        {
+          ...unit("u1", "squad:squad-1", 2, 2),
+          pos: { x: 2, y: 2 * STOREY_LAYERS, z: 2 },
+        },
+      ],
+      TEMPLATES,
+    );
+    builder.setLayerFocus({ storey: 0, storeyCount: 3, cutLevel: 1 });
+    const line = tethersIn(builder).get("u1");
+    // Ground at layer 0, not the cut-away first floor at layer 2.
+    expect(line?.scale.y).toBeCloseTo(tileTop(2 * STOREY_LAYERS) - tileTop(0));
+  });
+
+  // The case that bit #978: a roof tile carries its building and no
+  // `floorIndex`, and every fixture written for that change had floors
+  // and no roof. This code reads the same predicate, so it gets a roof.
+  it("tethers a unit standing on a roof the cut has taken away", async () => {
+    const b = new FixtureMapBuilder(6, 6, 8).fillGround();
+    b.building(tetherBuilding("b", 0, 2));
+    for (let floor = 0; floor < 2; floor++) {
+      b.tile({ x: 2, y: floor * STOREY_LAYERS, z: 2 }, SurfaceIds.FLOOR, {
+        buildingId: "b",
+        floorIndex: floor,
+      });
+    }
+    // Walkable roof: the building, no floor index, as generated maps emit.
+    b.tile({ x: 2, y: 2 * STOREY_LAYERS, z: 2 }, SurfaceIds.FLOOR, {
+      buildingId: "b",
+    });
+    const builder = new TacticalSceneBuilder({
+      map: b.build(),
+      models: new FakeModelLoader(),
+    });
+    await builder.update(
+      [
+        {
+          ...unit("u1", "squad:squad-1", 2, 2),
+          pos: { x: 2, y: 2 * STOREY_LAYERS, z: 2 },
+        },
+      ],
+      TEMPLATES,
+    );
+    // Cut to the ground floor: the roof is gone, so the unit on it is
+    // unsupported and the line lands on the ground.
+    builder.setLayerFocus({ storey: 0, storeyCount: 2, cutLevel: 1 });
+    const line = tethersIn(builder).get("u1");
+    expect(line?.scale.y).toBeCloseTo(tileTop(2 * STOREY_LAYERS) - tileTop(0));
+  });
+
+  // The interaction with #996/#1013's roof correction. Before that fix a
+  // roof's storey exceeded the top focus, so a unit standing on one was
+  // "unsupported" in the default view and drew a tether over a roof
+  // that was right there under its feet.
+  it("leaves a roof-standing unit alone at the top storey", async () => {
+    const b = new FixtureMapBuilder(6, 6, 8).fillGround();
+    b.building(tetherBuilding("b", 0, 2));
+    for (let floor = 0; floor < 2; floor++) {
+      b.tile({ x: 2, y: floor * STOREY_LAYERS, z: 2 }, SurfaceIds.FLOOR, {
+        buildingId: "b",
+        floorIndex: floor,
+      });
+    }
+    b.tile({ x: 2, y: 2 * STOREY_LAYERS, z: 2 }, SurfaceIds.FLOOR, {
+      buildingId: "b",
+    });
+    const builder = new TacticalSceneBuilder({
+      map: b.build(),
+      models: new FakeModelLoader(),
+    });
+    await builder.update(
+      [
+        {
+          ...unit("u1", "squad:squad-1", 2, 2),
+          pos: { x: 2, y: 2 * STOREY_LAYERS, z: 2 },
+        },
+      ],
+      TEMPLATES,
+    );
+    // The view the scene opens on: the roof is drawn, so no tether.
+    builder.setLayerFocus({ storey: 1, storeyCount: 2, cutLevel: undefined });
+    expect(tethersIn(builder).size).toBe(0);
+    // And one appears the moment the player actually cuts below it.
+    builder.setLayerFocus({ storey: 0, storeyCount: 2, cutLevel: 1 });
+    expect(tethersIn(builder).size).toBe(1);
+  });
+
+  it("retires the line when the cut rises back over the unit", async () => {
+    const { builder } = tetherScene();
+    await builder.update([upstairs()], TEMPLATES);
+    builder.setLayerFocus({ storey: 0, storeyCount: 2, cutLevel: 1 });
+    expect(tethersIn(builder).size).toBe(1);
+    builder.setLayerFocus({ storey: 1, storeyCount: 2, cutLevel: undefined });
+    expect(tethersIn(builder).size).toBe(0);
+  });
+
+  it("retires the line when the unit dies", async () => {
+    const { builder } = tetherScene();
+    await builder.update([upstairs()], TEMPLATES);
+    builder.setLayerFocus({ storey: 0, storeyCount: 2, cutLevel: 1 });
+    expect(tethersIn(builder).size).toBe(1);
+    await builder.update([{ ...upstairs(), hp: 0 }], TEMPLATES);
+    expect(tethersIn(builder).size).toBe(0);
   });
 });

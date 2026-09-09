@@ -549,6 +549,28 @@
 .tut-mission-results__loss {
   color: var(--ui-danger);
 }
+/*
+ * The payout on a mission that cost nothing (#740). It speaks with size
+ * and the winning green, never with the alarm's left border: a
+ * destroyed mech owns that channel, and one channel per question
+ * (style guide §12.2) is what keeps a reward from reading as a warning.
+ * On any mission that did cost something this class is not applied and
+ * the block stays at the foot of the panel, under the losses.
+ */
+.tut-mission-results__payout {
+  margin: var(--space-3) 0;
+}
+.tut-mission-results__payout-value {
+  font-size: 1.6em;
+  line-height: 1.2;
+}
+/* Colour carries valence, size carries importance -- never the reverse. */
+.tut-mission-results__payout-value--good {
+  color: var(--ui-ok);
+}
+.tut-mission-results__payout-value--bad {
+  color: var(--ui-warn);
+}
 
 /*
  * The choice that happens if the player ignores the event. Pushed to the

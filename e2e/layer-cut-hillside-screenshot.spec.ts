@@ -2,9 +2,11 @@ import type { Page } from "@playwright/test";
 import { expect, test } from "@playwright/test";
 
 import {
+  assertNoAssetFallback,
   drawnFrame,
   tacticalModelsReady,
   tapCameraKey,
+  watchAssetFallback,
 } from "./capture-frame.helper";
 
 import type { TacticalTestHooks } from "../src/ui/model/tactical-intent";
@@ -40,6 +42,9 @@ const SAVE_KEY = "tut:save:autosave";
 
 /** Plays into a live mission and returns the storeys the map offers. */
 async function launch(page: Page, seed: string): Promise<number> {
+  // Before navigating: the map's models are fetched on the first mount,
+  // so a listener attached later misses what this exists to catch.
+  watchAssetFallback(page);
   await page.goto("/");
   const body = page.locator("body");
   await expect(body).toHaveAttribute("data-app-state", "ready");
@@ -206,6 +211,8 @@ async function centreOn(page: Page, tile: Tile): Promise<void> {
 /** Screenshots the viewport once the scene has drawn the change. */
 async function shoot(page: Page, path: string): Promise<void> {
   await drawnFrame(page);
+  // Refuse the frame if anything drew a placeholder (#1021).
+  assertNoAssetFallback(page, path);
   await page.locator("#tactical-viewport").screenshot({ path });
 }
 

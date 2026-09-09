@@ -128,11 +128,22 @@ export class UnitCardView {
     this.meter = fill;
   }
 
-  /** Shows `unit` with its template, or the placeholder when either is missing. */
+  /**
+   * Shows `unit` with its template, or the placeholder when either is
+   * missing.
+   *
+   * `name` is the unit's identity -- "Alpha", the name the player gave
+   * this squad -- and the template's name is its type: "Rifle Squad",
+   * which every squad in the force shares. The card takes the identity
+   * when the caller can supply one (#1040), because a card that says
+   * "Rifle Squad" cannot tell the player which of the three they have
+   * selected.
+   */
   update(
     unit: Unit | undefined,
     template: UnitTemplate | undefined,
     attacksLeft?: number,
+    name?: string,
   ): void {
     if (!this.body || !this.empty) {
       return;
@@ -142,7 +153,7 @@ export class UnitCardView {
       this.empty.hidden = false;
       return;
     }
-    this.set("unit-name", template.name);
+    this.set("unit-name", name ?? template.name);
     this.set("unit-side", `${unit.team} · ${unit.kind}`);
     this.set("hp", `${formatWhole(unit.hp)} / ${formatWhole(unit.maxHp)}`);
     this.set("ap", `${formatWhole(unit.ap)} / ${formatWhole(unit.maxAp)}`);

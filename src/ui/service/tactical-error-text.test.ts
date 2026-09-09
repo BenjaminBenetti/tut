@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { TacticalError } from "../../tactical/model/tactical-error";
 import { describeTacticalError } from "../../tactical/model/tactical-error";
 import type { TacticalNames } from "./tactical-error-text";
-import { describeRefusal } from "./tactical-error-text";
+import { describeRefusal, namesFor } from "./tactical-error-text";
 
 /**
  * A sentinel in every entity id a refusal can carry. If it reaches the
@@ -128,5 +128,70 @@ describe("describeRefusal", () => {
         }).split(": ")[1] ?? ""
       }`,
     );
+  });
+});
+
+// ===========================================
+// Roster identity (#1040)
+// ===========================================
+
+describe("namesFor", () => {
+  /** Two squads of the same template, as a deployment routinely produces. */
+  const twoRifleSquads = {
+    mission: {
+      units: [
+        { id: "unit-1", sourceId: "squad-1", templateId: "squad:squad-1" },
+        { id: "unit-2", sourceId: "squad-2", templateId: "squad:squad-2" },
+        { id: "unit-9", sourceId: "bug:swarmer", templateId: "bug:swarmer" },
+      ],
+      // Distinct templates, one display name: `unit-factory` names a
+      // squad's template after the squad *type*, so two rosters collide
+      // on the name rather than on the id.
+      templates: {
+        "squad:squad-1": { name: "Rifle Squad" },
+        "squad:squad-2": { name: "Rifle Squad" },
+        "bug:swarmer": { name: "Swarmer" },
+      },
+      objectives: [],
+    } as unknown as Parameters<typeof namesFor>[0],
+    campaign: {
+      roster: {
+        squads: [
+          { id: "squad-1", name: "Alpha" },
+          { id: "squad-2", name: "Bravo" },
+        ],
+        mechs: [{ id: "mech-1", name: "Hammerhead" }],
+      },
+      overworld: { missions: [], map: { cities: [], regions: [] } },
+    } as unknown as Parameters<typeof namesFor>[1],
+  };
+
+  // QA's finding: two roster squads showed as one identity in-mission
+  // while the debrief called them Alpha and Bravo.
+  it("tells two squads of the same template apart, as the debrief does", () => {
+    const names = namesFor(twoRifleSquads.mission, twoRifleSquads.campaign);
+    expect(names.unit("unit-1")).toBe("Alpha");
+    expect(names.unit("unit-2")).toBe("Bravo");
+    expect(names.unit("unit-1")).not.toBe(names.unit("unit-2"));
+  });
+
+  // A bug has no roster entry, so its species is its identity and must
+  // still resolve rather than falling to the anonymous form.
+  it("falls back to the template for a unit with no roster entry", () => {
+    const names = namesFor(twoRifleSquads.mission, twoRifleSquads.campaign);
+    expect(names.unit("unit-9")).toBe("Swarmer");
+  });
+
+  // Without a campaign — a tactical screen that has no roster to hand —
+  // the template name is still better than an id.
+  it("uses the template when there is no campaign", () => {
+    const names = namesFor(twoRifleSquads.mission);
+    expect(names.unit("unit-1")).toBe("Rifle Squad");
+  });
+
+  it("never returns an id for a unit it cannot find", () => {
+    const names = namesFor(twoRifleSquads.mission, twoRifleSquads.campaign);
+    expect(names.unit("unit-404")).toBe("that unit");
+    expect(names.unit("unit-404")).not.toContain("unit-404");
   });
 });

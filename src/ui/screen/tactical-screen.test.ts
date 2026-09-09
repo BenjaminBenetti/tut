@@ -555,9 +555,32 @@ describe("TacticalScreen", () => {
     store.replace({ ...state, activeMission: mission });
 
     host.intents?.emit({ kind: "select-unit", unitId: squad.id });
+    // The squad's roster identity, not its type (#1040): two squads of
+    // one type share a template name, so the card used to call both of
+    // them "Rifle Squad" while the debrief said Alpha and Bravo.
     expect(
       root.querySelector('#unit-card [data-field="unit-name"]')?.textContent,
-    ).toBe(mission.templates[squad.templateId]?.name);
+    ).toBe(
+      state.roster.squads.find((s) => s.id === squad.sourceId)?.name ??
+        mission.templates[squad.templateId]?.name,
+    );
+    // The readiness rail beside it agrees. It arrived in #1041 wired to
+    // the log's old resolver, which answers with the template name, so
+    // without this the same defect would live on in a second surface
+    // while the card beside it read "Alpha".
+    const railNames = [
+      ...root.querySelectorAll('[data-role="squad-list"] li .tut-squad__name'),
+    ].map((el) => el.textContent);
+    const rosterNames = state.roster.squads.map((sq) => sq.name);
+    expect(railNames.length).toBeGreaterThan(0);
+    for (const name of rosterNames) {
+      expect(railNames, `the rail must name ${name}`).toContain(name);
+    }
+    // And no row falls back to a template name or a raw id.
+    for (const name of railNames) {
+      expect(name).not.toMatch(/^unit-/);
+    }
+
     host.intents?.emit({ kind: "action", action: "attack" });
     host.intents?.emit({ kind: "select-unit", unitId: bug.id });
     expect(root.querySelector<HTMLElement>("#hit-preview")?.hidden).toBe(false);

@@ -248,6 +248,7 @@ export class TacticalScreen implements Screen {
     this.hud.setMissionName(
       state === undefined ? undefined : missionCityName(state),
     );
+    this.hud.setCampaign(state);
     this.hud.update(mission, events);
     if (!mission) {
       return;

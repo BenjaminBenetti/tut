@@ -7,8 +7,8 @@ export const YARD_ARRANGEMENTS: Readonly<
   Record<KnownBuildingKindId, YardArrangement>
 > = {
   house: { prop: PropKindIds.BENCH, count: 1, spacing: 1, frontage: true },
-  apartment: { prop: PropKindIds.BENCH, count: 2, spacing: 3, frontage: true },
-  tower: { prop: PropKindIds.BENCH, count: 2, spacing: 3, frontage: true },
+  apartment: { prop: PropKindIds.BENCH, count: 2, spacing: 2, frontage: true },
+  tower: { prop: PropKindIds.BENCH, count: 2, spacing: 2, frontage: true },
   shop: { prop: PropKindIds.CRATE, count: 2, spacing: 1, frontage: false },
   warehouse: { prop: PropKindIds.CRATE, count: 3, spacing: 1, frontage: false },
 };

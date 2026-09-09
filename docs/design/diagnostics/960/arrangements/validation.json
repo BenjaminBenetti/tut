@@ -163,9 +163,29 @@
         "optionalSkipped": 1,
         "seconds": 125.95,
         "exitCode": 0
+      },
+      "wide": {
+        "command": "MAPGEN_WIDE=1 node node_modules/vitest/vitest.mjs run src/mapgen/service/generation-wide-sweep.test.ts --maxWorkers=1",
+        "maps": 1200,
+        "relocations": 0,
+        "seconds": 430.01,
+        "exitCode": 0
       }
     },
     "survey": "dropship-paired-survey.json",
-    "pending": ["wide", "sim", "browser", "fresh paired frames"]
+    "pending": ["sim", "browser", "fresh paired frames"],
+    "captureFirstAttempt": {
+      "exitCode": 143,
+      "completedInitialViews": 2,
+      "completedRepeats": 0,
+      "acceptedFrames": 0,
+      "note": "Capture parent and helper terminated; leftover own Chromium closed. Restarted the same finite stage batch detached with persistent per-stage results."
+    },
+    "status": "Paused for explicitly routed p1 #1089, draft #1095. Resume after submitting that fixture repair; studio checkpoint 2026-09-09 06:00 UTC.",
+    "captureSecondAttempt": {
+      "status": "Author interrupted for #1089",
+      "acceptedFrames": 0,
+      "note": "Finite detached batch was stopped with all its browser descendants; incomplete captures retained only in scratch."
+    }
   }
 }

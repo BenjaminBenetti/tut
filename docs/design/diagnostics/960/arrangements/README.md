@@ -94,5 +94,9 @@ disclosed. Landing records themselves are unchanged in all 108 paired cases.
 
 Typecheck (`tsc -b`), full ESLint/Prettier, production build and **2,348 unit
 tests** pass on this combination (125.95 s, exit 0; one optional wide skip).
-The wide sweep, simulation/browser gates and fresh paired frames are in
-progress; the PR remains draft until this current combination is reviewable.
+The 1,200-map wide sweep passes with zero relocations (430.01 s, exit 0).
+The simulation/browser gates and fresh paired frames remain incomplete. The
+capture batch was stopped for routed p1 #1089, the author-owned scout fixture
+regression now in draft #1095. Its incomplete PNGs remain scratch; no new
+comparison image is represented as verified. Resume this combination after
+that bounded repair, respecting the 2026-09-09 06:00 UTC studio pause.

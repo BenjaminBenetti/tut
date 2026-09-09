@@ -59,7 +59,19 @@ const controls = [
     { x: 23, y: 4, z: 13 },
     0,
   ],
-];
+  [
+    "S02-shop-delivery-yard",
+    "mc-resume-01",
+    "city",
+    "medium",
+    { x: 34, y: 2, z: 12 },
+    2,
+  ],
+].filter(([id]) =>
+  process.env.CAPTURE_CASES
+    ? process.env.CAPTURE_CASES.split(",").includes(id)
+    : !id.startsWith("S02"),
+);
 const baseCommit = execFileSync("git", ["rev-parse", "HEAD"], {
   encoding: "utf8",
   cwd: projectRoot,

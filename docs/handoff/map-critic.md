@@ -238,7 +238,8 @@ opened and hash-verified.** Both city seeds gain recognisable residential
 cues; S01 distinguishes shop/workplace/home and preserves the ladder; rural
 C01 remains unchanged. Each fresh PNG matches the accepted author after
 frame byte-for-byte. #960 stays open for outdoor arrangement.
-[Fresh evidence](../design/diagnostics/map-critic-post1048/README.md).
+[Fresh evidence](../design/diagnostics/map-critic-post1048/README.md), `fdc3034`;
+[posted main verdict](https://github.com/BenjaminBenetti/tut/issues/960#issuecomment-5594621085).
 Driver `frontage-camera.mjs`, final terminal70271 completed0; scratch
 `post1048-camera/`, isolated port4176/session77234. It uses the production
 camera rig accessor to match accepted framing, without map/scene changes.
@@ -284,8 +285,9 @@ merged at 01:35:34 UTC as `ba4d7b1`; final head `5f4c4a6` passed all three CI ch
 The merged survey passed local ESLint, Prettier and evidence validation:
 26 PNG/sidecar pairs plus six separate landing-cost pairs, and 24 unique
 survey recipes. Subsequent #1032/#1048 checks are on
-`docs/1023-map-critic-merged-checks`; the first 20 frames are committed and
-posted. Add the next docs PR's current-head CI/review to the same watcher.
+`docs/1023-map-critic-merged-checks`, now **[PR #1057](https://github.com/BenjaminBenetti/tut/pull/1057)**.
+All 26 new frames are committed and posted. The singleton watcher follows
+this PR's current-head CI, comments, reviews and merge.
 Tech Lead alone merges.
 
 ## Rulings and capture gotchas
@@ -398,8 +400,7 @@ Use `References` for live findings; a docs PR may use template `Closes #905`
 for the already-closed survey. Every comment has the Critic header. No
 main push, game code, art changes, merges, model switching or QA counting.
 
-Next: submit the completed cutaway/frontage documentation PR and follow its
-CI/review. Inspect #1042
+Next: follow completed cutaway/frontage docs PR #1057 CI/review. Inspect #1042
 landing, #1052 fences and #1055 coastal trails on fresh main when they land. File any newly
 evidenced distinct finding before expanding the write-up. The 24-recipe
 survey, top-roof verdict and #1049 are complete; keep the one bounded watch

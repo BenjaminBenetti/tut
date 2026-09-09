@@ -1,0 +1,26 @@
+{
+  "lagos-0": {
+    "openedAt": "2026-09-09T04:20:45.867130+00:00",
+    "observation": "Native close pair at camera-anchor tile(36,1,36) confirms repeated conifer and small rounded-tree groups at the surrounding lawn/bare-earth plots; same gray/red residential blocks with planters, supported roof/opening and clear street corner. Warm humid lowland identity missing as a combination, not individual tree impossibility. Known outdoor-context issue #960 remains."
+  },
+  "lagos-1": {
+    "openedAt": "2026-09-09T04:20:45.867130+00:00",
+    "observation": "Native close pair at camera-anchor tile(36,1,36) confirms repeated conifer and small rounded-tree groups at the surrounding lawn/bare-earth plots; same gray/red residential blocks with planters, supported roof/opening and clear street corner. Warm humid lowland identity missing as a combination, not individual tree impossibility. Known outdoor-context issue #960 remains."
+  },
+  "johannesburg-0": {
+    "openedAt": "2026-09-09T04:24:49.458200+00:00",
+    "observation": "Close view retains street corner, supported gray/red flat-roof home with visible planted-window/entrance cues; repeated conifers/small round trees in adjacent bare plot. Same building family as Lagos persists, though this is a smaller footprint and lower building. Reverse pending."
+  },
+  "johannesburg-1": {
+    "openedAt": "2026-09-09T04:26:29.533032+00:00",
+    "observation": "Reverse close pair confirms gray/red flat-box family at neighboring street corners, supported roofs and domestic details intact, repeated conifers/round trees on lawn/earth plots. Relative heights differ; local building types remain narrow."
+  },
+  "perth-0": {
+    "openedAt": "2026-09-09T04:26:29.533032+00:00",
+    "observation": "Close pair confirms supported multi-height gray/red blocks on real coastal grades, roofs/openings/ladder/awning and quay maintained. Bare-earth/sand/green ground with slender palms and small round trees reads generic coast, without distinct southwest Australian woodland character. Natural ground walls remain accepted relief, not decorative raised beds."
+  },
+  "perth-1": {
+    "openedAt": "2026-09-09T04:26:29.533032+00:00",
+    "observation": "Close pair confirms supported multi-height gray/red blocks on real coastal grades, roofs/openings/ladder/awning and quay maintained. Bare-earth/sand/green ground with slender palms and small round trees reads generic coast, without distinct southwest Australian woodland character. Natural ground walls remain accepted relief, not decorative raised beds."
+  }
+}

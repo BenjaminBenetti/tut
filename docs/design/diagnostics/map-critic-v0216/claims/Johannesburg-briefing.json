@@ -1,0 +1,78 @@
+{
+  "city": "Johannesburg",
+  "campaignSeed": "4242",
+  "advanceSteps": 1,
+  "runtime": {
+    "tag": "v0.2.16",
+    "baseline": "1131c9019f6dad4abf0a1b46dbfd78334daa9254",
+    "server": "http://127.0.0.1:4178",
+    "recordedAt": "2026-09-09T03:40:40.088535+00:00",
+    "config": ".scratch/map-critic-v0216/vite.config.mjs",
+    "watch": null,
+    "hmr": false,
+    "freshServerAfterCheckout": true,
+    "runtimeTrees": {
+      "src": "2b5a35ee3c27ae0373a3f57470447eba32734c63",
+      "public": "01e5c286dea273d9a7fae41d73bb3930b0347745",
+      "tools": "74e782320301f477ccef35031e695e4f038c4bbf"
+    },
+    "serverSession": 23504
+  },
+  "errors": [],
+  "viewport": {
+    "width": 1800,
+    "height": 1200
+  },
+  "sha256": "729ca99b4a757e00333b9d89d53cf8a9670181ffcdc5ec927cd9a8db274bca0b",
+  "capturedAt": "2026-09-09T03:42:44.211Z",
+  "record": {
+    "day": 2,
+    "mission": {
+      "id": "mission-1",
+      "typeId": "infestation-clearance",
+      "cityId": "johannesburg",
+      "difficulty": 3,
+      "mapParams": {
+        "biome": "temperate",
+        "settlement": "city",
+        "size": "small",
+        "seed": "730982385"
+      },
+      "rewards": {
+        "credits": 900
+      },
+      "createdDay": 2,
+      "expiresDay": 7,
+      "ignorePenalty": 10
+    },
+    "city": {
+      "id": "johannesburg",
+      "name": "Johannesburg",
+      "regionId": "sub-saharan-africa",
+      "infestation": 31,
+      "scale": "city",
+      "neighbourIds": ["nairobi", "lagos"],
+      "layout": {
+        "x": 0.5779166666666667,
+        "y": 0.6455555555555555
+      }
+    },
+    "region": {
+      "id": "sub-saharan-africa",
+      "name": "Sub-Saharan Africa",
+      "biome": "temperate",
+      "cityIds": ["lagos", "nairobi", "johannesburg"],
+      "neighbourRegionIds": [
+        "latin-america",
+        "western-europe",
+        "middle-east",
+        "south-asia"
+      ],
+      "layout": {
+        "x": 0.5631944444444446,
+        "y": 0.5388333333333333
+      }
+    }
+  },
+  "metadataScope": "Selected mission/city/region extracted from original observed campaign record; PNG unchanged."
+}

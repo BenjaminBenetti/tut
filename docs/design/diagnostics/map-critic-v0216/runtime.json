@@ -1,0 +1,16 @@
+{
+  "tag": "v0.2.16",
+  "baseline": "1131c9019f6dad4abf0a1b46dbfd78334daa9254",
+  "server": "http://127.0.0.1:4178",
+  "recordedAt": "2026-09-09T03:40:40.088535+00:00",
+  "config": ".scratch/map-critic-v0216/vite.config.mjs",
+  "watch": null,
+  "hmr": false,
+  "freshServerAfterCheckout": true,
+  "runtimeTrees": {
+    "src": "2b5a35ee3c27ae0373a3f57470447eba32734c63",
+    "public": "01e5c286dea273d9a7fae41d73bb3930b0347745",
+    "tools": "74e782320301f477ccef35031e695e4f038c4bbf"
+  },
+  "serverSession": 23504
+}

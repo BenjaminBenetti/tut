@@ -1,0 +1,73 @@
+{
+  "city": "Perth",
+  "campaignSeed": "4242",
+  "advanceSteps": 55,
+  "runtime": {
+    "tag": "v0.2.16",
+    "baseline": "1131c9019f6dad4abf0a1b46dbfd78334daa9254",
+    "server": "http://127.0.0.1:4178",
+    "recordedAt": "2026-09-09T03:40:40.088535+00:00",
+    "config": ".scratch/map-critic-v0216/vite.config.mjs",
+    "watch": null,
+    "hmr": false,
+    "freshServerAfterCheckout": true,
+    "runtimeTrees": {
+      "src": "2b5a35ee3c27ae0373a3f57470447eba32734c63",
+      "public": "01e5c286dea273d9a7fae41d73bb3930b0347745",
+      "tools": "74e782320301f477ccef35031e695e4f038c4bbf"
+    },
+    "serverSession": 23504
+  },
+  "errors": [],
+  "viewport": {
+    "width": 1800,
+    "height": 1200
+  },
+  "sha256": "f631a269130946347b4ee5b699ce88a8f572b036cd31ce7379ef5cf8b01a3e3b",
+  "capturedAt": "2026-09-09T03:44:43.019Z",
+  "record": {
+    "day": 56,
+    "mission": {
+      "id": "mission-115",
+      "typeId": "infestation-clearance",
+      "cityId": "perth",
+      "difficulty": 5,
+      "mapParams": {
+        "biome": "coastal",
+        "settlement": "town",
+        "size": "medium",
+        "seed": "215428772"
+      },
+      "rewards": {
+        "credits": 1500
+      },
+      "createdDay": 56,
+      "expiresDay": 61,
+      "ignorePenalty": 10
+    },
+    "city": {
+      "id": "perth",
+      "name": "Perth",
+      "regionId": "oceania",
+      "infestation": 27,
+      "scale": "town",
+      "neighbourIds": ["sydney", "jakarta"],
+      "layout": {
+        "x": 0.8218333333333334,
+        "y": 0.6775
+      }
+    },
+    "region": {
+      "id": "oceania",
+      "name": "Oceania",
+      "biome": "coastal",
+      "cityIds": ["perth", "sydney", "auckland"],
+      "neighbourRegionIds": ["southeast-asia", "east-asia"],
+      "layout": {
+        "x": 0.9091018518518519,
+        "y": 0.6901296296296296
+      }
+    }
+  },
+  "metadataScope": "Selected mission/city/region extracted from original observed campaign record; PNG unchanged."
+}

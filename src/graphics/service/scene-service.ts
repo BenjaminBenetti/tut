@@ -122,11 +122,6 @@ export class SceneService {
   // Public Methods
   // ===========================================
 
-  /** The render surface, for graphics-only pointer observation outside HUD panels. */
-  get canvas(): HTMLCanvasElement {
-    return this.renderer.domElement;
-  }
-
   /**
    * Starts the render loop. Safe to call once after construction.
    */

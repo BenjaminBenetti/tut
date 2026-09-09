@@ -1,0 +1,74 @@
+{
+  "checks": [
+    {
+      "after": "after/pitched-yaw0-hover.png",
+      "control": "before/pitched-yaw0-closed.png",
+      "byteIdentical": true,
+      "changedPixels": 0,
+      "sha256": "9b11c1753fec1457cbb1ac7ebec000e3415aa8f214de9cdb40685829ed26ad50"
+    },
+    {
+      "after": "after/pitched-yaw0-closed.png",
+      "control": "before/pitched-yaw0-closed.png",
+      "byteIdentical": true,
+      "changedPixels": 0,
+      "sha256": "9b11c1753fec1457cbb1ac7ebec000e3415aa8f214de9cdb40685829ed26ad50"
+    },
+    {
+      "after": "after/pitched-yaw0-squad.png",
+      "control": "before/pitched-yaw0-squad.png",
+      "byteIdentical": true,
+      "changedPixels": 0,
+      "sha256": "8252ee24f3c90830812434ca3dac5e25b450d7d324c47426bff97817c9e60f0f"
+    },
+    {
+      "after": "after/pitched-yaw0-squad-hover.png",
+      "control": "before/pitched-yaw0-squad.png",
+      "byteIdentical": true,
+      "changedPixels": 0,
+      "sha256": "8252ee24f3c90830812434ca3dac5e25b450d7d324c47426bff97817c9e60f0f"
+    },
+    {
+      "after": "after/pitched-yaw0-units-left.png",
+      "control": "before/pitched-yaw0-closed.png",
+      "byteIdentical": true,
+      "changedPixels": 0,
+      "sha256": "9b11c1753fec1457cbb1ac7ebec000e3415aa8f214de9cdb40685829ed26ad50"
+    },
+    {
+      "after": "after/flat-yaw2-hover.png",
+      "control": "before/flat-yaw2-closed.png",
+      "byteIdentical": true,
+      "changedPixels": 0,
+      "sha256": "12c18fda1c716877aec0254a1b45cbf3926348944c25468d6522a3c2cdc0c382"
+    },
+    {
+      "after": "after/flat-yaw2-closed.png",
+      "control": "before/flat-yaw2-closed.png",
+      "byteIdentical": true,
+      "changedPixels": 0,
+      "sha256": "12c18fda1c716877aec0254a1b45cbf3926348944c25468d6522a3c2cdc0c382"
+    },
+    {
+      "after": "after/flat-yaw2-squad.png",
+      "control": "before/flat-yaw2-squad.png",
+      "byteIdentical": true,
+      "changedPixels": 0,
+      "sha256": "49728e7f21a2c091bac5876dc36fbbc00b6e78e20cfafe3b6bb433140981ecb8"
+    },
+    {
+      "after": "after/flat-yaw2-squad-hover.png",
+      "control": "before/flat-yaw2-squad.png",
+      "byteIdentical": true,
+      "changedPixels": 0,
+      "sha256": "49728e7f21a2c091bac5876dc36fbbc00b6e78e20cfafe3b6bb433140981ecb8"
+    },
+    {
+      "after": "after/flat-yaw2-units-left.png",
+      "control": "before/flat-yaw2-closed.png",
+      "byteIdentical": true,
+      "changedPixels": 0,
+      "sha256": "12c18fda1c716877aec0254a1b45cbf3926348944c25468d6522a3c2cdc0c382"
+    }
+  ]
+}

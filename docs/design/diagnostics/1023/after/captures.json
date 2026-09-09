@@ -1,0 +1,96 @@
+{
+  "sourceCommit": "5ad79574a597204b2a3a70d9904bcc9c01b55516",
+  "repeatedBrowsers": 2,
+  "records": [
+    {
+      "id": "pitched-yaw0-closed",
+      "pointer": [-10, -10],
+      "state": {
+        "ghostCount": 0,
+        "ghostStrength": [0, 0, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "9b11c1753fec1457cbb1ac7ebec000e3415aa8f214de9cdb40685829ed26ad50"
+    },
+    {
+      "id": "pitched-yaw0-hover",
+      "pointer": [760, 405],
+      "state": {
+        "ghostCount": 0,
+        "ghostStrength": [0, 0, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "9b11c1753fec1457cbb1ac7ebec000e3415aa8f214de9cdb40685829ed26ad50"
+    },
+    {
+      "id": "pitched-yaw0-squad",
+      "pointer": [-10, -10],
+      "state": {
+        "ghostCount": 1,
+        "ghostStrength": [1, 0, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "8252ee24f3c90830812434ca3dac5e25b450d7d324c47426bff97817c9e60f0f"
+    },
+    {
+      "id": "pitched-yaw0-squad-hover",
+      "pointer": [760, 405],
+      "state": {
+        "ghostCount": 1,
+        "ghostStrength": [1, 0, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "8252ee24f3c90830812434ca3dac5e25b450d7d324c47426bff97817c9e60f0f"
+    },
+    {
+      "id": "pitched-yaw0-units-left",
+      "pointer": [760, 405],
+      "state": {
+        "ghostCount": 0,
+        "ghostStrength": [0, 0, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "9b11c1753fec1457cbb1ac7ebec000e3415aa8f214de9cdb40685829ed26ad50"
+    },
+    {
+      "id": "flat-yaw2-closed",
+      "pointer": [-10, -10],
+      "state": {
+        "ghostCount": 0,
+        "ghostStrength": [0, 0, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "12c18fda1c716877aec0254a1b45cbf3926348944c25468d6522a3c2cdc0c382"
+    },
+    {
+      "id": "flat-yaw2-hover",
+      "pointer": [760, 405],
+      "state": {
+        "ghostCount": 0,
+        "ghostStrength": [0, 0, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "12c18fda1c716877aec0254a1b45cbf3926348944c25468d6522a3c2cdc0c382"
+    },
+    {
+      "id": "flat-yaw2-squad",
+      "pointer": [-10, -10],
+      "state": {
+        "ghostCount": 2,
+        "ghostStrength": [1, 1, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "49728e7f21a2c091bac5876dc36fbbc00b6e78e20cfafe3b6bb433140981ecb8"
+    },
+    {
+      "id": "flat-yaw2-squad-hover",
+      "pointer": [760, 405],
+      "state": {
+        "ghostCount": 2,
+        "ghostStrength": [1, 1, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "49728e7f21a2c091bac5876dc36fbbc00b6e78e20cfafe3b6bb433140981ecb8"
+    },
+    {
+      "id": "flat-yaw2-units-left",
+      "pointer": [760, 405],
+      "state": {
+        "ghostCount": 0,
+        "ghostStrength": [0, 0, 0, 0, 0, 0, 0, 0]
+      },
+      "sha256": "12c18fda1c716877aec0254a1b45cbf3926348944c25468d6522a3c2cdc0c382"
+    }
+  ]
+}

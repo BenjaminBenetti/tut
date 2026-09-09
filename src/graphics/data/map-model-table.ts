@@ -122,6 +122,8 @@ export const PROP_MODELS: Readonly<Record<KnownPropKindId, ModelAssetId>> = {
   [PropKindIds.DUMPSTER]: "prop.dumpster",
   [PropKindIds.SHELVING]: "prop.shelving",
   [PropKindIds.TABLE]: "prop.table",
+  // Development placeholder; final #960 evidence requires Art's outdoor bench.
+  [PropKindIds.BENCH]: "prop.table",
   [PropKindIds.FENCE]: "prop.fence",
   [PropKindIds.BOULDER]: "prop.boulder",
   [PropKindIds.TREE_PINE]: "prop.tree-pine",

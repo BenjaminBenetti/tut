@@ -86,6 +86,8 @@ export class MapDraft {
   readonly buildings: Building[] = [];
   readonly connectors: Connector[] = [];
   readonly props: Prop[] = [];
+  /** Scratch provenance: yard allocation, distinct from vegetation/street/interior props. */
+  readonly yardPropIds = new Set<string>();
   readonly hooks: DraftHooks = {
     deployZones: [],
     objectives: [],

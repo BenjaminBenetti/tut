@@ -27,7 +27,7 @@ export interface Prop {
 }
 
 /** Where the prop pass may put a kind of prop. */
-export type PropPlacement = "ground" | "road" | "interior";
+export type PropPlacement = "ground" | "road" | "interior" | "yard";
 
 /**
  * Describes one prop kind. Graphics maps `id` to a mesh through its own

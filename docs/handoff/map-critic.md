@@ -17,10 +17,10 @@ frames are published at `e50207803d4a5f0dc2b11cbd3596e181298f8bfa`.
 Four Critic issues remain open: **#960 → #1006 → #1043 → #1005**; **one slot remains**.
 
 The Executive Director's focus is **tactical UX and map generation**, made
-robust. #968 says merges are temporarily paused because the Tech Lead hit
-Fable's weekly cap. **Work and pushing continue; no model switch, retooling
-or production hold.** Director may go quiet too. No waiting for a merge to
-finish evidence or file an independently actionable finding.
+robust. **#968 at01:08:43 UTC resumed merges and withdrew wind-down** after
+the Executive Director switched accounts. Tech Lead is back sweeping the
+accepted queue. Normal sequencing applies; no parking while work is eligible.
+The earlier weekly-cap pause is historical. No model switching or retooling.
 
 The singleton watcher uses the authorised **23:52:12–02:52:12 UTC** window,
 8–9 September, every five minutes. Do not reset its deadline on re-arm.
@@ -79,7 +79,7 @@ explain a picture. Route to both areas when cause cannot be assigned by eye.
    evidence: `mc-opening-03`, coastal/city/medium72, (51,1,31), 55px/tile.
    Town corroboration is posted. Rural #917 remains accepted and the
    coherent finite garden run is not this finding.
-3. **[#1043](https://github.com/BenjaminBenetti/tut/issues/1043), p2, MapGen + Art:**
+3. **[#1043](https://github.com/BenjaminBenetti/tut/issues/1043), p2, Art primary + MapGen support:**
    coastal rural brown approach loses route identity in broad bare earth.
    New `mc-resume-03`, coastal/rural/small48, junction focus (21,2,10),
    initial/one E turn; entrance context (13,2,24), 45px/tile. Three native
@@ -94,9 +94,10 @@ explain a picture. Route to both areas when cause cannot be assigned by eye.
 [#1006/#1005 evidence](../design/diagnostics/map-critic-v0213/followups/README.md)
 is already committed and posted (city `ebf67d7`, water `d8babd8`).
 MapGen submitted #911 as #1042 (`00af271`) and **started #1006**.
-MapGen explicitly queued **#1043 after #1006, ahead of #984 and #1005**.
-Its resulting order is #1006 active → #1043 → #984 → #1005 → #591.
-Art acknowledged #1043 material/readability support after submitting #960.
+**#1043 now has Art's primary claim**, explicitly routed by Director/Producer
+at01:10:14 after #1048 submission; Art acknowledged and started tracing the
+route/ground distinction. MapGen's supporting cause assessment stays after
+active#1006, ahead of#984/#1005/#591. Do not add a second primary seat label.
 Art's #450 is deferred by the focus order, not an automatic successor.
 Do not change specialists' primary ownership claims simply because both
 area labels appear. Tell the Director if the queue grows without work.
@@ -206,7 +207,18 @@ arrangements remain unfinished under #960/#1006. [Provisional verdict](https://g
 Before runtime9d9ea01, after2a979c7 with accepted units-only #1032 integrated.
 This is attributed author evidence, not our fresh-main acceptance or an
 independent recreation of browser-repeat, final unit/level/fog controls.
-Art was capturing those final controls before gates and its PR stacked on #1032.
+Art submitted **#1048 at d546637**, stacked on #1032, and Director accepted.
+All eighteen paired final unit/level/fog frames are now opened too, all hashes
+verified, all eight published restoration images exactly match their phase's
+closed control. [Final-controls judgment](https://github.com/BenjaminBenetti/tut/pull/1048#issuecomment-5594221931).
+Fresh-main verification remains owed; whole #960 stays open for outdoor use.
+
+**#1006 preview:** sixteen author frames at13a8914 opened, all hashes verified;
+before9d9ea01/after03569fb. City fragments disappear, retained city/town fences
+read as plot boundaries, rural controls byte-identical, waterfront preserved.
+The owner's lower distributed-cover measurement is a disclosed tradeoff; do
+not restore implausible fragments for tactical usefulness. [Provisional verdict](https://github.com/BenjaminBenetti/tut/issues/1006#issuecomment-5594198760).
+Fresh-main check and Director judgment remain ahead at this checkpoint.
 
 Prior records, all already published:
 
@@ -255,7 +267,7 @@ tactical camera view from the ramp side after finding the south-facing craft
 hid the starting rifle squad. Do not re-file the bare marker or that active
 framing problem. Map Lab retains its common survey orientation.
 
-Director's #1042 frame judgment was held only for a lot-cost question;
+Director accepted #1042 after its lot-cost answer, carried to d4faaf9;
 MapGen answered that the aircraft reservation precedes building placement,
 not deletion after generation. Its coastal/city/medium `mc-opening-03` pair
 moves deploy from the west edge to the north-facing craft's boarding area
@@ -264,7 +276,12 @@ MapGen's own 108-map comparison reports a worst6→4 building change on
 **coastal/city/small `mc-resume-02`**. Those counts are owner evidence, not Critic
 QA work. After integration inspect that recipe for settlement identity/cost,
 and the pictured city landing for approach, ramp visibility and squad framing.
-No post-integration verdict or new density defect has been established yet.
+The Critic has now rendered the largest-loss recipe on main9d9ea01 versus
+isolated PRd4faaf9: six native frames, both sides/whole view, all opened.
+Its thinner frontage is visible but remains a coherent coastal neighborhood;
+the aircraft gives arrival/return a physical anchor. **Acceptable cost on
+this recipe**, ranked below the four live defects. [Fresh preview record](../design/diagnostics/map-critic-premerge-0909/landing-cost/README.md).
+No post-integration verdict or population-wide density judgment is claimed.
 
 **Restart the capture server for every changed runtime baseline.** The
 stable capture configuration disables watching/HMR, so an inherited server
@@ -293,7 +310,7 @@ pilots in scratch, excluding them from claimed counts.
 Singleton script: `.scratch/map-critic-v0215/watch.py`; live session is
 recorded in `.scratch/map-critic-v0215/watch/session.json`. Config, consumed events and all channel responses live in
 `.scratch/map-critic-v0215/watch/`. Discussion caught up by full-page overlap
-and all subsequent change events; latest change cycle consumed **00:42:12 UTC**,
+and all subsequent change events; latest change cycle consumed **01:12:22 UTC**,
 quiet cycles continue (live cursor in config.json).
 The resume window is **23:52:12 Sept8 → 02:52:12 Sept9**; re-arms preserve it.
 The prior 19:15–22:15 watch timed out normally and stays finished.

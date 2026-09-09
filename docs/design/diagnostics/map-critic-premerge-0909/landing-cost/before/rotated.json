@@ -1,0 +1,58 @@
+{
+  "seed": "mc-resume-02",
+  "biome": "coastal",
+  "settlement": "city",
+  "size": "small",
+  "models": "1",
+  "units": "1",
+  "slope": "100",
+  "phase": "before",
+  "view": "rotated",
+  "url": "http://localhost:4175/mapgen-preview.html?seed=mc-resume-02&biome=coastal&settlement=city&size=small&models=1&units=1&slope=100",
+  "baseline": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+  "serverRuntime": {
+    "baseline": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+    "server": "http://localhost:4175",
+    "serverSession": 78445,
+    "recordedAt": "2026-09-08T23:54:44.203435+00:00",
+    "config": "tools/art/preview/capture-vite.config.mjs",
+    "watch": null,
+    "hmr": false,
+    "freshServerAfterCheckout": true,
+    "runtimeTrees": {
+      "src": "a40dc3470152eedf6c21ee8842926a558383ca35",
+      "public": "5e85567612436db764109379d0631edae38b7f77",
+      "tools": "9d64b17f164f5bc7c94ab0c12fd93ade1690591d"
+    }
+  },
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "clip": {
+    "x": 380,
+    "y": 0,
+    "width": 2020,
+    "height": 1500
+  },
+  "levels": {
+    "value": "10",
+    "max": "11",
+    "step": "2",
+    "label": "all"
+  },
+  "rotation": 1,
+  "camera": "initial zoom; one E for rotated",
+  "capturedAt": "2026-09-09T01:08:06.016Z",
+  "errors": [],
+  "pngSha256": "979b14670f9126ee3586bc95f2d5c5d505874f163eadd5179376b410b4911868",
+  "visuallyInspected": true,
+  "scope": "Fresh Critic capture of main versus unmerged PR1042; not post-merge acceptance",
+  "mapRegion": {
+    "xMin": 0,
+    "xMax": 47,
+    "zMin": 0,
+    "zMax": 47
+  },
+  "inspectionDateUTC": "2026-09-09"
+}

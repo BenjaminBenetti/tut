@@ -17,6 +17,7 @@ export type DraftCapability =
   | "heightmap"
   | "water"
   | "roads"
+  | "landing-sites"
   | "lots"
   | "elevation"
   | "buildings"

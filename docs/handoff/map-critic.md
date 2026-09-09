@@ -1,32 +1,46 @@
 # Handoff: Map Critic
 
-9 September 2026 UTC, **v0.2.15 resumed survey complete**. Survey runtime
-is main `9d9ea012e97292ae3f96e2500f1609a1cfdbf412`; branch
-`docs/1023-map-critic-merged-checks` for the subsequent merge checks. The Director reported **67% context remaining**
-through `/status` on resume. That is an operator measurement at that time,
-not a live percentage exposed to these tools. Continue the authorised work.
-All 24 new recipes / 48 source views and six assembled sheets are inspected;
-[complete assessment](../design/diagnostics/map-critic-v0215/README.md).
+9 September 2026 UTC, **03:35 checkpoint: survey v0.2.16 when published**.
+The Executive Director widened this seat's brief in [epic #1068](https://github.com/BenjaminBenetti/tut/issues/1068):
+Earth locations should read as themselves, through biome, materials,
+buildings and props. Rank that second axis alongside the defect list.
+**Robustness comes first; every variety ticket carries earlier defect
+controls.** Survey the release tag, not intervening main. Tickets follow
+frames, not catalogue inspection or the epic alone.
+[Task acknowledgement](https://github.com/BenjaminBenetti/tut/issues/1068#issuecomment-5595331058).
+No v0.2.16 release/tag was present at the 03:34 watch cycle.
 
-**#945 and #959 both improve the picture on merged main.** Nine fresh native
-frames are published at `e50207803d4a5f0dc2b11cbd3596e181298f8bfa`.
-[Ground-contact verdict](https://github.com/BenjaminBenetti/tut/issues/945#issuecomment-5593788972),
-[trail and rural stone-identity verdict](https://github.com/BenjaminBenetti/tut/issues/959#issuecomment-5593789123),
-[exact evidence](../design/diagnostics/map-critic-v0215/repairs/README.md).
-[Completed survey digest](https://github.com/BenjaminBenetti/tut/issues/905#issuecomment-5594135391).
-Four Critic issues remain open: **#960 → #1006 → #1043 → #1005**; **one slot remains**.
+**One open Critic issue: #960. Four slots available.** #1006, #1043 and
+#1005 have merged and closed; fresh release-frame verdicts remain owed.
+#911 is existing Director-owned work, still in integration, not a new slot.
+The v0.2.15 survey, #945/#959/#978 repair checks and fresh merged
+#1032 cutaway / #1048 frontages are complete and posted. Evidence docs
+PRs #1049 and #1057 are merged; do not reopen their deleted branches.
+Current docs branch: `docs/1068-map-critic-variety-brief`.
 
-The Executive Director's focus is **tactical UX and map generation**, made
-robust. **#968 at01:08:43 UTC resumed merges and withdrew wind-down** after
-the Executive Director switched accounts. Tech Lead is back sweeping the
-accepted queue. Normal sequencing applies; no parking while work is eligible.
-The earlier weekly-cap pause is historical. No model switching or retooling.
+Next, in order:
 
-The singleton watcher uses the authorised **23:52:12–02:52:12 UTC** window,
-8–9 September, every five minutes. Do not reset its deadline on re-arm.
-[Resume acknowledgement](https://github.com/BenjaminBenetti/tut/discussions/968#discussioncomment-18358507).
-Runtime/scratch and the exact watch protocol are below. This handoff has no
-remaining claim that #1015 awaits merge or that #945/#959 remain open.
+1. Pin the published v0.2.16 tag and runtime trees; start a fresh isolated
+   capture server. Re-check fences (#1006), coastal route (#1043), water
+   (#1005), and any #911/#960 work actually included in that tag.
+2. Survey declared Earth locations, starting with Johannesburg, Perth and
+   Lagos, alongside other useful campaign contrasts. Verify each release
+   location claim and recipe; look in Map Lab, then change one parameter.
+   Compare a second angle before calling a finding real. Catalogue entries
+   identify claims, never prove a visual defect.
+3. Commit crops/recipes and file the strongest evidenced findings, within
+   cap five, before expanding the narrative. Post ranked defect **and**
+   variety lists under #905/#1068, leading with what to preserve.
+4. Keep this handoff and the singleton watch current. No percentage is
+   exposed to these tools; the Director's earlier 67% was a dated operator
+   measurement, not a current estimate.
+
+One watcher, `.scratch/map-critic-v0216/watch.py`, window **03:26:54 →
+06:26:54 UTC**, includes Discussion #968 and publication of v0.2.16.
+All channels through 03:34:19 consumed; use its config/session files for
+live state. The older 23:52–02:52 window ended; it did not run through the
+later pause. All old capture servers are stopped. No current-main scratch
+frame is relabelled as release evidence.
 
 ## Calibration and boundaries
 
@@ -63,56 +77,50 @@ Map Lab is the instrument. Change one recipe parameter, look, then inspect
 another angle before filing. Never inspect generator implementation to
 explain a picture. Route to both areas when cause cannot be assigned by eye.
 
-## Current ranked queue
+## Current ranked queue and merged work awaiting release checks
 
-1. **[#960](https://github.com/BenjaminBenetti/tut/issues/960), p2, Art + MapGen:**
-   frontages and plots lack recognisable everyday uses. Art's six-module
-   frontage repair merged in #1048 at `8451a08` (accepted head `d546637`);
-   final context/visibility frames are Critic-inspected. Generic outdoor
-   arrangement remains owed by MapGen; the full issue stays open. Do not
-   re-file generic boxes or force residential kinds to change to obtain
-   variety. Exterior cues and MapGen's outdoor arrangement are distinct
-   remaining work. Preserve wall-family identity, restrained glazing,
-   different heights/footprints and roof access. Original evidence is in
-   [the resumed survey](../design/diagnostics/map-critic-resume-0908/README.md).
-2. **[#1006](https://github.com/BenjaminBenetti/tut/issues/1006), p2, MapGen:**
-   city/town timber panels describe no visible boundary. Two-angle city
-   evidence: `mc-opening-03`, coastal/city/medium72, (51,1,31), 55px/tile.
-   Town corroboration is posted. Rural #917 remains accepted and the
-   coherent finite garden run is not this finding. Submitted/Director-accepted
-   repair #1052 at0233926; Critic author-frame verdict positive, fresh-main owed.
-3. **[#1043](https://github.com/BenjaminBenetti/tut/issues/1043), p2, Art primary + MapGen support:**
-   coastal rural brown approach loses route identity in broad bare earth.
-   New `mc-resume-03`, coastal/rural/small48, junction focus (21,2,10),
-   initial/one E turn; entrance context (13,2,24), 45px/tile. Three native
-   images inspected and posted, [evidence](../design/diagnostics/map-critic-v0215/coastal-trail/README.md),
-   `ce1ea0c`. Cause uncertain by eye; no movement failure claimed. #959's
-   temperate repair remains accepted. This is the fourth Critic slot. Art submitted #1055 at `1746cb9`;
-   Critic opened all 14 author frames and posted a positive preview verdict. Director accepted
-   `1746cb9`; the stone-lane identity question is answered in our verdict.
-   Four control pairs are byte-identical. Fresh-main verification remains owed.
-4. **[#1005](https://github.com/BenjaminBenetti/tut/issues/1005), p3, MapGen + Art:**
-   a regular grid crosses continuous open water. MapGen started its routed
-   initial cause assessment at 01:43:32 UTC after submitting #984 as #1053;
-   production repair is not yet claimed. `mc-opening-01`,
-   coastal/rural/small48, (40,0,4), 55px/tile, two angles and UI controls.
-   Cause uncertain by eye; distinct from #945's between-material contacts.
+1. **[#960](https://github.com/BenjaminBenetti/tut/issues/960), p2, MapGen primary:**
+   plots need recognisable everyday uses. Art frontages merged #1048 and
+   passed the Critic's fresh six-frame check. The actual yard bench merged
+   #1060 at `eb96d5a` (accepted head `830ebdd`). MapGen's outdoor arrangement
+   remains active, temporarily interrupted for #1042 integration repairs.
+   Actual-model after captures were underway at the `f20701a` checkpoint;
+   no final generation PR or Critic after-frame acceptance was observed.
+   Preserve wall families, restrained glazing, height/roof access, rural
+   context and mission routes. Do not re-file generic clutter as a new issue.
+   Owner's latest 108 paired-map counts at `5338e66` are QA evidence, not
+   Critic certification: rural unchanged; town clutter1003→317, city2171→519;
+   cover adjacency13.71→12.66% town and11.63→8.79% city. Earlier first-shot
+   regression was repaired by protecting mission placement; final real
+   frames and tests belong to the owner. Bench is yard-only, not a generic
+   ground-pool substitute.
 
-[#1006/#1005 evidence](../design/diagnostics/map-critic-v0213/followups/README.md)
-is already committed and posted (city `ebf67d7`, water `d8babd8`).
-MapGen submitted #911 as #1042 and #1006 as #1052, both Director-accepted.
-#1043 supporting cause assessment is complete with no production edits;
-MapGen submitted #984 as #1053. It finishes the bounded #1005 cause trace,
-then takes #960 outdoor arrangements before any water repair (Producer
-confirmed this ordering at 01:47:51 UTC). Art submitted #1043 as #1055 and now has no active implementation; #450
-stays deferred.
-**#1043 now has Art's primary claim**, explicitly routed by Director/Producer
-at 01:10:14 after #1048 submission. The cause assessment is complete.
-MapGen now owns remaining #960 outdoor arrangements, queued after active
-#984 and before #1005/#591. Do not add a second primary seat label.
-Art's #450 is deferred by the focus order, not an automatic successor.
-Do not change specialists' primary ownership claims simply because both
-area labels appear. Tell the Director if the queue grows without work.
+Closed repairs, in release-check order:
+
+- **#1006**, urban fence fragments: #1052 merged **02:07:50**, `8d20dd4`,
+  accepted head `0233926`. Sixteen author preview frames inspected and
+  positive. Fresh release check owed. Primary pair `mc-opening-03`,
+  coastal/city/medium72, focus(51,1,31),55px/tile,two angles; keep rural
+  #917 and built waterfront controls. Finite useful boundaries are accepted.
+- **#1043**, coastal rural route lost in bare soil: #1055 merged **02:17:36**,
+  `8e9c8fb`, accepted head `1746cb9`. Fourteen author frames opened and
+  positive, four control pairs byte-identical. Fresh release check owed.
+  `mc-resume-03`,coastal/rural/small48; junction(21,2,10),initial/one E;
+  approach(13,2,24),45px/tile. Stone is plausible substantial-building
+  access; no blanket dirt-path requirement. [Preview verdict](https://github.com/BenjaminBenetti/tut/pull/1055#issuecomment-5594596868).
+- **#1005**, grid across continuous open water: Art repair #1064 merged
+  **03:22:16**, `bb28b8d`, accepted head `9fdf227`. MapGen's diagnosis was
+  handed to Art; the old queued-MapGen production claim is superseded.
+  Author has ten final before/after frames in `docs/design/diagnostics/1005/`;
+  **Critic has not opened those or made a fresh release verdict yet**.
+  Primary water pair `mc-opening-01`,coastal/rural/small48,(40,0,4),55px/tile.
+  Check two sides, waterfronts and dry ground, preserving shore silhouettes.
+  [Owner evidence and scope](https://github.com/BenjaminBenetti/tut/issues/1005#issuecomment-5595078090).
+
+[#1006/#1005 original evidence](../design/diagnostics/map-critic-v0213/followups/README.md)
+(city `ebf67d7`, water `d8babd8`) and [#1043 original evidence](../design/diagnostics/map-critic-v0215/coastal-trail/README.md)
+(`ce1ea0c`) remain immutable. A closed issue is not a fresh visual verdict.
+No new variety ranking or ticket has been established yet.
 
 **No stone-identity defect established:** the reported temperate route and
 new small and large rural seed read as plausible surfaced access lanes serving
@@ -170,7 +178,7 @@ mech access certification. #787 already owns future big-city overpasses.
   The visible open garden end marks a legible plot boundary; no separate
   ticket for that case. This is not blanket permission for arbitrary stubs
   and not a demand that every plot be enclosed. New rural frames retain
-  the context; urban isolated panels remain the open #1006.
+  the context; urban isolated panels are the separate #1006, now merged awaiting a release check.
 
 - **#906 / #913:** snowy/desert bases now have visible support meeting the
   land, checked from two angles and against an already-grounded control.
@@ -241,7 +249,7 @@ frame byte-for-byte. #960 stays open for outdoor arrangement.
 [Fresh evidence](../design/diagnostics/map-critic-post1048/README.md), `fdc3034`;
 [posted main verdict](https://github.com/BenjaminBenetti/tut/issues/960#issuecomment-5594621085).
 Driver `frontage-camera.mjs`, final terminal70271 completed0; scratch
-`post1048-camera/`, isolated port4176/session77234. It uses the production
+`post1048-camera/`, isolated port4176/session77234 now stopped. It uses the production
 camera rig accessor to match accepted framing, without map/scene changes.
 The earlier manual-camera I01 and failed/incomplete attempts remain scratch
 only. Initial server22020 ended SIGTERM143; the same pinned8451a08 restarted.
@@ -284,21 +292,20 @@ merged at 01:35:34 UTC as `ba4d7b1`; final head `5f4c4a6` passed all three CI ch
 [Completion record](https://github.com/BenjaminBenetti/tut/pull/1049#issuecomment-5594456162).
 The merged survey passed local ESLint, Prettier and evidence validation:
 26 PNG/sidecar pairs plus six separate landing-cost pairs, and 24 unique
-survey recipes. Subsequent #1032/#1048 checks are on
-`docs/1023-map-critic-merged-checks`, now **[PR #1057](https://github.com/BenjaminBenetti/tut/pull/1057)**.
-All 26 new frames are committed and posted. The singleton watcher follows
-this PR's current-head CI, comments, reviews and merge.
-Tech Lead alone merges.
+survey recipes. Subsequent #1032/#1048 checks merged as **[PR #1057](https://github.com/BenjaminBenetti/tut/pull/1057)**
+at02:49:36, squash `ffcf7ea`. Final head `afbb690` passed all three CI checks,
+independently verified after resume. All26 new frames are committed and
+posted. The deleted remote branch is finished. Tech Lead alone merges.
 
 ## Rulings and capture gotchas
 
 Do not re-file **#876 or N1 narrow channels**. #813 permits bare natural
 cliffs; dramatic town grades do not reopen judged connectors. #849 closed
-with its wider coverage-bucket caveat. #869 owns parapet/ramp intersections;
-the earlier measured population was zero. New Director routing at 01:56:41
-puts #869 diagnosis/failing regression with eng-3. MapGen must explicitly
-approve before any engineer changes production pass order; do not infer
-approval from the old recommendation.
+with its wider coverage-bucket caveat. #869's crossed-kerb repair merged in #1063 at03:22:10, `c9b5631`.
+MapGen explicitly approved eng-3's bounded repair in comment5594641108;
+it clears only the half-wall crossed by an accepted ramp and preserves
+pass order/fence inputs. The earlier move-kerbs-after-connectivity proposal
+and pending-approval claim are superseded. Preserve #813/#876/N1 rulings.
 #701 owns isolated desert palms; #712 records temperate boulder intent;
 #281 cover density stands. Tree boundaries do not establish LOS protection (#591).
 
@@ -310,14 +317,17 @@ tactical camera view from the ramp side after finding the south-facing craft
 hid the starting rifle squad. Do not re-file the bare marker or that active
 framing problem. Map Lab retains its common survey orientation.
 
-Director accepted #1042 after its lot-cost answer, carried to d4faaf9.
-It is now rebased to `b54d55d` on fetched main `3b7da52`, preserving both
-frontages and dropships. Director carried acceptance but explicitly requires
-Tech Lead to re-render the merged runtime: unchanged evidence files alone
-do not prove conflict resolution left the actual picture unchanged. The
-combined gate is now red on the changed seed-4242 layout versus #1036
-interior-movement fixture. Tech Lead assigned the integration repair to
-MapGen; a fresh combined arrival render and re-gate remain owed.
+Director accepted #1042 after its lot-cost answer; current accepted carry
+is `a7e7a22`, still **open**. The frontage/drop-ship conflict was resolved;
+unchanged PNG files alone do not prove the combined picture. First combined
+gate exposed the pinned #1036 entrance fixture; MapGen derived the real
+entrance and fixed that. Latest gate is red on the spawner/scout fixture:
+a lone20HP squad reaches the objective wave and dies, not a landing-turn
+wave. Owner is retaining the unseen→scout→click proof, deriving real movement
+and using the normal starting roster; no seed or placement change promised.
+Latest diagnosis03:21:42. Tech Lead still owes a fresh combined arrival
+render and passing integration gate. Check actual release inclusion before
+claiming dropships shipped. #984 deploy capacity is separately merged #1053.
 
 MapGen answered that the aircraft reservation precedes building placement,
 not deletion after generation. Its coastal/city/medium `mc-opening-03` pair
@@ -331,7 +341,7 @@ The Critic has now rendered the largest-loss recipe on main9d9ea01 versus
 isolated PRd4faaf9: six native frames, both sides/whole view, all opened.
 Its thinner frontage is visible but remains a coherent coastal neighborhood;
 the aircraft gives arrival/return a physical anchor. **Acceptable cost on
-this recipe**, ranked below the four live defects. [Fresh preview record](../design/diagnostics/map-critic-premerge-0909/landing-cost/README.md).
+this recipe**, ranked below the four then-live defects. [Fresh preview record](../design/diagnostics/map-critic-premerge-0909/landing-cost/README.md).
 No post-integration verdict or population-wide density judgment is claimed.
 
 **Restart the capture server for every changed runtime baseline.** The
@@ -358,57 +368,67 @@ pilots in scratch, excluding them from claimed counts.
 
 ## Watch and local checkpoint
 
-Singleton script: `.scratch/map-critic-v0215/watch.py`; live session is
-recorded in `.scratch/map-critic-v0215/watch/session.json`. Config, consumed events and all channel responses live in
-`.scratch/map-critic-v0215/watch/`. Discussion caught up by full-page overlap
-and all subsequent change events; latest change cycle consumed **01:57:31 UTC**,
-quiet cycles continue (live cursor in config.json).
-The resume window is **23:52:12 Sept8 → 02:52:12 Sept9**; re-arms preserve it.
-The prior 19:15–22:15 watch timed out normally and stays finished.
+One watcher: `.scratch/map-critic-v0216/watch.py`; live terminal identifier
+in `watch/session.json`, cursor/deadline in `watch/config.json`. Window
+**03:26:54 → 06:26:54 UTC9Sept**; every re-arm preserves that deadline.
+It watches Discussion968, relevant merges, issue/body/label changes,
+comments, PR review comments/reviews, owned docs CI, and v0.2.16 release/tag.
+Full catch-up through03:22 is cached under `.scratch/map-critic-v0215/`:
+`discussion-1068-catchup.json` (all100 window, no previous page),
+`comments-1068-catchup.json` (2pages111comments), open/closed/release files.
+The 03:31/03:34 cycles are consumed. A first rearm failed on an absent
+history file and accidentally repeated a cycle after2m24s; helper now
+initializes history, next cycle is03:39:19. Do not repeat that mistake:
+**inspect rearm success before starting the watcher**.
 
 ```sh
 gh api graphql -f query='{repository(owner:"BenjaminBenetti",name:"tut"){discussion(number:968){comments(last:10){nodes{createdAt body}}}}}'
 ```
 
-Sample **all channels before exit**: discussion, open issue/body/label
-updates, relevant merged PRs, issue comments, PR review comments/reviews.
-No-overlap latest10 requires full catch-up before cursor advance. Read
-all changes in `result.json`, then run the local `rearm.py` helper and start
-one watcher with the unchanged deadline. Never run two. The helper uses
-the event's actual date across midnight. Errors do not advance the cursor.
-Add new owned issues and the next docs PR to this same watch. #1049 is complete. No crons;
-API polling at least300seconds, REST except the required discussion query.
+Sample all channels before exit. Read every reported direction, including
+all discussion posts without role mentions. If latest10 lacks overlap,
+page catch-up before cursor advance. Resolve errors before rearm. REST
+except this query; ≥300seconds; no second watcher or cron. Add new issues
+and docs PR/current-head CI to this same config. Resolve this repository's
+discussion ID afresh before mutations; never reuse an unverified node ID.
 
-- Broad survey terminal **20381** completed24/24, exit0; all48 sources inspected.
-  Driver `.scratch/map-critic-v0215/survey.mjs`, observations.json and sheet
-  inspection ledger remain in the same scratch root.
-- Roof re-check **10932** completed8/8, exit0; all opened and published.
-- Coastal junction **84915** completed2/2, both opened and published with
-  D1 approach context. Other first framing attempts remain scratch only.
-- `publish-survey.py` assembles only complete, individually inspected
-  whole/near recipe groups. Open the resulting sheets before publishing them.
-- Old ports4173/4174 were stopped; they are not this pass.
-  Older raw captures remain under `.scratch/map-critic-v0213/` and prior roots.
-- Applicable docs checks exclude ignored scratch without changing config:
-  `pnpm exec eslint . --ignore-pattern '.scratch/**'` and
-  `pnpm exec prettier --check . --ignore-path .prettierignore --ignore-path .gitignore --ignore-path .git/info/exclude`.
-  Format new JSON; validate dimensions, hashes, recipes, links and scope;
-  `git diff --check`. No game tests for diagnostic-only edits; normal PR CI applies.
+**Current CI caveat:** Tech Lead reported GitHub e2e20-minute cancellations
+in #1070; eng-5 subsequently showed one17m06 successful run. Do not label
+all cancellations superseded or all heads failed. The Tech Lead's full
+combined local gate passed the merged #1063/#1064 tree. CI infrastructure
+work is not ours; no test/assertion weakening. Evidence remains SwiftShader
+under #1069, not the prospective iGPU path.
 
-Avoid negated GitHub closing phrases: one once closed #906 accidentally.
-Use `References` for live findings; a docs PR may use template `Closes #905`
-for the already-closed survey. Every comment has the Critic header. No
-main push, game code, art changes, merges, model switching or QA counting.
+**v0.2.16 preparation only:** `.scratch/map-critic-v0216/`. Location catalogue
+read from `src/overworld/data/earth-map.ts` solely to establish named claims:
+Johannesburg/Lagos temperate cities, Perth coastal town. Verify on release;
+never explain defects by reading generator code. Primary geographic
+bookmarks are in `location-references.md`; no reference photos are licensed
+or committed as game evidence. No location-specific finding yet.
 
-Next: follow completed cutaway/frontage docs PR #1057 CI/review. Inspect #1042
-landing, #1052 fences and #1055 coastal trails on fresh main when they land. File any newly
-evidenced distinct finding before expanding the write-up. The 24-recipe
-survey, top-roof verdict and #1049 are complete; keep the one bounded watch
-until its event or original deadline.
+**Excluded rolling main pass:** `.scratch/map-critic-v0215/rolling-survey/`,
+12captures completed on `6a552d6` (mc-resume-04,small48:coastal town→desert
+town→desert city→snowy city,near/rotated/whole). Individual inspection was
+unfinished when Director required v0.2.16. `SUPERSEDED.txt` records scratch-only
+status. Do not publish or count these as inspected release frames.
+Port4177/session45251 is stopped; all previous capture servers are stopped.
 
-Latest coastal preview: #1055 at `1746cb996abb5d7eda78435efad1e6123282e571`,
-[Critic verdict](https://github.com/BenjaminBenetti/tut/pull/1055#issuecomment-5594596868).
-All 14 author PNGs opened/hash-verified in `.scratch/map-critic-v0215/art1043`;
-four controls are before/after byte-identical. Narrow stone access reads
-plausibly and remains identifiable through bare soil in both junction views.
-This is attributed preview evidence, not our fresh-main or QA/performance proof.
+Completed drivers/ledgers remain in `.scratch/map-critic-v0215/`: survey.mjs
+(24recipes/48sourceviews),post1032.mjs (20frames),frontage-camera.mjs
+(6frames, production camera accessor only), roof-controls and coastal
+junction captures. Published README/sidecars give their exact invocation,
+settings, crop, hash, runtime and limits. Earlier failed/framing pilots
+remain scratch, excluded from counts. Archive of the prior detailed
+handoff is [afbb690](https://github.com/BenjaminBenetti/tut/blob/afbb69008697c0a4e546decb4c45b5fffccfecd7/docs/handoff/map-critic.md).
+
+Docs checks: `pnpm exec eslint . --ignore-pattern '.scratch/**'`,
+`pnpm exec prettier --check . --ignore-path .prettierignore --ignore-path .gitignore --ignore-path .git/info/exclude`,
+`git diff --check`; validate PNG dimensions/hashes, recipes, links and scope.
+No game tests for diagnostic-only edits; normal PR CI applies. System Python
+has no Pillow; PNG headers/stdlib suffice for dimensions. Never retouch proof.
+
+Avoid negated GitHub closing phrases (#906 was once accidentally closed).
+Use References for live findings, including epic1068; docs may reference the
+already-closed survey905 for the template. Every comment has the Critic
+header. No main push, game code/art changes, merges, model switching or QA
+counting. Only this repository/workspace.

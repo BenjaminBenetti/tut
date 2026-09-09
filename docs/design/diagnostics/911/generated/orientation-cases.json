@@ -1,0 +1,280 @@
+[
+  {
+    "id": "arrival-s",
+    "seed": "mc-resume-02",
+    "biome": "temperate",
+    "settlement": "rural",
+    "size": "small",
+    "pitch": 60,
+    "rotation": 0,
+    "clip": {
+      "x": 750,
+      "y": 250,
+      "width": 1200,
+      "height": 1000
+    },
+    "focus": {
+      "x": 10.0,
+      "y": 4,
+      "z": 41.0
+    },
+    "site": {
+      "deployZoneId": "hook-1",
+      "clearance": {
+        "x": 7,
+        "z": 35,
+        "w": 7,
+        "d": 13
+      },
+      "footprint": {
+        "x": 8,
+        "z": 40,
+        "w": 5,
+        "d": 7
+      },
+      "facing": "s",
+      "level": 4
+    },
+    "deploy": {
+      "id": "hook-1",
+      "kind": "deploy",
+      "tiles": [
+        {
+          "x": 8,
+          "y": 4,
+          "z": 39
+        },
+        {
+          "x": 9,
+          "y": 4,
+          "z": 39
+        },
+        {
+          "x": 10,
+          "y": 4,
+          "z": 39
+        },
+        {
+          "x": 11,
+          "y": 4,
+          "z": 39
+        },
+        {
+          "x": 8,
+          "y": 4,
+          "z": 38
+        },
+        {
+          "x": 9,
+          "y": 4,
+          "z": 38
+        },
+        {
+          "x": 10,
+          "y": 4,
+          "z": 38
+        },
+        {
+          "x": 11,
+          "y": 4,
+          "z": 38
+        },
+        {
+          "x": 8,
+          "y": 4,
+          "z": 37
+        },
+        {
+          "x": 9,
+          "y": 4,
+          "z": 37
+        },
+        {
+          "x": 10,
+          "y": 4,
+          "z": 37
+        },
+        {
+          "x": 11,
+          "y": 4,
+          "z": 37
+        },
+        {
+          "x": 8,
+          "y": 4,
+          "z": 36
+        },
+        {
+          "x": 9,
+          "y": 4,
+          "z": 36
+        },
+        {
+          "x": 10,
+          "y": 4,
+          "z": 36
+        },
+        {
+          "x": 11,
+          "y": 4,
+          "z": 36
+        }
+      ],
+      "requiredPass": 3
+    },
+    "notes": [
+      {
+        "pass": "dropship-sites",
+        "message": "dropship on s: 0 cut columns, 0 layer-columns excavated, 16 external boarding columns",
+        "at": {
+          "x": 8,
+          "y": 4,
+          "z": 39
+        }
+      },
+      {
+        "pass": "connectivity",
+        "message": "5 hook/class checks, 0 repairs, 0 relocations"
+      }
+    ]
+  },
+  {
+    "id": "arrival-e",
+    "seed": "mc-resume-02",
+    "biome": "coastal",
+    "settlement": "rural",
+    "size": "small",
+    "pitch": 60,
+    "rotation": 0,
+    "clip": {
+      "x": 750,
+      "y": 250,
+      "width": 1200,
+      "height": 1000
+    },
+    "focus": {
+      "x": 41.0,
+      "y": 2,
+      "z": 26.0
+    },
+    "site": {
+      "deployZoneId": "hook-1",
+      "clearance": {
+        "x": 35,
+        "z": 23,
+        "w": 13,
+        "d": 7
+      },
+      "footprint": {
+        "x": 40,
+        "z": 24,
+        "w": 7,
+        "d": 5
+      },
+      "facing": "e",
+      "level": 2
+    },
+    "deploy": {
+      "id": "hook-1",
+      "kind": "deploy",
+      "tiles": [
+        {
+          "x": 39,
+          "y": 2,
+          "z": 24
+        },
+        {
+          "x": 39,
+          "y": 2,
+          "z": 25
+        },
+        {
+          "x": 39,
+          "y": 2,
+          "z": 26
+        },
+        {
+          "x": 39,
+          "y": 2,
+          "z": 27
+        },
+        {
+          "x": 38,
+          "y": 2,
+          "z": 24
+        },
+        {
+          "x": 38,
+          "y": 2,
+          "z": 25
+        },
+        {
+          "x": 38,
+          "y": 2,
+          "z": 26
+        },
+        {
+          "x": 38,
+          "y": 2,
+          "z": 27
+        },
+        {
+          "x": 37,
+          "y": 2,
+          "z": 24
+        },
+        {
+          "x": 37,
+          "y": 2,
+          "z": 25
+        },
+        {
+          "x": 37,
+          "y": 2,
+          "z": 26
+        },
+        {
+          "x": 37,
+          "y": 2,
+          "z": 27
+        },
+        {
+          "x": 36,
+          "y": 2,
+          "z": 24
+        },
+        {
+          "x": 36,
+          "y": 2,
+          "z": 25
+        },
+        {
+          "x": 36,
+          "y": 2,
+          "z": 26
+        },
+        {
+          "x": 36,
+          "y": 2,
+          "z": 27
+        }
+      ],
+      "requiredPass": 3
+    },
+    "notes": [
+      {
+        "pass": "dropship-sites",
+        "message": "dropship on e: 0 cut columns, 0 layer-columns excavated, 16 external boarding columns",
+        "at": {
+          "x": 39,
+          "y": 2,
+          "z": 24
+        }
+      },
+      {
+        "pass": "connectivity",
+        "message": "5 hook/class checks, 0 repairs, 0 relocations"
+      }
+    ]
+  }
+]

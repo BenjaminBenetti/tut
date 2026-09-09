@@ -229,6 +229,7 @@ function freeColumns(draft: MapDraft): boolean[] {
       const surface = draft.groundSurfaceAt(x, z);
       if (
         draft.isRoad(x, z) ||
+        draft.isLandingReserved(x, z) ||
         surface === SurfaceIds.SIDEWALK ||
         surface === SurfaceIds.WATER ||
         isNearBorder(draft, x, z)

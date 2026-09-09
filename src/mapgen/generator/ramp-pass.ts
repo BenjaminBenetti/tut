@@ -68,6 +68,8 @@ export class RampPass implements GenerationPass {
     // from.
     const steps = collectSteps(draft, nodes).filter(
       (step) =>
+        !draft.isLandingReserved(step.lower.x, step.lower.z) &&
+        !draft.isLandingReserved(step.upper.x, step.upper.z) &&
         !hasConnector(draft, step.lower, step.upper) &&
         draft.slopeAt(step.lower.x, step.lower.z) === undefined &&
         draft.slopeAt(step.upper.x, step.upper.z) === undefined,

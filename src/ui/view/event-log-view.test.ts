@@ -118,16 +118,33 @@ describe("EventLogView", () => {
   it("collapses a run of identical lines into a count", () => {
     const view = new EventLogView();
     view.mount(host);
+    // Repeated fire rather than repeated movement: movement no longer
+    // reaches the log at all (#1028), and a collapse test written on it
+    // would pass by drawing nothing.
+    view.append([HIT, HIT, HIT, MISS], mission());
+    expect(lines()).toEqual([
+      "Rifle Squad hit Swarmer for 4 ×3",
+      "Swarmer missed Rifle Squad",
+    ]);
+  });
+
+  // #1028: the Executive Director asked for movement out of the log.
+  it("logs nothing for movement, and still logs what the move provoked", () => {
+    const view = new EventLogView();
+    view.mount(host);
     const move = {
       type: "tactical:unit-moved",
-      payload: { unitId: "unit-2", from: {}, to: {}, path: [{}] },
+      payload: { unitId: "unit-2", from: {}, to: {}, path: [{}, {}, {}] },
     } as unknown as TacticalEvent;
-    view.append([move, move, move, HIT], mission());
-    // Three identical moves are one row with a count, not three rows.
-    expect(lines()).toEqual([
-      "Swarmer moved 1 tile ×3",
-      "Rifle Squad hit Swarmer for 4",
-    ]);
+    // A move that walked into overwatch: the mover is silent, the shot
+    // is not. `move-handler` emits the reaction as its own event, so
+    // dropping the move line loses nothing that happened to anybody.
+    view.append([move, HIT, move], mission());
+    expect(lines()).toEqual(["Rifle Squad hit Swarmer for 4"]);
+
+    // And a turn of nothing but movement leaves the log as it was.
+    view.append([move, move], mission());
+    expect(lines()).toEqual(["Rifle Squad hit Swarmer for 4"]);
   });
 
   it("marks each line with the icon for its event", () => {

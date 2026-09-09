@@ -55,13 +55,20 @@ function describe(event: TacticalEvent, nameOf: NameOf): LogEntry | undefined {
         tone: "accent",
       };
     case "tactical:unit-moved":
-      return {
-        text: `${nameOf(event.payload.unitId)} moved ${tiles(
-          event.payload.path.length,
-        )}`,
-        icon: "move",
-        tone: "dim",
-      };
+      // Movement is the most frequent thing a player does and the least
+      // worth reporting (#1028). Logging it pushed the things that do
+      // matter -- a shot, a kill, a unit running dry -- off the top of
+      // a short log, so the log stopped being where you look to find
+      // out what happened.
+      //
+      // **All** movement is silent, including a move that provoked
+      // something. That is safe rather than a judgement call:
+      // `move-handler` pushes `UNIT_MOVED` and then pushes the
+      // reaction's own events beside it, so an overwatch shot is an
+      // `attack-resolved` entry in its own right. Dropping the move
+      // line removes "Alpha moved 3 tiles" and keeps "Bravo hit Alpha
+      // for 12" -- the consequence still speaks, in its own words.
+      return undefined;
     case "tactical:attack-resolved":
       return event.payload.hit
         ? {
@@ -124,11 +131,6 @@ function describe(event: TacticalEvent, nameOf: NameOf): LogEntry | undefined {
     default:
       return undefined;
   }
-}
-
-/** "1 tile", "4 tiles" — the log is sentences, so it counts like one. */
-function tiles(count: number): string {
-  return `${formatWhole(count)} ${count === 1 ? "tile" : "tiles"}`;
 }
 
 /** The glyph for a status change, defaulting to the overwatch eye. */

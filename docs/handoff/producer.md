@@ -20,11 +20,11 @@
 
 **#1091 routing:** eng-5 had **one** open issue/PR pair versus eng-4's **two**, so receives the regular-p2 camera/Attack collision. Remove A → Attack, retain F and the number row, audit W/S/D/Q/E/arrows for other camera collisions and fix the key-map comment. Prove spent-unit pan-left moves the camera without arming an action or producing a refusal. The issue has `seat:eng-5`, Owner Engineer and M2.5 Tactical Feel; **06:00 UTC is a checkpoint deadline, not a promise to finish or merge**. [Routing record](https://github.com/BenjaminBenetti/tut/issues/1091#issuecomment-5596199916).
 
-**Unowned (no seat):** #447, #673, #701, #712, #734, #760, #787, #1068, #1073, #1083, #1084, #1085 — **12 of 23 open issues** after routing #1091. Area and board Owner do not count as seat claims. **Real blocks:** #447 hive decisions; #760 behind #447; #734 Executive Director difficulty targets, also deferred. No account assignees are added.
+**Unowned (no seat):** #447, #673, #701, #712, #734, #760, #787, #1068, #1073, #1083, #1084, #1085, #1092 — **13 of 24 open issues** after routing #1091. Area and board Owner do not count as seat claims. **Real blocks:** #447 hive decisions; #760 behind #447; #734 Executive Director difficulty targets, also deferred. No account assignees are added.
 
 **Risks / remaining queue:** Tech Lead's stated merge sequence is #1051 → #1077 → #1067 once rebased; #1075 remains draft. #1090 prevents successive main pushes cancelling CI. #1089 is the known runner-only spawner-scout failure; MapGen's trace shows saved exploration succeeds while rendering lags, so QA's longer-distance hypothesis is not the established failure cause. Keep that distinction and disclose any CI exception in merge records. Stop work and watches by 06:00.
 
-**Board reconciliation:** moved 19 closed issue/PR cards to Done, added 14 missing current cards, and filled seven missing milestones plus #1091's milestone. Review attribution is retained. The older milestone counts and seat map in #1059 are dated snapshots, not current queue instructions.
+**Board reconciliation:** moved 19 closed issue/PR cards to Done, added 15 missing current cards, and filled seven missing milestones plus #1091/#1092's milestones. Review attribution is retained. The older milestone counts and seat map in #1059 are dated snapshots, not current queue instructions.
 
 **Executive Director:** “So I think things are going well. Just keep at it.”
 <!-- digest:end -->
@@ -37,7 +37,7 @@
 
 **#960 checkpoint:** #1075's older integrated evidence remains dated; current checkpoint 52aacf0 incorporates dropships and yard provenance. Its new 108-map comparison against main 6967394 preserves the non-target records and all 36 rural maps. Current cover-adjacency cost is −1.05 percentage points in towns and −2.85 in cities; final wide/sim/browser/frame checks on that combination were still in progress in the PR body. Do not substitute the older green integration for this head's unfinished proof.
 
-**Idle/queued work:** Art's #1082 boundary proposal identifies geographic recipe selection plus a bounded vegetation kit, while preserving global tree controls; it is not a claim on the whole issue. Flag the free Art implementation slot to the Director rather than defaulting to deferred #450. Unclaimed #1073 is the p3 Tab-centering follow-up; #1091's p2 collision goes first on eng-5. No speculative milestone decomposition is needed before shutdown.
+**Idle/queued work:** Art's #1082 boundary proposal identifies geographic recipe selection plus a bounded vegetation kit, while preserving global tree controls; it is not a claim on the whole issue. Flag the free Art implementation slot to the Director rather than defaulting to deferred #450. Unclaimed #1073 is the p3 Tab-centering follow-up; #1091's p2 collision goes first on eng-5. New #1092 is the separately filed capture-timeout follow-up, Ready and unclaimed; #1069 remains eng-3's active assignment. No competing implementation is assigned before its hardware checkpoint. No speculative milestone decomposition is needed before shutdown.
 
 **Producer checkpoint:** this session routes #1091, reconciles the board, publishes this handoff and caps the existing singleton watcher at **2026-09-09T06:00:00Z** using `.producer/pause-deadline.json`. Do not remove that deadline or rearm after it until an explicit studio resume. The watcher self-tests pass; scratch tooling stays out of the PR. On resume, read Discussion #968 and issue/PR threads before using this dated queue.
 

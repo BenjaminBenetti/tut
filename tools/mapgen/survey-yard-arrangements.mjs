@@ -95,6 +95,7 @@ try {
             recipe,
             mapHash: hash(map),
             hooks: hash(map.hooks),
+            dropships: hash(map.dropships ?? []),
             terrain: hash(terrain),
             buildings: hash(map.buildings),
             roads: hash(draft.roads),

@@ -54,7 +54,7 @@ The decisive preservation comparison is separately regenerated on **main `154f2c
 
 Current integration passes typecheck, full lint/format, build and **2,317 unit tests** (231.82 s, exit 0; one optional wide skip). All seven simulation checks pass (192.52 s, exit 0; one optional skip). The full browser suite passes across four serial shards: **67 passed / 37 optional skips, zero retries, all four exits 0** (14 / 23 / 14 / 16 tests). Shard 4 first returned 143 before completion; the isolated rerun passes in 2.7 minutes. The integrated wide invocation first failed its unchanged 600-second budget while software rendering ran alongside it (642.39 s wall, timeout only). After all Chromium processes closed, the unchanged **1,200-map test passes with zero relocations in 428.95 s, exit 0**. The failed/interrupted attempts remain in `validation.json`; no assertion or timeout was weakened.
 
-**Subsequent integration:** #1042 merged at `6967394` after this record was verified. Its reservation and golden changes now conflict with #1075 and must be integrated before review readiness. This record stays attributed to its original revisions; it is not a claim about that newer combined runtime.
+**Subsequent integration:** #1042 merged at `6967394` after this record was verified. Its reservation and golden changes are integrated at `ecaebc4`; the following section records that separate comparison. The earlier frames and checks stay attributed to their original revisions.
 
 The integrated reported views and control are all inspected, repeat in independent browsers, and match the original final PNG bytes exactly:
 
@@ -65,3 +65,34 @@ The integrated reported views and control are all inspected, repeat in independe
 Each folder has its own runtime/camera/hash sidecar. Reproduce with `CAPTURE_CASES=<comma-separated view ids> node tools/mapgen/capture-yard-arrangements.mjs <folder>`. These five integration frames supplement the fourteen original comparison frames; the shop/delivery comparisons remain attributed to the original runtimes. `validation.json` records commands, results and the disclosed interrupted attempts.
 
 The Map Critic opened all fourteen original comparison frames and verified their hashes, then judged the picture improved in [review 5595683809](https://github.com/BenjaminBenetti/tut/pull/1075#issuecomment-5595683809). The judgment explicitly applies to the pinned author comparison, and does not certify the measured cover tradeoff or replace the eventual merged-main re-check. Director judgment remains pending.
+
+## Integration after dropship placement, main `6967394`
+
+Runtime `ecaebc4` retains the accepted dropship reservations alongside the yard
+provenance. The shared open-ground query excludes the landing clearance, so the
+new arrangements use the same restriction as the existing placement passes. No
+yard placement factor changed during the merge. All six combined ASCII goldens
+were measured from the new runtime; the rural golden remains main's 2656216980.
+
+`dropship-paired-survey.json` records a fresh 108-recipe comparison against main
+`6967394`. The baseline checkout is `f44063a` from the four-arrival-frame docs
+follow-up; its runtime source and assets are identical to `6967394`. Every
+hook, dropship record, terrain/surface/wall, building, road, connector and
+non-target prop matches between these two runs. All 36 rural complete maps
+match. These measurements supersede the earlier numbers for this combination
+without replacing the dated earlier record.
+
+| Scale (36 maps each) | Targeted yard props → contextual props | Mean cover adjacency before → after | Cost |
+| --- | --- | --- | --- |
+| Town | 999 → 359 | 13.51% → 12.46% | −1.05 percentage points |
+| City | 2,101 → 523 | 11.26% → 8.42% | −2.85 percentage points |
+| Rural | Complete maps unchanged | 14.02% → 14.02% | none |
+
+The two reported city recipes now change 61→15 and 64→19 targeted props. These
+remain fewer, contextual LOW-cover objects, with the distributed-cover cost
+disclosed. Landing records themselves are unchanged in all 108 paired cases.
+
+Typecheck (`tsc -b`), full ESLint/Prettier, production build and **2,348 unit
+tests** pass on this combination (125.95 s, exit 0; one optional wide skip).
+The wide sweep, simulation/browser gates and fresh paired frames are in
+progress; the PR remains draft until this current combination is reviewable.

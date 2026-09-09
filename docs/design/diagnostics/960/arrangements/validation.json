@@ -149,5 +149,23 @@
     "cityMeanCoverAdjacencyPercent": [11.63262673243289, 8.741788691399467]
   },
   "review": "Director frame judgment, TL merge and Critic integrated-main re-check pending.",
-  "nextIntegration": "#1042 merged at 6967394 after this validated record. Latest-main integration remains to resolve on PR #1075; this record is preserved at its stated revisions."
+  "nextIntegration": "Dropship integration completed at ecaebc4; separate current checks and fresh paired frames are in progress, as recorded in dropshipIntegration.",
+  "dropshipIntegration": {
+    "baselineRuntime": "6967394d024c516379dc16c4ae464a50fb6d82a0",
+    "runtime": "ecaebc4c050df5d21412ebcf9c1e9a061b8a5cb3",
+    "checks": {
+      "typecheck": "tsc -b: exit 0",
+      "lint": "full ESLint: exit 0",
+      "format": "full Prettier: exit 0",
+      "build": "Vite production build: exit 0",
+      "units": {
+        "passed": 2348,
+        "optionalSkipped": 1,
+        "seconds": 125.95,
+        "exitCode": 0
+      }
+    },
+    "survey": "dropship-paired-survey.json",
+    "pending": ["wide", "sim", "browser", "fresh paired frames"]
+  }
 }

@@ -3,6 +3,8 @@
 Only `/dev/dri/renderD129` (AMD Granite Ridge, `1002:13c0`) is passed through.
 `renderD128` is the discrete RX 9070 and must remain absent. The image adds
 container-local RADV and Vulkan/EGL diagnostics. No host configuration changes.
+The device mapping is mandatory: a host without D129 cannot create this container.
+This configuration targets the studio host; other hosts need a variant without the mapping.
 The Director coordinates fleet rebuild timing **after merge**, with a ten-minute warning on #968.
 This checkout has no DRM node or Docker endpoint; hardware results are pending.
 

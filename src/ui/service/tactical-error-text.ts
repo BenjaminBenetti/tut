@@ -1,7 +1,11 @@
 import type { GameState } from "../../save/model/game-state";
 import { findCity } from "../../overworld/service/earth-map-query-service";
+import type { CommandError } from "../../core/model/command-error";
 import type { TacticalError } from "../../tactical/model/tactical-error";
-import { describeTacticalError } from "../../tactical/model/tactical-error";
+import {
+  describeTacticalError,
+  tacticalCause,
+} from "../../tactical/model/tactical-error";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 
 // ===========================================
@@ -216,6 +220,29 @@ export function describeRefusal(
 // ===========================================
 // Helpers
 // ===========================================
+
+/**
+ * What to put in front of the player for a refused command.
+ *
+ * A dispatched refusal reaches the UI as a `CommandError`, whose
+ * `message` was built inside the simulation and names its ids:
+ *
+ * ```
+ *   Unit "unit-1" is already fully loaded          ← error.message
+ *   Hammerhead is already fully loaded             ← this function
+ * ```
+ *
+ * The typed refusal rides along as `cause` (#1035), so the same resolver
+ * the HUD uses for its own previews can phrase the dispatched ones too.
+ * When there is no tactical cause -- an overworld refusal, a save
+ * written before `cause` existed, `unknown-command` from the dispatcher
+ * -- the message is already the best text available and is used as it
+ * stands. Nothing about this path can leave the player with no sentence.
+ */
+export function refusalText(error: CommandError, names: TacticalNames): string {
+  const cause = tacticalCause(error);
+  return cause === undefined ? error.message : describeRefusal(cause, names);
+}
 
 /** "spawner 2" from an index, or the anonymous form when there is none. */
 function ordinalOf(index: number): string {

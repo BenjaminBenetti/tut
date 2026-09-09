@@ -6,7 +6,7 @@ import type { MissionCampaignState } from "../model/mission-campaign-state";
 import type { MissionStarter } from "../model/mission-starter";
 import type { StartMissionCommand } from "../model/start-mission-command";
 import { START_MISSION } from "../model/start-mission-command";
-import { describeTacticalError } from "../model/tactical-error";
+import { tacticalRefusal } from "../model/tactical-error";
 
 // ===========================================
 // Types
@@ -64,9 +64,7 @@ export function createStartMissionHandler<TState extends MissionCampaignState>(
       ctx.ids,
     );
     if (!started.ok) {
-      return err(
-        commandError(started.error.kind, describeTacticalError(started.error)),
-      );
+      return err(tacticalRefusal(started.error));
     }
     return ok({ state: started.value, events: [] });
   };

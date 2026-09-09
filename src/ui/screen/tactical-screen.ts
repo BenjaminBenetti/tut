@@ -1,3 +1,4 @@
+import type { CommandError } from "../../core/model/command-error";
 import type { Unsubscribe } from "../../core/model/event-bus";
 import { findCity } from "../../overworld/service/earth-map-query-service";
 import type { GameState } from "../../save/model/game-state";
@@ -14,6 +15,7 @@ import type { ScreenRouter } from "../model/screen-router";
 import type { TacticalIntent } from "../model/tactical-intent";
 import type { TacticalSceneHost } from "../model/tactical-scene-host";
 import type { PhaseBannerOptions } from "../view/phase-banner-view";
+import { namesFor, refusalText } from "../service/tactical-error-text";
 import { TacticalHudView } from "../view/tactical-hud-view";
 
 // ===========================================
@@ -278,7 +280,7 @@ export class TacticalScreen implements Screen {
     }
     const result = store.dispatch(finishMission(missionId));
     if (!result.ok) {
-      this.hud.showStatus(result.error.message);
+      this.hud.showStatus(this.statusFor(result.error));
       return;
     }
     this.deps.router.navigate("mission-results");
@@ -401,7 +403,25 @@ export class TacticalScreen implements Screen {
       return;
     }
     const result = store.dispatch(command);
-    this.hud.showStatus(result.ok ? "" : result.error.message);
+    this.hud.showStatus(result.ok ? "" : this.statusFor(result.error));
+  }
+
+  /**
+   * The player's words for a refused command (#1035).
+   *
+   * `error.message` is written by the simulation and names its ids --
+   * `Unit "unit-1" is already fully loaded` -- which is right for a log
+   * and wrong for the one line the player reads. The typed refusal rides
+   * along as `cause`, so the same resolver that phrases the HUD's own
+   * previews phrases the dispatched ones, and the two agree.
+   *
+   * Resolved against the state the store is holding now. A refusal
+   * leaves the state untouched, so that is the state the refused command
+   * was judged against, and the names are the ones on screen.
+   */
+  private statusFor(error: CommandError): string {
+    const state = this.deps.session.store?.getState();
+    return refusalText(error, namesFor(state?.activeMission, state));
   }
 }
 

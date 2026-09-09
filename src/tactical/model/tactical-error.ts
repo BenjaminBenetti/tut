@@ -1,3 +1,4 @@
+import type { CommandError } from "../../core/model/command-error";
 import type { MissionOutcome } from "../../overworld/model/mission-result";
 
 // ===========================================
@@ -164,4 +165,106 @@ export function describeTacticalError(error: TacticalError): string {
     case "unhandled-command":
       return `No rule handles "${error.commandType}" in this mission`;
   }
+}
+
+// ===========================================
+// Carrying the error through a dispatch
+// ===========================================
+
+/**
+ * Every kind in the union, as a runtime set.
+ *
+ * Typed as a total `Record` on purpose: adding a member to
+ * `TacticalError` without adding it here is a compile error, so the set
+ * cannot silently fall behind the union. A kind missing from it would
+ * not throw -- `tacticalCause` would simply return `undefined` and the
+ * status line would quietly go back to showing raw ids, which is the
+ * defect this whole path exists to remove.
+ */
+export const TACTICAL_ERROR_KINDS: Readonly<
+  Record<TacticalError["kind"], true>
+> = {
+  "no-active-mission": true,
+  "mission-active": true,
+  "mission-not-found": true,
+  "empty-deployment": true,
+  "oversized-deployment": true,
+  "unit-not-found": true,
+  "illegal-move": true,
+  "mission-over": true,
+  "invalid-loadout": true,
+  "map-recipe": true,
+  "no-deploy-room": true,
+  "unit-not-on-map": true,
+  "unit-dead": true,
+  "wrong-phase": true,
+  "no-action-points": true,
+  "self-target": true,
+  "friendly-target": true,
+  "out-of-range": true,
+  "no-line-of-sight": true,
+  "target-destroyed": true,
+  "no-charges": true,
+  "no-such-weapon": true,
+  "charges-full": true,
+  "no-reload": true,
+  "objective-not-found": true,
+  "objective-complete": true,
+  "objective-not-yours": true,
+  "objective-target-missing": true,
+  "objective-out-of-reach": true,
+  "no-objective-in-reach": true,
+  "not-in-extraction-zone": true,
+  "not-extractable": true,
+  "mission-not-over": true,
+  "mission-mismatch": true,
+  "unhandled-command": true,
+};
+
+/**
+ * The command error for a tactical refusal: its kind as the code, its
+ * sentence as the message, and the refusal itself as the cause.
+ *
+ * One function rather than a `commandError(e.kind, describeTacticalError(e))`
+ * at each boundary, because that is how the id leak got in (#1035): every
+ * site flattened the typed error independently, so the UI could only ever
+ * receive the sentence that `describeTacticalError` had already built --
+ * ids and all. With the cause attached here, a refusal added tomorrow
+ * carries its data to the screen without anyone remembering to.
+ *
+ * The code is the kind by construction, which is what the hand-written
+ * sites did too; `NO_ACTIVE_MISSION` and the other exported codes stay
+ * equal to their kinds, and a test pins that.
+ */
+export function tacticalRefusal<TError extends TacticalError>(
+  error: TError,
+): CommandError<TError["kind"], TacticalError> {
+  return {
+    code: error.kind,
+    message: describeTacticalError(error),
+    cause: error,
+  };
+}
+
+/**
+ * The tactical refusal a command error is carrying, or `undefined` when
+ * it is carrying something else -- an overworld refusal, a replay loaded
+ * from a save written before `cause` existed, or nothing at all.
+ *
+ * This is how a caller gets the typed error back without `core` knowing
+ * what a `TacticalError` is: the domain that owns the union narrows it.
+ * Checked at runtime rather than asserted, because `cause` arrives as
+ * `unknown` and a save is not a trusted source.
+ */
+export function tacticalCause(error: {
+  readonly cause?: unknown;
+}): TacticalError | undefined {
+  const cause = error.cause;
+  if (typeof cause !== "object" || cause === null || !("kind" in cause)) {
+    return undefined;
+  }
+  const { kind } = cause as { readonly kind: unknown };
+  return typeof kind === "string" && Object.hasOwn(TACTICAL_ERROR_KINDS, kind)
+    ? (cause as TacticalError)
+    : undefined;
 }

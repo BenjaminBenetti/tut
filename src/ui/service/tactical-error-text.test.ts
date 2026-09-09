@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import type { TacticalError } from "../../tactical/model/tactical-error";
-import { describeTacticalError } from "../../tactical/model/tactical-error";
+import {
+  describeTacticalError,
+  TACTICAL_ERROR_KINDS,
+} from "../../tactical/model/tactical-error";
 import type { TacticalNames } from "./tactical-error-text";
 import { describeRefusal, namesFor } from "./tactical-error-text";
 
@@ -61,6 +64,7 @@ const EVERY_KIND: readonly TacticalError[] = [
   { kind: "not-extractable", unitId: ID },
   { kind: "mission-not-over", missionId: ID },
   { kind: "mission-mismatch", expected: ID, active: ID },
+  { kind: "no-objective-in-reach", unitId: ID },
   { kind: "unhandled-command", commandType: "tactical:move" },
 ];
 
@@ -78,8 +82,18 @@ describe("describeRefusal", () => {
   it("covers every kind the union has", () => {
     expect(new Set(EVERY_KIND.map((e) => e.kind)).size).toBe(EVERY_KIND.length);
     // A kind added to the union without a fixture here would leave the
-    // guard above blind to it, so the count is pinned deliberately.
-    expect(EVERY_KIND).toHaveLength(34);
+    // guard above blind to it. Counted against the union rather than
+    // against a literal: `TACTICAL_ERROR_KINDS` is a total `Record`, so
+    // the compiler keeps it in step with the type, and this test now
+    // rides on that instead of on a number somebody has to remember.
+    //
+    // The literal was 34 and went stale within the day -- #1044 added
+    // `no-objective-in-reach` while this branch was in review, and the
+    // number is exactly the sort of thing that gets bumped to green
+    // rather than read.
+    expect(EVERY_KIND.map((e) => e.kind).sort()).toEqual(
+      Object.keys(TACTICAL_ERROR_KINDS).sort(),
+    );
   });
 
   it("reads as sentences, with the names in place of the ids", () => {

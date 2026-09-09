@@ -25,7 +25,13 @@ import { ATTACK } from "../../tactical/model/attack-command";
 import { FINISH_MISSION } from "../../tactical/model/finish-mission-command";
 import { MISSION_ENDED } from "../../tactical/model/mission-ended-event";
 import { TURN_STARTED } from "../../tactical/model/turn-started-event";
+import type { CommandError } from "../../core/model/command-error";
 import { commandError } from "../../core/model/command-error";
+import type { ReloadCommand } from "../../tactical/model/reload-command";
+import type { RELOAD } from "../../tactical/model/reload-command";
+import { reloadHandler } from "../../tactical/service/reload-handler";
+import { liftTacticalHandler } from "../../tactical/service/tactical-command-handlers";
+import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import { err, ok } from "../../core/model/result";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import { startTacticalMission } from "../../tactical/service/mission-start-service";
@@ -143,6 +149,42 @@ class FakeStore implements CampaignStore {
   }
   get listenerCount(): number {
     return this.listeners.size;
+  }
+}
+
+/**
+ * A store that runs a refused command through the **real** lifted
+ * handler (#1035).
+ *
+ * `FakeStore` above hands back a refusal someone typed by hand, so a
+ * status-line test built on it can never see the message the simulation
+ * actually produces -- and the id leak lives in exactly that message.
+ * This one dispatches for real, so the test's subject is the sentence
+ * the player was getting.
+ */
+class RealDispatchStore implements CampaignStore {
+  /** The refusal the screen was handed, so a test can check the fixture leaks before asserting the screen hides it. */
+  lastError: CommandError | undefined;
+  constructor(private readonly state: GameState) {}
+  getState(): GameState {
+    return this.state;
+  }
+  subscribe(): Unsubscribe {
+    return () => undefined;
+  }
+  dispatch(command: OverworldCommand) {
+    const result = liftTacticalHandler<GameState, typeof RELOAD>(reloadHandler)(
+      this.state,
+      command as ReloadCommand,
+      { rng: new Mulberry32Rng(1), ids: new SequentialIdGenerator() },
+    );
+    if (!result.ok) {
+      this.lastError = result.error;
+    }
+    return result;
+  }
+  onError(): Unsubscribe {
+    return () => undefined;
   }
 }
 
@@ -598,6 +640,47 @@ describe("TacticalScreen", () => {
         root.querySelector<HTMLElement>('[data-role="preview-error"]')?.hidden,
       ).toBe(false);
     }
+  });
+
+  it("a refused command names the unit in the banner, never its id (#1035)", () => {
+    // The whole path a player takes: select a mech that has not fired,
+    // press Reload, read the banner. Nothing is stubbed between the
+    // keypress and the sentence.
+    const state = inMission();
+    const mech = state.activeMission?.units.find((u) => u.kind === "mech");
+    if (!mech) throw new Error("fixture needs a mech");
+    const store = new RealDispatchStore(state);
+    const host = new FakeHost();
+    new TacticalScreen({
+      router: fakeRouter().router,
+      session: sessionWith(store),
+      combatTuning: COMBAT_TUNING,
+      objectiveTuning: OBJECTIVE_TUNING,
+      sceneHost: host,
+    }).mount(root);
+
+    host.intents?.emit({ kind: "select-unit", unitId: mech.id });
+    host.intents?.emit({ kind: "action", action: "reload" });
+
+    // The fixture exhibits the defect. Without this the test could pass
+    // on a build where the simulation never puts an id in the message,
+    // and would then be asserting nothing at all.
+    expect(
+      store.lastError?.message,
+      "the simulation's own message must carry the id, or there is nothing to hide",
+    ).toContain(mech.id);
+
+    const status = root.querySelector(
+      '#turn-banner [data-role="status"]',
+    )?.textContent;
+    expect(status).not.toContain(mech.id);
+    // And it is the same name the card beside it is showing, so the two
+    // lines on screen agree about which unit refused.
+    const name = root.querySelector(
+      '#unit-card [data-field="unit-name"]',
+    )?.textContent;
+    expect(name).toBeTruthy();
+    expect(status).toBe(`${String(name)} is already fully loaded`);
   });
 
   it("End turn from the HUD goes through the store", () => {

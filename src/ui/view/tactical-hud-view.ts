@@ -42,6 +42,7 @@ import type {
   TacticalInvokeTarget,
 } from "../model/tactical-intent";
 import { ActionBarView } from "./action-bar-view";
+import { namesFor } from "../service/tactical-error-text";
 import { EventLogView } from "./event-log-view";
 import { HitPreviewView } from "./hit-preview-view";
 import { ObjectiveTrackerView } from "./objective-tracker-view";
@@ -1084,7 +1085,9 @@ export class TacticalHudView {
         : findAttackTarget(mission, this.target);
     const preview = this.currentPreview();
     this.preview.update(
-      target && preview ? { targetName: target.name, preview } : undefined,
+      target && preview
+        ? { targetName: target.name, preview, names: namesFor(mission) }
+        : undefined,
     );
     const inReach = this.interactTarget();
     this.objectives.update(

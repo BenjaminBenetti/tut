@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { err, ok } from "../../core/model/result";
+import type { TacticalNames } from "../service/tactical-error-text";
 import { CoverLevel } from "../../mapgen/model/cover";
 import type { ActionBarAction } from "./action-bar-view";
 import { ActionBarView } from "./action-bar-view";
@@ -330,6 +331,15 @@ describe("TurnBannerView", () => {
   });
 });
 
+/** A resolver whose answers are obviously names, so a leaked id shows. */
+const NAMES: TacticalNames = {
+  unit: () => "Swarmer",
+  objective: () => "spawner 1",
+  spawner: () => "spawner 1",
+  mech: () => "Hammerhead",
+  mission: () => "Lagos",
+};
+
 describe("HitPreviewView", () => {
   it("is hidden without a model, shows the numbers and chips, and reports Fire", () => {
     const onConfirm = vi.fn();
@@ -337,6 +347,7 @@ describe("HitPreviewView", () => {
     view.mount(root);
     expect(root.querySelector<HTMLElement>("#hit-preview")?.hidden).toBe(true);
     view.update({
+      names: NAMES,
       targetName: "Swarmer",
       preview: ok({
         hitChance: 51,
@@ -362,10 +373,28 @@ describe("HitPreviewView", () => {
     expect(onConfirm).toHaveBeenCalled();
   });
 
+  // #1035: the refusal the ticket is named after. The view used to
+  // render `No line of sight to "bug-3"` straight from the typed error.
+  it("names the target in a refusal instead of showing its id", () => {
+    const view = new HitPreviewView({ onConfirm: vi.fn() });
+    view.mount(root);
+    view.update({
+      names: NAMES,
+      targetName: "Swarmer",
+      preview: err({ kind: "no-line-of-sight", targetId: "bug-3" }),
+    });
+    const error = root.querySelector<HTMLElement>(
+      '[data-role="preview-error"]',
+    );
+    expect(error?.textContent).toBe("No line of sight to Swarmer");
+    expect(error?.textContent).not.toContain("bug-3");
+  });
+
   it("shows the refusal and disables Fire", () => {
     const view = new HitPreviewView({ onConfirm: vi.fn() });
     view.mount(root);
     view.update({
+      names: NAMES,
       targetName: "Swarmer",
       preview: err({ kind: "out-of-range", distance: 12, range: 8 }),
     });

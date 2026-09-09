@@ -103,28 +103,28 @@ const GOLDENS: readonly Golden[] = [
     biome: "temperate",
     settlement: "town",
     size: "medium",
-    checksum: 3319286876,
+    checksum: 778569479,
   },
   {
     seed: "golden-snowy",
     biome: "snowy",
     settlement: "town",
     size: "medium",
-    checksum: 4014196328,
+    checksum: 2807787324,
   },
   {
     seed: "golden-desert",
     biome: "desert",
     settlement: "town",
     size: "medium",
-    checksum: 3176145904,
+    checksum: 2170654726,
   },
   {
     seed: "golden-coastal",
     biome: "coastal",
     settlement: "town",
     size: "medium",
-    checksum: 2297890619,
+    checksum: 159638,
   },
   {
     seed: "golden-rural",
@@ -138,7 +138,7 @@ const GOLDENS: readonly Golden[] = [
     biome: "desert",
     settlement: "city",
     size: "large",
-    checksum: 2672219129,
+    checksum: 1747734376,
   },
 ];
 

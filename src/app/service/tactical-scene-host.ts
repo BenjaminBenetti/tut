@@ -14,6 +14,7 @@ import type { SpriteSource } from "../../graphics/model/sprite-source";
 import { GltfModelLoader } from "../../graphics/service/gltf-model-loader";
 import { ManifestSpriteLoader } from "../../graphics/service/manifest-sprite-loader";
 import { OrthographicCameraRig } from "../../graphics/service/orthographic-camera-rig";
+import { tileTopCentre } from "../../graphics/view/tactical-map-view";
 import { PlaceholderModelFactory } from "../../graphics/service/placeholder-model-factory";
 import { GhostController } from "../../graphics/service/ghost-controller";
 import { SceneService } from "../../graphics/service/scene-service";
@@ -63,6 +64,8 @@ interface AttachedScene {
   readonly builder: TacticalSceneBuilder;
   readonly input: TacticalInputController;
   readonly scene: SceneService;
+  /** The camera rig, kept so a unit can be centred on later (#1041). */
+  readonly rig: OrthographicCameraRig;
   readonly overlays: TacticalOverlays;
   readonly animations: TacticalAnimationQueue;
   mission: TacticalState;
@@ -187,6 +190,7 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
       },
     });
     this.attached = {
+      rig,
       builder,
       input,
       scene,
@@ -250,6 +254,11 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
     }
   }
 
+  /** Raises the words above the unit through the animation queue (#1030). */
+  notice(unitId: UnitId, text: string): void {
+    this.attached?.animations.notice(unitId, text);
+  }
+
   /** Shows or hides the weapon-range outline (#522). */
   setWeaponRangeVisible(visible: boolean): void {
     this.attached?.overlays.setWeaponRangeVisible(visible);
@@ -277,6 +286,18 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
       case "tile":
         return input.tileScreenPosition(target.tile);
     }
+  }
+
+  /** Centres the camera on a unit through the rig's existing `lookAt` (#1041). */
+  lookAtUnit(unitId: UnitId): void {
+    const attached = this.attached;
+    const unit = attached?.mission.units.find(
+      (candidate) => candidate.id === unitId,
+    );
+    if (!attached || !unit) {
+      return;
+    }
+    attached.rig.lookAt(tileTopCentre(unit.pos));
   }
 
   /**

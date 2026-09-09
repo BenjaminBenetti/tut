@@ -163,6 +163,28 @@ const MUZZLE_OFFSET = 0.35;
 /** How far the damage number climbs before it fades out. */
 const FLOATER_RISE = 1;
 
+/** Width, shape and colour of a notice: wider than a damage number, because it carries words. */
+const NOTICE_WIDTH = 9;
+
+/** Canvas width for a notice's words: a sentence needs more room than a damage number. */
+const NOTICE_CHIP_WIDTH = 768;
+const NOTICE_ASPECT = 0.16;
+/**
+ * `--ui-warn`, and chosen rather than landed on (#1030).
+ *
+ * Not `--ui-accent` `0xf08a24`: that is `UNIT_HIGHLIGHT_COLOUR`, and it
+ * already means "the unit you are commanding" — a bar in that colour
+ * above that same unit would be read as part of the selection. Not
+ * `--ui-danger` `0xe0453c`, which the damage floater uses and so means
+ * harm taken. A refusal is neither; it is a warning that the thing asked
+ * for cannot happen, which is exactly what the warn token is for.
+ */
+const NOTICE_COLOUR = 0xf0c63c;
+
+/** A notice lasts this many floater-durations, and holds full opacity for this share of it. */
+const NOTICE_DWELL = 2.5;
+const NOTICE_HOLD = 0.6;
+
 /** Height for a unit whose model is not registered; keeps effects on screen. */
 const FALLBACK_HEIGHT = 1;
 
@@ -213,6 +235,7 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
   private readonly camera: Camera | undefined;
   private readonly timing: AnimationTiming;
   private instant: boolean;
+  private notices: Animation[] = [];
   private readonly pending: { event: TacticalEvent; onDone?: () => void }[] =
     [];
   private current: Animation | undefined;
@@ -301,8 +324,83 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
   // ===========================================
 
   /** Advances the current animation, starting the next when it finishes. */
+  /**
+   * Raises a line of words above a unit, now, without queueing behind
+   * whatever is playing.
+   *
+   * The same floater the damage numbers use — #1029 asked whether they
+   * were the same mechanism and the answer is yes; a refusal and a
+   * completed action are both "this happened, here". A notice is
+   * deliberately *not* part of `pending`: a refusal has to appear while
+   * the player is still looking at the action they attempted, not after
+   * the current attack finishes playing, and several can stand at once
+   * when units act in succession.
+   *
+   * @param unitId - The unit to speak above.
+   * @param text - The words, already in the player's language.
+   * @param tone - Colour; the refusal tone by default.
+   */
+  notice(unitId: UnitId, text: string, tone = NOTICE_COLOUR): void {
+    const anchor = this.anchor(unitId, 1, TEXT_MARGIN);
+    if (!anchor) {
+      return;
+    }
+    const sprite = this.billboard(undefined, anchor, NOTICE_WIDTH, 0xffffff, {
+      label: text,
+      tone,
+      aspect: NOTICE_ASPECT,
+      chipWidth: NOTICE_CHIP_WIDTH,
+    });
+    if (!sprite) {
+      return;
+    }
+    // One at a time per unit. Two refusals stacked at the same anchor
+    // overlapped into an unreadable smudge in the first capture, and the
+    // older reason is the less useful one anyway.
+    const name = `notice:${unitId}`;
+    for (const standing of this.notices.filter((n) => n.name === name)) {
+      standing.finish();
+    }
+    this.notices = this.notices.filter((n) => n.name !== name);
+    const baseY = anchor.y;
+    const total = this.timing.floaterSeconds * NOTICE_DWELL;
+    let elapsed = 0;
+    this.notices.push({
+      name: `notice:${unitId}`,
+      advance: (seconds) => {
+        elapsed = Math.min(total, elapsed + seconds);
+        const phase = elapsed / total;
+        sprite.position.y = baseY + FLOATER_RISE * phase;
+        // Holds, then fades: a refusal the player has to read is worth
+        // more time on screen than a damage number they glance at.
+        sprite.material.opacity =
+          phase < NOTICE_HOLD
+            ? 1
+            : 1 - (phase - NOTICE_HOLD) / (1 - NOTICE_HOLD);
+        if (elapsed >= total) {
+          this.removeSprite(sprite);
+          return 0;
+        }
+        return undefined;
+      },
+      finish: () => {
+        this.removeSprite(sprite);
+      },
+    });
+  }
+
+  /**
+   * Advances the queue and any standing notices by `deltaSeconds`.
+   *
+   * @param deltaSeconds - Seconds since the last frame.
+   */
   update(deltaSeconds: number): void {
     this.stepSheets(deltaSeconds);
+    // Notices run beside the queue rather than in it, so a refusal is
+    // not held back by an animation the player is not waiting on.
+    this.notices = this.notices.filter(
+      (notice) => notice.advance(deltaSeconds) === undefined,
+    );
     let remaining = deltaSeconds;
     while (remaining > 0) {
       if (!this.current) {
@@ -777,6 +875,8 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
     colour: number,
     options: {
       readonly label?: string;
+      /** Canvas width for the text chip; wider for a sentence than for a number. */
+      readonly chipWidth?: number;
       readonly tone?: number;
       readonly width?: number;
       readonly aspect?: number;
@@ -795,7 +895,7 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
       ? sheetTexture.clone()
       : id
         ? this.textures.get(id)
-        : chipTexture(options.label, options.tone ?? colour);
+        : chipTexture(options.label, options.tone ?? colour, options.chipWidth);
     const blend =
       id && SPRITE_MANIFEST[id].blend === "additive"
         ? AdditiveBlending
@@ -950,30 +1050,41 @@ function samePoint(a: Vec3, b: Vec3): boolean {
 function chipTexture(
   label: string | undefined,
   tone: number,
+  width = 256,
 ): Texture | undefined {
   if (label === undefined || typeof document === "undefined") {
     return undefined;
   }
   const canvas = document.createElement("canvas");
-  canvas.width = 256;
+  canvas.width = width;
   canvas.height = 128;
   const ctx = canvas.getContext("2d");
   if (!ctx) {
     return undefined;
   }
   const hex = `#${tone.toString(16).padStart(6, "0")}`;
+  const box = width - 8;
   ctx.fillStyle = "rgba(20, 24, 33, 0.92)";
-  ctx.fillRect(4, 16, 248, 96);
+  ctx.fillRect(4, 16, box, 96);
   ctx.strokeStyle = "#2e3646";
   ctx.lineWidth = 4;
-  ctx.strokeRect(4, 16, 248, 96);
+  ctx.strokeRect(4, 16, box, 96);
   ctx.fillStyle = hex;
   ctx.fillRect(4, 16, 18, 96);
-  ctx.font = "bold 76px ui-monospace, monospace";
+  // Fits the words rather than assuming they are short (#1030). A damage
+  // number is three characters and a refusal is a sentence; drawn at one
+  // fixed size the sentence ran off both ends of the chip, which the
+  // first captured frame showed plainly.
+  const room = box - 18 - 16;
+  let size = 76;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
+  do {
+    ctx.font = `bold ${String(size)}px ui-monospace, monospace`;
+    size -= 2;
+  } while (size > 14 && ctx.measureText(label).width > room);
   ctx.fillStyle = "#ffffff";
-  ctx.fillText(label, 140, 66);
+  ctx.fillText(label, 18 + (box - 18) / 2, 66);
   const texture = new CanvasTexture(canvas);
   texture.name = `vfx.floater:${label}`;
   return texture;

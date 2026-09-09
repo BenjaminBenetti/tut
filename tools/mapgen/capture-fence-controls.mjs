@@ -3,7 +3,8 @@ import { chromium } from "@playwright/test";
 import { mkdirSync, writeFileSync } from "node:fs";
 // Run against the baseline checkout for before, then the fix for after.
 const phase = process.argv[2] ?? "after";
-const out = `docs/design/diagnostics/917/${phase}`;
+const out =
+  process.env.CAPTURE_OUTPUT ?? `docs/design/diagnostics/917/${phase}`;
 mkdirSync(out, { recursive: true });
 const controls = [
   {
@@ -84,6 +85,13 @@ const browser = await chromium.launch({
 const page = await browser.newPage({ viewport: { width: 2400, height: 1500 } });
 const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
+page.on("console", (message) => {
+  if (
+    message.type() === "error" ||
+    /\[assets\].*failed to load/i.test(message.text())
+  )
+    errors.push(message.text());
+});
 // Capture-only access to the existing rig, preserving the shipped scene,
 // geometry and camera methods. No gameplay or generation module is replaced.
 await page.route(

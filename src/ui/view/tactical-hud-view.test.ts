@@ -17,16 +17,33 @@ import { TacticalHudView } from "./tactical-hud-view";
 import { withVision } from "../../tactical/service/vision-service";
 import type { TurnStartedEvent } from "../../tactical/model/turn-started-event";
 import { TURN_STARTED } from "../../tactical/model/turn-started-event";
+import type { TacticalState } from "../../tactical/model/tactical-state";
 
 let root: HTMLElement;
 const field = (name: string): HTMLElement | null =>
   root.querySelector<HTMLElement>(`[data-field="${name}"]`);
 
-function setup() {
+/** The display name the player sees for a unit, from the mission's templates. */
+function nameOfUnit(mission: TacticalState, unitId: string): string {
+  const unit = mission.units.find((candidate) => candidate.id === unitId);
+  const template = unit ? mission.templates[unit.templateId] : undefined;
+  const name = template?.name;
+  if (name === undefined) {
+    throw new Error(`fixture unit ${unitId} has no template name`);
+  }
+  return name;
+}
+
+function setup(
+  extra: {
+    onLookAt?: (unitId: string) => void;
+    onNotice?: (unitId: string, text: string) => void;
+  } = {},
+) {
   const commands: TacticalCommand[] = [];
   const onBack = vi.fn();
   const hud = new TacticalHudView(
-    { onCommand: (c) => commands.push(c), onBack },
+    { onCommand: (c) => commands.push(c), onBack, ...extra },
     { combatTuning: COMBAT_TUNING, objectiveTuning: OBJECTIVE_TUNING },
   );
   hud.mount(root);
@@ -94,8 +111,10 @@ describe("TacticalHudView", () => {
     ).toBe(false);
     hud.handleIntent({ kind: "select-unit", unitId: "s2" });
     expect(
-      root.querySelector<HTMLButtonElement>('[data-action="attack"]')?.disabled,
-    ).toBe(true);
+      root
+        .querySelector<HTMLButtonElement>('[data-action="attack"]')
+        ?.getAttribute("aria-disabled"),
+    ).toBe("true");
     hud.handleIntent({ kind: "select-unit", unitId: "b1" });
     expect(field("unit-side")?.textContent).toBe("bugs · bug");
   });
@@ -550,7 +569,7 @@ describe("TacticalHudView", () => {
 
     // s1 stands at (1,0,1); the live spawner is at (9,0,0).
     hud.handleIntent({ kind: "select-unit", unitId: "s1" });
-    expect(button()?.disabled).toBe(true);
+    expect(button()?.getAttribute("aria-disabled")).toBe("true");
     hud.handleIntent({ kind: "action", action: "interact" });
     expect(commands).toEqual([]);
 
@@ -627,9 +646,10 @@ describe("TacticalHudView", () => {
     hud.update(adjacent);
     hud.handleIntent({ kind: "select-unit", unitId: "s2" });
     expect(
-      root.querySelector<HTMLButtonElement>('[data-action="interact"]')
-        ?.disabled,
-    ).toBe(true);
+      root
+        .querySelector<HTMLButtonElement>('[data-action="interact"]')
+        ?.getAttribute("aria-disabled"),
+    ).toBe("true");
 
     // Give it actions but finish the objective: still nothing to work.
     hud.update({
@@ -638,9 +658,134 @@ describe("TacticalHudView", () => {
       objectives: adjacent.objectives.map((o) => ({ ...o, complete: true })),
     });
     expect(
-      root.querySelector<HTMLButtonElement>('[data-action="interact"]')
-        ?.disabled,
-    ).toBe(true);
+      root
+        .querySelector<HTMLButtonElement>('[data-action="interact"]')
+        ?.getAttribute("aria-disabled"),
+    ).toBe("true");
+  });
+
+  /**
+   * The defect #1030 was filed for: an unavailable action used to return
+   * in silence, so the player could not tell "fine" from "refused".
+   *
+   * The words come from `describeTacticalError` — the vocabulary the
+   * rules already had — rather than a second set written beside the
+   * buttons, and they go above the unit that could not act as well as to
+   * the status line.
+   */
+  it("says why an action is refused, above the unit and in the status", () => {
+    const notices: string[] = [];
+    const { hud, mission } = setup({
+      onNotice: (unitId: string, text: string) => {
+        notices.push(`${unitId}: ${text}`);
+      },
+    });
+    // A unit with no action points left: the button is marked
+    // unavailable, and pressing it now explains itself.
+    hud.update({
+      ...mission,
+      units: mission.units.map((u) => (u.id === "s1" ? { ...u, ap: 0 } : u)),
+    });
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    expect(
+      root
+        .querySelector<HTMLButtonElement>('[data-action="overwatch"]')
+        ?.getAttribute("aria-disabled"),
+    ).toBe("true");
+
+    hud.handleIntent({ kind: "action", action: "overwatch" });
+    const status = root.querySelector<HTMLElement>('[data-role="status"]');
+    expect(status?.hidden).toBe(false);
+    expect(status?.textContent).toContain("no action points");
+    expect(notices).toHaveLength(1);
+    expect(notices[0]).toContain("no action points");
+
+    // Named, never id'd (#1035). The chip above the unit is the most
+    // prominent place a refusal appears, so a raw id reads worse there
+    // than anywhere it has appeared before. Asserted as an absence and
+    // a presence: the id is gone *and* the name is there, because
+    // dropping the id without gaining a name would also pass an
+    // absence-only check.
+    const named = nameOfUnit(mission, "s1");
+    expect(notices[0]).toContain(named);
+    expect(notices[0]).not.toContain('"s1"');
+    expect(status?.textContent).toContain(named);
+    expect(status?.textContent).not.toContain('"s1"');
+  });
+
+  /**
+   * The force at a glance (#1041). Before this the interface knew the
+   * squad only through whichever unit was selected, so "who still has a
+   * turn" was answerable only by clicking each in turn.
+   */
+  it("lists the force with its readiness, and names how many have still to act", () => {
+    const { hud, mission } = setup();
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    const rows = () => [
+      ...root.querySelectorAll<HTMLElement>('[data-role="squad-list"] li'),
+    ];
+    expect(rows().length).toBeGreaterThan(1);
+    expect(rows()[0]?.dataset.selected).toBe("true");
+    // Read against the mission rather than an assumed fixture: the row
+    // marks a unit spent exactly when it has no action left.
+    const apOf = new Map(mission.units.map((u) => [u.id, u.ap]));
+    for (const row of rows()) {
+      const ap = apOf.get(row.dataset.unitId ?? "") ?? 0;
+      expect(row.dataset.spent).toBe(ap > 0 ? "false" : "true");
+    }
+    const count = root.querySelector<HTMLElement>(
+      '[data-field="squad-unspent"]',
+    );
+    const ready = rows().filter((row) => row.dataset.spent === "false").length;
+    expect(count?.textContent).toBe(
+      ready > 0 ? `${String(ready)} to act` : "all done",
+    );
+
+    // A spent unit is marked, and the count follows it down.
+    hud.update({
+      ...mission,
+      units: mission.units.map((u) => (u.id === "s1" ? { ...u, ap: 0 } : u)),
+    });
+    const spent = rows().find((row) => row.dataset.unitId === "s1");
+    expect(spent?.dataset.spent).toBe("true");
+    expect(count?.textContent).not.toBe(
+      ready > 0 ? `${String(ready)} to act` : "all done",
+    );
+  });
+
+  it("picks a unit from the strip and brings it on screen", () => {
+    const lookedAt: string[] = [];
+    const { hud } = setup({
+      onLookAt: (unitId: string) => lookedAt.push(unitId),
+    });
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    const other = [
+      ...root.querySelectorAll<HTMLElement>('[data-role="squad-list"] li'),
+    ].find((row) => row.dataset.unitId !== "s1");
+    if (!other) throw new Error("fixture needs a second unit");
+    const id = other.dataset.unitId ?? "";
+    other.click();
+    // Selected *and* recovered: the row is the affordance, so there is
+    // no separate control to find.
+    expect(hud.getSelectedUnitId()).toBe(id);
+    expect(lookedAt).toEqual([id]);
+  });
+
+  it("names how many units are unspent on End turn rather than ending silently", () => {
+    const { hud, mission } = setup();
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    const button = () =>
+      root.querySelector<HTMLElement>(
+        '[data-action="end-turn"] .tut-btn__label',
+      );
+    expect(button()?.textContent).toContain("unspent");
+
+    // Nobody left to act: the count goes, rather than reading "0 unspent".
+    hud.update({
+      ...mission,
+      units: mission.units.map((u) => ({ ...u, ap: 0 })),
+    });
+    expect(button()?.textContent).toBe("End turn");
   });
 
   it("offers Extract only to a unit standing in the extraction zone", () => {
@@ -650,7 +795,7 @@ describe("TacticalHudView", () => {
 
     // s1 stands at (1,0,1); the zone is (0,0,0).
     hud.handleIntent({ kind: "select-unit", unitId: "s1" });
-    expect(button()?.disabled).toBe(true);
+    expect(button()?.getAttribute("aria-disabled")).toBe("true");
     hud.handleIntent({ kind: "action", action: "extract" });
     expect(commands).toEqual([]);
 
@@ -670,9 +815,10 @@ describe("TacticalHudView", () => {
         ?.disabled,
     ).toBe(false);
     expect(
-      root.querySelector<HTMLButtonElement>('[data-action="overwatch"]')
-        ?.disabled,
-    ).toBe(true);
+      root
+        .querySelector<HTMLButtonElement>('[data-action="overwatch"]')
+        ?.getAttribute("aria-disabled"),
+    ).toBe("true");
   });
 
   it("never offers Extract to the other side's unit", () => {
@@ -680,9 +826,10 @@ describe("TacticalHudView", () => {
     hud.update({ ...mission, extraction: [{ x: 4, y: 0, z: 1 }] });
     hud.handleIntent({ kind: "select-unit", unitId: "b1" });
     expect(
-      root.querySelector<HTMLButtonElement>('[data-action="extract"]')
-        ?.disabled,
-    ).toBe(true);
+      root
+        .querySelector<HTMLButtonElement>('[data-action="extract"]')
+        ?.getAttribute("aria-disabled"),
+    ).toBe("true");
   });
 
   it("drops a selection that died and reports status through the banner", () => {
@@ -699,9 +846,10 @@ describe("TacticalHudView", () => {
     ).toBe("Rejected");
     hud.update(undefined);
     expect(
-      root.querySelector<HTMLButtonElement>('[data-action="end-turn"]')
-        ?.disabled,
-    ).toBe(true);
+      root
+        .querySelector<HTMLButtonElement>('[data-action="end-turn"]')
+        ?.getAttribute("aria-disabled"),
+    ).toBe("true");
   });
 });
 // ===========================================

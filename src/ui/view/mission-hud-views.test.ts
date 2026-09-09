@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { err, ok } from "../../core/model/result";
+import type { TacticalNames } from "../service/tactical-error-text";
 import { CoverLevel } from "../../mapgen/model/cover";
 import type { ActionBarAction } from "./action-bar-view";
 import { ActionBarView } from "./action-bar-view";
@@ -175,24 +176,40 @@ describe("ActionBarView", () => {
     expect(weapons[1]?.title).toContain("press again");
   });
 
-  it("enables unit actions only when the unit can act, marks the mode and reports presses", () => {
+  /**
+   * The bar marks what is unavailable and still reports the press
+   * (#1030). It used to `disable` the button, which is why clicking an
+   * unavailable action taught the player nothing: the click never
+   * happened, so nothing could explain it. Availability is now
+   * `aria-disabled` — announced, styled, and still reachable — and the
+   * HUD refuses with words above the unit.
+   */
+  it("marks unavailable actions, reports the press anyway, and marks the mode", () => {
     const onAction = vi.fn<(action: ActionBarAction) => void>();
     const view = new ActionBarView({ onAction });
     view.mount(root);
     const button = (a: string) =>
       root.querySelector<HTMLButtonElement>(`[data-action="${a}"]`);
-    expect(button("attack")?.disabled).toBe(true);
+    expect(button("attack")?.getAttribute("aria-disabled")).toBe("true");
     view.update({ canAct: true, playerPhase: true, mode: "attack" });
-    expect(button("attack")?.disabled).toBe(false);
+    expect(button("attack")?.getAttribute("aria-disabled")).toBe("false");
     expect(button("attack")?.getAttribute("aria-pressed")).toBe("true");
     expect(button("move")?.getAttribute("aria-pressed")).toBe("false");
     button("move")?.click();
     button("end-turn")?.click();
     expect(onAction.mock.calls.map((c) => c[0])).toEqual(["move", "end-turn"]);
+
+    // Unavailable: marked, and the press still reaches the HUD, which is
+    // what lets a refusal say why instead of the click vanishing.
     view.update({ canAct: false, playerPhase: false, mode: undefined });
-    expect(button("end-turn")?.disabled).toBe(true);
+    expect(button("end-turn")?.getAttribute("aria-disabled")).toBe("true");
+    expect(button("end-turn")?.classList.contains("is-unavailable")).toBe(true);
     button("end-turn")?.click();
-    expect(onAction).toHaveBeenCalledTimes(2);
+    expect(onAction.mock.calls.map((c) => c[0])).toEqual([
+      "move",
+      "end-turn",
+      "end-turn",
+    ]);
   });
 
   it("marks every button with its icon", () => {
@@ -330,6 +347,15 @@ describe("TurnBannerView", () => {
   });
 });
 
+/** A resolver whose answers are obviously names, so a leaked id shows. */
+const NAMES: TacticalNames = {
+  unit: () => "Swarmer",
+  objective: () => "spawner 1",
+  spawner: () => "spawner 1",
+  mech: () => "Hammerhead",
+  mission: () => "Lagos",
+};
+
 describe("HitPreviewView", () => {
   it("is hidden without a model, shows the numbers and chips, and reports Fire", () => {
     const onConfirm = vi.fn();
@@ -337,6 +363,7 @@ describe("HitPreviewView", () => {
     view.mount(root);
     expect(root.querySelector<HTMLElement>("#hit-preview")?.hidden).toBe(true);
     view.update({
+      names: NAMES,
       targetName: "Swarmer",
       preview: ok({
         hitChance: 51,
@@ -362,10 +389,28 @@ describe("HitPreviewView", () => {
     expect(onConfirm).toHaveBeenCalled();
   });
 
+  // #1035: the refusal the ticket is named after. The view used to
+  // render `No line of sight to "bug-3"` straight from the typed error.
+  it("names the target in a refusal instead of showing its id", () => {
+    const view = new HitPreviewView({ onConfirm: vi.fn() });
+    view.mount(root);
+    view.update({
+      names: NAMES,
+      targetName: "Swarmer",
+      preview: err({ kind: "no-line-of-sight", targetId: "bug-3" }),
+    });
+    const error = root.querySelector<HTMLElement>(
+      '[data-role="preview-error"]',
+    );
+    expect(error?.textContent).toBe("No line of sight to Swarmer");
+    expect(error?.textContent).not.toContain("bug-3");
+  });
+
   it("shows the refusal and disables Fire", () => {
     const view = new HitPreviewView({ onConfirm: vi.fn() });
     view.mount(root);
     view.update({
+      names: NAMES,
       targetName: "Swarmer",
       preview: err({ kind: "out-of-range", distance: 12, range: 8 }),
     });

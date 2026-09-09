@@ -42,6 +42,7 @@ import type {
   TacticalInvokeTarget,
 } from "../model/tactical-intent";
 import { ActionBarView } from "./action-bar-view";
+import { describeRefusal, namesFor } from "../service/tactical-error-text";
 import { EventLogView } from "./event-log-view";
 import { HitPreviewView } from "./hit-preview-view";
 import { ObjectiveTrackerView } from "./objective-tracker-view";
@@ -59,6 +60,11 @@ import { PhaseBannerView } from "./phase-banner-view";
 import { TURN_STARTED } from "../../tactical/model/turn-started-event";
 import { TurnBannerView } from "./turn-banner-view";
 import { UnitCardView } from "./unit-card-view";
+// One resolver, shared with the log. #1029 moves this into
+// `event-vocabulary`; when that lands the import moves with it.
+import { nameResolver } from "./event-log-view";
+import { SquadStripView, playerUnits } from "./squad-strip-view";
+import { actingUnit } from "../../tactical/service/acting-unit";
 
 // ===========================================
 // Types
@@ -81,6 +87,17 @@ export interface TacticalHudHandlers {
   readonly onCommand: (command: TacticalCommand) => void;
   /** The player asked to leave the mission screen. */
   readonly onBack: () => void;
+  /**
+   * Bring a unit on screen (#1041). Absent in headless callers, which
+   * then simply do not move the camera.
+   */
+  readonly onLookAt?: (unitId: UnitId) => void;
+  /**
+   * Words to raise above a unit — why an action was refused (#1030), and
+   * in time what one did (#1029). Absent in headless callers, which then
+   * still get the status line.
+   */
+  readonly onNotice?: (unitId: UnitId, text: string) => void;
   /**
    * Where a world thing is on screen, for anchoring the context menu
    * (#529, ADR 0007 §2.1). The HUD projects nothing itself; the scene
@@ -122,6 +139,16 @@ export interface TacticalHudDeps {
 }
 
 /** Which team acts in which phase. */
+/** Actions a unit performs, and so the ones that can be refused (#1030). */
+const REFUSABLE = new Set<string>([
+  "move",
+  "attack",
+  "overwatch",
+  "reload",
+  "interact",
+  "extract",
+]);
+
 const TEAM_FOR_PHASE: Readonly<Record<TacticalState["phase"], Team>> = {
   player: "tdf",
   bugs: "bugs",
@@ -165,6 +192,15 @@ export class TacticalHudView {
   private readonly card = new UnitCardView();
   private readonly preview: HitPreviewView;
   private readonly objectives = new ObjectiveTrackerView();
+  /** The force at a glance; a row selects and recovers a unit (#1041). */
+  private readonly squad = new SquadStripView({
+    onPick: (unitId) => {
+      this.handleIntent({ kind: "select-unit", unitId });
+      // Unconditional here: the player asked for this unit by name, so
+      // overriding their own panning is what they meant.
+      this.handlers.onLookAt?.(unitId);
+    },
+  });
   /** The in-world context menu (#529); opened by right click, closed by the world. */
   private readonly radial = new RadialMenuView({
     onSelect: (id) => {
@@ -256,6 +292,11 @@ export class TacticalHudView {
     bottom.className = "tut-hud__bottom";
     this.banner.mount(top);
     this.radial.mount(hud);
+    // The force first, then the selected unit's detail. The strip is the
+    // overview and the card is the close-up; putting the close-up first
+    // pushed the third unit below the fold, which the frame showed and
+    // which defeats "the force at a glance" (#1041).
+    this.squad.mount(side);
     this.card.mount(side);
     this.preview.mount(side);
     this.objectives.mount(side);
@@ -733,6 +774,18 @@ export class TacticalHudView {
     // Arming, cancelling, ending the turn: all of them move on from
     // whatever the ring was asking about (#627).
     this.closeMenu();
+    // An attempted action that cannot happen says why, above the unit
+    // that could not act (#1030). It used to return in silence, which is
+    // what made silence unreadable: the player could not tell "fine"
+    // from "refused". The words come from the shared refusal
+    // vocabulary, so there is none beside the buttons.
+    // Only the actions a unit performs; `next-unit`, `cancel` and the
+    // rest are view controls with nothing to refuse.
+    const refusal = REFUSABLE.has(action) ? this.refusalFor(action) : undefined;
+    if (refusal !== undefined) {
+      this.announceRefusal(refusal);
+      return;
+    }
     switch (action) {
       case "move":
         if (this.canAct()) {
@@ -876,6 +929,75 @@ export class TacticalHudView {
   }
 
   /** True when the selected unit is on the acting side, alive, with action points. */
+  /** How many of the player's units still have an action to spend (#1041). */
+  private unspentCount(): number {
+    const mission = this.mission;
+    if (mission?.phase !== "player") {
+      return 0;
+    }
+    return playerUnits(mission).filter((unit) => unit.hp > 0 && unit.ap > 0)
+      .length;
+  }
+
+  /** Whether the selected unit may act at all. */
+  /**
+   * Why this action cannot happen for the selected unit, or `undefined`
+   * when it can.
+   *
+   * Asks the rules rather than a boolean of its own: `actingUnit` is the
+   * same precondition `overwatchHandler` and `reloadHandler` run, so the
+   * button and the command cannot disagree about who may act. The
+   * action-specific refusals stay where they already are — the aim
+   * preview owns range and sight, and the move path owns reachability.
+   */
+  private refusalFor(action: string): TacticalError | undefined {
+    const mission = this.mission;
+    if (mission === undefined || this.selected === undefined) {
+      return undefined;
+    }
+    if (action === "end-turn") {
+      return undefined;
+    }
+    if (action === "extract") {
+      // Leaving is free, so it does not spend an action point.
+      const acting = actingUnit(mission, this.selected, 0);
+      if (!acting.ok) {
+        return acting.error;
+      }
+      return this.canExtract()
+        ? undefined
+        : { kind: "not-in-extraction-zone", unitId: this.selected };
+    }
+    const acting = actingUnit(mission, this.selected, 1);
+    if (!acting.ok) {
+      return acting.error;
+    }
+    if (action === "interact" && this.interactTarget() === undefined) {
+      // Its own kind, because none of the existing objective errors is
+      // true here: nothing is missing or finished, there is simply
+      // nothing within reach. The first version of this borrowed
+      // `objective-not-found` with an empty id and the frame said
+      // `No objective "" is in this mission`, which is how I found out.
+      return { kind: "no-objective-in-reach", unitId: this.selected };
+    }
+    return undefined;
+  }
+
+  /** Puts the refusal above the unit, and in the status line for the log. */
+  private announceRefusal(error: TacticalError): void {
+    // Named, not id'd (#1035). The chip above the unit is the most
+    // prominent place a refusal has ever appeared, so `Unit "unit-1"`
+    // reads worse there than it ever did in the status line. eng-5's
+    // resolver is the one vocabulary for this; there is no second set
+    // of strings here.
+    const words = describeRefusal(error, namesFor(this.mission));
+    this.showStatus(words);
+    if (this.selected !== undefined) {
+      this.handlers.onNotice?.(this.selected, words);
+    }
+  }
+
+  /** Whether the selected unit may act at all: alive, its phase, an action left. */
   private canAct(): boolean {
     const mission = this.mission;
     const unit = this.unit(this.selected);
@@ -1040,6 +1162,7 @@ export class TacticalHudView {
       this.card.update(undefined, undefined);
       this.preview.update(undefined);
       this.objectives.update([], []);
+      this.squad.update(undefined);
       this.actions.update({
         canAct: false,
         playerPhase: false,
@@ -1084,7 +1207,9 @@ export class TacticalHudView {
         : findAttackTarget(mission, this.target);
     const preview = this.currentPreview();
     this.preview.update(
-      target && preview ? { targetName: target.name, preview } : undefined,
+      target && preview
+        ? { targetName: target.name, preview, names: namesFor(mission) }
+        : undefined,
     );
     const inReach = this.interactTarget();
     this.objectives.update(
@@ -1092,6 +1217,11 @@ export class TacticalHudView {
       mission.spawners,
       inReach?.objective.id,
     );
+    this.squad.update({
+      units: playerUnits(mission),
+      selectedId: this.selected,
+      nameOf: nameResolver(mission),
+    });
     this.actions.update({
       attacksLeft:
         selected === undefined
@@ -1111,6 +1241,7 @@ export class TacticalHudView {
       playerPhase: mission.phase === "player",
       mode: this.mode,
       reloadLabel: selected?.kind === "mech" ? "Vent" : "Reload",
+      unspent: this.unspentCount(),
       canExtract: this.canExtract(),
       canInteract: inReach !== undefined,
     });

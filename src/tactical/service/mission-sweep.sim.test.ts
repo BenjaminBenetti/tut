@@ -539,3 +539,69 @@ describe("seeded tactical sweep", () => {
     expect([table, floor, won >= WALKOVER_FLOOR]).toEqual([table, floor, true]);
   });
 });
+
+// ===========================================
+// The paired baseline for #734
+// ===========================================
+
+/**
+ * The map seeds the paired design plays at **every** difficulty.
+ *
+ * The sweep above is deliberately unpaired — sixty seeds, each played at
+ * one difficulty — which is right for asking "do missions conclude" and
+ * wrong for asking "what does one step of difficulty do". Measured
+ * unpaired, the top half of the range looks like a gradient; the same
+ * maps played at all ten showed that gradient was the variance between
+ * maps rather than the difficulty step (#734).
+ *
+ * Six maps, matching the design #734's acceptance names. `play` already
+ * takes the map seed and the difficulty separately and `startedMission`
+ * fixes the campaign seed at 7, so the same map seed at ten difficulties
+ * is the same terrain and the same starting force with only the
+ * difficulty moved. No second harness is needed for this — only a seed
+ * set and a way to ask for it.
+ */
+const PAIRED_SEEDS = Array.from({ length: 6 }, (_, i) => `paired-${String(i)}`);
+
+/**
+ * Opt-in, because this is a measurement rather than a gate: 60 missions
+ * at a 90-turn cap take minutes, and `pnpm test:sim` must stay a check
+ * that people actually run.
+ *
+ *     SIM_PAIRED=1 SIM_TURN_CAP=90 SIM_PAIRED_OUT=/tmp/paired.tsv pnpm test:sim
+ *
+ * It asserts only the invariants every run already asserts. It fixes no
+ * expected win rate, because what the ladder *should* be is #734's call
+ * and the Executive Director's steer, not this file's.
+ */
+const PAIRED = process.env.SIM_PAIRED === "1";
+
+describe.runIf(PAIRED)("paired difficulty baseline (#734)", () => {
+  it("plays every map at every difficulty and reports the curve", () => {
+    const runs: SweepRun[] = [];
+    for (const mapSeed of PAIRED_SEEDS) {
+      for (let difficulty = 1; difficulty <= 10; difficulty++) {
+        runs.push(play(mapSeed, difficulty, TURN_CAP));
+      }
+    }
+    // The one thing this does assert: the rules held in every run. A
+    // baseline measured from a broken simulation is worse than none.
+    expect(runs.flatMap((run) => run.violations)).toEqual([]);
+
+    const rows = runs.map((run) =>
+      [
+        run.seed,
+        run.difficulty,
+        run.outcome,
+        run.turns,
+        run.tdfAlive,
+        run.bugsAlive,
+      ].join("\t"),
+    );
+    const out = process.env.SIM_PAIRED_OUT;
+    if (out !== undefined) {
+      writeFileSync(out, `${rows.join("\n")}\n`);
+    }
+    expect(runs).toHaveLength(PAIRED_SEEDS.length * 10);
+  });
+});

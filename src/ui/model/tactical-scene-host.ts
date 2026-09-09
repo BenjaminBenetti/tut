@@ -57,6 +57,20 @@ export interface TacticalSceneHost {
   select(unitId: UnitId | undefined, targetId?: string): void;
 
   /**
+   * Says something above a unit: what it just did, or why it could not.
+   *
+   * One mechanism for both (#1030, #1029). A refusal and a completed
+   * action are the same shape of thing — something resolved, and the
+   * player should learn it where it happened rather than by reading the
+   * edge of the screen. It is the floater the damage numbers already
+   * use, which is #1029's question answered: the same one.
+   *
+   * @param unitId - The unit to speak above.
+   * @param text - Words in the player's language, not an error kind.
+   */
+  notice(unitId: UnitId, text: string): void;
+
+  /**
    * Shows or hides the weapon-range outline (#522). The screen owns the
    * toggle so the state survives a re-selection; the scene only draws.
    */
@@ -75,6 +89,19 @@ export interface TacticalSceneHost {
    * @returns Client pixels, or undefined when nothing is drawn there.
    */
   screenPositionOf(target: TacticalInvokeTarget): Vec2 | undefined;
+
+  /**
+   * Centres the view on a unit.
+   *
+   * The camera rig has had `lookAt` since it was written, and until now
+   * `frameMission` called it once at mission start and nothing called it
+   * again — so a unit selected off screen could not be recovered except
+   * by panning until it turned up (#1041). This is the caller it was
+   * missing, not new machinery.
+   *
+   * @param unitId - The unit to centre on.
+   */
+  lookAtUnit(unitId: UnitId): void;
 
   /**
    * Moves the view `delta` storeys and returns where it landed (#961).

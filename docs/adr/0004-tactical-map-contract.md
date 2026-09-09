@@ -389,7 +389,7 @@ map is a bug, never a runtime fallback.
 | I3 | Wall symmetry: `tile.walls[d]` equals `neighbour(d).walls[opposite(d)]` whenever the neighbour tile exists at the same `y`. |
 | I4 | Every connector references two existing tiles with the kind's `Δy` and adjacency rule; `pass` matches the kind; stairs' `from` tile has `surface 'stairs'`. |
 | I5 | Buildings: ≥ 1 floor, ≥ 1 entrance whose door wall exists; every floor tile lies inside the footprint and carries `buildingId`; every floor `i > 0` is reachable from floor 0 via the building's own connectors; interior and roof tiles are not mech-passable. |
-| I6 | Hooks: every tile exists and satisfies `pass & requiredPass`; each edge-spawn tile lies on the map boundary; every deploy zone has ≥ 4 mech-passable and ≥ 8 infantry-passable tiles that are mutually connected per class. |
+| I6 | Hooks: every tile exists and satisfies `pass & requiredPass`; each edge-spawn tile lies on the map boundary; every deploy zone has ≥ `MAX_DEPLOYED_UNITS` distinct mech-passable and ≥ `MAX_DEPLOYED_UNITS` distinct infantry-passable tiles (currently eight each), mutually connected per class. Repeated hook coordinates add no capacity. Both floors derive from the existing deployment cap; sixteen is the current placer's target, not the invariant (#984). |
 | I7 | Reachability: for each hook `h` and each class `c` in `h.requiredPass`, some tile of `h` is reachable under §5 from some tile of some deploy zone by class `c`. |
 | I8 | Recipe satisfaction: for each `HookRequirement`, exactly `count` hooks of that kind exist, and `minDistanceFromDeploy` holds. |
 | I9 | Determinism: `generate(recipe)` twice gives deep-equal maps (tested, not validated). |

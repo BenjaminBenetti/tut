@@ -4,10 +4,12 @@ import {
   Group,
   InstancedMesh,
   Color,
+  DoubleSide,
   Matrix4,
   Mesh,
   MeshStandardMaterial,
   OrthographicCamera,
+  Raycaster,
   Vector3,
 } from "three";
 import { describe, expect, it } from "vitest";
@@ -63,6 +65,55 @@ function meshesIn(view: TacticalMapView, level: number): InstancedMesh[] {
 }
 
 describe("TacticalMapView", () => {
+  it("keeps water's outer shell without internal faces across its continuous surface", () => {
+    const map = new FixtureMapBuilder(3, 3, 1)
+      .fillGround(0, SurfaceIds.WATER)
+      .build();
+    const view = new TacticalMapView(map);
+    const water = named(view, "tiles-ground:tile:water:");
+    for (const mesh of water) {
+      (mesh.material as MeshStandardMaterial).side = DoubleSide;
+    }
+    view.root.updateMatrixWorld(true);
+    const origin = new Vector3(1.5, SLAB_HEIGHT / 2, 1.5);
+    const boundaries = [
+      [new Vector3(1, 0, 0), new Vector3(3, origin.y, 1.5)],
+      [new Vector3(-1, 0, 0), new Vector3(0, origin.y, 1.5)],
+      [new Vector3(0, 0, 1), new Vector3(1.5, origin.y, 3)],
+      [new Vector3(0, 0, -1), new Vector3(1.5, origin.y, 0)],
+      [new Vector3(0, 1, 0), new Vector3(1.5, SLAB_HEIGHT, 1.5)],
+      [new Vector3(0, -1, 0), new Vector3(1.5, 0, 1.5)],
+    ] as const;
+    for (const [direction, boundary] of boundaries) {
+      const hits = new Raycaster(origin, direction).intersectObjects(water);
+      expect(hits.length).toBeGreaterThan(0);
+      expect(hits[0]!.point.distanceTo(boundary)).toBeLessThan(1e-6);
+    }
+    view.dispose();
+  });
+
+  it.each([
+    { neighbour: "shore", surface: SurfaceIds.SAND, level: 0 },
+    { neighbour: "higher water", surface: SurfaceIds.WATER, level: 1 },
+  ])("retains the water side against $neighbour", ({ surface, level }) => {
+    const builder = new FixtureMapBuilder(2, 1, 2);
+    builder.tile({ x: 0, y: 0, z: 0 }, SurfaceIds.WATER);
+    builder.tile({ x: 1, y: level, z: 0 }, surface);
+    const view = new TacticalMapView(builder.build());
+    const water = named(view, "tiles-ground:tile:water:0");
+    for (const mesh of water) {
+      (mesh.material as MeshStandardMaterial).side = DoubleSide;
+    }
+    view.root.updateMatrixWorld(true);
+    const hits = new Raycaster(
+      new Vector3(0.5, SLAB_HEIGHT / 2, 0.5),
+      new Vector3(1, 0, 0),
+    ).intersectObjects(water);
+    expect(hits.length).toBeGreaterThan(0);
+    expect(hits[0]!.point.x).toBeCloseTo(1, 6);
+    view.dispose();
+  });
+
   it("groups everything by level and centres on the map", () => {
     const view = new TacticalMapView(fixture().build());
     expect(view.levels).toEqual([0, 1]);
@@ -1067,5 +1118,75 @@ describe("TacticalMapView.setLayerFocus", () => {
     });
     expect(drawnLevels(view)).toEqual(cut);
     expect(cut).toEqual([0, 4]);
+  });
+});
+
+// ===========================================
+// The flat-map control owed for #978 (#1019)
+// ===========================================
+
+/**
+ * Two buildings sharing a ground level, each with floors **and a real
+ * roof tile** — the `buildingId`-without-`floorIndex` shape every
+ * fixture written for #978 omitted, which is how the roof omission
+ * survived four sabotage checks.
+ *
+ * Flat is the case #978 promised not to change: with every building on
+ * one ground level the per-building storey cut and the old single height
+ * cut are the same number, so the two must draw the same map at every
+ * step of the range — including the top, where "no cut" has to mean no
+ * cut for buildings as well as for terrain.
+ */
+function flatWithRoofs(): FixtureMapBuilder {
+  const b = new FixtureMapBuilder(8, 8, 10).fillGround();
+  b.building(building("tall", 0, 3));
+  b.building(building("short", 0, 1));
+  for (let floor = 0; floor < 3; floor++) {
+    b.tile({ x: 1, y: floor * STOREY_LAYERS, z: 1 }, SurfaceIds.FLOOR, {
+      buildingId: "tall",
+      floorIndex: floor,
+    });
+  }
+  b.tile({ x: 1, y: 3 * STOREY_LAYERS, z: 1 }, SurfaceIds.FLOOR, {
+    buildingId: "tall",
+  });
+  b.tile({ x: 5, y: 0, z: 5 }, SurfaceIds.FLOOR, {
+    buildingId: "short",
+    floorIndex: 0,
+  });
+  b.tile({ x: 5, y: 1 * STOREY_LAYERS, z: 5 }, SurfaceIds.FLOOR, {
+    buildingId: "short",
+  });
+  return b;
+}
+
+describe("the flat-map control for #978", () => {
+  it("draws exactly what the old height cut drew, at every storey", () => {
+    const map = flatWithRoofs().build();
+    // Three storeys, from the tallest building's floor count.
+    const storeys = 3;
+    for (let storey = 0; storey < storeys; storey++) {
+      const cutLevel = storey === storeys - 1 ? undefined : storey * 2 + 1;
+      const byHeight = new TacticalMapView(map);
+      byHeight.setMaxLevel(cutLevel);
+      const byStorey = new TacticalMapView(map);
+      byStorey.setLayerFocus({ storey, storeyCount: storeys, cutLevel });
+      expect(
+        drawnLevels(byStorey),
+        `storey ${String(storey)} must draw what the height cut drew`,
+      ).toEqual(drawnLevels(byHeight));
+    }
+  });
+
+  // The specific omission, stated as its own expectation so a reader
+  // does not have to infer it from the loop above: at the top of the
+  // range every roof is drawn, including the tallest building's, whose
+  // storey is one above the top floor index.
+  it("draws both roofs at the top of the range", () => {
+    const view = new TacticalMapView(flatWithRoofs().build());
+    view.setLayerFocus({ storey: 2, storeyCount: 3, cutLevel: undefined });
+    // Level 6 is the tall roof, level 2 the short one.
+    expect(drawnLevels(view)).toContain(6);
+    expect(drawnLevels(view)).toContain(2);
   });
 });

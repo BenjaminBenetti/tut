@@ -549,6 +549,28 @@
 .tut-mission-results__loss {
   color: var(--ui-danger);
 }
+/*
+ * The payout on a mission that cost nothing (#740). It speaks with size
+ * and the winning green, never with the alarm's left border: a
+ * destroyed mech owns that channel, and one channel per question
+ * (style guide §12.2) is what keeps a reward from reading as a warning.
+ * On any mission that did cost something this class is not applied and
+ * the block stays at the foot of the panel, under the losses.
+ */
+.tut-mission-results__payout {
+  margin: var(--space-3) 0;
+}
+.tut-mission-results__payout-value {
+  font-size: 1.6em;
+  line-height: 1.2;
+}
+/* Colour carries valence, size carries importance -- never the reverse. */
+.tut-mission-results__payout-value--good {
+  color: var(--ui-ok);
+}
+.tut-mission-results__payout-value--bad {
+  color: var(--ui-warn);
+}
 
 /*
  * The choice that happens if the player ignores the event. Pushed to the
@@ -802,6 +824,58 @@
 .tut-hud__objectives .tut-list > li > .tut-mono {
   flex: 0 0 auto;
   white-space: nowrap;
+}
+
+/*
+ * The squad strip (#1041): the player's own force, at a glance.
+ *
+ * Scoped to this panel rather than styling `.tut-list > li`, which every
+ * other list in the game shares — the lesson #991 left behind. The row
+ * is a button in all but name: it selects the unit and brings it on
+ * screen, so it has to read as pressable.
+ */
+/* "SQUAD" at one end, "3 to act" at the other, rather than run together. */
+.tut-hud__squad .tut-panel__title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.tut-hud__squad .tut-list > li {
+  gap: var(--space-2);
+  cursor: pointer;
+}
+
+.tut-hud__squad .tut-list > li > span:not(.tut-icon) {
+  min-width: 0;
+}
+
+.tut-squad__name {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tut-hud__squad .tut-list > li > .tut-mono {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+/* The unit being commanded, marked the way the scene marks it. */
+.tut-hud__squad .tut-list > li[data-selected="true"] {
+  background: var(--ui-panel-raised);
+  box-shadow: inset 2px 0 0 0 var(--ui-accent);
+}
+
+/*
+ * A unit with nothing left to do is dimmed rather than hidden: the
+ * question the strip answers is "who still has a turn", and an absent
+ * row would answer "who exists" instead.
+ */
+.tut-hud__squad .tut-list > li[data-spent="true"] {
+  opacity: 0.55;
 }
 
 .tut-hud__bottom {

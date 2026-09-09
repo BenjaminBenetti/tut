@@ -41,6 +41,12 @@ export interface ActionBarModel {
   /** Label of the reload button: "Vent" for a mech, "Reload" otherwise (#409). */
   readonly reloadLabel?: string;
   /**
+   * How many of the player's units still have an action (#1041). Named
+   * on End turn, because ending a turn with units that have not acted
+   * used to be silent — the player found out on the next turn.
+   */
+  readonly unspent?: number;
+  /**
    * Shots the selected unit has left this turn (#533). Shown on the
    * Attack button when it is more than one, which is how a player sees
    * that a squad fires twice and a mech once.
@@ -178,7 +184,10 @@ export class ActionBarView {
       text.textContent = label;
       button.append(key, icon, text);
       button.title = `${label} (${key.textContent})`;
-      button.disabled = true;
+      // Unavailable until `update` says otherwise — marked rather than
+      // blocked, so a press still reaches the HUD to be explained (#1030).
+      button.classList.add("is-unavailable");
+      button.setAttribute("aria-disabled", "true");
       if (action === "attack") {
         // The attack slot is rebuilt per selection: one button per weapon
         // when the unit carries several (#532).
@@ -227,7 +236,14 @@ export class ActionBarView {
         // Replaced by per-weapon buttons, which carry their own state.
         continue;
       }
-      button.disabled = !isEnabled(action, model);
+      // Unavailable rather than `disabled` (#1030). A disabled button
+      // cannot be clicked, so the player who clicks it learns nothing —
+      // which is the complaint. This one still looks unavailable and
+      // still refuses, but the refusal now says why, above the unit.
+      const available = isEnabled(action, model);
+      button.classList.toggle("is-unavailable", !available);
+      button.setAttribute("aria-disabled", available ? "false" : "true");
+      button.disabled = false;
       const pressed = action === model.mode;
       button.classList.toggle("is-selected", pressed);
       button.setAttribute("aria-pressed", pressed ? "true" : "false");
@@ -249,6 +265,19 @@ export class ActionBarView {
           label.textContent = text;
         }
         button.title = `${text} (${String(ACTION_BAR_ORDER.indexOf(action) + 1)})`;
+      }
+      if (action === "end-turn") {
+        // Says what it is about to leave behind (#1041). Named rather
+        // than blocked: a confirmation would change the flow, and the
+        // player who means it should press once.
+        const label = button.querySelector<HTMLElement>(".tut-btn__label");
+        const unspent = model.unspent ?? 0;
+        const text =
+          unspent > 0 ? `End turn (${String(unspent)} unspent)` : "End turn";
+        if (label) {
+          label.textContent = text;
+        }
+        button.dataset.unspent = String(unspent);
       }
     }
   }

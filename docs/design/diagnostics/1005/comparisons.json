@@ -1,0 +1,334 @@
+{
+  "beforeSource": "cd37ce973bdfd5d41af4529fd98efdc3dee30ece",
+  "afterSource": "d7403df5835d099efa3b8588399f37ba97e82cd6",
+  "independentBrowsersPerPhase": 2,
+  "views": [
+    {
+      "id": "S1-water-surface",
+      "cameraAndClipIdentical": true,
+      "beforeSha256": "f4aef599e0b0501353ad357bc8b332587526e9d5c7b36905d767389714af8130",
+      "afterSha256": "c1c81672526f324099ab506ab7181448b58344e58c0c302007665c34cb149d23",
+      "pngByteIdentical": false,
+      "changedRgbaPixels": 10351,
+      "renderingBefore": {
+        "calls": 414,
+        "triangles": 211230,
+        "geometries": 760,
+        "textures": 33,
+        "programs": 17
+      },
+      "renderingAfter": {
+        "calls": 426,
+        "triangles": 202382,
+        "geometries": 768,
+        "textures": 33,
+        "programs": 17
+      },
+      "renderingDelta": {
+        "calls": 12,
+        "triangles": -8848,
+        "geometries": 8,
+        "textures": 0,
+        "programs": 0
+      }
+    },
+    {
+      "id": "S2-water-surface",
+      "cameraAndClipIdentical": true,
+      "beforeSha256": "2d9ffc207eddb5411ece1707f13d6ec3a183e34b02cad6b86943c6e9d49f098c",
+      "afterSha256": "105d12a63fea95437a3d0b424f67dc0418cff1e08fb9f38beba6811b0ebbbf9f",
+      "pngByteIdentical": false,
+      "changedRgbaPixels": 10858,
+      "renderingBefore": {
+        "calls": 443,
+        "triangles": 221230,
+        "geometries": 760,
+        "textures": 33,
+        "programs": 17
+      },
+      "renderingAfter": {
+        "calls": 455,
+        "triangles": 212382,
+        "geometries": 768,
+        "textures": 33,
+        "programs": 17
+      },
+      "renderingDelta": {
+        "calls": 12,
+        "triangles": -8848,
+        "geometries": 8,
+        "textures": 0,
+        "programs": 0
+      }
+    },
+    {
+      "id": "W1-city-waterfront",
+      "cameraAndClipIdentical": true,
+      "beforeSha256": "61f59dce18baf27b79e65f43e48dfe23bd1d7c8ab3a7471a125f974a2e86d6de",
+      "afterSha256": "523c80ee06a87eee9a68c88b058400f5516248d1b0626e99ecb1ef3deefadc90",
+      "pngByteIdentical": false,
+      "changedRgbaPixels": 9272,
+      "renderingBefore": {
+        "calls": 890,
+        "triangles": 916810,
+        "geometries": 547,
+        "textures": 44,
+        "programs": 15
+      },
+      "renderingAfter": {
+        "calls": 900,
+        "triangles": 894316,
+        "geometries": 553,
+        "textures": 44,
+        "programs": 15
+      },
+      "renderingDelta": {
+        "calls": 10,
+        "triangles": -22494,
+        "geometries": 6,
+        "textures": 0,
+        "programs": 0
+      }
+    },
+    {
+      "id": "W2-town-waterfront",
+      "cameraAndClipIdentical": true,
+      "beforeSha256": "c802ef61f6b2510b7af22f6f6ae4912da15d0a25b81d9ce33a4382729acca4c2",
+      "afterSha256": "669b876a0180fa6c3f2b7cc5dac97a3165deacafd1cef7eb6f8096952321407a",
+      "pngByteIdentical": false,
+      "changedRgbaPixels": 8213,
+      "renderingBefore": {
+        "calls": 770,
+        "triangles": 332702,
+        "geometries": 916,
+        "textures": 43,
+        "programs": 18
+      },
+      "renderingAfter": {
+        "calls": 783,
+        "triangles": 323902,
+        "geometries": 924,
+        "textures": 43,
+        "programs": 18
+      },
+      "renderingDelta": {
+        "calls": 13,
+        "triangles": -8800,
+        "geometries": 8,
+        "textures": 0,
+        "programs": 0
+      }
+    },
+    {
+      "id": "P1-dry-ground-control",
+      "cameraAndClipIdentical": true,
+      "beforeSha256": "fe5b1132e149e1d7b24a598e87e0574ed41ab6bc57c9a93649a00f4e3a14fa8e",
+      "afterSha256": "fe5b1132e149e1d7b24a598e87e0574ed41ab6bc57c9a93649a00f4e3a14fa8e",
+      "pngByteIdentical": true,
+      "changedRgbaPixels": 0,
+      "renderingBefore": {
+        "calls": 633,
+        "triangles": 227686,
+        "geometries": 1075,
+        "textures": 28,
+        "programs": 16
+      },
+      "renderingAfter": {
+        "calls": 633,
+        "triangles": 227686,
+        "geometries": 1075,
+        "textures": 28,
+        "programs": 16
+      },
+      "renderingDelta": {
+        "calls": 0,
+        "triangles": 0,
+        "geometries": 0,
+        "textures": 0,
+        "programs": 0
+      }
+    }
+  ],
+  "maps": [
+    {
+      "recipe": {
+        "seed": "mc-opening-03",
+        "params": {
+          "archetype": "settlement",
+          "biome": "coastal",
+          "settlement": "city",
+          "size": "medium",
+          "hooks": [
+            {
+              "kind": "deploy",
+              "count": 1,
+              "requiredPass": 3
+            },
+            {
+              "kind": "egg-spawner",
+              "count": 3,
+              "requiredPass": 1,
+              "minDistanceFromDeploy": 12,
+              "maxNearestDistanceFromDeploy": 30,
+              "meta": {
+                "hatchRadius": 3
+              }
+            },
+            {
+              "kind": "edge-spawn",
+              "count": 2,
+              "requiredPass": 1
+            },
+            {
+              "kind": "extraction",
+              "count": 1,
+              "requiredPass": 3
+            }
+          ],
+          "slopeShare": 1
+        }
+      },
+      "jsonByteIdentical": true,
+      "sha256": "678bad9465ca06c8d6d9fb28dd950bca3e8704edaff6c493a6e0abc9fc18a788",
+      "flatWaterTiles": 1439,
+      "retainedExternalSides": 196,
+      "groundWaterTrianglesBefore": 17268,
+      "groundWaterTrianglesAfter": 6148
+    },
+    {
+      "recipe": {
+        "seed": "mc-opening-01",
+        "params": {
+          "archetype": "settlement",
+          "biome": "coastal",
+          "settlement": "rural",
+          "size": "small",
+          "hooks": [
+            {
+              "kind": "deploy",
+              "count": 1,
+              "requiredPass": 3
+            },
+            {
+              "kind": "egg-spawner",
+              "count": 3,
+              "requiredPass": 1,
+              "minDistanceFromDeploy": 12,
+              "maxNearestDistanceFromDeploy": 30,
+              "meta": {
+                "hatchRadius": 3
+              }
+            },
+            {
+              "kind": "edge-spawn",
+              "count": 2,
+              "requiredPass": 1
+            },
+            {
+              "kind": "extraction",
+              "count": 1,
+              "requiredPass": 3
+            }
+          ],
+          "slopeShare": 1
+        }
+      },
+      "jsonByteIdentical": true,
+      "sha256": "64b5a65ad1bc8eeeeee8086b7b1d217cbd91ec8e863153e4234b41b14a4b4377",
+      "flatWaterTiles": 577,
+      "retainedExternalSides": 124,
+      "groundWaterTrianglesBefore": 6924,
+      "groundWaterTrianglesAfter": 2556
+    },
+    {
+      "recipe": {
+        "seed": "mc-opening-01",
+        "params": {
+          "archetype": "settlement",
+          "biome": "coastal",
+          "settlement": "town",
+          "size": "small",
+          "hooks": [
+            {
+              "kind": "deploy",
+              "count": 1,
+              "requiredPass": 3
+            },
+            {
+              "kind": "egg-spawner",
+              "count": 3,
+              "requiredPass": 1,
+              "minDistanceFromDeploy": 12,
+              "maxNearestDistanceFromDeploy": 30,
+              "meta": {
+                "hatchRadius": 3
+              }
+            },
+            {
+              "kind": "edge-spawn",
+              "count": 2,
+              "requiredPass": 1
+            },
+            {
+              "kind": "extraction",
+              "count": 1,
+              "requiredPass": 3
+            }
+          ],
+          "slopeShare": 1
+        }
+      },
+      "jsonByteIdentical": true,
+      "sha256": "05c3560661c3da39c1c0736bd0d7ce0c549dbb95f8ecb00e9f0c7b86384524bb",
+      "flatWaterTiles": 577,
+      "retainedExternalSides": 124,
+      "groundWaterTrianglesBefore": 6924,
+      "groundWaterTrianglesAfter": 2556
+    },
+    {
+      "recipe": {
+        "seed": "mc-resume-01",
+        "params": {
+          "archetype": "settlement",
+          "biome": "temperate",
+          "settlement": "rural",
+          "size": "small",
+          "hooks": [
+            {
+              "kind": "deploy",
+              "count": 1,
+              "requiredPass": 3
+            },
+            {
+              "kind": "egg-spawner",
+              "count": 3,
+              "requiredPass": 1,
+              "minDistanceFromDeploy": 12,
+              "maxNearestDistanceFromDeploy": 30,
+              "meta": {
+                "hatchRadius": 3
+              }
+            },
+            {
+              "kind": "edge-spawn",
+              "count": 2,
+              "requiredPass": 1
+            },
+            {
+              "kind": "extraction",
+              "count": 1,
+              "requiredPass": 3
+            }
+          ],
+          "slopeShare": 1
+        }
+      },
+      "jsonByteIdentical": true,
+      "sha256": "520bd25f4691b750b0ca71ccb722aec659b7080ae8a961dafa247542f2fd6623",
+      "flatWaterTiles": 0,
+      "retainedExternalSides": 0,
+      "groundWaterTrianglesBefore": 0,
+      "groundWaterTrianglesAfter": 0
+    }
+  ]
+}

@@ -21,7 +21,10 @@ re-filing them under new numbers.
 
 ## 1. FRICTION — nothing in a mission tells you the state of your squad, and Tab hands you a unit it will not show you
 
-`shots/F3-tab-selects-a-unit-you-cannot-see.png`
+`shots/F3-tab-selects-a-unit-you-cannot-see.png` ·
+`shots/F3-clip-tab-does-not-follow.gif` (18 frames: the squad in view, the pan away, then
+two presses of Tab — the card goes RIFLE SQUAD → HAMMERHEAD and the action bar rebuilds
+itself around a mech's two weapons, while the map stays empty road)
 
 Four separate absences that add up to one: **there is no squad-level view in a mission.**
 

@@ -2,7 +2,8 @@ import type { Result } from "../../core/model/result";
 import { CoverLevel } from "../../mapgen/model/cover";
 import type { AttackPreview } from "../../tactical/model/attack-preview";
 import type { TacticalError } from "../../tactical/model/tactical-error";
-import { describeTacticalError } from "../../tactical/model/tactical-error";
+import type { TacticalNames } from "../service/tactical-error-text";
+import { describeRefusal } from "../service/tactical-error-text";
 import type { IconId } from "../data/icon-manifest";
 import { formatWhole } from "../service/format";
 import { iconGlyph } from "./icon-glyph";
@@ -21,6 +22,12 @@ export interface HitPreviewHandlers {
 export interface HitPreviewModel {
   readonly targetName: string;
   readonly preview: Result<AttackPreview, TacticalError>;
+  /**
+   * Resolves the ids a refusal carries into names (#1035). Handed in
+   * rather than looked up: the view has no mission, and the refusal it
+   * shows is the one place a player used to read `"bug-3"`.
+   */
+  readonly names: TacticalNames;
 }
 
 /** Cover level names for the chip. */
@@ -162,7 +169,10 @@ export class HitPreviewView {
       this.hit.textContent = "—";
       this.damage.textContent = "—";
       this.chips.textContent = "";
-      this.error.textContent = describeTacticalError(model.preview.error);
+      this.error.textContent = describeRefusal(
+        model.preview.error,
+        model.names,
+      );
       this.error.hidden = false;
       this.fire.disabled = true;
       return;

@@ -1,0 +1,73 @@
+{
+  "id": "R1-ground",
+  "baseline": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+  "serverRuntime": {
+    "baseline": "9d9ea012e97292ae3f96e2500f1609a1cfdbf412",
+    "server": "http://localhost:4175",
+    "serverSession": 78445,
+    "recordedAt": "2026-09-08T23:54:44.203435+00:00",
+    "config": "tools/art/preview/capture-vite.config.mjs",
+    "watch": null,
+    "hmr": false,
+    "freshServerAfterCheckout": true,
+    "runtimeTrees": {
+      "src": "a40dc3470152eedf6c21ee8842926a558383ca35",
+      "public": "5e85567612436db764109379d0631edae38b7f77",
+      "tools": "9d64b17f164f5bc7c94ab0c12fd93ade1690591d"
+    }
+  },
+  "campaignSeed": "4242",
+  "entry": "ordinary campaign, first mission, all available starter units selected",
+  "missionId": "mission-1",
+  "missionSeed": 1127010053,
+  "width": 48,
+  "depth": 48,
+  "levels": 14,
+  "viewport": {
+    "width": 1800,
+    "height": 1200
+  },
+  "cameraFocus": {
+    "x": 3,
+    "y": 2,
+    "z": 26
+  },
+  "roofReference": {
+    "x": 3,
+    "y": 12,
+    "z": 26
+  },
+  "pointer": {
+    "x": 0,
+    "y": 1199
+  },
+  "inputs": [
+    "e",
+    "]",
+    "PageDown",
+    "PageDown",
+    "PageDown",
+    "PageDown",
+    "PageDown"
+  ],
+  "readout": "1 / 5",
+  "cameraProjection": {
+    "x": 644.608947565991,
+    "y": 579.7108889587913
+  },
+  "dataset": {
+    "screen": "tactical",
+    "appState": "ready",
+    "selectedCity": "johannesburg",
+    "tacticalStorey": "1",
+    "tacticalStoreys": "5",
+    "tacticalUnits": "3",
+    "tacticalSpawners": "0",
+    "tacticalReady": "true",
+    "lastIntent": "layer-step"
+  },
+  "errors": [],
+  "sha256": "f2c1ccfa21703e34610e1e0a07a4245c44b9dae8cf0aa08ec7d55ec1257beb7a",
+  "captureDateUTC": "2026-09-09",
+  "visuallyInspected": true
+}

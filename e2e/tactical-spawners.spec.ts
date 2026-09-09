@@ -2,7 +2,6 @@ import type { Page } from "@playwright/test";
 
 import type { TacticalMap } from "../src/mapgen/model/tactical-map";
 import { PassMask } from "../src/mapgen/model/pass-mask";
-import { UNIT_TUNING } from "../src/tactical/data/unit-tuning";
 import {
   nearestSightPosition,
   pathBetween,
@@ -64,7 +63,14 @@ test("egg spawners are drawn on the tactical map and can be targeted by clicking
     .locator('[data-role="mission-details"] [data-action="plan-deployment"]')
     .click();
   await expect(body).toHaveAttribute("data-screen", "deployment");
-  await page.locator('#deploy-squads input[type="checkbox"]').first().check();
+  // Scouting is not a promise that a lone rifle squad survives a wave (#911).
+  // Use the available starting force; keep the campaign seed and real scout walk.
+  for (const option of await page
+    .locator(
+      '#deploy-mechs input[type="checkbox"]:enabled, #deploy-squads input[type="checkbox"]:enabled',
+    )
+    .all())
+    await option.check();
   await page.locator('[data-action="launch"]').click();
   await expect(body).toHaveAttribute("data-screen", "tactical");
   await expect(page.locator("#tactical-viewport canvas")).toBeVisible();
@@ -76,11 +82,13 @@ test("egg spawners are drawn on the tactical map and can be targeted by clicking
   expect(await objectives.count()).toBeGreaterThan(0);
   await expect(body).toHaveAttribute("data-tactical-spawners", "0");
 
-  // Scout until one is found: walk the squad at the nearest spawner a
+  // Scout until one is found: walk the leading unit at the nearest spawner a
   // few tiles a turn. This is the spotting step ADR 0006 §3 asks every
   // spec that used to look straight at the map to gain.
-  const spawnerId = await scoutToASpawner(page);
-  expect(spawnerId, "no spawner found while scouting").toBeTruthy();
+  const sighting = await scoutToASpawner(page);
+  expect(sighting, "no spawner found while scouting").toBeTruthy();
+  if (!sighting) throw new Error("No scouted spawner");
+  const { spawnerId, unitId } = sighting;
   await expect(body).not.toHaveAttribute("data-tactical-spawners", "0");
 
   // It has a place on screen, which is what makes it clickable at all.
@@ -91,7 +99,7 @@ test("egg spawners are drawn on the tactical map and can be targeted by clicking
   );
   expect(at).toBeTruthy();
 
-  // Scouting spent the squad's action points, and Attack is disabled for
+  // Scouting spent the scout's action points, and Attack is disabled for
   // a unit that cannot act. End the turn so the side refreshes before
   // the targeting half of this spec — otherwise whether the button is
   // clickable depends on how many moves the walk happened to take.
@@ -100,23 +108,49 @@ test("egg spawners are drawn on the tactical map and can be targeted by clicking
     page.locator('#turn-banner [data-field="phase"]'),
   ).toHaveAttribute("data-phase", "player");
   await expect(
-    page.locator('#action-bar [data-action="attack"]'),
+    page.locator('#action-bar [data-action="attack"]').first(),
   ).toBeEnabled();
 
-  // Selecting a squad, arming attack and clicking the spawner targets it.
-  await page.evaluate(() =>
-    (globalThis as HookGlobal).__tutTactical__?.selectUnit("unit-1"),
-  );
-  await expect(body).toHaveAttribute("data-selected-unit", "unit-1");
-  await page.locator('#action-bar [data-action="attack"]').click();
+  // Selecting the scout, arming attack and clicking the spawner targets it.
   await page.evaluate(
-    (id: string) =>
-      (globalThis as HookGlobal).__tutTactical__?.selectSpawner(id),
-    spawnerId ?? "",
+    (id: string) => (globalThis as HookGlobal).__tutTactical__?.selectUnit(id),
+    unitId,
   );
+  await expect(body).toHaveAttribute("data-selected-unit", unitId);
+  await page.locator('#action-bar [data-action="attack"]').first().click();
+  // Use real view controls to expose and frame the scouted interior before
+  // testing the picker. The old direct selection hook also accepted offscreen
+  // coordinates; a real mouse click must hit the visible spawner mesh.
+  const layerDown = page.locator('[data-action="layer-down"]');
+  while (await layerDown.isEnabled()) await layerDown.click();
+  const canvas = page.locator("#tactical-viewport canvas");
+  await canvas.hover();
+  await page.mouse.wheel(0, 360);
+  const bounds = await canvas.boundingBox();
+  expect(bounds).toBeTruthy();
+  let point: { x: number; y: number } | undefined;
+  await expect
+    .poll(async () => {
+      point = await page.evaluate(
+        (id: string) =>
+          (globalThis as HookGlobal).__tutTactical__?.spawnerScreenPosition(id),
+        spawnerId,
+      );
+      return (
+        point !== undefined &&
+        bounds !== null &&
+        point.x > bounds.x + 20 &&
+        point.x < bounds.x + bounds.width - 20 &&
+        point.y > bounds.y + 20 &&
+        point.y < bounds.y + bounds.height - 20
+      );
+    })
+    .toBe(true);
+  await expect(body).not.toHaveAttribute("data-selected-spawner", spawnerId);
+  await page.mouse.click(point!.x, point!.y);
   await expect(body).toHaveAttribute("data-selected-spawner", spawnerId ?? "");
-  // The squad keeps the card; a spawner is aimed at, never selected.
-  await expect(body).toHaveAttribute("data-selected-unit", "unit-1");
+  // The scout keeps the card; a spawner is aimed at, never selected.
+  await expect(body).toHaveAttribute("data-selected-unit", unitId);
 
   expect(errors).toEqual([]);
 });
@@ -131,10 +165,14 @@ interface SavedMission {
   units: {
     id: string;
     team: string;
+    hp: number;
+    passClass: "infantry" | "mech";
+    templateId: string;
     /** Action points left, so the walk knows when to end the turn. */
     ap: number;
     pos: { x: number; y: number; z: number };
   }[];
+  templates: Record<string, { sightRange: number }>;
   spawners: { id: string; pos: { x: number; y: number; z: number } }[];
 }
 
@@ -151,8 +189,8 @@ async function savedMission(page: Page): Promise<SavedMission | null> {
 }
 
 /**
- * Walks the squad toward the nearest spawner until one is drawn, and
- * returns the id of a spawner the objectives track — or undefined if
+ * Walks a living unit toward the nearest spawner until one is drawn, and
+ * returns that scout and a spawner the objectives track — or undefined if
  * none turned up.
  *
  * It routes rather than aims. A straight line at the target stalls the
@@ -163,11 +201,13 @@ async function savedMission(page: Page): Promise<SavedMission | null> {
  * that actually moves the unit, which lets it walk around what is in the
  * way instead of into it.
  */
-async function scoutToASpawner(page: Page): Promise<string | undefined> {
+async function scoutToASpawner(
+  page: Page,
+): Promise<{ spawnerId: string; unitId: string } | undefined> {
   const body = page.locator("body");
   for (let turn = 0; turn < 14; turn++) {
     const mission = await savedMission(page);
-    const unit = mission?.units.find((u) => u.team === "tdf");
+    const unit = mission?.units.find((u) => u.team === "tdf" && u.hp > 0);
     const spawner = nearestSpawner(mission, unit);
     if (!mission || !unit || !spawner) return undefined;
 
@@ -179,12 +219,12 @@ async function scoutToASpawner(page: Page): Promise<string | undefined> {
         mission.map,
         unit.pos,
         spawner.pos,
-        PassMask.INFANTRY,
-        UNIT_TUNING.infantry.sightRange,
+        unit.passClass === "mech" ? PassMask.MECH : PassMask.INFANTRY,
+        mission.templates[unit.templateId].sightRange,
       ) ?? spawner.pos;
     const moved = await stepToward(page, unit, vantage, mission.map);
     const found = await drawnSpawnerId(page);
-    if (found !== undefined) return found;
+    if (found !== undefined) return { spawnerId: found, unitId: unit.id };
     if (!moved) {
       // Boxed in for this turn's action points; a fresh turn reopens the
       // budget, and a failure to move at all is caught by the cap.
@@ -229,7 +269,12 @@ async function stepToward(
 ): Promise<boolean> {
   // Follow the walk the game says exists, a few tiles at a time: the
   // vantage may be a storey up a ramp the offsets below would never find.
-  const path = pathBetween(map, unit.pos, target, PassMask.INFANTRY);
+  const path = pathBetween(
+    map,
+    unit.pos,
+    target,
+    unit.passClass === "mech" ? PassMask.MECH : PassMask.INFANTRY,
+  );
   if (path !== undefined && path.length > 0) {
     for (const hop of [6, 5, 4, 3, 2, 1]) {
       const tile = path[Math.min(hop, path.length) - 1];

@@ -58,7 +58,7 @@ test("highlighted interior tiles move the squad through the doorway", async ({
   const original = save.state.activeMission!;
   const building = original.map.buildings.find((b) => b.id === "building-3");
   expect(building).toBeDefined();
-  const entrance = building!.entrances[0]!;
+  const entrance = building!.entrances[0];
   const entry = entrance.tile;
   const inward = stepGridPos(entry, oppositeDirection(entrance.side));
   const outward = directionOffset(entrance.side);

@@ -109,6 +109,46 @@ describe("EventLogView", () => {
       ?.click();
   });
 
+  /**
+   * An attack target is a unit **or** an egg spawner, and both come
+   * through the same resolver. Resolving everything as a unit removed
+   * the raw id and the spawner with it: `Rifle Squad hit that unit for
+   * 3`, beside an objectives panel reading `Destroy spawner 1`. The
+   * tracker's ordinal is the name every other surface uses (#949), so
+   * the log uses it too.
+   */
+  it("names an attacked spawner by the tracker's ordinal, not as a unit", () => {
+    const view = new EventLogView();
+    view.mount(host);
+    const state = {
+      ...mission(),
+      objectives: [
+        { id: "objective-1", targetId: "spawner-1" },
+        { id: "objective-2", targetId: "spawner-2" },
+      ],
+    } as unknown as TacticalState;
+    view.append(
+      [
+        {
+          type: "tactical:attack-resolved",
+          payload: {
+            attackerId: "unit-1",
+            targetId: "spawner-2",
+            hit: true,
+            damage: 3,
+            weaponRange: 8,
+            targetHp: 5,
+          },
+        },
+      ],
+      state,
+    );
+    expect(lines()).toEqual(["Rifle Squad hit spawner 2 for 3"]);
+    // Neither the raw id nor the anonymous unit wording.
+    expect(lines().join(" ")).not.toContain("spawner-2");
+    expect(lines().join(" ")).not.toContain("that unit");
+  });
+
   it("names nothing after an id when the mission has no name for it", () => {
     const view = new EventLogView();
     view.mount(host);

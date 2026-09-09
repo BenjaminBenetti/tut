@@ -207,7 +207,19 @@ export function nameResolver(
   // resolver falls back to "that unit" where a local copy fell back to
   // the raw id, which is the leak #1035 exists to remove.
   const names = namesFor(mission, campaign);
-  return (unitId) => names.unit(unitId);
+  // An attack target is a unit *or* an egg spawner, and the log passes
+  // both through here. Resolving everything as a unit drops the id and
+  // the spawner with it — `Rifle Squad hit that unit for 3`, beside an
+  // objectives panel reading `Destroy spawner 1`. So a tracked spawner
+  // goes through the resolver that names it the way the tracker does
+  // (#949): `spawner 1`, by ordinal.
+  const spawners = new Set(
+    (mission?.objectives ?? [])
+      .map((objective) => objective.targetId)
+      .filter((id): id is string => id !== undefined),
+  );
+  return (unitId) =>
+    spawners.has(unitId) ? names.spawner(unitId) : names.unit(unitId);
 }
 
 /**

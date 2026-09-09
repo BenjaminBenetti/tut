@@ -1226,6 +1226,7 @@ export class TacticalHudView {
       selected,
       selected ? mission.templates[selected.templateId] : undefined,
       selected ? attacksRemaining(selected, this.deps.combatTuning) : undefined,
+      selected ? namesFor(mission, this.campaign).unit(selected.id) : undefined,
     );
     const target =
       this.target === undefined

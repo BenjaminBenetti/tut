@@ -555,9 +555,15 @@ describe("TacticalScreen", () => {
     store.replace({ ...state, activeMission: mission });
 
     host.intents?.emit({ kind: "select-unit", unitId: squad.id });
+    // The squad's roster identity, not its type (#1040): two squads of
+    // one type share a template name, so the card used to call both of
+    // them "Rifle Squad" while the debrief said Alpha and Bravo.
     expect(
       root.querySelector('#unit-card [data-field="unit-name"]')?.textContent,
-    ).toBe(mission.templates[squad.templateId]?.name);
+    ).toBe(
+      state.roster.squads.find((s) => s.id === squad.sourceId)?.name ??
+        mission.templates[squad.templateId]?.name,
+    );
     host.intents?.emit({ kind: "action", action: "attack" });
     host.intents?.emit({ kind: "select-unit", unitId: bug.id });
     expect(root.querySelector<HTMLElement>("#hit-preview")?.hidden).toBe(false);

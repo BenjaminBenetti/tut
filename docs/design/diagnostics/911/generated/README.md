@@ -88,6 +88,17 @@ scales × three presets × `mc-resume-01/02/03`. Full measurements:
 | Town | 377 → 371 | 17,246 → 17,090 | 15.17% → 14.87% |
 | City | 507 → 488 | 16,409 → 15,666 | 12.73% → 12.29% |
 
+Of the 108 maps, 72 retain the same building count, 29 have one fewer, one has two fewer,
+and six have one more. Rural: 36 unchanged. Town: 30 unchanged, six down one. City: six
+unchanged, 23 down one, one down two, six up one. The largest measured loss is
+coastal/city/small `mc-resume-02`, 6→4. A 7×13 reservation is a physical bound, not a
+one-building-loss guarantee. Lots and buildings are generated around the earlier reservation;
+there is no building-deletion step. Changed candidate layouts can also fit an extra building.
+
+The pictured coastal/city/medium `mc-opening-03` is 10→9 buildings. Its former deployment
+starts at (2,1,28) on the west edge; new boarding is x5–8, z8–11 at y1. The before image
+shows the same location, not an existing deployment at that location.
+
 Those are real space/cover costs, not an unchanged-map claim. The site makes a cleared arrival
 place and removes possible building/prop placements. A new boarding origin also exposed one
 pre-existing cramped-indoor egg-spawner preference: roomy shootable outdoor ground now ranks

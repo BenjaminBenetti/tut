@@ -1,10 +1,39 @@
 # Handoff: Map Critic
 
-2026-09-08, v0.2.13 follow-up — #917 visually accepted on current main;
-five open Critic tickets (cap reached). Squad/pointer cutaway re-check is
-complete. Layers have useful floor views but fail the top-limit roof control;
-that regression is already owned under #978. The twelve-map next-seed survey
-is complete and published. The bounded watch has reached its original deadline.
+2026-09-08, **v0.2.15 resumed pass in progress**. The Director reports
+**67% context remaining**, checked through `/status`; continue this seat.
+The Executive Director's focus is tactical UX and map generation, made robust.
+#945/#1007 and #959/#1016 are merged; fresh post-merge verdicts are in progress.
+Three Critic tickets remain open: **#960 → #1006 → #1005**; two slots remain.
+
+Current branch `docs/945-map-critic-v0215`, baseline
+`9d9ea012e97292ae3f96e2500f1609a1cfdbf412` (v0.2.15). Prior docs PR #1015
+merged as `123c54c`; do not leave it awaiting review. Fresh capture server
+`78445` on **4175** started after checkout; use that server for this pass.
+Scratch root `.scratch/map-critic-v0215/` records its startup identity and
+runtime tree hashes. The inherited 4173 server had watching/HMR disabled
+and retained old code after checkout changed: its first two pilot frames
+are quarantined under `excluded-stale-server/`, never evidence for v0.2.15.
+**Restart the capture server for every changed runtime baseline.** Reading
+HEAD alone cannot certify the code an already-running server has cached.
+
+Standing orders are caught up through 23:46:02, including every intervening
+comment (full-page overlap checked). [Resume acknowledgement](https://github.com/BenjaminBenetti/tut/discussions/968#discussioncomment-18358507).
+The new singleton watch is `19147`, `.scratch/map-critic-v0215/watch.py`,
+**23:52:12–02:52:12 UTC** with five-minute polling. It samples every channel
+before deciding to exit. Do not extend that deadline on re-arm.
+
+**New ruling #1023 supersedes the pointer-follow reveal:** preserve squad
+radius 4 / 0.175, remove pointer reveal. Art submitted #1032 and resumed #960;
+the earlier Critic pointer verdict is historical, not a case for retention.
+The top-focus roof correction is merged in #1013; its current-main re-check
+will follow the two requested material/trail cases. The #978 flat-map proof
+debt was separately accepted under #1019/#1025; do not keep it listed as owed.
+
+Accepted images are dated evidence at their named code/capture identity;
+new-main frames are separate measurements. Never silently replace accepted
+historical PNGs to follow a later rendering change. Executable screenshot
+baselines have their own reviewed test-owner maintenance contract.
 
 ## Calibration and boundaries
 

@@ -156,6 +156,12 @@ Building frontage fabric uses flat `env-awning-green #56735F` and
 snow atlas cells would read as terrain painted onto the awning. Other frontage
 materials reuse the existing environment atlas.
 
+Lagos planting uses `env-tropical-leaf #39714E`,
+`env-tropical-leaf-light #568358` and `env-palm-trunk #786348`.
+The rendered masonry family uses `env-plaster-warm #C8B990` with existing
+concrete bands and metal/glass openings. These are separate model tokens;
+the established temperate vegetation and wall families retain their colours.
+
 Infested ground overlays use `bug-flesh` and `bug-bio-green-dim`; never recolour the base tile.
 
 ### 4.4 UI

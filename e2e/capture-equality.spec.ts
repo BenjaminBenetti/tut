@@ -5,6 +5,7 @@ import {
   drawnFrame,
   tacticalModelsReady,
   tapCameraKey,
+  tapCameraKeys,
   watchAssetFallback,
 } from "./capture-frame.helper";
 import { launchMission } from "./mission-capture.helper";
@@ -33,8 +34,18 @@ test("capture taps and a no-op reproduce the same rendered bytes", async ({
       await page.mouse.move(0, 0);
       // Seed 4242's tallest roof must be visible: the deploy-zone view
       // missed the top-focus roof regression introduced by #978.
-      for (const key of ["d", "s", "w", "w", "w", "w", "w", "w", "w", "w"])
-        await tapCameraKey(page, key);
+      await tapCameraKeys(page, [
+        "d",
+        "s",
+        "w",
+        "w",
+        "w",
+        "w",
+        "w",
+        "w",
+        "w",
+        "w",
+      ]);
       const viewport = page.locator("#tactical-viewport");
       const top = await viewport.screenshot({
         path: test.info().outputPath(`${run}-top.png`),

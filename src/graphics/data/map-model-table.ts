@@ -115,7 +115,12 @@ export const TERRAIN_TRANSITION_SOURCE =
  * emits it.
  * Benches use the contextual yard definition, so they never enter the generic ground pool.
  */
-export const PROP_MODELS: Readonly<Record<KnownPropKindId, ModelAssetId>> = {
+export const PROP_MODELS: Readonly<
+  Record<
+    KnownPropKindId | "bench" | "tree-tropical-almond" | "tree-oil-palm",
+    ModelAssetId
+  >
+> = {
   [PropKindIds.CAR]: "prop.car-compact",
   [PropKindIds.CRATE]: "prop.crate",
   [PropKindIds.BARRIER]: "prop.barrier-concrete",
@@ -129,6 +134,8 @@ export const PROP_MODELS: Readonly<Record<KnownPropKindId, ModelAssetId>> = {
   [PropKindIds.TREE_PINE]: "prop.tree-pine",
   [PropKindIds.TREE_OAK]: "prop.tree-oak",
   [PropKindIds.TREE_PALM]: "prop.tree-palm",
+  "tree-tropical-almond": "prop.tree-tropical-almond",
+  "tree-oil-palm": "prop.tree-oil-palm",
   [PropKindIds.CACTUS]: "prop.cactus",
 };
 
@@ -141,7 +148,7 @@ export const PROP_MODELS: Readonly<Record<KnownPropKindId, ModelAssetId>> = {
  * identical geometry, so a block of buildings stops reading as one
  * extruded material; which one a building draws in is `wallFamilyFor`.
  */
-export type WallFamily = "brick" | "concrete" | "panel";
+export type WallFamily = "brick" | "concrete" | "panel" | "plaster";
 
 /** Civic edges have their own geometry; buildings never draw this family. */
 export type WallPlacementFamily = WallFamily | "road";
@@ -151,6 +158,8 @@ export type WallPlacementFamily = WallFamily | "road";
  * the order is part of what a building's family depends on: reordering
  * it redraws every map. Append rather than insert.
  */
+// Plaster is selected explicitly by local appearance; extending this pool
+// would change the modulo and repaint every existing building.
 export const WALL_FAMILIES: readonly WallFamily[] = [
   "brick",
   "concrete",
@@ -188,6 +197,11 @@ export const WALL_MODELS: Readonly<
     window: "building.wall-window-panel",
     door: "building.wall-door-panel",
   },
+  plaster: {
+    solid: "building.wall-plaster",
+    window: "building.wall-window-plaster",
+    door: "building.wall-door-plaster",
+  },
 };
 
 /**
@@ -201,6 +215,7 @@ export const HALF_WALL_MODELS: Readonly<
   brick: "building.wall-half",
   concrete: "building.wall-half-concrete",
   panel: "building.wall-half-concrete",
+  plaster: "building.wall-half-concrete",
   road: "building.viaduct-parapet",
 };
 

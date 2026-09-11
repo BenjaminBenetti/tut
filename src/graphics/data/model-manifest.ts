@@ -12,6 +12,62 @@ import type { ModelManifest } from "../model/asset-manifest";
  * build script regenerates; the manifest test keeps the two in sync.
  */
 export const MODEL_MANIFEST = {
+  "prop.tree-tropical-almond": {
+    category: "props",
+    path: "assets/models/props/prop-tree-tropical-almond.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 2.0,
+    sockets: [],
+    quality: "final",
+  },
+  "prop.tree-oil-palm": {
+    category: "props",
+    path: "assets/models/props/prop-tree-oil-palm.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 2.3,
+    sockets: [],
+    quality: "final",
+  },
+  "building.wall-plaster": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-plaster.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: [],
+    quality: "final",
+  },
+  "building.wall-window-plaster": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-window-plaster.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: [],
+    quality: "final",
+  },
+  "building.wall-door-plaster": {
+    category: "buildings",
+    path: "assets/models/buildings/building-wall-door-plaster.glb",
+    footprint: {
+      w: 1,
+      d: 0,
+    },
+    height: 1.5,
+    sockets: ["socket_door"],
+    quality: "final",
+  },
+
   // ===========================================
   // Units (TDF)
   // ===========================================

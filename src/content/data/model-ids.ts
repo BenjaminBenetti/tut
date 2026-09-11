@@ -41,6 +41,12 @@ export const MODEL_IDS = [
   "tdf.mech.weapon-back.mortar",
   "tdf.mech.weapon-back.rotary-cannon",
   "tdf.mech.assembled-b",
+  // Lagos kit (#1082)
+  "prop.tree-tropical-almond",
+  "prop.tree-oil-palm",
+  "building.wall-plaster",
+  "building.wall-window-plaster",
+  "building.wall-door-plaster",
   // Bugs
   "bug.brute",
   "bug.lurker",

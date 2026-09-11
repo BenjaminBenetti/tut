@@ -22,6 +22,10 @@ export const PropKindIds = {
   TREE_PALM: "tree-palm",
   TREE_TROPICAL_ALMOND: "tree-tropical-almond",
   TREE_OIL_PALM: "tree-oil-palm",
+  TREE_TUART: "tree-tuart",
+  BANKSIA: "banksia",
+  GRASS_TREE: "grass-tree",
+  LIMESTONE_OUTCROP: "limestone-outcrop",
   CACTUS: "cactus",
 } as const;
 
@@ -139,5 +143,33 @@ export const PROP_DEFINITIONS: readonly PropDefinition[] = [
     blocksLos: false,
     placements: ["ground"],
     biomes: ["desert"],
+  },
+  {
+    id: PropKindIds.TREE_TUART,
+    cover: CoverLevel.HIGH,
+    blocksLos: false,
+    placements: ["vegetation"],
+    biomes: ["coastal"],
+  },
+  {
+    id: PropKindIds.BANKSIA,
+    cover: CoverLevel.HIGH,
+    blocksLos: false,
+    placements: ["vegetation"],
+    biomes: ["coastal"],
+  },
+  {
+    id: PropKindIds.GRASS_TREE,
+    cover: CoverLevel.LOW,
+    blocksLos: false,
+    placements: ["vegetation"],
+    biomes: ["coastal"],
+  },
+  {
+    id: PropKindIds.LIMESTONE_OUTCROP,
+    cover: CoverLevel.HIGH,
+    blocksLos: true,
+    placements: ["vegetation"],
+    biomes: ["coastal"],
   },
 ];

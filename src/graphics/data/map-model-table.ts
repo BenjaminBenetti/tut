@@ -116,19 +116,7 @@ export const TERRAIN_TRANSITION_SOURCE =
  * emits it.
  * Benches use the contextual yard definition, so they never enter the generic ground pool.
  */
-export const PROP_MODELS: Readonly<
-  Record<
-    | KnownPropKindId
-    | "bench"
-    | "tree-tropical-almond"
-    | "tree-oil-palm"
-    | "tree-tuart"
-    | "banksia"
-    | "grass-tree"
-    | "limestone-outcrop",
-    ModelAssetId
-  >
-> = {
+export const PROP_MODELS: Readonly<Record<KnownPropKindId, ModelAssetId>> = {
   [PropKindIds.CAR]: "prop.car-compact",
   [PropKindIds.CRATE]: "prop.crate",
   [PropKindIds.BARRIER]: "prop.barrier-concrete",
@@ -144,10 +132,10 @@ export const PROP_MODELS: Readonly<
   [PropKindIds.TREE_PALM]: "prop.tree-palm",
   "tree-tropical-almond": "prop.tree-tropical-almond",
   "tree-oil-palm": "prop.tree-oil-palm",
-  "tree-tuart": "prop.tree-tuart",
-  banksia: "prop.banksia",
-  "grass-tree": "prop.grass-tree",
-  "limestone-outcrop": "prop.limestone-outcrop",
+  [PropKindIds.TREE_TUART]: "prop.tree-tuart",
+  [PropKindIds.BANKSIA]: "prop.banksia",
+  [PropKindIds.GRASS_TREE]: "prop.grass-tree",
+  [PropKindIds.LIMESTONE_OUTCROP]: "prop.limestone-outcrop",
   [PropKindIds.CACTUS]: "prop.cactus",
 };
 

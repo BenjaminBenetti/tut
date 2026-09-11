@@ -8,10 +8,12 @@ import captureConfig from "../art/preview/capture-vite.config.mjs";
 
 const phase = process.argv[2] ?? "after";
 const projectRoot = process.env.PLACE_ROOT ?? process.cwd();
-const out = `docs/design/diagnostics/1082/${phase}`;
-mkdirSync("/workspaces/tut/.git/mapgen-1082/maps", { recursive: true });
+const out = process.env.PLACE_OUTPUT ?? `docs/design/diagnostics/1082/${phase}`;
+const mapOutput =
+  process.env.PLACE_MAP_OUTPUT ?? "/workspaces/tut/.git/mapgen-1082/maps";
+mkdirSync(mapOutput, { recursive: true });
 mkdirSync(out, { recursive: true });
-const controls = [
+const lagosControls = [
   [
     "L01-lagos",
     "1892582247",
@@ -52,7 +54,22 @@ const controls = [
     0,
     undefined,
   ],
-].filter(
+];
+const controls = (
+  process.env.PLACE_CASE_FILE
+    ? JSON.parse(readFileSync(process.env.PLACE_CASE_FILE, "utf8")).map((c) => [
+        c.id,
+        c.seed,
+        c.biome,
+        c.settlement,
+        c.size,
+        c.focus,
+        c.rotation,
+        c.placeProfile,
+        c.control ?? false,
+      ])
+    : lagosControls
+).filter(
   ([id]) =>
     !process.env.CAPTURE_CASES ||
     process.env.CAPTURE_CASES.split(",").includes(id),
@@ -143,6 +160,7 @@ try {
         focus,
         rotation,
         placeProfile,
+        retainProfile,
       ] of controls) {
         await page.mouse.move(0, 0);
         const query = new URLSearchParams({
@@ -154,7 +172,7 @@ try {
           units: "1",
           slope: "100",
         });
-        if (phase !== "before" && placeProfile)
+        if ((phase !== "before" || retainProfile) && placeProfile)
           query.set("place", placeProfile);
         const url = `http://127.0.0.1:8797/mapgen-preview.html?${query}`;
         if (page.url() !== url)
@@ -222,7 +240,7 @@ try {
         if (!repeat) {
           writeFileSync(file, bytes);
           writeFileSync(
-            `/workspaces/tut/.git/mapgen-1082/maps/${phase}-${id}.json`,
+            `${mapOutput}/${phase}-${id}.json`,
             JSON.stringify(info.map) + "\n",
           );
           const camera = {
@@ -234,7 +252,7 @@ try {
             id,
             seed,
             biome,
-            placeProfile: phase === "before" ? undefined : placeProfile,
+            placeProfile: info.map.recipe.params.placeProfile,
             url,
             settlement,
             size,

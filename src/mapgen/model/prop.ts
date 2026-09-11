@@ -26,8 +26,9 @@ export interface Prop {
   readonly rotation: Rotation;
 }
 
-/** Where the prop pass may put a kind of prop. */
-export type PropPlacement = "ground" | "road" | "interior" | "yard";
+/** Where a prop may be selected; vegetation is explicit planting, excluding random yard clutter. */
+export type PropPlacement =
+  "ground" | "vegetation" | "road" | "interior" | "yard";
 
 /**
  * Describes one prop kind. Graphics maps `id` to a mesh through its own

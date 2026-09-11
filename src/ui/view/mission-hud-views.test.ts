@@ -282,7 +282,7 @@ describe("event vocabulary", () => {
         type: "tactical:unit-status-changed",
         payload: { unitId: "unit-2", status: ["overwatch"] },
       } as never,
-      () => "Rifle Squad",
+      { ...NAMES, unit: () => "Rifle Squad" },
     );
     expect(line?.text).toBe("Rifle Squad is on overwatch");
   });
@@ -293,7 +293,7 @@ describe("event vocabulary", () => {
         type: "tactical:unit-status-changed",
         payload: { unitId: "unit-2", status: ["suppressed"] },
       } as never,
-      () => "Rifle Squad",
+      { ...NAMES, unit: () => "Rifle Squad" },
     );
     expect(line?.text).toBe("Rifle Squad is suppressed");
   });
@@ -382,6 +382,7 @@ const NAMES: TacticalNames = {
   unit: () => "Swarmer",
   objective: () => "spawner 1",
   spawner: () => "spawner 1",
+  target: () => "Swarmer",
   mech: () => "Hammerhead",
   mission: () => "Lagos",
 };

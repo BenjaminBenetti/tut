@@ -63,6 +63,8 @@ import { TurnBannerView } from "./turn-banner-view";
 import { UnitCardView } from "./unit-card-view";
 import { SquadStripView, playerUnits } from "./squad-strip-view";
 import { actingUnit } from "../../tactical/service/acting-unit";
+import { reloadPools } from "../../tactical/service/reload-handler";
+import { chargeRegisterFor } from "../service/charge-register";
 
 // ===========================================
 // Types
@@ -715,9 +717,19 @@ export class TacticalHudView {
     }
     // Move is armed by default now (#519), so a tile click reaches here
     // with anything selected — including a bug the player tapped to read
-    // its card. Only the acting side walks; the rest is a quiet no-op
-    // rather than a refusal the player did not ask for.
-    if (!this.canAct()) {
+    // its card. That one stays a quiet no-op: the player did not ask it
+    // to walk, so there is nothing to refuse.
+    //
+    // Their own unit with no action points did ask, and used to get the
+    // same silence — QA measured it and traced it to this early return.
+    // The button already explains that refusal; the tile click is how a
+    // player actually moves, so it explaining nothing is the very
+    // inconsistency this ticket exists to remove.
+    const refusal = this.refusalFor("move");
+    if (refusal !== undefined) {
+      if (refusal.kind === "no-action-points") {
+        this.announceRefusal(refusal);
+      }
       return;
     }
     const path = pathTo(
@@ -962,7 +974,6 @@ export class TacticalHudView {
     }
   }
 
-  /** True when the selected unit is on the acting side, alive, with action points. */
   /** How many of the player's units still have an action to spend (#1041). */
   private unspentCount(): number {
     const mission = this.mission;
@@ -1006,6 +1017,37 @@ export class TacticalHudView {
     if (!acting.ok) {
       return acting.error;
     }
+    if (action === "attack") {
+      // The rules already answer this per weapon: `weaponOptions` runs
+      // `refuseWeapon`, which checks charges. Availability was coming
+      // from `actingUnit` alone, which checks map, alive, phase and
+      // action points and knows nothing about ammunition — so the bar
+      // left ATTACK live on a squad reading `ammo 0 / 3`, four lines
+      // from the card that said so (#1062, QA on v0.2.16).
+      //
+      // Every weapon, not the first: a mech with a dry autocannon and a
+      // loaded missile pod can still shoot, so the refusal only stands
+      // when nothing on the unit can fire.
+      const options = weaponOptions(
+        mission,
+        acting.value.id,
+        this.deps.combatTuning,
+      );
+      const spent =
+        options.length > 0 && options.every((option) => !option.ready);
+      const refusal = spent ? options[0]?.refusal : undefined;
+      if (refusal !== undefined) {
+        return refusal;
+      }
+    }
+    if (action === "reload") {
+      // The same question the command answers, asked once. eng-5 found
+      // the bar offering Reload to a mech at heat 4/4 on `6a552d6`.
+      const pools = reloadPools(mission, acting.value);
+      if (!pools.ok) {
+        return pools.error;
+      }
+    }
     if (action === "interact" && this.interactTarget() === undefined) {
       // Its own kind, because none of the existing objective errors is
       // true here: nothing is missing or finished, there is simply
@@ -1017,6 +1059,24 @@ export class TacticalHudView {
     return undefined;
   }
 
+  /**
+   * How many attacks the card and the bar should show.
+   *
+   * `attacksRemaining` takes `Pick<Unit, "kind" | "ap">` — it cannot see
+   * ammunition, so it answered `1` for a squad with an empty magazine
+   * and the card advertised `ATTACKS 1` beside `ammo 0 / 3`. Asking
+   * `refusalFor` first means the count, the button and the words are one
+   * answer rather than three (#1062).
+   *
+   * @param unit - The selected unit.
+   * @returns Attacks left, or zero when the unit cannot attack at all.
+   */
+  private attacksLeftFor(unit: Unit): number {
+    return this.refusalFor("attack") === undefined
+      ? attacksRemaining(unit, this.deps.combatTuning)
+      : 0;
+  }
+
   /** Puts the refusal above the unit, and in the status line for the log. */
   private announceRefusal(error: TacticalError): void {
     // Named, not id'd (#1035). The chip above the unit is the most
@@ -1024,11 +1084,32 @@ export class TacticalHudView {
     // reads worse there than it ever did in the status line. eng-5's
     // resolver is the one vocabulary for this; there is no second set
     // of strings here.
-    const words = describeRefusal(error, namesFor(this.mission));
+    // With the campaign, like every other name on this screen (#1047):
+    // without it the resolver falls back to the template, so a refusal
+    // said `Rifle Squad` beside a card reading `ALPHA`. QA found it on
+    // #1067, where Attack at an empty magazine began refusing here
+    // instead of at the dispatcher, which already passed the campaign.
+    const words = describeRefusal(error, namesFor(this.mission, this.campaign));
     this.showStatus(words);
     if (this.selected !== undefined) {
       this.handlers.onNotice?.(this.selected, words);
     }
+  }
+
+  /**
+   * The actions the selected unit cannot take, from the same query that
+   * produces the refusal, so a button and its reason agree (#1030).
+   */
+  private unavailableActions(): ActionBarAction[] {
+    const actions: ActionBarAction[] = [
+      "move",
+      "attack",
+      "overwatch",
+      "reload",
+      "interact",
+      "extract",
+    ];
+    return actions.filter((action) => this.refusalFor(action) !== undefined);
   }
 
   /** Whether the selected unit may act at all: alive, its phase, an action left. */
@@ -1233,7 +1314,7 @@ export class TacticalHudView {
     this.card.update(
       selected,
       selected ? mission.templates[selected.templateId] : undefined,
-      selected ? attacksRemaining(selected, this.deps.combatTuning) : undefined,
+      selected ? this.attacksLeftFor(selected) : undefined,
       selected ? namesFor(mission, this.campaign).unit(selected.id) : undefined,
     );
     const target =
@@ -1274,10 +1355,7 @@ export class TacticalHudView {
       nameOf: (unitId) => railNames.unit(unitId),
     });
     this.actions.update({
-      attacksLeft:
-        selected === undefined
-          ? 0
-          : attacksRemaining(selected, this.deps.combatTuning),
+      attacksLeft: selected === undefined ? 0 : this.attacksLeftFor(selected),
       weapons: selected
         ? weaponOptions(mission, selected.id, this.deps.combatTuning).map(
             (option) => ({
@@ -1291,9 +1369,10 @@ export class TacticalHudView {
       canAct: this.canAct(),
       playerPhase: mission.phase === "player",
       mode: this.mode,
-      reloadLabel: selected?.kind === "mech" ? "Vent" : "Reload",
+      reloadLabel: chargeRegisterFor(selected?.kind ?? "squad").actionLabel,
       unspent: this.unspentCount(),
       canExtract: this.canExtract(),
+      unavailable: this.unavailableActions(),
       canInteract: inReach !== undefined,
     });
     // Last, so the listener reads the state the refresh just settled.

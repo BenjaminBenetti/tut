@@ -162,6 +162,12 @@ The rendered masonry family uses `env-plaster-warm #C8B990` with existing
 concrete bands and metal/glass openings. These are separate model tokens;
 the established temperate vegetation and wall families retain their colours.
 
+Perth woodland uses `env-sclerophyll-leaf #66765B` and
+`env-sclerophyll-leaf-light #849077`, `env-tuart-bark #AAA58F`,
+`env-grass-tree-trunk #393C32` and `env-limestone #BDB69A`.
+The grey-green foliage, branching crowns and pale rock distinguish the
+south-west Australian kit from Lagos’s layered broadleaf and palm planting.
+
 Infested ground overlays use `bug-flesh` and `bug-bio-green-dim`; never recolour the base tile.
 
 ### 4.4 UI

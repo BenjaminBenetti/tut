@@ -665,6 +665,91 @@ describe("TacticalHudView", () => {
   });
 
   /**
+   * The third surface that names a unit's charges, and the one nothing
+   * was asserting (#1062): the bar said `Vent`, the card said `heat`,
+   * and the refusal said `charges`, each deciding separately. Now all
+   * three ask `chargeRegisterFor`, so this test is what stops the bar
+   * drifting back — removing the split reddens the card and the refusal
+   * already, but left the button label free to say anything.
+   */
+  it("names the reload action as the unit's own card does", () => {
+    const { hud } = setup();
+    // `hudUnit` derives kind from the team, so the two-weapon fixture's
+    // `m1` is a mech by template and a squad by kind. The register keys
+    // off kind, as the card does, so say so.
+    const base = twoWeaponMission();
+    hud.update({
+      ...base,
+      units: base.units.map((u) =>
+        u.id === "m1" ? { ...u, kind: "mech" as const } : u,
+      ),
+    });
+    const label = (): string | undefined =>
+      root.querySelector<HTMLElement>('[data-action="reload"] .tut-btn__label')
+        ?.textContent ?? undefined;
+
+    hud.handleIntent({ kind: "select-unit", unitId: "m1" });
+    expect(label()).toBe("Vent");
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    expect(label()).toBe("Reload");
+  });
+
+  /**
+   * QA's corrected row (#1062): the Move **button** explains this
+   * refusal, while the right click players actually move with says
+   * nothing. `moveTo` opened with `if (!this.canAct()) return`, and
+   * `canAct` is one boolean answering two questions — "this is not
+   * yours to move" and "this is yours and it cannot move now". Only the
+   * second is a refusal.
+   *
+   * The tapped bug is the control, and it is the point of the test: a
+   * change that made every stray click complain would pass the first
+   * half on its own.
+   */
+  it("a tile click by a spent unit says why; a tapped bug still says nothing", () => {
+    // Id and words kept apart, so "the words carry no id" is a real
+    // assertion rather than one defeated by the id this test prepended.
+    const notices: string[] = [];
+    const noticedUnits: string[] = [];
+    const { hud, commands } = setup({
+      onNotice: (unitId: string, text: string) => {
+        noticedUnits.push(unitId);
+        notices.push(text);
+      },
+    });
+    // s2 is the player's own squad, on the player's own turn, with no
+    // action points left. Move is armed by default (#519), so this is a
+    // plain right click on the tile beside it — no button pressed.
+    hud.handleIntent({ kind: "select-unit", unitId: "s2" });
+    hud.handleIntent({
+      kind: "invoke",
+      target: { kind: "tile", tile: { x: 2, y: 0, z: 3 } },
+    });
+    expect(commands).toEqual([]);
+    const status = root.querySelector<HTMLElement>('[data-role="status"]');
+    expect(status?.hidden).toBe(false);
+    expect(status?.textContent).toContain("no action points");
+    expect(notices).toHaveLength(1);
+    // Above the unit that could not act, not some other one.
+    expect(noticedUnits).toEqual(["s2"]);
+    // Named, not id'd, like every other refusal (#1035).
+    expect(notices[0]).toContain("Rifle Squad");
+    expect(notices[0]).not.toContain("s2");
+
+    // The control: a bug the player tapped to read its card never asked
+    // to walk, so the same click on it stays silent.
+    notices.length = 0;
+    noticedUnits.length = 0;
+    hud.handleIntent({ kind: "select-unit", unitId: "b1" });
+    hud.handleIntent({
+      kind: "invoke",
+      target: { kind: "tile", tile: { x: 5, y: 0, z: 1 } },
+    });
+    expect(commands).toEqual([]);
+    expect(notices).toEqual([]);
+  });
+
+  /**
    * The defect #1030 was filed for: an unavailable action used to return
    * in silence, so the player could not tell "fine" from "refused".
    *
@@ -819,6 +904,188 @@ describe("TacticalHudView", () => {
       units: mission.units.map((u) => ({ ...u, ap: 0 })),
     });
     expect(button()?.textContent).toBe("End turn");
+  });
+
+  /**
+   * QA reproduced this on shipped v0.2.16 (#1027 F2) and the Director
+   * sharpened the acceptance from it: one card reading `AP 1 / 2`,
+   * **`ATTACKS 1`** and `ammo 0 / 3` four lines apart, with the bar
+   * leaving ATTACK live while it correctly dimmed INTERACT in the same
+   * frame.
+   *
+   * Three derivations of one fact. `actingUnit` checks map, alive,
+   * phase and action points; `attacksRemaining` takes only `kind` and
+   * `ap`; and `weaponOptions` — which runs the rules' own
+   * `refuseWeapon` — was the only one that knew about ammunition, and
+   * nothing asked it.
+   */
+  /**
+   * QA on #1067 at `578f62e`, reproduced in play: pressing the dimmed
+   * Attack gave `Rifle Squad is out of ammo; reload first` beside a card
+   * reading `ALPHA`, while the preview on the same head said `Alpha` —
+   * the two-names-for-one-unit defect #1047 closed, back again.
+   *
+   * The refusal now resolves with the campaign like every other name on
+   * the screen. The fixture gives `s1` a roster name that differs from
+   * its template, so this cannot pass on the template by coincidence.
+   */
+  it("names a refusing unit by its roster name, as the card does", () => {
+    const notices: string[] = [];
+    const { hud, mission } = setup({
+      onNotice: (_unitId: string, text: string) => {
+        notices.push(text);
+      },
+    });
+    hud.setCampaign({
+      roster: { squads: [{ id: "s1", name: "Alpha" }], mechs: [] },
+      overworld: { missions: [], map: { cities: [], regions: [] } },
+    } as unknown as Parameters<typeof hud.setCampaign>[0]);
+    const s1 = mission.units.find((unit) => unit.id === "s1");
+    const template = s1 && mission.templates[s1.templateId];
+    if (!s1 || !template)
+      throw new Error("fixture needs a unit with a template");
+    const weapon = {
+      ...template.weapons[0],
+      charges: 3,
+    } as (typeof template.weapons)[number];
+    hud.update({
+      ...mission,
+      templates: {
+        ...mission.templates,
+        [s1.templateId]: { ...template, weapons: [weapon] },
+      },
+      units: mission.units.map((unit) =>
+        unit.id === "s1" ? { ...unit, charges: { [weapon.id]: 0 } } : unit,
+      ),
+    });
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    hud.handleIntent({ kind: "action", action: "attack" });
+
+    const status = root.querySelector<HTMLElement>('[data-role="status"]');
+    expect(notices).toEqual(["Alpha is out of ammo; reload first"]);
+    expect(status?.textContent).toBe("Alpha is out of ammo; reload first");
+    // The template name is what the defect looked like.
+    expect(notices[0]).not.toContain("Rifle Squad");
+  });
+
+  it("stops offering Attack, and counting attacks, when the magazine is empty", () => {
+    const notices: string[] = [];
+    const { hud, mission } = setup({
+      onNotice: (_unitId: string, text: string) => {
+        notices.push(text);
+      },
+    });
+    const s1 = mission.units.find((unit) => unit.id === "s1");
+    const template = s1 && mission.templates[s1.templateId];
+    if (!s1 || !template)
+      throw new Error("fixture needs a unit with a template");
+    const weapon = {
+      ...template.weapons[0],
+      charges: 3,
+    } as (typeof template.weapons)[number];
+    const withAmmo = (left: number) => ({
+      ...mission,
+      templates: {
+        ...mission.templates,
+        [s1.templateId]: { ...template, weapons: [weapon] },
+      },
+      units: mission.units.map((unit) =>
+        unit.id === "s1" ? { ...unit, charges: { [weapon.id]: left } } : unit,
+      ),
+    });
+    const attack = () =>
+      root.querySelector<HTMLButtonElement>('[data-action="attack"]');
+    const attacks = () =>
+      root.querySelector<HTMLElement>('[data-field="attacks"]')?.textContent;
+
+    // Loaded: the control, so this cannot pass by always refusing.
+    hud.update(withAmmo(3));
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    expect(attack()?.getAttribute("aria-disabled")).toBe("false");
+    expect(Number(attacks())).toBeGreaterThan(0);
+
+    // Empty: the button goes, and the card stops advertising a shot the
+    // unit cannot take.
+    hud.update(withAmmo(0));
+    expect(attack()?.getAttribute("aria-disabled")).toBe("true");
+    expect(attacks()).toBe("0");
+
+    // ...and pressing it says why, in the register the card uses.
+    hud.handleIntent({ kind: "action", action: "attack" });
+    expect(notices).toHaveLength(1);
+    expect(notices[0]).toContain("out of ammo");
+    // A squad has no vent action, so the refusal must not offer one.
+    expect(notices[0]).not.toContain("vent");
+    expect(notices[0]).not.toContain("charges");
+  });
+
+  /**
+   * Found by eng-5 on `6a552d6` and handed to this ticket: the bar
+   * offered Reload to a mech at heat 4/4, and the player learned it was
+   * not on offer by pressing it.
+   *
+   * The bar now asks the same question the command answers —
+   * `reloadPools`, which the handler uses too — so the button and the
+   * rule cannot disagree about whether there is anything to reload.
+   */
+  it("does not offer Reload to a unit whose pools are already full", () => {
+    const notices: string[] = [];
+    const { hud, mission } = setup({
+      onNotice: (unitId: string, text: string) => {
+        notices.push(`${unitId}: ${text}`);
+      },
+    });
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    const reload = () =>
+      root.querySelector<HTMLButtonElement>('[data-action="reload"]');
+    // The fixture starts every pool full, which is the reported case.
+    expect(reload()?.getAttribute("aria-disabled")).toBe("true");
+
+    hud.handleIntent({ kind: "action", action: "reload" });
+    expect(notices).toHaveLength(1);
+    // This fixture's squad carries no pool at all, so the honest reason
+    // is "nothing to reload" rather than "already full". Asserted as the
+    // reason the rules give, not as the one I expected: the first
+    // version of this test guessed `charges-full` and was wrong about
+    // the fixture rather than about the behaviour.
+    expect(notices[0]).toContain("nothing to reload");
+    // Named, not id'd, like every other refusal.
+    expect(notices[0]).not.toContain('"s1"');
+
+    // Give the unit a pool and empty it, and the offer comes back — so
+    // the button is following the rule rather than always refusing.
+    const s1 = mission.units.find((unit) => unit.id === "s1");
+    if (!s1) throw new Error("fixture needs a unit");
+    const template = mission.templates[s1.templateId];
+    if (!template) throw new Error("fixture unit has no template");
+    const weapon = {
+      ...template.weapons[0],
+      charges: 3,
+    } as (typeof template.weapons)[number];
+    hud.update({
+      ...mission,
+      templates: {
+        ...mission.templates,
+        [s1.templateId]: { ...template, weapons: [weapon] },
+      },
+      units: mission.units.map((unit) =>
+        unit.id === "s1" ? { ...unit, charges: { [weapon.id]: 0 } } : unit,
+      ),
+    });
+    expect(reload()?.getAttribute("aria-disabled")).toBe("false");
+
+    // ...and full again, it is not on offer.
+    hud.update({
+      ...mission,
+      templates: {
+        ...mission.templates,
+        [s1.templateId]: { ...template, weapons: [weapon] },
+      },
+      units: mission.units.map((unit) =>
+        unit.id === "s1" ? { ...unit, charges: { [weapon.id]: 3 } } : unit,
+      ),
+    });
+    expect(reload()?.getAttribute("aria-disabled")).toBe("true");
   });
 
   it("offers Extract only to a unit standing in the extraction zone", () => {

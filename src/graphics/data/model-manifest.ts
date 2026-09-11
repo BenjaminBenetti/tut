@@ -12,6 +12,38 @@ import type { ModelManifest } from "../model/asset-manifest";
  * build script regenerates; the manifest test keeps the two in sync.
  */
 export const MODEL_MANIFEST = {
+  "prop.tree-tuart": {
+    category: "props",
+    path: "assets/models/props/prop-tree-tuart.glb",
+    footprint: { w: 1, d: 1 },
+    height: 2.2,
+    sockets: [],
+    quality: "final",
+  },
+  "prop.banksia": {
+    category: "props",
+    path: "assets/models/props/prop-banksia.glb",
+    footprint: { w: 1, d: 1 },
+    height: 1.4,
+    sockets: [],
+    quality: "final",
+  },
+  "prop.grass-tree": {
+    category: "props",
+    path: "assets/models/props/prop-grass-tree.glb",
+    footprint: { w: 1, d: 1 },
+    height: 0.75,
+    sockets: [],
+    quality: "final",
+  },
+  "prop.limestone-outcrop": {
+    category: "props",
+    path: "assets/models/props/prop-limestone-outcrop.glb",
+    footprint: { w: 1, d: 1 },
+    height: 0.9,
+    sockets: [],
+    quality: "final",
+  },
   "prop.tree-tropical-almond": {
     category: "props",
     path: "assets/models/props/prop-tree-tropical-almond.glb",

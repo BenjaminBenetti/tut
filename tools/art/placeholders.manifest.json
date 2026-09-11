@@ -1586,5 +1586,139 @@
     "quality": "final",
     "triangles": 268,
     "bytes": 32440
+  },
+  {
+    "id": "building.chimney",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-chimney.glb",
+    "footprint": {
+      "w": 0.44,
+      "d": 0.44
+    },
+    "height": 0.89,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 184,
+    "bytes": 19744
+  },
+  {
+    "id": "building.wall-ac-unit",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-wall-ac-unit.glb",
+    "footprint": {
+      "w": 0.7,
+      "d": 0.32
+    },
+    "height": 0.42,
+    "sockets": [
+      "socket_wall"
+    ],
+    "quality": "final",
+    "triangles": 144,
+    "bytes": 12388
+  },
+  {
+    "id": "building.residential-window-shutters",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-residential-window-shutters.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0.15
+    },
+    "height": 0.6,
+    "sockets": [
+      "socket_wall"
+    ],
+    "quality": "final",
+    "triangles": 108,
+    "bytes": 10628
+  },
+  {
+    "id": "building.warehouse-entry",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-warehouse-entry.glb",
+    "footprint": {
+      "w": 2.4,
+      "d": 0.66
+    },
+    "height": 0.24,
+    "sockets": [
+      "socket_wall"
+    ],
+    "quality": "final",
+    "triangles": 156,
+    "bytes": 14744
+  },
+  {
+    "id": "building.shop-awning-sign",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-shop-awning-sign.glb",
+    "footprint": {
+      "w": 3,
+      "d": 0.67
+    },
+    "height": 0.26,
+    "sockets": [
+      "socket_wall"
+    ],
+    "quality": "final",
+    "triangles": 96,
+    "bytes": 10484
+  },
+  {
+    "id": "prop.rooftop-hvac",
+    "category": "props",
+    "path": "assets/models/props/prop-rooftop-hvac.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.84,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 276,
+    "bytes": 29108
+  },
+  {
+    "id": "prop.rooftop-water-tank",
+    "category": "props",
+    "path": "assets/models/props/prop-rooftop-water-tank.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.25,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 288,
+    "bytes": 22940
+  },
+  {
+    "id": "prop.manhole",
+    "category": "props",
+    "path": "assets/models/props/prop-manhole.glb",
+    "footprint": {
+      "w": 0.56,
+      "d": 0.56
+    },
+    "height": 0.02,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 124,
+    "bytes": 11736
+  },
+  {
+    "id": "prop.curb-drain",
+    "category": "props",
+    "path": "assets/models/props/prop-curb-drain.glb",
+    "footprint": {
+      "w": 0.26,
+      "d": 0.62
+    },
+    "height": 0.03,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 84,
+    "bytes": 11332
   }
 ]

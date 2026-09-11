@@ -14,6 +14,15 @@
  * id here and an entry there in the same PR.
  */
 export const MODEL_IDS = [
+  "prop.curb-drain",
+  "prop.manhole",
+  "prop.rooftop-water-tank",
+  "prop.rooftop-hvac",
+  "building.shop-awning-sign",
+  "building.warehouse-entry",
+  "building.residential-window-shutters",
+  "building.wall-ac-unit",
+  "building.chimney",
   // Units (TDF)
   "tdf.infantry.engineer",
   "tdf.infantry.medic",

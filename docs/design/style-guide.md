@@ -173,6 +173,14 @@ Perth woodland uses `env-sclerophyll-leaf #66765B` and
 The grey-green foliage, branching crowns and pale rock distinguish the
 south-west Australian kit from Lagos’s layered broadleaf and palm planting.
 
+Urban roof and facade details reuse this environment palette: brick chimneys,
+cream banded water tanks, concrete/metal HVAC cabinets, open green shutters,
+terracotta shop canopies and corrugated warehouse loading canopies. Rooftop
+HVAC and tanks are real one-tile high-cover props; access paths and perimeter
+firing positions stay clear. Wall attachments keep window and door apertures
+open. Flush manholes and curb drains add no collision. Reproducible sources
+and footprints are listed in [the urban life kit](kits/urban-life-kit.md).
+
 Infested ground overlays use `bug-flesh` and `bug-bio-green-dim`; never recolour the base tile.
 
 ### 4.4 UI

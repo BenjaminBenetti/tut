@@ -8,7 +8,7 @@ import bpy
 from mathutils import Vector
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
-from bpy_kit import cylinder, join, material, mesh_objects, sphere  # noqa: E402
+from bpy_kit import cut_below, cylinder, join, material, mesh_objects, sphere  # noqa: E402
 
 
 def finish(name: str) -> None:
@@ -85,23 +85,28 @@ def grass_tree() -> None:
 
 
 def limestone_outcrop() -> None:
-    """A 1.05-high pale outcrop with broken ledges, within the one-tile rock contract."""
-    # Unequal polygon rings form a weathered mass rather than a concrete cube.
-    rings = [
-        (0, [(-.43, -.30), (-.14, -.43), (.32, -.33), (.46, .10), (.20, .40), (-.37, .32)]),
-        (.43, [(-.39, -.29), (-.13, -.35), (.37, -.28), (.43, .12), (.19, .35), (-.33, .30)]),
-        (.44, [(-.27, -.18), (-.09, -.27), (.35, -.27), (.40, .10), (.17, .32), (-.24, .18)]),
-        (.94, [(-.24, -.16), (-.08, -.22), (.24, -.18), (.28, .10), (.12, .25), (-.23, .17)]),
-    ]
-    vertices = [(x, y, z) for z, ring in rings for x, y in ring]
-    for i, z in enumerate([.94, 1.02, 1.05, .94, .91, .95]):
-        x, y, _ = vertices[18 + i]
-        vertices[18 + i] = (x, y, z)
-    faces = [tuple(reversed(range(6)))]
-    for level in range(3):
-        for i in range(6):
-            j = (i + 1) % 6
-            faces.append((level * 6 + i, level * 6 + j, (level + 1) * 6 + j, (level + 1) * 6 + i))
-    faces += [(18, 19, 20), (18, 20, 21), (18, 21, 22), (18, 22, 23)]
-    solid("limestone", vertices, faces, "env-limestone")
+    """A weathered 0.9-high limestone mass with an uneven shoulder and broken toe."""
+    # Unequal, tilted faceted masses interrupt the silhouette on every side.
+    # There is no horizontal ledge or stacked base: all three emerge from soil.
+    main = sphere("limestone_mass", 0.4, (-0.04, 0.07, 0.34), "env-limestone",
+                  segments=7, rings=5, scale=(0.88, 0.94, 1.32))
+    main.rotation_euler = (math.radians(-5), math.radians(8), math.radians(17))
+    shoulder = sphere("limestone_shoulder", 0.30, (0.20, -0.16, 0.16), "env-limestone",
+                      segments=7, rings=4, scale=(0.92, 0.84, 0.91))
+    shoulder.rotation_euler = (math.radians(11), math.radians(-13), math.radians(-23))
+    toe = sphere("limestone_toe", 0.17, (-0.25, -0.22, 0.075), "env-limestone",
+                 segments=5, rings=4, scale=(1, 0.83, 0.87))
+    toe.rotation_euler = (math.radians(-8), 0, math.radians(31))
+    for obj in [main, shoulder, toe]:
+        bpy.ops.object.select_all(action="DESELECT")
+        obj.select_set(True)
+        bpy.context.view_layer.objects.active = obj
+        bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+        cut_below(obj)
     finish("limestone-outcrop")
+    obj = bpy.context.view_layer.objects.active
+    highest = max(vertex.co.z for vertex in obj.data.vertices)
+    for vertex in obj.data.vertices:
+        vertex.co.z *= 0.9 / highest
+    obj.data.update()
+    bpy.context.view_layer.update()

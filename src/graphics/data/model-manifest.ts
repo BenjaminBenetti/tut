@@ -40,7 +40,7 @@ export const MODEL_MANIFEST = {
     category: "props",
     path: "assets/models/props/prop-limestone-outcrop.glb",
     footprint: { w: 1, d: 1 },
-    height: 1.05,
+    height: 0.9,
     sockets: [],
     quality: "final",
   },

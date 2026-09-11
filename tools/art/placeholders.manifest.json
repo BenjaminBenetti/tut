@@ -1539,10 +1539,10 @@
       "w": 1,
       "d": 1
     },
-    "height": 1.05,
+    "height": 0.9,
     "sockets": [],
     "quality": "final",
-    "triangles": 44,
-    "bytes": 4384
+    "triangles": 132,
+    "bytes": 10828
   }
 ]

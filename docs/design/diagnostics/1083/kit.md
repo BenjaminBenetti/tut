@@ -19,7 +19,7 @@ street is bushland or excluding planted palms and lawns.
 | `prop.tree-tuart` | 1×1 | 2.2 | 264 | 22,384 |
 | `prop.banksia` | 1×1 | 1.4 | 248 | 20,724 |
 | `prop.grass-tree` | 1×1 | 0.75 | 160 | 16,888 |
-| `prop.limestone-outcrop` | 1×1 | 1.05 | 44 | 4,384 |
+| `prop.limestone-outcrop` | 1×1 | 0.9 | 132 | 10,828 |
 
 Each has committed `_045`, `_135`, `_225` frames under `docs/design/renders/`.
 All twelve final angles and the assembly were opened. Every material primitive

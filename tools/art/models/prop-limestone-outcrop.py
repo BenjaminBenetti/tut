@@ -1,4 +1,4 @@
-"""Perth: pale limestone outcrop with broken sloping ledges."""
+"""Perth: weathered limestone mass with an irregular shoulder and toe."""
 
 import os
 import sys

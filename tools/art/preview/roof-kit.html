@@ -1,0 +1,118 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: #3a3f4a;
+      }
+      canvas {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      // Fitted roof kit review through the production geometry factory (Vite): ?layout=<url of a JSON file> lists placements
+      // { model: "assets/models/...glb", x, z, yaw? , y?, scale?: {x,y,z} }, plus optional
+      // { px, yaw, cx, cz, size }. Isometric camera at 35.264°, same lights as harness.html.
+      import * as THREE from "three";
+      import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+      import { PitchedRoofModelFactory } from "/src/graphics/service/pitched-roof-model-factory.ts";
+      import { MODEL_MANIFEST } from "/src/graphics/data/model-manifest.ts";
+      const params = new URLSearchParams(location.search);
+      const layout = await (await fetch(params.get("layout"))).json();
+      const size = layout.size ?? 960;
+      const px = layout.px ?? 64;
+      const yaw = ((layout.yaw ?? 45) * Math.PI) / 180;
+      const renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        preserveDrawingBuffer: true,
+      });
+      renderer.setSize(size, size);
+      renderer.setPixelRatio(1);
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFShadowMap;
+      document.body.appendChild(renderer.domElement);
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x1c2230);
+      // The game's rig, from src/graphics/service/shadow-rig.ts and
+      // style guide §12.1 -- not a preview rig of its own. This page
+      // renders the read test (§4.2.1), and a read test lit differently
+      // from the game is testing a fiction: it used to run ambient 0.9
+      // against the game's 0.55, with no shadows at all, which is the
+      // one thing that separates a shape from ground of its own tone.
+      scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+      const key = new THREE.DirectionalLight(0xffffff, 2.9);
+      key.castShadow = true;
+      key.shadow.mapSize.set(1024, 1024);
+      key.shadow.camera.left = -30;
+      key.shadow.camera.right = 30;
+      key.shadow.camera.top = 30;
+      key.shadow.camera.bottom = -30;
+      key.shadow.camera.near = 0.5;
+      key.shadow.camera.far = 120;
+      key.shadow.bias = -0.0015;
+      key.shadow.normalBias = 0.02;
+      scene.add(key, key.target);
+      const units = size / px;
+      const cam = new THREE.OrthographicCamera(
+        -units / 2,
+        units / 2,
+        units / 2,
+        -units / 2,
+        0.1,
+        100,
+      );
+      const elev = Math.atan(1 / Math.sqrt(2));
+      const target = new THREE.Vector3(
+        layout.cx ?? 0,
+        layout.cy ?? 0.6,
+        layout.cz ?? 0,
+      );
+      cam.position.set(
+        target.x + Math.sin(yaw) * 20 * Math.cos(elev),
+        target.y + 20 * Math.sin(elev),
+        target.z + Math.cos(yaw) * 20 * Math.cos(elev),
+      );
+      cam.lookAt(target);
+      cam.updateProjectionMatrix();
+      // The frustum follows what is being looked at, as followCamera
+      // does in game; left at the origin it misses the subject.
+      key.position.set(target.x + 4, target.y + 8, target.z + 12);
+      key.target.position.copy(target);
+      key.target.updateMatrixWorld();
+      const loader = new GLTFLoader();
+      const cache = new Map();
+      const load = (path) => {
+        if (!cache.has(path)) cache.set(path, loader.loadAsync(path));
+        return cache.get(path);
+      };
+      const roofs = new PitchedRoofModelFactory({
+        load: async (id) =>
+          (await load(`/${MODEL_MANIFEST[id].path}`)).scene.clone(true),
+        preload: async () => {},
+      });
+      for (const p of layout.placements) {
+        const gltf = await load(`/${p.model}`);
+        const node = p.roof
+          ? await roofs.create(p.roof)
+          : gltf.scene.clone(true);
+        node.position.set(p.x, p.y ?? 0, p.z);
+        node.rotation.y = ((p.yaw ?? 0) * Math.PI) / 180;
+        if (p.scale) node.scale.set(p.scale.x, p.scale.y, p.scale.z);
+        node.traverse((c) => {
+          if (c.isMesh) {
+            c.castShadow = true;
+            c.receiveShadow = true;
+          }
+        });
+        scene.add(node);
+      }
+      renderer.render(scene, cam);
+      document.title = "READY";
+    </script>
+  </body>
+</html>

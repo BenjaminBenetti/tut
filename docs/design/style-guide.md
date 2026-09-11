@@ -162,6 +162,10 @@ The rendered masonry family uses `env-plaster-warm #C8B990` with existing
 concrete bands and metal/glass openings. These are separate model tokens;
 the established temperate vegetation and wall families retain their colours.
 
+Johannesburg's hipped metal roofs use muted `env-roof-green #5B706A` beside
+brick and rendered masonry. The local roof form is selected explicitly;
+the original roof material remains the default elsewhere.
+
 Perth woodland uses `env-sclerophyll-leaf #66765B` and
 `env-sclerophyll-leaf-light #849077`, `env-tuart-bark #AAA58F`,
 `env-grass-tree-trunk #393C32` and `env-limestone #BDB69A`.

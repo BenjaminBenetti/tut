@@ -1,0 +1,17 @@
+{
+  "id": "building.roof-hipped",
+  "triangles": 30,
+  "bytes": 3272,
+  "bounds": [
+    [-0.5, 0.0, -0.5],
+    [0.5, 0.3700000047683716, 0.5]
+  ],
+  "parts": [
+    {
+      "name": "hipped-roof-cap",
+      "triangles": 30,
+      "watertight": true,
+      "windingConsistent": true
+    }
+  ]
+}

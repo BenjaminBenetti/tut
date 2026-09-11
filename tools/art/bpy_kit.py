@@ -70,6 +70,7 @@ PALETTE = {
     "env-tropical-leaf-light": "#568358",
     "env-palm-trunk": "#786348",
     "env-plaster-warm": "#C8B990",
+    "env-roof-green": "#5B706A",
     "env-sclerophyll-leaf": "#66765B",
     "env-sclerophyll-leaf-light": "#849077",
     "env-tuart-bark": "#AAA58F",

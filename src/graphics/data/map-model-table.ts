@@ -94,6 +94,9 @@ export const FOUNDATION_MODEL =
 export const PITCHED_ROOF_MODEL =
   "building.roof-pitched" satisfies ModelAssetId;
 
+/** Four-sided metal roof cap; the consumer fits its nine upper profile points. */
+export const HIPPED_ROOF_MODEL = "building.roof-hipped" satisfies ModelAssetId;
+
 /** Neutral shapes that borrow ground/terrace materials in the shared factory. */
 export const PARAMETERISED_TERRAIN_MODELS = {
   ...SLOPE_MODELS,

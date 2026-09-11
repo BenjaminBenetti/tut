@@ -60,7 +60,6 @@ export const PLACE_PROFILES: Readonly<Record<PlaceProfileId, PlaceProfile>> = {
         {
           prop: PropKindIds.LIMESTONE_OUTCROP,
           density: 0.4,
-          cluster: { min: 2, max: 3 },
         },
         { prop: PropKindIds.TREE_PALM, density: 0.2 },
         { prop: PropKindIds.FENCE, density: 0.8 },

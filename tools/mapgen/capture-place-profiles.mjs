@@ -274,7 +274,7 @@ try {
     }
   }
   writeFileSync(
-    `${out}/captures.json`,
+    process.env.PLACE_RECORD_FILE ?? `${out}/captures.json`,
     JSON.stringify(
       {
         baseCommit,

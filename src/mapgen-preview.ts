@@ -1,5 +1,6 @@
 import "./ui/style/theme.css";
 
+import { isPlaceProfileId } from "./content/model/place-profile-id";
 import { Group } from "three";
 
 import { previewMission } from "./app/service/preview-units";
@@ -62,7 +63,9 @@ function clampShare(raw: string | null): number {
  */
 function stateFromUrl(): PreviewControlsState {
   const query = new URLSearchParams(window.location.search);
+  const place = query.get("place");
   return {
+    ...(isPlaceProfileId(place) ? { placeProfile: place } : {}),
     seed: query.get("seed") ?? DEFAULT_STATE.seed,
     biome:
       (query.get("biome") as PreviewControlsState["biome"] | null) ??
@@ -116,6 +119,7 @@ function writeUrl(state: PreviewControlsState): void {
     archetype: state.archetype,
     slope: String(Math.round(state.slopeShare * 100)),
   });
+  if (state.placeProfile !== undefined) query.set("place", state.placeProfile);
   if (new URLSearchParams(window.location.search).get("models") === "1") {
     query.set("models", "1");
   }
@@ -186,6 +190,9 @@ async function main(): Promise<void> {
       params: {
         archetype: state.archetype,
         biome: state.biome,
+        ...(state.placeProfile === undefined
+          ? {}
+          : { placeProfile: state.placeProfile }),
         settlement: state.settlement,
         size: state.size,
         hooks: DEFAULT_MISSION_HOOKS,

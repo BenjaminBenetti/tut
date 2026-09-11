@@ -436,7 +436,14 @@ function resolveWalls(
         continue;
       }
       placements.push({
-        modelId: wallModel(kind, wallFamilyForWall(kind, tile.buildingId)),
+        modelId: wallModel(
+          kind,
+          wallFamilyForWall(
+            kind,
+            tile.buildingId,
+            map.recipe.params.placeProfile,
+          ),
+        ),
         level: tile.y,
         position: wallCentre(tile, side),
         // A wall is authored along +X, so north and south edges are

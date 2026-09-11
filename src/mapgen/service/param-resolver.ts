@@ -14,7 +14,7 @@ import type { ResolvedMapGenParams } from "../model/resolved-params";
 /** The registries parameter resolution needs. */
 export type ParamResolverRegistries = Pick<
   MapGenRegistries,
-  "biomes" | "settlements" | "mapSizes"
+  "biomes" | "settlements" | "mapSizes" | "placeProfiles"
 >;
 
 /**
@@ -48,7 +48,13 @@ export function resolveMapGenParams(
     archetype: params.archetype,
     width,
     depth,
-    biome,
+    biome:
+      params.placeProfile === undefined
+        ? biome
+        : {
+            ...biome,
+            ...registries.placeProfiles.get(params.placeProfile).environment,
+          },
     settlement,
     hooks: params.hooks,
     slopeShare,

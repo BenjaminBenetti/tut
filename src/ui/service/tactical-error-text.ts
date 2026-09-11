@@ -51,6 +51,19 @@ export interface TacticalNames {
    * the tracker shows, so the lookup differs but the wording cannot.
    */
   spawner(id: string): string;
+  /**
+   * Whatever an attack or a targeting refusal is pointed at, which may
+   * be a **unit or an egg spawner**.
+   *
+   * `unit` and `spawner` each know one kind and answer anonymously for
+   * the other, and the ids that reach here do not say which they are:
+   * `attack-resolved` and `no-line-of-sight` both carry a bare
+   * `targetId`, and the HUD resolves it through one port precisely so a
+   * spawner is aimed at exactly as a unit is. Asking `unit` for a
+   * spawner is how every shot at a nest came to be logged as
+   * "Hammerhead hit that unit for 15".
+   */
+  target(id: string): string;
   /** A mech's name from the roster. */
   mech(id: string): string;
   /** A mission, named by the city it is fought over (#739, #753). */
@@ -73,6 +86,9 @@ export interface TacticalNames {
 const ANONYMOUS = {
   unit: "that unit",
   objective: "that objective",
+  // A spawner no objective tracks has no ordinal to be called by, and
+  // "that objective" would be a lie about a thing that is not one.
+  spawner: "that egg spawner",
   mech: "that mech",
   mission: "that mission",
 } as const;
@@ -95,28 +111,46 @@ export function namesFor(
 ): TacticalNames {
   const units = new Map((mission?.units ?? []).map((unit) => [unit.id, unit]));
   const objectives = mission?.objectives ?? [];
+  const spawners = new Set((mission?.spawners ?? []).map((nest) => nest.id));
+  /** The ordinal of the objective tracking `id` as its target, or -1. */
+  const trackedAs = (id: string): number =>
+    objectives.findIndex((objective) => objective.targetId === id);
+  const nameUnit = (id: string): string => {
+    const unit = units.get(id);
+    if (!unit) {
+      return ANONYMOUS.unit;
+    }
+    // The roster identity first: a deployed squad or mech keeps the
+    // name the player gave it, which is what the debrief shows.
+    const roster = campaign?.roster;
+    const named =
+      roster?.squads.find((squad) => squad.id === unit.sourceId)?.name ??
+      roster?.mechs.find((mech) => mech.id === unit.sourceId)?.name;
+    // Then the template, which is the species for a bug and the only
+    // name it has.
+    return named ?? mission?.templates[unit.templateId]?.name ?? ANONYMOUS.unit;
+  };
   return {
-    unit: (id) => {
-      const unit = units.get(id);
-      if (!unit) {
-        return ANONYMOUS.unit;
-      }
-      // The roster identity first: a deployed squad or mech keeps the
-      // name the player gave it, which is what the debrief shows.
-      const roster = campaign?.roster;
-      const named =
-        roster?.squads.find((squad) => squad.id === unit.sourceId)?.name ??
-        roster?.mechs.find((mech) => mech.id === unit.sourceId)?.name;
-      // Then the template, which is the species for a bug and the only
-      // name it has.
-      return (
-        named ?? mission?.templates[unit.templateId]?.name ?? ANONYMOUS.unit
-      );
-    },
+    unit: nameUnit,
     objective: (id) =>
       ordinalOf(objectives.findIndex((objective) => objective.id === id)),
-    spawner: (id) =>
-      ordinalOf(objectives.findIndex((objective) => objective.targetId === id)),
+    spawner: (id) => ordinalOf(trackedAs(id)),
+    // Units first: they are the common target and the id sets do not
+    // overlap, since the mission issues both from one generator. Then
+    // anything an objective tracks, by that objective's ordinal -- the
+    // tracker is the authority on what a nest is called, so agreeing
+    // with it is the whole requirement (#949, #1072). Only a spawner no
+    // objective tracks falls to its own anonymous wording.
+    target: (id) => {
+      if (units.has(id)) {
+        return nameUnit(id);
+      }
+      const tracked = trackedAs(id);
+      if (tracked >= 0) {
+        return ordinalOf(tracked);
+      }
+      return spawners.has(id) ? ANONYMOUS.spawner : ANONYMOUS.unit;
+    },
     mech: (id) =>
       campaign?.roster.mechs.find((mech) => mech.id === id)?.name ??
       ANONYMOUS.mech,
@@ -177,7 +211,7 @@ export function describeRefusal(
     case "friendly-target":
       return `${names.unit(error.targetId)} is on the same side`;
     case "no-line-of-sight":
-      return `No line of sight to ${names.unit(error.targetId)}`;
+      return `No line of sight to ${names.target(error.targetId)}`;
     case "target-destroyed":
       return `${capitalise(names.spawner(error.targetId))} is already destroyed`;
     case "no-charges":

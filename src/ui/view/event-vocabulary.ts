@@ -1,10 +1,8 @@
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
-import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { UnitId } from "../../tactical/model/unit";
 import type { IconId } from "../data/icon-manifest";
 import { formatWhole } from "../service/format";
-import type { GameState } from "../../save/model/game-state";
-import { namesFor } from "../service/tactical-error-text";
+import type { TacticalNames } from "../service/tactical-error-text";
 
 // ===========================================
 // The completed-action vocabulary
@@ -35,23 +33,27 @@ export interface LogEntry {
 
 /** One line in the log: what to say, how to mark it, and how loud it is. */
 
-/** Reads a unit's display name out of the mission, falling back to its id. */
-export type NameOf = (unitId: UnitId) => string;
-
 /**
  * One event, one sentence. Everything the log knows how to say lives here,
  * so supporting a new event type is a single entry rather than a change to
  * the view (#525). Returning `undefined` drops the event silently — some
  * events exist for the renderer, not for the player.
  *
+ * Takes the whole resolver rather than a unit-name function. A line can
+ * be about a unit, an egg spawner or an objective, and a single-kind
+ * function is what produced `Hammerhead hit that unit for 15` and
+ * `Objective complete: objective-1` (#1072): the cases that needed another
+ * kind of name had nothing to ask.
+ *
  * @param event - The tactical event.
- * @param nameOf - Resolves a unit id to its display name.
+ * @param names - Resolves every kind of id a line can mention.
  * @returns The line to show, or undefined to skip it.
  */
 export function describeEvent(
   event: TacticalEvent,
-  nameOf: NameOf,
+  names: TacticalNames,
 ): LogEntry | undefined {
+  const nameOf = (unitId: UnitId): string => names.unit(unitId);
   switch (event.type) {
     case "tactical:turn-started":
       return {
@@ -79,14 +81,14 @@ export function describeEvent(
     case "tactical:attack-resolved":
       return event.payload.hit
         ? {
-            text: `${nameOf(event.payload.attackerId)} hit ${nameOf(
+            text: `${nameOf(event.payload.attackerId)} hit ${names.target(
               event.payload.targetId,
             )} for ${formatWhole(event.payload.damage)}`,
             icon: "attack",
             tone: "danger",
           }
         : {
-            text: `${nameOf(event.payload.attackerId)} missed ${nameOf(
+            text: `${nameOf(event.payload.attackerId)} missed ${names.target(
               event.payload.targetId,
             )}`,
             icon: "attack",
@@ -126,8 +128,8 @@ export function describeEvent(
     case "tactical:objective-updated":
       return {
         text: event.payload.complete
-          ? `Objective complete: ${event.payload.objectiveId}`
-          : `Objective updated: ${event.payload.objectiveId}`,
+          ? `Objective complete: ${names.objective(event.payload.objectiveId)}`
+          : `Objective updated: ${names.objective(event.payload.objectiveId)}`,
         icon: event.payload.complete ? "check" : "mission",
         tone: event.payload.complete ? "ok" : "accent",
       };
@@ -188,38 +190,6 @@ export function actorOf(event: TacticalEvent): UnitId | undefined {
     default:
       return undefined;
   }
-}
-
-/**
- * Resolves unit ids to the names a player recognises, from the mission's
- * templates. Falls back to the id so a log line never reads as blank.
- *
- * @param mission - Current mission state, if there is one.
- * @returns A name lookup.
- */
-export function nameResolver(
-  mission: TacticalState | undefined,
-  campaign?: GameState,
-): NameOf {
-  // Through `namesFor` rather than reading the templates again. The
-  // campaign carries the roster, which is where a squad's own name lives
-  // (#1040/#1047) — "Alpha" rather than "Rifle Squad" — and the shared
-  // resolver falls back to "that unit" where a local copy fell back to
-  // the raw id, which is the leak #1035 exists to remove.
-  const names = namesFor(mission, campaign);
-  // An attack target is a unit *or* an egg spawner, and the log passes
-  // both through here. Resolving everything as a unit drops the id and
-  // the spawner with it — `Rifle Squad hit that unit for 3`, beside an
-  // objectives panel reading `Destroy spawner 1`. So a tracked spawner
-  // goes through the resolver that names it the way the tracker does
-  // (#949): `spawner 1`, by ordinal.
-  const spawners = new Set(
-    (mission?.objectives ?? [])
-      .map((objective) => objective.targetId)
-      .filter((id): id is string => id !== undefined),
-  );
-  return (unitId) =>
-    spawners.has(unitId) ? names.spawner(unitId) : names.unit(unitId);
 }
 
 /**

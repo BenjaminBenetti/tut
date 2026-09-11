@@ -19,6 +19,7 @@ const NAMES: TacticalNames = {
   unit: () => "Rifle Squad",
   objective: () => "spawner 2",
   spawner: () => "spawner 2",
+  target: () => "Rifle Squad",
   mech: () => "Hammerhead",
   mission: () => "Lagos",
 };

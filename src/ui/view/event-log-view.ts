@@ -2,7 +2,8 @@ import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { GameState } from "../../save/model/game-state";
 import { formatWhole } from "../service/format";
-import { describeEvent, nameResolver } from "./event-vocabulary";
+import { namesFor } from "../service/tactical-error-text";
+import { describeEvent } from "./event-vocabulary";
 import { iconGlyph } from "./icon-glyph";
 
 // ===========================================
@@ -120,14 +121,13 @@ export class EventLogView {
     if (!list || events.length === 0) {
       return;
     }
-    // Through `nameResolver` rather than `namesFor` directly, so the log
-    // and the indicator above the unit (#1029) name a thing identically
-    // — including an egg spawner, which is a target the unit resolver
-    // alone cannot name.
-    const nameOf = nameResolver(mission, campaign);
+    // The same resolver the indicator above the unit uses (#1029), so the
+    // two name a thing identically -- an egg spawner included, which
+    // `target` names by the tracker's ordinal (#1072).
+    const names = namesFor(mission, campaign);
     const doc = list.ownerDocument;
     for (const event of events) {
-      const entry = describeEvent(event, nameOf);
+      const entry = describeEvent(event, names);
       if (!entry) {
         continue;
       }

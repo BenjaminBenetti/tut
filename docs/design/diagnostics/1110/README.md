@@ -1,6 +1,6 @@
 # Map variety and environmental realism
 
-One iterative review for #1110. Baseline: `5008477`. All close-up pairs use the
+One iterative review for #1110. The [second art pass](round2/README.md) adds rooftop infrastructure, distinct facades and street utility details. Baseline: `5008477`. All close-up pairs use the
 same seed, place profile, viewport, camera, and real production models. Images
 come from Map Lab; the live-mission image additionally shows the gameplay HUD
 and fog of war.
@@ -86,7 +86,7 @@ original compact mesh. New street density counts **occupied tiles**, preventing
 the larger vehicles from doubling the intended amount of road cover. The
 contract and compatibility decision are recorded in ADR 0004 §4.4.
 
-## Final review
+## First pass review
 
 The critic reviewed matching close-ups in both city orientations and across
 town, desert, snowy rural, Perth and Lagos. The implementation was revised
@@ -114,7 +114,7 @@ Camera settings and hashes for all seven close-ups are in
 [after/captures.json](after/captures.json). The production changes are at
 `61c2f29`; subsequent commits add review artifacts.
 
-## Validation
+## First pass validation
 
 - Typecheck, lint and production build passed.
 - Unit/property suite: 2,436 tests passed; one opt-in test skipped.

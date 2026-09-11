@@ -118,7 +118,14 @@ export const TERRAIN_TRANSITION_SOURCE =
  */
 export const PROP_MODELS: Readonly<
   Record<
-    KnownPropKindId | "bench" | "tree-tropical-almond" | "tree-oil-palm",
+    | KnownPropKindId
+    | "bench"
+    | "tree-tropical-almond"
+    | "tree-oil-palm"
+    | "tree-tuart"
+    | "banksia"
+    | "grass-tree"
+    | "limestone-outcrop",
     ModelAssetId
   >
 > = {
@@ -137,6 +144,10 @@ export const PROP_MODELS: Readonly<
   [PropKindIds.TREE_PALM]: "prop.tree-palm",
   "tree-tropical-almond": "prop.tree-tropical-almond",
   "tree-oil-palm": "prop.tree-oil-palm",
+  "tree-tuart": "prop.tree-tuart",
+  banksia: "prop.banksia",
+  "grass-tree": "prop.grass-tree",
+  "limestone-outcrop": "prop.limestone-outcrop",
   [PropKindIds.CACTUS]: "prop.cactus",
 };
 

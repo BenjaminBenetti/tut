@@ -1,0 +1,160 @@
+[
+  {
+    "id": "J01-reported",
+    "seed": "730982385",
+    "biome": "temperate",
+    "settlement": "city",
+    "size": "small",
+    "focus": {
+      "x": 24,
+      "y": 1,
+      "z": 24
+    },
+    "rotation": 0,
+    "pitch": 45,
+    "clip": {
+      "x": 640,
+      "y": 200,
+      "width": 1500,
+      "height": 1100
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "placeProfile": "johannesburg",
+    "reference": "docs/design/diagnostics/map-critic-v0216/focus/johannesburg-0.json"
+  },
+  {
+    "id": "J02-reverse",
+    "seed": "730982385",
+    "biome": "temperate",
+    "settlement": "city",
+    "size": "small",
+    "focus": {
+      "x": 24,
+      "y": 1,
+      "z": 24
+    },
+    "rotation": 1,
+    "pitch": 45,
+    "clip": {
+      "x": 640,
+      "y": 200,
+      "width": 1500,
+      "height": 1100
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "placeProfile": "johannesburg",
+    "reference": "docs/design/diagnostics/map-critic-v0216/focus/johannesburg-1.json"
+  },
+  {
+    "id": "J03-second-seed",
+    "seed": "1892582247",
+    "biome": "temperate",
+    "settlement": "city",
+    "size": "medium",
+    "focus": {
+      "x": 36,
+      "y": 1,
+      "z": 36
+    },
+    "rotation": 0,
+    "pitch": 45,
+    "clip": {
+      "x": 640,
+      "y": 200,
+      "width": 1500,
+      "height": 1100
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "placeProfile": "johannesburg",
+    "reference": "#1084 corroborating temperate/city/medium72 recipe, with Johannesburg profile"
+  },
+  {
+    "id": "J04-second-seed",
+    "seed": "1892582247",
+    "biome": "temperate",
+    "settlement": "city",
+    "size": "medium",
+    "focus": {
+      "x": 36,
+      "y": 1,
+      "z": 36
+    },
+    "rotation": 1,
+    "pitch": 45,
+    "clip": {
+      "x": 640,
+      "y": 200,
+      "width": 1500,
+      "height": 1100
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "placeProfile": "johannesburg",
+    "reference": "#1084 corroborating temperate/city/medium72 recipe, with Johannesburg profile"
+  },
+  {
+    "id": "C01-perth-control",
+    "seed": "215428772",
+    "biome": "coastal",
+    "settlement": "town",
+    "size": "medium",
+    "focus": {
+      "x": 36,
+      "y": 2,
+      "z": 36
+    },
+    "rotation": 0,
+    "pitch": 45,
+    "clip": {
+      "x": 640,
+      "y": 200,
+      "width": 1500,
+      "height": 1100
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "placeProfile": "perth",
+    "reference": "docs/design/diagnostics/map-critic-v0216/focus/perth-0.json",
+    "control": true
+  },
+  {
+    "id": "C02-perth-control",
+    "seed": "215428772",
+    "biome": "coastal",
+    "settlement": "town",
+    "size": "medium",
+    "focus": {
+      "x": 36,
+      "y": 2,
+      "z": 36
+    },
+    "rotation": 1,
+    "pitch": 45,
+    "clip": {
+      "x": 640,
+      "y": 200,
+      "width": 1500,
+      "height": 1100
+    },
+    "viewport": {
+      "width": 2400,
+      "height": 1500
+    },
+    "placeProfile": "perth",
+    "reference": "docs/design/diagnostics/map-critic-v0216/focus/perth-1.json",
+    "control": true
+  }
+]

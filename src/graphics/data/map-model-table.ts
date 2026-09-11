@@ -281,6 +281,8 @@ export function wallFamilyFor(
   if (buildingId === undefined) {
     return "brick";
   }
+  if (placeProfile === "johannesburg")
+    return hashSeed(buildingId) % 2 === 1 ? "plaster" : "brick";
   const index = hashSeed(buildingId) % WALL_FAMILIES.length;
   return WALL_FAMILIES[index] ?? "brick";
 }

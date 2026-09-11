@@ -19,6 +19,9 @@ async function main() {
     params: {
       archetype: "settlement",
       biome: "temperate",
+      ...(query.get("place") === "johannesburg"
+        ? { placeProfile: "johannesburg" }
+        : {}),
       settlement: flat ? "town" : "rural",
       size: "small",
       hooks: DEFAULT_MISSION_HOOKS,

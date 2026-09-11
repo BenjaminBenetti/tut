@@ -1,0 +1,49 @@
+{
+  "sourceHead": "dcbc064726b8537e9080413d6f3722a1484d96e4",
+  "renderer": "SwiftShader",
+  "repeatedBrowsers": 2,
+  "records": [
+    {
+      "name": "hip-closed",
+      "url": "http://127.0.0.1:8796/tools/art/preview/roof-cutaway.html?roof=pitched&place=johannesburg&units=0&yaw=0",
+      "ready": "true",
+      "ghostCount": "0",
+      "unit": "{\"x\":24,\"y\":4,\"z\":15}",
+      "units": "[]",
+      "radius": "4",
+      "floor": "0.175",
+      "yaw": "0",
+      "sha256": "fc806ee1ce98ded05073a3f5b00721dfbec2d6ecada1b2664594aa91ebda005b"
+    },
+    {
+      "name": "hip-1-squads",
+      "url": "http://127.0.0.1:8796/tools/art/preview/roof-cutaway.html?roof=pitched&place=johannesburg&units=1&yaw=0",
+      "ready": "true",
+      "ghostCount": "1",
+      "unit": "{\"x\":24,\"y\":4,\"z\":15}",
+      "units": "[{\"x\":24,\"y\":4,\"z\":15}]",
+      "radius": "4",
+      "floor": "0.175",
+      "yaw": "0",
+      "sha256": "92b39f3265e8d70eb091caf0b865d751c035643c17be47ef0d4112a11f65943c"
+    },
+    {
+      "name": "hip-2-squads",
+      "url": "http://127.0.0.1:8796/tools/art/preview/roof-cutaway.html?roof=pitched&place=johannesburg&units=2&yaw=0",
+      "ready": "true",
+      "ghostCount": "2",
+      "unit": "{\"x\":24,\"y\":4,\"z\":15}",
+      "units": "[{\"x\":24,\"y\":4,\"z\":15},{\"x\":21,\"y\":4,\"z\":11}]",
+      "radius": "4",
+      "floor": "0.175",
+      "yaw": "0",
+      "sha256": "f77b8e04cdb77822ef87d46fcbfd01d8c6469deebf41ab2249c77b6c2e056280"
+    },
+    {
+      "name": "hip-force-left",
+      "url": "http://127.0.0.1:8796/tools/art/preview/roof-cutaway.html?roof=pitched&place=johannesburg&units=2&yaw=0",
+      "closesByteIdentically": true,
+      "sha256": "fc806ee1ce98ded05073a3f5b00721dfbec2d6ecada1b2664594aa91ebda005b"
+    }
+  ]
+}

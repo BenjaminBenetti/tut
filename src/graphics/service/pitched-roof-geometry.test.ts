@@ -17,7 +17,7 @@ import { describe, expect, it } from "vitest";
 import type { ModelAssetId } from "../../content/data/model-ids";
 import type { ModelLoader } from "../model/model-loader";
 import { MODEL_MANIFEST } from "../data/model-manifest";
-import { PITCHED_ROOF_MODEL } from "../data/map-model-table";
+import { HIPPED_ROOF_MODEL, PITCHED_ROOF_MODEL } from "../data/map-model-table";
 import { PITCHED_ROOF_STYLE } from "../data/pitched-roof-style";
 import { TacticalMapView, tileTop } from "../view/tactical-map-view";
 import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
@@ -60,16 +60,17 @@ function shippedModels(): ModelLoader {
 }
 
 /** A pitched house with a stairwell hole in its upper storey. */
-function house(w: number, d: number) {
+function house(w: number, d: number, hipped = false) {
+  const id = hipped ? "building-1" : "house";
   const b = new FixtureMapBuilder(w + 2, d + 2, 4).fillGround(0, "grass");
   for (let z = 1; z <= d; z++)
     for (let x = 1; x <= w; x++) {
-      b.tile({ x, y: 0, z }, "floor", { buildingId: "house", floorIndex: 0 });
+      b.tile({ x, y: 0, z }, "floor", { buildingId: id, floorIndex: 0 });
       if (x !== 2 || z !== 2)
-        b.tile({ x, y: 2, z }, "floor", { buildingId: "house", floorIndex: 1 });
+        b.tile({ x, y: 2, z }, "floor", { buildingId: id, floorIndex: 1 });
     }
   b.building({
-    id: "house",
+    id,
     kind: "house",
     footprint: [{ x: 1, z: 1, w, d }],
     groundLevel: 0,
@@ -81,7 +82,19 @@ function house(w: number, d: number) {
     entrances: [],
     connectorIds: [],
   });
-  return b.build();
+  const map = b.build();
+  return hipped
+    ? {
+        ...map,
+        recipe: {
+          ...map.recipe,
+          params: {
+            ...map.recipe.params,
+            placeProfile: "johannesburg" as const,
+          },
+        },
+      }
+    : map;
 }
 
 /** Only the live roof parts, after the normal loader/instancer/vision path. */
@@ -111,14 +124,15 @@ describe("pitched roof shelter (#916)", () => {
     });
   });
 
-  for (const [w, d] of [
-    [4, 7],
-    [5, 8],
-    [7, 4],
-    [8, 5],
+  for (const [w, d, hipped] of [
+    [4, 7, false],
+    [5, 8, false],
+    [7, 4, false],
+    [8, 5, false],
+    [5, 8, true],
   ] as const) {
-    it(`${w}×${d}: continuous shelter across both ridge axes, including odd widths and the stairwell`, async () => {
-      const map = house(w, d),
+    it(`${hipped ? "hipped" : "gabled"} ${w}×${d}: continuous shelter across both ridge axes, including odd widths and the stairwell`, async () => {
+      const map = house(w, d, hipped),
         original = JSON.stringify(map),
         index = new TileIndex(map);
       const placements = resolveMapModels(map);
@@ -127,8 +141,10 @@ describe("pitched roof shelter (#916)", () => {
       expect(
         placements.roofs.find((p) => p.tile.x === 2 && p.tile.z === 2)?.tile.y,
       ).toBe(0);
-      expect(mapModelIds(placements)).toContain(PITCHED_ROOF_MODEL);
-      const uniforms = createGhostUniforms(2, 0.35);
+      expect(mapModelIds(placements)).toContain(
+        hipped ? HIPPED_ROOF_MODEL : PITCHED_ROOF_MODEL,
+      );
+      const uniforms = createGhostUniforms(4, 0.175);
       const view = new TacticalMapView(map, uniforms);
       view.setMaxLevel(2); // Called before asynchronous art introduces visual roof layer 4.
       await view.loadModels(models);
@@ -152,7 +168,10 @@ describe("pitched roof shelter (#916)", () => {
           const expected =
             tileTop(4) +
             PITCHED_ROOF_STYLE.eaveThickness +
-            Math.min(u, width - u) * PITCHED_ROOF_STYLE.risePerTile;
+            (hipped
+              ? Math.min(x - 1, w + 1 - x, z - 1, d + 1 - z)
+              : Math.min(u, width - u)) *
+              PITCHED_ROOF_STYLE.risePerTile;
           const hits = new Raycaster(
             new Vector3(x, 20, z),
             new Vector3(0, -1, 0),

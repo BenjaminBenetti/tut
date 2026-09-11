@@ -1,0 +1,139 @@
+{
+  "sourceHead": "dcbc064726b8537e9080413d6f3722a1484d96e4",
+  "renderer": "SwiftShader",
+  "independentBrowsersPerFrame": 2,
+  "pairs": [
+    {
+      "id": "J01-reported",
+      "mapDataIdenticalExceptProfile": true,
+      "pngByteIdentical": false,
+      "sha256": [
+        "962dbddc67768d3c5be6b0dfa450d59bf0da890d608efc34d0d81ee85ac1d2ca",
+        "f340904f2d281353e91a71f4e07c838982d497f97e9956ddb3b270d3fbf385ba"
+      ],
+      "buildings": 3,
+      "storeys": {
+        "2": 2,
+        "5": 1
+      },
+      "connectors": {
+        "stairs": 7
+      },
+      "props": 127,
+      "waterTiles": 0,
+      "dropships": 1
+    },
+    {
+      "id": "J02-reverse",
+      "mapDataIdenticalExceptProfile": true,
+      "pngByteIdentical": false,
+      "sha256": [
+        "39350a4f3ca4f7cf217053329e448f3d620e38c01f794b7ab55f8275122e05fd",
+        "388c21ac693ca1da490e1d86a48bb6f0ad98ed8d148efc566a82ce362de83243"
+      ],
+      "buildings": 3,
+      "storeys": {
+        "2": 2,
+        "5": 1
+      },
+      "connectors": {
+        "stairs": 7
+      },
+      "props": 127,
+      "waterTiles": 0,
+      "dropships": 1
+    },
+    {
+      "id": "J03-second-seed",
+      "mapDataIdenticalExceptProfile": true,
+      "pngByteIdentical": false,
+      "sha256": [
+        "96782f13f059172ae7a84d9e3574216c729e35fb8d4432e86e54b0bea99b5f71",
+        "91eadcd5ea6944aa591707e89f3b1c1c98cfa6d925c2a40d368dcae539876f18"
+      ],
+      "buildings": 13,
+      "storeys": {
+        "2": 6,
+        "4": 5,
+        "5": 1,
+        "3": 1
+      },
+      "connectors": {
+        "stairs": 36,
+        "ladder": 2
+      },
+      "props": 369,
+      "waterTiles": 0,
+      "dropships": 1
+    },
+    {
+      "id": "J04-second-seed",
+      "mapDataIdenticalExceptProfile": true,
+      "pngByteIdentical": false,
+      "sha256": [
+        "17bb1c4ebb788022b3c6b9ea4c20215c669029f9e276aaa082a9386966e23048",
+        "1dd1f3e351e362b76c21b297278987341b849b751905074289b5adfa83132da9"
+      ],
+      "buildings": 13,
+      "storeys": {
+        "2": 6,
+        "4": 5,
+        "5": 1,
+        "3": 1
+      },
+      "connectors": {
+        "stairs": 36,
+        "ladder": 2
+      },
+      "props": 369,
+      "waterTiles": 0,
+      "dropships": 1
+    },
+    {
+      "id": "C01-perth-control",
+      "mapDataIdenticalExceptProfile": true,
+      "pngByteIdentical": true,
+      "sha256": [
+        "99ead9ccdbb08cd0092fd4ce41ae1a6622e27348c21f8f044e9d8fb976b884ea",
+        "99ead9ccdbb08cd0092fd4ce41ae1a6622e27348c21f8f044e9d8fb976b884ea"
+      ],
+      "buildings": 7,
+      "storeys": {
+        "3": 1,
+        "1": 3,
+        "2": 3
+      },
+      "connectors": {
+        "ramp": 23,
+        "stairs": 8,
+        "ladder": 2
+      },
+      "props": 309,
+      "waterTiles": 1201,
+      "dropships": 1
+    },
+    {
+      "id": "C02-perth-control",
+      "mapDataIdenticalExceptProfile": true,
+      "pngByteIdentical": true,
+      "sha256": [
+        "78b9904c6b81627d882745e0ae3415c11dc1a57710935e08b8a55ee39964cd3d",
+        "78b9904c6b81627d882745e0ae3415c11dc1a57710935e08b8a55ee39964cd3d"
+      ],
+      "buildings": 7,
+      "storeys": {
+        "3": 1,
+        "1": 3,
+        "2": 3
+      },
+      "connectors": {
+        "ramp": 23,
+        "stairs": 8,
+        "ladder": 2
+      },
+      "props": 309,
+      "waterTiles": 1201,
+      "dropships": 1
+    }
+  ]
+}

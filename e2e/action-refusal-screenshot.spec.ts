@@ -91,4 +91,68 @@ test("captures refusals that used to be silent, and an available action", async 
   await viewport.screenshot({
     path: "docs/design/ui-action-refusal-move.png",
   });
+
+  // The right click, which is how a player actually moves (#1062). The
+  // frame above is the *button* refusing; this one is the gesture, and
+  // it said nothing at all until #1062. It goes through real mouse
+  // input rather than `invokeTile`, because the claim is about what a
+  // player can produce, and the hook bypasses tile picking entirely.
+  await page.evaluate(() =>
+    (globalThis as HookGlobal).__tutTactical__?.selectUnit("unit-1"),
+  );
+  const spot = await page.evaluate(() => {
+    const hooks = (globalThis as HookGlobal).__tutTactical__;
+    const here = hooks?.unitScreenPosition("unit-1");
+    if (!hooks || !here) {
+      return undefined;
+    }
+    // The hooks say where a tile is drawn, not which tile a unit stands
+    // on, so the unit's tile is found as the one drawn nearest its feet
+    // and the target is that tile's neighbour. No pixel thresholds: the
+    // first version guessed a distance band for "one tile away" and
+    // found nothing, which measured my guess rather than the map.
+    let mine: { x: number; y: number; z: number } | undefined;
+    let best = Infinity;
+    for (let x = 0; x < 96; x++) {
+      for (let z = 0; z < 96; z++) {
+        for (let y = 0; y < 4; y++) {
+          const at = hooks.tileScreenPosition({ x, y, z });
+          if (!at) {
+            continue;
+          }
+          const d = Math.hypot(at.x - here.x, at.y - here.y);
+          if (d < best) {
+            best = d;
+            mine = { x, y, z };
+          }
+        }
+      }
+    }
+    if (!mine) {
+      return undefined;
+    }
+    for (const [dx, dz] of [
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1],
+    ]) {
+      const at = hooks.tileScreenPosition({
+        x: mine.x + (dx ?? 0),
+        y: mine.y,
+        z: mine.z + (dz ?? 0),
+      });
+      if (at) {
+        return { x: at.x, y: at.y, from: mine };
+      }
+    }
+    return undefined;
+  });
+  expect(spot, "no neighbouring tile found to right click").toBeDefined();
+  await page.mouse.click(spot?.x ?? 0, spot?.y ?? 0, { button: "right" });
+  await drawnFrame(page);
+  await expect(status).toContainText("action points");
+  await viewport.screenshot({
+    path: "docs/design/ui-action-refusal-rightclick.png",
+  });
 });

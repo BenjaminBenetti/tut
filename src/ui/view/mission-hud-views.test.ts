@@ -12,6 +12,7 @@ import { describeEvent } from "./event-vocabulary";
 import { ObjectiveTrackerView } from "./objective-tracker-view";
 import { TurnBannerView } from "./turn-banner-view";
 import { UnitCardView } from "./unit-card-view";
+import { chargeRegisterFor } from "../service/charge-register";
 
 let root: HTMLElement;
 const field = (name: string): HTMLElement | null =>
@@ -383,6 +384,7 @@ const NAMES: TacticalNames = {
   objective: () => "spawner 1",
   spawner: () => "spawner 1",
   target: () => "Swarmer",
+  charge: () => chargeRegisterFor("squad"),
   mech: () => "Hammerhead",
   mission: () => "Lagos",
 };

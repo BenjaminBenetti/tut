@@ -33,6 +33,11 @@ const MAX_DAYS = 40;
 test("egg spawners are drawn on the tactical map and can be targeted by clicking one", async ({
   page,
 }) => {
+  // Hosted #1099 reaches the drawn nest at 92 s, then needs another 16 s
+  // just for four real layer clicks before framing/targeting. Three minutes
+  // covers this complete integration on CI; each stalled move still fails
+  // after the normal 15 s, and the local test keeps its existing 60 s limit.
+  if (process.env.CI) test.setTimeout(180_000);
   const errors: string[] = [];
   page.on("console", (message) => {
     if (message.type() === "error") {
@@ -104,11 +109,12 @@ test("egg spawners are drawn on the tactical map and can be targeted by clicking
   );
   expect(at).toBeTruthy();
 
-  // Scouting spent the scout's action points, and Attack is disabled for
-  // a unit that cannot act. End the turn so the side refreshes before
-  // the targeting half of this spec — otherwise whether the button is
-  // clickable depends on how many moves the walk happened to take.
-  await endTurn(page, body);
+  // Refresh only when scouting spent the last AP. On the reported seed the
+  // scout discovers the nest with one AP left; another enemy turn adds work
+  // unrelated to proving the spawner can be targeted.
+  const scout = (await savedMission(page))?.units.find((u) => u.id === unitId);
+  expect(scout, "the scout must survive discovery").toBeDefined();
+  if (scout!.ap === 0) await endTurn(page, body);
   await expect(
     page.locator('#action-bar [data-action="attack"]').first(),
   ).toBeEnabled();
@@ -394,28 +400,63 @@ async function moveAndWait(
       pos: tile,
       spentAp: true,
     });
-  // The renderer consumes an animation queue after the synchronous save. Let
-  // this visible move finish before adding another command to that queue.
-  await expect
-    .poll(
-      () =>
-        page.evaluate(
-          (args: { id: string; tile: TileCoord }) => {
-            const hooks = (globalThis as HookGlobal).__tutTactical__;
-            const unit = hooks?.unitScreenPosition(args.id);
-            const destination = hooks?.tileScreenPosition(args.tile);
-            return unit && destination
-              ? Math.hypot(unit.x - destination.x, unit.y - destination.y)
-              : Infinity;
-          },
-          { id: unit.id, tile },
-        ),
-      {
-        message: `saved scout move reached ${JSON.stringify(tile)}; waiting for its rendered feet`,
-      },
-    )
-    .toBeLessThan(0.1);
+  await waitForRenderedMove(page, unit.id, tile);
   return true;
+}
+
+/**
+ * Requires exact arrival while giving each visible advance the normal assertion
+ * budget. At low frame rates the scene's 0.1 s delta cap stretches a whole walk
+ * beyond that budget; a frozen model must still fail within it. The test's
+ * overall deadline bounds a walk that keeps moving without ever arriving.
+ */
+async function waitForRenderedMove(
+  page: Page,
+  unitId: string,
+  tile: TileCoord,
+) {
+  const samples: { x: number; y: number }[] = [];
+  let previous: { x: number; y: number } | undefined;
+  try {
+    for (;;) {
+      let current: { x: number; y: number } | undefined;
+      await expect
+        .poll(
+          async () => {
+            current = await page.evaluate(
+              (args: { id: string; tile: TileCoord }) => {
+                const hooks = (globalThis as HookGlobal).__tutTactical__;
+                const unit = hooks?.unitScreenPosition(args.id);
+                const destination = hooks?.tileScreenPosition(args.tile);
+                return unit && destination
+                  ? { x: unit.x - destination.x, y: unit.y - destination.y }
+                  : undefined;
+              },
+              { id: unitId, tile },
+            );
+            return (
+              current !== undefined &&
+              (Math.hypot(current.x, current.y) < 0.1 ||
+                previous === undefined ||
+                Math.hypot(current.x - previous.x, current.y - previous.y) >=
+                  0.1)
+            );
+          },
+          {
+            message: `rendered scout stalled before ${JSON.stringify(tile)}; last offset ${JSON.stringify(previous)}`,
+          },
+        )
+        .toBe(true);
+      samples.push(current!);
+      if (Math.hypot(current!.x, current!.y) < 0.1) return;
+      previous = current;
+    }
+  } finally {
+    await test.info().attach(`rendered-move-${tile.x}-${tile.y}-${tile.z}`, {
+      body: JSON.stringify({ unitId, tile, offsets: samples }),
+      contentType: "application/json",
+    });
+  }
 }
 
 /** Ends the turn and proves the saved player turn advanced, not just that a HUD exists. */

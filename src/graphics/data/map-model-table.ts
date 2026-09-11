@@ -116,12 +116,18 @@ export const TERRAIN_TRANSITION_SOURCE =
  * Style guide §7, `prop kind → model id`. `car` takes the 1×1 compact;
  * the 2×1 `prop.car-sedan` is for hand-placed wrecks and mapgen never
  * emits it.
- * Bench art is ready for #960's use-specific placement; MapGen registers
- * its definition there so this asset does not enter the old random yard pool.
+ * Benches use the contextual yard definition, so they never enter the generic ground pool.
  */
 export const PROP_MODELS: Readonly<
   Record<
-    KnownPropKindId | "bench" | "tree-tropical-almond" | "tree-oil-palm",
+    | KnownPropKindId
+    | "bench"
+    | "tree-tropical-almond"
+    | "tree-oil-palm"
+    | "tree-tuart"
+    | "banksia"
+    | "grass-tree"
+    | "limestone-outcrop",
     ModelAssetId
   >
 > = {
@@ -132,7 +138,7 @@ export const PROP_MODELS: Readonly<
   [PropKindIds.DUMPSTER]: "prop.dumpster",
   [PropKindIds.SHELVING]: "prop.shelving",
   [PropKindIds.TABLE]: "prop.table",
-  bench: "prop.bench",
+  [PropKindIds.BENCH]: "prop.bench",
   [PropKindIds.FENCE]: "prop.fence",
   [PropKindIds.BOULDER]: "prop.boulder",
   [PropKindIds.TREE_PINE]: "prop.tree-pine",
@@ -140,6 +146,10 @@ export const PROP_MODELS: Readonly<
   [PropKindIds.TREE_PALM]: "prop.tree-palm",
   "tree-tropical-almond": "prop.tree-tropical-almond",
   "tree-oil-palm": "prop.tree-oil-palm",
+  "tree-tuart": "prop.tree-tuart",
+  banksia: "prop.banksia",
+  "grass-tree": "prop.grass-tree",
+  "limestone-outcrop": "prop.limestone-outcrop",
   [PropKindIds.CACTUS]: "prop.cactus",
 };
 

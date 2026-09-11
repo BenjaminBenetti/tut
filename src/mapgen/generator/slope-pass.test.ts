@@ -373,10 +373,10 @@ describe("SlopePass", () => {
   });
 
   it("is deterministic per seed and rerolls nothing else", () => {
-    // Boundary placement consumes slope classification. Exclude that consumer
-    // from both sides to isolate what the slope pass itself changes (#917).
+    // Boundary and yard placement consume slope classification. Exclude both
+    // consumers to isolate what the slope pass itself changes (#917/#960).
     const passes = createSettlementPasses().filter(
-      (p) => p.id !== "rural-fences",
+      (p) => p.id !== "rural-fences" && p.id !== "yard-arrangements",
     );
     const without = new PipelineMapGenerator(
       passes.filter((p) => p.id !== "slopes"),

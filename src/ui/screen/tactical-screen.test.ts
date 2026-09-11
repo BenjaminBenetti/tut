@@ -47,6 +47,7 @@ import type { LayerFocus } from "../../graphics/model/layer-focus";
 import type { TacticalSceneHost } from "../model/tactical-scene-host";
 import { campaignOnDay, missionAt } from "../view/mission-fixtures.test-helper";
 import { TacticalScreen } from "./tactical-screen";
+import { describeTacticalError } from "../../tactical/model/tactical-error";
 
 type NavigateMock = Mock<(id: ScreenId) => void>;
 
@@ -735,9 +736,19 @@ describe("TacticalScreen", () => {
     // The fixture exhibits the defect. Without this the test could pass
     // on a build where the simulation never puts an id in the message,
     // and would then be asserting nothing at all.
+    //
+    // Against the rules' own wording rather than `store.lastError`,
+    // because #1062 stopped the bar offering Reload to a mech that has
+    // nothing to reload — so this press is refused *before* dispatch and
+    // the store never sees it. The guarantee under test is unchanged
+    // (the id exists, and the player is not shown it); what moved is
+    // which layer refuses. **The dispatch boundary itself needs a case
+    // that still dispatches** — an attack refused for range or line of
+    // sight is one — and that is worth its own test rather than this
+    // one quietly covering less than its name says.
     expect(
-      store.lastError?.message,
-      "the simulation's own message must carry the id, or there is nothing to hide",
+      describeTacticalError({ kind: "charges-full", unitId: mech.id }),
+      "the rules' own message must carry the id, or there is nothing to hide",
     ).toContain(mech.id);
 
     const status = root.querySelector(

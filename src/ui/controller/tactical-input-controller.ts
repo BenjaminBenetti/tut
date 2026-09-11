@@ -78,7 +78,11 @@ function numberRowBindings(): Record<string, TacticalAction | "end-turn"> {
 /**
  * Keyboard shortcuts (GDD §6.2 actions plus End Turn), keyed by
  * `KeyboardEvent.key` lower-cased. Q / E / WASD / arrows belong to the
- * camera controller and are not listed here. `t` cycles attack targets,
+ * camera controller (`CAMERA_KEYS`) and must not appear here: both
+ * handlers hear every key, so a key in both tables pans the view *and*
+ * arms an action. `a` was one until #1091 -- every leftward pan armed
+ * Attack, and on a spent unit said so on every keypress. A test checks
+ * the tables are disjoint. `t` cycles attack targets,
  * which is the only way to aim at an egg spawner until the scene draws
  * one the pointer can hit (#426).
  *
@@ -92,7 +96,6 @@ export const TACTICAL_SHORTCUTS: Readonly<
 > = {
   ...numberRowBindings(),
   m: "move",
-  a: "attack",
   f: "attack",
   o: "overwatch",
   r: "reload",
@@ -114,7 +117,8 @@ export const TACTICAL_SHORTCUTS: Readonly<
  * `]` and `[` are the primary pair: adjacent, unshifted, no modifier, so
  * going up a floor and back down is two keystrokes. `PageUp`/`PageDown`
  * are aliases for the same thing; the table above already carries
- * aliases (`a`/`f` both attack, `enter`/`end` both end the turn).
+ * aliases (`f` and its digit both attack, `enter`/`end` both end the
+ * turn).
  *
  * The value is the number of storeys to move, so a future "jump to the
  * top" needs a binding rather than a new mechanism.

@@ -166,6 +166,12 @@ Johannesburg's hipped metal roofs use muted `env-roof-green #5B706A` beside
 brick and rendered masonry. The local roof form is selected explicitly;
 the original roof material remains the default elsewhere.
 
+Perth woodland uses `env-sclerophyll-leaf #66765B` and
+`env-sclerophyll-leaf-light #849077`, `env-tuart-bark #AAA58F`,
+`env-grass-tree-trunk #393C32` and `env-limestone #BDB69A`.
+The grey-green foliage, branching crowns and pale rock distinguish the
+south-west Australian kit from Lagos’s layered broadleaf and palm planting.
+
 Infested ground overlays use `bug-flesh` and `bug-bio-green-dim`; never recolour the base tile.
 
 ### 4.4 UI

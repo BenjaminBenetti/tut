@@ -43,6 +43,10 @@ export const MODEL_IDS = [
   "tdf.mech.assembled-b",
   // Lagos kit (#1082)
   "prop.tree-tropical-almond",
+  "prop.tree-tuart",
+  "prop.banksia",
+  "prop.grass-tree",
+  "prop.limestone-outcrop",
   "prop.tree-oil-palm",
   "building.wall-plaster",
   "building.wall-window-plaster",

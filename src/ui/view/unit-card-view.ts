@@ -2,6 +2,7 @@ import type { Unit } from "../../tactical/model/unit";
 import type { UnitTemplate } from "../../tactical/model/unit-template";
 import { formatWhole } from "../service/format";
 import { iconGlyph } from "./icon-glyph";
+import { chargeRegisterFor } from "../service/charge-register";
 
 // ===========================================
 // Constants and model
@@ -166,7 +167,9 @@ export class UnitCardView {
     // One block per weapon (#532). A squad or a bug carries one and
     // reads as it always did; a mech lists its arm and back weapons,
     // which is the whole point — they differ in reach.
-    const kind = unit.kind === "mech" ? "heat" : "ammo";
+    // One source for this word, shared with the action bar and the
+    // refusal text, which used to choose it separately (#1062).
+    const kind = chargeRegisterFor(unit.kind).gauge;
     this.setEntries(
       "weapon",
       template.weapons.map((weapon) => {

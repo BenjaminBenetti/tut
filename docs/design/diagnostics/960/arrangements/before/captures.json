@@ -1,0 +1,294 @@
+{
+  "baseCommit": "8d20dd4e5716ad6a789ef6ef6dd9ef6379c2ffd5",
+  "repeatedBrowsers": 2,
+  "records": [
+    {
+      "id": "I01-city-frontages",
+      "seed": "mc-resume-01",
+      "biome": "temperate",
+      "settlement": "city",
+      "size": "medium",
+      "focus": {
+        "x": 43,
+        "y": 2,
+        "z": 39
+      },
+      "rotation": 0,
+      "camera": {
+        "yawIndex": 0,
+        "zoom": 55.11351921262162,
+        "target": {
+          "x": 43.5,
+          "y": 1.65,
+          "z": 39.5
+        },
+        "bounds": {
+          "x": 0,
+          "z": 0,
+          "w": 72,
+          "d": 72
+        },
+        "zoomRange": {
+          "min": 19.83827358328925,
+          "max": 192
+        }
+      },
+      "actualPitch": 45.00000000000009,
+      "pixel": {
+        "x": 1389.999999999999,
+        "y": 750.0000000000003
+      },
+      "clip": {
+        "x": 740,
+        "y": 225,
+        "width": 1300,
+        "height": 1050
+      },
+      "viewport": {
+        "width": 2400,
+        "height": 1500
+      },
+      "sha256": "13dddc151dd7841c476dcf5d45c24bf43a7ca00bbd17703dfe73be17fd1f37d7"
+    },
+    {
+      "id": "I02-city-frontages-rotated",
+      "seed": "mc-resume-01",
+      "biome": "temperate",
+      "settlement": "city",
+      "size": "medium",
+      "focus": {
+        "x": 43,
+        "y": 2,
+        "z": 39
+      },
+      "rotation": 1,
+      "camera": {
+        "yawIndex": 1,
+        "zoom": 55.11351921262119,
+        "target": {
+          "x": 43.5,
+          "y": 1.65,
+          "z": 39.5
+        },
+        "bounds": {
+          "x": 0,
+          "z": 0,
+          "w": 72,
+          "d": 72
+        },
+        "zoomRange": {
+          "min": 19.83827358328925,
+          "max": 192
+        }
+      },
+      "actualPitch": 44.99999999999995,
+      "pixel": {
+        "x": 1389.9999999999995,
+        "y": 750.0000000000007
+      },
+      "clip": {
+        "x": 740,
+        "y": 225,
+        "width": 1300,
+        "height": 1050
+      },
+      "viewport": {
+        "width": 2400,
+        "height": 1500
+      },
+      "sha256": "fbd86dfdebc9947a4822be088ec29416195c34b1223592e282b593a7da06fe15"
+    },
+    {
+      "id": "S01-nearby-shop-workplace-home",
+      "seed": "mc-resume-01",
+      "biome": "temperate",
+      "settlement": "city",
+      "size": "medium",
+      "focus": {
+        "x": 24,
+        "y": 2,
+        "z": 37
+      },
+      "rotation": 0,
+      "camera": {
+        "yawIndex": 0,
+        "zoom": 55.11351921262185,
+        "target": {
+          "x": 24.5,
+          "y": 1.65,
+          "z": 37.5
+        },
+        "bounds": {
+          "x": 0,
+          "z": 0,
+          "w": 72,
+          "d": 72
+        },
+        "zoomRange": {
+          "min": 19.83827358328925,
+          "max": 192
+        }
+      },
+      "actualPitch": 45.000000000000405,
+      "pixel": {
+        "x": 1389.999999999999,
+        "y": 749.9999999999999
+      },
+      "clip": {
+        "x": 740,
+        "y": 225,
+        "width": 1300,
+        "height": 1050
+      },
+      "viewport": {
+        "width": 2400,
+        "height": 1500
+      },
+      "sha256": "0d462bafc912b4994aa8a7d909b2cf2445a1163e27bf267223b4c0760f4b825d"
+    },
+    {
+      "id": "I03-second-seed",
+      "seed": "mc-opening-02",
+      "biome": "temperate",
+      "settlement": "city",
+      "size": "medium",
+      "focus": {
+        "x": 23,
+        "y": 1,
+        "z": 34
+      },
+      "rotation": 0,
+      "camera": {
+        "yawIndex": 0,
+        "zoom": 55.11351921262153,
+        "target": {
+          "x": 23.5,
+          "y": 0.9,
+          "z": 34.5
+        },
+        "bounds": {
+          "x": 0,
+          "z": 0,
+          "w": 72,
+          "d": 72
+        },
+        "zoomRange": {
+          "min": 19.83827358328925,
+          "max": 192
+        }
+      },
+      "actualPitch": 45.00000000000009,
+      "pixel": {
+        "x": 1389.999999999999,
+        "y": 750.0000000000001
+      },
+      "clip": {
+        "x": 740,
+        "y": 225,
+        "width": 1300,
+        "height": 1050
+      },
+      "viewport": {
+        "width": 2400,
+        "height": 1500
+      },
+      "sha256": "d119c44977e2f12902f6a2ef544aa7f6b4523b83401891e5617a72741b2ac0dd"
+    },
+    {
+      "id": "I04-second-seed-rotated",
+      "seed": "mc-opening-02",
+      "biome": "temperate",
+      "settlement": "city",
+      "size": "medium",
+      "focus": {
+        "x": 23,
+        "y": 1,
+        "z": 34
+      },
+      "rotation": 1,
+      "camera": {
+        "yawIndex": 1,
+        "zoom": 55.11351921262129,
+        "target": {
+          "x": 23.5,
+          "y": 0.9,
+          "z": 34.5
+        },
+        "bounds": {
+          "x": 0,
+          "z": 0,
+          "w": 72,
+          "d": 72
+        },
+        "zoomRange": {
+          "min": 19.83827358328925,
+          "max": 192
+        }
+      },
+      "actualPitch": 44.99999999999984,
+      "pixel": {
+        "x": 1389.9999999999995,
+        "y": 750.0000000000005
+      },
+      "clip": {
+        "x": 740,
+        "y": 225,
+        "width": 1300,
+        "height": 1050
+      },
+      "viewport": {
+        "width": 2400,
+        "height": 1500
+      },
+      "sha256": "70c50b34c3ea8da04ab660392b23893880b106d1a131896a489fb65095d6fa00"
+    },
+    {
+      "id": "C01-rural-roof-control",
+      "seed": "mc-opening-01",
+      "biome": "temperate",
+      "settlement": "rural",
+      "size": "small",
+      "focus": {
+        "x": 23,
+        "y": 4,
+        "z": 13
+      },
+      "rotation": 0,
+      "camera": {
+        "yawIndex": 0,
+        "zoom": 55.11351921262119,
+        "target": {
+          "x": 23.5,
+          "y": 3.15,
+          "z": 13.5
+        },
+        "bounds": {
+          "x": 0,
+          "z": 0,
+          "w": 48,
+          "d": 48
+        },
+        "zoomRange": {
+          "min": 29.757410374933876,
+          "max": 192
+        }
+      },
+      "actualPitch": 44.99999999999984,
+      "pixel": {
+        "x": 1389.999999999999,
+        "y": 749.9999999999999
+      },
+      "clip": {
+        "x": 740,
+        "y": 225,
+        "width": 1300,
+        "height": 1050
+      },
+      "viewport": {
+        "width": 2400,
+        "height": 1500
+      },
+      "sha256": "5ee845a569d00950133657bccd5b8e90dbcfe3a09cf3f364c9c2da641b029aa5"
+    }
+  ]
+}

@@ -8,6 +8,7 @@ import { PICKING_TUNING } from "../../graphics/controller/picking-controller";
 import type { SceneCamera } from "../../graphics/model/scene-camera";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { TacticalIntent } from "../model/tactical-intent";
+import { CAMERA_KEYS } from "../../graphics/controller/camera-input-controller";
 import { ACTION_BAR_ORDER } from "../model/tactical-intent";
 import type {
   CameraInput,
@@ -220,7 +221,7 @@ describe("TacticalInputController", () => {
     key("x");
     key("i");
     key("z");
-    key("a", { repeat: true });
+    key("f", { repeat: true });
     key("r", { target: { tagName: "INPUT" } });
     expect(intents).toEqual([
       { kind: "action", action: "move" },
@@ -429,8 +430,10 @@ describe("TacticalInputController pointer buttons", () => {
   });
 
   it("keeps every letter shortcut from #340 working alongside the digits", () => {
+    // Except `a`, removed in #1091: it is the camera's pan-left key, and
+    // `f` remains Attack's letter.
     const { intents, surface } = setup();
-    for (const key of ["m", "a", "o", "r", "i", "x", "enter"]) {
+    for (const key of ["m", "f", "o", "r", "i", "x", "enter"]) {
       surface.ownerDocument.dispatch("keydown", {
         key,
         preventDefault: () => undefined,
@@ -456,5 +459,28 @@ describe("TacticalInputController pointer buttons", () => {
     expect(digits.sort()).toEqual(
       ACTION_BAR_ORDER.map((_, i) => String(i + 1)).sort(),
     );
+  });
+  // #1091: `a` panned the view and armed Attack on the same keypress, so
+  // every leftward pan on a spent unit said "no action points left".
+  // Both handlers hear every key; the only fix that stays fixed is that
+  // no tactical binding shares a key with the camera. Iterates the
+  // camera's own table, so a camera key added later is covered too.
+  it("leaves every camera key to the camera", () => {
+    const { intents, surface } = setup();
+    const heard: string[] = [];
+    for (const key of CAMERA_KEYS) {
+      const before = intents.length;
+      surface.ownerDocument.dispatch("keydown", {
+        key,
+        repeat: false,
+        preventDefault: () => undefined,
+        target: null,
+      });
+      if (intents.length > before) {
+        heard.push(key);
+      }
+    }
+    expect(CAMERA_KEYS).toContain("a");
+    expect(heard, "camera keys that also fired a tactical intent").toEqual([]);
   });
 });

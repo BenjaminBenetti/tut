@@ -68,6 +68,17 @@ export interface ActionBarModel {
    */
   readonly canExtract?: boolean;
   /**
+   * Actions the selected unit cannot take, and so the buttons marked
+   * unavailable (#1030).
+   *
+   * Availability used to come from `canAct` alone, which knows about
+   * action points and the phase and nothing else — so the bar offered
+   * Reload to a unit at full charges and the player found out by
+   * pressing it. This comes from the same query that produces the
+   * refusal, so a button and its reason cannot disagree.
+   */
+  readonly unavailable?: readonly ActionBarAction[];
+  /**
    * Whether the selected unit is in reach of an objective it could work
    * (#427). Its own flag rather than `canAct`, because being able to act
    * is not enough: there has to be something in reach to act on.
@@ -379,6 +390,9 @@ export class ActionBarView {
 
 /** Whether one button is offered for the model. */
 function isEnabled(action: ActionBarAction, model: ActionBarModel): boolean {
+  if (model.unavailable?.includes(action) === true) {
+    return false;
+  }
   switch (action) {
     case "end-turn":
       return model.playerPhase;

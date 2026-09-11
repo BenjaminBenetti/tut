@@ -2,6 +2,7 @@ import { Group, Mesh } from "three";
 import { PITCHED_ROOF_MODEL } from "../data/map-model-table";
 import type { ModelLoader } from "../model/model-loader";
 import type { PitchedRoofAppearance } from "../model/pitched-roof-appearance";
+import { HippedRoofModelFactory } from "./hipped-roof-model-factory";
 
 /** Fits the Blender cap's upper profile, preserving its closed ceiling and shared material. */
 export class PitchedRoofModelFactory {
@@ -10,6 +11,11 @@ export class PitchedRoofModelFactory {
 
   /** Caller owns copied geometry; loader material/texture remain borrowed across all profiles. */
   async create(roof: PitchedRoofAppearance): Promise<Group> {
+    if (roof.depthHeights)
+      return new HippedRoofModelFactory(this.models).create(
+        roof.heights,
+        roof.depthHeights,
+      );
     const result = new Group();
     const source = await this.models.load(PITCHED_ROOF_MODEL);
     source.updateMatrixWorld(true);

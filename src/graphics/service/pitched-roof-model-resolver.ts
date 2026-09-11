@@ -9,6 +9,8 @@ import type { ModelPlacement } from "./map-model-resolver";
 
 /** Stable geometry key, shared across buildings, tiles and elevation batches. */
 export function pitchedRoofKey(roof: PitchedRoofAppearance): string {
+  if (roof.depthHeights)
+    return `hip:${roof.heights.join(":")}:${roof.depthHeights.join(":")}`;
   return roof.heights.join(":");
 }
 

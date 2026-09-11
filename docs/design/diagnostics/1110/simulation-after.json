@@ -1,0 +1,542 @@
+[
+  {
+    "seed": "sweep-0",
+    "difficulty": 1,
+    "tdfAlive": 3,
+    "bugsAlive": 2,
+    "outcome": "won",
+    "turns": 4,
+    "violations": []
+  },
+  {
+    "seed": "sweep-1",
+    "difficulty": 2,
+    "tdfAlive": 3,
+    "bugsAlive": 9,
+    "outcome": "won",
+    "turns": 8,
+    "violations": []
+  },
+  {
+    "seed": "sweep-2",
+    "difficulty": 3,
+    "tdfAlive": 3,
+    "bugsAlive": 11,
+    "outcome": "won",
+    "turns": 6,
+    "violations": []
+  },
+  {
+    "seed": "sweep-3",
+    "difficulty": 4,
+    "tdfAlive": 2,
+    "bugsAlive": 18,
+    "outcome": "won",
+    "turns": 11,
+    "violations": []
+  },
+  {
+    "seed": "sweep-4",
+    "difficulty": 5,
+    "tdfAlive": 1,
+    "bugsAlive": 54,
+    "outcome": "unresolved",
+    "turns": 15,
+    "violations": []
+  },
+  {
+    "seed": "sweep-5",
+    "difficulty": 6,
+    "tdfAlive": 3,
+    "bugsAlive": 42,
+    "outcome": "won",
+    "turns": 14,
+    "violations": []
+  },
+  {
+    "seed": "sweep-6",
+    "difficulty": 7,
+    "tdfAlive": 1,
+    "bugsAlive": 58,
+    "outcome": "unresolved",
+    "turns": 15,
+    "violations": []
+  },
+  {
+    "seed": "sweep-7",
+    "difficulty": 8,
+    "tdfAlive": 3,
+    "bugsAlive": 30,
+    "outcome": "won",
+    "turns": 11,
+    "violations": []
+  },
+  {
+    "seed": "sweep-8",
+    "difficulty": 9,
+    "tdfAlive": 3,
+    "bugsAlive": 41,
+    "outcome": "won",
+    "turns": 12,
+    "violations": []
+  },
+  {
+    "seed": "sweep-9",
+    "difficulty": 10,
+    "tdfAlive": 1,
+    "bugsAlive": 50,
+    "outcome": "unresolved",
+    "turns": 15,
+    "violations": []
+  },
+  {
+    "seed": "sweep-10",
+    "difficulty": 1,
+    "tdfAlive": 3,
+    "bugsAlive": 4,
+    "outcome": "won",
+    "turns": 6,
+    "violations": []
+  },
+  {
+    "seed": "sweep-11",
+    "difficulty": 2,
+    "tdfAlive": 3,
+    "bugsAlive": 5,
+    "outcome": "won",
+    "turns": 6,
+    "violations": []
+  },
+  {
+    "seed": "sweep-12",
+    "difficulty": 3,
+    "tdfAlive": 3,
+    "bugsAlive": 14,
+    "outcome": "won",
+    "turns": 8,
+    "violations": []
+  },
+  {
+    "seed": "sweep-13",
+    "difficulty": 4,
+    "tdfAlive": 3,
+    "bugsAlive": 12,
+    "outcome": "won",
+    "turns": 6,
+    "violations": []
+  },
+  {
+    "seed": "sweep-14",
+    "difficulty": 5,
+    "tdfAlive": 3,
+    "bugsAlive": 24,
+    "outcome": "won",
+    "turns": 11,
+    "violations": []
+  },
+  {
+    "seed": "sweep-15",
+    "difficulty": 6,
+    "tdfAlive": 3,
+    "bugsAlive": 12,
+    "outcome": "won",
+    "turns": 7,
+    "violations": []
+  },
+  {
+    "seed": "sweep-16",
+    "difficulty": 7,
+    "tdfAlive": 1,
+    "bugsAlive": 39,
+    "outcome": "won",
+    "turns": 12,
+    "violations": []
+  },
+  {
+    "seed": "sweep-17",
+    "difficulty": 8,
+    "tdfAlive": 2,
+    "bugsAlive": 31,
+    "outcome": "won",
+    "turns": 11,
+    "violations": []
+  },
+  {
+    "seed": "sweep-18",
+    "difficulty": 9,
+    "tdfAlive": 1,
+    "bugsAlive": 60,
+    "outcome": "unresolved",
+    "turns": 15,
+    "violations": []
+  },
+  {
+    "seed": "sweep-19",
+    "difficulty": 10,
+    "tdfAlive": 3,
+    "bugsAlive": 40,
+    "outcome": "won",
+    "turns": 12,
+    "violations": []
+  },
+  {
+    "seed": "sweep-20",
+    "difficulty": 1,
+    "tdfAlive": 3,
+    "bugsAlive": 4,
+    "outcome": "won",
+    "turns": 6,
+    "violations": []
+  },
+  {
+    "seed": "sweep-21",
+    "difficulty": 2,
+    "tdfAlive": 3,
+    "bugsAlive": 3,
+    "outcome": "won",
+    "turns": 6,
+    "violations": []
+  },
+  {
+    "seed": "sweep-22",
+    "difficulty": 3,
+    "tdfAlive": 3,
+    "bugsAlive": 11,
+    "outcome": "won",
+    "turns": 6,
+    "violations": []
+  },
+  {
+    "seed": "sweep-23",
+    "difficulty": 4,
+    "tdfAlive": 3,
+    "bugsAlive": 11,
+    "outcome": "won",
+    "turns": 8,
+    "violations": []
+  },
+  {
+    "seed": "sweep-24",
+    "difficulty": 5,
+    "tdfAlive": 3,
+    "bugsAlive": 26,
+    "outcome": "won",
+    "turns": 11,
+    "violations": []
+  },
+  {
+    "seed": "sweep-25",
+    "difficulty": 6,
+    "tdfAlive": 2,
+    "bugsAlive": 23,
+    "outcome": "won",
+    "turns": 11,
+    "violations": []
+  },
+  {
+    "seed": "sweep-26",
+    "difficulty": 7,
+    "tdfAlive": 1,
+    "bugsAlive": 47,
+    "outcome": "unresolved",
+    "turns": 15,
+    "violations": []
+  },
+  {
+    "seed": "sweep-27",
+    "difficulty": 8,
+    "tdfAlive": 3,
+    "bugsAlive": 14,
+    "outcome": "won",
+    "turns": 7,
+    "violations": []
+  },
+  {
+    "seed": "sweep-28",
+    "difficulty": 9,
+    "tdfAlive": 1,
+    "bugsAlive": 63,
+    "outcome": "unresolved",
+    "turns": 15,
+    "violations": []
+  },
+  {
+    "seed": "sweep-29",
+    "difficulty": 10,
+    "tdfAlive": 1,
+    "bugsAlive": 54,
+    "outcome": "unresolved",
+    "turns": 15,
+    "violations": []
+  },
+  {
+    "seed": "sweep-30",
+    "difficulty": 1,
+    "tdfAlive": 3,
+    "bugsAlive": 7,
+    "outcome": "won",
+    "turns": 9,
+    "violations": []
+  },
+  {
+    "seed": "sweep-31",
+    "difficulty": 2,
+    "tdfAlive": 3,
+    "bugsAlive": 3,
+    "outcome": "won",
+    "turns": 4,
+    "violations": []
+  },
+  {
+    "seed": "sweep-32",
+    "difficulty": 3,
+    "tdfAlive": 3,
+    "bugsAlive": 21,
+    "outcome": "won",
+    "turns": 11,
+    "violations": []
+  },
+  {
+    "seed": "sweep-33",
+    "difficulty": 4,
+    "tdfAlive": 3,
+    "bugsAlive": 11,
+    "outcome": "won",
+    "turns": 6,
+    "violations": []
+  },
+  {
+    "seed": "sweep-34",
+    "difficulty": 5,
+    "tdfAlive": 3,
+    "bugsAlive": 34,
+    "outcome": "won",
+    "turns": 12,
+    "violations": []
+  },
+  {
+    "seed": "sweep-35",
+    "difficulty": 6,
+    "tdfAlive": 3,
+    "bugsAlive": 29,
+    "outcome": "won",
+    "turns": 11,
+    "violations": []
+  },
+  {
+    "seed": "sweep-36",
+    "difficulty": 7,
+    "tdfAlive": 2,
+    "bugsAlive": 35,
+    "outcome": "won",
+    "turns": 11,
+    "violations": []
+  },
+  {
+    "seed": "sweep-37",
+    "difficulty": 8,
+    "tdfAlive": 1,
+    "bugsAlive": 45,
+    "outcome": "unresolved",
+    "turns": 15,
+    "violations": []
+  },
+  {
+    "seed": "sweep-38",
+    "difficulty": 9,
+    "tdfAlive": 1,
+    "bugsAlive": 58,
+    "outcome": "unresolved",
+    "turns": 15,
+    "violations": []
+  },
+  {
+    "seed": "sweep-39",
+    "difficulty": 10,
+    "tdfAlive": 1,
+    "bugsAlive": 56,
+    "outcome": "unresolved",
+    "turns": 15,
+    "violations": []
+  },
+  {
+    "seed": "sweep-40",
+    "difficulty": 1,
+    "tdfAlive": 3,
+    "bugsAlive": 4,
+    "outcome": "won",
+    "turns": 6,
+    "violations": []
+  },
+  {
+    "seed": "sweep-41",
+    "difficulty": 2,
+    "tdfAlive": 3,
+    "bugsAlive": 5,
+    "outcome": "won",
+    "turns": 6,
+    "violations": []
+  },
+  {
+    "seed": "sweep-42",
+    "difficulty": 3,
+    "tdfAlive": 3,
+    "bugsAlive": 11,
+    "outcome": "won",
+    "turns": 6,
+    "violations": []
+  },
+  {
+    "seed": "sweep-43",
+    "difficulty": 4,
+    "tdfAlive": 3,
+    "bugsAlive": 11,
+    "outcome": "won",
+    "turns": 6,
+    "violations": []
+  },
+  {
+    "seed": "sweep-44",
+    "difficulty": 5,
+    "tdfAlive": 2,
+    "bugsAlive": 33,
+    "outcome": "won",
+    "turns": 12,
+    "violations": []
+  },
+  {
+    "seed": "sweep-45",
+    "difficulty": 6,
+    "tdfAlive": 3,
+    "bugsAlive": 32,
+    "outcome": "won",
+    "turns": 12,
+    "violations": []
+  },
+  {
+    "seed": "sweep-46",
+    "difficulty": 7,
+    "tdfAlive": 3,
+    "bugsAlive": 38,
+    "outcome": "won",
+    "turns": 12,
+    "violations": []
+  },
+  {
+    "seed": "sweep-47",
+    "difficulty": 8,
+    "tdfAlive": 2,
+    "bugsAlive": 32,
+    "outcome": "won",
+    "turns": 12,
+    "violations": []
+  },
+  {
+    "seed": "sweep-48",
+    "difficulty": 9,
+    "tdfAlive": 1,
+    "bugsAlive": 61,
+    "outcome": "unresolved",
+    "turns": 15,
+    "violations": []
+  },
+  {
+    "seed": "sweep-49",
+    "difficulty": 10,
+    "tdfAlive": 1,
+    "bugsAlive": 64,
+    "outcome": "unresolved",
+    "turns": 15,
+    "violations": []
+  },
+  {
+    "seed": "sweep-50",
+    "difficulty": 1,
+    "tdfAlive": 3,
+    "bugsAlive": 1,
+    "outcome": "won",
+    "turns": 4,
+    "violations": []
+  },
+  {
+    "seed": "sweep-51",
+    "difficulty": 2,
+    "tdfAlive": 3,
+    "bugsAlive": 9,
+    "outcome": "won",
+    "turns": 8,
+    "violations": []
+  },
+  {
+    "seed": "sweep-52",
+    "difficulty": 3,
+    "tdfAlive": 3,
+    "bugsAlive": 11,
+    "outcome": "won",
+    "turns": 7,
+    "violations": []
+  },
+  {
+    "seed": "sweep-53",
+    "difficulty": 4,
+    "tdfAlive": 3,
+    "bugsAlive": 5,
+    "outcome": "won",
+    "turns": 4,
+    "violations": []
+  },
+  {
+    "seed": "sweep-54",
+    "difficulty": 5,
+    "tdfAlive": 3,
+    "bugsAlive": 36,
+    "outcome": "won",
+    "turns": 12,
+    "violations": []
+  },
+  {
+    "seed": "sweep-55",
+    "difficulty": 6,
+    "tdfAlive": 2,
+    "bugsAlive": 45,
+    "outcome": "unresolved",
+    "turns": 15,
+    "violations": []
+  },
+  {
+    "seed": "sweep-56",
+    "difficulty": 7,
+    "tdfAlive": 1,
+    "bugsAlive": 51,
+    "outcome": "unresolved",
+    "turns": 15,
+    "violations": []
+  },
+  {
+    "seed": "sweep-57",
+    "difficulty": 8,
+    "tdfAlive": 3,
+    "bugsAlive": 28,
+    "outcome": "won",
+    "turns": 10,
+    "violations": []
+  },
+  {
+    "seed": "sweep-58",
+    "difficulty": 9,
+    "tdfAlive": 1,
+    "bugsAlive": 62,
+    "outcome": "unresolved",
+    "turns": 15,
+    "violations": []
+  },
+  {
+    "seed": "sweep-59",
+    "difficulty": 10,
+    "tdfAlive": 1,
+    "bugsAlive": 67,
+    "outcome": "unresolved",
+    "turns": 15,
+    "violations": []
+  }
+]

@@ -1,0 +1,167 @@
+{
+  "baseline": "5008477",
+  "implementation": "61c2f29",
+  "maps": [
+    {
+      "case": "city",
+      "before": {
+        "buildings": 14,
+        "props": 435,
+        "cars": 0,
+        "roadProps": 0,
+        "roadTiles": 1584,
+        "occupiedRoadTiles": 0,
+        "carFootprints": {}
+      },
+      "after": {
+        "buildings": 14,
+        "props": 485,
+        "cars": 32,
+        "roadProps": 47,
+        "roadTiles": 1584,
+        "occupiedRoadTiles": 79,
+        "carFootprints": {
+          "2": 32
+        }
+      }
+    },
+    {
+      "case": "town",
+      "before": {
+        "buildings": 4,
+        "props": 199,
+        "cars": 0,
+        "roadProps": 0,
+        "roadTiles": 414,
+        "occupiedRoadTiles": 0,
+        "carFootprints": {}
+      },
+      "after": {
+        "buildings": 4,
+        "props": 209,
+        "cars": 4,
+        "roadProps": 8,
+        "roadTiles": 414,
+        "occupiedRoadTiles": 12,
+        "carFootprints": {
+          "2": 4
+        }
+      }
+    },
+    {
+      "case": "snowy",
+      "before": {
+        "buildings": 1,
+        "props": 192,
+        "cars": 1,
+        "roadProps": 0,
+        "roadTiles": 0,
+        "occupiedRoadTiles": 0,
+        "carFootprints": {
+          "1": 1
+        }
+      },
+      "after": {
+        "buildings": 1,
+        "props": 192,
+        "cars": 0,
+        "roadProps": 0,
+        "roadTiles": 0,
+        "occupiedRoadTiles": 0,
+        "carFootprints": {}
+      }
+    },
+    {
+      "case": "desert",
+      "before": {
+        "buildings": 4,
+        "props": 186,
+        "cars": 0,
+        "roadProps": 0,
+        "roadTiles": 414,
+        "occupiedRoadTiles": 0,
+        "carFootprints": {}
+      },
+      "after": {
+        "buildings": 4,
+        "props": 194,
+        "cars": 4,
+        "roadProps": 8,
+        "roadTiles": 414,
+        "occupiedRoadTiles": 12,
+        "carFootprints": {
+          "2": 4
+        }
+      }
+    },
+    {
+      "case": "perth",
+      "before": {
+        "buildings": 9,
+        "props": 255,
+        "cars": 0,
+        "roadProps": 0,
+        "roadTiles": 1052,
+        "occupiedRoadTiles": 0,
+        "carFootprints": {}
+      },
+      "after": {
+        "buildings": 9,
+        "props": 290,
+        "cars": 19,
+        "roadProps": 34,
+        "roadTiles": 1052,
+        "occupiedRoadTiles": 53,
+        "carFootprints": {
+          "2": 19
+        }
+      }
+    },
+    {
+      "case": "lagos",
+      "before": {
+        "buildings": 13,
+        "props": 369,
+        "cars": 0,
+        "roadProps": 0,
+        "roadTiles": 1584,
+        "occupiedRoadTiles": 0,
+        "carFootprints": {}
+      },
+      "after": {
+        "buildings": 13,
+        "props": 422,
+        "cars": 30,
+        "roadProps": 49,
+        "roadTiles": 1584,
+        "occupiedRoadTiles": 79,
+        "carFootprints": {
+          "2": 30
+        }
+      }
+    }
+  ],
+  "simulation": {
+    "before": {
+      "runs": 60,
+      "outcomes": {
+        "won": 44,
+        "unresolved": 16
+      },
+      "survivingUnits": 141,
+      "turns": 621,
+      "violations": 0
+    },
+    "after": {
+      "runs": 60,
+      "outcomes": {
+        "won": 44,
+        "unresolved": 16
+      },
+      "survivingUnits": 141,
+      "turns": 621,
+      "violations": 0
+    }
+  },
+  "independentCityCaptureIdentical": true
+}

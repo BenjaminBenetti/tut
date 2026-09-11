@@ -86,4 +86,47 @@ original compact mesh. New street density counts **occupied tiles**, preventing
 the larger vehicles from doubling the intended amount of road cover. The
 contract and compatibility decision are recorded in ADR 0004 §4.4.
 
-Final map results and validation will be recorded after the two-tile review.
+## Final review
+
+The critic reviewed matching close-ups in both city orientations and across
+town, desert, snowy rural, Perth and Lagos. The implementation was revised
+through the same PR, including full-size vehicles, footprint-aware fog,
+consistent exterior walls and grounded vegetation.
+
+| Case | Cars before → after | Road cells occupied before → after |
+| --- | ---: | ---: |
+| City | 0 → 32 | 0 → 79 / 1,584 |
+| Town | 0 → 4 | 0 → 12 / 414 |
+| Desert town | 0 → 4 | 0 → 12 / 414 |
+| Perth | 0 → 19 | 0 → 53 / 1,052 |
+| Lagos | 0 → 30 | 0 → 79 / 1,584 |
+| Snowy rural | 1 → 0 | No paved road tiles |
+
+Every generated car in these final controls occupies two cells. The snowy
+control's old compact car is omitted because its short stretch has no safe,
+level two-cell space; this is a consequence of the larger footprint. Building
+counts stay unchanged. Counts above describe simulation props; decorative
+lamps and hydrants do not add collision. Full counts are in [metrics.json](metrics.json).
+
+The city image was captured independently twice with a byte-identical SHA-256
+(`d21e1acd807d971cc8bab3ed9343e27e9d4525e4500f206ba87059ed44ddfd61`).
+Camera settings and hashes for all seven close-ups are in
+[after/captures.json](after/captures.json). The production changes are at
+`61c2f29`; subsequent commits add review artifacts.
+
+## Validation
+
+- Typecheck, lint and production build passed.
+- Unit/property suite: 2,436 tests passed; one opt-in test skipped.
+- The two-tile tests exercise atomic reservation/removal, frozen map validation,
+  save round trips, infantry/mech movement, sight lines, cover, rotation,
+  loaded-model alignment and visibility from either half.
+- The 60-mission simulation passed with zero invariant violations. Both baseline
+  and final runs produced 44 wins and 16 unresolved missions within the existing
+  15-turn cap, 141 survivors and 621 total turns. Seventeen individual reports
+  differ; aggregate equality does not imply unchanged mission behavior. See
+  [baseline results](simulation-before.json) and [final results](simulation-after.json).
+- New vehicle GLBs are watertight and were inspected from all three fixed angles.
+
+Browser and live-mission capture results are recorded after the final run.
+

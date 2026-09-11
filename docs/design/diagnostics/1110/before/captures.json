@@ -1,0 +1,303 @@
+{
+  "baseCommit": "50084772e8849527c38c563ee57aaf1dc0e34866",
+  "renderer": "SwiftShader",
+  "repeatedBrowsers": 1,
+  "records": [
+    {
+      "id": "city",
+      "seed": "mc-resume-01",
+      "biome": "temperate",
+      "url": "http://127.0.0.1:8797/mapgen-preview.html?seed=mc-resume-01&biome=temperate&settlement=city&size=medium&models=1&units=1&slope=100",
+      "settlement": "city",
+      "size": "medium",
+      "focus": {
+        "x": 43,
+        "y": 2,
+        "z": 39
+      },
+      "rotation": 0,
+      "camera": {
+        "yawIndex": 0,
+        "zoom": 55.11351921262162,
+        "target": {
+          "x": 43.5,
+          "y": 1.65,
+          "z": 39.5
+        },
+        "bounds": {
+          "x": 0,
+          "z": 0,
+          "w": 72,
+          "d": 72
+        },
+        "zoomRange": {
+          "min": 19.83827358328925,
+          "max": 192
+        }
+      },
+      "actualPitch": 45.00000000000009,
+      "pixel": {
+        "x": 1389.999999999999,
+        "y": 750.0000000000003
+      },
+      "clip": {
+        "x": 640,
+        "y": 200,
+        "width": 1500,
+        "height": 1100
+      },
+      "viewport": {
+        "width": 2400,
+        "height": 1500
+      },
+      "sha256": "54eabf0e7a03d5d1e50002527a740454dd72a906120d03d88fa84ff453fc4e60"
+    },
+    {
+      "id": "town",
+      "seed": "mc-opening-02",
+      "biome": "temperate",
+      "url": "http://127.0.0.1:8797/mapgen-preview.html?seed=mc-opening-02&biome=temperate&settlement=town&size=small&models=1&units=1&slope=100",
+      "settlement": "town",
+      "size": "small",
+      "focus": {
+        "x": 24,
+        "y": 2,
+        "z": 24
+      },
+      "rotation": 0,
+      "camera": {
+        "yawIndex": 0,
+        "zoom": 55.11351921262141,
+        "target": {
+          "x": 24.5,
+          "y": 1.65,
+          "z": 24.5
+        },
+        "bounds": {
+          "x": 0,
+          "z": 0,
+          "w": 48,
+          "d": 48
+        },
+        "zoomRange": {
+          "min": 29.757410374933876,
+          "max": 192
+        }
+      },
+      "actualPitch": 44.99999999999976,
+      "pixel": {
+        "x": 1389.9999999999995,
+        "y": 750
+      },
+      "clip": {
+        "x": 640,
+        "y": 200,
+        "width": 1500,
+        "height": 1100
+      },
+      "viewport": {
+        "width": 2400,
+        "height": 1500
+      },
+      "sha256": "2a8c75d66754179a167f887587c314ae831342f98c5bc4b1bbdd5d2d755e041a"
+    },
+    {
+      "id": "snowy",
+      "seed": "mc-resume-01",
+      "biome": "snowy",
+      "url": "http://127.0.0.1:8797/mapgen-preview.html?seed=mc-resume-01&biome=snowy&settlement=rural&size=small&models=1&units=1&slope=100",
+      "settlement": "rural",
+      "size": "small",
+      "focus": {
+        "x": 13,
+        "y": 3,
+        "z": 24
+      },
+      "rotation": 0,
+      "camera": {
+        "yawIndex": 0,
+        "zoom": 55.11351921262153,
+        "target": {
+          "x": 13.5,
+          "y": 2.4,
+          "z": 24.5
+        },
+        "bounds": {
+          "x": 0,
+          "z": 0,
+          "w": 48,
+          "d": 48
+        },
+        "zoomRange": {
+          "min": 29.757410374933876,
+          "max": 192
+        }
+      },
+      "actualPitch": 44.99999999999995,
+      "pixel": {
+        "x": 1389.9999999999995,
+        "y": 749.9999999999999
+      },
+      "clip": {
+        "x": 640,
+        "y": 200,
+        "width": 1500,
+        "height": 1100
+      },
+      "viewport": {
+        "width": 2400,
+        "height": 1500
+      },
+      "sha256": "5d8acd6ab5abbdc5d925bb228c4a0b7c9b54ef9c3ac129a72e071d8bb00881a4"
+    },
+    {
+      "id": "desert",
+      "seed": "mc-opening-02",
+      "biome": "desert",
+      "url": "http://127.0.0.1:8797/mapgen-preview.html?seed=mc-opening-02&biome=desert&settlement=town&size=small&models=1&units=1&slope=100",
+      "settlement": "town",
+      "size": "small",
+      "focus": {
+        "x": 24,
+        "y": 2,
+        "z": 24
+      },
+      "rotation": 0,
+      "camera": {
+        "yawIndex": 0,
+        "zoom": 55.11351921262141,
+        "target": {
+          "x": 24.5,
+          "y": 1.65,
+          "z": 24.5
+        },
+        "bounds": {
+          "x": 0,
+          "z": 0,
+          "w": 48,
+          "d": 48
+        },
+        "zoomRange": {
+          "min": 29.757410374933876,
+          "max": 192
+        }
+      },
+      "actualPitch": 44.99999999999976,
+      "pixel": {
+        "x": 1389.9999999999995,
+        "y": 750
+      },
+      "clip": {
+        "x": 640,
+        "y": 200,
+        "width": 1500,
+        "height": 1100
+      },
+      "viewport": {
+        "width": 2400,
+        "height": 1500
+      },
+      "sha256": "c59e0bcd3a67eade03768566b6ca54d95cd419254852843893fecb0d8ef55189"
+    },
+    {
+      "id": "perth",
+      "seed": "1892582247",
+      "biome": "coastal",
+      "placeProfile": "perth",
+      "url": "http://127.0.0.1:8797/mapgen-preview.html?seed=1892582247&biome=coastal&settlement=city&size=medium&models=1&units=1&slope=100&place=perth",
+      "settlement": "city",
+      "size": "medium",
+      "focus": {
+        "x": 36,
+        "y": 1,
+        "z": 36
+      },
+      "rotation": 0,
+      "camera": {
+        "yawIndex": 0,
+        "zoom": 55.113519212621654,
+        "target": {
+          "x": 36.5,
+          "y": 0.9,
+          "z": 36.5
+        },
+        "bounds": {
+          "x": 0,
+          "z": 0,
+          "w": 72,
+          "d": 72
+        },
+        "zoomRange": {
+          "min": 19.83827358328925,
+          "max": 192
+        }
+      },
+      "actualPitch": 45.00000000000026,
+      "pixel": {
+        "x": 1389.999999999999,
+        "y": 750
+      },
+      "clip": {
+        "x": 640,
+        "y": 200,
+        "width": 1500,
+        "height": 1100
+      },
+      "viewport": {
+        "width": 2400,
+        "height": 1500
+      },
+      "sha256": "239e7a5d18981fa38f9169af40614a09efe17a8ca55cda68579a6e7b8992df0d"
+    },
+    {
+      "id": "lagos",
+      "seed": "1892582247",
+      "biome": "temperate",
+      "placeProfile": "lagos",
+      "url": "http://127.0.0.1:8797/mapgen-preview.html?seed=1892582247&biome=temperate&settlement=city&size=medium&models=1&units=1&slope=100&place=lagos",
+      "settlement": "city",
+      "size": "medium",
+      "focus": {
+        "x": 36,
+        "y": 1,
+        "z": 36
+      },
+      "rotation": 0,
+      "camera": {
+        "yawIndex": 0,
+        "zoom": 55.113519212621654,
+        "target": {
+          "x": 36.5,
+          "y": 0.9,
+          "z": 36.5
+        },
+        "bounds": {
+          "x": 0,
+          "z": 0,
+          "w": 72,
+          "d": 72
+        },
+        "zoomRange": {
+          "min": 19.83827358328925,
+          "max": 192
+        }
+      },
+      "actualPitch": 45.00000000000026,
+      "pixel": {
+        "x": 1389.999999999999,
+        "y": 750
+      },
+      "clip": {
+        "x": 640,
+        "y": 200,
+        "width": 1500,
+        "height": 1100
+      },
+      "viewport": {
+        "width": 2400,
+        "height": 1500
+      },
+      "sha256": "eda749de663bc92b68f240b10c9a947b4c8c5b399db9db6207ff75bc3197cb9a"
+    }
+  ]
+}

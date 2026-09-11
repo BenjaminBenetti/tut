@@ -1,0 +1,92 @@
+[
+  {
+    "id": "city",
+    "seed": "mc-resume-01",
+    "biome": "temperate",
+    "settlement": "city",
+    "size": "medium",
+    "focus": {
+      "x": 43,
+      "y": 2,
+      "z": 39
+    },
+    "rotation": 0,
+    "placeProfile": null,
+    "control": true
+  },
+  {
+    "id": "town",
+    "seed": "mc-opening-02",
+    "biome": "temperate",
+    "settlement": "town",
+    "size": "small",
+    "focus": {
+      "x": 24,
+      "y": 2,
+      "z": 24
+    },
+    "rotation": 0,
+    "placeProfile": null,
+    "control": true
+  },
+  {
+    "id": "snowy",
+    "seed": "mc-resume-01",
+    "biome": "snowy",
+    "settlement": "rural",
+    "size": "small",
+    "focus": {
+      "x": 13,
+      "y": 3,
+      "z": 24
+    },
+    "rotation": 0,
+    "placeProfile": null,
+    "control": true
+  },
+  {
+    "id": "desert",
+    "seed": "mc-opening-02",
+    "biome": "desert",
+    "settlement": "town",
+    "size": "small",
+    "focus": {
+      "x": 24,
+      "y": 2,
+      "z": 24
+    },
+    "rotation": 0,
+    "placeProfile": null,
+    "control": true
+  },
+  {
+    "id": "perth",
+    "seed": "1892582247",
+    "biome": "coastal",
+    "settlement": "city",
+    "size": "medium",
+    "focus": {
+      "x": 36,
+      "y": 1,
+      "z": 36
+    },
+    "rotation": 0,
+    "placeProfile": "perth",
+    "control": true
+  },
+  {
+    "id": "lagos",
+    "seed": "1892582247",
+    "biome": "temperate",
+    "settlement": "city",
+    "size": "medium",
+    "focus": {
+      "x": 36,
+      "y": 1,
+      "z": 36
+    },
+    "rotation": 0,
+    "placeProfile": "lagos",
+    "control": true
+  }
+]

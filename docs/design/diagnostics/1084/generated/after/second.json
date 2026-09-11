@@ -1,0 +1,107 @@
+{
+  "baseCommit": "dcbc064726b8537e9080413d6f3722a1484d96e4",
+  "renderer": "SwiftShader",
+  "repeatedBrowsers": 2,
+  "records": [
+    {
+      "id": "J03-second-seed",
+      "seed": "1892582247",
+      "biome": "temperate",
+      "placeProfile": "johannesburg",
+      "url": "http://127.0.0.1:8797/mapgen-preview.html?seed=1892582247&biome=temperate&settlement=city&size=medium&models=1&units=1&slope=100&place=johannesburg",
+      "settlement": "city",
+      "size": "medium",
+      "focus": {
+        "x": 36,
+        "y": 1,
+        "z": 36
+      },
+      "rotation": 0,
+      "camera": {
+        "yawIndex": 0,
+        "zoom": 55.113519212621654,
+        "target": {
+          "x": 36.5,
+          "y": 0.9,
+          "z": 36.5
+        },
+        "bounds": {
+          "x": 0,
+          "z": 0,
+          "w": 72,
+          "d": 72
+        },
+        "zoomRange": {
+          "min": 19.83827358328925,
+          "max": 192
+        }
+      },
+      "actualPitch": 45.00000000000026,
+      "pixel": {
+        "x": 1389.999999999999,
+        "y": 750
+      },
+      "clip": {
+        "x": 640,
+        "y": 200,
+        "width": 1500,
+        "height": 1100
+      },
+      "viewport": {
+        "width": 2400,
+        "height": 1500
+      },
+      "sha256": "91eadcd5ea6944aa591707e89f3b1c1c98cfa6d925c2a40d368dcae539876f18"
+    },
+    {
+      "id": "J04-second-seed",
+      "seed": "1892582247",
+      "biome": "temperate",
+      "placeProfile": "johannesburg",
+      "url": "http://127.0.0.1:8797/mapgen-preview.html?seed=1892582247&biome=temperate&settlement=city&size=medium&models=1&units=1&slope=100&place=johannesburg",
+      "settlement": "city",
+      "size": "medium",
+      "focus": {
+        "x": 36,
+        "y": 1,
+        "z": 36
+      },
+      "rotation": 1,
+      "camera": {
+        "yawIndex": 1,
+        "zoom": 55.11351921262119,
+        "target": {
+          "x": 36.5,
+          "y": 0.9,
+          "z": 36.5
+        },
+        "bounds": {
+          "x": 0,
+          "z": 0,
+          "w": 72,
+          "d": 72
+        },
+        "zoomRange": {
+          "min": 19.83827358328925,
+          "max": 192
+        }
+      },
+      "actualPitch": 44.99999999999984,
+      "pixel": {
+        "x": 1389.9999999999995,
+        "y": 750.0000000000005
+      },
+      "clip": {
+        "x": 640,
+        "y": 200,
+        "width": 1500,
+        "height": 1100
+      },
+      "viewport": {
+        "width": 2400,
+        "height": 1500
+      },
+      "sha256": "1dd1f3e351e362b76c21b297278987341b849b751905074289b5adfa83132da9"
+    }
+  ]
+}

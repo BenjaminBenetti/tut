@@ -919,6 +919,55 @@ describe("TacticalHudView", () => {
    * `refuseWeapon` — was the only one that knew about ammunition, and
    * nothing asked it.
    */
+  /**
+   * QA on #1067 at `578f62e`, reproduced in play: pressing the dimmed
+   * Attack gave `Rifle Squad is out of ammo; reload first` beside a card
+   * reading `ALPHA`, while the preview on the same head said `Alpha` —
+   * the two-names-for-one-unit defect #1047 closed, back again.
+   *
+   * The refusal now resolves with the campaign like every other name on
+   * the screen. The fixture gives `s1` a roster name that differs from
+   * its template, so this cannot pass on the template by coincidence.
+   */
+  it("names a refusing unit by its roster name, as the card does", () => {
+    const notices: string[] = [];
+    const { hud, mission } = setup({
+      onNotice: (_unitId: string, text: string) => {
+        notices.push(text);
+      },
+    });
+    hud.setCampaign({
+      roster: { squads: [{ id: "s1", name: "Alpha" }], mechs: [] },
+      overworld: { missions: [], map: { cities: [], regions: [] } },
+    } as unknown as Parameters<typeof hud.setCampaign>[0]);
+    const s1 = mission.units.find((unit) => unit.id === "s1");
+    const template = s1 && mission.templates[s1.templateId];
+    if (!s1 || !template)
+      throw new Error("fixture needs a unit with a template");
+    const weapon = {
+      ...template.weapons[0],
+      charges: 3,
+    } as (typeof template.weapons)[number];
+    hud.update({
+      ...mission,
+      templates: {
+        ...mission.templates,
+        [s1.templateId]: { ...template, weapons: [weapon] },
+      },
+      units: mission.units.map((unit) =>
+        unit.id === "s1" ? { ...unit, charges: { [weapon.id]: 0 } } : unit,
+      ),
+    });
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    hud.handleIntent({ kind: "action", action: "attack" });
+
+    const status = root.querySelector<HTMLElement>('[data-role="status"]');
+    expect(notices).toEqual(["Alpha is out of ammo; reload first"]);
+    expect(status?.textContent).toBe("Alpha is out of ammo; reload first");
+    // The template name is what the defect looked like.
+    expect(notices[0]).not.toContain("Rifle Squad");
+  });
+
   it("stops offering Attack, and counting attacks, when the magazine is empty", () => {
     const notices: string[] = [];
     const { hud, mission } = setup({

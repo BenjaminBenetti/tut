@@ -261,6 +261,16 @@ test("captures a squad with an empty magazine, and the three things that follow"
   const status = page.locator('[data-role="status"]');
   await expect(status).toContainText("out of ammo");
   await expect(status).not.toContainText("vent");
+  // Named as the card names it — the roster name, not the template.
+  // QA rejected the first head of this frame because the status said
+  // `Rifle Squad` beside a card reading `ALPHA` (#1067).
+  const cardName = await page
+    .locator('#unit-card [data-field="unit-name"]')
+    .textContent();
+  expect(cardName, "the card names the selected unit").toBeTruthy();
+  await expect(status).toHaveText(
+    `${String(cardName)} is out of ammo; reload first`,
+  );
   await page.locator("#tactical-viewport").screenshot({
     path: "docs/design/ui-dry-squad-refusal.png",
   });

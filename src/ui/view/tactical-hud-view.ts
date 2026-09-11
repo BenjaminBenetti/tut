@@ -1084,7 +1084,12 @@ export class TacticalHudView {
     // reads worse there than it ever did in the status line. eng-5's
     // resolver is the one vocabulary for this; there is no second set
     // of strings here.
-    const words = describeRefusal(error, namesFor(this.mission));
+    // With the campaign, like every other name on this screen (#1047):
+    // without it the resolver falls back to the template, so a refusal
+    // said `Rifle Squad` beside a card reading `ALPHA`. QA found it on
+    // #1067, where Attack at an empty magazine began refusing here
+    // instead of at the dispatcher, which already passed the campaign.
+    const words = describeRefusal(error, namesFor(this.mission, this.campaign));
     this.showStatus(words);
     if (this.selected !== undefined) {
       this.handlers.onNotice?.(this.selected, words);

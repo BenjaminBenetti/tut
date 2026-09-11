@@ -1,0 +1,151 @@
+{
+  "runtime": "b64e723212640dbac2ddbbc35fea8255ee57b17c",
+  "seconds": 12.194498899000001,
+  "unprofiled": [
+    {
+      "id": "temperate/rural/small",
+      "mapHash": "2940002e7f25266c7e2fa9b658b3ffbaf6ddc5a0c089c8acd7e79b7964173ec1"
+    },
+    {
+      "id": "temperate/rural/medium",
+      "mapHash": "94080ac9a9798d41c3aa1da7e2acedeb40d0f5eb8348806ca9a22508e68fac39"
+    },
+    {
+      "id": "temperate/rural/large",
+      "mapHash": "77d7642f9f5ad5631a6cd5b00079a9d0a616bca22be4d3dc973041864591480a"
+    },
+    {
+      "id": "temperate/town/small",
+      "mapHash": "1d1fc89ff150b4f28ef25ccf87482383849d8b91d6f9a1a2988721f5e39500b6"
+    },
+    {
+      "id": "temperate/town/medium",
+      "mapHash": "ec88b6f68ef3e12ca418c892385d304de8d4de06789e243a9bf19594d0d4c41a"
+    },
+    {
+      "id": "temperate/town/large",
+      "mapHash": "07acb57145a463360f4409a855a42138b96d0cf1e489f81f3f47e8c50dba2c98"
+    },
+    {
+      "id": "temperate/city/small",
+      "mapHash": "b03d18e824aeb73e7871132b578fab0cbecfa6522c96a50217b90c0fe833e5cb"
+    },
+    {
+      "id": "temperate/city/medium",
+      "mapHash": "b18f9f0d37a6d88f845a36e60195a2d7f9439d5ca710439dbc5e5ba759e05eb1"
+    },
+    {
+      "id": "temperate/city/large",
+      "mapHash": "9e59eb2a57410c465bb0b9bd8f961a7debef831fcec8eab6d4f8b4b59bbbef9e"
+    },
+    {
+      "id": "snowy/rural/small",
+      "mapHash": "279e450432f8391b9a4ff395672bf918ff4131816104042172daadf5e7418228"
+    },
+    {
+      "id": "snowy/rural/medium",
+      "mapHash": "83cbd05de76c18d08c009e52683e5de30bd46e3575b981f3e69dad47c49e587f"
+    },
+    {
+      "id": "snowy/rural/large",
+      "mapHash": "8bed12ec26ee3386d3bb0cd39002b53780e04e8f0e8ed3d0c9039ee647b08de6"
+    },
+    {
+      "id": "snowy/town/small",
+      "mapHash": "952024d2f5422aa2f19f101b8288fcb5bd490ac3af783ec32f1f05be3e6c1804"
+    },
+    {
+      "id": "snowy/town/medium",
+      "mapHash": "fa8973473222bf076c055b7d2eb8e003515364c1dadc33183828d9cc1bfba0f5"
+    },
+    {
+      "id": "snowy/town/large",
+      "mapHash": "5ac7a29d2809c1d7c90319af539953db3daa5104b960787a7d2bb5da2650f8c7"
+    },
+    {
+      "id": "snowy/city/small",
+      "mapHash": "a51295d9767b938eca169b13ba123bd4362381e855a5be96b9a0b1e1d6ab9ac5"
+    },
+    {
+      "id": "snowy/city/medium",
+      "mapHash": "d6f9d257d3b1e3104bfebadc5a4e4a8aa2a0f1165872577c35b693780d259419"
+    },
+    {
+      "id": "snowy/city/large",
+      "mapHash": "d46cc11541db4e3d7d820d16fe5563ea2129b3658cf31ccf9d01351b0f919652"
+    },
+    {
+      "id": "desert/rural/small",
+      "mapHash": "f6873b2cd1a1fd24a5de956370ef92ae6fdc93153de787223d198e49755aeffa"
+    },
+    {
+      "id": "desert/rural/medium",
+      "mapHash": "1cb0db5946d9b4287c38c848f9dde4f97de572a643222c19321917d4f1bbbb2e"
+    },
+    {
+      "id": "desert/rural/large",
+      "mapHash": "0b7ea2b7ea310d394568ea53441471a4a08ddde11cac947307a443f74ec60fbe"
+    },
+    {
+      "id": "desert/town/small",
+      "mapHash": "adcb1da742df299984d5b6edd2bb87b5d5c214bacd55757b9727cc3069eb4f00"
+    },
+    {
+      "id": "desert/town/medium",
+      "mapHash": "2a0b34cba73bedd15a6e6d5e0abb73ec620b72ec6f04e7611ae68497c6528e5c"
+    },
+    {
+      "id": "desert/town/large",
+      "mapHash": "f605dba67a2c28a38293c1ca15637fe55bbb1aca78e737cb2c4626af439f4a69"
+    },
+    {
+      "id": "desert/city/small",
+      "mapHash": "ccf5f02d09b379a436ab32730fc774bfa9db866578c57a12c80cdf1c53d7f8c2"
+    },
+    {
+      "id": "desert/city/medium",
+      "mapHash": "abacc4d23ad3b1ca0a999fdea832abc17ed8498f5090b69bc73c346a11c6fb06"
+    },
+    {
+      "id": "desert/city/large",
+      "mapHash": "2db840c50a14b10b20eb2ebecd88c97ca8307e1e76144376ffca8e9cf1370a7d"
+    },
+    {
+      "id": "coastal/rural/small",
+      "mapHash": "fef6eaa52ecee2a3c384cc99040239b1726d1391aa18ec945793420d3a411c1d"
+    },
+    {
+      "id": "coastal/rural/medium",
+      "mapHash": "eb615009b877ae8f6398b8a7bb842d5bd6a13fe4168cbff5cb69ce773190b33b"
+    },
+    {
+      "id": "coastal/rural/large",
+      "mapHash": "c48cfbdc1a7e2ff971b746a2e2fca37caa0dafcdd9c06bfd4c5ce82c236cfb4e"
+    },
+    {
+      "id": "coastal/town/small",
+      "mapHash": "59cc22843529c343190c4d5c2357fe2aa26122b3987aadc8e4328d6b276c66aa"
+    },
+    {
+      "id": "coastal/town/medium",
+      "mapHash": "e163088c78f81e8aade547be96aead124ec224154616f3e51c47bebe43c4612b"
+    },
+    {
+      "id": "coastal/town/large",
+      "mapHash": "250268e2f7c190d14aca553c653bba50ee784e4dab279e7ad08969f56569b5d5"
+    },
+    {
+      "id": "coastal/city/small",
+      "mapHash": "598348ebf049577b5304eba7202277043a546f9683b13f8c0051f9e4468850ee"
+    },
+    {
+      "id": "coastal/city/medium",
+      "mapHash": "8cd93d03f9af0bd37950f38409388a98f99e6ad53112b178782eb9ef3ef92a47"
+    },
+    {
+      "id": "coastal/city/large",
+      "mapHash": "08bee28e81fb7e7243bb2dd508f26a4181aef05fe4f83f59cd294db3f2dd481f"
+    }
+  ],
+  "lagos": []
+}

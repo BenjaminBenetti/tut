@@ -1,0 +1,3048 @@
+{
+  "runtime": "8ec75d0611f4d9a7a6c7aeba128f29d29396fdc8",
+  "seconds": 31.873624693999997,
+  "unprofiled": [
+    {
+      "id": "temperate/rural/small",
+      "mapHash": "2940002e7f25266c7e2fa9b658b3ffbaf6ddc5a0c089c8acd7e79b7964173ec1"
+    },
+    {
+      "id": "temperate/rural/medium",
+      "mapHash": "94080ac9a9798d41c3aa1da7e2acedeb40d0f5eb8348806ca9a22508e68fac39"
+    },
+    {
+      "id": "temperate/rural/large",
+      "mapHash": "77d7642f9f5ad5631a6cd5b00079a9d0a616bca22be4d3dc973041864591480a"
+    },
+    {
+      "id": "temperate/town/small",
+      "mapHash": "1d1fc89ff150b4f28ef25ccf87482383849d8b91d6f9a1a2988721f5e39500b6"
+    },
+    {
+      "id": "temperate/town/medium",
+      "mapHash": "ec88b6f68ef3e12ca418c892385d304de8d4de06789e243a9bf19594d0d4c41a"
+    },
+    {
+      "id": "temperate/town/large",
+      "mapHash": "07acb57145a463360f4409a855a42138b96d0cf1e489f81f3f47e8c50dba2c98"
+    },
+    {
+      "id": "temperate/city/small",
+      "mapHash": "b03d18e824aeb73e7871132b578fab0cbecfa6522c96a50217b90c0fe833e5cb"
+    },
+    {
+      "id": "temperate/city/medium",
+      "mapHash": "b18f9f0d37a6d88f845a36e60195a2d7f9439d5ca710439dbc5e5ba759e05eb1"
+    },
+    {
+      "id": "temperate/city/large",
+      "mapHash": "9e59eb2a57410c465bb0b9bd8f961a7debef831fcec8eab6d4f8b4b59bbbef9e"
+    },
+    {
+      "id": "snowy/rural/small",
+      "mapHash": "279e450432f8391b9a4ff395672bf918ff4131816104042172daadf5e7418228"
+    },
+    {
+      "id": "snowy/rural/medium",
+      "mapHash": "83cbd05de76c18d08c009e52683e5de30bd46e3575b981f3e69dad47c49e587f"
+    },
+    {
+      "id": "snowy/rural/large",
+      "mapHash": "8bed12ec26ee3386d3bb0cd39002b53780e04e8f0e8ed3d0c9039ee647b08de6"
+    },
+    {
+      "id": "snowy/town/small",
+      "mapHash": "952024d2f5422aa2f19f101b8288fcb5bd490ac3af783ec32f1f05be3e6c1804"
+    },
+    {
+      "id": "snowy/town/medium",
+      "mapHash": "fa8973473222bf076c055b7d2eb8e003515364c1dadc33183828d9cc1bfba0f5"
+    },
+    {
+      "id": "snowy/town/large",
+      "mapHash": "5ac7a29d2809c1d7c90319af539953db3daa5104b960787a7d2bb5da2650f8c7"
+    },
+    {
+      "id": "snowy/city/small",
+      "mapHash": "a51295d9767b938eca169b13ba123bd4362381e855a5be96b9a0b1e1d6ab9ac5"
+    },
+    {
+      "id": "snowy/city/medium",
+      "mapHash": "d6f9d257d3b1e3104bfebadc5a4e4a8aa2a0f1165872577c35b693780d259419"
+    },
+    {
+      "id": "snowy/city/large",
+      "mapHash": "d46cc11541db4e3d7d820d16fe5563ea2129b3658cf31ccf9d01351b0f919652"
+    },
+    {
+      "id": "desert/rural/small",
+      "mapHash": "f6873b2cd1a1fd24a5de956370ef92ae6fdc93153de787223d198e49755aeffa"
+    },
+    {
+      "id": "desert/rural/medium",
+      "mapHash": "1cb0db5946d9b4287c38c848f9dde4f97de572a643222c19321917d4f1bbbb2e"
+    },
+    {
+      "id": "desert/rural/large",
+      "mapHash": "0b7ea2b7ea310d394568ea53441471a4a08ddde11cac947307a443f74ec60fbe"
+    },
+    {
+      "id": "desert/town/small",
+      "mapHash": "adcb1da742df299984d5b6edd2bb87b5d5c214bacd55757b9727cc3069eb4f00"
+    },
+    {
+      "id": "desert/town/medium",
+      "mapHash": "2a0b34cba73bedd15a6e6d5e0abb73ec620b72ec6f04e7611ae68497c6528e5c"
+    },
+    {
+      "id": "desert/town/large",
+      "mapHash": "f605dba67a2c28a38293c1ca15637fe55bbb1aca78e737cb2c4626af439f4a69"
+    },
+    {
+      "id": "desert/city/small",
+      "mapHash": "ccf5f02d09b379a436ab32730fc774bfa9db866578c57a12c80cdf1c53d7f8c2"
+    },
+    {
+      "id": "desert/city/medium",
+      "mapHash": "abacc4d23ad3b1ca0a999fdea832abc17ed8498f5090b69bc73c346a11c6fb06"
+    },
+    {
+      "id": "desert/city/large",
+      "mapHash": "2db840c50a14b10b20eb2ebecd88c97ca8307e1e76144376ffca8e9cf1370a7d"
+    },
+    {
+      "id": "coastal/rural/small",
+      "mapHash": "fef6eaa52ecee2a3c384cc99040239b1726d1391aa18ec945793420d3a411c1d"
+    },
+    {
+      "id": "coastal/rural/medium",
+      "mapHash": "eb615009b877ae8f6398b8a7bb842d5bd6a13fe4168cbff5cb69ce773190b33b"
+    },
+    {
+      "id": "coastal/rural/large",
+      "mapHash": "c48cfbdc1a7e2ff971b746a2e2fca37caa0dafcdd9c06bfd4c5ce82c236cfb4e"
+    },
+    {
+      "id": "coastal/town/small",
+      "mapHash": "59cc22843529c343190c4d5c2357fe2aa26122b3987aadc8e4328d6b276c66aa"
+    },
+    {
+      "id": "coastal/town/medium",
+      "mapHash": "e163088c78f81e8aade547be96aead124ec224154616f3e51c47bebe43c4612b"
+    },
+    {
+      "id": "coastal/town/large",
+      "mapHash": "250268e2f7c190d14aca553c653bba50ee784e4dab279e7ad08969f56569b5d5"
+    },
+    {
+      "id": "coastal/city/small",
+      "mapHash": "598348ebf049577b5304eba7202277043a546f9683b13f8c0051f9e4468850ee"
+    },
+    {
+      "id": "coastal/city/medium",
+      "mapHash": "8cd93d03f9af0bd37950f38409388a98f99e6ad53112b178782eb9ef3ef92a47"
+    },
+    {
+      "id": "coastal/city/large",
+      "mapHash": "08bee28e81fb7e7243bb2dd508f26a4181aef05fe4f83f59cd294db3f2dd481f"
+    }
+  ],
+  "lagos": [
+    {
+      "seed": "1892582247",
+      "settlement": "rural",
+      "size": "small",
+      "before": {
+        "recipe": {
+          "seed": "1892582247",
+          "params": {
+            "archetype": "settlement",
+            "biome": "temperate",
+            "settlement": "rural",
+            "size": "small",
+            "hooks": [
+              {
+                "kind": "deploy",
+                "count": 1,
+                "requiredPass": 3
+              },
+              {
+                "kind": "egg-spawner",
+                "count": 3,
+                "requiredPass": 1,
+                "minDistanceFromDeploy": 12,
+                "maxNearestDistanceFromDeploy": 30,
+                "meta": {
+                  "hatchRadius": 3
+                }
+              },
+              {
+                "kind": "edge-spawn",
+                "count": 2,
+                "requiredPass": 1
+              },
+              {
+                "kind": "extraction",
+                "count": 1,
+                "requiredPass": 3
+              }
+            ]
+          }
+        },
+        "trees": {
+          "tree-pine": 42,
+          "tree-oak": 80
+        },
+        "buildings": 1,
+        "storeys": [2],
+        "groundRange": [0, 4],
+        "connectors": 8,
+        "metrics": {
+          "groundTiles": 2224,
+          "openTiles": 2036,
+          "coverAdjacency": 0.1468565815324165,
+          "wallAdjacency": 0.012278978388998035,
+          "coveredSidesMean": 0.18860510805500982,
+          "coveredShare": 0.15667976424361493,
+          "flankProofShare": 0.02848722986247544,
+          "closedSidesMean": 0.9091355599214146,
+          "shelteredShare": 0.5790766208251473,
+          "backToWallShare": 0.281434184675835,
+          "highCoverPer100": 6.025179856115108,
+          "lowCoverPer100": 0.85431654676259,
+          "interiorPropsPerBuilding": 20,
+          "slopes": 505,
+          "slopeShare": 1,
+          "steps": {
+            "flat": 3639,
+            "half": 658,
+            "cliff": 37
+          },
+          "ramps": 7,
+          "footprintMean": 80,
+          "roomsPerFloor": 6.5,
+          "corridorBuildings": 1,
+          "stairs": 1,
+          "ladders": 0,
+          "maxFloors": 2,
+          "hatchSpaceMin": 12,
+          "hatchSpaceMean": 17
+        }
+      },
+      "after": {
+        "recipe": {
+          "seed": "1892582247",
+          "params": {
+            "archetype": "settlement",
+            "biome": "temperate",
+            "settlement": "rural",
+            "size": "small",
+            "hooks": [
+              {
+                "kind": "deploy",
+                "count": 1,
+                "requiredPass": 3
+              },
+              {
+                "kind": "egg-spawner",
+                "count": 3,
+                "requiredPass": 1,
+                "minDistanceFromDeploy": 12,
+                "maxNearestDistanceFromDeploy": 30,
+                "meta": {
+                  "hatchRadius": 3
+                }
+              },
+              {
+                "kind": "edge-spawn",
+                "count": 2,
+                "requiredPass": 1
+              },
+              {
+                "kind": "extraction",
+                "count": 1,
+                "requiredPass": 3
+              }
+            ],
+            "placeProfile": "lagos"
+          }
+        },
+        "trees": {
+          "tree-oil-palm": 42,
+          "tree-tropical-almond": 80
+        },
+        "buildings": 1,
+        "storeys": [2],
+        "groundRange": [0, 2],
+        "connectors": 3,
+        "metrics": {
+          "groundTiles": 2224,
+          "openTiles": 2037,
+          "coverAdjacency": 0.15316642120765833,
+          "wallAdjacency": 0.015709376534118802,
+          "coveredSidesMean": 0.20618556701030927,
+          "coveredShare": 0.16151202749140894,
+          "flankProofShare": 0.037800687285223365,
+          "closedSidesMean": 0.5174275895925381,
+          "shelteredShare": 0.36671575846833576,
+          "backToWallShare": 0.12812960235640647,
+          "highCoverPer100": 6.025179856115108,
+          "lowCoverPer100": 0.8093525179856115,
+          "interiorPropsPerBuilding": 20,
+          "slopes": 200,
+          "slopeShare": 1,
+          "steps": {
+            "flat": 4080,
+            "half": 252,
+            "cliff": 2
+          },
+          "ramps": 2,
+          "footprintMean": 80,
+          "roomsPerFloor": 6.5,
+          "corridorBuildings": 1,
+          "stairs": 1,
+          "ladders": 0,
+          "maxFloors": 2,
+          "hatchSpaceMin": 12,
+          "hatchSpaceMean": 18
+        }
+      }
+    },
+    {
+      "seed": "1892582247",
+      "settlement": "rural",
+      "size": "medium",
+      "before": {
+        "recipe": {
+          "seed": "1892582247",
+          "params": {
+            "archetype": "settlement",
+            "biome": "temperate",
+            "settlement": "rural",
+            "size": "medium",
+            "hooks": [
+              {
+                "kind": "deploy",
+                "count": 1,
+                "requiredPass": 3
+              },
+              {
+                "kind": "egg-spawner",
+                "count": 3,
+                "requiredPass": 1,
+                "minDistanceFromDeploy": 12,
+                "maxNearestDistanceFromDeploy": 30,
+                "meta": {
+                  "hatchRadius": 3
+                }
+              },
+              {
+                "kind": "edge-spawn",
+                "count": 2,
+                "requiredPass": 1
+              },
+              {
+                "kind": "extraction",
+                "count": 1,
+                "requiredPass": 3
+              }
+            ]
+          }
+        },
+        "trees": {
+          "tree-pine": 78,
+          "tree-oak": 216
+        },
+        "buildings": 1,
+        "storeys": [2],
+        "groundRange": [0, 4],
+        "connectors": 14,
+        "metrics": {
+          "groundTiles": 5104,
+          "openTiles": 4702,
+          "coverAdjacency": 0.14547001276052743,
+          "wallAdjacency": 0.00616758826031476,
+          "coveredSidesMean": 0.18672905146746066,
+          "coveredShare": 0.14929817099106762,
+          "flankProofShare": 0.03253934495959166,
+          "closedSidesMean": 0.966184602296895,
+          "shelteredShare": 0.6201616333475117,
+          "backToWallShare": 0.29221607826456825,
+          "highCoverPer100": 6.25,
+          "lowCoverPer100": 0.9404388714733543,
+          "interiorPropsPerBuilding": 20,
+          "slopes": 1350,
+          "slopeShare": 1,
+          "steps": {
+            "flat": 8241,
+            "half": 1774,
+            "cliff": 31
+          },
+          "ramps": 13,
+          "footprintMean": 80,
+          "roomsPerFloor": 6.5,
+          "corridorBuildings": 1,
+          "stairs": 1,
+          "ladders": 0,
+          "maxFloors": 2,
+          "hatchSpaceMin": 14,
+          "hatchSpaceMean": 18.333333333333332
+        }
+      },
+      "after": {
+        "recipe": {
+          "seed": "1892582247",
+          "params": {
+            "archetype": "settlement",
+            "biome": "temperate",
+            "settlement": "rural",
+            "size": "medium",
+            "hooks": [
+              {
+                "kind": "deploy",
+                "count": 1,
+                "requiredPass": 3
+              },
+              {
+                "kind": "egg-spawner",
+                "count": 3,
+                "requiredPass": 1,
+                "minDistanceFromDeploy": 12,
+                "maxNearestDistanceFromDeploy": 30,
+                "meta": {
+                  "hatchRadius": 3
+                }
+              },
+              {
+                "kind": "edge-spawn",
+                "count": 2,
+                "requiredPass": 1
+              },
+              {
+                "kind": "extraction",
+                "count": 1,
+                "requiredPass": 3
+              }
+            ],
+            "placeProfile": "lagos"
+          }
+        },
+        "trees": {
+          "tree-oil-palm": 78,
+          "tree-tropical-almond": 223
+        },
+        "buildings": 1,
+        "storeys": [2],
+        "groundRange": [0, 2],
+        "connectors": 7,
+        "metrics": {
+          "groundTiles": 5104,
+          "openTiles": 4696,
+          "coverAdjacency": 0.1582197614991482,
+          "wallAdjacency": 0.0068143100511073255,
+          "coveredSidesMean": 0.21337308347529813,
+          "coveredShare": 0.1624787052810903,
+          "flankProofShare": 0.04195059625212947,
+          "closedSidesMean": 0.48594548551959116,
+          "shelteredShare": 0.3494463373083475,
+          "backToWallShare": 0.11435264054514481,
+          "highCoverPer100": 6.36755485893417,
+          "lowCoverPer100": 0.9404388714733543,
+          "interiorPropsPerBuilding": 20,
+          "slopes": 415,
+          "slopeShare": 1,
+          "steps": {
+            "flat": 9505,
+            "half": 520,
+            "cliff": 21
+          },
+          "ramps": 6,
+          "footprintMean": 80,
+          "roomsPerFloor": 6.5,
+          "corridorBuildings": 1,
+          "stairs": 1,
+          "ladders": 0,
+          "maxFloors": 2,
+          "hatchSpaceMin": 15,
+          "hatchSpaceMean": 21.666666666666668
+        }
+      }
+    },
+    {
+      "seed": "1892582247",
+      "settlement": "rural",
+      "size": "large",
+      "before": {
+        "recipe": {
+          "seed": "1892582247",
+          "params": {
+            "archetype": "settlement",
+            "biome": "temperate",
+            "settlement": "rural",
+            "size": "large",
+            "hooks": [
+              {
+                "kind": "deploy",
+                "count": 1,
+                "requiredPass": 3
+              },
+              {
+                "kind": "egg-spawner",
+                "count": 3,
+                "requiredPass": 1,
+                "minDistanceFromDeploy": 12,
+                "maxNearestDistanceFromDeploy": 30,
+                "meta": {
+                  "hatchRadius": 3
+                }
+              },
+              {
+                "kind": "edge-spawn",
+                "count": 2,
+                "requiredPass": 1
+              },
+              {
+                "kind": "extraction",
+                "count": 1,
+                "requiredPass": 3
+              }
+            ]
+          }
+        },
+        "trees": {
+          "tree-pine": 193,
+          "tree-oak": 397
+        },
+        "buildings": 2,
+        "storeys": [2, 2],
+        "groundRange": [0, 4],
+        "connectors": 18,
+        "metrics": {
+          "groundTiles": 9066,
+          "openTiles": 8312,
+          "coverAdjacency": 0.1529114533205005,
+          "wallAdjacency": 0.0052935514918190565,
+          "coveredSidesMean": 0.1973051010587103,
+          "coveredShare": 0.15567853705486046,
+          "flankProofShare": 0.03512993262752647,
+          "closedSidesMean": 0.9843599615014437,
+          "shelteredShare": 0.6242781520692974,
+          "backToWallShare": 0.2998075072184793,
+          "highCoverPer100": 6.971100816236488,
+          "lowCoverPer100": 0.9596293845135672,
+          "interiorPropsPerBuilding": 17,
+          "slopes": 2519,
+          "slopeShare": 1,
+          "steps": {
+            "flat": 14531,
+            "half": 3319,
+            "cliff": 55
+          },
+          "ramps": 16,
+          "footprintMean": 75,
+          "roomsPerFloor": 6.25,
+          "corridorBuildings": 2,
+          "stairs": 2,
+          "ladders": 0,
+          "maxFloors": 2,
+          "hatchSpaceMin": 21,
+          "hatchSpaceMean": 22
+        }
+      },
+      "after": {
+        "recipe": {
+          "seed": "1892582247",
+          "params": {
+            "archetype": "settlement",
+            "biome": "temperate",
+            "settlement": "rural",
+            "size": "large",
+            "hooks": [
+              {
+                "kind": "deploy",
+                "count": 1,
+                "requiredPass": 3
+              },
+              {
+                "kind": "egg-spawner",
+                "count": 3,
+                "requiredPass": 1,
+                "minDistanceFromDeploy": 12,
+                "maxNearestDistanceFromDeploy": 30,
+                "meta": {
+                  "hatchRadius": 3
+                }
+              },
+              {
+                "kind": "edge-spawn",
+                "count": 2,
+                "requiredPass": 1
+              },
+              {
+                "kind": "extraction",
+                "count": 1,
+                "requiredPass": 3
+              }
+            ],
+            "placeProfile": "lagos"
+          }
+        },
+        "trees": {
+          "tree-oil-palm": 193,
+          "tree-tropical-almond": 397
+        },
+        "buildings": 2,
+        "storeys": [2, 2],
+        "groundRange": [0, 2],
+        "connectors": 9,
+        "metrics": {
+          "groundTiles": 9066,
+          "openTiles": 8306,
+          "coverAdjacency": 0.17517457259812183,
+          "wallAdjacency": 0.00638092944859138,
+          "coveredSidesMean": 0.23549241512159885,
+          "coveredShare": 0.17842523477004574,
+          "flankProofShare": 0.04671321935949916,
+          "closedSidesMean": 0.45786178666024563,
+          "shelteredShare": 0.327233325307007,
+          "backToWallShare": 0.10907777510233566,
+          "highCoverPer100": 6.982131039046989,
+          "lowCoverPer100": 1.014780498566071,
+          "interiorPropsPerBuilding": 17,
+          "slopes": 627,
+          "slopeShare": 1,
+          "steps": {
+            "flat": 17078,
+            "half": 812,
+            "cliff": 15
+          },
+          "ramps": 7,
+          "footprintMean": 75,
+          "roomsPerFloor": 6.25,
+          "corridorBuildings": 2,
+          "stairs": 2,
+          "ladders": 0,
+          "maxFloors": 2,
+          "hatchSpaceMin": 14,
+          "hatchSpaceMean": 20.333333333333332
+        }
+      }
+    },
+    {
+      "seed": "1892582247",
+      "settlement": "town",
+      "size": "small",
+      "before": {
+        "recipe": {
+          "seed": "1892582247",
+          "params": {
+            "archetype": "settlement",
+            "biome": "temperate",
+            "settlement": "town",
+            "size": "small",
+            "hooks": [
+              {
+                "kind": "deploy",
+                "count": 1,
+                "requiredPass": 3
+              },
+              {
+                "kind": "egg-spawner",
+                "count": 3,
+                "requiredPass": 1,
+                "minDistanceFromDeploy": 12,
+                "maxNearestDistanceFromDeploy": 30,
+                "meta": {
+                  "hatchRadius": 3
+                }
+              },
+              {
+                "kind": "edge-spawn",
+                "count": 2,
+                "requiredPass": 1
+              },
+              {
+                "kind": "extraction",
+                "count": 1,
+                "requiredPass": 3
+              }
+            ]
+          }
+        },
+        "trees": {
+          "tree-pine": 36,
+          "tree-oak": 39
+        },
+        "buildings": 4,
+        "storeys": [2, 3, 2, 2],
+        "groundRange": [0, 4],
+        "connectors": 40,
+        "metrics": {
+          "groundTiles": 2016,
+          "openTiles": 1868,
+          "coverAdjacency": 0.11134903640256959,
+          "wallAdjacency": 0.07922912205567452,
+          "coveredSidesMean": 0.21573875802997858,
+          "coveredShare": 0.17291220556745182,
+          "flankProofShare": 0.03693790149892934,
+          "closedSidesMean": 0.7938972162740899,
+          "shelteredShare": 0.5331905781584583,
+          "backToWallShare": 0.21627408993576017,
+          "highCoverPer100": 4.017857142857143,
+          "lowCoverPer100": 1.5873015873015872,
+          "interiorPropsPerBuilding": 22,
+          "slopes": 292,
+          "slopeShare": 1,
+          "steps": {
+            "flat": 3339,
+            "half": 419,
+            "cliff": 109
+          },
+          "ramps": 28,
+          "footprintMean": 72,
+          "roomsPerFloor": 3.6666666666666665,
+          "corridorBuildings": 1,
+          "stairs": 9,
+          "ladders": 3,
+          "maxFloors": 3,
+          "hatchSpaceMin": 11,
+          "hatchSpaceMean": 30
+        }
+      },
+      "after": {
+        "recipe": {
+          "seed": "1892582247",
+          "params": {
+            "archetype": "settlement",
+            "biome": "temperate",
+            "settlement": "town",
+            "size": "small",
+            "hooks": [
+              {
+                "kind": "deploy",
+                "count": 1,
+                "requiredPass": 3
+              },
+              {
+                "kind": "egg-spawner",
+                "count": 3,
+                "requiredPass": 1,
+                "minDistanceFromDeploy": 12,
+                "maxNearestDistanceFromDeploy": 30,
+                "meta": {
+                  "hatchRadius": 3
+                }
+              },
+              {
+                "kind": "edge-spawn",
+                "count": 2,
+                "requiredPass": 1
+              },
+              {
+                "kind": "extraction",
+                "count": 1,
+                "requiredPass": 3
+              }
+            ],
+            "placeProfile": "lagos"
+          }
+        },
+        "trees": {
+          "tree-oil-palm": 36,
+          "tree-tropical-almond": 39
+        },
+        "buildings": 4,
+        "storeys": [2, 3, 2, 2],
+        "groundRange": [0, 2],
+        "connectors": 20,
+        "metrics": {
+          "groundTiles": 2028,
+          "openTiles": 1879,
+          "coverAdjacency": 0.12240553485896753,
+          "wallAdjacency": 0.06279936136242682,
+          "coveredSidesMean": 0.20649281532730177,
+          "coveredShare": 0.16498137307078234,
+          "flankProofShare": 0.03512506652474721,
+          "closedSidesMean": 0.5002660989888238,
+          "shelteredShare": 0.35923363491218735,
+          "backToWallShare": 0.12187333688131985,
+          "highCoverPer100": 3.9940828402366866,
+          "lowCoverPer100": 1.6272189349112427,
+          "interiorPropsPerBuilding": 23.5,
+          "slopes": 119,
+          "slopeShare": 1,
+          "steps": {
+            "flat": 3657,
+            "half": 208,
+            "cliff": 28
+          },
+          "ramps": 8,
+          "footprintMean": 69,
+          "roomsPerFloor": 4.111111111111111,
+          "corridorBuildings": 1,
+          "stairs": 9,
+          "ladders": 3,
+          "maxFloors": 3,
+          "hatchSpaceMin": 9,
+          "hatchSpaceMean": 20.333333333333332
+        }
+      }
+    },
+    {
+      "seed": "1892582247",
+      "settlement": "town",
+      "size": "medium",
+      "before": {
+        "recipe": {
+          "seed": "1892582247",
+          "params": {
+            "archetype": "settlement",
+            "biome": "temperate",
+            "settlement": "town",
+            "size": "medium",
+            "hooks": [
+              {
+                "kind": "deploy",
+                "count": 1,
+                "requiredPass": 3
+              },
+              {
+                "kind": "egg-spawner",
+                "count": 3,
+                "requiredPass": 1,
+                "minDistanceFromDeploy": 12,
+                "maxNearestDistanceFromDeploy": 30,
+                "meta": {
+                  "hatchRadius": 3
+                }
+              },
+              {
+                "kind": "edge-spawn",
+                "count": 2,
+                "requiredPass": 1
+              },
+              {
+                "kind": "extraction",
+                "count": 1,
+                "requiredPass": 3
+              }
+            ]
+          }
+        },
+        "trees": {
+          "tree-pine": 78,
+          "tree-oak": 185
+        },
+        "buildings": 8,
+        "storeys": [2, 3, 2, 2, 1, 3, 3, 3],
+        "groundRange": [0, 4],
+        "connectors": 62,
+        "metrics": {
+          "groundTiles": 4679,
+          "openTiles": 4302,
+          "coverAdjacency": 0.1406322640632264,
+          "wallAdjacency": 0.05416085541608554,
+          "coveredSidesMean": 0.22524407252440726,
+          "coveredShare": 0.18154346815434683,
+          "flankProofShare": 0.038354253835425386,
+          "closedSidesMean": 0.8837749883774988,
+          "shelteredShare": 0.5818224081822408,
+          "backToWallShare": 0.25546257554625756,
+          "highCoverPer100": 6.091045095105792,
+          "lowCoverPer100": 1.2182090190211583,
+          "interiorPropsPerBuilding": 19.625,
+          "slopes": 939,
+          "slopeShare": 1,
+          "steps": {
+            "flat": 7608,
+            "half": 1286,
+            "cliff": 191
+          },
+          "ramps": 39,
+          "footprintMean": 63.125,
+          "roomsPerFloor": 4.105263157894737,
+          "corridorBuildings": 3,
+          "stairs": 19,
+          "ladders": 4,
+          "maxFloors": 3,
+          "hatchSpaceMin": 10,
+          "hatchSpaceMean": 16
+        }
+      },
+      "after": {
+        "recipe": {
+          "seed": "1892582247",
+          "params": {
+            "archetype": "settlement",
+            "biome": "temperate",
+            "settlement": "town",
+            "size": "medium",
+            "hooks": [
+              {
+                "kind": "deploy",
+                "count": 1,
+                "requiredPass": 3
+              },
+              {
+                "kind": "egg-spawner",
+                "count": 3,
+                "requiredPass": 1,
+                "minDistanceFromDeploy": 12,
+                "maxNearestDistanceFromDeploy": 30,
+                "meta": {
+                  "hatchRadius": 3
+                }
+              },
+              {
+                "kind": "edge-spawn",
+                "count": 2,
+                "requiredPass": 1
+              },
+              {
+                "kind": "extraction",
+                "count": 1,
+                "requiredPass": 3
+              }
+            ],
+            "placeProfile": "lagos"
+          }
+        },
+        "trees": {
+          "tree-oil-palm": 73,
+          "tree-tropical-almond": 187
+        },
+        "buildings": 8,
+        "storeys": [2, 3, 2, 2, 1, 3, 3, 3],
+        "groundRange": [0, 2],
+        "connectors": 39,
+        "metrics": {
+          "groundTiles": 4673,
+          "openTiles": 4299,
+          "coverAdjacency": 0.14980227959990697,
+          "wallAdjacency": 0.05350081414282391,
+          "coveredSidesMean": 0.2356361944638288,
+          "coveredShare": 0.1886485229123052,
+          "flankProofShare": 0.038148406606187485,
+          "closedSidesMean": 0.4819725517562224,
+          "shelteredShare": 0.36054896487555244,
+          "backToWallShare": 0.10327983251919051,
+          "highCoverPer100": 6.034667237320779,
+          "lowCoverPer100": 1.2197731649903703,
+          "interiorPropsPerBuilding": 20.5,
+          "slopes": 344,
+          "slopeShare": 1,
+          "steps": {
+            "flat": 8540,
+            "half": 461,
+            "cliff": 71
+          },
+          "ramps": 16,
+          "footprintMean": 63.875,
+          "roomsPerFloor": 4.157894736842105,
+          "corridorBuildings": 3,
+          "stairs": 19,
+          "ladders": 4,
+          "maxFloors": 3,
+          "hatchSpaceMin": 11,
+          "hatchSpaceMean": 17.333333333333332
+        }
+      }
+    },
+    {
+      "seed": "1892582247",
+      "settlement": "town",
+      "size": "large",
+      "before": {
+        "recipe": {
+          "seed": "1892582247",
+          "params": {
+            "archetype": "settlement",
+            "biome": "temperate",
+            "settlement": "town",
+            "size": "large",
+            "hooks": [
+              {
+                "kind": "deploy",
+                "count": 1,
+                "requiredPass": 3
+              },
+              {
+                "kind": "egg-spawner",
+                "count": 3,
+                "requiredPass": 1,
+                "minDistanceFromDeploy": 12,
+                "maxNearestDistanceFromDeploy": 30,
+                "meta": {
+                  "hatchRadius": 3
+                }
+              },
+              {
+                "kind": "edge-spawn",
+                "count": 2,
+                "requiredPass": 1
+              },
+              {
+                "kind": "extraction",
+                "count": 1,
+                "requiredPass": 3
+              }
+            ]
+          }
+        },
+        "trees": {
+          "tree-pine": 144,
+          "tree-oak": 317
+        },
+        "buildings": 14,
+        "storeys": [2, 3, 2, 2, 1, 3, 3, 3, 3, 3, 2, 2, 3, 3],
+        "groundRange": [0, 4],
+        "connectors": 109,
+        "metrics": {
+          "groundTiles": 8373,
+          "openTiles": 7731,
+          "coverAdjacency": 0.13646358815159745,
+          "wallAdjacency": 0.050704954080972704,
+          "coveredSidesMean": 0.22351571594877764,
+          "coveredShare": 0.17410425559436038,
+          "flankProofShare": 0.04139179924977364,
+          "closedSidesMean": 0.9234251713879188,
+          "shelteredShare": 0.5994049928857845,
+          "backToWallShare": 0.2711162850860173,
+          "highCoverPer100": 5.899916397945778,
+          "lowCoverPer100": 1.349576018153589,
+          "interiorPropsPerBuilding": 19.071428571428573,
+          "slopes": 1886,
+          "slopeShare": 1,
+          "steps": {
+            "flat": 13458,
+            "half": 2537,
+            "cliff": 340
+          },
+          "ramps": 72,
+          "footprintMean": 60.214285714285715,
+          "roomsPerFloor": 4.6571428571428575,
+          "corridorBuildings": 7,
+          "stairs": 33,
+          "ladders": 4,
+          "maxFloors": 3,
+          "hatchSpaceMin": 11,
+          "hatchSpaceMean": 17.666666666666668
+        }
+      },
+      "after": {
+        "recipe": {
+          "seed": "1892582247",
+          "params": {
+            "archetype": "settlement",
+            "biome": "temperate",
+            "settlement": "town",
+            "size": "large",
+            "hooks": [
+              {
+                "kind": "deploy",
+                "count": 1,
+                "requiredPass": 3
+              },
+              {
+                "kind": "egg-spawner",
+                "count": 3,
+                "requiredPass": 1,
+                "minDistanceFromDeploy": 12,
+                "maxNearestDistanceFromDeploy": 30,
+                "meta": {
+                  "hatchRadius": 3
+                }
+              },
+              {
+                "kind": "edge-spawn",
+                "count": 2,
+                "requiredPass": 1
+              },
+              {
+                "kind": "extraction",
+                "count": 1,
+                "requiredPass": 3
+              }
+            ],
+            "placeProfile": "lagos"
+          }
+        },
+        "trees": {
+          "tree-oil-palm": 144,
+          "tree-tropical-almond": 316
+        },
+        "buildings": 14,
+        "storeys": [2, 3, 2, 2, 1, 3, 3, 3, 3, 3, 2, 2, 3, 3],
+        "groundRange": [0, 2],
+        "connectors": 63,
+        "metrics": {
+          "groundTiles": 8373,
+          "openTiles": 7732,
+          "coverAdjacency": 0.16063114330056907,
+          "wallAdjacency": 0.04655975168132437,
+          "coveredSidesMean": 0.25116399379203314,
+          "coveredShare": 0.19335230212105536,
+          "flankProofShare": 0.04759441282979824,
+          "closedSidesMean": 0.45344024831867563,
+          "shelteredShare": 0.33678220382824625,
+          "backToWallShare": 0.09661148473874806,
+          "highCoverPer100": 5.887973247342649,
+          "lowCoverPer100": 1.349576018153589,
+          "interiorPropsPerBuilding": 19.142857142857142,
+          "slopes": 556,
+          "slopeShare": 1,
+          "steps": {
+            "flat": 15550,
+            "half": 698,
+            "cliff": 87
+          },
+          "ramps": 26,
+          "footprintMean": 60.214285714285715,
+          "roomsPerFloor": 4.6571428571428575,
+          "corridorBuildings": 7,
+          "stairs": 33,
+          "ladders": 4,
+          "maxFloors": 3,
+          "hatchSpaceMin": 17,
+          "hatchSpaceMean": 20.333333333333332
+        }
+      }
+    },
+    {
+      "seed": "1892582247",
+      "settlement": "city",
+      "size": "small",
+      "before": {
+        "recipe": {
+          "seed": "1892582247",
+          "params": {
+            "archetype": "settlement",
+            "biome": "temperate",
+            "settlement": "city",
+            "size": "small",
+            "hooks": [
+              {
+                "kind": "deploy",
+                "count": 1,
+                "requiredPass": 3
+              },
+              {
+                "kind": "egg-spawner",
+                "count": 3,
+                "requiredPass": 1,
+                "minDistanceFromDeploy": 12,
+                "maxNearestDistanceFromDeploy": 30,
+                "meta": {
+                  "hatchRadius": 3
+                }
+              },
+              {
+                "kind": "edge-spawn",
+                "count": 2,
+                "requiredPass": 1
+              },
+              {
+                "kind": "extraction",
+                "count": 1,
+                "requiredPass": 3
+              }
+            ]
+          }
+        },
+        "trees": {
+          "tree-pine": 21,
+          "tree-oak": 22
+        },
+        "buildings": 6,
+        "storeys": [2, 2, 2, 4, 2, 2],
+        "groundRange": [1, 1],
+        "connectors": 15,
+        "metrics": {
+          "groundTiles": 2004,
+          "openTiles": 1891,
+          "coverAdjacency": 0.06821787414066631,
+          "wallAdjacency": 0.07720782654680064,
+          "coveredSidesMean": 0.15230037017451084,
+          "coveredShare": 0.12321523003701745,
+          "flankProofShare": 0.023796932839767318,
+          "closedSidesMean": 0.19196192490745637,
+          "shelteredShare": 0.165520888418826,
+          "backToWallShare": 0.022739291380222106,
+          "highCoverPer100": 2.2954091816367264,
+          "lowCoverPer100": 1.5968063872255487,
+          "interiorPropsPerBuilding": 14.666666666666666,
+          "slopes": 0,
+          "slopeShare": 1,
+          "steps": {
+            "flat": 3827,
+            "half": 0,
+            "cliff": 0
+          },
+          "ramps": 0,
+          "footprintMean": 50,
+          "roomsPerFloor": 3.142857142857143,
+          "corridorBuildings": 0,
+          "stairs": 12,
+          "ladders": 3,
+          "maxFloors": 4,
+          "hatchSpaceMin": 8,
+          "hatchSpaceMean": 13.333333333333334
+        }
+      },
+      "after": {
+        "recipe": {
+          "seed": "1892582247",
+          "params": {
+            "archetype": "settlement",
+            "biome": "temperate",
+            "settlement": "city",
+            "size": "small",
+            "hooks": [
+              {
+                "kind": "deploy",
+                "count": 1,
+                "requiredPass": 3
+              },
+              {
+                "kind": "egg-spawner",
+                "count": 3,
+                "requiredPass": 1,
+                "minDistanceFromDeploy": 12,
+                "maxNearestDistanceFromDeploy": 30,
+                "meta": {
+                  "hatchRadius": 3
+                }
+              },
+              {
+                "kind": "edge-spawn",
+                "count": 2,
+                "requiredPass": 1
+              },
+              {
+                "kind": "extraction",
+                "count": 1,
+                "requiredPass": 3
+              }
+            ],
+            "placeProfile": "lagos"
+          }
+        },
+        "trees": {
+          "tree-oil-palm": 21,
+          "tree-tropical-almond": 22
+        },
+        "buildings": 6,
+        "storeys": [2, 2, 2, 4, 2, 2],
+        "groundRange": [0, 0],
+        "connectors": 15,
+        "metrics": {
+          "groundTiles": 2004,
+          "openTiles": 1891,
+          "coverAdjacency": 0.06821787414066631,
+          "wallAdjacency": 0.07720782654680064,
+          "coveredSidesMean": 0.15230037017451084,
+          "coveredShare": 0.12321523003701745,
+          "flankProofShare": 0.023796932839767318,
+          "closedSidesMean": 0.19196192490745637,
+          "shelteredShare": 0.165520888418826,
+          "backToWallShare": 0.022739291380222106,
+          "highCoverPer100": 2.2954091816367264,
+          "lowCoverPer100": 1.5968063872255487,
+          "interiorPropsPerBuilding": 14.666666666666666,
+          "slopes": 0,
+          "slopeShare": 1,
+          "steps": {
+            "flat": 3827,
+            "half": 0,
+            "cliff": 0
+          },
+          "ramps": 0,
+          "footprintMean": 50,
+          "roomsPerFloor": 3.142857142857143,
+          "corridorBuildings": 0,
+          "stairs": 12,
+          "ladders": 3,
+          "maxFloors": 4,
+          "hatchSpaceMin": 8,
+          "hatchSpaceMean": 13.333333333333334
+        }
+      }
+    },
+    {
+      "seed": "1892582247",
+      "settlement": "city",
+      "size": "medium",
+      "before": {
+        "recipe": {
+          "seed": "1892582247",
+          "params": {
+            "archetype": "settlement",
+            "biome": "temperate",
+            "settlement": "city",
+            "size": "medium",
+            "hooks": [
+              {
+                "kind": "deploy",
+                "count": 1,
+                "requiredPass": 3
+              },
+              {
+                "kind": "egg-spawner",
+                "count": 3,
+                "requiredPass": 1,
+                "minDistanceFromDeploy": 12,
+                "maxNearestDistanceFromDeploy": 30,
+                "meta": {
+                  "hatchRadius": 3
+                }
+              },
+              {
+                "kind": "edge-spawn",
+                "count": 2,
+                "requiredPass": 1
+              },
+              {
+                "kind": "extraction",
+                "count": 1,
+                "requiredPass": 3
+              }
+            ]
+          }
+        },
+        "trees": {
+          "tree-pine": 36,
+          "tree-oak": 50
+        },
+        "buildings": 13,
+        "storeys": [2, 2, 4, 4, 2, 2, 5, 4, 3, 4, 2, 2, 4],
+        "groundRange": [1, 1],
+        "connectors": 38,
+        "metrics": {
+          "groundTiles": 4572,
+          "openTiles": 4396,
+          "coverAdjacency": 0.07688808007279345,
+          "wallAdjacency": 0.07597816196542312,
+          "coveredSidesMean": 0.16219290263876252,
+          "coveredShare": 0.13148316651501366,
+          "flankProofShare": 0.02616014558689718,
+          "closedSidesMean": 0.1626478616924477,
+          "shelteredShare": 0.14058234758871702,
+          "backToWallShare": 0.0186533212010919,
+          "highCoverPer100": 2.077865266841645,
+          "lowCoverPer100": 1.006124234470691,
+          "interiorPropsPerBuilding": 17.53846153846154,
+          "slopes": 0,
+          "slopeShare": 1,
+          "steps": {
+            "flat": 8821,
+            "half": 0,
+            "cliff": 0
+          },
+          "ramps": 0,
+          "footprintMean": 47.07692307692308,
+          "roomsPerFloor": 4.1,
+          "corridorBuildings": 1,
+          "stairs": 36,
+          "ladders": 2,
+          "maxFloors": 5,
+          "hatchSpaceMin": 7,
+          "hatchSpaceMean": 21.333333333333332
+        }
+      },
+      "after": {
+        "recipe": {
+          "seed": "1892582247",
+          "params": {
+            "archetype": "settlement",
+            "biome": "temperate",
+            "settlement": "city",
+            "size": "medium",
+            "hooks": [
+              {
+                "kind": "deploy",
+                "count": 1,
+                "requiredPass": 3
+              },
+              {
+                "kind": "egg-spawner",
+                "count": 3,
+                "requiredPass": 1,
+                "minDistanceFromDeploy": 12,
+                "maxNearestDistanceFromDeploy": 30,
+                "meta": {
+                  "hatchRadius": 3
+                }
+              },
+              {
+                "kind": "edge-spawn",
+                "count": 2,
+                "requiredPass": 1
+              },
+              {
+                "kind": "extraction",
+                "count": 1,
+                "requiredPass": 3
+              }
+            ],
+            "placeProfile": "lagos"
+          }
+        },
+        "trees": {
+          "tree-oil-palm": 36,
+          "tree-tropical-almond": 50
+        },
+        "buildings": 13,
+        "storeys": [2, 2, 4, 4, 2, 2, 5, 4, 3, 4, 2, 2, 4],
+        "groundRange": [0, 0],
+        "connectors": 38,
+        "metrics": {
+          "groundTiles": 4572,
+          "openTiles": 4396,
+          "coverAdjacency": 0.07688808007279345,
+          "wallAdjacency": 0.07597816196542312,
+          "coveredSidesMean": 0.16219290263876252,
+          "coveredShare": 0.13148316651501366,
+          "flankProofShare": 0.02616014558689718,
+          "closedSidesMean": 0.1626478616924477,
+          "shelteredShare": 0.14058234758871702,
+          "backToWallShare": 0.0186533212010919,
+          "highCoverPer100": 2.077865266841645,
+          "lowCoverPer100": 1.006124234470691,
+          "interiorPropsPerBuilding": 17.53846153846154,
+          "slopes": 0,
+          "slopeShare": 1,
+          "steps": {
+            "flat": 8821,
+            "half": 0,
+            "cliff": 0
+          },
+          "ramps": 0,
+          "footprintMean": 47.07692307692308,
+          "roomsPerFloor": 4.1,
+          "corridorBuildings": 1,
+          "stairs": 36,
+          "ladders": 2,
+          "maxFloors": 5,
+          "hatchSpaceMin": 7,
+          "hatchSpaceMean": 21.333333333333332
+        }
+      }
+    },
+    {
+      "seed": "1892582247",
+      "settlement": "city",
+      "size": "large",
+      "before": {
+        "recipe": {
+          "seed": "1892582247",
+          "params": {
+            "archetype": "settlement",
+            "biome": "temperate",
+            "settlement": "city",
+            "size": "large",
+            "hooks": [
+              {
+                "kind": "deploy",
+                "count": 1,
+                "requiredPass": 3
+              },
+              {
+                "kind": "egg-spawner",
+                "count": 3,
+                "requiredPass": 1,
+                "minDistanceFromDeploy": 12,
+                "maxNearestDistanceFromDeploy": 30,
+                "meta": {
+                  "hatchRadius": 3
+                }
+              },
+              {
+                "kind": "edge-spawn",
+                "count": 2,
+                "requiredPass": 1
+              },
+              {
+                "kind": "extraction",
+                "count": 1,
+                "requiredPass": 3
+              }
+            ]
+          }
+        },
+        "trees": {
+          "tree-pine": 47,
+          "tree-oak": 124
+        },
+        "buildings": 27,
+        "storeys": [
+          2, 2, 2, 2, 2, 4, 5, 4, 3, 4, 2, 2, 4, 4, 3, 2, 5, 4, 2, 2, 2, 2, 4,
+          2, 3, 4, 2
+        ],
+        "groundRange": [2, 2],
+        "connectors": 75,
+        "metrics": {
+          "groundTiles": 7824,
+          "openTiles": 7508,
+          "coverAdjacency": 0.08670751198721365,
+          "wallAdjacency": 0.09496537027171018,
+          "coveredSidesMean": 0.18819925412892916,
+          "coveredShare": 0.15450186467767715,
+          "flankProofShare": 0.0270378263185935,
+          "closedSidesMean": 0.1599627064464571,
+          "shelteredShare": 0.1361214704315397,
+          "backToWallShare": 0.020245071923281833,
+          "highCoverPer100": 2.377300613496933,
+          "lowCoverPer100": 1.2142126789366052,
+          "interiorPropsPerBuilding": 19.40740740740741,
+          "slopes": 0,
+          "slopeShare": 1,
+          "steps": {
+            "flat": 15066,
+            "half": 0,
+            "cliff": 0
+          },
+          "ramps": 0,
+          "footprintMean": 51.55555555555556,
+          "roomsPerFloor": 4.2025316455696204,
+          "corridorBuildings": 5,
+          "stairs": 70,
+          "ladders": 5,
+          "maxFloors": 5,
+          "hatchSpaceMin": 21,
+          "hatchSpaceMean": 29.333333333333332
+        }
+      },
+      "after": {
+        "recipe": {
+          "seed": "1892582247",
+          "params": {
+            "archetype": "settlement",
+            "biome": "temperate",
+            "settlement": "city",
+            "size": "large",
+            "hooks": [
+              {
+                "kind": "deploy",
+                "count": 1,
+                "requiredPass": 3
+              },
+              {
+                "kind": "egg-spawner",
+                "count": 3,
+                "requiredPass": 1,
+                "minDistanceFromDeploy": 12,
+                "maxNearestDistanceFromDeploy": 30,
+                "meta": {
+                  "hatchRadius": 3
+                }
+              },
+              {
+                "kind": "edge-spawn",
+                "count": 2,
+                "requiredPass": 1
+              },
+              {
+                "kind": "extraction",
+                "count": 1,
+                "requiredPass": 3
+              }
+            ],
+            "placeProfile": "lagos"
+          }
+        },
+        "trees": {
+          "tree-oil-palm": 47,
+          "tree-tropical-almond": 124
+        },
+        "buildings": 27,
+        "storeys": [
+          2, 2, 2, 2, 2, 4, 5, 4, 3, 4, 2, 2, 4, 4, 3, 2, 5, 4, 2, 2, 2, 2, 4,
+          2, 3, 4, 2
+        ],
+        "groundRange": [0, 0],
+        "connectors": 75,
+        "metrics": {
+          "groundTiles": 7824,
+          "openTiles": 7508,
+          "coverAdjacency": 0.08670751198721365,
+          "wallAdjacency": 0.09496537027171018,
+          "coveredSidesMean": 0.18819925412892916,
+          "coveredShare": 0.15450186467767715,
+          "flankProofShare": 0.0270378263185935,
+          "closedSidesMean": 0.1599627064464571,
+          "shelteredShare": 0.1361214704315397,
+          "backToWallShare": 0.020245071923281833,
+          "highCoverPer100": 2.377300613496933,
+          "lowCoverPer100": 1.2142126789366052,
+          "interiorPropsPerBuilding": 19.40740740740741,
+          "slopes": 0,
+          "slopeShare": 1,
+          "steps": {
+            "flat": 15066,
+            "half": 0,
+            "cliff": 0
+          },
+          "ramps": 0,
+          "footprintMean": 51.55555555555556,
+          "roomsPerFloor": 4.2025316455696204,
+          "corridorBuildings": 5,
+          "stairs": 70,
+          "ladders": 5,
+          "maxFloors": 5,
+          "hatchSpaceMin": 21,
+          "hatchSpaceMean": 29.333333333333332
+        }
+      }
+    },
+    {
+      "seed": "1892582248",
+      "settlement": "rural",
+      "size": "small",
+      "before": {
+        "recipe": {
+          "seed": "1892582248",
+          "params": {
+            "archetype": "settlement",
+            "biome": "temperate",
+            "settlement": "rural",
+            "size": "small",
+            "hooks": [
+              {
+                "kind": "deploy",
+                "count": 1,
+                "requiredPass": 3
+              },
+              {
+                "kind": "egg-spawner",
+                "count": 3,
+                "requiredPass": 1,
+                "minDistanceFromDeploy": 12,
+                "maxNearestDistanceFromDeploy": 30,
+                "meta": {
+                  "hatchRadius": 3
+                }
+              },
+              {
+                "kind": "edge-spawn",
+                "count": 2,
+                "requiredPass": 1
+              },
+              {
+                "kind": "extraction",
+                "count": 1,
+                "requiredPass": 3
+              }
+            ]
+          }
+        },
+        "trees": {
+          "tree-oak": 96,
+          "tree-pine": 47
+        },
+        "buildings": 1,
+        "storeys": [2],
+        "groundRange": [0, 4],
+        "connectors": 10,
+        "metrics": {
+          "groundTiles": 2241,
+          "openTiles": 2026,
+          "coverAdjacency": 0.15004935834155972,
+          "wallAdjacency": 0.010365251727541954,
+          "coveredSidesMean": 0.20286278381046396,
+          "coveredShare": 0.1579466929911155,
+          "flankProofShare": 0.03751233958538993,
+          "closedSidesMean": 1.0676209279368214,
+          "shelteredShare": 0.6544916090819348,
+          "backToWallShare": 0.3272458045409674,
+          "highCoverPer100": 6.871932173136992,
+          "lowCoverPer100": 1.1601963409192326,
+          "interiorPropsPerBuilding": 15,
+          "slopes": 598,
+          "slopeShare": 1,
+          "steps": {
+            "flat": 3525,
+            "half": 804,
+            "cliff": 41
+          },
+          "ramps": 9,
+          "footprintMean": 63,
+          "roomsPerFloor": 5.5,
+          "corridorBuildings": 1,
+          "stairs": 1,
+          "ladders": 0,
+          "maxFloors": 2,
+          "hatchSpaceMin": 13,
+          "hatchSpaceMean": 16.666666666666668
+        }
+      },
+      "after": {
+        "recipe": {
+          "seed": "1892582248",
+          "params": {
+            "archetype": "settlement",
+            "biome": "temperate",
+            "settlement": "rural",
+            "size": "small",
+            "hooks": [
+              {
+                "kind": "deploy",
+                "count": 1,
+                "requiredPass": 3
+              },
+              {
+                "kind": "egg-spawner",
+                "count": 3,
+                "requiredPass": 1,
+                "minDistanceFromDeploy": 12,
+                "maxNearestDistanceFromDeploy": 30,
+                "meta": {
+                  "hatchRadius": 3
+                }
+              },
+              {
+                "kind": "edge-spawn",
+                "count": 2,
+                "requiredPass": 1
+              },
+              {
+                "kind": "extraction",
+                "count": 1,
+                "requiredPass": 3
+              }
+            ],
+            "placeProfile": "lagos"
+          }
+        },
+        "trees": {
+          "tree-tropical-almond": 96,
+          "tree-oil-palm": 47
+        },
+        "buildings": 1,
+        "storeys": [2],
+        "groundRange": [0, 2],
+        "connectors": 3,
+        "metrics": {
+          "groundTiles": 2241,
+          "openTiles": 2026,
+          "coverAdjacency": 0.16732477788746297,
+          "wallAdjacency": 0.014313919052319843,
+          "coveredSidesMean": 0.24086870681145114,
+          "coveredShare": 0.175715695952616,
+          "flankProofShare": 0.051826258637709774,
+          "closedSidesMean": 0.5384995064165844,
+          "shelteredShare": 0.368213228035538,
+          "backToWallShare": 0.13820335636722605,
+          "highCoverPer100": 6.871932173136992,
+          "lowCoverPer100": 1.1601963409192326,
+          "interiorPropsPerBuilding": 15,
+          "slopes": 143,
+          "slopeShare": 1,
+          "steps": {
+            "flat": 4137,
+            "half": 215,
+            "cliff": 18
+          },
+          "ramps": 2,
+          "footprintMean": 63,
+          "roomsPerFloor": 5.5,
+          "corridorBuildings": 1,
+          "stairs": 1,
+          "ladders": 0,
+          "maxFloors": 2,
+          "hatchSpaceMin": 6,
+          "hatchSpaceMean": 22.666666666666668
+        }
+      }
+    },
+    {
+      "seed": "1892582248",
+      "settlement": "rural",
+      "size": "medium",
+      "before": {
+        "recipe": {
+          "seed": "1892582248",
+          "params": {
+            "archetype": "settlement",
+            "biome": "temperate",
+            "settlement": "rural",
+            "size": "medium",
+            "hooks": [
+              {
+                "kind": "deploy",
+                "count": 1,
+                "requiredPass": 3
+              },
+              {
+                "kind": "egg-spawner",
+                "count": 3,
+                "requiredPass": 1,
+                "minDistanceFromDeploy": 12,
+                "maxNearestDistanceFromDeploy": 30,
+                "meta": {
+                  "hatchRadius": 3
+                }
+              },
+              {
+                "kind": "edge-spawn",
+                "count": 2,
+                "requiredPass": 1
+              },
+              {
+                "kind": "extraction",
+                "count": 1,
+                "requiredPass": 3
+              }
+            ]
+          }
+        },
+        "trees": {
+          "tree-oak": 174,
+          "tree-pine": 67
+        },
+        "buildings": 2,
+        "storeys": [2, 1],
+        "groundRange": [0, 4],
+        "connectors": 12,
+        "metrics": {
+          "groundTiles": 5065,
+          "openTiles": 4705,
+          "coverAdjacency": 0.12327311370882041,
+          "wallAdjacency": 0.009351753453772583,
+          "coveredSidesMean": 0.16301806588735387,
+          "coveredShare": 0.12943676939426144,
+          "flankProofShare": 0.027417640807651435,
+          "closedSidesMean": 0.9944739638682253,
+          "shelteredShare": 0.6178533475026567,
+          "backToWallShare": 0.3126461211477152,
+          "highCoverPer100": 5.468904244817374,
+          "lowCoverPer100": 0.9476801579466929,
+          "interiorPropsPerBuilding": 11,
+          "slopes": 1426,
+          "slopeShare": 1,
+          "steps": {
+            "flat": 8023,
+            "half": 1865,
+            "cliff": 67
+          },
+          "ramps": 11,
+          "footprintMean": 59.5,
+          "roomsPerFloor": 5.333333333333333,
+          "corridorBuildings": 2,
+          "stairs": 1,
+          "ladders": 0,
+          "maxFloors": 2,
+          "hatchSpaceMin": 9,
+          "hatchSpaceMean": 18.666666666666668
+        }
+      },
+      "after": {
+        "recipe": {
+          "seed": "1892582248",
+          "params": {
+            "archetype": "settlement",
+            "biome": "temperate",
+            "settlement": "rural",
+            "size": "medium",
+            "hooks": [
+              {
+                "kind": "deploy",
+                "count": 1,
+                "requiredPass": 3
+              },
+              {
+                "kind": "egg-spawner",
+                "count": 3,
+                "requiredPass": 1,
+                "minDistanceFromDeploy": 12,
+                "maxNearestDistanceFromDeploy": 30,
+                "meta": {
+                  "hatchRadius": 3
+                }
+              },
+              {
+                "kind": "edge-spawn",
+                "count": 2,
+                "requiredPass": 1
+              },
+              {
+                "kind": "extraction",
+                "count": 1,
+                "requiredPass": 3
+              }
+            ],
+            "placeProfile": "lagos"
+          }
+        },
+        "trees": {
+          "tree-tropical-almond": 182,
+          "tree-oil-palm": 71
+        },
+        "buildings": 2,
+        "storeys": [2, 1],
+        "groundRange": [0, 2],
+        "connectors": 7,
+        "metrics": {
+          "groundTiles": 5065,
+          "openTiles": 4693,
+          "coverAdjacency": 0.14020882164926488,
+          "wallAdjacency": 0.010867249094395908,
+          "coveredSidesMean": 0.18879181760068187,
+          "coveredShare": 0.14766673769443853,
+          "flankProofShare": 0.033027913914340505,
+          "closedSidesMean": 0.46793096100575327,
+          "shelteredShare": 0.3379501385041551,
+          "backToWallShare": 0.11101640741529938,
+          "highCoverPer100": 5.686080947680158,
+          "lowCoverPer100": 0.9674234945705825,
+          "interiorPropsPerBuilding": 11,
+          "slopes": 397,
+          "slopeShare": 1,
+          "steps": {
+            "flat": 9381,
+            "half": 553,
+            "cliff": 21
+          },
+          "ramps": 6,
+          "footprintMean": 59.5,
+          "roomsPerFloor": 5.333333333333333,
+          "corridorBuildings": 2,
+          "stairs": 1,
+          "ladders": 0,
+          "maxFloors": 2,
+          "hatchSpaceMin": 18,
+          "hatchSpaceMean": 20.333333333333332
+        }
+      }
+    },
+    {
+      "seed": "1892582248",
+      "settlement": "rural",
+      "size": "large",
+      "before": {
+        "recipe": {
+          "seed": "1892582248",
+          "params": {
+            "archetype": "settlement",
+            "biome": "temperate",
+            "settlement": "rural",
+            "size": "large",
+            "hooks": [
+              {
+                "kind": "deploy",
+                "count": 1,
+                "requiredPass": 3
+              },
+              {
+                "kind": "egg-spawner",
+                "count": 3,
+                "requiredPass": 1,
+                "minDistanceFromDeploy": 12,
+                "maxNearestDistanceFromDeploy": 30,
+                "meta": {
+                  "hatchRadius": 3
+                }
+              },
+              {
+                "kind": "edge-spawn",
+                "count": 2,
+                "requiredPass": 1
+              },
+              {
+                "kind": "extraction",
+                "count": 1,
+                "requiredPass": 3
+              }
+            ]
+          }
+        },
+        "trees": {
+          "tree-oak": 332,
+          "tree-pine": 165
+        },
+        "buildings": 4,
+        "storeys": [2, 1, 2, 1],
+        "groundRange": [0, 4],
+        "connectors": 25,
+        "metrics": {
+          "groundTiles": 8915,
+          "openTiles": 8245,
+          "coverAdjacency": 0.1417828987265009,
+          "wallAdjacency": 0.009217707701637356,
+          "coveredSidesMean": 0.1879927228623408,
+          "coveredShare": 0.14772589448150394,
+          "flankProofShare": 0.03323226197695573,
+          "closedSidesMean": 0.9436021831412977,
+          "shelteredShare": 0.5719830200121285,
+          "backToWallShare": 0.3039417828987265,
+          "highCoverPer100": 6.135726303982052,
+          "lowCoverPer100": 0.9871003925967471,
+          "interiorPropsPerBuilding": 11.75,
+          "slopes": 2262,
+          "slopeShare": 1,
+          "steps": {
+            "flat": 14418,
+            "half": 3021,
+            "cliff": 130
+          },
+          "ramps": 21,
+          "footprintMean": 75.25,
+          "roomsPerFloor": 4.833333333333333,
+          "corridorBuildings": 3,
+          "stairs": 3,
+          "ladders": 1,
+          "maxFloors": 2,
+          "hatchSpaceMin": 13,
+          "hatchSpaceMean": 17.333333333333332
+        }
+      },
+      "after": {
+        "recipe": {
+          "seed": "1892582248",
+          "params": {
+            "archetype": "settlement",
+            "biome": "temperate",
+            "settlement": "rural",
+            "size": "large",
+            "hooks": [
+              {
+                "kind": "deploy",
+                "count": 1,
+                "requiredPass": 3
+              },
+              {
+                "kind": "egg-spawner",
+                "count": 3,
+                "requiredPass": 1,
+                "minDistanceFromDeploy": 12,
+                "maxNearestDistanceFromDeploy": 30,
+                "meta": {
+                  "hatchRadius": 3
+                }
+              },
+              {
+                "kind": "edge-spawn",
+                "count": 2,
+                "requiredPass": 1
+              },
+              {
+                "kind": "extraction",
+                "count": 1,
+                "requiredPass": 3
+              }
+            ],
+            "placeProfile": "lagos"
+          }
+        },
+        "trees": {
+          "tree-tropical-almond": 332,
+          "tree-oil-palm": 168
+        },
+        "buildings": 4,
+        "storeys": [2, 1, 2, 1],
+        "groundRange": [0, 2],
+        "connectors": 10,
+        "metrics": {
+          "groundTiles": 8915,
+          "openTiles": 8243,
+          "coverAdjacency": 0.15868009219944196,
+          "wallAdjacency": 0.014193861458206964,
+          "coveredSidesMean": 0.2154555380322698,
+          "coveredShare": 0.16814266650491325,
+          "flankProofShare": 0.039063447773868734,
+          "closedSidesMean": 0.4696105786728133,
+          "shelteredShare": 0.33664927817542156,
+          "backToWallShare": 0.11173116583768046,
+          "highCoverPer100": 6.158160403813797,
+          "lowCoverPer100": 0.9871003925967471,
+          "interiorPropsPerBuilding": 11.75,
+          "slopes": 703,
+          "slopeShare": 1,
+          "steps": {
+            "flat": 16586,
+            "half": 965,
+            "cliff": 18
+          },
+          "ramps": 6,
+          "footprintMean": 75.25,
+          "roomsPerFloor": 4.833333333333333,
+          "corridorBuildings": 3,
+          "stairs": 3,
+          "ladders": 1,
+          "maxFloors": 2,
+          "hatchSpaceMin": 13,
+          "hatchSpaceMean": 18.333333333333332
+        }
+      }
+    },
+    {
+      "seed": "1892582248",
+      "settlement": "town",
+      "size": "small",
+      "before": {
+        "recipe": {
+          "seed": "1892582248",
+          "params": {
+            "archetype": "settlement",
+            "biome": "temperate",
+            "settlement": "town",
+            "size": "small",
+            "hooks": [
+              {
+                "kind": "deploy",
+                "count": 1,
+                "requiredPass": 3
+              },
+              {
+                "kind": "egg-spawner",
+                "count": 3,
+                "requiredPass": 1,
+                "minDistanceFromDeploy": 12,
+                "maxNearestDistanceFromDeploy": 30,
+                "meta": {
+                  "hatchRadius": 3
+                }
+              },
+              {
+                "kind": "edge-spawn",
+                "count": 2,
+                "requiredPass": 1
+              },
+              {
+                "kind": "extraction",
+                "count": 1,
+                "requiredPass": 3
+              }
+            ]
+          }
+        },
+        "trees": {
+          "tree-oak": 67,
+          "tree-pine": 36
+        },
+        "buildings": 5,
+        "storeys": [2, 1, 2, 3, 3],
+        "groundRange": [0, 4],
+        "connectors": 40,
+        "metrics": {
+          "groundTiles": 1986,
+          "openTiles": 1808,
+          "coverAdjacency": 0.13108407079646017,
+          "wallAdjacency": 0.07964601769911504,
+          "coveredSidesMean": 0.24446902654867256,
+          "coveredShare": 0.19745575221238937,
+          "flankProofShare": 0.040376106194690266,
+          "closedSidesMean": 0.9839601769911505,
+          "shelteredShare": 0.6172566371681416,
+          "backToWallShare": 0.2831858407079646,
+          "highCoverPer100": 5.639476334340383,
+          "lowCoverPer100": 1.5609264853977844,
+          "interiorPropsPerBuilding": 17.6,
+          "slopes": 388,
+          "slopeShare": 1,
+          "steps": {
+            "flat": 3132,
+            "half": 526,
+            "cliff": 138
+          },
+          "ramps": 28,
+          "footprintMean": 63.6,
+          "roomsPerFloor": 4.545454545454546,
+          "corridorBuildings": 2,
+          "stairs": 10,
+          "ladders": 2,
+          "maxFloors": 3,
+          "hatchSpaceMin": 8,
+          "hatchSpaceMean": 23
+        }
+      },
+      "after": {
+        "recipe": {
+          "seed": "1892582248",
+          "params": {
+            "archetype": "settlement",
+            "biome": "temperate",
+            "settlement": "town",
+            "size": "small",
+            "hooks": [
+              {
+                "kind": "deploy",
+                "count": 1,
+                "requiredPass": 3
+              },
+              {
+                "kind": "egg-spawner",
+                "count": 3,
+                "requiredPass": 1,
+                "minDistanceFromDeploy": 12,
+                "maxNearestDistanceFromDeploy": 30,
+                "meta": {
+                  "hatchRadius": 3
+                }
+              },
+              {
+                "kind": "edge-spawn",
+                "count": 2,
+                "requiredPass": 1
+              },
+              {
+                "kind": "extraction",
+                "count": 1,
+                "requiredPass": 3
+              }
+            ],
+            "placeProfile": "lagos"
+          }
+        },
+        "trees": {
+          "tree-tropical-almond": 67,
+          "tree-oil-palm": 36
+        },
+        "buildings": 5,
+        "storeys": [2, 1, 2, 3, 3],
+        "groundRange": [0, 2],
+        "connectors": 29,
+        "metrics": {
+          "groundTiles": 1986,
+          "openTiles": 1808,
+          "coverAdjacency": 0.14933628318584072,
+          "wallAdjacency": 0.08075221238938053,
+          "coveredSidesMean": 0.273783185840708,
+          "coveredShare": 0.21460176991150443,
+          "flankProofShare": 0.04811946902654867,
+          "closedSidesMean": 0.5663716814159292,
+          "shelteredShare": 0.40486725663716816,
+          "backToWallShare": 0.13274336283185842,
+          "highCoverPer100": 5.639476334340383,
+          "lowCoverPer100": 1.5609264853977844,
+          "interiorPropsPerBuilding": 17.2,
+          "slopes": 103,
+          "slopeShare": 1,
+          "steps": {
+            "flat": 3559,
+            "half": 158,
+            "cliff": 79
+          },
+          "ramps": 17,
+          "footprintMean": 63.6,
+          "roomsPerFloor": 4.545454545454546,
+          "corridorBuildings": 2,
+          "stairs": 10,
+          "ladders": 2,
+          "maxFloors": 3,
+          "hatchSpaceMin": 12,
+          "hatchSpaceMean": 15
+        }
+      }
+    },
+    {
+      "seed": "1892582248",
+      "settlement": "town",
+      "size": "medium",
+      "before": {
+        "recipe": {
+          "seed": "1892582248",
+          "params": {
+            "archetype": "settlement",
+            "biome": "temperate",
+            "settlement": "town",
+            "size": "medium",
+            "hooks": [
+              {
+                "kind": "deploy",
+                "count": 1,
+                "requiredPass": 3
+              },
+              {
+                "kind": "egg-spawner",
+                "count": 3,
+                "requiredPass": 1,
+                "minDistanceFromDeploy": 12,
+                "maxNearestDistanceFromDeploy": 30,
+                "meta": {
+                  "hatchRadius": 3
+                }
+              },
+              {
+                "kind": "edge-spawn",
+                "count": 2,
+                "requiredPass": 1
+              },
+              {
+                "kind": "extraction",
+                "count": 1,
+                "requiredPass": 3
+              }
+            ]
+          }
+        },
+        "trees": {
+          "tree-oak": 152,
+          "tree-pine": 60
+        },
+        "buildings": 10,
+        "storeys": [2, 3, 2, 3, 3, 3, 2, 1, 2, 2],
+        "groundRange": [0, 4],
+        "connectors": 64,
+        "metrics": {
+          "groundTiles": 4495,
+          "openTiles": 4165,
+          "coverAdjacency": 0.12484993997599039,
+          "wallAdjacency": 0.07563025210084033,
+          "coveredSidesMean": 0.2261704681872749,
+          "coveredShare": 0.18247298919567828,
+          "flankProofShare": 0.037695078031212484,
+          "closedSidesMean": 0.9258103241296518,
+          "shelteredShare": 0.5956782713085234,
+          "backToWallShare": 0.26218487394957984,
+          "highCoverPer100": 5.25027808676307,
+          "lowCoverPer100": 1.3125695216907676,
+          "interiorPropsPerBuilding": 20.4,
+          "slopes": 1003,
+          "slopeShare": 1,
+          "steps": {
+            "flat": 7138,
+            "half": 1308,
+            "cliff": 235
+          },
+          "ramps": 41,
+          "footprintMean": 68.9,
+          "roomsPerFloor": 5,
+          "corridorBuildings": 5,
+          "stairs": 20,
+          "ladders": 3,
+          "maxFloors": 3,
+          "hatchSpaceMin": 8,
+          "hatchSpaceMean": 13.666666666666666
+        }
+      },
+      "after": {
+        "recipe": {
+          "seed": "1892582248",
+          "params": {
+            "archetype": "settlement",
+            "biome": "temperate",
+            "settlement": "town",
+            "size": "medium",
+            "hooks": [
+              {
+                "kind": "deploy",
+                "count": 1,
+                "requiredPass": 3
+              },
+              {
+                "kind": "egg-spawner",
+                "count": 3,
+                "requiredPass": 1,
+                "minDistanceFromDeploy": 12,
+                "maxNearestDistanceFromDeploy": 30,
+                "meta": {
+                  "hatchRadius": 3
+                }
+              },
+              {
+                "kind": "edge-spawn",
+                "count": 2,
+                "requiredPass": 1
+              },
+              {
+                "kind": "extraction",
+                "count": 1,
+                "requiredPass": 3
+              }
+            ],
+            "placeProfile": "lagos"
+          }
+        },
+        "trees": {
+          "tree-tropical-almond": 148,
+          "tree-oil-palm": 60
+        },
+        "buildings": 10,
+        "storeys": [2, 3, 2, 3, 3, 3, 1, 1, 2, 2],
+        "groundRange": [0, 2],
+        "connectors": 33,
+        "metrics": {
+          "groundTiles": 4492,
+          "openTiles": 4158,
+          "coverAdjacency": 0.14381914381914382,
+          "wallAdjacency": 0.06782106782106782,
+          "coveredSidesMean": 0.24314574314574314,
+          "coveredShare": 0.18999518999519,
+          "flankProofShare": 0.041606541606541605,
+          "closedSidesMean": 0.4896584896584897,
+          "shelteredShare": 0.35594035594035595,
+          "backToWallShare": 0.11135161135161135,
+          "highCoverPer100": 5.18699910952805,
+          "lowCoverPer100": 1.4692787177203919,
+          "interiorPropsPerBuilding": 17.3,
+          "slopes": 333,
+          "slopeShare": 1,
+          "steps": {
+            "flat": 8157,
+            "half": 467,
+            "cliff": 50
+          },
+          "ramps": 11,
+          "footprintMean": 69.2,
+          "roomsPerFloor": 5.090909090909091,
+          "corridorBuildings": 5,
+          "stairs": 19,
+          "ladders": 3,
+          "maxFloors": 3,
+          "hatchSpaceMin": 13,
+          "hatchSpaceMean": 19.666666666666668
+        }
+      }
+    },
+    {
+      "seed": "1892582248",
+      "settlement": "town",
+      "size": "large",
+      "before": {
+        "recipe": {
+          "seed": "1892582248",
+          "params": {
+            "archetype": "settlement",
+            "biome": "temperate",
+            "settlement": "town",
+            "size": "large",
+            "hooks": [
+              {
+                "kind": "deploy",
+                "count": 1,
+                "requiredPass": 3
+              },
+              {
+                "kind": "egg-spawner",
+                "count": 3,
+                "requiredPass": 1,
+                "minDistanceFromDeploy": 12,
+                "maxNearestDistanceFromDeploy": 30,
+                "meta": {
+                  "hatchRadius": 3
+                }
+              },
+              {
+                "kind": "edge-spawn",
+                "count": 2,
+                "requiredPass": 1
+              },
+              {
+                "kind": "extraction",
+                "count": 1,
+                "requiredPass": 3
+              }
+            ]
+          }
+        },
+        "trees": {
+          "tree-oak": 278,
+          "tree-pine": 115
+        },
+        "buildings": 18,
+        "storeys": [2, 1, 2, 3, 3, 3, 2, 1, 2, 2, 1, 1, 1, 2, 2, 3, 3, 1],
+        "groundRange": [0, 4],
+        "connectors": 103,
+        "metrics": {
+          "groundTiles": 7973,
+          "openTiles": 7402,
+          "coverAdjacency": 0.13118076195622805,
+          "wallAdjacency": 0.06700891650905161,
+          "coveredSidesMean": 0.22426371251013238,
+          "coveredShare": 0.1813023507160227,
+          "flankProofShare": 0.03674682518238314,
+          "closedSidesMean": 0.8869224533909754,
+          "shelteredShare": 0.5587679005674142,
+          "backToWallShare": 0.2593893542285869,
+          "highCoverPer100": 5.4308290480371255,
+          "lowCoverPer100": 1.291860027593127,
+          "interiorPropsPerBuilding": 17.166666666666668,
+          "slopes": 1677,
+          "slopeShare": 1,
+          "steps": {
+            "flat": 12833,
+            "half": 2268,
+            "cliff": 356
+          },
+          "ramps": 67,
+          "footprintMean": 69.05555555555556,
+          "roomsPerFloor": 4.828571428571428,
+          "corridorBuildings": 6,
+          "stairs": 29,
+          "ladders": 7,
+          "maxFloors": 3,
+          "hatchSpaceMin": 6,
+          "hatchSpaceMean": 15.666666666666666
+        }
+      },
+      "after": {
+        "recipe": {
+          "seed": "1892582248",
+          "params": {
+            "archetype": "settlement",
+            "biome": "temperate",
+            "settlement": "town",
+            "size": "large",
+            "hooks": [
+              {
+                "kind": "deploy",
+                "count": 1,
+                "requiredPass": 3
+              },
+              {
+                "kind": "egg-spawner",
+                "count": 3,
+                "requiredPass": 1,
+                "minDistanceFromDeploy": 12,
+                "maxNearestDistanceFromDeploy": 30,
+                "meta": {
+                  "hatchRadius": 3
+                }
+              },
+              {
+                "kind": "edge-spawn",
+                "count": 2,
+                "requiredPass": 1
+              },
+              {
+                "kind": "extraction",
+                "count": 1,
+                "requiredPass": 3
+              }
+            ],
+            "placeProfile": "lagos"
+          }
+        },
+        "trees": {
+          "tree-tropical-almond": 274,
+          "tree-oil-palm": 115
+        },
+        "buildings": 18,
+        "storeys": [2, 1, 2, 3, 3, 2, 1, 1, 2, 2, 1, 1, 1, 2, 2, 3, 3, 1],
+        "groundRange": [0, 2],
+        "connectors": 59,
+        "metrics": {
+          "groundTiles": 8025,
+          "openTiles": 7453,
+          "coverAdjacency": 0.14463974238561653,
+          "wallAdjacency": 0.0664162082382933,
+          "coveredSidesMean": 0.24701462498322824,
+          "coveredShare": 0.19146652354756474,
+          "flankProofShare": 0.044545820474976516,
+          "closedSidesMean": 0.48477123306051256,
+          "shelteredShare": 0.3518046424258688,
+          "backToWallShare": 0.10948611297464109,
+          "highCoverPer100": 5.358255451713396,
+          "lowCoverPer100": 1.3333333333333335,
+          "interiorPropsPerBuilding": 15.833333333333334,
+          "slopes": 671,
+          "slopeShare": 1,
+          "steps": {
+            "flat": 14613,
+            "half": 870,
+            "cliff": 83
+          },
+          "ramps": 24,
+          "footprintMean": 66.16666666666667,
+          "roomsPerFloor": 4.424242424242424,
+          "corridorBuildings": 5,
+          "stairs": 27,
+          "ladders": 8,
+          "maxFloors": 3,
+          "hatchSpaceMin": 25,
+          "hatchSpaceMean": 36.666666666666664
+        }
+      }
+    },
+    {
+      "seed": "1892582248",
+      "settlement": "city",
+      "size": "small",
+      "before": {
+        "recipe": {
+          "seed": "1892582248",
+          "params": {
+            "archetype": "settlement",
+            "biome": "temperate",
+            "settlement": "city",
+            "size": "small",
+            "hooks": [
+              {
+                "kind": "deploy",
+                "count": 1,
+                "requiredPass": 3
+              },
+              {
+                "kind": "egg-spawner",
+                "count": 3,
+                "requiredPass": 1,
+                "minDistanceFromDeploy": 12,
+                "maxNearestDistanceFromDeploy": 30,
+                "meta": {
+                  "hatchRadius": 3
+                }
+              },
+              {
+                "kind": "edge-spawn",
+                "count": 2,
+                "requiredPass": 1
+              },
+              {
+                "kind": "extraction",
+                "count": 1,
+                "requiredPass": 3
+              }
+            ]
+          }
+        },
+        "trees": {
+          "tree-oak": 39,
+          "tree-pine": 11
+        },
+        "buildings": 6,
+        "storeys": [2, 3, 2, 3, 3, 4],
+        "groundRange": [3, 3],
+        "connectors": 17,
+        "metrics": {
+          "groundTiles": 2016,
+          "openTiles": 1898,
+          "coverAdjacency": 0.08377239199157008,
+          "wallAdjacency": 0.07744994731296101,
+          "coveredSidesMean": 0.1733403582718651,
+          "coveredShare": 0.1285563751317176,
+          "flankProofShare": 0.037934668071654375,
+          "closedSidesMean": 0.21180189673340358,
+          "shelteredShare": 0.1733403582718651,
+          "backToWallShare": 0.03161222339304531,
+          "highCoverPer100": 2.7281746031746033,
+          "lowCoverPer100": 1.3888888888888888,
+          "interiorPropsPerBuilding": 16.833333333333332,
+          "slopes": 0,
+          "slopeShare": 1,
+          "steps": {
+            "flat": 3853,
+            "half": 0,
+            "cliff": 0
+          },
+          "ramps": 0,
+          "footprintMean": 48,
+          "roomsPerFloor": 4.176470588235294,
+          "corridorBuildings": 2,
+          "stairs": 16,
+          "ladders": 1,
+          "maxFloors": 4,
+          "hatchSpaceMin": 11,
+          "hatchSpaceMean": 16.666666666666668
+        }
+      },
+      "after": {
+        "recipe": {
+          "seed": "1892582248",
+          "params": {
+            "archetype": "settlement",
+            "biome": "temperate",
+            "settlement": "city",
+            "size": "small",
+            "hooks": [
+              {
+                "kind": "deploy",
+                "count": 1,
+                "requiredPass": 3
+              },
+              {
+                "kind": "egg-spawner",
+                "count": 3,
+                "requiredPass": 1,
+                "minDistanceFromDeploy": 12,
+                "maxNearestDistanceFromDeploy": 30,
+                "meta": {
+                  "hatchRadius": 3
+                }
+              },
+              {
+                "kind": "edge-spawn",
+                "count": 2,
+                "requiredPass": 1
+              },
+              {
+                "kind": "extraction",
+                "count": 1,
+                "requiredPass": 3
+              }
+            ],
+            "placeProfile": "lagos"
+          }
+        },
+        "trees": {
+          "tree-tropical-almond": 39,
+          "tree-oil-palm": 11
+        },
+        "buildings": 6,
+        "storeys": [2, 3, 2, 3, 3, 4],
+        "groundRange": [1, 1],
+        "connectors": 17,
+        "metrics": {
+          "groundTiles": 2016,
+          "openTiles": 1898,
+          "coverAdjacency": 0.08377239199157008,
+          "wallAdjacency": 0.07744994731296101,
+          "coveredSidesMean": 0.1733403582718651,
+          "coveredShare": 0.1285563751317176,
+          "flankProofShare": 0.037934668071654375,
+          "closedSidesMean": 0.21180189673340358,
+          "shelteredShare": 0.1733403582718651,
+          "backToWallShare": 0.03161222339304531,
+          "highCoverPer100": 2.7281746031746033,
+          "lowCoverPer100": 1.3888888888888888,
+          "interiorPropsPerBuilding": 16.833333333333332,
+          "slopes": 0,
+          "slopeShare": 1,
+          "steps": {
+            "flat": 3853,
+            "half": 0,
+            "cliff": 0
+          },
+          "ramps": 0,
+          "footprintMean": 48,
+          "roomsPerFloor": 4.176470588235294,
+          "corridorBuildings": 2,
+          "stairs": 16,
+          "ladders": 1,
+          "maxFloors": 4,
+          "hatchSpaceMin": 11,
+          "hatchSpaceMean": 16.666666666666668
+        }
+      }
+    },
+    {
+      "seed": "1892582248",
+      "settlement": "city",
+      "size": "medium",
+      "before": {
+        "recipe": {
+          "seed": "1892582248",
+          "params": {
+            "archetype": "settlement",
+            "biome": "temperate",
+            "settlement": "city",
+            "size": "medium",
+            "hooks": [
+              {
+                "kind": "deploy",
+                "count": 1,
+                "requiredPass": 3
+              },
+              {
+                "kind": "egg-spawner",
+                "count": 3,
+                "requiredPass": 1,
+                "minDistanceFromDeploy": 12,
+                "maxNearestDistanceFromDeploy": 30,
+                "meta": {
+                  "hatchRadius": 3
+                }
+              },
+              {
+                "kind": "edge-spawn",
+                "count": 2,
+                "requiredPass": 1
+              },
+              {
+                "kind": "extraction",
+                "count": 1,
+                "requiredPass": 3
+              }
+            ]
+          }
+        },
+        "trees": {
+          "tree-oak": 77,
+          "tree-pine": 36
+        },
+        "buildings": 15,
+        "storeys": [2, 3, 2, 3, 3, 4, 2, 3, 2, 2, 2, 2, 3, 2, 4],
+        "groundRange": [2, 2],
+        "connectors": 35,
+        "metrics": {
+          "groundTiles": 4409,
+          "openTiles": 4190,
+          "coverAdjacency": 0.09689737470167065,
+          "wallAdjacency": 0.0945107398568019,
+          "coveredSidesMean": 0.20477326968973747,
+          "coveredShare": 0.16467780429594273,
+          "flankProofShare": 0.03198090692124105,
+          "closedSidesMean": 0.19307875894988066,
+          "shelteredShare": 0.1610978520286396,
+          "backToWallShare": 0.025059665871121718,
+          "highCoverPer100": 2.7897482422317985,
+          "lowCoverPer100": 1.383533681106827,
+          "interiorPropsPerBuilding": 16.333333333333332,
+          "slopes": 0,
+          "slopeShare": 1,
+          "steps": {
+            "flat": 8458,
+            "half": 0,
+            "cliff": 0
+          },
+          "ramps": 0,
+          "footprintMean": 51.666666666666664,
+          "roomsPerFloor": 4.461538461538462,
+          "corridorBuildings": 3,
+          "stairs": 33,
+          "ladders": 2,
+          "maxFloors": 4,
+          "hatchSpaceMin": 11,
+          "hatchSpaceMean": 18.333333333333332
+        }
+      },
+      "after": {
+        "recipe": {
+          "seed": "1892582248",
+          "params": {
+            "archetype": "settlement",
+            "biome": "temperate",
+            "settlement": "city",
+            "size": "medium",
+            "hooks": [
+              {
+                "kind": "deploy",
+                "count": 1,
+                "requiredPass": 3
+              },
+              {
+                "kind": "egg-spawner",
+                "count": 3,
+                "requiredPass": 1,
+                "minDistanceFromDeploy": 12,
+                "maxNearestDistanceFromDeploy": 30,
+                "meta": {
+                  "hatchRadius": 3
+                }
+              },
+              {
+                "kind": "edge-spawn",
+                "count": 2,
+                "requiredPass": 1
+              },
+              {
+                "kind": "extraction",
+                "count": 1,
+                "requiredPass": 3
+              }
+            ],
+            "placeProfile": "lagos"
+          }
+        },
+        "trees": {
+          "tree-tropical-almond": 77,
+          "tree-oil-palm": 36
+        },
+        "buildings": 15,
+        "storeys": [2, 3, 2, 3, 3, 4, 2, 3, 2, 2, 2, 2, 3, 2, 4],
+        "groundRange": [1, 1],
+        "connectors": 35,
+        "metrics": {
+          "groundTiles": 4409,
+          "openTiles": 4190,
+          "coverAdjacency": 0.09689737470167065,
+          "wallAdjacency": 0.0945107398568019,
+          "coveredSidesMean": 0.20477326968973747,
+          "coveredShare": 0.16467780429594273,
+          "flankProofShare": 0.03198090692124105,
+          "closedSidesMean": 0.19307875894988066,
+          "shelteredShare": 0.1610978520286396,
+          "backToWallShare": 0.025059665871121718,
+          "highCoverPer100": 2.7897482422317985,
+          "lowCoverPer100": 1.383533681106827,
+          "interiorPropsPerBuilding": 16.333333333333332,
+          "slopes": 0,
+          "slopeShare": 1,
+          "steps": {
+            "flat": 8458,
+            "half": 0,
+            "cliff": 0
+          },
+          "ramps": 0,
+          "footprintMean": 51.666666666666664,
+          "roomsPerFloor": 4.461538461538462,
+          "corridorBuildings": 3,
+          "stairs": 33,
+          "ladders": 2,
+          "maxFloors": 4,
+          "hatchSpaceMin": 11,
+          "hatchSpaceMean": 18.333333333333332
+        }
+      }
+    },
+    {
+      "seed": "1892582248",
+      "settlement": "city",
+      "size": "large",
+      "before": {
+        "recipe": {
+          "seed": "1892582248",
+          "params": {
+            "archetype": "settlement",
+            "biome": "temperate",
+            "settlement": "city",
+            "size": "large",
+            "hooks": [
+              {
+                "kind": "deploy",
+                "count": 1,
+                "requiredPass": 3
+              },
+              {
+                "kind": "egg-spawner",
+                "count": 3,
+                "requiredPass": 1,
+                "minDistanceFromDeploy": 12,
+                "maxNearestDistanceFromDeploy": 30,
+                "meta": {
+                  "hatchRadius": 3
+                }
+              },
+              {
+                "kind": "edge-spawn",
+                "count": 2,
+                "requiredPass": 1
+              },
+              {
+                "kind": "extraction",
+                "count": 1,
+                "requiredPass": 3
+              }
+            ]
+          }
+        },
+        "trees": {
+          "tree-oak": 146,
+          "tree-pine": 62
+        },
+        "buildings": 29,
+        "storeys": [
+          4, 3, 2, 3, 3, 4, 4, 3, 2, 2, 2, 2, 2, 2, 2, 4, 5, 2, 3, 2, 3, 2, 2,
+          3, 3, 2, 2, 2, 2
+        ],
+        "groundRange": [3, 3],
+        "connectors": 69,
+        "metrics": {
+          "groundTiles": 7736,
+          "openTiles": 7375,
+          "coverAdjacency": 0.09844067796610169,
+          "wallAdjacency": 0.10128813559322034,
+          "coveredSidesMean": 0.21613559322033898,
+          "coveredShare": 0.16922033898305086,
+          "flankProofShare": 0.03864406779661017,
+          "closedSidesMean": 0.1814237288135593,
+          "shelteredShare": 0.14589830508474577,
+          "backToWallShare": 0.028610169491525422,
+          "highCoverPer100": 2.921406411582213,
+          "lowCoverPer100": 1.2926577042399172,
+          "interiorPropsPerBuilding": 16.689655172413794,
+          "slopes": 0,
+          "slopeShare": 1,
+          "steps": {
+            "flat": 14866,
+            "half": 0,
+            "cliff": 0
+          },
+          "ramps": 0,
+          "footprintMean": 51.03448275862069,
+          "roomsPerFloor": 4.233766233766234,
+          "corridorBuildings": 6,
+          "stairs": 65,
+          "ladders": 4,
+          "maxFloors": 5,
+          "hatchSpaceMin": 8,
+          "hatchSpaceMean": 14.333333333333334
+        }
+      },
+      "after": {
+        "recipe": {
+          "seed": "1892582248",
+          "params": {
+            "archetype": "settlement",
+            "biome": "temperate",
+            "settlement": "city",
+            "size": "large",
+            "hooks": [
+              {
+                "kind": "deploy",
+                "count": 1,
+                "requiredPass": 3
+              },
+              {
+                "kind": "egg-spawner",
+                "count": 3,
+                "requiredPass": 1,
+                "minDistanceFromDeploy": 12,
+                "maxNearestDistanceFromDeploy": 30,
+                "meta": {
+                  "hatchRadius": 3
+                }
+              },
+              {
+                "kind": "edge-spawn",
+                "count": 2,
+                "requiredPass": 1
+              },
+              {
+                "kind": "extraction",
+                "count": 1,
+                "requiredPass": 3
+              }
+            ],
+            "placeProfile": "lagos"
+          }
+        },
+        "trees": {
+          "tree-tropical-almond": 146,
+          "tree-oil-palm": 62
+        },
+        "buildings": 29,
+        "storeys": [
+          4, 3, 2, 3, 3, 4, 4, 3, 2, 2, 2, 2, 2, 2, 2, 4, 5, 2, 3, 2, 3, 2, 2,
+          3, 3, 2, 2, 2, 2
+        ],
+        "groundRange": [1, 1],
+        "connectors": 69,
+        "metrics": {
+          "groundTiles": 7736,
+          "openTiles": 7375,
+          "coverAdjacency": 0.09844067796610169,
+          "wallAdjacency": 0.10128813559322034,
+          "coveredSidesMean": 0.21613559322033898,
+          "coveredShare": 0.16922033898305086,
+          "flankProofShare": 0.03864406779661017,
+          "closedSidesMean": 0.1814237288135593,
+          "shelteredShare": 0.14589830508474577,
+          "backToWallShare": 0.028610169491525422,
+          "highCoverPer100": 2.921406411582213,
+          "lowCoverPer100": 1.2926577042399172,
+          "interiorPropsPerBuilding": 16.689655172413794,
+          "slopes": 0,
+          "slopeShare": 1,
+          "steps": {
+            "flat": 14866,
+            "half": 0,
+            "cliff": 0
+          },
+          "ramps": 0,
+          "footprintMean": 51.03448275862069,
+          "roomsPerFloor": 4.233766233766234,
+          "corridorBuildings": 6,
+          "stairs": 65,
+          "ladders": 4,
+          "maxFloors": 5,
+          "hatchSpaceMin": 8,
+          "hatchSpaceMean": 14.333333333333334
+        }
+      }
+    }
+  ],
+  "control": {
+    "baseline": "b64e723212640dbac2ddbbc35fea8255ee57b17c",
+    "byteIdenticalMaps": 36
+  }
+}

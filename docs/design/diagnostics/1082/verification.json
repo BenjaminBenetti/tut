@@ -1,0 +1,53 @@
+{
+  "frameRuntime": "8ec75d0611f4d9a7a6c7aeba128f29d29396fdc8",
+  "pairs": [
+    {
+      "id": "L01-lagos",
+      "before": "96782f13f059172ae7a84d9e3574216c729e35fb8d4432e86e54b0bea99b5f71",
+      "after": "eda749de663bc92b68f240b10c9a947b4c8c5b399db9db6207ff75bc3197cb9a",
+      "changedPixels": 1606754,
+      "recoveredAfterMatchesOriginal": true,
+      "minimumIndependentBrowsersPerPhase": 2
+    },
+    {
+      "id": "S01-second-seed",
+      "before": "5bf6b03bb3328959a074fc978601ca97293047167ff5ee192a405ff9a1bfa7a6",
+      "after": "5a6cda18bc5e55fcc49ba12c820fdb4ebd1c32be00143200a432f5db2ebf9617",
+      "changedPixels": 1602080,
+      "recoveredAfterMatchesOriginal": true,
+      "minimumIndependentBrowsersPerPhase": 2
+    },
+    {
+      "id": "C01-snowy-route",
+      "before": "5d8acd6ab5abbdc5d925bb228c4a0b7c9b54ef9c3ac129a72e071d8bb00881a4",
+      "after": "5d8acd6ab5abbdc5d925bb228c4a0b7c9b54ef9c3ac129a72e071d8bb00881a4",
+      "changedPixels": 0,
+      "recoveredAfterMatchesOriginal": true,
+      "minimumIndependentBrowsersPerPhase": 2
+    },
+    {
+      "id": "L02-lagos-reverse",
+      "before": "17bb1c4ebb788022b3c6b9ea4c20215c669029f9e276aaa082a9386966e23048",
+      "after": "a7261fdeb4cdc2eee5d60c1ceb24c7f214ec225afe1e8de31f2e02d93ef290cf",
+      "changedPixels": 1604780,
+      "recoveredAfterMatchesOriginal": true,
+      "minimumIndependentBrowsersPerPhase": 2
+    }
+  ],
+  "recovery": "Original after batch stopped during its final repeat. Four PNGs were retained; VERIFY_EXISTING=1 CAPTURE_REPEATS=1 in a fresh SwiftShader browser reproduced every byte and recovered camera/hash sidecars. Original hashes preserved in each pair above.",
+  "unprofiledMapControlCount": 36,
+  "validLagosPairs": 18,
+  "browserChecks": {
+    "startTime": "2026-09-11T06:31:23.535Z",
+    "duration": 36317.986,
+    "expected": 15,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "unitTests": {
+    "passed": 2383,
+    "optionalSkipped": 1,
+    "domFilesRetestedWithWorktreeAccess": 28
+  }
+}

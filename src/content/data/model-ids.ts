@@ -63,6 +63,8 @@ export const MODEL_IDS = [
   "prop.boulder",
   "prop.cactus",
   "prop.car-compact",
+  "prop.car-hatchback",
+  "prop.car-utility",
   "prop.car-sedan",
   "prop.crate",
   "prop.dumpster",

@@ -423,6 +423,22 @@ export const MODEL_MANIFEST = {
     sockets: [],
     quality: "final",
   },
+  "prop.car-hatchback": {
+    category: "props",
+    path: "assets/models/props/car-hatchback.glb",
+    footprint: { w: 1, d: 2 },
+    height: 0.76,
+    sockets: [],
+    quality: "final",
+  },
+  "prop.car-utility": {
+    category: "props",
+    path: "assets/models/props/car-utility.glb",
+    footprint: { w: 1, d: 2 },
+    height: 0.86,
+    sockets: [],
+    quality: "final",
+  },
   "prop.car-sedan": {
     category: "props",
     path: "assets/models/props/car-sedan.glb",

@@ -70,6 +70,11 @@ PALETTE = {
     "env-tropical-leaf-light": "#568358",
     "env-palm-trunk": "#786348",
     "env-plaster-warm": "#C8B990",
+    "env-sclerophyll-leaf": "#66765B",
+    "env-sclerophyll-leaf-light": "#849077",
+    "env-tuart-bark": "#AAA58F",
+    "env-limestone": "#BDB69A",
+    "env-grass-tree-trunk": "#393C32",
 }
 
 EMISSIVE = {"tdf-visor", "bug-bio-green", "bug-bio-magenta"}

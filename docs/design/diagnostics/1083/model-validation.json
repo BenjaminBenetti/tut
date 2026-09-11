@@ -1,0 +1,106 @@
+[
+  {
+    "id": "prop.banksia",
+    "triangles": 248,
+    "bytes": 20724,
+    "bounds": [
+      [-0.4511473774909973, 0.0, -0.3511999845504761],
+      [0.4411473572254181, 1.3999998569488525, 0.37519997358322144]
+    ],
+    "parts": [
+      {
+        "name": "banksia",
+        "triangles": 80,
+        "watertight": true,
+        "windingConsistent": true
+      },
+      {
+        "name": "banksia_1",
+        "triangles": 108,
+        "watertight": true,
+        "windingConsistent": true
+      },
+      {
+        "name": "banksia_2",
+        "triangles": 60,
+        "watertight": true,
+        "windingConsistent": true
+      }
+    ]
+  },
+  {
+    "id": "prop.grass-tree",
+    "triangles": 160,
+    "bytes": 16888,
+    "bounds": [
+      [-0.4699999988079071, 0.0, -0.4652160704135895],
+      [0.450961709022522, 0.7549999952316284, 0.4652160704135895]
+    ],
+    "parts": [
+      {
+        "name": "grass-tree",
+        "triangles": 28,
+        "watertight": true,
+        "windingConsistent": true
+      },
+      {
+        "name": "grass-tree_1",
+        "triangles": 66,
+        "watertight": true,
+        "windingConsistent": true
+      },
+      {
+        "name": "grass-tree_2",
+        "triangles": 66,
+        "watertight": true,
+        "windingConsistent": true
+      }
+    ]
+  },
+  {
+    "id": "prop.tree-tuart",
+    "triangles": 264,
+    "bytes": 22384,
+    "bounds": [
+      [-0.4478461444377899, 0.0, -0.40639999508857727],
+      [0.43382686376571655, 2.200000047683716, 0.43220004439353943]
+    ],
+    "parts": [
+      {
+        "name": "tree-tuart",
+        "triangles": 120,
+        "watertight": true,
+        "windingConsistent": true
+      },
+      {
+        "name": "tree-tuart_1",
+        "triangles": 72,
+        "watertight": true,
+        "windingConsistent": true
+      },
+      {
+        "name": "tree-tuart_2",
+        "triangles": 72,
+        "watertight": true,
+        "windingConsistent": true
+      }
+    ]
+  },
+  {
+    "id": "prop.limestone-outcrop",
+    "triangles": 44,
+    "bytes": 4384,
+    "bounds": [
+      [-0.4300000071525574, 0.0, -0.4000000059604645],
+      [0.46000000834465027, 1.0499999523162842, 0.4300000071525574]
+    ],
+    "parts": [
+      {
+        "name": "limestone-outcrop",
+        "triangles": 44,
+        "watertight": true,
+        "windingConsistent": true
+      }
+    ]
+  }
+]

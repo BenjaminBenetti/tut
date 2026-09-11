@@ -12,6 +12,14 @@ import type { ModelManifest } from "../model/asset-manifest";
  * build script regenerates; the manifest test keeps the two in sync.
  */
 export const MODEL_MANIFEST = {
+  "building.roof-hipped": {
+    category: "buildings",
+    path: "assets/models/buildings/building-roof-hipped.glb",
+    footprint: { w: 1, d: 1 },
+    height: 0.37,
+    sockets: [],
+    quality: "final",
+  },
   "prop.tree-tropical-almond": {
     category: "props",
     path: "assets/models/props/prop-tree-tropical-almond.glb",

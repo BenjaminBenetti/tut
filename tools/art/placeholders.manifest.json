@@ -1488,5 +1488,19 @@
     "quality": "final",
     "triangles": 200,
     "bytes": 18916
+  },
+  {
+    "id": "building.roof-hipped",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-roof-hipped.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.37,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 30,
+    "bytes": 3272
   }
 ]

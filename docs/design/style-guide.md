@@ -162,6 +162,10 @@ The rendered masonry family uses `env-plaster-warm #C8B990` with existing
 concrete bands and metal/glass openings. These are separate model tokens;
 the established temperate vegetation and wall families retain their colours.
 
+Johannesburg's hipped metal roofs use muted `env-roof-green #5B706A` beside
+brick and rendered masonry. The local roof form is selected explicitly;
+the original roof material remains the default elsewhere.
+
 Infested ground overlays use `bug-flesh` and `bug-bio-green-dim`; never recolour the base tile.
 
 ### 4.4 UI

@@ -1,21 +1,16 @@
-# Terra Under Threat — Agent Instructions
+# Terra Under Threat — Engineering Contract
 
-You are working on **Terra Under Threat (TUT)**, a browser-based XCOM-style tactics game. Read these before doing anything:
+You are working on **Terra Under Threat (TUT)**, a browser-based XCOM-style tactics game. Read `docs/design/gdd.md` (what the game is) and `docs/design/architecture.md` (how it is built) before changing anything.
 
-1. `docs/process/studio.md` — how work flows, rules for every agent
-2. `docs/process/roles/<your-role>.md` — your job
-3. `docs/handoff/<your-role>.md` — where your predecessor left off (if it exists)
-4. `docs/design/gdd.md` — what the game is
-5. `docs/design/architecture.md` — how it is built
+Studio seats (the fleet agents) also follow `docs/process/studio.md`, then `docs/process/roles/<your-role>.md` and `docs/handoff/<your-role>.md`, in that order. A hands-on session is not a seat and ignores those three.
 
 ## Hard rules
 
 - Only this repository: `BenjaminBenetti/tut`. Never touch any other repo or directory outside this workspace.
-- Never push to `main`. All changes go through a PR. Only the Tech Lead merges.
+- Never push to `main`. Every change goes through a PR, docs included, and merges with squash when CI is green.
 - Never force-push a branch you don't own. Never rewrite `main` history.
 - Simulation code never imports three.js or touches the DOM.
 - No `Math.random()` outside `core/`'s RNG implementation.
-- Every GitHub comment you post starts with `**<Role>** · TUT agent` on its own line.
 
 ## Commands
 
@@ -90,9 +85,9 @@ Read `docs/adr/` once; the short version:
 
 ## GitHub API budget
 
-Every agent shares one GitHub account and one rate limit: 5,000 requests per hour, and GraphQL has its own point budget that runs out first. When it is exhausted, every agent stalls. Rules:
+Everything on this repository shares one GitHub account and one rate limit: 5,000 requests per hour, and GraphQL has its own point budget that runs out first. Rules:
 
-- **Poll GitHub at most once every 5 minutes.** Never loop on `gh` commands faster than that, not even to wait for CI; do local work between polls.
+- **Do not loop on `gh` to wait for CI.** Poll with a pause between checks and do local work in between.
 - **Prefer REST over GraphQL.** `gh pr list`, `gh pr view`, `gh pr checks`, `gh pr diff`, `gh issue list` and `gh issue view` use GraphQL. Use `gh api repos/BenjaminBenetti/tut/...` instead:
   - open PRs: `gh api "repos/BenjaminBenetti/tut/pulls?state=open&per_page=50" --jq '.[] | "#\(.number) \(.title)"'`
   - one PR, its files, its diff: `gh api repos/BenjaminBenetti/tut/pulls/N`, `.../pulls/N/files`, `.../pulls/N -H "Accept: application/vnd.github.v3.diff"`
@@ -108,4 +103,4 @@ Every agent shares one GitHub account and one rate limit: 5,000 requests per hou
 - Branch: `<type>/<issue>-<slug>` (`feat/12-earth-map-model`)
 - Commit messages: conventional commits, `feat(overworld): add infestation tick (#12)`
 - PR title: same format. Body: use the template. `Closes #<issue>`.
-- Commit early and often on your branch. Push at least once an hour so work survives an instance refresh.
+- Commit early and often on your branch, and push before you stop.

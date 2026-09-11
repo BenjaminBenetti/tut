@@ -51,6 +51,13 @@ Codex seats have no Monitor tool but do have background terminals. When a Codex 
 
 ## 3. Rules for every agent
 
+Seat-only rules that `CLAUDE.md` no longer carries, because that file is the engineering contract for anyone in the repository, hands-on sessions included:
+
+- **Read order at start:** this document, then `docs/process/roles/<role>.md`, then `docs/handoff/<role>.md` if it exists.
+- **Merge authority:** only the Tech Lead merges (§1, §2 step 5). Everyone else stops at ready for review.
+- **Polling cap:** GitHub at most once every five minutes per seat, one watcher per seat (below and §4).
+- **Push at least once an hour** so work survives an instance refresh.
+
 - **Never push to `main`.** Never force-push a branch you don't own. Never rewrite history on `main`.
 - **Never touch another repository.** This project is `BenjaminBenetti/tut` only.
 - **Every change is a PR.** Docs included.

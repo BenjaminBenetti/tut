@@ -1416,5 +1416,77 @@
     "quality": "final",
     "triangles": 180,
     "bytes": 14932
+  },
+  {
+    "id": "prop.tree-oil-palm",
+    "category": "props",
+    "path": "assets/models/props/prop-tree-oil-palm.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 2.3,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 232,
+    "bytes": 23108
+  },
+  {
+    "id": "building.wall-plaster",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-wall-plaster.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.5,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 100,
+    "bytes": 10344
+  },
+  {
+    "id": "building.wall-window-plaster",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-wall-window-plaster.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.5,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 216,
+    "bytes": 23604
+  },
+  {
+    "id": "building.wall-door-plaster",
+    "category": "buildings",
+    "path": "assets/models/buildings/building-wall-door-plaster.glb",
+    "footprint": {
+      "w": 1,
+      "d": 0
+    },
+    "height": 1.5,
+    "sockets": [
+      "socket_door"
+    ],
+    "quality": "final",
+    "triangles": 212,
+    "bytes": 21236
+  },
+  {
+    "id": "prop.tree-tropical-almond",
+    "category": "props",
+    "path": "assets/models/props/prop-tree-tropical-almond.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 2.0,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 200,
+    "bytes": 18916
   }
 ]

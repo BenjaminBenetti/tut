@@ -1,0 +1,219 @@
+[
+  {
+    "id": "prop.tree-tropical-almond",
+    "triangles": 200,
+    "bytes": 18916,
+    "bounds": [
+      [-0.49000000953674316, 0.0, -0.3715212345123291],
+      [0.49000000953674316, 2.0, 0.36152124404907227]
+    ],
+    "parts": [
+      {
+        "name": "tree-tropical-almond",
+        "triangles": 120,
+        "watertight": true,
+        "windingConsistent": true
+      },
+      {
+        "name": "tree-tropical-almond_1",
+        "triangles": 32,
+        "watertight": true,
+        "windingConsistent": true
+      },
+      {
+        "name": "tree-tropical-almond_2",
+        "triangles": 48,
+        "watertight": true,
+        "windingConsistent": true
+      }
+    ]
+  },
+  {
+    "id": "prop.tree-oil-palm",
+    "triangles": 232,
+    "bytes": 23108,
+    "bounds": [
+      [-0.4300000071525574, 0.0, -0.4660176932811737],
+      [0.49000000953674316, 2.299999952316284, 0.4660176932811737]
+    ],
+    "parts": [
+      {
+        "name": "tree-oil-palm",
+        "triangles": 28,
+        "watertight": true,
+        "windingConsistent": true
+      },
+      {
+        "name": "tree-oil-palm_1",
+        "triangles": 84,
+        "watertight": true,
+        "windingConsistent": true
+      },
+      {
+        "name": "tree-oil-palm_2",
+        "triangles": 60,
+        "watertight": true,
+        "windingConsistent": true
+      },
+      {
+        "name": "tree-oil-palm_3",
+        "triangles": 60,
+        "watertight": true,
+        "windingConsistent": true
+      }
+    ]
+  },
+  {
+    "id": "building.wall-plaster",
+    "triangles": 100,
+    "bytes": 10344,
+    "bounds": [
+      [-0.5, 0.0, -0.07000000029802322],
+      [0.5, 1.5000000484287739, 0.07000000029802322]
+    ],
+    "parts": [
+      {
+        "name": "plinth",
+        "triangles": 44,
+        "watertight": true,
+        "windingConsistent": true
+      },
+      {
+        "name": "cornice",
+        "triangles": 44,
+        "watertight": true,
+        "windingConsistent": true
+      },
+      {
+        "name": "field",
+        "triangles": 12,
+        "watertight": true,
+        "windingConsistent": true
+      }
+    ]
+  },
+  {
+    "id": "building.wall-window-plaster",
+    "triangles": 216,
+    "bytes": 23604,
+    "bounds": [
+      [-0.5, 0.0, -0.07999999821186066],
+      [0.5, 1.5000000484287739, 0.07999999821186066]
+    ],
+    "parts": [
+      {
+        "name": "plinth",
+        "triangles": 44,
+        "watertight": true,
+        "windingConsistent": true
+      },
+      {
+        "name": "cornice",
+        "triangles": 44,
+        "watertight": true,
+        "windingConsistent": true
+      },
+      {
+        "name": "spandrel",
+        "triangles": 12,
+        "watertight": true,
+        "windingConsistent": true
+      },
+      {
+        "name": "sill",
+        "triangles": 44,
+        "watertight": true,
+        "windingConsistent": true
+      },
+      {
+        "name": "jamb_l",
+        "triangles": 12,
+        "watertight": true,
+        "windingConsistent": true
+      },
+      {
+        "name": "jamb_r",
+        "triangles": 12,
+        "watertight": true,
+        "windingConsistent": true
+      },
+      {
+        "name": "head",
+        "triangles": 12,
+        "watertight": true,
+        "windingConsistent": true
+      },
+      {
+        "name": "glass",
+        "triangles": 12,
+        "watertight": true,
+        "windingConsistent": true
+      },
+      {
+        "name": "mullion",
+        "triangles": 12,
+        "watertight": true,
+        "windingConsistent": true
+      },
+      {
+        "name": "transom",
+        "triangles": 12,
+        "watertight": true,
+        "windingConsistent": true
+      }
+    ]
+  },
+  {
+    "id": "building.wall-door-plaster",
+    "triangles": 212,
+    "bytes": 21236,
+    "bounds": [
+      [-0.5000000074505806, 0.0, -0.07000000029802322],
+      [0.5000000074505806, 1.5000000484287739, 0.07000000029802322]
+    ],
+    "parts": [
+      {
+        "name": "cornice",
+        "triangles": 44,
+        "watertight": true,
+        "windingConsistent": true
+      },
+      {
+        "name": "plinth_l",
+        "triangles": 44,
+        "watertight": true,
+        "windingConsistent": true
+      },
+      {
+        "name": "jamb_l",
+        "triangles": 12,
+        "watertight": true,
+        "windingConsistent": true
+      },
+      {
+        "name": "plinth_r",
+        "triangles": 44,
+        "watertight": true,
+        "windingConsistent": true
+      },
+      {
+        "name": "jamb_r",
+        "triangles": 12,
+        "watertight": true,
+        "windingConsistent": true
+      },
+      {
+        "name": "lintel",
+        "triangles": 12,
+        "watertight": true,
+        "windingConsistent": true
+      },
+      {
+        "name": "threshold",
+        "triangles": 44,
+        "watertight": true,
+        "windingConsistent": true
+      }
+    ]
+  }
+]

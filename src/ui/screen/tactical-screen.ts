@@ -17,7 +17,7 @@ import type { TacticalSceneHost } from "../model/tactical-scene-host";
 import type { PhaseBannerOptions } from "../view/phase-banner-view";
 import { namesFor, refusalText } from "../service/tactical-error-text";
 import { TacticalHudView } from "../view/tactical-hud-view";
-import { actorOf, describeEvent, nameResolver } from "../view/event-vocabulary";
+import { actorOf, describeEvent } from "../view/event-vocabulary";
 
 // ===========================================
 // Types
@@ -288,13 +288,13 @@ export class TacticalScreen implements Screen {
     // without it the indicator says "Rifle Squad" while the log line it
     // is meant to mirror says "Alpha", which is the one thing this
     // mechanism exists to prevent.
-    const nameOf = nameResolver(mission, campaign);
+    const names = namesFor(mission, campaign);
     for (const event of events) {
       const unitId = actorOf(event);
       if (unitId === undefined) {
         continue;
       }
-      const entry = describeEvent(event, nameOf);
+      const entry = describeEvent(event, names);
       if (entry !== undefined) {
         host.notice(unitId, entry.text);
       }

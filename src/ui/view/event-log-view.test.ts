@@ -5,6 +5,7 @@ import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { GameState } from "../../save/model/game-state";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import { EventLogView } from "./event-log-view";
+import { ObjectiveTrackerView } from "./objective-tracker-view";
 
 // ===========================================
 // Fixtures
@@ -312,5 +313,114 @@ describe("EventLogView squad identity", () => {
     view.mount(host);
     view.append([shotBy("unit-1"), shotBy("unit-1")], twoSquads(), ROSTER);
     expect(lines()).toEqual(["Alpha hit Swarmer for 4 ×2"]);
+  });
+});
+
+// ===========================================
+// Naming what a row is about (#1072)
+// ===========================================
+
+describe("EventLogView naming non-unit things", () => {
+  /** A mission whose second objective tracks a spawner, plus one no objective tracks. */
+  function withSpawners(): TacticalState {
+    return {
+      ...mission(),
+      spawners: [
+        { id: "spawner-a", hp: 20, destroyed: false },
+        { id: "spawner-b", hp: 20, destroyed: false },
+        { id: "spawner-loose", hp: 20, destroyed: false },
+      ],
+      objectives: [
+        { id: "objective-a", targetId: "spawner-a", complete: false },
+        { id: "objective-b", targetId: "spawner-b", complete: true },
+      ],
+    } as unknown as TacticalState;
+  }
+
+  /** The rendered log rows for `events` against `withSpawners()`. */
+  function rowsFor(events: TacticalEvent[]): string[] {
+    const root = document.createElement("div");
+    document.body.append(root);
+    const view = new EventLogView();
+    view.mount(root);
+    view.append(events, withSpawners());
+    return [...root.querySelectorAll("li")].map((li) => li.textContent ?? "");
+  }
+
+  it("names an objective the way the tracker beside it does", () => {
+    // The requirement, not the string. The log and the rail compute the
+    // ordinal separately -- `objectives.findIndex` against
+    // `objectives.entries()` -- so a literal "spawner 2" here would still
+    // pass on a build where one of them drifted. Rendering both and
+    // comparing is the assertion that catches that.
+    const state = withSpawners();
+    const rail = document.createElement("div");
+    document.body.append(rail);
+    const tracker = new ObjectiveTrackerView();
+    tracker.mount(rail);
+    tracker.update(state.objectives, state.spawners);
+    const railRow =
+      rail.querySelectorAll("[data-objective-id]")[1]?.textContent ?? "";
+
+    const logRow =
+      rowsFor([
+        {
+          type: "tactical:objective-updated",
+          payload: { objectiveId: "objective-b", complete: true },
+        },
+      ])[0] ?? "";
+
+    expect(logRow).toBe("Objective complete: spawner 2");
+    expect(railRow).toContain("spawner 2");
+    expect(logRow).not.toContain("objective-b");
+  });
+
+  it("names a missed spawner too, and a spawner no objective tracks", () => {
+    const rows = rowsFor([
+      {
+        type: "tactical:attack-resolved",
+        payload: {
+          attackerId: "unit-1",
+          targetId: "spawner-b",
+          hit: false,
+          damage: 0,
+        },
+      } as TacticalEvent,
+      {
+        type: "tactical:attack-resolved",
+        payload: {
+          attackerId: "unit-1",
+          targetId: "spawner-loose",
+          hit: true,
+          damage: 4,
+        },
+      } as TacticalEvent,
+    ]);
+
+    expect(rows[0]).toBe("Rifle Squad missed spawner 2");
+    // No ordinal to give it, and "that objective" would be false.
+    expect(rows[1]).toBe("Rifle Squad hit that egg spawner for 4");
+    for (const row of rows) {
+      expect(row).not.toContain("that unit");
+      expect(row).not.toMatch(/spawner-/);
+    }
+  });
+
+  it("still names a unit target as a unit", () => {
+    // The control. A `target` that always answered as a spawner would
+    // pass both tests above and break every other attack row.
+    const rows = rowsFor([
+      {
+        type: "tactical:attack-resolved",
+        payload: {
+          attackerId: "unit-1",
+          targetId: "unit-2",
+          hit: true,
+          damage: 4,
+        },
+      } as TacticalEvent,
+    ]);
+
+    expect(rows[0]).toBe("Rifle Squad hit Swarmer for 4");
   });
 });

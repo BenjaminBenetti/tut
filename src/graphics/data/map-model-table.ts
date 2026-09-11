@@ -120,6 +120,8 @@ export const TERRAIN_TRANSITION_SOURCE =
  * Benches use the contextual yard definition, so they never enter the generic ground pool.
  */
 export const PROP_MODELS: Readonly<Record<KnownPropKindId, ModelAssetId>> = {
+  [PropKindIds.ROOFTOP_HVAC]: "prop.rooftop-hvac",
+  [PropKindIds.ROOFTOP_WATER_TANK]: "prop.rooftop-water-tank",
   [PropKindIds.CAR]: "prop.car-compact",
   [PropKindIds.CRATE]: "prop.crate",
   [PropKindIds.BARRIER]: "prop.barrier-concrete",

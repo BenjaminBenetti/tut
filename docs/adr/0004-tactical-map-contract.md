@@ -503,7 +503,7 @@ export interface GenerationPass {
 }
 
 export type DraftCapability =
-  'heightmap' | 'water' | 'roads' | 'lots' | 'buildings' | 'interiors' | 'props' | 'ramps' | 'hooks' | 'connected';
+  'heightmap' | 'water' | 'roads' | 'lots' | 'buildings' | 'interiors' | 'props' | 'ramps' | 'hooks' | 'rooftops' | 'connected';
 ```
 
 `MapDraft` (`src/mapgen/model/map-draft.ts`) is the mutable counterpart of `TacticalMap`: a dense
@@ -541,7 +541,8 @@ RNG fork, records diagnostics, then runs `validateTacticalMap`.
 | 7 | `ramps` | `props` | `ramps` | Ensures ground-level connectivity: BFS over ground columns; where a two-layer step separates components, emits ramps; larger steps stay cliffs (routes go around). |
 | 7a | `kerbs` | `ramps` | `kerbs` | Walls every paved edge that drops two or more layers and carries neither a connector nor a wall: a half wall on the high side, mirrored (#863). A one-layer paved step stays a bare kerb by design. |
 | 8 | `hooks` | `ramps` | `hooks` | For each `HookRequirement`, resolves a `HookPlacer` from the registry and runs it (§7.4). Placers share one frozen snapshot of the draft to prefer reachable tiles; egg spawners also keep at least six infantry-reachable tiles within their hatch radius. |
-| 8a | `yard-arrangements` | `props`,`buildings`,`lots`,`boundaries`,`slopes`,`ramps`,`hooks` | `yards` | Replaces only attributed urban yard crates/sandbags/barriers with building-use seating or storage groups inside the existing lot. Keeps original hook selections and their clearances, exterior window staging, and short routes around each group for both classes. Existing low-cover allocation is a ceiling; unsupported groups are omitted. Rural output, terrain, roads, buildings, fences and other prop populations are unchanged (#960). |
+| 8a | `rooftop-props` | `interiors`,`props`,`hooks` | `rooftops` | Places small building-use groups of HVAC and water tanks on actual walkable roof tiles. Each is a one-cell high-cover prop, reserved before freezing. Keeps roof perimeter, connector landings and mission hook clearances open; accepts a group only when every remaining interior and roof tile stays reachable through the building connectors. Uses a separate pass RNG stream (#1110). |
+| 8b | `yard-arrangements` | `props`,`buildings`,`lots`,`boundaries`,`slopes`,`ramps`,`hooks` | `yards` | Replaces only attributed urban yard crates/sandbags/barriers with building-use seating or storage groups inside the existing lot. Keeps original hook selections and their clearances, exterior window staging, and short routes around each group for both classes. Existing low-cover allocation is a ceiling; unsupported groups are omitted. Rural output, terrain, roads, buildings, fences and other prop populations are unchanged (#960). |
 | 9 | `connectivity` | `hooks` | `connected` | Checks I7. Repairs along the route needing the fewest changes (remove a blocking prop, open a door in a building wall, add a ramp across a two-layer step); relocates the hook only when no repairable route exists. Logs every repair to diagnostics so the preview shows them. |
 | 10 | freeze + validate | `connected` | – | Not a pass: `generateTacticalMap` denormalises `pass` and `coverProvided`, computes `levels`, freezes the draft into `TacticalMap` and validates (a `GenerationPass` cannot return a map). |
 

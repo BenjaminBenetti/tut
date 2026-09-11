@@ -1,6 +1,7 @@
 import { DIRECTIONS } from "../../core/model/direction";
 import type { Direction } from "../../core/model/direction";
 import { stepGridPos } from "../../core/service/grid-math";
+import { hashSeed } from "../../core/service/seed-hash";
 import type { Building } from "../../mapgen/model/building";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { Tile } from "../../mapgen/model/tile";
@@ -11,6 +12,7 @@ import {
   BUILDING_FRONTAGE_STYLES,
   DOMESTIC_WINDOW_MODULE,
   MAILBOX_MODULE,
+  SHUTTER_WINDOW_MODULE,
 } from "../data/building-frontage-styles";
 import type { BuildingFrontageModule } from "../model/building-frontage-style";
 import { MODEL_MANIFEST } from "../data/model-manifest";
@@ -39,7 +41,6 @@ export function resolveBuildingFrontages(
   map: TacticalMap,
   index: TileIndex,
 ): readonly ModelPlacement[] {
-  if (map.recipe.params.settlement === "rural") return [];
   const result: ModelPlacement[] = [];
   const ladders = map.connectors.filter((c) => c.kind === "ladder");
   const propTops = new Map<string, number>();
@@ -62,10 +63,17 @@ export function resolveBuildingFrontages(
   for (const building of map.buildings) {
     const style = BUILDING_FRONTAGE_STYLES[building.kind];
     if (!style) continue;
+    const utilityAlongX =
+      hashSeed(`${map.recipe.seed}:${building.id}:service-sides`) % 2 === 0;
     for (const entrance of building.entrances) {
       const tile = index.getAt(entrance.tile);
       if (tile?.walls[entrance.side] !== "door") continue;
-      for (const module of style.entrances) {
+      const entrances =
+        style.entranceVariants?.[
+          hashSeed(`${map.recipe.seed}:${building.id}:entrance`) %
+            style.entranceVariants.length
+        ] ?? style.entrances;
+      for (const module of entrances) {
         if (
           clearMount(
             building,
@@ -102,7 +110,7 @@ export function resolveBuildingFrontages(
         }
       }
     }
-    if (!style.domesticWindows) continue;
+    if (!style.domesticWindows && !style.wallUtility) continue;
     const windows = new Set<string>();
     for (const rect of building.footprint) {
       for (const floor of building.floors) {
@@ -115,20 +123,45 @@ export function resolveBuildingFrontages(
               const key = `${x},${floor.y},${z},${side}`;
               if (windows.has(key)) continue;
               windows.add(key);
+              const windowModule =
+                hashSeed(`${map.recipe.seed}:${building.id}:${side}:window`) %
+                  2 ===
+                0
+                  ? DOMESTIC_WINDOW_MODULE
+                  : SHUTTER_WINDOW_MODULE;
               if (
+                style.domesticWindows &&
                 tile.walls[side] === "window" &&
                 clearMount(
                   building,
                   tile,
                   side,
-                  DOMESTIC_WINDOW_MODULE,
+                  windowModule,
                   index,
                   ladders,
                   propTops,
                 )
               ) {
-                result.push(mount(DOMESTIC_WINDOW_MODULE, tile, side));
+                result.push(mount(windowModule, tile, side));
               }
+              const along = side === "n" || side === "s" ? tile.x : tile.z;
+              if (
+                style.wallUtility &&
+                (side === "n" || side === "s") === utilityAlongX &&
+                tile.walls[side] === "solid" &&
+                (along + hashSeed(`${building.id}:${side}:utility`)) % 5 ===
+                  0 &&
+                clearMount(
+                  building,
+                  tile,
+                  side,
+                  style.wallUtility,
+                  index,
+                  ladders,
+                  propTops,
+                )
+              )
+                result.push(mount(style.wallUtility, tile, side));
             }
           }
         }

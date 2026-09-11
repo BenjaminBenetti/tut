@@ -39,6 +39,8 @@ import { GROUND_SLAB_THICKNESS } from "../data/tactical-overlay-palette";
 import { tileTop } from "../view/tactical-map-view";
 import { resolveDropshipModels } from "./dropship-model-resolver";
 import { resolveStreetDetails } from "./street-detail-resolver";
+import { resolveStreetSurfaces } from "./street-surface-resolver";
+import { resolveRoofDetails } from "./roof-detail-resolver";
 import {
   propAppearanceScale,
   propModelVariation,
@@ -163,6 +165,7 @@ export function resolveMapModels(
   const walls = resolveWalls(map, index);
   const ramps = resolveRampModels(map, index, roads);
   const connectors = [...ramps, ...resolveLadderModels(map, index, walls)];
+  const roofs = resolvePitchedRoofModels(map, index);
   const rampFeet = new Set(
     ramps
       .filter((p) => p.ramp!.replacesGround)
@@ -171,13 +174,17 @@ export function resolveMapModels(
   return {
     tiles: resolveTiles(map, index, rampFeet, roads),
     foundations: resolveFoundationModels(map),
-    roofs: resolvePitchedRoofModels(map, index),
+    roofs,
     walls,
-    frontages: resolveBuildingFrontages(map, index),
+    frontages: [
+      ...resolveBuildingFrontages(map, index),
+      ...resolveRoofDetails(map, index, roofs),
+    ],
     props: [
       ...resolveProps(map, index),
       ...resolveDropshipModels(map),
       ...resolveStreetDetails(map, index),
+      ...resolveStreetSurfaces(map, index),
     ],
     connectors,
   };

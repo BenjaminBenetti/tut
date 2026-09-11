@@ -585,7 +585,8 @@ export class TacticalMapView implements Disposable, TilePicker {
           : part.material;
         const originalMaterial =
           this.ghostUniforms !== undefined &&
-          batch.modelId.startsWith(GHOSTED_MODEL_PREFIX) &&
+          (batch.modelId.startsWith(GHOSTED_MODEL_PREFIX) ||
+            batch.modelId.startsWith("prop.rooftop-")) &&
           prototypeMaterial !== undefined
             ? this.ghostMaterial(prototypeMaterial)
             : part.material;

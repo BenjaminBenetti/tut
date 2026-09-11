@@ -13,6 +13,10 @@ export interface BuildingFrontageModule {
 export interface BuildingFrontageStyle {
   /** First clear fit wins; a narrow retail awning keeps adjacent ladders clear. */
   readonly entrances: readonly BuildingFrontageModule[];
+  /** Alternative coherent entrance styles, each retaining its own narrow fallback. */
+  readonly entranceVariants?: readonly (readonly BuildingFrontageModule[])[];
   readonly domesticWindows?: boolean;
   readonly sharedMail?: boolean;
+  /** Mounted only on selected solid upper-storey bays, clear of all apertures. */
+  readonly wallUtility?: BuildingFrontageModule;
 }

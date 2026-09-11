@@ -1,0 +1,280 @@
+{
+  "campaignSeed": "9",
+  "initialYaw": 2,
+  "oppositeYaw": 0,
+  "restoredByteIdentical": true,
+  "recipe": {
+    "seed": "3677615265",
+    "params": {
+      "archetype": "settlement",
+      "biome": "coastal",
+      "settlement": "town",
+      "size": "small",
+      "hooks": [
+        {
+          "kind": "deploy",
+          "count": 1,
+          "requiredPass": 3
+        },
+        {
+          "kind": "egg-spawner",
+          "count": 2,
+          "requiredPass": 1,
+          "minDistanceFromDeploy": 12,
+          "maxNearestDistanceFromDeploy": 30,
+          "meta": {
+            "hatchRadius": 3
+          }
+        },
+        {
+          "kind": "edge-spawn",
+          "count": 2,
+          "requiredPass": 1
+        },
+        {
+          "kind": "extraction",
+          "count": 1,
+          "requiredPass": 3
+        }
+      ]
+    }
+  },
+  "site": {
+    "deployZoneId": "hook-1",
+    "clearance": {
+      "x": 41,
+      "z": 35,
+      "w": 7,
+      "d": 13
+    },
+    "footprint": {
+      "x": 42,
+      "z": 40,
+      "w": 5,
+      "d": 7
+    },
+    "facing": "s",
+    "level": 2
+  },
+  "boarding": [
+    {
+      "x": 42,
+      "y": 2,
+      "z": 39
+    },
+    {
+      "x": 43,
+      "y": 2,
+      "z": 39
+    },
+    {
+      "x": 44,
+      "y": 2,
+      "z": 39
+    },
+    {
+      "x": 45,
+      "y": 2,
+      "z": 39
+    },
+    {
+      "x": 42,
+      "y": 2,
+      "z": 38
+    },
+    {
+      "x": 43,
+      "y": 2,
+      "z": 38
+    },
+    {
+      "x": 44,
+      "y": 2,
+      "z": 38
+    },
+    {
+      "x": 45,
+      "y": 2,
+      "z": 38
+    },
+    {
+      "x": 42,
+      "y": 2,
+      "z": 37
+    },
+    {
+      "x": 43,
+      "y": 2,
+      "z": 37
+    },
+    {
+      "x": 44,
+      "y": 2,
+      "z": 37
+    },
+    {
+      "x": 45,
+      "y": 2,
+      "z": 37
+    },
+    {
+      "x": 42,
+      "y": 2,
+      "z": 36
+    },
+    {
+      "x": 43,
+      "y": 2,
+      "z": 36
+    },
+    {
+      "x": 44,
+      "y": 2,
+      "z": 36
+    },
+    {
+      "x": 45,
+      "y": 2,
+      "z": 36
+    }
+  ],
+  "extraction": [
+    {
+      "x": 42,
+      "y": 2,
+      "z": 39
+    },
+    {
+      "x": 43,
+      "y": 2,
+      "z": 39
+    },
+    {
+      "x": 44,
+      "y": 2,
+      "z": 39
+    },
+    {
+      "x": 45,
+      "y": 2,
+      "z": 39
+    },
+    {
+      "x": 42,
+      "y": 2,
+      "z": 38
+    },
+    {
+      "x": 43,
+      "y": 2,
+      "z": 38
+    },
+    {
+      "x": 44,
+      "y": 2,
+      "z": 38
+    },
+    {
+      "x": 45,
+      "y": 2,
+      "z": 38
+    },
+    {
+      "x": 42,
+      "y": 2,
+      "z": 37
+    },
+    {
+      "x": 43,
+      "y": 2,
+      "z": 37
+    },
+    {
+      "x": 44,
+      "y": 2,
+      "z": 37
+    },
+    {
+      "x": 45,
+      "y": 2,
+      "z": 37
+    },
+    {
+      "x": 42,
+      "y": 2,
+      "z": 36
+    },
+    {
+      "x": 43,
+      "y": 2,
+      "z": 36
+    },
+    {
+      "x": 44,
+      "y": 2,
+      "z": 36
+    },
+    {
+      "x": 45,
+      "y": 2,
+      "z": 36
+    }
+  ],
+  "force": [
+    {
+      "id": "unit-1",
+      "kind": "mech",
+      "pos": {
+        "x": 42,
+        "y": 2,
+        "z": 39
+      }
+    },
+    {
+      "id": "unit-2",
+      "kind": "squad",
+      "pos": {
+        "x": 43,
+        "y": 2,
+        "z": 39
+      }
+    },
+    {
+      "id": "unit-3",
+      "kind": "squad",
+      "pos": {
+        "x": 44,
+        "y": 2,
+        "z": 39
+      }
+    }
+  ],
+  "viewport": {
+    "width": 1600,
+    "height": 1000
+  },
+  "framing": "Actual host-created arrival camera, then two synchronous E taps, then two more restore a byte-identical arrival. Seed 9 opposite is the old yaw-0 arrival defect on the same generated map. Real campaign fog, pointer at (0,0).",
+  "baseline": "6967394d024c516379dc16c4ae464a50fb6d82a0",
+  "runtime": {
+    "baseline": "6967394d024c516379dc16c4ae464a50fb6d82a0",
+    "server": "http://127.0.0.1:4179",
+    "serverSession": 4675,
+    "recordedAt": "2026-09-09T04:39:12.579065+00:00",
+    "freshServerAfterCheckout": true,
+    "watch": null,
+    "hmr": false,
+    "runtimeTrees": {
+      "src": "d118b581c7e7e316ef8f499d276b2007852a46a5",
+      "public": "01e5c286dea273d9a7fae41d73bb3930b0347745",
+      "tools": "4cfc422779864b4c606de9f4d2ef7baf646f6c2c"
+    },
+    "backend": "SwiftShader",
+    "capture": "Existing dropship-site.spec.ts capture mode on two real campaign seeds, retries0; no game changes",
+    "command": "CAPTURE=1 CAPTURE_OUTPUT=/workspaces/tut/.scratch/map-critic-v0216/dropship pnpm exec playwright test --config .scratch/map-critic-v0216/playwright-dropship.config.ts"
+  },
+  "view": "arrival-opposite",
+  "yaw": 0,
+  "sha256": "c3ec9e45a7711ff346607712d342daa25b9bf55b95a29199b67fa893f0e5132d",
+  "captureRun": "2 existing capture checks passed, retries0, exit0; all four individual views opened",
+  "evidenceKind": "Fresh merged-main native acceptance record, not an asserted historical regression baseline"
+}

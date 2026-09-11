@@ -24,10 +24,13 @@ FROM mcr.microsoft.com/devcontainers/javascript-node:latest
 ARG BLENDER_VERSION=4.5.13
 ARG BLENDER_SERIES=4.5
 
-# ---- system packages: Blender runtime libs, openscad, venv support, xvfb ----
+# ---- system packages: Blender runtime, iGPU drivers/probes, art tools ----
+# Mesa is container-local. Device access comes only from devcontainer.json;
+# the host's existing driver/configuration is not changed by this image.
 RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         libxi6 libxxf86vm1 libxfixes3 libxrender1 libgl1 libegl1 libsm6 xz-utils \
+        mesa-vulkan-drivers vulkan-tools mesa-utils \
         openscad python3-venv xvfb \
     && rm -rf /var/lib/apt/lists/*
 

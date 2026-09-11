@@ -42,6 +42,7 @@ import type {
   TacticalInvokeTarget,
 } from "../model/tactical-intent";
 import { ActionBarView } from "./action-bar-view";
+import type { GameState } from "../../save/model/game-state";
 import { describeRefusal, namesFor } from "../service/tactical-error-text";
 import { EventLogView } from "./event-log-view";
 import { HitPreviewView } from "./hit-preview-view";
@@ -60,9 +61,6 @@ import { PhaseBannerView } from "./phase-banner-view";
 import { TURN_STARTED } from "../../tactical/model/turn-started-event";
 import { TurnBannerView } from "./turn-banner-view";
 import { UnitCardView } from "./unit-card-view";
-// One resolver, shared with the log. #1029 moves this into
-// `event-vocabulary`; when that lands the import moves with it.
-import { nameResolver } from "./event-log-view";
 import { SquadStripView, playerUnits } from "./squad-strip-view";
 import { actingUnit } from "../../tactical/service/acting-unit";
 
@@ -233,6 +231,14 @@ export class TacticalHudView {
   private selected: UnitId | undefined;
   /** The city the mission is fought over, set by the screen (#753). */
   private missionName: string | undefined;
+  /**
+   * The campaign the mission belongs to, set by the screen (#1040).
+   *
+   * Held for the roster: two squads of one template are Alpha and Bravo
+   * to the debrief and were both "Rifle Squad" in here, so a mission
+   * alone cannot say who did what.
+   */
+  private campaign: GameState | undefined;
   /** Which storey the scene draws, set by the screen (#961). */
   private layerFocus: LayerFocus | undefined;
   private target: UnitId | undefined;
@@ -335,7 +341,11 @@ export class TacticalHudView {
     this.mission = mission;
     this.view = mission === undefined ? undefined : viewFor(mission, "tdf");
     this.phases.announce(phaseChangesIn(events));
-    this.log.append(arrived && mission ? mission.log : events, mission);
+    this.log.append(
+      arrived && mission ? mission.log : events,
+      mission,
+      this.campaign,
+    );
     const aliveUnit = (id: UnitId | undefined): boolean =>
       id !== undefined &&
       (mission?.units.some((u) => u.id === id && u.hp > 0) ?? false);
@@ -401,6 +411,20 @@ export class TacticalHudView {
    */
   setMissionName(name: string | undefined): void {
     this.missionName = name;
+    this.refresh();
+  }
+
+  /**
+   * The campaign the mission belongs to, for roster identities (#1040).
+   *
+   * Handed in rather than looked up, for the same reason as the mission
+   * name: a tactical view given the whole campaign to search would be
+   * the wrong dependency, and the screen already holds it.
+   *
+   * @param campaign - The campaign, or undefined outside one.
+   */
+  setCampaign(campaign: GameState | undefined): void {
+    this.campaign = campaign;
     this.refresh();
   }
 
@@ -1200,6 +1224,7 @@ export class TacticalHudView {
       selected,
       selected ? mission.templates[selected.templateId] : undefined,
       selected ? attacksRemaining(selected, this.deps.combatTuning) : undefined,
+      selected ? namesFor(mission, this.campaign).unit(selected.id) : undefined,
     );
     const target =
       this.target === undefined
@@ -1208,7 +1233,11 @@ export class TacticalHudView {
     const preview = this.currentPreview();
     this.preview.update(
       target && preview
-        ? { targetName: target.name, preview, names: namesFor(mission) }
+        ? {
+            targetName: target.name,
+            preview,
+            names: namesFor(mission, this.campaign),
+          }
         : undefined,
     );
     const inReach = this.interactTarget();
@@ -1217,10 +1246,22 @@ export class TacticalHudView {
       mission.spawners,
       inReach?.objective.id,
     );
+    // The rail names units through the same resolver as the card, the
+    // banner and the log (#1040). It arrived in #1041 using the log's
+    // `nameResolver`, which then answered with the *template* name --
+    // "Rifle Squad" for both Alpha and Bravo -- and fell back to the raw
+    // id, which is the defect #1040 removed by converting the rail.
+    //
+    // Neither is true of `nameResolver` any more: #1029 moved it into
+    // `event-vocabulary` and it now delegates here, so the two agree by
+    // construction. The rail still calls `namesFor` directly because it
+    // wants the resolver object, not the `NameOf` function the log and
+    // the indicator share.
+    const railNames = namesFor(mission, this.campaign);
     this.squad.update({
       units: playerUnits(mission),
       selectedId: this.selected,
-      nameOf: nameResolver(mission),
+      nameOf: (unitId) => railNames.unit(unitId),
     });
     this.actions.update({
       attacksLeft:

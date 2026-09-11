@@ -104,3 +104,79 @@ export async function tapCameraKey(page: Page, key: string): Promise<void> {
   }, key);
   await drawnFrame(page);
 }
+
+/**
+ * A neighbouring tile's client-pixel position, for a real pointer click
+ * beside a unit.
+ *
+ * The hooks say where a *tile* is drawn, not which tile a unit stands
+ * on, so the unit's tile is found as the one drawn nearest its feet and
+ * the answer is that tile's neighbour. Searched rather than offset: the
+ * first version of this guessed that "one tile away" was 24-90 px and
+ * found nothing, which measured the guess and not the map.
+ *
+ * @param page - The page driving a live mission.
+ * @param unitId - The unit to find a neighbouring tile for.
+ * @returns Where to click, or undefined if no neighbour is on screen.
+ */
+export async function neighbourTileOf(
+  page: Page,
+  unitId: string,
+): Promise<{ x: number; y: number } | undefined> {
+  return page.evaluate((id) => {
+    const hooks = (
+      globalThis as {
+        __tutTactical__?: {
+          unitScreenPosition(
+            unitId: string,
+          ): { x: number; y: number } | undefined;
+          tileScreenPosition(tile: {
+            x: number;
+            y: number;
+            z: number;
+          }): { x: number; y: number } | undefined;
+        };
+      }
+    ).__tutTactical__;
+    const here = hooks?.unitScreenPosition(id);
+    if (!hooks || !here) {
+      return undefined;
+    }
+    let mine: { x: number; y: number; z: number } | undefined;
+    let best = Infinity;
+    for (let x = 0; x < 96; x++) {
+      for (let z = 0; z < 96; z++) {
+        for (let y = 0; y < 4; y++) {
+          const at = hooks.tileScreenPosition({ x, y, z });
+          if (!at) {
+            continue;
+          }
+          const d = Math.hypot(at.x - here.x, at.y - here.y);
+          if (d < best) {
+            best = d;
+            mine = { x, y, z };
+          }
+        }
+      }
+    }
+    if (!mine) {
+      return undefined;
+    }
+    for (const [dx, dz] of [
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1],
+    ]) {
+      const at = hooks.tileScreenPosition({
+        x: mine.x + (dx ?? 0),
+        y: mine.y,
+        z: mine.z + (dz ?? 0),
+      });
+      if (at) {
+        return { x: at.x, y: at.y };
+      }
+    }
+    return undefined;
+  }, unitId);
+}

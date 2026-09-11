@@ -1,0 +1,68 @@
+{
+  "id": "V14-temperate-city-newseed",
+  "seed": "mc-variety-01",
+  "biome": "temperate",
+  "settlement": "city",
+  "size": "large",
+  "models": "1",
+  "units": "1",
+  "slope": "100",
+  "view": "rotated",
+  "url": "http://127.0.0.1:4178/mapgen-preview.html?seed=mc-variety-01&biome=temperate&settlement=city&size=large&models=1&units=1&slope=100",
+  "baseline": "1131c9019f6dad4abf0a1b46dbfd78334daa9254",
+  "serverRuntime": {
+    "tag": "v0.2.16",
+    "baseline": "1131c9019f6dad4abf0a1b46dbfd78334daa9254",
+    "server": "http://127.0.0.1:4178",
+    "recordedAt": "2026-09-09T03:40:40.088535+00:00",
+    "config": ".scratch/map-critic-v0216/vite.config.mjs",
+    "watch": null,
+    "hmr": false,
+    "freshServerAfterCheckout": true,
+    "runtimeTrees": {
+      "src": "2b5a35ee3c27ae0373a3f57470447eba32734c63",
+      "public": "01e5c286dea273d9a7fae41d73bb3930b0347745",
+      "tools": "74e782320301f477ccef35031e695e4f038c4bbf"
+    },
+    "serverSession": 23504
+  },
+  "capturedAt": "2026-09-09T05:11:34.388Z",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "clip": {
+    "x": 380,
+    "y": 0,
+    "width": 2020,
+    "height": 1500
+  },
+  "camera": {
+    "yawIndex": 1,
+    "zoom": 40,
+    "target": {
+      "x": 48,
+      "y": 0,
+      "z": 48
+    },
+    "bounds": {
+      "x": 0,
+      "z": 0,
+      "w": 96,
+      "d": 96
+    },
+    "zoomRange": {
+      "min": 14.878705187466938,
+      "max": 192
+    }
+  },
+  "levels": {
+    "value": "14",
+    "max": "14",
+    "step": "2",
+    "label": "all"
+  },
+  "errors": [],
+  "sha256": "1192b9dd9f88bd9e30a06d78ff9583d04df1126ab3aeeaedb2a82139de2b2db6",
+  "settling": "Production drawnFrame helper: fonts and two animation frames; asset fallback guard installed before navigation and asserted before shutter"
+}

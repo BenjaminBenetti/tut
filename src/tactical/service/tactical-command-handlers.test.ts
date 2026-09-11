@@ -28,13 +28,18 @@ import type { EndTurnCommand } from "../model/end-turn-command";
 import { END_TURN, endTurn } from "../model/end-turn-command";
 import type { MoveCommand } from "../model/move-command";
 import { MOVE, move } from "../model/move-command";
+import type { RELOAD } from "../model/reload-command";
+import { reload } from "../model/reload-command";
 import type { TacticalHandler } from "../model/tactical-handler";
+import { tacticalCause, tacticalRefusal } from "../model/tactical-error";
 import { TURN_STARTED } from "../model/turn-started-event";
 import { UNIT_MOVED } from "../model/unit-moved-event";
+import { reloadHandler } from "./reload-handler";
 import { startTacticalMission } from "./mission-start-service";
 import { riggedRng } from "./tactical-fixtures.test-helper";
 import {
   applyTacticalCommand,
+  liftTacticalHandler,
   MISSION_OVER,
   NO_ACTIVE_MISSION,
   registerTacticalCommands,
@@ -347,5 +352,82 @@ describe("the RNG fork nonce (#667)", () => {
     dispatcher.process(capped, command);
     expect(draws).toHaveLength(2);
     expect(draws[0]).not.toBe(draws[1]);
+  });
+});
+
+// ===========================================
+// Carrying the refusal through the boundary (#1035)
+// ===========================================
+
+describe("liftTacticalHandler carrying the cause", () => {
+  /** A real refusal from a real handler: the mech starts with full charges. */
+  function refuseReload() {
+    const state = inMission();
+    const unit = state.activeMission?.units.find((u) => u.kind === "mech");
+    if (!unit) throw new Error("fixture needs a mech");
+    const lifted = liftTacticalHandler<GameState, typeof RELOAD>(reloadHandler);
+    const result = lifted(state, reload(unit.id), {
+      rng: riggedRng(false),
+      ids: new SequentialIdGenerator(),
+    });
+    return { result, unitId: unit.id };
+  }
+
+  it("puts the typed refusal on the command error, not just its sentence", () => {
+    const { result, unitId } = refuseReload();
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    // The code and message are exactly what they were before #1035, so
+    // every existing reader of either is unaffected.
+    expect(result.error.code).toBe("charges-full");
+    expect(result.error.message).toBe(
+      `Unit "${unitId}" is already fully loaded`,
+    );
+    // And the data behind that sentence now survives the boundary. This
+    // is the whole change: without it the id in the message above is the
+    // only thing the UI ever receives, which is why it reached the
+    // status line verbatim.
+    expect(tacticalCause(result.error)).toEqual({
+      kind: "charges-full",
+      unitId,
+    });
+  });
+
+  it("refuses a command with no mission, and that refusal is typed too", () => {
+    const lifted = liftTacticalHandler<GameState, typeof RELOAD>(reloadHandler);
+    const result = lifted(
+      { ...inMission(), activeMission: undefined },
+      reload("unit-1"),
+      { rng: riggedRng(false), ids: new SequentialIdGenerator() },
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.code).toBe(NO_ACTIVE_MISSION);
+    expect(tacticalCause(result.error)).toEqual({ kind: "no-active-mission" });
+  });
+
+  it("reads nothing out of an error carrying a foreign cause", () => {
+    // An overworld refusal, a save written before `cause` existed, or a
+    // handler that never had a typed error: each must leave the UI on
+    // its existing message rather than crashing or inventing a kind.
+    expect(tacticalCause({})).toBeUndefined();
+    expect(tacticalCause({ cause: null })).toBeUndefined();
+    expect(tacticalCause({ cause: { kind: "not-a-kind" } })).toBeUndefined();
+    expect(tacticalCause({ cause: "charges-full" })).toBeUndefined();
+  });
+
+  it("keeps every exported code equal to the kind it names", () => {
+    // `NO_ACTIVE_MISSION` and `MISSION_OVER` are compared against
+    // `error.code` by callers; `tacticalRefusal` derives the code from
+    // the kind, so a drift between the two would silently stop those
+    // comparisons matching.
+    expect(tacticalRefusal({ kind: "no-active-mission" }).code).toBe(
+      NO_ACTIVE_MISSION,
+    );
+    expect(tacticalRefusal({ kind: "mission-over", outcome: "won" }).code).toBe(
+      MISSION_OVER,
+    );
   });
 });

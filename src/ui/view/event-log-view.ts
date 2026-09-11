@@ -1,24 +1,13 @@
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { TacticalState } from "../../tactical/model/tactical-state";
-import type { UnitId } from "../../tactical/model/unit";
-import type { IconId } from "../data/icon-manifest";
+import type { GameState } from "../../save/model/game-state";
 import { formatWhole } from "../service/format";
+import { describeEvent, nameResolver } from "./event-vocabulary";
 import { iconGlyph } from "./icon-glyph";
 
 // ===========================================
 // Types
 // ===========================================
-
-/** One line in the log: what to say, how to mark it, and how loud it is. */
-interface LogEntry {
-  readonly text: string;
-  readonly icon: IconId;
-  /** Style-guide tone; `plain` is body text. */
-  readonly tone: "plain" | "danger" | "ok" | "accent" | "bug" | "dim";
-}
-
-/** Reads a unit's display name out of the mission, falling back to its id. */
-type NameOf = (unitId: UnitId) => string;
 
 // ===========================================
 // Constants
@@ -33,110 +22,6 @@ let collapsedForSession = false;
 // ===========================================
 // Phrasing
 // ===========================================
-
-/**
- * One event, one sentence. Everything the log knows how to say lives here,
- * so supporting a new event type is a single entry rather than a change to
- * the view (#525). Returning `undefined` drops the event silently — some
- * events exist for the renderer, not for the player.
- *
- * @param event - The tactical event.
- * @param nameOf - Resolves a unit id to its display name.
- * @returns The line to show, or undefined to skip it.
- */
-function describe(event: TacticalEvent, nameOf: NameOf): LogEntry | undefined {
-  switch (event.type) {
-    case "tactical:turn-started":
-      return {
-        text: `Turn ${formatWhole(event.payload.turn)} — ${
-          event.payload.phase === "player" ? "TDF" : "bug"
-        } phase`,
-        icon: "advance",
-        tone: "accent",
-      };
-    case "tactical:unit-moved":
-      // Movement is the most frequent thing a player does and the least
-      // worth reporting (#1028). Logging it pushed the things that do
-      // matter -- a shot, a kill, a unit running dry -- off the top of
-      // a short log, so the log stopped being where you look to find
-      // out what happened.
-      //
-      // **All** movement is silent, including a move that provoked
-      // something. That is safe rather than a judgement call:
-      // `move-handler` pushes `UNIT_MOVED` and then pushes the
-      // reaction's own events beside it, so an overwatch shot is an
-      // `attack-resolved` entry in its own right. Dropping the move
-      // line removes "Alpha moved 3 tiles" and keeps "Bravo hit Alpha
-      // for 12" -- the consequence still speaks, in its own words.
-      return undefined;
-    case "tactical:attack-resolved":
-      return event.payload.hit
-        ? {
-            text: `${nameOf(event.payload.attackerId)} hit ${nameOf(
-              event.payload.targetId,
-            )} for ${formatWhole(event.payload.damage)}`,
-            icon: "attack",
-            tone: "danger",
-          }
-        : {
-            text: `${nameOf(event.payload.attackerId)} missed ${nameOf(
-              event.payload.targetId,
-            )}`,
-            icon: "attack",
-            tone: "dim",
-          };
-    case "tactical:unit-died":
-      return {
-        text: `${nameOf(event.payload.unitId)} destroyed`,
-        icon: "warning",
-        tone: "danger",
-      };
-    case "tactical:unit-reloaded":
-      return {
-        text: `${nameOf(event.payload.unitId)} reloaded`,
-        icon: "reload",
-        tone: "dim",
-      };
-    case "tactical:unit-status-changed":
-      return {
-        text:
-          event.payload.status.length > 0
-            ? `${nameOf(event.payload.unitId)} is ${event.payload.status.join(", ")}`
-            : `${nameOf(event.payload.unitId)} is clear`,
-        icon: statusIcon(event.payload.status[0]),
-        tone: "plain",
-      };
-    case "tactical:bugs-spawned":
-      return {
-        text: `${formatWhole(event.payload.unitIds.length)} bugs ${
-          event.payload.source === "spawner" ? "hatched" : "arrived at the edge"
-        }`,
-        icon: "egg",
-        tone: "bug",
-      };
-    case "tactical:objective-updated":
-      return {
-        text: event.payload.complete
-          ? `Objective complete: ${event.payload.objectiveId}`
-          : `Objective updated: ${event.payload.objectiveId}`,
-        icon: event.payload.complete ? "check" : "mission",
-        tone: event.payload.complete ? "ok" : "accent",
-      };
-    case "tactical:mission-ended":
-      return {
-        text: `Mission ${event.payload.outcome}`,
-        icon: event.payload.outcome === "won" ? "check" : "warning",
-        tone: event.payload.outcome === "won" ? "ok" : "danger",
-      };
-    default:
-      return undefined;
-  }
-}
-
-/** The glyph for a status change, defaulting to the overwatch eye. */
-function statusIcon(status: string | undefined): IconId {
-  return status === "hidden" || status === "suppressed" ? status : "overwatch";
-}
 
 // ===========================================
 // EventLogView
@@ -229,15 +114,20 @@ export class EventLogView {
   append(
     events: readonly TacticalEvent[],
     mission: TacticalState | undefined,
+    campaign?: GameState,
   ): void {
     const list = this.list;
     if (!list || events.length === 0) {
       return;
     }
-    const nameOf = nameResolver(mission);
+    // Through `nameResolver` rather than `namesFor` directly, so the log
+    // and the indicator above the unit (#1029) name a thing identically
+    // — including an egg spawner, which is a target the unit resolver
+    // alone cannot name.
+    const nameOf = nameResolver(mission, campaign);
     const doc = list.ownerDocument;
     for (const event of events) {
-      const entry = describe(event, nameOf);
+      const entry = describeEvent(event, nameOf);
       if (!entry) {
         continue;
       }
@@ -305,22 +195,3 @@ export class EventLogView {
 // ===========================================
 // Helpers
 // ===========================================
-
-/**
- * Resolves unit ids to the names a player recognises, from the mission's
- * templates. Falls back to the id so a log line never reads as blank.
- *
- * @param mission - Current mission state, if there is one.
- * @returns A name lookup.
- */
-export function nameResolver(mission: TacticalState | undefined): NameOf {
-  if (!mission) {
-    return (unitId) => unitId;
-  }
-  const byId = new Map(mission.units.map((unit) => [unit.id, unit]));
-  return (unitId) => {
-    const unit = byId.get(unitId);
-    const template = unit ? mission.templates[unit.templateId] : undefined;
-    return template?.name ?? unitId;
-  };
-}

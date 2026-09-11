@@ -1,0 +1,38 @@
+{
+  "johannesburg/near": {
+    "openedAt": "2026-09-09T03:49:22.148864+00:00",
+    "observation": "Coherent paved street grid, broad sidewalks, supported buildings with varied storey heights, roofs/openings and domestic frontage cues. Four primary blocks share red-brick lower/gray upper/flat roof vocabulary. Conifer and small round-canopy tree groups on uniformly green grass/brown bare plots give generic temperate neighborhood, little specific Highveld identity in this view. Grass/trees can exist in Johannesburg; do not claim individual pine or lawn impossible. Generic crates/barriers remain #960. Need reverse/whole plus other location and one-parameter controls before ranking."
+  },
+  "johannesburg/rotated": {
+    "openedAt": "2026-09-09T03:50:15.444998+00:00",
+    "observation": "Reverse view retains varied height, coherent street grid and property-boundary fences; all homes retain roofs and an exposed roof opening. Same red-brick/gray-upper flat-box family dominates. Several conifer/round-canopy groups on green lawn and brown bare ground still generic temperate. Existing #960 scattered cover context remains; no floating structures or decorative plinth regressions observed."
+  },
+  "johannesburg/whole": {
+    "openedAt": "2026-09-09T03:55:13.508214+00:00",
+    "observation": "Whole small map confirms ordinary street blocks with four principal buildings of differing storeys, all sharing gray/red flat-box identity, conifer and round-canopy groups, no blue water or broader Highveld ground character. Streets and roofs legible; no new distinct defect beyond known outdoor-context #960."
+  },
+  "lagos/near": {
+    "openedAt": "2026-09-09T03:55:13.508214+00:00",
+    "observation": "Larger map has legible paved grid, roofs, frontage planters and contextual long fence boundaries. Green lawns/bare brown plots with groups of pointy conifers and small rounded trees repeat the Johannesburg temperate read. Red brick and gray upper walls dominate; height/footprint varies but little humid coastal-lowland or local streetscape identity is visible. First-angle candidate: Lagos biome/local-vegetation gap; do not demand water on every urban mission or paint all Lagos as wetland."
+  },
+  "lagos/rotated": {
+    "openedAt": "2026-09-09T03:57:53.190427+00:00",
+    "observation": "Second angle confirms conifer groups and same small rounded tree groups in several open plots, with red brick/gray upper/flat roofs and generic crates/blocks. Town structure reads as built city blocks and retains height and roof openings. Humid coastal-plain city identity absent in this bounded pair; strong candidate to rank under biome/vegetation, above purely ornamental props. Compare existing coastal setting before deciding full scope; no claim all Lagos sites must touch lagoon."
+  },
+  "lagos/whole": {
+    "openedAt": "2026-09-09T04:02:07.909048+00:00",
+    "observation": "Whole map confirms a flat connected urban grid, open perimeter grass plots with repeated conifer groups, red/gray flat-roof buildings varied in height/footprint. No broader humid-lowland character emerges at map scale. City clearly city, location unclear. Candidate needs existing-biome comparison and no claim all Lagos maps need visible water."
+  },
+  "perth/near": {
+    "openedAt": "2026-09-09T04:02:07.909048+00:00",
+    "observation": "Coastal town shows strongly graded sandy/green shore, clusters of thin palms and some small round-canopy trees, recurring red-brick/gray-upper flat-roof blocks. Awnings and planting communicate building use and quay/road endings are purposeful. Regional natural vegetation and building vocabulary do not yet distinguish Perth from generic palmy coastal town in first view. Do not claim Perth has no palms or hills; its real neighborhoods vary. Reverse/whole pending."
+  },
+  "perth/rotated": {
+    "openedAt": "2026-09-09T04:14:18.268982+00:00",
+    "observation": "Reverse and whole confirm a coherent graded coastal town, continuous blue water, purposeful quay endings, supported differing building heights and domestic/shop awnings. Thin palms/small round-canopy groups and green/sandy/brown ground create a generic coast; the same gray/red flat-roof family dominates. Regional flora and building vocabulary would distinguish Perth. Real hills and planted palms are possible in Perth; their mere presence is not a defect."
+  },
+  "perth/whole": {
+    "openedAt": "2026-09-09T04:14:18.268982+00:00",
+    "observation": "Reverse and whole confirm a coherent graded coastal town, continuous blue water, purposeful quay endings, supported differing building heights and domestic/shop awnings. Thin palms/small round-canopy groups and green/sandy/brown ground create a generic coast; the same gray/red flat-roof family dominates. Regional flora and building vocabulary would distinguish Perth. Real hills and planted palms are possible in Perth; their mere presence is not a defect."
+  }
+}

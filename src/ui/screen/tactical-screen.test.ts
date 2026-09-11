@@ -25,7 +25,13 @@ import { ATTACK } from "../../tactical/model/attack-command";
 import { FINISH_MISSION } from "../../tactical/model/finish-mission-command";
 import { MISSION_ENDED } from "../../tactical/model/mission-ended-event";
 import { TURN_STARTED } from "../../tactical/model/turn-started-event";
+import type { CommandError } from "../../core/model/command-error";
 import { commandError } from "../../core/model/command-error";
+import type { ReloadCommand } from "../../tactical/model/reload-command";
+import type { RELOAD } from "../../tactical/model/reload-command";
+import { reloadHandler } from "../../tactical/service/reload-handler";
+import { liftTacticalHandler } from "../../tactical/service/tactical-command-handlers";
+import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import { err, ok } from "../../core/model/result";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import { startTacticalMission } from "../../tactical/service/mission-start-service";
@@ -143,6 +149,42 @@ class FakeStore implements CampaignStore {
   }
   get listenerCount(): number {
     return this.listeners.size;
+  }
+}
+
+/**
+ * A store that runs a refused command through the **real** lifted
+ * handler (#1035).
+ *
+ * `FakeStore` above hands back a refusal someone typed by hand, so a
+ * status-line test built on it can never see the message the simulation
+ * actually produces -- and the id leak lives in exactly that message.
+ * This one dispatches for real, so the test's subject is the sentence
+ * the player was getting.
+ */
+class RealDispatchStore implements CampaignStore {
+  /** The refusal the screen was handed, so a test can check the fixture leaks before asserting the screen hides it. */
+  lastError: CommandError | undefined;
+  constructor(private readonly state: GameState) {}
+  getState(): GameState {
+    return this.state;
+  }
+  subscribe(): Unsubscribe {
+    return () => undefined;
+  }
+  dispatch(command: OverworldCommand) {
+    const result = liftTacticalHandler<GameState, typeof RELOAD>(reloadHandler)(
+      this.state,
+      command as ReloadCommand,
+      { rng: new Mulberry32Rng(1), ids: new SequentialIdGenerator() },
+    );
+    if (!result.ok) {
+      this.lastError = result.error;
+    }
+    return result;
+  }
+  onError(): Unsubscribe {
+    return () => undefined;
   }
 }
 
@@ -335,6 +377,76 @@ describe("TacticalScreen", () => {
     await Promise.resolve();
     expect(logged).toHaveBeenCalledWith("Tactical scene failed", boom);
     logged.mockRestore();
+  });
+
+  /**
+   * Anything worth a line in the log is worth showing where it happened
+   * (#1029) — with movement the one exception, because the unit walking
+   * is already the indicator.
+   *
+   * The words are the log's own, from `event-vocabulary`, so the record
+   * at the edge of the screen and the notification above the unit can
+   * never say different things about the same event.
+   */
+  it("indicates every logged action above the unit that did it, except a move", () => {
+    const state = inMission();
+    const host = new FakeHost();
+    const store = new FakeStore(state);
+    new TacticalScreen({
+      router: fakeRouter().router,
+      session: sessionWith(store),
+      combatTuning: COMBAT_TUNING,
+      objectiveTuning: OBJECTIVE_TUNING,
+      sceneHost: host,
+    }).mount(root);
+    host.notices.length = 0;
+
+    store.command(state, [
+      {
+        type: "tactical:unit-reloaded",
+        payload: { unitId: "unit-1" },
+      },
+      {
+        type: "tactical:unit-status-changed",
+        payload: { unitId: "unit-2", status: ["overwatch"] },
+      },
+      // Excluded: the unit walking is already the indicator.
+      {
+        type: "tactical:unit-moved",
+        payload: {
+          unitId: "unit-1",
+          from: { x: 0, y: 0, z: 0 },
+          to: { x: 1, y: 0, z: 0 },
+          path: [{ x: 1, y: 0, z: 0 }],
+        },
+      },
+      // Belongs to the log, not to any unit.
+      { type: "tactical:turn-started", payload: { turn: 2, phase: "player" } },
+    ] as never);
+
+    // Two units acting in succession, each above its own unit.
+    expect(host.notices).toHaveLength(2);
+    expect(host.notices[0]).toContain("unit-1");
+    expect(host.notices[1]).toContain("unit-2");
+    // No move, no turn-start.
+    expect(host.notices.join(" ")).not.toContain("moved");
+    expect(host.notices.join(" ")).not.toContain("Turn");
+
+    // The property that matters, and the reason the vocabulary was
+    // lifted into one module: the words above the unit are the words in
+    // the log. Asserted against the log's *rendered* lines rather than
+    // against the same function that produced them, so this cannot pass
+    // by both readers being wrong together.
+    const logged = [
+      ...root.querySelectorAll<HTMLElement>('[data-role="event-log-list"] li'),
+    ].map((line) => line.textContent ?? "");
+    for (const notice of host.notices) {
+      const words = notice.slice(notice.indexOf(": ") + 2);
+      expect(
+        logged.some((line) => line.includes(words)),
+        `the log does not say what the indicator says: ${words}`,
+      ).toBe(true);
+    }
   });
 
   it("mounts the banner and viewport from the active mission and attaches the scene host", () => {
@@ -555,9 +667,32 @@ describe("TacticalScreen", () => {
     store.replace({ ...state, activeMission: mission });
 
     host.intents?.emit({ kind: "select-unit", unitId: squad.id });
+    // The squad's roster identity, not its type (#1040): two squads of
+    // one type share a template name, so the card used to call both of
+    // them "Rifle Squad" while the debrief said Alpha and Bravo.
     expect(
       root.querySelector('#unit-card [data-field="unit-name"]')?.textContent,
-    ).toBe(mission.templates[squad.templateId]?.name);
+    ).toBe(
+      state.roster.squads.find((s) => s.id === squad.sourceId)?.name ??
+        mission.templates[squad.templateId]?.name,
+    );
+    // The readiness rail beside it agrees. It arrived in #1041 wired to
+    // the log's old resolver, which answers with the template name, so
+    // without this the same defect would live on in a second surface
+    // while the card beside it read "Alpha".
+    const railNames = [
+      ...root.querySelectorAll('[data-role="squad-list"] li .tut-squad__name'),
+    ].map((el) => el.textContent);
+    const rosterNames = state.roster.squads.map((sq) => sq.name);
+    expect(railNames.length).toBeGreaterThan(0);
+    for (const name of rosterNames) {
+      expect(railNames, `the rail must name ${name}`).toContain(name);
+    }
+    // And no row falls back to a template name or a raw id.
+    for (const name of railNames) {
+      expect(name).not.toMatch(/^unit-/);
+    }
+
     host.intents?.emit({ kind: "action", action: "attack" });
     host.intents?.emit({ kind: "select-unit", unitId: bug.id });
     expect(root.querySelector<HTMLElement>("#hit-preview")?.hidden).toBe(false);
@@ -575,6 +710,47 @@ describe("TacticalScreen", () => {
         root.querySelector<HTMLElement>('[data-role="preview-error"]')?.hidden,
       ).toBe(false);
     }
+  });
+
+  it("a refused command names the unit in the banner, never its id (#1035)", () => {
+    // The whole path a player takes: select a mech that has not fired,
+    // press Reload, read the banner. Nothing is stubbed between the
+    // keypress and the sentence.
+    const state = inMission();
+    const mech = state.activeMission?.units.find((u) => u.kind === "mech");
+    if (!mech) throw new Error("fixture needs a mech");
+    const store = new RealDispatchStore(state);
+    const host = new FakeHost();
+    new TacticalScreen({
+      router: fakeRouter().router,
+      session: sessionWith(store),
+      combatTuning: COMBAT_TUNING,
+      objectiveTuning: OBJECTIVE_TUNING,
+      sceneHost: host,
+    }).mount(root);
+
+    host.intents?.emit({ kind: "select-unit", unitId: mech.id });
+    host.intents?.emit({ kind: "action", action: "reload" });
+
+    // The fixture exhibits the defect. Without this the test could pass
+    // on a build where the simulation never puts an id in the message,
+    // and would then be asserting nothing at all.
+    expect(
+      store.lastError?.message,
+      "the simulation's own message must carry the id, or there is nothing to hide",
+    ).toContain(mech.id);
+
+    const status = root.querySelector(
+      '#turn-banner [data-role="status"]',
+    )?.textContent;
+    expect(status).not.toContain(mech.id);
+    // And it is the same name the card beside it is showing, so the two
+    // lines on screen agree about which unit refused.
+    const name = root.querySelector(
+      '#unit-card [data-field="unit-name"]',
+    )?.textContent;
+    expect(name).toBeTruthy();
+    expect(status).toBe(`${String(name)} is already fully loaded`);
   });
 
   it("End turn from the HUD goes through the store", () => {

@@ -1,0 +1,86 @@
+{
+  "C1-city-fences": {
+    "openedAt": "2026-09-09T03:42:58.212419+00:00",
+    "observation": "Separate timber panels have gone; the grass strip is visibly open. Paved quay/railing remain coherent at left; opposite frontage has legible striped canopy. Palm/rock group and crate remain, within existing #960 outdoor context scope. First angle positive; second angle/control pending."
+  },
+  "C2-city-fences": {
+    "openedAt": "2026-09-09T03:44:29.098564+00:00",
+    "observation": "Reverse angle confirms both former panels absent and no hidden fence issue remains in this strip. Quay rails retained at both pavement ends; narrow grass/sand strip and tree group unobstructed. Positive reported repair; retained plot-run controls still pending."
+  },
+  "city-plot-run-1": {
+    "openedAt": "2026-09-09T03:45:01.430595+00:00",
+    "observation": "A long retained timber run divides the open back/side ground of adjacent street-front buildings. It has a legible property-edge relationship rather than appearing as individual scattered panels. Frontage planters/canopies distinguish homes and shop. Endpoint and opposite side still to check; preview green marker not a new finding."
+  },
+  "city-plot-run-2": {
+    "openedAt": "2026-09-09T03:48:00.513818+00:00",
+    "observation": "Other side confirms the timber run belongs to a single building-side yard boundary, with an open approach at its inner end. Continuous line reads intentionally built; no need to enclose the whole yard. Adjacent building frontage planting survives. Keep this contextual finite end, distinguish from removed isolated shore panels."
+  },
+  "rural-trail-control": {
+    "openedAt": "2026-09-09T03:49:22.148864+00:00",
+    "observation": "Timber run still follows the narrow rural trail/building-side plot edge, with passage left open. Supported large pitched-roof building and grass/sand contacts preserved. Strong relief includes previously ruled natural edges; no re-filing. Positive rural preservation."
+  },
+  "rural-plot-control": {
+    "openedAt": "2026-09-09T03:50:15.444998+00:00",
+    "observation": "Long timber run remains on the seaward plot edge beside the rural house, with the stone approach readable. Open end corresponds to the plot extent; no new requirement to close it. Natural stepped shore/slope silhouettes retained. Positive preservation; narrow stone approach at strong grade is an existing ruled/owned contour context, not a new diagnosis."
+  },
+  "S1-water-surface": {
+    "openedAt": "2026-09-09T03:50:59.511493+00:00",
+    "observation": "Reported open water is now one continuous blue surface, with no internal tile grid visible. Shore shadow and bank silhouette remain. Picture improved from this first side; wait for stronger reverse-angle proof and waterfront controls. The deliberately retained flat water appearance is not the repaired seam finding."
+  },
+  "S2-water-surface": {
+    "openedAt": "2026-09-09T03:55:13.508214+00:00",
+    "observation": "Stronger reverse angle now shows continuous blue water; old dashed grid is gone. Shore edge and building/fence shadows still visible. Both primary views improve the picture."
+  },
+  "W1-city-waterfront": {
+    "openedAt": "2026-09-09T03:55:13.508214+00:00",
+    "observation": "Paved city road terminates at its purposeful railed quay, with blue water continuous below. Preserves the #915 built termination and unobstructed street approach."
+  },
+  "W2-town-waterfront": {
+    "openedAt": "2026-09-09T03:55:13.508214+00:00",
+    "observation": "Town road still ends in a small paved/railed overlook on natural terrain; water grid absent, shore shadow retained. Its existing strong grade is unchanged context, not a new ramp ruling."
+  },
+  "D1-coastal-approach": {
+    "openedAt": "2026-09-09T03:55:13.508214+00:00",
+    "observation": "Stone approach is distinctly traceable beside the large building entrance, across the previously merging brown/sand context. Broad grass/sand/soil contours and supported roofed buildings remain. Close junction pair still pending."
+  },
+  "E1-coastal-junction": {
+    "openedAt": "2026-09-09T03:57:53.190427+00:00",
+    "observation": "Narrow stone route remains visibly distinct through the wide brown bare-earth junction. Grade and previously present steep crossing remain; this is route-identity acceptance, not new traversability certification. Rounded grass/sand/bare-earth margins stay legible."
+  },
+  "E2-coastal-junction": {
+    "openedAt": "2026-09-09T04:14:18.268982+00:00",
+    "observation": "Opened 04:02\u201304:04 before compaction: reverse confirms the stone trail remains traceable through bare earth. Material repair improves route recognition; grade and existing connector rulings remain distinct."
+  },
+  "P1-temperate-control": {
+    "openedAt": "2026-09-09T04:02:07.909048+00:00",
+    "observation": "Temperate stone access remains distinct through earth, alongside contextual rural fence and varied natural relief; no return to #959 route camouflage."
+  },
+  "P2-temperate-control": {
+    "openedAt": "2026-09-09T04:02:07.909048+00:00",
+    "observation": "Reverse temperate view keeps stone route identifiable across brown and green. The existing pronounced grade and spurs remain deliberate geometry context, not a fresh finding."
+  },
+  "P3-snowy-control": {
+    "openedAt": "2026-09-09T04:14:18.268982+00:00",
+    "observation": "Brown trail remains clearly visible on snow, stone access surfaces distinct. Natural stepped relief and finite trail fence retained. No coastal-material spillover observed."
+  },
+  "P4-desert-control": {
+    "openedAt": "2026-09-09T04:14:18.268982+00:00",
+    "observation": "Brown dirt route remains distinct against yellow sand; gray stone access and underlying natural grades retained. Desert palms are existing #701 context, not a new coastal-repair finding."
+  },
+  "M1-coastal-contours": {
+    "openedAt": "2026-09-09T04:14:18.268982+00:00",
+    "observation": "Rounded irregular grass/earth contacts soften the material boundaries. Real terrain slopes retain their accepted angular geometry. No square material patch regression in this crop."
+  },
+  "M2-coastal-contours": {
+    "openedAt": "2026-09-09T04:14:18.268982+00:00",
+    "observation": "Reverse confirms rounded shore grass and earth contacts; terrain geometry is distinct from surface blending. Water is continuous blue; no material seam regression established."
+  },
+  "N1-snowy-contours": {
+    "openedAt": "2026-09-09T04:14:18.268982+00:00",
+    "observation": "Gray stony ground meets snow in a rounded irregular footprint beside the apartment. Supported full roofs and visible domestic planting preserved. Scattered crates/sandbags remain known #960."
+  },
+  "N2-snowy-contours": {
+    "openedAt": "2026-09-09T04:14:18.268982+00:00",
+    "observation": "Opposite angle confirms softened stony-patch boundary on snow and supported building walls/roofs; no square-patch regression. Existing crate/cover context belongs to #960."
+  }
+}

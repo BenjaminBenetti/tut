@@ -1,7 +1,11 @@
 import type { GameState } from "../../save/model/game-state";
 import { findCity } from "../../overworld/service/earth-map-query-service";
+import type { CommandError } from "../../core/model/command-error";
 import type { TacticalError } from "../../tactical/model/tactical-error";
-import { describeTacticalError } from "../../tactical/model/tactical-error";
+import {
+  describeTacticalError,
+  tacticalCause,
+} from "../../tactical/model/tactical-error";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 
 // ===========================================
@@ -17,7 +21,16 @@ import type { TacticalState } from "../../tactical/model/tactical-state";
  * is the other half: the same refusal in the words on the screen.
  */
 export interface TacticalNames {
-  /** A unit's name from its template, never its id. */
+  /**
+   * A unit's name — its **roster identity** where it has one, never its
+   * id.
+   *
+   * Alpha and Bravo are both `squad:rifle`, so a template name calls
+   * them the same thing and an event about one reads as an event about
+   * the other (#1040). The debrief already calls them Alpha and Bravo,
+   * from the roster; in-mission text has to agree. A bug has no roster
+   * entry, so its species name from the template is its identity.
+   */
   unit(id: string): string;
   /**
    * An objective, named by its **ordinal** — "spawner 2".
@@ -85,8 +98,20 @@ export function namesFor(
   return {
     unit: (id) => {
       const unit = units.get(id);
-      const template = unit ? mission?.templates[unit.templateId] : undefined;
-      return template?.name ?? ANONYMOUS.unit;
+      if (!unit) {
+        return ANONYMOUS.unit;
+      }
+      // The roster identity first: a deployed squad or mech keeps the
+      // name the player gave it, which is what the debrief shows.
+      const roster = campaign?.roster;
+      const named =
+        roster?.squads.find((squad) => squad.id === unit.sourceId)?.name ??
+        roster?.mechs.find((mech) => mech.id === unit.sourceId)?.name;
+      // Then the template, which is the species for a bug and the only
+      // name it has.
+      return (
+        named ?? mission?.templates[unit.templateId]?.name ?? ANONYMOUS.unit
+      );
     },
     objective: (id) =>
       ordinalOf(objectives.findIndex((objective) => objective.id === id)),
@@ -195,6 +220,29 @@ export function describeRefusal(
 // ===========================================
 // Helpers
 // ===========================================
+
+/**
+ * What to put in front of the player for a refused command.
+ *
+ * A dispatched refusal reaches the UI as a `CommandError`, whose
+ * `message` was built inside the simulation and names its ids:
+ *
+ * ```
+ *   Unit "unit-1" is already fully loaded          ← error.message
+ *   Hammerhead is already fully loaded             ← this function
+ * ```
+ *
+ * The typed refusal rides along as `cause` (#1035), so the same resolver
+ * the HUD uses for its own previews can phrase the dispatched ones too.
+ * When there is no tactical cause -- an overworld refusal, a save
+ * written before `cause` existed, `unknown-command` from the dispatcher
+ * -- the message is already the best text available and is used as it
+ * stands. Nothing about this path can leave the player with no sentence.
+ */
+export function refusalText(error: CommandError, names: TacticalNames): string {
+  const cause = tacticalCause(error);
+  return cause === undefined ? error.message : describeRefusal(cause, names);
+}
 
 /** "spawner 2" from an index, or the anonymous form when there is none. */
 function ordinalOf(index: number): string {

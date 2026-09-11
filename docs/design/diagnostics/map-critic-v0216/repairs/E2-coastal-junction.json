@@ -1,0 +1,78 @@
+{
+  "seed": "mc-resume-03",
+  "biome": "coastal",
+  "settlement": "rural",
+  "size": "small",
+  "rotation": 1,
+  "id": "E2-coastal-junction",
+  "tile": {
+    "x": 21,
+    "y": 2,
+    "z": 10
+  },
+  "pitch": 45,
+  "width": 1300,
+  "height": 1050,
+  "camera": {
+    "yawIndex": 1,
+    "zoom": 55.11351921262141,
+    "target": {
+      "x": 21.5,
+      "y": 1.65,
+      "z": 10.5
+    },
+    "bounds": {
+      "x": 0,
+      "z": 0,
+      "w": 48,
+      "d": 48
+    },
+    "zoomRange": {
+      "min": 29.757410374933876,
+      "max": 192
+    }
+  },
+  "actualPitch": 45.00000000000015,
+  "pixel": {
+    "x": 1389.999999999999,
+    "y": 750.0000000000003
+  },
+  "url": "http://127.0.0.1:4178/mapgen-preview.html?seed=mc-resume-03&biome=coastal&settlement=rural&size=small&models=1&units=1&slope=100",
+  "baseline": "1131c9019f6dad4abf0a1b46dbfd78334daa9254",
+  "serverRuntime": {
+    "tag": "v0.2.16",
+    "baseline": "1131c9019f6dad4abf0a1b46dbfd78334daa9254",
+    "server": "http://127.0.0.1:4178",
+    "recordedAt": "2026-09-09T03:40:40.088535+00:00",
+    "config": ".scratch/map-critic-v0216/vite.config.mjs",
+    "watch": null,
+    "hmr": false,
+    "freshServerAfterCheckout": true,
+    "runtimeTrees": {
+      "src": "2b5a35ee3c27ae0373a3f57470447eba32734c63",
+      "public": "01e5c286dea273d9a7fae41d73bb3930b0347745",
+      "tools": "74e782320301f477ccef35031e695e4f038c4bbf"
+    },
+    "serverSession": 23504
+  },
+  "capturedAt": "2026-09-09T03:55:54.409Z",
+  "viewport": {
+    "width": 2400,
+    "height": 1500
+  },
+  "clip": {
+    "x": 740,
+    "y": 225,
+    "width": 1300,
+    "height": 1050
+  },
+  "levels": {
+    "value": "6",
+    "max": "6",
+    "step": "2",
+    "label": "all"
+  },
+  "errors": [],
+  "sha256": "baef2c8bd6fbb90515cd194dbce8a04106f324a73f4dab4d7748cfdadafc5e77",
+  "cameraMethod": "Production camera rig accessor, matching published Art camera; no map or scene substitution"
+}

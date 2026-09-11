@@ -1,6 +1,13 @@
 import type { Page } from "@playwright/test";
 
-import type { TacticalMap } from "../src/mapgen/model/tactical-map";
+import type { TacticalState } from "../src/tactical/model/tactical-state";
+import type { TileCoord } from "../src/mapgen/model/tile-coord";
+import type { MoveGraph } from "../src/tactical/service/movement-service";
+import {
+  buildMoveGraph,
+  pathTo,
+} from "../src/tactical/service/movement-service";
+import { perceivedSpawners } from "../src/tactical/service/vision-service";
 import { PassMask } from "../src/mapgen/model/pass-mask";
 import {
   nearestSightPosition,
@@ -17,9 +24,6 @@ interface HookGlobal {
 
 /** Days to advance before giving up on a mission appearing for the fixed seed. */
 const MAX_DAYS = 40;
-
-/** How long to let the autosave catch up before calling a move refused. */
-const MOVE_SETTLE_MS = 400;
 
 /**
  * #484: an egg spawner is a mission's primary objective, so it has to be
@@ -74,6 +78,7 @@ test("egg spawners are drawn on the tactical map and can be targeted by clicking
   await page.locator('[data-action="launch"]').click();
   await expect(body).toHaveAttribute("data-screen", "tactical");
   await expect(page.locator("#tactical-viewport canvas")).toBeVisible();
+  await expect(body).toHaveAttribute("data-tactical-ready", "true");
 
   // Since #551 the scene draws the player's view, so a spawner nobody has
   // scouted is not on the map at all. That is the point: the objective
@@ -103,10 +108,7 @@ test("egg spawners are drawn on the tactical map and can be targeted by clicking
   // a unit that cannot act. End the turn so the side refreshes before
   // the targeting half of this spec — otherwise whether the button is
   // clickable depends on how many moves the walk happened to take.
-  await page.locator('#action-bar [data-action="end-turn"]').click();
-  await expect(
-    page.locator('#turn-banner [data-field="phase"]'),
-  ).toHaveAttribute("data-phase", "player");
+  await endTurn(page, body);
   await expect(
     page.locator('#action-bar [data-action="attack"]').first(),
   ).toBeEnabled();
@@ -159,22 +161,8 @@ test("egg spawners are drawn on the tactical map and can be targeted by clicking
 // Scouting (#551)
 // ===========================================
 
-/** The mission as the autosave holds it. */
-interface SavedMission {
-  map: TacticalMap;
-  units: {
-    id: string;
-    team: string;
-    hp: number;
-    passClass: "infantry" | "mech";
-    templateId: string;
-    /** Action points left, so the walk knows when to end the turn. */
-    ap: number;
-    pos: { x: number; y: number; z: number };
-  }[];
-  templates: Record<string, { sightRange: number }>;
-  spawners: { id: string; pos: { x: number; y: number; z: number } }[];
-}
+/** The real saved state supplies movement budgets, command progress and knowledge. */
+type SavedMission = TacticalState;
 
 /** Reads the live mission out of the autosave. */
 async function savedMission(page: Page): Promise<SavedMission | null> {
@@ -189,53 +177,95 @@ async function savedMission(page: Page): Promise<SavedMission | null> {
 }
 
 /**
- * Walks a living unit toward the nearest spawner until one is drawn, and
- * returns that scout and a spawner the objectives track — or undefined if
- * none turned up.
- *
- * It routes rather than aims. A straight line at the target stalls the
- * moment a building or a prop is in the way: the move is correctly
- * refused, the unit stays put, and every later turn recomputes the same
- * impossible target from the same tile. So each turn tries candidate
- * tiles in order of how much they close the gap and keeps the first one
- * that actually moves the unit, which lets it walk around what is in the
- * way instead of into it.
+ * Scouts with real movement until the player's saved knowledge contains a
+ * spawner, then waits for that mesh. Drawing follows queued animations, so
+ * a zero mesh count must never tell a scout that already found it to walk on.
  */
 async function scoutToASpawner(
   page: Page,
 ): Promise<{ spawnerId: string; unitId: string } | undefined> {
   const body = page.locator("body");
-  for (let turn = 0; turn < 14; turn++) {
-    const mission = await savedMission(page);
-    const unit = mission?.units.find((u) => u.team === "tdf" && u.hp > 0);
-    const spawner = nearestSpawner(mission, unit);
-    if (!mission || !unit || !spawner) return undefined;
+  const progress: unknown[] = [];
+  const initial = await savedMission(page);
+  expect(initial, "scouting needs an active saved mission").not.toBeNull();
+  const graph = buildMoveGraph(initial!.map);
+  try {
+    for (let attempt = 0; attempt < 14; attempt++) {
+      const mission = await savedMission(page);
+      const unit = mission?.units.find((u) => u.team === "tdf" && u.hp > 0);
+      const spawner = nearestSpawner(mission, unit);
+      expect(
+        { mission: !!mission, unit: !!unit, spawner: !!spawner },
+        `scouting lost its fixture: ${JSON.stringify(progress)}`,
+      ).toEqual({ mission: true, unit: true, spawner: true });
+      if (!mission || !unit || !spawner) return undefined;
+      const known = perceivedSpawners(mission, "tdf")[0];
+      if (known) return await waitForScoutedMesh(page, known.id, unit.id);
 
-    // Walk to where the squad can see it, not to it: since ADR 0009 (#829)
-    // a spawner may sit deep inside a building, and the wall beside it
-    // shows nothing. The game says which reachable tile has the sight line.
-    const vantage =
-      nearestSightPosition(
-        mission.map,
-        unit.pos,
-        spawner.pos,
-        unit.passClass === "mech" ? PassMask.MECH : PassMask.INFANTRY,
-        mission.templates[unit.templateId].sightRange,
-      ) ?? spawner.pos;
-    const moved = await stepToward(page, unit, vantage, mission.map);
-    const found = await drawnSpawnerId(page);
-    if (found !== undefined) return { spawnerId: found, unitId: unit.id };
-    if (!moved) {
-      // Boxed in for this turn's action points; a fresh turn reopens the
-      // budget, and a failure to move at all is caught by the cap.
-      await endTurn(page, body);
-      continue;
+      const vantage =
+        nearestSightPosition(
+          mission.map,
+          unit.pos,
+          spawner.pos,
+          unit.passClass === "mech" ? PassMask.MECH : PassMask.INFANTRY,
+          mission.templates[unit.templateId].sightRange,
+        ) ?? spawner.pos;
+      const moved = await stepToward(page, unit, vantage, mission, graph);
+      const after = await savedMission(page);
+      const scout = after?.units.find((u) => u.id === unit.id);
+      progress.push({
+        attempt,
+        turn: mission.turn,
+        commandBefore: mission.commandSeq,
+        commandAfter: after?.commandSeq,
+        from: unit.pos,
+        to: scout?.pos,
+        apBefore: unit.ap,
+        apAfter: scout?.ap,
+        hp: scout?.hp,
+        perceived: after
+          ? perceivedSpawners(after, "tdf").map((s) => s.id)
+          : [],
+        drawn: await body.getAttribute("data-tactical-spawners"),
+      });
+      expect(moved, `scout made no progress: ${JSON.stringify(progress)}`).toBe(
+        true,
+      );
+      const found = after && perceivedSpawners(after, "tdf")[0];
+      if (found) return await waitForScoutedMesh(page, found.id, unit.id);
+      if ((scout?.ap ?? 0) <= 0) await endTurn(page, body);
     }
-    if (await outOfActions(page, unit.id)) {
-      await endTurn(page, body);
-    }
+    return undefined;
+  } finally {
+    await test.info().attach("scout-progress", {
+      body: JSON.stringify(progress, null, 2),
+      contentType: "application/json",
+    });
   }
-  return undefined;
+}
+
+/** Waits for the specific known spawner's actual scene object before targeting it. */
+async function waitForScoutedMesh(
+  page: Page,
+  spawnerId: string,
+  unitId: string,
+) {
+  await expect
+    .poll(
+      () =>
+        page.evaluate(
+          (id: string) =>
+            (globalThis as HookGlobal).__tutTactical__?.spawnerScreenPosition(
+              id,
+            ),
+          spawnerId,
+        ),
+      {
+        message: `scouted ${spawnerId}; waiting for its mesh after queued animations`,
+      },
+    )
+    .toBeTruthy();
+  return { spawnerId, unitId };
 }
 
 /** The spawner closest to the unit, so the walk is the short one. */
@@ -265,12 +295,13 @@ async function stepToward(
   page: Page,
   unit: SavedMission["units"][number],
   target: { x: number; y: number; z: number },
-  map: TacticalMap,
+  mission: SavedMission,
+  graph: MoveGraph,
 ): Promise<boolean> {
   // Follow the walk the game says exists, a few tiles at a time: the
   // vantage may be a storey up a ramp the offsets below would never find.
   const path = pathBetween(
-    map,
+    mission.map,
     unit.pos,
     target,
     unit.passClass === "mech" ? PassMask.MECH : PassMask.INFANTRY,
@@ -279,14 +310,7 @@ async function stepToward(
     for (const hop of [6, 5, 4, 3, 2, 1]) {
       const tile = path[Math.min(hop, path.length) - 1];
       if (tile === undefined) continue;
-      await page.evaluate(
-        (args: { id: string; tile: { x: number; y: number; z: number } }) => {
-          (globalThis as HookGlobal).__tutTactical__?.selectUnit(args.id);
-          (globalThis as HookGlobal).__tutTactical__?.invokeTile(args.tile);
-        },
-        { id: unit.id, tile },
-      );
-      if (await movedFrom(page, unit.id, unit.pos)) {
+      if (await moveAndWait(page, mission, unit, tile, graph)) {
         return true;
       }
     }
@@ -311,14 +335,7 @@ async function stepToward(
     .sort((a, b) => manhattan(a, target) - manhattan(b, target));
 
   for (const tile of candidates.slice(0, 10)) {
-    await page.evaluate(
-      (args: { id: string; tile: { x: number; y: number; z: number } }) => {
-        (globalThis as HookGlobal).__tutTactical__?.selectUnit(args.id);
-        (globalThis as HookGlobal).__tutTactical__?.invokeTile(args.tile);
-      },
-      { id: unit.id, tile },
-    );
-    if (await movedFrom(page, unit.id, unit.pos)) {
+    if (await moveAndWait(page, mission, unit, tile, graph)) {
       return true;
     }
   }
@@ -326,49 +343,104 @@ async function stepToward(
 }
 
 /**
- * Whether the unit left `from`, waiting briefly for the autosave to
- * catch up. The store updates synchronously but the save is written
- * after, and under a full parallel suite that gap is wide enough to read
- * the old position and conclude a legal move was refused.
+ * Filters refusals using the HUD's movement query, then proves the accepted
+ * command reached its exact saved destination and spent AP. A broken invoke
+ * fails here with its attempted move, rather than burning the scout's cap.
  */
-async function movedFrom(
+async function moveAndWait(
   page: Page,
-  unitId: string,
-  from: { x: number; y: number; z: number },
+  mission: SavedMission,
+  unit: SavedMission["units"][number],
+  tile: TileCoord,
+  graph: MoveGraph,
 ): Promise<boolean> {
-  const deadline = Date.now() + MOVE_SETTLE_MS;
-  do {
-    const mission = await savedMission(page);
-    const unit = mission?.units.find((u) => u.id === unitId);
-    if (unit && manhattan(unit.pos, from) > 0) {
-      return true;
-    }
-    await page.waitForTimeout(25);
-  } while (Date.now() < deadline);
-  return false;
+  const path = pathTo(mission, unit.id, tile, graph);
+  if (!path?.length) return false;
+  await page.evaluate(
+    (args: { id: string; tile: TileCoord }) => {
+      (globalThis as HookGlobal).__tutTactical__?.selectUnit(args.id);
+      (globalThis as HookGlobal).__tutTactical__?.invokeTile(args.tile);
+    },
+    { id: unit.id, tile },
+  );
+  await expect
+    .poll(
+      async () => {
+        const after = await savedMission(page);
+        const scout = after?.units.find((u) => u.id === unit.id);
+        return {
+          turn: after?.turn,
+          phase: after?.phase,
+          command: after?.commandSeq,
+          pos: scout?.pos,
+          spentAp: (scout?.ap ?? unit.ap) < unit.ap,
+        };
+      },
+      {
+        message: `scout move refused or stalled: ${JSON.stringify({
+          unit: unit.id,
+          from: unit.pos,
+          to: tile,
+          turn: mission.turn,
+          ap: unit.ap,
+          command: mission.commandSeq,
+        })}`,
+      },
+    )
+    .toEqual({
+      turn: mission.turn,
+      phase: "player",
+      command: mission.commandSeq + 1,
+      pos: tile,
+      spentAp: true,
+    });
+  // The renderer consumes an animation queue after the synchronous save. Let
+  // this visible move finish before adding another command to that queue.
+  await expect
+    .poll(
+      () =>
+        page.evaluate(
+          (args: { id: string; tile: TileCoord }) => {
+            const hooks = (globalThis as HookGlobal).__tutTactical__;
+            const unit = hooks?.unitScreenPosition(args.id);
+            const destination = hooks?.tileScreenPosition(args.tile);
+            return unit && destination
+              ? Math.hypot(unit.x - destination.x, unit.y - destination.y)
+              : Infinity;
+          },
+          { id: unit.id, tile },
+        ),
+      {
+        message: `saved scout move reached ${JSON.stringify(tile)}; waiting for its rendered feet`,
+      },
+    )
+    .toBeLessThan(0.1);
+  return true;
 }
 
-/** A spawner the objectives track, once one is actually drawn. */
-async function drawnSpawnerId(page: Page): Promise<string | undefined> {
-  const drawn = await page
-    .locator("body")
-    .getAttribute("data-tactical-spawners");
-  if (drawn === null || drawn === "0") {
-    return undefined;
-  }
-  const objectives = page.locator('[data-role="objective-list"] li');
-  return (await objectives.first().getAttribute("data-target-id")) ?? undefined;
-}
-
-/** Whether the unit has spent its action points. */
-async function outOfActions(page: Page, unitId: string): Promise<boolean> {
-  const mission = await savedMission(page);
-  const unit = mission?.units.find((u) => u.id === unitId);
-  return (unit?.ap ?? 0) <= 0;
-}
-
-/** Ends the turn and waits for the tactical screen to settle. */
+/** Ends the turn and proves the saved player turn advanced, not just that a HUD exists. */
 async function endTurn(page: Page, body: ReturnType<Page["locator"]>) {
+  const before = await savedMission(page);
+  expect(before, "end turn needs an active mission").not.toBeNull();
   await page.locator('#action-bar [data-action="end-turn"]').click();
+  await expect
+    .poll(
+      async () => {
+        const after = await savedMission(page);
+        return {
+          turn: after?.turn,
+          phase: after?.phase,
+          command: after?.commandSeq,
+        };
+      },
+      {
+        message: `player turn ${before!.turn} did not advance in the saved mission`,
+      },
+    )
+    .toEqual({
+      turn: before!.turn + 1,
+      phase: "player",
+      command: before!.commandSeq + 1,
+    });
   await expect(body).toHaveAttribute("data-screen", "tactical");
 }

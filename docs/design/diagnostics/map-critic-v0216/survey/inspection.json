@@ -1,0 +1,182 @@
+{
+  "V01-coastal-city/near": {
+    "openedAt": "2026-09-09T04:14:18.268982+00:00",
+    "observation": "Changing only Lagos recipe biome to coastal replaces conifer/lawn context with sandy/green plots, slender palm groups and a clear shoreline. Streets, purposeful quays, supported roofs and frontage differences remain legible. This is a warmer coastal identity, but repeated gray/red flat blocks and sparse similar planting still generic. Demonstrates partial improvement available in existing palette, not proof a biome switch alone delivers Lagos."
+  },
+  "V01-coastal-city/rotated": {
+    "openedAt": "2026-09-09T04:14:18.268982+00:00",
+    "observation": "Changing only Lagos recipe biome to coastal replaces conifer/lawn context with sandy/green plots, slender palm groups and a clear shoreline. Streets, purposeful quays, supported roofs and frontage differences remain legible. This is a warmer coastal identity, but repeated gray/red flat blocks and sparse similar planting still generic. Demonstrates partial improvement available in existing palette, not proof a biome switch alone delivers Lagos."
+  },
+  "V01-coastal-city/whole": {
+    "openedAt": "2026-09-09T04:14:18.268982+00:00",
+    "observation": "Changing only Lagos recipe biome to coastal replaces conifer/lawn context with sandy/green plots, slender palm groups and a clear shoreline. Streets, purposeful quays, supported roofs and frontage differences remain legible. This is a warmer coastal identity, but repeated gray/red flat blocks and sparse similar planting still generic. Demonstrates partial improvement available in existing palette, not proof a biome switch alone delivers Lagos."
+  },
+  "V02-coastal-town/near": {
+    "openedAt": "2026-09-09T04:17:29.951256+00:00",
+    "observation": "Settlement-only change city to town yields fewer streets/buildings and strong natural grades. Supported roofed blocks, purposeful waterfront terminus, contextual long plot fences and rounded surface contacts retain their read. Buildings still share gray/red flat-box family; palms/round small trees retain generic coastal identity. Steep accepted ramps are not a new finding."
+  },
+  "V02-coastal-town/rotated": {
+    "openedAt": "2026-09-09T04:17:29.951293+00:00",
+    "observation": "Settlement-only change city to town yields fewer streets/buildings and strong natural grades. Supported roofed blocks, purposeful waterfront terminus, contextual long plot fences and rounded surface contacts retain their read. Buildings still share gray/red flat-box family; palms/round small trees retain generic coastal identity. Steep accepted ramps are not a new finding."
+  },
+  "V02-coastal-town/whole": {
+    "openedAt": "2026-09-09T04:17:29.951295+00:00",
+    "observation": "Settlement-only change city to town yields fewer streets/buildings and strong natural grades. Supported roofed blocks, purposeful waterfront terminus, contextual long plot fences and rounded surface contacts retain their read. Buildings still share gray/red flat-box family; palms/round small trees retain generic coastal identity. Steep accepted ramps are not a new finding."
+  },
+  "V03-coastal-rural/near": {
+    "openedAt": "2026-09-09T04:20:45.867130+00:00",
+    "observation": "Settlement-only town to rural change produces a winding stone lane and isolated supported roofed home amid open graded shore ground. Route remains traceable on earth from both sides; finite fences belong beside route/home. Material contours stay smooth. Overall setting differs strongly from city; generic palms/round-tree motifs still recur. No new distinct defect established."
+  },
+  "V03-coastal-rural/rotated": {
+    "openedAt": "2026-09-09T04:20:45.867130+00:00",
+    "observation": "Settlement-only town to rural change produces a winding stone lane and isolated supported roofed home amid open graded shore ground. Route remains traceable on earth from both sides; finite fences belong beside route/home. Material contours stay smooth. Overall setting differs strongly from city; generic palms/round-tree motifs still recur. No new distinct defect established."
+  },
+  "V03-coastal-rural/whole": {
+    "openedAt": "2026-09-09T04:20:45.867130+00:00",
+    "observation": "Settlement-only town to rural change produces a winding stone lane and isolated supported roofed home amid open graded shore ground. Route remains traceable on earth from both sides; finite fences belong beside route/home. Material contours stay smooth. Overall setting differs strongly from city; generic palms/round-tree motifs still recur. No new distinct defect established."
+  },
+  "V04-temperate-rural/near": {
+    "openedAt": "2026-09-09T04:24:49.458200+00:00",
+    "observation": "Biome-only coast to temperate: more green land and conifer/round-canopy groups replace the sandy/palm shoreline. Winding stone lane remains legible through earth and accepted grades, home remains supported/roofed with plot boundary. Broad generic temperate character differs from coast. No new distinct defect established."
+  },
+  "V04-temperate-rural/rotated": {
+    "openedAt": "2026-09-09T04:24:49.458200+00:00",
+    "observation": "Biome-only coast to temperate: more green land and conifer/round-canopy groups replace the sandy/palm shoreline. Winding stone lane remains legible through earth and accepted grades, home remains supported/roofed with plot boundary. Broad generic temperate character differs from coast. No new distinct defect established."
+  },
+  "V04-temperate-rural/whole": {
+    "openedAt": "2026-09-09T04:24:49.458200+00:00",
+    "observation": "Biome-only coast to temperate: more green land and conifer/round-canopy groups replace the sandy/palm shoreline. Winding stone lane remains legible through earth and accepted grades, home remains supported/roofed with plot boundary. Broad generic temperate character differs from coast. No new distinct defect established."
+  },
+  "V05-temperate-town/near": {
+    "openedAt": "2026-09-09T04:36:02.360134+00:00",
+    "observation": "Settlement-only rural to town adds paved streets and multi-storey roofed blocks on real green relief. Long fences belong to open plot boundaries. Trees/material contacts remain coherent, building family still repetitive despite awning/use differences. No new distinct defect established; pronounced natural grades remain deliberately separate from removed decorative plinths."
+  },
+  "V05-temperate-town/rotated": {
+    "openedAt": "2026-09-09T04:36:02.360186+00:00",
+    "observation": "Settlement-only rural to town adds paved streets and multi-storey roofed blocks on real green relief. Long fences belong to open plot boundaries. Trees/material contacts remain coherent, building family still repetitive despite awning/use differences. No new distinct defect established; pronounced natural grades remain deliberately separate from removed decorative plinths."
+  },
+  "V05-temperate-town/whole": {
+    "openedAt": "2026-09-09T04:36:02.360188+00:00",
+    "observation": "Settlement-only rural to town adds paved streets and multi-storey roofed blocks on real green relief. Long fences belong to open plot boundaries. Trees/material contacts remain coherent, building family still repetitive despite awning/use differences. No new distinct defect established; pronounced natural grades remain deliberately separate from removed decorative plinths."
+  },
+  "V06-desert-town/near": {
+    "openedAt": "2026-09-09T04:40:20.006013+00:00",
+    "observation": "Biome-only temperate-to-desert change visibly replaces green/conifer land with sand, cactus and scattered palms, gray stony patches. Streets and raised natural grades keep supported roofed buildings, perimeter rails and credible fences. Same gray/red rectangular building family persists strongly, corroborating broad stock-kit repetition without claiming a particular named desert city. Isolated palms belong to #701."
+  },
+  "V06-desert-town/rotated": {
+    "openedAt": "2026-09-09T04:40:20.006058+00:00",
+    "observation": "Biome-only temperate-to-desert change visibly replaces green/conifer land with sand, cactus and scattered palms, gray stony patches. Streets and raised natural grades keep supported roofed buildings, perimeter rails and credible fences. Same gray/red rectangular building family persists strongly, corroborating broad stock-kit repetition without claiming a particular named desert city. Isolated palms belong to #701."
+  },
+  "V06-desert-town/whole": {
+    "openedAt": "2026-09-09T04:40:20.006061+00:00",
+    "observation": "Biome-only temperate-to-desert change visibly replaces green/conifer land with sand, cactus and scattered palms, gray stony patches. Streets and raised natural grades keep supported roofed buildings, perimeter rails and credible fences. Same gray/red rectangular building family persists strongly, corroborating broad stock-kit repetition without claiming a particular named desert city. Isolated palms belong to #701."
+  },
+  "V07-desert-rural/near": {
+    "openedAt": "2026-09-09T04:44:00.939639+00:00",
+    "observation": "Settlement-only town to rural gives one roofed structure above an exposed supported foundation, winding brown path through sandy grades, clustered stones/cacti and scattered palms. Path remains distinct from sand/stony areas. Strong existing natural/lot cut faces visible from both sides; no claim about door reachability without tactical check and no reopening accepted connector/foundation rulings from silhouette alone. Larger building family remains the same, rather than a new named-place claim."
+  },
+  "V07-desert-rural/rotated": {
+    "openedAt": "2026-09-09T04:44:00.939661+00:00",
+    "observation": "Settlement-only town to rural gives one roofed structure above an exposed supported foundation, winding brown path through sandy grades, clustered stones/cacti and scattered palms. Path remains distinct from sand/stony areas. Strong existing natural/lot cut faces visible from both sides; no claim about door reachability without tactical check and no reopening accepted connector/foundation rulings from silhouette alone. Larger building family remains the same, rather than a new named-place claim."
+  },
+  "V07-desert-rural/whole": {
+    "openedAt": "2026-09-09T04:44:00.939663+00:00",
+    "observation": "Settlement-only town to rural gives one roofed structure above an exposed supported foundation, winding brown path through sandy grades, clustered stones/cacti and scattered palms. Path remains distinct from sand/stony areas. Strong existing natural/lot cut faces visible from both sides; no claim about door reachability without tactical check and no reopening accepted connector/foundation rulings from silhouette alone. Larger building family remains the same, rather than a new named-place claim."
+  },
+  "V08-snowy-rural/near": {
+    "openedAt": "2026-09-09T04:48:23.439722+00:00",
+    "observation": "Biome-only desert-to-snow changes to continuous white ground, conifer groups and gray stony exposures. Brown path remains clear from both sides around the roofed building, plot/trail fences retained. Softer surface contacts remain distinct from deliberate highly stepped/teethed natural grades. No new distinct defect established; the same building family remains visible across climates."
+  },
+  "V08-snowy-rural/rotated": {
+    "openedAt": "2026-09-09T04:48:23.439746+00:00",
+    "observation": "Biome-only desert-to-snow changes to continuous white ground, conifer groups and gray stony exposures. Brown path remains clear from both sides around the roofed building, plot/trail fences retained. Softer surface contacts remain distinct from deliberate highly stepped/teethed natural grades. No new distinct defect established; the same building family remains visible across climates."
+  },
+  "V08-snowy-rural/whole": {
+    "openedAt": "2026-09-09T04:48:23.439748+00:00",
+    "observation": "Biome-only desert-to-snow changes to continuous white ground, conifer groups and gray stony exposures. Brown path remains clear from both sides around the roofed building, plot/trail fences retained. Softer surface contacts remain distinct from deliberate highly stepped/teethed natural grades. No new distinct defect established; the same building family remains visible across climates."
+  },
+  "V09-snowy-town/near": {
+    "openedAt": "2026-09-09T04:53:52.474258+00:00",
+    "observation": "Settlement-only rural to town adds a paved street network and larger supported buildings within snowy conifer-covered relief. Near and reverse show open plot/trail fences, intact roof silhouettes and readable street crossings. Grey rock contacts retain irregular outlines. The repeated gray/red building vocabulary still dominates; steep natural and lot-cut faces are visible but this frame alone does not reopen the accepted elevation/connector rulings. No new distinct defect established."
+  },
+  "V09-snowy-town/rotated": {
+    "openedAt": "2026-09-09T04:53:52.474281+00:00",
+    "observation": "Settlement-only rural to town adds a paved street network and larger supported buildings within snowy conifer-covered relief. Near and reverse show open plot/trail fences, intact roof silhouettes and readable street crossings. Grey rock contacts retain irregular outlines. The repeated gray/red building vocabulary still dominates; steep natural and lot-cut faces are visible but this frame alone does not reopen the accepted elevation/connector rulings. No new distinct defect established."
+  },
+  "V09-snowy-town/whole": {
+    "openedAt": "2026-09-09T04:53:52.474284+00:00",
+    "observation": "Settlement-only rural to town adds a paved street network and larger supported buildings within snowy conifer-covered relief. Near and reverse show open plot/trail fences, intact roof silhouettes and readable street crossings. Grey rock contacts retain irregular outlines. The repeated gray/red building vocabulary still dominates; steep natural and lot-cut faces are visible but this frame alone does not reopen the accepted elevation/connector rulings. No new distinct defect established."
+  },
+  "V10-snowy-city/near": {
+    "openedAt": "2026-09-09T04:56:31.562293+00:00",
+    "observation": "Settlement-only town to city produces a flatter, denser avenue grid with roof-height variation, domestic window boxes and a striped shop frontage. Both sides and the whole board preserve clear streets, supported buildings and coherent plot boundary runs. Snow and conifers distinguish climate, but the repeated rectangular gray/red building family and loose cover props remain the already-filed variety/use gaps. Flat ground alone is not proof of tactically flat play; roofs and storeys remain visible. No new distinct defect established."
+  },
+  "V10-snowy-city/rotated": {
+    "openedAt": "2026-09-09T04:56:31.562358+00:00",
+    "observation": "Settlement-only town to city produces a flatter, denser avenue grid with roof-height variation, domestic window boxes and a striped shop frontage. Both sides and the whole board preserve clear streets, supported buildings and coherent plot boundary runs. Snow and conifers distinguish climate, but the repeated rectangular gray/red building family and loose cover props remain the already-filed variety/use gaps. Flat ground alone is not proof of tactically flat play; roofs and storeys remain visible. No new distinct defect established."
+  },
+  "V10-snowy-city/whole": {
+    "openedAt": "2026-09-09T04:56:31.562360+00:00",
+    "observation": "Settlement-only town to city produces a flatter, denser avenue grid with roof-height variation, domestic window boxes and a striped shop frontage. Both sides and the whole board preserve clear streets, supported buildings and coherent plot boundary runs. Snow and conifers distinguish climate, but the repeated rectangular gray/red building family and loose cover props remain the already-filed variety/use gaps. Flat ground alone is not proof of tactically flat play; roofs and storeys remain visible. No new distinct defect established."
+  },
+  "V11-desert-city/near": {
+    "openedAt": "2026-09-09T04:59:26.877477+00:00",
+    "observation": "Biome-only snowy to desert preserves the avenue/plot structure while sand, cactus, palms and stones replace snow/conifers. Individual heights and building colors change, but near, reverse and whole retain the same rectangular gray/red family. Ground-material contacts and credible fence extents remain legible; loose urban cover remains #960. Isolated palms are #701, not a new finding. No additional distinct defect or claimed named desert location is established."
+  },
+  "V11-desert-city/rotated": {
+    "openedAt": "2026-09-09T04:59:26.877510+00:00",
+    "observation": "Biome-only snowy to desert preserves the avenue/plot structure while sand, cactus, palms and stones replace snow/conifers. Individual heights and building colors change, but near, reverse and whole retain the same rectangular gray/red family. Ground-material contacts and credible fence extents remain legible; loose urban cover remains #960. Isolated palms are #701, not a new finding. No additional distinct defect or claimed named desert location is established."
+  },
+  "V11-desert-city/whole": {
+    "openedAt": "2026-09-09T04:59:26.877512+00:00",
+    "observation": "Biome-only snowy to desert preserves the avenue/plot structure while sand, cactus, palms and stones replace snow/conifers. Individual heights and building colors change, but near, reverse and whole retain the same rectangular gray/red family. Ground-material contacts and credible fence extents remain legible; loose urban cover remains #960. Isolated palms are #701, not a new finding. No additional distinct defect or claimed named desert location is established."
+  },
+  "V12-desert-city-large/near": {
+    "openedAt": "2026-09-09T05:03:04.402613+00:00",
+    "observation": "Size-only medium to large extends the avenue grid across more blocks; individual pitched/flat roofs and taller apartments remain distinct. Near and quarter-turn views hold the ground/building/fence contacts. Whole view makes repeated freestanding rectangular blocks on similarly open sandy plots more apparent: added area extends the same neighborhood vocabulary. Corroborates existing #1084 building-form breadth and #960 yard-use gap, without establishing a new defect or certifying combat balance."
+  },
+  "V12-desert-city-large/rotated": {
+    "openedAt": "2026-09-09T05:03:04.402645+00:00",
+    "observation": "Size-only medium to large extends the avenue grid across more blocks; individual pitched/flat roofs and taller apartments remain distinct. Near and quarter-turn views hold the ground/building/fence contacts. Whole view makes repeated freestanding rectangular blocks on similarly open sandy plots more apparent: added area extends the same neighborhood vocabulary. Corroborates existing #1084 building-form breadth and #960 yard-use gap, without establishing a new defect or certifying combat balance."
+  },
+  "V12-desert-city-large/whole": {
+    "openedAt": "2026-09-09T05:03:04.402647+00:00",
+    "observation": "Size-only medium to large extends the avenue grid across more blocks; individual pitched/flat roofs and taller apartments remain distinct. Near and quarter-turn views hold the ground/building/fence contacts. Whole view makes repeated freestanding rectangular blocks on similarly open sandy plots more apparent: added area extends the same neighborhood vocabulary. Corroborates existing #1084 building-form breadth and #960 yard-use gap, without establishing a new defect or certifying combat balance."
+  },
+  "V13-temperate-city-large/near": {
+    "openedAt": "2026-09-09T05:09:05.676566+00:00",
+    "observation": "Biome-only desert-to-temperate on the large city changes the ground to green/brown and trees to conifer/round-canopy groups. Near, quarter-turn and whole views preserve roof/frontage/support/fence readability; the avenue grid and recurring freestanding building family remain. This is a clearly different climate with limited additional neighborhood identity, supporting the current variety queue. No additional distinct defect established."
+  },
+  "V13-temperate-city-large/rotated": {
+    "openedAt": "2026-09-09T05:09:05.676594+00:00",
+    "observation": "Biome-only desert-to-temperate on the large city changes the ground to green/brown and trees to conifer/round-canopy groups. Near, quarter-turn and whole views preserve roof/frontage/support/fence readability; the avenue grid and recurring freestanding building family remain. This is a clearly different climate with limited additional neighborhood identity, supporting the current variety queue. No additional distinct defect established."
+  },
+  "V13-temperate-city-large/whole": {
+    "openedAt": "2026-09-09T05:09:05.676596+00:00",
+    "observation": "Biome-only desert-to-temperate on the large city changes the ground to green/brown and trees to conifer/round-canopy groups. Near, quarter-turn and whole views preserve roof/frontage/support/fence readability; the avenue grid and recurring freestanding building family remain. This is a clearly different climate with limited additional neighborhood identity, supporting the current variety queue. No additional distinct defect established."
+  },
+  "V14-temperate-city-newseed/near": {
+    "openedAt": "2026-09-09T05:13:52.548770+00:00",
+    "observation": "Seed-only change on large temperate city moves the street spacing, building positions/heights and plant/earth groups. Near, quarter-turn and whole show recognizably different arrangements with the same freestanding gray/red rectangular family; pitched and flat roofs, taller blocks and shop frontage remain readable. The seed matters, but does not close the local-building vocabulary finding. Coherent fences/contacts and roof support persist; loose cover remains #960. No new distinct defect established."
+  },
+  "V14-temperate-city-newseed/rotated": {
+    "openedAt": "2026-09-09T05:13:52.548794+00:00",
+    "observation": "Seed-only change on large temperate city moves the street spacing, building positions/heights and plant/earth groups. Near, quarter-turn and whole show recognizably different arrangements with the same freestanding gray/red rectangular family; pitched and flat roofs, taller blocks and shop frontage remain readable. The seed matters, but does not close the local-building vocabulary finding. Coherent fences/contacts and roof support persist; loose cover remains #960. No new distinct defect established."
+  },
+  "V14-temperate-city-newseed/whole": {
+    "openedAt": "2026-09-09T05:13:52.548797+00:00",
+    "observation": "Seed-only change on large temperate city moves the street spacing, building positions/heights and plant/earth groups. Near, quarter-turn and whole show recognizably different arrangements with the same freestanding gray/red rectangular family; pitched and flat roofs, taller blocks and shop frontage remain readable. The seed matters, but does not close the local-building vocabulary finding. Coherent fences/contacts and roof support persist; loose cover remains #960. No new distinct defect established."
+  },
+  "V15-temperate-city-small/near": {
+    "openedAt": "2026-09-09T05:16:01.466334+00:00",
+    "observation": "Size-only large-to-small on mc-variety-01 produces a compact avenue layout with fewer supported roofed buildings, retaining visible height differences and meaningful open plot fences. Both angles and the whole board keep the same gray/red building family and generic green/brown planting combination. The bare deploy marker is the known post-release #911 repair, not a new ticket. No additional distinct defect established."
+  },
+  "V15-temperate-city-small/rotated": {
+    "openedAt": "2026-09-09T05:16:01.466367+00:00",
+    "observation": "Size-only large-to-small on mc-variety-01 produces a compact avenue layout with fewer supported roofed buildings, retaining visible height differences and meaningful open plot fences. Both angles and the whole board keep the same gray/red building family and generic green/brown planting combination. The bare deploy marker is the known post-release #911 repair, not a new ticket. No additional distinct defect established."
+  },
+  "V15-temperate-city-small/whole": {
+    "openedAt": "2026-09-09T05:16:01.466369+00:00",
+    "observation": "Size-only large-to-small on mc-variety-01 produces a compact avenue layout with fewer supported roofed buildings, retaining visible height differences and meaningful open plot fences. Both angles and the whole board keep the same gray/red building family and generic green/brown planting combination. The bare deploy marker is the known post-release #911 repair, not a new ticket. No additional distinct defect established."
+  }
+}

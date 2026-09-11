@@ -1,3 +1,4 @@
+import type { CommandError } from "../../core/model/command-error";
 import type { Unsubscribe } from "../../core/model/event-bus";
 import { findCity } from "../../overworld/service/earth-map-query-service";
 import type { GameState } from "../../save/model/game-state";
@@ -14,7 +15,9 @@ import type { ScreenRouter } from "../model/screen-router";
 import type { TacticalIntent } from "../model/tactical-intent";
 import type { TacticalSceneHost } from "../model/tactical-scene-host";
 import type { PhaseBannerOptions } from "../view/phase-banner-view";
+import { namesFor, refusalText } from "../service/tactical-error-text";
 import { TacticalHudView } from "../view/tactical-hud-view";
+import { actorOf, describeEvent, nameResolver } from "../view/event-vocabulary";
 
 // ===========================================
 // Types
@@ -248,13 +251,53 @@ export class TacticalScreen implements Screen {
     this.hud.setMissionName(
       state === undefined ? undefined : missionCityName(state),
     );
+    this.hud.setCampaign(state);
     this.hud.update(mission, events);
     if (!mission) {
       return;
     }
+    this.announce(mission, events, state);
     this.syncScene(mission, events);
     if (mission.outcome !== undefined) {
       this.finish(mission.missionId);
+    }
+  }
+
+  /**
+   * Puts every logged action above the unit that did it (#1029).
+   *
+   * Anything worth a line in the log is worth showing where it happened;
+   * the log at the edge of the screen becomes the record and the
+   * indicator becomes the notification. Movement is excluded — `actorOf`
+   * says why — and events belonging to nobody in particular stay in the
+   * log alone.
+   *
+   * The words are the log's own, from `event-vocabulary`, so the two can
+   * never say different things about the same event.
+   */
+  private announce(
+    mission: TacticalState,
+    events: readonly TacticalEvent[],
+    campaign: GameState | undefined,
+  ): void {
+    const host = this.deps.sceneHost;
+    if (!host) {
+      return;
+    }
+    // The campaign too, because the log resolves with it since #1047:
+    // without it the indicator says "Rifle Squad" while the log line it
+    // is meant to mirror says "Alpha", which is the one thing this
+    // mechanism exists to prevent.
+    const nameOf = nameResolver(mission, campaign);
+    for (const event of events) {
+      const unitId = actorOf(event);
+      if (unitId === undefined) {
+        continue;
+      }
+      const entry = describeEvent(event, nameOf);
+      if (entry !== undefined) {
+        host.notice(unitId, entry.text);
+      }
     }
   }
 
@@ -277,7 +320,7 @@ export class TacticalScreen implements Screen {
     }
     const result = store.dispatch(finishMission(missionId));
     if (!result.ok) {
-      this.hud.showStatus(result.error.message);
+      this.hud.showStatus(this.statusFor(result.error));
       return;
     }
     this.deps.router.navigate("mission-results");
@@ -400,7 +443,25 @@ export class TacticalScreen implements Screen {
       return;
     }
     const result = store.dispatch(command);
-    this.hud.showStatus(result.ok ? "" : result.error.message);
+    this.hud.showStatus(result.ok ? "" : this.statusFor(result.error));
+  }
+
+  /**
+   * The player's words for a refused command (#1035).
+   *
+   * `error.message` is written by the simulation and names its ids --
+   * `Unit "unit-1" is already fully loaded` -- which is right for a log
+   * and wrong for the one line the player reads. The typed refusal rides
+   * along as `cause`, so the same resolver that phrases the HUD's own
+   * previews phrases the dispatched ones, and the two agree.
+   *
+   * Resolved against the state the store is holding now. A refusal
+   * leaves the state untouched, so that is the state the refused command
+   * was judged against, and the names are the ones on screen.
+   */
+  private statusFor(error: CommandError): string {
+    const state = this.deps.session.store?.getState();
+    return refusalText(error, namesFor(state?.activeMission, state));
   }
 }
 

@@ -96,12 +96,28 @@ export async function tacticalModelsReady(page: Page): Promise<void> {
  * with machine load. Gameplay input tests should still use real keyboard input.
  */
 export async function tapCameraKey(page: Page, key: string): Promise<void> {
-  await page.evaluate((key) => {
-    document.dispatchEvent(
-      new KeyboardEvent("keydown", { key, bubbles: true }),
-    );
-    document.dispatchEvent(new KeyboardEvent("keyup", { key, bubbles: true }));
-  }, key);
+  await tapCameraKeys(page, [key]);
+}
+
+/**
+ * Frame an unobserved setup sequence with the same real DOM taps, then draw.
+ * No intermediate view is sampled: waiting two frames for every setup tap
+ * only adds software-rendering work. Single-tap controls still draw separately.
+ */
+export async function tapCameraKeys(
+  page: Page,
+  keys: readonly string[],
+): Promise<void> {
+  await page.evaluate((keys) => {
+    for (const key of keys) {
+      document.dispatchEvent(
+        new KeyboardEvent("keydown", { key, bubbles: true }),
+      );
+      document.dispatchEvent(
+        new KeyboardEvent("keyup", { key, bubbles: true }),
+      );
+    }
+  }, keys);
   await drawnFrame(page);
 }
 

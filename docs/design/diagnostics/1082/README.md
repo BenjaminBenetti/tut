@@ -67,3 +67,8 @@ two independent browsers. The after batch was interrupted on its final repeat;
 a fresh browser re-captured all four images with `VERIFY_EXISTING=1`, matching every
 saved byte while recovering sidecars. [Verification](verification.json) records
 hashes, pixel counts, camera agreement and this recovery.
+
+After rebasing onto main `dc29a33` (merged yards and Perth’s asset kit), typecheck
+and 37 focused generation/render tests pass. A fresh [integrated reported reverse
+view](integrated/L02-lagos-reverse.png) at `6674bfd` is byte-identical to the original
+after-frame; both asset kits’ model registrations survive the rebase.

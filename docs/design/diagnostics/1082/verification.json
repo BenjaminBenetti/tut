@@ -49,5 +49,13 @@
     "passed": 2383,
     "optionalSkipped": 1,
     "domFilesRetestedWithWorktreeAccess": 28
+  },
+  "mainIntegration": {
+    "main": "dc29a33",
+    "frameRuntime": "6674bfd707a7329be0152cb8b50a4bc521926b9e",
+    "frame": "integrated/L02-lagos-reverse.png",
+    "byteIdenticalToOriginalAfter": true,
+    "typecheck": "passed",
+    "focusedGenerationAndRenderTests": 37
   }
 }

@@ -257,7 +257,7 @@ describe("shipped ladder connector (#891)", () => {
     first.geometry.dispose();
     second.geometry.dispose();
   });
-  it("uses the actual ground-floor brickwork instead of the owning building's concrete family", () => {
+  it("matches the ground-floor concrete finish after mirrored walls inherit their building family", () => {
     const map = generateTacticalMap({
       seed: "qa813-temperate-town-small-0",
       params: {
@@ -274,8 +274,8 @@ describe("shipped ladder connector (#891)", () => {
     );
     expect(sections).toHaveLength(2);
     expect(sections[0]!.ladder).toMatchObject({
-      finish: "weathered",
-      supportModel: "building.wall",
+      finish: "brushed",
+      supportModel: "building.wall-concrete",
     });
   });
 });

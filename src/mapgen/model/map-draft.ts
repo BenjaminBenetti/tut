@@ -19,6 +19,7 @@ import type { SurfaceId } from "./surface";
 import type { TileCoord } from "./tile-coord";
 import type { Slope } from "./slope";
 import type { WallKind, WallSet } from "./wall";
+import { isValidPropFootprint } from "../service/prop-footprint";
 
 // ===========================================
 // Types
@@ -355,10 +356,22 @@ export class MapDraft {
   // Props
   // ===========================================
 
-  /** Places a prop. Throws if the tile already holds one. */
-  addProp(kind: PropKindId, coord: TileCoord, rotation: Rotation = 0): Prop {
-    const key = this.tileKey(coord);
-    if (this.propByTile.has(key)) {
+  /** Atomically places a prop on its explicit footprint; legacy callers occupy only the anchor. */
+  addProp(
+    kind: PropKindId,
+    coord: TileCoord,
+    rotation: Rotation = 0,
+    occupiedTiles?: readonly TileCoord[],
+  ): Prop {
+    const cells = occupiedTiles ?? [coord];
+    if (
+      !isValidPropFootprint(coord, cells) ||
+      cells.some((cell) => !this.inBounds(cell.x, cell.z))
+    )
+      throw new Error(
+        "Prop footprint must contain unique, level, in-bounds cells including its anchor",
+      );
+    if (cells.some((cell) => this.propByTile.has(this.tileKey(cell)))) {
       throw new Error(
         `Tile (${coord.x}, ${coord.y}, ${coord.z}) already has a prop`,
       );
@@ -368,9 +381,12 @@ export class MapDraft {
       kind,
       tile: { x: coord.x, y: coord.y, z: coord.z },
       rotation,
+      ...(cells.length > 1
+        ? { occupiedTiles: cells.map((cell) => ({ ...cell })) }
+        : {}),
     };
     this.props.push(prop);
-    this.propByTile.set(key, prop);
+    for (const cell of cells) this.propByTile.set(this.tileKey(cell), prop);
     return prop;
   }
 
@@ -387,7 +403,8 @@ export class MapDraft {
     }
     const [prop] = this.props.splice(index, 1);
     if (prop !== undefined) {
-      this.propByTile.delete(this.tileKey(prop.tile));
+      for (const tile of prop.occupiedTiles ?? [prop.tile])
+        this.propByTile.delete(this.tileKey(tile));
     }
   }
 

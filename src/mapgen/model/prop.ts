@@ -16,14 +16,16 @@ export type PropKindId = string;
 export type Rotation = 0 | 1 | 2 | 3;
 
 /**
- * A placed object occupying exactly one tile. The tile it sits on is never
- * passable and grants the definition's cover to its neighbours.
+ * A placed object. Every occupied tile is impassable and grants the
+ * definition's cover; the anchor remains stable for identity and appearance.
  */
 export interface Prop {
   readonly id: string;
   readonly kind: PropKindId;
   readonly tile: TileCoord;
   readonly rotation: Rotation;
+  /** Exact footprint including the anchor. Omitted in legacy saves and single-tile props. */
+  readonly occupiedTiles?: readonly TileCoord[];
 }
 
 /** Where a prop may be selected; vegetation is explicit planting, excluding random yard clutter. */
@@ -44,4 +46,6 @@ export interface PropDefinition {
   readonly placements: readonly PropPlacement[];
   /** Restricts the kind to these biomes; `undefined` means any biome. */
   readonly biomes?: readonly BiomeId[];
+  /** Placement footprint at rotation zero. Existing placed records retain their own footprint. */
+  readonly footprint?: { readonly w: number; readonly d: number };
 }

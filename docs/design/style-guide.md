@@ -163,8 +163,9 @@ concrete bands and metal/glass openings. These are separate model tokens;
 the established temperate vegetation and wall families retain their colours.
 
 Johannesburg's hipped metal roofs use muted `env-roof-green #5B706A` beside
-brick and rendered masonry. The local roof form is selected explicitly;
-the original roof material remains the default elsewhere.
+brick and rendered masonry. Eligible non-walkable house roofs also vary
+between gabled and hipped forms elsewhere; walkable flat roofs keep their
+existing geometry. The original roof remains one of the generated choices.
 
 Perth woodland uses `env-sclerophyll-leaf #66765B` and
 `env-sclerophyll-leaf-light #849077`, `env-tuart-bark #AAA58F`,
@@ -278,7 +279,7 @@ Map generation (`src/mapgen/data/surfaces.ts`, `props.ts`) emits surface ids and
 
 | Prop kind | Model id | Cover in mapgen |
 |---|---|---|
-| `car` | `prop.car-compact` (1×1). `prop.car-sedan` is 2×1 for hand-placed wrecks | high |
+| `car` | Two occupied tiles; seeded `prop.car-sedan`, `prop.car-hatchback`, or `prop.car-utility`. Legacy single-tile saved cars retain `prop.car-compact`. | high |
 | `crate` | `prop.crate` | low |
 | `barrier` | `prop.barrier-concrete` | low |
 | `sandbags` | `prop.sandbags` | low |

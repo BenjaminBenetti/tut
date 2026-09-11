@@ -369,6 +369,55 @@ function named(view: TacticalMapView, prefix: string): InstancedMesh[] {
 }
 
 describe("TacticalMapView.loadModels", () => {
+  it("centres a two-tile car and reveals its entire hull when only the trailing tile is known", async () => {
+    const anchor = { x: 1, y: 0, z: 1 };
+    const tail = { x: 2, y: 0, z: 1 };
+    const map = new FixtureMapBuilder(5, 3, 1)
+      .fillGround(0, "road")
+      .prop("car", anchor, 0, [anchor, tail])
+      .build();
+    const index = new TileIndex(map);
+    const view = new TacticalMapView(map);
+    const placeholder = named(view, "props:prop:")[0]!;
+    const matrix = new Matrix4();
+    placeholder.getMatrixAt(0, matrix);
+    expect(new Vector3().setFromMatrixPosition(matrix).x).toBe(2);
+    expect(new Vector3().setFromMatrixScale(matrix).x).toBeCloseTo(1.6);
+    view.setVision({
+      visible: [index.keyOf(tail)],
+      explored: [index.keyOf(tail)],
+      spotted: [],
+      lastSeen: {},
+    });
+    await view.loadModels(new FakeModelLoader());
+    const cars = named(view, "props-model:prop.car-");
+    expect(cars.length).toBeGreaterThan(0);
+    for (const car of cars) {
+      const colour = new Color();
+      car.getColorAt(0, colour);
+      expect(colour.toArray()).toEqual([1, 1, 1]);
+      expect(car.geometry.getAttribute("unexploredMist").getW(0)).toBe(0);
+    }
+    view.setVision({
+      visible: [],
+      explored: [index.keyOf(tail)],
+      spotted: [],
+      lastSeen: {},
+    });
+    for (const car of cars) {
+      const colour = new Color();
+      car.getColorAt(0, colour);
+      expect(colour.r).toBeLessThan(1);
+      expect(car.geometry.getAttribute("unexploredMist").getW(0)).toBe(0);
+    }
+    view.setVision({ visible: [], explored: [], spotted: [], lastSeen: {} });
+    for (const car of cars)
+      expect(car.geometry.getAttribute("unexploredMist").getW(0)).toBe(1);
+    view.setVision(undefined);
+    for (const car of cars)
+      expect(car.geometry.getAttribute("unexploredMist").getW(0)).toBe(0);
+    view.dispose();
+  });
   it("replaces slope placeholders, batches by surface, and shares mist materials across levels", async () => {
     const base = new FixtureMapBuilder(3, 1, 2).fillGround().build();
     const map: TacticalMap = {

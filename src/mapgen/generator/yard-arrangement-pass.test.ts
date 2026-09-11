@@ -67,7 +67,7 @@ describe("building-use yards", () => {
       const replacements = after.map.props.filter((p) => !oldIds.has(p.id));
       expect(replacements.length).toBeLessThanOrEqual(mutable.length);
       expect(
-        replacements.every((p) => p.kind === "bench" || p.kind === "crate"),
+        replacements.every((p) => ["bench", "crate", "table"].includes(p.kind)),
       ).toBe(true);
       const otherIds = new Set(other.map((p) => p.id));
       expect(after.map.props.filter((p) => otherIds.has(p.id))).toEqual(other);
@@ -132,8 +132,10 @@ describe("building-use yards", () => {
         );
         expect(building).toBeDefined();
         expect(
-          YARD_ARRANGEMENTS[building!.kind as KnownBuildingKindId].prop,
-        ).toBe(prop.kind);
+          YARD_ARRANGEMENTS[building!.kind as KnownBuildingKindId].flatMap(
+            (profile) => profile.props,
+          ),
+        ).toContain(prop.kind);
       }
     });
   }

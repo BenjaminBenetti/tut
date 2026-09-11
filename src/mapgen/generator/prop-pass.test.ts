@@ -6,6 +6,8 @@ import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import { hashSeed } from "../../core/service/seed-hash";
 import { DIRECTIONS } from "../../core/model/direction";
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
+import { createRegistry } from "../../core/service/definition-registry";
+import { propTiles } from "../service/prop-footprint";
 import { rectContains, stepGridPos } from "../../core/service/grid-math";
 import { BIOME_DEFINITIONS } from "../data/biomes";
 import { SETTLEMENT_DEFINITIONS } from "../data/settlements";
@@ -271,6 +273,163 @@ describe("PropPass", () => {
     };
     expect(() => new PropPass().run(context)).not.toThrow();
     expect(draft.props.some((p) => p.tile.x === 0)).toBe(true);
+  });
+
+  it.each([3, 4])(
+    "parks along %i-lane carriageways while clearing through lanes and junctions",
+    (lanes) => {
+      const draft = new MapDraft(
+        32,
+        32,
+        new SequentialIdGenerator(),
+        SurfaceIds.GRASS,
+      );
+      for (let z = 0; z < 32; z++)
+        for (let x = 0; x < 32; x++)
+          if ((x >= 12 && x < 12 + lanes) || (z >= 12 && z < 12 + lanes)) {
+            draft.setRoad(x, z);
+            draft.setGroundSurface(x, z, SurfaceIds.ROAD);
+          }
+      new PropPass({ placements: ["street"] }).run({
+        draft,
+        registries,
+        rng: new Mulberry32Rng(hashSeed(`wide-street-${lanes}`)),
+        diagnostics: new DiagnosticsCollector().forPass("props"),
+        params: {
+          archetype: "settlement",
+          width: 32,
+          depth: 32,
+          biome: BIOME_DEFINITIONS.temperate,
+          settlement: {
+            ...SETTLEMENT_DEFINITIONS.city,
+            streetPropDensity: 100,
+          },
+          hooks: [],
+          slopeShare: 1,
+        },
+      });
+      expect(draft.props.length).toBeGreaterThan(8);
+      expect(draft.props.some((p) => p.kind === "car")).toBe(true);
+      for (const prop of draft.props)
+        if (prop.kind === "car") {
+          expect(propTiles(prop)).toHaveLength(2);
+          for (const cell of propTiles(prop)) {
+            expect(draft.propAt(cell)?.id).toBe(prop.id);
+            expect(
+              cell.x >= 10 &&
+                cell.x <= 13 + lanes &&
+                cell.z >= 10 &&
+                cell.z <= 13 + lanes,
+            ).toBe(false);
+          }
+        }
+      for (const {
+        tile: { x, z },
+        rotation,
+      } of draft.props) {
+        const horizontal = z === 12 || z === 11 + lanes;
+        expect(horizontal || x === 12 || x === 11 + lanes).toBe(true);
+        expect(rotation).toBe(horizontal ? 0 : 1);
+        expect(x >= 10 && x <= 13 + lanes && z >= 10 && z <= 13 + lanes).toBe(
+          false,
+        );
+      }
+    },
+  );
+
+  it.each([1, 2])(
+    "retains parking on short %i-lane rural stretches",
+    (lanes) => {
+      const draft = new MapDraft(
+        8,
+        8,
+        new SequentialIdGenerator(),
+        SurfaceIds.GRASS,
+      );
+      for (let x = 2; x <= 4; x++)
+        for (let z = 2; z < 2 + lanes; z++) {
+          draft.setRoad(x, z);
+          draft.setGroundSurface(x, z, SurfaceIds.DIRT);
+        }
+      new PropPass({ placements: ["street"] }).run({
+        draft,
+        registries,
+        rng: new Mulberry32Rng(hashSeed("short-rural-road")),
+        diagnostics: new DiagnosticsCollector().forPass("props"),
+        params: {
+          archetype: "settlement",
+          width: 8,
+          depth: 8,
+          biome: BIOME_DEFINITIONS.temperate,
+          settlement: {
+            ...SETTLEMENT_DEFINITIONS.rural,
+            streetPropDensity: 100,
+          },
+          hooks: [],
+          slopeShare: 1,
+        },
+      });
+      expect(draft.props).toHaveLength(1);
+      expect(draft.props[0]!.tile.x).toBe(3);
+    },
+  );
+
+  it("reserves whole cars outside ramps, dropship clearances and height changes within an occupied-cell budget", () => {
+    const draft = new MapDraft(
+      32,
+      12,
+      new SequentialIdGenerator(),
+      SurfaceIds.GRASS,
+    );
+    for (let x = 0; x < 32; x++)
+      for (let z = 4; z < 8; z++) {
+        draft.setRoad(x, z);
+        draft.setGroundSurface(x, z, SurfaceIds.ROAD);
+      }
+    const ramp = { x: 10, y: 0, z: 4 };
+    draft.addConnector("ramp", ramp, { x: 10, y: 2, z: 3 });
+    const clearance = { x: 14, z: 3, w: 3, d: 6 };
+    draft.dropships.push({
+      deployZoneId: "ship",
+      clearance,
+      footprint: clearance,
+      facing: "n",
+      level: 0,
+    });
+    draft.setGroundLevel(20, 4, 1);
+    new PropPass({ placements: ["street"] }).run({
+      draft,
+      registries: {
+        ...registries,
+        props: createRegistry("prop", [registries.props.get("car")]),
+      },
+      rng: new Mulberry32Rng(hashSeed("two-tile-parking")),
+      diagnostics: new DiagnosticsCollector().forPass("props"),
+      params: {
+        archetype: "settlement",
+        width: 32,
+        depth: 12,
+        biome: BIOME_DEFINITIONS.temperate,
+        settlement: { ...SETTLEMENT_DEFINITIONS.city, streetPropDensity: 20 },
+        hooks: [],
+        slopeShare: 1,
+      },
+    });
+    expect(draft.props.length).toBeGreaterThan(0);
+    expect(draft.props.flatMap(propTiles).length).toBeLessThanOrEqual(
+      Math.round(128 * 0.2),
+    );
+    for (const prop of draft.props) {
+      expect(propTiles(prop)).toHaveLength(2);
+      for (const tile of propTiles(prop)) {
+        expect(tile).not.toEqual(ramp);
+        expect(rectContains(clearance, tile.x, tile.z)).toBe(false);
+        expect(draft.groundLevelAt(tile.x, tile.z)).toBe(prop.tile.y);
+        expect(tile.z === 4 || tile.z === 7).toBe(true);
+        const lane = { ...tile, z: tile.z === 4 ? 5 : 6 };
+        expect(draft.propAt(lane)).toBeUndefined();
+      }
+    }
   });
 
   it("furnishes every room kind from its table and no room beyond it", () => {

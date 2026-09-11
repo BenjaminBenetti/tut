@@ -200,8 +200,9 @@ export type PropKindId = string;       // data-defined: 'car', 'crate', 'tree-pi
 export interface Prop {
   readonly id: string;                 // instance id
   readonly kind: PropKindId;
-  readonly tile: TileCoord;            // the tile it occupies (one tile per prop in M1.5)
+  readonly tile: TileCoord;            // anchor, also included in occupiedTiles when present
   readonly rotation: 0 | 1 | 2 | 3;    // quarter turns, for graphics
+  readonly occupiedTiles?: readonly TileCoord[]; // explicit footprint; absent means [tile]
 }
 export type PropPlacement = 'ground' | 'road' | 'interior';
 export interface PropDefinition {      // src/mapgen/data/props.ts
@@ -210,8 +211,29 @@ export interface PropDefinition {      // src/mapgen/data/props.ts
   readonly blocksLos: boolean;
   readonly placements: readonly PropPlacement[];   // where the prop pass may put it
   readonly biomes?: readonly BiomeId[]; // restrict to biomes; undefined = any
+  readonly footprint?: { readonly w: number; readonly d: number }; // new placement only; defaults 1×1
 }
 ```
+
+**Two-tile vehicles (#1110, Executive Director play review).** New parked cars
+occupy two contiguous, level cells along a carriageway. `occupiedTiles` is the
+complete footprint, including the anchor, with no duplicate coordinates. Every
+occupied tile references the same prop id and carries the prop's impassability,
+cover and sight blocking. Placement and removal are atomic across the footprint;
+connectivity repair cannot leave half a car behind. Street placement validates
+both cells and counts occupied cells against its density budget.
+
+Graphics draws one model at the footprint's centre and fits the model's authored
+axis to the road. Visibility considers the whole footprint, including the
+unexplored-mist state. Building-frontage clearance also considers every occupied
+cell. Tactical continues to consume each tile's existing pass/cover/LOS fields.
+
+The optional field is backward compatible with the inline maps in existing
+saves. Its absence means one occupied tile and retains the original compact
+vehicle model; graphics never enlarges an old saved car over walkable ground.
+The map and save versions stay unchanged, following the additive dropship
+record precedent in §4.6. Shipped migrations remain frozen. New-map recipes can
+produce different layouts, as already allowed by §2.9.
 
 Wall kinds, and what each does:
 
@@ -411,7 +433,7 @@ map is a bug, never a runtime fallback.
 | # | Invariant |
 |---|---|
 | I1 | Every tile is in bounds and `(x,y,z)` is unique. `levels` ≥ max `y` + 1. |
-| I2 | A tile with `propId` has `pass == NONE`; its `coverProvided` and `blocksLos` equal the prop definition's. A tile without a prop provides no cover and blocks no sight, except a recorded dropship footprint, which is impassable and opaque (§4.6). Every prop's tile exists and references it back. |
+| I2 | A tile with `propId` has `pass == NONE`; its `coverProvided` and `blocksLos` equal the prop definition's. A tile without a prop provides no cover and blocks no sight, except a recorded dropship footprint, which is impassable and opaque (§4.6). Every prop footprint cell exists and references it back; no tile outside that footprint may reference the prop. Absent `occupiedTiles` means the single anchor tile (§4.4). |
 | I3 | Wall symmetry: `tile.walls[d]` equals `neighbour(d).walls[opposite(d)]` whenever the neighbour tile exists at the same `y`. |
 | I4 | Every connector references two existing tiles with the kind's `Δy` and adjacency rule; `pass` matches the kind; stairs' `from` tile has `surface 'stairs'`. |
 | I5 | Buildings: ≥ 1 floor, ≥ 1 entrance whose door wall exists; every floor tile lies inside the footprint and carries `buildingId`; every floor `i > 0` is reachable from floor 0 via the building's own connectors; interior and roof tiles are not mech-passable. |

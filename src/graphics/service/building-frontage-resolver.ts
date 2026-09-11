@@ -13,10 +13,14 @@ import {
   MAILBOX_MODULE,
 } from "../data/building-frontage-styles";
 import type { BuildingFrontageModule } from "../model/building-frontage-style";
-import { propModel } from "../data/map-model-table";
 import { MODEL_MANIFEST } from "../data/model-manifest";
 import { tileTop } from "../view/tactical-map-view";
 import type { ModelPlacement } from "./map-model-resolver";
+import { propTiles } from "../../mapgen/service/prop-footprint";
+import {
+  propAppearanceScale,
+  propModelVariation,
+} from "./prop-appearance-resolver";
 
 /** +Z faces outdoors at zero turns; placementMatrix turns clockwise about Y. */
 const OUTWARD_TURNS: Readonly<Record<Direction, Rotation>> = {
@@ -40,16 +44,20 @@ export function resolveBuildingFrontages(
   const ladders = map.connectors.filter((c) => c.kind === "ladder");
   const propTops = new Map<string, number>();
   for (const prop of map.props) {
-    const id = propModel(prop.kind);
+    const id = propModelVariation(prop, map.recipe.seed)?.modelId;
     if (!id) continue;
-    const key = `${prop.tile.x},${prop.tile.z}`;
-    propTops.set(
-      key,
-      Math.max(
-        propTops.get(key) ?? -Infinity,
-        tileTop(prop.tile.y) + MODEL_MANIFEST[id].height,
-      ),
-    );
+    for (const tile of propTiles(prop)) {
+      const key = `${tile.x},${tile.z}`;
+      propTops.set(
+        key,
+        Math.max(
+          propTops.get(key) ?? -Infinity,
+          tileTop(prop.tile.y) +
+            MODEL_MANIFEST[id].height *
+              (propAppearanceScale(prop, map.recipe.seed).scaleY ?? 1),
+        ),
+      );
+    }
   }
   for (const building of map.buildings) {
     const style = BUILDING_FRONTAGE_STYLES[building.kind];

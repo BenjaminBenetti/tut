@@ -91,15 +91,10 @@ export class YardArrangementPass implements GenerationPass {
     let used = 0;
     let groups = 0;
     for (const building of rng.shuffle(draft.buildings)) {
-      const profile = Object.hasOwn(YARD_ARRANGEMENTS, building.kind)
+      const profiles = Object.hasOwn(YARD_ARRANGEMENTS, building.kind)
         ? YARD_ARRANGEMENTS[building.kind as KnownBuildingKindId]
         : undefined;
-      if (
-        !profile ||
-        profile.count > clutter.length - used ||
-        !registries.props.has(profile.prop)
-      )
-        continue;
+      if (!profiles) continue;
       const lot = draft.lots.find(({ rect }) =>
         building.footprint.every(
           (part) =>
@@ -110,33 +105,41 @@ export class YardArrangementPass implements GenerationPass {
       if (!lot) continue;
       const entrance = building.entrances[0];
       if (!entrance) continue;
-      const candidates = rng.shuffle(wallGroups(building, profile));
-      const frontageRank = (side: Direction): number =>
-        side === entrance.side
-          ? 2
-          : side === oppositeDirection(entrance.side)
-            ? 0
-            : 1;
-      candidates.sort(
-        (a, b) =>
-          (frontageRank(b.side) - frontageRank(a.side)) *
-          (profile.frontage ? 1 : -1),
-      );
-      const group = candidates.find(
-        (candidate) =>
-          candidate.tiles.every((tile) =>
-            available(draft, lot, tile, candidate.side, blocked),
-          ) && preservesLocalRoutes(snapshot, candidate.tiles, occupied),
-      );
-      if (!group) continue;
-      for (const tile of group.tiles) {
-        draft.addProp(profile.prop, tile, ROTATION[group.side]);
-        occupied.add(draft.tileKey(tile));
-        // Other buildings cannot occupy this group's walking/seating apron.
-        blocked.add(draft.tileKey(stepGridPos(tile, group.side)));
+      for (const profile of rng.shuffle(profiles)) {
+        if (
+          profile.props.length > clutter.length - used ||
+          profile.props.some((prop) => !registries.props.has(prop))
+        )
+          continue;
+        const candidates = rng.shuffle(wallGroups(building, profile));
+        const frontageRank = (side: Direction): number =>
+          side === entrance.side
+            ? 2
+            : side === oppositeDirection(entrance.side)
+              ? 0
+              : 1;
+        candidates.sort(
+          (a, b) =>
+            (frontageRank(b.side) - frontageRank(a.side)) *
+            (profile.frontage ? 1 : -1),
+        );
+        const group = candidates.find(
+          (candidate) =>
+            candidate.tiles.every((tile) =>
+              available(draft, lot, tile, candidate.side, blocked),
+            ) && preservesLocalRoutes(snapshot, candidate.tiles, occupied),
+        );
+        if (!group) continue;
+        for (const [i, tile] of group.tiles.entries()) {
+          draft.addProp(profile.props[i]!, tile, ROTATION[group.side]);
+          occupied.add(draft.tileKey(tile));
+          // Other buildings cannot occupy this group's walking/seating apron.
+          blocked.add(draft.tileKey(stepGridPos(tile, group.side)));
+        }
+        used += group.tiles.length;
+        groups++;
+        break;
       }
-      used += group.tiles.length;
-      groups++;
     }
     diagnostics.note(
       `${used}/${clutter.length} yard props in ${groups} building-use groups; ${clutter.length - used} omitted; fences/vegetation retained`,
@@ -151,13 +154,13 @@ export class YardArrangementPass implements GenerationPass {
 /** Full groups aligned to an actual footprint wall, one tile outside the building. */
 function wallGroups(building: Building, profile: YardArrangement): YardGroup[] {
   const groups: YardGroup[] = [];
-  const span = (profile.count - 1) * profile.spacing + 1;
+  const span = (profile.props.length - 1) * profile.spacing + 1;
   for (const rect of building.footprint) {
     for (const side of DIRECTIONS) {
       const alongX = side === "n" || side === "s";
       const length = alongX ? rect.w : rect.d;
       for (let start = 0; start + span <= length; start++) {
-        const tiles = Array.from({ length: profile.count }, (_, i) => ({
+        const tiles = Array.from({ length: profile.props.length }, (_, i) => ({
           x: alongX
             ? rect.x + start + i * profile.spacing
             : side === "w"

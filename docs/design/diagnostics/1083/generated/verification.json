@@ -1,0 +1,429 @@
+{
+  "sourceHead": "b6a0487bbc852d5021ceeacd7398e107949ee342",
+  "renderer": "SwiftShader",
+  "independentBrowsersPerFrame": 2,
+  "pairs": [
+    {
+      "id": "P01-reported",
+      "control": false,
+      "cameraEqual": true,
+      "pngByteIdentical": false,
+      "sha256": [
+        "09c0e81688f64bed242fd723f515fb56e46184c4b373a6e76e904e34e8a4dbf1",
+        "99ead9ccdbb08cd0092fd4ce41ae1a6622e27348c21f8f044e9d8fb976b884ea"
+      ],
+      "before": {
+        "buildings": 7,
+        "storeys": {
+          "3": 1,
+          "1": 3,
+          "2": 3
+        },
+        "connectors": {
+          "ramp": 23,
+          "stairs": 8,
+          "ladder": 2
+        },
+        "props": {
+          "bench": 5,
+          "boulder": 26,
+          "crate": 26,
+          "fence": 35,
+          "shelving": 75,
+          "table": 51,
+          "tree-oak": 21,
+          "tree-palm": 71
+        },
+        "waterTiles": 1201,
+        "dropships": 1,
+        "coverTiles": 310
+      },
+      "after": {
+        "buildings": 7,
+        "storeys": {
+          "3": 1,
+          "1": 3,
+          "2": 3
+        },
+        "connectors": {
+          "ramp": 23,
+          "stairs": 8,
+          "ladder": 2
+        },
+        "props": {
+          "banksia": 27,
+          "bench": 5,
+          "crate": 26,
+          "fence": 32,
+          "grass-tree": 25,
+          "limestone-outcrop": 10,
+          "shelving": 75,
+          "table": 51,
+          "tree-palm": 5,
+          "tree-tuart": 53
+        },
+        "waterTiles": 1201,
+        "dropships": 1,
+        "coverTiles": 309
+      },
+      "unchanged": {
+        "buildings": true,
+        "connectors": false,
+        "hooks": false,
+        "dropships": true,
+        "water": true
+      }
+    },
+    {
+      "id": "P02-reverse",
+      "control": false,
+      "cameraEqual": true,
+      "pngByteIdentical": false,
+      "sha256": [
+        "c20ed39269279bbe07ff90c6c9fd36f928a970173f1d14d3dc398fcf46d94e3d",
+        "78b9904c6b81627d882745e0ae3415c11dc1a57710935e08b8a55ee39964cd3d"
+      ],
+      "before": {
+        "buildings": 7,
+        "storeys": {
+          "3": 1,
+          "1": 3,
+          "2": 3
+        },
+        "connectors": {
+          "ramp": 23,
+          "stairs": 8,
+          "ladder": 2
+        },
+        "props": {
+          "bench": 5,
+          "boulder": 26,
+          "crate": 26,
+          "fence": 35,
+          "shelving": 75,
+          "table": 51,
+          "tree-oak": 21,
+          "tree-palm": 71
+        },
+        "waterTiles": 1201,
+        "dropships": 1,
+        "coverTiles": 310
+      },
+      "after": {
+        "buildings": 7,
+        "storeys": {
+          "3": 1,
+          "1": 3,
+          "2": 3
+        },
+        "connectors": {
+          "ramp": 23,
+          "stairs": 8,
+          "ladder": 2
+        },
+        "props": {
+          "banksia": 27,
+          "bench": 5,
+          "crate": 26,
+          "fence": 32,
+          "grass-tree": 25,
+          "limestone-outcrop": 10,
+          "shelving": 75,
+          "table": 51,
+          "tree-palm": 5,
+          "tree-tuart": 53
+        },
+        "waterTiles": 1201,
+        "dropships": 1,
+        "coverTiles": 309
+      },
+      "unchanged": {
+        "buildings": true,
+        "connectors": false,
+        "hooks": false,
+        "dropships": true,
+        "water": true
+      }
+    },
+    {
+      "id": "P03-second-seed",
+      "control": false,
+      "cameraEqual": true,
+      "pngByteIdentical": false,
+      "sha256": [
+        "b1d3d35a2d98aa8040984693cd3855bf77b8b482dcbfd787d191f0e6872c90ce",
+        "6d147eb067c4d2218735ebba937d2d46923addd96bace6780679d1f846048872"
+      ],
+      "before": {
+        "buildings": 8,
+        "storeys": {
+          "2": 4,
+          "3": 3,
+          "1": 1
+        },
+        "connectors": {
+          "ramp": 20,
+          "stairs": 18,
+          "ladder": 5
+        },
+        "props": {
+          "bench": 4,
+          "boulder": 21,
+          "crate": 41,
+          "fence": 35,
+          "shelving": 63,
+          "table": 54,
+          "tree-oak": 24,
+          "tree-palm": 78
+        },
+        "waterTiles": 1501,
+        "dropships": 1,
+        "coverTiles": 320
+      },
+      "after": {
+        "buildings": 8,
+        "storeys": {
+          "2": 4,
+          "3": 3,
+          "1": 1
+        },
+        "connectors": {
+          "ramp": 20,
+          "stairs": 18,
+          "ladder": 5
+        },
+        "props": {
+          "banksia": 31,
+          "bench": 2,
+          "crate": 37,
+          "fence": 26,
+          "grass-tree": 34,
+          "limestone-outcrop": 9,
+          "shelving": 63,
+          "table": 54,
+          "tree-palm": 6,
+          "tree-tuart": 49
+        },
+        "waterTiles": 1501,
+        "dropships": 1,
+        "coverTiles": 311
+      },
+      "unchanged": {
+        "buildings": true,
+        "connectors": false,
+        "hooks": false,
+        "dropships": true,
+        "water": true
+      }
+    },
+    {
+      "id": "P04-second-seed",
+      "control": false,
+      "cameraEqual": true,
+      "pngByteIdentical": false,
+      "sha256": [
+        "664ec343c11ae0a218c78b2c30ad98e25aa0356cc05a0a7e782bf4974cf68984",
+        "63aea28e5ab0a2fb2a135d569341e52d6288524d51f0aeeef83d3bab4647c9b4"
+      ],
+      "before": {
+        "buildings": 8,
+        "storeys": {
+          "2": 4,
+          "3": 3,
+          "1": 1
+        },
+        "connectors": {
+          "ramp": 20,
+          "stairs": 18,
+          "ladder": 5
+        },
+        "props": {
+          "bench": 4,
+          "boulder": 21,
+          "crate": 41,
+          "fence": 35,
+          "shelving": 63,
+          "table": 54,
+          "tree-oak": 24,
+          "tree-palm": 78
+        },
+        "waterTiles": 1501,
+        "dropships": 1,
+        "coverTiles": 320
+      },
+      "after": {
+        "buildings": 8,
+        "storeys": {
+          "2": 4,
+          "3": 3,
+          "1": 1
+        },
+        "connectors": {
+          "ramp": 20,
+          "stairs": 18,
+          "ladder": 5
+        },
+        "props": {
+          "banksia": 31,
+          "bench": 2,
+          "crate": 37,
+          "fence": 26,
+          "grass-tree": 34,
+          "limestone-outcrop": 9,
+          "shelving": 63,
+          "table": 54,
+          "tree-palm": 6,
+          "tree-tuart": 49
+        },
+        "waterTiles": 1501,
+        "dropships": 1,
+        "coverTiles": 311
+      },
+      "unchanged": {
+        "buildings": true,
+        "connectors": false,
+        "hooks": false,
+        "dropships": true,
+        "water": true
+      }
+    },
+    {
+      "id": "C01-lagos-control",
+      "control": true,
+      "cameraEqual": true,
+      "pngByteIdentical": true,
+      "sha256": [
+        "eda749de663bc92b68f240b10c9a947b4c8c5b399db9db6207ff75bc3197cb9a",
+        "eda749de663bc92b68f240b10c9a947b4c8c5b399db9db6207ff75bc3197cb9a"
+      ],
+      "before": {
+        "buildings": 13,
+        "storeys": {
+          "2": 6,
+          "4": 5,
+          "5": 1,
+          "3": 1
+        },
+        "connectors": {
+          "stairs": 36,
+          "ladder": 2
+        },
+        "props": {
+          "bench": 14,
+          "boulder": 9,
+          "crate": 20,
+          "fence": 30,
+          "shelving": 92,
+          "table": 118,
+          "tree-oil-palm": 36,
+          "tree-tropical-almond": 50
+        },
+        "waterTiles": 0,
+        "dropships": 1,
+        "coverTiles": 369
+      },
+      "after": {
+        "buildings": 13,
+        "storeys": {
+          "2": 6,
+          "4": 5,
+          "5": 1,
+          "3": 1
+        },
+        "connectors": {
+          "stairs": 36,
+          "ladder": 2
+        },
+        "props": {
+          "bench": 14,
+          "boulder": 9,
+          "crate": 20,
+          "fence": 30,
+          "shelving": 92,
+          "table": 118,
+          "tree-oil-palm": 36,
+          "tree-tropical-almond": 50
+        },
+        "waterTiles": 0,
+        "dropships": 1,
+        "coverTiles": 369
+      },
+      "unchanged": {
+        "buildings": true,
+        "connectors": true,
+        "hooks": true,
+        "dropships": true,
+        "water": true
+      }
+    },
+    {
+      "id": "C02-lagos-control",
+      "control": true,
+      "cameraEqual": true,
+      "pngByteIdentical": true,
+      "sha256": [
+        "a7261fdeb4cdc2eee5d60c1ceb24c7f214ec225afe1e8de31f2e02d93ef290cf",
+        "a7261fdeb4cdc2eee5d60c1ceb24c7f214ec225afe1e8de31f2e02d93ef290cf"
+      ],
+      "before": {
+        "buildings": 13,
+        "storeys": {
+          "2": 6,
+          "4": 5,
+          "5": 1,
+          "3": 1
+        },
+        "connectors": {
+          "stairs": 36,
+          "ladder": 2
+        },
+        "props": {
+          "bench": 14,
+          "boulder": 9,
+          "crate": 20,
+          "fence": 30,
+          "shelving": 92,
+          "table": 118,
+          "tree-oil-palm": 36,
+          "tree-tropical-almond": 50
+        },
+        "waterTiles": 0,
+        "dropships": 1,
+        "coverTiles": 369
+      },
+      "after": {
+        "buildings": 13,
+        "storeys": {
+          "2": 6,
+          "4": 5,
+          "5": 1,
+          "3": 1
+        },
+        "connectors": {
+          "stairs": 36,
+          "ladder": 2
+        },
+        "props": {
+          "bench": 14,
+          "boulder": 9,
+          "crate": 20,
+          "fence": 30,
+          "shelving": 92,
+          "table": 118,
+          "tree-oil-palm": 36,
+          "tree-tropical-almond": 50
+        },
+        "waterTiles": 0,
+        "dropships": 1,
+        "coverTiles": 369
+      },
+      "unchanged": {
+        "buildings": true,
+        "connectors": true,
+        "hooks": true,
+        "dropships": true,
+        "water": true
+      }
+    }
+  ]
+}

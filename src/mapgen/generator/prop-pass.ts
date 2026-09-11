@@ -257,9 +257,15 @@ function placeVegetation(
   blocked: ReadonlySet<number>,
   rng: Rng,
 ): number {
-  const entries = biome.vegetation.filter((entry) =>
-    allowedIn(registries.props.get(entry.prop), biome.id, "ground"),
-  );
+  const entries = biome.vegetation.filter((entry) => {
+    const definition = registries.props.get(entry.prop);
+    // Local low plants belong to this explicit planting list, not the
+    // legacy LOW-cover ground pool used to populate every settlement yard.
+    return (
+      allowedIn(definition, biome.id, "ground") ||
+      allowedIn(definition, biome.id, "vegetation")
+    );
+  });
   const seedRate = (entry: VegetationEntry): number =>
     entry.density / meanClusterSize(entry);
   const total = entries.reduce((sum, entry) => sum + seedRate(entry), 0) / 100;

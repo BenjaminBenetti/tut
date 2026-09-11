@@ -14,6 +14,7 @@ import { KerbPass } from "../generator/kerb-pass";
 import { SlopePass } from "../generator/slope-pass";
 import { RoadPass } from "../generator/road-pass";
 import { BoundaryFencePass } from "../generator/boundary-fence-pass";
+import { YardArrangementPass } from "../generator/yard-arrangement-pass";
 import { TerrainPass } from "../generator/terrain-pass";
 import { WaterPass } from "../generator/water-pass";
 import type { GenerationPass } from "../model/generation-pass";
@@ -48,6 +49,7 @@ export function createSettlementPasses(): GenerationPass[] {
     new KerbPass(),
     new BoundaryFencePass(),
     new HookPass(),
+    new YardArrangementPass(),
     new ConnectivityPass(),
   ];
 }

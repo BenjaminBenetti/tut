@@ -489,7 +489,8 @@ function placeYardClutter(
     ) {
       continue;
     }
-    draft.addProp(rng.pick(kinds).id, coord, randomRotation(rng));
+    const prop = draft.addProp(rng.pick(kinds).id, coord, randomRotation(rng));
+    draft.yardPropIds.add(prop.id);
     placed++;
   }
   return placed;

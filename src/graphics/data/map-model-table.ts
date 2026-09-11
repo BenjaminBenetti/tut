@@ -113,8 +113,7 @@ export const TERRAIN_TRANSITION_SOURCE =
  * Style guide §7, `prop kind → model id`. `car` takes the 1×1 compact;
  * the 2×1 `prop.car-sedan` is for hand-placed wrecks and mapgen never
  * emits it.
- * Bench art is ready for #960's use-specific placement; MapGen registers
- * its definition there so this asset does not enter the old random yard pool.
+ * Benches use the contextual yard definition, so they never enter the generic ground pool.
  */
 export const PROP_MODELS: Readonly<
   Record<
@@ -136,7 +135,7 @@ export const PROP_MODELS: Readonly<
   [PropKindIds.DUMPSTER]: "prop.dumpster",
   [PropKindIds.SHELVING]: "prop.shelving",
   [PropKindIds.TABLE]: "prop.table",
-  bench: "prop.bench",
+  [PropKindIds.BENCH]: "prop.bench",
   [PropKindIds.FENCE]: "prop.fence",
   [PropKindIds.BOULDER]: "prop.boulder",
   [PropKindIds.TREE_PINE]: "prop.tree-pine",

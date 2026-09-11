@@ -1,0 +1,38 @@
+{
+  "baselineCheckout": "f44063a6d8f71171e225c623d6d26ee6c7502e66",
+  "baselineRuntime": "6967394",
+  "afterCheckout": "873bf491e57bf9c1eb10d5bb3d18f067cc136a5f",
+  "afterRuntime": "ecaebc4",
+  "independentBrowsersPerPhase": 2,
+  "framesInspected": true,
+  "records": [
+    {
+      "id": "I01-city-frontages",
+      "beforeSha256": "a99fb12288a35488410ee3477366c867999fe20b939bc8362d924431cc34b525",
+      "afterSha256": "1d4ad6915aea030e3775851cad6c2f5e3fafd662af2c5a8b364bbb5bfbdcc530",
+      "changedPixels": 16286,
+      "recipeAndCameraIdentical": true
+    },
+    {
+      "id": "I02-city-frontages-rotated",
+      "beforeSha256": "94afb1f02075e17a43621538e2da758c9b8adfe900e0909e304ba7d002972312",
+      "afterSha256": "9ce43e52a502043c2cbc8b74f2a290e88909c83abf6d2135545ea8f748b8f703",
+      "changedPixels": 16594,
+      "recipeAndCameraIdentical": true
+    },
+    {
+      "id": "C01-rural-roof-control",
+      "beforeSha256": "aa7004b729d54ae8034af767685e06bb12937c3978ab5da05d2507b454a20343",
+      "afterSha256": "aa7004b729d54ae8034af767685e06bb12937c3978ab5da05d2507b454a20343",
+      "changedPixels": 0,
+      "recipeAndCameraIdentical": true
+    }
+  ],
+  "rotatedRoofChecks": {
+    "suspectedHatchRegion": [785, 700, 103, 90],
+    "suspectedHatchChangedPixels": 0,
+    "roofRegion": [310, 735, 670, 165],
+    "roofChangedPixels": 0
+  },
+  "interpretation": "Bench replaces house-side barriers; generic urban clutter removed. Full rural frame is pixel-identical. Roof-detail difference suspected by eye was disproved by the zero-pixel region checks and unchanged building tiles/records."
+}

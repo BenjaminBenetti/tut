@@ -91,6 +91,8 @@ export class MapDraft {
   readonly buildings: Building[] = [];
   readonly connectors: Connector[] = [];
   readonly props: Prop[] = [];
+  /** Scratch provenance: yard allocation, distinct from vegetation/street/interior props. */
+  readonly yardPropIds = new Set<string>();
   readonly dropships: DropshipSite[] = [];
   /** The production site pass ran; missing sites must not silently become legacy blobs. */
   requiresDropships = false;

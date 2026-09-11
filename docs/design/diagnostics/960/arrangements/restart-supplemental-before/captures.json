@@ -1,0 +1,102 @@
+{
+  "baseCommit": "f44063a6d8f71171e225c623d6d26ee6c7502e66",
+  "repeatedBrowsers": 2,
+  "records": [
+    {
+      "id": "S01-nearby-shop-workplace-home",
+      "seed": "mc-resume-01",
+      "biome": "temperate",
+      "settlement": "city",
+      "size": "medium",
+      "focus": {
+        "x": 24,
+        "y": 2,
+        "z": 37
+      },
+      "rotation": 0,
+      "camera": {
+        "yawIndex": 0,
+        "zoom": 55.11351921262185,
+        "target": {
+          "x": 24.5,
+          "y": 1.65,
+          "z": 37.5
+        },
+        "bounds": {
+          "x": 0,
+          "z": 0,
+          "w": 72,
+          "d": 72
+        },
+        "zoomRange": {
+          "min": 19.83827358328925,
+          "max": 192
+        }
+      },
+      "actualPitch": 45.000000000000405,
+      "pixel": {
+        "x": 1389.999999999999,
+        "y": 749.9999999999999
+      },
+      "clip": {
+        "x": 740,
+        "y": 225,
+        "width": 1300,
+        "height": 1050
+      },
+      "viewport": {
+        "width": 2400,
+        "height": 1500
+      },
+      "sha256": "737b776f0b03a81c0d03c6bb2880a9ff8756e208027e6fa2d36af23ca9c8004e"
+    },
+    {
+      "id": "S02-shop-delivery-yard",
+      "seed": "mc-resume-01",
+      "biome": "temperate",
+      "settlement": "city",
+      "size": "medium",
+      "focus": {
+        "x": 34,
+        "y": 2,
+        "z": 12
+      },
+      "rotation": 2,
+      "camera": {
+        "yawIndex": 2,
+        "zoom": 55.11351921262153,
+        "target": {
+          "x": 34.5,
+          "y": 1.65,
+          "z": 12.5
+        },
+        "bounds": {
+          "x": 0,
+          "z": 0,
+          "w": 72,
+          "d": 72
+        },
+        "zoomRange": {
+          "min": 19.83827358328925,
+          "max": 192
+        }
+      },
+      "actualPitch": 44.99999999999976,
+      "pixel": {
+        "x": 1390.0000000000002,
+        "y": 750.0000000000001
+      },
+      "clip": {
+        "x": 740,
+        "y": 225,
+        "width": 1300,
+        "height": 1050
+      },
+      "viewport": {
+        "width": 2400,
+        "height": 1500
+      },
+      "sha256": "2804dc3c1928c3e79aec2f678709a68e18796d681e649b0e8b7261d19fa32207"
+    }
+  ]
+}

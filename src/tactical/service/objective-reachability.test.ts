@@ -162,6 +162,25 @@ describe("objective reachability on shipped mission maps (#345)", () => {
     // 24 maps on CI at about 0.5 s each on the runner, plus headroom.
   }, 120_000);
 
+  it("keeps the yard-side firing approach open in the #960 seating regression", () => {
+    const registries = createDefaultRegistries();
+    const recipe = missionToMapRecipe(
+      mission("firing-town/small/8", "town", "small"),
+      MISSION_TYPES["infestation-clearance"],
+      registries,
+    );
+    expect(recipe.ok).toBe(true);
+    if (!recipe.ok) return;
+    const map = generateTacticalMap(recipe.value, { registries });
+    // This seed is beyond CI's four-seed sweep. Seating once isolated the
+    // only outdoor firing approach to objective 1 even though it was walkable
+    // by infantry indoors. Both classes must still be able to take a shot.
+    for (const approach of objectiveApproach(map)) {
+      expect(approach.mechFiringSteps).toBeGreaterThanOrEqual(0);
+      expect(approach.infantryFiringSteps).toBeGreaterThanOrEqual(0);
+    }
+  });
+
   it("starts the nearest spawner inside a turn budget a player would sit through", () => {
     // The reported failure (#345) was a force that spent 40 turns without
     // ever getting a shot off. This is the guard against a map or a

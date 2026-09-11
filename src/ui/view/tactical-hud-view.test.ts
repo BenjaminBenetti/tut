@@ -753,6 +753,39 @@ describe("TacticalHudView", () => {
     );
   });
 
+  /**
+   * Tab and a strip row are two ways to ask for a unit, and they used to
+   * disagree: the row selected and centred, Tab only selected, so a
+   * player cycling with Tab could land on an armed unit they could not
+   * see (#1073, found by QA verifying #1041).
+   *
+   * Asserts the looked-at id *is* the newly selected one, so centring the
+   * previous unit, or any unit, fails as well as not centring at all.
+   */
+  it("Tab brings the unit it selects on screen, like a strip row (#1073)", () => {
+    const lookedAt: string[] = [];
+    const { hud, mission } = setup({
+      onLookAt: (unitId: string) => lookedAt.push(unitId),
+    });
+    // Two actors, so Tab has somewhere to go: the fixture's s2 starts
+    // with no action points, and a spent unit is not in the cycle.
+    hud.update({
+      ...mission,
+      units: mission.units.map((u) => (u.id === "s2" ? { ...u, ap: 2 } : u)),
+    });
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    lookedAt.length = 0;
+
+    hud.handleIntent({ kind: "action", action: "next-unit" });
+    expect(hud.getSelectedUnitId()).toBe("s2");
+    expect(lookedAt).toEqual(["s2"]);
+
+    // And again, wrapping back — each press centres the unit it lands on.
+    hud.handleIntent({ kind: "action", action: "next-unit" });
+    expect(hud.getSelectedUnitId()).toBe("s1");
+    expect(lookedAt).toEqual(["s2", "s1"]);
+  });
+
   it("picks a unit from the strip and brings it on screen", () => {
     const lookedAt: string[] = [];
     const { hud } = setup({

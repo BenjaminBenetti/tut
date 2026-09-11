@@ -70,6 +70,14 @@ const KEY_BINDINGS: Readonly<Record<string, KeyBinding>> = {
   arrowright: { kind: "pan", direction: "right" },
 };
 
+/**
+ * Every key the camera answers to, lower-cased like `KeyboardEvent.key`.
+ * Exported so a table of other shortcuts can be checked against it: a
+ * key bound in both places fires both, which is how `a` came to pan the
+ * view and arm Attack on every leftward pan (#1091).
+ */
+export const CAMERA_KEYS: readonly string[] = Object.keys(KEY_BINDINGS);
+
 const TEXT_ENTRY_TAGS: ReadonlySet<string> = new Set([
   "INPUT",
   "TEXTAREA",

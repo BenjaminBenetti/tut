@@ -1,0 +1,17 @@
+[
+  {
+    "before": "building.wall-concrete",
+    "after": "building.wall-plaster",
+    "worldTrianglesEqual": true
+  },
+  {
+    "before": "building.wall-window-concrete",
+    "after": "building.wall-window-plaster",
+    "worldTrianglesEqual": true
+  },
+  {
+    "before": "building.wall-door-concrete",
+    "after": "building.wall-door-plaster",
+    "worldTrianglesEqual": true
+  }
+]

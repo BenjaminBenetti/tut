@@ -20,9 +20,9 @@ import {
   wallFamilyForWall,
 } from "./map-model-table";
 
-/** Every wall model the table names, across all three families. */
+/** Every available wall model, including families outside the legacy hash pool. */
 const allWallModels = [
-  ...WALL_FAMILIES.flatMap((family) => Object.values(WALL_MODELS[family])),
+  ...Object.values(WALL_MODELS).flatMap((family) => Object.values(family)),
   ...Object.values(HALF_WALL_MODELS),
 ];
 

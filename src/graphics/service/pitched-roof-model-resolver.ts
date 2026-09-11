@@ -1,7 +1,8 @@
 import { STOREY_LAYERS } from "../../core/model/elevation";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { TileIndex } from "../../mapgen/service/tile-index";
-import { PITCHED_ROOF_MODEL } from "../data/map-model-table";
+import { hashSeed } from "../../core/service/seed-hash";
+import { HIPPED_ROOF_MODEL, PITCHED_ROOF_MODEL } from "../data/map-model-table";
 import { PITCHED_ROOF_STYLE } from "../data/pitched-roof-style";
 import type { PitchedRoofAppearance } from "../model/pitched-roof-appearance";
 import { tileTop } from "../view/tactical-map-view";
@@ -27,6 +28,10 @@ export function resolvePitchedRoofModels(
   const result: ModelPlacement[] = [];
   for (const building of map.buildings) {
     if (building.roof.kind !== "pitched" || building.roof.walkable) continue;
+    const hipped =
+      map.recipe.params.placeProfile === "johannesburg" &&
+      building.kind === "house" &&
+      hashSeed(building.id) % 2 === 1;
     const level = building.groundLevel + building.floors.length * STOREY_LAYERS;
     const covered = new Set<string>();
     for (const rect of building.footprint) {
@@ -47,17 +52,19 @@ export function resolvePitchedRoofModels(
             PITCHED_ROOF_STYLE.eaveThickness +
             Math.min(u, width - u) * PITCHED_ROOF_STYLE.risePerTile;
           result.push({
-            modelId: PITCHED_ROOF_MODEL,
+            modelId: hipped ? HIPPED_ROOF_MODEL : PITCHED_ROOF_MODEL,
             level,
             position: { x: x + 0.5, y: tileTop(level), z: z + 0.5 },
-            turns: alongX ? 0 : 1,
-            roof: {
-              heights: [
-                height(offset),
-                height(offset + 0.5),
-                height(offset + 1),
-              ],
-            },
+            turns: hipped || alongX ? 0 : 1,
+            roof: hipped
+              ? hipProfile(x - rect.x, z - rect.z, rect.w, rect.d)
+              : {
+                  heights: [
+                    height(offset),
+                    height(offset + 0.5),
+                    height(offset + 1),
+                  ],
+                },
             tile,
           });
         }
@@ -65,4 +72,23 @@ export function resolvePitchedRoofModels(
     }
   }
   return result;
+}
+
+/** World-aligned profiles let every hip cap share the same corner convention. */
+function hipProfile(
+  x: number,
+  z: number,
+  width: number,
+  depth: number,
+): PitchedRoofAppearance {
+  const heights = (
+    offset: number,
+    span: number,
+  ): readonly [number, number, number] => {
+    const at = (u: number): number =>
+      PITCHED_ROOF_STYLE.eaveThickness +
+      Math.min(u, span - u) * PITCHED_ROOF_STYLE.risePerTile;
+    return [at(offset), at(offset + 0.5), at(offset + 1)];
+  };
+  return { heights: heights(x, width), depthHeights: heights(z, depth) };
 }

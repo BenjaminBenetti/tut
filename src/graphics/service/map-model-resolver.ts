@@ -440,7 +440,7 @@ function resolveWalls(
           kind,
           wallFamilyForWall(
             kind,
-            tile.buildingId,
+            localWallBuildingId(map, tile, side, kind, index),
             map.recipe.params.placeProfile,
           ),
         ),
@@ -454,6 +454,23 @@ function resolveWalls(
     }
   }
   return placements;
+}
+
+/** Keeps Johannesburg's ground-floor exterior finish tied to the building across its shared edge. */
+function localWallBuildingId(
+  map: TacticalMap,
+  tile: Tile,
+  side: Direction,
+  kind: NonNullable<Tile["walls"][Direction]>,
+  index: TileIndex,
+): string | undefined {
+  if (
+    map.recipe.params.placeProfile !== "johannesburg" ||
+    tile.buildingId !== undefined ||
+    kind === "half"
+  )
+    return tile.buildingId;
+  return index.getAt(stepGridPos(tile, side))?.buildingId;
 }
 
 /** True when the tile beyond `side` exists at the same level and will draw the shared wall. */

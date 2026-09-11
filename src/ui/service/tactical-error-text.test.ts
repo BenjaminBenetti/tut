@@ -209,4 +209,28 @@ describe("namesFor", () => {
     expect(names.unit("unit-404")).toBe("that unit");
     expect(names.unit("unit-404")).not.toContain("unit-404");
   });
+  it("names an egg spawner a refusal is aimed at, not as a unit", () => {
+    // `no-line-of-sight` carries a bare `targetId`, and a spawner is
+    // aimed at exactly as a unit is. Resolving it as a unit is how the
+    // hit preview came to read "No line of sight to that unit" under a
+    // header saying EGG SPAWNER (#1072).
+    const names = namesFor(
+      {
+        ...twoRifleSquads.mission,
+        spawners: [{ id: "spawner-7" }],
+        objectives: [{ id: "objective-1", targetId: "spawner-7" }],
+      } as unknown as Parameters<typeof namesFor>[0],
+      twoRifleSquads.campaign,
+    );
+    expect(
+      describeRefusal(
+        { kind: "no-line-of-sight", targetId: "spawner-7" },
+        names,
+      ),
+    ).toBe("No line of sight to spawner 1");
+    // And a unit target is still a unit.
+    expect(
+      describeRefusal({ kind: "no-line-of-sight", targetId: "unit-9" }, names),
+    ).toBe("No line of sight to Swarmer");
+  });
 });

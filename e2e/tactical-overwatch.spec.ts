@@ -2,6 +2,7 @@ import type { Page } from "@playwright/test";
 import { expect, test } from "@playwright/test";
 
 import type { TacticalTestHooks } from "../src/ui/model/tactical-intent";
+import { openUnitWheel, wheelItem } from "./action-wheel.helper";
 
 /** The page's global object as seen from `page.evaluate`. */
 interface HookGlobal {
@@ -106,7 +107,7 @@ test("overwatch reports itself on the unit card and in the event log", async ({
   const status = page.locator('.tut-hud__side [data-field="status"]');
   const actionPoints = page.locator('.tut-hud__side [data-field="ap"]');
   const attacks = page.locator('.tut-hud__side [data-field="attacks"]');
-  const overwatch = page.locator('#action-bar [data-action="overwatch"]');
+  const overwatch = wheelItem(page, "overwatch");
 
   // The control: a unit that has not acted holds its points and says nothing
   // about its status, so the assertions below cannot pass on a stale card.
@@ -116,6 +117,8 @@ test("overwatch reports itself on the unit card and in the event log", async ({
   );
   await expect(status).toHaveText(EMPTY_FIELD);
   await expect(actionPoints).toHaveText("2 / 2");
+  // Overwatch lives on the unit's wheel (#1112).
+  await openUnitWheel(page, "unit-1");
   await expect(overwatch).toBeEnabled();
 
   await overwatch.click();

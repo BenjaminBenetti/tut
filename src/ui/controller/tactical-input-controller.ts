@@ -18,7 +18,6 @@ import type {
   TacticalInputHooks,
   TacticalIntentSink,
 } from "../model/tactical-intent";
-import { ACTION_BAR_ORDER } from "../model/tactical-intent";
 
 // ===========================================
 // Types
@@ -62,20 +61,6 @@ export interface TacticalInputDeps {
 // ===========================================
 
 /**
- * `1` … `7` in the order the action bar shows its buttons (#520), so the
- * digit under a button is the digit that arms it. Derived from
- * `ACTION_BAR_ORDER` rather than typed out, so a button added to the bar
- * takes the next digit without a second edit here.
- */
-function numberRowBindings(): Record<string, TacticalAction | "end-turn"> {
-  const bound: Record<string, TacticalAction | "end-turn"> = {};
-  ACTION_BAR_ORDER.forEach((action, index) => {
-    bound[String(index + 1)] = action;
-  });
-  return bound;
-}
-
-/**
  * Keyboard shortcuts (GDD §6.2 actions plus End Turn), keyed by
  * `KeyboardEvent.key` lower-cased. Q / E / WASD / arrows belong to the
  * camera controller (`CAMERA_KEYS`) and must not appear here: both
@@ -86,15 +71,13 @@ function numberRowBindings(): Record<string, TacticalAction | "end-turn"> {
  * which is the only way to aim at an egg spawner until the scene draws
  * one the pointer can hit (#426).
  *
- * The number row comes first so the letters below can still override a
- * digit if one is ever bound twice; nothing does today. Every letter
- * from #340 keeps its meaning — the digits are additional, not a
- * replacement.
+ * The number row went with the action bar (#1112): the digits were bound
+ * from the bar's order, and there is no bar to document them now. Every
+ * letter from #340 keeps its meaning.
  */
 export const TACTICAL_SHORTCUTS: Readonly<
   Record<string, TacticalAction | "end-turn">
 > = {
-  ...numberRowBindings(),
   m: "move",
   f: "attack",
   o: "overwatch",
@@ -253,7 +236,8 @@ export class TacticalTargetPicker implements Picker<TacticalTarget> {
  * ```
  *   left  ──▶ PickingController<TacticalTarget> ──▶ onSelected
  *                ──▶ emit select-unit | select-spawner | select-tile
- *   right ──▶ onInvoked ──▶ emit invoke, browser menu suppressed
+ *                    (the HUD selects a friendly unit, else opens the wheel)
+ *   right ──▶ onInvoked ──▶ emit invoke (the HUD walks there), browser menu suppressed
  *   keydown ──▶ TACTICAL_SHORTCUTS ──▶ emit action | end-turn
  *   update  ──▶ cameraInput.update
  * ```
@@ -341,12 +325,12 @@ export class TacticalInputController implements FrameUpdatable {
     this.picking.select({ kind: "spawner", spawnerId });
   }
 
-  /** Reports a tile as if clicked. Selection highlight stays on the unit. */
+  /** Points at a tile as if left-clicked; the HUD opens the wheel there (#1112). */
   selectTile(tile: TileCoord): void {
     this.picking.select({ kind: "tile", tile });
   }
 
-  /** Invokes the armed action on a tile as if right-clicked (#520). */
+  /** Walks the selected unit to a tile as if right-clicked (#520, #1112). */
   invokeTile(tile: TileCoord): void {
     this.deps.intents.emit({ kind: "invoke", target: { kind: "tile", tile } });
   }
@@ -422,7 +406,7 @@ export class TacticalInputController implements FrameUpdatable {
     }
   }
 
-  /** Swallows the browser menu inside the viewport, where right click invokes instead. */
+  /** Swallows the browser menu inside the viewport, where right click moves instead. */
   private readonly handleContextMenu = (event: Event): void => {
     event.preventDefault();
   };

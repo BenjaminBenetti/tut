@@ -4,8 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { err, ok } from "../../core/model/result";
 import type { TacticalNames } from "../service/tactical-error-text";
 import { CoverLevel } from "../../mapgen/model/cover";
-import type { ActionBarAction } from "./action-bar-view";
-import { ActionBarView } from "./action-bar-view";
+import { EndTurnView } from "./end-turn-view";
 import { HitPreviewView } from "./hit-preview-view";
 import { hudMission, hudTemplate, hudUnit } from "./mission-hud.test-helper";
 import { describeEvent } from "./event-vocabulary";
@@ -150,83 +149,51 @@ describe("UnitCardView weapon lines (#641)", () => {
   });
 });
 
-describe("ActionBarView", () => {
-  it("puts Attack's digit on every weapon button, not just the first (#652)", () => {
-    const view = new ActionBarView({ onAction: vi.fn() });
-    view.mount(root);
-    view.update({
-      canAct: true,
-      playerPhase: true,
-      mode: undefined,
-      weapons: [
-        { id: "arm-weapon", name: "Autocannon", ready: true },
-        { id: "back-weapon", name: "Missile Pod", ready: true },
-      ],
-    });
-    const weapons = [...root.querySelectorAll<HTMLElement>("[data-weapon-id]")];
-    expect(weapons).toHaveLength(2);
-    // One key reaches both -- press it again to cycle (#532) -- so the
-    // digit is true on each. A button without the hint also loses the
-    // indent it reserves, so its glyph and label sit left of its
-    // neighbours' and the bar reads as though it had no shortcut.
-    const hints = weapons.map(
-      (b) =>
-        b.querySelector<HTMLElement>('[data-role="shortcut"]')?.textContent,
-    );
-    expect(hints).toEqual(["2", "2"]);
-    // And the one that is not first says how to reach it.
-    expect(weapons[1]?.title).toContain("press again");
-  });
-
+describe("EndTurnView", () => {
   /**
-   * The bar marks what is unavailable and still reports the press
-   * (#1030). It used to `disable` the button, which is why clicking an
-   * unavailable action taught the player nothing: the click never
-   * happened, so nothing could explain it. Availability is now
-   * `aria-disabled` — announced, styled, and still reachable — and the
-   * HUD refuses with words above the unit.
+   * The one button left at the bottom since the bar moved into the
+   * scene (#1112). Marked unavailable rather than disabled outside the
+   * player's phase (#1030), so a press still reaches the HUD to be
+   * explained, and it names what it would leave unspent (#1041).
    */
-  it("marks unavailable actions, reports the press anyway, and marks the mode", () => {
-    const onAction = vi.fn<(action: ActionBarAction) => void>();
-    const view = new ActionBarView({ onAction });
+  it("offers End turn in the player's phase, names the unspent, and reports the press", () => {
+    const onEndTurn = vi.fn();
+    const view = new EndTurnView({ onEndTurn });
     view.mount(root);
-    const button = (a: string) =>
-      root.querySelector<HTMLButtonElement>(`[data-action="${a}"]`);
-    expect(button("attack")?.getAttribute("aria-disabled")).toBe("true");
-    view.update({ canAct: true, playerPhase: true, mode: "attack" });
-    expect(button("attack")?.getAttribute("aria-disabled")).toBe("false");
-    expect(button("attack")?.getAttribute("aria-pressed")).toBe("true");
-    expect(button("move")?.getAttribute("aria-pressed")).toBe("false");
-    button("move")?.click();
-    button("end-turn")?.click();
-    expect(onAction.mock.calls.map((c) => c[0])).toEqual(["move", "end-turn"]);
-
-    // Unavailable: marked, and the press still reaches the HUD, which is
-    // what lets a refusal say why instead of the click vanishing.
-    view.update({ canAct: false, playerPhase: false, mode: undefined });
-    expect(button("end-turn")?.getAttribute("aria-disabled")).toBe("true");
-    expect(button("end-turn")?.classList.contains("is-unavailable")).toBe(true);
-    button("end-turn")?.click();
-    expect(onAction.mock.calls.map((c) => c[0])).toEqual([
-      "move",
-      "end-turn",
-      "end-turn",
-    ]);
+    const button = root.querySelector<HTMLButtonElement>(
+      '#turn-bar [data-action="end-turn"]',
+    );
+    expect(button?.getAttribute("aria-disabled")).toBe("true");
+    view.update({ playerPhase: true, unspent: 2 });
+    expect(button?.getAttribute("aria-disabled")).toBe("false");
+    expect(button?.textContent).toContain("End turn (2 unspent)");
+    view.update({ playerPhase: true, unspent: 0 });
+    expect(button?.textContent).toContain("End turn");
+    expect(button?.textContent).not.toContain("unspent");
+    button?.click();
+    expect(onEndTurn).toHaveBeenCalledTimes(1);
+    // Off phase: marked, and still reachable.
+    view.update({ playerPhase: false, unspent: 0 });
+    expect(button?.classList.contains("is-unavailable")).toBe(true);
+    button?.click();
+    expect(onEndTurn).toHaveBeenCalledTimes(2);
   });
 
-  it("marks every button with its icon", () => {
-    const view = new ActionBarView({ onAction: vi.fn() });
+  it("carries its icon", () => {
+    const view = new EndTurnView({ onEndTurn: vi.fn() });
     view.mount(root);
-    const iconOf = (a: string) =>
+    expect(
       root
-        .querySelector<HTMLElement>(`[data-action="${a}"] .tut-icon`)
-        ?.style.getPropertyValue("--icon");
-    // `iconUrl` already yields `url(…)`; wrapping it again is invalid CSS and
-    // the mask silently degrades to a solid block, which is what shipped the
-    // first time icons were used (#495).
-    expect(iconOf("move")).toBe("url(/assets/ui/icons/move.svg)");
-    expect(iconOf("end-turn")).toBe("url(/assets/ui/icons/end-turn.svg)");
-    expect(iconOf("attack")).toBe("url(/assets/ui/icons/attack.svg)");
+        .querySelector<HTMLElement>('[data-action="end-turn"] .tut-icon')
+        ?.style.getPropertyValue("--icon"),
+    ).toBe("url(/assets/ui/icons/end-turn.svg)");
+  });
+
+  // The bar's other buttons are gone: the wheel offers them on the map.
+  it("has no other action buttons", () => {
+    const view = new EndTurnView({ onEndTurn: vi.fn() });
+    view.mount(root);
+    expect(root.querySelectorAll("#turn-bar button")).toHaveLength(1);
   });
 });
 

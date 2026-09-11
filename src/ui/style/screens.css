@@ -740,9 +740,9 @@
 
 /*
  * The HUD is an overlay grid over the tactical viewport: banner across
- * the top, a side column on the right, the action bar along the bottom.
- * The grid itself lets pointer events through to the map; its parts do
- * not.
+ * the top, a side column on the right, the End turn bar along the bottom
+ * (the actions themselves are on the wheel, #1112). The grid itself lets
+ * pointer events through to the map; its parts do not.
  */
 .tut-hud {
   position: absolute;
@@ -890,9 +890,9 @@
    =========================================== */
 
 /*
- * Bottom left of the map area: clear of the action bar below and the unit
- * card on the right, so it never covers either at 1280 x 720 or at the
- * 800 px minimum width. Collapsed it is just its own header.
+ * Bottom left of the map area: clear of the End turn bar below and the
+ * unit card on the right, so it never covers either at 1280 x 720 or at
+ * the 800 px minimum width. Collapsed it is just its own header.
  */
 .tut-hud__log {
   grid-area: map;
@@ -964,9 +964,9 @@
 }
 
 /*
- * Action-bar buttons carry their glyph between the shortcut digit and the
- * label (#495). The icon takes `currentColor`, so it dims with a disabled
- * button and turns accent on the armed one without a rule of its own.
+ * The End turn button carries its glyph before the label (#495). The icon
+ * takes `currentColor`, so it dims with an unavailable button without a
+ * rule of its own.
  */
 .tut-hud__actions .tut-btn {
   display: inline-flex;

@@ -8,6 +8,7 @@ import { nearestSightPosition } from "../src/tactical/service/map-assessment-ser
 import type { TacticalTestHooks } from "../src/ui/model/tactical-intent";
 import { drawnFrame } from "./capture-frame.helper";
 import { launchMission, settleForShot } from "./mission-capture.helper";
+import { openUnitWheel, wheelItem } from "./action-wheel.helper";
 
 interface HookGlobal {
   __tutTactical__?: TacticalTestHooks;
@@ -135,7 +136,7 @@ test("captures a squad with an empty magazine, and the three things that follow"
       (id) => (globalThis as HookGlobal).__tutTactical__?.selectUnit(id),
       squadId,
     );
-    await page.keyboard.press("2");
+    await page.keyboard.press("f");
     await page.evaluate(
       (id) => (globalThis as HookGlobal).__tutTactical__?.selectSpawner(id),
       spawnerId,
@@ -191,7 +192,6 @@ test("captures a squad with an empty magazine, and the three things that follow"
         (id) => (globalThis as HookGlobal).__tutTactical__?.selectUnit(id),
         squadId,
       );
-      await page.keyboard.press("1");
       for (const goal of goals) {
         await page.evaluate(
           (tile) =>
@@ -210,7 +210,7 @@ test("captures a squad with an empty magazine, and the three things that follow"
     if (dry !== null && (ammoOf(dry, squadId) ?? 1) === 0) {
       break;
     }
-    const endTurn = page.locator('#action-bar [data-action="end-turn"]');
+    const endTurn = page.locator('#turn-bar [data-action="end-turn"]');
     if (await endTurn.isEnabled()) {
       await endTurn.click();
       await page.waitForTimeout(SETTLE_MS);
@@ -238,25 +238,26 @@ test("captures a squad with an empty magazine, and the three things that follow"
   await page.waitForTimeout(NOTICE_DWELL_MS);
   await drawnFrame(page);
 
-  // 1. The bar does not offer a shot the unit has nothing for.
-  const attack = page.locator('#action-bar [data-action="attack"]');
-  await expect(attack).toHaveAttribute("aria-disabled", "true");
-  // 2. The card does not advertise one either.
+  // 1. The card does not advertise a shot the unit has nothing for.
   await expect(page.locator('[data-field="attacks"]')).toHaveText("0");
-  // 3. The register is the card's: `ammo`, not `charges` or `heat`.
+  // 2. The register is the card's: `ammo`, not `charges` or `heat`.
   await expect(page.locator('[data-field="weapon"]').first()).toContainText(
     "ammo 0",
   );
+  // 3. The wheel names the refill in that register too (#1112).
+  await openUnitWheel(page, squadId);
   await expect(
-    page.locator('#action-bar [data-action="reload"] .tut-btn__label'),
+    wheelItem(page, "reload").locator(".tut-radial__label"),
   ).toHaveText("Reload");
 
   await page.locator("#tactical-viewport").screenshot({
     path: "docs/design/ui-dry-squad.png",
   });
+  await page.keyboard.press("Escape");
 
-  // ...and pressing Attack says why, in that same register.
-  await attack.click({ force: true });
+  // ...and asking for Attack says why, in that same register.
+  await page.locator("#tactical-viewport canvas").hover();
+  await page.keyboard.press("f");
   await drawnFrame(page);
   const status = page.locator('[data-role="status"]');
   await expect(status).toContainText("out of ammo");

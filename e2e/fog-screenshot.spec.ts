@@ -252,7 +252,7 @@ test("captures a mission with fog of war for review", async ({ page }) => {
     if (step) {
       await walkToward(page, "unit-1", step);
     }
-    await page.locator('#action-bar [data-action="end-turn"]').click();
+    await page.locator('#turn-bar [data-action="end-turn"]').click();
     await page.waitForTimeout(150);
   }
   // The walk is the whole point of the second shot, and it has already

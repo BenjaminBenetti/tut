@@ -91,12 +91,14 @@ function missionCityName(state: GameState): string | undefined {
  * ```
  *   ┌ #tactical-viewport ◄── sceneHost.attach / update ───────────────────┐
  *   │   └ #mission-hud: #turn-banner (mission, turn, phase, counts, exit) │
- *   │                   #unit-card #hit-preview #objectives / #action-bar  │
+ *   │                   #unit-card #hit-preview #objectives / #turn-bar    │
+ *   │                   #radial-menu — the action wheel, at the clicked   │
+ *   │                   tile, enemy or unit (#1112)                        │
  *   └─────────────────────────────────────────────────────────────────────┘
  *
  *   host intents ──▶ hud.handleIntent ──▶ onCommand ──▶ store.dispatch
  *                └─▶ syncOverlays()                        range / cover / LOS overlays
- *   hud.onViewChange ─▶ syncOverlays()                        arming Attack shows the envelope
+ *   hud.onViewChange ─▶ syncOverlays()                        aiming shows the envelope
  *   store change ──▶ host.update(mission, tactical events)  animations, then units
  *                └─▶ mission.outcome set ──▶ FinishMission ──▶ "mission-results"
  * ```
@@ -163,7 +165,7 @@ export class TacticalScreen implements Screen {
         },
         // The scene owns the camera, so it is what can answer where a
         // world thing is on screen (ADR 0007 §2.1). The HUD anchors the
-        // context menu to that point rather than to the click.
+        // action wheel to that point rather than to the click.
         anchorFor: (target) => deps.sceneHost?.screenPositionOf(target),
       },
       {

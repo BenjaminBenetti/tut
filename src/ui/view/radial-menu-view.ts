@@ -163,7 +163,10 @@ export class RadialMenuView {
     };
     root.addEventListener("click", onClick);
     doc.addEventListener("keydown", onKey);
-    doc.addEventListener("pointerdown", onOutside);
+    // Capture phase, because the HUD's panels stop pointer events from
+    // bubbling to the map picker (#1112); a press on a panel is still a
+    // press outside the ring and must still dismiss it.
+    doc.addEventListener("pointerdown", onOutside, { capture: true });
 
     this.root = root;
     this.ring = ring;
@@ -171,7 +174,7 @@ export class RadialMenuView {
     this.dispose = () => {
       root.removeEventListener("click", onClick);
       doc.removeEventListener("keydown", onKey);
-      doc.removeEventListener("pointerdown", onOutside);
+      doc.removeEventListener("pointerdown", onOutside, { capture: true });
     };
   }
 

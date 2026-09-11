@@ -9,7 +9,6 @@ import type { SceneCamera } from "../../graphics/model/scene-camera";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { TacticalIntent } from "../model/tactical-intent";
 import { CAMERA_KEYS } from "../../graphics/controller/camera-input-controller";
-import { ACTION_BAR_ORDER } from "../model/tactical-intent";
 import type {
   CameraInput,
   TacticalInputSurface,
@@ -409,27 +408,7 @@ describe("TacticalInputController pointer buttons", () => {
     expect(prevented).toBe(1);
   });
 
-  it("binds the number row to the action bar in order", () => {
-    const { intents, surface } = setup();
-    for (const key of ["1", "2", "3", "4", "5", "6", "7"]) {
-      surface.ownerDocument.dispatch("keydown", {
-        key,
-        preventDefault: () => undefined,
-      });
-    }
-    expect(intents).toEqual([
-      { kind: "action", action: "move" },
-      { kind: "action", action: "attack" },
-      { kind: "action", action: "overwatch" },
-      { kind: "action", action: "reload" },
-      { kind: "action", action: "interact" },
-      { kind: "action", action: "extract" },
-      // The bar's last button is End turn, so its digit is End Turn.
-      { kind: "end-turn" },
-    ]);
-  });
-
-  it("keeps every letter shortcut from #340 working alongside the digits", () => {
+  it("keeps every letter shortcut from #340 working", () => {
     // Except `a`, removed in #1091: it is the camera's pan-left key, and
     // `f` remains Attack's letter.
     const { intents, surface } = setup();
@@ -452,13 +431,14 @@ describe("TacticalInputController pointer buttons", () => {
     ]);
   });
 
-  it("has one digit per action-bar button, with no gaps", () => {
+  // The number row went with the action bar (#1112): the digits were the
+  // bar's order, and a digit with no button to document it is a hidden
+  // binding. Iterates the table so a digit added back is caught.
+  it("binds no digit, now that there is no bar to number", () => {
     const digits = Object.keys(TACTICAL_SHORTCUTS).filter((key) =>
       /^[0-9]$/.test(key),
     );
-    expect(digits.sort()).toEqual(
-      ACTION_BAR_ORDER.map((_, i) => String(i + 1)).sort(),
-    );
+    expect(digits).toEqual([]);
   });
   // #1091: `a` panned the view and armed Attack on the same keypress, so
   // every leftward pan on a spent unit said "no action points left".

@@ -774,7 +774,7 @@ describe("TacticalScreen", () => {
       sceneHost: new FakeHost(),
     }).mount(root);
     root
-      .querySelector<HTMLButtonElement>('#action-bar [data-action="end-turn"]')
+      .querySelector<HTMLButtonElement>('#turn-bar [data-action="end-turn"]')
       ?.click();
     expect(store.dispatched.map((c) => c.type)).toEqual(["tactical:end-turn"]);
   });

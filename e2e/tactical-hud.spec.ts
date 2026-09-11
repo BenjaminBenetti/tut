@@ -45,11 +45,7 @@ test("selecting a unit shows its card and a hit preview on a target", async ({
   await expect(page.locator('#unit-card [data-field="hp"]')).toHaveText(
     "20 / 20",
   );
-  await expect(
-    page.locator('#action-bar [data-action="attack"]'),
-  ).toBeEnabled();
-
-  await page.locator('#action-bar [data-action="attack"]').click();
+  // A click on the enemy aims at it (#1112); the preview follows the aim.
   await page.evaluate(() =>
     (globalThis as HookGlobal).__tutTactical__?.selectUnit("unit-3"),
   );

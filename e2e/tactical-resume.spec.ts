@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
 import type { TacticalTestHooks } from "../src/ui/model/tactical-intent";
+import { openUnitWheel, wheelItem } from "./action-wheel.helper";
 
 /** The page's global object as seen from `page.evaluate`. */
 interface HookGlobal {
@@ -79,16 +80,17 @@ test("a mission left through the HUD can be resumed from the overworld, and fini
   ).toHaveText(cityName);
   await expect(page.locator("#turn-banner")).not.toContainText(missionId);
 
-  // And it can still be finished. Extract is offered for a selected unit
-  // standing in the zone, and the force deployed on the extraction hook,
-  // so selecting the squad is all it takes.
+  // And it can still be finished. Boarding is offered on the wheel of a
+  // selected unit standing in the zone (#1112), and the force deployed
+  // on the extraction hook, so the squad's own wheel is all it takes.
   await page.evaluate(() =>
     (globalThis as HookGlobal).__tutTactical__?.selectUnit("unit-1"),
   );
   await expect(body).toHaveAttribute("data-selected-unit", "unit-1");
-  const extract = page.locator('#action-bar [data-action="extract"]');
-  await expect(extract).toBeEnabled();
-  await extract.click();
+  await openUnitWheel(page, "unit-1");
+  const board = wheelItem(page, "extract");
+  await expect(board).toBeEnabled();
+  await board.click();
   await expect(body).toHaveAttribute("data-screen", "mission-results");
 
   // Once it is over the control is gone again.

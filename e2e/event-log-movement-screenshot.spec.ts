@@ -167,7 +167,7 @@ test("captures the event log across a turn of moves and one other action", async
   await page.evaluate(() =>
     (globalThis as HookGlobal).__tutTactical__?.selectUnit("unit-3"),
   );
-  await page.keyboard.press("3");
+  await page.keyboard.press("o");
   await expect
     .poll(async () => (await logRows(page)).join(" | "), { timeout: 5000 })
     .toContain("overwatch");

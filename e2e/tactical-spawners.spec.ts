@@ -115,17 +115,14 @@ test("egg spawners are drawn on the tactical map and can be targeted by clicking
   const scout = (await savedMission(page))?.units.find((u) => u.id === unitId);
   expect(scout, "the scout must survive discovery").toBeDefined();
   if (scout!.ap === 0) await endTurn(page, body);
-  await expect(
-    page.locator('#action-bar [data-action="attack"]').first(),
-  ).toBeEnabled();
 
-  // Selecting the scout, arming attack and clicking the spawner targets it.
+  // Selecting the scout and clicking the spawner aims at it (#1112):
+  // nothing is armed first.
   await page.evaluate(
     (id: string) => (globalThis as HookGlobal).__tutTactical__?.selectUnit(id),
     unitId,
   );
   await expect(body).toHaveAttribute("data-selected-unit", unitId);
-  await page.locator('#action-bar [data-action="attack"]').first().click();
   // Use real view controls to expose and frame the scouted interior before
   // testing the picker. The old direct selection hook also accepted offscreen
   // coordinates; a real mouse click must hit the visible spawner mesh.
@@ -463,7 +460,7 @@ async function waitForRenderedMove(
 async function endTurn(page: Page, body: ReturnType<Page["locator"]>) {
   const before = await savedMission(page);
   expect(before, "end turn needs an active mission").not.toBeNull();
-  await page.locator('#action-bar [data-action="end-turn"]').click();
+  await page.locator('#turn-bar [data-action="end-turn"]').click();
   await expect
     .poll(
       async () => {

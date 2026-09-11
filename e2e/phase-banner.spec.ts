@@ -86,7 +86,7 @@ test("ending a turn shows the bug phase banner, then the player's turn", async (
     });
   });
 
-  await page.locator('#action-bar [data-action="end-turn"]').click();
+  await page.locator('#turn-bar [data-action="end-turn"]').click();
 
   // The bugs act first, then control comes back to the player.
   await expect

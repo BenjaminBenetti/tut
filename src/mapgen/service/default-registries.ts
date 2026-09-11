@@ -1,3 +1,4 @@
+import { PLACE_PROFILES } from "../data/place-profiles";
 import { BIOME_DEFINITIONS } from "../data/biomes";
 import { BUILDING_TEMPLATES } from "../data/building-templates";
 import { ELEVATED_FEATURES } from "../data/elevated-features";
@@ -24,6 +25,10 @@ export function createDefaultRegistries(): MapGenRegistries {
     surfaces: createRegistry("surface", SURFACE_DEFINITIONS),
     props: createRegistry("prop", PROP_DEFINITIONS),
     biomes: createRegistry("biome", Object.values(BIOME_DEFINITIONS)),
+    placeProfiles: createRegistry(
+      "place profile",
+      Object.values(PLACE_PROFILES),
+    ),
     settlements: createRegistry(
       "settlement",
       Object.values(SETTLEMENT_DEFINITIONS),

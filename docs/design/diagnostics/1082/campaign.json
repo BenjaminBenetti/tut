@@ -1,0 +1,65 @@
+{
+  "campaignSeed": 4242,
+  "day": 28,
+  "eventChoices": 5,
+  "mission": {
+    "id": "mission-14",
+    "typeId": "infestation-clearance",
+    "cityId": "lagos",
+    "difficulty": 4,
+    "mapParams": {
+      "biome": "temperate",
+      "settlement": "city",
+      "size": "medium",
+      "seed": "1892582247"
+    },
+    "rewards": {
+      "credits": 1200
+    },
+    "createdDay": 28,
+    "expiresDay": 33,
+    "ignorePenalty": 10
+  },
+  "recipe": {
+    "seed": "1892582247",
+    "params": {
+      "archetype": "settlement",
+      "biome": "temperate",
+      "settlement": "city",
+      "size": "medium",
+      "hooks": [
+        {
+          "kind": "deploy",
+          "count": 1,
+          "requiredPass": 3
+        },
+        {
+          "kind": "egg-spawner",
+          "count": 2,
+          "requiredPass": 1,
+          "minDistanceFromDeploy": 12,
+          "maxNearestDistanceFromDeploy": 30,
+          "meta": {
+            "hatchRadius": 3
+          }
+        },
+        {
+          "kind": "edge-spawn",
+          "count": 2,
+          "requiredPass": 1
+        },
+        {
+          "kind": "extraction",
+          "count": 1,
+          "requiredPass": 3
+        }
+      ],
+      "placeProfile": "lagos"
+    }
+  },
+  "buildings": 13,
+  "trees": {
+    "tree-oil-palm": 36,
+    "tree-tropical-almond": 50
+  }
+}

@@ -1,3 +1,4 @@
+import type { PlaceProfileId } from "../../content/model/place-profile-id";
 import type { Connector } from "../../mapgen/model/connector";
 import type { Rotation } from "../../mapgen/model/prop";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
@@ -34,7 +35,11 @@ export function resolveLadderModels(
     const dx = to.x - from.x,
       dz = to.z - from.z;
     const turns: Rotation = dz > 0 ? 0 : dx < 0 ? 1 : dz < 0 ? 2 : 3;
-    const supportModel = supportingWall(connector, walls);
+    const supportModel = supportingWall(
+      connector,
+      walls,
+      map.recipe.params.placeProfile,
+    );
     const finish = ladderFinishForWall(supportModel);
     const setback =
       LADDER_WALL_HALF_THICKNESS +
@@ -61,6 +66,7 @@ export function resolveLadderModels(
 function supportingWall(
   connector: Connector,
   walls: readonly ModelPlacement[],
+  placeProfile?: PlaceProfileId,
 ): ModelPlacement["modelId"] {
   const { from, to } = connector;
   const x = (from.x + to.x + 1) / 2,
@@ -76,6 +82,7 @@ function supportingWall(
     )
     .sort((a, b) => b.position.y - a.position.y)[0];
   return (
-    support?.modelId ?? wallModel("solid", wallFamilyFor(connector.buildingId))
+    support?.modelId ??
+    wallModel("solid", wallFamilyFor(connector.buildingId, placeProfile))
   );
 }

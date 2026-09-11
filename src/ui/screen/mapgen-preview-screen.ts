@@ -1,3 +1,8 @@
+import {
+  PLACE_PROFILE_IDS,
+  isPlaceProfileId,
+} from "../../content/model/place-profile-id";
+import type { PlaceProfileId } from "../../content/model/place-profile-id";
 import { STOREY_LAYERS } from "../../core/model/elevation";
 import { BIOME_IDS } from "../../content/model/biome-id";
 import type { BiomeId } from "../../content/model/biome-id";
@@ -23,6 +28,7 @@ import { nextSeed } from "../service/seed-sequence";
 export interface PreviewControlsState {
   readonly seed: string;
   readonly biome: BiomeId;
+  readonly placeProfile?: PlaceProfileId;
   readonly settlement: SettlementScale;
   readonly size: MapSizePreset;
   /**
@@ -88,6 +94,7 @@ export class MapgenPreviewScreen {
   private readonly options: MapgenPreviewScreenOptions;
   private readonly seedInput: HTMLInputElement;
   private readonly biomeSelect: HTMLSelectElement;
+  private readonly placeSelect: HTMLSelectElement;
   private readonly settlementSelect: HTMLSelectElement;
   private readonly sizeSelect: HTMLSelectElement;
   private readonly levelSlider: HTMLInputElement;
@@ -148,6 +155,14 @@ export class MapgenPreviewScreen {
     form.appendChild(labelled(doc, "Seed", this.seedInput, reroll, next));
 
     this.biomeSelect = select(doc, "biome", BIOME_IDS, initial.biome);
+    this.placeSelect = select(
+      doc,
+      "place",
+      ["", ...PLACE_PROFILE_IDS],
+      initial.placeProfile ?? "",
+    );
+    const defaultPlace = this.placeSelect.options[0];
+    if (defaultPlace) defaultPlace.textContent = "Biome default";
     this.settlementSelect = select(
       doc,
       "settlement",
@@ -156,6 +171,7 @@ export class MapgenPreviewScreen {
     );
     this.sizeSelect = select(doc, "size", MAP_SIZE_PRESETS, initial.size);
     form.appendChild(labelled(doc, "Biome", this.biomeSelect));
+    form.appendChild(labelled(doc, "Place", this.placeSelect));
     form.appendChild(labelled(doc, "Settlement", this.settlementSelect));
     form.appendChild(labelled(doc, "Size", this.sizeSelect));
 
@@ -231,6 +247,9 @@ export class MapgenPreviewScreen {
     return {
       seed: this.seedInput.value.trim() || "seed",
       biome: this.biomeSelect.value as BiomeId,
+      ...(isPlaceProfileId(this.placeSelect.value)
+        ? { placeProfile: this.placeSelect.value }
+        : {}),
       settlement: this.settlementSelect.value as SettlementScale,
       size: this.sizeSelect.value as MapSizePreset,
       archetype: this.archetype,

@@ -1,3 +1,4 @@
+import { isPlaceProfileId } from "../../content/model/place-profile-id";
 import type {
   MissionHookRequirement,
   MissionType,
@@ -88,7 +89,16 @@ export function missionToMapRecipe(
   }
   return ok({
     seed,
-    params: { archetype: "settlement", biome, settlement, size, hooks },
+    params: {
+      archetype: "settlement",
+      biome,
+      settlement,
+      size,
+      hooks,
+      ...(isPlaceProfileId(mission.cityId)
+        ? { placeProfile: mission.cityId }
+        : {}),
+    },
   });
 }
 

@@ -1,0 +1,56 @@
+{
+  "baseCommit": "b6a0487bbc852d5021ceeacd7398e107949ee342",
+  "renderer": "SwiftShader",
+  "repeatedBrowsers": 2,
+  "records": [
+    {
+      "id": "P04-second-seed",
+      "seed": "1892582247",
+      "biome": "coastal",
+      "url": "http://127.0.0.1:8797/mapgen-preview.html?seed=1892582247&biome=coastal&settlement=town&size=medium&models=1&units=1&slope=100",
+      "settlement": "town",
+      "size": "medium",
+      "focus": {
+        "x": 36,
+        "y": 2,
+        "z": 36
+      },
+      "rotation": 1,
+      "camera": {
+        "yawIndex": 1,
+        "zoom": 55.11351921262119,
+        "target": {
+          "x": 36.5,
+          "y": 1.65,
+          "z": 36.5
+        },
+        "bounds": {
+          "x": 0,
+          "z": 0,
+          "w": 72,
+          "d": 72
+        },
+        "zoomRange": {
+          "min": 19.83827358328925,
+          "max": 192
+        }
+      },
+      "actualPitch": 44.99999999999984,
+      "pixel": {
+        "x": 1389.9999999999995,
+        "y": 750.0000000000005
+      },
+      "clip": {
+        "x": 640,
+        "y": 200,
+        "width": 1500,
+        "height": 1100
+      },
+      "viewport": {
+        "width": 2400,
+        "height": 1500
+      },
+      "sha256": "664ec343c11ae0a218c78b2c30ad98e25aa0356cc05a0a7e782bf4974cf68984"
+    }
+  ]
+}

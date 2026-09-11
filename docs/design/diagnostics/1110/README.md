@@ -56,5 +56,34 @@ finishes must be consistent across mirrored exterior walls and preserve local
 place identities. Generation must remain deterministic and pass the map
 invariant sweep; restored road cover is also checked in the mission simulation.
 
-Implementation results and validation will be recorded here as the critique
-and implementation passes complete.
+## Two-tile vehicle scale
+
+The first street pass exposed the old compact car's toy-like proportions. The
+user requested two-tile cars during review, so the next pass reserves two real
+cells and uses the existing sedan plus new hatchback and utility van models.
+The new meshes are approximately 3.7 metres long at the game's 2 metres/tile
+scale. Both stay within the two-cell footprint; their roof heights remain
+0.76 and 0.86 world units. They validate as watertight at 256/268 triangles and
+under 33 KB each, below the prop budget.
+
+![Vehicle scale with infantry for reference](vehicle-scale.png)
+
+All vehicles above share the same camera scale: old compact upper-left, existing
+sedan upper-right, new hatchback lower-left, new utility van lower-right. This
+is a composed art comparison, not a generated map. Reproduce it with:
+
+```sh
+node tools/art/preview/render-scene.mjs tools/art/preview/layouts/vehicle-scale.json docs/design/diagnostics/1110/vehicle-scale.png
+```
+
+The art source is `tools/art/models/vehicle_variants.py` and the two
+`prop-car-*.py` entry scripts. The new models follow the standard +Z glTF front;
+the model selector accounts for the original sedan's +X front. All three
+therefore align with the same recorded carriageway direction.
+
+Legacy saves without `occupiedTiles` keep their one-tile car collision and the
+original compact mesh. New street density counts **occupied tiles**, preventing
+the larger vehicles from doubling the intended amount of road cover. The
+contract and compatibility decision are recorded in ADR 0004 §4.4.
+
+Final map results and validation will be recorded after the two-tile review.

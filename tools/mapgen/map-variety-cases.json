@@ -15,6 +15,21 @@
     "control": true
   },
   {
+    "id": "city-reverse",
+    "seed": "mc-resume-01",
+    "biome": "temperate",
+    "settlement": "city",
+    "size": "medium",
+    "focus": {
+      "x": 43,
+      "y": 2,
+      "z": 39
+    },
+    "rotation": 1,
+    "placeProfile": null,
+    "control": true
+  },
+  {
     "id": "town",
     "seed": "mc-opening-02",
     "biome": "temperate",

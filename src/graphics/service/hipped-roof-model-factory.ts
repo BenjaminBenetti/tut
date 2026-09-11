@@ -16,12 +16,13 @@ export class HippedRoofModelFactory {
     source.updateMatrixWorld(true);
     source.traverse((object) => {
       if (!(object instanceof Mesh)) return;
-      const geometry = object.geometry.index
-        ? object.geometry.toNonIndexed()
-        : object.geometry.clone();
+      const original = object as Mesh;
+      const geometry = original.geometry.index
+        ? original.geometry.toNonIndexed()
+        : original.geometry.clone();
       geometry.applyMatrix4(object.matrixWorld);
       fitProfile(geometry, width, depth);
-      result.add(new Mesh(geometry, object.material));
+      result.add(new Mesh(geometry, original.material));
     });
     return result;
   }

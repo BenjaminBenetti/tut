@@ -1,3 +1,4 @@
+import type { PlaceProfileId } from "../../content/model/place-profile-id";
 import type { BiomeId } from "../../content/model/biome-id";
 import type { MapSizeId } from "../../content/model/map-size-id";
 import { MAP_SIZE_IDS } from "../../content/model/map-size-id";
@@ -67,6 +68,8 @@ export interface HookRequirement {
 export interface MapGenParams {
   readonly archetype: MapArchetype;
   readonly biome: BiomeId;
+  /** City-specific environment and art; absent preserves the biome defaults. */
+  readonly placeProfile?: PlaceProfileId;
   readonly settlement: SettlementScale;
   readonly size: MapSize;
   /** From the mission type definition. */

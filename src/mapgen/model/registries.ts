@@ -1,3 +1,4 @@
+import type { PlaceProfile } from "./place-profile";
 import type { BiomeDefinition } from "./biome-definition";
 import type { BuildingTemplate } from "./building-template";
 import type { ElevatedFeature } from "./elevated-feature";
@@ -22,6 +23,7 @@ export interface MapGenRegistries {
   readonly surfaces: Registry<SurfaceDefinition>;
   readonly props: Registry<PropDefinition>;
   readonly biomes: Registry<BiomeDefinition>;
+  readonly placeProfiles: Registry<PlaceProfile>;
   readonly settlements: Registry<SettlementDefinition>;
   readonly mapSizes: Registry<MapSizeDefinition>;
   readonly buildingTemplates: Registry<BuildingTemplate>;

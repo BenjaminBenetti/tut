@@ -61,6 +61,28 @@ describe("missionToMapRecipe", () => {
     expect(recipe.params.size).toBe("small");
   });
 
+  it("carries recognised mission cities into saved recipes and leaves others unprofiled", () => {
+    for (const cityId of ["lagos", "perth", "johannesburg"]) {
+      const recipe = unwrap(
+        missionToMapRecipe(
+          mission({ cityId }),
+          INFESTATION_CLEARANCE,
+          registries,
+        ),
+      );
+      expect(recipe.params.placeProfile).toBe(cityId);
+      expect(JSON.parse(JSON.stringify(recipe))).toEqual(recipe);
+    }
+    const recipe = unwrap(
+      missionToMapRecipe(
+        mission({ cityId: "nairobi" }),
+        INFESTATION_CLEARANCE,
+        registries,
+      ),
+    );
+    expect(recipe.params).not.toHaveProperty("placeProfile");
+  });
+
   it("scales objective counts with difficulty and fills in kind defaults", () => {
     const easy = unwrap(
       missionToMapRecipe(

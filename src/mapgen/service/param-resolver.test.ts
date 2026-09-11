@@ -55,6 +55,38 @@ describe("resolveMapGenParams", () => {
     }
   });
 
+  it("layers a place onto its biome without restyling unprofiled recipes", () => {
+    const original = registries.biomes.get("temperate");
+    const plain = resolveMapGenParams(BASE, registries);
+    const lagos = resolveMapGenParams(
+      { ...BASE, placeProfile: "lagos" },
+      registries,
+    );
+    expect(plain.biome).toBe(original);
+    expect(lagos.biome.terrain.amplitudeLayers).toBeLessThan(
+      original.terrain.amplitudeLayers,
+    );
+    expect(lagos.biome.vegetation.map((entry) => entry.prop)).toEqual([
+      "tree-tropical-almond",
+      "tree-oil-palm",
+      "boulder",
+      "fence",
+    ]);
+    expect(lagos.biome.buildingKinds).toBe(original.buildingKinds);
+    expect(lagos.biome.groundSurfaces).toBe(original.groundSurfaces);
+    expect(lagos.biome.hasShoreline).toBe(original.hasShoreline);
+    expect(resolveMapGenParams(BASE, registries).biome).toBe(original);
+  });
+
+  it("rejects unknown place profiles rather than silently generating another place", () => {
+    expect(() =>
+      resolveMapGenParams(
+        { ...BASE, placeProfile: "unknown" as "lagos" },
+        registries,
+      ),
+    ).toThrow('Unknown place profile id "unknown"');
+  });
+
   it("passes explicit dimensions through", () => {
     const resolved = resolveMapGenParams(
       { ...BASE, size: { width: 40, depth: 24 } },

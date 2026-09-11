@@ -550,3 +550,45 @@ describe("resolveMapModels parapets", () => {
     );
   });
 });
+
+describe("resolveMapModels — Lagos", () => {
+  it("uses the local wall kit on ground and upper walls while retaining civic parapets", () => {
+    const b = field();
+    b.tile(at(1, 1), SurfaceIds.FLOOR);
+    b.wall(at(1, 1), "n", "solid");
+    b.tile(at(1, 1, 1), SurfaceIds.FLOOR, {
+      buildingId: "home",
+    });
+    b.wall(at(1, 1, 1), "n", "window");
+    b.tile(at(4, 4), SurfaceIds.SIDEWALK);
+    b.wall(at(4, 4), "n", "half");
+    const plain = b.build();
+    const local: TacticalMap = {
+      ...plain,
+      recipe: {
+        ...plain.recipe,
+        params: { ...plain.recipe.params, placeProfile: "lagos" },
+      },
+    };
+    const walls = resolveMapModels(local).walls;
+    expect(walls.map((wall) => wall.modelId)).toEqual(
+      expect.arrayContaining([
+        "building.wall-plaster",
+        "building.wall-window-plaster",
+        "building.viaduct-parapet",
+      ]),
+    );
+    expect(
+      resolveMapModels(plain).walls.some(
+        (wall) => wall.modelId === "building.wall-plaster",
+      ),
+    ).toBe(false);
+    expect(
+      walls.map(({ modelId: _modelId, ...placement }) => placement),
+    ).toEqual(
+      resolveMapModels(plain).walls.map(
+        ({ modelId: _modelId, ...placement }) => placement,
+      ),
+    );
+  });
+});

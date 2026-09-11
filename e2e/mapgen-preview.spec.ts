@@ -38,3 +38,23 @@ test("mapgen preview renders a fixed seed without console errors", async ({
   await expect(page.locator("#status")).toBeEmpty();
   expect(errors).toEqual([]);
 });
+
+/** A shared Map Lab URL must reproduce the campaign's local identity after reload. */
+test("Map Lab keeps the selected place through generation and reload", async ({
+  page,
+}) => {
+  await page.goto(
+    "/mapgen-preview.html?seed=1892582247&biome=temperate&settlement=city&size=small&place=lagos",
+  );
+  await expect(page.locator("body")).toHaveAttribute("data-app-state", "ready");
+  await expect(page.locator("#place")).toHaveValue("lagos");
+  await page.locator("#next-seed").click();
+  await expect(page).toHaveURL(/place=lagos/);
+  await page.reload();
+  await expect(page.locator("body")).toHaveAttribute("data-app-state", "ready");
+  await expect(page.locator("#place")).toHaveValue("lagos");
+  await page.locator("#place").selectOption("");
+  await page.locator("#next-seed").click();
+  await expect(page).not.toHaveURL(/place=/);
+  await expect(page.locator("#status")).toBeEmpty();
+});

@@ -20,6 +20,8 @@ export const PropKindIds = {
   TREE_PINE: "tree-pine",
   TREE_OAK: "tree-oak",
   TREE_PALM: "tree-palm",
+  TREE_TROPICAL_ALMOND: "tree-tropical-almond",
+  TREE_OIL_PALM: "tree-oil-palm",
   CACTUS: "cactus",
 } as const;
 
@@ -116,6 +118,20 @@ export const PROP_DEFINITIONS: readonly PropDefinition[] = [
     blocksLos: false,
     placements: ["ground"],
     biomes: ["coastal", "desert"],
+  },
+  {
+    id: PropKindIds.TREE_TROPICAL_ALMOND,
+    cover: CoverLevel.HIGH,
+    blocksLos: false,
+    placements: ["ground"],
+    biomes: ["temperate", "coastal"],
+  },
+  {
+    id: PropKindIds.TREE_OIL_PALM,
+    cover: CoverLevel.HIGH,
+    blocksLos: false,
+    placements: ["ground"],
+    biomes: ["temperate", "coastal"],
   },
   {
     id: PropKindIds.CACTUS,

@@ -1,3 +1,4 @@
+import type { PlaceProfileId } from "../../content/model/place-profile-id";
 import type { ModelAssetId } from "../../content/data/model-ids";
 import { hashSeed } from "../../core/service/seed-hash";
 import { PropKindIds } from "../../mapgen/data/props";
@@ -115,12 +116,7 @@ export const TERRAIN_TRANSITION_SOURCE =
  * emits it.
  * Benches use the contextual yard definition, so they never enter the generic ground pool.
  */
-export const PROP_MODELS: Readonly<
-  Record<
-    KnownPropKindId | "bench" | "tree-tropical-almond" | "tree-oil-palm",
-    ModelAssetId
-  >
-> = {
+export const PROP_MODELS: Readonly<Record<KnownPropKindId, ModelAssetId>> = {
   [PropKindIds.CAR]: "prop.car-compact",
   [PropKindIds.CRATE]: "prop.crate",
   [PropKindIds.BARRIER]: "prop.barrier-concrete",
@@ -257,7 +253,9 @@ export function wallModel(
 
 /**
  * The family a building draws in: one per `buildingId`, so a building
- * is a single material rather than a patchwork, and brick where a wall
+ * is a single material rather than a patchwork. Lagos uses the warm
+ * rendered kit through every storey, including untagged ground walls.
+ * Unprofiled maps keep brick where a wall
  * belongs to no building — a building's own ground-floor walls stand on
  * untagged tiles, so this default is what keeps a brick tower brick to
  * the pavement. The one civic exception is the parapet: see
@@ -268,7 +266,11 @@ export function wallModel(
  * has to come back looking the same after a reload — which a generator
  * position cannot promise and a hash of the id gives for free.
  */
-export function wallFamilyFor(buildingId: string | undefined): WallFamily {
+export function wallFamilyFor(
+  buildingId: string | undefined,
+  placeProfile?: PlaceProfileId,
+): WallFamily {
+  if (placeProfile === "lagos") return "plaster";
   if (buildingId === undefined) {
     return "brick";
   }
@@ -287,9 +289,10 @@ export function wallFamilyFor(buildingId: string | undefined): WallFamily {
 export function wallFamilyForWall(
   kind: WallKind,
   buildingId: string | undefined,
+  placeProfile?: PlaceProfileId,
 ): WallPlacementFamily {
   if (buildingId === undefined && kind === "half") {
     return "road";
   }
-  return wallFamilyFor(buildingId);
+  return wallFamilyFor(buildingId, placeProfile);
 }

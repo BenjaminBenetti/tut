@@ -235,7 +235,10 @@ try {
         };
         const bytes = await page.screenshot({ clip, timeout: 120000 });
         const file = `${out}/${id}.png`;
-        if (repeat && !bytes.equals(readFileSync(file)))
+        if (
+          (repeat || process.env.VERIFY_EXISTING === "1") &&
+          !bytes.equals(readFileSync(file))
+        )
           throw new Error(`Capture drift: ${id}`);
         if (!repeat) {
           writeFileSync(file, bytes);
@@ -264,6 +267,21 @@ try {
             sha256: createHash("sha256").update(bytes).digest("hex"),
           });
         }
+        // Preserve camera/hash provenance even if a long batch is interrupted.
+        writeFileSync(
+          process.env.PLACE_RECORD_FILE ?? `${out}/captures.json`,
+          JSON.stringify(
+            {
+              baseCommit,
+              renderer: "SwiftShader",
+              repeatedBrowsers: 1,
+              verifyingExistingFrames: process.env.VERIFY_EXISTING === "1",
+              records,
+            },
+            null,
+            2,
+          ) + "\n",
+        );
         console.log(
           `${phase}/${id}: ${repeat ? "second browser byte-identical" : "captured"}`,
         );

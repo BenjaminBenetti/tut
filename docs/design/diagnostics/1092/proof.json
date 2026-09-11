@@ -1,0 +1,134 @@
+{
+  "beforeRevision": "bbd605cf814118650db2f4bd7972e9d263360dd8",
+  "sourceRevision": "31d50106b02d8d22666102bf11a4c25ec5a43b13",
+  "fixture": {
+    "seed": "4242",
+    "viewport": [800, 600],
+    "mounts": 2,
+    "setupKeys": ["d", "s", "w", "w", "w", "w", "w", "w", "w", "w"],
+    "renderer": "SwiftShader",
+    "browser": "HeadlessChrome/151.0.7922.34",
+    "cpus": [0, 1],
+    "workers": 1,
+    "ci": true,
+    "equalityTimeoutSeconds": 240
+  },
+  "measurement": "Same checkout/image, warm Vite cache, sequential runs; /proc CPU tick deltas for descendant GPU processes during Playwright API calls only, excluding exited processes and intervals between APIs. Other seats share host load; timing is not a fleet-load attribution.",
+  "frames": [
+    {
+      "name": "0-no-op.png",
+      "sha256": "f1254a9f554a3803ba7018e1a4af6edcde314c17a8facffbcdb528e4681809b4",
+      "equalsBefore": true
+    },
+    {
+      "name": "0-panned.png",
+      "sha256": "023eb53cdc5b2d5626b4671e84d2880f13a467bc153f473b4f5ebcacf9cdb835",
+      "equalsBefore": true
+    },
+    {
+      "name": "0-top.png",
+      "sha256": "f1254a9f554a3803ba7018e1a4af6edcde314c17a8facffbcdb528e4681809b4",
+      "equalsBefore": true
+    },
+    {
+      "name": "1-no-op.png",
+      "sha256": "f1254a9f554a3803ba7018e1a4af6edcde314c17a8facffbcdb528e4681809b4",
+      "equalsBefore": true
+    },
+    {
+      "name": "1-panned.png",
+      "sha256": "023eb53cdc5b2d5626b4671e84d2880f13a467bc153f473b4f5ebcacf9cdb835",
+      "equalsBefore": true
+    },
+    {
+      "name": "1-top.png",
+      "sha256": "f1254a9f554a3803ba7018e1a4af6edcde314c17a8facffbcdb528e4681809b4",
+      "equalsBefore": true
+    }
+  ],
+  "profile": {
+    "baseline": {
+      "tests": [
+        {
+          "test": "capture taps and a no-op reproduce the same rendered bytes",
+          "status": "passed",
+          "duration": 144560
+        },
+        {
+          "test": "capture readiness waits for map art as well as units",
+          "status": "passed",
+          "duration": 16149
+        },
+        {
+          "test": "a capture refuses a frame drawn with placeholder art",
+          "status": "passed",
+          "duration": 43273
+        }
+      ],
+      "screenshots": {
+        "calls": 6,
+        "wallSeconds": 88.469,
+        "gpuCpuSeconds": 170.66
+      },
+      "frameAndInputEvaluations": {
+        "calls": 50,
+        "wallSeconds": 39.894,
+        "gpuCpuSeconds": 77.11
+      },
+      "contextCreation": {
+        "calls": 2,
+        "wallSeconds": 7.944,
+        "gpuCpuSeconds": 15.66
+      },
+      "otherMountAndReadinessAPIs": {
+        "calls": 33,
+        "wallSeconds": 4.611,
+        "gpuCpuSeconds": 4.47
+      }
+    },
+    "batched": {
+      "tests": [
+        {
+          "test": "capture taps and a no-op reproduce the same rendered bytes",
+          "status": "passed",
+          "duration": 110717
+        },
+        {
+          "test": "capture readiness waits for map art as well as units",
+          "status": "passed",
+          "duration": 15411
+        },
+        {
+          "test": "a capture refuses a frame drawn with placeholder art",
+          "status": "passed",
+          "duration": 35624
+        }
+      ],
+      "screenshots": {
+        "calls": 6,
+        "wallSeconds": 81.156,
+        "gpuCpuSeconds": 158.78
+      },
+      "frameAndInputEvaluations": {
+        "calls": 14,
+        "wallSeconds": 11.33,
+        "gpuCpuSeconds": 22.0
+      },
+      "contextCreation": {
+        "calls": 2,
+        "wallSeconds": 8.278,
+        "gpuCpuSeconds": 16.38
+      },
+      "otherMountAndReadinessAPIs": {
+        "calls": 33,
+        "wallSeconds": 6.193,
+        "gpuCpuSeconds": 5.92
+      }
+    }
+  },
+  "environmentSampleDuringRepeatedChecks": {
+    "at": "2026-09-11T05:27:08.124461+00:00",
+    "hostLoadAverage": [62.107421875, 56.341796875, 39.81396484375],
+    "note": "Point sample during repeated checks, not the earlier paired profile; host load was not sampled during that profile. Local unit checks use CPUs 2-5, while e2e runner, Vite and Chromium inherit CPUs 0-1."
+  }
+}

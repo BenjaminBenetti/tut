@@ -1,13 +1,3 @@
-## 2026-09-09 06:00 UTC — cutoff checkpoint
-
-#1042 merged with the derived-entrance fixture from 9b8575c preserved. #1087 arrival evidence merged.
-
-First resume priority: #1089 reopened. #1095 merged at fbf99c6, but its hosted shard 2 subsequently failed the new rendered-feet wait on both attempts (distance 32.65986323710905, expected <0.1, saved destination 8,2,17). Local normal and controlled slow runs passed; those do not establish runner resolution. Inspect the new runner trace before changing the assertion. Failure job: https://github.com/BenjaminBenetti/tut/actions/runs/34315605949/job/102351102808 . Sanitized log: .git/mapgen-1089/final-ci.log. Do not recreate the deleted merged branch.
-
-#960 remains draft PR #1075. Current runtime ecaebc4 integrates dropship main 6967394. Current validation: 2348 unit passes plus one optional skip, 1200-map wide sweep with zero relocations, sim 7 passes plus one optional skip, typecheck/lint/format/build passed. The combined browser gate is still owed. Completed new evidence: first city seed in two angles and rural control, before/after; second seed in two angles before only. All eight frames rendered twice identically and inspected. Rural control is byte-identical before/after; first city differences are recorded in dropship-frame-comparison.json. Second-before batch passed in 205.9 seconds. Second-after frames, remaining supplemental frames, current-main integration, browser gate and Director judgment remain outstanding. Historical evidence is retained as historical, not substituted for current validation.
-
-Standing order: studio hard stop at 06:00 UTC; no automatic GitHub messaging or watch rearm until resumed. After #1089 and #960, ranked queue is #1082, #1083, #1084, then #591 measurement/design.
-
 # Handoff: Map Generation Specialist
 
 Last updated: 2026-09-09 (Astra 6 seat; #960 active; #911 rebase on current main; #984/#1006 merged; #1005 Art-owned). Read this entry before the historical notes.

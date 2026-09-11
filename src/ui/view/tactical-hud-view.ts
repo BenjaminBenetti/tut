@@ -930,7 +930,16 @@ export class TacticalHudView {
     this.refresh();
   }
 
-  /** Selects the next friendly unit with action points after the current selection, wrapping. */
+  /**
+   * Selects the next friendly unit with action points after the current
+   * selection, wrapping, and brings it on screen (#1073).
+   *
+   * Centres for the same reason a squad-strip row does: the player asked
+   * for a specific unit, so overriding their own panning is what they
+   * meant. Before this, Tab and the strip disagreed about what selecting
+   * a unit means, and Tab could hand the player an armed unit they could
+   * not see.
+   */
   private selectNextActor(): void {
     const mission = this.mission;
     if (!mission) {
@@ -949,6 +958,7 @@ export class TacticalHudView {
       this.selected = next.id;
       this.target = undefined;
       this.mode = DEFAULT_HUD_MODE;
+      this.handlers.onLookAt?.(next.id);
     }
   }
 

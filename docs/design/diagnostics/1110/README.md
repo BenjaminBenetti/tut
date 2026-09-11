@@ -43,7 +43,7 @@ must be available in that worktree. Set `CAPTURE_CASES=city` for one case, or
 CAPTURE=1 pnpm exec playwright test e2e/map-variety-screenshot.spec.ts --workers=1
 ```
 
-The second command captures a city overview and a mission reached through
+The second command captures Map Lab at play zoom and a mission reached through
 the real deployment flow, with asset fallback guards.
 
 ## Review criteria
@@ -128,5 +128,13 @@ Camera settings and hashes for all seven close-ups are in
   [baseline results](simulation-before.json) and [final results](simulation-after.json).
 - New vehicle GLBs are watertight and were inspected from all three fixed angles.
 
-Browser and live-mission capture results are recorded after the final run.
+- Full browser suite: 70 passed, 47 opt-in tests skipped (`pnpm test:e2e`).
+- Both dedicated review captures passed with `CAPTURE=1`: Map Lab at play zoom
+  and real mission deployment with fog, without page errors or asset fallbacks.
+- The critic approved all seven map close-ups, the vehicle scale reference,
+  Map Lab context and live mission. No blocking findings remain.
+
+![Map Lab at play zoom](after/city-overview.png)
+
+![Live mission with fog](after/live-mission.png)
 

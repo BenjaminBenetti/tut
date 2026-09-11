@@ -1,14 +1,14 @@
 # Container iGPU experiments (#1069)
 
-Only `/dev/dri/renderD129` (AMD Granite Ridge, `1002:13c0`) is passed through.
-`renderD128` is the discrete RX 9070 and must remain absent. The image adds
-container-local RADV and Vulkan/EGL diagnostics. No host configuration changes.
+The default devcontainer has no required GPU device. The [iGPU variant](../../.devcontainer/README.md)
+passes only `/dev/dri/renderD129` (AMD Granite Ridge, `1002:13c0`). `renderD128`
+is the discrete RX 9070 and must remain absent inside either container. Both
+configurations share the image with container-local RADV and Vulkan/EGL diagnostics.
+No host configuration changes.
 
-Known limitation: Docker requires D129 at container creation; without it, creation fails before the `tools/gpu` guards can run.
-Only the studio host currently builds this devcontainer. Other hosts need a variant without the mapping.
-
-The Director coordinates fleet rebuild timing **after merge**, with a ten-minute warning on #968.
-This checkout has no DRM node or Docker endpoint; hardware results are pending.
+The Director coordinates fleet rebuild timing and selects the iGPU variant on
+the studio host. [Post-rebuild paired measurements](https://github.com/BenjaminBenetti/tut/issues/1069#issuecomment-5629783197)
+verify RADV/radeonsi access and reduced rendering CPU cost; evidence stays software.
 
 ## Evidence boundary
 

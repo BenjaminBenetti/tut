@@ -1,9 +1,10 @@
 {
-  "name": "tut",
+  "name": "tut (iGPU)",
   "build": {
-    "dockerfile": "Dockerfile",
-    "context": "."
+    "dockerfile": "../Dockerfile",
+    "context": ".."
   },
+  "runArgs": ["--device=/dev/dri/renderD129:/dev/dri/renderD129"],
   "postCreateCommand": "sudo corepack enable && pnpm install && pnpm exec playwright install --with-deps chromium",
   "forwardPorts": [5173],
   "portsAttributes": {

@@ -97,7 +97,20 @@ test("captures a leftward pan past a spent unit", async ({ page }) => {
       line.textContent = "";
     }
   });
-  await drawnFrame(page);
+  // Wait for the walk back to finish drawing. The first captures caught
+  // the mech mid-stride in one tree and at rest in the other, so the
+  // pair disagreed about where it stood for a reason that had nothing to
+  // do with the keys.
+  let last = await unitOnScreen(page);
+  for (let poll = 0; poll < 50; poll++) {
+    await page.waitForTimeout(200);
+    await drawnFrame(page);
+    const now = await unitOnScreen(page);
+    if (Math.abs(now.x - last.x) < 0.5 && Math.abs(now.y - last.y) < 0.5) {
+      break;
+    }
+    last = now;
+  }
 
   const from = await unitOnScreen(page);
   for (let press = 0; press < 2; press++) {

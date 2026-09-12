@@ -1,3 +1,4 @@
+import type { UnitMotion } from "../model/unit-motion";
 import type { LayerFocus } from "../model/layer-focus";
 import type { Camera, Object3D } from "three";
 import { Box3, Group, Raycaster, Vector2 } from "three";
@@ -365,6 +366,11 @@ export class TacticalSceneBuilder
     return this.meshes.get(unitId)?.object;
   }
 
+  /** The model's local movement and attack poses, while the unit is placed. */
+  unitMotion(unitId: UnitId): UnitMotion | undefined {
+    return this.meshes.get(unitId)?.motion;
+  }
+
   /**
    * The unit's height in world units, measured from its placed model, or
    * undefined while it loads. The animation queue anchors damage numbers and
@@ -486,7 +492,7 @@ export class TacticalSceneBuilder
     if (!this.wanted.has(unit.id)) {
       return;
     }
-    const mesh = new UnitMesh(unit.id, model);
+    const mesh = new UnitMesh(unit.id, model, template.modelId);
     mesh.setPose(unit.pos, unit.facing);
     this.meshes.set(unit.id, mesh);
     this.modelIds.set(unit.id, template.modelId);

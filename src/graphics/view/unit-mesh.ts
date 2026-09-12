@@ -5,6 +5,8 @@ import type { Direction } from "../../core/model/direction";
 import type { Vec3 } from "../../core/model/grid";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { OVERLAY_LIFT } from "../data/tactical-overlay-palette";
+import type { UnitMotion } from "../model/unit-motion";
+import { UnitMotionRig } from "../service/unit-motion-rig";
 import type { Disposable } from "../model/disposable";
 import { tileTopCentre } from "./tactical-map-view";
 
@@ -101,6 +103,7 @@ export class UnitMesh implements Disposable {
 
   /** Add this to the units group. */
   readonly object: Group;
+  readonly motion: UnitMotion | undefined;
   private readonly model: Object3D;
   private readonly hoverRing: Mesh;
   private readonly selectionRing: Mesh;
@@ -113,11 +116,13 @@ export class UnitMesh implements Disposable {
   /**
    * @param unitId - Names the group so scene dumps read well.
    * @param model - The loaded model clone; owned by this mesh from now on.
+   * @param modelId - Registered unit family, for its movement and attack rig.
    */
-  constructor(unitId: string, model: Object3D) {
+  constructor(unitId: string, model: Object3D, modelId?: string) {
     this.object = new Group();
     this.object.name = `unit:${unitId}`;
     this.model = model;
+    this.motion = modelId ? new UnitMotionRig(model, modelId) : undefined;
     this.model.name = `unit-model:${unitId}`;
     // A unit throws a shadow and takes one; its selection rings do not,
     // being flat markers on the ground (#507).
@@ -183,6 +188,7 @@ export class UnitMesh implements Disposable {
    * are left to the loader.
    */
   dispose(): void {
+    this.motion?.reset();
     for (const disposable of this.disposables) {
       disposable.dispose();
     }

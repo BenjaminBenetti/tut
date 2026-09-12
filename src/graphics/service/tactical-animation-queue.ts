@@ -1,3 +1,4 @@
+import type { UnitMotion } from "../model/unit-motion";
 import type { Camera, Object3D, Texture } from "three";
 import {
   AdditiveBlending,
@@ -39,6 +40,8 @@ import { isMeleeRange } from "../../tactical/model/weapon-profile";
 export interface AnimationScene {
   /** The unit's object to move and fade, or undefined once removed. */
   unitObject(unitId: UnitId): Object3D | undefined;
+  /** Local limb poses; scenes with stand-in geometry may omit this. */
+  unitMotion?(unitId: UnitId): UnitMotion | undefined;
   /** World centre of a tile's top, or undefined off the map. */
   tileWorldPosition(tile: TileCoord): Vec3 | undefined;
   /**
@@ -119,7 +122,7 @@ interface Animation {
  * lands in about 0.4 s and its number is gone by 1.3 s.
  */
 export const DEFAULT_ANIMATION_TIMING: AnimationTiming = {
-  stepSeconds: 0.12,
+  stepSeconds: 0.24,
   flashSeconds: 0.12,
   tracerSeconds: 0.18,
   impactSeconds: 0.15,
@@ -434,6 +437,7 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
   /** Drops queued events and every billboard. */
   dispose(): void {
     this.pending.length = 0;
+    this.current?.finish();
     this.current = undefined;
     for (const sprite of [...this.live]) {
       this.removeSprite(sprite);
@@ -477,7 +481,7 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
     }
   }
 
-  /** Slides the unit through every tile of its path, ending exactly on the last. */
+  /** Walks the path with a facing and limb stride, landing exactly on the last tile. */
   private walk(
     unitId: UnitId,
     path: readonly TileCoord[],
@@ -494,6 +498,7 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
     if (points.length === 0 || !samePoint(points[points.length - 1]!, end)) {
       points.push(end);
     }
+    const motion = this.scene.unitMotion?.(unitId);
     const stepSeconds = this.timing.stepSeconds;
     let elapsed = 0;
     const total = stepSeconds * points.length;
@@ -501,6 +506,12 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
       x: object.position.x,
       y: object.position.y,
       z: object.position.z,
+    };
+    const finish = (): void => {
+      const previous = points.length > 1 ? points[points.length - 2]! : from;
+      faceTowards(object, previous, end);
+      object.position.set(end.x, end.y, end.z);
+      motion?.reset();
     };
     return {
       name: `walk:${unitId}`,
@@ -512,16 +523,20 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
         const local = Math.min(1, progress - index);
         const start = index === 0 ? from : points[index - 1]!;
         const target = points[index]!;
+        faceTowards(object, start, target);
+        motion?.walk(progress);
         object.position.set(
           start.x + (target.x - start.x) * local,
           start.y + (target.y - start.y) * local,
           start.z + (target.z - start.z) * local,
         );
-        return elapsed >= total ? leftover : undefined;
+        if (elapsed >= total) {
+          finish();
+          return leftover;
+        }
+        return undefined;
       },
-      finish: () => {
-        object.position.set(end.x, end.y, end.z);
-      },
+      finish,
     };
   }
 
@@ -548,6 +563,10 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
     if (!attacker && !target) {
       return undefined;
     }
+    const motion = this.scene.unitMotion?.(attackerId);
+    const originalYaw = attacker?.rotation.y;
+    if (attacker && target)
+      faceTowards(attacker, attacker.position, target.position);
     const muzzle = this.anchor(attackerId, MUZZLE_FRACTION);
     const body = this.anchor(targetId, BODY_FRACTION);
     // The weapon, not the gap between the models (#457). Measuring the
@@ -593,6 +612,9 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
     let elapsed = 0;
 
     const cleanup = (): void => {
+      motion?.reset();
+      if (attacker && originalYaw !== undefined)
+        attacker.rotation.y = originalYaw;
       for (const sprite of [flash, tracer, impact, floater]) {
         if (sprite) {
           this.removeSprite(sprite);
@@ -604,6 +626,14 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
       advance: (seconds) => {
         const leftover = Math.max(0, elapsed + seconds - total);
         elapsed = Math.min(total, elapsed + seconds);
+        motion?.attack(
+          Math.min(
+            1,
+            elapsed /
+              (flashSeconds + flightSeconds + this.timing.impactSeconds),
+          ),
+          melee,
+        );
         if (flash) {
           const phase = Math.min(1, elapsed / flashSeconds);
           flash.material.opacity = 1 - phase;
@@ -1088,4 +1118,11 @@ function chipTexture(
   const texture = new CanvasTexture(canvas);
   texture.name = `vfx.floater:${label}`;
   return texture;
+}
+
+/** Turns the model's north-facing front along a horizontal segment. */
+function faceTowards(object: Object3D, from: Vec3, to: Vec3): void {
+  const dx = to.x - from.x;
+  const dz = to.z - from.z;
+  if (dx !== 0 || dz !== 0) object.rotation.y = Math.atan2(-dx, -dz);
 }

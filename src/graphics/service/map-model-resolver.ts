@@ -9,6 +9,7 @@ import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { Tile } from "../../mapgen/model/tile";
 import { TileIndex } from "../../mapgen/service/tile-index";
+import { propBounds, propTiles } from "../../mapgen/service/prop-footprint";
 import { terrainSlopeRise } from "./terrain-slope-rise";
 import type { RoadAppearance } from "../model/road-appearance";
 import type { TerrainSlopeAppearance } from "../model/terrain-slope-appearance";
@@ -23,7 +24,6 @@ import { resolveRampModels } from "./ramp-model-resolver";
 import { resolveTerrainSlopeAppearances } from "./terrain-slope-resolver";
 import { resolveRoadAppearances, roadModelId } from "./road-model-resolver";
 import {
-  propModel,
   ROAD_VARIANTS,
   ROAD_MODELS,
   SIDEWALK_VARIANTS,
@@ -38,6 +38,13 @@ import {
 import { GROUND_SLAB_THICKNESS } from "../data/tactical-overlay-palette";
 import { tileTop } from "../view/tactical-map-view";
 import { resolveDropshipModels } from "./dropship-model-resolver";
+import { resolveStreetDetails } from "./street-detail-resolver";
+import { resolveStreetSurfaces } from "./street-surface-resolver";
+import { resolveRoofDetails } from "./roof-detail-resolver";
+import {
+  propAppearanceScale,
+  propModelVariation,
+} from "./prop-appearance-resolver";
 
 // ===========================================
 // Types
@@ -56,6 +63,8 @@ export interface ModelPlacement {
   readonly position: Vec3;
   /** Quarter turns clockwise seen from above, matching `Prop.rotation`. */
   readonly turns: Rotation;
+  /** Horizontal fit for natural prop variation, never larger than authored bounds. */
+  readonly scaleX?: number;
   /** Vertical fit for one-layer slope art; other models retain their authored size. */
   readonly scaleY?: number;
   /** Authored forward-axis fit, used when two ramps share a lower tile. */
@@ -76,6 +85,8 @@ export interface ModelPlacement {
    * the tile it stands on.
    */
   readonly tile: TileCoord;
+  /** A multi-tile object is revealed when any part of its actual footprint is seen. */
+  readonly occupiedTiles?: readonly TileCoord[];
 }
 
 /** Everything on a map that resolves to a model, split by what it replaces. */
@@ -154,6 +165,7 @@ export function resolveMapModels(
   const walls = resolveWalls(map, index);
   const ramps = resolveRampModels(map, index, roads);
   const connectors = [...ramps, ...resolveLadderModels(map, index, walls)];
+  const roofs = resolvePitchedRoofModels(map, index);
   const rampFeet = new Set(
     ramps
       .filter((p) => p.ramp!.replacesGround)
@@ -162,10 +174,18 @@ export function resolveMapModels(
   return {
     tiles: resolveTiles(map, index, rampFeet, roads),
     foundations: resolveFoundationModels(map),
-    roofs: resolvePitchedRoofModels(map, index),
+    roofs,
     walls,
-    frontages: resolveBuildingFrontages(map, index),
-    props: [...resolveProps(map, index), ...resolveDropshipModels(map)],
+    frontages: [
+      ...resolveBuildingFrontages(map, index),
+      ...resolveRoofDetails(map, index, roofs),
+    ],
+    props: [
+      ...resolveProps(map, index),
+      ...resolveDropshipModels(map),
+      ...resolveStreetDetails(map, index),
+      ...resolveStreetSurfaces(map, index),
+    ],
     connectors,
   };
 }
@@ -440,7 +460,7 @@ function resolveWalls(
           kind,
           wallFamilyForWall(
             kind,
-            localWallBuildingId(map, tile, side, kind, index),
+            localWallBuildingId(tile, side, kind, index),
             map.recipe.params.placeProfile,
           ),
         ),
@@ -456,20 +476,14 @@ function resolveWalls(
   return placements;
 }
 
-/** Keeps Johannesburg's ground-floor exterior finish tied to the building across its shared edge. */
+/** Ground-floor exterior walls inherit the building across their mirrored edge. */
 function localWallBuildingId(
-  map: TacticalMap,
   tile: Tile,
   side: Direction,
   kind: NonNullable<Tile["walls"][Direction]>,
   index: TileIndex,
 ): string | undefined {
-  if (
-    map.recipe.params.placeProfile !== "johannesburg" ||
-    tile.buildingId !== undefined ||
-    kind === "half"
-  )
-    return tile.buildingId;
+  if (tile.buildingId !== undefined || kind === "half") return tile.buildingId;
   return index.getAt(stepGridPos(tile, side))?.buildingId;
 }
 
@@ -506,16 +520,23 @@ function resolveProps(
   const placements: ModelPlacement[] = [];
   for (const prop of map.props) {
     const tile = index.getAt(prop.tile);
-    const modelId = propModel(prop.kind);
-    if (tile === undefined || modelId === undefined) {
+    const appearance = propModelVariation(prop, map.recipe.seed);
+    if (tile === undefined || appearance === undefined) {
       continue;
     }
+    const bounds = propBounds(prop);
     placements.push({
-      modelId,
+      modelId: appearance.modelId,
       level: tile.y,
-      position: { x: tile.x + 0.5, y: tileTop(tile.y), z: tile.z + 0.5 },
-      turns: prop.rotation,
+      position: {
+        x: bounds.x + bounds.w / 2,
+        y: tileTop(tile.y),
+        z: bounds.z + bounds.d / 2,
+      },
+      turns: appearance.turns,
+      ...propAppearanceScale(prop, map.recipe.seed),
       tile: { x: tile.x, y: tile.y, z: tile.z },
+      ...(prop.occupiedTiles ? { occupiedTiles: propTiles(prop) } : {}),
     });
   }
   return placements;

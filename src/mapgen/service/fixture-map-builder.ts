@@ -175,18 +175,31 @@ export class FixtureMapBuilder {
   // Props, connectors, buildings
   // ===========================================
 
-  /**
-   * Places a prop on an existing tile: the tile becomes impassable and
-   * grants the prop's cover.
-   */
-  prop(kind: PropKindId, coord: TileCoord, rotation: Rotation = 0): this {
-    const tile = this.mustGet(coord);
+  /** Places an explicit footprint, defaulting to legacy one-tile collision. */
+  prop(
+    kind: PropKindId,
+    coord: TileCoord,
+    rotation: Rotation = 0,
+    occupiedTiles?: readonly TileCoord[],
+  ): this {
+    const cells = occupiedTiles ?? [coord];
+    const tiles = cells.map((cell) => this.mustGet(cell));
     const id = this.id("p");
-    tile.propId = id;
-    tile.pass = PassMask.NONE;
-    tile.coverProvided = PROPS.get(kind).cover;
-    tile.blocksLos = PROPS.get(kind).blocksLos;
-    this.props.push({ id, kind, tile: { ...coord }, rotation });
+    for (const tile of tiles) {
+      tile.propId = id;
+      tile.pass = PassMask.NONE;
+      tile.coverProvided = PROPS.get(kind).cover;
+      tile.blocksLos = PROPS.get(kind).blocksLos;
+    }
+    this.props.push({
+      id,
+      kind,
+      tile: { ...coord },
+      rotation,
+      ...(occupiedTiles
+        ? { occupiedTiles: occupiedTiles.map((cell) => ({ ...cell })) }
+        : {}),
+    });
     return this;
   }
 

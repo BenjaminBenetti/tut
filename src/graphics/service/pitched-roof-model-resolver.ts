@@ -28,10 +28,7 @@ export function resolvePitchedRoofModels(
   const result: ModelPlacement[] = [];
   for (const building of map.buildings) {
     if (building.roof.kind !== "pitched" || building.roof.walkable) continue;
-    const hipped =
-      map.recipe.params.placeProfile === "johannesburg" &&
-      building.kind === "house" &&
-      hashSeed(building.id) % 2 === 1;
+    const hipped = building.kind === "house" && hashSeed(building.id) % 2 === 1;
     const level = building.groundLevel + building.floors.length * STOREY_LAYERS;
     const covered = new Set<string>();
     for (const rect of building.footprint) {

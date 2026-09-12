@@ -78,6 +78,28 @@ function carriageway(coords: readonly TileCoord[]): TacticalMap {
 // Tests
 // ===========================================
 
+describe("shared ground-floor facade ownership", () => {
+  it.each(["n", "e", "s", "w"] as const)(
+    "keeps the %s facade in the building's chosen family on both storeys",
+    (side) => {
+      const builder = new FixtureMapBuilder(6, 6, 3).fillGround();
+      for (const y of [0, 2]) {
+        builder.tile({ x: 2, y, z: 2 }, "floor", { buildingId: "building-2" });
+        builder.wall({ x: 2, y, z: 2 }, side, "window");
+      }
+      const map = builder.build();
+      const original = JSON.stringify(map);
+      const walls = resolveMapModels(map).walls;
+      expect(walls).toHaveLength(2);
+      expect(walls.map((p) => p.modelId)).toEqual([
+        wallModel("window", wallFamilyFor("building-2")),
+        wallModel("window", wallFamilyFor("building-2")),
+      ]);
+      expect(JSON.stringify(map)).toBe(original);
+    },
+  );
+});
+
 describe("resolveMapModels — surfaces", () => {
   it("puts each plain surface's top face on the tile top (#557)", () => {
     const map = painted(SurfaceIds.GRASS, [at(1, 1)]);

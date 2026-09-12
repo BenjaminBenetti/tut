@@ -1,0 +1,56 @@
+{
+  "baseCommit": "50084772e8849527c38c563ee57aaf1dc0e34866",
+  "renderer": "SwiftShader",
+  "repeatedBrowsers": 1,
+  "records": [
+    {
+      "id": "city-reverse",
+      "seed": "mc-resume-01",
+      "biome": "temperate",
+      "url": "http://127.0.0.1:8797/mapgen-preview.html?seed=mc-resume-01&biome=temperate&settlement=city&size=medium&models=1&units=1&slope=100",
+      "settlement": "city",
+      "size": "medium",
+      "focus": {
+        "x": 43,
+        "y": 2,
+        "z": 39
+      },
+      "rotation": 1,
+      "camera": {
+        "yawIndex": 1,
+        "zoom": 55.11351921262119,
+        "target": {
+          "x": 43.5,
+          "y": 1.65,
+          "z": 39.5
+        },
+        "bounds": {
+          "x": 0,
+          "z": 0,
+          "w": 72,
+          "d": 72
+        },
+        "zoomRange": {
+          "min": 19.83827358328925,
+          "max": 192
+        }
+      },
+      "actualPitch": 44.99999999999995,
+      "pixel": {
+        "x": 1389.9999999999995,
+        "y": 750.0000000000007
+      },
+      "clip": {
+        "x": 640,
+        "y": 200,
+        "width": 1500,
+        "height": 1100
+      },
+      "viewport": {
+        "width": 2400,
+        "height": 1500
+      },
+      "sha256": "ff2c03a1f7f1673cecd9c66fca551c8adba779718d630b492376d8f8d7a85844"
+    }
+  ]
+}

@@ -160,15 +160,22 @@ test("highlighted interior tiles move the squad through the doorway", async ({
         });
       }
       // Wait for the rendered mover as well as the state transition.
+      // The full-roof CI trace renders once per ~2 s, while SceneService
+      // caps animation deltas at 0.1 s. Three 0.24 s tile steps therefore
+      // need about eight rendered frames: the old 15 s limit expired with
+      // the squad still advancing through its final tile. Allow 30 s on CI
+      // for that playback; keep the local limit and exact arrival assertion.
       await expect
-        .poll(() =>
-          page.evaluate(({ id, to }) => {
-            const unit = window.__tutTactical__!.unitScreenPosition(id);
-            const tile = window.__tutTactical__!.tileScreenPosition(to);
-            return unit && tile
-              ? Math.hypot(unit.x - tile.x, unit.y - tile.y)
-              : Infinity;
-          }, attempt),
+        .poll(
+          () =>
+            page.evaluate(({ id, to }) => {
+              const unit = window.__tutTactical__!.unitScreenPosition(id);
+              const tile = window.__tutTactical__!.tileScreenPosition(to);
+              return unit && tile
+                ? Math.hypot(unit.x - tile.x, unit.y - tile.y)
+                : Infinity;
+            }, attempt),
+          { timeout: process.env.CI ? 30_000 : 5_000 },
         )
         .toBeLessThan(1);
       await drawnFrame(page);

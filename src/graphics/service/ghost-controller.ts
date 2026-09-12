@@ -30,7 +30,8 @@ function clamp(value: number, low: number, high: number): number {
  *
  * ```
  *   every frame:  source() ──► world positions ──► × camera.matrixWorldInverse
- *                                                  └──► view space ──► uniforms
+ *                                    │             └──► view space ──► uniforms
+ *                                    └──► world y (the feet) ──► uniforms
  * ```
  *
  * The centres are the **objects the scene is already drawing** rather
@@ -91,6 +92,9 @@ export class GhostController implements FrameUpdatable {
       const previous = this.slots[i];
       if (object !== undefined && centre !== undefined) {
         object.getWorldPosition(this.scratch);
+        // A unit's object stands on its tile, so its world height is the
+        // height of its feet: the plane below which nothing ghosts (#1118).
+        this.uniforms.uGhostFeet.value[i] = this.scratch.y;
         // View space is what the shader compares in, so the projection is
         // done once here rather than per fragment.
         centre.copy(this.scratch).applyMatrix4(this.camera.matrixWorldInverse);

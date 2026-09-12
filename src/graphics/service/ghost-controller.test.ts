@@ -37,6 +37,28 @@ describe("GhostController (#526)", () => {
     expect(centre.z).toBeCloseTo(-10, 5);
   });
 
+  it("records each unit's feet in world height, whatever the camera does (#1118)", () => {
+    const uniforms = createGhostUniforms(3, 0.15);
+    const cam = camera();
+    const ground = at(2, 0, 0);
+    const upstairs = at(5, 3, 0);
+    const controller = new GhostController(
+      cam,
+      () => [ground, upstairs],
+      uniforms,
+    );
+    controller.update(0.016);
+
+    expect(uniforms.uGhostFeet.value[0]).toBeCloseTo(0, 5);
+    expect(uniforms.uGhostFeet.value[1]).toBeCloseTo(3, 5);
+
+    // Height is a world fact, not a view one: a moved camera leaves it.
+    cam.position.set(4, 7, 10);
+    cam.updateMatrixWorld(true);
+    controller.update(0.016);
+    expect(uniforms.uGhostFeet.value[1]).toBeCloseTo(3, 5);
+  });
+
   it("follows the camera, so panning does not smear the cutaway", () => {
     const uniforms = createGhostUniforms(3, 0.15);
     const cam = camera();

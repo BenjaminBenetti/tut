@@ -68,35 +68,35 @@
       "atlas": "bug",
       "col": 0,
       "row": 0,
-      "hex": "#14121A",
+      "hex": "#2E2118",
       "style": "chitin"
     },
     "bug-chitin-dark": {
       "atlas": "bug",
       "col": 1,
       "row": 0,
-      "hex": "#2B2436",
+      "hex": "#5C3B25",
       "style": "chitin"
     },
     "bug-chitin-mid": {
       "atlas": "bug",
       "col": 2,
       "row": 0,
-      "hex": "#4A3B5A",
+      "hex": "#8B5D36",
       "style": "chitin"
     },
     "bug-flesh": {
       "atlas": "bug",
       "col": 3,
       "row": 0,
-      "hex": "#7A3A4E",
+      "hex": "#73452E",
       "style": "flesh"
     },
     "bug-flesh-light": {
       "atlas": "bug",
       "col": 0,
       "row": 1,
-      "hex": "#B05A6E",
+      "hex": "#956344",
       "style": "flesh"
     },
     "bug-bio-green": {
@@ -124,7 +124,21 @@
       "atlas": "bug",
       "col": 0,
       "row": 2,
-      "hex": "#D8CBB0",
+      "hex": "#DDC39B",
+      "style": "bone"
+    },
+    "bug-chitin-tan": {
+      "atlas": "bug",
+      "col": 1,
+      "row": 2,
+      "hex": "#B88B58",
+      "style": "bone"
+    },
+    "bug-chitin-light": {
+      "atlas": "bug",
+      "col": 2,
+      "row": 2,
+      "hex": "#C6A275",
       "style": "bone"
     },
     "env-asphalt": {

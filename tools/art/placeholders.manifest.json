@@ -175,13 +175,13 @@
       "w": 1,
       "d": 1
     },
-    "height": 1.34,
+    "height": 1.4,
     "sockets": [
       "socket_hatch"
     ],
     "quality": "final",
-    "triangles": 730,
-    "bytes": 63784
+    "triangles": 9696,
+    "bytes": 244624
   },
   {
     "id": "building.floor",
@@ -987,11 +987,11 @@
       "w": 1,
       "d": 1
     },
-    "height": 0.55,
+    "height": 0.5,
     "sockets": [],
     "quality": "final",
-    "triangles": 590,
-    "bytes": 68168
+    "triangles": 12464,
+    "bytes": 339028
   },
   {
     "id": "bug.lurker",
@@ -1001,11 +1001,11 @@
       "w": 1,
       "d": 1
     },
-    "height": 1.35,
+    "height": 1.3,
     "sockets": [],
     "quality": "final",
-    "triangles": 732,
-    "bytes": 71372
+    "triangles": 14292,
+    "bytes": 377604
   },
   {
     "id": "bug.brute",
@@ -1015,11 +1015,11 @@
       "w": 1,
       "d": 1
     },
-    "height": 1.95,
+    "height": 1.8,
     "sockets": [],
     "quality": "final",
-    "triangles": 746,
-    "bytes": 75428
+    "triangles": 18344,
+    "bytes": 469500
   },
   {
     "id": "tdf.infantry.rifle",

@@ -8,7 +8,7 @@ tools/art/gen-image.sh docs/design/concepts/prompts/<name>.txt docs/design/conce
 
 Sheets are documentation, not runtime assets; they are stored at 1536 px wide.
 
-**New review:** [Swarmer redesign — Splitmask, Crescent and Ribknife in brown](swarmer-redesign/README.md). Three alternative directions for a future bug-family redesign, now revised to brown chitin and tan plates, with exact image-edit prompts and notes on extending each theme. Earlier palette studies remain available for comparison; silhouette selection is pending.
+**Selected bug direction:** [Brown Crescent B](swarmer-redesign/b-crescent-brown.md). The [Crescent family kit](../kits/crescent-bugs.md) implements all four replacement models. [The three concept directions](swarmer-redesign/README.md) and earlier palettes remain available as design history. The original bug sheets below are superseded by this kit.
 
 | Sheet | Subject | Style guide |
 |---|---|---|

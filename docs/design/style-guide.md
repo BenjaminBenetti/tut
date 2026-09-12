@@ -7,8 +7,8 @@
 ## 1. Pillars
 
 1. **Readable at isometric distance.** Every unit must be identifiable from its silhouette at the game's default zoom (about 64 px per tile). If it needs a texture to read, it fails.
-2. **Two factions, two colour worlds.** TDF is cool grey, olive and orange. Bugs are near-black chitin with sickly bioluminescence. The two palettes never share a hue.
-3. **Low-poly with intent.** Flat-shaded, hard-edged, chunky. Detail goes into silhouette and colour blocking, not surface noise.
+2. **Two factions, two colour worlds.** TDF is cool grey, olive and orange. Bugs have walnut/chestnut chitin, tan shell rims and small green or magenta biological lights. Broad shell shapes and dark joints distinguish them from TDF hardware.
+3. **Geometry with intent.** Strong silhouettes and broad colour blocks carry the distant view. The Crescent bugs use more detailed curved shells, overlapping plates and articulated limbs for close views, with hard cutting edges and restrained surface texture.
 4. **Modular by construction.** Mech parts, building kits and tile sets are assembled from pieces with shared pivots and sockets so map generation and the mech bay can recombine them.
 5. **Military-procedural UI.** Flat, high contrast, monospace data, no ornament.
 
@@ -45,7 +45,7 @@ These are the presentation assumptions the art is built against (GDD §6.1; the 
 | Infantry squad token | 1×1 | 0.9 (figures) on a 0.05 thick base disc, Ø 0.85 | Figures arranged in a loose wedge; leader front-centre. |
 | Mech (baseline chassis) | 1×1 | 2.4–2.8 | Taller than a building floor (1.5 u) so it visibly cannot enter interiors. Shoulders ~1.1 u wide. |
 | Mech, heavy chassis | 1×1 | up to 3.2 | Same footprint. Never exceeds 1.4 u wide at the shoulders; must not clip neighbours. |
-| Swarmer | 1×1 | 0.5 | Low wedge, ~0.8 u long. Cheap, many on screen. |
+| Swarmer | 1×1 | 0.5 | Low Crescent shield, compact segmented abdomen, four running legs and two short blade arms. |
 | Lurker | 1×1 | 1.3 | Tall, thin, forward-leaning. Blades longer than legs. |
 | Brute | 1×1 | 1.8 | Wide dome, ~0.95 u across. Fills the tile. |
 | Egg spawner | 1×1 | 1.4 | Fleshy mound with 3–5 eggs. A 2×2 "clutch" variant may come later. |
@@ -72,10 +72,10 @@ Silhouette rules per class:
 
 - **Infantry squad**: a cluster of five upright sticks on a disc. Helmets are the biggest readable feature; one figure carries something long (rocket, sniper) to identify squad type.
 - **Mech**: a tall rectangle with shoulders wider than hips, one arm ends in a weapon, one shoulder or back carries a second weapon. Legs are clearly separate pieces.
-- **Swarmer**: a horizontal wedge, head low, back spines. Reads as an arrow pointing where it runs.
-- **Lurker**: a vertical, forward-leaning stroke with two long blade arms held up. Thin waist. Reads as a question mark.
-- **Brute**: a dome. Head sunk into the carapace, blade-hands dragging. Reads as a boulder.
-- **Egg spawner**: a lumpy mound with three to five ovoid eggs, one split open. Reads as wrong.
+- **Swarmer**: a broad thin Crescent mantle with swept rear corners, a low recessed head and a short segmented abdomen. Four running legs and two hooked forearms. Tan dorsal lozenges and a light shell lip remain visible from above.
+- **Lurker**: a narrow high Crescent hood over a thin, forward-leaning body, four slender running legs and two long sickles. Magenta eye recesses identify the stalking class.
+- **Brute**: a heavy domed Crescent mantle, overlapping flank plates, a recessed head and broad cleavers. Four thick legs support its mass; tan central lozenges and the reinforced shell rim carry its outline.
+- **Egg spawner**: a rooted Crescent husk cradles three ribbed eggs and a larger opening egg. Brown shell valves surround a recessed magenta hatch; small green sacs sit near the base.
 
 ## 4. Palette
 
@@ -100,23 +100,27 @@ Rule: orange covers at most 10 % of any TDF model's visible surface. It is a mar
 
 | Token | Hex | Use |
 |---|---|---|
-| `bug-chitin-black` | `#14121A` | Blade backs, claws, deepest plates |
-| `bug-chitin-dark` | `#2B2436` | Primary body |
-| `bug-chitin-mid` | `#4A3B5A` | Plate highlights, joints |
-| `bug-flesh` | `#7A3A4E` | Exposed flesh between plates, egg mounds |
-| `bug-flesh-light` | `#B05A6E` | Flesh highlights, egg membranes |
+| `bug-chitin-black` | `#2E2118` | Dark umber blade backs, joints and eye recesses |
+| `bug-chitin-dark` | `#5C3B25` | Walnut primary shell |
+| `bug-chitin-mid` | `#8B5D36` | Chestnut overlapping plates and limb armour |
+| `bug-chitin-tan` | `#B88B58` | Broad dorsal lozenges, shell lips and egg ribs |
+| `bug-chitin-light` | `#C6A275` | Sandy shell highlights |
+| `bug-flesh` | `#73452E` | Russet tissue between plates and egg mounds |
+| `bug-flesh-light` | `#956344` | Brown tissue highlights and egg membranes |
 | `bug-bio-green` | `#9CFF3D` | Primary bioluminescence: eyes, vein lines, spines (emissive) |
 | `bug-bio-green-dim` | `#4C8F1A` | Non-emissive green, sick residue, spawner pools |
 | `bug-bio-magenta` | `#E23DFF` | Secondary bioluminescence: egg interiors, lurker markings (emissive) |
-| `bug-bone` | `#D8CBB0` | Blade edges, teeth, spines |
+| `bug-bone` | `#DDC39B` | Pale horn cutting edges, mandibles and toe tips |
 
 Rule: bioluminescence is small and bright, never a wash. Swarmers get green only. Lurkers get magenta. Brutes get green with bone. Spawners get both, pulsing.
 
-Rule: **`bug-bone` is what makes a bug readable, not the glow.** Dark chitin on dark asphalt is a silhouette with no edge, so every species carries a segmented bone crest along its spine — plates, not one slab, with the glow between them. The glow says *which* species; the crest is what says *there is something there* at 64 px per tile.
+Rule: **Dark shell / tan plate contrast carries the Crescent family at game distance.** Every mobile bug has broad tan dorsal lozenges and a reinforced shell lip; the spawner repeats that contrast in egg ribs. Pale horn stays on narrow cutting edges. The small glow identifies the class. Brown ground requires a value read test as well as asphalt, grass and rock.
+
+The Executive Director selected [brown Crescent B](concepts/swarmer-redesign/b-crescent-brown.md) as the family design on 2026-09-12 and requested detailed replacement models. Sources, renders, budgets and validation are in [the Crescent kit](kits/crescent-bugs.md).
 
 ### 4.2.1 The read test
 
-![Both factions on three grounds at 64 px per tile](faction-read-test.png)
+Current Crescent read tests: [asphalt](diagnostics/crescent-bugs/scene-asphalt.png), [grass](diagnostics/crescent-bugs/scene-grass.png), [rock](diagnostics/crescent-bugs/scene-rock.png), plus [brown earth](diagnostics/crescent-bugs/tactical-earth.png) in the interactive gallery. The [earlier faction sheet](faction-read-test.png) records the previous purple bugs.
 
 **Each faction has its own worst ground, and they are not the same ground.** The test used to be asphalt alone, described as "the darkest ground in the game and the worst case for either". It cannot be the worst case for either: the factions are different colours, so the ground that swallows one is the ground that shows off the other. Asphalt is where TDF read *best*, and testing there returned a clean bill of health for a faction that disappears on grass.
 
@@ -128,17 +132,17 @@ node tools/art/preview/render-scene.mjs tools/art/preview/layouts/grass-read.jso
 node tools/art/preview/render-scene.mjs tools/art/preview/layouts/rock-read.json    out.png
 ```
 
-- **Asphalt** is the bugs' worst ground. Dark chitin on dark road: the bodies merge and only the bone crest and the glow carry them. TDF read comfortably here.
+- **Asphalt** tests the walnut shell against dark road. Tan dorsal plates and the shell rim carry its outline; the new brown palette also needs a brown-earth check. At 64 px per tile, fine shell seams recede but the Crescent silhouette and broad tan/dark split remain visible. TDF read comfortably on asphalt.
 - **Grass** is TDF's worst ground, and it is the temperate biome's primary surface — the most common ground in the game. `tdf-olive #6B7A3F` against `env-grass #5E7A3A` is **ΔE 6.2, ΔL 1.0**: no tonal separation at all, and barely above the threshold at which two colours are the same colour. The olive torso and arms still merge with it and always will — that is what olive drab is *for*. What makes the squads findable is the helmet above them (#613).
 - **Rock** is the control. Both factions read.
 
 **Screen on value, not on colour distance** (#613). ΔE catches an outright duplicate like olive-on-grass, and is worth computing for any new colour — but on its own it will tell you a figure is fine when it is invisible. The infantry helmet was `tdf-grey-mid`: **ΔE 46 from grass and ΔL 5**. Hue distance carrying no tonal difference does not survive 64 px and a cast shadow, and the squads disappeared exactly as though the helmet were not there.
 
-What actually keeps a figure visible is that **at least one of its parts separates in value from the ground it stands on.** By that measure the old infantry were tonally flat on *four* grounds — rock 3.7, frozen dirt 4.0, grass 5.3, dirt 6.1 — every part of the figure the same tone as the terrain. A light helmet takes the worst case to 9.6, and on the grounds where the helmet then matches the ground instead (sidewalk, wet sand) the olive body carries it. That two-part split is the TDF equivalent of the bugs' bone crest, and `faction-read.test.ts` guards both the ΔE screen and the value one.
+What actually keeps a figure visible is that **at least one of its parts separates in value from the ground it stands on.** By that measure the old infantry were tonally flat on *four* grounds — rock 3.7, frozen dirt 4.0, grass 5.3, dirt 6.1 — every part of the figure the same tone as the terrain. A light helmet takes the worst case to 9.6, and on the grounds where the helmet then matches the ground instead (sidewalk, wet sand) the olive body carries it. That two-part split is the TDF equivalent of the bugs' tan dorsal plates, and `faction-read.test.ts` guards both the ΔE screen and the value one.
 
 ΔE also overstates the large models: it flagged `tdf-grey-mid` mech armour on rock at 12.3, which the render does not bear out, because the mech is big and internally contrasty. **Size and internal contrast beat any single hue distance.** A small, near-monotone model is the one in danger.
 
-**There is no colour that separates from every ground**, so do not go looking for one. `tdf-grey-light` merely trades grass for concrete (ΔE 15.7). Separation has to come from something that is not hue: the bone crest on the bugs, and contact shadows (#507) for everything — a shape on ground of its own tone is separated by the shadow under it as much as by anything on its back. That is why the answer to "I cannot see the units" is not more glow, and not a new colour.
+**There is no colour that separates from every ground**, so do not go looking for one. `tdf-grey-light` merely trades grass for concrete (ΔE 15.7). Separation has to come from something that is not hue: the tan dorsal plates on the bugs, and contact shadows (#507) for everything — a shape on ground of its own tone is separated by the shadow under it as much as by anything on its back. That is why the answer to "I cannot see the units" is not more glow, and not a new colour.
 
 ### 4.3 Environment by biome
 
@@ -229,8 +233,8 @@ Implementation: `src/ui/style/theme.css` exposes the §4.4 tokens as CSS custom 
 - **Format**: glTF binary (`.glb`), one file per asset, no external buffers or images unless a texture is required.
 - **Axes**: +Y up, +Z forward, right-handed. Bake all transforms; root node has identity transform. 1 unit = 1 tile.
 - **Pivot**: centre of the base footprint at y = 0. Wall and edge pieces pivot on the tile edge they attach to (see §7).
-- **Materials**: one `MeshStandardMaterial` per palette token, named exactly as the token (`tdf-grey-mid`). `metalness 0`, `roughness 0.9` for cloth and chitin, `0.6` for painted metal. Emissive tokens set `emissive` to the same hex with `emissiveIntensity 1.5`.
-- **Shading**: flat. No smoothing groups on armour, tiles or buildings. Organic bug flesh may use smooth normals.
+- **Materials**: one `MeshStandardMaterial` per palette token, named exactly as the token (`tdf-grey-mid`). `metalness 0`, `roughness 0.9` for cloth/flesh, `0.74` for Crescent chitin, `0.6` for painted metal. Emissive tokens set `emissive` to the same hex with `emissiveIntensity 1.5`.
+- **Shading**: flat on hard armour, tiles and buildings. Crescent shell domes, limb cuffs and organic tissue use smooth normals; dorsal lozenges and blade edges retain explicit hard facets.
 - **Textures**: three 512² palette atlases (`tdf-atlas_albedo`, `bug-atlas_albedo` for units; `env-atlas_albedo` for tiles, buildings and props), one 128 px cell per token, built by `tools/art/build-textures.mjs`; a face maps its whole UV range into the cell of its token, and the GLB references the atlas as an external image so files stay small. No per-model textures. Linear filtered with mipmaps; nearest-neighbour only for pixel-locked detail. Sprites ≤ 512².
 - **Sockets**: empty nodes named `socket_<name>` mark attach points. Mechs expose `socket_arm_l`, `socket_arm_r`, `socket_back`, `socket_legs`. Buildings expose `socket_door`, `socket_roof`. Spawners expose `socket_hatch` for the egg-burst VFX.
 - **Mech part nodes**: a mech is assembled at runtime from separate GLBs: `chassis`, `legs`, `arm-l`, `arm-r`, `weapon-arm`, `weapon-back`. Each part pivots at its socket point so the mech bay can swap them.
@@ -242,12 +246,14 @@ Implementation: `src/ui/style/theme.css` exposes the §4.4 tokens as CSS custom 
 |---|---|---|
 | Infantry figure | 150–300 (squad ≤ 1 500) | ≤ 100 KB |
 | Mech chassis / legs / arm / weapon | 1 200 / 800 / 400 / 300 | ≤ 150 KB per part |
-| Swarmer / lurker / brute | 600 / 1 000 / 2 000 | ≤ 100 KB |
-| Egg spawner | 1 200 | ≤ 100 KB |
+| Crescent swarmer / lurker / brute | 16 000 / 18 000 / 20 000 | < 500 KB each |
+| Crescent egg spawner | 16 000 | < 500 KB |
 | Tile piece (ground, road) | ≤ 60 | ≤ 20 KB |
 | Building module (wall, floor, roof, stairs) | ≤ 800 | ≤ 100 KB |
 | Prop (cover, street furniture) | ≤ 300 | ≤ 60 KB |
 | TDF dropship (one 5×7 cargo transport) | ≤ 3 000 | ≤ 200 KB |
+
+The detailed Crescent kit replaces the original 600/1,000/2,000-triangle bug and 1,200-triangle spawner budgets. Geometry goes into continuous shell curvature, plate overlap, joints and blade profiles; per-file caps and runtime read/animation checks still apply. Authored continuous UVs map the whole sculpted surface into its atlas cell, preserving shared vertices and avoiding one repeated texture patch per triangle.
 
 Hard cap from the role brief: models < 500 KB, textures ≤ 1024², sprites ≤ 512². One documented exception: the overworld world-map texture is 2048×1024 (a 2:1 plate carrée needs the width for coastlines at map zoom); it is the only texture allowed over 1024² and must stay under 1.5 MB.
 

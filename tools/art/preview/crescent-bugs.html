@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Crescent — bug family</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #171613;
+        color: #e7dfd0;
+        font:
+          15px/1.5 system-ui,
+          sans-serif;
+      }
+      main {
+        max-width: 1800px;
+        margin: auto;
+        padding: 40px;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        gap: 30px;
+        align-items: end;
+        margin-bottom: 30px;
+      }
+      .eyebrow {
+        color: #c6a275;
+        text-transform: uppercase;
+        letter-spacing: 0.22em;
+        font-size: 11px;
+        font-weight: 600;
+      }
+      h1 {
+        font:
+          56px/1.1 Georgia,
+          serif;
+        margin: 12px 0;
+        letter-spacing: -0.03em;
+      }
+      p {
+        margin: 0;
+        color: #aca798;
+      }
+      .swatches {
+        display: flex;
+        gap: 5px;
+        margin-bottom: 8px;
+      }
+      .swatches i {
+        display: block;
+        width: 38px;
+        height: 12px;
+        background: var(--color);
+      }
+      nav {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: center;
+        padding: 18px 0;
+        border-top: 1px solid #39342b;
+      }
+      select,
+      button {
+        color: #e7dfd0;
+        background: #29261f;
+        border: 1px solid #554938;
+        padding: 9px 14px;
+        border-radius: 4px;
+        font: inherit;
+        cursor: pointer;
+      }
+      label {
+        color: #c6bca9;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      #status {
+        margin-left: auto;
+        font-size: 12px;
+      }
+      .family {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+      }
+      article {
+        background: #211f1a;
+        border: 1px solid #39342b;
+        border-radius: 6px;
+        overflow: hidden;
+      }
+      .viewport {
+        height: 410px;
+        cursor: grab;
+      }
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+      .caption {
+        padding: 22px;
+        border-top: 1px solid #39342b;
+        min-height: 178px;
+      }
+      h2 {
+        font:
+          29px Georgia,
+          serif;
+        margin: 8px 0;
+      }
+      .stats {
+        font-size: 11px;
+        color: #a28e70;
+        margin-top: 16px;
+        font-variant-numeric: tabular-nums;
+      }
+      footer {
+        display: flex;
+        justify-content: space-between;
+        gap: 30px;
+        margin-top: 24px;
+        font-size: 12px;
+        color: #a28e70;
+      }
+      a {
+        color: #ddc39b;
+      }
+      @media (max-width: 1000px) {
+        .family {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        header {
+          align-items: start;
+        }
+        h1 {
+          font-size: 42px;
+        }
+      }
+      @media (max-width: 580px) {
+        main {
+          padding: 20px;
+        }
+        .family {
+          grid-template-columns: 1fr;
+        }
+        header,
+        footer {
+          display: block;
+        }
+        .swatches {
+          margin-top: 20px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <div class="eyebrow">Terra Under Threat · Creature design</div>
+          <h1>The Crescent brood</h1>
+          <p>Walnut armour. Swept shells. A family of hooked predators.</p>
+        </div>
+        <div>
+          <div class="swatches">
+            <i style="--color: #2e2118"></i><i style="--color: #5c3b25"></i
+            ><i style="--color: #8b5d36"></i><i style="--color: #b88b58"></i
+            ><i style="--color: #ddc39b"></i>
+          </div>
+          <span class="eyebrow">Brown Crescent B · 3D study</span>
+        </div>
+      </header>
+      <nav aria-label="Model preview controls">
+        <label
+          >Pose
+          <select id="pose">
+            <option value="rest">Rest</option>
+            <option value="walk">Walk</option>
+            <option value="strike">Strike</option>
+          </select></label
+        >
+        <label
+          >Ground
+          <select id="ground">
+            <option value="#3A3D42">Asphalt</option>
+            <option value="#5E7A3A">Grass</option>
+            <option value="#6E6A66">Rock</option>
+            <option value="#8B7355">Brown earth</option>
+          </select></label
+        >
+        <label
+          >Framing
+          <select id="framing">
+            <option value="detail">Detail</option>
+            <option value="scale">Relative scale</option>
+            <option value="tactical">64 px / tile</option>
+          </select></label
+        >
+        <label
+          >Angle
+          <input
+            id="angle"
+            type="range"
+            min="0"
+            max="360"
+            step="0.1"
+            value="45"
+        /></label>
+        <button id="turn" type="button" aria-pressed="false">Turntable</button>
+        <p id="status" role="status">Loading models…</p>
+      </nav>
+      <section class="family" aria-label="Bug family">
+        <article data-model="bug.swarmer">
+          <div
+            class="viewport"
+            role="img"
+            aria-label="Interactive swarmer model"
+          ></div>
+          <div class="caption">
+            <div class="eyebrow">01 · Swarm hunter</div>
+            <h2>Swarmer</h2>
+            <p>A low crescent hood, segmented tail and paired hooks.</p>
+            <div class="stats"></div>
+          </div>
+        </article>
+        <article data-model="bug.lurker">
+          <div
+            class="viewport"
+            role="img"
+            aria-label="Interactive lurker model"
+          ></div>
+          <div class="caption">
+            <div class="eyebrow">02 · Ambush predator</div>
+            <h2>Lurker</h2>
+            <p>A narrow hood above a ringed torso and long sickles.</p>
+            <div class="stats"></div>
+          </div>
+        </article>
+        <article data-model="bug.brute">
+          <div
+            class="viewport"
+            role="img"
+            aria-label="Interactive brute model"
+          ></div>
+          <div class="caption">
+            <div class="eyebrow">03 · Living siege engine</div>
+            <h2>Brute</h2>
+            <p>A heavy mantle, overlapping armour and broad cleavers.</p>
+            <div class="stats"></div>
+          </div>
+        </article>
+        <article data-model="bug.egg-spawner">
+          <div
+            class="viewport"
+            role="img"
+            aria-label="Interactive egg spawner model"
+          ></div>
+          <div class="caption">
+            <div class="eyebrow">04 · Brood nest</div>
+            <h2>Egg spawner</h2>
+            <p>Ribbed eggs beneath a split, luminous shell crown.</p>
+            <div class="stats"></div>
+          </div>
+        </article>
+      </section>
+      <footer>
+        <span
+          >Drag a model to orbit · Scroll to inspect · Rest returns the authored
+          pose<br />Detail frames each creature individually; relative scale
+          uses the same camera scale for all four.</span
+        ><span
+          >Actual game models and production limb animation<br /><a
+            href="/docs/design/concepts/swarmer-redesign/b-crescent-brown.png"
+            >Selected concept reference ↗</a
+          ></span
+        >
+      </footer>
+    </main>
+    <script type="module" src="./crescent-bugs.ts"></script>
+  </body>
+</html>

@@ -92,6 +92,25 @@ describe("unit motion on the shipped models", () => {
       expect(legs.length).toBeGreaterThanOrEqual(
         id.startsWith("tdf.infantry") ? 10 : 2,
       );
+      if (id.startsWith("bug.")) {
+        // Crescent bugs have four running legs and two independently
+        // grouped blade arms. Joining the sculpt into one mesh must fail.
+        expect(legs).toHaveLength(4);
+        const arms: Object3D[] = [];
+        clone.traverse((part) => {
+          if (part.name.startsWith("motion-arm-")) arms.push(part);
+        });
+        expect(arms).toHaveLength(2);
+        // Every limb's origin is its attachment. Rotation must keep it
+        // at the pivot instead of orbiting around the limb's bounding box.
+        for (const joint of [...legs, ...arms]) {
+          expect(joint.children).toHaveLength(1);
+          expect(joint.children[0]!.userData.motion_joint).toBe(true);
+          expect(joint.children[0]!.position.length()).toBeLessThan(1e-6);
+        }
+        mesh.motion!.attack(0.35, true);
+        expect(arms.every((arm) => Math.abs(arm.rotation.x) > 0.1)).toBe(true);
+      }
       mesh.motion!.walk(0.13);
       expect(legs.some((leg) => leg.rotation.x > 0.1)).toBe(true);
       expect(legs.some((leg) => leg.rotation.x < -0.1)).toBe(true);
@@ -107,6 +126,13 @@ describe("unit motion on the shipped models", () => {
       const expected = model.clone(true);
       expected.rotateY(Math.PI);
       const before = new Box3().setFromObject(expected);
+      if (id.startsWith("bug.")) {
+        expect(before.min.y).toBeCloseTo(0, 3);
+        expect(before.getSize(new Vector3()).y).toBeCloseTo(
+          MODEL_MANIFEST[id].height,
+          2,
+        );
+      }
       new UnitMesh("actor", model, id);
       const after = new Box3().setFromObject(model);
       expect(

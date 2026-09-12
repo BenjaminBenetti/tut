@@ -225,6 +225,7 @@ export class UnitMotionRig implements UnitMotion {
       const box = bounds(parts);
       const at = box.getCenter(new Vector3());
       at.y = box.max.y;
+      useAuthoredJoint(parts, at);
       const phase =
         (key.startsWith("r") ? Math.PI : 0) + Number(key[1] ?? 0) * Math.PI;
       this.legs.push(pivot(body, parts, `motion-leg-${key}`, at, phase));
@@ -233,6 +234,7 @@ export class UnitMotionRig implements UnitMotion {
       const box = bounds(parts);
       const at = box.getCenter(new Vector3());
       at.y = box.max.y;
+      useAuthoredJoint(parts, at);
       this.arms.push(
         pivot(body, parts, `motion-arm-${key}`, at, key === "r" ? Math.PI : 0),
       );
@@ -243,6 +245,13 @@ export class UnitMotionRig implements UnitMotion {
 // ===========================================
 // Pivot helpers
 // ===========================================
+
+/** Uses an exported hip/shoulder origin when an anatomical part provides one. */
+function useAuthoredJoint(parts: readonly Object3D[], target: Vector3): void {
+  if (parts.length === 1 && parts[0]!.userData.motion_joint === true) {
+    parts[0]!.getWorldPosition(target);
+  }
+}
 
 /** Measures a set of siblings in world space before reparenting them. */
 function bounds(parts: readonly Object3D[]): Box3 {

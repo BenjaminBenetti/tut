@@ -39,15 +39,17 @@ PALETTE = {
     "tdf-orange": "#F08A24",
     "tdf-orange-dim": "#B86414",
     "tdf-visor": "#7FD1FF",
-    "bug-chitin-black": "#14121A",
-    "bug-chitin-dark": "#2B2436",
-    "bug-chitin-mid": "#4A3B5A",
-    "bug-flesh": "#7A3A4E",
-    "bug-flesh-light": "#B05A6E",
+    "bug-chitin-black": "#2E2118",
+    "bug-chitin-dark": "#5C3B25",
+    "bug-chitin-mid": "#8B5D36",
+    "bug-chitin-tan": "#B88B58",
+    "bug-chitin-light": "#C6A275",
+    "bug-flesh": "#73452E",
+    "bug-flesh-light": "#956344",
     "bug-bio-green": "#9CFF3D",
     "bug-bio-green-dim": "#4C8F1A",
     "bug-bio-magenta": "#E23DFF",
-    "bug-bone": "#D8CBB0",
+    "bug-bone": "#DDC39B",
     "env-asphalt": "#3A3D42",
     "env-concrete": "#8E8A82",
     "env-sidewalk": "#A7A297",
@@ -115,7 +117,9 @@ def material(token: str) -> bpy.types.Material:
     bsdf = mat.node_tree.nodes["Principled BSDF"]
     colour = hex_to_linear_rgba(PALETTE[token])
     bsdf.inputs["Base Color"].default_value = colour
-    bsdf.inputs["Roughness"].default_value = 0.6 if token in METAL else 0.9
+    bsdf.inputs["Roughness"].default_value = (
+        0.6 if token in METAL else 0.74 if token.startswith("bug-chitin") else 0.9
+    )
     bsdf.inputs["Metallic"].default_value = 0.0
     if token in EMISSIVE:
         bsdf.inputs["Emission Color"].default_value = colour
@@ -281,7 +285,8 @@ def export_glb(path: str) -> int:
     """Export the whole scene as GLB with +Y up. Returns the file size in bytes."""
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
     bpy.ops.object.select_all(action="SELECT")
-    bpy.ops.export_scene.gltf(filepath=path, export_format="GLB", export_yup=True, export_apply=True)
+    bpy.ops.export_scene.gltf(filepath=path, export_format="GLB", export_yup=True, export_apply=True,
+                             export_extras=any(ob.get("motion_joint") for ob in mesh_objects()))
     return os.path.getsize(path)
 
 
@@ -310,6 +315,8 @@ def apply_atlas_uvs(layout: dict) -> list[str]:
     ``r`` is ``[1 - (r + 1) / grid, 1 - r / grid]``; the exported file then
     samples the right row. Meshes without a UV layer get one (all zeros, one
     texel of the cell), so a textured material never renders white.
+    ``atlas_preserve_uv`` retains authored continuous coordinates instead of
+    resetting each face; this is used by the detailed organic Crescent kit.
 
     Returns:
         Atlas ids used, in first-use order (``"tdf"``, ``"bug"``).
@@ -323,15 +330,19 @@ def apply_atlas_uvs(layout: dict) -> list[str]:
         me = ob.data
         if not me.uv_layers:
             me.uv_layers.new(name="UVMap")
+        # Sculpted surfaces carry continuous authored UVs. Retaining those
+        # avoids stamping a full texture cell on each tiny smooth-shell face.
+        preserve_uv = bool(ob.get("atlas_preserve_uv", False))
         # Every face gets the whole cell, like the three.js placeholders (a
         # box face is one panel), rather than Blender's cross-shaped cube layout.
         bpy.ops.object.select_all(action="DESELECT")
         ob.select_set(True)
         bpy.context.view_layer.objects.active = ob
-        bpy.ops.object.mode_set(mode="EDIT")
-        bpy.ops.mesh.select_all(action="SELECT")
-        bpy.ops.uv.reset()
-        bpy.ops.object.mode_set(mode="OBJECT")
+        if not preserve_uv:
+            bpy.ops.object.mode_set(mode="EDIT")
+            bpy.ops.mesh.select_all(action="SELECT")
+            bpy.ops.uv.reset()
+            bpy.ops.object.mode_set(mode="OBJECT")
         uv = me.uv_layers.active.data
         turn = int(ob.get("atlas_uv_rot", 0)) % 360
         for poly in me.polygons:
@@ -354,7 +365,7 @@ def apply_atlas_uvs(layout: dict) -> list[str]:
                     u, v = 1.0 - u, 1.0 - v
                 elif turn == 270:
                     u, v = 1.0 - v, u
-                if sliver:
+                if sliver and not preserve_uv:
                     u = 0.45 + 0.1 * u
                     v = 0.45 + 0.1 * v
                 uv[li].uv = (

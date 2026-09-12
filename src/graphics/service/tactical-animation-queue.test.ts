@@ -125,6 +125,47 @@ describe("TacticalAnimationQueue", () => {
     expect(queue.busy).toBe(false);
   });
 
+  it("a walk shows a unit that was waiting hidden for it (#1116)", () => {
+    const s = scene();
+    const unit = s.objects.get("unit-1")!;
+    unit.visible = false;
+    const queue = new TacticalAnimationQueue({
+      scene: s,
+      sprites,
+      timing: TIMING,
+    });
+    queue.enqueue([MOVE], () => undefined);
+    queue.update(0.05);
+    // Shown as the first step begins, not when the walk ends: the unit
+    // is meant to be seen walking in.
+    expect(unit.visible).toBe(true);
+    expect(unit.position.x).toBeLessThan(1.5);
+  });
+
+  it("a reveal shows a unit that was waiting hidden for it (#1116)", () => {
+    const s = scene();
+    const unit = s.objects.get("unit-2")!;
+    unit.visible = false;
+    const queue = new TacticalAnimationQueue({
+      scene: s,
+      sprites,
+      timing: TIMING,
+    });
+    queue.enqueue(
+      [
+        {
+          type: "tactical:unit-spotted",
+          payload: { unitId: "unit-2", team: "tdf" },
+        },
+      ],
+      () => undefined,
+    );
+    queue.update(0.05);
+    expect(unit.visible).toBe(true);
+    expect(unit.scale.x).toBeGreaterThan(0.01);
+    expect(unit.scale.x).toBeLessThan(1);
+  });
+
   it("replays a batch in order, each callback after its last event, passing through silent events", () => {
     const s = scene();
     const queue = new TacticalAnimationQueue({

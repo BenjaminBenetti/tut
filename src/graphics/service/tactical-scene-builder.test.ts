@@ -207,6 +207,62 @@ describe("TacticalSceneBuilder", () => {
     expect(builder.root.getObjectByName("units")?.children).toHaveLength(0);
   });
 
+  it("arrive places a unit where its walk begins, and the next update re-poses it (#1116)", async () => {
+    const { builder, models } = build();
+    await builder.update([unit("u1", "squad:squad-1", 1, 1)], TEMPLATES);
+    const bug = unit("b1", "bug:swarmer", 4, 2);
+    await builder.arrive(bug, TEMPLATES["bug:swarmer"]!, { x: 5, y: 0, z: 5 });
+    expect(models.loads).toContain("bug.swarmer");
+    expect(builder.unitIds()).toEqual(["u1", "b1"]);
+    // At the start of the walk, not at the tile the state holds.
+    expect(builder.unitWorldPosition("b1")).toEqual({
+      x: 5.5,
+      y: SLAB_HEIGHT,
+      z: 5.5,
+    });
+    // Once on the board it is an ordinary unit: no second load, and the
+    // redraw after the batch moves it to where the state says.
+    await builder.arrive(bug, TEMPLATES["bug:swarmer"]!, { x: 0, y: 0, z: 0 });
+    expect(models.loads.filter((id) => id === "bug.swarmer")).toHaveLength(1);
+    await builder.update([unit("u1", "squad:squad-1", 1, 1), bug], TEMPLATES);
+    expect(builder.unitWorldPosition("b1")).toEqual({
+      x: 4.5,
+      y: SLAB_HEIGHT,
+      z: 2.5,
+    });
+    expect(models.loads.filter((id) => id === "bug.swarmer")).toHaveLength(1);
+  });
+
+  it("an arrival waits hidden: no cutaway opens around it and no pick finds it, until it moves (#1116)", async () => {
+    const { builder } = build();
+    await builder.update([unit("u1", "squad:squad-1", 1, 1)], TEMPLATES);
+    const bug = unit("b1", "bug:swarmer", 4, 2);
+    await builder.arrive(bug, TEMPLATES["bug:swarmer"]!, { x: 5, y: 0, z: 5 });
+    const object = builder.unitObject("b1")!;
+    expect(object.visible).toBe(false);
+    // The wall cutaway centres on drawn units; an unseen bug in the dark
+    // must not open a window that says where it is.
+    expect(builder.ghostTargets().map((o) => o.name)).toEqual(["unit:u1"]);
+    expect(builder.pickUnit(ndcOf(5.5, 5.5), topDownCamera())).toBeUndefined();
+    // The walk shows it (the queue sets `visible`); from then on it is
+    // an ordinary unit.
+    object.visible = true;
+    expect(builder.ghostTargets().map((o) => o.name)).toEqual([
+      "unit:u1",
+      "unit:b1",
+    ]);
+    expect(builder.pickUnit(ndcOf(5.5, 5.5), topDownCamera())).toBe("b1");
+  });
+
+  it("the redraw after a batch shows an arrival the queue never walked", async () => {
+    const { builder } = build();
+    const bug = unit("b1", "bug:swarmer", 4, 2);
+    await builder.arrive(bug, TEMPLATES["bug:swarmer"]!, { x: 5, y: 0, z: 5 });
+    expect(builder.unitObject("b1")?.visible).toBe(false);
+    await builder.update([bug], TEMPLATES);
+    expect(builder.unitObject("b1")?.visible).toBe(true);
+  });
+
   it("discards a load for a unit removed while its model was loading", async () => {
     const { builder, models } = build();
     models.hold();

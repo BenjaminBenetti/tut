@@ -31,8 +31,9 @@ import type { TacticalState } from "../../tactical/model/tactical-state";
  * - `15`: `overworld.lastMissionResult.cityId`, so the debrief can name
  *   the city (#739); a result without one is dropped.
  * - `16`: active mission/map elevation uses half-height layers (ADR 0008, #807).
+ * - `18`: active mission radar scanners; older missions migrate with none.
  */
-export const GAME_STATE_SCHEMA_VERSION = 17;
+export const GAME_STATE_SCHEMA_VERSION = 18;
 
 /**
  * Bookkeeping that every save needs regardless of gameplay content.

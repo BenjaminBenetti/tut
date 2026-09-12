@@ -176,6 +176,7 @@ export function startTacticalMission<TState extends MissionCampaignState>(
     ],
     // No command has been applied yet. Deliberately not `log.length`,
     // which is 1 here and is exactly the coupling #667 removes.
+    radars: [],
     commandSeq: 0,
   };
   return ok({

@@ -125,6 +125,12 @@ invisible-but-present object is one `visible = true` away from a wallhack, and
 picking would still find it. **That rule is for units and objectives, and for
 nothing else.**
 
+One bounded exception (#1116, GDD §6.2.2): an enemy that moves during a batch
+and is in view by the end of it is placed at the start of its walk before the
+batch plays, so the walk animates instead of the unit appearing at its
+destination. The object exists only for that batch, for a unit the player is
+about to see anyway; a unit that stays unspotted is never placed.
+
 Terrain, walls, connectors and props are **always drawn**, in three states:
 visible at full colour, explored-but-not-visible dimmed, and unexplored
 **darkened further — never absent.** (Director ruling on #748, 2026-09-05,

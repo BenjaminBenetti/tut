@@ -8,7 +8,7 @@ tools/art/gen-image.sh docs/design/concepts/prompts/<name>.txt docs/design/conce
 
 Sheets are documentation, not runtime assets; they are stored at 1536 px wide.
 
-**New review:** [Swarmer redesign — Splitmask, Crescent and Ribknife](swarmer-redesign/README.md). Three alternative directions for a future bug-family redesign, with concept sheets, exact built-in image-generation prompts and notes on extending each theme. Direction selection is pending.
+**New review:** [Swarmer redesign — Splitmask, Crescent and Ribknife in brown](swarmer-redesign/README.md). Three alternative directions for a future bug-family redesign, now revised to brown chitin and tan plates, with exact image-edit prompts and notes on extending each theme. Earlier palette studies remain available for comparison; silhouette selection is pending.
 
 | Sheet | Subject | Style guide |
 |---|---|---|

@@ -29,6 +29,7 @@ export class UnitMotionRig implements UnitMotion {
   private readonly figures: Joint[] = [];
   private readonly height: number;
   private readonly infantry: boolean;
+  private readonly mech: boolean;
   private readonly bug: boolean;
   private readonly swarmer: boolean;
 
@@ -39,6 +40,7 @@ export class UnitMotionRig implements UnitMotion {
     private readonly tuning: UnitMotionTuning = UNIT_MOTION_TUNING,
   ) {
     this.infantry = modelId.startsWith("tdf.infantry.");
+    this.mech = modelId.startsWith("tdf.mech.");
     this.bug = modelId.startsWith("bug.");
     this.swarmer = modelId === "bug.swarmer";
     this.height = new Box3().setFromObject(model).getSize(new Vector3()).y;
@@ -54,11 +56,12 @@ export class UnitMotionRig implements UnitMotion {
     model.rotateY(Math.PI);
   }
 
-  /** Alternating planted strides; bugs use a splayed scuttle and tripod phases. */
+  /** Alternating strides; mechs take a full left/right cycle over two tiles. */
   walk(strides: number): void {
     this.reset();
     const tuning = this.tuning;
-    const cycle = strides * Math.PI * 2;
+    const cyclesPerTile = this.mech ? tuning.mechWalkCyclesPerTile : 1;
+    const cycle = strides * cyclesPerTile * Math.PI * 2;
     const lift = Math.abs(Math.sin(cycle));
     this.body.object.position.y += lift * this.height * tuning.bodyLift;
     this.body.object.rotation.z =

@@ -1,6 +1,6 @@
 /** Presentation poses, independent of the unit's tactical position and facing. */
 export interface UnitMotion {
-  /** Samples a stride in tile units; zero and whole strides are grounded. */
+  /** Samples the gait at the cumulative distance walked, in tile units. */
   walk(strides: number): void;
   /** Samples a firing recoil or melee swing from rest (0) back to rest (1). */
   attack(progress: number, melee: boolean): void;
@@ -8,8 +8,10 @@ export interface UnitMotion {
   reset(): void;
 }
 
-/** Pose amplitudes in radians and world units, shared by the unit animation rig. */
+/** Gait cadence and pose amplitudes shared by the unit animation rig. */
 export interface UnitMotionTuning {
+  /** Full left/right gait cycles per tile travelled by a mech. */
+  readonly mechWalkCyclesPerTile: number;
   readonly bodyLift: number;
   readonly bodyRoll: number;
   readonly bugRoll: number;

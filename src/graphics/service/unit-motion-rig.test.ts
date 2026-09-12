@@ -142,3 +142,20 @@ it.each([
     }
   },
 );
+
+it.each(["tdf.mech.assembled-a", "tdf.mech.assembled-b"] as const)(
+  "%s alternates its feet over two tiles at the slower cadence",
+  async (id) => {
+    const mesh = new UnitMesh("actor", await loadModel(id), id);
+    const leg = mesh.object.getObjectByName("motion-leg-l")!;
+    mesh.motion!.walk(0.5);
+    const firstStep = leg.rotation.x;
+    expect(firstStep).toBeGreaterThan(0.2);
+    mesh.motion!.walk(1);
+    expect(leg.rotation.x).toBeCloseTo(0);
+    mesh.motion!.walk(1.5);
+    expect(leg.rotation.x).toBeCloseTo(-firstStep);
+    mesh.motion!.walk(2);
+    expect(leg.rotation.x).toBeCloseTo(0);
+  },
+);

@@ -242,6 +242,8 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
   private readonly pending: { event: TacticalEvent; onDone?: () => void }[] =
     [];
   private current: Animation | undefined;
+  /** Keeps alternating feet across the simulation's one-tile move events. */
+  private readonly walkedTiles = new Map<UnitId, number>();
   private readonly textures = new Map<SpriteId, Texture | undefined>();
   private readonly live = new Set<Sprite>();
   /** Sprites playing a frame sheet, with their own cloned texture (#697). */
@@ -302,6 +304,8 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
     if (this.current) {
       this.current.finish();
       this.current = undefined;
+      const finished = this.pending.shift();
+      finished?.onDone?.();
     }
     while (this.pending.length > 0) {
       const next = this.pending.shift();
@@ -439,6 +443,7 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
     this.pending.length = 0;
     this.current?.finish();
     this.current = undefined;
+    this.walkedTiles.clear();
     for (const sprite of [...this.live]) {
       this.removeSprite(sprite);
     }
@@ -499,6 +504,7 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
       points.push(end);
     }
     const motion = this.scene.unitMotion?.(unitId);
+    const walkedBefore = this.walkedTiles.get(unitId) ?? 0;
     const stepSeconds = this.timing.stepSeconds;
     let elapsed = 0;
     const total = stepSeconds * points.length;
@@ -511,6 +517,7 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
       const previous = points.length > 1 ? points[points.length - 2]! : from;
       faceTowards(object, previous, end);
       object.position.set(end.x, end.y, end.z);
+      this.walkedTiles.set(unitId, walkedBefore + points.length);
       motion?.reset();
     };
     return {
@@ -524,7 +531,7 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
         const start = index === 0 ? from : points[index - 1]!;
         const target = points[index]!;
         faceTowards(object, start, target);
-        motion?.walk(progress);
+        motion?.walk(walkedBefore + progress);
         object.position.set(
           start.x + (target.x - start.x) * local,
           start.y + (target.y - start.y) * local,

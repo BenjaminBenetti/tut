@@ -525,6 +525,30 @@ describe("unit action poses", () => {
     expect(queue.busy).toBe(false);
   });
 
+  it.each([false, true])(
+    "carries the gait between tile events (skip first: %s)",
+    (skipFirst) => {
+      const { motion, queue } = animatedScene();
+      const step = (fromX: number): TacticalEvent => ({
+        type: "tactical:unit-moved",
+        payload: {
+          unitId: "unit-1",
+          from: { x: fromX, y: 0, z: 0 },
+          to: { x: fromX + 1, y: 0, z: 0 },
+          path: [{ x: fromX + 1, y: 0, z: 0 }],
+        },
+      });
+      queue.enqueue([step(0)]);
+      queue.update(0.05);
+      expect(motion.walk).toHaveBeenLastCalledWith(0.5);
+      if (skipFirst) queue.skip();
+      else queue.update(0.05);
+      queue.enqueue([step(1)]);
+      queue.update(0.05);
+      expect(motion.walk).toHaveBeenLastCalledWith(1.5);
+    },
+  );
+
   it.each([RIFLE_RANGE, CLAW_RANGE])(
     "aims and samples the weapon's attack pose at range %s",
     (range) => {

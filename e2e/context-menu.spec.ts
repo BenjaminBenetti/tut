@@ -17,9 +17,10 @@ const MAX_DAYS = 40;
  *
  * The unit tests cover each dismissal path; this one exists because the
  * fault was in the wiring between two pieces that each had passing tests
- * of their own, and only a real mission puts them together.
+ * of their own, and only a real mission puts them together. Since #1112
+ * the ring is the action wheel and a left click on a tile opens it.
  */
-test("the context menu opens on a right click and every way out closes it", async ({
+test("the action wheel opens on a left click and every way out closes it", async ({
   page,
 }) => {
   await page.goto("/");
@@ -96,27 +97,26 @@ test("the context menu opens on a right click and every way out closes it", asyn
     (unitId) => (globalThis as HookGlobal).__tutTactical__?.selectUnit(unitId),
     step.unitId,
   );
-  // Arm Attack, so a right click on a tile is the gap the menu fills.
-  // Since #532 a mech carries one Attack button per weapon, so this has
-  // to name which: `first()` arms the same weapon the digit key does.
-  await page.locator('#action-bar [data-action="attack"]').first().click();
-
   // Escape closes it.
   await page.evaluate(
-    (tile) => (globalThis as HookGlobal).__tutTactical__?.invokeTile(tile),
+    (tile) => (globalThis as HookGlobal).__tutTactical__?.selectTile(tile),
     step.to,
   );
   await expect(menu).toHaveAttribute("data-open", "true");
   await page.keyboard.press("Escape");
   await expect(menu).toBeHidden();
 
-  // Choosing the item closes it and moves the unit — once.
-  await page.locator('#action-bar [data-action="attack"]').first().click();
+  // Choosing Move — the first entry on a tile's wheel — closes it and
+  // moves the unit, once.
   await page.evaluate(
-    (tile) => (globalThis as HookGlobal).__tutTactical__?.invokeTile(tile),
+    (tile) => (globalThis as HookGlobal).__tutTactical__?.selectTile(tile),
     step.to,
   );
   await expect(menu).toHaveAttribute("data-open", "true");
+  await expect(menu.locator("button[data-item]").first()).toHaveAttribute(
+    "data-item",
+    `move:${String(step.to.x)},${String(step.to.y)},${String(step.to.z)}`,
+  );
   await menu.locator("button[data-item]").first().click();
   await expect(menu).toBeHidden();
 

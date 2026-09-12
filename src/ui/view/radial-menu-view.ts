@@ -70,6 +70,11 @@ const MAX_ITEMS = 6;
 /** Where the first item sits, measured clockwise from twelve o'clock. */
 const START_ANGLE = -Math.PI / 2;
 
+/** Stroke of the track, in pixels; also the room the SVG box leaves for it. */
+const TRACK_STROKE = 2;
+
+const SVG_NS = "http://www.w3.org/2000/svg";
+
 // ===========================================
 // RadialMenuView
 // ===========================================
@@ -104,6 +109,8 @@ export class RadialMenuView {
   private root: HTMLElement | undefined;
   private ring: HTMLElement | undefined;
   private hub: HTMLElement | undefined;
+  /** The drawn ellipse the entries sit on; the eye's line between them. */
+  private track: SVGEllipseElement | undefined;
   private dispose: (() => void) | undefined;
 
   // ===========================================
@@ -132,7 +139,17 @@ export class RadialMenuView {
     const ring = doc.createElement("div");
     ring.className = "tut-radial__ring";
     ring.dataset.role = "radial-ring";
-    root.append(ring, hub);
+    // The track: an ellipse through the entries, so the ring reads as
+    // one thing around the target rather than as loose buttons. SVG, so
+    // it is a stroke that scales with the radius and costs no layout.
+    const svg = doc.createElementNS(SVG_NS, "svg");
+    svg.setAttribute("class", "tut-radial__track");
+    svg.setAttribute("aria-hidden", "true");
+    const track = doc.createElementNS(SVG_NS, "ellipse");
+    track.setAttribute("cx", "0");
+    track.setAttribute("cy", "0");
+    svg.appendChild(track);
+    root.append(svg, ring, hub);
     parent.appendChild(root);
 
     const onClick = (event: Event): void => {
@@ -163,15 +180,19 @@ export class RadialMenuView {
     };
     root.addEventListener("click", onClick);
     doc.addEventListener("keydown", onKey);
-    doc.addEventListener("pointerdown", onOutside);
+    // Capture phase, because the HUD's panels stop pointer events from
+    // bubbling to the map picker (#1112); a press on a panel is still a
+    // press outside the ring and must still dismiss it.
+    doc.addEventListener("pointerdown", onOutside, { capture: true });
 
     this.root = root;
     this.ring = ring;
     this.hub = hub;
+    this.track = track;
     this.dispose = () => {
       root.removeEventListener("click", onClick);
       doc.removeEventListener("keydown", onKey);
-      doc.removeEventListener("pointerdown", onOutside);
+      doc.removeEventListener("pointerdown", onOutside, { capture: true });
     };
   }
 
@@ -183,6 +204,7 @@ export class RadialMenuView {
     this.root = undefined;
     this.ring = undefined;
     this.hub = undefined;
+    this.track = undefined;
   }
 
   // ===========================================
@@ -213,6 +235,7 @@ export class RadialMenuView {
     const doc = root.ownerDocument;
     ring.textContent = "";
     const radius = RADIUS_BY_COUNT[shown.length] ?? RADIUS_BY_COUNT[MAX_ITEMS]!;
+    this.drawTrack(radius);
     shown.forEach((item, index) => {
       const angle = START_ANGLE + (index * 2 * Math.PI) / shown.length;
       const button = doc.createElement("button");
@@ -256,10 +279,23 @@ export class RadialMenuView {
       hubEl.append(value, caption);
     }
 
-    root.style.left = `${String(anchor.x)}px`;
-    root.style.top = `${String(anchor.y)}px`;
+    this.moveTo(anchor);
     root.hidden = false;
     root.dataset.open = "true";
+  }
+
+  /**
+   * Moves an open menu to `anchor` without redrawing its entries: what
+   * a camera pan calls once a frame, so the ring stays on the tile it
+   * belongs to rather than on the pixel it opened at (ADR 0007 §2.1).
+   *
+   * @param anchor - Screen position of the world point this belongs to.
+   */
+  moveTo(anchor: ScreenAnchor): void {
+    if (this.root) {
+      this.root.style.left = `${String(anchor.x)}px`;
+      this.root.style.top = `${String(anchor.y)}px`;
+    }
   }
 
   /** Hides the menu without destroying it. */
@@ -273,5 +309,29 @@ export class RadialMenuView {
   /** True while a menu is on screen. */
   get isOpen(): boolean {
     return this.root !== undefined && !this.root.hidden;
+  }
+
+  // ===========================================
+  // Private Methods
+  // ===========================================
+
+  /** Sizes the track to the ring the entries were placed on. */
+  private drawTrack(radius: number): void {
+    const track = this.track;
+    const svg = track?.parentElement;
+    if (!track || !svg) {
+      return;
+    }
+    const rx = radius * RADIUS_X_SCALE;
+    const ry = radius;
+    track.setAttribute("rx", String(rx));
+    track.setAttribute("ry", String(ry));
+    const margin = TRACK_STROKE;
+    svg.setAttribute(
+      "viewBox",
+      `${String(-rx - margin)} ${String(-ry - margin)} ${String(2 * (rx + margin))} ${String(2 * (ry + margin))}`,
+    );
+    svg.setAttribute("width", String(2 * (rx + margin)));
+    svg.setAttribute("height", String(2 * (ry + margin)));
   }
 }

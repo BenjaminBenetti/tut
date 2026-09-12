@@ -82,7 +82,7 @@ test("captures the HUD naming the egg spawner it is aimed at", async ({
         .z;
     });
     expect(at, `the mech must reach z=${String(target)}`).toBe(target);
-    await page.keyboard.press("7");
+    await page.keyboard.press("Enter");
     await page.waitForTimeout(2500);
   }
 
@@ -90,7 +90,7 @@ test("captures the HUD naming the egg spawner it is aimed at", async ({
     (globalThis as HookGlobal).__tutTactical__?.selectUnit("unit-1"),
   );
   await page.waitForTimeout(200);
-  await page.keyboard.press("2");
+  await page.keyboard.press("f");
   await page.waitForTimeout(200);
   await page.evaluate(() =>
     (globalThis as HookGlobal).__tutTactical__?.selectSpawner("spawner-1"),

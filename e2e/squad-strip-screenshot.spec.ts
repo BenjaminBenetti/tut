@@ -3,6 +3,7 @@ import { expect, test } from "@playwright/test";
 import { drawnFrame } from "./capture-frame.helper";
 import { launchMission, settleForShot } from "./mission-capture.helper";
 import type { TacticalTestHooks } from "../src/ui/model/tactical-intent";
+import { openUnitWheel, wheelItem } from "./action-wheel.helper";
 
 interface HookGlobal {
   __tutTactical__?: TacticalTestHooks;
@@ -45,10 +46,8 @@ test("captures squad readiness, recovery, and the untouched scene", async ({
   await page.screenshot({ path: "docs/design/ui-squad-strip-scene.png" });
 
   // Spend a unit, and the strip and End turn both say so.
-  await page
-    .locator('#action-bar [data-action="overwatch"]')
-    .first()
-    .click({ force: true });
+  await openUnitWheel(page, "unit-1");
+  await wheelItem(page, "overwatch").click({ force: true });
   await drawnFrame(page);
   await rail.screenshot({ path: "docs/design/ui-squad-strip-spent.png" });
   await expect(

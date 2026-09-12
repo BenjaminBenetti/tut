@@ -14,11 +14,10 @@ import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { SpawnerId } from "../../tactical/model/tactical-state";
 import type { UnitId } from "../../tactical/model/unit";
 import type {
-  TacticalAction,
   TacticalInputHooks,
   TacticalIntentSink,
 } from "../model/tactical-intent";
-import { ACTION_BAR_ORDER } from "../model/tactical-intent";
+import { TACTICAL_SHORTCUTS } from "../model/tactical-intent";
 
 // ===========================================
 // Types
@@ -27,8 +26,13 @@ import { ACTION_BAR_ORDER } from "../model/tactical-intent";
 /** The DOM surface the controller listens on: the element the map canvas lives in. */
 export type TacticalInputSurface = CameraInputSurface & PickingSurface;
 
-/** What the scene must offer: unit and tile hit-testing with highlights. */
-export type TacticalPicker = UnitPicker & TilePicker & SpawnerPicker;
+/** What the scene must offer: unit and tile hit-testing with highlights, and how tall a unit is drawn. */
+export type TacticalPicker = UnitPicker &
+  TilePicker &
+  SpawnerPicker & {
+    /** Height of a unit's drawn model in world units, or undefined when it is not drawn. */
+    unitHeight(unitId: UnitId): number | undefined;
+  };
 
 /** The camera type the generic picker hands through; named here so `ui/` never imports three. */
 type PickCamera = Parameters<Picker<TacticalTarget>["pick"]>[1];
@@ -61,53 +65,7 @@ export interface TacticalInputDeps {
 // Constants
 // ===========================================
 
-/**
- * `1` … `7` in the order the action bar shows its buttons (#520), so the
- * digit under a button is the digit that arms it. Derived from
- * `ACTION_BAR_ORDER` rather than typed out, so a button added to the bar
- * takes the next digit without a second edit here.
- */
-function numberRowBindings(): Record<string, TacticalAction | "end-turn"> {
-  const bound: Record<string, TacticalAction | "end-turn"> = {};
-  ACTION_BAR_ORDER.forEach((action, index) => {
-    bound[String(index + 1)] = action;
-  });
-  return bound;
-}
-
-/**
- * Keyboard shortcuts (GDD §6.2 actions plus End Turn), keyed by
- * `KeyboardEvent.key` lower-cased. Q / E / WASD / arrows belong to the
- * camera controller (`CAMERA_KEYS`) and must not appear here: both
- * handlers hear every key, so a key in both tables pans the view *and*
- * arms an action. `a` was one until #1091 -- every leftward pan armed
- * Attack, and on a spent unit said so on every keypress. A test checks
- * the tables are disjoint. `t` cycles attack targets,
- * which is the only way to aim at an egg spawner until the scene draws
- * one the pointer can hit (#426).
- *
- * The number row comes first so the letters below can still override a
- * digit if one is ever bound twice; nothing does today. Every letter
- * from #340 keeps its meaning — the digits are additional, not a
- * replacement.
- */
-export const TACTICAL_SHORTCUTS: Readonly<
-  Record<string, TacticalAction | "end-turn">
-> = {
-  ...numberRowBindings(),
-  m: "move",
-  f: "attack",
-  o: "overwatch",
-  r: "reload",
-  i: "interact",
-  x: "extract",
-  tab: "next-unit",
-  t: "next-target",
-  v: "toggle-range",
-  escape: "cancel",
-  enter: "end-turn",
-  end: "end-turn",
-};
+export { TACTICAL_SHORTCUTS };
 
 /**
  * View keys: which storey of the map is drawn (#961). Separate from
@@ -123,6 +81,9 @@ export const TACTICAL_SHORTCUTS: Readonly<
  * The value is the number of storeys to move, so a future "jump to the
  * top" needs a binding rather than a new mechanism.
  */
+/** Held to show every visible unit's status above its head. */
+export const INSPECT_KEY = "shift";
+
 export const TACTICAL_VIEW_SHORTCUTS: Readonly<Record<string, number>> = {
   "]": 1,
   "[": -1,
@@ -253,7 +214,8 @@ export class TacticalTargetPicker implements Picker<TacticalTarget> {
  * ```
  *   left  ──▶ PickingController<TacticalTarget> ──▶ onSelected
  *                ──▶ emit select-unit | select-spawner | select-tile
- *   right ──▶ onInvoked ──▶ emit invoke, browser menu suppressed
+ *                    (the HUD selects a friendly unit, else opens the wheel)
+ *   right ──▶ onInvoked ──▶ emit invoke (the HUD walks there), browser menu suppressed
  *   keydown ──▶ TACTICAL_SHORTCUTS ──▶ emit action | end-turn
  *   update  ──▶ cameraInput.update
  * ```
@@ -301,6 +263,13 @@ export class TacticalInputController implements FrameUpdatable {
     // opens the browser's menu (#520).
     surface.addEventListener("contextmenu", this.handleContextMenu);
     surface.ownerDocument.addEventListener("keydown", this.handleKeyDown);
+    surface.ownerDocument.addEventListener("keyup", this.handleKeyUp);
+    // Shift released while the window is away never sends a keyup, so
+    // losing the window releases it.
+    surface.ownerDocument.addEventListener(
+      "visibilitychange",
+      this.handleVisibilityChange,
+    );
     this.deps.cameraInput.attach(surface);
   }
 
@@ -313,6 +282,11 @@ export class TacticalInputController implements FrameUpdatable {
     this.picking.detach();
     surface.removeEventListener("contextmenu", this.handleContextMenu);
     surface.ownerDocument.removeEventListener("keydown", this.handleKeyDown);
+    surface.ownerDocument.removeEventListener("keyup", this.handleKeyUp);
+    surface.ownerDocument.removeEventListener(
+      "visibilitychange",
+      this.handleVisibilityChange,
+    );
     this.deps.cameraInput.detach();
     this.surface = undefined;
   }
@@ -341,12 +315,12 @@ export class TacticalInputController implements FrameUpdatable {
     this.picking.select({ kind: "spawner", spawnerId });
   }
 
-  /** Reports a tile as if clicked. Selection highlight stays on the unit. */
+  /** Points at a tile as if left-clicked; the HUD opens the wheel there (#1112). */
   selectTile(tile: TileCoord): void {
     this.picking.select({ kind: "tile", tile });
   }
 
-  /** Invokes the armed action on a tile as if right-clicked (#520). */
+  /** Walks the selected unit to a tile as if right-clicked (#520, #1112). */
   invokeTile(tile: TileCoord): void {
     this.deps.intents.emit({ kind: "invoke", target: { kind: "tile", tile } });
   }
@@ -363,6 +337,24 @@ export class TacticalInputController implements FrameUpdatable {
   /** Where a unit's feet appear in client pixels, or undefined when detached or unknown. */
   unitScreenPosition(unitId: UnitId): Vec2 | undefined {
     return this.picking.screenPositionOf({ kind: "unit", unitId });
+  }
+
+  /**
+   * Where the top of a unit's model appears in client pixels, or
+   * undefined when detached or unknown: where a status chip sits so it
+   * does not cover the unit it describes.
+   */
+  unitHeadScreenPosition(unitId: UnitId): Vec2 | undefined {
+    const feet = this.deps.picker.unitWorldPosition(unitId);
+    const height = this.deps.picker.unitHeight(unitId);
+    if (feet === undefined || height === undefined) {
+      return undefined;
+    }
+    return this.picking.projectPoint({
+      x: feet.x,
+      y: feet.y + height,
+      z: feet.z,
+    });
   }
 
   /** Where a spawner's base appears in client pixels, or undefined when detached or unknown. */
@@ -397,6 +389,9 @@ export class TacticalInputController implements FrameUpdatable {
       stepLayer: (delta) => {
         this.deps.intents.emit({ kind: "layer-step", delta });
       },
+      setInspecting: (held) => {
+        this.deps.intents.emit({ kind: "inspect", held });
+      },
     };
   }
 
@@ -422,7 +417,19 @@ export class TacticalInputController implements FrameUpdatable {
     }
   }
 
-  /** Swallows the browser menu inside the viewport, where right click invokes instead. */
+  /** Releases the status chips when Shift comes up. */
+  private readonly handleKeyUp = (event: KeyboardEvent): void => {
+    if (isInspectKey(event)) {
+      this.deps.intents.emit({ kind: "inspect", held: false });
+    }
+  };
+
+  /** Releases the status chips when the page is hidden mid-hold. */
+  private readonly handleVisibilityChange = (): void => {
+    this.deps.intents.emit({ kind: "inspect", held: false });
+  };
+
+  /** Swallows the browser menu inside the viewport, where right click moves instead. */
   private readonly handleContextMenu = (event: Event): void => {
     event.preventDefault();
   };
@@ -433,6 +440,10 @@ export class TacticalInputController implements FrameUpdatable {
       return;
     }
     const key = event.key.toLowerCase();
+    if (key === INSPECT_KEY) {
+      this.deps.intents.emit({ kind: "inspect", held: true });
+      return;
+    }
     const step = TACTICAL_VIEW_SHORTCUTS[key];
     if (step !== undefined) {
       event.preventDefault();
@@ -450,6 +461,11 @@ export class TacticalInputController implements FrameUpdatable {
         : { kind: "action", action: bound },
     );
   };
+}
+
+/** Releases the inspect hold when Shift comes up. */
+function isInspectKey(event: KeyboardEvent): boolean {
+  return event.key.toLowerCase() === INSPECT_KEY;
 }
 
 /** True when the key event came from a text control, so shortcuts never eat typing. */

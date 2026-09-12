@@ -150,31 +150,45 @@ describe("CameraInputController", () => {
     controller.update(0.5);
     expect(controls.calls).toEqual([]);
 
-    const tap = CAMERA_INPUT_TUNING.tapPanPx;
     doc.dispatch("keydown", { key: "d", repeat: false });
     controller.update(0.5);
     const step = CAMERA_INPUT_TUNING.panSpeedPxPerSecond * 0.5;
-    // The press itself moves once, then holding it keeps panning.
-    expect(controls.calls).toEqual([
-      `panBy:${tap.toFixed(1)},0.0`,
-      `panBy:${step.toFixed(1)},0.0`,
-    ]);
+    // Holding pans smoothly from the first frame: no nudge on the press,
+    // which was the jump on every change of direction.
+    expect(controls.calls).toEqual([`panBy:${step.toFixed(1)},0.0`]);
 
+    // A hold that already went further than a tap owes nothing on release.
     doc.dispatch("keyup", { key: "d" });
+    expect(controls.calls).toHaveLength(1);
     doc.dispatch("keydown", { key: "ArrowUp", repeat: false });
     controller.update(0.5);
     expect(controls.calls.at(-1)).toBe(`panBy:0.0,${(-step).toFixed(1)}`);
 
     doc.dispatch("keyup", { key: "ArrowUp" });
     controller.update(0.5);
-    // Two taps and two held steps, and nothing after the key came up.
-    expect(controls.calls).toHaveLength(4);
+    // Two held steps, and nothing after the key came up.
+    expect(controls.calls).toHaveLength(2);
+  });
+
+  it("tops a short hold up to a tap on release, so a brief press still moves a tap's worth", () => {
+    const { controls, controller, doc } = setup();
+    const tap = CAMERA_INPUT_TUNING.tapPanPx;
+    doc.dispatch("keydown", { key: "d", repeat: false });
+    // One short frame: 600 px/s × 0.05 s = 30 px, well under the tap.
+    controller.update(0.05);
+    doc.dispatch("keyup", { key: "d" });
+    const held = CAMERA_INPUT_TUNING.panSpeedPxPerSecond * 0.05;
+    expect(controls.calls).toEqual([
+      `panBy:${held.toFixed(1)},0.0`,
+      `panBy:${(tap - held).toFixed(1)},0.0`,
+    ]);
   });
 
   it("moves on a single press, so a tapped key is not swallowed (#538)", () => {
     const { controls, controller, doc } = setup();
     const tap = CAMERA_INPUT_TUNING.tapPanPx;
-    // Press and release inside one frame: `update` never sees the key.
+    // Press and release inside one frame: `update` never sees the key,
+    // and the release pays the whole tap.
     doc.dispatch("keydown", { key: "ArrowLeft", repeat: false });
     doc.dispatch("keyup", { key: "ArrowLeft" });
     controller.update(0.5);
@@ -187,6 +201,9 @@ describe("CameraInputController", () => {
     doc.dispatch("keydown", { key: "s", repeat: true });
     doc.dispatch("keydown", { key: "s", repeat: true });
     controller.update(0);
+    // Nothing moves until a frame passes or the key is released.
+    expect(controls.calls).toHaveLength(0);
+    doc.dispatch("keyup", { key: "s" });
     expect(controls.calls).toHaveLength(1);
   });
 
@@ -196,7 +213,7 @@ describe("CameraInputController", () => {
     doc.dispatch("keydown", { key: "d", repeat: false });
     controller.update(1);
     const step = CAMERA_INPUT_TUNING.panSpeedPxPerSecond / Math.SQRT2;
-    // Each press nudged once; the held pan is the normalised one after.
+    // The held pan is the normalised one.
     expect(controls.calls.at(-1)).toBe(
       `panBy:${step.toFixed(1)},${(-step).toFixed(1)}`,
     );
@@ -208,7 +225,7 @@ describe("CameraInputController", () => {
     doc.dispatch("keydown", { key: "d", repeat: false });
     const afterTaps = controls.calls.length;
     controller.update(1);
-    // Both presses nudged, and the held pair adds nothing on top.
+    // The held pair adds nothing.
     expect(controls.calls).toHaveLength(afterTaps);
   });
 

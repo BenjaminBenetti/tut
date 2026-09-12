@@ -128,6 +128,13 @@ export const DEFAULT_ANIMATION_TIMING: AnimationTiming = {
   revealSeconds: 0.35,
 };
 
+/** Text size on a chip drawn to fit its words, in canvas pixels of a 128 px chip. */
+const CHIP_FIT_FONT_PX = 64;
+/** Canvas pixels the tone bar and the chip's frame take from the text's room. */
+const CHIP_TEXT_INSET = 18 + 8;
+/** Canvas pixels of air either side of the words. */
+const CHIP_TEXT_MARGIN = 24;
+
 /**
  * Billboard sizes in world units (1 u = 1 tile = 64 px at the default zoom).
  * Measured by compositing each sprite over a real mission frame, not chosen
@@ -163,12 +170,21 @@ const MUZZLE_OFFSET = 0.35;
 /** How far the damage number climbs before it fades out. */
 const FLOATER_RISE = 1;
 
-/** Width, shape and colour of a notice: wider than a damage number, because it carries words. */
-const NOTICE_WIDTH = 9;
-
-/** Canvas width for a notice's words: a sentence needs more room than a damage number. */
-const NOTICE_CHIP_WIDTH = 768;
-const NOTICE_ASPECT = 0.16;
+/**
+ * Height of a notice in world units: the same band as the damage
+ * number (`FLOATER_WIDTH * 0.42`), so the two read as one family of
+ * chips above the unit. The width follows the words — the chip is
+ * drawn to fit its text and the sprite takes the chip's aspect — so a
+ * short refusal is a short chip.
+ *
+ * It was nine tiles wide at a fixed aspect: a refusal spanned half the
+ * screen at the default zoom and grew with it, which is what the
+ * Executive Director saw as chips "wayyy too big" that scaled with the
+ * view. World units are right — the chip belongs to the scene and
+ * should zoom with the unit it sits over — but the size has to be a
+ * unit's size, not a map's.
+ */
+const NOTICE_HEIGHT = 0.5;
 /**
  * `--ui-warn`, and chosen rather than landed on (#1030).
  *
@@ -236,8 +252,12 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
   private readonly timing: AnimationTiming;
   private instant: boolean;
   private notices: Animation[] = [];
-  private readonly pending: { event: TacticalEvent; onDone?: () => void }[] =
-    [];
+  private readonly pending: {
+    event: TacticalEvent;
+    onDone?: () => void;
+    /** Told when this event begins to play. */
+    onStart?: (event: TacticalEvent) => void;
+  }[] = [];
   private current: Animation | undefined;
   private readonly textures = new Map<SpriteId, Texture | undefined>();
   private readonly live = new Set<Sprite>();
@@ -273,7 +293,11 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
    * played. Events with nothing to show (turn started, objectives) pass
    * straight through, so the callback still fires in sequence.
    */
-  enqueue(events: readonly TacticalEvent[], onDone?: () => void): void {
+  enqueue(
+    events: readonly TacticalEvent[],
+    onDone?: () => void,
+    onStart?: (event: TacticalEvent) => void,
+  ): void {
     if (events.length === 0) {
       onDone?.();
       return;
@@ -282,6 +306,7 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
       this.pending.push({
         event,
         onDone: index === events.length - 1 ? onDone : undefined,
+        onStart,
       });
     });
     if (this.instant) {
@@ -305,6 +330,7 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
       if (!next) {
         break;
       }
+      next.onStart?.(next.event);
       const animation = this.start(next.event);
       animation?.finish();
       next.onDone?.();
@@ -345,11 +371,10 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
     if (!anchor) {
       return;
     }
-    const sprite = this.billboard(undefined, anchor, NOTICE_WIDTH, 0xffffff, {
+    const sprite = this.billboard(undefined, anchor, NOTICE_HEIGHT, 0xffffff, {
       label: text,
       tone,
-      aspect: NOTICE_ASPECT,
-      chipWidth: NOTICE_CHIP_WIDTH,
+      fitLabel: true,
     });
     if (!sprite) {
       return;
@@ -408,6 +433,10 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
         if (!next) {
           return;
         }
+        // Told as it begins, not as it ends: what the HUD writes about an
+        // event should appear as the event happens on the map, so a bug
+        // phase reads one action at a time rather than all at once.
+        next.onStart?.(next.event);
         const animation = this.start(next.event);
         if (!animation) {
           this.pending.shift();
@@ -881,6 +910,11 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
       readonly width?: number;
       readonly aspect?: number;
       readonly rotation?: number;
+      /**
+       * Draw the chip to fit its words and size the sprite from the
+       * chip: `size` is then the height, and the width follows the text.
+       */
+      readonly fitLabel?: boolean;
     } = {},
   ): Sprite {
     // An effect with a frame sheet plays it; the single-frame image is
@@ -895,7 +929,12 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
       ? sheetTexture.clone()
       : id
         ? this.textures.get(id)
-        : chipTexture(options.label, options.tone ?? colour, options.chipWidth);
+        : chipTexture(
+            options.label,
+            options.tone ?? colour,
+            options.chipWidth,
+            options.fitLabel ?? false,
+          );
     const blend =
       id && SPRITE_MANIFEST[id].blend === "additive"
         ? AdditiveBlending
@@ -912,7 +951,12 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
       material.rotation = options.rotation;
     }
     const sprite = new Sprite(material);
-    sprite.scale.set(options.width ?? size, size * (options.aspect ?? 1), 1);
+    if (options.fitLabel && texture) {
+      const image = texture.image as { width: number; height: number };
+      sprite.scale.set((size * image.width) / image.height, size, 1);
+    } else {
+      sprite.scale.set(options.width ?? size, size * (options.aspect ?? 1), 1);
+    }
     sprite.position.set(at.x, at.y, at.z);
     sprite.name = id ?? `vfx.floater:${options.label ?? ""}`;
     // Effects belong on top of the unit they describe, never behind it.
@@ -1051,17 +1095,30 @@ function chipTexture(
   label: string | undefined,
   tone: number,
   width = 256,
+  fit = false,
 ): Texture | undefined {
   if (label === undefined || typeof document === "undefined") {
     return undefined;
   }
   const canvas = document.createElement("canvas");
-  canvas.width = width;
   canvas.height = 128;
   const ctx = canvas.getContext("2d");
   if (!ctx) {
     return undefined;
   }
+  if (fit) {
+    // Wide enough for the words at the chip's text size, never narrower
+    // than a damage number's chip, so a one-word notice is still a chip.
+    ctx.font = `bold ${String(CHIP_FIT_FONT_PX)}px ui-monospace, monospace`;
+    const words = ctx.measureText(label).width;
+    canvas.width = Math.max(
+      width,
+      Math.ceil(words) + CHIP_TEXT_INSET + CHIP_TEXT_MARGIN * 2,
+    );
+  } else {
+    canvas.width = width;
+  }
+  width = canvas.width;
   const hex = `#${tone.toString(16).padStart(6, "0")}`;
   const box = width - 8;
   ctx.fillStyle = "rgba(20, 24, 33, 0.92)";
@@ -1076,7 +1133,7 @@ function chipTexture(
   // fixed size the sentence ran off both ends of the chip, which the
   // first captured frame showed plainly.
   const room = box - 18 - 16;
-  let size = 76;
+  let size = fit ? CHIP_FIT_FONT_PX + 2 : 76;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   do {

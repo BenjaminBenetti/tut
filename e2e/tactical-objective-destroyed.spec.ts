@@ -167,7 +167,7 @@ test("a mech can destroy an egg spawner, so a mission can be won", async ({
       (id) => (globalThis as HookGlobal).__tutTactical__?.selectUnit(id),
       mechId,
     );
-    await page.keyboard.press("2");
+    await page.keyboard.press("f");
     await page.evaluate(
       (id) => (globalThis as HookGlobal).__tutTactical__?.selectSpawner(id),
       spawnerId,
@@ -256,7 +256,6 @@ test("a mech can destroy an egg spawner, so a mission can be won", async ({
         (id) => (globalThis as HookGlobal).__tutTactical__?.selectUnit(id),
         mechId,
       );
-      await page.keyboard.press("1");
       for (const goal of goals) {
         await page.evaluate(
           (tile) =>

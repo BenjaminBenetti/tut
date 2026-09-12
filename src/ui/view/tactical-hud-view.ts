@@ -24,6 +24,7 @@ import {
 } from "../../tactical/service/attack-target-service";
 import {
   attacksRemaining,
+  chargesLeft,
   previewAttack,
   weaponOptions,
 } from "../../tactical/service/combat-service";
@@ -34,24 +35,27 @@ import {
   pathTo,
 } from "../../tactical/service/movement-service";
 import type { ReachableObjective } from "../../tactical/service/objective-service";
-import { reachableObjectives } from "../../tactical/service/objective-service";
 import type {
-  ActionBarAction,
   TacticalAction,
   TacticalIntent,
   TacticalInvokeTarget,
 } from "../model/tactical-intent";
-import { ActionBarView } from "./action-bar-view";
 import type { GameState } from "../../save/model/game-state";
 import { describeRefusal, namesFor } from "../service/tactical-error-text";
+import type { UnitAction } from "../service/action-availability";
+import { actionRefusal, interactTarget } from "../service/action-availability";
+import type { WheelContext, WheelPage } from "../service/action-wheel";
+import {
+  actionWheel,
+  parseWheelChoice,
+  weaponWheel,
+} from "../service/action-wheel";
+import type { ActionBarAction } from "./action-bar-view";
+import { ActionBarView } from "./action-bar-view";
 import { EventLogView } from "./event-log-view";
 import { HitPreviewView } from "./hit-preview-view";
 import { ObjectiveTrackerView } from "./objective-tracker-view";
-import type {
-  RadialMenuHub,
-  RadialMenuItem,
-  ScreenAnchor,
-} from "./radial-menu-view";
+import type { ScreenAnchor } from "./radial-menu-view";
 import { RadialMenuView } from "./radial-menu-view";
 import type {
   PhaseAnnouncement,
@@ -61,9 +65,9 @@ import { PhaseBannerView } from "./phase-banner-view";
 import { TURN_STARTED } from "../../tactical/model/turn-started-event";
 import { TurnBannerView } from "./turn-banner-view";
 import { UnitCardView } from "./unit-card-view";
+import type { UnitStatusChip } from "./unit-status-layer-view";
+import { UnitStatusLayerView } from "./unit-status-layer-view";
 import { SquadStripView, playerUnits } from "./squad-strip-view";
-import { actingUnit } from "../../tactical/service/acting-unit";
-import { reloadPools } from "../../tactical/service/reload-handler";
 import { chargeRegisterFor } from "../service/charge-register";
 
 // ===========================================
@@ -71,14 +75,15 @@ import { chargeRegisterFor } from "../service/charge-register";
 // ===========================================
 
 /**
- * Which action a click on the map performs. There is always one armed:
- * moving is what a player does most, so it is the resting state and no
- * mode has to be chosen before walking a unit (#519). Picking Attack
- * arms it until it is used or cancelled, and then Move comes back.
+ * Whether the HUD is aiming. Moving is what a player does most, so it is
+ * the resting state and no mode has to be chosen before walking a unit
+ * (#519). Aiming is entered by opening the wheel on an enemy (#1112) or
+ * by the keyboard — Attack's letter, or cycling targets — and left by
+ * firing, cancelling or dismissing the wheel.
  */
 export type HudMode = "move" | "attack";
 
-/** The action the HUD falls back to: a click on a reachable tile walks there. */
+/** The state the HUD falls back to: a right click on a reachable tile walks there. */
 export const DEFAULT_HUD_MODE: HudMode = "move";
 
 /** What the HUD reports back to its owner. */
@@ -99,10 +104,10 @@ export interface TacticalHudHandlers {
    */
   readonly onNotice?: (unitId: UnitId, text: string) => void;
   /**
-   * Where a world thing is on screen, for anchoring the context menu
-   * (#529, ADR 0007 §2.1). The HUD projects nothing itself; the scene
-   * owns the camera. Absent in tests and headless callers, and the menu
-   * simply does not open without it.
+   * Where a world thing is on screen, for anchoring the wheel (#529,
+   * ADR 0007 §2.1). The HUD projects nothing itself; the scene owns the
+   * camera. Absent in tests and headless callers, and the wheel simply
+   * does not open without it.
    */
   readonly anchorFor?: (
     target: TacticalInvokeTarget,
@@ -113,9 +118,9 @@ export interface TacticalHudHandlers {
    *
    * Before this, the only thing that pushed overlay state to the scene
    * was an intent arriving *from* the scene, so state the HUD changed on
-   * its own -- arming Attack from the action bar, or #522's range key --
-   * did not reach the map until the player next clicked it. Optional, so
-   * a HUD built without a scene needs no stub.
+   * its own — #522's range key, say — did not reach the map until the
+   * player next clicked it. Optional, so a HUD built without a scene
+   * needs no stub.
    */
   readonly onViewChange?: () => void;
   /**
@@ -126,6 +131,17 @@ export interface TacticalHudHandlers {
    * still shows whatever `setLayerFocus` was last given.
    */
   readonly onLayerStep?: (delta: number) => void;
+  /**
+   * Frame a tile on the map, or clear the frame: the tile the wheel is
+   * open on. Optional, so a HUD built without a scene needs no stub.
+   */
+  readonly onMarkTile?: (tile: TileCoord | undefined) => void;
+  /**
+   * Where the top of a unit's model is on screen, for the status chip
+   * above it while Shift is held. Absent in tests and headless callers,
+   * and the chips simply do not appear without it.
+   */
+  readonly headAnchorFor?: (unitId: UnitId) => ScreenAnchor | undefined;
 }
 
 /** What the HUD needs injected. */
@@ -136,9 +152,21 @@ export interface TacticalHudDeps {
   readonly objectiveTuning: ObjectiveTuning;
   /** Hold time and timers for the phase banner; the defaults are the DOM's. */
   readonly phaseBanner?: PhaseBannerOptions;
+  /**
+   * The key table, so the action bar can write each action's key on its
+   * button and the hint cannot drift from the binding. Empty when not
+   * given, which is a bar with no hints.
+   */
+  readonly shortcuts?: Readonly<Record<string, TacticalAction | "end-turn">>;
 }
 
-/** Which team acts in which phase. */
+/** Which page of the wheel is open. */
+type WheelPageKind = "actions" | "weapons";
+
+// ===========================================
+// Constants
+// ===========================================
+
 /** Actions a unit performs, and so the ones that can be refused (#1030). */
 const REFUSABLE = new Set<string>([
   "move",
@@ -149,10 +177,14 @@ const REFUSABLE = new Set<string>([
   "extract",
 ]);
 
+/** Which team acts in which phase. */
 const TEAM_FOR_PHASE: Readonly<Record<TacticalState["phase"], Team>> = {
   player: "tdf",
   bugs: "bugs",
 };
+
+/** The pointer events the HUD's panels keep from the map picker beneath. */
+const POINTER_EVENTS = ["pointerdown", "pointerup", "pointermove"] as const;
 
 // ===========================================
 // TacticalHudView
@@ -161,19 +193,24 @@ const TEAM_FOR_PHASE: Readonly<Record<TacticalState["phase"], Team>> = {
 /**
  * The mission HUD (GDD §6.2) composed from its parts, plus the small
  * amount of presentation state the parts share: which unit is selected,
- * which action is armed, and which enemy is being previewed. Every
- * number on screen comes from the mission state or `previewAttack`.
+ * whether it is aiming, and which enemy is being previewed. Every number
+ * on screen comes from the mission state or `previewAttack`.
+ *
+ * The actions live on the **wheel** (#1112), an in-world ring opened by
+ * a left click on the thing the action is about; the bottom of the HUD
+ * keeps only End turn.
  *
  * ```
- *   intent select-unit ──▶ attack mode + enemy? ──▶ preview target
- *                      └─▶ else select it (card follows)
- *   intent select-tile ──▶ move mode ──▶ pathTo ──▶ onCommand(move(selected, path))
- *                                             └─ undefined ──▶ "out of reach", stay armed
- *   intent action      ──▶ move / attack arm the mode; next-target cycles
- *                          what is aimed at; overwatch / reload
- *                          ──▶ onCommand; cancel clears; next-unit cycles
+ *   intent select-unit ──▶ friendly, not selected ──▶ select it (card follows)
+ *                      ├─▶ the selected unit     ──▶ wheel: overwatch / reload / interact / board
+ *                      └─▶ enemy                 ──▶ aim at it, wheel: attack (weapons) / …
+ *   intent select-spawner ──▶ aim at it, wheel: attack / interact / …
+ *   intent select-tile ──▶ wheel: move / board / overwatch / reload
+ *   intent invoke tile ──▶ pathTo ──▶ onCommand(move(selected, path))
+ *                                └─ undefined ──▶ "out of reach"
+ *   intent action      ──▶ letters: arm, cycle, dispatch, cancel
  *   intent end-turn    ──▶ onCommand(endTurn())
- *   Fire               ──▶ onCommand(attack(selected, target))
+ *   wheel entry        ──▶ onCommand(attack | overwatch | reload | interact | extract)
  * ```
  */
 export class TacticalHudView {
@@ -195,30 +232,42 @@ export class TacticalHudView {
   /** The force at a glance; a row selects and recovers a unit (#1041). */
   private readonly squad = new SquadStripView({
     onPick: (unitId) => {
-      this.handleIntent({ kind: "select-unit", unitId });
+      // A plain selection, never the wheel: the row is a way to find a
+      // unit, not a click on it.
+      this.selectUnit(unitId);
       // Unconditional here: the player asked for this unit by name, so
       // overriding their own panning is what they meant.
       this.handlers.onLookAt?.(unitId);
     },
   });
-  /** The in-world context menu (#529); opened by right click, closed by the world. */
+  /** The in-world action wheel (#529, #1112); opened by left click, closed by the world. */
   private readonly radial = new RadialMenuView({
     onSelect: (id) => {
       this.chooseFromMenu(id);
     },
     onDismiss: () => {
-      this.closeMenu();
+      this.dismissMenu();
     },
   });
   /**
-   * What the open menu belongs to. The menu is dismissed by the world,
+   * What the open wheel belongs to. The wheel is dismissed by the world,
    * not only by the player (ADR 0007 §2.2): when its target stops being
    * drawn — killed, deselected, or unseen under fog — the anchor stops
-   * resolving and the menu closes itself.
+   * resolving and the wheel closes itself.
    */
   private menuTarget: TacticalInvokeTarget | undefined;
+  /** Which page is up: the actions, or the weapons behind Attack. */
+  private menuPage: WheelPageKind = "actions";
   private readonly log = new EventLogView();
+  /** The actions with their keys along the bottom; a press is the key (#1113 review). */
   private readonly actions: ActionBarView;
+  /** Cancels the frame loop that keeps an open wheel on its tile as the camera moves. */
+  private stopFollowing: (() => void) | undefined;
+  /** The status chips above every visible unit while Shift is held. */
+  private readonly status = new UnitStatusLayerView();
+  private inspecting = false;
+  /** Cancels the frame loop that keeps the chips on their units. */
+  private stopInspecting: (() => void) | undefined;
   private root: HTMLElement | undefined;
   private mission: TacticalState | undefined;
   /**
@@ -246,13 +295,16 @@ export class TacticalHudView {
   private target: UnitId | undefined;
   private mode: HudMode = DEFAULT_HUD_MODE;
   /**
-   * Which weapon Attack is armed with (#532). Undefined means the unit's
-   * first, which is what a single-weapon unit always uses.
+   * Which weapon a keyboard-armed Attack fires with (#532). Undefined
+   * means the unit's first, which is what a single-weapon unit always
+   * uses. The wheel names its weapon on the entry instead.
    */
   private armedWeaponId: WeaponId | undefined;
   private weaponRangePinned = false;
   /** Torn down with the HUD; watches the side rail for hidden content (#657). */
   private sideOverflow: { readonly dispose: () => void } | undefined;
+  /** Torn down with the HUD; keeps panel clicks off the map picker. */
+  private pointerGuard: { readonly dispose: () => void } | undefined;
 
   // ===========================================
   // Constructor
@@ -272,21 +324,25 @@ export class TacticalHudView {
         this.confirmAttack();
       },
     });
-    this.actions = new ActionBarView({
-      onAction: (action, weaponId) => {
-        if (action === "attack" && weaponId !== undefined) {
-          this.armedWeaponId = weaponId;
-        }
-        this.handleAction(action);
+    this.actions = new ActionBarView(
+      {
+        onAction: (action) => {
+          this.handleIntent(
+            action === "end-turn"
+              ? { kind: "end-turn" }
+              : { kind: "action", action },
+          );
+        },
       },
-    });
+      deps.shortcuts ?? {},
+    );
   }
 
   // ===========================================
   // Lifecycle
   // ===========================================
 
-  /** Builds the HUD under `parent`: banner on top, side column, action bar below. */
+  /** Builds the HUD under `parent`: banner on top, side column, End turn below. */
   mount(parent: HTMLElement): void {
     const doc = parent.ownerDocument;
     const hud = doc.createElement("div");
@@ -300,6 +356,7 @@ export class TacticalHudView {
     bottom.className = "tut-hud__bottom";
     this.banner.mount(top);
     this.radial.mount(hud);
+    this.status.mount(hud);
     // The force first, then the selected unit's detail. The strip is the
     // overview and the card is the close-up; putting the close-up first
     // pushed the third unit below the fold, which the frame showed and
@@ -312,6 +369,7 @@ export class TacticalHudView {
     this.actions.mount(bottom);
     hud.append(top, side, bottom);
     this.watchSideOverflow(side);
+    this.guardPointer(hud);
     this.phases.mount(hud);
     parent.appendChild(hud);
     this.root = hud;
@@ -366,6 +424,29 @@ export class TacticalHudView {
     this.refresh();
   }
 
+  /**
+   * Records one event as it happens on the map: its log line and any
+   * phase banner it carries. The screen calls this as the scene plays
+   * each event, so the HUD's account of a bug phase lands one action at
+   * a time, in step with the animation, rather than all at once before
+   * it. The state itself follows through `update` once the scene has
+   * settled.
+   *
+   * Ignored for a mission the HUD has not been shown yet: an arriving
+   * mission replays its own log in `update`, and hearing the arrival's
+   * events here as well would write them twice.
+   *
+   * @param event - The event beginning to play.
+   * @param mission - The mission it belongs to, for the names in the line.
+   */
+  playEvent(event: TacticalEvent, mission: TacticalState): void {
+    if (this.mission?.missionId !== mission.missionId) {
+      return;
+    }
+    this.phases.announce(phaseChangesIn([event]));
+    this.log.append([event], mission, this.campaign);
+  }
+
   /** Shows a one-line message in the banner (a rejected command, for instance). */
   showStatus(message: string): void {
     this.banner.showStatus(message);
@@ -375,6 +456,12 @@ export class TacticalHudView {
   unmount(): void {
     this.sideOverflow?.dispose();
     this.sideOverflow = undefined;
+    this.pointerGuard?.dispose();
+    this.pointerGuard = undefined;
+    this.stopFollowing?.();
+    this.stopFollowing = undefined;
+    this.setInspecting(false);
+    this.status.unmount();
     this.phases.unmount();
     this.actions.unmount();
     this.log.unmount();
@@ -382,6 +469,7 @@ export class TacticalHudView {
     this.preview.unmount();
     this.card.unmount();
     this.banner.unmount();
+    this.radial.unmount();
     this.root?.remove();
     this.root = undefined;
   }
@@ -395,7 +483,7 @@ export class TacticalHudView {
     return this.selected;
   }
 
-  /** The armed action. */
+  /** Whether the HUD is aiming. */
   getMode(): HudMode {
     return this.mode;
   }
@@ -448,17 +536,15 @@ export class TacticalHudView {
   /**
    * Whether the weapon-range marks should be drawn (#522).
    *
-   * Armed intent decides it, not selection (#590). "How far can I shoot?"
-   * is a question the player asks while aiming, so the envelope answers
-   * it while Attack is armed and stays out of the way otherwise. It used
-   * to default to on for every selection, which put 109-157 marks on the
-   * map the moment a unit was clicked -- more than any other overlay
-   * plane -- and #522 gave the toggle a key and no button, so there was
-   * no discoverable way back off it.
+   * Aiming decides it, not selection (#590). "How far can I shoot?" is a
+   * question the player asks while aiming, so the envelope answers it
+   * while the HUD is aiming and stays out of the way otherwise. It used
+   * to default to on for every selection, which put 109-157 marks on
+   * the map the moment a unit was clicked.
    *
    * The key still pins the marks up for a player who wants them
-   * permanently; pinning is kept apart from the mode so arming and
-   * disarming Attack cannot silently unpin them.
+   * permanently; pinning is kept apart from the mode so aiming and
+   * disarming cannot silently unpin them.
    */
   isWeaponRangeVisible(): boolean {
     return this.mode === "attack" || this.weaponRangePinned;
@@ -477,14 +563,16 @@ export class TacticalHudView {
   handleIntent(intent: TacticalIntent): void {
     switch (intent.kind) {
       case "select-unit":
-        this.selectUnit(intent.unitId);
-        break;
+        this.pointAtUnit(intent.unitId);
+        return;
       case "select-spawner":
-        this.selectUnit(intent.spawnerId);
+        this.pointAtEnemy({
+          kind: "spawner",
+          spawnerId: intent.spawnerId,
+        });
         return;
       case "select-tile":
-        // Left click points, it never acts (#520). Invoking is the right
-        // button's job, below.
+        this.pointAtTile(intent.tile);
         return;
       case "invoke":
         this.invokeAt(intent.target);
@@ -498,7 +586,56 @@ export class TacticalHudView {
         this.closeMenu();
         this.handlers.onCommand(endTurn());
         return;
+      case "inspect":
+        this.setInspecting(intent.held);
+        return;
     }
+  }
+
+  /**
+   * Shows the status chips above every visible unit while `held`, and
+   * takes them away when not (Shift, on #1113's review). The chips are
+   * re-anchored once a frame while up, so they follow the camera and
+   * the units, and re-filled on every refresh, so they follow the state.
+   *
+   * @param held - Whether Shift is down.
+   */
+  setInspecting(held: boolean): void {
+    if (held === this.inspecting) {
+      return;
+    }
+    this.inspecting = held;
+    if (!held) {
+      this.stopInspecting?.();
+      this.stopInspecting = undefined;
+      this.status.hide();
+      return;
+    }
+    this.drawStatus();
+    const schedule =
+      typeof requestAnimationFrame === "function"
+        ? requestAnimationFrame
+        : undefined;
+    if (schedule === undefined) {
+      return;
+    }
+    let handle = 0;
+    const tick = (): void => {
+      if (!this.inspecting) {
+        return;
+      }
+      this.drawStatus();
+      handle = schedule(tick);
+    };
+    handle = schedule(tick);
+    this.stopInspecting = () => {
+      cancelAnimationFrame(handle);
+    };
+  }
+
+  /** Whether the status chips are up. */
+  isInspecting(): boolean {
+    return this.inspecting;
   }
 
   // ===========================================
@@ -506,129 +643,163 @@ export class TacticalHudView {
   // ===========================================
 
   /**
-   * Carries out the armed action wherever the right button landed
-   * (#520): Move walks to a tile, Attack fires on a unit or an egg
-   * spawner. A target the armed action cannot use is ignored rather than
-   * guessed at — right-clicking an enemy while Move is armed does not
-   * walk into it, and right-clicking bare ground while Attack is armed
-   * does not shoot the floor.
+   * A left click on a unit (#1112): a friendly unit is selected, the
+   * selected unit opens its own wheel, and an enemy opens the aiming
+   * wheel. Resolved through the same port the combat rules use so an
+   * egg spawner is picked exactly as a unit is (#426).
    *
    * ```
-   *   move   + tile           ──► moveTo(tile)
-   *   attack + unit/spawner   ──► fire on it
-   *   anything else           ──► ignored
+   *   nothing acting selected ──► select it (any team; a bug shows its card)
+   *   the selected unit       ──► wheel: overwatch / reload / interact / board
+   *   other team              ──► aim, wheel: attack / …
+   *   friendly                ──► select it
    * ```
+   */
+  private pointAtUnit(unitId: UnitId): void {
+    const mission = this.mission;
+    if (!mission) {
+      return;
+    }
+    const picked = findAttackTarget(mission, unitId);
+    if (!picked || picked.hp <= 0) {
+      return;
+    }
+    const actor = this.actingSelection();
+    if (actor !== undefined && picked.team !== actor.team) {
+      this.pointAtEnemy({ kind: "unit", unitId });
+      return;
+    }
+    if (actor?.id === unitId) {
+      this.openWheel({ kind: "unit", unitId });
+      this.refresh();
+      return;
+    }
+    if (picked.kind !== "unit") {
+      return;
+    }
+    this.selectUnit(unitId);
+  }
+
+  /**
+   * A left click on an enemy unit or an egg spawner with an acting unit
+   * selected: aim at it and open the wheel there. Aiming is what makes
+   * the scene draw the sight cue and the envelope (#590) and the panel
+   * show the preview, so the click tells the player what the wheel is
+   * about before they read it.
+   */
+  private pointAtEnemy(target: TacticalInvokeTarget): void {
+    const mission = this.mission;
+    if (!mission || target.kind === "tile" || !this.actingSelection()) {
+      return;
+    }
+    const targetId = target.kind === "unit" ? target.unitId : target.spawnerId;
+    const picked = findAttackTarget(mission, targetId);
+    if (!picked || picked.hp <= 0) {
+      return;
+    }
+    this.closeMenu();
+    if (this.mode !== "attack") {
+      // Entering the aim fresh fires the unit's first weapon; a weapon
+      // armed from the keyboard (#532) survives a click on the target.
+      this.armedWeaponId = undefined;
+    }
+    this.mode = "attack";
+    this.target = targetId;
+    this.openWheel(target);
+    this.refresh();
+  }
+
+  /** A left click on a tile with an acting unit selected: the wheel opens there. */
+  private pointAtTile(tile: TileCoord): void {
+    if (!this.actingSelection()) {
+      return;
+    }
+    this.openWheel({ kind: "tile", tile });
+    this.refresh();
+  }
+
+  /**
+   * Walks the selected unit wherever the right button landed (#520,
+   * #1112). Only a tile is walked to: right-clicking an enemy while
+   * aiming from the keyboard fires, as the commit gesture it has been
+   * since #520, and anything else is ignored rather than guessed at.
    *
-   * It invokes the *armed* action and nothing else. Since #519 made Move
-   * the resting state, that reads in play as "right click walks, unless
-   * you armed Attack" — the two issues meet here: #519 chose the default
-   * action, this one chose the button that commits it.
+   * ```
+   *   tile                         ──► moveTo(tile)
+   *   unit / spawner while aiming  ──► fire on it
+   *   anything else                ──► ignored
+   * ```
    */
   private invokeAt(target: TacticalInvokeTarget): void {
     if (this.selected === undefined) {
       return;
     }
-    // The armed action still commits directly when it applies to what
-    // was clicked — that is #520's control scheme and the fast path a
-    // player uses all mission. The menu fills the gap it leaves: right
-    // clicking an enemy with Move armed, or a tile with Attack armed,
-    // did nothing at all before (#529).
-    if (this.mode === "attack" && target.kind !== "tile") {
-      this.fireAt(target.kind === "unit" ? target.unitId : target.spawnerId);
-      return;
-    }
-    if (this.mode === "move" && target.kind === "tile") {
+    // A right click is a new decision; whatever the wheel was asking
+    // about is over (#627).
+    this.closeMenu();
+    if (target.kind === "tile") {
       this.moveTo(target.tile);
       return;
     }
-    this.openMenuAt(target);
+    if (this.mode === "attack") {
+      this.fireAt(target.kind === "unit" ? target.unitId : target.spawnerId);
+      return;
+    }
+    this.refresh();
   }
 
   /**
-   * Opens the context menu on `target`, or reports that there was
-   * nothing to offer (#529).
+   * Marks the wheel open on `target`, or leaves it closed when there is
+   * nothing to offer or nowhere to draw it (#529, #1112). The caller
+   * refreshes: the page is drawn by `followMenu` on every refresh, so
+   * what is on screen is always the page for the mission as it is now.
    *
-   * Entries come from the **same predicates the rules use** — `pathTo`
-   * decides whether Move is offered, `previewAttack` supplies the hit
-   * chance and damage. A menu that offers a shot the rules then refuse
-   * is the #517 defect wearing a different hat, and a menu that lies is
-   * worse than no menu.
-   *
-   * @param target - What the right click landed on.
-   * @returns True when a menu opened, so the caller stops.
+   * Entries come from `actionWheel`, which asks the **same predicates
+   * the rules use**, so the wheel never offers a shot the rules then
+   * refuse.
    */
-  private openMenuAt(target: TacticalInvokeTarget): boolean {
+  private openWheel(target: TacticalInvokeTarget): void {
     const anchor = this.handlers.anchorFor?.(target);
-    const mission = this.mission;
-    if (!anchor || !mission || this.selected === undefined) {
-      return false;
-    }
-    const { items, hub } = this.menuFor(target, mission);
-    if (items.length === 0) {
-      return false;
+    if (!anchor || !this.mission || this.selected === undefined) {
+      return;
     }
     this.menuTarget = target;
-    this.radial.open(items, hub, anchor);
-    return true;
+    this.menuPage = "actions";
+    if (this.pageFor(target, "actions").items.length === 0) {
+      this.menuTarget = undefined;
+    }
   }
 
-  /** The entries and centre fact for a right click on `target`. */
-  private menuFor(
+  /** The wheel page for `target`, built against the mission as it is now. */
+  private pageFor(
     target: TacticalInvokeTarget,
-    mission: TacticalState,
-  ): { items: RadialMenuItem[]; hub: RadialMenuHub | undefined } {
-    const items: RadialMenuItem[] = [];
-    let hub: RadialMenuHub | undefined;
+    page: WheelPageKind,
+  ): WheelPage {
+    const mission = this.mission;
     const unitId = this.selected;
-    if (unitId === undefined) {
-      return { items, hub };
+    if (!mission || unitId === undefined) {
+      return { items: [] };
     }
-    if (target.kind === "tile") {
-      const path = pathTo(
-        mission,
-        unitId,
-        target.tile,
-        this.moveGraphFor(mission),
-      );
-      if (path !== undefined && path.length > 0) {
-        items.push({
-          id: `move:${String(target.tile.x)},${String(target.tile.y)},${String(target.tile.z)}`,
-          label: "Move",
-          icon: "move",
-          detail: `${String(path.length)} tiles`,
-          primary: true,
-        });
-      }
-      return { items, hub };
-    }
-    const targetId = target.kind === "unit" ? target.unitId : target.spawnerId;
-    const preview = previewAttack(
+    const ctx: WheelContext = {
       mission,
       unitId,
-      targetId,
-      this.deps.combatTuning,
-    );
-    if (preview.ok) {
-      hub = {
-        value: `${String(Math.round(preview.value.hitChance * 100))}%`,
-        caption: "hit chance",
-        tone: preview.value.hitChance >= 0.5 ? "ok" : "warn",
-      };
-      items.push({
-        id: `attack:${targetId}`,
-        label: "Fire",
-        icon: "attack",
-        detail: `${String(preview.value.damage[0])}\u2013${String(preview.value.damage[1])} dmg`,
-        primary: true,
-      });
+      graph: this.moveGraphFor(mission),
+      names: namesFor(mission, this.campaign),
+      deps: this.deps,
+    };
+    if (page === "weapons" && target.kind !== "tile") {
+      return weaponWheel(
+        target.kind === "unit" ? target.unitId : target.spawnerId,
+        ctx,
+      );
     }
-    return { items, hub };
+    return actionWheel(target, ctx);
   }
 
   /**
-   * Keeps an open menu on its target, or closes it (ADR 0007 §2.2).
+   * Keeps an open wheel on its target, or closes it (ADR 0007 §2.2).
    *
-   * The anchor is re-resolved from the world every refresh, so a menu
+   * The anchor is re-resolved from the world every refresh, so a wheel
    * follows its unit as the camera moves and closes itself the moment
    * that unit stops being drawn — which under fog of war includes a bug
    * walking out of sight, not only one that died.
@@ -644,55 +815,153 @@ export class TacticalHudView {
       return;
     }
     const anchor = this.handlers.anchorFor?.(target);
-    const mission = this.mission;
-    if (!anchor || !mission) {
+    if (!anchor || !this.mission || this.selected === undefined) {
       this.closeMenu();
       return;
     }
     // Recomputed rather than remembered, so the hub's hit chance is the
     // one that applies now: `open` re-renders in place by design.
-    const { items, hub } = this.menuFor(target, mission);
+    const { items, hub } = this.pageFor(target, this.menuPage);
     if (items.length === 0) {
       this.closeMenu();
       return;
     }
     this.radial.open(items, hub, anchor);
+    this.handlers.onMarkTile?.(this.tileOf(target));
+    this.follow(target);
+  }
+
+  /**
+   * Keeps an open wheel on its world point between refreshes: once a
+   * frame, while it is open, the anchor is projected again and the ring
+   * moved to it. Without this the ring stayed where it opened while the
+   * camera panned underneath it (the Executive Director's item 8 on
+   * #1113). Refreshes still rebuild the entries; this only moves them.
+   */
+  private follow(target: TacticalInvokeTarget): void {
+    if (this.stopFollowing !== undefined) {
+      return;
+    }
+    const schedule =
+      typeof requestAnimationFrame === "function"
+        ? requestAnimationFrame
+        : undefined;
+    if (schedule === undefined) {
+      return;
+    }
+    let handle = 0;
+    const tick = (): void => {
+      if (this.menuTarget !== target) {
+        this.stopFollowing = undefined;
+        return;
+      }
+      const anchor = this.handlers.anchorFor?.(target);
+      if (anchor === undefined) {
+        // The target stopped being drawn: dismissed by the world (ADR 0007 §2.2).
+        this.stopFollowing = undefined;
+        this.closeMenu();
+        this.refresh();
+        return;
+      }
+      this.radial.moveTo(anchor);
+      handle = schedule(tick);
+    };
+    handle = schedule(tick);
+    this.stopFollowing = () => {
+      cancelAnimationFrame(handle);
+    };
+  }
+
+  /** The tile a wheel target stands on, for the mark on the map. */
+  private tileOf(target: TacticalInvokeTarget): TileCoord | undefined {
+    switch (target.kind) {
+      case "tile":
+        return target.tile;
+      case "unit":
+        return this.unit(target.unitId)?.pos;
+      case "spawner":
+        return this.mission?.spawners.find((s) => s.id === target.spawnerId)
+          ?.pos;
+    }
   }
 
   /**
    * Puts the ring away and forgets what it belonged to. The one way the
-   * menu closes, so no path can drop the target while leaving the ring
+   * wheel closes, so no path can drop the target while leaving the ring
    * on screen — which is what stranded it over the map (#627).
    */
   private closeMenu(): void {
     this.menuTarget = undefined;
+    this.menuPage = "actions";
+    this.stopFollowing?.();
+    this.stopFollowing = undefined;
     this.radial.close();
+    this.handlers.onMarkTile?.(undefined);
   }
 
-  /** Dispatches the command a menu entry stands for. */
-  private chooseFromMenu(id: string): void {
-    // Close first, and unconditionally: the view reports a choice but
-    // does not hide itself, so every path out of here has to. Clearing
-    // only the target left the ring stranded on screen offering an
-    // action that had already happened (#627).
+  /**
+   * The player dismissed the wheel — Escape, or a press outside it. Only
+   * the ring goes: an aim taken by opening the wheel on an enemy stays,
+   * with its preview and its Fire button in the panel, until the player
+   * cancels, fires, walks or picks something else. The press that
+   * dismisses the ring is often the press on that Fire button, and
+   * clearing the aim here would empty the panel under the click.
+   */
+  private dismissMenu(): void {
     this.closeMenu();
+    this.refresh();
+  }
+
+  /** Dispatches the command a wheel entry stands for, or turns the page. */
+  private chooseFromMenu(id: string): void {
+    const choice = parseWheelChoice(id);
     const unitId = this.selected;
-    if (unitId === undefined) {
+    const target = this.menuTarget;
+    if (choice === undefined || unitId === undefined || target === undefined) {
+      this.closeMenu();
       return;
     }
-    if (id.startsWith("attack:")) {
-      this.fireAt(id.slice("attack:".length));
-      return;
-    }
-    if (id.startsWith("move:")) {
-      const [x, y, z] = id
-        .slice("move:".length)
-        .split(",")
-        .map((part) => Number(part));
-      if (x !== undefined && y !== undefined && z !== undefined) {
-        this.moveTo({ x, y, z });
+    // Turning the page keeps the ring; everything else closes it first,
+    // and unconditionally: the view reports a choice but does not hide
+    // itself, so every path out of here has to (#627).
+    if (choice.action === "attack" && choice.weaponId === undefined) {
+      const weapons = this.mission
+        ? weaponOptions(this.mission, unitId, this.deps.combatTuning)
+        : [];
+      if (weapons.length > 1) {
+        this.menuPage = "weapons";
+        this.refresh();
+        return;
       }
     }
+    if (choice.action === "back") {
+      this.menuPage = "actions";
+      this.refresh();
+      return;
+    }
+    this.closeMenu();
+    switch (choice.action) {
+      case "move":
+        this.moveTo(choice.tile);
+        return;
+      case "attack":
+        this.armedWeaponId = choice.weaponId;
+        this.fireAt(choice.targetId);
+        return;
+      case "overwatch":
+        this.handlers.onCommand(overwatch(unitId));
+        break;
+      case "reload":
+        this.handlers.onCommand(reload(unitId));
+        break;
+      case "interact":
+        this.handlers.onCommand(interact(unitId, choice.objectiveId));
+        break;
+      case "extract":
+        this.handlers.onCommand(extract(unitId));
+        break;
+    }
+    this.refresh();
   }
 
   /**
@@ -702,29 +971,22 @@ export class TacticalHudView {
    * range works rather than only an orthogonally adjacent one.
    *
    * ```
-   *   pathTo undefined ──► "out of reach", move stays armed for another click
-   *   path []          ──► the unit's own tile; disarm, nothing dispatched
-   *   otherwise        ──► onCommand(move(unit, path)), disarm
+   *   pathTo undefined ──► "out of reach", nothing dispatched
+   *   path []          ──► the unit's own tile; nothing dispatched
+   *   otherwise        ──► onCommand(move(unit, path))
    * ```
-   *
-   * A refusal leaves the mode armed on purpose: the player misjudged the
-   * range, not the intent, and the next click should still be a move.
    */
   private moveTo(tile: TileCoord): void {
     const mission = this.mission;
     if (!mission || this.selected === undefined) {
       return;
     }
-    // Move is armed by default now (#519), so a tile click reaches here
-    // with anything selected — including a bug the player tapped to read
-    // its card. That one stays a quiet no-op: the player did not ask it
-    // to walk, so there is nothing to refuse.
+    // A right click reaches here with anything selected — including a
+    // bug the player tapped to read its card. That one stays a quiet
+    // no-op: the player did not ask it to walk, so there is nothing to
+    // refuse.
     //
-    // Their own unit with no action points did ask, and used to get the
-    // same silence — QA measured it and traced it to this early return.
-    // The button already explains that refusal; the tile click is how a
-    // player actually moves, so it explaining nothing is the very
-    // inconsistency this ticket exists to remove.
+    // Their own unit with no action points did ask, and says so (#1027).
     const refusal = this.refusalFor("move");
     if (refusal !== undefined) {
       if (refusal.kind === "no-action-points") {
@@ -743,6 +1005,7 @@ export class TacticalHudView {
       return;
     }
     this.mode = DEFAULT_HUD_MODE;
+    this.target = undefined;
     if (path.length > 0) {
       this.handlers.onCommand(move(this.selected, path));
     }
@@ -763,10 +1026,9 @@ export class TacticalHudView {
   }
 
   /**
-   * In attack mode anything on the other side becomes the preview target,
-   * resolved through the same port the combat rules use so an egg spawner
-   * is picked exactly as a unit is (#426); otherwise the unit is selected.
-   * An id that is not a unit can only ever be a target.
+   * Selects a unit outright: the card follows, aiming stops, the wheel
+   * closes. Any living unit can be selected — a bug, to read its card —
+   * but only the acting side's units get a wheel.
    */
   private selectUnit(unitId: UnitId): void {
     const mission = this.mission;
@@ -776,17 +1038,8 @@ export class TacticalHudView {
     // The ring belongs to the decision that opened it. Picking something
     // else is a new decision, so the old one goes away (#627).
     this.closeMenu();
-    const picked = findAttackTarget(mission, unitId);
+    const picked = this.unit(unitId);
     if (!picked || picked.hp <= 0) {
-      return;
-    }
-    const selected = this.unit(this.selected);
-    if (this.mode === "attack" && selected && picked.team !== selected.team) {
-      this.target = unitId;
-      this.refresh();
-      return;
-    }
-    if (picked.kind !== "unit") {
       return;
     }
     this.selected = unitId;
@@ -797,27 +1050,20 @@ export class TacticalHudView {
   }
 
   /**
-   * Arms, cancels, cycles or dispatches per the action.
-   *
-   * It takes **both** vocabularies, because neither contains the other:
-   * the bar has `end-turn` and no `toggle-range` (#522 gave that a key
-   * and no button), while the keyboard has `next-unit`, `next-target`
-   * and `cancel` and no button of their own. #520 binds the number row
-   * to `ACTION_BAR_ORDER` alone, so the two sets stay deliberately
-   * different and this is the one place they meet.
+   * Arms, cancels, cycles or dispatches per a keyboard action. The
+   * letters reach the same commands the wheel does, without the pointer.
    */
-  private handleAction(action: TacticalAction | ActionBarAction): void {
+  private handleAction(action: TacticalAction): void {
     // Arming, cancelling, ending the turn: all of them move on from
     // whatever the ring was asking about (#627).
     this.closeMenu();
     // An attempted action that cannot happen says why, above the unit
-    // that could not act (#1030). It used to return in silence, which is
-    // what made silence unreadable: the player could not tell "fine"
-    // from "refused". The words come from the shared refusal
-    // vocabulary, so there is none beside the buttons.
-    // Only the actions a unit performs; `next-unit`, `cancel` and the
-    // rest are view controls with nothing to refuse.
-    const refusal = REFUSABLE.has(action) ? this.refusalFor(action) : undefined;
+    // that could not act (#1030). Only the actions a unit performs;
+    // `next-unit`, `cancel` and the rest are view controls with nothing
+    // to refuse.
+    const refusal = REFUSABLE.has(action)
+      ? this.refusalFor(action as UnitAction)
+      : undefined;
     if (refusal !== undefined) {
       this.announceRefusal(refusal);
       return;
@@ -825,9 +1071,7 @@ export class TacticalHudView {
     switch (action) {
       case "move":
         if (this.canAct()) {
-          // Pressing the armed action again disarms it, which for Move
-          // means staying on Move: there is nothing quieter to fall to.
-          this.mode = this.mode === action ? DEFAULT_HUD_MODE : action;
+          this.mode = DEFAULT_HUD_MODE;
           this.target = undefined;
         }
         break;
@@ -847,7 +1091,7 @@ export class TacticalHudView {
         }
         break;
       case "extract":
-        if (this.canExtract() && this.selected !== undefined) {
+        if (this.selected !== undefined) {
           this.handlers.onCommand(extract(this.selected));
         }
         break;
@@ -858,9 +1102,6 @@ export class TacticalHudView {
         }
         break;
       }
-      case "end-turn":
-        this.handlers.onCommand(endTurn());
-        break;
       case "cancel":
         this.mode = DEFAULT_HUD_MODE;
         this.target = undefined;
@@ -879,11 +1120,10 @@ export class TacticalHudView {
   }
 
   /**
-   * Fires the armed attack at whatever the right button landed on,
-   * without needing the preview confirmed first: right click is the
-   * commit gesture (#520). An illegal shot is dispatched and refused by
-   * the rules, so the reason lands in the status line rather than the
-   * click being swallowed.
+   * Fires at a target without needing the preview confirmed first: the
+   * wheel entry and the right button are the commit gesture (#520). An
+   * illegal shot is dispatched and refused by the rules, so the reason
+   * lands in the status line rather than the click being swallowed.
    */
   private fireAt(targetId: string): void {
     this.target = targetId;
@@ -891,12 +1131,9 @@ export class TacticalHudView {
   }
 
   /**
-   * Arms Attack, and on a repeat press moves to the unit's next weapon
-   * (#532). The digit stays put — Attack is always 2 — because
-   * renumbering the bar per selection would move Overwatch's key
-   * depending on what is selected, which is worse than a cycle. A unit
-   * with one weapon therefore behaves exactly as it always did: press
-   * again to disarm.
+   * Arms Attack from the keyboard, and on a repeat press moves to the
+   * unit's next weapon (#532). A unit with one weapon behaves as it
+   * always did: press again to disarm.
    */
   private armAttack(): void {
     const mission = this.mission;
@@ -984,89 +1221,27 @@ export class TacticalHudView {
       .length;
   }
 
-  /** Whether the selected unit may act at all. */
   /**
    * Why this action cannot happen for the selected unit, or `undefined`
-   * when it can.
-   *
-   * Asks the rules rather than a boolean of its own: `actingUnit` is the
-   * same precondition `overwatchHandler` and `reloadHandler` run, so the
-   * button and the command cannot disagree about who may act. The
-   * action-specific refusals stay where they already are — the aim
-   * preview owns range and sight, and the move path owns reachability.
+   * when it can — the rules' own answer, shared with the wheel so an
+   * entry and the refusal it explains cannot disagree.
    */
-  private refusalFor(action: string): TacticalError | undefined {
+  private refusalFor(action: UnitAction): TacticalError | undefined {
     const mission = this.mission;
     if (mission === undefined || this.selected === undefined) {
       return undefined;
     }
-    if (action === "end-turn") {
-      return undefined;
-    }
-    if (action === "extract") {
-      // Leaving is free, so it does not spend an action point.
-      const acting = actingUnit(mission, this.selected, 0);
-      if (!acting.ok) {
-        return acting.error;
-      }
-      return this.canExtract()
-        ? undefined
-        : { kind: "not-in-extraction-zone", unitId: this.selected };
-    }
-    const acting = actingUnit(mission, this.selected, 1);
-    if (!acting.ok) {
-      return acting.error;
-    }
-    if (action === "attack") {
-      // The rules already answer this per weapon: `weaponOptions` runs
-      // `refuseWeapon`, which checks charges. Availability was coming
-      // from `actingUnit` alone, which checks map, alive, phase and
-      // action points and knows nothing about ammunition — so the bar
-      // left ATTACK live on a squad reading `ammo 0 / 3`, four lines
-      // from the card that said so (#1062, QA on v0.2.16).
-      //
-      // Every weapon, not the first: a mech with a dry autocannon and a
-      // loaded missile pod can still shoot, so the refusal only stands
-      // when nothing on the unit can fire.
-      const options = weaponOptions(
-        mission,
-        acting.value.id,
-        this.deps.combatTuning,
-      );
-      const spent =
-        options.length > 0 && options.every((option) => !option.ready);
-      const refusal = spent ? options[0]?.refusal : undefined;
-      if (refusal !== undefined) {
-        return refusal;
-      }
-    }
-    if (action === "reload") {
-      // The same question the command answers, asked once. eng-5 found
-      // the bar offering Reload to a mech at heat 4/4 on `6a552d6`.
-      const pools = reloadPools(mission, acting.value);
-      if (!pools.ok) {
-        return pools.error;
-      }
-    }
-    if (action === "interact" && this.interactTarget() === undefined) {
-      // Its own kind, because none of the existing objective errors is
-      // true here: nothing is missing or finished, there is simply
-      // nothing within reach. The first version of this borrowed
-      // `objective-not-found` with an empty id and the frame said
-      // `No objective "" is in this mission`, which is how I found out.
-      return { kind: "no-objective-in-reach", unitId: this.selected };
-    }
-    return undefined;
+    return actionRefusal(mission, this.selected, action, this.deps);
   }
 
   /**
-   * How many attacks the card and the bar should show.
+   * How many attacks the card should show.
    *
    * `attacksRemaining` takes `Pick<Unit, "kind" | "ap">` — it cannot see
    * ammunition, so it answered `1` for a squad with an empty magazine
    * and the card advertised `ATTACKS 1` beside `ammo 0 / 3`. Asking
-   * `refusalFor` first means the count, the button and the words are one
-   * answer rather than three (#1062).
+   * `refusalFor` first means the count and the words are one answer
+   * rather than two (#1062).
    *
    * @param unit - The selected unit.
    * @returns Attacks left, or zero when the unit cannot attack at all.
@@ -1079,16 +1254,10 @@ export class TacticalHudView {
 
   /** Puts the refusal above the unit, and in the status line for the log. */
   private announceRefusal(error: TacticalError): void {
-    // Named, not id'd (#1035). The chip above the unit is the most
-    // prominent place a refusal has ever appeared, so `Unit "unit-1"`
-    // reads worse there than it ever did in the status line. eng-5's
-    // resolver is the one vocabulary for this; there is no second set
-    // of strings here.
-    // With the campaign, like every other name on this screen (#1047):
-    // without it the resolver falls back to the template, so a refusal
-    // said `Rifle Squad` beside a card reading `ALPHA`. QA found it on
-    // #1067, where Attack at an empty magazine began refusing here
-    // instead of at the dispatcher, which already passed the campaign.
+    // Named, not id'd (#1035), and with the campaign, like every other
+    // name on this screen (#1047): without it the resolver falls back
+    // to the template, so a refusal said `Rifle Squad` beside a card
+    // reading `ALPHA`.
     const words = describeRefusal(error, namesFor(this.mission, this.campaign));
     this.showStatus(words);
     if (this.selected !== undefined) {
@@ -1101,7 +1270,7 @@ export class TacticalHudView {
    * produces the refusal, so a button and its reason agree (#1030).
    */
   private unavailableActions(): ActionBarAction[] {
-    const actions: ActionBarAction[] = [
+    const actions: UnitAction[] = [
       "move",
       "attack",
       "overwatch",
@@ -1123,6 +1292,25 @@ export class TacticalHudView {
       unit.ap > 0 &&
       unit.team === TEAM_FOR_PHASE[mission.phase]
     );
+  }
+
+  /**
+   * The selected unit when it is one the player commands this phase,
+   * else undefined. The wheel opens for these and nothing else: a bug
+   * selected to read its card gets no actions, and neither does a squad
+   * during the bug phase. Action points do not matter here — a spent
+   * unit still gets a wheel, with every entry saying why it is closed.
+   */
+  private actingSelection(): Unit | undefined {
+    const mission = this.mission;
+    const unit = this.unit(this.selected);
+    return mission !== undefined &&
+      unit !== undefined &&
+      unit.hp > 0 &&
+      unit.team === "tdf" &&
+      unit.team === TEAM_FOR_PHASE[mission.phase]
+      ? unit
+      : undefined;
   }
 
   /**
@@ -1153,45 +1341,13 @@ export class TacticalHudView {
     this.target = targets[(at + 1) % targets.length]?.id;
   }
 
-  /**
-   * True when the selected unit can leave the map: a living unit of the
-   * acting side standing on an extraction tile (#341). Action points do
-   * not matter — walking out is free, so a unit that spent its turn
-   * reaching the zone still leaves on the same turn.
-   */
-  private canExtract(): boolean {
-    const mission = this.mission;
-    const unit = this.unit(this.selected);
-    return (
-      mission !== undefined &&
-      unit !== undefined &&
-      unit.hp > 0 &&
-      unit.team === TEAM_FOR_PHASE[mission.phase] &&
-      mission.extraction.some(
-        (tile) =>
-          tile.x === unit.pos.x &&
-          tile.y === unit.pos.y &&
-          tile.z === unit.pos.z,
-      )
-    );
-  }
-
-  /**
-   * The objective Interact would work: the nearest one the selected unit
-   * can reach, or undefined when there is none. The rules answer this
-   * (`reachableObjectives`), so the button offers exactly what the
-   * handler would accept.
-   */
+  /** The nearest objective the selected unit could work, if any. */
   private interactTarget(): ReachableObjective | undefined {
     const mission = this.mission;
     if (!mission || this.selected === undefined) {
       return undefined;
     }
-    return reachableObjectives(
-      mission,
-      this.selected,
-      this.deps.objectiveTuning,
-    )[0];
+    return interactTarget(mission, this.selected, this.deps.objectiveTuning);
   }
 
   /** A unit of the current mission by id. */
@@ -1220,14 +1376,44 @@ export class TacticalHudView {
   }
 
   /**
+   * Keeps presses on the HUD's panels and the wheel off the map picker
+   * beneath them (#1112).
+   *
+   * The HUD is mounted inside the viewport the picker listens on, so a
+   * pointer event on a wheel entry bubbles up to the picker, which then
+   * picks the tile under the entry and reports a click there. While a
+   * tile click did nothing that was harmless; now it opens a wheel, so a
+   * choice on one ring would open another behind it. Stopped at the HUD
+   * root, after the panel has seen it: the grid itself lets events
+   * through (`pointer-events: none`), so anything that reaches here
+   * with a target inside it was aimed at a panel, not the map.
+   */
+  private guardPointer(hud: HTMLElement): void {
+    const stop = (event: Event): void => {
+      if (event.target !== hud) {
+        event.stopPropagation();
+      }
+    };
+    for (const type of POINTER_EVENTS) {
+      hud.addEventListener(type, stop);
+    }
+    this.pointerGuard = {
+      dispose: () => {
+        for (const type of POINTER_EVENTS) {
+          hud.removeEventListener(type, stop);
+        }
+      },
+    };
+  }
+
+  /**
    * Marks the side rail while it has content below the fold (#657).
    *
    * The rail is laid out correctly -- it is a grid row and stops above
-   * the action bar, measured at 647 against the bar's 663 at 720p. What
-   * goes wrong is quieter: a two-weapon mech's card plus two objectives
-   * comes to 654 px in a 590 px rail, so the last objective is cut and
-   * **nothing says the rest is one scroll away.** A cut row with no cue
-   * reads as a rendering fault rather than as more to see.
+   * the bottom bar. What goes wrong is quieter: a two-weapon mech's card
+   * plus two objectives can outgrow the rail, so the last objective is
+   * cut and **nothing says the rest is one scroll away.** A cut row with
+   * no cue reads as a rendering fault rather than as more to see.
    *
    * Cannot be done in CSS alone: it depends on content height against
    * box height, which no selector can ask about. Re-measured when the
@@ -1268,9 +1454,59 @@ export class TacticalHudView {
     measure();
   }
 
+  /**
+   * One chip per unit the player can see and whose head is on screen:
+   * the perceived view, never the true mission, so a bug nobody has
+   * spotted gets no chip announcing it (ADR 0006).
+   */
+  private drawStatus(): void {
+    const mission = this.mission;
+    const view = this.view;
+    const anchorFor = this.handlers.headAnchorFor;
+    if (!mission || !view || anchorFor === undefined) {
+      this.status.show([]);
+      return;
+    }
+    const names = namesFor(mission, this.campaign);
+    const chips: UnitStatusChip[] = [];
+    for (const unit of view.units) {
+      if (unit.hp <= 0) {
+        continue;
+      }
+      const anchor = anchorFor(unit.id);
+      if (anchor === undefined) {
+        continue;
+      }
+      // One gauge per weapon with a pool: a mech's two guns heat
+      // separately, and the chip says so rather than showing the first.
+      const gauge = chargeRegisterFor(unit.kind).gauge;
+      const charges = (
+        mission.templates[unit.templateId]?.weapons ?? []
+      ).flatMap((weapon) => {
+        const left = chargesLeft(unit, weapon);
+        return weapon.charges === undefined || left === undefined
+          ? []
+          : [{ label: weapon.name, gauge, value: left, max: weapon.charges }];
+      });
+      chips.push({
+        unitId: unit.id,
+        anchor,
+        name: names.unit(unit.id),
+        team: unit.team,
+        hp: unit.hp,
+        maxHp: unit.maxHp,
+        charges,
+      });
+    }
+    this.status.show(chips);
+  }
+
   /** Pushes the mission and the presentation state into every part. */
   private refresh(): void {
     this.followMenu();
+    if (this.inspecting) {
+      this.drawStatus();
+    }
     const mission = this.mission;
     if (!mission) {
       this.banner.update(undefined);
@@ -1279,11 +1515,12 @@ export class TacticalHudView {
       this.objectives.update([], []);
       this.squad.update(undefined);
       this.actions.update({
-        canAct: false,
         playerPhase: false,
-        mode: undefined,
-        canExtract: false,
-        canInteract: false,
+        unavailable: [],
+        hasActor: false,
+        reloadLabel: "Reload",
+        aiming: false,
+        unspent: 0,
       });
       return;
     }
@@ -1338,16 +1575,7 @@ export class TacticalHudView {
       inReach?.objective.id,
     );
     // The rail names units through the same resolver as the card, the
-    // banner and the log (#1040). It arrived in #1041 using the log's
-    // `nameResolver`, which then answered with the *template* name --
-    // "Rifle Squad" for both Alpha and Bravo -- and fell back to the raw
-    // id, which is the defect #1040 removed by converting the rail.
-    //
-    // Neither is true of `nameResolver` any more: #1029 moved it into
-    // `event-vocabulary` and it now delegates here, so the two agree by
-    // construction. The rail still calls `namesFor` directly because it
-    // wants the resolver object, not the `NameOf` function the log and
-    // the indicator share.
+    // banner and the log (#1040).
     const railNames = namesFor(mission, this.campaign);
     this.squad.update({
       units: playerUnits(mission),
@@ -1355,25 +1583,12 @@ export class TacticalHudView {
       nameOf: (unitId) => railNames.unit(unitId),
     });
     this.actions.update({
-      attacksLeft: selected === undefined ? 0 : this.attacksLeftFor(selected),
-      weapons: selected
-        ? weaponOptions(mission, selected.id, this.deps.combatTuning).map(
-            (option) => ({
-              id: option.weapon.id,
-              name: option.weapon.name,
-              ready: option.ready,
-            }),
-          )
-        : [],
-      armedWeaponId: this.armedWeaponId,
-      canAct: this.canAct(),
       playerPhase: mission.phase === "player",
-      mode: this.mode,
-      reloadLabel: chargeRegisterFor(selected?.kind ?? "squad").actionLabel,
-      unspent: this.unspentCount(),
-      canExtract: this.canExtract(),
       unavailable: this.unavailableActions(),
-      canInteract: inReach !== undefined,
+      hasActor: this.actingSelection() !== undefined,
+      reloadLabel: chargeRegisterFor(selected?.kind ?? "squad").actionLabel,
+      aiming: this.mode === "attack",
+      unspent: this.unspentCount(),
     });
     // Last, so the listener reads the state the refresh just settled.
     this.handlers.onViewChange?.();

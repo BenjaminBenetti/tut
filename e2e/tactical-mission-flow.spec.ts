@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import type { TacticalTestHooks } from "../src/ui/model/tactical-intent";
+import { openUnitWheel, wheelItem } from "./action-wheel.helper";
 
 /** The page's global object as seen from `page.evaluate`. */
 interface HookGlobal {
@@ -85,17 +86,13 @@ test("Launch plays the mission out, extraction ends it, and the debrief comes fr
     page.locator('#turn-banner [data-field="tdf-units"]'),
   ).toHaveText("1");
   // The objective tracker reads from the mission: every spawner still
-  // standing, none of them worked yet. Interact is offered only in reach,
-  // and the spawners sit 12+ tiles from the deploy zone (#427).
+  // standing, none of them worked yet.
   const objectives = page.locator('[data-role="objective-list"] li');
   await expect(objectives.first()).toBeVisible();
   await expect(page.locator('[data-field="objective-summary"]')).toHaveText(
     /^0 \/ [1-9]\d*$/,
   );
   await expect(objectives.first()).toContainText("hp");
-  await expect(
-    page.locator('#action-bar [data-action="interact"]'),
-  ).toBeDisabled();
 
   // The mission is still on offer: nothing is resolved until it ends.
 
@@ -109,15 +106,20 @@ test("Launch plays the mission out, extraction ends it, and the debrief comes fr
   ).toHaveText(cityName ?? "");
 
   // Walk the squad off the map. It deployed on the extraction hook, so
-  // Extract is offered as soon as it is selected.
-  const extract = page.locator('#action-bar [data-action="extract"]');
-  await expect(extract).toBeDisabled();
+  // its own wheel offers boarding the drop ship (#1112). Interact is
+  // offered only in reach, and the spawners sit 12+ tiles from the
+  // deploy zone (#427), so the wheel has no Interact entry.
   await page.evaluate(() =>
     (globalThis as HookGlobal).__tutTactical__?.selectUnit("unit-1"),
   );
   await expect(body).toHaveAttribute("data-selected-unit", "unit-1");
-  await expect(extract).toBeEnabled();
-  await extract.click();
+  await openUnitWheel(page, "unit-1");
+  await expect(
+    page.locator('#radial-menu button[data-item^="interact:"]'),
+  ).toHaveCount(0);
+  const board = wheelItem(page, "extract");
+  await expect(board).toBeEnabled();
+  await board.click();
 
   // The last unit off the map ends the mission, and the debrief is built
   // from it: extracted, with the extraction share of the reward.
@@ -219,17 +221,15 @@ test("a unit moves on a right click, with no action chosen first", async ({
   expect(plan).not.toBeNull();
   if (!plan) return;
 
-  // Select the unit and right click the tile. Nothing on the action bar
-  // is touched between the two — that is the whole point of #519; #520
-  // moved the trigger from the left button to the right.
+  // Select the unit and right click the tile. Nothing is armed between
+  // the two — that is the whole point of #519; #520 moved the trigger
+  // from the left button to the right, and #1112 made it the only thing
+  // the right button does.
   await page.evaluate(
     (unitId) => (globalThis as HookGlobal).__tutTactical__?.selectUnit(unitId),
     plan.unitId,
   );
   await expect(body).toHaveAttribute("data-selected-unit", plan.unitId);
-  await expect(
-    page.locator('#action-bar [data-action="move"]'),
-  ).toHaveAttribute("aria-pressed", "true");
   await page.evaluate(
     (tile) => (globalThis as HookGlobal).__tutTactical__?.invokeTile(tile),
     plan.to,

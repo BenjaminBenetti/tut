@@ -5,6 +5,7 @@ import type { Page } from "@playwright/test";
 import { expect, test } from "@playwright/test";
 
 import type { TacticalTestHooks } from "../src/ui/model/tactical-intent";
+import { openUnitWheel, wheelItem } from "./action-wheel.helper";
 
 /** The page's global object as seen from `page.evaluate`. */
 interface HookGlobal {
@@ -150,14 +151,24 @@ test("captures the debrief payout, clean and after a mech loss", async ({
   await expect(body).toHaveAttribute("data-screen", "tactical");
   await expect(body).toHaveAttribute("data-tactical-units", /^[1-9]\d*$/);
 
-  const extract = page.locator('#action-bar [data-action="extract"]');
+  const board = wheelItem(page, "extract");
   for (const unitId of ["unit-2", "unit-3"]) {
     await page.evaluate(
       (id) => (globalThis as HookGlobal).__tutTactical__?.selectUnit(id),
       unitId,
     );
-    if (await extract.isEnabled()) {
-      await extract.click();
+    // A dead unit cannot be selected, and has no wheel to open.
+    const selected = await page
+      .locator(
+        `[data-role="squad-list"] li[data-unit-id="${unitId}"][data-selected="true"]`,
+      )
+      .count();
+    if (selected === 0) {
+      continue;
+    }
+    await openUnitWheel(page, unitId);
+    if (await board.isEnabled()) {
+      await board.click();
     }
   }
   await shootDebrief(page, `${FRAMES}-mech-lost.png`);

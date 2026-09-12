@@ -119,7 +119,9 @@ Vision is a core system, not a presentation detail.
 ### 6.2.2 Presentation of combat
 The player's attention belongs on the battlefield, not on a side panel.
 
-- Move is the default action. Selecting a unit and clicking a reachable tile moves it, with no mode to enter first. Right click invokes actions; number keys select them.
+- Move is the default action. Selecting a unit and **right clicking** a reachable tile moves it, with no mode to enter first.
+- **Left click opens the action wheel.** With a unit selected, a left click on anything but a friendly unit (which switches the selection) opens a ring at the clicked thing listing the actions that apply *there*: Move on a tile; Attack on an enemy, which turns to a sub-wheel of the unit's weapons when it carries several; Interact on an objective in reach; Reload / Vent and Overwatch on every wheel; clicking the selected unit itself opens its own wheel. Actions the rules refuse stay on the ring, closed, with the reason on them. There is no action bar: only End turn keeps a button. (Executive Director, 2026-09-11, #1112.)
+- **Extract is boarding the drop ship.** It is offered on the wheel when the drop ship or its boarding tiles are clicked, open only to a unit standing on the ramp — never as a button of its own.
 - The reach of one action point and of two are distinguishable before committing to a move, and a selected unit shows its weapon range without needing a target.
 - Attack confirmation appears at the target, not in a panel: hit chance, damage and the commit control presented on the enemy itself.
 - Building geometry between the camera and a unit fades in a soft radius so the player can always see their own force and the fight.
@@ -130,7 +132,7 @@ The player's attention belongs on the battlefield, not on a side panel.
 ### 6.3 Spawning
 - **Egg spawners** are static objectives placed by map generation. They periodically hatch bugs. Destroying them is the baseline objective.
 - **Edge spawns** trickle bugs in from map edges on a timer that escalates with mission difficulty and overworld threat.
-- Missions end on objective completion, full extraction, or squad wipe.
+- Missions end when the force is off the map: **won** once every objective is complete and the survivors have boarded the drop ship, **extracted** if they board with an objective still open, **lost** on a squad wipe. Completing the objectives does not end the mission on its own; the force still has to get home (Executive Director, 2026-09-11).
 
 ### 6.4 Bugs (see Track: Bestiary)
 - Baseline three for M2: a **swarmer** (fast, weak, numerous, rushes), a **lurker** (stealthy flanker that tries to get behind the line), and a **brute** (slow, armored, punishes clumping).

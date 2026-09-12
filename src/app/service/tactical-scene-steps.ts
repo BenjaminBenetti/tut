@@ -44,8 +44,12 @@ export interface SceneFraming {
 
 /** What a step needs to play a batch of events around a redraw. */
 export interface PhasedQueue {
-  /** Plays the events, then calls `done`. */
-  enqueue(events: readonly TacticalEvent[], done: () => void): void;
+  /** Plays the events, then calls `done`; `onStart` hears each as it begins. */
+  enqueue(
+    events: readonly TacticalEvent[],
+    done: () => void,
+    onStart?: (event: TacticalEvent) => void,
+  ): void;
 }
 
 // ===========================================
@@ -134,18 +138,24 @@ export function frameMission(
  * @param queue - The animation queue to play through.
  * @param events - The batch that just resolved.
  * @param redraw - Moves the scene to the new state, between the phases.
+ * @param onStart - Hears each event as it begins to play, in order.
  */
 export function playAroundRedraw(
   queue: PhasedQueue,
   events: readonly TacticalEvent[],
   redraw: () => Promise<void>,
+  onStart?: (event: TacticalEvent) => void,
 ): Promise<void> {
   const phases = phaseEvents(events);
   return new Promise((resolve) => {
-    queue.enqueue(phases.before, () => {
-      void redraw().then(() => {
-        queue.enqueue(phases.after, resolve);
-      });
-    });
+    queue.enqueue(
+      phases.before,
+      () => {
+        void redraw().then(() => {
+          queue.enqueue(phases.after, resolve, onStart);
+        });
+      },
+      onStart,
+    );
   });
 }

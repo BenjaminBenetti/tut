@@ -3,6 +3,7 @@ import { expect, test } from "@playwright/test";
 import { drawnFrame, neighbourTileOf } from "./capture-frame.helper";
 import { launchMission, settleForShot } from "./mission-capture.helper";
 import type { TacticalTestHooks } from "../src/ui/model/tactical-intent";
+import { openUnitWheel, wheelItem } from "./action-wheel.helper";
 
 interface HookGlobal {
   __tutTactical__?: TacticalTestHooks;
@@ -65,10 +66,9 @@ test("captures indicators for several actions, and a move that shows none", asyn
       (id) => (globalThis as HookGlobal).__tutTactical__?.selectUnit(id),
       unitId,
     );
-    await page
-      .locator(`#action-bar [data-action="${action}"]`)
-      .first()
-      .click({ force: true });
+    // The action lives on the unit's wheel (#1112).
+    await openUnitWheel(page, unitId);
+    await wheelItem(page, action).click({ force: true });
     await drawnFrame(page);
     expect(
       await logged(),

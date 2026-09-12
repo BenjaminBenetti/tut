@@ -93,7 +93,7 @@ test("captures two same-template squads acting separately", async ({
       (id) => (globalThis as HookGlobal).__tutTactical__?.selectUnit(id),
       unitId,
     );
-    await page.keyboard.press("3");
+    await page.keyboard.press("o");
     await page.waitForTimeout(250);
   }
   await drawnFrame(page);

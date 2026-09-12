@@ -9,16 +9,12 @@ import type { SceneCamera } from "../../graphics/model/scene-camera";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { TacticalIntent } from "../model/tactical-intent";
 import { CAMERA_KEYS } from "../../graphics/controller/camera-input-controller";
-import { ACTION_BAR_ORDER } from "../model/tactical-intent";
 import type {
   CameraInput,
   TacticalInputSurface,
   TacticalPicker,
 } from "./tactical-input-controller";
-import {
-  TACTICAL_SHORTCUTS,
-  TacticalInputController,
-} from "./tactical-input-controller";
+import { TacticalInputController } from "./tactical-input-controller";
 
 type Listener = (event: unknown) => void;
 
@@ -109,6 +105,9 @@ class FakePicker implements TacticalPicker {
   }
   spawnerWorldPosition(id: string): Vec3 | undefined {
     return id === "spawner-1" ? { x: 2, y: 0, z: 2 } : undefined;
+  }
+  unitHeight(): number | undefined {
+    return 1;
   }
   unitWorldPosition(id: string): Vec3 | undefined {
     return id === "u1" ? { x: -1, y: 0, z: 0 } : undefined;
@@ -409,27 +408,7 @@ describe("TacticalInputController pointer buttons", () => {
     expect(prevented).toBe(1);
   });
 
-  it("binds the number row to the action bar in order", () => {
-    const { intents, surface } = setup();
-    for (const key of ["1", "2", "3", "4", "5", "6", "7"]) {
-      surface.ownerDocument.dispatch("keydown", {
-        key,
-        preventDefault: () => undefined,
-      });
-    }
-    expect(intents).toEqual([
-      { kind: "action", action: "move" },
-      { kind: "action", action: "attack" },
-      { kind: "action", action: "overwatch" },
-      { kind: "action", action: "reload" },
-      { kind: "action", action: "interact" },
-      { kind: "action", action: "extract" },
-      // The bar's last button is End turn, so its digit is End Turn.
-      { kind: "end-turn" },
-    ]);
-  });
-
-  it("keeps every letter shortcut from #340 working alongside the digits", () => {
+  it("keeps every letter shortcut from #340 working", () => {
     // Except `a`, removed in #1091: it is the camera's pan-left key, and
     // `f` remains Attack's letter.
     const { intents, surface } = setup();
@@ -452,13 +431,33 @@ describe("TacticalInputController pointer buttons", () => {
     ]);
   });
 
-  it("has one digit per action-bar button, with no gaps", () => {
-    const digits = Object.keys(TACTICAL_SHORTCUTS).filter((key) =>
-      /^[0-9]$/.test(key),
-    );
-    expect(digits.sort()).toEqual(
-      ACTION_BAR_ORDER.map((_, i) => String(i + 1)).sort(),
-    );
+  it("binds the number row to the bar's order, and Shift to inspecting", () => {
+    const { intents, surface } = setup();
+    for (const key of ["1", "2", "3", "4", "5", "6", "7"]) {
+      surface.ownerDocument.dispatch("keydown", {
+        key,
+        preventDefault: () => undefined,
+      });
+    }
+    expect(intents).toEqual([
+      { kind: "action", action: "move" },
+      { kind: "action", action: "attack" },
+      { kind: "action", action: "overwatch" },
+      { kind: "action", action: "reload" },
+      { kind: "action", action: "interact" },
+      { kind: "action", action: "extract" },
+      { kind: "end-turn" },
+    ]);
+    intents.length = 0;
+    surface.ownerDocument.dispatch("keydown", {
+      key: "Shift",
+      preventDefault: () => undefined,
+    });
+    surface.ownerDocument.dispatch("keyup", { key: "Shift" });
+    expect(intents).toEqual([
+      { kind: "inspect", held: true },
+      { kind: "inspect", held: false },
+    ]);
   });
   // #1091: `a` panned the view and armed Attack on the same keypress, so
   // every leftward pan on a spent unit said "no action points left".

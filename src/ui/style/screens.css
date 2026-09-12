@@ -740,9 +740,9 @@
 
 /*
  * The HUD is an overlay grid over the tactical viewport: banner across
- * the top, a side column on the right, the action bar along the bottom.
- * The grid itself lets pointer events through to the map; its parts do
- * not.
+ * the top, a side column on the right, the End turn bar along the bottom
+ * (the actions themselves are on the wheel, #1112). The grid itself lets
+ * pointer events through to the map; its parts do not.
  */
 .tut-hud {
   position: absolute;
@@ -890,9 +890,9 @@
    =========================================== */
 
 /*
- * Bottom left of the map area: clear of the action bar below and the unit
- * card on the right, so it never covers either at 1280 x 720 or at the
- * 800 px minimum width. Collapsed it is just its own header.
+ * Bottom left of the map area: clear of the End turn bar below and the
+ * unit card on the right, so it never covers either at 1280 x 720 or at
+ * the 800 px minimum width. Collapsed it is just its own header.
  */
 .tut-hud__log {
   grid-area: map;
@@ -964,9 +964,9 @@
 }
 
 /*
- * Action-bar buttons carry their glyph between the shortcut digit and the
- * label (#495). The icon takes `currentColor`, so it dims with a disabled
- * button and turns accent on the armed one without a rule of its own.
+ * The End turn button carries its glyph before the label (#495). The icon
+ * takes `currentColor`, so it dims with an unavailable button without a
+ * rule of its own.
  */
 .tut-hud__actions .tut-btn {
   display: inline-flex;
@@ -1102,9 +1102,31 @@
 }
 
 .tut-radial__ring,
-.tut-radial__hub {
+.tut-radial__hub,
+.tut-radial__track {
   position: absolute;
   transform: translate(-50%, -50%);
+}
+
+/*
+ * The track joins the entries into one ring: a dashed ellipse in the
+ * accent, faint enough to sit behind the words. Without it the entries
+ * read as loose buttons scattered near the tile.
+ */
+.tut-radial__track {
+  left: 0;
+  top: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.tut-radial__track ellipse {
+  /* No fill: the tile the wheel is about is framed on the map beneath it. */
+  fill: none;
+  stroke: var(--ui-accent);
+  stroke-width: 2;
+  stroke-dasharray: 6 5;
+  opacity: 0.8;
 }
 
 .tut-radial__hub {
@@ -1178,4 +1200,80 @@
   .tut-radial__item {
     animation: none;
   }
+}
+
+/* ===========================================
+   Unit status chips (Shift held)
+   =========================================== */
+
+/*
+ * One compact chip above every visible unit while Shift is held: name,
+ * a health bar and the charge gauge. Anchored to the unit's head like
+ * the wheel is anchored to its tile (ADR 0007), so it is part of the
+ * scene rather than a rail. No pointer events: it is a readout, and it
+ * must never eat the click on the unit beneath it.
+ */
+.tut-status-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.tut-status-chip {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 6px));
+  min-width: 92px;
+  padding: 3px 6px 4px;
+  background: rgb(20 24 33 / 88%);
+  border: var(--line) solid var(--ui-line);
+  border-left: 3px solid var(--ui-accent);
+  font-size: 11px;
+  line-height: 1.2;
+  color: var(--ui-text);
+  white-space: nowrap;
+}
+
+.tut-status-chip[data-team="bugs"] {
+  border-left-color: var(--ui-bug);
+}
+
+.tut-status-chip__name {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.tut-status-chip__health {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 3px 0 2px;
+}
+
+.tut-status-chip__bar {
+  flex: 1;
+  min-width: 56px;
+  height: 4px;
+  background: rgb(255 255 255 / 12%);
+}
+
+.tut-status-chip__numbers {
+  font-size: 10px;
+  color: var(--ui-text-dim);
+}
+
+.tut-status-chip__fill {
+  height: 100%;
+  background: var(--ui-ok);
+}
+.tut-status-chip__fill[data-tone="warn"] {
+  background: var(--ui-warn);
+}
+.tut-status-chip__fill[data-tone="danger"] {
+  background: var(--ui-danger);
+}
+
+.tut-status-chip__gauges {
+  font-size: 10px;
+  color: var(--ui-text-dim);
 }

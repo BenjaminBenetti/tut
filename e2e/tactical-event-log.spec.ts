@@ -99,7 +99,7 @@ test("the event log reads the mission's events and collapses (#525)", async ({
 });
 
 for (const size of WIDTHS) {
-  test(`the event log clears the action bar and the unit card at ${size.label} (#525)`, async ({
+  test(`the event log clears the End turn bar and the unit card at ${size.label} (#525)`, async ({
     page,
   }) => {
     await page.setViewportSize({ width: size.width, height: size.height });
@@ -109,7 +109,7 @@ for (const size of WIDTHS) {
     const actions = await boxOf(page.locator("#action-bar"));
     const objectives = await boxOf(page.locator("#objectives"));
 
-    expect(overlaps(log, actions), "log over the action bar").toBe(false);
+    expect(overlaps(log, actions), "log over the End turn bar").toBe(false);
     expect(overlaps(log, objectives), "log over the side column").toBe(false);
     // And it is where the issue asks for it: the bottom-left corner.
     expect(log.x).toBeLessThan(size.width / 2);

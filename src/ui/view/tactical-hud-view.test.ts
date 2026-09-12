@@ -38,12 +38,23 @@ function setup(
   extra: {
     onLookAt?: (unitId: string) => void;
     onNotice?: (unitId: string, text: string) => void;
+    onMarkTile?: (
+      tile: { x: number; y: number; z: number } | undefined,
+    ) => void;
+    headAnchorFor?: (unitId: string) => { x: number; y: number } | undefined;
   } = {},
 ) {
   const commands: TacticalCommand[] = [];
   const onBack = vi.fn();
   const hud = new TacticalHudView(
-    { onCommand: (c) => commands.push(c), onBack, ...extra },
+    {
+      onCommand: (c) => commands.push(c),
+      onBack,
+      // An anchor, so the wheel can open: without one a left click on a
+      // tile or an enemy opens nothing and half the HUD is untestable.
+      anchorFor: () => ({ x: 100, y: 100 }),
+      ...extra,
+    },
     { combatTuning: COMBAT_TUNING, objectiveTuning: OBJECTIVE_TUNING },
   );
   hud.mount(root);
@@ -51,6 +62,22 @@ function setup(
   hud.update(mission);
   return { hud, commands, mission, onBack };
 }
+
+/** The wheel entry with this id, or null while the wheel is closed. */
+const item = (id: string): HTMLButtonElement | null =>
+  root.querySelector<HTMLButtonElement>(
+    `#radial-menu button[data-item="${id}"]`,
+  );
+
+/** Every entry id on the open wheel, in ring order. */
+const items = (): string[] =>
+  [...root.querySelectorAll<HTMLElement>("#radial-menu button[data-item]")].map(
+    (button) => button.dataset.item ?? "",
+  );
+
+/** True while the wheel is on screen. */
+const wheelOpen = (): boolean =>
+  root.querySelector<HTMLElement>("#radial-menu")?.dataset.open === "true";
 
 beforeEach(() => {
   document.body.innerHTML = "";
@@ -101,22 +128,271 @@ describe("TacticalHudView", () => {
     ).toBe(false);
   });
 
-  it("selecting a unit fills the card and enables the actions it can take", () => {
+  it("selecting a unit fills the card; clicking it again opens its wheel (#1112)", () => {
     const { hud } = setup();
     hud.handleIntent({ kind: "select-unit", unitId: "s1" });
     expect(hud.getSelectedUnitId()).toBe("s1");
     expect(field("unit-name")?.textContent).toBe("Rifle Squad");
-    expect(
-      root.querySelector<HTMLButtonElement>('[data-action="attack"]')?.disabled,
-    ).toBe(false);
+    // A click on a friendly unit selects it and opens nothing.
+    expect(wheelOpen()).toBe(false);
+    // A second click on the selected unit asks what it can do here.
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    expect(wheelOpen()).toBe(true);
+    expect(item("overwatch")?.disabled).toBe(false);
+    // Another friendly unit switches the selection and closes the wheel.
     hud.handleIntent({ kind: "select-unit", unitId: "s2" });
-    expect(
-      root
-        .querySelector<HTMLButtonElement>('[data-action="attack"]')
-        ?.getAttribute("aria-disabled"),
-    ).toBe("true");
+    expect(hud.getSelectedUnitId()).toBe("s2");
+    expect(wheelOpen()).toBe(false);
+    // A spent unit still gets a wheel, with every entry saying why not.
+    hud.handleIntent({ kind: "select-unit", unitId: "s2" });
+    expect(item("overwatch")?.disabled).toBe(true);
+    expect(item("overwatch")?.title).toContain("no action points");
+    // With a squad selected, a bug is a target, not a selection.
     hud.handleIntent({ kind: "select-unit", unitId: "b1" });
+    expect(hud.getSelectedUnitId()).toBe("s2");
+    expect(hud.getTargetUnitId()).toBe("b1");
+    expect(wheelOpen()).toBe(true);
+    expect(item("attack:b1")?.disabled).toBe(true);
+  });
+
+  it("a bug can be selected to read its card when nothing of the player's is", () => {
+    const { hud } = setup();
+    hud.handleIntent({ kind: "select-unit", unitId: "b1" });
+    expect(hud.getSelectedUnitId()).toBe("b1");
     expect(field("unit-side")?.textContent).toBe("bugs · bug");
+    expect(wheelOpen()).toBe(false);
+  });
+
+  it("a left click on an enemy aims at it and opens the wheel with Attack first (#1112)", () => {
+    const { hud, commands, mission } = setup();
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    hud.handleIntent({ kind: "select-unit", unitId: "b1" });
+    // Aiming: the target is previewed and the envelope is drawn, as the
+    // keyboard's Attack does, so the map explains the ring.
+    expect(hud.getSelectedUnitId()).toBe("s1");
+    expect(hud.getTargetUnitId()).toBe("b1");
+    expect(hud.getMode()).toBe("attack");
+    expect(items()[0]).toBe("attack:b1");
+    const expected = previewAttack(mission, "s1", "b1", COMBAT_TUNING);
+    if (!expected.ok) throw new Error("fixture shot must be legal");
+    expect(field("hub-value")?.textContent).toBe(
+      `${String(expected.value.hitChance)}%`,
+    );
+    // One weapon: the entry is the shot.
+    item("attack:b1")?.click();
+    expect(commands).toEqual([
+      { type: ATTACK, payload: { attackerId: "s1", targetId: "b1" } },
+    ]);
+    expect(wheelOpen()).toBe(false);
+    expect(hud.getMode()).toBe("move");
+  });
+
+  it("Attack on a unit with several weapons turns to a weapon page, and Back turns back (#1112)", () => {
+    const commands: TacticalCommand[] = [];
+    const hud = new TacticalHudView(
+      {
+        onCommand: (c) => commands.push(c),
+        onBack: vi.fn(),
+        anchorFor: () => ({ x: 100, y: 100 }),
+      },
+      { combatTuning: COMBAT_TUNING, objectiveTuning: OBJECTIVE_TUNING },
+    );
+    hud.mount(root);
+    hud.update(twoWeaponMission());
+    hud.handleIntent({ kind: "select-unit", unitId: "m1" });
+    hud.handleIntent({ kind: "select-unit", unitId: "b1" });
+    expect(items()[0]).toBe("attack:b1");
+    item("attack:b1")?.click();
+    // The page turned rather than firing: one entry per weapon, a way back.
+    expect(wheelOpen()).toBe(true);
+    expect(items()).toEqual([
+      "attack:b1:arm-weapon",
+      "attack:b1:back-weapon",
+      "back:b1",
+    ]);
+    expect(commands).toEqual([]);
+    item("back:b1")?.click();
+    expect(items()[0]).toBe("attack:b1");
+    item("attack:b1")?.click();
+    item("attack:b1:back-weapon")?.click();
+    expect(commands).toEqual([
+      {
+        type: ATTACK,
+        payload: { attackerId: "m1", targetId: "b1", weaponId: "back-weapon" },
+      },
+    ]);
+    expect(wheelOpen()).toBe(false);
+  });
+
+  it("a press outside an aiming wheel closes the ring and keeps the aim, so the panel's Fire still works (#1112)", () => {
+    const { hud, commands } = setup();
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    hud.handleIntent({ kind: "select-unit", unitId: "b1" });
+    expect(hud.getMode()).toBe("attack");
+    // The press that dismisses the ring is the press on Fire: pointerdown
+    // reaches the document first, then the click lands on the button.
+    document.body.dispatchEvent(
+      new PointerEvent("pointerdown", { bubbles: true }),
+    );
+    expect(wheelOpen()).toBe(false);
+    expect(hud.getMode()).toBe("attack");
+    expect(hud.getTargetUnitId()).toBe("b1");
+    root
+      .querySelector<HTMLButtonElement>('[data-action="confirm-attack"]')
+      ?.click();
+    expect(commands).toEqual([
+      { type: ATTACK, payload: { attackerId: "s1", targetId: "b1" } },
+    ]);
+    // Cancel is what clears the aim, as it always did.
+    hud.handleIntent({ kind: "select-unit", unitId: "b1" });
+    hud.handleIntent({ kind: "action", action: "cancel" });
+    expect(wheelOpen()).toBe(false);
+    expect(hud.getMode()).toBe("move");
+    expect(hud.getTargetUnitId()).toBeUndefined();
+  });
+
+  it("a left click on a tile opens the wheel with Move, and Move walks (#1112)", () => {
+    const { hud, commands } = setup();
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    hud.handleIntent({ kind: "select-tile", tile: { x: 3, y: 0, z: 1 } });
+    expect(items()).toEqual(["move:3,0,1", "overwatch", "reload"]);
+    expect(commands).toEqual([]);
+    item("move:3,0,1")?.click();
+    expect(commands.map((c) => c.type)).toEqual([MOVE]);
+    expect(wheelOpen()).toBe(false);
+  });
+
+  it("a tile out of reach still gets a wheel, with Move closed and the reason on it", () => {
+    const { hud, mission } = setup();
+    hud.update({
+      ...mission,
+      units: mission.units.map((u) => (u.id === "s1" ? { ...u, ap: 1 } : u)),
+    });
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    hud.handleIntent({ kind: "select-tile", tile: { x: 9, y: 0, z: 5 } });
+    expect(item("move:9,0,5")?.disabled).toBe(true);
+    expect(item("move:9,0,5")?.textContent).toContain("out of reach");
+  });
+
+  it("frames the wheel's tile on the map while it is open, and clears it after (#1113 review)", () => {
+    const marked: (string | undefined)[] = [];
+    const { hud, mission } = setup({
+      onMarkTile: (tile) => {
+        marked.push(
+          tile === undefined
+            ? undefined
+            : `${String(tile.x)},${String(tile.y)},${String(tile.z)}`,
+        );
+      },
+    });
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    hud.handleIntent({ kind: "select-tile", tile: { x: 3, y: 0, z: 1 } });
+    expect(marked.at(-1)).toBe("3,0,1");
+    // An enemy's wheel frames the enemy's tile.
+    hud.handleIntent({ kind: "select-unit", unitId: "b1" });
+    const b1 = mission.units.find((u) => u.id === "b1");
+    expect(marked.at(-1)).toBe(
+      `${String(b1?.pos.x)},${String(b1?.pos.y)},${String(b1?.pos.z)}`,
+    );
+    hud.handleIntent({ kind: "action", action: "cancel" });
+    expect(marked.at(-1)).toBeUndefined();
+  });
+
+  it("shows a status chip above every visible unit while Shift is held, and none after (#1113 review)", () => {
+    const { hud, mission } = setup({
+      headAnchorFor: (unitId) => ({ x: unitId.length * 10, y: 50 }),
+    });
+    const layer = (): HTMLElement | null =>
+      root.querySelector<HTMLElement>("#unit-status-layer");
+    const chips = (): HTMLElement[] => [
+      ...root.querySelectorAll<HTMLElement>(".tut-status-chip"),
+    ];
+    expect(layer()?.hidden).toBe(true);
+    hud.handleIntent({ kind: "inspect", held: true });
+    expect(layer()?.hidden).toBe(false);
+    // Every living unit the player can see: the fixture's two squads and
+    // the bugs a real look from where they stand has spotted.
+    const visible = mission.units.filter(
+      (u) =>
+        u.hp > 0 &&
+        (u.team === "tdf" || mission.vision.tdf.spotted.includes(u.id)),
+    );
+    expect(
+      chips()
+        .map((c) => c.dataset.unitId)
+        .sort(),
+    ).toEqual(visible.map((u) => u.id).sort());
+    const s2 = chips().find((c) => c.dataset.unitId === "s2");
+    expect(
+      s2?.querySelector<HTMLElement>('[data-field="status-name"]')?.textContent,
+    ).toBe("Rifle Squad");
+    // 12 of 20 hit points: a 60% bar, still in the ok tone.
+    const fill = s2?.querySelector<HTMLElement>('[data-field="status-hp"]');
+    expect(fill?.style.width).toBe("60%");
+    expect(fill?.dataset.tone).toBe("ok");
+    // The numbers after the bar; no pool on the fixture's rifles, so no
+    // gauge line.
+    expect(
+      s2?.querySelector<HTMLElement>('[data-field="status-hp-text"]')
+        ?.textContent,
+    ).toBe("12 / 20");
+    expect(
+      s2?.querySelector<HTMLElement>('[data-field="status-charges"]')?.hidden,
+    ).toBe(true);
+    expect(s2?.style.left).toBe("20px");
+    // The chips follow the state: a unit that dies loses its chip.
+    hud.update({
+      ...mission,
+      units: mission.units.map((u) => (u.id === "s2" ? { ...u, hp: 0 } : u)),
+    });
+    expect(chips().some((c) => c.dataset.unitId === "s2")).toBe(false);
+    hud.handleIntent({ kind: "inspect", held: false });
+    expect(layer()?.hidden).toBe(true);
+    expect(chips()).toHaveLength(0);
+  });
+
+  it("names every pooled weapon's gauge in the unit's register on its chip", () => {
+    const { hud, mission } = setup({
+      headAnchorFor: () => ({ x: 0, y: 0 }),
+    });
+    const s1 = mission.units.find((u) => u.id === "s1");
+    const template = s1 && mission.templates[s1.templateId];
+    if (!s1 || !template) throw new Error("fixture needs s1");
+    const first = template.weapons[0];
+    if (!first) throw new Error("fixture weapon");
+    const rifle = { ...first, id: "rifle", name: "Rifle", charges: 3 };
+    const launcher = {
+      ...first,
+      id: "launcher",
+      name: "Launcher",
+      charges: 2,
+    };
+    // And one with no pool, which gets no line.
+    const knife = { ...first, id: "knife", name: "Knife" };
+    hud.update({
+      ...mission,
+      templates: {
+        ...mission.templates,
+        [s1.templateId]: { ...template, weapons: [rifle, knife, launcher] },
+      },
+      units: mission.units.map((u) =>
+        u.id === "s1" ? { ...u, charges: { rifle: 1, launcher: 2 } } : u,
+      ),
+    });
+    hud.handleIntent({ kind: "inspect", held: true });
+    const lines = [
+      ...root.querySelectorAll<HTMLElement>(
+        '.tut-status-chip[data-unit-id="s1"] [data-field="status-charge"]',
+      ),
+    ].map((row) => row.textContent);
+    expect(lines).toEqual(["Rifle · ammo 1 / 3", "Launcher · ammo 2 / 2"]);
+  });
+
+  it("a tile click by a unit that is not the player's opens nothing", () => {
+    const { hud } = setup();
+    hud.handleIntent({ kind: "select-unit", unitId: "b1" });
+    hud.handleIntent({ kind: "select-tile", tile: { x: 5, y: 0, z: 3 } });
+    expect(wheelOpen()).toBe(false);
   });
 
   it("previews and fires at an egg spawner, naming it in the panel (#426)", () => {
@@ -212,13 +488,14 @@ describe("TacticalHudView", () => {
     expect(hud.getSelectedUnitId()).toBe("s1");
   });
 
-  it("a select-spawner intent outside attack mode neither targets nor selects", () => {
+  it("a select-spawner intent with nothing armed aims at the spawner and opens the wheel (#1112)", () => {
     const { hud } = setup();
     hud.handleIntent({ kind: "select-unit", unitId: "s1" });
     hud.handleIntent({ kind: "select-spawner", spawnerId: "spawner-1" });
     // A spawner is never the selected unit — it has no card and no actions.
     expect(hud.getSelectedUnitId()).toBe("s1");
-    expect(hud.getTargetUnitId()).toBeUndefined();
+    expect(hud.getTargetUnitId()).toBe("spawner-1");
+    expect(items()[0]).toBe("attack:spawner-1");
   });
 
   it("shows the weapon range while Attack is armed, and not on plain selection (#590)", () => {
@@ -529,12 +806,8 @@ describe("TacticalHudView", () => {
       target: { kind: "tile", tile: { x: 5, y: 0, z: 3 } },
     });
     expect(commands.map((c) => c.type)).toEqual([MOVE]);
-    // And the bar says so, so the state is legible.
-    expect(
-      root
-        .querySelector<HTMLElement>('[data-action="move"]')
-        ?.getAttribute("aria-pressed"),
-    ).toBe("true");
+    // And no wheel: the right button commits, it never asks.
+    expect(wheelOpen()).toBe(false);
   });
 
   it("ignores a tile click when the selected unit is not the player's", () => {
@@ -547,7 +820,7 @@ describe("TacticalHudView", () => {
     expect(commands).toEqual([]);
   });
 
-  it("does not move onto a tile while Attack is armed", () => {
+  it("a right click walks even while aiming, and stops the aim (#1112)", () => {
     const { hud, commands } = setup();
     hud.handleIntent({ kind: "select-unit", unitId: "s1" });
     hud.handleIntent({ kind: "action", action: "attack" });
@@ -556,20 +829,26 @@ describe("TacticalHudView", () => {
       kind: "invoke",
       target: { kind: "tile", tile: { x: 5, y: 0, z: 3 } },
     });
-    expect(commands).toEqual([]);
-    // Pressing the armed action again falls back to Move, not to nothing.
+    expect(commands.map((c) => c.type)).toEqual([MOVE]);
+    expect(hud.getMode()).toBe("move");
+    // Pressing Attack twice arms and disarms, as it always did.
+    hud.handleIntent({ kind: "action", action: "attack" });
     hud.handleIntent({ kind: "action", action: "attack" });
     expect(hud.getMode()).toBe("move");
   });
 
   it("offers Interact only when an objective is in reach, and works the nearest", () => {
     const { hud, mission, commands } = setup();
-    const button = (): HTMLButtonElement | null =>
-      root.querySelector<HTMLButtonElement>('[data-action="interact"]');
+    const interactItem = (): HTMLButtonElement | null =>
+      root.querySelector<HTMLButtonElement>(
+        '#radial-menu button[data-item^="interact:"]',
+      );
 
     // s1 stands at (1,0,1); the live spawner is at (9,0,0).
     hud.handleIntent({ kind: "select-unit", unitId: "s1" });
-    expect(button()?.getAttribute("aria-disabled")).toBe("true");
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    expect(wheelOpen()).toBe(true);
+    expect(interactItem()).toBeNull();
     hud.handleIntent({ kind: "action", action: "interact" });
     expect(commands).toEqual([]);
 
@@ -603,8 +882,15 @@ describe("TacticalHudView", () => {
         },
       ],
     });
-    expect(button()?.disabled).toBe(false);
-    button()?.click();
+    // The unit's own wheel offers the nearest one.
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    expect(interactItem()?.dataset.item).toBe("interact:objective-near");
+    // And the spawner's wheel offers it when that spawner is the one.
+    hud.handleIntent({ kind: "select-spawner", spawnerId: "spawner-far" });
+    expect(interactItem()).toBeNull();
+    hud.handleIntent({ kind: "select-spawner", spawnerId: "spawner-near" });
+    expect(interactItem()?.disabled).toBe(false);
+    interactItem()?.click();
     expect(commands).toEqual([
       {
         type: INTERACT,
@@ -642,14 +928,16 @@ describe("TacticalHudView", () => {
       ...mission,
       spawners: [{ ...mission.spawners[0]!, pos: { x: 1, y: 0, z: 4 } }],
     };
+    const interactItem = (): HTMLButtonElement | null =>
+      root.querySelector<HTMLButtonElement>(
+        '#radial-menu button[data-item^="interact:"]',
+      );
     // s2 is beside the spawner but has no action points left.
     hud.update(adjacent);
     hud.handleIntent({ kind: "select-unit", unitId: "s2" });
-    expect(
-      root
-        .querySelector<HTMLButtonElement>('[data-action="interact"]')
-        ?.getAttribute("aria-disabled"),
-    ).toBe("true");
+    hud.handleIntent({ kind: "select-unit", unitId: "s2" });
+    expect(wheelOpen()).toBe(true);
+    expect(interactItem()).toBeNull();
 
     // Give it actions but finish the objective: still nothing to work.
     hud.update({
@@ -657,11 +945,8 @@ describe("TacticalHudView", () => {
       units: adjacent.units.map((u) => (u.id === "s2" ? { ...u, ap: 2 } : u)),
       objectives: adjacent.objectives.map((o) => ({ ...o, complete: true })),
     });
-    expect(
-      root
-        .querySelector<HTMLButtonElement>('[data-action="interact"]')
-        ?.getAttribute("aria-disabled"),
-    ).toBe("true");
+    expect(wheelOpen()).toBe(true);
+    expect(interactItem()).toBeNull();
   });
 
   /**
@@ -685,11 +970,14 @@ describe("TacticalHudView", () => {
       ),
     });
     const label = (): string | undefined =>
-      root.querySelector<HTMLElement>('[data-action="reload"] .tut-btn__label')
-        ?.textContent ?? undefined;
+      root.querySelector<HTMLElement>(
+        '#radial-menu [data-item="reload"] .tut-radial__label',
+      )?.textContent ?? undefined;
 
     hud.handleIntent({ kind: "select-unit", unitId: "m1" });
+    hud.handleIntent({ kind: "select-unit", unitId: "m1" });
     expect(label()).toBe("Vent");
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
     hud.handleIntent({ kind: "select-unit", unitId: "s1" });
     expect(label()).toBe("Reload");
   });
@@ -737,10 +1025,18 @@ describe("TacticalHudView", () => {
     expect(notices[0]).not.toContain("s2");
 
     // The control: a bug the player tapped to read its card never asked
-    // to walk, so the same click on it stays silent.
+    // to walk, so the same click on it stays silent. The squad has to
+    // go first: with one selected, a click on a bug aims rather than
+    // selects (#1112).
     notices.length = 0;
     noticedUnits.length = 0;
+    const { mission } = setup();
+    hud.update({
+      ...mission,
+      units: mission.units.map((u) => (u.id === "s2" ? { ...u, hp: 0 } : u)),
+    });
     hud.handleIntent({ kind: "select-unit", unitId: "b1" });
+    expect(hud.getSelectedUnitId()).toBe("b1");
     hud.handleIntent({
       kind: "invoke",
       target: { kind: "tile", tile: { x: 5, y: 0, z: 1 } },
@@ -765,18 +1061,16 @@ describe("TacticalHudView", () => {
         notices.push(`${unitId}: ${text}`);
       },
     });
-    // A unit with no action points left: the button is marked
-    // unavailable, and pressing it now explains itself.
+    // A unit with no action points left: the wheel entry is closed with
+    // the reason on it, and the key explains itself.
     hud.update({
       ...mission,
       units: mission.units.map((u) => (u.id === "s1" ? { ...u, ap: 0 } : u)),
     });
     hud.handleIntent({ kind: "select-unit", unitId: "s1" });
-    expect(
-      root
-        .querySelector<HTMLButtonElement>('[data-action="overwatch"]')
-        ?.getAttribute("aria-disabled"),
-    ).toBe("true");
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    expect(item("overwatch")?.disabled).toBe(true);
+    expect(item("overwatch")?.textContent).toContain("no AP");
 
     hud.handleIntent({ kind: "action", action: "overwatch" });
     const status = root.querySelector<HTMLElement>('[data-role="status"]');
@@ -993,21 +1287,22 @@ describe("TacticalHudView", () => {
         unit.id === "s1" ? { ...unit, charges: { [weapon.id]: left } } : unit,
       ),
     });
-    const attack = () =>
-      root.querySelector<HTMLButtonElement>('[data-action="attack"]');
     const attacks = () =>
       root.querySelector<HTMLElement>('[data-field="attacks"]')?.textContent;
 
     // Loaded: the control, so this cannot pass by always refusing.
     hud.update(withAmmo(3));
     hud.handleIntent({ kind: "select-unit", unitId: "s1" });
-    expect(attack()?.getAttribute("aria-disabled")).toBe("false");
+    hud.handleIntent({ kind: "select-unit", unitId: "b1" });
+    expect(item("attack:b1")?.disabled).toBe(false);
     expect(Number(attacks())).toBeGreaterThan(0);
 
-    // Empty: the button goes, and the card stops advertising a shot the
-    // unit cannot take.
+    // Empty: the entry closes with the reason on it, and the card stops
+    // advertising a shot the unit cannot take. The wheel is still open
+    // on the bug, re-drawn against the new state.
     hud.update(withAmmo(0));
-    expect(attack()?.getAttribute("aria-disabled")).toBe("true");
+    expect(item("attack:b1")?.disabled).toBe(true);
+    expect(item("attack:b1")?.textContent).toContain("empty");
     expect(attacks()).toBe("0");
 
     // ...and pressing it says why, in the register the card uses.
@@ -1036,10 +1331,10 @@ describe("TacticalHudView", () => {
       },
     });
     hud.handleIntent({ kind: "select-unit", unitId: "s1" });
-    const reload = () =>
-      root.querySelector<HTMLButtonElement>('[data-action="reload"]');
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    const reload = () => item("reload");
     // The fixture starts every pool full, which is the reported case.
-    expect(reload()?.getAttribute("aria-disabled")).toBe("true");
+    expect(reload()?.disabled).toBe(true);
 
     hud.handleIntent({ kind: "action", action: "reload" });
     expect(notices).toHaveLength(1);
@@ -1072,7 +1367,9 @@ describe("TacticalHudView", () => {
         unit.id === "s1" ? { ...unit, charges: { [weapon.id]: 0 } } : unit,
       ),
     });
-    expect(reload()?.getAttribute("aria-disabled")).toBe("false");
+    // The key closed the wheel; open it again on the unit.
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    expect(reload()?.disabled).toBe(false);
 
     // ...and full again, it is not on offer.
     hud.update({
@@ -1085,51 +1382,72 @@ describe("TacticalHudView", () => {
         unit.id === "s1" ? { ...unit, charges: { [weapon.id]: 3 } } : unit,
       ),
     });
-    expect(reload()?.getAttribute("aria-disabled")).toBe("true");
+    expect(reload()?.disabled).toBe(true);
   });
 
-  it("offers Extract only to a unit standing in the extraction zone", () => {
+  it("offers Board on the drop ship's tiles, open only to a unit standing on the zone (#1112)", () => {
     const { hud, mission, commands } = setup();
-    const button = (): HTMLButtonElement | null =>
-      root.querySelector<HTMLButtonElement>('[data-action="extract"]');
 
-    // s1 stands at (1,0,1); the zone is (0,0,0).
+    // s1 stands at (1,0,1); the zone is (0,0,0). Clicking the zone from
+    // beside it offers boarding, closed, with the reason on it — and
+    // Move, which is how to get there.
     hud.handleIntent({ kind: "select-unit", unitId: "s1" });
-    expect(button()?.getAttribute("aria-disabled")).toBe("true");
+    hud.handleIntent({ kind: "select-tile", tile: { x: 0, y: 0, z: 0 } });
+    expect(items()).toEqual(["move:0,0,0", "extract", "overwatch", "reload"]);
+    expect(item("extract")?.disabled).toBe(true);
+    expect(item("extract")?.textContent).toContain("not on the ramp");
+    // A tile that is not the ship offers no boarding at all.
+    hud.handleIntent({ kind: "select-tile", tile: { x: 3, y: 0, z: 3 } });
+    expect(item("extract")).toBeNull();
     hud.handleIntent({ kind: "action", action: "extract" });
     expect(commands).toEqual([]);
 
+    // Standing on the zone, the unit's own wheel boards.
     hud.update({ ...mission, extraction: [{ x: 1, y: 0, z: 1 }] });
-    expect(button()?.disabled).toBe(false);
-    button()?.click();
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    expect(item("extract")?.disabled).toBe(false);
+    item("extract")?.click();
     expect(commands).toEqual([{ type: EXTRACT, payload: { unitId: "s1" } }]);
   });
 
-  it("offers Extract to a unit that has spent its turn, since walking out is free", () => {
+  it("offers Board under the aircraft itself, not only on the boarding tiles (#1112)", () => {
+    const { hud, mission } = setup();
+    hud.update({
+      ...mission,
+      map: {
+        ...mission.map,
+        dropships: [
+          {
+            deployZoneId: "deploy-1",
+            footprint: { x: 6, z: 3, w: 3, d: 2 },
+            clearance: { x: 5, z: 2, w: 5, d: 4 },
+            level: 0,
+            facing: "n",
+          },
+        ],
+      },
+    });
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    hud.handleIntent({ kind: "select-tile", tile: { x: 7, y: 0, z: 4 } });
+    expect(item("extract")).not.toBeNull();
+  });
+
+  it("offers Board to a unit that has spent its turn, since walking out is free", () => {
     const { hud, mission } = setup();
     // s2 is on the zone with no action points left.
     hud.update({ ...mission, extraction: [{ x: 1, y: 0, z: 3 }] });
     hud.handleIntent({ kind: "select-unit", unitId: "s2" });
-    expect(
-      root.querySelector<HTMLButtonElement>('[data-action="extract"]')
-        ?.disabled,
-    ).toBe(false);
-    expect(
-      root
-        .querySelector<HTMLButtonElement>('[data-action="overwatch"]')
-        ?.getAttribute("aria-disabled"),
-    ).toBe("true");
+    hud.handleIntent({ kind: "select-unit", unitId: "s2" });
+    expect(item("extract")?.disabled).toBe(false);
+    expect(item("overwatch")?.disabled).toBe(true);
   });
 
-  it("never offers Extract to the other side's unit", () => {
+  it("gives the other side's unit no wheel at all", () => {
     const { hud, mission } = setup();
     hud.update({ ...mission, extraction: [{ x: 4, y: 0, z: 1 }] });
     hud.handleIntent({ kind: "select-unit", unitId: "b1" });
-    expect(
-      root
-        .querySelector<HTMLButtonElement>('[data-action="extract"]')
-        ?.getAttribute("aria-disabled"),
-    ).toBe("true");
+    hud.handleIntent({ kind: "select-unit", unitId: "b1" });
+    expect(wheelOpen()).toBe(false);
   });
 
   it("drops a selection that died and reports status through the banner", () => {
@@ -1235,14 +1553,10 @@ describe("the context menu closes after it is used (#627)", () => {
   const ring = (): HTMLElement | null =>
     root.querySelector<HTMLElement>(".tut-radial");
 
-  it("opens on a right click the armed action cannot serve", () => {
+  it("opens on a left click on a tile", () => {
     const { hud } = withMenu();
     hud.handleIntent({ kind: "select-unit", unitId: "s1" });
-    hud.handleIntent({ kind: "action", action: "attack" });
-    hud.handleIntent({
-      kind: "invoke",
-      target: { kind: "tile", tile: { x: 2, y: 0, z: 1 } },
-    });
+    hud.handleIntent({ kind: "select-tile", tile: { x: 2, y: 0, z: 1 } });
 
     expect(ring()?.hidden).toBe(false);
   });
@@ -1250,11 +1564,7 @@ describe("the context menu closes after it is used (#627)", () => {
   it("hides itself once an entry is chosen, rather than stranding it on the map", () => {
     const { hud } = withMenu();
     hud.handleIntent({ kind: "select-unit", unitId: "s1" });
-    hud.handleIntent({ kind: "action", action: "attack" });
-    hud.handleIntent({
-      kind: "invoke",
-      target: { kind: "tile", tile: { x: 2, y: 0, z: 1 } },
-    });
+    hud.handleIntent({ kind: "select-tile", tile: { x: 2, y: 0, z: 1 } });
     expect(ring()?.hidden).toBe(false);
 
     root.querySelector<HTMLButtonElement>("button[data-item]")?.click();
@@ -1270,7 +1580,7 @@ describe("the context menu closes after it is used (#627)", () => {
 // ===========================================
 
 describe("the context menu closes when the player moves on (#627)", () => {
-  /** A HUD with an anchor, a unit selected and Attack armed. */
+  /** A HUD with an anchor and a unit selected. */
   function armed() {
     const commands: TacticalCommand[] = [];
     const hud = new TacticalHudView(
@@ -1285,17 +1595,13 @@ describe("the context menu closes when the player moves on (#627)", () => {
     const mission = hudMission();
     hud.update(mission);
     hud.handleIntent({ kind: "select-unit", unitId: "s1" });
-    hud.handleIntent({ kind: "action", action: "attack" });
     return { hud, commands, mission };
   }
 
   const isOpen = (): boolean =>
     root.querySelector<HTMLElement>("#radial-menu")?.dataset.open === "true";
   const openOnTile = (hud: TacticalHudView): void => {
-    hud.handleIntent({
-      kind: "invoke",
-      target: { kind: "tile", tile: { x: 2, y: 0, z: 1 } },
-    });
+    hud.handleIntent({ kind: "select-tile", tile: { x: 2, y: 0, z: 1 } });
   };
 
   // The three rows of QA's dismissal table that choosing an entry,
@@ -1314,8 +1620,20 @@ describe("the context menu closes when the player moves on (#627)", () => {
     const { hud } = armed();
     openOnTile(hud);
     expect(isOpen()).toBe(true);
-    hud.handleIntent({ kind: "action", action: "move" });
+    hud.handleIntent({ kind: "action", action: "attack" });
     expect(isOpen()).toBe(false);
+  });
+
+  it("closes on a right click, which walks instead of asking", () => {
+    const { hud, commands } = armed();
+    openOnTile(hud);
+    expect(isOpen()).toBe(true);
+    hud.handleIntent({
+      kind: "invoke",
+      target: { kind: "tile", tile: { x: 3, y: 0, z: 1 } },
+    });
+    expect(isOpen()).toBe(false);
+    expect(commands.map((c) => c.type)).toEqual([MOVE]);
   });
 
   it("closes when the turn is ended", () => {

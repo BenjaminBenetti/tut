@@ -152,6 +152,7 @@ describe("TacticalOverlays", () => {
       coverLow: 1,
       coverHigh: 1,
       blockedShot: 1,
+      markedTile: 0,
     });
     overlays.clear();
     expect(overlays.counts()).toEqual({
@@ -161,6 +162,7 @@ describe("TacticalOverlays", () => {
       coverLow: 0,
       coverHigh: 0,
       blockedShot: 0,
+      markedTile: 0,
     });
     overlays.dispose();
     expect(overlays.root.children).toHaveLength(0);

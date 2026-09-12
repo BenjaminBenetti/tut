@@ -18,8 +18,20 @@ import type { TacticalState } from "../model/tactical-state";
  *   nobody standing, nobody got out    ──► lost
  * ```
  *
- * Objectives win first: a force that finishes the job as its last unit
- * falls has still finished the job.
+ * Finishing the objectives does not end the mission: the force still
+ * has to get home (Executive Director, review of #1113). So the mission
+ * ends only when nobody of the player's is left on the map — extracted
+ * or dead — and the outcome is read from what they achieved: every
+ * objective complete and someone out is **won**; someone out with an
+ * objective open is **extracted**; nobody out is **lost**, whatever
+ * they finished, because nobody came home to say so.
+ *
+ * ```
+ *   a TDF unit still standing ──► undefined (play on)
+ *   nobody extracted          ──► lost
+ *   objectives all complete   ──► won
+ *   otherwise                 ──► extracted
+ * ```
  *
  * A pure predicate over the state, deliberately owned by neither the
  * turn engine nor the objectives: the turn boundary asks it, and so do
@@ -31,19 +43,31 @@ import type { TacticalState } from "../model/tactical-state";
 export function missionOutcome(
   mission: TacticalState,
 ): MissionOutcome | undefined {
-  if (
-    mission.objectives.length > 0 &&
-    mission.objectives.every((objective) => objective.complete)
-  ) {
-    return "won";
-  }
   const standing = mission.units.some(
     (unit) => unit.team === "tdf" && unit.hp > 0,
   );
   if (standing) {
     return undefined;
   }
-  return mission.extracted.length > 0 ? "extracted" : "lost";
+  if (mission.extracted.length === 0) {
+    return "lost";
+  }
+  return objectivesComplete(mission) ? "won" : "extracted";
+}
+
+/**
+ * Whether every objective is done — the moment the HUD tells the player
+ * to head for the drop ship. A mission with no objectives can only be
+ * extracted from, never won.
+ *
+ * @param mission - The mission to read.
+ * @returns True once every objective is complete.
+ */
+export function objectivesComplete(mission: TacticalState): boolean {
+  return (
+    mission.objectives.length > 0 &&
+    mission.objectives.every((objective) => objective.complete)
+  );
 }
 
 // ===========================================

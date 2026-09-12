@@ -6,6 +6,8 @@ import type { Tile } from "../../mapgen/model/tile";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { AttackCommand } from "../model/attack-command";
 import { attack } from "../model/attack-command";
+import type { ExtractCommand } from "../model/extract-command";
+import { extract } from "../model/extract-command";
 import type { AttackTarget } from "../model/attack-target";
 import type { InteractCommand } from "../model/interact-command";
 import { interact } from "../model/interact-command";
@@ -58,6 +60,7 @@ export type DriverAction =
   | { readonly kind: "attack"; readonly command: AttackCommand }
   | { readonly kind: "interact"; readonly command: InteractCommand }
   | { readonly kind: "reload"; readonly command: ReloadCommand }
+  | { readonly kind: "extract"; readonly command: ExtractCommand }
   | {
       readonly kind: "move";
       readonly command: MoveCommand;
@@ -210,6 +213,55 @@ export function nextActionAgainst(
     // No way in. Shooting it is still better than standing there.
   }
   return fireAction(mission, unit, target, graph);
+}
+
+/**
+ * The way home once the objectives are done: board from the extraction
+ * zone, else walk toward it. Since the force has to extract to win, a
+ * driver that only ever engaged spawners left every cleared mission
+ * unresolved at the turn cap.
+ *
+ * Boarding is free, so a unit on the zone extracts with no action
+ * points left; walking still needs one.
+ *
+ * ```
+ *   unit missing, down, off-phase ──► blocked unit-unavailable
+ *   standing on the zone          ──► extract
+ *   no action points              ──► blocked unit-unavailable
+ *   otherwise                     ──► move toward the nearest zone tile
+ * ```
+ */
+export function homewardAction(
+  mission: TacticalState,
+  unitId: UnitId,
+  graph: MoveGraph = buildMoveGraph(mission.map),
+): DriverAction {
+  const unit = mission.units.find((candidate) => candidate.id === unitId);
+  if (
+    unit === undefined ||
+    unit.hp <= 0 ||
+    unit.team !== TEAM_FOR_PHASE[mission.phase]
+  ) {
+    return blocked("unit-unavailable");
+  }
+  const onZone = mission.extraction.some(
+    (tile) =>
+      tile.x === unit.pos.x && tile.y === unit.pos.y && tile.z === unit.pos.z,
+  );
+  if (onZone) {
+    return { kind: "extract", command: extract(unit.id) };
+  }
+  if (unit.ap <= 0) {
+    return blocked("unit-unavailable");
+  }
+  const zone: FiringPosition[] = mission.extraction.map((tile) => ({
+    tile,
+    distance: 0,
+  }));
+  if (zone.length === 0) {
+    return blocked("no-route");
+  }
+  return walkToward(mission, unit, zone, graph);
 }
 
 /**

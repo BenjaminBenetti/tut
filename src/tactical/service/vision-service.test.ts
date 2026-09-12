@@ -19,6 +19,7 @@ import {
   computeVision,
   emptyVision,
   initialVision,
+  perceivedOccupantAt,
   perceivedSpawners,
   perceivedUnits,
   withVision,
@@ -632,5 +633,64 @@ describe("lastSeen (#716)", () => {
     expect(state.vision.tdf.spotted).toEqual(["near"]);
     expect(state.vision.tdf.lastSeen.near).toEqual(at(2, 0));
     expect(state.vision.tdf.lastSeen.hidden).toBeUndefined();
+  });
+});
+
+describe("perceivedOccupantAt", () => {
+  /** A squad at the origin with a spotted bug, an unspotted bug and two spawners. */
+  function board(): TacticalState {
+    const base = missionWith(
+      WALLED,
+      [
+        unitAt("u", "infantry", at(0, 0)),
+        unitAt("near", "infantry", at(2, 0), { team: "bugs" }),
+        unitAt("far", "infantry", at(5, 0), { team: "bugs" }),
+        unitAt("dead", "infantry", at(1, 1), { team: "bugs", hp: 0 }),
+      ],
+      {
+        spawners: [
+          spawnerAt("seen", { x: 2, y: 0, z: 2 }),
+          spawnerAt("unseen", { x: 6, y: 0, z: 6 }),
+        ],
+      },
+    );
+    return withVision({ state: base, events: [] }).state;
+  }
+
+  it("names a spotted enemy standing on the tile, as the wheel needs for a click beside its model (#1117)", () => {
+    const mission = board();
+    expect(mission.vision.tdf.spotted).toEqual(["near"]);
+    const occupant = perceivedOccupantAt(mission, "tdf", at(2, 0));
+    expect(occupant?.kind).toBe("unit");
+    expect(occupant?.kind === "unit" && occupant.unit.id).toBe("near");
+  });
+
+  it("names the side's own unit on its tile", () => {
+    const occupant = perceivedOccupantAt(board(), "tdf", at(0, 0));
+    expect(occupant?.kind === "unit" && occupant.unit.id).toBe("u");
+  });
+
+  it("answers nothing for an enemy the side has not spotted, so the tile wheel gives nothing away", () => {
+    expect(perceivedOccupantAt(board(), "tdf", at(5, 0))).toBeUndefined();
+  });
+
+  it("skips a dead unit: its tile is free to walk to", () => {
+    expect(perceivedOccupantAt(board(), "tdf", at(1, 1))).toBeUndefined();
+  });
+
+  it("names an explored spawner and not one still in the dark", () => {
+    const mission = board();
+    const seen = perceivedOccupantAt(mission, "tdf", { x: 2, y: 0, z: 2 });
+    expect(seen?.kind === "spawner" && seen.spawner.id).toBe("seen");
+    expect(
+      perceivedOccupantAt(mission, "tdf", { x: 6, y: 0, z: 6 }),
+    ).toBeUndefined();
+  });
+
+  it("matches the level too: the tile under a rooftop unit is empty", () => {
+    const mission = board();
+    expect(
+      perceivedOccupantAt(mission, "tdf", { x: 0, y: 2, z: 0 }),
+    ).toBeUndefined();
   });
 });

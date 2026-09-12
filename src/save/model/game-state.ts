@@ -32,9 +32,10 @@ import type { TacticalState } from "../../tactical/model/tactical-state";
  *   the city (#739); a result without one is dropped.
  * - `16`: active mission/map elevation uses half-height layers (ADR 0008, #807).
  * - `17`: graveyard entries remember their mission city (#950).
- * - `18`: local city biomes and expanded Earth geography.
+ * - `18`: active mission radar scanners; older missions migrate with none.
+ * - `19`: local city biomes and expanded Earth geography.
  */
-export const GAME_STATE_SCHEMA_VERSION = 18;
+export const GAME_STATE_SCHEMA_VERSION = 19;
 
 /**
  * Bookkeeping that every save needs regardless of gameplay content.

@@ -1,5 +1,5 @@
 import type { GridPos } from "../../core/model/grid";
-import { manhattanDistance } from "../../core/service/grid-math";
+import { gridPosEquals, manhattanDistance } from "../../core/service/grid-math";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import type { TacticalApplied, TacticalEvent } from "../model/tactical-event";
@@ -360,4 +360,52 @@ export function perceivedUnits(
   return mission.units.filter(
     (unit) => unit.team === team || spotted.has(unit.id),
   );
+}
+
+/**
+ * What a side knows is standing on a tile: one of its own units or a
+ * spotted enemy, else an explored egg spawner. Nothing when the tile is
+ * empty as far as that side can tell, which is the answer for an
+ * unspotted bug too, so a click on its tile learns nothing (ADR 0006).
+ */
+export type PerceivedOccupant =
+  | { readonly kind: "unit"; readonly unit: Unit }
+  | { readonly kind: "spawner"; readonly spawner: Spawner };
+
+/**
+ * The living unit or undestroyed spawner `team` perceives on `tile`, or
+ * undefined. A click resolves to a tile whenever it misses the model's
+ * silhouette, and the wheel then has to ask what stands there (#1117):
+ * this is that question, answered through the same projection the
+ * scene draws from, so the wheel can never offer a shot at something
+ * the player cannot see.
+ *
+ * ```
+ *   tile ──► perceivedUnits    ──► living unit standing there?  ──► unit
+ *        └─► perceivedSpawners ──► undestroyed spawner there?   ──► spawner
+ *                                                               └─► undefined
+ * ```
+ *
+ * @param mission - The mission.
+ * @param team - The side doing the looking.
+ * @param tile - The tile that was pointed at.
+ * @param index - Tile index for the map, built when not given.
+ * @returns What stands there as far as `team` knows, or undefined.
+ */
+export function perceivedOccupantAt(
+  mission: TacticalState,
+  team: Team,
+  tile: TileCoord,
+  index: TileIndex = new TileIndex(mission.map),
+): PerceivedOccupant | undefined {
+  const unit = perceivedUnits(mission, team).find(
+    (candidate) => candidate.hp > 0 && gridPosEquals(candidate.pos, tile),
+  );
+  if (unit !== undefined) {
+    return { kind: "unit", unit };
+  }
+  const spawner = perceivedSpawners(mission, team, index).find(
+    (candidate) => !candidate.destroyed && gridPosEquals(candidate.pos, tile),
+  );
+  return spawner === undefined ? undefined : { kind: "spawner", spawner };
 }

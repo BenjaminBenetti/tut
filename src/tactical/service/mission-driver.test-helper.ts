@@ -20,7 +20,9 @@ import type { TacticalState } from "../model/tactical-state";
 import { TEAM_FOR_PHASE } from "../model/tactical-state";
 import type { Unit, UnitId } from "../model/unit";
 import { passMaskFor } from "../model/unit";
+import { COMBAT_TUNING } from "../data/combat-tuning";
 import { findAttackTarget } from "./attack-target-service";
+import { attackDistance, withinReach } from "./weapon-reach-service";
 import type { MoveGraph, TileKey } from "./movement-service";
 import {
   buildMoveGraph,
@@ -143,10 +145,10 @@ export function positionsWithin(
     if (!occupiable(tile, unitClass)) {
       continue;
     }
-    const distance = manhattanDistance(tile, target.pos);
-    if (distance > range) {
+    if (!withinReach(range, tile, target.pos, COMBAT_TUNING)) {
       continue;
     }
+    const distance = attackDistance(tile, target.pos);
     if (
       requireSight &&
       !hasLineOfSight(mission.map, tile, target.pos, graph.index)
@@ -322,7 +324,7 @@ function fireAction(
   const weapon = template?.weapons[0];
   const range = weapon?.profile.range ?? 0;
   const inRange =
-    manhattanDistance(unit.pos, target.pos) <= range &&
+    withinReach(range, unit.pos, target.pos, COMBAT_TUNING) &&
     hasLineOfSight(mission.map, unit.pos, target.pos, graph.index);
   if (inRange) {
     const left =

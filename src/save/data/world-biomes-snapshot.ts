@@ -1,6 +1,6 @@
 import type { EarthMap } from "../../overworld/model/earth-map";
 
-/** Frozen v18 geography. Never edit: old saves must migrate identically after future content updates. */
+/** Frozen v19 geography. Never edit: old saves must migrate identically after future content updates. */
 // prettier-ignore
 export const WORLD_BIOMES_SNAPSHOT: EarthMap = {
   regions: [

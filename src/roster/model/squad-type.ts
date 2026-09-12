@@ -1,3 +1,5 @@
+import type { UnitAbility } from "../../content/model/unit-ability";
+
 /**
  * Key of a squad type in the catalogue, e.g. `"rifle"`. Plain string so
  * the catalogue stays data-driven and new types (Track: Arsenal) need no
@@ -39,4 +41,6 @@ export interface SquadType {
   readonly combatRating: number;
   /** One or two sentences for the roster and hire screens. */
   readonly description: string;
+  /** Special tactical actions granted to this squad type. */
+  readonly abilities?: readonly UnitAbility[];
 }

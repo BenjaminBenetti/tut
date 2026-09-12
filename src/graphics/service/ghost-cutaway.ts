@@ -20,6 +20,11 @@ export interface GhostUniforms {
   readonly uGhostFloor: { value: number };
   /** Per-centre ramp in `[0, 1]`, so a cutaway fades in and out rather than snapping. */
   readonly uGhostStrength: { value: number[] };
+  /**
+   * World height of each centre's feet. Nothing at or below a unit's
+   * feet ghosts for it, so the floor it stands on stays solid (#1118).
+   */
+  readonly uGhostFeet: { value: number[] };
 }
 
 // ===========================================
@@ -35,6 +40,15 @@ export const MAX_GHOSTS = 8;
 
 /** Softness of the edge in world units, from the style guide (§12.4). */
 const SOFT_EDGE_UNITS = 0.65;
+
+/**
+ * How far above a unit's feet, in world units, a fragment has to be
+ * before it may ghost for that unit (#1118). The floor a unit stands on
+ * tops out exactly at its feet, and float noise on that plane must not
+ * flicker it; a wall rises 1.5 u from the same plane and fades from the
+ * shins up. A half-layer ledge is 0.75 u and still fades.
+ */
+export const GHOST_FOOT_MARGIN = 0.3;
 
 // ===========================================
 // Uniforms
@@ -59,6 +73,7 @@ export function createGhostUniforms(
     uGhostRadius: { value: radius },
     uGhostFloor: { value: floor },
     uGhostStrength: { value: Array.from({ length: MAX_GHOSTS }, () => 0) },
+    uGhostFeet: { value: Array.from({ length: MAX_GHOSTS }, () => 0) },
   };
 }
 
@@ -81,6 +96,14 @@ export function createGhostUniforms(
  * through the wall *behind* the unit as well as the one in front of it,
  * which reads as a spotlight rather than a cutaway. The depth comparison
  * is what makes it XCOM's effect.
+ *
+ * A third condition keeps the ground under the unit (#1118): a fragment
+ * fades only when it is **above the unit's feet**. The floor a unit
+ * stands on lies on its own plane, so in front of the unit it is both
+ * nearer the camera and inside the radius, and without the height test
+ * the cutaway opened the floor and showed the storey below through it.
+ * Walls beside the unit and slabs over it still fade, since they rise
+ * above the feet; the slab under them never does.
  *
  * Working in view space rather than screen space is exact here because
  * the game draws through one orthographic camera (ADR 0004 §3, ADR 0005):
@@ -118,6 +141,7 @@ export function applyGhostCutaway(
     shader.uniforms.uGhostRadius = uniforms.uGhostRadius;
     shader.uniforms.uGhostFloor = uniforms.uGhostFloor;
     shader.uniforms.uGhostStrength = uniforms.uGhostStrength;
+    shader.uniforms.uGhostFeet = uniforms.uGhostFeet;
     shader.vertexShader = shader.vertexShader
       .replace("#include <common>", `#include <common>\n${VERTEX_HEAD}`)
       // After project_vertex, so instanced transforms are already applied.
@@ -142,17 +166,36 @@ export function applyGhostCutaway(
 // Shader source
 // ===========================================
 
-const VERTEX_HEAD = "varying vec3 vGhostView;";
+const VERTEX_HEAD = "varying vec3 vGhostView;\nvarying float vGhostWorldY;";
 
-const VERTEX_BODY = "vGhostView = mvPosition.xyz;";
+/**
+ * The view-space position for the depth and radius tests, and the world
+ * height for the feet test. The height is rebuilt the way three's own
+ * `worldpos_vertex` does it, batching and instancing included, because
+ * that chunk is only compiled in when a map or shadow asks for it.
+ */
+const VERTEX_BODY = `
+  vGhostView = mvPosition.xyz;
+  vec4 ghostWorld = vec4( transformed, 1.0 );
+  #ifdef USE_BATCHING
+    ghostWorld = batchingMatrix * ghostWorld;
+  #endif
+  #ifdef USE_INSTANCING
+    ghostWorld = instanceMatrix * ghostWorld;
+  #endif
+  ghostWorld = modelMatrix * ghostWorld;
+  vGhostWorldY = ghostWorld.y;
+`;
 
 const FRAGMENT_BODY = `
   float ghostAlpha = 1.0;
   for (int i = 0; i < MAX_GHOSTS; i++) {
     if (i >= uGhostCount) break;
     vec3 centre = uGhostCentres[i];
-    // View space looks down -z, so a larger z is nearer the camera.
-    if (vGhostView.z > centre.z) {
+    // View space looks down -z, so a larger z is nearer the camera. And
+    // only what rises above the unit's feet fades: the floor it stands
+    // on stays solid (#1118).
+    if (vGhostView.z > centre.z && vGhostWorldY > uGhostFeet[i] + ${GHOST_FOOT_MARGIN.toFixed(2)}) {
       float d = length(vGhostView.xy - centre.xy);
       // Soft edge measured inward from the radius in world units, so the
       // building gives way rather than showing a circle cut in it.
@@ -175,11 +218,13 @@ function fragmentHead(): string {
   return `
     #define MAX_GHOSTS ${String(MAX_GHOSTS)}
     varying vec3 vGhostView;
+    varying float vGhostWorldY;
     uniform int uGhostCount;
     uniform vec3 uGhostCentres[MAX_GHOSTS];
     uniform float uGhostRadius;
     uniform float uGhostFloor;
     uniform float uGhostStrength[MAX_GHOSTS];
+    uniform float uGhostFeet[MAX_GHOSTS];
 
     float ghostDither(vec2 fragment) {
       int x = int(mod(fragment.x, 4.0));

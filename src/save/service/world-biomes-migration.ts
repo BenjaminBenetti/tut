@@ -3,7 +3,7 @@ import { WORLD_BIOMES_SNAPSHOT } from "../data/world-biomes-snapshot";
 import type { Migration } from "../model/migration";
 
 // ===========================================
-// Frozen v17 → v18 world expansion
+// Frozen v18 → v19 world expansion
 // ===========================================
 
 /** Original regions, used to distinguish a shipped campaign from a custom map. */
@@ -15,8 +15,8 @@ const ORIGINAL_REGIONS = WORLD_BIOMES_SNAPSHOT.regions.slice(0, 12);
  * Custom maps inherit optional city biomes without receiving unrelated nodes.
  */
 export const EXPAND_WORLD_BIOMES: Migration = {
-  from: 17,
-  to: 18,
+  from: 18,
+  to: 19,
   apply(state) {
     if (!isRecord(state) || !isRecord(state.overworld)) return state;
     const map = state.overworld.map;
@@ -97,7 +97,7 @@ function recordsById(
       typeof value.id !== "string" ||
       entries.has(value.id)
     )
-      throw new Error("v17 world contains an invalid or duplicate map entry");
+      throw new Error("v18 world contains an invalid or duplicate map entry");
     entries.set(value.id, value);
   }
   return entries;
@@ -112,6 +112,6 @@ function joinedIds(
     !Array.isArray(existing) ||
     !existing.every((id): id is string => typeof id === "string")
   )
-    throw new Error("v17 world contains invalid map links");
+    throw new Error("v18 world contains invalid map links");
   return [...new Set([...existing, ...added])];
 }

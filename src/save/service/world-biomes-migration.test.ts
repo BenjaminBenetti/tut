@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { EarthMap } from "../../overworld/model/earth-map";
+import { GAME_STATE_MIGRATIONS } from "../data/migrations";
 import { WORLD_BIOMES_SNAPSHOT } from "../data/world-biomes-snapshot";
+import { GAME_STATE_SCHEMA_VERSION } from "../model/game-state";
+import { MigrationRunner } from "./migration-runner";
 import { EXPAND_WORLD_BIOMES } from "./world-biomes-migration";
 
 /** Original geography with campaign progress and an already offered/active mission. */
@@ -50,6 +53,47 @@ function oldCampaign() {
 }
 
 describe("world biome save expansion", () => {
+  it.each([17, 18])(
+    "upgrades a v%i campaign through the registered chain and preserves deployed radar",
+    (schemaVersion) => {
+      const campaign = oldCampaign();
+      const radars = [
+        {
+          id: "scanner-1",
+          team: "tdf",
+          pos: { x: 3, y: 0, z: 4 },
+          range: 30,
+        },
+      ];
+      const before = {
+        ...campaign,
+        activeMission: {
+          ...campaign.activeMission,
+          ...(schemaVersion === 18 ? { radars } : {}),
+        },
+      };
+      const serialized = JSON.stringify(before);
+      const result = new MigrationRunner(
+        GAME_STATE_MIGRATIONS,
+        GAME_STATE_SCHEMA_VERSION,
+      ).migrate({ schemaVersion, savedAt: "saved", state: before });
+      expect(result.ok).toBe(true);
+      if (!result.ok) throw new Error(result.error.message);
+      expect(result.value.schemaVersion).toBe(19);
+      expect(result.value.savedAt).toBe("saved");
+      const next = result.value.state as typeof before;
+      expect(next.overworld.map.cities).toHaveLength(51);
+      expect(next.overworld.map.regions).toHaveLength(17);
+      expect(next.activeMission).toEqual({
+        ...campaign.activeMission,
+        radars: schemaVersion === 18 ? radars : [],
+      });
+      expect(next.overworld.missions).toBe(before.overworld.missions);
+      expect(next.economy).toBe(before.economy);
+      expect(JSON.stringify(before)).toBe(serialized);
+    },
+  );
+
   it("adds connected geography while retaining all campaign and active battle progress", () => {
     const before = oldCampaign();
     const serialized = JSON.stringify(before);

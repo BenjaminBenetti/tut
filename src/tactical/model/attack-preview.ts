@@ -14,7 +14,7 @@ export interface AttackPreview {
   readonly hitChance: number;
   /** Inclusive damage band after armor, `[min, max]`; whole numbers, `min >= minDamage`. */
   readonly damage: readonly [number, number];
-  /** Tiles between attacker and target, Manhattan. */
+  /** Tiles between attacker and target, in three dimensions (#1119). */
   readonly distance: number;
   /** Cover the target has against this attacker. */
   readonly cover: CoverLevel;

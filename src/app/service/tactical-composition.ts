@@ -28,6 +28,9 @@ import { INTERACT } from "../../tactical/model/interact-command";
 import { MOVE } from "../../tactical/model/move-command";
 import { OVERWATCH } from "../../tactical/model/overwatch-command";
 import { RELOAD } from "../../tactical/model/reload-command";
+import { DEPLOY_RADAR } from "../../tactical/model/deploy-radar-command";
+import { RADAR_TUNING } from "../../tactical/data/radar-tuning";
+import { createDeployRadarHandler } from "../../tactical/service/radar-service";
 import { createAttackHandler } from "../../tactical/service/combat-service";
 import type { MissionStartDeps } from "../../tactical/service/mission-start-service";
 import { createMoveHandler } from "../../tactical/service/move-handler";
@@ -165,6 +168,7 @@ export function shippedTacticalHandlers(): TacticalHandlers {
     [MOVE]: createMoveHandler(createOverwatchReaction(COMBAT_TUNING)),
     [OVERWATCH]: overwatchHandler,
     [RELOAD]: reloadHandler,
+    [DEPLOY_RADAR]: createDeployRadarHandler(RADAR_TUNING),
     [INTERACT]: createInteractHandler(OBJECTIVE_TUNING),
     [EXTRACT]: createExtractHandler(OBJECTIVE_TUNING),
   };

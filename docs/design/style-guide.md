@@ -583,8 +583,10 @@ The case to check is a squad behind building geometry, with the surrounding map 
 | Radius | **4.0 tiles** around the unit | Executive Director selected this from the #937 comparison, including the two-squad overlap that reveals most of the upper floor. |
 | Soft edge | **0.65 tiles**, measured inward from the radius | A hard circle reads as a stencil; a soft one reads as the building giving way. Measured inward rather than as a fraction of the radius, so softness does not change when the radius does. |
 | Fade in / out | **0.15 s** | Instant flickers as units move; longer lags the camera. |
-| What fades | Walls, floors, roofs, parapets and tall props between the camera and the unit | Anything that can stand in the way. |
-| What never fades | Ground, the unit itself, overlays, VFX, hook markers | These are the read. |
+| What fades | Walls, floors, roofs, parapets and tall props between the camera and the unit, **above its feet** | Anything that can stand in the way. |
+| What never fades | Ground, the floor the unit stands on and anything below it, the unit itself, overlays, VFX, hook markers | These are the read. A slab at the unit's feet is in front of it and inside the radius, and fading it showed the storey below through the floor (#1118). |
+
+**The floor holds (#1118).** A fragment fades only when it rises more than `GHOST_FOOT_MARGIN` (0.3 u) above the unit's feet. Without that the slab in front of a unit on an upper storey opened and the room below read through it, which the Executive Director found made the interior unreadable. [Before and after frames](diagnostics/1118/README.md), pitched and flat roofs at two yaws.
 
 Applies to **every unit the player can currently see**, not only their own: hiding a spotted bug behind a wall undoes the spotting. That is the same question fog of war answers (#531), so it wants one predicate, not two.
 

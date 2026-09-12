@@ -58,6 +58,43 @@ const ids = (page: { items: readonly { id: string }[] }): string[] =>
   page.items.map((item) => item.id);
 
 describe("actionWheel on a tile", () => {
+  it("offers radar only to signals infantry, with the same placement/AP refusals as the command", () => {
+    const base = hudMission();
+    const mission: TacticalState = {
+      ...base,
+      templates: {
+        ...base.templates,
+        rifle: {
+          ...hudTemplate("rifle", "Radio Squad"),
+          abilities: ["deploy-radar"],
+        },
+      },
+    };
+    const tile = { x: 2, y: 0, z: 1 };
+    const entry = (state: TacticalState, target = tile, unitId = "s1") =>
+      actionWheel(
+        { kind: "tile", tile: target },
+        contextFor(state, unitId),
+      ).items.find((item) => item.id.startsWith("deploy-radar"));
+    expect(entry(base)).toBeUndefined();
+    expect(entry(mission)).toMatchObject({
+      label: "Deploy radar",
+      detail: "1 AP · scan 30",
+    });
+    expect(entry(mission)?.disabled).not.toBe(true);
+    expect(entry(mission, { x: 5, y: 0, z: 1 })).toMatchObject({
+      disabled: true,
+      detail: "range 1",
+    });
+    expect(entry(mission, tile, "s2")).toMatchObject({
+      disabled: true,
+      detail: "no AP",
+    });
+    expect(parseWheelChoice(entry(mission)!.id)).toEqual({
+      action: "deploy-radar",
+      tile,
+    });
+  });
   it("offers Move with the path length, then the unit's own actions", () => {
     const mission = hudMission();
     const page = actionWheel(

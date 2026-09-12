@@ -29,7 +29,7 @@ New northern, Amazonian, Andean and Mediterranean regions connect to the existin
 spread network. Alice Springs adds the Australian interior to Oceania. Every city
 remains reachable, and each new region has routes to the existing world.
 
-Save version 18 expands existing campaigns using frozen geography. Existing city
+Save version 19 expands existing campaigns using frozen geography. Existing city
 infestation, day, credits, roster, installations and spread cooldowns remain.
 New cities begin uninfested, following the normal Earth seed rules. Existing
 mission offers retain their original recipes, and an active mission retains its

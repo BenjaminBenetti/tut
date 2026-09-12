@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { STOREY_LAYERS } from "../../core/model/elevation";
 import { BIOME_IDS } from "../../content/model/biome-id";
 import { SETTLEMENT_SCALES } from "../../content/model/settlement-scale";
 import { DEFAULT_MISSION_HOOKS } from "../../mapgen/data/hook-requirements";
@@ -70,6 +71,40 @@ describe("assessMap", () => {
     expect(assessment.infantryLevelSpan).toBe(1);
     expect(assessment.mechLevelSpan).toBe(1);
     expect(assessment.mechReachShare).toBe(1);
+  });
+
+  it("counts a rooftop as a firing position when height puts the objective in reach (#1119)", () => {
+    // Objective at (4,0,4); a two-storey podium at (8,4,4) is four
+    // across and three tall: hypot(4, 3) = 5, beyond a 3-tile weapon on
+    // the plane, inside its reach with the storey bonus (3 + 4 = 7).
+    const builder = new FixtureMapBuilder(9, 9, 2 * STOREY_LAYERS + 1)
+      .fillGround()
+      .deploy([{ x: 0, y: 0, z: 8 }])
+      .objective(
+        HookKinds.EGG_SPAWNER,
+        [{ x: 4, y: 0, z: 4 }],
+        PassMask.INFANTRY,
+      )
+      .edgeSpawn([{ x: 8, y: 0, z: 0 }]);
+    builder.tile({ x: 8, y: 2 * STOREY_LAYERS, z: 4 }, SurfaceIds.GRASS);
+    builder.connector(
+      "ladder",
+      { x: 8, y: 0, z: 4 },
+      { x: 8, y: 2 * STOREY_LAYERS, z: 4 },
+    );
+    const map = builder.build();
+    const withHeight = assessMap(map, {
+      ...DEFAULT_ASSESSMENT_OPTIONS,
+      range: 3,
+    });
+    const flat = assessMap(map, {
+      ...DEFAULT_ASSESSMENT_OPTIONS,
+      range: 3,
+      reach: { reachBonusPerStorey: 0, maxReachBonus: 0 },
+    });
+    expect(withHeight.firingPositionsMin).toBe(flat.firingPositionsMin + 1);
+    expect(withHeight.elevatedFiringShare).toBeGreaterThan(0);
+    expect(flat.elevatedFiringShare).toBe(0);
   });
 
   it("reports empty ranges on a map with no objectives or edge spawns", () => {

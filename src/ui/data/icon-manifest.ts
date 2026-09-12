@@ -25,6 +25,7 @@ export interface IconAssetEntry {
 /** Every UI icon, keyed by id. */
 export const ICON_MANIFEST = {
   ability: { path: "assets/ui/icons/ability.svg", label: "Ability" },
+  radar: { path: "assets/ui/icons/radar.svg", label: "Radar" },
   advance: { path: "assets/ui/icons/advance.svg", label: "Advance day" },
   attack: { path: "assets/ui/icons/attack.svg", label: "Attack" },
   back: { path: "assets/ui/icons/back.svg", label: "Back" },

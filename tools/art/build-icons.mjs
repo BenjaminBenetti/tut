@@ -23,6 +23,8 @@ import { fileURLToPath } from "node:url";
  * @type {Record<string, string>}
  */
 const ICONS = {
+  radar:
+    '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 12 L19 5"/><circle cx="8" cy="15" r="1"/>',
   advance: '<path d="M5 4 L15 12 L5 20 Z"/><path d="M19 4 V20"/>',
   day: '<circle cx="12" cy="12" r="9"/><path d="M12 7 V12 H16"/>',
   credits:

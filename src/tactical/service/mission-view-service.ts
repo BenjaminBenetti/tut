@@ -29,6 +29,7 @@ export function viewFor(mission: TacticalState, team: Team): MissionView {
   const view: TacticalState = {
     ...mission,
     units: perceivedUnits(mission, team),
+    radars: mission.radars.filter((radar) => radar.team === team),
     vision:
       team === "tdf"
         ? { tdf: mine, bugs: NO_VISION }

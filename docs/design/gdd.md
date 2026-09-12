@@ -82,7 +82,7 @@ Until M2, tactical missions are **auto-resolved** by a placeholder resolver so t
 - Region-level installations bought with credits. Examples: **defensive battery** (reduces spawn/growth in a region), **repellent dispersal** (deters spread to neighbours), **sensor array** (reveals missions earlier / better intel). Each has a build cost, upkeep, and a limited count per region.
 
 ### 5.7 Roster
-- **Infantry squads**: one roster entry = one squad token of ~5 soldiers. Types include rifle, rocket, sniper, engineer, medic (expand under Track: Arsenal). Squads take casualties; a squad below strength can be reinforced for credits; a wiped squad is gone.
+- **Infantry squads**: one roster entry = one squad token of ~5 soldiers. Types include rifle, rocket, sniper, engineer, medic, and radio (expand under Track: Arsenal). Squads take casualties; a squad below strength can be reinforced for credits; a wiped squad is gone.
 - **Mechs**: one roster entry = one mech. Built from a **chassis** plus **legs**, **arms**, one **arm weapon**, one **back weapon**, and **utility slots**. Parts have stats (armor, mobility, heat, power, accuracy, etc.) and may be upgraded. Mechs that are destroyed in a mission are **gone**, parts included.
 - Both persist across missions with damage, kills, and experience where applicable.
 
@@ -103,6 +103,7 @@ Until M2, tactical missions are **auto-resolved** by a placeholder resolver so t
 - **One attack action per weapon.** A unit does not have a single generic "attack". A mech carrying an arm weapon and a back weapon offers two distinct attacks, each with its own range, damage, accuracy and cost. Squad weapons work the same way.
 - **Infantry squads attack twice per turn.** Squads are the answer to numerous small bugs; mechs are the answer to armoured and large targets. This asymmetry is deliberate and is what makes both worth fielding.
 - Cover, line of sight, elevation bonuses, flanking. Hit chance and damage are visible before committing.
+- **Range is measured in three dimensions, and height buys reach.** The distance a shot is held against combines the map-plane distance with the vertical gap (a layer is 0.75 of a tile), rounded to whole tiles, so a target a storey up is further away than it looks on the plane. A shooter standing a whole storey above its target reaches further per storey, to a cap; shooting up or level earns nothing. A melee weapon gets neither term: a claw has to touch, and cannot reach a squad on the roof above it. (Executive Director, 2026-09-12, #1119.)
 - **Cover and flanking are ranged concepts. A melee attacker (weapon range 1) gets neither.** No cover mitigation, no flank bonus — a bite or a claw resolves on base accuracy plus elevation and status. Cover still protects against melee, but structurally rather than as a percentage: a prop tile cannot be stood on, so cover denies approach angles. A defender with a boulder to the north simply cannot be attacked from the north.
   Without this rule the flank term inverted the lesson of the whole system: `flanked` is "the attacker found an angle your cover does not protect", which for an adjacent attacker was true precisely *because* the cover existed — so standing beside a boulder raised a swarmer's chance from 60 % to 75 %, and a player reading that correctly would learn to avoid cover (#446).
 
@@ -115,6 +116,7 @@ Vision is a core system, not a presentation detail.
 - Spotting is an event: a bug entering vision is announced, and it is a moment the player should notice.
 - The bug AI is bound by the same rule. Bugs act on what they could plausibly know, and must not path toward units they have not detected.
 - Line of sight for *targeting* and vision for *knowing* share the same geometry but are separate concerns; a unit may see a bug it cannot legally shoot.
+- **Radio squads deploy radar** for 1 AP on an adjacent free tile (placement range 1, following terrain and wall traversal). The small scanner operates for the rest of the mission, even after its squad leaves. Within a horizontal **30-tile circular radius**, hidden enemy units and structures, including egg nests, appear as red location blips through fog, walls, and floors. Units use round markers; structures use square markers. Scanning does not explore terrain, spot units for targeting, or disclose species or health. Contacts update with movement and disappear when their targets die, leave coverage, or become visible. There is no charge limit or upkeep; deployed scanners allow movement through their tile. Scanners persist in mission saves. This gives the player a way to locate egg nests before scouting them on foot (Executive Director, 2026-09-12).
 
 ### 6.2.2 Presentation of combat
 The player's attention belongs on the battlefield, not on a side panel.
@@ -126,6 +128,7 @@ The player's attention belongs on the battlefield, not on a side panel.
 - Attack confirmation appears at the target, not in a panel: hit chance, damage and the commit control presented on the enemy itself.
 - Building geometry between the camera and a unit fades in a soft radius so the player can always see their own force and the fight.
 - Every action produces visible feedback: animation, effect, and floating text for hits, misses and damage, rendered above the unit and never inside its model.
+- **A bug that walks into view is seen walking in.** Its move plays in full from the tile it started on, fog or not, and it is announced as it appears; a bug spotted standing still simply appears. Popping in at the destination reads as a teleport. (Executive Director, 2026-09-12, #1116.)
 - Turn transitions are unmistakable, and the end of the bug phase is obvious.
 - A collapsible event log records everything, reviewable at any time.
 

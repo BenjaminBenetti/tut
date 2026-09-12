@@ -1,3 +1,8 @@
+import type {
+  AreaEffect,
+  AreaOfEffect,
+} from "../../tactical/model/weapon-profile";
+
 // ===========================================
 // Stat sheet
 // ===========================================
@@ -35,6 +40,10 @@ export interface MechWeapon {
   readonly firepower: number;
   /** Armor points each hit ignores. */
   readonly armorPen: number;
+  /** The part's blast, effect and force, carried through as the part declares them (#1121). */
+  readonly aoe?: AreaOfEffect;
+  readonly aoeEffect?: AreaEffect;
+  readonly demoForce?: number;
 }
 
 export interface MechStatSheet {

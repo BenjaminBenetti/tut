@@ -106,6 +106,21 @@ Until M2, tactical missions are **auto-resolved** by a placeholder resolver so t
 - **Cover and flanking are ranged concepts. A melee attacker (weapon range 1) gets neither.** No cover mitigation, no flank bonus — a bite or a claw resolves on base accuracy plus elevation and status. Cover still protects against melee, but structurally rather than as a percentage: a prop tile cannot be stood on, so cover denies approach angles. A defender with a boulder to the north simply cannot be attacked from the north.
   Without this rule the flank term inverted the lesson of the whole system: `flanked` is "the attacker found an angle your cover does not protect", which for an adjacent attacker was true precisely *because* the cover existed — so standing beside a boulder raised a swarmer's chance from 60 % to 75 %, and a player reading that correctly would learn to avoid cover (#446).
 
+### 6.2.3 Weapons that mark the ground: blast, fire and demolition
+A weapon is more than a range and a damage number. Since #1121 a weapon profile can carry three more things, and every shipped weapon is marked with the ones that fit it.
+
+- **Blast (AOE).** A radius in tiles and a falloff. Everything within the radius of the impact — either side, and egg spawners — takes the weapon's damage less the falloff share per tile, then armor. The shooter never hurts itself. A blast is stopped by whatever stops sight: it does not pass a solid wall or go round a hill, and it stays on its own storey.
+- **Blast effect.** What the blast leaves on the ground: **fire**, with a chance at the impact that fades with the same falloff. Fire is an entity with a turn: at the start of every phase it burns the units of the side whose phase begins that stand in it (and egg spawners, on the bug phase), then its clock counts down, and it burns out after two full rounds. A second blast rekindles a burning tile rather than stacking a second fire.
+- **Demo force.** How hard the weapon hits structures. `0`, the default, breaks nothing. `1` clears street furniture, fences, crates and cars; `2` brings down dumpsters, trees, doors and windows; `3` opens solid walls. What falls is what stands in the blast footprint. Boulders and rock are the ground and never fall. Whole-building collapse is not modelled; force 3 breaches a building by opening its walls.
+
+Rules that follow from these:
+
+- A weapon with a blast, an effect or a force **may be fired at a tile** with no enemy on it. The action wheel offers it on a tile as its own entry per capable weapon, with the hit chance, the damage at the impact and how many of the player's own units stand in the blast. The footprint is painted on the ground before the shot.
+- **A miss applies nothing.** A shot at a tile rolls the same hit formula as a shot at a unit, with the cover and flank terms at zero because there is no body behind cover; a miss at an empty tile costs the shot and does nothing else.
+- Friendly fire is real. A mortar shell does not ask whose side a squad is on; the preview says who is in the blast so the player decides with the number in front of them.
+
+Marked weapons, as shipped: the **Flamer** (blast 1, fire), the **Missile Pod** (blast 1, force 1), the **Mortar** (blast 2, force 2), the **Autocannon** and **Rotary Cannon** (force 1), the **Railgun** (force 2), the **Rocket Squad** (blast 1, force 2, and the armor penetration its description always promised), and the **Brute**, whose cleavers sweep the tiles beside its mark (blast 1, force 1) — which is what "punishes clumping" means on the tile grid. The Pulse Laser, small arms and the small bugs mark nothing.
+
 ### 6.2.1 Vision and fog of war
 Vision is a core system, not a presentation detail.
 

@@ -78,6 +78,15 @@ export interface TacticalSceneHost {
   markTile(tile: TileCoord | undefined): void;
 
   /**
+   * Paints the tiles a previewed blast would reach, or clears them
+   * (#1121): the footprint of the shot the wheel or the aim is about,
+   * so the player sees what they are about to scorch.
+   *
+   * @param tiles - The footprint, or empty for none.
+   */
+  markBlast(tiles: readonly TileCoord[]): void;
+
+  /**
    * Shows the overlays for a selected unit, or clears them.
    *
    * @param unitId - The selected unit.

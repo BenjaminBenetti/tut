@@ -185,7 +185,9 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
     const scene = new SceneService(container, {
       camera: rig,
       content,
-      updatables: [input, animations, ghosting],
+      // The fires flicker on the frame loop like everything else that
+      // moves without a command (#1121).
+      updatables: [input, animations, ghosting, builder.effectsUpdatable],
     });
     input.attach(container);
     // The height cut is the scene's, not the input controller's, so the
@@ -254,6 +256,16 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
       delete document.body.dataset.tacticalMarkedTile;
     } else {
       document.body.dataset.tacticalMarkedTile = `${String(tile.x)},${String(tile.y)},${String(tile.z)}`;
+    }
+  }
+
+  /** Paints the footprint of the shot being considered, or clears it (#1121). */
+  markBlast(tiles: readonly TileCoord[]): void {
+    this.attached?.overlays.setBlastTiles(tiles);
+    if (tiles.length === 0) {
+      delete document.body.dataset.tacticalBlastTiles;
+    } else {
+      document.body.dataset.tacticalBlastTiles = String(tiles.length);
     }
   }
 
@@ -429,6 +441,9 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
       );
       document.body.dataset.tacticalSpawners = String(
         attached.builder.spawnerIds().length,
+      );
+      document.body.dataset.tacticalEffects = String(
+        attached.builder.effectIds().length,
       );
     }
   }

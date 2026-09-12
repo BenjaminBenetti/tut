@@ -1,6 +1,6 @@
 import type { Result } from "../../core/model/result";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
-import { attack } from "../../tactical/model/attack-command";
+import { attack, attackTile } from "../../tactical/model/attack-command";
 import type { AttackPreview } from "../../tactical/model/attack-preview";
 import type { CombatTuning } from "../../tactical/model/combat-tuning";
 import { endTurn } from "../../tactical/model/end-turn-command";
@@ -22,10 +22,13 @@ import {
   enemyAttackTargets,
   findAttackTarget,
 } from "../../tactical/service/attack-target-service";
+import type { PreviewDeps } from "../../tactical/service/combat-service";
 import {
   attacksRemaining,
   chargesLeft,
   previewAttack,
+  previewTileAttack,
+  tileWeaponOptions,
   weaponOptions,
 } from "../../tactical/service/combat-service";
 import { viewFor } from "../../tactical/service/mission-view-service";
@@ -137,6 +140,12 @@ export interface TacticalHudHandlers {
    */
   readonly onMarkTile?: (tile: TileCoord | undefined) => void;
   /**
+   * Paint the tiles a previewed blast would reach, or clear them
+   * (#1121): the footprint of the shot the wheel or the aim is about.
+   * Optional, so a HUD built without a scene needs no stub.
+   */
+  readonly onMarkBlast?: (tiles: readonly TileCoord[]) => void;
+  /**
    * Where the top of a unit's model is on screen, for the status chip
    * above it while Shift is held. Absent in tests and headless callers,
    * and the chips simply do not appear without it.
@@ -150,6 +159,11 @@ export interface TacticalHudDeps {
   readonly combatTuning: CombatTuning;
   /** Tuning handed to `reachableObjectives`; the HUD judges no distance itself. */
   readonly objectiveTuning: ObjectiveTuning;
+  /**
+   * The content a blast preview asks what would fall (#1121). Optional:
+   * without it previews still show the blast and who stands in it.
+   */
+  readonly previewDeps?: PreviewDeps;
   /** Hold time and timers for the phase banner; the defaults are the DOM's. */
   readonly phaseBanner?: PhaseBannerOptions;
   /**
@@ -786,6 +800,9 @@ export class TacticalHudView {
       graph: this.moveGraphFor(mission),
       names: namesFor(mission, this.campaign),
       deps: this.deps,
+      ...(this.deps.previewDeps === undefined
+        ? {}
+        : { previewDeps: this.deps.previewDeps }),
     };
     if (page === "weapons" && target.kind !== "tile") {
       return weaponWheel(
@@ -948,6 +965,16 @@ export class TacticalHudView {
         this.armedWeaponId = choice.weaponId;
         this.fireAt(choice.targetId);
         return;
+      case "attack-tile":
+        // The entry is the shot (#1121), as an attack entry is: the
+        // rules refuse an illegal one and the reason lands in the status
+        // line rather than the click being swallowed.
+        this.target = undefined;
+        this.mode = DEFAULT_HUD_MODE;
+        this.handlers.onCommand(
+          attackTile(unitId, choice.tile, choice.weaponId),
+        );
+        break;
       case "overwatch":
         this.handlers.onCommand(overwatch(unitId));
         break;
@@ -1372,7 +1399,48 @@ export class TacticalHudView {
       this.target,
       this.deps.combatTuning,
       this.armedWeaponId,
+      this.deps.previewDeps,
     );
+  }
+
+  /**
+   * The tiles the shot the player is considering would reach (#1121):
+   * the aimed weapon's blast around its target, or — with the wheel
+   * open on a tile — the first weapon that could fire at that tile.
+   * Empty when nothing being considered marks the ground, so a rifle
+   * squad's aim paints nothing new.
+   */
+  private consideredBlast(): readonly TileCoord[] {
+    const mission = this.mission;
+    const unitId = this.selected;
+    if (!mission || unitId === undefined) {
+      return [];
+    }
+    const aimed = this.currentPreview();
+    if (aimed?.ok && aimed.value.blast !== undefined) {
+      return aimed.value.blast.tiles;
+    }
+    const target = this.menuTarget;
+    if (target?.kind !== "tile") {
+      return [];
+    }
+    const capable = tileWeaponOptions(
+      mission,
+      unitId,
+      this.deps.combatTuning,
+    )[0];
+    if (capable === undefined) {
+      return [];
+    }
+    const preview = previewTileAttack(
+      mission,
+      unitId,
+      target.tile,
+      this.deps.combatTuning,
+      capable.weapon.id,
+      this.deps.previewDeps,
+    );
+    return preview.ok ? (preview.value.blast?.tiles ?? []) : [];
   }
 
   /**
@@ -1522,6 +1590,7 @@ export class TacticalHudView {
         aiming: false,
         unspent: 0,
       });
+      this.handlers.onMarkBlast?.([]);
       return;
     }
     this.banner.update({
@@ -1590,6 +1659,7 @@ export class TacticalHudView {
       aiming: this.mode === "attack",
       unspent: this.unspentCount(),
     });
+    this.handlers.onMarkBlast?.(this.consideredBlast());
     // Last, so the listener reads the state the refresh just settled.
     this.handlers.onViewChange?.();
   }

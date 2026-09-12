@@ -14,6 +14,12 @@ import type { Vec3 } from "../../core/model/grid";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import { ATTACK_RESOLVED } from "../../tactical/model/attack-resolved-event";
+import type { BlastResolvedPayload } from "../../tactical/model/blast-resolved-event";
+import { BLAST_RESOLVED } from "../../tactical/model/blast-resolved-event";
+import type { EffectDamagedPayload } from "../../tactical/model/effect-damaged-event";
+import { EFFECT_DAMAGED } from "../../tactical/model/effect-damaged-event";
+import type { StructureDestroyedPayload } from "../../tactical/model/structure-destroyed-event";
+import { STRUCTURE_DESTROYED } from "../../tactical/model/structure-destroyed-event";
 import {
   SPAWNER_DAMAGED,
   type SpawnerDamagedPayload,
@@ -217,6 +223,18 @@ const BUG_MODEL_PREFIX = "bug.";
 /** Style-guide tones: `ui-danger` damage, `ui-text-dim` miss. */
 const DAMAGE_COLOUR = 0xe0453c;
 const MISS_COLOUR = 0x8b94a6;
+
+/** Fire damage reads in the flame's own orange, so a burn is told from a hit. */
+const BURN_COLOUR = 0xf08a24;
+
+/** A blast burst covers its radius: one tile of sprite per tile of reach, plus the impact. */
+const BLAST_BASE_SIZE = 1.4;
+const BLAST_SIZE_PER_TILE = 1.6;
+const BLAST_GROWTH = 0.5;
+
+/** A falling structure's puff, and how far a blast's number rises above the tile. */
+const RUBBLE_SIZE = 1.1;
+const TILE_TEXT_LIFT = 0.6;
 
 // ===========================================
 // TacticalAnimationQueue
@@ -504,6 +522,12 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
         return this.fade(event.payload.unitId);
       case SPAWNER_DAMAGED:
         return this.spawnerBurst(event.payload);
+      case BLAST_RESOLVED:
+        return this.blast(event.payload);
+      case STRUCTURE_DESTROYED:
+        return this.rubble(event.payload);
+      case EFFECT_DAMAGED:
+        return this.burn(event.payload);
       case UNIT_SPOTTED:
         // Only what the player can see: a spot on the bugs' side is
         // their business and never reaches the screen (ADR 0006 §2.4).
@@ -884,9 +908,234 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
     };
   }
 
+  /**
+   * A blast (#1121): a tracer from the shooter to the impact tile, a
+   * burst there sized to the radius, and a number over every victim the
+   * blast reached — or MISS over the tile for a shot at the ground that
+   * went wide. The aimed target's own number is on the `AttackResolved`
+   * that played just before, so it is not repeated here.
+   *
+   * ```
+   *   flash ──► tracer ──────────► burst swelling ──► numbers rising
+   *   0        0.06              0.24               0.39           1.3 s
+   * ```
+   */
+  private blast(payload: BlastResolvedPayload): Animation | undefined {
+    const ground = this.scene.tileWorldPosition(payload.impact);
+    if (!ground) {
+      return undefined;
+    }
+    const attacker = this.scene.unitObject(payload.attackerId);
+    const muzzle = this.anchor(payload.attackerId, MUZZLE_FRACTION);
+    const melee = isMeleeRange(payload.weaponRange);
+    if (attacker) {
+      faceTowards(attacker, attacker.position, ground);
+    }
+    const flash = payload.aimedAtTile
+      ? this.openingFlash(muzzle, ground, melee)
+      : undefined;
+    const tracer =
+      payload.aimedAtTile && !melee && muzzle
+        ? this.billboard("vfx.tracer", muzzle, TRACER_THICKNESS, 0xffffff, {
+            width: TRACER_THICKNESS * 3,
+            rotation: this.screenAngle(muzzle, ground),
+          })
+        : undefined;
+    const burstSize = BLAST_BASE_SIZE + BLAST_SIZE_PER_TILE * payload.radius;
+    const burstAt = { x: ground.x, y: ground.y + 0.3, z: ground.z };
+    const burst = payload.hit
+      ? this.billboard("vfx.impact", burstAt, burstSize, 0xffffff)
+      : undefined;
+    const floaters: { sprite: Sprite; baseY: number }[] = [];
+    if (!payload.hit && payload.aimedAtTile) {
+      const at = { x: ground.x, y: ground.y + TILE_TEXT_LIFT, z: ground.z };
+      floaters.push({
+        sprite: this.billboard(undefined, at, FLOATER_WIDTH, 0xffffff, {
+          label: "MISS",
+          tone: MISS_COLOUR,
+          aspect: 0.42,
+        }),
+        baseY: at.y,
+      });
+    }
+    for (const victim of payload.victims) {
+      const at =
+        victim.kind === "unit"
+          ? this.anchor(victim.targetId, 1, TEXT_MARGIN)
+          : this.spawnerTop(victim.targetId);
+      if (!at) {
+        continue;
+      }
+      floaters.push({
+        sprite: this.billboard(undefined, at, FLOATER_WIDTH, 0xffffff, {
+          label: `-${String(victim.damage)}`,
+          tone: DAMAGE_COLOUR,
+          aspect: 0.42,
+        }),
+        baseY: at.y,
+      });
+    }
+    if (burst) {
+      burst.visible = false;
+    }
+    for (const { sprite } of floaters) {
+      sprite.visible = false;
+    }
+    const flashSeconds = flash ? this.timing.flashSeconds : 0;
+    const flightSeconds = tracer ? this.timing.tracerSeconds : 0;
+    const landsAt = flashSeconds * 0.5 + flightSeconds;
+    const total =
+      landsAt + Math.max(this.timing.deathSeconds, this.timing.floaterSeconds);
+    let elapsed = 0;
+    const cleanup = (): void => {
+      for (const sprite of [flash, tracer, burst, ...floaters.map((f) => f.sprite)]) {
+        if (sprite) {
+          this.removeSprite(sprite);
+        }
+      }
+    };
+    return {
+      name: `blast:${payload.attackerId}`,
+      advance: (seconds) => {
+        const leftover = Math.max(0, elapsed + seconds - total);
+        elapsed = Math.min(total, elapsed + seconds);
+        if (flash) {
+          const phase = Math.min(1, elapsed / flashSeconds);
+          flash.material.opacity = 1 - phase;
+          if (phase >= 1) {
+            this.removeSprite(flash);
+          }
+        }
+        if (tracer && muzzle) {
+          const phase = Math.min(
+            1,
+            Math.max(0, (elapsed - flashSeconds * 0.5) / flightSeconds),
+          );
+          tracer.position.set(
+            muzzle.x + (ground.x - muzzle.x) * phase,
+            muzzle.y + (ground.y - muzzle.y) * phase,
+            muzzle.z + (ground.z - muzzle.z) * phase,
+          );
+          tracer.visible = elapsed >= flashSeconds * 0.5 && phase < 1;
+        }
+        if (burst) {
+          const phase = Math.min(
+            1,
+            Math.max(0, (elapsed - landsAt) / this.timing.deathSeconds),
+          );
+          burst.visible = elapsed >= landsAt;
+          const scale = burstSize * (1 + phase * BLAST_GROWTH);
+          burst.scale.set(scale, scale, 1);
+          burst.material.opacity = 1 - phase;
+        }
+        for (const { sprite, baseY } of floaters) {
+          const phase = Math.min(
+            1,
+            Math.max(0, (elapsed - landsAt) / this.timing.floaterSeconds),
+          );
+          sprite.visible = elapsed >= landsAt;
+          sprite.position.y = baseY + FLOATER_RISE * phase;
+          sprite.material.opacity = Math.min(1, (1 - phase) * 1.5);
+        }
+        if (elapsed >= total) {
+          cleanup();
+          return leftover;
+        }
+        return undefined;
+      },
+      finish: cleanup,
+    };
+  }
+
+  /**
+   * A structure coming down (#1121): a puff over the tile it stood on,
+   * swelling as it fades. The map view collapses the prop or wall
+   * itself when the scene redraws, after this has played.
+   */
+  private rubble(payload: StructureDestroyedPayload): Animation | undefined {
+    const ground = this.scene.tileWorldPosition(payload.tile);
+    if (!ground) {
+      return undefined;
+    }
+    const at = { x: ground.x, y: ground.y + 0.4, z: ground.z };
+    const sprite = this.billboard("vfx.tdf-death", at, RUBBLE_SIZE, 0xffffff);
+    const seconds = this.timing.deathSeconds;
+    let elapsed = 0;
+    const cleanup = (): void => {
+      this.removeSprite(sprite);
+    };
+    return {
+      name: `rubble:${String(payload.tile.x)},${String(payload.tile.z)}`,
+      advance: (delta) => {
+        const leftover = Math.max(0, elapsed + delta - seconds);
+        elapsed = Math.min(seconds, elapsed + delta);
+        const progress = elapsed / seconds;
+        const scale = RUBBLE_SIZE * (1 + progress * BURST_GROWTH);
+        sprite.scale.set(scale, scale, 1);
+        sprite.material.opacity = 1 - progress;
+        if (elapsed >= seconds) {
+          cleanup();
+          return leftover;
+        }
+        return undefined;
+      },
+      finish: cleanup,
+    };
+  }
+
+  /**
+   * A unit or spawner burning on a fire's turn (#1121): the damage
+   * number in the flame's colour, rising as any damage number does.
+   */
+  private burn(payload: EffectDamagedPayload): Animation | undefined {
+    const at =
+      payload.targetKind === "unit"
+        ? this.anchor(payload.targetId, 1, TEXT_MARGIN)
+        : this.spawnerTop(payload.targetId);
+    if (!at) {
+      return undefined;
+    }
+    const floater = this.billboard(undefined, at, FLOATER_WIDTH, 0xffffff, {
+      label: `-${String(payload.damage)}`,
+      tone: BURN_COLOUR,
+      aspect: 0.42,
+    });
+    const seconds = this.timing.floaterSeconds;
+    let elapsed = 0;
+    const cleanup = (): void => {
+      this.removeSprite(floater);
+    };
+    return {
+      name: `burn:${payload.targetId}`,
+      advance: (delta) => {
+        const leftover = Math.max(0, elapsed + delta - seconds);
+        elapsed = Math.min(seconds, elapsed + delta);
+        const phase = elapsed / seconds;
+        floater.position.y = at.y + FLOATER_RISE * phase;
+        floater.material.opacity = Math.min(1, (1 - phase) * 1.5);
+        if (elapsed >= seconds) {
+          cleanup();
+          return leftover;
+        }
+        return undefined;
+      },
+      finish: cleanup,
+    };
+  }
+
   // ===========================================
   // Private Methods: anchoring
   // ===========================================
+
+  /** The point above an egg spawner a number rises from, or undefined while it loads. */
+  private spawnerTop(spawnerId: SpawnerId): Vec3 | undefined {
+    const base = this.scene.spawnerWorldPosition(spawnerId);
+    if (!base) {
+      return undefined;
+    }
+    const height = this.scene.spawnerHeight(spawnerId) ?? FALLBACK_HEIGHT;
+    return { x: base.x, y: base.y + height + TEXT_MARGIN, z: base.z };
+  }
 
   /**
    * A point on a unit, as a fraction of its height plus an optional margin.

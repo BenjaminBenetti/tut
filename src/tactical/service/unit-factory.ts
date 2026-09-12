@@ -78,8 +78,12 @@ export function squadUnit(
       {
         id: PRIMARY_WEAPON_ID,
         name: DEFAULT_WEAPON_NAME,
+        // The type's own shape over the shared one (#1121), with the
+        // damage always the rating's: a rocket squad bursts and cracks
+        // plate, but how hard it hits is still what it is worth.
         profile: {
           ...infantry.weapon,
+          ...infantry.weaponByType[squadType.id],
           damage: Math.max(
             1,
             Math.ceil(squadType.combatRating * infantry.weapon.damage),
@@ -269,6 +273,15 @@ function mechWeapons(
       ),
       damage: Math.max(1, Math.round(weapon.firepower * tuning.weapon.damage)),
       armorPen: weapon.armorPen,
+      // How the part lands is the part's own (#1121), carried through
+      // as declared: a mortar's blast is not a tuning knob.
+      ...(weapon.aoe === undefined ? {} : { aoe: weapon.aoe }),
+      ...(weapon.aoeEffect === undefined
+        ? {}
+        : { aoeEffect: weapon.aoeEffect }),
+      ...(weapon.demoForce === undefined
+        ? {}
+        : { demoForce: weapon.demoForce }),
     },
     charges: tuning.charges,
   }));

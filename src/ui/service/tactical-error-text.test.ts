@@ -69,6 +69,10 @@ const EVERY_KIND: readonly TacticalError[] = [
   { kind: "mission-mismatch", expected: ID, active: ID },
   { kind: "no-objective-in-reach", unitId: ID },
   { kind: "unhandled-command", commandType: "tactical:move" },
+  { kind: "no-area-weapon", unitId: ID },
+  { kind: "no-such-tile", x: 1, y: 0, z: 2 },
+  { kind: "no-aim", unitId: ID },
+  { kind: "tile-out-of-sight", x: 1, y: 0, z: 2 },
 ];
 
 describe("describeRefusal", () => {

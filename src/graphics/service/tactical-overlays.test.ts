@@ -153,7 +153,13 @@ describe("TacticalOverlays", () => {
       coverHigh: 1,
       blockedShot: 1,
       markedTile: 0,
+      blast: 0,
     });
+    overlays.setBlastTiles([
+      { x: 1, y: 0, z: 1 },
+      { x: 2, y: 0, z: 1 },
+    ]);
+    expect(overlays.counts().blast).toBe(2);
     overlays.clear();
     expect(overlays.counts()).toEqual({
       weaponRange: 0,
@@ -163,6 +169,7 @@ describe("TacticalOverlays", () => {
       coverHigh: 0,
       blockedShot: 0,
       markedTile: 0,
+      blast: 0,
     });
     overlays.dispose();
     expect(overlays.root.children).toHaveLength(0);

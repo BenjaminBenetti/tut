@@ -441,6 +441,31 @@ const ADD_GRAVE_CITY: Migration = {
 };
 
 // ===========================================
+// v17 → v18
+// ===========================================
+
+/**
+ * v17 → v18 (#1121): a mission in progress gains `effects`, the fires
+ * burning on its tiles. Nothing could burn before, so a mission in
+ * flight starts with none; a save with no mission is untouched, and one
+ * that already carries the list is left alone.
+ */
+const ADD_MISSION_EFFECTS: Migration = {
+  from: 17,
+  to: 18,
+  apply: (state) => {
+    if (!isRecord(state)) {
+      return state;
+    }
+    const mission = state.activeMission;
+    if (!isRecord(mission) || Array.isArray(mission.effects)) {
+      return state;
+    }
+    return { ...state, activeMission: { ...mission, effects: [] } };
+  },
+};
+
+// ===========================================
 // Chain
 // ===========================================
 
@@ -527,4 +552,5 @@ export const GAME_STATE_MIGRATIONS: readonly Migration[] = [
   ADD_RESULT_CITY,
   HALF_HEIGHT_LAYERS,
   ADD_GRAVE_CITY,
+  ADD_MISSION_EFFECTS,
 ];

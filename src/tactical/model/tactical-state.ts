@@ -3,6 +3,7 @@ import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { MissionId } from "../../overworld/model/mission";
 import type { MissionOutcome } from "../../overworld/model/mission-result";
 import type { TacticalEvent } from "./tactical-event";
+import type { TileEffect } from "./tile-effect";
 import type { Team, Unit, UnitId } from "./unit";
 import type { UnitTemplate, UnitTemplateId } from "./unit-template";
 
@@ -155,6 +156,7 @@ export const NO_VISION: SideVision = {
  *   ├── units[], templates    everyone on the map, plus the stat blocks they share
  *   ├── turn, phase           FIRST_TURN and counting; player then bugs
  *   ├── objectives[], spawners[]
+ *   ├── effects[]             fires burning on tiles, each with a clock (#1121)
  *   ├── edgeSpawn             when the next edge wave arrives
  *   ├── extraction[]          tiles a unit must reach to leave
  *   ├── extracted[]           units that left through them, as they left; not in units[]
@@ -184,6 +186,12 @@ export interface TacticalState {
   readonly phase: TacticalPhase;
   readonly objectives: readonly Objective[];
   readonly spawners: readonly Spawner[];
+  /**
+   * Tile effects burning on the map (#1121), in the order they were lit.
+   * Each acts at the start of every phase against the side whose phase
+   * begins and is removed when its clock runs down.
+   */
+  readonly effects: readonly TileEffect[];
   readonly edgeSpawn: EdgeSpawnSchedule;
   /** Tiles of the extraction hook. */
   readonly extraction: readonly TileCoord[];

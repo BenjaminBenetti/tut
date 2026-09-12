@@ -15,6 +15,15 @@ export interface InfantryUnitTuning {
   readonly armor: number;
   /** Weapon shape; `damage` here is per point of the type's `combatRating`. */
   readonly weapon: WeaponProfile;
+  /**
+   * How a squad type's weapon differs from the shape above (#1121): a
+   * rocket squad's blast and its force against structures. Merged over
+   * `weapon`; `damage` stays the rating's and cannot be overridden here.
+   * Types missing here fire the plain shape.
+   */
+  readonly weaponByType: Readonly<
+    Partial<Record<SquadTypeId, Omit<Partial<WeaponProfile>, "damage">>>
+  >;
   /** Tiles a unit of this class sees (ADR 0006); longer than its weapon range. */
   readonly sightRange: number;
   /** Model per squad type; types missing here draw `fallbackModelId`. */

@@ -1,3 +1,5 @@
+import type { MapPartId } from "../model/map-part";
+import { propPart, wallPart } from "../model/map-part";
 import type { ModelAssetId } from "../../content/data/model-ids";
 import type { Direction } from "../../core/model/direction";
 import { DIRECTIONS } from "../../core/model/direction";
@@ -85,6 +87,13 @@ export interface ModelPlacement {
    * the tile it stands on.
    */
   readonly tile: TileCoord;
+  /**
+   * Which demolishable piece of the map this draws (#1121), when it
+   * draws one: a prop or a wall edge. The view collapses the instance
+   * when the mission's map loses the piece. Absent for ground, roofs
+   * and everything else a shot cannot bring down.
+   */
+  readonly part?: MapPartId;
   /** A multi-tile object is revealed when any part of its actual footprint is seen. */
   readonly occupiedTiles?: readonly TileCoord[];
 }
@@ -470,6 +479,7 @@ function resolveWalls(
         // unturned and east and west edges take a quarter turn.
         turns: side === "n" || side === "s" ? 0 : 1,
         tile: { x: tile.x, y: tile.y, z: tile.z },
+        part: wallPart(index.keyOf(tile), side),
       });
     }
   }
@@ -537,6 +547,7 @@ function resolveProps(
       ...propAppearanceScale(prop, map.recipe.seed),
       tile: { x: tile.x, y: tile.y, z: tile.z },
       ...(prop.occupiedTiles ? { occupiedTiles: propTiles(prop) } : {}),
+      part: propPart(prop.id),
     });
   }
   return placements;

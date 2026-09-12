@@ -94,6 +94,69 @@ export function describeEvent(
             icon: "attack",
             tone: "dim",
           };
+    case "tactical:blast-resolved": {
+      // A shot at the ground says where it went; a blast around a unit
+      // says who else it caught, since the aimed target's own line is
+      // the `attack-resolved` before it (#1121).
+      const shooter = nameOf(event.payload.attackerId);
+      const hurt = event.payload.victims.filter((v) => v.damage > 0);
+      if (!event.payload.hit) {
+        return {
+          text: `${shooter} fired at the ground and missed`,
+          icon: "attack",
+          tone: "dim",
+        };
+      }
+      if (hurt.length === 0) {
+        return event.payload.aimedAtTile
+          ? {
+              text: `${shooter} hit the ground; nothing was standing there`,
+              icon: "attack",
+              tone: "dim",
+            }
+          : undefined;
+      }
+      return {
+        text: `${shooter}'s blast caught ${hurt
+          .map((v) => `${names.target(v.targetId)} for ${formatWhole(v.damage)}`)
+          .join(", ")}`,
+        icon: "attack",
+        tone: "danger",
+      };
+    }
+    case "tactical:structure-destroyed": {
+      const what =
+        event.payload.structure.kind === "prop"
+          ? structureName(event.payload.structure.propKind)
+          : wallName(event.payload.structure.wallKind);
+      return {
+        text: `${nameOf(event.payload.unitId)} brought down ${what}`,
+        icon: "warning",
+        tone: "accent",
+      };
+    }
+    case "tactical:effect-started":
+      return {
+        text: event.payload.rekindled
+          ? `${effectName(event.payload.kind)} flares up again`
+          : `${effectName(event.payload.kind)} breaks out`,
+        icon: "warning",
+        tone: "accent",
+      };
+    case "tactical:effect-damaged":
+      return {
+        text: `${names.target(event.payload.targetId)} ${effectVerb(
+          event.payload.kind,
+        )} for ${formatWhole(event.payload.damage)}`,
+        icon: "warning",
+        tone: "danger",
+      };
+    case "tactical:effect-ended":
+      return {
+        text: `${effectName(event.payload.kind)} burns out`,
+        icon: "warning",
+        tone: "dim",
+      };
     case "tactical:unit-died":
       return {
         text: `${nameOf(event.payload.unitId)} destroyed`,
@@ -181,6 +244,19 @@ export function actorOf(event: TacticalEvent): UnitId | undefined {
       // Above the unit that died, not its killer: the death is the
       // thing that happened, and it happened there.
       return event.payload.unitId;
+    case "tactical:blast-resolved":
+      // Above the shooter: the blast is what they did (#1121).
+      return event.payload.attackerId;
+    case "tactical:structure-destroyed":
+      return event.payload.unitId;
+    case "tactical:effect-damaged":
+      // Above whoever burned; a spawner has no head to put it over.
+      return event.payload.targetKind === "unit"
+        ? event.payload.targetId
+        : undefined;
+    case "tactical:effect-started":
+    case "tactical:effect-ended":
+      return undefined;
     case "tactical:unit-moved":
     case "tactical:turn-started":
     case "tactical:bugs-spawned":
@@ -190,6 +266,41 @@ export function actorOf(event: TacticalEvent): UnitId | undefined {
     default:
       return undefined;
   }
+}
+
+/** "a car", "a fence": the prop kind id read as words with an article. */
+function structureName(kind: string): string {
+  const words = kind.replace(/-/g, " ");
+  return `${/^[aeiou]/.test(words) ? "an" : "a"} ${words}`;
+}
+
+/** What a wall of this kind is called when it falls. */
+function wallName(kind: string): string {
+  switch (kind) {
+    case "half":
+      return "a parapet";
+    case "window":
+      return "a window";
+    case "door":
+      return "a door";
+    default:
+      return "a wall";
+  }
+}
+
+/** The noun for a tile effect, capitalised to open a sentence. */
+function effectName(kind: string): string {
+  return kind === "fire" ? "Fire" : capitaliseWord(kind);
+}
+
+/** The verb for taking a tile effect's damage. */
+function effectVerb(kind: string): string {
+  return kind === "fire" ? "burned" : `took ${kind}`;
+}
+
+/** Sentence case for one word. */
+function capitaliseWord(word: string): string {
+  return word.charAt(0).toUpperCase() + word.slice(1);
 }
 
 /**

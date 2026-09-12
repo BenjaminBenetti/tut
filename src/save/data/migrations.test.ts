@@ -532,3 +532,29 @@ describe("v16 → v17", () => {
     expect(step()?.apply("not a save")).toBe("not a save");
   });
 });
+
+describe("v17 → v18", () => {
+  const runner = new MigrationRunner(GAME_STATE_MIGRATIONS, 18);
+  const at = (state: unknown): unknown => {
+    const migrated = runner.migrate({
+      schemaVersion: 17,
+      savedAt: "2026-09-12T00:00:00.000Z",
+      state,
+    });
+    if (!migrated.ok) throw new Error(migrated.error.message);
+    return migrated.value.state;
+  };
+
+  it("gives a mission in flight an empty list of tile effects", () => {
+    const state = at({ activeMission: { units: [] } }) as {
+      activeMission: { effects: unknown };
+    };
+    expect(state.activeMission.effects).toEqual([]);
+  });
+
+  it("leaves a campaign with no mission, and a mission that already has effects, alone", () => {
+    expect(at({ overworld: {} })).toEqual({ overworld: {} });
+    const kept = { activeMission: { effects: [{ id: "effect-1" }] } };
+    expect(at(kept)).toEqual(kept);
+  });
+});

@@ -3,9 +3,12 @@ import { phaseEvents } from "../../graphics/service/animation-phases";
 import { missionFocus } from "../../graphics/service/tactical-framing";
 import type { UnitTemplateLookup } from "../../graphics/service/tactical-scene-builder";
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
+import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { SideVision, Spawner } from "../../tactical/model/tactical-state";
 import type { TacticalState } from "../../tactical/model/tactical-state";
+import type { TileEffect } from "../../tactical/model/tile-effect";
 import type { Unit } from "../../tactical/model/unit";
+import { perceivedEffects } from "../../tactical/service/tile-effect-service";
 import {
   perceivedSpawners,
   perceivedUnits,
@@ -24,12 +27,16 @@ import type { MapExtent } from "../../graphics/service/camera-math";
  * method that built its own three.js (#622).
  */
 export interface PerceivedStage {
+  /** Brings the drawn map in step with the mission's, which demolition changes (#1121). */
+  applyMap(map: TacticalMap): void;
   /** Draws the map as this side knows it; `undefined` shows all of it. */
   setVision(vision: SideVision | undefined): void;
   /** Places the units that should be on the board, and removes the rest. */
   update(units: readonly Unit[], templates: UnitTemplateLookup): Promise<void>;
   /** Places the egg spawners that should be on the board. */
   updateSpawners(spawners: readonly Spawner[]): Promise<void>;
+  /** Draws the fires on ground this side knows (#1121). */
+  updateEffects(effects: readonly TileEffect[]): void;
 }
 
 /** What a step needs to point the camera at a mission. */
@@ -60,10 +67,12 @@ export interface PhasedQueue {
  * Draws the player's view of `mission`, in the order the view needs.
  *
  * ```
+ *   applyMap(map)                          what demolition has taken down (#1121)
  *   setVision(vision.tdf)                  the map, as this side knows it
  *   then, together:
  *     update(perceivedUnits)               spotted enemies only
  *     updateSpawners(perceivedSpawners)    explored spawners only
+ *     updateEffects(perceivedEffects)      fires on explored ground
  * ```
  *
  * Two rules live here, and both are silent when broken. The scene draws
@@ -81,7 +90,11 @@ export async function drawPerceived(
   stage: PerceivedStage,
   mission: TacticalState,
 ): Promise<void> {
+  // The map first: a wall that fell this command must be gone before
+  // vision is painted onto what is left.
+  stage.applyMap(mission.map);
   stage.setVision(mission.vision.tdf);
+  stage.updateEffects(perceivedEffects(mission, "tdf"));
   // Units and spawners are both just models on tiles, and a spawner is
   // the mission's objective, so it appears with the force rather than
   // after it (#484).

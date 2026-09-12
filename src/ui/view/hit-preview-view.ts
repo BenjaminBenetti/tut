@@ -50,6 +50,41 @@ const COVER_ICONS: Readonly<Record<CoverLevel, IconId | undefined>> = {
 };
 
 // ===========================================
+// Blast chips
+// ===========================================
+
+/**
+ * What the blast adds to the chip row (#1121): its reach, how many
+ * others stand in it, whether it leaves fire, and what it would bring
+ * down. Nothing for a weapon without one, so the row reads as it did.
+ */
+function blastChips(
+  p: AttackPreview,
+): readonly { icon?: IconId; text: string }[] {
+  const blast = p.blast;
+  if (blast === undefined) {
+    return [];
+  }
+  const chips: { icon?: IconId; text: string }[] = [];
+  if (blast.radius > 0) {
+    chips.push({ icon: "damage", text: `blast ${formatWhole(blast.radius)}` });
+  }
+  if (blast.victims.length > 0) {
+    chips.push({
+      icon: "warning",
+      text: `${formatWhole(blast.victims.length)} more in blast`,
+    });
+  }
+  if (blast.leavesEffect) {
+    chips.push({ text: "fire" });
+  }
+  if (blast.demolished !== undefined && blast.demolished > 0) {
+    chips.push({ text: `breaks ${formatWhole(blast.demolished)}` });
+  }
+  return chips;
+}
+
+// ===========================================
 // HitPreviewView
 // ===========================================
 
@@ -192,6 +227,7 @@ export class HitPreviewView {
               text: `${p.elevation > 0 ? "+" : ""}${formatWhole(p.elevation)} lvl`,
             },
           ]),
+      ...blastChips(p),
     ];
     // Built as nodes rather than one string, so each fact can carry its
     // glyph. The " · " separators stay as text between them, so the

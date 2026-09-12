@@ -207,7 +207,8 @@ export const STARTER_PARTS: readonly MechPart[] = [
       weight: 10,
     },
     description: "The workhorse. Reliable damage at any range that matters.",
-    weapon: { range: 10, armorPen: 2 },
+    // Cannon shells go through a car (#1121).
+    weapon: { range: 10, armorPen: 2, demoForce: 1 },
   },
   {
     id: "arm-weapon-flamer",
@@ -225,7 +226,14 @@ export const STARTER_PARTS: readonly MechPart[] = [
       weight: 7,
     },
     description: "Hard to miss with, hard on the heat sinks. Swarmers hate it.",
-    weapon: { range: 3, armorPen: 0 },
+    // A gout of burning fuel: it washes over the tile beside its mark at
+    // half strength and leaves most of what it touches burning (#1121).
+    weapon: {
+      range: 3,
+      armorPen: 0,
+      aoe: { radius: 1, falloff: 0.5 },
+      aoeEffect: { kind: "fire", chance: 0.8, falloff: 0.3 },
+    },
   },
   {
     id: "arm-weapon-laser",
@@ -243,6 +251,7 @@ export const STARTER_PARTS: readonly MechPart[] = [
       weight: 5,
     },
     description: "Light and precise. Draws heavily on the reactor.",
+    // Precise means precise: one thing, nothing around it, nothing broken.
     weapon: { range: 12, armorPen: 1 },
   },
   {
@@ -261,7 +270,8 @@ export const STARTER_PARTS: readonly MechPart[] = [
       weight: 14,
     },
     description: "One slug, one brute. Needs a chassis that can feed it.",
-    weapon: { range: 14, armorPen: 4 },
+    // The slug keeps going: a dumpster or a door does not stop it (#1121).
+    weapon: { range: 14, armorPen: 4, demoForce: 2 },
   },
 
   // ===========================================
@@ -283,7 +293,13 @@ export const STARTER_PARTS: readonly MechPart[] = [
       weight: 12,
     },
     description: "Shoulder-mounted salvo launcher. Loud, and the bugs notice.",
-    weapon: { range: 14, armorPen: 1 },
+    // A salvo bursts over the tiles beside its mark and clears light cover (#1121).
+    weapon: {
+      range: 14,
+      armorPen: 1,
+      aoe: { radius: 1, falloff: 0.5 },
+      demoForce: 1,
+    },
   },
   {
     id: "back-weapon-mortar",
@@ -302,7 +318,13 @@ export const STARTER_PARTS: readonly MechPart[] = [
     },
     description:
       "Indirect fire over the rooftops. Where it lands is a matter of faith.",
-    weapon: { range: 16, armorPen: 0 },
+    // The widest blast on the arsenal, and heavy enough to open a doorway (#1121).
+    weapon: {
+      range: 16,
+      armorPen: 0,
+      aoe: { radius: 2, falloff: 0.4 },
+      demoForce: 2,
+    },
   },
   {
     id: "back-weapon-rotary-cannon",
@@ -320,7 +342,8 @@ export const STARTER_PARTS: readonly MechPart[] = [
       weight: 18,
     },
     description: "Six barrels of persuasion. Bring radiators.",
-    weapon: { range: 8, armorPen: 3 },
+    // Volume of fire chews through a barricade (#1121).
+    weapon: { range: 8, armorPen: 3, demoForce: 1 },
   },
 
   // ===========================================

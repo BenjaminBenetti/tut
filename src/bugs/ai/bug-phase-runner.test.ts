@@ -24,6 +24,7 @@ import {
   openField,
   riggedRng,
   unitAt,
+  fixtureAttackDeps,
 } from "../../tactical/service/tactical-fixtures.test-helper";
 import type { TacticalHandlers } from "../../tactical/service/tactical-command-handlers";
 import { missionOutcome } from "../../tactical/service/mission-end-service";
@@ -50,9 +51,12 @@ import { UNIT_SPOTTED } from "../../tactical/model/unit-spotted-event";
 const at = (x: number, z: number): TileCoord => ({ x, y: 0, z });
 
 /** The shipped action rules; no `EndTurn`, as the composition root passes them. */
+const ATTACK_DEPS = fixtureAttackDeps();
 const HANDLERS: TacticalHandlers = {
-  [ATTACK]: createAttackHandler(COMBAT_TUNING),
-  [MOVE]: createMoveHandler(createOverwatchReaction(COMBAT_TUNING)),
+  [ATTACK]: createAttackHandler(COMBAT_TUNING, ATTACK_DEPS),
+  [MOVE]: createMoveHandler(
+    createOverwatchReaction(COMBAT_TUNING, ATTACK_DEPS),
+  ),
 };
 
 /** Every fixture bug is a swarmer, whose tag is `rush`. */

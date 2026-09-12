@@ -4,10 +4,14 @@ import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { Unit, UnitId } from "../../tactical/model/unit";
 import type { WeaponId } from "../../tactical/model/unit-weapon";
 import { findAttackTarget } from "../../tactical/service/attack-target-service";
+import type { PreviewDeps } from "../../tactical/service/combat-service";
 import {
   previewAttack,
+  previewTileAttack,
+  tileWeaponOptions,
   weaponOptions,
 } from "../../tactical/service/combat-service";
+import type { AttackPreview } from "../../tactical/model/attack-preview";
 import type { MoveGraph } from "../../tactical/service/movement-service";
 import { pathTo } from "../../tactical/service/movement-service";
 import type { TacticalInvokeTarget } from "../model/tactical-intent";
@@ -36,6 +40,12 @@ export interface WheelContext {
   /** Names for the refusal tooltips, so they never read an id. */
   readonly names: TacticalNames;
   readonly deps: ActionAvailabilityDeps;
+  /**
+   * The content a blast preview asks about what would fall (#1121).
+   * Optional: without it the entries still show the blast and who is
+   * in it, and say nothing about structures.
+   */
+  readonly previewDeps?: PreviewDeps;
 }
 
 /** One page of the wheel: its entries and the fact at its centre. */
@@ -52,6 +62,12 @@ export type WheelChoice =
       readonly targetId: string;
       /** Undefined opens the weapon page or fires the unit's single weapon. */
       readonly weaponId: WeaponId | undefined;
+    }
+  | {
+      /** Fire a weapon at the ground (#1121); always names its weapon. */
+      readonly action: "attack-tile";
+      readonly tile: TileCoord;
+      readonly weaponId: WeaponId;
     }
   | { readonly action: "overwatch" }
   | { readonly action: "reload" }
@@ -82,6 +98,7 @@ const SHORT_REASONS: Readonly<Partial<Record<TacticalError["kind"], string>>> =
     "not-in-extraction-zone": "not on the ramp",
     "no-objective-in-reach": "nothing in reach",
     "target-destroyed": "destroyed",
+    "tile-out-of-sight": "no line of sight",
   };
 
 /** Separates an entry's action from its argument in the id. */
@@ -105,7 +122,8 @@ const COMFORTABLE_HIT_CHANCE = 50;
  * different hat, and a wheel that lies is worse than no wheel.
  *
  * ```
- *   tile      ──► Move (path) · Board (drop ship tile) · Overwatch · Reload
+ *   tile      ──► Move (path) · one Fire entry per weapon that can fire at
+ *                 the ground (#1121) · Board (drop ship tile) · Overwatch · Reload
  *   enemy     ──► Attack (hub: hit chance) · Overwatch · Reload
  *   spawner   ──► Attack · Interact (if this one is in reach) · Overwatch · Reload
  *   own unit  ──► Overwatch · Reload · Interact · Board
@@ -167,6 +185,7 @@ export function weaponWheel(targetId: string, ctx: WheelContext): WheelPage {
       targetId,
       ctx.deps.combatTuning,
       option.weapon.id,
+      ctx.previewDeps,
     );
     const id = itemId(
       "attack",
@@ -177,7 +196,7 @@ export function weaponWheel(targetId: string, ctx: WheelContext): WheelPage {
         id,
         label: option.weapon.name,
         icon: "attack",
-        detail: `${String(preview.value.hitChance)}% · ${damageText(preview.value.damage)}`,
+        detail: blastDetail(preview.value, unit),
         primary: !primaryPicked,
       });
       primaryPicked = true;
@@ -210,14 +229,8 @@ export function parseWheelChoice(id: string): WheelChoice | undefined {
   const argument = at === -1 ? "" : id.slice(at + 1);
   switch (action) {
     case "move": {
-      const [x, y, z] = argument.split(",").map((part) => Number(part));
-      if (x === undefined || y === undefined || z === undefined) {
-        return undefined;
-      }
-      if ([x, y, z].some((n) => Number.isNaN(n))) {
-        return undefined;
-      }
-      return { action, tile: { x, y, z } };
+      const tile = parseTile(argument);
+      return tile === undefined ? undefined : { action, tile };
     }
     case "attack": {
       const split = argument.indexOf(ID_SEPARATOR);
@@ -228,6 +241,17 @@ export function parseWheelChoice(id: string): WheelChoice | undefined {
             targetId: argument.slice(0, split),
             weaponId: argument.slice(split + 1),
           };
+    }
+    case "attack-tile": {
+      const split = argument.indexOf(ID_SEPARATOR);
+      if (split === -1) {
+        return undefined;
+      }
+      const tile = parseTile(argument.slice(0, split));
+      const weaponId = argument.slice(split + 1);
+      return tile === undefined || weaponId === ""
+        ? undefined
+        : { action, tile, weaponId };
     }
     case "interact":
       return { action, objectiveId: argument };
@@ -249,10 +273,7 @@ export function parseWheelChoice(id: string): WheelChoice | undefined {
 /** Move where reachable, Board on the drop ship, then the unit's own actions. */
 function tilePage(tile: TileCoord, unit: Unit, ctx: WheelContext): WheelPage {
   const items: RadialMenuItem[] = [];
-  const id = itemId(
-    "move",
-    `${String(tile.x)},${String(tile.y)},${String(tile.z)}`,
-  );
+  const id = itemId("move", tileArgument(tile));
   const refusal = actionRefusal(ctx.mission, unit.id, "move", ctx.deps);
   const path =
     refusal === undefined
@@ -278,11 +299,101 @@ function tilePage(tile: TileCoord, unit: Unit, ctx: WheelContext): WheelPage {
       primary: true,
     });
   }
+  items.push(...tileAttackItems(tile, unit, ctx));
   if (isDropshipTile(ctx.mission, tile)) {
     items.push(boardItem(unit, ctx));
   }
   items.push(overwatchItem(unit, ctx), reloadItem(unit, ctx));
   return { items };
+}
+
+/**
+ * One entry per weapon the unit could fire at this tile (#1121): a
+ * mortar, a flamer, a rocket, an autocannon with a car in front of it.
+ * A unit with nothing that marks the ground gets no entry at all, so a
+ * rifle squad's tile wheel reads exactly as it did.
+ *
+ * Each entry is the shot itself, previewed on the ring: hit chance, the
+ * band at the impact, and — the reason the preview exists — how many of
+ * the player's own units are standing in the blast. The label is the
+ * weapon's name when the unit carries several; "Fire" otherwise, since
+ * a rocket squad's one weapon has no name of its own.
+ */
+function tileAttackItems(
+  tile: TileCoord,
+  unit: Unit,
+  ctx: WheelContext,
+): RadialMenuItem[] {
+  const capable = tileWeaponOptions(
+    ctx.mission,
+    unit.id,
+    ctx.deps.combatTuning,
+  );
+  const named = weaponOptions(ctx.mission, unit.id, ctx.deps.combatTuning);
+  const items: RadialMenuItem[] = [];
+  for (const option of capable) {
+    const id = itemId(
+      "attack-tile",
+      `${tileArgument(tile)}${ID_SEPARATOR}${option.weapon.id}`,
+    );
+    const label = named.length > 1 ? option.weapon.name : "Fire";
+    const preview = previewTileAttack(
+      ctx.mission,
+      unit.id,
+      tile,
+      ctx.deps.combatTuning,
+      option.weapon.id,
+      ctx.previewDeps,
+    );
+    if (!preview.ok) {
+      items.push(closed(id, label, "attack", preview.error, ctx));
+      continue;
+    }
+    items.push({
+      id,
+      label,
+      icon: "attack",
+      detail: blastDetail(preview.value, unit),
+    });
+  }
+  return items;
+}
+
+/**
+ * `62% · 8–13 dmg · 2 allies` — the numbers and, when any of the
+ * player's own units stand in the blast, how many (#1121). The count
+ * is the warning; it is printed last so it is the last thing read
+ * before the click.
+ */
+function blastDetail(preview: AttackPreview, unit: Unit): string {
+  const parts = [
+    `${String(preview.hitChance)}%`,
+    damageText(preview.damage),
+  ];
+  const allies =
+    preview.blast?.victims.filter((victim) => victim.team === unit.team)
+      .length ?? 0;
+  if (allies > 0) {
+    parts.push(`${String(allies)} ${allies === 1 ? "ally" : "allies"}`);
+  }
+  return parts.join(" · ");
+}
+
+/** `x,y,z` for an entry id. */
+function tileArgument(tile: TileCoord): string {
+  return `${String(tile.x)},${String(tile.y)},${String(tile.z)}`;
+}
+
+/** A tile back out of `x,y,z`, or undefined for anything else. */
+function parseTile(argument: string): TileCoord | undefined {
+  const [x, y, z] = argument.split(",").map((part) => Number(part));
+  if (x === undefined || y === undefined || z === undefined) {
+    return undefined;
+  }
+  if ([x, y, z].some((n) => Number.isNaN(n))) {
+    return undefined;
+  }
+  return { x, y, z };
 }
 
 /** What the unit can do standing where it is. */
@@ -361,6 +472,8 @@ function enemyPage(targetId: string, unit: Unit, ctx: WheelContext): WheelPage {
       unit.id,
       targetId,
       ctx.deps.combatTuning,
+      undefined,
+      ctx.previewDeps,
     );
     if (preview.ok) {
       hub = hitHub(preview.value.hitChance);
@@ -368,7 +481,7 @@ function enemyPage(targetId: string, unit: Unit, ctx: WheelContext): WheelPage {
         id: attackId,
         label: "Attack",
         icon: "attack",
-        detail: damageText(preview.value.damage),
+        detail: alliesSuffix(damageText(preview.value.damage), preview.value, unit),
         primary: true,
       });
     } else {
@@ -470,6 +583,16 @@ function hitHub(hitChance: number): RadialMenuHub {
     caption: "hit chance",
     tone: hitChance >= COMFORTABLE_HIT_CHANCE ? "ok" : "warn",
   };
+}
+
+/** `text · 2 allies` when the player's own units stand in the blast (#1121), else `text`. */
+function alliesSuffix(text: string, preview: AttackPreview, unit: Unit): string {
+  const allies =
+    preview.blast?.victims.filter((victim) => victim.team === unit.team)
+      .length ?? 0;
+  return allies > 0
+    ? `${text} · ${String(allies)} ${allies === 1 ? "ally" : "allies"}`
+    : text;
 }
 
 /** `8–13 dmg`. */

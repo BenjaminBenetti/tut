@@ -150,6 +150,86 @@ describe("actionWheel on a tile", () => {
   });
 });
 
+describe("actionWheel on a tile with a weapon that marks the ground (#1121)", () => {
+  /** `s1` with a rocket: blast 1, force 2. */
+  function rocketMission(): TacticalState {
+    const base = hudMission();
+    const rocket = {
+      ...hudTemplate("rocket", "Rocket Squad", 10),
+      weapons: [
+        {
+          id: "primary",
+          name: "Attack",
+          profile: {
+            range: 8,
+            accuracy: 65,
+            damage: 10,
+            armorPen: 2,
+            aoe: { radius: 1, falloff: 0.5 },
+            demoForce: 2,
+          },
+        },
+      ],
+    };
+    return withVision({
+      state: {
+        ...base,
+        units: base.units.map((u) =>
+          u.id === "s1" ? { ...u, templateId: "rocket" } : u,
+        ),
+        templates: { ...base.templates, rocket },
+      },
+      events: [],
+    }).state;
+  }
+
+  it("offers Fire at the tile with the hit chance, the band and the allies in the blast", () => {
+    const mission = rocketMission();
+    // (2,0,3) is beside `s2` at (1,3): the blast reaches an ally.
+    const page = actionWheel(
+      { kind: "tile", tile: { x: 2, y: 0, z: 3 } },
+      contextFor(mission, "s1"),
+    );
+    expect(ids(page)).toEqual([
+      "move:2,0,3",
+      "attack-tile:2,0,3:primary",
+      "overwatch",
+      "reload",
+    ]);
+    const fire = page.items[1];
+    expect(fire).toMatchObject({ label: "Fire", icon: "attack" });
+    expect(fire?.disabled).toBeUndefined();
+    expect(fire?.detail).toMatch(/^\d+% · \d+–\d+ dmg · 1 ally$/);
+  });
+
+  it("offers nothing at the ground for a rifle, and closes the entry with the rules' reason out of range", () => {
+    const plain = actionWheel(
+      { kind: "tile", tile: { x: 3, y: 0, z: 1 } },
+      contextFor(hudMission(), "s1"),
+    );
+    expect(ids(plain)).toEqual(["move:3,0,1", "overwatch", "reload"]);
+    const far = actionWheel(
+      { kind: "tile", tile: { x: 9, y: 0, z: 5 } },
+      contextFor(rocketMission(), "s1"),
+    );
+    expect(far.items[1]).toMatchObject({
+      id: "attack-tile:9,0,5:primary",
+      disabled: true,
+      detail: "out of range",
+    });
+  });
+
+  it("parses the tile entry back into the shot it stands for", () => {
+    expect(parseWheelChoice("attack-tile:2,0,3:primary")).toEqual({
+      action: "attack-tile",
+      tile: { x: 2, y: 0, z: 3 },
+      weaponId: "primary",
+    });
+    expect(parseWheelChoice("attack-tile:2,0,3")).toBeUndefined();
+    expect(parseWheelChoice("attack-tile:x,0,3:primary")).toBeUndefined();
+  });
+});
+
 describe("actionWheel on an enemy", () => {
   it("puts Attack first with the rules' hit chance at the centre, and fires with one weapon", () => {
     const mission = hudMission();

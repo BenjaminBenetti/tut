@@ -326,6 +326,8 @@ Reference assemblies: `tdf.mech.assembled-a` (Vanguard, Strider, Tracker, Autoca
 
 The mech bay assembles this table at runtime and shows the result (#694): `src/graphics/data/part-model-table.ts` holds it as code, `MechAssembler` hangs the parts on the §6 sockets, and `MechPreviewScene` draws them. See [`mech-bay-assembly.png`](mech-bay-assembly.png).
 
+**The battlefield assembles the same table (#1115).** A mech's unit template carries its loadout, and `LoadoutUnitModelSource` draws it through the same assembler, flattened so the motion rig finds its limbs as it does on a reference GLB. The reference assemblies are drawn only for a mission saved before #1115. Every loadout the player can build is therefore a different mech on the field: [`diagnostics/1115`](diagnostics/1115/README.md) renders three side by side through the tactical scene builder.
+
 **Frame a preview on the silhouette, not on a box.** Project the mesh vertices into camera space and take the extents there. A bounding box under an isometric tilt projects to a hexagon whose extreme corners are empty air above and below anything tall and thin, and a mech is tall and thin: measured, framing on the box put the *box* at 82 % of the view and the mech at **61 %**. The part thumbnails are still in the older version of this trap — their helper frames on the box's *diagonal*, which over-pads worse — and re-shooting all thirty is the cost of fixing them (#694).
 
 ## 8. Asset manifests

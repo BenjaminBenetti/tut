@@ -8,6 +8,7 @@ import { DEFAULT_CITY_SCALE } from "../../overworld/service/earth-map-builder";
 import type { Migration } from "../model/migration";
 import { isRecord } from "../../core/model/record-guard";
 import { HALF_HEIGHT_LAYERS } from "../service/half-height-layer-migration";
+import { EXPAND_WORLD_BIOMES } from "../service/world-biomes-migration";
 
 // ===========================================
 // Steps
@@ -441,18 +442,18 @@ const ADD_GRAVE_CITY: Migration = {
 };
 
 // ===========================================
-// v17 → v18
+// v19 → v20
 // ===========================================
 
 /**
- * v17 → v18 (#1121): a mission in progress gains `effects`, the fires
+ * v19 → v20 (#1121): a mission in progress gains `effects`, the fires
  * burning on its tiles. Nothing could burn before, so a mission in
  * flight starts with none; a save with no mission is untouched, and one
  * that already carries the list is left alone.
  */
 const ADD_MISSION_EFFECTS: Migration = {
-  from: 17,
-  to: 18,
+  from: 19,
+  to: 20,
   apply: (state) => {
     if (!isRecord(state)) {
       return state;
@@ -535,6 +536,17 @@ const SPLIT_WEAPONS_PER_UNIT: Migration = {
   },
 };
 
+/** v17 → v18: existing missions begin with no deployed radar scanners. */
+const ADD_MISSION_RADARS: Migration = {
+  from: 17,
+  to: 18,
+  apply(state) {
+    if (!isRecord(state)) throw new Error("v17 state is not an object");
+    if (!isRecord(state.activeMission)) return state;
+    return { ...state, activeMission: { ...state.activeMission, radars: [] } };
+  },
+};
+
 export const GAME_STATE_MIGRATIONS: readonly Migration[] = [
   ADD_SPREAD_COOLDOWNS,
   ADD_CITY_SCALE,
@@ -552,5 +564,7 @@ export const GAME_STATE_MIGRATIONS: readonly Migration[] = [
   ADD_RESULT_CITY,
   HALF_HEIGHT_LAYERS,
   ADD_GRAVE_CITY,
+  ADD_MISSION_RADARS,
+  EXPAND_WORLD_BIOMES,
   ADD_MISSION_EFFECTS,
 ];

@@ -17,6 +17,8 @@ import type { Tether } from "../view/elevation-tether";
 import { ElevationTether } from "../view/elevation-tether";
 import type { Disposable } from "../model/disposable";
 import type { ModelLoader } from "../model/model-loader";
+import type { UnitModelSource } from "../model/unit-model-source";
+import { LoadoutUnitModelSource } from "./loadout-unit-model-source";
 import type { SpawnerPicker } from "../model/spawner-picker";
 import type { TilePicker } from "../model/tile-picker";
 import type { UnitPicker } from "../model/unit-picker";
@@ -30,6 +32,8 @@ import type {
   TileEffectId,
 } from "../../tactical/model/tile-effect";
 import type { FrameUpdatable } from "../model/frame-updatable";
+import { RadarView } from "../view/radar-view";
+import type { Radar, RadarContact } from "../../tactical/model/radar";
 
 // ===========================================
 // Types
@@ -38,8 +42,14 @@ import type { FrameUpdatable } from "../model/frame-updatable";
 /** What the builder is composed from. */
 export interface TacticalSceneBuilderOptions {
   readonly map: TacticalMap;
-  /** Resolves `UnitTemplate.modelId` to models; one prototype per id is fetched and cloned per unit. */
+  /** Loads map art, spawners and, through `unitModels`' default, unit models. */
   readonly models: ModelLoader;
+  /**
+   * Resolves a unit template to its object; a mech is assembled from
+   * its loadout (#1115). Defaults to `LoadoutUnitModelSource` over
+   * `models`.
+   */
+  readonly unitModels?: UnitModelSource;
 }
 
 /**
@@ -70,7 +80,10 @@ export type UnitTemplateLookup = Readonly<Record<UnitTemplateId, UnitTemplate>>;
  *   update(units, templates)
  *     ├─ gone or hp ≤ 0 ──► mesh.dispose()
  *     ├─ known           ──► mesh.setPose(pos, facing)
- *     └─ new             ──► models.load(template.modelId) ──► UnitMesh (unless removed meanwhile)
+ *     └─ new             ──► unitModels.load(template) ──► UnitMesh (unless removed meanwhile)
+ *                            (a mech: its loadout's parts assembled, #1115)
+ *
+ *   arrive(unit, template, at)   ──► as "new", hidden, at `at` instead of the unit's tile (#1116)
  *
  *   updateSpawners(spawners)
  *     ├─ destroyed or gone ──► mesh.dispose()
@@ -107,6 +120,8 @@ export class TacticalSceneBuilder
   /** Cutaway uniforms every ghosted wall material shares (#526). */
   private readonly ghostUniforms: GhostUniforms;
   private readonly models: ModelLoader;
+  private readonly radarView: RadarView;
+  private readonly unitModels: UnitModelSource;
   private readonly unitsGroup: Group;
   private readonly meshes = new Map<UnitId, UnitMesh>();
   /** Where each unit stands, so the tethers can be redrawn when the cut moves (#981). */
@@ -142,6 +157,10 @@ export class TacticalSceneBuilder
   /** Builds the map immediately; units arrive through `update`. */
   constructor(options: TacticalSceneBuilderOptions) {
     this.models = options.models;
+    this.radarView = new RadarView(options.models);
+    this.unitModels =
+      options.unitModels ??
+      new LoadoutUnitModelSource({ models: options.models });
     this.ghostUniforms = createGhostUniforms(GHOST_RADIUS, GHOST_FLOOR);
     // No objective markers in a mission: the spawner model appears when
     // its tile is explored, and a marker under it would show through
@@ -161,6 +180,7 @@ export class TacticalSceneBuilder
       this.effects.root,
       this.unitsGroup,
       this.tethers.root,
+      this.radarView.root,
     );
   }
 
@@ -177,7 +197,9 @@ export class TacticalSceneBuilder
    * vision rules hide (ADR 0006).
    */
   ghostTargets(): readonly Object3D[] {
-    return this.unitsGroup.children;
+    // An arrival waiting hidden for its walk is not yet the player's to
+    // see, so no wall opens around it (#1116).
+    return this.unitsGroup.children.filter((object) => object.visible);
   }
 
   /** The cutaway uniforms, for the frame controller that updates them. */
@@ -261,6 +283,9 @@ export class TacticalSceneBuilder
       this.positions.set(unit.id, unit.pos);
       if (existing) {
         existing.setPose(unit.pos, unit.facing);
+        // An arrival the queue never walked (instant mode, or a batch
+        // that was skipped) is on the board now, not hidden.
+        existing.setHidden(false);
         continue;
       }
       if (this.wanted.has(unit.id)) {
@@ -276,6 +301,30 @@ export class TacticalSceneBuilder
       loads.push(this.place(unit, template));
     }
     await Promise.all(loads);
+    this.drawTethers();
+  }
+
+  /**
+   * Places `unit` at `at` rather than at its own tile, hidden, so the
+   * animation queue can walk it in from there (#1116): the walk (or the
+   * spot that precedes it) shows it, so it appears the moment it moves
+   * rather than standing in the dark while earlier events play. A unit
+   * already drawn or loading is left alone. The next `update` re-poses
+   * it to where the state says and shows it, or removes it, like any
+   * other unit.
+   */
+  async arrive(
+    unit: Unit,
+    template: UnitTemplate,
+    at: TileCoord,
+  ): Promise<void> {
+    if (this.wanted.has(unit.id)) {
+      return;
+    }
+    this.wanted.add(unit.id);
+    this.positions.set(unit.id, at);
+    await this.place({ ...unit, pos: at }, template);
+    this.meshes.get(unit.id)?.setHidden(true);
     this.drawTethers();
   }
 
@@ -347,8 +396,22 @@ export class TacticalSceneBuilder
     await Promise.all(loads);
   }
 
+  /** Shows friendly scanners and location-only radar contacts through the fog. */
+  async updateRadar(
+    radars: readonly Radar[],
+    contacts: readonly RadarContact[],
+  ): Promise<void> {
+    await this.radarView.update(radars, contacts);
+  }
+
+  /** Counts the scanner models and blips actually placed in the scene. */
+  radarCounts(): { scanners: number; contacts: number } {
+    return this.radarView.counts();
+  }
+
   /** Frees the map, every unit mesh and detaches the root. */
   dispose(): void {
+    this.radarView.dispose();
     for (const id of [...this.meshes.keys()]) {
       this.remove(id);
     }
@@ -379,7 +442,8 @@ export class TacticalSceneBuilder
     );
     for (const hit of hits) {
       const unitId = this.targetToUnit.get(hit.object);
-      if (unitId !== undefined) {
+      // A hidden arrival (#1116) is drawn nowhere and picked nowhere.
+      if (unitId !== undefined && this.meshes.get(unitId)?.object.visible) {
         return unitId;
       }
     }
@@ -533,9 +597,9 @@ export class TacticalSceneBuilder
     this.tethers.show(tethers);
   }
 
-  /** Loads the template's model and places the unit, unless it was removed while loading. */
+  /** Loads the template's model (a mech from its parts, #1115) and places the unit, unless it was removed while loading. */
   private async place(unit: Unit, template: UnitTemplate): Promise<void> {
-    const model = await this.models.load(template.modelId);
+    const model = await this.unitModels.load(template);
     if (!this.wanted.has(unit.id)) {
       return;
     }

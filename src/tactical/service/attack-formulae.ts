@@ -8,6 +8,7 @@ import type { WeaponProfile } from "../model/weapon-profile";
 
 /** What the hit-chance formula reads off the map. */
 export interface AttackTerrain {
+  /** Tiles between attacker and target, in three dimensions (#1119). */
   readonly distance: number;
   readonly cover: CoverLevel;
   readonly flanked: boolean;

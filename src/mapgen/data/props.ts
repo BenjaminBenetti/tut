@@ -141,7 +141,7 @@ export const PROP_DEFINITIONS: readonly PropDefinition[] = [
     cover: CoverLevel.HIGH,
     blocksLos: false,
     placements: ["ground"],
-    biomes: ["temperate", "snowy"],
+    biomes: ["temperate", "snowy", "mediterranean", "taiga", "alpine"],
   },
   {
     id: PropKindIds.TREE_OAK,
@@ -149,7 +149,14 @@ export const PROP_DEFINITIONS: readonly PropDefinition[] = [
     cover: CoverLevel.HIGH,
     blocksLos: false,
     placements: ["ground"],
-    biomes: ["temperate", "coastal"],
+    biomes: [
+      "temperate",
+      "coastal",
+      "tropical",
+      "wetland",
+      "savanna",
+      "mediterranean",
+    ],
   },
   {
     id: PropKindIds.TREE_PALM,
@@ -157,7 +164,7 @@ export const PROP_DEFINITIONS: readonly PropDefinition[] = [
     cover: CoverLevel.HIGH,
     blocksLos: false,
     placements: ["ground"],
-    biomes: ["coastal", "desert"],
+    biomes: ["coastal", "desert", "tropical", "wetland", "mediterranean"],
   },
   {
     id: PropKindIds.TREE_TROPICAL_ALMOND,
@@ -165,7 +172,14 @@ export const PROP_DEFINITIONS: readonly PropDefinition[] = [
     cover: CoverLevel.HIGH,
     blocksLos: false,
     placements: ["ground"],
-    biomes: ["temperate", "coastal"],
+    biomes: [
+      "temperate",
+      "coastal",
+      "tropical",
+      "wetland",
+      "savanna",
+      "mediterranean",
+    ],
   },
   {
     id: PropKindIds.TREE_OIL_PALM,
@@ -173,7 +187,14 @@ export const PROP_DEFINITIONS: readonly PropDefinition[] = [
     cover: CoverLevel.HIGH,
     blocksLos: false,
     placements: ["ground"],
-    biomes: ["temperate", "coastal"],
+    biomes: [
+      "temperate",
+      "coastal",
+      "tropical",
+      "wetland",
+      "savanna",
+      "mediterranean",
+    ],
   },
   {
     id: PropKindIds.CACTUS,

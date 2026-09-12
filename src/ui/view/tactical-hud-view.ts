@@ -10,6 +10,7 @@ import { extract } from "../../tactical/model/extract-command";
 import { interact } from "../../tactical/model/interact-command";
 import type { ObjectiveTuning } from "../../tactical/model/objective-tuning";
 import { reload } from "../../tactical/model/reload-command";
+import { deployRadar } from "../../tactical/model/deploy-radar-command";
 import type { TacticalCommand } from "../../tactical/model/tactical-command";
 import type { TacticalError } from "../../tactical/model/tactical-error";
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
@@ -31,6 +32,7 @@ import {
   weaponOptions,
 } from "../../tactical/service/combat-service";
 import { viewFor } from "../../tactical/service/mission-view-service";
+import { perceivedOccupantAt } from "../../tactical/service/vision-service";
 import type { MoveGraph } from "../../tactical/service/movement-service";
 import {
   buildMoveGraph,
@@ -290,6 +292,7 @@ export class TacticalHudView {
   /** Cancels the frame loop that keeps the chips on their units. */
   private stopInspecting: (() => void) | undefined;
   private root: HTMLElement | undefined;
+  private radarLegend: HTMLElement | undefined;
   private mission: TacticalState | undefined;
   /**
    * The mission as the player's side perceives it (ADR 0006). Kept
@@ -386,6 +389,19 @@ export class TacticalHudView {
     this.card.mount(side);
     this.preview.mount(side);
     this.objectives.mount(side);
+    const radarLegend = doc.createElement("section");
+    radarLegend.className = "tut-panel tut-mono";
+    radarLegend.dataset.role = "radar-legend";
+    const radarTitle = doc.createElement("div");
+    radarTitle.className = "tut-panel__title";
+    radarTitle.textContent = "Radar contacts";
+    const radarKey = doc.createElement("div");
+    radarKey.className = "tut-radar-key";
+    radarKey.textContent = "● Units · □ Structures";
+    radarLegend.append(radarTitle, radarKey);
+    radarLegend.hidden = true;
+    side.appendChild(radarLegend);
+    this.radarLegend = radarLegend;
     this.log.mount(hud);
     this.actions.mount(bottom);
     hud.append(top, side, bottom);
@@ -493,6 +509,7 @@ export class TacticalHudView {
     this.radial.unmount();
     this.root?.remove();
     this.root = undefined;
+    this.radarLegend = undefined;
   }
 
   // ===========================================
@@ -730,8 +747,35 @@ export class TacticalHudView {
     this.refresh();
   }
 
-  /** A left click on a tile with an acting unit selected: the wheel opens there. */
+  /**
+   * A left click on a tile. The picker answers "tile" whenever the click
+   * misses a model's silhouette, which on a tall mech or a low swarmer is
+   * most of the tile it stands on (#1117), so the tile is first asked
+   * what stands on it as far as the player knows: an occupant is handled
+   * as if its model had been clicked, and only an empty tile opens the
+   * tile wheel. Perception, not the mission, answers — a click on an
+   * unspotted bug's tile learns nothing (ADR 0006).
+   *
+   * ```
+   *   perceived unit there     ──► pointAtUnit   (select / own wheel / aim)
+   *   explored spawner there   ──► pointAtEnemy  (aim, wheel: attack / …)
+   *   nothing the player knows ──► wheel: move / board / overwatch / reload
+   * ```
+   */
   private pointAtTile(tile: TileCoord): void {
+    const mission = this.mission;
+    if (!mission) {
+      return;
+    }
+    const occupant = perceivedOccupantAt(mission, "tdf", tile);
+    if (occupant?.kind === "unit") {
+      this.pointAtUnit(occupant.unit.id);
+      return;
+    }
+    if (occupant?.kind === "spawner") {
+      this.pointAtEnemy({ kind: "spawner", spawnerId: occupant.spawner.id });
+      return;
+    }
     if (!this.actingSelection()) {
       return;
     }
@@ -986,6 +1030,9 @@ export class TacticalHudView {
       case "overwatch":
         this.handlers.onCommand(overwatch(unitId));
         break;
+      case "deploy-radar":
+        this.handlers.onCommand(deployRadar(unitId, choice.tile));
+        return;
       case "reload":
         this.handlers.onCommand(reload(unitId));
         break;
@@ -1631,6 +1678,11 @@ export class TacticalHudView {
 
   /** Pushes the mission and the presentation state into every part. */
   private refresh(): void {
+    if (this.radarLegend) {
+      this.radarLegend.hidden = !(
+        this.mission?.radars.some((radar) => radar.team === "tdf") ?? false
+      );
+    }
     this.followMenu();
     if (this.inspecting) {
       this.drawStatus();

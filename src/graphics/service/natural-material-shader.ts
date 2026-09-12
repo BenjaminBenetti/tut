@@ -7,6 +7,8 @@ export const NATURAL_MATERIAL_FRAGMENT = `
   uniform vec2 uNaturalSize;
   uniform sampler2D uNaturalWeights;
   uniform vec4 uNaturalUv[5];
+  uniform vec3 uNaturalTint[5];
+  uniform vec3 uNaturalOwnerTint;
   varying vec2 vNaturalWorld;
   varying float vNaturalUp;
 
@@ -18,7 +20,10 @@ export const NATURAL_MATERIAL_FRAGMENT = `
   vec3 naturalAlbedo() {
     vec2 naturalDx = dFdx(vNaturalWorld), naturalDz = dFdy(vNaturalWorld);
     // The unwarped owner retains walls, water and built boundaries exactly.
-    if(vNaturalUp < 0.05 || naturalId(floor(vNaturalWorld)) == 0.0) {
+    if(vNaturalUp < 0.05) {
+      return texture2D(map, vMapUv).rgb * uNaturalOwnerTint;
+    }
+    if(naturalId(floor(vNaturalWorld)) == 0.0) {
       return texture2D(map, vMapUv).rgb;
     }
     vec4 weights = texture2D(uNaturalWeights, vNaturalWorld / uNaturalSize);
@@ -35,7 +40,7 @@ export const NATURAL_MATERIAL_FRAGMENT = `
             vec2 span = region.zw - region.xy;
             vec3 sampleColour = textureGrad(map, mix(region.xy, region.zw,
               fract(vNaturalWorld)), naturalDx * span, naturalDz * span).rgb;
-          colour += sampleColour * weight;
+          colour += sampleColour * uNaturalTint[${i}] * weight;
           total += weight;
         }
       }`,

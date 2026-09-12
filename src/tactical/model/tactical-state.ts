@@ -6,6 +6,7 @@ import type { TacticalEvent } from "./tactical-event";
 import type { TileEffect } from "./tile-effect";
 import type { Team, Unit, UnitId } from "./unit";
 import type { UnitTemplate, UnitTemplateId } from "./unit-template";
+import type { Radar } from "./radar";
 
 // ===========================================
 // Ids and unions
@@ -192,6 +193,8 @@ export interface TacticalState {
    * begins and is removed when its clock runs down.
    */
   readonly effects: readonly TileEffect[];
+  /** Deployed scanners, active until the mission ends. */
+  readonly radars: readonly Radar[];
   readonly edgeSpawn: EdgeSpawnSchedule;
   /** Tiles of the extraction hook. */
   readonly extraction: readonly TileCoord[];

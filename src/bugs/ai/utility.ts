@@ -78,7 +78,11 @@ export function nearestEnemy(
   return best;
 }
 
-/** Manhattan distance across the ground plane; levels are ignored, as weapons range. */
+/**
+ * Manhattan distance across the ground plane, for scoring how far a bug
+ * has to walk; levels are ignored. Whether a shot reaches is a different
+ * question, and `validateAttack` answers it in three dimensions (#1119).
+ */
 export function tileDistance(a: TileCoord, b: TileCoord): number {
   return Math.abs(a.x - b.x) + Math.abs(a.z - b.z);
 }

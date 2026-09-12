@@ -23,6 +23,7 @@ import { BUGS_SPAWNED } from "../../tactical/model/bugs-spawned-event";
 import { MOVE } from "../../tactical/model/move-command";
 import { OVERWATCH } from "../../tactical/model/overwatch-command";
 import { RELOAD } from "../../tactical/model/reload-command";
+import { DEPLOY_RADAR } from "../../tactical/model/deploy-radar-command";
 import { EXTRACT, extract } from "../../tactical/model/extract-command";
 import { INTERACT } from "../../tactical/model/interact-command";
 import { END_TURN, endTurn } from "../../tactical/model/end-turn-command";
@@ -139,6 +140,7 @@ describe("composeTactical", () => {
       MOVE,
       OVERWATCH,
       RELOAD,
+      DEPLOY_RADAR,
       INTERACT,
       EXTRACT,
       // EndTurn is registered last because it closes over the action

@@ -28,6 +28,14 @@ describe("combat tuning", () => {
     expect(T.maxElevationModifier).toBeGreaterThanOrEqual(T.elevationPerStorey);
   });
 
+  it("lets height buy reach, and more than it costs in distance (#1119)", () => {
+    expect(T.reachBonusPerStorey).toBeGreaterThanOrEqual(0);
+    expect(T.maxReachBonus).toBeGreaterThanOrEqual(T.reachBonusPerStorey);
+    // A storey is 1.5 tiles tall; a bonus below that would make high
+    // ground a net loss of reach against the ground.
+    expect(T.reachBonusPerStorey).toBeGreaterThanOrEqual(1.5);
+  });
+
   it("rolls damage in a sane band and costs whole action points", () => {
     expect(T.damageSpread).toBeGreaterThanOrEqual(0);
     expect(T.damageSpread).toBeLessThan(1);

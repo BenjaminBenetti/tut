@@ -45,7 +45,7 @@ test("a campaign with fast threat escalation reaches defeat and the game-over sc
     "Global threat reached 100, ending the campaign.",
   );
   // The threat threshold can end a campaign before any city reaches 100 infestation.
-  await expect(page.locator('[data-field="cities-lost"]')).toHaveText("0 / 37");
+  await expect(page.locator('[data-field="cities-lost"]')).toHaveText("0 / 51");
   await expect(page.locator('[data-field="final-threat"]')).toHaveText("100");
   const day = Number(await page.locator('[data-field="day"]').textContent());
   expect(day).toBeGreaterThan(1);

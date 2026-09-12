@@ -139,6 +139,29 @@ function edgeHasWater(draft: MapDraft, edge: string): boolean {
 }
 
 describe("WaterPass", () => {
+  it("uses muddy wetland banks while keeping the water connected and the opposite edge dry", () => {
+    for (let i = 0; i < 12; i++) {
+      const { draft } = run("wetland", `wetland-${i}`);
+      const water = waterColumns(draft);
+      expect(water.length).toBeGreaterThan(0);
+      expect(components(draft, water)).toBe(1);
+      const edge = fullEdges(draft, water)[0]!;
+      expect(edgeHasWater(draft, OPPOSITE[edge]!)).toBe(false);
+      for (const { x, z } of water) {
+        for (const [dx, dz] of [
+          [1, 0],
+          [-1, 0],
+          [0, 1],
+          [0, -1],
+        ]) {
+          if (!draft.inBounds(x + dx!, z + dz!)) continue;
+          expect([SurfaceIds.WATER, SurfaceIds.DIRT]).toContain(
+            draft.groundSurfaceAt(x + dx!, z + dz!),
+          );
+        }
+      }
+    }
+  });
   it("floods one contiguous band along exactly one edge on coastal maps", () => {
     for (let i = 0; i < 40; i++) {
       const { draft } = run("coastal", `coast-${i}`);

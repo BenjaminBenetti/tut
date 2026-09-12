@@ -21,7 +21,7 @@ import type { MapLayout } from "../../overworld/model/map-layout";
  * The fix corrects the picture, not the data: latitude and longitude
  * stay authoritative, and presentation nudges the marker onto the
  * coastline the player can actually see, by the smallest offset that
- * reaches land. Every value below is under 3.5 % of the map, and
+ * reaches land. Every value below is under 4 % of either map axis, and
  * `city-marker-nudges.test.ts` samples the texture to prove that every
  * city — nudged or not — lands on something that is not ocean.
  *
@@ -47,4 +47,11 @@ export const CITY_MARKER_NUDGES: Readonly<Record<CityId, MapLayout>> = {
   jakarta: { x: -0.00049, y: +0.00391 }, // −1, +4 px
   sydney: { x: +0.00439, y: -0.00781 }, // +9, −8 px
   auckland: { x: -0.01367, y: -0.03223 }, // −28, −33 px
+  "alice-springs": { x: -0.007324, y: 0.004883 },
+  reykjavik: { x: -0.0348, y: 0.016 }, // Iceland is drawn west of its projected position.
+  tromso: { x: -0.00293, y: 0.011719 },
+  longyearbyen: { x: -0.03566, y: -0.00685 }, // Follow the drawn Svalbard islands.
+  manaus: { x: -0.011719, y: 0.022461 },
+  quito: { x: -0.000977, y: 0.00293 },
+  athens: { x: -0.003906, y: 0.003906 },
 };

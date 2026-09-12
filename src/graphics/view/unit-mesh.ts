@@ -159,6 +159,16 @@ export class UnitMesh implements Disposable {
     this.object.rotation.y = FACING_YAW[facing];
   }
 
+  /**
+   * Hides the whole unit, rings included, or shows it again. A unit put
+   * on the board ahead of its walk waits hidden until the walk begins
+   * (#1116), so nothing stands in the dark before the player is meant
+   * to see it.
+   */
+  setHidden(hidden: boolean): void {
+    this.object.visible = !hidden;
+  }
+
   /** Shows or hides the rings. */
   setHighlight(highlight: UnitHighlight): void {
     this.hoverRing.visible = highlight.hovered;

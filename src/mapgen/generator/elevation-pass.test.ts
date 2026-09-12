@@ -70,50 +70,56 @@ describe("ElevationPass", () => {
     expect(pass.provides).toEqual(["elevation"]);
   });
 
-  it("makes explicitly enabled fixture features usable by a mech", () => {
-    // City plats are graded flat, so this was zero on every seed before
-    // the pass (#444). The point is that outdoor height exists and that a
-    // mech is allowed on it. It was asserted per seed at 60+ tiles while
-    // viaducts carried most of the share; #785 disabled every
-    // road-surfaced feature and #762 keeps the rest a column off every
-    // lot, and a medium city can now place no terrace at all on a given
-    // seed (coastal/0 does). So this is asserted over the set: most seeds
-    // still get height, and a mech can stand on it. The share sitting well
-    // under #444's band is recorded on #785 and #762, not hidden here.
-    let seeds = 0;
-    let seedsWithHeight = 0;
-    let mechHighTotal = 0;
-    for (const biome of BIOME_IDS) {
-      for (let i = 0; i < SEEDS; i++) {
-        const label = `${biome}/${i}`;
-        const map = generateTacticalMap(
-          { seed: `elevated-${label}`, params: params("city", biome) },
-          { registries },
-        );
-        const levels = new Map<number, number>();
-        for (const tile of map.tiles) {
-          if (tile.buildingId === undefined) {
-            levels.set(tile.y, (levels.get(tile.y) ?? 0) + 1);
+  it(
+    "makes explicitly enabled fixture features usable by a mech",
+    () => {
+      // City plats are graded flat, so this was zero on every seed before
+      // the pass (#444). The point is that outdoor height exists and that a
+      // mech is allowed on it. It was asserted per seed at 60+ tiles while
+      // viaducts carried most of the share; #785 disabled every
+      // road-surfaced feature and #762 keeps the rest a column off every
+      // lot, and a medium city can now place no terrace at all on a given
+      // seed (coastal/0 does). So this is asserted over the set: most seeds
+      // still get height, and a mech can stand on it. The share sitting well
+      // under #444's band is recorded on #785 and #762, not hidden here.
+      let seeds = 0;
+      let seedsWithHeight = 0;
+      let mechHighTotal = 0;
+      for (const biome of BIOME_IDS) {
+        for (let i = 0; i < SEEDS; i++) {
+          const label = `${biome}/${i}`;
+          const map = generateTacticalMap(
+            { seed: `elevated-${label}`, params: params("city", biome) },
+            { registries },
+          );
+          const levels = new Map<number, number>();
+          for (const tile of map.tiles) {
+            if (tile.buildingId === undefined) {
+              levels.set(tile.y, (levels.get(tile.y) ?? 0) + 1);
+            }
           }
+          const base = [...levels.entries()].sort(
+            (a, b) => b[1] - a[1],
+          )[0]?.[0];
+          const mechHigh = map.tiles.filter(
+            (tile) =>
+              tile.buildingId === undefined &&
+              base !== undefined &&
+              tile.y > base &&
+              (tile.pass & PassMask.MECH) === PassMask.MECH,
+          ).length;
+          seeds++;
+          if (mechHigh > 0) {
+            seedsWithHeight++;
+          }
+          mechHighTotal += mechHigh;
         }
-        const base = [...levels.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
-        const mechHigh = map.tiles.filter(
-          (tile) =>
-            tile.buildingId === undefined &&
-            base !== undefined &&
-            tile.y > base &&
-            (tile.pass & PassMask.MECH) === PassMask.MECH,
-        ).length;
-        seeds++;
-        if (mechHigh > 0) {
-          seedsWithHeight++;
-        }
-        mechHighTotal += mechHigh;
       }
-    }
-    expect(seedsWithHeight / seeds).toBeGreaterThanOrEqual(0.75);
-    expect(mechHighTotal).toBeGreaterThan(0);
-  });
+      expect(seedsWithHeight / seeds).toBeGreaterThanOrEqual(0.75);
+      expect(mechHighTotal).toBeGreaterThan(0);
+    },
+    BIOME_IDS.length * (process.env.CI === undefined ? 5_000 : 30_000),
+  );
 
   it("leaves every step it makes climbable, never a cliff", () => {
     for (let i = 0; i < SEEDS; i++) {

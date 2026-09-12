@@ -550,6 +550,8 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
     if (!object) {
       return undefined;
     }
+    // An arrival waits hidden where its walk begins; the walk shows it (#1116).
+    object.visible = true;
     const points = path.map(
       (tile) => this.scene.tileWorldPosition(tile) ?? tileTopCentre(tile),
     );
@@ -823,9 +825,11 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
    * the time this runs the unit exists; if it somehow does not, the
    * reveal is skipped rather than faked.
    *
-   * It deliberately does not walk the unit in from where it came: that
-   * path crosses ground the player has not explored, and animating it
-   * would draw the route out of the fog.
+   * A unit that walked into view is the host's business, not this
+   * method's: `placeArrivals` puts it on the board where its walk began
+   * and its spot is phased ahead of its first move, so the swell plays
+   * there and the walk follows in full (#1116, Executive Director). A
+   * unit spotted standing still simply swells where it stands.
    */
   private reveal(unitId: UnitId): Animation | undefined {
     const object = this.scene.unitObject(unitId);
@@ -837,6 +841,8 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
     const settle = (): void => {
       object.scale.set(1, 1, 1);
     };
+    // An arrival waits hidden where its walk begins; its spot shows it (#1116).
+    object.visible = true;
     object.scale.set(0.01, 0.01, 0.01);
     return {
       name: `reveal:${unitId}`,

@@ -1,6 +1,7 @@
 import type { Result } from "../../core/model/result";
 import { err, ok } from "../../core/model/result";
-import { manhattanDistance } from "../../core/service/grid-math";
+import type { WeaponReachTuning } from "../model/weapon-reach-tuning";
+import { attackDistance, weaponReach } from "./weapon-reach-service";
 import { CoverLevel as Cover } from "../../mapgen/model/cover";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
@@ -107,7 +108,8 @@ export interface AttackRoll extends TacticalApplied<TacticalState> {
 /**
  * Cover, flank, distance and elevation between two tiles on a map. A
  * target is flanked when it has cover against some direction but none
- * against this attacker.
+ * against this attacker. Distance is measured in three dimensions
+ * (`attackDistance`, #1119), so a storey of height counts.
  */
 export function attackTerrain(
   map: TacticalMap,
@@ -126,7 +128,7 @@ export function attackTerrain(
       ) !== Cover.NONE,
   );
   return {
-    distance: manhattanDistance(attacker, target),
+    distance: attackDistance(attacker, target),
     cover,
     flanked: cover === Cover.NONE && anyCover,
     elevation: elevationBonus(attacker, target),
@@ -292,22 +294,31 @@ export function validateAttack(
   if (!chosen.ok) {
     return chosen;
   }
-  return validateTargeting(mission, attackerId, targetId, chosen.value.id);
+  return validateTargeting(
+    mission,
+    attackerId,
+    targetId,
+    tuning,
+    chosen.value.id,
+  );
 }
 
 /**
  * The targeting checks that hold whoever's phase it is and whatever the
  * attacker's action points: attacker and target both on the map and
- * still standing, the target an enemy other than the attacker, in range
- * and in sight. Range, sight and cover are judged against the target's
+ * still standing, the target an enemy other than the attacker, in reach
+ * and in sight. Reach, sight and cover are judged against the target's
  * tile, so an egg spawner is shot at through exactly the rules a unit
- * is. Overwatch reactions (#328) fire on exactly these. Returns the
- * pair and terrain for the formulae.
+ * is. Reach is the weapon's range plus what height buys (#1119), and
+ * the distance it is held against is three-dimensional; the refusal
+ * carries both numbers. Overwatch reactions (#328) fire on exactly
+ * these. Returns the pair and terrain for the formulae.
  */
 export function validateTargeting(
   mission: TacticalState,
   attackerId: UnitId,
   targetId: UnitId,
+  tuning: WeaponReachTuning,
   weaponId?: WeaponId,
 ): Result<AttackPair & { readonly terrain: AttackTerrain }, TacticalError> {
   const pair = liveTargetingPair(mission, attackerId, targetId);
@@ -331,11 +342,17 @@ export function validateTargeting(
     attackTerrain(mission.map, attacker.pos, target.pos, index),
     weapon.profile,
   );
-  if (terrain.distance > weapon.profile.range) {
+  const reach = weaponReach(
+    weapon.profile.range,
+    attacker.pos,
+    target.pos,
+    tuning,
+  );
+  if (terrain.distance > reach) {
     return err({
       kind: "out-of-range",
       distance: terrain.distance,
-      range: weapon.profile.range,
+      range: reach,
     });
   }
   if (!hasLineOfSight(mission.map, attacker.pos, target.pos, index)) {
@@ -354,7 +371,7 @@ export function validateTargeting(
  * ```
  *   attacker      ──► unit-not-on-map · unit-dead · wrong-phase · no-action-points
  *   weapon        ──► no-such-weapon · no-charges · no-area-weapon
- *   tile          ──► no-such-tile · out-of-range · tile-out-of-sight
+ *   tile          ──► no-such-tile · out-of-range (reach, #1119) · tile-out-of-sight
  * ```
  *
  * @returns The pair and the terrain for the formulae.
@@ -389,11 +406,14 @@ export function validateTileAttack(
   const terrain = terrainForTile(
     attackTerrain(mission.map, attacker.pos, impact, index),
   );
-  if (terrain.distance > weapon.profile.range) {
+  // The same reach rule as a shot at a unit (#1119): height buys reach,
+  // and the distance held against it is three-dimensional.
+  const reach = weaponReach(weapon.profile.range, attacker.pos, impact, tuning);
+  if (terrain.distance > reach) {
     return err({
       kind: "out-of-range",
       distance: terrain.distance,
-      range: weapon.profile.range,
+      range: reach,
     });
   }
   if (!hasLineOfSight(mission.map, attacker.pos, impact, index)) {

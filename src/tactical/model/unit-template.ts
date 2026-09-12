@@ -1,4 +1,6 @@
 import type { ModelAssetId } from "../../content/data/model-ids";
+import type { UnitAbility } from "../../content/model/unit-ability";
+import type { MechLoadout } from "../../roster/model/mech-loadout";
 import type { PassClass } from "./unit";
 import type { UnitWeapon } from "./unit-weapon";
 
@@ -56,6 +58,18 @@ export interface UnitTemplate {
   readonly armor: number;
   /** Which tiles the unit may stand on (GDD §6.1: mechs stay outside). */
   readonly passClass: PassClass;
-  /** Model graphics draws for every unit of this template. */
+  /**
+   * Model graphics draws for every unit of this template. For a mech it
+   * is the reference assembly, drawn only when `loadout` is absent.
+   */
   readonly modelId: ModelAssetId;
+  /** Special actions; absent on older saved templates and ordinary units. */
+  readonly abilities?: readonly UnitAbility[];
+  /**
+   * The loadout a mech was built from, so graphics can assemble the
+   * parts the player actually fitted (#1115); the mech bay preview and
+   * the battlefield then agree. Absent for squads and bugs, and on
+   * missions saved before it existed, which keep drawing `modelId`.
+   */
+  readonly loadout?: MechLoadout;
 }

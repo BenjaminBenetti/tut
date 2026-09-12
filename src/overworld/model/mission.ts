@@ -63,10 +63,12 @@ export interface MissionRewards {
  * `MissionResolver`. Plain serializable data inside the overworld slice.
  *
  * ```
+ *   (*) A city biome overrides its region default.
+ *
  *   MissionType (content)     Mission (this)              City / Region
  *   ┌────────────────────┐    ┌───────────────────────┐   ┌─────────────┐
  *   │ id ────────────────┼───►│ typeId                │   │ city.id ◄───┼── cityId
- *   │ difficultyBand ────┼───►│ difficulty            │   │ region.biome┼──► mapParams.biome
+ *   │ difficultyBand ────┼───►│ difficulty            │   │ biome (*)   ┼──► mapParams.biome
  *   │ rewardPerDifficulty┼───►│ rewards.credits       │   └─────────────┘
  *   │ expiryDays ────────┼───►│ createdDay, expiresDay│
  *   │ ignorePenalty ─────┼───►│ ignorePenalty         │

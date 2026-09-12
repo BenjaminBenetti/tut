@@ -1,3 +1,4 @@
+import { BIOME_INFO } from "../../content/data/biome-info";
 import type { Mission, MissionId } from "../../overworld/model/mission";
 import { findCity } from "../../overworld/service/earth-map-query-service";
 import type { MissionTypeCatalogue } from "../../overworld/service/mission-generation-service";
@@ -157,7 +158,7 @@ export class MissionDetailsView {
       difficulty: `D${formatWhole(mission.difficulty)}`,
       reward: formatCredits(mission.rewards.credits),
       "days-left": `${formatWhole(mission.expiresDay - state.overworld.day)} d`,
-      biome: mission.mapParams.biome,
+      biome: BIOME_INFO[mission.mapParams.biome].name,
       settlement: mission.mapParams.settlement,
       size: mission.mapParams.size,
       penalty: `+${formatWhole(mission.ignorePenalty)} infestation`,

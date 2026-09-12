@@ -533,11 +533,11 @@ describe("v16 → v17", () => {
   });
 });
 
-describe("v17 → v18", () => {
-  const runner = new MigrationRunner(GAME_STATE_MIGRATIONS, 18);
+describe("v19 → v20", () => {
+  const runner = new MigrationRunner(GAME_STATE_MIGRATIONS, 20);
   const at = (state: unknown): unknown => {
     const migrated = runner.migrate({
-      schemaVersion: 17,
+      schemaVersion: 19,
       savedAt: "2026-09-12T00:00:00.000Z",
       state,
     });
@@ -556,5 +556,22 @@ describe("v17 → v18", () => {
     expect(at({ overworld: {} })).toEqual({ overworld: {} });
     const kept = { activeMission: { effects: [{ id: "effect-1" }] } };
     expect(at(kept)).toEqual(kept);
+  });
+});
+
+describe("radar migration", () => {
+  it("adds an empty scanner list to v17 missions without changing their fog or units", () => {
+    const migration = GAME_STATE_MIGRATIONS.find((step) => step.from === 17)!;
+    const mission = {
+      units: [{ id: "squad-1" }],
+      vision: { tdf: { explored: [1, 2] } },
+    };
+    const old = { activeMission: mission };
+    expect(migration.apply(old)).toEqual({
+      activeMission: { ...mission, radars: [] },
+    });
+    expect(old).toEqual({ activeMission: mission });
+    const campaign = { overworld: { day: 4 } };
+    expect(migration.apply(campaign)).toBe(campaign);
   });
 });

@@ -153,7 +153,8 @@ function notesOf(diagnostics: GenerationDiagnostics): string[] {
 const SEEDS = process.env.CI === undefined ? 6 : 3;
 
 /** 30 s locally (measured 8.4 s); the runner budget since ADR 0009 (#856). */
-const INVARIANT_BUDGET_MS = process.env.CI === undefined ? 30_000 : 120_000;
+const INVARIANT_BUDGET_MS =
+  (BIOME_IDS.length / 4) * (process.env.CI === undefined ? 30_000 : 120_000);
 
 describe("ConnectivityPass", () => {
   it(

@@ -7,9 +7,21 @@
  * generation so a `Mission` can carry a biome without importing `mapgen/`.
  * The full generation definitions are keyed by these ids in
  * `mapgen/data/biomes`; adding a biome is one new member here plus one
- * data entry there.
+ * data entry there, with matching presentation catalogue entries.
  */
-export type BiomeId = "temperate" | "snowy" | "desert" | "coastal";
+export type BiomeId =
+  | "temperate"
+  | "snowy"
+  | "desert"
+  | "coastal"
+  | "tropical"
+  | "savanna"
+  | "steppe"
+  | "mediterranean"
+  | "taiga"
+  | "tundra"
+  | "alpine"
+  | "wetland";
 
 /** Every biome id, in a fixed order. */
 export const BIOME_IDS: readonly BiomeId[] = [
@@ -17,4 +29,12 @@ export const BIOME_IDS: readonly BiomeId[] = [
   "snowy",
   "desert",
   "coastal",
+  "tropical",
+  "savanna",
+  "steppe",
+  "mediterranean",
+  "taiga",
+  "tundra",
+  "alpine",
+  "wetland",
 ];

@@ -74,11 +74,24 @@ export const MEDIC_SQUAD: SquadType = {
     "Field medics who stabilise the wounded. They shoot back, but their real job is bringing everyone home.",
 };
 
-/** Every squad type available in M1, in catalogue order. */
+/** Signals infantry that locates hidden bugs and egg nests. */
+export const RADIO_SQUAD: SquadType = {
+  id: "radio",
+  name: "Radio Squad",
+  hireCost: 650,
+  reinforceCostPerSoldier: 110,
+  combatRating: 28,
+  description:
+    "Signals infantry with portable radar. Deploy a scanner on an adjacent free tile for 1 AP: hidden enemies and egg nests appear as red blips within a 30-tile circle for the rest of the mission.",
+  abilities: ["deploy-radar"],
+};
+
+/** Every available squad type, in catalogue order. */
 export const SQUAD_TYPES: readonly SquadType[] = [
   RIFLE_SQUAD,
   ROCKET_SQUAD,
   SNIPER_SQUAD,
   ENGINEER_SQUAD,
   MEDIC_SQUAD,
+  RADIO_SQUAD,
 ];

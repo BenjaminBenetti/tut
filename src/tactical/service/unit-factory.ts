@@ -97,6 +97,9 @@ export function squadUnit(
     armor: infantry.armor,
     passClass: "infantry",
     modelId: infantry.modelIdByType[squadType.id] ?? infantry.fallbackModelId,
+    ...(squadType.abilities === undefined
+      ? {}
+      : { abilities: [...squadType.abilities] }),
   };
   return build(
     "squad",
@@ -116,7 +119,8 @@ export function squadUnit(
  * clamped to the tuning's bounds; the weapon fires for `firepower`
  * scaled by the tuning's damage, at the base accuracy plus the sheet's
  * modifier, clamped to `[0, 100]`; per-hit armor is `armor × armorFactor`.
- * Pure: reads only its arguments and draws one id.
+ * The template carries the loadout, so graphics draws the fitted parts
+ * (#1115). Pure: reads only its arguments and draws one id.
  */
 export function mechUnit(
   mech: Mech,
@@ -144,6 +148,9 @@ export function mechUnit(
     armor: Math.max(0, Math.round(sheet.armor * tuning.armorFactor)),
     passClass: "mech",
     modelId: tuning.modelId,
+    // Graphics assembles the fitted parts from this, so the mech on the
+    // field is the one the player built in the bay (#1115).
+    loadout: mech.loadout,
   };
   const hp = Math.round(
     (maxHp * (MECH_MAX_DAMAGE - mech.damage)) / MECH_MAX_DAMAGE,

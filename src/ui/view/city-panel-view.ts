@@ -1,4 +1,5 @@
 import { MISSION_TYPES } from "../../content/data/mission-types";
+import { BIOME_INFO } from "../../content/data/biome-info";
 import type { CityId } from "../../overworld/model/city";
 import { MAX_INFESTATION } from "../../overworld/model/city";
 import type { Mission, MissionId } from "../../overworld/model/mission";
@@ -48,6 +49,7 @@ export class CityPanelView {
   private name: HTMLElement | undefined;
   private region: HTMLElement | undefined;
   private scale: HTMLElement | undefined;
+  private biome: HTMLElement | undefined;
   private meter: HTMLElement | undefined;
   private infestation: HTMLElement | undefined;
   private regionMean: HTMLElement | undefined;
@@ -101,6 +103,7 @@ export class CityPanelView {
     grid.className = "tut-kv";
     const region = this.addField(doc, grid, "Region", "region");
     const scale = this.addField(doc, grid, "Scale", "scale");
+    const biome = this.addField(doc, grid, "Biome", "biome");
     const infestation = this.addField(doc, grid, "Infestation", "infestation");
     const regionMean = this.addField(doc, grid, "Region mean", "region-mean");
 
@@ -159,6 +162,7 @@ export class CityPanelView {
     this.name = name;
     this.region = region;
     this.scale = scale;
+    this.biome = biome;
     this.meter = fill;
     this.infestation = infestation;
     this.regionMean = regionMean;
@@ -192,6 +196,9 @@ export class CityPanelView {
     this.setText(this.name, city.name);
     this.setText(this.region, region.name);
     this.setText(this.scale, city.scale);
+    const environment = BIOME_INFO[city.biome ?? region.biome];
+    this.setText(this.biome, environment.name);
+    if (this.biome) this.biome.title = environment.description;
     this.setText(this.infestation, formatWhole(city.infestation));
     this.setText(
       this.regionMean,
@@ -216,6 +223,7 @@ export class CityPanelView {
     this.name = undefined;
     this.region = undefined;
     this.scale = undefined;
+    this.biome = undefined;
     this.meter = undefined;
     this.infestation = undefined;
     this.regionMean = undefined;

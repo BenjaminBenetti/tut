@@ -1720,5 +1720,33 @@
     "quality": "final",
     "triangles": 84,
     "bytes": 11332
+  },
+  {
+    "id": "tdf.radar-scanner",
+    "category": "props",
+    "path": "assets/models/props/tdf-radar-scanner.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.96,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 188,
+    "bytes": 20184
+  },
+  {
+    "id": "tdf.infantry.radio",
+    "category": "units",
+    "path": "assets/models/units/tdf-infantry-radio.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.36,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1028,
+    "bytes": 97688
   }
 ]

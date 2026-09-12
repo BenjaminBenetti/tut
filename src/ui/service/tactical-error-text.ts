@@ -242,6 +242,8 @@ export function describeRefusal(
       return `${names.unit(error.unitId)} is already fully loaded`;
     case "no-reload":
       return `${names.unit(error.unitId)} has nothing to reload`;
+    case "no-radar":
+      return `${names.unit(error.unitId)} cannot deploy radar`;
     case "no-deploy-room":
       return `No ${error.passClass} tile is left in the deploy zone for ${names.unit(error.unitId)}`;
     case "illegal-move":

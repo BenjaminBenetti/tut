@@ -1,4 +1,7 @@
 import { expect, type Page } from "@playwright/test";
+import type { GameState } from "../src/save/model/game-state";
+import type { SaveEnvelope } from "../src/save/model/save-envelope";
+import type { MissionMapFixture } from "./fixtures/mission-maps";
 
 /** Days to advance before giving up on a mission appearing for the fixed seed. */
 const MAX_DAYS = 40;
@@ -14,8 +17,13 @@ const MAX_DAYS = 40;
  *
  * @param page - The page to drive.
  * @param seed - The campaign seed, which fixes the map and the mission.
+ * @param fixture - Optional pinned battlefield for geometry-specific regressions.
  */
-export async function launchMission(page: Page, seed: string): Promise<void> {
+export async function launchMission(
+  page: Page,
+  seed: string,
+  fixture?: MissionMapFixture,
+): Promise<void> {
   await page.goto("/");
   const body = page.locator("body");
   await expect(body).toHaveAttribute("data-app-state", "ready");
@@ -40,6 +48,35 @@ export async function launchMission(page: Page, seed: string): Promise<void> {
     await choice.first().click();
   }
 
+  if (fixture) {
+    const missionId = await rows.first().getAttribute("data-mission-id");
+    await page.evaluate(
+      ({ missionId, fixture }) => {
+        const key = "tut:save:autosave";
+        const save = JSON.parse(
+          localStorage.getItem(key)!,
+        ) as SaveEnvelope<GameState>;
+        const state = save.state;
+        const missions = state.overworld.missions.map((mission) =>
+          mission.id === missionId ? { ...mission, ...fixture } : mission,
+        );
+        localStorage.setItem(
+          key,
+          JSON.stringify({
+            ...save,
+            state: {
+              ...state,
+              overworld: { ...state.overworld, missions },
+            },
+          }),
+        );
+      },
+      { missionId, fixture },
+    );
+    await page.reload();
+    await page.locator('[data-action="continue"]').click();
+    await expect(body).toHaveAttribute("data-screen", "overworld");
+  }
   await rows.first().click();
   await page
     .locator('[data-role="mission-details"] [data-action="plan-deployment"]')

@@ -326,6 +326,8 @@ Reference assemblies: `tdf.mech.assembled-a` (Vanguard, Strider, Tracker, Autoca
 
 The mech bay assembles this table at runtime and shows the result (#694): `src/graphics/data/part-model-table.ts` holds it as code, `MechAssembler` hangs the parts on the §6 sockets, and `MechPreviewScene` draws them. See [`mech-bay-assembly.png`](mech-bay-assembly.png).
 
+**The battlefield assembles the same table (#1115).** A mech's unit template carries its loadout, and `LoadoutUnitModelSource` draws it through the same assembler, flattened so the motion rig finds its limbs as it does on a reference GLB. The reference assemblies are drawn only for a mission saved before #1115. Every loadout the player can build is therefore a different mech on the field: [`diagnostics/1115`](diagnostics/1115/README.md) renders three side by side through the tactical scene builder.
+
 **Frame a preview on the silhouette, not on a box.** Project the mesh vertices into camera space and take the extents there. A bounding box under an isometric tilt projects to a hexagon whose extreme corners are empty air above and below anything tall and thin, and a mech is tall and thin: measured, framing on the box put the *box* at 82 % of the view and the mech at **61 %**. The part thumbnails are still in the older version of this trap — their helper frames on the box's *diagonal*, which over-pads worse — and re-shooting all thirty is the cost of fixing them (#694).
 
 ## 8. Asset manifests
@@ -583,8 +585,10 @@ The case to check is a squad behind building geometry, with the surrounding map 
 | Radius | **4.0 tiles** around the unit | Executive Director selected this from the #937 comparison, including the two-squad overlap that reveals most of the upper floor. |
 | Soft edge | **0.65 tiles**, measured inward from the radius | A hard circle reads as a stencil; a soft one reads as the building giving way. Measured inward rather than as a fraction of the radius, so softness does not change when the radius does. |
 | Fade in / out | **0.15 s** | Instant flickers as units move; longer lags the camera. |
-| What fades | Walls, floors, roofs, parapets and tall props between the camera and the unit | Anything that can stand in the way. |
-| What never fades | Ground, the unit itself, overlays, VFX, hook markers | These are the read. |
+| What fades | Walls, floors, roofs, parapets and tall props between the camera and the unit, **above its feet** | Anything that can stand in the way. |
+| What never fades | Ground, the floor the unit stands on and anything below it, the unit itself, overlays, VFX, hook markers | These are the read. A slab at the unit's feet is in front of it and inside the radius, and fading it showed the storey below through the floor (#1118). |
+
+**The floor holds (#1118).** A fragment fades only when it rises more than `GHOST_FOOT_MARGIN` (0.3 u) above the unit's feet. Without that the slab in front of a unit on an upper storey opened and the room below read through it, which the Executive Director found made the interior unreadable. [Before and after frames](diagnostics/1118/README.md), pitched and flat roofs at two yaws.
 
 Applies to **every unit the player can currently see**, not only their own: hiding a spotted bug behind a wall undoes the spotting. That is the same question fog of war answers (#531), so it wants one predicate, not two.
 

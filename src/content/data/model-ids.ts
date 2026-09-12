@@ -26,6 +26,8 @@ export const MODEL_IDS = [
   // Units (TDF)
   "tdf.infantry.engineer",
   "tdf.infantry.medic",
+  "tdf.infantry.radio",
+  "tdf.radar-scanner",
   "tdf.infantry.rifle",
   "tdf.infantry.rocket",
   "tdf.infantry.sniper",

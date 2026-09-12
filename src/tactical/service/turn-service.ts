@@ -248,7 +248,7 @@ export function overwatchReaction(
     ) {
       continue;
     }
-    const checked = validateTargeting(state, watcherId, movedUnitId);
+    const checked = validateTargeting(state, watcherId, movedUnitId, tuning);
     if (!checked.ok) {
       continue;
     }

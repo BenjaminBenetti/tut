@@ -6,9 +6,13 @@ import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { TileEffect } from "../../tactical/model/tile-effect";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { SideVision, Spawner } from "../../tactical/model/tactical-state";
-import type { Unit } from "../../tactical/model/unit";
+import type { TileCoord } from "../../mapgen/model/tile-coord";
+import { ATTACK_RESOLVED } from "../../tactical/model/attack-resolved-event";
+import type { Unit, UnitId } from "../../tactical/model/unit";
+import { UNIT_DIED } from "../../tactical/model/unit-died-event";
 import { UNIT_SPOTTED } from "../../tactical/model/unit-spotted-event";
 import { UNIT_MOVED } from "../../tactical/model/unit-moved-event";
+import type { UnitTemplate } from "../../tactical/model/unit-template";
 import {
   missionWith,
   openField,
@@ -18,6 +22,7 @@ import { withVision } from "../../tactical/service/vision-service";
 import {
   drawPerceived,
   frameMission,
+  placeArrivals,
   playAroundRedraw,
 } from "./tactical-scene-steps";
 import type { MapExtent } from "../../graphics/service/camera-math";
@@ -37,6 +42,12 @@ class StageRecorder {
   /** Records the map handed to the scene (#1121). */
   applyMap(_map: TacticalMap): void {
     this.calls.push("applyMap");
+  }
+
+  /** Records the radar layer update. */
+  updateRadar(): Promise<void> {
+    this.calls.push("updateRadar");
+    return Promise.resolve();
   }
 
   /** Records the vision handed to the scene. */
@@ -65,6 +76,24 @@ class StageRecorder {
   updateSpawners(spawners: readonly Spawner[]): Promise<void> {
     this.calls.push("updateSpawners");
     this.spawners = spawners;
+    return Promise.resolve();
+  }
+}
+
+/** An `ArrivalStage` that records what was placed where. */
+class ArrivalRecorder {
+  readonly arrived: { unitId: UnitId; template: string; at: TileCoord }[] = [];
+
+  constructor(private readonly onBoard: readonly UnitId[] = []) {}
+
+  /** The units the scene was drawing before the batch. */
+  unitIds(): readonly UnitId[] {
+    return this.onBoard;
+  }
+
+  /** Records the placement. */
+  arrive(unit: Unit, template: UnitTemplate, at: TileCoord): Promise<void> {
+    this.arrived.push({ unitId: unit.id, template: template.id, at });
     return Promise.resolve();
   }
 }
@@ -160,6 +189,7 @@ describe("drawPerceived", () => {
       "updateEffects",
       "update",
       "updateSpawners",
+      "updateRadar",
     ]);
   });
 });
@@ -185,6 +215,145 @@ describe("frameMission", () => {
     // The middle of this map is (4, 4); opening there puts the squad off
     // screen on a large map.
     expect(framing.target?.x).not.toBeCloseTo(4.5);
+  });
+});
+
+// ===========================================
+// placeArrivals
+// ===========================================
+
+describe("placeArrivals (#1116)", () => {
+  const step = (
+    unitId: string,
+    from: TileCoord,
+    to: TileCoord,
+  ): TacticalEvent => ({
+    type: UNIT_MOVED,
+    payload: { unitId, from, to, path: [to] },
+  });
+  const spot = (
+    unitId: string,
+    team: "tdf" | "bugs" = "tdf",
+  ): TacticalEvent => ({
+    type: UNIT_SPOTTED,
+    payload: { unitId, team },
+  });
+
+  /** A squad at the origin and a bug that has just walked up next to it. */
+  function walkedIn() {
+    const base = missionWith(MAP, [
+      unitAt("s1", "infantry", { x: 0, y: 0, z: 0 }),
+      unitAt("b", "infantry", { x: 2, y: 0, z: 0 }, { team: "bugs" }),
+    ]);
+    const mission = withVision({ state: base, events: [] }).state;
+    expect(mission.vision.tdf.spotted).toContain("b");
+    const events = [
+      step("b", { x: 5, y: 0, z: 0 }, { x: 4, y: 0, z: 0 }),
+      step("b", { x: 4, y: 0, z: 0 }, { x: 3, y: 0, z: 0 }),
+      step("b", { x: 3, y: 0, z: 0 }, { x: 2, y: 0, z: 0 }),
+      spot("b"),
+    ];
+    return { mission, events };
+  }
+
+  it("places a bug that walked into view where its walk began, so the walk can play", async () => {
+    const { mission, events } = walkedIn();
+    const stage = new ArrivalRecorder(["s1"]);
+    const placed = await placeArrivals(stage, mission, events);
+    // The first move's `from`, not the destination the state holds.
+    expect(stage.arrived).toEqual([
+      { unitId: "b", template: "bug:swarmer", at: { x: 5, y: 0, z: 0 } },
+    ]);
+    expect([...placed]).toEqual(["b"]);
+  });
+
+  it("leaves a unit the scene already draws alone", async () => {
+    const { mission, events } = walkedIn();
+    const stage = new ArrivalRecorder(["s1", "b"]);
+    const placed = await placeArrivals(stage, mission, events);
+    expect(stage.arrived).toEqual([]);
+    expect(placed.size).toBe(0);
+  });
+
+  it("never places a bug that stays out of sight, whatever it did (ADR 0006)", async () => {
+    const base = missionWith(MAP, [
+      unitAt("s1", "infantry", { x: 0, y: 0, z: 0 }),
+      unitAt("far", "infantry", { x: 7, y: 0, z: 7 }, { team: "bugs" }),
+    ]);
+    const mission = withVision({ state: base, events: [] }).state;
+    expect(mission.vision.tdf.spotted).not.toContain("far");
+    const stage = new ArrivalRecorder(["s1"]);
+    const placed = await placeArrivals(stage, mission, [
+      step("far", { x: 7, y: 0, z: 6 }, { x: 7, y: 0, z: 7 }),
+      // The bugs' own sighting of the squad is their business.
+      spot("s1", "bugs"),
+    ]);
+    expect(stage.arrived).toEqual([]);
+    expect(placed.size).toBe(0);
+  });
+
+  it("does not place a unit spotted standing still: the reveal after the redraw handles that", async () => {
+    const { mission } = walkedIn();
+    const stage = new ArrivalRecorder(["s1"]);
+    const placed = await placeArrivals(stage, mission, [spot("b")]);
+    expect(stage.arrived).toEqual([]);
+    expect(placed.size).toBe(0);
+  });
+
+  it("places a bug the squad shot on the way in, even one that died unspotted", async () => {
+    // Overwatch kills it on its second step: vision at the end of the
+    // batch never lists it, and the player still has to watch it happen.
+    const base = missionWith(MAP, [
+      unitAt("s1", "infantry", { x: 0, y: 0, z: 0 }),
+      unitAt("b", "infantry", { x: 3, y: 0, z: 0 }, { team: "bugs", hp: 0 }),
+    ]);
+    const mission = withVision({ state: base, events: [] }).state;
+    expect(mission.vision.tdf.spotted).not.toContain("b");
+    const stage = new ArrivalRecorder(["s1"]);
+    const placed = await placeArrivals(stage, mission, [
+      step("b", { x: 5, y: 0, z: 0 }, { x: 4, y: 0, z: 0 }),
+      step("b", { x: 4, y: 0, z: 0 }, { x: 3, y: 0, z: 0 }),
+      {
+        type: ATTACK_RESOLVED,
+        payload: {
+          attackerId: "s1",
+          targetId: "b",
+          hit: true,
+          damage: 10,
+          targetHp: 0,
+          weaponRange: 8,
+        },
+      },
+      { type: UNIT_DIED, payload: { unitId: "b", killerId: "s1" } },
+    ]);
+    expect(stage.arrived.map((a) => a.at)).toEqual([{ x: 5, y: 0, z: 0 }]);
+    expect([...placed]).toEqual(["b"]);
+  });
+
+  it("does not place a bug that only a bug fired on", async () => {
+    const base = missionWith(MAP, [
+      unitAt("s1", "infantry", { x: 0, y: 0, z: 0 }),
+      unitAt("b", "infantry", { x: 7, y: 0, z: 7 }, { team: "bugs" }),
+      unitAt("c", "infantry", { x: 7, y: 0, z: 6 }, { team: "bugs" }),
+    ]);
+    const mission = withVision({ state: base, events: [] }).state;
+    const stage = new ArrivalRecorder(["s1"]);
+    const placed = await placeArrivals(stage, mission, [
+      step("b", { x: 6, y: 0, z: 7 }, { x: 7, y: 0, z: 7 }),
+      {
+        type: ATTACK_RESOLVED,
+        payload: {
+          attackerId: "c",
+          targetId: "b",
+          hit: true,
+          damage: 1,
+          targetHp: 9,
+          weaponRange: 1,
+        },
+      },
+    ]);
+    expect(stage.arrived).toEqual([]);
+    expect(placed.size).toBe(0);
   });
 });
 
@@ -235,6 +404,31 @@ describe("playAroundRedraw", () => {
       return Promise.resolve();
     });
     expect(trace).toEqual(["enqueue:1", "redraw", "enqueue:1"]);
+  });
+
+  it("plays an arrival's spot and walk before the redraw, since it is already on the board (#1116)", async () => {
+    const queue = new QueueRecorder();
+    const walk: TacticalEvent = {
+      type: UNIT_MOVED,
+      payload: {
+        unitId: "far",
+        from: { x: 7, y: 0, z: 6 },
+        to: { x: 7, y: 0, z: 7 },
+        path: [{ x: 7, y: 0, z: 7 }],
+      },
+    };
+    await playAroundRedraw(
+      queue,
+      [walk, spotted],
+      () => Promise.resolve(),
+      undefined,
+      new Set(["far"]),
+    );
+    expect(queue.batches[0]?.map((e) => e.type)).toEqual([
+      UNIT_SPOTTED,
+      UNIT_MOVED,
+    ]);
+    expect(queue.batches[1]).toEqual([]);
   });
 
   it("still resolves when there is nothing to play", async () => {

@@ -1,41 +1,17 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "@playwright/test";
 
-import type { TutTestHooks } from "../src/app/model/test-hooks";
+import { launchMission } from "./mission-capture.helper";
+import { CITY_MISSION_FIXTURE } from "./fixtures/mission-maps";
 import type { TacticalTestHooks } from "../src/ui/model/tactical-intent";
 
 interface HookGlobal {
-  __tut__?: TutTestHooks;
   __tutTactical__?: TacticalTestHooks;
 }
 
-const MAX_DAYS = 40;
-
 /** Starts a real mission on the fixed seed and returns its id. */
 async function startMission(page: Page): Promise<void> {
-  await page.goto("/");
-  const body = page.locator("body");
-  await expect(body).toHaveAttribute("data-app-state", "ready");
-  await page.locator('[data-field="seed"]').fill("4242");
-  await page.locator('[data-action="new-game"]').click();
-  await expect(body).toHaveAttribute("data-screen", "overworld");
-  const rows = page.locator('[data-role="mission-list"] [data-mission-id]');
-  const advance = page.locator('[data-action="advance-day"]');
-  const choice = page.locator('[data-role="event-dialog"] [data-choice-id]');
-  for (let day = 0; day < MAX_DAYS && (await rows.count()) === 0; day++) {
-    if (await choice.first().isVisible()) {
-      await choice.first().click();
-    }
-    await expect(advance).toBeEnabled();
-    await advance.click();
-  }
-  const missionId = await rows.first().getAttribute("data-mission-id");
-  await page.evaluate(
-    (id) => (globalThis as HookGlobal).__tut__?.startTacticalMission(id),
-    missionId ?? "",
-  );
-  await expect(body).toHaveAttribute("data-screen", "tactical");
-  await expect(page.locator("#tactical-viewport canvas")).toBeVisible();
+  await launchMission(page, "4242", CITY_MISSION_FIXTURE);
 }
 
 /** Where a unit's feet are on screen, or undefined. */

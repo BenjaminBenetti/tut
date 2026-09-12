@@ -54,9 +54,17 @@ export const UNIT_TUNING: UnitTuning = {
       sniper: "tdf.infantry.sniper",
       engineer: "tdf.infantry.engineer",
       medic: "tdf.infantry.medic",
+      radio: "tdf.infantry.radio",
     },
     fallbackModelId: "tdf.infantry.rifle",
-    chargesByType: { rifle: 3, rocket: 1, sniper: 2, engineer: 3, medic: 3 },
+    chargesByType: {
+      rifle: 3,
+      rocket: 1,
+      sniper: 2,
+      engineer: 3,
+      medic: 3,
+      radio: 3,
+    },
     fallbackCharges: 3,
   },
   mech: {

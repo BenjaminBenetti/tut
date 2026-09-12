@@ -23,6 +23,11 @@ import {
   isDropshipTile,
 } from "./action-availability";
 import { chargeRegisterFor } from "./charge-register";
+import { RADAR_TUNING } from "../../tactical/data/radar-tuning";
+import {
+  carriesRadar,
+  validateRadarDeployment,
+} from "../../tactical/service/radar-service";
 import type { TacticalNames } from "./tactical-error-text";
 import { describeRefusal } from "./tactical-error-text";
 
@@ -57,6 +62,7 @@ export interface WheelPage {
 /** What a chosen entry stands for, parsed back out of its id. */
 export type WheelChoice =
   | { readonly action: "move"; readonly tile: TileCoord }
+  | { readonly action: "deploy-radar"; readonly tile: TileCoord }
   | {
       readonly action: "attack";
       readonly targetId: string;
@@ -100,6 +106,8 @@ const SHORT_REASONS: Readonly<Partial<Record<TacticalError["kind"], string>>> =
     "target-destroyed": "destroyed",
     "tile-out-of-sight": "no line of sight",
     "no-area-weapon": "not at the ground",
+    "radar-out-of-reach": "range 1",
+    "radar-tile-blocked": "tile blocked",
   };
 
 /** Separates an entry's action from its argument in the id. */
@@ -242,7 +250,8 @@ export function parseWheelChoice(id: string): WheelChoice | undefined {
   const action = at === -1 ? id : id.slice(0, at);
   const argument = at === -1 ? "" : id.slice(at + 1);
   switch (action) {
-    case "move": {
+    case "move":
+    case "deploy-radar": {
       const tile = parseTile(argument);
       return tile === undefined ? undefined : { action, tile };
     }
@@ -318,6 +327,29 @@ function tilePage(tile: TileCoord, unit: Unit, ctx: WheelContext): WheelPage {
   items.push(tileAttackItem(tile, unit, ctx));
   if (isDropshipTile(ctx.mission, tile)) {
     items.push(boardItem(unit, ctx));
+  }
+  if (carriesRadar(ctx.mission, unit)) {
+    const radarId = itemId(
+      "deploy-radar",
+      `${String(tile.x)},${String(tile.y)},${String(tile.z)}`,
+    );
+    const deployment = validateRadarDeployment(
+      ctx.mission,
+      unit.id,
+      tile,
+      RADAR_TUNING,
+      ctx.graph,
+    );
+    items.push(
+      deployment.ok
+        ? {
+            id: radarId,
+            label: "Deploy radar",
+            icon: "radar",
+            detail: "1 AP · scan 30",
+          }
+        : closed(radarId, "Deploy radar", "radar", deployment.error, ctx),
+    );
   }
   items.push(overwatchItem(unit, ctx), reloadItem(unit, ctx));
   return { items };

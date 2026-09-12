@@ -7,7 +7,10 @@ import type { Tile } from "../../mapgen/model/tile";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { ReachabilityService } from "../../mapgen/service/reachability-service";
 import { TileIndex } from "../../mapgen/service/tile-index";
+import { COMBAT_TUNING } from "../data/combat-tuning";
 import { UNIT_TUNING } from "../data/unit-tuning";
+import type { WeaponReachTuning } from "../model/weapon-reach-tuning";
+import { withinReach } from "./weapon-reach-service";
 import type {
   DistanceRange,
   MapAssessment,
@@ -21,8 +24,10 @@ import { coverAgainst, hasLineOfSight } from "./sight-service";
 
 /** What the assessment measures firing positions and vision with. */
 export interface AssessmentOptions {
-  /** Weapon range a firing position must be inside. */
+  /** Weapon range a firing position must be inside, on level ground. */
   readonly range: number;
+  /** How height stretches that range (#1119). */
+  readonly reach: WeaponReachTuning;
   /** How far a standing unit sees, for the visibility sample. */
   readonly sightRange: number;
   /**
@@ -40,6 +45,7 @@ export interface AssessmentOptions {
 /** Range firing positions are counted at when the caller says nothing. */
 export const DEFAULT_ASSESSMENT_OPTIONS: AssessmentOptions = {
   range: UNIT_TUNING.infantry.weapon.range,
+  reach: COMBAT_TUNING,
   sightRange: UNIT_TUNING.infantry.sightRange,
   visionSamples: 30,
 };
@@ -151,6 +157,7 @@ export function objectiveApproach(
               infantry,
               origin,
               UNIT_TUNING.infantry.weapon.range,
+              COMBAT_TUNING,
             ),
       mechFiringSteps:
         origin === undefined
@@ -161,6 +168,7 @@ export function objectiveApproach(
               mech,
               origin,
               UNIT_TUNING.mech.weapon.range,
+              COMBAT_TUNING,
             ),
     };
   });
@@ -176,14 +184,15 @@ function stepsToFiringPosition(
   steps: ReadonlyMap<number, number>,
   origin: TileCoord,
   range: number,
+  reach: WeaponReachTuning,
 ): number {
   let best = -1;
-  for (const tile of tilesWithin(index, origin, range)) {
+  for (const tile of tilesWithin(index, origin, range + reach.maxReachBonus)) {
     const at = steps.get(index.keyOf(tile));
     if (at === undefined || (best >= 0 && at >= best)) {
       continue;
     }
-    if (manhattanDistance(tile, origin) > range) {
+    if (!withinReach(range, tile, origin, reach)) {
       continue;
     }
     if (!hasLineOfSight(map, tile, origin, index)) {
@@ -210,11 +219,11 @@ interface FiringPositions {
 
 /**
  * Tiles a squad can shoot the objective from: reachable from deploy,
- * within `range` in the same metric the hit chance uses (manhattan), and
- * with the sight line clear. `covered` counts the ones that have cover
- * against that objective and `elevated` the ones that look down on it —
- * the two terms the hit chance adds for a unit trading fire with a
- * hatching spawner.
+ * within reach by the rules' own predicate (three-dimensional distance,
+ * height bonus included, #1119), and with the sight line clear.
+ * `covered` counts the ones that have cover against that objective and
+ * `elevated` the ones that look down on it — the two terms the hit
+ * chance adds for a unit trading fire with a hatching spawner.
  */
 function firingPositionsFor(
   map: TacticalMap,
@@ -229,11 +238,15 @@ function firingPositionsFor(
   let total = 0;
   let covered = 0;
   let elevated = 0;
-  for (const tile of tilesWithin(index, origin, options.range)) {
+  for (const tile of tilesWithin(
+    index,
+    origin,
+    options.range + options.reach.maxReachBonus,
+  )) {
     if (!reachable.has(index.keyOf(tile))) {
       continue;
     }
-    if (manhattanDistance(tile, origin) > options.range) {
+    if (!withinReach(options.range, tile, origin, options.reach)) {
       continue;
     }
     if (!hasLineOfSight(map, tile, origin, index)) {
@@ -280,17 +293,18 @@ export function nearestSightPosition(
   target: TileCoord,
   unitClass: UnitClass,
   range: number,
+  reach: WeaponReachTuning = COMBAT_TUNING,
 ): TileCoord | undefined {
   const index = new TileIndex(map);
-  const reach = new ReachabilityService(index, map.connectors);
-  const steps = walkFrom(index, reach, [from], unitClass);
+  const walkable = new ReachabilityService(index, map.connectors);
+  const steps = walkFrom(index, walkable, [from], unitClass);
   let best: { tile: Tile; steps: number } | undefined;
-  for (const tile of tilesWithin(index, target, range)) {
+  for (const tile of tilesWithin(index, target, range + reach.maxReachBonus)) {
     const walked = steps.get(index.keyOf(tile));
     if (
       walked === undefined ||
       (best !== undefined && walked >= best.steps) ||
-      manhattanDistance(tile, target) > range ||
+      !withinReach(range, tile, target, reach) ||
       !hasLineOfSight(map, tile, target, index)
     ) {
       continue;

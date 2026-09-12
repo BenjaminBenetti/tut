@@ -346,6 +346,77 @@ describe("TacticalHudView", () => {
     expect(wheelOpen()).toBe(false);
   });
 
+  it("a left click on the tile an enemy stands on aims at it, as a click on its model does (#1117)", () => {
+    const { hud, commands, mission } = setup();
+    // Perception for real: b1 stands three tiles from s1 on open ground,
+    // so it is spotted; b2 is across the field and is not.
+    const seen = withVision({ state: mission, events: [] }).state;
+    hud.update(seen);
+    expect(seen.vision.tdf.spotted).toContain("b1");
+    const b1 = seen.units.find((u) => u.id === "b1")!;
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    hud.handleIntent({ kind: "select-tile", tile: b1.pos });
+    expect(hud.getTargetUnitId()).toBe("b1");
+    expect(hud.getMode()).toBe("attack");
+    expect(items()[0]).toBe("attack:b1");
+    item("attack:b1")?.click();
+    expect(commands).toEqual([
+      { type: ATTACK, payload: { attackerId: "s1", targetId: "b1" } },
+    ]);
+  });
+
+  it("a left click on an unspotted enemy's tile opens the plain tile wheel, giving nothing away", () => {
+    const { hud, mission } = setup();
+    // Short sight, so the far swarmer is in the dark while the near one
+    // (three tiles off) stays spotted.
+    const shortSighted: TacticalState = {
+      ...mission,
+      templates: {
+        ...mission.templates,
+        rifle: { ...hudTemplate("rifle", "Rifle Squad"), sightRange: 3 },
+      },
+    };
+    const seen = withVision({ state: shortSighted, events: [] }).state;
+    hud.update(seen);
+    expect(seen.vision.tdf.spotted).toEqual(["b1"]);
+    const b2 = seen.units.find((u) => u.id === "b2")!;
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    hud.handleIntent({ kind: "select-tile", tile: b2.pos });
+    expect(hud.getMode()).toBe("move");
+    expect(hud.getTargetUnitId()).toBeUndefined();
+    expect(items().some((id) => id.startsWith("attack:"))).toBe(false);
+    expect(items()).toContain("overwatch");
+  });
+
+  it("a left click on the tile under a squadmate selects it, and under the selected unit opens its own wheel (#1117)", () => {
+    const { hud, mission } = setup();
+    const seen = withVision({ state: mission, events: [] }).state;
+    hud.update(seen);
+    const s2 = seen.units.find((u) => u.id === "s2")!;
+    const s1 = seen.units.find((u) => u.id === "s1")!;
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    hud.handleIntent({ kind: "select-tile", tile: s2.pos });
+    expect(hud.getSelectedUnitId()).toBe("s2");
+    expect(wheelOpen()).toBe(false);
+    hud.handleIntent({ kind: "select-tile", tile: s1.pos });
+    expect(hud.getSelectedUnitId()).toBe("s1");
+    hud.handleIntent({ kind: "select-tile", tile: s1.pos });
+    expect(wheelOpen()).toBe(true);
+    expect(items()).toContain("overwatch");
+    expect(items().some((id) => id.startsWith("move:"))).toBe(false);
+  });
+
+  it("a left click on an explored spawner's tile aims at the spawner (#1117)", () => {
+    const { hud, mission } = setup();
+    const seen = withVision({ state: mission, events: [] }).state;
+    hud.update(seen);
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    hud.handleIntent({ kind: "select-tile", tile: { x: 9, y: 0, z: 0 } });
+    expect(hud.getMode()).toBe("attack");
+    expect(hud.getTargetUnitId()).toBe("spawner-1");
+    expect(items()[0]).toBe("attack:spawner-1");
+  });
+
   it("a tile out of reach still gets a wheel, with Move closed and the reason on it", () => {
     const { hud, mission } = setup();
     hud.update({

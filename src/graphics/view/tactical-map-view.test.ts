@@ -1,4 +1,5 @@
 import type { Object3D } from "three";
+import { BIOME_GROUND_STYLES } from "../data/biome-ground-styles";
 import {
   BoxGeometry,
   Group,
@@ -65,6 +66,26 @@ function meshesIn(view: TacticalMapView, level: number): InstancedMesh[] {
 }
 
 describe("TacticalMapView", () => {
+  it("matches savanna ground pillars and placeholder slabs to the biome without repainting roads", () => {
+    const original = fixture().build();
+    const map: TacticalMap = {
+      ...original,
+      recipe: {
+        ...original.recipe,
+        params: { ...original.recipe.params, biome: "savanna" },
+      },
+    };
+    const view = new TacticalMapView(map);
+    const ground = named(view, "tiles-ground:tile:grass:")[0]!;
+    expect((ground.material as MeshStandardMaterial).color.getHex()).toBe(
+      BIOME_GROUND_STYLES.savanna.grass,
+    );
+    const road = named(view, "tiles-ground:tile:road:")[0]!;
+    expect((road.material as MeshStandardMaterial).color.getHex()).toBe(
+      0x3a3d42,
+    );
+    view.dispose();
+  });
   it("keeps water's outer shell without internal faces across its continuous surface", () => {
     const map = new FixtureMapBuilder(3, 3, 1)
       .fillGround(0, SurfaceIds.WATER)

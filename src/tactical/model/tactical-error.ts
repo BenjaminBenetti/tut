@@ -57,7 +57,9 @@ export type TacticalError =
   | { readonly kind: "friendly-target"; readonly targetId: string }
   | {
       readonly kind: "out-of-range";
+      /** Tiles to the target, in three dimensions (#1119). */
       readonly distance: number;
+      /** The weapon's reach for this shot, height bonus included. */
       readonly range: number;
     }
   | { readonly kind: "no-line-of-sight"; readonly targetId: string }
@@ -80,6 +82,9 @@ export type TacticalError =
     }
   | { readonly kind: "charges-full"; readonly unitId: string }
   | { readonly kind: "no-reload"; readonly unitId: string }
+  | { readonly kind: "no-radar"; readonly unitId: string }
+  | { readonly kind: "radar-out-of-reach"; readonly range: number }
+  | { readonly kind: "radar-tile-blocked" }
   | { readonly kind: "objective-not-found"; readonly objectiveId: string }
   | { readonly kind: "objective-complete"; readonly objectiveId: string }
   | { readonly kind: "objective-not-yours"; readonly unitId: string }
@@ -164,6 +169,12 @@ export function describeTacticalError(error: TacticalError): string {
       return `Unit "${error.unitId}" is already fully loaded`;
     case "no-reload":
       return `Unit "${error.unitId}" has nothing to reload`;
+    case "no-radar":
+      return `Unit "${error.unitId}" cannot deploy radar`;
+    case "radar-out-of-reach":
+      return `Deploy radar within ${String(error.range)} tile of the squad`;
+    case "radar-tile-blocked":
+      return "Deploy radar on an adjacent free tile the squad can reach";
     case "objective-not-found":
       return `No objective "${error.objectiveId}" is in this mission`;
     case "objective-complete":
@@ -234,6 +245,9 @@ export const TACTICAL_ERROR_KINDS: Readonly<
   "tile-out-of-sight": true,
   "charges-full": true,
   "no-reload": true,
+  "no-radar": true,
+  "radar-out-of-reach": true,
+  "radar-tile-blocked": true,
   "objective-not-found": true,
   "objective-complete": true,
   "objective-not-yours": true,

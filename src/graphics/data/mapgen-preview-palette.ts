@@ -1,3 +1,4 @@
+import { LAYER_TILES } from "../../core/model/elevation";
 import type { ConnectorKind } from "../../mapgen/model/connector";
 import type { CoverLevel } from "../../mapgen/model/cover";
 import { HookKinds } from "../../mapgen/model/hook";
@@ -7,8 +8,12 @@ import type { WallKind } from "../../mapgen/model/wall";
 // Scale
 // ===========================================
 
-/** World units per half-height layer; two layers span one building storey. */
-export const LAYER_HEIGHT = 0.75;
+/**
+ * World units per half-height layer; two layers span one building storey.
+ * A tile is one world unit, so this is `LAYER_TILES`: the rules measure
+ * attack distance with the same number (#1119).
+ */
+export const LAYER_HEIGHT = LAYER_TILES;
 
 /**
  * Thickness of the **placeholder box** a tile is drawn as before its

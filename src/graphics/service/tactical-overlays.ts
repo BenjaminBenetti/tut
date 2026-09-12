@@ -17,7 +17,10 @@ import { CoverLevel } from "../../mapgen/model/cover";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { Unit, UnitId } from "../../tactical/model/unit";
+import { COMBAT_TUNING } from "../../tactical/data/combat-tuning";
+import type { WeaponReachTuning } from "../../tactical/model/weapon-reach-tuning";
 import { findAttackTarget } from "../../tactical/service/attack-target-service";
+import { withinReach } from "../../tactical/service/weapon-reach-service";
 import {
   apCostOf,
   buildMoveGraph,
@@ -759,6 +762,7 @@ export function overlaysFor(
   mission: TacticalState,
   unitId: UnitId | undefined,
   targetId?: string,
+  reach: WeaponReachTuning = COMBAT_TUNING,
 ): OverlayState {
   const unit = mission.units.find((u) => u.id === unitId);
   if (unit === undefined || unit.hp <= 0) {
@@ -809,28 +813,41 @@ export function overlaysFor(
     moveRange,
     cover,
     blockedShot,
-    weaponRange: weaponRangeFrom(mission, unit),
+    weaponRange: weaponRangeFrom(mission, unit, index, reach),
   };
 }
 
 /**
- * How far `unit` can fire: one ground tile per column inside its
- * weapon's range, by the same metric the hit chance uses. A unit whose
- * template has no weapon can fire nowhere.
+ * How far `unit` can fire: one tile per column inside its weapon's
+ * reach, by the same predicate the rules use (`withinReach`, #1119). A
+ * unit whose template has no weapon can fire nowhere.
  *
- * **Range only — deliberately not filtered by line of sight** (#624).
+ * **Reach only — deliberately not filtered by line of sight** (#624).
  * The question this answers is the one the Executive Director asked,
  * _"how far can I fire"_, and that is a property of the weapon, not of
  * where the walls happen to be. Filtering by sight made the set a
  * scatter of pockets whose outline came out as disconnected dashes,
- * which states nothing at all; and it produced a tile per *level* per
- * column, so a boundary drawn round it also had interior edges through
- * every step in the terrain.
+ * which states nothing at all.
+ *
+ * Height enters the answer, because it enters the rule: from a roof the
+ * reach over the street below is longer, and a target a storey up is
+ * further away than the map plane says. A column is inside the outline
+ * when **any tile of it the player has explored** is inside reach; a
+ * column the player has not explored is judged at the firer's own level,
+ * so the outline never draws a picture of terrain the fog exists to hide.
+ * The mark itself stays one flat tile per column at the firer's level:
+ * laid on each column's top it climbed the side of every building and
+ * read as a picture of the ground rather than of the weapon.
  *
  * Whether a particular tile will actually take the shot is a different
  * question, asked of a chosen target, and `blockedShot` answers it.
  */
-function weaponRangeFrom(mission: TacticalState, unit: Unit): TileCoord[] {
+function weaponRangeFrom(
+  mission: TacticalState,
+  unit: Unit,
+  index: TileIndex,
+  reach: WeaponReachTuning,
+): TileCoord[] {
   // The unit's default weapon (#532). A mech now carries several with
   // different reaches, and the boundary should follow whichever the
   // player has armed — but the overlay is asked for a unit, not for a
@@ -841,24 +858,22 @@ function weaponRangeFrom(mission: TacticalState, unit: Unit): TileCoord[] {
   if (range <= 0) {
     return [];
   }
+  const explored = new Set(mission.vision.tdf?.explored ?? []);
+  const radius = range + reach.maxReachBonus;
   const tiles: TileCoord[] = [];
-  for (let x = unit.pos.x - range; x <= unit.pos.x + range; x++) {
-    const spread = range - Math.abs(x - unit.pos.x);
+  for (let x = unit.pos.x - radius; x <= unit.pos.x + radius; x++) {
+    const spread = radius - Math.abs(x - unit.pos.x);
     for (let z = unit.pos.z - spread; z <= unit.pos.z + spread; z++) {
-      // Flat, at the firer's own level, and a pure horizontal reach.
-      //
-      // Laying it on each column's top instead made the line climb the
-      // side of every building it passed, because neighbouring columns
-      // end at different heights. Letting height into the test dented
-      // the outline against tall ground, which is worse than untidy:
-      // the dents are a picture of terrain the player may not have
-      // seen, drawn on top of fog that exists to hide it.
-      //
-      // So the boundary states the weapon's reach and nothing else. It
-      // is occluded by whatever stands in front of it, like any other
-      // ground mark. Whether one particular tile will take the shot is
-      // `blockedShot`'s question, asked of a chosen target.
-      tiles.push({ x, y: unit.pos.y, z });
+      const known = index
+        .column(x, z)
+        .filter((tile) => explored.has(index.keyOf(tile)));
+      const candidates: readonly TileCoord[] =
+        known.length > 0 ? known : [{ x, y: unit.pos.y, z }];
+      if (
+        candidates.some((tile) => withinReach(range, unit.pos, tile, reach))
+      ) {
+        tiles.push({ x, y: unit.pos.y, z });
+      }
     }
   }
   return tiles;

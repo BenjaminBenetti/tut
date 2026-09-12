@@ -510,6 +510,17 @@ const SPLIT_WEAPONS_PER_UNIT: Migration = {
   },
 };
 
+/** v17 → v18: existing missions begin with no deployed radar scanners. */
+const ADD_MISSION_RADARS: Migration = {
+  from: 17,
+  to: 18,
+  apply(state) {
+    if (!isRecord(state)) throw new Error("v17 state is not an object");
+    if (!isRecord(state.activeMission)) return state;
+    return { ...state, activeMission: { ...state.activeMission, radars: [] } };
+  },
+};
+
 export const GAME_STATE_MIGRATIONS: readonly Migration[] = [
   ADD_SPREAD_COOLDOWNS,
   ADD_CITY_SCALE,
@@ -527,4 +538,5 @@ export const GAME_STATE_MIGRATIONS: readonly Migration[] = [
   ADD_RESULT_CITY,
   HALF_HEIGHT_LAYERS,
   ADD_GRAVE_CITY,
+  ADD_MISSION_RADARS,
 ];

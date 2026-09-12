@@ -144,6 +144,7 @@ function mission(
     vision: emptyVision(),
     extraction: [],
     log: [],
+    radars: [],
     commandSeq: 0,
     ...overrides,
   };

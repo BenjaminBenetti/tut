@@ -93,6 +93,9 @@ export function squadUnit(
     armor: infantry.armor,
     passClass: "infantry",
     modelId: infantry.modelIdByType[squadType.id] ?? infantry.fallbackModelId,
+    ...(squadType.abilities === undefined
+      ? {}
+      : { abilities: [...squadType.abilities] }),
   };
   return build(
     "squad",

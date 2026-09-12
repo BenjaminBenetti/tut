@@ -106,6 +106,12 @@ export function describeEvent(
         icon: "reload",
         tone: "dim",
       };
+    case "tactical:radar-deployed":
+      return {
+        text: `${nameOf(event.payload.unitId)} deployed radar · ${String(event.payload.radar.range)}-tile scan`,
+        icon: "radar",
+        tone: "accent",
+      };
     case "tactical:unit-status-changed":
       return {
         text:
@@ -176,6 +182,8 @@ export function actorOf(event: TacticalEvent): UnitId | undefined {
       return event.payload.attackerId;
     case "tactical:unit-reloaded":
     case "tactical:unit-status-changed":
+      return event.payload.unitId;
+    case "tactical:radar-deployed":
       return event.payload.unitId;
     case "tactical:unit-died":
       // Above the unit that died, not its killer: the death is the

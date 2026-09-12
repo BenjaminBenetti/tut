@@ -12,6 +12,29 @@ import type { ModelManifest } from "../model/asset-manifest";
  * build script regenerates; the manifest test keeps the two in sync.
  */
 export const MODEL_MANIFEST = {
+  "tdf.radar-scanner": {
+    category: "props",
+    path: "assets/models/props/tdf-radar-scanner.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 0.96,
+    sockets: [],
+    quality: "final",
+  },
+  "tdf.infantry.radio": {
+    category: "units",
+    path: "assets/models/units/tdf-infantry-radio.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 1.36,
+    sockets: [],
+    quality: "final",
+  },
+
   "building.roof-hipped": {
     category: "buildings",
     path: "assets/models/buildings/building-roof-hipped.glb",

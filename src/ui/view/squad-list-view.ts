@@ -55,6 +55,7 @@ export class SquadListView {
   private typePicker: HTMLSelectElement | undefined;
   private nameInput: HTMLInputElement | undefined;
   private hireButton: HTMLButtonElement | undefined;
+  private hireDescription: HTMLElement | undefined;
   private credits = 0;
   private readonly disposers: (() => void)[] = [];
   private squads: readonly Squad[] = [];
@@ -103,6 +104,12 @@ export class SquadListView {
     const form = this.createHireForm(doc);
 
     panel.append(title, table, form.root);
+    const description = doc.createElement("p");
+    description.className = "tut-dim";
+    description.id = "hire-description";
+    form.picker.setAttribute("aria-describedby", description.id);
+    panel.appendChild(description);
+    this.hireDescription = description;
     parent.appendChild(panel);
 
     this.root = panel;
@@ -135,6 +142,7 @@ export class SquadListView {
     this.root = undefined;
     this.rows = undefined;
     this.typePicker = undefined;
+    this.hireDescription = undefined;
     this.nameInput = undefined;
     this.hireButton = undefined;
   }
@@ -289,6 +297,8 @@ export class SquadListView {
       return;
     }
     const type = this.selectedType();
+    if (this.hireDescription)
+      this.hireDescription.textContent = type?.description ?? "";
     if (!type) {
       this.hireButton.textContent = "Hire";
       this.hireButton.disabled = true;

@@ -1,0 +1,155 @@
+import { err, ok } from "../../core/model/result";
+import type { Result } from "../../core/model/result";
+import type { TileCoord } from "../../mapgen/model/tile-coord";
+import { TileIndex } from "../../mapgen/service/tile-index";
+import type { DeployRadarCommand } from "../model/deploy-radar-command";
+import type { Radar, RadarContact, RadarTuning } from "../model/radar";
+import { RADAR_DEPLOYED } from "../model/radar-deployed-event";
+import type { TacticalError } from "../model/tactical-error";
+import type { TacticalHandler } from "../model/tactical-handler";
+import type { TacticalState } from "../model/tactical-state";
+import type { Team, Unit, UnitId } from "../model/unit";
+import { passMaskFor } from "../model/unit";
+import { actingUnit } from "./acting-unit";
+import type { MoveGraph } from "./movement-service";
+import { buildMoveGraph, occupiedKeys } from "./movement-service";
+
+// ===========================================
+// Deployment
+// ===========================================
+
+/** Whether this unit's frozen template grants the radar action. */
+export function carriesRadar(mission: TacticalState, unit: Unit): boolean {
+  return (
+    unit.kind === "squad" &&
+    unit.team === "tdf" &&
+    (mission.templates[unit.templateId]?.abilities ?? []).includes(
+      "deploy-radar",
+    )
+  );
+}
+
+/** Shared wheel/command validation: an adjacent, reachable, free surface. */
+export function validateRadarDeployment(
+  mission: TacticalState,
+  unitId: UnitId,
+  tile: TileCoord,
+  tuning: RadarTuning,
+  graph: MoveGraph = buildMoveGraph(mission.map),
+): Result<Unit, TacticalError> {
+  if (mission.outcome !== undefined) {
+    return err({ kind: "mission-over", outcome: mission.outcome });
+  }
+  const acting = actingUnit(mission, unitId, tuning.apCost);
+  if (!acting.ok) return acting;
+  const unit = acting.value;
+  if (!carriesRadar(mission, unit)) {
+    return err({ kind: "no-radar", unitId });
+  }
+  if (
+    ![tile.x, tile.y, tile.z].every(Number.isInteger) ||
+    !graph.index.inBounds(tile)
+  ) {
+    return err({ kind: "radar-tile-blocked" });
+  }
+  const distance = Math.hypot(tile.x - unit.pos.x, tile.z - unit.pos.z);
+  if (distance > tuning.deployRange || Math.abs(tile.y - unit.pos.y) > 1) {
+    return err({ kind: "radar-out-of-reach", range: tuning.deployRange });
+  }
+  const from = graph.index.getAt(unit.pos);
+  const to = graph.index.getAt(tile);
+  if (
+    from === undefined ||
+    to === undefined ||
+    !graph.reachability.canStep(from, to, passMaskFor("infantry"))
+  ) {
+    return err({ kind: "radar-tile-blocked" });
+  }
+  const key = graph.index.keyOf(tile);
+  if (
+    occupiedKeys(mission, graph.index).has(key) ||
+    mission.spawners.some(
+      (s) => !s.destroyed && s.hp > 0 && graph.index.keyOf(s.pos) === key,
+    ) ||
+    mission.radars.some((r) => graph.index.keyOf(r.pos) === key)
+  ) {
+    return err({ kind: "radar-tile-blocked" });
+  }
+  return ok(unit);
+}
+
+/** Places a scanner and spends AP only after all validation succeeds. */
+export function createDeployRadarHandler(
+  tuning: RadarTuning,
+): TacticalHandler<DeployRadarCommand> {
+  return (mission, command, ctx) => {
+    const { unitId, tile } = command.payload;
+    const validated = validateRadarDeployment(mission, unitId, tile, tuning);
+    if (!validated.ok) return validated;
+    const radar: Radar = {
+      id: ctx.ids.nextId("radar"),
+      team: validated.value.team,
+      pos: { ...tile },
+      range: tuning.scanRange,
+    };
+    return ok({
+      state: {
+        ...mission,
+        radars: [...mission.radars, radar],
+        units: mission.units.map((unit) =>
+          unit.id === unitId ? { ...unit, ap: unit.ap - tuning.apCost } : unit,
+        ),
+      },
+      events: [{ type: RADAR_DEPLOYED, payload: { unitId, radar } }],
+    });
+  };
+}
+
+// ===========================================
+// Contacts
+// ===========================================
+
+/**
+ * Red location blips for living, unseen enemies inside any friendly scanner's
+ * horizontal circle. Scans cross walls and floors, update from current positions,
+ * and never change sight, explored terrain, targeting, or the other side's intel.
+ */
+export function radarContacts(
+  mission: TacticalState,
+  team: Team,
+): readonly RadarContact[] {
+  const radars = mission.radars.filter((radar) => radar.team === team);
+  if (radars.length === 0) return [];
+  const scanned = (pos: TileCoord): boolean =>
+    radars.some(
+      (radar) =>
+        (pos.x - radar.pos.x) ** 2 + (pos.z - radar.pos.z) ** 2 <=
+        radar.range ** 2,
+    );
+  const spotted = new Set(mission.vision[team].spotted);
+  const contacts: RadarContact[] = mission.units
+    .filter(
+      (unit) =>
+        unit.team !== team &&
+        unit.hp > 0 &&
+        !spotted.has(unit.id) &&
+        scanned(unit.pos),
+    )
+    .map((unit) => ({ kind: "unit", pos: unit.pos }));
+  if (team === "tdf") {
+    const index = new TileIndex(mission.map);
+    const visible = new Set(mission.vision[team].visible);
+    contacts.push(
+      ...mission.spawners
+        .filter(
+          (s) =>
+            !s.destroyed &&
+            s.hp > 0 &&
+            !visible.has(index.keyOf(s.pos)) &&
+            scanned(s.pos),
+        )
+        .map((s): RadarContact => ({ kind: "structure", pos: s.pos })),
+    );
+  }
+  return contacts;
+}

@@ -24,6 +24,8 @@ import type { GhostUniforms } from "./ghost-cutaway";
 import { createGhostUniforms } from "./ghost-cutaway";
 import { TacticalMapView, tileTop } from "../view/tactical-map-view";
 import { UnitMesh } from "../view/unit-mesh";
+import { RadarView } from "../view/radar-view";
+import type { Radar, RadarContact } from "../../tactical/model/radar";
 
 // ===========================================
 // Types
@@ -101,6 +103,7 @@ export class TacticalSceneBuilder
   /** Cutaway uniforms every ghosted wall material shares (#526). */
   private readonly ghostUniforms: GhostUniforms;
   private readonly models: ModelLoader;
+  private readonly radarView: RadarView;
   private readonly unitsGroup: Group;
   private readonly meshes = new Map<UnitId, UnitMesh>();
   /** Where each unit stands, so the tethers can be redrawn when the cut moves (#981). */
@@ -134,6 +137,7 @@ export class TacticalSceneBuilder
   /** Builds the map immediately; units arrive through `update`. */
   constructor(options: TacticalSceneBuilderOptions) {
     this.models = options.models;
+    this.radarView = new RadarView(options.models);
     this.ghostUniforms = createGhostUniforms(GHOST_RADIUS, GHOST_FLOOR);
     // No objective markers in a mission: the spawner model appears when
     // its tile is explored, and a marker under it would show through
@@ -152,6 +156,7 @@ export class TacticalSceneBuilder
       this.spawnersGroup,
       this.unitsGroup,
       this.tethers.root,
+      this.radarView.root,
     );
   }
 
@@ -306,8 +311,22 @@ export class TacticalSceneBuilder
     await Promise.all(loads);
   }
 
+  /** Shows friendly scanners and location-only radar contacts through the fog. */
+  async updateRadar(
+    radars: readonly Radar[],
+    contacts: readonly RadarContact[],
+  ): Promise<void> {
+    await this.radarView.update(radars, contacts);
+  }
+
+  /** Counts the scanner models and blips actually placed in the scene. */
+  radarCounts(): { scanners: number; contacts: number } {
+    return this.radarView.counts();
+  }
+
   /** Frees the map, every unit mesh and detaches the root. */
   dispose(): void {
+    this.radarView.dispose();
     for (const id of [...this.meshes.keys()]) {
       this.remove(id);
     }

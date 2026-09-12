@@ -167,6 +167,7 @@ export function previewMission(map: TacticalMap): TacticalState {
     extracted: [],
     vision: emptyVision(),
     log: [],
+    radars: [],
     commandSeq: 0,
   };
 }

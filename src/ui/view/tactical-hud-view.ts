@@ -10,6 +10,7 @@ import { extract } from "../../tactical/model/extract-command";
 import { interact } from "../../tactical/model/interact-command";
 import type { ObjectiveTuning } from "../../tactical/model/objective-tuning";
 import { reload } from "../../tactical/model/reload-command";
+import { deployRadar } from "../../tactical/model/deploy-radar-command";
 import type { TacticalCommand } from "../../tactical/model/tactical-command";
 import type { TacticalError } from "../../tactical/model/tactical-error";
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
@@ -269,6 +270,7 @@ export class TacticalHudView {
   /** Cancels the frame loop that keeps the chips on their units. */
   private stopInspecting: (() => void) | undefined;
   private root: HTMLElement | undefined;
+  private radarLegend: HTMLElement | undefined;
   private mission: TacticalState | undefined;
   /**
    * The mission as the player's side perceives it (ADR 0006). Kept
@@ -365,6 +367,19 @@ export class TacticalHudView {
     this.card.mount(side);
     this.preview.mount(side);
     this.objectives.mount(side);
+    const radarLegend = doc.createElement("section");
+    radarLegend.className = "tut-panel tut-mono";
+    radarLegend.dataset.role = "radar-legend";
+    const radarTitle = doc.createElement("div");
+    radarTitle.className = "tut-panel__title";
+    radarTitle.textContent = "Radar contacts";
+    const radarKey = doc.createElement("div");
+    radarKey.className = "tut-radar-key";
+    radarKey.textContent = "● Units · □ Structures";
+    radarLegend.append(radarTitle, radarKey);
+    radarLegend.hidden = true;
+    side.appendChild(radarLegend);
+    this.radarLegend = radarLegend;
     this.log.mount(hud);
     this.actions.mount(bottom);
     hud.append(top, side, bottom);
@@ -472,6 +487,7 @@ export class TacticalHudView {
     this.radial.unmount();
     this.root?.remove();
     this.root = undefined;
+    this.radarLegend = undefined;
   }
 
   // ===========================================
@@ -951,6 +967,9 @@ export class TacticalHudView {
       case "overwatch":
         this.handlers.onCommand(overwatch(unitId));
         break;
+      case "deploy-radar":
+        this.handlers.onCommand(deployRadar(unitId, choice.tile));
+        return;
       case "reload":
         this.handlers.onCommand(reload(unitId));
         break;
@@ -1503,6 +1522,11 @@ export class TacticalHudView {
 
   /** Pushes the mission and the presentation state into every part. */
   private refresh(): void {
+    if (this.radarLegend) {
+      this.radarLegend.hidden = !(
+        this.mission?.radars.some((radar) => radar.team === "tdf") ?? false
+      );
+    }
     this.followMenu();
     if (this.inspecting) {
       this.drawStatus();

@@ -1,3 +1,4 @@
+import { BIOME_INFO } from "../../content/data/biome-info";
 import type { Mission, MissionId } from "../../overworld/model/mission";
 import { findCity } from "../../overworld/service/earth-map-query-service";
 import type { MissionTypeCatalogue } from "../../overworld/service/mission-generation-service";
@@ -189,4 +190,3 @@ export class MissionDetailsView {
     this.onPlan = undefined;
   }
 }
-import { BIOME_INFO } from "../../content/data/biome-info";

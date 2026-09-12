@@ -102,6 +102,7 @@ describe("natural material contacts", () => {
     );
     expect(tints[0]!.r).toBeGreaterThan(defaults[0]!.r);
     expect(tints[3]).toEqual(defaults[3]);
+    expect(styledShader.uniforms.uNaturalOwnerTint!.value).toBe(tints[0]);
     expect(styledShader.fragmentShader).toContain(
       "sampleColour * uNaturalTint[0]",
     );

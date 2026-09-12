@@ -122,6 +122,7 @@ export class NaturalMaterialTransitions implements Disposable {
         uNaturalWeights: { value: this.weights },
         uNaturalUv: { value: this.regions },
         uNaturalTint: { value: this.tints },
+        uNaturalOwnerTint: { value: this.tints[id - 1] },
       });
       shader.vertexShader = shader.vertexShader
         .replace(

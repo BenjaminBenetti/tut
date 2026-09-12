@@ -165,7 +165,9 @@ test("highlighted interior tiles move the squad through the doorway", async ({
       // caps animation deltas at 0.1 s. Three 0.24 s tile steps therefore
       // need about eight rendered frames: the old 15 s limit expired with
       // the squad still advancing through its final tile. Allow 30 s on CI
-      // for that playback; keep the local limit and exact arrival assertion.
+      // for that playback. The expanded biome render matrix can also leave
+      // the local software renderer finishing its last tile after 5 s; allow
+      // 15 s locally while retaining the exact rendered arrival assertion.
       await expect
         .poll(
           () =>
@@ -176,7 +178,7 @@ test("highlighted interior tiles move the squad through the doorway", async ({
                 ? Math.hypot(unit.x - tile.x, unit.y - tile.y)
                 : Infinity;
             }, attempt),
-          { timeout: process.env.CI ? 30_000 : 5_000 },
+          { timeout: process.env.CI ? 30_000 : 15_000 },
         )
         .toBeLessThan(1);
       await drawnFrame(page);

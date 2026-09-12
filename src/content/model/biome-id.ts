@@ -7,7 +7,7 @@
  * generation so a `Mission` can carry a biome without importing `mapgen/`.
  * The full generation definitions are keyed by these ids in
  * `mapgen/data/biomes`; adding a biome is one new member here plus one
- * data entry there.
+ * data entry there, with matching presentation catalogue entries.
  */
 export type BiomeId =
   | "temperate"

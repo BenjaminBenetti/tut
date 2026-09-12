@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  Color,
   BoxGeometry,
   Group,
   Mesh,
@@ -73,6 +74,45 @@ function shader(): {
 }
 
 describe("natural material contacts", () => {
+  it("tints each atlas surface for its biome without changing saved terrain or shared materials", () => {
+    const original = map();
+    const source: TacticalMap = {
+      ...original,
+      recipe: {
+        ...original.recipe,
+        params: { ...original.recipe.params, biome: "savanna" },
+      },
+    };
+    const before = JSON.stringify(source);
+    const base = new MeshStandardMaterial({ map: new Texture() });
+    const savanna = new NaturalMaterialTransitions(source);
+    const standard = new NaturalMaterialTransitions(original);
+    const styledShader = shader();
+    const defaultShader = shader();
+    savanna
+      .material(base, "grass")
+      .onBeforeCompile(styledShader as never, {} as never);
+    standard
+      .material(base, "grass")
+      .onBeforeCompile(defaultShader as never, {} as never);
+    const tints = styledShader.uniforms.uNaturalTint!.value as Color[];
+    const defaults = defaultShader.uniforms.uNaturalTint!.value as Color[];
+    expect(defaults.every((colour) => colour.equals(new Color(1, 1, 1)))).toBe(
+      true,
+    );
+    expect(tints[0]!.r).toBeGreaterThan(defaults[0]!.r);
+    expect(tints[3]).toEqual(defaults[3]);
+    expect(styledShader.fragmentShader).toContain(
+      "sampleColour * uNaturalTint[0]",
+    );
+    expect(savanna.material(base, "road")).toBe(base);
+    expect(base.color).toEqual(new Color(1, 1, 1));
+    expect(JSON.stringify(source)).toBe(before);
+    savanna.dispose();
+    standard.dispose();
+    base.map!.dispose();
+    base.dispose();
+  });
   it("keeps categorical ground ownership, hard boundaries and the entire map unchanged", () => {
     const source = map();
     const before = JSON.stringify(source);
@@ -143,7 +183,7 @@ describe("natural material contacts", () => {
     expect(compiled.fragmentShader).toContain("textureGrad(map");
     expect(compiled.vertexShader).toContain("instanceMatrix * naturalPosition");
     expect(mist.customProgramCacheKey()).toContain(
-      "existing-hook:natural-material-contacts-v1:unexplored-mist",
+      "existing-hook:natural-material-contacts-v2:unexplored-mist",
     );
     expect(base).toHaveProperty("onBeforeCompile", before);
     mist.dispose();

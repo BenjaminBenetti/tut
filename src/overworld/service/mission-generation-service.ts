@@ -285,7 +285,7 @@ function createMission(
     cityId: city.id,
     difficulty,
     mapParams: {
-      biome: region.biome,
+      biome: city.biome ?? region.biome,
       settlement: city.scale,
       size: mapSizeFor(difficulty, rule),
       seed: String(mapSeed),

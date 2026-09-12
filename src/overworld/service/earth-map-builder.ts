@@ -148,6 +148,7 @@ function buildCity(
     regionId,
     infestation,
     scale: seed.scale ?? DEFAULT_CITY_SCALE,
+    ...(seed.biome === undefined ? {} : { biome: seed.biome }),
     neighbourIds: neighbours.get(seed.id) ?? [],
     layout: seed.layout,
   };

@@ -91,6 +91,25 @@ describe("buildEarthMap", () => {
     expect(map.cities[2]?.name).toBe("C");
   });
 
+  it("keeps a local city biome and leaves unassigned cities to inherit their region", () => {
+    const source = SPEC.regions[0]!;
+    const local = buildEarthMap({
+      ...SPEC,
+      regions: [
+        {
+          ...source,
+          cities: source.cities.map((city) =>
+            city.id === A ? { ...city, biome: "alpine" as const } : city,
+          ),
+        },
+        SPEC.regions[1]!,
+      ],
+    });
+    expect(local.cities[0]?.biome).toBe("alpine");
+    expect(local.cities[1]?.biome).toBeUndefined();
+    expect(local.regions[0]?.biome).toBe("temperate");
+  });
+
   it("rejects duplicate region ids", () => {
     const spec: EarthMapSpec = {
       regions: [SPEC.regions[0]!, { ...SPEC.regions[1]!, id: WEST }],

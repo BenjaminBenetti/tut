@@ -8,10 +8,8 @@ const SEED = "matrix";
 
 /**
  * Every biome × settlement combination generates and renders at the
- * small size without a generation error. The 2026-09-03 QA pass ran all
- * 72 biome × settlement × size × seed combinations clean; the suite
- * keeps the 12 small ones so a regression in any biome or settlement
- * definition is caught on every push.
+ * small size without a generation error. The matrix follows the catalogue,
+ * so every newly shipped biome is exercised at all three settlement scales.
  */
 for (const biome of BIOME_IDS) {
   for (const settlement of SETTLEMENT_SCALES) {

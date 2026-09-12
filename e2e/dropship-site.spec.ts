@@ -9,6 +9,10 @@ import {
   tapCameraKey,
 } from "./capture-frame.helper";
 import { launchMission, settleForShot } from "./mission-capture.helper";
+import {
+  CITY_MISSION_FIXTURE,
+  COASTAL_MISSION_FIXTURE,
+} from "./fixtures/mission-maps";
 
 /** Capture-only access to the live rig; no camera result is replaced. */
 interface LandingCameraGlobal {
@@ -50,7 +54,11 @@ for (const fixture of [
         });
       },
     );
-    await launchMission(page, fixture.seed);
+    await launchMission(
+      page,
+      fixture.seed,
+      fixture.seed === "4242" ? CITY_MISSION_FIXTURE : COASTAL_MISSION_FIXTURE,
+    );
     await tacticalModelsReady(page);
     const mission = await page.evaluate(() => {
       const raw = localStorage.getItem("tut:save:autosave");

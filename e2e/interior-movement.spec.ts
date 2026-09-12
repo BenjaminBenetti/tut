@@ -19,6 +19,7 @@ import {
 import { initialVision } from "../src/tactical/service/vision-service";
 import { drawnFrame, tacticalModelsReady } from "./capture-frame.helper";
 import { launchMission } from "./mission-capture.helper";
+import { CITY_MISSION_FIXTURE } from "./fixtures/mission-maps";
 
 const SAVE_KEY = "tut:save:autosave";
 const CAPTURE = process.env.CAPTURE !== undefined;
@@ -52,7 +53,7 @@ test("highlighted interior tiles move the squad through the doorway", async ({
       errors.push(message.text());
     }
   });
-  await launchMission(page, "4242");
+  await launchMission(page, "4242", CITY_MISSION_FIXTURE);
   await tacticalModelsReady(page);
   const save = await saveIn(page);
   const original = save.state.activeMission!;

@@ -10,7 +10,7 @@ import { SurfaceIds } from "./surfaces";
 // ===========================================
 
 /**
- * The four M1.5 biomes (GDD §7), keyed by id so the compiler fails when a
+ * Earth environments (GDD §7), keyed by id so the compiler fails when a
  * biome id has no definition. Numbers are conservative starting points;
  * tune them in the preview harness, not in passes.
  */
@@ -128,6 +128,257 @@ export const BIOME_DEFINITIONS: Readonly<Record<BiomeId, BiomeDefinition>> = {
     ],
     roadSurface: SurfaceIds.ROAD,
     // Stone keeps the rural route visible through natural sand, grass and dirt (#1043).
+    trailSurface: SurfaceIds.ROCK,
+  },
+
+  tropical: {
+    id: "tropical",
+    groundSurfaces: [
+      { surface: SurfaceIds.GRASS, weight: 8 },
+      { surface: SurfaceIds.DIRT, weight: 2 },
+    ],
+    terrain: {
+      amplitudeLayers: 4,
+      frequency: 0.065,
+      octaves: 3,
+      roughness: 0.55,
+    },
+    hasShoreline: false,
+    vegetation: [
+      {
+        prop: PropKindIds.TREE_TROPICAL_ALMOND,
+        density: 7,
+        cluster: { min: 3, max: 6 },
+      },
+      {
+        prop: PropKindIds.TREE_OIL_PALM,
+        density: 3,
+        cluster: { min: 2, max: 4 },
+      },
+      { prop: PropKindIds.BOULDER, density: 1 },
+    ],
+    buildingKinds: [
+      { template: BuildingKindIds.HOUSE, weight: 5 },
+      { template: BuildingKindIds.APARTMENT, weight: 3 },
+      { template: BuildingKindIds.SHOP, weight: 2 },
+      { template: BuildingKindIds.WAREHOUSE, weight: 1 },
+      { template: BuildingKindIds.TOWER, weight: 1 },
+    ],
+    roadSurface: SurfaceIds.ROAD,
+    trailSurface: SurfaceIds.ROCK,
+  },
+  savanna: {
+    id: "savanna",
+    groundSurfaces: [
+      { surface: SurfaceIds.GRASS, weight: 5 },
+      { surface: SurfaceIds.DIRT, weight: 3 },
+      { surface: SurfaceIds.SAND, weight: 2 },
+    ],
+    terrain: {
+      amplitudeLayers: 3,
+      frequency: 0.055,
+      octaves: 2,
+      roughness: 0.4,
+    },
+    hasShoreline: false,
+    vegetation: [
+      { prop: PropKindIds.TREE_OAK, density: 1.2, cluster: { min: 2, max: 3 } },
+      { prop: PropKindIds.BOULDER, density: 3, cluster: { min: 2, max: 4 } },
+      { prop: PropKindIds.FENCE, density: 0.7 },
+    ],
+    buildingKinds: [
+      { template: BuildingKindIds.HOUSE, weight: 5 },
+      { template: BuildingKindIds.APARTMENT, weight: 3 },
+      { template: BuildingKindIds.SHOP, weight: 2 },
+      { template: BuildingKindIds.WAREHOUSE, weight: 2 },
+      { template: BuildingKindIds.TOWER, weight: 1 },
+    ],
+    roadSurface: SurfaceIds.ROAD,
+    trailSurface: SurfaceIds.ROCK,
+  },
+  steppe: {
+    id: "steppe",
+    groundSurfaces: [
+      { surface: SurfaceIds.GRASS, weight: 6 },
+      { surface: SurfaceIds.DIRT, weight: 4 },
+    ],
+    terrain: {
+      amplitudeLayers: 2,
+      frequency: 0.04,
+      octaves: 2,
+      roughness: 0.35,
+    },
+    hasShoreline: false,
+    vegetation: [
+      { prop: PropKindIds.BOULDER, density: 2, cluster: { min: 2, max: 3 } },
+      { prop: PropKindIds.FENCE, density: 1.2 },
+    ],
+    buildingKinds: [
+      { template: BuildingKindIds.HOUSE, weight: 5 },
+      { template: BuildingKindIds.APARTMENT, weight: 3 },
+      { template: BuildingKindIds.SHOP, weight: 1 },
+      { template: BuildingKindIds.WAREHOUSE, weight: 3 },
+      { template: BuildingKindIds.TOWER, weight: 1 },
+    ],
+    roadSurface: SurfaceIds.ROAD,
+    trailSurface: SurfaceIds.ROCK,
+  },
+  mediterranean: {
+    id: "mediterranean",
+    groundSurfaces: [
+      { surface: SurfaceIds.GRASS, weight: 4 },
+      { surface: SurfaceIds.DIRT, weight: 3 },
+      { surface: SurfaceIds.ROCK, weight: 3 },
+    ],
+    terrain: {
+      amplitudeLayers: 4,
+      frequency: 0.07,
+      octaves: 2,
+      roughness: 0.5,
+    },
+    hasShoreline: false,
+    vegetation: [
+      { prop: PropKindIds.TREE_PINE, density: 2, cluster: { min: 2, max: 4 } },
+      { prop: PropKindIds.TREE_OAK, density: 1, cluster: { min: 2, max: 3 } },
+      { prop: PropKindIds.BOULDER, density: 2, cluster: { min: 2, max: 4 } },
+      { prop: PropKindIds.FENCE, density: 1 },
+    ],
+    buildingKinds: [
+      { template: BuildingKindIds.HOUSE, weight: 6 },
+      { template: BuildingKindIds.APARTMENT, weight: 3 },
+      { template: BuildingKindIds.SHOP, weight: 3 },
+      { template: BuildingKindIds.WAREHOUSE, weight: 1 },
+      { template: BuildingKindIds.TOWER, weight: 1 },
+    ],
+    roadSurface: SurfaceIds.ROAD,
+    trailSurface: SurfaceIds.SAND,
+  },
+  taiga: {
+    id: "taiga",
+    groundSurfaces: [
+      { surface: SurfaceIds.GRASS, weight: 4 },
+      { surface: SurfaceIds.DIRT, weight: 4 },
+      { surface: SurfaceIds.ROCK, weight: 2 },
+    ],
+    terrain: {
+      amplitudeLayers: 4,
+      frequency: 0.065,
+      octaves: 3,
+      roughness: 0.55,
+    },
+    hasShoreline: false,
+    vegetation: [
+      { prop: PropKindIds.TREE_PINE, density: 9, cluster: { min: 4, max: 8 } },
+      { prop: PropKindIds.BOULDER, density: 1.5, cluster: { min: 2, max: 3 } },
+      { prop: PropKindIds.FENCE, density: 0.6 },
+    ],
+    buildingKinds: [
+      { template: BuildingKindIds.HOUSE, weight: 5 },
+      { template: BuildingKindIds.APARTMENT, weight: 3 },
+      { template: BuildingKindIds.SHOP, weight: 1 },
+      { template: BuildingKindIds.WAREHOUSE, weight: 3 },
+      { template: BuildingKindIds.TOWER, weight: 1 },
+    ],
+    roadSurface: SurfaceIds.ROAD,
+    trailSurface: SurfaceIds.SAND,
+  },
+  tundra: {
+    id: "tundra",
+    groundSurfaces: [
+      { surface: SurfaceIds.GRASS, weight: 3 },
+      { surface: SurfaceIds.ROCK, weight: 5 },
+      { surface: SurfaceIds.SNOW, weight: 2 },
+    ],
+    terrain: {
+      amplitudeLayers: 2,
+      frequency: 0.045,
+      octaves: 2,
+      roughness: 0.4,
+    },
+    hasShoreline: false,
+    vegetation: [
+      { prop: PropKindIds.BOULDER, density: 4, cluster: { min: 2, max: 5 } },
+      { prop: PropKindIds.FENCE, density: 0.5 },
+    ],
+    buildingKinds: [
+      { template: BuildingKindIds.HOUSE, weight: 5 },
+      { template: BuildingKindIds.APARTMENT, weight: 3 },
+      { template: BuildingKindIds.SHOP, weight: 1 },
+      { template: BuildingKindIds.WAREHOUSE, weight: 3 },
+      { template: BuildingKindIds.TOWER, weight: 1 },
+    ],
+    roadSurface: SurfaceIds.ROAD,
+    trailSurface: SurfaceIds.DIRT,
+  },
+  alpine: {
+    id: "alpine",
+    groundSurfaces: [
+      { surface: SurfaceIds.ROCK, weight: 5 },
+      { surface: SurfaceIds.GRASS, weight: 3 },
+      { surface: SurfaceIds.SNOW, weight: 2 },
+    ],
+    terrain: {
+      amplitudeLayers: 6,
+      frequency: 0.06,
+      octaves: 3,
+      roughness: 0.6,
+    },
+    hasShoreline: false,
+    vegetation: [
+      {
+        prop: PropKindIds.TREE_PINE,
+        density: 2.5,
+        cluster: { min: 2, max: 4 },
+      },
+      { prop: PropKindIds.BOULDER, density: 3, cluster: { min: 2, max: 5 } },
+      { prop: PropKindIds.FENCE, density: 0.7 },
+    ],
+    buildingKinds: [
+      { template: BuildingKindIds.HOUSE, weight: 6 },
+      { template: BuildingKindIds.APARTMENT, weight: 3 },
+      { template: BuildingKindIds.SHOP, weight: 1 },
+      { template: BuildingKindIds.WAREHOUSE, weight: 2 },
+      { template: BuildingKindIds.TOWER, weight: 1 },
+    ],
+    roadSurface: SurfaceIds.ROAD,
+    trailSurface: SurfaceIds.DIRT,
+  },
+  wetland: {
+    id: "wetland",
+    groundSurfaces: [
+      { surface: SurfaceIds.DIRT, weight: 6 },
+      { surface: SurfaceIds.GRASS, weight: 4 },
+    ],
+    terrain: {
+      amplitudeLayers: 1,
+      frequency: 0.045,
+      octaves: 2,
+      roughness: 0.35,
+    },
+    hasShoreline: true,
+    bankSurface: SurfaceIds.DIRT,
+    vegetation: [
+      {
+        prop: PropKindIds.TREE_TROPICAL_ALMOND,
+        density: 3,
+        cluster: { min: 2, max: 4 },
+      },
+      {
+        prop: PropKindIds.TREE_OIL_PALM,
+        density: 2,
+        cluster: { min: 2, max: 4 },
+      },
+      { prop: PropKindIds.BOULDER, density: 0.5 },
+      { prop: PropKindIds.FENCE, density: 0.8 },
+    ],
+    buildingKinds: [
+      { template: BuildingKindIds.HOUSE, weight: 5 },
+      { template: BuildingKindIds.APARTMENT, weight: 3 },
+      { template: BuildingKindIds.SHOP, weight: 2 },
+      { template: BuildingKindIds.WAREHOUSE, weight: 3 },
+      { template: BuildingKindIds.TOWER, weight: 1 },
+    ],
+    roadSurface: SurfaceIds.ROAD,
     trailSurface: SurfaceIds.ROCK,
   },
 };

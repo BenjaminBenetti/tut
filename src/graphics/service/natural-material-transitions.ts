@@ -1,4 +1,5 @@
 import {
+  Color,
   DataTexture,
   MeshStandardMaterial,
   LinearFilter,
@@ -10,6 +11,8 @@ import {
 import type { Material } from "three";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import { surfaceModel } from "../data/map-model-table";
+import { BIOME_GROUND_STYLES } from "../data/biome-ground-styles";
+import { SURFACE_COLOURS } from "../data/mapgen-preview-palette";
 import {
   NATURAL_MATERIAL_SURFACES,
   NATURAL_MATERIAL_TRANSITION,
@@ -37,9 +40,22 @@ export class NaturalMaterialTransitions implements Disposable {
   private readonly materials = new Map<string, Material>();
   private readonly regions = NATURAL_MATERIAL_SURFACES.map(() => new Vector4());
   private readonly size: Vector2;
+  private readonly tints: readonly Color[];
 
   /** Builds a small categorical texture from the frozen map without changing it. */
   constructor(private readonly map: TacticalMap) {
+    const style = BIOME_GROUND_STYLES[map.recipe.params.biome];
+    this.tints = NATURAL_MATERIAL_SURFACES.map((surface) => {
+      const target = style[surface];
+      if (target === undefined) return new Color(1, 1, 1);
+      const authored = new Color(SURFACE_COLOURS[surface]);
+      const colour = new Color(target);
+      return new Color(
+        colour.r / authored.r,
+        colour.g / authored.g,
+        colour.b / authored.b,
+      );
+    });
     const field = naturalMaterialField(map);
     this.field = new DataTexture(field, map.width, map.depth, RGBAFormat);
     this.field.minFilter = NearestFilter;
@@ -105,6 +121,7 @@ export class NaturalMaterialTransitions implements Disposable {
         uNaturalSize: { value: this.size },
         uNaturalWeights: { value: this.weights },
         uNaturalUv: { value: this.regions },
+        uNaturalTint: { value: this.tints },
       });
       shader.vertexShader = shader.vertexShader
         .replace(
@@ -129,7 +146,7 @@ export class NaturalMaterialTransitions implements Disposable {
         .replace("#include <map_fragment>", NATURAL_MATERIAL_SAMPLE);
     };
     material.customProgramCacheKey = (): string =>
-      `${priorKey}:natural-material-contacts-v1`;
+      `${priorKey}:natural-material-contacts-v2`;
     this.materials.set(key, material);
     return material;
   }

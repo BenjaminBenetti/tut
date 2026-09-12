@@ -90,10 +90,10 @@ function campaign(seed = 7): {
     cityId: city.id,
     difficulty: 1,
     mapParams: {
-      biome: region.biome,
+      biome: city.biome ?? region.biome,
       settlement: city.scale,
       size: "small",
-      seed: "start-1",
+      seed: `start-${String(seed)}`,
     },
     rewards: { credits: 300 },
     createdDay: 1,
@@ -300,7 +300,7 @@ describe("startTacticalMission", () => {
     expect(tactical.missionId).toBe(mission.id);
     expect(tactical.difficulty).toBe(mission.difficulty);
     expect(tactical.threat).toBeGreaterThanOrEqual(0);
-    expect(tactical.map.recipe.seed).toBe("start-1");
+    expect(tactical.map.recipe.seed).toBe(mission.mapParams.seed);
     expect(tactical.map.tiles.length).toBeGreaterThan(0);
     expect(tactical.turn).toBe(FIRST_TURN);
     expect(tactical.phase).toBe("player");

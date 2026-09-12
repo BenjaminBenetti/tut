@@ -7,6 +7,7 @@ import type {
   GenerationPass,
 } from "../model/generation-pass";
 import type { MapDraft } from "../model/map-draft";
+import type { SurfaceId } from "../model/surface";
 import { ValueNoise } from "../service/value-noise";
 
 // ===========================================
@@ -66,7 +67,13 @@ export class WaterPass implements GenerationPass {
     const baseFraction =
       BASE_FRACTION_MIN + rng.next() * (BASE_FRACTION_MAX - BASE_FRACTION_MIN);
     const noise = new ValueNoise(rng.fork("shore"));
-    const flooded = floodEdge(draft, edge, baseFraction, noise);
+    const flooded = floodEdge(
+      draft,
+      edge,
+      baseFraction,
+      noise,
+      params.biome.bankSurface ?? SurfaceIds.SAND,
+    );
     diagnostics.note(`shoreline on edge ${edge}: ${flooded} water columns`);
   }
 }
@@ -85,6 +92,7 @@ function floodEdge(
   edge: Direction,
   baseFraction: number,
   noise: ValueNoise,
+  bankSurface: SurfaceId,
 ): number {
   const horizontal = edge === "e" || edge === "w";
   const alongLength = horizontal ? draft.depth : draft.width;
@@ -104,7 +112,7 @@ function floodEdge(
         draft.setGroundSurface(x, z, SurfaceIds.WATER);
         flooded++;
       } else {
-        draft.setGroundSurface(x, z, SurfaceIds.SAND);
+        draft.setGroundSurface(x, z, bankSurface);
       }
     }
   }

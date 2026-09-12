@@ -7,6 +7,7 @@ export const NATURAL_MATERIAL_FRAGMENT = `
   uniform vec2 uNaturalSize;
   uniform sampler2D uNaturalWeights;
   uniform vec4 uNaturalUv[5];
+  uniform vec3 uNaturalTint[5];
   varying vec2 vNaturalWorld;
   varying float vNaturalUp;
 
@@ -35,7 +36,7 @@ export const NATURAL_MATERIAL_FRAGMENT = `
             vec2 span = region.zw - region.xy;
             vec3 sampleColour = textureGrad(map, mix(region.xy, region.zw,
               fract(vNaturalWorld)), naturalDx * span, naturalDz * span).rgb;
-          colour += sampleColour * weight;
+          colour += sampleColour * uNaturalTint[${i}] * weight;
           total += weight;
         }
       }`,

@@ -34,7 +34,8 @@ import { TileIndex } from "./tile-index";
 const registries = createDefaultRegistries();
 
 /** Biome × settlement × size combinations the sweep walks. */
-const COMBOS = 4 * 3 * 3;
+const COMBOS =
+  BIOME_IDS.length * SETTLEMENT_SCALES.length * MAP_SIZE_PRESETS.length;
 
 /**
  * Seeds per combination: six locally, three on CI (#829). At the ADR 0009
@@ -63,7 +64,7 @@ const SEEDS_PER_COMBO = process.env.CI === undefined ? 6 : 3;
  * What catches a generator that has become slower is the wide sweep's
  * runtime, not this number.
  */
-const SWEEP_TIMEOUT_MS = 240_000;
+const SWEEP_TIMEOUT_MS = (BIOME_IDS.length / 4) * 240_000;
 
 function recipe(
   seed: string,

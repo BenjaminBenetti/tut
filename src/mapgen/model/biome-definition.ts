@@ -57,6 +57,8 @@ export interface BiomeDefinition {
   readonly terrain: TerrainProfile;
   /** True when the water pass carves a shoreline along one edge. */
   readonly hasShoreline: boolean;
+  /** Bank material; sandy beaches by default, earth along wetland waterways. */
+  readonly bankSurface?: SurfaceId;
   /** Props scattered on open ground. May be empty. */
   readonly vegetation: readonly VegetationEntry[];
   /** Building templates allowed here. Never empty. */

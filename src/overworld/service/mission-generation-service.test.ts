@@ -350,6 +350,27 @@ describe("generateMissions", () => {
     });
   });
 
+  it("uses a city's local biome for new missions without rewriting existing offers", () => {
+    const state = fixtureState({ missions: [missionAt("full", 20)] });
+    const local = {
+      ...state,
+      map: {
+        ...state.map,
+        cities: state.map.cities.map((city) => ({
+          ...city,
+          biome: "alpine" as const,
+        })),
+      },
+    };
+    const result = generateMissions(local, deps(3, ALWAYS));
+    expect(
+      result.state.missions.find((m) => m.cityId === "mid")?.mapParams.biome,
+    ).toBe("alpine");
+    expect(result.state.missions.find((m) => m.cityId === "full")).toBe(
+      state.missions[0],
+    );
+  });
+
   it("applies no intel bonus to regions without an entry", () => {
     const state = fixtureState({ day: 1 });
     const result = generateMissions(state, deps(3, ALWAYS, { west: 4 }));

@@ -1,3 +1,4 @@
+import type { BiomeId } from "../../content/model/biome-id";
 import type { SettlementScale } from "../../content/model/settlement-scale";
 import type { EarthMap } from "../model/earth-map";
 import type {
@@ -23,13 +24,13 @@ function city(
   name: string,
   latitude: number,
   longitude: number,
-  scale?: SettlementScale,
+  options: { readonly scale?: SettlementScale; readonly biome?: BiomeId } = {},
 ): CitySeed {
   return {
     id,
     name,
     layout: projectEquirectangular(latitude, longitude),
-    ...(scale === undefined ? {} : { scale }),
+    ...options,
   };
 }
 
@@ -48,21 +49,9 @@ function link(a: string, b: string): CityLink {
  * generation gets exercised across the campaign. Cities are placed by
  * their real coordinates; the overworld screen may nudge labels.
  *
- * ```
- *   Region                Linked regions (derived from the city links below)
- *   North America West    North America East · Latin America · East Asia
- *   North America East    North America West · Latin America · Western Europe
- *   Latin America         North America West · North America East · Sub-Saharan Africa
- *   Western Europe        North America East · Eastern Europe · Middle East · Sub-Saharan Africa
- *   Eastern Europe        Western Europe · Middle East · North Asia
- *   Middle East           Western Europe · Eastern Europe · Sub-Saharan Africa · South Asia · North Asia
- *   Sub-Saharan Africa    Latin America · Western Europe · Middle East · South Asia
- *   South Asia            Middle East · Sub-Saharan Africa · Southeast Asia
- *   North Asia            Eastern Europe · Middle East · East Asia
- *   East Asia             North Asia · Southeast Asia · Oceania · North America West
- *   Southeast Asia        South Asia · East Asia · Oceania
- *   Oceania               Southeast Asia · East Asia
- * ```
+ * Region defaults describe the broader landscape; local city biomes keep
+ * mountain capitals, river deltas and dry interiors distinct. Northern,
+ * Amazonian, Andean and Mediterranean routes fill the original map's gaps.
  */
 const REGIONS: readonly RegionSeed[] = [
   {
@@ -70,9 +59,13 @@ const REGIONS: readonly RegionSeed[] = [
     name: "North America West",
     biome: "coastal",
     cities: [
-      city("vancouver", "Vancouver", 49.28, -123.12),
-      city("san-francisco", "San Francisco", 37.77, -122.42),
-      city("los-angeles", "Los Angeles", 34.05, -118.24),
+      city("vancouver", "Vancouver", 49.28, -123.12, { biome: "temperate" }),
+      city("san-francisco", "San Francisco", 37.77, -122.42, {
+        biome: "mediterranean",
+      }),
+      city("los-angeles", "Los Angeles", 34.05, -118.24, {
+        biome: "mediterranean",
+      }),
     ],
   },
   {
@@ -88,12 +81,12 @@ const REGIONS: readonly RegionSeed[] = [
   {
     id: "latin-america",
     name: "Latin America",
-    biome: "coastal",
+    biome: "temperate",
     cities: [
-      city("mexico-city", "Mexico City", 19.43, -99.13),
-      city("bogota", "Bogotá", 4.71, -74.07),
-      city("sao-paulo", "São Paulo", -23.55, -46.63),
-      city("buenos-aires", "Buenos Aires", -34.6, -58.38),
+      city("mexico-city", "Mexico City", 19.43, -99.13, { biome: "alpine" }),
+      city("bogota", "Bogotá", 4.71, -74.07, { biome: "alpine" }),
+      city("sao-paulo", "São Paulo", -23.55, -46.63, { biome: "tropical" }),
+      city("buenos-aires", "Buenos Aires", -34.6, -58.38, { biome: "steppe" }),
     ],
   },
   {
@@ -109,9 +102,9 @@ const REGIONS: readonly RegionSeed[] = [
   {
     id: "eastern-europe",
     name: "Eastern Europe",
-    biome: "snowy",
+    biome: "temperate",
     cities: [
-      city("stockholm", "Stockholm", 59.33, 18.07),
+      city("stockholm", "Stockholm", 59.33, 18.07, { biome: "taiga" }),
       city("warsaw", "Warsaw", 52.23, 21.01),
       city("moscow", "Moscow", 55.76, 37.62),
     ],
@@ -121,17 +114,17 @@ const REGIONS: readonly RegionSeed[] = [
     name: "Middle East",
     biome: "desert",
     cities: [
-      city("istanbul", "Istanbul", 41.01, 28.98),
+      city("istanbul", "Istanbul", 41.01, 28.98, { biome: "mediterranean" }),
       city("cairo", "Cairo", 30.04, 31.24),
-      city("tehran", "Tehran", 35.69, 51.39),
+      city("tehran", "Tehran", 35.69, 51.39, { biome: "steppe" }),
     ],
   },
   {
     id: "sub-saharan-africa",
     name: "Sub-Saharan Africa",
-    biome: "temperate",
+    biome: "savanna",
     cities: [
-      city("lagos", "Lagos", 6.52, 3.38),
+      city("lagos", "Lagos", 6.52, 3.38, { biome: "tropical" }),
       city("nairobi", "Nairobi", -1.29, 36.82),
       city("johannesburg", "Johannesburg", -26.2, 28.05),
     ],
@@ -139,21 +132,27 @@ const REGIONS: readonly RegionSeed[] = [
   {
     id: "south-asia",
     name: "South Asia",
-    biome: "desert",
+    biome: "savanna",
     cities: [
-      city("karachi", "Karachi", 24.86, 67.01),
+      city("karachi", "Karachi", 24.86, 67.01, { biome: "desert" }),
       city("delhi", "Delhi", 28.61, 77.21),
-      city("mumbai", "Mumbai", 19.08, 72.88),
+      city("mumbai", "Mumbai", 19.08, 72.88, { biome: "tropical" }),
     ],
   },
   {
     id: "north-asia",
     name: "North Asia",
-    biome: "snowy",
+    biome: "steppe",
     cities: [
-      city("novosibirsk", "Novosibirsk", 55.03, 82.92, "town"),
-      city("almaty", "Almaty", 43.24, 76.89, "town"),
-      city("ulaanbaatar", "Ulaanbaatar", 47.89, 106.91, "town"),
+      city("novosibirsk", "Novosibirsk", 55.03, 82.92, {
+        scale: "town",
+        biome: "taiga",
+      }),
+      city("almaty", "Almaty", 43.24, 76.89, {
+        scale: "town",
+        biome: "alpine",
+      }),
+      city("ulaanbaatar", "Ulaanbaatar", 47.89, 106.91, { scale: "town" }),
     ],
   },
   {
@@ -169,11 +168,11 @@ const REGIONS: readonly RegionSeed[] = [
   {
     id: "southeast-asia",
     name: "Southeast Asia",
-    biome: "coastal",
+    biome: "wetland",
     cities: [
       city("bangkok", "Bangkok", 13.76, 100.5),
-      city("singapore", "Singapore", 1.35, 103.82),
-      city("jakarta", "Jakarta", -6.21, 106.85),
+      city("singapore", "Singapore", 1.35, 103.82, { biome: "tropical" }),
+      city("jakarta", "Jakarta", -6.21, 106.85, { biome: "tropical" }),
     ],
   },
   {
@@ -181,9 +180,64 @@ const REGIONS: readonly RegionSeed[] = [
     name: "Oceania",
     biome: "coastal",
     cities: [
-      city("perth", "Perth", -31.95, 115.86, "town"),
+      city("alice-springs", "Alice Springs", -23.7, 133.88, {
+        scale: "town",
+        biome: "desert",
+      }),
+      city("perth", "Perth", -31.95, 115.86, { scale: "town" }),
       city("sydney", "Sydney", -33.87, 151.21),
-      city("auckland", "Auckland", -36.85, 174.76, "town"),
+      city("auckland", "Auckland", -36.85, 174.76, { scale: "town" }),
+    ],
+  },
+  {
+    id: "boreal-north-america",
+    name: "Boreal North America",
+    biome: "taiga",
+    cities: [
+      city("anchorage", "Anchorage", 61.22, -149.9, { scale: "town" }),
+      city("yellowknife", "Yellowknife", 62.45, -114.38, { scale: "town" }),
+    ],
+  },
+  {
+    id: "arctic-north-atlantic",
+    name: "Arctic North Atlantic",
+    biome: "tundra",
+    cities: [
+      city("reykjavik", "Reykjavík", 64.15, -21.94, { scale: "town" }),
+      city("tromso", "Tromsø", 69.65, 18.96, { scale: "town" }),
+      city("longyearbyen", "Longyearbyen", 78.22, 15.65, {
+        scale: "rural",
+        biome: "snowy",
+      }),
+    ],
+  },
+  {
+    id: "amazon-basin",
+    name: "Amazon Basin",
+    biome: "tropical",
+    cities: [
+      city("manaus", "Manaus", -3.12, -60.02),
+      city("iquitos", "Iquitos", -3.75, -73.25, { biome: "wetland" }),
+    ],
+  },
+  {
+    id: "andes-pacific",
+    name: "Andes and Pacific",
+    biome: "alpine",
+    cities: [
+      city("quito", "Quito", -0.18, -78.47),
+      city("lima", "Lima", -12.05, -77.04, { biome: "desert" }),
+      city("santiago", "Santiago", -33.45, -70.67, { biome: "mediterranean" }),
+    ],
+  },
+  {
+    id: "mediterranean-basin",
+    name: "Mediterranean Basin",
+    biome: "mediterranean",
+    cities: [
+      city("lisbon", "Lisbon", 38.72, -9.14),
+      city("rome", "Rome", 41.9, 12.5),
+      city("athens", "Athens", 37.98, 23.73),
     ],
   },
 ];
@@ -198,6 +252,32 @@ const REGIONS: readonly RegionSeed[] = [
  * directions so no region is a dead end.
  */
 const LINKS: readonly CityLink[] = [
+  // ---- Northern forests and the Arctic ----
+  link("anchorage", "yellowknife"),
+  link("anchorage", "vancouver"),
+  link("yellowknife", "toronto"),
+  link("reykjavik", "tromso"),
+  link("tromso", "longyearbyen"),
+  link("reykjavik", "new-york"),
+  link("reykjavik", "london"),
+  link("tromso", "stockholm"),
+  // ---- South American interior and Pacific ----
+  link("manaus", "iquitos"),
+  link("manaus", "bogota"),
+  link("iquitos", "sao-paulo"),
+  link("quito", "lima"),
+  link("lima", "santiago"),
+  link("quito", "bogota"),
+  link("santiago", "buenos-aires"),
+  // ---- Mediterranean and Australian interior ----
+  link("lisbon", "rome"),
+  link("rome", "athens"),
+  link("lisbon", "paris"),
+  link("rome", "cairo"),
+  link("athens", "istanbul"),
+  link("alice-springs", "perth"),
+  link("alice-springs", "sydney"),
+
   // ---- North America West ----
   link("vancouver", "san-francisco"),
   link("san-francisco", "los-angeles"),
@@ -276,5 +356,5 @@ const LINKS: readonly CityLink[] = [
 /** The authoring spec the shipped map is built from. */
 const EARTH_MAP_SPEC: EarthMapSpec = { regions: REGIONS, links: LINKS };
 
-/** The shipped strategic map: 12 regions, 37 cities, 51 spread routes. */
+/** The shipped strategic map: 17 regions, 51 cities, 73 spread routes. */
 export const EARTH_MAP: EarthMap = buildEarthMap(EARTH_MAP_SPEC);

@@ -157,7 +157,7 @@ export class MissionDetailsView {
       difficulty: `D${formatWhole(mission.difficulty)}`,
       reward: formatCredits(mission.rewards.credits),
       "days-left": `${formatWhole(mission.expiresDay - state.overworld.day)} d`,
-      biome: mission.mapParams.biome,
+      biome: BIOME_INFO[mission.mapParams.biome].name,
       settlement: mission.mapParams.settlement,
       size: mission.mapParams.size,
       penalty: `+${formatWhole(mission.ignorePenalty)} infestation`,
@@ -189,3 +189,4 @@ export class MissionDetailsView {
     this.onPlan = undefined;
   }
 }
+import { BIOME_INFO } from "../../content/data/biome-info";

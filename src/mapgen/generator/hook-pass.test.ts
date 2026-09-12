@@ -96,7 +96,8 @@ const SEEDS = 5;
  * the sibling tests make statistical claims on it. The budget follows
  * `vitest.config.ts`: 20 s locally, the 120 s runner budget on CI (#856).
  */
-const PLACEMENT_BUDGET_MS = process.env.CI === undefined ? 20_000 : 120_000;
+const PLACEMENT_BUDGET_MS =
+  (BIOME_IDS.length / 4) * (process.env.CI === undefined ? 20_000 : 120_000);
 
 describe("HookPass", () => {
   it(

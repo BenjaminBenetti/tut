@@ -136,8 +136,8 @@ describe("GameOverScreen", () => {
     expect(field("outcome-tagline")?.textContent).toBe(
       "Global threat reached 100, ending the campaign.",
     );
-    expect(field("cities-lost")?.textContent).toBe("0 / 37");
-    expect(field("cities-infested")?.textContent).toBe("37 / 37");
+    expect(field("cities-lost")?.textContent).toBe("0 / 51");
+    expect(field("cities-infested")?.textContent).toBe("51 / 51");
     expect(field("final-threat")?.textContent).toBe("100");
   });
 

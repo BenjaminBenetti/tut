@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { BIOME_INFO } from "../src/content/data/biome-info";
 
 /** Days to advance before giving up on a mission appearing for the fixed seed. */
 const MAX_DAYS = 40;
@@ -49,8 +50,8 @@ test("a mission appears, opens a briefing, routes to deployment, auto-resolves a
   const details = page.locator('[data-role="mission-details"]');
   await expect(details).toBeVisible();
   await expect(details).toHaveAttribute("data-mission-id", missionId ?? "");
-  await expect(details.locator('[data-field="detail-biome"]')).toHaveText(
-    /temperate|snowy|desert|coastal/,
+  expect(Object.values(BIOME_INFO).map((info) => info.name)).toContain(
+    await details.locator('[data-field="detail-biome"]').textContent(),
   );
   await expect(details.locator('[data-field="detail-settlement"]')).toHaveText(
     /rural|town|city/,

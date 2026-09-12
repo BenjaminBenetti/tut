@@ -330,9 +330,14 @@ describe("TacticalHudView", () => {
     const fill = s2?.querySelector<HTMLElement>('[data-field="status-hp"]');
     expect(fill?.style.width).toBe("60%");
     expect(fill?.dataset.tone).toBe("ok");
-    // No pool on the fixture's rifles, so no gauge line.
+    // The numbers after the bar; no pool on the fixture's rifles, so no
+    // gauge line.
     expect(
-      s2?.querySelector<HTMLElement>('[data-field="status-charge"]')?.hidden,
+      s2?.querySelector<HTMLElement>('[data-field="status-hp-text"]')
+        ?.textContent,
+    ).toBe("12 / 20");
+    expect(
+      s2?.querySelector<HTMLElement>('[data-field="status-charges"]')?.hidden,
     ).toBe(true);
     expect(s2?.style.left).toBe("20px");
     // The chips follow the state: a unit that dies loses its chip.
@@ -346,33 +351,41 @@ describe("TacticalHudView", () => {
     expect(chips()).toHaveLength(0);
   });
 
-  it("names the charge gauge in the unit's register on its chip", () => {
+  it("names every pooled weapon's gauge in the unit's register on its chip", () => {
     const { hud, mission } = setup({
       headAnchorFor: () => ({ x: 0, y: 0 }),
     });
     const s1 = mission.units.find((u) => u.id === "s1");
     const template = s1 && mission.templates[s1.templateId];
     if (!s1 || !template) throw new Error("fixture needs s1");
-    const weapon = {
-      ...template.weapons[0],
-      charges: 3,
-    } as (typeof template.weapons)[number];
+    const first = template.weapons[0];
+    if (!first) throw new Error("fixture weapon");
+    const rifle = { ...first, id: "rifle", name: "Rifle", charges: 3 };
+    const launcher = {
+      ...first,
+      id: "launcher",
+      name: "Launcher",
+      charges: 2,
+    };
+    // And one with no pool, which gets no line.
+    const knife = { ...first, id: "knife", name: "Knife" };
     hud.update({
       ...mission,
       templates: {
         ...mission.templates,
-        [s1.templateId]: { ...template, weapons: [weapon] },
+        [s1.templateId]: { ...template, weapons: [rifle, knife, launcher] },
       },
       units: mission.units.map((u) =>
-        u.id === "s1" ? { ...u, charges: { [weapon.id]: 1 } } : u,
+        u.id === "s1" ? { ...u, charges: { rifle: 1, launcher: 2 } } : u,
       ),
     });
     hud.handleIntent({ kind: "inspect", held: true });
-    const chip = root.querySelector<HTMLElement>(
-      '.tut-status-chip[data-unit-id="s1"] [data-field="status-charge"]',
-    );
-    expect(chip?.hidden).toBe(false);
-    expect(chip?.textContent).toBe("ammo 1 / 3");
+    const lines = [
+      ...root.querySelectorAll<HTMLElement>(
+        '.tut-status-chip[data-unit-id="s1"] [data-field="status-charge"]',
+      ),
+    ].map((row) => row.textContent);
+    expect(lines).toEqual(["Rifle · ammo 1 / 3", "Launcher · ammo 2 / 2"]);
   });
 
   it("a tile click by a unit that is not the player's opens nothing", () => {

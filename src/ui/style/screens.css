@@ -1243,10 +1243,23 @@
   letter-spacing: 0.02em;
 }
 
-.tut-status-chip__bar {
-  height: 4px;
+.tut-status-chip__health {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   margin: 3px 0 2px;
+}
+
+.tut-status-chip__bar {
+  flex: 1;
+  min-width: 56px;
+  height: 4px;
   background: rgb(255 255 255 / 12%);
+}
+
+.tut-status-chip__numbers {
+  font-size: 10px;
+  color: var(--ui-text-dim);
 }
 
 .tut-status-chip__fill {
@@ -1260,7 +1273,7 @@
   background: var(--ui-danger);
 }
 
-.tut-status-chip__gauge {
+.tut-status-chip__gauges {
   font-size: 10px;
   color: var(--ui-text-dim);
 }

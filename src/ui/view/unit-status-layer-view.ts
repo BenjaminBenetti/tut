@@ -15,14 +15,21 @@ export interface UnitStatusChip {
   readonly hp: number;
   readonly maxHp: number;
   /**
-   * The unit's charges, in the register its card uses — `ammo 2 / 3`,
-   * `heat 1 / 4` — or undefined for a unit that carries no pool.
+   * One entry per weapon that carries a pool, in the register the
+   * unit's card uses — `Autocannon · heat 4 / 4`, `Rifle · ammo 2 / 3` —
+   * and empty for a unit with no pool at all.
    */
-  readonly charge?: {
-    readonly gauge: string;
-    readonly value: number;
-    readonly max: number;
-  };
+  readonly charges: readonly UnitStatusCharge[];
+}
+
+/** One weapon's pool on a chip. */
+export interface UnitStatusCharge {
+  /** The weapon the pool belongs to. */
+  readonly label: string;
+  /** `ammo` or `heat`. */
+  readonly gauge: string;
+  readonly value: number;
+  readonly max: number;
 }
 
 // ===========================================
@@ -37,11 +44,12 @@ export interface UnitStatusChip {
  * the camera and leaves with the key.
  *
  * ```
- *        ┌ Hammerhead ────────┐
- *        │ ████████████░░░░░  │   80 / 80 as a bar
- *        │ heat 4 / 4         │
- *        └─────────┬──────────┘
- *                 (unit)
+ *        ┌ Hammerhead ──────────────────┐
+ *        │ ████████████░░░░░   64 / 80  │   the bar, then the numbers
+ *        │ Autocannon · heat 4 / 4      │   one line per pooled weapon
+ *        │ Missile Pod · heat 2 / 4     │
+ *        └─────────────┬────────────────┘
+ *                    (unit)
  * ```
  *
  * Presentation only: it takes chips and screen anchors and draws them;
@@ -146,16 +154,22 @@ function buildChip(doc: Document, unitId: UnitId): HTMLElement {
   const name = doc.createElement("div");
   name.className = "tut-status-chip__name";
   name.dataset.field = "status-name";
+  const health = doc.createElement("div");
+  health.className = "tut-status-chip__health";
   const bar = doc.createElement("div");
   bar.className = "tut-status-chip__bar";
   const fill = doc.createElement("div");
   fill.className = "tut-status-chip__fill";
   fill.dataset.field = "status-hp";
   bar.appendChild(fill);
-  const gauge = doc.createElement("div");
-  gauge.className = "tut-status-chip__gauge tut-mono";
-  gauge.dataset.field = "status-charge";
-  chip.append(name, bar, gauge);
+  const numbers = doc.createElement("span");
+  numbers.className = "tut-status-chip__numbers tut-mono";
+  numbers.dataset.field = "status-hp-text";
+  health.append(bar, numbers);
+  const gauges = doc.createElement("div");
+  gauges.className = "tut-status-chip__gauges tut-mono";
+  gauges.dataset.field = "status-charges";
+  chip.append(name, health, gauges);
   return chip;
 }
 
@@ -176,17 +190,38 @@ function fillChip(element: HTMLElement, chip: UnitStatusChip): void {
     fill.dataset.hp = `${String(chip.hp)}/${String(chip.maxHp)}`;
     fill.dataset.tone = share > 0.5 ? "ok" : share > 0.25 ? "warn" : "danger";
   }
-  const gauge = element.querySelector<HTMLElement>(
-    '[data-field="status-charge"]',
+  const numbers = element.querySelector<HTMLElement>(
+    '[data-field="status-hp-text"]',
   );
-  if (gauge) {
-    const text =
-      chip.charge === undefined
-        ? ""
-        : `${chip.charge.gauge} ${String(chip.charge.value)} / ${String(chip.charge.max)}`;
-    if (gauge.textContent !== text) {
-      gauge.textContent = text;
+  if (numbers) {
+    const text = `${String(chip.hp)} / ${String(chip.maxHp)}`;
+    if (numbers.textContent !== text) {
+      numbers.textContent = text;
     }
-    gauge.hidden = chip.charge === undefined;
+  }
+  const gauges = element.querySelector<HTMLElement>(
+    '[data-field="status-charges"]',
+  );
+  if (gauges) {
+    // The weapon's name only when there is more than one pool to tell
+    // apart: a squad's single magazine is just its ammo.
+    const lines = chip.charges.map((charge) =>
+      chip.charges.length > 1
+        ? `${charge.label} · ${charge.gauge} ${String(charge.value)} / ${String(charge.max)}`
+        : `${charge.gauge} ${String(charge.value)} / ${String(charge.max)}`,
+    );
+    // Rebuilt only when the words change; this runs once a frame.
+    if (gauges.dataset.lines !== lines.join("\n")) {
+      gauges.dataset.lines = lines.join("\n");
+      gauges.replaceChildren(
+        ...lines.map((line) => {
+          const row = element.ownerDocument.createElement("div");
+          row.dataset.field = "status-charge";
+          row.textContent = line;
+          return row;
+        }),
+      );
+    }
+    gauges.hidden = lines.length === 0;
   }
 }

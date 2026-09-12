@@ -24,7 +24,10 @@ describe("UnitStatusLayerView", () => {
         team: "tdf",
         hp: 5,
         maxHp: 20,
-        charge: { gauge: "ammo", value: 2, max: 3 },
+        charges: [
+          { label: "Autocannon", gauge: "heat", value: 4, max: 4 },
+          { label: "Missile Pod", gauge: "heat", value: 2, max: 4 },
+        ],
       },
       {
         unitId: "b1",
@@ -33,6 +36,7 @@ describe("UnitStatusLayerView", () => {
         team: "bugs",
         hp: 6,
         maxHp: 6,
+        charges: [],
       },
     ]);
     expect(view.isOpen).toBe(true);
@@ -45,19 +49,28 @@ describe("UnitStatusLayerView", () => {
     // A quarter left: the danger tone.
     expect(fill?.style.width).toBe("25%");
     expect(fill?.dataset.tone).toBe("danger");
+    // The numbers after the bar, and one line per pooled weapon.
     expect(
-      chip?.querySelector<HTMLElement>('[data-field="status-charge"]')
+      chip?.querySelector<HTMLElement>('[data-field="status-hp-text"]')
         ?.textContent,
-    ).toBe("ammo 2 / 3");
+    ).toBe("5 / 20");
+    expect(
+      [
+        ...(chip?.querySelectorAll<HTMLElement>(
+          '[data-field="status-charge"]',
+        ) ?? []),
+      ].map((row) => row.textContent),
+    ).toEqual(["Autocannon · heat 4 / 4", "Missile Pod · heat 2 / 4"]);
     const bug = root.querySelector<HTMLElement>(
       '.tut-status-chip[data-unit-id="b1"]',
     );
     expect(bug?.dataset.team).toBe("bugs");
     expect(
-      bug?.querySelector<HTMLElement>('[data-field="status-charge"]')?.hidden,
+      bug?.querySelector<HTMLElement>('[data-field="status-charges"]')?.hidden,
     ).toBe(true);
 
-    // Moved, not rebuilt: the same element, at the new anchor.
+    // Moved, not rebuilt: the same element, at the new anchor. And a
+    // single pool goes unlabelled: it is just the unit's ammo.
     view.show([
       {
         unitId: "u1",
@@ -66,12 +79,17 @@ describe("UnitStatusLayerView", () => {
         team: "tdf",
         hp: 5,
         maxHp: 20,
+        charges: [{ label: "Attack", gauge: "ammo", value: 2, max: 3 }],
       },
     ]);
     expect(root.querySelector('.tut-status-chip[data-unit-id="u1"]')).toBe(
       chip,
     );
     expect(chip?.style.left).toBe("15px");
+    expect(
+      chip?.querySelector<HTMLElement>('[data-field="status-charge"]')
+        ?.textContent,
+    ).toBe("ammo 2 / 3");
     expect(root.querySelectorAll(".tut-status-chip")).toHaveLength(1);
 
     view.hide();

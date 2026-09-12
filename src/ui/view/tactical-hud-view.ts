@@ -1477,11 +1477,17 @@ export class TacticalHudView {
       if (anchor === undefined) {
         continue;
       }
-      const template = mission.templates[unit.templateId];
-      const pooled = template?.weapons.find(
-        (weapon) => weapon.charges !== undefined,
-      );
-      const left = pooled === undefined ? undefined : chargesLeft(unit, pooled);
+      // One gauge per weapon with a pool: a mech's two guns heat
+      // separately, and the chip says so rather than showing the first.
+      const gauge = chargeRegisterFor(unit.kind).gauge;
+      const charges = (
+        mission.templates[unit.templateId]?.weapons ?? []
+      ).flatMap((weapon) => {
+        const left = chargesLeft(unit, weapon);
+        return weapon.charges === undefined || left === undefined
+          ? []
+          : [{ label: weapon.name, gauge, value: left, max: weapon.charges }];
+      });
       chips.push({
         unitId: unit.id,
         anchor,
@@ -1489,15 +1495,7 @@ export class TacticalHudView {
         team: unit.team,
         hp: unit.hp,
         maxHp: unit.maxHp,
-        ...(pooled?.charges !== undefined && left !== undefined
-          ? {
-              charge: {
-                gauge: chargeRegisterFor(unit.kind).gauge,
-                value: left,
-                max: pooled.charges,
-              },
-            }
-          : {}),
+        charges,
       });
     }
     this.status.show(chips);

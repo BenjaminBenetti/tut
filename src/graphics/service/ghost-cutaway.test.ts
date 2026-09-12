@@ -4,6 +4,7 @@ import { MeshStandardMaterial, Vector3 } from "three";
 import {
   applyGhostCutaway,
   createGhostUniforms,
+  GHOST_FOOT_MARGIN,
   MAX_GHOSTS,
 } from "./ghost-cutaway";
 
@@ -79,6 +80,35 @@ describe("ghost cutaway (#526)", () => {
     expect(shader.fragmentShader).toContain("vGhostView.z > centre.z");
     // Discard, not blend, so surviving fragments still write depth.
     expect(shader.fragmentShader).toContain("discard");
+  });
+
+  it("fades only what rises above the unit's feet, so the floor it stands on stays solid (#1118)", () => {
+    const uniforms = createGhostUniforms(2, 0.15);
+    const ghosted = applyGhostCutaway(new MeshStandardMaterial(), uniforms);
+    const shader = shaderStub();
+
+    ghosted.onBeforeCompile(shader as never, null as never);
+
+    // The feet heights reach the program through the shared block, like
+    // the centres, so the controller's per-frame write lands.
+    expect(shader.uniforms.uGhostFeet).toBe(uniforms.uGhostFeet);
+    expect(uniforms.uGhostFeet.value).toHaveLength(MAX_GHOSTS);
+    // World height is rebuilt with the instance transform applied, or
+    // every instanced slab would be judged at the prototype's origin.
+    const vertex = shader.vertexShader;
+    expect(vertex).toContain("ghostWorld = instanceMatrix * ghostWorld;");
+    expect(vertex).toContain("vGhostWorldY = ghostWorld.y;");
+    expect(vertex.indexOf("vGhostWorldY = ghostWorld.y;")).toBeGreaterThan(
+      vertex.indexOf("#include <project_vertex>"),
+    );
+    // Depth and height are one conjunction: a slab in front of the unit
+    // at its own level is nearer the camera and still must not fade.
+    expect(shader.fragmentShader).toContain(
+      `vGhostView.z > centre.z && vGhostWorldY > uGhostFeet[i] + ${GHOST_FOOT_MARGIN.toFixed(2)}`,
+    );
+    // Below a wall's height and above float noise on the floor plane.
+    expect(GHOST_FOOT_MARGIN).toBeGreaterThan(0);
+    expect(GHOST_FOOT_MARGIN).toBeLessThan(0.75);
   });
 
   it("gives the ghosted program its own cache key", () => {

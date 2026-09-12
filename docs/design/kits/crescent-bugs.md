@@ -1,8 +1,8 @@
-# Brown Crescent bug family
+# Brown bug family — distinct species
 
-The Executive Director selected [brown Crescent B](../concepts/swarmer-redesign/b-crescent-brown.md) on 2026-09-12 and requested detailed replacement models for the entire family. These are the actual exported game assets, built in Blender from reproducible Python sources.
+The Executive Director selected [brown Crescent B](../concepts/swarmer-redesign/b-crescent-brown.md) for the swarmer and asked for a related brown bug family. The silhouette revision keeps the swarmer unchanged and gives the lurker, brute and spawner their own body plans. Shared materials and anatomy establish kinship; the crescent hood belongs to the swarmer. These are the actual exported game assets, built in Blender from reproducible Python sources.
 
-![The four Crescent models in the browser gallery](../diagnostics/crescent-bugs/family.png)
+![Four distinct brown bug models in the browser gallery](../diagnostics/crescent-bugs/family.png)
 
 ## Review the models
 
@@ -17,12 +17,12 @@ Browser captures: [relative scale](../diagnostics/crescent-bugs/relative-scale.p
 
 ## Family language
 
-Walnut primary shells, chestnut overlapping armour, tan dorsal lozenges and rims, dark umber joints, and narrow pale horn cutting edges. Green eyes/gills remain on the swarmer and brute; magenta identifies the lurker and the spawner's central hatch. Broad shapes carry the tactical silhouette; small growth seams and cuff edges reward inspection up close.
+Walnut primary shells, chestnut armour, tan chitin markings, dark umber joints, paired eye clusters and pale horn cutting edges unite the family. Tan markings can follow a face, wing case or egg rib; their placement is species-specific. A repeated head shape or hood is not required. Green eyes/gills remain on the swarmer and brute; magenta identifies the lurker and the spawner's central hatch. Broad shapes carry the tactical silhouette; small growth seams and cuff edges reward inspection up close.
 
 - **Swarmer:** thin swept hood over a low body; five overlapping abdominal plates; four running legs and two short hooks.
-- **Lurker:** narrow elevated hood, five torso rings, slender four-legged stance and long curved sickles.
-- **Brute:** deep mantle, layered shoulder shells and four overlapping back plates; heavy joint cuffs and wide cleavers.
-- **Egg spawner:** rooted crescent husk, three ribbed eggs and six shell valves around a luminous central opening. The `socket_hatch` anchor remains available to gameplay effects.
+- **Lurker:** exposed wedge-shaped face, raised feelers, swept shoulder fins and a slender ringed thorax. Long sickles and four fine legs give it a mantis silhouette; it has no hood.
+- **Brute:** a broad beetle vault with paired oval wing cases and a narrow centre seam, a low battering brow, jaw horns, thick legs and short heavy cleavers. Two broken rows of tan back markings replace the swarmer crest.
+- **Egg spawner:** an asymmetric root web, four ribbed eggs of different sizes and a fleshy central bulb with four rounded hatch lobes. The old crescent base and pointed crown are removed. The `socket_hatch` anchor remains available to gameplay effects.
 
 The shared [style guide](../style-guide.md) records the brown palette and revised detailed-model budgets. Gameplay species, abilities and occupied tile counts remain unchanged.
 
@@ -33,9 +33,9 @@ Each GLB is below 500 KiB. The selected detail pass replaces the original 600 / 
 | Model | Height | Triangles | GLB | Budget |
 |---|---:|---:|---:|---:|
 | Swarmer | 0.5 u | 12,464 | 339,028 bytes (331.1 KiB) | 16,000 |
-| Lurker | 1.3 u | 14,292 | 377,604 bytes (368.8 KiB) | 18,000 |
-| Brute | 1.8 u | 18,344 | 469,500 bytes (458.5 KiB) | 20,000 |
-| Egg-Spawner | 1.4 u | 9,696 | 244,624 bytes (238.9 KiB) | 16,000 |
+| Lurker | 1.3 u | 13,668 | 372,004 bytes (363.3 KiB) | 18,000 |
+| Brute | 1.8 u | 16,700 | 441,052 bytes (430.7 KiB) | 20,000 |
+| Egg-Spawner | 1.4 u | 11,264 | 295,136 bytes (288.2 KiB) | 16,000 |
 
 [Validation report, bounds and SHA-256 hashes](../diagnostics/crescent-bugs/validation.json).
 
@@ -45,7 +45,7 @@ Each moving bug exports four `leg_[lr][01]` nodes and two `blade_`, `scythe_` or
 
 ## Read checks and reproduction
 
-All twelve Blender angles were inspected. The browser gallery uses the game's ambient/key intensities (0.55 / 2.9), with a tighter shadow frustum for close inspection. The existing scene harness retains the production shadow frustum for ground comparisons at 64 px / tile: [asphalt](../diagnostics/crescent-bugs/scene-asphalt.png), [grass](../diagnostics/crescent-bugs/scene-grass.png), [rock](../diagnostics/crescent-bugs/scene-rock.png). The gallery also records [brown earth](../diagnostics/crescent-bugs/tactical-earth.png). At tactical size, shell seams recede; the crescent outline, tan dorsal markings and distinct body proportions carry the read.
+All twelve Blender angles were inspected. The browser gallery uses the game's ambient/key intensities (0.55 / 2.9), with a tighter shadow frustum for close inspection. The existing scene harness retains the production shadow frustum for ground comparisons at 64 px / tile: [asphalt](../diagnostics/crescent-bugs/scene-asphalt.png), [grass](../diagnostics/crescent-bugs/scene-grass.png), [rock](../diagnostics/crescent-bugs/scene-rock.png). The gallery also records [brown earth](../diagnostics/crescent-bugs/tactical-earth.png). At tactical size, shell seams recede; the low crescent swarmer, open mantis lurker, broad beetle brute and clustered spawner remain identifiable through their outlines and tan/dark contrast.
 
 The builders are [bug_parts.py](../../../tools/art/models/bug_parts.py) and [crescent_geometry.py](../../../tools/art/models/crescent_geometry.py). Rebuild from the repository root:
 
@@ -60,4 +60,4 @@ node tools/art/preview/render-thumbnails.mjs bug.
 node tools/art/preview/capture-crescent-bugs.mjs
 ```
 
-The exporter writes the JSON manifest; `src/graphics/data/model-manifest.ts` records matching heights and paths. Thumbnails keep their existing IDs. Captures are actual Blender/Three.js renders, with no generated paint-over. The selected concept and the archived A/C concepts preserve their original image-generation provenance.
+The exporter writes the JSON manifest; `src/graphics/data/model-manifest.ts` records matching heights and paths. Thumbnails keep their existing IDs. Captures are actual Blender/Three.js renders, with no generated paint-over. The swarmer remains byte-for-byte unchanged by this silhouette revision. The selected concept and the archived A/C concepts preserve their original image-generation provenance.

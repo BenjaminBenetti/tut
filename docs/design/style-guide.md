@@ -47,7 +47,7 @@ These are the presentation assumptions the art is built against (GDD §6.1; the 
 | Mech, heavy chassis | 1×1 | up to 3.2 | Same footprint. Never exceeds 1.4 u wide at the shoulders; must not clip neighbours. |
 | Swarmer | 1×1 | 0.5 | Low Crescent shield, compact segmented abdomen, four running legs and two short blade arms. |
 | Lurker | 1×1 | 1.3 | Tall, thin, forward-leaning. Blades longer than legs. |
-| Brute | 1×1 | 1.8 | Wide dome, ~0.95 u across. Fills the tile. |
+| Brute | 1×1 | 1.8 | Paired oval wing cases, ~1.1 u across; the running stance reaches 1.3 u. |
 | Egg spawner | 1×1 | 1.4 | Fleshy mound with 3–5 eggs. A 2×2 "clutch" variant may come later. |
 | Building floor | — | 1.5 | Floor-to-floor. Interiors are for infantry only. |
 | Wall | — | 1.5 × 0.1 thick | Snaps to tile edges. |
@@ -73,9 +73,9 @@ Silhouette rules per class:
 - **Infantry squad**: a cluster of five upright sticks on a disc. Helmets are the biggest readable feature; one figure carries something long (rocket, sniper) to identify squad type.
 - **Mech**: a tall rectangle with shoulders wider than hips, one arm ends in a weapon, one shoulder or back carries a second weapon. Legs are clearly separate pieces.
 - **Swarmer**: a broad thin Crescent mantle with swept rear corners, a low recessed head and a short segmented abdomen. Four running legs and two hooked forearms. Tan dorsal lozenges and a light shell lip remain visible from above.
-- **Lurker**: a narrow high Crescent hood over a thin, forward-leaning body, four slender running legs and two long sickles. Magenta eye recesses identify the stalking class.
-- **Brute**: a heavy domed Crescent mantle, overlapping flank plates, a recessed head and broad cleavers. Four thick legs support its mass; tan central lozenges and the reinforced shell rim carry its outline.
-- **Egg spawner**: a rooted Crescent husk cradles three ribbed eggs and a larger opening egg. Brown shell valves surround a recessed magenta hatch; small green sacs sit near the base.
+- **Lurker**: an exposed wedge face, raised feelers and swept shoulder fins over a thin, forward-leaning, ringed thorax. Four slender running legs and two long sickles; no hood. Magenta eye clusters identify the stalking class.
+- **Brute**: a broad beetle vault formed by paired oval wing cases with a narrow dorsal seam. A low battering brow, jaw horns, short cleavers and four thick legs make it heavy. Broken rows of tan back markings follow its own armour anatomy.
+- **Egg spawner**: an asymmetric root web supports four ribbed eggs and a larger fleshy hatch bulb. Four rounded lobes open around the magenta hatch; small green sacs sit near the base. No crescent plinth or pointed crown.
 
 ## 4. Palette
 
@@ -114,13 +114,13 @@ Rule: orange covers at most 10 % of any TDF model's visible surface. It is a mar
 
 Rule: bioluminescence is small and bright, never a wash. Swarmers get green only. Lurkers get magenta. Brutes get green with bone. Spawners get both, pulsing.
 
-Rule: **Dark shell / tan plate contrast carries the Crescent family at game distance.** Every mobile bug has broad tan dorsal lozenges and a reinforced shell lip; the spawner repeats that contrast in egg ribs. Pale horn stays on narrow cutting edges. The small glow identifies the class. Brown ground requires a value read test as well as asphalt, grass and rock.
+Rule: **Shared anatomy and materials, distinct species silhouettes.** Brown chitin, dark joints, tan markings, paired eye clusters and pale blade edges establish the family. The crescent hood is the swarmer's signature, not a template for every bug. Each species places tan/dark contrast on its own anatomy: swarmer dorsal plates, lurker face and spine, brute wing cases, spawner egg ribs. Judge family resemblance alongside a silhouette comparison at tactical size. Brown ground requires a value read test as well as asphalt, grass and rock.
 
-The Executive Director selected [brown Crescent B](concepts/swarmer-redesign/b-crescent-brown.md) as the family design on 2026-09-12 and requested detailed replacement models. Sources, renders, budgets and validation are in [the Crescent kit](kits/crescent-bugs.md).
+The Executive Director selected [brown Crescent B](concepts/swarmer-redesign/b-crescent-brown.md) for the swarmer on 2026-09-12 and requested detailed replacement models, then clarified that every species should have a distinct look. Sources, renders, budgets and validation are in [the brown bug kit](kits/crescent-bugs.md).
 
 ### 4.2.1 The read test
 
-Current Crescent read tests: [asphalt](diagnostics/crescent-bugs/scene-asphalt.png), [grass](diagnostics/crescent-bugs/scene-grass.png), [rock](diagnostics/crescent-bugs/scene-rock.png), plus [brown earth](diagnostics/crescent-bugs/tactical-earth.png) in the interactive gallery. The [earlier faction sheet](faction-read-test.png) records the previous purple bugs.
+Current brown-family read tests: [asphalt](diagnostics/crescent-bugs/scene-asphalt.png), [grass](diagnostics/crescent-bugs/scene-grass.png), [rock](diagnostics/crescent-bugs/scene-rock.png), plus [brown earth](diagnostics/crescent-bugs/tactical-earth.png) in the interactive gallery. The [earlier faction sheet](faction-read-test.png) records the previous purple bugs.
 
 **Each faction has its own worst ground, and they are not the same ground.** The test used to be asphalt alone, described as "the darkest ground in the game and the worst case for either". It cannot be the worst case for either: the factions are different colours, so the ground that swallows one is the ground that shows off the other. Asphalt is where TDF read *best*, and testing there returned a clean bill of health for a faction that disappears on grass.
 
@@ -253,7 +253,7 @@ Implementation: `src/ui/style/theme.css` exposes the §4.4 tokens as CSS custom 
 | Prop (cover, street furniture) | ≤ 300 | ≤ 60 KB |
 | TDF dropship (one 5×7 cargo transport) | ≤ 3 000 | ≤ 200 KB |
 
-The detailed Crescent kit replaces the original 600/1,000/2,000-triangle bug and 1,200-triangle spawner budgets. Geometry goes into continuous shell curvature, plate overlap, joints and blade profiles; per-file caps and runtime read/animation checks still apply. Authored continuous UVs map the whole sculpted surface into its atlas cell, preserving shared vertices and avoiding one repeated texture patch per triangle.
+The detailed brown bug kit replaces the original 600/1,000/2,000-triangle bug and 1,200-triangle spawner budgets. Geometry goes into continuous shell curvature, plate overlap, joints and blade profiles; per-file caps and runtime read/animation checks still apply. Authored continuous UVs map the whole sculpted surface into its atlas cell, preserving shared vertices and avoiding one repeated texture patch per triangle.
 
 Hard cap from the role brief: models < 500 KB, textures ≤ 1024², sprites ≤ 512². One documented exception: the overworld world-map texture is 2048×1024 (a 2:1 plate carrée needs the width for coastlines at map zoom); it is the only texture allowed over 1024² and must stay under 1.5 MB.
 

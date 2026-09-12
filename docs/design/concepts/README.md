@@ -8,7 +8,7 @@ tools/art/gen-image.sh docs/design/concepts/prompts/<name>.txt docs/design/conce
 
 Sheets are documentation, not runtime assets; they are stored at 1536 px wide.
 
-**Selected bug direction:** [Brown Crescent B](swarmer-redesign/b-crescent-brown.md). The [Crescent family kit](../kits/crescent-bugs.md) implements all four replacement models. [The three concept directions](swarmer-redesign/README.md) and earlier palettes remain available as design history. The original bug sheets below are superseded by this kit.
+**Selected swarmer direction:** [Brown Crescent B](swarmer-redesign/b-crescent-brown.md). The [brown family kit](../kits/crescent-bugs.md) implements all four replacement models with distinct species silhouettes and shared materials. [The three concept directions](swarmer-redesign/README.md) and earlier palettes remain available as design history. The original bug sheets below are superseded by this kit.
 
 | Sheet | Subject | Style guide |
 |---|---|---|

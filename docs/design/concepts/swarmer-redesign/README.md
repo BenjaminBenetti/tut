@@ -1,6 +1,6 @@
 # Swarmer redesign — brown Crescent selected
 
-**Selected · 2026-09-12.** The Executive Director chose **B — Crescent in brown** and requested detailed replacement 3D models for the whole family. The [Crescent bug kit](../../kits/crescent-bugs.md) contains the implemented swarmer, lurker, brute and egg spawner, exported models, renders and an interactive preview. A and C remain archived alternatives.
+**Selected · 2026-09-12.** The Executive Director chose **B — Crescent in brown** for the swarmer and requested detailed replacement 3D models for the whole family, then clarified that every species should have a distinct silhouette. The [brown bug kit](../../kits/crescent-bugs.md) contains the implemented swarmer, lurker, brute and egg spawner, exported models, renders and an interactive preview. A and C remain archived alternatives.
 
 Each sheet contains a large three-quarter view, a side profile and a front view. Click a preview for the full 1536×1024 image.
 
@@ -30,7 +30,7 @@ Earlier palette studies remain available for comparison: [A — Splitmask](a-spl
 
 ## Selected direction and implementation
 
-The Crescent's thin, swept hood, tan dorsal lozenges and hooked forelimbs define the family. The swarmer keeps the broadest, lowest shield. The lurker stretches the hood and hooks into a narrow stalker with long sickles. The brute carries a thick mantle and overlapping back plates. The spawner repeats shell rims and tan ribs around its clutch and opening crown.
+The swarmer keeps the selected thin, swept Crescent hood. The rest of the family inherits brown chitin, tan markings, dark joints, eye clusters and pale blade edges. The lurker has an exposed spearhead and mantis body; the brute has paired beetle wing cases and a low battering head; the spawner is an asymmetric cluster of ribbed eggs. A repeated crescent hood is not required for family resemblance.
 
 The approved detail pass replaces the old polygon budgets with class budgets of 16,000 / 18,000 / 20,000 triangles for swarmer / lurker / brute and 16,000 for the spawner, while keeping each GLB below 500 KiB. All three moving bugs have four running legs and two blade arms. See the [kit review](../../kits/crescent-bugs.md) for actual counts, dimensions, animation checks and ground reads.
 

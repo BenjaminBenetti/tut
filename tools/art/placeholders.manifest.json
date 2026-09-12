@@ -180,8 +180,8 @@
       "socket_hatch"
     ],
     "quality": "final",
-    "triangles": 9696,
-    "bytes": 244624
+    "triangles": 11264,
+    "bytes": 295136
   },
   {
     "id": "building.floor",
@@ -1004,8 +1004,8 @@
     "height": 1.3,
     "sockets": [],
     "quality": "final",
-    "triangles": 14292,
-    "bytes": 377604
+    "triangles": 13668,
+    "bytes": 372004
   },
   {
     "id": "bug.brute",
@@ -1018,8 +1018,8 @@
     "height": 1.8,
     "sockets": [],
     "quality": "final",
-    "triangles": 18344,
-    "bytes": 469500
+    "triangles": 16700,
+    "bytes": 441052
   },
   {
     "id": "tdf.infantry.rifle",

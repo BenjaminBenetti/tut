@@ -52,9 +52,9 @@
   },
   {
     "path": "public/assets/models/bugs/bug-lurker.glb",
-    "bytes": 377604,
-    "meshes": 33,
-    "triangles": 14292,
+    "bytes": 372004,
+    "meshes": 35,
+    "triangles": 13668,
     "watertight": {
       "carapace": true,
       "carapace_1": true,
@@ -65,6 +65,8 @@
       "head": true,
       "head_1": true,
       "head_2": true,
+      "head_3": true,
+      "head_4": true,
       "leg_l0": true,
       "leg_l0_1": true,
       "leg_l0_2": true,
@@ -91,22 +93,22 @@
       "scythe_r_3": true
     },
     "bounds": [
-      [-0.44889890402555466, 0.0, -0.5249999836087227],
-      [0.44889890402555466, 1.2999999523162842, 0.5249999668449163]
+      [-0.4384799674153328, 0.0, -0.5249999854713678],
+      [0.4384799674153328, 1.2999999523162842, 0.5249999687075615]
     ],
-    "extents": [0.8977978080511093, 1.2999999523162842, 1.049999950453639],
+    "extents": [0.8769599348306656, 1.2999999523162842, 1.0499999541789293],
     "height": 1.2999999523162842,
     "ok": true,
     "problems": [],
     "id": "bug.lurker",
-    "sha256": "3f865d22c8f04eacf26dd7b151e78bb34fd2aa04e63ad1b18afb8f2be832e219",
+    "sha256": "cb64a3c3d84a099186b8cb27927ee93a43a83a86024f46fee8a5e5450b016b1c",
     "triangleBudget": 18000
   },
   {
     "path": "public/assets/models/bugs/bug-brute.glb",
-    "bytes": 469500,
-    "meshes": 32,
-    "triangles": 18344,
+    "bytes": 441052,
+    "meshes": 34,
+    "triangles": 16700,
     "watertight": {
       "carapace": true,
       "carapace_1": true,
@@ -116,6 +118,8 @@
       "head": true,
       "head_1": true,
       "head_2": true,
+      "head_3": true,
+      "head_4": true,
       "leg_l0": true,
       "leg_l0_1": true,
       "leg_l0_2": true,
@@ -142,22 +146,22 @@
       "cleaver_r_3": true
     },
     "bounds": [
-      [-0.5299999713897705, 0.0, -0.5749999731779099],
-      [0.5299999713897705, 1.7999999523162842, 0.574999988079071]
+      [-0.6499999761581421, 0.0, -0.675000011920929],
+      [0.6499999761581421, 1.7999999523162842, 0.6749999970197678]
     ],
-    "extents": [1.059999942779541, 1.7999999523162842, 1.149999961256981],
+    "extents": [1.2999999523162842, 1.7999999523162842, 1.3500000089406967],
     "height": 1.7999999523162842,
     "ok": true,
     "problems": [],
     "id": "bug.brute",
-    "sha256": "49e33c99e218675d32d0b8ef6067cfac03293f143b33ec60e213286e65e48ed5",
+    "sha256": "e218a1f122d0c1180d125a36f767cf45930292334787450bf4531d6aabe06ead",
     "triangleBudget": 20000
   },
   {
     "path": "public/assets/models/props/egg-spawner.glb",
-    "bytes": 244624,
-    "meshes": 7,
-    "triangles": 9696,
+    "bytes": 295136,
+    "meshes": 8,
+    "triangles": 11264,
     "watertight": {
       "brood_nest": true,
       "brood_nest_1": true,
@@ -165,18 +169,19 @@
       "brood_nest_3": true,
       "brood_nest_4": true,
       "brood_nest_5": true,
-      "brood_nest_6": true
+      "brood_nest_6": true,
+      "brood_nest_7": true
     },
     "bounds": [
-      [-0.5, 0.0, -0.4708656705915928],
-      [0.5, 1.399999976158142, 0.4708656631410122]
+      [-0.49358852207660675, 0.0, -0.49080999568104744],
+      [0.49358849227428436, 1.399999976158142, 0.49081001803278923]
     ],
-    "extents": [1.0, 1.399999976158142, 0.941731333732605],
+    "extents": [0.9871770143508911, 1.399999976158142, 0.9816200137138367],
     "height": 1.399999976158142,
     "ok": true,
     "problems": [],
     "id": "bug.egg-spawner",
-    "sha256": "3fcf83388e68d040514e805e328bcf6be46952f2c6cfc24345a99a97dca69560",
+    "sha256": "cecd835a98d4d0cbe4885e6598e82c9ba8c894e3bd67a31c4acc86aa7f8fe981",
     "triangleBudget": 16000
   }
 ]

@@ -2,7 +2,7 @@
 
 ![Crescent with a chestnut shield, dark umber limbs and tan markings, three-quarter, side and front studies](b-crescent-brown.png)
 
-- **Status:** selected by the Executive Director on 2026-09-12 for the whole family; [implemented 3D kit](../../kits/crescent-bugs.md).
+- **Status:** selected by the Executive Director on 2026-09-12 for the swarmer; shared brown materials extend to distinct species silhouettes; [implemented 3D kit](../../kits/crescent-bugs.md).
 - **Generator:** built-in `image_gen`, imagegen skill, image-edit mode; image model as served by the tool.
 - **Date:** 2026-09-12.
 - **Asset:** `b-crescent-brown.png`, 1536×1024, unmodified tool output.

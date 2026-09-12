@@ -66,6 +66,7 @@ export class UnexploredFog implements Disposable {
   private readonly surfaces: {
     coverage: BufferAttribute;
     keys: readonly number[];
+    owners?: readonly (readonly number[] | undefined)[];
   }[] = [];
   private readonly surfaceResources: Disposable[] = [];
   /** Scene-owned augmentations: batch count must not multiply material setup. */
@@ -104,6 +105,7 @@ export class UnexploredFog implements Disposable {
     mesh: Mesh,
     keys: readonly number[],
     ownership: "shared" | "exclusive" = "shared",
+    owners?: readonly (readonly number[] | undefined)[],
   ): void {
     // Unique material IDs used to draw batches in construction order. Keep
     // that order explicitly when materials are shared: coincident wall seams
@@ -120,6 +122,10 @@ export class UnexploredFog implements Disposable {
             { length: geometry.getAttribute("position").count },
             () => keys[0]!,
           );
+    const ownerGroups =
+      mesh instanceof InstancedMesh || owners === undefined
+        ? owners
+        : ownerKeys.map(() => owners[0]);
     const data = new Float32Array(ownerKeys.length * 4);
     ownerKeys.forEach((key, i) => {
       const level = Math.floor(key / (this.map.width * this.map.depth));
@@ -140,8 +146,8 @@ export class UnexploredFog implements Disposable {
       Array.isArray(mesh.material) ? mesh.material : [mesh.material]
     ).map((base) => this.surfaceMaterial(base));
     mesh.material = Array.isArray(mesh.material) ? materials : materials[0]!;
-    this.surfaces.push({ coverage, keys: ownerKeys });
-    this.updateSurface(coverage, ownerKeys);
+    this.surfaces.push({ coverage, keys: ownerKeys, owners: ownerGroups });
+    this.updateSurface(coverage, ownerKeys, ownerGroups);
   }
 
   /** Clears mist permanently on explored tiles, including after they leave sight. */
@@ -150,7 +156,7 @@ export class UnexploredFog implements Disposable {
     for (const key of vision?.visible ?? []) known.add(key);
     this.known = vision === undefined ? undefined : known;
     for (const surface of this.surfaces)
-      this.updateSurface(surface.coverage, surface.keys);
+      this.updateSurface(surface.coverage, surface.keys, surface.owners);
     for (const fog of this.levels.values()) {
       fog.data.fill(0);
       let count = 0;
@@ -229,11 +235,15 @@ export class UnexploredFog implements Disposable {
   private updateSurface(
     coverage: BufferAttribute,
     keys: readonly number[],
+    owners?: readonly (readonly number[] | undefined)[],
   ): void {
     keys.forEach((key, i) =>
       coverage.setW(
         i,
-        this.known !== undefined && !this.known.has(key) ? 1 : 0,
+        this.known !== undefined &&
+          !(owners?.[i] ?? [key]).some((owner) => this.known!.has(owner))
+          ? 1
+          : 0,
       ),
     );
     coverage.needsUpdate = true;

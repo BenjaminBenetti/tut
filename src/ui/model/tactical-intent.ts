@@ -7,9 +7,9 @@ import type { UnitId } from "../../tactical/model/unit";
 // ===========================================
 
 /**
- * Keyboard-driven actions the player can ask for. The tactical screen
- * maps them onto `TacticalCommand`s once #324 defines those; until then
- * they are the whole vocabulary the input layer speaks.
+ * Keyboard-driven actions the player can ask for. The pointer reaches
+ * the same actions through the wheel (#1112); these are the letters
+ * that reach them without it.
  */
 export type TacticalAction =
   | "move"
@@ -38,24 +38,49 @@ export const TACTICAL_ACTIONS = [
 ] as const satisfies readonly TacticalAction[];
 
 /**
- * The actions the bar offers, in the order it shows them. The number row
- * is bound from this list (#520), so a button and its digit cannot drift
- * apart: `1` is always whatever sits first on the bar.
+ * Keyboard shortcuts (GDD §6.2 actions plus End Turn), keyed by
+ * `KeyboardEvent.key` lower-cased. Q / E / WASD / arrows belong to the
+ * camera controller (`CAMERA_KEYS`) and must not appear here: both
+ * handlers hear every key, so a key in both tables pans the view *and*
+ * arms an action. `a` was one until #1091 -- every leftward pan armed
+ * Attack, and on a spent unit said so on every keypress. A test checks
+ * the tables are disjoint. `t` cycles attack targets,
+ * which is the only way to aim at an egg spawner until the scene draws
+ * one the pointer can hit (#426).
+ *
+ * The number row went with the action bar (#1112): the digits were bound
+ * from the bar's order, and there is no bar to document them now. Every
+ * letter from #340 keeps its meaning.
  */
-export const ACTION_BAR_ORDER = [
-  "move",
-  "attack",
-  "overwatch",
-  "reload",
-  "interact",
-  "extract",
-  "end-turn",
-] as const;
+export const TACTICAL_SHORTCUTS: Readonly<
+  Record<string, TacticalAction | "end-turn">
+> = {
+  // The number row first, in the bar's order, so the hint on each
+  // button is its digit: the Executive Director found the letters hard
+  // to reach (`o` for Overwatch) and asked for keys under the left hand.
+  // The letters below stay as aliases.
+  "1": "move",
+  "2": "attack",
+  "3": "overwatch",
+  "4": "reload",
+  "5": "interact",
+  "6": "extract",
+  "7": "end-turn",
+  m: "move",
+  f: "attack",
+  o: "overwatch",
+  r: "reload",
+  i: "interact",
+  x: "extract",
+  tab: "next-unit",
+  t: "next-target",
+  v: "toggle-range",
+  escape: "cancel",
+  enter: "end-turn",
+  end: "end-turn",
+};
 
-/** What the action bar can be told to do; also what a number key can pick. */
-export type ActionBarAction = (typeof ACTION_BAR_ORDER)[number];
-
-/** What a right click landed on (#520). */
+/** What a click on the map landed on: a unit, an egg spawner or a tile. */
 export type TacticalInvokeTarget =
   | { readonly kind: "unit"; readonly unitId: UnitId }
   | { readonly kind: "spawner"; readonly spawnerId: SpawnerId }
@@ -66,9 +91,13 @@ export type TacticalInvokeTarget =
  * at, an action shortcut, or End Turn. Plain data, so a screen can log
  * or replay it.
  *
- * `select-*` and `invoke` are the two halves of #520: the left button
- * only ever points at something, and the right button asks for the armed
- * action to happen there.
+ * `select-*` and `invoke` are the two buttons (#520, #1112): the left
+ * button points at something — a friendly unit to select, or anything
+ * else to open the action wheel on — and the right button walks the
+ * selected unit there.
+ *
+ * `inspect` is Shift held or released: while held, every visible unit
+ * shows its status above its head. A view state, like `layer-step`.
  *
  * `layer-step` is the odd one out and stays here on purpose: it changes
  * nothing in the mission, only which storeys the scene draws (#961). It
@@ -83,7 +112,8 @@ export type TacticalIntent =
   | { readonly kind: "invoke"; readonly target: TacticalInvokeTarget }
   | { readonly kind: "action"; readonly action: TacticalAction }
   | { readonly kind: "layer-step"; readonly delta: number }
-  | { readonly kind: "end-turn" };
+  | { readonly kind: "end-turn" }
+  | { readonly kind: "inspect"; readonly held: boolean };
 
 /** Receives every intent the input layer produces. The tactical screen implements it. */
 export interface TacticalIntentSink {
@@ -105,9 +135,9 @@ export interface TacticalTestHooks {
   selectUnit(unitId: UnitId): void;
   /** Targets an egg spawner as if clicked (#484). */
   selectSpawner(spawnerId: SpawnerId): void;
-  /** Selects a tile as if left-clicked. */
+  /** Points at a tile as if left-clicked: opens the action wheel there (#1112). */
   selectTile(tile: TileCoord): void;
-  /** Invokes the armed action on a tile as if right-clicked (#520). */
+  /** Walks the selected unit to a tile as if right-clicked (#520, #1112). */
   invokeTile(tile: TileCoord): void;
   /** Client-pixel position of a unit's feet, for a real pointer click. */
   unitScreenPosition(unitId: UnitId): { x: number; y: number } | undefined;
@@ -119,6 +149,8 @@ export interface TacticalTestHooks {
   tileScreenPosition(tile: TileCoord): { x: number; y: number } | undefined;
   /** Moves the view `delta` storeys, as the layer keys do (#961). */
   stepLayer(delta: number): void;
+  /** Holds or releases Shift: the status chips above every visible unit. */
+  setInspecting(held: boolean): void;
   /**
    * Puts the map back on the single height cut it used before #978, so a
    * capture can show the defect and the fix **in one run**.

@@ -34,6 +34,7 @@ import type {
   VisionTileKey,
 } from "../../tactical/model/tactical-state";
 import { TileIndex } from "../../mapgen/service/tile-index";
+import { propBounds, propTiles } from "../../mapgen/service/prop-footprint";
 import { terrainSlopeRise } from "../service/terrain-slope-rise";
 import {
   createWaterBoundaryGeometry,
@@ -100,6 +101,7 @@ interface Batch {
   readonly matrices: Matrix4[];
   /** The tile each instance belongs to, so vision can tint it (#551, #761). */
   readonly keys: VisionTileKey[];
+  readonly owners: (readonly VisionTileKey[] | undefined)[];
 }
 
 /** One connector's tile, and the material and base colour vision tints. */
@@ -223,6 +225,7 @@ interface TileCut {
 interface InstanceTiles {
   readonly matrices: readonly Matrix4[];
   readonly keys: readonly VisionTileKey[];
+  readonly owners?: readonly (readonly VisionTileKey[] | undefined)[];
 }
 
 /**
@@ -282,6 +285,17 @@ function stateOf(vision: IndexedVision, key: VisionTileKey): TileVisionState {
  */
 const GHOSTED_MODEL_PREFIX = "building.";
 
+/** What a map view may leave out. */
+export interface TacticalMapViewOptions {
+  /**
+   * Draw a marker on objective hook tiles. On by default for the mapgen
+   * preview, where the marker is how a placement is read; a mission
+   * turns it off because the marker would show the objective through
+   * fog of war.
+   */
+  readonly objectiveMarkers?: boolean;
+}
+
 /**
  *
  */
@@ -294,6 +308,8 @@ export class TacticalMapView implements Disposable, TilePicker {
   readonly root: Group;
   /** Shared cutaway uniforms, when the scene ghosts walls (#526). */
   private readonly ghostUniforms: GhostUniforms | undefined;
+  /** Whether objective hook tiles get a marker; off in a mission, on in the preview. */
+  private readonly objectiveMarkers: boolean;
   private readonly map: TacticalMap;
   private readonly index: TileIndex;
   private readonly levelGroups = new Map<number, Group>();
@@ -339,9 +355,14 @@ export class TacticalMapView implements Disposable, TilePicker {
   // ===========================================
 
   /** Builds every mesh immediately. */
-  constructor(map: TacticalMap, ghostUniforms?: GhostUniforms) {
+  constructor(
+    map: TacticalMap,
+    ghostUniforms?: GhostUniforms,
+    options: TacticalMapViewOptions = {},
+  ) {
     this.map = map;
     this.ghostUniforms = ghostUniforms;
+    this.objectiveMarkers = options.objectiveMarkers ?? true;
     this.index = new TileIndex(map);
     this.root = new Group();
     this.root.name = "tactical-map";
@@ -494,6 +515,7 @@ export class TacticalMapView implements Disposable, TilePicker {
         level: number;
         matrices: Matrix4[];
         keys: VisionTileKey[];
+        owners: (readonly VisionTileKey[] | undefined)[];
         slopeTile?: Tile;
         road?: RoadAppearance;
         ramp?: RampAppearance;
@@ -518,6 +540,9 @@ export class TacticalMapView implements Disposable, TilePicker {
       const key = `${placement.modelId}:${String(placement.level)}${slopeTile ? `:${slopeTile.surface}` : ""}${road ? `:road:${roadAppearanceKey(road)}` : ""}${ramp ? `:ramp:${ramp.surface}` : ""}${ladder ? `:ladder:${ladder.finish}` : ""}${roof ? `:roof:${pitchedRoofKey(roof)}` : ""}${terrain ? `:terrain:${terrainPrototypeKey(terrain.appearance, tile!.surface)}` : ""}`;
       const matrix = placementMatrix(placement);
       const tileKey = this.index.keyOf(placement.tile);
+      const owners = placement.occupiedTiles?.map((tile) =>
+        this.index.keyOf(tile),
+      );
       const batch = batches.get(key);
       if (batch === undefined) {
         batches.set(key, {
@@ -525,6 +550,7 @@ export class TacticalMapView implements Disposable, TilePicker {
           level: placement.level,
           matrices: [matrix],
           keys: [tileKey],
+          owners: [owners],
           slopeTile,
           road,
           ramp,
@@ -537,6 +563,7 @@ export class TacticalMapView implements Disposable, TilePicker {
       } else {
         batch.matrices.push(matrix);
         batch.keys.push(tileKey);
+        batch.owners.push(owners);
       }
     }
     for (const [key, batch] of batches) {
@@ -576,7 +603,8 @@ export class TacticalMapView implements Disposable, TilePicker {
           : part.material;
         const originalMaterial =
           this.ghostUniforms !== undefined &&
-          batch.modelId.startsWith(GHOSTED_MODEL_PREFIX) &&
+          (batch.modelId.startsWith(GHOSTED_MODEL_PREFIX) ||
+            batch.modelId.startsWith("prop.rooftop-")) &&
           prototypeMaterial !== undefined
             ? this.ghostMaterial(prototypeMaterial)
             : part.material;
@@ -610,6 +638,7 @@ export class TacticalMapView implements Disposable, TilePicker {
             new Matrix4().multiplyMatrices(cell, part.local),
           ),
           batch.keys,
+          batch.owners,
         );
         // The mist owns its geometry/material clones; loader prototypes
         // stay untouched. This view owns the instanced wrapper.
@@ -826,13 +855,15 @@ export class TacticalMapView implements Disposable, TilePicker {
     mesh: InstancedMesh,
     matrices: readonly Matrix4[],
     keys: readonly VisionTileKey[],
+    owners?: readonly (readonly VisionTileKey[] | undefined)[],
   ): void {
     const tiles: InstanceTiles = {
       matrices: matrices.map((m) => m.clone()),
       keys: [...keys],
+      owners,
     };
     if (!mesh.name.startsWith("hooks:"))
-      this.unexploredFog.trackSurface(mesh, keys);
+      this.unexploredFog.trackSurface(mesh, keys, "shared", owners);
     this.instanceTiles.set(mesh, tiles);
     this.applyVisionTo(mesh, tiles);
   }
@@ -858,7 +889,14 @@ export class TacticalMapView implements Disposable, TilePicker {
       if (base === undefined || key === undefined) {
         continue;
       }
-      const state = vision === undefined ? "visible" : stateOf(vision, key);
+      const ownerKeys = tiles.owners?.[i] ?? [key];
+      const state =
+        vision === undefined ||
+        ownerKeys.some((owner) => vision.visible.has(owner))
+          ? "visible"
+          : ownerKeys.some((owner) => vision.explored.has(owner))
+            ? "explored"
+            : "unexplored";
       mesh.setMatrixAt(i, this.hiddenByCut(key) ? COLLAPSED : base);
       mesh.setColorAt(i, tintFor(state));
     }
@@ -1169,13 +1207,14 @@ export class TacticalMapView implements Disposable, TilePicker {
       }
       const height = PROP_HEIGHTS[tile.coverProvided];
       const top = tileTop(tile.y);
+      const bounds = propBounds(prop);
       const matrix = boxMatrix(
-        tile.x + 0.5,
+        bounds.x + bounds.w / 2,
         top + height / 2,
-        tile.z + 0.5,
-        PROP_FOOTPRINT,
+        bounds.z + bounds.d / 2,
+        bounds.w - 1 + PROP_FOOTPRINT,
         height,
-        PROP_FOOTPRINT,
+        bounds.d - 1 + PROP_FOOTPRINT,
       );
       pushBatch(
         batches,
@@ -1184,6 +1223,9 @@ export class TacticalMapView implements Disposable, TilePicker {
         tile.y,
         matrix,
         this.index.keyOf(tile),
+        prop.occupiedTiles
+          ? propTiles(prop).map((cell) => this.index.keyOf(cell))
+          : undefined,
       );
     }
     this.flushBatches(batches, "props");
@@ -1378,6 +1420,15 @@ export class TacticalMapView implements Disposable, TilePicker {
   private buildHooks(): void {
     const batches = new Map<string, Batch>();
     for (const hook of allHooks(this.map.hooks)) {
+      // An objective's marker is the objective's location, and the
+      // scene withholds objectives until they are seen (ADR 0006 §2.4).
+      // The marker was map geometry, built here from the generator's
+      // hooks and skipped by the fog, so a green slab advertised every
+      // egg spawner through the mist from turn one. The mapgen preview
+      // still wants it; a mission does not.
+      if (!this.objectiveMarkers && isObjective(hook, this.map)) {
+        continue;
+      }
       for (const coord of hook.tiles) {
         const colour = HOOK_COLOURS[hook.kind] ?? FALLBACK_HOOK_COLOUR;
         const lift =
@@ -1444,7 +1495,7 @@ export class TacticalMapView implements Disposable, TilePicker {
       mesh.name = `${label}:${key}`;
       this.disposables.push(mesh);
       this.groupFor(batch.level).add(mesh);
-      this.trackInstances(mesh, batch.matrices, batch.keys);
+      this.trackInstances(mesh, batch.matrices, batch.keys, batch.owners);
       const kept = this.placeholders.get(label);
       if (kept === undefined) {
         this.placeholders.set(label, [mesh]);
@@ -1682,7 +1733,11 @@ function placementMatrix(placement: ModelPlacement): Matrix4 {
   return new Matrix4().compose(
     new Vector3(x, y, z),
     new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), yaw),
-    new Vector3(1, placement.scaleY ?? 1, placement.scaleZ ?? 1),
+    new Vector3(
+      placement.scaleX ?? 1,
+      placement.scaleY ?? 1,
+      placement.scaleZ ?? 1,
+    ),
   );
 }
 
@@ -1710,6 +1765,7 @@ function pushBatch(
   level: number,
   matrix: Matrix4,
   tileKey: VisionTileKey,
+  owners?: readonly VisionTileKey[],
 ): void {
   const batch = batches.get(key);
   if (batch === undefined) {
@@ -1718,10 +1774,12 @@ function pushBatch(
       level,
       matrices: [matrix],
       keys: [tileKey],
+      owners: [owners],
     });
   } else {
     batch.matrices.push(matrix);
     batch.keys.push(tileKey);
+    batch.owners.push(owners);
   }
 }
 

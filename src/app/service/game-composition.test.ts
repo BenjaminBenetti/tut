@@ -8,6 +8,7 @@ import type { Deployment } from "../../overworld/model/deployment";
 import { launchMission } from "../../overworld/model/launch-mission-command";
 import { OBJECTIVE_TUNING } from "../../tactical/data/objective-tuning";
 import { finishMission } from "../../tactical/model/finish-mission-command";
+import { extract } from "../../tactical/model/extract-command";
 import { interact } from "../../tactical/model/interact-command";
 import { startMission } from "../../tactical/model/start-mission-command";
 import type { Mission } from "../../overworld/model/mission";
@@ -196,7 +197,7 @@ describe("composeGame", () => {
     expect(loaded.ok && loaded.value.activeMission).toBeUndefined();
   });
 
-  it("wins a mission by clearing its objectives and pays the full reward", () => {
+  it("wins a mission by clearing its objectives and boarding the drop ship, and pays the full reward", () => {
     const { game } = build();
     const { mission, deployment } = campaignWithMission(game);
     game.session.store?.dispatch(startMission(mission.id, deployment));
@@ -230,7 +231,7 @@ describe("composeGame", () => {
     // two actions — one unit's whole turn beside it.
     let guard = 0;
     while (
-      game.session.state?.activeMission?.outcome === undefined &&
+      game.session.state?.activeMission?.objectives.some((o) => !o.complete) &&
       guard++ < 10
     ) {
       const before = game.session.state?.activeMission?.units[0];
@@ -253,9 +254,29 @@ describe("composeGame", () => {
       expect(outcome?.ok).toBe(true);
     }
 
+    const cleared = game.session.state?.activeMission;
+    expect(cleared?.spawners[0]?.destroyed).toBe(true);
+    expect(cleared?.objectives[0]?.complete).toBe(true);
+    // Not over yet: the objectives are done and the force still has to
+    // get home. Stand the squad on the ramp and board.
+    expect(cleared?.outcome).toBeUndefined();
+    const live = game.session.state;
+    const ramp = live?.activeMission?.extraction[0];
+    if (!live?.activeMission || !ramp) throw new Error("no extraction zone");
+    game.session.replace({
+      ...live,
+      activeMission: {
+        ...live.activeMission,
+        units: live.activeMission.units.map((u) => ({
+          ...u,
+          pos: ramp,
+          ap: u.maxAp,
+        })),
+      },
+    });
+    const boarded = game.session.store?.dispatch(extract(unit.id));
+    expect(boarded?.ok).toBe(true);
     const decided = game.session.state?.activeMission;
-    expect(decided?.spawners[0]?.destroyed).toBe(true);
-    expect(decided?.objectives[0]?.complete).toBe(true);
     expect(decided?.outcome).toBe("won");
 
     const result = game.session.store?.dispatch(finishMission(mission.id));

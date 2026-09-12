@@ -33,6 +33,7 @@ import { reloadHandler } from "../../tactical/service/reload-handler";
 import { liftTacticalHandler } from "../../tactical/service/tactical-command-handlers";
 import { Mulberry32Rng } from "../../core/service/mulberry32-rng";
 import { err, ok } from "../../core/model/result";
+import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import { startTacticalMission } from "../../tactical/service/mission-start-service";
 import type { CampaignStore, GameSession } from "../model/game-session";
@@ -44,7 +45,10 @@ import type {
   TacticalIntentSink,
 } from "../model/tactical-intent";
 import type { LayerFocus } from "../../graphics/model/layer-focus";
-import type { TacticalSceneHost } from "../model/tactical-scene-host";
+import type {
+  TacticalSceneHost,
+  TacticalUpdateHooks,
+} from "../model/tactical-scene-host";
 import { campaignOnDay, missionAt } from "../view/mission-fixtures.test-helper";
 import { TacticalScreen } from "./tactical-screen";
 import { describeTacticalError } from "../../tactical/model/tactical-error";
@@ -208,12 +212,28 @@ class FakeHost implements TacticalSceneHost {
   }
   update(
     mission: TacticalState,
-    events: readonly { type: string }[] = [],
+    events: readonly TacticalEvent[] = [],
+    hooks: TacticalUpdateHooks = {},
   ): Promise<void> {
     this.calls.push(
       `update:${mission.missionId}:${mission.turn}:${events.map((e) => e.type).join(",")}`,
     );
+    // The fake plays instantly: every event, then settled, synchronously,
+    // so the tests below can assert straight after a store change.
+    for (const event of events) {
+      hooks.onEvent?.(event);
+    }
+    hooks.onSettled?.();
     return Promise.resolve();
+  }
+  /** Every tile the screen asked to frame, undefined for a clear. */
+  readonly marked: (string | undefined)[] = [];
+  markTile(tile: { x: number; y: number; z: number } | undefined): void {
+    this.marked.push(
+      tile === undefined
+        ? undefined
+        : `${String(tile.x)},${String(tile.y)},${String(tile.z)}`,
+    );
   }
   /** Units the screen asked to centre on (#1041). */
   readonly lookedAt: string[] = [];
@@ -232,6 +252,9 @@ class FakeHost implements TacticalSceneHost {
   }
   screenPositionOf(): { x: number; y: number } | undefined {
     // The fake draws nothing, so nothing has a screen position.
+    return undefined;
+  }
+  unitHeadScreenPosition(): { x: number; y: number } | undefined {
     return undefined;
   }
 

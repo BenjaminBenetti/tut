@@ -592,7 +592,7 @@ describe("attacking an egg spawner", () => {
     expect(applied.value.state.units).toHaveLength(1);
   });
 
-  it("destroying the last spawner completes its objective and ends the mission", () => {
+  it("destroying the last spawner completes its objective; the force still has to extract", () => {
     const [low] = damageRange(RIFLE, 0, T);
     const m = withSpawner([unit("s1", "tdf", "rifle", 0, 0)], { hp: low });
     const applied = resolveAttack(m, attack("s1", "spawner-1"), riggedCtx(), T);
@@ -603,12 +603,13 @@ describe("attacking an egg spawner", () => {
       destroyed: true,
     });
     expect(applied.value.state.objectives[0]?.complete).toBe(true);
-    expect(applied.value.state.outcome).toBe("won");
+    // Not over: the squad is still on the map, and the mission ends when
+    // it boards the drop ship (the Executive Director's rule on #1113).
+    expect(applied.value.state.outcome).toBeUndefined();
     expect(applied.value.events.map((e) => e.type)).toEqual([
       ATTACK_RESOLVED,
       SPAWNER_DAMAGED,
       OBJECTIVE_UPDATED,
-      MISSION_ENDED,
     ]);
   });
 

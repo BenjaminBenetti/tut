@@ -47,17 +47,21 @@ async function unitAt(page: Page, id: string) {
 }
 
 /**
- * Right click invokes, left click selects, digits arm (#520). Playtest 1:
- * "Right click should be the 'invoke action' trigger not left click.
- * Perhaps number keys could be used to quick cycle actions."
+ * Left click asks, right click walks (#520, #1112). Playtest 1: "Right
+ * click should be the 'invoke action' trigger not left click." The wheel
+ * replaced the bar and its digits: a left click on a tile opens the
+ * actions for that tile, and only the right button moves.
  */
-test("left click selects a tile, right click moves to it", async ({ page }) => {
+test("left click opens the wheel on a tile, right click moves to it", async ({
+  page,
+}) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => {
     errors.push(error.message);
   });
   await startMission(page);
   const body = page.locator("body");
+  const menu = page.locator("#radial-menu");
 
   await page.evaluate(() =>
     (globalThis as HookGlobal).__tutTactical__?.selectUnit("unit-1"),
@@ -71,23 +75,23 @@ test("left click selects a tile, right click moves to it", async ({ page }) => {
   const before = await unitAt(page, "unit-1");
   if (!before) throw new Error("unit-1 has no screen position");
 
-  // Arm Move with its digit rather than a bar click.
-  await page.locator("#tactical-viewport canvas").hover();
-  await page.keyboard.press("1");
-  await expect(body).toHaveAttribute("data-last-intent", "move");
-
   // A tile a short walk away: two tiles along, in screen space.
   const target = { x: before.x + 60, y: before.y + 30 };
 
-  // Left click points at it and does not move the unit.
+  // Left click opens the wheel there and does not move the unit.
   await page.mouse.click(target.x, target.y);
   await expect(body).toHaveAttribute("data-last-intent", "select-tile");
+  await expect(menu).toHaveAttribute("data-open", "true");
+  await expect(menu.locator('button[data-item^="move:"]')).toHaveCount(1);
   const afterLeft = await unitAt(page, "unit-1");
   expect(afterLeft).toEqual(before);
+  await page.keyboard.press("Escape");
+  await expect(menu).toBeHidden();
 
-  // Right click on the same spot invokes the armed action, and it walks.
+  // Right click on the same spot walks there, with no wheel.
   await page.mouse.click(target.x, target.y, { button: "right" });
   await expect(body).toHaveAttribute("data-last-intent", "invoke");
+  await expect(menu).toBeHidden();
   await expect
     .poll(async () => {
       const now = await unitAt(page, "unit-1");
@@ -98,7 +102,9 @@ test("left click selects a tile, right click moves to it", async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-test("the number row arms actions in action-bar order", async ({ page }) => {
+test("the number row and the letters arm and cancel, and the bar shows the digits", async ({
+  page,
+}) => {
   await startMission(page);
   const body = page.locator("body");
   await page.evaluate(() =>
@@ -107,30 +113,25 @@ test("the number row arms actions in action-bar order", async ({ page }) => {
   await expect(body).toHaveAttribute("data-selected-unit", "unit-1");
   await page.locator("#tactical-viewport canvas").hover();
 
+  await page.keyboard.press("f");
+  await expect(body).toHaveAttribute("data-last-intent", "attack");
+  await page.keyboard.press("Escape");
+  await expect(body).toHaveAttribute("data-last-intent", "cancel");
+
+  // The number row arms in the bar's order, and the bar says so.
   await page.keyboard.press("2");
   await expect(body).toHaveAttribute("data-last-intent", "attack");
-  // A unit carrying several weapons shows one Attack button each (#532),
-  // so ask the armed one rather than assuming there is only one.
-  await expect(
-    page.locator('#action-bar [data-action="attack"][aria-pressed="true"]'),
-  ).toHaveCount(1);
-
-  await page.keyboard.press("1");
-  await expect(body).toHaveAttribute("data-last-intent", "move");
-  await expect(
-    page.locator('#action-bar [data-action="move"]'),
-  ).toHaveAttribute("aria-pressed", "true");
-
-  // The bar documents the digits it answers to.
-  await expect(
-    page.locator('#action-bar [data-action="move"] [data-role="shortcut"]'),
-  ).toHaveText("1");
-  // One key reaches every weapon button (#652), so each carries the same
-  // digit. The array form asserts all of them; `.first()` would pass here
-  // while checking less than the single-element form used to.
+  await page.keyboard.press("Escape");
   await expect(
     page.locator('#action-bar [data-action="attack"] [data-role="shortcut"]'),
-  ).toHaveText(["2", "2"]);
+  ).toHaveText("2");
+  // A bar press goes straight to the HUD, not through the input
+  // controller, so the body's last-intent stays put; the bar itself
+  // shows the aim it armed.
+  await page.locator('#action-bar [data-action="attack"]').click();
+  await expect(
+    page.locator('#action-bar [data-action="attack"]'),
+  ).toHaveAttribute("aria-pressed", "true");
 });
 
 test("the browser menu is suppressed on the map, not on the document", async ({

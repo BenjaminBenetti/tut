@@ -3,6 +3,7 @@ import { expect, test } from "@playwright/test";
 import { drawnFrame } from "./capture-frame.helper";
 import { launchMission, settleForShot } from "./mission-capture.helper";
 import type { TacticalTestHooks } from "../src/ui/model/tactical-intent";
+import { openUnitWheel, wheelItem } from "./action-wheel.helper";
 
 interface HookGlobal {
   __tutTactical__?: TacticalTestHooks;
@@ -31,24 +32,21 @@ test("captures refusals that used to be silent, and an available action", async 
 
   const viewport = page.locator("#tactical-viewport");
   const status = page.locator('[data-role="status"]');
-  // A real click on the real button, which is the point: an unavailable
-  // action used to be `disabled`, so this click did not exist and the
-  // player learned nothing from making it.
-  const press = async (action: string): Promise<void> => {
+  // The action's letter, which is the one way left to *ask* for an
+  // action the wheel has already marked closed (#1112): a closed wheel
+  // entry carries its reason on its face and cannot be picked, so the
+  // refusal below is the keyboard's. The key goes through the real
+  // document listener, so this is what a player can produce.
+  const press = async (
+    action: "interact" | "overwatch" | "move",
+  ): Promise<void> => {
     await page.evaluate(() =>
       (globalThis as HookGlobal).__tutTactical__?.selectUnit("unit-1"),
     );
-    // `force`, because Playwright's actionability check treats
-    // `aria-disabled` as not-enabled and will not click it. That is the
-    // known cost of the pattern and the reason it is the right one: the
-    // control still *announces* itself unavailable to assistive
-    // technology, unlike a plain enabled button, while staying in the
-    // tab order and reachable — which a `disabled` button is not. The
-    // click below is a real mouse click at the button's coordinates.
-    await page
-      .locator(`#action-bar [data-action="${action}"]`)
-      .first()
-      .click({ force: true });
+    await page.locator("#tactical-viewport canvas").hover();
+    await page.keyboard.press(
+      { interact: "i", overwatch: "o", move: "m" }[action],
+    );
     await drawnFrame(page);
   };
 
@@ -61,6 +59,15 @@ test("captures refusals that used to be silent, and an available action", async 
   await viewport.screenshot({
     path: "docs/design/ui-action-refusal-control.png",
   });
+
+  // The wheel says why before anything is pressed: the unit's own wheel
+  // with Interact absent (nothing in reach) and Reload closed.
+  await openUnitWheel(page, "unit-1");
+  await expect(wheelItem(page, "reload")).toBeDisabled();
+  await viewport.screenshot({
+    path: "docs/design/ui-action-refusal-wheel.png",
+  });
+  await page.keyboard.press("Escape");
 
   // Interact with no objective in reach: previously silent.
   await press("interact");

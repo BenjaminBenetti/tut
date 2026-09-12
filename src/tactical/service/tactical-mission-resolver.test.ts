@@ -328,11 +328,12 @@ describe("tacticalMissionResult", () => {
   });
 
   it("falls back to the terminal check when the mission carries no outcome", () => {
-    const tactical: TacticalState = missionWith(
-      MAP,
-      [squadUnit("unit-1", "squad-1", SQUAD_HP)],
-      { objectives: DONE },
-    );
+    // Off the map with the objectives done: won by the terminal check
+    // alone, without a recorded outcome.
+    const tactical: TacticalState = missionWith(MAP, [], {
+      objectives: DONE,
+      extracted: [squadUnit("unit-1", "squad-1", SQUAD_HP)],
+    });
     const result = tacticalMissionResult(
       {
         tactical,

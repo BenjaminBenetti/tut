@@ -1,0 +1,60 @@
+{
+  "firstPass": "f0b0d6a",
+  "secondPass": "72fe6f4",
+  "maps": [
+    {
+      "case": "city",
+      "propsBefore": 485,
+      "propsAfter": 498,
+      "hvac": 7,
+      "waterTanks": 6,
+      "cars": 32,
+      "allCarsTwoTiles": true
+    },
+    {
+      "case": "town",
+      "propsBefore": 209,
+      "propsAfter": 216,
+      "hvac": 3,
+      "waterTanks": 4,
+      "cars": 4,
+      "allCarsTwoTiles": true
+    },
+    {
+      "case": "snowy",
+      "propsBefore": 192,
+      "propsAfter": 192,
+      "hvac": 0,
+      "waterTanks": 0,
+      "cars": 0,
+      "allCarsTwoTiles": true
+    },
+    {
+      "case": "desert",
+      "propsBefore": 194,
+      "propsAfter": 202,
+      "hvac": 5,
+      "waterTanks": 3,
+      "cars": 4,
+      "allCarsTwoTiles": true
+    },
+    {
+      "case": "perth",
+      "propsBefore": 290,
+      "propsAfter": 300,
+      "hvac": 5,
+      "waterTanks": 5,
+      "cars": 19,
+      "allCarsTwoTiles": true
+    },
+    {
+      "case": "lagos",
+      "propsBefore": 422,
+      "propsAfter": 432,
+      "hvac": 3,
+      "waterTanks": 7,
+      "cars": 30,
+      "allCarsTwoTiles": true
+    }
+  ]
+}

@@ -76,6 +76,7 @@ describe("generateTacticalMap", () => {
       "kerbs",
       "rural-fences",
       "hooks",
+      "rooftop-props",
       "yard-arrangements",
       "connectivity",
     ]);

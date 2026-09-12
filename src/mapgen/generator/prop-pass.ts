@@ -4,6 +4,7 @@ import { DIRECTIONS } from "../../core/model/direction";
 import type { Rng } from "../../core/model/rng";
 import { stepGridPos } from "../../core/service/grid-math";
 import { SurfaceIds } from "../data/surfaces";
+import { STREET_PROP_TUNING } from "../data/street-prop-tuning";
 import { CoverLevel } from "../model/cover";
 import type {
   BiomeDefinition,
@@ -22,6 +23,7 @@ import type { ResolvedMapGenParams } from "../model/resolved-params";
 import type { ColumnCoord } from "../model/road";
 import type { TileCoord } from "../model/tile-coord";
 import { isOpenGround, isRoadAt } from "../service/draft-queries";
+import { propPlacementTiles } from "../service/prop-footprint";
 import { unreachableInteriorTiles } from "./interior/building-reachability";
 import type { Axis } from "./road/road-builder";
 
@@ -361,8 +363,9 @@ function placeStreetProps(
     return 0;
   }
   let placed = 0;
+  let occupied = 0;
   for (const column of rng.shuffle(columns)) {
-    if (placed >= target) {
+    if (occupied >= target) {
       break;
     }
     const coord = draft.groundCoord(column.x, column.z);
@@ -377,8 +380,37 @@ function placeStreetProps(
     ) {
       continue;
     }
-    draft.addProp(rng.pick(kinds).id, coord, axis === "x" ? 0 : 1);
+    const kind =
+      params.settlement.id === "rural"
+        ? rng.pick(kinds)
+        : rng.pickWeighted(
+            kinds,
+            (prop) =>
+              STREET_PROP_TUNING.weights[prop.id] ??
+              STREET_PROP_TUNING.defaultWeight,
+          );
+    const rotation = axis === "x" ? 0 : 1;
+    const footprint = propPlacementTiles(coord, kind, rotation);
+    if (occupied + footprint.length > target) continue;
+    if (
+      !footprint.every(
+        (tile) =>
+          draft.inBounds(tile.x, tile.z) &&
+          isRoadAt(draft, tile.x, tile.z) &&
+          draft.groundLevelAt(tile.x, tile.z) === coord.y &&
+          roadAxis(draft, tile) === axis &&
+          !blocked.has(draft.tileKey(tile)) &&
+          draft.propAt(tile) === undefined &&
+          !hasAdjacentProp(draft, tile) &&
+          !draft.isNaturalEdge(tile.x, tile.z) &&
+          isStraightRoad(draft, tile, axis) &&
+          hasWayAround(draft, tile, axis),
+      )
+    )
+      continue;
+    draft.addProp(kind.id, coord, rotation, footprint);
     placed++;
+    occupied += footprint.length;
   }
   return placed;
 }
@@ -412,19 +444,55 @@ function acrossNeighbours(column: ColumnCoord, axis: Axis): ColumnCoord[] {
 }
 
 /**
- * Road columns on a straight stretch: any road beside the column is a
- * parallel lane of the same stretch, never a crossing or a branching
- * street. Holds for one-lane trails and multi-lane city streets alike.
+ * Curbside columns on a straight stretch retain the same carriageway width
+ * two tiles ahead and behind. Interior lanes deliberately have no roadAxis:
+ * parked vehicles occupy the curb, leaving the through lanes open. Checking
+ * the whole cross-section also keeps junction mouths and bends clear.
  */
 function isStraightRoad(
   draft: MapDraft,
   column: ColumnCoord,
   axis: Axis,
 ): boolean {
-  return acrossNeighbours(column, axis).every(
-    (next) =>
-      !isRoadAt(draft, next.x, next.z) || roadAxis(draft, next) === axis,
-  );
+  const width = carriagewayWidth(draft, column, axis);
+  // Narrow trails retain their existing short and uneven parking opportunities.
+  // Only wider urban roads need a whole-carriageway junction margin.
+  if (width < 3)
+    return acrossNeighbours(column, axis).every(
+      (next) =>
+        !isRoadAt(draft, next.x, next.z) || roadAxis(draft, next) === axis,
+    );
+  return [-2, -1, 1, 2].every((distance) => {
+    const next = {
+      x: column.x + (axis === "x" ? distance : 0),
+      z: column.z + (axis === "z" ? distance : 0),
+    };
+    return (
+      isRoadAt(draft, next.x, next.z) &&
+      roadAxis(draft, next) === axis &&
+      carriagewayWidth(draft, next, axis) === width &&
+      draft.groundLevelAt(next.x, next.z) ===
+        draft.groundLevelAt(column.x, column.z)
+    );
+  });
+}
+
+/** Number of parallel road lanes across a curbside column. */
+function carriagewayWidth(
+  draft: MapDraft,
+  column: ColumnCoord,
+  axis: Axis,
+): number {
+  let width = 1;
+  for (const sign of [-1, 1]) {
+    for (let distance = 1; ; distance++) {
+      const x = column.x + (axis === "z" ? sign * distance : 0);
+      const z = column.z + (axis === "x" ? sign * distance : 0);
+      if (!isRoadAt(draft, x, z)) break;
+      width++;
+    }
+  }
+  return width;
 }
 
 /**

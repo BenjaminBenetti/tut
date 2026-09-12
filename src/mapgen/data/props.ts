@@ -27,6 +27,8 @@ export const PropKindIds = {
   GRASS_TREE: "grass-tree",
   LIMESTONE_OUTCROP: "limestone-outcrop",
   CACTUS: "cactus",
+  ROOFTOP_HVAC: "rooftop-hvac",
+  ROOFTOP_WATER_TANK: "rooftop-water-tank",
 } as const;
 
 /** One of the well-known prop kind ids. */
@@ -42,7 +44,20 @@ export type KnownPropKindId = (typeof PropKindIds)[keyof typeof PropKindIds];
  */
 export const PROP_DEFINITIONS: readonly PropDefinition[] = [
   {
+    id: PropKindIds.ROOFTOP_HVAC,
+    cover: CoverLevel.HIGH,
+    blocksLos: true,
+    placements: ["roof"],
+  },
+  {
+    id: PropKindIds.ROOFTOP_WATER_TANK,
+    cover: CoverLevel.HIGH,
+    blocksLos: true,
+    placements: ["roof"],
+  },
+  {
     id: PropKindIds.CAR,
+    footprint: { w: 2, d: 1 },
     cover: CoverLevel.HIGH,
     blocksLos: true,
     placements: ["road"],
@@ -81,7 +96,7 @@ export const PROP_DEFINITIONS: readonly PropDefinition[] = [
     id: PropKindIds.TABLE,
     cover: CoverLevel.LOW,
     blocksLos: false,
-    placements: ["interior"],
+    placements: ["interior", "yard"],
   },
   {
     id: PropKindIds.BENCH,

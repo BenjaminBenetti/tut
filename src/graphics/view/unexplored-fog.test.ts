@@ -25,6 +25,22 @@ function maskOf(group: Group): DataTexture {
 }
 
 describe("UnexploredFog", () => {
+  it("uses both owners on every vertex of a non-instanced multi-tile mesh", () => {
+    const map = new FixtureMapBuilder(2, 1, 1).fillGround().build();
+    const fog = new UnexploredFog(map);
+    const geometry = new BoxGeometry();
+    const material = new MeshStandardMaterial();
+    const mesh = new Mesh(geometry, material);
+    fog.setVision({ visible: [1], explored: [1], spotted: [], lastSeen: {} });
+    fog.trackSurface(mesh, [0], "shared", [[0, 1]]);
+    const coverage = mesh.geometry.getAttribute("unexploredMist");
+    for (let i = 0; i < coverage.count; i++) expect(coverage.getW(i)).toBe(0);
+    fog.setVision({ visible: [], explored: [], spotted: [], lastSeen: {} });
+    for (let i = 0; i < coverage.count; i++) expect(coverage.getW(i)).toBe(1);
+    fog.dispose();
+    geometry.dispose();
+    material.dispose();
+  });
   it("shares prototype resources across batches but keeps coverage independent", () => {
     const map = new FixtureMapBuilder(3, 1, 1).fillGround().build();
     const fog = new UnexploredFog(map);

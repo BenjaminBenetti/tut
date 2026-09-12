@@ -30,10 +30,16 @@ export const CAMERA_INPUT_TUNING = {
   /** Keyboard pan speed in screen pixels per second, while a key is held. */
   panSpeedPxPerSecond: 600,
   /**
-   * How far a single press moves the view, in screen pixels. Held keys
+   * The least a single press moves the view, in screen pixels. Held keys
    * pan continuously from `update`, but a press and release inside one
    * frame never reaches it, so a tapped arrow key would do nothing at
    * all — which is how QA found the camera unrecoverable (#538).
+   *
+   * Paid on **release**, not on press: the press used to nudge the view
+   * this far at once and then hold it smoothly, which read as a jump
+   * every time the direction changed (Executive Director on #1113). Now
+   * a held key only pans smoothly, and a key let go before it has
+   * panned this far is topped up to it, so a tap still moves.
    */
   tapPanPx: 96,
   /** Zoom factor per wheel pixel: `factor = exp(-deltaPx × sensitivity)`. */
@@ -114,6 +120,8 @@ export class CameraInputController implements FrameUpdatable {
   private readonly controls: CameraControls;
   private readonly rotatable: boolean;
   private readonly heldPan = new Set<PanDirection>();
+  /** Pixels panned along each held direction since its press, for the tap top-up. */
+  private readonly pannedSincePress = new Map<PanDirection, number>();
   private surface: CameraInputSurface | undefined;
 
   // ===========================================
@@ -165,6 +173,7 @@ export class CameraInputController implements FrameUpdatable {
       this.handleVisibilityChange,
     );
     this.heldPan.clear();
+    this.pannedSincePress.clear();
     this.surface = undefined;
   }
 
@@ -194,6 +203,15 @@ export class CameraInputController implements FrameUpdatable {
       (CAMERA_INPUT_TUNING.panSpeedPxPerSecond * deltaSeconds) /
       Math.hypot(dx, dy);
     this.controls.panBy(dx * step, dy * step);
+    for (const direction of this.heldPan) {
+      const along = isHorizontal(direction)
+        ? Math.abs(dx * step)
+        : Math.abs(dy * step);
+      this.pannedSincePress.set(
+        direction,
+        (this.pannedSincePress.get(direction) ?? 0) + along,
+      );
+    }
   }
 
   // ===========================================
@@ -215,10 +233,9 @@ export class CameraInputController implements FrameUpdatable {
     event.preventDefault();
     if (binding.kind === "pan") {
       if (!event.repeat) {
-        // A tap must move the view. Auto-repeat is left to `update`, so
-        // holding the key does not stack a nudge per repeat on top of
-        // the continuous pan.
-        this.tapPan(binding.direction);
+        // Nothing moves on the press itself: the hold pans from the
+        // next frame, and the release tops a short press up to a tap.
+        this.pannedSincePress.set(binding.direction, 0);
       }
       this.heldPan.add(binding.direction);
     } else if (!event.repeat && this.rotatable) {
@@ -230,19 +247,26 @@ export class CameraInputController implements FrameUpdatable {
     }
   };
 
-  /** Moves the view one press-worth in a direction. */
-  private tapPan(direction: PanDirection): void {
-    const step = CAMERA_INPUT_TUNING.tapPanPx;
-    const dx = direction === "left" ? -step : direction === "right" ? step : 0;
-    const dy = direction === "up" ? -step : direction === "down" ? step : 0;
+  /** Moves the view `px` in a direction. */
+  private tapPan(direction: PanDirection, px: number): void {
+    const dx = direction === "left" ? -px : direction === "right" ? px : 0;
+    const dy = direction === "up" ? -px : direction === "down" ? px : 0;
     this.controls.panBy(dx, dy);
   }
 
   /** Releases a held pan key. */
   private readonly handleKeyUp = (event: KeyboardEvent): void => {
     const binding = KEY_BINDINGS[event.key.toLowerCase()];
-    if (binding?.kind === "pan") {
-      this.heldPan.delete(binding.direction);
+    if (binding?.kind !== "pan") {
+      return;
+    }
+    this.heldPan.delete(binding.direction);
+    // A short press is topped up to a tap's worth, so a tap is never
+    // swallowed (#538) and a hold never jumps.
+    const panned = this.pannedSincePress.get(binding.direction);
+    this.pannedSincePress.delete(binding.direction);
+    if (panned !== undefined && panned < CAMERA_INPUT_TUNING.tapPanPx) {
+      this.tapPan(binding.direction, CAMERA_INPUT_TUNING.tapPanPx - panned);
     }
   };
 
@@ -265,6 +289,7 @@ export class CameraInputController implements FrameUpdatable {
   /** Drops held keys when the page is hidden, since their key-up may never arrive. */
   private readonly handleVisibilityChange = (): void => {
     this.heldPan.clear();
+    this.pannedSincePress.clear();
   };
 }
 
@@ -304,4 +329,9 @@ function isTextEntryTarget(target: EventTarget | null): boolean {
     (element.tagName !== undefined && TEXT_ENTRY_TAGS.has(element.tagName)) ||
     element.isContentEditable === true
   );
+}
+
+/** Whether a pan direction moves along the screen's x axis. */
+function isHorizontal(direction: PanDirection): boolean {
+  return direction === "left" || direction === "right";
 }

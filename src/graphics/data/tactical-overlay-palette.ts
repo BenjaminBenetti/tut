@@ -216,3 +216,24 @@ export const OVERLAY_LIFT = 0.02;
 
 /** Slab thickness of the range quads. */
 export const RANGE_THICKNESS = 0.02;
+
+/**
+ * `ui-accent`: the tile the action wheel is open on (#1112 follow-up).
+ * The wheel is a decision about one tile; the mark says which, so the
+ * ring and the ground it belongs to read as one thing. The player's own
+ * intent, so the accent token, like the weapon-range outline.
+ */
+export const MARKED_TILE_COLOUR = 0xf08a24;
+
+/** A frame, not a fill: the move band under it must still show its tier. */
+export const MARKED_TILE_OPACITY = 0.95;
+
+/**
+ * Outer footprint of the frame, in tiles: the whole tile. It has to read
+ * over the move band beneath it, and at 0.96 with a thin band only a
+ * sliver showed past the band's quad.
+ */
+export const MARKED_TILE_FOOTPRINT = 1;
+
+/** Width of the frame's band, in tiles: bold enough to read as the answer to "which tile". */
+export const MARKED_TILE_BAND = 0.16;

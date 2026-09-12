@@ -91,10 +91,8 @@ test("captures the glyphed screens for review", async ({ page }) => {
   expect(await unresolved(), "every tactical glyph resolves").toEqual([]);
   await page.screenshot({ path: "docs/design/ui-glyphs-tactical.png" });
 
-  // The radial menu's glyphs exist only while it is open, so nothing
-  // above looks at them. Arm Attack and right-click a tile: the menu is
-  // exactly what fills the gap when the armed action cannot act there
-  // (#529).
+  // The wheel's glyphs exist only while it is open, so nothing above
+  // looks at them. A left click on a tile opens it there (#1112).
   const menu = page.locator("#radial-menu");
   // The nearest free extraction tile, which is what `context-menu.spec`
   // uses: somewhere the unit could plausibly walk, so the menu has an
@@ -128,14 +126,13 @@ test("captures the glyphed screens for review", async ({ page }) => {
         )[0] ?? null
     );
   }, mineId);
-  expect(here, "there is a free tile to right-click").not.toBeNull();
+  expect(here, "there is a free tile to click").not.toBeNull();
   if (here === null) return;
-  await page.locator('#action-bar [data-action="attack"]').first().click();
   await page.evaluate(
     (tile) =>
       (
-        globalThis as { __tutTactical__?: { invokeTile(t: unknown): void } }
-      ).__tutTactical__?.invokeTile(tile),
+        globalThis as { __tutTactical__?: { selectTile(t: unknown): void } }
+      ).__tutTactical__?.selectTile(tile),
     here,
   );
   await expect(menu).toHaveAttribute("data-open", "true");
@@ -176,7 +173,7 @@ test("captures the glyphed screens for review", async ({ page }) => {
           ).__tutTactical__?.selectUnit(id),
         mineId,
       );
-      await page.keyboard.press("2");
+      await page.keyboard.press("f");
       await page.evaluate(
         (id) =>
           (

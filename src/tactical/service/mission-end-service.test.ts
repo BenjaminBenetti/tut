@@ -39,7 +39,7 @@ describe("missionOutcome", () => {
     ).toBeUndefined();
   });
 
-  it("is won when every objective is complete, whoever is left standing", () => {
+  it("plays on with every objective complete while a TDF unit still stands: the force has to extract", () => {
     const map = openField().build();
     expect(
       missionOutcome(
@@ -47,14 +47,41 @@ describe("missionOutcome", () => {
           objectives: done,
         }),
       ),
+    ).toBeUndefined();
+  });
+
+  it("is won once the objectives are complete and the survivors have extracted", () => {
+    const map = openField().build();
+    const bugsOnly = [unitAt("b", "infantry", at(7, 7), { team: "bugs" })];
+    expect(
+      missionOutcome(
+        missionWith(map, bugsOnly, {
+          objectives: done,
+          extracted: [unitAt("u", "infantry", at(0, 0))],
+        }),
+      ),
     ).toBe("won");
+    // Casualties do not undo it: one out is enough to bring the result home.
+    expect(
+      missionOutcome(
+        missionWith(
+          map,
+          [unitAt("v", "infantry", at(1, 1), { hp: 0 }), ...bugsOnly],
+          {
+            objectives: done,
+            extracted: [unitAt("u", "infantry", at(0, 0))],
+          },
+        ),
+      ),
+    ).toBe("won");
+    // Nobody out is lost, whatever they finished before they fell.
     expect(
       missionOutcome(
         missionWith(map, [unitAt("u", "infantry", at(0, 0), { hp: 0 })], {
           objectives: done,
         }),
       ),
-    ).toBe("won");
+    ).toBe("lost");
   });
 
   it("is lost on a wipe with nobody extracted and extracted once the survivors have left", () => {
@@ -108,8 +135,12 @@ describe("endIfOver", () => {
   it("records the outcome and announces MissionEnded once a terminal condition holds", () => {
     const mission = missionWith(
       openField().build(),
-      [unitAt("u", "infantry", at(0, 0))],
-      { objectives: done, turn: 4 },
+      [unitAt("b", "infantry", at(7, 7), { team: "bugs" })],
+      {
+        objectives: done,
+        turn: 4,
+        extracted: [unitAt("u", "infantry", at(0, 0))],
+      },
     );
     const applied = endIfOver(mission, []);
     expect(applied.state.outcome).toBe("won");

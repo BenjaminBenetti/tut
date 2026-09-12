@@ -37,6 +37,7 @@ describe("settlement pipeline", () => {
       "kerbs",
       "rural-fences",
       "hooks",
+      "rooftop-props",
       "yard-arrangements",
       "connectivity",
     ]);

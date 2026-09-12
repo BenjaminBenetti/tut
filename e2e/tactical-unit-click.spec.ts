@@ -132,10 +132,6 @@ test("clicking a unit on the tactical map selects it and arms its actions", asyn
   await expect(page.locator("#tactical-viewport canvas")).toBeVisible();
   await expect(body).toHaveAttribute("data-tactical-units", /\d+/);
 
-  // Nothing is selected yet, so the bar cannot act.
-  const move = page.locator('#action-bar [data-action="move"]');
-  await expect(move).toBeDisabled();
-
   const feet = await settledFeet(page, "unit-1");
   expect(feet, "unit-1 never settled on screen").toBeDefined();
   // Any column near the middle of the map; the search finds its layer.
@@ -147,9 +143,11 @@ test("clicking a unit on the tactical map selects it and arms its actions", asyn
 
   await expect(body).toHaveAttribute("data-selected-unit", "unit-1");
   await expect(body).toHaveAttribute("data-last-intent", "select-unit");
-  // Selecting a unit is what makes the bar usable; without this the
-  // attribute could be set while the player still cannot do anything.
-  await expect(move).toBeEnabled();
+  // Selecting a unit is what the strip shows; without this the
+  // attribute could be set while the HUD holds no selection.
+  await expect(
+    page.locator('[data-role="squad-list"] li[data-unit-id="unit-1"]'),
+  ).toHaveAttribute("data-selected", "true");
 
   expect(errors, `console errors: ${errors.join(" | ")}`).toEqual([]);
 });

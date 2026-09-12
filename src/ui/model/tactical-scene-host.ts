@@ -1,4 +1,5 @@
 import type { LayerFocus } from "../../graphics/model/layer-focus";
+import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { Vec2 } from "../../core/model/grid";
@@ -7,6 +8,25 @@ import type {
   TacticalIntentSink,
   TacticalInvokeTarget,
 } from "./tactical-intent";
+
+// ===========================================
+// Types
+// ===========================================
+
+/**
+ * What the screen wants to hear while an update plays. The scene plays
+ * a batch one event at a time; what the HUD says about each event —
+ * its log line, the words above the unit, a phase banner — should land
+ * as that event happens on the map, not all at once before the first
+ * frame. Without this the whole bug phase read as one jump followed by
+ * an animation of it.
+ */
+export interface TacticalUpdateHooks {
+  /** Called as each event begins to play, in order. */
+  readonly onEvent?: (event: TacticalEvent) => void;
+  /** Called once the units stand where the mission says, after the last event. */
+  readonly onSettled?: () => void;
+}
 
 // ===========================================
 // TacticalSceneHost
@@ -39,12 +59,23 @@ export interface TacticalSceneHost {
 
   /**
    * Plays `events` in order, then brings the units in step with the
-   * newer mission state. Resolves when the units are placed.
+   * newer mission state. Resolves when the units are placed; `hooks`
+   * hears each event as it plays and the moment the scene settles.
    */
   update(
     mission: TacticalState,
     events?: readonly TacticalEvent[],
+    hooks?: TacticalUpdateHooks,
   ): Promise<void>;
+
+  /**
+   * Frames a tile on the map, or clears the frame: the tile the action
+   * wheel is open on, so the ring and the ground it belongs to read as
+   * one thing.
+   *
+   * @param tile - The tile to frame, or undefined for none.
+   */
+  markTile(tile: TileCoord | undefined): void;
 
   /**
    * Shows the overlays for a selected unit, or clears them.
@@ -89,6 +120,14 @@ export interface TacticalSceneHost {
    * @returns Client pixels, or undefined when nothing is drawn there.
    */
   screenPositionOf(target: TacticalInvokeTarget): Vec2 | undefined;
+
+  /**
+   * Where the top of a unit's model is on screen, in client pixels, or
+   * undefined when it is not drawn: the anchor for its status chip.
+   *
+   * @param unitId - The unit.
+   */
+  unitHeadScreenPosition(unitId: UnitId): Vec2 | undefined;
 
   /**
    * Centres the view on a unit.

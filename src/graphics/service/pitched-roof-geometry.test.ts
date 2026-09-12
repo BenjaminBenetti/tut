@@ -61,7 +61,8 @@ function shippedModels(): ModelLoader {
 
 /** A pitched house with a stairwell hole in its upper storey. */
 function house(w: number, d: number, hipped = false) {
-  const id = hipped ? "building-1" : "house";
+  // Stable building hashes explicitly select both available silhouette families.
+  const id = hipped ? "building-1" : "gabled-house";
   const b = new FixtureMapBuilder(w + 2, d + 2, 4).fillGround(0, "grass");
   for (let z = 1; z <= d; z++)
     for (let x = 1; x <= w; x++) {

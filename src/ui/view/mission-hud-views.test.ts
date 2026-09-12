@@ -4,8 +4,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { err, ok } from "../../core/model/result";
 import type { TacticalNames } from "../service/tactical-error-text";
 import { CoverLevel } from "../../mapgen/model/cover";
-import type { ActionBarAction } from "./action-bar-view";
 import { ActionBarView } from "./action-bar-view";
+import { TACTICAL_SHORTCUTS } from "../model/tactical-intent";
 import { HitPreviewView } from "./hit-preview-view";
 import { hudMission, hudTemplate, hudUnit } from "./mission-hud.test-helper";
 import { describeEvent } from "./event-vocabulary";
@@ -151,79 +151,98 @@ describe("UnitCardView weapon lines (#641)", () => {
 });
 
 describe("ActionBarView", () => {
-  it("puts Attack's digit on every weapon button, not just the first (#652)", () => {
-    const view = new ActionBarView({ onAction: vi.fn() });
-    view.mount(root);
-    view.update({
-      canAct: true,
-      playerPhase: true,
-      mode: undefined,
-      weapons: [
-        { id: "arm-weapon", name: "Autocannon", ready: true },
-        { id: "back-weapon", name: "Missile Pod", ready: true },
-      ],
-    });
-    const weapons = [...root.querySelectorAll<HTMLElement>("[data-weapon-id]")];
-    expect(weapons).toHaveLength(2);
-    // One key reaches both -- press it again to cycle (#532) -- so the
-    // digit is true on each. A button without the hint also loses the
-    // indent it reserves, so its glyph and label sit left of its
-    // neighbours' and the bar reads as though it had no shortcut.
-    const hints = weapons.map(
-      (b) =>
-        b.querySelector<HTMLElement>('[data-role="shortcut"]')?.textContent,
-    );
-    expect(hints).toEqual(["2", "2"]);
-    // And the one that is not first says how to reach it.
-    expect(weapons[1]?.title).toContain("press again");
-  });
-
   /**
-   * The bar marks what is unavailable and still reports the press
-   * (#1030). It used to `disable` the button, which is why clicking an
-   * unavailable action taught the player nothing: the click never
-   * happened, so nothing could explain it. Availability is now
-   * `aria-disabled` — announced, styled, and still reachable — and the
-   * HUD refuses with words above the unit.
+   * The bar lists the actions with the keys that reach them; a press is
+   * the key (the Executive Director's ask on #1113: keep the hotkeys
+   * listed). Unavailable actions are marked rather than disabled
+   * (#1030), so a press still reaches the HUD to be explained.
    */
-  it("marks unavailable actions, reports the press anyway, and marks the mode", () => {
-    const onAction = vi.fn<(action: ActionBarAction) => void>();
-    const view = new ActionBarView({ onAction });
+  it("writes each action's key from the shortcut table, and reports a press as the key would", () => {
+    const onAction = vi.fn<(action: string) => void>();
+    const view = new ActionBarView({ onAction }, TACTICAL_SHORTCUTS);
     view.mount(root);
-    const button = (a: string) =>
-      root.querySelector<HTMLButtonElement>(`[data-action="${a}"]`);
-    expect(button("attack")?.getAttribute("aria-disabled")).toBe("true");
-    view.update({ canAct: true, playerPhase: true, mode: "attack" });
-    expect(button("attack")?.getAttribute("aria-disabled")).toBe("false");
-    expect(button("attack")?.getAttribute("aria-pressed")).toBe("true");
-    expect(button("move")?.getAttribute("aria-pressed")).toBe("false");
-    button("move")?.click();
-    button("end-turn")?.click();
-    expect(onAction.mock.calls.map((c) => c[0])).toEqual(["move", "end-turn"]);
-
-    // Unavailable: marked, and the press still reaches the HUD, which is
-    // what lets a refusal say why instead of the click vanishing.
-    view.update({ canAct: false, playerPhase: false, mode: undefined });
-    expect(button("end-turn")?.getAttribute("aria-disabled")).toBe("true");
-    expect(button("end-turn")?.classList.contains("is-unavailable")).toBe(true);
-    button("end-turn")?.click();
+    const hint = (a: string): string | null | undefined =>
+      root.querySelector<HTMLElement>(
+        `#action-bar [data-action="${a}"] [data-role="shortcut"]`,
+      )?.textContent;
+    // The number row, in the bar's order: keys under the left hand.
+    expect(hint("move")).toBe("1");
+    expect(hint("attack")).toBe("2");
+    expect(hint("overwatch")).toBe("3");
+    expect(hint("reload")).toBe("4");
+    expect(hint("interact")).toBe("5");
+    expect(hint("extract")).toBe("6");
+    expect(hint("end-turn")).toBe("7");
+    root.querySelector<HTMLButtonElement>('[data-action="overwatch"]')?.click();
+    root.querySelector<HTMLButtonElement>('[data-action="end-turn"]')?.click();
     expect(onAction.mock.calls.map((c) => c[0])).toEqual([
-      "move",
-      "end-turn",
+      "overwatch",
       "end-turn",
     ]);
   });
 
+  it("marks what is unavailable, names the refill and the unspent, and shows the aim", () => {
+    const view = new ActionBarView({ onAction: vi.fn() }, TACTICAL_SHORTCUTS);
+    view.mount(root);
+    const button = (a: string) =>
+      root.querySelector<HTMLButtonElement>(`[data-action="${a}"]`);
+    expect(button("attack")?.getAttribute("aria-disabled")).toBe("true");
+    view.update({
+      playerPhase: true,
+      unavailable: ["reload"],
+      hasActor: true,
+      reloadLabel: "Vent",
+      aiming: true,
+      unspent: 2,
+    });
+    expect(button("attack")?.getAttribute("aria-disabled")).toBe("false");
+    expect(button("attack")?.getAttribute("aria-pressed")).toBe("true");
+    expect(button("reload")?.classList.contains("is-unavailable")).toBe(true);
+    expect(button("reload")?.textContent).toContain("Vent");
+    expect(button("end-turn")?.textContent).toContain("End turn (2 unspent)");
+    // Board, not Extract: it is boarding the drop ship (#1112).
+    expect(button("extract")?.textContent).toContain("Board");
+    // Nothing of the player's selected: no unit action, End turn still on.
+    view.update({
+      playerPhase: true,
+      unavailable: [],
+      hasActor: false,
+      reloadLabel: "Reload",
+      aiming: false,
+      unspent: 0,
+    });
+    expect(button("move")?.getAttribute("aria-disabled")).toBe("true");
+    expect(button("end-turn")?.getAttribute("aria-disabled")).toBe("false");
+    expect(button("end-turn")?.textContent).not.toContain("unspent");
+    // Off phase: End turn marked, and a press still reported.
+    const onAction = vi.fn();
+    const off = new ActionBarView({ onAction }, TACTICAL_SHORTCUTS);
+    off.mount(root);
+    off.update({
+      playerPhase: false,
+      unavailable: [],
+      hasActor: false,
+      reloadLabel: "Reload",
+      aiming: false,
+      unspent: 0,
+    });
+    const bars = root.querySelectorAll("#action-bar");
+    const last = bars[bars.length - 1];
+    const end = last?.querySelector<HTMLButtonElement>(
+      '[data-action="end-turn"]',
+    );
+    expect(end?.classList.contains("is-unavailable")).toBe(true);
+    end?.click();
+    expect(onAction).toHaveBeenCalledWith("end-turn");
+  });
+
   it("marks every button with its icon", () => {
-    const view = new ActionBarView({ onAction: vi.fn() });
+    const view = new ActionBarView({ onAction: vi.fn() }, TACTICAL_SHORTCUTS);
     view.mount(root);
     const iconOf = (a: string) =>
       root
         .querySelector<HTMLElement>(`[data-action="${a}"] .tut-icon`)
         ?.style.getPropertyValue("--icon");
-    // `iconUrl` already yields `url(…)`; wrapping it again is invalid CSS and
-    // the mask silently degrades to a solid block, which is what shipped the
-    // first time icons were used (#495).
     expect(iconOf("move")).toBe("url(/assets/ui/icons/move.svg)");
     expect(iconOf("end-turn")).toBe("url(/assets/ui/icons/end-turn.svg)");
     expect(iconOf("attack")).toBe("url(/assets/ui/icons/attack.svg)");

@@ -27,12 +27,17 @@ import { validateLoadout } from "../../roster/service/loadout-validation-service
 import type { GameState } from "../../save/model/game-state";
 import { createNewGame } from "../../save/service/new-game-service";
 import { COMBAT_TUNING } from "../data/combat-tuning";
+import {
+  missionWith,
+  openField,
+  unitAt,
+} from "./tactical-fixtures.test-helper";
 import { OBJECTIVE_TUNING } from "../data/objective-tuning";
 import { SPAWN_TUNING } from "../data/spawn-tuning";
 import { UNIT_TUNING } from "../data/unit-tuning";
 import { ATTACK } from "../model/attack-command";
 import { END_TURN, endTurn } from "../model/end-turn-command";
-import { EXTRACT } from "../model/extract-command";
+import { EXTRACT, extract } from "../model/extract-command";
 import { INTERACT } from "../model/interact-command";
 import { MOVE } from "../model/move-command";
 import { OVERWATCH } from "../model/overwatch-command";
@@ -43,7 +48,10 @@ import { createAttackHandler } from "./combat-service";
 import { objectiveApproach } from "./map-assessment-service";
 import { startTacticalMission } from "./mission-start-service";
 import type { EngagementBlock } from "./mission-driver.test-helper";
-import { nextActionAgainst } from "./mission-driver.test-helper";
+import {
+  homewardAction,
+  nextActionAgainst,
+} from "./mission-driver.test-helper";
 import { createMoveHandler } from "./move-handler";
 import { buildMoveGraph } from "./movement-service";
 import {
@@ -439,5 +447,48 @@ describe("nextActionAgainst", () => {
         graph,
       ),
     ).toEqual({ kind: "blocked", reason: "unit-unavailable" });
+  });
+});
+
+// ===========================================
+// The way home
+// ===========================================
+
+describe("homewardAction", () => {
+  const at = (x: number, z: number) => ({ x, y: 0, z });
+  /** An open field with the ramp at the origin, and one squad. */
+  const withRamp = (
+    unit: ReturnType<typeof unitAt>,
+    overrides: Parameters<typeof missionWith>[2] = {},
+  ) => ({
+    ...missionWith(openField().build(), [unit], overrides),
+    extraction: [at(0, 0)],
+  });
+
+  it("boards from the zone, even with no actions left, and walks toward it otherwise", () => {
+    const onZone = withRamp(unitAt("u", "infantry", at(0, 0), { ap: 0 }));
+    expect(homewardAction(onZone, "u")).toEqual({
+      kind: "extract",
+      command: extract("u"),
+    });
+
+    const away = withRamp(unitAt("u", "infantry", at(6, 6)));
+    const walk = homewardAction(away, "u");
+    expect(walk.kind).toBe("move");
+    if (walk.kind !== "move") return;
+    // Closer to the ramp than where it stood.
+    expect(walk.to.x + walk.to.z).toBeLessThan(12);
+  });
+
+  it("names why it cannot go: no actions off the zone, or not this side's phase", () => {
+    const spent = withRamp(unitAt("u", "infantry", at(6, 6), { ap: 0 }));
+    expect(homewardAction(spent, "u")).toEqual({
+      kind: "blocked",
+      reason: "unit-unavailable",
+    });
+    const bugsTurn = withRamp(unitAt("u", "infantry", at(6, 6)), {
+      phase: "bugs",
+    });
+    expect(homewardAction(bugsTurn, "u").kind).toBe("blocked");
   });
 });

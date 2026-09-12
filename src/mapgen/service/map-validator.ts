@@ -21,6 +21,11 @@ import type { TileCoord } from "../model/tile-coord";
 import { ReachabilityService } from "./reachability-service";
 import { TileIndex } from "./tile-index";
 import { validateDropshipSites } from "./dropship-site-validator";
+import {
+  propTiles,
+  isValidPropFootprint,
+  propPlacementTiles,
+} from "./prop-footprint";
 
 // ===========================================
 // Types
@@ -161,15 +166,50 @@ class MapValidator {
       this.fail("I2", "Duplicate prop id");
     }
     for (const prop of this.map.props) {
-      const tile = index.getAt(prop.tile);
-      if (tile === undefined) {
-        this.fail("I2", `Prop ${prop.id} sits on a missing tile`, prop.tile);
-      } else if (tile.propId !== prop.id) {
+      const footprint = propTiles(prop);
+      if (!isValidPropFootprint(prop.tile, footprint))
         this.fail(
           "I2",
-          `Prop ${prop.id}'s tile does not point back at it`,
-          tile,
+          `Prop ${prop.id} has an invalid occupied footprint`,
+          prop.tile,
         );
+      const definition = this.registries.props.find(prop.kind);
+      if (
+        prop.occupiedTiles !== undefined &&
+        definition?.footprint !== undefined
+      ) {
+        const expected = propPlacementTiles(
+          prop.tile,
+          definition,
+          prop.rotation,
+        );
+        if (
+          expected.length !== footprint.length ||
+          expected.some(
+            (cell) =>
+              !footprint.some(
+                (tile) =>
+                  tile.x === cell.x && tile.y === cell.y && tile.z === cell.z,
+              ),
+          )
+        )
+          this.fail(
+            "I2",
+            `Prop ${prop.id}'s occupied cells do not match its rotated footprint`,
+            prop.tile,
+          );
+      }
+      for (const coord of footprint) {
+        const tile = index.getAt(coord);
+        if (tile === undefined) {
+          this.fail("I2", `Prop ${prop.id} sits on a missing tile`, coord);
+        } else if (tile.propId !== prop.id) {
+          this.fail(
+            "I2",
+            `Prop ${prop.id}'s tile does not point back at it`,
+            tile,
+          );
+        }
       }
     }
     for (const tile of this.map.tiles) {
@@ -194,9 +234,10 @@ class MapValidator {
         continue;
       }
       if (
-        prop.tile.x !== tile.x ||
-        prop.tile.y !== tile.y ||
-        prop.tile.z !== tile.z
+        !propTiles(prop).some(
+          (coord) =>
+            coord.x === tile.x && coord.y === tile.y && coord.z === tile.z,
+        )
       ) {
         this.fail(
           "I2",

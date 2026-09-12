@@ -79,12 +79,100 @@ function resolve(map: TacticalMap) {
 }
 
 describe("building use cues", () => {
+  it("varies shop entrances by seed and keeps every domestic facade in a coherent window style", () => {
+    const choices = new Set<string>();
+    for (let i = 0; i < 12; i++) {
+      const map = fixture("shop");
+      const varied = {
+        ...map,
+        recipe: { ...map.recipe, seed: `shop-style-${i}` },
+      };
+      const result = resolve(varied);
+      choices.add(result[0]!.modelId);
+      expect(resolve(varied)).toEqual(result);
+    }
+    expect([...choices].sort()).toEqual([
+      "building.shop-awning",
+      "building.shop-awning-sign",
+    ]);
+    const windows = resolve(fixture()).filter((p) =>
+      p.modelId.startsWith("building.residential-window"),
+    );
+    for (const turns of [0, 1, 2, 3])
+      expect(
+        new Set(windows.filter((p) => p.turns === turns).map((p) => p.modelId))
+          .size,
+      ).toBe(1);
+    expect(resolve(fixture("warehouse")).map((p) => p.modelId)).toEqual([
+      "building.warehouse-entry",
+    ]);
+  });
+
+  it("mounts air conditioning on solid upper bays and clears its entire ladder column", () => {
+    const map = fixture();
+    const solid = {
+      ...map,
+      tiles: map.tiles.map((tile) =>
+        tile.y === 4
+          ? {
+              ...tile,
+              walls: Object.fromEntries(
+                Object.entries(tile.walls).map(([side]) => [
+                  side,
+                  "solid" as const,
+                ]),
+              ),
+            }
+          : tile,
+      ),
+    };
+    const result = resolve(solid).filter(
+      (p) => p.modelId === "building.wall-ac-unit",
+    );
+    expect(result.length).toBeGreaterThan(0);
+    expect(
+      new Set(result.map((module) => module.turns)).size,
+    ).toBeLessThanOrEqual(2);
+    expect(new Set(result.map((module) => module.turns % 2)).size).toBe(1);
+    const unit = result[0]!;
+    const side = ["s", "w", "n", "e"][unit.turns] as Direction;
+    for (const module of result) {
+      expect(module.level).toBe(4);
+      expect(
+        new TileIndex(solid).getAt(module.tile)?.walls[
+          ["s", "w", "n", "e"][module.turns] as Direction
+        ],
+      ).toBe("solid");
+    }
+    const outside = stepGridPos(unit.tile, side);
+    const obstructed = {
+      ...solid,
+      connectors: [
+        {
+          id: "ladder",
+          kind: "ladder" as const,
+          from: { ...outside, y: 2 },
+          to: { ...unit.tile, y: 6 },
+          pass: 1,
+        },
+      ],
+    };
+    expect(
+      resolve(obstructed).some(
+        (p) =>
+          p.modelId === unit.modelId &&
+          p.turns === unit.turns &&
+          p.tile.x === unit.tile.x &&
+          p.tile.z === unit.tile.z,
+      ),
+    ).toBe(false);
+  });
   it.each(DIRECTIONS)(
     "faces the %s exterior and retains the entrance's owner",
     (side) => {
       const map = fixture("shop", side);
-      const placement = resolve(map).find(
-        (p) => p.modelId === "building.shop-awning",
+      const placement = resolve(map).find((p) =>
+        p.modelId.startsWith("building.shop-awning"),
       )!;
       const door = map.buildings[0]!.entrances[0]!.tile;
       const outward = stepGridPos({ x: 0, y: 0, z: 0 }, side);
@@ -115,12 +203,13 @@ describe("building use cues", () => {
         "building.residential-entry",
         "building.mailbox-bank",
         "building.residential-window",
+        "building.residential-window-shutters",
       ]),
     );
     expect(JSON.stringify(map)).toBe(before);
     expect(
-      resolve(fixture("shop")).every(
-        (p) => p.modelId === "building.shop-awning",
+      resolve(fixture("shop")).every((p) =>
+        p.modelId.startsWith("building.shop-awning"),
       ),
     ).toBe(true);
     expect(resolve(fixture("tower")).map((p) => p.modelId)).toEqual([
@@ -219,8 +308,8 @@ describe("building use cues", () => {
     expect(resolve(acrossDoor)).toEqual([]);
   });
 
-  it("preserves the rural control", () => {
-    const map = fixture();
+  it("gives rural houses the same fitted, use-specific detail as urban houses", () => {
+    const map = fixture("house");
     const rural = {
       ...map,
       recipe: {
@@ -228,7 +317,8 @@ describe("building use cues", () => {
         params: { ...map.recipe.params, settlement: "rural" as const },
       },
     };
-    expect(resolve(rural)).toEqual([]);
+    expect(resolve(rural)).toEqual(resolve(map));
+    expect(resolve(rural).length).toBeGreaterThan(0);
   });
 
   it("loads the attachments through the real scene consumer with owner fog and storey cuts", async () => {
@@ -249,7 +339,7 @@ describe("building use cues", () => {
       )
         frontages.push(object as InstancedMesh);
     });
-    expect(frontages).toHaveLength(3);
+    expect(frontages).toHaveLength(4);
     for (const mesh of frontages) {
       expect((mesh.material as MeshStandardMaterial).name).toContain("ghosted");
       const mist = mesh.geometry.getAttribute("unexploredMist");

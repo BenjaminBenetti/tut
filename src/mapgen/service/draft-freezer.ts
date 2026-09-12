@@ -74,7 +74,13 @@ export function freezeDraft(
     tiles,
     buildings: [...draft.buildings],
     connectors: [...draft.connectors],
-    props: draft.props.map((prop) => ({ ...prop, tile: { ...prop.tile } })),
+    props: draft.props.map((prop) => ({
+      ...prop,
+      tile: { ...prop.tile },
+      ...(prop.occupiedTiles
+        ? { occupiedTiles: prop.occupiedTiles.map((tile) => ({ ...tile })) }
+        : {}),
+    })),
     hooks: freezeHooks(draft),
     ...(draft.dropships.length === 0
       ? {}

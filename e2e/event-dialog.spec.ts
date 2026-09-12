@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 /**
- * Seed 9 raises a city plea for Berlin on day 2 (found by running the
+ * Seed 9 raises a city plea for Novosibirsk on day 2 (found by running the
  * default tick pipeline over the first sixty seeds); the day is
  * deterministic per seed because every tick step forks the campaign RNG
  * with the day in the label.
@@ -35,10 +35,10 @@ test("a seeded event opens the dialog, blocks Advance Day and clears on a choice
   await expect(dialog).toBeVisible();
   await expect(dialog.locator('[data-field="event-title"]')).not.toHaveText("");
   await expect(dialog.locator('[data-field="event-city"]')).toHaveText(
-    "Berlin",
+    "Novosibirsk",
   );
   await expect(dialog.locator('[data-field="event-text"]')).toContainText(
-    "Berlin",
+    "Novosibirsk",
   );
   const choices = dialog.locator("[data-choice-id]");
   expect(await choices.count()).toBeGreaterThan(0);

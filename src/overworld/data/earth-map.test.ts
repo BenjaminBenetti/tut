@@ -41,9 +41,9 @@ function reachableFrom(start: CityId): Set<CityId> {
 describe("EARTH_MAP seed data", () => {
   const { regions, cities } = EARTH_MAP;
 
-  it("ships at least 8 regions and 20 cities", () => {
-    expect(regions.length).toBeGreaterThanOrEqual(8);
-    expect(cities.length).toBeGreaterThanOrEqual(20);
+  it("fills the northern forests, Arctic, Amazon, Andes and Mediterranean", () => {
+    expect(regions.length).toBeGreaterThanOrEqual(17);
+    expect(cities.length).toBeGreaterThanOrEqual(51);
   });
 
   it("has unique region ids, city ids and display names", () => {
@@ -147,10 +147,31 @@ describe("EARTH_MAP seed data", () => {
   });
 
   it("uses every shipped biome at least once", () => {
-    const used = new Set(regions.map((region) => region.biome));
+    const used = new Set(
+      cities.map((city) => city.biome ?? regionOf(EARTH_MAP, city.id).biome),
+    );
     for (const biome of BIOME_IDS) {
       expect(used.has(biome), biome).toBe(true);
     }
+  });
+
+  it.each([
+    ["bogota", "alpine"],
+    ["mumbai", "tropical"],
+    ["lagos", "tropical"],
+    ["johannesburg", "savanna"],
+    ["ulaanbaatar", "steppe"],
+    ["novosibirsk", "taiga"],
+    ["reykjavik", "tundra"],
+    ["longyearbyen", "snowy"],
+    ["manaus", "tropical"],
+    ["iquitos", "wetland"],
+    ["rome", "mediterranean"],
+    ["alice-springs", "desert"],
+    ["perth", "coastal"],
+  ])("assigns %s its local environment", (id, biome) => {
+    const city = getCity(EARTH_MAP, id);
+    expect(city.biome ?? regionOf(EARTH_MAP, id).biome).toBe(biome);
   });
 
   it("is plain JSON-serializable data", () => {

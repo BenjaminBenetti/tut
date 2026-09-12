@@ -71,71 +71,75 @@ describe("SlopePass", () => {
     expect(ids.indexOf("slopes")).toBe(ids.indexOf("ramps") - 1);
   });
 
-  it("makes every rural terrain step a slope at the default share, and none at zero", () => {
-    for (const biome of BIOME_IDS) {
-      for (let i = 0; i < SEEDS; i++) {
-        const seed = `slopes-${biome}-${i}`;
-        const all = generateTacticalMap(
-          { seed, params: params("rural", biome) },
-          { registries },
-        );
-        const none = generateTacticalMap(
-          { seed, params: params("rural", biome, 0) },
-          { registries },
-        );
-        // Rural has no plats, lots aside: every unwalled step away from a
-        // building is natural terrain.
-        const index = new TileIndex(all);
-        const steps = unwalledSteps(all, index).filter(
-          ({ lower, upper }) =>
-            !all.buildings.some((b) => {
-              const fp = b.footprint[0];
-              if (fp === undefined) return false;
-              const near = (t: Tile): boolean =>
-                t.x >= fp.x - 1 &&
-                t.x <= fp.x + fp.w &&
-                t.z >= fp.z - 1 &&
-                t.z <= fp.z + fp.d;
-              return near(lower) || near(upper);
-            }),
-        );
-        if (steps.length === 0) continue;
-        // Not every unwalled step can carry a wedge: a prop on either tile
-        // takes it out of the walkable graph, a graded trail column or a
-        // lot's edge is man-made by the ruling, and a one-wide gully or a
-        // pit has no wedge shape. Measured 281 of 339 on temperate/0 with
-        // those accounting for the rest, and coastal/0 the low end at 0.70
-        // (water edges are not walkable steps, props are denser). The
-        // pass's own note is the exact number and is asserted below.
-        const sloped = steps.filter(({ lower }) => lower.slope !== undefined);
-        expect(
-          sloped.length / steps.length,
-          `${seed} share ${String(sloped.length)}/${String(steps.length)}`,
-        ).toBeGreaterThanOrEqual(0.6);
-        const note =
-          generateTacticalMapWithDiagnostics(
+  it(
+    "makes every rural terrain step a slope at the default share, and none at zero",
+    () => {
+      for (const biome of BIOME_IDS) {
+        for (let i = 0; i < SEEDS; i++) {
+          const seed = `slopes-${biome}-${i}`;
+          const all = generateTacticalMap(
             { seed, params: params("rural", biome) },
             { registries },
-          ).diagnostics.notes.find((n) => n.pass === "slopes")?.message ?? "";
-        expect(note, `${seed} note`).toMatch(/\(100 %\)/);
-        expect(
-          none.tiles.filter((t) => t.slope !== undefined),
-          `${seed} at share 0`,
-        ).toHaveLength(0);
-        // The Map Lab metric reads the knob back exactly (#801 review):
-        // every natural edge is frozen as one whether sloped or not.
-        expect(computeMapMetrics(all).slopeShare, `${seed} metric at 1`).toBe(
-          1,
-        );
-        if (all.tiles.some((t) => t.naturalEdge === true)) {
+          );
+          const none = generateTacticalMap(
+            { seed, params: params("rural", biome, 0) },
+            { registries },
+          );
+          // Rural has no plats, lots aside: every unwalled step away from a
+          // building is natural terrain.
+          const index = new TileIndex(all);
+          const steps = unwalledSteps(all, index).filter(
+            ({ lower, upper }) =>
+              !all.buildings.some((b) => {
+                const fp = b.footprint[0];
+                if (fp === undefined) return false;
+                const near = (t: Tile): boolean =>
+                  t.x >= fp.x - 1 &&
+                  t.x <= fp.x + fp.w &&
+                  t.z >= fp.z - 1 &&
+                  t.z <= fp.z + fp.d;
+                return near(lower) || near(upper);
+              }),
+          );
+          if (steps.length === 0) continue;
+          // Not every unwalled step can carry a wedge: a prop on either tile
+          // takes it out of the walkable graph, a graded trail column or a
+          // lot's edge is man-made by the ruling, and a one-wide gully or a
+          // pit has no wedge shape. Measured 281 of 339 on temperate/0 with
+          // those accounting for the rest, and coastal/0 the low end at 0.70
+          // (water edges are not walkable steps, props are denser). The
+          // pass's own note is the exact number and is asserted below.
+          const sloped = steps.filter(({ lower }) => lower.slope !== undefined);
           expect(
-            computeMapMetrics(none).slopeShare,
-            `${seed} metric at 0`,
-          ).toBe(0);
+            sloped.length / steps.length,
+            `${seed} share ${String(sloped.length)}/${String(steps.length)}`,
+          ).toBeGreaterThanOrEqual(0.6);
+          const note =
+            generateTacticalMapWithDiagnostics(
+              { seed, params: params("rural", biome) },
+              { registries },
+            ).diagnostics.notes.find((n) => n.pass === "slopes")?.message ?? "";
+          expect(note, `${seed} note`).toMatch(/\(100 %\)/);
+          expect(
+            none.tiles.filter((t) => t.slope !== undefined),
+            `${seed} at share 0`,
+          ).toHaveLength(0);
+          // The Map Lab metric reads the knob back exactly (#801 review):
+          // every natural edge is frozen as one whether sloped or not.
+          expect(computeMapMetrics(all).slopeShare, `${seed} metric at 1`).toBe(
+            1,
+          );
+          if (all.tiles.some((t) => t.naturalEdge === true)) {
+            expect(
+              computeMapMetrics(none).slopeShare,
+              `${seed} metric at 0`,
+            ).toBe(0);
+          }
         }
       }
-    }
-  });
+    },
+    BIOME_IDS.length * (process.env.CI === undefined ? 5_000 : 30_000),
+  );
 
   it("makes every straight and inner slope a free walk both ways for both classes, with no connector", () => {
     const ring: readonly Direction[] = ["s", "w", "n", "e"];

@@ -21,6 +21,8 @@ export interface CitySeed {
   readonly infestation?: number;
   /** Settlement scale for missions here; defaults to `DEFAULT_CITY_SCALE`. */
   readonly scale?: SettlementScale;
+  /** Local environment where a broad region spans several climates. */
+  readonly biome?: BiomeId;
 }
 
 /** Authoring form of a region: its cities are nested rather than referenced. */

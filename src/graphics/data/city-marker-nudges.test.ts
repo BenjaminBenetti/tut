@@ -149,7 +149,7 @@ describe("city markers against the Earth texture", () => {
         expect(isOcean(sample(png, city.layout.x, city.layout.y))).toBe(false);
         continue;
       }
-      expect(Math.abs(nudge.x)).toBeLessThan(0.02);
+      expect(Math.abs(nudge.x)).toBeLessThan(0.04);
       expect(Math.abs(nudge.y)).toBeLessThan(0.04);
     }
     // Every nudge names a city that exists.

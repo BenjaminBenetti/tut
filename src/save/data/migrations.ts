@@ -8,6 +8,7 @@ import { DEFAULT_CITY_SCALE } from "../../overworld/service/earth-map-builder";
 import type { Migration } from "../model/migration";
 import { isRecord } from "../../core/model/record-guard";
 import { HALF_HEIGHT_LAYERS } from "../service/half-height-layer-migration";
+import { EXPAND_WORLD_BIOMES } from "../service/world-biomes-migration";
 
 // ===========================================
 // Steps
@@ -539,4 +540,5 @@ export const GAME_STATE_MIGRATIONS: readonly Migration[] = [
   HALF_HEIGHT_LAYERS,
   ADD_GRAVE_CITY,
   ADD_MISSION_RADARS,
+  EXPAND_WORLD_BIOMES,
 ];

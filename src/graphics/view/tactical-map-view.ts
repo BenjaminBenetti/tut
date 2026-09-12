@@ -1,3 +1,4 @@
+import { BIOME_GROUND_STYLES } from "../data/biome-ground-styles";
 import { STOREY_LAYERS } from "../../core/model/elevation";
 import type { LayerFocus } from "../model/layer-focus";
 import type { Camera, Material, Object3D } from "three";
@@ -311,6 +312,7 @@ export class TacticalMapView implements Disposable, TilePicker {
   /** Whether objective hook tiles get a marker; off in a mission, on in the preview. */
   private readonly objectiveMarkers: boolean;
   private readonly map: TacticalMap;
+  private readonly surfaceColours: Readonly<Record<string, number>>;
   private readonly index: TileIndex;
   private readonly levelGroups = new Map<number, Group>();
   private readonly materials = new Map<string, Material>();
@@ -361,6 +363,10 @@ export class TacticalMapView implements Disposable, TilePicker {
     options: TacticalMapViewOptions = {},
   ) {
     this.map = map;
+    this.surfaceColours = {
+      ...SURFACE_COLOURS,
+      ...BIOME_GROUND_STYLES[map.recipe.params.biome],
+    };
     this.ghostUniforms = ghostUniforms;
     this.objectiveMarkers = options.objectiveMarkers ?? true;
     this.index = new TileIndex(map);
@@ -693,7 +699,7 @@ export class TacticalMapView implements Disposable, TilePicker {
     let prototype = this.slopeModels.get(key);
     if (prototype === undefined) {
       const sides = this.material(
-        SURFACE_COLOURS[surface] ?? FALLBACK_SURFACE_COLOUR,
+        this.surfaceColours[surface] ?? FALLBACK_SURFACE_COLOUR,
       );
       const groundId = surfaceModel(surface);
       const materials =
@@ -723,7 +729,7 @@ export class TacticalMapView implements Disposable, TilePicker {
     if (prototype === undefined) {
       const surface = ROAD_STYLES[appearance.style].surface;
       const sides = this.material(
-        SURFACE_COLOURS[surface] ?? FALLBACK_SURFACE_COLOUR,
+        this.surfaceColours[surface] ?? FALLBACK_SURFACE_COLOUR,
       );
       const materials = slopeMaterialsFromGround(
         await models.load(surfaceModel(surface)!),
@@ -752,7 +758,7 @@ export class TacticalMapView implements Disposable, TilePicker {
     let prototype = this.terrainModels.get(key);
     if (!prototype) {
       const sides = this.material(
-        SURFACE_COLOURS[tile.surface] ?? FALLBACK_SURFACE_COLOUR,
+        this.surfaceColours[tile.surface] ?? FALLBACK_SURFACE_COLOUR,
       );
       const materials = slopeMaterialsFromGround(
         await models.load(surfaceModel(tile.surface)!),
@@ -1042,7 +1048,8 @@ export class TacticalMapView implements Disposable, TilePicker {
     const slabs = new Map<string, Batch>();
     const foundations = new Map<string, Batch>();
     for (const tile of this.map.tiles) {
-      const colour = SURFACE_COLOURS[tile.surface] ?? FALLBACK_SURFACE_COLOUR;
+      const colour =
+        this.surfaceColours[tile.surface] ?? FALLBACK_SURFACE_COLOUR;
       const top = tileTop(tile.y);
       const isGround = tile.buildingId === undefined;
       const support = foundationHeight(tile);

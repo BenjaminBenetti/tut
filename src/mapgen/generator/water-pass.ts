@@ -7,6 +7,7 @@ import type {
   GenerationPass,
 } from "../model/generation-pass";
 import type { MapDraft } from "../model/map-draft";
+import type { SurfaceId } from "../model/surface";
 import { ValueNoise } from "../service/value-noise";
 
 // ===========================================
@@ -34,7 +35,8 @@ const BEACH_WIDTH = 2;
  * Pass 2 of the settlement archetype (ADR 0004 §7.3). For biomes with a
  * shoreline, floods a band of columns along one randomly chosen map edge:
  * water columns drop to level 0 and become `water` (impassable); the next
- * few columns inland become sand. Other biomes are untouched.
+ * few columns inland take the biome's bank material (sand by default).
+ * Other biomes are untouched.
  *
  * ```
  *   edge w:   ~~~~::""""""""      ~ water, : beach, " ground
@@ -66,7 +68,13 @@ export class WaterPass implements GenerationPass {
     const baseFraction =
       BASE_FRACTION_MIN + rng.next() * (BASE_FRACTION_MAX - BASE_FRACTION_MIN);
     const noise = new ValueNoise(rng.fork("shore"));
-    const flooded = floodEdge(draft, edge, baseFraction, noise);
+    const flooded = floodEdge(
+      draft,
+      edge,
+      baseFraction,
+      noise,
+      params.biome.bankSurface ?? SurfaceIds.SAND,
+    );
     diagnostics.note(`shoreline on edge ${edge}: ${flooded} water columns`);
   }
 }
@@ -85,6 +93,7 @@ function floodEdge(
   edge: Direction,
   baseFraction: number,
   noise: ValueNoise,
+  bankSurface: SurfaceId,
 ): number {
   const horizontal = edge === "e" || edge === "w";
   const alongLength = horizontal ? draft.depth : draft.width;
@@ -104,7 +113,7 @@ function floodEdge(
         draft.setGroundSurface(x, z, SurfaceIds.WATER);
         flooded++;
       } else {
-        draft.setGroundSurface(x, z, SurfaceIds.SAND);
+        draft.setGroundSurface(x, z, bankSurface);
       }
     }
   }

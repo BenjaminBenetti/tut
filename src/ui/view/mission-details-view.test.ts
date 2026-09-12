@@ -35,7 +35,7 @@ describe("MissionDetailsView", () => {
     expect(field("difficulty")).toBe("D4");
     expect(field("reward")).toBe("¢1,200");
     expect(field("days-left")).toBe("3 d");
-    expect(field("biome")).toBe("desert");
+    expect(field("biome")).toBe("Desert");
     expect(field("settlement")).toBe("town");
     expect(field("size")).toBe("medium");
     expect(field("penalty")).toBe("+10 infestation");

@@ -84,10 +84,11 @@ describe("biome definitions", () => {
     }
   });
 
-  it("give only the coastal biome a shoreline", () => {
+  it("give coastal and wetland maps waterways", () => {
     const withShoreline = biomes.values
       .filter((biome) => biome.hasShoreline)
       .map((biome) => biome.id);
-    expect(withShoreline).toEqual(["coastal"]);
+    expect(withShoreline).toEqual(["coastal", "wetland"]);
+    expect(BIOME_DEFINITIONS.wetland.bankSurface).toBe("dirt");
   });
 });

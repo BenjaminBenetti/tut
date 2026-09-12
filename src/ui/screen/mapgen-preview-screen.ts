@@ -5,6 +5,7 @@ import {
 import type { PlaceProfileId } from "../../content/model/place-profile-id";
 import { STOREY_LAYERS } from "../../core/model/elevation";
 import { BIOME_IDS } from "../../content/model/biome-id";
+import { BIOME_INFO } from "../../content/data/biome-info";
 import type { BiomeId } from "../../content/model/biome-id";
 import { SETTLEMENT_SCALES } from "../../content/model/settlement-scale";
 import type { SettlementScale } from "../../content/model/settlement-scale";
@@ -155,6 +156,11 @@ export class MapgenPreviewScreen {
     form.appendChild(labelled(doc, "Seed", this.seedInput, reroll, next));
 
     this.biomeSelect = select(doc, "biome", BIOME_IDS, initial.biome);
+    for (const option of this.biomeSelect.options) {
+      const info = BIOME_INFO[option.value as BiomeId];
+      option.textContent = info.name;
+      option.title = info.description;
+    }
     this.placeSelect = select(
       doc,
       "place",

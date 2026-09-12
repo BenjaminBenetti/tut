@@ -14,6 +14,8 @@ import {
 import { describe, expect, it } from "vitest";
 
 import { STOREY_LAYERS } from "../../core/model/elevation";
+import { STARTER_LOADOUT } from "../../roster/data/starter-roster";
+import { mechAssemblyFor } from "../data/part-model-table";
 import type { ModelAssetId } from "../../content/data/model-ids";
 import { SurfaceIds } from "../../mapgen/data/surfaces";
 import type { Building } from "../../mapgen/model/building";
@@ -72,6 +74,10 @@ class FakeModelLoader implements ModelLoader {
 const TEMPLATES: Record<string, UnitTemplate> = {
   "squad:squad-1": template("squad:squad-1", "tdf.infantry.rifle", "infantry"),
   "bug:swarmer": template("bug:swarmer", "bug.swarmer", "infantry"),
+  "mech:mech-1": {
+    ...template("mech:mech-1", "tdf.mech.assembled-a", "mech"),
+    loadout: STARTER_LOADOUT,
+  },
 };
 
 function template(
@@ -180,6 +186,24 @@ describe("TacticalSceneBuilder", () => {
     });
     expect(builder.root.getObjectByName("units")?.children).toHaveLength(2);
     expect(LAYER_HEIGHT).toBeGreaterThan(0);
+  });
+
+  it("draws a mech from the parts its loadout names, not the reference assembly (#1115)", async () => {
+    const { builder, models } = build();
+    const mech = { ...unit("m1", "mech:mech-1", 2, 2), kind: "mech" as const };
+    await builder.update([mech], TEMPLATES);
+    const assembly = mechAssemblyFor(STARTER_LOADOUT);
+    expect(models.loads).toContain(assembly.armWeapon);
+    expect(models.loads).toContain(assembly.legs);
+    expect(models.loads).not.toContain("tdf.mech.assembled-a");
+    expect(builder.unitIds()).toEqual(["m1"]);
+    expect(builder.unitWorldPosition("m1")).toEqual({
+      x: 2.5,
+      y: SLAB_HEIGHT,
+      z: 2.5,
+    });
+    // The death burst still tells a machine from a bug by the template's model family.
+    expect(builder.unitModelId("m1")).toBe("tdf.mech.assembled-a");
   });
 
   it("re-poses moved units without reloading, and removes gone or dead units", async () => {

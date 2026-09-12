@@ -17,6 +17,8 @@ import type { Tether } from "../view/elevation-tether";
 import { ElevationTether } from "../view/elevation-tether";
 import type { Disposable } from "../model/disposable";
 import type { ModelLoader } from "../model/model-loader";
+import type { UnitModelSource } from "../model/unit-model-source";
+import { LoadoutUnitModelSource } from "./loadout-unit-model-source";
 import type { SpawnerPicker } from "../model/spawner-picker";
 import type { TilePicker } from "../model/tile-picker";
 import type { UnitPicker } from "../model/unit-picker";
@@ -34,8 +36,14 @@ import type { Radar, RadarContact } from "../../tactical/model/radar";
 /** What the builder is composed from. */
 export interface TacticalSceneBuilderOptions {
   readonly map: TacticalMap;
-  /** Resolves `UnitTemplate.modelId` to models; one prototype per id is fetched and cloned per unit. */
+  /** Loads map art, spawners and, through `unitModels`' default, unit models. */
   readonly models: ModelLoader;
+  /**
+   * Resolves a unit template to its object; a mech is assembled from
+   * its loadout (#1115). Defaults to `LoadoutUnitModelSource` over
+   * `models`.
+   */
+  readonly unitModels?: UnitModelSource;
 }
 
 /**
@@ -66,7 +74,8 @@ export type UnitTemplateLookup = Readonly<Record<UnitTemplateId, UnitTemplate>>;
  *   update(units, templates)
  *     ├─ gone or hp ≤ 0 ──► mesh.dispose()
  *     ├─ known           ──► mesh.setPose(pos, facing)
- *     └─ new             ──► models.load(template.modelId) ──► UnitMesh (unless removed meanwhile)
+ *     └─ new             ──► unitModels.load(template) ──► UnitMesh (unless removed meanwhile)
+ *                            (a mech: its loadout's parts assembled, #1115)
  *
  *   arrive(unit, template, at)   ──► as "new", hidden, at `at` instead of the unit's tile (#1116)
  *
@@ -106,6 +115,7 @@ export class TacticalSceneBuilder
   private readonly ghostUniforms: GhostUniforms;
   private readonly models: ModelLoader;
   private readonly radarView: RadarView;
+  private readonly unitModels: UnitModelSource;
   private readonly unitsGroup: Group;
   private readonly meshes = new Map<UnitId, UnitMesh>();
   /** Where each unit stands, so the tethers can be redrawn when the cut moves (#981). */
@@ -140,6 +150,9 @@ export class TacticalSceneBuilder
   constructor(options: TacticalSceneBuilderOptions) {
     this.models = options.models;
     this.radarView = new RadarView(options.models);
+    this.unitModels =
+      options.unitModels ??
+      new LoadoutUnitModelSource({ models: options.models });
     this.ghostUniforms = createGhostUniforms(GHOST_RADIUS, GHOST_FLOOR);
     // No objective markers in a mission: the spawner model appears when
     // its tile is explored, and a marker under it would show through
@@ -542,9 +555,9 @@ export class TacticalSceneBuilder
     this.tethers.show(tethers);
   }
 
-  /** Loads the template's model and places the unit, unless it was removed while loading. */
+  /** Loads the template's model (a mech from its parts, #1115) and places the unit, unless it was removed while loading. */
   private async place(unit: Unit, template: UnitTemplate): Promise<void> {
-    const model = await this.models.load(template.modelId);
+    const model = await this.unitModels.load(template);
     if (!this.wanted.has(unit.id)) {
       return;
     }

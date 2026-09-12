@@ -4,8 +4,14 @@ import { Box3, Mesh, Vector3 } from "three";
 import type { Object3D } from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { describe, expect, it } from "vitest";
+import type { ModelAssetId } from "../../content/data/model-ids";
+import { STARTER_LOADOUT } from "../../roster/data/starter-roster";
 import { MODEL_MANIFEST } from "../data/model-manifest";
+import { mechAssemblyFor } from "../data/part-model-table";
+import type { ModelLoader } from "../model/model-loader";
 import { UnitMesh } from "../view/unit-mesh";
+import { flattenModel } from "./loadout-unit-model-source";
+import { MechAssembler } from "./mech-assembler";
 
 const MODELS = [
   "tdf.infantry.rifle",
@@ -21,7 +27,7 @@ const MODELS = [
 ] as const;
 
 /** Loads real geometry and node transforms, omitting browser-only image decoding. */
-async function loadModel(id: (typeof MODELS)[number]): Promise<Object3D> {
+async function loadModel(id: ModelAssetId): Promise<Object3D> {
   const source = readFileSync(`public/${MODEL_MANIFEST[id].path}`);
   const length = source.readUInt32LE(12);
   const json = JSON.parse(
@@ -159,3 +165,73 @@ it.each(["tdf.mech.assembled-a", "tdf.mech.assembled-b"] as const)(
     expect(leg.rotation.x).toBeCloseTo(0);
   },
 );
+
+/** A mech assembled from the shipped part GLBs, as the battlefield draws one (#1115). */
+async function assembledStarter(): Promise<Object3D> {
+  const models: ModelLoader = {
+    load: (id) => loadModel(id),
+    preload: () => Promise.resolve(),
+  };
+  const assembler = new MechAssembler({ models });
+  return flattenModel(
+    await assembler.assemble(mechAssemblyFor(STARTER_LOADOUT)),
+  );
+}
+
+describe("unit motion on a mech assembled from its loadout (#1115)", () => {
+  it("finds both legs and the weapon arm, and walks like the reference", async () => {
+    const model = await assembledStarter();
+    const mesh = new UnitMesh("actor", model, "tdf.mech.assembled-a");
+    const rest = pose(model);
+    const legs: Object3D[] = [];
+    const arms: Object3D[] = [];
+    model.traverse((part) => {
+      if (part.name.startsWith("motion-leg-")) legs.push(part);
+      if (part.name.startsWith("motion-arm-")) arms.push(part);
+    });
+    expect(legs.map((leg) => leg.name).sort()).toEqual([
+      "motion-leg-l",
+      "motion-leg-r",
+    ]);
+    expect(arms.length).toBeGreaterThanOrEqual(1);
+    mesh.motion!.walk(0.5);
+    expect(pose(model)).not.toEqual(rest);
+    expect(legs.some((leg) => leg.rotation.x > 0.1)).toBe(true);
+    expect(legs.some((leg) => leg.rotation.x < -0.1)).toBe(true);
+    mesh.motion!.reset();
+    expect(pose(model)).toEqual(rest);
+    mesh.motion!.attack(0.35, false);
+    expect(pose(model)).not.toEqual(rest);
+    mesh.motion!.reset();
+    expect(pose(model)).toEqual(rest);
+  });
+
+  it("stands as tall as the reference assembly and faces the same way", async () => {
+    const assembled = await assembledStarter();
+    const reference = await loadModel("tdf.mech.assembled-a");
+    const mesh = new UnitMesh("actor", assembled, "tdf.mech.assembled-a");
+    const referenceMesh = new UnitMesh(
+      "reference",
+      reference,
+      "tdf.mech.assembled-a",
+    );
+    const height = (model: Object3D): number =>
+      new Box3().setFromObject(model).getSize(new Vector3()).y;
+    // Same legs and chassis, so the same height within a hand's width.
+    expect(Math.abs(height(assembled) - height(reference))).toBeLessThan(0.15);
+    for (const facing of ["n", "e", "s", "w"] as const) {
+      mesh.setPose({ x: 0, y: 0, z: 0 }, facing);
+      referenceMesh.setPose({ x: 0, y: 0, z: 0 }, facing);
+      const muzzle = mesh.object
+        .getObjectByName("socket_muzzle")!
+        .getWorldPosition(new Vector3())
+        .sub(mesh.object.position);
+      const expected = referenceMesh.object
+        .getObjectByName("socket_muzzle")!
+        .getWorldPosition(new Vector3())
+        .sub(referenceMesh.object.position);
+      expect(Math.sign(muzzle.x)).toBe(Math.sign(expected.x));
+      expect(Math.sign(muzzle.z)).toBe(Math.sign(expected.z));
+    }
+  });
+});

@@ -30,6 +30,7 @@ import {
   stepFocus,
   topFocus,
 } from "../../graphics/service/layer-focus-service";
+import { LoadoutUnitModelSource } from "../../graphics/service/loadout-unit-model-source";
 import { TacticalSceneBuilder } from "../../graphics/service/tactical-scene-builder";
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
@@ -155,6 +156,8 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
     const builder = new TacticalSceneBuilder({
       map: mission.map,
       models: this.models,
+      // A mech is drawn from the parts its loadout names (#1115).
+      unitModels: new LoadoutUnitModelSource({ models: this.models }),
     });
     const overlays = new TacticalOverlays();
     const rig = new OrthographicCameraRig({

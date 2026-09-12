@@ -95,7 +95,7 @@ Until M2, tactical missions are **auto-resolved** by a placeholder resolver so t
 ### 6.1 Presentation
 - Fixed isometric camera; rotation in 90° steps; zoom in a small range. Orthographic projection.
 - Tile grid with elevation levels. Multi-floor buildings are enterable by infantry. Mechs are too tall for interiors and act as heavy fire support outside.
-- Unit tokens: an infantry squad is rendered as ~5 figures that move as one unit and occupy one tile; a mech occupies one tile and is visibly taller.
+- Unit tokens: an infantry squad is rendered as ~5 figures that move as one unit and occupy one tile; a mech occupies one tile and is visibly taller. A mech is drawn from the parts fitted to it, so the mech on the field is the one built in the bay and two loadouts are told apart at a glance (Executive Director, 2026-09-12, #1115).
 
 ### 6.2 Turn structure
 - Player phase → bug phase. Each unit has action points (move + act, XCOM-style two-action budget by default; mechs may have distinct budgets).

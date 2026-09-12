@@ -169,6 +169,9 @@ describe("mechUnit", () => {
       passClass: "mech",
       modelId: "tdf.mech.assembled-a",
     });
+    // The loadout rides along, so graphics draws the parts the player
+    // fitted rather than the reference assembly (#1115).
+    expect(template.loadout).toBe(mech.loadout);
     // One attack per fitted weapon (#532), each with that part's own
     // reach and penetration rather than the tuning's single profile.
     expect(template.weapons).toHaveLength(sheet.weapons.length);

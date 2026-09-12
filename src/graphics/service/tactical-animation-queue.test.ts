@@ -1,5 +1,5 @@
 import { Object3D, Texture } from "three";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { MODEL_MANIFEST } from "../data/model-manifest";
@@ -480,5 +480,114 @@ describe("TacticalAnimationQueue reveal", () => {
     });
     queue.update(TIMING.revealSeconds * 2);
     expect(done).toBe(true);
+  });
+});
+
+describe("unit action poses", () => {
+  /** A pose port wired exactly as the scene builder exposes its unit mesh. */
+  function animatedScene() {
+    const s = scene();
+    const motion = { walk: vi.fn(), attack: vi.fn(), reset: vi.fn() };
+    s.unitMotion = (id) => (id === "unit-1" ? motion : undefined);
+    return {
+      s,
+      motion,
+      queue: new TacticalAnimationQueue({ scene: s, sprites, timing: TIMING }),
+    };
+  }
+
+  it("turns along each path segment while sampling strides, then settles", () => {
+    const { s, motion, queue } = animatedScene();
+    queue.enqueue([
+      {
+        type: "tactical:unit-moved",
+        payload: {
+          unitId: "unit-1",
+          from: { x: 0, y: 0, z: 0 },
+          to: { x: 1, y: 1, z: 1 },
+          path: [
+            { x: 1, y: 0, z: 0 },
+            { x: 1, y: 1, z: 1 },
+          ],
+        },
+      },
+    ]);
+    queue.update(0.025);
+    expect(s.objects.get("unit-1")!.rotation.y).toBeCloseTo(-Math.PI / 2);
+    expect(motion.walk).toHaveBeenLastCalledWith(0.25);
+    queue.update(0.1);
+    expect(Math.abs(s.objects.get("unit-1")!.rotation.y)).toBeCloseTo(Math.PI);
+    queue.update(1);
+    expect(motion.reset).toHaveBeenCalledOnce();
+    expect(s.objects.get("unit-1")!.position.y).toBeCloseTo(
+      tileTopCentre({ x: 1, y: 1, z: 1 }).y,
+    );
+    expect(queue.busy).toBe(false);
+  });
+
+  it.each([false, true])(
+    "carries the gait between tile events (skip first: %s)",
+    (skipFirst) => {
+      const { motion, queue } = animatedScene();
+      const step = (fromX: number): TacticalEvent => ({
+        type: "tactical:unit-moved",
+        payload: {
+          unitId: "unit-1",
+          from: { x: fromX, y: 0, z: 0 },
+          to: { x: fromX + 1, y: 0, z: 0 },
+          path: [{ x: fromX + 1, y: 0, z: 0 }],
+        },
+      });
+      queue.enqueue([step(0)]);
+      queue.update(0.05);
+      expect(motion.walk).toHaveBeenLastCalledWith(0.5);
+      if (skipFirst) queue.skip();
+      else queue.update(0.05);
+      queue.enqueue([step(1)]);
+      queue.update(0.05);
+      expect(motion.walk).toHaveBeenLastCalledWith(1.5);
+    },
+  );
+
+  it.each([RIFLE_RANGE, CLAW_RANGE])(
+    "aims and samples the weapon's attack pose at range %s",
+    (range) => {
+      const { s, motion, queue } = animatedScene();
+      const yaw = s.objects.get("unit-1")!.rotation.y;
+      queue.enqueue([attack(range)]);
+      queue.update(0.035);
+      expect(s.objects.get("unit-1")!.rotation.y).toBeCloseTo(-Math.PI / 2);
+      expect(motion.attack).toHaveBeenCalledWith(
+        expect.any(Number),
+        range === CLAW_RANGE,
+      );
+      queue.update(2);
+      expect(motion.reset).toHaveBeenCalledOnce();
+      expect(s.objects.get("unit-1")!.rotation.y).toBe(yaw);
+    },
+  );
+
+  it.each([MOVE, ATTACK])(
+    "resets an in-flight $type on skip and disposal",
+    (event) => {
+      for (const finish of ["skip", "dispose"] as const) {
+        const { motion, queue } = animatedScene();
+        queue.enqueue([event]);
+        queue.update(0.025);
+        queue[finish]();
+        expect(motion.reset).toHaveBeenCalled();
+        expect(queue.busy).toBe(false);
+        expect(queue.root.children).toHaveLength(0);
+      }
+    },
+  );
+
+  it("finishes instantly without leaving a stride or recoil applied", () => {
+    const { motion, queue } = animatedScene();
+    queue.setInstant(true);
+    queue.enqueue([MOVE, ATTACK]);
+    expect(motion.walk).not.toHaveBeenCalled();
+    expect(motion.attack).not.toHaveBeenCalled();
+    expect(motion.reset).toHaveBeenCalledTimes(2);
   });
 });

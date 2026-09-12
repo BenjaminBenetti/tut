@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Unit animation preview</title>
+    <style>
+      body {
+        margin: 0;
+        background: #141821;
+        color: #eee;
+        font: 14px monospace;
+      }
+      nav {
+        padding: 12px;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+      canvas {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <label
+        >Unit
+        <select id="model"></select
+      ></label>
+      <button id="walk">Move</button><button id="attack">Attack</button>
+      <button id="pause">Pause</button><button id="reset">Reset</button>
+      <span id="status">Loading models…</span>
+    </nav>
+    <script type="module" src="./unit-motion.ts"></script>
+  </body>
+</html>

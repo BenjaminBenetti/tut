@@ -3,16 +3,24 @@ import { describe, expect, it } from "vitest";
 import {
   ENGINEER_SQUAD,
   MEDIC_SQUAD,
+  RADIO_SQUAD,
   RIFLE_SQUAD,
   ROCKET_SQUAD,
   SNIPER_SQUAD,
   SQUAD_TYPES,
 } from "./squad-types";
 
-const REQUIRED_IDS = ["rifle", "rocket", "sniper", "engineer", "medic"];
+const REQUIRED_IDS = [
+  "rifle",
+  "rocket",
+  "sniper",
+  "engineer",
+  "medic",
+  "radio",
+];
 
 describe("squad-types data", () => {
-  it("contains the five M1 types with unique ids", () => {
+  it("contains every shipped squad type with unique ids", () => {
     const ids = SQUAD_TYPES.map((t) => t.id);
     expect(new Set(ids).size).toBe(ids.length);
     for (const id of REQUIRED_IDS) {
@@ -27,6 +35,7 @@ describe("squad-types data", () => {
       SNIPER_SQUAD,
       ENGINEER_SQUAD,
       MEDIC_SQUAD,
+      RADIO_SQUAD,
     ]) {
       expect(SQUAD_TYPES).toContain(type);
     }

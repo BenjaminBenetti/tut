@@ -386,6 +386,8 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
     attached.builder.dispose();
     this.deps.onHooks?.(undefined);
     delete document.body.dataset.tacticalUnits;
+    delete document.body.dataset.tacticalRadars;
+    delete document.body.dataset.tacticalRadarContacts;
     delete document.body.dataset.tacticalReady;
     delete document.body.dataset.tacticalStorey;
     delete document.body.dataset.tacticalStoreys;
@@ -433,6 +435,9 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
     }
     await drawPerceived(attached.builder, mission);
     if (this.attached === attached) {
+      const radar = attached.builder.radarCounts();
+      document.body.dataset.tacticalRadars = String(radar.scanners);
+      document.body.dataset.tacticalRadarContacts = String(radar.contacts);
       document.body.dataset.tacticalUnits = String(
         attached.builder.unitIds().length,
       );

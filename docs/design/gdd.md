@@ -82,7 +82,7 @@ Until M2, tactical missions are **auto-resolved** by a placeholder resolver so t
 - Region-level installations bought with credits. Examples: **defensive battery** (reduces spawn/growth in a region), **repellent dispersal** (deters spread to neighbours), **sensor array** (reveals missions earlier / better intel). Each has a build cost, upkeep, and a limited count per region.
 
 ### 5.7 Roster
-- **Infantry squads**: one roster entry = one squad token of ~5 soldiers. Types include rifle, rocket, sniper, engineer, medic (expand under Track: Arsenal). Squads take casualties; a squad below strength can be reinforced for credits; a wiped squad is gone.
+- **Infantry squads**: one roster entry = one squad token of ~5 soldiers. Types include rifle, rocket, sniper, engineer, medic, and radio (expand under Track: Arsenal). Squads take casualties; a squad below strength can be reinforced for credits; a wiped squad is gone.
 - **Mechs**: one roster entry = one mech. Built from a **chassis** plus **legs**, **arms**, one **arm weapon**, one **back weapon**, and **utility slots**. Parts have stats (armor, mobility, heat, power, accuracy, etc.) and may be upgraded. Mechs that are destroyed in a mission are **gone**, parts included.
 - Both persist across missions with damage, kills, and experience where applicable.
 
@@ -115,6 +115,7 @@ Vision is a core system, not a presentation detail.
 - Spotting is an event: a bug entering vision is announced, and it is a moment the player should notice.
 - The bug AI is bound by the same rule. Bugs act on what they could plausibly know, and must not path toward units they have not detected.
 - Line of sight for *targeting* and vision for *knowing* share the same geometry but are separate concerns; a unit may see a bug it cannot legally shoot.
+- **Radio squads deploy radar** for 1 AP on an adjacent free tile (placement range 1, following terrain and wall traversal). The small scanner operates for the rest of the mission, even after its squad leaves. Within a horizontal **30-tile circular radius**, hidden enemy units and structures, including egg nests, appear as red location blips through fog, walls, and floors. Units use round markers; structures use square markers. Scanning does not explore terrain, spot units for targeting, or disclose species or health. Contacts update with movement and disappear when their targets die, leave coverage, or become visible. There is no charge limit or upkeep; deployed scanners allow movement through their tile. Scanners persist in mission saves. This gives the player a way to locate egg nests before scouting them on foot (Executive Director, 2026-09-12).
 
 ### 6.2.2 Presentation of combat
 The player's attention belongs on the battlefield, not on a side panel.

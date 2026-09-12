@@ -17,6 +17,8 @@ import {
 } from "../../tactical/service/vision-service";
 import { LAYER_HEIGHT } from "../../graphics/data/mapgen-preview-palette";
 import type { MapExtent } from "../../graphics/service/camera-math";
+import type { Radar, RadarContact } from "../../tactical/model/radar";
+import { radarContacts } from "../../tactical/service/radar-service";
 
 // ===========================================
 // Types
@@ -35,6 +37,11 @@ export interface PerceivedStage {
   update(units: readonly Unit[], templates: UnitTemplateLookup): Promise<void>;
   /** Places the egg spawners that should be on the board. */
   updateSpawners(spawners: readonly Spawner[]): Promise<void>;
+  /** Places friendly scanners and their location-only enemy blips. */
+  updateRadar(
+    radars: readonly Radar[],
+    contacts: readonly RadarContact[],
+  ): Promise<void>;
 }
 
 /**
@@ -105,6 +112,10 @@ export async function drawPerceived(
   await Promise.all([
     stage.update(perceivedUnits(mission, "tdf"), mission.templates),
     stage.updateSpawners(perceivedSpawners(mission, "tdf")),
+    stage.updateRadar(
+      mission.radars.filter((radar) => radar.team === "tdf"),
+      radarContacts(mission, "tdf"),
+    ),
   ]);
 }
 

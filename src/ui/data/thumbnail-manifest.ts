@@ -28,6 +28,11 @@ export interface ThumbnailAssetEntry {
 
 /** Every thumbnail, keyed by model id. */
 export const THUMBNAIL_MANIFEST = {
+  "tdf.infantry.radio": {
+    path: "assets/ui/thumbs/tdf.infantry.radio.png",
+    model: "tdf.infantry.radio",
+    label: "Radio squad",
+  },
   "tdf.infantry.rifle": {
     path: "assets/ui/thumbs/tdf.infantry.rifle.png",
     model: "tdf.infantry.rifle",

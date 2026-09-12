@@ -85,6 +85,7 @@ function mission(
     extracted: [],
     vision: emptyVision(),
     log: [],
+    radars: [],
     commandSeq: 0,
   };
 }

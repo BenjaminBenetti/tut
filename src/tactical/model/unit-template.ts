@@ -1,4 +1,5 @@
 import type { ModelAssetId } from "../../content/data/model-ids";
+import type { UnitAbility } from "../../content/model/unit-ability";
 import type { PassClass } from "./unit";
 import type { UnitWeapon } from "./unit-weapon";
 
@@ -58,4 +59,6 @@ export interface UnitTemplate {
   readonly passClass: PassClass;
   /** Model graphics draws for every unit of this template. */
   readonly modelId: ModelAssetId;
+  /** Special actions; absent on older saved templates and ordinary units. */
+  readonly abilities?: readonly UnitAbility[];
 }

@@ -36,6 +36,12 @@ class StageRecorder {
   units: readonly Unit[] = [];
   spawners: readonly Spawner[] = [];
 
+  /** Records the radar layer update. */
+  updateRadar(): Promise<void> {
+    this.calls.push("updateRadar");
+    return Promise.resolve();
+  }
+
   /** Records the vision handed to the scene. */
   setVision(vision: SideVision | undefined): void {
     this.calls.push("setVision");
@@ -163,7 +169,12 @@ describe("drawPerceived", () => {
     const stage = new StageRecorder();
     await drawPerceived(stage, missionWithBug());
     // A spawner is the mission's objective; it appears with the force.
-    expect(stage.calls).toEqual(["setVision", "update", "updateSpawners"]);
+    expect(stage.calls).toEqual([
+      "setVision",
+      "update",
+      "updateSpawners",
+      "updateRadar",
+    ]);
   });
 });
 

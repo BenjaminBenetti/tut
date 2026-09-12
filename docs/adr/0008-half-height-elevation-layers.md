@@ -81,6 +81,12 @@ Everything man-made spans two layers where it spanned one level:
 - **Elevation bonus threshold is one storey.** `elevationBonus(from, to)` =
   `trunc((from.y − to.y) / STOREY_LAYERS)` storeys, × `elevationPerLevel`
   (renamed `elevationPerStorey`). A bare half step gives no bonus either way.
+- **Attack distance uses real height too (#1119, GDD §6.2).** `attackDistance`
+  = `round(hypot(manhattan, |Δy| × LAYER_TILES))` with `LAYER_TILES = 0.75`,
+  the same number the renderer draws a layer at; on level ground it is the
+  Manhattan distance it always was. A ranged weapon's reach grows by
+  `reachBonusPerStorey` per whole storey the shooter stands above the
+  target, capped at `maxReachBonus`; a melee weapon's does not.
 - **Line of sight uses real height in layers**: the eye at `y + 1` layer, the
   ray sampled in layers; a column blocks when a tile's `y` exceeds the ray's
   height at that point, as now. A half-step ledge therefore blocks sight only

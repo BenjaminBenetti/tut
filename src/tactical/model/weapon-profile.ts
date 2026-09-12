@@ -8,7 +8,11 @@
  * their data, roster units derive theirs at mission start (#321).
  */
 export interface WeaponProfile {
-  /** Tiles the weapon reaches, Manhattan. Positive integer; `1` is melee. */
+  /**
+   * Tiles the weapon reaches on level ground, Manhattan. Positive
+   * integer; `1` is melee. Height adds to the distance a shot is held
+   * against and, from above, to the reach (`weapon-reach-service`, #1119).
+   */
   readonly range: number;
   /** Base hit chance in percent before cover and elevation. In `[0, 100]`. */
   readonly accuracy: number;

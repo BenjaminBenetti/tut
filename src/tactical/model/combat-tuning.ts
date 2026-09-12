@@ -1,6 +1,7 @@
 import type { UnitKind } from "./unit";
 
 import type { CoverLevel } from "../../mapgen/model/cover";
+import type { WeaponReachTuning } from "./weapon-reach-tuning";
 
 // ===========================================
 // Combat tuning
@@ -22,9 +23,12 @@ import type { CoverLevel } from "../../mapgen/model/cover";
  *
  *   damage  = roll in [damage × (1 − spread), damage × (1 + spread)]
  *           − max(0, armor − armorPen), never below minDamage
+ *
+ *   distance = round(hypot(manhattan, |Δy| × LAYER_TILES))   (#1119)
+ *   reach    = range + min(maxReachBonus, storeysAbove × reachBonusPerStorey)
  * ```
  */
-export interface CombatTuning {
+export interface CombatTuning extends WeaponReachTuning {
   /** Accuracy lost per tile of distance beyond the first. Non-negative. */
   readonly rangePenaltyPerTile: number;
   /** Accuracy change per cover level the target has against the attacker. Non-positive values. */

@@ -6,6 +6,7 @@
  * background, isometric 45°, framed to the model's bounding box.
  *
  *   node tools/art/preview/render-thumbnails.mjs
+ *   node tools/art/preview/render-thumbnails.mjs bug.
  *
  * Registered in `src/ui/data/thumbnail-manifest.ts`. Needs `@playwright/test`.
  */
@@ -24,7 +25,9 @@ const PORT = 8792;
  * @returns {boolean} True when the model belongs on a screen.
  */
 function wantsThumbnail(entry) {
-  return /^(tdf|bug)\./.test(entry.id);
+  return (
+    /^(tdf|bug)\./.test(entry.id) && entry.id.startsWith(process.argv[2] ?? "")
+  );
 }
 
 /**

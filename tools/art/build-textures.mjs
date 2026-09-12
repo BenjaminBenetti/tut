@@ -84,29 +84,29 @@ export const ATLAS_CELLS = {
     atlas: "bug",
     col: 0,
     row: 0,
-    hex: "#14121A",
+    hex: "#2E2118",
     style: "chitin",
   },
   "bug-chitin-dark": {
     atlas: "bug",
     col: 1,
     row: 0,
-    hex: "#2B2436",
+    hex: "#5C3B25",
     style: "chitin",
   },
   "bug-chitin-mid": {
     atlas: "bug",
     col: 2,
     row: 0,
-    hex: "#4A3B5A",
+    hex: "#8B5D36",
     style: "chitin",
   },
-  "bug-flesh": { atlas: "bug", col: 3, row: 0, hex: "#7A3A4E", style: "flesh" },
+  "bug-flesh": { atlas: "bug", col: 3, row: 0, hex: "#73452E", style: "flesh" },
   "bug-flesh-light": {
     atlas: "bug",
     col: 0,
     row: 1,
-    hex: "#B05A6E",
+    hex: "#956344",
     style: "flesh",
   },
   "bug-bio-green": {
@@ -130,7 +130,21 @@ export const ATLAS_CELLS = {
     hex: "#E23DFF",
     style: "glow",
   },
-  "bug-bone": { atlas: "bug", col: 0, row: 2, hex: "#D8CBB0", style: "bone" },
+  "bug-bone": { atlas: "bug", col: 0, row: 2, hex: "#DDC39B", style: "bone" },
+  "bug-chitin-tan": {
+    atlas: "bug",
+    col: 1,
+    row: 2,
+    hex: "#B88B58",
+    style: "bone",
+  },
+  "bug-chitin-light": {
+    atlas: "bug",
+    col: 2,
+    row: 2,
+    hex: "#C6A275",
+    style: "bone",
+  },
   "env-asphalt": {
     atlas: "env",
     col: 0,
@@ -458,7 +472,7 @@ function paintGlass(cell) {
 }
 
 /**
- * Chitin: wrapping Voronoi plates with dark cracks and per-plate shading.
+ * Chitin: subtle wrapping growth seams and small per-plate tone shifts.
  * @param {Cell} cell - Target.
  * @param {Rng} rng - Seed.
  */
@@ -468,7 +482,7 @@ function paintChitin(cell, rng) {
     points.push([
       rng.range(0, CELL),
       rng.range(0, CELL),
-      rng.range(0.82, 1.12),
+      rng.range(0.95, 1.05),
     ]);
   cell.shade((x, y) => {
     let d1 = Infinity;
@@ -487,9 +501,9 @@ function paintChitin(cell, rng) {
       } else if (d < d2) d2 = d;
     }
     const edge = d2 - d1;
-    if (edge < 2.2) return 0.45;
-    if (edge < 4.5) return 0.8;
-    return tone * (1 - d1 / 220);
+    if (edge < 1.4) return 0.84;
+    if (edge < 3.0) return 0.94;
+    return tone * (1 - d1 / 950);
   });
 }
 
@@ -508,7 +522,7 @@ function paintFlesh(cell, rng) {
     for (let s = 0; s < 60; s++) {
       const nx = x + Math.cos(a + Math.sin(s * 0.3) * 0.6) * 2;
       const ny = y + Math.sin(a + Math.sin(s * 0.3) * 0.6) * 2;
-      cell.line(x, y, nx, ny, 0.7, 2);
+      cell.line(x, y, nx, ny, 0.94, 1);
       x = nx;
       y = ny;
     }

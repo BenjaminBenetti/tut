@@ -1,12 +1,14 @@
 # Concept sheets
 
-Generated reference art for the first asset set. Every image has a sidecar `.md` with the exact prompt, generator, date and keep/change notes (architecture §7). Regenerate any sheet with:
+Generated reference art for the first asset set, plus later explorations. Every image has a sidecar `.md` recording its prompt (inline or in a linked text file), generator, date and keep/change notes (architecture §7). Regenerate the original sheets with:
 
 ```
 tools/art/gen-image.sh docs/design/concepts/prompts/<name>.txt docs/design/concepts/<name>.png
 ```
 
-Sheets are documentation, not runtime assets; they are downscaled to 1536 px wide.
+Sheets are documentation, not runtime assets; they are stored at 1536 px wide.
+
+**Selected swarmer direction:** [Brown Crescent B](swarmer-redesign/b-crescent-brown.md). The [brown family kit](../kits/crescent-bugs.md) implements all four replacement models with distinct species silhouettes and shared materials. [The three concept directions](swarmer-redesign/README.md) and earlier palettes remain available as design history. The original bug sheets below are superseded by this kit.
 
 | Sheet | Subject | Style guide |
 |---|---|---|

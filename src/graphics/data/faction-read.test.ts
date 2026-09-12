@@ -18,7 +18,7 @@ const FACTION_PRIMARIES: Readonly<Record<string, string>> = {
   "tdf-olive": "#6B7A3F",
   "tdf-olive-dark": "#45502A",
   "tdf-grey-mid": "#5B6573",
-  "bug-chitin-dark": "#2B2436",
+  "bug-chitin-dark": "#5C3B25",
 };
 
 /** Style guide §4.3: every surface a unit can stand on. */
@@ -55,9 +55,9 @@ const FIGURE_PARTS: Readonly<Record<string, readonly string[]>> = {
   // camera always sees, and it is what carries grass and rock (#613).
   "tdf infantry": ["#6B7A3F", "#9AA5B1"],
   "tdf mech": ["#5B6573", "#9AA5B1", "#2E3440"],
-  // Dark chitin and the bone crest, which is the bugs' answer to the
-  // same problem and has been since §4.2.
-  bug: ["#2B2436", "#D8CBB0"],
+  // Walnut shell and the broad tan dorsal plates of the Crescent family.
+  // Narrow horn cutting edges and small emissives cannot carry the read.
+  bug: ["#5C3B25", "#B88B58"],
 };
 
 /**

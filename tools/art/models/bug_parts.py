@@ -1,10 +1,9 @@
-"""Bug builders: swarmer, lurker, brute and the egg spawner (style guide §3 silhouettes,
-§4.2 palette; concept sheets under ``docs/design/concepts/``).
+"""One brown bug family, with species-specific silhouettes and shared anatomy.
 
-Sharp, bladed, chitinous: dark chitin plates, bone blade edges, small bright
-bioluminescence (green for swarmer and brute, magenta for lurker, both on the
-spawner). Organic masses are smooth-shaded spheres; plates and blades are
-chamfered boxes. Bugs face -Y like everything else.
+Reproducible authored replacements for all four original bugs. The swarmer
+follows the approved brown Crescent concept; the other classes inherit its
+materials and joint anatomy without repeating its crescent silhouette. Limb node names
+are the UnitMotionRig contract. See docs/design/kits/crescent-bugs.md.
 """
 
 from __future__ import annotations
@@ -13,144 +12,331 @@ import math
 import os
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
-from bpy_kit import bevel, box, cut_below, cylinder, socket, sphere  # noqa: E402
-
-
-def plate(name, size, at, token="bug-chitin-dark", rot=(0, 0, 0), chamfer=0.015):
-    """Chamfered chitin plate."""
-    return bevel(box(name, size, at, token, rot), chamfer)
-
-
-def blade(name, length, at, rot, token_back="bug-chitin-black"):
-    """A scythe blade: dark chamfered back with a bone edge strip along -Y.
-
-    ``rot`` orients the blade; it lies along local -Y from ``at`` (its root).
-    """
-    plate(f"{name}_back", (0.05, length, 0.12), at, token_back, rot, chamfer=0.012)
-    box(f"{name}_edge", (0.06, length * 0.96, 0.03), at, "bug-bone", rot)
-
-
-def leg(name, at, yaw, splay, length=0.3, thickness=0.05, token="bug-chitin-dark"):
-    """An insect leg: coxa angled out and down from ``at``, tibia down to the ground."""
-    up = length * 0.5
-    box(f"{name}_coxa", (thickness, thickness, length), (at[0] + math.sin(yaw) * up * 0.7, at[1] + math.cos(yaw) * up * 0.7, at[2] - up * 0.3), token,
-        rot=(math.cos(yaw) * splay, -math.sin(yaw) * splay, 0))
-    box(f"{name}_tibia", (thickness * 0.8, thickness * 0.8, length * 0.9), (at[0] + math.sin(yaw) * length * 1.05, at[1] + math.cos(yaw) * length * 1.05, max(at[2] - length * 0.9, length * 0.4)), token,
-        rot=(math.cos(yaw) * splay * 0.4, -math.sin(yaw) * splay * 0.4, 0))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from crescent_geometry import bead, finish, growth_ridges, group_new, hooked_blade, joint_origin, mesh, rim, scute, shell, sweep
+from bpy_kit import mesh_objects, socket
 
 
 # ===========================================
-# Swarmer: low wedge, six legs, short blades, green eyes (0.5 u)
+# Anatomy shared by the family
+# ===========================================
+
+
+def limb(name, points, radius):
+    """A connected articulated running leg with joint collars and a tapered foot."""
+    before = set(mesh_objects())
+    for i in range(len(points) - 1):
+        a, b = points[i], points[i + 1]
+        mid = tuple(a[k] * 0.56 + b[k] * 0.44 for k in range(3))
+        r = radius * (1 - i * 0.2)
+        sweep(name + f"_segment{i}", [a, mid, b], [r * 0.64, r * 0.62, r * 0.38],
+              token="bug-chitin-dark" if i % 2 == 0 else "bug-chitin-black", sides=10)
+        # A tapered exoskeleton cuff overlaps each flexible segment; the
+        # flared leading end reads as grown armour even when zoomed in.
+        cuff = [tuple(a[k] * (1 - t) + b[k] * t for k in range(3))
+                for t in (0.13, 0.24, 0.48, 0.70)]
+        sweep(name + f"_cuff{i}", cuff, [r * 0.91, r * 1.19, r * 1.03, r * 0.71],
+              [r * 0.83, r * 1.03, r * 0.94, r * 0.63], token="bug-chitin-mid", sides=8)
+        if i < len(points) - 2:
+            bead(name + f"_joint{i}", b, r * 0.71, "bug-chitin-black", segments=12, rings=8)
+            scute(name + f"_jointplate{i}", (b[0], b[1], b[2] + r * 0.55),
+                  r * 1.8, r * 2.0, r * 0.28, "bug-chitin-mid")
+    # Two short terminal toes form a real contact rather than a hovering point.
+    p = points[-1]
+    for side in (-1, 1):
+        sweep(name + f"_toe{side}", [p, (p[0] + side * radius * 0.32, p[1] - radius * 0.75, 0.004)],
+              [radius * 0.24, 0.002], token="bug-bone", sides=6)
+    return joint_origin(group_new(before, name), points[0])
+
+
+def face(at, size, glow="bug-bio-green"):
+    """Recessed head, protected eye clusters and two small curved mandibles."""
+    before = set(mesh_objects())
+    x, y, z = at
+    bead("head_core", at, size, "bug-chitin-black", scale=(1, 0.8, 0.63), segments=20, rings=12)
+    for side in (-1, 1):
+        for i, ratio in enumerate((1.0, 0.57)):
+            eye = (x + side * size * (0.71 + i * 0.22), y - size * (0.55 - i * 0.17),
+                   z + size * (0.10 - i * 0.25))
+            bead(f"eye_socket{side}_{i}", eye, size * 0.28 * ratio, "bug-chitin-black")
+            bead(f"eye{side}_{i}", (eye[0], eye[1] - size * 0.13, eye[2] + size * 0.025),
+                 size * 0.185 * ratio, glow, scale=(1, 0.72, 1), segments=14, rings=10)
+        hooked_blade(f"mandible{side}",
+                     [(x + side * size * 0.42, y - size * 0.46, z - size * 0.27),
+                      (x + side * size * 0.60, y - size * 0.92, z - size * 0.39),
+                      (x + side * size * 0.17, y - size * 1.20, z - size * 0.35)],
+                     [size * 0.20, size * 0.12, 0.001], size * 0.13, size * 0.06)
+    # Keep this node's origin at the actual front for the facing regression.
+    return group_new(before, "head")
+
+
+def forearm(name, anchor, elbow, wrist, blade_points, widths, radius):
+    """Jointed upper arm, protective cuff and a true curved cutting blade."""
+    before = set(mesh_objects())
+    sweep(name + "_upper", [anchor, elbow, wrist], [radius, radius * 0.80, radius * 0.56],
+          token="bug-chitin-mid", sides=12)
+    bead(name + "_elbow", elbow, radius * 0.82, "bug-chitin-black", segments=14, rings=10)
+    bead(name + "_wrist", wrist, radius * 0.58, "bug-chitin-black")
+    scute(name + "_cuff", (elbow[0], elbow[1], elbow[2] + radius * 0.68),
+          radius * 1.8, radius * 2.8, radius * 0.32)
+    hooked_blade(name + "_hook", blade_points, widths, radius * 0.42, radius * 0.17)
+    return joint_origin(group_new(before, name), anchor)
+
+
+def vents(name, at, scale, side, glow):
+    """Two sheltered glowing gill slots, each inside a dark chitin recess."""
+    x, y, z = at
+    for i in range(2):
+        points = [(x, y + i * scale * 2.3, z),
+                  (x + side * scale * 0.48, y + i * scale * 2.3, z - scale * 1.65)]
+        sweep(f"{name}_recess{i}", points, [scale * 0.56] * 2, token="bug-chitin-black", sides=8)
+        sweep(f"{name}_light{i}", [(p[0], p[1] - scale * 0.20, p[2] + scale * 0.10) for p in points],
+              [scale * 0.24] * 2, token=glow, sides=6)
+
+
+def abdomen(name, start, count, width, length, rise):
+    """Overlapping independent tergites over a dark flexible abdomen."""
+    x, y, z = start
+    bead(name + "_core", (x, y + count * length * 0.24, z - rise * 0.9),
+         width, "bug-chitin-black", scale=(0.76, count * length / width * 0.32, 0.32),
+         segments=20, rings=12)
+    for i in range(count):
+        ratio = 1 - i / (count + 1)
+        yy, zz = y + i * length * 0.52, z - i * rise * 0.11
+        _, edge = shell(f"{name}_tergite{i}", (x, yy, zz), width * ratio, length,
+                        rise * ratio, "bug-chitin-mid" if i % 2 == 0 else "bug-chitin-dark",
+                        thickness=0.012, segments=24, rings=4)
+        rim(f"{name}_lip{i}", edge, 0.007, "bug-chitin-mid")
+
+
+# ===========================================
+# Swarmer: flat Crescent shield, four running legs and two blade arms
 # ===========================================
 
 
 def build_swarmer() -> None:
-    """Fast low wedge: abdomen behind, thorax, low head with blades, dorsal spines."""
-    sphere("abdomen", 0.2, (0, 0.28, 0.24), "bug-chitin-mid", segments=8, rings=5, scale=(0.75, 1.3, 0.8), smooth=True)
-    plate("thorax", (0.32, 0.4, 0.22), (0, -0.02, 0.26), "bug-chitin-dark", chamfer=0.03)
-    plate("collar", (0.26, 0.2, 0.18), (0, -0.26, 0.2), "bug-chitin-mid", chamfer=0.02)
-    plate("head", (0.18, 0.2, 0.13), (0, -0.44, 0.13), "bug-chitin-dark", chamfer=0.02)
+    """Small, swift ground hunter; the approved brown Crescent silhouette."""
+    before = set(mesh_objects())
+    bead("thorax", (0, -0.02, 0.245), 0.19, "bug-chitin-black", scale=(1.1, 1.25, 0.55),
+         segments=20, rings=12)
+    abdomen("abdomen", (0, 0.15, 0.28), 5, 0.19, 0.105, 0.082)
+    _, edge = shell("mantle", (0, -0.075, 0.31), 0.425, 0.325, 0.13,
+                    crescent=1.0, thickness=0.018, segments=48, rings=8)
+    rim("mantle_rim", edge, 0.0095)
+    growth_ridges("mantle_ridge", (0, -0.075, 0.31), edge, 0.13)
+    for i, (y, z, w, tilt) in enumerate([(-0.285, 0.377, 0.085, 0.36),
+                                        (-0.17, 0.425, 0.12, 0.12),
+                                        (-0.04, 0.439, 0.13, -0.03),
+                                        (0.085, 0.402, 0.09, -0.30)]):
+        scute(f"dorsal_lozenge{i}", (0, y, z), w, 0.13, 0.023, tilt=tilt)
     for side in (-1, 1):
-        box(f"eye_{'l' if side < 0 else 'r'}", (0.06, 0.02, 0.05), (side * 0.05, -0.54, 0.15), "bug-bio-green")
-        box(f"eye2_{'l' if side < 0 else 'r'}", (0.035, 0.02, 0.03), (side * 0.09, -0.52, 0.11), "bug-bio-green")
-        blade(f"blade_{'l' if side < 0 else 'r'}", 0.3, (side * 0.14, -0.55, 0.1), (math.radians(35), 0, side * math.radians(12)))
-        for i, y in enumerate((-0.2, 0.0, 0.18)):
-            leg(f"leg_{'l' if side < 0 else 'r'}{i}", (side * 0.14, y, 0.2), side * math.radians(90 - 25 * (i - 1)), math.radians(45))
-    # Dorsal glow and crest carry the whole read at 64 px per tile: a 0.5 u bug
-    # on dark asphalt is 32 px of near-black chitin, and a 0.02 u vein is
-    # sub-pixel. Wider, not brighter — bioluminescence stays small and hard
-    # (style guide §4.2), and the bone crest is what separates the silhouette
-    # from the ground.
-    for i, y in enumerate((-0.16, 0.0, 0.16)):
-        box(f"vein_{i}", (0.05, 0.09, 0.02), (0, y, 0.38), "bug-bio-green")
-    # Segmented, not one slab: four tapering plates read as a spined back both
-    # at 64 px and in a close-up render, where a single bone box looked like a
-    # backpack.
-    for i, (y, w) in enumerate(((-0.2, 0.19), (-0.02, 0.16), (0.16, 0.12))):
-        box(f"crest_{i}", (w, 0.11, 0.02), (0, y, 0.375), "bug-bone")
-    for i, y in enumerate((0.3, 0.12, -0.06)):
-        cylinder(f"spine_{i}", 0.0, 0.06, 0.16, 4, (0, y, 0.42 - i * 0.02), "bug-bone", rot=(math.radians(-20), 0, 0))
+        vents(f"gill{side}", (side * 0.225, 0.006, 0.385), 0.022, side, "bug-bio-green")
+    group_new(before, "carapace")
+    face((0, -0.32, 0.255), 0.10)
+    for side in (-1, 1):
+        s = "l" if side < 0 else "r"
+        limb(f"leg_{s}0", [(side * 0.17, -0.06, 0.255), (side * 0.34, -0.19, 0.225),
+                           (side * 0.405, -0.24, 0.085), (side * 0.47, -0.31, 0.015)], 0.038)
+        limb(f"leg_{s}1", [(side * 0.15, 0.18, 0.265), (side * 0.32, 0.285, 0.255),
+                           (side * 0.39, 0.365, 0.07), (side * 0.44, 0.44, 0.015)], 0.042)
+        wrist = (side * 0.205, -0.425, 0.18)
+        forearm(f"blade_{s}", (side * 0.12, -0.22, 0.255), (side * 0.245, -0.34, 0.22), wrist,
+                [wrist, (side * 0.245, -0.475, 0.155), (side * 0.25, -0.53, 0.095),
+                 (side * 0.205, -0.555, 0.035)], [0.026, 0.041, 0.028, 0.001], 0.035)
+    finish(0.5, 0.98, 1.02)
 
 
 # ===========================================
-# Lurker: tall, thin, forward-leaning stalker with scythe arms (1.3 u)
+# Lurker: exposed spearhead, arched neck, raised feelers and long sickles
 # ===========================================
 
 
 def build_lurker() -> None:
-    """Question-mark silhouette: long legs, narrow waist, hooded head, two long scythes."""
+    """A lean mantis with an exposed wedge face and no enclosing hood."""
+    before = set(mesh_objects())
+    sweep("thorax", [(0, 0.11, 0.50), (0, 0.07, 0.70), (0, -0.04, 0.90), (0, -0.20, 1.055)],
+          [0.10, 0.075, 0.084, 0.067], [0.105, 0.08, 0.08, 0.06],
+          token="bug-flesh", sides=18)
+    for i in range(5):
+        z, y = 0.58 + i * 0.085, 0.092 - i * 0.035
+        _, edge = shell(f"thorax_ring{i}", (0, y, z), 0.10 - i * 0.007, 0.11, 0.055,
+                        "bug-chitin-dark", thickness=0.015, segments=24, rings=4)
+        rim(f"thorax_rim{i}", edge, 0.007, "bug-chitin-mid")
+        scute(f"spine_mark{i}", (0, y + 0.02, z + 0.055), 0.054, 0.078, 0.015)
+    abdomen("tail", (0, 0.20, 0.48), 5, 0.13, 0.11, 0.067)
     for side in (-1, 1):
-        s = "l" if side < 0 else "r"
-        x = side * 0.12
-        plate(f"thigh_{s}", (0.09, 0.12, 0.42), (x, 0.08, 0.62), "bug-chitin-dark", rot=(math.radians(-20), 0, 0), chamfer=0.01)
-        plate(f"shin_{s}", (0.08, 0.09, 0.5), (x, -0.04, 0.25), "bug-chitin-dark", rot=(math.radians(12), 0, 0), chamfer=0.01)
-        plate(f"foot_{s}", (0.1, 0.18, 0.05), (x, -0.1, 0.025), "bug-chitin-black", chamfer=0.008)
-        box(f"claw_{s}", (0.03, 0.08, 0.03), (x, -0.2, 0.02), "bug-bone")
-    plate("waist", (0.16, 0.14, 0.2), (0, 0, 0.85), "bug-chitin-mid", chamfer=0.015)
-    plate("chest", (0.3, 0.22, 0.34), (0, -0.08, 1.03), "bug-chitin-dark", rot=(math.radians(-20), 0, 0), chamfer=0.02)
-    sphere("hood", 0.11, (0, -0.2, 1.24), "bug-chitin-dark", segments=8, rings=5, scale=(0.9, 1.3, 1.0), smooth=True)
-    box("slit", (0.14, 0.02, 0.035), (0, -0.32, 1.2), "bug-bio-magenta")
-    box("hood_crest", (0.03, 0.2, 0.02), (0, -0.16, 1.34), "bug-bone")
-    box("spine_glow", (0.06, 0.02, 0.34), (0, 0.06, 1.02), "bug-bio-magenta")
+        # Thin backward shoulder fins emphasize its narrow, open chest.
+        sweep(f"shoulder_fin{side}", [(side * 0.08, -0.065, 0.89),
+              (side * 0.14, 0.035, 1.02), (side * 0.10, 0.17, 1.08)],
+              [0.035, 0.047, 0.002], [0.012, 0.018, 0.001], token="bug-chitin-mid", sides=10)
+        vents(f"gill{side}", (side * 0.074, -0.08, 0.875), 0.019, side, "bug-bio-magenta")
+    group_new(before, "carapace")
+    # The face itself is a tapered wedge, rather than a small head under a hat.
+    head_start = set(mesh_objects())
+    face((0, -0.24, 1.04), 0.115, "bug-bio-magenta")
+    sweep("face_wedge", [(0, -0.15, 1.065), (0, -0.25, 1.095), (0, -0.405, 1.015)],
+          [0.052, 0.145, 0.018], [0.04, 0.052, 0.021], "bug-chitin-dark", sides=10)
+    scute("brow_keel", (0, -0.25, 1.144), 0.076, 0.16, 0.022, tilt=0.22)
     for side in (-1, 1):
-        s = "l" if side < 0 else "r"
-        plate(f"upper_arm_{s}", (0.07, 0.08, 0.42), (side * 0.2, -0.3, 1.08), "bug-chitin-mid", rot=(math.radians(-65), 0, 0), chamfer=0.01)
-        blade(f"scythe_{s}", 0.7, (side * 0.24, -0.5, 1.15), (math.radians(20), 0, side * math.radians(-6)))
-    cylinder("tail", 0.02, 0.07, 0.6, 6, (0, 0.34, 0.72), "bug-chitin-dark", rot=(math.radians(110), 0, 0))
-    for i in range(3):
-        box(f"tail_glow_{i}", (0.035, 0.07, 0.035), (0, 0.24 + i * 0.12, 0.79 - i * 0.05), "bug-bio-magenta")
+        sweep(f"cheek_plate{side}", [(side * 0.14, -0.24, 1.097),
+              (side * 0.09, -0.335, 1.06), (side * 0.018, -0.407, 1.02)],
+              [0.009, 0.014, 0.004], token="bug-chitin-tan", sides=6)
+        sweep(f"feeler{side}", [(side * 0.075, -0.17, 1.09),
+              (side * 0.13, -0.095, 1.21), (side * 0.15, 0.005, 1.26)],
+              [0.014, 0.009, 0.002], token="bug-chitin-black", sides=8)
+        bead(f"temple_eye{side}", (side * 0.135, -0.28, 1.092), 0.025,
+             "bug-bio-magenta", scale=(0.7, 1, 0.7), segments=14, rings=10)
+    group_new(head_start, "head")
+    for side in (-1, 1):
+        label = "l" if side < 0 else "r"
+        limb(f"leg_{label}0", [(side * 0.075, 0.055, 0.59), (side * 0.20, -0.09, 0.37),
+                              (side * 0.145, -0.09, 0.10), (side * 0.20, -0.22, 0.015)], 0.033)
+        limb(f"leg_{label}1", [(side * 0.08, 0.15, 0.56), (side * 0.24, 0.31, 0.45),
+                              (side * 0.25, 0.28, 0.12), (side * 0.31, 0.42, 0.015)], 0.036)
+        wrist = (side * 0.31, -0.345, 0.88)
+        forearm(f"scythe_{label}", (side * 0.07, -0.07, 0.89), (side * 0.27, -0.11, 1.005), wrist,
+                [wrist, (side * 0.38, -0.46, 0.77), (side * 0.42, -0.53, 0.57),
+                 (side * 0.38, -0.56, 0.34), (side * 0.27, -0.49, 0.13)],
+                [0.038, 0.066, 0.077, 0.049, 0.001], 0.044)
+    finish(1.3, 0.95, 1.05)
 
 
 # ===========================================
-# Brute: armoured dome with cleaver blades (1.8 u)
+# Brute: broad beetle wing cases, low battering head and short cleaver arms
 # ===========================================
 
 
 def build_brute() -> None:
-    """Boulder carapace, head sunk into the chest, spikes, two cleavers dragging."""
-    sphere("carapace", 0.5, (0, 0, 1.05), "bug-chitin-dark", segments=10, rings=6, scale=(0.95, 1.0, 1.3), smooth=True)
-    sphere("carapace_ridge", 0.36, (0, 0.05, 1.35), "bug-chitin-mid", segments=8, rings=5, scale=(1.0, 1.0, 0.8), smooth=True)
-    plate("head", (0.34, 0.3, 0.28), (0, -0.5, 0.72), "bug-chitin-dark", chamfer=0.02)
-    box("eye_slit", (0.28, 0.02, 0.055), (0, -0.66, 0.76), "bug-bio-green")
-    box("seam", (0.9, 0.06, 0.06), (0, -0.3, 0.55), "bug-flesh")
+    """A beetle tank: paired oval back plates, compact neck and heavy forelimbs."""
+    before = set(mesh_objects())
+    bead("thorax", (0, 0.08, 0.91), 0.47, "bug-chitin-black", scale=(1.03, 1.05, 1.20),
+         segments=28, rings=18)
+    abdomen("abdomen", (0, 0.31, 0.79), 4, 0.34, 0.18, 0.15)
     for side in (-1, 1):
-        s = "l" if side < 0 else "r"
-        for i, y in enumerate((-0.22, 0.2)):
-            plate(f"leg_{s}{i}", (0.22, 0.24, 0.42), (side * 0.3, y, 0.21), "bug-chitin-dark", chamfer=0.015)
-        plate(f"arm_{s}", (0.24, 0.26, 0.5), (side * 0.5, -0.2, 0.55), "bug-chitin-mid", chamfer=0.02)
-        plate(f"cleaver_{s}", (0.1, 0.7, 0.16), (side * 0.46, -0.4, 0.08), "bug-chitin-black", chamfer=0.012)
-        box(f"cleaver_edge_{s}", (0.11, 0.68, 0.05), (side * 0.46, -0.42, 0.02), "bug-bone")
-        box(f"flesh_{s}", (0.06, 0.2, 0.3), (side * 0.36, -0.18, 0.5), "bug-flesh")
-    # A bone ridge down the carapace: at 64 px per tile the brute is a dark
-    # boulder against dark ground, and the spikes alone read as noise rather
-    # than as an edge.
-    for i, (y, w) in enumerate(((-0.34, 0.26), (-0.12, 0.3), (0.1, 0.26), (0.3, 0.18))):
-        box(f"ridge_{i}", (w, 0.13, 0.03), (0, y, 1.68), "bug-bone")
-    for i, y in enumerate((-0.23, -0.01, 0.2)):
-        box(f"vent_{i}", (0.16, 0.06, 0.02), (0, y, 1.67), "bug-bio-green")
-    for i, (x, y, z) in enumerate([(0, 0, 1.82), (-0.2, 0.15, 1.7), (0.2, 0.15, 1.7), (-0.3, -0.2, 1.5), (0.3, -0.2, 1.5)]):
-        cylinder(f"spike_{i}", 0.0, 0.08, 0.25, 4, (x, y, z), "bug-bone", rot=(math.radians(-15 * (i % 2)), 0, 0))
+        # Each wing case is half a vaulted shell, so the two meet at a
+        # narrow dorsal seam rather than becoming two disconnected humps.
+        rows, cols = 17, 15
+        vertices = []
+        def vault(t, angle):
+            """A section of a broad beetle back, from dorsal seam to flank."""
+            curve = math.sin(math.pi * t) ** 0.68
+            width = 0.12 + 0.41 * curve
+            return (side * (0.013 + width * math.sin(angle)), -0.29 + t * 0.94,
+                    0.94 + curve * 0.07 + (0.15 + curve * 0.43) * math.cos(angle))
+        for i in range(rows):
+            vertices.extend(vault(i / (rows - 1), j * math.pi * 0.54 / (cols - 1)) for j in range(cols))
+        count = len(vertices)
+        vertices.extend((x, y, z - 0.035) for x, y, z in vertices[:])
+        faces = []
+        for i in range(rows - 1):
+            for j in range(cols - 1):
+                a = i * cols + j
+                faces.extend([(a, a + 1, a + cols + 1, a + cols),
+                              (a + count + cols, a + count + cols + 1, a + count + 1, a + count)])
+        boundary = list(range(cols)) + [i * cols + cols - 1 for i in range(1, rows)]
+        boundary += [(rows - 1) * cols + j for j in range(cols - 2, -1, -1)]
+        boundary += [i * cols for i in range(rows - 2, 0, -1)]
+        for a, b in zip(boundary, boundary[1:] + boundary[:1]):
+            faces.append((a, b, b + count, a + count))
+        mesh(f"elytron{side}", vertices, faces, "bug-chitin-dark")
+        seam = [vault(i / 16, 0.04) for i in range(17)]
+        sweep(f"elytron_seam{side}", seam, [0.009] * 17, token="bug-chitin-mid", sides=6)
+        for i, t in enumerate((0.23, 0.42, 0.61, 0.79)):
+            rib = [vault(t, 0.20 + j * 1.32 / 8) for j in range(9)]
+            sweep(f"elytron_ridge{side}_{i}", rib, [0.010] * 9, token="bug-chitin-mid", sides=6)
+            x, y, z = vault(t, 0.38)
+            scute(f"back_mark{side}_{i}", (x, y, z + 0.005), 0.11, 0.12, 0.025)
+        for i in range(2):
+            _, flank_edge = shell(f"flank{side}_{i}", (side * 0.39, -0.04 + i * 0.30, 0.70),
+                                  0.20, 0.25, 0.24, "bug-chitin-mid", thickness=0.027,
+                                  segments=28, rings=5)
+            rim(f"flank_rim{side}_{i}", flank_edge, 0.010)
+        vents(f"gill{side}", (side * 0.45, -0.11, 1.12), 0.037, side, "bug-bio-green")
+    group_new(before, "carapace")
+    # Blunt forward head with a low battering brow and two short jaw horns.
+    head_start = set(mesh_objects())
+    face((0, -0.40, 0.99), 0.22)
+    sweep("battering_brow", [(0, -0.29, 1.105), (0, -0.43, 1.14), (0, -0.58, 1.065)],
+          [0.25, 0.30, 0.16], [0.10, 0.10, 0.07], "bug-chitin-mid", sides=16)
+    scute("brow_mark", (0, -0.425, 1.245), 0.19, 0.19, 0.035, tilt=0.12)
+    for side in (-1, 1):
+        hooked_blade(f"jaw_horn{side}", [(side * 0.20, -0.39, 0.90),
+                     (side * 0.23, -0.56, 0.86), (side * 0.14, -0.67, 0.97)],
+                     [0.067, 0.058, 0.002], 0.038, 0.012)
+    group_new(head_start, "head")
+    for side in (-1, 1):
+        label = "l" if side < 0 else "r"
+        for i, y in enumerate((-0.13, 0.29)):
+            limb(f"leg_{label}{i}", [(side * 0.32, y, 0.76), (side * 0.54, y + 0.05, 0.44),
+                                    (side * 0.53, y + 0.10, 0.14), (side * 0.61, y + 0.085, 0.022)], 0.11)
+        wrist = (side * 0.48, -0.46, 0.50)
+        forearm(f"cleaver_{label}", (side * 0.35, -0.24, 0.85), (side * 0.56, -0.30, 0.66), wrist,
+                [wrist, (side * 0.53, -0.57, 0.40), (side * 0.51, -0.66, 0.23),
+                 (side * 0.34, -0.65, 0.16)], [0.075, 0.14, 0.13, 0.002], 0.105)
+    finish(1.8, 1.30, 1.35)
 
 
 # ===========================================
-# Egg spawner: fleshy mound, eggs, hatch stalk (1.4 u), socket_hatch
+# Egg spawner: asymmetric clustered brood sacs, root web and soft hatch lips
 # ===========================================
+
+
+def brood_egg(name, at, radius, height):
+    """An ovoid membrane anchored by six grown ribs, without a shield motif."""
+    x, y, z = at
+    bead(name, at, radius, "bug-flesh-light", scale=(1, 0.93, height / radius),
+         segments=28, rings=18)
+    for j in range(6):
+        a = j * math.tau / 6
+        points = []
+        for k in range(9):
+            theta = 0.19 + k * (math.pi - 0.38) / 8
+            r = radius * math.sin(theta) * 1.015
+            points.append((x + math.sin(a) * r, y + math.cos(a) * r * 0.93,
+                           z - math.cos(theta) * height))
+        sweep(f"{name}_rib{j}", points, [0.009 + 0.007 * math.sin(k * math.pi / 8) for k in range(9)],
+              token="bug-chitin-tan", sides=6)
+    scute(name + "_cap", (x, y, z + height * 0.97), radius * 0.45, radius * 0.6, 0.025)
 
 
 def build_egg_spawner() -> None:
-    """Mound with three eggs and one split glowing egg, a stalk with a hatch, veins."""
-    cylinder("pool", 0.55, 0.55, 0.02, 12, (0, 0, 0.01), "bug-bio-green-dim")
-    cut_below(sphere("mound", 0.5, (0, 0, 0.15), "bug-flesh", segments=10, rings=6, scale=(1.0, 1.0, 0.8), smooth=True))
-    cylinder("stalk", 0.12, 0.2, 0.7, 8, (0, 0, 0.85), "bug-flesh")
-    cylinder("hatch", 0.2, 0.2, 0.1, 8, (0, 0, 1.25), "bug-chitin-dark")
-    cylinder("hatch_glow", 0.12, 0.12, 0.04, 8, (0, 0, 1.32), "bug-bio-magenta")
-    socket("hatch", (0, 0, 1.4))
-    plate("ridge_0", (0.08, 0.5, 0.14), (-0.25, 0.1, 0.45), "bug-chitin-dark", rot=(0, 0, 0.4), chamfer=0.01)
-    plate("ridge_1", (0.08, 0.4, 0.14), (0.2, 0.3, 0.42), "bug-chitin-dark", rot=(0, 0, -0.7), chamfer=0.01)
-    for i, (x, y) in enumerate([(-0.28, -0.2), (0.28, 0.22), (-0.22, 0.28)]):
-        sphere(f"egg_{i}", 0.18, (x, y, 0.5), "bug-flesh-light", segments=8, rings=6, scale=(1, 1, 1.4), smooth=True)
-    sphere("egg_split", 0.18, (0.28, -0.24, 0.5), "bug-flesh-light", segments=8, rings=6, scale=(1, 1, 0.9), smooth=True)
-    sphere("egg_core", 0.11, (0.28, -0.24, 0.66), "bug-bio-magenta", segments=8, rings=6)
-    for i, (at, rot) in enumerate([((0, -0.3, 0.46), (0, 0, 0.6)), ((-0.3, 0.05, 0.4), (0, 0, 1.4)), ((0.15, 0.3, 0.44), (0, 0, -0.5))]):
-        box(f"vein_{i}", (0.025, 0.4, 0.025), at, "bug-bio-green", rot=rot)
+    """A rooted cluster of eggs with a fleshy central hatch, no crescent base or crown."""
+    before = set(mesh_objects())
+    # Organic root web: several low lobes instead of a single manufactured disc.
+    bead("brood_mound", (0, 0.05, 0.15), 0.36, "bug-flesh", scale=(1.12, 1.05, 0.34),
+         segments=28, rings=16)
+    for i in range(9):
+        a = i * math.tau / 9
+        points = [(math.sin(a) * 0.14, math.cos(a) * 0.14, 0.18),
+                  (math.sin(a + 0.15) * 0.36, math.cos(a + 0.15) * 0.37, 0.08),
+                  (math.sin(a + 0.05) * 0.50, math.cos(a + 0.05) * 0.50, 0.015)]
+        sweep(f"root{i}", points, [0.058, 0.038, 0.004], token="bug-chitin-dark", sides=10)
+        scute(f"root_scale{i}", (points[1][0], points[1][1], 0.103), 0.064, 0.09, 0.018,
+              "bug-chitin-mid")
+    for i, (x, y, radius, height) in enumerate([(-0.25, -0.20, 0.20, 0.31),
+                                               (0.24, -0.24, 0.16, 0.245),
+                                               (-0.24, 0.22, 0.17, 0.38),
+                                               (0.28, 0.24, 0.17, 0.29)]):
+        brood_egg(f"egg{i}", (x, y, 0.12 + height), radius, height)
+    centre = (0.04, 0.05)
+    bead("hatch_bulb", (*centre, 0.51), 0.245, "bug-flesh", scale=(1, 1, 1.28),
+         segments=32, rings=20)
+    # Four rounded valves peel outwards from a short bulb, like an opening egg.
+    for i in range(4):
+        a = i * math.tau / 4 + math.pi / 4
+        points = [(centre[0] + math.sin(a) * 0.10, centre[1] + math.cos(a) * 0.10, 0.33),
+                  (centre[0] + math.sin(a) * 0.20, centre[1] + math.cos(a) * 0.20, 0.58),
+                  (centre[0] + math.sin(a) * 0.20, centre[1] + math.cos(a) * 0.20, 0.81),
+                  (centre[0] + math.sin(a) * 0.29, centre[1] + math.cos(a) * 0.29, 0.89)]
+        sweep(f"hatch_lobe{i}", points, [0.05, 0.09, 0.10, 0.045],
+              [0.03, 0.045, 0.045, 0.03], "bug-chitin-mid", sides=12)
+        sweep(f"hatch_rib{i}", [(p[0], p[1], p[2] + 0.015) for p in points],
+              [0.010, 0.018, 0.020, 0.012], token="bug-chitin-tan", sides=8)
+    bead("hatch_throat", (*centre, 0.816), 0.17, "bug-chitin-black", scale=(1, 1, 0.15), segments=28, rings=12)
+    bead("hatch_core", (*centre, 0.846), 0.105, "bug-bio-magenta", scale=(1, 1, 0.17), segments=24, rings=12)
+    for side in (-1, 1):
+        bead(f"brood_sac{side}", (side * 0.10, -0.31, 0.20), 0.028,
+             "bug-bio-green", scale=(1, 1.5, 0.65))
+    group_new(before, "brood_nest")
+    socket("hatch", (centre[0], centre[1], 0.90))
+    finish(1.4, 1.1, 1.1)

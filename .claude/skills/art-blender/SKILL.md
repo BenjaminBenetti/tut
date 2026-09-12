@@ -46,7 +46,7 @@ Review any GLB (including the three.js placeholders) the same way: `blender -b -
 | Scale | 1 unit = 1 tile = 2 m. Infantry figure 0.9 u, mech 2.4–3.2 u, swarmer 0.5, lurker 1.3, brute 1.8, spawner 1.4, wall 1.5 × 1 × 0.1, floor 1.5 u per level. |
 | Pivot | Base centre: feet on z = 0, footprint centred on the origin. Walls pivot at the base midpoint along +X. Sub-parts (arms, weapons) pivot at their socket. A mound or boulder sunk into the ground gets `cut_below(ob)` so nothing hangs under z = 0 (the validator rejects it). |
 | Materials | One flat Principled material per palette token, named after the token (`bpy_kit.material`). Tokens that have a cell in the unit atlases (`tools/art/atlas-cells.json`, all `tdf-*` and `bug-*`) are textured automatically by `make_model.py`: UVs are remapped into the cell and the GLB references the atlas by relative URI (never embedded). `--no-textured` keeps flat colours (tiles, buildings, most props have no cell anyway). |
-| Shading | Flat. `bpy_kit` primitives are flat by default; organic bug flesh may pass `smooth=True`. `bevel(ob, 0.03)` chamfers armour plates (about 2× the triangles of a plain box; keep it for hero parts). |
+| Shading | Flat by default; smooth bug shells and joint cuffs are intentional. `bpy_kit` primitives are flat by default; organic bug flesh may pass `smooth=True`. `bevel(ob, 0.03)` chamfers armour plates (about 2× the triangles of a plain box; keep it for hero parts). |
 | Sockets | `socket("arm_l", (x, y, z))` creates an empty `socket_arm_l`; mechs expose `chassis`, `arm_l`, `arm_r`, `back`, `weapon`, `muzzle`; spawners `hatch`; door walls `door`. |
 | Naming | Files kebab-case with faction/kit prefix (`tdf-mech-chassis-bulwark.glb`, `bug-lurker.glb`, `city-road-corner.glb`); ids dot-separated `faction.subject.variant`. |
 | Watertight | Every mesh closed. The validator merges the exporter's split flat-shading vertices before checking, so only real holes fail. |
@@ -57,13 +57,13 @@ Triangle and file budgets (style guide §6, `--max-triangles` per class):
 |---|---|---|
 | Infantry figure / squad | 300 / 1 500 | 100 KB |
 | Mech chassis / legs / arm / weapon | 1 200 / 800 / 400 / 300 | 150 KB per part |
-| Swarmer / lurker / brute | 600 / 1 000 / 2 000 | 100 KB |
-| Egg spawner | 1 200 | 100 KB |
+| Detailed swarmer / lurker / brute | 16 000 / 18 000 / 20 000 | 500 KiB |
+| Detailed egg spawner | 16 000 | 500 KiB |
 | Tile piece | 60 | 20 KB |
 | Building module | 800 | 100 KB |
 | Prop | 300 | 60 KB |
 
-Hard cap for anything: 500 KB (the validator's default).
+Hard cap for anything: 500 KiB (the validator's default). The Executive Director requested detailed brown-family replacements on 2026-09-12, then clarified that the crescent hood is the swarmer's signature while the other species need their own silhouettes; these supersede the original bug budgets. See `docs/design/kits/crescent-bugs.md` for source, validation and the production-animation review.
 
 ## Manifest registration
 

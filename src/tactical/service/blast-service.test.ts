@@ -6,14 +6,19 @@ import { SurfaceIds } from "../../mapgen/data/surfaces";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { blastFootprint, blastVictims } from "./blast-service";
-import { missionWith, openField, unitAt } from "./tactical-fixtures.test-helper";
+import {
+  missionWith,
+  openField,
+  unitAt,
+} from "./tactical-fixtures.test-helper";
 
 const at = (x: number, z: number, y = 0): TileCoord => ({ x, y, z });
 
 /** The footprint as `x,z` strings, in the order returned. */
 const cells = (map: TacticalMap, impact: TileCoord, radius: number): string[] =>
   blastFootprint(map, impact, radius).map(
-    ({ tile, distance }) => `${String(tile.x)},${String(tile.z)}@${String(distance)}`,
+    ({ tile, distance }) =>
+      `${String(tile.x)},${String(tile.z)}@${String(distance)}`,
   );
 
 describe("blastFootprint", () => {

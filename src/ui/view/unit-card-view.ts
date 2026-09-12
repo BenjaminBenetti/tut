@@ -179,7 +179,9 @@ export class UnitCardView {
         // The blast, the fire and the force after the four numbers
         // every weapon has (#1121), only when the weapon has them.
         const extras = [
-          ...(p.aoe === undefined ? [] : [`blast ${formatWhole(p.aoe.radius)}`]),
+          ...(p.aoe === undefined
+            ? []
+            : [`blast ${formatWhole(p.aoe.radius)}`]),
           ...(p.aoeEffect === undefined ? [] : [p.aoeEffect.kind]),
           ...((p.demoForce ?? 0) > 0
             ? [`demo ${formatWhole(p.demoForce ?? 0)}`]

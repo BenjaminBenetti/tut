@@ -1406,9 +1406,14 @@ export class TacticalHudView {
   /**
    * The tiles the shot the player is considering would reach (#1121):
    * the aimed weapon's blast around its target, or — with the wheel
-   * open on a tile — the first weapon that could fire at that tile.
-   * Empty when nothing being considered marks the ground, so a rifle
-   * squad's aim paints nothing new.
+   * open on a tile — everything any weapon that could fire at that tile
+   * would reach, since the wheel offers each and the player has not yet
+   * chosen. Empty when nothing being considered marks the ground, so a
+   * rifle squad's aim paints nothing new.
+   *
+   * The union rather than the first weapon's footprint: a mech's arm
+   * gun breaks a car on the one tile while its pod bursts over five, and
+   * a footprint that showed the one tile understated the pod.
    */
   private consideredBlast(): readonly TileCoord[] {
     const mission = this.mission;
@@ -1424,23 +1429,33 @@ export class TacticalHudView {
     if (target?.kind !== "tile") {
       return [];
     }
-    const capable = tileWeaponOptions(
+    const seen = new Set<string>();
+    const tiles: TileCoord[] = [];
+    for (const option of tileWeaponOptions(
       mission,
       unitId,
       this.deps.combatTuning,
-    )[0];
-    if (capable === undefined) {
-      return [];
+    )) {
+      const preview = previewTileAttack(
+        mission,
+        unitId,
+        target.tile,
+        this.deps.combatTuning,
+        option.weapon.id,
+        this.deps.previewDeps,
+      );
+      if (!preview.ok) {
+        continue;
+      }
+      for (const tile of preview.value.blast?.tiles ?? []) {
+        const key = `${String(tile.x)},${String(tile.y)},${String(tile.z)}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          tiles.push(tile);
+        }
+      }
     }
-    const preview = previewTileAttack(
-      mission,
-      unitId,
-      target.tile,
-      this.deps.combatTuning,
-      capable.weapon.id,
-      this.deps.previewDeps,
-    );
-    return preview.ok ? (preview.value.blast?.tiles ?? []) : [];
+    return tiles;
   }
 
   /**

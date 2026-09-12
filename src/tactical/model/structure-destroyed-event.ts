@@ -19,7 +19,11 @@ export type DestroyedStructure =
       readonly propId: string;
       readonly propKind: PropKindId;
     }
-  | { readonly kind: "wall"; readonly side: Direction; readonly wallKind: WallKind };
+  | {
+      readonly kind: "wall";
+      readonly side: Direction;
+      readonly wallKind: WallKind;
+    };
 
 /** Payload of `StructureDestroyed`. */
 export interface StructureDestroyedPayload {

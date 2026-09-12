@@ -118,7 +118,9 @@ export function describeEvent(
       }
       return {
         text: `${shooter}'s blast caught ${hurt
-          .map((v) => `${names.target(v.targetId)} for ${formatWhole(v.damage)}`)
+          .map(
+            (v) => `${names.target(v.targetId)} for ${formatWhole(v.damage)}`,
+          )
           .join(", ")}`,
         icon: "attack",
         tone: "danger",

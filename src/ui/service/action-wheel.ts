@@ -366,10 +366,7 @@ function tileAttackItems(
  * before the click.
  */
 function blastDetail(preview: AttackPreview, unit: Unit): string {
-  const parts = [
-    `${String(preview.hitChance)}%`,
-    damageText(preview.damage),
-  ];
+  const parts = [`${String(preview.hitChance)}%`, damageText(preview.damage)];
   const allies =
     preview.blast?.victims.filter((victim) => victim.team === unit.team)
       .length ?? 0;
@@ -481,7 +478,11 @@ function enemyPage(targetId: string, unit: Unit, ctx: WheelContext): WheelPage {
         id: attackId,
         label: "Attack",
         icon: "attack",
-        detail: alliesSuffix(damageText(preview.value.damage), preview.value, unit),
+        detail: alliesSuffix(
+          damageText(preview.value.damage),
+          preview.value,
+          unit,
+        ),
         primary: true,
       });
     } else {
@@ -586,7 +587,11 @@ function hitHub(hitChance: number): RadialMenuHub {
 }
 
 /** `text · 2 allies` when the player's own units stand in the blast (#1121), else `text`. */
-function alliesSuffix(text: string, preview: AttackPreview, unit: Unit): string {
+function alliesSuffix(
+  text: string,
+  preview: AttackPreview,
+  unit: Unit,
+): string {
   const allies =
     preview.blast?.victims.filter((victim) => victim.team === unit.team)
       .length ?? 0;

@@ -5,10 +5,7 @@ import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import type { AttackTarget } from "../model/attack-target";
 import type { TacticalState } from "../model/tactical-state";
-import {
-  spawnerAttackTarget,
-  unitAttackTarget,
-} from "./attack-target-service";
+import { spawnerAttackTarget, unitAttackTarget } from "./attack-target-service";
 import { hasLineOfSight } from "./sight-service";
 
 // ===========================================

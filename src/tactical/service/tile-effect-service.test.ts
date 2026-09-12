@@ -39,13 +39,26 @@ describe("ignite", () => {
     ];
     // Always-true dice: only the car tile (impassable) and the tile at
     // distance 2 (chance 1 − 0.5 × 2 = 0) are spared.
-    const lit = ignite(mission, footprint, FIRE, "s1", ctxWith(riggedRng(true)), HAZARD_TUNING);
-    expect(lit.state.effects.map((e) => `${String(e.tile.x)},${String(e.tile.z)}`)).toEqual([
-      "3,3",
-      "4,3",
+    const lit = ignite(
+      mission,
+      footprint,
+      FIRE,
+      "s1",
+      ctxWith(riggedRng(true)),
+      HAZARD_TUNING,
+    );
+    expect(
+      lit.state.effects.map((e) => `${String(e.tile.x)},${String(e.tile.z)}`),
+    ).toEqual(["3,3", "4,3"]);
+    expect(
+      lit.state.effects.every(
+        (e) => e.phasesLeft === HAZARD_TUNING.effects.fire.duration,
+      ),
+    ).toBe(true);
+    expect(lit.events.map((e) => e.type)).toEqual([
+      EFFECT_STARTED,
+      EFFECT_STARTED,
     ]);
-    expect(lit.state.effects.every((e) => e.phasesLeft === HAZARD_TUNING.effects.fire.duration)).toBe(true);
-    expect(lit.events.map((e) => e.type)).toEqual([EFFECT_STARTED, EFFECT_STARTED]);
     expect(lit.events[0]).toMatchObject({
       payload: { kind: "fire", unitId: "s1", rekindled: false },
     });
@@ -110,7 +123,12 @@ describe("burn", () => {
         effects: [fire("effect-1", at(3, 3), 2), fire("effect-2", at(6, 6), 1)],
       },
     );
-    const burned = burn(mission, ctxWith(riggedRng(true, "high")), HAZARD_TUNING, COMBAT_TUNING);
+    const burned = burn(
+      mission,
+      ctxWith(riggedRng(true, "high")),
+      HAZARD_TUNING,
+      COMBAT_TUNING,
+    );
     const hp = (id: string): number | undefined =>
       burned.state.units.find((u) => u.id === id)?.hp;
     // Fire does 4 ± 25 %, high end 5, against no armor.
@@ -118,9 +136,18 @@ describe("burn", () => {
     expect(hp("bug-in")).toBe(10);
     expect(hp("tdf-out")).toBe(10);
     expect(burned.state.effects).toEqual([fire("effect-1", at(3, 3), 1)]);
-    expect(burned.events.map((e) => e.type)).toEqual([EFFECT_DAMAGED, EFFECT_ENDED]);
+    expect(burned.events.map((e) => e.type)).toEqual([
+      EFFECT_DAMAGED,
+      EFFECT_ENDED,
+    ]);
     expect(burned.events[0]).toMatchObject({
-      payload: { effectId: "effect-1", targetId: "tdf-in", targetKind: "unit", damage: 5, hp: 5 },
+      payload: {
+        effectId: "effect-1",
+        targetId: "tdf-in",
+        targetKind: "unit",
+        damage: 5,
+        hp: 5,
+      },
     });
   });
 
@@ -130,10 +157,21 @@ describe("burn", () => {
       [unitAt("b", "infantry", at(3, 3), { team: "bugs", hp: 2 })],
       { phase: "bugs", effects: [fire("effect-1", at(3, 3), 3)] },
     );
-    const burned = burn(mission, ctxWith(riggedRng(true)), HAZARD_TUNING, COMBAT_TUNING);
+    const burned = burn(
+      mission,
+      ctxWith(riggedRng(true)),
+      HAZARD_TUNING,
+      COMBAT_TUNING,
+    );
     expect(burned.state.units[0]?.hp).toBe(0);
-    expect(burned.events.map((e) => e.type)).toEqual([EFFECT_DAMAGED, UNIT_DIED]);
-    expect(burned.events[1]).toEqual({ type: UNIT_DIED, payload: { unitId: "b" } });
+    expect(burned.events.map((e) => e.type)).toEqual([
+      EFFECT_DAMAGED,
+      UNIT_DIED,
+    ]);
+    expect(burned.events[1]).toEqual({
+      type: UNIT_DIED,
+      payload: { unitId: "b" },
+    });
   });
 
   it("burns an egg spawner on the bug phase only, through the one spawner rule", () => {
@@ -149,16 +187,36 @@ describe("burn", () => {
       spawners: [spawner],
       effects: [fire("effect-1", at(3, 3), 3)],
     });
-    const player = burn({ ...base, phase: "player" }, ctxWith(riggedRng(true)), HAZARD_TUNING, COMBAT_TUNING);
+    const player = burn(
+      { ...base, phase: "player" },
+      ctxWith(riggedRng(true)),
+      HAZARD_TUNING,
+      COMBAT_TUNING,
+    );
     expect(player.state.spawners[0]?.hp).toBe(20);
-    const bugs = burn({ ...base, phase: "bugs" }, ctxWith(riggedRng(true)), HAZARD_TUNING, COMBAT_TUNING);
+    const bugs = burn(
+      { ...base, phase: "bugs" },
+      ctxWith(riggedRng(true)),
+      HAZARD_TUNING,
+      COMBAT_TUNING,
+    );
     expect(bugs.state.spawners[0]?.hp).toBe(17);
-    expect(bugs.events.map((e) => e.type)).toEqual([EFFECT_DAMAGED, SPAWNER_DAMAGED]);
+    expect(bugs.events.map((e) => e.type)).toEqual([
+      EFFECT_DAMAGED,
+      SPAWNER_DAMAGED,
+    ]);
   });
 
   it("is a no-op with nothing burning", () => {
-    const mission = missionWith(openField().build(), [unitAt("s", "infantry", at(1, 1))]);
-    const burned = burn(mission, ctxWith(riggedRng(true)), HAZARD_TUNING, COMBAT_TUNING);
+    const mission = missionWith(openField().build(), [
+      unitAt("s", "infantry", at(1, 1)),
+    ]);
+    const burned = burn(
+      mission,
+      ctxWith(riggedRng(true)),
+      HAZARD_TUNING,
+      COMBAT_TUNING,
+    );
     expect(burned.state).toBe(mission);
     expect(burned.events).toEqual([]);
   });

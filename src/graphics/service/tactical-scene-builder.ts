@@ -25,7 +25,10 @@ import { createGhostUniforms } from "./ghost-cutaway";
 import { TacticalMapView, tileTop } from "../view/tactical-map-view";
 import { TileEffectView } from "../view/tile-effect-view";
 import { UnitMesh } from "../view/unit-mesh";
-import type { TileEffect, TileEffectId } from "../../tactical/model/tile-effect";
+import type {
+  TileEffect,
+  TileEffectId,
+} from "../../tactical/model/tile-effect";
 import type { FrameUpdatable } from "../model/frame-updatable";
 
 // ===========================================

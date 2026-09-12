@@ -188,7 +188,9 @@ export function burn(
       const hp = Math.max(0, unit.hp - damage);
       state = {
         ...state,
-        units: state.units.map((u): Unit => (u.id === unit.id ? { ...u, hp } : u)),
+        units: state.units.map((u): Unit =>
+          u.id === unit.id ? { ...u, hp } : u,
+        ),
       };
       events.push({
         type: EFFECT_DAMAGED,

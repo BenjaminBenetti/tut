@@ -86,7 +86,14 @@ export function resolveBuildingFrontages(
             propTops,
           )
         ) {
-          result.push(onWall(mount(module, tile, entrance.side), tile, entrance.side, index));
+          result.push(
+            onWall(
+              mount(module, tile, entrance.side),
+              tile,
+              entrance.side,
+              index,
+            ),
+          );
           break;
         }
       }
@@ -105,7 +112,14 @@ export function resolveBuildingFrontages(
               propTops,
             )
           ) {
-            result.push(onWall(mount(MAILBOX_MODULE, next, entrance.side), next, entrance.side, index));
+            result.push(
+              onWall(
+                mount(MAILBOX_MODULE, next, entrance.side),
+                next,
+                entrance.side,
+                index,
+              ),
+            );
             break;
           }
         }
@@ -143,7 +157,9 @@ export function resolveBuildingFrontages(
                   propTops,
                 )
               ) {
-                result.push(onWall(mount(windowModule, tile, side), tile, side, index));
+                result.push(
+                  onWall(mount(windowModule, tile, side), tile, side, index),
+                );
               }
               const along = side === "n" || side === "s" ? tile.x : tile.z;
               if (
@@ -162,7 +178,14 @@ export function resolveBuildingFrontages(
                   propTops,
                 )
               )
-                result.push(onWall(mount(style.wallUtility, tile, side), tile, side, index));
+                result.push(
+                  onWall(
+                    mount(style.wallUtility, tile, side),
+                    tile,
+                    side,
+                    index,
+                  ),
+                );
             }
           }
         }

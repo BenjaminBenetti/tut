@@ -988,7 +988,12 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
       landsAt + Math.max(this.timing.deathSeconds, this.timing.floaterSeconds);
     let elapsed = 0;
     const cleanup = (): void => {
-      for (const sprite of [flash, tracer, burst, ...floaters.map((f) => f.sprite)]) {
+      for (const sprite of [
+        flash,
+        tracer,
+        burst,
+        ...floaters.map((f) => f.sprite),
+      ]) {
         if (sprite) {
           this.removeSprite(sprite);
         }

@@ -8,7 +8,10 @@ import {
   PointLight,
 } from "three";
 
-import type { TileEffect, TileEffectId } from "../../tactical/model/tile-effect";
+import type {
+  TileEffect,
+  TileEffectId,
+} from "../../tactical/model/tile-effect";
 import type { Disposable } from "../model/disposable";
 import type { FrameUpdatable } from "../model/frame-updatable";
 import { tileTop } from "./tactical-map-view";
@@ -140,7 +143,8 @@ export class TileEffectView implements FrameUpdatable, Disposable {
     for (const fire of this.fires.values()) {
       fire.tongues.forEach((tongue, i) => {
         const phase = PHASES[i % PHASES.length] ?? 0;
-        const breath = 1 + FLICKER_DEPTH * Math.sin(t + phase) * Math.sin(t * 0.37 + phase);
+        const breath =
+          1 + FLICKER_DEPTH * Math.sin(t + phase) * Math.sin(t * 0.37 + phase);
         tongue.scale.set(1, breath, 1);
       });
       fire.light.intensity = LIGHT_INTENSITY * (1 + 0.2 * Math.sin(t * 0.8));

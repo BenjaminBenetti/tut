@@ -46,8 +46,12 @@ describe("demolish", () => {
       .prop(PropKindIds.BOULDER, at(2, 2))
       .prop(PropKindIds.FENCE, at(3, 3))
       .build();
-    expect(demolish(map, [at(2, 2)], 9, structures, DEMOLITION_TUNING).props).toEqual([]);
-    expect(demolish(map, [at(3, 3)], 0, structures, DEMOLITION_TUNING).map).toBe(map);
+    expect(
+      demolish(map, [at(2, 2)], 9, structures, DEMOLITION_TUNING).props,
+    ).toEqual([]);
+    expect(
+      demolish(map, [at(3, 3)], 0, structures, DEMOLITION_TUNING).map,
+    ).toBe(map);
   });
 
   it("removes a two-tile car whole when either tile is in the footprint", () => {
@@ -90,7 +94,13 @@ describe("demolish", () => {
 
   it("returns the very same map when nothing in the footprint can fall", () => {
     const map = openField().build();
-    const result = demolish(map, [at(1, 1), at(2, 2)], 3, structures, DEMOLITION_TUNING);
+    const result = demolish(
+      map,
+      [at(1, 1), at(2, 2)],
+      3,
+      structures,
+      DEMOLITION_TUNING,
+    );
     expect(result.map).toBe(map);
     expect(result.props).toEqual([]);
     expect(result.walls).toEqual([]);

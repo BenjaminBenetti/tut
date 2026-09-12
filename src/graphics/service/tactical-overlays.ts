@@ -646,7 +646,7 @@ export class TacticalOverlays implements Disposable {
     // the one thing that must never be under them.
     this.markedTile.setTiles(
       tile === undefined ? [] : [tile],
-      OVERLAY_LIFT * 6,
+      OVERLAY_LIFT * 7,
       true,
     );
   }
@@ -659,7 +659,12 @@ export class TacticalOverlays implements Disposable {
    * @param tiles - The footprint, impact first, or empty for none.
    */
   setBlastTiles(tiles: readonly TileCoord[]): void {
-    this.blast.setTiles(tiles, OVERLAY_LIFT * 5, false);
+    // As high as the marked frame, which is the one lift known to clear
+    // the boarding-zone markers: those are opaque boxes that write depth,
+    // and a fill a hair lower vanished under them on the drop ship's
+    // patch (measured on #1121's first frame). The frame is lifted one
+    // step further so it still draws over the fill.
+    this.blast.setTiles(tiles, OVERLAY_LIFT * 6, false);
   }
 
   /** Hides every layer. */

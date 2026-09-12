@@ -232,7 +232,10 @@ describe("createEndTurnHandler", () => {
     });
     const mission = missionWith(
       openField().build(),
-      [unitAt("s", "infantry", at(0, 0)), unitAt("b", "infantry", at(5, 5), { team: "bugs" })],
+      [
+        unitAt("s", "infantry", at(0, 0)),
+        unitAt("b", "infantry", at(5, 5), { team: "bugs" }),
+      ],
       { phase: "bugs" },
     );
     const result = createEndTurnHandler([...DEFAULT_PHASE_STEPS, lethal])(
@@ -398,8 +401,13 @@ describe("overwatchReaction", () => {
         `${probe.name}: vision`,
       ).toBe(probe.expected);
       expect(
-        overwatchReaction(mission, "b", ctxWith(riggedRng(true, "low")), T, DEPS)
-          .events.length > 0,
+        overwatchReaction(
+          mission,
+          "b",
+          ctxWith(riggedRng(true, "low")),
+          T,
+          DEPS,
+        ).events.length > 0,
         `${probe.name}: overwatch`,
       ).toBe(probe.expected);
     }
@@ -576,8 +584,13 @@ describe("overwatchReaction", () => {
       },
     };
     expect(
-      overwatchReaction(seeing, "m", ctxWith(riggedRng(true)), COMBAT_TUNING, DEPS)
-        .events.length,
+      overwatchReaction(
+        seeing,
+        "m",
+        ctxWith(riggedRng(true)),
+        COMBAT_TUNING,
+        DEPS,
+      ).events.length,
     ).toBeGreaterThan(0);
   });
 });

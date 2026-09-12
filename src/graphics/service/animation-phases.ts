@@ -1,4 +1,6 @@
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
+import type { UnitId } from "../../tactical/model/unit";
+import { UNIT_MOVED } from "../../tactical/model/unit-moved-event";
 import { UNIT_SPOTTED } from "../../tactical/model/unit-spotted-event";
 
 // ===========================================
@@ -37,14 +39,70 @@ export interface AnimationPhases {
  *        └─ after:  spotted                 played once placement has run
  * ```
  *
- * Order within each phase is preserved, so a move still plays before the
- * attack that followed it.
+ * The exception is an **arrival** (#1116): a unit the host has already
+ * placed at the start of its walk because it moves during the batch and
+ * is in view by the end of it. Its object exists before the first phase
+ * plays, so its spot is moved ahead of its first move and plays there,
+ * and the whole walk follows in view.
+ *
+ * ```
+ *   arrivals = {b}
+ *   [moved b, moved b, attacked, spotted b]
+ *        │
+ *        ├─ before: spotted b, moved b, moved b, attacked
+ *        └─ after:  (nothing)
+ * ```
+ *
+ * Order within each phase is otherwise preserved, so a move still plays
+ * before the attack that followed it.
+ *
+ * @param events - The batch that just resolved.
+ * @param arrivals - Units placed at their starting tile ahead of the batch.
  */
-export function phaseEvents(events: readonly TacticalEvent[]): AnimationPhases {
+export function phaseEvents(
+  events: readonly TacticalEvent[],
+  arrivals: ReadonlySet<UnitId> = new Set(),
+): AnimationPhases {
   const before: TacticalEvent[] = [];
   const after: TacticalEvent[] = [];
+  /** Arrivals whose first move has been passed. */
+  const announced = new Set<UnitId>();
+  /** Spots pulled ahead of a move, so they are not played twice. */
+  const pulled = new Set<TacticalEvent>();
   for (const event of events) {
-    (event.type === UNIT_SPOTTED ? after : before).push(event);
+    if (event.type === UNIT_SPOTTED) {
+      if (!arrivals.has(event.payload.unitId)) {
+        after.push(event);
+      } else if (!pulled.has(event)) {
+        // A spot that came before the first move, or a later re-spot:
+        // the object exists, so it plays in stream order.
+        announced.add(event.payload.unitId);
+        before.push(event);
+      }
+      continue;
+    }
+    if (event.type === UNIT_MOVED) {
+      const { unitId } = event.payload;
+      if (arrivals.has(unitId) && !announced.has(unitId)) {
+        announced.add(unitId);
+        const spot = firstSpotOf(events, unitId);
+        if (spot !== undefined) {
+          pulled.add(spot);
+          before.push(spot);
+        }
+      }
+    }
+    before.push(event);
   }
   return { before, after };
+}
+
+/** The first spot of `unitId` in the batch, if the batch announces it. */
+function firstSpotOf(
+  events: readonly TacticalEvent[],
+  unitId: UnitId,
+): TacticalEvent | undefined {
+  return events.find(
+    (event) => event.type === UNIT_SPOTTED && event.payload.unitId === unitId,
+  );
 }

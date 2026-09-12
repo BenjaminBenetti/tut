@@ -76,6 +76,15 @@ describe("UnitMesh", () => {
     expect(material.depthTest).toBe(true);
   });
 
+  it("hides and shows the whole group, rings included (#1116)", () => {
+    const mesh = new UnitMesh("u1", model());
+    expect(mesh.object.visible).toBe(true);
+    mesh.setHidden(true);
+    expect(mesh.object.visible).toBe(false);
+    mesh.setHidden(false);
+    expect(mesh.object.visible).toBe(true);
+  });
+
   it("dispose detaches the group", () => {
     const parent = new Group();
     const mesh = new UnitMesh("unit-1", model());

@@ -86,6 +86,11 @@ these.
 
 ## Mission length
 
+> **Since #1119** distance is measured in three dimensions and a shooter a
+> whole storey above its target reaches further (`reachBonusPerStorey`,
+> `maxReachBonus` in `combat-tuning`). The table below was measured before
+> that rule; the sweep floors it pins still hold with it (see the PR).
+
 | outcome | n | median | range |
 | ------- | - | ------ | ----- |
 | won | 119 | **6 turns** | 4–21 |

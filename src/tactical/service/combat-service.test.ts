@@ -240,6 +240,30 @@ describe("attackTerrain", () => {
     ).toBe(1);
   });
 
+  it("measures distance in three dimensions, so a storey of height counts (#1119)", () => {
+    // Same column, one storey up: 1.5 tiles of height alone.
+    expect(
+      attackTerrain(map, { x: 1, y: STOREY_LAYERS, z: 1 }, { x: 1, y: 0, z: 1 })
+        .distance,
+    ).toBe(2);
+    // Two storeys up and seven across: hypot(7, 3) = 7.6, rounded to 8.
+    expect(
+      attackTerrain(
+        map,
+        { x: 1, y: 2 * STOREY_LAYERS, z: 1 },
+        { x: 4, y: 0, z: 5 },
+      ).distance,
+    ).toBe(8);
+    // Height counts the same way up as down.
+    expect(
+      attackTerrain(
+        map,
+        { x: 4, y: 0, z: 5 },
+        { x: 1, y: 2 * STOREY_LAYERS, z: 1 },
+      ).distance,
+    ).toBe(8);
+  });
+
   it("reads low cover from a crate and flanks around it", () => {
     // Target at (4,0,3): the crate sits north of it at (4,0,2).
     const covered = attackTerrain(
@@ -904,7 +928,7 @@ describe("the refusals shared by preview and attack", () => {
   ] as const)("answers alike for %s", (_name, attackerId, targetId) => {
     const m = board();
     const preview = previewAttack(m, attackerId, targetId, T);
-    const targeting = validateTargeting(m, attackerId, targetId);
+    const targeting = validateTargeting(m, attackerId, targetId, T);
     expect(preview.ok).toBe(false);
     expect(targeting.ok).toBe(false);
     if (preview.ok || targeting.ok) return;
@@ -920,14 +944,14 @@ describe("validateTargeting", () => {
     ]);
 
   it("refuses an attacker that is not on the map", () => {
-    const result = validateTargeting(pair(), "ghost", "b1");
+    const result = validateTargeting(pair(), "ghost", "b1", T);
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.error).toEqual({ kind: "unit-not-on-map", unitId: "ghost" });
   });
 
   it("refuses a target that is not on the map", () => {
-    const result = validateTargeting(pair(), "s1", "ghost");
+    const result = validateTargeting(pair(), "s1", "ghost", T);
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.error).toEqual({ kind: "unit-not-on-map", unitId: "ghost" });
@@ -938,7 +962,7 @@ describe("validateTargeting", () => {
       unit("s1", "tdf", "rifle", 1, 1, { hp: 0 }),
       unit("b1", "bugs", "swarmer", 2, 1, { hp: 6, maxHp: 6 }),
     ]);
-    const result = validateTargeting(m, "s1", "b1");
+    const result = validateTargeting(m, "s1", "b1", T);
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.error).toEqual({ kind: "unit-dead", unitId: "s1" });
@@ -949,14 +973,14 @@ describe("validateTargeting", () => {
       unit("s1", "tdf", "rifle", 1, 1),
       unit("b1", "bugs", "swarmer", 2, 1, { hp: 0, maxHp: 6 }),
     ]);
-    const result = validateTargeting(m, "s1", "b1");
+    const result = validateTargeting(m, "s1", "b1", T);
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.error).toEqual({ kind: "unit-dead", unitId: "b1" });
   });
 
   it("refuses a weapon the attacker does not carry", () => {
-    const result = validateTargeting(pair(), "s1", "b1", "no-such-weapon");
+    const result = validateTargeting(pair(), "s1", "b1", T, "no-such-weapon");
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.error).toEqual({ kind: "no-such-weapon", unitId: "s1" });

@@ -1,6 +1,9 @@
 import { InstancedMesh } from "three";
 import { describe, expect, it } from "vitest";
 
+import { STOREY_LAYERS } from "../../core/model/elevation";
+import { SurfaceIds } from "../../mapgen/data/surfaces";
+
 import { startedMission } from "../../bugs/ai/bug-mission.test-helper";
 
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
@@ -363,6 +366,71 @@ describe("overlaysFor weapon range", () => {
     expect(tiles.every((t) => t.y === unit.pos.y)).toBe(true);
     const columns = new Set(tiles.map((t) => `${t.x},${t.z}`));
     expect(columns.size).toBe(tiles.length);
+  });
+
+  it("reaches further over explored ground below a rooftop firer, and not into the fog (#1119)", () => {
+    // A 13x13 field with a two-storey podium at (6,6); the firer stands
+    // on it with a 3-tile weapon. On the plane its reach would be 3.
+    const builder = new FixtureMapBuilder(13, 13, 2 * STOREY_LAYERS + 1);
+    for (let x = 0; x < 13; x++) {
+      for (let z = 0; z < 13; z++) {
+        if (x === 6 && z === 6) continue;
+        builder.tile({ x, y: 0, z }, SurfaceIds.GRASS);
+      }
+    }
+    builder.tile({ x: 6, y: 2 * STOREY_LAYERS, z: 6 }, SurfaceIds.GRASS);
+    const map = builder.build();
+    const unit = unitAt("u1", "infantry", { x: 6, y: 2 * STOREY_LAYERS, z: 6 });
+    const base = missionWith(map, [unit]);
+    const template = base.templates[unit.templateId]!;
+    const armed: TacticalState = {
+      ...base,
+      templates: {
+        ...base.templates,
+        [unit.templateId]: {
+          ...template,
+          weapons: [
+            {
+              ...template.weapons[0]!,
+              profile: { ...template.weapons[0]!.profile, range: 3 },
+            },
+          ],
+        },
+      },
+    };
+    const index = new TileIndex(map);
+    const explored = (tiles: readonly { x: number; z: number }[]) =>
+      tiles.map((t) => index.keyOf({ x: t.x, y: 0, z: t.z }));
+    // Nothing explored: judged flat at the firer's level, the plain diamond.
+    const dark = overlaysFor(armed, "u1").weaponRange;
+    expect(dark).toHaveLength(25);
+    // The eastern ground explored: two storeys buy 4 tiles of reach over
+    // it, so (13 across at 3 tall is out, but) 6 across is now in.
+    const lit: TacticalState = {
+      ...armed,
+      vision: {
+        ...armed.vision,
+        tdf: {
+          ...armed.vision.tdf,
+          explored: explored([
+            { x: 12, z: 6 },
+            { x: 11, z: 6 },
+            { x: 10, z: 6 },
+          ]),
+        },
+      },
+    };
+    const keys = new Set(
+      overlaysFor(lit, "u1").weaponRange.map((t) => `${t.x},${t.z}`),
+    );
+    expect(keys.has("12,6")).toBe(true);
+    expect(keys.has("11,6")).toBe(true);
+    // The unexplored west is still the flat picture: (0,6) is 6 across
+    // at the firer's own level and stays out.
+    expect(keys.has("0,6")).toBe(false);
+    // Every mark still sits at the firer's level, one per column.
+    const tiles = overlaysFor(lit, "u1").weaponRange;
+    expect(tiles.every((t) => t.y === 2 * STOREY_LAYERS)).toBe(true);
   });
 
   it("is empty for a unit whose template carries no reach", () => {

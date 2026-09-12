@@ -114,7 +114,7 @@ export interface ChassisPart extends MechPartBase {
  * on, and the reason to carry more than one.
  */
 export interface PartWeapon {
-  /** Tiles the weapon reaches, Manhattan. Positive integer. */
+  /** Tiles the weapon reaches on level ground, Manhattan. Positive integer. */
   readonly range: number;
   /** Armor points ignored by each hit. Non-negative. */
   readonly armorPen: number;

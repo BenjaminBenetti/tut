@@ -57,7 +57,9 @@ export type TacticalError =
   | { readonly kind: "friendly-target"; readonly targetId: string }
   | {
       readonly kind: "out-of-range";
+      /** Tiles to the target, in three dimensions (#1119). */
       readonly distance: number;
+      /** The weapon's reach for this shot, height bonus included. */
       readonly range: number;
     }
   | { readonly kind: "no-line-of-sight"; readonly targetId: string }

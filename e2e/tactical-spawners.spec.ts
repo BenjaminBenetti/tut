@@ -33,11 +33,13 @@ const MAX_DAYS = 40;
 test("egg spawners are drawn on the tactical map and can be targeted by clicking one", async ({
   page,
 }) => {
-  // Hosted #1099 reaches the drawn nest at 92 s, then needs another 16 s
-  // just for four real layer clicks before framing/targeting. Three minutes
-  // covers this complete integration on CI; each stalled move still fails
-  // after the normal 15 s, and the local test keeps its existing 60 s limit.
-  if (process.env.CI) test.setTimeout(180_000);
+  // Animated scouting now takes 0.24 s per tile. On hosted SwiftShader,
+  // the 0.1 s frame-delta cap stretches that playback: PR #1114's trace
+  // reached the nest and camera framing but exhausted the former 180 s
+  // total before the final click. Give the complete scout-and-target flow
+  // five minutes on CI. Each stalled move still fails after the normal
+  // 15 s assertion budget; the local test keeps its existing 60 s limit.
+  if (process.env.CI) test.setTimeout(300_000);
   const errors: string[] = [];
   page.on("console", (message) => {
     if (message.type() === "error") {

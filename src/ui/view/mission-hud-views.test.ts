@@ -165,17 +165,14 @@ describe("ActionBarView", () => {
       root.querySelector<HTMLElement>(
         `#action-bar [data-action="${a}"] [data-role="shortcut"]`,
       )?.textContent;
-    expect(hint("move")).toBe("M");
-    expect(hint("attack")).toBe("F");
-    expect(hint("overwatch")).toBe("O");
-    expect(hint("reload")).toBe("R");
-    expect(hint("interact")).toBe("I");
-    expect(hint("extract")).toBe("X");
-    expect(hint("end-turn")).toBe("Enter");
-    // No digits: the number row went with the old bar (#1112).
-    for (const button of root.querySelectorAll('[data-role="shortcut"]')) {
-      expect(button.textContent).not.toMatch(/^[0-9]$/);
-    }
+    // The number row, in the bar's order: keys under the left hand.
+    expect(hint("move")).toBe("1");
+    expect(hint("attack")).toBe("2");
+    expect(hint("overwatch")).toBe("3");
+    expect(hint("reload")).toBe("4");
+    expect(hint("interact")).toBe("5");
+    expect(hint("extract")).toBe("6");
+    expect(hint("end-turn")).toBe("7");
     root.querySelector<HTMLButtonElement>('[data-action="overwatch"]')?.click();
     root.querySelector<HTMLButtonElement>('[data-action="end-turn"]')?.click();
     expect(onAction.mock.calls.map((c) => c[0])).toEqual([

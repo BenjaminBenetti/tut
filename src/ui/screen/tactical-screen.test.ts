@@ -254,6 +254,9 @@ class FakeHost implements TacticalSceneHost {
     // The fake draws nothing, so nothing has a screen position.
     return undefined;
   }
+  unitHeadScreenPosition(): { x: number; y: number } | undefined {
+    return undefined;
+  }
 
   stepLayerFocus(delta: number): LayerFocus | undefined {
     this.layerSteps.push(delta);

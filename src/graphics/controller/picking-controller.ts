@@ -151,7 +151,16 @@ export class PickingController<TId> {
   /** Where something currently appears, in client pixels, or undefined when detached or unknown. */
   screenPositionOf(id: TId): Vec2 | undefined {
     const world = this.picker.worldPosition(id);
-    if (!this.surface || !world) {
+    return world === undefined ? undefined : this.projectPoint(world);
+  }
+
+  /**
+   * Where a world point appears, in client pixels, or undefined when
+   * detached. The projection `screenPositionOf` uses, for callers that
+   * already have the point — a unit's head rather than its feet.
+   */
+  projectPoint(world: Vec3): Vec2 | undefined {
+    if (!this.surface) {
       return undefined;
     }
     const ndc = new Vector3(world.x, world.y, world.z).project(

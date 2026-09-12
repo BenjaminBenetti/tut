@@ -55,6 +55,17 @@ export const TACTICAL_ACTIONS = [
 export const TACTICAL_SHORTCUTS: Readonly<
   Record<string, TacticalAction | "end-turn">
 > = {
+  // The number row first, in the bar's order, so the hint on each
+  // button is its digit: the Executive Director found the letters hard
+  // to reach (`o` for Overwatch) and asked for keys under the left hand.
+  // The letters below stay as aliases.
+  "1": "move",
+  "2": "attack",
+  "3": "overwatch",
+  "4": "reload",
+  "5": "interact",
+  "6": "extract",
+  "7": "end-turn",
   m: "move",
   f: "attack",
   o: "overwatch",
@@ -85,6 +96,9 @@ export type TacticalInvokeTarget =
  * else to open the action wheel on — and the right button walks the
  * selected unit there.
  *
+ * `inspect` is Shift held or released: while held, every visible unit
+ * shows its status above its head. A view state, like `layer-step`.
+ *
  * `layer-step` is the odd one out and stays here on purpose: it changes
  * nothing in the mission, only which storeys the scene draws (#961). It
  * is an intent rather than a direct call so the one key table keeps
@@ -98,7 +112,8 @@ export type TacticalIntent =
   | { readonly kind: "invoke"; readonly target: TacticalInvokeTarget }
   | { readonly kind: "action"; readonly action: TacticalAction }
   | { readonly kind: "layer-step"; readonly delta: number }
-  | { readonly kind: "end-turn" };
+  | { readonly kind: "end-turn" }
+  | { readonly kind: "inspect"; readonly held: boolean };
 
 /** Receives every intent the input layer produces. The tactical screen implements it. */
 export interface TacticalIntentSink {
@@ -134,6 +149,8 @@ export interface TacticalTestHooks {
   tileScreenPosition(tile: TileCoord): { x: number; y: number } | undefined;
   /** Moves the view `delta` storeys, as the layer keys do (#961). */
   stepLayer(delta: number): void;
+  /** Holds or releases Shift: the status chips above every visible unit. */
+  setInspecting(held: boolean): void;
   /**
    * Puts the map back on the single height cut it used before #978, so a
    * capture can show the defect and the fix **in one run**.

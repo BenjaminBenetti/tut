@@ -316,6 +316,11 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
     }
   }
 
+  /** The top of a unit's model on screen, through the input controller's projection. */
+  unitHeadScreenPosition(unitId: UnitId): Vec2 | undefined {
+    return this.attached?.input.unitHeadScreenPosition(unitId);
+  }
+
   /** Centres the camera on a unit through the rig's existing `lookAt` (#1041). */
   lookAtUnit(unitId: UnitId): void {
     const attached = this.attached;

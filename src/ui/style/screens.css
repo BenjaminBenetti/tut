@@ -1201,3 +1201,66 @@
     animation: none;
   }
 }
+
+/* ===========================================
+   Unit status chips (Shift held)
+   =========================================== */
+
+/*
+ * One compact chip above every visible unit while Shift is held: name,
+ * a health bar and the charge gauge. Anchored to the unit's head like
+ * the wheel is anchored to its tile (ADR 0007), so it is part of the
+ * scene rather than a rail. No pointer events: it is a readout, and it
+ * must never eat the click on the unit beneath it.
+ */
+.tut-status-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.tut-status-chip {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 6px));
+  min-width: 92px;
+  padding: 3px 6px 4px;
+  background: rgb(20 24 33 / 88%);
+  border: var(--line) solid var(--ui-line);
+  border-left: 3px solid var(--ui-accent);
+  font-size: 11px;
+  line-height: 1.2;
+  color: var(--ui-text);
+  white-space: nowrap;
+}
+
+.tut-status-chip[data-team="bugs"] {
+  border-left-color: var(--ui-bug);
+}
+
+.tut-status-chip__name {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.tut-status-chip__bar {
+  height: 4px;
+  margin: 3px 0 2px;
+  background: rgb(255 255 255 / 12%);
+}
+
+.tut-status-chip__fill {
+  height: 100%;
+  background: var(--ui-ok);
+}
+.tut-status-chip__fill[data-tone="warn"] {
+  background: var(--ui-warn);
+}
+.tut-status-chip__fill[data-tone="danger"] {
+  background: var(--ui-danger);
+}
+
+.tut-status-chip__gauge {
+  font-size: 10px;
+  color: var(--ui-text-dim);
+}

@@ -102,7 +102,7 @@ test("left click opens the wheel on a tile, right click moves to it", async ({
   expect(errors).toEqual([]);
 });
 
-test("the letter shortcuts still arm and cancel, and no digit does", async ({
+test("the number row and the letters arm and cancel, and the bar shows the digits", async ({
   page,
 }) => {
   await startMission(page);
@@ -118,13 +118,13 @@ test("the letter shortcuts still arm and cancel, and no digit does", async ({
   await page.keyboard.press("Escape");
   await expect(body).toHaveAttribute("data-last-intent", "cancel");
 
-  // The number row went (#1112): a digit is not an intent.
+  // The number row arms in the bar's order, and the bar says so.
   await page.keyboard.press("2");
-  await expect(body).toHaveAttribute("data-last-intent", "cancel");
-  // The bar lists the actions with their letters, and a press is the key.
+  await expect(body).toHaveAttribute("data-last-intent", "attack");
+  await page.keyboard.press("Escape");
   await expect(
     page.locator('#action-bar [data-action="attack"] [data-role="shortcut"]'),
-  ).toHaveText("F");
+  ).toHaveText("2");
   // A bar press goes straight to the HUD, not through the input
   // controller, so the body's last-intent stays put; the bar itself
   // shows the aim it armed.

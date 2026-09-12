@@ -122,6 +122,14 @@ export interface TacticalSceneHost {
   screenPositionOf(target: TacticalInvokeTarget): Vec2 | undefined;
 
   /**
+   * Where the top of a unit's model is on screen, in client pixels, or
+   * undefined when it is not drawn: the anchor for its status chip.
+   *
+   * @param unitId - The unit.
+   */
+  unitHeadScreenPosition(unitId: UnitId): Vec2 | undefined;
+
+  /**
    * Centres the view on a unit.
    *
    * The camera rig has had `lookAt` since it was written, and until now

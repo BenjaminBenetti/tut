@@ -179,6 +179,10 @@ export class TacticalScreen implements Screen {
         onMarkTile: (tile) => {
           deps.sceneHost?.markTile(tile);
         },
+        // The status chips sit at the top of each unit's model, which
+        // only the scene can locate.
+        headAnchorFor: (unitId) =>
+          deps.sceneHost?.unitHeadScreenPosition(unitId),
       },
       {
         combatTuning: deps.combatTuning,

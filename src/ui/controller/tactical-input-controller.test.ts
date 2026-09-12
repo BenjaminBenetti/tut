@@ -14,10 +14,7 @@ import type {
   TacticalInputSurface,
   TacticalPicker,
 } from "./tactical-input-controller";
-import {
-  TACTICAL_SHORTCUTS,
-  TacticalInputController,
-} from "./tactical-input-controller";
+import { TacticalInputController } from "./tactical-input-controller";
 
 type Listener = (event: unknown) => void;
 
@@ -108,6 +105,9 @@ class FakePicker implements TacticalPicker {
   }
   spawnerWorldPosition(id: string): Vec3 | undefined {
     return id === "spawner-1" ? { x: 2, y: 0, z: 2 } : undefined;
+  }
+  unitHeight(): number | undefined {
+    return 1;
   }
   unitWorldPosition(id: string): Vec3 | undefined {
     return id === "u1" ? { x: -1, y: 0, z: 0 } : undefined;
@@ -431,14 +431,33 @@ describe("TacticalInputController pointer buttons", () => {
     ]);
   });
 
-  // The number row went with the action bar (#1112): the digits were the
-  // bar's order, and a digit with no button to document it is a hidden
-  // binding. Iterates the table so a digit added back is caught.
-  it("binds no digit, now that there is no bar to number", () => {
-    const digits = Object.keys(TACTICAL_SHORTCUTS).filter((key) =>
-      /^[0-9]$/.test(key),
-    );
-    expect(digits).toEqual([]);
+  it("binds the number row to the bar's order, and Shift to inspecting", () => {
+    const { intents, surface } = setup();
+    for (const key of ["1", "2", "3", "4", "5", "6", "7"]) {
+      surface.ownerDocument.dispatch("keydown", {
+        key,
+        preventDefault: () => undefined,
+      });
+    }
+    expect(intents).toEqual([
+      { kind: "action", action: "move" },
+      { kind: "action", action: "attack" },
+      { kind: "action", action: "overwatch" },
+      { kind: "action", action: "reload" },
+      { kind: "action", action: "interact" },
+      { kind: "action", action: "extract" },
+      { kind: "end-turn" },
+    ]);
+    intents.length = 0;
+    surface.ownerDocument.dispatch("keydown", {
+      key: "Shift",
+      preventDefault: () => undefined,
+    });
+    surface.ownerDocument.dispatch("keyup", { key: "Shift" });
+    expect(intents).toEqual([
+      { kind: "inspect", held: true },
+      { kind: "inspect", held: false },
+    ]);
   });
   // #1091: `a` panned the view and armed Attack on the same keypress, so
   // every leftward pan on a spent unit said "no action points left".

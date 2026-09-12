@@ -41,6 +41,7 @@ function setup(
     onMarkTile?: (
       tile: { x: number; y: number; z: number } | undefined,
     ) => void;
+    headAnchorFor?: (unitId: string) => { x: number; y: number } | undefined;
   } = {},
 ) {
   const commands: TacticalCommand[] = [];
@@ -295,6 +296,83 @@ describe("TacticalHudView", () => {
     );
     hud.handleIntent({ kind: "action", action: "cancel" });
     expect(marked.at(-1)).toBeUndefined();
+  });
+
+  it("shows a status chip above every visible unit while Shift is held, and none after (#1113 review)", () => {
+    const { hud, mission } = setup({
+      headAnchorFor: (unitId) => ({ x: unitId.length * 10, y: 50 }),
+    });
+    const layer = (): HTMLElement | null =>
+      root.querySelector<HTMLElement>("#unit-status-layer");
+    const chips = (): HTMLElement[] => [
+      ...root.querySelectorAll<HTMLElement>(".tut-status-chip"),
+    ];
+    expect(layer()?.hidden).toBe(true);
+    hud.handleIntent({ kind: "inspect", held: true });
+    expect(layer()?.hidden).toBe(false);
+    // Every living unit the player can see: the fixture's two squads and
+    // the bugs a real look from where they stand has spotted.
+    const visible = mission.units.filter(
+      (u) =>
+        u.hp > 0 &&
+        (u.team === "tdf" || mission.vision.tdf.spotted.includes(u.id)),
+    );
+    expect(
+      chips()
+        .map((c) => c.dataset.unitId)
+        .sort(),
+    ).toEqual(visible.map((u) => u.id).sort());
+    const s2 = chips().find((c) => c.dataset.unitId === "s2");
+    expect(
+      s2?.querySelector<HTMLElement>('[data-field="status-name"]')?.textContent,
+    ).toBe("Rifle Squad");
+    // 12 of 20 hit points: a 60% bar, still in the ok tone.
+    const fill = s2?.querySelector<HTMLElement>('[data-field="status-hp"]');
+    expect(fill?.style.width).toBe("60%");
+    expect(fill?.dataset.tone).toBe("ok");
+    // No pool on the fixture's rifles, so no gauge line.
+    expect(
+      s2?.querySelector<HTMLElement>('[data-field="status-charge"]')?.hidden,
+    ).toBe(true);
+    expect(s2?.style.left).toBe("20px");
+    // The chips follow the state: a unit that dies loses its chip.
+    hud.update({
+      ...mission,
+      units: mission.units.map((u) => (u.id === "s2" ? { ...u, hp: 0 } : u)),
+    });
+    expect(chips().some((c) => c.dataset.unitId === "s2")).toBe(false);
+    hud.handleIntent({ kind: "inspect", held: false });
+    expect(layer()?.hidden).toBe(true);
+    expect(chips()).toHaveLength(0);
+  });
+
+  it("names the charge gauge in the unit's register on its chip", () => {
+    const { hud, mission } = setup({
+      headAnchorFor: () => ({ x: 0, y: 0 }),
+    });
+    const s1 = mission.units.find((u) => u.id === "s1");
+    const template = s1 && mission.templates[s1.templateId];
+    if (!s1 || !template) throw new Error("fixture needs s1");
+    const weapon = {
+      ...template.weapons[0],
+      charges: 3,
+    } as (typeof template.weapons)[number];
+    hud.update({
+      ...mission,
+      templates: {
+        ...mission.templates,
+        [s1.templateId]: { ...template, weapons: [weapon] },
+      },
+      units: mission.units.map((u) =>
+        u.id === "s1" ? { ...u, charges: { [weapon.id]: 1 } } : u,
+      ),
+    });
+    hud.handleIntent({ kind: "inspect", held: true });
+    const chip = root.querySelector<HTMLElement>(
+      '.tut-status-chip[data-unit-id="s1"] [data-field="status-charge"]',
+    );
+    expect(chip?.hidden).toBe(false);
+    expect(chip?.textContent).toBe("ammo 1 / 3");
   });
 
   it("a tile click by a unit that is not the player's opens nothing", () => {

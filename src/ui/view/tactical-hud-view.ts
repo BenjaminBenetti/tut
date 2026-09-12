@@ -24,6 +24,7 @@ import {
 } from "../../tactical/service/attack-target-service";
 import {
   attacksRemaining,
+  chargesLeft,
   previewAttack,
   weaponOptions,
 } from "../../tactical/service/combat-service";
@@ -64,6 +65,8 @@ import { PhaseBannerView } from "./phase-banner-view";
 import { TURN_STARTED } from "../../tactical/model/turn-started-event";
 import { TurnBannerView } from "./turn-banner-view";
 import { UnitCardView } from "./unit-card-view";
+import type { UnitStatusChip } from "./unit-status-layer-view";
+import { UnitStatusLayerView } from "./unit-status-layer-view";
 import { SquadStripView, playerUnits } from "./squad-strip-view";
 import { chargeRegisterFor } from "../service/charge-register";
 
@@ -133,6 +136,12 @@ export interface TacticalHudHandlers {
    * open on. Optional, so a HUD built without a scene needs no stub.
    */
   readonly onMarkTile?: (tile: TileCoord | undefined) => void;
+  /**
+   * Where the top of a unit's model is on screen, for the status chip
+   * above it while Shift is held. Absent in tests and headless callers,
+   * and the chips simply do not appear without it.
+   */
+  readonly headAnchorFor?: (unitId: UnitId) => ScreenAnchor | undefined;
 }
 
 /** What the HUD needs injected. */
@@ -254,6 +263,11 @@ export class TacticalHudView {
   private readonly actions: ActionBarView;
   /** Cancels the frame loop that keeps an open wheel on its tile as the camera moves. */
   private stopFollowing: (() => void) | undefined;
+  /** The status chips above every visible unit while Shift is held. */
+  private readonly status = new UnitStatusLayerView();
+  private inspecting = false;
+  /** Cancels the frame loop that keeps the chips on their units. */
+  private stopInspecting: (() => void) | undefined;
   private root: HTMLElement | undefined;
   private mission: TacticalState | undefined;
   /**
@@ -342,6 +356,7 @@ export class TacticalHudView {
     bottom.className = "tut-hud__bottom";
     this.banner.mount(top);
     this.radial.mount(hud);
+    this.status.mount(hud);
     // The force first, then the selected unit's detail. The strip is the
     // overview and the card is the close-up; putting the close-up first
     // pushed the third unit below the fold, which the frame showed and
@@ -445,6 +460,8 @@ export class TacticalHudView {
     this.pointerGuard = undefined;
     this.stopFollowing?.();
     this.stopFollowing = undefined;
+    this.setInspecting(false);
+    this.status.unmount();
     this.phases.unmount();
     this.actions.unmount();
     this.log.unmount();
@@ -569,7 +586,56 @@ export class TacticalHudView {
         this.closeMenu();
         this.handlers.onCommand(endTurn());
         return;
+      case "inspect":
+        this.setInspecting(intent.held);
+        return;
     }
+  }
+
+  /**
+   * Shows the status chips above every visible unit while `held`, and
+   * takes them away when not (Shift, on #1113's review). The chips are
+   * re-anchored once a frame while up, so they follow the camera and
+   * the units, and re-filled on every refresh, so they follow the state.
+   *
+   * @param held - Whether Shift is down.
+   */
+  setInspecting(held: boolean): void {
+    if (held === this.inspecting) {
+      return;
+    }
+    this.inspecting = held;
+    if (!held) {
+      this.stopInspecting?.();
+      this.stopInspecting = undefined;
+      this.status.hide();
+      return;
+    }
+    this.drawStatus();
+    const schedule =
+      typeof requestAnimationFrame === "function"
+        ? requestAnimationFrame
+        : undefined;
+    if (schedule === undefined) {
+      return;
+    }
+    let handle = 0;
+    const tick = (): void => {
+      if (!this.inspecting) {
+        return;
+      }
+      this.drawStatus();
+      handle = schedule(tick);
+    };
+    handle = schedule(tick);
+    this.stopInspecting = () => {
+      cancelAnimationFrame(handle);
+    };
+  }
+
+  /** Whether the status chips are up. */
+  isInspecting(): boolean {
+    return this.inspecting;
   }
 
   // ===========================================
@@ -1388,9 +1454,61 @@ export class TacticalHudView {
     measure();
   }
 
+  /**
+   * One chip per unit the player can see and whose head is on screen:
+   * the perceived view, never the true mission, so a bug nobody has
+   * spotted gets no chip announcing it (ADR 0006).
+   */
+  private drawStatus(): void {
+    const mission = this.mission;
+    const view = this.view;
+    const anchorFor = this.handlers.headAnchorFor;
+    if (!mission || !view || anchorFor === undefined) {
+      this.status.show([]);
+      return;
+    }
+    const names = namesFor(mission, this.campaign);
+    const chips: UnitStatusChip[] = [];
+    for (const unit of view.units) {
+      if (unit.hp <= 0) {
+        continue;
+      }
+      const anchor = anchorFor(unit.id);
+      if (anchor === undefined) {
+        continue;
+      }
+      const template = mission.templates[unit.templateId];
+      const pooled = template?.weapons.find(
+        (weapon) => weapon.charges !== undefined,
+      );
+      const left = pooled === undefined ? undefined : chargesLeft(unit, pooled);
+      chips.push({
+        unitId: unit.id,
+        anchor,
+        name: names.unit(unit.id),
+        team: unit.team,
+        hp: unit.hp,
+        maxHp: unit.maxHp,
+        ...(pooled?.charges !== undefined && left !== undefined
+          ? {
+              charge: {
+                gauge: chargeRegisterFor(unit.kind).gauge,
+                value: left,
+                max: pooled.charges,
+              },
+            }
+          : {}),
+      });
+    }
+    this.status.show(chips);
+  }
+
   /** Pushes the mission and the presentation state into every part. */
   private refresh(): void {
     this.followMenu();
+    if (this.inspecting) {
+      this.drawStatus();
+    }
     const mission = this.mission;
     if (!mission) {
       this.banner.update(undefined);

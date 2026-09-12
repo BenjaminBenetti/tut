@@ -1134,7 +1134,12 @@
   justify-items: center;
   gap: 2px;
   padding: var(--space-2) var(--space-3);
-  background: rgb(20 24 33 / 88%);
+  /* Translucent, so the ground the decision is about shows through it:
+     the hub sits on the impact tile, and a blast footprint painted there
+     (#1121) has to read under the number, not vanish behind a plate. The
+     blur keeps the digits legible over a busy tile. */
+  background: rgb(20 24 33 / 58%);
+  backdrop-filter: blur(1.5px);
   border: var(--line) solid var(--ui-line);
   text-align: center;
   pointer-events: none;

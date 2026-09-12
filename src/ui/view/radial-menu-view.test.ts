@@ -57,6 +57,28 @@ describe("RadialMenuView", () => {
     expect(vent?.title).toBe("No heat");
   });
 
+  it("reports the entry rested on, and none when the pointer leaves or the ring closes (#1121)", () => {
+    const onHover = vi.fn<(id: string | undefined) => void>();
+    const view = new RadialMenuView({
+      onSelect: vi.fn(),
+      onDismiss: vi.fn(),
+      onHover,
+    });
+    view.mount(host);
+    view.open(ITEMS, undefined, { x: 0, y: 0 });
+    const [fire] = buttons();
+    fire?.dispatchEvent(new Event("pointerenter"));
+    fire?.dispatchEvent(new Event("pointerleave"));
+    fire?.dispatchEvent(new Event("focus"));
+    view.close();
+    expect(onHover.mock.calls.map((c) => c[0])).toEqual([
+      "fire",
+      undefined,
+      "fire",
+      undefined,
+    ]);
+  });
+
   it("reports an enabled choice and ignores a disabled one", () => {
     const onSelect = vi.fn<(id: string) => void>();
     const view = new RadialMenuView({ onSelect, onDismiss: vi.fn() });

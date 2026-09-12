@@ -64,10 +64,10 @@ export type WheelChoice =
       readonly weaponId: WeaponId | undefined;
     }
   | {
-      /** Fire a weapon at the ground (#1121); always names its weapon. */
+      /** Fire at the ground (#1121). Undefined opens the weapon page or fires the unit's single weapon. */
       readonly action: "attack-tile";
       readonly tile: TileCoord;
-      readonly weaponId: WeaponId;
+      readonly weaponId: WeaponId | undefined;
     }
   | { readonly action: "overwatch" }
   | { readonly action: "reload" }
@@ -99,6 +99,7 @@ const SHORT_REASONS: Readonly<Partial<Record<TacticalError["kind"], string>>> =
     "no-objective-in-reach": "nothing in reach",
     "target-destroyed": "destroyed",
     "tile-out-of-sight": "no line of sight",
+    "no-area-weapon": "not at the ground",
   };
 
 /** Separates an entry's action from its argument in the id. */
@@ -122,8 +123,8 @@ const COMFORTABLE_HIT_CHANCE = 50;
  * different hat, and a wheel that lies is worse than no wheel.
  *
  * ```
- *   tile      ──► Move (path) · one Fire entry per weapon that can fire at
- *                 the ground (#1121) · Board (drop ship tile) · Overwatch · Reload
+ *   tile      ──► Move (path) · Attack at the ground (#1121; weapons page
+ *                 when there are several) · Board (drop ship tile) · Overwatch · Reload
  *   enemy     ──► Attack (hub: hit chance) · Overwatch · Reload
  *   spawner   ──► Attack · Interact (if this one is in reach) · Overwatch · Reload
  *   own unit  ──► Overwatch · Reload · Interact · Board
@@ -161,15 +162,28 @@ export function actionWheel(
  * The sub-wheel behind Attack for a unit carrying several weapons
  * (#1112, GDD §6.2: one attack per weapon). One entry per weapon with
  * its own hit chance and damage against this target, and a way back.
+ * The same page whether the target is an enemy or a tile (#1121): the
+ * player picks a weapon the same way, and a weapon that cannot be
+ * fired at the ground is on the ring, closed, with the reason.
  *
- * @param targetId - The enemy unit or spawner being aimed at.
+ * @param target - The enemy unit, spawner or tile being aimed at.
  * @param ctx - The mission, the acting unit and the rules' tuning.
  * @returns The page, or an empty one when nothing can be aimed.
  */
-export function weaponWheel(targetId: string, ctx: WheelContext): WheelPage {
+export function weaponWheel(
+  target: TacticalInvokeTarget,
+  ctx: WheelContext,
+): WheelPage {
   const unit = ctx.mission.units.find((u) => u.id === ctx.unitId);
+  if (unit === undefined) {
+    return { items: [] };
+  }
+  if (target.kind === "tile") {
+    return tileWeaponPage(target.tile, unit, ctx);
+  }
+  const targetId = target.kind === "unit" ? target.unitId : target.spawnerId;
   const enemy = findAttackTarget(ctx.mission, targetId);
-  if (unit === undefined || enemy === undefined) {
+  if (enemy === undefined) {
     return { items: [] };
   }
   const items: RadialMenuItem[] = [];
@@ -244,13 +258,15 @@ export function parseWheelChoice(id: string): WheelChoice | undefined {
     }
     case "attack-tile": {
       const split = argument.indexOf(ID_SEPARATOR);
-      if (split === -1) {
+      const tile = parseTile(
+        split === -1 ? argument : argument.slice(0, split),
+      );
+      if (tile === undefined) {
         return undefined;
       }
-      const tile = parseTile(argument.slice(0, split));
-      const weaponId = argument.slice(split + 1);
-      return tile === undefined || weaponId === ""
-        ? undefined
+      const weaponId = split === -1 ? "" : argument.slice(split + 1);
+      return weaponId === ""
+        ? { action, tile, weaponId: undefined }
         : { action, tile, weaponId };
     }
     case "interact":
@@ -299,7 +315,7 @@ function tilePage(tile: TileCoord, unit: Unit, ctx: WheelContext): WheelPage {
       primary: true,
     });
   }
-  items.push(...tileAttackItems(tile, unit, ctx));
+  items.push(tileAttackItem(tile, unit, ctx));
   if (isDropshipTile(ctx.mission, tile)) {
     items.push(boardItem(unit, ctx));
   }
@@ -308,35 +324,87 @@ function tilePage(tile: TileCoord, unit: Unit, ctx: WheelContext): WheelPage {
 }
 
 /**
- * One entry per weapon the unit could fire at this tile (#1121): a
- * mortar, a flamer, a rocket, an autocannon with a car in front of it.
- * A unit with nothing that marks the ground gets no entry at all, so a
- * rifle squad's tile wheel reads exactly as it did.
- *
- * Each entry is the shot itself, previewed on the ring: hit chance, the
- * band at the impact, and — the reason the preview exists — how many of
- * the player's own units are standing in the blast. The label is the
- * weapon's name when the unit carries several; "Fire" otherwise, since
- * a rocket squad's one weapon has no name of its own.
+ * Attack at the ground (#1121), built the way the enemy page builds it
+ * so the two read as one action: closed with the rules' reason when the
+ * unit cannot attack at all or nothing it carries marks the ground;
+ * with several weapons it turns the page, with one it is the shot
+ * itself, previewed on the ring. A rifle squad sees it closed with
+ * "not at the ground", which is the fact rather than an absence.
  */
-function tileAttackItems(
+function tileAttackItem(
   tile: TileCoord,
   unit: Unit,
   ctx: WheelContext,
-): RadialMenuItem[] {
+): RadialMenuItem {
+  const id = itemId("attack-tile", tileArgument(tile));
+  const refusal = actionRefusal(ctx.mission, unit.id, "attack", ctx.deps);
+  if (refusal !== undefined) {
+    return closed(id, "Attack", "attack", refusal, ctx);
+  }
+  const weapons = weaponOptions(ctx.mission, unit.id, ctx.deps.combatTuning);
   const capable = tileWeaponOptions(
     ctx.mission,
     unit.id,
     ctx.deps.combatTuning,
   );
-  const named = weaponOptions(ctx.mission, unit.id, ctx.deps.combatTuning);
+  const first = capable[0];
+  if (first === undefined) {
+    return closed(
+      id,
+      "Attack",
+      "attack",
+      { kind: "no-area-weapon", unitId: unit.id },
+      ctx,
+    );
+  }
+  if (weapons.length > 1) {
+    return {
+      id,
+      label: "Attack",
+      icon: "attack",
+      detail: `${String(weapons.length)} weapons`,
+    };
+  }
+  const preview = previewTileAttack(
+    ctx.mission,
+    unit.id,
+    tile,
+    ctx.deps.combatTuning,
+    first.weapon.id,
+    ctx.previewDeps,
+  );
+  return preview.ok
+    ? {
+        id,
+        label: "Attack",
+        icon: "attack",
+        detail: blastDetail(preview.value, unit),
+      }
+    : closed(id, "Attack", "attack", preview.error, ctx);
+}
+
+/**
+ * The weapon page for a tile (#1121): every weapon the unit carries, the
+ * ones that can fire at the ground open with their numbers, the rest
+ * closed with the reason, and a way back — the enemy's page with the
+ * ground at its centre.
+ */
+function tileWeaponPage(
+  tile: TileCoord,
+  unit: Unit,
+  ctx: WheelContext,
+): WheelPage {
   const items: RadialMenuItem[] = [];
-  for (const option of capable) {
+  let primaryPicked = false;
+  for (const option of weaponOptions(
+    ctx.mission,
+    unit.id,
+    ctx.deps.combatTuning,
+  )) {
     const id = itemId(
       "attack-tile",
       `${tileArgument(tile)}${ID_SEPARATOR}${option.weapon.id}`,
     );
-    const label = named.length > 1 ? option.weapon.name : "Fire";
     const preview = previewTileAttack(
       ctx.mission,
       unit.id,
@@ -345,18 +413,21 @@ function tileAttackItems(
       option.weapon.id,
       ctx.previewDeps,
     );
-    if (!preview.ok) {
-      items.push(closed(id, label, "attack", preview.error, ctx));
-      continue;
+    if (preview.ok) {
+      items.push({
+        id,
+        label: option.weapon.name,
+        icon: "attack",
+        detail: blastDetail(preview.value, unit),
+        primary: !primaryPicked,
+      });
+      primaryPicked = true;
+    } else {
+      items.push(closed(id, option.weapon.name, "attack", preview.error, ctx));
     }
-    items.push({
-      id,
-      label,
-      icon: "attack",
-      detail: blastDetail(preview.value, unit),
-    });
   }
-  return items;
+  items.push({ id: itemId("back", "ground"), label: "Back", icon: "back" });
+  return { items, hub: { value: "Ground", caption: "pick a weapon" } };
 }
 
 /**

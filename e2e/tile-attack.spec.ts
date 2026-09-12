@@ -96,38 +96,58 @@ test("the starter mech fires its missile pod at an empty tile from the wheel", a
     MECH,
   );
 
-  // The first candidate whose wheel offers the pod, open: the map is
-  // generated, so a tile two steps out may be behind a wall.
+  // The first candidate whose wheel offers Attack open: the map is
+  // generated, so a tile two steps out may be behind a wall. Attack on
+  // a tile reads as it does on an enemy (#1121): one entry, which turns
+  // to the weapon page for a unit carrying several.
   let chosen: Tile | undefined;
-  let entryId = "";
+  let tileId = "";
   for (const tile of mech.candidates) {
     await page.evaluate(
       (t) => (globalThis as HookGlobal).__tutTactical__?.selectTile(t),
       tile,
     );
     await expect(wheel(page)).toHaveAttribute("data-open", "true");
-    const id = `attack-tile:${String(tile.x)},${String(tile.y)},${String(tile.z)}:${POD}`;
+    const id = `attack-tile:${String(tile.x)},${String(tile.y)},${String(tile.z)}`;
     const entry = wheelItem(page, id);
     if ((await entry.count()) === 1 && !(await entry.isDisabled())) {
       chosen = tile;
-      entryId = id;
+      tileId = id;
       break;
     }
     await page.keyboard.press("Escape");
     await expect(wheel(page)).toBeHidden();
   }
-  expect(chosen, "no tile beside the mech takes a missile").toBeDefined();
+  expect(chosen, "no tile beside the mech takes a shot").toBeDefined();
   if (!chosen) return;
 
-  // The entry carries the numbers, and the footprint is on the ground
-  // while it is considered: a radius-1 burst reaches up to five tiles.
-  const entry = wheelItem(page, entryId);
-  await expect(entry).toContainText("%");
-  await expect(entry).toContainText("dmg");
-  await expect(entry).toContainText("Missile Pod");
+  // With the wheel open every weapon's footprint is painted together:
+  // the gun's one tile inside the pod's five.
+  await expect(wheelItem(page, tileId)).toContainText("2 weapons");
   await expect(page.locator("body")).toHaveAttribute(
     "data-tactical-blast-tiles",
-    /^[1-5]$/,
+    /^[2-5]$/,
+  );
+  await wheelItem(page, tileId).click();
+  const gun = wheelItem(page, `${tileId}:arm-weapon`);
+  const pod = wheelItem(page, `${tileId}:${POD}`);
+  await expect(pod).toContainText("Missile Pod");
+  await expect(pod).toContainText("%");
+  await expect(pod).toContainText("dmg");
+  // The autocannon breaks a car, so it too can be fired at the ground,
+  // and its footprint is the one tile it hits.
+  await expect(gun).toBeEnabled();
+  // Resting on a weapon paints its footprint alone: the gun's one tile,
+  // the pod's up to five.
+  await gun.hover();
+  await expect(page.locator("body")).toHaveAttribute(
+    "data-tactical-blast-tiles",
+    "1",
+  );
+  await pod.hover();
+  await expect(page.locator("body")).toHaveAttribute(
+    "data-tactical-blast-tiles",
+    /^[2-5]$/,
   );
   await drawnFrame(page);
   if (process.env.CAPTURE !== undefined) {
@@ -135,6 +155,7 @@ test("the starter mech fires its missile pod at an empty tile from the wheel", a
       path: "docs/design/ui-tile-attack-wheel.png",
     });
   }
+  const entry = pod;
 
   // Choosing it fires: the wheel closes, the footprint is gone, the log
   // says where the shell went, and the mech's turn is spent — a miss

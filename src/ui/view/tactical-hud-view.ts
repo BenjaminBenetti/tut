@@ -28,7 +28,6 @@ import {
   chargesLeft,
   previewAttack,
   previewTileAttack,
-  tileWeaponOptions,
   weaponOptions,
 } from "../../tactical/service/combat-service";
 import { viewFor } from "../../tactical/service/mission-view-service";
@@ -262,7 +261,15 @@ export class TacticalHudView {
     onDismiss: () => {
       this.dismissMenu();
     },
+    // Resting on a weapon paints what it would reach (#1121); the whole
+    // refresh is not needed for that, only the footprint.
+    onHover: (id) => {
+      this.hoveredItem = id;
+      this.handlers.onMarkBlast?.(this.consideredBlast());
+    },
   });
+  /** The wheel entry the pointer or focus rests on, if any (#1121). */
+  private hoveredItem: string | undefined;
   /**
    * What the open wheel belongs to. The wheel is dismissed by the world,
    * not only by the player (ADR 0007 §2.2): when its target stops being
@@ -804,11 +811,8 @@ export class TacticalHudView {
         ? {}
         : { previewDeps: this.deps.previewDeps }),
     };
-    if (page === "weapons" && target.kind !== "tile") {
-      return weaponWheel(
-        target.kind === "unit" ? target.unitId : target.spawnerId,
-        ctx,
-      );
+    if (page === "weapons") {
+      return weaponWheel(target, ctx);
     }
     return actionWheel(target, ctx);
   }
@@ -910,6 +914,7 @@ export class TacticalHudView {
   private closeMenu(): void {
     this.menuTarget = undefined;
     this.menuPage = "actions";
+    this.hoveredItem = undefined;
     this.stopFollowing?.();
     this.stopFollowing = undefined;
     this.radial.close();
@@ -941,7 +946,10 @@ export class TacticalHudView {
     // Turning the page keeps the ring; everything else closes it first,
     // and unconditionally: the view reports a choice but does not hide
     // itself, so every path out of here has to (#627).
-    if (choice.action === "attack" && choice.weaponId === undefined) {
+    if (
+      (choice.action === "attack" || choice.action === "attack-tile") &&
+      choice.weaponId === undefined
+    ) {
       const weapons = this.mission
         ? weaponOptions(this.mission, unitId, this.deps.combatTuning)
         : [];
@@ -1404,16 +1412,21 @@ export class TacticalHudView {
   }
 
   /**
-   * The tiles the shot the player is considering would reach (#1121):
-   * the aimed weapon's blast around its target, or — with the wheel
-   * open on a tile — everything any weapon that could fire at that tile
-   * would reach, since the wheel offers each and the player has not yet
-   * chosen. Empty when nothing being considered marks the ground, so a
-   * rifle squad's aim paints nothing new.
+   * The tiles the shot the player is considering would reach (#1121).
    *
-   * The union rather than the first weapon's footprint: a mech's arm
-   * gun breaks a car on the one tile while its pod bursts over five, and
-   * a footprint that showed the one tile understated the pod.
+   * ```
+   *   wheel open, a weapon entry rested on ──► that weapon's footprint
+   *   wheel open on an enemy or a tile      ──► every weapon's, together
+   *   aiming with the wheel closed          ──► the armed weapon's
+   *   otherwise                             ──► nothing
+   * ```
+   *
+   * Always painted while something is being considered, whatever it is
+   * aimed at: a shot at a unit and a shot at the ground are the same
+   * shot, and the player asked to see the blast either way. The union
+   * rather than the first weapon's footprint while no weapon is chosen,
+   * because a mech's arm gun marks one tile where its pod marks five,
+   * and a footprint that showed the one understated the pod.
    */
   private consideredBlast(): readonly TileCoord[] {
     const mission = this.mission;
@@ -1421,41 +1434,73 @@ export class TacticalHudView {
     if (!mission || unitId === undefined) {
       return [];
     }
-    const aimed = this.currentPreview();
-    if (aimed?.ok && aimed.value.blast !== undefined) {
-      return aimed.value.blast.tiles;
-    }
     const target = this.menuTarget;
-    if (target?.kind !== "tile") {
-      return [];
-    }
-    const seen = new Set<string>();
-    const tiles: TileCoord[] = [];
-    for (const option of tileWeaponOptions(
-      mission,
-      unitId,
-      this.deps.combatTuning,
-    )) {
-      const preview = previewTileAttack(
+    if (target !== undefined) {
+      const rested =
+        this.hoveredItem === undefined
+          ? undefined
+          : parseWheelChoice(this.hoveredItem);
+      if (
+        rested !== undefined &&
+        (rested.action === "attack" || rested.action === "attack-tile") &&
+        rested.weaponId !== undefined
+      ) {
+        return this.footprintOf(target, rested.weaponId);
+      }
+      const seen = new Set<string>();
+      const union: TileCoord[] = [];
+      for (const option of weaponOptions(
         mission,
         unitId,
-        target.tile,
         this.deps.combatTuning,
-        option.weapon.id,
-        this.deps.previewDeps,
-      );
-      if (!preview.ok) {
-        continue;
-      }
-      for (const tile of preview.value.blast?.tiles ?? []) {
-        const key = `${String(tile.x)},${String(tile.y)},${String(tile.z)}`;
-        if (!seen.has(key)) {
-          seen.add(key);
-          tiles.push(tile);
+      )) {
+        for (const tile of this.footprintOf(target, option.weapon.id)) {
+          const key = `${String(tile.x)},${String(tile.y)},${String(tile.z)}`;
+          if (!seen.has(key)) {
+            seen.add(key);
+            union.push(tile);
+          }
         }
       }
+      return union;
     }
-    return tiles;
+    const aimed = this.currentPreview();
+    return aimed?.ok ? (aimed.value.blast?.tiles ?? []) : [];
+  }
+
+  /**
+   * What one weapon would reach around `target`, from the same previews
+   * the wheel prints its numbers from; empty when the shot is refused or
+   * the weapon marks nothing.
+   */
+  private footprintOf(
+    target: TacticalInvokeTarget,
+    weaponId: WeaponId,
+  ): readonly TileCoord[] {
+    const mission = this.mission;
+    const unitId = this.selected;
+    if (!mission || unitId === undefined) {
+      return [];
+    }
+    const preview =
+      target.kind === "tile"
+        ? previewTileAttack(
+            mission,
+            unitId,
+            target.tile,
+            this.deps.combatTuning,
+            weaponId,
+            this.deps.previewDeps,
+          )
+        : previewAttack(
+            mission,
+            unitId,
+            target.kind === "unit" ? target.unitId : target.spawnerId,
+            this.deps.combatTuning,
+            weaponId,
+            this.deps.previewDeps,
+          );
+    return preview.ok ? (preview.value.blast?.tiles ?? []) : [];
   }
 
   /**

@@ -1,12 +1,14 @@
 # Concept sheets
 
-Generated reference art for the first asset set. Every image has a sidecar `.md` with the exact prompt, generator, date and keep/change notes (architecture §7). Regenerate any sheet with:
+Generated reference art for the first asset set, plus later explorations. Every image has a sidecar `.md` recording its prompt (inline or in a linked text file), generator, date and keep/change notes (architecture §7). Regenerate the original sheets with:
 
 ```
 tools/art/gen-image.sh docs/design/concepts/prompts/<name>.txt docs/design/concepts/<name>.png
 ```
 
-Sheets are documentation, not runtime assets; they are downscaled to 1536 px wide.
+Sheets are documentation, not runtime assets; they are stored at 1536 px wide.
+
+**New review:** [Swarmer redesign — Splitmask, Crescent and Ribknife](swarmer-redesign/README.md). Three alternative directions for a future bug-family redesign, with concept sheets, exact built-in image-generation prompts and notes on extending each theme. Direction selection is pending.
 
 | Sheet | Subject | Style guide |
 |---|---|---|

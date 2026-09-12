@@ -132,7 +132,7 @@ The player's attention belongs on the battlefield, not on a side panel.
 ### 6.3 Spawning
 - **Egg spawners** are static objectives placed by map generation. They periodically hatch bugs. Destroying them is the baseline objective.
 - **Edge spawns** trickle bugs in from map edges on a timer that escalates with mission difficulty and overworld threat.
-- Missions end on objective completion, full extraction, or squad wipe.
+- Missions end when the force is off the map: **won** once every objective is complete and the survivors have boarded the drop ship, **extracted** if they board with an objective still open, **lost** on a squad wipe. Completing the objectives does not end the mission on its own; the force still has to get home (Executive Director, 2026-09-11).
 
 ### 6.4 Bugs (see Track: Bestiary)
 - Baseline three for M2: a **swarmer** (fast, weak, numerous, rushes), a **lurker** (stealthy flanker that tries to get behind the line), and a **brute** (slow, armored, punishes clumping).

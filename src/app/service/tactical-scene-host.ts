@@ -31,6 +31,7 @@ import {
 } from "../../graphics/service/layer-focus-service";
 import { TacticalSceneBuilder } from "../../graphics/service/tactical-scene-builder";
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
+import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { UnitId } from "../../tactical/model/unit";
 import { TacticalInputController } from "../../ui/controller/tactical-input-controller";
@@ -40,7 +41,10 @@ import type {
   TacticalInvokeTarget,
   TacticalTestHooks,
 } from "../../ui/model/tactical-intent";
-import type { TacticalSceneHost } from "../../ui/model/tactical-scene-host";
+import type {
+  TacticalSceneHost,
+  TacticalUpdateHooks,
+} from "../../ui/model/tactical-scene-host";
 
 // ===========================================
 // Types
@@ -220,17 +224,37 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
   update(
     mission: TacticalState,
     events: readonly TacticalEvent[] = [],
+    hooks: TacticalUpdateHooks = {},
   ): Promise<void> {
     const attached = this.attached;
     if (!attached) {
+      hooks.onSettled?.();
       return Promise.resolve();
     }
     attached.mission = mission;
-    return playAroundRedraw(attached.animations, events, () =>
-      this.placeUnits(mission),
+    return playAroundRedraw(
+      attached.animations,
+      events,
+      () => this.placeUnits(mission),
+      hooks.onEvent,
     ).then(() => {
       this.refreshOverlays();
+      hooks.onSettled?.();
     });
+  }
+
+  /**
+   * Frames the wheel's tile through the overlays (#1112 follow-up), and
+   * records it on the body so a spec can read which tile is framed
+   * without a hook, as `tacticalSelected` does for the selection.
+   */
+  markTile(tile: TileCoord | undefined): void {
+    this.attached?.overlays.setMarkedTile(tile);
+    if (tile === undefined) {
+      delete document.body.dataset.tacticalMarkedTile;
+    } else {
+      document.body.dataset.tacticalMarkedTile = `${String(tile.x)},${String(tile.y)},${String(tile.z)}`;
+    }
   }
 
   /**

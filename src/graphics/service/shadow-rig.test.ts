@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   createKeyLight,
   followCamera,
+  shadowExtentFor,
   KEY_LIGHT_OFFSET,
   SHADOW_TUNING,
 } from "./shadow-rig";
@@ -82,5 +83,58 @@ describe("followCamera", () => {
     level.updateMatrixWorld(true);
     followCamera(key, level);
     expect(key.target.position).toEqual(before);
+  });
+});
+
+// ===========================================
+// Extent follows the view
+// ===========================================
+
+describe("shadowExtentFor", () => {
+  it("keeps the rest extent for a view narrower than it, and grows for a wider one", () => {
+    // 20 tiles across at the isometric elevation: inside the 30-tile floor.
+    const close = new OrthographicCamera(-10, 10, 6, -6);
+    expect(shadowExtentFor(close, Math.sin(Math.atan(1 / Math.SQRT2)))).toBe(
+      SHADOW_TUNING.extent,
+    );
+    // 100 tiles across: the box has to grow, plus the margin.
+    const wide = new OrthographicCamera(-50, 50, 6, -6);
+    expect(shadowExtentFor(wide, 1)).toBe(50 + SHADOW_TUNING.extentMargin);
+    // Screen-up covers more ground the lower the camera looks.
+    const tall = new OrthographicCamera(-10, 10, 20, -20);
+    expect(shadowExtentFor(tall, 0.5)).toBe(40 + SHADOW_TUNING.extentMargin);
+  });
+
+  it("never exceeds the ceiling, and honours the camera's zoom", () => {
+    const vast = new OrthographicCamera(-500, 500, 300, -300);
+    expect(shadowExtentFor(vast, 1)).toBe(SHADOW_TUNING.maxExtent);
+    const zoomed = new OrthographicCamera(-100, 100, 60, -60);
+    zoomed.zoom = 8;
+    expect(shadowExtentFor(zoomed, 1)).toBe(SHADOW_TUNING.extent);
+  });
+
+  it("is applied by followCamera, so the frustum matches the view it follows", () => {
+    const key = createKeyLight();
+    const camera = new OrthographicCamera(-60, 60, 30, -30);
+    camera.position.set(0, 50, 50);
+    camera.lookAt(0, 0, 0);
+    camera.updateMatrixWorld();
+    followCamera(key, camera);
+    expect(key.shadow.camera.right).toBeGreaterThan(SHADOW_TUNING.extent);
+    expect(key.shadow.camera.left).toBe(-key.shadow.camera.right);
+  });
+
+  it("keeps every caster in the frustum in front of the near plane", () => {
+    // The light is far enough out that the whole box, at its widest and
+    // tallest, still lies past `near`: the pop-in was casters crossing
+    // the near plane as the target followed the camera.
+    const offset = Math.hypot(
+      KEY_LIGHT_OFFSET.x,
+      KEY_LIGHT_OFFSET.y,
+      KEY_LIGHT_OFFSET.z,
+    );
+    const reach = SHADOW_TUNING.maxExtent * Math.SQRT2 + 12;
+    expect(offset - reach).toBeGreaterThan(SHADOW_TUNING.near);
+    expect(offset + reach).toBeLessThan(SHADOW_TUNING.far);
   });
 });

@@ -165,10 +165,13 @@ describe("actionWheel on an enemy", () => {
       primary: true,
       detail: `${String(expected.value.damage[0])}–${String(expected.value.damage[1])} dmg`,
     });
+    // A whole percent, printed as it is: the first cut multiplied it by
+    // a hundred again and the hub read 3100%.
+    expect(expected.value.hitChance).toBeLessThanOrEqual(100);
     expect(page.hub).toEqual({
-      value: `${String(Math.round(expected.value.hitChance * 100))}%`,
+      value: `${String(expected.value.hitChance)}%`,
       caption: "hit chance",
-      tone: expected.value.hitChance >= 0.5 ? "ok" : "warn",
+      tone: expected.value.hitChance >= 50 ? "ok" : "warn",
     });
   });
 
@@ -210,7 +213,7 @@ describe("actionWheel on an enemy", () => {
         return preview.ok ? preview.value.hitChance : 0;
       }),
     );
-    expect(page.hub?.value).toBe(`${String(Math.round(best * 100))}%`);
+    expect(page.hub?.value).toBe(`${String(best)}%`);
   });
 
   it("offers Interact on a spawner only when that spawner's objective is in reach", () => {
@@ -290,7 +293,7 @@ describe("weaponWheel", () => {
     expect(page.items[1]).toMatchObject({
       label: "Missile Pod",
       primary: true,
-      detail: `${String(Math.round(pod.value.hitChance * 100))}% · ${String(pod.value.damage[0])}–${String(pod.value.damage[1])} dmg`,
+      detail: `${String(pod.value.hitChance)}% · ${String(pod.value.damage[0])}–${String(pod.value.damage[1])} dmg`,
     });
     expect(page.items[2]).toMatchObject({ label: "Back", icon: "back" });
     expect(page.hub).toEqual({ value: "Swarmer", caption: "pick a weapon" });

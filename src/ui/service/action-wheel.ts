@@ -87,6 +87,9 @@ const SHORT_REASONS: Readonly<Partial<Record<TacticalError["kind"], string>>> =
 /** Separates an entry's action from its argument in the id. */
 const ID_SEPARATOR = ":";
 
+/** Whole percent from which the hub reads as a comfortable shot. */
+const COMFORTABLE_HIT_CHANCE = 50;
+
 // ===========================================
 // Pages
 // ===========================================
@@ -174,7 +177,7 @@ export function weaponWheel(targetId: string, ctx: WheelContext): WheelPage {
         id,
         label: option.weapon.name,
         icon: "attack",
-        detail: `${String(Math.round(preview.value.hitChance * 100))}% · ${damageText(preview.value.damage)}`,
+        detail: `${String(preview.value.hitChance)}% · ${damageText(preview.value.damage)}`,
         primary: !primaryPicked,
       });
       primaryPicked = true;
@@ -456,12 +459,16 @@ function closed(
   };
 }
 
-/** The hit chance at the centre of an aiming wheel. */
+/**
+ * The hit chance at the centre of an aiming wheel. `hitChance` is a
+ * whole percent already (`AttackPreview`), so it is printed as it is:
+ * the first version multiplied it by a hundred and the hub read 3100%.
+ */
 function hitHub(hitChance: number): RadialMenuHub {
   return {
-    value: `${String(Math.round(hitChance * 100))}%`,
+    value: `${String(hitChance)}%`,
     caption: "hit chance",
-    tone: hitChance >= 0.5 ? "ok" : "warn",
+    tone: hitChance >= COMFORTABLE_HIT_CHANCE ? "ok" : "warn",
   };
 }
 

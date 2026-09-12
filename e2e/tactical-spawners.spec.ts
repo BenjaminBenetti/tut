@@ -460,7 +460,7 @@ async function waitForRenderedMove(
 async function endTurn(page: Page, body: ReturnType<Page["locator"]>) {
   const before = await savedMission(page);
   expect(before, "end turn needs an active mission").not.toBeNull();
-  await page.locator('#turn-bar [data-action="end-turn"]').click();
+  await page.locator('#action-bar [data-action="end-turn"]').click();
   await expect
     .poll(
       async () => {

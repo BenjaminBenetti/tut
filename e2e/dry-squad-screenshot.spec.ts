@@ -210,7 +210,7 @@ test("captures a squad with an empty magazine, and the three things that follow"
     if (dry !== null && (ammoOf(dry, squadId) ?? 1) === 0) {
       break;
     }
-    const endTurn = page.locator('#turn-bar [data-action="end-turn"]');
+    const endTurn = page.locator('#action-bar [data-action="end-turn"]');
     if (await endTurn.isEnabled()) {
       await endTurn.click();
       await page.waitForTimeout(SETTLE_MS);

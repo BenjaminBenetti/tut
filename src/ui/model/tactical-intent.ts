@@ -37,6 +37,38 @@ export const TACTICAL_ACTIONS = [
   "cancel",
 ] as const satisfies readonly TacticalAction[];
 
+/**
+ * Keyboard shortcuts (GDD §6.2 actions plus End Turn), keyed by
+ * `KeyboardEvent.key` lower-cased. Q / E / WASD / arrows belong to the
+ * camera controller (`CAMERA_KEYS`) and must not appear here: both
+ * handlers hear every key, so a key in both tables pans the view *and*
+ * arms an action. `a` was one until #1091 -- every leftward pan armed
+ * Attack, and on a spent unit said so on every keypress. A test checks
+ * the tables are disjoint. `t` cycles attack targets,
+ * which is the only way to aim at an egg spawner until the scene draws
+ * one the pointer can hit (#426).
+ *
+ * The number row went with the action bar (#1112): the digits were bound
+ * from the bar's order, and there is no bar to document them now. Every
+ * letter from #340 keeps its meaning.
+ */
+export const TACTICAL_SHORTCUTS: Readonly<
+  Record<string, TacticalAction | "end-turn">
+> = {
+  m: "move",
+  f: "attack",
+  o: "overwatch",
+  r: "reload",
+  i: "interact",
+  x: "extract",
+  tab: "next-unit",
+  t: "next-target",
+  v: "toggle-range",
+  escape: "cancel",
+  enter: "end-turn",
+  end: "end-turn",
+};
+
 /** What a click on the map landed on: a unit, an egg spawner or a tile. */
 export type TacticalInvokeTarget =
   | { readonly kind: "unit"; readonly unitId: UnitId }

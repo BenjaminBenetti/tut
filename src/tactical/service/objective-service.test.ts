@@ -98,7 +98,7 @@ describe("createInteractHandler", () => {
     ]);
   });
 
-  it("completes the objective and wins the mission with the last spawner", () => {
+  it("completes the objective with the last spawner; the mission ends on extraction", () => {
     const applied = handler(
       besideSpawner({ hp: TUNING.chargeDamage }),
       interact("u", "objective-1"),
@@ -109,16 +109,13 @@ describe("createInteractHandler", () => {
     const { state, events } = applied.value;
     expect(state.spawners[0]).toMatchObject({ hp: 0, destroyed: true });
     expect(state.objectives[0]?.complete).toBe(true);
-    expect(state.outcome).toBe("won");
+    // Not over: the unit is still on the map, and the force has to
+    // board the drop ship to bring the result home.
+    expect(state.outcome).toBeUndefined();
     expect(events.map((event) => event.type)).toEqual([
       SPAWNER_DAMAGED,
       OBJECTIVE_UPDATED,
-      MISSION_ENDED,
     ]);
-    expect(events[2]).toEqual({
-      type: MISSION_ENDED,
-      payload: { outcome: "won", turn: 1 },
-    });
   });
 
   it("leaves the mission running while another objective is open", () => {

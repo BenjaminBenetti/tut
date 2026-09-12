@@ -1102,9 +1102,31 @@
 }
 
 .tut-radial__ring,
-.tut-radial__hub {
+.tut-radial__hub,
+.tut-radial__track {
   position: absolute;
   transform: translate(-50%, -50%);
+}
+
+/*
+ * The track joins the entries into one ring: a dashed ellipse in the
+ * accent, faint enough to sit behind the words. Without it the entries
+ * read as loose buttons scattered near the tile.
+ */
+.tut-radial__track {
+  left: 0;
+  top: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.tut-radial__track ellipse {
+  /* No fill: the tile the wheel is about is framed on the map beneath it. */
+  fill: none;
+  stroke: var(--ui-accent);
+  stroke-width: 2;
+  stroke-dasharray: 6 5;
+  opacity: 0.8;
 }
 
 .tut-radial__hub {

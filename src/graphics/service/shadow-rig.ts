@@ -1,5 +1,5 @@
 import type { Camera } from "three";
-import { DirectionalLight, Vector3 } from "three";
+import { DirectionalLight, OrthographicCamera, Vector3 } from "three";
 
 // ===========================================
 // Tuning
@@ -25,10 +25,22 @@ export const SHADOW_TUNING = {
    * from ~30 s to 1.5 minutes and timed two specs out (#507).
    */
   mapSize: 1024,
-  /** Half-width of the orthographic shadow frustum, in tiles. */
+  /**
+   * Half-width of the orthographic shadow frustum, in tiles, at rest.
+   * `followCamera` widens it to cover the ground the view can see, up
+   * to `maxExtent`; 30 is the floor a close zoom keeps for sharpness.
+   */
   extent: 30,
+  /**
+   * The widest the frustum grows. Beyond this a 1024 map is too coarse
+   * to be worth the pass, and a view that wide is a map view anyway.
+   */
+  maxExtent: 140,
+  /** Ground margin past the visible area, so a caster just off screen still shadows into it. */
+  extentMargin: 6,
   near: 0.5,
-  far: 120,
+  /** Past the far corner of the widest frustum from a light 224 tiles out. */
+  far: 500,
   /** Pulls the depth test off surfaces, against acne on flat ground. */
   bias: -0.0015,
   /** Offsets along the normal, against acne on the slabs' thin edges. */
@@ -36,7 +48,20 @@ export const SHADOW_TUNING = {
 } as const;
 
 /** Where the key light sits relative to whatever it is lighting. */
-export const KEY_LIGHT_OFFSET = { x: 4, y: 8, z: 12 } as const;
+/**
+ * Where the key light sits relative to what it lights. The direction is
+ * what the art was lit under; the *distance* is the fix the Executive
+ * Director's shadow pop-in asked for. At `(4, 8, 12)` the light was 15
+ * tiles from its target with a frustum 60 tiles across, so anything on
+ * the lit half further than ~15 tiles along the light's axis sat behind
+ * the near plane and cast nothing — and as the target followed the
+ * camera, casters crossed that plane and their shadows blinked. Fifteen
+ * times further out the light is 224 tiles from its target, past the
+ * far corner of the widest frustum `followCamera` will size, so no
+ * caster in the box reaches the near plane. A directional light does
+ * not care about distance; only its shadow camera does.
+ */
+export const KEY_LIGHT_OFFSET = { x: 60, y: 120, z: 180 } as const;
 
 // ===========================================
 // Rig
@@ -104,4 +129,52 @@ export function followCamera(key: DirectionalLight, camera: Camera): void {
     ground.z + KEY_LIGHT_OFFSET.z,
   );
   key.updateMatrixWorld();
+  fitExtent(key, camera, -forward.y);
+}
+
+/**
+ * The half-width the shadow frustum needs to cover the ground the
+ * camera can see, in tiles, from the camera's own frustum.
+ *
+ * An orthographic view `w` wide and `h` tall, looking down at an
+ * elevation whose sine is `sinElevation`, sees `w` tiles across and
+ * `h / sinElevation` tiles up the ground. The fixed 60-tile box was
+ * smaller than a 1080p view at the plain zoom floor, so the far corners
+ * of the screen never had shadows and gained or lost them as the box
+ * swept past (the pop-in reported on #1113).
+ *
+ * @param camera - The view camera; a perspective camera keeps the rest extent.
+ * @param sinElevation - Downward component of the camera's forward, in (0, 1].
+ * @returns The half-width to use, within the tuning's floor and ceiling.
+ */
+export function shadowExtentFor(camera: Camera, sinElevation: number): number {
+  if (!(camera instanceof OrthographicCamera) || sinElevation <= 0) {
+    return SHADOW_TUNING.extent;
+  }
+  const halfWidth = (camera.right - camera.left) / 2 / camera.zoom;
+  const halfHeight = (camera.top - camera.bottom) / 2 / camera.zoom;
+  const needed =
+    Math.max(halfWidth, halfHeight / sinElevation) + SHADOW_TUNING.extentMargin;
+  return Math.min(
+    SHADOW_TUNING.maxExtent,
+    Math.max(SHADOW_TUNING.extent, needed),
+  );
+}
+
+/** Resizes the shadow frustum to the view, only when it changes. */
+function fitExtent(
+  key: DirectionalLight,
+  camera: Camera,
+  sinElevation: number,
+): void {
+  const extent = shadowExtentFor(camera, sinElevation);
+  const frustum = key.shadow.camera;
+  if (frustum.right === extent) {
+    return;
+  }
+  frustum.left = -extent;
+  frustum.right = extent;
+  frustum.top = extent;
+  frustum.bottom = -extent;
+  frustum.updateProjectionMatrix();
 }

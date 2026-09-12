@@ -285,6 +285,17 @@ function stateOf(vision: IndexedVision, key: VisionTileKey): TileVisionState {
  */
 const GHOSTED_MODEL_PREFIX = "building.";
 
+/** What a map view may leave out. */
+export interface TacticalMapViewOptions {
+  /**
+   * Draw a marker on objective hook tiles. On by default for the mapgen
+   * preview, where the marker is how a placement is read; a mission
+   * turns it off because the marker would show the objective through
+   * fog of war.
+   */
+  readonly objectiveMarkers?: boolean;
+}
+
 /**
  *
  */
@@ -297,6 +308,8 @@ export class TacticalMapView implements Disposable, TilePicker {
   readonly root: Group;
   /** Shared cutaway uniforms, when the scene ghosts walls (#526). */
   private readonly ghostUniforms: GhostUniforms | undefined;
+  /** Whether objective hook tiles get a marker; off in a mission, on in the preview. */
+  private readonly objectiveMarkers: boolean;
   private readonly map: TacticalMap;
   private readonly index: TileIndex;
   private readonly levelGroups = new Map<number, Group>();
@@ -342,9 +355,14 @@ export class TacticalMapView implements Disposable, TilePicker {
   // ===========================================
 
   /** Builds every mesh immediately. */
-  constructor(map: TacticalMap, ghostUniforms?: GhostUniforms) {
+  constructor(
+    map: TacticalMap,
+    ghostUniforms?: GhostUniforms,
+    options: TacticalMapViewOptions = {},
+  ) {
     this.map = map;
     this.ghostUniforms = ghostUniforms;
+    this.objectiveMarkers = options.objectiveMarkers ?? true;
     this.index = new TileIndex(map);
     this.root = new Group();
     this.root.name = "tactical-map";
@@ -1402,6 +1420,15 @@ export class TacticalMapView implements Disposable, TilePicker {
   private buildHooks(): void {
     const batches = new Map<string, Batch>();
     for (const hook of allHooks(this.map.hooks)) {
+      // An objective's marker is the objective's location, and the
+      // scene withholds objectives until they are seen (ADR 0006 §2.4).
+      // The marker was map geometry, built here from the generator's
+      // hooks and skipped by the fog, so a green slab advertised every
+      // egg spawner through the mist from turn one. The mapgen preview
+      // still wants it; a mission does not.
+      if (!this.objectiveMarkers && isObjective(hook, this.map)) {
+        continue;
+      }
       for (const coord of hook.tiles) {
         const colour = HOOK_COLOURS[hook.kind] ?? FALLBACK_HOOK_COLOUR;
         const lift =

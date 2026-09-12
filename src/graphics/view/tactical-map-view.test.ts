@@ -579,6 +579,29 @@ describe("TacticalMapView.loadModels", () => {
     view.dispose();
   });
 
+  it("leaves objective hooks unmarked when asked, so a mission does not show spawners through fog", () => {
+    const map = new FixtureMapBuilder(6, 6, 1)
+      .fillGround()
+      .objective(HookKinds.EGG_SPAWNER, [{ x: 2, y: 0, z: 2 }])
+      .build();
+    const marked = new TacticalMapView(map);
+    const unmarked = new TacticalMapView(map, undefined, {
+      objectiveMarkers: false,
+    });
+    const hookMeshes = (view: TacticalMapView): string[] => {
+      const names: string[] = [];
+      view.root.traverse((object) => {
+        if (object.name.startsWith("hooks:hook:")) names.push(object.name);
+      });
+      return names;
+    };
+    expect(hookMeshes(marked).some((n) => n.includes("egg-spawner"))).toBe(
+      true,
+    );
+    expect(hookMeshes(unmarked).some((n) => n.includes("egg-spawner"))).toBe(
+      false,
+    );
+  });
   it("preloads the distinct ids and instances rather than cloning per cell", async () => {
     const map = fixture().build();
     const view = new TacticalMapView(map);

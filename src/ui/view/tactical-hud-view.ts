@@ -49,7 +49,8 @@ import {
   parseWheelChoice,
   weaponWheel,
 } from "../service/action-wheel";
-import { EndTurnView } from "./end-turn-view";
+import type { ActionBarAction } from "./action-bar-view";
+import { ActionBarView } from "./action-bar-view";
 import { EventLogView } from "./event-log-view";
 import { HitPreviewView } from "./hit-preview-view";
 import { ObjectiveTrackerView } from "./objective-tracker-view";
@@ -64,6 +65,7 @@ import { TURN_STARTED } from "../../tactical/model/turn-started-event";
 import { TurnBannerView } from "./turn-banner-view";
 import { UnitCardView } from "./unit-card-view";
 import { SquadStripView, playerUnits } from "./squad-strip-view";
+import { chargeRegisterFor } from "../service/charge-register";
 
 // ===========================================
 // Types
@@ -126,6 +128,11 @@ export interface TacticalHudHandlers {
    * still shows whatever `setLayerFocus` was last given.
    */
   readonly onLayerStep?: (delta: number) => void;
+  /**
+   * Frame a tile on the map, or clear the frame: the tile the wheel is
+   * open on. Optional, so a HUD built without a scene needs no stub.
+   */
+  readonly onMarkTile?: (tile: TileCoord | undefined) => void;
 }
 
 /** What the HUD needs injected. */
@@ -136,6 +143,12 @@ export interface TacticalHudDeps {
   readonly objectiveTuning: ObjectiveTuning;
   /** Hold time and timers for the phase banner; the defaults are the DOM's. */
   readonly phaseBanner?: PhaseBannerOptions;
+  /**
+   * The key table, so the action bar can write each action's key on its
+   * button and the hint cannot drift from the binding. Empty when not
+   * given, which is a bar with no hints.
+   */
+  readonly shortcuts?: Readonly<Record<string, TacticalAction | "end-turn">>;
 }
 
 /** Which page of the wheel is open. */
@@ -237,7 +250,10 @@ export class TacticalHudView {
   /** Which page is up: the actions, or the weapons behind Attack. */
   private menuPage: WheelPageKind = "actions";
   private readonly log = new EventLogView();
-  private readonly endTurn: EndTurnView;
+  /** The actions with their keys along the bottom; a press is the key (#1113 review). */
+  private readonly actions: ActionBarView;
+  /** Cancels the frame loop that keeps an open wheel on its tile as the camera moves. */
+  private stopFollowing: (() => void) | undefined;
   private root: HTMLElement | undefined;
   private mission: TacticalState | undefined;
   /**
@@ -294,11 +310,18 @@ export class TacticalHudView {
         this.confirmAttack();
       },
     });
-    this.endTurn = new EndTurnView({
-      onEndTurn: () => {
-        this.handleIntent({ kind: "end-turn" });
+    this.actions = new ActionBarView(
+      {
+        onAction: (action) => {
+          this.handleIntent(
+            action === "end-turn"
+              ? { kind: "end-turn" }
+              : { kind: "action", action },
+          );
+        },
       },
-    });
+      deps.shortcuts ?? {},
+    );
   }
 
   // ===========================================
@@ -328,7 +351,7 @@ export class TacticalHudView {
     this.preview.mount(side);
     this.objectives.mount(side);
     this.log.mount(hud);
-    this.endTurn.mount(bottom);
+    this.actions.mount(bottom);
     hud.append(top, side, bottom);
     this.watchSideOverflow(side);
     this.guardPointer(hud);
@@ -386,6 +409,29 @@ export class TacticalHudView {
     this.refresh();
   }
 
+  /**
+   * Records one event as it happens on the map: its log line and any
+   * phase banner it carries. The screen calls this as the scene plays
+   * each event, so the HUD's account of a bug phase lands one action at
+   * a time, in step with the animation, rather than all at once before
+   * it. The state itself follows through `update` once the scene has
+   * settled.
+   *
+   * Ignored for a mission the HUD has not been shown yet: an arriving
+   * mission replays its own log in `update`, and hearing the arrival's
+   * events here as well would write them twice.
+   *
+   * @param event - The event beginning to play.
+   * @param mission - The mission it belongs to, for the names in the line.
+   */
+  playEvent(event: TacticalEvent, mission: TacticalState): void {
+    if (this.mission?.missionId !== mission.missionId) {
+      return;
+    }
+    this.phases.announce(phaseChangesIn([event]));
+    this.log.append([event], mission, this.campaign);
+  }
+
   /** Shows a one-line message in the banner (a rejected command, for instance). */
   showStatus(message: string): void {
     this.banner.showStatus(message);
@@ -397,8 +443,10 @@ export class TacticalHudView {
     this.sideOverflow = undefined;
     this.pointerGuard?.dispose();
     this.pointerGuard = undefined;
+    this.stopFollowing?.();
+    this.stopFollowing = undefined;
     this.phases.unmount();
-    this.endTurn.unmount();
+    this.actions.unmount();
     this.log.unmount();
     this.objectives.unmount();
     this.preview.unmount();
@@ -713,6 +761,62 @@ export class TacticalHudView {
       return;
     }
     this.radial.open(items, hub, anchor);
+    this.handlers.onMarkTile?.(this.tileOf(target));
+    this.follow(target);
+  }
+
+  /**
+   * Keeps an open wheel on its world point between refreshes: once a
+   * frame, while it is open, the anchor is projected again and the ring
+   * moved to it. Without this the ring stayed where it opened while the
+   * camera panned underneath it (the Executive Director's item 8 on
+   * #1113). Refreshes still rebuild the entries; this only moves them.
+   */
+  private follow(target: TacticalInvokeTarget): void {
+    if (this.stopFollowing !== undefined) {
+      return;
+    }
+    const schedule =
+      typeof requestAnimationFrame === "function"
+        ? requestAnimationFrame
+        : undefined;
+    if (schedule === undefined) {
+      return;
+    }
+    let handle = 0;
+    const tick = (): void => {
+      if (this.menuTarget !== target) {
+        this.stopFollowing = undefined;
+        return;
+      }
+      const anchor = this.handlers.anchorFor?.(target);
+      if (anchor === undefined) {
+        // The target stopped being drawn: dismissed by the world (ADR 0007 §2.2).
+        this.stopFollowing = undefined;
+        this.closeMenu();
+        this.refresh();
+        return;
+      }
+      this.radial.moveTo(anchor);
+      handle = schedule(tick);
+    };
+    handle = schedule(tick);
+    this.stopFollowing = () => {
+      cancelAnimationFrame(handle);
+    };
+  }
+
+  /** The tile a wheel target stands on, for the mark on the map. */
+  private tileOf(target: TacticalInvokeTarget): TileCoord | undefined {
+    switch (target.kind) {
+      case "tile":
+        return target.tile;
+      case "unit":
+        return this.unit(target.unitId)?.pos;
+      case "spawner":
+        return this.mission?.spawners.find((s) => s.id === target.spawnerId)
+          ?.pos;
+    }
   }
 
   /**
@@ -723,7 +827,10 @@ export class TacticalHudView {
   private closeMenu(): void {
     this.menuTarget = undefined;
     this.menuPage = "actions";
+    this.stopFollowing?.();
+    this.stopFollowing = undefined;
     this.radial.close();
+    this.handlers.onMarkTile?.(undefined);
   }
 
   /**
@@ -1092,6 +1199,22 @@ export class TacticalHudView {
     }
   }
 
+  /**
+   * The actions the selected unit cannot take, from the same query that
+   * produces the refusal, so a button and its reason agree (#1030).
+   */
+  private unavailableActions(): ActionBarAction[] {
+    const actions: UnitAction[] = [
+      "move",
+      "attack",
+      "overwatch",
+      "reload",
+      "interact",
+      "extract",
+    ];
+    return actions.filter((action) => this.refusalFor(action) !== undefined);
+  }
+
   /** Whether the selected unit may act at all: alive, its phase, an action left. */
   private canAct(): boolean {
     const mission = this.mission;
@@ -1275,7 +1398,14 @@ export class TacticalHudView {
       this.preview.update(undefined);
       this.objectives.update([], []);
       this.squad.update(undefined);
-      this.endTurn.update({ playerPhase: false, unspent: 0 });
+      this.actions.update({
+        playerPhase: false,
+        unavailable: [],
+        hasActor: false,
+        reloadLabel: "Reload",
+        aiming: false,
+        unspent: 0,
+      });
       return;
     }
     this.banner.update({
@@ -1336,8 +1466,12 @@ export class TacticalHudView {
       selectedId: this.selected,
       nameOf: (unitId) => railNames.unit(unitId),
     });
-    this.endTurn.update({
+    this.actions.update({
       playerPhase: mission.phase === "player",
+      unavailable: this.unavailableActions(),
+      hasActor: this.actingSelection() !== undefined,
+      reloadLabel: chargeRegisterFor(selected?.kind ?? "squad").actionLabel,
+      aiming: this.mode === "attack",
       unspent: this.unspentCount(),
     });
     // Last, so the listener reads the state the refresh just settled.

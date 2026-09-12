@@ -146,7 +146,7 @@ test("captures the glyphed screens for review", async ({ page }) => {
   // turn and stop when the preview offers a shot rather than a refusal.
   // A refused preview leaves the chip row empty, which has no box at
   // all, so "visible" is the honest test for "there is a shot here".
-  const endTurn = page.locator('#turn-bar [data-action="end-turn"]');
+  const endTurn = page.locator('#action-bar [data-action="end-turn"]');
   const chips = page.locator('[data-field="preview-terrain"]');
   let aimed = false;
   for (let turn = 0; turn < TURNS_FOR_A_TARGET && !aimed; turn++) {

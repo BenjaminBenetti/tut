@@ -118,12 +118,20 @@ test("the letter shortcuts still arm and cancel, and no digit does", async ({
   await page.keyboard.press("Escape");
   await expect(body).toHaveAttribute("data-last-intent", "cancel");
 
-  // The number row went with the bar (#1112): a digit is not an intent.
+  // The number row went (#1112): a digit is not an intent.
   await page.keyboard.press("2");
   await expect(body).toHaveAttribute("data-last-intent", "cancel");
-  // And there is no bar to number: End turn is the one button left.
-  await expect(page.locator("#turn-bar button")).toHaveCount(1);
-  await expect(page.locator("#action-bar")).toHaveCount(0);
+  // The bar lists the actions with their letters, and a press is the key.
+  await expect(
+    page.locator('#action-bar [data-action="attack"] [data-role="shortcut"]'),
+  ).toHaveText("F");
+  // A bar press goes straight to the HUD, not through the input
+  // controller, so the body's last-intent stays put; the bar itself
+  // shows the aim it armed.
+  await page.locator('#action-bar [data-action="attack"]').click();
+  await expect(
+    page.locator('#action-bar [data-action="attack"]'),
+  ).toHaveAttribute("aria-pressed", "true");
 });
 
 test("the browser menu is suppressed on the map, not on the document", async ({

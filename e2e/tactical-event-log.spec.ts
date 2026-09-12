@@ -77,7 +77,7 @@ test("the event log reads the mission's events and collapses (#525)", async ({
   // Ending the turn runs the bug phase, which is the first thing the
   // player's own actions put in there.
   const before = await entries.count();
-  await page.locator('#turn-bar [data-action="end-turn"]').click();
+  await page.locator('#action-bar [data-action="end-turn"]').click();
   await expect
     .poll(async () => entries.count(), { timeout: 20000 })
     .toBeGreaterThan(before);
@@ -106,7 +106,7 @@ for (const size of WIDTHS) {
     await launchMission(page);
 
     const log = await boxOf(page.locator("#event-log"));
-    const actions = await boxOf(page.locator("#turn-bar"));
+    const actions = await boxOf(page.locator("#action-bar"));
     const objectives = await boxOf(page.locator("#objectives"));
 
     expect(overlaps(log, actions), "log over the End turn bar").toBe(false);

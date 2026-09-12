@@ -1,6 +1,7 @@
-import type { Object3D, RingGeometry } from "three";
+import type { Object3D } from "three";
 import {
   BoxGeometry,
+  RingGeometry,
   BufferAttribute,
   BufferGeometry,
   Group,
@@ -36,6 +37,10 @@ import {
   BLOCKED_SHOT_COLOUR,
   BLOCKED_SHOT_OPACITY,
   BLOCKED_SHOT_SIZE,
+  MARKED_TILE_BAND,
+  MARKED_TILE_COLOUR,
+  MARKED_TILE_FOOTPRINT,
+  MARKED_TILE_OPACITY,
   MOVE_RANGE_ONE_AP_COLOUR,
   MOVE_RANGE_ONE_AP_FOOTPRINT,
   MOVE_RANGE_ONE_AP_OPACITY,
@@ -465,6 +470,8 @@ export class TacticalOverlays implements Disposable {
   private readonly coverHigh: EdgeTickLayer;
   private readonly blockedShot: OverlayLayer;
   private readonly weaponRange: PerimeterRibbon;
+  /** The tile the action wheel is open on (#1112): one square frame, or none. */
+  private readonly markedTile: OverlayLayer;
   /**
    * Off until something asks for it (#590). The screen drives this from
    * armed intent, and a scene that defaulted to on would paint the
@@ -515,6 +522,22 @@ export class TacticalOverlays implements Disposable {
       COVER_OPACITY,
       2,
     );
+    this.markedTile = new OverlayLayer(
+      "overlay-marked-tile",
+      // A four-segment ring is a square frame once it starts a quarter
+      // turn in: the corners then sit on the diagonals and the sides
+      // lie along the tile edges.
+      new RingGeometry(
+        ((MARKED_TILE_FOOTPRINT - 2 * MARKED_TILE_BAND) / 2) * Math.SQRT2,
+        (MARKED_TILE_FOOTPRINT / 2) * Math.SQRT2,
+        4,
+        1,
+        Math.PI / 4,
+      ),
+      MARKED_TILE_COLOUR,
+      MARKED_TILE_OPACITY,
+      4,
+    );
     this.blockedShot = new OverlayLayer(
       "overlay-blocked-shot",
       // A box turned 45 degrees about its own axis: a diamond, which no
@@ -542,6 +565,7 @@ export class TacticalOverlays implements Disposable {
       this.coverLow.mesh,
       this.coverHigh.mesh,
       this.blockedShot.mesh,
+      this.markedTile.mesh,
     );
   }
 
@@ -592,6 +616,25 @@ export class TacticalOverlays implements Disposable {
     return this.weaponRangeVisible;
   }
 
+  /**
+   * Frames the tile the action wheel is open on, or clears the frame
+   * (#1112 follow-up). Independent of `show`, because the wheel opens
+   * and closes far more often than the selection changes and the frame
+   * belongs to the wheel, not to the unit.
+   *
+   * @param tile - The tile to frame, or undefined for none.
+   */
+  setMarkedTile(tile: TileCoord | undefined): void {
+    // Above every other plane on the tile: the move band, the cover
+    // ticks and the blocked-shot mark all sit lower, and the frame is
+    // the one thing that must never be under them.
+    this.markedTile.setTiles(
+      tile === undefined ? [] : [tile],
+      OVERLAY_LIFT * 6,
+      true,
+    );
+  }
+
   /** Hides every layer. */
   clear(): void {
     this.show(EMPTY_OVERLAYS);
@@ -620,6 +663,7 @@ export class TacticalOverlays implements Disposable {
     coverLow: number;
     coverHigh: number;
     blockedShot: number;
+    markedTile: number;
   } {
     return {
       weaponRange: this.weaponRange.edgeCount(),
@@ -628,6 +672,7 @@ export class TacticalOverlays implements Disposable {
       coverLow: this.coverLow.tickCount(),
       coverHigh: this.coverHigh.tickCount(),
       blockedShot: this.blockedShot.mesh.count,
+      markedTile: this.markedTile.mesh.count,
     };
   }
 
@@ -640,6 +685,7 @@ export class TacticalOverlays implements Disposable {
       this.coverLow.mesh,
       this.coverHigh.mesh,
       this.blockedShot.mesh,
+      this.markedTile.mesh,
     ];
   }
 
@@ -651,6 +697,7 @@ export class TacticalOverlays implements Disposable {
     this.coverLow.dispose();
     this.coverHigh.dispose();
     this.blockedShot.dispose();
+    this.markedTile.dispose();
     this.root.removeFromParent();
   }
 }

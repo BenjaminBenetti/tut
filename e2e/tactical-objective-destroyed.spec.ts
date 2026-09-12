@@ -273,7 +273,7 @@ test("a mech can destroy an egg spawner, so a mission can be won", async ({
     if (destroyed) {
       break;
     }
-    const endTurn = page.locator('#turn-bar [data-action="end-turn"]');
+    const endTurn = page.locator('#action-bar [data-action="end-turn"]');
     if (await endTurn.isEnabled()) {
       await endTurn.click();
       await expect(

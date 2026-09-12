@@ -134,7 +134,12 @@ export class TacticalSceneBuilder
   constructor(options: TacticalSceneBuilderOptions) {
     this.models = options.models;
     this.ghostUniforms = createGhostUniforms(GHOST_RADIUS, GHOST_FLOOR);
-    this.mapView = new TacticalMapView(options.map, this.ghostUniforms);
+    // No objective markers in a mission: the spawner model appears when
+    // its tile is explored, and a marker under it would show through
+    // the fog first (ADR 0006 §2.4).
+    this.mapView = new TacticalMapView(options.map, this.ghostUniforms, {
+      objectiveMarkers: false,
+    });
     this.unitsGroup = new Group();
     this.unitsGroup.name = "units";
     this.spawnersGroup = new Group();

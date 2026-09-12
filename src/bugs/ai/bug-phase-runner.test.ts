@@ -293,10 +293,12 @@ describe("createBugPhaseRunner", () => {
   });
 
   it("stops when a bug's own action decides the mission mid-phase, not at the next turn boundary", () => {
-    // #425 ends a mission the moment the last objective completes. The
-    // runner asks `missionOutcome` between bugs, so b2 must never act.
-    // A stub Interact keeps this about the runner's guard rather than
-    // the objective rules' own reach and cost checks.
+    // A wipe decides a mission the moment it happens. The runner asks
+    // `missionOutcome` between bugs, so b2 must never act. A stub
+    // Interact that fells every TDF unit keeps this about the runner's
+    // guard rather than the combat rules' own rolls. (It used to complete
+    // the objectives instead; since the force has to extract to win,
+    // that no longer decides anything mid-phase.)
     const demolish: TacticalHandlers = {
       ...HANDLERS,
       [INTERACT]: (mission, command) =>
@@ -306,12 +308,12 @@ describe("createBugPhaseRunner", () => {
             // Bills the action like the real rule, so a bug that acts
             // after the mission is decided leaves a mark to assert on.
             units: mission.units.map((u) =>
-              u.id === command.payload.unitId ? { ...u, ap: u.ap - 1 } : u,
+              u.id === command.payload.unitId
+                ? { ...u, ap: u.ap - 1 }
+                : u.team === "tdf"
+                  ? { ...u, hp: 0 }
+                  : u,
             ),
-            objectives: mission.objectives.map((o) => ({
-              ...o,
-              complete: true,
-            })),
           },
           events: [],
         }),
@@ -334,8 +336,7 @@ describe("createBugPhaseRunner", () => {
       speciesOf,
       combat: COMBAT_TUNING,
     })(mission, ctxWith(riggedRng(true)));
-    expect(applied.state.objectives[0]?.complete).toBe(true);
-    expect(missionOutcome(applied.state)).toBe("won");
+    expect(missionOutcome(applied.state)).toBe("lost");
     // b2 still has both actions: the phase stopped before reaching it.
     expect(applied.state.units.find((u) => u.id === "b2")?.ap).toBe(2);
   });

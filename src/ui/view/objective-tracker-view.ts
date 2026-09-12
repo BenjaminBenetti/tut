@@ -75,6 +75,15 @@ export class ObjectiveTrackerView {
     }
     const done = objectives.filter((o) => o.complete).length;
     this.summary.textContent = `${formatWhole(done)} / ${formatWhole(objectives.length)}`;
+    // Finishing the objectives no longer ends the mission; the force
+    // has to board the drop ship. The tracker is where the player looks
+    // to see what is left to do, so this is where the last step is
+    // named.
+    const allDone = objectives.length > 0 && done === objectives.length;
+    this.summary.dataset.complete = allDone ? "true" : "false";
+    this.summary.textContent = allDone
+      ? `${formatWhole(done)} / ${formatWhole(objectives.length)} — board the drop ship`
+      : `${formatWhole(done)} / ${formatWhole(objectives.length)}`;
     const doc = this.list.ownerDocument;
     this.list.replaceChildren();
     for (const [index, objective] of objectives.entries()) {

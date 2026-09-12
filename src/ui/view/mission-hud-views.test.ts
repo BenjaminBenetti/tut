@@ -4,7 +4,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { err, ok } from "../../core/model/result";
 import type { TacticalNames } from "../service/tactical-error-text";
 import { CoverLevel } from "../../mapgen/model/cover";
-import { EndTurnView } from "./end-turn-view";
+import { ActionBarView } from "./action-bar-view";
+import { TACTICAL_SHORTCUTS } from "../model/tactical-intent";
 import { HitPreviewView } from "./hit-preview-view";
 import { hudMission, hudTemplate, hudUnit } from "./mission-hud.test-helper";
 import { describeEvent } from "./event-vocabulary";
@@ -149,51 +150,105 @@ describe("UnitCardView weapon lines (#641)", () => {
   });
 });
 
-describe("EndTurnView", () => {
+describe("ActionBarView", () => {
   /**
-   * The one button left at the bottom since the bar moved into the
-   * scene (#1112). Marked unavailable rather than disabled outside the
-   * player's phase (#1030), so a press still reaches the HUD to be
-   * explained, and it names what it would leave unspent (#1041).
+   * The bar lists the actions with the keys that reach them; a press is
+   * the key (the Executive Director's ask on #1113: keep the hotkeys
+   * listed). Unavailable actions are marked rather than disabled
+   * (#1030), so a press still reaches the HUD to be explained.
    */
-  it("offers End turn in the player's phase, names the unspent, and reports the press", () => {
-    const onEndTurn = vi.fn();
-    const view = new EndTurnView({ onEndTurn });
+  it("writes each action's key from the shortcut table, and reports a press as the key would", () => {
+    const onAction = vi.fn<(action: string) => void>();
+    const view = new ActionBarView({ onAction }, TACTICAL_SHORTCUTS);
     view.mount(root);
-    const button = root.querySelector<HTMLButtonElement>(
-      '#turn-bar [data-action="end-turn"]',
+    const hint = (a: string): string | null | undefined =>
+      root.querySelector<HTMLElement>(
+        `#action-bar [data-action="${a}"] [data-role="shortcut"]`,
+      )?.textContent;
+    expect(hint("move")).toBe("M");
+    expect(hint("attack")).toBe("F");
+    expect(hint("overwatch")).toBe("O");
+    expect(hint("reload")).toBe("R");
+    expect(hint("interact")).toBe("I");
+    expect(hint("extract")).toBe("X");
+    expect(hint("end-turn")).toBe("Enter");
+    // No digits: the number row went with the old bar (#1112).
+    for (const button of root.querySelectorAll('[data-role="shortcut"]')) {
+      expect(button.textContent).not.toMatch(/^[0-9]$/);
+    }
+    root.querySelector<HTMLButtonElement>('[data-action="overwatch"]')?.click();
+    root.querySelector<HTMLButtonElement>('[data-action="end-turn"]')?.click();
+    expect(onAction.mock.calls.map((c) => c[0])).toEqual([
+      "overwatch",
+      "end-turn",
+    ]);
+  });
+
+  it("marks what is unavailable, names the refill and the unspent, and shows the aim", () => {
+    const view = new ActionBarView({ onAction: vi.fn() }, TACTICAL_SHORTCUTS);
+    view.mount(root);
+    const button = (a: string) =>
+      root.querySelector<HTMLButtonElement>(`[data-action="${a}"]`);
+    expect(button("attack")?.getAttribute("aria-disabled")).toBe("true");
+    view.update({
+      playerPhase: true,
+      unavailable: ["reload"],
+      hasActor: true,
+      reloadLabel: "Vent",
+      aiming: true,
+      unspent: 2,
+    });
+    expect(button("attack")?.getAttribute("aria-disabled")).toBe("false");
+    expect(button("attack")?.getAttribute("aria-pressed")).toBe("true");
+    expect(button("reload")?.classList.contains("is-unavailable")).toBe(true);
+    expect(button("reload")?.textContent).toContain("Vent");
+    expect(button("end-turn")?.textContent).toContain("End turn (2 unspent)");
+    // Board, not Extract: it is boarding the drop ship (#1112).
+    expect(button("extract")?.textContent).toContain("Board");
+    // Nothing of the player's selected: no unit action, End turn still on.
+    view.update({
+      playerPhase: true,
+      unavailable: [],
+      hasActor: false,
+      reloadLabel: "Reload",
+      aiming: false,
+      unspent: 0,
+    });
+    expect(button("move")?.getAttribute("aria-disabled")).toBe("true");
+    expect(button("end-turn")?.getAttribute("aria-disabled")).toBe("false");
+    expect(button("end-turn")?.textContent).not.toContain("unspent");
+    // Off phase: End turn marked, and a press still reported.
+    const onAction = vi.fn();
+    const off = new ActionBarView({ onAction }, TACTICAL_SHORTCUTS);
+    off.mount(root);
+    off.update({
+      playerPhase: false,
+      unavailable: [],
+      hasActor: false,
+      reloadLabel: "Reload",
+      aiming: false,
+      unspent: 0,
+    });
+    const bars = root.querySelectorAll("#action-bar");
+    const last = bars[bars.length - 1];
+    const end = last?.querySelector<HTMLButtonElement>(
+      '[data-action="end-turn"]',
     );
-    expect(button?.getAttribute("aria-disabled")).toBe("true");
-    view.update({ playerPhase: true, unspent: 2 });
-    expect(button?.getAttribute("aria-disabled")).toBe("false");
-    expect(button?.textContent).toContain("End turn (2 unspent)");
-    view.update({ playerPhase: true, unspent: 0 });
-    expect(button?.textContent).toContain("End turn");
-    expect(button?.textContent).not.toContain("unspent");
-    button?.click();
-    expect(onEndTurn).toHaveBeenCalledTimes(1);
-    // Off phase: marked, and still reachable.
-    view.update({ playerPhase: false, unspent: 0 });
-    expect(button?.classList.contains("is-unavailable")).toBe(true);
-    button?.click();
-    expect(onEndTurn).toHaveBeenCalledTimes(2);
+    expect(end?.classList.contains("is-unavailable")).toBe(true);
+    end?.click();
+    expect(onAction).toHaveBeenCalledWith("end-turn");
   });
 
-  it("carries its icon", () => {
-    const view = new EndTurnView({ onEndTurn: vi.fn() });
+  it("marks every button with its icon", () => {
+    const view = new ActionBarView({ onAction: vi.fn() }, TACTICAL_SHORTCUTS);
     view.mount(root);
-    expect(
+    const iconOf = (a: string) =>
       root
-        .querySelector<HTMLElement>('[data-action="end-turn"] .tut-icon')
-        ?.style.getPropertyValue("--icon"),
-    ).toBe("url(/assets/ui/icons/end-turn.svg)");
-  });
-
-  // The bar's other buttons are gone: the wheel offers them on the map.
-  it("has no other action buttons", () => {
-    const view = new EndTurnView({ onEndTurn: vi.fn() });
-    view.mount(root);
-    expect(root.querySelectorAll("#turn-bar button")).toHaveLength(1);
+        .querySelector<HTMLElement>(`[data-action="${a}"] .tut-icon`)
+        ?.style.getPropertyValue("--icon");
+    expect(iconOf("move")).toBe("url(/assets/ui/icons/move.svg)");
+    expect(iconOf("end-turn")).toBe("url(/assets/ui/icons/end-turn.svg)");
+    expect(iconOf("attack")).toBe("url(/assets/ui/icons/attack.svg)");
   });
 });
 

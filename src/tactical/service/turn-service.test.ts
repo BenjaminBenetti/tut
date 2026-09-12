@@ -215,14 +215,16 @@ describe("createEndTurnHandler", () => {
   });
 
   it("ends the mission instead of starting a phase when a terminal condition holds", () => {
+    // Everyone out with the objectives done: won at the boundary.
     const won = missionWith(
       openField().build(),
-      [unitAt("u", "infantry", at(0, 0), { ap: 0 })],
+      [unitAt("b", "infantry", at(7, 7), { team: "bugs" })],
       {
         turn: 5,
         objectives: [
           { id: "o1", kind: "destroy-spawner", targetId: "s1", complete: true },
         ],
+        extracted: [unitAt("u", "infantry", at(0, 0), { ap: 0 })],
       },
     );
     const outcome = handler(won, endTurn(), ctx);
@@ -231,7 +233,6 @@ describe("createEndTurnHandler", () => {
     expect(outcome.value.state.outcome).toBe("won");
     expect(outcome.value.state.phase).toBe("player");
     expect(outcome.value.state.turn).toBe(5);
-    expect(unitIn(outcome.value.state, "u").ap).toBe(0);
     expect(outcome.value.events).toEqual([
       { type: MISSION_ENDED, payload: { outcome: "won", turn: 5 } },
     ]);

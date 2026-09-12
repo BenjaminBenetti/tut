@@ -301,7 +301,7 @@ test("End turn plays the bug phase and comes back to the player", async ({
   const before = Number(await turn.textContent());
   expect(before).toBeGreaterThan(0);
 
-  await page.locator('#turn-bar [data-action="end-turn"]').click();
+  await page.locator('#action-bar [data-action="end-turn"]').click();
 
   // The bugs act inside EndTurn, so the round is over by the time the
   // banner repaints: same side, next turn.

@@ -38,6 +38,9 @@ function setup(
   extra: {
     onLookAt?: (unitId: string) => void;
     onNotice?: (unitId: string, text: string) => void;
+    onMarkTile?: (
+      tile: { x: number; y: number; z: number } | undefined,
+    ) => void;
   } = {},
 ) {
   const commands: TacticalCommand[] = [];
@@ -172,7 +175,7 @@ describe("TacticalHudView", () => {
     const expected = previewAttack(mission, "s1", "b1", COMBAT_TUNING);
     if (!expected.ok) throw new Error("fixture shot must be legal");
     expect(field("hub-value")?.textContent).toBe(
-      `${String(Math.round(expected.value.hitChance * 100))}%`,
+      `${String(expected.value.hitChance)}%`,
     );
     // One weapon: the entry is the shot.
     item("attack:b1")?.click();
@@ -268,6 +271,30 @@ describe("TacticalHudView", () => {
     hud.handleIntent({ kind: "select-tile", tile: { x: 9, y: 0, z: 5 } });
     expect(item("move:9,0,5")?.disabled).toBe(true);
     expect(item("move:9,0,5")?.textContent).toContain("out of reach");
+  });
+
+  it("frames the wheel's tile on the map while it is open, and clears it after (#1113 review)", () => {
+    const marked: (string | undefined)[] = [];
+    const { hud, mission } = setup({
+      onMarkTile: (tile) => {
+        marked.push(
+          tile === undefined
+            ? undefined
+            : `${String(tile.x)},${String(tile.y)},${String(tile.z)}`,
+        );
+      },
+    });
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    hud.handleIntent({ kind: "select-tile", tile: { x: 3, y: 0, z: 1 } });
+    expect(marked.at(-1)).toBe("3,0,1");
+    // An enemy's wheel frames the enemy's tile.
+    hud.handleIntent({ kind: "select-unit", unitId: "b1" });
+    const b1 = mission.units.find((u) => u.id === "b1");
+    expect(marked.at(-1)).toBe(
+      `${String(b1?.pos.x)},${String(b1?.pos.y)},${String(b1?.pos.z)}`,
+    );
+    hud.handleIntent({ kind: "action", action: "cancel" });
+    expect(marked.at(-1)).toBeUndefined();
   });
 
   it("a tile click by a unit that is not the player's opens nothing", () => {

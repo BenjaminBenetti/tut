@@ -13,7 +13,11 @@ import type { GameSession } from "../model/game-session";
 import type { Screen, ScreenId } from "../model/screen";
 import type { ScreenRouter } from "../model/screen-router";
 import type { TacticalIntent } from "../model/tactical-intent";
-import type { TacticalSceneHost } from "../model/tactical-scene-host";
+import { TACTICAL_SHORTCUTS } from "../model/tactical-intent";
+import type {
+  TacticalSceneHost,
+  TacticalUpdateHooks,
+} from "../model/tactical-scene-host";
 import type { PhaseBannerOptions } from "../view/phase-banner-view";
 import { namesFor, refusalText } from "../service/tactical-error-text";
 import { TacticalHudView } from "../view/tactical-hud-view";
@@ -91,7 +95,7 @@ function missionCityName(state: GameState): string | undefined {
  * ```
  *   ┌ #tactical-viewport ◄── sceneHost.attach / update ───────────────────┐
  *   │   └ #mission-hud: #turn-banner (mission, turn, phase, counts, exit) │
- *   │                   #unit-card #hit-preview #objectives / #turn-bar    │
+ *   │                   #unit-card #hit-preview #objectives / #action-bar  │
  *   │                   #radial-menu — the action wheel, at the clicked   │
  *   │                   tile, enemy or unit (#1112)                        │
  *   └─────────────────────────────────────────────────────────────────────┘
@@ -99,7 +103,10 @@ function missionCityName(state: GameState): string | undefined {
  *   host intents ──▶ hud.handleIntent ──▶ onCommand ──▶ store.dispatch
  *                └─▶ syncOverlays()                        range / cover / LOS overlays
  *   hud.onViewChange ─▶ syncOverlays()                        aiming shows the envelope
- *   store change ──▶ host.update(mission, tactical events)  animations, then units
+ *   store change ──▶ hud.update(mission)                     the board, at once
+ *                └─▶ host.update(mission, events, hooks)     one event at a time:
+ *                     onEvent ──▶ hud.playEvent + notice        log line, banner, chip
+ *                     onSettled ──▶ the debrief, if the mission is over
  *                └─▶ mission.outcome set ──▶ FinishMission ──▶ "mission-results"
  * ```
  */
@@ -167,11 +174,17 @@ export class TacticalScreen implements Screen {
         // world thing is on screen (ADR 0007 §2.1). The HUD anchors the
         // action wheel to that point rather than to the click.
         anchorFor: (target) => deps.sceneHost?.screenPositionOf(target),
+        // The wheel's tile is framed on the map, so the ring and the
+        // ground it belongs to read as one thing.
+        onMarkTile: (tile) => {
+          deps.sceneHost?.markTile(tile);
+        },
       },
       {
         combatTuning: deps.combatTuning,
         objectiveTuning: deps.objectiveTuning,
         phaseBanner: deps.phaseBanner,
+        shortcuts: TACTICAL_SHORTCUTS,
       },
     );
   }
@@ -235,7 +248,27 @@ export class TacticalScreen implements Screen {
   // Rendering
   // ===========================================
 
-  /** Pushes the mission into the bar, the HUD and the scene host, with the events that produced it. */
+  /**
+   * Pushes the mission into the HUD and the scene host, with the events
+   * that produced it.
+   *
+   * With a scene attached, the batch is **paced by the scene**: each
+   * event's log line, banner and indicator land as the scene plays it,
+   * and the debrief waits for the last of them. Before this the whole
+   * bug phase was written to the HUD before its first frame animated,
+   * so the player read the result and then watched a replay of it (the
+   * Executive Director's item 7 on #1113).
+   *
+   * The state itself goes to the HUD at once. It is what the rules are
+   * asked against, and a HUD holding the previous turn refused the
+   * player's first command after the bug phase as "not your turn"
+   * until the animation ran out (`tactical-spawners` caught it). What
+   * is paced is the *account* of the batch, not the board.
+   *
+   * A mission arriving whole, or a screen without a scene, takes the
+   * batch at once as well: there is nothing to pace against, and an
+   * arrival replays the mission's own log.
+   */
   private render(
     state: GameState | undefined,
     events: readonly TacticalEvent[] = [],
@@ -254,19 +287,41 @@ export class TacticalScreen implements Screen {
       state === undefined ? undefined : missionCityName(state),
     );
     this.hud.setCampaign(state);
-    this.hud.update(mission, events);
-    if (!mission) {
+    const paced =
+      mission !== undefined &&
+      this.deps.sceneHost !== undefined &&
+      this.viewport !== undefined &&
+      this.attachedMissionId === mission.missionId;
+    if (!paced) {
+      this.hud.update(mission, events);
+      if (!mission) {
+        return;
+      }
+      for (const event of events) {
+        this.announceOne(event, mission, state);
+      }
+      this.syncScene(mission, events);
+      if (mission.outcome !== undefined) {
+        this.finish(mission.missionId);
+      }
       return;
     }
-    this.announce(mission, events, state);
-    this.syncScene(mission, events);
-    if (mission.outcome !== undefined) {
-      this.finish(mission.missionId);
-    }
+    this.hud.update(mission);
+    this.syncScene(mission, events, {
+      onEvent: (event) => {
+        this.hud.playEvent(event, mission);
+        this.announceOne(event, mission, state);
+      },
+      onSettled: () => {
+        if (mission.outcome !== undefined) {
+          this.finish(mission.missionId);
+        }
+      },
+    });
   }
 
   /**
-   * Puts every logged action above the unit that did it (#1029).
+   * Puts a logged action above the unit that did it (#1029).
    *
    * Anything worth a line in the log is worth showing where it happened;
    * the log at the edge of the screen becomes the record and the
@@ -277,29 +332,23 @@ export class TacticalScreen implements Screen {
    * The words are the log's own, from `event-vocabulary`, so the two can
    * never say different things about the same event.
    */
-  private announce(
+  private announceOne(
+    event: TacticalEvent,
     mission: TacticalState,
-    events: readonly TacticalEvent[],
     campaign: GameState | undefined,
   ): void {
     const host = this.deps.sceneHost;
-    if (!host) {
+    const unitId = actorOf(event);
+    if (!host || unitId === undefined) {
       return;
     }
     // The campaign too, because the log resolves with it since #1047:
     // without it the indicator says "Rifle Squad" while the log line it
     // is meant to mirror says "Alpha", which is the one thing this
     // mechanism exists to prevent.
-    const names = namesFor(mission, campaign);
-    for (const event of events) {
-      const unitId = actorOf(event);
-      if (unitId === undefined) {
-        continue;
-      }
-      const entry = describeEvent(event, names);
-      if (entry !== undefined) {
-        host.notice(unitId, entry.text);
-      }
+    const entry = describeEvent(event, namesFor(mission, campaign));
+    if (entry !== undefined) {
+      host.notice(unitId, entry.text);
     }
   }
 
@@ -366,6 +415,7 @@ export class TacticalScreen implements Screen {
   private syncScene(
     mission: TacticalState,
     events: readonly TacticalEvent[],
+    hooks?: TacticalUpdateHooks,
   ): void {
     const host = this.deps.sceneHost;
     if (!host || !this.viewport) {
@@ -394,7 +444,7 @@ export class TacticalScreen implements Screen {
     };
     const pending =
       this.attachedMissionId === mission.missionId
-        ? host.update(mission, events)
+        ? host.update(mission, events, hooks)
         : host.attach(this.viewport, mission, intents);
     if (this.attachedMissionId !== mission.missionId) {
       // What a freshly built scene already shows: no selection, no

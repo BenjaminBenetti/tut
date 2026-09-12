@@ -8,6 +8,7 @@ import { CAMERA_ZOOM } from "../../graphics/model/camera-state";
 import {
   drawPerceived,
   frameMission,
+  placeArrivals,
   playAroundRedraw,
 } from "./tactical-scene-steps";
 import type { ModelLoader } from "../../graphics/model/model-loader";
@@ -232,15 +233,23 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
       return Promise.resolve();
     }
     attached.mission = mission;
-    return playAroundRedraw(
-      attached.animations,
-      events,
-      () => this.placeUnits(mission),
-      hooks.onEvent,
-    ).then(() => {
-      this.refreshOverlays();
-      hooks.onSettled?.();
-    });
+    // A unit that walks into view is put on the board where its walk
+    // began, so the walk can play rather than the unit popping in at
+    // its destination (#1116).
+    return placeArrivals(attached.builder, mission, events)
+      .then((arrivals) =>
+        playAroundRedraw(
+          attached.animations,
+          events,
+          () => this.placeUnits(mission),
+          hooks.onEvent,
+          arrivals,
+        ),
+      )
+      .then(() => {
+        this.refreshOverlays();
+        hooks.onSettled?.();
+      });
   }
 
   /**

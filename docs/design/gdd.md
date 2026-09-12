@@ -126,6 +126,7 @@ The player's attention belongs on the battlefield, not on a side panel.
 - Attack confirmation appears at the target, not in a panel: hit chance, damage and the commit control presented on the enemy itself.
 - Building geometry between the camera and a unit fades in a soft radius so the player can always see their own force and the fight.
 - Every action produces visible feedback: animation, effect, and floating text for hits, misses and damage, rendered above the unit and never inside its model.
+- **A bug that walks into view is seen walking in.** Its move plays in full from the tile it started on, fog or not, and it is announced as it appears; a bug spotted standing still simply appears. Popping in at the destination reads as a teleport. (Executive Director, 2026-09-12, #1116.)
 - Turn transitions are unmistakable, and the end of the bug phase is obvious.
 - A collapsible event log records everything, reviewable at any time.
 

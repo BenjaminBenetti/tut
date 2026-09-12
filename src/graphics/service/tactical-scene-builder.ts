@@ -66,6 +66,8 @@ export type UnitTemplateLookup = Readonly<Record<UnitTemplateId, UnitTemplate>>;
  *     ├─ known           ──► mesh.setPose(pos, facing)
  *     └─ new             ──► models.load(template.modelId) ──► UnitMesh (unless removed meanwhile)
  *
+ *   arrive(unit, template, at)   ──► as "new", hidden, at `at` instead of the unit's tile (#1116)
+ *
  *   updateSpawners(spawners)
  *     ├─ destroyed or gone ──► mesh.dispose()
  *     └─ new               ──► models.load(SPAWNER_MODEL_ID) ──► UnitMesh
@@ -168,7 +170,9 @@ export class TacticalSceneBuilder
    * vision rules hide (ADR 0006).
    */
   ghostTargets(): readonly Object3D[] {
-    return this.unitsGroup.children;
+    // An arrival waiting hidden for its walk is not yet the player's to
+    // see, so no wall opens around it (#1116).
+    return this.unitsGroup.children.filter((object) => object.visible);
   }
 
   /** The cutaway uniforms, for the frame controller that updates them. */
@@ -252,6 +256,9 @@ export class TacticalSceneBuilder
       this.positions.set(unit.id, unit.pos);
       if (existing) {
         existing.setPose(unit.pos, unit.facing);
+        // An arrival the queue never walked (instant mode, or a batch
+        // that was skipped) is on the board now, not hidden.
+        existing.setHidden(false);
         continue;
       }
       if (this.wanted.has(unit.id)) {
@@ -267,6 +274,30 @@ export class TacticalSceneBuilder
       loads.push(this.place(unit, template));
     }
     await Promise.all(loads);
+    this.drawTethers();
+  }
+
+  /**
+   * Places `unit` at `at` rather than at its own tile, hidden, so the
+   * animation queue can walk it in from there (#1116): the walk (or the
+   * spot that precedes it) shows it, so it appears the moment it moves
+   * rather than standing in the dark while earlier events play. A unit
+   * already drawn or loading is left alone. The next `update` re-poses
+   * it to where the state says and shows it, or removes it, like any
+   * other unit.
+   */
+  async arrive(
+    unit: Unit,
+    template: UnitTemplate,
+    at: TileCoord,
+  ): Promise<void> {
+    if (this.wanted.has(unit.id)) {
+      return;
+    }
+    this.wanted.add(unit.id);
+    this.positions.set(unit.id, at);
+    await this.place({ ...unit, pos: at }, template);
+    this.meshes.get(unit.id)?.setHidden(true);
     this.drawTethers();
   }
 
@@ -337,7 +368,8 @@ export class TacticalSceneBuilder
     );
     for (const hit of hits) {
       const unitId = this.targetToUnit.get(hit.object);
-      if (unitId !== undefined) {
+      // A hidden arrival (#1116) is drawn nowhere and picked nowhere.
+      if (unitId !== undefined && this.meshes.get(unitId)?.object.visible) {
         return unitId;
       }
     }

@@ -29,6 +29,7 @@ import {
   weaponOptions,
 } from "../../tactical/service/combat-service";
 import { viewFor } from "../../tactical/service/mission-view-service";
+import { perceivedOccupantAt } from "../../tactical/service/vision-service";
 import type { MoveGraph } from "../../tactical/service/movement-service";
 import {
   buildMoveGraph,
@@ -709,8 +710,35 @@ export class TacticalHudView {
     this.refresh();
   }
 
-  /** A left click on a tile with an acting unit selected: the wheel opens there. */
+  /**
+   * A left click on a tile. The picker answers "tile" whenever the click
+   * misses a model's silhouette, which on a tall mech or a low swarmer is
+   * most of the tile it stands on (#1117), so the tile is first asked
+   * what stands on it as far as the player knows: an occupant is handled
+   * as if its model had been clicked, and only an empty tile opens the
+   * tile wheel. Perception, not the mission, answers — a click on an
+   * unspotted bug's tile learns nothing (ADR 0006).
+   *
+   * ```
+   *   perceived unit there     ──► pointAtUnit   (select / own wheel / aim)
+   *   explored spawner there   ──► pointAtEnemy  (aim, wheel: attack / …)
+   *   nothing the player knows ──► wheel: move / board / overwatch / reload
+   * ```
+   */
   private pointAtTile(tile: TileCoord): void {
+    const mission = this.mission;
+    if (!mission) {
+      return;
+    }
+    const occupant = perceivedOccupantAt(mission, "tdf", tile);
+    if (occupant?.kind === "unit") {
+      this.pointAtUnit(occupant.unit.id);
+      return;
+    }
+    if (occupant?.kind === "spawner") {
+      this.pointAtEnemy({ kind: "spawner", spawnerId: occupant.spawner.id });
+      return;
+    }
     if (!this.actingSelection()) {
       return;
     }

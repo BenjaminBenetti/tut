@@ -367,8 +367,10 @@ export const MODEL_MANIFEST = {
   "bug.brute": {
     category: "bugs",
     path: "assets/models/bugs/bug-brute.glb",
-    footprint: { w: 1, d: 1 },
-    height: 1.8,
+    // Authored at its 2×2 tactical footprint (#1134), low and wide like
+    // the beetle it is; the unit mesh draws it at unit scale.
+    footprint: { w: 2, d: 2 },
+    height: 0.9,
     sockets: [],
     quality: "final",
   },

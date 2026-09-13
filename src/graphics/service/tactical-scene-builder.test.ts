@@ -78,9 +78,15 @@ const TEMPLATES: Record<string, UnitTemplate> = {
     ...template("mech:mech-1", "tdf.mech.assembled-a", "mech"),
     loadout: STARTER_LOADOUT,
   },
-  // A 2×2 unit (#1130): its position is the anchor tile of four.
+  // A 2×2 unit (#1130): its position is the anchor tile of four. The
+  // brute's art is authored at that footprint since #1134, so it draws
+  // at unit scale; `bug:block` wears one-tile art and is scaled up.
   "bug:brute": {
     ...template("bug:brute", "bug.brute", "infantry"),
+    footprint: 2,
+  },
+  "bug:block": {
+    ...template("bug:block", "bug.swarmer", "infantry"),
     footprint: 2,
   },
 };
@@ -736,7 +742,7 @@ describe("TacticalSceneBuilder footprints", () => {
   it("stands a 2×2 unit on the corner its four tiles share, twice the size, and picks it anywhere on the block", async () => {
     const { builder } = build();
     await builder.update(
-      [unit("u1", "squad:squad-1", 0, 0), unit("b1", "bug:brute", 2, 2)],
+      [unit("u1", "squad:squad-1", 0, 0), unit("b1", "bug:block", 2, 2)],
       TEMPLATES,
     );
     // Anchor (2, 2): the block is (2..3, 2..3), centred on (3, 3).
@@ -761,6 +767,14 @@ describe("TacticalSceneBuilder footprints", () => {
     expect(builder.pickUnit(ndcOf(2.4, 2.4), camera)).toBe("b1");
     expect(builder.pickUnit(ndcOf(3.6, 3.6), camera)).toBe("b1");
     expect(builder.pickUnit(ndcOf(1.5, 1.5), camera)).toBeUndefined();
+  });
+
+  it("draws a 2×2 unit whose art was authored at its footprint at unit scale (#1134)", async () => {
+    const { builder } = build();
+    await builder.update([unit("b1", "bug:brute", 2, 2)], TEMPLATES);
+    // The stub model is one unit tall; the brute's manifest footprint is
+    // 2×2, so nothing multiplies it.
+    expect(builder.unitHeight("b1")).toBeCloseTo(1);
   });
 
   it("answers where a unit's feet go on any tile, sized to that unit's footprint", async () => {

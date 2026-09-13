@@ -100,8 +100,9 @@ describe("unit motion on the shipped models", () => {
       );
       if (id.startsWith("bug.")) {
         // Crescent bugs have four running legs and two independently
-        // grouped blade arms. Joining the sculpt into one mesh must fail.
-        expect(legs).toHaveLength(4);
+        // grouped blade arms; the beetle brute walks on six since #1134.
+        // Joining the sculpt into one mesh must fail.
+        expect(legs).toHaveLength(id === "bug.brute" ? 6 : 4);
         const arms: Object3D[] = [];
         clone.traverse((part) => {
           if (part.name.startsWith("motion-arm-")) arms.push(part);

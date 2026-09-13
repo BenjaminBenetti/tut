@@ -54,17 +54,82 @@ describe("blastFootprint", () => {
     expect(reached).toContain("1,3@2");
   });
 
-  it("stays on its own storey: a roof blast leaves the floor beneath alone", () => {
+  it("does not pass a floor slab either way: a roof blast leaves the room beneath alone (#1130)", () => {
     const builder = openField();
-    // A slab two layers up over (3,3): the same column, one storey above.
+    // A slab two layers up over (3,3): a roof with the ground-floor
+    // room beneath it. Within a radius-2 blast by distance (1.5 tiles
+    // rounds to 2), so it is the slab, not the range, that keeps it out.
     builder.tile(at(3, 3, STOREY_LAYERS), SurfaceIds.ROOF);
     const map = builder.build();
-    const fromGround = blastFootprint(map, at(3, 3), 1).map((b) => b.tile.y);
+    const fromGround = blastFootprint(map, at(3, 3), 2).map((b) => b.tile.y);
+    expect(fromGround).toHaveLength(13);
     expect(fromGround.every((y) => y === 0)).toBe(true);
-    const fromRoof = blastFootprint(map, at(3, 3, STOREY_LAYERS), 0).map(
-      (b) => b.tile.y,
+    const fromRoof = blastFootprint(map, at(3, 3, STOREY_LAYERS), 2).map(
+      ({ tile, distance }) =>
+        `${String(tile.x)},${String(tile.z)},${String(tile.y)}@${String(distance)}`,
     );
-    expect(fromRoof).toEqual([STOREY_LAYERS]);
+    // The room under the slab is out; the ground beside a roof edge
+    // with no parapet is in, 1.8 tiles down and over.
+    expect(fromRoof[0]).toBe("3,3,2@0");
+    expect(fromRoof).not.toContain("3,3,0@2");
+    expect(fromRoof).toContain("4,3,0@2");
+  });
+
+  it("measures in three dimensions: a ledge beside the impact is one tile away, the roof edge next door is two (#1130)", () => {
+    // ```
+    //   y = 2                  ═══·═══  roof over (5,3)
+    //   y = 1            ▄▄▄            half-height ledge at (4,3)
+    //   y = 0   · · ●    ▀▀▀  │ room │  impact at (3,3); solid wall west of (5,3)
+    //           1 2 3     4      5
+    // ```
+    const builder = openField()
+      .removeTile(at(4, 3))
+      .tile(at(4, 3, 1), SurfaceIds.GRASS)
+      .tile(at(5, 3, STOREY_LAYERS), SurfaceIds.ROOF)
+      .wall(at(5, 3), "w", "solid");
+    const map = builder.build();
+    const one = blastFootprint(map, at(3, 3), 1).map(
+      ({ tile, distance }) =>
+        `${String(tile.x)},${String(tile.z)},${String(tile.y)}@${String(distance)}`,
+    );
+    // The ledge: √(1² + 0.75²) rounds to 1, so it is in a radius-1 blast.
+    expect(one).toContain("4,3,1@1");
+    expect(one).not.toContain("5,3,2@2");
+    const two = blastFootprint(map, at(3, 3), 2).map(
+      ({ tile, distance }) =>
+        `${String(tile.x)},${String(tile.z)},${String(tile.y)}@${String(distance)}`,
+    );
+    // The roof edge: √(2² + 1.5²) = 2.5 rounds to 3 — out at radius 2
+    // from two columns away, and the wall keeps the room out.
+    expect(two).toContain("4,3,1@1");
+    expect(two).not.toContain("5,3,2@3");
+    expect(two).not.toContain("5,3,0@2");
+    // From the foot of the wall the roof edge is √(1² + 1.5²) ≈ 1.8,
+    // two tiles: reached over the parapet, at falloff distance 2.
+    const atWall = blastFootprint(map, at(4, 3, 1), 2).map(
+      ({ tile, distance }) =>
+        `${String(tile.x)},${String(tile.z)},${String(tile.y)}@${String(distance)}`,
+    );
+    expect(atWall).toContain("5,3,2@1");
+    expect(atWall).not.toContain("5,3,0@1");
+  });
+
+  it("reaches the open ground a storey below a roof edge, by line of sight, and not the ground beyond it (#1130)", () => {
+    // A roof over a room at (5,3); open ground west of it.
+    const map = openField()
+      .tile(at(5, 3, STOREY_LAYERS), SurfaceIds.ROOF)
+      .wall(at(5, 3), "w", "solid")
+      .build();
+    const reached = blastFootprint(map, at(5, 3, STOREY_LAYERS), 2).map(
+      ({ tile, distance }) =>
+        `${String(tile.x)},${String(tile.z)},${String(tile.y)}@${String(distance)}`,
+    );
+    // Next door on the ground: 1.8 tiles, seen over the parapet.
+    expect(reached).toContain("4,3,0@2");
+    // Two out on the ground: 2.5 tiles rounds to 3.
+    expect(reached).not.toContain("3,3,0@3");
+    // The room under the slab: never.
+    expect(reached).not.toContain("5,3,0@2");
   });
 
   it("reaches a tile with an opaque prop on it, but nothing behind it", () => {

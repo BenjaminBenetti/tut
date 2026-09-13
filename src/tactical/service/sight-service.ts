@@ -85,6 +85,8 @@ export interface SightLine {
  *   cell visited  ──► a tile whose prop blocks sight (Tile.blocksLos) ───► blocked
  *                     no tile, but ground higher in that column ────────► blocked
  *                     (the line is inside a hill: terrain is sparse)
+ *                     the line rises or falls through a floor slab ─────► blocked
+ *                     (a floor with a room beneath it, #1130)
  *   corner hit    ──► any of the four edges meeting there, as above
  *
  *   height(t) = (from.y + EYE) + ((to.y + EYE) − (from.y + EYE)) · t
@@ -95,6 +97,10 @@ export interface SightLine {
  * never blocks, and a line that passes exactly through a corner touches
  * only that corner's edges, not the two cells it grazes. Symmetric in
  * `from` and `to`.
+ *
+ * Two tiles in one column are a floor over a room, and the line between
+ * them runs straight through the slab: blocked, like any other line
+ * that pierces a floor.
  */
 export function hasLineOfSight(
   map: TacticalMap,
@@ -102,9 +108,6 @@ export function hasLineOfSight(
   to: TileCoord,
   index: TileIndex = new TileIndex(map),
 ): boolean {
-  if (from.x === to.x && from.z === to.z) {
-    return true;
-  }
   const line = traceLine(from, to);
   const heightAt = heightFunction(from, to);
 
@@ -125,7 +128,55 @@ export function hasLineOfSight(
       return false;
     }
   }
+  for (const cell of line.cells) {
+    if (piercesFloor(index, cell, heightAt)) {
+      return false;
+    }
+  }
   return true;
+}
+
+/**
+ * Whether the line passes through a floor slab while it is over `cell`
+ * (#1130): a tile in that column whose level lies strictly between the
+ * heights the line enters and leaves the cell at, with another tile
+ * beneath it in the same column.
+ *
+ * ```
+ *   y = 2   ═══════ floor      line from eye height 1 up to eye height 3
+ *   y = 0   ─────── ground     crosses level 2 over this column ──► blocked
+ * ```
+ *
+ * Only a floor with a room under it counts. A terrace step or a
+ * hillside ledge is a single tile over solid ground, and the sampled
+ * storey rule above already decides what it stops; reading every ledge
+ * as a slab would change sightlines on every hill for a rule about
+ * buildings. Before this a unit on the ground floor saw — and shot —
+ * the floor above through the ceiling, and a blast on a roof reached
+ * the room beneath it.
+ *
+ * Strict on both ends: a line that ends exactly at a slab's level is a
+ * unit looking along its own floor, not through it.
+ */
+function piercesFloor(
+  index: TileIndex,
+  cell: VisitedCell,
+  heightAt: (t: number) => number,
+): boolean {
+  const enter = heightAt(cell.tEnter);
+  const exit = heightAt(cell.tExit);
+  const low = Math.min(enter, exit);
+  const high = Math.max(enter, exit);
+  if (high - low === 0) {
+    return false;
+  }
+  const column = index.column(cell.x, cell.z);
+  return column.some(
+    (tile) =>
+      tile.y > low &&
+      tile.y < high &&
+      column.some((beneath) => beneath.y < tile.y),
+  );
 }
 
 /**

@@ -42,7 +42,7 @@ import {
 const RIFLE = SQUAD_TYPES.find((t) => t.id === "rifle")!;
 const DAY = 4;
 /** Starter loadout cost with the shipped parts (validated in #49's tests). */
-const STARTER_COST = 3250;
+const STARTER_COST = 2850;
 
 const DEPLETED: Squad = {
   id: "squad-1",
@@ -386,7 +386,7 @@ describe("buildMech", () => {
       payload: {
         mech,
         cost: STARTER_COST,
-        statSheet: { totalCost: STARTER_COST, combatRating: 129 },
+        statSheet: { totalCost: STARTER_COST, combatRating: 113 },
       },
     });
     expect(slices).toEqual(snapshot);

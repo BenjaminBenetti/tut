@@ -84,11 +84,13 @@ Until M2, tactical missions are **auto-resolved** by a placeholder resolver so t
 ### 5.7 Roster
 - **Infantry squads**: one roster entry = one squad token of ~5 soldiers. Types include rifle, rocket, sniper, engineer, medic, and radio (expand under Track: Arsenal). Squads take casualties; a squad below strength can be reinforced for credits; a wiped squad is gone.
 - **Mechs**: one roster entry = one mech. Built from a **chassis** plus **legs**, **arms**, one **arm weapon**, one **back weapon**, and **utility slots**. Parts have stats (armor, mobility, heat, power, accuracy, etc.) and may be upgraded. Mechs that are destroyed in a mission are **gone**, parts included.
+- **Chassis trade off against each other, and each is the best at exactly one thing** (Executive Director, 2026-09-13, #1130). Four frames ship: the **Vanguard** is the *price* frame and the starter, with half the plate it had and little room to grow; the **Courser** is the *speed* frame that stays fast under a load; the **Bulwark** is the *armor* frame, slow and able to shrug off a brute; the **Atlas** is the *utility* frame, a capital-class reactor with the most slots at the highest price. A frame that won two axes would make another pointless, so the data test pins one axis per chassis.
 - Both persist across missions with damage, kills, and experience where applicable.
 
 ### 5.8 Mech customization
 - A dedicated screen. Choose chassis → fit parts → validate (weight, power, slot constraints) → save loadout. Loadouts are named. Cost is visible at every step, as is the mech's resulting stat sheet.
 - Design intent: a max-investment mech should feel like a capital ship. Losing it should be devastating and memorable.
+- The starter mech is the cheap one, not the safe one: it fills its Vanguard to the tonne, so the first upgrade is a swap rather than an add, and the first real investment is a different frame (#1130).
 
 ## 6. Tactical missions
 

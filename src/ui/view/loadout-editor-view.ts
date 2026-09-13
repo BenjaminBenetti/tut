@@ -54,7 +54,7 @@ const EMPTY_OPTION = "";
  * ```
  *   ┌ Loadout ──────────────────────────────────┐
  *   │ Name        [Skirmisher________]           │
- *   │ Chassis     [Vanguard · ¢1,200 ▾]          │
+ *   │ Chassis     [Vanguard · ¢800 ▾]            │
  *   │ Legs        [Strider · ¢350 ▾]   ⚠ error   │
  *   │ …                                          │
  *   │ Utility 1   [Radiator · ¢250 ▾]            │

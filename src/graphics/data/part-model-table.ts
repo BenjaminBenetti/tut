@@ -53,6 +53,9 @@ export interface MechAssembly {
  */
 export const PART_MODELS: Readonly<Partial<Record<PartId, PartModels>>> = {
   "chassis-vanguard": { kind: "single", model: "tdf.mech.chassis-a" },
+  // The Courser (#1130) has no model of its own yet and wears the
+  // Vanguard's light frame; the two are the same silhouette class.
+  "chassis-courser": { kind: "single", model: "tdf.mech.chassis-a" },
   "chassis-bulwark": { kind: "single", model: "tdf.mech.chassis.bulwark" },
   "chassis-atlas": { kind: "single", model: "tdf.mech.chassis.atlas" },
   "legs-strider": { kind: "single", model: "tdf.mech.legs-a" },

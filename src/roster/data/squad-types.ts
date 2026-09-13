@@ -14,9 +14,9 @@ import type { SquadType } from "../model/squad-type";
 //     auto-resolver's scale where one point of mission difficulty is
 //     worth `difficultyScale` (40) rating (#336): a full rifle squad is
 //     an even fight alone at difficulty 1, two rifle squads at
-//     difficulty 2, and the starter mech (129) is worth a bit over three
-//     squads, so squads matter on their own (GDD §5.7) while a mech is
-//     still the capital piece. Support types (engineer, medic) rate low
+//     difficulty 2, and the starter mech (113 since #1130 halved the
+//     Vanguard's plate) is worth nearly three squads, so squads matter
+//     on their own (GDD §5.7) while a mech is still the capital piece. Support types (engineer, medic) rate low
 //     here and earn their keep through abilities in M2.
 
 /** General-purpose infantry; the starter squad type. */

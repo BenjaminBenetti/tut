@@ -183,6 +183,46 @@ describe("STARTER_PARTS", () => {
     chassisParts.forEach(check);
   });
 
+  it("makes every chassis the best at exactly one of armor, mobility, utility and price (#1130)", () => {
+    // The four frames trade off against each other, and a player has to
+    // be able to read which is which: the cheapest frame is nobody's
+    // armor, the fastest nobody's capital ship. A chassis that wins two
+    // axes makes another pointless, and one that wins none is a trap.
+    const axes: readonly (readonly [string, (c: ChassisPart) => number])[] = [
+      ["armor", (c) => c.stats.armor],
+      ["mobility", (c) => c.stats.mobility],
+      ["utility", (c) => c.capacity.utilitySlots],
+      ["price", (c) => -c.cost],
+    ];
+    const wins = new Map<string, string[]>(
+      chassisParts.map((chassis) => [chassis.id, []]),
+    );
+    for (const [axis, value] of axes) {
+      const best = Math.max(...chassisParts.map(value));
+      const winners = chassisParts.filter((c) => value(c) === best);
+      expect(winners, axis).toHaveLength(1);
+      wins.get(winners[0]!.id)?.push(axis);
+    }
+    for (const [id, won] of wins) {
+      expect(won, id).toHaveLength(1);
+    }
+  });
+
+  it("keeps the starter chassis the cheap one, with half the plate of the heavy frame (#1130)", () => {
+    const byId = new Map(chassisParts.map((chassis) => [chassis.id, chassis]));
+    const vanguard = byId.get("chassis-vanguard");
+    const bulwark = byId.get("chassis-bulwark");
+    expect(vanguard).toBeDefined();
+    expect(bulwark).toBeDefined();
+    for (const chassis of chassisParts) {
+      if (chassis.id !== "chassis-vanguard") {
+        expect(chassis.cost, chassis.id).toBeGreaterThan(vanguard!.cost);
+      }
+    }
+    expect(vanguard!.stats.armor * 4).toBe(bulwark!.stats.armor);
+    expect(vanguard!.tier).toBe(1);
+  });
+
   it("is plain data that survives a JSON round trip", () => {
     const copy = JSON.parse(JSON.stringify(STARTER_PARTS)) as unknown;
     expect(copy).toEqual(STARTER_PARTS);

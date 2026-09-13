@@ -11,8 +11,10 @@ import type { UnitTuning } from "../model/unit-tuning";
  * - A soldier is 4 hp, so a full squad is 20 hp and a rifle squad
  *   (rating 40) hits for 3 at 65%; a rocket squad (56) hits for 5 with
  *   armor penetration.
- * - The starter mech (armor 30, mobility 7, firepower 40) comes out at
- *   80 hp, 6 move, a 40-damage 70% shot and 9 per-hit armor.
+ * - The starter mech (armor 20, mobility 5, firepower 40 since the
+ *   Vanguard's plate was halved, #1130) comes out at 70 hp, 8 move, an
+ *   18-damage autocannon and a 22-damage missile pod at 70%, and 6
+ *   per-hit armor.
  * - Both sides get the XCOM-style two-action turn (GDD §6.2).
  * - Sight reaches half again past the weapon (12 for infantry, 14 for a
  *   mech, against ranges of 8 and 10), so a squad spots what it is about

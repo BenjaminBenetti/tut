@@ -81,6 +81,8 @@ export class UnitCardView {
   private readonly handlers: UnitCardHandlers;
   /** The weapon row the pointer or focus rests on, if any (#1132). */
   private hovered: WeaponId | undefined;
+  /** The field whose row is rested on, so another field's rewrite leaves it alone. */
+  private hoveredField: string | undefined;
 
   // ===========================================
   // Constructor
@@ -279,13 +281,27 @@ export class UnitCardView {
   // Helpers
   // ===========================================
 
-  /** Records where the pointer or focus rests and tells the owner once per change. */
-  private hover(weaponId: WeaponId | undefined): void {
+  /**
+   * Records where the pointer or focus rests and tells the owner once
+   * per change. `field` names the block the row belongs to, so that
+   * block's rewrite — and only that block's — can let go of it: the
+   * equipment block is rewritten on every refresh too, and a mech with
+   * nothing to list must not drop the weapon row the pointer is on.
+   */
+  private hover(weaponId: WeaponId | undefined, field?: string): void {
     if (weaponId === this.hovered) {
       return;
     }
     this.hovered = weaponId;
+    this.hoveredField = weaponId === undefined ? undefined : field;
     this.handlers.onWeaponHover?.(weaponId);
+  }
+
+  /** Lets go of the rested row when it belongs to `field`, whose rows are being replaced. */
+  private releaseHoverIn(field: string): void {
+    if (this.hoveredField === field) {
+      this.hover(undefined);
+    }
   }
 
   /** Writes a field's text only when it changed. */
@@ -322,7 +338,7 @@ export class UnitCardView {
     }
     if (entries.length === 0) {
       delete el.dataset.entries;
-      this.hover(undefined);
+      this.releaseHoverIn(field);
       this.set(field, EMPTY_FIELD);
       return;
     }
@@ -341,7 +357,7 @@ export class UnitCardView {
     el.dataset.entries = key;
     // The rows are about to be replaced, and a replaced row never fires
     // its leave; whatever rested on one is resting on nothing now.
-    this.hover(undefined);
+    this.releaseHoverIn(field);
     const doc = el.ownerDocument;
     el.replaceChildren(
       ...entries.map((entry) => {
@@ -357,7 +373,7 @@ export class UnitCardView {
           const id = entry.id;
           for (const type of ["mouseenter", "focus"]) {
             block.addEventListener(type, () => {
-              this.hover(id);
+              this.hover(id, field);
             });
           }
           for (const type of ["mouseleave", "blur"]) {

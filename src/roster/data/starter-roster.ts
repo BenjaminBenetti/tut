@@ -27,14 +27,22 @@ export const STARTER_LOADOUT: MechLoadout = {
 // ===========================================
 
 /**
- * What a new campaign fields before the first purchase: two rifle squads
- * and one mech (#54). Placeholder composition until the campaign is
- * playable end to end; names are call signs, not people.
+ * What a new campaign fields before the first purchase: two rifle squads,
+ * a radio squad, a rocket squad and one mech (#54, #1132). The rifles
+ * hold the line, the radio's scanner finds the egg nests before the
+ * force walks into them, and the rocket squad's launcher and breaching
+ * charge crack the nests once found — so the first mission can be played
+ * the way the design means it to be, with every tool at hand. The two
+ * new squads follow the rifles so the ids of the original force
+ * (`squad-1`, `squad-2`, `mech-1`) and the order units take the field in
+ * are what they always were. Names are call signs, not people.
  */
 export const STARTER_ROSTER: StarterRosterSpec = {
   squads: [
     { typeId: "rifle", name: "Alpha" },
     { typeId: "rifle", name: "Bravo" },
+    { typeId: "radio", name: "Charlie" },
+    { typeId: "rocket", name: "Delta" },
   ],
   mechs: [{ name: "Hammerhead", loadout: STARTER_LOADOUT }],
 };

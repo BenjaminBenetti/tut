@@ -81,10 +81,12 @@ test("captures two same-template squads acting separately", async ({
   // gives each squad its own template (`squad:squad-1`, `squad:squad-2`)
   // and then names both after the squad **type**, so two rosters show
   // as one identity. I had assumed a shared template id and was wrong.
+  // Since #1132 the force also fields a radio and a rocket squad, so the
+  // names are not all one; the evidence is that at least two are.
   expect(
-    new Set(squadNames).size,
-    `the two squads must display the same name; got ${squadNames.join(", ")}`,
-  ).toBe(1);
+    squadNames.length - new Set(squadNames).size,
+    `two squads must display the same name; got ${squadNames.join(", ")}`,
+  ).toBeGreaterThanOrEqual(1);
 
   // Both squads go on overwatch: one action each, naming the actor, and
   // no target to complicate the sentence.

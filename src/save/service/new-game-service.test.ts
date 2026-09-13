@@ -89,6 +89,8 @@ describe("createNewGame", () => {
     expect(roster.squads.map((s) => [s.id, s.name, s.typeId])).toEqual([
       ["squad-1", "Alpha", "rifle"],
       ["squad-2", "Bravo", "rifle"],
+      ["squad-3", "Charlie", "radio"],
+      ["squad-4", "Delta", "rocket"],
     ]);
     for (const squad of roster.squads) {
       expect(squad.strength).toBe(SQUAD_MAX_STRENGTH);
@@ -129,8 +131,8 @@ describe("createNewGame", () => {
     const { meta } = newGame(42);
     expect(meta.seed).toBe(42);
     expect(meta.createdAt).toBe(CREATED_AT);
-    expect(meta.ids).toEqual({ counters: { squad: 3, mech: 2 } });
-    expect(new SequentialIdGenerator(meta.ids).nextId("squad")).toBe("squad-3");
+    expect(meta.ids).toEqual({ counters: { squad: 5, mech: 2 } });
+    expect(new SequentialIdGenerator(meta.ids).nextId("squad")).toBe("squad-5");
     // The opening is drawn from a labelled fork, which leaves the master
     // stream exactly where a fresh generator starts.
     expect(meta.rng).toEqual(new Mulberry32Rng(42).getState());

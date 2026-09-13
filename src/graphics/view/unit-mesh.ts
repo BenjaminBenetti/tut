@@ -8,7 +8,8 @@ import { OVERLAY_LIFT } from "../data/tactical-overlay-palette";
 import type { UnitMotion } from "../model/unit-motion";
 import { UnitMotionRig } from "../service/unit-motion-rig";
 import type { Disposable } from "../model/disposable";
-import { tileTopCentre } from "./tactical-map-view";
+import { DEFAULT_FOOTPRINT } from "../../tactical/service/footprint-service";
+import { unitFeetAt } from "../service/unit-placement";
 
 // ===========================================
 // Constants
@@ -85,16 +86,21 @@ export interface UnitHighlight {
 /**
  * One unit's model on the map: the loaded model (a clone whose geometry
  * and materials are shared with every other unit of the same `modelId`)
- * placed at its tile's top centre and turned to its facing, with a hover
- * ring and a selection ring at its feet. The model's own meshes are the
- * pick targets.
+ * placed at the centre of its footprint and turned to its facing, with a
+ * hover ring and a selection ring at its feet. The model's own meshes
+ * are the pick targets.
  *
  * ```
- *   object (Group, at tile top centre, yaw = FACING_YAW[facing])
- *   ├── model            the loaded clone, pivot at base centre
- *   ├── hover ring       thin, shown while hovered
- *   └── selection ring   bold, shown while selected
+ *   object (Group, at the footprint's top centre, yaw = FACING_YAW[facing])
+ *   ├── model            the loaded clone, pivot at base centre, ×footprint
+ *   ├── hover ring       thin, shown while hovered, radius ×footprint
+ *   └── selection ring   bold, shown while selected, radius ×footprint
  * ```
+ *
+ * A unit with a footprint wider than one tile (#1130: the 2×2 brute) is
+ * the same model scaled up by its side, so the brute art authored to a
+ * one-tile box fills its four tiles rather than being squashed into one
+ * of them, and its rings grow to circle the whole block.
  */
 export class UnitMesh implements Disposable {
   // ===========================================
@@ -104,6 +110,8 @@ export class UnitMesh implements Disposable {
   /** Add this to the units group. */
   readonly object: Group;
   readonly motion: UnitMotion | undefined;
+  /** Tiles per side the unit covers; its model and rings are scaled by it. */
+  readonly footprint: number;
   private readonly model: Object3D;
   private readonly hoverRing: Mesh;
   private readonly selectionRing: Mesh;
@@ -117,13 +125,26 @@ export class UnitMesh implements Disposable {
    * @param unitId - Names the group so scene dumps read well.
    * @param model - The loaded model clone; owned by this mesh from now on.
    * @param modelId - Registered unit family, for its movement and attack rig.
+   * @param footprint - Tiles per side the unit covers (#1130); the model
+   *   and rings are scaled by it, so a 2×2 unit draws twice the size.
    */
-  constructor(unitId: string, model: Object3D, modelId?: string) {
+  constructor(
+    unitId: string,
+    model: Object3D,
+    modelId?: string,
+    footprint: number = DEFAULT_FOOTPRINT,
+  ) {
     this.object = new Group();
     this.object.name = `unit:${unitId}`;
+    this.footprint = footprint;
     this.model = model;
     this.motion = modelId ? new UnitMotionRig(model, modelId) : undefined;
     this.model.name = `unit-model:${unitId}`;
+    // The art is authored to a one-tile box; a wider footprint is the
+    // same art at the footprint's scale. Applied to the model rather
+    // than the group so the animation queue's grow and fade, which
+    // scale the group, still run from 0 to 1.
+    this.model.scale.multiplyScalar(footprint);
     // A unit throws a shadow and takes one; its selection rings do not,
     // being flat markers on the ground (#507).
     this.model.traverse((part) => {
@@ -131,15 +152,15 @@ export class UnitMesh implements Disposable {
       part.receiveShadow = true;
     });
     this.hoverRing = this.createRing(
-      HOVER_RING.inner,
-      HOVER_RING.outer,
+      HOVER_RING.inner * footprint,
+      HOVER_RING.outer * footprint,
       0.6,
       HOVER_RING_LIFT,
     );
     this.hoverRing.name = "hover-ring";
     this.selectionRing = this.createRing(
-      SELECTION_RING.inner,
-      SELECTION_RING.outer,
+      SELECTION_RING.inner * footprint,
+      SELECTION_RING.outer * footprint,
       1,
       SELECTION_RING_LIFT,
       true,
@@ -152,10 +173,14 @@ export class UnitMesh implements Disposable {
   // Public Methods
   // ===========================================
 
-  /** Moves the unit to a tile's top centre and turns it to `facing`. */
+  /**
+   * Moves the unit to the top centre of its footprint anchored at `pos`
+   * and turns it to `facing`. For a one-tile unit that is the tile's own
+   * top centre; a 2×2 stands on the corner its four tiles share.
+   */
   setPose(pos: TileCoord, facing: Direction): void {
-    const centre = tileTopCentre(pos);
-    this.object.position.set(centre.x, centre.y, centre.z);
+    const feet = unitFeetAt(pos, this.footprint);
+    this.object.position.set(feet.x, feet.y, feet.z);
     this.object.rotation.y = FACING_YAW[facing];
   }
 

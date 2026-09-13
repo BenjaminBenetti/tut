@@ -125,6 +125,46 @@ describe("TacticalAnimationQueue", () => {
     expect(queue.busy).toBe(false);
   });
 
+  it("walks a unit through the centres of its footprint when the scene knows them (#1130)", () => {
+    const base = scene();
+    // A 2×2 unit-1: its feet are one tile past each anchor's corner.
+    const s: AnimationScene & { objects: Map<string, Object3D> } = {
+      ...base,
+      unitWorldPositionAt: (id, tile) =>
+        id === "unit-1"
+          ? { x: tile.x + 1, y: tileTopCentre(tile).y, z: tile.z + 1 }
+          : undefined,
+    };
+    const queue = new TacticalAnimationQueue({
+      scene: s,
+      sprites,
+      timing: TIMING,
+    });
+    queue.enqueue([MOVE], () => undefined);
+    queue.update(1);
+    const unit = s.objects.get("unit-1")!;
+    // Anchor (2, 0) → feet at (3, 1), not the tile centre (2.5, 0.5).
+    expect(unit.position.x).toBeCloseTo(3);
+    expect(unit.position.z).toBeCloseTo(1);
+    // A unit the scene has no footprint answer for walks tile centres.
+    queue.enqueue(
+      [
+        {
+          type: "tactical:unit-moved",
+          payload: {
+            unitId: "unit-2",
+            from: { x: 4, y: 0, z: 0 },
+            to: { x: 4, y: 0, z: 2 },
+            path: [{ x: 4, y: 0, z: 2 }],
+          },
+        },
+      ],
+      () => undefined,
+    );
+    queue.update(1);
+    expect(s.objects.get("unit-2")!.position.z).toBeCloseTo(2.5);
+  });
+
   it("a walk shows a unit that was waiting hidden for it (#1116)", () => {
     const s = scene();
     const unit = s.objects.get("unit-1")!;

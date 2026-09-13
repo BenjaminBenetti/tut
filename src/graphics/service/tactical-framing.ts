@@ -2,7 +2,9 @@ import type { YawIndex } from "../model/camera-state";
 import type { Vec3 } from "../../core/model/grid";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { Unit } from "../../tactical/model/unit";
-import { tileTopCentre } from "../view/tactical-map-view";
+import type { UnitTemplate } from "../../tactical/model/unit-template";
+import { footprintSizeOf } from "../../tactical/service/footprint-service";
+import { tileTop } from "../view/tactical-map-view";
 
 // ===========================================
 // Framing
@@ -28,7 +30,9 @@ import { tileTopCentre } from "../view/tactical-map-view";
  */
 export function missionFocus(mission: TacticalState): Vec3 {
   const force = mission.units.filter((u) => u.team === "tdf" && u.hp > 0);
-  return force.length === 0 ? mapCentre(mission) : boundingCentre(force);
+  return force.length === 0
+    ? mapCentre(mission)
+    : boundingCentre(force, mission.templates);
 }
 
 /**
@@ -69,25 +73,32 @@ export function mapCentre(mission: TacticalState): Vec3 {
 // Helpers
 // ===========================================
 
-/** The centre of the units' bounding box, at the height they stand on. */
-function boundingCentre(units: readonly Unit[]): Vec3 {
-  const first = units[0];
-  if (first === undefined) {
+/**
+ * The centre of the units' bounding box, at the height they stand on.
+ * Each unit spans its whole footprint (#1130), so the box runs from the
+ * anchor's near edge to the far edge of its last tile and a single
+ * one-tile unit lands on the middle of its own tile rather than its
+ * corner.
+ */
+function boundingCentre(
+  units: readonly Unit[],
+  templates: Readonly<Record<string, UnitTemplate>>,
+): Vec3 {
+  if (units.length === 0) {
     return { x: 0, y: 0, z: 0 };
   }
-  let minX = first.pos.x;
-  let maxX = first.pos.x;
-  let minZ = first.pos.z;
-  let maxZ = first.pos.z;
-  let topY = tileTopCentre(first.pos).y;
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minZ = Infinity;
+  let maxZ = -Infinity;
+  let topY = -Infinity;
   for (const unit of units) {
+    const size = footprintSizeOf(templates[unit.templateId] ?? {});
     minX = Math.min(minX, unit.pos.x);
-    maxX = Math.max(maxX, unit.pos.x);
+    maxX = Math.max(maxX, unit.pos.x + size);
     minZ = Math.min(minZ, unit.pos.z);
-    maxZ = Math.max(maxZ, unit.pos.z);
-    topY = Math.max(topY, tileTopCentre(unit.pos).y);
+    maxZ = Math.max(maxZ, unit.pos.z + size);
+    topY = Math.max(topY, tileTop(unit.pos.y));
   }
-  // Tile centres, so a single unit lands on the middle of its own tile
-  // rather than its corner.
-  return { x: (minX + maxX) / 2 + 0.5, y: topY, z: (minZ + maxZ) / 2 + 0.5 };
+  return { x: (minX + maxX) / 2, y: topY, z: (minZ + maxZ) / 2 };
 }

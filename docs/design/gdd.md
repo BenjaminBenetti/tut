@@ -143,6 +143,7 @@ The player's attention belongs on the battlefield, not on a side panel.
 - Attack confirmation appears at the target, not in a panel: hit chance, damage and the commit control presented on the enemy itself.
 - Building geometry between the camera and a unit fades in a soft radius so the player can always see their own force and the fight.
 - Every action produces visible feedback: animation, effect, and floating text for hits, misses and damage, rendered above the unit and never inside its model.
+- **A blast is one explosion.** An area weapon's shot plays as one moment: the shell leaves the shooter, an explosion the size of the footprint goes off at the impact, and every number, death, spawner burst and falling structure in that footprint lands at the same instant — never the target first and the neighbours one by one. The log still records each event in order. (Executive Director, 2026-09-13, #1130.)
 - **A bug that walks into view is seen walking in.** Its move plays in full from the tile it started on, fog or not, and it is announced as it appears; a bug spotted standing still simply appears. Popping in at the destination reads as a teleport. (Executive Director, 2026-09-12, #1116.)
 - Turn transitions are unmistakable, and the end of the bug phase is obvious.
 - A collapsible event log records everything, reviewable at any time.

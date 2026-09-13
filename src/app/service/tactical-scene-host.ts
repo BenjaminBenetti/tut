@@ -119,6 +119,8 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
   private readonly models: ModelLoader;
   private readonly sprites: SpriteSource;
   private attached: AttachedScene | undefined;
+  /** Whether the player's map input is held (#1130); applied to every scene attached. */
+  private inputLocked = false;
 
   // ===========================================
   // Constructor
@@ -203,6 +205,7 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
       ],
     });
     input.attach(container);
+    input.setLocked(this.inputLocked);
     // The height cut is the scene's, not the input controller's, so the
     // host supplies that one hook itself (#978).
     this.deps.onHooks?.({
@@ -323,6 +326,12 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
   /** Shows or hides the weapon-range outline (#522). */
   setWeaponRangeVisible(visible: boolean): void {
     this.attached?.overlays.setWeaponRangeVisible(visible);
+  }
+
+  /** Holds or releases the player's map input, and remembers it for the next scene (#1130). */
+  setInputLocked(locked: boolean): void {
+    this.inputLocked = locked;
+    this.attached?.input.setLocked(locked);
   }
 
   /** Disposes the scene, input and builder. */

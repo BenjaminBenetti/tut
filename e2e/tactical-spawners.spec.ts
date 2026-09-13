@@ -16,6 +16,7 @@ import {
 import { expect, test } from "@playwright/test";
 
 import type { TacticalTestHooks } from "../src/ui/model/tactical-intent";
+import { waitForBugPhasePlayed } from "./bug-phase.helper";
 
 /** The page's global object as seen from `page.evaluate`. */
 interface HookGlobal {
@@ -483,4 +484,8 @@ async function endTurn(page: Page, body: ReturnType<Page["locator"]>) {
       command: before!.commandSeq + 1,
     });
   await expect(body).toHaveAttribute("data-screen", "tactical");
+  // The board is the player's again; the controls are not until the
+  // bugs have finished walking (#1130), and the scout's hooks are held
+  // with them.
+  await waitForBugPhasePlayed(page);
 }

@@ -483,3 +483,75 @@ describe("TacticalInputController pointer buttons", () => {
     expect(heard, "camera keys that also fired a tactical intent").toEqual([]);
   });
 });
+
+// ===========================================
+// Lock (#1130)
+// ===========================================
+
+describe("TacticalInputController while locked (#1130)", () => {
+  /** A press and release of one button at a client position. */
+  function click(
+    surface: ReturnType<typeof setup>["surface"],
+    button: number,
+    clientX: number,
+  ): void {
+    surface.dispatch("pointerdown", { clientX, clientY: 200, button });
+    surface.dispatch("pointerup", { clientX, clientY: 200, button });
+  }
+  const key = (
+    surface: ReturnType<typeof setup>["surface"],
+    k: string,
+  ): { prevented: boolean } => {
+    const seen = { prevented: false };
+    surface.ownerDocument.dispatch("keydown", {
+      key: k,
+      repeat: false,
+      preventDefault: () => {
+        seen.prevented = true;
+      },
+      target: null,
+    });
+    return seen;
+  };
+
+  it("drops clicks, hooks and action keys, and keeps hover, the storey keys, Shift and the camera", () => {
+    const { controller, intents, picker, surface, cameraInput } = setup();
+    controller.setLocked(true);
+    expect(controller.isLocked()).toBe(true);
+    click(surface, 0, 20);
+    click(surface, 2, 200);
+    click(surface, 0, 380);
+    controller.selectUnit("u1");
+    controller.selectSpawner("spawner-1");
+    controller.selectTile({ x: 2, y: 0, z: 2 });
+    controller.invokeTile({ x: 2, y: 0, z: 2 });
+    controller.hooks().selectUnit("u1");
+    controller.hooks().invokeTile({ x: 2, y: 0, z: 2 });
+    // Swallowed even while dropped: Tab must not walk the focus off the map.
+    expect(key(surface, "m").prevented).toBe(true);
+    expect(key(surface, "Enter").prevented).toBe(true);
+    key(surface, "Tab");
+    expect(intents).toEqual([]);
+    expect(picker.selected).toBeUndefined();
+    expect(picker.selectedSpawner).toBeUndefined();
+    // Hover still highlights: the pointer is not dead, only the press.
+    surface.dispatch("pointermove", { clientX: 20, clientY: 200 });
+    expect(picker.hovered).toBe("u1");
+    key(surface, "]");
+    key(surface, "Shift");
+    expect(intents).toEqual([
+      { kind: "layer-step", delta: 1 },
+      { kind: "inspect", held: true },
+    ]);
+    controller.update(0.016);
+    expect(cameraInput.updates).toBe(1);
+    controller.setLocked(false);
+    click(surface, 0, 20);
+    key(surface, "m");
+    expect(intents.slice(2)).toEqual([
+      { kind: "select-unit", unitId: "u1" },
+      { kind: "action", action: "move" },
+    ]);
+    expect(picker.selected).toBe("u1");
+  });
+});

@@ -117,6 +117,17 @@ export interface TacticalSceneHost {
   setWeaponRangeVisible(visible: boolean): void;
 
   /**
+   * Locks or unlocks the player's input on the map (#1130). While
+   * locked, a click on a unit, spawner or tile and the action keys are
+   * dropped without a word; the camera and the storey keys keep working.
+   * The screen holds the lock for as long as a bug phase is playing, so
+   * the controls follow the account of the turn rather than the board.
+   *
+   * @param locked - True to drop mission intents.
+   */
+  setInputLocked(locked: boolean): void;
+
+  /**
    * Where a world thing appears on screen, in client pixels, or
    * undefined when it is not drawn.
    *

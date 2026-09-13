@@ -247,6 +247,9 @@ export class TacticalHudView {
   /** The force at a glance; a row selects and recovers a unit (#1041). */
   private readonly squad = new SquadStripView({
     onPick: (unitId) => {
+      if (this.playbackLocked) {
+        return;
+      }
       // A plain selection, never the wheel: the row is a way to find a
       // unit, not a click on it.
       this.selectUnit(unitId);
@@ -291,6 +294,13 @@ export class TacticalHudView {
   private inspecting = false;
   /** Cancels the frame loop that keeps the chips on their units. */
   private stopInspecting: (() => void) | undefined;
+  /**
+   * Whether the bug phase is still playing on the map (#1130). While it
+   * is, End turn is disabled and every intent but Shift is dropped: the
+   * board is already the player's, the account of the turn is not, and
+   * the controls follow the account.
+   */
+  private playbackLocked = false;
   private root: HTMLElement | undefined;
   private radarLegend: HTMLElement | undefined;
   private mission: TacticalState | undefined;
@@ -409,6 +419,7 @@ export class TacticalHudView {
     this.guardPointer(hud);
     this.phases.mount(hud);
     parent.appendChild(hud);
+    hud.dataset.phasePlaying = String(this.playbackLocked);
     this.root = hud;
     this.refresh();
   }
@@ -597,8 +608,11 @@ export class TacticalHudView {
   // Intents
   // ===========================================
 
-  /** Applies an intent from the input controller or the keyboard. */
+  /** Applies an intent from the input controller or the keyboard; drops all but Shift while a phase plays (#1130). */
   handleIntent(intent: TacticalIntent): void {
+    if (this.playbackLocked && intent.kind !== "inspect") {
+      return;
+    }
     switch (intent.kind) {
       case "select-unit":
         this.pointAtUnit(intent.unitId);
@@ -674,6 +688,30 @@ export class TacticalHudView {
   /** Whether the status chips are up. */
   isInspecting(): boolean {
     return this.inspecting;
+  }
+
+  /**
+   * Holds or releases the controls while a bug phase plays on the map
+   * (#1130). Held: End turn is disabled, the wheel and the panel dispatch
+   * nothing, and every intent but Shift is dropped. The HUD root says so
+   * in `data-phase-playing`, which is what a spec waits on.
+   *
+   * @param locked - True while the scene is still playing the phase.
+   */
+  setPlaybackLocked(locked: boolean): void {
+    if (locked === this.playbackLocked) {
+      return;
+    }
+    this.playbackLocked = locked;
+    if (this.root) {
+      this.root.dataset.phasePlaying = String(locked);
+    }
+    this.refresh();
+  }
+
+  /** Whether the controls are held for a playing bug phase. */
+  isPlaybackLocked(): boolean {
+    return this.playbackLocked;
   }
 
   // ===========================================
@@ -980,6 +1018,10 @@ export class TacticalHudView {
 
   /** Dispatches the command a wheel entry stands for, or turns the page. */
   private chooseFromMenu(id: string): void {
+    if (this.playbackLocked) {
+      this.closeMenu();
+      return;
+    }
     const choice = parseWheelChoice(id);
     const unitId = this.selected;
     const target = this.menuTarget;
@@ -1250,7 +1292,11 @@ export class TacticalHudView {
 
   /** Dispatches the previewed attack and clears the preview. */
   private confirmAttack(): void {
-    if (this.selected === undefined || this.target === undefined) {
+    if (
+      this.playbackLocked ||
+      this.selected === undefined ||
+      this.target === undefined
+    ) {
       return;
     }
     this.handlers.onCommand(
@@ -1705,6 +1751,7 @@ export class TacticalHudView {
         reloadLabel: "Reload",
         aiming: false,
         unspent: 0,
+        locked: this.playbackLocked,
       });
       this.handlers.onMarkBlast?.([]);
       return;
@@ -1774,6 +1821,7 @@ export class TacticalHudView {
       reloadLabel: chargeRegisterFor(selected?.kind ?? "squad").actionLabel,
       aiming: this.mode === "attack",
       unspent: this.unspentCount(),
+      locked: this.playbackLocked,
     });
     this.handlers.onMarkBlast?.(this.consideredBlast());
     // Last, so the listener reads the state the refresh just settled.

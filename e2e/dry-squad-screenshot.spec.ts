@@ -1,6 +1,8 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "@playwright/test";
 
+import { waitForBugPhasePlayed } from "./bug-phase.helper";
+
 import { PassMask } from "../src/mapgen/model/pass-mask";
 import type { TacticalMap } from "../src/mapgen/model/tactical-map";
 import { UNIT_TUNING } from "../src/tactical/data/unit-tuning";
@@ -213,6 +215,9 @@ test("captures a squad with an empty magazine, and the three things that follow"
     const endTurn = page.locator('#action-bar [data-action="end-turn"]');
     if (await endTurn.isEnabled()) {
       await endTurn.click();
+      // The hooks that aim and walk are held until the bugs have
+      // finished moving (#1130).
+      await waitForBugPhasePlayed(page);
       await page.waitForTimeout(SETTLE_MS);
     }
   }

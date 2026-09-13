@@ -147,6 +147,7 @@ The player's attention belongs on the battlefield, not on a side panel.
 - Every action produces visible feedback: animation, effect, and floating text for hits, misses and damage, rendered above the unit and never inside its model.
 - **A bug that walks into view is seen walking in.** Its move plays in full from the tile it started on, fog or not, and it is announced as it appears; a bug spotted standing still simply appears. Popping in at the destination reads as a teleport. (Executive Director, 2026-09-12, #1116.)
 - Turn transitions are unmistakable, and the end of the bug phase is obvious.
+- **The player's controls stay locked until the bug phase has finished playing on the map.** The board updates the moment the rules resolve the turn, but End turn is disabled and clicks on units, tiles and spawners and the action keys are dropped until the last bug has finished moving; the camera and the storey keys keep working. The "Your turn" banner was already timed to the map; the controls were early, and a player could select and act while the bugs were still walking. (Executive Director, 2026-09-13, #1130.)
 - A collapsible event log records everything, reviewable at any time.
 
 ### 6.3 Spawning

@@ -1,7 +1,10 @@
 import type { Unit } from "../../tactical/model/unit";
 import type { UnitTemplate } from "../../tactical/model/unit-template";
 import type { WeaponId } from "../../tactical/model/unit-weapon";
-import type { EquipmentDefinition } from "../../tactical/model/equipment";
+import type {
+  EquipmentDefinition,
+  EquipmentId,
+} from "../../tactical/model/equipment";
 import { displayWeaponName } from "../../tactical/model/unit-weapon";
 import { SHIPPED_EQUIPMENT } from "../../tactical/repository/equipment-catalogue";
 import { chargeDelayText } from "../service/charge-delay-text";
@@ -18,24 +21,34 @@ import { chargeRegisterFor } from "../service/charge-register";
 /** What a field with nothing to show reads as. */
 const EMPTY_FIELD = "—";
 
+/**
+ * A row of the card the pointer or keyboard focus can rest on: one of
+ * the unit's weapons (#1132) or one of the items it carries (#1134).
+ * The owner paints that row's reach on the ground while it rests there.
+ */
+export type CardHover =
+  | { readonly kind: "weapon"; readonly weaponId: WeaponId }
+  | { readonly kind: "equipment"; readonly equipmentId: EquipmentId };
+
 /** What the card tells its owner. */
 export interface UnitCardHandlers {
   /**
-   * The pointer or keyboard focus came to rest on a weapon's row, or
-   * left it (`undefined`) (#1132). The owner paints that weapon's reach
-   * on the ground while it rests there.
+   * The pointer or keyboard focus came to rest on a weapon's or an
+   * item's row, or left it (`undefined`).
    */
-  readonly onWeaponHover?: (weaponId: WeaponId | undefined) => void;
+  readonly onRowHover?: (hover: CardHover | undefined) => void;
 }
 
 /** One titled block in a card field: a weapon's name and its numbers. */
 interface CardEntry {
   /**
    * What the block stands for, when resting on it means something: a
-   * weapon's id, so the row can announce itself (#1132). Absent for a
-   * block that is only text.
+   * weapon's or an item's id, so the row can announce itself (#1132,
+   * #1134). Absent for a block that is only text.
    */
   readonly id?: string;
+  /** What kind of thing `id` names; a weapon when absent. */
+  readonly kind?: CardHover["kind"];
   /** Omitted when the unit carries one of whatever this lists. */
   readonly name?: string;
   readonly value: string;
@@ -81,7 +94,7 @@ export class UnitCardView {
   private meter: HTMLElement | undefined;
   private readonly handlers: UnitCardHandlers;
   /** The weapon row the pointer or focus rests on, if any (#1132). */
-  private hovered: WeaponId | undefined;
+  private hovered: CardHover | undefined;
   /** The field whose row is rested on, so another field's rewrite leaves it alone. */
   private hoveredField: string | undefined;
 
@@ -244,6 +257,8 @@ export class UnitCardView {
     this.setEntries(
       "equipment",
       equipmentOf(template, unit, SHIPPED_EQUIPMENT).map((carried) => ({
+        id: carried.definition.id,
+        kind: "equipment" as const,
         name: carried.definition.name,
         value: equipmentSummary(carried.definition),
         charges: `uses ${formatWhole(carried.usesLeft)} / ${formatWhole(carried.definition.uses)}`,
@@ -262,8 +277,8 @@ export class UnitCardView {
     this.empty.hidden = true;
   }
 
-  /** The weapon row the pointer or focus rests on, if any (#1132). */
-  hoveredWeapon(): WeaponId | undefined {
+  /** The row the pointer or focus rests on, if any (#1132, #1134). */
+  hoveredRow(): CardHover | undefined {
     return this.hovered;
   }
 
@@ -289,13 +304,13 @@ export class UnitCardView {
    * equipment block is rewritten on every refresh too, and a mech with
    * nothing to list must not drop the weapon row the pointer is on.
    */
-  private hover(weaponId: WeaponId | undefined, field?: string): void {
-    if (weaponId === this.hovered) {
+  private hover(row: CardHover | undefined, field?: string): void {
+    if (sameHover(row, this.hovered)) {
       return;
     }
-    this.hovered = weaponId;
-    this.hoveredField = weaponId === undefined ? undefined : field;
-    this.handlers.onWeaponHover?.(weaponId);
+    this.hovered = row;
+    this.hoveredField = row === undefined ? undefined : field;
+    this.handlers.onRowHover?.(row);
   }
 
   /** Lets go of the rested row when it belongs to `field`, whose rows are being replaced. */
@@ -349,7 +364,7 @@ export class UnitCardView {
     const key = entries
       .map(
         (e) =>
-          `${e.id ?? ""}\u0000${e.name ?? ""}\u0000${e.value}\u0000${e.charges ?? ""}`,
+          `${e.kind ?? ""}:${e.id ?? ""}\u0000${e.name ?? ""}\u0000${e.value}\u0000${e.charges ?? ""}`,
       )
       .join("\u0001");
     if (el.dataset.entries === key) {
@@ -367,19 +382,29 @@ export class UnitCardView {
         if (entry.id !== undefined) {
           // A row that can be rested on (#1132): by pointer, and by
           // keyboard, since a preview that only the mouse can reach is
-          // a preview half the players cannot have.
-          block.dataset.role = "weapon-row";
-          block.dataset.weaponId = entry.id;
+          // a preview half the players cannot have. It says so with a
+          // pointer cursor and a lift on hover (#1134).
+          const row: CardHover =
+            entry.kind === "equipment"
+              ? { kind: "equipment", equipmentId: entry.id }
+              : { kind: "weapon", weaponId: entry.id };
+          block.classList.add("tut-card__entry--hoverable");
+          if (row.kind === "equipment") {
+            block.dataset.role = "equipment-row";
+            block.dataset.equipmentId = row.equipmentId;
+          } else {
+            block.dataset.role = "weapon-row";
+            block.dataset.weaponId = row.weaponId;
+          }
           block.tabIndex = 0;
-          const id = entry.id;
           for (const type of ["mouseenter", "focus"]) {
             block.addEventListener(type, () => {
-              this.hover(id, field);
+              this.hover(row, field);
             });
           }
           for (const type of ["mouseleave", "blur"]) {
             block.addEventListener(type, () => {
-              if (this.hovered === id) {
+              if (sameHover(this.hovered, row)) {
                 this.hover(undefined);
               }
             });
@@ -437,4 +462,20 @@ function equipmentSummary(definition: EquipmentDefinition): string {
     parts.push(chargeDelayText(definition.delayTurns));
   }
   return parts.join(" · ");
+}
+
+/** True when both name the same row, or both name none. */
+function sameHover(
+  a: CardHover | undefined,
+  b: CardHover | undefined,
+): boolean {
+  if (a === undefined || b === undefined) {
+    return a === b;
+  }
+  if (a.kind !== b.kind) {
+    return false;
+  }
+  return a.kind === "weapon"
+    ? a.weaponId === (b as { weaponId: WeaponId }).weaponId
+    : a.equipmentId === (b as { equipmentId: EquipmentId }).equipmentId;
 }

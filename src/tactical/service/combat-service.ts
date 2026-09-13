@@ -1051,35 +1051,68 @@ function applyDamage(
 }
 
 /**
+ * Whether a shot from `weapon` by a unit of `kind` spends every remaining
+ * action point (#533, #1130). The weapon's own `endsTurn` wins when it
+ * says anything; otherwise the kind's rule in the tuning decides. The
+ * one place the two are read together, so the budget, the resolver and
+ * the card cannot disagree about who fires twice.
+ *
+ * @param weapon - The profile of the weapon fired.
+ * @param kind - The kind of the unit firing it.
+ * @param tuning - The combat knobs holding the per-kind default.
+ * @returns True when the shot is the unit's last action of the turn.
+ */
+export function attackEndsTurn(
+  weapon: WeaponProfile,
+  kind: Unit["kind"],
+  tuning: CombatTuning,
+): boolean {
+  return weapon.endsTurn ?? tuning.attackEndsTurn[kind];
+}
+
+/**
  * How many more times a unit could attack this turn (#533).
  *
  * ```
- *   ap < cost                 ──► 0
- *   attack ends the turn      ──► 1     one shot, whatever is left
- *   otherwise                 ──► ⌊ap / cost⌋
+ *   ap < cost                          ──► 0
+ *   every weapon ends the turn         ──► 1     one shot, whatever is left
+ *   some weapon does not               ──► ⌊ap / cost⌋
  * ```
  *
  * Derived rather than stored, so the HUD never has to know which kinds
- * fire twice: an infantry squad with two actions reports 2, a mech with
- * two reports 1, and a spent unit reports 0.
+ * or weapons fire twice: a rifle squad with two actions reports 2, a
+ * radio squad with its SMG reports 1 (#1130), a mech with two reports 1,
+ * and a spent unit reports 0. A unit carrying nothing takes the kind's
+ * rule.
+ *
+ * @param unit - The unit's kind and action points.
+ * @param weapons - What it carries; the rule is per weapon since #1130.
+ * @param tuning - The combat knobs.
+ * @returns Attacks left, never negative.
  */
 export function attacksRemaining(
   unit: Pick<Unit, "kind" | "ap">,
+  weapons: readonly UnitWeapon[],
   tuning: CombatTuning,
 ): number {
   if (tuning.attackApCost <= 0 || unit.ap < tuning.attackApCost) {
     return 0;
   }
-  return tuning.attackEndsTurn[unit.kind]
-    ? 1
-    : Math.floor(unit.ap / tuning.attackApCost);
+  const endsTurn =
+    weapons.length === 0
+      ? tuning.attackEndsTurn[unit.kind]
+      : weapons.every((weapon) =>
+          attackEndsTurn(weapon.profile, unit.kind, tuning),
+        );
+  return endsTurn ? 1 : Math.floor(unit.ap / tuning.attackApCost);
 }
 
 /**
  * Resolves an `Attack` command: validates it, then rolls it with the
  * attacker paying `attackApCost`, or every remaining action point when
- * attacks end the turn for its kind — which is how an infantry squad
- * gets two shots and a mech one (#533). Rolls against exactly the numbers
+ * the weapon's attack ends the turn (`attackEndsTurn`) — which is how a
+ * rifle squad gets two shots, a mech one (#533), and a radio squad with
+ * an SMG one (#1130). Rolls against exactly the numbers
  * `previewAttack` shows. When the shot destroyed an egg spawner and that
  * completed the last objective, the mission ends here rather than at the
  * next turn boundary, the way `Interact` ends it (#426). Pure: on any
@@ -1116,7 +1149,7 @@ export function resolveAttack(
       checked.value,
       ctx,
       tuning,
-      apAfterShot(checked.value.attacker, tuning),
+      apAfterShot(checked.value.attacker, checked.value.weapon, tuning),
       deps,
     );
     return ok(settle(applied));
@@ -1136,15 +1169,27 @@ export function resolveAttack(
     checked.value,
     ctx,
     tuning,
-    apAfterShot(checked.value.attacker, tuning),
+    apAfterShot(checked.value.attacker, checked.value.weapon, tuning),
     deps,
   );
   return ok(settle(applied));
 }
 
-/** What a shot leaves the attacker: one action less, or none when its kind's attack ends the turn. */
-function apAfterShot(attacker: Unit, tuning: CombatTuning): number {
-  return tuning.attackEndsTurn[attacker.kind]
+/**
+ * What a shot leaves the attacker: one action less, or none when the
+ * weapon's attack ends the turn (`attackEndsTurn`).
+ *
+ * @param attacker - The unit firing.
+ * @param weapon - The weapon it fires.
+ * @param tuning - The combat knobs.
+ * @returns Action points left after the shot, never negative.
+ */
+function apAfterShot(
+  attacker: Unit,
+  weapon: UnitWeapon,
+  tuning: CombatTuning,
+): number {
+  return attackEndsTurn(weapon.profile, attacker.kind, tuning)
     ? 0
     : Math.max(0, attacker.ap - tuning.attackApCost);
 }

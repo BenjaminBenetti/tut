@@ -1470,6 +1470,46 @@ describe("TacticalHudView", () => {
   });
 
   /**
+   * The weapon decides the volume of fire (#1130): a radio squad with
+   * an SMG has one burst a turn although it is a squad, and the card
+   * must say `ATTACKS 1`, not the kind's 2.
+   */
+  it("counts one attack for a weapon whose shot ends the turn", () => {
+    const { hud, mission } = setup();
+    const s1 = mission.units.find((unit) => unit.id === "s1");
+    const template = s1 && mission.templates[s1.templateId];
+    if (!s1 || !template)
+      throw new Error("fixture needs a unit with a template");
+    const carried = template.weapons[0]!;
+    const attacks = () =>
+      root.querySelector<HTMLElement>('[data-field="attacks"]')?.textContent;
+    const armedWith = (endsTurn: boolean | undefined) => ({
+      ...mission,
+      templates: {
+        ...mission.templates,
+        [s1.templateId]: {
+          ...template,
+          weapons: [
+            {
+              ...carried,
+              name: endsTurn ? "SMG" : carried.name,
+              profile: { ...carried.profile, endsTurn },
+            },
+          ],
+        },
+      },
+    });
+
+    // Control: the carbine keeps the squad's two.
+    hud.update(armedWith(undefined));
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    expect(attacks()).toBe("2");
+
+    hud.update(armedWith(true));
+    expect(attacks()).toBe("1");
+  });
+
+  /**
    * Found by eng-5 on `6a552d6` and handed to this ticket: the bar
    * offered Reload to a mech at heat 4/4, and the player learned it was
    * not on offer by pressing it.

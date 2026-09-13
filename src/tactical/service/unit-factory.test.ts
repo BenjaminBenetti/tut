@@ -92,7 +92,7 @@ describe("squadUnit", () => {
       weapons: [
         {
           id: PRIMARY_WEAPON_ID,
-          name: DEFAULT_WEAPON_NAME,
+          name: "Carbine",
           profile: { range: 8, accuracy: 65, damage: 3, armorPen: 0 },
           charges: 3,
         },
@@ -140,6 +140,118 @@ describe("squadUnit", () => {
     };
     const { template } = squadUnit(squad(5, "cavalry"), odd, AT, deps());
     expect(template.modelId).toBe(UNIT_TUNING.infantry.fallbackModelId);
+    expect(template.weapons[0]!.profile.damage).toBe(1);
+  });
+
+  /**
+   * Each squad type fights with its own weapon (#1130): the numbers here
+   * are the table on `UNIT_TUNING.infantry.weaponByType`, pinned so a
+   * tuning slip shows up as a diff rather than in play.
+   */
+  it("arms each shipped squad type with its own weapon", () => {
+    const armed = Object.fromEntries(
+      SQUAD_TYPES.map((type) => {
+        const weapon = squadUnit(squad(5, type.id), type, AT, deps()).template
+          .weapons[0]!;
+        const { range, accuracy, damage, armorPen, endsTurn } = weapon.profile;
+        return [
+          type.id,
+          {
+            name: weapon.name,
+            range,
+            accuracy,
+            damage,
+            armorPen,
+            endsTurn,
+            charges: weapon.charges,
+          },
+        ];
+      }),
+    );
+    expect(armed).toEqual({
+      rifle: {
+        name: "Carbine",
+        range: 8,
+        accuracy: 65,
+        damage: 3,
+        armorPen: 0,
+        endsTurn: undefined,
+        charges: 3,
+      },
+      medic: {
+        name: "Carbine",
+        range: 8,
+        accuracy: 65,
+        damage: 2,
+        armorPen: 0,
+        endsTurn: undefined,
+        charges: 3,
+      },
+      radio: {
+        name: "SMG",
+        range: 5,
+        accuracy: 70,
+        damage: 4,
+        armorPen: 0,
+        endsTurn: true,
+        charges: 4,
+      },
+      engineer: {
+        name: "Shotgun",
+        range: 3,
+        accuracy: 75,
+        damage: 5,
+        armorPen: 0,
+        endsTurn: undefined,
+        charges: 2,
+      },
+      sniper: {
+        name: "Marksman Rifle",
+        range: 12,
+        accuracy: 80,
+        damage: 6,
+        armorPen: 0,
+        endsTurn: true,
+        charges: 2,
+      },
+      rocket: {
+        name: "Rocket Launcher",
+        range: 10,
+        accuracy: 65,
+        damage: 5,
+        armorPen: 2,
+        endsTurn: true,
+        charges: 1,
+      },
+    });
+    // The rocket keeps its blast and its force (#1121).
+    const rocket = squadUnit(squad(5, "rocket"), ROCKET, AT, deps()).template
+      .weapons[0]!.profile;
+    expect(rocket.aoe).toEqual({ radius: 1, falloff: 0.5 });
+    expect(rocket.demoForce).toBe(2);
+  });
+
+  it("gives a squad type with no weapon tuning the shared shape under the fallback name", () => {
+    const odd: SquadType = { ...RIFLE, id: "cavalry", name: "Cavalry" };
+    const { template } = squadUnit(squad(5, "cavalry"), odd, AT, deps());
+    const weapon = template.weapons[0]!;
+    expect(weapon.name).toBe(UNIT_TUNING.infantry.fallbackWeaponName);
+    expect(weapon.profile).toEqual({
+      ...UNIT_TUNING.infantry.weapon,
+      damage: 3,
+    });
+    expect(weapon.profile.endsTurn).toBeUndefined();
+  });
+
+  it("scales the rating's damage by the type's scale, never to zero", () => {
+    const tuning = {
+      ...UNIT_TUNING,
+      infantry: {
+        ...UNIT_TUNING.infantry,
+        weaponByType: { rifle: { damageScale: 0.01 } },
+      },
+    };
+    const { template } = squadUnit(squad(), RIFLE, AT, { ...deps(), tuning });
     expect(template.weapons[0]!.profile.damage).toBe(1);
   });
 });

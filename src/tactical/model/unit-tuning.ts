@@ -6,6 +6,28 @@ import type { WeaponProfile } from "./weapon-profile";
 // Infantry
 // ===========================================
 
+/**
+ * How one squad type's weapon differs from the shared shape (#1121,
+ * #1130): what it is called, how much harder or softer it hits than
+ * its rating alone says, and any profile field of its own — range,
+ * accuracy, blast, force, and whether a shot ends the turn. `damage`
+ * is never set here: it stays the rating's, scaled.
+ *
+ * ```
+ *   profile = { ...weapon, ...entry (less name, damageScale) }
+ *   damage  = ⌈ combatRating × weapon.damage × damageScale ⌉, at least 1
+ * ```
+ */
+export interface SquadWeaponTuning extends Omit<
+  Partial<WeaponProfile>,
+  "damage"
+> {
+  /** What the unit card calls the weapon: "Carbine", "SMG". */
+  readonly name?: string;
+  /** Multiplier on the rating-derived damage before the ceiling; `1` when absent. Positive. */
+  readonly damageScale?: number;
+}
+
 /** How a squad's tactical stats derive from its roster entry and type. */
 export interface InfantryUnitTuning {
   /** Hit points per soldier; a squad's `maxHp` is `maxStrength × hpPerSoldier`. Positive integer. */
@@ -16,14 +38,17 @@ export interface InfantryUnitTuning {
   /** Weapon shape; `damage` here is per point of the type's `combatRating`. */
   readonly weapon: WeaponProfile;
   /**
-   * How a squad type's weapon differs from the shape above (#1121): a
-   * rocket squad's blast and its force against structures. Merged over
-   * `weapon`; `damage` stays the rating's and cannot be overridden here.
-   * Types missing here fire the plain shape.
+   * How each squad type's weapon differs from the shape above (#1121,
+   * #1130): its name, its damage scale, a rocket squad's blast and force,
+   * an SMG's short range and one shot a turn. Merged over `weapon`;
+   * `damage` stays the rating's, scaled. Types missing here fire the
+   * plain shape under `fallbackWeaponName`.
    */
   readonly weaponByType: Readonly<
-    Partial<Record<SquadTypeId, Omit<Partial<WeaponProfile>, "damage">>>
+    Partial<Record<SquadTypeId, SquadWeaponTuning>>
   >;
+  /** What a squad type with no entry in `weaponByType` calls its weapon. */
+  readonly fallbackWeaponName: string;
   /** Tiles a unit of this class sees (ADR 0006); longer than its weapon range. */
   readonly sightRange: number;
   /** Model per squad type; types missing here draw `fallbackModelId`. */

@@ -32,7 +32,9 @@ import { TileIndex } from "../../mapgen/service/tile-index";
 import { previewTileAttack, tileWeaponOptions } from "./combat-service";
 import { emptyVision } from "./vision-service";
 import {
+  attackEndsTurn,
   attackTerrain,
+  attacksRemaining,
   createAttackHandler,
   damageRange,
   hitChance,
@@ -951,6 +953,90 @@ describe("attacks per turn by unit kind", () => {
     expect(applied.ok).toBe(true);
     if (!applied.ok) return;
     expect(applied.value.state.units.find((u) => u.id === "b1")?.ap).toBe(0);
+  });
+});
+
+// ===========================================
+// The weapon overrides the kind (#1130)
+// ===========================================
+
+describe("attacks per turn by weapon", () => {
+  /** A squad weapon that is one burst a turn: the radio squad's SMG. */
+  const SMG: WeaponProfile = { ...RIFLE, range: 5, endsTurn: true };
+  /** A weapon that grants a second shot to a kind that normally gets one. */
+  const TWIN: WeaponProfile = { ...RIFLE, endsTurn: false };
+  const templates: Record<string, UnitTemplate> = {
+    ...TEMPLATES,
+    smg: template("smg", SMG),
+    twin: template("twin", TWIN),
+  };
+  const hit = (): TacticalContext => ctx(1);
+  const board = (attacker: Unit): TacticalState =>
+    mission(
+      [attacker, unit("b1", "bugs", "swarmer", 1, 0, { hp: 40, maxHp: 40 })],
+      {
+        templates,
+      },
+    );
+
+  it("ends a squad's turn on a weapon that says so, and refuses the second burst", () => {
+    const first = resolveAttack(
+      board(unit("s1", "tdf", "smg", 0, 0)),
+      attack("s1", "b1"),
+      hit(),
+      T,
+      DEPS,
+    );
+    expect(first.ok).toBe(true);
+    if (!first.ok) return;
+    // Both actions spent by one burst: a rifle squad would have one left.
+    expect(first.value.state.units.find((u) => u.id === "s1")?.ap).toBe(0);
+    const second = resolveAttack(
+      first.value.state,
+      attack("s1", "b1"),
+      hit(),
+      T,
+      DEPS,
+    );
+    expect(second.ok).toBe(false);
+    if (second.ok) return;
+    expect(second.error.kind).toBe("no-action-points");
+  });
+
+  it("lets a mech fire twice on a weapon that does not end the turn", () => {
+    const first = resolveAttack(
+      board(unit("s1", "tdf", "twin", 0, 0, { kind: "mech" })),
+      attack("s1", "b1"),
+      hit(),
+      T,
+      DEPS,
+    );
+    expect(first.ok).toBe(true);
+    if (!first.ok) return;
+    expect(first.value.state.units.find((u) => u.id === "s1")?.ap).toBe(1);
+  });
+
+  it("reads the kind's rule when the weapon is silent", () => {
+    expect(attackEndsTurn(RIFLE, "squad", T)).toBe(false);
+    expect(attackEndsTurn(RIFLE, "mech", T)).toBe(true);
+    expect(attackEndsTurn(SMG, "squad", T)).toBe(true);
+    expect(attackEndsTurn(TWIN, "bug", T)).toBe(false);
+  });
+
+  it("counts the attacks left from the weapons carried", () => {
+    const squad = { kind: "squad" as const, ap: 2 };
+    expect(attacksRemaining(squad, templates.rifle!.weapons, T)).toBe(2);
+    expect(attacksRemaining(squad, templates.smg!.weapons, T)).toBe(1);
+    // Nothing carried: the kind's rule, as before #1130.
+    expect(attacksRemaining(squad, [], T)).toBe(2);
+    expect(attacksRemaining({ kind: "mech", ap: 2 }, [], T)).toBe(1);
+    expect(
+      attacksRemaining({ kind: "mech", ap: 2 }, templates.twin!.weapons, T),
+    ).toBe(2);
+    // Spent is spent, whatever the weapon says.
+    expect(
+      attacksRemaining({ kind: "squad", ap: 0 }, templates.rifle!.weapons, T),
+    ).toBe(0);
   });
 });
 

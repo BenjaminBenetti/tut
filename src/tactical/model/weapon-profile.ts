@@ -82,6 +82,16 @@ export interface WeaponProfile {
    * force is data: `PropDefinition.demolition` and `DemolitionTuning`.
    */
   readonly demoForce?: number;
+  /**
+   * Whether a shot from this weapon spends every remaining action point
+   * (#1130). Absent, the unit kind's rule in `CombatTuning.attackEndsTurn`
+   * decides, as it always did: a squad's attack costs one action and a
+   * mech's or a bug's ends its turn. Present, it overrides that rule for
+   * this weapon alone — a radio squad's SMG and a sniper's rifle are
+   * one-shot-a-turn weapons in the hands of a kind that otherwise fires
+   * twice — so the volume of fire is the weapon's, not the kind's.
+   */
+  readonly endsTurn?: boolean;
 }
 
 // ===========================================

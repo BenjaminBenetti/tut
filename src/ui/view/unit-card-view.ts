@@ -1,5 +1,6 @@
 import type { Unit } from "../../tactical/model/unit";
 import type { UnitTemplate } from "../../tactical/model/unit-template";
+import { displayWeaponName } from "../../tactical/model/unit-weapon";
 import { formatWhole } from "../service/format";
 import { iconGlyph } from "./icon-glyph";
 import { chargeRegisterFor } from "../service/charge-register";
@@ -188,7 +189,7 @@ export class UnitCardView {
             : []),
         ];
         return {
-          name: template.weapons.length > 1 ? weapon.name : undefined,
+          name: displayWeaponName(template.weapons, weapon),
           value: [
             `range ${formatWhole(p.range)} · acc ${formatWhole(p.accuracy)} · dmg ${formatWhole(p.damage)} · pen ${formatWhole(p.armorPen)}`,
             ...extras,

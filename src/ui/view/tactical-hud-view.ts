@@ -1319,18 +1319,22 @@ export class TacticalHudView {
   /**
    * How many attacks the card should show.
    *
-   * `attacksRemaining` takes `Pick<Unit, "kind" | "ap">` — it cannot see
-   * ammunition, so it answered `1` for a squad with an empty magazine
-   * and the card advertised `ATTACKS 1` beside `ammo 0 / 3`. Asking
-   * `refusalFor` first means the count and the words are one answer
-   * rather than two (#1062).
+   * `attacksRemaining` reads kind, action points and, since #1130, the
+   * weapons carried — it cannot see ammunition, so it answered `1` for
+   * a squad with an empty magazine and the card advertised `ATTACKS 1`
+   * beside `ammo 0 / 3`. Asking `refusalFor` first means the count and
+   * the words are one answer rather than two (#1062).
    *
    * @param unit - The selected unit.
    * @returns Attacks left, or zero when the unit cannot attack at all.
    */
   private attacksLeftFor(unit: Unit): number {
     return this.refusalFor("attack") === undefined
-      ? attacksRemaining(unit, this.deps.combatTuning)
+      ? attacksRemaining(
+          unit,
+          this.mission?.templates[unit.templateId]?.weapons ?? [],
+          this.deps.combatTuning,
+        )
       : 0;
   }
 

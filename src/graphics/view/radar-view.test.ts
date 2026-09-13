@@ -127,7 +127,7 @@ describe("RadarView", () => {
       expect(puff.position.y).toBeGreaterThan(0.7);
       expect(puff.material.opacity).toBeGreaterThanOrEqual(0);
       expect(puff.material.opacity).toBeLessThan(1);
-      expect(puff.material.color.getHex()).toBe(0x2f2f2f);
+      expect(puff.material.color.getHex()).toBe(0x6b6b6b);
       expect(puff.material.depthWrite).toBe(false);
     }
     // The plume rises: puffs are spread over the loop, so at least one is above where it was born.

@@ -14,11 +14,11 @@ import { surfaceRise, tileRiseFor } from "./surface-rise";
 // ===========================================
 
 describe("surfaceRise (#1130)", () => {
-  it("lifts a sidewalk by the half of its slab that stands above the plane", () => {
+  it("lifts a sidewalk by its slab height less half the ground's", () => {
     const sidewalk = MODEL_MANIFEST["tile.city.sidewalk"].height;
     expect(sidewalk).toBeGreaterThan(GROUND_SLAB_THICKNESS);
     expect(surfaceRise(SurfaceIds.SIDEWALK)).toBeCloseTo(
-      (sidewalk - GROUND_SLAB_THICKNESS) / 2,
+      sidewalk - GROUND_SLAB_THICKNESS / 2,
       6,
     );
   });

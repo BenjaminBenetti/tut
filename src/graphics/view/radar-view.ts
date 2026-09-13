@@ -34,7 +34,7 @@ export const RADAR_SMOKE_NAME = "radar-smoke";
 export const HEAD_TURN_RATE = (2 * Math.PI) / 20;
 
 /** Puffs per dead scanner; each rises, swells and fades on its own phase of one loop. */
-const SMOKE_PUFFS = 3;
+const SMOKE_PUFFS = 5;
 
 /** Seconds one puff takes from the dish to gone. */
 const SMOKE_PERIOD = 2.4;
@@ -43,20 +43,25 @@ const SMOKE_PERIOD = 2.4;
 const SMOKE_START_HEIGHT = 0.8;
 
 /** How far a puff rises over its loop, in world units. */
-const SMOKE_RISE = 0.9;
+const SMOKE_RISE = 1.4;
 
 /** A puff's size at birth and how much it swells by the end. */
-const SMOKE_BASE_SCALE = 0.18;
-const SMOKE_GROWTH = 0.32;
+const SMOKE_BASE_SCALE = 0.45;
+const SMOKE_GROWTH = 0.65;
 
 /** Peak opacity of a puff; it fades in over the first quarter and out over the rest. */
-const SMOKE_PEAK_OPACITY = 0.6;
+const SMOKE_PEAK_OPACITY = 0.85;
 
 /** Sideways wander of a rising puff. */
 const SMOKE_DRIFT = 0.08;
 
-/** Dark, sooty grey: an electrical fire, not a campfire. */
-const SMOKE_COLOUR = 0x2f2f2f;
+/**
+ * Mid grey rather than soot: on the dark ground of a night map a black
+ * puff at half opacity vanished (measured on #1130's first frame, A/B
+ * against opaque magenta), and the plume has to read from the default
+ * zoom, where the whole scanner is thirty pixels tall.
+ */
+const SMOKE_COLOUR = 0x6b6b6b;
 
 // ===========================================
 // Types

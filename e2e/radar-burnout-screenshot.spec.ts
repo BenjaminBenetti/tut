@@ -89,6 +89,10 @@ test("a burnt-out scanner smokes beside a live one", async ({ page }) => {
     "2",
   );
   await settleForShot(page);
+  // Close enough to tell a turning dish from a still one: zoom in on the
+  // scanners, which stand three tiles south of the line.
+  await page.mouse.move(720, 470);
+  await page.mouse.wheel(0, -900);
   // Mid-way through the smoke's loop, so the puffs are up and visible.
   await page.waitForTimeout(1200);
   await drawnFrame(page);

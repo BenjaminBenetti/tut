@@ -36,6 +36,16 @@ import type { TileRise } from "../model/tile-rise";
  * nothing; water is recessed, and a slab thinner than the ground's
  * never rises above it.
  *
+ * The rise is the slab's **whole** height above its pivot's drop, not
+ * the half the diagram would suggest. Measured on #1130's city frame
+ * (seed 4242, `move-range-sidewalk-screenshot.spec.ts`), a band lifted
+ * 0.02 + 0.035 was still swallowed by the sidewalk, 0.02 + 0.05 too,
+ * and 0.02 + 0.07 was the first to show — the drawn slab stands higher
+ * than its accessor bounds say, and the renderer is the authority on
+ * what hides a quad. Taking the full height (0.095 for the sidewalk)
+ * clears it with margin; a slab no thicker than the ground rises
+ * nothing, so every road, grass and floor band stays where it was.
+ *
  * @param surface - The surface id of the tile.
  * @param manifest - The model registry; the shipped one by default.
  * @returns World units above `tileTop`, never negative.
@@ -51,7 +61,11 @@ export function surfaceRise(
   if (modelId === undefined) {
     return 0;
   }
-  return Math.max(0, (manifest[modelId].height - GROUND_SLAB_THICKNESS) / 2);
+  const height = manifest[modelId].height;
+  if (height <= GROUND_SLAB_THICKNESS) {
+    return 0;
+  }
+  return height - GROUND_SLAB_THICKNESS / 2;
 }
 
 /**

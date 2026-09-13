@@ -294,6 +294,20 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
   }
 
   /**
+   * Paints the reach of the weapon rested on in the unit panel, or
+   * clears it (#1132), and counts it on the body as the blast is, so a
+   * spec can read that the preview is up without a hook.
+   */
+  markWeaponRange(tiles: readonly TileCoord[]): void {
+    this.attached?.overlays.setWeaponRangeFill(tiles);
+    if (tiles.length === 0) {
+      delete document.body.dataset.tacticalRangeTiles;
+    } else {
+      document.body.dataset.tacticalRangeTiles = String(tiles.length);
+    }
+  }
+
+  /**
    * Shows range, cover and line-of-sight overlays for `unitId`, and
    * rings the unit itself, or clears both.
    *

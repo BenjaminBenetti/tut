@@ -87,6 +87,15 @@ export interface TacticalSceneHost {
   markBlast(tiles: readonly TileCoord[]): void;
 
   /**
+   * Paints the tiles the weapon the player rests on in the unit panel
+   * can reach, or clears them (#1132): the range preview, red where the
+   * move preview is blue.
+   *
+   * @param tiles - The reachable tiles, or empty for none.
+   */
+  markWeaponRange(tiles: readonly TileCoord[]): void;
+
+  /**
    * Shows the overlays for a selected unit, or clears them.
    *
    * @param unitId - The selected unit.

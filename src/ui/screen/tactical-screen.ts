@@ -199,6 +199,11 @@ export class TacticalScreen implements Screen {
         onMarkBlast: (tiles) => {
           deps.sceneHost?.markBlast(tiles);
         },
+        // The reach of the weapon rested on in the unit panel, painted
+        // on the ground it can hit (#1132).
+        onMarkWeaponRange: (tiles) => {
+          deps.sceneHost?.markWeaponRange(tiles);
+        },
         // The status chips sit at the top of each unit's model, which
         // only the scene can locate.
         headAnchorFor: (unitId) =>

@@ -56,6 +56,9 @@ import {
   OVERLAY_LIFT,
   RANGE_THICKNESS,
   WEAPON_RANGE_COLOUR,
+  WEAPON_RANGE_FILL_COLOUR,
+  WEAPON_RANGE_FILL_FOOTPRINT,
+  WEAPON_RANGE_FILL_OPACITY,
   WEAPON_RANGE_LINE_WIDTH,
   WEAPON_RANGE_OPACITY,
 } from "../data/tactical-overlay-palette";
@@ -532,6 +535,8 @@ export class TacticalOverlays implements Disposable {
   private readonly markedTile: OverlayLayer;
   /** The tiles a previewed blast would reach (#1121), or none. */
   private readonly blast: OverlayLayer;
+  /** The tiles the weapon rested on in the unit panel can reach (#1132), or none. */
+  private readonly rangeFill: OverlayLayer;
   /**
    * Off until something asks for it (#590). The screen drives this from
    * armed intent, and a scene that defaulted to on would paint the
@@ -641,6 +646,21 @@ export class TacticalOverlays implements Disposable {
       4,
       rise,
     );
+    this.rangeFill = new OverlayLayer(
+      "overlay-weapon-range-fill",
+      // The move band's square in the danger tone: what the weapon can
+      // reach, painted the way the move preview paints where the unit
+      // can go (#1132).
+      new BoxGeometry(
+        WEAPON_RANGE_FILL_FOOTPRINT,
+        RANGE_THICKNESS,
+        WEAPON_RANGE_FILL_FOOTPRINT,
+      ),
+      WEAPON_RANGE_FILL_COLOUR,
+      WEAPON_RANGE_FILL_OPACITY,
+      2,
+      rise,
+    );
     this.root.add(
       this.weaponRange.mesh,
       this.rangeOneAp.mesh,
@@ -648,6 +668,7 @@ export class TacticalOverlays implements Disposable {
       this.coverLow.mesh,
       this.coverHigh.mesh,
       this.blockedShot.mesh,
+      this.rangeFill.mesh,
       this.blast.mesh,
       this.markedTile.mesh,
     );
@@ -735,10 +756,28 @@ export class TacticalOverlays implements Disposable {
     this.blast.setTiles(tiles, OVERLAY_LIFT * 6, false);
   }
 
+  /**
+   * Paints the tiles the weapon rested on in the unit panel can reach,
+   * or clears them (#1132). Independent of `show` like the blast: the
+   * fill belongs to the hover, not to the selection, and it comes and
+   * goes far more often.
+   *
+   * @param tiles - The reachable tiles, or empty for none.
+   */
+  setWeaponRangeFill(tiles: readonly TileCoord[]): void {
+    // Above the move bands and the cover ticks, and clear of the drop
+    // ship's opaque boarding markers, which swallow any fill below about
+    // six lifts (the blast fill sits at six for the same reason); half a
+    // step under the blast so the two never share a plane, and under the
+    // wheel's frame, which must stay on top of everything.
+    this.rangeFill.setTiles(tiles, OVERLAY_LIFT * 5.5, false);
+  }
+
   /** Hides every layer. */
   clear(): void {
     this.show(EMPTY_OVERLAYS);
     this.setBlastTiles([]);
+    this.setWeaponRangeFill([]);
   }
 
   /**
@@ -766,6 +805,7 @@ export class TacticalOverlays implements Disposable {
     blockedShot: number;
     markedTile: number;
     blast: number;
+    rangeFill: number;
   } {
     return {
       weaponRange: this.weaponRange.edgeCount(),
@@ -776,6 +816,7 @@ export class TacticalOverlays implements Disposable {
       blockedShot: this.blockedShot.mesh.count,
       markedTile: this.markedTile.mesh.count,
       blast: this.blast.mesh.count,
+      rangeFill: this.rangeFill.mesh.count,
     };
   }
 
@@ -788,6 +829,7 @@ export class TacticalOverlays implements Disposable {
       this.coverLow.mesh,
       this.coverHigh.mesh,
       this.blockedShot.mesh,
+      this.rangeFill.mesh,
       this.blast.mesh,
       this.markedTile.mesh,
     ];
@@ -802,6 +844,7 @@ export class TacticalOverlays implements Disposable {
     this.coverHigh.dispose();
     this.blockedShot.dispose();
     this.blast.dispose();
+    this.rangeFill.dispose();
     this.markedTile.dispose();
     this.root.removeFromParent();
   }

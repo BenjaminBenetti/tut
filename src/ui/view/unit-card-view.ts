@@ -1,5 +1,6 @@
 import type { Unit } from "../../tactical/model/unit";
 import type { UnitTemplate } from "../../tactical/model/unit-template";
+import type { WeaponId } from "../../tactical/model/unit-weapon";
 import { displayWeaponName } from "../../tactical/model/unit-weapon";
 import { formatWhole } from "../service/format";
 import { weaponProfileText } from "../service/weapon-profile-text";
@@ -13,8 +14,24 @@ import { chargeRegisterFor } from "../service/charge-register";
 /** What a field with nothing to show reads as. */
 const EMPTY_FIELD = "—";
 
+/** What the card tells its owner. */
+export interface UnitCardHandlers {
+  /**
+   * The pointer or keyboard focus came to rest on a weapon's row, or
+   * left it (`undefined`) (#1132). The owner paints that weapon's reach
+   * on the ground while it rests there.
+   */
+  readonly onWeaponHover?: (weaponId: WeaponId | undefined) => void;
+}
+
 /** One titled block in a card field: a weapon's name and its numbers. */
 interface CardEntry {
+  /**
+   * What the block stands for, when resting on it means something: a
+   * weapon's id, so the row can announce itself (#1132). Absent for a
+   * block that is only text.
+   */
+  readonly id?: string;
   /** Omitted when the unit carries one of whatever this lists. */
   readonly name?: string;
   readonly value: string;
@@ -58,6 +75,18 @@ export class UnitCardView {
   private body: HTMLElement | undefined;
   private fields = new Map<string, HTMLElement>();
   private meter: HTMLElement | undefined;
+  private readonly handlers: UnitCardHandlers;
+  /** The weapon row the pointer or focus rests on, if any (#1132). */
+  private hovered: WeaponId | undefined;
+
+  // ===========================================
+  // Constructor
+  // ===========================================
+
+  /** @param handlers - Whom to tell about a weapon row being rested on; none by default. */
+  constructor(handlers: UnitCardHandlers = {}) {
+    this.handlers = handlers;
+  }
 
   // ===========================================
   // Lifecycle
@@ -159,6 +188,8 @@ export class UnitCardView {
       return;
     }
     if (!unit || !template) {
+      // A hidden row cannot be left by the pointer, so the card says so.
+      this.hover(undefined);
       this.body.hidden = true;
       this.empty.hidden = false;
       return;
@@ -190,6 +221,7 @@ export class UnitCardView {
         const capacity = weapon.charges;
         const left = unit.charges?.[weapon.id] ?? capacity ?? 0;
         return {
+          id: weapon.id,
           name: displayWeaponName(template.weapons, weapon),
           // The same line the mech bay prints for the weapon (#1132).
           value: weaponProfileText(weapon.profile),
@@ -213,8 +245,14 @@ export class UnitCardView {
     this.empty.hidden = true;
   }
 
+  /** The weapon row the pointer or focus rests on, if any (#1132). */
+  hoveredWeapon(): WeaponId | undefined {
+    return this.hovered;
+  }
+
   /** Removes the card. */
   unmount(): void {
+    this.hover(undefined);
     this.root?.remove();
     this.root = undefined;
     this.empty = undefined;
@@ -226,6 +264,15 @@ export class UnitCardView {
   // ===========================================
   // Helpers
   // ===========================================
+
+  /** Records where the pointer or focus rests and tells the owner once per change. */
+  private hover(weaponId: WeaponId | undefined): void {
+    if (weaponId === this.hovered) {
+      return;
+    }
+    this.hovered = weaponId;
+    this.handlers.onWeaponHover?.(weaponId);
+  }
 
   /** Writes a field's text only when it changed. */
   private set(field: string, text: string): void {
@@ -261,6 +308,7 @@ export class UnitCardView {
     }
     if (entries.length === 0) {
       delete el.dataset.entries;
+      this.hover(undefined);
       this.set(field, EMPTY_FIELD);
       return;
     }
@@ -268,17 +316,44 @@ export class UnitCardView {
     // store tick, and replacing these nodes each time would restart any
     // transition on them.
     const key = entries
-      .map((e) => `${e.name ?? ""}\u0000${e.value}\u0000${e.charges ?? ""}`)
+      .map(
+        (e) =>
+          `${e.id ?? ""}\u0000${e.name ?? ""}\u0000${e.value}\u0000${e.charges ?? ""}`,
+      )
       .join("\u0001");
     if (el.dataset.entries === key) {
       return;
     }
     el.dataset.entries = key;
+    // The rows are about to be replaced, and a replaced row never fires
+    // its leave; whatever rested on one is resting on nothing now.
+    this.hover(undefined);
     const doc = el.ownerDocument;
     el.replaceChildren(
       ...entries.map((entry) => {
         const block = doc.createElement("div");
         block.className = "tut-card__entry";
+        if (entry.id !== undefined) {
+          // A row that can be rested on (#1132): by pointer, and by
+          // keyboard, since a preview that only the mouse can reach is
+          // a preview half the players cannot have.
+          block.dataset.role = "weapon-row";
+          block.dataset.weaponId = entry.id;
+          block.tabIndex = 0;
+          const id = entry.id;
+          for (const type of ["mouseenter", "focus"]) {
+            block.addEventListener(type, () => {
+              this.hover(id);
+            });
+          }
+          for (const type of ["mouseleave", "blur"]) {
+            block.addEventListener(type, () => {
+              if (this.hovered === id) {
+                this.hover(undefined);
+              }
+            });
+          }
+        }
         if (entry.name !== undefined) {
           const name = doc.createElement("span");
           name.className = "tut-card__entry-name tut-dim";

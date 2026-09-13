@@ -248,6 +248,21 @@ export const BLAST_OPACITY = 0.32;
 export const BLAST_FOOTPRINT = 0.84;
 
 /**
+ * `ui-danger`: the ground a weapon can reach from where its unit stands
+ * (#1132), painted while the player rests on that weapon in the unit
+ * panel. Red where the move preview is blue, so the two answers — where
+ * I can go, what I can hit — never share a colour; the same token as the
+ * blast fill, because both are ground a shot touches.
+ */
+export const WEAPON_RANGE_FILL_COLOUR = 0xe0453c;
+
+/** A fill on the same light footing as the move bands, legible over them. */
+export const WEAPON_RANGE_FILL_OPACITY = 0.3;
+
+/** Footprint of the range fill within its tile, in tiles; the move band's, so the two tile. */
+export const WEAPON_RANGE_FILL_FOOTPRINT = 0.84;
+
+/**
  * Outer footprint of the frame, in tiles: the whole tile. It has to read
  * over the move band beneath it, and at 0.96 with a thin band only a
  * sliver showed past the band's quad.

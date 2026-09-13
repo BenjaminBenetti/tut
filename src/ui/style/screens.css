@@ -757,7 +757,7 @@
   inset: 0;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
-  grid-template-columns: min(300px, 30vw) minmax(0, 1fr) min(300px, 30vw);
+  grid-template-columns: min(300px, 30vw) minmax(0, 1fr) min(360px, 32vw);
   grid-template-areas:
     "top top top"
     "rail map side"

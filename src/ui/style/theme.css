@@ -109,11 +109,21 @@ h3 {
  * them running together read as one paragraph (#641).
  */
 .tut-card__entry + .tut-card__entry {
-  margin-top: 0.4em;
+  margin-top: 0.25em;
 }
 
-.tut-card__entry-name {
+.tut-card__entry-head {
   display: block;
+}
+
+/* Block rows of the card's key-value grid: the term above, the entries
+   under it across the whole width (#1134). */
+.tut-kv .tut-kv__block {
+  grid-column: 1 / -1;
+}
+
+dd.tut-kv__block {
+  margin-bottom: var(--space-1);
 }
 
 /*
@@ -146,7 +156,7 @@ h3 {
  * so it cannot be mistaken for another `·` term in the profile above.
  */
 .tut-card__entry-charges {
-  display: block;
+  display: inline;
 }
 
 .tut-dim {

@@ -190,6 +190,13 @@ export class UnitCardView {
       value.className = "tut-mono";
       value.dataset.field = field;
       value.textContent = EMPTY_FIELD;
+      if (field === "weapon" || field === "equipment") {
+        // A block row: the term on its own line and the entries under
+        // it across the whole card, so a weapon's numbers fit on one or
+        // two lines instead of four in the value column (#1134).
+        term.classList.add("tut-kv__block");
+        value.classList.add("tut-kv__block");
+      }
       grid.append(term, value);
       this.fields.set(field, value);
       this.rows.set(field, [term, value]);
@@ -469,22 +476,36 @@ export class UnitCardView {
             });
           }
         }
-        if (entry.name !== undefined) {
-          const name = doc.createElement("span");
-          name.className = "tut-card__entry-name tut-dim";
-          name.textContent = entry.name;
-          block.appendChild(name);
+        // The name and its pool share a line ("Grenade · uses 2 / 2"):
+        // a card with two weapons or two items has to fit its column
+        // without scrolling (#1134), and the pool is short.
+        if (entry.name !== undefined || entry.charges !== undefined) {
+          const head = doc.createElement("span");
+          head.className = "tut-card__entry-head";
+          if (entry.name !== undefined) {
+            const name = doc.createElement("span");
+            name.className = "tut-card__entry-name tut-dim";
+            name.textContent = entry.name;
+            head.appendChild(name);
+          }
+          if (entry.charges !== undefined) {
+            if (entry.name !== undefined) {
+              const dot = doc.createElement("span");
+              dot.className = "tut-dim";
+              dot.textContent = " · ";
+              head.appendChild(dot);
+            }
+            const charges = doc.createElement("span");
+            charges.className = "tut-card__entry-charges tut-dim";
+            charges.dataset.role = "charges";
+            charges.textContent = entry.charges;
+            head.appendChild(charges);
+          }
+          block.appendChild(head);
         }
         const value = doc.createElement("span");
         value.textContent = entry.value;
         block.appendChild(value);
-        if (entry.charges !== undefined) {
-          const charges = doc.createElement("span");
-          charges.className = "tut-card__entry-charges tut-dim";
-          charges.dataset.role = "charges";
-          charges.textContent = entry.charges;
-          block.appendChild(charges);
-        }
         return block;
       }),
     );

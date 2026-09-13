@@ -36,20 +36,6 @@ describe("combat tuning", () => {
     expect(T.reachBonusPerStorey).toBeGreaterThanOrEqual(1.5);
   });
 
-  it("steadies a shot at the ground without making it certain (#1121)", () => {
-    expect(T.groundShotBonus).toBeGreaterThanOrEqual(0);
-    // The starter mortar (accuracy 60 after its own −10) at ten tiles:
-    // more likely to land than not, which is what the Executive
-    // Director asked for after five misses in a row.
-    expect(60 + T.groundShotBonus - T.rangePenaltyPerTile * 9).toBeGreaterThan(
-      50,
-    );
-    // And at its full sixteen tiles, still not a certainty.
-    expect(60 + T.groundShotBonus - T.rangePenaltyPerTile * 15).toBeLessThan(
-      T.maxHitChance,
-    );
-  });
-
   it("rolls damage in a sane band and costs whole action points", () => {
     expect(T.damageSpread).toBeGreaterThanOrEqual(0);
     expect(T.damageSpread).toBeLessThan(1);

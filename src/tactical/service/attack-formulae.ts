@@ -70,22 +70,3 @@ export function damageRange(
     Math.max(tuning.minDamage, high - effectiveArmor),
   ];
 }
-
-/**
- * Whole-percent chance a shot aimed at a tile lands (#1121): the same
- * formula, with the tuning's ground-shot bonus on the weapon's accuracy.
- * The caller has already zeroed the cover and flank terms, because there
- * is no body behind cover; this is the further fact that the ground
- * does not move. Clamped into the same band.
- */
-export function groundHitChance(
-  weapon: WeaponProfile,
-  terrain: AttackTerrain,
-  tuning: CombatTuning,
-): number {
-  return hitChance(
-    { ...weapon, accuracy: weapon.accuracy + tuning.groundShotBonus },
-    terrain,
-    tuning,
-  );
-}

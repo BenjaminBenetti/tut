@@ -19,7 +19,6 @@ import type { WeaponReachTuning } from "./weapon-reach-tuning";
  *               + coverModifier[cover]        (cover the target has against this attacker)
  *               + flankBonus                  (target has cover elsewhere but none here)
  *               + elevationPerStorey × levels  (attacker above: +, below: −, capped)
- *               + groundShotBonus              (aimed at a tile: no cover, no flank, and this)
  *               , minHitChance, maxHitChance )
  *
  *   damage  = roll in [damage × (1 − spread), damage × (1 + spread)]
@@ -36,14 +35,6 @@ export interface CombatTuning extends WeaponReachTuning {
   readonly coverModifier: Readonly<Record<CoverLevel, number>>;
   /** Accuracy gained when the target has cover on some side but none against this attacker. Non-negative. */
   readonly flankBonus: number;
-  /**
-   * Accuracy gained by a shot aimed at a tile rather than a unit (#1121):
-   * the ground does not move, duck or hide. Non-negative. Applied on top
-   * of the ordinary formula with its cover and flank terms at zero, so a
-   * mortar dropped on open ground lands more often than it misses at
-   * middle range and a rifle at the same range is still the harder shot.
-   */
-  readonly groundShotBonus: number;
   /** Accuracy per level the attacker stands above the target (negative below). Non-negative. */
   readonly elevationPerStorey: number;
   /** Largest elevation modifier in either direction. Non-negative. */

@@ -78,6 +78,11 @@ const TEMPLATES: Record<string, UnitTemplate> = {
     ...template("mech:mech-1", "tdf.mech.assembled-a", "mech"),
     loadout: STARTER_LOADOUT,
   },
+  // A 2×2 unit (#1130): its position is the anchor tile of four.
+  "bug:brute": {
+    ...template("bug:brute", "bug.brute", "infantry"),
+    footprint: 2,
+  },
 };
 
 function template(
@@ -579,6 +584,23 @@ describe("TacticalSceneBuilder elevation tethers", () => {
     expect(tethersIn(builder).size).toBe(0);
   });
 
+  it("hangs a 2×2 unit's tether under the middle of its footprint, not its anchor tile (#1130)", async () => {
+    const { builder } = tetherScene();
+    await builder.update(
+      [
+        {
+          ...unit("b1", "bug:brute", 2, 2),
+          pos: { x: 2, y: STOREY_LAYERS, z: 2 },
+        },
+      ],
+      TEMPLATES,
+    );
+    builder.setLayerFocus({ storey: 0, storeyCount: 2, cutLevel: 1 });
+    const line = tethersIn(builder).get("b1");
+    expect(line?.position.x).toBeCloseTo(3);
+    expect(line?.position.z).toBeCloseTo(3);
+  });
+
   // Sabotage-driven: the first version of these tests passed with the
   // support search ignoring the cut entirely, because the only thing
   // under the unit was ground that is never hidden. Three storeys, unit
@@ -701,5 +723,96 @@ describe("TacticalSceneBuilder elevation tethers", () => {
     expect(tethersIn(builder).size).toBe(1);
     await builder.update([{ ...upstairs(), hp: 0 }], TEMPLATES);
     expect(tethersIn(builder).size).toBe(0);
+  });
+});
+
+// ===========================================
+// Footprints (#1130)
+// ===========================================
+
+describe("TacticalSceneBuilder footprints", () => {
+  it("stands a 2×2 unit on the corner its four tiles share, twice the size, and picks it anywhere on the block", async () => {
+    const { builder } = build();
+    await builder.update(
+      [unit("u1", "squad:squad-1", 0, 0), unit("b1", "bug:brute", 2, 2)],
+      TEMPLATES,
+    );
+    // Anchor (2, 2): the block is (2..3, 2..3), centred on (3, 3).
+    expect(builder.unitWorldPosition("b1")).toEqual({
+      x: 3,
+      y: SLAB_HEIGHT,
+      z: 3,
+    });
+    // The one-tile unit beside it is exactly where it always was.
+    expect(builder.unitWorldPosition("u1")).toEqual({
+      x: 0.5,
+      y: SLAB_HEIGHT,
+      z: 0.5,
+    });
+    // The fake model is a 1 u box; at footprint 2 the unit is 2 u tall.
+    expect(builder.unitHeight("b1")).toBeCloseTo(2);
+    expect(builder.unitHeight("u1")).toBeCloseTo(1);
+    const camera = topDownCamera();
+    // The model spans the block (0.8 u box ×2 = 1.6 u, centred on 3, 3),
+    // so a click on any of its four tiles lands on it.
+    expect(builder.pickUnit(ndcOf(3, 3), camera)).toBe("b1");
+    expect(builder.pickUnit(ndcOf(2.4, 2.4), camera)).toBe("b1");
+    expect(builder.pickUnit(ndcOf(3.6, 3.6), camera)).toBe("b1");
+    expect(builder.pickUnit(ndcOf(1.5, 1.5), camera)).toBeUndefined();
+  });
+
+  it("answers where a unit's feet go on any tile, sized to that unit's footprint", async () => {
+    const { builder } = build();
+    await builder.update(
+      [unit("u1", "squad:squad-1", 0, 0), unit("b1", "bug:brute", 2, 2)],
+      TEMPLATES,
+    );
+    const tile = { x: 1, y: 0, z: 4 };
+    expect(builder.unitWorldPositionAt("u1", tile)).toEqual({
+      x: 1.5,
+      y: SLAB_HEIGHT,
+      z: 4.5,
+    });
+    expect(builder.unitWorldPositionAt("b1", tile)).toEqual({
+      x: 2,
+      y: SLAB_HEIGHT,
+      z: 5,
+    });
+    // Off the map, or for a unit the scene does not have: nothing.
+    expect(
+      builder.unitWorldPositionAt("b1", { x: 9, y: 0, z: 9 }),
+    ).toBeUndefined();
+    expect(builder.unitWorldPositionAt("ghost", tile)).toBeUndefined();
+  });
+
+  it("knows a loading unit's footprint before its model has arrived, and forgets a removed one", async () => {
+    const { builder, models } = build();
+    models.hold();
+    const pending = builder.update([unit("b1", "bug:brute", 2, 2)], TEMPLATES);
+    expect(builder.unitWorldPositionAt("b1", { x: 0, y: 0, z: 0 })).toEqual({
+      x: 1,
+      y: SLAB_HEIGHT,
+      z: 1,
+    });
+    models.open();
+    await pending;
+    await builder.update([], TEMPLATES);
+    expect(
+      builder.unitWorldPositionAt("b1", { x: 0, y: 0, z: 0 }),
+    ).toBeUndefined();
+  });
+
+  it("re-poses a moved 2×2 unit to its new footprint centre", async () => {
+    const { builder } = build();
+    await builder.update([unit("b1", "bug:brute", 2, 2)], TEMPLATES);
+    await builder.update(
+      [{ ...unit("b1", "bug:brute", 0, 1), facing: "s" }],
+      TEMPLATES,
+    );
+    expect(builder.unitWorldPosition("b1")).toEqual({
+      x: 1,
+      y: SLAB_HEIGHT,
+      z: 2,
+    });
   });
 });

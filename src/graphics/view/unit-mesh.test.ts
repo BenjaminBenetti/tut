@@ -1,4 +1,4 @@
-import type { MeshBasicMaterial } from "three";
+import type { MeshBasicMaterial, RingGeometry } from "three";
 import { BoxGeometry, Group, Mesh, MeshStandardMaterial } from "three";
 import { describe, expect, it } from "vitest";
 
@@ -91,5 +91,48 @@ describe("UnitMesh", () => {
     parent.add(mesh.object);
     mesh.dispose();
     expect(parent.children).toHaveLength(0);
+  });
+
+  // ===========================================
+  // Footprints (#1130)
+  // ===========================================
+
+  it("a one-tile unit is unchanged: unit scale, tile-centre pose, tile-sized rings", () => {
+    const mesh = new UnitMesh("unit-1", model(), undefined, 1);
+    mesh.setPose({ x: 3, y: 0, z: 5 }, "n");
+    expect(mesh.footprint).toBe(1);
+    expect(mesh.worldPosition()).toEqual({ x: 3.5, y: SLAB_HEIGHT, z: 5.5 });
+    const inner = mesh.object.getObjectByName("unit-model:unit-1")!;
+    expect(inner.scale.x).toBe(1);
+    const ring = mesh.object.getObjectByName("selection-ring") as Mesh;
+    expect((ring.geometry as RingGeometry).parameters.outerRadius).toBe(0.5);
+  });
+
+  it("stands a 2×2 unit on the corner its four tiles share and doubles its model and rings", () => {
+    const mesh = new UnitMesh("brute", model(), undefined, 2);
+    mesh.setPose({ x: 3, y: 1, z: 5 }, "w");
+    expect(mesh.footprint).toBe(2);
+    // The anchor is (3, 5); the block covers (3..4, 5..6) and its middle
+    // is the shared corner at (4, 6), at the anchor level's top.
+    expect(mesh.worldPosition()).toEqual({
+      x: 4,
+      y: LAYER_HEIGHT + SLAB_HEIGHT,
+      z: 6,
+    });
+    expect(mesh.object.rotation.y).toBe(FACING_YAW.w);
+    // The art is authored to one tile; the same art at twice the scale
+    // fills the four tiles instead of being squashed into one.
+    const inner = mesh.object.getObjectByName("unit-model:brute")!;
+    expect([inner.scale.x, inner.scale.y, inner.scale.z]).toEqual([2, 2, 2]);
+    // Its rings circle the whole block, not one tile of it.
+    const selection = mesh.object.getObjectByName("selection-ring") as Mesh;
+    const hover = mesh.object.getObjectByName("hover-ring") as Mesh;
+    expect((selection.geometry as RingGeometry).parameters.outerRadius).toBe(1);
+    expect((hover.geometry as RingGeometry).parameters.outerRadius).toBeCloseTo(
+      0.94,
+    );
+    // The group itself stays at unit scale: the queue's grow and fade
+    // scale the group from 0 to 1 and must still land on the full size.
+    expect(mesh.object.scale.x).toBe(1);
   });
 });

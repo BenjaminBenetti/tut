@@ -816,3 +816,63 @@ describe("TacticalSceneBuilder footprints", () => {
     });
   });
 });
+
+describe("TacticalSceneBuilder marks under the storey cut (#1134)", () => {
+  const groundFloor = { x: 2, y: 0, z: 2 };
+  const firstFloor = { x: 2, y: STOREY_LAYERS, z: 2 };
+  const cutToGround = { storey: 0, storeyCount: 2, cutLevel: 1 };
+  const uncut = { storey: 1, storeyCount: 2, cutLevel: undefined };
+
+  it("answers the map view's cut for a tile", () => {
+    const { builder } = tetherScene();
+    expect(builder.isCut(firstFloor)).toBe(false);
+    builder.setLayerFocus(cutToGround);
+    expect(builder.isCut(firstFloor)).toBe(true);
+    expect(builder.isCut(groundFloor)).toBe(false);
+    builder.setLayerFocus(uncut);
+    expect(builder.isCut(firstFloor)).toBe(false);
+  });
+
+  it("withholds a charge marker on a peeled floor and redraws it when the view rises", () => {
+    const { builder } = tetherScene();
+    const charges = [
+      {
+        id: "c-low",
+        ownerId: "u1",
+        equipmentId: "breaching-charge",
+        tile: groundFloor,
+        detonatesOnTurn: 2,
+      },
+      {
+        id: "c-high",
+        ownerId: "u1",
+        equipmentId: "breaching-charge",
+        tile: firstFloor,
+        detonatesOnTurn: 2,
+      },
+    ];
+    builder.updateCharges(charges);
+    expect(builder.chargeIds()).toEqual(["c-low", "c-high"]);
+    builder.setLayerFocus(cutToGround);
+    expect(builder.chargeIds()).toEqual(["c-low"]);
+    // A refresh from state while cut keeps the rule.
+    builder.updateCharges(charges);
+    expect(builder.chargeIds()).toEqual(["c-low"]);
+    builder.setLayerFocus(uncut);
+    expect(builder.chargeIds()).toEqual(["c-low", "c-high"]);
+  });
+
+  it("withholds a radar blip on a peeled floor and redraws it when the view rises", async () => {
+    const { builder } = tetherScene();
+    const contacts = [
+      { kind: "unit" as const, pos: groundFloor },
+      { kind: "structure" as const, pos: firstFloor },
+    ];
+    await builder.updateRadar([], contacts);
+    expect(builder.radarCounts().contacts).toBe(2);
+    builder.setLayerFocus(cutToGround);
+    expect(builder.radarCounts().contacts).toBe(1);
+    builder.setLayerFocus(uncut);
+    expect(builder.radarCounts().contacts).toBe(2);
+  });
+});

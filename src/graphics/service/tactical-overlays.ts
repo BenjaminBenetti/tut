@@ -63,6 +63,8 @@ import {
   WEAPON_RANGE_OPACITY,
 } from "../data/tactical-overlay-palette";
 import type { Disposable } from "../model/disposable";
+import type { TileCut } from "../model/tile-cut";
+import { NO_CUT } from "../model/tile-cut";
 import type { TileRise } from "../model/tile-rise";
 import { NO_RISE } from "../model/tile-rise";
 import { tileTopCentre } from "../view/tactical-map-view";
@@ -544,6 +546,15 @@ export class TacticalOverlays implements Disposable {
    */
   private weaponRangeVisible = false;
   private lastState: OverlayState = EMPTY_OVERLAYS;
+  /**
+   * What the storey view hides (#1134). Every list below is kept as it
+   * was asked for and filtered through this on the way to a layer, so
+   * a change of storey redraws from the same facts.
+   */
+  private cut: TileCut = NO_CUT;
+  private marked: TileCoord | undefined;
+  private blastTiles: readonly TileCoord[] = [];
+  private rangeFillTiles: readonly TileCoord[] = [];
 
   // ===========================================
   // Constructor
@@ -680,29 +691,54 @@ export class TacticalOverlays implements Disposable {
 
   /** Draws `state`; an empty state hides everything. */
   show(state: OverlayState): void {
+    this.lastState = state;
     this.rangeOneAp.setTiles(
-      tilesCosting(state.moveRange, 1),
+      this.shown(tilesCosting(state.moveRange, 1)),
       OVERLAY_LIFT,
       false,
     );
     // The dearer band sits a hair higher so the inset quad reads on top
     // where the two ever overlap.
     this.rangeTwoAp.setTiles(
-      tilesCosting(state.moveRange, 2),
+      this.shown(tilesCosting(state.moveRange, 2)),
       OVERLAY_LIFT * 1.5,
       false,
     );
     this.coverLow.setEdges(
-      state.cover.filter((c) => c.level === CoverLevel.LOW),
+      this.shownMarkers(state.cover.filter((c) => c.level === CoverLevel.LOW)),
       OVERLAY_LIFT * 2,
     );
     this.coverHigh.setEdges(
-      state.cover.filter((c) => c.level === CoverLevel.HIGH),
+      this.shownMarkers(state.cover.filter((c) => c.level === CoverLevel.HIGH)),
       OVERLAY_LIFT * 2,
     );
-    this.blockedShot.setTiles(state.blockedShot, OVERLAY_LIFT * 3, true);
-    this.lastState = state;
+    this.blockedShot.setTiles(
+      this.shown(state.blockedShot),
+      OVERLAY_LIFT * 3,
+      true,
+    );
     this.drawWeaponRange();
+  }
+
+  /**
+   * Tells the overlays what the storey view hides (#1134), and redraws
+   * everything through it. A move band, a cover tick, a blast footprint
+   * or a wheel frame on a floor the cut has peeled away used to hang in
+   * the air over the floor below, which is exactly the floor the player
+   * cut down to read.
+   *
+   * Asked rather than derived: the map view owns the rule (a building
+   * tile is judged on its own floor number, anything else on height),
+   * and two copies of it would drift.
+   *
+   * @param cut - The predicate, or undefined to hide nothing.
+   */
+  setLayerCut(cut: TileCut | undefined): void {
+    this.cut = cut ?? NO_CUT;
+    this.show(this.lastState);
+    this.setMarkedTile(this.marked);
+    this.setBlastTiles(this.blastTiles);
+    this.setWeaponRangeFill(this.rangeFillTiles);
   }
 
   /**
@@ -730,11 +766,12 @@ export class TacticalOverlays implements Disposable {
    * @param tile - The tile to frame, or undefined for none.
    */
   setMarkedTile(tile: TileCoord | undefined): void {
+    this.marked = tile;
     // Above every other plane on the tile: the move band, the cover
     // ticks and the blocked-shot mark all sit lower, and the frame is
     // the one thing that must never be under them.
     this.markedTile.setTiles(
-      tile === undefined ? [] : [tile],
+      this.shown(tile === undefined ? [] : [tile]),
       OVERLAY_LIFT * 7,
       true,
     );
@@ -753,7 +790,8 @@ export class TacticalOverlays implements Disposable {
     // and a fill a hair lower vanished under them on the drop ship's
     // patch (measured on #1121's first frame). The frame is lifted one
     // step further so it still draws over the fill.
-    this.blast.setTiles(tiles, OVERLAY_LIFT * 6, false);
+    this.blastTiles = tiles;
+    this.blast.setTiles(this.shown(tiles), OVERLAY_LIFT * 6, false);
   }
 
   /**
@@ -770,7 +808,8 @@ export class TacticalOverlays implements Disposable {
     // six lifts (the blast fill sits at six for the same reason); half a
     // step under the blast so the two never share a plane, and under the
     // wheel's frame, which must stay on top of everything.
-    this.rangeFill.setTiles(tiles, OVERLAY_LIFT * 5.5, false);
+    this.rangeFillTiles = tiles;
+    this.rangeFill.setTiles(this.shown(tiles), OVERLAY_LIFT * 5.5, false);
   }
 
   /** Hides every layer. */
@@ -790,9 +829,19 @@ export class TacticalOverlays implements Disposable {
    */
   private drawWeaponRange(): void {
     this.weaponRange.setTiles(
-      this.weaponRangeVisible ? this.lastState.weaponRange : [],
+      this.weaponRangeVisible ? this.shown(this.lastState.weaponRange) : [],
       OVERLAY_LIFT,
     );
+  }
+
+  /** The tiles the storey view still shows (#1134). */
+  private shown(tiles: readonly TileCoord[]): TileCoord[] {
+    return tiles.filter((tile) => !this.cut(tile));
+  }
+
+  /** The cover markers whose tile the storey view still shows (#1134). */
+  private shownMarkers(markers: readonly CoverMarker[]): CoverMarker[] {
+    return markers.filter((marker) => !this.cut(marker.tile));
   }
 
   /** Instances drawn per layer, for tests and debug readouts. */

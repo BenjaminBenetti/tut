@@ -1147,7 +1147,7 @@ describe("TacticalScreen phase banners", () => {
 
 describe("TacticalScreen playback lock (#1130)", () => {
   it("holds Leave while the bug phase is still playing (#1132)", () => {
-    const { store, host, endTurn } = playing();
+    const { store, host, endTurn, banner } = playing();
     const leave = (): void => {
       root
         .querySelector<HTMLButtonElement>(
@@ -1162,6 +1162,11 @@ describe("TacticalScreen playback lock (#1130)", () => {
     expect(dialog()?.hidden).toBe(true);
     expect(store.dispatched.map((c) => c.type)).not.toContain(ABANDON_MISSION);
     host.settle();
+    // The scene is done but "Bug phase" is still up: Leave stays held
+    // until the banner has passed, like every other control (#1132).
+    leave();
+    expect(dialog()?.hidden).toBe(true);
+    banner.fire();
     leave();
     expect(dialog()?.hidden).toBe(false);
   });

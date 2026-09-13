@@ -193,7 +193,7 @@ describe("TacticalHudView", () => {
     const hud = new TacticalHudView(
       {
         onCommand: vi.fn(),
-        onBack: vi.fn(),
+        onLeave: vi.fn(),
         onMarkWeaponRange: (tiles) => ranges.push(tiles.length),
       },
       { combatTuning: COMBAT_TUNING, objectiveTuning: OBJECTIVE_TUNING },

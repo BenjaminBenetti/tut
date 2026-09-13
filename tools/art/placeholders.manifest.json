@@ -1022,76 +1022,6 @@
     "bytes": 441052
   },
   {
-    "id": "tdf.infantry.rifle",
-    "category": "units",
-    "path": "assets/models/units/tdf-infantry-rifle.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 0.97,
-    "sockets": [],
-    "quality": "final",
-    "triangles": 1112,
-    "bytes": 122732
-  },
-  {
-    "id": "tdf.infantry.engineer",
-    "category": "units",
-    "path": "assets/models/units/tdf-infantry-engineer.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 0.97,
-    "sockets": [],
-    "quality": "final",
-    "triangles": 1112,
-    "bytes": 122964
-  },
-  {
-    "id": "tdf.infantry.medic",
-    "category": "units",
-    "path": "assets/models/units/tdf-infantry-medic.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 0.97,
-    "sockets": [],
-    "quality": "final",
-    "triangles": 1136,
-    "bytes": 125832
-  },
-  {
-    "id": "tdf.infantry.rocket",
-    "category": "units",
-    "path": "assets/models/units/tdf-infantry-rocket.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 0.98,
-    "sockets": [],
-    "quality": "final",
-    "triangles": 1128,
-    "bytes": 124088
-  },
-  {
-    "id": "tdf.infantry.sniper",
-    "category": "units",
-    "path": "assets/models/units/tdf-infantry-sniper.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 0.97,
-    "sockets": [],
-    "quality": "final",
-    "triangles": 1112,
-    "bytes": 122736
-  },
-  {
     "id": "building.viaduct-parapet",
     "category": "buildings",
     "path": "assets/models/buildings/city-viaduct-parapet.glb",
@@ -1736,6 +1666,76 @@
     "bytes": 20184
   },
   {
+    "id": "tdf.infantry.rifle",
+    "category": "units",
+    "path": "assets/models/units/tdf-infantry-rifle.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.97,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1472,
+    "bytes": 129364
+  },
+  {
+    "id": "tdf.infantry.rocket",
+    "category": "units",
+    "path": "assets/models/units/tdf-infantry-rocket.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.03,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1842,
+    "bytes": 158944
+  },
+  {
+    "id": "tdf.infantry.sniper",
+    "category": "units",
+    "path": "assets/models/units/tdf-infantry-sniper.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.97,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1792,
+    "bytes": 144360
+  },
+  {
+    "id": "tdf.infantry.engineer",
+    "category": "units",
+    "path": "assets/models/units/tdf-infantry-engineer.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.97,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1888,
+    "bytes": 158244
+  },
+  {
+    "id": "tdf.infantry.medic",
+    "category": "units",
+    "path": "assets/models/units/tdf-infantry-medic.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.97,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 1916,
+    "bytes": 158004
+  },
+  {
     "id": "tdf.infantry.radio",
     "category": "units",
     "path": "assets/models/units/tdf-infantry-radio.glb",
@@ -1746,7 +1746,7 @@
     "height": 1.36,
     "sockets": [],
     "quality": "final",
-    "triangles": 1028,
-    "bytes": 97688
+    "triangles": 1816,
+    "bytes": 154764
   }
 ]

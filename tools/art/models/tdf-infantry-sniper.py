@@ -1,4 +1,4 @@
-"""Infantry squad: sniper kit. See squad_parts.py; run through make_model.py."""
+"""Sniper squad: soft caps, hooded shoulder drapes and long scoped rifles."""
 
 import os
 import sys
@@ -9,6 +9,8 @@ from squad_parts import build_squad  # noqa: E402
 FOOTPRINT = (1, 1)
 
 
+# ===========================================
+
 def build() -> None:
-    """Five soldiers on one base, sniper specialist on the left flank."""
+    """Build four marksmen around a low-kneeling binocular spotter."""
     build_squad("sniper")

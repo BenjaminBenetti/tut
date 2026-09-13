@@ -1,4 +1,4 @@
-"""Infantry squad: medic kit. See squad_parts.py; run through make_model.py."""
+"""Medic squad: light uniforms, marked backpacks and chest-slung carbines."""
 
 import os
 import sys
@@ -9,6 +9,8 @@ from squad_parts import build_squad  # noqa: E402
 FOOTPRINT = (1, 1)
 
 
+# ===========================================
+
 def build() -> None:
-    """Five soldiers on one base, medic specialist on the left flank."""
+    """Build five medics with armbands and one carried medical case."""
     build_squad("medic")

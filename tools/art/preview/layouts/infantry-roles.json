@@ -1,0 +1,190 @@
+{
+  "size": 960,
+  "px": 150,
+  "yaw": 45,
+  "cx": 2.5,
+  "cz": 1.0,
+  "cy": 0.3,
+  "placements": [
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 0,
+      "z": 0,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 1,
+      "z": 0,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 2,
+      "z": 0,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 3,
+      "z": 0,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 4,
+      "z": 0,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 5,
+      "z": 0,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 0,
+      "z": 1,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 1,
+      "z": 1,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 2,
+      "z": 1,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 3,
+      "z": 1,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 4,
+      "z": 1,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 5,
+      "z": 1,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 0,
+      "z": 2,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 1,
+      "z": 2,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 2,
+      "z": 2,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 3,
+      "z": 2,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 4,
+      "z": 2,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 5,
+      "z": 2,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 0,
+      "z": 3,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 1,
+      "z": 3,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 2,
+      "z": 3,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 3,
+      "z": 3,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 4,
+      "z": 3,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/tiles/ground-grass.glb",
+      "x": 5,
+      "z": 3,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/units/tdf-infantry-rifle.glb",
+      "x": 0,
+      "z": 0,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/units/tdf-infantry-rocket.glb",
+      "x": 2,
+      "z": 0,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/units/tdf-infantry-sniper.glb",
+      "x": 4,
+      "z": 0,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/units/tdf-infantry-engineer.glb",
+      "x": 0,
+      "z": 2,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/units/tdf-infantry-medic.glb",
+      "x": 2,
+      "z": 2,
+      "yaw": 0
+    },
+    {
+      "model": "assets/models/units/tdf-infantry-radio.glb",
+      "x": 4,
+      "z": 2,
+      "yaw": 0
+    }
+  ]
+}

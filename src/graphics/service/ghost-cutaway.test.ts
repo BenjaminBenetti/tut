@@ -1,29 +1,41 @@
 import { describe, expect, it } from "vitest";
-import { MeshStandardMaterial, Vector3 } from "three";
+import {
+  MeshStandardMaterial,
+  Object3D,
+  OrthographicCamera,
+  Vector3,
+} from "three";
 
 import {
   applyGhostCutaway,
   createGhostUniforms,
   GHOST_FOOT_MARGIN,
-  GHOST_PLAN_MARGIN,
-  ghostPlanDepth,
-  ghostsInFrontOf,
+  GHOST_RAY_MARGIN,
+  GHOST_SAMPLES,
+  GHOST_SOFT_EDGE,
+  ghostFade,
+  ghostSamples,
+  ghostsAlongRay,
   MAX_GHOSTS,
 } from "./ghost-cutaway";
+import { GhostController } from "./ghost-controller";
 
 /** The tactical camera's pitch: `atan(1 / √2)`, ADR 0005. */
 const PITCH = Math.atan(1 / Math.SQRT2);
 
-/** View-space depth gained per world unit of height at the tactical pitch. */
-const UP_DEPTH = Math.sin(PITCH);
+/** The ray radius the scene ships with (`tactical-scene-builder`). */
+const RADIUS = 0.6;
 
 /**
- * View-space `z` of a point `ahead` tiles toward the camera across the
- * ground and `rise` world units above the unit's feet, relative to the
- * unit's own `z`. Nearer is larger.
+ * A camera at the tactical pitch looking at the origin from +z, so
+ * "toward the camera" is +z in world space and "up" is +y.
  */
-function viewZ(ahead: number, rise: number): number {
-  return ahead * Math.cos(PITCH) + rise * UP_DEPTH;
+function pitchedCamera(): OrthographicCamera {
+  const cam = new OrthographicCamera(-10, 10, 10, -10, 0.1, 100);
+  cam.position.set(0, 20 * Math.sin(PITCH), 20 * Math.cos(PITCH));
+  cam.lookAt(0, 0, 0);
+  cam.updateMatrixWorld(true);
+  return cam;
 }
 
 /** A stand-in for the shader object three hands to `onBeforeCompile`. */
@@ -93,13 +105,16 @@ describe("ghost cutaway (#526)", () => {
     expect(vertex.indexOf("vGhostView = mvPosition.xyz;")).toBeGreaterThan(
       vertex.indexOf("#include <project_vertex>"),
     );
-    // Only fragments whose footprint is nearer the camera than the centre
-    // fade, or the wall behind the unit would be cut away too (#1132).
+    // Rays, not a plane (#1134): every sample is tried, and a fragment
+    // is on a ray when it is nearer the camera than that sample.
     expect(shader.fragmentShader).toContain(
-      "float plan = vGhostView.z - rise * uGhostUp;",
+      `#define GHOST_SAMPLES ${GHOST_SAMPLES}`,
     );
     expect(shader.fragmentShader).toContain(
-      `plan > centre.z + ${GHOST_PLAN_MARGIN.toFixed(2)}`,
+      `vGhostView.z > sample.z + ${GHOST_RAY_MARGIN.toFixed(2)}`,
+    );
+    expect(shader.fragmentShader).toContain(
+      "nearest = min(nearest, length(vGhostView.xy - sample.xy));",
     );
     // Discard, not blend, so surviving fragments still write depth.
     expect(shader.fragmentShader).toContain("discard");
@@ -124,87 +139,174 @@ describe("ghost cutaway (#526)", () => {
     expect(vertex.indexOf("vGhostWorldY = ghostWorld.y;")).toBeGreaterThan(
       vertex.indexOf("#include <project_vertex>"),
     );
-    // Depth and height are one conjunction: a slab in front of the unit
-    // at its own level is nearer the camera and still must not fade.
+    // The feet test runs before any ray is tried: a slab in front of the
+    // unit at its own level is nearer the camera and still must not fade.
     expect(shader.fragmentShader).toContain(
       "float rise = vGhostWorldY - uGhostFeet[i];",
     );
     expect(shader.fragmentShader).toContain(
-      `plan > centre.z + ${GHOST_PLAN_MARGIN.toFixed(2)} && rise > ${GHOST_FOOT_MARGIN.toFixed(2)}`,
+      `if (rise <= ${GHOST_FOOT_MARGIN.toFixed(2)}) continue;`,
     );
     // Below a wall's height and above float noise on the floor plane.
     expect(GHOST_FOOT_MARGIN).toBeGreaterThan(0);
     expect(GHOST_FOOT_MARGIN).toBeLessThan(0.75);
   });
 
-  it("compares plan depth, so a tall wall behind the unit stays solid (#1132)", () => {
+  it("binds the unit's box edges, and the old plane test is gone (#1134)", () => {
     const uniforms = createGhostUniforms(2, 0.15);
     const ghosted = applyGhostCutaway(new MeshStandardMaterial(), uniforms);
     const shader = shaderStub();
 
     ghosted.onBeforeCompile(shader as never, null as never);
 
-    // The per-frame up-depth reaches the program through the shared block.
-    expect(shader.uniforms.uGhostUp).toBe(uniforms.uGhostUp);
-    expect(shader.fragmentShader).toContain("uniform float uGhostUp;");
-    // And the old test — raw view depth against the centre — is gone: it
-    // is exactly what faded the far wall of every room.
+    for (const name of ["uGhostRight", "uGhostForward", "uGhostUpVec"]) {
+      expect(shader.uniforms[name]).toBe(
+        uniforms[name as keyof typeof uniforms],
+      );
+      expect(shader.fragmentShader).toContain(
+        `uniform vec3 ${name}[MAX_GHOSTS];`,
+      );
+    }
+    // A plane through the unit faded walls off to the side; a radius
+    // around its centre faded the wall behind it. Neither test remains.
+    expect(shader.fragmentShader).not.toContain("uGhostUp;");
     expect(shader.fragmentShader).not.toContain("vGhostView.z > centre.z");
+    expect(shader.fragmentShader).not.toContain(
+      "length(vGhostView.xy - centre.xy)",
+    );
   });
 
-  describe("ghostsInFrontOf, the CPU mirror of the shader's test (#1132)", () => {
-    const centre = { viewZ: -20, feetY: 0 };
-    /** A fragment `ahead` tiles toward the camera and `rise` above the feet. */
-    const fragment = (
-      ahead: number,
-      rise: number,
-    ): { viewZ: number; worldY: number } => ({
-      viewZ: centre.viewZ + viewZ(ahead, rise),
-      worldY: centre.feetY + rise,
-    });
+  describe("ghostsAlongRay, the CPU mirror of the shader's test (#1134)", () => {
+    const sample = { x: 1, y: 2, z: -20 };
 
-    it("takes the rise back out of the depth", () => {
-      // Whatever height a fragment stands at, its plan depth is its
-      // footprint's: a tile ahead across the ground.
-      for (const rise of [0, 0.75, 1.5, 3]) {
-        const f = fragment(1, rise);
-        expect(
-          ghostPlanDepth(f.viewZ, f.worldY, centre.feetY, UP_DEPTH),
-        ).toBeCloseTo(centre.viewZ + Math.cos(PITCH), 6);
-      }
-    });
-
-    it("fades a wall a tile in front of the unit", () => {
-      expect(ghostsInFrontOf(fragment(1, 1), centre, UP_DEPTH)).toBe(true);
-      expect(ghostsInFrontOf(fragment(1, 0.5), centre, UP_DEPTH)).toBe(true);
-    });
-
-    it("keeps a wall a tile behind the unit solid, however tall", () => {
-      // At the tactical pitch a 1.5 u wall a tile behind is nearer the
-      // camera than the feet by 0.05 from its top — the old rule faded
-      // it; the plan rule reads it as behind.
-      const behind = fragment(-1, 1.5);
-      expect(behind.viewZ).toBeGreaterThan(centre.viewZ);
-      expect(ghostsInFrontOf(behind, centre, UP_DEPTH)).toBe(false);
-      expect(ghostsInFrontOf(fragment(-1, 3), centre, UP_DEPTH)).toBe(false);
-      expect(ghostsInFrontOf(fragment(-2, 6), centre, UP_DEPTH)).toBe(false);
-    });
-
-    it("keeps what stands on the unit's own row solid, at the centre's depth", () => {
-      expect(ghostsInFrontOf(fragment(0, 1.5), centre, UP_DEPTH)).toBe(false);
-      // Just inside the margin: not yet; just past it: fades.
-      const edge = (GHOST_PLAN_MARGIN / Math.cos(PITCH)) * 0.9;
-      expect(ghostsInFrontOf(fragment(edge, 1), centre, UP_DEPTH)).toBe(false);
-      expect(ghostsInFrontOf(fragment(edge / 0.81, 1), centre, UP_DEPTH)).toBe(
+    it("is on the ray when nearer the camera and within the radius on the view plane", () => {
+      expect(ghostsAlongRay(sample, { x: 1.2, y: 2.1, z: -19 }, RADIUS)).toBe(
         true,
       );
     });
 
-    it("never fades the floor the unit stands on, even in front of it (#1118)", () => {
-      expect(ghostsInFrontOf(fragment(2, 0), centre, UP_DEPTH)).toBe(false);
+    it("is off the ray when farther from the camera, however close across the view", () => {
+      expect(ghostsAlongRay(sample, { x: 1, y: 2, z: -21 }, RADIUS)).toBe(
+        false,
+      );
+      expect(ghostsAlongRay(sample, { x: 1, y: 2, z: -20 }, RADIUS)).toBe(
+        false,
+      );
       expect(
-        ghostsInFrontOf(fragment(2, GHOST_FOOT_MARGIN), centre, UP_DEPTH),
+        ghostsAlongRay(
+          sample,
+          { x: 1, y: 2, z: -20 + GHOST_RAY_MARGIN * 0.9 },
+          RADIUS,
+        ),
       ).toBe(false);
+    });
+
+    it("is off the ray when beside it on the view plane, however near", () => {
+      expect(
+        ghostsAlongRay(sample, { x: 1 + RADIUS * 1.1, y: 2, z: -10 }, RADIUS),
+      ).toBe(false);
+    });
+
+    it("leaves from the corners and the spine of the unit, in the shader's order", () => {
+      const centre = { x: 0, y: 0, z: 0 };
+      const right = { x: 1, y: 0, z: 0 };
+      const forward = { x: 0, y: 0, z: 1 };
+      const up = { x: 0, y: 2, z: 0 };
+      const samples = ghostSamples(centre, right, forward, up);
+      expect(samples).toHaveLength(GHOST_SAMPLES);
+      expect(samples[0]).toEqual({ x: -1, y: 0, z: -1 });
+      expect(samples[3]).toEqual({ x: 1, y: 0, z: 1 });
+      expect(samples[4]).toEqual({ x: -1, y: 2, z: -1 });
+      expect(samples[7]).toEqual({ x: 1, y: 2, z: 1 });
+      expect(samples[8]).toEqual({ x: 0, y: 2, z: 0 });
+      expect(samples[9]).toEqual({ x: 0, y: 1, z: 0 });
+      expect(samples[10]).toEqual({ x: 0, y: 0, z: 0 });
+    });
+  });
+
+  describe("ghostFade on a room, through the tactical camera (#1134)", () => {
+    /**
+     * A one-tile squad at the origin, a unit tall, seen through the
+     * pitched camera: the controller fills the uniforms exactly as the
+     * scene does, and world fragments are judged through the same
+     * camera. Toward the camera is +z.
+     */
+    const cam = pitchedCamera();
+    const uniforms = createGhostUniforms(RADIUS, 0.15);
+    const object = new Object3D();
+    object.updateMatrixWorld(true);
+    new GhostController(
+      cam,
+      () => [{ object, halfWidth: 0.5, height: 1 }],
+      uniforms,
+    ).update(1);
+    const ghost = {
+      centre: uniforms.uGhostCentres.value[0]!,
+      right: uniforms.uGhostRight.value[0]!,
+      forward: uniforms.uGhostForward.value[0]!,
+      up: uniforms.uGhostUpVec.value[0]!,
+      feetY: 0,
+    };
+    /** Fade for a fragment at a world point. */
+    const fadeAt = (x: number, y: number, z: number): number => {
+      const view = new Vector3(x, y, z).applyMatrix4(cam.matrixWorldInverse);
+      return ghostFade(ghost, { view, worldY: y }, RADIUS);
+    };
+
+    it("fades the wall directly in front of the unit", () => {
+      expect(fadeAt(0, 1, 1)).toBeGreaterThan(0.9);
+      expect(fadeAt(0.4, 0.8, 1)).toBeGreaterThan(0.5);
+    });
+
+    it("keeps a wall in front but two tiles to the side solid", () => {
+      // Nearer the camera than every sample, and it would have faded
+      // under the plane rule; no ray from the unit passes through it.
+      expect(fadeAt(2, 1, 1)).toBe(0);
+      expect(fadeAt(-2, 0.5, 1)).toBe(0);
+      expect(fadeAt(2, 1.4, 0.5)).toBe(0);
+    });
+
+    it("keeps the wall behind the unit solid, however tall", () => {
+      expect(fadeAt(0, 1, -1)).toBe(0);
+      expect(fadeAt(0, 1.5, -1)).toBe(0);
+      expect(fadeAt(0, 3, -2)).toBe(0);
+    });
+
+    it("never fades the floor the unit stands on, even in front of it (#1118)", () => {
+      expect(fadeAt(0, 0, 0.4)).toBe(0);
+      expect(fadeAt(0.3, GHOST_FOOT_MARGIN, 0.3)).toBe(0);
+    });
+
+    it("fades a roof over the unit", () => {
+      // Straight over the head the roof sits on the rim of the head ray
+      // (half a unit up projects 0.41 across the view); the slab just in
+      // front of the head, where the camera actually looks through, is
+      // fully on it.
+      expect(fadeAt(0, 1.5, 0)).toBeGreaterThan(0.5);
+      expect(fadeAt(0, 1.5, 0.5)).toBeGreaterThan(0.9);
+    });
+
+    it("keeps the wall on the far edge of the tile beside the unit solid at every height", () => {
+      for (const y of [0.5, 1, 1.4]) {
+        expect(fadeAt(1.5, y, 0)).toBe(0);
+      }
+    });
+
+    it("fades the wall on the unit's own tile edge where its rays cross it", () => {
+      // The east edge at the unit's row: the ray from the back-east corner
+      // of the feet reaches the camera through it, a little way up.
+      expect(fadeAt(0.5, 0.4, 0)).toBeGreaterThan(0.5);
+    });
+
+    it("softens over the last part of the radius rather than cutting", () => {
+      // Sliding a fragment in front of the unit sideways: full fade
+      // inside, nothing outside, something in between.
+      const inside = fadeAt(0, 1, 1);
+      const rim = fadeAt(RADIUS + 0.5 - GHOST_SOFT_EDGE / 2, 1, 1);
+      const outside = fadeAt(RADIUS + 0.5 + 0.1, 1, 1);
+      expect(inside).toBeGreaterThan(rim);
+      expect(rim).toBeGreaterThan(0);
+      expect(outside).toBe(0);
     });
   });
 

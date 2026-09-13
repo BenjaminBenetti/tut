@@ -22,7 +22,7 @@ import { LoadoutUnitModelSource } from "./loadout-unit-model-source";
 import type { SpawnerPicker } from "../model/spawner-picker";
 import type { TilePicker } from "../model/tile-picker";
 import type { UnitPicker } from "../model/unit-picker";
-import type { GhostUniforms } from "./ghost-cutaway";
+import type { GhostSubject, GhostUniforms } from "./ghost-cutaway";
 import { createGhostUniforms } from "./ghost-cutaway";
 import { TacticalMapView, tileTop } from "../view/tactical-map-view";
 import { TileEffectView } from "../view/tile-effect-view";
@@ -101,14 +101,20 @@ export type UnitTemplateLookup = Readonly<Record<UnitTemplateId, UnitTemplate>>;
  * ```
  */
 /**
- * Cutaway radius in world units and the alpha a fully cut-away wall
- * keeps, from the style guide §12.4. One world unit is one tile. The
- * Executive Director chose radius 4 after the one/two-squad comparisons
- * (#937). Halving retained opacity from 0.35 to 0.175 leaves a lighter
- * trace of shelter: 3/16 Bayer fragments at the centre instead of 6/16.
- * Depth comparison, inward edge softness and fade timing stay unchanged.
+ * Ray radius in world units and the alpha a fully cut-away wall keeps,
+ * from the style guide §12.4. One world unit is one tile. Since #1134
+ * the cutaway is a bundle of rays from the unit's body to the camera,
+ * so the radius is each ray's, measured across the view plane: a little
+ * over half a tile, so the rays from a one-tile footprint's corners
+ * overlap into one silhouette with a soft rim, and a wall a full tile
+ * to the side is outside every one of them. (Before #1134 it was the
+ * radius of a disc around the unit, 4 tiles, chosen by the Executive
+ * Director in #937; the disc faded walls off to the side, which is what
+ * the rays replace.) Halving retained opacity from 0.35 to 0.175 leaves
+ * a lighter trace of shelter: 3/16 Bayer fragments on the ray instead
+ * of 6/16.
  */
-const GHOST_RADIUS = 4;
+const GHOST_RADIUS = 0.6;
 const GHOST_FLOOR = 0.175;
 
 /**
@@ -208,10 +214,21 @@ export class TacticalSceneBuilder
    * may see, so ghosting can never cut a wall away around something
    * vision rules hide (ADR 0006).
    */
-  ghostTargets(): readonly Object3D[] {
+  ghostTargets(): readonly GhostSubject[] {
     // An arrival waiting hidden for its walk is not yet the player's to
-    // see, so no wall opens around it (#1116).
-    return this.unitsGroup.children.filter((object) => object.visible);
+    // see, so no wall opens around it (#1116). Each comes with its
+    // footprint and measured height, which are what the rays leave from
+    // (#1134); a unit whose model is still loading is a point.
+    return this.unitsGroup.children
+      .filter((object) => object.visible)
+      .map((object) => {
+        const unitId = object.name.replace(/^unit:/, "");
+        return {
+          object,
+          halfWidth: (this.sizes.get(unitId) ?? DEFAULT_FOOTPRINT) / 2,
+          height: this.heights.get(unitId) ?? 0,
+        };
+      });
   }
 
   /** The cutaway uniforms, for the frame controller that updates them. */

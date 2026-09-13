@@ -572,7 +572,7 @@ It runs the real animation queue against stand-in units at exactly 64 px per til
 
 XCOM-style ghosting (#526): geometry between the camera and a unit fades in a soft radius so the player never loses the fight behind a wall.
 
-**It is a hole in the wall, not a see-through building.** A fragment fades where it is *both* within the radius of a unit *and* in front of that unit in plan — its footprint nearer the camera than the unit's, the fragment's own height taken out of the comparison (#1132), so a tall wall behind the unit stays solid. Distance alone opens the wall behind the unit as well as the one in front, which reads as a spotlight rather than a cutaway; the depth test is what makes it XCOM's effect.
+**It is a window where the unit is, not a see-through building.** Since #1134 the cutaway is a bundle of rays from the unit's body to the camera: from the four corners of its footprint at foot and head height and from its spine at the feet, the waist and the head. A fragment fades only where it stands *on* one of those rays — nearer the camera than the sample and within the ray's radius of the sample's spot on the view plane — so only what actually occludes the unit's body gives way. A wall in front of the unit but off to its side stays solid; so does the wall behind it (farther than every sample) and the floor under it (#1118). Before this the test was a plane through the unit with a four-tile disc around it (#1132), and everything on the camera's side of that plane within the disc faded, walls beside the unit included (Executive Director, 2026-09-13, #1134).
 
 The building stays a solid object and the city keeps its silhouette. That is the point, and it is the half a mock cannot tell you:
 
@@ -589,8 +589,8 @@ The case to check is a squad behind building geometry, with the surrounding map 
 | Property | Value | Why |
 |---|---|---|
 | Fade target | **0.175 opacity floor** | Half the retained opacity of 0.35: the Bayer centre keeps 3/16 fragments instead of 6/16. A light material trace remains over the room; floor 0 removes it entirely. |
-| Radius | **4.0 tiles** around the unit | Executive Director selected this from the #937 comparison, including the two-squad overlap that reveals most of the upper floor. |
-| Soft edge | **0.65 tiles**, measured inward from the radius | A hard circle reads as a stencil; a soft one reads as the building giving way. Measured inward rather than as a fraction of the radius, so softness does not change when the radius does. |
+| Ray radius | **0.6 tiles** around each sample point, across the view plane | A little over half a tile, so the rays from a one-tile footprint's corners overlap into one silhouette with a soft rim, and a wall a full tile to the side is outside every one (#1134). The 4-tile disc the Executive Director chose in #937 was the radius of the old plane rule; the rays replace it. |
+| Soft edge | **0.25 tiles**, measured inward from the ray radius | A hard circle reads as a stencil; a soft one reads as the building giving way. Measured inward rather than as a fraction of the radius, so softness does not change when the radius does. Narrower than the old 0.65 because the radius is. |
 | Fade in / out | **0.15 s** | Instant flickers as units move; longer lags the camera. |
 | What fades | Walls, floors, roofs, parapets and tall props between the camera and the unit, **above its feet** | Anything that can stand in the way. |
 | What never fades | Ground, the floor the unit stands on and anything below it, the unit itself, overlays, VFX, hook markers | These are the read. A slab at the unit's feet is in front of it and inside the radius, and fading it showed the storey below through the floor (#1118). |

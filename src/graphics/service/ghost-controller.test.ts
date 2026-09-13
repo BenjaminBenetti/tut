@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { Object3D, OrthographicCamera } from "three";
 
+import type { GhostSubject } from "./ghost-cutaway";
 import { createGhostUniforms, MAX_GHOSTS } from "./ghost-cutaway";
 import { GhostController } from "./ghost-controller";
 
@@ -13,12 +14,12 @@ function camera(): OrthographicCamera {
   return cam;
 }
 
-/** An object parked at a world point. */
-function at(x: number, y: number, z: number): Object3D {
+/** A one-tile, one-unit-tall subject parked at a world point. */
+function at(x: number, y: number, z: number): GhostSubject {
   const object = new Object3D();
   object.position.set(x, y, z);
   object.updateMatrixWorld(true);
-  return object;
+  return { object, halfWidth: 0.5, height: 1 };
 }
 
 describe("GhostController (#526)", () => {
@@ -59,19 +60,32 @@ describe("GhostController (#526)", () => {
     expect(uniforms.uGhostFeet.value[1]).toBeCloseTo(3, 5);
   });
 
-  it("tells the shader how much nearer a fragment gets per unit it rises (#1132)", () => {
+  it("hands the shader the unit's box as view-space edges, lengths kept (#1134)", () => {
     const uniforms = createGhostUniforms(3, 0.15);
-    // Looking straight along -z, height is across the view: no depth.
-    new GhostController(camera(), () => [at(0, 0, 0)], uniforms).update(0.016);
-    expect(uniforms.uGhostUp.value).toBeCloseTo(0, 5);
+    // Looking straight along -z: world x is view x, world y is view y,
+    // and a two-tile, 1.8-tall brute's edges keep those lengths.
+    const brute = { ...at(0, 0, 0), halfWidth: 1, height: 1.8 };
+    new GhostController(camera(), () => [brute], uniforms).update(0.016);
+    const right = uniforms.uGhostRight.value[0]!;
+    const forward = uniforms.uGhostForward.value[0]!;
+    const up = uniforms.uGhostUpVec.value[0]!;
+    expect([right.x, right.y, right.z].map((v) => +v.toFixed(5))).toEqual([
+      1, 0, 0,
+    ]);
+    expect(up.y).toBeCloseTo(1.8, 5);
+    expect(up.z).toBeCloseTo(0, 5);
+    // World z points at the camera here, so the forward edge is depth.
+    expect(forward.z).toBeCloseTo(1, 5);
 
-    // Pitched down 45°, a unit of height is sin(45°) nearer the camera.
+    // Pitched down 45°, a unit of height is sin(45°) nearer the camera
+    // and cos(45°) up the view plane: the edge is rotated, not shrunk.
     const pitched = new OrthographicCamera(-10, 10, 10, -10, 0.1, 100);
     pitched.position.set(0, 10, 10);
     pitched.lookAt(0, 0, 0);
     pitched.updateMatrixWorld(true);
-    new GhostController(pitched, () => [at(0, 0, 0)], uniforms).update(0.016);
-    expect(uniforms.uGhostUp.value).toBeCloseTo(Math.SQRT1_2, 5);
+    new GhostController(pitched, () => [brute], uniforms).update(0.016);
+    expect(uniforms.uGhostUpVec.value[0]!.z).toBeCloseTo(1.8 * Math.SQRT1_2, 5);
+    expect(uniforms.uGhostUpVec.value[0]!.y).toBeCloseTo(1.8 * Math.SQRT1_2, 5);
   });
 
   it("follows the camera, so panning does not smear the cutaway", () => {

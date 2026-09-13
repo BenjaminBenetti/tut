@@ -103,6 +103,7 @@ export type TacticalError =
   | { readonly kind: "not-in-extraction-zone"; readonly unitId: string }
   | { readonly kind: "not-extractable"; readonly unitId: string }
   | { readonly kind: "mission-not-over"; readonly missionId: string }
+  | { readonly kind: "not-player-phase" }
   | {
       readonly kind: "mission-mismatch";
       readonly expected: string;
@@ -193,6 +194,8 @@ export function describeTacticalError(error: TacticalError): string {
       return `Unit "${error.unitId}" cannot leave through the extraction zone`;
     case "mission-not-over":
       return `Mission "${error.missionId}" is still being fought`;
+    case "not-player-phase":
+      return "The mission cannot be left during the bug phase";
     case "mission-mismatch":
       return `Mission "${error.expected}" was expected but "${error.active}" is in progress`;
     case "unhandled-command":
@@ -257,6 +260,7 @@ export const TACTICAL_ERROR_KINDS: Readonly<
   "not-in-extraction-zone": true,
   "not-extractable": true,
   "mission-not-over": true,
+  "not-player-phase": true,
   "mission-mismatch": true,
   "unhandled-command": true,
 };

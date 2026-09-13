@@ -54,7 +54,7 @@ const OUTCOME_COPY: Readonly<Record<MissionOutcome, OutcomeCopy>> = {
   lost: {
     title: "Mission lost",
     tagline:
-      "The force was wiped or the mission failed. Nothing was extracted.",
+      "The force was wiped, or the mission was left with its objectives open.",
     tone: "danger",
   },
 };
@@ -240,6 +240,33 @@ export class MissionResultsScreen implements Screen {
     const lossless =
       result.mechsDestroyed.length === 0 && result.squadsWiped.length === 0;
 
+    // Who was left on the map when the player left (#1132), named
+    // before the casualty rows: they are in those rows too, as wiped or
+    // destroyed, and this says why. Absent when nobody was.
+    if (result.leftBehind !== undefined && result.leftBehind.length > 0) {
+      // The same id-to-name pairing the loss rows use, so a stranded
+      // squad reads by the name on its grave rather than by a guess.
+      const named = new Map<string, string>([
+        ...zip(
+          result.mechsDestroyed,
+          lostNames(result.mechsDestroyed, "mech", graves, roster),
+        ),
+        ...zip(
+          result.squadsWiped,
+          lostNames(result.squadsWiped, "squad", graves, roster),
+        ),
+      ]);
+      panel.appendChild(
+        this.section(
+          doc,
+          "Left behind",
+          "left-behind",
+          result.leftBehind.map((id) => named.get(id) ?? id),
+          "",
+          true,
+        ),
+      );
+    }
     panel.appendChild(
       this.section(
         doc,
@@ -499,6 +526,14 @@ export class MissionResultsScreen implements Screen {
 // ===========================================
 // Helpers
 // ===========================================
+
+/** Pairs each id with the name at the same index. */
+function zip(
+  ids: readonly string[],
+  names: readonly string[],
+): readonly (readonly [string, string])[] {
+  return ids.map((id, index) => [id, names[index] ?? id] as const);
+}
 
 /**
  * Names for lost units. A unit still in the roster (casualties not yet

@@ -370,10 +370,10 @@ describe("event vocabulary", () => {
 });
 
 describe("TurnBannerView", () => {
-  it("shows turn and phase, a status line, and reports Back", () => {
-    const onBack = vi.fn();
+  it("shows turn and phase, a status line, and reports Leave", () => {
+    const onLeave = vi.fn();
     const onLayerStep = vi.fn();
-    const view = new TurnBannerView({ onBack, onLayerStep });
+    const view = new TurnBannerView({ onLeave, onLayerStep });
     view.mount(root);
     view.update({
       missionName: "Seoul",
@@ -394,16 +394,18 @@ describe("TurnBannerView", () => {
     expect(status?.hidden).toBe(false);
     view.showStatus("");
     expect(status?.hidden).toBe(true);
-    root.querySelector<HTMLButtonElement>('[data-action="overworld"]')?.click();
-    expect(onBack).toHaveBeenCalled();
+    root
+      .querySelector<HTMLButtonElement>('[data-action="leave-mission"]')
+      ?.click();
+    expect(onLeave).toHaveBeenCalled();
   });
 
   // #961: the player is changing this constantly, so it is a banner stat
   // with buttons beside it rather than something in a menu.
   it("reads out the storey one-based and reports each button", () => {
-    const onBack = vi.fn();
+    const onLeave = vi.fn();
     const onLayerStep = vi.fn();
-    const view = new TurnBannerView({ onBack, onLayerStep });
+    const view = new TurnBannerView({ onLeave, onLayerStep });
     view.mount(root);
     const model = {
       missionName: "Seoul",

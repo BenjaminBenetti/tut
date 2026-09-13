@@ -596,7 +596,8 @@
 /* Modal (event dialog)                        */
 /* =========================================== */
 
-.tut-overworld > .tut-modal {
+.tut-overworld > .tut-modal,
+.tut-tactical > .tut-modal {
   position: absolute;
   inset: 0;
   z-index: 2;

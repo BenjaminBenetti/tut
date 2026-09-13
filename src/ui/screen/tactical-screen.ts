@@ -3,7 +3,9 @@ import type { Unsubscribe } from "../../core/model/event-bus";
 import { findCity } from "../../overworld/service/earth-map-query-service";
 import type { GameState } from "../../save/model/game-state";
 import type { CombatTuning } from "../../tactical/model/combat-tuning";
+import { abandonMission } from "../../tactical/model/abandon-mission-command";
 import { finishMission } from "../../tactical/model/finish-mission-command";
+import { leaveMissionSummary } from "../../tactical/service/abandon-mission-handler";
 import type { ObjectiveTuning } from "../../tactical/model/objective-tuning";
 import type { PreviewDeps } from "../../tactical/service/combat-service";
 import type { TacticalCommand } from "../../tactical/model/tactical-command";
@@ -22,6 +24,7 @@ import type {
 } from "../model/tactical-scene-host";
 import type { PhaseBannerOptions } from "../view/phase-banner-view";
 import { namesFor, refusalText } from "../service/tactical-error-text";
+import { ConfirmDialogView } from "../view/confirm-dialog-view";
 import { TacticalHudView } from "../view/tactical-hud-view";
 import { actorOf, describeEvent } from "../view/event-vocabulary";
 
@@ -90,8 +93,11 @@ function missionCityName(state: GameState): string | undefined {
  * `activeMission` from the campaign store and re-renders the scene and
  * the HUD on every change; the HUD turns the scene's intents
  * into commands, which go through the store with refusals shown in the
- * HUD's banner. With no mission in progress it says so; the HUD's
- * banner is the one way back to the overworld. When the mission reports
+ * HUD's banner. With no mission in progress it says so, and the banner's
+ * Leave button is the way out: it abandons the mission where it stands
+ * (#1132), after a confirm dialog when units are not aboard or objectives
+ * are open — there is no detour to the overworld with a mission running.
+ * When the mission reports
  * an outcome the screen finishes it — `FinishMission` resolves it through
  * the tactical resolver and empties `activeMission` (#341) — and hands
  * over to the results screen.
@@ -124,6 +130,8 @@ export class TacticalScreen implements Screen {
   readonly id: ScreenId = "tactical";
   private readonly deps: TacticalScreenDeps;
   private readonly hud: TacticalHudView;
+  /** Asks before the mission is abandoned with something at stake (#1132). */
+  private readonly dialog: ConfirmDialogView;
   private root: HTMLElement | undefined;
   private viewport: HTMLElement | undefined;
   private note: HTMLElement | undefined;
@@ -162,8 +170,8 @@ export class TacticalScreen implements Screen {
         onCommand: (command) => {
           this.dispatch(command);
         },
-        onBack: () => {
-          this.deps.router.navigate("overworld");
+        onLeave: () => {
+          this.leave();
         },
         // Bring a unit on screen (#1041). The camera rig has had
         // `lookAt` all along; until now nothing called it after the
@@ -214,6 +222,20 @@ export class TacticalScreen implements Screen {
         shortcuts: TACTICAL_SHORTCUTS,
       },
     );
+    this.dialog = new ConfirmDialogView(
+      {
+        role: "leave-dialog",
+        kicker: "Leave mission",
+        confirmAction: "leave-confirm",
+        cancelAction: "leave-cancel",
+      },
+      {
+        onConfirm: () => {
+          this.dispatch(abandonMission());
+        },
+        onCancel: () => undefined,
+      },
+    );
   }
 
   // ===========================================
@@ -239,6 +261,7 @@ export class TacticalScreen implements Screen {
     note.textContent = "No mission in progress.";
     note.hidden = true;
     layout.appendChild(note);
+    this.dialog.mount(layout);
 
     root.appendChild(layout);
     this.root = layout;
@@ -271,6 +294,7 @@ export class TacticalScreen implements Screen {
     // The next scene starts with no overlays, so the next push must run.
     this.overlayState = undefined;
     this.finishedMissionId = undefined;
+    this.dialog.unmount();
     this.hud.unmount();
     this.root?.remove();
     this.root = undefined;
@@ -625,6 +649,57 @@ export class TacticalScreen implements Screen {
   }
 
   /**
+   * Leaves the mission where it stands (#1132).
+   *
+   * Asks the rules what it would cost first: with everyone aboard and
+   * the job done there is nothing to confirm and the mission ends at
+   * once; otherwise the dialog names the units that will be left behind
+   * and says whether the mission will be recorded as failed, and only a
+   * confirmation dispatches `AbandonMission`. Held while the bug phase
+   * is still playing, like every other control (#1130). With no mission
+   * in progress there is nothing to leave, and the button is simply the
+   * way back to the overworld.
+   */
+  private leave(): void {
+    if (this.playing) {
+      return;
+    }
+    const state = this.deps.session.store?.getState();
+    const mission = state?.activeMission;
+    if (mission === undefined) {
+      this.deps.router.navigate("overworld");
+      return;
+    }
+    const summary = leaveMissionSummary(mission);
+    if (summary.free) {
+      this.dispatch(abandonMission());
+      return;
+    }
+    const names = namesFor(mission, state);
+    const stranded = summary.leftBehind.map((unit) => names.unit(unit.unitId));
+    const lines: string[] = [];
+    if (stranded.length > 0) {
+      lines.push(
+        `${listNames(stranded)} ${stranded.length === 1 ? "is" : "are"} not aboard the drop ship and will be lost.`,
+      );
+    }
+    lines.push(
+      summary.objectivesOpen > 0
+        ? `${String(summary.objectivesOpen)} objective${summary.objectivesOpen === 1 ? " is" : "s are"} still open: the mission will be recorded as failed.`
+        : "Every objective is complete: the mission will be recorded as won.",
+    );
+    this.dialog.show({
+      title:
+        stranded.length > 0
+          ? `Leave ${listNames(stranded)} behind?`
+          : "Leave the mission?",
+      lines,
+      confirmLabel: "Leave",
+      cancelLabel: "Stay",
+    });
+  }
+
+  /**
    * The player's words for a refused command (#1035).
    *
    * `error.message` is written by the simulation and names its ids --
@@ -655,6 +730,14 @@ export class TacticalScreen implements Screen {
  */
 function crossesPhase(events: readonly TacticalEvent[]): boolean {
   return events.some((event) => event.type === TURN_STARTED);
+}
+
+/** "Alpha", "Alpha and Bravo", "Alpha, Bravo and Hammerhead". */
+function listNames(names: readonly string[]): string {
+  if (names.length <= 1) {
+    return names[0] ?? "";
+  }
+  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1] ?? ""}`;
 }
 
 /** The tactical events in a store change; everything else is the overworld's. */

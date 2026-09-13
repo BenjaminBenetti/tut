@@ -572,7 +572,7 @@ It runs the real animation queue against stand-in units at exactly 64 px per til
 
 XCOM-style ghosting (#526): geometry between the camera and a unit fades in a soft radius so the player never loses the fight behind a wall.
 
-**It is a hole in the wall, not a see-through building.** A fragment fades where it is *both* within the radius of a unit *and* nearer the camera than that unit. Distance alone opens the wall behind the unit as well as the one in front, which reads as a spotlight rather than a cutaway; the depth test is what makes it XCOM's effect.
+**It is a hole in the wall, not a see-through building.** A fragment fades where it is *both* within the radius of a unit *and* in front of that unit in plan — its footprint nearer the camera than the unit's, the fragment's own height taken out of the comparison (#1132), so a tall wall behind the unit stays solid. Distance alone opens the wall behind the unit as well as the one in front, which reads as a spotlight rather than a cutaway; the depth test is what makes it XCOM's effect.
 
 The building stays a solid object and the city keeps its silhouette. That is the point, and it is the half a mock cannot tell you:
 

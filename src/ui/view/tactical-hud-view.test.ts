@@ -1999,6 +1999,22 @@ describe("TacticalHudView while the bug phase plays (#1130)", () => {
     expect(commands.map((c) => c.type)).toEqual([END_TURN]);
   });
 
+  it("End turn pressed again through the button while the phase plays reaches nothing (#1132)", () => {
+    const { hud, commands } = setup();
+    endTurn()?.click();
+    expect(commands.map((c) => c.type)).toEqual([END_TURN]);
+    hud.setPlaybackLocked(true);
+    // A browser click on a disabled button, a synthetic click that
+    // ignores `disabled`, and the shortcut's intent.
+    endTurn()?.click();
+    endTurn()?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    hud.handleIntent({ kind: "end-turn" });
+    expect(commands.map((c) => c.type)).toEqual([END_TURN]);
+    hud.setPlaybackLocked(false);
+    endTurn()?.click();
+    expect(commands.map((c) => c.type)).toEqual([END_TURN, END_TURN]);
+  });
+
   it("does not fire an aimed shot from the panel, nor a wheel entry, while the phase plays", () => {
     const { hud, commands } = setup();
     hud.handleIntent({ kind: "select-unit", unitId: "s1" });

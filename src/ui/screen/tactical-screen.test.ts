@@ -917,6 +917,33 @@ describe("TacticalScreen", () => {
 // Phase banners (#523)
 // ===========================================
 
+/** Timers a test fires by hand, so no banner or watchdog waits on a wall clock. */
+function manualTimers() {
+  const pending = new Map<number, () => void>();
+  let next = 1;
+  return {
+    options: {
+      holdMs: 1000,
+      setTimer: (run: () => void) => {
+        const handle = next++;
+        pending.set(handle, run);
+        return handle;
+      },
+      clearTimer: (handle: number) => {
+        pending.delete(handle);
+      },
+    },
+    /** How many timers are waiting. */
+    pending: () => pending.size,
+    fire: () => {
+      for (const [handle, run] of [...pending]) {
+        pending.delete(handle);
+        run();
+      }
+    },
+  };
+}
+
 describe("TacticalScreen phase banners", () => {
   // The suite above keeps its own root in the document; clear it, or a
   // stale `#turn-banner` shadows this one when an id selector is
@@ -924,31 +951,6 @@ describe("TacticalScreen phase banners", () => {
   beforeEach(() => {
     document.body.innerHTML = "";
   });
-
-  /** Timers the test fires by hand, so no banner waits on a wall clock. */
-  function manualTimers() {
-    const pending = new Map<number, () => void>();
-    let next = 1;
-    return {
-      options: {
-        holdMs: 1000,
-        setTimer: (run: () => void) => {
-          const handle = next++;
-          pending.set(handle, run);
-          return handle;
-        },
-        clearTimer: (handle: number) => {
-          pending.delete(handle);
-        },
-      },
-      fire: () => {
-        for (const [handle, run] of [...pending]) {
-          pending.delete(handle);
-          run();
-        }
-      },
-    };
-  }
 
   it("announces the bug phase and then the player's turn from one EndTurn", () => {
     const root = document.createElement("div");
@@ -1055,12 +1057,22 @@ describe("TacticalScreen playback lock (#1130)", () => {
     const store = new FakeStore(state);
     const host = new FakeHost();
     host.deferSettle = true;
+    // The banner and the watchdog on hand-fired clocks: the lock waits
+    // on both the scene and the banner (#1132), and the tests below
+    // say which moved when.
+    const banner = manualTimers();
+    const watchdog = manualTimers();
     const screen = new TacticalScreen({
       router: fakeRouter().router,
       session: sessionWith(store),
       combatTuning: COMBAT_TUNING,
       objectiveTuning: OBJECTIVE_TUNING,
       sceneHost: host,
+      phaseBanner: banner.options,
+      playbackWatchdog: {
+        setTimer: watchdog.options.setTimer,
+        clearTimer: watchdog.options.clearTimer,
+      },
     });
     screen.mount(root);
     const mission = state.activeMission!;
@@ -1087,11 +1099,11 @@ describe("TacticalScreen playback lock (#1130)", () => {
         ] as CampaignEvent[],
       );
     };
-    return { screen, store, host, state, mission, endTurn };
+    return { screen, store, host, state, mission, endTurn, banner, watchdog };
   }
 
-  it("holds End turn, the map and the body while a phase plays, and releases them when the scene settles", () => {
-    const { host, store, endTurn } = playing();
+  it("holds End turn, the map and the body while a phase plays, and releases them once the scene has settled and the bug phase banner has passed", () => {
+    const { host, store, endTurn, banner } = playing();
     expect(document.body.dataset.phasePlaying).toBe("false");
     expect(hudPlaying()).toBe("false");
     expect(endTurnButton()?.disabled).toBe(false);
@@ -1107,6 +1119,11 @@ describe("TacticalScreen playback lock (#1130)", () => {
     endTurnButton()?.click();
     expect(store.dispatched.map((c) => c.type)).not.toContain(END_TURN);
     host.settle();
+    // The map is done, but "Bug phase" is still up: to the player the
+    // bugs are not finished, so nothing is offered yet (#1132).
+    expect(document.body.dataset.phasePlaying).toBe("true");
+    expect(endTurnButton()?.disabled).toBe(true);
+    banner.fire();
     expect(document.body.dataset.phasePlaying).toBe("false");
     expect(hudPlaying()).toBe("false");
     expect(endTurnButton()?.disabled).toBe(false);
@@ -1116,7 +1133,7 @@ describe("TacticalScreen playback lock (#1130)", () => {
   });
 
   it("drops the player's intents while the phase plays and takes them once it has settled", () => {
-    const { host, store, endTurn } = playing();
+    const { host, store, endTurn, banner } = playing();
     endTurn();
     host.intents?.emit({ kind: "select-unit", unitId: "unit-1" });
     host.intents?.emit({ kind: "action", action: "overwatch" });
@@ -1125,10 +1142,120 @@ describe("TacticalScreen playback lock (#1130)", () => {
     expect(document.body.dataset.lastIntent).toBeUndefined();
     expect(store.dispatched.map((c) => c.type)).not.toContain(END_TURN);
     host.settle();
+    banner.fire();
     host.intents?.emit({ kind: "select-unit", unitId: "unit-1" });
     expect(document.body.dataset.selectedUnit).toBe("unit-1");
     host.intents?.emit({ kind: "end-turn" });
     expect(store.dispatched.map((c) => c.type)).toContain(END_TURN);
+  });
+
+  it("holds the controls through an instant bug phase until 'Bug phase' has passed (#1132)", () => {
+    const { host, endTurn, banner } = playing();
+    endTurn();
+    // Nothing to draw: the scene settles on the spot, before the player
+    // has read the banner. This is the window End turn was pressed
+    // twice in.
+    host.settle();
+    expect(document.body.dataset.phasePlaying).toBe("true");
+    expect(endTurnButton()?.disabled).toBe(true);
+    expect(host.locked).toBe(true);
+    // "Bug phase" gives way to "Your turn": released as it appears, not
+    // when it is dismissed.
+    banner.fire();
+    expect(document.body.dataset.phasePlaying).toBe("false");
+    expect(endTurnButton()?.disabled).toBe(false);
+    expect(host.locked).toBe(false);
+    banner.fire();
+    expect(document.body.dataset.phasePlaying).toBe("false");
+  });
+
+  it("releases at the settle when the banner has already moved on (#1132)", () => {
+    const { host, endTurn, banner } = playing();
+    endTurn();
+    banner.fire();
+    // The banner says "Your turn" while the last bug is still walking.
+    expect(document.body.dataset.phasePlaying).toBe("true");
+    expect(endTurnButton()?.disabled).toBe(true);
+    host.settle();
+    expect(document.body.dataset.phasePlaying).toBe("false");
+    expect(endTurnButton()?.disabled).toBe(false);
+  });
+
+  it("dispatches one EndTurn for two presses in a row, the button disabled from the first (#1132)", () => {
+    const { store, state, mission } = playing();
+    // The real store applies the command and notifies before `dispatch`
+    // returns; the fake only records, so it is taught the one command
+    // this test is about.
+    const original = store.dispatch.bind(store);
+    store.dispatch = (command) => {
+      const result = original(command);
+      if (command.type === END_TURN) {
+        store.command(
+          {
+            ...state,
+            activeMission: {
+              ...mission,
+              phase: "player",
+              turn: mission.turn + 1,
+            },
+          },
+          [
+            {
+              type: TURN_STARTED,
+              payload: { turn: mission.turn, phase: "bugs" },
+            },
+            {
+              type: TURN_STARTED,
+              payload: { turn: mission.turn + 1, phase: "player" },
+            },
+          ] as CampaignEvent[],
+        );
+      }
+      return result;
+    };
+    const button = endTurnButton();
+    expect(button?.disabled).toBe(false);
+    button?.click();
+    expect(button?.disabled).toBe(true);
+    expect(document.body.dataset.phasePlaying).toBe("true");
+    // A second press by every route: a browser click, a synthetic one
+    // that ignores `disabled`, and the key.
+    button?.click();
+    button?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(store.dispatched.filter((c) => c.type === END_TURN)).toHaveLength(1);
+    expect(field("turn")).toBe("2");
+  });
+
+  it("frees the controls with a warning when the scene stops making progress (#1132)", () => {
+    const { host, endTurn, watchdog, banner } = playing();
+    const warned = vi.spyOn(console, "warn").mockImplementation(() => {
+      // The assertion below is what this test is about.
+    });
+    endTurn();
+    expect(document.body.dataset.phasePlaying).toBe("true");
+    expect(watchdog.pending()).toBe(1);
+    // A banner change is a sign of life: the clock restarts.
+    banner.fire();
+    expect(watchdog.pending()).toBe(1);
+    // Then nothing: no settle, no banner, no event.
+    watchdog.fire();
+    expect(warned).toHaveBeenCalledTimes(1);
+    expect(document.body.dataset.phasePlaying).toBe("false");
+    expect(endTurnButton()?.disabled).toBe(false);
+    expect(host.locked).toBe(false);
+    // The settle arriving late changes nothing.
+    host.settle();
+    expect(document.body.dataset.phasePlaying).toBe("false");
+    warned.mockRestore();
+  });
+
+  it("stops the watchdog once the batch has released (#1132)", () => {
+    const { host, endTurn, watchdog, banner } = playing();
+    endTurn();
+    host.settle();
+    banner.fire();
+    expect(document.body.dataset.phasePlaying).toBe("false");
+    expect(watchdog.pending()).toBe(0);
   });
 
   it("keeps the storey keys and Shift working while the phase plays", () => {

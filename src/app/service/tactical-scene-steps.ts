@@ -286,9 +286,17 @@ export function playAroundRedraw(
     queue.enqueue(
       phases.before,
       () => {
-        void redraw().then(() => {
-          queue.enqueue(phases.after, resolve, onStart);
-        });
+        // A redraw that rejects must not strand the batch (#1132): the
+        // promise here is what releases the player's controls, and an
+        // unhandled rejection left them held for a whole CI budget. The
+        // failure is logged and the rest of the batch still plays.
+        void redraw()
+          .catch((error: unknown) => {
+            console.error("Tactical redraw failed", error);
+          })
+          .then(() => {
+            queue.enqueue(phases.after, resolve, onStart);
+          });
       },
       onStart,
     );

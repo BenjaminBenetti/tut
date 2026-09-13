@@ -3,6 +3,7 @@ import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { attack, attackTile } from "../../tactical/model/attack-command";
 import type { AttackPreview } from "../../tactical/model/attack-preview";
 import type { CombatTuning } from "../../tactical/model/combat-tuning";
+import type { Unsubscribe } from "../../core/model/event-bus";
 import { endTurn } from "../../tactical/model/end-turn-command";
 import { move } from "../../tactical/model/move-command";
 import { overwatch } from "../../tactical/model/overwatch-command";
@@ -16,7 +17,10 @@ import type { TacticalError } from "../../tactical/model/tactical-error";
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { LayerFocus } from "../../graphics/model/layer-focus";
 import type { MissionView } from "../../tactical/model/mission-view";
-import type { TacticalState } from "../../tactical/model/tactical-state";
+import type {
+  TacticalPhase,
+  TacticalState,
+} from "../../tactical/model/tactical-state";
 import type { Team, Unit, UnitId } from "../../tactical/model/unit";
 import type { WeaponId } from "../../tactical/model/unit-weapon";
 import {
@@ -712,6 +716,28 @@ export class TacticalHudView {
   /** Whether the controls are held for a playing bug phase. */
   isPlaybackLocked(): boolean {
     return this.playbackLocked;
+  }
+
+  /**
+   * Whether the phase banner is still announcing `phase`, on screen or
+   * queued (#1132). The screen holds the controls while the bug phase
+   * is announced: a bug phase with nothing to draw settles at once, but
+   * the player is still reading "Bug phase" for its hold, and End turn
+   * offered under that banner was pressed twice.
+   *
+   * @param phase - The phase asked about.
+   */
+  isAnnouncing(phase: TacticalPhase): boolean {
+    return this.phases.announcing(phase);
+  }
+
+  /**
+   * Hears every change of the phase banner, and returns the unsubscribe.
+   *
+   * @param listener - Called after a banner is shown, replaced or dismissed.
+   */
+  onPhaseBanner(listener: () => void): Unsubscribe {
+    return this.phases.subscribe(listener);
   }
 
   // ===========================================

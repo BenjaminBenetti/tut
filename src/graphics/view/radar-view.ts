@@ -6,15 +6,15 @@ import {
   Mesh,
   MeshBasicMaterial,
   RingGeometry,
-  Sprite,
-  SpriteMaterial,
 } from "three";
 import type { Radar, RadarContact } from "../../tactical/model/radar";
 import { radarIsActive } from "../../tactical/model/radar";
 import type { Disposable } from "../model/disposable";
 import type { FrameUpdatable } from "../model/frame-updatable";
 import type { ModelLoader } from "../model/model-loader";
+import { RADAR_SMOKE } from "../data/smoke-plumes";
 import { createFalloffTexture } from "../service/falloff-texture";
+import { SmokePlume } from "./smoke-plume";
 import { tileTopCentre } from "./tactical-map-view";
 
 // ===========================================
@@ -33,46 +33,9 @@ export const RADAR_SMOKE_NAME = "radar-smoke";
 /** Radians per second the head turns while the battery holds: one revolution every twenty seconds. */
 export const HEAD_TURN_RATE = (2 * Math.PI) / 20;
 
-/** Puffs per dead scanner; each rises, swells and fades on its own phase of one loop. */
-const SMOKE_PUFFS = 5;
-
-/** Seconds one puff takes from the dish to gone. */
-const SMOKE_PERIOD = 2.4;
-
-/** Where a puff is born, above the tile top: just over the dish (the model is 0.96 tall). */
-const SMOKE_START_HEIGHT = 0.8;
-
-/** How far a puff rises over its loop, in world units. */
-const SMOKE_RISE = 1.4;
-
-/** A puff's size at birth and how much it swells by the end. */
-const SMOKE_BASE_SCALE = 0.45;
-const SMOKE_GROWTH = 0.65;
-
-/** Peak opacity of a puff; it fades in over the first quarter and out over the rest. */
-const SMOKE_PEAK_OPACITY = 0.85;
-
-/** Sideways wander of a rising puff. */
-const SMOKE_DRIFT = 0.08;
-
-/**
- * Mid grey rather than soot: on the dark ground of a night map a black
- * puff at half opacity vanished (measured on #1130's first frame, A/B
- * against opaque magenta), and the plume has to read from the default
- * zoom, where the whole scanner is thirty pixels tall.
- */
-const SMOKE_COLOUR = 0x6b6b6b;
-
 // ===========================================
 // Types
 // ===========================================
-
-/** One puff of a plume: its sprite, its own material (opacity is per material) and its phase offset. */
-interface SmokePuff {
-  readonly sprite: Sprite;
-  readonly material: SpriteMaterial;
-  readonly offset: number;
-}
 
 /** One placed scanner: its model, the head that turns, and whether it still runs. */
 interface DrawnScanner {
@@ -80,8 +43,8 @@ interface DrawnScanner {
   /** The pivot the dish, its face and the feed turn on; the whole model when the GLB has no such nodes. */
   readonly head: Object3D;
   active: boolean;
-  /** Present once the battery has died. */
-  smoke?: { readonly root: Group; readonly puffs: readonly SmokePuff[] };
+  /** Present once the battery has died; the plume preset is `RADAR_SMOKE`. */
+  smoke?: SmokePlume;
 }
 
 // ===========================================
@@ -92,8 +55,8 @@ interface DrawnScanner {
  * Friendly scanner models and location blips, outside the enemy picking
  * lists. Since #1130 a scanner is a thing with a state: while its
  * battery holds its head turns slowly, and once it burns out the head
- * stops and a plume of dark smoke rises off the dish for as long as the
- * scanner stands.
+ * stops and a plume of smoke (`SmokePlume`, the `RADAR_SMOKE` preset)
+ * rises off the dish for as long as the scanner stands.
  *
  * ```
  *   updateRadar(radars, contacts) ──► models placed / kept / removed,
@@ -128,7 +91,6 @@ export class RadarView implements FrameUpdatable, Disposable {
   });
   /** Soft disc every smoke puff is cut from; owned here, shared by every plume. */
   private readonly smokeFalloff = createFalloffTexture();
-  private clock = 0;
 
   // ===========================================
   // Constructor
@@ -191,14 +153,13 @@ export class RadarView implements FrameUpdatable, Disposable {
 
   /** Turns every running head and breathes every dead scanner's smoke. */
   update(deltaSeconds: number): void {
-    this.clock += deltaSeconds;
     for (const drawn of this.scanners.values()) {
       if (drawn.active) {
         drawn.head.rotation.y =
           (drawn.head.rotation.y + HEAD_TURN_RATE * deltaSeconds) %
           (2 * Math.PI);
-      } else if (drawn.smoke !== undefined) {
-        this.breathe(drawn.smoke.puffs);
+      } else {
+        drawn.smoke?.update(deltaSeconds);
       }
     }
   }
@@ -276,60 +237,18 @@ export class RadarView implements FrameUpdatable, Disposable {
     if (drawn.active || drawn.smoke !== undefined) {
       return;
     }
-    const smoke = this.buildSmoke();
+    const smoke = new SmokePlume(
+      RADAR_SMOKE,
+      this.smokeFalloff,
+      RADAR_SMOKE_NAME,
+    );
     drawn.root.add(smoke.root);
     drawn.smoke = smoke;
-    this.breathe(smoke.puffs);
-  }
-
-  /** A plume of puffs over the dish, each on its own phase of the loop. */
-  private buildSmoke(): NonNullable<DrawnScanner["smoke"]> {
-    const root = new Group();
-    root.name = RADAR_SMOKE_NAME;
-    const puffs: SmokePuff[] = [];
-    for (let i = 0; i < SMOKE_PUFFS; i++) {
-      const material = new SpriteMaterial({
-        color: SMOKE_COLOUR,
-        alphaMap: this.smokeFalloff,
-        transparent: true,
-        opacity: 0,
-        depthWrite: false,
-      });
-      const sprite = new Sprite(material);
-      sprite.renderOrder = 8;
-      root.add(sprite);
-      puffs.push({
-        sprite,
-        material,
-        offset: (i / SMOKE_PUFFS) * SMOKE_PERIOD,
-      });
-    }
-    return { root, puffs };
-  }
-
-  /** Moves every puff along its loop: born over the dish, rising, swelling, fading. */
-  private breathe(puffs: readonly SmokePuff[]): void {
-    for (const puff of puffs) {
-      const t = ((this.clock + puff.offset) % SMOKE_PERIOD) / SMOKE_PERIOD;
-      const scale = SMOKE_BASE_SCALE + SMOKE_GROWTH * t;
-      puff.sprite.position.set(
-        Math.sin((this.clock + puff.offset) * 1.3) * SMOKE_DRIFT * t,
-        SMOKE_START_HEIGHT + SMOKE_RISE * t,
-        Math.cos((this.clock + puff.offset) * 0.9) * SMOKE_DRIFT * t,
-      );
-      puff.sprite.scale.set(scale, scale, 1);
-      puff.material.opacity = SMOKE_PEAK_OPACITY * Math.min(1, t * 4) * (1 - t);
-    }
   }
 
   /** Removes one scanner and frees the materials its smoke owned; the model's are the loader's. */
   private removeScanner(id: string, drawn: DrawnScanner): void {
-    if (drawn.smoke !== undefined) {
-      for (const puff of drawn.smoke.puffs) {
-        puff.material.dispose();
-      }
-      drawn.smoke.root.removeFromParent();
-    }
+    drawn.smoke?.dispose();
     drawn.root.removeFromParent();
     this.scanners.delete(id);
   }

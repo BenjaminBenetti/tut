@@ -2,6 +2,7 @@ import type { Unit } from "../../tactical/model/unit";
 import type { UnitTemplate } from "../../tactical/model/unit-template";
 import { displayWeaponName } from "../../tactical/model/unit-weapon";
 import { formatWhole } from "../service/format";
+import { weaponProfileText } from "../service/weapon-profile-text";
 import { iconGlyph } from "./icon-glyph";
 import { chargeRegisterFor } from "../service/charge-register";
 
@@ -186,26 +187,12 @@ export class UnitCardView {
     this.setEntries(
       "weapon",
       template.weapons.map((weapon) => {
-        const p = weapon.profile;
         const capacity = weapon.charges;
         const left = unit.charges?.[weapon.id] ?? capacity ?? 0;
-        // The blast, the fire and the force after the four numbers
-        // every weapon has (#1121), only when the weapon has them.
-        const extras = [
-          ...(p.aoe === undefined
-            ? []
-            : [`blast ${formatWhole(p.aoe.radius)}`]),
-          ...(p.aoeEffect === undefined ? [] : [p.aoeEffect.kind]),
-          ...((p.demoForce ?? 0) > 0
-            ? [`demo ${formatWhole(p.demoForce ?? 0)}`]
-            : []),
-        ];
         return {
           name: displayWeaponName(template.weapons, weapon),
-          value: [
-            `range ${formatWhole(p.range)} · acc ${formatWhole(p.accuracy)} · dmg ${formatWhole(p.damage)} · pen ${formatWhole(p.armorPen)}`,
-            ...extras,
-          ].join(" · "),
+          // The same line the mech bay prints for the weapon (#1132).
+          value: weaponProfileText(weapon.profile),
           charges:
             capacity === undefined
               ? undefined

@@ -16,6 +16,7 @@ import type { OverworldCommand } from "../../overworld/model/overworld-command";
 import { createOverworldCommandDispatcher } from "../../overworld/service/command-dispatcher";
 import { registerRosterCommands } from "../../overworld/service/roster-command-handlers";
 import { MECH_RATING_TUNING } from "../../roster/data/mech-rating-tuning";
+import { UNIT_TUNING } from "../../tactical/data/unit-tuning";
 import { STARTER_PARTS } from "../../roster/data/parts";
 import { ROSTER_TUNING } from "../../roster/data/roster-tuning";
 import { SQUAD_TYPES } from "../../roster/data/squad-types";
@@ -189,6 +190,7 @@ function mountWith(
     session: sessionWith(store),
     parts: PARTS,
     rating: MECH_RATING_TUNING,
+    unitTuning: UNIT_TUNING,
     upgrades: UPGRADE_TUNING,
     preview,
   });
@@ -249,6 +251,12 @@ describe("MechBayScreen", () => {
     expect(sheetField("combatRating")).toBe("113");
     expect(sheetField("totalCost")).toBe("¢2,850");
     expect(sheetField("weight")).toBe("60");
+    // The Combat block is the field's own numbers (#1132): the starter's
+    // sheet armor of 20 is 6 per hit and 70 hit points on the ground.
+    expect(sheetField("combat-hp")).toBe("70");
+    expect(sheetField("combat-armor")).toBe("6");
+    expect(sheetField("combat-move")).toBe("8");
+    expect(root.querySelector('#stat-sheet [data-field="armor"]')).toBeNull();
   });
 
   it("lists every catalogue part for a slot priced, and only that slot's parts", () => {

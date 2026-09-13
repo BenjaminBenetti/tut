@@ -8,6 +8,7 @@ import type { LoadoutError } from "../../roster/model/loadout-error";
 import type { MechLoadout } from "../../roster/model/mech-loadout";
 import type { MechRatingTuning } from "../../roster/model/mech-rating-tuning";
 import type { MechStatSheet } from "../../roster/model/mech-stat-sheet";
+import type { UnitTuning } from "../../tactical/model/unit-tuning";
 import type { PartCatalogue } from "../../roster/model/part-catalogue";
 import type { UpgradeTuning } from "../../roster/model/upgrade-tuning";
 import { validateLoadout } from "../../roster/service/loadout-validation-service";
@@ -34,6 +35,12 @@ export interface MechBayScreenDeps {
   readonly parts: PartCatalogue;
   /** Combat-rating weights for the sheet. */
   readonly rating: MechRatingTuning;
+  /**
+   * Turns a sheet into the field numbers the sheet panel prints (#1132):
+   * the same tuning the mission's unit factory uses, so the bay and the
+   * field agree.
+   */
+  readonly unitTuning: UnitTuning;
   /** Upgrade multipliers for any levels the draft records. */
   readonly upgrades: UpgradeTuning;
   /**
@@ -89,7 +96,7 @@ export class MechBayScreen implements Screen {
   readonly id: ScreenId = "mech-bay";
   private readonly deps: MechBayScreenDeps;
   private readonly editor: LoadoutEditorView;
-  private readonly sheet = new StatSheetView();
+  private readonly sheet: StatSheetView;
   private readonly preview = new MechPreviewView();
   private readonly saved: SavedLoadoutsView;
   private root: HTMLElement | undefined;
@@ -110,6 +117,7 @@ export class MechBayScreen implements Screen {
   /** @param deps - Router, session and the content the editor and validator read. */
   constructor(deps: MechBayScreenDeps) {
     this.deps = deps;
+    this.sheet = new StatSheetView(deps.unitTuning.mech);
     this.editor = new LoadoutEditorView(
       {
         onChange: (loadout) => {

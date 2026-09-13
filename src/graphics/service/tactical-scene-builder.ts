@@ -128,6 +128,10 @@ export class TacticalSceneBuilder
   private readonly ghostUniforms: GhostUniforms;
   private readonly models: ModelLoader;
   private readonly radarView: RadarView;
+  /** What was last asked for, kept so a change of storey can redraw it through the cut (#1134). */
+  private lastCharges: readonly PlacedCharge[] = [];
+  private lastRadars: readonly Radar[] = [];
+  private lastContacts: readonly RadarContact[] = [];
   private readonly unitModels: UnitModelSource;
   private readonly unitsGroup: Group;
   private readonly meshes = new Map<UnitId, UnitMesh>();
@@ -239,6 +243,21 @@ export class TacticalSceneBuilder
   setLayerFocus(focus: LayerFocus | undefined): void {
     this.mapView.setLayerFocus(focus);
     this.drawTethers();
+    // Intel marks and charge markers on a peeled floor go with it (#1134).
+    this.charges.updateCharges(this.shownCharges());
+    void this.radarView.updateRadar(this.lastRadars, this.shownContacts());
+  }
+
+  /**
+   * Whether the storey view hides the tile at `coord` (#1134): the map
+   * view's own rule, so the overlays and the marks painted on the map
+   * agree with the map about what is peeled away.
+   *
+   * @param coord - The tile to ask about.
+   * @returns True when the cut is below it.
+   */
+  isCut(coord: TileCoord): boolean {
+    return this.mapView.isCut(coord);
   }
 
   /** Shows only map levels up to `maxLevel`; units are never hidden. */
@@ -386,7 +405,8 @@ export class TacticalSceneBuilder
    * @param charges - The placed charges to draw.
    */
   updateCharges(charges: readonly PlacedCharge[]): void {
-    this.charges.updateCharges(charges);
+    this.lastCharges = charges;
+    this.charges.updateCharges(this.shownCharges());
   }
 
   /** Ids of the charges currently drawn. */
@@ -435,7 +455,9 @@ export class TacticalSceneBuilder
     radars: readonly Radar[],
     contacts: readonly RadarContact[],
   ): Promise<void> {
-    await this.radarView.updateRadar(radars, contacts);
+    this.lastRadars = radars;
+    this.lastContacts = contacts;
+    await this.radarView.updateRadar(radars, this.shownContacts());
   }
 
   /** What the frame loop ticks so scanner dishes turn and dead ones smoke (#1130); the host adds it to its updatables. */
@@ -762,6 +784,16 @@ export class TacticalSceneBuilder
         selected: id === this.selected,
       });
     }
+  }
+
+  /** The placed charges the storey view still shows (#1134). */
+  private shownCharges(): PlacedCharge[] {
+    return this.lastCharges.filter((charge) => !this.isCut(charge.tile));
+  }
+
+  /** The radar contacts the storey view still shows (#1134). */
+  private shownContacts(): RadarContact[] {
+    return this.lastContacts.filter((contact) => !this.isCut(contact.pos));
   }
 }
 

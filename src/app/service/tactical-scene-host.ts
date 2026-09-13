@@ -165,6 +165,9 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
     });
     // Raised slabs such as sidewalks lift the marks painted on them (#1130).
     const overlays = new TacticalOverlays({ rise: tileRiseFor(mission.map) });
+    // Marks on a floor the storey view has peeled away go with it (#1134);
+    // the map view answers, so the two never disagree about the cut.
+    overlays.setLayerCut((tile) => builder.isCut(tile));
     const rig = new OrthographicCameraRig({
       zoom: CAMERA_ZOOM.min,
       yawIndex: missionArrivalYaw(mission),
@@ -417,6 +420,7 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
       delta,
     );
     attached.builder.setLayerFocus(attached.layerFocus);
+    attached.overlays.setLayerCut((tile) => attached.builder.isCut(tile));
     this.publishLayerFocus();
     return attached.layerFocus;
   }

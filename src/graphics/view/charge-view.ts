@@ -1,5 +1,12 @@
 import type { Object3D } from "three";
-import { BoxGeometry, Group, Mesh, MeshBasicMaterial } from "three";
+import {
+  BoxGeometry,
+  DoubleSide,
+  Group,
+  Mesh,
+  MeshBasicMaterial,
+  RingGeometry,
+} from "three";
 
 import type { PlacedCharge } from "../../tactical/model/equipment";
 import type { Disposable } from "../model/disposable";
@@ -11,15 +18,26 @@ import { tileTop } from "./tactical-map-view";
 // ===========================================
 
 /** The charge's block: a satchel-sized box on the tile centre, in world units. */
-const BODY_WIDTH = 0.3;
-const BODY_HEIGHT = 0.16;
-const BODY_DEPTH = 0.2;
+const BODY_WIDTH = 0.5;
+const BODY_HEIGHT = 0.26;
+const BODY_DEPTH = 0.34;
 
 /** The arming light on top: a small cube that blinks. */
-const LAMP_SIZE = 0.06;
+const LAMP_SIZE = 0.14;
 
 /** Blink: on and off twice a second, so a set charge is never mistaken for a crate. */
 const BLINK_HZ = 2;
+
+/**
+ * A red ring on the ground around the block. The block alone was a few
+ * pixels at the default zoom (measured on #1132's first frame); the
+ * ring is what makes a placed charge readable from across the map.
+ */
+const RING_INNER = 0.34;
+const RING_OUTER = 0.46;
+const RING_LIFT = 0.03;
+const RING_ON_OPACITY = 0.9;
+const RING_OFF_OPACITY = 0.35;
 
 /** Olive body, style-guide TDF drab; the lamp a warning red. */
 const BODY_COLOUR = 0x4f5a3a;
@@ -34,6 +52,8 @@ const LAMP_OFF = 0x5a1410;
 interface DrawnCharge {
   readonly root: Group;
   readonly lamp: Mesh;
+  /** The ground ring that blinks with the lamp. */
+  readonly ring: Mesh;
 }
 
 /**
@@ -67,6 +87,21 @@ export class ChargeView implements FrameUpdatable, Disposable {
   private readonly body = new MeshBasicMaterial({ color: BODY_COLOUR });
   private readonly lampOn = new MeshBasicMaterial({ color: LAMP_ON });
   private readonly lampOff = new MeshBasicMaterial({ color: LAMP_OFF });
+  private readonly ringGeometry = new RingGeometry(RING_INNER, RING_OUTER, 32);
+  private readonly ringOn = new MeshBasicMaterial({
+    color: LAMP_ON,
+    side: DoubleSide,
+    transparent: true,
+    opacity: RING_ON_OPACITY,
+    depthWrite: false,
+  });
+  private readonly ringOff = new MeshBasicMaterial({
+    color: LAMP_ON,
+    side: DoubleSide,
+    transparent: true,
+    opacity: RING_OFF_OPACITY,
+    depthWrite: false,
+  });
   private clock = 0;
 
   // ===========================================
@@ -114,6 +149,7 @@ export class ChargeView implements FrameUpdatable, Disposable {
     const lit = Math.floor(this.clock * BLINK_HZ * 2) % 2 === 0;
     for (const charge of this.charges.values()) {
       charge.lamp.material = lit ? this.lampOn : this.lampOff;
+      charge.ring.material = lit ? this.ringOn : this.ringOff;
     }
   }
 
@@ -132,6 +168,9 @@ export class ChargeView implements FrameUpdatable, Disposable {
     this.body.dispose();
     this.lampOn.dispose();
     this.lampOff.dispose();
+    this.ringGeometry.dispose();
+    this.ringOn.dispose();
+    this.ringOff.dispose();
     this.root.removeFromParent();
   }
 
@@ -149,9 +188,13 @@ export class ChargeView implements FrameUpdatable, Disposable {
     body.position.y = BODY_HEIGHT / 2;
     const lamp = new Mesh(this.lampGeometry, this.lampOn);
     lamp.position.y = BODY_HEIGHT + LAMP_SIZE / 2;
-    root.add(body, lamp);
+    const ring = new Mesh(this.ringGeometry, this.ringOn);
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.y = RING_LIFT;
+    ring.renderOrder = 6;
+    root.add(body, lamp, ring);
     this.root.add(root);
-    return { root, lamp };
+    return { root, lamp, ring };
   }
 
   /** Removes one charge's objects; the geometry and materials are shared and stay. */

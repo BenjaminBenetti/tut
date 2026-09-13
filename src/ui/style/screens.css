@@ -47,6 +47,11 @@
   left: 50%;
   width: min(360px, calc(100vw - 2 * var(--space-4)));
   transform: translate(-50%, -50%);
+  /* A debrief that lists five stragglers and a promotion outgrows a
+     720 px window; the panel scrolls rather than pushing its Continue
+     button off the screen (#1132). */
+  max-height: calc(100vh - 2 * var(--space-4));
+  overflow: auto;
 }
 
 .tut-menu .tut-stack {

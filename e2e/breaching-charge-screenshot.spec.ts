@@ -7,6 +7,8 @@ import type { PlacedCharge } from "../src/tactical/model/equipment";
 import type { Unit } from "../src/tactical/model/unit";
 import type { UnitTemplate } from "../src/tactical/model/unit-template";
 import { initialVision } from "../src/tactical/service/vision-service";
+// Registers the detonation event in the log's union for the check below.
+import "../src/tactical/model/charge-detonated-event";
 import { drawnFrame, tacticalModelsReady } from "./capture-frame.helper";
 import { launchMission, settleForShot } from "./mission-capture.helper";
 
@@ -155,14 +157,17 @@ test("a placed breaching charge is marked, then goes off as the next turn opens"
     timeout: 60_000,
   });
   await expect(body).toHaveAttribute("data-tactical-charges", "0");
-  const dead = await page.evaluate((key) => {
+  // The swarmers rush the line during their phase and may leave the
+  // footprint before the charge goes off, so the frame is judged on the
+  // detonation itself: the charge is gone and the log says it went off.
+  const detonated = await page.evaluate((key) => {
     const raw = localStorage.getItem(key);
-    if (raw === null) return 0;
+    if (raw === null) return false;
     const saved = JSON.parse(raw) as { state: GameState };
-    return (saved.state.activeMission?.units ?? []).filter(
-      (unit) => unit.team === "bugs" && unit.hp <= 0,
-    ).length;
+    return (saved.state.activeMission?.log ?? []).some(
+      (event) => event.type === "tactical:charge-detonated",
+    );
   }, SAVE_KEY);
-  expect(dead, "the charge should have caught both swarmers").toBe(2);
+  expect(detonated, "the charge should have gone off").toBe(true);
   expect(errors).toEqual([]);
 });

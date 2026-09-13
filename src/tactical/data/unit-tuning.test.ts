@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { MODEL_IDS } from "../../content/data/model-ids";
+import { ROSTER_TUNING } from "../../roster/data/roster-tuning";
 import { SQUAD_TYPES } from "../../roster/data/squad-types";
 import { UNIT_TUNING } from "./unit-tuning";
 
@@ -78,6 +79,13 @@ describe("unit tuning", () => {
       // type's weapon reaches past the class's eyes (ADR 0006).
       expect(shape.range, type.id).toBeLessThanOrEqual(infantry.sightRange);
     }
+  });
+
+  it("climbs the same rank ladder the roster promotes by (#1130)", () => {
+    // The HUD names the rank from the roster's ladder and the field
+    // bonuses come from this one; a substitute for either would let a
+    // Corporal's move disagree with its badge.
+    expect(UNIT_TUNING.ranks).toBe(ROSTER_TUNING.ranks);
   });
 
   it("gives every class eyes at least as long as its weapon (ADR 0006)", () => {

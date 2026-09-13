@@ -12,7 +12,6 @@ import {
   MECH_DESTROYED,
   SQUAD_WIPED,
   UNIT_DAMAGED,
-  UNIT_PROMOTED,
 } from "../../roster/model/roster-event";
 import type { Squad } from "../../roster/model/squad";
 import type { CampaignState } from "../model/campaign-state";
@@ -406,15 +405,13 @@ describe("createLaunchMissionHandler", () => {
     expect(next.overworld.lastMissionResult).toBe(WIN);
     expect(next.overworld.day).toBe(DAY);
 
-    // Coming home from a first mission is worth one swarmer, which is
-    // the first rung of the ladder: both green survivors are promoted,
-    // each right after its own damage line (#1130).
+    // Coming home from a first mission is worth half a swarmer, short
+    // of the first rung of the ladder: nobody is promoted for surviving
+    // alone, and the first rung waits for a kill (#1130).
     expect(result.value.events.map((e) => e.type)).toEqual([
       MISSION_RESOLVED,
       UNIT_DAMAGED,
-      UNIT_PROMOTED,
       UNIT_DAMAGED,
-      UNIT_PROMOTED,
       CREDITS_CHANGED,
       CITY_INFESTATION_CHANGED,
     ]);

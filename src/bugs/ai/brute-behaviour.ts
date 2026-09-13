@@ -10,6 +10,11 @@ import type { MissionView } from "../../tactical/model/mission-view";
 import type { TacticalCommand } from "../../tactical/model/tactical-command";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { Unit, UnitId } from "../../tactical/model/unit";
+import { blastRadiusOf } from "../../tactical/model/weapon-profile";
+import {
+  blastFootprint,
+  blastVictims,
+} from "../../tactical/service/blast-service";
 import { validateTileAttack } from "../../tactical/service/combat-service";
 import {
   footprintTiles,
@@ -266,6 +271,12 @@ export class BruteBehaviour implements BugBehaviour {
    * the shot is only issued when the rules would accept it — enough
    * action points, a tile in reach — so a refused plan never ends the
    * brute's turn early.
+   *
+   * The cleavers sweep the tiles around the impact, and the impact is
+   * the brute's own edge, so a swarmer pressed against its flank would
+   * take the blow meant for the wall. A brute does not cleave its own
+   * escort: when a fellow bug stands in the sweep it holds the cut for
+   * a turn and lets the swarm shuffle.
    */
   private cut(
     mission: TacticalState,
@@ -283,12 +294,37 @@ export class BruteBehaviour implements BugBehaviour {
       unitFootprintSize(mission, unit),
       toward,
     );
-    if (impact === undefined) {
+    if (impact === undefined || this.sweepsOwnSide(mission, unit, impact)) {
       return [];
     }
     return validateTileAttack(mission, unitId, impact, ctx.combat).ok
       ? [attackTile(unitId, impact)]
       : [];
+  }
+
+  /**
+   * Whether the cleavers' sweep around `impact` would reach a bug other
+   * than the brute itself: the same footprint and victims the rules
+   * would roll, so the answer matches what the shot would do.
+   */
+  private sweepsOwnSide(
+    mission: TacticalState,
+    unit: Unit,
+    impact: TileCoord,
+  ): boolean {
+    const weapon = mission.templates[unit.templateId]?.weapons[0];
+    if (weapon === undefined) {
+      return false;
+    }
+    const footprint = blastFootprint(
+      mission.map,
+      impact,
+      blastRadiusOf(weapon.profile),
+    );
+    return blastVictims(mission, footprint, new Set([unit.id])).some(
+      (victim) =>
+        victim.target.kind === "unit" && victim.target.team === unit.team,
+    );
   }
 
   /** The mission as it will stand once the unit has walked `path` to `to`, its action points spent. */

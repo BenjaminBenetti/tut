@@ -17,9 +17,10 @@ export const ROSTER_TUNING: RosterTuning = {
    */
   repairCostPerPoint: 10,
   /**
-   * Flat per mission, on top of what the kills were worth: one
-   * swarmer's worth, so a quiet mission still counts for something.
+   * Flat per mission, on top of what the kills were worth: half a
+   * swarmer, so a quiet mission still counts for something but the
+   * first rung (10) is earned by a kill, not by coming home once.
    */
-  xpPerMissionSurvived: 10,
+  xpPerMissionSurvived: 5,
   ranks: RANK_TUNING,
 };

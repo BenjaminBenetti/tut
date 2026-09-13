@@ -33,7 +33,7 @@ import {
   createOverwatchReaction,
   DEFAULT_PHASE_STEPS,
 } from "../../tactical/service/turn-service";
-import { BRUTE, BUG_SPECIES } from "../data/species";
+import { BRUTE, BUG_SPECIES, SWARMER } from "../data/species";
 import { BRUTE_TUNING } from "../data/brute-tuning";
 import { createSpeciesLookup } from "../service/species-lookup";
 import { MapBehaviourRegistry } from "./behaviour-registry";
@@ -419,6 +419,37 @@ describe("BruteBehaviour cutting through walls (#1130)", () => {
       adjacentCount(brute.pos, [unit(second.state, "squad-1")], SIZE),
     ).toBe(1);
     expect(second.types).toContain(ATTACK_RESOLVED);
+  });
+
+  it("holds the cut while a fellow bug stands in the cleavers' sweep", () => {
+    // The impact is the brute's own east edge at (5,5); a radius-1 sweep
+    // from there reaches (5,6), where a swarmer waits against its flank.
+    const escorted = withBug(
+      walledRoom("window"),
+      SWARMER,
+      at(5, 6),
+      "swarmer-1",
+    ).mission;
+    const played = playBugPhase(escorted);
+    expect(played.types).not.toContain(STRUCTURE_DESTROYED);
+    expect(played.types).not.toContain(BLAST_RESOLVED);
+    expect(wallOn(played.state, at(6, 5), "w")).toBe("window");
+    expect(unit(played.state, "swarmer-1").hp).toBe(SWARMER.hp);
+  });
+
+  it("still cuts when the escort stands clear of the sweep", () => {
+    // Two tiles south of the brute's block: outside a radius-1 sweep
+    // from either east cell, so the wall falls as it would alone.
+    const clear = withBug(
+      walledRoom("window"),
+      SWARMER,
+      at(4, 8),
+      "swarmer-1",
+    ).mission;
+    const played = playBugPhase(clear);
+    expect(played.types).toContain(STRUCTURE_DESTROYED);
+    expect(wallOn(played.state, at(6, 5), "w")).toBeUndefined();
+    expect(unit(played.state, "swarmer-1").hp).toBe(SWARMER.hp);
   });
 
   it("cuts a solid wall toward a squad it remembers but cannot see, then walks in", () => {

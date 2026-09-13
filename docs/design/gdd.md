@@ -117,7 +117,7 @@ A weapon is more than a range and a damage number. Since #1121 a weapon profile 
 Rules that follow from these:
 
 - A weapon with a blast, an effect or a force **may be fired at a tile** with no enemy on it. The action wheel offers it on a tile as its own entry per capable weapon, with the hit chance, the damage at the impact and how many of the player's own units stand in the blast. The footprint is painted on the ground before the shot.
-- **A miss applies nothing.** A shot at a tile rolls the same hit formula as a shot at a unit, with the cover and flank terms at zero because there is no body behind cover; a miss at an empty tile costs the shot and does nothing else.
+- **A miss applies nothing.** A shot at a tile rolls the same hit formula as a shot at a unit, with the cover and flank terms at zero because there is no body behind cover, plus a flat bonus because the ground does not move (the starter mortar lands two shots in three at ten tiles); a miss at an empty tile costs the shot and does nothing else.
 - Friendly fire is real. A mortar shell does not ask whose side a squad is on; the preview says who is in the blast so the player decides with the number in front of them.
 
 Marked weapons, as shipped: the **Flamer** (blast 1, fire), the **Missile Pod** (blast 1, force 1), the **Mortar** (blast 2, force 2), the **Autocannon** and **Rotary Cannon** (force 1), the **Railgun** (force 2), the **Rocket Squad** (blast 1, force 2, and the armor penetration its description always promised), and the **Brute**, whose cleavers sweep the tiles beside its mark (blast 1, force 1) — which is what "punishes clumping" means on the tile grid. The Pulse Laser, small arms and the small bugs mark nothing.

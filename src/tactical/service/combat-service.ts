@@ -41,7 +41,7 @@ import {
   isMelee,
 } from "../model/weapon-profile";
 import type { AttackTerrain } from "./attack-formulae";
-import { damageRange, hitChance } from "./attack-formulae";
+import { damageRange, groundHitChance, hitChance } from "./attack-formulae";
 import { findAttackTarget } from "./attack-target-service";
 import type { BlastTile } from "./blast-service";
 import { blastFootprint, blastVictims } from "./blast-service";
@@ -52,7 +52,7 @@ import { damageSpawner } from "./spawner-damage-service";
 import { ignite } from "./tile-effect-service";
 
 export type { AttackTerrain } from "./attack-formulae";
-export { damageRange, hitChance } from "./attack-formulae";
+export { damageRange, groundHitChance, hitChance } from "./attack-formulae";
 
 // ===========================================
 // Types
@@ -618,8 +618,10 @@ export function previewAttack(
 
 /**
  * The numbers for a shot at the ground (#1121), or why it is not
- * allowed. The damage band is what an unarmoured thing on the impact
- * tile would take; the blast says who is actually standing in it.
+ * allowed. The hit chance carries the ground-shot bonus — the ground
+ * does not move — and the damage band is what an unarmoured thing on
+ * the impact tile would take; the blast says who is actually standing
+ * in it.
  */
 export function previewTileAttack(
   mission: TacticalState,
@@ -641,7 +643,7 @@ export function previewTileAttack(
   }
   const { attacker, weapon, impact, terrain } = checked.value;
   return ok({
-    hitChance: hitChance(weapon.profile, terrain, tuning),
+    hitChance: groundHitChance(weapon.profile, terrain, tuning),
     damage: damageRange(weapon.profile, 0, tuning),
     distance: terrain.distance,
     cover: terrain.cover,
@@ -823,8 +825,9 @@ export function rollAttack(
 }
 
 /**
- * Rolls a validated shot at the ground (#1121). Draw order as for
- * `rollAttack`, less the target's own damage:
+ * Rolls a validated shot at the ground (#1121) against
+ * `groundHitChance`, the number `previewTileAttack` shows. Draw order
+ * as for `rollAttack`, less the target's own damage:
  *
  * ```
  *   1. chance(hitChance / 100)              hit?
@@ -846,7 +849,7 @@ export function rollTileAttack(
   deps: AttackDeps,
 ): AttackRoll {
   const { attacker, weapon, impact, terrain } = checked;
-  const chance = hitChance(weapon.profile, terrain, tuning);
+  const chance = groundHitChance(weapon.profile, terrain, tuning);
   const hit = ctx.rng.chance(chance / 100);
   const billed = billShot(mission, attacker, weapon, apAfter);
   return resolveImpact(

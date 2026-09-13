@@ -12,6 +12,8 @@ export interface SquadCasualtyReport {
   readonly losses: number;
   /** Kills credited to the squad; absent means none. */
   readonly kills?: number;
+  /** Experience the kills were worth (#1130); absent means none. */
+  readonly xp?: number;
 }
 
 /** Damage one deployed mech took, and the kills it is credited with. */
@@ -21,6 +23,8 @@ export interface MechDamageCasualtyReport {
   readonly damage: number;
   /** Kills credited to the mech; absent means none. */
   readonly kills?: number;
+  /** Experience the kills were worth (#1130); absent means none. */
+  readonly xp?: number;
 }
 
 // ===========================================

@@ -98,7 +98,8 @@ export interface TacticalResolveDeps {
  *        damage after = 100 × (1 − hp / maxHp)   added = after − mech.damage
  *        hp 0 ──► the rest of its 0..100 damage, mechsDestroyed
  *
- *   log UnitDied { killerId } ──► kills credited to the killer's squad or mech
+ *   log UnitDied { killerId } ──► kills credited to the killer's squad or mech,
+ *                                 each worth its template's xpValue (#1130)
  *   outcome ──► creditsFor / infestationDeltaFor, the auto-resolver's scale
  * ```
  *
@@ -122,13 +123,13 @@ export function tacticalMissionResult(
   const { tactical, mission, deployment, state } = input;
   const outcome = tactical.outcome ?? missionOutcome(tactical) ?? "lost";
   const roster = [...tactical.units, ...tactical.extracted];
-  const kills = killsBySource(tactical, roster);
+  const credits = creditsBySource(tactical, roster);
 
   const squadCasualties: SquadCasualties[] = [];
   const squadsWiped: string[] = [];
   for (const squad of deployedSquads(deployment, state)) {
     const unit = findUnit(roster, "squad", squad.id);
-    const credited = kills.get(squad.id) ?? 0;
+    const credited = credits.get(squad.id) ?? NO_CREDIT;
     if (unit === undefined) {
       pushCasualties(squadCasualties, squad.id, 0, credited);
       continue;
@@ -149,19 +150,19 @@ export function tacticalMissionResult(
   const mechsDestroyed: string[] = [];
   for (const mech of deployedMechs(deployment, state)) {
     const unit = findUnit(roster, "mech", mech.id);
-    const credited = kills.get(mech.id) ?? 0;
+    const credited = credits.get(mech.id) ?? NO_CREDIT;
     const remaining = MECH_MAX_DAMAGE - mech.damage;
     const damage =
       unit === undefined
         ? 0
         : clamp(damageTaken(unit, mech.damage), 0, remaining);
-    if (damage === 0 && credited === 0) {
+    if (damage === 0 && credited.kills === 0) {
       continue;
     }
     mechDamage.push({
       mechId: mech.id,
       damage,
-      ...(credited > 0 ? { kills: credited } : {}),
+      ...creditFields(credited),
     });
     if (damage > 0 && damage >= remaining) {
       mechsDestroyed.push(mech.id);
@@ -285,22 +286,34 @@ export class TacticalMissionResolver implements MissionResolver {
 // Helpers
 // ===========================================
 
+/** What one squad or mech earned: its kills and what they were worth. */
+interface KillCredit {
+  readonly kills: number;
+  readonly xp: number;
+}
+
+/** Nothing earned: the credit of a unit that killed nothing. */
+const NO_CREDIT: KillCredit = { kills: 0, xp: 0 };
+
 /**
- * Kills credited to each deployed squad and mech, by roster source id:
- * every `UnitDied` in the mission log whose killer was one of ours and
- * whose casualty was a bug. Friendly fire earns nobody a kill.
+ * Kills credited to each deployed squad and mech, by roster source id,
+ * with the experience they were worth (#1130): every `UnitDied` in the
+ * mission log whose killer was one of ours and whose casualty was a
+ * bug, each kill worth the dead unit's template `xpValue`. Friendly
+ * fire earns nobody a kill, and a template with no worth — a mission
+ * saved before species carried one — earns the kill and nothing else.
  */
-function killsBySource(
+function creditsBySource(
   tactical: TacticalState,
   roster: readonly Unit[],
-): Map<string, number> {
+): Map<string, KillCredit> {
   const sourceByUnit = new Map<UnitId, string>();
   for (const unit of roster) {
     if (unit.team === "tdf") {
       sourceByUnit.set(unit.id, unit.sourceId);
     }
   }
-  const kills = new Map<string, number>();
+  const credits = new Map<string, KillCredit>();
   for (const event of tactical.log) {
     if (event.type !== UNIT_DIED) {
       continue;
@@ -314,9 +327,22 @@ function killsBySource(
     if (source === undefined || dead?.team !== "bugs") {
       continue;
     }
-    kills.set(source, (kills.get(source) ?? 0) + 1);
+    const worth = tactical.templates[dead.templateId]?.xpValue ?? 0;
+    const soFar = credits.get(source) ?? NO_CREDIT;
+    credits.set(source, {
+      kills: soFar.kills + 1,
+      xp: soFar.xp + Math.max(0, worth),
+    });
   }
-  return kills;
+  return credits;
+}
+
+/** The optional `kills` and `xp` fields of a report, present only when earned. */
+function creditFields(credit: KillCredit): { kills?: number; xp?: number } {
+  return {
+    ...(credit.kills > 0 ? { kills: credit.kills } : {}),
+    ...(credit.xp > 0 ? { xp: credit.xp } : {}),
+  };
 }
 
 /** The token a deployed roster entry fought as, wherever it ended up. */
@@ -348,12 +374,12 @@ function pushCasualties(
   reports: SquadCasualties[],
   squadId: string,
   losses: number,
-  kills: number,
+  credit: KillCredit,
 ): void {
-  if (losses === 0 && kills === 0) {
+  if (losses === 0 && credit.kills === 0) {
     return;
   }
-  reports.push({ squadId, losses, ...(kills > 0 ? { kills } : {}) });
+  reports.push({ squadId, losses, ...creditFields(credit) });
 }
 
 /** Clamps `value` into `[min, max]`. */

@@ -4,6 +4,8 @@ import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { Mech } from "../../roster/model/mech";
 import { MECH_MAX_DAMAGE } from "../../roster/model/mech";
 import type { MechStatSheet } from "../../roster/model/mech-stat-sheet";
+import type { RankTuning } from "../../roster/model/rank";
+import { rankBonuses, rankIndexOf } from "../../roster/service/rank-service";
 import type { Squad } from "../../roster/model/squad";
 import type { SquadType } from "../../roster/model/squad-type";
 import type { BugUnitSource } from "../model/bug-unit-source";
@@ -58,8 +60,9 @@ export function templateIdFor(
  * scale with soldiers: `maxHp = maxStrength × hpPerSoldier`, and the unit
  * starts at `strength × hpPerSoldier`, so a depleted squad enters hurt.
  * Weapon damage is the type's `combatRating` times the tuning's damage
- * per point, rounded up so no squad hits for zero. Pure: reads only its
- * arguments and draws one id.
+ * per point, rounded up so no squad hits for zero. The squad's rank
+ * (#1130) is folded in last, over everything the type decided. Pure:
+ * reads only its arguments and draws one id.
  */
 export function squadUnit(
   squad: Squad,
@@ -105,7 +108,7 @@ export function squadUnit(
     "squad",
     "tdf",
     squad.id,
-    template,
+    withRankBonuses(template, squad.xp, deps.tuning.ranks),
     squad.strength * infantry.hpPerSoldier,
     placement,
     deps.ids,
@@ -120,7 +123,8 @@ export function squadUnit(
  * scaled by the tuning's damage, at the base accuracy plus the sheet's
  * modifier, clamped to `[0, 100]`; per-hit armor is `armor × armorFactor`.
  * The template carries the loadout, so graphics draws the fitted parts
- * (#1115). Pure: reads only its arguments and draws one id.
+ * (#1115), and the pilot's rank (#1130) is folded in last, over the
+ * sheet. Pure: reads only its arguments and draws one id.
  */
 export function mechUnit(
   mech: Mech,
@@ -155,7 +159,15 @@ export function mechUnit(
   const hp = Math.round(
     (maxHp * (MECH_MAX_DAMAGE - mech.damage)) / MECH_MAX_DAMAGE,
   );
-  return build("mech", "tdf", mech.id, template, hp, placement, deps.ids);
+  return build(
+    "mech",
+    "tdf",
+    mech.id,
+    withRankBonuses(template, mech.xp, deps.tuning.ranks),
+    hp,
+    placement,
+    deps.ids,
+  );
 }
 
 /**
@@ -186,6 +198,9 @@ export function bugUnit(
     armor: species.armor,
     passClass: "infantry",
     modelId: species.modelId,
+    // What the kill is worth rides on the template (#1130), so the
+    // resolver reads it off the casualty rather than asking a catalogue.
+    ...(species.xpValue === undefined ? {} : { xpValue: species.xpValue }),
   };
   return build(
     "bug",
@@ -306,6 +321,47 @@ function chargesFor(template: UnitTemplate): {
     weapon.charges === undefined ? [] : [[weapon.id, weapon.charges] as const],
   );
   return entries.length === 0 ? {} : { charges: Object.fromEntries(entries) };
+}
+
+/**
+ * The template with the rank its experience has reached folded in
+ * (#1130): the ladder's bonuses for that rung are added to move and
+ * action points and to every weapon's accuracy, clamped to a percentage,
+ * and the rank itself is recorded for the HUD. Runs last, after the
+ * squad type or the stat sheet has had its say, so a rule that reads the
+ * template never has to ask what the rank was.
+ *
+ * ```
+ *   xp 30 on the shipped ladder ──► rank 2 "Corporal"
+ *     move 5 ──► 6     maxAp 2 ──► 2     accuracy 65 ──► 69
+ * ```
+ *
+ * An empty ladder leaves the template alone.
+ */
+function withRankBonuses(
+  template: UnitTemplate,
+  xp: number,
+  ranks: RankTuning,
+): UnitTemplate {
+  const index = rankIndexOf(xp, ranks.ladder);
+  const rank = ranks.ladder[index];
+  if (rank === undefined) {
+    return template;
+  }
+  const bonuses = rankBonuses(index, ranks.bonuses);
+  return {
+    ...template,
+    move: template.move + bonuses.move,
+    maxAp: template.maxAp + bonuses.ap,
+    weapons: template.weapons.map((weapon) => ({
+      ...weapon,
+      profile: {
+        ...weapon.profile,
+        accuracy: clamp(weapon.profile.accuracy + bonuses.accuracy, 0, 100),
+      },
+    })),
+    rank: { name: rank.name, index },
+  };
 }
 
 /** Clamps `value` into `[min, max]`. */

@@ -1,3 +1,4 @@
+import { RANK_TUNING } from "../../roster/data/rank-tuning";
 import type { UnitTuning } from "../model/unit-tuning";
 
 // ===========================================
@@ -22,6 +23,9 @@ import type { UnitTuning } from "../model/unit-tuning";
  *   dry.
  * - Blast and force (#1121): only the rocket squad's weapon differs in
  *   how it lands; see `weaponByType`.
+ * - Ranks (#1130): a veteran's move, accuracy and action points are
+ *   lifted by its rung on the roster's ladder, on the same curve the
+ *   roster promotes by (`roster/data/rank-tuning.ts`).
  */
 export const UNIT_TUNING: UnitTuning = {
   infantry: {
@@ -80,4 +84,5 @@ export const UNIT_TUNING: UnitTuning = {
     modelId: "tdf.mech.assembled-a",
     charges: 4,
   },
+  ranks: RANK_TUNING,
 };

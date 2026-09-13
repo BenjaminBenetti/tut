@@ -1,3 +1,5 @@
+import type { RankTuning } from "./rank";
+
 /**
  * Balance knobs for roster bookkeeping. Services receive a tuning object
  * rather than importing the defaults, so tests and future difficulty
@@ -9,4 +11,6 @@ export interface RosterTuning {
   readonly repairCostPerPoint: number;
   /** Experience every squad and mech that returns from a mission earns. */
   readonly xpPerMissionSurvived: number;
+  /** The rank ladder experience climbs, and what each rung is worth (#1130). */
+  readonly ranks: RankTuning;
 }

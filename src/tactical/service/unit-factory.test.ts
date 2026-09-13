@@ -101,6 +101,8 @@ describe("squadUnit", () => {
       armor: 0,
       passClass: "infantry",
       modelId: "tdf.infantry.rifle",
+      // A green squad is a Private, and a Private earns nothing yet (#1130).
+      rank: { name: "Private", index: 0 },
     });
     expect(unit).toEqual({
       id: "unit-1",
@@ -141,6 +143,84 @@ describe("squadUnit", () => {
     const { template } = squadUnit(squad(5, "cavalry"), odd, AT, deps());
     expect(template.modelId).toBe(UNIT_TUNING.infantry.fallbackModelId);
     expect(template.weapons[0]!.profile.damage).toBe(1);
+  });
+});
+
+// ===========================================
+// Ranks (#1130)
+// ===========================================
+
+describe("rank bonuses", () => {
+  const rifle = () => squadUnit(squad(), RIFLE, AT, deps()).template;
+
+  it("gives a Corporal (30 xp, three swarmers) one more tile of move and nothing else", () => {
+    const { unit, template } = squadUnit(
+      { ...squad(), xp: 30 },
+      RIFLE,
+      AT,
+      deps(),
+    );
+    expect(template.rank).toEqual({ name: "Corporal", index: 2 });
+    expect(template.move).toBe(rifle().move + 1);
+    expect(template.maxAp).toBe(rifle().maxAp);
+    expect(template.weapons[0]?.profile.accuracy).toBe(
+      rifle().weapons[0]!.profile.accuracy + 4,
+    );
+    expect(unit.maxAp).toBe(template.maxAp);
+  });
+
+  it("gives a Staff Sergeant (100 xp, ten swarmers) a third action point", () => {
+    const { unit, template } = squadUnit(
+      { ...squad(), xp: 100 },
+      RIFLE,
+      AT,
+      deps(),
+    );
+    expect(template.rank?.name).toBe("Staff Sergeant");
+    expect(template.maxAp).toBe(3);
+    expect(unit.ap).toBe(3);
+    expect(template.move).toBe(rifle().move + 2);
+  });
+
+  it("lifts a mech pilot the same way, on every weapon, and never past 100 accuracy", () => {
+    const { mech, sheet } = starterMech();
+    const green = mechUnit(mech, sheet, AT, deps()).template;
+    const veteran = mechUnit({ ...mech, xp: 100 }, sheet, AT, deps()).template;
+    expect(veteran.rank).toEqual({ name: "Staff Sergeant", index: 4 });
+    expect(veteran.move).toBe(green.move + 2);
+    expect(veteran.maxAp).toBe(green.maxAp + 1);
+    for (const [i, weapon] of veteran.weapons.entries()) {
+      expect(weapon.profile.accuracy).toBe(
+        Math.min(100, green.weapons[i]!.profile.accuracy + 8),
+      );
+    }
+    const sharp = mechUnit(
+      { ...mech, xp: 100 },
+      { ...sheet, accuracy: 40 },
+      AT,
+      deps(),
+    ).template;
+    for (const weapon of sharp.weapons) {
+      expect(weapon.profile.accuracy).toBeLessThanOrEqual(100);
+    }
+  });
+
+  it("stops at the top of the ladder however much experience piles up", () => {
+    const top = deps().tuning.ranks.ladder.length - 1;
+    const { template } = squadUnit(
+      { ...squad(), xp: 1_000_000 },
+      RIFLE,
+      AT,
+      deps(),
+    );
+    expect(template.rank?.index).toBe(top);
+  });
+
+  it("copies what a bug is worth onto its template, and nothing when the species says nothing", () => {
+    expect(
+      bugUnit({ ...SWARMER, xpValue: 10 }, AT, deps()).template.xpValue,
+    ).toBe(10);
+    expect(bugUnit(SWARMER, AT, deps()).template).not.toHaveProperty("xpValue");
   });
 });
 

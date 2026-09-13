@@ -1,4 +1,5 @@
 import type { ModelAssetId } from "../../content/data/model-ids";
+import type { RankTuning } from "../../roster/model/rank";
 import type { SquadTypeId } from "../../roster/model/squad-type";
 import type { WeaponProfile } from "./weapon-profile";
 
@@ -73,4 +74,11 @@ export interface MechUnitTuning {
 export interface UnitTuning {
   readonly infantry: InfantryUnitTuning;
   readonly mech: MechUnitTuning;
+  /**
+   * The roster's rank ladder and what each rung adds to a squad's or a
+   * mech's template at mission start (#1130). The same object the
+   * roster promotes with, so the rank the HUD names is the one the
+   * bonuses were paid for.
+   */
+  readonly ranks: RankTuning;
 }

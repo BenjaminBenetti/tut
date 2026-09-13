@@ -39,6 +39,7 @@ import {
   tacticalMissionResult,
 } from "./tactical-mission-resolver";
 import {
+  FIXTURE_TEMPLATES,
   missionWith,
   openField,
   unitAt,
@@ -59,6 +60,8 @@ const MAP = openField().build();
 const SQUAD_HP = 5 * HP_PER_SOLDIER;
 /** The starter mech's hit points in these fixtures. */
 const MECH_HP = 80;
+/** The fixture bug template, to derive species templates that carry a worth. */
+const TEMPLATE_BUG = missionWith(MAP, []).templates[FIXTURE_TEMPLATES.bug]!;
 
 function at(x: number, z: number): TileCoord {
   return { x, y: 0, z };
@@ -512,6 +515,62 @@ describe("tacticalMissionResult casualties", () => {
       { mechId: "mech-1", damage: 0, kills: 1 },
     ]);
     expect(result.mechsDestroyed).toEqual([]);
+  });
+
+  it("credits each kill with its template's worth, extracted killers included (#1130)", () => {
+    const worth = {
+      "bug:swarmer": { ...TEMPLATE_BUG, id: "bug:swarmer", xpValue: 10 },
+      "bug:brute": { ...TEMPLATE_BUG, id: "bug:brute", xpValue: 60 },
+      // A template saved before species carried a worth (#1130).
+      "bug:old": { ...TEMPLATE_BUG, id: "bug:old" },
+    };
+    const swarmer = (id: string): Unit => ({
+      ...bugUnit(id),
+      templateId: "bug:swarmer",
+    });
+    const brute = (id: string): Unit => ({
+      ...bugUnit(id),
+      templateId: "bug:brute",
+    });
+    const base = missionWith(
+      MAP,
+      [
+        mechUnit("unit-2", "mech-1", MECH_HP),
+        swarmer("unit-3"),
+        swarmer("unit-4"),
+        brute("unit-6"),
+        // A bug whose template predates worth: the kill counts, for nothing.
+        { ...bugUnit("unit-7"), templateId: "bug:old" },
+      ],
+      { objectives: DONE, outcome: "won" },
+    );
+    const tactical: TacticalState = {
+      ...base,
+      templates: { ...base.templates, ...worth },
+      // The squad boarded the drop ship: its kills still come home.
+      extracted: [squadUnit("unit-1", "squad-1", SQUAD_HP)],
+      log: [
+        { type: UNIT_DIED, payload: { unitId: "unit-3", killerId: "unit-1" } },
+        { type: UNIT_DIED, payload: { unitId: "unit-4", killerId: "unit-1" } },
+        { type: UNIT_DIED, payload: { unitId: "unit-6", killerId: "unit-2" } },
+        { type: UNIT_DIED, payload: { unitId: "unit-7", killerId: "unit-2" } },
+      ],
+    };
+    const result = tacticalMissionResult(
+      {
+        tactical,
+        mission: mission(),
+        deployment: deployment(["squad-1"], ["mech-1"]),
+        state: resolutionState([squad("squad-1")], [mech("mech-1")]),
+      },
+      DEPS,
+    );
+    expect(result.squadCasualties).toEqual([
+      { squadId: "squad-1", losses: 0, kills: 2, xp: 20 },
+    ]);
+    expect(result.mechDamage).toEqual([
+      { mechId: "mech-1", damage: 0, kills: 2, xp: 60 },
+    ]);
   });
 
   it("reports no losses for a deployed unit with no token on the map", () => {

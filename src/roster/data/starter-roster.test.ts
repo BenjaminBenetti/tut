@@ -65,10 +65,14 @@ describe("STARTER_ROSTER", () => {
     expect(new Set(names).size).toBe(names.length);
   });
 
-  it("fields two rifle squads and one mech on the starter loadout", () => {
+  it("fields two rifle squads, a radio, a rocket and one mech on the starter loadout (#1132)", () => {
+    // The rifles first, so the original force keeps its ids and its
+    // place in the deployment order; the finders and crackers after.
     expect(STARTER_ROSTER.squads.map((squad) => squad.typeId)).toEqual([
       "rifle",
       "rifle",
+      "radio",
+      "rocket",
     ]);
     expect(STARTER_ROSTER.mechs).toHaveLength(1);
     expect(STARTER_ROSTER.mechs[0]?.loadout).toBe(STARTER_LOADOUT);

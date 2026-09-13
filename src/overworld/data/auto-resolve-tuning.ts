@@ -8,10 +8,10 @@ import type { AutoResolveTuning } from "../model/auto-resolve-tuning";
  * Default auto-resolve tuning. `difficultyScale` 40 makes one point of
  * difficulty worth exactly a full rifle squad (rating 40, #336), so a
  * lone squad is an even fight at difficulty 1, two squads at difficulty
- * 2, and the starter roster (two rifle squads plus the 113-rated starter
- * mech, 193) is favoured on a difficulty 4 mission, a shade under even
- * odds on difficulty 5 since #1130 halved the starter chassis' plate,
- * and near-certain on a skirmish. `winSpread` 40 means being one full squad
+ * 2, and the starter roster (two rifle squads, a radio, a rocket and the
+ * 113-rated starter mech, 277 since #1132 added the two support squads)
+ * is favoured on a difficulty 6 mission, a shade under even odds on
+ * difficulty 7, and near-certain on a skirmish. `winSpread` 40 means being one full squad
  * ahead or behind is roughly a 3-to-1 fight. Casualties bite hardest on
  * a loss: half the soldiers and a coin-flip's worth of mechs, so an
  * ignored difficulty warning is a memorable mistake (GDD §5.8).

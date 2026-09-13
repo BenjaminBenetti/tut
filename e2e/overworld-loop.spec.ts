@@ -134,7 +134,8 @@ test("plays the overworld loop end to end without console errors", async ({
   const boxes = page.locator(
     '[data-role="deployment-picker"] input[type="checkbox"]',
   );
-  await expect(boxes).toHaveCount(3);
+  // Two rifles, a radio, a rocket and the mech (#1132).
+  await expect(boxes).toHaveCount(5);
   for (const box of await boxes.all()) {
     await box.check();
   }
@@ -177,14 +178,14 @@ test("plays the overworld loop end to end without console errors", async ({
   await expect(body).toHaveAttribute("data-screen", "roster");
   const squadRows = page.locator("#squad-list tbody tr");
   const mechRows = page.locator("#mech-list tbody tr");
-  await expect(squadRows).toHaveCount(2);
+  await expect(squadRows).toHaveCount(4);
   await expect(mechRows).toHaveCount(1);
   const rosterCredits = page.locator('#roster-bar [data-field="credits"]');
   const beforeHire = parseCredits(await rosterCredits.textContent());
   await page.locator('[data-field="hire-type"]').selectOption("rifle");
   await page.locator('[data-field="hire-name"]').fill("Echo");
   await page.locator('[data-action="hire"]').click();
-  await expect(squadRows).toHaveCount(3);
+  await expect(squadRows).toHaveCount(5);
   await expect(rosterCredits).toHaveText(
     `¢${(beforeHire - 500).toLocaleString("en-US")}`,
   );
@@ -254,7 +255,7 @@ test("plays the overworld loop end to end without console errors", async ({
   await expect(day).toHaveText(finalDay);
   await expect(credits).toHaveText(`¢${finalCredits.toLocaleString("en-US")}`);
   await page.locator('#top-bar [data-action="roster"]').click();
-  await expect(squadRows).toHaveCount(3);
+  await expect(squadRows).toHaveCount(5);
   await expect(mechRows).toHaveCount(2);
 
   expect(errors).toEqual([]);

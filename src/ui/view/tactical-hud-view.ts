@@ -99,8 +99,8 @@ export const DEFAULT_HUD_MODE: HudMode = "move";
 export interface TacticalHudHandlers {
   /** A command the player asked for; the owner dispatches it and reports refusals through `showStatus`. */
   readonly onCommand: (command: TacticalCommand) => void;
-  /** The player asked to leave the mission screen. */
-  readonly onBack: () => void;
+  /** The player asked to leave the mission (#1132); the owner confirms and dispatches. */
+  readonly onLeave: () => void;
   /**
    * Bring a unit on screen (#1041). Absent in headless callers, which
    * then simply do not move the camera.
@@ -366,7 +366,7 @@ export class TacticalHudView {
     this.handlers = handlers;
     this.deps = deps;
     this.banner = new TurnBannerView({
-      onBack: () => handlers.onBack(),
+      onLeave: () => handlers.onLeave(),
       onLayerStep: (delta) => handlers.onLayerStep?.(delta),
     });
     this.phases = new PhaseBannerView(deps.phaseBanner);

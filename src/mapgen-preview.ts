@@ -258,7 +258,7 @@ async function main(): Promise<void> {
             onCommand: (command) => {
               document.body.dataset.lastCommand = command.type;
             },
-            onBack: () => undefined,
+            onLeave: () => undefined,
           },
           {
             combatTuning: COMBAT_TUNING,

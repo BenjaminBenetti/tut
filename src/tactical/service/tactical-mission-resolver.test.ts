@@ -29,6 +29,8 @@ import type { GameState } from "../../save/model/game-state";
 import { createNewGame } from "../../save/service/new-game-service";
 import { SPAWN_TUNING } from "../data/spawn-tuning";
 import { UNIT_TUNING } from "../data/unit-tuning";
+import { MISSION_ENDED } from "../model/mission-ended-event";
+import { UNIT_ABANDONED } from "../model/unit-abandoned-event";
 import type { Objective } from "../model/tactical-state";
 import type { TacticalState } from "../model/tactical-state";
 import type { Unit } from "../model/unit";
@@ -347,6 +349,66 @@ describe("tacticalMissionResult", () => {
       DEPS,
     );
     expect(result.outcome).toBe("won");
+  });
+
+  it("names the roster entries left behind off the log, and only those (#1132)", () => {
+    // Alpha and the mech were stranded when the player left; Bravo had
+    // already boarded. The stranded two read as wiped and destroyed as
+    // any fallen unit would, and the result says why.
+    const tactical: TacticalState = {
+      ...missionWith(
+        MAP,
+        [
+          squadUnit("unit-1", "squad-1", 0),
+          mechUnit("unit-3", "mech-1", 0),
+          bugUnit("unit-4"),
+        ],
+        {
+          objectives: OPEN,
+          outcome: "lost",
+          extracted: [squadUnit("unit-2", "squad-2", SQUAD_HP)],
+        },
+      ),
+      log: [
+        { type: UNIT_ABANDONED, payload: { unitId: "unit-1" } },
+        { type: UNIT_ABANDONED, payload: { unitId: "unit-3" } },
+        { type: MISSION_ENDED, payload: { outcome: "lost", turn: 4 } },
+      ],
+    };
+    const result = tacticalMissionResult(
+      {
+        tactical,
+        mission: mission(3),
+        deployment: deployment(["squad-1", "squad-2"], ["mech-1"]),
+        state: resolutionState(
+          [squad("squad-1"), squad("squad-2")],
+          [mech("mech-1")],
+        ),
+      },
+      DEPS,
+    );
+    expect(result.leftBehind).toEqual(["squad-1", "mech-1"]);
+    expect(result.squadsWiped).toEqual(["squad-1"]);
+    expect(result.mechsDestroyed).toEqual(["mech-1"]);
+    expect(result.outcome).toBe("lost");
+  });
+
+  it("carries no left-behind field on a mission nobody left (#1132)", () => {
+    const tactical: TacticalState = missionWith(
+      MAP,
+      [squadUnit("unit-1", "squad-1", 0), bugUnit("unit-3")],
+      { objectives: OPEN, outcome: "lost" },
+    );
+    const result = tacticalMissionResult(
+      {
+        tactical,
+        mission: mission(3),
+        deployment: deployment(["squad-1"]),
+        state: resolutionState([squad("squad-1")]),
+      },
+      DEPS,
+    );
+    expect(result.leftBehind).toBeUndefined();
   });
 
   it("calls an abandoned mission lost", () => {

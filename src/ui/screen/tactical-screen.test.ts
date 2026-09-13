@@ -21,6 +21,7 @@ import { COMBAT_TUNING } from "../../tactical/data/combat-tuning";
 import { OBJECTIVE_TUNING } from "../../tactical/data/objective-tuning";
 import { UNIT_TUNING } from "../../tactical/data/unit-tuning";
 import { SPAWN_TUNING } from "../../tactical/data/spawn-tuning";
+import { ABANDON_MISSION } from "../../tactical/model/abandon-mission-command";
 import { ATTACK } from "../../tactical/model/attack-command";
 import { END_TURN } from "../../tactical/model/end-turn-command";
 import { FINISH_MISSION } from "../../tactical/model/finish-mission-command";
@@ -592,10 +593,10 @@ describe("TacticalScreen", () => {
     expect(host.calls).toEqual([]);
   });
 
-  it("Overworld navigates and unmount releases the host and unsubscribes", () => {
+  it("unmount releases the host and unsubscribes", () => {
     const store = new FakeStore(inMission());
     const host = new FakeHost();
-    const { router, navigate } = fakeRouter();
+    const { router } = fakeRouter();
     const screen = new TacticalScreen({
       router,
       session: sessionWith(store),
@@ -604,13 +605,121 @@ describe("TacticalScreen", () => {
       sceneHost: host,
     });
     screen.mount(root);
-    root.querySelector<HTMLButtonElement>('[data-action="overworld"]')?.click();
-    expect(navigate).toHaveBeenCalledWith("overworld");
     expect(store.listenerCount).toBe(1);
     screen.unmount();
     expect(store.listenerCount).toBe(0);
     expect(host.calls.at(-1)).toBe("release");
     expect(root.childElementCount).toBe(0);
+  });
+
+  describe("Leave (#1132)", () => {
+    const dialog = (): HTMLElement | null =>
+      root.querySelector<HTMLElement>('[data-role="leave-dialog"]');
+    const leaveButton = (): HTMLButtonElement | null =>
+      root.querySelector<HTMLButtonElement>(
+        '#turn-banner [data-action="leave-mission"]',
+      );
+
+    /** A mounted screen in a live mission, with the whole force on the map. */
+    function mountedInMission(state = inMission()) {
+      const store = new FakeStore(state);
+      const host = new FakeHost();
+      const { router, navigate } = fakeRouter();
+      const screen = new TacticalScreen({
+        router,
+        session: sessionWith(store),
+        combatTuning: COMBAT_TUNING,
+        objectiveTuning: OBJECTIVE_TUNING,
+        sceneHost: host,
+      });
+      screen.mount(root);
+      return { screen, store, host, navigate, state };
+    }
+
+    it("offers Leave in the banner and no longer offers the overworld", () => {
+      mountedInMission();
+      expect(leaveButton()?.textContent).toBe("Leave");
+      expect(root.querySelector('[data-action="overworld"]')).toBeNull();
+      expect(dialog()?.hidden).toBe(true);
+    });
+
+    it("asks before stranding the force, naming the units and the failed outcome, and Stay keeps the mission", () => {
+      const { store, navigate, state } = mountedInMission();
+      leaveButton()?.click();
+      expect(dialog()?.hidden).toBe(false);
+      const text = dialog()?.textContent ?? "";
+      for (const squad of state.roster.squads) {
+        expect(text).toContain(squad.name);
+      }
+      for (const mech of state.roster.mechs) {
+        expect(text).toContain(mech.name);
+      }
+      expect(text).toContain("recorded as failed");
+      expect(text).not.toContain("unit-1");
+      root
+        .querySelector<HTMLButtonElement>('[data-action="leave-cancel"]')
+        ?.click();
+      expect(dialog()?.hidden).toBe(true);
+      expect(store.dispatched.map((c) => c.type)).not.toContain(
+        ABANDON_MISSION,
+      );
+      expect(navigate).not.toHaveBeenCalled();
+    });
+
+    it("dispatches AbandonMission on confirm", () => {
+      const { store } = mountedInMission();
+      leaveButton()?.click();
+      root
+        .querySelector<HTMLButtonElement>('[data-action="leave-confirm"]')
+        ?.click();
+      expect(dialog()?.hidden).toBe(true);
+      expect(store.dispatched.map((c) => c.type)).toEqual([ABANDON_MISSION]);
+    });
+
+    it("says the mission will be won when the objectives are done, and leaves at once when nothing is at stake", () => {
+      const started = inMission();
+      const mission = started.activeMission!;
+      const done = {
+        ...started,
+        activeMission: {
+          ...mission,
+          objectives: mission.objectives.map((o) => ({ ...o, complete: true })),
+        },
+      };
+      const { store } = mountedInMission(done);
+      leaveButton()?.click();
+      expect(dialog()?.textContent).toContain("recorded as won");
+      root
+        .querySelector<HTMLButtonElement>('[data-action="leave-cancel"]')
+        ?.click();
+      // Everyone aboard and the job done: no question to ask.
+      const aboard = {
+        ...done,
+        activeMission: {
+          ...done.activeMission,
+          units: mission.units.filter((u) => u.team !== "tdf"),
+          extracted: mission.units.filter((u) => u.team === "tdf"),
+        },
+      };
+      store.replace(aboard);
+      leaveButton()?.click();
+      expect(dialog()?.hidden).toBe(true);
+      expect(store.dispatched.map((c) => c.type)).toEqual([ABANDON_MISSION]);
+    });
+
+    it("is the way back to the overworld when no mission is in progress", () => {
+      const store = new FakeStore(campaignOnDay(4, []));
+      const { router, navigate } = fakeRouter();
+      new TacticalScreen({
+        router,
+        session: sessionWith(store),
+        combatTuning: COMBAT_TUNING,
+        objectiveTuning: OBJECTIVE_TUNING,
+      }).mount(root);
+      leaveButton()?.click();
+      expect(navigate).toHaveBeenCalledWith("overworld");
+      expect(store.dispatched).toEqual([]);
+    });
   });
 
   it("hands only the tactical events of a store change to the host, in order (#338)", () => {
@@ -705,7 +814,9 @@ describe("TacticalScreen", () => {
       root.querySelector("#tactical-viewport #mission-hud"),
     ).not.toBeNull();
     expect(root.querySelector("#tactical-bar")).toBeNull();
-    expect(root.querySelectorAll('[data-action="overworld"]')).toHaveLength(1);
+    expect(root.querySelectorAll('[data-action="leave-mission"]')).toHaveLength(
+      1,
+    );
     expect(root.querySelectorAll('[data-field="turn"]')).toHaveLength(1);
     expect(
       root.querySelector('#turn-banner [data-field="turn"]')?.textContent,
@@ -1035,6 +1146,26 @@ describe("TacticalScreen phase banners", () => {
 // ===========================================
 
 describe("TacticalScreen playback lock (#1130)", () => {
+  it("holds Leave while the bug phase is still playing (#1132)", () => {
+    const { store, host, endTurn } = playing();
+    const leave = (): void => {
+      root
+        .querySelector<HTMLButtonElement>(
+          '#turn-banner [data-action="leave-mission"]',
+        )
+        ?.click();
+    };
+    const dialog = (): HTMLElement | null =>
+      root.querySelector<HTMLElement>('[data-role="leave-dialog"]');
+    endTurn();
+    leave();
+    expect(dialog()?.hidden).toBe(true);
+    expect(store.dispatched.map((c) => c.type)).not.toContain(ABANDON_MISSION);
+    host.settle();
+    leave();
+    expect(dialog()?.hidden).toBe(false);
+  });
+
   let root: HTMLElement;
 
   beforeEach(() => {

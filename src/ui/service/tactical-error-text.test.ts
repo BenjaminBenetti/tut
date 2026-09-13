@@ -69,6 +69,7 @@ const EVERY_KIND: readonly TacticalError[] = [
   { kind: "not-in-extraction-zone", unitId: ID },
   { kind: "not-extractable", unitId: ID },
   { kind: "mission-not-over", missionId: ID },
+  { kind: "not-player-phase" },
   { kind: "mission-mismatch", expected: ID, active: ID },
   { kind: "no-objective-in-reach", unitId: ID },
   { kind: "unhandled-command", commandType: "tactical:move" },

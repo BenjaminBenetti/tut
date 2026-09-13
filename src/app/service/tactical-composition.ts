@@ -25,6 +25,7 @@ import { UNIT_TUNING } from "../../tactical/data/unit-tuning";
 import { SPAWN_TUNING } from "../../tactical/data/spawn-tuning";
 import { ATTACK } from "../../tactical/model/attack-command";
 import { END_TURN } from "../../tactical/model/end-turn-command";
+import { ABANDON_MISSION } from "../../tactical/model/abandon-mission-command";
 import { EXTRACT } from "../../tactical/model/extract-command";
 import { INTERACT } from "../../tactical/model/interact-command";
 import { MOVE } from "../../tactical/model/move-command";
@@ -44,6 +45,7 @@ import {
   createExtractHandler,
   createInteractHandler,
 } from "../../tactical/service/objective-service";
+import { createAbandonMissionHandler } from "../../tactical/service/abandon-mission-handler";
 import { overwatchHandler } from "../../tactical/service/overwatch-handler";
 import { reloadHandler } from "../../tactical/service/reload-handler";
 import type { SpawnDeps } from "../../tactical/service/spawn-service";
@@ -199,6 +201,7 @@ export function shippedTacticalHandlers(
     [DEPLOY_RADAR]: createDeployRadarHandler(RADAR_TUNING),
     [INTERACT]: createInteractHandler(OBJECTIVE_TUNING),
     [EXTRACT]: createExtractHandler(OBJECTIVE_TUNING),
+    [ABANDON_MISSION]: createAbandonMissionHandler(),
   };
   const bugPhase = createBugPhaseRunner({
     handlers: actions,

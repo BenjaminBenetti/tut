@@ -26,6 +26,7 @@ import { RELOAD } from "../../tactical/model/reload-command";
 import { DEPLOY_RADAR } from "../../tactical/model/deploy-radar-command";
 import { EXTRACT, extract } from "../../tactical/model/extract-command";
 import { INTERACT } from "../../tactical/model/interact-command";
+import { ABANDON_MISSION } from "../../tactical/model/abandon-mission-command";
 import { END_TURN, endTurn } from "../../tactical/model/end-turn-command";
 import type { TacticalHandler } from "../../tactical/model/tactical-handler";
 import { TURN_STARTED } from "../../tactical/model/turn-started-event";
@@ -143,6 +144,7 @@ describe("composeTactical", () => {
       DEPLOY_RADAR,
       INTERACT,
       EXTRACT,
+      ABANDON_MISSION,
       // EndTurn is registered last because it closes over the action
       // rules above: the bug phase drives them and must not be able to
       // recurse into the turn engine (#335).

@@ -45,11 +45,11 @@ function setup(
   } = {},
 ) {
   const commands: TacticalCommand[] = [];
-  const onBack = vi.fn();
+  const onLeave = vi.fn();
   const hud = new TacticalHudView(
     {
       onCommand: (c) => commands.push(c),
-      onBack,
+      onLeave,
       // An anchor, so the wheel can open: without one a left click on a
       // tile or an enemy opens nothing and half the HUD is untestable.
       anchorFor: () => ({ x: 100, y: 100 }),
@@ -60,7 +60,7 @@ function setup(
   hud.mount(root);
   const mission = hudMission();
   hud.update(mission);
-  return { hud, commands, mission, onBack };
+  return { hud, commands, mission, onLeave };
 }
 
 /** The wheel entry with this id, or null while the wheel is closed. */
@@ -252,7 +252,7 @@ describe("TacticalHudView", () => {
     const hud = new TacticalHudView(
       {
         onCommand: (c) => commands.push(c),
-        onBack: vi.fn(),
+        onLeave: vi.fn(),
         anchorFor: () => ({ x: 100, y: 100 }),
         onMarkBlast: (tiles) => blasts.push(tiles.length),
       },
@@ -308,7 +308,7 @@ describe("TacticalHudView", () => {
     const hud = new TacticalHudView(
       {
         onCommand: (c) => commands.push(c),
-        onBack: vi.fn(),
+        onLeave: vi.fn(),
         anchorFor: () => ({ x: 100, y: 100 }),
       },
       { combatTuning: COMBAT_TUNING, objectiveTuning: OBJECTIVE_TUNING },
@@ -590,7 +590,7 @@ describe("TacticalHudView", () => {
   it("previews and fires at an egg spawner, naming it in the panel (#426)", () => {
     const commands: TacticalCommand[] = [];
     const hud = new TacticalHudView(
-      { onCommand: (c) => commands.push(c), onBack: vi.fn() },
+      { onCommand: (c) => commands.push(c), onLeave: vi.fn() },
       { combatTuning: COMBAT_TUNING, objectiveTuning: OBJECTIVE_TUNING },
     );
     hud.mount(root);
@@ -725,7 +725,7 @@ describe("TacticalHudView", () => {
     const hud = new TacticalHudView(
       {
         onCommand: vi.fn(),
-        onBack: vi.fn(),
+        onLeave: vi.fn(),
         onViewChange: () => changes.push(1),
       },
       { combatTuning: COMBAT_TUNING, objectiveTuning: OBJECTIVE_TUNING },
@@ -772,7 +772,7 @@ describe("TacticalHudView", () => {
   it("previews the weapon that is armed, not the unit's first (#532)", () => {
     const commands: TacticalCommand[] = [];
     const hud = new TacticalHudView(
-      { onCommand: (c) => commands.push(c), onBack: vi.fn() },
+      { onCommand: (c) => commands.push(c), onLeave: vi.fn() },
       { combatTuning: COMBAT_TUNING, objectiveTuning: OBJECTIVE_TUNING },
     );
     hud.mount(root);
@@ -1774,7 +1774,7 @@ describe("the context menu closes after it is used (#627)", () => {
     const hud = new TacticalHudView(
       {
         onCommand: (c) => commands.push(c),
-        onBack: vi.fn(),
+        onLeave: vi.fn(),
         // Without an anchor the menu never opens and a test of its
         // dismissal silently proves nothing.
         anchorFor: () => ({ x: 100, y: 100 }),
@@ -1824,7 +1824,7 @@ describe("the context menu closes when the player moves on (#627)", () => {
     const hud = new TacticalHudView(
       {
         onCommand: (c) => commands.push(c),
-        onBack: vi.fn(),
+        onLeave: vi.fn(),
         anchorFor: () => ({ x: 100, y: 100 }),
       },
       { combatTuning: COMBAT_TUNING, objectiveTuning: OBJECTIVE_TUNING },
@@ -1930,7 +1930,7 @@ function logLines(): string[] {
 /** A HUD mounted but not yet shown a mission. */
 function bareHud(): TacticalHudView {
   const hud = new TacticalHudView(
-    { onCommand: vi.fn(), onBack: vi.fn() },
+    { onCommand: vi.fn(), onLeave: vi.fn() },
     { combatTuning: COMBAT_TUNING, objectiveTuning: OBJECTIVE_TUNING },
   );
   hud.mount(root);

@@ -165,6 +165,12 @@ export function describeEvent(
         icon: "warning",
         tone: "danger",
       };
+    case "tactical:unit-abandoned":
+      return {
+        text: `${nameOf(event.payload.unitId)} left behind`,
+        icon: "warning",
+        tone: "danger",
+      };
     case "tactical:unit-reloaded":
       return {
         text: `${nameOf(event.payload.unitId)} reloaded`,
@@ -279,6 +285,7 @@ export function actorOf(event: TacticalEvent): UnitId | undefined {
     case "tactical:bugs-spawned":
     case "tactical:objective-updated":
     case "tactical:mission-ended":
+    case "tactical:unit-abandoned":
       return undefined;
     default:
       return undefined;

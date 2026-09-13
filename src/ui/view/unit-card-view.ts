@@ -1,6 +1,7 @@
 import type { Unit } from "../../tactical/model/unit";
 import type { UnitTemplate } from "../../tactical/model/unit-template";
 import type { WeaponId } from "../../tactical/model/unit-weapon";
+import type { RankTuning } from "../../roster/model/rank";
 import type {
   EquipmentDefinition,
   EquipmentId,
@@ -11,6 +12,7 @@ import { chargeDelayText } from "../service/charge-delay-text";
 import { equipmentOf } from "../../tactical/service/equipment-service";
 import { footprintSizeOf } from "../../tactical/service/footprint-service";
 import { formatWhole } from "../service/format";
+import { attachRankTooltip } from "./rank-tooltip-view";
 import { weaponProfileText } from "../service/weapon-profile-text";
 import { iconGlyph } from "./icon-glyph";
 import { chargeRegisterFor } from "../service/charge-register";
@@ -38,6 +40,12 @@ export interface UnitCardHandlers {
    * item's row, or left it (`undefined`).
    */
   readonly onRowHover?: (hover: CardHover | undefined) => void;
+}
+
+/** What the card needs injected; everything optional, a bare card still reads. */
+export interface UnitCardOptions {
+  /** The ladder and its rates, so the rank badge can say what it is worth (#1134). */
+  readonly rankTuning?: RankTuning;
 }
 
 /** One titled block in a card field: a weapon's name and its numbers. */
@@ -94,6 +102,9 @@ export class UnitCardView {
   private fields = new Map<string, HTMLElement>();
   private meter: HTMLElement | undefined;
   private readonly handlers: UnitCardHandlers;
+  private readonly options: UnitCardOptions;
+  /** The rank index the badge's popover was last attached for. */
+  private rankAttached: number | undefined;
   /** The weapon row the pointer or focus rests on, if any (#1132). */
   private hovered: CardHover | undefined;
   /** Each stat row's term and value, so an enemy's card can drop the rows that are not its business (#1134). */
@@ -105,9 +116,13 @@ export class UnitCardView {
   // Constructor
   // ===========================================
 
-  /** @param handlers - Whom to tell about a weapon row being rested on; none by default. */
-  constructor(handlers: UnitCardHandlers = {}) {
+  /**
+   * @param handlers - Whom to tell about a weapon row being rested on; none by default.
+   * @param options - The rank tuning for the badge's popover; none by default.
+   */
+  constructor(handlers: UnitCardHandlers = {}, options: UnitCardOptions = {}) {
     this.handlers = handlers;
+    this.options = options;
   }
 
   // ===========================================
@@ -246,6 +261,7 @@ export class UnitCardView {
     const rankBadge = this.fields.get("unit-rank");
     if (rankBadge) {
       rankBadge.hidden = template.rank === undefined;
+      this.attachRank(rankBadge, template.rank?.index);
     }
     this.set("hp", `${formatWhole(unit.hp)} / ${formatWhole(unit.maxHp)}`);
     this.set("ap", `${formatWhole(unit.ap)} / ${formatWhole(unit.maxAp)}`);
@@ -322,6 +338,23 @@ export class UnitCardView {
   // ===========================================
   // Helpers
   // ===========================================
+
+  /**
+   * Gives the badge its popover for `index` (#1134). Listeners are
+   * added once and the popover reads the index they were attached
+   * with, so a new rank on the same badge replaces the badge's text
+   * and re-attaches; the same rank leaves it alone.
+   */
+  private attachRank(badge: HTMLElement, index: number | undefined): void {
+    const tuning = this.options.rankTuning;
+    if (tuning === undefined || index === undefined) {
+      return;
+    }
+    if (index !== this.rankAttached) {
+      this.rankAttached = index;
+      attachRankTooltip(badge, index, tuning);
+    }
+  }
 
   /**
    * Records where the pointer or focus rests and tells the owner once

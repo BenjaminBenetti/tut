@@ -227,6 +227,14 @@ describe("RosterScreen", () => {
     expect(first.querySelector('[data-field="strength"]')?.textContent).toBe(
       "3 / 5",
     );
+    // The rank name carries the popover saying what it is worth (#1134).
+    expect(
+      first
+        .querySelector<HTMLElement>(
+          '[data-field="rank"] [data-role="rank-name"]',
+        )
+        ?.classList.contains("tut-rank"),
+    ).toBe(true);
     // A green squad's rank and the distance to its first stripe (#1130).
     expect(
       first.querySelector('[data-field="rank"] [data-role="rank-name"]')

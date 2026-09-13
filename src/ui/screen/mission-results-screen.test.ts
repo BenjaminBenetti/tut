@@ -209,6 +209,22 @@ describe("MissionResultsScreen", () => {
       "Alpha +30 xp · promoted to Corporal",
       "Anvil +10 xp · Sergeant",
     ]);
+    // The rank name is an anchor for the popover that says what the
+    // rank is worth (#1134), on the rung the unit now holds.
+    const ranks = [
+      ...field("experience").querySelectorAll<HTMLElement>(
+        '[data-role="rank-name"]',
+      ),
+    ];
+    expect(ranks.map((r) => [r.textContent, r.dataset.rankIndex])).toEqual([
+      ["Corporal", "2"],
+      ["Sergeant", "3"],
+    ]);
+    ranks[0]?.dispatchEvent(new Event("mouseenter"));
+    expect(
+      document.querySelector<HTMLElement>('[data-role="rank-tooltip"]')
+        ?.textContent,
+    ).toContain("Corporal · 30 xp");
     expect(field("credits").textContent).toBe("¢900");
     expect(field("infestation-delta").textContent).toBe("-20");
   });

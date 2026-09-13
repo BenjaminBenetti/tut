@@ -226,6 +226,7 @@ export async function bootstrapApp(doc: Document): Promise<void> {
             session: game.session,
             combatTuning: COMBAT_TUNING,
             objectiveTuning: OBJECTIVE_TUNING,
+            rankTuning: game.content.rosterTuning.ranks,
             previewDeps: game.tactical.attackDeps,
             sceneHost: new DomTacticalSceneHost({
               baseUrl: import.meta.env.BASE_URL,

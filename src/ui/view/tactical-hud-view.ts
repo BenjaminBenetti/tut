@@ -9,6 +9,7 @@ import { move } from "../../tactical/model/move-command";
 import { overwatch } from "../../tactical/model/overwatch-command";
 import { extract } from "../../tactical/model/extract-command";
 import { interact } from "../../tactical/model/interact-command";
+import type { RankTuning } from "../../roster/model/rank";
 import type { ObjectiveTuning } from "../../tactical/model/objective-tuning";
 import { reload } from "../../tactical/model/reload-command";
 import { RADAR_DISH } from "../../tactical/data/equipment";
@@ -178,6 +179,8 @@ export interface TacticalHudDeps {
   readonly combatTuning: CombatTuning;
   /** Tuning handed to `reachableObjectives`; the HUD judges no distance itself. */
   readonly objectiveTuning: ObjectiveTuning;
+  /** The rank ladder and its rates, for the card's rank popover (#1134); absent in tests without one. */
+  readonly rankTuning?: RankTuning;
   /**
    * The content a blast preview asks what would fall (#1121). Optional:
    * without it previews still show the blast and who stands in it.
@@ -262,11 +265,7 @@ export class TacticalHudView {
   private readonly banner: TurnBannerView;
   private readonly phases: PhaseBannerView;
   /** The selected unit's card; resting on one of its weapons previews that weapon's reach (#1132). */
-  private readonly card = new UnitCardView({
-    onRowHover: (row) => {
-      this.previewRowRange(row);
-    },
-  });
+  private readonly card: UnitCardView;
   private readonly preview: HitPreviewView;
   private readonly objectives = new ObjectiveTrackerView();
   /** The force at a glance; a row selects and recovers a unit (#1041). */
@@ -371,6 +370,14 @@ export class TacticalHudView {
 
   /** @param handlers - Where commands and navigation go. */
   constructor(handlers: TacticalHudHandlers, deps: TacticalHudDeps) {
+    this.card = new UnitCardView(
+      {
+        onRowHover: (row) => {
+          this.previewRowRange(row);
+        },
+      },
+      { rankTuning: deps.rankTuning },
+    );
     this.handlers = handlers;
     this.deps = deps;
     this.banner = new TurnBannerView({

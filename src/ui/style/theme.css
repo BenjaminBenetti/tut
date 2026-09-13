@@ -524,3 +524,39 @@ input[type="radio"]:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
+
+/* =========================================== */
+/* Rank tooltip (#1134)                        */
+/* =========================================== */
+
+/* A rank name that can be rested on: it says so with a dotted underline
+   and a help cursor, and the popover says what the rank is worth. */
+.tut-rank {
+  cursor: help;
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+}
+
+.tut-tooltip {
+  position: fixed;
+  z-index: 60;
+  max-width: 320px;
+  padding: var(--space-2) var(--space-3);
+  background: var(--ui-panel-raised);
+  border: var(--line) solid var(--ui-line);
+  color: var(--ui-text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.4;
+  pointer-events: none;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.5);
+}
+
+.tut-tooltip p {
+  margin: 0;
+}
+
+.tut-tooltip p + p {
+  margin-top: var(--space-1);
+  color: var(--ui-text-dim);
+}

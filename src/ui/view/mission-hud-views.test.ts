@@ -13,6 +13,7 @@ import { ObjectiveTrackerView } from "./objective-tracker-view";
 import { TurnBannerView } from "./turn-banner-view";
 import { UnitCardView } from "./unit-card-view";
 import { chargeRegisterFor } from "../service/charge-register";
+import { RANK_TUNING } from "../../roster/data/rank-tuning";
 
 let root: HTMLElement;
 const field = (name: string): HTMLElement | null =>
@@ -59,6 +60,39 @@ describe("UnitCardView", () => {
 });
 
 describe("UnitCardView rank badge (#1130)", () => {
+  it("opens the rank popover from the badge when it is given the tuning (#1134)", () => {
+    const view = new UnitCardView({}, { rankTuning: RANK_TUNING });
+    view.mount(root);
+    view.update(hudUnit("s1", "tdf", "rifle", 1, 1), {
+      ...hudTemplate("rifle", "Rifle Squad"),
+      rank: { name: "Corporal", index: 2 },
+    });
+    const badge = field("unit-rank");
+    expect(badge?.classList.contains("tut-rank")).toBe(true);
+    badge?.dispatchEvent(new Event("mouseenter"));
+    const tip = document.querySelector<HTMLElement>(
+      '[data-role="rank-tooltip"]',
+    );
+    expect(tip?.hidden).toBe(false);
+    expect(tip?.textContent).toContain("+1 move · +4 accuracy · +0 AP");
+    badge?.dispatchEvent(new Event("mouseleave"));
+    expect(tip?.hidden).toBe(true);
+    // A card built without the tuning has nothing to say and no anchor.
+    const bare = new UnitCardView();
+    const other = document.createElement("div");
+    document.body.appendChild(other);
+    bare.mount(other);
+    bare.update(hudUnit("s2", "tdf", "rifle", 1, 1), {
+      ...hudTemplate("rifle", "Rifle Squad"),
+      rank: { name: "Corporal", index: 2 },
+    });
+    expect(
+      other
+        .querySelector<HTMLElement>('[data-field="unit-rank"]')
+        ?.classList.contains("tut-rank"),
+    ).toBe(false);
+  });
+
   it("names the rank the template was built at, and hides it for a template without one", () => {
     const view = new UnitCardView();
     view.mount(root);

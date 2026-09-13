@@ -46,13 +46,22 @@ test("the side rail stays clear of the action bar, and says when it has more to 
   await expect(body).toHaveAttribute("data-screen", "tactical");
   await expect(page.locator("#tactical-viewport canvas")).toBeVisible();
 
-  // The mech is the tall card: two weapons, each with its own pool.
+  // The mech is the tall card: two weapons, each with its own pool. Since
+  // #1134 the card has the right column to itself and must not scroll;
+  // the cue under test lives on the left rail's panels, which are made
+  // to overflow by shortening the window rather than by a taller card.
   await page.evaluate(() =>
     (globalThis as HookGlobal).__tutTactical__?.selectUnit("unit-1"),
   );
   await expect(body).toHaveAttribute("data-selected-unit", "unit-1");
+  const side = page.locator(".tut-hud__side");
+  expect(
+    await side.evaluate((el) => el.scrollHeight - el.clientHeight),
+    "the unit card must fit its column without scrolling (#1134)",
+  ).toBeLessThanOrEqual(1);
+  await page.setViewportSize({ width: 1280, height: 520 });
 
-  const rail = page.locator(".tut-hud__side");
+  const rail = page.locator(".tut-hud__rail-panels");
   const bar = page.locator(".tut-hud__bottom");
   const railBox = await rail.boundingBox();
   const barBox = await bar.boundingBox();

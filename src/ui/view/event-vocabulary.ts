@@ -1,3 +1,5 @@
+import { SHIPPED_EQUIPMENT } from "../../tactical/repository/equipment-catalogue";
+import { chargeDelayText } from "../service/charge-delay-text";
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { UnitId } from "../../tactical/model/unit";
 import type { IconId } from "../data/icon-manifest";
@@ -210,7 +212,10 @@ export function describeEvent(
       };
     case "tactical:charge-placed":
       return {
-        text: `${nameOf(event.payload.charge.ownerId)} set a breaching charge · goes off as the next turn opens`,
+        text: `${nameOf(event.payload.charge.ownerId)} set a breaching charge · goes off ${chargeDelayText(
+          SHIPPED_EQUIPMENT.get(event.payload.charge.equipmentId)?.delayTurns ??
+            1,
+        )}`,
         icon: "warning",
         tone: "accent",
       };

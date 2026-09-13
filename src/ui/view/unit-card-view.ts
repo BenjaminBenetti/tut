@@ -4,6 +4,7 @@ import type { WeaponId } from "../../tactical/model/unit-weapon";
 import type { EquipmentDefinition } from "../../tactical/model/equipment";
 import { displayWeaponName } from "../../tactical/model/unit-weapon";
 import { SHIPPED_EQUIPMENT } from "../../tactical/repository/equipment-catalogue";
+import { chargeDelayText } from "../service/charge-delay-text";
 import { equipmentOf } from "../../tactical/service/equipment-service";
 import { formatWhole } from "../service/format";
 import { weaponProfileText } from "../service/weapon-profile-text";
@@ -433,7 +434,7 @@ function equipmentSummary(definition: EquipmentDefinition): string {
     }
   }
   if (definition.delayTurns !== undefined) {
-    parts.push("next turn");
+    parts.push(chargeDelayText(definition.delayTurns));
   }
   return parts.join(" · ");
 }

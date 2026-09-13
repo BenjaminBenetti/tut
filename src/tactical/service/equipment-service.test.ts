@@ -356,7 +356,7 @@ describe("UseEquipment: grenade", () => {
 describe("UseEquipment: breaching charge", () => {
   const site = at(3, 1);
 
-  it("is set on a tile within two and waits for the next turn", () => {
+  it("is set on a tile within two and waits for the turn after next (#1134)", () => {
     const before = kitted();
     const result = handler(
       before,
@@ -371,7 +371,7 @@ describe("UseEquipment: breaching charge", () => {
         ownerId: "squad",
         equipmentId: BREACHING_CHARGE.id,
         tile: site,
-        detonatesOnTurn: 2,
+        detonatesOnTurn: 3,
       },
     ]);
     expect(result.value.events.map((e) => e.type)).toEqual([
@@ -408,7 +408,7 @@ describe("UseEquipment: breaching charge", () => {
     expect(preview.value.blast?.victims.map((v) => v.id)).toEqual(["squad"]);
   });
 
-  it("goes off as the next player turn opens: the bug standing on it dies, the wall beside it falls, and the squad that stayed close is hurt", () => {
+  it("goes off as the player turn after next opens: the bug standing on it dies, the wall beside it falls, and the squad that stayed close is hurt", () => {
     const map = openField().wall(at(3, 1), "e", "solid").build();
     const placed = handler(
       kitted([], map),
@@ -437,11 +437,28 @@ describe("UseEquipment: breaching charge", () => {
     expect(toBugs.value.events.some((e) => e.type === CHARGE_DETONATED)).toBe(
       false,
     );
+    // The next player turn opens with the charge still waiting: the
+    // squad has this whole turn to step away (#1134).
+    const nextTurn = turn(mission, endTurn(), ctx);
+    expect(nextTurn.ok).toBe(true);
+    if (!nextTurn.ok) return;
+    mission = nextTurn.value.state;
+    expect(mission.turn).toBe(2);
+    expect(mission.phase).toBe("player");
+    expect(mission.charges).toHaveLength(1);
+    expect(nextTurn.value.events.some((e) => e.type === CHARGE_DETONATED)).toBe(
+      false,
+    );
+    const secondBugs = turn(mission, endTurn(), ctx);
+    expect(secondBugs.ok).toBe(true);
+    if (!secondBugs.ok) return;
+    mission = secondBugs.value.state;
+    expect(mission.charges).toHaveLength(1);
     const toPlayer = turn(mission, endTurn(), ctx);
     expect(toPlayer.ok).toBe(true);
     if (!toPlayer.ok) return;
     mission = toPlayer.value.state;
-    expect(mission.turn).toBe(2);
+    expect(mission.turn).toBe(3);
     expect(mission.charges).toEqual([]);
     const types = toPlayer.value.events.map((e) => e.type);
     expect(types).toContain(CHARGE_DETONATED);

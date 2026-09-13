@@ -145,7 +145,7 @@ A squad carries more than its weapon, and what it carries runs out. Since #1132 
 |---|---|---|---|---|
 | **Radar dish** | radio squad | 3 | 2, carried on foot | places a scanner (§6.2.1) |
 | **Grenade** | every infantry squad | 2 | 5, thrown, needs sight | a blast of radius 2 for 6, falling off 40 % a tile; force 1, so it clears fences, crates and cars; can be thrown at an empty tile; rolls the same hit chance as a shot at the ground and a miss does nothing |
-| **Breaching charge** | rocket squad | 1 | 2, placed, needs sight | set on a tile on turn T, it goes off as the player phase of turn T+1 opens: a blast of radius 3 for 20 with 3 points of penetration, falling off 30 % a tile, and force 3 — it opens solid walls. It cannot miss and **spares nobody**, the squad that set it included, so the squad has the rest of its turn to step away; a bug that walks onto it in its own phase is standing on it when it goes |
+| **Breaching charge** | rocket squad | 1 | 2, placed, needs sight | set on a tile on turn T, it waits through turn T+1 and goes off as the player phase of turn T+2 opens: a blast of radius 3 for 20 with 3 points of penetration, falling off 30 % a tile, and force 3 — it opens solid walls. It cannot miss and **spares nobody**, the squad that set it included, so the squad has a whole turn to step away; a bug that walks onto it in either bug phase is standing on it when it goes. It went off as T+1 opened at first, which caught a squad that placed it with its last action (Executive Director, 2026-09-13, #1134) |
 
 A placed charge is drawn on its tile until it goes; the log records the use, the placement and the detonation, and kills are credited to the squad that set it whether or not it is still on the map.
 

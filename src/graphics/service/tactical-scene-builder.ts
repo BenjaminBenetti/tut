@@ -40,6 +40,7 @@ import {
   DEFAULT_FOOTPRINT,
   footprintSizeOf,
 } from "../../tactical/service/footprint-service";
+import { authoredFootprint } from "./model-footprint";
 import { unitFeetAt } from "./unit-placement";
 
 // ===========================================
@@ -672,6 +673,11 @@ export class TacticalSceneBuilder
       model,
       template.modelId,
       footprintSizeOf(template),
+      // A mech is assembled from one-tile parts; every other unit's art
+      // says in the manifest how many tiles it was built to (#1134).
+      template.loadout === undefined
+        ? authoredFootprint(template.modelId)
+        : DEFAULT_FOOTPRINT,
     );
     mesh.setPose(unit.pos, unit.facing);
     this.meshes.set(unit.id, mesh);

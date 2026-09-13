@@ -97,10 +97,11 @@ export interface UnitHighlight {
  *   └── selection ring   bold, shown while selected, radius ×footprint
  * ```
  *
- * A unit with a footprint wider than one tile (#1130: the 2×2 brute) is
- * the same model scaled up by its side, so the brute art authored to a
- * one-tile box fills its four tiles rather than being squashed into one
- * of them, and its rings grow to circle the whole block.
+ * A unit with a footprint wider than one tile (#1130: the 2×2 brute)
+ * has its rings grown to circle the whole block, and its model scaled
+ * by whatever its art does not already cover: a one-tile model is
+ * scaled up by the footprint's side, while art authored at its
+ * footprint (#1134) is drawn as built.
  */
 export class UnitMesh implements Disposable {
   // ===========================================
@@ -125,14 +126,18 @@ export class UnitMesh implements Disposable {
    * @param unitId - Names the group so scene dumps read well.
    * @param model - The loaded model clone; owned by this mesh from now on.
    * @param modelId - Registered unit family, for its movement and attack rig.
-   * @param footprint - Tiles per side the unit covers (#1130); the model
-   *   and rings are scaled by it, so a 2×2 unit draws twice the size.
+   * @param footprint - Tiles per side the unit covers (#1130); the rings
+   *   are scaled by it, and the model by what its art does not already
+   *   cover.
+   * @param authoredFootprint - Tiles per side the art was built to
+   *   (#1134); a model authored at its footprint is not scaled twice.
    */
   constructor(
     unitId: string,
     model: Object3D,
     modelId?: string,
     footprint: number = DEFAULT_FOOTPRINT,
+    authoredFootprint: number = DEFAULT_FOOTPRINT,
   ) {
     this.object = new Group();
     this.object.name = `unit:${unitId}`;
@@ -140,11 +145,11 @@ export class UnitMesh implements Disposable {
     this.model = model;
     this.motion = modelId ? new UnitMotionRig(model, modelId) : undefined;
     this.model.name = `unit-model:${unitId}`;
-    // The art is authored to a one-tile box; a wider footprint is the
-    // same art at the footprint's scale. Applied to the model rather
-    // than the group so the animation queue's grow and fade, which
-    // scale the group, still run from 0 to 1.
-    this.model.scale.multiplyScalar(footprint);
+    // Art authored to a one-tile box is the same art at the footprint's
+    // scale; art authored to its footprint (the #1134 brute) is drawn as
+    // built. Applied to the model rather than the group so the animation
+    // queue's grow and fade, which scale the group, still run from 0 to 1.
+    this.model.scale.multiplyScalar(footprint / authoredFootprint);
     // A unit throws a shadow and takes one; its selection rings do not,
     // being flat markers on the ground (#507).
     this.model.traverse((part) => {

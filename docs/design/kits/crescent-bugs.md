@@ -21,7 +21,7 @@ Walnut primary shells, chestnut armour, tan chitin markings, dark umber joints, 
 
 - **Swarmer:** thin swept hood over a low body; five overlapping abdominal plates; four running legs and two short hooks.
 - **Lurker:** exposed wedge-shaped face, raised feelers, swept shoulder fins and a slender ringed thorax. Long sickles and four fine legs give it a mantis silhouette; it has no hood.
-- **Brute:** a broad beetle vault with paired oval wing cases and a narrow centre seam, a low battering brow, jaw horns, thick legs and short heavy cleavers. Two broken rows of tan back markings replace the swarmer crest.
+- **Brute:** a low, wide beetle authored at its 2×2 tactical footprint (#1134, `brute_parts.py`): one domed vault of paired wing cases over a segmented abdomen, six jointed legs planted wide, a low forward head with mandibles between two heavy cleavers. Two broken rows of tan back markings replace the swarmer crest. About 1.6 × 1.8 tiles and 0.9 tall, so it never towers over a mech.
 - **Egg spawner:** an asymmetric root web, four ribbed eggs of different sizes and a fleshy central bulb with four rounded hatch lobes. The old crescent base and pointed crown are removed. The `socket_hatch` anchor remains available to gameplay effects.
 
 The shared [style guide](../style-guide.md) records the brown palette and revised detailed-model budgets. Gameplay species, abilities and occupied tile counts remain unchanged.
@@ -34,7 +34,7 @@ Each GLB is below 500 KiB. The selected detail pass replaces the original 600 / 
 |---|---:|---:|---:|---:|
 | Swarmer | 0.5 u | 12,464 | 339,028 bytes (331.1 KiB) | 16,000 |
 | Lurker | 1.3 u | 13,668 | 372,004 bytes (363.3 KiB) | 18,000 |
-| Brute | 1.8 u | 16,700 | 441,052 bytes (430.7 KiB) | 20,000 |
+| Brute | 0.9 u (2×2 footprint) | 15,640 | 419,844 bytes (410.0 KiB) | 20,000 |
 | Egg-Spawner | 1.4 u | 11,264 | 295,136 bytes (288.2 KiB) | 16,000 |
 
 [Validation report, bounds and SHA-256 hashes](../diagnostics/crescent-bugs/validation.json).

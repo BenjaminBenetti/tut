@@ -1008,20 +1008,6 @@
     "bytes": 372004
   },
   {
-    "id": "bug.brute",
-    "category": "bugs",
-    "path": "assets/models/bugs/bug-brute.glb",
-    "footprint": {
-      "w": 1,
-      "d": 1
-    },
-    "height": 1.8,
-    "sockets": [],
-    "quality": "final",
-    "triangles": 16700,
-    "bytes": 441052
-  },
-  {
     "id": "building.viaduct-parapet",
     "category": "buildings",
     "path": "assets/models/buildings/city-viaduct-parapet.glb",
@@ -1748,5 +1734,19 @@
     "quality": "final",
     "triangles": 1816,
     "bytes": 154764
+  },
+  {
+    "id": "bug.brute",
+    "category": "bugs",
+    "path": "assets/models/bugs/bug-brute.glb",
+    "footprint": {
+      "w": 2,
+      "d": 2
+    },
+    "height": 0.9,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 15640,
+    "bytes": 419844
   }
 ]

@@ -244,7 +244,7 @@ Implementation: `src/ui/style/theme.css` exposes the §4.4 tokens as CSS custom 
 
 | Asset class | Triangle budget | File size |
 |---|---|---|
-| Infantry figure | 150–300 (squad ≤ 1 500) | ≤ 100 KB |
+| Infantry figure | 150–300 (squad ≤ 2 000, since the role kit of #1132) | ≤ 160 KB |
 | Mech chassis / legs / arm / weapon | 1 200 / 800 / 400 / 300 | ≤ 150 KB per part |
 | Crescent swarmer / lurker / brute | 16 000 / 18 000 / 20 000 | < 500 KB each |
 | Crescent egg spawner | 16 000 | < 500 KB |

@@ -89,7 +89,11 @@ test("highlighted interior tiles move the squad through the doorway", async ({
   }
   const positioned = {
     ...original,
-    units: original.units.map((u) => ({ ...u, pos: positions[u.id] ?? u.pos })),
+    // Only the three units the scene is staged for: the radio and rocket
+    // squads a campaign fields since #1132 would stand in the doorway ray.
+    units: original.units
+      .filter((u) => u.team !== "tdf" || u.id in positions)
+      .map((u) => ({ ...u, pos: positions[u.id] ?? u.pos })),
   };
   const mission = { ...positioned, vision: initialVision(positioned) };
   expect(mission.vision.tdf.explored).not.toContain(index.keyOf(entry));

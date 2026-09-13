@@ -152,8 +152,9 @@ test("the rail holds the force and the objectives, the card holds one unit, and 
   await expect(card).toHaveAttribute("data-inspecting-enemy", "true");
   await expect(card.locator('[data-field="unit-side"]')).toContainText("2×2");
   await expect(card.locator('[data-field="unit-name"]')).toHaveText("Brute");
-  await page.keyboard.press("Escape");
+  // Shot while the brute is on the card: Escape would put the mech back.
   await drawnFrame(page);
   await page.screenshot({ path: "docs/design/ui-hud-bug-card.png" });
+  await page.keyboard.press("Escape");
   expect(errors).toEqual([]);
 });

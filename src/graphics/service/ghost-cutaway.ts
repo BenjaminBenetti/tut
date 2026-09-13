@@ -390,9 +390,11 @@ const FRAGMENT_BODY = `
     // larger z is nearer the camera.
     float nearest = 1e9;
     for (int s = 0; s < GHOST_SAMPLES; s++) {
-      vec3 sample = uGhostCentres[i] + ghostSampleOffset(s, uGhostRight[i], uGhostForward[i], uGhostUpVec[i]);
-      if (vGhostView.z > sample.z + ${GHOST_RAY_MARGIN.toFixed(2)}) {
-        nearest = min(nearest, length(vGhostView.xy - sample.xy));
+      // 'spot', not 'sample': GLSL ES reserves that word, and no test
+      // compiles the chunk; the tests read it as a string (#1134).
+      vec3 spot = uGhostCentres[i] + ghostSampleOffset(s, uGhostRight[i], uGhostForward[i], uGhostUpVec[i]);
+      if (vGhostView.z > spot.z + ${GHOST_RAY_MARGIN.toFixed(2)}) {
+        nearest = min(nearest, length(vGhostView.xy - spot.xy));
       }
     }
     // Soft edge measured inward from the radius in world units, so the

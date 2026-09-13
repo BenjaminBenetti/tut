@@ -1606,7 +1606,11 @@ export class TacticalMapView implements Disposable, TilePicker {
    * @returns True when the cut is below it.
    */
   isCut(coord: TileCoord): boolean {
-    return this.hiddenByCut(this.index.keyOf(coord));
+    // The weapon-range outline runs past the map's edge; a coordinate
+    // off the grid has no storey to be cut by, and `keyOf` would throw.
+    return (
+      this.index.inBounds(coord) && this.hiddenByCut(this.index.keyOf(coord))
+    );
   }
 
   /**

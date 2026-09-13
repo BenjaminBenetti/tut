@@ -111,10 +111,10 @@ describe("ghost cutaway (#526)", () => {
       `#define GHOST_SAMPLES ${GHOST_SAMPLES}`,
     );
     expect(shader.fragmentShader).toContain(
-      `vGhostView.z > sample.z + ${GHOST_RAY_MARGIN.toFixed(2)}`,
+      `vGhostView.z > spot.z + ${GHOST_RAY_MARGIN.toFixed(2)}`,
     );
     expect(shader.fragmentShader).toContain(
-      "nearest = min(nearest, length(vGhostView.xy - sample.xy));",
+      "nearest = min(nearest, length(vGhostView.xy - spot.xy));",
     );
     // Discard, not blend, so surviving fragments still write depth.
     expect(shader.fragmentShader).toContain("discard");

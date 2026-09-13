@@ -14,6 +14,7 @@ import {
   pathBetween,
 } from "../src/tactical/service/map-assessment-service";
 import { expect, test } from "@playwright/test";
+import { drawnFrame } from "./capture-frame.helper";
 
 import type { TacticalTestHooks } from "../src/ui/model/tactical-intent";
 import { waitForBugPhasePlayed } from "./bug-phase.helper";
@@ -156,8 +157,15 @@ test("egg spawners are drawn on the tactical map and can be targeted by clicking
     .toBe(true);
   // The HUD's rail and card stop pointer events (#1113), and since #1134
   // the rail stands on the left of the map, so a spawner that projects
-  // under a panel is panned into the open before the click. One tap
-  // says which way the pan moves the picture; the rest follow it.
+  // under a panel is zoomed out into the open before the click: zooming
+  // pulls everything toward the view's centre, where no panel is, and
+  // unlike a pan it cannot carry the spawner off the screen.
+  const readPoint = (): Promise<{ x: number; y: number } | undefined> =>
+    page.evaluate(
+      (id: string) =>
+        (globalThis as HookGlobal).__tutTactical__?.spawnerScreenPosition(id),
+      spawnerId,
+    );
   const covered = async (p: { x: number; y: number }): Promise<boolean> =>
     page.evaluate(({ x, y }) => {
       const el = document.elementFromPoint(x, y);
@@ -165,31 +173,43 @@ test("egg spawners are drawn on the tactical map and can be targeted by clicking
         el !== null && el.closest(".tut-hud__rail, .tut-hud__side") !== null
       );
     }, p);
-  for (let step = 0; step < 24 && (await covered(point!)); step++) {
-    const wantRight = point!.x < bounds!.x + bounds!.width / 2;
-    const before = point!.x;
-    await page.keyboard.press(wantRight ? "a" : "d");
-    await page.waitForTimeout(80);
-    point = await page.evaluate(
-      (id: string) =>
-        (globalThis as HookGlobal).__tutTactical__?.spawnerScreenPosition(id),
-      spawnerId,
+  for (let step = 0; step < 6 && (await covered(point!)); step++) {
+    await page.mouse.move(
+      bounds!.x + bounds!.width / 2,
+      bounds!.y + bounds!.height / 2,
     );
-    if (point !== undefined && wantRight === point.x < before) {
-      // The tap went the other way: press the opposite key twice to
-      // net one step in the wanted direction.
-      await page.keyboard.press(wantRight ? "d" : "a");
-      await page.keyboard.press(wantRight ? "d" : "a");
-      await page.waitForTimeout(80);
+    await page.mouse.wheel(0, 240);
+    await page.waitForTimeout(150);
+    point = await readPoint();
+  }
+  expect(await covered(point!), "the spawner must be in the open").toBe(false);
+  // A tap keeps panning for a few frames after the key is up, so the
+  // point is read again until two reads agree before it is clicked.
+  await expect
+    .poll(async () => {
+      const first = await page.evaluate(
+        (id: string) =>
+          (globalThis as HookGlobal).__tutTactical__?.spawnerScreenPosition(id),
+        spawnerId,
+      );
+      await page.waitForTimeout(150);
       point = await page.evaluate(
         (id: string) =>
           (globalThis as HookGlobal).__tutTactical__?.spawnerScreenPosition(id),
         spawnerId,
       );
-    }
-  }
-  expect(await covered(point!), "the spawner must be in the open").toBe(false);
+      return (
+        first !== undefined &&
+        point !== undefined &&
+        Math.abs(first.x - point.x) < 0.5 &&
+        Math.abs(first.y - point.y) < 0.5
+      );
+    })
+    .toBe(true);
   await expect(body).not.toHaveAttribute("data-selected-spawner", spawnerId);
+  // The picker raycasts against the last drawn frame, which can trail
+  // the settled camera by one: draw before the click lands.
+  await drawnFrame(page);
   await page.mouse.click(point!.x, point!.y);
   await expect(body).toHaveAttribute("data-selected-spawner", spawnerId ?? "");
   // The scout keeps the card; a spawner is aimed at, never selected.

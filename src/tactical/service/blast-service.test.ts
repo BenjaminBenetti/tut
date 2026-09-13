@@ -7,6 +7,7 @@ import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { blastFootprint, blastVictims } from "./blast-service";
 import {
+  blockUnitAt,
   missionWith,
   openField,
   unitAt,
@@ -116,5 +117,28 @@ describe("blastVictims", () => {
       (v) => v.target.id,
     );
     expect(spared).toEqual(["north", "spawner-1"]);
+  });
+});
+
+describe("blastVictims with a unit on a 2×2 block (#1130)", () => {
+  it("strikes the block once, at the distance of its nearest reached tile", () => {
+    const map = openField().build();
+    const mission = missionWith(map, [
+      unitAt("shooter", "infantry", at(0, 0)),
+      blockUnitAt("block", at(4, 3)),
+    ]);
+    // Radius 2 from (3,3) reaches (4,3) at 1 and (5,3), (4,4) at 2.
+    const footprint = blastFootprint(map, at(3, 3), 2);
+    const victims = blastVictims(mission, footprint, new Set()).map(
+      (v) => `${v.target.id}@${String(v.distance)}`,
+    );
+    expect(victims).toEqual(["block@1"]);
+    // A blast that reaches only the block's far corner still finds it.
+    const corner = blastFootprint(map, at(6, 5), 2);
+    expect(
+      blastVictims(mission, corner, new Set()).map(
+        (v) => `${v.target.id}@${String(v.distance)}`,
+      ),
+    ).toEqual(["block@2"]);
   });
 });

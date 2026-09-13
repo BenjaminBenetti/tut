@@ -26,6 +26,8 @@ export const FIXTURE_TEMPLATES = {
   infantry: "squad:fixture",
   mech: "mech:fixture",
   bug: "bug:swarmer",
+  /** A bug on a 2×2 block (#1130), otherwise the fixture stats. */
+  block: "bug:block",
 } as const;
 
 /**
@@ -39,6 +41,10 @@ const TEMPLATES: Readonly<Record<string, UnitTemplate>> = {
   ),
   [FIXTURE_TEMPLATES.mech]: template(FIXTURE_TEMPLATES.mech, "mech"),
   [FIXTURE_TEMPLATES.bug]: template(FIXTURE_TEMPLATES.bug, "infantry"),
+  [FIXTURE_TEMPLATES.block]: {
+    ...template(FIXTURE_TEMPLATES.block, "infantry"),
+    footprint: 2,
+  },
 };
 
 /** A template with `move` 3 and two action points. */
@@ -104,6 +110,23 @@ export function unitAt(
     maxAp: 2,
     status: options.status ?? [],
     passClass,
+  };
+}
+
+/**
+ * A living bug standing on a 2×2 block anchored at `pos` (#1130), with
+ * the fixture stats: the same reach, sight and hit points as everyone
+ * else, so a test isolates the footprint. Its tiles are `pos`,
+ * `pos + x`, `pos + z` and `pos + x + z`.
+ */
+export function blockUnitAt(
+  id: string,
+  pos: TileCoord,
+  options: UnitOptions = {},
+): Unit {
+  return {
+    ...unitAt(id, "infantry", pos, { team: "bugs", ...options }),
+    templateId: FIXTURE_TEMPLATES.block,
   };
 }
 

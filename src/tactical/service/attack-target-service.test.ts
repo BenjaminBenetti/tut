@@ -6,6 +6,7 @@ import {
   findAttackTarget,
   SPAWNER_ARMOR,
   SPAWNER_NAME,
+  unitAttackTarget,
 } from "./attack-target-service";
 import {
   FIXTURE_TEMPLATES,
@@ -117,5 +118,22 @@ describe("enemyAttackTargets", () => {
       ),
     };
     expect(enemyAttackTargets(down, "tdf")).toEqual([]);
+  });
+});
+
+describe("unitAttackTarget with a footprint (#1130)", () => {
+  it("projects the template's footprint, and none when the template has none", () => {
+    const unit = unitAt(
+      "b",
+      "infantry",
+      { x: 2, y: 0, z: 2 },
+      { team: "bugs" },
+    );
+    const template = mission().templates[unit.templateId]!;
+    expect(template.id).toBe(FIXTURE_TEMPLATES.bug);
+    expect(
+      unitAttackTarget(unit, { ...template, footprint: 2 }).footprint,
+    ).toBe(2);
+    expect("footprint" in unitAttackTarget(unit, template)).toBe(false);
   });
 });

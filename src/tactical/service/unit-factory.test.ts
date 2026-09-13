@@ -296,3 +296,12 @@ describe("unit factory contract", () => {
     expect(passMaskFor("mech")).toBe(PassMask.MECH);
   });
 });
+
+describe("bugUnit with a footprint (#1130)", () => {
+  it("copies a species' footprint onto the template and leaves it off otherwise", () => {
+    const d = deps();
+    const big = bugUnit({ ...SWARMER, id: "big", footprint: 2 }, AT, d);
+    expect(big.template.footprint).toBe(2);
+    expect("footprint" in bugUnit(SWARMER, AT, d).template).toBe(false);
+  });
+});

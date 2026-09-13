@@ -23,4 +23,6 @@ export interface BugUnitSource {
   /** Tiles it can see, for fog of war (ADR 0006). Positive. */
   readonly sightRange: number;
   readonly modelId: ModelAssetId;
+  /** Tiles per side it occupies (#1130); absent means one. Copied onto the template. */
+  readonly footprint?: number;
 }

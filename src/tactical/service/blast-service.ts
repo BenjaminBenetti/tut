@@ -6,6 +6,7 @@ import { TileIndex } from "../../mapgen/service/tile-index";
 import type { AttackTarget } from "../model/attack-target";
 import type { TacticalState } from "../model/tactical-state";
 import { spawnerAttackTarget, unitAttackTarget } from "./attack-target-service";
+import { footprintContains, footprintSizeOf } from "./footprint-service";
 import { hasLineOfSight } from "./sight-service";
 
 // ===========================================
@@ -99,7 +100,9 @@ export function blastFootprint(
  * whose own damage is the shot's and not the blast's.
  *
  * In footprint order, units before spawners on the same tile, units in
- * `units` order: the order the damage rolls are drawn in.
+ * `units` order: the order the damage rolls are drawn in. A unit that
+ * stands on more than one tile (#1130) is struck once, at the distance
+ * of the nearest tile of it the blast reaches.
  *
  * @param mission - The mission the blast happens in.
  * @param footprint - The tiles the blast reaches, from `blastFootprint`.
@@ -112,17 +115,23 @@ export function blastVictims(
   exclude: ReadonlySet<string>,
 ): BlastVictim[] {
   const victims: BlastVictim[] = [];
+  const struck = new Set<string>();
   for (const { tile, distance } of footprint) {
     for (const unit of mission.units) {
-      if (unit.hp <= 0 || exclude.has(unit.id) || !sameTile(unit.pos, tile)) {
+      if (unit.hp <= 0 || exclude.has(unit.id) || struck.has(unit.id)) {
         continue;
       }
       const template = mission.templates[unit.templateId];
+      const size = template === undefined ? 1 : footprintSizeOf(template);
+      if (!footprintContains(unit.pos, size, tile)) {
+        continue;
+      }
       if (template === undefined) {
         throw new Error(
           `Unit "${unit.id}" references a template missing from the mission`,
         );
       }
+      struck.add(unit.id);
       victims.push({ target: unitAttackTarget(unit, template), distance });
     }
     for (const spawner of mission.spawners) {

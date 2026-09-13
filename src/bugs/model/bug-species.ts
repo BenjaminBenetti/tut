@@ -66,4 +66,11 @@ export interface BugSpecies {
   readonly modelId: ModelAssetId;
   /** Relative chance of hatching from an egg spawner. Positive; weights need not sum to 1. */
   readonly hatchWeight: number;
+  /**
+   * Tiles per side the species occupies on the ground plane (#1130).
+   * Absent means one tile. The brute is `2`: a boulder of carapace does
+   * not fit on one tile, and it cannot fit through a door either, which
+   * is why its cleavers open walls.
+   */
+  readonly footprint?: number;
 }

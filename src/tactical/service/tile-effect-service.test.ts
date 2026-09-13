@@ -11,6 +11,7 @@ import { SPAWNER_DAMAGED } from "../model/spawner-damaged-event";
 import type { TileEffect } from "../model/tile-effect";
 import { UNIT_DIED } from "../model/unit-died-event";
 import {
+  blockUnitAt,
   ctxWith,
   missionWith,
   openField,
@@ -230,5 +231,35 @@ describe("perceivedEffects", () => {
     });
     // Nobody has looked yet: nothing is perceived.
     expect(perceivedEffects(mission, "tdf")).toEqual([]);
+  });
+});
+
+describe("burn with a unit on a 2×2 block (#1130)", () => {
+  it("burns the block when any tile of it is alight, once per fire", () => {
+    // Fires on two of the block's four tiles: two fires, two burns; a
+    // fire beside the block burns nobody.
+    const mission = missionWith(
+      openField().build(),
+      [blockUnitAt("b", at(4, 3))],
+      {
+        phase: "bugs",
+        effects: [
+          fire("f1", at(5, 4), 2),
+          fire("f2", at(4, 3), 2),
+          fire("f3", at(6, 3), 2),
+        ],
+      },
+    );
+    const burnt = burn(
+      mission,
+      ctxWith(riggedRng(true, "low")),
+      HAZARD_TUNING,
+      COMBAT_TUNING,
+    );
+    const burns = burnt.events.flatMap((e) =>
+      e.type === EFFECT_DAMAGED ? [e.payload] : [],
+    );
+    expect(burns.map((b) => b.effectId)).toEqual(["f1", "f2"]);
+    expect(burns.every((b) => b.targetId === "b")).toBe(true);
   });
 });

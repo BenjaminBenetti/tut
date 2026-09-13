@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { MODEL_IDS } from "../../content/data/model-ids";
 import { BUG_SPECIES_IDS } from "../../content/model/bug-species-id";
 import type { BugUnitSource } from "../../tactical/model/bug-unit-source";
+import { DEMOLITION_TUNING } from "../../tactical/data/demolition-tuning";
 import { BEHAVIOUR_TAGS } from "../model/bug-species";
 import { BRUTE, BUG_SPECIES, LURKER, SWARMER } from "./species";
 
@@ -83,5 +84,20 @@ describe("bug species data", () => {
         true,
       ]);
     }
+  });
+});
+
+describe("the brute's block and cleavers (#1130)", () => {
+  it("stands on a 2×2 block while the small species take one tile", () => {
+    expect(BRUTE.footprint).toBe(2);
+    expect(SWARMER.footprint).toBeUndefined();
+    expect(LURKER.footprint).toBeUndefined();
+  });
+
+  it("brings enough force to open a solid wall, since it fits through no door", () => {
+    expect(BRUTE.weapon.demoForce).toBeGreaterThanOrEqual(
+      DEMOLITION_TUNING.wallForce.solid,
+    );
+    expect(BRUTE.weapon.aoe?.radius).toBe(1);
   });
 });

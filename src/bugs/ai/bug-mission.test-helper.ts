@@ -25,10 +25,16 @@ import { UNIT_TUNING } from "../../tactical/data/unit-tuning";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { Unit } from "../../tactical/model/unit";
+import { footprintTiles } from "../../tactical/service/footprint-service";
 import {
   startTacticalMission,
   tileAdmits,
 } from "../../tactical/service/mission-start-service";
+import {
+  buildMoveGraph,
+  footprintFits,
+} from "../../tactical/service/movement-service";
+import { PassMask } from "../../mapgen/model/pass-mask";
 import type { BugSpecies } from "../model/bug-species";
 import type { MissionView } from "../../tactical/model/mission-view";
 import { viewFor } from "../../tactical/service/mission-view-service";
@@ -84,15 +90,19 @@ export function campaignWithMission(
  * The infantry-walkable tile nearest `target` (Manhattan across the
  * ground plane, then level difference), unoccupied by a unit. Deploy
  * zones sit on raised ground on some maps, so a bug dropped at a fixed
- * offset would otherwise land inside a wall.
+ * offset would otherwise land inside a wall. For a species on a block
+ * (#1130) pass its `size`: the tile is then an anchor whose whole block
+ * stands, holds together and is free.
  */
 export function walkableTileNear(
   mission: TacticalState,
   target: TileCoord,
+  size = 1,
 ): TileCoord {
   const occupied = new Set(
     mission.units.map((u) => `${u.pos.x},${u.pos.y},${u.pos.z}`),
   );
+  const graph = buildMoveGraph(mission.map);
   let best: TileCoord | undefined;
   let bestScore = Number.POSITIVE_INFINITY;
   for (const tile of mission.map.tiles) {
@@ -100,6 +110,15 @@ export function walkableTileNear(
       continue;
     }
     if (occupied.has(`${tile.x},${tile.y},${tile.z}`)) {
+      continue;
+    }
+    if (
+      size > 1 &&
+      (!footprintFits(graph, tile, size, PassMask.INFANTRY) ||
+        footprintTiles(tile, size).some((cell) =>
+          occupied.has(`${cell.x},${cell.y},${cell.z}`),
+        ))
+    ) {
       continue;
     }
     const score =
@@ -207,6 +226,10 @@ export function withBug(
           armor: species.armor,
           passClass: "infantry" as const,
           modelId: species.modelId,
+          // As `bugUnit` does (#1130): a block carries its size.
+          ...(species.footprint === undefined
+            ? {}
+            : { footprint: species.footprint }),
         },
       },
     },

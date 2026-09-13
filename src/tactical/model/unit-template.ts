@@ -72,4 +72,12 @@ export interface UnitTemplate {
    * missions saved before it existed, which keep drawing `modelId`.
    */
   readonly loadout?: MechLoadout;
+  /**
+   * Tiles per side the unit occupies on the ground plane (#1130). Absent
+   * means one tile, as every unit did before the brute grew to a 2×2
+   * block; `Unit.pos` is then the anchor — the tile with the lowest `x`
+   * and lowest `z` — and every tile of the block shares its level. See
+   * `footprint-service`.
+   */
+  readonly footprint?: number;
 }

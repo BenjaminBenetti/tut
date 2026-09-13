@@ -3,7 +3,18 @@ import { manhattanDistance } from "../../core/service/grid-math";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { WeaponReachTuning } from "../model/weapon-reach-tuning";
 import { isMeleeRange } from "../model/weapon-profile";
+import { footprintTiles } from "./footprint-service";
 import { elevationBonus } from "./sight-service";
+
+// ===========================================
+// Types
+// ===========================================
+
+/** The tile of each of two footprints that lies nearest the other. */
+export interface ClosestTiles {
+  readonly from: TileCoord;
+  readonly to: TileCoord;
+}
 
 // ===========================================
 // Distance
@@ -31,6 +42,46 @@ export function attackDistance(from: TileCoord, to: TileCoord): number {
   const across = manhattanDistance(from, to);
   const up = Math.abs(from.y - to.y) * LAYER_TILES;
   return Math.round(Math.hypot(across, up));
+}
+
+/**
+ * The pair of tiles, one from each footprint, nearest each other by
+ * `attackDistance` (#1130): a shot at a brute is held against the tile
+ * of it facing the shooter, and a brute swings from the tile of its own
+ * block nearest its mark. Single tiles pair as themselves, so nothing
+ * one-tile changes. Ties keep the first pair in footprint order, so two
+ * runs agree.
+ *
+ * ```
+ *   shooter S, brute B (2×2)        distance is S→b₀, not S→B's anchor
+ *     S . . b₀ b₁
+ *           b₂ b₃
+ * ```
+ *
+ * @param from - The first footprint's anchor.
+ * @param fromSize - Its tiles per side.
+ * @param to - The second footprint's anchor.
+ * @param toSize - Its tiles per side.
+ * @returns The nearest tile of each.
+ */
+export function closestTiles(
+  from: TileCoord,
+  fromSize: number,
+  to: TileCoord,
+  toSize: number,
+): ClosestTiles {
+  let best: ClosestTiles = { from, to };
+  let bestDistance = Number.POSITIVE_INFINITY;
+  for (const a of footprintTiles(from, fromSize)) {
+    for (const b of footprintTiles(to, toSize)) {
+      const distance = attackDistance(a, b);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        best = { from: a, to: b };
+      }
+    }
+  }
+  return best;
 }
 
 // ===========================================

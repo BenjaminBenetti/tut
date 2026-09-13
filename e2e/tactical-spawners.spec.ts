@@ -154,6 +154,41 @@ test("egg spawners are drawn on the tactical map and can be targeted by clicking
       );
     })
     .toBe(true);
+  // The HUD's rail and card stop pointer events (#1113), and since #1134
+  // the rail stands on the left of the map, so a spawner that projects
+  // under a panel is panned into the open before the click. One tap
+  // says which way the pan moves the picture; the rest follow it.
+  const covered = async (p: { x: number; y: number }): Promise<boolean> =>
+    page.evaluate(({ x, y }) => {
+      const el = document.elementFromPoint(x, y);
+      return (
+        el !== null && el.closest(".tut-hud__rail, .tut-hud__side") !== null
+      );
+    }, p);
+  for (let step = 0; step < 24 && (await covered(point!)); step++) {
+    const wantRight = point!.x < bounds!.x + bounds!.width / 2;
+    const before = point!.x;
+    await page.keyboard.press(wantRight ? "a" : "d");
+    await page.waitForTimeout(80);
+    point = await page.evaluate(
+      (id: string) =>
+        (globalThis as HookGlobal).__tutTactical__?.spawnerScreenPosition(id),
+      spawnerId,
+    );
+    if (point !== undefined && wantRight === point.x < before) {
+      // The tap went the other way: press the opposite key twice to
+      // net one step in the wanted direction.
+      await page.keyboard.press(wantRight ? "d" : "a");
+      await page.keyboard.press(wantRight ? "d" : "a");
+      await page.waitForTimeout(80);
+      point = await page.evaluate(
+        (id: string) =>
+          (globalThis as HookGlobal).__tutTactical__?.spawnerScreenPosition(id),
+        spawnerId,
+      );
+    }
+  }
+  expect(await covered(point!), "the spawner must be in the open").toBe(false);
   await expect(body).not.toHaveAttribute("data-selected-spawner", spawnerId);
   await page.mouse.click(point!.x, point!.y);
   await expect(body).toHaveAttribute("data-selected-spawner", spawnerId ?? "");

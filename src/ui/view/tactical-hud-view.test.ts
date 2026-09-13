@@ -1916,3 +1916,84 @@ describe("the event log on arrival (#573)", () => {
     expect(logLines()).toEqual(["Turn 1 — TDF phase", "Turn 1 — bug phase"]);
   });
 });
+
+// ===========================================
+// Playback lock (#1130)
+// ===========================================
+
+describe("TacticalHudView while the bug phase plays (#1130)", () => {
+  const endTurn = (): HTMLButtonElement | null =>
+    root.querySelector<HTMLButtonElement>(
+      '#action-bar [data-action="end-turn"]',
+    );
+  const hudPlaying = (): string | undefined =>
+    root.querySelector<HTMLElement>("#mission-hud")?.dataset.phasePlaying;
+
+  it("disables End turn, says so on its root, and drops every intent but Shift", () => {
+    const { hud, commands } = setup();
+    expect(endTurn()?.disabled).toBe(false);
+    expect(hudPlaying()).toBe("false");
+    hud.setPlaybackLocked(true);
+    expect(hud.isPlaybackLocked()).toBe(true);
+    expect(hudPlaying()).toBe("true");
+    expect(endTurn()?.disabled).toBe(true);
+    expect(root.querySelector<HTMLElement>("#action-bar")?.dataset.locked).toBe(
+      "true",
+    );
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    expect(hud.getSelectedUnitId()).toBeUndefined();
+    hud.handleIntent({ kind: "select-tile", tile: { x: 2, y: 0, z: 2 } });
+    expect(wheelOpen()).toBe(false);
+    hud.handleIntent({ kind: "end-turn" });
+    hud.handleIntent({ kind: "action", action: "overwatch" });
+    expect(commands).toEqual([]);
+    hud.handleIntent({ kind: "inspect", held: true });
+    expect(hud.isInspecting()).toBe(true);
+    hud.handleIntent({ kind: "inspect", held: false });
+    hud.setPlaybackLocked(false);
+    expect(hudPlaying()).toBe("false");
+    expect(endTurn()?.disabled).toBe(false);
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    expect(hud.getSelectedUnitId()).toBe("s1");
+    hud.handleIntent({ kind: "end-turn" });
+    expect(commands.map((c) => c.type)).toEqual([END_TURN]);
+  });
+
+  it("does not fire an aimed shot from the panel, nor a wheel entry, while the phase plays", () => {
+    const { hud, commands } = setup();
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    hud.handleIntent({ kind: "action", action: "attack" });
+    hud.handleIntent({ kind: "select-unit", unitId: "b1" });
+    expect(hud.getTargetUnitId()).toBe("b1");
+    expect(wheelOpen()).toBe(true);
+    hud.setPlaybackLocked(true);
+    root
+      .querySelector<HTMLButtonElement>('[data-action="confirm-attack"]')
+      ?.click();
+    item("attack:b1")?.click();
+    expect(commands).toEqual([]);
+    expect(wheelOpen()).toBe(false);
+    hud.setPlaybackLocked(false);
+    root
+      .querySelector<HTMLButtonElement>('[data-action="confirm-attack"]')
+      ?.click();
+    expect(commands).toEqual([
+      { type: ATTACK, payload: { attackerId: "s1", targetId: "b1" } },
+    ]);
+  });
+
+  it("a strip row picks nothing while the phase plays", () => {
+    const onLookAt = vi.fn();
+    const { hud } = setup({ onLookAt });
+    hud.setPlaybackLocked(true);
+    const row = root.querySelector<HTMLElement>('[data-role="squad-list"] li');
+    if (!row) throw new Error("fixture needs a strip row");
+    row.click();
+    expect(hud.getSelectedUnitId()).toBeUndefined();
+    expect(onLookAt).not.toHaveBeenCalled();
+    hud.setPlaybackLocked(false);
+    row.click();
+    expect(hud.getSelectedUnitId()).toBe(row.dataset.unitId);
+    expect(onLookAt).toHaveBeenCalledWith(row.dataset.unitId);
+  });
+});

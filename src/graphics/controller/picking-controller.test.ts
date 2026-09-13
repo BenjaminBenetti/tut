@@ -117,6 +117,33 @@ describe("PickingController", () => {
     expect(picker.selected).toBe("right");
   });
 
+  it("a click neither selects nor invokes while the scene says it is locked, and hover goes on (#1130)", () => {
+    const picker = new FakePicker();
+    const selected: string[] = [];
+    const invoked: string[] = [];
+    let locked = true;
+    const controller = new PickingController(picker, sceneCamera(), {
+      onSelected: (id) => selected.push(id),
+      onInvoked: (id) => invoked.push(id),
+      isLocked: () => locked,
+    });
+    const surface = new FakeSurface();
+    controller.attach(surface.asSurface());
+    surface.dispatch("pointerdown", { clientX: 20, clientY: 200, button: 0 });
+    surface.dispatch("pointerup", { clientX: 20, clientY: 200, button: 0 });
+    surface.dispatch("pointerdown", { clientX: 380, clientY: 200, button: 2 });
+    surface.dispatch("pointerup", { clientX: 380, clientY: 200, button: 2 });
+    surface.dispatch("pointermove", { clientX: 380, clientY: 200 });
+    expect(selected).toEqual([]);
+    expect(invoked).toEqual([]);
+    expect(picker.selected).toBeUndefined();
+    expect(picker.hovered).toBe("right");
+    locked = false;
+    surface.dispatch("pointerdown", { clientX: 20, clientY: 200, button: 0 });
+    surface.dispatch("pointerup", { clientX: 20, clientY: 200, button: 0 });
+    expect(selected).toEqual(["left"]);
+  });
+
   it("select() marks and reports without pointer input; detach clears listeners and hover", () => {
     const picker = new FakePicker();
     const selected: string[] = [];

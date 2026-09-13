@@ -1,6 +1,8 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "@playwright/test";
 
+import { waitForBugPhasePlayed } from "./bug-phase.helper";
+
 import type { TacticalTestHooks } from "../src/ui/model/tactical-intent";
 
 /** The page's global object as seen from `page.evaluate`. */
@@ -253,6 +255,9 @@ test("captures a mission with fog of war for review", async ({ page }) => {
       await walkToward(page, "unit-1", step);
     }
     await page.locator('#action-bar [data-action="end-turn"]').click();
+    // The next walk's hooks are held until the bugs have finished
+    // moving (#1130); before this the walk was simply attempted early.
+    await waitForBugPhasePlayed(page);
     await page.waitForTimeout(150);
   }
   // The walk is the whole point of the second shot, and it has already

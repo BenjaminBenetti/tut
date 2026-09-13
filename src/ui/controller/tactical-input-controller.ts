@@ -229,6 +229,8 @@ export class TacticalInputController implements FrameUpdatable {
   private readonly targets: TacticalTargetPicker;
   private readonly picking: PickingController<TacticalTarget>;
   private surface: TacticalInputSurface | undefined;
+  /** Whether mission intents are being dropped (#1130). */
+  private locked = false;
 
   // ===========================================
   // Constructor
@@ -245,6 +247,7 @@ export class TacticalInputController implements FrameUpdatable {
       onInvoked: (target) => {
         this.deps.intents.emit({ kind: "invoke", target });
       },
+      isLocked: () => this.locked,
     });
   }
 
@@ -302,26 +305,61 @@ export class TacticalInputController implements FrameUpdatable {
   }
 
   // ===========================================
+  // Lock
+  // ===========================================
+
+  /**
+   * Drops or takes the player's mission input (#1130). While locked a
+   * click on a unit, spawner or tile, a right click, and the action and
+   * End Turn keys produce no intent; the camera, the storey keys and
+   * Shift keep working, because none of them ask the mission for
+   * anything. The hooks obey it too, so a spec cannot act where a
+   * player could not.
+   *
+   * @param locked - True to drop mission intents.
+   */
+  setLocked(locked: boolean): void {
+    this.locked = locked;
+  }
+
+  /** Whether mission intents are being dropped. */
+  isLocked(): boolean {
+    return this.locked;
+  }
+
+  // ===========================================
   // Selection
   // ===========================================
 
-  /** Selects a unit as if clicked: highlights it and reports it. */
+  /** Selects a unit as if clicked: highlights it and reports it. Dropped while locked. */
   selectUnit(unitId: UnitId): void {
+    if (this.locked) {
+      return;
+    }
     this.picking.select({ kind: "unit", unitId });
   }
 
-  /** Targets an egg spawner as if clicked: highlights it and reports it (#484). */
+  /** Targets an egg spawner as if clicked: highlights it and reports it (#484). Dropped while locked. */
   selectSpawner(spawnerId: SpawnerId): void {
+    if (this.locked) {
+      return;
+    }
     this.picking.select({ kind: "spawner", spawnerId });
   }
 
-  /** Points at a tile as if left-clicked; the HUD opens the wheel there (#1112). */
+  /** Points at a tile as if left-clicked; the HUD opens the wheel there (#1112). Dropped while locked. */
   selectTile(tile: TileCoord): void {
+    if (this.locked) {
+      return;
+    }
     this.picking.select({ kind: "tile", tile });
   }
 
-  /** Walks the selected unit to a tile as if right-clicked (#520, #1112). */
+  /** Walks the selected unit to a tile as if right-clicked (#520, #1112). Dropped while locked. */
   invokeTile(tile: TileCoord): void {
+    if (this.locked) {
+      return;
+    }
     this.deps.intents.emit({ kind: "invoke", target: { kind: "tile", tile } });
   }
 
@@ -455,6 +493,11 @@ export class TacticalInputController implements FrameUpdatable {
       return;
     }
     event.preventDefault();
+    // Still swallowed while locked: Tab must not walk the browser's focus
+    // off the map because the bugs are mid-stride.
+    if (this.locked) {
+      return;
+    }
     this.deps.intents.emit(
       bound === "end-turn"
         ? { kind: "end-turn" }

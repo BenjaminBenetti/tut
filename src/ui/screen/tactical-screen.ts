@@ -9,6 +9,7 @@ import type { PreviewDeps } from "../../tactical/service/combat-service";
 import type { TacticalCommand } from "../../tactical/model/tactical-command";
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { TacticalState } from "../../tactical/model/tactical-state";
+import { TURN_STARTED } from "../../tactical/model/turn-started-event";
 import type { UnitId } from "../../tactical/model/unit";
 import type { GameSession } from "../model/game-session";
 import type { Screen, ScreenId } from "../model/screen";
@@ -107,9 +108,11 @@ function missionCityName(state: GameState): string | undefined {
  *                └─▶ syncOverlays()                        range / cover / LOS overlays
  *   hud.onViewChange ─▶ syncOverlays()                        aiming shows the envelope
  *   store change ──▶ hud.update(mission)                     the board, at once
+ *                ├─▶ a phase change? ──▶ setPlaying(true)      controls held (#1130)
  *                └─▶ host.update(mission, events, hooks)     one event at a time:
  *                     onEvent ──▶ hud.playEvent + notice        log line, banner, chip
- *                     onSettled ──▶ the debrief, if the mission is over
+ *                     onSettled ──▶ setPlaying(false)           controls released
+ *                               ──▶ the debrief, if the mission is over
  *                └─▶ mission.outcome set ──▶ FinishMission ──▶ "mission-results"
  * ```
  */
@@ -137,6 +140,15 @@ export class TacticalScreen implements Screen {
   /** The mission `FinishMission` has already been dispatched for, so it is asked once. */
   private finishedMissionId: string | undefined;
   private readonly disposers: (() => void)[] = [];
+  /**
+   * Paced batches still playing a phase change (#1130). The controls
+   * are held while it is above zero; `playbackGeneration` lets a batch
+   * orphaned by a new mission or an unmount release nothing.
+   */
+  private playingBatches = 0;
+  private playbackGeneration = 0;
+  /** What the HUD, the scene and the body were last told. */
+  private playing = false;
 
   // ===========================================
   // Constructor
@@ -232,6 +244,9 @@ export class TacticalScreen implements Screen {
     this.root = layout;
     this.viewport = viewport;
     this.note = note;
+    // Nothing is playing on a fresh screen; said outright so a spec can
+    // wait on the attribute from the first frame (#1130).
+    doc.body.dataset.phasePlaying = "false";
 
     const store = this.deps.session.store;
     this.render(store?.getState());
@@ -240,10 +255,14 @@ export class TacticalScreen implements Screen {
     });
   }
 
-  /** Unsubscribes, releases the scene and removes the layout. */
+  /** Unsubscribes, releases the lock and the scene, and removes the layout. */
   unmount(): void {
     this.unsubscribe?.();
     this.unsubscribe = undefined;
+    const body = this.root?.ownerDocument.body;
+    // Before the scene goes: a batch it never settles must not hold the
+    // next mission's controls (#1130).
+    this.resetPlayback();
     for (const dispose of this.disposers.splice(0)) {
       dispose();
     }
@@ -257,6 +276,9 @@ export class TacticalScreen implements Screen {
     this.root = undefined;
     this.viewport = undefined;
     this.note = undefined;
+    if (body) {
+      delete body.dataset.phasePlaying;
+    }
   }
 
   // ===========================================
@@ -279,6 +301,16 @@ export class TacticalScreen implements Screen {
    * player's first command after the bug phase as "not your turn"
    * until the animation ran out (`tactical-spawners` caught it). What
    * is paced is the *account* of the batch, not the board.
+   *
+   * The controls, though, follow the account (#1130). A batch that
+   * crosses a phase — an `EndTurn`, which plays the whole bug phase and
+   * hands the turn back — holds them from the first event to the last:
+   * End turn is disabled, clicks and action keys are dropped, and the
+   * body says `data-phase-playing="true"` so a spec can wait it out.
+   * Without this the "Your turn" banner was right and the controls were
+   * early: the Executive Director could select and act while the bugs
+   * were still walking. The player's own batches are not held — they
+   * are already looking at what they did.
    *
    * A mission arriving whole, or a screen without a scene, takes the
    * batch at once as well: there is nothing to pace against, and an
@@ -308,6 +340,9 @@ export class TacticalScreen implements Screen {
       this.viewport !== undefined &&
       this.attachedMissionId === mission.missionId;
     if (!paced) {
+      // Another mission, or none: whatever the last scene was playing
+      // is over as far as these controls are concerned.
+      this.resetPlayback();
       this.hud.update(mission, events);
       if (!mission) {
         return;
@@ -315,24 +350,85 @@ export class TacticalScreen implements Screen {
       for (const event of events) {
         this.announceOne(event, mission, state);
       }
-      this.syncScene(mission, events);
+      void this.syncScene(mission, events);
       if (mission.outcome !== undefined) {
         this.finish(mission.missionId);
       }
       return;
     }
+    // Held before the HUD sees the new board, so its first refresh
+    // already draws End turn disabled.
+    const release = crossesPhase(events) ? this.beginPlayback() : undefined;
     this.hud.update(mission);
-    this.syncScene(mission, events, {
+    void this.syncScene(mission, events, {
       onEvent: (event) => {
         this.hud.playEvent(event, mission);
         this.announceOne(event, mission, state);
       },
       onSettled: () => {
+        release?.();
         if (mission.outcome !== undefined) {
           this.finish(mission.missionId);
         }
       },
+      // A scene that fails mid-batch never settles; the promise still
+      // resolves, and the release is idempotent.
+    }).then(() => {
+      release?.();
     });
+  }
+
+  // ===========================================
+  // Playback lock
+  // ===========================================
+
+  /**
+   * Holds the controls for one paced batch (#1130) and returns what
+   * releases them. Idempotent, and inert once the mission it belonged
+   * to has been replaced or the screen unmounted, so a scene that never
+   * settles cannot leave the next mission locked.
+   */
+  private beginPlayback(): () => void {
+    const generation = this.playbackGeneration;
+    this.playingBatches += 1;
+    this.setPlaying(true);
+    let released = false;
+    return () => {
+      if (released || generation !== this.playbackGeneration) {
+        return;
+      }
+      released = true;
+      this.playingBatches -= 1;
+      if (this.playingBatches === 0) {
+        this.setPlaying(false);
+      }
+    };
+  }
+
+  /** Forgets every playing batch: a new mission, or none, has nothing playing. */
+  private resetPlayback(): void {
+    this.playbackGeneration += 1;
+    this.playingBatches = 0;
+    this.setPlaying(false);
+  }
+
+  /**
+   * Pushes the lock to everything that enforces it: the HUD, which
+   * disables End turn and drops intents; the scene host, which drops
+   * clicks and action keys; and the body, which a spec waits on. Only
+   * on a change, so a screen that never locks never touches the host.
+   */
+  private setPlaying(playing: boolean): void {
+    if (playing === this.playing) {
+      return;
+    }
+    this.playing = playing;
+    this.hud.setPlaybackLocked(playing);
+    this.deps.sceneHost?.setInputLocked(playing);
+    const body = this.root?.ownerDocument.body;
+    if (body) {
+      body.dataset.phasePlaying = String(playing);
+    }
   }
 
   /**
@@ -426,18 +522,33 @@ export class TacticalScreen implements Screen {
     host.setWeaponRangeVisible(weaponRange);
   }
 
-  /** Attaches the scene on the first mission, updates it afterwards; never throws into the store. */
+  /**
+   * Attaches the scene on the first mission, updates it afterwards;
+   * never throws into the store. Resolves once the host has settled or
+   * failed, either way, so a caller can release what it held.
+   */
   private syncScene(
     mission: TacticalState,
     events: readonly TacticalEvent[],
     hooks?: TacticalUpdateHooks,
-  ): void {
+  ): Promise<void> {
     const host = this.deps.sceneHost;
     if (!host || !this.viewport) {
-      return;
+      return Promise.resolve();
     }
     const intents = {
       emit: (intent: TacticalIntent): void => {
+        // Nothing of the mission's while a bug phase is still playing
+        // (#1130): the board says it is the player's turn, the map does
+        // not yet, and the controls follow the map. View intents pass:
+        // the storey keys and Shift ask the scene, not the mission.
+        if (
+          this.playing &&
+          intent.kind !== "layer-step" &&
+          intent.kind !== "inspect"
+        ) {
+          return;
+        }
         if (intent.kind === "layer-step") {
           // A view change, not a mission one: it never reaches the HUD's
           // intent handling or the overlays (#961). The focus comes back
@@ -478,7 +589,7 @@ export class TacticalScreen implements Screen {
     // touches a key, so the readout is never blank while the control is
     // live.
     this.hud.setLayerFocus(host.layerFocus());
-    void pending.catch((error: unknown) => {
+    return pending.catch((error: unknown) => {
       console.error("Tactical scene failed", error);
     });
   }
@@ -535,6 +646,16 @@ export class TacticalScreen implements Screen {
 // ===========================================
 // Helpers
 // ===========================================
+
+/**
+ * True when a batch carries a phase change (#1130): an `EndTurn` plays
+ * the bug phase and hands the turn back in one batch, and that is the
+ * batch the controls wait out. A move or a shot of the player's own is
+ * not held: the player is already looking at it.
+ */
+function crossesPhase(events: readonly TacticalEvent[]): boolean {
+  return events.some((event) => event.type === TURN_STARTED);
+}
 
 /** The tactical events in a store change; everything else is the overworld's. */
 function tacticalEventsOf(

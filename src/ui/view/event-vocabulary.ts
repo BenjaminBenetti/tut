@@ -198,6 +198,11 @@ export function describeEvent(
         tone: "dim",
       };
     case "tactical:equipment-used":
+      // A scanner's deployment logs itself with its battery on the next
+      // line; a second line for the same act read as a stutter.
+      if (event.payload.equipmentId === "radar-dish") {
+        return undefined;
+      }
       return {
         text: `${nameOf(event.payload.unitId)} used ${event.payload.name.toLowerCase()} · ${formatWhole(event.payload.usesLeft)} left`,
         icon: "ability",

@@ -815,10 +815,16 @@ export class TacticalScreen implements Screen {
         `${listNames(stranded)} ${stranded.length === 1 ? "is" : "are"} not aboard the drop ship and will be lost.`,
       );
     }
+    // The sentence follows the outcome the rules will record, not the
+    // objective count alone: the job done with nobody aboard yet is
+    // still recorded as failed, and the dialog must not promise a win
+    // the debrief will not deliver (#1132 review).
     lines.push(
-      summary.objectivesOpen > 0
-        ? `${String(summary.objectivesOpen)} objective${summary.objectivesOpen === 1 ? " is" : "s are"} still open: the mission will be recorded as failed.`
-        : "Every objective is complete: the mission will be recorded as won.",
+      summary.outcome === "won"
+        ? "Every objective is complete: the mission will be recorded as won."
+        : summary.objectivesOpen > 0
+          ? `${String(summary.objectivesOpen)} objective${summary.objectivesOpen === 1 ? " is" : "s are"} still open: the mission will be recorded as failed.`
+          : "Every objective is complete, but nobody has boarded the drop ship: leaving now is recorded as failed.",
     );
     this.dialog.show({
       title:

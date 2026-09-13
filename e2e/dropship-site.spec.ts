@@ -84,7 +84,8 @@ for (const fixture of [
     expect(boarding.tiles).toHaveLength(16);
     expect(mission.extraction).toEqual(boarding.tiles);
     const force = mission.units.filter((unit) => unit.team === "tdf");
-    expect(force).toHaveLength(3);
+    // The starter force: a mech and four squads since #1132.
+    expect(force).toHaveLength(5);
     expect(new Set(force.map((unit) => unit.kind))).toEqual(
       new Set(["squad", "mech"]),
     );

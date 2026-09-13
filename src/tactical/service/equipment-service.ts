@@ -43,6 +43,13 @@ import type { PhaseStep } from "./turn-service";
 import { closestTiles } from "./weapon-reach-service";
 
 // ===========================================
+// Constants
+// ===========================================
+
+/** What the preview quotes for a placed charge: it goes off, it does not roll. */
+const CERTAIN_HIT_CHANCE = 100;
+
+// ===========================================
 // Types
 // ===========================================
 
@@ -257,9 +264,11 @@ export function previewEquipmentUse(
   }
   const profile = definition.profile;
   return ok({
+    // A placed charge is not a shot: the detonation rolls no hit, so the
+    // preview says so rather than quoting the ceiling a shot would have.
     hitChance:
       definition.kind === "charge"
-        ? deps.combat.maxHitChance
+        ? CERTAIN_HIT_CHANCE
         : hitChance(profile, terrain, deps.combat),
     damage: damageRange(profile, 0, deps.combat),
     distance: terrain.distance,

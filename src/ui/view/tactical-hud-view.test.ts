@@ -187,6 +187,22 @@ describe("TacticalHudView", () => {
     expect(hud.getMode()).toBe("move");
   });
 
+  it("holds the Leave button with the rest of the controls while a phase plays (#1132)", () => {
+    const hud = new TacticalHudView(
+      { onCommand: vi.fn(), onLeave: vi.fn() },
+      { combatTuning: COMBAT_TUNING, objectiveTuning: OBJECTIVE_TUNING },
+    );
+    hud.mount(root);
+    hud.update(twoWeaponMission());
+    const leave = (): HTMLButtonElement | null =>
+      root.querySelector<HTMLButtonElement>('[data-action="leave-mission"]');
+    expect(leave()?.disabled).toBe(false);
+    hud.setPlaybackLocked(true);
+    expect(leave()?.disabled).toBe(true);
+    hud.setPlaybackLocked(false);
+    expect(leave()?.disabled).toBe(false);
+  });
+
   it("paints a weapon's reach while its row on the card is rested on, and clears it on leave (#1132)", () => {
     const mission = twoWeaponMission();
     const ranges: number[] = [];

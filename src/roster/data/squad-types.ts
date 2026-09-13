@@ -95,7 +95,7 @@ export const RADIO_SQUAD: SquadType = {
   reinforceCostPerSoldier: 110,
   combatRating: 28,
   description:
-    "Signals infantry with SMGs and portable radar. One hard-hitting burst a turn at short range. Deploy a scanner on a free tile within 2 tiles for 1 AP: hidden enemies and egg nests appear as red blips within a 30-tile circle for 3 turns, until its battery burns out.",
+    "Signals infantry with SMGs and portable radar. One hard-hitting burst a turn at short range. Carries three scanners a mission: deploy one on a free tile within 2 tiles for 1 AP, and hidden enemies and egg nests appear as red blips within a 30-tile circle for 3 turns.",
   equipment: [GRENADE.id, RADAR_DISH.id],
 };
 

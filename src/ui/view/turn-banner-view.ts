@@ -68,6 +68,8 @@ export class TurnBannerView {
 
   private readonly handlers: TurnBannerHandlers;
   private root: HTMLElement | undefined;
+  /** The Leave button, held with the rest of the controls while a phase plays (#1132). */
+  private leave: HTMLButtonElement | undefined;
   private fields = new Map<string, HTMLElement>();
   private phase: HTMLElement | undefined;
   private status: HTMLElement | undefined;
@@ -111,6 +113,7 @@ export class TurnBannerView {
     back.className = "tut-btn";
     back.dataset.action = "leave-mission";
     back.textContent = "Leave";
+    this.leave = back;
     const tdf = this.createStat(doc, "TDF", "tdf-units");
     const bugs = this.createStat(doc, "Bugs", "bug-units");
     const layer = this.createLayerControl(doc);
@@ -202,6 +205,19 @@ export class TurnBannerView {
     stat.append(term, value);
     this.fields.set(field, value);
     return stat;
+  }
+
+  /**
+   * Enables or holds the Leave button (#1132). Leaving is refused while
+   * a bug phase is still playing, so the button says so rather than
+   * swallowing the click.
+   *
+   * @param enabled - False while the controls are held.
+   */
+  setLeaveEnabled(enabled: boolean): void {
+    if (this.leave) {
+      this.leave.disabled = !enabled;
+    }
   }
 
   /**

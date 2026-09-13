@@ -688,6 +688,25 @@ describe("TacticalScreen", () => {
       };
       const { store } = mountedInMission(done);
       leaveButton()?.click();
+      // The job is done but nobody is aboard yet: the rules record that
+      // as lost, and the dialog says so rather than promising a win.
+      expect(dialog()?.textContent).toContain("nobody has boarded");
+      expect(dialog()?.textContent).toContain("recorded as failed");
+      root
+        .querySelector<HTMLButtonElement>('[data-action="leave-cancel"]')
+        ?.click();
+      // One unit out and the rest still on the map: recorded as won,
+      // with the stragglers lost.
+      const [first, ...rest] = mission.units.filter((u) => u.team === "tdf");
+      store.replace({
+        ...done,
+        activeMission: {
+          ...done.activeMission,
+          units: [...rest, ...mission.units.filter((u) => u.team !== "tdf")],
+          extracted: [first!],
+        },
+      });
+      leaveButton()?.click();
       expect(dialog()?.textContent).toContain("recorded as won");
       root
         .querySelector<HTMLButtonElement>('[data-action="leave-cancel"]')

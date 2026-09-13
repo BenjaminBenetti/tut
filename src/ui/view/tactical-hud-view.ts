@@ -727,6 +727,7 @@ export class TacticalHudView {
     if (this.root) {
       this.root.dataset.phasePlaying = String(locked);
     }
+    this.banner.setLeaveEnabled(!locked);
     this.refresh();
   }
 

@@ -404,7 +404,7 @@ describe("UseEquipment: breaching charge", () => {
     );
     expect(preview.ok).toBe(true);
     if (!preview.ok) return;
-    expect(preview.value.hitChance).toBe(COMBAT_TUNING.maxHitChance);
+    expect(preview.value.hitChance).toBe(100);
     expect(preview.value.blast?.victims.map((v) => v.id)).toEqual(["squad"]);
   });
 

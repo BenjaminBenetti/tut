@@ -38,6 +38,8 @@ import type { TacticalComposition } from "./tactical-composition";
 import { composeTactical } from "./tactical-composition";
 import { AUTO_RESOLVE_TUNING } from "../../overworld/data/auto-resolve-tuning";
 import { MECH_RATING_TUNING } from "../../roster/data/mech-rating-tuning";
+import { UNIT_TUNING } from "../../tactical/data/unit-tuning";
+import type { UnitTuning } from "../../tactical/model/unit-tuning";
 import { STARTER_PARTS } from "../../roster/data/parts";
 import { LoadoutMechRater } from "../../roster/service/loadout-mech-rater";
 import { ROSTER_TUNING } from "../../roster/data/roster-tuning";
@@ -99,6 +101,8 @@ export interface GameContent {
   readonly rosterTuning: RosterTuning;
   readonly upgrades: UpgradeTuning;
   readonly rating: MechRatingTuning;
+  /** Turns roster entries into field numbers; the mech bay prints them (#1132). */
+  readonly unitTuning: UnitTuning;
   /** Names and describes mission types for the mission list and briefing. */
   readonly missionTypes: MissionTypeCatalogue;
   /** Copy and choices for the event dialog. */
@@ -174,6 +178,7 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     rosterTuning: ROSTER_TUNING,
     upgrades: UPGRADE_TUNING,
     rating: MECH_RATING_TUNING,
+    unitTuning: UNIT_TUNING,
     missionTypes: MISSION_TYPES,
     eventTypes: new DataEventTypeCatalogue(
       EVENT_TYPE_IDS.map((id) => EVENT_TYPES[id]),

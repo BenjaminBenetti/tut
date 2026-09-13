@@ -92,6 +92,7 @@ Until M2, tactical missions are **auto-resolved** by a placeholder resolver so t
 - A dedicated screen. Choose chassis → fit parts → validate (weight, power, slot constraints) → save loadout. Loadouts are named. Cost is visible at every step, as is the mech's resulting stat sheet.
 - Design intent: a max-investment mech should feel like a capital ship. Losing it should be devastating and memorable.
 - The starter mech is the cheap one, not the safe one: it fills its Vanguard to the tonne, so the first upgrade is a swap rather than an add, and the first real investment is a different frame (#1130).
+- **The bay prints the field's numbers, from one derivation.** The stat sheet's Combat block is the mech as the tactical unit factory freezes it — hit points, per-hit armor, move, action points, sight and each weapon's range, accuracy, damage and penetration — computed by the same `mechCombatProfile` the mission uses, so "50 armor" in the bay can never be "15 armor" on the ground. Part sums that the field never shows (plate, actuators, firepower totals) are not printed under the field's words; what constrains the build (weight, power, heat, rating, cost) has its own Build block. Squads follow the same rule through `squadCombatProfile` (Executive Director, 2026-09-13, #1132).
 
 ## 6. Tactical missions
 

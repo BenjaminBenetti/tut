@@ -39,7 +39,7 @@ interface CardEntry {
  * tags. Every number is copied from the state; nothing is derived here.
  *
  * ```
- *   ┌ RIFLE SQUAD ──────────────── TDF · squad ┐
+ *   ┌ ALPHA ─────────── TDF · squad · Corporal ┐
  *   │ HP ▮▮▮▮▮▮▮░░░ 14 / 20      AP 1 / 2     │
  *   │ Weapon  range 8 · acc 65 · dmg 3 · pen 0 │
  *   │ Armor 0            overwatch             │
@@ -87,6 +87,12 @@ export class UnitCardView {
     const side = doc.createElement("span");
     side.className = "tut-badge";
     side.dataset.field = "unit-side";
+    // The rank beside the side, only for a unit that holds one (#1130):
+    // a bug has no stripes, and a badge reading nothing says nothing.
+    const rank = doc.createElement("span");
+    rank.className = "tut-badge";
+    rank.dataset.field = "unit-rank";
+    rank.hidden = true;
 
     const meter = doc.createElement("div");
     meter.className = "tut-meter tut-meter--ok";
@@ -118,11 +124,12 @@ export class UnitCardView {
       this.fields.set(field, value);
     }
 
-    body.append(name, side, meter, grid);
+    body.append(name, side, rank, meter, grid);
     section.append(title, empty, body);
     parent.appendChild(section);
     this.fields.set("unit-name", name);
     this.fields.set("unit-side", side);
+    this.fields.set("unit-rank", rank);
     this.root = section;
     this.empty = empty;
     this.body = body;
@@ -156,6 +163,11 @@ export class UnitCardView {
     }
     this.set("unit-name", name ?? template.name);
     this.set("unit-side", `${unit.team} · ${unit.kind}`);
+    this.set("unit-rank", template.rank?.name ?? "");
+    const rankBadge = this.fields.get("unit-rank");
+    if (rankBadge) {
+      rankBadge.hidden = template.rank === undefined;
+    }
     this.set("hp", `${formatWhole(unit.hp)} / ${formatWhole(unit.maxHp)}`);
     this.set("ap", `${formatWhole(unit.ap)} / ${formatWhole(unit.maxAp)}`);
     // Action points alone do not say how many shots are left: a squad's

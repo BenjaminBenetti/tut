@@ -10,6 +10,7 @@ import { ADVANCE_DAY } from "../../overworld/model/advance-day-command";
 import type { CampaignEvent } from "../../overworld/model/campaign-event";
 import type { MissionResult } from "../../overworld/model/mission-result";
 import type { OverworldCommand } from "../../overworld/model/overworld-command";
+import { ROSTER_TUNING } from "../../roster/data/roster-tuning";
 import type { GameState } from "../../save/model/game-state";
 import type { CampaignStore, GameSession } from "../model/game-session";
 import type { ScreenId } from "../model/screen";
@@ -93,7 +94,9 @@ const RESULT: MissionResult = {
   cityId: "vancouver",
   outcome: "extracted",
   squadCasualties: [
-    { squadId: "squad-1", losses: 2 },
+    // Three swarmers: 30 xp, which with the mission's 10 lifts a green
+    // squad past Corporal (#1130).
+    { squadId: "squad-1", losses: 2, kills: 3, xp: 30 },
     { squadId: "squad-2", losses: 5 },
     { squadId: "squad-3", losses: 0 },
   ],
@@ -101,7 +104,8 @@ const RESULT: MissionResult = {
   mechsDestroyed: ["mech-1"],
   mechDamage: [
     { mechId: "mech-1", damage: 100 },
-    { mechId: "mech-2", damage: 35 },
+    // One swarmer on a pilot already a Sergeant: no promotion.
+    { mechId: "mech-2", damage: 35, kills: 1, xp: 10 },
   ],
   creditsAwarded: 900,
   infestationDelta: -20,
@@ -109,8 +113,9 @@ const RESULT: MissionResult = {
 
 /**
  * A campaign after the casualties of `RESULT` were applied: squad-2 and
- * mech-1 are gone and in the graveyard, squad-1 is down to 3, mech-2 is
- * at 35 damage, and a second mech survives unhurt.
+ * mech-1 are gone and in the graveyard, squad-1 is down to 3 and up to
+ * 40 xp, mech-2 is at 35 damage and 85 xp, and a second mech survives
+ * unhurt.
  */
 function afterMission(): GameState {
   const base = campaignOnDay(5, []);
@@ -123,10 +128,12 @@ function afterMission(): GameState {
     roster: {
       ...base.roster,
       squads: [
-        { ...alpha, id: "squad-1", strength: 3 },
+        { ...alpha, id: "squad-1", strength: 3, kills: 3, xp: 40 },
         { ...bravo, id: "squad-3", name: "Charlie", strength: 5 },
       ],
-      mechs: [{ ...hammerhead, id: "mech-2", name: "Anvil", damage: 35 }],
+      mechs: [
+        { ...hammerhead, id: "mech-2", name: "Anvil", damage: 35, xp: 85 },
+      ],
       graveyard: [
         { kind: "squad", name: "Old Guard", day: 2, missionId: "mission-0" },
         { kind: "squad", name: bravo.name, day: 5, missionId: "mission-1" },
@@ -163,6 +170,7 @@ describe("MissionResultsScreen", () => {
     new MissionResultsScreen({
       router: fakeRouter().router,
       session: sessionWith(store),
+      rosterTuning: ROSTER_TUNING,
     }).mount(root);
 
     expect(field("outcome").textContent).toBe("Force extracted");
@@ -183,6 +191,7 @@ describe("MissionResultsScreen", () => {
       "squads-wiped",
       "casualties",
       "mech-damage",
+      "experience",
     ]);
     expect(
       field("mechs-destroyed").classList.contains(
@@ -193,6 +202,13 @@ describe("MissionResultsScreen", () => {
     expect(items("squads-wiped")).toEqual(["Bravo"]);
     expect(items("casualties")).toEqual(["Alpha −2 (3/5)"]);
     expect(items("mech-damage")).toEqual(["Anvil +35 (35/100)"]);
+    // What the kills were worth, and the promotion the roster made of
+    // it (#1130): Alpha went 0 → 40 and crossed Corporal at 30; Anvil
+    // went 65 → 85 and stayed a Sergeant.
+    expect(items("experience")).toEqual([
+      "Alpha +30 xp · promoted to Corporal",
+      "Anvil +10 xp · Sergeant",
+    ]);
     expect(field("credits").textContent).toBe("¢900");
     expect(field("infestation-delta").textContent).toBe("-20");
   });
@@ -214,6 +230,7 @@ describe("MissionResultsScreen", () => {
     new MissionResultsScreen({
       router: fakeRouter().router,
       session: sessionWith(store),
+      rosterTuning: ROSTER_TUNING,
     }).mount(root);
     const section = field("mechs-destroyed");
     expect(section.dataset.count).toBe("0");
@@ -249,6 +266,7 @@ describe("MissionResultsScreen", () => {
     new MissionResultsScreen({
       router: fakeRouter().router,
       session: sessionWith(store),
+      rosterTuning: ROSTER_TUNING,
     }).mount(root);
 
     expect(items("squads-wiped")).toHaveLength(2);
@@ -277,6 +295,7 @@ describe("MissionResultsScreen", () => {
     new MissionResultsScreen({
       router: fakeRouter().router,
       session: sessionWith(store),
+      rosterTuning: ROSTER_TUNING,
     }).mount(root);
     expect(field("casualties").querySelector(".tut-label")?.textContent).toBe(
       "Casualties (surviving squads)",
@@ -305,6 +324,7 @@ describe("MissionResultsScreen", () => {
     new MissionResultsScreen({
       router: fakeRouter().router,
       session: sessionWith(store),
+      rosterTuning: ROSTER_TUNING,
     }).mount(root);
     expect(field("casualties").querySelector(".tut-dim")?.textContent).toBe(
       "No casualties.",
@@ -341,6 +361,7 @@ describe("MissionResultsScreen", () => {
     new MissionResultsScreen({
       router: fakeRouter().router,
       session: sessionWith(store),
+      rosterTuning: ROSTER_TUNING,
     }).mount(root);
     expect(field("outcome").textContent).toBe("Mission accomplished");
     expect(field("outcome").dataset.tone).toBe("ok");
@@ -349,6 +370,7 @@ describe("MissionResultsScreen", () => {
       "squads-wiped",
       "casualties",
       "mech-damage",
+      "experience",
     ]) {
       expect(field(name).dataset.count).toBe("0");
       expect(field(name).querySelector("ul")).toBeNull();
@@ -366,6 +388,7 @@ describe("MissionResultsScreen", () => {
     new MissionResultsScreen({
       router: fakeRouter().router,
       session: sessionWith(store),
+      rosterTuning: ROSTER_TUNING,
     }).mount(root);
     expect(items("mechs-destroyed")).toEqual(["mech-1"]);
     expect(items("squads-wiped")).toEqual(["squad-2"]);
@@ -374,9 +397,11 @@ describe("MissionResultsScreen", () => {
   it("Continue advances the day through the store, then routes to the overworld", () => {
     const store = new FakeStore(afterMission());
     const { router, navigate } = fakeRouter();
-    new MissionResultsScreen({ router, session: sessionWith(store) }).mount(
-      root,
-    );
+    new MissionResultsScreen({
+      router,
+      session: sessionWith(store),
+      rosterTuning: ROSTER_TUNING,
+    }).mount(root);
     root.querySelector<HTMLButtonElement>('[data-action="continue"]')?.click();
     expect(store.dispatched).toEqual([ADVANCE_DAY]);
     expect(store.getState().overworld.day).toBe(6);
@@ -387,9 +412,11 @@ describe("MissionResultsScreen", () => {
     const store = new FakeStore(afterMission());
     store.fail = true;
     const { router, navigate } = fakeRouter();
-    new MissionResultsScreen({ router, session: sessionWith(store) }).mount(
-      root,
-    );
+    new MissionResultsScreen({
+      router,
+      session: sessionWith(store),
+      rosterTuning: ROSTER_TUNING,
+    }).mount(root);
     root.querySelector<HTMLButtonElement>('[data-action="continue"]')?.click();
     const status = root.querySelector<HTMLElement>('[data-role="status"]');
     expect(status?.hidden).toBe(false);
@@ -401,6 +428,7 @@ describe("MissionResultsScreen", () => {
     const screen = new MissionResultsScreen({
       router: fakeRouter().router,
       session: sessionWith(new FakeStore(campaignOnDay(1, []))),
+      rosterTuning: ROSTER_TUNING,
     });
     screen.mount(root);
     expect(field("outcome").textContent).toBe("No result");
@@ -435,6 +463,7 @@ describe("MissionResultsScreen payout prominence", () => {
     new MissionResultsScreen({
       router: fakeRouter().router,
       session: sessionWith(store),
+      rosterTuning: ROSTER_TUNING,
     }).mount(root);
     return root;
   }

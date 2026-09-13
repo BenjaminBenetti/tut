@@ -68,6 +68,46 @@ beforeEach(() => {
 // ===========================================
 
 describe("PhaseBannerView", () => {
+  it("says which phases it is still announcing, and tells subscribers on every change (#1132)", () => {
+    const view = mounted();
+    const changes: string[] = [];
+    const unsubscribe = view.subscribe(() => {
+      changes.push(view.current()?.phase ?? "idle");
+    });
+    expect(view.announcing("bugs")).toBe(false);
+    view.announce([
+      { phase: "bugs", turn: 1 },
+      { phase: "player", turn: 2 },
+    ]);
+    // "Bug phase" is up and "Your turn" waits: both are announced.
+    expect(view.announcing("bugs")).toBe(true);
+    expect(view.announcing("player")).toBe(true);
+    expect(changes).toEqual(["bugs"]);
+    timers.fire();
+    expect(view.announcing("bugs")).toBe(false);
+    expect(view.announcing("player")).toBe(true);
+    expect(changes).toEqual(["bugs", "player"]);
+    timers.fire();
+    expect(view.announcing("player")).toBe(false);
+    expect(changes).toEqual(["bugs", "player", "idle"]);
+    unsubscribe();
+    view.announce([{ phase: "bugs", turn: 2 }]);
+    expect(changes).toHaveLength(3);
+  });
+
+  it("a skipped banner tells subscribers too (#1132)", () => {
+    const view = mounted();
+    let told = 0;
+    view.subscribe(() => {
+      told += 1;
+    });
+    view.announce([{ phase: "bugs", turn: 1 }]);
+    expect(told).toBe(1);
+    view.skip();
+    expect(told).toBe(2);
+    expect(view.announcing("bugs")).toBe(false);
+  });
+
   it("mounts idle and hidden, so it blocks nothing before a phase changes", () => {
     const view = mounted();
     expect(banner()).not.toBeNull();

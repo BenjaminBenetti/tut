@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import type { Rect, Vec3 } from "../../core/model/grid";
 import type { UnitTemplateLookup } from "../../graphics/service/tactical-scene-builder";
@@ -389,6 +389,23 @@ describe("playAroundRedraw", () => {
     expect(queue.batches[0]?.map((e) => e.type)).toEqual([UNIT_MOVED]);
     expect(queue.batches[1]?.map((e) => e.type)).toEqual([UNIT_SPOTTED]);
     expect(order).toEqual(["redraw"]);
+  });
+
+  it("still plays the second phase and resolves when the redraw rejects (#1132)", async () => {
+    const queue = new QueueRecorder();
+    const boom = new Error("template missing");
+    const logged = vi.spyOn(console, "error").mockImplementation(() => {
+      // Swallowed: the assertion below is what this test is about.
+    });
+    // The promise here is what releases the player's controls; a
+    // rejection that left it pending held them for a whole CI budget.
+    await playAroundRedraw(queue, [moved, spotted], () => Promise.reject(boom));
+    expect(queue.batches.map((batch) => batch.map((e) => e.type))).toEqual([
+      [UNIT_MOVED],
+      [UNIT_SPOTTED],
+    ]);
+    expect(logged).toHaveBeenCalledWith("Tactical redraw failed", boom);
+    logged.mockRestore();
   });
 
   it("runs the redraw after the first phase and before the second", async () => {

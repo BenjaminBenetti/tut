@@ -1,3 +1,4 @@
+import type { Unsubscribe } from "../../core/model/event-bus";
 import type { TacticalPhase } from "../../tactical/model/tactical-state";
 import { formatWhole } from "../service/format";
 
@@ -85,6 +86,8 @@ export class PhaseBannerView {
   private previous: TacticalPhase | undefined;
   private timer: number | undefined;
   private dispose: (() => void) | undefined;
+  /** Told after every change of what is on screen: a banner shown, or idle (#1132). */
+  private readonly listeners = new Set<() => void>();
 
   // ===========================================
   // Constructor
@@ -145,6 +148,7 @@ export class PhaseBannerView {
     this.dispose = undefined;
     this.root?.remove();
     this.root = undefined;
+    this.notify();
     this.titleEl = undefined;
     this.detailEl = undefined;
   }
@@ -183,6 +187,35 @@ export class PhaseBannerView {
     return this.showing;
   }
 
+  /**
+   * Whether a banner for `phase` is on screen or still waiting its turn
+   * (#1132). The controls read this: while the bug phase is announced,
+   * the bug phase is not over as far as the player can tell, however
+   * quickly the map finished playing it.
+   *
+   * @param phase - The phase asked about.
+   */
+  announcing(phase: TacticalPhase): boolean {
+    return (
+      this.showing?.phase === phase ||
+      this.queue.some((announcement) => announcement.phase === phase)
+    );
+  }
+
+  /**
+   * Subscribes to every change of what is on screen — a banner shown,
+   * the next one replacing it, or the view going idle — and returns the
+   * matching unsubscribe.
+   *
+   * @param listener - Called after the change has been drawn.
+   */
+  subscribe(listener: () => void): Unsubscribe {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  }
+
   /** How many banners are still waiting. Test seam. */
   pending(): number {
     return this.queue.length;
@@ -199,6 +232,7 @@ export class PhaseBannerView {
     this.showing = next;
     if (next === undefined) {
       this.hide();
+      this.notify();
       return;
     }
     this.render(next);
@@ -206,6 +240,14 @@ export class PhaseBannerView {
       this.timer = undefined;
       this.advance();
     }, this.holdMs);
+    this.notify();
+  }
+
+  /** Tells every subscriber what is on screen changed; copied, as one may unsubscribe. */
+  private notify(): void {
+    for (const listener of [...this.listeners]) {
+      listener();
+    }
   }
 
   /** Writes one announcement into the element and makes it visible. */

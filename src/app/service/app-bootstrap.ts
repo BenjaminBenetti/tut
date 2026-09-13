@@ -181,7 +181,12 @@ export async function bootstrapApp(doc: Document): Promise<void> {
       ],
       [
         "mission-results",
-        () => new MissionResultsScreen({ router, session: game.session }),
+        () =>
+          new MissionResultsScreen({
+            router,
+            session: game.session,
+            rosterTuning: game.content.rosterTuning,
+          }),
       ],
       [
         "roster",

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { RANK_TUNING } from "../data/rank-tuning";
 import type { CasualtyReport } from "../model/casualty-report";
 import type { Mech } from "../model/mech";
 import { MECH_MAX_DAMAGE } from "../model/mech";
@@ -8,6 +9,7 @@ import {
   MECH_DESTROYED,
   SQUAD_WIPED,
   UNIT_DAMAGED,
+  UNIT_PROMOTED,
 } from "../model/roster-event";
 import type { RosterState } from "../model/roster-state";
 import type { RosterTuning } from "../model/roster-tuning";
@@ -22,6 +24,7 @@ const DAY = 12;
 const TUNING: RosterTuning = {
   repairCostPerPoint: 10,
   xpPerMissionSurvived: 10,
+  ranks: RANK_TUNING,
 };
 
 const LOADOUT: MechLoadout = {
@@ -57,7 +60,9 @@ function mech(id: string, damage: number): Mech {
     damage,
     kills: 4,
     missionsSurvived: 3,
-    xp: 50,
+    // 40, not 50: the shipped ladder has a rung at 60, and a fixture ten
+    // short of it would promote on every survived mission (#1130).
+    xp: 40,
   };
 }
 
@@ -119,7 +124,7 @@ describe("applyCasualties", () => {
     expect(roster.mechs[0]).toEqual({
       ...mech("m1", 0),
       missionsSurvived: 4,
-      xp: 60,
+      xp: 50,
     });
     expect(events).toEqual([]);
   });
@@ -146,7 +151,7 @@ describe("applyCasualties", () => {
       ...mech("m3", 35),
       kills: 6,
       missionsSurvived: 4,
-      xp: 60,
+      xp: 50,
     });
     expect(events).toEqual([
       {
@@ -158,6 +163,83 @@ describe("applyCasualties", () => {
         payload: { kind: "mech", unitId: "m3", from: 10, to: 35 },
       },
     ]);
+  });
+
+  it("adds what the kills were worth and promotes when a rung is reached (#1130)", () => {
+    // s2 sits at 30 (Corporal). Two swarmers (20) and the mission's 10
+    // make 60: Sergeant, announced after its own damage line.
+    const { roster, events } = applyCasualties(
+      ROSTER,
+      report({
+        squadCasualties: [{ squadId: "s2", losses: 1, kills: 2, xp: 20 }],
+        deployedSquadIds: ["s2"],
+      }),
+      DAY,
+      TUNING,
+    );
+    expect(roster.squads[1]).toEqual({
+      ...squad("s2", 2),
+      kills: 3,
+      missionsSurvived: 3,
+      xp: 60,
+    });
+    expect(events).toEqual([
+      {
+        type: UNIT_DAMAGED,
+        payload: { kind: "squad", unitId: "s2", from: 3, to: 2 },
+      },
+      {
+        type: UNIT_PROMOTED,
+        payload: {
+          kind: "squad",
+          unitId: "s2",
+          name: "S2",
+          from: { id: "corporal", name: "Corporal", xp: 30 },
+          to: { id: "sergeant", name: "Sergeant", xp: 60 },
+        },
+      },
+    ]);
+  });
+
+  it("names the rank a mech pilot ended on when a mission clears several rungs", () => {
+    // m1 at 40 plus a brute (60) and the mission's 10 is 110: past
+    // Sergeant (60) and up to Staff Sergeant (100) in one go.
+    const { roster, events } = applyCasualties(
+      ROSTER,
+      report({
+        mechDamage: [{ mechId: "m1", damage: 0, kills: 1, xp: 60 }],
+        deployedMechIds: ["m1"],
+      }),
+      DAY,
+      TUNING,
+    );
+    expect(roster.mechs[0]).toMatchObject({ kills: 5, xp: 110 });
+    expect(events).toEqual([
+      {
+        type: UNIT_PROMOTED,
+        payload: {
+          kind: "mech",
+          unitId: "m1",
+          name: "M1",
+          from: { id: "corporal", name: "Corporal", xp: 30 },
+          to: { id: "staff-sergeant", name: "Staff Sergeant", xp: 100 },
+        },
+      },
+    ]);
+  });
+
+  it("promotes nobody who did not come back", () => {
+    const { events } = applyCasualties(
+      ROSTER,
+      report({
+        squadCasualties: [{ squadId: "s2", losses: 3, kills: 4, xp: 40 }],
+        squadsWiped: ["s2"],
+        deployedSquadIds: ["s2"],
+      }),
+      DAY,
+      TUNING,
+    );
+    expect(events.map((e) => e.type)).toEqual([SQUAD_WIPED]);
   });
 
   it("removes wiped squads and destroyed mechs and buries them in order", () => {

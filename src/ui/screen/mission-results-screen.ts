@@ -7,6 +7,8 @@ import type {
   GraveyardEntry,
   RosterState,
 } from "../../roster/model/roster-state";
+import type { RosterTuning } from "../../roster/model/roster-tuning";
+import { promotionBetween, rankOf } from "../../roster/service/rank-service";
 import type { GameState } from "../../save/model/game-state";
 import type { GameSession } from "../model/game-session";
 import type { Screen, ScreenId } from "../model/screen";
@@ -21,6 +23,8 @@ import { formatCredits, formatWhole } from "../service/format";
 export interface MissionResultsScreenDeps {
   readonly router: ScreenRouter;
   readonly session: GameSession;
+  /** The rank ladder and the per-mission experience, to read a promotion back off the roster (#1130). */
+  readonly rosterTuning: RosterTuning;
 }
 
 /** Banner copy per outcome. */
@@ -70,7 +74,8 @@ const UNKNOWN_CITY = "Unknown city";
  * The debrief after a mission (GDD §6.5): the outcome banner, then the
  * losses with destroyed mechs given top billing because losing one
  * should be devastating and memorable (GDD §5.8), wiped squads, every
- * surviving squad's casualties, every surviving mech's damage, and the
+ * surviving squad's casualties, every surviving mech's damage, the
+ * experience the kills earned with any promotion (#1130), and the
  * credits and infestation change. Names for the dead come from the
  * graveyard (the roster no longer holds them); names for survivors come
  * from the roster. Continue dispatches `AdvanceDay` and returns to the
@@ -84,6 +89,7 @@ const UNKNOWN_CITY = "Unknown city";
  *   │   Squads wiped      Bravo                          │
  *   │   Casualties        Alpha −2 (3/5)                 │
  *   │   Mech damage       Anvil +35 (35/100)             │
+ *   │   Experience        Alpha +30 xp · promoted to Corporal │
  *   │   Credits ¢1,500 · Infestation −20                 │
  *   │ [Continue]                                         │
  *   └────────────────────────────────────────────────────┘
@@ -104,7 +110,7 @@ export class MissionResultsScreen implements Screen {
   // Constructor
   // ===========================================
 
-  /** @param deps - Router and the session holding the last result. */
+  /** @param deps - Router, the session holding the last result, and the roster tuning. */
   constructor(deps: MissionResultsScreenDeps) {
     this.deps = deps;
   }
@@ -309,6 +315,17 @@ export class MissionResultsScreen implements Screen {
       ),
     );
 
+    panel.appendChild(
+      this.section(
+        doc,
+        "Experience",
+        "experience",
+        this.experienceLines(result, roster),
+        "No kills credited.",
+        false,
+      ),
+    );
+
     // The payout. On a mission that cost nothing it is promoted to the
     // top of the panel; otherwise it stays at the foot, where it has
     // always been (#740).
@@ -377,6 +394,50 @@ export class MissionResultsScreen implements Screen {
       rewards.append(term, detail);
     }
     return rewards;
+  }
+
+  /**
+   * One line per surviving unit credited with kills (#1130): what the
+   * kills were worth and, when the total crossed a rung, the rank it
+   * was promoted to. The roster already holds the new total, so the
+   * experience before the mission is read back by subtracting what the
+   * mission added — the report's worth and the per-mission credit — and
+   * the promotion is judged by the same rule the roster promoted with.
+   *
+   * ```
+   *   Alpha +30 xp · promoted to Corporal
+   *   Anvil +60 xp · Sergeant
+   * ```
+   */
+  private experienceLines(
+    result: MissionResult,
+    roster: RosterState,
+  ): string[] {
+    const { ranks, xpPerMissionSurvived } = this.deps.rosterTuning;
+    const line = (name: string, earned: number, xpAfter: number): string => {
+      const before = xpAfter - earned - xpPerMissionSurvived;
+      const promoted = promotionBetween(before, xpAfter, ranks.ladder);
+      const standing =
+        promoted === undefined
+          ? rankOf(xpAfter, ranks.ladder)?.name
+          : `promoted to ${promoted.name}`;
+      return `${name} +${formatWhole(earned)} xp${
+        standing === undefined ? "" : ` · ${standing}`
+      }`;
+    };
+    const squads = result.squadCasualties.flatMap((c) => {
+      const squad = roster.squads.find((s) => s.id === c.squadId);
+      return squad === undefined || (c.xp ?? 0) <= 0
+        ? []
+        : [line(squad.name, c.xp ?? 0, squad.xp)];
+    });
+    const mechs = result.mechDamage.flatMap((d) => {
+      const mech = roster.mechs.find((m) => m.id === d.mechId);
+      return mech === undefined || (d.xp ?? 0) <= 0
+        ? []
+        : [line(mech.name, d.xp ?? 0, mech.xp)];
+    });
+    return [...squads, ...mechs];
   }
 
   /** A titled list; `prominent` gives the destroyed-mechs block its top billing. */

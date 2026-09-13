@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { SequentialIdGenerator } from "../../core/service/sequential-id-generator";
 import { CREDITS_CHANGED } from "../../economy/model/economy-event";
 import { LedgerTransactionService } from "../../economy/service/transaction-service";
+import { RANK_TUNING } from "../data/rank-tuning";
 import type { Mech } from "../model/mech";
 import { describeRosterError } from "../model/roster-error";
 import { MECH_REPAIRED } from "../model/roster-event";
@@ -19,6 +20,7 @@ const DAY = 9;
 const TUNING: RosterTuning = {
   repairCostPerPoint: 10,
   xpPerMissionSurvived: 0,
+  ranks: RANK_TUNING,
 };
 
 /** A mech with the given damage. */

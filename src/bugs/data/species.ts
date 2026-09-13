@@ -22,6 +22,11 @@ import type { BugSpecies } from "../model/bug-species";
 //     nobody has asked for yet.
 //   • hatchWeight is what egg spawners roll on: six swarmers to three
 //     lurkers to one brute keeps the first missions swarmy.
+//   • xpValue is what a kill is worth to the killer (#1130), sized to the
+//     rank ladder in `roster/data/ranks.ts` where a swarmer is the unit:
+//     a swarmer is one rung's worth at the bottom of the ladder, a
+//     lurker is two and a half — a focused turn's work — and a brute six,
+//     because a squad that brings one down has earned its stripes.
 
 /** Tiles every bug sees. One number until a species needs its own (ADR 0006). */
 const SIGHT = 10;
@@ -41,6 +46,7 @@ export const SWARMER: BugSpecies = {
   behaviour: "rush",
   modelId: "bug.swarmer",
   hatchWeight: 6,
+  xpValue: 10,
 };
 
 /** Stealthy flanker that tries to get behind the line (GDD §6.4). */
@@ -58,6 +64,7 @@ export const LURKER: BugSpecies = {
   behaviour: "flank",
   modelId: "bug.lurker",
   hatchWeight: 3,
+  xpValue: 25,
 };
 
 /** Slow, armored; punishes clumping (GDD §6.4). */
@@ -85,6 +92,7 @@ export const BRUTE: BugSpecies = {
   behaviour: "punish-clumps",
   modelId: "bug.brute",
   hatchWeight: 1,
+  xpValue: 60,
 };
 
 /**

@@ -42,6 +42,8 @@ describe("UnitCardView", () => {
     );
     expect(field("unit-name")?.textContent).toBe("Rifle Squad");
     expect(field("unit-side")?.textContent).toBe("tdf · squad");
+    // No rank on the template, no badge (#1130).
+    expect(field("unit-rank")?.hidden).toBe(true);
     expect(field("hp")?.textContent).toBe("14 / 20");
     expect(field("ap")?.textContent).toBe("1 / 2");
     expect(field("weapon")?.textContent).toBe(
@@ -53,6 +55,22 @@ describe("UnitCardView", () => {
         .querySelector<HTMLElement>(".tut-meter__fill")
         ?.style.getPropertyValue("--value"),
     ).toBe("70%");
+  });
+});
+
+describe("UnitCardView rank badge (#1130)", () => {
+  it("names the rank the template was built at, and hides it for a template without one", () => {
+    const view = new UnitCardView();
+    view.mount(root);
+    const unit = hudUnit("s1", "tdf", "rifle", 1, 1, {});
+    view.update(unit, {
+      ...hudTemplate("rifle", "Rifle Squad"),
+      rank: { name: "Corporal", index: 2 },
+    });
+    expect(field("unit-rank")?.hidden).toBe(false);
+    expect(field("unit-rank")?.textContent).toBe("Corporal");
+    view.update(unit, hudTemplate("rifle", "Rifle Squad"));
+    expect(field("unit-rank")?.hidden).toBe(true);
   });
 });
 

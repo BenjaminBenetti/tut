@@ -66,4 +66,10 @@ export interface BugSpecies {
   readonly modelId: ModelAssetId;
   /** Relative chance of hatching from an egg spawner. Positive; weights need not sum to 1. */
   readonly hatchWeight: number;
+  /**
+   * Experience the killer's squad or mech earns for one of these
+   * (#1130). Positive. Frozen onto the unit template at spawn, so the
+   * mission resolver credits it without a species lookup.
+   */
+  readonly xpValue: number;
 }

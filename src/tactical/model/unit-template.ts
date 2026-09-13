@@ -16,6 +16,21 @@ import type { UnitWeapon } from "./unit-weapon";
 export type UnitTemplateId = string;
 
 // ===========================================
+// Rank
+// ===========================================
+
+/**
+ * The rank a TDF unit fought at, frozen with the rest of its template
+ * (#1130): the HUD names it and the bonuses it bought are already in the
+ * template's numbers. The index is what those bonuses scaled with.
+ */
+export interface TemplateRank {
+  readonly name: string;
+  /** Position on the roster's ladder, `0` for the lowest rung. */
+  readonly index: number;
+}
+
+// ===========================================
 // Unit template
 // ===========================================
 
@@ -87,4 +102,17 @@ export interface UnitTemplate {
    * missions saved before it existed, which keep drawing `modelId`.
    */
   readonly loadout?: MechLoadout;
+  /**
+   * The rank the roster entry held at mission start (#1130), for the
+   * HUD; its move, accuracy and action-point bonuses are already folded
+   * into the fields above. Absent for bugs and on older saved missions.
+   */
+  readonly rank?: TemplateRank;
+  /**
+   * Experience killing one of these earns the killer (#1130), copied
+   * from the species so the resolver reads it off the log's casualty
+   * without a catalogue. Absent for TDF units and on older saved
+   * missions, which then credit nothing.
+   */
+  readonly xpValue?: number;
 }

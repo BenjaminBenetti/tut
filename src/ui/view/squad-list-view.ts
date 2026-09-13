@@ -1,9 +1,11 @@
+import type { RankLadder } from "../../roster/model/rank";
 import type { RosterState } from "../../roster/model/roster-state";
 import type { Squad } from "../../roster/model/squad";
 import type { SquadType, SquadTypeId } from "../../roster/model/squad-type";
 import type { SquadTypeCatalogue } from "../../roster/model/squad-type-catalogue";
 import { formatCredits, formatWhole } from "../service/format";
 import { iconGlyph } from "./icon-glyph";
+import { rankCell } from "./rank-cell";
 
 // ===========================================
 // Types
@@ -28,8 +30,8 @@ export interface SquadListModel {
 // ===========================================
 
 /**
- * The roster's infantry panel: one row per squad with type, strength,
- * kills and xp and a Reinforce button priced at the type's per-soldier
+ * The roster's infantry panel: one row per squad with type, rank (#1130),
+ * strength, kills and xp and a Reinforce button priced at the type's per-soldier
  * rate for every missing soldier, plus a hire form whose type picker
  * shows each type's cost. Buttons the treasury cannot cover are
  * disabled; the rows are rebuilt on every `update` since the roster is
@@ -37,7 +39,7 @@ export interface SquadListModel {
  *
  * ```
  *   ┌ Squads ─────────────────────────────────────────────┐
- *   │ name  │ type   │ strength │ kills │ xp │ [Reinforce ¢160] │
+ *   │ name  │ type   │ rank │ strength │ kills │ xp │ [Reinforce ¢160] │
  *   │ …                                                    │
  *   │ Hire: [type ▾ (¢500)] [name____] [Hire ¢500]          │
  *   └──────────────────────────────────────────────────────┘
@@ -50,6 +52,7 @@ export class SquadListView {
 
   private readonly handlers: SquadListViewHandlers;
   private readonly squadTypes: SquadTypeCatalogue;
+  private readonly ranks: RankLadder;
   private root: HTMLElement | undefined;
   private rows: HTMLTableSectionElement | undefined;
   private typePicker: HTMLSelectElement | undefined;
@@ -67,10 +70,16 @@ export class SquadListView {
   /**
    * @param handlers - Callbacks for hire and reinforce.
    * @param squadTypes - Catalogue the picker and prices are read from.
+   * @param ranks - The ladder each squad's experience is read against.
    */
-  constructor(handlers: SquadListViewHandlers, squadTypes: SquadTypeCatalogue) {
+  constructor(
+    handlers: SquadListViewHandlers,
+    squadTypes: SquadTypeCatalogue,
+    ranks: RankLadder,
+  ) {
     this.handlers = handlers;
     this.squadTypes = squadTypes;
+    this.ranks = ranks;
   }
 
   // ===========================================
@@ -92,7 +101,15 @@ export class SquadListView {
     table.className = "tut-table";
     const head = doc.createElement("thead");
     const headRow = doc.createElement("tr");
-    for (const label of ["Name", "Type", "Strength", "Kills", "XP", ""]) {
+    for (const label of [
+      "Name",
+      "Type",
+      "Rank",
+      "Strength",
+      "Kills",
+      "XP",
+      "",
+    ]) {
       const th = doc.createElement("th");
       th.textContent = label;
       headRow.appendChild(th);
@@ -175,6 +192,7 @@ export class SquadListView {
     row.append(
       nameCell,
       this.cell(doc, type?.name ?? squad.typeId, "type"),
+      rankCell(doc, squad.xp, this.ranks),
       this.cell(
         doc,
         `${formatWhole(squad.strength)} / ${formatWhole(squad.maxStrength)}`,

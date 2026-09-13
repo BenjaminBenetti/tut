@@ -258,7 +258,15 @@ export class SceneService {
     this.lastFrameTimeMs = timeMs;
 
     for (const updatable of this.updatables) {
-      updatable.update(deltaSeconds);
+      // One updatable throwing must not end the loop (#1132): three's
+      // animation loop schedules the next frame after the callback
+      // returns, so an uncaught error here would freeze every frame
+      // after it — and the tactical queue with the player's controls.
+      try {
+        updatable.update(deltaSeconds);
+      } catch (error: unknown) {
+        console.error("Frame update failed", error);
+      }
     }
     this.sceneCamera.apply();
     if (this.key) {

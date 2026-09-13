@@ -41,6 +41,8 @@ export interface TacticalScreenDeps {
   readonly previewDeps?: PreviewDeps;
   /** Hold time and timers for the phase banner (#523); the defaults are the DOM's. */
   readonly phaseBanner?: PhaseBannerOptions;
+  /** Idle limit and timers for the playback watchdog (#1132); the defaults are the DOM's. */
+  readonly playbackWatchdog?: PlaybackWatchdogOptions;
   /** Builds and owns the three.js scene for the mission; absent in unit tests that only check the DOM. */
   readonly sceneHost?: TacticalSceneHost;
   /**
@@ -50,6 +52,31 @@ export interface TacticalScreenDeps {
    */
   readonly onIntent?: (intent: TacticalIntent) => void;
 }
+
+/**
+ * How the playback lock guards against a scene that never settles
+ * (#1132). The lock is released for real when the scene settles and the
+ * bug phase banner has passed; this is the net under that.
+ */
+export interface PlaybackWatchdogOptions {
+  /** Longest the lock may hold with nothing happening on the map. */
+  readonly idleMs?: number;
+  /** Defaults to `setTimeout`. */
+  readonly setTimer?: (run: () => void, ms: number) => number;
+  /** Defaults to `clearTimeout`. */
+  readonly clearTimer?: (handle: number) => void;
+}
+
+/**
+ * Longest the controls stay held with no event beginning, no settle and
+ * no banner change (#1132). A bug phase makes progress at least once a
+ * second while it plays — every walk, shot and fade is an event, and
+ * the watchdog restarts on each — so ten seconds of silence is a scene
+ * that has stopped: a redraw that rejected, a frame loop that died, a
+ * load that never came back. On a CI runner the lock once held for the
+ * whole 60 s budget; the game should never freeze on presentation.
+ */
+export const PLAYBACK_IDLE_LIMIT_MS = 10_000;
 
 /**
  * The name of the city the active mission is fought over, or `undefined`
@@ -149,6 +176,16 @@ export class TacticalScreen implements Screen {
   private playbackGeneration = 0;
   /** What the HUD, the scene and the body were last told. */
   private playing = false;
+  /**
+   * Releases waiting on the phase banner (#1132): the scene has settled
+   * but "Bug phase" is still up, so the controls wait for it to pass.
+   */
+  private readonly awaitingBanner = new Set<() => void>();
+  private readonly idleLimitMs: number;
+  private readonly setTimer: (run: () => void, ms: number) => number;
+  private readonly clearTimer: (handle: number) => void;
+  /** The watchdog for the batches playing now; one, restarted on every sign of life. */
+  private watchdog: number | undefined;
 
   // ===========================================
   // Constructor
@@ -157,6 +194,15 @@ export class TacticalScreen implements Screen {
   /** @param deps - Router, session, tuning, scene host and the intent sink. */
   constructor(deps: TacticalScreenDeps) {
     this.deps = deps;
+    this.idleLimitMs = deps.playbackWatchdog?.idleMs ?? PLAYBACK_IDLE_LIMIT_MS;
+    this.setTimer =
+      deps.playbackWatchdog?.setTimer ??
+      ((run, ms) => globalThis.setTimeout(run, ms) as unknown as number);
+    this.clearTimer =
+      deps.playbackWatchdog?.clearTimer ??
+      ((handle) => {
+        globalThis.clearTimeout(handle);
+      });
     this.hud = new TacticalHudView(
       {
         onCommand: (command) => {
@@ -219,6 +265,14 @@ export class TacticalScreen implements Screen {
         shortcuts: TACTICAL_SHORTCUTS,
       },
     );
+    // A settled batch waiting on "Bug phase" is released the moment the
+    // banner moves on (#1132); the HUD owns the banner, so it says when.
+    this.hud.onPhaseBanner(() => {
+      this.restartWatchdog();
+      for (const check of [...this.awaitingBanner]) {
+        check();
+      }
+    });
   }
 
   // ===========================================
@@ -363,15 +417,16 @@ export class TacticalScreen implements Screen {
     }
     // Held before the HUD sees the new board, so its first refresh
     // already draws End turn disabled.
-    const release = crossesPhase(events) ? this.beginPlayback() : undefined;
+    const hold = crossesPhase(events) ? this.holdPlayback() : undefined;
     this.hud.update(mission);
     void this.syncScene(mission, events, {
       onEvent: (event) => {
+        hold?.progress();
         this.hud.playEvent(event, mission);
         this.announceOne(event, mission, state);
       },
       onSettled: () => {
-        release?.();
+        hold?.settled();
         if (mission.outcome !== undefined) {
           this.finish(mission.missionId);
         }
@@ -379,7 +434,7 @@ export class TacticalScreen implements Screen {
       // A scene that fails mid-batch never settles; the promise still
       // resolves, and the release is idempotent.
     }).then(() => {
-      release?.();
+      hold?.settled();
     });
   }
 
@@ -405,15 +460,87 @@ export class TacticalScreen implements Screen {
       released = true;
       this.playingBatches -= 1;
       if (this.playingBatches === 0) {
+        this.stopWatchdog();
         this.setPlaying(false);
       }
     };
+  }
+
+  /**
+   * Holds the controls for one phase-crossing batch (#1132) and returns
+   * the two signals that release them. The release needs both: the
+   * scene has settled, and the phase banner has stopped announcing the
+   * bug phase. A bug phase with nothing to draw settles on the spot,
+   * while the player is still reading "Bug phase" for its hold — and
+   * End turn offered under that banner was what got pressed twice.
+   *
+   * ```
+   *   hold ──► settled ──┬── banner past "Bug phase" ──► release
+   *                      └── still announcing ──► wait for the banner
+   *          idle limit with no progress, settle or banner ──► release, warn
+   * ```
+   */
+  private holdPlayback(): { progress: () => void; settled: () => void } {
+    const release = this.beginPlayback();
+    let settled = false;
+    const tryRelease = (): void => {
+      if (!settled || this.hud.isAnnouncing("bugs")) {
+        return;
+      }
+      this.awaitingBanner.delete(tryRelease);
+      release();
+    };
+    this.restartWatchdog();
+    return {
+      progress: () => {
+        this.restartWatchdog();
+      },
+      settled: () => {
+        settled = true;
+        this.awaitingBanner.add(tryRelease);
+        tryRelease();
+      },
+    };
+  }
+
+  /**
+   * Restarts the clock that frees the controls if the map goes quiet
+   * (#1132): no event beginning, no settle and no banner change for
+   * `idleLimitMs` means the scene has stopped, and the player must not
+   * be frozen with it. Releases every held batch with a warning, which
+   * is a bug report, not a rule.
+   */
+  private restartWatchdog(): void {
+    this.stopWatchdog();
+    if (this.playingBatches === 0) {
+      return;
+    }
+    this.watchdog = this.setTimer(() => {
+      this.watchdog = undefined;
+      if (this.playingBatches === 0) {
+        return;
+      }
+      console.warn(
+        `Tactical playback made no progress for ${String(this.idleLimitMs)} ms; releasing the controls`,
+      );
+      this.resetPlayback();
+    }, this.idleLimitMs);
+  }
+
+  /** Cancels the watchdog, if one is running. */
+  private stopWatchdog(): void {
+    if (this.watchdog !== undefined) {
+      this.clearTimer(this.watchdog);
+      this.watchdog = undefined;
+    }
   }
 
   /** Forgets every playing batch: a new mission, or none, has nothing playing. */
   private resetPlayback(): void {
     this.playbackGeneration += 1;
     this.playingBatches = 0;
+    this.awaitingBanner.clear();
+    this.stopWatchdog();
     this.setPlaying(false);
   }
 

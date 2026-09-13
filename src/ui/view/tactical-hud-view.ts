@@ -236,7 +236,9 @@ const POINTER_EVENTS = ["pointerdown", "pointerup", "pointermove"] as const;
  * ```
  *   intent select-unit ──▶ friendly, not selected ──▶ select it (card follows)
  *                      ├─▶ the selected unit     ──▶ wheel: overwatch / reload / interact / board
+ *                      ├─▶ enemy, nothing acting ──▶ select it: the card reads the bug
  *                      └─▶ enemy                 ──▶ aim at it, wheel: attack (weapons) / …
+ *                                                    and the card reads the bug (#1134)
  *   intent select-spawner ──▶ aim at it, wheel: attack / interact / …
  *   intent select-tile ──▶ wheel: move / board / overwatch / reload
  *   intent invoke tile ──▶ pathTo ──▶ onCommand(move(selected, path))
@@ -399,7 +401,28 @@ export class TacticalHudView {
   // Lifecycle
   // ===========================================
 
-  /** Builds the HUD under `parent`: banner on top, side column, End turn below. */
+  /**
+   * Builds the HUD under `parent`: banner on top, the force and the
+   * objectives down the left rail with the event log under them, the
+   * unit card alone on the right, End turn below (#1134).
+   *
+   * ```
+   *   ┌ top: turn banner ──────────────────────────────────────────┐
+   *   │ rail ────────┐                          ┌ side ───────────┐ │
+   *   │ │ Squad      │            map           │ Unit card       │ │
+   *   │ │ Objectives │                          │ (hit preview)   │ │
+   *   │ │ Radar key  │                          │                 │ │
+   *   │ │ ⋮ scrolls  │                          │                 │ │
+   *   │ │ Event log  │                          │                 │ │
+   *   │ └────────────┘                          └─────────────────┘ │
+   *   └ bottom: End turn ──────────────────────────────────────────┘
+   * ```
+   *
+   * The card used to share the right column with the strip and the
+   * objectives, and once it listed two weapons, equipment and a rank it
+   * scrolled (#1134): the close-up needs the whole column, and the
+   * overview reads just as well on the other side.
+   */
   mount(parent: HTMLElement): void {
     const doc = parent.ownerDocument;
     const hud = doc.createElement("div");
@@ -407,6 +430,10 @@ export class TacticalHudView {
     hud.className = "tut-hud";
     const top = doc.createElement("div");
     top.className = "tut-hud__top";
+    const rail = doc.createElement("aside");
+    rail.className = "tut-hud__rail";
+    const panels = doc.createElement("div");
+    panels.className = "tut-hud__rail-panels tut-stack";
     const side = doc.createElement("aside");
     side.className = "tut-hud__side tut-stack";
     const bottom = doc.createElement("div");
@@ -414,14 +441,12 @@ export class TacticalHudView {
     this.banner.mount(top);
     this.radial.mount(hud);
     this.status.mount(hud);
-    // The force first, then the selected unit's detail. The strip is the
-    // overview and the card is the close-up; putting the close-up first
-    // pushed the third unit below the fold, which the frame showed and
-    // which defeats "the force at a glance" (#1041).
-    this.squad.mount(side);
+    // The force first, then the objectives: the strip is the overview
+    // (#1041), and it heads the rail the way it used to head the column.
+    this.squad.mount(panels);
+    this.objectives.mount(panels);
     this.card.mount(side);
     this.preview.mount(side);
-    this.objectives.mount(side);
     const radarLegend = doc.createElement("section");
     radarLegend.className = "tut-panel tut-mono";
     radarLegend.dataset.role = "radar-legend";
@@ -433,11 +458,15 @@ export class TacticalHudView {
     radarKey.textContent = "● Units · □ Structures";
     radarLegend.append(radarTitle, radarKey);
     radarLegend.hidden = true;
-    side.appendChild(radarLegend);
+    panels.appendChild(radarLegend);
     this.radarLegend = radarLegend;
-    this.log.mount(hud);
+    rail.appendChild(panels);
+    // The log closes the rail: bottom left, as it always was, and never
+    // under the panels above it because the panels scroll instead.
+    this.log.mount(rail);
     this.actions.mount(bottom);
-    hud.append(top, side, bottom);
+    hud.append(top, rail, side, bottom);
+    this.watchSideOverflow(panels);
     this.watchSideOverflow(side);
     this.guardPointer(hud);
     this.phases.mount(hud);
@@ -1470,6 +1499,19 @@ export class TacticalHudView {
     return actions.filter((action) => this.refusalFor(action) !== undefined);
   }
 
+  /**
+   * The unit the card is about (#1134): the enemy unit being aimed at
+   * while one is, else the selection. An egg spawner is aimed at but
+   * has no card, so the selection stays up for it.
+   */
+  private inspectedUnitId(): UnitId | undefined {
+    const target =
+      this.target === undefined ? undefined : this.unit(this.target);
+    return target !== undefined && target.team !== "tdf"
+      ? target.id
+      : this.selected;
+  }
+
   /** Whether the selected unit may act at all: alive, its phase, an action left. */
   private canAct(): boolean {
     const mission = this.mission;
@@ -1573,7 +1615,9 @@ export class TacticalHudView {
    */
   private previewRowRange(row: CardHover | undefined): void {
     const mission = this.mission;
-    const unitId = this.selected;
+    // The card's unit, which is the aimed-at enemy while aiming (#1134):
+    // resting on a bug's claw shows how far the bug reaches.
+    const unitId = this.inspectedUnitId();
     if (row === undefined || !mission || unitId === undefined) {
       this.handlers.onMarkWeaponRange?.([]);
       return;
@@ -1894,12 +1938,15 @@ export class TacticalHudView {
               storeyCount: this.layerFocus.storeyCount,
             },
     });
-    const selected = this.unit(this.selected);
+    // The card shows the enemy being aimed at while one is (#1134): the
+    // player who clicked a bug wants to read it, and the shot's own
+    // numbers are on the preview beside it. Otherwise the selection.
+    const shown = this.unit(this.inspectedUnitId());
     this.card.update(
-      selected,
-      selected ? mission.templates[selected.templateId] : undefined,
-      selected ? this.attacksLeftFor(selected) : undefined,
-      selected ? namesFor(mission, this.campaign).unit(selected.id) : undefined,
+      shown,
+      shown ? mission.templates[shown.templateId] : undefined,
+      shown?.team === "tdf" ? this.attacksLeftFor(shown) : undefined,
+      shown ? namesFor(mission, this.campaign).unit(shown.id) : undefined,
     );
     // A preview that stays up across a move is recomputed from where the
     // unit stands now, and one for a unit no longer selected goes.
@@ -1936,7 +1983,8 @@ export class TacticalHudView {
       playerPhase: mission.phase === "player",
       unavailable: this.unavailableActions(),
       hasActor: this.actingSelection() !== undefined,
-      reloadLabel: chargeRegisterFor(selected?.kind ?? "squad").actionLabel,
+      reloadLabel: chargeRegisterFor(this.unit(this.selected)?.kind ?? "squad")
+        .actionLabel,
       aiming: this.mode === "attack",
       unspent: this.unspentCount(),
       locked: this.playbackLocked,

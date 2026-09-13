@@ -9,6 +9,7 @@ import { displayWeaponName } from "../../tactical/model/unit-weapon";
 import { SHIPPED_EQUIPMENT } from "../../tactical/repository/equipment-catalogue";
 import { chargeDelayText } from "../service/charge-delay-text";
 import { equipmentOf } from "../../tactical/service/equipment-service";
+import { footprintSizeOf } from "../../tactical/service/footprint-service";
 import { formatWhole } from "../service/format";
 import { weaponProfileText } from "../service/weapon-profile-text";
 import { iconGlyph } from "./icon-glyph";
@@ -95,6 +96,8 @@ export class UnitCardView {
   private readonly handlers: UnitCardHandlers;
   /** The weapon row the pointer or focus rests on, if any (#1132). */
   private hovered: CardHover | undefined;
+  /** Each stat row's term and value, so an enemy's card can drop the rows that are not its business (#1134). */
+  private readonly rows = new Map<string, readonly HTMLElement[]>();
   /** The field whose row is rested on, so another field's rewrite leaves it alone. */
   private hoveredField: string | undefined;
 
@@ -155,6 +158,7 @@ export class UnitCardView {
     for (const [label, field, icon] of [
       ["HP", "hp", "hp"],
       ["AP", "ap", "ap"],
+      ["Move", "move", "move"],
       ["Attacks", "attacks", "attack"],
       ["Weapon", "weapon", "attack"],
       ["Equipment", "equipment", "ability"],
@@ -173,6 +177,7 @@ export class UnitCardView {
       value.textContent = EMPTY_FIELD;
       grid.append(term, value);
       this.fields.set(field, value);
+      this.rows.set(field, [term, value]);
     }
 
     body.append(name, side, rank, meter, grid);
@@ -214,8 +219,29 @@ export class UnitCardView {
       this.empty.hidden = false;
       return;
     }
+    // An enemy's card (#1134): the player clicked a bug to read it. It
+    // has no rank, no equipment and no attacks of the player's to count,
+    // so those rows go; its footprint is worth a word when it is a block.
+    const enemy = unit.team !== "tdf";
+    const size = footprintSizeOf(template);
+    if (this.root) {
+      if (enemy) {
+        this.root.dataset.inspectingEnemy = "true";
+      } else {
+        delete this.root.dataset.inspectingEnemy;
+      }
+    }
+    for (const field of ["attacks", "equipment"]) {
+      for (const el of this.rows.get(field) ?? []) {
+        el.hidden = enemy;
+      }
+    }
     this.set("unit-name", name ?? template.name);
-    this.set("unit-side", `${unit.team} · ${unit.kind}`);
+    this.set(
+      "unit-side",
+      `${unit.team} · ${unit.kind}${size > 1 ? ` · ${String(size)}×${String(size)}` : ""}`,
+    );
+    this.set("move", formatWhole(template.move));
     this.set("unit-rank", template.rank?.name ?? "");
     const rankBadge = this.fields.get("unit-rank");
     if (rankBadge) {

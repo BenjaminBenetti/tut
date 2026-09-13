@@ -16,7 +16,8 @@ import type { SpriteSource } from "../../graphics/model/sprite-source";
 import { GltfModelLoader } from "../../graphics/service/gltf-model-loader";
 import { ManifestSpriteLoader } from "../../graphics/service/manifest-sprite-loader";
 import { OrthographicCameraRig } from "../../graphics/service/orthographic-camera-rig";
-import { tileTopCentre } from "../../graphics/view/tactical-map-view";
+import { unitFeetAt } from "../../graphics/service/unit-placement";
+import { footprintSizeOf } from "../../tactical/service/footprint-service";
 import { PlaceholderModelFactory } from "../../graphics/service/placeholder-model-factory";
 import { GhostController } from "../../graphics/service/ghost-controller";
 import { SceneService } from "../../graphics/service/scene-service";
@@ -354,7 +355,13 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
     if (!attached || !unit) {
       return;
     }
-    attached.rig.lookAt(tileTopCentre(unit.pos));
+    // The middle of the unit's footprint, not its anchor tile (#1130).
+    attached.rig.lookAt(
+      unitFeetAt(
+        unit.pos,
+        footprintSizeOf(attached.mission.templates[unit.templateId] ?? {}),
+      ),
+    );
   }
 
   /**

@@ -51,6 +51,14 @@ export interface AnimationScene {
   /** World centre of a tile's top, or undefined off the map. */
   tileWorldPosition(tile: TileCoord): Vec3 | undefined;
   /**
+   * Where the unit's feet are when it stands on `tile` (#1130): the
+   * tile's top at the centre of the unit's footprint, so a 2×2 brute
+   * walks along the corners its four tiles share rather than along the
+   * centres of its anchor tiles. Scenes without footprints may omit it;
+   * the queue then walks through tile centres, as it always did.
+   */
+  unitWorldPositionAt?(unitId: UnitId, tile: TileCoord): Vec3 | undefined;
+  /**
    * The unit's height in world units, from its registered model. Every
    * effect anchors off this: a mech is 2.79 u and an infantry figure 0.9,
    * so a fixed lift above the feet puts damage numbers inside the legs of
@@ -546,15 +554,19 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
     to: TileCoord,
   ): Animation | undefined {
     const object = this.scene.unitObject(unitId);
-    const end = this.scene.tileWorldPosition(to) ?? tileTopCentre(to);
+    // Where this unit's feet go on a tile: its footprint's centre when
+    // the scene knows footprints (#1130), else the tile's own centre.
+    const standAt = (tile: TileCoord): Vec3 =>
+      this.scene.unitWorldPositionAt?.(unitId, tile) ??
+      this.scene.tileWorldPosition(tile) ??
+      tileTopCentre(tile);
+    const end = standAt(to);
     if (!object) {
       return undefined;
     }
     // An arrival waits hidden where its walk begins; the walk shows it (#1116).
     object.visible = true;
-    const points = path.map(
-      (tile) => this.scene.tileWorldPosition(tile) ?? tileTopCentre(tile),
-    );
+    const points = path.map(standAt);
     if (points.length === 0 || !samePoint(points[points.length - 1]!, end)) {
       points.push(end);
     }

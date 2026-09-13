@@ -59,6 +59,21 @@ export interface UnitTemplate {
   /** Which tiles the unit may stand on (GDD §6.1: mechs stay outside). */
   readonly passClass: PassClass;
   /**
+   * Tiles per side the unit covers on the ground plane (#1130). Absent
+   * means one tile, as every unit was before it; the brute is `2`, a
+   * 2×2 block. `Unit.pos` is the footprint's **anchor**: the tile with
+   * the lowest `x` and lowest `z`, every tile of the footprint sharing
+   * its `y`. `footprint-service` enumerates the rest.
+   *
+   * ```
+   *   footprint 2, anchor at (x, z)
+   *
+   *      (x, z)   (x+1, z)
+   *      (x, z+1) (x+1, z+1)     drawn centred on (x+1, z+1)
+   * ```
+   */
+  readonly footprint?: number;
+  /**
    * Model graphics draws for every unit of this template. For a mech it
    * is the reference assembly, drawn only when `loadout` is absent.
    */

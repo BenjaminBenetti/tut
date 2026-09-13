@@ -1,4 +1,3 @@
-import { STOREY_LAYERS } from "../../core/model/elevation";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { Tile } from "../../mapgen/model/tile";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
@@ -7,6 +6,7 @@ import type { AttackTarget } from "../model/attack-target";
 import type { TacticalState } from "../model/tactical-state";
 import { spawnerAttackTarget, unitAttackTarget } from "./attack-target-service";
 import { hasLineOfSight } from "./sight-service";
+import { attackDistance } from "./weapon-reach-service";
 
 // ===========================================
 // Types
@@ -15,7 +15,12 @@ import { hasLineOfSight } from "./sight-service";
 /** One tile a blast reaches, and how far it is from the impact. */
 export interface BlastTile {
   readonly tile: Tile;
-  /** Manhattan tiles from the impact on the ground plane; `0` is the impact itself. */
+  /**
+   * Whole tiles from the impact in three dimensions, as `attackDistance`
+   * measures a shot (#1130); `0` is the impact itself. Falloff and the
+   * effect chance fade with it, so a ledge above the impact is further
+   * than the tile beside it.
+   */
   readonly distance: number;
 }
 
@@ -31,8 +36,7 @@ export interface BlastVictim {
 
 /**
  * The tiles a blast centred on `impact` reaches (#1121): every tile
- * within `radius` on the ground plane, on the impact's own storey, that
- * the impact can see.
+ * within `radius` of it in three dimensions that the impact can see.
  *
  * ```
  *   radius 1 at ●, a solid wall on the east edge
@@ -41,17 +45,32 @@ export interface BlastVictim {
  *     ·  ●  │  ✕           ✕   not reached: the wall stops the blast
  *        ·                     (and, if the force allows, falls to it —
  *                               the wall is on the impact tile's edge)
+ *
+ *   radius 2 at ● on the ground beside a building, seen from the side
+ *
+ *   y = 2        ═══·═══        the roof edge next door: √(1² + 1.5²)
+ *                │     │        rounds to 2 tiles, and the impact sees
+ *   y = 0   · · ● │  ✕  │       it over the parapet — reached; the
+ *                │     │        room behind the solid wall is not
  * ```
  *
  * Three rules, each with a reason:
  *
- * - **Same storey.** `|tile.y − impact.y| < STOREY_LAYERS`, so a shell
- *   landing on a roof does nothing to the floor beneath the slab, while a
- *   half-height step (ADR 0008) stays in the blast.
+ * - **Three dimensions (#1130).** The distance is `attackDistance`, the
+ *   one the reach rules hold a shot against: the ground-plane distance
+ *   combined with the vertical gap at `LAYER_TILES` a layer, rounded to
+ *   whole tiles. A half-height step beside the impact rounds to one
+ *   tile and stays in the blast; the tile a storey up next door is two
+ *   away; nothing in the impact's own column is ever closer than the
+ *   slab between them lets it be. Until this the footprint was a disc
+ *   cut at the impact's storey, which on a multi-floor building meant a
+ *   shell on the stairs reached the landing above and not the ground
+ *   beside it (Executive Director, 2026-09-13).
  * - **Line of sight from the impact.** A blast does not go through a
- *   solid wall or round a hill; `hasLineOfSight` is the one rule for
- *   what stops a line, and a blast is a line from the impact outward.
- *   The impact tile itself is always in, whatever stands on it.
+ *   solid wall, round a hill or through a floor slab; `hasLineOfSight`
+ *   is the one rule for what stops a line, and a blast is a line from
+ *   the impact outward. The impact tile itself is always in, whatever
+ *   stands on it.
  * - **Ordered.** Impact first, then by distance, then by position, so
  *   the damage rolls that follow draw in one order for one seed.
  *
@@ -69,12 +88,14 @@ export function blastFootprint(
 ): BlastTile[] {
   const reached: BlastTile[] = [];
   const reach = Math.max(0, Math.floor(radius));
+  // The 3-D distance is never less than the ground-plane distance, so
+  // the Manhattan diamond bounds the columns worth reading.
   for (let dx = -reach; dx <= reach; dx++) {
     const spread = reach - Math.abs(dx);
     for (let dz = -spread; dz <= spread; dz++) {
-      const distance = Math.abs(dx) + Math.abs(dz);
       for (const tile of index.column(impact.x + dx, impact.z + dz)) {
-        if (Math.abs(tile.y - impact.y) >= STOREY_LAYERS) {
+        const distance = attackDistance(impact, tile);
+        if (distance > reach) {
           continue;
         }
         if (distance > 0 && !hasLineOfSight(map, impact, tile, index)) {

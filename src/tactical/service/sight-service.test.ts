@@ -341,6 +341,60 @@ describe("terrain", () => {
 });
 
 // ===========================================
+// Floors
+// ===========================================
+
+describe("floors", () => {
+  it("blocks a line that rises through a floor slab, and one straight up through it (#1130)", () => {
+    // A room on the ground with a floor over it: the line from the
+    // ground-floor unit climbs through the ceiling to reach the unit
+    // upstairs. Until this rule it did, and the two could shoot each
+    // other through the slab.
+    const map = new FixtureMapBuilder(5, 5, 3 * STOREY_LAYERS)
+      .fillGround(0, SurfaceIds.FLOOR)
+      .tile({ x: 2, y: STOREY_LAYERS, z: 1 }, SurfaceIds.FLOOR)
+      .tile({ x: 3, y: STOREY_LAYERS, z: 1 }, SurfaceIds.FLOOR)
+      .build();
+    expect(los(map, at(1, 1), { x: 3, y: STOREY_LAYERS, z: 1 })).toBe(false);
+    expect(los(map, at(2, 1), { x: 2, y: STOREY_LAYERS, z: 1 })).toBe(false);
+  });
+
+  it("sees along its own floor, and up through a hole in the one above", () => {
+    const map = new FixtureMapBuilder(5, 5, 3 * STOREY_LAYERS)
+      .fillGround(0, SurfaceIds.FLOOR)
+      .tile({ x: 1, y: STOREY_LAYERS, z: 1 }, SurfaceIds.FLOOR)
+      .tile({ x: 3, y: STOREY_LAYERS, z: 1 }, SurfaceIds.FLOOR)
+      .build();
+    // Along the upper floor: level, so no slab is crossed.
+    expect(
+      los(
+        map,
+        { x: 1, y: STOREY_LAYERS, z: 1 },
+        { x: 3, y: STOREY_LAYERS, z: 1 },
+      ),
+    ).toBe(true);
+    // Up through the gap over (2,1): the line climbs where there is
+    // no slab to climb through.
+    expect(los(map, at(1, 1), { x: 3, y: STOREY_LAYERS, z: 1 })).toBe(true);
+  });
+
+  it("leaves a hillside ledge alone: a single tile over solid ground is not a slab", () => {
+    // A terrace half a storey down between a hilltop and the ground.
+    // The line from the top passes the terrace's level over the
+    // terrace itself; the storey rule already judges terrain, and a
+    // ledge with nothing beneath it is not a floor.
+    const map = new FixtureMapBuilder(5, 3, 3 * STOREY_LAYERS)
+      .fillGround()
+      .removeTile(at(0, 1))
+      .tile({ x: 0, y: 2 * STOREY_LAYERS, z: 1 }, SurfaceIds.GRASS)
+      .removeTile(at(1, 1))
+      .tile({ x: 1, y: 2 * STOREY_LAYERS - 1, z: 1 }, SurfaceIds.GRASS)
+      .build();
+    expect(los(map, { x: 0, y: 2 * STOREY_LAYERS, z: 1 }, at(2, 1))).toBe(true);
+  });
+});
+
+// ===========================================
 // Corner seams
 // ===========================================
 

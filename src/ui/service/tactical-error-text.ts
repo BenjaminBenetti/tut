@@ -232,6 +232,10 @@ export function describeRefusal(
       // Rifle Squad a vent named an action its bar does not have
       // (#1062, QA on `0a47be2`).
       return `${names.unit(error.unitId)} ${names.charge(error.unitId).emptyPhrase}`;
+    case "no-area-weapon":
+      return `${names.unit(error.unitId)} has no weapon that can be fired at the ground`;
+    case "no-aim":
+      return `${names.unit(error.unitId)} was given nothing to fire at`;
     case "no-such-weapon":
       return `${names.unit(error.unitId)} is not carrying that weapon`;
     case "charges-full":

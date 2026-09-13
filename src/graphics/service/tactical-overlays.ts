@@ -37,6 +37,9 @@ import {
   COVER_TICK_INSET,
   COVER_TICK_LENGTH,
   COVER_TICK_WIDTH,
+  BLAST_COLOUR,
+  BLAST_FOOTPRINT,
+  BLAST_OPACITY,
   BLOCKED_SHOT_COLOUR,
   BLOCKED_SHOT_OPACITY,
   BLOCKED_SHOT_SIZE,
@@ -475,6 +478,8 @@ export class TacticalOverlays implements Disposable {
   private readonly weaponRange: PerimeterRibbon;
   /** The tile the action wheel is open on (#1112): one square frame, or none. */
   private readonly markedTile: OverlayLayer;
+  /** The tiles a previewed blast would reach (#1121), or none. */
+  private readonly blast: OverlayLayer;
   /**
    * Off until something asks for it (#590). The screen drives this from
    * armed intent, and a scene that defaulted to on would paint the
@@ -541,6 +546,16 @@ export class TacticalOverlays implements Disposable {
       MARKED_TILE_OPACITY,
       4,
     );
+    this.blast = new OverlayLayer(
+      "overlay-blast",
+      // A flat square inside the tile, like the move bands, in the
+      // danger tone: the ground a shot will scorch, drawn before it is
+      // fired (#1121).
+      new BoxGeometry(BLAST_FOOTPRINT, RANGE_THICKNESS, BLAST_FOOTPRINT),
+      BLAST_COLOUR,
+      BLAST_OPACITY,
+      5,
+    );
     this.blockedShot = new OverlayLayer(
       "overlay-blocked-shot",
       // A box turned 45 degrees about its own axis: a diamond, which no
@@ -568,6 +583,7 @@ export class TacticalOverlays implements Disposable {
       this.coverLow.mesh,
       this.coverHigh.mesh,
       this.blockedShot.mesh,
+      this.blast.mesh,
       this.markedTile.mesh,
     );
   }
@@ -633,14 +649,31 @@ export class TacticalOverlays implements Disposable {
     // the one thing that must never be under them.
     this.markedTile.setTiles(
       tile === undefined ? [] : [tile],
-      OVERLAY_LIFT * 6,
+      OVERLAY_LIFT * 7,
       true,
     );
+  }
+
+  /**
+   * Paints the tiles a previewed blast would reach, or clears them
+   * (#1121). Independent of `show` like the marked tile: the footprint
+   * belongs to the wheel or the aim, not to the selection.
+   *
+   * @param tiles - The footprint, impact first, or empty for none.
+   */
+  setBlastTiles(tiles: readonly TileCoord[]): void {
+    // As high as the marked frame, which is the one lift known to clear
+    // the boarding-zone markers: those are opaque boxes that write depth,
+    // and a fill a hair lower vanished under them on the drop ship's
+    // patch (measured on #1121's first frame). The frame is lifted one
+    // step further so it still draws over the fill.
+    this.blast.setTiles(tiles, OVERLAY_LIFT * 6, false);
   }
 
   /** Hides every layer. */
   clear(): void {
     this.show(EMPTY_OVERLAYS);
+    this.setBlastTiles([]);
   }
 
   /**
@@ -667,6 +700,7 @@ export class TacticalOverlays implements Disposable {
     coverHigh: number;
     blockedShot: number;
     markedTile: number;
+    blast: number;
   } {
     return {
       weaponRange: this.weaponRange.edgeCount(),
@@ -676,6 +710,7 @@ export class TacticalOverlays implements Disposable {
       coverHigh: this.coverHigh.tickCount(),
       blockedShot: this.blockedShot.mesh.count,
       markedTile: this.markedTile.mesh.count,
+      blast: this.blast.mesh.count,
     };
   }
 
@@ -688,6 +723,7 @@ export class TacticalOverlays implements Disposable {
       this.coverLow.mesh,
       this.coverHigh.mesh,
       this.blockedShot.mesh,
+      this.blast.mesh,
       this.markedTile.mesh,
     ];
   }
@@ -700,6 +736,7 @@ export class TacticalOverlays implements Disposable {
     this.coverLow.dispose();
     this.coverHigh.dispose();
     this.blockedShot.dispose();
+    this.blast.dispose();
     this.markedTile.dispose();
     this.root.removeFromParent();
   }

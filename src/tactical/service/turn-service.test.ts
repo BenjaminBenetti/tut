@@ -21,6 +21,7 @@ import {
   riggedRng,
   unitAt,
   walledField,
+  fixtureAttackDeps,
 } from "./tactical-fixtures.test-helper";
 import { computeVision, unitCanSee } from "./vision-service";
 import type { PhaseStep } from "./turn-service";
@@ -50,6 +51,8 @@ function unitIn(mission: TacticalState, id: string) {
 // ===========================================
 // End turn
 // ===========================================
+
+const DEPS = fixtureAttackDeps();
 
 describe("createEndTurnHandler", () => {
   it("hands the turn to the bugs on the same turn: bugs refreshed, TDF suppression lifted, the dead untouched", () => {
@@ -214,6 +217,41 @@ describe("createEndTurnHandler", () => {
     ]);
   });
 
+  it("ends the mission when a phase step of the opening phase decides it (#1121)", () => {
+    // A step that kills the last TDF unit as the player phase opens, as
+    // a fire under it would. Before #1121 no step could kill, and the
+    // mission would have opened a phase nobody could play.
+    const lethal: PhaseStep = (mission) => ({
+      state: {
+        ...mission,
+        units: mission.units.map((u) =>
+          u.team === "tdf" ? { ...u, hp: 0 } : u,
+        ),
+      },
+      events: [],
+    });
+    const mission = missionWith(
+      openField().build(),
+      [
+        unitAt("s", "infantry", at(0, 0)),
+        unitAt("b", "infantry", at(5, 5), { team: "bugs" }),
+      ],
+      { phase: "bugs" },
+    );
+    const result = createEndTurnHandler([...DEFAULT_PHASE_STEPS, lethal])(
+      mission,
+      endTurn(),
+      ctxWith(riggedRng(true)),
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.state.outcome).toBe("lost");
+    expect(result.value.events.map((e) => e.type)).toEqual([
+      TURN_STARTED,
+      MISSION_ENDED,
+    ]);
+  });
+
   it("ends the mission instead of starting a phase when a terminal condition holds", () => {
     // Everyone out with the objectives done: won at the boundary.
     const won = missionWith(
@@ -266,6 +304,7 @@ describe("overwatchReaction", () => {
       "b",
       ctxWith(riggedRng(true, "low")),
       T,
+      DEPS,
     );
     expect(first.events).toEqual([
       {
@@ -292,6 +331,7 @@ describe("overwatchReaction", () => {
       "b",
       ctxWith(riggedRng(true)),
       T,
+      DEPS,
     );
     expect(second.events).toEqual([]);
     expect(second.state).toBe(first.state);
@@ -361,8 +401,13 @@ describe("overwatchReaction", () => {
         `${probe.name}: vision`,
       ).toBe(probe.expected);
       expect(
-        overwatchReaction(mission, "b", ctxWith(riggedRng(true, "low")), T)
-          .events.length > 0,
+        overwatchReaction(
+          mission,
+          "b",
+          ctxWith(riggedRng(true, "low")),
+          T,
+          DEPS,
+        ).events.length > 0,
         `${probe.name}: overwatch`,
       ).toBe(probe.expected);
     }
@@ -409,7 +454,7 @@ describe("overwatchReaction", () => {
       ],
       { phase: "bugs" },
     );
-    expect(overwatchReaction(walled, "b", ctx, T).events).toEqual([]);
+    expect(overwatchReaction(walled, "b", ctx, T, DEPS).events).toEqual([]);
     const field = openField().build();
     const hidden = missionWith(
       field,
@@ -419,12 +464,12 @@ describe("overwatchReaction", () => {
       ],
       { phase: "bugs" },
     );
-    expect(overwatchReaction(hidden, "b", ctx, T).events).toEqual([]);
+    expect(overwatchReaction(hidden, "b", ctx, T, DEPS).events).toEqual([]);
     const friend = missionWith(field, [
       unitAt("w", "infantry", at(0, 0), watching),
       unitAt("u", "infantry", at(3, 0)),
     ]);
-    expect(overwatchReaction(friend, "u", ctx, T).events).toEqual([]);
+    expect(overwatchReaction(friend, "u", ctx, T, DEPS).events).toEqual([]);
     const down = missionWith(
       field,
       [
@@ -433,7 +478,7 @@ describe("overwatchReaction", () => {
       ],
       { phase: "bugs" },
     );
-    expect(overwatchReaction(down, "b", ctx, T).events).toEqual([]);
+    expect(overwatchReaction(down, "b", ctx, T, DEPS).events).toEqual([]);
     const idle = missionWith(
       field,
       [
@@ -442,8 +487,8 @@ describe("overwatchReaction", () => {
       ],
       { phase: "bugs" },
     );
-    expect(overwatchReaction(idle, "b", ctx, T).events).toEqual([]);
-    expect(overwatchReaction(idle, "ghost", ctx, T).events).toEqual([]);
+    expect(overwatchReaction(idle, "b", ctx, T, DEPS).events).toEqual([]);
+    expect(overwatchReaction(idle, "ghost", ctx, T, DEPS).events).toEqual([]);
   });
 
   it("lets every watcher in sight fire in turn and stops once the mover is down", () => {
@@ -461,6 +506,7 @@ describe("overwatchReaction", () => {
       "b",
       ctxWith(riggedRng(true, "high")),
       T,
+      DEPS,
     );
     expect(result.events.map((e) => e.type)).toEqual([
       ATTACK_RESOLVED,
@@ -484,6 +530,7 @@ describe("overwatchReaction", () => {
       "b",
       ctxWith(riggedRng(true, "high")),
       T,
+      DEPS,
     );
     expect(both.events.map((e) => e.type)).toEqual([
       ATTACK_RESOLVED,
@@ -521,6 +568,7 @@ describe("overwatchReaction", () => {
       "m",
       ctxWith(riggedRng(true)),
       COMBAT_TUNING,
+      DEPS,
     );
     expect(applied.events).toEqual([]);
 
@@ -536,8 +584,13 @@ describe("overwatchReaction", () => {
       },
     };
     expect(
-      overwatchReaction(seeing, "m", ctxWith(riggedRng(true)), COMBAT_TUNING)
-        .events.length,
+      overwatchReaction(
+        seeing,
+        "m",
+        ctxWith(riggedRng(true)),
+        COMBAT_TUNING,
+        DEPS,
+      ).events.length,
     ).toBeGreaterThan(0);
   });
 });
@@ -547,7 +600,9 @@ describe("overwatchReaction", () => {
 // ===========================================
 
 describe("createMoveHandler with the overwatch reaction", () => {
-  const moveHandler = createMoveHandler(createOverwatchReaction(COMBAT_TUNING));
+  const moveHandler = createMoveHandler(
+    createOverwatchReaction(COMBAT_TUNING, fixtureAttackDeps()),
+  );
 
   it("fires after the step that brings the mover into range and ends the walk when it dies there", () => {
     const mission = missionWith(

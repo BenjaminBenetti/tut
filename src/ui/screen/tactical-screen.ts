@@ -5,6 +5,7 @@ import type { GameState } from "../../save/model/game-state";
 import type { CombatTuning } from "../../tactical/model/combat-tuning";
 import { finishMission } from "../../tactical/model/finish-mission-command";
 import type { ObjectiveTuning } from "../../tactical/model/objective-tuning";
+import type { PreviewDeps } from "../../tactical/service/combat-service";
 import type { TacticalCommand } from "../../tactical/model/tactical-command";
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { TacticalState } from "../../tactical/model/tactical-state";
@@ -35,6 +36,8 @@ export interface TacticalScreenDeps {
   readonly combatTuning: CombatTuning;
   /** Tuning the HUD hands to `reachableObjectives`; the screen judges no distance itself. */
   readonly objectiveTuning: ObjectiveTuning;
+  /** The content the HUD's blast previews ask what would fall (#1121); absent in tests without one. */
+  readonly previewDeps?: PreviewDeps;
   /** Hold time and timers for the phase banner (#523); the defaults are the DOM's. */
   readonly phaseBanner?: PhaseBannerOptions;
   /** Builds and owns the three.js scene for the mission; absent in unit tests that only check the DOM. */
@@ -179,6 +182,11 @@ export class TacticalScreen implements Screen {
         onMarkTile: (tile) => {
           deps.sceneHost?.markTile(tile);
         },
+        // The footprint of the shot being considered, painted on the
+        // ground it would reach (#1121).
+        onMarkBlast: (tiles) => {
+          deps.sceneHost?.markBlast(tiles);
+        },
         // The status chips sit at the top of each unit's model, which
         // only the scene can locate.
         headAnchorFor: (unitId) =>
@@ -187,6 +195,9 @@ export class TacticalScreen implements Screen {
       {
         combatTuning: deps.combatTuning,
         objectiveTuning: deps.objectiveTuning,
+        ...(deps.previewDeps === undefined
+          ? {}
+          : { previewDeps: deps.previewDeps }),
         phaseBanner: deps.phaseBanner,
         shortcuts: TACTICAL_SHORTCUTS,
       },

@@ -66,6 +66,20 @@ export type TacticalError =
   | { readonly kind: "target-destroyed"; readonly targetId: string }
   | { readonly kind: "no-charges"; readonly unitId: string }
   | { readonly kind: "no-such-weapon"; readonly unitId: string }
+  | { readonly kind: "no-area-weapon"; readonly unitId: string }
+  | {
+      readonly kind: "no-such-tile";
+      readonly x: number;
+      readonly y: number;
+      readonly z: number;
+    }
+  | { readonly kind: "no-aim"; readonly unitId: string }
+  | {
+      readonly kind: "tile-out-of-sight";
+      readonly x: number;
+      readonly y: number;
+      readonly z: number;
+    }
   | { readonly kind: "charges-full"; readonly unitId: string }
   | { readonly kind: "no-reload"; readonly unitId: string }
   | { readonly kind: "no-radar"; readonly unitId: string }
@@ -143,6 +157,14 @@ export function describeTacticalError(error: TacticalError): string {
       return `Unit "${error.unitId}" is out of charges; reload or vent first`;
     case "no-such-weapon":
       return `Unit "${error.unitId}" is not carrying that weapon`;
+    case "no-area-weapon":
+      return `Unit "${error.unitId}" has no weapon that can be fired at the ground`;
+    case "no-such-tile":
+      return `There is no tile at (${String(error.x)}, ${String(error.y)}, ${String(error.z)})`;
+    case "no-aim":
+      return `Unit "${error.unitId}" was told to fire at nothing, or at two things`;
+    case "tile-out-of-sight":
+      return `No line of sight to the tile at (${String(error.x)}, ${String(error.y)}, ${String(error.z)})`;
     case "charges-full":
       return `Unit "${error.unitId}" is already fully loaded`;
     case "no-reload":
@@ -217,6 +239,10 @@ export const TACTICAL_ERROR_KINDS: Readonly<
   "target-destroyed": true,
   "no-charges": true,
   "no-such-weapon": true,
+  "no-area-weapon": true,
+  "no-such-tile": true,
+  "no-aim": true,
+  "tile-out-of-sight": true,
   "charges-full": true,
   "no-reload": true,
   "no-radar": true,

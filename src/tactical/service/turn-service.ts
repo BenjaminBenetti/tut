@@ -15,6 +15,7 @@ import { TURN_STARTED } from "../model/turn-started-event";
 import type { Unit, UnitId, UnitStatus } from "../model/unit";
 import { UNIT_STATUS_CHANGED } from "../model/unit-status-changed-event";
 import { TileIndex } from "../../mapgen/service/tile-index";
+import type { AttackDeps } from "./combat-service";
 import { rollAttack, validateTargeting } from "./combat-service";
 import { missionOutcome } from "./mission-end-service";
 import { unitCanSee } from "./vision-service";
@@ -120,7 +121,7 @@ export function createEndTurnHandler(
     }
     const opened = openNextPhase(mission, steps, ctx);
     if (opened.state.phase !== "bugs" || bugPhase === undefined) {
-      return ok(opened);
+      return ok(endIfDecided(opened));
     }
     const played = bugPhase(opened.state, ctx);
     const events: TacticalEvent[] = [...opened.events, ...played.events];
@@ -129,9 +130,27 @@ export function createEndTurnHandler(
       const ended = endMission(played.state, decided);
       return ok({ state: ended.state, events: [...events, ...ended.events] });
     }
-    const next = openNextPhase(played.state, steps, ctx);
+    const next = endIfDecided(openNextPhase(played.state, steps, ctx));
     return ok({ state: next.state, events: [...events, ...next.events] });
   };
+}
+
+/**
+ * Ends the mission if opening the phase decided it (#1121). The phase
+ * steps can now kill: a fire burning at the start of the player phase
+ * can take the last unit standing, and until the next `EndTurn` nobody
+ * would have noticed. A phase that opened without deciding anything —
+ * every phase before fires existed — is returned exactly as it came.
+ */
+function endIfDecided(
+  opened: TacticalApplied<TacticalState>,
+): TacticalApplied<TacticalState> {
+  const outcome = missionOutcome(opened.state);
+  if (outcome === undefined) {
+    return opened;
+  }
+  const ended = endMission(opened.state, outcome);
+  return { state: ended.state, events: [...opened.events, ...ended.events] };
 }
 
 /** Records the outcome on the mission and announces `MissionEnded`. */
@@ -192,6 +211,7 @@ export function overwatchReaction(
   movedUnitId: UnitId,
   ctx: TacticalContext,
   tuning: CombatTuning,
+  deps: AttackDeps,
 ): TacticalApplied<TacticalState> {
   const events: TacticalEvent[] = [];
   let state = mission;
@@ -238,6 +258,7 @@ export function overwatchReaction(
       ctx,
       tuning,
       checked.value.attacker.ap,
+      deps,
     );
     events.push(...shot.events);
     const status = without(checked.value.attacker.status, "overwatch");
@@ -255,10 +276,13 @@ export function overwatchReaction(
   return { state, events };
 }
 
-/** The overwatch reaction as a `StepReaction` for `createMoveHandler`, closed over the tuning. */
-export function createOverwatchReaction(tuning: CombatTuning): StepReaction {
+/** The overwatch reaction as a `StepReaction` for `createMoveHandler`, closed over the tuning and the content. */
+export function createOverwatchReaction(
+  tuning: CombatTuning,
+  deps: AttackDeps,
+): StepReaction {
   return (mission, movedUnitId, ctx) =>
-    overwatchReaction(mission, movedUnitId, ctx, tuning);
+    overwatchReaction(mission, movedUnitId, ctx, tuning, deps);
 }
 
 // ===========================================

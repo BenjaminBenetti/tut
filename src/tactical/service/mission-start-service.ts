@@ -164,6 +164,8 @@ export function startTacticalMission<TState extends MissionCampaignState>(
     phase: "player",
     objectives,
     spawners,
+    // Nothing burns until something is fired (#1121).
+    effects: [],
     edgeSpawn: { nextTurn: deps.spawnTuning.firstWaveTurn, wave: 0 },
     extraction: map.hooks.extraction.tiles.map(coordOf),
     extracted: [],

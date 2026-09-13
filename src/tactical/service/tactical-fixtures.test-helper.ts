@@ -6,10 +6,15 @@ import { SurfaceIds } from "../../mapgen/data/surfaces";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
+import { createDefaultRegistries } from "../../mapgen/service/default-registries";
+import { DEMOLITION_TUNING } from "../data/demolition-tuning";
+import { HAZARD_TUNING } from "../data/hazard-tuning";
 import type { TacticalContext } from "../model/tactical-handler";
 import type { TacticalState } from "../model/tactical-state";
 import type { PassClass, Team, Unit, UnitStatus } from "../model/unit";
 import type { UnitTemplate } from "../model/unit-template";
+import type { AttackDeps } from "./combat-service";
+import { registryStructureCatalogue } from "./structure-catalogue";
 import { emptyVision } from "./vision-service";
 
 // ===========================================
@@ -110,6 +115,7 @@ export type MissionOptions = Partial<
     | "turn"
     | "objectives"
     | "spawners"
+    | "effects"
     | "edgeSpawn"
     | "extracted"
     | "outcome"
@@ -136,6 +142,7 @@ export function missionWith(
     phase: "player",
     objectives: [],
     spawners: [],
+    effects: [],
     edgeSpawn: { nextTurn: 3, wave: 0 },
     extraction: [],
     extracted: [],
@@ -144,6 +151,24 @@ export function missionWith(
     radars: [],
     commandSeq: 0,
     ...options,
+  };
+}
+
+// ===========================================
+// Attack content
+// ===========================================
+
+/**
+ * What a shot needs beyond the combat tuning (#1121), over the shipped
+ * content: prop tiers and surfaces from the default registries, and the
+ * shipped wall forces and fire clock. One instance per test file is
+ * plenty; it holds nothing mutable.
+ */
+export function fixtureAttackDeps(): AttackDeps {
+  return {
+    structures: registryStructureCatalogue(createDefaultRegistries()),
+    demolition: DEMOLITION_TUNING,
+    hazards: HAZARD_TUNING,
   };
 }
 

@@ -39,24 +39,34 @@ export type KnownPropKindId = (typeof PropKindIds)[keyof typeof PropKindIds];
 // ===========================================
 
 /**
- * Prop definitions. Cover and line-of-sight blocking are what tactical
- * reads; placements and biomes are what the prop pass reads.
+ * Prop definitions. Cover, line-of-sight blocking and demolition are
+ * what tactical reads; placements and biomes are what the prop pass
+ * reads.
+ *
+ * Demolition (#1121) follows the weapon ladder: `1` is what an
+ * autocannon or a missile salvo clears — street furniture, fences,
+ * cars, crates; `2` is what a railgun or a mortar brings down — a
+ * dumpster, a tree, a rooftop unit. Boulders and rock outcrops carry no
+ * tier: they are the ground, and no weapon on the arsenal moves it.
  */
 export const PROP_DEFINITIONS: readonly PropDefinition[] = [
   {
     id: PropKindIds.ROOFTOP_HVAC,
+    demolition: 2,
     cover: CoverLevel.HIGH,
     blocksLos: true,
     placements: ["roof"],
   },
   {
     id: PropKindIds.ROOFTOP_WATER_TANK,
+    demolition: 2,
     cover: CoverLevel.HIGH,
     blocksLos: true,
     placements: ["roof"],
   },
   {
     id: PropKindIds.CAR,
+    demolition: 1,
     footprint: { w: 2, d: 1 },
     cover: CoverLevel.HIGH,
     blocksLos: true,
@@ -64,42 +74,49 @@ export const PROP_DEFINITIONS: readonly PropDefinition[] = [
   },
   {
     id: PropKindIds.CRATE,
+    demolition: 1,
     cover: CoverLevel.LOW,
     blocksLos: false,
     placements: ["ground", "interior"],
   },
   {
     id: PropKindIds.BARRIER,
+    demolition: 1,
     cover: CoverLevel.LOW,
     blocksLos: false,
     placements: ["road", "ground"],
   },
   {
     id: PropKindIds.SANDBAGS,
+    demolition: 1,
     cover: CoverLevel.LOW,
     blocksLos: false,
     placements: ["ground", "road"],
   },
   {
     id: PropKindIds.DUMPSTER,
+    demolition: 2,
     cover: CoverLevel.HIGH,
     blocksLos: true,
     placements: ["ground", "road"],
   },
   {
     id: PropKindIds.SHELVING,
+    demolition: 2,
     cover: CoverLevel.HIGH,
     blocksLos: true,
     placements: ["interior"],
   },
   {
     id: PropKindIds.TABLE,
+    demolition: 1,
     cover: CoverLevel.LOW,
     blocksLos: false,
     placements: ["interior", "yard"],
   },
   {
     id: PropKindIds.BENCH,
+    demolition: 1,
     cover: CoverLevel.LOW,
     blocksLos: false,
     // Contextual only: never part of the generic ground scatter.
@@ -107,6 +124,7 @@ export const PROP_DEFINITIONS: readonly PropDefinition[] = [
   },
   {
     id: PropKindIds.FENCE,
+    demolition: 1,
     cover: CoverLevel.LOW,
     blocksLos: false,
     placements: ["ground"],
@@ -119,6 +137,7 @@ export const PROP_DEFINITIONS: readonly PropDefinition[] = [
   },
   {
     id: PropKindIds.TREE_PINE,
+    demolition: 2,
     cover: CoverLevel.HIGH,
     blocksLos: false,
     placements: ["ground"],
@@ -126,6 +145,7 @@ export const PROP_DEFINITIONS: readonly PropDefinition[] = [
   },
   {
     id: PropKindIds.TREE_OAK,
+    demolition: 2,
     cover: CoverLevel.HIGH,
     blocksLos: false,
     placements: ["ground"],
@@ -140,6 +160,7 @@ export const PROP_DEFINITIONS: readonly PropDefinition[] = [
   },
   {
     id: PropKindIds.TREE_PALM,
+    demolition: 2,
     cover: CoverLevel.HIGH,
     blocksLos: false,
     placements: ["ground"],
@@ -147,6 +168,7 @@ export const PROP_DEFINITIONS: readonly PropDefinition[] = [
   },
   {
     id: PropKindIds.TREE_TROPICAL_ALMOND,
+    demolition: 2,
     cover: CoverLevel.HIGH,
     blocksLos: false,
     placements: ["ground"],
@@ -161,6 +183,7 @@ export const PROP_DEFINITIONS: readonly PropDefinition[] = [
   },
   {
     id: PropKindIds.TREE_OIL_PALM,
+    demolition: 2,
     cover: CoverLevel.HIGH,
     blocksLos: false,
     placements: ["ground"],
@@ -175,6 +198,7 @@ export const PROP_DEFINITIONS: readonly PropDefinition[] = [
   },
   {
     id: PropKindIds.CACTUS,
+    demolition: 1,
     cover: CoverLevel.LOW,
     blocksLos: false,
     placements: ["ground"],
@@ -182,6 +206,7 @@ export const PROP_DEFINITIONS: readonly PropDefinition[] = [
   },
   {
     id: PropKindIds.TREE_TUART,
+    demolition: 2,
     cover: CoverLevel.HIGH,
     blocksLos: false,
     placements: ["vegetation"],
@@ -189,6 +214,7 @@ export const PROP_DEFINITIONS: readonly PropDefinition[] = [
   },
   {
     id: PropKindIds.BANKSIA,
+    demolition: 2,
     cover: CoverLevel.HIGH,
     blocksLos: false,
     placements: ["vegetation"],
@@ -196,6 +222,7 @@ export const PROP_DEFINITIONS: readonly PropDefinition[] = [
   },
   {
     id: PropKindIds.GRASS_TREE,
+    demolition: 1,
     cover: CoverLevel.LOW,
     blocksLos: false,
     placements: ["vegetation"],

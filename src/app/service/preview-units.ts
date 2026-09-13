@@ -162,6 +162,7 @@ export function previewMission(map: TacticalMap): TacticalState {
     phase: "player",
     objectives,
     spawners,
+    effects: [],
     edgeSpawn: { nextTurn: SPAWN_TUNING.firstWaveTurn, wave: 0 },
     extraction: map.hooks.extraction.tiles,
     extracted: [],

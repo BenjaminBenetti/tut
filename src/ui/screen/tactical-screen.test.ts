@@ -235,6 +235,11 @@ class FakeHost implements TacticalSceneHost {
         : `${String(tile.x)},${String(tile.y)},${String(tile.z)}`,
     );
   }
+  /** Blast footprints the screen asked to paint (#1121), by tile count. */
+  readonly blasts: number[] = [];
+  markBlast(tiles: readonly { x: number; y: number; z: number }[]): void {
+    this.blasts.push(tiles.length);
+  }
   /** Units the screen asked to centre on (#1041). */
   readonly lookedAt: string[] = [];
   lookAtUnit(unitId: string): void {

@@ -187,6 +187,85 @@ describe("TacticalHudView", () => {
     expect(hud.getMode()).toBe("move");
   });
 
+  it("paints the blast for an enemy and a tile alike, every weapon together, and the rested weapon alone (#1121)", () => {
+    const base = twoWeaponMission();
+    const mech = base.templates.mech!;
+    const pod = mech.weapons[1]!;
+    const mission = withVision({
+      state: {
+        ...base,
+        templates: {
+          ...base.templates,
+          mech: {
+            ...mech,
+            weapons: [
+              mech.weapons[0]!,
+              {
+                ...pod,
+                profile: { ...pod.profile, aoe: { radius: 1, falloff: 0.5 } },
+              },
+            ],
+          },
+        },
+      },
+      events: [],
+    }).state;
+    const commands: TacticalCommand[] = [];
+    const blasts: number[] = [];
+    const hud = new TacticalHudView(
+      {
+        onCommand: (c) => commands.push(c),
+        onBack: vi.fn(),
+        anchorFor: () => ({ x: 100, y: 100 }),
+        onMarkBlast: (tiles) => blasts.push(tiles.length),
+      },
+      { combatTuning: COMBAT_TUNING, objectiveTuning: OBJECTIVE_TUNING },
+    );
+    hud.mount(root);
+    hud.update(mission);
+    hud.handleIntent({ kind: "select-unit", unitId: "m1" });
+    // Aiming at an enemy: every weapon's footprint together, the pod's
+    // five tiles around b1 with the gun's one inside them.
+    hud.handleIntent({ kind: "select-unit", unitId: "b1" });
+    expect(blasts.at(-1)).toBe(5);
+    item("attack:b1")?.click();
+    // The gun marks nothing, so resting on it paints nothing: the
+    // footprint is the weapon's, not a ring for its own sake.
+    item("attack:b1:arm-weapon")?.dispatchEvent(new Event("pointerenter"));
+    expect(blasts.at(-1)).toBe(0);
+    item("attack:b1:back-weapon")?.dispatchEvent(new Event("pointerenter"));
+    expect(blasts.at(-1)).toBe(5);
+    item("attack:b1:back-weapon")?.dispatchEvent(new Event("pointerleave"));
+    expect(blasts.at(-1)).toBe(5);
+    hud.handleIntent({ kind: "action", action: "cancel" });
+
+    // A tile: the same entry, the same page, the same footprint.
+    hud.handleIntent({ kind: "select-unit", unitId: "m1" });
+    hud.handleIntent({ kind: "select-tile", tile: { x: 3, y: 0, z: 1 } });
+    expect(items()).toContain("attack-tile:3,0,1");
+    expect(blasts.at(-1)).toBe(5);
+    item("attack-tile:3,0,1")?.click();
+    expect(items()).toEqual([
+      "attack-tile:3,0,1:arm-weapon",
+      "attack-tile:3,0,1:back-weapon",
+      "back:ground",
+    ]);
+    expect(item("attack-tile:3,0,1:arm-weapon")?.disabled).toBe(true);
+    item("attack-tile:3,0,1:back-weapon")?.click();
+    expect(commands).toEqual([
+      {
+        type: ATTACK,
+        payload: {
+          attackerId: "m1",
+          tile: { x: 3, y: 0, z: 1 },
+          weaponId: "back-weapon",
+        },
+      },
+    ]);
+    expect(wheelOpen()).toBe(false);
+    expect(blasts.at(-1)).toBe(0);
+  });
+
   it("Attack on a unit with several weapons turns to a weapon page, and Back turns back (#1112)", () => {
     const commands: TacticalCommand[] = [];
     const hud = new TacticalHudView(
@@ -255,7 +334,12 @@ describe("TacticalHudView", () => {
     const { hud, commands } = setup();
     hud.handleIntent({ kind: "select-unit", unitId: "s1" });
     hud.handleIntent({ kind: "select-tile", tile: { x: 3, y: 0, z: 1 } });
-    expect(items()).toEqual(["move:3,0,1", "overwatch", "reload"]);
+    expect(items()).toEqual([
+      "move:3,0,1",
+      "attack-tile:3,0,1",
+      "overwatch",
+      "reload",
+    ]);
     expect(commands).toEqual([]);
     item("move:3,0,1")?.click();
     expect(commands.map((c) => c.type)).toEqual([MOVE]);
@@ -1464,7 +1548,13 @@ describe("TacticalHudView", () => {
     // Move, which is how to get there.
     hud.handleIntent({ kind: "select-unit", unitId: "s1" });
     hud.handleIntent({ kind: "select-tile", tile: { x: 0, y: 0, z: 0 } });
-    expect(items()).toEqual(["move:0,0,0", "extract", "overwatch", "reload"]);
+    expect(items()).toEqual([
+      "move:0,0,0",
+      "attack-tile:0,0,0",
+      "extract",
+      "overwatch",
+      "reload",
+    ]);
     expect(item("extract")?.disabled).toBe(true);
     expect(item("extract")?.textContent).toContain("not on the ramp");
     // A tile that is not the ship offers no boarding at all.

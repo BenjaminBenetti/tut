@@ -323,6 +323,15 @@ function weaponsOf(
         accuracy: stats.accuracy,
         firepower: stats.firepower,
         armorPen: weapon.armorPen,
+        // How it lands is the part's own business (#1121); the sheet
+        // only carries it through to the unit factory.
+        ...(weapon.aoe === undefined ? {} : { aoe: weapon.aoe }),
+        ...(weapon.aoeEffect === undefined
+          ? {}
+          : { aoeEffect: weapon.aoeEffect }),
+        ...(weapon.demoForce === undefined
+          ? {}
+          : { demoForce: weapon.demoForce }),
       });
     }
   }

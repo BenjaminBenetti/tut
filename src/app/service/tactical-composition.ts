@@ -18,6 +18,8 @@ import type { UpgradeTuning } from "../../roster/model/upgrade-tuning";
 import { validateLoadout } from "../../roster/service/loadout-validation-service";
 import type { GameState } from "../../save/model/game-state";
 import { COMBAT_TUNING } from "../../tactical/data/combat-tuning";
+import { DEMOLITION_TUNING } from "../../tactical/data/demolition-tuning";
+import { HAZARD_TUNING } from "../../tactical/data/hazard-tuning";
 import { OBJECTIVE_TUNING } from "../../tactical/data/objective-tuning";
 import { UNIT_TUNING } from "../../tactical/data/unit-tuning";
 import { SPAWN_TUNING } from "../../tactical/data/spawn-tuning";
@@ -28,6 +30,7 @@ import { INTERACT } from "../../tactical/model/interact-command";
 import { MOVE } from "../../tactical/model/move-command";
 import { OVERWATCH } from "../../tactical/model/overwatch-command";
 import { RELOAD } from "../../tactical/model/reload-command";
+import type { AttackDeps } from "../../tactical/service/combat-service";
 import { DEPLOY_RADAR } from "../../tactical/model/deploy-radar-command";
 import { RADAR_TUNING } from "../../tactical/data/radar-tuning";
 import { createDeployRadarHandler } from "../../tactical/service/radar-service";
@@ -45,8 +48,10 @@ import {
   createEdgeWaveStep,
   createHatchStep,
 } from "../../tactical/service/spawn-service";
+import { registryStructureCatalogue } from "../../tactical/service/structure-catalogue";
 import type { TacticalHandlers } from "../../tactical/service/tactical-command-handlers";
 import { registerTacticalCommands } from "../../tactical/service/tactical-command-handlers";
+import { createBurnStep } from "../../tactical/service/tile-effect-service";
 import type { FinishedMissionSource } from "../../tactical/service/tactical-mission-resolver";
 import { TacticalMissionResolver } from "../../tactical/service/tactical-mission-resolver";
 import {
@@ -54,6 +59,7 @@ import {
   createOverwatchReaction,
   DEFAULT_PHASE_STEPS,
 } from "../../tactical/service/turn-service";
+import type { MapGenRegistries } from "../../mapgen/model/registries";
 import type { GameContent } from "./game-composition";
 
 // ===========================================
@@ -70,6 +76,12 @@ export type TacticalContent = Pick<
 export interface TacticalComposition {
   /** The pure rule handlers registered on the campaign dispatcher, by command tag. */
   readonly handlers: TacticalHandlers;
+  /**
+   * What a shot needs beyond the combat tuning (#1121), over the shipped
+   * content. The HUD previews blasts and demolition against the same
+   * ports the rules resolve them with.
+   */
+  readonly attackDeps: AttackDeps;
   /** Deps for `startTacticalMission` over the given id generator. */
   readonly missionStartDepsFor: (ids: IdGenerator) => MissionStartDeps;
   /**
@@ -108,10 +120,11 @@ export interface TacticalComposition {
 export function composeTactical(
   dispatcher: CommandDispatcher<GameState>,
   content: TacticalContent,
-  handlers: TacticalHandlers = shippedTacticalHandlers(),
+  handlers?: TacticalHandlers,
 ): TacticalComposition {
-  registerTacticalCommands(dispatcher, handlers);
   const registries = createDefaultRegistries();
+  handlers ??= shippedTacticalHandlers(registries);
+  registerTacticalCommands(dispatcher, handlers);
   const sheetFor = createSheetLookup(
     content.parts,
     content.rating,
@@ -128,6 +141,7 @@ export function composeTactical(
   });
   return {
     handlers,
+    attackDeps: attackDepsOver(registries),
     missionStartDepsFor,
     resolverFor: (finishedMission) =>
       new TacticalMissionResolver({
@@ -153,19 +167,28 @@ export function composeTactical(
  * their own object to isolate the lifting path.
  *
  * ```
- *   EndTurn ──► phase steps: refreshSides, hatch, edge waves
+ *   EndTurn ──► phase steps: refreshSides, burn, hatch, edge waves
  *                    └──► bug phase runner ──► every living bug acts
  *                              └──► player turn + 1 (or MissionEnded)
  * ```
+ *
+ * Fires burn right after the sides are refreshed (#1121): the side
+ * whose phase begins pays for standing in one before it can move out,
+ * and before anything hatches into it.
  */
-export function shippedTacticalHandlers(): TacticalHandlers {
+export function shippedTacticalHandlers(
+  registries: MapGenRegistries = createDefaultRegistries(),
+): TacticalHandlers {
   const spawn: SpawnDeps = {
     species: Object.values(BUG_SPECIES),
     tuning: SPAWN_TUNING,
   };
+  const attackDeps = attackDepsOver(registries);
   const actions: TacticalHandlers = {
-    [ATTACK]: createAttackHandler(COMBAT_TUNING),
-    [MOVE]: createMoveHandler(createOverwatchReaction(COMBAT_TUNING)),
+    [ATTACK]: createAttackHandler(COMBAT_TUNING, attackDeps),
+    [MOVE]: createMoveHandler(
+      createOverwatchReaction(COMBAT_TUNING, attackDeps),
+    ),
     [OVERWATCH]: overwatchHandler,
     [RELOAD]: reloadHandler,
     [DEPLOY_RADAR]: createDeployRadarHandler(RADAR_TUNING),
@@ -183,11 +206,21 @@ export function shippedTacticalHandlers(): TacticalHandlers {
     [END_TURN]: createEndTurnHandler(
       [
         ...DEFAULT_PHASE_STEPS,
+        createBurnStep(HAZARD_TUNING, COMBAT_TUNING),
         createHatchStep(spawn),
         createEdgeWaveStep(spawn),
       ],
       bugPhase,
     ),
+  };
+}
+
+/** The shot's content ports over the mapgen registries, with the shipped tunings (#1121). */
+export function attackDepsOver(registries: MapGenRegistries): AttackDeps {
+  return {
+    structures: registryStructureCatalogue(registries),
+    demolition: DEMOLITION_TUNING,
+    hazards: HAZARD_TUNING,
   };
 }
 

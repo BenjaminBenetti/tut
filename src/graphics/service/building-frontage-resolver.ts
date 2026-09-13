@@ -1,3 +1,4 @@
+import { wallPart } from "../model/map-part";
 import { DIRECTIONS } from "../../core/model/direction";
 import type { Direction } from "../../core/model/direction";
 import { stepGridPos } from "../../core/service/grid-math";
@@ -85,7 +86,14 @@ export function resolveBuildingFrontages(
             propTops,
           )
         ) {
-          result.push(mount(module, tile, entrance.side));
+          result.push(
+            onWall(
+              mount(module, tile, entrance.side),
+              tile,
+              entrance.side,
+              index,
+            ),
+          );
           break;
         }
       }
@@ -104,7 +112,14 @@ export function resolveBuildingFrontages(
               propTops,
             )
           ) {
-            result.push(mount(MAILBOX_MODULE, next, entrance.side));
+            result.push(
+              onWall(
+                mount(MAILBOX_MODULE, next, entrance.side),
+                next,
+                entrance.side,
+                index,
+              ),
+            );
             break;
           }
         }
@@ -142,7 +157,9 @@ export function resolveBuildingFrontages(
                   propTops,
                 )
               ) {
-                result.push(mount(windowModule, tile, side));
+                result.push(
+                  onWall(mount(windowModule, tile, side), tile, side, index),
+                );
               }
               const along = side === "n" || side === "s" ? tile.x : tile.z;
               if (
@@ -161,7 +178,14 @@ export function resolveBuildingFrontages(
                   propTops,
                 )
               )
-                result.push(mount(style.wallUtility, tile, side));
+                result.push(
+                  onWall(
+                    mount(style.wallUtility, tile, side),
+                    tile,
+                    side,
+                    index,
+                  ),
+                );
             }
           }
         }
@@ -169,6 +193,19 @@ export function resolveBuildingFrontages(
     }
   }
   return result;
+}
+
+/**
+ * The placement stamped with the wall it hangs on (#1121), so a door
+ * canopy or a window box falls with its wall when a blast opens it.
+ */
+function onWall(
+  placement: ModelPlacement,
+  tile: Tile,
+  side: Direction,
+  index: TileIndex,
+): ModelPlacement {
+  return { ...placement, part: wallPart(index.keyOf(tile), side) };
 }
 
 /** A coordinate offset along a facade without moving across its wall. */

@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import type { Rect, Vec3 } from "../../core/model/grid";
 import type { UnitTemplateLookup } from "../../graphics/service/tactical-scene-builder";
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
+import type { TileEffect } from "../../tactical/model/tile-effect";
+import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { SideVision, Spawner } from "../../tactical/model/tactical-state";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { ATTACK_RESOLVED } from "../../tactical/model/attack-resolved-event";
@@ -35,6 +37,12 @@ class StageRecorder {
   vision: SideVision | undefined;
   units: readonly Unit[] = [];
   spawners: readonly Spawner[] = [];
+  effects: readonly TileEffect[] = [];
+
+  /** Records the map handed to the scene (#1121). */
+  applyMap(_map: TacticalMap): void {
+    this.calls.push("applyMap");
+  }
 
   /** Records the radar layer update. */
   updateRadar(): Promise<void> {
@@ -46,6 +54,12 @@ class StageRecorder {
   setVision(vision: SideVision | undefined): void {
     this.calls.push("setVision");
     this.vision = vision;
+  }
+
+  /** Records the fires the scene was asked to draw (#1121). */
+  updateEffects(effects: readonly TileEffect[]): void {
+    this.calls.push("updateEffects");
+    this.effects = effects;
   }
 
   /** Records the units the scene was asked to draw. */
@@ -160,7 +174,7 @@ describe("drawPerceived", () => {
     const mission = missionWithBug();
     await drawPerceived(stage, mission);
     // Placed first, the units stand on a map drawn a frame stale.
-    expect(stage.calls[0]).toBe("setVision");
+    expect(stage.calls.slice(0, 2)).toEqual(["applyMap", "setVision"]);
     expect(stage.calls).toContain("update");
     expect(stage.vision).toBe(mission.vision.tdf);
   });
@@ -170,7 +184,9 @@ describe("drawPerceived", () => {
     await drawPerceived(stage, missionWithBug());
     // A spawner is the mission's objective; it appears with the force.
     expect(stage.calls).toEqual([
+      "applyMap",
       "setVision",
+      "updateEffects",
       "update",
       "updateSpawners",
       "updateRadar",

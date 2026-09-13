@@ -114,6 +114,46 @@ describe("STARTER_PARTS", () => {
     }
   });
 
+  it("keeps every blast, effect and force inside its band (#1121)", () => {
+    for (const part of STARTER_PARTS) {
+      const weapon = part.slot === "chassis" ? undefined : part.weapon;
+      if (weapon === undefined) continue;
+      if (weapon.aoe !== undefined) {
+        expect(Number.isInteger(weapon.aoe.radius), part.id).toBe(true);
+        expect(weapon.aoe.radius, part.id).toBeGreaterThan(0);
+        expect(weapon.aoe.falloff, part.id).toBeGreaterThanOrEqual(0);
+        expect(weapon.aoe.falloff, part.id).toBeLessThanOrEqual(1);
+      }
+      if (weapon.aoeEffect !== undefined) {
+        expect(weapon.aoeEffect.chance, part.id).toBeGreaterThan(0);
+        expect(weapon.aoeEffect.chance, part.id).toBeLessThanOrEqual(1);
+        expect(weapon.aoeEffect.falloff, part.id).toBeGreaterThanOrEqual(0);
+        expect(weapon.aoeEffect.falloff, part.id).toBeLessThanOrEqual(1);
+      }
+      if (weapon.demoForce !== undefined) {
+        expect(Number.isInteger(weapon.demoForce), part.id).toBe(true);
+        expect(weapon.demoForce, part.id).toBeGreaterThan(0);
+        expect(weapon.demoForce, part.id).toBeLessThanOrEqual(3);
+      }
+    }
+  });
+
+  it("marks the arsenal the way the design says (#1121): blasts, fire and force where they belong", () => {
+    const byId = new Map(STARTER_PARTS.map((part) => [part.id, part]));
+    const weapon = (id: string) => {
+      const part = byId.get(id);
+      return part?.slot === "chassis" ? undefined : part?.weapon;
+    };
+    expect(weapon("arm-weapon-flamer")?.aoeEffect?.kind).toBe("fire");
+    expect(weapon("arm-weapon-flamer")?.aoe?.radius).toBe(1);
+    expect(weapon("back-weapon-mortar")?.aoe?.radius).toBe(2);
+    expect(weapon("back-weapon-missile-pod")?.aoe?.radius).toBe(1);
+    expect(weapon("arm-weapon-laser")?.aoe).toBeUndefined();
+    expect(weapon("arm-weapon-laser")?.demoForce ?? 0).toBe(0);
+    expect(weapon("arm-weapon-railgun")?.demoForce).toBe(2);
+    expect(weapon("arm-weapon-autocannon")?.demoForce).toBe(1);
+  });
+
   it("gives every weapon part a firing profile, and no other part one", () => {
     for (const part of componentParts) {
       if (WEAPON_SLOTS.includes(part.slot)) {

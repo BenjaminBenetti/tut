@@ -4,10 +4,14 @@ import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { Unit, UnitId } from "../../tactical/model/unit";
 import type { WeaponId } from "../../tactical/model/unit-weapon";
 import { findAttackTarget } from "../../tactical/service/attack-target-service";
+import type { PreviewDeps } from "../../tactical/service/combat-service";
 import {
   previewAttack,
+  previewTileAttack,
+  tileWeaponOptions,
   weaponOptions,
 } from "../../tactical/service/combat-service";
+import type { AttackPreview } from "../../tactical/model/attack-preview";
 import type { MoveGraph } from "../../tactical/service/movement-service";
 import { pathTo } from "../../tactical/service/movement-service";
 import type { TacticalInvokeTarget } from "../model/tactical-intent";
@@ -41,6 +45,12 @@ export interface WheelContext {
   /** Names for the refusal tooltips, so they never read an id. */
   readonly names: TacticalNames;
   readonly deps: ActionAvailabilityDeps;
+  /**
+   * The content a blast preview asks about what would fall (#1121).
+   * Optional: without it the entries still show the blast and who is
+   * in it, and say nothing about structures.
+   */
+  readonly previewDeps?: PreviewDeps;
 }
 
 /** One page of the wheel: its entries and the fact at its centre. */
@@ -57,6 +67,12 @@ export type WheelChoice =
       readonly action: "attack";
       readonly targetId: string;
       /** Undefined opens the weapon page or fires the unit's single weapon. */
+      readonly weaponId: WeaponId | undefined;
+    }
+  | {
+      /** Fire at the ground (#1121). Undefined opens the weapon page or fires the unit's single weapon. */
+      readonly action: "attack-tile";
+      readonly tile: TileCoord;
       readonly weaponId: WeaponId | undefined;
     }
   | { readonly action: "overwatch" }
@@ -88,6 +104,8 @@ const SHORT_REASONS: Readonly<Partial<Record<TacticalError["kind"], string>>> =
     "not-in-extraction-zone": "not on the ramp",
     "no-objective-in-reach": "nothing in reach",
     "target-destroyed": "destroyed",
+    "tile-out-of-sight": "no line of sight",
+    "no-area-weapon": "not at the ground",
     "radar-out-of-reach": "range 1",
     "radar-tile-blocked": "tile blocked",
   };
@@ -113,7 +131,8 @@ const COMFORTABLE_HIT_CHANCE = 50;
  * different hat, and a wheel that lies is worse than no wheel.
  *
  * ```
- *   tile      ──► Move (path) · Board (drop ship tile) · Overwatch · Reload
+ *   tile      ──► Move (path) · Attack at the ground (#1121; weapons page
+ *                 when there are several) · Board (drop ship tile) · Overwatch · Reload
  *   enemy     ──► Attack (hub: hit chance) · Overwatch · Reload
  *   spawner   ──► Attack · Interact (if this one is in reach) · Overwatch · Reload
  *   own unit  ──► Overwatch · Reload · Interact · Board
@@ -151,15 +170,28 @@ export function actionWheel(
  * The sub-wheel behind Attack for a unit carrying several weapons
  * (#1112, GDD §6.2: one attack per weapon). One entry per weapon with
  * its own hit chance and damage against this target, and a way back.
+ * The same page whether the target is an enemy or a tile (#1121): the
+ * player picks a weapon the same way, and a weapon that cannot be
+ * fired at the ground is on the ring, closed, with the reason.
  *
- * @param targetId - The enemy unit or spawner being aimed at.
+ * @param target - The enemy unit, spawner or tile being aimed at.
  * @param ctx - The mission, the acting unit and the rules' tuning.
  * @returns The page, or an empty one when nothing can be aimed.
  */
-export function weaponWheel(targetId: string, ctx: WheelContext): WheelPage {
+export function weaponWheel(
+  target: TacticalInvokeTarget,
+  ctx: WheelContext,
+): WheelPage {
   const unit = ctx.mission.units.find((u) => u.id === ctx.unitId);
+  if (unit === undefined) {
+    return { items: [] };
+  }
+  if (target.kind === "tile") {
+    return tileWeaponPage(target.tile, unit, ctx);
+  }
+  const targetId = target.kind === "unit" ? target.unitId : target.spawnerId;
   const enemy = findAttackTarget(ctx.mission, targetId);
-  if (unit === undefined || enemy === undefined) {
+  if (enemy === undefined) {
     return { items: [] };
   }
   const items: RadialMenuItem[] = [];
@@ -175,6 +207,7 @@ export function weaponWheel(targetId: string, ctx: WheelContext): WheelPage {
       targetId,
       ctx.deps.combatTuning,
       option.weapon.id,
+      ctx.previewDeps,
     );
     const id = itemId(
       "attack",
@@ -185,7 +218,7 @@ export function weaponWheel(targetId: string, ctx: WheelContext): WheelPage {
         id,
         label: option.weapon.name,
         icon: "attack",
-        detail: `${String(preview.value.hitChance)}% · ${damageText(preview.value.damage)}`,
+        detail: blastDetail(preview.value, unit),
         primary: !primaryPicked,
       });
       primaryPicked = true;
@@ -219,14 +252,8 @@ export function parseWheelChoice(id: string): WheelChoice | undefined {
   switch (action) {
     case "move":
     case "deploy-radar": {
-      const [x, y, z] = argument.split(",").map((part) => Number(part));
-      if (x === undefined || y === undefined || z === undefined) {
-        return undefined;
-      }
-      if ([x, y, z].some((n) => Number.isNaN(n))) {
-        return undefined;
-      }
-      return { action, tile: { x, y, z } };
+      const tile = parseTile(argument);
+      return tile === undefined ? undefined : { action, tile };
     }
     case "attack": {
       const split = argument.indexOf(ID_SEPARATOR);
@@ -237,6 +264,19 @@ export function parseWheelChoice(id: string): WheelChoice | undefined {
             targetId: argument.slice(0, split),
             weaponId: argument.slice(split + 1),
           };
+    }
+    case "attack-tile": {
+      const split = argument.indexOf(ID_SEPARATOR);
+      const tile = parseTile(
+        split === -1 ? argument : argument.slice(0, split),
+      );
+      if (tile === undefined) {
+        return undefined;
+      }
+      const weaponId = split === -1 ? "" : argument.slice(split + 1);
+      return weaponId === ""
+        ? { action, tile, weaponId: undefined }
+        : { action, tile, weaponId };
     }
     case "interact":
       return { action, objectiveId: argument };
@@ -258,10 +298,7 @@ export function parseWheelChoice(id: string): WheelChoice | undefined {
 /** Move where reachable, Board on the drop ship, then the unit's own actions. */
 function tilePage(tile: TileCoord, unit: Unit, ctx: WheelContext): WheelPage {
   const items: RadialMenuItem[] = [];
-  const id = itemId(
-    "move",
-    `${String(tile.x)},${String(tile.y)},${String(tile.z)}`,
-  );
+  const id = itemId("move", tileArgument(tile));
   const refusal = actionRefusal(ctx.mission, unit.id, "move", ctx.deps);
   const path =
     refusal === undefined
@@ -287,6 +324,7 @@ function tilePage(tile: TileCoord, unit: Unit, ctx: WheelContext): WheelPage {
       primary: true,
     });
   }
+  items.push(tileAttackItem(tile, unit, ctx));
   if (isDropshipTile(ctx.mission, tile)) {
     items.push(boardItem(unit, ctx));
   }
@@ -315,6 +353,147 @@ function tilePage(tile: TileCoord, unit: Unit, ctx: WheelContext): WheelPage {
   }
   items.push(overwatchItem(unit, ctx), reloadItem(unit, ctx));
   return { items };
+}
+
+/**
+ * Attack at the ground (#1121), built the way the enemy page builds it
+ * so the two read as one action: closed with the rules' reason when the
+ * unit cannot attack at all or nothing it carries marks the ground;
+ * with several weapons it turns the page, with one it is the shot
+ * itself, previewed on the ring. A rifle squad sees it closed with
+ * "not at the ground", which is the fact rather than an absence.
+ */
+function tileAttackItem(
+  tile: TileCoord,
+  unit: Unit,
+  ctx: WheelContext,
+): RadialMenuItem {
+  const id = itemId("attack-tile", tileArgument(tile));
+  const refusal = actionRefusal(ctx.mission, unit.id, "attack", ctx.deps);
+  if (refusal !== undefined) {
+    return closed(id, "Attack", "attack", refusal, ctx);
+  }
+  const weapons = weaponOptions(ctx.mission, unit.id, ctx.deps.combatTuning);
+  const capable = tileWeaponOptions(
+    ctx.mission,
+    unit.id,
+    ctx.deps.combatTuning,
+  );
+  const first = capable[0];
+  if (first === undefined) {
+    return closed(
+      id,
+      "Attack",
+      "attack",
+      { kind: "no-area-weapon", unitId: unit.id },
+      ctx,
+    );
+  }
+  if (weapons.length > 1) {
+    return {
+      id,
+      label: "Attack",
+      icon: "attack",
+      detail: `${String(weapons.length)} weapons`,
+    };
+  }
+  const preview = previewTileAttack(
+    ctx.mission,
+    unit.id,
+    tile,
+    ctx.deps.combatTuning,
+    first.weapon.id,
+    ctx.previewDeps,
+  );
+  return preview.ok
+    ? {
+        id,
+        label: "Attack",
+        icon: "attack",
+        detail: blastDetail(preview.value, unit),
+      }
+    : closed(id, "Attack", "attack", preview.error, ctx);
+}
+
+/**
+ * The weapon page for a tile (#1121): every weapon the unit carries, the
+ * ones that can fire at the ground open with their numbers, the rest
+ * closed with the reason, and a way back — the enemy's page with the
+ * ground at its centre.
+ */
+function tileWeaponPage(
+  tile: TileCoord,
+  unit: Unit,
+  ctx: WheelContext,
+): WheelPage {
+  const items: RadialMenuItem[] = [];
+  let primaryPicked = false;
+  for (const option of weaponOptions(
+    ctx.mission,
+    unit.id,
+    ctx.deps.combatTuning,
+  )) {
+    const id = itemId(
+      "attack-tile",
+      `${tileArgument(tile)}${ID_SEPARATOR}${option.weapon.id}`,
+    );
+    const preview = previewTileAttack(
+      ctx.mission,
+      unit.id,
+      tile,
+      ctx.deps.combatTuning,
+      option.weapon.id,
+      ctx.previewDeps,
+    );
+    if (preview.ok) {
+      items.push({
+        id,
+        label: option.weapon.name,
+        icon: "attack",
+        detail: blastDetail(preview.value, unit),
+        primary: !primaryPicked,
+      });
+      primaryPicked = true;
+    } else {
+      items.push(closed(id, option.weapon.name, "attack", preview.error, ctx));
+    }
+  }
+  items.push({ id: itemId("back", "ground"), label: "Back", icon: "back" });
+  return { items, hub: { value: "Ground", caption: "pick a weapon" } };
+}
+
+/**
+ * `62% · 8–13 dmg · 2 allies` — the numbers and, when any of the
+ * player's own units stand in the blast, how many (#1121). The count
+ * is the warning; it is printed last so it is the last thing read
+ * before the click.
+ */
+function blastDetail(preview: AttackPreview, unit: Unit): string {
+  const parts = [`${String(preview.hitChance)}%`, damageText(preview.damage)];
+  const allies =
+    preview.blast?.victims.filter((victim) => victim.team === unit.team)
+      .length ?? 0;
+  if (allies > 0) {
+    parts.push(`${String(allies)} ${allies === 1 ? "ally" : "allies"}`);
+  }
+  return parts.join(" · ");
+}
+
+/** `x,y,z` for an entry id. */
+function tileArgument(tile: TileCoord): string {
+  return `${String(tile.x)},${String(tile.y)},${String(tile.z)}`;
+}
+
+/** A tile back out of `x,y,z`, or undefined for anything else. */
+function parseTile(argument: string): TileCoord | undefined {
+  const [x, y, z] = argument.split(",").map((part) => Number(part));
+  if (x === undefined || y === undefined || z === undefined) {
+    return undefined;
+  }
+  if ([x, y, z].some((n) => Number.isNaN(n))) {
+    return undefined;
+  }
+  return { x, y, z };
 }
 
 /** What the unit can do standing where it is. */
@@ -393,6 +572,8 @@ function enemyPage(targetId: string, unit: Unit, ctx: WheelContext): WheelPage {
       unit.id,
       targetId,
       ctx.deps.combatTuning,
+      undefined,
+      ctx.previewDeps,
     );
     if (preview.ok) {
       hub = hitHub(preview.value.hitChance);
@@ -400,7 +581,11 @@ function enemyPage(targetId: string, unit: Unit, ctx: WheelContext): WheelPage {
         id: attackId,
         label: "Attack",
         icon: "attack",
-        detail: damageText(preview.value.damage),
+        detail: alliesSuffix(
+          damageText(preview.value.damage),
+          preview.value,
+          unit,
+        ),
         primary: true,
       });
     } else {
@@ -502,6 +687,20 @@ function hitHub(hitChance: number): RadialMenuHub {
     caption: "hit chance",
     tone: hitChance >= COMFORTABLE_HIT_CHANCE ? "ok" : "warn",
   };
+}
+
+/** `text · 2 allies` when the player's own units stand in the blast (#1121), else `text`. */
+function alliesSuffix(
+  text: string,
+  preview: AttackPreview,
+  unit: Unit,
+): string {
+  const allies =
+    preview.blast?.victims.filter((victim) => victim.team === unit.team)
+      .length ?? 0;
+  return allies > 0
+    ? `${text} · ${String(allies)} ${allies === 1 ? "ally" : "allies"}`
+    : text;
 }
 
 /** `8–13 dmg`. */

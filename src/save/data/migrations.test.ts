@@ -533,6 +533,32 @@ describe("v16 → v17", () => {
   });
 });
 
+describe("v19 → v20", () => {
+  const runner = new MigrationRunner(GAME_STATE_MIGRATIONS, 20);
+  const at = (state: unknown): unknown => {
+    const migrated = runner.migrate({
+      schemaVersion: 19,
+      savedAt: "2026-09-12T00:00:00.000Z",
+      state,
+    });
+    if (!migrated.ok) throw new Error(migrated.error.message);
+    return migrated.value.state;
+  };
+
+  it("gives a mission in flight an empty list of tile effects", () => {
+    const state = at({ activeMission: { units: [] } }) as {
+      activeMission: { effects: unknown };
+    };
+    expect(state.activeMission.effects).toEqual([]);
+  });
+
+  it("leaves a campaign with no mission, and a mission that already has effects, alone", () => {
+    expect(at({ overworld: {} })).toEqual({ overworld: {} });
+    const kept = { activeMission: { effects: [{ id: "effect-1" }] } };
+    expect(at(kept)).toEqual(kept);
+  });
+});
+
 describe("radar migration", () => {
   it("adds an empty scanner list to v17 missions without changing their fog or units", () => {
     const migration = GAME_STATE_MIGRATIONS.find((step) => step.from === 17)!;

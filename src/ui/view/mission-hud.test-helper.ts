@@ -123,6 +123,7 @@ export function hudMission(
         destroyed: true,
       },
     ],
+    effects: [],
     edgeSpawn: { nextTurn: 3, wave: 0 },
     extraction: [{ x: 0, y: 0, z: 0 }],
     extracted: [],

@@ -101,14 +101,21 @@ describe("actionWheel on a tile", () => {
       { kind: "tile", tile: { x: 3, y: 0, z: 1 } },
       contextFor(mission, "s1"),
     );
-    expect(ids(page)).toEqual(["move:3,0,1", "overwatch", "reload"]);
+    // Attack at the ground is on every tile's ring since #1121, closed
+    // for a rifle with the reason, as an empty gun is.
+    expect(ids(page)).toEqual([
+      "move:3,0,1",
+      "attack-tile:3,0,1",
+      "overwatch",
+      "reload",
+    ]);
     expect(page.items[0]).toMatchObject({
       label: "Move",
       detail: "2 tiles",
       primary: true,
     });
     // Reload is closed with the rules' reason, not hidden.
-    expect(page.items[2]).toMatchObject({
+    expect(page.items[3]).toMatchObject({
       disabled: true,
       detail: "nothing to reload",
     });
@@ -148,7 +155,7 @@ describe("actionWheel on a tile", () => {
       { kind: "tile", tile: { x: 1, y: 0, z: 1 } },
       contextFor(mission, "s1"),
     );
-    expect(ids(own)).toEqual(["overwatch", "reload"]);
+    expect(ids(own)).toEqual(["attack-tile:1,0,1", "overwatch", "reload"]);
   });
 
   it("offers Board on the drop ship's tiles, open only from the zone", () => {
@@ -159,11 +166,12 @@ describe("actionWheel on a tile", () => {
     );
     expect(ids(beside)).toEqual([
       "move:0,0,0",
+      "attack-tile:0,0,0",
       "extract",
       "overwatch",
       "reload",
     ]);
-    expect(beside.items[1]).toMatchObject({
+    expect(beside.items[2]).toMatchObject({
       label: "Board",
       disabled: true,
       detail: "not on the ramp",
@@ -173,17 +181,182 @@ describe("actionWheel on a tile", () => {
       contextFor({ ...mission, extraction: [{ x: 1, y: 0, z: 1 }] }, "s1"),
     );
     // The zone moved, so (0,0,0) is plain ground now.
-    expect(ids(standing)).toEqual(["move:0,0,0", "overwatch", "reload"]);
+    expect(ids(standing)).toEqual([
+      "move:0,0,0",
+      "attack-tile:0,0,0",
+      "overwatch",
+      "reload",
+    ]);
     const onZone = actionWheel(
       { kind: "tile", tile: { x: 1, y: 0, z: 1 } },
       contextFor({ ...mission, extraction: [{ x: 1, y: 0, z: 1 }] }, "s1"),
     );
-    expect(onZone.items[0]).toMatchObject({
+    expect(onZone.items[1]).toMatchObject({
       id: "extract",
       label: "Board",
       detail: "drop ship",
     });
-    expect(onZone.items[0]?.disabled).toBeUndefined();
+    expect(onZone.items[1]?.disabled).toBeUndefined();
+  });
+});
+
+describe("actionWheel on a tile with a weapon that marks the ground (#1121)", () => {
+  /** `s1` with a rocket: blast 1, force 2. */
+  function rocketMission(): TacticalState {
+    const base = hudMission();
+    const rocket = {
+      ...hudTemplate("rocket", "Rocket Squad", 10),
+      weapons: [
+        {
+          id: "primary",
+          name: "Attack",
+          profile: {
+            range: 8,
+            accuracy: 65,
+            damage: 10,
+            armorPen: 2,
+            aoe: { radius: 1, falloff: 0.5 },
+            demoForce: 2,
+          },
+        },
+      ],
+    };
+    return withVision({
+      state: {
+        ...base,
+        units: base.units.map((u) =>
+          u.id === "s1" ? { ...u, templateId: "rocket" } : u,
+        ),
+        templates: { ...base.templates, rocket },
+      },
+      events: [],
+    }).state;
+  }
+
+  /** `m1` with an autocannon that marks nothing and a pod that bursts. */
+  function blastMechMission(): TacticalState {
+    const base = hudMission();
+    const template = {
+      ...hudTemplate("mech", "Hammerhead"),
+      weapons: [
+        {
+          id: "arm-weapon",
+          name: "Autocannon",
+          profile: { range: 8, accuracy: 65, damage: 10, armorPen: 0 },
+        },
+        {
+          id: "back-weapon",
+          name: "Missile Pod",
+          profile: {
+            range: 12,
+            accuracy: 55,
+            damage: 22,
+            armorPen: 1,
+            aoe: { radius: 1, falloff: 0.5 },
+          },
+        },
+      ],
+    };
+    return withVision({
+      state: {
+        ...base,
+        units: [...base.units, hudUnit("m1", "tdf", "mech", 1, 1)],
+        templates: { ...base.templates, mech: template },
+      },
+      events: [],
+    }).state;
+  }
+
+  it("offers Attack at the tile as the shot itself for one weapon, with the numbers and the allies in the blast", () => {
+    const mission = rocketMission();
+    // (2,0,3) is beside `s2` at (1,3): the blast reaches an ally.
+    const page = actionWheel(
+      { kind: "tile", tile: { x: 2, y: 0, z: 3 } },
+      contextFor(mission, "s1"),
+    );
+    expect(ids(page)).toEqual([
+      "move:2,0,3",
+      "attack-tile:2,0,3",
+      "overwatch",
+      "reload",
+    ]);
+    const fire = page.items[1];
+    expect(fire).toMatchObject({ label: "Attack", icon: "attack" });
+    expect(fire?.disabled).toBeUndefined();
+    expect(fire?.detail).toMatch(/^\d+% · \d+–\d+ dmg · 1 ally$/);
+  });
+
+  it("closes Attack at the ground for a rifle with the reason, and out of range with the rules' reason", () => {
+    const plain = actionWheel(
+      { kind: "tile", tile: { x: 3, y: 0, z: 1 } },
+      contextFor(hudMission(), "s1"),
+    );
+    expect(ids(plain)).toEqual([
+      "move:3,0,1",
+      "attack-tile:3,0,1",
+      "overwatch",
+      "reload",
+    ]);
+    expect(plain.items[1]).toMatchObject({
+      disabled: true,
+      detail: "not at the ground",
+      reason: "Rifle Squad has no weapon that can be fired at the ground",
+    });
+    const far = actionWheel(
+      { kind: "tile", tile: { x: 9, y: 0, z: 5 } },
+      contextFor(rocketMission(), "s1"),
+    );
+    expect(far.items[1]).toMatchObject({
+      id: "attack-tile:9,0,5",
+      disabled: true,
+      detail: "out of range",
+    });
+  });
+
+  it("with several weapons Attack turns the page, and the tile's weapon page reads like the enemy's", () => {
+    const mission = blastMechMission();
+    const tile = { x: 3, y: 0, z: 1 };
+    const page = actionWheel({ kind: "tile", tile }, contextFor(mission, "m1"));
+    expect(page.items[1]).toMatchObject({
+      id: "attack-tile:3,0,1",
+      label: "Attack",
+      detail: "2 weapons",
+    });
+    const weapons = weaponWheel(
+      { kind: "tile", tile },
+      contextFor(mission, "m1"),
+    );
+    expect(ids(weapons)).toEqual([
+      "attack-tile:3,0,1:arm-weapon",
+      "attack-tile:3,0,1:back-weapon",
+      "back:ground",
+    ]);
+    // The gun that marks nothing is on the ring, closed, with why.
+    expect(weapons.items[0]).toMatchObject({
+      label: "Autocannon",
+      disabled: true,
+      detail: "not at the ground",
+    });
+    expect(weapons.items[1]).toMatchObject({
+      label: "Missile Pod",
+      primary: true,
+    });
+    expect(weapons.items[1]?.detail).toMatch(/^\d+% · \d+–\d+ dmg$/);
+    expect(weapons.hub).toEqual({ value: "Ground", caption: "pick a weapon" });
+  });
+
+  it("parses the tile entries back into the shots they stand for", () => {
+    expect(parseWheelChoice("attack-tile:2,0,3")).toEqual({
+      action: "attack-tile",
+      tile: { x: 2, y: 0, z: 3 },
+      weaponId: undefined,
+    });
+    expect(parseWheelChoice("attack-tile:2,0,3:primary")).toEqual({
+      action: "attack-tile",
+      tile: { x: 2, y: 0, z: 3 },
+      weaponId: "primary",
+    });
+    expect(parseWheelChoice("attack-tile:x,0,3:primary")).toBeUndefined();
   });
 });
 
@@ -308,7 +481,10 @@ describe("weaponWheel", () => {
   it("lists one entry per weapon with its own numbers, the first legal one primary, and a way back", () => {
     const mission = twoWeaponMission();
     // b2 is past the autocannon and inside the pod.
-    const page = weaponWheel("b2", contextFor(mission, "m1"));
+    const page = weaponWheel(
+      { kind: "unit", unitId: "b2" },
+      contextFor(mission, "m1"),
+    );
     expect(ids(page)).toEqual([
       "attack:b2:arm-weapon",
       "attack:b2:back-weapon",

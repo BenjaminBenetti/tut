@@ -48,4 +48,11 @@ export interface PropDefinition {
   readonly biomes?: readonly BiomeId[];
   /** Placement footprint at rotation zero. Existing placed records retain their own footprint. */
   readonly footprint?: { readonly w: number; readonly d: number };
+  /**
+   * Demolition force needed to destroy the prop (#1121): `1` for a
+   * barrier, a fence or a car, `2` for a dumpster or a tree. Absent
+   * means nothing brings it down — a boulder is the ground itself.
+   * Tactical reads it; mapgen never does.
+   */
+  readonly demolition?: number;
 }

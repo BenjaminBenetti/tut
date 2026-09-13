@@ -45,6 +45,13 @@ export interface RadialMenuHandlers {
   readonly onSelect: (id: string) => void;
   /** The player dismissed it — Escape, or a click outside the ring. */
   readonly onDismiss: () => void;
+  /**
+   * The pointer or the focus rests on an item, or on none (#1121). The
+   * caller previews what that choice would do — the blast a weapon
+   * would leave — before the player commits to it. Optional: a caller
+   * with nothing to preview needs no stub.
+   */
+  readonly onHover?: (id: string | undefined) => void;
 }
 
 // ===========================================
@@ -263,6 +270,19 @@ export class RadialMenuView {
         detail.textContent = item.detail;
         button.appendChild(detail);
       }
+      // Pointer and keyboard alike: resting on an entry is a question
+      // about it, and the caller answers on the map (#1121). The
+      // listeners go with the button when the ring is redrawn.
+      const rest = (): void => {
+        this.handlers.onHover?.(item.id);
+      };
+      const leave = (): void => {
+        this.handlers.onHover?.(undefined);
+      };
+      button.addEventListener("pointerenter", rest);
+      button.addEventListener("focus", rest);
+      button.addEventListener("pointerleave", leave);
+      button.addEventListener("blur", leave);
       ring.appendChild(button);
     });
 
@@ -300,6 +320,8 @@ export class RadialMenuView {
 
   /** Hides the menu without destroying it. */
   close(): void {
+    // Nothing is rested on once the ring is gone.
+    this.handlers.onHover?.(undefined);
     if (this.root) {
       this.root.hidden = true;
       delete this.root.dataset.open;

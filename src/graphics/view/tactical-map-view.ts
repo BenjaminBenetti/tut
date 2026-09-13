@@ -1,3 +1,5 @@
+import type { MapPartId } from "../model/map-part";
+import { propPart, wallPart } from "../model/map-part";
 import { BIOME_GROUND_STYLES } from "../data/biome-ground-styles";
 import { STOREY_LAYERS } from "../../core/model/elevation";
 import type { LayerFocus } from "../model/layer-focus";
@@ -103,6 +105,8 @@ interface Batch {
   /** The tile each instance belongs to, so vision can tint it (#551, #761). */
   readonly keys: VisionTileKey[];
   readonly owners: (readonly VisionTileKey[] | undefined)[];
+  /** The demolishable piece each instance draws, when it draws one (#1121). */
+  readonly parts: (MapPartId | undefined)[];
 }
 
 /** One connector's tile, and the material and base colour vision tints. */
@@ -227,6 +231,8 @@ interface InstanceTiles {
   readonly matrices: readonly Matrix4[];
   readonly keys: readonly VisionTileKey[];
   readonly owners?: readonly (readonly VisionTileKey[] | undefined)[];
+  /** The demolishable piece each instance draws, when it draws one (#1121). */
+  readonly parts?: readonly (MapPartId | undefined)[];
 }
 
 /**
@@ -311,9 +317,14 @@ export class TacticalMapView implements Disposable, TilePicker {
   private readonly ghostUniforms: GhostUniforms | undefined;
   /** Whether objective hook tiles get a marker; off in a mission, on in the preview. */
   private readonly objectiveMarkers: boolean;
+  /** The map as built. Geometry is never rebuilt; demolition collapses instances instead (#1121). */
   private readonly map: TacticalMap;
   private readonly surfaceColours: Readonly<Record<string, number>>;
   private readonly index: TileIndex;
+  /** The mission's map as last applied, so an unchanged one costs a reference check. */
+  private current: TacticalMap;
+  /** Parts the mission's map has lost since the view was built (#1121); their instances are collapsed. */
+  private readonly demolished = new Set<MapPartId>();
   private readonly levelGroups = new Map<number, Group>();
   private readonly materials = new Map<string, Material>();
   /** One scene-specific cutaway per prototype, also shared by the mist cache. */
@@ -363,6 +374,7 @@ export class TacticalMapView implements Disposable, TilePicker {
     options: TacticalMapViewOptions = {},
   ) {
     this.map = map;
+    this.current = map;
     this.surfaceColours = {
       ...SURFACE_COLOURS,
       ...BIOME_GROUND_STYLES[map.recipe.params.biome],
@@ -437,6 +449,60 @@ export class TacticalMapView implements Disposable, TilePicker {
     for (const [mesh, connector] of this.connectorTiles) {
       this.applyVisionToConnector(mesh, connector);
     }
+  }
+
+  /**
+   * Brings the drawn map in step with the mission's after demolition
+   * (#1121): every prop and every wall edge the built map has and `next`
+   * lacks is collapsed, placeholder and model alike, and stays collapsed.
+   *
+   * ```
+   *   built map ──► props not in next        ──► prop:<id>          collapsed
+   *             ──► wall edges not in next   ──► wall:<key>:<side>  collapsed
+   * ```
+   *
+   * Collapse rather than rebuild, for the reason the layer cut collapses:
+   * the instance batches and the fog surfaces they registered were
+   * built once, and taking an instance to zero scale removes it from the
+   * frame and from picking without disturbing either. Nothing is ever
+   * added: a map only loses pieces during a mission.
+   *
+   * @param next - The mission's map as it stands now.
+   */
+  applyMap(next: TacticalMap): void {
+    if (next === this.current) {
+      return;
+    }
+    this.current = next;
+    const before = this.demolished.size;
+    const alive = new Set(next.props.map((prop) => prop.id));
+    for (const prop of this.map.props) {
+      if (!alive.has(prop.id)) {
+        this.demolished.add(propPart(prop.id));
+      }
+    }
+    const nextIndex = new TileIndex(next);
+    for (const tile of this.map.tiles) {
+      const now = nextIndex.getAt(tile);
+      for (const side of DIRECTIONS) {
+        if (tile.walls[side] !== undefined && now?.walls[side] === undefined) {
+          this.demolished.add(wallPart(this.index.keyOf(tile), side));
+        }
+      }
+    }
+    if (this.demolished.size === before) {
+      return;
+    }
+    for (const [mesh, tiles] of this.instanceTiles) {
+      if (tiles.parts !== undefined) {
+        this.applyVisionTo(mesh, tiles);
+      }
+    }
+  }
+
+  /** Parts demolished so far, for tests. */
+  demolishedParts(): readonly MapPartId[] {
+    return [...this.demolished];
   }
 
   // ===========================================
@@ -522,6 +588,7 @@ export class TacticalMapView implements Disposable, TilePicker {
         matrices: Matrix4[];
         keys: VisionTileKey[];
         owners: (readonly VisionTileKey[] | undefined)[];
+        parts: (MapPartId | undefined)[];
         slopeTile?: Tile;
         road?: RoadAppearance;
         ramp?: RampAppearance;
@@ -557,6 +624,7 @@ export class TacticalMapView implements Disposable, TilePicker {
           matrices: [matrix],
           keys: [tileKey],
           owners: [owners],
+          parts: [placement.part],
           slopeTile,
           road,
           ramp,
@@ -570,6 +638,7 @@ export class TacticalMapView implements Disposable, TilePicker {
         batch.matrices.push(matrix);
         batch.keys.push(tileKey);
         batch.owners.push(owners);
+        batch.parts.push(placement.part);
       }
     }
     for (const [key, batch] of batches) {
@@ -645,6 +714,7 @@ export class TacticalMapView implements Disposable, TilePicker {
           ),
           batch.keys,
           batch.owners,
+          batch.parts,
         );
         // The mist owns its geometry/material clones; loader prototypes
         // stay untouched. This view owns the instanced wrapper.
@@ -862,11 +932,13 @@ export class TacticalMapView implements Disposable, TilePicker {
     matrices: readonly Matrix4[],
     keys: readonly VisionTileKey[],
     owners?: readonly (readonly VisionTileKey[] | undefined)[],
+    parts?: readonly (MapPartId | undefined)[],
   ): void {
     const tiles: InstanceTiles = {
       matrices: matrices.map((m) => m.clone()),
       keys: [...keys],
       owners,
+      ...(parts?.some((part) => part !== undefined) ? { parts } : {}),
     };
     if (!mesh.name.startsWith("hooks:"))
       this.unexploredFog.trackSurface(mesh, keys, "shared", owners);
@@ -903,7 +975,12 @@ export class TacticalMapView implements Disposable, TilePicker {
           : ownerKeys.some((owner) => vision.explored.has(owner))
             ? "explored"
             : "unexplored";
-      mesh.setMatrixAt(i, this.hiddenByCut(key) ? COLLAPSED : base);
+      // Collapsed for the cut, or because the piece is gone (#1121):
+      // a demolished wall is not architecture the player remembers, it
+      // is rubble, and it takes no space in the frame or under a click.
+      const part = tiles.parts?.[i];
+      const gone = part !== undefined && this.demolished.has(part);
+      mesh.setMatrixAt(i, this.hiddenByCut(key) || gone ? COLLAPSED : base);
       mesh.setColorAt(i, tintFor(state));
     }
     mesh.instanceMatrix.needsUpdate = true;
@@ -1163,6 +1240,8 @@ export class TacticalMapView implements Disposable, TilePicker {
           tile.y,
           matrix,
           this.index.keyOf(tile),
+          undefined,
+          wallPart(this.index.keyOf(tile), side),
         );
       }
     }
@@ -1233,6 +1312,7 @@ export class TacticalMapView implements Disposable, TilePicker {
         prop.occupiedTiles
           ? propTiles(prop).map((cell) => this.index.keyOf(cell))
           : undefined,
+        propPart(prop.id),
       );
     }
     this.flushBatches(batches, "props");
@@ -1502,7 +1582,13 @@ export class TacticalMapView implements Disposable, TilePicker {
       mesh.name = `${label}:${key}`;
       this.disposables.push(mesh);
       this.groupFor(batch.level).add(mesh);
-      this.trackInstances(mesh, batch.matrices, batch.keys, batch.owners);
+      this.trackInstances(
+        mesh,
+        batch.matrices,
+        batch.keys,
+        batch.owners,
+        batch.parts,
+      );
       const kept = this.placeholders.get(label);
       if (kept === undefined) {
         this.placeholders.set(label, [mesh]);
@@ -1773,6 +1859,7 @@ function pushBatch(
   matrix: Matrix4,
   tileKey: VisionTileKey,
   owners?: readonly VisionTileKey[],
+  part?: MapPartId,
 ): void {
   const batch = batches.get(key);
   if (batch === undefined) {
@@ -1782,11 +1869,13 @@ function pushBatch(
       matrices: [matrix],
       keys: [tileKey],
       owners: [owners],
+      parts: [part],
     });
   } else {
     batch.matrices.push(matrix);
     batch.keys.push(tileKey);
     batch.owners.push(owners);
+    batch.parts.push(part);
   }
 }
 

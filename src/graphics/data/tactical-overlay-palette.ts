@@ -229,6 +229,20 @@ export const MARKED_TILE_COLOUR = 0xf08a24;
 export const MARKED_TILE_OPACITY = 0.95;
 
 /**
+ * `ui-danger`: the ground a considered shot will scorch (#1121). The
+ * same token as the blocked-shot diamond and high cover — the world
+ * pushing back — and a different shape again: a flat square fill inside
+ * the tile, so the footprint reads as an area rather than as marks.
+ */
+export const BLAST_COLOUR = 0xe0453c;
+
+/** A fill light enough to leave the move band and the marked frame legible through it. */
+export const BLAST_OPACITY = 0.32;
+
+/** Footprint of the blast fill within its tile, in tiles. */
+export const BLAST_FOOTPRINT = 0.84;
+
+/**
  * Outer footprint of the frame, in tiles: the whole tile. It has to read
  * over the move band beneath it, and at 0.96 with a thin band only a
  * sliver showed past the band's quad.

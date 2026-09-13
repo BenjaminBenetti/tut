@@ -14,7 +14,9 @@ import type { BugSpecies } from "../model/bug-species";
 //     not. Every species has two actions, so a swarmer can move twice
 //     or move and bite.
 //   • Weapons are all melee (range 1); accuracy and damage climb with
-//     size, and only the brute's blades punch through mech armor.
+//     size, and only the brute's blades punch through mech armor. The
+//     brute's blow also sweeps the tiles beside its mark and breaks
+//     light structures (#1121); the small species mark nothing.
 //   • sightRange is one value for every species (ADR 0006): bugs hunt by
 //     scent as much as sight, and giving each its own number is tuning
 //     nobody has asked for yet.
@@ -68,7 +70,17 @@ export const BRUTE: BugSpecies = {
   armor: 3,
   move: 3,
   ap: 2,
-  weapon: { range: 1, accuracy: 65, damage: 10, armorPen: 2 },
+  // The cleavers sweep: whoever stands beside its mark takes a share of
+  // the blow, which is what "punishes clumping" means on the tile grid
+  // (#1121). A boulder of carapace also walks through a fence or a car.
+  weapon: {
+    range: 1,
+    accuracy: 65,
+    damage: 10,
+    armorPen: 2,
+    aoe: { radius: 1, falloff: 0.6 },
+    demoForce: 1,
+  },
   sightRange: SIGHT,
   behaviour: "punish-clumps",
   modelId: "bug.brute",

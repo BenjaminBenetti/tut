@@ -1,3 +1,8 @@
+import type {
+  AreaEffect,
+  AreaOfEffect,
+} from "../../tactical/model/weapon-profile";
+
 // ===========================================
 // Identifiers and slots
 // ===========================================
@@ -109,15 +114,26 @@ export interface ChassisPart extends MechPartBase {
 /**
  * What a weapon part fires like, beyond the `firepower` and `accuracy`
  * its stats already contribute (#532). Damage comes from `firepower` and
- * the hit chance from `accuracy`, so what is left is how far it reaches
- * and what it punches through — the two things a mech's weapons differ
- * on, and the reason to carry more than one.
+ * the hit chance from `accuracy`, so what is left is how far it reaches,
+ * what it punches through and — since #1121 — how it lands: over an
+ * area, leaving fire, and how hard it hits what stands in the way. These
+ * are the things a mech's weapons differ on, and the reason to carry
+ * more than one.
+ *
+ * The three optional blocks are the tactical `WeaponProfile`'s own, so
+ * the unit factory copies them through unchanged.
  */
 export interface PartWeapon {
   /** Tiles the weapon reaches on level ground, Manhattan. Positive integer. */
   readonly range: number;
   /** Armor points ignored by each hit. Non-negative. */
   readonly armorPen: number;
+  /** The blast the damage is spread over; absent for a weapon that hits one thing. */
+  readonly aoe?: AreaOfEffect;
+  /** What the blast leaves on the ground; absent for a weapon that leaves nothing. */
+  readonly aoeEffect?: AreaEffect;
+  /** Force against structures; absent or `0` breaks nothing. See `WeaponProfile.demoForce`. */
+  readonly demoForce?: number;
 }
 
 /** Any part fitted onto a chassis: legs, arms, weapons and utilities. */

@@ -423,6 +423,8 @@ describe("resolveMapModels — props", () => {
         turns: 2,
         // Carried so vision can dim or drop it with its tile (#551).
         tile: at(2, 2),
+        // And so demolition can collapse exactly this prop (#1121).
+        part: "prop:p1",
       },
     ]);
   });

@@ -20,6 +20,8 @@ import type { UnitTuning } from "../model/unit-tuning";
  * - Charges (#409): a rifle squad fires three times before reloading, a
  *   rocket squad once, a mech four times before venting; bugs never run
  *   dry.
+ * - Blast and force (#1121): only the rocket squad's weapon differs in
+ *   how it lands; see `weaponByType`.
  */
 export const UNIT_TUNING: UnitTuning = {
   infantry: {
@@ -32,6 +34,19 @@ export const UNIT_TUNING: UnitTuning = {
     // gives rifle 3, rocket 5, sniper 4, engineer 3, medic 2 after the
     // ceiling, exactly the values tuned before that rescale.
     weapon: { range: 8, accuracy: 65, damage: 0.075, armorPen: 0 },
+    // The rocket squad is the one squad whose weapon lands differently
+    // (#1121): a shoulder rocket bursts over the tile beside its mark at
+    // half strength, punches two points of plate — "for cracking brutes
+    // and egg spawners" is what its description has promised since M1 —
+    // and brings down anything up to a dumpster or a door. Every other
+    // squad fires small arms, which mark nothing on the ground.
+    weaponByType: {
+      rocket: {
+        armorPen: 2,
+        aoe: { radius: 1, falloff: 0.5 },
+        demoForce: 2,
+      },
+    },
     sightRange: 12,
     modelIdByType: {
       rifle: "tdf.infantry.rifle",

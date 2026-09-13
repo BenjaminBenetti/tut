@@ -79,7 +79,8 @@ describe("world biome save expansion", () => {
       ).migrate({ schemaVersion, savedAt: "saved", state: before });
       expect(result.ok).toBe(true);
       if (!result.ok) throw new Error(result.error.message);
-      expect(result.value.schemaVersion).toBe(19);
+      // The chain's end, not a literal: every later step runs too.
+      expect(result.value.schemaVersion).toBe(GAME_STATE_SCHEMA_VERSION);
       expect(result.value.savedAt).toBe("saved");
       const next = result.value.state as typeof before;
       expect(next.overworld.map.cities).toHaveLength(51);
@@ -87,6 +88,8 @@ describe("world biome save expansion", () => {
       expect(next.activeMission).toEqual({
         ...campaign.activeMission,
         radars: schemaVersion === 18 ? radars : [],
+        // v19 → v20 (#1121): nothing was burning in an older mission.
+        effects: [],
       });
       expect(next.overworld.missions).toBe(before.overworld.missions);
       expect(next.economy).toBe(before.economy);

@@ -25,7 +25,13 @@ import type { UnitPicker } from "../model/unit-picker";
 import type { GhostUniforms } from "./ghost-cutaway";
 import { createGhostUniforms } from "./ghost-cutaway";
 import { TacticalMapView, tileTop } from "../view/tactical-map-view";
+import { TileEffectView } from "../view/tile-effect-view";
 import { UnitMesh } from "../view/unit-mesh";
+import type {
+  TileEffect,
+  TileEffectId,
+} from "../../tactical/model/tile-effect";
+import type { FrameUpdatable } from "../model/frame-updatable";
 import { RadarView } from "../view/radar-view";
 import type { Radar, RadarContact } from "../../tactical/model/radar";
 
@@ -129,6 +135,8 @@ export class TacticalSceneBuilder
   /** Units the latest `update` asked for; a load that finishes for a unit no longer here is discarded. */
   private readonly wanted = new Set<UnitId>();
   private readonly spawnersGroup: Group;
+  /** The fires (#1121); a frame updatable the host ticks, exposed as `effectsUpdatable`. */
+  private readonly effects = new TileEffectView();
   private readonly spawnerMeshes = new Map<SpawnerId, UnitMesh>();
   /** Measured once when placed, for anchoring the egg burst (#697). */
   private readonly spawnerHeights = new Map<SpawnerId, number>();
@@ -169,6 +177,7 @@ export class TacticalSceneBuilder
     this.root.add(
       this.mapView.root,
       this.spawnersGroup,
+      this.effects.root,
       this.unitsGroup,
       this.tethers.root,
       this.radarView.root,
@@ -325,6 +334,38 @@ export class TacticalSceneBuilder
   }
 
   /**
+   * Brings the map in step with a mission whose map has changed (#1121):
+   * every prop and wall the new map no longer has is collapsed out of
+   * the drawn one. The map is otherwise built once; demolition is the
+   * only thing that changes it mid-mission.
+   *
+   * @param map - The mission's map as it stands now.
+   */
+  applyMap(map: TacticalMap): void {
+    this.mapView.applyMap(map);
+  }
+
+  /**
+   * Draws exactly `effects` (#1121): the fires the player perceives, as
+   * the units are the units the player perceives.
+   *
+   * @param effects - The tile effects to draw.
+   */
+  updateEffects(effects: readonly TileEffect[]): void {
+    this.effects.updateEffects(effects);
+  }
+
+  /** Ids of the effects currently drawn. */
+  effectIds(): readonly TileEffectId[] {
+    return this.effects.effectIds();
+  }
+
+  /** What the frame loop ticks so the fires flicker; the host adds it to its updatables. */
+  get effectsUpdatable(): FrameUpdatable {
+    return this.effects;
+  }
+
+  /**
    * Brings the drawn egg spawners in step with `spawners` (#484). A
    * spawner that is destroyed — or gone from the list — is removed, the
    * way a dead unit is; the rest are placed once and never move, so
@@ -379,6 +420,7 @@ export class TacticalSceneBuilder
       this.removeSpawner(id);
     }
     this.wantedSpawners.clear();
+    this.effects.dispose();
     this.mapView.dispose();
     this.root.removeFromParent();
   }

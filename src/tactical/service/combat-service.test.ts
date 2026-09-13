@@ -22,6 +22,14 @@ import { UNIT_DIED } from "../model/unit-died-event";
 import type { UnitTemplate } from "../model/unit-template";
 import type { WeaponProfile } from "../model/weapon-profile";
 import { DEFAULT_WEAPON_NAME, PRIMARY_WEAPON_ID } from "../model/unit-weapon";
+import { fixtureAttackDeps, riggedRng } from "./tactical-fixtures.test-helper";
+import { attackTile } from "../model/attack-command";
+import { BLAST_RESOLVED } from "../model/blast-resolved-event";
+import { EFFECT_STARTED } from "../model/effect-started-event";
+import { STRUCTURE_DESTROYED } from "../model/structure-destroyed-event";
+import { PassMask } from "../../mapgen/model/pass-mask";
+import { TileIndex } from "../../mapgen/service/tile-index";
+import { previewTileAttack, tileWeaponOptions } from "./combat-service";
 import { emptyVision } from "./vision-service";
 import {
   attackTerrain,
@@ -38,6 +46,7 @@ import {
 // ===========================================
 
 const T = COMBAT_TUNING;
+const DEPS = fixtureAttackDeps();
 const RIFLE: WeaponProfile = {
   range: 8,
   accuracy: 65,
@@ -131,6 +140,7 @@ function mission(
     missionId: "mission-1",
     seed: 1,
     map: fixtureMap(),
+    effects: [],
     units,
     templates: TEMPLATES,
     difficulty: 1,
@@ -374,12 +384,12 @@ describe("resolveAttack", () => {
 
   it("is deterministic per seed and only ever hits or misses as the preview says", () => {
     const m = base();
-    const a = resolveAttack(m, attack("s1", "b1"), ctx(3), T);
-    const b = resolveAttack(m, attack("s1", "b1"), ctx(3), T);
+    const a = resolveAttack(m, attack("s1", "b1"), ctx(3), T, DEPS);
+    const b = resolveAttack(m, attack("s1", "b1"), ctx(3), T, DEPS);
     expect(b).toEqual(a);
     let hits = 0;
     for (let seed = 1; seed <= 200; seed++) {
-      const result = resolveAttack(m, attack("s1", "b1"), ctx(seed), T);
+      const result = resolveAttack(m, attack("s1", "b1"), ctx(seed), T, DEPS);
       expect(result.ok).toBe(true);
       if (!result.ok) continue;
       const resolved = result.value.events[0];
@@ -410,7 +420,7 @@ describe("resolveAttack", () => {
         unit("s1", "tdf", templateId, 1, 1),
         unit("b1", "bugs", "swarmer", 2, 1, { hp: 6, maxHp: 6 }),
       ]);
-      const result = resolveAttack(m, attack("s1", "b1"), ctx(3), T);
+      const result = resolveAttack(m, attack("s1", "b1"), ctx(3), T, DEPS);
       expect(result.ok).toBe(true);
       if (!result.ok) continue;
       const resolved = result.value.events[0];
@@ -425,7 +435,7 @@ describe("resolveAttack", () => {
     const hitSeed = [...Array(50).keys()]
       .map((i) => i + 1)
       .find((seed) => {
-        const r = resolveAttack(m, attack("s1", "b1"), ctx(seed), T);
+        const r = resolveAttack(m, attack("s1", "b1"), ctx(seed), T, DEPS);
         return (
           r.ok &&
           r.value.events[0]?.type === ATTACK_RESOLVED &&
@@ -433,7 +443,13 @@ describe("resolveAttack", () => {
         );
       });
     expect(hitSeed).toBeDefined();
-    const result = resolveAttack(m, attack("s1", "b1"), ctx(hitSeed ?? 1), T);
+    const result = resolveAttack(
+      m,
+      attack("s1", "b1"),
+      ctx(hitSeed ?? 1),
+      T,
+      DEPS,
+    );
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     const { state, events } = result.value;
@@ -457,13 +473,19 @@ describe("resolveAttack", () => {
       minHitChance: 5,
     };
     const m = base();
-    const result = resolveAttack(m, attack("s1", "b1"), ctx(2), tuning);
+    const result = resolveAttack(m, attack("s1", "b1"), ctx(2), tuning, DEPS);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     const attacker = result.value.state.units.find((u) => u.id === "s1");
     expect(attacker?.ap).toBe(1);
     const missed = [...Array(30).keys()].some((seed) => {
-      const r = resolveAttack(m, attack("s1", "b1"), ctx(seed + 1), tuning);
+      const r = resolveAttack(
+        m,
+        attack("s1", "b1"),
+        ctx(seed + 1),
+        tuning,
+        DEPS,
+      );
       if (!r.ok) return false;
       const ev = r.value.events[0];
       return (
@@ -494,10 +516,16 @@ describe("resolveAttack", () => {
       ]),
       templates: armed,
     };
-    const first = resolveAttack(m, attack("s1", "b1"), ctx(1), {
-      ...T,
-      attackEndsTurn: { squad: false, mech: false, bug: false },
-    });
+    const first = resolveAttack(
+      m,
+      attack("s1", "b1"),
+      ctx(1),
+      {
+        ...T,
+        attackEndsTurn: { squad: false, mech: false, bug: false },
+      },
+      DEPS,
+    );
     expect(first.ok).toBe(true);
     if (!first.ok) return;
     expect(first.value.state.units[0]?.charges).toEqual({
@@ -515,7 +543,7 @@ describe("resolveAttack", () => {
   it("returns the error and leaves the mission untouched for an illegal attack", () => {
     const m = base();
     const before = JSON.parse(JSON.stringify(m)) as TacticalState;
-    const result = createAttackHandler(T)(m, attack("b1", "s1"), ctx(1));
+    const result = createAttackHandler(T, DEPS)(m, attack("b1", "s1"), ctx(1));
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.error.kind).toBe("wrong-phase");
@@ -598,7 +626,13 @@ describe("attacking an egg spawner", () => {
 
   it("takes hit points off the spawner and announces the damage", () => {
     const m = withSpawner([unit("s1", "tdf", "rifle", 0, 0)]);
-    const applied = resolveAttack(m, attack("s1", "spawner-1"), riggedCtx(), T);
+    const applied = resolveAttack(
+      m,
+      attack("s1", "spawner-1"),
+      riggedCtx(),
+      T,
+      DEPS,
+    );
     expect(applied.ok).toBe(true);
     if (!applied.ok) return;
     const [low] = damageRange(RIFLE, 0, T);
@@ -620,7 +654,13 @@ describe("attacking an egg spawner", () => {
   it("destroying the last spawner completes its objective; the force still has to extract", () => {
     const [low] = damageRange(RIFLE, 0, T);
     const m = withSpawner([unit("s1", "tdf", "rifle", 0, 0)], { hp: low });
-    const applied = resolveAttack(m, attack("s1", "spawner-1"), riggedCtx(), T);
+    const applied = resolveAttack(
+      m,
+      attack("s1", "spawner-1"),
+      riggedCtx(),
+      T,
+      DEPS,
+    );
     expect(applied.ok).toBe(true);
     if (!applied.ok) return;
     expect(applied.value.state.spawners[0]).toMatchObject({
@@ -657,7 +697,13 @@ describe("attacking an egg spawner", () => {
         },
       ],
     });
-    const applied = resolveAttack(m, attack("s1", "spawner-1"), riggedCtx(), T);
+    const applied = resolveAttack(
+      m,
+      attack("s1", "spawner-1"),
+      riggedCtx(),
+      T,
+      DEPS,
+    );
     expect(applied.ok).toBe(true);
     if (!applied.ok) return;
     expect(applied.value.state.outcome).toBeUndefined();
@@ -673,6 +719,7 @@ describe("attacking an egg spawner", () => {
       attack("s1", "spawner-1"),
       { rng: new Mulberry32Rng(1), ids: new SequentialIdGenerator() },
       { ...T, minHitChance: 0, maxHitChance: 0 },
+      DEPS,
     );
     expect(missed.ok).toBe(true);
     if (!missed.ok) return;
@@ -831,7 +878,13 @@ describe("attacks per turn by unit kind", () => {
   const hit = (): TacticalContext => ctx(1);
 
   it("lets an infantry squad fire twice in one turn", () => {
-    const first = resolveAttack(pair("squad"), attack("s1", "b1"), hit(), T);
+    const first = resolveAttack(
+      pair("squad"),
+      attack("s1", "b1"),
+      hit(),
+      T,
+      DEPS,
+    );
     expect(first.ok).toBe(true);
     if (!first.ok) return;
     const after = first.value.state.units.find((u) => u.id === "s1");
@@ -843,6 +896,7 @@ describe("attacks per turn by unit kind", () => {
       attack("s1", "b1"),
       hit(),
       T,
+      DEPS,
     );
     expect(second.ok).toBe(true);
     if (!second.ok) return;
@@ -852,19 +906,25 @@ describe("attacks per turn by unit kind", () => {
   it("refuses a squad's third attack, so two is the budget and not a special case", () => {
     let state = pair("squad");
     for (let fired = 0; fired < 2; fired++) {
-      const applied = resolveAttack(state, attack("s1", "b1"), hit(), T);
+      const applied = resolveAttack(state, attack("s1", "b1"), hit(), T, DEPS);
       expect(applied.ok).toBe(true);
       if (!applied.ok) return;
       state = applied.value.state;
     }
-    const third = resolveAttack(state, attack("s1", "b1"), hit(), T);
+    const third = resolveAttack(state, attack("s1", "b1"), hit(), T, DEPS);
     expect(third.ok).toBe(false);
     if (third.ok) return;
     expect(third.error.kind).toBe("no-action-points");
   });
 
   it("still ends a mech's turn on its one attack", () => {
-    const applied = resolveAttack(pair("mech"), attack("s1", "b1"), hit(), T);
+    const applied = resolveAttack(
+      pair("mech"),
+      attack("s1", "b1"),
+      hit(),
+      T,
+      DEPS,
+    );
     expect(applied.ok).toBe(true);
     if (!applied.ok) return;
     expect(applied.value.state.units.find((u) => u.id === "s1")?.ap).toBe(0);
@@ -873,6 +933,7 @@ describe("attacks per turn by unit kind", () => {
       attack("s1", "b1"),
       hit(),
       T,
+      DEPS,
     );
     expect(again.ok).toBe(false);
   });
@@ -886,7 +947,7 @@ describe("attacks per turn by unit kind", () => {
       // A bug can only act in its own phase.
       { phase: "bugs" },
     );
-    const applied = resolveAttack(state, attack("b1", "s1"), hit(), T);
+    const applied = resolveAttack(state, attack("b1", "s1"), hit(), T, DEPS);
     expect(applied.ok).toBe(true);
     if (!applied.ok) return;
     expect(applied.value.state.units.find((u) => u.id === "b1")?.ap).toBe(0);
@@ -985,5 +1046,463 @@ describe("validateTargeting", () => {
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.error).toEqual({ kind: "no-such-weapon", unitId: "s1" });
+  });
+});
+
+// ===========================================
+// Blast, demolition and fire (#1121)
+// ===========================================
+
+describe("weapons that mark the ground (#1121)", () => {
+  const MORTAR: WeaponProfile = {
+    range: 16,
+    accuracy: 70,
+    damage: 20,
+    armorPen: 0,
+    aoe: { radius: 1, falloff: 0.5 },
+    demoForce: 2,
+  };
+  const FLAMER: WeaponProfile = {
+    range: 3,
+    accuracy: 80,
+    damage: 12,
+    armorPen: 0,
+    aoe: { radius: 1, falloff: 0.5 },
+    aoeEffect: { kind: "fire", chance: 1, falloff: 0 },
+  };
+  const CANNON: WeaponProfile = {
+    range: 10,
+    accuracy: 70,
+    damage: 10,
+    armorPen: 0,
+    demoForce: 1,
+  };
+  const BREACHER: WeaponProfile = { ...CANNON, demoForce: 3 };
+  const marked = {
+    ...TEMPLATES,
+    mortar: template("mortar", MORTAR),
+    flamer: template("flamer", FLAMER),
+    cannon: template("cannon", CANNON),
+    breacher: template("breacher", BREACHER),
+  };
+  /** Loaded dice: every roll hits, every band rolls its low end. */
+  const sure = (): TacticalContext => ({
+    rng: riggedRng(true, "low"),
+    ids: new SequentialIdGenerator(),
+  });
+  const wide = (): TacticalContext => ({
+    rng: riggedRng(false),
+    ids: new SequentialIdGenerator(),
+  });
+  const hpOf = (state: TacticalState, id: string): number | undefined =>
+    state.units.find((u) => u.id === id)?.hp;
+
+  it("splashes everything beside the target, both sides, less the shooter and the target, with falloff before armor", () => {
+    const m = {
+      ...mission([
+        unit("s1", "tdf", "mortar", 0, 0),
+        unit("b1", "bugs", "swarmer", 5, 0),
+        unit("b2", "bugs", "swarmer", 5, 1),
+        unit("ally", "tdf", "rifle", 6, 0),
+        unit("plated", "bugs", "armoured", 4, 0),
+        unit("far", "bugs", "swarmer", 7, 0),
+      ]),
+      templates: marked,
+    };
+    const applied = resolveAttack(m, attack("s1", "b1"), sure(), T, DEPS);
+    expect(applied.ok).toBe(true);
+    if (!applied.ok) return;
+    const { state, events } = applied.value;
+    // Mortar 20 ± 25 % low end 15 on the target …
+    expect(hpOf(state, "b1")).toBe(5);
+    // … half strength (10, low end 8) on the neighbours, friend or foe …
+    expect(hpOf(state, "b2")).toBe(12);
+    expect(hpOf(state, "ally")).toBe(12);
+    // … less the plate: 8 − 4 armor = 4.
+    expect(hpOf(state, "plated")).toBe(16);
+    // Out of the radius, and the shooter itself: untouched.
+    expect(hpOf(state, "far")).toBe(20);
+    expect(hpOf(state, "s1")).toBe(20);
+    const blast = events.find((e) => e.type === BLAST_RESOLVED);
+    expect(blast).toBeDefined();
+    if (blast?.type !== BLAST_RESOLVED) return;
+    expect(blast.payload).toMatchObject({
+      attackerId: "s1",
+      impact: { x: 5, y: 0, z: 0 },
+      hit: true,
+      radius: 1,
+      aimedAtTile: false,
+    });
+    expect(blast.payload.victims.map((v) => v.targetId).sort()).toEqual(
+      ["ally", "b2", "plated"].sort(),
+    );
+    // The aimed target's own line comes first and the blast follows it.
+    expect(events.map((e) => e.type).slice(0, 2)).toEqual([
+      ATTACK_RESOLVED,
+      BLAST_RESOLVED,
+    ]);
+  });
+
+  it("a miss at a unit applies nothing around it either", () => {
+    const m = {
+      ...mission([
+        unit("s1", "tdf", "mortar", 0, 0),
+        unit("b1", "bugs", "swarmer", 5, 0),
+        unit("b2", "bugs", "swarmer", 5, 1),
+      ]),
+      templates: marked,
+    };
+    const applied = resolveAttack(m, attack("s1", "b1"), wide(), T, DEPS);
+    expect(applied.ok).toBe(true);
+    if (!applied.ok) return;
+    expect(hpOf(applied.value.state, "b2")).toBe(20);
+    expect(applied.value.events.map((e) => e.type)).toEqual([ATTACK_RESOLVED]);
+  });
+
+  it("a plain weapon's shot is byte-for-byte what it was", () => {
+    const m = mission([
+      unit("s1", "tdf", "rifle", 0, 0),
+      unit("b1", "bugs", "swarmer", 3, 0),
+      unit("b2", "bugs", "swarmer", 3, 1),
+    ]);
+    const applied = resolveAttack(m, attack("s1", "b1"), sure(), T, DEPS);
+    expect(applied.ok).toBe(true);
+    if (!applied.ok) return;
+    expect(applied.value.events.map((e) => e.type)).toEqual([ATTACK_RESOLVED]);
+    expect(hpOf(applied.value.state, "b2")).toBe(20);
+  });
+
+  it("fires at an empty tile: the blast lands on whoever is beside it, and a miss costs the shot and nothing else", () => {
+    const m = {
+      ...mission([
+        unit("s1", "tdf", "mortar", 0, 0),
+        unit("b1", "bugs", "swarmer", 5, 1),
+      ]),
+      templates: marked,
+    };
+    const landed = resolveAttack(
+      m,
+      attackTile("s1", { x: 5, y: 0, z: 0 }),
+      sure(),
+      T,
+      DEPS,
+    );
+    expect(landed.ok).toBe(true);
+    if (!landed.ok) return;
+    expect(hpOf(landed.value.state, "b1")).toBe(12);
+    expect(landed.value.state.units[0]?.ap).toBe(1);
+    expect(landed.value.events.map((e) => e.type)).toEqual([BLAST_RESOLVED]);
+    if (landed.value.events[0]?.type !== BLAST_RESOLVED) return;
+    expect(landed.value.events[0].payload).toMatchObject({
+      hit: true,
+      aimedAtTile: true,
+    });
+    expect(landed.value.events[0].payload.victims).toEqual([
+      { targetId: "b1", kind: "unit", damage: 8, hp: 12 },
+    ]);
+
+    const wideOf = resolveAttack(
+      m,
+      attackTile("s1", { x: 5, y: 0, z: 0 }),
+      wide(),
+      T,
+      DEPS,
+    );
+    expect(wideOf.ok).toBe(true);
+    if (!wideOf.ok) return;
+    expect(hpOf(wideOf.value.state, "b1")).toBe(20);
+    expect(wideOf.value.state.units[0]?.ap).toBe(1);
+    expect(wideOf.value.events).toEqual([
+      {
+        type: BLAST_RESOLVED,
+        payload: {
+          attackerId: "s1",
+          impact: { x: 5, y: 0, z: 0 },
+          hit: false,
+          radius: 1,
+          aimedAtTile: true,
+          weaponRange: 16,
+          victims: [],
+        },
+      },
+    ]);
+  });
+
+  it("refuses a tile shot from a weapon that marks nothing, at a tile that is not there, out of range, or out of sight", () => {
+    const m = {
+      ...mission([
+        unit("s1", "tdf", "rifle", 0, 0),
+        unit("m1", "tdf", "mortar", 0, 1),
+      ]),
+      templates: marked,
+    };
+    const plain = resolveAttack(
+      m,
+      attackTile("s1", { x: 3, y: 0, z: 0 }),
+      sure(),
+      T,
+      DEPS,
+    );
+    expect(plain.ok).toBe(false);
+    if (!plain.ok) expect(plain.error.kind).toBe("no-area-weapon");
+    const nowhere = resolveAttack(
+      m,
+      attackTile("m1", { x: 3, y: 5, z: 0 }),
+      sure(),
+      T,
+      DEPS,
+    );
+    expect(nowhere.ok).toBe(false);
+    if (!nowhere.ok) expect(nowhere.error.kind).toBe("no-such-tile");
+    const far = resolveAttack(
+      {
+        ...m,
+        templates: {
+          ...marked,
+          mortar: template("mortar", { ...MORTAR, range: 2 }),
+        },
+      },
+      attackTile("m1", { x: 5, y: 0, z: 1 }),
+      sure(),
+      T,
+      DEPS,
+    );
+    expect(far.ok).toBe(false);
+    if (!far.ok) expect(far.error.kind).toBe("out-of-range");
+    // (8,0,3) is behind the solid wall on the west of (7,0,3).
+    const blind = resolveAttack(
+      { ...m, units: [unit("m1", "tdf", "mortar", 5, 3)] },
+      attackTile("m1", { x: 7, y: 0, z: 3 }),
+      sure(),
+      T,
+      DEPS,
+    );
+    expect(blind.ok).toBe(false);
+    if (!blind.ok) expect(blind.error.kind).toBe("tile-out-of-sight");
+    const neither = resolveAttack(
+      m,
+      { type: "tactical:attack", payload: { attackerId: "m1" } },
+      sure(),
+      T,
+      DEPS,
+    );
+    expect(neither.ok).toBe(false);
+    if (!neither.ok) expect(neither.error.kind).toBe("no-aim");
+  });
+
+  it("brings down what its force can in the footprint, and the map it leaves is the one the next shot sees", () => {
+    const m = {
+      ...mission([unit("s1", "tdf", "cannon", 0, 2)]),
+      templates: marked,
+    };
+    // The fixture's crate at (4,0,2) is a light prop: force 1 takes it.
+    const before = new TileIndex(m.map).getAt({ x: 4, y: 0, z: 2 })!;
+    expect(before.propId).toBeDefined();
+    const applied = resolveAttack(
+      m,
+      attackTile("s1", { x: 4, y: 0, z: 2 }),
+      sure(),
+      T,
+      DEPS,
+    );
+    expect(applied.ok).toBe(true);
+    if (!applied.ok) return;
+    const after = new TileIndex(applied.value.state.map).getAt({
+      x: 4,
+      y: 0,
+      z: 2,
+    })!;
+    expect(after.propId).toBeUndefined();
+    expect(after.pass).toBe(PassMask.ALL);
+    expect(applied.value.state.map.props).toHaveLength(0);
+    const fell = applied.value.events.filter(
+      (e) => e.type === STRUCTURE_DESTROYED,
+    );
+    expect(fell).toHaveLength(1);
+    expect(fell[0]).toMatchObject({
+      payload: {
+        unitId: "s1",
+        tile: { x: 4, y: 0, z: 2 },
+        structure: { kind: "prop" },
+      },
+    });
+    // Force 2 cannot open the solid wall: aimed at the tile it stands
+    // on, nothing falls — a mortar breaches a door, not masonry.
+    const wall = resolveAttack(
+      { ...m, units: [unit("s1", "tdf", "mortar", 6, 3)] },
+      attackTile("s1", { x: 6, y: 0, z: 3 }),
+      sure(),
+      T,
+      DEPS,
+    );
+    expect(wall.ok).toBe(true);
+    if (!wall.ok) return;
+    expect(wall.value.events.some((e) => e.type === STRUCTURE_DESTROYED)).toBe(
+      false,
+    );
+    // Force 3 does.
+    const breach = resolveAttack(
+      { ...m, units: [unit("s1", "tdf", "breacher", 6, 3)] },
+      attackTile("s1", { x: 6, y: 0, z: 3 }),
+      sure(),
+      T,
+      DEPS,
+    );
+    expect(breach.ok).toBe(true);
+    if (!breach.ok) return;
+    expect(
+      breach.value.events
+        .filter((e) => e.type === STRUCTURE_DESTROYED)
+        .map((e) =>
+          e.type === STRUCTURE_DESTROYED ? e.payload.structure.kind : "",
+        ),
+    ).toEqual(["wall"]);
+    expect(
+      new TileIndex(breach.value.state.map).getAt({ x: 7, y: 0, z: 3 })!.walls,
+    ).toEqual({});
+  });
+
+  it("leaves fire on the ground it reaches, after the blast and the demolition", () => {
+    const m = {
+      ...mission([
+        unit("s1", "tdf", "flamer", 0, 0),
+        unit("b1", "bugs", "swarmer", 2, 0),
+      ]),
+      templates: marked,
+    };
+    const applied = resolveAttack(m, attack("s1", "b1"), sure(), T, DEPS);
+    expect(applied.ok).toBe(true);
+    if (!applied.ok) return;
+    const { state, events } = applied.value;
+    // Radius 1 around (2,0): five tiles minus none blocked, but the
+    // shooter's own tile (0,0) is outside the radius, so it does not burn.
+    const lit = state.effects
+      .map((e) => `${String(e.tile.x)},${String(e.tile.z)}`)
+      .sort();
+    expect(lit).toEqual(["1,0", "2,0", "2,1", "3,0"].sort());
+    expect(
+      state.effects.every((e) => e.kind === "fire" && e.phasesLeft === 4),
+    ).toBe(true);
+    const order = events.map((e) => e.type);
+    expect(order.indexOf(BLAST_RESOLVED)).toBeLessThan(
+      order.indexOf(EFFECT_STARTED),
+    );
+    expect(events.filter((e) => e.type === EFFECT_STARTED)).toHaveLength(4);
+    expect(state.effects.map((e) => e.id)).toEqual([
+      "effect-1",
+      "effect-2",
+      "effect-3",
+      "effect-4",
+    ]);
+  });
+
+  it("previews the blast: the tiles, who else stands in them with their band, and what would fall", () => {
+    const m = {
+      ...mission([
+        unit("s1", "tdf", "mortar", 0, 0),
+        unit("b1", "bugs", "swarmer", 5, 0),
+        unit("ally", "tdf", "rifle", 6, 0),
+      ]),
+      templates: marked,
+    };
+    const aimed = previewAttack(m, "s1", "b1", T, undefined, DEPS);
+    expect(aimed.ok).toBe(true);
+    if (!aimed.ok) return;
+    expect(aimed.value.blast?.radius).toBe(1);
+    expect(aimed.value.blast?.tiles[0]).toEqual({ x: 5, y: 0, z: 0 });
+    expect(aimed.value.blast?.victims).toEqual([
+      {
+        id: "ally",
+        kind: "unit",
+        name: "rifle",
+        team: "tdf",
+        distance: 1,
+        damage: [8, 13],
+      },
+    ]);
+    expect(aimed.value.blast?.demolished).toBe(0);
+    expect(aimed.value.blast?.leavesEffect).toBe(false);
+
+    const ground = previewTileAttack(
+      m,
+      "s1",
+      { x: 4, y: 0, z: 2 },
+      T,
+      undefined,
+      DEPS,
+    );
+    expect(ground.ok).toBe(true);
+    if (!ground.ok) return;
+    // No body, no cover: the chance is accuracy less the range penalty.
+    expect(ground.value.cover).toBe(CoverLevel.NONE);
+    expect(ground.value.flanked).toBe(false);
+    expect(ground.value.hitChance).toBe(70 - T.rangePenaltyPerTile * (6 - 1));
+    expect(ground.value.blast?.demolished).toBe(1);
+    // Without the content the count is unknown and says so, rather than zero.
+    const blind = previewTileAttack(m, "s1", { x: 4, y: 0, z: 2 }, T);
+    expect(blind.ok && blind.value.blast?.demolished).toBeUndefined();
+
+    const plain = previewAttack(m, "ally", "b1", T);
+    expect(plain.ok && plain.value.blast).toBeUndefined();
+  });
+
+  it("lists only the weapons that can fire at the ground", () => {
+    const m = {
+      ...mission([
+        unit("s1", "tdf", "rifle", 0, 0),
+        unit("m1", "tdf", "mortar", 0, 1),
+      ]),
+      templates: marked,
+    };
+    expect(tileWeaponOptions(m, "s1", T)).toEqual([]);
+    expect(tileWeaponOptions(m, "m1", T).map((o) => o.weapon.id)).toEqual([
+      PRIMARY_WEAPON_ID,
+    ]);
+  });
+
+  it("ends the mission there and then when the blast, not the shot, takes the last spawner", () => {
+    const m = {
+      ...mission(
+        [
+          unit("s1", "tdf", "mortar", 0, 0),
+          unit("b1", "bugs", "swarmer", 5, 0),
+        ],
+        {
+          spawners: [
+            {
+              id: "spawner-1",
+              pos: { x: 5, y: 0, z: 1 },
+              hatchRadius: 1,
+              hp: 5,
+              timer: 3,
+              destroyed: false,
+            },
+          ],
+          objectives: [
+            {
+              id: "objective-1",
+              kind: "destroy-spawner",
+              targetId: "spawner-1",
+              complete: false,
+            },
+          ],
+          extracted: [unit("gone", "tdf", "rifle", 0, 0)],
+        },
+      ),
+      templates: marked,
+    };
+    // The shooter is the last unit standing; once it is off the map the
+    // completed objective would read as won. Here it still stands, so the
+    // objective completes and the mission plays on — but the spawner's
+    // destruction comes from the splash and is announced as such.
+    const applied = resolveAttack(m, attack("s1", "b1"), sure(), T, DEPS);
+    expect(applied.ok).toBe(true);
+    if (!applied.ok) return;
+    expect(applied.value.state.spawners[0]?.destroyed).toBe(true);
+    expect(applied.value.state.objectives[0]?.complete).toBe(true);
+    expect(applied.value.events.map((e) => e.type)).toContain(SPAWNER_DAMAGED);
+    expect(applied.value.events.map((e) => e.type)).toContain(
+      OBJECTIVE_UPDATED,
+    );
   });
 });

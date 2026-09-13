@@ -1,6 +1,6 @@
 import type { Result } from "../../core/model/result";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
-import { attack } from "../../tactical/model/attack-command";
+import { attack, attackTile } from "../../tactical/model/attack-command";
 import type { AttackPreview } from "../../tactical/model/attack-preview";
 import type { CombatTuning } from "../../tactical/model/combat-tuning";
 import { endTurn } from "../../tactical/model/end-turn-command";
@@ -23,10 +23,12 @@ import {
   enemyAttackTargets,
   findAttackTarget,
 } from "../../tactical/service/attack-target-service";
+import type { PreviewDeps } from "../../tactical/service/combat-service";
 import {
   attacksRemaining,
   chargesLeft,
   previewAttack,
+  previewTileAttack,
   weaponOptions,
 } from "../../tactical/service/combat-service";
 import { viewFor } from "../../tactical/service/mission-view-service";
@@ -139,6 +141,12 @@ export interface TacticalHudHandlers {
    */
   readonly onMarkTile?: (tile: TileCoord | undefined) => void;
   /**
+   * Paint the tiles a previewed blast would reach, or clear them
+   * (#1121): the footprint of the shot the wheel or the aim is about.
+   * Optional, so a HUD built without a scene needs no stub.
+   */
+  readonly onMarkBlast?: (tiles: readonly TileCoord[]) => void;
+  /**
    * Where the top of a unit's model is on screen, for the status chip
    * above it while Shift is held. Absent in tests and headless callers,
    * and the chips simply do not appear without it.
@@ -152,6 +160,11 @@ export interface TacticalHudDeps {
   readonly combatTuning: CombatTuning;
   /** Tuning handed to `reachableObjectives`; the HUD judges no distance itself. */
   readonly objectiveTuning: ObjectiveTuning;
+  /**
+   * The content a blast preview asks what would fall (#1121). Optional:
+   * without it previews still show the blast and who stands in it.
+   */
+  readonly previewDeps?: PreviewDeps;
   /** Hold time and timers for the phase banner; the defaults are the DOM's. */
   readonly phaseBanner?: PhaseBannerOptions;
   /**
@@ -250,7 +263,15 @@ export class TacticalHudView {
     onDismiss: () => {
       this.dismissMenu();
     },
+    // Resting on a weapon paints what it would reach (#1121); the whole
+    // refresh is not needed for that, only the footprint.
+    onHover: (id) => {
+      this.hoveredItem = id;
+      this.handlers.onMarkBlast?.(this.consideredBlast());
+    },
   });
+  /** The wheel entry the pointer or focus rests on, if any (#1121). */
+  private hoveredItem: string | undefined;
   /**
    * What the open wheel belongs to. The wheel is dismissed by the world,
    * not only by the player (ADR 0007 §2.2): when its target stops being
@@ -830,12 +851,12 @@ export class TacticalHudView {
       graph: this.moveGraphFor(mission),
       names: namesFor(mission, this.campaign),
       deps: this.deps,
+      ...(this.deps.previewDeps === undefined
+        ? {}
+        : { previewDeps: this.deps.previewDeps }),
     };
-    if (page === "weapons" && target.kind !== "tile") {
-      return weaponWheel(
-        target.kind === "unit" ? target.unitId : target.spawnerId,
-        ctx,
-      );
+    if (page === "weapons") {
+      return weaponWheel(target, ctx);
     }
     return actionWheel(target, ctx);
   }
@@ -937,6 +958,7 @@ export class TacticalHudView {
   private closeMenu(): void {
     this.menuTarget = undefined;
     this.menuPage = "actions";
+    this.hoveredItem = undefined;
     this.stopFollowing?.();
     this.stopFollowing = undefined;
     this.radial.close();
@@ -968,7 +990,10 @@ export class TacticalHudView {
     // Turning the page keeps the ring; everything else closes it first,
     // and unconditionally: the view reports a choice but does not hide
     // itself, so every path out of here has to (#627).
-    if (choice.action === "attack" && choice.weaponId === undefined) {
+    if (
+      (choice.action === "attack" || choice.action === "attack-tile") &&
+      choice.weaponId === undefined
+    ) {
       const weapons = this.mission
         ? weaponOptions(this.mission, unitId, this.deps.combatTuning)
         : [];
@@ -992,6 +1017,16 @@ export class TacticalHudView {
         this.armedWeaponId = choice.weaponId;
         this.fireAt(choice.targetId);
         return;
+      case "attack-tile":
+        // The entry is the shot (#1121), as an attack entry is: the
+        // rules refuse an illegal one and the reason lands in the status
+        // line rather than the click being swallowed.
+        this.target = undefined;
+        this.mode = DEFAULT_HUD_MODE;
+        this.handlers.onCommand(
+          attackTile(unitId, choice.tile, choice.weaponId),
+        );
+        break;
       case "overwatch":
         this.handlers.onCommand(overwatch(unitId));
         break;
@@ -1419,7 +1454,100 @@ export class TacticalHudView {
       this.target,
       this.deps.combatTuning,
       this.armedWeaponId,
+      this.deps.previewDeps,
     );
+  }
+
+  /**
+   * The tiles the shot the player is considering would reach (#1121).
+   *
+   * ```
+   *   wheel open, a weapon entry rested on ──► that weapon's footprint
+   *   wheel open on an enemy or a tile      ──► every weapon's, together
+   *   aiming with the wheel closed          ──► the armed weapon's
+   *   otherwise                             ──► nothing
+   * ```
+   *
+   * Always painted while something is being considered, whatever it is
+   * aimed at: a shot at a unit and a shot at the ground are the same
+   * shot, and the player asked to see the blast either way. The union
+   * rather than the first weapon's footprint while no weapon is chosen,
+   * because a mech's arm gun marks one tile where its pod marks five,
+   * and a footprint that showed the one understated the pod.
+   */
+  private consideredBlast(): readonly TileCoord[] {
+    const mission = this.mission;
+    const unitId = this.selected;
+    if (!mission || unitId === undefined) {
+      return [];
+    }
+    const target = this.menuTarget;
+    if (target !== undefined) {
+      const rested =
+        this.hoveredItem === undefined
+          ? undefined
+          : parseWheelChoice(this.hoveredItem);
+      if (
+        rested !== undefined &&
+        (rested.action === "attack" || rested.action === "attack-tile") &&
+        rested.weaponId !== undefined
+      ) {
+        return this.footprintOf(target, rested.weaponId);
+      }
+      const seen = new Set<string>();
+      const union: TileCoord[] = [];
+      for (const option of weaponOptions(
+        mission,
+        unitId,
+        this.deps.combatTuning,
+      )) {
+        for (const tile of this.footprintOf(target, option.weapon.id)) {
+          const key = `${String(tile.x)},${String(tile.y)},${String(tile.z)}`;
+          if (!seen.has(key)) {
+            seen.add(key);
+            union.push(tile);
+          }
+        }
+      }
+      return union;
+    }
+    const aimed = this.currentPreview();
+    return aimed?.ok ? (aimed.value.blast?.tiles ?? []) : [];
+  }
+
+  /**
+   * What one weapon would reach around `target`, from the same previews
+   * the wheel prints its numbers from; empty when the shot is refused or
+   * the weapon marks nothing.
+   */
+  private footprintOf(
+    target: TacticalInvokeTarget,
+    weaponId: WeaponId,
+  ): readonly TileCoord[] {
+    const mission = this.mission;
+    const unitId = this.selected;
+    if (!mission || unitId === undefined) {
+      return [];
+    }
+    const preview =
+      target.kind === "tile"
+        ? previewTileAttack(
+            mission,
+            unitId,
+            target.tile,
+            this.deps.combatTuning,
+            weaponId,
+            this.deps.previewDeps,
+          )
+        : previewAttack(
+            mission,
+            unitId,
+            target.kind === "unit" ? target.unitId : target.spawnerId,
+            this.deps.combatTuning,
+            weaponId,
+            this.deps.previewDeps,
+          );
+    return preview.ok ? (preview.value.blast?.tiles ?? []) : [];
   }
 
   /**
@@ -1574,6 +1702,7 @@ export class TacticalHudView {
         aiming: false,
         unspent: 0,
       });
+      this.handlers.onMarkBlast?.([]);
       return;
     }
     this.banner.update({
@@ -1642,6 +1771,7 @@ export class TacticalHudView {
       aiming: this.mode === "attack",
       unspent: this.unspentCount(),
     });
+    this.handlers.onMarkBlast?.(this.consideredBlast());
     // Last, so the listener reads the state the refresh just settled.
     this.handlers.onViewChange?.();
   }

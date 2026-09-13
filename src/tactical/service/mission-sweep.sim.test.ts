@@ -30,6 +30,7 @@ import { validateLoadout } from "../../roster/service/loadout-validation-service
 import type { GameState } from "../../save/model/game-state";
 import { createNewGame } from "../../save/service/new-game-service";
 import { COMBAT_TUNING } from "../data/combat-tuning";
+import { fixtureAttackDeps } from "./tactical-fixtures.test-helper";
 import { OBJECTIVE_TUNING } from "../data/objective-tuning";
 import { SPAWN_TUNING } from "../data/spawn-tuning";
 import { UNIT_TUNING } from "../data/unit-tuning";
@@ -76,9 +77,12 @@ import {
 /** The shipped rules, assembled without `app/` so this stays in-domain. */
 function rules(): TacticalHandlers {
   const spawn = { species: Object.values(BUG_SPECIES), tuning: SPAWN_TUNING };
+  const attackDeps = fixtureAttackDeps();
   const actions: TacticalHandlers = {
-    [ATTACK]: createAttackHandler(COMBAT_TUNING),
-    [MOVE]: createMoveHandler(createOverwatchReaction(COMBAT_TUNING)),
+    [ATTACK]: createAttackHandler(COMBAT_TUNING, attackDeps),
+    [MOVE]: createMoveHandler(
+      createOverwatchReaction(COMBAT_TUNING, attackDeps),
+    ),
     [OVERWATCH]: overwatchHandler,
     [RELOAD]: reloadHandler,
     [INTERACT]: createInteractHandler(OBJECTIVE_TUNING),

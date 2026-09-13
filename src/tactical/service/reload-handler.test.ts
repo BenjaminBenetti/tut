@@ -72,6 +72,7 @@ function mission(
     missionId: "mission-1",
     seed: 1,
     map: new FixtureMapBuilder(4, 4, 1).fillGround().build(),
+    effects: [],
     units,
     templates: TEMPLATES,
     difficulty: 1,

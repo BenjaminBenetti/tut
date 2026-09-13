@@ -1436,7 +1436,7 @@ describe("weapons that mark the ground (#1121)", () => {
     // No body, no cover: the chance is accuracy less the range penalty.
     expect(ground.value.cover).toBe(CoverLevel.NONE);
     expect(ground.value.flanked).toBe(false);
-    expect(ground.value.hitChance).toBe(70 - 2 * (6 - 1));
+    expect(ground.value.hitChance).toBe(70 - T.rangePenaltyPerTile * (6 - 1));
     expect(ground.value.blast?.demolished).toBe(1);
     // Without the content the count is unknown and says so, rather than zero.
     const blind = previewTileAttack(m, "s1", { x: 4, y: 0, z: 2 }, T);

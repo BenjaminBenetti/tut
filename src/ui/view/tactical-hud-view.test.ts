@@ -596,6 +596,49 @@ describe("TacticalHudView", () => {
     expect(lines).toEqual(["Rifle · ammo 1 / 3", "Launcher · ammo 2 / 2"]);
   });
 
+  it("paints an item's reach while its row on the card is rested on (#1134)", () => {
+    const { hud, mission } = setup();
+    const ranges: number[] = [];
+    hud.unmount();
+    const painted = new TacticalHudView(
+      {
+        onCommand: vi.fn(),
+        onLeave: vi.fn(),
+        onMarkWeaponRange: (tiles) => ranges.push(tiles.length),
+      },
+      { combatTuning: COMBAT_TUNING, objectiveTuning: OBJECTIVE_TUNING },
+    );
+    painted.mount(root);
+    const s1 = mission.units.find((u) => u.id === "s1");
+    const template = s1 && mission.templates[s1.templateId];
+    if (!s1 || !template) throw new Error("fixture needs s1");
+    painted.update({
+      ...mission,
+      templates: {
+        ...mission.templates,
+        [s1.templateId]: { ...template, equipment: ["grenade", "radar-dish"] },
+      },
+    });
+    painted.handleIntent({ kind: "select-unit", unitId: "s1" });
+    const row = (id: string): HTMLElement | null =>
+      root.querySelector<HTMLElement>(
+        `#unit-card [data-role="equipment-row"][data-equipment-id="${id}"]`,
+      );
+    expect(row("grenade")).not.toBeNull();
+    row("grenade")?.dispatchEvent(new Event("mouseenter"));
+    const grenade = ranges.at(-1) ?? 0;
+    expect(grenade).toBeGreaterThan(0);
+    row("grenade")?.dispatchEvent(new Event("mouseleave"));
+    expect(ranges.at(-1)).toBe(0);
+    // A radar's sites are the free tiles a short walk away: fewer than
+    // a grenade's throw, and never none on open ground.
+    row("radar-dish")?.dispatchEvent(new Event("mouseenter"));
+    const radar = ranges.at(-1) ?? 0;
+    expect(radar).toBeGreaterThan(0);
+    expect(radar).toBeLessThan(grenade);
+    painted.unmount();
+  });
+
   it("lists the selected unit's equipment on the card with its uses left (#1132)", () => {
     const { hud, mission } = setup();
     const s1 = mission.units.find((u) => u.id === "s1");

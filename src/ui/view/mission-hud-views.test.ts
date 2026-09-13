@@ -135,7 +135,8 @@ describe("UnitCardView weapon lines (#641)", () => {
   it("announces the weapon row the pointer or focus rests on, once, and the leave (#1132)", () => {
     const hovered: (string | undefined)[] = [];
     const view = new UnitCardView({
-      onWeaponHover: (weaponId) => hovered.push(weaponId),
+      onRowHover: (row) =>
+        hovered.push(row?.kind === "weapon" ? row.weaponId : undefined),
     });
     view.mount(root);
     view.update(
@@ -155,7 +156,10 @@ describe("UnitCardView weapon lines (#641)", () => {
     expect(rows.map((b) => b.tabIndex)).toEqual([0, 0]);
     rows[1]?.dispatchEvent(new Event("mouseenter"));
     expect(hovered).toEqual(["back-weapon"]);
-    expect(view.hoveredWeapon()).toBe("back-weapon");
+    expect(view.hoveredRow()).toEqual({
+      kind: "weapon",
+      weaponId: "back-weapon",
+    });
     // Resting on the same row again says nothing new.
     rows[1]?.dispatchEvent(new Event("mouseenter"));
     expect(hovered).toEqual(["back-weapon"]);
@@ -166,7 +170,57 @@ describe("UnitCardView weapon lines (#641)", () => {
     // Hiding the card is a leave: the row cannot report one itself.
     view.update(undefined, undefined);
     expect(hovered.at(-1)).toBeUndefined();
-    expect(view.hoveredWeapon()).toBeUndefined();
+    expect(view.hoveredRow()).toBeUndefined();
+  });
+
+  it("announces an item's row the same way, and marks every restable row as hoverable (#1134)", () => {
+    const hovered: (string | undefined)[] = [];
+    const view = new UnitCardView({
+      onRowHover: (row) =>
+        hovered.push(
+          row === undefined
+            ? undefined
+            : row.kind === "equipment"
+              ? `item:${row.equipmentId}`
+              : `weapon:${row.weaponId}`,
+        ),
+    });
+    view.mount(root);
+    view.update(
+      { ...hudUnit("s1", "tdf", "rifle", 1, 1), equipment: { grenade: 1 } },
+      {
+        ...hudTemplate("rifle", "Rifle Squad"),
+        equipment: ["grenade", "radar-dish"],
+      },
+    );
+    const items = blocks("equipment");
+    expect(items.map((b) => b.dataset.role)).toEqual([
+      "equipment-row",
+      "equipment-row",
+    ]);
+    expect(items.map((b) => b.dataset.equipmentId)).toEqual([
+      "grenade",
+      "radar-dish",
+    ]);
+    expect(items.map((b) => b.tabIndex)).toEqual([0, 0]);
+    // Every restable row says so: the cursor and the lift come from
+    // this class, and a row without it is a hover nobody finds.
+    for (const row of [...blocks("weapon"), ...items]) {
+      expect(row.classList.contains("tut-card__entry--hoverable")).toBe(true);
+    }
+    items[1]?.dispatchEvent(new Event("mouseenter"));
+    expect(hovered).toEqual(["item:radar-dish"]);
+    expect(view.hoveredRow()).toEqual({
+      kind: "equipment",
+      equipmentId: "radar-dish",
+    });
+    // Moving from an item to a weapon is one change, not a leave and an enter.
+    blocks("weapon")[0]?.dispatchEvent(new Event("focus"));
+    expect(hovered.at(-1)).toBe("weapon:primary");
+    items[1]?.dispatchEvent(new Event("mouseleave"));
+    expect(hovered.at(-1)).toBe("weapon:primary");
+    blocks("weapon")[0]?.dispatchEvent(new Event("blur"));
+    expect(hovered.at(-1)).toBeUndefined();
   });
 
   it("leaves a one-weapon card exactly as it was, with no name line", () => {

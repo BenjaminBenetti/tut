@@ -12,12 +12,16 @@ interface HookGlobal {
 /** The starter mech, the one unit that carries two weapons. */
 const MECH = "unit-1";
 
+/** The first rifle squad, which carries a grenade (#1132). */
+const SQUAD = "unit-2";
+
 /**
  * Resting on a weapon in the unit panel paints its reach on the ground
  * (#1132): the card's row for the Autocannon is hovered and the body
  * counts the painted tiles, then the pointer leaves and the count is
  * gone. A hover is an ordinary pointer gesture, so this drives the real
- * card rather than a hook.
+ * card rather than a hook. An item's row previews the same way (#1134):
+ * a squad's Grenade row paints its throw.
  *
  *   CAPTURE=1 pnpm exec playwright test e2e/weapon-range-preview.spec.ts
  */
@@ -75,6 +79,29 @@ test("hovering a weapon on the unit panel paints its reach, and leaving clears i
   }
 
   // Leaving the card takes the paint with it.
+  await page.mouse.move(40, 400);
+  await expect(body).not.toHaveAttribute("data-tactical-range-tiles", /.+/);
+
+  // An item's row paints too (#1134): the squad's grenade, thrown five
+  // tiles, and the row invites the hover with a pointer cursor.
+  await page.evaluate(
+    (id) => (globalThis as HookGlobal).__tutTactical__?.selectUnit(id),
+    SQUAD,
+  );
+  await expect(body).toHaveAttribute("data-tactical-selected", SQUAD);
+  const grenade = page.locator(
+    '#unit-card [data-role="equipment-row"][data-equipment-id="grenade"]',
+  );
+  await expect(grenade).toContainText("Grenade");
+  await expect(grenade).toHaveCSS("cursor", "pointer");
+  await grenade.hover();
+  await expect(body).toHaveAttribute("data-tactical-range-tiles", /^[1-9]\d*$/);
+  await drawnFrame(page);
+  if (process.env.CAPTURE !== undefined) {
+    await page.locator("#tactical-viewport").screenshot({
+      path: "docs/design/ui-equipment-range-preview.png",
+    });
+  }
   await page.mouse.move(40, 400);
   await expect(body).not.toHaveAttribute("data-tactical-range-tiles", /.+/);
   expect(errors).toEqual([]);

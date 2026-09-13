@@ -32,6 +32,7 @@ import {
   findAttackTarget,
 } from "../../tactical/service/attack-target-service";
 import type { PreviewDeps } from "../../tactical/service/combat-service";
+import { equipmentRangeTiles } from "../../tactical/service/equipment-range-service";
 import { weaponRangeTiles } from "../../tactical/service/weapon-range-service";
 import {
   attacksRemaining,
@@ -77,6 +78,7 @@ import type {
 import { PhaseBannerView } from "./phase-banner-view";
 import { TURN_STARTED } from "../../tactical/model/turn-started-event";
 import { TurnBannerView } from "./turn-banner-view";
+import type { CardHover } from "./unit-card-view";
 import { UnitCardView } from "./unit-card-view";
 import type { UnitStatusChip } from "./unit-status-layer-view";
 import { UnitStatusLayerView } from "./unit-status-layer-view";
@@ -259,8 +261,8 @@ export class TacticalHudView {
   private readonly phases: PhaseBannerView;
   /** The selected unit's card; resting on one of its weapons previews that weapon's reach (#1132). */
   private readonly card = new UnitCardView({
-    onWeaponHover: (weaponId) => {
-      this.previewWeaponRange(weaponId);
+    onRowHover: (row) => {
+      this.previewRowRange(row);
     },
   });
   private readonly preview: HitPreviewView;
@@ -1569,15 +1571,27 @@ export class TacticalHudView {
    * rules' own reach and sight predicates, so the red on the ground is
    * what the shot can actually reach.
    */
-  private previewWeaponRange(weaponId: WeaponId | undefined): void {
+  private previewRowRange(row: CardHover | undefined): void {
     const mission = this.mission;
     const unitId = this.selected;
-    if (weaponId === undefined || !mission || unitId === undefined) {
+    if (row === undefined || !mission || unitId === undefined) {
       this.handlers.onMarkWeaponRange?.([]);
       return;
     }
     this.handlers.onMarkWeaponRange?.(
-      weaponRangeTiles(mission, unitId, weaponId, this.deps.combatTuning),
+      row.kind === "weapon"
+        ? weaponRangeTiles(
+            mission,
+            unitId,
+            row.weaponId,
+            this.deps.combatTuning,
+          )
+        : equipmentRangeTiles(
+            mission,
+            unitId,
+            row.equipmentId,
+            SHIPPED_EQUIPMENT,
+          ),
     );
   }
 
@@ -1889,7 +1903,7 @@ export class TacticalHudView {
     );
     // A preview that stays up across a move is recomputed from where the
     // unit stands now, and one for a unit no longer selected goes.
-    this.previewWeaponRange(this.card.hoveredWeapon());
+    this.previewRowRange(this.card.hoveredRow());
     const target =
       this.target === undefined
         ? undefined

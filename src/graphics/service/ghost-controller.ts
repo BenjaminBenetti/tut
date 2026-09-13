@@ -32,6 +32,7 @@ function clamp(value: number, low: number, high: number): number {
  *   every frame:  source() ──► world positions ──► × camera.matrixWorldInverse
  *                                    │             └──► view space ──► uniforms
  *                                    └──► world y (the feet) ──► uniforms
+ *                 world up ──► × camera rotation ──► view z per unit of height
  * ```
  *
  * The centres are the **objects the scene is already drawing** rather
@@ -85,6 +86,13 @@ export class GhostController implements FrameUpdatable {
     const objects = this.source();
     const count = Math.min(objects.length, MAX_GHOSTS);
     this.camera.updateMatrixWorld();
+    // How much nearer the camera a fragment gets per world unit it rises:
+    // the shader takes this back out so it compares footprints, not
+    // heights (#1132). One number for the frame, since every centre is
+    // seen through the same camera.
+    this.uniforms.uGhostUp.value = this.scratch
+      .set(0, 1, 0)
+      .transformDirection(this.camera.matrixWorldInverse).z;
     const step = deltaSeconds / FADE_SECONDS;
     for (let i = 0; i < MAX_GHOSTS; i++) {
       const object = i < count ? objects[i] : undefined;

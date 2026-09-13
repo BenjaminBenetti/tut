@@ -25,6 +25,14 @@ export interface GhostUniforms {
    * feet ghosts for it, so the floor it stands on stays solid (#1118).
    */
   readonly uGhostFeet: { value: number[] };
+  /**
+   * View-space depth gained per world unit of height: the world up
+   * vector's view-space `z` (#1132). The shader subtracts a fragment's
+   * rise above the unit's feet times this from its depth, so the depth
+   * it compares is the fragment's **plan** depth — where its footprint
+   * stands — and a tall wall behind the unit is not "nearer" for rising.
+   */
+  readonly uGhostUp: { value: number };
 }
 
 // ===========================================
@@ -50,6 +58,15 @@ const SOFT_EDGE_UNITS = 0.65;
  */
 export const GHOST_FOOT_MARGIN = 0.3;
 
+/**
+ * How far in front of a unit, in view-space depth, a fragment's footprint
+ * has to stand before it ghosts (#1132). Keeps float noise on the unit's
+ * own row from flickering, and leaves the wall running through the
+ * unit's tile cut at the unit rather than a hair behind it: at the
+ * tactical pitch a depth of 0.05 is 0.06 of a tile across the ground.
+ */
+export const GHOST_PLAN_MARGIN = 0.05;
+
 // ===========================================
 // Uniforms
 // ===========================================
@@ -74,7 +91,75 @@ export function createGhostUniforms(
     uGhostFloor: { value: floor },
     uGhostStrength: { value: Array.from({ length: MAX_GHOSTS }, () => 0) },
     uGhostFeet: { value: Array.from({ length: MAX_GHOSTS }, () => 0) },
+    uGhostUp: { value: 0 },
   };
+}
+
+// ===========================================
+// Rule
+// ===========================================
+
+/**
+ * A fragment's depth with its rise above a unit's feet taken out: the
+ * view-space depth of the point on the unit's floor plane directly
+ * beneath it, which is where its footprint stands (#1132).
+ *
+ * @param viewZ - The fragment's view-space `z`; larger is nearer the camera.
+ * @param worldY - The fragment's world height.
+ * @param feetY - The unit's feet, in world height.
+ * @param upDepth - View-space depth per world unit of height (`uGhostUp`).
+ * @returns The plan depth, comparable with the unit's own view `z`.
+ */
+export function ghostPlanDepth(
+  viewZ: number,
+  worldY: number,
+  feetY: number,
+  upDepth: number,
+): number {
+  return viewZ - (worldY - feetY) * upDepth;
+}
+
+/**
+ * Whether a fragment stands between the camera and a unit (#1132): its
+ * footprint is on the camera's side of the unit's, and it rises above
+ * the unit's feet. The CPU mirror of the shader's test, so the maths is
+ * pinned where a test can reach it; the radius and the soft edge are
+ * applied on top of this in the shader.
+ *
+ * ```
+ *   camera                        rule: plan(fragment) > plan(unit)
+ *      ╲                          rise(fragment) > GHOST_FOOT_MARGIN
+ *       ╲   ┌────┐ front wall ──► ghosts: in front, above the feet
+ *        ╲  │    │
+ *         ╲ │ ◉ unit   ┌────┐ back wall ──► solid: behind, however tall
+ *   ───────┴────┴──────┴────┴───── floor ──► solid: never above the feet
+ * ```
+ *
+ * Depth alone got this wrong (#526 through #1130): the tactical camera
+ * looks down at 35°, so a wall a tile behind the unit is nearer the
+ * camera than the unit's feet from 1.4 u up, and the far wall of every
+ * room faded from the shins up. Taking the height back out compares
+ * footprints instead.
+ *
+ * @param fragment - The fragment.
+ * @param fragment.viewZ - Its view-space `z`; larger is nearer the camera.
+ * @param fragment.worldY - Its world height.
+ * @param centre - The unit.
+ * @param centre.viewZ - The unit's view-space `z`.
+ * @param centre.feetY - The unit's feet, in world height.
+ * @param upDepth - View-space depth per world unit of height.
+ * @returns True when the fragment should fade for this unit.
+ */
+export function ghostsInFrontOf(
+  fragment: { readonly viewZ: number; readonly worldY: number },
+  centre: { readonly viewZ: number; readonly feetY: number },
+  upDepth: number,
+): boolean {
+  const rise = fragment.worldY - centre.feetY;
+  return (
+    ghostPlanDepth(fragment.viewZ, fragment.worldY, centre.feetY, upDepth) >
+      centre.viewZ + GHOST_PLAN_MARGIN && rise > GHOST_FOOT_MARGIN
+  );
 }
 
 // ===========================================
@@ -95,7 +180,11 @@ export function createGhostUniforms(
  * **Both conditions are load-bearing.** Distance alone would punch a hole
  * through the wall *behind* the unit as well as the one in front of it,
  * which reads as a spotlight rather than a cutaway. The depth comparison
- * is what makes it XCOM's effect.
+ * is what makes it XCOM's effect — and since #1132 it is a comparison of
+ * **plan** depth: the fragment's rise above the unit's feet is taken back
+ * out first (`ghostsInFrontOf`), because at the tactical pitch a tall
+ * wall behind the unit is nearer the camera than the unit's feet from
+ * 1.4 u up, and the far wall of every room faded from the shins up.
  *
  * A third condition keeps the ground under the unit (#1118): a fragment
  * fades only when it is **above the unit's feet**. The floor a unit
@@ -142,6 +231,7 @@ export function applyGhostCutaway(
     shader.uniforms.uGhostFloor = uniforms.uGhostFloor;
     shader.uniforms.uGhostStrength = uniforms.uGhostStrength;
     shader.uniforms.uGhostFeet = uniforms.uGhostFeet;
+    shader.uniforms.uGhostUp = uniforms.uGhostUp;
     shader.vertexShader = shader.vertexShader
       .replace("#include <common>", `#include <common>\n${VERTEX_HEAD}`)
       // After project_vertex, so instanced transforms are already applied.
@@ -192,10 +282,15 @@ const FRAGMENT_BODY = `
   for (int i = 0; i < MAX_GHOSTS; i++) {
     if (i >= uGhostCount) break;
     vec3 centre = uGhostCentres[i];
-    // View space looks down -z, so a larger z is nearer the camera. And
-    // only what rises above the unit's feet fades: the floor it stands
-    // on stays solid (#1118).
-    if (vGhostView.z > centre.z && vGhostWorldY > uGhostFeet[i] + ${GHOST_FOOT_MARGIN.toFixed(2)}) {
+    // View space looks down -z, so a larger z is nearer the camera. The
+    // depth compared is the fragment's plan depth — its rise above the
+    // unit's feet taken out — so only what stands in front of the unit
+    // fades and a tall wall behind it stays solid (#1132). And only what
+    // rises above the unit's feet fades: the floor it stands on stays
+    // solid (#1118).
+    float rise = vGhostWorldY - uGhostFeet[i];
+    float plan = vGhostView.z - rise * uGhostUp;
+    if (plan > centre.z + ${GHOST_PLAN_MARGIN.toFixed(2)} && rise > ${GHOST_FOOT_MARGIN.toFixed(2)}) {
       float d = length(vGhostView.xy - centre.xy);
       // Soft edge measured inward from the radius in world units, so the
       // building gives way rather than showing a circle cut in it.
@@ -225,6 +320,7 @@ function fragmentHead(): string {
     uniform float uGhostFloor;
     uniform float uGhostStrength[MAX_GHOSTS];
     uniform float uGhostFeet[MAX_GHOSTS];
+    uniform float uGhostUp;
 
     float ghostDither(vec2 fragment) {
       int x = int(mod(fragment.x, 4.0));

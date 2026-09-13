@@ -202,8 +202,17 @@ export function attachRankTooltip(
   if (!element.hasAttribute("tabindex")) {
     element.tabIndex = 0;
   }
+  // Listeners go on once; a later attach for a new rank only rewrites
+  // the dataset, and the popover reads the index from there. Otherwise
+  // a badge that changed rank three times carried three sets, and the
+  // one that won was the last registered, by accident (#1134 review).
+  if (element.dataset.rankAttached === "true") {
+    return;
+  }
+  element.dataset.rankAttached = "true";
   const open = (): void => {
-    tooltip.show(element, rankTooltipLines(index, tuning));
+    const current = Number(element.dataset.rankIndex ?? index);
+    tooltip.show(element, rankTooltipLines(current, tuning));
   };
   const close = (): void => {
     tooltip.hide(element);

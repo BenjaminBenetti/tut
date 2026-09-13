@@ -12,6 +12,7 @@ import type {
   EquipmentId,
   PlacedCharge,
 } from "../model/equipment";
+import { DEFAULT_CHARGE_DELAY_TURNS } from "../model/equipment";
 import { CHARGE_ID_PREFIX, usesLeftOf } from "../model/equipment";
 import { EQUIPMENT_USED } from "../model/equipment-used-event";
 import type { RadarTuning } from "../model/radar";
@@ -48,9 +49,6 @@ import { closestTiles } from "./weapon-reach-service";
 
 /** What the preview quotes for a placed charge: it goes off, it does not roll. */
 const CERTAIN_HIT_CHANCE = 100;
-
-/** Turns a charge waits when its definition names none: the turn after next (#1134). */
-const DEFAULT_DELAY_TURNS = 2;
 
 // ===========================================
 // Types
@@ -389,7 +387,8 @@ export function createUseEquipmentHandler(
           equipmentId: definition.id,
           tile: { x: tile.x, y: tile.y, z: tile.z },
           detonatesOnTurn:
-            mission.turn + (definition.delayTurns ?? DEFAULT_DELAY_TURNS),
+            mission.turn +
+            (definition.delayTurns ?? DEFAULT_CHARGE_DELAY_TURNS),
         };
         return ok({
           state: { ...billed, charges: [...billed.charges, charge] },

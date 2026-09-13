@@ -81,6 +81,13 @@ export interface EquipmentDefinition {
 }
 
 /**
+ * Turns a charge waits when its definition names no delay: placed on
+ * turn T, it detonates as turn T + 2 opens, a whole turn to step away
+ * (#1134). The rules and every text that names the wait read this.
+ */
+export const DEFAULT_CHARGE_DELAY_TURNS = 2;
+
+/**
  * How the rules and the HUD look equipment up. A small interface so a
  * service depends on it rather than on the data module (ADR 0003).
  */

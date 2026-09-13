@@ -24,6 +24,7 @@ import {
 } from "./action-availability";
 import { chargeRegisterFor } from "./charge-register";
 import { RADAR_DISH } from "../../tactical/data/equipment";
+import { DEFAULT_CHARGE_DELAY_TURNS } from "../../tactical/model/equipment";
 import { RADAR_TUNING } from "../../tactical/data/radar-tuning";
 import type {
   EquipmentDefinition,
@@ -431,7 +432,7 @@ function equipmentItem(
     definition.kind === "charge"
       ? [
           chargeDetail(preview.value, unit),
-          chargeDelayText(definition.delayTurns ?? 1),
+          chargeDelayText(definition.delayTurns ?? DEFAULT_CHARGE_DELAY_TURNS),
           uses,
         ].join(" · ")
       : `${blastDetail(preview.value, unit)} · ${uses}`;

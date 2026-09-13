@@ -1,3 +1,4 @@
+import { DEFAULT_CHARGE_DELAY_TURNS } from "../../tactical/model/equipment";
 import { SHIPPED_EQUIPMENT } from "../../tactical/repository/equipment-catalogue";
 import { chargeDelayText } from "../service/charge-delay-text";
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
@@ -214,7 +215,7 @@ export function describeEvent(
       return {
         text: `${nameOf(event.payload.charge.ownerId)} set a breaching charge · goes off ${chargeDelayText(
           SHIPPED_EQUIPMENT.get(event.payload.charge.equipmentId)?.delayTurns ??
-            1,
+            DEFAULT_CHARGE_DELAY_TURNS,
         )}`,
         icon: "warning",
         tone: "accent",

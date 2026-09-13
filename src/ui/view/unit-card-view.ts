@@ -237,6 +237,8 @@ export class UnitCardView {
     if (!unit || !template) {
       // A hidden row cannot be left by the pointer, so the card says so.
       this.hover(undefined);
+      // An empty card reads nobody, enemy or not.
+      delete this.root?.dataset.inspectingEnemy;
       this.body.hidden = true;
       this.empty.hidden = false;
       return;

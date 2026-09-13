@@ -122,12 +122,15 @@ describe("CameraInputController", () => {
     expect(doc2.totalListeners()).toBe(3);
   });
 
-  it("Q rotates left and E rotates right, once per press", () => {
+  it("Q rotates right and E rotates left, once per press (#1130)", () => {
     const { controls, doc } = setup();
     doc.dispatch("keydown", { key: "q", repeat: false });
     doc.dispatch("keydown", { key: "q", repeat: true });
     doc.dispatch("keydown", { key: "E", repeat: false });
-    expect(controls.calls).toEqual(["rotateLeft", "rotateRight"]);
+    // The rig's left and right keep their meaning; the keys swapped
+    // because the world on screen spins against the rig, and the
+    // player reads the world (#1130).
+    expect(controls.calls).toEqual(["rotateRight", "rotateLeft"]);
   });
 
   it("ignores keys typed into text entry elements", () => {

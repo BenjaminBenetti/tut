@@ -93,7 +93,9 @@ test("tactical input picks units and tiles at any camera yaw and maps shortcuts"
   // Frame the units with the real control, retaining the assertions below.
   await page.mouse.wheel(0, 120);
   await page.mouse.wheel(0, 120);
-  await page.keyboard.press("e");
+  // One step clockwise, which is Q since #1130 swapped the keys; the
+  // framing below was measured at this yaw.
+  await page.keyboard.press("q");
   // Wait for the projected positions to stop moving rather than for a
   // fixed span: the rig applies its new state on the next frame, and a
   // stale read here clicks where the unit *was* and picks whatever is

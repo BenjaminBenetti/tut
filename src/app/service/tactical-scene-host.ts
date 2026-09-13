@@ -33,6 +33,7 @@ import {
 } from "../../graphics/service/layer-focus-service";
 import { LoadoutUnitModelSource } from "../../graphics/service/loadout-unit-model-source";
 import { TacticalSceneBuilder } from "../../graphics/service/tactical-scene-builder";
+import { tileRiseFor } from "../../graphics/service/surface-rise";
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { TacticalState } from "../../tactical/model/tactical-state";
@@ -160,7 +161,8 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
       // A mech is drawn from the parts its loadout names (#1115).
       unitModels: new LoadoutUnitModelSource({ models: this.models }),
     });
-    const overlays = new TacticalOverlays();
+    // Raised slabs such as sidewalks lift the marks painted on them (#1130).
+    const overlays = new TacticalOverlays({ rise: tileRiseFor(mission.map) });
     const rig = new OrthographicCameraRig({
       zoom: CAMERA_ZOOM.min,
       yawIndex: missionArrivalYaw(mission),

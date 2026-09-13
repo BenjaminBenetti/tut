@@ -211,6 +211,11 @@ export const GROUND_SLAB_THICKNESS = 0.05;
  *
  * The other layers lift by multiples of this (`× 1.5`, `× 2`, `× 3`), so
  * raising the base raises all of them together.
+ *
+ * Measured from `tileTop`, which is where a ground slab's top face lands
+ * — but not a sidewalk's, whose thicker slab stands 0.035 above it and
+ * swallowed the move bands (#1130). Every layer adds the tile's
+ * `surfaceRise` on top of its lift, so this stays a nudge.
  */
 export const OVERLAY_LIFT = 0.02;
 

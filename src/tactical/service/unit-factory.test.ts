@@ -264,20 +264,22 @@ describe("mechUnit", () => {
   it("derives the template from the stat sheet", () => {
     const { mech, sheet } = starterMech();
     const { unit, template } = mechUnit(mech, sheet, AT, deps());
+    // The Vanguard's plate was halved in #1130: 20 armor on the sheet
+    // is 70 hit points and 6 per hit, where 30 was 80 and 9.
     expect(sheet).toMatchObject({
-      armor: 30,
-      mobility: 7,
+      armor: 20,
+      mobility: 5,
       accuracy: 0,
       firepower: 40,
     });
     expect(template).toMatchObject({
       id: "mech:mech-1",
       name: "Hammerhead",
-      maxHp: 80,
+      maxHp: 70,
       maxAp: 2,
       move: 8,
       sightRange: 14,
-      armor: 9,
+      armor: 6,
       passClass: "mech",
       modelId: "tdf.mech.assembled-a",
     });
@@ -301,8 +303,8 @@ describe("mechUnit", () => {
       kind: "mech",
       team: "tdf",
       sourceId: "mech-1",
-      hp: 80,
-      maxHp: 80,
+      hp: 70,
+      maxHp: 70,
       passClass: "mech",
     });
   });
@@ -310,8 +312,9 @@ describe("mechUnit", () => {
   it("starts a damaged mech reduced by its accumulated damage", () => {
     const { mech, sheet } = starterMech(25);
     const { unit } = mechUnit(mech, sheet, AT, deps());
-    expect(unit.hp).toBe(60);
-    expect(unit.maxHp).toBe(80);
+    // 70 × 75 % is 52.5, and the factory rounds half up.
+    expect(unit.hp).toBe(53);
+    expect(unit.maxHp).toBe(70);
   });
 
   it("clamps move and accuracy into their bounds", () => {

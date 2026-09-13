@@ -12,20 +12,42 @@ import type { MechPart } from "../model/mech-part";
  *     one exception and supplies it
  *   - only weapons have `firepower`
  *   - a mech built from the cheapest part in every slot fits every chassis
+ *   - every chassis is the best at exactly one of armor, mobility,
+ *     utility slots and price, so the trade-off reads at a glance
+ *     (#1130; the table is in the chassis section below)
  */
 export const STARTER_PARTS: readonly MechPart[] = [
   // ===========================================
   // Chassis
   // ===========================================
+  //
+  // Four frames, one for each thing a player might want from a mech,
+  // and each is the best at exactly one of them (Executive Director,
+  // 2026-09-13, #1130). `parts.test.ts` pins the table:
+  //
+  //   | chassis  | tier | cost | armor | mobility | slots | weight / power |
+  //   |----------|------|------|-------|----------|-------|----------------|
+  //   | Vanguard |  1   |  800 |  10   |    3     |   2   |   40 t /  30   |  PRICE
+  //   | Courser  |  1   | 1400 |  12   |    6     |   2   |   44 t /  28   |  SPEED
+  //   | Bulwark  |  1   | 1800 |  40   |    1     |   3   |   70 t /  40   |  ARMOR
+  //   | Atlas    |  2   | 3200 |  28   |    2     |   5   |   95 t /  60   |  UTILITY
+  //
+  // The Vanguard is the starter frame and the cheap one: it carries the
+  // starter loadout to the tonne and little more, and its plate is half
+  // what it was. The Courser keeps its speed under a load that would
+  // slow the Vanguard to a walk. The Bulwark shrugs off a brute and
+  // carries a real gun, and pays for it in every step. The Atlas is the
+  // capital ship: the reactor and the slots to fit everything at once,
+  // at a price that hurts to lose.
   {
     id: "chassis-vanguard",
     name: "Vanguard",
     slot: "chassis",
     tier: 1,
-    cost: 1200,
+    cost: 800,
     stats: {
-      armor: 20,
-      mobility: 5,
+      armor: 10,
+      mobility: 3,
       heat: -2,
       power: 30,
       accuracy: 0,
@@ -33,6 +55,25 @@ export const STARTER_PARTS: readonly MechPart[] = [
       weight: 20,
     },
     capacity: { maxWeight: 40, powerOutput: 30, utilitySlots: 2 },
+    description:
+      "Budget frame and thin plate. Cheap enough to lose, which is the point.",
+  },
+  {
+    id: "chassis-courser",
+    name: "Courser",
+    slot: "chassis",
+    tier: 1,
+    cost: 1400,
+    stats: {
+      armor: 12,
+      mobility: 6,
+      heat: -2,
+      power: 28,
+      accuracy: 0,
+      firepower: 0,
+      weight: 16,
+    },
+    capacity: { maxWeight: 44, powerOutput: 28, utilitySlots: 2 },
     description:
       "Light frame built for speed. Carries little, but gets there first.",
   },
@@ -44,7 +85,7 @@ export const STARTER_PARTS: readonly MechPart[] = [
     cost: 1800,
     stats: {
       armor: 40,
-      mobility: 3,
+      mobility: 1,
       heat: -3,
       power: 40,
       accuracy: 0,
@@ -62,17 +103,17 @@ export const STARTER_PARTS: readonly MechPart[] = [
     tier: 2,
     cost: 3200,
     stats: {
-      armor: 55,
-      mobility: 4,
+      armor: 28,
+      mobility: 2,
       heat: -4,
       power: 60,
       accuracy: 0,
       firepower: 0,
       weight: 45,
     },
-    capacity: { maxWeight: 95, powerOutput: 60, utilitySlots: 4 },
+    capacity: { maxWeight: 95, powerOutput: 60, utilitySlots: 5 },
     description:
-      "Capital-class frame with a reactor to match. Losing one is a bad day.",
+      "Capital-class frame with a reactor to match and room for every fitting. Losing one is a bad day.",
   },
 
   // ===========================================

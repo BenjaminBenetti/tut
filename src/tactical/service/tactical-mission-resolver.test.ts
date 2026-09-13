@@ -57,8 +57,8 @@ const DEPS: MissionResultDeps = {
 const MAP = openField().build();
 /** Squad hit points a squad unit is built with: five soldiers' worth. */
 const SQUAD_HP = 5 * HP_PER_SOLDIER;
-/** The starter mech's hit points in these fixtures. */
-const MECH_HP = 80;
+/** The starter mech's hit points in these fixtures (70 since #1130). */
+const MECH_HP = 70;
 
 function at(x: number, z: number): TileCoord {
   return { x, y: 0, z };

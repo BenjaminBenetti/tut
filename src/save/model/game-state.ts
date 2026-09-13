@@ -35,8 +35,10 @@ import type { TacticalState } from "../../tactical/model/tactical-state";
  * - `18`: active mission radar scanners; older missions migrate with none.
  * - `19`: local city biomes and expanded Earth geography.
  * - `20`: active mission tile effects — fires (#1121); older missions migrate with none.
+ * - `21`: radar scanners carry a battery, `radars[].turnsLeft` (#1130); older
+ *   scanners migrate with a full one.
  */
-export const GAME_STATE_SCHEMA_VERSION = 20;
+export const GAME_STATE_SCHEMA_VERSION = 21;
 
 /**
  * Bookkeeping that every save needs regardless of gameplay content.

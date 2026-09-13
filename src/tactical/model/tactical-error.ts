@@ -172,9 +172,9 @@ export function describeTacticalError(error: TacticalError): string {
     case "no-radar":
       return `Unit "${error.unitId}" cannot deploy radar`;
     case "radar-out-of-reach":
-      return `Deploy radar within ${String(error.range)} tile of the squad`;
+      return `Deploy radar within ${String(error.range)} tiles of the squad`;
     case "radar-tile-blocked":
-      return "Deploy radar on an adjacent free tile the squad can reach";
+      return "Deploy radar on a free tile within reach that the squad can walk to";
     case "objective-not-found":
       return `No objective "${error.objectiveId}" is in this mission`;
     case "objective-complete":

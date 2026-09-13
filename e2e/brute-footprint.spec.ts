@@ -4,7 +4,7 @@ import { FixtureMapBuilder } from "../src/mapgen/service/fixture-map-builder";
 import type { GameState } from "../src/save/model/game-state";
 import type { Unit } from "../src/tactical/model/unit";
 import type { UnitTemplate } from "../src/tactical/model/unit-template";
-import { emptyVision } from "../src/tactical/service/vision-service";
+import { initialVision } from "../src/tactical/service/vision-service";
 import type { TacticalTestHooks } from "../src/ui/model/tactical-intent";
 import { drawnFrame, tacticalModelsReady } from "./capture-frame.helper";
 import { launchMission, settleForShot } from "./mission-capture.helper";
@@ -65,64 +65,63 @@ test("a 2×2 brute is drawn on the corner its four tiles share", async ({
   await tacticalModelsReady(page);
 
   const map = new FixtureMapBuilder(32, 24, 1).fillGround().build();
-  const tdfCount = await page.evaluate(
-    ({ key, fixtureMap, vision, anchor, template }) => {
-      const envelope = JSON.parse(localStorage.getItem(key)!) as {
-        state: GameState;
-      };
-      const mission = envelope.state.activeMission!;
-      const force = mission.units.filter(
-        (unit) => unit.team === "tdf" && unit.hp > 0,
-      );
-      const brute: Unit = {
-        id: "brute-1",
-        kind: "bug",
-        team: "bugs",
-        sourceId: "brute",
-        templateId: template.id,
-        pos: anchor,
-        facing: "w",
-        hp: template.maxHp,
-        maxHp: template.maxHp,
-        ap: template.maxAp,
-        maxAp: template.maxAp,
-        status: [],
-        passClass: "infantry",
-      };
-      envelope.state = {
-        ...envelope.state,
-        activeMission: {
-          ...mission,
-          map: fixtureMap,
-          // The force in a line four tiles west of the brute, well
-          // inside its sight, so the brute is spotted as the save loads.
-          units: [
-            ...force.map((unit, index) => ({
-              ...unit,
-              pos: { x: 4 + index, y: 0, z: 8 },
-              facing: "e" as const,
-            })),
-            brute,
-          ],
-          templates: { ...mission.templates, [template.id]: template },
-          spawners: [],
-          objectives: [],
-          extraction: [],
-          radars: [],
-          effects: [],
-          vision,
-        },
-      };
-      localStorage.setItem(key, JSON.stringify(envelope));
-      return force.length;
+  // Two trips: the save is read in the page, the board is rebuilt here
+  // so the real vision rules can look from it (a resumed save keeps the
+  // vision it was given; nothing recomputes it on load), and the result
+  // is written back.
+  const envelope = await page.evaluate(
+    (key) => JSON.parse(localStorage.getItem(key)!) as { state: GameState },
+    SAVE_KEY,
+  );
+  const mission = envelope.state.activeMission!;
+  const force = mission.units.filter(
+    (unit) => unit.team === "tdf" && unit.hp > 0,
+  );
+  const tdfCount = force.length;
+  const brute: Unit = {
+    id: "brute-1",
+    kind: "bug",
+    team: "bugs",
+    sourceId: "brute",
+    templateId: BRUTE_TEMPLATE.id,
+    pos: ANCHOR,
+    facing: "w",
+    hp: BRUTE_TEMPLATE.maxHp,
+    maxHp: BRUTE_TEMPLATE.maxHp,
+    ap: BRUTE_TEMPLATE.maxAp,
+    maxAp: BRUTE_TEMPLATE.maxAp,
+    status: [],
+    passClass: "infantry",
+  };
+  const { vision: _stale, ...blind } = {
+    ...mission,
+    map,
+    // The force in a line four tiles west of the brute, well inside its
+    // sight, so the brute is spotted as the save loads.
+    units: [
+      ...force.map((unit, index) => ({
+        ...unit,
+        pos: { x: 4 + index, y: 0, z: 8 },
+        facing: "e" as const,
+      })),
+      brute,
+    ],
+    templates: { ...mission.templates, [BRUTE_TEMPLATE.id]: BRUTE_TEMPLATE },
+    spawners: [],
+    objectives: [],
+    extraction: [],
+    radars: [],
+    effects: [],
+  };
+  const rewritten: GameState = {
+    ...envelope.state,
+    activeMission: { ...blind, vision: initialVision(blind) },
+  };
+  await page.evaluate(
+    ({ key, saved }) => {
+      localStorage.setItem(key, JSON.stringify(saved));
     },
-    {
-      key: SAVE_KEY,
-      fixtureMap: map,
-      vision: emptyVision(),
-      anchor: ANCHOR,
-      template: BRUTE_TEMPLATE,
-    },
+    { key: SAVE_KEY, saved: { ...envelope, state: rewritten } },
   );
   expect(tdfCount).toBeGreaterThan(0);
 

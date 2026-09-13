@@ -240,7 +240,12 @@ export class MechListView {
     row.append(
       nameCell,
       loadout,
-      rankCell(doc, mech.xp, this.deps.tuning.ranks.ladder),
+      rankCell(
+        doc,
+        mech.xp,
+        this.deps.tuning.ranks.ladder,
+        this.deps.tuning.ranks,
+      ),
       damage,
       kills,
       xp,

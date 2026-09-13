@@ -1,4 +1,4 @@
-import type { RankLadder } from "../../roster/model/rank";
+import type { RankLadder, RankTuning } from "../../roster/model/rank";
 import type { RosterState } from "../../roster/model/roster-state";
 import type { Squad } from "../../roster/model/squad";
 import type { SquadType, SquadTypeId } from "../../roster/model/squad-type";
@@ -53,6 +53,8 @@ export class SquadListView {
   private readonly handlers: SquadListViewHandlers;
   private readonly squadTypes: SquadTypeCatalogue;
   private readonly ranks: RankLadder;
+  /** The ladder with its rates, for the rank popover (#1134); absent means no popover. */
+  private readonly rankTuning: RankTuning | undefined;
   private root: HTMLElement | undefined;
   private rows: HTMLTableSectionElement | undefined;
   private typePicker: HTMLSelectElement | undefined;
@@ -71,15 +73,18 @@ export class SquadListView {
    * @param handlers - Callbacks for hire and reinforce.
    * @param squadTypes - Catalogue the picker and prices are read from.
    * @param ranks - The ladder each squad's experience is read against.
+   * @param rankTuning - The ladder with its rates, for the rank popover (#1134); optional.
    */
   constructor(
     handlers: SquadListViewHandlers,
     squadTypes: SquadTypeCatalogue,
     ranks: RankLadder,
+    rankTuning?: RankTuning,
   ) {
     this.handlers = handlers;
     this.squadTypes = squadTypes;
     this.ranks = ranks;
+    this.rankTuning = rankTuning;
   }
 
   // ===========================================
@@ -192,7 +197,7 @@ export class SquadListView {
     row.append(
       nameCell,
       this.cell(doc, type?.name ?? squad.typeId, "type"),
-      rankCell(doc, squad.xp, this.ranks),
+      rankCell(doc, squad.xp, this.ranks, this.rankTuning),
       this.cell(
         doc,
         `${formatWhole(squad.strength)} / ${formatWhole(squad.maxStrength)}`,

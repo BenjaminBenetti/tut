@@ -1,5 +1,10 @@
-import type { RankLadder } from "../../roster/model/rank";
-import { rankOf, xpToNextRank } from "../../roster/service/rank-service";
+import type { RankLadder, RankTuning } from "../../roster/model/rank";
+import {
+  rankIndexOf,
+  rankOf,
+  xpToNextRank,
+} from "../../roster/service/rank-service";
+import { attachRankTooltip } from "./rank-tooltip-view";
 import { formatWhole } from "../service/format";
 
 // ===========================================
@@ -24,21 +29,29 @@ const NO_RANK = "—";
  *   └──────────────────────────────┘
  * ```
  *
+ * Resting on the name opens the rank popover (#1134) when the tuning
+ * is given; a ladder alone still names the rank.
+ *
  * @param doc - Owning document.
  * @param xp - The unit's accumulated experience.
  * @param ladder - Ranks from lowest to highest.
+ * @param tuning - The ladder with its rates, for the popover; optional.
  * @returns The cell, carrying `data-field="rank"` for tests.
  */
 export function rankCell(
   doc: Document,
   xp: number,
   ladder: RankLadder,
+  tuning?: RankTuning,
 ): HTMLTableCellElement {
   const cell = doc.createElement("td");
   cell.dataset.field = "rank";
   const name = doc.createElement("span");
   name.dataset.role = "rank-name";
   name.textContent = rankOf(xp, ladder)?.name ?? NO_RANK;
+  if (tuning !== undefined && ladder.length > 0) {
+    attachRankTooltip(name, rankIndexOf(xp, ladder), tuning);
+  }
   cell.appendChild(name);
   const toNext = xpToNextRank(xp, ladder);
   if (toNext !== undefined) {

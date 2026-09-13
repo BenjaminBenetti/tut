@@ -6,6 +6,7 @@ import type { CombatTuning } from "../../tactical/model/combat-tuning";
 import { abandonMission } from "../../tactical/model/abandon-mission-command";
 import { finishMission } from "../../tactical/model/finish-mission-command";
 import { leaveMissionSummary } from "../../tactical/service/abandon-mission-handler";
+import type { RankTuning } from "../../roster/model/rank";
 import type { ObjectiveTuning } from "../../tactical/model/objective-tuning";
 import type { PreviewDeps } from "../../tactical/service/combat-service";
 import type { TacticalCommand } from "../../tactical/model/tactical-command";
@@ -40,6 +41,8 @@ export interface TacticalScreenDeps {
   readonly combatTuning: CombatTuning;
   /** Tuning the HUD hands to `reachableObjectives`; the screen judges no distance itself. */
   readonly objectiveTuning: ObjectiveTuning;
+  /** The rank ladder and its rates for the card's rank popover (#1134); absent in tests without one. */
+  readonly rankTuning?: RankTuning;
   /** The content the HUD's blast previews ask what would fall (#1121); absent in tests without one. */
   readonly previewDeps?: PreviewDeps;
   /** Hold time and timers for the phase banner (#523); the defaults are the DOM's. */
@@ -266,6 +269,7 @@ export class TacticalScreen implements Screen {
       {
         combatTuning: deps.combatTuning,
         objectiveTuning: deps.objectiveTuning,
+        rankTuning: deps.rankTuning,
         ...(deps.previewDeps === undefined
           ? {}
           : { previewDeps: deps.previewDeps }),

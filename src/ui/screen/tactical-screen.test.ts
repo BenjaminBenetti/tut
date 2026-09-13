@@ -266,6 +266,11 @@ class FakeHost implements TacticalSceneHost {
   markBlast(tiles: readonly { x: number; y: number; z: number }[]): void {
     this.blasts.push(tiles.length);
   }
+  /** Weapon reaches the screen asked to paint (#1132), by tile count. */
+  readonly ranges: number[] = [];
+  markWeaponRange(tiles: readonly { x: number; y: number; z: number }[]): void {
+    this.ranges.push(tiles.length);
+  }
   /** Units the screen asked to centre on (#1041). */
   readonly lookedAt: string[] = [];
   lookAtUnit(unitId: string): void {

@@ -24,6 +24,7 @@ import {
   findAttackTarget,
 } from "../../tactical/service/attack-target-service";
 import type { PreviewDeps } from "../../tactical/service/combat-service";
+import { weaponRangeTiles } from "../../tactical/service/weapon-range-service";
 import {
   attacksRemaining,
   chargesLeft,
@@ -147,6 +148,13 @@ export interface TacticalHudHandlers {
    */
   readonly onMarkBlast?: (tiles: readonly TileCoord[]) => void;
   /**
+   * Paint the tiles the weapon rested on in the unit panel can reach,
+   * or clear them (#1132): the range preview, red where the move
+   * preview is blue. Optional, so a HUD built without a scene needs no
+   * stub.
+   */
+  readonly onMarkWeaponRange?: (tiles: readonly TileCoord[]) => void;
+  /**
    * Where the top of a unit's model is on screen, for the status chip
    * above it while Shift is held. Absent in tests and headless callers,
    * and the chips simply do not appear without it.
@@ -241,7 +249,12 @@ export class TacticalHudView {
   private graphFor: TacticalState["map"] | undefined;
   private readonly banner: TurnBannerView;
   private readonly phases: PhaseBannerView;
-  private readonly card = new UnitCardView();
+  /** The selected unit's card; resting on one of its weapons previews that weapon's reach (#1132). */
+  private readonly card = new UnitCardView({
+    onWeaponHover: (weaponId) => {
+      this.previewWeaponRange(weaponId);
+    },
+  });
   private readonly preview: HitPreviewView;
   private readonly objectives = new ObjectiveTrackerView();
   /** The force at a glance; a row selects and recovers a unit (#1041). */
@@ -1509,6 +1522,24 @@ export class TacticalHudView {
   }
 
   /**
+   * Paints the reach of `weaponId` from where the selected unit stands,
+   * or clears the paint for no weapon (#1132). The tiles come from the
+   * rules' own reach and sight predicates, so the red on the ground is
+   * what the shot can actually reach.
+   */
+  private previewWeaponRange(weaponId: WeaponId | undefined): void {
+    const mission = this.mission;
+    const unitId = this.selected;
+    if (weaponId === undefined || !mission || unitId === undefined) {
+      this.handlers.onMarkWeaponRange?.([]);
+      return;
+    }
+    this.handlers.onMarkWeaponRange?.(
+      weaponRangeTiles(mission, unitId, weaponId, this.deps.combatTuning),
+    );
+  }
+
+  /**
    * The tiles the shot the player is considering would reach (#1121).
    *
    * ```
@@ -1754,6 +1785,7 @@ export class TacticalHudView {
         locked: this.playbackLocked,
       });
       this.handlers.onMarkBlast?.([]);
+      this.handlers.onMarkWeaponRange?.([]);
       return;
     }
     this.banner.update({
@@ -1786,6 +1818,9 @@ export class TacticalHudView {
       selected ? this.attacksLeftFor(selected) : undefined,
       selected ? namesFor(mission, this.campaign).unit(selected.id) : undefined,
     );
+    // A preview that stays up across a move is recomputed from where the
+    // unit stands now, and one for a unit no longer selected goes.
+    this.previewWeaponRange(this.card.hoveredWeapon());
     const target =
       this.target === undefined
         ? undefined

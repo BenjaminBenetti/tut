@@ -187,6 +187,43 @@ describe("TacticalHudView", () => {
     expect(hud.getMode()).toBe("move");
   });
 
+  it("paints a weapon's reach while its row on the card is rested on, and clears it on leave (#1132)", () => {
+    const mission = twoWeaponMission();
+    const ranges: number[] = [];
+    const hud = new TacticalHudView(
+      {
+        onCommand: vi.fn(),
+        onBack: vi.fn(),
+        onMarkWeaponRange: (tiles) => ranges.push(tiles.length),
+      },
+      { combatTuning: COMBAT_TUNING, objectiveTuning: OBJECTIVE_TUNING },
+    );
+    hud.mount(root);
+    hud.update(mission);
+    hud.handleIntent({ kind: "select-unit", unitId: "m1" });
+    const row = (id: string): HTMLElement | null =>
+      root.querySelector<HTMLElement>(
+        `#unit-card [data-role="weapon-row"][data-weapon-id="${id}"]`,
+      );
+    expect(row("arm-weapon")).not.toBeNull();
+    row("arm-weapon")?.dispatchEvent(new Event("mouseenter"));
+    const arm = ranges.at(-1) ?? 0;
+    expect(arm).toBeGreaterThan(0);
+    // The longer weapon reaches more of the field.
+    row("arm-weapon")?.dispatchEvent(new Event("mouseleave"));
+    expect(ranges.at(-1)).toBe(0);
+    row("back-weapon")?.dispatchEvent(new Event("mouseenter"));
+    expect(ranges.at(-1) ?? 0).toBeGreaterThan(arm);
+    // A refresh keeps the preview up from where the unit stands.
+    hud.update(mission);
+    expect(ranges.at(-1) ?? 0).toBeGreaterThan(arm);
+    // Deselecting takes the card away, and the paint with it.
+    hud.handleIntent({ kind: "action", action: "cancel" });
+    hud.handleIntent({ kind: "select-unit", unitId: "m1" });
+    hud.update(undefined);
+    expect(ranges.at(-1)).toBe(0);
+  });
+
   it("paints the blast for an enemy and a tile alike, every weapon together, and the rested weapon alone (#1121)", () => {
     const base = twoWeaponMission();
     const mech = base.templates.mech!;

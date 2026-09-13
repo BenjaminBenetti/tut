@@ -161,6 +161,7 @@ describe("TacticalOverlays", () => {
       blockedShot: 1,
       markedTile: 0,
       blast: 0,
+      rangeFill: 0,
     });
     overlays.setBlastTiles([
       { x: 1, y: 0, z: 1 },
@@ -177,6 +178,7 @@ describe("TacticalOverlays", () => {
       blockedShot: 0,
       markedTile: 0,
       blast: 0,
+      rangeFill: 0,
     });
     overlays.dispose();
     expect(overlays.root.children).toHaveLength(0);
@@ -669,6 +671,25 @@ describe("TacticalOverlays on raised surfaces (#1130)", () => {
       tileTop(0) + OVERLAY_LIFT * 7 + rise,
       6,
     );
+    overlays.dispose();
+  });
+
+  it("paints the weapon-range fill above the bands and under the blast, with the rise, and clears it (#1132)", () => {
+    const overlays = overlaysOnStreet();
+    overlays.setWeaponRangeFill([sidewalk, { x: 0, y: 0, z: 0 }]);
+    expect(overlays.counts().rangeFill).toBe(2);
+    const rise = surfaceRise(SurfaceIds.SIDEWALK);
+    expect(instanceY(overlays, "overlay-weapon-range-fill", 0)).toBeCloseTo(
+      tileTop(0) + OVERLAY_LIFT * 5.5 + rise,
+      6,
+    );
+    // A road tile rises nothing: the fill sits on its own lift alone.
+    expect(instanceY(overlays, "overlay-weapon-range-fill", 1)).toBeCloseTo(
+      tileTop(0) + OVERLAY_LIFT * 5.5,
+      6,
+    );
+    overlays.clear();
+    expect(overlays.counts().rangeFill).toBe(0);
     overlays.dispose();
   });
 

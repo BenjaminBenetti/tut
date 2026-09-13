@@ -77,6 +77,16 @@ function roomField(): ReturnType<FixtureMapBuilder["build"]> {
     builder.wall({ x: ROOM.x, y: 0, z }, "w", "solid");
     builder.wall({ x: ROOM.x + ROOM.w - 1, y: 0, z }, "e", "solid");
   }
+  // Two free-standing wall segments off to the side but nearer the
+  // camera than the squad (#1134): under the old plane rule both faded
+  // for standing on the camera's side within the radius; no ray from
+  // the squad to the camera passes through either, so both stay solid.
+  for (const x of [ROOM.x + ROOM.w + 1, ROOM.x + ROOM.w + 2]) {
+    builder.wall({ x, y: 0, z: ROOM.z + ROOM.d - 1 }, "s", "solid");
+  }
+  for (const z of [ROOM.z + ROOM.d + 1, ROOM.z + ROOM.d + 2]) {
+    builder.wall({ x: ROOM.x - 2, y: 0, z }, "e", "solid");
+  }
   const building: Building = {
     id: ROOM_ID,
     kind: "fixture-room",
@@ -91,22 +101,24 @@ function roomField(): ReturnType<FixtureMapBuilder["build"]> {
 }
 
 /**
- * The cutaway opens only what stands between the camera and the unit
- * (#1132). The starter force is launched for real, then the board is
- * rewritten onto a flat field with one walled, roofed room and the
- * first squad in the middle of it. The storey cut is lifted so the roof
- * is drawn, and the frame is taken: the south and east walls and the
- * roof over the camera's side of the squad fade in the usual dithered
- * window, while the north and west walls and the floor stay solid, so
- * the room reads as a room with its near corner cut away rather than a
- * spotlight that dissolves the back of it.
+ * The cutaway opens only what a ray from the squad to the camera passes
+ * through (#1132, rays since #1134). The starter force is launched for
+ * real, then the board is rewritten onto a flat field with one walled,
+ * roofed room, the first squad in the middle of it, and two stray wall
+ * segments off to the side of the room on the camera's side. The storey
+ * cut is lifted so the roof is drawn, and the frame is taken: the parts
+ * of the south and east walls and of the roof that stand over the squad
+ * on screen fade in the usual dithered window, while the north and west
+ * walls, the floor, the rest of the near walls and both stray segments
+ * stay solid — so the room reads as a room with a window cut where the
+ * squad is, not a disc dissolving everything on the camera's side.
  *
  * The placement is asserted from the saved state on both sides of the
  * reload, so a frame of the wrong thing fails instead of passing.
  *
  *   CAPTURE=1 pnpm exec playwright test e2e/ghost-depth-screenshot.spec.ts
  */
-test("the cutaway fades the walls in front of a squad and leaves the walls behind it solid", async ({
+test("the cutaway fades only what a ray from the squad to the camera passes through", async ({
   page,
 }) => {
   test.skip(
@@ -140,6 +152,14 @@ test("the cutaway fades the walls in front of a squad and leaves the walls behin
   expect(index.getAt({ x: INSIDE.x, y: 2, z: INSIDE.z })?.surface).toBe(
     SurfaceIds.ROOF,
   );
+  // The stray segments are there to stay solid (#1134).
+  expect(
+    index.getAt({ x: ROOM.x + ROOM.w + 1, y: 0, z: ROOM.z + ROOM.d - 1 })?.walls
+      .s,
+  ).toBe("solid");
+  expect(
+    index.getAt({ x: ROOM.x - 2, y: 0, z: ROOM.z + ROOM.d + 1 })?.walls.e,
+  ).toBe("solid");
 
   const save = await page.evaluate(
     (key) => JSON.parse(localStorage.getItem(key)!) as SaveEnvelope<GameState>,

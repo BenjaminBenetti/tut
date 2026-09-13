@@ -1,16 +1,16 @@
-import type { Camera, Object3D } from "three";
+import type { Camera } from "three";
 import { Vector3 } from "three";
 
 import type { FrameUpdatable } from "../model/frame-updatable";
-import type { GhostUniforms } from "./ghost-cutaway";
+import type { GhostSubject, GhostUniforms } from "./ghost-cutaway";
 import { MAX_GHOSTS } from "./ghost-cutaway";
 
 // ===========================================
 // Types
 // ===========================================
 
-/** Where the units to keep visible are, in world space, newest first. */
-export type GhostSource = () => readonly Object3D[];
+/** The units to keep visible, newest first: where each is drawn and how big it is. */
+export type GhostSource = () => readonly GhostSubject[];
 
 /** Seconds a cutaway takes to open or close (style guide §12.4). */
 const FADE_SECONDS = 0.15;
@@ -29,10 +29,9 @@ function clamp(value: number, low: number, high: number): number {
  * able to see (#526).
  *
  * ```
- *   every frame:  source() ──► world positions ──► × camera.matrixWorldInverse
- *                                    │             └──► view space ──► uniforms
+ *   every frame:  source() ──► feet, footprint, height ──► × camera.matrixWorldInverse
+ *                                    │                     └──► view-space box ──► uniforms
  *                                    └──► world y (the feet) ──► uniforms
- *                 world up ──► × camera rotation ──► view z per unit of height
  * ```
  *
  * The centres are the **objects the scene is already drawing** rather
@@ -55,8 +54,9 @@ export class GhostController implements FrameUpdatable {
   private readonly source: GhostSource;
   private readonly uniforms: GhostUniforms;
   private readonly scratch = new Vector3();
-  /** Object each centre slot is tracking, so a ramp follows its own unit. */
-  private readonly slots: (Object3D | undefined)[] = [];
+  private readonly edge = new Vector3();
+  /** Object each slot is tracking, so a ramp follows its own unit. */
+  private readonly slots: (GhostSubject["object"] | undefined)[] = [];
 
   // ===========================================
   // Constructor
@@ -83,29 +83,45 @@ export class GhostController implements FrameUpdatable {
    * @param deltaSeconds - Frame delta, which drives the fade ramp.
    */
   update(deltaSeconds: number): void {
-    const objects = this.source();
-    const count = Math.min(objects.length, MAX_GHOSTS);
+    const subjects = this.source();
+    const count = Math.min(subjects.length, MAX_GHOSTS);
     this.camera.updateMatrixWorld();
-    // How much nearer the camera a fragment gets per world unit it rises:
-    // the shader takes this back out so it compares footprints, not
-    // heights (#1132). One number for the frame, since every centre is
-    // seen through the same camera.
-    this.uniforms.uGhostUp.value = this.scratch
-      .set(0, 1, 0)
-      .transformDirection(this.camera.matrixWorldInverse).z;
     const step = deltaSeconds / FADE_SECONDS;
     for (let i = 0; i < MAX_GHOSTS; i++) {
-      const object = i < count ? objects[i] : undefined;
+      const subject = i < count ? subjects[i] : undefined;
+      const object = subject?.object;
       const centre = this.uniforms.uGhostCentres.value[i];
       const previous = this.slots[i];
-      if (object !== undefined && centre !== undefined) {
+      if (
+        subject !== undefined &&
+        object !== undefined &&
+        centre !== undefined
+      ) {
         object.getWorldPosition(this.scratch);
         // A unit's object stands on its tile, so its world height is the
         // height of its feet: the plane below which nothing ghosts (#1118).
         this.uniforms.uGhostFeet.value[i] = this.scratch.y;
         // View space is what the shader compares in, so the projection is
-        // done once here rather than per fragment.
+        // done once here rather than per fragment: the feet centre, and
+        // the box edges the rays leave from (#1134).
         centre.copy(this.scratch).applyMatrix4(this.camera.matrixWorldInverse);
+        this.edgeInView(
+          this.scratch,
+          subject.halfWidth,
+          0,
+          0,
+          i,
+          "uGhostRight",
+        );
+        this.edgeInView(
+          this.scratch,
+          0,
+          0,
+          subject.halfWidth,
+          i,
+          "uGhostForward",
+        );
+        this.edgeInView(this.scratch, 0, subject.height, 0, i, "uGhostUpVec");
       }
       // A slot that changed hands starts from nothing, or the new unit
       // inherits the old one's ramp and the cutaway appears to jump.
@@ -126,5 +142,35 @@ export class GhostController implements FrameUpdatable {
       (live, value, index) => (value > 0 ? index + 1 : live),
       count,
     );
+  }
+
+  // ===========================================
+  // Private Methods
+  // ===========================================
+
+  /**
+   * Writes a world-space edge from `feet` into a view-space uniform:
+   * the view position of the edge's far end less the view position of
+   * the feet. Done as a difference of points rather than a transformed
+   * direction because three's `transformDirection` normalises, and the
+   * shader needs the edge's length.
+   */
+  private edgeInView(
+    feet: Vector3,
+    dx: number,
+    dy: number,
+    dz: number,
+    slot: number,
+    uniform: "uGhostRight" | "uGhostForward" | "uGhostUpVec",
+  ): void {
+    const target = this.uniforms[uniform].value[slot];
+    const centre = this.uniforms.uGhostCentres.value[slot];
+    if (target === undefined || centre === undefined) {
+      return;
+    }
+    this.edge
+      .set(feet.x + dx, feet.y + dy, feet.z + dz)
+      .applyMatrix4(this.camera.matrixWorldInverse);
+    target.copy(this.edge).sub(centre);
   }
 }

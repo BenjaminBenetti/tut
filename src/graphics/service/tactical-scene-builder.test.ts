@@ -271,12 +271,14 @@ describe("TacticalSceneBuilder", () => {
     expect(object.visible).toBe(false);
     // The wall cutaway centres on drawn units; an unseen bug in the dark
     // must not open a window that says where it is.
-    expect(builder.ghostTargets().map((o) => o.name)).toEqual(["unit:u1"]);
+    expect(builder.ghostTargets().map((s) => s.object.name)).toEqual([
+      "unit:u1",
+    ]);
     expect(builder.pickUnit(ndcOf(5.5, 5.5), topDownCamera())).toBeUndefined();
     // The walk shows it (the queue sets `visible`); from then on it is
     // an ordinary unit.
     object.visible = true;
-    expect(builder.ghostTargets().map((o) => o.name)).toEqual([
+    expect(builder.ghostTargets().map((s) => s.object.name)).toEqual([
       "unit:u1",
       "unit:b1",
     ]);

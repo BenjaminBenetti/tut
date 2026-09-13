@@ -191,7 +191,13 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
       content,
       // The fires flicker on the frame loop like everything else that
       // moves without a command (#1121).
-      updatables: [input, animations, ghosting, builder.effectsUpdatable],
+      updatables: [
+        input,
+        animations,
+        ghosting,
+        builder.effectsUpdatable,
+        builder.radarUpdatable,
+      ],
     });
     input.attach(container);
     // The height cut is the scene's, not the input controller's, so the

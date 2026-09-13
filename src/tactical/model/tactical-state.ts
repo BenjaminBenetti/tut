@@ -6,6 +6,7 @@ import type { TacticalEvent } from "./tactical-event";
 import type { TileEffect } from "./tile-effect";
 import type { Team, Unit, UnitId } from "./unit";
 import type { UnitTemplate, UnitTemplateId } from "./unit-template";
+import type { PlacedCharge } from "./equipment";
 import type { Radar } from "./radar";
 
 // ===========================================
@@ -158,6 +159,7 @@ export const NO_VISION: SideVision = {
  *   ├── turn, phase           FIRST_TURN and counting; player then bugs
  *   ├── objectives[], spawners[]
  *   ├── effects[]             fires burning on tiles, each with a clock (#1121)
+ *   ├── charges[]             breaching charges waiting to go off (#1132)
  *   ├── edgeSpawn             when the next edge wave arrives
  *   ├── extraction[]          tiles a unit must reach to leave
  *   ├── extracted[]           units that left through them, as they left; not in units[]
@@ -195,6 +197,11 @@ export interface TacticalState {
   readonly effects: readonly TileEffect[];
   /** Deployed scanners, active until the mission ends. */
   readonly radars: readonly Radar[];
+  /**
+   * Breaching charges placed and not yet detonated (#1132), in the order
+   * they were set. Each goes off as the player phase of its turn opens.
+   */
+  readonly charges: readonly PlacedCharge[];
   readonly edgeSpawn: EdgeSpawnSchedule;
   /** Tiles of the extraction hook. */
   readonly extraction: readonly TileCoord[];

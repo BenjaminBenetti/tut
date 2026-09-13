@@ -1,6 +1,9 @@
 import type { Unit } from "../../tactical/model/unit";
 import type { UnitTemplate } from "../../tactical/model/unit-template";
+import type { EquipmentDefinition } from "../../tactical/model/equipment";
 import { displayWeaponName } from "../../tactical/model/unit-weapon";
+import { SHIPPED_EQUIPMENT } from "../../tactical/repository/equipment-catalogue";
+import { equipmentOf } from "../../tactical/service/equipment-service";
 import { formatWhole } from "../service/format";
 import { iconGlyph } from "./icon-glyph";
 import { chargeRegisterFor } from "../service/charge-register";
@@ -108,6 +111,7 @@ export class UnitCardView {
       ["AP", "ap", "ap"],
       ["Attacks", "attacks", "attack"],
       ["Weapon", "weapon", "attack"],
+      ["Equipment", "equipment", "ability"],
       ["Armor", "armor", "armor"],
       ["Status", "status", "overwatch"],
     ] as const) {
@@ -213,6 +217,16 @@ export class UnitCardView {
         };
       }),
     );
+    // What the unit carries besides its weapon (#1132), each with its
+    // uses left; a bug or a mech carries nothing and shows a dash.
+    this.setEntries(
+      "equipment",
+      equipmentOf(template, unit, SHIPPED_EQUIPMENT).map((carried) => ({
+        name: carried.definition.name,
+        value: equipmentSummary(carried.definition),
+        charges: `uses ${formatWhole(carried.usesLeft)} / ${formatWhole(carried.definition.uses)}`,
+      })),
+    );
     this.set("armor", formatWhole(template.armor));
     this.set(
       "status",
@@ -312,4 +326,36 @@ export class UnitCardView {
       }),
     );
   }
+}
+
+// ===========================================
+// Helpers
+// ===========================================
+
+/**
+ * The numbers an item is judged by (#1132): where it may go and, for a
+ * grenade or a charge, what it does there, on the weapon line's pattern.
+ */
+function equipmentSummary(definition: EquipmentDefinition): string {
+  const parts = [`range ${formatWhole(definition.range)}`];
+  const p = definition.profile;
+  if (p !== undefined) {
+    if (definition.kind === "blast") {
+      parts.push(`acc ${formatWhole(p.accuracy)}`);
+    }
+    parts.push(
+      `dmg ${formatWhole(p.damage)}`,
+      `pen ${formatWhole(p.armorPen)}`,
+    );
+    if (p.aoe !== undefined) {
+      parts.push(`blast ${formatWhole(p.aoe.radius)}`);
+    }
+    if ((p.demoForce ?? 0) > 0) {
+      parts.push(`demo ${formatWhole(p.demoForce ?? 0)}`);
+    }
+  }
+  if (definition.delayTurns !== undefined) {
+    parts.push("next turn");
+  }
+  return parts.join(" · ");
 }

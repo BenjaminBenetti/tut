@@ -23,11 +23,19 @@ import {
   isDropshipTile,
 } from "./action-availability";
 import { chargeRegisterFor } from "./charge-register";
+import { RADAR_DISH } from "../../tactical/data/equipment";
 import { RADAR_TUNING } from "../../tactical/data/radar-tuning";
+import type {
+  EquipmentDefinition,
+  EquipmentId,
+} from "../../tactical/model/equipment";
+import { SHIPPED_EQUIPMENT } from "../../tactical/repository/equipment-catalogue";
+import type { EquipmentRules } from "../../tactical/service/equipment-service";
 import {
-  carriesRadar,
-  validateRadarDeployment,
-} from "../../tactical/service/radar-service";
+  equipmentOf,
+  previewEquipmentUse,
+  validateEquipmentUse,
+} from "../../tactical/service/equipment-service";
 import type { TacticalNames } from "./tactical-error-text";
 import { describeRefusal } from "./tactical-error-text";
 
@@ -63,6 +71,11 @@ export interface WheelPage {
 export type WheelChoice =
   | { readonly action: "move"; readonly tile: TileCoord }
   | { readonly action: "deploy-radar"; readonly tile: TileCoord }
+  | {
+      readonly action: "use-equipment";
+      readonly equipmentId: EquipmentId;
+      readonly tile: TileCoord;
+    }
   | {
       readonly action: "attack";
       readonly targetId: string;
@@ -106,8 +119,10 @@ const SHORT_REASONS: Readonly<Partial<Record<TacticalError["kind"], string>>> =
     "target-destroyed": "destroyed",
     "tile-out-of-sight": "no line of sight",
     "no-area-weapon": "not at the ground",
-    "radar-out-of-reach": `range ${String(RADAR_TUNING.deployRange)}`,
+    "radar-out-of-reach": `range ${String(RADAR_DISH.range)}`,
     "radar-tile-blocked": "tile blocked",
+    "no-equipment": "not carried",
+    "equipment-spent": "none left",
   };
 
 /** Separates an entry's action from its argument in the id. */
@@ -255,6 +270,20 @@ export function parseWheelChoice(id: string): WheelChoice | undefined {
       const tile = parseTile(argument);
       return tile === undefined ? undefined : { action, tile };
     }
+    case "equipment": {
+      const split = argument.indexOf(ID_SEPARATOR);
+      if (split === -1) {
+        return undefined;
+      }
+      const tile = parseTile(argument.slice(split + 1));
+      return tile === undefined
+        ? undefined
+        : {
+            action: "use-equipment",
+            equipmentId: argument.slice(0, split),
+            tile,
+          };
+    }
     case "attack": {
       const split = argument.indexOf(ID_SEPARATOR);
       return split === -1
@@ -328,31 +357,96 @@ function tilePage(tile: TileCoord, unit: Unit, ctx: WheelContext): WheelPage {
   if (isDropshipTile(ctx.mission, tile)) {
     items.push(boardItem(unit, ctx));
   }
-  if (carriesRadar(ctx.mission, unit)) {
-    const radarId = itemId(
-      "deploy-radar",
-      `${String(tile.x)},${String(tile.y)},${String(tile.z)}`,
-    );
-    const deployment = validateRadarDeployment(
-      ctx.mission,
-      unit.id,
-      tile,
-      RADAR_TUNING,
-      ctx.graph,
-    );
+  // Every item the unit carries (#1132): the dish where a scanner may
+  // go, a grenade or a charge on any tile it can throw to.
+  for (const carried of equipmentOf(
+    ctx.mission.templates[unit.templateId],
+    unit,
+    SHIPPED_EQUIPMENT,
+  )) {
     items.push(
-      deployment.ok
-        ? {
-            id: radarId,
-            label: "Deploy radar",
-            icon: "radar",
-            detail: `${String(RADAR_TUNING.apCost)} AP · scan ${String(RADAR_TUNING.scanRange)} · ${String(RADAR_TUNING.batteryTurns)} turns`,
-          }
-        : closed(radarId, "Deploy radar", "radar", deployment.error, ctx),
+      equipmentItem(tile, unit, carried.definition, carried.usesLeft, ctx),
     );
   }
   items.push(overwatchItem(unit, ctx), reloadItem(unit, ctx));
   return { items };
+}
+
+/**
+ * One item of the unit's equipment at a tile (#1132). The radar dish
+ * keeps the entry it has always had — `deploy-radar:x,y,z`, "Deploy
+ * radar", `1 AP · scan 30` — so a player and a test find it where it
+ * was; a grenade or a charge reads like a shot at the ground, with the
+ * uses left last. Closed with the rules' reason when the use is refused.
+ */
+function equipmentItem(
+  tile: TileCoord,
+  unit: Unit,
+  definition: EquipmentDefinition,
+  usesLeft: number,
+  ctx: WheelContext,
+): RadialMenuItem {
+  const rules: EquipmentRules = {
+    catalogue: SHIPPED_EQUIPMENT,
+    combat: ctx.deps.combatTuning,
+  };
+  if (definition.kind === "radar") {
+    const id = itemId("deploy-radar", tileArgument(tile));
+    const site = validateEquipmentUse(
+      ctx.mission,
+      unit.id,
+      definition.id,
+      tile,
+      rules,
+      ctx.graph,
+    );
+    return site.ok
+      ? {
+          id,
+          label: "Deploy radar",
+          icon: "radar",
+          detail: `${String(definition.apCost)} AP · scan ${String(RADAR_TUNING.scanRange)}`,
+        }
+      : closed(id, "Deploy radar", "radar", site.error, ctx);
+  }
+  const id = itemId(
+    "equipment",
+    `${definition.id}${ID_SEPARATOR}${tileArgument(tile)}`,
+  );
+  const icon = definition.kind === "charge" ? "warning" : "attack";
+  const preview = previewEquipmentUse(
+    ctx.mission,
+    unit.id,
+    definition.id,
+    tile,
+    rules,
+    ctx.previewDeps,
+  );
+  if (!preview.ok) {
+    return closed(id, definition.name, icon, preview.error, ctx);
+  }
+  const uses = `${String(usesLeft)}/${String(definition.uses)}`;
+  const detail =
+    definition.kind === "charge"
+      ? [chargeDetail(preview.value, unit), "next turn", uses].join(" · ")
+      : `${blastDetail(preview.value, unit)} · ${uses}`;
+  return { id, label: definition.name, icon, detail };
+}
+
+/**
+ * `18–22 dmg · 1 ally` for a charge, which cannot miss and so prints no
+ * chance; the unit itself counts among the allies, because a charge
+ * spares nobody and the squad has to walk away from it.
+ */
+function chargeDetail(preview: AttackPreview, unit: Unit): string {
+  const parts = [damageText(preview.damage)];
+  const allies =
+    preview.blast?.victims.filter((victim) => victim.team === unit.team)
+      .length ?? 0;
+  if (allies > 0) {
+    parts.push(`${String(allies)} ${allies === 1 ? "ally" : "allies"}`);
+  }
+  return parts.join(" · ");
 }
 
 /**

@@ -31,12 +31,15 @@ import { MOVE } from "../../tactical/model/move-command";
 import { OVERWATCH } from "../../tactical/model/overwatch-command";
 import { RELOAD } from "../../tactical/model/reload-command";
 import type { AttackDeps } from "../../tactical/service/combat-service";
-import { DEPLOY_RADAR } from "../../tactical/model/deploy-radar-command";
 import { RADAR_TUNING } from "../../tactical/data/radar-tuning";
+import { USE_EQUIPMENT } from "../../tactical/model/use-equipment-command";
+import { SHIPPED_EQUIPMENT } from "../../tactical/repository/equipment-catalogue";
+import type { EquipmentDeps } from "../../tactical/service/equipment-service";
 import {
-  createDeployRadarHandler,
-  drainRadarBatteries,
-} from "../../tactical/service/radar-service";
+  createDetonateStep,
+  createUseEquipmentHandler,
+} from "../../tactical/service/equipment-service";
+import { drainRadarBatteries } from "../../tactical/service/radar-service";
 import { createAttackHandler } from "../../tactical/service/combat-service";
 import type { MissionStartDeps } from "../../tactical/service/mission-start-service";
 import { createMoveHandler } from "../../tactical/service/move-handler";
@@ -170,7 +173,7 @@ export function composeTactical(
  * their own object to isolate the lifting path.
  *
  * ```
- *   EndTurn ──► phase steps: refreshSides, drain radars, burn, hatch, edge waves
+ *   EndTurn ──► phase steps: refreshSides, drain radars, detonate charges, burn, hatch, edge waves
  *                    └──► bug phase runner ──► every living bug acts
  *                              └──► player turn + 1 (or MissionEnded)
  * ```
@@ -179,7 +182,10 @@ export function composeTactical(
  * whose phase begins pays for standing in one before it can move out,
  * and before anything hatches into it. Radar batteries drain as the
  * player's turn opens (#1130), before the fires, so a scanner that dies
- * this turn is announced at the top of the turn's account.
+ * this turn is announced at the top of the turn's account. Breaching
+ * charges go off next (#1132), before the fires: whatever the blast
+ * lights burns from this turn, and a bug the blast leaves standing in
+ * a fire pays for it before it can move.
  */
 export function shippedTacticalHandlers(
   registries: MapGenRegistries = createDefaultRegistries(),
@@ -189,6 +195,12 @@ export function shippedTacticalHandlers(
     tuning: SPAWN_TUNING,
   };
   const attackDeps = attackDepsOver(registries);
+  const equipment: EquipmentDeps = {
+    catalogue: SHIPPED_EQUIPMENT,
+    combat: COMBAT_TUNING,
+    attack: attackDeps,
+    radar: RADAR_TUNING,
+  };
   const actions: TacticalHandlers = {
     [ATTACK]: createAttackHandler(COMBAT_TUNING, attackDeps),
     [MOVE]: createMoveHandler(
@@ -196,7 +208,7 @@ export function shippedTacticalHandlers(
     ),
     [OVERWATCH]: overwatchHandler,
     [RELOAD]: reloadHandler,
-    [DEPLOY_RADAR]: createDeployRadarHandler(RADAR_TUNING),
+    [USE_EQUIPMENT]: createUseEquipmentHandler(equipment),
     [INTERACT]: createInteractHandler(OBJECTIVE_TUNING),
     [EXTRACT]: createExtractHandler(OBJECTIVE_TUNING),
   };
@@ -212,6 +224,7 @@ export function shippedTacticalHandlers(
       [
         ...DEFAULT_PHASE_STEPS,
         drainRadarBatteries,
+        createDetonateStep(equipment),
         createBurnStep(HAZARD_TUNING, COMBAT_TUNING),
         createHatchStep(spawn),
         createEdgeWaveStep(spawn),

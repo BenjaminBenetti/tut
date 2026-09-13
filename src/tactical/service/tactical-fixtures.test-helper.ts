@@ -172,6 +172,7 @@ export function missionWith(
     vision: emptyVision(),
     log: [],
     radars: [],
+    charges: [],
     commandSeq: 0,
     ...options,
   };

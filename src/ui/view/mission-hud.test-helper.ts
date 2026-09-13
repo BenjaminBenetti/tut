@@ -130,6 +130,7 @@ export function hudMission(
     vision: emptyVision(),
     log: [],
     radars: [],
+    charges: [],
     commandSeq: 0,
     ...overrides,
   };

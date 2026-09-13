@@ -82,7 +82,16 @@ export type TacticalError =
     }
   | { readonly kind: "charges-full"; readonly unitId: string }
   | { readonly kind: "no-reload"; readonly unitId: string }
-  | { readonly kind: "no-radar"; readonly unitId: string }
+  | {
+      readonly kind: "no-equipment";
+      readonly unitId: string;
+      readonly equipmentId: string;
+    }
+  | {
+      readonly kind: "equipment-spent";
+      readonly unitId: string;
+      readonly equipmentId: string;
+    }
   | { readonly kind: "radar-out-of-reach"; readonly range: number }
   | { readonly kind: "radar-tile-blocked" }
   | { readonly kind: "objective-not-found"; readonly objectiveId: string }
@@ -169,8 +178,10 @@ export function describeTacticalError(error: TacticalError): string {
       return `Unit "${error.unitId}" is already fully loaded`;
     case "no-reload":
       return `Unit "${error.unitId}" has nothing to reload`;
-    case "no-radar":
-      return `Unit "${error.unitId}" cannot deploy radar`;
+    case "no-equipment":
+      return `Unit "${error.unitId}" does not carry "${error.equipmentId}"`;
+    case "equipment-spent":
+      return `Unit "${error.unitId}" has no uses of "${error.equipmentId}" left`;
     case "radar-out-of-reach":
       return `Deploy radar within ${String(error.range)} tiles of the squad`;
     case "radar-tile-blocked":
@@ -245,7 +256,8 @@ export const TACTICAL_ERROR_KINDS: Readonly<
   "tile-out-of-sight": true,
   "charges-full": true,
   "no-reload": true,
-  "no-radar": true,
+  "no-equipment": true,
+  "equipment-spent": true,
   "radar-out-of-reach": true,
   "radar-tile-blocked": true,
   "objective-not-found": true,

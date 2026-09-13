@@ -179,6 +179,8 @@ export function startTacticalMission<TState extends MissionCampaignState>(
     // No command has been applied yet. Deliberately not `log.length`,
     // which is 1 here and is exactly the coupling #667 removes.
     radars: [],
+    // No charge is set until a squad sets one (#1132).
+    charges: [],
     commandSeq: 0,
   };
   return ok({

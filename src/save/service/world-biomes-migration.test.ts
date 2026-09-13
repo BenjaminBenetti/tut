@@ -94,6 +94,8 @@ describe("world biome save expansion", () => {
             : [],
         // v19 → v20 (#1121): nothing was burning in an older mission.
         effects: [],
+        // v21 → v22 (#1132): no charge was set in an older mission.
+        charges: [],
       });
       expect(next.overworld.missions).toBe(before.overworld.missions);
       expect(next.economy).toBe(before.economy);

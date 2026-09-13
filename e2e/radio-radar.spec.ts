@@ -58,7 +58,7 @@ test("radio squads deploy persistent scanners that mark hidden units and nests",
       ) as { state: GameState };
       const mission = envelope.state.activeMission!;
       const radio = mission.units.find((unit) =>
-        mission.templates[unit.templateId]?.abilities?.includes("deploy-radar"),
+        mission.templates[unit.templateId]?.equipment?.includes("radar-dish"),
       )!;
       if (!radio) throw new Error("Hiring did not create a radio template");
       envelope.state = {
@@ -85,7 +85,7 @@ test("radio squads deploy persistent scanners that mark hidden units and nests",
               id: "radar-test-bug",
               name: "Swarmer",
               modelId: "bug.swarmer",
-              abilities: [],
+              equipment: [],
             },
           },
           spawners: [

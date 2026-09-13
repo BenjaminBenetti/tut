@@ -83,9 +83,11 @@ export function squadUnit(
     armor: infantry.armor,
     passClass: "infantry",
     modelId: infantry.modelIdByType[squadType.id] ?? infantry.fallbackModelId,
-    ...(squadType.abilities === undefined
+    // The type's kit rides on the template (#1132); uses are counted on
+    // the unit as it draws on them, full until it does.
+    ...(squadType.equipment === undefined
       ? {}
-      : { abilities: [...squadType.abilities] }),
+      : { equipment: [...squadType.equipment] }),
   };
   return build(
     "squad",

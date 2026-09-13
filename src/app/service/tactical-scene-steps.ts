@@ -8,6 +8,7 @@ import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { SideVision, Spawner } from "../../tactical/model/tactical-state";
 import type { TacticalState } from "../../tactical/model/tactical-state";
+import type { PlacedCharge } from "../../tactical/model/equipment";
 import type { TileEffect } from "../../tactical/model/tile-effect";
 import type { Unit, UnitId } from "../../tactical/model/unit";
 import { perceivedEffects } from "../../tactical/service/tile-effect-service";
@@ -44,6 +45,8 @@ export interface PerceivedStage {
   updateSpawners(spawners: readonly Spawner[]): Promise<void>;
   /** Draws the fires on ground this side knows (#1121). */
   updateEffects(effects: readonly TileEffect[]): void;
+  /** Draws the breaching charges set and waiting (#1132). */
+  updateCharges(charges: readonly PlacedCharge[]): void;
   /** Places friendly scanners and their location-only enemy blips. */
   updateRadar(
     radars: readonly Radar[],
@@ -97,6 +100,7 @@ export interface PhasedQueue {
  *     update(perceivedUnits)               spotted enemies only
  *     updateSpawners(perceivedSpawners)    explored spawners only
  *     updateEffects(perceivedEffects)      fires on explored ground
+ *     updateCharges(charges)               set breaching charges (#1132)
  * ```
  *
  * Two rules live here, and both are silent when broken. The scene draws
@@ -119,6 +123,8 @@ export async function drawPerceived(
   stage.applyMap(mission.map);
   stage.setVision(mission.vision.tdf);
   stage.updateEffects(perceivedEffects(mission, "tdf"));
+  // A set charge is the player's own, on ground it stood on to set it.
+  stage.updateCharges(mission.charges);
   // Units and spawners are both just models on tiles, and a spawner is
   // the mission's objective, so it appears with the force rather than
   // after it (#484).

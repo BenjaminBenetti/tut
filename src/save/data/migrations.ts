@@ -8,6 +8,7 @@ import { DEFAULT_CITY_SCALE } from "../../overworld/service/earth-map-builder";
 import type { Migration } from "../model/migration";
 import { isRecord } from "../../core/model/record-guard";
 import { RADAR_TUNING } from "../../tactical/data/radar-tuning";
+import { RADAR_DISH } from "../../tactical/data/equipment";
 import { HALF_HEIGHT_LAYERS } from "../service/half-height-layer-migration";
 import { EXPAND_WORLD_BIOMES } from "../service/world-biomes-migration";
 
@@ -499,6 +500,54 @@ const ADD_RADAR_BATTERY: Migration = {
 };
 
 // ===========================================
+// v21 → v22
+// ===========================================
+
+/**
+ * v21 → v22 (#1132): a squad's special actions become equipment with
+ * uses. A template that had `abilities: ["deploy-radar"]` now carries
+ * `equipment: ["radar-dish"]`; every other template carried nothing and
+ * still does. Uses are counted on the unit only as it draws on them, so
+ * no unit needs rewriting — an absent record is a full allowance. The
+ * mission also gains its list of placed charges, empty.
+ */
+const ABILITIES_TO_EQUIPMENT: Migration = {
+  from: 21,
+  to: 22,
+  apply: (state) => {
+    if (!isRecord(state)) {
+      return state;
+    }
+    const mission = state.activeMission;
+    if (!isRecord(mission)) {
+      return state;
+    }
+    const templates = isRecord(mission.templates)
+      ? Object.fromEntries(
+          Object.entries(mission.templates).map(([id, template]) => {
+            if (!isRecord(template) || !Array.isArray(template.abilities)) {
+              return [id, template];
+            }
+            const { abilities, ...rest } = template;
+            const equipment = abilities.flatMap((ability: unknown) =>
+              ability === "deploy-radar" ? [RADAR_DISH.id] : [],
+            );
+            return [id, equipment.length === 0 ? rest : { ...rest, equipment }];
+          }),
+        )
+      : mission.templates;
+    return {
+      ...state,
+      activeMission: {
+        ...mission,
+        templates,
+        charges: Array.isArray(mission.charges) ? mission.charges : [],
+      },
+    };
+  },
+};
+
+// ===========================================
 // Chain
 // ===========================================
 
@@ -600,4 +649,5 @@ export const GAME_STATE_MIGRATIONS: readonly Migration[] = [
   EXPAND_WORLD_BIOMES,
   ADD_MISSION_EFFECTS,
   ADD_RADAR_BATTERY,
+  ABILITIES_TO_EQUIPMENT,
 ];

@@ -1,20 +1,20 @@
 import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
 import { SurfaceIds } from "../../mapgen/data/surfaces";
 import { describe, expect, it } from "vitest";
+import { RADAR_DISH } from "../data/equipment";
 import { RADAR_TUNING } from "../data/radar-tuning";
 import { COMBAT_TUNING } from "../data/combat-tuning";
-import { deployRadar } from "../model/deploy-radar-command";
 import { endTurn } from "../model/end-turn-command";
 import type { Radar } from "../model/radar";
 import { RADAR_BURNED_OUT } from "../model/radar-burned-out-event";
 import type { TacticalState } from "../model/tactical-state";
+import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { previewAttack } from "./combat-service";
 import { viewFor } from "./mission-view-service";
 import {
-  createDeployRadarHandler,
   drainRadarBatteries,
   radarContacts,
-  validateRadarDeployment,
+  validateRadarSite,
 } from "./radar-service";
 import { createEndTurnHandler, refreshSides } from "./turn-service";
 import {
@@ -52,89 +52,18 @@ function radioMission(): TacticalState {
       ...base.templates,
       [unit.templateId]: {
         ...base.templates[unit.templateId]!,
-        abilities: ["deploy-radar"],
+        equipment: [RADAR_DISH.id],
       },
     },
   };
 }
 
-describe("Deploy radar", () => {
-  it("spends one AP, emits feedback, preserves inputs and produces serializable state", () => {
-    const before = radioMission();
-    const result = createDeployRadarHandler(RADAR_TUNING)(
-      before,
-      deployRadar("radio", TILE),
-      ctxWith(riggedRng(true)),
-    );
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-    expect(result.value.state.radars).toEqual([{ ...SCANNER, pos: TILE }]);
-    expect(result.value.state.units[0]?.ap).toBe(1);
-    expect(result.value.events).toEqual([
-      {
-        type: "tactical:radar-deployed",
-        payload: { unitId: "radio", radar: { ...SCANNER, pos: TILE } },
-      },
-    ]);
-    expect(before.radars).toEqual([]);
-    expect(before.units[0]?.ap).toBe(2);
-    expect(JSON.parse(JSON.stringify(result.value.state))).toEqual(
-      result.value.state,
-    );
-  });
+/** The site check alone, for the radio squad where it stands (#1132: the handler is `equipment-service`). */
+function site(mission: TacticalState, tile: TileCoord) {
+  return validateRadarSite(mission, mission.units[0]!, tile, RADAR_DISH.range);
+}
 
-  it.each([
-    [
-      "ordinary squad",
-      (m: TacticalState) => ({ ...m, templates: {} }),
-      "no-radar",
-    ],
-    [
-      "spent squad",
-      (m: TacticalState) => ({
-        ...m,
-        units: m.units.map((u) => ({ ...u, ap: 0 })),
-      }),
-      "no-action-points",
-    ],
-    [
-      "dead squad",
-      (m: TacticalState) => ({
-        ...m,
-        units: m.units.map((u) => ({ ...u, hp: 0 })),
-      }),
-      "unit-dead",
-    ],
-    [
-      "bug phase",
-      (m: TacticalState): TacticalState => ({ ...m, phase: "bugs" }),
-      "wrong-phase",
-    ],
-    [
-      "ended mission",
-      (m: TacticalState): TacticalState => ({ ...m, outcome: "won" }),
-      "mission-over",
-    ],
-  ])("refuses a %s without creating a scanner", (_label, change, kind) => {
-    const mission = change(radioMission());
-    const ctx = ctxWith(riggedRng(true));
-    const ids = ctx.ids.getState();
-    const result = createDeployRadarHandler(RADAR_TUNING)(
-      mission,
-      deployRadar("radio", TILE),
-      ctx,
-    );
-    expect(result).toEqual({
-      ok: false,
-      error: {
-        kind,
-        ...(kind === "mission-over" ? { outcome: "won" } : { unitId: "radio" }),
-      },
-    });
-    expect(ctx.ids.getState()).toEqual(ids);
-    expect(mission.radars).toEqual([]);
-  });
-
+describe("Radar sites", () => {
   it("accepts a diagonal and a two-tile straight placement (#1130: range 2, a diagonal measures 1.41)", () => {
     const mission = radioMission();
     for (const tile of [
@@ -142,9 +71,7 @@ describe("Deploy radar", () => {
       { x: 3, y: 0, z: 1 },
       { x: 1, y: 0, z: 3 },
     ]) {
-      expect(
-        validateRadarDeployment(mission, "radio", tile, RADAR_TUNING).ok,
-      ).toBe(true);
+      expect(site(mission, tile).ok).toBe(true);
     }
   });
 
@@ -155,9 +82,10 @@ describe("Deploy radar", () => {
       { x: 3, y: 0, z: 3 },
       { x: 2, y: 2, z: 1 },
     ]) {
-      expect(
-        validateRadarDeployment(mission, "radio", tile, RADAR_TUNING),
-      ).toMatchObject({ ok: false, error: { kind: "radar-out-of-reach" } });
+      expect(site(mission, tile)).toMatchObject({
+        ok: false,
+        error: { kind: "radar-out-of-reach" },
+      });
     }
     for (const tile of [
       ORIGIN,
@@ -165,9 +93,7 @@ describe("Deploy radar", () => {
       { ...TILE, x: 1.5 },
       { ...TILE, x: -1 },
     ]) {
-      expect(
-        validateRadarDeployment(mission, "radio", tile, RADAR_TUNING).ok,
-      ).toBe(false);
+      expect(site(mission, tile).ok).toBe(false);
     }
     const occupied = [
       {
@@ -191,9 +117,10 @@ describe("Deploy radar", () => {
       },
     ];
     for (const state of occupied) {
-      expect(
-        validateRadarDeployment(state, "radio", TILE, RADAR_TUNING),
-      ).toMatchObject({ ok: false, error: { kind: "radar-tile-blocked" } });
+      expect(site(state, TILE)).toMatchObject({
+        ok: false,
+        error: { kind: "radar-tile-blocked" },
+      });
     }
   });
 
@@ -213,25 +140,17 @@ describe("Deploy radar", () => {
       },
     };
     const beyond = { x: 3, y: 0, z: 1 };
-    expect(
-      validateRadarDeployment(walled, "radio", beyond, RADAR_TUNING),
-    ).toMatchObject({ ok: false, error: { kind: "radar-tile-blocked" } });
+    expect(site(walled, beyond)).toMatchObject({
+      ok: false,
+      error: { kind: "radar-tile-blocked" },
+    });
     // The diagonal past the wall's end is two steps round, so it is fine.
-    expect(
-      validateRadarDeployment(
-        walled,
-        "radio",
-        { x: 2, y: 0, z: 2 },
-        RADAR_TUNING,
-      ).ok,
-    ).toBe(true);
+    expect(site(walled, { x: 2, y: 0, z: 2 }).ok).toBe(true);
     const crowded = {
       ...base,
       units: [...base.units, unitAt("other", "infantry", TILE)],
     };
-    expect(
-      validateRadarDeployment(crowded, "radio", beyond, RADAR_TUNING).ok,
-    ).toBe(true);
+    expect(site(crowded, beyond).ok).toBe(true);
   });
 
   it("cannot place through a solid wall or on an impassable tile", () => {
@@ -243,10 +162,7 @@ describe("Deploy radar", () => {
           t.x === TILE.x && t.z === TILE.z ? { ...t, ...change } : t,
         ),
       };
-      expect(
-        validateRadarDeployment({ ...base, map }, "radio", TILE, RADAR_TUNING)
-          .ok,
-      ).toBe(false);
+      expect(site({ ...base, map }, TILE).ok).toBe(false);
     }
   });
 });
@@ -390,17 +306,6 @@ describe("radar battery", () => {
   function deployed(turnsLeft = RADAR_TUNING.batteryTurns): TacticalState {
     return { ...radioMission(), radars: [{ ...SCANNER, turnsLeft }] };
   }
-
-  it("deploys with the tuning's full battery", () => {
-    const result = createDeployRadarHandler(RADAR_TUNING)(
-      radioMission(),
-      deployRadar("radio", TILE),
-      ctxWith(riggedRng(true)),
-    );
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-    expect(result.value.state.radars[0]?.turnsLeft).toBe(3);
-  });
 
   it("drains one turn as a player phase opens and nothing as the bug phase opens, without touching its input", () => {
     const player = deployed();

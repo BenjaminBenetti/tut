@@ -1,13 +1,11 @@
 import type { RadarTuning } from "../model/radar";
 
 /**
- * Radio squads place a scanner within two tiles for one action (#1130:
- * range 2 so a diagonal, which measures 1.41, is legal). It scans for
- * three player turns and then burns out.
+ * A scanner sweeps a 30-tile circle and runs for three player turns
+ * before its battery dies (#1130). Placement range and cost are the
+ * radar dish's definition in `equipment.ts` (#1132).
  */
 export const RADAR_TUNING: RadarTuning = {
-  apCost: 1,
-  deployRange: 2,
   scanRange: 30,
   batteryTurns: 3,
 };

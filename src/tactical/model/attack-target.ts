@@ -40,4 +40,10 @@ export interface AttackTarget {
   readonly armor: number;
   /** The side it belongs to, so a shot at one's own is refused. */
   readonly team: Team;
+  /**
+   * Tiles per side it occupies (#1130); absent means one. A shot at a
+   * bigger target is judged against the tile of it nearest the shooter,
+   * and `pos` is the anchor of the block.
+   */
+  readonly footprint?: number;
 }

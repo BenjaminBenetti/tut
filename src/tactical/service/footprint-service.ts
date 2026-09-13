@@ -1,47 +1,56 @@
 import type { TileCoord } from "../../mapgen/model/tile-coord";
+import type { TacticalState } from "../model/tactical-state";
+import type { Unit } from "../model/unit";
 import type { UnitTemplate } from "../model/unit-template";
 
 // ===========================================
-// Size
+// Constants
 // ===========================================
 
-/** Tiles per side of a unit that declares no footprint. */
+/** Tiles per side a unit stands on when its template declares no footprint. */
 export const DEFAULT_FOOTPRINT = 1;
 
+// ===========================================
+// Footprint
+// ===========================================
+
 /**
- * Tiles per side a template's units cover on the ground plane (#1130):
- * its declared `footprint`, or one when it declares none, as every
- * template did before the brute.
+ * The footprint a unit occupies on the ground plane (#1130): a square of
+ * `size × size` tiles anchored at the unit's `pos`, which is the tile
+ * with the lowest `x` and lowest `z`. Every tile shares the anchor's
+ * level. A unit without a declared footprint stands on one tile, as
+ * every unit did before the brute grew to four.
  *
- * @param template - The template, or anything carrying its footprint.
- * @returns A positive integer.
+ * ```
+ *   size 2, anchored at A            index order: anchor first, then
+ *                                    row-major — z outer, x inner
+ *        A  1
+ *        2  3
+ * ```
+ *
+ * @param template - The template, or whatever of it carries `footprint`.
+ * @returns Tiles per side; `1` when the template declares nothing.
  */
 export function footprintSizeOf(
   template: Pick<UnitTemplate, "footprint">,
 ): number {
-  return template.footprint ?? DEFAULT_FOOTPRINT;
+  const size = template.footprint;
+  return size === undefined || size < 1 ? DEFAULT_FOOTPRINT : Math.floor(size);
 }
 
-// ===========================================
-// Tiles
-// ===========================================
-
 /**
- * Every tile a footprint of `size` covers from its anchor `pos`: the
- * anchor first, then row-major — `z` outer, `x` inner — all at the
- * anchor's `y`.
+ * Every tile of a footprint of `size` anchored at `pos`: the anchor
+ * first, then row-major with `z` as the outer loop and `x` as the inner,
+ * all on the anchor's level. Stable order, so callers that draw from a
+ * seed per tile agree between runs.
  *
- * ```
- *   size 2 at (x, z)   ──►  [(x, z), (x+1, z), (x, z+1), (x+1, z+1)]
- * ```
- *
- * @param pos - The anchor: the footprint's lowest `x` and lowest `z`.
- * @param size - Tiles per side; `1` is the anchor alone.
- * @returns The covered tiles, anchor first.
+ * @param pos - The anchor: lowest `x` and lowest `z` of the footprint.
+ * @param size - Tiles per side; anything below one reads as one.
+ * @returns The footprint's tiles, `size²` of them.
  */
 export function footprintTiles(pos: TileCoord, size: number): TileCoord[] {
-  const tiles: TileCoord[] = [];
   const side = Math.max(1, Math.floor(size));
+  const tiles: TileCoord[] = [];
   for (let dz = 0; dz < side; dz++) {
     for (let dx = 0; dx < side; dx++) {
       tiles.push({ x: pos.x + dx, y: pos.y, z: pos.z + dz });
@@ -51,41 +60,77 @@ export function footprintTiles(pos: TileCoord, size: number): TileCoord[] {
 }
 
 /**
- * Where a footprint's middle is on the ground plane, in tile units: the
- * anchor's corner plus half the side. A one-tile footprint centres on
- * its own tile at `+0.5`; a 2×2 centres on the corner its four tiles
- * share, at `+1`.
+ * The centre of a footprint in tile units on the ground plane: for a
+ * single tile it is the tile's own centre at `+0.5`, for a 2×2 the
+ * corner the four tiles meet at. Graphics stands the model here.
  *
  * @param pos - The anchor.
  * @param size - Tiles per side.
- * @returns The centre in tile units on the ground plane.
+ * @returns The centre's `x` and `z` in tile units.
  */
 export function footprintCentre(
   pos: TileCoord,
   size: number,
 ): { x: number; z: number } {
-  return { x: pos.x + size / 2, z: pos.z + size / 2 };
+  const side = Math.max(1, Math.floor(size));
+  return { x: pos.x + side / 2, z: pos.z + side / 2 };
 }
 
 /**
- * True when `tile` is one of the tiles a footprint of `size` anchored at
- * `pos` covers, level included.
+ * True when `tile` is one of the footprint's tiles: inside the square on
+ * the ground plane and on the anchor's level.
  *
  * @param pos - The anchor.
  * @param size - Tiles per side.
  * @param tile - The tile asked about.
- * @returns True when the footprint covers it.
+ * @returns Whether the footprint covers that tile.
  */
 export function footprintContains(
   pos: TileCoord,
   size: number,
   tile: TileCoord,
 ): boolean {
+  const side = Math.max(1, Math.floor(size));
   return (
     tile.y === pos.y &&
     tile.x >= pos.x &&
-    tile.x < pos.x + size &&
+    tile.x < pos.x + side &&
     tile.z >= pos.z &&
-    tile.z < pos.z + size
+    tile.z < pos.z + side
   );
+}
+
+// ===========================================
+// Units in a mission
+// ===========================================
+
+/**
+ * Tiles per side of the footprint `unit` stands on, read from its
+ * template in the mission. A unit whose template is missing stands on
+ * one tile rather than nowhere, so an unknown unit still blocks the
+ * tile it is recorded on.
+ *
+ * @param mission - The mission the unit is in.
+ * @param unit - The unit.
+ * @returns Tiles per side, `1` or more.
+ */
+export function unitFootprintSize(mission: TacticalState, unit: Unit): number {
+  return footprintSizeOf(mission.templates[unit.templateId] ?? {});
+}
+
+/**
+ * Every tile `unit` stands on in the mission: its anchor for a
+ * single-tile unit, the whole block for a brute. The one call for any
+ * rule that asks "which tiles does this unit hold" — occupancy, blasts,
+ * fires, spotting — so none of them re-derives the square.
+ *
+ * @param mission - The mission the unit is in.
+ * @param unit - The unit.
+ * @returns The tiles it holds, anchor first.
+ */
+export function unitFootprintTiles(
+  mission: TacticalState,
+  unit: Unit,
+): TileCoord[] {
+  return footprintTiles(unit.pos, unitFootprintSize(mission, unit));
 }

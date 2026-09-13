@@ -14,7 +14,8 @@ import type { TacticalContext } from "../model/tactical-handler";
 import type { Spawner, TacticalState } from "../model/tactical-state";
 import type { Unit, UnitId } from "../model/unit";
 import type { UnitTemplate } from "../model/unit-template";
-import { occupiedKeys } from "./movement-service";
+import { footprintSizeOf, footprintTiles } from "./footprint-service";
+import { footprintFits, occupiedKeys } from "./movement-service";
 import type { PhaseStep } from "./turn-service";
 import { bugUnit } from "./unit-factory";
 
@@ -277,6 +278,16 @@ export function waveSize(
  * candidates: the candidates are shuffled and the first `count` taken,
  * then each gets one species rolled by hatch weight. New units arrive
  * with no action points; their templates join the mission's if missing.
+ *
+ * A species with a footprint (#1130) needs its whole block to fit —
+ * every tile standing, passable and free, the block unbroken by walls —
+ * with the drawn tile somewhere in it. The anchors that put the drawn
+ * tile in each corner are tried in footprint order and the first that
+ * fits is taken; when none does, that bug is not hatched and the draw
+ * moves on. The draws themselves are untouched, so a seed that placed a
+ * swarmer on a tile still does, and a brute that does not fit costs
+ * nothing but its own absence. Tiles a placed block covers are taken
+ * for the rest of the batch, so no hatchling lands inside a brute.
  */
 function placeBugs(
   mission: TacticalState,
@@ -292,7 +303,14 @@ function placeBugs(
   if (count <= 0 || weighted.length === 0) {
     return { state: mission, unitIds: [] };
   }
-  const taken = occupiedKeys(mission, snapshot.index);
+  const taken = new Set(occupiedKeys(mission, snapshot.index));
+  // A live spawner's tile is never stood on either: the room already
+  // leaves out its own, and a block must not reach across onto one.
+  for (const spawner of mission.spawners) {
+    if (!spawner.destroyed && snapshot.index.inBounds(spawner.pos)) {
+      taken.add(snapshot.index.keyOf(spawner.pos));
+    }
+  }
   const free = candidates.filter(
     (tile) =>
       allows(tile.pass, PassMask.INFANTRY) &&
@@ -302,16 +320,37 @@ function placeBugs(
   if (chosen.length === 0) {
     return { state: mission, unitIds: [] };
   }
+  const graph = { index: snapshot.index, reachability: snapshot.reach };
   const units: Unit[] = [...mission.units];
   const templates: Record<string, UnitTemplate> = { ...mission.templates };
   const unitIds: UnitId[] = [];
   for (const tile of chosen) {
     const source = rng.pickWeighted(weighted, (entry) => entry.hatchWeight);
+    const size = footprintSizeOf(source);
+    const anchor = footprintTiles(tile, size)
+      .map((corner) => ({
+        x: tile.x - (corner.x - tile.x),
+        y: tile.y,
+        z: tile.z - (corner.z - tile.z),
+      }))
+      .find(
+        (candidate) =>
+          footprintFits(graph, candidate, size, PassMask.INFANTRY) &&
+          footprintTiles(candidate, size).every(
+            (cell) => !taken.has(snapshot.index.keyOf(cell)),
+          ),
+      );
+    if (anchor === undefined) {
+      continue;
+    }
     const built = bugUnit(
       source,
-      { pos: { x: tile.x, y: tile.y, z: tile.z }, facing: facingOf(tile) },
+      { pos: anchor, facing: facingOf(tile) },
       { ids },
     );
+    for (const cell of footprintTiles(anchor, size)) {
+      taken.add(snapshot.index.keyOf(cell));
+    }
     units.push({ ...built.unit, ap: 0 });
     templates[built.template.id] ??= built.template;
     unitIds.push(built.unit.id);

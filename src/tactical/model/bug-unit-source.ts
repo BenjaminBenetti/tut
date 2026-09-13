@@ -28,4 +28,6 @@ export interface BugUnitSource {
    * means the kill is worth nothing. Copied onto the template.
    */
   readonly xpValue?: number;
+  /** Tiles per side it occupies (#1130); absent means one. Copied onto the template. */
+  readonly footprint?: number;
 }

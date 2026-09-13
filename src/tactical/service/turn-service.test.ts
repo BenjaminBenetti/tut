@@ -14,6 +14,7 @@ import { UNIT_MOVED } from "../model/unit-moved-event";
 import { UNIT_STATUS_CHANGED } from "../model/unit-status-changed-event";
 import { createMoveHandler } from "./move-handler";
 import {
+  blockUnitAt,
   ctxWith,
   FIXTURE_TEMPLATES,
   missionWith,
@@ -663,5 +664,60 @@ describe("createMoveHandler with the overwatch reaction", () => {
     expect(bug.pos).toEqual(at(3, 0));
     expect(bug.hp).toBe(10);
     expect(bug.ap).toBe(0);
+  });
+});
+
+// ===========================================
+// Footprints (#1130)
+// ===========================================
+
+describe("overwatchReaction against a unit on a 2×2 block (#1130)", () => {
+  it("fires when any tile of the block is in sight, at the tile nearest the watcher", () => {
+    // A solid wall between x = 3 and x = 4 with a window at z = 2. The
+    // watcher at (1,2) sees along that row; a block anchored at (4,1)
+    // shows only its tile (4,2) there.
+    const builder = openField();
+    for (let z = 0; z < 8; z++) {
+      builder.wall({ x: 3, y: 0, z }, "e", z === 2 ? "window" : "solid");
+    }
+    const map = builder.build();
+    const mission = missionWith(
+      map,
+      [
+        unitAt("w", "infantry", at(1, 2), { ap: 0, status: ["overwatch"] }),
+        blockUnitAt("b", at(4, 1)),
+      ],
+      { phase: "bugs" },
+    );
+    const shot = overwatchReaction(
+      mission,
+      "b",
+      ctxWith(riggedRng(true, "low")),
+      COMBAT_TUNING,
+      DEPS,
+    );
+    expect(shot.events.map((e) => e.type)).toEqual([
+      ATTACK_RESOLVED,
+      UNIT_STATUS_CHANGED,
+    ]);
+    expect(unitIn(shot.state, "b").hp).toBe(8);
+    // A single tile at the same anchor is behind the masonry: no shot.
+    const single = missionWith(
+      map,
+      [
+        unitAt("w", "infantry", at(1, 2), { ap: 0, status: ["overwatch"] }),
+        unitAt("b", "infantry", at(4, 1), { team: "bugs" }),
+      ],
+      { phase: "bugs" },
+    );
+    expect(
+      overwatchReaction(
+        single,
+        "b",
+        ctxWith(riggedRng(true)),
+        COMBAT_TUNING,
+        DEPS,
+      ).events,
+    ).toEqual([]);
   });
 });

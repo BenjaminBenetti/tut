@@ -5,7 +5,10 @@ import { SurfaceIds } from "../../mapgen/data/surfaces";
 import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { manhattanDistance } from "../../core/service/grid-math";
+import { PassMask } from "../../mapgen/model/pass-mask";
+import { PropKindIds } from "../../mapgen/data/props";
 import {
+  blockUnitAt,
   missionWith,
   openField,
   twoFloorBuilding,
@@ -15,7 +18,10 @@ import {
 import {
   apCostOf,
   buildMoveGraph,
+  footprintCanStep,
+  footprintFits,
   moveBudget,
+  occupiedKeys,
   pathTo,
   reachable,
 } from "./movement-service";
@@ -254,5 +260,131 @@ describe("pathTo", () => {
       at(6, 5, 1),
       at(6, 6, 1),
     ]);
+  });
+});
+
+// ===========================================
+// Footprints (#1130)
+// ===========================================
+
+describe("units on a 2×2 block (#1130)", () => {
+  it("reaches every anchor its whole block fits at, one step per anchor, and stops short of the edge", () => {
+    const map = openField().build();
+    const graph = buildMoveGraph(map);
+    const mission = missionWith(map, [blockUnitAt("b", at(0, 0))], {
+      phase: "bugs",
+    });
+    const reach = reachable(mission, "b", graph);
+    // The same 28 anchors a soldier reaches from the corner within six
+    // steps: the block never needs x = 7 or z = 7, which are out of reach
+    // anyway, so the count and every cost are unchanged.
+    expect(reach.size).toBe(28);
+    for (const tile of map.tiles) {
+      const distance = manhattanDistance(tile, at(0, 0));
+      const fits = tile.x <= 6 && tile.z <= 6;
+      expect(reach.get(graph.index.keyOf(tile))).toBe(
+        distance <= 6 && fits ? distance : undefined,
+      );
+    }
+    // A block against the far edge has nowhere to put its second row.
+    const cornered = missionWith(map, [blockUnitAt("b", at(6, 6))], {
+      phase: "bugs",
+    });
+    const fromCorner = reachable(cornered, "b", graph);
+    expect(fromCorner.get(graph.index.keyOf(at(7, 6)))).toBeUndefined();
+    expect(fromCorner.get(graph.index.keyOf(at(6, 7)))).toBeUndefined();
+    expect(fromCorner.get(graph.index.keyOf(at(5, 6)))).toBe(1);
+  });
+
+  it("is stopped by a doorway a soldier walks through", () => {
+    // The wall between x = 3 and x = 4 has one door, at z = 2: a soldier
+    // crosses there, a block two tiles wide cannot.
+    const map = walledField();
+    const graph = buildMoveGraph(map);
+    const mission = missionWith(map, [blockUnitAt("b", at(0, 2))], {
+      phase: "bugs",
+    });
+    const anchors = [...reachable(mission, "b", graph).keys()].map((key) =>
+      map.tiles.find((tile) => graph.index.keyOf(tile) === key)!,
+    );
+    expect(anchors.length).toBeGreaterThan(0);
+    expect(anchors.every((anchor) => anchor.x <= 2)).toBe(true);
+    expect(pathTo(mission, "b", at(4, 2), graph)).toBeUndefined();
+    const soldier = missionWith(map, [unitAt("u", "infantry", at(2, 2))]);
+    expect(pathTo(soldier, "u", at(4, 2), graph)).toEqual([at(3, 2), at(4, 2)]);
+  });
+
+  it("holds four tiles that others walk around, and never straddles a wall between its own tiles", () => {
+    const map = openField().build();
+    const graph = buildMoveGraph(map);
+    const mission = missionWith(map, [
+      unitAt("u", "infantry", at(0, 3)),
+      blockUnitAt("b", at(3, 3)),
+    ]);
+    expect(occupiedKeys(mission, graph.index, "u")).toEqual(
+      new Set(
+        [at(3, 3), at(4, 3), at(3, 4), at(4, 4)].map((t) =>
+          graph.index.keyOf(t),
+        ),
+      ),
+    );
+    const reach = reachable(mission, "u", graph);
+    for (const held of [at(3, 3), at(4, 3), at(3, 4), at(4, 4)]) {
+      expect(reach.get(graph.index.keyOf(held))).toBeUndefined();
+    }
+    expect(reach.get(graph.index.keyOf(at(2, 3)))).toBe(2);
+    expect(pathTo(mission, "u", at(5, 2), graph)).toHaveLength(6);
+
+    // A wall on the south edge of (5,2) runs between the tiles a block
+    // anchored at (4,2) or (5,2) would hold: neither anchor is standable,
+    // while (4,1), whose tiles the wall only borders, is.
+    const split = openField().wall(at(5, 2), "s", "solid").build();
+    const splitGraph = buildMoveGraph(split);
+    const walker = missionWith(split, [blockUnitAt("b", at(0, 2))], {
+      phase: "bugs",
+    });
+    const along = reachable(walker, "b", splitGraph);
+    expect(along.get(splitGraph.index.keyOf(at(3, 2)))).toBe(3);
+    expect(along.get(splitGraph.index.keyOf(at(4, 2)))).toBeUndefined();
+    expect(along.get(splitGraph.index.keyOf(at(5, 2)))).toBeUndefined();
+    expect(along.get(splitGraph.index.keyOf(at(4, 1)))).toBe(5);
+  });
+
+  it("walks around another block and cannot share a tile with it", () => {
+    const map = openField().build();
+    const graph = buildMoveGraph(map);
+    const mission = missionWith(
+      map,
+      [blockUnitAt("a", at(0, 3)), blockUnitAt("b", at(3, 3))],
+      { phase: "bugs" },
+    );
+    const reach = reachable(mission, "a", graph);
+    // Anchors whose block would overlap b's tiles (x 3..4, z 3..4).
+    for (const anchor of [at(2, 2), at(2, 3), at(2, 4), at(3, 2), at(4, 2)]) {
+      expect(reach.get(graph.index.keyOf(anchor))).toBeUndefined();
+    }
+    expect(reach.get(graph.index.keyOf(at(1, 3)))).toBe(1);
+    expect(reach.get(graph.index.keyOf(at(2, 1)))).toBe(4);
+  });
+
+  it("answers footprintFits and footprintCanStep tile by tile", () => {
+    const map = openField().prop(PropKindIds.CRATE, at(5, 5)).build();
+    const graph = buildMoveGraph(map);
+    const infantry = PassMask.INFANTRY;
+    expect(footprintFits(graph, at(0, 0), 2, infantry)).toBe(true);
+    expect(footprintFits(graph, at(6, 6), 2, infantry)).toBe(true);
+    expect(footprintFits(graph, at(7, 6), 2, infantry)).toBe(false);
+    expect(footprintFits(graph, at(4, 4), 2, infantry)).toBe(false);
+    expect(footprintFits(graph, at(7, 7), 1, infantry)).toBe(true);
+    const from = graph.index.getAt(at(0, 0))!;
+    const east = graph.index.getAt(at(1, 0))!;
+    expect(footprintCanStep(graph, from, east, 2, infantry)).toBe(true);
+    // The block's second row would step onto the crate.
+    const near = graph.index.getAt(at(3, 4))!;
+    const onto = graph.index.getAt(at(4, 4))!;
+    expect(footprintCanStep(graph, near, onto, 1, infantry)).toBe(
+      graph.reachability.canStep(near, onto, infantry),
+    );
+    expect(footprintCanStep(graph, near, onto, 2, infantry)).toBe(false);
   });
 });

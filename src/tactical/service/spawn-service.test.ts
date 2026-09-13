@@ -21,6 +21,7 @@ import {
   waveInterval,
   waveSize,
 } from "./spawn-service";
+import { footprintTiles } from "./footprint-service";
 import {
   missionWith,
   openField,
@@ -58,6 +59,8 @@ const BRUTE: SpawnSource = {
   hatchWeight: 1,
 };
 const DEPS: SpawnDeps = { species: [SWARMER, BRUTE], tuning: T };
+/** A species on a 2×2 block (#1130). */
+const BIG: SpawnSource = { ...BRUTE, id: "big", name: "Big", footprint: 2 };
 
 /** A context over a seeded stream with fresh ids. */
 function ctxFor(seed: number): TacticalContext {
@@ -398,5 +401,96 @@ describe("as phase steps on EndTurn", () => {
     ).toEqual([0, 0, 0, 0]);
     expect(next.spawners[0]?.timer).toBe(T.hatchInterval);
     expect(next.edgeSpawn).toEqual({ nextTurn: 7, wave: 1 });
+  });
+});
+
+// ===========================================
+// Footprints (#1130)
+// ===========================================
+
+describe("hatching a species on a 2×2 block (#1130)", () => {
+  it("puts each block where all four tiles stand free, off the spawner and off each other, for every seed", () => {
+    const mission = missionWith(openField().build(), [], {
+      phase: "bugs",
+      spawners: [spawnerAt("ripe", at(4, 4), 1)],
+    });
+    const bigOnly: SpawnDeps = { species: [BIG], tuning: T };
+    let hatched = 0;
+    for (let seed = 1; seed <= 8; seed++) {
+      const result = hatch(mission, ctxFor(seed), bigOnly);
+      const bugs = bugsOf(result.state);
+      // Two blocks do not always both fit around the drawn tiles; one
+      // always does on an open field, and a block that does not fit is
+      // simply not hatched.
+      expect(bugs.length).toBeGreaterThanOrEqual(1);
+      expect(bugs.length).toBeLessThanOrEqual(T.hatchCount);
+      hatched += bugs.length;
+      const held = new Set<string>();
+      for (const bug of bugs) {
+        expect(result.state.templates[bug.templateId]?.footprint).toBe(2);
+        for (const tile of footprintTiles(bug.pos, 2)) {
+          expect(tile.x).toBeLessThan(8);
+          expect(tile.z).toBeLessThan(8);
+          expect(tile).not.toEqual(at(4, 4));
+          const key = `${String(tile.x)},${String(tile.z)}`;
+          expect(held.has(key)).toBe(false);
+          held.add(key);
+        }
+        // The drawn tile is one of the block's, so the block hatches
+        // within the spawner's room.
+        expect(
+          footprintTiles(bug.pos, 2).some(
+            (tile) => manhattanDistance(tile, at(4, 4)) <= 2,
+          ),
+        ).toBe(true);
+      }
+      expect(hatch(mission, ctxFor(seed), bigOnly)).toEqual(result);
+    }
+    expect(hatched).toBeGreaterThan(8);
+  });
+
+  it("hatches nothing on a block where no block fits, while a single tile still hatches", () => {
+    // Walls on every east edge cut the field into one-wide corridors.
+    const builder = openField();
+    for (let x = 0; x < 7; x++) {
+      for (let z = 0; z < 8; z++) {
+        builder.wall(at(x, z), "e", "solid");
+      }
+    }
+    const mission = missionWith(builder.build(), [], {
+      phase: "bugs",
+      spawners: [spawnerAt("ripe", at(4, 4), 1)],
+    });
+    const none = hatch(mission, ctxFor(2), { species: [BIG], tuning: T });
+    expect(none.state.units).toEqual([]);
+    expect(none.events).toEqual([]);
+    expect(none.state.spawners[0]?.timer).toBe(T.hatchInterval);
+    const small = hatch(mission, ctxFor(2), { species: [SWARMER], tuning: T });
+    expect(bugsOf(small.state)).toHaveLength(T.hatchCount);
+  });
+
+  it("never lands a later hatchling inside an earlier block", () => {
+    // One spawner, a block and then swarmers from the same roll of tiles:
+    // a swarmer whose drawn tile the block took is skipped, not stacked.
+    const mission = missionWith(openField().build(), [], {
+      phase: "bugs",
+      spawners: [spawnerAt("ripe", at(4, 4), 1, { hatchRadius: 3 })],
+    });
+    const mixed: SpawnDeps = {
+      species: [BIG, { ...SWARMER, hatchWeight: 6 }],
+      tuning: { ...T, hatchCount: 6 },
+    };
+    for (let seed = 1; seed <= 12; seed++) {
+      const result = hatch(mission, ctxFor(seed), mixed);
+      const held = new Set<string>();
+      for (const bug of bugsOf(result.state)) {
+        const size = result.state.templates[bug.templateId]?.footprint ?? 1;
+        for (const tile of footprintTiles(bug.pos, size)) {
+          const key = `${String(tile.x)},${String(tile.z)}`;
+          expect([seed, key, held.has(key)]).toEqual([seed, key, false]);
+          held.add(key);
+        }
+      }
+    }
   });
 });

@@ -98,7 +98,7 @@ Until M2, tactical missions are **auto-resolved** by a placeholder resolver so t
 ### 6.1 Presentation
 - Fixed isometric camera; rotation in 90° steps; zoom in a small range. Orthographic projection.
 - Tile grid with elevation levels. Multi-floor buildings are enterable by infantry. Mechs are too tall for interiors and act as heavy fire support outside.
-- Unit tokens: an infantry squad is rendered as ~5 figures that move as one unit and occupy one tile; a mech occupies one tile and is visibly taller. A mech is drawn from the parts fitted to it, so the mech on the field is the one built in the bay and two loadouts are told apart at a glance (Executive Director, 2026-09-12, #1115).
+- Unit tokens: an infantry squad is rendered as ~5 figures that move as one unit and occupy one tile; a mech occupies one tile and is visibly taller. A mech is drawn from the parts fitted to it, so the mech on the field is the one built in the bay and two loadouts are told apart at a glance (Executive Director, 2026-09-12, #1115). A **brute occupies a 2×2 block** of tiles: its position is the block's lowest-`x`, lowest-`z` tile and every tile of the block shares its level. It moves anchor by anchor at the same cost as anyone else, needs all four tiles standing, free and unbroken by walls, fits through no door, and is measured by the tile of it nearest the other party — it is shot on the face it presents, it swings from the tile nearest its mark, it sees from all four tiles, it is spotted when any of them is in view, and a blast or a fire hurts it once. It gets no cover and cannot be flanked (Executive Director, 2026-09-13, #1130).
 
 ### 6.2 Turn structure
 - Player phase → bug phase. Each unit has action points (move + act, XCOM-style two-action budget by default; mechs may have distinct budgets).
@@ -123,7 +123,7 @@ Rules that follow from these:
 - **A miss applies nothing.** A shot at a tile rolls the same hit formula as a shot at a unit, with the cover and flank terms at zero because there is no body behind cover; a miss at an empty tile costs the shot and does nothing else.
 - Friendly fire is real. A mortar shell does not ask whose side a squad is on; the preview says who is in the blast so the player decides with the number in front of them.
 
-Marked weapons, as shipped: the **Flamer** (blast 1, fire), the **Missile Pod** (blast 1, force 1), the **Mortar** (blast 2, force 2), the **Autocannon** and **Rotary Cannon** (force 1), the **Railgun** (force 2), the **Rocket Squad** (blast 1, force 2, and the armor penetration its description always promised), and the **Brute**, whose cleavers sweep the tiles beside its mark (blast 1, force 1) — which is what "punishes clumping" means on the tile grid. The Pulse Laser, small arms and the small bugs mark nothing.
+Marked weapons, as shipped: the **Flamer** (blast 1, fire), the **Missile Pod** (blast 1, force 1), the **Mortar** (blast 2, force 2), the **Autocannon** and **Rotary Cannon** (force 1), the **Railgun** (force 2), the **Rocket Squad** (blast 1, force 2, and the armor penetration its description always promised), and the **Brute**, whose cleavers sweep the tiles beside its mark (blast 1, force 3) — which is what "punishes clumping" means on the tile grid, and which opens solid walls: a brute fits through no door, so when it knows of a squad it cannot reach it fires at the wall or prop between them and walks through the gap next turn (Executive Director, 2026-09-13, #1130). The Pulse Laser, small arms and the small bugs mark nothing.
 
 ### 6.2.1 Vision and fog of war
 Vision is a core system, not a presentation detail.
@@ -158,7 +158,7 @@ The player's attention belongs on the battlefield, not on a side panel.
 - Missions end when the force is off the map: **won** once every objective is complete and the survivors have boarded the drop ship, **extracted** if they board with an objective still open, **lost** on a squad wipe. Completing the objectives does not end the mission on its own; the force still has to get home (Executive Director, 2026-09-11).
 
 ### 6.4 Bugs (see Track: Bestiary)
-- Baseline three for M2: a **swarmer** (fast, weak, numerous, rushes), a **lurker** (stealthy flanker that tries to get behind the line), and a **brute** (slow, armored, punishes clumping).
+- Baseline three for M2: a **swarmer** (fast, weak, numerous, rushes), a **lurker** (stealthy flanker that tries to get behind the line), and a **brute** (slow, armored, punishes clumping; stands on a 2×2 block and cuts through walls to reach a squad indoors, #1130).
 - Later species unlock over overworld time, XCOM-style escalation. Hives and the space platform introduce their own variants.
 
 ### 6.5 Resolution

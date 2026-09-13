@@ -13,6 +13,11 @@ import { NO_VISION, TEAMS_BY_VISION } from "../model/tactical-state";
 import type { Team, Unit, UnitId } from "../model/unit";
 import { UNIT_LOST } from "../model/unit-lost-event";
 import { UNIT_SPOTTED } from "../model/unit-spotted-event";
+import {
+  footprintContains,
+  unitFootprintSize,
+  unitFootprintTiles,
+} from "./footprint-service";
 import { hasLineOfSight } from "./sight-service";
 
 // ===========================================
@@ -52,6 +57,9 @@ export function sightRangeOf(mission: TacticalState, unit: Unit): number {
  * renderer showing a bug as spotted while overwatch held its fire, with
  * both sides individually correct and no test failing.
  *
+ * A watcher on a block (#1130) looks from every tile of it: a brute
+ * sees what any of its four tiles has a line to.
+ *
  * @param mission - The mission being looked at.
  * @param watcher - The unit doing the looking.
  * @param at - The position being looked at.
@@ -65,9 +73,28 @@ export function unitCanSee(
   at: GridPos,
   index: TileIndex,
 ): boolean {
+  const range = sightRangeOf(mission, watcher);
+  return unitFootprintTiles(mission, watcher).some((eye) =>
+    eyeSees(mission, eye, range, at, index),
+  );
+}
+
+/**
+ * Whether one eye at `eye` with `range` sees `at`: inside the range by
+ * the map-plane metric, with a clear line. The rule `unitCanSee` asks
+ * of each tile a watcher stands on, and the one `computeVision`'s sweep
+ * asks per eye, so the two cannot disagree.
+ */
+function eyeSees(
+  mission: TacticalState,
+  eye: GridPos,
+  range: number,
+  at: GridPos,
+  index: TileIndex,
+): boolean {
   return (
-    manhattanDistance(watcher.pos, at) <= sightRangeOf(mission, watcher) &&
-    hasLineOfSight(mission.map, watcher.pos, at, index)
+    manhattanDistance(eye, at) <= range &&
+    hasLineOfSight(mission.map, eye, at, index)
   );
 }
 
@@ -101,24 +128,26 @@ export function computeVision(
   );
   for (const watcher of watchers) {
     const range = sightRangeOf(mission, watcher);
-    // Only the diamond within range, column by column, rather than every
-    // tile on the map: this runs on every move, and a sight trace is the
-    // most expensive rule in the game (ADR 0006 §3). The loop bounds are
-    // an optimisation over `unitCanSee`, not a second copy of it: the
-    // predicate still decides every tile, so the two cannot disagree.
-    for (let dx = -range; dx <= range; dx++) {
-      const span = range - Math.abs(dx);
-      for (let dz = -span; dz <= span; dz++) {
-        for (const tile of index.column(
-          watcher.pos.x + dx,
-          watcher.pos.z + dz,
-        )) {
-          const key = index.keyOf(tile);
-          if (visible.has(key)) {
-            continue;
-          }
-          if (unitCanSee(mission, watcher, tile, index)) {
-            visible.add(key);
+    // Only the diamond within range of each eye, column by column,
+    // rather than every tile on the map: this runs on every move, and a
+    // sight trace is the most expensive rule in the game (ADR 0006 §3).
+    // The loop bounds are an optimisation over `unitCanSee`, not a
+    // second copy of it: `eyeSees` still decides every tile for every
+    // eye, which is what `unitCanSee` asks, so the two cannot disagree.
+    // A block's eyes (#1130) overlap almost entirely, and a tile the
+    // first eye saw is skipped for the rest.
+    for (const eye of unitFootprintTiles(mission, watcher)) {
+      for (let dx = -range; dx <= range; dx++) {
+        const span = range - Math.abs(dx);
+        for (let dz = -span; dz <= span; dz++) {
+          for (const tile of index.column(eye.x + dx, eye.z + dz)) {
+            const key = index.keyOf(tile);
+            if (visible.has(key)) {
+              continue;
+            }
+            if (eyeSees(mission, eye, range, tile, index)) {
+              visible.add(key);
+            }
           }
         }
       }
@@ -129,7 +158,11 @@ export function computeVision(
     if (unit.team === team || unit.hp <= 0) {
       continue;
     }
-    if (visible.has(index.keyOf(unit.pos))) {
+    // A block is spotted when any tile of it is in view (#1130).
+    const seen = unitFootprintTiles(mission, unit).some(
+      (tile) => index.inBounds(tile) && visible.has(index.keyOf(tile)),
+    );
+    if (seen) {
       spotted.push(unit.id);
     }
   }
@@ -262,12 +295,21 @@ export function emptyVision(): Record<Team, SideVision> {
 // ===========================================
 
 /**
- * Whether two missions present the same vantage: the same units, alive or
- * not in the same way, standing in the same places. Those are the only
- * things vision reads, so anything else — health, action points, status,
- * charges — can differ freely without changing what a side can see.
+ * Whether two missions present the same vantage: the same map, and the
+ * same units, alive or not in the same way, standing in the same places.
+ * Those are the only things vision reads, so anything else — health,
+ * action points, status, charges — can differ freely without changing
+ * what a side can see.
+ *
+ * The map is compared by identity (#1130): demolition returns a new map
+ * only when something fell, and a wall that fell is a line of sight
+ * that opened. Before this a brute that cut its way into a room went on
+ * not seeing the squad inside until something moved.
  */
 function sameVantage(before: TacticalState, after: TacticalState): boolean {
+  if (before.map !== after.map) {
+    return false;
+  }
   if (before.units.length !== after.units.length) {
     return false;
   }
@@ -398,8 +440,15 @@ export function perceivedOccupantAt(
   tile: TileCoord,
   index: TileIndex = new TileIndex(mission.map),
 ): PerceivedOccupant | undefined {
+  // Any tile of a block names the unit standing on it (#1130).
   const unit = perceivedUnits(mission, team).find(
-    (candidate) => candidate.hp > 0 && gridPosEquals(candidate.pos, tile),
+    (candidate) =>
+      candidate.hp > 0 &&
+      footprintContains(
+        candidate.pos,
+        unitFootprintSize(mission, candidate),
+        tile,
+      ),
   );
   if (unit !== undefined) {
     return { kind: "unit", unit };

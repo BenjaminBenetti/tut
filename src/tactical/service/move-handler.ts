@@ -18,9 +18,11 @@ import { PHASE_FOR_TEAM } from "../model/tactical-state";
 import type { Unit, UnitId } from "../model/unit";
 import { passMaskFor } from "../model/unit";
 import { UNIT_MOVED } from "../model/unit-moved-event";
+import { unitFootprintSize } from "./footprint-service";
 import {
   apCostOf,
   buildMoveGraph,
+  footprintCanStep,
   moveBudget,
   searchMoves,
 } from "./movement-service";
@@ -73,6 +75,7 @@ export function createMoveHandler(
     const graph = buildMoveGraph(mission.map);
     const search = searchMoves(mission, unit, graph);
     const unitClass = passMaskFor(unit.passClass);
+    const size = unitFootprintSize(mission, unit);
     let previous = graph.index.getAt(unit.pos);
     const steps: Tile[] = [];
     for (const coord of path) {
@@ -82,9 +85,11 @@ export function createMoveHandler(
       if (tile === undefined || !search.costs.has(graph.index.keyOf(tile))) {
         return reject("unreachable");
       }
+      // The whole block steps, not just the anchor (#1130); for one
+      // tile this is the §5 step it always was.
       if (
         previous === undefined ||
-        !graph.reachability.canStep(previous, tile, unitClass)
+        !footprintCanStep(graph, previous, tile, size, unitClass)
       ) {
         return reject("not-a-step");
       }

@@ -25,12 +25,14 @@ import {
   withVision,
 } from "./vision-service";
 import {
+  blockUnitAt,
   missionWith,
   openField,
   ridgedField,
   unitAt,
   walledField,
 } from "./tactical-fixtures.test-helper";
+import { UNIT_MOVED } from "../model/unit-moved-event";
 
 /** An intact egg spawner on a tile, for the vision fixtures. */
 function spawnerAt(id: string, pos: TileCoord): Spawner {
@@ -692,5 +694,106 @@ describe("perceivedOccupantAt", () => {
     expect(
       perceivedOccupantAt(mission, "tdf", { x: 0, y: 2, z: 0 }),
     ).toBeUndefined();
+  });
+});
+
+// ===========================================
+// Footprints (#1130)
+// ===========================================
+
+/**
+ * The field split by a solid wall between `x = 3` and `x = 4` with a
+ * window at `z = 2`: sight crosses at the window and nowhere else.
+ */
+function windowedField() {
+  const builder = openField();
+  for (let z = 0; z < 8; z++) {
+    builder.wall({ x: 3, y: 0, z }, "e", z === 2 ? "window" : "solid");
+  }
+  return builder.build();
+}
+
+describe("vision for units on a 2×2 block (#1130)", () => {
+  it("looks from every tile of the block, so it sees what its anchor alone cannot", () => {
+    // Anchored at (2,1) the block's tile (3,2) is at the window; the
+    // anchor's own row is behind masonry.
+    const map = windowedField();
+    const index = new TileIndex(map);
+    const block = missionWith(map, [blockUnitAt("b", at(2, 1))]);
+    const single = missionWith(map, [
+      unitAt("b", "infantry", at(2, 1), { team: "bugs" }),
+    ]);
+    expect(computeVision(block, "bugs", index).visible).toContain(
+      index.keyOf(at(5, 1)),
+    );
+    expect(computeVision(single, "bugs", index).visible).not.toContain(
+      index.keyOf(at(5, 1)),
+    );
+    const enemyThere = missionWith(map, [
+      blockUnitAt("b", at(2, 1)),
+      unitAt("t", "infantry", at(5, 1)),
+    ]);
+    expect(computeVision(enemyThere, "bugs", index).spotted).toEqual(["t"]);
+  });
+
+  it("is spotted as soon as any tile of the block is in view, and names it from any of them", () => {
+    // The watcher looks through the window along z = 2: a block anchored
+    // at (4,1) shows its tile (4,2) there while its anchor stays hidden.
+    const map = windowedField();
+    const index = new TileIndex(map);
+    const mission = missionWith(map, [
+      unitAt("w", "infantry", at(1, 2)),
+      blockUnitAt("b", at(4, 1)),
+    ]);
+    const seen = computeVision(mission, "tdf", index);
+    expect(seen.visible).not.toContain(index.keyOf(at(4, 1)));
+    expect(seen.spotted).toEqual(["b"]);
+    const single = missionWith(map, [
+      unitAt("w", "infantry", at(1, 2)),
+      unitAt("b", "infantry", at(4, 1), { team: "bugs" }),
+    ]);
+    expect(computeVision(single, "tdf", index).spotted).toEqual([]);
+    const known = withVision({ state: mission, events: [] }).state;
+    for (const tile of [at(4, 1), at(5, 1), at(4, 2), at(5, 2)]) {
+      expect(perceivedOccupantAt(known, "tdf", tile, index)).toEqual({
+        kind: "unit",
+        unit: known.units[1],
+      });
+    }
+    expect(perceivedOccupantAt(known, "tdf", at(6, 2), index)).toBeUndefined();
+  });
+
+  it("recomputes when the map changed under it, as when a wall fell", () => {
+    // Nothing moved, but the wall between them is gone: the recompute
+    // must run, or a brute that cut its way in would go on seeing
+    // nothing (#1130).
+    const walled = missionWith(WALLED, [
+      unitAt("w", "infantry", at(2, 3)),
+      unitAt("b", "infantry", at(5, 3), { team: "bugs" }),
+    ]);
+    const before = withVision({ state: walled, events: [] }).state;
+    expect(before.vision.tdf.spotted).toEqual([]);
+    const opened = { ...before, map: OPEN };
+    const after = withVision(
+      {
+        state: opened,
+        events: [
+          {
+            type: UNIT_MOVED,
+            payload: { unitId: "w", from: at(2, 3), to: at(2, 3), path: [] },
+          },
+        ],
+      },
+      before,
+    );
+    expect(after.state.vision.tdf.spotted).toEqual(["b"]);
+    expect(after.events.map((e) => e.type)).toEqual([
+      UNIT_MOVED,
+      UNIT_SPOTTED,
+      UNIT_SPOTTED,
+    ]);
+    // The same map object, nothing moved: still skipped.
+    const same = withVision({ state: before, events: [] }, before);
+    expect(same.state).toBe(before);
   });
 });

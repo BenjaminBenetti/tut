@@ -13,6 +13,10 @@ import {
   hitChance,
   validateAttack,
 } from "../../tactical/service/combat-service";
+import {
+  footprintTiles,
+  unitFootprintSize,
+} from "../../tactical/service/footprint-service";
 import type { MoveGraph } from "../../tactical/service/movement-service";
 import {
   buildMoveGraph,
@@ -87,6 +91,53 @@ export function tileDistance(a: TileCoord, b: TileCoord): number {
   return Math.abs(a.x - b.x) + Math.abs(a.z - b.z);
 }
 
+/**
+ * How far a block of `size` tiles a side anchored at `anchor` is from
+ * `to` (#1130): the `tileDistance` of the nearest tile of the block,
+ * which is how far the nearest part of a brute has to walk. One tile
+ * is `tileDistance` exactly.
+ */
+export function footprintDistance(
+  anchor: TileCoord,
+  size: number,
+  to: TileCoord,
+): number {
+  let best = Number.POSITIVE_INFINITY;
+  for (const tile of footprintTiles(anchor, size)) {
+    best = Math.min(best, tileDistance(tile, to));
+  }
+  return best;
+}
+
+/**
+ * Where a bug's own side last saw an enemy, nearest first (#1130): the
+ * remembered positions a brute cuts toward when it perceives nobody.
+ * Unlike `recalledSite` it keeps a memory the bug is already standing
+ * beside, because a squad remembered on the far side of a wall is
+ * exactly the one worth cutting the wall for. Undefined when this side
+ * remembers nothing.
+ *
+ * @param mission - The mission as this side perceives it.
+ * @param unit - The bug doing the remembering.
+ * @returns The nearest remembered position, or undefined.
+ */
+export function rememberedEnemy(
+  mission: TacticalState,
+  unit: Unit,
+): TileCoord | undefined {
+  const size = unitFootprintSize(mission, unit);
+  let best: TileCoord | undefined;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  for (const pos of Object.values(mission.vision[unit.team]?.lastSeen ?? {})) {
+    const distance = footprintDistance(unit.pos, size, pos);
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      best = pos;
+    }
+  }
+  return best;
+}
+
 // ===========================================
 // Hunting
 // ===========================================
@@ -118,10 +169,13 @@ export function recalledSite(
   unit: Unit,
 ): TileCoord | undefined {
   const remembered = mission.vision[unit.team]?.lastSeen ?? {};
+  const size = unitFootprintSize(mission, unit);
   let best: TileCoord | undefined;
   let bestDistance = Number.POSITIVE_INFINITY;
   for (const pos of Object.values(remembered)) {
-    const distance = tileDistance(unit.pos, pos);
+    // Measured from the nearest tile of the bug (#1130), so a block
+    // standing beside a memory has spent it like a single tile would.
+    const distance = footprintDistance(unit.pos, size, pos);
     if (distance <= 1 || distance >= bestDistance) {
       continue;
     }
@@ -307,18 +361,21 @@ export function overwatchScore(
 /**
  * How much `enemies` are bunched around `tile`: the number within
  * `radius` tiles divided by their count. A brute uses it to find the
- * crowd; a lurker, negated, to find the straggler.
+ * crowd; a lurker, negated, to find the straggler. For a bug on a block
+ * (#1130) `size` measures from the nearest tile of the block anchored
+ * at `tile`; one tile is the anchor alone.
  */
 export function clumpScore(
   tile: TileCoord,
   enemies: readonly Unit[],
   radius: number,
+  size = 1,
 ): number {
   if (enemies.length === 0) {
     return 0;
   }
   const near = enemies.filter(
-    (e) => tileDistance(tile, e.pos) <= radius,
+    (e) => footprintDistance(tile, size, e.pos) <= radius,
   ).length;
   return near / enemies.length;
 }

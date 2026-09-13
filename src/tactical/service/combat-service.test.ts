@@ -22,7 +22,14 @@ import { UNIT_DIED } from "../model/unit-died-event";
 import type { UnitTemplate } from "../model/unit-template";
 import type { WeaponProfile } from "../model/weapon-profile";
 import { DEFAULT_WEAPON_NAME, PRIMARY_WEAPON_ID } from "../model/unit-weapon";
-import { fixtureAttackDeps, riggedRng } from "./tactical-fixtures.test-helper";
+import {
+  blockUnitAt,
+  fixtureAttackDeps,
+  missionWith,
+  openField,
+  riggedRng,
+  unitAt,
+} from "./tactical-fixtures.test-helper";
 import { attackTile } from "../model/attack-command";
 import { BLAST_RESOLVED } from "../model/blast-resolved-event";
 import { EFFECT_STARTED } from "../model/effect-started-event";
@@ -1590,5 +1597,91 @@ describe("weapons that mark the ground (#1121)", () => {
     expect(applied.value.events.map((e) => e.type)).toContain(
       OBJECTIVE_UPDATED,
     );
+  });
+});
+
+// ===========================================
+// Footprints (#1130)
+// ===========================================
+
+describe("shots to and from a unit on a 2×2 block (#1130)", () => {
+  const tile = (x: number, z: number): { x: number; y: number; z: number } => ({
+    x,
+    y: 0,
+    z,
+  });
+
+  it("holds the shot against the block's nearest tile and centres the hit there", () => {
+    // Shooter east of a block anchored at (1,3): the anchor is six tiles
+    // off, the block's east column five — inside the fixture's range 5.
+    const mission = missionWith(openField().build(), [
+      unitAt("s", "infantry", tile(7, 3)),
+      blockUnitAt("b", tile(1, 3)),
+    ]);
+    const checked = validateTargeting(mission, "s", "b", T);
+    expect(checked.ok).toBe(true);
+    if (!checked.ok) return;
+    expect(checked.value.terrain.distance).toBe(5);
+    expect(checked.value.target.pos).toEqual(tile(2, 3));
+    expect(checked.value.target.footprint).toBe(2);
+    // One tile further and the nearest tile is out of reach too.
+    const further = missionWith(openField().build(), [
+      unitAt("s", "infantry", tile(7, 3)),
+      blockUnitAt("b", tile(0, 3)),
+    ]);
+    const refused = validateTargeting(further, "s", "b", T);
+    expect(refused.ok).toBe(false);
+    if (refused.ok) return;
+    expect(refused.error).toEqual({
+      kind: "out-of-range",
+      distance: 6,
+      range: 5,
+    });
+  });
+
+  it("gives a block no cover and no flank, where a soldier on the same tile would have both", () => {
+    // A crate west of the target's tile shields a soldier from the west
+    // and leaves it flanked from the east; a block is too big to hide.
+    const map = openField().prop(PropKindIds.CRATE, tile(2, 3)).build();
+    const soldier = missionWith(map, [
+      unitAt("w", "infantry", tile(0, 3)),
+      unitAt("e", "infantry", tile(6, 3)),
+      unitAt("t", "infantry", tile(3, 3), { team: "bugs" }),
+    ]);
+    const shielded = validateTargeting(soldier, "w", "t", T);
+    const flanked = validateTargeting(soldier, "e", "t", T);
+    expect(shielded.ok && shielded.value.terrain.cover).toBe(CoverLevel.LOW);
+    expect(flanked.ok && flanked.value.terrain.flanked).toBe(true);
+    const block = missionWith(map, [
+      unitAt("w", "infantry", tile(0, 3)),
+      unitAt("e", "infantry", tile(6, 3)),
+      blockUnitAt("t", tile(3, 3)),
+    ]);
+    const west = validateTargeting(block, "w", "t", T);
+    const east = validateTargeting(block, "e", "t", T);
+    expect(west.ok && west.value.terrain.cover).toBe(CoverLevel.NONE);
+    expect(west.ok && west.value.terrain.flanked).toBe(false);
+    expect(east.ok && east.value.terrain.flanked).toBe(false);
+  });
+
+  it("lets a block attack from the tile of itself nearest the target", () => {
+    const mission = missionWith(
+      openField().build(),
+      [blockUnitAt("b", tile(0, 3)), unitAt("t", "infantry", tile(6, 3))],
+      { phase: "bugs" },
+    );
+    const checked = validateTargeting(mission, "b", "t", T);
+    expect(checked.ok).toBe(true);
+    if (!checked.ok) return;
+    expect(checked.value.terrain.distance).toBe(5);
+    const beyond = missionWith(
+      openField().build(),
+      [blockUnitAt("b", tile(0, 3)), unitAt("t", "infantry", tile(7, 3))],
+      { phase: "bugs" },
+    );
+    const refused = validateTargeting(beyond, "b", "t", T);
+    expect(refused.ok).toBe(false);
+    if (refused.ok) return;
+    expect(refused.error).toMatchObject({ kind: "out-of-range", distance: 6 });
   });
 });

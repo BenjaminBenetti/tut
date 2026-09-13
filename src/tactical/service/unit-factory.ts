@@ -156,7 +156,8 @@ export function mechUnit(
 /**
  * Builds a bug from its species data, which is already in tactical
  * terms (#322). Every bug of a species shares one template
- * (`"bug:<species>"`) and starts at full health. Pure: reads only its
+ * (`"bug:<species>"`) and starts at full health; a species with a
+ * footprint carries it onto the template (#1130). Pure: reads only its
  * arguments and draws one id.
  */
 export function bugUnit(
@@ -184,6 +185,11 @@ export function bugUnit(
     // What the kill is worth rides on the template (#1130), so the
     // resolver reads it off the casualty rather than asking a catalogue.
     ...(species.xpValue === undefined ? {} : { xpValue: species.xpValue }),
+    // A species that stands on more than one tile says so (#1130); the
+    // rest declare nothing and stand on one, as before.
+    ...(species.footprint === undefined
+      ? {}
+      : { footprint: species.footprint }),
   };
   return build(
     "bug",

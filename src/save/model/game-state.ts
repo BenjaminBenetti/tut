@@ -37,8 +37,10 @@ import type { TacticalState } from "../../tactical/model/tactical-state";
  * - `20`: active mission tile effects — fires (#1121); older missions migrate with none.
  * - `21`: radar scanners carry a battery, `radars[].turnsLeft` (#1130); older
  *   scanners migrate with a full one.
+ * - `22`: squad abilities become limited-use equipment, `templates[].equipment`,
+ *   and the mission holds its placed charges, `charges` (#1132).
  */
-export const GAME_STATE_SCHEMA_VERSION = 21;
+export const GAME_STATE_SCHEMA_VERSION = 22;
 
 /**
  * Bookkeeping that every save needs regardless of gameplay content.

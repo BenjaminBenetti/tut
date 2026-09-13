@@ -66,7 +66,7 @@ describe("actionWheel on a tile", () => {
         ...base.templates,
         rifle: {
           ...hudTemplate("rifle", "Radio Squad"),
-          abilities: ["deploy-radar"],
+          equipment: ["radar-dish"],
         },
       },
     };
@@ -79,7 +79,7 @@ describe("actionWheel on a tile", () => {
     expect(entry(base)).toBeUndefined();
     expect(entry(mission)).toMatchObject({
       label: "Deploy radar",
-      detail: "1 AP · scan 30 · 3 turns",
+      detail: "1 AP · scan 30",
     });
     expect(entry(mission)?.disabled).not.toBe(true);
     expect(entry(mission, { x: 5, y: 0, z: 1 })).toMatchObject({
@@ -95,6 +95,71 @@ describe("actionWheel on a tile", () => {
       tile,
     });
   });
+  it("offers a grenade and a charge on a tile with their numbers and uses, closed when spent or out of reach (#1132)", () => {
+    const base = hudMission();
+    const kitted: TacticalState = {
+      ...base,
+      templates: {
+        ...base.templates,
+        rifle: {
+          ...hudTemplate("rifle", "Rocket Squad"),
+          equipment: ["grenade", "breaching-charge"],
+        },
+      },
+    };
+    const near = { x: 2, y: 0, z: 1 };
+    const page = actionWheel(
+      { kind: "tile", tile: near },
+      contextFor(kitted, "s1"),
+    );
+    const grenade = page.items.find(
+      (item) => item.id === "equipment:grenade:2,0,1",
+    );
+    const charge = page.items.find(
+      (item) => item.id === "equipment:breaching-charge:2,0,1",
+    );
+    expect(grenade).toMatchObject({ label: "Grenade", icon: "attack" });
+    expect(grenade?.detail).toMatch(/^\d+% · [\d–]+ dmg .*2\/2$/);
+    expect(grenade?.disabled).not.toBe(true);
+    expect(charge).toMatchObject({
+      label: "Breaching charge",
+      icon: "warning",
+    });
+    expect(charge?.detail).toMatch(/dmg .* next turn · 1\/1$/);
+    expect(parseWheelChoice(grenade!.id)).toEqual({
+      action: "use-equipment",
+      equipmentId: "grenade",
+      tile: near,
+    });
+    // Spent: closed with the reason; out of reach: the rules' reason.
+    const spent: TacticalState = {
+      ...kitted,
+      units: kitted.units.map((u) =>
+        u.id === "s1" ? { ...u, equipment: { grenade: 0 } } : u,
+      ),
+    };
+    expect(
+      actionWheel(
+        { kind: "tile", tile: near },
+        contextFor(spent, "s1"),
+      ).items.find((item) => item.id === "equipment:grenade:2,0,1"),
+    ).toMatchObject({ disabled: true, detail: "none left" });
+    const far = { x: 7, y: 0, z: 1 };
+    expect(
+      actionWheel(
+        { kind: "tile", tile: far },
+        contextFor(kitted, "s1"),
+      ).items.find((item) => item.id === "equipment:breaching-charge:7,0,1"),
+    ).toMatchObject({ disabled: true, detail: "out of range" });
+    // A squad with no kit gets no such entries.
+    expect(
+      actionWheel(
+        { kind: "tile", tile: near },
+        contextFor(base, "s1"),
+      ).items.some((item) => item.id.startsWith("equipment:")),
+    ).toBe(false);
+  });
+
   it("offers Move with the path length, then the unit's own actions", () => {
     const mission = hudMission();
     const page = actionWheel(

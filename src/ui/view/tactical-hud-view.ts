@@ -11,7 +11,11 @@ import { extract } from "../../tactical/model/extract-command";
 import { interact } from "../../tactical/model/interact-command";
 import type { ObjectiveTuning } from "../../tactical/model/objective-tuning";
 import { reload } from "../../tactical/model/reload-command";
-import { deployRadar } from "../../tactical/model/deploy-radar-command";
+import { RADAR_DISH } from "../../tactical/data/equipment";
+import type { EquipmentId } from "../../tactical/model/equipment";
+import { useEquipment } from "../../tactical/model/use-equipment-command";
+import { SHIPPED_EQUIPMENT } from "../../tactical/repository/equipment-catalogue";
+import { previewEquipmentUse } from "../../tactical/service/equipment-service";
 import type { TacticalCommand } from "../../tactical/model/tactical-command";
 import type { TacticalError } from "../../tactical/model/tactical-error";
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
@@ -1112,8 +1116,19 @@ export class TacticalHudView {
         this.handlers.onCommand(overwatch(unitId));
         break;
       case "deploy-radar":
-        this.handlers.onCommand(deployRadar(unitId, choice.tile));
+        // The dish is equipment like the rest (#1132); the entry keeps
+        // its old name so the ring reads as it did.
+        this.handlers.onCommand(
+          useEquipment(unitId, RADAR_DISH.id, choice.tile),
+        );
         return;
+      case "use-equipment":
+        this.target = undefined;
+        this.mode = DEFAULT_HUD_MODE;
+        this.handlers.onCommand(
+          useEquipment(unitId, choice.equipmentId, choice.tile),
+        );
+        break;
       case "reload":
         this.handlers.onCommand(reload(unitId));
         break;
@@ -1601,6 +1616,12 @@ export class TacticalHudView {
       ) {
         return this.footprintOf(target, rested.weaponId);
       }
+      // Resting on a grenade or a charge paints what it would reach
+      // (#1132), and only then: a tile wheel that always painted a
+      // radius-3 charge would swamp the weapons' own footprints.
+      if (rested?.action === "use-equipment") {
+        return this.equipmentFootprint(rested.equipmentId, rested.tile);
+      }
       const seen = new Set<string>();
       const union: TileCoord[] = [];
       for (const option of weaponOptions(
@@ -1620,6 +1641,27 @@ export class TacticalHudView {
     }
     const aimed = this.currentPreview();
     return aimed?.ok ? (aimed.value.blast?.tiles ?? []) : [];
+  }
+
+  /** What one item would reach around `tile` (#1132); empty when the use is refused or the item marks nothing. */
+  private equipmentFootprint(
+    equipmentId: EquipmentId,
+    tile: TileCoord,
+  ): readonly TileCoord[] {
+    const mission = this.mission;
+    const unitId = this.selected;
+    if (!mission || unitId === undefined) {
+      return [];
+    }
+    const preview = previewEquipmentUse(
+      mission,
+      unitId,
+      equipmentId,
+      tile,
+      { catalogue: SHIPPED_EQUIPMENT, combat: this.deps.combatTuning },
+      this.deps.previewDeps,
+    );
+    return preview.ok ? (preview.value.blast?.tiles ?? []) : [];
   }
 
   /**

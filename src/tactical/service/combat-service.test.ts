@@ -164,6 +164,7 @@ function mission(
     extraction: [],
     log: [],
     radars: [],
+    charges: [],
     commandSeq: 0,
     ...overrides,
   };

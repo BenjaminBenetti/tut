@@ -580,6 +580,44 @@ describe("TacticalHudView", () => {
     expect(lines).toEqual(["Rifle · ammo 1 / 3", "Launcher · ammo 2 / 2"]);
   });
 
+  it("lists the selected unit's equipment on the card with its uses left (#1132)", () => {
+    const { hud, mission } = setup();
+    const s1 = mission.units.find((u) => u.id === "s1");
+    const template = s1 && mission.templates[s1.templateId];
+    if (!s1 || !template) throw new Error("fixture needs s1");
+    hud.update({
+      ...mission,
+      templates: {
+        ...mission.templates,
+        [s1.templateId]: {
+          ...template,
+          equipment: ["grenade", "radar-dish", "breaching-charge"],
+        },
+      },
+      units: mission.units.map((u) =>
+        u.id === "s1" ? { ...u, equipment: { grenade: 1 } } : u,
+      ),
+    });
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    const field = root.querySelector<HTMLElement>(
+      '#unit-card [data-field="equipment"]',
+    );
+    const names = [
+      ...(field?.querySelectorAll(".tut-card__entry-name") ?? []),
+    ].map((el) => el.textContent);
+    const uses = [
+      ...(field?.querySelectorAll('[data-role="charges"]') ?? []),
+    ].map((el) => el.textContent);
+    expect(names).toEqual(["Grenade", "Radar dish", "Breaching charge"]);
+    expect(uses).toEqual(["uses 1 / 2", "uses 3 / 3", "uses 1 / 1"]);
+    // A unit with no kit shows the dash, not an empty block.
+    hud.update(mission);
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    expect(
+      root.querySelector('#unit-card [data-field="equipment"]')?.textContent,
+    ).toBe("—");
+  });
+
   it("a tile click by a unit that is not the player's opens nothing", () => {
     const { hud } = setup();
     hud.handleIntent({ kind: "select-unit", unitId: "b1" });

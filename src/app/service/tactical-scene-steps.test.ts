@@ -62,6 +62,11 @@ class StageRecorder {
     this.effects = effects;
   }
 
+  /** Records the charges the scene was asked to draw (#1132). */
+  updateCharges(): void {
+    this.calls.push("updateCharges");
+  }
+
   /** Records the units the scene was asked to draw. */
   update(
     units: readonly Unit[],
@@ -187,6 +192,7 @@ describe("drawPerceived", () => {
       "applyMap",
       "setVision",
       "updateEffects",
+      "updateCharges",
       "update",
       "updateSpawners",
       "updateRadar",

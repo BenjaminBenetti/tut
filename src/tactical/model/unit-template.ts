@@ -1,6 +1,6 @@
 import type { ModelAssetId } from "../../content/data/model-ids";
-import type { UnitAbility } from "../../content/model/unit-ability";
 import type { MechLoadout } from "../../roster/model/mech-loadout";
+import type { EquipmentId } from "./equipment";
 import type { PassClass } from "./unit";
 import type { UnitWeapon } from "./unit-weapon";
 
@@ -93,8 +93,12 @@ export interface UnitTemplate {
    * is the reference assembly, drawn only when `loadout` is absent.
    */
   readonly modelId: ModelAssetId;
-  /** Special actions; absent on older saved templates and ordinary units. */
-  readonly abilities?: readonly UnitAbility[];
+  /**
+   * The limited-use items the unit carries (#1132), by catalogue id:
+   * grenades, a radar dish, a breaching charge. Absent for bugs, mechs
+   * and older saved templates, which carry nothing.
+   */
+  readonly equipment?: readonly EquipmentId[];
   /**
    * The loadout a mech was built from, so graphics can assemble the
    * parts the player actually fitted (#1115); the mech bay preview and

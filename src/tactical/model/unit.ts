@@ -1,3 +1,4 @@
+import type { EquipmentId } from "./equipment";
 import type { WeaponId } from "./unit-weapon";
 import type { Direction } from "../../core/model/direction";
 import type { UnitClass } from "../../mapgen/model/pass-mask";
@@ -108,6 +109,13 @@ export interface Unit {
    * one on the back.
    */
   readonly charges?: Readonly<Record<WeaponId, number>>;
+  /**
+   * Uses left of each piece of equipment the unit has drawn on (#1132),
+   * keyed by `EquipmentId`. An item absent here has never been used and
+   * has its full allowance (`usesLeftOf`), so a fresh unit carries no
+   * record and a save from before equipment needs no rewrite.
+   */
+  readonly equipment?: Readonly<Record<EquipmentId, number>>;
 }
 
 // ===========================================

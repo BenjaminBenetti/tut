@@ -32,7 +32,9 @@ import type {
   TileEffectId,
 } from "../../tactical/model/tile-effect";
 import type { FrameUpdatable } from "../model/frame-updatable";
+import { ChargeView } from "../view/charge-view";
 import { RadarView } from "../view/radar-view";
+import type { PlacedCharge } from "../../tactical/model/equipment";
 import type { Radar, RadarContact } from "../../tactical/model/radar";
 import {
   DEFAULT_FOOTPRINT,
@@ -144,6 +146,8 @@ export class TacticalSceneBuilder
   private readonly spawnersGroup: Group;
   /** The fires (#1121); a frame updatable the host ticks, exposed as `effectsUpdatable`. */
   private readonly effects = new TileEffectView();
+  /** The set breaching charges (#1132); ticked for their blinking lamps as `chargesUpdatable`. */
+  private readonly charges = new ChargeView();
   private readonly spawnerMeshes = new Map<SpawnerId, UnitMesh>();
   /** Measured once when placed, for anchoring the egg burst (#697). */
   private readonly spawnerHeights = new Map<SpawnerId, number>();
@@ -185,6 +189,7 @@ export class TacticalSceneBuilder
       this.mapView.root,
       this.spawnersGroup,
       this.effects.root,
+      this.charges.root,
       this.unitsGroup,
       this.tethers.root,
       this.radarView.root,
@@ -375,6 +380,26 @@ export class TacticalSceneBuilder
   }
 
   /**
+   * Draws exactly `charges` (#1132): every breaching charge set and not
+   * yet gone. They are the player's own, so none is withheld.
+   *
+   * @param charges - The placed charges to draw.
+   */
+  updateCharges(charges: readonly PlacedCharge[]): void {
+    this.charges.updateCharges(charges);
+  }
+
+  /** Ids of the charges currently drawn. */
+  chargeIds(): readonly string[] {
+    return this.charges.chargeIds();
+  }
+
+  /** What the frame loop ticks so the charges' lamps blink; the host adds it to its updatables. */
+  get chargesUpdatable(): FrameUpdatable {
+    return this.charges;
+  }
+
+  /**
    * Brings the drawn egg spawners in step with `spawners` (#484). A
    * spawner that is destroyed — or gone from the list — is removed, the
    * way a dead unit is; the rest are placed once and never move, so
@@ -435,6 +460,7 @@ export class TacticalSceneBuilder
     }
     this.wantedSpawners.clear();
     this.effects.dispose();
+    this.charges.dispose();
     this.mapView.dispose();
     this.root.removeFromParent();
   }

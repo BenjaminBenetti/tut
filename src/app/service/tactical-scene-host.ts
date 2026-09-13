@@ -201,6 +201,7 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
         animations,
         ghosting,
         builder.effectsUpdatable,
+        builder.chargesUpdatable,
         builder.radarUpdatable,
       ],
     });
@@ -499,6 +500,9 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
       );
       document.body.dataset.tacticalEffects = String(
         attached.builder.effectIds().length,
+      );
+      document.body.dataset.tacticalCharges = String(
+        attached.builder.chargeIds().length,
       );
     }
   }

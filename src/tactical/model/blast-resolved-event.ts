@@ -20,6 +20,13 @@ export interface BlastVictim {
   readonly hp: number;
 }
 
+/**
+ * How the blast got to its impact (#1132), for the animation: a shot or
+ * a throw leaves the attacker with a flash and a tracer; a placed charge
+ * simply goes off where it lies.
+ */
+export type BlastDelivery = "shot" | "thrown" | "placed";
+
 /** Payload of `BlastResolved`. */
 export interface BlastResolvedPayload {
   readonly attackerId: UnitId;
@@ -33,6 +40,14 @@ export interface BlastResolvedPayload {
   readonly aimedAtTile: boolean;
   /** The attacking weapon's reach, as `AttackResolved` carries it (#457). */
   readonly weaponRange: number;
+  /**
+   * What made the blast when it was not the attacker's weapon (#1132):
+   * `"grenade"`, `"breaching charge"`. Absent for a shot, which the log
+   * calls a blast as it always has.
+   */
+  readonly source?: string;
+  /** How it arrived; absent means a shot. */
+  readonly delivery?: BlastDelivery;
   /**
    * Everything the blast reached other than the aimed target, whose own
    * damage is on the `AttackResolved` that precedes this. Impact tile

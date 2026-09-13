@@ -401,7 +401,12 @@ export class TacticalSceneBuilder
     radars: readonly Radar[],
     contacts: readonly RadarContact[],
   ): Promise<void> {
-    await this.radarView.update(radars, contacts);
+    await this.radarView.updateRadar(radars, contacts);
+  }
+
+  /** What the frame loop ticks so scanner dishes turn and dead ones smoke (#1130); the host adds it to its updatables. */
+  get radarUpdatable(): FrameUpdatable {
+    return this.radarView;
   }
 
   /** Counts the scanner models and blips actually placed in the scene. */

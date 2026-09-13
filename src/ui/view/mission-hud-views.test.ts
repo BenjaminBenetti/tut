@@ -307,6 +307,38 @@ describe("event vocabulary", () => {
     expect(line?.text).toBe("Rifle Squad is on overwatch");
   });
 
+  it("names the scan and the battery on deployment, and says a dead scanner is dead (#1130)", () => {
+    const radar = {
+      id: "radar-1",
+      team: "tdf" as const,
+      pos: { x: 1, y: 0, z: 1 },
+      range: 30,
+      turnsLeft: 3,
+    };
+    const deployed = describeEvent(
+      {
+        type: "tactical:radar-deployed",
+        payload: { unitId: "unit-2", radar },
+      } as never,
+      { ...NAMES, unit: () => "Radio Squad" },
+    );
+    expect(deployed?.text).toBe(
+      "Radio Squad deployed radar · 30-tile scan · 3-turn battery",
+    );
+    const dead = describeEvent(
+      {
+        type: "tactical:radar-burned-out",
+        payload: { radarId: "radar-1", pos: radar.pos },
+      } as never,
+      NAMES,
+    );
+    expect(dead).toEqual({
+      text: "Radar burnt out · battery dead",
+      icon: "radar",
+      tone: "dim",
+    });
+  });
+
   it("still reads correctly for a status that happens to be an adjective", () => {
     const line = describeEvent(
       {

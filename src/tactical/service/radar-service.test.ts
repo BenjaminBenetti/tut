@@ -4,15 +4,19 @@ import { describe, expect, it } from "vitest";
 import { RADAR_TUNING } from "../data/radar-tuning";
 import { COMBAT_TUNING } from "../data/combat-tuning";
 import { deployRadar } from "../model/deploy-radar-command";
+import { endTurn } from "../model/end-turn-command";
 import type { Radar } from "../model/radar";
+import { RADAR_BURNED_OUT } from "../model/radar-burned-out-event";
 import type { TacticalState } from "../model/tactical-state";
 import { previewAttack } from "./combat-service";
 import { viewFor } from "./mission-view-service";
 import {
   createDeployRadarHandler,
+  drainRadarBatteries,
   radarContacts,
   validateRadarDeployment,
 } from "./radar-service";
+import { createEndTurnHandler, refreshSides } from "./turn-service";
 import {
   missionWith,
   unitAt,
@@ -27,7 +31,13 @@ import {
 
 const ORIGIN = { x: 1, y: 0, z: 1 };
 const TILE = { x: 2, y: 0, z: 1 };
-const SCANNER: Radar = { id: "radar-1", team: "tdf", pos: ORIGIN, range: 30 };
+const SCANNER: Radar = {
+  id: "radar-1",
+  team: "tdf",
+  pos: ORIGIN,
+  range: 30,
+  turnsLeft: 3,
+};
 
 /** A signals squad on an open field, with the ability frozen into its template. */
 function radioMission(): TacticalState {
@@ -125,11 +135,24 @@ describe("Deploy radar", () => {
     expect(mission.radars).toEqual([]);
   });
 
-  it("refuses distant, diagonal, invalid, occupied, nest and duplicate scanner tiles", () => {
+  it("accepts a diagonal and a two-tile straight placement (#1130: range 2, a diagonal measures 1.41)", () => {
     const mission = radioMission();
     for (const tile of [
-      { x: 3, y: 0, z: 1 },
       { x: 2, y: 0, z: 2 },
+      { x: 3, y: 0, z: 1 },
+      { x: 1, y: 0, z: 3 },
+    ]) {
+      expect(
+        validateRadarDeployment(mission, "radio", tile, RADAR_TUNING).ok,
+      ).toBe(true);
+    }
+  });
+
+  it("refuses distant, invalid, occupied, nest and duplicate scanner tiles", () => {
+    const mission = radioMission();
+    for (const tile of [
+      { x: 4, y: 0, z: 1 },
+      { x: 3, y: 0, z: 3 },
       { x: 2, y: 2, z: 1 },
     ]) {
       expect(
@@ -152,6 +175,7 @@ describe("Deploy radar", () => {
         units: [...mission.units, unitAt("other", "infantry", TILE)],
       },
       { ...mission, radars: [{ ...SCANNER, pos: TILE }] },
+      { ...mission, radars: [{ ...SCANNER, pos: TILE, turnsLeft: 0 }] },
       {
         ...mission,
         spawners: [
@@ -171,6 +195,43 @@ describe("Deploy radar", () => {
         validateRadarDeployment(state, "radio", TILE, RADAR_TUNING),
       ).toMatchObject({ ok: false, error: { kind: "radar-tile-blocked" } });
     }
+  });
+
+  it("carries the scanner on foot: a wall that costs a three-step detour blocks, a comrade in the way does not", () => {
+    const base = radioMission();
+    // A wall on the east edge of the squad's tile: the straight tile
+    // beyond it is two tiles off but three steps round.
+    const walled = {
+      ...base,
+      map: {
+        ...base.map,
+        tiles: base.map.tiles.map((t) =>
+          t.x === ORIGIN.x && t.z === ORIGIN.z
+            ? { ...t, walls: { e: "solid" as const } }
+            : t,
+        ),
+      },
+    };
+    const beyond = { x: 3, y: 0, z: 1 };
+    expect(
+      validateRadarDeployment(walled, "radio", beyond, RADAR_TUNING),
+    ).toMatchObject({ ok: false, error: { kind: "radar-tile-blocked" } });
+    // The diagonal past the wall's end is two steps round, so it is fine.
+    expect(
+      validateRadarDeployment(
+        walled,
+        "radio",
+        { x: 2, y: 0, z: 2 },
+        RADAR_TUNING,
+      ).ok,
+    ).toBe(true);
+    const crowded = {
+      ...base,
+      units: [...base.units, unitAt("other", "infantry", TILE)],
+    };
+    expect(
+      validateRadarDeployment(crowded, "radio", beyond, RADAR_TUNING).ok,
+    ).toBe(true);
   });
 
   it("cannot place through a solid wall or on an impassable tile", () => {
@@ -321,5 +382,131 @@ describe("radar contacts", () => {
     expect(radarContacts(spotted, "tdf")).toEqual([]);
     // Scanners remain autonomous after the deploying squad extracts.
     expect(radarContacts({ ...mission, units: [bug] }, "tdf")).toHaveLength(2);
+  });
+});
+
+describe("radar battery", () => {
+  /** A scanner deployed on turn 1, in the player's phase. */
+  function deployed(turnsLeft = RADAR_TUNING.batteryTurns): TacticalState {
+    return { ...radioMission(), radars: [{ ...SCANNER, turnsLeft }] };
+  }
+
+  it("deploys with the tuning's full battery", () => {
+    const result = createDeployRadarHandler(RADAR_TUNING)(
+      radioMission(),
+      deployRadar("radio", TILE),
+      ctxWith(riggedRng(true)),
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.state.radars[0]?.turnsLeft).toBe(3);
+  });
+
+  it("drains one turn as a player phase opens and nothing as the bug phase opens, without touching its input", () => {
+    const player = deployed();
+    const before = JSON.stringify(player);
+    const drained = drainRadarBatteries(player, ctxWith(riggedRng(true)));
+    expect(drained.state.radars).toEqual([{ ...SCANNER, turnsLeft: 2 }]);
+    expect(drained.events).toEqual([]);
+    expect(JSON.stringify(player)).toBe(before);
+    const bugs: TacticalState = { ...player, phase: "bugs" };
+    const untouched = drainRadarBatteries(bugs, ctxWith(riggedRng(true)));
+    expect(untouched.state).toBe(bugs);
+    expect(untouched.events).toEqual([]);
+  });
+
+  it("announces the scanner that dies and leaves a dead one alone", () => {
+    const mission: TacticalState = {
+      ...deployed(1),
+      radars: [
+        { ...SCANNER, turnsLeft: 1 },
+        { ...SCANNER, id: "radar-dead", turnsLeft: 0 },
+      ],
+    };
+    const drained = drainRadarBatteries(mission, ctxWith(riggedRng(true)));
+    expect(drained.state.radars).toEqual([
+      { ...SCANNER, turnsLeft: 0 },
+      { ...SCANNER, id: "radar-dead", turnsLeft: 0 },
+    ]);
+    expect(drained.events).toEqual([
+      {
+        type: RADAR_BURNED_OUT,
+        payload: { radarId: "radar-1", pos: ORIGIN },
+      },
+    ]);
+  });
+
+  it("scans through turns T, T+1 and T+2 and the bug phases between, and is burnt out when T+3 opens", () => {
+    const bug = unitAt(
+      "bug",
+      "infantry",
+      { x: 16, y: 0, z: 1 },
+      { team: "bugs" },
+    );
+    let mission: TacticalState = {
+      ...deployed(),
+      units: [...radioMission().units, bug],
+    };
+    const handler = createEndTurnHandler([refreshSides, drainRadarBatteries]);
+    const ctx = ctxWith(riggedRng(true));
+    const seen: {
+      turn: number;
+      phase: string;
+      left: number;
+      contacts: number;
+    }[] = [];
+    const burnouts: number[] = [];
+    for (let step = 0; step < 6; step++) {
+      const result = handler(mission, endTurn(), ctx);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      mission = result.value.state;
+      for (const event of result.value.events) {
+        if (event.type === RADAR_BURNED_OUT) burnouts.push(mission.turn);
+      }
+      seen.push({
+        turn: mission.turn,
+        phase: mission.phase,
+        left: mission.radars[0]?.turnsLeft ?? -1,
+        contacts: radarContacts(mission, "tdf").length,
+      });
+    }
+    expect(seen).toEqual([
+      { turn: 1, phase: "bugs", left: 3, contacts: 1 },
+      { turn: 2, phase: "player", left: 2, contacts: 1 },
+      { turn: 2, phase: "bugs", left: 2, contacts: 1 },
+      { turn: 3, phase: "player", left: 1, contacts: 1 },
+      { turn: 3, phase: "bugs", left: 1, contacts: 1 },
+      { turn: 4, phase: "player", left: 0, contacts: 0 },
+    ]);
+    expect(burnouts).toEqual([4]);
+    // The dead scanner stays on the map for the renderer and the save.
+    expect(mission.radars).toHaveLength(1);
+    expect(JSON.parse(JSON.stringify(mission))).toEqual(mission);
+  });
+
+  it("reports nothing from a burnt-out scanner while a live one beside it still does", () => {
+    const bug = unitAt(
+      "bug",
+      "infantry",
+      { x: 16, y: 0, z: 1 },
+      { team: "bugs" },
+    );
+    const base = { ...radioMission(), units: [...radioMission().units, bug] };
+    expect(
+      radarContacts({ ...base, radars: [{ ...SCANNER, turnsLeft: 0 }] }, "tdf"),
+    ).toEqual([]);
+    expect(
+      radarContacts(
+        {
+          ...base,
+          radars: [
+            { ...SCANNER, turnsLeft: 0 },
+            { ...SCANNER, id: "radar-2", turnsLeft: 1 },
+          ],
+        },
+        "tdf",
+      ),
+    ).toEqual([{ kind: "unit", pos: bug.pos }]);
   });
 });

@@ -925,6 +925,88 @@
   padding: var(--space-3) var(--space-4);
   background: var(--ui-panel);
   border-top: var(--line) solid var(--ui-line);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+/* ===========================================
+   Development tools (#1136)
+   =========================================== */
+
+/*
+ * The bug button leads the bar at its left end, set apart from the
+ * actions by a rule; the actions keep the middle. Dev builds only: the
+ * HUD builds neither element outside one.
+ */
+.tut-hud__debug-toggle {
+  flex: 0 0 auto;
+  padding-inline: var(--space-3);
+  border-right: var(--line) solid var(--ui-line);
+  padding-right: var(--space-4);
+  margin-right: 0;
+  border-radius: 0;
+}
+
+.tut-hud__debug-toggle[aria-pressed="true"] {
+  box-shadow: inset 0 0 0 2px var(--ui-accent);
+}
+
+/*
+ * The debug menu lies over the left rail: the same grid cell, stacked
+ * above it, so opening it reflows nothing and closing it leaves the
+ * rail as it was. It scrolls in the rail's height when the lists grow.
+ */
+.tut-debug-menu {
+  grid-area: rail;
+  z-index: 4;
+  margin: var(--space-4);
+  align-self: start;
+  max-height: calc(100% - 2 * var(--space-4));
+  overflow: auto;
+  scrollbar-width: thin;
+  pointer-events: auto;
+}
+
+.tut-debug-menu__head {
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tut-debug-menu__close {
+  padding: var(--space-1) var(--space-2);
+}
+
+.tut-debug-menu__heading {
+  font-weight: 600;
+  margin-top: var(--space-3);
+}
+
+.tut-debug-menu__side {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tut-debug-menu__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.tut-debug-menu__entry {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.tut-debug-menu__armed {
+  margin: var(--space-3) 0 0;
+  font-size: 12px;
+}
+
+.tut-debug-menu__armed[data-armed="true"] {
+  color: var(--ui-accent);
 }
 
 /* ===========================================
@@ -998,6 +1080,7 @@
 }
 
 .tut-hud__actions {
+  flex: 1 1 auto;
   justify-content: center;
 }
 

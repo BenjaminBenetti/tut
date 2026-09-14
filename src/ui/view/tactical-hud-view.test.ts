@@ -9,6 +9,7 @@ import { ATTACK } from "../../tactical/model/attack-command";
 import { END_TURN } from "../../tactical/model/end-turn-command";
 import { MOVE } from "../../tactical/model/move-command";
 import { OVERWATCH } from "../../tactical/model/overwatch-command";
+import { placeUnit } from "../../tactical/model/place-unit-command";
 import type { TacticalCommand } from "../../tactical/model/tactical-command";
 import { SPAWNER_NAME } from "../../tactical/service/attack-target-service";
 import { previewAttack } from "../../tactical/service/combat-service";
@@ -2226,5 +2227,133 @@ describe("TacticalHudView while the bug phase plays (#1130)", () => {
     row.click();
     expect(hud.getSelectedUnitId()).toBe(row.dataset.unitId);
     expect(onLookAt).toHaveBeenCalledWith(row.dataset.unitId);
+  });
+});
+
+// ===========================================
+// Development tools (#1136)
+// ===========================================
+
+describe("development tools (#1136)", () => {
+  const PLACEABLE = [
+    { kind: "squad", id: "rifle", name: "Rifle Squad" },
+    { kind: "bug", id: "swarmer", name: "Swarmer" },
+  ] as const;
+
+  const toggle = (): HTMLButtonElement | null =>
+    root.querySelector<HTMLButtonElement>('[data-testid="debug-menu-toggle"]');
+  const panel = (): HTMLElement | null =>
+    root.querySelector<HTMLElement>('[data-testid="debug-menu"]');
+  const entry = (kind: string, id: string): HTMLButtonElement | null =>
+    root.querySelector<HTMLButtonElement>(
+      `[data-testid="debug-place-${kind}-${id}"]`,
+    );
+  const status = (): string =>
+    root.querySelector<HTMLElement>('#turn-banner [data-role="status"]')
+      ?.textContent ?? "";
+
+  /** A HUD with the tools, or without them, over the fixture mission. */
+  function setupDev(devTools: boolean) {
+    const commands: TacticalCommand[] = [];
+    const hud = new TacticalHudView(
+      {
+        onCommand: (c) => commands.push(c),
+        onLeave: () => undefined,
+        anchorFor: () => ({ x: 100, y: 100 }),
+      },
+      {
+        combatTuning: COMBAT_TUNING,
+        objectiveTuning: OBJECTIVE_TUNING,
+        ...(devTools ? { devTools: { placeable: PLACEABLE } } : {}),
+      },
+    );
+    hud.mount(root);
+    const mission = hudMission();
+    hud.update(mission);
+    return { hud, commands, mission };
+  }
+
+  it("builds neither the bug button nor the menu without the tools", () => {
+    setupDev(false);
+    expect(toggle()).toBeNull();
+    expect(panel()).toBeNull();
+  });
+
+  it("puts the bug button before Move on the bar and opens the menu over the rail", () => {
+    setupDev(true);
+    const button = toggle();
+    expect(button?.getAttribute("aria-label")).toBe("Debug menu");
+    const bottom = root.querySelector<HTMLElement>(".tut-hud__bottom");
+    const move = bottom?.querySelector<HTMLElement>('[data-action="move"]');
+    expect(button && move ? button.compareDocumentPosition(move) : 0).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    expect(panel()?.hidden).toBe(true);
+    button?.click();
+    expect(panel()?.hidden).toBe(false);
+    expect(button?.getAttribute("aria-pressed")).toBe("true");
+    expect(panel()?.closest("#mission-hud")).not.toBeNull();
+    button?.click();
+    expect(panel()?.hidden).toBe(true);
+  });
+
+  it("arms an entry, says so on the status line, and places it where the map is clicked, staying armed", () => {
+    const { hud, commands, mission } = setupDev(true);
+    toggle()?.click();
+    entry("bug", "swarmer")?.click();
+    expect(hud.getArmedPlacement()).toEqual(PLACEABLE[1]);
+    expect(entry("bug", "swarmer")?.getAttribute("aria-pressed")).toBe("true");
+    expect(status()).toBe("Place: Swarmer — click the map, Esc cancels");
+    hud.handleIntent({ kind: "select-tile", tile: { x: 5, y: 0, z: 3 } });
+    expect(commands).toEqual([
+      placeUnit(mission.missionId, "bug", "swarmer", { x: 5, y: 0, z: 3 }),
+    ]);
+    // No wheel opened for the click: the placement took it.
+    expect(wheelOpen()).toBe(false);
+    // Still armed: the next click places another.
+    hud.handleIntent({
+      kind: "invoke",
+      target: { kind: "tile", tile: { x: 6, y: 0, z: 3 } },
+    });
+    expect(commands).toHaveLength(2);
+    // The screen's "nothing to report" after a success keeps the instruction up.
+    hud.showStatus("");
+    expect(status()).toBe("Place: Swarmer — click the map, Esc cancels");
+    // A click on a unit is a placement onto its tile, for the rules to refuse.
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    expect(commands[2]).toEqual(
+      placeUnit(mission.missionId, "bug", "swarmer", { x: 1, y: 0, z: 1 }),
+    );
+    expect(hud.getSelectedUnitId()).toBeUndefined();
+  });
+
+  it("disarms on Escape, on the entry pressed again, and on closing the menu", () => {
+    const { hud, commands } = setupDev(true);
+    toggle()?.click();
+    entry("squad", "rifle")?.click();
+    hud.handleIntent({ kind: "action", action: "cancel" });
+    expect(hud.getArmedPlacement()).toBeUndefined();
+    expect(status()).toBe("");
+    // Disarmed, a tile click is an ordinary click again: nothing selected,
+    // so nothing is placed and nothing opens.
+    hud.handleIntent({ kind: "select-tile", tile: { x: 5, y: 0, z: 3 } });
+    expect(commands).toEqual([]);
+
+    entry("squad", "rifle")?.click();
+    expect(hud.getArmedPlacement()).toEqual(PLACEABLE[0]);
+    entry("squad", "rifle")?.click();
+    expect(hud.getArmedPlacement()).toBeUndefined();
+
+    entry("squad", "rifle")?.click();
+    root
+      .querySelector<HTMLButtonElement>('[data-action="debug-menu-close"]')
+      ?.click();
+    expect(panel()?.hidden).toBe(true);
+    expect(hud.getArmedPlacement()).toBeUndefined();
+
+    entry("squad", "rifle")?.click();
+    toggle()?.click();
+    toggle()?.click();
+    expect(hud.getArmedPlacement()).toBeUndefined();
   });
 });

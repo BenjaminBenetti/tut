@@ -76,6 +76,8 @@ Add domains via ADR when needed. Don't create `utils` dumping grounds.
 - **Map contract**: `TacticalMap { width, depth, levels, tiles[], buildings[], hooks{deployZones, objectives, edgeSpawns, extraction} }`. Map generation produces it; tactical consumes it; graphics renders it. Full contract and invariants: [ADR 0004](../adr/0004-tactical-map-contract.md).
 - **Cameras**: one orthographic rig module owns the single camera, driven by a plain `CameraState`. A `CameraProjection` (elevation, yaw offset) picks how it looks at the ground: tactical maps use the isometric projection they are authored for (fixed elevation `atan(1/√2)`, yaw snapped to the 4 diagonals), and the strategic map uses the top-down projection (straight down, north up, no rotation) so Earth reads as a map rather than a rhombus. Zoom is clamped for both. See [ADR 0005](../adr/0005-overworld-camera-is-top-down.md).
 
+- **Development tools** (#1136): `import.meta.env.DEV` is read in exactly one place, `app/service/app-bootstrap.ts`, and enters the composition as a plain `devTools: boolean`. `composeGame` → `composeTactical` turn it into the `PlaceUnit` handler's `enabled` switch and, when on, a `DevTools { placeable }` catalogue the tactical screen hands the HUD; when off the screen receives nothing and builds no dev-only DOM. The handler is registered in every build and refuses with `TacticalError { kind: "debug-disabled" }` outside a dev one, so the same command in a production save replays to a typed refusal rather than to a unit. Nothing below `app/` reads the environment.
+
 ## 6. Testing strategy
 
 - Simulation domains: Vitest unit tests required for every PR that touches them. Deterministic seeds make golden tests cheap.

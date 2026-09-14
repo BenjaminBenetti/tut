@@ -39,8 +39,12 @@ import type { TacticalState } from "../../tactical/model/tactical-state";
  *   scanners migrate with a full one.
  * - `22`: squad abilities become limited-use equipment, `templates[].equipment`,
  *   and the mission holds its placed charges, `charges` (#1132).
+ * - `23`: deployed turrets are units of kind `turret` carrying a battery,
+ *   `units[].turnsLeft`, and a watch carries its shots, `units[].overwatchShots`
+ *   (#1138). Both absent on every older unit, which is what the rules read as
+ *   "not a turret" and "one shot", so the migration reshapes nothing.
  */
-export const GAME_STATE_SCHEMA_VERSION = 22;
+export const GAME_STATE_SCHEMA_VERSION = 23;
 
 /**
  * Bookkeeping that every save needs regardless of gameplay content.

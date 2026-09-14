@@ -20,8 +20,9 @@ export type EquipmentId = string;
  * | `blast`  | resolves at once, like a shot at the ground (#1121)      |
  * | `charge` | is placed on the tile and detonates `delayTurns` later   |
  * | `heal`   | mends the user's own side in a blast-shaped area (#1138)  |
+ * | `turret` | puts a turret unit on the tile (`turret-service`, #1138) |
  */
-export type EquipmentKind = "radar" | "blast" | "charge" | "heal";
+export type EquipmentKind = "radar" | "blast" | "charge" | "heal" | "turret";
 
 /** Every `EquipmentKind`, in a fixed order. */
 export const EQUIPMENT_KINDS = [
@@ -29,7 +30,22 @@ export const EQUIPMENT_KINDS = [
   "blast",
   "charge",
   "heal",
+  "turret",
 ] as const satisfies readonly EquipmentKind[];
+
+/**
+ * True for an item that is carried to a tile and put down there
+ * (#1138): a radar dish or a turret. Its range is a walk over the move
+ * graph rather than a throw, it has no hit chance or damage to preview,
+ * and it keeps its own entry on the wheel's ring rather than riding
+ * under Attack. The one predicate the rules, the range preview and the
+ * wheel share, so a fourth kind of deployable is added in one place.
+ */
+export function isDeployable(
+  definition: Pick<EquipmentDefinition, "kind">,
+): boolean {
+  return definition.kind === "radar" || definition.kind === "turret";
+}
 
 /** Prefix the id generator uses for placed charges, e.g. `"charge-2"`. */
 export const CHARGE_ID_PREFIX = "charge";
@@ -53,7 +69,8 @@ export const CHARGE_ID_PREFIX = "charge";
  *                                ├─ radar  ──► Radar placed
  *                                ├─ blast  ──► BlastResolved …   (resolveBlastAt)
  *                                ├─ charge ──► PlacedCharge ──► detonates as turn T+delay opens
- *                                └─ heal   ──► UnitsHealed        (resolveHealAt)
+ *                                ├─ heal   ──► UnitsHealed        (resolveHealAt)
+ *                                └─ turret ──► a turret Unit on overwatch (#1138)
  * ```
  */
 export interface EquipmentDefinition {
@@ -66,10 +83,10 @@ export interface EquipmentDefinition {
   /** Action points one use costs. Positive integer. */
   readonly apCost: number;
   /**
-   * Tiles from the user the tile may be. A radar dish is carried there
-   * on foot (a bounded walk over the move graph); a blast or a charge
-   * is thrown or placed, measured with `attackDistance` and needing a
-   * line of sight. Positive integer.
+   * Tiles from the user the tile may be. A radar dish or a turret is
+   * carried there on foot (a bounded walk over the move graph); a blast
+   * or a charge is thrown or placed, measured with `attackDistance` and
+   * needing a line of sight. Positive integer.
    */
   readonly range: number;
   /** What a blast or a charge does where it lands; absent for a radar or a heal. */

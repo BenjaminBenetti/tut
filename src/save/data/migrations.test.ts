@@ -660,3 +660,29 @@ describe("radar migration", () => {
     expect(migration.apply(campaign)).toBe(campaign);
   });
 });
+
+describe("v22 → v23", () => {
+  const runner = new MigrationRunner(GAME_STATE_MIGRATIONS, 23);
+
+  it("stamps a v22 save without reshaping it: a turret's battery and a watch's shots are new optional fields (#1138)", () => {
+    const state = {
+      overworld: { day: 4 },
+      activeMission: {
+        units: [{ id: "unit-1", kind: "squad", status: ["overwatch"] }],
+        templates: {},
+        charges: [],
+      },
+    };
+    const migrated = runner.migrate({
+      schemaVersion: 22,
+      savedAt: "2026-09-14T00:00:00.000Z",
+      state,
+    });
+    if (!migrated.ok) throw new Error(migrated.error.message);
+    expect(migrated.value.state).toEqual(state);
+    expect(GAME_STATE_MIGRATIONS.at(-1)).toMatchObject({ from: 22, to: 23 });
+    expect(() =>
+      GAME_STATE_MIGRATIONS.at(-1)!.apply("not a campaign"),
+    ).toThrow();
+  });
+});

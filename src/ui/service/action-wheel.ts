@@ -23,9 +23,14 @@ import {
   isDropshipTile,
 } from "./action-availability";
 import { chargeRegisterFor } from "./charge-register";
-import { RADAR_DISH } from "../../tactical/data/equipment";
-import { DEFAULT_CHARGE_DELAY_TURNS } from "../../tactical/model/equipment";
+import { RADAR_DISH, TURRET } from "../../tactical/data/equipment";
+import {
+  DEFAULT_CHARGE_DELAY_TURNS,
+  isDeployable,
+} from "../../tactical/model/equipment";
 import { RADAR_TUNING } from "../../tactical/data/radar-tuning";
+import { TURRET_TUNING } from "../../tactical/data/turret-tuning";
+import { overwatchShotsOf } from "../../tactical/model/weapon-profile";
 import type {
   EquipmentDefinition,
   EquipmentId,
@@ -78,6 +83,8 @@ export interface WheelPage {
 export type WheelChoice =
   | { readonly action: "move"; readonly tile: TileCoord }
   | { readonly action: "deploy-radar"; readonly tile: TileCoord }
+  /** Put a turret on the tile (#1138); its own entry on the ring, like the dish. */
+  | { readonly action: "deploy-turret"; readonly tile: TileCoord }
   | {
       readonly action: "use-equipment";
       readonly equipmentId: EquipmentId;
@@ -128,6 +135,9 @@ const SHORT_REASONS: Readonly<Partial<Record<TacticalError["kind"], string>>> =
     "no-area-weapon": "not at the ground",
     "radar-out-of-reach": `range ${String(RADAR_DISH.range)}`,
     "radar-tile-blocked": "tile blocked",
+    "turret-out-of-reach": `range ${String(TURRET.range)}`,
+    "turret-tile-blocked": "tile blocked",
+    "takes-no-orders": "no orders",
     "no-equipment": "not carried",
     "equipment-spent": "none left",
     "nothing-to-heal": "nobody to heal",
@@ -158,8 +168,8 @@ const COMFORTABLE_HIT_CHANCE = 50;
  *
  * ```
  *   tile      ──► Move (path) · Attack at the ground (#1121) · Board (drop
- *                 ship tile) · Deploy radar · Heal / Repair (#1138) ·
- *                 Overwatch · Reload
+ *                 ship tile) · Deploy radar · Deploy turret · Heal / Repair
+ *                 (#1138) · Overwatch · Reload
  *                   └─ Attack turns to a page — weapons, then the grenade
  *                      and the charge (#1136) — when there is more than one
  *                      way to hit the tile; a lone weapon is the shot itself
@@ -312,7 +322,8 @@ export function parseWheelChoice(id: string): WheelChoice | undefined {
   const argument = at === -1 ? "" : id.slice(at + 1);
   switch (action) {
     case "move":
-    case "deploy-radar": {
+    case "deploy-radar":
+    case "deploy-turret": {
       const tile = parseTile(argument);
       return tile === undefined ? undefined : { action, tile };
     }
@@ -403,21 +414,18 @@ function tilePage(tile: TileCoord, unit: Unit, ctx: WheelContext): WheelPage {
   if (isDropshipTile(ctx.mission, tile)) {
     items.push(boardItem(unit, ctx));
   }
-  // The dish where a scanner may go (#1132), and a medkit or a repair
-  // kit where it would land (#1138): neither is an attack, so both keep
-  // their own entry. A grenade or a charge is an attack and rides under
-  // Attack with the weapons (#1136): the ring used to break them out
-  // beside it, and the Executive Director found two places to look for
-  // one kind of thing confusing.
+  // The dish where a scanner may go (#1132), the turret beside it, and
+  // a medkit or a repair kit where it would land (#1138): none is an
+  // attack, so each keeps its own entry. A grenade or a charge is an
+  // attack and rides under Attack with the weapons (#1136): the ring
+  // used to break them out beside it, and the Executive Director found
+  // two places to look for one kind of thing confusing.
   for (const carried of equipmentOf(
     ctx.mission.templates[unit.templateId],
     unit,
     SHIPPED_EQUIPMENT,
   )) {
-    if (
-      carried.definition.kind === "radar" ||
-      carried.definition.kind === "heal"
-    ) {
+    if (keepsOwnEntry(carried.definition)) {
       items.push(
         equipmentItem(tile, unit, carried.definition, carried.usesLeft, ctx),
       );
@@ -428,14 +436,26 @@ function tilePage(tile: TileCoord, unit: Unit, ctx: WheelContext): WheelPage {
 }
 
 /**
+ * Whether an item keeps its own entry on the tile's ring rather than
+ * riding under Attack: a deployable (the dish, the turret — #1138) or
+ * a kit that mends (#1138). Neither is an attack, and the Executive
+ * Director asked that only attacks be grouped under Attack (#1136).
+ */
+function keepsOwnEntry(definition: Pick<EquipmentDefinition, "kind">): boolean {
+  return isDeployable(definition) || definition.kind === "heal";
+}
+
+/**
  * One item of the unit's equipment at a tile (#1132). The radar dish
  * keeps the entry it has always had — `deploy-radar:x,y,z`, "Deploy
  * radar", `1 AP · scan 30` — so a player and a test find it where it
- * was; a grenade or a charge reads like a shot at the ground, with the
- * uses left last, and since #1136 sits on the Attack page under the
- * same id it had on the ring; a medkit or a repair kit reads "Heal" or
- * "Repair" with what it gives and to how many (#1138). Closed with the
- * rules' reason when the use is refused.
+ * was, and the turret takes the same shape (#1138): `deploy-turret:x,y,z`,
+ * "Deploy turret", `1 AP · 2 shots · 3 turns · 2/2`. A grenade or a
+ * charge reads like a shot at the ground, with the uses left last, and
+ * since #1136 sits on the Attack page under the same id it had on the
+ * ring; a medkit or a repair kit reads "Heal" or "Repair" with what it
+ * gives and to how many (#1138). Closed with the rules' reason when the
+ * use is refused.
  */
 function equipmentItem(
   tile: TileCoord,
@@ -466,6 +486,30 @@ function equipmentItem(
           detail: `${String(definition.apCost)} AP · scan ${String(RADAR_TUNING.scanRange)}`,
         }
       : closed(id, "Deploy radar", "radar", site.error, ctx);
+  }
+  if (definition.kind === "turret") {
+    const id = itemId("deploy-turret", tileArgument(tile));
+    const site = validateEquipmentUse(
+      ctx.mission,
+      unit.id,
+      definition.id,
+      tile,
+      rules,
+      ctx.graph,
+    );
+    return site.ok
+      ? {
+          id,
+          label: "Deploy turret",
+          icon: "overwatch",
+          detail: [
+            `${String(definition.apCost)} AP`,
+            `${String(overwatchShotsOf(TURRET_TUNING.weapon.profile))} shots`,
+            `${String(TURRET_TUNING.batteryTurns)} turns`,
+            `${String(usesLeft)}/${String(definition.uses)}`,
+          ].join(" · "),
+        }
+      : closed(id, "Deploy turret", "overwatch", site.error, ctx);
   }
   const id = itemId(
     "equipment",
@@ -699,9 +743,10 @@ function tileWeaponPage(
 
 /**
  * The equipment the unit attacks with (#1136): everything it carries
- * but the radar dish, which is a scan, and a medkit or a repair kit,
- * which mends (#1138); each keeps its own entry on the ring. In the
- * order the template lists it, so the page and the card agree.
+ * but the deployables — the radar dish, which is a scan, and the turret
+ * (#1138), which is put down — and a medkit or a repair kit, which mends
+ * (#1138); each keeps its own entry on the ring. In the order the
+ * template lists it, so the page and the card agree.
  */
 function attackKitOf(
   mission: TacticalState,
@@ -711,10 +756,7 @@ function attackKitOf(
     mission.templates[unit.templateId],
     unit,
     SHIPPED_EQUIPMENT,
-  ).filter(
-    (carried) =>
-      carried.definition.kind !== "radar" && carried.definition.kind !== "heal",
-  );
+  ).filter((carried) => !keepsOwnEntry(carried.definition));
 }
 
 /**

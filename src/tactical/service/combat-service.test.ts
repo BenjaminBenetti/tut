@@ -478,7 +478,7 @@ describe("resolveAttack", () => {
   it("spends only the attack cost when attacks do not end the turn, and a miss changes no hit points", () => {
     const tuning: CombatTuning = {
       ...T,
-      attackEndsTurn: { squad: false, mech: false, bug: false },
+      attackEndsTurn: { squad: false, mech: false, bug: false, turret: false },
       maxHitChance: 5,
       minHitChance: 5,
     };
@@ -532,7 +532,12 @@ describe("resolveAttack", () => {
       ctx(1),
       {
         ...T,
-        attackEndsTurn: { squad: false, mech: false, bug: false },
+        attackEndsTurn: {
+          squad: false,
+          mech: false,
+          bug: false,
+          turret: false,
+        },
       },
       DEPS,
     );

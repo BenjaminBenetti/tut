@@ -12,6 +12,7 @@ import { describeEvent } from "./event-vocabulary";
 import { ObjectiveTrackerView } from "./objective-tracker-view";
 import { TurnBannerView } from "./turn-banner-view";
 import { UnitCardView } from "./unit-card-view";
+import { playerUnits } from "./squad-strip-view";
 import { chargeRegisterFor } from "../service/charge-register";
 import { RANK_TUNING } from "../../roster/data/rank-tuning";
 
@@ -700,5 +701,109 @@ describe("HitPreviewView", () => {
       root.querySelector<HTMLButtonElement>('[data-action="confirm-attack"]')
         ?.disabled,
     ).toBe(true);
+  });
+});
+
+describe("UnitCardView for a deployed turret (#1138)", () => {
+  it("reads the battery in place of the action budget, and gives a squad its rows back", () => {
+    const view = new UnitCardView();
+    view.mount(root);
+    view.update(
+      hudUnit("t1", "tdf", "turret", 2, 2, {
+        kind: "turret",
+        hp: 30,
+        maxHp: 30,
+        ap: 0,
+        maxAp: 0,
+        status: ["overwatch"],
+        turnsLeft: 3,
+      }),
+      { ...hudTemplate("turret", "Turret"), maxAp: 0, move: 0 },
+      0,
+    );
+    expect(field("unit-name")?.textContent).toBe("Turret");
+    expect(field("unit-side")?.textContent).toBe("tdf · turret");
+    expect(field("hp")?.textContent).toBe("30 / 30");
+    expect(field("battery")?.textContent).toBe("3 turns");
+    expect(field("battery")?.hidden).toBe(false);
+    for (const hidden of ["ap", "move", "attacks"]) {
+      expect(field(hidden)?.hidden, hidden).toBe(true);
+    }
+    expect(field("status")?.textContent).toBe("overwatch");
+    view.update(
+      hudUnit("t1", "tdf", "turret", 2, 2, { kind: "turret", turnsLeft: 1 }),
+      hudTemplate("turret", "Turret"),
+    );
+    expect(field("battery")?.textContent).toBe("1 turn");
+    view.update(
+      hudUnit("s1", "tdf", "rifle", 1, 1),
+      hudTemplate("rifle", "Rifle Squad"),
+    );
+    expect(field("ap")?.hidden).toBe(false);
+    expect(field("battery")?.hidden).toBe(true);
+  });
+});
+
+describe("event vocabulary for turrets (#1138)", () => {
+  it("names the shots and the battery on deployment, says a burnt-out turret is dead, and does not stutter the use", () => {
+    const deployed = describeEvent(
+      {
+        type: "tactical:turret-deployed",
+        payload: {
+          unitId: "unit-2",
+          turretId: "unit-9",
+          tile: { x: 1, y: 0, z: 1 },
+          turnsLeft: 3,
+          overwatchShots: 2,
+        },
+      } as never,
+      { ...NAMES, unit: () => "Engineer Squad" },
+    );
+    expect(deployed).toEqual({
+      text: "Engineer Squad deployed a turret · 2 shots a turn on overwatch · 3-turn battery",
+      icon: "overwatch",
+      tone: "accent",
+    });
+    const dead = describeEvent(
+      {
+        type: "tactical:turret-burned-out",
+        payload: { turretId: "unit-9", pos: { x: 1, y: 0, z: 1 } },
+      } as never,
+      NAMES,
+    );
+    expect(dead).toEqual({
+      text: "Turret burned out · battery dead",
+      icon: "overwatch",
+      tone: "dim",
+    });
+    expect(
+      describeEvent(
+        {
+          type: "tactical:equipment-used",
+          payload: {
+            unitId: "unit-2",
+            equipmentId: "turret",
+            name: "Turret",
+            tile: { x: 1, y: 0, z: 1 },
+            usesLeft: 1,
+          },
+        } as never,
+        NAMES,
+      ),
+    ).toBeUndefined();
+  });
+});
+
+describe("playerUnits (#1138)", () => {
+  it("lists the force the player orders, never a deployed turret", () => {
+    const base = hudMission();
+    const mission = {
+      ...base,
+      units: [
+        ...base.units,
+        hudUnit("t1", "tdf", "turret", 2, 2, { kind: "turret", turnsLeft: 3 }),
+      ],
+    };
+    expect(playerUnits(mission).map((unit) => unit.id)).toEqual(["s1", "s2"]);
   });
 });

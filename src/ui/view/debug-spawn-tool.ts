@@ -175,5 +175,14 @@ function keyOf(entry: PlaceableUnit): string {
 
 /** The glyph beside an entry: the side it fights for. */
 function iconFor(kind: PlaceableUnit["kind"]): "squad" | "mech" | "egg" {
-  return kind === "bug" ? "egg" : kind;
+  switch (kind) {
+    case "bug":
+      return "egg";
+    case "mech":
+      return "mech";
+    case "squad":
+    case "turret":
+      // A turret is never listed (#1138); it would read as infantry.
+      return "squad";
+  }
 }

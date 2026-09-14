@@ -14,7 +14,7 @@ import { interact } from "../../tactical/model/interact-command";
 import type { RankTuning } from "../../roster/model/rank";
 import type { ObjectiveTuning } from "../../tactical/model/objective-tuning";
 import { reload } from "../../tactical/model/reload-command";
-import { RADAR_DISH } from "../../tactical/data/equipment";
+import { RADAR_DISH, TURRET } from "../../tactical/data/equipment";
 import type { EquipmentId } from "../../tactical/model/equipment";
 import { useEquipment } from "../../tactical/model/use-equipment-command";
 import { SHIPPED_EQUIPMENT } from "../../tactical/repository/equipment-catalogue";
@@ -30,6 +30,7 @@ import type {
   TacticalState,
 } from "../../tactical/model/tactical-state";
 import type { Team, Unit, UnitId } from "../../tactical/model/unit";
+import { isAutonomous } from "../../tactical/model/unit";
 import type { WeaponId } from "../../tactical/model/unit-weapon";
 import {
   enemyAttackTargets,
@@ -1339,6 +1340,10 @@ export class TacticalHudView {
           useEquipment(unitId, RADAR_DISH.id, choice.tile),
         );
         return;
+      case "deploy-turret":
+        // The turret takes the dish's shape on the ring (#1138).
+        this.handlers.onCommand(useEquipment(unitId, TURRET.id, choice.tile));
+        return;
       case "use-equipment":
         this.target = undefined;
         this.mode = DEFAULT_HUD_MODE;
@@ -1594,8 +1599,10 @@ export class TacticalHudView {
       return;
     }
     const team = TEAM_FOR_PHASE[mission.phase];
+    // A turret is never an actor (#1138): Tab walks the units the
+    // player can give an order to.
     const actors = mission.units.filter(
-      (u) => u.team === team && u.hp > 0 && u.ap > 0,
+      (u) => u.team === team && u.hp > 0 && u.ap > 0 && !isAutonomous(u),
     );
     if (actors.length === 0) {
       return;
@@ -1714,8 +1721,10 @@ export class TacticalHudView {
    * The selected unit when it is one the player commands this phase,
    * else undefined. The wheel opens for these and nothing else: a bug
    * selected to read its card gets no actions, and neither does a squad
-   * during the bug phase. Action points do not matter here — a spent
-   * unit still gets a wheel, with every entry saying why it is closed.
+   * during the bug phase, nor a deployed turret in any phase (#1138) —
+   * it is selected to read its battery, and takes no orders. Action
+   * points do not matter here — a spent unit still gets a wheel, with
+   * every entry saying why it is closed.
    */
   private actingSelection(): Unit | undefined {
     const mission = this.mission;
@@ -1724,7 +1733,8 @@ export class TacticalHudView {
       unit !== undefined &&
       unit.hp > 0 &&
       unit.team === "tdf" &&
-      unit.team === TEAM_FOR_PHASE[mission.phase]
+      unit.team === TEAM_FOR_PHASE[mission.phase] &&
+      !isAutonomous(unit)
       ? unit
       : undefined;
   }

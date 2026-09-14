@@ -15,6 +15,7 @@ import type { EquipmentDefinition, EquipmentId } from "../model/equipment";
 //   | Breaching charge | charge | 1    | 1  | 2     | —   | 20  | 3   | 3 / 0.3           | 3    | 2     | —    |
 //   | Medkit           | heal   | 4    | 1  | 5     | —   | —   | —   | 2 / —             | —    | —     | 10   |
 //   | Repair kit       | heal   | 2    | 1  | 5     | —   | —   | —   | 2 / —             | —    | —     | 25   |
+//   | Turret           | turret | 2    | 1  | 2     | —   | —   | —   | —                 | —    | —     | —    |
 //
 //   • The dish keeps its scan radius and battery in `radar-tuning.ts`;
 //     only where it may be put and what it costs live here.
@@ -34,6 +35,8 @@ import type { EquipmentDefinition, EquipmentId } from "../model/equipment";
 //     in it, four times a mission; the repair kit 25 to every mechanical
 //     one, twice. Neither hurts anything or misses, and a unit at full
 //     hit points takes nothing.
+//   • A turret (#1138) is carried like the dish and put down as a unit
+//     of its own; its gun, plate and battery are `turret-tuning.ts`.
 
 /**
  * How far a thrown kit goes and how wide it lands: the grenade's
@@ -112,6 +115,20 @@ export const REPAIR_KIT: EquipmentDefinition = {
   heal: { amount: 25, target: "mechanical", radius: THROWN_KIT_BLAST_RADIUS },
 };
 
+/**
+ * The engineer squad's deployable turret (#1138): two a mission, put
+ * down within two tiles for an action, as the dish is. What the turret
+ * then is — its gun, its plate, its battery — is `turret-tuning.ts`.
+ */
+export const TURRET: EquipmentDefinition = {
+  id: "turret",
+  name: "Turret",
+  kind: "turret",
+  uses: 2,
+  apCost: 1,
+  range: 2,
+};
+
 /** Every piece of equipment keyed by id, in catalogue order. */
 export const EQUIPMENT: Readonly<Record<EquipmentId, EquipmentDefinition>> = {
   [RADAR_DISH.id]: RADAR_DISH,
@@ -119,4 +136,5 @@ export const EQUIPMENT: Readonly<Record<EquipmentId, EquipmentDefinition>> = {
   [BREACHING_CHARGE.id]: BREACHING_CHARGE,
   [MEDKIT.id]: MEDKIT,
   [REPAIR_KIT.id]: REPAIR_KIT,
+  [TURRET.id]: TURRET,
 };

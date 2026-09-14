@@ -721,3 +721,107 @@ describe("overwatchReaction against a unit on a 2×2 block (#1130)", () => {
     ).toEqual([]);
   });
 });
+
+// ===========================================
+// Two-shot watches (#1138)
+// ===========================================
+
+describe("overwatchReaction with a two-shot watch (#1138)", () => {
+  const T = COMBAT_TUNING;
+  /** A watcher whose gun grants two reaction shots, as a turret's does. */
+  const twoShot = () => ({
+    ...unitAt("w", "infantry", at(0, 0), { ap: 0, status: ["overwatch"] }),
+    overwatchShots: 2,
+  });
+
+  it("keeps watching after the first shot and fires again at the mover's next step, clearing only then", () => {
+    const mission = missionWith(
+      openField().build(),
+      [twoShot(), unitAt("b", "infantry", at(3, 0), { team: "bugs" })],
+      { phase: "bugs" },
+    );
+    const first = overwatchReaction(
+      mission,
+      "b",
+      ctxWith(riggedRng(true, "low")),
+      T,
+      DEPS,
+    );
+    // One shot per step, and no status line: the watcher is still watching.
+    expect(first.events.map((e) => e.type)).toEqual([ATTACK_RESOLVED]);
+    expect(unitIn(first.state, "w")).toMatchObject({
+      status: ["overwatch"],
+      overwatchShots: 1,
+    });
+    expect(unitIn(first.state, "b").hp).toBe(8);
+    const second = overwatchReaction(
+      first.state,
+      "b",
+      ctxWith(riggedRng(true, "low")),
+      T,
+      DEPS,
+    );
+    expect(second.events.map((e) => e.type)).toEqual([
+      ATTACK_RESOLVED,
+      UNIT_STATUS_CHANGED,
+    ]);
+    expect(unitIn(second.state, "w").status).toEqual([]);
+    expect("overwatchShots" in unitIn(second.state, "w")).toBe(false);
+    expect(unitIn(second.state, "b").hp).toBe(6);
+    const third = overwatchReaction(
+      second.state,
+      "b",
+      ctxWith(riggedRng(true)),
+      T,
+      DEPS,
+    );
+    expect(third.events).toEqual([]);
+    expect(third.state).toBe(second.state);
+  });
+
+  it("spends the second shot on the next bug to move when the first stops stepping", () => {
+    const mission = missionWith(
+      openField().build(),
+      [
+        twoShot(),
+        unitAt("b1", "infantry", at(3, 0), { team: "bugs" }),
+        unitAt("b2", "infantry", at(0, 3), { team: "bugs" }),
+      ],
+      { phase: "bugs" },
+    );
+    const first = overwatchReaction(mission, "b1", ctx, T, DEPS);
+    const second = overwatchReaction(first.state, "b2", ctx, T, DEPS);
+    expect(unitIn(second.state, "b1").hp).toBe(8);
+    expect(unitIn(second.state, "b2").hp).toBe(8);
+    expect(unitIn(second.state, "w").status).toEqual([]);
+  });
+
+  it("through the move handler, hits a walking bug on two consecutive steps", () => {
+    const moveHandler = createMoveHandler(createOverwatchReaction(T, DEPS));
+    const mission = missionWith(
+      openField().build(),
+      [twoShot(), unitAt("b", "infantry", at(7, 0), { team: "bugs" })],
+      { phase: "bugs" },
+    );
+    const outcome = moveHandler(
+      mission,
+      move("b", [at(6, 0), at(5, 0), at(4, 0), at(3, 0)]),
+      ctxWith(riggedRng(true, "low")),
+    );
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+    expect(outcome.value.events.map((e) => e.type)).toEqual([
+      UNIT_MOVED,
+      UNIT_MOVED,
+      ATTACK_RESOLVED,
+      UNIT_MOVED,
+      ATTACK_RESOLVED,
+      UNIT_STATUS_CHANGED,
+      UNIT_MOVED,
+    ]);
+    expect(unitIn(outcome.value.state, "b")).toMatchObject({
+      pos: at(3, 0),
+      hp: 6,
+    });
+  });
+});

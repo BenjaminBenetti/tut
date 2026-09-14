@@ -873,3 +873,83 @@ describe("parseWheelChoice", () => {
     expect(parseWheelChoice("dance")).toBeUndefined();
   });
 });
+
+describe("actionWheel with a turret (#1138)", () => {
+  /** The rifle template re-kitted as an engineer's: a grenade and the turret. */
+  function engineered(): TacticalState {
+    const base = hudMission();
+    return {
+      ...base,
+      templates: {
+        ...base.templates,
+        rifle: {
+          ...hudTemplate("rifle", "Engineer Squad"),
+          equipment: ["grenade", "turret"],
+        },
+      },
+    };
+  }
+
+  it("offers Deploy turret on the ring beside Move, closed out of reach, and keeps it off the Attack page", () => {
+    const mission = engineered();
+    const tile = { x: 2, y: 0, z: 1 };
+    const page = actionWheel({ kind: "tile", tile }, contextFor(mission, "s1"));
+    const entry = page.items.find((item) => item.id === "deploy-turret:2,0,1");
+    expect(entry).toMatchObject({
+      label: "Deploy turret",
+      icon: "overwatch",
+      detail: "1 AP · 2 shots · 3 turns · 2/2",
+    });
+    expect(entry?.disabled).not.toBe(true);
+    expect(parseWheelChoice(entry!.id)).toEqual({
+      action: "deploy-turret",
+      tile,
+    });
+    // The rifle and the grenade are the two ways to hit the ground; the
+    // turret is not one of them, so Attack counts two, not three.
+    expect(
+      page.items.find((item) => item.id === "attack-tile:2,0,1"),
+    ).toMatchObject({ detail: "2 options" });
+    const far = actionWheel(
+      { kind: "tile", tile: { x: 5, y: 0, z: 1 } },
+      contextFor(mission, "s1"),
+    ).items.find((item) => item.id.startsWith("deploy-turret"));
+    expect(far).toMatchObject({ disabled: true, detail: "range 2" });
+    const spent = actionWheel(
+      { kind: "tile", tile },
+      contextFor(mission, "s2"),
+    ).items.find((item) => item.id.startsWith("deploy-turret"));
+    expect(spent).toMatchObject({ disabled: true, detail: "no AP" });
+  });
+
+  it("closes every entry for a deployed turret, which takes no orders", () => {
+    const base = hudMission();
+    const mission: TacticalState = {
+      ...base,
+      units: [
+        ...base.units,
+        hudUnit("t1", "tdf", "turret", 2, 3, {
+          kind: "turret",
+          ap: 0,
+          maxAp: 0,
+          status: ["overwatch"],
+          turnsLeft: 3,
+        }),
+      ],
+      templates: {
+        ...base.templates,
+        turret: { ...hudTemplate("turret", "Turret"), maxAp: 0, move: 0 },
+      },
+    };
+    const page = actionWheel(
+      { kind: "unit", unitId: "t1" },
+      contextFor(mission, "t1"),
+    );
+    expect(
+      page.items.map((item) => [item.id, item.disabled, item.detail]),
+    ).toEqual([
+      ["overwatch", true, "no orders"],
+      ["reload", true, "no orders"],
+    ]);
+  });
+});

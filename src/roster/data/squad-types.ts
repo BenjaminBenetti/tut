@@ -5,6 +5,7 @@ import {
   MEDKIT,
   RADAR_DISH,
   REPAIR_KIT,
+  TURRET,
 } from "../../tactical/data/equipment";
 
 // ===========================================
@@ -27,9 +28,9 @@ import {
 //     here and earn their keep through abilities in M2.
 //   • equipment (#1132): every squad carries grenades; the radio squad
 //     adds its radar dish and the rocket squad a breaching charge; the
-//     medic squad carries a medkit and the engineer squad a repair kit
-//     (#1138). The items and their uses are defined in
-//     `tactical/data/equipment.ts`.
+//     medic squad carries a medkit, and the engineer squad a repair kit
+//     and two deployable turrets (#1138). The items and their uses are
+//     defined in `tactical/data/equipment.ts`.
 
 /** General-purpose infantry; the starter squad type. */
 export const RIFLE_SQUAD: SquadType = {
@@ -75,8 +76,8 @@ export const ENGINEER_SQUAD: SquadType = {
   reinforceCostPerSoldier: 110,
   combatRating: 28,
   description:
-    "Combat engineers with shotguns, tools and demolition charges: two blasts a turn at arm's length, nothing at range. Invaluable around objectives. Carries a repair kit: twice a mission, every mech in a grenade's footprint gets 25 hit points back.",
-  equipment: [GRENADE.id, REPAIR_KIT.id],
+    "Combat engineers with shotguns, tools and demolition charges: two blasts a turn at arm's length, nothing at range. Invaluable around objectives. Carries a repair kit: twice a mission, every mech in a grenade's footprint gets 25 hit points back. Carries two turrets a mission: deploy one on a free tile within 2 tiles for 1 AP, and it stands on overwatch for 3 turns, two rifle-strength shots a turn, before it burns out.",
+  equipment: [GRENADE.id, REPAIR_KIT.id, TURRET.id],
 };
 
 /** Medics who keep other squads on their feet. */

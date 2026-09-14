@@ -554,3 +554,20 @@ describe("objective handlers", () => {
 function refusal(outcome: TacticalOutcome): string {
   return outcome.ok ? "ok" : outcome.error.kind;
 }
+
+describe("createExtractHandler with a deployed turret (#1138)", () => {
+  it("refuses to board a turret standing on the zone: it is left behind", () => {
+    const handler = createExtractHandler(TUNING);
+    const mission: TacticalState = {
+      ...missionWith(MAP, [
+        { ...unitAt("t", "infantry", at(0, 0)), kind: "turret" },
+        unitAt("u", "infantry", at(1, 0)),
+      ]),
+      extraction: [at(0, 0), at(1, 0)],
+    };
+    expect(refusal(handler(mission, extract("t"), CTX))).toBe(
+      "not-extractable",
+    );
+    expect(refusal(handler(mission, extract("u"), CTX))).toBe("ok");
+  });
+});

@@ -16,6 +16,7 @@ import type {
 } from "../model/tactical-state";
 import { TEAM_FOR_PHASE } from "../model/tactical-state";
 import type { Unit, UnitId } from "../model/unit";
+import { isAutonomous } from "../model/unit";
 import { UNIT_EXTRACTED } from "../model/unit-extracted-event";
 import { endIfOver } from "./mission-end-service";
 import { damageSpawner } from "./spawner-damage-service";
@@ -279,7 +280,9 @@ export function createExtractHandler(
     if (unit.hp <= 0) {
       return err({ kind: "unit-dead", unitId });
     }
-    if (unit.team !== "tdf") {
+    // A bug cannot board, and neither can a deployed turret (#1138): it
+    // is equipment the force leaves behind, not a passenger.
+    if (unit.team !== "tdf" || isAutonomous(unit)) {
       return err({ kind: "not-extractable", unitId });
     }
     if (unit.team !== TEAM_FOR_PHASE[mission.phase]) {

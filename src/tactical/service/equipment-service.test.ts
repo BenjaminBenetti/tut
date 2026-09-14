@@ -11,8 +11,10 @@ import {
   MEDKIT,
   RADAR_DISH,
   REPAIR_KIT,
+  TURRET,
 } from "../data/equipment";
 import { RADAR_TUNING } from "../data/radar-tuning";
+import { TURRET_TUNING } from "../data/turret-tuning";
 import { BLAST_RESOLVED } from "../model/blast-resolved-event";
 import { CHARGE_DETONATED } from "../model/charge-detonated-event";
 import { CHARGE_PLACED } from "../model/charge-placed-event";
@@ -21,12 +23,14 @@ import { usesLeftOf } from "../model/equipment";
 import { EQUIPMENT_USED } from "../model/equipment-used-event";
 import { RADAR_DEPLOYED } from "../model/radar-deployed-event";
 import { STRUCTURE_DESTROYED } from "../model/structure-destroyed-event";
+import { TURRET_DEPLOYED } from "../model/turret-deployed-event";
 import type { TacticalState } from "../model/tactical-state";
 import type { Unit } from "../model/unit";
 import { UNIT_DIED } from "../model/unit-died-event";
 import { UNITS_HEALED } from "../model/unit-healed-event";
 import { useEquipment } from "../model/use-equipment-command";
 import { createEquipmentCatalogue } from "../repository/equipment-catalogue";
+import { equipmentRangeTiles } from "./equipment-range-service";
 import type { EquipmentDeps } from "./equipment-service";
 import {
   carriesEquipment,
@@ -59,6 +63,7 @@ const DEPS: EquipmentDeps = {
   combat: COMBAT_TUNING,
   attack: fixtureAttackDeps(),
   radar: RADAR_TUNING,
+  turret: TURRET_TUNING,
 };
 
 const handler = createUseEquipmentHandler(DEPS);
@@ -656,5 +661,136 @@ describe("UseEquipment: medkit and repair kit (#1138)", () => {
     expect(
       previewHealUse(kitted(), "squad", GRENADE.id, at(3, 1), DEPS),
     ).toMatchObject({ ok: false, error: { kind: "no-area-weapon" } });
+  });
+});
+
+// ===========================================
+// Turret (#1138)
+// ===========================================
+
+/** An engineer on the open field carrying the turret, and whatever else the caller puts down. */
+function engineered(units: readonly Unit[] = []): TacticalState {
+  const base = missionWith(openField().build(), [
+    unitAt("squad", "infantry", SQUAD),
+    ...units,
+  ]);
+  return {
+    ...base,
+    templates: {
+      ...base.templates,
+      [FIXTURE_TEMPLATES.infantry]: {
+        ...base.templates[FIXTURE_TEMPLATES.infantry]!,
+        equipment: [TURRET.id],
+      },
+    },
+  };
+}
+
+describe("UseEquipment: turret", () => {
+  it("puts a turret on the tile on overwatch, bills the action and the use, and announces both", () => {
+    const before = engineered();
+    const tile = at(2, 2);
+    const result = handler(
+      before,
+      useEquipment("squad", TURRET.id, tile),
+      ctxWith(riggedRng(true)),
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const after = result.value.state;
+    expect(after.units).toHaveLength(2);
+    expect(after.units[1]).toMatchObject({
+      kind: "turret",
+      team: "tdf",
+      pos: tile,
+      status: ["overwatch"],
+      overwatchShots: 2,
+      turnsLeft: 3,
+    });
+    expect(after.templates["turret:turret"]?.construction).toBe("mechanical");
+    expect(squad(after)).toMatchObject({
+      ap: 1,
+      equipment: { [TURRET.id]: 1 },
+    });
+    expect(result.value.events.map((e) => e.type)).toEqual([
+      EQUIPMENT_USED,
+      TURRET_DEPLOYED,
+    ]);
+    expect(result.value.events[0]).toMatchObject({
+      payload: {
+        unitId: "squad",
+        equipmentId: TURRET.id,
+        name: "Turret",
+        tile,
+        usesLeft: 1,
+      },
+    });
+    expect(before.units).toHaveLength(1);
+    expect(JSON.parse(JSON.stringify(after))).toEqual(after);
+  });
+
+  it("runs out after two, and is refused out of reach, on a taken tile, and for a preview", () => {
+    const base = engineered();
+    const tile = at(2, 2);
+    expect(
+      validateEquipmentUse(base, "squad", TURRET.id, at(4, 1), DEPS),
+    ).toMatchObject({ ok: false, error: { kind: "turret-out-of-reach" } });
+    const crowded = engineered([unitAt("other", "infantry", tile)]);
+    expect(
+      validateEquipmentUse(crowded, "squad", TURRET.id, tile, DEPS),
+    ).toMatchObject({ ok: false, error: { kind: "turret-tile-blocked" } });
+    expect(
+      previewEquipmentUse(base, "squad", TURRET.id, tile, DEPS),
+    ).toMatchObject({ ok: false, error: { kind: "no-area-weapon" } });
+    // The range preview paints the same sites the rules accept (#1134).
+    const painted = equipmentRangeTiles(
+      base,
+      "squad",
+      TURRET.id,
+      DEPS.catalogue,
+    );
+    expect(painted).toContainEqual(tile);
+    expect(painted).toContainEqual(at(3, 1));
+    expect(painted).not.toContainEqual(at(4, 1));
+    expect(painted).not.toContainEqual(SQUAD);
+    // Two uses: the second goes down, the third is refused, and a
+    // turret's own tile is taken for the next.
+    const first = handler(
+      base,
+      useEquipment("squad", TURRET.id, tile),
+      ctxWith(riggedRng(true)),
+    );
+    if (!first.ok) throw new Error(first.error.kind);
+    const second = handler(
+      {
+        ...first.value.state,
+        units: first.value.state.units.map((u) =>
+          u.id === "squad" ? { ...u, ap: 2 } : u,
+        ),
+      },
+      useEquipment("squad", TURRET.id, at(3, 1)),
+      ctxWith(riggedRng(true)),
+    );
+    if (!second.ok) throw new Error(second.error.kind);
+    expect(squad(second.value.state).equipment).toEqual({ [TURRET.id]: 0 });
+    const third = validateEquipmentUse(
+      {
+        ...second.value.state,
+        units: second.value.state.units.map((u) =>
+          u.id === "squad" ? { ...u, ap: 2 } : u,
+        ),
+      },
+      "squad",
+      TURRET.id,
+      at(1, 3),
+      DEPS,
+    );
+    expect(third).toMatchObject({
+      ok: false,
+      error: { kind: "equipment-spent" },
+    });
+    expect(
+      validateEquipmentUse(first.value.state, "squad", TURRET.id, tile, DEPS),
+    ).toMatchObject({ ok: false, error: { kind: "turret-tile-blocked" } });
   });
 });

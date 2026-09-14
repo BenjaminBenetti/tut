@@ -451,8 +451,56 @@ function buildRockTile(mf) {
  * @property {boolean} [textured] - Map palette tokens onto the atlases (default true; only tokens with a cell change).
  */
 
+/**
+ * The engineer's deployable turret (#1138): a squat armoured base, a
+ * pedestal, and a gun that sits under one named node, `gun`, pivoted at
+ * the barrel's mount so `turret-view` can sweep it about +Y. Pivot at
+ * the base centre; 0.9 tall to the top of the gun; muzzle points +Z
+ * (forward, ADR 0004 §3) at rest.
+ *
+ * ```
+ *          ══▶ gun (0.55 long, at y 0.62, named "gun")
+ *         ┌──┐  breech
+ *         │  │  pedestal
+ *      ┌──┴──┴──┐
+ *      │  base  │  0.8 × 0.3 × 0.8
+ *      └────────┘
+ * ```
+ *
+ * @param {MaterialFactory} mf - Material factory.
+ * @returns {Object3D} The turret.
+ */
+function buildTurret(mf) {
+  const plate = mf.get("tdf-grey-mid");
+  const dark = mf.get("tdf-grey-dark");
+  const trim = mf.get("tdf-orange");
+  const gun = group(
+    "gun",
+    [
+      box(dark, [0.22, 0.18, 0.26], [0, 0, -0.02], { name: "breech" }),
+      box(plate, [0.08, 0.08, 0.55], [0, 0.02, 0.36], { name: "barrel" }),
+      box(trim, [0.1, 0.1, 0.06], [0, 0.02, 0.6], { name: "muzzle" }),
+    ],
+    [0, 0.62, 0],
+  );
+  return group("root", [
+    box(plate, [0.8, 0.3, 0.8], [0, 0.15, 0], { name: "base" }),
+    box(trim, [0.84, 0.04, 0.84], [0, 0.32, 0], { name: "base_trim" }),
+    box(dark, [0.3, 0.2, 0.3], [0, 0.44, 0], { name: "pedestal" }),
+    gun,
+  ]);
+}
+
 /** @type {ModelDef[]} */
 const MODEL_DEFS = [
+  {
+    id: "tdf.turret",
+    category: "units",
+    file: "tdf-turret.glb",
+    footprint: { w: 1, d: 1 },
+    height: 0.9,
+    build: buildTurret,
+  },
   ...["straight", "corner", "t", "cross"].map((shape) => ({
     id: `tile.city.road-${shape}`,
     category: "tiles",

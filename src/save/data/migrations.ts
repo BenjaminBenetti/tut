@@ -628,6 +628,24 @@ const ADD_MISSION_RADARS: Migration = {
   },
 };
 
+/**
+ * v22 → v23 (#1138): a mission may now hold deployed turrets — units of
+ * kind `turret` with a battery (`turnsLeft`) — and a unit on overwatch
+ * may carry a shot count (`overwatchShots`). Both are optional and both
+ * read as their absence meant before (not a turret; one shot), and no
+ * save from v22 can hold a turret, so there is nothing to rewrite: the
+ * step exists so the schema history says when the shape grew and a
+ * v22 save is stamped as read by rules that know the fields.
+ */
+const ADD_TURRETS: Migration = {
+  from: 22,
+  to: 23,
+  apply(state) {
+    if (!isRecord(state)) throw new Error("v22 state is not an object");
+    return state;
+  },
+};
+
 export const GAME_STATE_MIGRATIONS: readonly Migration[] = [
   ADD_SPREAD_COOLDOWNS,
   ADD_CITY_SCALE,
@@ -650,4 +668,5 @@ export const GAME_STATE_MIGRATIONS: readonly Migration[] = [
   ADD_MISSION_EFFECTS,
   ADD_RADAR_BATTERY,
   ABILITIES_TO_EQUIPMENT,
+  ADD_TURRETS,
 ];

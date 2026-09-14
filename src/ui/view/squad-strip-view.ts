@@ -1,5 +1,6 @@
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import type { Unit, UnitId } from "../../tactical/model/unit";
+import { isAutonomous } from "../../tactical/model/unit";
 import { formatWhole } from "../service/format";
 import { iconGlyph } from "./icon-glyph";
 
@@ -164,7 +165,14 @@ export class SquadStripView {
   }
 }
 
-/** The units on the player's side, in mission order. */
+/**
+ * The units on the player's side that take orders, in mission order. A
+ * deployed turret (#1138) is left out: the strip counts who has still
+ * to act, and a turret never acts on command — it is read by clicking
+ * it on the map, where its card shows the battery.
+ */
 export function playerUnits(mission: TacticalState): readonly Unit[] {
-  return mission.units.filter((unit) => unit.team === "tdf");
+  return mission.units.filter(
+    (unit) => unit.team === "tdf" && !isAutonomous(unit),
+  );
 }

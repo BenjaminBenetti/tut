@@ -1,4 +1,5 @@
 import type { Unit } from "../../tactical/model/unit";
+import { isAutonomous } from "../../tactical/model/unit";
 import type { UnitTemplate } from "../../tactical/model/unit-template";
 import type { WeaponId } from "../../tactical/model/unit-weapon";
 import type { RankTuning } from "../../roster/model/rank";
@@ -90,6 +91,10 @@ interface CardEntry {
  *   │ Armor 0            overwatch             │
  *   └──────────────────────────────────────────┘
  * ```
+ *
+ * A deployed turret (#1138) reads its battery instead of an action
+ * budget: it takes no orders, so the AP, Move and Attacks rows go and a
+ * Battery row ("3 turns") takes their place.
  */
 export class UnitCardView {
   // ===========================================
@@ -173,6 +178,7 @@ export class UnitCardView {
     for (const [label, field, icon] of [
       ["HP", "hp", "hp"],
       ["AP", "ap", "ap"],
+      ["Battery", "battery", "advance"],
       ["Move", "move", "move"],
       ["Attacks", "attacks", "attack"],
       ["Weapon", "weapon", "attack"],
@@ -260,6 +266,24 @@ export class UnitCardView {
         el.hidden = enemy;
       }
     }
+    // A turret's card (#1138): no action budget to read, a battery to
+    // read instead. The rows swap rather than both showing, so the card
+    // never says "AP 0 / 0" about a thing that was never going to act.
+    const autonomous = isAutonomous(unit);
+    for (const field of ["ap", "move", "attacks"]) {
+      for (const el of this.rows.get(field) ?? []) {
+        el.hidden = enemy || autonomous;
+      }
+    }
+    for (const el of this.rows.get("battery") ?? []) {
+      el.hidden = unit.turnsLeft === undefined;
+    }
+    this.set(
+      "battery",
+      unit.turnsLeft === undefined
+        ? EMPTY_FIELD
+        : `${formatWhole(unit.turnsLeft)} ${unit.turnsLeft === 1 ? "turn" : "turns"}`,
+    );
     this.set("unit-name", name ?? template.name);
     this.set(
       "unit-side",

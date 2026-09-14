@@ -24,12 +24,14 @@ import {
 } from "./action-availability";
 import { chargeRegisterFor } from "./charge-register";
 import { RADAR_DISH } from "../../tactical/data/equipment";
+import { DEFAULT_CHARGE_DELAY_TURNS } from "../../tactical/model/equipment";
 import { RADAR_TUNING } from "../../tactical/data/radar-tuning";
 import type {
   EquipmentDefinition,
   EquipmentId,
 } from "../../tactical/model/equipment";
 import { SHIPPED_EQUIPMENT } from "../../tactical/repository/equipment-catalogue";
+import { chargeDelayText } from "./charge-delay-text";
 import type { EquipmentRules } from "../../tactical/service/equipment-service";
 import {
   equipmentOf,
@@ -428,7 +430,11 @@ function equipmentItem(
   const uses = `${String(usesLeft)}/${String(definition.uses)}`;
   const detail =
     definition.kind === "charge"
-      ? [chargeDetail(preview.value, unit), "next turn", uses].join(" · ")
+      ? [
+          chargeDetail(preview.value, unit),
+          chargeDelayText(definition.delayTurns ?? DEFAULT_CHARGE_DELAY_TURNS),
+          uses,
+        ].join(" · ")
       : `${blastDetail(preview.value, unit)} · ${uses}`;
   return { id, label: definition.name, icon, detail };
 }

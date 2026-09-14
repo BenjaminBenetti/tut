@@ -3,6 +3,7 @@ import { expect, test } from "@playwright/test";
 import { FixtureMapBuilder } from "../src/mapgen/service/fixture-map-builder";
 import type { TileCoord } from "../src/mapgen/model/tile-coord";
 import type { GameState } from "../src/save/model/game-state";
+import { BREACHING_CHARGE } from "../src/tactical/data/equipment";
 import type { PlacedCharge } from "../src/tactical/model/equipment";
 import type { Unit } from "../src/tactical/model/unit";
 import type { UnitTemplate } from "../src/tactical/model/unit-template";
@@ -45,10 +46,11 @@ const FRAMES = 14;
 
 /**
  * A placed breaching charge and its detonation (#1132, item 4). The
- * board is rewritten with a charge already placed, due on the next
- * turn, and two swarmers beside it: the first frame shows the marker on
- * its tile; End turn plays the bug phase, and as the player's turn opens
- * the charge goes off, which the burst of frames catches.
+ * board is rewritten with a charge already placed, due after the
+ * definition's delay, and two swarmers beside it: the first frame shows
+ * the marker on its tile; End turn plays each bug phase until the turn
+ * it is due, and as that player turn opens the charge goes off, which
+ * the burst of frames catches.
  *
  *   CAPTURE=1 pnpm exec playwright test e2e/breaching-charge-screenshot.spec.ts
  *
@@ -101,7 +103,9 @@ test("a placed breaching charge is marked, then goes off as the next turn opens"
     ownerId: owner.id,
     equipmentId: "breaching-charge",
     tile: CHARGE_TILE,
-    detonatesOnTurn: mission.turn + 1,
+    // Placed this turn with the shipped delay, so the spec ends turns
+    // until it is due rather than assuming when that is (#1134).
+    detonatesOnTurn: mission.turn + (BREACHING_CHARGE.delayTurns ?? 1),
   };
   const { vision: _stale, ...blind } = {
     ...mission,
@@ -147,6 +151,14 @@ test("a placed breaching charge is marked, then goes off as the next turn opens"
     path: "docs/design/ui-breaching-charge.png",
   });
 
+  // Every turn before the due one passes with the charge still waiting.
+  for (let waited = 1; waited < (BREACHING_CHARGE.delayTurns ?? 1); waited++) {
+    await page.locator('[data-action="end-turn"]').click();
+    await expect(body).not.toHaveAttribute("data-phase-playing", "true", {
+      timeout: 60_000,
+    });
+    await expect(body).toHaveAttribute("data-tactical-charges", "1");
+  }
   await page.locator('[data-action="end-turn"]').click();
   for (let frame = 0; frame < FRAMES; frame++) {
     await page.locator("#tactical-viewport").screenshot({

@@ -708,3 +708,77 @@ describe("TacticalOverlays on raised surfaces (#1130)", () => {
     overlays.dispose();
   });
 });
+
+describe("TacticalOverlays under the storey cut (#1134)", () => {
+  const low = { x: 1, y: 0, z: 1 };
+  const high = { x: 1, y: 4, z: 1 };
+  /** Hides everything above level 1, the way a view on the ground floor does. */
+  const groundFloorOnly = (tile: { y: number }): boolean => tile.y > 1;
+
+  /** One tile on each floor in every layer, so each layer has something to lose. */
+  function paintBothFloors(overlays: TacticalOverlays): void {
+    overlays.show({
+      moveRange: [
+        { tile: low, apCost: 1 },
+        { tile: high, apCost: 1 },
+        { tile: { ...high, x: 2 }, apCost: 2 },
+      ],
+      cover: [
+        { tile: low, dx: 1, dz: 0, level: 1 },
+        { tile: high, dx: 1, dz: 0, level: 2 },
+      ],
+      blockedShot: [low, high],
+      weaponRange: [low, high],
+    });
+    overlays.setWeaponRangeVisible(true);
+    overlays.setMarkedTile(high);
+    overlays.setBlastTiles([low, high]);
+    overlays.setWeaponRangeFill([low, high]);
+  }
+
+  it("draws nothing on a floor above the view, on every layer, and everything again when the view rises", () => {
+    const overlays = new TacticalOverlays();
+    paintBothFloors(overlays);
+    const whole = overlays.counts();
+    expect(whole).toMatchObject({
+      rangeOneAp: 2,
+      rangeTwoAp: 1,
+      blockedShot: 2,
+      markedTile: 1,
+      blast: 2,
+      rangeFill: 2,
+    });
+    overlays.setLayerCut(groundFloorOnly);
+    expect(overlays.counts()).toMatchObject({
+      rangeOneAp: 1,
+      rangeTwoAp: 0,
+      blockedShot: 1,
+      markedTile: 0,
+      blast: 1,
+      rangeFill: 1,
+    });
+    // The high cover tick and the high tile's outline went with them.
+    expect(overlays.counts().coverHigh).toBe(0);
+    expect(overlays.counts().coverLow).toBe(1);
+    // Stepping the view back up redraws from the same facts, nothing lost.
+    overlays.setLayerCut(undefined);
+    expect(overlays.counts()).toEqual(whole);
+    overlays.dispose();
+  });
+
+  it("keeps filtering what is painted after the cut is set", () => {
+    const overlays = new TacticalOverlays();
+    overlays.setLayerCut(groundFloorOnly);
+    overlays.setBlastTiles([low, high]);
+    overlays.setMarkedTile(high);
+    overlays.setWeaponRangeFill([high]);
+    expect(overlays.counts()).toMatchObject({
+      blast: 1,
+      markedTile: 0,
+      rangeFill: 0,
+    });
+    overlays.setMarkedTile(low);
+    expect(overlays.counts().markedTile).toBe(1);
+    overlays.dispose();
+  });
+});

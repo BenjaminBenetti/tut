@@ -108,6 +108,15 @@ describe("UnitMesh", () => {
     expect((ring.geometry as RingGeometry).parameters.outerRadius).toBe(0.5);
   });
 
+  it("draws a 2×2 unit whose art was authored at its footprint at unit scale, rings still doubled (#1134)", () => {
+    const mesh = new UnitMesh("brute", model(), undefined, 2, 2);
+    mesh.setPose({ x: 3, y: 1, z: 5 }, "w");
+    const inner = mesh.object.getObjectByName("unit-model:brute")!;
+    expect(inner.scale.x).toBe(1);
+    const ring = mesh.object.getObjectByName("selection-ring") as Mesh;
+    expect((ring.geometry as RingGeometry).parameters.outerRadius).toBe(1);
+  });
+
   it("stands a 2×2 unit on the corner its four tiles share and doubles its model and rings", () => {
     const mesh = new UnitMesh("brute", model(), undefined, 2);
     mesh.setPose({ x: 3, y: 1, z: 5 }, "w");

@@ -12,7 +12,7 @@ import type { EquipmentDefinition, EquipmentId } from "../model/equipment";
 //   |------------------|--------|------|----|-------|-----|-----|-----|-------------------|------|-------|
 //   | Radar dish       | radar  | 3    | 1  | 2     | —   | —   | —   | —                 | —    | —     |
 //   | Grenade          | blast  | 2    | 1  | 5     | 75  | 6   | 0   | 2 / 0.4           | 1    | —     |
-//   | Breaching charge | charge | 1    | 1  | 2     | —   | 20  | 3   | 3 / 0.3           | 3    | 1     |
+//   | Breaching charge | charge | 1    | 1  | 2     | —   | 20  | 3   | 3 / 0.3           | 3    | 2     |
 //
 //   • The dish keeps its scan radius and battery in `radar-tuning.ts`;
 //     only where it may be put and what it costs live here.
@@ -20,9 +20,12 @@ import type { EquipmentDefinition, EquipmentId } from "../model/equipment";
 //     crates (force 1) and finishes swarmers, and can be thrown at a
 //     tile with nobody on it.
 //   • A breaching charge is placed by hand two tiles out and goes off as
-//     the next player turn opens, so the squad has its remaining action
-//     to step away and a bug that walks onto it in its own phase is
-//     caught. Force 3 opens solid walls, which is what "breaching" means.
+//     the player turn after next opens (placed on T, it waits through
+//     T+1 and goes as T+2 opens), so the squad has a whole turn to step
+//     away and a bug that walks onto it in either bug phase is caught.
+//     It went off as T+1 opened at first, which caught a squad that
+//     placed it with its last action (Executive Director, 2026-09-13,
+//     #1134). Force 3 opens solid walls, which is what "breaching" means.
 
 /** The radio squad's scanner (#1130 battery; #1132 three uses). */
 export const RADAR_DISH: EquipmentDefinition = {
@@ -68,7 +71,7 @@ export const BREACHING_CHARGE: EquipmentDefinition = {
     aoe: { radius: 3, falloff: 0.3 },
     demoForce: 3,
   },
-  delayTurns: 1,
+  delayTurns: 2,
 };
 
 /** Every piece of equipment keyed by id, in catalogue order. */

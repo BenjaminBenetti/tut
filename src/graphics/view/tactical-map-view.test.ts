@@ -1282,4 +1282,12 @@ describe("the flat-map control for #978", () => {
     expect(drawnLevels(view)).toContain(6);
     expect(drawnLevels(view)).toContain(2);
   });
+
+  it("never cuts a coordinate off the map, where the range outline runs (#1134)", () => {
+    const map = new FixtureMapBuilder(4, 4, 1).fillGround().build();
+    const view = new TacticalMapView(map);
+    expect(view.isCut({ x: -6, y: 0, z: 8 })).toBe(false);
+    expect(view.isCut({ x: 40, y: 0, z: 1 })).toBe(false);
+    view.dispose();
+  });
 });

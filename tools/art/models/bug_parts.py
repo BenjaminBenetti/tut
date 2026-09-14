@@ -1,6 +1,7 @@
 """One brown bug family, with species-specific silhouettes and shared anatomy.
 
-Reproducible authored replacements for all four original bugs. The swarmer
+Reproducible authored replacements for all four original bugs (the brute
+lives in brute_parts.py since #1134, authored at its 2×2 footprint). The swarmer
 follows the approved brown Crescent concept; the other classes inherit its
 materials and joint anatomy without repeating its crescent silhouette. Limb node names
 are the UnitMotionRig contract. See docs/design/kits/crescent-bugs.md.
@@ -199,81 +200,6 @@ def build_lurker() -> None:
                  (side * 0.38, -0.56, 0.34), (side * 0.27, -0.49, 0.13)],
                 [0.038, 0.066, 0.077, 0.049, 0.001], 0.044)
     finish(1.3, 0.95, 1.05)
-
-
-# ===========================================
-# Brute: broad beetle wing cases, low battering head and short cleaver arms
-# ===========================================
-
-
-def build_brute() -> None:
-    """A beetle tank: paired oval back plates, compact neck and heavy forelimbs."""
-    before = set(mesh_objects())
-    bead("thorax", (0, 0.08, 0.91), 0.47, "bug-chitin-black", scale=(1.03, 1.05, 1.20),
-         segments=28, rings=18)
-    abdomen("abdomen", (0, 0.31, 0.79), 4, 0.34, 0.18, 0.15)
-    for side in (-1, 1):
-        # Each wing case is half a vaulted shell, so the two meet at a
-        # narrow dorsal seam rather than becoming two disconnected humps.
-        rows, cols = 17, 15
-        vertices = []
-        def vault(t, angle):
-            """A section of a broad beetle back, from dorsal seam to flank."""
-            curve = math.sin(math.pi * t) ** 0.68
-            width = 0.12 + 0.41 * curve
-            return (side * (0.013 + width * math.sin(angle)), -0.29 + t * 0.94,
-                    0.94 + curve * 0.07 + (0.15 + curve * 0.43) * math.cos(angle))
-        for i in range(rows):
-            vertices.extend(vault(i / (rows - 1), j * math.pi * 0.54 / (cols - 1)) for j in range(cols))
-        count = len(vertices)
-        vertices.extend((x, y, z - 0.035) for x, y, z in vertices[:])
-        faces = []
-        for i in range(rows - 1):
-            for j in range(cols - 1):
-                a = i * cols + j
-                faces.extend([(a, a + 1, a + cols + 1, a + cols),
-                              (a + count + cols, a + count + cols + 1, a + count + 1, a + count)])
-        boundary = list(range(cols)) + [i * cols + cols - 1 for i in range(1, rows)]
-        boundary += [(rows - 1) * cols + j for j in range(cols - 2, -1, -1)]
-        boundary += [i * cols for i in range(rows - 2, 0, -1)]
-        for a, b in zip(boundary, boundary[1:] + boundary[:1]):
-            faces.append((a, b, b + count, a + count))
-        mesh(f"elytron{side}", vertices, faces, "bug-chitin-dark")
-        seam = [vault(i / 16, 0.04) for i in range(17)]
-        sweep(f"elytron_seam{side}", seam, [0.009] * 17, token="bug-chitin-mid", sides=6)
-        for i, t in enumerate((0.23, 0.42, 0.61, 0.79)):
-            rib = [vault(t, 0.20 + j * 1.32 / 8) for j in range(9)]
-            sweep(f"elytron_ridge{side}_{i}", rib, [0.010] * 9, token="bug-chitin-mid", sides=6)
-            x, y, z = vault(t, 0.38)
-            scute(f"back_mark{side}_{i}", (x, y, z + 0.005), 0.11, 0.12, 0.025)
-        for i in range(2):
-            _, flank_edge = shell(f"flank{side}_{i}", (side * 0.39, -0.04 + i * 0.30, 0.70),
-                                  0.20, 0.25, 0.24, "bug-chitin-mid", thickness=0.027,
-                                  segments=28, rings=5)
-            rim(f"flank_rim{side}_{i}", flank_edge, 0.010)
-        vents(f"gill{side}", (side * 0.45, -0.11, 1.12), 0.037, side, "bug-bio-green")
-    group_new(before, "carapace")
-    # Blunt forward head with a low battering brow and two short jaw horns.
-    head_start = set(mesh_objects())
-    face((0, -0.40, 0.99), 0.22)
-    sweep("battering_brow", [(0, -0.29, 1.105), (0, -0.43, 1.14), (0, -0.58, 1.065)],
-          [0.25, 0.30, 0.16], [0.10, 0.10, 0.07], "bug-chitin-mid", sides=16)
-    scute("brow_mark", (0, -0.425, 1.245), 0.19, 0.19, 0.035, tilt=0.12)
-    for side in (-1, 1):
-        hooked_blade(f"jaw_horn{side}", [(side * 0.20, -0.39, 0.90),
-                     (side * 0.23, -0.56, 0.86), (side * 0.14, -0.67, 0.97)],
-                     [0.067, 0.058, 0.002], 0.038, 0.012)
-    group_new(head_start, "head")
-    for side in (-1, 1):
-        label = "l" if side < 0 else "r"
-        for i, y in enumerate((-0.13, 0.29)):
-            limb(f"leg_{label}{i}", [(side * 0.32, y, 0.76), (side * 0.54, y + 0.05, 0.44),
-                                    (side * 0.53, y + 0.10, 0.14), (side * 0.61, y + 0.085, 0.022)], 0.11)
-        wrist = (side * 0.48, -0.46, 0.50)
-        forearm(f"cleaver_{label}", (side * 0.35, -0.24, 0.85), (side * 0.56, -0.30, 0.66), wrist,
-                [wrist, (side * 0.53, -0.57, 0.40), (side * 0.51, -0.66, 0.23),
-                 (side * 0.34, -0.65, 0.16)], [0.075, 0.14, 0.13, 0.002], 0.105)
-    finish(1.8, 1.30, 1.35)
 
 
 # ===========================================

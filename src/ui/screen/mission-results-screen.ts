@@ -8,12 +8,27 @@ import type {
   RosterState,
 } from "../../roster/model/roster-state";
 import type { RosterTuning } from "../../roster/model/roster-tuning";
-import { promotionBetween, rankOf } from "../../roster/service/rank-service";
+import {
+  promotionBetween,
+  rankIndexOf,
+  rankOf,
+} from "../../roster/service/rank-service";
+import { attachRankTooltip } from "../view/rank-tooltip-view";
 import type { GameState } from "../../save/model/game-state";
 import type { GameSession } from "../model/game-session";
 import type { Screen, ScreenId } from "../model/screen";
 import type { ScreenRouter } from "../model/screen-router";
 import { formatCredits, formatWhole } from "../service/format";
+
+// ===========================================
+// Types
+// ===========================================
+
+/** One list item on the debrief; a rank at its end carries the rank popover (#1134). */
+interface DebriefLine {
+  readonly text: string;
+  readonly rank?: { readonly name: string; readonly index: number };
+}
 
 // ===========================================
 // Types
@@ -439,18 +454,30 @@ export class MissionResultsScreen implements Screen {
   private experienceLines(
     result: MissionResult,
     roster: RosterState,
-  ): string[] {
+  ): DebriefLine[] {
     const { ranks, xpPerMissionSurvived } = this.deps.rosterTuning;
-    const line = (name: string, earned: number, xpAfter: number): string => {
+    const line = (
+      name: string,
+      earned: number,
+      xpAfter: number,
+    ): DebriefLine => {
       const before = xpAfter - earned - xpPerMissionSurvived;
       const promoted = promotionBetween(before, xpAfter, ranks.ladder);
-      const standing =
-        promoted === undefined
-          ? rankOf(xpAfter, ranks.ladder)?.name
-          : `promoted to ${promoted.name}`;
-      return `${name} +${formatWhole(earned)} xp${
-        standing === undefined ? "" : ` · ${standing}`
+      const standing = promoted ?? rankOf(xpAfter, ranks.ladder);
+      const text = `${name} +${formatWhole(earned)} xp${
+        standing === undefined
+          ? ""
+          : ` · ${promoted === undefined ? "" : "promoted to "}`
       }`;
+      return standing === undefined
+        ? { text }
+        : {
+            text,
+            rank: {
+              name: standing.name,
+              index: rankIndexOf(xpAfter, ranks.ladder),
+            },
+          };
     };
     const squads = result.squadCasualties.flatMap((c) => {
       const squad = roster.squads.find((s) => s.id === c.squadId);
@@ -472,7 +499,7 @@ export class MissionResultsScreen implements Screen {
     doc: Document,
     label: string,
     field: string,
-    items: readonly string[],
+    items: readonly (string | DebriefLine)[],
     emptyText: string,
     prominent: boolean,
   ): HTMLElement {
@@ -507,7 +534,18 @@ export class MissionResultsScreen implements Screen {
     list.className = "tut-list";
     for (const item of items) {
       const li = doc.createElement("li");
-      li.textContent = item;
+      if (typeof item === "string" || item.rank === undefined) {
+        li.textContent = typeof item === "string" ? item : item.text;
+      } else {
+        // The rank name is its own span so it can carry the popover
+        // that says what the rank is worth (#1134).
+        li.append(item.text);
+        const name = doc.createElement("span");
+        name.dataset.role = "rank-name";
+        name.textContent = item.rank.name;
+        attachRankTooltip(name, item.rank.index, this.deps.rosterTuning.ranks);
+        li.appendChild(name);
+      }
       list.appendChild(li);
     }
     block.appendChild(list);

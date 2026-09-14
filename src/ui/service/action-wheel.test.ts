@@ -125,7 +125,7 @@ describe("actionWheel on a tile", () => {
       label: "Breaching charge",
       icon: "warning",
     });
-    expect(charge?.detail).toMatch(/dmg .* next turn · 1\/1$/);
+    expect(charge?.detail).toMatch(/dmg .* in 2 turns · 1\/1$/);
     expect(parseWheelChoice(grenade!.id)).toEqual({
       action: "use-equipment",
       equipmentId: "grenade",

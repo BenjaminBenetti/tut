@@ -20,6 +20,8 @@ import { TURN_STARTED } from "../../tactical/model/turn-started-event";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 
 let root: HTMLElement;
+const card = (): HTMLElement | null =>
+  root.querySelector<HTMLElement>("#unit-card");
 const field = (name: string): HTMLElement | null =>
   root.querySelector<HTMLElement>(`[data-field="${name}"]`);
 
@@ -161,6 +163,42 @@ describe("TacticalHudView", () => {
     expect(hud.getSelectedUnitId()).toBe("b1");
     expect(field("unit-side")?.textContent).toBe("bugs · bug");
     expect(wheelOpen()).toBe(false);
+  });
+
+  it("lays the force and the objectives down the left rail with the log, and the card alone on the right (#1134)", () => {
+    setup();
+    const rail = root.querySelector<HTMLElement>(".tut-hud__rail")!;
+    const side = root.querySelector<HTMLElement>(".tut-hud__side")!;
+    expect(rail.querySelector('[data-role="squad-list"]')).not.toBeNull();
+    expect(rail.querySelector("#objectives")).not.toBeNull();
+    expect(rail.querySelector("#event-log")).not.toBeNull();
+    expect(rail.querySelector("#unit-card")).toBeNull();
+    expect(side.querySelector("#unit-card")).not.toBeNull();
+    expect(side.querySelector('[data-role="squad-list"]')).toBeNull();
+    expect(side.querySelector("#event-log")).toBeNull();
+    // The log closes the rail, under the panels that scroll.
+    expect(rail.lastElementChild?.id).toBe("event-log");
+  });
+
+  it("reads the bug being aimed at on the card, without its rank, equipment or attacks, and reads the squad again when the aim ends (#1134)", () => {
+    const { hud } = setup();
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    expect(field("unit-side")?.textContent).toBe("tdf · squad");
+    expect(card()?.dataset.inspectingEnemy).toBeUndefined();
+    hud.handleIntent({ kind: "select-unit", unitId: "b1" });
+    // Aiming: the selection is still the squad, the card is the bug.
+    expect(hud.getSelectedUnitId()).toBe("s1");
+    expect(field("unit-side")?.textContent).toBe("bugs · bug");
+    expect(card()?.dataset.inspectingEnemy).toBe("true");
+    expect(field("move")?.textContent).not.toBe("—");
+    expect(field("unit-rank")?.hidden).toBe(true);
+    expect(field("attacks")?.hidden).toBe(true);
+    expect(field("equipment")?.hidden).toBe(true);
+    expect(field("weapon")?.hidden).toBe(false);
+    hud.handleIntent({ kind: "action", action: "cancel" });
+    expect(field("unit-side")?.textContent).toBe("tdf · squad");
+    expect(card()?.dataset.inspectingEnemy).toBeUndefined();
+    expect(field("attacks")?.hidden).toBe(false);
   });
 
   it("a left click on an enemy aims at it and opens the wheel with Attack first (#1112)", () => {
@@ -594,6 +632,49 @@ describe("TacticalHudView", () => {
       ),
     ].map((row) => row.textContent);
     expect(lines).toEqual(["Rifle · ammo 1 / 3", "Launcher · ammo 2 / 2"]);
+  });
+
+  it("paints an item's reach while its row on the card is rested on (#1134)", () => {
+    const { hud, mission } = setup();
+    const ranges: number[] = [];
+    hud.unmount();
+    const painted = new TacticalHudView(
+      {
+        onCommand: vi.fn(),
+        onLeave: vi.fn(),
+        onMarkWeaponRange: (tiles) => ranges.push(tiles.length),
+      },
+      { combatTuning: COMBAT_TUNING, objectiveTuning: OBJECTIVE_TUNING },
+    );
+    painted.mount(root);
+    const s1 = mission.units.find((u) => u.id === "s1");
+    const template = s1 && mission.templates[s1.templateId];
+    if (!s1 || !template) throw new Error("fixture needs s1");
+    painted.update({
+      ...mission,
+      templates: {
+        ...mission.templates,
+        [s1.templateId]: { ...template, equipment: ["grenade", "radar-dish"] },
+      },
+    });
+    painted.handleIntent({ kind: "select-unit", unitId: "s1" });
+    const row = (id: string): HTMLElement | null =>
+      root.querySelector<HTMLElement>(
+        `#unit-card [data-role="equipment-row"][data-equipment-id="${id}"]`,
+      );
+    expect(row("grenade")).not.toBeNull();
+    row("grenade")?.dispatchEvent(new Event("mouseenter"));
+    const grenade = ranges.at(-1) ?? 0;
+    expect(grenade).toBeGreaterThan(0);
+    row("grenade")?.dispatchEvent(new Event("mouseleave"));
+    expect(ranges.at(-1)).toBe(0);
+    // A radar's sites are the free tiles a short walk away: fewer than
+    // a grenade's throw, and never none on open ground.
+    row("radar-dish")?.dispatchEvent(new Event("mouseenter"));
+    const radar = ranges.at(-1) ?? 0;
+    expect(radar).toBeGreaterThan(0);
+    expect(radar).toBeLessThan(grenade);
+    painted.unmount();
   });
 
   it("lists the selected unit's equipment on the card with its uses left (#1132)", () => {
@@ -1536,12 +1617,14 @@ describe("TacticalHudView", () => {
     const attacks = () =>
       root.querySelector<HTMLElement>('[data-field="attacks"]')?.textContent;
 
-    // Loaded: the control, so this cannot pass by always refusing.
+    // Loaded: the control, so this cannot pass by always refusing. The
+    // card reads the squad before the aim, because while aiming it reads
+    // the bug (#1134).
     hud.update(withAmmo(3));
     hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    expect(Number(attacks())).toBeGreaterThan(0);
     hud.handleIntent({ kind: "select-unit", unitId: "b1" });
     expect(item("attack:b1")?.disabled).toBe(false);
-    expect(Number(attacks())).toBeGreaterThan(0);
 
     // Empty: the entry closes with the reason on it, and the card stops
     // advertising a shot the unit cannot take. The wheel is still open
@@ -1549,6 +1632,7 @@ describe("TacticalHudView", () => {
     hud.update(withAmmo(0));
     expect(item("attack:b1")?.disabled).toBe(true);
     expect(item("attack:b1")?.textContent).toContain("empty");
+    hud.handleIntent({ kind: "action", action: "cancel" });
     expect(attacks()).toBe("0");
 
     // ...and pressing it says why, in the register the card uses.

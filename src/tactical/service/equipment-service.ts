@@ -12,6 +12,7 @@ import type {
   EquipmentId,
   PlacedCharge,
 } from "../model/equipment";
+import { DEFAULT_CHARGE_DELAY_TURNS } from "../model/equipment";
 import { CHARGE_ID_PREFIX, usesLeftOf } from "../model/equipment";
 import { EQUIPMENT_USED } from "../model/equipment-used-event";
 import type { RadarTuning } from "../model/radar";
@@ -385,7 +386,9 @@ export function createUseEquipmentHandler(
           ownerId: unit.id,
           equipmentId: definition.id,
           tile: { x: tile.x, y: tile.y, z: tile.z },
-          detonatesOnTurn: mission.turn + (definition.delayTurns ?? 1),
+          detonatesOnTurn:
+            mission.turn +
+            (definition.delayTurns ?? DEFAULT_CHARGE_DELAY_TURNS),
         };
         return ok({
           state: { ...billed, charges: [...billed.charges, charge] },
@@ -404,9 +407,10 @@ export function createUseEquipmentHandler(
  * Sets off every charge whose turn has come, as the **player** phase
  * opens (#1132). A phase step for `createEndTurnHandler`, run after the
  * radars drain and before the fires burn: placed on turn T, a charge
- * with a delay of one goes off as turn T+1 opens, so the squad that set
- * it had the rest of turn T to step away and a bug that walked onto it
- * during its own phase is standing on it now.
+ * with a delay of two goes off as turn T+2 opens (#1134), so the squad
+ * that set it had the rest of turn T and all of turn T+1 to step away,
+ * and a bug that walked onto it during either of its phases is standing
+ * on it now.
  *
  * ```
  *   player phase opens ──► for each charge with detonatesOnTurn ≤ turn, in order set:

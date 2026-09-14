@@ -1,11 +1,18 @@
 import type { Unit } from "../../tactical/model/unit";
 import type { UnitTemplate } from "../../tactical/model/unit-template";
 import type { WeaponId } from "../../tactical/model/unit-weapon";
-import type { EquipmentDefinition } from "../../tactical/model/equipment";
+import type { RankTuning } from "../../roster/model/rank";
+import type {
+  EquipmentDefinition,
+  EquipmentId,
+} from "../../tactical/model/equipment";
 import { displayWeaponName } from "../../tactical/model/unit-weapon";
 import { SHIPPED_EQUIPMENT } from "../../tactical/repository/equipment-catalogue";
+import { chargeDelayText } from "../service/charge-delay-text";
 import { equipmentOf } from "../../tactical/service/equipment-service";
+import { footprintSizeOf } from "../../tactical/service/footprint-service";
 import { formatWhole } from "../service/format";
+import { attachRankTooltip } from "./rank-tooltip-view";
 import { weaponProfileText } from "../service/weapon-profile-text";
 import { iconGlyph } from "./icon-glyph";
 import { chargeRegisterFor } from "../service/charge-register";
@@ -17,24 +24,40 @@ import { chargeRegisterFor } from "../service/charge-register";
 /** What a field with nothing to show reads as. */
 const EMPTY_FIELD = "—";
 
+/**
+ * A row of the card the pointer or keyboard focus can rest on: one of
+ * the unit's weapons (#1132) or one of the items it carries (#1134).
+ * The owner paints that row's reach on the ground while it rests there.
+ */
+export type CardHover =
+  | { readonly kind: "weapon"; readonly weaponId: WeaponId }
+  | { readonly kind: "equipment"; readonly equipmentId: EquipmentId };
+
 /** What the card tells its owner. */
 export interface UnitCardHandlers {
   /**
-   * The pointer or keyboard focus came to rest on a weapon's row, or
-   * left it (`undefined`) (#1132). The owner paints that weapon's reach
-   * on the ground while it rests there.
+   * The pointer or keyboard focus came to rest on a weapon's or an
+   * item's row, or left it (`undefined`).
    */
-  readonly onWeaponHover?: (weaponId: WeaponId | undefined) => void;
+  readonly onRowHover?: (hover: CardHover | undefined) => void;
+}
+
+/** What the card needs injected; everything optional, a bare card still reads. */
+export interface UnitCardOptions {
+  /** The ladder and its rates, so the rank badge can say what it is worth (#1134). */
+  readonly rankTuning?: RankTuning;
 }
 
 /** One titled block in a card field: a weapon's name and its numbers. */
 interface CardEntry {
   /**
    * What the block stands for, when resting on it means something: a
-   * weapon's id, so the row can announce itself (#1132). Absent for a
-   * block that is only text.
+   * weapon's or an item's id, so the row can announce itself (#1132,
+   * #1134). Absent for a block that is only text.
    */
   readonly id?: string;
+  /** What kind of thing `id` names; a weapon when absent. */
+  readonly kind?: CardHover["kind"];
   /** Omitted when the unit carries one of whatever this lists. */
   readonly name?: string;
   readonly value: string;
@@ -79,8 +102,13 @@ export class UnitCardView {
   private fields = new Map<string, HTMLElement>();
   private meter: HTMLElement | undefined;
   private readonly handlers: UnitCardHandlers;
+  private readonly options: UnitCardOptions;
+  /** The rank index the badge's popover was last attached for. */
+  private rankAttached: number | undefined;
   /** The weapon row the pointer or focus rests on, if any (#1132). */
-  private hovered: WeaponId | undefined;
+  private hovered: CardHover | undefined;
+  /** Each stat row's term and value, so an enemy's card can drop the rows that are not its business (#1134). */
+  private readonly rows = new Map<string, readonly HTMLElement[]>();
   /** The field whose row is rested on, so another field's rewrite leaves it alone. */
   private hoveredField: string | undefined;
 
@@ -88,9 +116,13 @@ export class UnitCardView {
   // Constructor
   // ===========================================
 
-  /** @param handlers - Whom to tell about a weapon row being rested on; none by default. */
-  constructor(handlers: UnitCardHandlers = {}) {
+  /**
+   * @param handlers - Whom to tell about a weapon row being rested on; none by default.
+   * @param options - The rank tuning for the badge's popover; none by default.
+   */
+  constructor(handlers: UnitCardHandlers = {}, options: UnitCardOptions = {}) {
     this.handlers = handlers;
+    this.options = options;
   }
 
   // ===========================================
@@ -141,6 +173,7 @@ export class UnitCardView {
     for (const [label, field, icon] of [
       ["HP", "hp", "hp"],
       ["AP", "ap", "ap"],
+      ["Move", "move", "move"],
       ["Attacks", "attacks", "attack"],
       ["Weapon", "weapon", "attack"],
       ["Equipment", "equipment", "ability"],
@@ -157,8 +190,16 @@ export class UnitCardView {
       value.className = "tut-mono";
       value.dataset.field = field;
       value.textContent = EMPTY_FIELD;
+      if (field === "weapon" || field === "equipment") {
+        // A block row: the term on its own line and the entries under
+        // it across the whole card, so a weapon's numbers fit on one or
+        // two lines instead of four in the value column (#1134).
+        term.classList.add("tut-kv__block");
+        value.classList.add("tut-kv__block");
+      }
       grid.append(term, value);
       this.fields.set(field, value);
+      this.rows.set(field, [term, value]);
     }
 
     body.append(name, side, rank, meter, grid);
@@ -196,16 +237,40 @@ export class UnitCardView {
     if (!unit || !template) {
       // A hidden row cannot be left by the pointer, so the card says so.
       this.hover(undefined);
+      // An empty card reads nobody, enemy or not.
+      delete this.root?.dataset.inspectingEnemy;
       this.body.hidden = true;
       this.empty.hidden = false;
       return;
     }
+    // An enemy's card (#1134): the player clicked a bug to read it. It
+    // has no rank, no equipment and no attacks of the player's to count,
+    // so those rows go; its footprint is worth a word when it is a block.
+    const enemy = unit.team !== "tdf";
+    const size = footprintSizeOf(template);
+    if (this.root) {
+      if (enemy) {
+        this.root.dataset.inspectingEnemy = "true";
+      } else {
+        delete this.root.dataset.inspectingEnemy;
+      }
+    }
+    for (const field of ["attacks", "equipment"]) {
+      for (const el of this.rows.get(field) ?? []) {
+        el.hidden = enemy;
+      }
+    }
     this.set("unit-name", name ?? template.name);
-    this.set("unit-side", `${unit.team} · ${unit.kind}`);
+    this.set(
+      "unit-side",
+      `${unit.team} · ${unit.kind}${size > 1 ? ` · ${String(size)}×${String(size)}` : ""}`,
+    );
+    this.set("move", formatWhole(template.move));
     this.set("unit-rank", template.rank?.name ?? "");
     const rankBadge = this.fields.get("unit-rank");
     if (rankBadge) {
       rankBadge.hidden = template.rank === undefined;
+      this.attachRank(rankBadge, template.rank?.index);
     }
     this.set("hp", `${formatWhole(unit.hp)} / ${formatWhole(unit.maxHp)}`);
     this.set("ap", `${formatWhole(unit.ap)} / ${formatWhole(unit.maxAp)}`);
@@ -243,6 +308,8 @@ export class UnitCardView {
     this.setEntries(
       "equipment",
       equipmentOf(template, unit, SHIPPED_EQUIPMENT).map((carried) => ({
+        id: carried.definition.id,
+        kind: "equipment" as const,
         name: carried.definition.name,
         value: equipmentSummary(carried.definition),
         charges: `uses ${formatWhole(carried.usesLeft)} / ${formatWhole(carried.definition.uses)}`,
@@ -261,8 +328,8 @@ export class UnitCardView {
     this.empty.hidden = true;
   }
 
-  /** The weapon row the pointer or focus rests on, if any (#1132). */
-  hoveredWeapon(): WeaponId | undefined {
+  /** The row the pointer or focus rests on, if any (#1132, #1134). */
+  hoveredRow(): CardHover | undefined {
     return this.hovered;
   }
 
@@ -282,19 +349,36 @@ export class UnitCardView {
   // ===========================================
 
   /**
+   * Gives the badge its popover for `index` (#1134). Listeners are
+   * added once and the popover reads the index they were attached
+   * with, so a new rank on the same badge replaces the badge's text
+   * and re-attaches; the same rank leaves it alone.
+   */
+  private attachRank(badge: HTMLElement, index: number | undefined): void {
+    const tuning = this.options.rankTuning;
+    if (tuning === undefined || index === undefined) {
+      return;
+    }
+    if (index !== this.rankAttached) {
+      this.rankAttached = index;
+      attachRankTooltip(badge, index, tuning);
+    }
+  }
+
+  /**
    * Records where the pointer or focus rests and tells the owner once
    * per change. `field` names the block the row belongs to, so that
    * block's rewrite — and only that block's — can let go of it: the
    * equipment block is rewritten on every refresh too, and a mech with
    * nothing to list must not drop the weapon row the pointer is on.
    */
-  private hover(weaponId: WeaponId | undefined, field?: string): void {
-    if (weaponId === this.hovered) {
+  private hover(row: CardHover | undefined, field?: string): void {
+    if (sameHover(row, this.hovered)) {
       return;
     }
-    this.hovered = weaponId;
-    this.hoveredField = weaponId === undefined ? undefined : field;
-    this.handlers.onWeaponHover?.(weaponId);
+    this.hovered = row;
+    this.hoveredField = row === undefined ? undefined : field;
+    this.handlers.onRowHover?.(row);
   }
 
   /** Lets go of the rested row when it belongs to `field`, whose rows are being replaced. */
@@ -348,7 +432,7 @@ export class UnitCardView {
     const key = entries
       .map(
         (e) =>
-          `${e.id ?? ""}\u0000${e.name ?? ""}\u0000${e.value}\u0000${e.charges ?? ""}`,
+          `${e.kind ?? ""}:${e.id ?? ""}\u0000${e.name ?? ""}\u0000${e.value}\u0000${e.charges ?? ""}`,
       )
       .join("\u0001");
     if (el.dataset.entries === key) {
@@ -366,40 +450,64 @@ export class UnitCardView {
         if (entry.id !== undefined) {
           // A row that can be rested on (#1132): by pointer, and by
           // keyboard, since a preview that only the mouse can reach is
-          // a preview half the players cannot have.
-          block.dataset.role = "weapon-row";
-          block.dataset.weaponId = entry.id;
+          // a preview half the players cannot have. It says so with a
+          // pointer cursor and a lift on hover (#1134).
+          const row: CardHover =
+            entry.kind === "equipment"
+              ? { kind: "equipment", equipmentId: entry.id }
+              : { kind: "weapon", weaponId: entry.id };
+          block.classList.add("tut-card__entry--hoverable");
+          if (row.kind === "equipment") {
+            block.dataset.role = "equipment-row";
+            block.dataset.equipmentId = row.equipmentId;
+          } else {
+            block.dataset.role = "weapon-row";
+            block.dataset.weaponId = row.weaponId;
+          }
           block.tabIndex = 0;
-          const id = entry.id;
           for (const type of ["mouseenter", "focus"]) {
             block.addEventListener(type, () => {
-              this.hover(id, field);
+              this.hover(row, field);
             });
           }
           for (const type of ["mouseleave", "blur"]) {
             block.addEventListener(type, () => {
-              if (this.hovered === id) {
+              if (sameHover(this.hovered, row)) {
                 this.hover(undefined);
               }
             });
           }
         }
-        if (entry.name !== undefined) {
-          const name = doc.createElement("span");
-          name.className = "tut-card__entry-name tut-dim";
-          name.textContent = entry.name;
-          block.appendChild(name);
+        // The name and its pool share a line ("Grenade · uses 2 / 2"):
+        // a card with two weapons or two items has to fit its column
+        // without scrolling (#1134), and the pool is short.
+        if (entry.name !== undefined || entry.charges !== undefined) {
+          const head = doc.createElement("span");
+          head.className = "tut-card__entry-head";
+          if (entry.name !== undefined) {
+            const name = doc.createElement("span");
+            name.className = "tut-card__entry-name tut-dim";
+            name.textContent = entry.name;
+            head.appendChild(name);
+          }
+          if (entry.charges !== undefined) {
+            if (entry.name !== undefined) {
+              const dot = doc.createElement("span");
+              dot.className = "tut-dim";
+              dot.textContent = " · ";
+              head.appendChild(dot);
+            }
+            const charges = doc.createElement("span");
+            charges.className = "tut-card__entry-charges tut-dim";
+            charges.dataset.role = "charges";
+            charges.textContent = entry.charges;
+            head.appendChild(charges);
+          }
+          block.appendChild(head);
         }
         const value = doc.createElement("span");
         value.textContent = entry.value;
         block.appendChild(value);
-        if (entry.charges !== undefined) {
-          const charges = doc.createElement("span");
-          charges.className = "tut-card__entry-charges tut-dim";
-          charges.dataset.role = "charges";
-          charges.textContent = entry.charges;
-          block.appendChild(charges);
-        }
         return block;
       }),
     );
@@ -433,7 +541,23 @@ function equipmentSummary(definition: EquipmentDefinition): string {
     }
   }
   if (definition.delayTurns !== undefined) {
-    parts.push("next turn");
+    parts.push(chargeDelayText(definition.delayTurns));
   }
   return parts.join(" · ");
+}
+
+/** True when both name the same row, or both name none. */
+function sameHover(
+  a: CardHover | undefined,
+  b: CardHover | undefined,
+): boolean {
+  if (a === undefined || b === undefined) {
+    return a === b;
+  }
+  if (a.kind !== b.kind) {
+    return false;
+  }
+  return a.kind === "weapon"
+    ? a.weaponId === (b as { weaponId: WeaponId }).weaponId
+    : a.equipmentId === (b as { equipmentId: EquipmentId }).equipmentId;
 }

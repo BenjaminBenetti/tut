@@ -35,8 +35,9 @@ test("captures squad readiness, recovery, and the untouched scene", async ({
   );
   await drawnFrame(page);
 
-  // The whole force with its readiness, beside the card that shows one.
-  const rail = page.locator(".tut-hud__side");
+  // The whole force with its readiness, on the left rail since #1134; the
+  // card that shows one is across the map on the right.
+  const rail = page.locator(".tut-hud__rail-panels");
   await expect(
     page.locator('[data-role="squad-list"] li').first(),
   ).toBeVisible();

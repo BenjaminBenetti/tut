@@ -109,11 +109,45 @@ h3 {
  * them running together read as one paragraph (#641).
  */
 .tut-card__entry + .tut-card__entry {
-  margin-top: 0.4em;
+  margin-top: 0.25em;
 }
 
-.tut-card__entry-name {
+.tut-card__entry-head {
   display: block;
+}
+
+/* Block rows of the card's key-value grid: the term above, the entries
+   under it across the whole width (#1134). */
+.tut-kv .tut-kv__block {
+  grid-column: 1 / -1;
+}
+
+dd.tut-kv__block {
+  margin-bottom: var(--space-1);
+}
+
+/*
+ * A row that previews its reach on the ground when rested on (#1132,
+ * #1134): a weapon or an item. The cursor and the lift say it can be,
+ * because a hover with no invitation is a feature nobody finds.
+ */
+.tut-card__entry--hoverable {
+  cursor: pointer;
+  margin-left: -0.35em;
+  margin-right: -0.35em;
+  padding: 0.15em 0.35em;
+  border-radius: 3px;
+  transition: background-color 120ms ease-out;
+}
+
+.tut-card__entry--hoverable:hover,
+.tut-card__entry--hoverable:focus-visible {
+  background: var(--ui-panel-raised);
+}
+
+.tut-card__entry--hoverable:focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: -2px;
 }
 
 /*
@@ -122,7 +156,7 @@ h3 {
  * so it cannot be mistaken for another `·` term in the profile above.
  */
 .tut-card__entry-charges {
-  display: block;
+  display: inline;
 }
 
 .tut-dim {
@@ -499,4 +533,40 @@ input[type="checkbox"]:disabled,
 input[type="radio"]:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+/* =========================================== */
+/* Rank tooltip (#1134)                        */
+/* =========================================== */
+
+/* A rank name that can be rested on: it says so with a dotted underline
+   and a help cursor, and the popover says what the rank is worth. */
+.tut-rank {
+  cursor: help;
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+}
+
+.tut-tooltip {
+  position: fixed;
+  z-index: 60;
+  max-width: 320px;
+  padding: var(--space-2) var(--space-3);
+  background: var(--ui-panel-raised);
+  border: var(--line) solid var(--ui-line);
+  color: var(--ui-text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.4;
+  pointer-events: none;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.5);
+}
+
+.tut-tooltip p {
+  margin: 0;
+}
+
+.tut-tooltip p + p {
+  margin-top: var(--space-1);
+  color: var(--ui-text-dim);
 }

@@ -73,10 +73,19 @@ export interface EquipmentDefinition {
   /**
    * Turns a placed charge waits (#1132): placed on turn T in the player
    * phase, it detonates as the player phase of turn `T + delayTurns`
-   * opens. Positive integer; absent for anything but a charge.
+   * opens — two for the shipped charge, so the squad that set it has a
+   * whole turn to step away (#1134). Positive integer; absent for
+   * anything but a charge.
    */
   readonly delayTurns?: number;
 }
+
+/**
+ * Turns a charge waits when its definition names no delay: placed on
+ * turn T, it detonates as turn T + 2 opens, a whole turn to step away
+ * (#1134). The rules and every text that names the wait read this.
+ */
+export const DEFAULT_CHARGE_DELAY_TURNS = 2;
 
 /**
  * How the rules and the HUD look equipment up. A small interface so a

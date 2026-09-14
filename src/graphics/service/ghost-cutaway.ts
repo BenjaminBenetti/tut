@@ -436,7 +436,11 @@ const VERTEX_BODY = `
  * distance instead of eleven. Measured on `e2e/tile-attack.spec.ts`
  * under SwiftShader: 19.3 s with the per-fragment rebuild and no
  * reject, 12.4 s with the loop disabled, 11.0 s before the ray cutaway
- * existed — enough that CI's e2e shard ran past its budget.
+ * existed — enough that CI's e2e shard ran past its budget. Neither
+ * change alters the picture: a wall rendered through both shaders in
+ * a SwiftShader WebGL2 context hashed to the same frame, pixel for
+ * pixel, and the reject is exactly the region where `nearest` could
+ * never fall inside the radius.
  */
 const FRAGMENT_BODY = `
   float ghostAlpha = 1.0;

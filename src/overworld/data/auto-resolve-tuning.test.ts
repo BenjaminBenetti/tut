@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import { MECH_RATING_TUNING } from "../../roster/data/mech-rating-tuning";
 import { STARTER_PARTS } from "../../roster/data/parts";
-import { RIFLE_SQUAD } from "../../roster/data/squad-types";
-import { STARTER_LOADOUT } from "../../roster/data/starter-roster";
+import { RIFLE_SQUAD, SQUAD_TYPES } from "../../roster/data/squad-types";
+import {
+  STARTER_LOADOUT,
+  STARTER_ROSTER,
+} from "../../roster/data/starter-roster";
 import { UPGRADE_TUNING } from "../../roster/data/upgrade-tuning";
 import { MECH_MAX_DAMAGE } from "../../roster/model/mech";
 import { StaticPartCatalogue } from "../../roster/repository/static-part-catalogue";
@@ -84,7 +87,7 @@ describe("auto-resolve tuning", () => {
     expect(winProbability(2 * squad, 2, T)).toBeCloseTo(0.5, 5);
   });
 
-  it("keeps the starter roster favoured on a difficulty 4 mission, near even on 5, and warns a lone squad off difficulty 3", () => {
+  it("keeps the starter roster favoured on a difficulty 6 mission, near even on 7, and warns a lone squad off difficulty 3", () => {
     const sheet = validateLoadout(
       STARTER_LOADOUT,
       new StaticPartCatalogue(STARTER_PARTS),
@@ -92,13 +95,22 @@ describe("auto-resolve tuning", () => {
       UPGRADE_TUNING,
     );
     if (!sheet.ok) throw new Error("starter loadout must validate");
+    // The force as the campaign actually fields it (#1132): two rifles,
+    // a radio, a rocket and the mech, 277 on the resolver's scale.
     const starterForce =
-      2 * RIFLE_SQUAD.combatRating + sheet.value.combatRating;
-    // #1130 halved the starter chassis' plate, so the starter roster
-    // (193) sits a shade under difficulty 5's 200 rather than over it.
-    expect(winProbability(starterForce, 4, T)).toBeGreaterThan(0.65);
-    expect(winProbability(starterForce, 5, T)).toBeGreaterThanOrEqual(0.45);
-    expect(winProbability(starterForce, 3, T)).toBeGreaterThan(0.85);
+      STARTER_ROSTER.squads.reduce(
+        (sum, squad) =>
+          sum +
+          (SQUAD_TYPES.find((type) => type.id === squad.typeId)?.combatRating ??
+            0),
+        0,
+      ) + sheet.value.combatRating;
+    expect(starterForce).toBe(277);
+    // A shade under one squad over difficulty 6's 240, a shade under
+    // difficulty 7's 280, and a comfortable skirmish at 5.
+    expect(winProbability(starterForce, 6, T)).toBeGreaterThan(0.65);
+    expect(winProbability(starterForce, 7, T)).toBeGreaterThanOrEqual(0.45);
+    expect(winProbability(starterForce, 5, T)).toBeGreaterThan(0.85);
     expect(winProbability(RIFLE_SQUAD.combatRating, 3, T)).toBeLessThan(0.2);
     // The starter mech is worth nearly three squads, not a dozen.
     const mechInSquads = sheet.value.combatRating / RIFLE_SQUAD.combatRating;

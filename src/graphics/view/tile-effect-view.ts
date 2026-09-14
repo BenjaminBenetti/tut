@@ -12,8 +12,11 @@ import type {
   TileEffect,
   TileEffectId,
 } from "../../tactical/model/tile-effect";
+import { FIRE_SMOKE } from "../data/smoke-plumes";
 import type { Disposable } from "../model/disposable";
 import type { FrameUpdatable } from "../model/frame-updatable";
+import { createFalloffTexture } from "../service/falloff-texture";
+import { SmokePlume } from "./smoke-plume";
 import { tileTop } from "./tactical-map-view";
 
 // ===========================================
@@ -43,26 +46,33 @@ const LIGHT_DISTANCE = 3;
 /** Deterministic phase offsets so five tongues never breathe in step. */
 const PHASES = [0, 1.7, 3.1, 4.4, 5.6];
 
+/** Name of a fire's smoke plume, for tests and scene inspection (#1132). */
+export const FIRE_SMOKE_NAME = "fire-smoke";
+
 // ===========================================
 // TileEffectView
 // ===========================================
 
-/** One drawn fire: its group, its tongues and the base scale each breathes around. */
+/** One drawn fire: its group, its tongues, its light and the smoke over it. */
 interface DrawnFire {
   readonly root: Group;
   readonly tongues: readonly Mesh[];
   readonly light: PointLight;
+  /** The plume over the flames (#1132), the `FIRE_SMOKE` preset. */
+  readonly smoke: SmokePlume;
 }
 
 /**
  * Draws the mission's tile effects (#1121): a cluster of flame cones on
- * every burning tile, flickering, with a small warm light. Placeholder
+ * every burning tile, flickering, with a small warm light, and since
+ * #1132 a plume of smoke over the flames — the same `SmokePlume` a
+ * burnt-out radar wears, on the fire's own preset. Placeholder flame
  * geometry until art lands (architecture §7), built so a sprite sheet
  * can replace the cones without changing who calls this.
  *
  * ```
  *   update(effects)  ──► one group per effect id: added, kept, or removed
- *   update(dt)       ──► every tongue breathes on its own phase
+ *   update(dt)       ──► every tongue breathes on its own phase, every plume rises
  * ```
  *
  * Observes state only: it is handed the effects the player perceives
@@ -92,6 +102,8 @@ export class TileEffectView implements FrameUpdatable, Disposable {
     blending: AdditiveBlending,
     depthWrite: false,
   });
+  /** Soft disc every smoke puff is cut from; owned here, shared by every plume. */
+  private readonly smokeFalloff = createFalloffTexture();
   private clock = 0;
 
   // ===========================================
@@ -136,11 +148,12 @@ export class TileEffectView implements FrameUpdatable, Disposable {
     return [...this.fires.keys()];
   }
 
-  /** Breathes every tongue and its light. */
+  /** Breathes every tongue and its light, and lifts every plume. */
   update(deltaSeconds: number): void {
     this.clock += deltaSeconds;
     const t = this.clock * FLICKER_HZ;
     for (const fire of this.fires.values()) {
+      fire.smoke.update(deltaSeconds);
       fire.tongues.forEach((tongue, i) => {
         const phase = PHASES[i % PHASES.length] ?? 0;
         const breath =
@@ -164,6 +177,7 @@ export class TileEffectView implements FrameUpdatable, Disposable {
     this.geometry.dispose();
     this.body.dispose();
     this.core.dispose();
+    this.smokeFalloff.dispose();
     this.root.removeFromParent();
   }
 
@@ -171,7 +185,7 @@ export class TileEffectView implements FrameUpdatable, Disposable {
   // Private Methods
   // ===========================================
 
-  /** Builds one fire on its tile: tongues in a ring around a taller core, and the light. */
+  /** Builds one fire on its tile: tongues in a ring around a taller core, the light, and the plume over them. */
   private build(effect: TileEffect): DrawnFire {
     const root = new Group();
     root.name = `effect:${effect.id}`;
@@ -195,16 +209,23 @@ export class TileEffectView implements FrameUpdatable, Disposable {
     const light = new PointLight(FLAME_BODY, LIGHT_INTENSITY, LIGHT_DISTANCE);
     light.position.set(0, TONGUE_HEIGHT, 0);
     root.add(light);
+    const smoke = new SmokePlume(
+      FIRE_SMOKE,
+      this.smokeFalloff,
+      FIRE_SMOKE_NAME,
+    );
+    root.add(smoke.root);
     this.root.add(root);
-    return { root, tongues, light };
+    return { root, tongues, light, smoke };
   }
 
-  /** Removes one fire's group; the geometry and materials are shared and stay. */
+  /** Removes one fire's group and frees its plume; the flame geometry and materials are shared and stay. */
   private remove(id: TileEffectId): void {
     const fire = this.fires.get(id);
     if (fire === undefined) {
       return;
     }
+    fire.smoke.dispose();
     fire.light.dispose();
     fire.root.removeFromParent();
     this.fires.delete(id);

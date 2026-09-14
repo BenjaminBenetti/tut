@@ -11,7 +11,11 @@ import { extract } from "../../tactical/model/extract-command";
 import { interact } from "../../tactical/model/interact-command";
 import type { ObjectiveTuning } from "../../tactical/model/objective-tuning";
 import { reload } from "../../tactical/model/reload-command";
-import { deployRadar } from "../../tactical/model/deploy-radar-command";
+import { RADAR_DISH } from "../../tactical/data/equipment";
+import type { EquipmentId } from "../../tactical/model/equipment";
+import { useEquipment } from "../../tactical/model/use-equipment-command";
+import { SHIPPED_EQUIPMENT } from "../../tactical/repository/equipment-catalogue";
+import { previewEquipmentUse } from "../../tactical/service/equipment-service";
 import type { TacticalCommand } from "../../tactical/model/tactical-command";
 import type { TacticalError } from "../../tactical/model/tactical-error";
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
@@ -28,6 +32,7 @@ import {
   findAttackTarget,
 } from "../../tactical/service/attack-target-service";
 import type { PreviewDeps } from "../../tactical/service/combat-service";
+import { weaponRangeTiles } from "../../tactical/service/weapon-range-service";
 import {
   attacksRemaining,
   chargesLeft,
@@ -98,8 +103,8 @@ export const DEFAULT_HUD_MODE: HudMode = "move";
 export interface TacticalHudHandlers {
   /** A command the player asked for; the owner dispatches it and reports refusals through `showStatus`. */
   readonly onCommand: (command: TacticalCommand) => void;
-  /** The player asked to leave the mission screen. */
-  readonly onBack: () => void;
+  /** The player asked to leave the mission (#1132); the owner confirms and dispatches. */
+  readonly onLeave: () => void;
   /**
    * Bring a unit on screen (#1041). Absent in headless callers, which
    * then simply do not move the camera.
@@ -150,6 +155,13 @@ export interface TacticalHudHandlers {
    * Optional, so a HUD built without a scene needs no stub.
    */
   readonly onMarkBlast?: (tiles: readonly TileCoord[]) => void;
+  /**
+   * Paint the tiles the weapon rested on in the unit panel can reach,
+   * or clear them (#1132): the range preview, red where the move
+   * preview is blue. Optional, so a HUD built without a scene needs no
+   * stub.
+   */
+  readonly onMarkWeaponRange?: (tiles: readonly TileCoord[]) => void;
   /**
    * Where the top of a unit's model is on screen, for the status chip
    * above it while Shift is held. Absent in tests and headless callers,
@@ -245,7 +257,12 @@ export class TacticalHudView {
   private graphFor: TacticalState["map"] | undefined;
   private readonly banner: TurnBannerView;
   private readonly phases: PhaseBannerView;
-  private readonly card = new UnitCardView();
+  /** The selected unit's card; resting on one of its weapons previews that weapon's reach (#1132). */
+  private readonly card = new UnitCardView({
+    onWeaponHover: (weaponId) => {
+      this.previewWeaponRange(weaponId);
+    },
+  });
   private readonly preview: HitPreviewView;
   private readonly objectives = new ObjectiveTrackerView();
   /** The force at a glance; a row selects and recovers a unit (#1041). */
@@ -353,7 +370,7 @@ export class TacticalHudView {
     this.handlers = handlers;
     this.deps = deps;
     this.banner = new TurnBannerView({
-      onBack: () => handlers.onBack(),
+      onLeave: () => handlers.onLeave(),
       onLayerStep: (delta) => handlers.onLayerStep?.(delta),
     });
     this.phases = new PhaseBannerView(deps.phaseBanner);
@@ -710,6 +727,7 @@ export class TacticalHudView {
     if (this.root) {
       this.root.dataset.phasePlaying = String(locked);
     }
+    this.banner.setLeaveEnabled(!locked);
     this.refresh();
   }
 
@@ -1099,8 +1117,19 @@ export class TacticalHudView {
         this.handlers.onCommand(overwatch(unitId));
         break;
       case "deploy-radar":
-        this.handlers.onCommand(deployRadar(unitId, choice.tile));
+        // The dish is equipment like the rest (#1132); the entry keeps
+        // its old name so the ring reads as it did.
+        this.handlers.onCommand(
+          useEquipment(unitId, RADAR_DISH.id, choice.tile),
+        );
         return;
+      case "use-equipment":
+        this.target = undefined;
+        this.mode = DEFAULT_HUD_MODE;
+        this.handlers.onCommand(
+          useEquipment(unitId, choice.equipmentId, choice.tile),
+        );
+        break;
       case "reload":
         this.handlers.onCommand(reload(unitId));
         break;
@@ -1535,6 +1564,24 @@ export class TacticalHudView {
   }
 
   /**
+   * Paints the reach of `weaponId` from where the selected unit stands,
+   * or clears the paint for no weapon (#1132). The tiles come from the
+   * rules' own reach and sight predicates, so the red on the ground is
+   * what the shot can actually reach.
+   */
+  private previewWeaponRange(weaponId: WeaponId | undefined): void {
+    const mission = this.mission;
+    const unitId = this.selected;
+    if (weaponId === undefined || !mission || unitId === undefined) {
+      this.handlers.onMarkWeaponRange?.([]);
+      return;
+    }
+    this.handlers.onMarkWeaponRange?.(
+      weaponRangeTiles(mission, unitId, weaponId, this.deps.combatTuning),
+    );
+  }
+
+  /**
    * The tiles the shot the player is considering would reach (#1121).
    *
    * ```
@@ -1570,6 +1617,12 @@ export class TacticalHudView {
       ) {
         return this.footprintOf(target, rested.weaponId);
       }
+      // Resting on a grenade or a charge paints what it would reach
+      // (#1132), and only then: a tile wheel that always painted a
+      // radius-3 charge would swamp the weapons' own footprints.
+      if (rested?.action === "use-equipment") {
+        return this.equipmentFootprint(rested.equipmentId, rested.tile);
+      }
       const seen = new Set<string>();
       const union: TileCoord[] = [];
       for (const option of weaponOptions(
@@ -1589,6 +1642,27 @@ export class TacticalHudView {
     }
     const aimed = this.currentPreview();
     return aimed?.ok ? (aimed.value.blast?.tiles ?? []) : [];
+  }
+
+  /** What one item would reach around `tile` (#1132); empty when the use is refused or the item marks nothing. */
+  private equipmentFootprint(
+    equipmentId: EquipmentId,
+    tile: TileCoord,
+  ): readonly TileCoord[] {
+    const mission = this.mission;
+    const unitId = this.selected;
+    if (!mission || unitId === undefined) {
+      return [];
+    }
+    const preview = previewEquipmentUse(
+      mission,
+      unitId,
+      equipmentId,
+      tile,
+      { catalogue: SHIPPED_EQUIPMENT, combat: this.deps.combatTuning },
+      this.deps.previewDeps,
+    );
+    return preview.ok ? (preview.value.blast?.tiles ?? []) : [];
   }
 
   /**
@@ -1780,6 +1854,7 @@ export class TacticalHudView {
         locked: this.playbackLocked,
       });
       this.handlers.onMarkBlast?.([]);
+      this.handlers.onMarkWeaponRange?.([]);
       return;
     }
     this.banner.update({
@@ -1812,6 +1887,9 @@ export class TacticalHudView {
       selected ? this.attacksLeftFor(selected) : undefined,
       selected ? namesFor(mission, this.campaign).unit(selected.id) : undefined,
     );
+    // A preview that stays up across a move is recomputed from where the
+    // unit stands now, and one for a unit no longer selected goes.
+    this.previewWeaponRange(this.card.hoveredWeapon());
     const target =
       this.target === undefined
         ? undefined

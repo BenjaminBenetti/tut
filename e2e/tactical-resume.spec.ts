@@ -52,11 +52,15 @@ async function launchMission(page: Page): Promise<LaunchedMission> {
 }
 
 /**
- * #468: the HUD's Overworld button leaves a mission running, and before
- * this the campaign was stuck there — the overworld had no route back
- * and StartMission refused every other mission with `mission-active`.
+ * #468 gave a mission left mid-fight a way back; #1132 removed the way
+ * out that created the case — the banner's button now abandons the
+ * mission rather than stepping to the overworld with it running — so
+ * the mission that survives here is one the player closed the tab on.
+ * The autosave brings it back through Continue, named by its city, and
+ * it can still be finished; the overworld's Resume control appears only
+ * while a mission is in progress and is gone once it is over.
  */
-test("a mission left through the HUD can be resumed from the overworld, and finished", async ({
+test("a mission in progress survives a reload, resumes through Continue, and is finished", async ({
   page,
 }) => {
   const errors: string[] = [];
@@ -66,13 +70,11 @@ test("a mission left through the HUD can be resumed from the overworld, and fini
   const body = page.locator("body");
   const resume = page.locator('#top-bar [data-action="resume-mission"]');
 
-  // Leave the fight the way a player can: the banner's Overworld button.
-  await page.locator('#turn-banner [data-action="overworld"]').click();
-  await expect(body).toHaveAttribute("data-screen", "overworld");
-
-  // The way back is offered, and it is the mission that was left.
-  await expect(resume).toBeVisible();
-  await resume.click();
+  // Walk away from the fight and come back to it: the autosave holds the
+  // live mission and Continue lands straight on it.
+  await page.reload();
+  await expect(body).toHaveAttribute("data-app-state", "ready");
+  await page.locator('[data-action="continue"]').click();
   await expect(body).toHaveAttribute("data-screen", "tactical");
   // Named by its city, not its id (#753) — and it is the one that was left.
   await expect(

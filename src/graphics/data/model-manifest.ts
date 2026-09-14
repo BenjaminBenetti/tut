@@ -162,7 +162,7 @@ export const MODEL_MANIFEST = {
     category: "units",
     path: "assets/models/units/tdf-infantry-rocket.glb",
     footprint: { w: 1, d: 1 },
-    height: 0.98,
+    height: 1.03,
     sockets: [],
     quality: "final",
   },

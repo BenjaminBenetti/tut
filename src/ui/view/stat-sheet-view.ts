@@ -1,57 +1,114 @@
 import type { Result } from "../../core/model/result";
 import type { LoadoutError } from "../../roster/model/loadout-error";
 import type { MechStatSheet } from "../../roster/model/mech-stat-sheet";
+import type { MechCombatProfile } from "../../tactical/model/mech-combat-profile";
+import type { MechUnitTuning } from "../../tactical/model/unit-tuning";
+import { mechCombatProfile } from "../../tactical/service/mech-combat-profile";
 import { formatCredits, formatWhole } from "../service/format";
+import { weaponProfileText } from "../service/weapon-profile-text";
 
 // ===========================================
 // Constants
 // ===========================================
 
-/** Sheet rows in display order with their labels. */
 /**
- * The sheet fields this view renders. Numeric only: the sheet also
- * carries `weapons` (#532), which is a list for the tactical layer and
- * not a stat to print in a row.
+ * The sheet fields the Build block prints: what constrains the build,
+ * not what the mech does with it. Numeric only: the sheet also carries
+ * `weapons` (#532), which the Combat block prints per weapon.
  */
-type StatKey = {
+type BuildKey = {
   [K in keyof MechStatSheet]: MechStatSheet[K] extends number ? K : never;
 }[keyof MechStatSheet];
 
-const ROWS: readonly [StatKey, string][] = [
-  ["armor", "Armor"],
-  ["mobility", "Mobility"],
-  ["heat", "Heat"],
-  ["accuracy", "Accuracy"],
-  ["firepower", "Firepower"],
+/**
+ * Build rows in display order with their labels. The sheet's raw
+ * `armor`, `mobility`, `accuracy` and `firepower` are deliberately not
+ * here (#1132): they are part sums the field never shows — a mech with
+ * "50 armor" takes hits at 15 — and printing them under the same words
+ * as the field's numbers is what the Executive Director caught. What
+ * they become is in the Combat block.
+ */
+const BUILD_ROWS: readonly [BuildKey, string][] = [
   ["weight", "Weight"],
   ["powerBalance", "Power balance"],
-  ["combatRating", "Combat rating"],
+  ["heat", "Heat"],
+  ["combatRating", "Rating"],
   ["totalCost", "Total cost"],
 ];
+
+/** Combat rows in display order: the labels the tactical unit card uses. */
+const COMBAT_ROWS: readonly [keyof CombatFields, string][] = [
+  ["combat-hp", "HP"],
+  ["combat-ap", "AP"],
+  ["combat-move", "Move"],
+  ["combat-armor", "Armor"],
+  ["combat-sight", "Sight"],
+];
+
+/** The scalar Combat fields, keyed by their `data-field`. */
+interface CombatFields {
+  readonly "combat-hp": number;
+  readonly "combat-ap": number;
+  readonly "combat-move": number;
+  readonly "combat-armor": number;
+  readonly "combat-sight": number;
+}
+
+/** What a field shows while there is no sheet. */
+const EMPTY = "—";
 
 // ===========================================
 // StatSheetView
 // ===========================================
 
 /**
- * The mech bay's right half: the validated stat sheet with total cost
- * and combat rating, or the list of reasons the draft is not buildable.
- * Values show dashes while the draft is invalid, since there is no sheet
- * to show; the errors also render beside their slots in the editor.
+ * The mech bay's right half: the draft's field numbers and its build
+ * numbers, or the list of reasons the draft is not buildable.
+ *
+ * ```
+ *   ┌ Stat sheet ─────────────── [Buildable] ┐
+ *   │ COMBAT                                 │   the mech as the field
+ *   │   HP 70   AP 2   Move 8   Armor 6      │   sees it (#1132): the
+ *   │   Sight 14                             │   same derivation the
+ *   │   Weapon  Autocannon                   │   unit factory freezes
+ *   │           range 10 · acc 75 · dmg 18 … │   into the template
+ *   │           Missile Pod                  │
+ *   │           range 14 · acc 70 · dmg 22 … │
+ *   │ BUILD                                  │   what constrains the
+ *   │   Weight 60  Power balance 0  Heat −1  │   build
+ *   │   Rating 113  Total cost ¢2,850        │
+ *   └────────────────────────────────────────┘
+ * ```
+ *
+ * The Combat block is `mechCombatProfile` over the validated sheet —
+ * one source of truth with the tactical unit factory, so the bay can
+ * never describe a mech the field contradicts. Values show dashes while
+ * the draft is invalid, since there is no sheet to derive from; the
+ * errors also render beside their slots in the editor.
  */
 export class StatSheetView {
   // ===========================================
   // Fields
   // ===========================================
 
+  private readonly tuning: MechUnitTuning;
   private root: HTMLElement | undefined;
-  private values = new Map<StatKey, HTMLElement>();
+  private fields = new Map<string, HTMLElement>();
+  private weapons: HTMLElement | undefined;
   private verdict: HTMLElement | undefined;
   private errors: HTMLElement | undefined;
 
   // ===========================================
   // Lifecycle
   // ===========================================
+
+  /**
+   * @param tuning - The mech slice of the unit tuning, which turns a
+   *   sheet into field numbers; the same object the mission uses.
+   */
+  constructor(tuning: MechUnitTuning) {
+    this.tuning = tuning;
+  }
 
   /** Builds the panel under `parent`; call `update` to fill it. */
   mount(parent: HTMLElement): void {
@@ -68,18 +125,34 @@ export class StatSheetView {
     verdict.className = "tut-badge";
     verdict.dataset.field = "verdict";
 
-    const grid = doc.createElement("dl");
-    grid.className = "tut-kv";
-    for (const [key, label] of ROWS) {
-      const term = doc.createElement("dt");
-      term.className = "tut-label";
-      term.textContent = label;
-      const value = doc.createElement("dd");
-      value.className = "tut-data";
-      value.dataset.field = key;
-      value.textContent = "—";
-      grid.append(term, value);
-      this.values.set(key, value);
+    const combatTitle = doc.createElement("div");
+    combatTitle.className = "tut-label";
+    combatTitle.dataset.role = "combat-title";
+    combatTitle.textContent = "Combat";
+    const combat = doc.createElement("dl");
+    combat.className = "tut-kv";
+    combat.dataset.role = "combat";
+    for (const [key, label] of COMBAT_ROWS) {
+      combat.append(...this.row(doc, key, label));
+    }
+    const weaponsTerm = doc.createElement("dt");
+    weaponsTerm.className = "tut-label";
+    weaponsTerm.textContent = "Weapon";
+    const weapons = doc.createElement("dd");
+    weapons.className = "tut-mono";
+    weapons.dataset.field = "combat-weapons";
+    weapons.textContent = EMPTY;
+    combat.append(weaponsTerm, weapons);
+
+    const buildTitle = doc.createElement("div");
+    buildTitle.className = "tut-label";
+    buildTitle.dataset.role = "build-title";
+    buildTitle.textContent = "Build";
+    const build = doc.createElement("dl");
+    build.className = "tut-kv";
+    build.dataset.role = "build";
+    for (const [key, label] of BUILD_ROWS) {
+      build.append(...this.row(doc, key, label));
     }
 
     const errors = doc.createElement("ul");
@@ -87,25 +160,42 @@ export class StatSheetView {
     errors.dataset.role = "errors";
     errors.hidden = true;
 
-    panel.append(title, verdict, grid, errors);
+    panel.append(
+      title,
+      verdict,
+      combatTitle,
+      combat,
+      buildTitle,
+      build,
+      errors,
+    );
     parent.appendChild(panel);
     this.root = panel;
+    this.weapons = weapons;
     this.verdict = verdict;
     this.errors = errors;
   }
 
-  /** Shows the sheet on success, or dashes plus every error on failure. */
+  /** Shows the field and build numbers on success, or dashes plus every error on failure. */
   update(result: Result<MechStatSheet, LoadoutError[]>): void {
-    if (!this.verdict || !this.errors) {
+    if (!this.verdict || !this.errors || !this.weapons) {
       return;
     }
     if (result.ok) {
       const sheet = result.value;
-      for (const [key, el] of this.values) {
-        el.textContent =
+      const profile = mechCombatProfile(sheet, this.tuning);
+      const fields = combatFields(profile);
+      for (const [key] of COMBAT_ROWS) {
+        this.set(key, formatWhole(fields[key]));
+      }
+      this.setWeapons(profile);
+      for (const [key] of BUILD_ROWS) {
+        this.set(
+          key,
           key === "totalCost"
             ? formatCredits(sheet[key])
-            : formatWhole(sheet[key]);
+            : formatWhole(sheet[key]),
+        );
       }
       this.verdict.textContent = "Buildable";
       this.verdict.className = "tut-badge tut-badge--ok";
@@ -114,9 +204,11 @@ export class StatSheetView {
       this.errors.hidden = true;
       return;
     }
-    for (const el of this.values.values()) {
-      el.textContent = "—";
+    for (const el of this.fields.values()) {
+      el.textContent = EMPTY;
     }
+    this.weapons.replaceChildren();
+    this.weapons.textContent = EMPTY;
     this.verdict.textContent = `Not buildable · ${formatWhole(result.error.length)} issue${result.error.length === 1 ? "" : "s"}`;
     this.verdict.className = "tut-badge tut-badge--danger";
     this.verdict.dataset.tone = "danger";
@@ -139,8 +231,76 @@ export class StatSheetView {
   unmount(): void {
     this.root?.remove();
     this.root = undefined;
-    this.values = new Map<StatKey, HTMLElement>();
+    this.fields = new Map<string, HTMLElement>();
+    this.weapons = undefined;
     this.verdict = undefined;
     this.errors = undefined;
   }
+
+  // ===========================================
+  // Helpers
+  // ===========================================
+
+  /** One term/value pair for a grid, registered under `key`. */
+  private row(doc: Document, key: string, label: string): HTMLElement[] {
+    const term = doc.createElement("dt");
+    term.className = "tut-label";
+    term.textContent = label;
+    const value = doc.createElement("dd");
+    value.className = "tut-data";
+    value.dataset.field = key;
+    value.textContent = EMPTY;
+    this.fields.set(key, value);
+    return [term, value];
+  }
+
+  /** Writes a field's text. */
+  private set(key: string, text: string): void {
+    const el = this.fields.get(key);
+    if (el) {
+      el.textContent = text;
+    }
+  }
+
+  /**
+   * One block per weapon, name over the line the unit card prints
+   * (#532, #1132), so the bay and the field read the same way.
+   */
+  private setWeapons(profile: MechCombatProfile): void {
+    if (!this.weapons) {
+      return;
+    }
+    const doc = this.weapons.ownerDocument;
+    this.weapons.textContent = "";
+    this.weapons.replaceChildren(
+      ...profile.weapons.map((weapon) => {
+        const block = doc.createElement("div");
+        block.className = "tut-card__entry";
+        block.dataset.role = "combat-weapon";
+        block.dataset.weapon = weapon.id;
+        const name = doc.createElement("div");
+        name.className = "tut-card__entry-name tut-dim";
+        name.textContent = weapon.name;
+        const value = doc.createElement("div");
+        value.textContent = weaponProfileText(weapon.profile);
+        block.append(name, value);
+        return block;
+      }),
+    );
+  }
+}
+
+// ===========================================
+// Helpers
+// ===========================================
+
+/** The scalar Combat fields of a profile, keyed by `data-field`. */
+function combatFields(profile: MechCombatProfile): CombatFields {
+  return {
+    "combat-hp": profile.maxHp,
+    "combat-ap": profile.maxAp,
+    "combat-move": profile.move,
+    "combat-armor": profile.armor,
+    "combat-sight": profile.sightRange,
+  };
 }

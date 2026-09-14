@@ -87,6 +87,7 @@ function mission(
     vision: emptyVision(),
     log: [],
     radars: [],
+    charges: [],
     commandSeq: 0,
   };
 }

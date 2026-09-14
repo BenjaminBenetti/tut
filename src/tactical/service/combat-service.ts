@@ -16,6 +16,7 @@ import type { AttackTarget } from "../model/attack-target";
 import type { AttackPreview, BlastPreview } from "../model/attack-preview";
 import { ATTACK_RESOLVED } from "../model/attack-resolved-event";
 import type { BlastVictim as BlastVictimHit } from "../model/blast-resolved-event";
+import type { BlastDelivery } from "../model/blast-resolved-event";
 import { BLAST_RESOLVED } from "../model/blast-resolved-event";
 import type { CombatTuning } from "../model/combat-tuning";
 import type { DemolitionTuning } from "../model/demolition-tuning";
@@ -863,12 +864,12 @@ export function rollAttack(
       spawnerHit: target.kind === "spawner",
     };
   }
-  const impact = resolveImpact(
+  const impact = resolveBlastAt(
     struck.state,
-    attacker,
+    attacker.id,
+    new Set([target.id, attacker.id]),
     weapon,
     target.pos,
-    new Set([target.id]),
     { aimedAtTile: false, hit: true },
     ctx,
     tuning,
@@ -908,12 +909,12 @@ export function rollTileAttack(
   const chance = hitChance(weapon.profile, terrain, tuning);
   const hit = ctx.rng.chance(chance / 100);
   const billed = billShot(mission, attacker, weapon, apAfter);
-  return resolveImpact(
+  return resolveBlastAt(
     billed,
-    attacker,
+    attacker.id,
+    new Set([attacker.id]),
     weapon,
     impact,
-    new Set(),
     { aimedAtTile: true, hit },
     ctx,
     tuning,
@@ -922,9 +923,13 @@ export function rollTileAttack(
 }
 
 /** How the shot was aimed, for the blast's event. */
-interface ImpactAim {
+export interface ImpactAim {
   readonly aimedAtTile: boolean;
   readonly hit: boolean;
+  /** What made the blast when it was not a weapon (#1132), for the log. */
+  readonly source?: string;
+  /** How it arrived (#1132); absent means a shot. */
+  readonly delivery?: BlastDelivery;
 }
 
 /**
@@ -940,15 +945,32 @@ interface ImpactAim {
  *
  * On a miss only the event is emitted, and only for a shot aimed at the
  * ground — a missed shot at a unit already has its `AttackResolved`.
- * The attacker never damages itself: a brute's sweep does not cut the
- * brute, and a mortar's crew is behind the tube.
+ * `spared` names what the blast does not touch: a shot spares its own
+ * attacker (a brute's sweep does not cut the brute, and a mortar's crew
+ * is behind the tube) and the unit it was aimed at, whose damage is the
+ * shot's; a placed charge spares nobody (#1132).
+ *
+ * Exported for equipment (#1132): a grenade or a breaching charge is a
+ * blast with a profile of its own and no weapon behind it, and it must
+ * do exactly what a shell does around where it lands.
+ *
+ * @param mission - The mission the blast happens in.
+ * @param attackerId - Whose blast it is; kills are credited here.
+ * @param spared - Ids the blast does not touch.
+ * @param weapon - The profile the blast has, with its name.
+ * @param impact - Where it lands.
+ * @param aim - Whether it hit, and how it was aimed.
+ * @param ctx - Dice and ids.
+ * @param tuning - The combat knobs.
+ * @param deps - What a blast can break and leave burning.
+ * @returns The mission after the blast, its events, and whether a spawner was hit.
  */
-function resolveImpact(
+export function resolveBlastAt(
   mission: TacticalState,
-  attacker: Unit,
+  attackerId: UnitId,
+  spared: ReadonlySet<string>,
   weapon: UnitWeapon,
   impact: TileCoord,
-  exclude: ReadonlySet<string>,
   aim: ImpactAim,
   ctx: TacticalContext,
   tuning: CombatTuning,
@@ -963,7 +985,6 @@ function resolveImpact(
   const victims: BlastVictimHit[] = [];
   let spawnerHit = false;
   if (aim.hit) {
-    const spared = new Set([...exclude, attacker.id]);
     for (const { target, distance } of blastVictims(
       mission,
       footprint,
@@ -974,7 +995,7 @@ function resolveImpact(
       const hp = Math.max(0, target.hp - damage);
       victims.push({ targetId: target.id, kind: target.kind, damage, hp });
       spawnerHit ||= target.kind === "spawner";
-      const struck = applyDamage(state, target, damage, attacker.id);
+      const struck = applyDamage(state, target, damage, attackerId);
       state = struck.state;
       events.push(...struck.events);
     }
@@ -983,13 +1004,15 @@ function resolveImpact(
     events.push({
       type: BLAST_RESOLVED,
       payload: {
-        attackerId: attacker.id,
+        attackerId,
         impact,
         hit: aim.hit,
         radius,
         aimedAtTile: aim.aimedAtTile,
         weaponRange: profile.range,
         victims,
+        ...(aim.source === undefined ? {} : { source: aim.source }),
+        ...(aim.delivery === undefined ? {} : { delivery: aim.delivery }),
       },
     });
   }
@@ -1011,7 +1034,7 @@ function resolveImpact(
       events.push({
         type: STRUCTURE_DESTROYED,
         payload: {
-          unitId: attacker.id,
+          unitId: attackerId,
           tile: prop.tile,
           structure: { kind: "prop", propId: prop.id, propKind: prop.kind },
         },
@@ -1021,7 +1044,7 @@ function resolveImpact(
       events.push({
         type: STRUCTURE_DESTROYED,
         payload: {
-          unitId: attacker.id,
+          unitId: attackerId,
           tile: wall.tile,
           structure: { kind: "wall", side: wall.side, wallKind: wall.kind },
         },
@@ -1033,7 +1056,7 @@ function resolveImpact(
       state,
       footprint.map(sitesOf),
       profile.aoeEffect,
-      attacker.id,
+      attackerId,
       ctx,
       deps.hazards,
     );

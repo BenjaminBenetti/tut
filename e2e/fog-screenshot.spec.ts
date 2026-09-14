@@ -273,10 +273,12 @@ test("captures a mission with fog of war for review", async ({ page }) => {
   );
   // Resume the same live mission to draw turn 7 from its settled state.
   // The turn counter/phase banner can finish before the animation backlog,
-  // so a timed shutter otherwise captures terrain with stale vision.
-  await page.locator('#turn-banner [data-action="overworld"]').click();
-  await expect(body).toHaveAttribute("data-screen", "overworld");
-  await page.locator('#top-bar [data-action="resume-mission"]').click();
+  // so a timed shutter otherwise captures terrain with stale vision. The
+  // way round is the autosave: the banner's button now leaves the mission
+  // for good (#1132), so a reload and Continue is the detour.
+  await page.reload();
+  await expect(body).toHaveAttribute("data-app-state", "ready");
+  await page.locator('[data-action="continue"]').click();
   await expect(body).toHaveAttribute("data-screen", "tactical");
   await expect(page.locator("#tactical-viewport canvas")).toBeVisible();
   await page.evaluate(() =>

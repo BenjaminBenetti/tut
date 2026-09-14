@@ -100,9 +100,14 @@ export function describeEvent(
       // the `attack-resolved` before it (#1121).
       const shooter = nameOf(event.payload.attackerId);
       const hurt = event.payload.victims.filter((v) => v.damage > 0);
+      // A grenade or a charge names itself (#1132); a shot is a blast.
+      const source = event.payload.source;
       if (!event.payload.hit) {
         return {
-          text: `${shooter} fired at the ground and missed`,
+          text:
+            source === undefined
+              ? `${shooter} fired at the ground and missed`
+              : `${shooter}'s ${source} missed`,
           icon: "attack",
           tone: "dim",
         };
@@ -110,14 +115,17 @@ export function describeEvent(
       if (hurt.length === 0) {
         return event.payload.aimedAtTile
           ? {
-              text: `${shooter} hit the ground; nothing was standing there`,
+              text:
+                source === undefined
+                  ? `${shooter} hit the ground; nothing was standing there`
+                  : `${shooter}'s ${source} went off; nothing was standing there`,
               icon: "attack",
               tone: "dim",
             }
           : undefined;
       }
       return {
-        text: `${shooter}'s blast caught ${hurt
+        text: `${shooter}'s ${source ?? "blast"} caught ${hurt
           .map(
             (v) => `${names.target(v.targetId)} for ${formatWhole(v.damage)}`,
           )
@@ -165,6 +173,12 @@ export function describeEvent(
         icon: "warning",
         tone: "danger",
       };
+    case "tactical:unit-abandoned":
+      return {
+        text: `${nameOf(event.payload.unitId)} left behind`,
+        icon: "warning",
+        tone: "danger",
+      };
     case "tactical:unit-reloaded":
       return {
         text: `${nameOf(event.payload.unitId)} reloaded`,
@@ -182,6 +196,29 @@ export function describeEvent(
         text: "Radar burnt out · battery dead",
         icon: "radar",
         tone: "dim",
+      };
+    case "tactical:equipment-used":
+      // A scanner's deployment logs itself with its battery on the next
+      // line; a second line for the same act read as a stutter.
+      if (event.payload.equipmentId === "radar-dish") {
+        return undefined;
+      }
+      return {
+        text: `${nameOf(event.payload.unitId)} used ${event.payload.name.toLowerCase()} · ${formatWhole(event.payload.usesLeft)} left`,
+        icon: "ability",
+        tone: "accent",
+      };
+    case "tactical:charge-placed":
+      return {
+        text: `${nameOf(event.payload.charge.ownerId)} set a breaching charge · goes off as the next turn opens`,
+        icon: "warning",
+        tone: "accent",
+      };
+    case "tactical:charge-detonated":
+      return {
+        text: "Breaching charge detonated",
+        icon: "warning",
+        tone: "danger",
       };
     case "tactical:unit-status-changed":
       return {
@@ -255,7 +292,10 @@ export function actorOf(event: TacticalEvent): UnitId | undefined {
     case "tactical:unit-status-changed":
       return event.payload.unitId;
     case "tactical:radar-deployed":
+    case "tactical:equipment-used":
       return event.payload.unitId;
+    case "tactical:charge-placed":
+      return event.payload.charge.ownerId;
     case "tactical:unit-died":
       // Above the unit that died, not its killer: the death is the
       // thing that happened, and it happened there.
@@ -273,12 +313,14 @@ export function actorOf(event: TacticalEvent): UnitId | undefined {
     case "tactical:effect-started":
     case "tactical:effect-ended":
     case "tactical:radar-burned-out":
+    case "tactical:charge-detonated":
       return undefined;
     case "tactical:unit-moved":
     case "tactical:turn-started":
     case "tactical:bugs-spawned":
     case "tactical:objective-updated":
     case "tactical:mission-ended":
+    case "tactical:unit-abandoned":
       return undefined;
     default:
       return undefined;

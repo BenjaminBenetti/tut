@@ -1,4 +1,4 @@
-"""Infantry squad: engineer kit. See squad_parts.py; run through make_model.py."""
+"""Engineer squad: lamp-equipped hard hats, shotguns and demolition tools."""
 
 import os
 import sys
@@ -9,6 +9,8 @@ from squad_parts import build_squad  # noqa: E402
 FOOTPRINT = (1, 1)
 
 
+# ===========================================
+
 def build() -> None:
-    """Five soldiers on one base, engineer specialist on the left flank."""
+    """Build five combat engineers, including a toolbox carrier."""
     build_squad("engineer")

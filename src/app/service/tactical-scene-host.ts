@@ -201,6 +201,7 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
         animations,
         ghosting,
         builder.effectsUpdatable,
+        builder.chargesUpdatable,
         builder.radarUpdatable,
       ],
     });
@@ -290,6 +291,20 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
       delete document.body.dataset.tacticalBlastTiles;
     } else {
       document.body.dataset.tacticalBlastTiles = String(tiles.length);
+    }
+  }
+
+  /**
+   * Paints the reach of the weapon rested on in the unit panel, or
+   * clears it (#1132), and counts it on the body as the blast is, so a
+   * spec can read that the preview is up without a hook.
+   */
+  markWeaponRange(tiles: readonly TileCoord[]): void {
+    this.attached?.overlays.setWeaponRangeFill(tiles);
+    if (tiles.length === 0) {
+      delete document.body.dataset.tacticalRangeTiles;
+    } else {
+      document.body.dataset.tacticalRangeTiles = String(tiles.length);
     }
   }
 
@@ -485,6 +500,9 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
       );
       document.body.dataset.tacticalEffects = String(
         attached.builder.effectIds().length,
+      );
+      document.body.dataset.tacticalCharges = String(
+        attached.builder.chargeIds().length,
       );
     }
   }

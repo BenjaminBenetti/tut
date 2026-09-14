@@ -82,7 +82,16 @@ export type TacticalError =
     }
   | { readonly kind: "charges-full"; readonly unitId: string }
   | { readonly kind: "no-reload"; readonly unitId: string }
-  | { readonly kind: "no-radar"; readonly unitId: string }
+  | {
+      readonly kind: "no-equipment";
+      readonly unitId: string;
+      readonly equipmentId: string;
+    }
+  | {
+      readonly kind: "equipment-spent";
+      readonly unitId: string;
+      readonly equipmentId: string;
+    }
   | { readonly kind: "radar-out-of-reach"; readonly range: number }
   | { readonly kind: "radar-tile-blocked" }
   | { readonly kind: "objective-not-found"; readonly objectiveId: string }
@@ -103,6 +112,7 @@ export type TacticalError =
   | { readonly kind: "not-in-extraction-zone"; readonly unitId: string }
   | { readonly kind: "not-extractable"; readonly unitId: string }
   | { readonly kind: "mission-not-over"; readonly missionId: string }
+  | { readonly kind: "not-player-phase" }
   | {
       readonly kind: "mission-mismatch";
       readonly expected: string;
@@ -169,8 +179,10 @@ export function describeTacticalError(error: TacticalError): string {
       return `Unit "${error.unitId}" is already fully loaded`;
     case "no-reload":
       return `Unit "${error.unitId}" has nothing to reload`;
-    case "no-radar":
-      return `Unit "${error.unitId}" cannot deploy radar`;
+    case "no-equipment":
+      return `Unit "${error.unitId}" does not carry "${error.equipmentId}"`;
+    case "equipment-spent":
+      return `Unit "${error.unitId}" has no uses of "${error.equipmentId}" left`;
     case "radar-out-of-reach":
       return `Deploy radar within ${String(error.range)} tiles of the squad`;
     case "radar-tile-blocked":
@@ -193,6 +205,8 @@ export function describeTacticalError(error: TacticalError): string {
       return `Unit "${error.unitId}" cannot leave through the extraction zone`;
     case "mission-not-over":
       return `Mission "${error.missionId}" is still being fought`;
+    case "not-player-phase":
+      return "The mission cannot be left during the bug phase";
     case "mission-mismatch":
       return `Mission "${error.expected}" was expected but "${error.active}" is in progress`;
     case "unhandled-command":
@@ -245,7 +259,8 @@ export const TACTICAL_ERROR_KINDS: Readonly<
   "tile-out-of-sight": true,
   "charges-full": true,
   "no-reload": true,
-  "no-radar": true,
+  "no-equipment": true,
+  "equipment-spent": true,
   "radar-out-of-reach": true,
   "radar-tile-blocked": true,
   "objective-not-found": true,
@@ -257,6 +272,7 @@ export const TACTICAL_ERROR_KINDS: Readonly<
   "not-in-extraction-zone": true,
   "not-extractable": true,
   "mission-not-over": true,
+  "not-player-phase": true,
   "mission-mismatch": true,
   "unhandled-command": true,
 };

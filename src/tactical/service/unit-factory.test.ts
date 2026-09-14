@@ -101,6 +101,8 @@ describe("squadUnit", () => {
       armor: 0,
       passClass: "infantry",
       modelId: "tdf.infantry.rifle",
+      // Every squad carries grenades (#1132).
+      equipment: ["grenade"],
       // A green squad is a Private, and a Private earns nothing yet (#1130).
       rank: { name: "Private", index: 0 },
     });
@@ -120,6 +122,18 @@ describe("squadUnit", () => {
       passClass: "infantry",
       charges: { [PRIMARY_WEAPON_ID]: 3 },
     });
+  });
+
+  it("carries the type's equipment onto the template and counts no use yet (#1132)", () => {
+    const radioType = SQUAD_TYPES.find((t) => t.id === "radio");
+    if (!radioType) throw new Error("shipped radio squad missing");
+    const rifle = squadUnit(squad(), RIFLE, AT, deps());
+    expect(rifle.template.equipment).toEqual(["grenade"]);
+    expect(rifle.unit.equipment).toBeUndefined();
+    const radio = squadUnit(squad(5, "radio"), radioType, AT, deps());
+    expect(radio.template.equipment).toEqual(["grenade", "radar-dish"]);
+    const rocket = squadUnit(squad(5, "rocket"), ROCKET, AT, deps());
+    expect(rocket.template.equipment).toEqual(["grenade", "breaching-charge"]);
   });
 
   it("starts a depleted squad hurt and scales damage with the type's rating", () => {

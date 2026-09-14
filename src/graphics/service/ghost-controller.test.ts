@@ -59,6 +59,21 @@ describe("GhostController (#526)", () => {
     expect(uniforms.uGhostFeet.value[1]).toBeCloseTo(3, 5);
   });
 
+  it("tells the shader how much nearer a fragment gets per unit it rises (#1132)", () => {
+    const uniforms = createGhostUniforms(3, 0.15);
+    // Looking straight along -z, height is across the view: no depth.
+    new GhostController(camera(), () => [at(0, 0, 0)], uniforms).update(0.016);
+    expect(uniforms.uGhostUp.value).toBeCloseTo(0, 5);
+
+    // Pitched down 45°, a unit of height is sin(45°) nearer the camera.
+    const pitched = new OrthographicCamera(-10, 10, 10, -10, 0.1, 100);
+    pitched.position.set(0, 10, 10);
+    pitched.lookAt(0, 0, 0);
+    pitched.updateMatrixWorld(true);
+    new GhostController(pitched, () => [at(0, 0, 0)], uniforms).update(0.016);
+    expect(uniforms.uGhostUp.value).toBeCloseTo(Math.SQRT1_2, 5);
+  });
+
   it("follows the camera, so panning does not smear the cutaway", () => {
     const uniforms = createGhostUniforms(3, 0.15);
     const cam = camera();

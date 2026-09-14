@@ -7,8 +7,12 @@ import { formatWhole } from "../service/format";
 
 /** What the banner reports back to its owner. */
 export interface TurnBannerHandlers {
-  /** The player asked to leave the mission screen. */
-  readonly onBack: () => void;
+  /**
+   * The player asked to leave the mission (#1132): abandon it where it
+   * stands, with whoever is not aboard left behind. The screen decides
+   * whether that needs confirming; the banner only offers it.
+   */
+  readonly onLeave: () => void;
   /**
    * The player asked to move the view `delta` storeys (#961). The
    * keyboard is the fast path — `]` and `[` — and these buttons are the
@@ -49,10 +53,12 @@ export interface TurnBannerModel {
 /**
  * The one strip across the top of the mission (GDD §6.2, #403): the
  * city, turn, whose phase it is, the living unit counts, a status line for
- * rejected commands and the way back to the overworld.
+ * rejected commands and the way out of the mission (#1132: Leave, which
+ * abandons the fight, rather than a detour to the overworld with the
+ * mission still running).
  *
  * ```
- *   ┌ MISSION Lagos · TURN 3 · PLAYER PHASE · TDF 3 · BUGS 1 · FLOOR [-] 2/3 [+] ── status ── [Overworld] ┐
+ *   ┌ MISSION Lagos · TURN 3 · PLAYER PHASE · TDF 3 · BUGS 1 · FLOOR [-] 2/3 [+] ── status ── [Leave] ┐
  * ```
  */
 export class TurnBannerView {
@@ -62,6 +68,8 @@ export class TurnBannerView {
 
   private readonly handlers: TurnBannerHandlers;
   private root: HTMLElement | undefined;
+  /** The Leave button, held with the rest of the controls while a phase plays (#1132). */
+  private leave: HTMLButtonElement | undefined;
   private fields = new Map<string, HTMLElement>();
   private phase: HTMLElement | undefined;
   private status: HTMLElement | undefined;
@@ -103,15 +111,16 @@ export class TurnBannerView {
     const back = doc.createElement("button");
     back.type = "button";
     back.className = "tut-btn";
-    back.dataset.action = "overworld";
-    back.textContent = "Overworld";
+    back.dataset.action = "leave-mission";
+    back.textContent = "Leave";
+    this.leave = back;
     const tdf = this.createStat(doc, "TDF", "tdf-units");
     const bugs = this.createStat(doc, "Bugs", "bug-units");
     const layer = this.createLayerControl(doc);
     bar.append(mission, turn, phase, tdf, bugs, layer, spacer, status, back);
     parent.appendChild(bar);
     const onBack = (): void => {
-      this.handlers.onBack();
+      this.handlers.onLeave();
     };
     back.addEventListener("click", onBack);
     const onDown = (): void => {
@@ -196,6 +205,19 @@ export class TurnBannerView {
     stat.append(term, value);
     this.fields.set(field, value);
     return stat;
+  }
+
+  /**
+   * Enables or holds the Leave button (#1132). Leaving is refused while
+   * a bug phase is still playing, so the button says so rather than
+   * swallowing the click.
+   *
+   * @param enabled - False while the controls are held.
+   */
+  setLeaveEnabled(enabled: boolean): void {
+    if (this.leave) {
+      this.leave.disabled = !enabled;
+    }
   }
 
   /**

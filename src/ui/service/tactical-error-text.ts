@@ -2,6 +2,7 @@ import type { GameState } from "../../save/model/game-state";
 import { findCity } from "../../overworld/service/earth-map-query-service";
 import type { CommandError } from "../../core/model/command-error";
 import type { TacticalError } from "../../tactical/model/tactical-error";
+import { SHIPPED_EQUIPMENT } from "../../tactical/repository/equipment-catalogue";
 import {
   describeTacticalError,
   tacticalCause,
@@ -242,8 +243,10 @@ export function describeRefusal(
       return `${names.unit(error.unitId)} is already fully loaded`;
     case "no-reload":
       return `${names.unit(error.unitId)} has nothing to reload`;
-    case "no-radar":
-      return `${names.unit(error.unitId)} cannot deploy radar`;
+    case "no-equipment":
+      return `${names.unit(error.unitId)} does not carry a ${equipmentName(error.equipmentId)}`;
+    case "equipment-spent":
+      return `${names.unit(error.unitId)} has no ${equipmentName(error.equipmentId)} left`;
     case "no-deploy-room":
       return `No ${error.passClass} tile is left in the deploy zone for ${names.unit(error.unitId)}`;
     case "illegal-move":
@@ -317,4 +320,9 @@ function moveReason(
 /** Sentence case for a name that opens a sentence. */
 function capitalise(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+/** The item's name in lower case, or its id when the catalogue does not know it. */
+function equipmentName(equipmentId: string): string {
+  return SHIPPED_EQUIPMENT.get(equipmentId)?.name.toLowerCase() ?? equipmentId;
 }

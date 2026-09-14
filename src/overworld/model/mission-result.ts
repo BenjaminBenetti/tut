@@ -120,4 +120,12 @@ export interface MissionResult {
    * sensor array deployable's `intelBonus` (#52); never set in M1.
    */
   readonly intel?: number;
+  /**
+   * Roster ids of the squads and mechs the player left on the map when
+   * leaving the mission (#1132), in the order they were stranded. Each
+   * is also in `squadsWiped` or `mechsDestroyed`; this says why, so the
+   * debrief can name them as left behind rather than as casualties.
+   * Absent when nobody was.
+   */
+  readonly leftBehind?: readonly string[];
 }

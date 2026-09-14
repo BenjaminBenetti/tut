@@ -23,6 +23,7 @@ import { MECH_MAX_DAMAGE } from "../../roster/model/mech";
 import type { MissionCampaignState } from "../model/mission-campaign-state";
 import type { TacticalError } from "../model/tactical-error";
 import type { TacticalState } from "../model/tactical-state";
+import { UNIT_ABANDONED } from "../model/unit-abandoned-event";
 import { UNIT_DIED } from "../model/unit-died-event";
 import type { Unit, UnitId, UnitKind } from "../model/unit";
 import type { UnitTuning } from "../model/unit-tuning";
@@ -179,7 +180,30 @@ export function tacticalMissionResult(
     mechDamage,
     creditsAwarded: creditsFor(outcome, mission, deps.tuning),
     infestationDelta: infestationDeltaFor(outcome, mission, deps.tuning),
+    ...leftBehindField(tactical, roster),
   };
+}
+
+/**
+ * The roster entries the player left on the map (#1132), read off the
+ * log's `UnitAbandoned` events in order; absent when there were none so
+ * a mission nobody left is reported exactly as before.
+ */
+function leftBehindField(
+  tactical: TacticalState,
+  roster: readonly Unit[],
+): { leftBehind?: readonly string[] } {
+  const leftBehind: string[] = [];
+  for (const event of tactical.log) {
+    if (event.type !== UNIT_ABANDONED) {
+      continue;
+    }
+    const unit = roster.find((u) => u.id === event.payload.unitId);
+    if (unit !== undefined && !leftBehind.includes(unit.sourceId)) {
+      leftBehind.push(unit.sourceId);
+    }
+  }
+  return leftBehind.length === 0 ? {} : { leftBehind };
 }
 
 // ===========================================

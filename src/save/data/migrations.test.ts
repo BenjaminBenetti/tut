@@ -594,6 +594,56 @@ describe("v20 → v21", () => {
   });
 });
 
+describe("v21 → v22", () => {
+  const runner = new MigrationRunner(GAME_STATE_MIGRATIONS, 22);
+  const at = (state: unknown): unknown => {
+    const migrated = runner.migrate({
+      schemaVersion: 21,
+      savedAt: "2026-09-13T00:00:00.000Z",
+      state,
+    });
+    if (!migrated.ok) throw new Error(migrated.error.message);
+    return migrated.value.state;
+  };
+
+  it("turns a radio template's ability into its radar dish and gives the mission an empty charge list (#1132)", () => {
+    const state = at({
+      activeMission: {
+        templates: {
+          "squad:radio": { id: "squad:radio", abilities: ["deploy-radar"] },
+          "squad:rifle": { id: "squad:rifle" },
+          "bug:swarmer": { id: "bug:swarmer", abilities: [] },
+        },
+        units: [{ id: "unit-1", templateId: "squad:radio", ap: 1 }],
+      },
+    }) as {
+      activeMission: {
+        templates: Record<string, Record<string, unknown>>;
+        units: unknown[];
+        charges: unknown[];
+      };
+    };
+    expect(state.activeMission.templates).toEqual({
+      "squad:radio": { id: "squad:radio", equipment: ["radar-dish"] },
+      "squad:rifle": { id: "squad:rifle" },
+      "bug:swarmer": { id: "bug:swarmer" },
+    });
+    // Uses are counted only as they are spent, so the unit is untouched.
+    expect(state.activeMission.units).toEqual([
+      { id: "unit-1", templateId: "squad:radio", ap: 1 },
+    ]);
+    expect(state.activeMission.charges).toEqual([]);
+  });
+
+  it("leaves a campaign with no mission alone and keeps charges a newer save already had", () => {
+    expect(at({ overworld: {} })).toEqual({ overworld: {} });
+    const kept = {
+      activeMission: { templates: {}, charges: [{ id: "charge-1" }] },
+    };
+    expect(at(kept)).toEqual(kept);
+  });
+});
+
 describe("radar migration", () => {
   it("adds an empty scanner list to v17 missions without changing their fog or units", () => {
     const migration = GAME_STATE_MIGRATIONS.find((step) => step.from === 17)!;

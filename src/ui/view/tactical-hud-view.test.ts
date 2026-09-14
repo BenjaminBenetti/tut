@@ -45,11 +45,11 @@ function setup(
   } = {},
 ) {
   const commands: TacticalCommand[] = [];
-  const onBack = vi.fn();
+  const onLeave = vi.fn();
   const hud = new TacticalHudView(
     {
       onCommand: (c) => commands.push(c),
-      onBack,
+      onLeave,
       // An anchor, so the wheel can open: without one a left click on a
       // tile or an enemy opens nothing and half the HUD is untestable.
       anchorFor: () => ({ x: 100, y: 100 }),
@@ -60,7 +60,7 @@ function setup(
   hud.mount(root);
   const mission = hudMission();
   hud.update(mission);
-  return { hud, commands, mission, onBack };
+  return { hud, commands, mission, onLeave };
 }
 
 /** The wheel entry with this id, or null while the wheel is closed. */
@@ -187,6 +187,59 @@ describe("TacticalHudView", () => {
     expect(hud.getMode()).toBe("move");
   });
 
+  it("holds the Leave button with the rest of the controls while a phase plays (#1132)", () => {
+    const hud = new TacticalHudView(
+      { onCommand: vi.fn(), onLeave: vi.fn() },
+      { combatTuning: COMBAT_TUNING, objectiveTuning: OBJECTIVE_TUNING },
+    );
+    hud.mount(root);
+    hud.update(twoWeaponMission());
+    const leave = (): HTMLButtonElement | null =>
+      root.querySelector<HTMLButtonElement>('[data-action="leave-mission"]');
+    expect(leave()?.disabled).toBe(false);
+    hud.setPlaybackLocked(true);
+    expect(leave()?.disabled).toBe(true);
+    hud.setPlaybackLocked(false);
+    expect(leave()?.disabled).toBe(false);
+  });
+
+  it("paints a weapon's reach while its row on the card is rested on, and clears it on leave (#1132)", () => {
+    const mission = twoWeaponMission();
+    const ranges: number[] = [];
+    const hud = new TacticalHudView(
+      {
+        onCommand: vi.fn(),
+        onLeave: vi.fn(),
+        onMarkWeaponRange: (tiles) => ranges.push(tiles.length),
+      },
+      { combatTuning: COMBAT_TUNING, objectiveTuning: OBJECTIVE_TUNING },
+    );
+    hud.mount(root);
+    hud.update(mission);
+    hud.handleIntent({ kind: "select-unit", unitId: "m1" });
+    const row = (id: string): HTMLElement | null =>
+      root.querySelector<HTMLElement>(
+        `#unit-card [data-role="weapon-row"][data-weapon-id="${id}"]`,
+      );
+    expect(row("arm-weapon")).not.toBeNull();
+    row("arm-weapon")?.dispatchEvent(new Event("mouseenter"));
+    const arm = ranges.at(-1) ?? 0;
+    expect(arm).toBeGreaterThan(0);
+    // The longer weapon reaches more of the field.
+    row("arm-weapon")?.dispatchEvent(new Event("mouseleave"));
+    expect(ranges.at(-1)).toBe(0);
+    row("back-weapon")?.dispatchEvent(new Event("mouseenter"));
+    expect(ranges.at(-1) ?? 0).toBeGreaterThan(arm);
+    // A refresh keeps the preview up from where the unit stands.
+    hud.update(mission);
+    expect(ranges.at(-1) ?? 0).toBeGreaterThan(arm);
+    // Deselecting takes the card away, and the paint with it.
+    hud.handleIntent({ kind: "action", action: "cancel" });
+    hud.handleIntent({ kind: "select-unit", unitId: "m1" });
+    hud.update(undefined);
+    expect(ranges.at(-1)).toBe(0);
+  });
+
   it("paints the blast for an enemy and a tile alike, every weapon together, and the rested weapon alone (#1121)", () => {
     const base = twoWeaponMission();
     const mech = base.templates.mech!;
@@ -215,7 +268,7 @@ describe("TacticalHudView", () => {
     const hud = new TacticalHudView(
       {
         onCommand: (c) => commands.push(c),
-        onBack: vi.fn(),
+        onLeave: vi.fn(),
         anchorFor: () => ({ x: 100, y: 100 }),
         onMarkBlast: (tiles) => blasts.push(tiles.length),
       },
@@ -271,7 +324,7 @@ describe("TacticalHudView", () => {
     const hud = new TacticalHudView(
       {
         onCommand: (c) => commands.push(c),
-        onBack: vi.fn(),
+        onLeave: vi.fn(),
         anchorFor: () => ({ x: 100, y: 100 }),
       },
       { combatTuning: COMBAT_TUNING, objectiveTuning: OBJECTIVE_TUNING },
@@ -543,6 +596,44 @@ describe("TacticalHudView", () => {
     expect(lines).toEqual(["Rifle · ammo 1 / 3", "Launcher · ammo 2 / 2"]);
   });
 
+  it("lists the selected unit's equipment on the card with its uses left (#1132)", () => {
+    const { hud, mission } = setup();
+    const s1 = mission.units.find((u) => u.id === "s1");
+    const template = s1 && mission.templates[s1.templateId];
+    if (!s1 || !template) throw new Error("fixture needs s1");
+    hud.update({
+      ...mission,
+      templates: {
+        ...mission.templates,
+        [s1.templateId]: {
+          ...template,
+          equipment: ["grenade", "radar-dish", "breaching-charge"],
+        },
+      },
+      units: mission.units.map((u) =>
+        u.id === "s1" ? { ...u, equipment: { grenade: 1 } } : u,
+      ),
+    });
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    const field = root.querySelector<HTMLElement>(
+      '#unit-card [data-field="equipment"]',
+    );
+    const names = [
+      ...(field?.querySelectorAll(".tut-card__entry-name") ?? []),
+    ].map((el) => el.textContent);
+    const uses = [
+      ...(field?.querySelectorAll('[data-role="charges"]') ?? []),
+    ].map((el) => el.textContent);
+    expect(names).toEqual(["Grenade", "Radar dish", "Breaching charge"]);
+    expect(uses).toEqual(["uses 1 / 2", "uses 3 / 3", "uses 1 / 1"]);
+    // A unit with no kit shows the dash, not an empty block.
+    hud.update(mission);
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    expect(
+      root.querySelector('#unit-card [data-field="equipment"]')?.textContent,
+    ).toBe("—");
+  });
+
   it("a tile click by a unit that is not the player's opens nothing", () => {
     const { hud } = setup();
     hud.handleIntent({ kind: "select-unit", unitId: "b1" });
@@ -553,7 +644,7 @@ describe("TacticalHudView", () => {
   it("previews and fires at an egg spawner, naming it in the panel (#426)", () => {
     const commands: TacticalCommand[] = [];
     const hud = new TacticalHudView(
-      { onCommand: (c) => commands.push(c), onBack: vi.fn() },
+      { onCommand: (c) => commands.push(c), onLeave: vi.fn() },
       { combatTuning: COMBAT_TUNING, objectiveTuning: OBJECTIVE_TUNING },
     );
     hud.mount(root);
@@ -688,7 +779,7 @@ describe("TacticalHudView", () => {
     const hud = new TacticalHudView(
       {
         onCommand: vi.fn(),
-        onBack: vi.fn(),
+        onLeave: vi.fn(),
         onViewChange: () => changes.push(1),
       },
       { combatTuning: COMBAT_TUNING, objectiveTuning: OBJECTIVE_TUNING },
@@ -735,7 +826,7 @@ describe("TacticalHudView", () => {
   it("previews the weapon that is armed, not the unit's first (#532)", () => {
     const commands: TacticalCommand[] = [];
     const hud = new TacticalHudView(
-      { onCommand: (c) => commands.push(c), onBack: vi.fn() },
+      { onCommand: (c) => commands.push(c), onLeave: vi.fn() },
       { combatTuning: COMBAT_TUNING, objectiveTuning: OBJECTIVE_TUNING },
     );
     hud.mount(root);
@@ -1737,7 +1828,7 @@ describe("the context menu closes after it is used (#627)", () => {
     const hud = new TacticalHudView(
       {
         onCommand: (c) => commands.push(c),
-        onBack: vi.fn(),
+        onLeave: vi.fn(),
         // Without an anchor the menu never opens and a test of its
         // dismissal silently proves nothing.
         anchorFor: () => ({ x: 100, y: 100 }),
@@ -1787,7 +1878,7 @@ describe("the context menu closes when the player moves on (#627)", () => {
     const hud = new TacticalHudView(
       {
         onCommand: (c) => commands.push(c),
-        onBack: vi.fn(),
+        onLeave: vi.fn(),
         anchorFor: () => ({ x: 100, y: 100 }),
       },
       { combatTuning: COMBAT_TUNING, objectiveTuning: OBJECTIVE_TUNING },
@@ -1893,7 +1984,7 @@ function logLines(): string[] {
 /** A HUD mounted but not yet shown a mission. */
 function bareHud(): TacticalHudView {
   const hud = new TacticalHudView(
-    { onCommand: vi.fn(), onBack: vi.fn() },
+    { onCommand: vi.fn(), onLeave: vi.fn() },
     { combatTuning: COMBAT_TUNING, objectiveTuning: OBJECTIVE_TUNING },
   );
   hud.mount(root);

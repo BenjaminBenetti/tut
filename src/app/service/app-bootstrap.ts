@@ -207,6 +207,7 @@ export async function bootstrapApp(doc: Document): Promise<void> {
             session: game.session,
             parts: game.content.parts,
             rating: game.content.rating,
+            unitTuning: game.content.unitTuning,
             upgrades: game.content.upgrades,
             preview: new DomMechPreviewHost({
               baseUrl: import.meta.env.BASE_URL,

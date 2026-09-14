@@ -1,7 +1,12 @@
 import type { Unit } from "../../tactical/model/unit";
 import type { UnitTemplate } from "../../tactical/model/unit-template";
+import type { WeaponId } from "../../tactical/model/unit-weapon";
+import type { EquipmentDefinition } from "../../tactical/model/equipment";
 import { displayWeaponName } from "../../tactical/model/unit-weapon";
+import { SHIPPED_EQUIPMENT } from "../../tactical/repository/equipment-catalogue";
+import { equipmentOf } from "../../tactical/service/equipment-service";
 import { formatWhole } from "../service/format";
+import { weaponProfileText } from "../service/weapon-profile-text";
 import { iconGlyph } from "./icon-glyph";
 import { chargeRegisterFor } from "../service/charge-register";
 
@@ -12,8 +17,24 @@ import { chargeRegisterFor } from "../service/charge-register";
 /** What a field with nothing to show reads as. */
 const EMPTY_FIELD = "—";
 
+/** What the card tells its owner. */
+export interface UnitCardHandlers {
+  /**
+   * The pointer or keyboard focus came to rest on a weapon's row, or
+   * left it (`undefined`) (#1132). The owner paints that weapon's reach
+   * on the ground while it rests there.
+   */
+  readonly onWeaponHover?: (weaponId: WeaponId | undefined) => void;
+}
+
 /** One titled block in a card field: a weapon's name and its numbers. */
 interface CardEntry {
+  /**
+   * What the block stands for, when resting on it means something: a
+   * weapon's id, so the row can announce itself (#1132). Absent for a
+   * block that is only text.
+   */
+  readonly id?: string;
   /** Omitted when the unit carries one of whatever this lists. */
   readonly name?: string;
   readonly value: string;
@@ -57,6 +78,20 @@ export class UnitCardView {
   private body: HTMLElement | undefined;
   private fields = new Map<string, HTMLElement>();
   private meter: HTMLElement | undefined;
+  private readonly handlers: UnitCardHandlers;
+  /** The weapon row the pointer or focus rests on, if any (#1132). */
+  private hovered: WeaponId | undefined;
+  /** The field whose row is rested on, so another field's rewrite leaves it alone. */
+  private hoveredField: string | undefined;
+
+  // ===========================================
+  // Constructor
+  // ===========================================
+
+  /** @param handlers - Whom to tell about a weapon row being rested on; none by default. */
+  constructor(handlers: UnitCardHandlers = {}) {
+    this.handlers = handlers;
+  }
 
   // ===========================================
   // Lifecycle
@@ -108,6 +143,7 @@ export class UnitCardView {
       ["AP", "ap", "ap"],
       ["Attacks", "attacks", "attack"],
       ["Weapon", "weapon", "attack"],
+      ["Equipment", "equipment", "ability"],
       ["Armor", "armor", "armor"],
       ["Status", "status", "overwatch"],
     ] as const) {
@@ -158,6 +194,8 @@ export class UnitCardView {
       return;
     }
     if (!unit || !template) {
+      // A hidden row cannot be left by the pointer, so the card says so.
+      this.hover(undefined);
       this.body.hidden = true;
       this.empty.hidden = false;
       return;
@@ -186,32 +224,29 @@ export class UnitCardView {
     this.setEntries(
       "weapon",
       template.weapons.map((weapon) => {
-        const p = weapon.profile;
         const capacity = weapon.charges;
         const left = unit.charges?.[weapon.id] ?? capacity ?? 0;
-        // The blast, the fire and the force after the four numbers
-        // every weapon has (#1121), only when the weapon has them.
-        const extras = [
-          ...(p.aoe === undefined
-            ? []
-            : [`blast ${formatWhole(p.aoe.radius)}`]),
-          ...(p.aoeEffect === undefined ? [] : [p.aoeEffect.kind]),
-          ...((p.demoForce ?? 0) > 0
-            ? [`demo ${formatWhole(p.demoForce ?? 0)}`]
-            : []),
-        ];
         return {
+          id: weapon.id,
           name: displayWeaponName(template.weapons, weapon),
-          value: [
-            `range ${formatWhole(p.range)} · acc ${formatWhole(p.accuracy)} · dmg ${formatWhole(p.damage)} · pen ${formatWhole(p.armorPen)}`,
-            ...extras,
-          ].join(" · "),
+          // The same line the mech bay prints for the weapon (#1132).
+          value: weaponProfileText(weapon.profile),
           charges:
             capacity === undefined
               ? undefined
               : `${kind} ${formatWhole(left)} / ${formatWhole(capacity)}`,
         };
       }),
+    );
+    // What the unit carries besides its weapon (#1132), each with its
+    // uses left; a bug or a mech carries nothing and shows a dash.
+    this.setEntries(
+      "equipment",
+      equipmentOf(template, unit, SHIPPED_EQUIPMENT).map((carried) => ({
+        name: carried.definition.name,
+        value: equipmentSummary(carried.definition),
+        charges: `uses ${formatWhole(carried.usesLeft)} / ${formatWhole(carried.definition.uses)}`,
+      })),
     );
     this.set("armor", formatWhole(template.armor));
     this.set(
@@ -226,8 +261,14 @@ export class UnitCardView {
     this.empty.hidden = true;
   }
 
+  /** The weapon row the pointer or focus rests on, if any (#1132). */
+  hoveredWeapon(): WeaponId | undefined {
+    return this.hovered;
+  }
+
   /** Removes the card. */
   unmount(): void {
+    this.hover(undefined);
     this.root?.remove();
     this.root = undefined;
     this.empty = undefined;
@@ -239,6 +280,29 @@ export class UnitCardView {
   // ===========================================
   // Helpers
   // ===========================================
+
+  /**
+   * Records where the pointer or focus rests and tells the owner once
+   * per change. `field` names the block the row belongs to, so that
+   * block's rewrite — and only that block's — can let go of it: the
+   * equipment block is rewritten on every refresh too, and a mech with
+   * nothing to list must not drop the weapon row the pointer is on.
+   */
+  private hover(weaponId: WeaponId | undefined, field?: string): void {
+    if (weaponId === this.hovered) {
+      return;
+    }
+    this.hovered = weaponId;
+    this.hoveredField = weaponId === undefined ? undefined : field;
+    this.handlers.onWeaponHover?.(weaponId);
+  }
+
+  /** Lets go of the rested row when it belongs to `field`, whose rows are being replaced. */
+  private releaseHoverIn(field: string): void {
+    if (this.hoveredField === field) {
+      this.hover(undefined);
+    }
+  }
 
   /** Writes a field's text only when it changed. */
   private set(field: string, text: string): void {
@@ -274,6 +338,7 @@ export class UnitCardView {
     }
     if (entries.length === 0) {
       delete el.dataset.entries;
+      this.releaseHoverIn(field);
       this.set(field, EMPTY_FIELD);
       return;
     }
@@ -281,17 +346,44 @@ export class UnitCardView {
     // store tick, and replacing these nodes each time would restart any
     // transition on them.
     const key = entries
-      .map((e) => `${e.name ?? ""}\u0000${e.value}\u0000${e.charges ?? ""}`)
+      .map(
+        (e) =>
+          `${e.id ?? ""}\u0000${e.name ?? ""}\u0000${e.value}\u0000${e.charges ?? ""}`,
+      )
       .join("\u0001");
     if (el.dataset.entries === key) {
       return;
     }
     el.dataset.entries = key;
+    // The rows are about to be replaced, and a replaced row never fires
+    // its leave; whatever rested on one is resting on nothing now.
+    this.releaseHoverIn(field);
     const doc = el.ownerDocument;
     el.replaceChildren(
       ...entries.map((entry) => {
         const block = doc.createElement("div");
         block.className = "tut-card__entry";
+        if (entry.id !== undefined) {
+          // A row that can be rested on (#1132): by pointer, and by
+          // keyboard, since a preview that only the mouse can reach is
+          // a preview half the players cannot have.
+          block.dataset.role = "weapon-row";
+          block.dataset.weaponId = entry.id;
+          block.tabIndex = 0;
+          const id = entry.id;
+          for (const type of ["mouseenter", "focus"]) {
+            block.addEventListener(type, () => {
+              this.hover(id, field);
+            });
+          }
+          for (const type of ["mouseleave", "blur"]) {
+            block.addEventListener(type, () => {
+              if (this.hovered === id) {
+                this.hover(undefined);
+              }
+            });
+          }
+        }
         if (entry.name !== undefined) {
           const name = doc.createElement("span");
           name.className = "tut-card__entry-name tut-dim";
@@ -312,4 +404,36 @@ export class UnitCardView {
       }),
     );
   }
+}
+
+// ===========================================
+// Helpers
+// ===========================================
+
+/**
+ * The numbers an item is judged by (#1132): where it may go and, for a
+ * grenade or a charge, what it does there, on the weapon line's pattern.
+ */
+function equipmentSummary(definition: EquipmentDefinition): string {
+  const parts = [`range ${formatWhole(definition.range)}`];
+  const p = definition.profile;
+  if (p !== undefined) {
+    if (definition.kind === "blast") {
+      parts.push(`acc ${formatWhole(p.accuracy)}`);
+    }
+    parts.push(
+      `dmg ${formatWhole(p.damage)}`,
+      `pen ${formatWhole(p.armorPen)}`,
+    );
+    if (p.aoe !== undefined) {
+      parts.push(`blast ${formatWhole(p.aoe.radius)}`);
+    }
+    if ((p.demoForce ?? 0) > 0) {
+      parts.push(`demo ${formatWhole(p.demoForce ?? 0)}`);
+    }
+  }
+  if (definition.delayTurns !== undefined) {
+    parts.push("next turn");
+  }
+  return parts.join(" · ");
 }

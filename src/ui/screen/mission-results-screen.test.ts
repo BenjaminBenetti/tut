@@ -213,6 +213,39 @@ describe("MissionResultsScreen", () => {
     expect(field("infestation-delta").textContent).toBe("-20");
   });
 
+  it("names the units the player left behind, before the loss rows (#1132)", () => {
+    const after = afterMission();
+    const store = new FakeStore({
+      ...after,
+      overworld: {
+        ...after.overworld,
+        lastMissionResult: { ...RESULT, leftBehind: ["squad-2", "mech-1"] },
+      },
+    });
+    new MissionResultsScreen({
+      router: fakeRouter().router,
+      session: sessionWith(store),
+      rosterTuning: ROSTER_TUNING,
+    }).mount(root);
+    expect(items("left-behind")).toEqual(["Bravo", "Hammerhead"]);
+    const sections = [
+      ...root.querySelectorAll<HTMLElement>(".tut-mission-results__section"),
+    ].map((section) => section.dataset.field);
+    expect(sections.indexOf("left-behind")).toBeLessThan(
+      sections.indexOf("mechs-destroyed"),
+    );
+  });
+
+  it("shows no left-behind row on a mission nobody left (#1132)", () => {
+    const store = new FakeStore(afterMission());
+    new MissionResultsScreen({
+      router: fakeRouter().router,
+      session: sessionWith(store),
+      rosterTuning: ROSTER_TUNING,
+    }).mount(root);
+    expect(root.querySelector('[data-field="left-behind"]')).toBeNull();
+  });
+
   it("does not raise the alarm on a debrief with nothing to mourn", () => {
     // "Mechs destroyed" earns top billing when a mech is destroyed. It
     // was applied whatever the content, so a clean extraction opened

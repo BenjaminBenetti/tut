@@ -155,7 +155,10 @@ describe("unit motion on the shipped models", () => {
 
 it.each([
   ["tdf.mech.assembled-a", "socket_muzzle"],
-  ["tdf.infantry.rifle", "fig0_rifle"],
+  // The leader kneels front-centre, and since #1132 every figure's upper
+  // parts are joined into one `fig<N>_upper`, so the leader's torso is
+  // the front marker where its rifle used to be.
+  ["tdf.infantry.rifle", "fig0_upper"],
   ["bug.swarmer", "head"],
 ] as const)(
   "turns %s's actual front toward its tactical facing",

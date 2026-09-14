@@ -1139,12 +1139,17 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
       (aimed && this.anchor(aimed.payload.targetId, BODY_FRACTION)) ??
       (aimed && this.spawnerTop(aimed.payload.targetId)) ??
       ({ x: ground.x, y: ground.y + BLAST_LIFT, z: ground.z } satisfies Vec3);
-    if (attacker) {
+    // A placed charge goes off where it lies (#1132): nothing leaves
+    // the squad that set it, which may be far off or gone by now.
+    const placed = impact.delivery === "placed";
+    if (attacker && !placed) {
       faceTowards(attacker, attacker.position, aim);
     }
-    const muzzle = this.anchor(attackerId, MUZZLE_FRACTION);
-    const flightSeconds = melee ? 0 : this.timing.tracerSeconds;
-    const landsAt = this.timing.flashSeconds * 0.5 + flightSeconds;
+    const muzzle = placed
+      ? undefined
+      : this.anchor(attackerId, MUZZLE_FRACTION);
+    const flightSeconds = melee || placed ? 0 : this.timing.tracerSeconds;
+    const landsAt = placed ? 0 : this.timing.flashSeconds * 0.5 + flightSeconds;
     const poseSeconds =
       this.timing.flashSeconds + flightSeconds + this.timing.impactSeconds;
 

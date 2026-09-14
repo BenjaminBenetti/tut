@@ -132,6 +132,43 @@ describe("UnitCardView weapon lines (#641)", () => {
     expect(field("charges")).toBeNull();
   });
 
+  it("announces the weapon row the pointer or focus rests on, once, and the leave (#1132)", () => {
+    const hovered: (string | undefined)[] = [];
+    const view = new UnitCardView({
+      onWeaponHover: (weaponId) => hovered.push(weaponId),
+    });
+    view.mount(root);
+    view.update(
+      hudUnit("m1", "tdf", "mech", 1, 1, { kind: "mech" }),
+      twoWeaponTemplate(),
+    );
+    const rows = blocks("weapon");
+    expect(rows.map((b) => b.dataset.role)).toEqual([
+      "weapon-row",
+      "weapon-row",
+    ]);
+    expect(rows.map((b) => b.dataset.weaponId)).toEqual([
+      "arm-weapon",
+      "back-weapon",
+    ]);
+    // Reachable by keyboard, not only by pointer.
+    expect(rows.map((b) => b.tabIndex)).toEqual([0, 0]);
+    rows[1]?.dispatchEvent(new Event("mouseenter"));
+    expect(hovered).toEqual(["back-weapon"]);
+    expect(view.hoveredWeapon()).toBe("back-weapon");
+    // Resting on the same row again says nothing new.
+    rows[1]?.dispatchEvent(new Event("mouseenter"));
+    expect(hovered).toEqual(["back-weapon"]);
+    rows[1]?.dispatchEvent(new Event("mouseleave"));
+    expect(hovered).toEqual(["back-weapon", undefined]);
+    rows[0]?.dispatchEvent(new Event("focus"));
+    expect(hovered.at(-1)).toBe("arm-weapon");
+    // Hiding the card is a leave: the row cannot report one itself.
+    view.update(undefined, undefined);
+    expect(hovered.at(-1)).toBeUndefined();
+    expect(view.hoveredWeapon()).toBeUndefined();
+  });
+
   it("leaves a one-weapon card exactly as it was, with no name line", () => {
     const view = new UnitCardView();
     view.mount(root);
@@ -370,10 +407,10 @@ describe("event vocabulary", () => {
 });
 
 describe("TurnBannerView", () => {
-  it("shows turn and phase, a status line, and reports Back", () => {
-    const onBack = vi.fn();
+  it("shows turn and phase, a status line, and reports Leave", () => {
+    const onLeave = vi.fn();
     const onLayerStep = vi.fn();
-    const view = new TurnBannerView({ onBack, onLayerStep });
+    const view = new TurnBannerView({ onLeave, onLayerStep });
     view.mount(root);
     view.update({
       missionName: "Seoul",
@@ -394,16 +431,18 @@ describe("TurnBannerView", () => {
     expect(status?.hidden).toBe(false);
     view.showStatus("");
     expect(status?.hidden).toBe(true);
-    root.querySelector<HTMLButtonElement>('[data-action="overworld"]')?.click();
-    expect(onBack).toHaveBeenCalled();
+    root
+      .querySelector<HTMLButtonElement>('[data-action="leave-mission"]')
+      ?.click();
+    expect(onLeave).toHaveBeenCalled();
   });
 
   // #961: the player is changing this constantly, so it is a banner stat
   // with buttons beside it rather than something in a menu.
   it("reads out the storey one-based and reports each button", () => {
-    const onBack = vi.fn();
+    const onLeave = vi.fn();
     const onLayerStep = vi.fn();
-    const view = new TurnBannerView({ onBack, onLayerStep });
+    const view = new TurnBannerView({ onLeave, onLayerStep });
     view.mount(root);
     const model = {
       missionName: "Seoul",

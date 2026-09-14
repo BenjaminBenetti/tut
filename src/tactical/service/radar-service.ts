@@ -1,20 +1,18 @@
+import type { IdGenerator } from "../../core/model/id-generator";
 import { err, ok } from "../../core/model/result";
 import type { Result } from "../../core/model/result";
 import type { Tile } from "../../mapgen/model/tile";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { TileIndex } from "../../mapgen/service/tile-index";
-import type { DeployRadarCommand } from "../model/deploy-radar-command";
 import type { Radar, RadarContact, RadarTuning } from "../model/radar";
 import { radarIsActive } from "../model/radar";
 import { RADAR_BURNED_OUT } from "../model/radar-burned-out-event";
 import { RADAR_DEPLOYED } from "../model/radar-deployed-event";
 import type { TacticalError } from "../model/tactical-error";
-import type { TacticalEvent } from "../model/tactical-event";
-import type { TacticalHandler } from "../model/tactical-handler";
+import type { TacticalApplied, TacticalEvent } from "../model/tactical-event";
 import type { TacticalState } from "../model/tactical-state";
-import type { Team, Unit, UnitId } from "../model/unit";
+import type { Team, Unit } from "../model/unit";
 import { passMaskFor } from "../model/unit";
-import { actingUnit } from "./acting-unit";
 import type { MoveGraph } from "./movement-service";
 import { buildMoveGraph, occupiedKeys } from "./movement-service";
 import type { PhaseStep } from "./turn-service";
@@ -23,39 +21,29 @@ import type { PhaseStep } from "./turn-service";
 // Deployment
 // ===========================================
 
-/** Whether this unit's frozen template grants the radar action. */
-export function carriesRadar(mission: TacticalState, unit: Unit): boolean {
-  return (
-    unit.kind === "squad" &&
-    unit.team === "tdf" &&
-    (mission.templates[unit.templateId]?.abilities ?? []).includes(
-      "deploy-radar",
-    )
-  );
-}
-
 /**
- * Shared wheel/command validation: a free, reachable surface within the
- * tuning's straight-line deploy range on the ground plane and at most a
- * layer up or down. Range 2 since #1130, so a diagonal neighbour (which
- * measures 1.41) is legal; a burnt-out scanner still holds its tile.
+ * Whether a scanner may be put on `tile` by a unit standing where
+ * `unit` stands (#1132: the site alone; who may deploy, whether it has
+ * a use and an action left, is `equipment-service`'s question): a free,
+ * reachable surface within `range` straight-line tiles on the ground
+ * plane, at most a layer up or down. Range 2 since #1130, so a diagonal
+ * neighbour (which measures 1.41) is legal; a burnt-out scanner still
+ * holds its tile.
+ *
+ * @param mission - The mission the scanner would join.
+ * @param unit - The unit carrying it.
+ * @param tile - Where it would be put.
+ * @param range - Straight-line tiles from the unit it may be carried.
+ * @param graph - Traversal structures for the map, built here when the caller has none.
+ * @returns Nothing when the site is fine, else why not.
  */
-export function validateRadarDeployment(
+export function validateRadarSite(
   mission: TacticalState,
-  unitId: UnitId,
+  unit: Unit,
   tile: TileCoord,
-  tuning: RadarTuning,
+  range: number,
   graph: MoveGraph = buildMoveGraph(mission.map),
-): Result<Unit, TacticalError> {
-  if (mission.outcome !== undefined) {
-    return err({ kind: "mission-over", outcome: mission.outcome });
-  }
-  const acting = actingUnit(mission, unitId, tuning.apCost);
-  if (!acting.ok) return acting;
-  const unit = acting.value;
-  if (!carriesRadar(mission, unit)) {
-    return err({ kind: "no-radar", unitId });
-  }
+): Result<void, TacticalError> {
   if (
     ![tile.x, tile.y, tile.z].every(Number.isInteger) ||
     !graph.index.inBounds(tile)
@@ -63,15 +51,15 @@ export function validateRadarDeployment(
     return err({ kind: "radar-tile-blocked" });
   }
   const distance = Math.hypot(tile.x - unit.pos.x, tile.z - unit.pos.z);
-  if (distance > tuning.deployRange || Math.abs(tile.y - unit.pos.y) > 1) {
-    return err({ kind: "radar-out-of-reach", range: tuning.deployRange });
+  if (distance > range || Math.abs(tile.y - unit.pos.y) > 1) {
+    return err({ kind: "radar-out-of-reach", range });
   }
   const from = graph.index.getAt(unit.pos);
   const to = graph.index.getAt(tile);
   if (
     from === undefined ||
     to === undefined ||
-    !withinSteps(graph, from, to, Math.ceil(tuning.deployRange))
+    !withinSteps(graph, from, to, Math.ceil(range))
   ) {
     return err({ kind: "radar-tile-blocked" });
   }
@@ -85,34 +73,38 @@ export function validateRadarDeployment(
   ) {
     return err({ kind: "radar-tile-blocked" });
   }
-  return ok(unit);
+  return ok(undefined);
 }
 
-/** Places a scanner with a full battery and spends AP only after all validation succeeds. */
-export function createDeployRadarHandler(
+/**
+ * Puts a scanner with a full battery on `tile` for `unit`'s side and
+ * announces it. The site is taken as already validated; the caller
+ * bills the action and the use (#1132). Pure: draws one id.
+ *
+ * @param mission - The mission the scanner joins.
+ * @param unit - The unit placing it.
+ * @param tile - Where it goes.
+ * @param tuning - Scan radius and battery.
+ * @param ids - Issues the scanner's id.
+ * @returns The mission with the scanner, and the `RadarDeployed` event.
+ */
+export function placeRadar(
+  mission: TacticalState,
+  unit: Unit,
+  tile: TileCoord,
   tuning: RadarTuning,
-): TacticalHandler<DeployRadarCommand> {
-  return (mission, command, ctx) => {
-    const { unitId, tile } = command.payload;
-    const validated = validateRadarDeployment(mission, unitId, tile, tuning);
-    if (!validated.ok) return validated;
-    const radar: Radar = {
-      id: ctx.ids.nextId("radar"),
-      team: validated.value.team,
-      pos: { ...tile },
-      range: tuning.scanRange,
-      turnsLeft: tuning.batteryTurns,
-    };
-    return ok({
-      state: {
-        ...mission,
-        radars: [...mission.radars, radar],
-        units: mission.units.map((unit) =>
-          unit.id === unitId ? { ...unit, ap: unit.ap - tuning.apCost } : unit,
-        ),
-      },
-      events: [{ type: RADAR_DEPLOYED, payload: { unitId, radar } }],
-    });
+  ids: IdGenerator,
+): TacticalApplied<TacticalState> {
+  const radar: Radar = {
+    id: ids.nextId("radar"),
+    team: unit.team,
+    pos: { x: tile.x, y: tile.y, z: tile.z },
+    range: tuning.scanRange,
+    turnsLeft: tuning.batteryTurns,
+  };
+  return {
+    state: { ...mission, radars: [...mission.radars, radar] },
+    events: [{ type: RADAR_DEPLOYED, payload: { unitId: unit.id, radar } }],
   };
 }
 

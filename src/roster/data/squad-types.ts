@@ -1,4 +1,9 @@
 import type { SquadType } from "../model/squad-type";
+import {
+  BREACHING_CHARGE,
+  GRENADE,
+  RADAR_DISH,
+} from "../../tactical/data/equipment";
 
 // ===========================================
 // Squad types (GDD §5.7)
@@ -18,6 +23,9 @@ import type { SquadType } from "../model/squad-type";
 //     Vanguard's plate) is worth nearly three squads, so squads matter
 //     on their own (GDD §5.7) while a mech is still the capital piece. Support types (engineer, medic) rate low
 //     here and earn their keep through abilities in M2.
+//   • equipment (#1132): every squad carries grenades; the radio squad
+//     adds its radar dish and the rocket squad a breaching charge. The
+//     items and their uses are defined in `tactical/data/equipment.ts`.
 
 /** General-purpose infantry; the starter squad type. */
 export const RIFLE_SQUAD: SquadType = {
@@ -28,6 +36,7 @@ export const RIFLE_SQUAD: SquadType = {
   combatRating: 40,
   description:
     "Five riflemen with standard-issue carbines, two bursts a turn. Cheap, dependable, and good at holding a line against swarms.",
+  equipment: [GRENADE.id],
 };
 
 /** Anti-armour infantry carrying shoulder-fired rockets. */
@@ -39,6 +48,7 @@ export const ROCKET_SQUAD: SquadType = {
   combatRating: 56,
   description:
     "Shoulder-fired rocket launchers for cracking brutes and egg spawners: one shot a turn that bursts over the tiles around its mark and brings down doors and dumpsters. Devastating per shot, thin on ammunition.",
+  equipment: [GRENADE.id, BREACHING_CHARGE.id],
 };
 
 /** Long-range marksmen. */
@@ -50,6 +60,7 @@ export const SNIPER_SQUAD: SquadType = {
   combatRating: 48,
   description:
     "Marksmen with long rifles: one carefully placed shot a turn, out to the edge of what the squad can see. Excellent from rooftops, fragile up close.",
+  equipment: [GRENADE.id],
 };
 
 /** Field engineers who place and repair deployables. */
@@ -61,6 +72,7 @@ export const ENGINEER_SQUAD: SquadType = {
   combatRating: 28,
   description:
     "Combat engineers with shotguns, tools and demolition charges: two blasts a turn at arm's length, nothing at range. Invaluable around objectives.",
+  equipment: [GRENADE.id],
 };
 
 /** Medics who keep other squads on their feet. */
@@ -72,6 +84,7 @@ export const MEDIC_SQUAD: SquadType = {
   combatRating: 24,
   description:
     "Field medics who stabilise the wounded. They shoot back with carbines, two bursts a turn, but their real job is bringing everyone home.",
+  equipment: [GRENADE.id],
 };
 
 /** Signals infantry that locates hidden bugs and egg nests. */
@@ -82,8 +95,8 @@ export const RADIO_SQUAD: SquadType = {
   reinforceCostPerSoldier: 110,
   combatRating: 28,
   description:
-    "Signals infantry with SMGs and portable radar. One hard-hitting burst a turn at short range. Deploy a scanner on a free tile within 2 tiles for 1 AP: hidden enemies and egg nests appear as red blips within a 30-tile circle for 3 turns, until its battery burns out.",
-  abilities: ["deploy-radar"],
+    "Signals infantry with SMGs and portable radar. One hard-hitting burst a turn at short range. Carries three scanners a mission: deploy one on a free tile within 2 tiles for 1 AP, and hidden enemies and egg nests appear as red blips within a 30-tile circle for 3 turns.",
+  equipment: [GRENADE.id, RADAR_DISH.id],
 };
 
 /** Every available squad type, in catalogue order. */

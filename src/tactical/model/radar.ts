@@ -35,11 +35,12 @@ export interface RadarContact {
   readonly pos: TileCoord;
 }
 
-/** Deployment and scanning balance, injected into the action rules. */
+/**
+ * Scanning balance, injected into the rules. Where a dish may be put
+ * and what it costs are the radar dish's own definition in
+ * `tactical/data/equipment.ts` (#1132).
+ */
 export interface RadarTuning {
-  readonly apCost: number;
-  /** Straight-line tiles from the squad a scanner may be placed, on the ground plane. */
-  readonly deployRange: number;
   readonly scanRange: number;
   /** Player turns a fresh scanner runs before its battery dies (#1130). Positive integer. */
   readonly batteryTurns: number;

@@ -326,6 +326,11 @@ test("captures the layer control for review", async ({ page }) => {
     process.env.CAPTURE === undefined,
     "set CAPTURE=1 to regenerate the layer control frames",
   );
+  // Five full-viewport shots of a whole map under SwiftShader, plus a
+  // reload: the default 60 s ran out between the third and fourth shot
+  // on #1136's re-run, which read as a hang at the screenshot and was
+  // the budget. The other capture specs already allow this much.
+  test.setTimeout(240_000);
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("console", (message) => {

@@ -39,8 +39,10 @@ import type {
 import {
   equipmentOf,
   previewEquipmentUse,
+  previewHealUse,
   validateEquipmentUse,
 } from "../../tactical/service/equipment-service";
+import type { HealPreview } from "../../tactical/model/heal-preview";
 import type { TacticalNames } from "./tactical-error-text";
 import { describeRefusal } from "./tactical-error-text";
 
@@ -128,7 +130,11 @@ const SHORT_REASONS: Readonly<Partial<Record<TacticalError["kind"], string>>> =
     "radar-tile-blocked": "tile blocked",
     "no-equipment": "not carried",
     "equipment-spent": "none left",
+    "nothing-to-heal": "nobody to heal",
   };
+
+/** The ring's words for a repair kit with nothing to mend; the medkit's are in `SHORT_REASONS`. */
+const NOTHING_TO_REPAIR = "nothing to repair";
 
 /** Separates an entry's action from its argument in the id. */
 const ID_SEPARATOR = ":";
@@ -152,7 +158,8 @@ const COMFORTABLE_HIT_CHANCE = 50;
  *
  * ```
  *   tile      ──► Move (path) · Attack at the ground (#1121) · Board (drop
- *                 ship tile) · Deploy radar · Overwatch · Reload
+ *                 ship tile) · Deploy radar · Heal / Repair (#1138) ·
+ *                 Overwatch · Reload
  *                   └─ Attack turns to a page — weapons, then the grenade
  *                      and the charge (#1136) — when there is more than one
  *                      way to hit the tile; a lone weapon is the shot itself
@@ -396,16 +403,21 @@ function tilePage(tile: TileCoord, unit: Unit, ctx: WheelContext): WheelPage {
   if (isDropshipTile(ctx.mission, tile)) {
     items.push(boardItem(unit, ctx));
   }
-  // The dish where a scanner may go (#1132). A grenade or a charge is an
-  // attack and rides under Attack with the weapons (#1136): the ring
-  // used to break them out beside it, and the Executive Director found
-  // two places to look for one kind of thing confusing.
+  // The dish where a scanner may go (#1132), and a medkit or a repair
+  // kit where it would land (#1138): neither is an attack, so both keep
+  // their own entry. A grenade or a charge is an attack and rides under
+  // Attack with the weapons (#1136): the ring used to break them out
+  // beside it, and the Executive Director found two places to look for
+  // one kind of thing confusing.
   for (const carried of equipmentOf(
     ctx.mission.templates[unit.templateId],
     unit,
     SHIPPED_EQUIPMENT,
   )) {
-    if (carried.definition.kind === "radar") {
+    if (
+      carried.definition.kind === "radar" ||
+      carried.definition.kind === "heal"
+    ) {
       items.push(
         equipmentItem(tile, unit, carried.definition, carried.usesLeft, ctx),
       );
@@ -421,8 +433,9 @@ function tilePage(tile: TileCoord, unit: Unit, ctx: WheelContext): WheelPage {
  * radar", `1 AP · scan 30` — so a player and a test find it where it
  * was; a grenade or a charge reads like a shot at the ground, with the
  * uses left last, and since #1136 sits on the Attack page under the
- * same id it had on the ring. Closed with the rules' reason when the
- * use is refused.
+ * same id it had on the ring; a medkit or a repair kit reads "Heal" or
+ * "Repair" with what it gives and to how many (#1138). Closed with the
+ * rules' reason when the use is refused.
  */
 function equipmentItem(
   tile: TileCoord,
@@ -458,6 +471,10 @@ function equipmentItem(
     "equipment",
     `${definition.id}${ID_SEPARATOR}${tileArgument(tile)}`,
   );
+  const uses = `${String(usesLeft)}/${String(definition.uses)}`;
+  if (definition.kind === "heal") {
+    return healItem(id, tile, unit, definition, uses, rules, ctx);
+  }
   const icon = definition.kind === "charge" ? "warning" : "attack";
   const preview = previewEquipmentUse(
     ctx.mission,
@@ -470,7 +487,6 @@ function equipmentItem(
   if (!preview.ok) {
     return closed(id, definition.name, icon, preview.error, ctx);
   }
-  const uses = `${String(usesLeft)}/${String(definition.uses)}`;
   const detail =
     definition.kind === "charge"
       ? [
@@ -480,6 +496,57 @@ function equipmentItem(
         ].join(" · ")
       : `${blastDetail(preview.value, unit)} · ${uses}`;
   return { id, label: definition.name, icon, detail };
+}
+
+/**
+ * The entry for a medkit or a repair kit at a tile (#1138): "Heal" for
+ * flesh, "Repair" for metal — the verb rather than the item, since the
+ * ring is a list of things to do — with what each unit gets and how
+ * many would get it, then the uses left. Closed with the rules' reason
+ * when the throw is refused or nobody in the footprint can be mended,
+ * which the ring says as "nobody to heal" or "nothing to repair".
+ *
+ * ```
+ *   Heal     +10 hp · 2 allies · 4/4
+ *   Repair   +25 hp · 1 ally · 2/2
+ *   Repair   nothing to repair            (closed)
+ * ```
+ */
+function healItem(
+  id: string,
+  tile: TileCoord,
+  unit: Unit,
+  definition: EquipmentDefinition,
+  uses: string,
+  rules: EquipmentRules,
+  ctx: WheelContext,
+): RadialMenuItem {
+  const label = definition.heal?.target === "mechanical" ? "Repair" : "Heal";
+  const preview = previewHealUse(
+    ctx.mission,
+    unit.id,
+    definition.id,
+    tile,
+    rules,
+  );
+  if (!preview.ok) {
+    const item = closed(id, label, "hp", preview.error, ctx);
+    return preview.error.kind === "nothing-to-heal" && label === "Repair"
+      ? { ...item, detail: NOTHING_TO_REPAIR }
+      : item;
+  }
+  return {
+    id,
+    label,
+    icon: "hp",
+    detail: `${healDetail(preview.value)} · ${uses}`,
+  };
+}
+
+/** `+10 hp · 2 allies`: what each gets, and how many get it. */
+function healDetail(preview: HealPreview): string {
+  const count = preview.beneficiaries.length;
+  return `+${String(preview.amount)} hp · ${String(count)} ${count === 1 ? "ally" : "allies"}`;
 }
 
 /**
@@ -632,7 +699,8 @@ function tileWeaponPage(
 
 /**
  * The equipment the unit attacks with (#1136): everything it carries
- * but the radar dish, which is a scan and keeps its own entry. In the
+ * but the radar dish, which is a scan, and a medkit or a repair kit,
+ * which mends (#1138); each keeps its own entry on the ring. In the
  * order the template lists it, so the page and the card agree.
  */
 function attackKitOf(
@@ -643,7 +711,10 @@ function attackKitOf(
     mission.templates[unit.templateId],
     unit,
     SHIPPED_EQUIPMENT,
-  ).filter((carried) => carried.definition.kind !== "radar");
+  ).filter(
+    (carried) =>
+      carried.definition.kind !== "radar" && carried.definition.kind !== "heal",
+  );
 }
 
 /**

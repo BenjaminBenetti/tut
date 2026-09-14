@@ -25,6 +25,8 @@ import {
 } from "../../tactical/model/spawner-damaged-event";
 import type { SpawnerId } from "../../tactical/model/tactical-state";
 import { UNIT_DIED } from "../../tactical/model/unit-died-event";
+import type { UnitsHealedPayload } from "../../tactical/model/unit-healed-event";
+import { UNITS_HEALED } from "../../tactical/model/unit-healed-event";
 import { UNIT_MOVED } from "../../tactical/model/unit-moved-event";
 import { UNIT_SPOTTED } from "../../tactical/model/unit-spotted-event";
 import type { UnitId } from "../../tactical/model/unit";
@@ -251,6 +253,9 @@ const MISS_COLOUR = 0x8b94a6;
 
 /** Fire damage reads in the flame's own orange, so a burn is told from a hit. */
 const BURN_COLOUR = 0xf08a24;
+
+/** A heal reads in `--ui-ok` green (#1138): the damage floater's shape, the opposite sign and tone. */
+const HEAL_COLOUR = 0x7ccb5a;
 
 /** A blast burst covers its radius: one tile of sprite per tile of reach, plus the impact. */
 const BLAST_BASE_SIZE = 1.4;
@@ -702,6 +707,8 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
         return this.rubble(event.payload);
       case EFFECT_DAMAGED:
         return this.burn(event.payload);
+      case UNITS_HEALED:
+        return this.heal(event.payload);
       case UNIT_SPOTTED:
         // Only what the player can see: a spot on the bugs' side is
         // their business and never reaches the screen (ADR 0006 §2.4).
@@ -1516,6 +1523,23 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
       },
       finish: cleanup,
     };
+  }
+
+  /**
+   * A medkit or a repair kit landing (#1138): `+N` in green over every
+   * unit it mended, rising together as a blast's numbers do — the same
+   * floater with the sign turned round, and nothing else, so a heal is
+   * as modest on the screen as it is in the rules. Skipped, with the
+   * callback still made, when the scene has none of the units.
+   */
+  private heal(payload: UnitsHealedPayload): Animation | undefined {
+    const numbers = payload.healed.flatMap((unit) => {
+      const at = this.anchor(unit.unitId, 1, TEXT_MARGIN);
+      return at
+        ? [{ at, label: `+${String(unit.amount)}`, tone: HEAL_COLOUR }]
+        : [];
+    });
+    return numbers.length === 0 ? undefined : this.numbers(numbers);
   }
 
   // ===========================================

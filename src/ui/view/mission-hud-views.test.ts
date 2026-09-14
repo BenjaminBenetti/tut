@@ -482,6 +482,47 @@ describe("event vocabulary", () => {
     });
   });
 
+  it("says who a kit mended and by how much, repaired for metal (#1138)", () => {
+    const names = {
+      ...NAMES,
+      unit: (id: string) =>
+        ({ medic: "Medic Squad", hurt: "Rifle Squad", mech: "Hammerhead" })[
+          id
+        ] ?? id,
+    };
+    const healed = describeEvent(
+      {
+        type: "tactical:units-healed",
+        payload: {
+          kitId: "medkit",
+          userId: "medic",
+          healed: [
+            { unitId: "hurt", amount: 10, hpAfter: 20 },
+            { unitId: "medic", amount: 3, hpAfter: 20 },
+          ],
+        },
+      } as never,
+      names,
+    );
+    expect(healed).toEqual({
+      text: "Medic Squad healed Rifle Squad for 10, Medic Squad for 3",
+      icon: "hp",
+      tone: "ok",
+    });
+    const repaired = describeEvent(
+      {
+        type: "tactical:units-healed",
+        payload: {
+          kitId: "repair-kit",
+          userId: "medic",
+          healed: [{ unitId: "mech", amount: 25, hpAfter: 60 }],
+        },
+      } as never,
+      names,
+    );
+    expect(repaired?.text).toBe("Medic Squad repaired Hammerhead for 25");
+  });
+
   it("still reads correctly for a status that happens to be an adjective", () => {
     const line = describeEvent(
       {

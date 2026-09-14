@@ -18,7 +18,7 @@ import { RADAR_DISH } from "../../tactical/data/equipment";
 import type { EquipmentId } from "../../tactical/model/equipment";
 import { useEquipment } from "../../tactical/model/use-equipment-command";
 import { SHIPPED_EQUIPMENT } from "../../tactical/repository/equipment-catalogue";
-import { previewEquipmentUse } from "../../tactical/service/equipment-service";
+import { equipmentFootprintTiles } from "../../tactical/service/equipment-service";
 import type { TacticalCommand } from "../../tactical/model/tactical-command";
 import type { TacticalError } from "../../tactical/model/tactical-error";
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
@@ -1887,7 +1887,12 @@ export class TacticalHudView {
     return aimed?.ok ? (aimed.value.blast?.tiles ?? []) : [];
   }
 
-  /** What one item would reach around `tile` (#1132); empty when the use is refused or the item marks nothing. */
+  /**
+   * What one item would reach around `tile` (#1132) — a grenade's blast
+   * or a medkit's area (#1138), painted the same way, since the overlay
+   * has one tint for "what lands here"; empty when the use is refused
+   * or the item marks nothing.
+   */
   private equipmentFootprint(
     equipmentId: EquipmentId,
     tile: TileCoord,
@@ -1897,7 +1902,7 @@ export class TacticalHudView {
     if (!mission || unitId === undefined) {
       return [];
     }
-    const preview = previewEquipmentUse(
+    return equipmentFootprintTiles(
       mission,
       unitId,
       equipmentId,
@@ -1905,7 +1910,6 @@ export class TacticalHudView {
       { catalogue: SHIPPED_EQUIPMENT, combat: this.deps.combatTuning },
       this.deps.previewDeps,
     );
-    return preview.ok ? (preview.value.blast?.tiles ?? []) : [];
   }
 
   /**

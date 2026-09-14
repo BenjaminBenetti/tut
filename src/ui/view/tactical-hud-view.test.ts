@@ -455,6 +455,57 @@ describe("TacticalHudView", () => {
     expect(wheelOpen()).toBe(false);
   });
 
+  it("a medkit sits on the ring as Heal: resting on it paints the area, picking it uses the kit, and the card reads its numbers (#1138)", () => {
+    const commands: TacticalCommand[] = [];
+    const blasts: number[] = [];
+    const hud = new TacticalHudView(
+      {
+        onCommand: (c) => commands.push(c),
+        onLeave: vi.fn(),
+        anchorFor: () => ({ x: 100, y: 100 }),
+        onMarkBlast: (tiles) => blasts.push(tiles.length),
+      },
+      { combatTuning: COMBAT_TUNING, objectiveTuning: OBJECTIVE_TUNING },
+    );
+    hud.mount(root);
+    const base = hudMission();
+    hud.update({
+      ...base,
+      templates: {
+        ...base.templates,
+        rifle: {
+          ...hudTemplate("rifle", "Medic Squad"),
+          equipment: ["medkit"],
+        },
+      },
+    });
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    const summary = root.querySelector(
+      '#unit-card [data-field="equipment"] [data-role="equipment-row"] > span:last-child',
+    )?.textContent;
+    expect(summary).toBe("range 5 · heal 10 · blast 2 · organic");
+    // s2 at (1,0,3) is at 12 of 20; the empty tile beside it takes the
+    // throw (a click on s2 itself would pick the unit), and its ring
+    // offers Heal at top level.
+    hud.handleIntent({ kind: "select-tile", tile: { x: 2, y: 0, z: 3 } });
+    expect(items()).toEqual([
+      "move:2,0,3",
+      "attack-tile:2,0,3",
+      "equipment:medkit:2,0,3",
+      "overwatch",
+      "reload",
+    ]);
+    expect(item("equipment:medkit:2,0,3")?.disabled).toBe(false);
+    expect(item("equipment:medkit:2,0,3")?.textContent).toContain("+10 hp");
+    item("equipment:medkit:2,0,3")?.dispatchEvent(new Event("pointerenter"));
+    expect(blasts.at(-1) ?? 0).toBeGreaterThan(1);
+    item("equipment:medkit:2,0,3")?.click();
+    expect(commands).toEqual([
+      useEquipment("s1", "medkit", { x: 2, y: 0, z: 3 }),
+    ]);
+    expect(wheelOpen()).toBe(false);
+  });
+
   it("a press outside an aiming wheel closes the ring and keeps the aim, so the panel's Fire still works (#1112)", () => {
     const { hud, commands } = setup();
     hud.handleIntent({ kind: "select-unit", unitId: "s1" });

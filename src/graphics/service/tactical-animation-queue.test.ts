@@ -848,6 +848,42 @@ describe("TacticalAnimationQueue blast", () => {
     expect(named(queue, "vfx.blast")).toEqual([]);
   });
 
+  it("floats a green +N over every unit a kit mended, and nothing else (#1138)", () => {
+    const s = withThird();
+    const queue = new TacticalAnimationQueue({
+      scene: s,
+      sprites,
+      timing: TIMING,
+    });
+    const healed: TacticalEvent = {
+      type: "tactical:units-healed",
+      payload: {
+        kitId: "medkit",
+        userId: "unit-1",
+        healed: [
+          { unitId: "unit-2", amount: 10, hpAfter: 20 },
+          { unitId: "unit-3", amount: 4, hpAfter: 20 },
+          // A unit the scene does not have gets no number, and the rest still do.
+          { unitId: "unit-9", amount: 1, hpAfter: 20 },
+        ],
+      },
+    };
+    let done = 0;
+    queue.enqueue([healed], () => {
+      done++;
+    });
+    queue.update(0.05);
+    expect(named(queue, "vfx.floater")).toEqual([
+      "vfx.floater:+10",
+      "vfx.floater:+4",
+    ]);
+    expect(named(queue, "vfx.blast")).toEqual([]);
+    expect(queue.root.children).toHaveLength(2);
+    queue.update(0.3);
+    expect(done).toBe(1);
+    expect(queue.root.children).toHaveLength(0);
+  });
+
   it("finishes a blast whole when skipped or played instantly", () => {
     const s = withThird();
     const queue = new TacticalAnimationQueue({

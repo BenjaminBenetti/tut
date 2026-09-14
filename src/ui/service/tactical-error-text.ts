@@ -247,6 +247,15 @@ export function describeRefusal(
       return `${names.unit(error.unitId)} does not carry a ${equipmentName(error.equipmentId)}`;
     case "equipment-spent":
       return `${names.unit(error.unitId)} has no ${equipmentName(error.equipmentId)} left`;
+    case "nothing-to-heal":
+      // A repair kit mends metal and a medkit flesh (#1138); the
+      // sentence says which was missing, so a medic who threw at the
+      // mech learns why rather than reading "nobody".
+      return `${names.unit(error.unitId)} has ${
+        SHIPPED_EQUIPMENT.get(error.equipmentId)?.heal?.target === "mechanical"
+          ? "nothing to repair"
+          : "nobody to heal"
+      } there`;
     case "no-deploy-room":
       return `No ${error.passClass} tile is left in the deploy zone for ${names.unit(error.unitId)}`;
     case "illegal-move":

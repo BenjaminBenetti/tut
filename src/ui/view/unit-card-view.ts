@@ -520,10 +520,20 @@ export class UnitCardView {
 
 /**
  * The numbers an item is judged by (#1132): where it may go and, for a
- * grenade or a charge, what it does there, on the weapon line's pattern.
+ * grenade or a charge, what it does there, on the weapon line's
+ * pattern; for a medkit or a repair kit what it gives, how wide, and to
+ * what — `heal 10 · blast 2 · organic` (#1138).
  */
 function equipmentSummary(definition: EquipmentDefinition): string {
   const parts = [`range ${formatWhole(definition.range)}`];
+  const heal = definition.heal;
+  if (heal !== undefined) {
+    parts.push(
+      `heal ${formatWhole(heal.amount)}`,
+      `blast ${formatWhole(heal.radius)}`,
+      heal.target,
+    );
+  }
   const p = definition.profile;
   if (p !== undefined) {
     if (definition.kind === "blast") {

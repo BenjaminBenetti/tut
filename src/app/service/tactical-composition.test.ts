@@ -22,6 +22,8 @@ import { ATTACK } from "../../tactical/model/attack-command";
 import { BUGS_SPAWNED } from "../../tactical/model/bugs-spawned-event";
 import { MOVE } from "../../tactical/model/move-command";
 import { OVERWATCH } from "../../tactical/model/overwatch-command";
+import { PLACE_UNIT, placeUnit } from "../../tactical/model/place-unit-command";
+import { UNIT_PLACED } from "../../tactical/model/unit-placed-event";
 import { RELOAD } from "../../tactical/model/reload-command";
 import { USE_EQUIPMENT } from "../../tactical/model/use-equipment-command";
 import { EXTRACT, extract } from "../../tactical/model/extract-command";
@@ -145,11 +147,90 @@ describe("composeTactical", () => {
       INTERACT,
       EXTRACT,
       ABANDON_MISSION,
+      // The development tools' placement is registered in every build
+      // (#1136), refusing outside a dev one.
+      PLACE_UNIT,
       // EndTurn is registered last because it closes over the action
       // rules above: the bug phase drives them and must not be able to
       // recurse into the turn engine (#335).
       END_TURN,
     ]);
+  });
+
+  describe("development tools (#1136)", () => {
+    /** A live mission on the composed dispatcher, with the whole starter force placed. */
+    function liveMission(devTools: boolean) {
+      const dispatcher = createOverworldCommandDispatcher<GameState>();
+      const tactical = composeTactical(dispatcher, CONTENT, undefined, {
+        devTools,
+      });
+      const { state, missionId } = campaignWithMission();
+      const started = startTacticalMission(
+        state,
+        missionId,
+        {
+          missionId,
+          squadIds: state.roster.squads.map((s) => s.id),
+          mechIds: state.roster.mechs.map((m) => m.id),
+        },
+        tactical.missionStartDepsFor(new SequentialIdGenerator()),
+      );
+      if (!started.ok) throw new Error("fixture mission must start");
+      const mission = started.value.activeMission!;
+      const beside = walkableTileNear(mission, mission.units[0]!.pos);
+      return {
+        tactical,
+        store: new GameStore(started.value, dispatcher),
+        missionId,
+        beside,
+        unitsBefore: mission.units.length,
+      };
+    }
+
+    it("offers no tools and refuses PlaceUnit as debug-disabled by default", () => {
+      const { tactical, store, missionId, beside, unitsBefore } =
+        liveMission(false);
+      expect(tactical.devTools).toBeUndefined();
+      const outcome = store.dispatch(
+        placeUnit(missionId, "bug", "swarmer", beside),
+      );
+      expect(outcome.ok).toBe(false);
+      if (outcome.ok) return;
+      expect(outcome.error.code).toBe("debug-disabled");
+      expect(store.getState().activeMission?.units).toHaveLength(unitsBefore);
+    });
+
+    it("in a dev build lists what can be placed, and a PlaceUnit lands on the map, logged and spotted", () => {
+      const { tactical, store, missionId, beside, unitsBefore } =
+        liveMission(true);
+      expect(tactical.devTools?.placeable).toContainEqual({
+        kind: "squad",
+        id: "rifle",
+        name: "Rifle Squad",
+      });
+      expect(tactical.devTools?.placeable).toContainEqual({
+        kind: "mech",
+        id: "starter",
+        name: "Mech (starter)",
+      });
+      expect(tactical.devTools?.placeable).toContainEqual({
+        kind: "bug",
+        id: "swarmer",
+        name: "Swarmer",
+      });
+      const outcome = store.dispatch(
+        placeUnit(missionId, "bug", "swarmer", beside),
+      );
+      expect(outcome.ok).toBe(true);
+      const mission = store.getState().activeMission!;
+      expect(mission.units).toHaveLength(unitsBefore + 1);
+      const placed = mission.units.at(-1)!;
+      expect(placed).toMatchObject({ team: "bugs", sourceId: "swarmer" });
+      expect(mission.log.some((e) => e.type === UNIT_PLACED)).toBe(true);
+      // Vision was recomputed by the lift: a bug put down beside the
+      // force is seen at once.
+      expect(mission.vision.tdf.spotted).toContain(placed.id);
+    });
   });
 
   it("routes a registered rule at the mission, not at unknown-command", () => {

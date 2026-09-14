@@ -18,10 +18,10 @@ import { Vector3 } from "three";
  * sample points its rays leave from. The controller builds those on the
  * CPU (`ghostSamples`) from the box's edges and hands the shader the
  * finished spots, so the fragment loop reads a uniform instead of
- * rebuilding eleven points per ghost per pixel.
+ * rebuilding nineteen points per ghost per pixel.
  *
  * ```
- *   uGhostSpots   [ ghost 0: s0 … s10 ][ ghost 1: s0 … s10 ] … ×MAX_GHOSTS
+ *   uGhostSpots   [ ghost 0: s0 … s18 ][ ghost 1: s0 … s18 ] … ×MAX_GHOSTS
  *                   └─ index i * GHOST_SAMPLES + s, in ghostSamples order
  *   uGhostReach   [ r0 ][ r1 ] …   bounding circle per ghost on the view plane
  * ```
@@ -41,7 +41,7 @@ export interface GhostUniforms {
    * Per ghost, the radius on the view plane, from the feet centre, past
    * which no fragment can stand on any of its rays: the farthest sample
    * from the centre plus `uGhostRadius` (#1134). The shader rejects a
-   * fragment outside it with one distance instead of eleven.
+   * fragment outside it with one distance instead of nineteen.
    */
   readonly uGhostReach: { value: number[] };
   /**
@@ -90,8 +90,9 @@ export interface ViewPoint {
 export const MAX_GHOSTS = 8;
 
 /**
- * Rays per ghost (#1134): the four corners of the footprint at foot and
- * head height, and the centre at the feet, the waist and the head.
+ * Rays from the unit's body (#1134): the four corners of the footprint
+ * at foot and head height, and the centre at the feet, the waist and
+ * the head.
  *
  * ```
  *   head   4───────5      8  head centre
@@ -101,10 +102,44 @@ export const MAX_GHOSTS = 8;
  *          (2, 3 and 6, 7 are the far corners)
  * ```
  */
-export const GHOST_SAMPLES = 11;
+export const GHOST_BODY_SAMPLES = 11;
 
-/** Softness of a ray's edge in world units, inward from the radius (style guide §12.4). */
-export const GHOST_SOFT_EDGE = 0.25;
+/**
+ * Rays from a ring around the unit at waist height (#1138), spaced
+ * evenly, `GHOST_RING_MARGIN` outside the footprint. The body rays
+ * alone open a window the shape of the unit's silhouette, which showed
+ * the unit and nothing it could walk to; the ring opens the cone
+ * around it, so the tiles beside the unit and the near walls read
+ * through the roof while the far walls stay solid.
+ *
+ * ```
+ *            14
+ *        15  ▪   13          ring at waist height, indices 11 … 18,
+ *      16 ▪  ◉   ▪ 12        starting along +right and turning
+ *        17  ▪   11          toward +forward
+ *            18
+ * ```
+ */
+export const GHOST_RING_SAMPLES = 8;
+
+/** Rays per ghost: the body's, then the ring's, in that order. */
+export const GHOST_SAMPLES = GHOST_BODY_SAMPLES + GHOST_RING_SAMPLES;
+
+/**
+ * How far outside the footprint, in world units, the ring's rays leave
+ * from (#1138). Half a tile puts a one-tile squad's ring on the edge of
+ * the next tile out, so with the ray radius the cone covers about a
+ * two-tile ring of its floor.
+ */
+export const GHOST_RING_MARGIN = 0.75;
+
+/**
+ * Softness of a ray's edge in world units, inward from the radius
+ * (style guide §12.4). Widened with the radius in #1138 — 0.25 at 0.6
+ * was a hair over a third of it; 0.45 at 1.1 keeps that share — so the
+ * bigger window still reads as the building giving way, not a stencil.
+ */
+export const GHOST_SOFT_EDGE = 0.45;
 
 /**
  * How far above a unit's feet, in world units, a fragment has to be
@@ -159,12 +194,15 @@ export function createGhostUniforms(
 /**
  * The sample points a ghost's rays leave from, in the order the shader
  * enumerates them (#1134): the footprint's corners at the feet and at
- * the head, then the centre at the head, the waist and the feet.
+ * the head, then the centre at the head, the waist and the feet, then
+ * the ring at waist height (#1138), `spread` half-footprints out from
+ * the centre, starting along `right` and turning toward `forward`.
  *
  * @param centre - The feet centre, in view space.
  * @param right - Half the footprint along world x, in view space.
  * @param forward - Half the footprint along world z, in view space.
  * @param up - The unit's height along world y, in view space.
+ * @param spread - The ring's distance from the centre, in half-footprints (`ghostRingSpread`).
  * @returns `GHOST_SAMPLES` points.
  */
 export function ghostSamples(
@@ -172,6 +210,7 @@ export function ghostSamples(
   right: ViewPoint,
   forward: ViewPoint,
   up: ViewPoint,
+  spread: number,
 ): ViewPoint[] {
   const at = (a: number, b: number, k: number): ViewPoint => ({
     x: centre.x + a * right.x + b * forward.x + k * up.x,
@@ -190,7 +229,25 @@ export function ghostSamples(
     }
   }
   samples.push(at(0, 0, 1), at(0, 0, 0.5), at(0, 0, 0));
+  for (let r = 0; r < GHOST_RING_SAMPLES; r++) {
+    const angle = (r / GHOST_RING_SAMPLES) * Math.PI * 2;
+    samples.push(at(spread * Math.cos(angle), spread * Math.sin(angle), 0.5));
+  }
   return samples;
+}
+
+/**
+ * How far out the ring sits, in half-footprints, for a unit of this
+ * size (#1138): the footprint's own half width plus `GHOST_RING_MARGIN`,
+ * as a multiple of the half width the box edges are already scaled by.
+ * The margin is in world units so a mech's ring is not three times a
+ * squad's.
+ *
+ * @param halfWidth - Half the footprint's side in world units.
+ * @returns The multiple of the box edges the ring's points lie at.
+ */
+export function ghostRingSpread(halfWidth: number): number {
+  return (halfWidth + GHOST_RING_MARGIN) / halfWidth;
 }
 
 /**
@@ -227,7 +284,7 @@ export function ghostsAlongRay(
  * far from the feet centre, across the view, the farthest sample sits,
  * plus the ray radius. No fragment outside it is within the radius of
  * any sample, so the shader can drop it after one distance test rather
- * than eleven — which is what most fragments of most walls are, and
+ * than nineteen — which is what most fragments of most walls are, and
  * what made the ray cutaway affordable on a CPU rasterizer.
  *
  * ```
@@ -433,7 +490,7 @@ const VERTEX_BODY = `
  * SwiftShader, a CPU rasterizer (#1134): the sample points come in as a
  * uniform rather than being rebuilt from the box edges per fragment,
  * and a fragment outside a ghost's bounding circle leaves after one
- * distance instead of eleven. Measured on `e2e/tile-attack.spec.ts`
+ * distance instead of nineteen. Measured on `e2e/tile-attack.spec.ts`
  * under SwiftShader: 19.3 s with the per-fragment rebuild and no
  * reject, 12.4 s with the loop disabled, 11.0 s before the ray cutaway
  * existed — enough that CI's e2e shard ran past its budget. Neither
@@ -485,9 +542,10 @@ const FRAGMENT_BODY = `
  *
  * `uGhostSpots` is flat, `MAX_GHOSTS * GHOST_SAMPLES` long, in the
  * order `ghostSamples` fills it on the CPU: corners at the feet, corners
- * at the head, then the centre at the head, the waist and the feet. The
- * shader no longer derives them (#1134): a function of the box edges
- * cost eleven vector sums per ghost per fragment.
+ * at the head, the centre at the head, the waist and the feet, then the
+ * waist-height ring (#1138). The shader no longer derives them (#1134):
+ * a function of the box edges cost eleven vector sums per ghost per
+ * fragment, and the ring would have added eight sines.
  */
 function fragmentHead(): string {
   return `

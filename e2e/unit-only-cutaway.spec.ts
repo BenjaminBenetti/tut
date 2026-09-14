@@ -23,8 +23,8 @@ test.describe("unit-only roof reveal", () => {
     // Actual model readiness, within the unchanged hook timeout. A short DOM
     // assertion budget is not the asset loader's completion condition.
     await page.locator('body[data-ready="true"]').waitFor();
-    // The ray radius since #1134; it was a 4-tile disc before.
-    await expect(page.locator("body")).toHaveAttribute("data-radius", "0.6");
+    // The ray radius since #1138 (0.6 from #1134; a 4-tile disc before).
+    await expect(page.locator("body")).toHaveAttribute("data-radius", "1.2");
     await expect(page.locator("body")).toHaveAttribute("data-floor", "0.175");
     await settledUnits(1);
   });

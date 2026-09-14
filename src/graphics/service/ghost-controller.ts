@@ -6,6 +6,7 @@ import type { GhostSubject, GhostUniforms } from "./ghost-cutaway";
 import {
   GHOST_SAMPLES,
   ghostReach,
+  ghostRingSpread,
   ghostSamples,
   MAX_GHOSTS,
 } from "./ghost-cutaway";
@@ -48,7 +49,7 @@ function clamp(value: number, low: number, high: number): number {
  * (ADR 0006). It also means a unit that dies mid-frame takes its cutaway
  * with it, with no bookkeeping.
  *
- * Cost is four matrix multiplies and eleven sample points per ghosted
+ * Cost is four matrix multiplies and nineteen sample points per ghosted
  * unit per frame — the deployed force, not the map — and one uniform
  * write shared by every ghosted material. The samples are built here
  * rather than in the shader because here they are built once per unit,
@@ -135,7 +136,7 @@ export class GhostController implements FrameUpdatable {
           this.forward,
         );
         this.edgeInView(this.scratch, centre, 0, subject.height, 0, this.up);
-        this.writeSamples(i, centre);
+        this.writeSamples(i, centre, ghostRingSpread(subject.halfWidth));
       }
       // A slot that changed hands starts from nothing, or the new unit
       // inherits the old one's ramp and the cutaway appears to jump.
@@ -188,9 +189,19 @@ export class GhostController implements FrameUpdatable {
    * points, in `ghostSamples` order, and its reach with the circle that
    * bounds them (#1134). The shader indexes the same way:
    * `uGhostSpots[i * GHOST_SAMPLES + s]`.
+   *
+   * @param slot - The ghost's slot in the uniform arrays.
+   * @param centre - The feet centre, in view space.
+   * @param spread - How far out the waist ring sits, in half-footprints (#1138).
    */
-  private writeSamples(slot: number, centre: Vector3): void {
-    const spots = ghostSamples(centre, this.right, this.forward, this.up);
+  private writeSamples(slot: number, centre: Vector3, spread: number): void {
+    const spots = ghostSamples(
+      centre,
+      this.right,
+      this.forward,
+      this.up,
+      spread,
+    );
     const base = slot * GHOST_SAMPLES;
     for (let s = 0; s < GHOST_SAMPLES; s++) {
       const spot = spots[s];

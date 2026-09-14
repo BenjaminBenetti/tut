@@ -119,4 +119,26 @@ export interface UnitTemplate {
    * missions, which then credit nothing.
    */
   readonly xpValue?: number;
+  /**
+   * What the unit is made of (#1138), which decides which kit can mend
+   * it: a medkit heals only `"organic"` units, a repair kit only
+   * `"mechanical"` ones. Absent on most templates, where it follows the
+   * unit's kind — see `constructionOf` in `service/construction-service`
+   * — so only a template that breaks the rule (a mechanical unit that is
+   * not a mech, such as a deployed turret) has to say so.
+   */
+  readonly construction?: Construction;
 }
+
+/**
+ * What a unit is made of (#1138): flesh that a medic can patch, or metal
+ * that an engineer can weld. Bugs and squads are organic, mechs are
+ * mechanical, and a template may say otherwise for itself.
+ */
+export type Construction = "organic" | "mechanical";
+
+/** Every `Construction`, in a fixed order. */
+export const CONSTRUCTIONS = [
+  "organic",
+  "mechanical",
+] as const satisfies readonly Construction[];

@@ -3,7 +3,12 @@ import { Vector3 } from "three";
 
 import type { FrameUpdatable } from "../model/frame-updatable";
 import type { GhostSubject, GhostUniforms } from "./ghost-cutaway";
-import { MAX_GHOSTS } from "./ghost-cutaway";
+import {
+  GHOST_SAMPLES,
+  ghostReach,
+  ghostSamples,
+  MAX_GHOSTS,
+} from "./ghost-cutaway";
 
 // ===========================================
 // Types
@@ -30,8 +35,10 @@ function clamp(value: number, low: number, high: number): number {
  *
  * ```
  *   every frame:  source() ──► feet, footprint, height ──► × camera.matrixWorldInverse
- *                                    │                     └──► view-space box ──► uniforms
- *                                    └──► world y (the feet) ──► uniforms
+ *                                    │                     └──► view-space box edges
+ *                                    │                            └──► ghostSamples ──► uGhostSpots
+ *                                    │                                   └──► ghostReach ──► uGhostReach
+ *                                    └──► world y (the feet) ──► uGhostFeet
  * ```
  *
  * The centres are the **objects the scene is already drawing** rather
@@ -41,9 +48,11 @@ function clamp(value: number, low: number, high: number): number {
  * (ADR 0006). It also means a unit that dies mid-frame takes its cutaway
  * with it, with no bookkeeping.
  *
- * Cost is one matrix multiply per ghosted unit per frame — the deployed
- * force, not the map — and one uniform write shared by every ghosted
- * material.
+ * Cost is four matrix multiplies and eleven sample points per ghosted
+ * unit per frame — the deployed force, not the map — and one uniform
+ * write shared by every ghosted material. The samples are built here
+ * rather than in the shader because here they are built once per unit,
+ * and there they were built once per unit *per fragment* (#1134).
  */
 export class GhostController implements FrameUpdatable {
   // ===========================================
@@ -55,6 +64,9 @@ export class GhostController implements FrameUpdatable {
   private readonly uniforms: GhostUniforms;
   private readonly scratch = new Vector3();
   private readonly edge = new Vector3();
+  private readonly right = new Vector3();
+  private readonly forward = new Vector3();
+  private readonly up = new Vector3();
   /** Object each slot is tracking, so a ramp follows its own unit. */
   private readonly slots: (GhostSubject["object"] | undefined)[] = [];
 
@@ -102,26 +114,28 @@ export class GhostController implements FrameUpdatable {
         // height of its feet: the plane below which nothing ghosts (#1118).
         this.uniforms.uGhostFeet.value[i] = this.scratch.y;
         // View space is what the shader compares in, so the projection is
-        // done once here rather than per fragment: the feet centre, and
-        // the box edges the rays leave from (#1134).
+        // done once here rather than per fragment: the feet centre, the
+        // box edges, and from them the sample points the rays leave from
+        // and the circle that bounds them (#1134).
         centre.copy(this.scratch).applyMatrix4(this.camera.matrixWorldInverse);
         this.edgeInView(
           this.scratch,
+          centre,
           subject.halfWidth,
           0,
           0,
-          i,
-          "uGhostRight",
+          this.right,
         );
         this.edgeInView(
           this.scratch,
+          centre,
           0,
           0,
           subject.halfWidth,
-          i,
-          "uGhostForward",
+          this.forward,
         );
-        this.edgeInView(this.scratch, 0, subject.height, 0, i, "uGhostUpVec");
+        this.edgeInView(this.scratch, centre, 0, subject.height, 0, this.up);
+        this.writeSamples(i, centre);
       }
       // A slot that changed hands starts from nothing, or the new unit
       // inherits the old one's ramp and the cutaway appears to jump.
@@ -149,28 +163,46 @@ export class GhostController implements FrameUpdatable {
   // ===========================================
 
   /**
-   * Writes a world-space edge from `feet` into a view-space uniform:
+   * Writes a world-space edge from `feet` into `target`, in view space:
    * the view position of the edge's far end less the view position of
    * the feet. Done as a difference of points rather than a transformed
    * direction because three's `transformDirection` normalises, and the
-   * shader needs the edge's length.
+   * samples need the edge's length.
    */
   private edgeInView(
     feet: Vector3,
+    centre: Vector3,
     dx: number,
     dy: number,
     dz: number,
-    slot: number,
-    uniform: "uGhostRight" | "uGhostForward" | "uGhostUpVec",
+    target: Vector3,
   ): void {
-    const target = this.uniforms[uniform].value[slot];
-    const centre = this.uniforms.uGhostCentres.value[slot];
-    if (target === undefined || centre === undefined) {
-      return;
-    }
     this.edge
       .set(feet.x + dx, feet.y + dy, feet.z + dz)
       .applyMatrix4(this.camera.matrixWorldInverse);
     target.copy(this.edge).sub(centre);
+  }
+
+  /**
+   * Fills slot `slot` of the flat spots uniform with the ghost's sample
+   * points, in `ghostSamples` order, and its reach with the circle that
+   * bounds them (#1134). The shader indexes the same way:
+   * `uGhostSpots[i * GHOST_SAMPLES + s]`.
+   */
+  private writeSamples(slot: number, centre: Vector3): void {
+    const spots = ghostSamples(centre, this.right, this.forward, this.up);
+    const base = slot * GHOST_SAMPLES;
+    for (let s = 0; s < GHOST_SAMPLES; s++) {
+      const spot = spots[s];
+      const target = this.uniforms.uGhostSpots.value[base + s];
+      if (spot !== undefined && target !== undefined) {
+        target.set(spot.x, spot.y, spot.z);
+      }
+    }
+    this.uniforms.uGhostReach.value[slot] = ghostReach(
+      centre,
+      spots,
+      this.uniforms.uGhostRadius.value,
+    );
   }
 }

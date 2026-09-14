@@ -14,6 +14,7 @@ import {
   GHOST_SAMPLES,
   GHOST_SOFT_EDGE,
   ghostFade,
+  ghostReach,
   ghostSamples,
   ghostsAlongRay,
   MAX_GHOSTS,
@@ -152,21 +153,44 @@ describe("ghost cutaway (#526)", () => {
     expect(GHOST_FOOT_MARGIN).toBeLessThan(0.75);
   });
 
-  it("binds the unit's box edges, and the old plane test is gone (#1134)", () => {
+  it("binds the precomputed spots and reach, and the old plane test is gone (#1134)", () => {
     const uniforms = createGhostUniforms(2, 0.15);
     const ghosted = applyGhostCutaway(new MeshStandardMaterial(), uniforms);
     const shader = shaderStub();
 
     ghosted.onBeforeCompile(shader as never, null as never);
 
+    // The sample points arrive as one flat uniform, built on the CPU
+    // once per unit per frame; the shader no longer derives them from
+    // the box edges per fragment, which cost SwiftShader half its
+    // frame budget on the e2e shard.
+    expect(shader.uniforms.uGhostSpots).toBe(uniforms.uGhostSpots);
+    expect(shader.uniforms.uGhostReach).toBe(uniforms.uGhostReach);
+    expect(shader.fragmentShader).toContain(
+      "uniform vec3 uGhostSpots[MAX_GHOSTS * GHOST_SAMPLES];",
+    );
+    expect(shader.fragmentShader).toContain(
+      "uniform float uGhostReach[MAX_GHOSTS];",
+    );
+    expect(shader.fragmentShader).toContain(
+      "vec3 spot = uGhostSpots[i * GHOST_SAMPLES + s];",
+    );
+    expect(shader.fragmentShader).not.toContain("ghostSampleOffset");
     for (const name of ["uGhostRight", "uGhostForward", "uGhostUpVec"]) {
-      expect(shader.uniforms[name]).toBe(
-        uniforms[name as keyof typeof uniforms],
-      );
-      expect(shader.fragmentShader).toContain(
-        `uniform vec3 ${name}[MAX_GHOSTS];`,
-      );
+      expect(shader.fragmentShader).not.toContain(name);
     }
+    // The bounding-circle reject sits after the feet test and before
+    // the sample loop, so most fragments pay one length per ghost.
+    const body = shader.fragmentShader;
+    const reject = body.indexOf(
+      "if (length(vGhostView.xy - uGhostCentres[i].xy) > uGhostReach[i]) continue;",
+    );
+    expect(reject).toBeGreaterThan(
+      body.indexOf(`if (rise <= ${GHOST_FOOT_MARGIN.toFixed(2)}) continue;`),
+    );
+    expect(reject).toBeLessThan(
+      body.indexOf("for (int s = 0; s < GHOST_SAMPLES; s++)"),
+    );
     // A plane through the unit faded walls off to the side; a radius
     // around its centre faded the wall behind it. Neither test remains.
     expect(shader.fragmentShader).not.toContain("uGhostUp;");
@@ -174,6 +198,58 @@ describe("ghost cutaway (#526)", () => {
     expect(shader.fragmentShader).not.toContain(
       "length(vGhostView.xy - centre.xy)",
     );
+  });
+
+  it("keeps the GLSL free of reserved words, since no test compiles it (#1134)", () => {
+    const uniforms = createGhostUniforms(2, 0.15);
+    const ghosted = applyGhostCutaway(new MeshStandardMaterial(), uniforms);
+    const shader = shaderStub();
+
+    ghosted.onBeforeCompile(shader as never, null as never);
+
+    const glsl = `${shader.vertexShader}\n${shader.fragmentShader}`
+      .split("\n")
+      .filter((line) => !line.trim().startsWith("//"))
+      .join("\n");
+    for (const word of [
+      "sample",
+      "input",
+      "output",
+      "filter",
+      "cast",
+      "namespace",
+      "using",
+      "sizeof",
+    ]) {
+      expect(glsl).not.toMatch(new RegExp(`\\b${word}\\b`));
+    }
+  });
+
+  describe("ghostReach, the bounding circle the shader rejects outside (#1134)", () => {
+    const centre = { x: 0, y: 0, z: 0 };
+    const spots = ghostSamples(
+      centre,
+      { x: 1, y: 0, z: 0 },
+      { x: 0, y: 0.5, z: 0.5 },
+      { x: 0, y: 2, z: -1 },
+    );
+
+    it("is the farthest sample across the view plane plus the ray radius", () => {
+      // The far head corner: x = 1, y = 0.5 + 2, depth ignored.
+      expect(ghostReach(centre, spots, RADIUS)).toBeCloseTo(
+        Math.hypot(1, 2.5) + RADIUS,
+        9,
+      );
+    });
+
+    it("covers every sample's ray, so the reject never drops a fragment the loop would fade", () => {
+      const reach = ghostReach(centre, spots, RADIUS);
+      for (const spot of spots) {
+        expect(Math.hypot(spot.x, spot.y) + RADIUS).toBeLessThanOrEqual(
+          reach + 1e-9,
+        );
+      }
+    });
   });
 
   describe("ghostsAlongRay, the CPU mirror of the shader's test (#1134)", () => {
@@ -242,9 +318,8 @@ describe("ghost cutaway (#526)", () => {
     ).update(1);
     const ghost = {
       centre: uniforms.uGhostCentres.value[0]!,
-      right: uniforms.uGhostRight.value[0]!,
-      forward: uniforms.uGhostForward.value[0]!,
-      up: uniforms.uGhostUpVec.value[0]!,
+      spots: uniforms.uGhostSpots.value.slice(0, GHOST_SAMPLES),
+      reach: uniforms.uGhostReach.value[0]!,
       feetY: 0,
     };
     /** Fade for a fragment at a world point. */
@@ -296,6 +371,38 @@ describe("ghost cutaway (#526)", () => {
       // The east edge at the unit's row: the ray from the back-east corner
       // of the feet reaches the camera through it, a little way up.
       expect(fadeAt(0.5, 0.4, 0)).toBeGreaterThan(0.5);
+    });
+
+    it("rejects outside the reach exactly where the full loop would find nothing (#1134)", () => {
+      // The early reject must not change the picture: over a grid around
+      // the unit, the fade with the reach applied equals the fade with
+      // the reach lifted, so every fragment it drops was zero anyway.
+      const lifted = { ...ghost, reach: Number.POSITIVE_INFINITY };
+      let rejected = 0;
+      let faded = 0;
+      for (let x = -3; x <= 3; x += 0.25) {
+        for (let y = 0.5; y <= 3; y += 0.25) {
+          for (let z = -2; z <= 3; z += 0.25) {
+            const view = new Vector3(x, y, z).applyMatrix4(
+              cam.matrixWorldInverse,
+            );
+            const fragment = { view, worldY: y };
+            const withReach = ghostFade(ghost, fragment, RADIUS);
+            const withoutReach = ghostFade(lifted, fragment, RADIUS);
+            expect(withReach).toBe(withoutReach);
+            if (
+              Math.hypot(view.x - ghost.centre.x, view.y - ghost.centre.y) >
+              ghost.reach
+            ) {
+              rejected++;
+            }
+            if (withReach > 0) faded++;
+          }
+        }
+      }
+      // The grid exercises both branches, or the equality proves nothing.
+      expect(rejected).toBeGreaterThan(0);
+      expect(faded).toBeGreaterThan(0);
     });
 
     it("softens over the last part of the radius rather than cutting", () => {

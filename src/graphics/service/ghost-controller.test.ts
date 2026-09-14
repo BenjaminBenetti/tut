@@ -2,7 +2,11 @@ import { describe, expect, it } from "vitest";
 import { Object3D, OrthographicCamera } from "three";
 
 import type { GhostSubject } from "./ghost-cutaway";
-import { createGhostUniforms, MAX_GHOSTS } from "./ghost-cutaway";
+import {
+  createGhostUniforms,
+  GHOST_SAMPLES,
+  MAX_GHOSTS,
+} from "./ghost-cutaway";
 import { GhostController } from "./ghost-controller";
 
 /** A camera looking down -z from `z = 10`, as the rig sets up. */
@@ -60,22 +64,32 @@ describe("GhostController (#526)", () => {
     expect(uniforms.uGhostFeet.value[1]).toBeCloseTo(3, 5);
   });
 
-  it("hands the shader the unit's box as view-space edges, lengths kept (#1134)", () => {
+  it("hands the shader the unit's sample points in view space, lengths kept (#1134)", () => {
     const uniforms = createGhostUniforms(3, 0.15);
     // Looking straight along -z: world x is view x, world y is view y,
-    // and a two-tile, 1.8-tall brute's edges keep those lengths.
+    // and a two-tile, 1.8-tall brute's box keeps those lengths. The
+    // spots are precomputed here, not in the shader, so the fragment
+    // loop reads a uniform instead of rebuilding them per pixel.
     const brute = { ...at(0, 0, 0), halfWidth: 1, height: 1.8 };
     new GhostController(camera(), () => [brute], uniforms).update(0.016);
-    const right = uniforms.uGhostRight.value[0]!;
-    const forward = uniforms.uGhostForward.value[0]!;
-    const up = uniforms.uGhostUpVec.value[0]!;
-    expect([right.x, right.y, right.z].map((v) => +v.toFixed(5))).toEqual([
-      1, 0, 0,
-    ]);
-    expect(up.y).toBeCloseTo(1.8, 5);
-    expect(up.z).toBeCloseTo(0, 5);
-    // World z points at the camera here, so the forward edge is depth.
-    expect(forward.z).toBeCloseTo(1, 5);
+    const spot = (s: number): number[] =>
+      uniforms.uGhostSpots.value[s]!.toArray().map((v) => +v.toFixed(5));
+    // Feet corners, then head corners, then head, waist, feet centres.
+    expect(spot(0)).toEqual([-1, 0, -11]);
+    expect(spot(1)).toEqual([1, 0, -11]);
+    expect(spot(2)).toEqual([-1, 0, -9]);
+    expect(spot(3)).toEqual([1, 0, -9]);
+    expect(spot(4)).toEqual([-1, 1.8, -11]);
+    expect(spot(7)).toEqual([1, 1.8, -9]);
+    expect(spot(8)).toEqual([0, 1.8, -10]);
+    expect(spot(9)).toEqual([0, 0.9, -10]);
+    expect(spot(10)).toEqual([0, 0, -10]);
+    // The farthest spot on the view plane is a head corner, √(1 + 1.8²)
+    // from the centre, and the reach adds the ray radius.
+    expect(uniforms.uGhostReach.value[0]).toBeCloseTo(
+      Math.hypot(1, 1.8) + 3,
+      5,
+    );
 
     // Pitched down 45°, a unit of height is sin(45°) nearer the camera
     // and cos(45°) up the view plane: the edge is rotated, not shrunk.
@@ -84,8 +98,28 @@ describe("GhostController (#526)", () => {
     pitched.lookAt(0, 0, 0);
     pitched.updateMatrixWorld(true);
     new GhostController(pitched, () => [brute], uniforms).update(0.016);
-    expect(uniforms.uGhostUpVec.value[0]!.z).toBeCloseTo(1.8 * Math.SQRT1_2, 5);
-    expect(uniforms.uGhostUpVec.value[0]!.y).toBeCloseTo(1.8 * Math.SQRT1_2, 5);
+    const feet = uniforms.uGhostSpots.value[10]!;
+    const head = uniforms.uGhostSpots.value[8]!;
+    expect(head.z - feet.z).toBeCloseTo(1.8 * Math.SQRT1_2, 5);
+    expect(head.y - feet.y).toBeCloseTo(1.8 * Math.SQRT1_2, 5);
+  });
+
+  it("writes each ghost's spots into its own stretch of the flat array (#1134)", () => {
+    const uniforms = createGhostUniforms(3, 0.15);
+    const units = [at(0, 0, 0), at(4, 0, 0)];
+    new GhostController(camera(), () => units, uniforms).update(0.016);
+
+    // Ghost 1's feet centre sits at index 1 * GHOST_SAMPLES + 10, where
+    // the shader reads it.
+    const second = uniforms.uGhostSpots.value[GHOST_SAMPLES + 10]!;
+    expect(second.x).toBeCloseTo(4, 5);
+    expect(uniforms.uGhostSpots.value).toHaveLength(MAX_GHOSTS * GHOST_SAMPLES);
+    // Half a tile wide and a unit tall, seen square on: the head corner
+    // is the farthest spot across the view, and depth does not count.
+    expect(uniforms.uGhostReach.value[1]).toBeCloseTo(
+      Math.hypot(0.5, 1) + 3,
+      5,
+    );
   });
 
   it("follows the camera, so panning does not smear the cutaway", () => {

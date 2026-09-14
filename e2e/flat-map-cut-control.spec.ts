@@ -243,8 +243,13 @@ test("a flat map draws the same under the storey cut and the height cut", async 
     process.env.CAPTURE === undefined,
     "set CAPTURE=1 to regenerate the flat-map control frames",
   );
+  // A verified pan of up to forty taps and nine full-viewport shots
+  // under SwiftShader: the default 60 s ran out during the pan, and
+  // 300 s ran out on the last shot with a second worker alongside,
+  // which roughly doubles every shot (#1136). Measured alone: 4.2 min.
+  test.setTimeout(600_000);
   const body = page.locator("body");
-  await launchMission(page, process.env.LAYER_SEED ?? "4242");
+  await launchMission(page, process.env.LAYER_SEED ?? "1");
   await tacticalModelsReady(page);
   await settleForShot(page);
 
@@ -275,36 +280,54 @@ test("a flat map draws the same under the storey cut and the height cut", async 
   const heightCutFor = (storey: number): number | undefined =>
     storey === storeys - 1 ? undefined : ground + (storey + 1) * 2 - 1;
 
-  // Ground floor, one above it, the roofs off, and the top of the range.
-  for (const storey of [0, 1, storeys - 2, storeys - 1]) {
-    const label =
-      storey === storeys - 1
-        ? "top"
-        : storey === storeys - 2
-          ? "roof-off"
-          : `floor-${String(storey + 1)}`;
+  /** Both cuts at `storey`, drawn on one camera, and whether they match. */
+  const pairMatches = async (
+    storey: number,
+    label: string,
+  ): Promise<boolean> => {
     await toStorey(page, storey, storeys);
     await shoot(page, `${FRAMES}-${label}-storey.png`);
-
     await page.evaluate(
       (cut) => (globalThis as HookGlobal).__tutTactical__?.applyHeightCut(cut),
       heightCutFor(storey),
     );
     await shoot(page, `${FRAMES}-${label}-height.png`);
+    return readFileSync(`${FRAMES}-${label}-storey.png`).equals(
+      readFileSync(`${FRAMES}-${label}-height.png`),
+    );
+  };
 
+  // Ground floor, one above it, and the top of the range: where the two
+  // rules are the same number on a flat map.
+  for (const storey of [0, 1, storeys - 1]) {
+    const label =
+      storey === storeys - 1 ? "top" : `floor-${String(storey + 1)}`;
     expect(
-      readFileSync(`${FRAMES}-${label}-storey.png`).equals(
-        readFileSync(`${FRAMES}-${label}-height.png`),
-      ),
+      await pairMatches(storey, label),
       `${label}: the storey cut must draw what the height cut drew`,
     ).toBe(true);
   }
+
+  // The roofs off (#1136): the storey view takes every roof off below
+  // the top, the height cut only those above the tallest building's top
+  // floor. So the pair differs exactly when some building is shorter
+  // than the tallest — its roof is on under one rule and off under the
+  // other — and matches when every building is the same height. Either
+  // way the frame is asserted, so a rule that quietly kept the short
+  // roofs on would fail here.
+  const shorter = Math.min(...shape.floors) < Math.max(...shape.floors);
+  expect(
+    await pairMatches(storeys - 2, "roof-off"),
+    shorter
+      ? "roof-off: the storey view must take the shorter roofs off where the height cut keeps them"
+      : "roof-off: with every building the same height the two cuts must agree",
+  ).toBe(!shorter);
 
   // The instrument itself: shot twice with nothing changed. Equality is
   // only evidence once this holds (#996).
   const again = `${FRAMES}-reproducibility-check.png`;
   await shoot(page, again);
-  const stable = readFileSync(`${FRAMES}-top-height.png`).equals(
+  const stable = readFileSync(`${FRAMES}-roof-off-height.png`).equals(
     readFileSync(again),
   );
   rmSync(again, { force: true });

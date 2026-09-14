@@ -214,6 +214,81 @@ async function shoot(page: Page, path: string): Promise<void> {
   await page.locator("#tactical-viewport").screenshot({ path });
 }
 
+/** Half the width of the box the control frames cut around the unit, in px. */
+const CONTROL_HALF_WIDTH = 48;
+
+/** Half the height of that box: the unit's body and the strip under its feet. */
+const CONTROL_HALF_HEIGHT = 80;
+
+/**
+ * Screenshots a box around where `unitId` is drawn, after the scene has
+ * drawn the change.
+ *
+ * The control is about the unit, so the frame is of the unit: its body
+ * and the strip below its feet, which is where a tether would hang.
+ * Since #1136 the storey view leaves terrain alone while the height cut
+ * it is compared against does not, so a whole-viewport pair differs
+ * wherever a hill stands above the cut — which is the map, not the
+ * unit. A box the unit fills keeps the comparison honest without
+ * weakening it: anything the tether change did to a supported unit
+ * still lands inside it.
+ *
+ * @param page - The page holding the live mission.
+ * @param unitId - The unit to frame.
+ * @param path - Where to write the PNG.
+ */
+async function shootUnit(
+  page: Page,
+  unitId: string,
+  path: string,
+): Promise<void> {
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+      }),
+  );
+  const at = await unitAt(page, unitId);
+  const box = await page.locator("#tactical-viewport").boundingBox();
+  if (!at || !box) {
+    throw new Error(`cannot frame ${unitId}: it has no screen position`);
+  }
+  const left = Math.max(box.x, at.x - CONTROL_HALF_WIDTH);
+  const top = Math.max(box.y, at.y - CONTROL_HALF_HEIGHT);
+  await page.screenshot({
+    path,
+    clip: {
+      x: left,
+      y: top,
+      width: Math.min(box.x + box.width, at.x + CONTROL_HALF_WIDTH) - left,
+      height: Math.min(box.y + box.height, at.y + CONTROL_HALF_HEIGHT) - top,
+    },
+  });
+}
+
+/**
+ * Where `unitId` stands, read out of the autosave.
+ *
+ * @param page - The page holding the live mission.
+ * @param unitId - The unit to find.
+ * @returns Its tile, or null when it is not in the mission.
+ */
+async function unitTile(page: Page, unitId: string): Promise<Tile | null> {
+  return page.evaluate(
+    ({ key, id }) => {
+      const raw = localStorage.getItem(key);
+      const save = JSON.parse(raw ?? "{}") as {
+        state: {
+          activeMission?: { units: { id: string; pos: Tile }[] };
+        };
+      };
+      const unit = save.state.activeMission?.units.find((u) => u.id === id);
+      return unit ? { x: unit.pos.x, y: unit.pos.y, z: unit.pos.z } : null;
+    },
+    { key: SAVE_KEY, id: unitId },
+  );
+}
+
 /**
  * A standable tile two storeys above the ground, to stand a unit on.
  *
@@ -307,19 +382,14 @@ test("captures a unit above the cut, before and after, and the control", async (
   // zone below the cut. Taken after the perch it is not a control at
   // all: unit-1's own tether is in the frame, which is how the first
   // version of this failed its own byte-identical assertion.
-  const heightCutFor = async (): Promise<number> =>
-    page.evaluate((key) => {
-      const raw = localStorage.getItem(key);
-      const save = JSON.parse(raw ?? "{}") as {
-        state: {
-          activeMission?: { map: { buildings: { groundLevel: number }[] } };
-        };
-      };
-      const grounds = (save.state.activeMission?.map.buildings ?? []).map(
-        (b) => b.groundLevel,
-      );
-      return grounds.length === 0 ? 1 : Math.min(...grounds) + 1;
-    }, SAVE_KEY);
+  //
+  // The height cut is the one that keeps the unit's own floor: the top
+  // layer of the storey it stands on. It used to be the lowest
+  // building's ground plus one, and on a deploy zone up a step that cut
+  // the ground from under the unit — which since #1136 the storey view
+  // never does, so the pair differed for a reason that is the map's,
+  // not the unit's.
+  const heightCutFor = (stand: Tile): number => stand.y + 1;
   const stepToGround = async (): Promise<void> => {
     for (let i = 0; i < storeys; i++) {
       await page.evaluate(() =>
@@ -336,22 +406,29 @@ test("captures a unit above the cut, before and after, and the control", async (
   await expect
     .poll(async () => (await unitAt(page, "unit-1")) !== undefined)
     .toBe(true);
-  await centreOn(page, { x: 0, y: 0, z: 0 });
+  // On the unit, not on the map's corner: the control is of the unit,
+  // and a frame it is not in cannot fail (#1136 found it framing water).
+  const stand = await unitTile(page, "unit-1");
+  expect(stand, "unit-1 must be in the mission").not.toBeNull();
+  await centreOn(page, stand ?? { x: 0, y: 0, z: 0 });
   await stepToGround();
-  const groundCut = await heightCutFor();
+  const groundCut = heightCutFor(stand ?? { x: 0, y: 0, z: 0 });
   await page.evaluate(
     (cut) => (globalThis as HookGlobal).__tutTactical__?.applyHeightCut(cut),
     groundCut,
   );
-  await shoot(page, `${FRAMES}-below-before.png`);
+  await shootUnit(page, "unit-1", `${FRAMES}-below-before.png`);
   await page.evaluate(() =>
     (globalThis as HookGlobal).__tutTactical__?.stepLayer(0),
   );
-  await shoot(page, `${FRAMES}-below-after.png`);
+  await shootUnit(page, "unit-1", `${FRAMES}-below-after.png`);
   // Asserted, not eyeballed. A unit standing on floor the cut still
   // shows must render exactly as it did before this change, and the two
   // frames are drawn seconds apart on one camera, so anything that
-  // touched a supported unit would show up here as a difference.
+  // touched a supported unit would show up here as a difference. Cut to
+  // a box around the unit since #1136: the storey view no longer cuts
+  // terrain and the height cut it is compared with does, so the rest of
+  // the frame differs by design wherever a hill stands.
   expect(
     readFileSync(`${FRAMES}-below-before.png`).equals(
       readFileSync(`${FRAMES}-below-after.png`),

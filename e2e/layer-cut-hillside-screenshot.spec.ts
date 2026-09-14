@@ -233,7 +233,7 @@ test("captures the hillside cut, before and after, in one run", async ({
     process.env.CAPTURE === undefined,
     "set CAPTURE=1 to regenerate the hillside frames",
   );
-  const seed = process.env.LAYER_SEED ?? "555";
+  const seed = process.env.LAYER_SEED ?? "13";
 
   const storeys = await launch(page, seed);
   const highest = await highestBuildingTile(page);

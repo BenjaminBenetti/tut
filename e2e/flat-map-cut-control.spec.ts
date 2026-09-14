@@ -42,6 +42,8 @@ interface MapShape {
   readonly floors: readonly number[];
   readonly roofTiles: number;
   readonly roofLevels: readonly number[];
+  /** The highest layer any tile outside a building stands at. */
+  readonly terrainCeiling: number;
 }
 
 /**
@@ -69,7 +71,8 @@ async function mapShape(page: Page): Promise<MapShape> {
     };
     const map = save.state.activeMission?.map;
     const buildings = map?.buildings ?? [];
-    const roofs = (map?.tiles ?? []).filter(
+    const tiles = map?.tiles ?? [];
+    const roofs = tiles.filter(
       (t) => t.buildingId !== undefined && t.floorIndex === undefined,
     );
     return {
@@ -77,6 +80,10 @@ async function mapShape(page: Page): Promise<MapShape> {
       floors: buildings.map((b) => b.floors.length),
       roofTiles: roofs.length,
       roofLevels: [...new Set(roofs.map((t) => t.y))].sort((a, b) => a - b),
+      terrainCeiling: Math.max(
+        0,
+        ...tiles.filter((t) => t.buildingId === undefined).map((t) => t.y),
+      ),
     };
   }, SAVE_KEY);
 }
@@ -213,8 +220,15 @@ async function shoot(page: Page, path: string): Promise<void> {
  * On a map whose buildings all stand on one ground level, the
  * per-building storey cut and the single height cut it replaced are the
  * same number at every step of the range. So the two must draw the same
- * pixels — at the ground floor, in the middle, and at the top where "no
- * cut" has to mean no cut for roofs as well as for terrain.
+ * pixels — at the ground floor, in the middle, with the roofs off, and
+ * at the top where "no cut" has to mean no cut for roofs as well as for
+ * terrain.
+ *
+ * Since #1136 the storey cut leaves terrain alone, so the two agree only
+ * on a map with no terrain above the buildings' ground level: a hill
+ * would be cut by height and kept by storey. That is asserted from the
+ * map rather than assumed; pick another seed with `LAYER_SEED` if the
+ * default grows a hill.
  *
  * Both members of every pair are drawn **in one run on one camera**, and
  * the old rule is the real one: `applyHeightCut` puts the map back on
@@ -230,7 +244,7 @@ test("a flat map draws the same under the storey cut and the height cut", async 
     "set CAPTURE=1 to regenerate the flat-map control frames",
   );
   const body = page.locator("body");
-  await launchMission(page, "4242");
+  await launchMission(page, process.env.LAYER_SEED ?? "4242");
   await tacticalModelsReady(page);
   await settleForShot(page);
 
@@ -243,8 +257,13 @@ test("a flat map draws the same under the storey cut and the height cut", async 
     0,
   );
   const ground = shape.grounds[0] ?? 0;
+  expect(
+    shape.terrainCeiling,
+    "the control needs no terrain above the buildings' ground (#1136)",
+  ).toBeLessThanOrEqual(ground);
   const storeys = Number(await body.getAttribute("data-tactical-storeys"));
-  expect(storeys).toBe(Math.max(...shape.floors));
+  // One view per floor of the tallest building, plus the roof (#1136).
+  expect(storeys).toBe(Math.max(...shape.floors) + 1);
 
   // Frame the roof the fault hides, or the comparison is blind to it.
   const roof = await tallestRoofTile(page);
@@ -256,10 +275,14 @@ test("a flat map draws the same under the storey cut and the height cut", async 
   const heightCutFor = (storey: number): number | undefined =>
     storey === storeys - 1 ? undefined : ground + (storey + 1) * 2 - 1;
 
-  // Ground floor, one above it, and the top of the range.
-  for (const storey of [0, 1, storeys - 1]) {
+  // Ground floor, one above it, the roofs off, and the top of the range.
+  for (const storey of [0, 1, storeys - 2, storeys - 1]) {
     const label =
-      storey === storeys - 1 ? "top" : `floor-${String(storey + 1)}`;
+      storey === storeys - 1
+        ? "top"
+        : storey === storeys - 2
+          ? "roof-off"
+          : `floor-${String(storey + 1)}`;
     await toStorey(page, storey, storeys);
     await shoot(page, `${FRAMES}-${label}-storey.png`);
 

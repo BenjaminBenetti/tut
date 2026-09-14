@@ -352,11 +352,15 @@ test("captures the layer control for review", async ({ page }) => {
   }
   // A frame of a flat map would say nothing about a layer control, so
   // this is a hard requirement rather than a skip.
+  // Views, not floors: the roof is its own step since #1136, so a
+  // two-floor building offers three, and a flat map one.
   expect(
     storeys,
     "the capture seed must offer a multi-storey building",
-  ).toBeGreaterThan(1);
-  await expect(readout).toHaveText(`${storeys} / ${storeys}`);
+  ).toBeGreaterThan(2);
+  const floors = storeys - 1;
+  // The roofed top reads "All": it is not a floor (#1136).
+  await expect(readout).toHaveText("All");
 
   // Uncut: the map as it has always looked.
   const top = await shoot(page, `${FRAMES}-top.png`);
@@ -365,28 +369,29 @@ test("captures the layer control for review", async ({ page }) => {
   // either matches the one above exactly or the control is changing
   // something it should not.
   await step(page, 1);
-  await expect(readout).toHaveText(`${storeys} / ${storeys}`);
+  await expect(readout).toHaveText("All");
   const unchanged = await shoot(page, `${FRAMES}-top-after-up.png`);
   expect(unchanged.equals(top), "a no-op must preserve exact PNG bytes").toBe(
     true,
   );
 
-  // One storey down: the transition off the top.
+  // One storey down: the roofs come off and the top floor is on show.
   await step(page, -1);
   await expect(body).toHaveAttribute(
     "data-tactical-storey",
     String(storeys - 1),
   );
+  await expect(readout).toHaveText(`${floors} / ${floors}`);
   await shoot(page, `${FRAMES}-one-down.png`);
 
-  // The ground floor, roofs and upper storeys peeled off.
+  // The ground floor, roofs and upper storeys peeled off; the hills stay.
   await toGround(page, storeys);
-  await expect(readout).toHaveText(`1 / ${storeys}`);
+  await expect(readout).toHaveText(`1 / ${floors}`);
   await shoot(page, `${FRAMES}-ground.png`);
 
   // Down from the ground floor is the other end of the clamp.
   await step(page, -1);
-  await expect(readout).toHaveText(`1 / ${storeys}`);
+  await expect(readout).toHaveText(`1 / ${floors}`);
 
   // A unit standing above the cut: it keeps its true height, because
   // hiding an enemy because the player looked at another floor would be

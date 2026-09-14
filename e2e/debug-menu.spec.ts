@@ -50,16 +50,28 @@ async function freeTileBesideTheForce(
       .map((unit) => `${unit.pos.x},${unit.pos.y},${unit.pos.z}`),
   );
   const force = mission.units.filter((u) => u.team === "tdf" && u.hp > 0);
+  // A unit's model overlaps the screen centre of the tile behind it in
+  // the isometric view, so a click there picks the unit, and the rules
+  // refuse the placement as occupied. Only tiles with no living unit
+  // on any of the eight neighbours are offered, two to three tiles out
+  // from a member of the force on its own level.
+  const living = mission.units.filter((unit) => unit.hp > 0);
+  const clearOfUnits = (tile: Tile): boolean =>
+    living.every(
+      (unit) =>
+        unit.pos.y !== tile.y ||
+        Math.max(Math.abs(unit.pos.x - tile.x), Math.abs(unit.pos.z - tile.z)) >
+          1,
+    );
   const candidates: Tile[] = [];
+  const seen = new Set<string>();
   for (const unit of force) {
-    for (const [dx, dz] of [
-      [1, 0],
-      [-1, 0],
-      [0, 1],
-      [0, -1],
-    ] as const) {
-      const tile = { x: unit.pos.x + dx, y: unit.pos.y, z: unit.pos.z + dz };
-      if (!taken.has(`${tile.x},${tile.y},${tile.z}`)) {
+    for (let dx = -3; dx <= 3; dx += 1) {
+      for (let dz = -3; dz <= 3; dz += 1) {
+        const tile = { x: unit.pos.x + dx, y: unit.pos.y, z: unit.pos.z + dz };
+        const key = `${tile.x},${tile.y},${tile.z}`;
+        if (seen.has(key) || taken.has(key) || !clearOfUnits(tile)) continue;
+        seen.add(key);
         candidates.push(tile);
       }
     }
@@ -142,6 +154,14 @@ test("the debug menu places a bug and a squad where the map is clicked", async (
   );
   const first = await freeTileBesideTheForce(page);
   expect(first, "a free tile beside the force in the open").toBeTruthy();
+  // The picker reads the last drawn frame, so draw one before clicking
+  // (#1134), and make sure the panel is not what the click lands on.
+  await drawnFrame(page);
+  const under = await page.evaluate(
+    ({ x, y }) => document.elementFromPoint(x, y)?.tagName ?? "",
+    first!.at,
+  );
+  expect(under, "the click lands on the map").toBe("CANVAS");
   await page.mouse.click(first!.at.x, first!.at.y);
   await expect
     .poll(async () => (await savedMission(page))?.units.length)

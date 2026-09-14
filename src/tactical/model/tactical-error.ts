@@ -94,6 +94,13 @@ export type TacticalError =
     }
   | { readonly kind: "radar-out-of-reach"; readonly range: number }
   | { readonly kind: "radar-tile-blocked" }
+  // A medkit or a repair kit with nobody of its side and make to mend in
+  // its footprint (#1138): a use that would spend the kit on nothing.
+  | {
+      readonly kind: "nothing-to-heal";
+      readonly unitId: string;
+      readonly equipmentId: string;
+    }
   | { readonly kind: "objective-not-found"; readonly objectiveId: string }
   | { readonly kind: "objective-complete"; readonly objectiveId: string }
   | { readonly kind: "objective-not-yours"; readonly unitId: string }
@@ -208,6 +215,8 @@ export function describeTacticalError(error: TacticalError): string {
       return `Deploy radar within ${String(error.range)} tiles of the squad`;
     case "radar-tile-blocked":
       return "Deploy radar on a free tile within reach that the squad can walk to";
+    case "nothing-to-heal":
+      return `Unit "${error.unitId}" has nothing "${error.equipmentId}" can mend there`;
     case "objective-not-found":
       return `No objective "${error.objectiveId}" is in this mission`;
     case "objective-complete":
@@ -292,6 +301,7 @@ export const TACTICAL_ERROR_KINDS: Readonly<
   "equipment-spent": true,
   "radar-out-of-reach": true,
   "radar-tile-blocked": true,
+  "nothing-to-heal": true,
   "objective-not-found": true,
   "objective-complete": true,
   "objective-not-yours": true,

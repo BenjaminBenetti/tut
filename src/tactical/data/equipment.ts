@@ -8,11 +8,13 @@ import type { EquipmentDefinition, EquipmentId } from "../model/equipment";
 // mission. Numbers, sized against the weapons in `unit-tuning.ts` (a
 // carbine hits for 3, a missile pod bursts over five tiles for 22):
 //
-//   | item             | kind   | uses | AP | range | acc | dmg | pen | blast (r/falloff) | demo | delay |
-//   |------------------|--------|------|----|-------|-----|-----|-----|-------------------|------|-------|
-//   | Radar dish       | radar  | 3    | 1  | 2     | —   | —   | —   | —                 | —    | —     |
-//   | Grenade          | blast  | 2    | 1  | 5     | 75  | 6   | 0   | 2 / 0.4           | 1    | —     |
-//   | Breaching charge | charge | 1    | 1  | 2     | —   | 20  | 3   | 3 / 0.3           | 3    | 2     |
+//   | item             | kind   | uses | AP | range | acc | dmg | pen | blast (r/falloff) | demo | delay | heal |
+//   |------------------|--------|------|----|-------|-----|-----|-----|-------------------|------|-------|------|
+//   | Radar dish       | radar  | 3    | 1  | 2     | —   | —   | —   | —                 | —    | —     | —    |
+//   | Grenade          | blast  | 2    | 1  | 5     | 75  | 6   | 0   | 2 / 0.4           | 1    | —     | —    |
+//   | Breaching charge | charge | 1    | 1  | 2     | —   | 20  | 3   | 3 / 0.3           | 3    | 2     | —    |
+//   | Medkit           | heal   | 4    | 1  | 5     | —   | —   | —   | 2 / —             | —    | —     | 10   |
+//   | Repair kit       | heal   | 2    | 1  | 5     | —   | —   | —   | 2 / —             | —    | —     | 25   |
 //
 //   • The dish keeps its scan radius and battery in `radar-tuning.ts`;
 //     only where it may be put and what it costs live here.
@@ -26,6 +28,20 @@ import type { EquipmentDefinition, EquipmentId } from "../model/equipment";
 //     It went off as T+1 opened at first, which caught a squad that
 //     placed it with its last action (Executive Director, 2026-09-13,
 //     #1134). Force 3 opens solid walls, which is what "breaching" means.
+//   • A medkit or a repair kit is thrown like a grenade and mends the
+//     user's own side in the grenade's footprint (Executive Director,
+//     2026-09-14, #1138): the medkit 10 hit points to every organic unit
+//     in it, four times a mission; the repair kit 25 to every mechanical
+//     one, twice. Neither hurts anything or misses, and a unit at full
+//     hit points takes nothing.
+
+/**
+ * How far a thrown kit goes and how wide it lands: the grenade's
+ * numbers, which the kits share by construction (#1138) so "an AOE like
+ * grenade" stays true when the grenade is retuned.
+ */
+const THROWN_KIT_RANGE = 5;
+const THROWN_KIT_BLAST_RADIUS = 2;
 
 /** The radio squad's scanner (#1130 battery; #1132 three uses). */
 export const RADAR_DISH: EquipmentDefinition = {
@@ -44,13 +60,13 @@ export const GRENADE: EquipmentDefinition = {
   kind: "blast",
   uses: 2,
   apCost: 1,
-  range: 5,
+  range: THROWN_KIT_RANGE,
   profile: {
-    range: 5,
+    range: THROWN_KIT_RANGE,
     accuracy: 75,
     damage: 6,
     armorPen: 0,
-    aoe: { radius: 2, falloff: 0.4 },
+    aoe: { radius: THROWN_KIT_BLAST_RADIUS, falloff: 0.4 },
     demoForce: 1,
   },
 };
@@ -74,9 +90,33 @@ export const BREACHING_CHARGE: EquipmentDefinition = {
   delayTurns: 2,
 };
 
+/** The medic squad's medkit (#1138): ten hit points to every organic unit in the area, four times. */
+export const MEDKIT: EquipmentDefinition = {
+  id: "medkit",
+  name: "Medkit",
+  kind: "heal",
+  uses: 4,
+  apCost: 1,
+  range: THROWN_KIT_RANGE,
+  heal: { amount: 10, target: "organic", radius: THROWN_KIT_BLAST_RADIUS },
+};
+
+/** The engineer squad's repair kit (#1138): twenty-five hit points to every mechanical unit in the area, twice. */
+export const REPAIR_KIT: EquipmentDefinition = {
+  id: "repair-kit",
+  name: "Repair kit",
+  kind: "heal",
+  uses: 2,
+  apCost: 1,
+  range: THROWN_KIT_RANGE,
+  heal: { amount: 25, target: "mechanical", radius: THROWN_KIT_BLAST_RADIUS },
+};
+
 /** Every piece of equipment keyed by id, in catalogue order. */
 export const EQUIPMENT: Readonly<Record<EquipmentId, EquipmentDefinition>> = {
   [RADAR_DISH.id]: RADAR_DISH,
   [GRENADE.id]: GRENADE,
   [BREACHING_CHARGE.id]: BREACHING_CHARGE,
+  [MEDKIT.id]: MEDKIT,
+  [REPAIR_KIT.id]: REPAIR_KIT,
 };

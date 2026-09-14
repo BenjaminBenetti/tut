@@ -226,6 +226,23 @@ export function describeEvent(
         icon: "warning",
         tone: "danger",
       };
+    case "tactical:units-healed": {
+      // One line for the whole area, as a blast gets (#1138): who was
+      // mended and by how much, "repaired" when the kit mends metal.
+      const verb =
+        SHIPPED_EQUIPMENT.get(event.payload.kitId)?.heal?.target ===
+        "mechanical"
+          ? "repaired"
+          : "healed";
+      const mended = event.payload.healed.map(
+        (unit) => `${nameOf(unit.unitId)} for ${formatWhole(unit.amount)}`,
+      );
+      return {
+        text: `${nameOf(event.payload.userId)} ${verb} ${mended.join(", ")}`,
+        icon: "hp",
+        tone: "ok",
+      };
+    }
     case "tactical:unit-status-changed":
       return {
         text:
@@ -311,6 +328,10 @@ export function actorOf(event: TacticalEvent): UnitId | undefined {
       return event.payload.unitId;
     case "tactical:charge-placed":
       return event.payload.charge.ownerId;
+    case "tactical:units-healed":
+      // Above the medic: the heal is what they did; each mended unit
+      // gets its own number from the scene (#1138).
+      return event.payload.userId;
     case "tactical:unit-died":
       // Above the unit that died, not its killer: the death is the
       // thing that happened, and it happened there.

@@ -186,6 +186,84 @@ describe("actionWheel on a tile", () => {
     ).toBe(false);
   });
 
+  it("puts a medkit on the ring as Heal with what it gives and to how many, never under Attack, closed with nobody to heal (#1138)", () => {
+    const base = hudMission();
+    // s1 is the medic, at full health; s2 two tiles south is at 12 of 20.
+    const medics: TacticalState = {
+      ...base,
+      templates: {
+        ...base.templates,
+        rifle: {
+          ...hudTemplate("rifle", "Medic Squad"),
+          equipment: ["grenade", "medkit"],
+        },
+      },
+    };
+    const hurtTile = { x: 1, y: 0, z: 3 };
+    const ring = actionWheel(
+      { kind: "tile", tile: hurtTile },
+      contextFor(medics, "s1"),
+    );
+    expect(ids(ring)).toEqual([
+      "move:1,0,3",
+      "attack-tile:1,0,3",
+      "equipment:medkit:1,0,3",
+      "overwatch",
+      "reload",
+    ]);
+    const heal = ring.items[2];
+    expect(heal).toMatchObject({
+      label: "Heal",
+      icon: "hp",
+      detail: "+10 hp · 1 ally · 4/4",
+    });
+    expect(heal?.disabled).not.toBe(true);
+    expect(parseWheelChoice(heal!.id)).toEqual({
+      action: "use-equipment",
+      equipmentId: "medkit",
+      tile: hurtTile,
+    });
+    // Attack counts the rifle and the grenade only; the page lists no kit.
+    expect(ring.items[1]?.detail).toBe("2 options");
+    expect(
+      ids(
+        weaponWheel({ kind: "tile", tile: hurtTile }, contextFor(medics, "s1")),
+      ),
+    ).toEqual([
+      "attack-tile:1,0,3:primary",
+      "equipment:grenade:1,0,3",
+      "back:ground",
+    ]);
+    // A tile in reach with only the whole medic near it: closed, with the reason.
+    const empty = actionWheel(
+      { kind: "tile", tile: { x: 3, y: 0, z: 0 } },
+      contextFor(medics, "s1"),
+    ).items.find((item) => item.id === "equipment:medkit:3,0,0");
+    expect(empty).toMatchObject({ disabled: true, detail: "nobody to heal" });
+    expect(empty?.reason).toBe("Medic Squad has nobody to heal there");
+    // A repair kit reads Repair and says what is missing in its own words.
+    const engineers: TacticalState = {
+      ...medics,
+      templates: {
+        ...medics.templates,
+        rifle: {
+          ...hudTemplate("rifle", "Engineer Squad"),
+          equipment: ["repair-kit"],
+        },
+      },
+    };
+    const repair = actionWheel(
+      { kind: "tile", tile: hurtTile },
+      contextFor(engineers, "s1"),
+    ).items.find((item) => item.id === "equipment:repair-kit:1,0,3");
+    expect(repair).toMatchObject({
+      label: "Repair",
+      icon: "hp",
+      disabled: true,
+      detail: "nothing to repair",
+    });
+  });
+
   it("keeps the radar dish on the ring while the grenade goes under Attack (#1136)", () => {
     const base = hudMission();
     const radio: TacticalState = {

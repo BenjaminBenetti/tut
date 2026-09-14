@@ -25,7 +25,9 @@ import { attackDistance, closestTiles } from "./weapon-reach-service";
  *              the unit's level or one off
  *   blast  ──► attackDistance(from, tile) ≤ range and a sight line from
  *   charge     the tile of the unit's block nearest it, the pair
- *              `validateEquipmentUse` measures a throw from
+ *   heal       `validateEquipmentUse` measures a throw from (#1138: a
+ *              kit is thrown like a grenade; whether anyone is there to
+ *              mend is the wheel's question, not the reach's)
  * ```
  *
  * The unit's own tiles are never in the answer. The radar's walk is a

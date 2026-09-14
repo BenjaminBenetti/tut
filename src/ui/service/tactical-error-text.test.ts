@@ -62,6 +62,7 @@ const EVERY_KIND: readonly TacticalError[] = [
   { kind: "equipment-spent", unitId: ID, equipmentId: "grenade" },
   { kind: "radar-out-of-reach", range: 1 },
   { kind: "radar-tile-blocked" },
+  { kind: "nothing-to-heal", unitId: ID, equipmentId: "medkit" },
   { kind: "objective-not-found", objectiveId: ID },
   { kind: "objective-complete", objectiveId: ID },
   { kind: "objective-not-yours", unitId: ID },

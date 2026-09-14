@@ -14,22 +14,36 @@ import { Vector3 } from "three";
  * write per frame updates them all. Everything is in **view space**, so
  * the shader compares fragments with units without a matrix per pixel.
  *
- * Each ghost is a box: the unit's feet centre and three edge vectors —
- * half its footprint along world x and z, and its full height along
- * world y — which the shader turns into the sample points its rays
- * leave from (#1134).
+ * Each ghost is a box: the unit's feet centre and, since #1134, the
+ * sample points its rays leave from. The controller builds those on the
+ * CPU (`ghostSamples`) from the box's edges and hands the shader the
+ * finished spots, so the fragment loop reads a uniform instead of
+ * rebuilding eleven points per ghost per pixel.
+ *
+ * ```
+ *   uGhostSpots   [ ghost 0: s0 … s10 ][ ghost 1: s0 … s10 ] … ×MAX_GHOSTS
+ *                   └─ index i * GHOST_SAMPLES + s, in ghostSamples order
+ *   uGhostReach   [ r0 ][ r1 ] …   bounding circle per ghost on the view plane
+ * ```
  */
 export interface GhostUniforms {
   /** How many entries of the arrays are live this frame. */
   readonly uGhostCount: { value: number };
   /** Feet centres in view space, one per unit being kept visible. */
   readonly uGhostCentres: { value: Vector3[] };
-  /** Half the footprint along world x, as a view-space vector. */
-  readonly uGhostRight: { value: Vector3[] };
-  /** Half the footprint along world z, as a view-space vector. */
-  readonly uGhostForward: { value: Vector3[] };
-  /** The unit's height along world y, as a view-space vector. */
-  readonly uGhostUpVec: { value: Vector3[] };
+  /**
+   * Every ghost's sample points in view space, flat: ghost `i`'s sample
+   * `s` sits at `i * GHOST_SAMPLES + s`, in the order `ghostSamples`
+   * returns them (#1134).
+   */
+  readonly uGhostSpots: { value: Vector3[] };
+  /**
+   * Per ghost, the radius on the view plane, from the feet centre, past
+   * which no fragment can stand on any of its rays: the farthest sample
+   * from the centre plus `uGhostRadius` (#1134). The shader rejects a
+   * fragment outside it with one distance instead of eleven.
+   */
+  readonly uGhostReach: { value: number[] };
   /**
    * Radius of each ray in world units, measured across the view plane:
    * how far from a sample point's projection a fragment may lie and
@@ -123,18 +137,18 @@ export function createGhostUniforms(
   radius: number,
   floor: number,
 ): GhostUniforms {
-  const vectors = (): Vector3[] =>
-    Array.from({ length: MAX_GHOSTS }, () => new Vector3());
+  const vectors = (length: number): Vector3[] =>
+    Array.from({ length }, () => new Vector3());
+  const numbers = (): number[] => Array.from({ length: MAX_GHOSTS }, () => 0);
   return {
     uGhostCount: { value: 0 },
-    uGhostCentres: { value: vectors() },
-    uGhostRight: { value: vectors() },
-    uGhostForward: { value: vectors() },
-    uGhostUpVec: { value: vectors() },
+    uGhostCentres: { value: vectors(MAX_GHOSTS) },
+    uGhostSpots: { value: vectors(MAX_GHOSTS * GHOST_SAMPLES) },
+    uGhostReach: { value: numbers() },
     uGhostRadius: { value: radius },
     uGhostFloor: { value: floor },
-    uGhostStrength: { value: Array.from({ length: MAX_GHOSTS }, () => 0) },
-    uGhostFeet: { value: Array.from({ length: MAX_GHOSTS }, () => 0) },
+    uGhostStrength: { value: numbers() },
+    uGhostFeet: { value: numbers() },
   };
 }
 
@@ -209,17 +223,54 @@ export function ghostsAlongRay(
 }
 
 /**
+ * The bounding circle of a ghost's rays on the view plane (#1134): how
+ * far from the feet centre, across the view, the farthest sample sits,
+ * plus the ray radius. No fragment outside it is within the radius of
+ * any sample, so the shader can drop it after one distance test rather
+ * than eleven — which is what most fragments of most walls are, and
+ * what made the ray cutaway affordable on a CPU rasterizer.
+ *
+ * ```
+ *          ╭───────────╮   reach = max |spot.xy − centre.xy| + radius
+ *        ╭─┤ ◦   ◦   ◦ ├─╮
+ *        │ │     ◉     │ │  ◉ centre, ◦ samples, ─ the ray radius
+ *        ╰─┤ ◦   ◦   ◦ ├─╯
+ *          ╰───────────╯
+ * ```
+ *
+ * @param centre - The feet centre, in view space.
+ * @param spots - The ghost's `GHOST_SAMPLES` sample points, in view space.
+ * @param radius - Ray radius across the view plane.
+ * @returns The reject radius, measured across the view plane.
+ */
+export function ghostReach(
+  centre: ViewPoint,
+  spots: readonly ViewPoint[],
+  radius: number,
+): number {
+  let farthest = 0;
+  for (const spot of spots) {
+    farthest = Math.max(
+      farthest,
+      Math.hypot(spot.x - centre.x, spot.y - centre.y),
+    );
+  }
+  return farthest + radius;
+}
+
+/**
  * How strongly a fragment fades for one ghost, in `[0, 1]`: the CPU
  * mirror of the shader's rule, so the maths is pinned where a test can
- * reach it (#1134). Zero for anything at or below the unit's feet
- * (#1118), otherwise the soft-edged coverage of the nearest ray the
- * fragment stands on.
+ * reach it (#1134). It takes exactly what the shader is given — the
+ * centre, the precomputed spots and the reach — and rejects in the
+ * same order: zero for anything at or below the unit's feet (#1118),
+ * zero outside the bounding circle, otherwise the soft-edged coverage
+ * of the nearest ray the fragment stands on.
  *
- * @param ghost - The ghost's box in view space, and its feet height.
- * @param ghost.centre - The feet centre.
- * @param ghost.right - Half the footprint along world x.
- * @param ghost.forward - Half the footprint along world z.
- * @param ghost.up - The unit's height along world y.
+ * @param ghost - The ghost as the shader sees it, and its feet height.
+ * @param ghost.centre - The feet centre, in view space.
+ * @param ghost.spots - Its `GHOST_SAMPLES` sample points, in view space.
+ * @param ghost.reach - Its bounding circle on the view plane (`ghostReach`).
  * @param ghost.feetY - The feet, in world height.
  * @param fragment - The fragment in view space, with its world height.
  * @param fragment.view - Its view-space position.
@@ -230,9 +281,8 @@ export function ghostsAlongRay(
 export function ghostFade(
   ghost: {
     readonly centre: ViewPoint;
-    readonly right: ViewPoint;
-    readonly forward: ViewPoint;
-    readonly up: ViewPoint;
+    readonly spots: readonly ViewPoint[];
+    readonly reach: number;
     readonly feetY: number;
   },
   fragment: { readonly view: ViewPoint; readonly worldY: number },
@@ -241,17 +291,20 @@ export function ghostFade(
   if (fragment.worldY - ghost.feetY <= GHOST_FOOT_MARGIN) {
     return 0;
   }
+  if (
+    Math.hypot(
+      fragment.view.x - ghost.centre.x,
+      fragment.view.y - ghost.centre.y,
+    ) > ghost.reach
+  ) {
+    return 0;
+  }
   let nearest = Number.POSITIVE_INFINITY;
-  for (const sample of ghostSamples(
-    ghost.centre,
-    ghost.right,
-    ghost.forward,
-    ghost.up,
-  )) {
-    if (fragment.view.z > sample.z + GHOST_RAY_MARGIN) {
+  for (const spot of ghost.spots) {
+    if (fragment.view.z > spot.z + GHOST_RAY_MARGIN) {
       nearest = Math.min(
         nearest,
-        Math.hypot(fragment.view.x - sample.x, fragment.view.y - sample.y),
+        Math.hypot(fragment.view.x - spot.x, fragment.view.y - spot.y),
       );
     }
   }
@@ -323,9 +376,8 @@ export function applyGhostCutaway(
   ): void => {
     shader.uniforms.uGhostCount = uniforms.uGhostCount;
     shader.uniforms.uGhostCentres = uniforms.uGhostCentres;
-    shader.uniforms.uGhostRight = uniforms.uGhostRight;
-    shader.uniforms.uGhostForward = uniforms.uGhostForward;
-    shader.uniforms.uGhostUpVec = uniforms.uGhostUpVec;
+    shader.uniforms.uGhostSpots = uniforms.uGhostSpots;
+    shader.uniforms.uGhostReach = uniforms.uGhostReach;
     shader.uniforms.uGhostRadius = uniforms.uGhostRadius;
     shader.uniforms.uGhostFloor = uniforms.uGhostFloor;
     shader.uniforms.uGhostStrength = uniforms.uGhostStrength;
@@ -375,14 +427,32 @@ const VERTEX_BODY = `
   vGhostWorldY = ghostWorld.y;
 `;
 
+/**
+ * The per-fragment rule. Two things keep it cheap, because every
+ * fragment of every wall and roof runs it and the e2e renderer is
+ * SwiftShader, a CPU rasterizer (#1134): the sample points come in as a
+ * uniform rather than being rebuilt from the box edges per fragment,
+ * and a fragment outside a ghost's bounding circle leaves after one
+ * distance instead of eleven. Measured on `e2e/tile-attack.spec.ts`
+ * under SwiftShader: 19.3 s with the per-fragment rebuild and no
+ * reject, 12.4 s with the loop disabled, 11.0 s before the ray cutaway
+ * existed — enough that CI's e2e shard ran past its budget. Neither
+ * change alters the picture: a wall rendered through both shaders in
+ * a SwiftShader WebGL2 context hashed to the same frame, pixel for
+ * pixel, and the reject is exactly the region where `nearest` could
+ * never fall inside the radius.
+ */
 const FRAGMENT_BODY = `
   float ghostAlpha = 1.0;
   for (int i = 0; i < MAX_GHOSTS; i++) {
     if (i >= uGhostCount) break;
     // Only what rises above the unit's feet may fade: the floor it
-    // stands on stays solid (#1118).
+    // stands on stays solid (#1118). Cheapest test first.
     float rise = vGhostWorldY - uGhostFeet[i];
     if (rise <= ${GHOST_FOOT_MARGIN.toFixed(2)}) continue;
+    // Outside the ghost's bounding circle on the view plane no ray can
+    // reach this fragment, so it is dropped after one length (#1134).
+    if (length(vGhostView.xy - uGhostCentres[i].xy) > uGhostReach[i]) continue;
     // The nearest ray this fragment stands on (#1134): a sample's ray
     // to the camera runs along the view axis, so the fragment is on it
     // when it is nearer than the sample and within the radius of the
@@ -392,7 +462,7 @@ const FRAGMENT_BODY = `
     for (int s = 0; s < GHOST_SAMPLES; s++) {
       // 'spot', not 'sample': GLSL ES reserves that word, and no test
       // compiles the chunk; the tests read it as a string (#1134).
-      vec3 spot = uGhostCentres[i] + ghostSampleOffset(s, uGhostRight[i], uGhostForward[i], uGhostUpVec[i]);
+      vec3 spot = uGhostSpots[i * GHOST_SAMPLES + s];
       if (vGhostView.z > spot.z + ${GHOST_RAY_MARGIN.toFixed(2)}) {
         nearest = min(nearest, length(vGhostView.xy - spot.xy));
       }
@@ -413,9 +483,11 @@ const FRAGMENT_BODY = `
  * wall reads as a soft screen-door rather than a hard-edged hole, while
  * every surviving fragment still writes depth normally.
  *
- * `ghostSampleOffset` enumerates the samples in the order `ghostSamples`
- * does on the CPU: corners at the feet, corners at the head, then the
- * centre at the head, the waist and the feet.
+ * `uGhostSpots` is flat, `MAX_GHOSTS * GHOST_SAMPLES` long, in the
+ * order `ghostSamples` fills it on the CPU: corners at the feet, corners
+ * at the head, then the centre at the head, the waist and the feet. The
+ * shader no longer derives them (#1134): a function of the box edges
+ * cost eleven vector sums per ghost per fragment.
  */
 function fragmentHead(): string {
   return `
@@ -425,25 +497,12 @@ function fragmentHead(): string {
     varying float vGhostWorldY;
     uniform int uGhostCount;
     uniform vec3 uGhostCentres[MAX_GHOSTS];
-    uniform vec3 uGhostRight[MAX_GHOSTS];
-    uniform vec3 uGhostForward[MAX_GHOSTS];
-    uniform vec3 uGhostUpVec[MAX_GHOSTS];
+    uniform vec3 uGhostSpots[MAX_GHOSTS * GHOST_SAMPLES];
+    uniform float uGhostReach[MAX_GHOSTS];
     uniform float uGhostRadius;
     uniform float uGhostFloor;
     uniform float uGhostStrength[MAX_GHOSTS];
     uniform float uGhostFeet[MAX_GHOSTS];
-
-    vec3 ghostSampleOffset(int s, vec3 right, vec3 forward, vec3 up) {
-      if (s < 8) {
-        float a = (s == 1 || s == 3 || s == 5 || s == 7) ? 1.0 : -1.0;
-        float b = (s == 2 || s == 3 || s == 6 || s == 7) ? 1.0 : -1.0;
-        float k = (s >= 4) ? 1.0 : 0.0;
-        return a * right + b * forward + k * up;
-      }
-      if (s == 8) return up;
-      if (s == 9) return 0.5 * up;
-      return vec3(0.0);
-    }
 
     float ghostDither(vec2 fragment) {
       int x = int(mod(fragment.x, 4.0));

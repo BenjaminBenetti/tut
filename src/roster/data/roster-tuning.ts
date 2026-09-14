@@ -1,4 +1,5 @@
 import type { RosterTuning } from "../model/roster-tuning";
+import { RANK_TUNING } from "./rank-tuning";
 
 // ===========================================
 // Default tuning
@@ -15,6 +16,11 @@ export const ROSTER_TUNING: RosterTuning = {
    * but is not free.
    */
   repairCostPerPoint: 10,
-  /** Flat per mission; a rank ladder can be layered on later. */
-  xpPerMissionSurvived: 10,
+  /**
+   * Flat per mission, on top of what the kills were worth: half a
+   * swarmer, so a quiet mission still counts for something but the
+   * first rung (10) is earned by a kill, not by coming home once.
+   */
+  xpPerMissionSurvived: 5,
+  ranks: RANK_TUNING,
 };

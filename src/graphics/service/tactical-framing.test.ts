@@ -11,6 +11,7 @@ import { SurfaceIds } from "../../mapgen/data/surfaces";
 import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
 import type { TacticalState } from "../../tactical/model/tactical-state";
 import {
+  FIXTURE_TEMPLATES,
   missionWith,
   unitAt,
 } from "../../tactical/service/tactical-fixtures.test-helper";
@@ -81,6 +82,20 @@ describe("missionFocus", () => {
       unitAt("b1", "infantry", at(35, 35), { team: "bugs" }),
     ]);
     expect(missionFocus(mission)).toEqual({ x: 2.5, y: tileTop(0), z: 2.5 });
+  });
+
+  it("frames a 2×2 unit on the middle of its footprint, not its anchor tile (#1130)", () => {
+    const base = bigField([unitAt("u1", "infantry", at(7, 9))]);
+    const infantry = base.templates[FIXTURE_TEMPLATES.infantry]!;
+    const mission: TacticalState = {
+      ...base,
+      templates: {
+        ...base.templates,
+        [FIXTURE_TEMPLATES.infantry]: { ...infantry, footprint: 2 },
+      },
+    };
+    // Anchor (7, 9) covers (7..8, 9..10); its middle is (8, 10).
+    expect(missionFocus(mission)).toEqual({ x: 8, y: tileTop(0), z: 10 });
   });
 
   it("looks at the level the force is standing on, not the ground", () => {

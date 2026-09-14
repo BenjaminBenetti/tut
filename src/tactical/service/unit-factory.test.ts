@@ -92,7 +92,7 @@ describe("squadUnit", () => {
       weapons: [
         {
           id: PRIMARY_WEAPON_ID,
-          name: DEFAULT_WEAPON_NAME,
+          name: "Carbine",
           profile: { range: 8, accuracy: 65, damage: 3, armorPen: 0 },
           charges: 3,
         },
@@ -101,6 +101,8 @@ describe("squadUnit", () => {
       armor: 0,
       passClass: "infantry",
       modelId: "tdf.infantry.rifle",
+      // A green squad is a Private, and a Private earns nothing yet (#1130).
+      rank: { name: "Private", index: 0 },
     });
     expect(unit).toEqual({
       id: "unit-1",
@@ -142,6 +144,196 @@ describe("squadUnit", () => {
     expect(template.modelId).toBe(UNIT_TUNING.infantry.fallbackModelId);
     expect(template.weapons[0]!.profile.damage).toBe(1);
   });
+
+  /**
+   * Each squad type fights with its own weapon (#1130): the numbers here
+   * are the table on `UNIT_TUNING.infantry.weaponByType`, pinned so a
+   * tuning slip shows up as a diff rather than in play.
+   */
+  it("arms each shipped squad type with its own weapon", () => {
+    const armed = Object.fromEntries(
+      SQUAD_TYPES.map((type) => {
+        const weapon = squadUnit(squad(5, type.id), type, AT, deps()).template
+          .weapons[0]!;
+        const { range, accuracy, damage, armorPen, endsTurn } = weapon.profile;
+        return [
+          type.id,
+          {
+            name: weapon.name,
+            range,
+            accuracy,
+            damage,
+            armorPen,
+            endsTurn,
+            charges: weapon.charges,
+          },
+        ];
+      }),
+    );
+    expect(armed).toEqual({
+      rifle: {
+        name: "Carbine",
+        range: 8,
+        accuracy: 65,
+        damage: 3,
+        armorPen: 0,
+        endsTurn: undefined,
+        charges: 3,
+      },
+      medic: {
+        name: "Carbine",
+        range: 8,
+        accuracy: 65,
+        damage: 2,
+        armorPen: 0,
+        endsTurn: undefined,
+        charges: 3,
+      },
+      radio: {
+        name: "SMG",
+        range: 5,
+        accuracy: 70,
+        damage: 4,
+        armorPen: 0,
+        endsTurn: true,
+        charges: 4,
+      },
+      engineer: {
+        name: "Shotgun",
+        range: 3,
+        accuracy: 75,
+        damage: 5,
+        armorPen: 0,
+        endsTurn: undefined,
+        charges: 2,
+      },
+      sniper: {
+        name: "Marksman Rifle",
+        range: 12,
+        accuracy: 80,
+        damage: 6,
+        armorPen: 0,
+        endsTurn: true,
+        charges: 2,
+      },
+      rocket: {
+        name: "Rocket Launcher",
+        range: 10,
+        accuracy: 65,
+        damage: 5,
+        armorPen: 2,
+        endsTurn: true,
+        charges: 1,
+      },
+    });
+    // The rocket keeps its blast and its force (#1121).
+    const rocket = squadUnit(squad(5, "rocket"), ROCKET, AT, deps()).template
+      .weapons[0]!.profile;
+    expect(rocket.aoe).toEqual({ radius: 1, falloff: 0.5 });
+    expect(rocket.demoForce).toBe(2);
+  });
+
+  it("gives a squad type with no weapon tuning the shared shape under the fallback name", () => {
+    const odd: SquadType = { ...RIFLE, id: "cavalry", name: "Cavalry" };
+    const { template } = squadUnit(squad(5, "cavalry"), odd, AT, deps());
+    const weapon = template.weapons[0]!;
+    expect(weapon.name).toBe(UNIT_TUNING.infantry.fallbackWeaponName);
+    expect(weapon.profile).toEqual({
+      ...UNIT_TUNING.infantry.weapon,
+      damage: 3,
+    });
+    expect(weapon.profile.endsTurn).toBeUndefined();
+  });
+
+  it("scales the rating's damage by the type's scale, never to zero", () => {
+    const tuning = {
+      ...UNIT_TUNING,
+      infantry: {
+        ...UNIT_TUNING.infantry,
+        weaponByType: { rifle: { damageScale: 0.01 } },
+      },
+    };
+    const { template } = squadUnit(squad(), RIFLE, AT, { ...deps(), tuning });
+    expect(template.weapons[0]!.profile.damage).toBe(1);
+  });
+});
+
+// ===========================================
+// Ranks (#1130)
+// ===========================================
+
+describe("rank bonuses", () => {
+  const rifle = () => squadUnit(squad(), RIFLE, AT, deps()).template;
+
+  it("gives a Corporal (30 xp, three swarmers) one more tile of move and nothing else", () => {
+    const { unit, template } = squadUnit(
+      { ...squad(), xp: 30 },
+      RIFLE,
+      AT,
+      deps(),
+    );
+    expect(template.rank).toEqual({ name: "Corporal", index: 2 });
+    expect(template.move).toBe(rifle().move + 1);
+    expect(template.maxAp).toBe(rifle().maxAp);
+    expect(template.weapons[0]?.profile.accuracy).toBe(
+      rifle().weapons[0]!.profile.accuracy + 4,
+    );
+    expect(unit.maxAp).toBe(template.maxAp);
+  });
+
+  it("gives a Staff Sergeant (100 xp, ten swarmers) a third action point", () => {
+    const { unit, template } = squadUnit(
+      { ...squad(), xp: 100 },
+      RIFLE,
+      AT,
+      deps(),
+    );
+    expect(template.rank?.name).toBe("Staff Sergeant");
+    expect(template.maxAp).toBe(3);
+    expect(unit.ap).toBe(3);
+    expect(template.move).toBe(rifle().move + 2);
+  });
+
+  it("lifts a mech pilot the same way, on every weapon, and never past 100 accuracy", () => {
+    const { mech, sheet } = starterMech();
+    const green = mechUnit(mech, sheet, AT, deps()).template;
+    const veteran = mechUnit({ ...mech, xp: 100 }, sheet, AT, deps()).template;
+    expect(veteran.rank).toEqual({ name: "Staff Sergeant", index: 4 });
+    expect(veteran.move).toBe(green.move + 2);
+    expect(veteran.maxAp).toBe(green.maxAp + 1);
+    for (const [i, weapon] of veteran.weapons.entries()) {
+      expect(weapon.profile.accuracy).toBe(
+        Math.min(100, green.weapons[i]!.profile.accuracy + 8),
+      );
+    }
+    const sharp = mechUnit(
+      { ...mech, xp: 100 },
+      { ...sheet, accuracy: 40 },
+      AT,
+      deps(),
+    ).template;
+    for (const weapon of sharp.weapons) {
+      expect(weapon.profile.accuracy).toBeLessThanOrEqual(100);
+    }
+  });
+
+  it("stops at the top of the ladder however much experience piles up", () => {
+    const top = deps().tuning.ranks.ladder.length - 1;
+    const { template } = squadUnit(
+      { ...squad(), xp: 1_000_000 },
+      RIFLE,
+      AT,
+      deps(),
+    );
+    expect(template.rank?.index).toBe(top);
+  });
+
+  it("copies what a bug is worth onto its template, and nothing when the species says nothing", () => {
+    expect(
+      bugUnit({ ...SWARMER, xpValue: 10 }, AT, deps()).template.xpValue,
+    ).toBe(10);
+    expect(bugUnit(SWARMER, AT, deps()).template).not.toHaveProperty("xpValue");
+  });
 });
 
 // ===========================================
@@ -152,20 +344,22 @@ describe("mechUnit", () => {
   it("derives the template from the stat sheet", () => {
     const { mech, sheet } = starterMech();
     const { unit, template } = mechUnit(mech, sheet, AT, deps());
+    // The Vanguard's plate was halved in #1130: 20 armor on the sheet
+    // is 70 hit points and 6 per hit, where 30 was 80 and 9.
     expect(sheet).toMatchObject({
-      armor: 30,
-      mobility: 7,
+      armor: 20,
+      mobility: 5,
       accuracy: 0,
       firepower: 40,
     });
     expect(template).toMatchObject({
       id: "mech:mech-1",
       name: "Hammerhead",
-      maxHp: 80,
+      maxHp: 70,
       maxAp: 2,
       move: 8,
       sightRange: 14,
-      armor: 9,
+      armor: 6,
       passClass: "mech",
       modelId: "tdf.mech.assembled-a",
     });
@@ -189,8 +383,8 @@ describe("mechUnit", () => {
       kind: "mech",
       team: "tdf",
       sourceId: "mech-1",
-      hp: 80,
-      maxHp: 80,
+      hp: 70,
+      maxHp: 70,
       passClass: "mech",
     });
   });
@@ -198,8 +392,9 @@ describe("mechUnit", () => {
   it("starts a damaged mech reduced by its accumulated damage", () => {
     const { mech, sheet } = starterMech(25);
     const { unit } = mechUnit(mech, sheet, AT, deps());
-    expect(unit.hp).toBe(60);
-    expect(unit.maxHp).toBe(80);
+    // 70 × 75 % is 52.5, and the factory rounds half up.
+    expect(unit.hp).toBe(53);
+    expect(unit.maxHp).toBe(70);
   });
 
   it("clamps move and accuracy into their bounds", () => {
@@ -294,5 +489,14 @@ describe("unit factory contract", () => {
     expect(templateIdFor("squad", "squad-7")).toBe("squad:squad-7");
     expect(passMaskFor("infantry")).toBe(PassMask.INFANTRY);
     expect(passMaskFor("mech")).toBe(PassMask.MECH);
+  });
+});
+
+describe("bugUnit with a footprint (#1130)", () => {
+  it("copies a species' footprint onto the template and leaves it off otherwise", () => {
+    const d = deps();
+    const big = bugUnit({ ...SWARMER, id: "big", footprint: 2 }, AT, d);
+    expect(big.template.footprint).toBe(2);
+    expect("footprint" in bugUnit(SWARMER, AT, d).template).toBe(false);
   });
 });

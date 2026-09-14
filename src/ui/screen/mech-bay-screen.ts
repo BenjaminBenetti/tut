@@ -64,7 +64,7 @@ const DEFAULT_MECH_NAME = "Mech";
  * header's status line.
  *
  * ```
- *   ┌ #mech-bay-bar  MECH BAY  ¢5,000 ── status ── [Save] [mech name][Build ¢3,250] [Roster] ┐
+ *   ┌ #mech-bay-bar  MECH BAY  ¢5,000 ── status ── [Save] [mech name][Build ¢2,850] [Roster] ┐
  *   ├───────────────────────────────┬─────────────────────────────────────────────────────────┤
  *   │ #loadout-editor               │ #stat-sheet                                             │
  *   │ pickers + inline errors       │ values / error list                                     │

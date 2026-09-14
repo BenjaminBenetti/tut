@@ -42,6 +42,12 @@ export interface PickingOptions<TId> {
    * (#520). Scenes that omit it keep selecting on any button.
    */
   readonly onInvoked?: (id: TId) => void;
+  /**
+   * When given and answering true, a click selects and invokes nothing
+   * (#1130): the tactical screen holds the map while a bug phase plays.
+   * Hover still highlights, so the pointer is not dead, only the press.
+   */
+  readonly isLocked?: () => boolean;
 }
 
 // ===========================================
@@ -198,6 +204,9 @@ export class PickingController<TId> {
     }
     const moved = Math.hypot(event.clientX - press.x, event.clientY - press.y);
     if (moved > PICKING_TUNING.clickSlopPx) {
+      return;
+    }
+    if (this.options.isLocked?.() === true) {
       return;
     }
     const id = this.pickAt(event);

@@ -90,6 +90,7 @@ export class RosterScreen implements Screen {
         },
       },
       deps.squadTypes,
+      deps.rosterTuning.ranks.ladder,
     );
     this.mechs = new MechListView(
       {

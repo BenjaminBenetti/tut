@@ -1,7 +1,12 @@
 import type { Result } from "../../core/model/result";
 import { err, ok } from "../../core/model/result";
 import type { WeaponReachTuning } from "../model/weapon-reach-tuning";
-import { attackDistance, weaponReach } from "./weapon-reach-service";
+import {
+  attackDistance,
+  closestTiles,
+  weaponReach,
+} from "./weapon-reach-service";
+import { footprintSizeOf } from "./footprint-service";
 import { CoverLevel as Cover } from "../../mapgen/model/cover";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
@@ -68,6 +73,12 @@ export interface AttackPair {
   readonly attackerTemplate: UnitTemplate;
   /** The weapon this attack is made with (#532); one of the template's. */
   readonly weapon: UnitWeapon;
+  /**
+   * What is shot at. For a target on a block (#1130) `pos` is the tile
+   * of it the shot is held against — the one nearest the attacker —
+   * rather than the block's anchor, so a hit's blast spreads from where
+   * it landed.
+   */
   readonly target: AttackTarget;
 }
 
@@ -162,6 +173,23 @@ export function terrainForWeapon(
  * to an empty tile, with the target-dependent terms at zero.
  */
 export function terrainForTile(terrain: AttackTerrain): AttackTerrain {
+  return { ...terrain, cover: Cover.NONE, flanked: false };
+}
+
+/**
+ * The terrain as it applies to a target of `size` tiles a side (#1130).
+ * A block gets no cover and cannot be flanked: a brute does not crouch
+ * behind a crate, and a boulder of carapace two tiles wide is not
+ * hidden by a waist-high wall on one edge of one of its tiles. A single
+ * tile keeps whatever the geometry gave it.
+ */
+export function terrainForFootprint(
+  terrain: AttackTerrain,
+  size: number,
+): AttackTerrain {
+  if (size <= 1) {
+    return terrain;
+  }
   return { ...terrain, cover: Cover.NONE, flanked: false };
 }
 
@@ -313,6 +341,13 @@ export function validateAttack(
  * the distance it is held against is three-dimensional; the refusal
  * carries both numbers. Overwatch reactions (#328) fire on exactly
  * these. Returns the pair and terrain for the formulae.
+ *
+ * A unit that stands on a block (#1130) is measured by the tile of it
+ * nearest the other party (`closestTiles`): a brute is shot at on the
+ * face it presents and swings from the tile of itself nearest its mark,
+ * and the pair's `target.pos` is that struck tile, so the blast a hit
+ * spreads is centred where the shot landed. A block gets no cover
+ * (`terrainForFootprint`).
  */
 export function validateTargeting(
   mission: TacticalState,
@@ -338,16 +373,21 @@ export function validateTargeting(
     return err({ kind: "no-such-weapon", unitId: attackerId });
   }
   const index = new TileIndex(mission.map);
-  const terrain = terrainForWeapon(
-    attackTerrain(mission.map, attacker.pos, target.pos, index),
-    weapon.profile,
-  );
-  const reach = weaponReach(
-    weapon.profile.range,
+  const targetSize = target.footprint ?? 1;
+  const { from, to } = closestTiles(
     attacker.pos,
+    footprintSizeOf(attackerTemplate),
     target.pos,
-    tuning,
+    targetSize,
   );
+  const terrain = terrainForFootprint(
+    terrainForWeapon(
+      attackTerrain(mission.map, from, to, index),
+      weapon.profile,
+    ),
+    targetSize,
+  );
+  const reach = weaponReach(weapon.profile.range, from, to, tuning);
   if (terrain.distance > reach) {
     return err({
       kind: "out-of-range",
@@ -355,10 +395,16 @@ export function validateTargeting(
       range: reach,
     });
   }
-  if (!hasLineOfSight(mission.map, attacker.pos, target.pos, index)) {
+  if (!hasLineOfSight(mission.map, from, to, index)) {
     return err({ kind: "no-line-of-sight", targetId });
   }
-  return ok({ attacker, attackerTemplate, weapon, target, terrain });
+  return ok({
+    attacker,
+    attackerTemplate,
+    weapon,
+    target: sameTile(target.pos, to) ? target : { ...target, pos: to },
+    terrain,
+  });
 }
 
 /**
@@ -403,12 +449,20 @@ export function validateTileAttack(
   if (impact === undefined) {
     return err({ kind: "no-such-tile", x: tile.x, y: tile.y, z: tile.z });
   }
+  const attackerTemplate = templateOf(mission, attacker);
+  // A block fires from the tile of itself nearest the impact (#1130).
+  const { from } = closestTiles(
+    attacker.pos,
+    footprintSizeOf(attackerTemplate),
+    impact,
+    1,
+  );
   const terrain = terrainForTile(
-    attackTerrain(mission.map, attacker.pos, impact, index),
+    attackTerrain(mission.map, from, impact, index),
   );
   // The same reach rule as a shot at a unit (#1119): height buys reach,
   // and the distance held against it is three-dimensional.
-  const reach = weaponReach(weapon.profile.range, attacker.pos, impact, tuning);
+  const reach = weaponReach(weapon.profile.range, from, impact, tuning);
   if (terrain.distance > reach) {
     return err({
       kind: "out-of-range",
@@ -416,16 +470,21 @@ export function validateTileAttack(
       range: reach,
     });
   }
-  if (!hasLineOfSight(mission.map, attacker.pos, impact, index)) {
+  if (!hasLineOfSight(mission.map, from, impact, index)) {
     return err({ kind: "tile-out-of-sight", x: tile.x, y: tile.y, z: tile.z });
   }
   return ok({
     attacker,
-    attackerTemplate: templateOf(mission, attacker),
+    attackerTemplate,
     weapon,
     impact: { x: impact.x, y: impact.y, z: impact.z },
     terrain,
   });
+}
+
+/** True when both coordinates name the same tile, level included. */
+function sameTile(a: TileCoord, b: TileCoord): boolean {
+  return a.x === b.x && a.y === b.y && a.z === b.z;
 }
 
 /** The template a unit references; a mission that lacks it is broken, not an illegal command. */
@@ -1051,35 +1110,68 @@ function applyDamage(
 }
 
 /**
+ * Whether a shot from `weapon` by a unit of `kind` spends every remaining
+ * action point (#533, #1130). The weapon's own `endsTurn` wins when it
+ * says anything; otherwise the kind's rule in the tuning decides. The
+ * one place the two are read together, so the budget, the resolver and
+ * the card cannot disagree about who fires twice.
+ *
+ * @param weapon - The profile of the weapon fired.
+ * @param kind - The kind of the unit firing it.
+ * @param tuning - The combat knobs holding the per-kind default.
+ * @returns True when the shot is the unit's last action of the turn.
+ */
+export function attackEndsTurn(
+  weapon: WeaponProfile,
+  kind: Unit["kind"],
+  tuning: CombatTuning,
+): boolean {
+  return weapon.endsTurn ?? tuning.attackEndsTurn[kind];
+}
+
+/**
  * How many more times a unit could attack this turn (#533).
  *
  * ```
- *   ap < cost                 ──► 0
- *   attack ends the turn      ──► 1     one shot, whatever is left
- *   otherwise                 ──► ⌊ap / cost⌋
+ *   ap < cost                          ──► 0
+ *   every weapon ends the turn         ──► 1     one shot, whatever is left
+ *   some weapon does not               ──► ⌊ap / cost⌋
  * ```
  *
  * Derived rather than stored, so the HUD never has to know which kinds
- * fire twice: an infantry squad with two actions reports 2, a mech with
- * two reports 1, and a spent unit reports 0.
+ * or weapons fire twice: a rifle squad with two actions reports 2, a
+ * radio squad with its SMG reports 1 (#1130), a mech with two reports 1,
+ * and a spent unit reports 0. A unit carrying nothing takes the kind's
+ * rule.
+ *
+ * @param unit - The unit's kind and action points.
+ * @param weapons - What it carries; the rule is per weapon since #1130.
+ * @param tuning - The combat knobs.
+ * @returns Attacks left, never negative.
  */
 export function attacksRemaining(
   unit: Pick<Unit, "kind" | "ap">,
+  weapons: readonly UnitWeapon[],
   tuning: CombatTuning,
 ): number {
   if (tuning.attackApCost <= 0 || unit.ap < tuning.attackApCost) {
     return 0;
   }
-  return tuning.attackEndsTurn[unit.kind]
-    ? 1
-    : Math.floor(unit.ap / tuning.attackApCost);
+  const endsTurn =
+    weapons.length === 0
+      ? tuning.attackEndsTurn[unit.kind]
+      : weapons.every((weapon) =>
+          attackEndsTurn(weapon.profile, unit.kind, tuning),
+        );
+  return endsTurn ? 1 : Math.floor(unit.ap / tuning.attackApCost);
 }
 
 /**
  * Resolves an `Attack` command: validates it, then rolls it with the
  * attacker paying `attackApCost`, or every remaining action point when
- * attacks end the turn for its kind — which is how an infantry squad
- * gets two shots and a mech one (#533). Rolls against exactly the numbers
+ * the weapon's attack ends the turn (`attackEndsTurn`) — which is how a
+ * rifle squad gets two shots, a mech one (#533), and a radio squad with
+ * an SMG one (#1130). Rolls against exactly the numbers
  * `previewAttack` shows. When the shot destroyed an egg spawner and that
  * completed the last objective, the mission ends here rather than at the
  * next turn boundary, the way `Interact` ends it (#426). Pure: on any
@@ -1116,7 +1208,7 @@ export function resolveAttack(
       checked.value,
       ctx,
       tuning,
-      apAfterShot(checked.value.attacker, tuning),
+      apAfterShot(checked.value.attacker, checked.value.weapon, tuning),
       deps,
     );
     return ok(settle(applied));
@@ -1136,15 +1228,27 @@ export function resolveAttack(
     checked.value,
     ctx,
     tuning,
-    apAfterShot(checked.value.attacker, tuning),
+    apAfterShot(checked.value.attacker, checked.value.weapon, tuning),
     deps,
   );
   return ok(settle(applied));
 }
 
-/** What a shot leaves the attacker: one action less, or none when its kind's attack ends the turn. */
-function apAfterShot(attacker: Unit, tuning: CombatTuning): number {
-  return tuning.attackEndsTurn[attacker.kind]
+/**
+ * What a shot leaves the attacker: one action less, or none when the
+ * weapon's attack ends the turn (`attackEndsTurn`).
+ *
+ * @param attacker - The unit firing.
+ * @param weapon - The weapon it fires.
+ * @param tuning - The combat knobs.
+ * @returns Action points left after the shot, never negative.
+ */
+function apAfterShot(
+  attacker: Unit,
+  weapon: UnitWeapon,
+  tuning: CombatTuning,
+): number {
+  return attackEndsTurn(weapon.profile, attacker.kind, tuning)
     ? 0
     : Math.max(0, attacker.ap - tuning.attackApCost);
 }

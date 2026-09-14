@@ -58,14 +58,22 @@ const PIXELS_PER_PAGE = 400;
  * Keys by their lower-cased `KeyboardEvent.key`.
  *
  * ```
- *        Q  W  E          Q / E  rotate left / right
+ *        Q  W  E          Q / E  rotate right / left
  *        A  S  D          W A S D  pan (arrows too)
  *       wheel             zoom
  * ```
+ *
+ * Q turns the rig right (clockwise from above) and E turns it left.
+ * It was the other way round until #1130, when the Executive Director
+ * found the rotation "moving in reverse" in play: the player reads the
+ * world spinning, and the world spins against the rig, so the key on
+ * the left has to turn the rig right for the map to go the way the hand
+ * expects. The rig's own `rotateLeft` / `rotateRight` keep their meaning;
+ * only which key asks for which changed.
  */
 const KEY_BINDINGS: Readonly<Record<string, KeyBinding>> = {
-  q: { kind: "rotate", turn: "left" },
-  e: { kind: "rotate", turn: "right" },
+  q: { kind: "rotate", turn: "right" },
+  e: { kind: "rotate", turn: "left" },
   w: { kind: "pan", direction: "up" },
   a: { kind: "pan", direction: "left" },
   s: { kind: "pan", direction: "down" },

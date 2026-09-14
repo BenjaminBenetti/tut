@@ -227,6 +227,15 @@ describe("RosterScreen", () => {
     expect(first.querySelector('[data-field="strength"]')?.textContent).toBe(
       "3 / 5",
     );
+    // A green squad's rank and the distance to its first stripe (#1130).
+    expect(
+      first.querySelector('[data-field="rank"] [data-role="rank-name"]')
+        ?.textContent,
+    ).toBe("Private");
+    expect(
+      first.querySelector('[data-field="rank"] [data-role="next-rank"]')
+        ?.textContent,
+    ).toBe(" next in 10 xp");
     expect(
       first.querySelector<HTMLButtonElement>('[data-action="reinforce"]')
         ?.textContent,
@@ -236,6 +245,10 @@ describe("RosterScreen", () => {
     expect(mech.querySelector('[data-field="loadout"]')?.textContent).toContain(
       "Vanguard",
     );
+    expect(
+      mech.querySelector('[data-field="rank"] [data-role="rank-name"]')
+        ?.textContent,
+    ).toBe("Private");
     expect(mech.querySelector('[data-field="damage"]')?.textContent).toContain(
       "40",
     );

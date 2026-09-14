@@ -16,6 +16,21 @@ import type { UnitWeapon } from "./unit-weapon";
 export type UnitTemplateId = string;
 
 // ===========================================
+// Rank
+// ===========================================
+
+/**
+ * The rank a TDF unit fought at, frozen with the rest of its template
+ * (#1130): the HUD names it and the bonuses it bought are already in the
+ * template's numbers. The index is what those bonuses scaled with.
+ */
+export interface TemplateRank {
+  readonly name: string;
+  /** Position on the roster's ladder, `0` for the lowest rung. */
+  readonly index: number;
+}
+
+// ===========================================
 // Unit template
 // ===========================================
 
@@ -59,6 +74,21 @@ export interface UnitTemplate {
   /** Which tiles the unit may stand on (GDD §6.1: mechs stay outside). */
   readonly passClass: PassClass;
   /**
+   * Tiles per side the unit covers on the ground plane (#1130). Absent
+   * means one tile, as every unit was before it; the brute is `2`, a
+   * 2×2 block. `Unit.pos` is the footprint's **anchor**: the tile with
+   * the lowest `x` and lowest `z`, every tile of the footprint sharing
+   * its `y`. `footprint-service` enumerates the rest.
+   *
+   * ```
+   *   footprint 2, anchor at (x, z)
+   *
+   *      (x, z)   (x+1, z)
+   *      (x, z+1) (x+1, z+1)     drawn centred on (x+1, z+1)
+   * ```
+   */
+  readonly footprint?: number;
+  /**
    * Model graphics draws for every unit of this template. For a mech it
    * is the reference assembly, drawn only when `loadout` is absent.
    */
@@ -72,4 +102,17 @@ export interface UnitTemplate {
    * missions saved before it existed, which keep drawing `modelId`.
    */
   readonly loadout?: MechLoadout;
+  /**
+   * The rank the roster entry held at mission start (#1130), for the
+   * HUD; its move, accuracy and action-point bonuses are already folded
+   * into the fields above. Absent for bugs and on older saved missions.
+   */
+  readonly rank?: TemplateRank;
+  /**
+   * Experience killing one of these earns the killer (#1130), copied
+   * from the species so the resolver reads it off the log's casualty
+   * without a catalogue. Absent for TDF units and on older saved
+   * missions, which then credit nothing.
+   */
+  readonly xpValue?: number;
 }

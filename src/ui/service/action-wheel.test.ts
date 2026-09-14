@@ -79,12 +79,12 @@ describe("actionWheel on a tile", () => {
     expect(entry(base)).toBeUndefined();
     expect(entry(mission)).toMatchObject({
       label: "Deploy radar",
-      detail: "1 AP · scan 30",
+      detail: "1 AP · scan 30 · 3 turns",
     });
     expect(entry(mission)?.disabled).not.toBe(true);
     expect(entry(mission, { x: 5, y: 0, z: 1 })).toMatchObject({
       disabled: true,
-      detail: "range 1",
+      detail: "range 2",
     });
     expect(entry(mission, tile, "s2")).toMatchObject({
       disabled: true,

@@ -405,6 +405,9 @@ describe("createLaunchMissionHandler", () => {
     expect(next.overworld.lastMissionResult).toBe(WIN);
     expect(next.overworld.day).toBe(DAY);
 
+    // Coming home from a first mission is worth half a swarmer, short
+    // of the first rung of the ladder: nobody is promoted for surviving
+    // alone, and the first rung waits for a kill (#1130).
     expect(result.value.events.map((e) => e.type)).toEqual([
       MISSION_RESOLVED,
       UNIT_DAMAGED,

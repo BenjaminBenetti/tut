@@ -316,6 +316,7 @@ The roster's starter part catalogue (`src/roster/data/parts.ts`) maps to mech pa
 | Part id | Model id |
 |---|---|
 | `chassis-vanguard` | `tdf.mech.chassis-a` |
+| `chassis-courser` | `tdf.mech.chassis-a` (shares the Vanguard's frame until it has its own, #1130) |
 | `chassis-bulwark` | `tdf.mech.chassis.bulwark` |
 | `chassis-atlas` | `tdf.mech.chassis.atlas` |
 | `legs-strider` | `tdf.mech.legs-a` |

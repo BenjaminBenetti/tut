@@ -23,4 +23,11 @@ export interface BugUnitSource {
   /** Tiles it can see, for fog of war (ADR 0006). Positive. */
   readonly sightRange: number;
   readonly modelId: ModelAssetId;
+  /**
+   * Experience a kill of this species earns its killer (#1130); absent
+   * means the kill is worth nothing. Copied onto the template.
+   */
+  readonly xpValue?: number;
+  /** Tiles per side it occupies (#1130); absent means one. Copied onto the template. */
+  readonly footprint?: number;
 }

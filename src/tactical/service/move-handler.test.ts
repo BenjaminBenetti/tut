@@ -10,6 +10,7 @@ import type { TacticalState } from "../model/tactical-state";
 import { UNIT_MOVED } from "../model/unit-moved-event";
 import { createMoveHandler } from "./move-handler";
 import {
+  blockUnitAt,
   missionWith,
   openField,
   twoFloorBuilding,
@@ -207,5 +208,37 @@ describe("moveHandler", () => {
     ];
     expect(reasonOf(mission, "u", loop)).toBe("over-budget");
     expect(reasonOf(mission, "u", loop.slice(0, 6))).toBeUndefined();
+  });
+});
+
+// ===========================================
+// Footprints (#1130)
+// ===========================================
+
+describe("moveHandler with a unit on a 2×2 block (#1130)", () => {
+  it("walks the block anchor by anchor and refuses a path its block cannot make", () => {
+    const map = openField().wall(at(5, 2), "s", "solid").build();
+    const mission = missionWith(map, [blockUnitAt("b", at(0, 2))], {
+      phase: "bugs",
+    });
+    const walked = moveHandler(mission, move("b", [at(1, 2), at(2, 2)]), ctx);
+    expect(walked.ok).toBe(true);
+    if (!walked.ok) return;
+    const after = walked.value.state.units.find((u) => u.id === "b")!;
+    expect(after.pos).toEqual(at(2, 2));
+    expect(after.ap).toBe(1);
+    expect(walked.value.events.map((e) => e.type)).toEqual([
+      UNIT_MOVED,
+      UNIT_MOVED,
+    ]);
+    // (4,2) would put the wall between the block's own two rows.
+    expect(
+      reasonOf(mission, "b", [at(1, 2), at(2, 2), at(3, 2), at(4, 2)]),
+    ).toBe("unreachable");
+    // A soldier walks the same path without a thought.
+    const soldier = missionWith(map, [unitAt("u", "infantry", at(0, 2))]);
+    expect(
+      reasonOf(soldier, "u", [at(1, 2), at(2, 2), at(3, 2), at(4, 2)]),
+    ).toBeUndefined();
   });
 });

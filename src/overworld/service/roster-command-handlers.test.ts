@@ -203,7 +203,7 @@ describe("roster handlers through the dispatcher", () => {
       ["mech-1", "Hammer"],
       ["mech-2", "Anvil"],
     ]);
-    expect(state.economy.credits).toBe(20_000 - 3250);
+    expect(state.economy.credits).toBe(20_000 - 2850);
     expect(state.meta.ids.counters).toEqual({ squad: 3, txn: 3, mech: 3 });
     expect(types).toEqual(["economy:credits-changed", MECH_BUILT]);
   });
@@ -277,6 +277,6 @@ describe("roster handlers through the dispatcher", () => {
     expect(outcome.ok).toBe(false);
     if (outcome.ok) return;
     expect(outcome.error.code).toBe("insufficient-credits");
-    expect(outcome.error.message).toContain("3250");
+    expect(outcome.error.message).toContain("2850");
   });
 });

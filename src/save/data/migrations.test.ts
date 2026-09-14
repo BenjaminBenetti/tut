@@ -559,6 +559,41 @@ describe("v19 → v20", () => {
   });
 });
 
+describe("v20 → v21", () => {
+  const runner = new MigrationRunner(GAME_STATE_MIGRATIONS, 21);
+  const at = (state: unknown): unknown => {
+    const migrated = runner.migrate({
+      schemaVersion: 20,
+      savedAt: "2026-09-13T00:00:00.000Z",
+      state,
+    });
+    if (!migrated.ok) throw new Error(migrated.error.message);
+    return migrated.value.state;
+  };
+
+  it("gives every scanner from before batteries a full one (#1130)", () => {
+    const state = at({
+      activeMission: {
+        radars: [
+          { id: "radar-1", team: "tdf", pos: { x: 1, y: 0, z: 1 }, range: 30 },
+          { id: "radar-2", team: "tdf", pos: { x: 4, y: 0, z: 1 }, range: 30 },
+        ],
+      },
+    }) as { activeMission: { radars: { id: string; turnsLeft: number }[] } };
+    expect(state.activeMission.radars.map((r) => r.turnsLeft)).toEqual([3, 3]);
+  });
+
+  it("leaves a campaign with no mission, and a scanner already counting, alone", () => {
+    expect(at({ overworld: {} })).toEqual({ overworld: {} });
+    const kept = {
+      activeMission: { radars: [{ id: "radar-1", turnsLeft: 1 }] },
+    };
+    expect(at(kept)).toEqual(kept);
+    const noScanners = { activeMission: { radars: [] } };
+    expect(at(noScanners)).toEqual(noScanners);
+  });
+});
+
 describe("radar migration", () => {
   it("adds an empty scanner list to v17 missions without changing their fog or units", () => {
     const migration = GAME_STATE_MIGRATIONS.find((step) => step.from === 17)!;

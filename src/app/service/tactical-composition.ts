@@ -33,7 +33,10 @@ import { RELOAD } from "../../tactical/model/reload-command";
 import type { AttackDeps } from "../../tactical/service/combat-service";
 import { DEPLOY_RADAR } from "../../tactical/model/deploy-radar-command";
 import { RADAR_TUNING } from "../../tactical/data/radar-tuning";
-import { createDeployRadarHandler } from "../../tactical/service/radar-service";
+import {
+  createDeployRadarHandler,
+  drainRadarBatteries,
+} from "../../tactical/service/radar-service";
 import { createAttackHandler } from "../../tactical/service/combat-service";
 import type { MissionStartDeps } from "../../tactical/service/mission-start-service";
 import { createMoveHandler } from "../../tactical/service/move-handler";
@@ -167,14 +170,16 @@ export function composeTactical(
  * their own object to isolate the lifting path.
  *
  * ```
- *   EndTurn ──► phase steps: refreshSides, burn, hatch, edge waves
+ *   EndTurn ──► phase steps: refreshSides, drain radars, burn, hatch, edge waves
  *                    └──► bug phase runner ──► every living bug acts
  *                              └──► player turn + 1 (or MissionEnded)
  * ```
  *
  * Fires burn right after the sides are refreshed (#1121): the side
  * whose phase begins pays for standing in one before it can move out,
- * and before anything hatches into it.
+ * and before anything hatches into it. Radar batteries drain as the
+ * player's turn opens (#1130), before the fires, so a scanner that dies
+ * this turn is announced at the top of the turn's account.
  */
 export function shippedTacticalHandlers(
   registries: MapGenRegistries = createDefaultRegistries(),
@@ -206,6 +211,7 @@ export function shippedTacticalHandlers(
     [END_TURN]: createEndTurnHandler(
       [
         ...DEFAULT_PHASE_STEPS,
+        drainRadarBatteries,
         createBurnStep(HAZARD_TUNING, COMBAT_TUNING),
         createHatchStep(spawn),
         createEdgeWaveStep(spawn),

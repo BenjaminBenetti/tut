@@ -1,3 +1,4 @@
+import { RANK_TUNING } from "../../roster/data/rank-tuning";
 import type { UnitTuning } from "../model/unit-tuning";
 
 // ===========================================
@@ -11,8 +12,10 @@ import type { UnitTuning } from "../model/unit-tuning";
  * - A soldier is 4 hp, so a full squad is 20 hp and a rifle squad
  *   (rating 40) hits for 3 at 65%; a rocket squad (56) hits for 5 with
  *   armor penetration.
- * - The starter mech (armor 30, mobility 7, firepower 40) comes out at
- *   80 hp, 6 move, a 40-damage 70% shot and 9 per-hit armor.
+ * - The starter mech (armor 20, mobility 5, firepower 40 since the
+ *   Vanguard's plate was halved, #1130) comes out at 70 hp, 8 move, an
+ *   18-damage autocannon and a 22-damage missile pod at 70%, and 6
+ *   per-hit armor.
  * - Both sides get the XCOM-style two-action turn (GDD §6.2).
  * - Sight reaches half again past the weapon (12 for infantry, 14 for a
  *   mech, against ranges of 8 and 10), so a squad spots what it is about
@@ -20,8 +23,11 @@ import type { UnitTuning } from "../model/unit-tuning";
  * - Charges (#409): a rifle squad fires three times before reloading, a
  *   rocket squad once, a mech four times before venting; bugs never run
  *   dry.
- * - Blast and force (#1121): only the rocket squad's weapon differs in
- *   how it lands; see `weaponByType`.
+ * - Each squad type fights with its own weapon (#1121, #1130); see the
+ *   table on `weaponByType`.
+ * - Ranks (#1130): a veteran's move, accuracy and action points are
+ *   lifted by its rung on the roster's ladder, on the same curve the
+ *   roster promotes by (`roster/data/rank-tuning.ts`).
  */
 export const UNIT_TUNING: UnitTuning = {
   infantry: {
@@ -34,19 +40,58 @@ export const UNIT_TUNING: UnitTuning = {
     // gives rifle 3, rocket 5, sniper 4, engineer 3, medic 2 after the
     // ceiling, exactly the values tuned before that rescale.
     weapon: { range: 8, accuracy: 65, damage: 0.075, armorPen: 0 },
-    // The rocket squad is the one squad whose weapon lands differently
-    // (#1121): a shoulder rocket bursts over the tile beside its mark at
-    // half strength, punches two points of plate — "for cracking brutes
-    // and egg spawners" is what its description has promised since M1 —
-    // and brings down anything up to a dumpster or a door. Every other
-    // squad fires small arms, which mark nothing on the ground.
+    // Each squad type fights with its own weapon (#1130), so the types
+    // are told apart by how they shoot rather than by a number. Damage
+    // is the rating's, scaled, and rounded up:
+    //
+    //   type      weapon           range acc dmg pen shots/turn mag  marks
+    //   rifle     Carbine            8    65   3   0     2       3   —
+    //   medic     Carbine            8    65   2   0     2       3   —
+    //   radio     SMG                5    70   4   0     1       4   —
+    //   engineer  Shotgun            3    75   5   0     2       2   —
+    //   sniper    Marksman Rifle    12    80   6   0     1       2   —
+    //   rocket    Rocket Launcher   10    65   5   2     1       1   blast 1, demo 2
+    //
+    // The carbine is the shared shape; a type with no entry fires it.
+    // The SMG is the carbine traded down for range and up for hitting
+    // power, one burst a turn. The shotgun is a squad that has to be in
+    // the bug's face, and gets two goes at it. The marksman rifle
+    // reaches as far as the squad can see (`sightRange`, so overwatch
+    // is never refused a shot the numbers allow) and takes its one shot
+    // seriously. The rocket (#1121) bursts over the tile beside its
+    // mark at half strength, punches two points of plate — "for
+    // cracking brutes and egg spawners" is what its description has
+    // promised since M1 — and brings down anything up to a dumpster or
+    // a door; one shot a turn is the whole point of carrying it. The
+    // small arms mark nothing on the ground.
     weaponByType: {
+      rifle: { name: "Carbine" },
+      medic: { name: "Carbine" },
+      radio: {
+        name: "SMG",
+        range: 5,
+        accuracy: 70,
+        damageScale: 1.75,
+        endsTurn: true,
+      },
+      engineer: { name: "Shotgun", range: 3, accuracy: 75, damageScale: 2.25 },
+      sniper: {
+        name: "Marksman Rifle",
+        range: 12,
+        accuracy: 80,
+        damageScale: 1.6,
+        endsTurn: true,
+      },
       rocket: {
+        name: "Rocket Launcher",
+        range: 10,
         armorPen: 2,
         aoe: { radius: 1, falloff: 0.5 },
         demoForce: 2,
+        endsTurn: true,
       },
     },
+    fallbackWeaponName: "Carbine",
     sightRange: 12,
     modelIdByType: {
       rifle: "tdf.infantry.rifle",
@@ -61,9 +106,9 @@ export const UNIT_TUNING: UnitTuning = {
       rifle: 3,
       rocket: 1,
       sniper: 2,
-      engineer: 3,
+      engineer: 2,
       medic: 3,
-      radio: 3,
+      radio: 4,
     },
     fallbackCharges: 3,
   },
@@ -80,4 +125,5 @@ export const UNIT_TUNING: UnitTuning = {
     modelId: "tdf.mech.assembled-a",
     charges: 4,
   },
+  ranks: RANK_TUNING,
 };

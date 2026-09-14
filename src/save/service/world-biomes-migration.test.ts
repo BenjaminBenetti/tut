@@ -87,7 +87,11 @@ describe("world biome save expansion", () => {
       expect(next.overworld.map.regions).toHaveLength(17);
       expect(next.activeMission).toEqual({
         ...campaign.activeMission,
-        radars: schemaVersion === 18 ? radars : [],
+        // v20 → v21 (#1130): a scanner from before batteries starts with a full one.
+        radars:
+          schemaVersion === 18
+            ? radars.map((r) => ({ ...r, turnsLeft: 3 }))
+            : [],
         // v19 → v20 (#1121): nothing was burning in an older mission.
         effects: [],
       });

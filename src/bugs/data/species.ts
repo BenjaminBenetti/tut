@@ -15,13 +15,20 @@ import type { BugSpecies } from "../model/bug-species";
 //     or move and bite.
 //   • Weapons are all melee (range 1); accuracy and damage climb with
 //     size, and only the brute's blades punch through mech armor. The
-//     brute's blow also sweeps the tiles beside its mark and breaks
-//     light structures (#1121); the small species mark nothing.
+//     brute's blow also sweeps the tiles beside its mark and opens
+//     walls (#1121, #1130); the small species mark nothing.
+//   • footprint: the brute stands on a 2×2 block (#1130); the small
+//     species take one tile and declare nothing.
 //   • sightRange is one value for every species (ADR 0006): bugs hunt by
 //     scent as much as sight, and giving each its own number is tuning
 //     nobody has asked for yet.
 //   • hatchWeight is what egg spawners roll on: six swarmers to three
 //     lurkers to one brute keeps the first missions swarmy.
+//   • xpValue is what a kill is worth to the killer (#1130), sized to the
+//     rank ladder in `roster/data/ranks.ts` where a swarmer is the unit:
+//     a swarmer is one rung's worth at the bottom of the ladder, a
+//     lurker is two and a half — a focused turn's work — and a brute six,
+//     because a squad that brings one down has earned its stripes.
 
 /** Tiles every bug sees. One number until a species needs its own (ADR 0006). */
 const SIGHT = 10;
@@ -41,6 +48,7 @@ export const SWARMER: BugSpecies = {
   behaviour: "rush",
   modelId: "bug.swarmer",
   hatchWeight: 6,
+  xpValue: 10,
 };
 
 /** Stealthy flanker that tries to get behind the line (GDD §6.4). */
@@ -58,6 +66,7 @@ export const LURKER: BugSpecies = {
   behaviour: "flank",
   modelId: "bug.lurker",
   hatchWeight: 3,
+  xpValue: 25,
 };
 
 /** Slow, armored; punishes clumping (GDD §6.4). */
@@ -72,19 +81,27 @@ export const BRUTE: BugSpecies = {
   ap: 2,
   // The cleavers sweep: whoever stands beside its mark takes a share of
   // the blow, which is what "punishes clumping" means on the tile grid
-  // (#1121). A boulder of carapace also walks through a fence or a car.
+  // (#1121). Force 3 opens solid walls (#1130): a brute is four tiles
+  // wide and fits through no door, so the Executive Director asked for
+  // a slice with "demo 2 or above" that lets it cut its way to a squad
+  // indoors — and on the demolition ladder only 3 brings a solid wall
+  // down; 2 stops at doors and windows, which the brute cannot use.
   weapon: {
     range: 1,
     accuracy: 65,
     damage: 10,
     armorPen: 2,
     aoe: { radius: 1, falloff: 0.6 },
-    demoForce: 1,
+    demoForce: 3,
   },
   sightRange: SIGHT,
   behaviour: "punish-clumps",
   modelId: "bug.brute",
   hatchWeight: 1,
+  xpValue: 60,
+  // A 2×2 block (#1130): the model was squashed into one tile, and a
+  // boulder of carapace should not fit where a soldier does.
+  footprint: 2,
 };
 
 /**

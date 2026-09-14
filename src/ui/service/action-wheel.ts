@@ -106,7 +106,7 @@ const SHORT_REASONS: Readonly<Partial<Record<TacticalError["kind"], string>>> =
     "target-destroyed": "destroyed",
     "tile-out-of-sight": "no line of sight",
     "no-area-weapon": "not at the ground",
-    "radar-out-of-reach": "range 1",
+    "radar-out-of-reach": `range ${String(RADAR_TUNING.deployRange)}`,
     "radar-tile-blocked": "tile blocked",
   };
 
@@ -346,7 +346,7 @@ function tilePage(tile: TileCoord, unit: Unit, ctx: WheelContext): WheelPage {
             id: radarId,
             label: "Deploy radar",
             icon: "radar",
-            detail: "1 AP · scan 30",
+            detail: `${String(RADAR_TUNING.apCost)} AP · scan ${String(RADAR_TUNING.scanRange)} · ${String(RADAR_TUNING.batteryTurns)} turns`,
           }
         : closed(radarId, "Deploy radar", "radar", deployment.error, ctx),
     );

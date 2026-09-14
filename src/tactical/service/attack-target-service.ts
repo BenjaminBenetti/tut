@@ -34,6 +34,11 @@ export function unitAttackTarget(
     hp: unit.hp,
     armor: template.armor,
     team: unit.team,
+    // A block says how big it is (#1130); a single tile says nothing,
+    // so the projection of one is exactly what it was.
+    ...(template.footprint === undefined
+      ? {}
+      : { footprint: template.footprint }),
   };
 }
 

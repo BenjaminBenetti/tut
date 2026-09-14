@@ -40,6 +40,12 @@ export interface ActionBarModel {
    * used to be silent.
    */
   readonly unspent: number;
+  /**
+   * Whether the bug phase is still playing on the map (#1130). Held,
+   * every button is disabled outright — End turn first among them — so
+   * the bar cannot be worked ahead of what the map shows.
+   */
+  readonly locked?: boolean;
 }
 
 // ===========================================
@@ -173,10 +179,15 @@ export class ActionBarView {
     this.root = bar;
   }
 
-  /** Marks availability per the model, the aim on Attack, and the unspent on End turn. */
+  /** Marks availability per the model, the aim on Attack, and the unspent on End turn; disables the lot while locked. */
   update(model: ActionBarModel): void {
+    const locked = model.locked === true;
+    if (this.root) {
+      this.root.dataset.locked = String(locked);
+    }
     for (const [action, button] of this.buttons) {
-      const available = isOffered(action, model);
+      const available = !locked && isOffered(action, model);
+      button.disabled = locked;
       button.classList.toggle("is-unavailable", !available);
       button.setAttribute("aria-disabled", available ? "false" : "true");
       const pressed = action === "attack" && model.aiming;

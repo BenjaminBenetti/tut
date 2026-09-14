@@ -294,11 +294,17 @@ describe("shippedBugBehaviours", () => {
     const placed = withBug(
       mission,
       BRUTE,
-      walkableTileNear(mission, {
-        x: squad.pos.x + 4,
-        y: squad.pos.y,
-        z: squad.pos.z + 4,
-      }),
+      // The brute stands on a 2×2 block (#1130), so the tile is an
+      // anchor its whole block fits at.
+      walkableTileNear(
+        mission,
+        {
+          x: squad.pos.x + 4,
+          y: squad.pos.y,
+          z: squad.pos.z + 4,
+        },
+        BRUTE.footprint,
+      ),
       "brute-live",
     );
     const endTurnHandler = shippedTacticalHandlers()[END_TURN];

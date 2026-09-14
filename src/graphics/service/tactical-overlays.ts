@@ -60,6 +60,8 @@ import {
   WEAPON_RANGE_OPACITY,
 } from "../data/tactical-overlay-palette";
 import type { Disposable } from "../model/disposable";
+import type { TileRise } from "../model/tile-rise";
+import { NO_RISE } from "../model/tile-rise";
 import { tileTopCentre } from "../view/tactical-map-view";
 
 // ===========================================
@@ -233,14 +235,23 @@ class PerimeterRibbon implements Disposable {
   readonly mesh: Mesh;
   private readonly geometry = new BufferGeometry();
   private readonly material: MeshBasicMaterial;
+  private readonly rise: TileRise;
 
-  /** @param name - Object name for tests and debugging. */
+  /**
+   * @param name - Object name for tests and debugging.
+   * @param colour - Material colour.
+   * @param opacity - Material opacity.
+   * @param renderOrder - Draw order among the overlay planes.
+   * @param rise - How far each tile's slab stands above `tileTop` (#1130).
+   */
   constructor(
     name: string,
     colour: number,
     opacity: number,
     renderOrder: number,
+    rise: TileRise,
   ) {
+    this.rise = rise;
     this.material = new MeshBasicMaterial({
       color: colour,
       transparent: true,
@@ -272,7 +283,16 @@ class PerimeterRibbon implements Disposable {
         if (inside.has(`${tile.x + dx},${tile.z + dz}`)) {
           continue;
         }
-        pushEdgeQuad(positions, centre, dx, dz, 0.5, half, 0, centre.y + lift);
+        pushEdgeQuad(
+          positions,
+          centre,
+          dx,
+          dz,
+          0.5,
+          half,
+          0,
+          centre.y + lift + this.rise(tile),
+        );
       }
     }
     this.geometry.setAttribute(
@@ -313,14 +333,23 @@ class EdgeTickLayer implements Disposable {
   readonly mesh: Mesh;
   private readonly geometry = new BufferGeometry();
   private readonly material: MeshBasicMaterial;
+  private readonly rise: TileRise;
 
-  /** @param name - Object name for tests and debugging. */
+  /**
+   * @param name - Object name for tests and debugging.
+   * @param colour - Material colour.
+   * @param opacity - Material opacity.
+   * @param renderOrder - Draw order among the overlay planes.
+   * @param rise - How far each tile's slab stands above `tileTop` (#1130).
+   */
   constructor(
     name: string,
     colour: number,
     opacity: number,
     renderOrder: number,
+    rise: TileRise,
   ) {
+    this.rise = rise;
     this.material = new MeshBasicMaterial({
       color: colour,
       transparent: true,
@@ -351,7 +380,7 @@ class EdgeTickLayer implements Disposable {
         COVER_TICK_LENGTH / 2,
         COVER_TICK_WIDTH / 2,
         COVER_TICK_INSET,
-        centre.y + lift,
+        centre.y + lift + this.rise(marker.tile),
       );
     }
     this.geometry.setAttribute(
@@ -381,16 +410,26 @@ class OverlayLayer implements Disposable {
   readonly mesh: InstancedMesh;
   private readonly material: MeshBasicMaterial;
   private readonly geometry: BoxGeometry | RingGeometry;
+  private readonly rise: TileRise;
 
-  /** @param name - Object name for tests and debugging. */
+  /**
+   * @param name - Object name for tests and debugging.
+   * @param geometry - The shape stamped once per tile.
+   * @param colour - Material colour.
+   * @param opacity - Material opacity.
+   * @param renderOrder - Draw order among the overlay planes.
+   * @param rise - How far each tile's slab stands above `tileTop` (#1130).
+   */
   constructor(
     name: string,
     geometry: BoxGeometry | RingGeometry,
     colour: number,
     opacity: number,
     renderOrder: number,
+    rise: TileRise,
   ) {
     this.geometry = geometry;
+    this.rise = rise;
     this.material = new MeshBasicMaterial({
       color: colour,
       transparent: true,
@@ -425,7 +464,7 @@ class OverlayLayer implements Disposable {
       } else {
         matrix.identity();
       }
-      matrix.setPosition(centre.x, centre.y + lift, centre.z);
+      matrix.setPosition(centre.x, centre.y + lift + this.rise(tile), centre.z);
       this.mesh.setMatrixAt(index, matrix);
     });
     this.mesh.count = count;
@@ -443,6 +482,19 @@ class OverlayLayer implements Disposable {
 // ===========================================
 // TacticalOverlays
 // ===========================================
+
+/** What the overlays need from the scene they are painted on. */
+export interface TacticalOverlaysOptions {
+  /**
+   * How far each tile's slab stands above `tileTop` (#1130), from
+   * `tileRiseFor(map)`. Every lift below is measured from the plane the
+   * rules use, and a raised slab such as a sidewalk stands 0.035 above
+   * it — more than the move bands are lifted — so without this the
+   * bands on a sidewalk were painted inside the slab and never seen.
+   * Absent means no surface rises, which is what a scene-less test wants.
+   */
+  readonly rise?: TileRise;
+}
 
 /**
  * Movement-range, cover and line-of-sight overlays over the tactical map
@@ -492,8 +544,13 @@ export class TacticalOverlays implements Disposable {
   // Constructor
   // ===========================================
 
-  /** Builds the empty layers. */
-  constructor() {
+  /**
+   * Builds the empty layers.
+   *
+   * @param options - The scene's tile rise; none by default.
+   */
+  constructor(options: TacticalOverlaysOptions = {}) {
+    const rise = options.rise ?? NO_RISE;
     this.root = new Group();
     this.root.name = "tactical-overlays";
     this.rangeOneAp = new OverlayLayer(
@@ -506,6 +563,7 @@ export class TacticalOverlays implements Disposable {
       MOVE_RANGE_ONE_AP_COLOUR,
       MOVE_RANGE_ONE_AP_OPACITY,
       1,
+      rise,
     );
     this.rangeTwoAp = new OverlayLayer(
       "overlay-move-range-2ap",
@@ -517,18 +575,21 @@ export class TacticalOverlays implements Disposable {
       MOVE_RANGE_TWO_AP_COLOUR,
       MOVE_RANGE_TWO_AP_OPACITY,
       1,
+      rise,
     );
     this.coverLow = new EdgeTickLayer(
       "overlay-cover-low",
       COVER_LOW_COLOUR,
       COVER_OPACITY,
       2,
+      rise,
     );
     this.coverHigh = new EdgeTickLayer(
       "overlay-cover-high",
       COVER_HIGH_COLOUR,
       COVER_OPACITY,
       2,
+      rise,
     );
     this.markedTile = new OverlayLayer(
       "overlay-marked-tile",
@@ -545,6 +606,7 @@ export class TacticalOverlays implements Disposable {
       MARKED_TILE_COLOUR,
       MARKED_TILE_OPACITY,
       4,
+      rise,
     );
     this.blast = new OverlayLayer(
       "overlay-blast",
@@ -555,6 +617,7 @@ export class TacticalOverlays implements Disposable {
       BLAST_COLOUR,
       BLAST_OPACITY,
       5,
+      rise,
     );
     this.blockedShot = new OverlayLayer(
       "overlay-blocked-shot",
@@ -569,12 +632,14 @@ export class TacticalOverlays implements Disposable {
       BLOCKED_SHOT_COLOUR,
       BLOCKED_SHOT_OPACITY,
       3,
+      rise,
     );
     this.weaponRange = new PerimeterRibbon(
       "overlay-weapon-range",
       WEAPON_RANGE_COLOUR,
       WEAPON_RANGE_OPACITY,
       4,
+      rise,
     );
     this.root.add(
       this.weaponRange.mesh,

@@ -7,6 +7,7 @@ import { EARTH_MAP } from "../../overworld/data/earth-map";
 import { DEFAULT_CITY_SCALE } from "../../overworld/service/earth-map-builder";
 import type { Migration } from "../model/migration";
 import { isRecord } from "../../core/model/record-guard";
+import { RADAR_TUNING } from "../../tactical/data/radar-tuning";
 import { HALF_HEIGHT_LAYERS } from "../service/half-height-layer-migration";
 import { EXPAND_WORLD_BIOMES } from "../service/world-biomes-migration";
 
@@ -467,6 +468,37 @@ const ADD_MISSION_EFFECTS: Migration = {
 };
 
 // ===========================================
+// v20 → v21
+// ===========================================
+
+/**
+ * v20 → v21 (#1130): a deployed radar scanner runs on a battery and
+ * carries `turnsLeft`. A scanner from before batteries existed starts
+ * with a full one, which is the kindest reading of a save that never
+ * counted; a save with no mission, and a scanner already counting, are
+ * left alone.
+ */
+const ADD_RADAR_BATTERY: Migration = {
+  from: 20,
+  to: 21,
+  apply: (state) => {
+    if (!isRecord(state)) {
+      return state;
+    }
+    const mission = state.activeMission;
+    if (!isRecord(mission) || !Array.isArray(mission.radars)) {
+      return state;
+    }
+    const radars = mission.radars.map((radar: unknown) =>
+      isRecord(radar) && typeof radar.turnsLeft !== "number"
+        ? { ...radar, turnsLeft: RADAR_TUNING.batteryTurns }
+        : radar,
+    );
+    return { ...state, activeMission: { ...mission, radars } };
+  },
+};
+
+// ===========================================
 // Chain
 // ===========================================
 
@@ -567,4 +599,5 @@ export const GAME_STATE_MIGRATIONS: readonly Migration[] = [
   ADD_MISSION_RADARS,
   EXPAND_WORLD_BIOMES,
   ADD_MISSION_EFFECTS,
+  ADD_RADAR_BATTERY,
 ];

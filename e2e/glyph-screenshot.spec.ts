@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+import { waitForBugPhasePlayed } from "./bug-phase.helper";
+
 import { launchMission, settleForShot } from "./mission-capture.helper";
 
 /** Turns to hand over before giving up on a bug walking into view. */
@@ -191,6 +193,9 @@ test("captures the glyphed screens for review", async ({ page }) => {
     await expect(
       page.locator('#turn-banner [data-field="phase"]'),
     ).toContainText(/player/i, { timeout: 30000 });
+    // The hooks above are held with the controls until the bugs have
+    // finished walking (#1130).
+    await waitForBugPhasePlayed(page);
   }
   // Required, not conditional: a capture behind an `if` that quietly
   // does nothing is how a committed frame goes stale unnoticed (#650).

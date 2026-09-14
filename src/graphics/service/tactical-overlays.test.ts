@@ -1,4 +1,5 @@
-import { InstancedMesh } from "three";
+import { InstancedMesh, Matrix4 } from "three";
+import type { BufferAttribute, Mesh } from "three";
 import { describe, expect, it } from "vitest";
 
 import { STOREY_LAYERS } from "../../core/model/elevation";
@@ -31,6 +32,9 @@ import {
   campaignOnDay,
   missionAt,
 } from "../../ui/view/mission-fixtures.test-helper";
+import { OVERLAY_LIFT } from "../data/tactical-overlay-palette";
+import { tileTop } from "../view/tactical-map-view";
+import { surfaceRise, tileRiseFor } from "./surface-rise";
 import {
   EMPTY_OVERLAYS,
   TacticalOverlays,
@@ -560,5 +564,126 @@ describe("the sight cue marks the exception (#517, #624)", () => {
     expect(state.blockedShot.length).toBeLessThanOrEqual(
       state.moveRange.length,
     );
+  });
+});
+
+// ===========================================
+// Raised surfaces (#1130)
+// ===========================================
+
+describe("TacticalOverlays on raised surfaces (#1130)", () => {
+  const road = { x: 0, y: 0, z: 0 };
+  const sidewalk = { x: 1, y: 0, z: 1 };
+
+  /** Overlays over a road with one sidewalk tile, the scene's own rise resolver. */
+  function overlaysOnStreet(): TacticalOverlays {
+    const map = new FixtureMapBuilder(3, 3, 1)
+      .fillGround(0, SurfaceIds.ROAD)
+      .tile(sidewalk, SurfaceIds.SIDEWALK)
+      .build();
+    return new TacticalOverlays({ rise: tileRiseFor(map) });
+  }
+
+  /** The world height of instance `index` on the named instanced layer. */
+  function instanceY(
+    overlays: TacticalOverlays,
+    name: string,
+    index: number,
+  ): number {
+    const layer = overlays.layers().find((l) => l.name === name);
+    if (!(layer instanceof InstancedMesh)) {
+      throw new Error(`${name} must be an instanced layer`);
+    }
+    const matrix = new Matrix4();
+    layer.getMatrixAt(index, matrix);
+    return matrix.elements[13];
+  }
+
+  /** Every vertex height of a built edge layer (ribbon or ticks). */
+  function vertexHeights(overlays: TacticalOverlays, name: string): number[] {
+    const layer = overlays.layers().find((l) => l.name === name) as Mesh;
+    const position = layer.geometry.getAttribute("position") as BufferAttribute;
+    const heights: number[] = [];
+    for (let i = 0; i < position.count; i++) {
+      heights.push(position.getY(i));
+    }
+    return heights;
+  }
+
+  it("paints the move band on a sidewalk above its slab, and on a road where it always was", () => {
+    const overlays = overlaysOnStreet();
+    overlays.show({
+      moveRange: [
+        { tile: road, apCost: 1 },
+        { tile: sidewalk, apCost: 1 },
+      ],
+      cover: [],
+      blockedShot: [],
+      weaponRange: [],
+    });
+    const rise = surfaceRise(SurfaceIds.SIDEWALK);
+    // The slab's top face is `rise` above the plane; the band must clear it.
+    const slabTop = tileTop(0) + rise;
+    expect(instanceY(overlays, "overlay-move-range-1ap", 0)).toBeCloseTo(
+      tileTop(0) + OVERLAY_LIFT,
+      6,
+    );
+    const onSidewalk = instanceY(overlays, "overlay-move-range-1ap", 1);
+    expect(onSidewalk).toBeCloseTo(tileTop(0) + OVERLAY_LIFT + rise, 6);
+    expect(onSidewalk).toBeGreaterThan(slabTop);
+    overlays.dispose();
+  });
+
+  it("lifts the edge marks and the wheel's frame on a sidewalk by the same rise", () => {
+    const overlays = overlaysOnStreet();
+    overlays.setWeaponRangeVisible(true);
+    overlays.show({
+      moveRange: [],
+      cover: [{ tile: sidewalk, level: 1, dx: 1, dz: 0 }],
+      blockedShot: [sidewalk],
+      weaponRange: [sidewalk],
+    });
+    overlays.setMarkedTile(sidewalk);
+    overlays.setBlastTiles([sidewalk]);
+    const rise = surfaceRise(SurfaceIds.SIDEWALK);
+    // Each edge layer keeps its own lift and adds the rise on top.
+    for (const [name, lift] of [
+      ["overlay-weapon-range", OVERLAY_LIFT],
+      ["overlay-cover-low", OVERLAY_LIFT * 2],
+    ] as const) {
+      const heights = vertexHeights(overlays, name);
+      expect(heights.length, name).toBeGreaterThan(0);
+      for (const y of heights) {
+        expect(y, name).toBeCloseTo(tileTop(0) + lift + rise, 6);
+      }
+    }
+    expect(instanceY(overlays, "overlay-blocked-shot", 0)).toBeCloseTo(
+      tileTop(0) + OVERLAY_LIFT * 3 + rise,
+      6,
+    );
+    expect(instanceY(overlays, "overlay-blast", 0)).toBeCloseTo(
+      tileTop(0) + OVERLAY_LIFT * 6 + rise,
+      6,
+    );
+    expect(instanceY(overlays, "overlay-marked-tile", 0)).toBeCloseTo(
+      tileTop(0) + OVERLAY_LIFT * 7 + rise,
+      6,
+    );
+    overlays.dispose();
+  });
+
+  it("rises nothing without a resolver, so a scene-less overlay draws as before", () => {
+    const overlays = new TacticalOverlays();
+    overlays.show({
+      moveRange: [{ tile: sidewalk, apCost: 2 }],
+      cover: [],
+      blockedShot: [],
+      weaponRange: [],
+    });
+    expect(instanceY(overlays, "overlay-move-range-2ap", 0)).toBeCloseTo(
+      tileTop(0) + OVERLAY_LIFT * 1.5,
+      6,
+    );
+    overlays.dispose();
   });
 });

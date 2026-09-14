@@ -6,6 +6,8 @@ import { UNIT_TUNING } from "../src/tactical/data/unit-tuning";
 import { nearestSightPosition } from "../src/tactical/service/map-assessment-service";
 import { expect, test } from "@playwright/test";
 
+import { waitForBugPhasePlayed } from "./bug-phase.helper";
+
 import type { TacticalTestHooks } from "../src/ui/model/tactical-intent";
 
 /** The page's global object as seen from `page.evaluate`. */
@@ -279,6 +281,10 @@ test("a mech can destroy an egg spawner, so a mission can be won", async ({
       await expect(
         page.locator('#turn-banner [data-field="phase"]'),
       ).toContainText(/player/i, { timeout: 30000 });
+      // The hooks that aim and walk are held until the bugs have
+      // finished moving (#1130); an attempt made before that is dropped
+      // and burns a turn of the budget.
+      await waitForBugPhasePlayed(page);
     }
   }
 

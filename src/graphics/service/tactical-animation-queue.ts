@@ -1,5 +1,5 @@
 import type { UnitMotion } from "../model/unit-motion";
-import type { Camera, Object3D, Texture } from "three";
+import type { Camera, DataTexture, Object3D, Texture } from "three";
 import {
   AdditiveBlending,
   CanvasTexture,
@@ -14,7 +14,6 @@ import type { Vec3 } from "../../core/model/grid";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import { ATTACK_RESOLVED } from "../../tactical/model/attack-resolved-event";
-import type { BlastResolvedPayload } from "../../tactical/model/blast-resolved-event";
 import { BLAST_RESOLVED } from "../../tactical/model/blast-resolved-event";
 import type { EffectDamagedPayload } from "../../tactical/model/effect-damaged-event";
 import { EFFECT_DAMAGED } from "../../tactical/model/effect-damaged-event";
@@ -37,6 +36,8 @@ import type { FrameUpdatable } from "../model/frame-updatable";
 import type { SpriteSource } from "../model/sprite-source";
 import { tileTopCentre } from "../view/tactical-map-view";
 import { isMeleeRange } from "../../tactical/model/weapon-profile";
+import { createBlastRingTexture } from "./blast-ring-texture";
+import { createFalloffTexture } from "./falloff-texture";
 
 // ===========================================
 // Types
@@ -50,6 +51,14 @@ export interface AnimationScene {
   unitMotion?(unitId: UnitId): UnitMotion | undefined;
   /** World centre of a tile's top, or undefined off the map. */
   tileWorldPosition(tile: TileCoord): Vec3 | undefined;
+  /**
+   * Where the unit's feet are when it stands on `tile` (#1130): the
+   * tile's top at the centre of the unit's footprint, so a 2×2 brute
+   * walks along the corners its four tiles share rather than along the
+   * centres of its anchor tiles. Scenes without footprints may omit it;
+   * the queue then walks through tile centres, as it always did.
+   */
+  unitWorldPositionAt?(unitId: UnitId, tile: TileCoord): Vec3 | undefined;
   /**
    * The unit's height in world units, from its registered model. Every
    * effect anchors off this: a mech is 2.79 u and an infantry figure 0.9,
@@ -117,6 +126,22 @@ interface Animation {
   advance(seconds: number): number | undefined;
   /** Jumps to the end state. */
   finish(): void;
+}
+
+/**
+ * One part of a composite animation: what to play and when, from the
+ * composite's own start. Built lazily so its sprites appear at `at`,
+ * not when the composite is assembled.
+ */
+interface ScheduledPart {
+  readonly at: number;
+  readonly start: () => Animation | undefined;
+}
+
+/** What one turn of the queue plays: the animation and how many pending events it covers. */
+interface Playback {
+  readonly animation: Animation | undefined;
+  readonly count: number;
 }
 
 // ===========================================
@@ -232,6 +257,31 @@ const BLAST_BASE_SIZE = 1.4;
 const BLAST_SIZE_PER_TILE = 1.6;
 const BLAST_GROWTH = 0.5;
 
+/**
+ * The explosion's three layers (#1130), each as a share of the blast's
+ * size: the spark core the impact sprite already draws, a fireball
+ * glow that swells and dies, and a shockwave ring that runs out past
+ * the footprint's edge.
+ *
+ * ```
+ *   core   ●        0.7 → 1.05 of size, gone with the flash
+ *   glow   ◉◉       0.5 → 1.2         fades as the square of time
+ *   ring   ◯ → ◯    0.3 → 1.7         the wave leaving the impact
+ * ```
+ */
+const BLAST_CORE_SHARE = 0.7;
+const BLAST_GLOW_START = 0.5;
+const BLAST_GLOW_END = 1.2;
+const BLAST_RING_START = 0.3;
+const BLAST_RING_END = 1.7;
+
+/** Fireball in the flame's orange; the wave in a pale, hot yellow. */
+const BLAST_GLOW_COLOUR = 0xf08a24;
+const BLAST_RING_COLOUR = 0xfff0c0;
+
+/** Where the shell bursts above a tile it was aimed at, in world units. */
+const BLAST_LIFT = 0.3;
+
 /** A falling structure's puff, and how far a blast's number rises above the tile. */
 const RUBBLE_SIZE = 1.1;
 const TILE_TEXT_LIFT = 0.6;
@@ -257,6 +307,13 @@ const TILE_TEXT_LIFT = 0.6;
  *   walk path ──► flash + impact + floater ──► fade ──► onDone()
  * ```
  *
+ * One exception to "one at a time" (#1130): a blast is one event to
+ * the eye however many the rules emit for it. An `AttackResolved`, the
+ * deaths it and its blast caused and the `BlastResolved` itself land
+ * together, as one explosion, with every number, fade and falling
+ * structure in the footprint starting at the same instant — see
+ * `blastGroupLength` and `volley`.
+ *
  * Presentation only: it moves objects it is handed and never reads or
  * writes game state.
  */
@@ -280,12 +337,17 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
     onStart?: (event: TacticalEvent) => void;
   }[] = [];
   private current: Animation | undefined;
+  /** How many pending events `current` covers: one, or a whole blast (#1130). */
+  private currentCount = 0;
   /** Keeps alternating feet across the simulation's one-tile move events. */
   private readonly walkedTiles = new Map<UnitId, number>();
   private readonly textures = new Map<SpriteId, Texture | undefined>();
   private readonly live = new Set<Sprite>();
   /** Sprites playing a frame sheet, with their own cloned texture (#697). */
   private readonly playing = new Map<Sprite, SheetPlayback>();
+  /** Procedural explosion textures, built on first use and owned here (#1130). */
+  private glowTexture: DataTexture | undefined;
+  private ringTexture: DataTexture | undefined;
 
   // ===========================================
   // Constructor
@@ -347,18 +409,12 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
     if (this.current) {
       this.current.finish();
       this.current = undefined;
-      const finished = this.pending.shift();
-      finished?.onDone?.();
+      this.settle(this.currentCount);
     }
     while (this.pending.length > 0) {
-      const next = this.pending.shift();
-      if (!next) {
-        break;
-      }
-      next.onStart?.(next.event);
-      const animation = this.start(next.event);
+      const { animation, count } = this.begin();
       animation?.finish();
-      next.onDone?.();
+      this.settle(count);
     }
   }
 
@@ -454,31 +510,142 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
     let remaining = deltaSeconds;
     while (remaining > 0) {
       if (!this.current) {
-        const next = this.pending[0];
-        if (!next) {
+        if (this.pending.length === 0) {
           return;
         }
-        // Told as it begins, not as it ends: what the HUD writes about an
-        // event should appear as the event happens on the map, so a bug
-        // phase reads one action at a time rather than all at once.
-        next.onStart?.(next.event);
-        const animation = this.start(next.event);
+        const { animation, count } = this.begin();
         if (!animation) {
-          this.pending.shift();
-          next.onDone?.();
+          this.settle(count);
           continue;
         }
         this.current = animation;
+        this.currentCount = count;
       }
       const leftover = this.current.advance(remaining);
       if (leftover === undefined) {
         return;
       }
       this.current = undefined;
-      const finished = this.pending.shift();
-      finished?.onDone?.();
+      this.settle(this.currentCount);
       remaining = leftover;
     }
+  }
+
+  // ===========================================
+  // Private Methods: the queue
+  // ===========================================
+
+  /**
+   * Starts whatever is at the head of the queue: one event, or the
+   * events of one blast played as one explosion (#1130). Every event
+   * covered is told it has begun, in order, before the first frame.
+   *
+   * Told as it begins, not as it ends: what the HUD writes about an
+   * event should appear as the event happens on the map, so a bug
+   * phase reads one action at a time rather than all at once.
+   *
+   * @returns The animation, or none when there is nothing to show, and
+   *   how many pending events it covers.
+   */
+  private begin(): Playback {
+    const count = this.blastGroupLength();
+    const group = this.pending.slice(0, count);
+    for (const entry of group) {
+      entry.onStart?.(entry.event);
+    }
+    const head = group[0];
+    if (!head) {
+      return { animation: undefined, count: 0 };
+    }
+    const animation =
+      count > 1
+        ? this.volley(group.map((entry) => entry.event))
+        : this.start(head.event);
+    return { animation, count };
+  }
+
+  /**
+   * Retires the first `count` pending events, running each one's
+   * callback in order.
+   *
+   * @param count - Events the animation that just finished covered.
+   */
+  private settle(count: number): void {
+    for (const finished of this.pending.splice(0, count)) {
+      finished.onDone?.();
+    }
+  }
+
+  /**
+   * How many events from the head of the queue are one blast (#1130).
+   *
+   * The rules emit a blast as a run of events: the shot at what it was
+   * aimed at, then whatever died to the shot and to the blast, then the
+   * `BlastResolved` naming everyone it reached, then the structures it
+   * brought down. Played one after another they read as the target
+   * being hit, then a corpse, then a burst, then the neighbours — a
+   * blast is none of those things, it is one moment.
+   *
+   * ```
+   *   [AttackResolved]? [UnitDied | SpawnerDamaged]* BlastResolved [StructureDestroyed]*
+   *    same attacker     each in the blast's victims   the one       same shooter
+   *                      or the aimed target           shot
+   * ```
+   *
+   * Anything that breaks the shape — a different attacker, a death the
+   * blast did not cause, no blast at all — ends the group at one event,
+   * and the head plays as it always did.
+   *
+   * @returns The run's length; `1` for any event that is not a blast's.
+   */
+  private blastGroupLength(): number {
+    const head = this.pending[0]?.event;
+    if (head === undefined) {
+      return 0;
+    }
+    let attacker: UnitId | undefined;
+    const inBlast = new Set<string>();
+    let next = 0;
+    if (head.type === ATTACK_RESOLVED) {
+      attacker = head.payload.attackerId;
+      inBlast.add(head.payload.targetId);
+      next = 1;
+    }
+    const struck: string[] = [];
+    for (; next < this.pending.length; next++) {
+      const event = this.pending[next]?.event;
+      if (event?.type === UNIT_DIED) {
+        struck.push(event.payload.unitId);
+      } else if (event?.type === SPAWNER_DAMAGED) {
+        struck.push(event.payload.spawnerId);
+      } else {
+        break;
+      }
+    }
+    const blast = this.pending[next]?.event;
+    if (blast?.type !== BLAST_RESOLVED) {
+      return 1;
+    }
+    if (attacker !== undefined && blast.payload.attackerId !== attacker) {
+      return 1;
+    }
+    for (const victim of blast.payload.victims) {
+      inBlast.add(victim.targetId);
+    }
+    if (!struck.every((id) => inBlast.has(id))) {
+      return 1;
+    }
+    next++;
+    for (; next < this.pending.length; next++) {
+      const event = this.pending[next]?.event;
+      if (
+        event?.type !== STRUCTURE_DESTROYED ||
+        event.payload.unitId !== blast.payload.attackerId
+      ) {
+        break;
+      }
+    }
+    return next;
   }
 
   // ===========================================
@@ -490,10 +657,15 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
     this.pending.length = 0;
     this.current?.finish();
     this.current = undefined;
+    this.currentCount = 0;
     this.walkedTiles.clear();
     for (const sprite of [...this.live]) {
       this.removeSprite(sprite);
     }
+    this.glowTexture?.dispose();
+    this.glowTexture = undefined;
+    this.ringTexture?.dispose();
+    this.ringTexture = undefined;
     this.root.removeFromParent();
   }
 
@@ -523,7 +695,9 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
       case SPAWNER_DAMAGED:
         return this.spawnerBurst(event.payload);
       case BLAST_RESOLVED:
-        return this.blast(event.payload);
+        // On its own: a shot at the ground that reached nothing that
+        // died. With company it arrives through `begin` instead.
+        return this.volley([event]);
       case STRUCTURE_DESTROYED:
         return this.rubble(event.payload);
       case EFFECT_DAMAGED:
@@ -546,15 +720,19 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
     to: TileCoord,
   ): Animation | undefined {
     const object = this.scene.unitObject(unitId);
-    const end = this.scene.tileWorldPosition(to) ?? tileTopCentre(to);
+    // Where this unit's feet go on a tile: its footprint's centre when
+    // the scene knows footprints (#1130), else the tile's own centre.
+    const standAt = (tile: TileCoord): Vec3 =>
+      this.scene.unitWorldPositionAt?.(unitId, tile) ??
+      this.scene.tileWorldPosition(tile) ??
+      tileTopCentre(tile);
+    const end = standAt(to);
     if (!object) {
       return undefined;
     }
     // An arrival waits hidden where its walk begins; the walk shows it (#1116).
     object.visible = true;
-    const points = path.map(
-      (tile) => this.scene.tileWorldPosition(tile) ?? tileTopCentre(tile),
-    );
+    const points = path.map(standAt);
     if (points.length === 0 || !samePoint(points[points.length - 1]!, end)) {
       points.push(end);
     }
@@ -915,98 +1093,199 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
   }
 
   /**
-   * A blast (#1121): a tracer from the shooter to the impact tile, a
-   * burst there sized to the radius, and a number over every victim the
-   * blast reached — or MISS over the tile for a shot at the ground that
-   * went wide. The aimed target's own number is on the `AttackResolved`
-   * that played just before, so it is not repeated here.
+   * A blast as one explosion (#1130): the shot leaves the shooter, and
+   * at the instant it lands everything it did happens at once — the
+   * explosion over the impact, sized to the radius; the number over the
+   * aimed target and over every victim the blast reached; the fade of
+   * everything it killed; the burst of every spawner it finished; the
+   * puff over every structure it brought down. A shot at the ground
+   * that went wide plays the shot and MISS over the tile, nothing else.
    *
    * ```
-   *   flash ──► tracer ──────────► burst swelling ──► numbers rising
-   *   0        0.06              0.24               0.39           1.3 s
+   *   flash ──► tracer ──────────► ● explosion  ─┐
+   *   0        0.06              0.24            ├─ numbers, fades,
+   *                                              │  bursts and rubble
+   *                                              └─ all from 0.24 s
    * ```
+   *
+   * Until this the rules' run of events for one shell — the hit, then
+   * each death, then the burst, then the neighbours' numbers — played
+   * in that order, one after the other, so a rocket into a clump read
+   * as the bugs being picked off in turn (Executive Director,
+   * 2026-09-13). The events are still told to the HUD in order, at the
+   * start; only the picture is one moment.
+   *
+   * @param events - The blast's run, as `blastGroupLength` cut it: an
+   *   optional `AttackResolved`, deaths, the `BlastResolved`, rubble.
    */
-  private blast(payload: BlastResolvedPayload): Animation | undefined {
-    const ground = this.scene.tileWorldPosition(payload.impact);
-    if (!ground) {
+  private volley(events: readonly TacticalEvent[]): Animation | undefined {
+    const blast = events.find((event) => event.type === BLAST_RESOLVED);
+    if (blast === undefined) {
       return undefined;
     }
-    const attacker = this.scene.unitObject(payload.attackerId);
-    const muzzle = this.anchor(payload.attackerId, MUZZLE_FRACTION);
-    const melee = isMeleeRange(payload.weaponRange);
+    const aimed = events.find((event) => event.type === ATTACK_RESOLVED);
+    const impact = blast.payload;
+    const ground =
+      this.scene.tileWorldPosition(impact.impact) ??
+      tileTopCentre(impact.impact);
+    const attackerId = impact.attackerId;
+    const attacker = this.scene.unitObject(attackerId);
+    const motion = this.scene.unitMotion?.(attackerId);
+    const originalYaw = attacker?.rotation.y;
+    const melee = isMeleeRange(impact.weaponRange);
+    // The shell flies at the body of what it was aimed at, or at the
+    // tile: a shot at the ground bursts a little above it.
+    const aim =
+      (aimed && this.anchor(aimed.payload.targetId, BODY_FRACTION)) ??
+      (aimed && this.spawnerTop(aimed.payload.targetId)) ??
+      ({ x: ground.x, y: ground.y + BLAST_LIFT, z: ground.z } satisfies Vec3);
     if (attacker) {
-      faceTowards(attacker, attacker.position, ground);
+      faceTowards(attacker, attacker.position, aim);
     }
-    const flash = payload.aimedAtTile
-      ? this.openingFlash(muzzle, ground, melee)
-      : undefined;
-    const tracer =
-      payload.aimedAtTile && !melee && muzzle
-        ? this.billboard("vfx.tracer", muzzle, TRACER_THICKNESS, 0xffffff, {
-            width: TRACER_THICKNESS * 3,
-            rotation: this.screenAngle(muzzle, ground),
-          })
-        : undefined;
-    const burstSize = BLAST_BASE_SIZE + BLAST_SIZE_PER_TILE * payload.radius;
-    const burstAt = { x: ground.x, y: ground.y + 0.3, z: ground.z };
-    const burst = payload.hit
-      ? this.billboard("vfx.impact", burstAt, burstSize, 0xffffff)
-      : undefined;
-    const floaters: { sprite: Sprite; baseY: number }[] = [];
-    if (!payload.hit && payload.aimedAtTile) {
-      const at = { x: ground.x, y: ground.y + TILE_TEXT_LIFT, z: ground.z };
-      floaters.push({
-        sprite: this.billboard(undefined, at, FLOATER_WIDTH, 0xffffff, {
-          label: "MISS",
-          tone: MISS_COLOUR,
-          aspect: 0.42,
-        }),
-        baseY: at.y,
-      });
+    const muzzle = this.anchor(attackerId, MUZZLE_FRACTION);
+    const flightSeconds = melee ? 0 : this.timing.tracerSeconds;
+    const landsAt = this.timing.flashSeconds * 0.5 + flightSeconds;
+    const poseSeconds =
+      this.timing.flashSeconds + flightSeconds + this.timing.impactSeconds;
+
+    const numbers: {
+      readonly at: Vec3;
+      readonly label: string;
+      readonly tone: number;
+    }[] = [];
+    if (aimed) {
+      const at =
+        this.anchor(aimed.payload.targetId, 1, TEXT_MARGIN) ??
+        this.spawnerTop(aimed.payload.targetId);
+      if (at) {
+        numbers.push({
+          at,
+          label: aimed.payload.hit
+            ? `-${String(aimed.payload.damage)}`
+            : "MISS",
+          tone: aimed.payload.hit ? DAMAGE_COLOUR : MISS_COLOUR,
+        });
+      }
     }
-    for (const victim of payload.victims) {
+    for (const victim of impact.victims) {
       const at =
         victim.kind === "unit"
           ? this.anchor(victim.targetId, 1, TEXT_MARGIN)
           : this.spawnerTop(victim.targetId);
-      if (!at) {
-        continue;
-      }
-      floaters.push({
-        sprite: this.billboard(undefined, at, FLOATER_WIDTH, 0xffffff, {
+      if (at) {
+        numbers.push({
+          at,
           label: `-${String(victim.damage)}`,
           tone: DAMAGE_COLOUR,
-          aspect: 0.42,
-        }),
-        baseY: at.y,
+        });
+      }
+    }
+    if (!impact.hit && impact.aimedAtTile) {
+      numbers.push({
+        at: { x: ground.x, y: ground.y + TILE_TEXT_LIFT, z: ground.z },
+        label: "MISS",
+        tone: MISS_COLOUR,
       });
     }
-    if (burst) {
-      burst.visible = false;
+
+    const parts: ScheduledPart[] = [
+      { at: 0, start: () => this.shot(muzzle, aim, melee) },
+    ];
+    if (impact.hit) {
+      parts.push({
+        at: landsAt,
+        start: () => this.explosion(aim, impact.radius),
+      });
     }
-    for (const { sprite } of floaters) {
-      sprite.visible = false;
+    if (numbers.length > 0) {
+      parts.push({ at: landsAt, start: () => this.numbers(numbers) });
     }
-    const flashSeconds = flash ? this.timing.flashSeconds : 0;
-    const flightSeconds = tracer ? this.timing.tracerSeconds : 0;
-    const landsAt = flashSeconds * 0.5 + flightSeconds;
-    const total =
-      landsAt + Math.max(this.timing.deathSeconds, this.timing.floaterSeconds);
+    for (const event of events) {
+      switch (event.type) {
+        case UNIT_DIED:
+          parts.push({
+            at: landsAt,
+            start: () => this.fade(event.payload.unitId),
+          });
+          break;
+        case SPAWNER_DAMAGED:
+          parts.push({
+            at: landsAt,
+            start: () => this.spawnerBurst(event.payload),
+          });
+          break;
+        case STRUCTURE_DESTROYED:
+          parts.push({ at: landsAt, start: () => this.rubble(event.payload) });
+          break;
+        default:
+          break;
+      }
+    }
+
     let elapsed = 0;
     const cleanup = (): void => {
-      for (const sprite of [
-        flash,
-        tracer,
-        burst,
-        ...floaters.map((f) => f.sprite),
-      ]) {
+      motion?.reset();
+      if (attacker && originalYaw !== undefined) {
+        attacker.rotation.y = originalYaw;
+      }
+    };
+    const inner = scheduled(`blast:${attackerId}`, parts);
+    return {
+      name: inner.name,
+      advance: (seconds) => {
+        elapsed += seconds;
+        motion?.attack(Math.min(1, elapsed / poseSeconds), melee);
+        const leftover = inner.advance(seconds);
+        if (leftover !== undefined) {
+          cleanup();
+        }
+        return leftover;
+      },
+      finish: () => {
+        inner.finish();
+        cleanup();
+      },
+    };
+  }
+
+  /**
+   * The shot leaving the shooter: the muzzle flash, or the claw slash
+   * at the mark, and the tracer's flight to `aim`. Nothing lands here;
+   * the explosion is scheduled to the instant the tracer arrives.
+   *
+   * @param muzzle - Where the shot leaves, or undefined when the shooter is not drawn.
+   * @param aim - Where it is going.
+   * @param melee - A swing rather than a shot: no tracer.
+   */
+  private shot(
+    muzzle: Vec3 | undefined,
+    aim: Vec3,
+    melee: boolean,
+  ): Animation | undefined {
+    const flash = this.openingFlash(muzzle, aim, melee);
+    const tracer =
+      melee || !muzzle
+        ? undefined
+        : this.billboard("vfx.tracer", muzzle, TRACER_THICKNESS, 0xffffff, {
+            width: TRACER_THICKNESS * 3,
+            rotation: this.screenAngle(muzzle, aim),
+          });
+    if (!flash && !tracer) {
+      return undefined;
+    }
+    const flashSeconds = this.timing.flashSeconds;
+    const flightSeconds = melee ? 0 : this.timing.tracerSeconds;
+    const total = Math.max(flashSeconds, flashSeconds * 0.5 + flightSeconds);
+    let elapsed = 0;
+    const cleanup = (): void => {
+      for (const sprite of [flash, tracer]) {
         if (sprite) {
           this.removeSprite(sprite);
         }
       }
     };
     return {
-      name: `blast:${payload.attackerId}`,
+      name: "shot",
       advance: (seconds) => {
         const leftover = Math.max(0, elapsed + seconds - total);
         elapsed = Math.min(total, elapsed + seconds);
@@ -1023,32 +1302,132 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
             Math.max(0, (elapsed - flashSeconds * 0.5) / flightSeconds),
           );
           tracer.position.set(
-            muzzle.x + (ground.x - muzzle.x) * phase,
-            muzzle.y + (ground.y - muzzle.y) * phase,
-            muzzle.z + (ground.z - muzzle.z) * phase,
+            muzzle.x + (aim.x - muzzle.x) * phase,
+            muzzle.y + (aim.y - muzzle.y) * phase,
+            muzzle.z + (aim.z - muzzle.z) * phase,
           );
           tracer.visible = elapsed >= flashSeconds * 0.5 && phase < 1;
         }
-        if (burst) {
-          const phase = Math.min(
-            1,
-            Math.max(0, (elapsed - landsAt) / this.timing.deathSeconds),
-          );
-          burst.visible = elapsed >= landsAt;
-          const scale = burstSize * (1 + phase * BLAST_GROWTH);
-          burst.scale.set(scale, scale, 1);
-          burst.material.opacity = 1 - phase;
+        if (elapsed >= total) {
+          cleanup();
+          return leftover;
         }
+        return undefined;
+      },
+      finish: cleanup,
+    };
+  }
+
+  /**
+   * The explosion itself (#1130): the spark core the impact sprite
+   * draws, a fireball glow behind it and a shockwave ring running out
+   * past the footprint, all sized to the radius and all gone within a
+   * death's duration.
+   *
+   * @param at - The point of impact in world space.
+   * @param radius - Tiles the blast reached; sizes every layer.
+   */
+  private explosion(at: Vec3, radius: number): Animation {
+    const size = BLAST_BASE_SIZE + BLAST_SIZE_PER_TILE * radius;
+    const core = this.billboard(
+      "vfx.impact",
+      at,
+      size * BLAST_CORE_SHARE,
+      0xffffff,
+    );
+    this.glowTexture ??= createFalloffTexture();
+    this.ringTexture ??= createBlastRingTexture();
+    const glow = this.billboard(
+      undefined,
+      at,
+      size * BLAST_GLOW_START,
+      BLAST_GLOW_COLOUR,
+      { texture: this.glowTexture, additive: true, name: "vfx.blast-glow" },
+    );
+    const ring = this.billboard(
+      undefined,
+      at,
+      size * BLAST_RING_START,
+      BLAST_RING_COLOUR,
+      { texture: this.ringTexture, additive: true, name: "vfx.blast-ring" },
+    );
+    const seconds = this.timing.deathSeconds;
+    let elapsed = 0;
+    const cleanup = (): void => {
+      for (const sprite of [core, glow, ring]) {
+        this.removeSprite(sprite);
+      }
+    };
+    return {
+      name: "explosion",
+      advance: (delta) => {
+        const leftover = Math.max(0, elapsed + delta - seconds);
+        elapsed = Math.min(seconds, elapsed + delta);
+        const phase = elapsed / seconds;
+        // Ease out: fast at first, then coasting, as a pressure wave does.
+        const eased = 1 - (1 - phase) * (1 - phase);
+        const coreScale = size * BLAST_CORE_SHARE * (1 + phase * BLAST_GROWTH);
+        core.scale.set(coreScale, coreScale, 1);
+        core.material.opacity = 1 - phase;
+        const glowScale =
+          size *
+          (BLAST_GLOW_START + (BLAST_GLOW_END - BLAST_GLOW_START) * eased);
+        glow.scale.set(glowScale, glowScale, 1);
+        glow.material.opacity = (1 - phase) * (1 - phase);
+        const ringScale =
+          size *
+          (BLAST_RING_START + (BLAST_RING_END - BLAST_RING_START) * eased);
+        ring.scale.set(ringScale, ringScale, 1);
+        ring.material.opacity = 1 - phase;
+        if (elapsed >= seconds) {
+          cleanup();
+          return leftover;
+        }
+        return undefined;
+      },
+      finish: cleanup,
+    };
+  }
+
+  /**
+   * Every number a blast puts up, rising and fading together: the one
+   * over the aimed target, one over each victim, or MISS over the tile.
+   *
+   * @param numbers - Where each goes, what it says and in which tone.
+   */
+  private numbers(
+    numbers: readonly {
+      readonly at: Vec3;
+      readonly label: string;
+      readonly tone: number;
+    }[],
+  ): Animation {
+    const floaters = numbers.map(({ at, label, tone }) => ({
+      sprite: this.billboard(undefined, at, FLOATER_WIDTH, 0xffffff, {
+        label,
+        tone,
+        aspect: 0.42,
+      }),
+      baseY: at.y,
+    }));
+    const seconds = this.timing.floaterSeconds;
+    let elapsed = 0;
+    const cleanup = (): void => {
+      for (const { sprite } of floaters) {
+        this.removeSprite(sprite);
+      }
+    };
+    return {
+      name: "numbers",
+      advance: (delta) => {
+        const leftover = Math.max(0, elapsed + delta - seconds);
+        elapsed = Math.min(seconds, elapsed + delta);
+        const phase = elapsed / seconds;
         for (const { sprite, baseY } of floaters) {
-          const phase = Math.min(
-            1,
-            Math.max(0, (elapsed - landsAt) / this.timing.floaterSeconds),
-          );
-          sprite.visible = elapsed >= landsAt;
           sprite.position.y = baseY + FLOATER_RISE * phase;
           sprite.material.opacity = Math.min(1, (1 - phase) * 1.5);
         }
-        if (elapsed >= total) {
+        if (elapsed >= seconds) {
           cleanup();
           return leftover;
         }
@@ -1212,6 +1591,16 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
        * chip: `size` is then the height, and the width follows the text.
        */
       readonly fitLabel?: boolean;
+      /**
+       * A texture of the caller's own instead of a manifest sprite or a
+       * chip (#1130): the procedural explosion layers. Shared and owned
+       * by the queue, so never disposed with the sprite.
+       */
+      readonly texture?: Texture;
+      /** Add light rather than paint over, for a glow or a wave. */
+      readonly additive?: boolean;
+      /** The sprite's name in the scene graph, when `id` does not give one. */
+      readonly name?: string;
     } = {},
   ): Sprite {
     // An effect with a frame sheet plays it; the single-frame image is
@@ -1221,19 +1610,25 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
     const sheetId = id === undefined ? undefined : sheetIdFor(id);
     const sheetTexture = sheetId ? this.textures.get(sheetId) : undefined;
     const sheet = sheetId ? entryOf(sheetId).sheet : undefined;
-    const animated = sheetTexture !== undefined && sheet !== undefined;
-    const texture = animated
-      ? sheetTexture.clone()
-      : id
-        ? this.textures.get(id)
-        : chipTexture(
-            options.label,
-            options.tone ?? colour,
-            options.chipWidth,
-            options.fitLabel ?? false,
-          );
+    const animated =
+      options.texture === undefined &&
+      sheetTexture !== undefined &&
+      sheet !== undefined;
+    const texture =
+      options.texture ??
+      (animated
+        ? sheetTexture.clone()
+        : id
+          ? this.textures.get(id)
+          : chipTexture(
+              options.label,
+              options.tone ?? colour,
+              options.chipWidth,
+              options.fitLabel ?? false,
+            ));
     const blend =
-      id && SPRITE_MANIFEST[id].blend === "additive"
+      options.additive === true ||
+      (id && SPRITE_MANIFEST[id].blend === "additive")
         ? AdditiveBlending
         : NormalBlending;
     const material = new SpriteMaterial({
@@ -1255,7 +1650,7 @@ export class TacticalAnimationQueue implements FrameUpdatable, Disposable {
       sprite.scale.set(options.width ?? size, size * (options.aspect ?? 1), 1);
     }
     sprite.position.set(at.x, at.y, at.z);
-    sprite.name = id ?? `vfx.floater:${options.label ?? ""}`;
+    sprite.name = options.name ?? id ?? `vfx.floater:${options.label ?? ""}`;
     // Effects belong on top of the unit they describe, never behind it.
     sprite.renderOrder = 10;
     this.root.add(sprite);
@@ -1371,6 +1766,87 @@ function showFrame(texture: Texture, sheet: SpriteSheet, index: number): void {
 /** True when two points coincide. */
 function samePoint(a: Vec3, b: Vec3): boolean {
   return a.x === b.x && a.y === b.y && a.z === b.z;
+}
+
+/**
+ * Several animations as one, each starting at its own offset from the
+ * whole's start and all advancing together from then on (#1130). The
+ * whole finishes when the last part does, handing back whatever time
+ * that part had left over.
+ *
+ * ```
+ *   at 0     ├── shot ──┤
+ *   at 0.24            ├──── explosion ────┤
+ *   at 0.24            ├── numbers ─────────────┤   ← finishes the whole
+ *   at 0.24            ├── fade ──┤
+ * ```
+ *
+ * Parts are built when their moment comes, not when the whole is
+ * assembled, so a sprite appears at its offset and a unit that is to
+ * fade stands whole until then. A part with nothing to show is simply
+ * skipped.
+ *
+ * @param name - The whole's name.
+ * @param parts - What to play and when; any order.
+ * @returns The composite.
+ */
+function scheduled(name: string, parts: readonly ScheduledPart[]): Animation {
+  const queue = [...parts].sort((a, b) => a.at - b.at);
+  const running: Animation[] = [];
+  let elapsed = 0;
+  let nextPart = 0;
+  return {
+    name,
+    advance: (seconds) => {
+      const before = elapsed;
+      elapsed += seconds;
+      let leftover = Number.POSITIVE_INFINITY;
+      const step = (animation: Animation, span: number): boolean => {
+        const left = animation.advance(span);
+        if (left === undefined) {
+          return false;
+        }
+        leftover = Math.min(leftover, left);
+        return true;
+      };
+      for (const animation of [...running]) {
+        if (step(animation, seconds)) {
+          running.splice(running.indexOf(animation), 1);
+        }
+      }
+      for (; nextPart < queue.length; nextPart++) {
+        const part = queue[nextPart];
+        if (part === undefined || part.at > elapsed) {
+          break;
+        }
+        const animation = part.start();
+        if (
+          animation &&
+          !step(animation, elapsed - Math.max(before, part.at))
+        ) {
+          running.push(animation);
+        }
+      }
+      if (running.length > 0 || nextPart < queue.length) {
+        return undefined;
+      }
+      const lastAt = queue[queue.length - 1]?.at ?? 0;
+      return Number.isFinite(leftover)
+        ? leftover
+        : Math.max(0, elapsed - lastAt);
+    },
+    finish: () => {
+      for (; nextPart < queue.length; nextPart++) {
+        const animation = queue[nextPart]?.start();
+        if (animation) {
+          running.push(animation);
+        }
+      }
+      for (const animation of running.splice(0)) {
+        animation.finish();
+      }
+    },
+  };
 }
 
 /**

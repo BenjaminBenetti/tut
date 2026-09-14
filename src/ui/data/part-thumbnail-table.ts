@@ -22,6 +22,8 @@ import type { ThumbnailId } from "./thumbnail-manifest";
  */
 export const PART_THUMBNAILS: Readonly<Partial<Record<PartId, ThumbnailId>>> = {
   "chassis-vanguard": "tdf.mech.chassis-a",
+  // The Courser (#1130) wears the Vanguard's model and so its picture.
+  "chassis-courser": "tdf.mech.chassis-a",
   "chassis-bulwark": "tdf.mech.chassis.bulwark",
   "chassis-atlas": "tdf.mech.chassis.atlas",
   "legs-strider": "tdf.mech.legs-a",

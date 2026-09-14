@@ -17,6 +17,7 @@ import { UNIT_STATUS_CHANGED } from "../model/unit-status-changed-event";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import type { AttackDeps } from "./combat-service";
 import { rollAttack, validateTargeting } from "./combat-service";
+import { unitFootprintTiles } from "./footprint-service";
 import { missionOutcome } from "./mission-end-service";
 import { unitCanSee } from "./vision-service";
 
@@ -228,6 +229,8 @@ export function overwatchReaction(
     )
     .map((unit) => unit.id);
   const index = new TileIndex(state.map);
+  // A mover on a block (#1130) is in view when any tile of it is.
+  const moverTiles = unitFootprintTiles(state, mover);
   for (const watcherId of watcherIds) {
     if ((findUnit(state, movedUnitId)?.hp ?? 0) <= 0) {
       break;
@@ -244,7 +247,7 @@ export function overwatchReaction(
     // `unit-tuning.test.ts` pins the relationship from the other side.
     if (
       watcher === undefined ||
-      !unitCanSee(state, watcher, mover.pos, index)
+      !moverTiles.some((tile) => unitCanSee(state, watcher, tile, index))
     ) {
       continue;
     }

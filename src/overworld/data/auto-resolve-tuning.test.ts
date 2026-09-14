@@ -84,7 +84,7 @@ describe("auto-resolve tuning", () => {
     expect(winProbability(2 * squad, 2, T)).toBeCloseTo(0.5, 5);
   });
 
-  it("keeps the starter roster at or above even odds on a difficulty 5 mission and warns a lone squad off difficulty 3", () => {
+  it("keeps the starter roster favoured on a difficulty 4 mission, near even on 5, and warns a lone squad off difficulty 3", () => {
     const sheet = validateLoadout(
       STARTER_LOADOUT,
       new StaticPartCatalogue(STARTER_PARTS),
@@ -94,10 +94,13 @@ describe("auto-resolve tuning", () => {
     if (!sheet.ok) throw new Error("starter loadout must validate");
     const starterForce =
       2 * RIFLE_SQUAD.combatRating + sheet.value.combatRating;
-    expect(winProbability(starterForce, 5, T)).toBeGreaterThanOrEqual(0.5);
+    // #1130 halved the starter chassis' plate, so the starter roster
+    // (193) sits a shade under difficulty 5's 200 rather than over it.
+    expect(winProbability(starterForce, 4, T)).toBeGreaterThan(0.65);
+    expect(winProbability(starterForce, 5, T)).toBeGreaterThanOrEqual(0.45);
     expect(winProbability(starterForce, 3, T)).toBeGreaterThan(0.85);
     expect(winProbability(RIFLE_SQUAD.combatRating, 3, T)).toBeLessThan(0.2);
-    // The starter mech is worth a bit over three squads, not a dozen.
+    // The starter mech is worth nearly three squads, not a dozen.
     const mechInSquads = sheet.value.combatRating / RIFLE_SQUAD.combatRating;
     expect(mechInSquads).toBeGreaterThan(2.5);
     expect(mechInSquads).toBeLessThan(4.5);

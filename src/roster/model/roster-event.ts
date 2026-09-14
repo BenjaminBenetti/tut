@@ -5,6 +5,7 @@ import type { Mech, MechId } from "./mech";
 import type { MechLoadout } from "./mech-loadout";
 import type { PartId } from "./mech-part";
 import type { MechStatSheet } from "./mech-stat-sheet";
+import type { Rank } from "./rank";
 import type { GraveyardEntry, RosterState } from "./roster-state";
 import type { Squad, SquadId } from "./squad";
 
@@ -173,6 +174,32 @@ export type MechDestroyedEvent = DomainEvent<
 >;
 
 // ===========================================
+// Unit promoted
+// ===========================================
+
+/** Event type emitted when a survivor's experience reaches a new rank (#1130). */
+export const UNIT_PROMOTED = "roster:unit-promoted";
+
+/** What presentation needs to announce the promotion. */
+export interface UnitPromotedPayload {
+  readonly kind: "squad" | "mech";
+  /** The squad or mech id. */
+  readonly unitId: string;
+  /** The unit's name, so the line reads "Alpha promoted to Corporal". */
+  readonly name: string;
+  /** The rank it held before the mission. */
+  readonly from: Rank;
+  /** The rank it holds now; higher on the ladder than `from`. */
+  readonly to: Rank;
+}
+
+/** A squad or a mech's pilot climbed the rank ladder (GDD §5.7). */
+export type UnitPromotedEvent = DomainEvent<
+  typeof UNIT_PROMOTED,
+  UnitPromotedPayload
+>;
+
+// ===========================================
 // Mech repaired
 // ===========================================
 
@@ -255,6 +282,7 @@ export type RosterEvent =
   | UnitDamagedEvent
   | SquadWipedEvent
   | MechDestroyedEvent
+  | UnitPromotedEvent
   | MechRepairedEvent
   | MechRenamedEvent
   | PartUpgradedEvent;

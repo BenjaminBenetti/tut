@@ -4,6 +4,8 @@ import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { Mech } from "../../roster/model/mech";
 import { MECH_MAX_DAMAGE } from "../../roster/model/mech";
 import type { MechStatSheet } from "../../roster/model/mech-stat-sheet";
+import type { RankTuning } from "../../roster/model/rank";
+import { rankBonuses, rankIndexOf } from "../../roster/service/rank-service";
 import type { Squad } from "../../roster/model/squad";
 import type { SquadType } from "../../roster/model/squad-type";
 import type { BugUnitSource } from "../model/bug-unit-source";
@@ -57,9 +59,11 @@ export function templateIdFor(
  * Builds an infantry unit from a roster squad (GDD §6.1). Hit points
  * scale with soldiers: `maxHp = maxStrength × hpPerSoldier`, and the unit
  * starts at `strength × hpPerSoldier`, so a depleted squad enters hurt.
- * Weapon damage is the type's `combatRating` times the tuning's damage
- * per point, rounded up so no squad hits for zero. Pure: reads only its
- * arguments and draws one id.
+ * The weapon is the type's own (#1130, `squadWeapon`): its damage is the
+ * type's `combatRating` times the tuning's damage per point, times the
+ * type's scale, rounded up so no squad hits for zero. The squad's rank
+ * (#1130) is folded in last, over everything the type decided. Pure:
+ * reads only its arguments and draws one id.
  */
 export function squadUnit(
   squad: Squad,
@@ -74,25 +78,7 @@ export function squadUnit(
     maxHp: squad.maxStrength * infantry.hpPerSoldier,
     maxAp: infantry.maxAp,
     move: infantry.move,
-    weapons: [
-      {
-        id: PRIMARY_WEAPON_ID,
-        name: DEFAULT_WEAPON_NAME,
-        // The type's own shape over the shared one (#1121), with the
-        // damage always the rating's: a rocket squad bursts and cracks
-        // plate, but how hard it hits is still what it is worth.
-        profile: {
-          ...infantry.weapon,
-          ...infantry.weaponByType[squadType.id],
-          damage: Math.max(
-            1,
-            Math.ceil(squadType.combatRating * infantry.weapon.damage),
-          ),
-        },
-        charges:
-          infantry.chargesByType[squadType.id] ?? infantry.fallbackCharges,
-      },
-    ],
+    weapons: [squadWeapon(squadType, infantry)],
     sightRange: infantry.sightRange,
     armor: infantry.armor,
     passClass: "infantry",
@@ -105,7 +91,7 @@ export function squadUnit(
     "squad",
     "tdf",
     squad.id,
-    template,
+    withRankBonuses(template, squad.xp, deps.tuning.ranks),
     squad.strength * infantry.hpPerSoldier,
     placement,
     deps.ids,
@@ -120,7 +106,8 @@ export function squadUnit(
  * scaled by the tuning's damage, at the base accuracy plus the sheet's
  * modifier, clamped to `[0, 100]`; per-hit armor is `armor × armorFactor`.
  * The template carries the loadout, so graphics draws the fitted parts
- * (#1115). Pure: reads only its arguments and draws one id.
+ * (#1115), and the pilot's rank (#1130) is folded in last, over the
+ * sheet. Pure: reads only its arguments and draws one id.
  */
 export function mechUnit(
   mech: Mech,
@@ -155,13 +142,22 @@ export function mechUnit(
   const hp = Math.round(
     (maxHp * (MECH_MAX_DAMAGE - mech.damage)) / MECH_MAX_DAMAGE,
   );
-  return build("mech", "tdf", mech.id, template, hp, placement, deps.ids);
+  return build(
+    "mech",
+    "tdf",
+    mech.id,
+    withRankBonuses(template, mech.xp, deps.tuning.ranks),
+    hp,
+    placement,
+    deps.ids,
+  );
 }
 
 /**
  * Builds a bug from its species data, which is already in tactical
  * terms (#322). Every bug of a species shares one template
- * (`"bug:<species>"`) and starts at full health. Pure: reads only its
+ * (`"bug:<species>"`) and starts at full health; a species with a
+ * footprint carries it onto the template (#1130). Pure: reads only its
  * arguments and draws one id.
  */
 export function bugUnit(
@@ -186,6 +182,14 @@ export function bugUnit(
     armor: species.armor,
     passClass: "infantry",
     modelId: species.modelId,
+    // What the kill is worth rides on the template (#1130), so the
+    // resolver reads it off the casualty rather than asking a catalogue.
+    ...(species.xpValue === undefined ? {} : { xpValue: species.xpValue }),
+    // A species that stands on more than one tile says so (#1130); the
+    // rest declare nothing and stand on one, as before.
+    ...(species.footprint === undefined
+      ? {}
+      : { footprint: species.footprint }),
   };
   return build(
     "bug",
@@ -229,6 +233,50 @@ function build(
     ...chargesFor(template),
   };
   return { unit, template };
+}
+
+/**
+ * The one weapon a squad type fights with (#1121, #1130): the shared
+ * shape under the type's own entry, named by that entry, with the
+ * damage always the rating's — scaled by the entry, so an SMG hits a
+ * little harder than a carbine — and the type's magazine.
+ *
+ * ```
+ *   { ...weapon, ...entry }  less name and damageScale  ──► profile
+ *   ⌈ combatRating × weapon.damage × damageScale ⌉, ≥ 1  ──► profile.damage
+ * ```
+ *
+ * A type with no entry fires the plain shape under the fallback name,
+ * so a squad type added to the catalogue without tuning is still armed.
+ *
+ * @param squadType - The catalogue entry the squad is of.
+ * @param infantry - The infantry tuning.
+ * @returns The squad's weapon, charges included.
+ */
+function squadWeapon(
+  squadType: SquadType,
+  infantry: UnitTuning["infantry"],
+): UnitWeapon {
+  const {
+    name = infantry.fallbackWeaponName,
+    damageScale = 1,
+    ...shape
+  } = infantry.weaponByType[squadType.id] ?? {};
+  return {
+    id: PRIMARY_WEAPON_ID,
+    name,
+    profile: {
+      ...infantry.weapon,
+      ...shape,
+      damage: Math.max(
+        1,
+        Math.ceil(
+          squadType.combatRating * infantry.weapon.damage * damageScale,
+        ),
+      ),
+    },
+    charges: infantry.chargesByType[squadType.id] ?? infantry.fallbackCharges,
+  };
 }
 
 /**
@@ -306,6 +354,47 @@ function chargesFor(template: UnitTemplate): {
     weapon.charges === undefined ? [] : [[weapon.id, weapon.charges] as const],
   );
   return entries.length === 0 ? {} : { charges: Object.fromEntries(entries) };
+}
+
+/**
+ * The template with the rank its experience has reached folded in
+ * (#1130): the ladder's bonuses for that rung are added to move and
+ * action points and to every weapon's accuracy, clamped to a percentage,
+ * and the rank itself is recorded for the HUD. Runs last, after the
+ * squad type or the stat sheet has had its say, so a rule that reads the
+ * template never has to ask what the rank was.
+ *
+ * ```
+ *   xp 30 on the shipped ladder ──► rank 2 "Corporal"
+ *     move 5 ──► 6     maxAp 2 ──► 2     accuracy 65 ──► 69
+ * ```
+ *
+ * An empty ladder leaves the template alone.
+ */
+function withRankBonuses(
+  template: UnitTemplate,
+  xp: number,
+  ranks: RankTuning,
+): UnitTemplate {
+  const index = rankIndexOf(xp, ranks.ladder);
+  const rank = ranks.ladder[index];
+  if (rank === undefined) {
+    return template;
+  }
+  const bonuses = rankBonuses(index, ranks.bonuses);
+  return {
+    ...template,
+    move: template.move + bonuses.move,
+    maxAp: template.maxAp + bonuses.ap,
+    weapons: template.weapons.map((weapon) => ({
+      ...weapon,
+      profile: {
+        ...weapon.profile,
+        accuracy: clamp(weapon.profile.accuracy + bonuses.accuracy, 0, 100),
+      },
+    })),
+    rank: { name: rank.name, index },
+  };
 }
 
 /** Clamps `value` into `[min, max]`. */

@@ -34,6 +34,11 @@ import type {
 import type { FrameUpdatable } from "../model/frame-updatable";
 import { RadarView } from "../view/radar-view";
 import type { Radar, RadarContact } from "../../tactical/model/radar";
+import {
+  DEFAULT_FOOTPRINT,
+  footprintSizeOf,
+} from "../../tactical/service/footprint-service";
+import { unitFeetAt } from "./unit-placement";
 
 // ===========================================
 // Types
@@ -126,6 +131,8 @@ export class TacticalSceneBuilder
   private readonly meshes = new Map<UnitId, UnitMesh>();
   /** Where each unit stands, so the tethers can be redrawn when the cut moves (#981). */
   private readonly positions = new Map<UnitId, TileCoord>();
+  /** Tiles per side each unit covers (#1130), known from its template as soon as it is wanted. */
+  private readonly sizes = new Map<UnitId, number>();
   private readonly tethers = new ElevationTether();
   /** Model id per placed unit, so a death burst can tell a machine from a bug. */
   private readonly modelIds = new Map<UnitId, string>();
@@ -298,6 +305,7 @@ export class TacticalSceneBuilder
         );
       }
       this.wanted.add(unit.id);
+      this.sizes.set(unit.id, footprintSizeOf(template));
       loads.push(this.place(unit, template));
     }
     await Promise.all(loads);
@@ -323,6 +331,7 @@ export class TacticalSceneBuilder
     }
     this.wanted.add(unit.id);
     this.positions.set(unit.id, at);
+    this.sizes.set(unit.id, footprintSizeOf(template));
     await this.place({ ...unit, pos: at }, template);
     this.meshes.get(unit.id)?.setHidden(true);
     this.drawTethers();
@@ -401,7 +410,12 @@ export class TacticalSceneBuilder
     radars: readonly Radar[],
     contacts: readonly RadarContact[],
   ): Promise<void> {
-    await this.radarView.update(radars, contacts);
+    await this.radarView.updateRadar(radars, contacts);
+  }
+
+  /** What the frame loop ticks so scanner dishes turn and dead ones smoke (#1130); the host adds it to its updatables. */
+  get radarUpdatable(): FrameUpdatable {
+    return this.radarView;
   }
 
   /** Counts the scanner models and blips actually placed in the scene. */
@@ -470,6 +484,29 @@ export class TacticalSceneBuilder
   /** A unit's feet in world space, or undefined for an unknown or still-loading unit. */
   unitWorldPosition(unitId: UnitId): Vec3 | undefined {
     return this.meshes.get(unitId)?.worldPosition();
+  }
+
+  /**
+   * Where `unitId`'s feet are when its footprint is anchored on `tile`
+   * (#1130), or undefined off the map or for a unit the scene does not
+   * know: the tile's top at the centre of the unit's footprint, which
+   * for a one-tile unit is the tile's own centre. The animation queue
+   * walks a unit through these rather than through tile centres, so a
+   * 2×2 brute moves along the corners its four tiles share.
+   *
+   * @param unitId - The unit, drawn or loading.
+   * @param tile - The anchor tile it would stand on.
+   * @returns The feet in world units.
+   */
+  unitWorldPositionAt(unitId: UnitId, tile: TileCoord): Vec3 | undefined {
+    const size = this.sizes.get(unitId);
+    if (
+      size === undefined ||
+      this.mapView.tileWorldPosition(tile) === undefined
+    ) {
+      return undefined;
+    }
+    return unitFeetAt(tile, size);
   }
 
   /** The unit's scene object for animation, or undefined once removed or while loading. */
@@ -586,10 +623,11 @@ export class TacticalSceneBuilder
       if (below === undefined) {
         continue;
       }
+      const feet = unitFeetAt(pos, this.sizes.get(unitId) ?? DEFAULT_FOOTPRINT);
       tethers.push({
         unitId,
-        x: pos.x + 0.5,
-        z: pos.z + 0.5,
+        x: feet.x,
+        z: feet.z,
         top: tileTop(pos.y),
         bottom: tileTop(below),
       });
@@ -603,7 +641,12 @@ export class TacticalSceneBuilder
     if (!this.wanted.has(unit.id)) {
       return;
     }
-    const mesh = new UnitMesh(unit.id, model, template.modelId);
+    const mesh = new UnitMesh(
+      unit.id,
+      model,
+      template.modelId,
+      footprintSizeOf(template),
+    );
     mesh.setPose(unit.pos, unit.facing);
     this.meshes.set(unit.id, mesh);
     this.modelIds.set(unit.id, template.modelId);
@@ -676,6 +719,7 @@ export class TacticalSceneBuilder
       this.modelIds.delete(unitId);
       this.heights.delete(unitId);
     }
+    this.sizes.delete(unitId);
     if (this.hovered === unitId) {
       this.hovered = undefined;
     }

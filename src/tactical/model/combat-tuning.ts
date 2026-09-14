@@ -58,6 +58,10 @@ export interface CombatTuning extends WeaponReachTuning {
    * A record rather than a flag because "how many attacks a kind gets"
    * is a budget rule, and the attack handler should not know which kind
    * it is resolving.
+   *
+   * The kind's rule is the default. A weapon whose profile sets
+   * `endsTurn` overrides it for its own shots (#1130): a radio squad's
+   * SMG fires once a turn although the squad kind fires twice.
    */
   readonly attackEndsTurn: Readonly<Record<UnitKind, boolean>>;
 }

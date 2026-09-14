@@ -125,6 +125,46 @@ describe("TacticalAnimationQueue", () => {
     expect(queue.busy).toBe(false);
   });
 
+  it("walks a unit through the centres of its footprint when the scene knows them (#1130)", () => {
+    const base = scene();
+    // A 2×2 unit-1: its feet are one tile past each anchor's corner.
+    const s: AnimationScene & { objects: Map<string, Object3D> } = {
+      ...base,
+      unitWorldPositionAt: (id, tile) =>
+        id === "unit-1"
+          ? { x: tile.x + 1, y: tileTopCentre(tile).y, z: tile.z + 1 }
+          : undefined,
+    };
+    const queue = new TacticalAnimationQueue({
+      scene: s,
+      sprites,
+      timing: TIMING,
+    });
+    queue.enqueue([MOVE], () => undefined);
+    queue.update(1);
+    const unit = s.objects.get("unit-1")!;
+    // Anchor (2, 0) → feet at (3, 1), not the tile centre (2.5, 0.5).
+    expect(unit.position.x).toBeCloseTo(3);
+    expect(unit.position.z).toBeCloseTo(1);
+    // A unit the scene has no footprint answer for walks tile centres.
+    queue.enqueue(
+      [
+        {
+          type: "tactical:unit-moved",
+          payload: {
+            unitId: "unit-2",
+            from: { x: 4, y: 0, z: 0 },
+            to: { x: 4, y: 0, z: 2 },
+            path: [{ x: 4, y: 0, z: 2 }],
+          },
+        },
+      ],
+      () => undefined,
+    );
+    queue.update(1);
+    expect(s.objects.get("unit-2")!.position.z).toBeCloseTo(2.5);
+  });
+
   it("a walk shows a unit that was waiting hidden for it (#1116)", () => {
     const s = scene();
     const unit = s.objects.get("unit-1")!;
@@ -630,5 +670,222 @@ describe("unit action poses", () => {
     expect(motion.walk).not.toHaveBeenCalled();
     expect(motion.attack).not.toHaveBeenCalled();
     expect(motion.reset).toHaveBeenCalledTimes(2);
+  });
+});
+
+// ===========================================
+// Blasts (#1130)
+// ===========================================
+
+describe("TacticalAnimationQueue blast", () => {
+  /** The starter mech's missile pod bursting on unit-2's tile and catching unit-3 beside it. */
+  const BLAST: TacticalEvent = {
+    type: "tactical:blast-resolved",
+    payload: {
+      attackerId: "unit-1",
+      impact: { x: 4, y: 0, z: 0 },
+      hit: true,
+      radius: 1,
+      aimedAtTile: false,
+      weaponRange: RIFLE_RANGE,
+      victims: [{ targetId: "unit-3", kind: "unit", damage: 4, hp: 6 }],
+    },
+  };
+  const DEATH_3: TacticalEvent = {
+    type: "tactical:unit-died",
+    payload: { unitId: "unit-3", killerId: "unit-1" },
+  };
+
+  /** The two-unit scene with a third unit on the tile beside unit-2. */
+  function withThird(): ReturnType<typeof scene> {
+    const s = scene();
+    const o = new Object3D();
+    const c = tileTopCentre({ x: 5, y: 0, z: 0 });
+    o.position.set(c.x, c.y, c.z);
+    s.objects.set("unit-3", o);
+    return s;
+  }
+
+  /** Billboards under the queue whose name starts with `prefix`. */
+  function named(queue: TacticalAnimationQueue, prefix: string): string[] {
+    return queue.root.children
+      .map((child) => child.name)
+      .filter((name) => name.startsWith(prefix))
+      .sort();
+  }
+
+  it("plays the shot, its deaths and its blast as one explosion, announced in order as the shell leaves", () => {
+    const s = withThird();
+    const queue = new TacticalAnimationQueue({
+      scene: s,
+      sprites,
+      timing: TIMING,
+    });
+    const started: string[] = [];
+    let done = 0;
+    queue.enqueue(
+      [ATTACK, DEATH, DEATH_3, BLAST],
+      () => {
+        done++;
+      },
+      (event) => started.push(event.type),
+    );
+    queue.update(0.05);
+    // The HUD hears every event of the blast, in order, before the first frame.
+    expect(started).toEqual([
+      ATTACK.type,
+      DEATH.type,
+      DEATH_3.type,
+      BLAST.type,
+    ]);
+    // In flight: flash and tracer only. Nobody has been hit yet, so no
+    // number stands and nobody has begun to fall.
+    expect(named(queue, "vfx.floater")).toEqual([]);
+    expect(named(queue, "vfx.blast")).toEqual([]);
+    expect(s.objects.get("unit-2")!.scale.x).toBe(1);
+    expect(s.objects.get("unit-3")!.scale.x).toBe(1);
+    expect(done).toBe(0);
+
+    // Landed, 0.15 s in: the explosion's three layers, both numbers and
+    // both fades, all from the same instant.
+    queue.update(0.15);
+    expect(named(queue, "vfx.blast")).toEqual([
+      "vfx.blast-glow",
+      "vfx.blast-ring",
+    ]);
+    expect(named(queue, "vfx.impact")).toEqual(["vfx.impact"]);
+    expect(named(queue, "vfx.floater")).toEqual([
+      "vfx.floater:-4",
+      "vfx.floater:-7",
+    ]);
+    const two = s.objects.get("unit-2")!.scale.x;
+    const three = s.objects.get("unit-3")!.scale.x;
+    expect(two).toBeLessThan(1);
+    expect(two).toBeGreaterThan(0.05);
+    expect(three).toBe(two);
+    expect(done).toBe(0);
+
+    queue.update(1);
+    expect(done).toBe(1);
+    expect(queue.busy).toBe(false);
+    expect(queue.root.children).toHaveLength(0);
+    expect(s.objects.get("unit-2")!.scale.x).toBeLessThan(0.05);
+    expect(s.objects.get("unit-3")!.scale.x).toBeLessThan(0.05);
+  });
+
+  it("puts MISS over the tile for a shot at the ground that went wide, and no explosion", () => {
+    const s = withThird();
+    const queue = new TacticalAnimationQueue({
+      scene: s,
+      sprites,
+      timing: TIMING,
+    });
+    const wide: TacticalEvent = {
+      ...BLAST,
+      payload: { ...BLAST.payload, hit: false, aimedAtTile: true, victims: [] },
+    };
+    queue.enqueue([wide], () => undefined);
+    queue.update(0.05);
+    expect(named(queue, "vfx.floater")).toEqual([]);
+    queue.update(0.15);
+    expect(named(queue, "vfx.floater")).toEqual(["vfx.floater:MISS"]);
+    expect(named(queue, "vfx.blast")).toEqual([]);
+    expect(named(queue, "vfx.impact")).toEqual([]);
+  });
+
+  it("bursts a spawner the blast finished with the explosion, not before it", () => {
+    const s = withThird();
+    const queue = new TacticalAnimationQueue({
+      scene: s,
+      sprites,
+      timing: TIMING,
+    });
+    const egg: TacticalEvent = {
+      type: "tactical:spawner-damaged",
+      payload: {
+        spawnerId: "spawner-1",
+        unitId: "unit-1",
+        damage: 20,
+        hp: 0,
+        destroyed: true,
+      },
+    };
+    const shell: TacticalEvent = {
+      ...BLAST,
+      payload: {
+        ...BLAST.payload,
+        aimedAtTile: true,
+        victims: [
+          { targetId: "spawner-1", kind: "spawner", damage: 20, hp: 0 },
+        ],
+      },
+    };
+    queue.enqueue([egg, shell], () => undefined);
+    queue.update(0.05);
+    expect(named(queue, "vfx.egg-burst")).toEqual([]);
+    queue.update(0.15);
+    expect(named(queue, "vfx.egg-burst")).toEqual(["vfx.egg-burst"]);
+    expect(named(queue, "vfx.floater")).toEqual(["vfx.floater:-20"]);
+  });
+
+  it("leaves a shot that is not a blast's alone, even when another unit's blast follows", () => {
+    const s = withThird();
+    const queue = new TacticalAnimationQueue({
+      scene: s,
+      sprites,
+      timing: TIMING,
+    });
+    const someoneElse: TacticalEvent = {
+      ...BLAST,
+      payload: { ...BLAST.payload, attackerId: "unit-3", victims: [] },
+    };
+    queue.enqueue([ATTACK, DEATH, someoneElse], () => undefined);
+    queue.update(0.05);
+    // A plain attack raises its number hidden as it starts — four
+    // billboards, as it always has — rather than waiting for a landing.
+    expect(queue.root.children).toHaveLength(4);
+    expect(named(queue, "vfx.floater")).toEqual(["vfx.floater:-7"]);
+    expect(named(queue, "vfx.blast")).toEqual([]);
+  });
+
+  it("finishes a blast whole when skipped or played instantly", () => {
+    const s = withThird();
+    const queue = new TacticalAnimationQueue({
+      scene: s,
+      sprites,
+      timing: TIMING,
+    });
+    let done = 0;
+    queue.enqueue([ATTACK, DEATH, DEATH_3, BLAST], () => {
+      done++;
+    });
+    queue.update(0.05);
+    queue.skip();
+    expect(done).toBe(1);
+    expect(queue.busy).toBe(false);
+    expect(queue.root.children).toHaveLength(0);
+    expect(s.objects.get("unit-2")!.scale.x).toBeLessThan(0.05);
+    expect(s.objects.get("unit-3")!.scale.x).toBeLessThan(0.05);
+
+    const instantScene = withThird();
+    const instant = new TacticalAnimationQueue({
+      scene: instantScene,
+      sprites,
+      timing: TIMING,
+      instant: true,
+    });
+    const started: string[] = [];
+    let instantDone = 0;
+    instant.enqueue(
+      [ATTACK, DEATH, DEATH_3, BLAST],
+      () => {
+        instantDone++;
+      },
+      (event) => started.push(event.type),
+    );
+    expect(instantDone).toBe(1);
+    expect(started).toHaveLength(4);
+    expect(instant.root.children).toHaveLength(0);
+    expect(instantScene.objects.get("unit-3")!.scale.x).toBeLessThan(0.05);
   });
 });

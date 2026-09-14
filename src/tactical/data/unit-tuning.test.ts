@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { MODEL_IDS } from "../../content/data/model-ids";
+import { ROSTER_TUNING } from "../../roster/data/roster-tuning";
 import { SQUAD_TYPES } from "../../roster/data/squad-types";
 import { UNIT_TUNING } from "./unit-tuning";
 
@@ -59,6 +60,32 @@ describe("unit tuning", () => {
     }
     expect(MODEL_IDS).toContain(UNIT_TUNING.infantry.fallbackModelId);
     expect(MODEL_IDS).toContain(UNIT_TUNING.mech.modelId);
+  });
+
+  it("arms every shipped squad type with a named weapon whose numbers are in range (#1130)", () => {
+    const { infantry } = UNIT_TUNING;
+    expect(infantry.fallbackWeaponName.trim().length).toBeGreaterThan(0);
+    for (const type of SQUAD_TYPES) {
+      const entry = infantry.weaponByType[type.id];
+      expect(entry, type.id).toBeDefined();
+      expect(entry?.name?.trim().length, type.id).toBeGreaterThan(0);
+      const shape = { ...infantry.weapon, ...entry };
+      expect(shape.range, type.id).toBeGreaterThan(0);
+      expect(shape.accuracy, type.id).toBeGreaterThanOrEqual(0);
+      expect(shape.accuracy, type.id).toBeLessThanOrEqual(100);
+      expect(shape.armorPen, type.id).toBeGreaterThanOrEqual(0);
+      expect(entry?.damageScale ?? 1, type.id).toBeGreaterThan(0);
+      // Overwatch may only react to a mover the watcher can see, so no
+      // type's weapon reaches past the class's eyes (ADR 0006).
+      expect(shape.range, type.id).toBeLessThanOrEqual(infantry.sightRange);
+    }
+  });
+
+  it("climbs the same rank ladder the roster promotes by (#1130)", () => {
+    // The HUD names the rank from the roster's ladder and the field
+    // bonuses come from this one; a substitute for either would let a
+    // Corporal's move disagree with its badge.
+    expect(UNIT_TUNING.ranks).toBe(ROSTER_TUNING.ranks);
   });
 
   it("gives every class eyes at least as long as its weapon (ADR 0006)", () => {

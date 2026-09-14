@@ -42,6 +42,8 @@ describe("UnitCardView", () => {
     );
     expect(field("unit-name")?.textContent).toBe("Rifle Squad");
     expect(field("unit-side")?.textContent).toBe("tdf · squad");
+    // No rank on the template, no badge (#1130).
+    expect(field("unit-rank")?.hidden).toBe(true);
     expect(field("hp")?.textContent).toBe("14 / 20");
     expect(field("ap")?.textContent).toBe("1 / 2");
     expect(field("weapon")?.textContent).toBe(
@@ -53,6 +55,22 @@ describe("UnitCardView", () => {
         .querySelector<HTMLElement>(".tut-meter__fill")
         ?.style.getPropertyValue("--value"),
     ).toBe("70%");
+  });
+});
+
+describe("UnitCardView rank badge (#1130)", () => {
+  it("names the rank the template was built at, and hides it for a template without one", () => {
+    const view = new UnitCardView();
+    view.mount(root);
+    const unit = hudUnit("s1", "tdf", "rifle", 1, 1, {});
+    view.update(unit, {
+      ...hudTemplate("rifle", "Rifle Squad"),
+      rank: { name: "Corporal", index: 2 },
+    });
+    expect(field("unit-rank")?.hidden).toBe(false);
+    expect(field("unit-rank")?.textContent).toBe("Corporal");
+    view.update(unit, hudTemplate("rifle", "Rifle Squad"));
+    expect(field("unit-rank")?.hidden).toBe(true);
   });
 });
 
@@ -305,6 +323,38 @@ describe("event vocabulary", () => {
       { ...NAMES, unit: () => "Rifle Squad" },
     );
     expect(line?.text).toBe("Rifle Squad is on overwatch");
+  });
+
+  it("names the scan and the battery on deployment, and says a dead scanner is dead (#1130)", () => {
+    const radar = {
+      id: "radar-1",
+      team: "tdf" as const,
+      pos: { x: 1, y: 0, z: 1 },
+      range: 30,
+      turnsLeft: 3,
+    };
+    const deployed = describeEvent(
+      {
+        type: "tactical:radar-deployed",
+        payload: { unitId: "unit-2", radar },
+      } as never,
+      { ...NAMES, unit: () => "Radio Squad" },
+    );
+    expect(deployed?.text).toBe(
+      "Radio Squad deployed radar · 30-tile scan · 3-turn battery",
+    );
+    const dead = describeEvent(
+      {
+        type: "tactical:radar-burned-out",
+        payload: { radarId: "radar-1", pos: radar.pos },
+      } as never,
+      NAMES,
+    );
+    expect(dead).toEqual({
+      text: "Radar burnt out · battery dead",
+      icon: "radar",
+      tone: "dim",
+    });
   });
 
   it("still reads correctly for a status that happens to be an adjective", () => {

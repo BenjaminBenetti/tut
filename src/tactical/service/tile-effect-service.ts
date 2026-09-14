@@ -16,6 +16,7 @@ import { UNIT_DIED } from "../model/unit-died-event";
 import type { Team, Unit, UnitId } from "../model/unit";
 import type { AreaEffect, WeaponProfile } from "../model/weapon-profile";
 import { falloffShare } from "../model/weapon-profile";
+import { footprintContains, unitFootprintSize } from "./footprint-service";
 import { damageRange } from "./attack-formulae";
 import { damageSpawner } from "./spawner-damage-service";
 import type { PhaseStep } from "./turn-service";
@@ -175,10 +176,15 @@ export function burn(
       armorPen: rule.armorPen,
     };
     for (const unit of state.units) {
+      // A block burns when any tile of it is alight (#1130), once per fire.
       if (
         unit.hp <= 0 ||
         unit.team !== acting ||
-        !sameTile(unit.pos, effect.tile)
+        !footprintContains(
+          unit.pos,
+          unitFootprintSize(state, unit),
+          effect.tile,
+        )
       ) {
         continue;
       }

@@ -20,10 +20,13 @@ export type WeaponId = string;
 export const PRIMARY_WEAPON_ID = "primary";
 
 /**
- * What a single-weapon unit's attack is called. Squads and bugs have no
- * per-weapon content to name — a swarmer's bite is not a fitted part —
- * so the action reads the way it always did rather than inventing
- * flavour the data does not have.
+ * What a single-weapon unit's attack is called when nothing names it. A
+ * bug has no per-weapon content to name — a swarmer's bite is not a
+ * fitted part — so its one action reads the way it always did rather
+ * than inventing flavour the data does not have. A squad's weapon is
+ * named by its type's tuning since #1130 ("Carbine", "SMG"); the wheel
+ * still offers a single weapon as "Attack", and the name is for the
+ * card.
  */
 export const DEFAULT_WEAPON_NAME = "Attack";
 
@@ -88,4 +91,24 @@ export function defaultWeaponId(
   weapons: readonly UnitWeapon[],
 ): WeaponId | undefined {
   return weapons[0]?.id;
+}
+
+/**
+ * The name a card shows for one of a unit's weapons, or nothing when
+ * it would only repeat the action: a unit's only weapon carrying the
+ * placeholder name — a bug's bite, a squad from a save older than
+ * #1130 — is just its attack, while a named weapon ("Carbine", "SMG")
+ * or one of several is worth a label.
+ *
+ * @param weapons - Everything the unit carries.
+ * @param weapon - The one being shown.
+ * @returns The label, or undefined for none.
+ */
+export function displayWeaponName(
+  weapons: readonly UnitWeapon[],
+  weapon: UnitWeapon,
+): string | undefined {
+  return weapons.length <= 1 && weapon.name === DEFAULT_WEAPON_NAME
+    ? undefined
+    : weapon.name;
 }

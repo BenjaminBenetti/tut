@@ -173,9 +173,15 @@ export function describeEvent(
       };
     case "tactical:radar-deployed":
       return {
-        text: `${nameOf(event.payload.unitId)} deployed radar · ${String(event.payload.radar.range)}-tile scan`,
+        text: `${nameOf(event.payload.unitId)} deployed radar · ${String(event.payload.radar.range)}-tile scan · ${String(event.payload.radar.turnsLeft)}-turn battery`,
         icon: "radar",
         tone: "accent",
+      };
+    case "tactical:radar-burned-out":
+      return {
+        text: "Radar burnt out · battery dead",
+        icon: "radar",
+        tone: "dim",
       };
     case "tactical:unit-status-changed":
       return {
@@ -266,6 +272,7 @@ export function actorOf(event: TacticalEvent): UnitId | undefined {
         : undefined;
     case "tactical:effect-started":
     case "tactical:effect-ended":
+    case "tactical:radar-burned-out":
       return undefined;
     case "tactical:unit-moved":
     case "tactical:turn-started":

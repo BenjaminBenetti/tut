@@ -6,10 +6,12 @@ import {
   MECH_DESTROYED,
   SQUAD_WIPED,
   UNIT_DAMAGED,
+  UNIT_PROMOTED,
 } from "../model/roster-event";
 import type { GraveyardEntry, RosterState } from "../model/roster-state";
 import type { RosterTuning } from "../model/roster-tuning";
 import type { Squad } from "../model/squad";
+import { promotionBetween, rankOf } from "./rank-service";
 
 // ===========================================
 // Types
@@ -28,10 +30,11 @@ export interface CasualtiesApplied {
 /**
  * Applies a finished mission to the roster (GDD §2, §5.7): deployed
  * squads lose soldiers, deployed mechs accumulate damage, every survivor
- * is credited with the mission, its kills and `xpPerMissionSurvived`,
- * and wiped squads and destroyed mechs are removed and memorialised in
- * the graveyard. Pure: never mutates its inputs and reads only its
- * arguments.
+ * is credited with the mission, its kills, what those kills were worth
+ * and `xpPerMissionSurvived`, is promoted when the experience reaches a
+ * new rung of the ladder (#1130), and wiped squads and destroyed mechs
+ * are removed and memorialised in the graveyard. Pure: never mutates its
+ * inputs and reads only its arguments.
  *
  * ```
  *   for each deployed squad            for each deployed mech
@@ -39,6 +42,7 @@ export interface CasualtiesApplied {
  *     wiped? ──► graveyard + SquadWiped  destroyed? ──► graveyard + MechDestroyed
  *     hurt?  ──► UnitDamaged             hurt?      ──► UnitDamaged
  *     survivor: kills, xp, missions +1   survivor: kills, xp, missions +1
+ *     new rung? ──► UnitPromoted         new rung? ──► UnitPromoted
  * ```
  *
  * A squad is wiped when it is listed in `squadsWiped` or its strength
@@ -120,13 +124,15 @@ function settleSquad(
       },
     });
   }
+  const xp = squad.xp + tuning.xpPerMissionSurvived + (casualties?.xp ?? 0);
+  pushPromotion(events, "squad", squad.id, squad.name, squad.xp, xp, tuning);
   return [
     {
       ...squad,
       strength,
       kills: squad.kills + (casualties?.kills ?? 0),
       missionsSurvived: squad.missionsSurvived + 1,
-      xp: squad.xp + tuning.xpPerMissionSurvived,
+      xp,
     },
   ];
 }
@@ -160,15 +166,43 @@ function settleMech(
       payload: { kind: "mech", unitId: mech.id, from: mech.damage, to: damage },
     });
   }
+  const xp = mech.xp + tuning.xpPerMissionSurvived + (damageReport?.xp ?? 0);
+  pushPromotion(events, "mech", mech.id, mech.name, mech.xp, xp, tuning);
   return [
     {
       ...mech,
       damage,
       kills: mech.kills + (damageReport?.kills ?? 0),
       missionsSurvived: mech.missionsSurvived + 1,
-      xp: mech.xp + tuning.xpPerMissionSurvived,
+      xp,
     },
   ];
+}
+
+/**
+ * Announces a promotion when the experience crossed a rung of the
+ * ladder (#1130), after the unit's own damage event so the debrief reads
+ * the cost before the reward.
+ */
+function pushPromotion(
+  events: RosterEvent[],
+  kind: "squad" | "mech",
+  unitId: string,
+  name: string,
+  xpBefore: number,
+  xpAfter: number,
+  tuning: RosterTuning,
+): void {
+  const ladder = tuning.ranks.ladder;
+  const to = promotionBetween(xpBefore, xpAfter, ladder);
+  const from = rankOf(xpBefore, ladder);
+  if (to === undefined || from === undefined) {
+    return;
+  }
+  events.push({
+    type: UNIT_PROMOTED,
+    payload: { kind, unitId, name, from, to },
+  });
 }
 
 /** A graveyard entry for a unit lost on `day` in `missionId`, over `cityId`. */

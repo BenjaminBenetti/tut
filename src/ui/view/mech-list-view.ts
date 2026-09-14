@@ -6,6 +6,7 @@ import type { RosterState } from "../../roster/model/roster-state";
 import type { RosterTuning } from "../../roster/model/roster-tuning";
 import { formatCredits, formatWhole } from "../service/format";
 import { iconGlyph } from "./icon-glyph";
+import { rankCell } from "./rank-cell";
 
 // ===========================================
 // Types
@@ -37,7 +38,8 @@ export interface MechListViewDeps {
 
 /**
  * The roster's mech panel: one row per mech with its loadout summary
- * (chassis and weapons by catalogue name), a damage meter, kills and xp,
+ * (chassis and weapons by catalogue name), the pilot's rank (#1130), a
+ * damage meter, kills and xp,
  * a Repair button priced at `repairCostPerPoint × damage`, and an
  * inline rename field. Buttons the treasury cannot cover are disabled;
  * the rows are rebuilt on every `update`.
@@ -92,7 +94,15 @@ export class MechListView {
     table.className = "tut-table";
     const head = doc.createElement("thead");
     const headRow = doc.createElement("tr");
-    for (const label of ["Name", "Loadout", "Damage", "Kills", "XP", ""]) {
+    for (const label of [
+      "Name",
+      "Loadout",
+      "Rank",
+      "Damage",
+      "Kills",
+      "XP",
+      "",
+    ]) {
       const th = doc.createElement("th");
       th.textContent = label;
       headRow.appendChild(th);
@@ -227,7 +237,15 @@ export class MechListView {
     });
     actions.appendChild(repair);
 
-    row.append(nameCell, loadout, damage, kills, xp, actions);
+    row.append(
+      nameCell,
+      loadout,
+      rankCell(doc, mech.xp, this.deps.tuning.ranks.ladder),
+      damage,
+      kills,
+      xp,
+      actions,
+    );
     return row;
   }
 

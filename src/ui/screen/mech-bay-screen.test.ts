@@ -246,8 +246,8 @@ describe("MechBayScreen", () => {
     expect(picker("utility-1").value).toBe("");
     expect(root.querySelector('select[data-field="utility-2"]')).toBeNull();
     expect(q('#stat-sheet [data-field="verdict"]').dataset.tone).toBe("ok");
-    expect(sheetField("combatRating")).toBe("129");
-    expect(sheetField("totalCost")).toBe("¢3,250");
+    expect(sheetField("combatRating")).toBe("113");
+    expect(sheetField("totalCost")).toBe("¢2,850");
     expect(sheetField("weight")).toBe("60");
   });
 
@@ -272,7 +272,7 @@ describe("MechBayScreen", () => {
     choose("arm-weapon", STARTER_LOADOUT.armWeaponId);
     expect(errorCodes()).toEqual([]);
     expect(inline.hidden).toBe(true);
-    expect(sheetField("combatRating")).toBe("129");
+    expect(sheetField("combatRating")).toBe("113");
   });
 
   it("shows a picture of the part each picker has chosen (#495)", () => {
@@ -296,10 +296,12 @@ describe("MechBayScreen", () => {
     );
     if (!thumb) throw new Error("mech bay has no chassis row");
     const before = thumb.dataset.thumb;
+    // Two frames may share a picture (the Courser wears the Vanguard's,
+    // #1130); the swap is only visible on one that does not.
     const other = [...select.options]
       .map((o) => o.value)
-      .find((v) => v !== select.value);
-    if (other === undefined) throw new Error("only one chassis to pick");
+      .find((v) => v !== select.value && partThumbnail(v) !== before);
+    if (other === undefined) throw new Error("no chassis with another picture");
     select.value = other;
     select.dispatchEvent(new Event("change", { bubbles: true }));
     expect(thumb.dataset.thumb).toBe(partThumbnail(other));
@@ -369,7 +371,7 @@ describe("MechBayScreen", () => {
     expect(picker("chassis").value).toBe("chassis-atlas");
     expect(picker("arm-weapon").value).toBe(STARTER_LOADOUT.armWeaponId);
     expect(root.querySelectorAll('select[data-slot="utility"]')).toHaveLength(
-      4,
+      5,
     );
     expect(picker("utility-0").value).toBe(STARTER_LOADOUT.utilityIds[0]);
     expect(sheetField("totalCost")).toBe("¢5,250");
@@ -420,7 +422,7 @@ describe("MechBayScreen", () => {
   it("lists the saved templates and shows the build cost on the button", () => {
     mountWith(newGame(), root, true);
     expect(savedNames()).toEqual([STARTER_LOADOUT.name]);
-    expect(button("build-mech").textContent).toBe("Build ¢3,250");
+    expect(button("build-mech").textContent).toBe("Build ¢2,850");
     expect(button("build-mech").disabled).toBe(false);
     expect(button("save-loadout").disabled).toBe(false);
   });
@@ -476,9 +478,9 @@ describe("MechBayScreen", () => {
     const after = store!.getState();
     expect(after.roster.mechs).toHaveLength(mechsBefore + 1);
     expect(after.roster.mechs.at(-1)?.name).toBe("Anvil");
-    expect(after.economy.credits).toBe(5000 - 3250);
+    expect(after.economy.credits).toBe(5000 - 2850);
     expect(q('#mech-bay-bar [data-field="credits"]').textContent).toBe(
-      "¢1,750",
+      "¢2,150",
     );
     expect(status().textContent).toBe("Built Anvil.");
     // A second build is now unaffordable.

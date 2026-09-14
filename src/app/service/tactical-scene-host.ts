@@ -16,7 +16,8 @@ import type { SpriteSource } from "../../graphics/model/sprite-source";
 import { GltfModelLoader } from "../../graphics/service/gltf-model-loader";
 import { ManifestSpriteLoader } from "../../graphics/service/manifest-sprite-loader";
 import { OrthographicCameraRig } from "../../graphics/service/orthographic-camera-rig";
-import { tileTopCentre } from "../../graphics/view/tactical-map-view";
+import { unitFeetAt } from "../../graphics/service/unit-placement";
+import { footprintSizeOf } from "../../tactical/service/footprint-service";
 import { PlaceholderModelFactory } from "../../graphics/service/placeholder-model-factory";
 import { GhostController } from "../../graphics/service/ghost-controller";
 import { SceneService } from "../../graphics/service/scene-service";
@@ -32,6 +33,7 @@ import {
 } from "../../graphics/service/layer-focus-service";
 import { LoadoutUnitModelSource } from "../../graphics/service/loadout-unit-model-source";
 import { TacticalSceneBuilder } from "../../graphics/service/tactical-scene-builder";
+import { tileRiseFor } from "../../graphics/service/surface-rise";
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { TacticalState } from "../../tactical/model/tactical-state";
@@ -117,6 +119,8 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
   private readonly models: ModelLoader;
   private readonly sprites: SpriteSource;
   private attached: AttachedScene | undefined;
+  /** Whether the player's map input is held (#1130); applied to every scene attached. */
+  private inputLocked = false;
 
   // ===========================================
   // Constructor
@@ -159,7 +163,8 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
       // A mech is drawn from the parts its loadout names (#1115).
       unitModels: new LoadoutUnitModelSource({ models: this.models }),
     });
-    const overlays = new TacticalOverlays();
+    // Raised slabs such as sidewalks lift the marks painted on them (#1130).
+    const overlays = new TacticalOverlays({ rise: tileRiseFor(mission.map) });
     const rig = new OrthographicCameraRig({
       zoom: CAMERA_ZOOM.min,
       yawIndex: missionArrivalYaw(mission),
@@ -191,9 +196,16 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
       content,
       // The fires flicker on the frame loop like everything else that
       // moves without a command (#1121).
-      updatables: [input, animations, ghosting, builder.effectsUpdatable],
+      updatables: [
+        input,
+        animations,
+        ghosting,
+        builder.effectsUpdatable,
+        builder.radarUpdatable,
+      ],
     });
     input.attach(container);
+    input.setLocked(this.inputLocked);
     // The height cut is the scene's, not the input controller's, so the
     // host supplies that one hook itself (#978).
     this.deps.onHooks?.({
@@ -316,6 +328,12 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
     this.attached?.overlays.setWeaponRangeVisible(visible);
   }
 
+  /** Holds or releases the player's map input, and remembers it for the next scene (#1130). */
+  setInputLocked(locked: boolean): void {
+    this.inputLocked = locked;
+    this.attached?.input.setLocked(locked);
+  }
+
   /** Disposes the scene, input and builder. */
   /**
    * Where a world thing appears on screen, delegated to the input
@@ -354,7 +372,13 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
     if (!attached || !unit) {
       return;
     }
-    attached.rig.lookAt(tileTopCentre(unit.pos));
+    // The middle of the unit's footprint, not its anchor tile (#1130).
+    attached.rig.lookAt(
+      unitFeetAt(
+        unit.pos,
+        footprintSizeOf(attached.mission.templates[unit.templateId] ?? {}),
+      ),
+    );
   }
 
   /**

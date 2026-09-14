@@ -22,7 +22,14 @@ import { UNIT_DIED } from "../model/unit-died-event";
 import type { UnitTemplate } from "../model/unit-template";
 import type { WeaponProfile } from "../model/weapon-profile";
 import { DEFAULT_WEAPON_NAME, PRIMARY_WEAPON_ID } from "../model/unit-weapon";
-import { fixtureAttackDeps, riggedRng } from "./tactical-fixtures.test-helper";
+import {
+  blockUnitAt,
+  fixtureAttackDeps,
+  missionWith,
+  openField,
+  riggedRng,
+  unitAt,
+} from "./tactical-fixtures.test-helper";
 import { attackTile } from "../model/attack-command";
 import { BLAST_RESOLVED } from "../model/blast-resolved-event";
 import { EFFECT_STARTED } from "../model/effect-started-event";
@@ -32,7 +39,9 @@ import { TileIndex } from "../../mapgen/service/tile-index";
 import { previewTileAttack, tileWeaponOptions } from "./combat-service";
 import { emptyVision } from "./vision-service";
 import {
+  attackEndsTurn,
   attackTerrain,
+  attacksRemaining,
   createAttackHandler,
   damageRange,
   hitChance,
@@ -955,6 +964,90 @@ describe("attacks per turn by unit kind", () => {
 });
 
 // ===========================================
+// The weapon overrides the kind (#1130)
+// ===========================================
+
+describe("attacks per turn by weapon", () => {
+  /** A squad weapon that is one burst a turn: the radio squad's SMG. */
+  const SMG: WeaponProfile = { ...RIFLE, range: 5, endsTurn: true };
+  /** A weapon that grants a second shot to a kind that normally gets one. */
+  const TWIN: WeaponProfile = { ...RIFLE, endsTurn: false };
+  const templates: Record<string, UnitTemplate> = {
+    ...TEMPLATES,
+    smg: template("smg", SMG),
+    twin: template("twin", TWIN),
+  };
+  const hit = (): TacticalContext => ctx(1);
+  const board = (attacker: Unit): TacticalState =>
+    mission(
+      [attacker, unit("b1", "bugs", "swarmer", 1, 0, { hp: 40, maxHp: 40 })],
+      {
+        templates,
+      },
+    );
+
+  it("ends a squad's turn on a weapon that says so, and refuses the second burst", () => {
+    const first = resolveAttack(
+      board(unit("s1", "tdf", "smg", 0, 0)),
+      attack("s1", "b1"),
+      hit(),
+      T,
+      DEPS,
+    );
+    expect(first.ok).toBe(true);
+    if (!first.ok) return;
+    // Both actions spent by one burst: a rifle squad would have one left.
+    expect(first.value.state.units.find((u) => u.id === "s1")?.ap).toBe(0);
+    const second = resolveAttack(
+      first.value.state,
+      attack("s1", "b1"),
+      hit(),
+      T,
+      DEPS,
+    );
+    expect(second.ok).toBe(false);
+    if (second.ok) return;
+    expect(second.error.kind).toBe("no-action-points");
+  });
+
+  it("lets a mech fire twice on a weapon that does not end the turn", () => {
+    const first = resolveAttack(
+      board(unit("s1", "tdf", "twin", 0, 0, { kind: "mech" })),
+      attack("s1", "b1"),
+      hit(),
+      T,
+      DEPS,
+    );
+    expect(first.ok).toBe(true);
+    if (!first.ok) return;
+    expect(first.value.state.units.find((u) => u.id === "s1")?.ap).toBe(1);
+  });
+
+  it("reads the kind's rule when the weapon is silent", () => {
+    expect(attackEndsTurn(RIFLE, "squad", T)).toBe(false);
+    expect(attackEndsTurn(RIFLE, "mech", T)).toBe(true);
+    expect(attackEndsTurn(SMG, "squad", T)).toBe(true);
+    expect(attackEndsTurn(TWIN, "bug", T)).toBe(false);
+  });
+
+  it("counts the attacks left from the weapons carried", () => {
+    const squad = { kind: "squad" as const, ap: 2 };
+    expect(attacksRemaining(squad, templates.rifle!.weapons, T)).toBe(2);
+    expect(attacksRemaining(squad, templates.smg!.weapons, T)).toBe(1);
+    // Nothing carried: the kind's rule, as before #1130.
+    expect(attacksRemaining(squad, [], T)).toBe(2);
+    expect(attacksRemaining({ kind: "mech", ap: 2 }, [], T)).toBe(1);
+    expect(
+      attacksRemaining({ kind: "mech", ap: 2 }, templates.twin!.weapons, T),
+    ).toBe(2);
+    // Spent is spent, whatever the weapon says.
+    expect(
+      attacksRemaining({ kind: "squad", ap: 0 }, templates.rifle!.weapons, T),
+    ).toBe(0);
+  });
+});
+
+// ===========================================
 // validateTargeting's own refusals (#735)
 // ===========================================
 
@@ -1504,5 +1597,91 @@ describe("weapons that mark the ground (#1121)", () => {
     expect(applied.value.events.map((e) => e.type)).toContain(
       OBJECTIVE_UPDATED,
     );
+  });
+});
+
+// ===========================================
+// Footprints (#1130)
+// ===========================================
+
+describe("shots to and from a unit on a 2×2 block (#1130)", () => {
+  const tile = (x: number, z: number): { x: number; y: number; z: number } => ({
+    x,
+    y: 0,
+    z,
+  });
+
+  it("holds the shot against the block's nearest tile and centres the hit there", () => {
+    // Shooter east of a block anchored at (1,3): the anchor is six tiles
+    // off, the block's east column five — inside the fixture's range 5.
+    const mission = missionWith(openField().build(), [
+      unitAt("s", "infantry", tile(7, 3)),
+      blockUnitAt("b", tile(1, 3)),
+    ]);
+    const checked = validateTargeting(mission, "s", "b", T);
+    expect(checked.ok).toBe(true);
+    if (!checked.ok) return;
+    expect(checked.value.terrain.distance).toBe(5);
+    expect(checked.value.target.pos).toEqual(tile(2, 3));
+    expect(checked.value.target.footprint).toBe(2);
+    // One tile further and the nearest tile is out of reach too.
+    const further = missionWith(openField().build(), [
+      unitAt("s", "infantry", tile(7, 3)),
+      blockUnitAt("b", tile(0, 3)),
+    ]);
+    const refused = validateTargeting(further, "s", "b", T);
+    expect(refused.ok).toBe(false);
+    if (refused.ok) return;
+    expect(refused.error).toEqual({
+      kind: "out-of-range",
+      distance: 6,
+      range: 5,
+    });
+  });
+
+  it("gives a block no cover and no flank, where a soldier on the same tile would have both", () => {
+    // A crate west of the target's tile shields a soldier from the west
+    // and leaves it flanked from the east; a block is too big to hide.
+    const map = openField().prop(PropKindIds.CRATE, tile(2, 3)).build();
+    const soldier = missionWith(map, [
+      unitAt("w", "infantry", tile(0, 3)),
+      unitAt("e", "infantry", tile(6, 3)),
+      unitAt("t", "infantry", tile(3, 3), { team: "bugs" }),
+    ]);
+    const shielded = validateTargeting(soldier, "w", "t", T);
+    const flanked = validateTargeting(soldier, "e", "t", T);
+    expect(shielded.ok && shielded.value.terrain.cover).toBe(CoverLevel.LOW);
+    expect(flanked.ok && flanked.value.terrain.flanked).toBe(true);
+    const block = missionWith(map, [
+      unitAt("w", "infantry", tile(0, 3)),
+      unitAt("e", "infantry", tile(6, 3)),
+      blockUnitAt("t", tile(3, 3)),
+    ]);
+    const west = validateTargeting(block, "w", "t", T);
+    const east = validateTargeting(block, "e", "t", T);
+    expect(west.ok && west.value.terrain.cover).toBe(CoverLevel.NONE);
+    expect(west.ok && west.value.terrain.flanked).toBe(false);
+    expect(east.ok && east.value.terrain.flanked).toBe(false);
+  });
+
+  it("lets a block attack from the tile of itself nearest the target", () => {
+    const mission = missionWith(
+      openField().build(),
+      [blockUnitAt("b", tile(0, 3)), unitAt("t", "infantry", tile(6, 3))],
+      { phase: "bugs" },
+    );
+    const checked = validateTargeting(mission, "b", "t", T);
+    expect(checked.ok).toBe(true);
+    if (!checked.ok) return;
+    expect(checked.value.terrain.distance).toBe(5);
+    const beyond = missionWith(
+      openField().build(),
+      [blockUnitAt("b", tile(0, 3)), unitAt("t", "infantry", tile(7, 3))],
+      { phase: "bugs" },
+    );
+    const refused = validateTargeting(beyond, "b", "t", T);
+    expect(refused.ok).toBe(false);
+    if (refused.ok) return;
+    expect(refused.error).toMatchObject({ kind: "out-of-range", distance: 6 });
   });
 });

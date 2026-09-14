@@ -105,17 +105,22 @@ export type UnitTemplateLookup = Readonly<Record<UnitTemplateId, UnitTemplate>>;
  * Ray radius in world units and the alpha a fully cut-away wall keeps,
  * from the style guide §12.4. One world unit is one tile. Since #1134
  * the cutaway is a bundle of rays from the unit's body to the camera,
- * so the radius is each ray's, measured across the view plane: a little
- * over half a tile, so the rays from a one-tile footprint's corners
- * overlap into one silhouette with a soft rim, and a wall a full tile
- * to the side is outside every one of them. (Before #1134 it was the
- * radius of a disc around the unit, 4 tiles, chosen by the Executive
- * Director in #937; the disc faded walls off to the side, which is what
- * the rays replace.) Halving retained opacity from 0.35 to 0.175 leaves
- * a lighter trace of shelter: 3/16 Bayer fragments on the ray instead
- * of 6/16.
+ * so the radius is each ray's, measured across the view plane. It
+ * opened at 0.6 — a little over half a tile, so the rays from a
+ * one-tile footprint's corners overlapped into one silhouette with a
+ * soft rim — and the Executive Director found that window too tight to
+ * read a room by: the unit showed and nothing it could walk to did.
+ * At 1.1, with the waist-height ring of rays half a tile outside the
+ * footprint (#1138), the window is a cone that opens the roof and the
+ * near walls over about a two-tile ring of the unit's floor, and a
+ * wall three tiles off is still outside every ray. (Before #1134 it
+ * was the radius of a disc around the unit, 4 tiles, chosen by the
+ * Executive Director in #937; the disc faded walls off to the side,
+ * which is what the rays replace.) Halving retained opacity from 0.35
+ * to 0.175 leaves a lighter trace of shelter: 3/16 Bayer fragments on
+ * the ray instead of 6/16.
  */
-const GHOST_RADIUS = 0.6;
+const GHOST_RADIUS = 1.2;
 const GHOST_FLOOR = 0.175;
 
 /**

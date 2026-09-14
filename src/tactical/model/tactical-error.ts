@@ -94,6 +94,19 @@ export type TacticalError =
     }
   | { readonly kind: "radar-out-of-reach"; readonly range: number }
   | { readonly kind: "radar-tile-blocked" }
+  // A medkit or a repair kit with nobody of its side and make to mend in
+  // its footprint (#1138): a use that would spend the kit on nothing.
+  | {
+      readonly kind: "nothing-to-heal";
+      readonly unitId: string;
+      readonly equipmentId: string;
+    }
+  // A turret's site (#1138): the radar's two refusals, worded for a gun.
+  | { readonly kind: "turret-out-of-reach"; readonly range: number }
+  | { readonly kind: "turret-tile-blocked" }
+  // A unit nobody orders (#1138): a deployed turret fires by rule and
+  // refuses every command that asks it to act.
+  | { readonly kind: "takes-no-orders"; readonly unitId: string }
   | { readonly kind: "objective-not-found"; readonly objectiveId: string }
   | { readonly kind: "objective-complete"; readonly objectiveId: string }
   | { readonly kind: "objective-not-yours"; readonly unitId: string }
@@ -208,6 +221,14 @@ export function describeTacticalError(error: TacticalError): string {
       return `Deploy radar within ${String(error.range)} tiles of the squad`;
     case "radar-tile-blocked":
       return "Deploy radar on a free tile within reach that the squad can walk to";
+    case "nothing-to-heal":
+      return `Unit "${error.unitId}" has nothing "${error.equipmentId}" can mend there`;
+    case "turret-out-of-reach":
+      return `Deploy the turret within ${String(error.range)} tiles of the squad`;
+    case "turret-tile-blocked":
+      return "Deploy the turret on a free tile within reach that the squad can walk to";
+    case "takes-no-orders":
+      return `Unit "${error.unitId}" takes no orders; it fires on its own`;
     case "objective-not-found":
       return `No objective "${error.objectiveId}" is in this mission`;
     case "objective-complete":
@@ -292,6 +313,10 @@ export const TACTICAL_ERROR_KINDS: Readonly<
   "equipment-spent": true,
   "radar-out-of-reach": true,
   "radar-tile-blocked": true,
+  "nothing-to-heal": true,
+  "turret-out-of-reach": true,
+  "turret-tile-blocked": true,
+  "takes-no-orders": true,
   "objective-not-found": true,
   "objective-complete": true,
   "objective-not-yours": true,

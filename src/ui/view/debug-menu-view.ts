@@ -1,5 +1,14 @@
 import type { PlaceableUnit } from "../../tactical/model/place-unit-command";
+import type {
+  DebugMenuModel,
+  DebugTool,
+  DebugToolPage,
+} from "../model/debug-tool";
+import { createSpawnTool } from "./debug-spawn-tool";
 import { iconGlyph } from "./icon-glyph";
+
+export { armedStatus } from "./debug-spawn-tool";
+export type { DebugMenuModel } from "../model/debug-tool";
 
 // ===========================================
 // Types
@@ -18,14 +27,6 @@ export interface DebugMenuHandlers {
   readonly onClose: () => void;
 }
 
-/** What the menu shows. */
-export interface DebugMenuModel {
-  /** Whether the panel is on screen. */
-  readonly open: boolean;
-  /** The entry armed for placement, if any; its button reads pressed. */
-  readonly armed: PlaceableUnit | undefined;
-}
-
 // ===========================================
 // Constants
 // ===========================================
@@ -33,11 +34,8 @@ export interface DebugMenuModel {
 /** `data-testid` of the panel, for the specs. */
 export const DEBUG_MENU_TEST_ID = "debug-menu";
 
-/** The two lists, by which side the placed unit fights for. */
-const SIDES = [
-  { title: "Friendly", kinds: ["squad", "mech"] },
-  { title: "Hostile", kinds: ["bug"] },
-] as const;
+/** `data-testid` of the Back button on a tool's page, for the specs. */
+export const DEBUG_BACK_TEST_ID = "debug-back";
 
 // ===========================================
 // DebugMenuView
@@ -46,28 +44,30 @@ const SIDES = [
 /**
  * The development tools' panel (#1136): a dev-only menu the bug button
  * at the bottom left of the mission bar opens, laid over the left rail.
- * Its one section so far lists every unit the `PlaceUnit` handler can
- * put down, friendly and hostile; pressing an entry arms it, and the
- * HUD then treats the next click on the map as "place it there".
+ * It opens on a high-level **tool list** (#1138) — one line per tool
+ * with what it does — and pressing a tool replaces the body with that
+ * tool's page under its title and a Back button. Spawn is the one tool
+ * so far; its page lists every unit the `PlaceUnit` handler can put
+ * down, and pressing an entry arms it for the next click on the map.
  *
  * ```
- *   ┌ DEBUG ─────────────────────────── ✕ ┐
- *   │ Place unit                          │
- *   │ Friendly                            │
- *   │   [Rifle Squad] [Rocket Squad] …    │
- *   │   [Mech (starter)]                  │
- *   │ Hostile                             │
- *   │   [Swarmer] [Lurker] [Brute]        │
- *   │ Place: Swarmer — click the map,     │
- *   │ Esc cancels                         │
- *   └─────────────────────────────────────┘
+ *   ┌ DEBUG ─────────────────────────── ✕ ┐      ┌ DEBUG ─────────────────────────── ✕ ┐
+ *   │ [Spawn                            ] │      │ [← Back]  Spawn                     │
+ *   │ [ Place a friendly or hostile unit] │ ──►  │ Friendly                            │
+ *   │                                     │      │   [Rifle Squad] [Rocket Squad] …    │
+ *   │                                     │ ◄──  │ Hostile                             │
+ *   │                                     │      │   [Swarmer] [Lurker] [Brute]        │
+ *   │                                     │      │ Place: Swarmer — click the map,     │
+ *   └─────────────────────────────────────┘      └─────────────────────────────────────┘
  * ```
  *
- * The entries come from the composition, which reads them from the
- * handler's own catalogues, so the menu cannot offer a type the rules
- * would then refuse as unknown. The panel is a child of the HUD grid,
- * so the HUD's pointer guard keeps clicks on it off the map picker
- * (#1113) the way it does for every other panel.
+ * Closing the panel puts it back on the tool list for the next opening,
+ * and Back disarms whatever the page had armed, so nothing stays armed
+ * behind a page that is no longer on screen. The tools declare
+ * themselves (`DebugTool`); the view renders the list and the page
+ * chrome, so a second tool is one more entry in `tools`. The panel is a
+ * child of the HUD grid, so the HUD's pointer guard keeps clicks on it
+ * off the map picker (#1113) the way it does for every other panel.
  */
 export class DebugMenuView {
   // ===========================================
@@ -75,10 +75,11 @@ export class DebugMenuView {
   // ===========================================
 
   private readonly handlers: DebugMenuHandlers;
-  private readonly entries: readonly PlaceableUnit[];
+  private readonly tools: readonly DebugTool[];
   private root: HTMLElement | undefined;
-  private armedLine: HTMLElement | undefined;
-  private readonly buttons = new Map<string, HTMLButtonElement>();
+  private body: HTMLElement | undefined;
+  private page: DebugToolPage | undefined;
+  private model: DebugMenuModel = { open: false, armed: undefined };
   private dispose: (() => void) | undefined;
 
   // ===========================================
@@ -87,18 +88,19 @@ export class DebugMenuView {
 
   /**
    * @param handlers - Where arming and closing are reported.
-   * @param entries - Every unit the menu offers, in catalogue order.
+   * @param entries - Every unit the Spawn tool offers, in catalogue order.
    */
   constructor(handlers: DebugMenuHandlers, entries: readonly PlaceableUnit[]) {
     this.handlers = handlers;
-    this.entries = entries;
+    // The tool list (#1138): add a tool here, not a branch in the view.
+    this.tools = [createSpawnTool(entries, handlers.onArm)];
   }
 
   // ===========================================
   // Lifecycle
   // ===========================================
 
-  /** Builds the panel under `parent`, closed; call `update` to open it. */
+  /** Builds the panel under `parent`, closed on the tool list; call `update` to open it. */
   mount(parent: HTMLElement): void {
     const doc = parent.ownerDocument;
     const panel = doc.createElement("section");
@@ -123,46 +125,10 @@ export class DebugMenuView {
     head.append(title, close);
     panel.appendChild(head);
 
-    const section = doc.createElement("div");
-    section.className = "tut-debug-menu__section tut-stack";
-    const heading = doc.createElement("div");
-    heading.className = "tut-debug-menu__heading";
-    heading.textContent = "Place unit";
-    section.appendChild(heading);
-    for (const side of SIDES) {
-      const label = doc.createElement("div");
-      label.className = "tut-dim tut-debug-menu__side";
-      label.textContent = side.title;
-      section.appendChild(label);
-      const list = doc.createElement("div");
-      list.className = "tut-debug-menu__list";
-      list.dataset.side = side.title.toLowerCase();
-      for (const entry of this.entries) {
-        if (!(side.kinds as readonly string[]).includes(entry.kind)) {
-          continue;
-        }
-        const button = doc.createElement("button");
-        button.type = "button";
-        button.className = "tut-btn tut-debug-menu__entry";
-        button.dataset.testid = `debug-place-${entry.kind}-${entry.id}`;
-        button.dataset.kind = entry.kind;
-        button.dataset.id = entry.id;
-        button.setAttribute("aria-pressed", "false");
-        button.appendChild(iconGlyph(doc, iconFor(entry.kind)));
-        const text = doc.createElement("span");
-        text.className = "tut-btn__label";
-        text.textContent = entry.name;
-        button.appendChild(text);
-        list.appendChild(button);
-        this.buttons.set(keyOf(entry), button);
-      }
-      section.appendChild(list);
-    }
-    const armedLine = doc.createElement("p");
-    armedLine.className = "tut-mono tut-debug-menu__armed";
-    armedLine.dataset.role = "debug-armed";
-    section.appendChild(armedLine);
-    panel.appendChild(section);
+    const body = doc.createElement("div");
+    body.className = "tut-debug-menu__body tut-stack";
+    body.dataset.role = "debug-body";
+    panel.appendChild(body);
     parent.appendChild(panel);
 
     const onClick = (event: Event): void => {
@@ -174,81 +140,146 @@ export class DebugMenuView {
         this.handlers.onClose();
         return;
       }
+      if (target.closest('[data-action="debug-back"]')) {
+        this.goBack();
+        return;
+      }
       const button = target.closest<HTMLButtonElement>(
-        "button.tut-debug-menu__entry",
+        "button.tut-debug-menu__tool",
       );
       if (!button) {
         return;
       }
-      const entry = this.entries.find(
-        (candidate) =>
-          candidate.kind === button.dataset.kind &&
-          candidate.id === button.dataset.id,
+      const tool = this.tools.find(
+        (candidate) => candidate.id === button.dataset.tool,
       );
-      if (entry === undefined) {
-        return;
+      if (tool !== undefined) {
+        this.openTool(tool);
       }
-      // Pressing the armed entry again disarms it; the owner decides
-      // from what it is holding, so the menu asks with the entry and
-      // the owner compares.
-      this.handlers.onArm(
-        button.getAttribute("aria-pressed") === "true" ? undefined : entry,
-      );
     };
     panel.addEventListener("click", onClick);
     this.dispose = () => {
       panel.removeEventListener("click", onClick);
     };
     this.root = panel;
-    this.armedLine = armedLine;
+    this.body = body;
+    this.showTools();
   }
 
-  /** Shows or hides the panel and marks the armed entry. */
+  /**
+   * Shows or hides the panel and refreshes the open page. Closing
+   * returns the body to the tool list, so the next opening starts high
+   * level again (#1138).
+   */
   update(model: DebugMenuModel): void {
-    if (!this.root || !this.armedLine) {
+    this.model = model;
+    if (!this.root) {
       return;
     }
     this.root.hidden = !model.open;
     this.root.dataset.open = String(model.open);
-    const armedKey = model.armed === undefined ? undefined : keyOf(model.armed);
-    for (const [key, button] of this.buttons) {
-      const pressed = key === armedKey;
-      button.setAttribute("aria-pressed", pressed ? "true" : "false");
-      button.classList.toggle("is-selected", pressed);
+    if (!model.open && this.page !== undefined) {
+      this.showTools();
     }
-    this.armedLine.textContent =
-      model.armed === undefined
-        ? "Pick a unit, then click the map to place it."
-        : armedStatus(model.armed);
-    this.armedLine.dataset.armed = String(model.armed !== undefined);
+    this.page?.update(model);
   }
 
-  /** Removes the panel and its listener. */
+  /** Removes the panel and its listeners. */
   unmount(): void {
+    this.page?.dispose();
+    this.page = undefined;
     this.dispose?.();
     this.dispose = undefined;
     this.root?.remove();
     this.root = undefined;
-    this.armedLine = undefined;
-    this.buttons.clear();
+    this.body = undefined;
   }
-}
 
-// ===========================================
-// Helpers
-// ===========================================
+  // ===========================================
+  // Pages
+  // ===========================================
 
-/** The status line while an entry is armed, shared with the HUD's banner. */
-export function armedStatus(entry: PlaceableUnit): string {
-  return `Place: ${entry.name} — click the map, Esc cancels`;
-}
+  /** Replaces the body with the tool list: one line per tool, label over description. */
+  private showTools(): void {
+    const body = this.clearBody();
+    if (!body) {
+      return;
+    }
+    const doc = body.ownerDocument;
+    const list = doc.createElement("div");
+    list.className = "tut-debug-menu__tools tut-stack";
+    list.dataset.role = "debug-tools";
+    for (const tool of this.tools) {
+      const button = doc.createElement("button");
+      button.type = "button";
+      button.className = "tut-btn tut-debug-menu__tool";
+      button.dataset.testid = `debug-tool-${tool.id}`;
+      button.dataset.tool = tool.id;
+      const label = doc.createElement("span");
+      label.className = "tut-btn__label";
+      label.textContent = tool.label;
+      const description = doc.createElement("span");
+      description.className = "tut-dim tut-debug-menu__tool-description";
+      description.textContent = tool.description;
+      button.append(label, description);
+      list.appendChild(button);
+    }
+    body.appendChild(list);
+  }
 
-/** One key per entry, so a button is found by what it places. */
-function keyOf(entry: PlaceableUnit): string {
-  return `${entry.kind}:${entry.id}`;
-}
+  /** Replaces the body with `tool`'s page under its title and a Back button. */
+  private openTool(tool: DebugTool): void {
+    const body = this.clearBody();
+    if (!body) {
+      return;
+    }
+    const doc = body.ownerDocument;
+    const head = doc.createElement("div");
+    head.className = "tut-debug-menu__page-head tut-row";
+    const back = doc.createElement("button");
+    back.type = "button";
+    back.className = "tut-btn tut-debug-menu__back";
+    back.dataset.testid = DEBUG_BACK_TEST_ID;
+    back.dataset.action = "debug-back";
+    back.setAttribute("aria-label", "Back to the tool list");
+    back.appendChild(iconGlyph(doc, "back"));
+    const backLabel = doc.createElement("span");
+    backLabel.className = "tut-btn__label";
+    backLabel.textContent = "Back";
+    back.appendChild(backLabel);
+    const title = doc.createElement("div");
+    title.className = "tut-debug-menu__heading";
+    title.dataset.role = "debug-page-title";
+    title.textContent = tool.label;
+    head.append(back, title);
+    body.appendChild(head);
+    const page = doc.createElement("div");
+    page.className = "tut-debug-menu__page tut-stack";
+    page.dataset.tool = tool.id;
+    body.appendChild(page);
+    this.page = tool.render(page);
+    this.page.update(this.model);
+  }
 
-/** The glyph beside an entry: the side it fights for. */
-function iconFor(kind: PlaceableUnit["kind"]): "squad" | "mech" | "egg" {
-  return kind === "bug" ? "egg" : kind;
+  /**
+   * Back: the page goes, and so does anything it had armed — the owner
+   * is asked to disarm, so the status line does not keep an instruction
+   * for a page that is no longer on screen.
+   */
+  private goBack(): void {
+    this.showTools();
+    if (this.model.armed !== undefined) {
+      this.handlers.onArm(undefined);
+    }
+  }
+
+  /** Disposes the open page, if any, and empties the body for the next one. */
+  private clearBody(): HTMLElement | undefined {
+    this.page?.dispose();
+    this.page = undefined;
+    if (this.body) {
+      this.body.replaceChildren();
+    }
+    return this.body;
+  }
 }

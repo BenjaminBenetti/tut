@@ -8,9 +8,13 @@ import {
   BREACHING_CHARGE,
   EQUIPMENT,
   GRENADE,
+  MEDKIT,
   RADAR_DISH,
+  REPAIR_KIT,
+  TURRET,
 } from "../data/equipment";
 import { RADAR_TUNING } from "../data/radar-tuning";
+import { TURRET_TUNING } from "../data/turret-tuning";
 import { BLAST_RESOLVED } from "../model/blast-resolved-event";
 import { CHARGE_DETONATED } from "../model/charge-detonated-event";
 import { CHARGE_PLACED } from "../model/charge-placed-event";
@@ -19,18 +23,23 @@ import { usesLeftOf } from "../model/equipment";
 import { EQUIPMENT_USED } from "../model/equipment-used-event";
 import { RADAR_DEPLOYED } from "../model/radar-deployed-event";
 import { STRUCTURE_DESTROYED } from "../model/structure-destroyed-event";
+import { TURRET_DEPLOYED } from "../model/turret-deployed-event";
 import type { TacticalState } from "../model/tactical-state";
 import type { Unit } from "../model/unit";
 import { UNIT_DIED } from "../model/unit-died-event";
+import { UNITS_HEALED } from "../model/unit-healed-event";
 import { useEquipment } from "../model/use-equipment-command";
 import { createEquipmentCatalogue } from "../repository/equipment-catalogue";
+import { equipmentRangeTiles } from "./equipment-range-service";
 import type { EquipmentDeps } from "./equipment-service";
 import {
   carriesEquipment,
   createDetonateStep,
   createUseEquipmentHandler,
+  equipmentFootprintTiles,
   equipmentOf,
   previewEquipmentUse,
+  previewHealUse,
   validateEquipmentUse,
 } from "./equipment-service";
 import {
@@ -41,6 +50,7 @@ import {
   openField,
   riggedRng,
   unitAt,
+  walledField,
 } from "./tactical-fixtures.test-helper";
 import { createEndTurnHandler, refreshSides } from "./turn-service";
 
@@ -53,6 +63,7 @@ const DEPS: EquipmentDeps = {
   combat: COMBAT_TUNING,
   attack: fixtureAttackDeps(),
   radar: RADAR_TUNING,
+  turret: TURRET_TUNING,
 };
 
 const handler = createUseEquipmentHandler(DEPS);
@@ -82,6 +93,29 @@ function kitted(
 /** The squad as the mission now has it. */
 function squad(mission: TacticalState): Unit {
   return mission.units.find((u) => u.id === "squad")!;
+}
+
+/**
+ * A medic-and-engineer field (#1138): the squad at (1,1) carries both
+ * kits, a wounded squad stands two tiles east, a wounded mech beside it.
+ */
+function aidStation(units: readonly Unit[] = []): TacticalState {
+  const base = missionWith(openField().build(), [
+    unitAt("squad", "infantry", SQUAD, { hp: 6 }),
+    unitAt("hurt", "infantry", at(3, 1), { hp: 2 }),
+    unitAt("mech", "mech", at(3, 2), { hp: 1 }),
+    ...units,
+  ]);
+  return {
+    ...base,
+    templates: {
+      ...base.templates,
+      [FIXTURE_TEMPLATES.infantry]: {
+        ...base.templates[FIXTURE_TEMPLATES.infantry]!,
+        equipment: [MEDKIT.id, REPAIR_KIT.id],
+      },
+    },
+  };
 }
 
 describe("equipment carried", () => {
@@ -485,5 +519,278 @@ describe("UseEquipment: breaching charge", () => {
     ).toMatchObject({
       payload: { unitId: "bug", killerId: "squad" },
     });
+  });
+});
+
+describe("UseEquipment: medkit and repair kit (#1138)", () => {
+  it("mends every unit of its side and make in the footprint, the user included, and bills the action and the use", () => {
+    const before = aidStation();
+    const result = handler(
+      before,
+      useEquipment("squad", MEDKIT.id, at(3, 1)),
+      ctxWith(riggedRng(false)),
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const hp = Object.fromEntries(
+      result.value.state.units.map((u) => [u.id, u.hp]),
+    );
+    // The hurt squad on the impact gets the full 10, the medic two
+    // tiles off the 4 it was missing; the mech is metal and untouched.
+    expect(hp).toEqual({ squad: 10, hurt: 10, mech: 1 });
+    expect(squad(result.value.state).ap).toBe(1);
+    expect(usesLeftOf(squad(result.value.state), MEDKIT)).toBe(3);
+    expect(result.value.events.map((e) => e.type)).toEqual([
+      EQUIPMENT_USED,
+      UNITS_HEALED,
+    ]);
+    expect(result.value.events[1]).toEqual({
+      type: UNITS_HEALED,
+      payload: {
+        kitId: MEDKIT.id,
+        userId: "squad",
+        healed: [
+          { unitId: "hurt", amount: 8, hpAfter: 10 },
+          { unitId: "squad", amount: 4, hpAfter: 10 },
+        ],
+      },
+    });
+    // The repair kit is the same throw for the other make.
+    const welded = handler(
+      result.value.state,
+      useEquipment("squad", REPAIR_KIT.id, at(3, 2)),
+      ctxWith(riggedRng(false)),
+    );
+    expect(welded.ok).toBe(true);
+    if (!welded.ok) return;
+    expect(welded.value.state.units.find((u) => u.id === "mech")?.hp).toBe(10);
+    expect(welded.value.events[1]).toMatchObject({
+      type: UNITS_HEALED,
+      payload: { kitId: REPAIR_KIT.id, healed: [{ unitId: "mech" }] },
+    });
+    expect(usesLeftOf(squad(welded.value.state), REPAIR_KIT)).toBe(1);
+  });
+
+  it("refuses a kit with nobody of its make to mend, out of range, out of sight or spent, without spending it", () => {
+    const mission = aidStation();
+    // A medkit thrown at the mech's tile mends nobody: the mech is metal
+    // and the wounded squads are three tiles off it.
+    expect(
+      validateEquipmentUse(mission, "squad", MEDKIT.id, at(3, 4), DEPS),
+    ).toEqual({
+      ok: false,
+      error: {
+        kind: "nothing-to-heal",
+        unitId: "squad",
+        equipmentId: "medkit",
+      },
+    });
+    expect(
+      validateEquipmentUse(mission, "squad", REPAIR_KIT.id, at(6, 6), DEPS),
+    ).toMatchObject({ ok: false, error: { kind: "out-of-range" } });
+    // Everyone already whole: nothing to heal, not a free use.
+    const whole: TacticalState = {
+      ...mission,
+      units: mission.units.map((u) => ({ ...u, hp: u.maxHp })),
+    };
+    const refused = handler(
+      whole,
+      useEquipment("squad", MEDKIT.id, at(3, 1)),
+      ctxWith(riggedRng(false)),
+    );
+    expect(refused).toMatchObject({
+      ok: false,
+      error: { kind: "nothing-to-heal" },
+    });
+    const spent: TacticalState = {
+      ...mission,
+      units: mission.units.map((u) =>
+        u.id === "squad" ? { ...u, equipment: { [MEDKIT.id]: 0 } } : u,
+      ),
+    };
+    expect(
+      validateEquipmentUse(spent, "squad", MEDKIT.id, at(3, 1), DEPS),
+    ).toMatchObject({ ok: false, error: { kind: "equipment-spent" } });
+    // Behind a wall: the throw itself is refused before anyone is counted.
+    const walled = { ...aidStation(), map: walledField() };
+    expect(
+      validateEquipmentUse(walled, "squad", MEDKIT.id, at(5, 1), DEPS),
+    ).toMatchObject({ ok: false, error: { kind: "tile-out-of-sight" } });
+  });
+
+  it("previews who would be mended and paints the footprint like a grenade's, and a kit is no area weapon", () => {
+    const mission = aidStation();
+    const preview = previewHealUse(mission, "squad", MEDKIT.id, at(3, 1), DEPS);
+    expect(preview.ok).toBe(true);
+    if (!preview.ok) return;
+    expect(preview.value).toMatchObject({
+      amount: 10,
+      radius: 2,
+      alreadyWhole: 0,
+      beneficiaries: [
+        {
+          id: "hurt",
+          name: FIXTURE_TEMPLATES.infantry,
+          amount: 8,
+          hpAfter: 10,
+        },
+        { id: "squad", amount: 4, hpAfter: 10, distance: 2 },
+      ],
+    });
+    expect(preview.value.tiles[0]).toEqual(at(3, 1));
+    // The kit's area is the grenade's: same radius, same tiles.
+    const grenade = previewEquipmentUse(
+      { ...mission, templates: kitted().templates },
+      "squad",
+      GRENADE.id,
+      at(3, 1),
+      DEPS,
+    );
+    expect(grenade.ok && grenade.value.blast?.tiles).toEqual(
+      preview.value.tiles,
+    );
+    expect(
+      equipmentFootprintTiles(mission, "squad", MEDKIT.id, at(3, 1), DEPS),
+    ).toEqual(preview.value.tiles);
+    expect(
+      equipmentFootprintTiles(mission, "squad", MEDKIT.id, at(3, 4), DEPS),
+    ).toEqual([]);
+    expect(
+      previewEquipmentUse(mission, "squad", MEDKIT.id, at(3, 1), DEPS),
+    ).toMatchObject({ ok: false, error: { kind: "no-area-weapon" } });
+    expect(
+      previewHealUse(kitted(), "squad", GRENADE.id, at(3, 1), DEPS),
+    ).toMatchObject({ ok: false, error: { kind: "no-area-weapon" } });
+  });
+});
+
+// ===========================================
+// Turret (#1138)
+// ===========================================
+
+/** An engineer on the open field carrying the turret, and whatever else the caller puts down. */
+function engineered(units: readonly Unit[] = []): TacticalState {
+  const base = missionWith(openField().build(), [
+    unitAt("squad", "infantry", SQUAD),
+    ...units,
+  ]);
+  return {
+    ...base,
+    templates: {
+      ...base.templates,
+      [FIXTURE_TEMPLATES.infantry]: {
+        ...base.templates[FIXTURE_TEMPLATES.infantry]!,
+        equipment: [TURRET.id],
+      },
+    },
+  };
+}
+
+describe("UseEquipment: turret", () => {
+  it("puts a turret on the tile on overwatch, bills the action and the use, and announces both", () => {
+    const before = engineered();
+    const tile = at(2, 2);
+    const result = handler(
+      before,
+      useEquipment("squad", TURRET.id, tile),
+      ctxWith(riggedRng(true)),
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const after = result.value.state;
+    expect(after.units).toHaveLength(2);
+    expect(after.units[1]).toMatchObject({
+      kind: "turret",
+      team: "tdf",
+      pos: tile,
+      status: ["overwatch"],
+      overwatchShots: 2,
+      turnsLeft: 3,
+    });
+    expect(after.templates["turret:turret"]?.construction).toBe("mechanical");
+    expect(squad(after)).toMatchObject({
+      ap: 1,
+      equipment: { [TURRET.id]: 1 },
+    });
+    expect(result.value.events.map((e) => e.type)).toEqual([
+      EQUIPMENT_USED,
+      TURRET_DEPLOYED,
+    ]);
+    expect(result.value.events[0]).toMatchObject({
+      payload: {
+        unitId: "squad",
+        equipmentId: TURRET.id,
+        name: "Turret",
+        tile,
+        usesLeft: 1,
+      },
+    });
+    expect(before.units).toHaveLength(1);
+    expect(JSON.parse(JSON.stringify(after))).toEqual(after);
+  });
+
+  it("runs out after two, and is refused out of reach, on a taken tile, and for a preview", () => {
+    const base = engineered();
+    const tile = at(2, 2);
+    expect(
+      validateEquipmentUse(base, "squad", TURRET.id, at(4, 1), DEPS),
+    ).toMatchObject({ ok: false, error: { kind: "turret-out-of-reach" } });
+    const crowded = engineered([unitAt("other", "infantry", tile)]);
+    expect(
+      validateEquipmentUse(crowded, "squad", TURRET.id, tile, DEPS),
+    ).toMatchObject({ ok: false, error: { kind: "turret-tile-blocked" } });
+    expect(
+      previewEquipmentUse(base, "squad", TURRET.id, tile, DEPS),
+    ).toMatchObject({ ok: false, error: { kind: "no-area-weapon" } });
+    // The range preview paints the same sites the rules accept (#1134).
+    const painted = equipmentRangeTiles(
+      base,
+      "squad",
+      TURRET.id,
+      DEPS.catalogue,
+    );
+    expect(painted).toContainEqual(tile);
+    expect(painted).toContainEqual(at(3, 1));
+    expect(painted).not.toContainEqual(at(4, 1));
+    expect(painted).not.toContainEqual(SQUAD);
+    // Two uses: the second goes down, the third is refused, and a
+    // turret's own tile is taken for the next.
+    const first = handler(
+      base,
+      useEquipment("squad", TURRET.id, tile),
+      ctxWith(riggedRng(true)),
+    );
+    if (!first.ok) throw new Error(first.error.kind);
+    const second = handler(
+      {
+        ...first.value.state,
+        units: first.value.state.units.map((u) =>
+          u.id === "squad" ? { ...u, ap: 2 } : u,
+        ),
+      },
+      useEquipment("squad", TURRET.id, at(3, 1)),
+      ctxWith(riggedRng(true)),
+    );
+    if (!second.ok) throw new Error(second.error.kind);
+    expect(squad(second.value.state).equipment).toEqual({ [TURRET.id]: 0 });
+    const third = validateEquipmentUse(
+      {
+        ...second.value.state,
+        units: second.value.state.units.map((u) =>
+          u.id === "squad" ? { ...u, ap: 2 } : u,
+        ),
+      },
+      "squad",
+      TURRET.id,
+      at(1, 3),
+      DEPS,
+    );
+    expect(third).toMatchObject({
+      ok: false,
+      error: { kind: "equipment-spent" },
+    });
+    expect(
+      validateEquipmentUse(first.value.state, "squad", TURRET.id, tile, DEPS),
+    ).toMatchObject({ ok: false, error: { kind: "turret-tile-blocked" } });
   });
 });

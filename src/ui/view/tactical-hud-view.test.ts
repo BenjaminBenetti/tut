@@ -455,6 +455,57 @@ describe("TacticalHudView", () => {
     expect(wheelOpen()).toBe(false);
   });
 
+  it("a medkit sits on the ring as Heal: resting on it paints the area, picking it uses the kit, and the card reads its numbers (#1138)", () => {
+    const commands: TacticalCommand[] = [];
+    const blasts: number[] = [];
+    const hud = new TacticalHudView(
+      {
+        onCommand: (c) => commands.push(c),
+        onLeave: vi.fn(),
+        anchorFor: () => ({ x: 100, y: 100 }),
+        onMarkBlast: (tiles) => blasts.push(tiles.length),
+      },
+      { combatTuning: COMBAT_TUNING, objectiveTuning: OBJECTIVE_TUNING },
+    );
+    hud.mount(root);
+    const base = hudMission();
+    hud.update({
+      ...base,
+      templates: {
+        ...base.templates,
+        rifle: {
+          ...hudTemplate("rifle", "Medic Squad"),
+          equipment: ["medkit"],
+        },
+      },
+    });
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    const summary = root.querySelector(
+      '#unit-card [data-field="equipment"] [data-role="equipment-row"] > span:last-child',
+    )?.textContent;
+    expect(summary).toBe("range 5 · heal 10 · blast 2 · organic");
+    // s2 at (1,0,3) is at 12 of 20; the empty tile beside it takes the
+    // throw (a click on s2 itself would pick the unit), and its ring
+    // offers Heal at top level.
+    hud.handleIntent({ kind: "select-tile", tile: { x: 2, y: 0, z: 3 } });
+    expect(items()).toEqual([
+      "move:2,0,3",
+      "attack-tile:2,0,3",
+      "equipment:medkit:2,0,3",
+      "overwatch",
+      "reload",
+    ]);
+    expect(item("equipment:medkit:2,0,3")?.disabled).toBe(false);
+    expect(item("equipment:medkit:2,0,3")?.textContent).toContain("+10 hp");
+    item("equipment:medkit:2,0,3")?.dispatchEvent(new Event("pointerenter"));
+    expect(blasts.at(-1) ?? 0).toBeGreaterThan(1);
+    item("equipment:medkit:2,0,3")?.click();
+    expect(commands).toEqual([
+      useEquipment("s1", "medkit", { x: 2, y: 0, z: 3 }),
+    ]);
+    expect(wheelOpen()).toBe(false);
+  });
+
   it("a press outside an aiming wheel closes the ring and keeps the aim, so the panel's Fire still works (#1112)", () => {
     const { hud, commands } = setup();
     hud.handleIntent({ kind: "select-unit", unitId: "s1" });
@@ -2308,6 +2359,8 @@ describe("development tools (#1136)", () => {
     root.querySelector<HTMLButtonElement>(
       `[data-testid="debug-place-${kind}-${id}"]`,
     );
+  const spawnTool = (): HTMLButtonElement | null =>
+    root.querySelector<HTMLButtonElement>('[data-testid="debug-tool-spawn"]');
   const status = (): string =>
     root.querySelector<HTMLElement>('#turn-banner [data-role="status"]')
       ?.textContent ?? "";
@@ -2357,9 +2410,58 @@ describe("development tools (#1136)", () => {
     expect(panel()?.hidden).toBe(true);
   });
 
+  it("opens on the tool list, Spawn alone on it, and reaches the entries through Spawn (#1138)", () => {
+    setupDev(true);
+    toggle()?.click();
+    const list = [
+      ...root.querySelectorAll<HTMLElement>(
+        '[data-role="debug-tools"] .tut-btn__label',
+      ),
+    ].map((label) => label.textContent);
+    expect(list).toEqual(["Spawn"]);
+    expect(entry("bug", "swarmer")).toBeNull();
+    spawnTool()?.click();
+    expect(entry("bug", "swarmer")).not.toBeNull();
+    expect(entry("squad", "rifle")).not.toBeNull();
+    // Back returns to the list.
+    root
+      .querySelector<HTMLButtonElement>('[data-testid="debug-back"]')
+      ?.click();
+    expect(spawnTool()).not.toBeNull();
+    expect(entry("bug", "swarmer")).toBeNull();
+  });
+
+  it("closing the menu resets it to the tool list and disarms (#1138)", () => {
+    const { hud } = setupDev(true);
+    toggle()?.click();
+    spawnTool()?.click();
+    entry("bug", "swarmer")?.click();
+    expect(hud.getArmedPlacement()).toEqual(PLACEABLE[1]);
+    toggle()?.click();
+    expect(hud.getArmedPlacement()).toBeUndefined();
+    expect(status()).toBe("");
+    toggle()?.click();
+    expect(spawnTool()).not.toBeNull();
+    expect(entry("bug", "swarmer")).toBeNull();
+  });
+
+  it("Back from the spawn page disarms, so the status line drops the instruction (#1138)", () => {
+    const { hud } = setupDev(true);
+    toggle()?.click();
+    spawnTool()?.click();
+    entry("squad", "rifle")?.click();
+    expect(status()).toBe("Place: Rifle Squad — click the map, Esc cancels");
+    root
+      .querySelector<HTMLButtonElement>('[data-testid="debug-back"]')
+      ?.click();
+    expect(hud.getArmedPlacement()).toBeUndefined();
+    expect(status()).toBe("");
+  });
+
   it("arms an entry, says so on the status line, and places it where the map is clicked, staying armed", () => {
     const { hud, commands, mission } = setupDev(true);
     toggle()?.click();
+    spawnTool()?.click();
     entry("bug", "swarmer")?.click();
     expect(hud.getArmedPlacement()).toEqual(PLACEABLE[1]);
     expect(entry("bug", "swarmer")?.getAttribute("aria-pressed")).toBe("true");
@@ -2390,6 +2492,7 @@ describe("development tools (#1136)", () => {
   it("disarms on Escape, on the entry pressed again, and on closing the menu", () => {
     const { hud, commands } = setupDev(true);
     toggle()?.click();
+    spawnTool()?.click();
     entry("squad", "rifle")?.click();
     hud.handleIntent({ kind: "action", action: "cancel" });
     expect(hud.getArmedPlacement()).toBeUndefined();
@@ -2411,8 +2514,11 @@ describe("development tools (#1136)", () => {
     expect(panel()?.hidden).toBe(true);
     expect(hud.getArmedPlacement()).toBeUndefined();
 
-    entry("squad", "rifle")?.click();
+    // Closed, the menu is back on the tool list (#1138).
     toggle()?.click();
+    spawnTool()?.click();
+    entry("squad", "rifle")?.click();
+    expect(hud.getArmedPlacement()).toEqual(PLACEABLE[0]);
     toggle()?.click();
     expect(hud.getArmedPlacement()).toBeUndefined();
   });

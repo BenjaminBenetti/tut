@@ -276,6 +276,10 @@ function resolveSource(
         },
       });
     }
+    case "turret":
+      // A turret is deployed by an engineer, never placed by the menu
+      // (#1138): there is no catalogue of turrets to pick from.
+      return unknown();
     case "mech": {
       const source = deps.mechs.find((entry) => entry.id === id);
       if (source === undefined) {

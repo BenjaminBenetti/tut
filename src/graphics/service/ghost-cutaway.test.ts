@@ -9,12 +9,16 @@ import {
 import {
   applyGhostCutaway,
   createGhostUniforms,
+  GHOST_BODY_SAMPLES,
   GHOST_FOOT_MARGIN,
   GHOST_RAY_MARGIN,
+  GHOST_RING_MARGIN,
+  GHOST_RING_SAMPLES,
   GHOST_SAMPLES,
   GHOST_SOFT_EDGE,
   ghostFade,
   ghostReach,
+  ghostRingSpread,
   ghostSamples,
   ghostsAlongRay,
   MAX_GHOSTS,
@@ -24,8 +28,11 @@ import { GhostController } from "./ghost-controller";
 /** The tactical camera's pitch: `atan(1 / √2)`, ADR 0005. */
 const PITCH = Math.atan(1 / Math.SQRT2);
 
-/** The ray radius the scene ships with (`tactical-scene-builder`). */
-const RADIUS = 0.6;
+/** The ray radius the scene ships with (`tactical-scene-builder`), since #1138. */
+const RADIUS = 1.2;
+
+/** The waist ring's distance in half-footprints for a one-tile unit (#1138). */
+const SQUAD_SPREAD = ghostRingSpread(0.5);
 
 /**
  * A camera at the tactical pitch looking at the origin from +z, so
@@ -232,10 +239,12 @@ describe("ghost cutaway (#526)", () => {
       { x: 1, y: 0, z: 0 },
       { x: 0, y: 0.5, z: 0.5 },
       { x: 0, y: 2, z: -1 },
+      2,
     );
 
     it("is the farthest sample across the view plane plus the ray radius", () => {
-      // The far head corner: x = 1, y = 0.5 + 2, depth ignored.
+      // The far head corner: x = 1, y = 0.5 + 2, depth ignored. The ring
+      // at two half-footprints reaches y = 2 at most, inside that.
       expect(ghostReach(centre, spots, RADIUS)).toBeCloseTo(
         Math.hypot(1, 2.5) + RADIUS,
         9,
@@ -288,7 +297,7 @@ describe("ghost cutaway (#526)", () => {
       const right = { x: 1, y: 0, z: 0 };
       const forward = { x: 0, y: 0, z: 1 };
       const up = { x: 0, y: 2, z: 0 };
-      const samples = ghostSamples(centre, right, forward, up);
+      const samples = ghostSamples(centre, right, forward, up, 2);
       expect(samples).toHaveLength(GHOST_SAMPLES);
       expect(samples[0]).toEqual({ x: -1, y: 0, z: -1 });
       expect(samples[3]).toEqual({ x: 1, y: 0, z: 1 });
@@ -297,6 +306,49 @@ describe("ghost cutaway (#526)", () => {
       expect(samples[8]).toEqual({ x: 0, y: 2, z: 0 });
       expect(samples[9]).toEqual({ x: 0, y: 1, z: 0 });
       expect(samples[10]).toEqual({ x: 0, y: 0, z: 0 });
+    });
+
+    it("then leaves from a ring at waist height, `spread` half-footprints out (#1138)", () => {
+      const centre = { x: 0, y: 0, z: 0 };
+      const right = { x: 1, y: 0, z: 0 };
+      const forward = { x: 0, y: 0, z: 1 };
+      const up = { x: 0, y: 2, z: 0 };
+      const samples = ghostSamples(centre, right, forward, up, 2);
+      const ring = samples.slice(GHOST_BODY_SAMPLES);
+      expect(ring).toHaveLength(GHOST_RING_SAMPLES);
+      expect(GHOST_SAMPLES).toBe(GHOST_BODY_SAMPLES + GHOST_RING_SAMPLES);
+      // Evenly spaced from +right toward +forward, every point at the
+      // waist and two half-footprints from the centre.
+      const near = (
+        point: { x: number; y: number; z: number },
+        x: number,
+        z: number,
+      ): void => {
+        expect(point.x).toBeCloseTo(x, 9);
+        expect(point.y).toBeCloseTo(1, 9);
+        expect(point.z).toBeCloseTo(z, 9);
+      };
+      near(ring[0]!, 2, 0);
+      near(ring[2]!, 0, 2);
+      near(ring[4]!, -2, 0);
+      near(ring[6]!, 0, -2);
+      near(ring[1]!, Math.SQRT2, Math.SQRT2);
+      for (const point of ring) {
+        expect(Math.hypot(point.x, point.z)).toBeCloseTo(2, 9);
+      }
+    });
+
+    it("puts the ring a fixed margin outside the footprint, whatever the unit's size (#1138)", () => {
+      // A one-tile squad's ring is a tile and a quarter out; a two-tile
+      // mech's is not two and a half, because the margin is in world
+      // units and the spread is what scales it back to the box edges.
+      expect(ghostRingSpread(0.5) * 0.5).toBeCloseTo(
+        0.5 + GHOST_RING_MARGIN,
+        9,
+      );
+      expect(ghostRingSpread(1) * 1).toBeCloseTo(1 + GHOST_RING_MARGIN, 9);
+      expect(GHOST_RING_MARGIN).toBeGreaterThan(0);
+      expect(GHOST_RING_MARGIN).toBeLessThan(1);
     });
   });
 
@@ -328,23 +380,57 @@ describe("ghost cutaway (#526)", () => {
       return ghostFade(ghost, { view, worldY: y }, RADIUS);
     };
 
+    it("fills the ring from the unit's own footprint (#1138)", () => {
+      // The controller derives the spread from the subject's half width,
+      // so the ring sits GHOST_RING_MARGIN outside a one-tile footprint.
+      const ring = ghost.spots.slice(GHOST_BODY_SAMPLES);
+      expect(ring).toHaveLength(GHOST_RING_SAMPLES);
+      expect(SQUAD_SPREAD * 0.5).toBeCloseTo(0.5 + GHOST_RING_MARGIN, 9);
+      // The reach covers the ring: the farthest ring point across the
+      // view plus the radius is within it.
+      for (const spot of ring) {
+        expect(
+          Math.hypot(spot.x - ghost.centre.x, spot.y - ghost.centre.y) + RADIUS,
+        ).toBeLessThanOrEqual(ghost.reach + 1e-9);
+      }
+    });
+
     it("fades the wall directly in front of the unit", () => {
       expect(fadeAt(0, 1, 1)).toBeGreaterThan(0.9);
       expect(fadeAt(0.4, 0.8, 1)).toBeGreaterThan(0.5);
     });
 
-    it("keeps a wall in front but two tiles to the side solid", () => {
-      // Nearer the camera than every sample, and it would have faded
-      // under the plane rule; no ray from the unit passes through it.
-      expect(fadeAt(2, 1, 1)).toBe(0);
-      expect(fadeAt(-2, 0.5, 1)).toBe(0);
-      expect(fadeAt(2, 1.4, 0.5)).toBe(0);
+    it("opens the cone: a wall in front and two tiles to the side fades with the ring (#1138)", () => {
+      // The body rays alone left this solid, and the Executive Director
+      // saw a window the shape of the unit with nothing around it. The
+      // ring's ray from a tile and a quarter out passes through it.
+      expect(fadeAt(2, 1, 1)).toBeGreaterThan(0);
+      expect(fadeAt(-2, 0.5, 1)).toBeGreaterThan(0);
     });
 
-    it("keeps the wall behind the unit solid, however tall", () => {
-      expect(fadeAt(0, 1, -1)).toBe(0);
-      expect(fadeAt(0, 1.5, -1)).toBe(0);
+    it("keeps a wall in front but three tiles to the side solid", () => {
+      // Nearer the camera than every sample, and it would have faded
+      // under the plane rule; no ray from the unit or its ring passes
+      // through it, so the building keeps its shape past the cone.
+      expect(fadeAt(3, 1, 1)).toBe(0);
+      expect(fadeAt(-3, 0.5, 1)).toBe(0);
+      expect(fadeAt(3, 1.4, 0.5)).toBe(0);
+    });
+
+    it("keeps a wall well behind the unit solid, however tall", () => {
+      // Farther from the camera than every sample, the ring's back
+      // included: nothing there is on a ray.
+      expect(fadeAt(0, 1, -3)).toBe(0);
+      expect(fadeAt(0, 1.5, -3)).toBe(0);
       expect(fadeAt(0, 3, -2)).toBe(0);
+    });
+
+    it("opens the wall a tile behind the unit above its base, so the tiles beyond read (#1138)", () => {
+      // The ring's back point is a tile and a quarter behind the unit,
+      // so the wall a tile behind is in front of it and fades from the
+      // waist band up; its base holds through the foot margin.
+      expect(fadeAt(0, 1, -1)).toBeGreaterThan(0);
+      expect(fadeAt(0, GHOST_FOOT_MARGIN, -1)).toBe(0);
     });
 
     it("never fades the floor the unit stands on, even in front of it (#1118)", () => {
@@ -361,9 +447,14 @@ describe("ghost cutaway (#526)", () => {
       expect(fadeAt(0, 1.5, 0.5)).toBeGreaterThan(0.9);
     });
 
-    it("keeps the wall on the far edge of the tile beside the unit solid at every height", () => {
+    it("opens the wall on the far edge of the tile beside the unit, and keeps the next one solid (#1138)", () => {
+      // The tile beside the unit is inside the cone the ring opens: its
+      // far edge, a tile and a half out, fades at every height above
+      // the feet. The far edge of the second tile out is past every
+      // ray, so the room's shape survives.
       for (const y of [0.5, 1, 1.4]) {
-        expect(fadeAt(1.5, y, 0)).toBe(0);
+        expect(fadeAt(1.5, y, 0)).toBeGreaterThan(0);
+        expect(fadeAt(2.5, y, 0)).toBe(0);
       }
     });
 
@@ -380,9 +471,9 @@ describe("ghost cutaway (#526)", () => {
       const lifted = { ...ghost, reach: Number.POSITIVE_INFINITY };
       let rejected = 0;
       let faded = 0;
-      for (let x = -3; x <= 3; x += 0.25) {
+      for (let x = -4; x <= 4; x += 0.25) {
         for (let y = 0.5; y <= 3; y += 0.25) {
-          for (let z = -2; z <= 3; z += 0.25) {
+          for (let z = -3; z <= 4; z += 0.25) {
             const view = new Vector3(x, y, z).applyMatrix4(
               cam.matrixWorldInverse,
             );
@@ -407,10 +498,14 @@ describe("ghost cutaway (#526)", () => {
 
     it("softens over the last part of the radius rather than cutting", () => {
       // Sliding a fragment in front of the unit sideways: full fade
-      // inside, nothing outside, something in between.
+      // inside, nothing outside, something in between. The rim is now
+      // the ring's (#1138): its side point is a tile and a quarter out,
+      // so the soft band lies between ring + radius − soft and ring +
+      // radius across the view.
+      const ring = 0.5 + GHOST_RING_MARGIN;
       const inside = fadeAt(0, 1, 1);
-      const rim = fadeAt(RADIUS + 0.5 - GHOST_SOFT_EDGE / 2, 1, 1);
-      const outside = fadeAt(RADIUS + 0.5 + 0.1, 1, 1);
+      const rim = fadeAt(ring + RADIUS - GHOST_SOFT_EDGE / 2, 1, 1);
+      const outside = fadeAt(ring + RADIUS + 0.15, 1, 1);
       expect(inside).toBeGreaterThan(rim);
       expect(rim).toBeGreaterThan(0);
       expect(outside).toBe(0);

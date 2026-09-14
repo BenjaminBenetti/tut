@@ -2,6 +2,7 @@ import type { MissionOutcome } from "../../overworld/model/mission-result";
 import { MISSION_ENDED } from "../model/mission-ended-event";
 import type { TacticalApplied, TacticalEvent } from "../model/tactical-event";
 import type { TacticalState } from "../model/tactical-state";
+import { isAutonomous } from "../model/unit";
 
 // ===========================================
 // Outcome
@@ -24,7 +25,9 @@ import type { TacticalState } from "../model/tactical-state";
  * or dead — and the outcome is read from what they achieved: every
  * objective complete and someone out is **won**; someone out with an
  * objective open is **extracted**; nobody out is **lost**, whatever
- * they finished, because nobody came home to say so.
+ * they finished, because nobody came home to say so. A deployed turret
+ * is not somebody (#1138): it cannot come home, so a turret still
+ * standing after the last squad has gone keeps nothing open.
  *
  * ```
  *   a TDF unit still standing ──► undefined (play on)
@@ -44,7 +47,7 @@ export function missionOutcome(
   mission: TacticalState,
 ): MissionOutcome | undefined {
   const standing = mission.units.some(
-    (unit) => unit.team === "tdf" && unit.hp > 0,
+    (unit) => unit.team === "tdf" && unit.hp > 0 && !isAutonomous(unit),
   );
   if (standing) {
     return undefined;

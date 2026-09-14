@@ -92,3 +92,15 @@ describe("overwatchHandler", () => {
     ).toBe("ok");
   });
 });
+
+describe("overwatchHandler with a deployed turret (#1138)", () => {
+  it("refuses the order: a turret is put on watch by the turn, never by command", () => {
+    const mission = missionWith(openField().build(), [
+      { ...unitAt("t", "infantry", at(2, 2), { ap: 1 }), kind: "turret" },
+    ]);
+    const outcome = overwatchHandler(mission, overwatch("t"), ctx);
+    expect(outcome.ok).toBe(false);
+    if (outcome.ok) return;
+    expect(outcome.error).toEqual({ kind: "takes-no-orders", unitId: "t" });
+  });
+});

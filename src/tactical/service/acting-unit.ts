@@ -5,6 +5,7 @@ import type { TacticalState } from "../model/tactical-state";
 import { TEAM_FOR_PHASE } from "../model/tactical-state";
 import type { Unit } from "../model/unit";
 import type { UnitId } from "../model/unit";
+import { isAutonomous } from "../model/unit";
 
 // ===========================================
 // Acting preconditions
@@ -18,6 +19,7 @@ import type { UnitId } from "../model/unit";
  * ```
  *   not on the map ──► unit-not-on-map      wrong side's phase ──► wrong-phase
  *   hp <= 0        ──► unit-dead            ap < cost          ──► no-action-points
+ *   a turret       ──► takes-no-orders      (#1138: it fires by rule, never on command)
  * ```
  *
  * One implementation, for the reason #992 gave: `overwatchHandler` and
@@ -48,6 +50,9 @@ export function actingUnit(
   }
   if (unit.hp <= 0) {
     return err({ kind: "unit-dead", unitId });
+  }
+  if (isAutonomous(unit)) {
+    return err({ kind: "takes-no-orders", unitId });
   }
   if (unit.team !== TEAM_FOR_PHASE[mission.phase]) {
     return err({ kind: "wrong-phase", unitId });

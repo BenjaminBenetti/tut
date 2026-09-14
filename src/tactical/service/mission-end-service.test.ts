@@ -149,3 +149,27 @@ describe("endIfOver", () => {
     ]);
   });
 });
+
+describe("missionOutcome with a deployed turret (#1138)", () => {
+  it("does not let a turret keep the mission open once the force is gone", () => {
+    const map = openField().build();
+    const turret = {
+      ...unitAt("t", "infantry", at(2, 2)),
+      kind: "turret" as const,
+      turnsLeft: 3,
+    };
+    expect(
+      missionOutcome(
+        missionWith(map, [
+          turret,
+          unitAt("u", "infantry", at(0, 0), { hp: 0 }),
+        ]),
+      ),
+    ).toBe("lost");
+    expect(
+      missionOutcome(
+        missionWith(map, [turret, unitAt("u", "infantry", at(0, 0))]),
+      ),
+    ).toBeUndefined();
+  });
+});

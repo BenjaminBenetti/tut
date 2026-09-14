@@ -4,6 +4,7 @@ import { Object3D, OrthographicCamera } from "three";
 import type { GhostSubject } from "./ghost-cutaway";
 import {
   createGhostUniforms,
+  GHOST_RING_MARGIN,
   GHOST_SAMPLES,
   MAX_GHOSTS,
 } from "./ghost-cutaway";
@@ -84,8 +85,16 @@ describe("GhostController (#526)", () => {
     expect(spot(8)).toEqual([0, 1.8, -10]);
     expect(spot(9)).toEqual([0, 0.9, -10]);
     expect(spot(10)).toEqual([0, 0, -10]);
+    // Then the waist ring (#1138), GHOST_RING_MARGIN outside the box:
+    // 1.75 out for a half width of 1, at 0.9 up, from +x toward +z.
+    expect(spot(11)).toEqual([1.75, 0.9, -10]);
+    expect(spot(13)).toEqual([0, 0.9, -8.25]);
+    expect(spot(15)).toEqual([-1.75, 0.9, -10]);
+    // `toFixed` keeps the sign of cos(3π/2)'s rounding noise; the value is 0.
+    expect(spot(17).map((v) => v + 0)).toEqual([0, 0.9, -11.75]);
     // The farthest spot on the view plane is a head corner, √(1 + 1.8²)
-    // from the centre, and the reach adds the ray radius.
+    // from the centre — the ring's √(1.75² + 0.9²) is inside that — and
+    // the reach adds the ray radius.
     expect(uniforms.uGhostReach.value[0]).toBeCloseTo(
       Math.hypot(1, 1.8) + 3,
       5,
@@ -114,10 +123,12 @@ describe("GhostController (#526)", () => {
     const second = uniforms.uGhostSpots.value[GHOST_SAMPLES + 10]!;
     expect(second.x).toBeCloseTo(4, 5);
     expect(uniforms.uGhostSpots.value).toHaveLength(MAX_GHOSTS * GHOST_SAMPLES);
-    // Half a tile wide and a unit tall, seen square on: the head corner
-    // is the farthest spot across the view, and depth does not count.
+    // Half a tile wide and a unit tall, seen square on: the ring's side
+    // point, a tile and a quarter out at the waist, is the farthest spot
+    // across the view (past the head corner's √(0.5² + 1²) since #1138),
+    // and depth does not count.
     expect(uniforms.uGhostReach.value[1]).toBeCloseTo(
-      Math.hypot(0.5, 1) + 3,
+      Math.hypot(0.5 + GHOST_RING_MARGIN, 0.5) + 3,
       5,
     );
   });

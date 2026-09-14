@@ -206,6 +206,7 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
         builder.effectsUpdatable,
         builder.chargesUpdatable,
         builder.radarUpdatable,
+        builder.turretUpdatable,
       ],
     });
     input.attach(container);

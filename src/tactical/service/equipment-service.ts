@@ -12,14 +12,16 @@ import type {
   EquipmentId,
   PlacedCharge,
 } from "../model/equipment";
-import { DEFAULT_CHARGE_DELAY_TURNS } from "../model/equipment";
+import { DEFAULT_CHARGE_DELAY_TURNS, isDeployable } from "../model/equipment";
 import { CHARGE_ID_PREFIX, usesLeftOf } from "../model/equipment";
 import { EQUIPMENT_USED } from "../model/equipment-used-event";
+import type { HealPreview } from "../model/heal-preview";
 import type { RadarTuning } from "../model/radar";
 import type { TacticalError } from "../model/tactical-error";
 import type { TacticalEvent } from "../model/tactical-event";
 import type { TacticalHandler } from "../model/tactical-handler";
 import type { TacticalState } from "../model/tactical-state";
+import type { TurretTuning } from "../model/turret";
 import type { Unit, UnitId } from "../model/unit";
 import type { UnitTemplate } from "../model/unit-template";
 import type { UnitWeapon } from "../model/unit-weapon";
@@ -35,12 +37,14 @@ import {
   terrainForTile,
 } from "./combat-service";
 import { footprintSizeOf } from "./footprint-service";
+import { healReach, resolveHealAt } from "./heal-service";
 import { endIfOver } from "./mission-end-service";
 import type { MoveGraph } from "./movement-service";
 import { buildMoveGraph } from "./movement-service";
 import { placeRadar, validateRadarSite } from "./radar-service";
 import { hasLineOfSight } from "./sight-service";
 import type { PhaseStep } from "./turn-service";
+import { placeTurret, validateTurretSite } from "./turret-service";
 import { closestTiles } from "./weapon-reach-service";
 
 // ===========================================
@@ -69,6 +73,8 @@ export interface EquipmentDeps extends EquipmentRules {
   readonly attack: AttackDeps;
   /** Scan radius and battery for a placed dish. */
   readonly radar: RadarTuning;
+  /** Gun, plate and battery for a deployed turret (#1138). */
+  readonly turret: TurretTuning;
 }
 
 /** One item a unit carries, with what it has left of it. */
@@ -135,14 +141,19 @@ export function equipmentOf(
  * on the acting side with the action points the item costs, carrying it
  * with a use left; then the site by kind — a dish where a scanner may be
  * put (`validateRadarSite`), a grenade or a charge on a tile within the
- * item's range, measured in three dimensions, that the unit can see.
+ * item's range, measured in three dimensions, that the unit can see; a
+ * medkit or a repair kit the same throw, and then somebody in its
+ * footprint it can mend (#1138) — a kit spent on nothing is refused
+ * rather than counted.
  *
  * ```
  *   unit   ──► unit-not-on-map · unit-dead · wrong-phase · no-action-points
  *   item   ──► no-equipment · equipment-spent
  *   radar  ──► radar-out-of-reach · radar-tile-blocked
+ *   turret ──► turret-out-of-reach · turret-tile-blocked (the same site rule, #1138)
  *   blast  ──► no-such-tile · out-of-range · tile-out-of-sight
  *   charge ──► the same as a blast
+ *   heal   ──► the same as a blast, then nothing-to-heal
  * ```
  *
  * The one predicate the wheel and the handler share, so an entry the
@@ -183,8 +194,10 @@ export function validateEquipmentUse(
   if (usesLeft <= 0) {
     return err({ kind: "equipment-spent", unitId, equipmentId });
   }
-  if (definition.kind === "radar") {
-    const site = validateRadarSite(
+  if (isDeployable(definition)) {
+    const validateSite =
+      definition.kind === "turret" ? validateTurretSite : validateRadarSite;
+    const site = validateSite(
       mission,
       unit,
       tile,
@@ -218,6 +231,14 @@ export function validateEquipmentUse(
   if (!hasLineOfSight(mission.map, from, impact, index)) {
     return err({ kind: "tile-out-of-sight", x: tile.x, y: tile.y, z: tile.z });
   }
+  if (
+    definition.kind === "heal" &&
+    (definition.heal === undefined ||
+      healReach(mission, unit, definition.heal, tile, index).beneficiaries
+        .length === 0)
+  ) {
+    return err({ kind: "nothing-to-heal", unitId, equipmentId });
+  }
   return ok({ unit, definition, usesLeft, from, terrain });
 }
 
@@ -226,7 +247,7 @@ export function validateEquipmentUse(
  * is refused, for the wheel and the footprint overlay: a grenade rolls
  * the same hit formula as a shot at the ground, a charge cannot miss,
  * and the blast says who stands in it — the unit itself included for a
- * charge, which spares nobody. A radar dish has no numbers to preview
+ * charge, which spares nobody. A radar dish or a turret has no numbers to preview
  * and is refused as `no-area-weapon`.
  *
  * @param mission - The mission.
@@ -257,7 +278,7 @@ export function previewEquipmentUse(
   }
   const { unit, definition, terrain } = checked.value;
   if (
-    definition.kind === "radar" ||
+    isDeployable(definition) ||
     definition.profile === undefined ||
     terrain === undefined
   ) {
@@ -287,6 +308,96 @@ export function previewEquipmentUse(
   });
 }
 
+/**
+ * What a medkit or a repair kit would do at `tile` (#1138), or why it
+ * is refused, for the wheel's Heal entry and the footprint overlay: the
+ * area it reaches, everyone in it who would be mended and by how much,
+ * and how many of the right side and make were already whole. Anything
+ * that is not a heal is refused as `no-area-weapon`, the mirror of what
+ * `previewEquipmentUse` says to a kit.
+ *
+ * @param mission - The mission.
+ * @param unitId - The unit that would act.
+ * @param equipmentId - Which of its items.
+ * @param tile - Where.
+ * @param deps - The catalogue and the tunings.
+ * @returns The preview, or the refusal.
+ */
+export function previewHealUse(
+  mission: TacticalState,
+  unitId: UnitId,
+  equipmentId: EquipmentId,
+  tile: TileCoord,
+  deps: EquipmentRules,
+): Result<HealPreview, TacticalError> {
+  const checked = validateEquipmentUse(
+    mission,
+    unitId,
+    equipmentId,
+    tile,
+    deps,
+  );
+  if (!checked.ok) {
+    return checked;
+  }
+  const { unit, definition } = checked.value;
+  if (definition.kind !== "heal" || definition.heal === undefined) {
+    return err({ kind: "no-area-weapon", unitId });
+  }
+  const reach = healReach(mission, unit, definition.heal, tile);
+  return ok({
+    amount: definition.heal.amount,
+    radius: definition.heal.radius,
+    tiles: reach.footprint.map(({ tile: t }) => ({ x: t.x, y: t.y, z: t.z })),
+    beneficiaries: reach.beneficiaries.map((b) => ({
+      id: b.unit.id,
+      name: mission.templates[b.unit.templateId]?.name ?? b.unit.id,
+      distance: b.distance,
+      amount: b.amount,
+      hpAfter: b.hpAfter,
+    })),
+    alreadyWhole: reach.alreadyWhole,
+  });
+}
+
+/**
+ * The tiles an item would reach around `tile` (#1132, #1138), whatever
+ * it does there: a blast's or a charge's footprint from its attack
+ * preview, a kit's from its heal preview, nothing for a radar dish or a
+ * refused use. The one question the overlay asks, so it needs no branch
+ * of its own on the item's kind.
+ *
+ * @param mission - The mission.
+ * @param unitId - The unit that would act.
+ * @param equipmentId - Which of its items.
+ * @param tile - Where.
+ * @param deps - The catalogue and the tunings.
+ * @param preview - The content a blast preview asks about what would fall.
+ * @returns The reached tiles, impact first, or none.
+ */
+export function equipmentFootprintTiles(
+  mission: TacticalState,
+  unitId: UnitId,
+  equipmentId: EquipmentId,
+  tile: TileCoord,
+  deps: EquipmentRules,
+  preview?: PreviewDeps,
+): readonly TileCoord[] {
+  if (deps.catalogue.get(equipmentId)?.kind === "heal") {
+    const heal = previewHealUse(mission, unitId, equipmentId, tile, deps);
+    return heal.ok ? heal.value.tiles : [];
+  }
+  const blast = previewEquipmentUse(
+    mission,
+    unitId,
+    equipmentId,
+    tile,
+    deps,
+    preview,
+  );
+  return blast.ok ? (blast.value.blast?.tiles ?? []) : [];
+}
+
 // ===========================================
 // Handler
 // ===========================================
@@ -298,9 +409,11 @@ export function previewEquipmentUse(
  * ```
  *   UseEquipment ──► EquipmentUsed { usesLeft }
  *                    ├─ radar  ──► RadarDeployed                    (placeRadar)
+ *                    ├─ turret ──► TurretDeployed, a turret unit on overwatch (placeTurret, #1138)
  *                    ├─ blast  ──► [UnitDied…] BlastResolved [StructureDestroyed…] [EffectStarted…]
  *                    │             the same run a shot at the ground emits, delivery "thrown"
- *                    └─ charge ──► ChargePlaced { detonatesOnTurn: turn + delay }
+ *                    ├─ charge ──► ChargePlaced { detonatesOnTurn: turn + delay }
+ *                    └─ heal   ──► UnitsHealed { healed… }        (resolveHealAt, #1138)
  * ```
  *
  * A grenade that reaches the last spawner ends the mission as a shot
@@ -351,6 +464,10 @@ export function createUseEquipmentHandler(
         const placed = placeRadar(billed, unit, tile, deps.radar, ctx.ids);
         return ok({ state: placed.state, events: [used, ...placed.events] });
       }
+      case "turret": {
+        const placed = placeTurret(billed, unit, tile, deps.turret, ctx.ids);
+        return ok({ state: placed.state, events: [used, ...placed.events] });
+      }
       case "blast": {
         if (definition.profile === undefined || terrain === undefined) {
           return err({ kind: "no-equipment", unitId, equipmentId });
@@ -394,6 +511,21 @@ export function createUseEquipmentHandler(
           state: { ...billed, charges: [...billed.charges, charge] },
           events: [used, { type: CHARGE_PLACED, payload: { charge } }],
         });
+      }
+      case "heal": {
+        if (definition.heal === undefined) {
+          return err({ kind: "no-equipment", unitId, equipmentId });
+        }
+        // Cannot miss and rolls nothing: the validation already found
+        // somebody to mend, so the kit is spent on them.
+        const healed = resolveHealAt(
+          billed,
+          unit.id,
+          definition.id,
+          definition.heal,
+          tile,
+        );
+        return ok({ state: healed.state, events: [used, ...healed.events] });
       }
     }
   };

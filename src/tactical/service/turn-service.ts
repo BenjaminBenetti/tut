@@ -14,6 +14,7 @@ import { TEAM_FOR_PHASE } from "../model/tactical-state";
 import { TURN_STARTED } from "../model/turn-started-event";
 import type { Unit, UnitId, UnitStatus } from "../model/unit";
 import { UNIT_STATUS_CHANGED } from "../model/unit-status-changed-event";
+import { leaveOverwatch, spendOverwatchShot } from "./overwatch-status";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import type { AttackDeps } from "./combat-service";
 import { rollAttack, validateTargeting } from "./combat-service";
@@ -50,9 +51,11 @@ export type PhaseStep = (
  * | `overwatch` cleared (lapsed)| `suppressed` cleared    |
  *
  * Overwatch lasts until the watcher's next turn, so an unfired watch
- * lapses here; suppression laid on during the enemy's phase holds through
- * the victim's own phase and lifts once it has endured it. The dead are
- * left alone. No per-unit events: `TurnStarted` announces the refresh.
+ * lapses here, its shot count with it (#1138; a turret's is granted
+ * again by `createTurretStep`, which runs after this); suppression laid
+ * on during the enemy's phase holds through the victim's own phase and
+ * lifts once it has endured it. The dead are left alone. No per-unit
+ * events: `TurnStarted` announces the refresh.
  */
 export const refreshSides: PhaseStep = (mission) => {
   const acting = TEAM_FOR_PHASE[mission.phase];
@@ -63,11 +66,7 @@ export const refreshSides: PhaseStep = (mission) => {
     if (unit.team === acting) {
       return unit.ap === unit.maxAp && !unit.status.includes("overwatch")
         ? unit
-        : {
-            ...unit,
-            ap: unit.maxAp,
-            status: without(unit.status, "overwatch"),
-          };
+        : { ...leaveOverwatch(unit), ap: unit.maxAp };
     }
     return unit.status.includes("suppressed")
       ? { ...unit, status: without(unit.status, "suppressed") }
@@ -192,18 +191,25 @@ function openNextPhase(
 
 /**
  * Every enemy on overwatch that can target the unit that just stepped
- * fires at it once, in `units` order, each shot consuming that watcher's
- * overwatch; a watcher that cannot see or reach the mover keeps watching
- * for a later step. Reaction shots skip the phase and action-point checks
- * (the watcher spent its actions going on watch) but obey range, sight,
- * and the same hit and damage formulae as a normal shot, drawing from the
- * move command's stream in order. Stops when the mover is down. A hidden
+ * fires at it once, in `units` order, each shot spending one of that
+ * watcher's reaction shots (`spendOverwatchShot`): a squad's watch has
+ * one and is clear after it, a turret's has two (#1138), so the turret
+ * keeps watching and fires again at the mover's **next step**, or at
+ * the next bug to move, whichever comes first. One shot per watcher per
+ * step, never two at once: the loop is per step, and a second shot at
+ * the same step would be a burst the numbers do not describe. A watcher
+ * that cannot see or reach the mover keeps watching for a later step.
+ * Reaction shots skip the phase and action-point checks (the watcher
+ * spent its actions going on watch) but obey range, sight, and the same
+ * hit and damage formulae as a normal shot, drawing from the move
+ * command's stream in order. Stops when the mover is down. A hidden
  * mover is never fired on.
  *
  * ```
  *   for watcher of enemies with `overwatch`:
  *     validateTargeting(watcher, mover) ok? ──► rollAttack (ap unchanged)
- *                                               overwatch removed, UnitStatusChanged
+ *                                               a shot spent; the last clears the
+ *                                               watch and announces UnitStatusChanged
  *     mover down? ──► stop
  * ```
  */
@@ -264,17 +270,26 @@ export function overwatchReaction(
       deps,
     );
     events.push(...shot.events);
-    const status = without(checked.value.attacker.status, "overwatch");
+    const fired = findUnit(shot.state, watcherId);
+    if (fired === undefined) {
+      state = shot.state;
+      continue;
+    }
+    const spent = spendOverwatchShot(fired);
     state = {
       ...shot.state,
       units: shot.state.units.map((unit) =>
-        unit.id === watcherId ? { ...unit, status } : unit,
+        unit.id === watcherId ? spent : unit,
       ),
     };
-    events.push({
-      type: UNIT_STATUS_CHANGED,
-      payload: { unitId: watcherId, status },
-    });
+    // The status is announced only when it changes: a turret that still
+    // has a shot is still on overwatch, and saying so again is noise.
+    if (!spent.status.includes("overwatch")) {
+      events.push({
+        type: UNIT_STATUS_CHANGED,
+        payload: { unitId: watcherId, status: spent.status },
+      });
+    }
   }
   return { state, events };
 }

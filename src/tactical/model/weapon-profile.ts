@@ -92,6 +92,20 @@ export interface WeaponProfile {
    * twice — so the volume of fire is the weapon's, not the kind's.
    */
   readonly endsTurn?: boolean;
+  /**
+   * Reaction shots one overwatch with this weapon fires (#1138). Absent
+   * means one, as every overwatch was before it: the watcher fires at
+   * the first enemy step it can and is clear. A deployed turret's gun
+   * says two, so its watch survives its first shot and takes a second
+   * at the mover's next step, or at the next bug to move. Positive
+   * integer; read through `overwatchShotsOf`.
+   */
+  readonly overwatchShots?: number;
+}
+
+/** Reaction shots one overwatch with this weapon fires; `1` when it declares none (#1138). */
+export function overwatchShotsOf(weapon: WeaponProfile): number {
+  return weapon.overwatchShots ?? 1;
 }
 
 // ===========================================

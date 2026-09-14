@@ -16,14 +16,20 @@ export type UnitId = string;
 /** Prefix the id generator uses for tactical units. */
 export const UNIT_ID_PREFIX = "unit";
 
-/** What a token is: a squad of ~5 figures, one mech, or one bug (GDD §6.1). */
-export type UnitKind = "squad" | "mech" | "bug";
+/**
+ * What a token is: a squad of ~5 figures, one mech, one bug (GDD §6.1),
+ * or a deployed turret (#1138) — a piece of equipment an engineer put
+ * down that fights as a unit: it is shot at, it sees, it fires on
+ * overwatch, and it is never given an order.
+ */
+export type UnitKind = "squad" | "mech" | "bug" | "turret";
 
 /** Every `UnitKind`, in a fixed order. */
 export const UNIT_KINDS = [
   "squad",
   "mech",
   "bug",
+  "turret",
 ] as const satisfies readonly UnitKind[];
 
 /** Which side a unit fights for. */
@@ -50,7 +56,7 @@ export const PASS_CLASSES = [
  *
  * | status       | meaning                                          |
  * |--------------|--------------------------------------------------|
- * | `overwatch`  | fires at the first enemy that moves in range      |
+ * | `overwatch`  | fires at enemies that move in range, one shot a step, `overwatchShots` times (#1138) |
  * | `hidden`     | not yet revealed to the other team (lurkers)     |
  * | `suppressed` | pinned; accuracy and movement reduced this turn  |
  */
@@ -116,6 +122,20 @@ export interface Unit {
    * record and a save from before equipment needs no rewrite.
    */
   readonly equipment?: Readonly<Record<EquipmentId, number>>;
+  /**
+   * Player turns of battery a deployed turret has left (#1138), like a
+   * scanner's `Radar.turnsLeft`: drains as each player turn opens and at
+   * zero the turret burns out. Absent for everything that is not a
+   * turret, and on every unit saved before turrets existed.
+   */
+  readonly turnsLeft?: number;
+  /**
+   * Reaction shots left in the unit's current overwatch (#1138). Absent
+   * means one, which is what every watch was before turrets: a squad on
+   * overwatch fires once and is clear. A turret's gun says two, so it
+   * keeps watching after its first shot (`overwatch-status`).
+   */
+  readonly overwatchShots?: number;
 }
 
 // ===========================================
@@ -125,4 +145,15 @@ export interface Unit {
 /** The mapgen passability bit a unit class needs on a tile. */
 export function passMaskFor(passClass: PassClass): UnitClass {
   return passClass === "mech" ? PASS.MECH : PASS.INFANTRY;
+}
+
+/**
+ * True for a unit nobody orders (#1138): a deployed turret holds its
+ * tile and fires by rule. The strip does not list it, Tab does not
+ * cycle onto it, the wheel does not open for it, and its standing
+ * neither keeps the mission open nor counts at the debrief — it is
+ * equipment the force left behind, not a member of it.
+ */
+export function isAutonomous(unit: Pick<Unit, "kind">): boolean {
+  return unit.kind === "turret";
 }

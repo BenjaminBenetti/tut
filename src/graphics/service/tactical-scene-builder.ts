@@ -34,6 +34,7 @@ import type {
 import type { FrameUpdatable } from "../model/frame-updatable";
 import { ChargeView } from "../view/charge-view";
 import { RadarView } from "../view/radar-view";
+import { TurretView } from "../view/turret-view";
 import type { PlacedCharge } from "../../tactical/model/equipment";
 import type { Radar, RadarContact } from "../../tactical/model/radar";
 import {
@@ -105,17 +106,22 @@ export type UnitTemplateLookup = Readonly<Record<UnitTemplateId, UnitTemplate>>;
  * Ray radius in world units and the alpha a fully cut-away wall keeps,
  * from the style guide §12.4. One world unit is one tile. Since #1134
  * the cutaway is a bundle of rays from the unit's body to the camera,
- * so the radius is each ray's, measured across the view plane: a little
- * over half a tile, so the rays from a one-tile footprint's corners
- * overlap into one silhouette with a soft rim, and a wall a full tile
- * to the side is outside every one of them. (Before #1134 it was the
- * radius of a disc around the unit, 4 tiles, chosen by the Executive
- * Director in #937; the disc faded walls off to the side, which is what
- * the rays replace.) Halving retained opacity from 0.35 to 0.175 leaves
- * a lighter trace of shelter: 3/16 Bayer fragments on the ray instead
- * of 6/16.
+ * so the radius is each ray's, measured across the view plane. It
+ * opened at 0.6 — a little over half a tile, so the rays from a
+ * one-tile footprint's corners overlapped into one silhouette with a
+ * soft rim — and the Executive Director found that window too tight to
+ * read a room by: the unit showed and nothing it could walk to did.
+ * At 1.1, with the waist-height ring of rays half a tile outside the
+ * footprint (#1138), the window is a cone that opens the roof and the
+ * near walls over about a two-tile ring of the unit's floor, and a
+ * wall three tiles off is still outside every ray. (Before #1134 it
+ * was the radius of a disc around the unit, 4 tiles, chosen by the
+ * Executive Director in #937; the disc faded walls off to the side,
+ * which is what the rays replace.) Halving retained opacity from 0.35
+ * to 0.175 leaves a lighter trace of shelter: 3/16 Bayer fragments on
+ * the ray instead of 6/16.
  */
-const GHOST_RADIUS = 0.6;
+const GHOST_RADIUS = 1.2;
 const GHOST_FLOOR = 0.175;
 
 /**
@@ -135,6 +141,8 @@ export class TacticalSceneBuilder
   private readonly ghostUniforms: GhostUniforms;
   private readonly models: ModelLoader;
   private readonly radarView: RadarView;
+  /** Sweeping guns and smoking husks for turrets (#1138); ticked as `turretUpdatable`. */
+  private readonly turretView: TurretView;
   /** What was last asked for, kept so a change of storey can redraw it through the cut (#1134). */
   private lastCharges: readonly PlacedCharge[] = [];
   private lastRadars: readonly Radar[] = [];
@@ -180,6 +188,9 @@ export class TacticalSceneBuilder
   constructor(options: TacticalSceneBuilderOptions) {
     this.models = options.models;
     this.radarView = new RadarView(options.models);
+    this.turretView = new TurretView(options.models, (unitId) =>
+      this.unitObject(unitId),
+    );
     this.unitModels =
       options.unitModels ??
       new LoadoutUnitModelSource({ models: options.models });
@@ -204,6 +215,7 @@ export class TacticalSceneBuilder
       this.unitsGroup,
       this.tethers.root,
       this.radarView.root,
+      this.turretView.root,
     );
   }
 
@@ -352,6 +364,9 @@ export class TacticalSceneBuilder
     }
     await Promise.all(loads);
     this.drawTethers();
+    // Turrets animate on top of their unit meshes and leave husks when
+    // they burn out (#1138); the view reads the same units.
+    await this.turretView.updateTurrets(units);
   }
 
   /**
@@ -483,6 +498,16 @@ export class TacticalSceneBuilder
     return this.radarView;
   }
 
+  /** What the frame loop ticks so turret guns sweep and burnt-out ones smoke (#1138); the host adds it to its updatables. */
+  get turretUpdatable(): FrameUpdatable {
+    return this.turretView;
+  }
+
+  /** Counts the turret guns sweeping and the husks placed in the scene. */
+  turretCounts(): { sweeping: number; husks: number } {
+    return this.turretView.counts();
+  }
+
   /** Counts the scanner models and blips actually placed in the scene. */
   radarCounts(): { scanners: number; contacts: number } {
     return this.radarView.counts();
@@ -491,6 +516,7 @@ export class TacticalSceneBuilder
   /** Frees the map, every unit mesh and detaches the root. */
   dispose(): void {
     this.radarView.dispose();
+    this.turretView.dispose();
     for (const id of [...this.meshes.keys()]) {
       this.remove(id);
     }

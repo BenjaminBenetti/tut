@@ -12,6 +12,17 @@ import type { ModelManifest } from "../model/asset-manifest";
  * build script regenerates; the manifest test keeps the two in sync.
  */
 export const MODEL_MANIFEST = {
+  "tdf.turret": {
+    category: "units",
+    path: "assets/models/units/tdf-turret.glb",
+    footprint: {
+      w: 1,
+      d: 1,
+    },
+    height: 0.9,
+    sockets: [],
+    quality: "placeholder",
+  },
   "tdf.radar-scanner": {
     category: "props",
     path: "assets/models/props/tdf-radar-scanner.glb",

@@ -64,6 +64,19 @@ describe("squad-types data", () => {
     }
   });
 
+  it("gives the medic a medkit and the engineer a repair kit, grenades besides (#1138)", () => {
+    expect(MEDIC_SQUAD.equipment).toContain("medkit");
+    expect(ENGINEER_SQUAD.equipment).toContain("repair-kit");
+    for (const type of SQUAD_TYPES) {
+      expect(type.equipment).toContain("grenade");
+    }
+    // Nobody else carries a kit: the heal is what the two types are for.
+    for (const type of [RIFLE_SQUAD, ROCKET_SQUAD, SNIPER_SQUAD, RADIO_SQUAD]) {
+      expect(type.equipment).not.toContain("medkit");
+      expect(type.equipment).not.toContain("repair-kit");
+    }
+  });
+
   it("round-trips through JSON unchanged", () => {
     const text = JSON.stringify(SQUAD_TYPES);
     expect(JSON.parse(text)).toEqual(SQUAD_TYPES);

@@ -1,4 +1,7 @@
-import { DEFAULT_CHARGE_DELAY_TURNS } from "../../tactical/model/equipment";
+import {
+  DEFAULT_CHARGE_DELAY_TURNS,
+  isDeployable,
+} from "../../tactical/model/equipment";
 import { SHIPPED_EQUIPMENT } from "../../tactical/repository/equipment-catalogue";
 import { chargeDelayText } from "../service/charge-delay-text";
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
@@ -200,10 +203,24 @@ export function describeEvent(
         icon: "radar",
         tone: "dim",
       };
-    case "tactical:equipment-used":
-      // A scanner's deployment logs itself with its battery on the next
-      // line; a second line for the same act read as a stutter.
-      if (event.payload.equipmentId === "radar-dish") {
+    case "tactical:turret-deployed":
+      return {
+        text: `${nameOf(event.payload.unitId)} deployed a turret · ${formatWhole(event.payload.overwatchShots)} shots a turn on overwatch · ${formatWhole(event.payload.turnsLeft)}-turn battery`,
+        icon: "overwatch",
+        tone: "accent",
+      };
+    case "tactical:turret-burned-out":
+      return {
+        text: "Turret burned out · battery dead",
+        icon: "overwatch",
+        tone: "dim",
+      };
+    case "tactical:equipment-used": {
+      // A scanner's or a turret's deployment logs itself with its
+      // battery on the next line; a second line for the same act read
+      // as a stutter.
+      const definition = SHIPPED_EQUIPMENT.get(event.payload.equipmentId);
+      if (definition !== undefined && isDeployable(definition)) {
         return undefined;
       }
       return {
@@ -211,6 +228,7 @@ export function describeEvent(
         icon: "ability",
         tone: "accent",
       };
+    }
     case "tactical:charge-placed":
       return {
         text: `${nameOf(event.payload.charge.ownerId)} set a breaching charge · goes off ${chargeDelayText(
@@ -226,6 +244,23 @@ export function describeEvent(
         icon: "warning",
         tone: "danger",
       };
+    case "tactical:units-healed": {
+      // One line for the whole area, as a blast gets (#1138): who was
+      // mended and by how much, "repaired" when the kit mends metal.
+      const verb =
+        SHIPPED_EQUIPMENT.get(event.payload.kitId)?.heal?.target ===
+        "mechanical"
+          ? "repaired"
+          : "healed";
+      const mended = event.payload.healed.map(
+        (unit) => `${nameOf(unit.unitId)} for ${formatWhole(unit.amount)}`,
+      );
+      return {
+        text: `${nameOf(event.payload.userId)} ${verb} ${mended.join(", ")}`,
+        icon: "hp",
+        tone: "ok",
+      };
+    }
     case "tactical:unit-status-changed":
       return {
         text:
@@ -307,10 +342,15 @@ export function actorOf(event: TacticalEvent): UnitId | undefined {
     case "tactical:unit-status-changed":
       return event.payload.unitId;
     case "tactical:radar-deployed":
+    case "tactical:turret-deployed":
     case "tactical:equipment-used":
       return event.payload.unitId;
     case "tactical:charge-placed":
       return event.payload.charge.ownerId;
+    case "tactical:units-healed":
+      // Above the medic: the heal is what they did; each mended unit
+      // gets its own number from the scene (#1138).
+      return event.payload.userId;
     case "tactical:unit-died":
       // Above the unit that died, not its killer: the death is the
       // thing that happened, and it happened there.
@@ -328,6 +368,7 @@ export function actorOf(event: TacticalEvent): UnitId | undefined {
     case "tactical:effect-started":
     case "tactical:effect-ended":
     case "tactical:radar-burned-out":
+    case "tactical:turret-burned-out":
     case "tactical:charge-detonated":
       return undefined;
     case "tactical:unit-moved":

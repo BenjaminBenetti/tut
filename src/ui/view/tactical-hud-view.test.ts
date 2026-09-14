@@ -9,6 +9,7 @@ import { ATTACK } from "../../tactical/model/attack-command";
 import { END_TURN } from "../../tactical/model/end-turn-command";
 import { MOVE } from "../../tactical/model/move-command";
 import { OVERWATCH } from "../../tactical/model/overwatch-command";
+import { useEquipment } from "../../tactical/model/use-equipment-command";
 import type { TacticalCommand } from "../../tactical/model/tactical-command";
 import { SPAWNER_NAME } from "../../tactical/service/attack-target-service";
 import { previewAttack } from "../../tactical/service/combat-service";
@@ -390,6 +391,65 @@ describe("TacticalHudView", () => {
         type: ATTACK,
         payload: { attackerId: "m1", targetId: "b1", weaponId: "back-weapon" },
       },
+    ]);
+    expect(wheelOpen()).toBe(false);
+  });
+
+  it("a grenade rides under Attack on a tile: the entry turns the page, resting on it paints the throw, and picking it throws (#1136)", () => {
+    const commands: TacticalCommand[] = [];
+    const blasts: number[] = [];
+    const hud = new TacticalHudView(
+      {
+        onCommand: (c) => commands.push(c),
+        onLeave: vi.fn(),
+        anchorFor: () => ({ x: 100, y: 100 }),
+        onMarkBlast: (tiles) => blasts.push(tiles.length),
+      },
+      { combatTuning: COMBAT_TUNING, objectiveTuning: OBJECTIVE_TUNING },
+    );
+    hud.mount(root);
+    const base = hudMission();
+    hud.update({
+      ...base,
+      templates: {
+        ...base.templates,
+        rifle: {
+          ...hudTemplate("rifle", "Rifle Squad"),
+          equipment: ["grenade"],
+        },
+      },
+    });
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    hud.handleIntent({ kind: "select-tile", tile: { x: 3, y: 0, z: 1 } });
+    // The ring: no grenade beside Attack any more.
+    expect(items()).toEqual([
+      "move:3,0,1",
+      "attack-tile:3,0,1",
+      "overwatch",
+      "reload",
+    ]);
+    expect(item("attack-tile:3,0,1")?.disabled).toBe(false);
+    item("attack-tile:3,0,1")?.click();
+    // A lone rifle used to be the shot itself; with a grenade carried
+    // the entry turns the page, and nothing has fired.
+    expect(commands).toEqual([]);
+    expect(wheelOpen()).toBe(true);
+    expect(items()).toEqual([
+      "attack-tile:3,0,1:primary",
+      "equipment:grenade:3,0,1",
+      "back:ground",
+    ]);
+    expect(item("attack-tile:3,0,1:primary")?.disabled).toBe(true);
+    // Resting on the grenade paints where it lands (#1132), from the
+    // page as it did from the ring.
+    item("equipment:grenade:3,0,1")?.dispatchEvent(new Event("pointerenter"));
+    expect(blasts.at(-1) ?? 0).toBeGreaterThan(0);
+    item("back:ground")?.click();
+    expect(items()[1]).toBe("attack-tile:3,0,1");
+    item("attack-tile:3,0,1")?.click();
+    item("equipment:grenade:3,0,1")?.click();
+    expect(commands).toEqual([
+      useEquipment("s1", "grenade", { x: 3, y: 0, z: 1 }),
     ]);
     expect(wheelOpen()).toBe(false);
   });

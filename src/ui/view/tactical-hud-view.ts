@@ -62,6 +62,7 @@ import { actionRefusal, interactTarget } from "../service/action-availability";
 import type { WheelContext, WheelPage } from "../service/action-wheel";
 import {
   actionWheel,
+  opensAttackPage,
   parseWheelChoice,
   weaponWheel,
 } from "../service/action-wheel";
@@ -1114,18 +1115,19 @@ export class TacticalHudView {
     // Turning the page keeps the ring; everything else closes it first,
     // and unconditionally: the view reports a choice but does not hide
     // itself, so every path out of here has to (#627).
+    // Whether the entry turns the page is the wheel's rule, asked once
+    // (#1136): a tile's page holds the grenade and the charge as well as
+    // the weapons, so counting weapons here would fire a lone rifle at
+    // the ground the wheel had promised to open a page for.
     if (
       (choice.action === "attack" || choice.action === "attack-tile") &&
-      choice.weaponId === undefined
+      choice.weaponId === undefined &&
+      this.mission !== undefined &&
+      opensAttackPage(this.mission, unitId, target, this.deps.combatTuning)
     ) {
-      const weapons = this.mission
-        ? weaponOptions(this.mission, unitId, this.deps.combatTuning)
-        : [];
-      if (weapons.length > 1) {
-        this.menuPage = "weapons";
-        this.refresh();
-        return;
-      }
+      this.menuPage = "weapons";
+      this.refresh();
+      return;
     }
     if (choice.action === "back") {
       this.menuPage = "actions";

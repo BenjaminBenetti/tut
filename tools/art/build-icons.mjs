@@ -95,6 +95,8 @@ const ICONS = {
   elevation:
     '<path d="M2 20 H8 V15 H14 V10 H20 V5"/><path d="M17 8 L20 5 L23 8"/>',
   ammo: '<path d="M9 3 H15 V7 H9 Z"/><path d="M7 7 H17 V21 H7 Z"/><path d="M10 11 H14 M10 15 H14"/>',
+  // The development tools' toggle (#1136): a beetle, seen from above.
+  bug: '<circle cx="12" cy="14" r="6"/><circle cx="12" cy="6" r="2.5"/><path d="M12 8 V20"/><path d="M6 12 L2 9 M6 16 H2 M6 19 L3 22 M18 12 L22 9 M18 16 H22 M18 19 L21 22"/><path d="M10 4 L9 2 M14 4 L15 2"/>',
 };
 
 // ===========================================

@@ -26,6 +26,7 @@ import { ATTACK } from "../../tactical/model/attack-command";
 import { END_TURN } from "../../tactical/model/end-turn-command";
 import { FINISH_MISSION } from "../../tactical/model/finish-mission-command";
 import { MISSION_ENDED } from "../../tactical/model/mission-ended-event";
+import { placeUnit } from "../../tactical/model/place-unit-command";
 import { TURN_STARTED } from "../../tactical/model/turn-started-event";
 import type { CommandError } from "../../core/model/command-error";
 import { commandError } from "../../core/model/command-error";
@@ -1501,5 +1502,64 @@ describe("TacticalScreen playback lock (#1130)", () => {
     expect(document.body.dataset.phasePlaying).toBe("false");
     expect(host.locked).toBe(false);
     logged.mockRestore();
+  });
+});
+
+// ===========================================
+// Development tools (#1136)
+// ===========================================
+
+describe("TacticalScreen development tools (#1136)", () => {
+  let root: HTMLElement;
+
+  beforeEach(() => {
+    document.body.innerHTML = "";
+    root = document.createElement("div");
+    document.body.appendChild(root);
+  });
+
+  const PLACEABLE = [{ kind: "bug", id: "swarmer", name: "Swarmer" }] as const;
+
+  /** A mounted screen in a live mission, with or without the tools. */
+  function mounted(devTools: boolean) {
+    const state = inMission();
+    const store = new FakeStore(state);
+    const host = new FakeHost();
+    const screen = new TacticalScreen({
+      router: fakeRouter().router,
+      session: sessionWith(store),
+      combatTuning: COMBAT_TUNING,
+      objectiveTuning: OBJECTIVE_TUNING,
+      sceneHost: host,
+      ...(devTools ? { devTools: { placeable: PLACEABLE } } : {}),
+    });
+    screen.mount(root);
+    return { screen, store, host, state };
+  }
+
+  it("renders nothing of the tools when the composition gave none", () => {
+    mounted(false);
+    expect(root.querySelector('[data-testid="debug-menu-toggle"]')).toBeNull();
+    expect(root.querySelector('[data-testid="debug-menu"]')).toBeNull();
+  });
+
+  it("hands the tools to the HUD, and an armed placement reaches the store as PlaceUnit for the live mission", () => {
+    const { store, host, state } = mounted(true);
+    root
+      .querySelector<HTMLButtonElement>('[data-testid="debug-menu-toggle"]')
+      ?.click();
+    root
+      .querySelector<HTMLButtonElement>(
+        '[data-testid="debug-place-bug-swarmer"]',
+      )
+      ?.click();
+    host.intents?.emit({ kind: "select-tile", tile: { x: 4, y: 0, z: 4 } });
+    expect(store.dispatched).toEqual([
+      placeUnit(state.activeMission!.missionId, "bug", "swarmer", {
+        x: 4,
+        y: 0,
+        z: 4,
+      }),
+    ]);
   });
 });

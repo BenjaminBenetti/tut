@@ -34,7 +34,7 @@ import type { TickDeps } from "../../overworld/service/default-tick-steps";
 import type { MissionTypeCatalogue } from "../../overworld/service/mission-generation-service";
 import { createDefaultTickSteps } from "../../overworld/service/default-tick-steps";
 import { registerRosterCommands } from "../../overworld/service/roster-command-handlers";
-import type { TacticalComposition } from "./tactical-composition";
+import type { DevTools, TacticalComposition } from "./tactical-composition";
 import { composeTactical } from "./tactical-composition";
 import { AUTO_RESOLVE_TUNING } from "../../overworld/data/auto-resolve-tuning";
 import { MECH_RATING_TUNING } from "../../roster/data/mech-rating-tuning";
@@ -92,6 +92,13 @@ export interface GameCompositionDeps {
    * in dev builds.
    */
   readonly debug?: CampaignDebugOptions;
+  /**
+   * Whether this is a dev build (#1136): the bootstrap passes
+   * `import.meta.env.DEV`, tests pass what they mean to test. It turns
+   * on the tactical development tools — the `PlaceUnit` handler and the
+   * debug menu — and nothing else; absent means a production build.
+   */
+  readonly devTools?: boolean;
 }
 
 /** Shipped content and tuning screens read to label and price things. */
@@ -131,6 +138,11 @@ export interface GameComposition {
    * screen reads it to choose which command Launch dispatches.
    */
   readonly autoResolve: boolean;
+  /**
+   * The tactical development tools (#1136), in a dev build; undefined
+   * otherwise, and then no screen renders anything of them.
+   */
+  readonly devTools: DevTools | undefined;
 }
 
 // ===========================================
@@ -213,7 +225,9 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     mechRater,
     tuning: AUTO_RESOLVE_TUNING,
   });
-  const tactical = composeTactical(dispatcher, content);
+  const tactical = composeTactical(dispatcher, content, undefined, {
+    devTools: deps.devTools === true,
+  });
   const autosave = new AutosaveService(
     saves,
     AUTOSAVE_SLOT_ID,
@@ -266,6 +280,7 @@ export function composeGame(deps: GameCompositionDeps): GameComposition {
     content,
     tactical,
     autoResolve,
+    devTools: tactical.devTools,
   };
 }
 

@@ -269,6 +269,10 @@ export function describeRefusal(
       return `${names.unit(error.unitId)} is not standing in the extraction zone`;
     case "not-extractable":
       return `${names.unit(error.unitId)} cannot leave through the extraction zone`;
+    case "takes-no-orders":
+      // A deployed turret (#1138): it fires by rule, and the player
+      // clicked it to read its battery, not to command it.
+      return `${names.unit(error.unitId)} takes no orders; it fires on its own`;
     case "unknown-unit-type":
       // A catalogue id, not an entity id, but it is still an id and
       // the menu that sent it already knows what it asked for (#1136).

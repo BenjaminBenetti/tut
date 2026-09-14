@@ -1,6 +1,7 @@
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import { TileIndex } from "../../mapgen/service/tile-index";
 import type { EquipmentCatalogue, EquipmentId } from "../model/equipment";
+import { isDeployable } from "../model/equipment";
 import type { TacticalState } from "../model/tactical-state";
 import type { Unit, UnitId } from "../model/unit";
 import { footprintContains, unitFootprintSize } from "./footprint-service";
@@ -22,7 +23,8 @@ import { attackDistance, closestTiles } from "./weapon-reach-service";
  *
  * ```
  *   radar  ──► validateRadarSite: a free tile a bounded walk away, on
- *              the unit's level or one off
+ *   turret     the unit's level or one off (the turret's rule is the
+ *              dish's, #1138)
  *   blast  ──► attackDistance(from, tile) ≤ range and a sight line from
  *   charge     the tile of the unit's block nearest it, the pair
  *              `validateEquipmentUse` measures a throw from
@@ -57,10 +59,9 @@ export function equipmentRangeTiles(
   }
   const size = unitFootprintSize(mission, unit);
   const radius = Math.ceil(definition.range);
-  const walk =
-    definition.kind === "radar"
-      ? (graph ?? buildMoveGraph(mission.map))
-      : undefined;
+  const walk = isDeployable(definition)
+    ? (graph ?? buildMoveGraph(mission.map))
+    : undefined;
   const tiles: TileCoord[] = [];
   for (let x = unit.pos.x - radius; x <= unit.pos.x + size - 1 + radius; x++) {
     for (

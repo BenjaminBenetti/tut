@@ -13,6 +13,7 @@ import type { EquipmentDefinition, EquipmentId } from "../model/equipment";
 //   | Radar dish       | radar  | 3    | 1  | 2     | —   | —   | —   | —                 | —    | —     |
 //   | Grenade          | blast  | 2    | 1  | 5     | 75  | 6   | 0   | 2 / 0.4           | 1    | —     |
 //   | Breaching charge | charge | 1    | 1  | 2     | —   | 20  | 3   | 3 / 0.3           | 3    | 2     |
+//   | Turret           | turret | 2    | 1  | 2     | —   | —   | —   | —                 | —    | —     |
 //
 //   • The dish keeps its scan radius and battery in `radar-tuning.ts`;
 //     only where it may be put and what it costs live here.
@@ -26,6 +27,8 @@ import type { EquipmentDefinition, EquipmentId } from "../model/equipment";
 //     It went off as T+1 opened at first, which caught a squad that
 //     placed it with its last action (Executive Director, 2026-09-13,
 //     #1134). Force 3 opens solid walls, which is what "breaching" means.
+//   • A turret (#1138) is carried like the dish and put down as a unit
+//     of its own; its gun, plate and battery are `turret-tuning.ts`.
 
 /** The radio squad's scanner (#1130 battery; #1132 three uses). */
 export const RADAR_DISH: EquipmentDefinition = {
@@ -74,9 +77,24 @@ export const BREACHING_CHARGE: EquipmentDefinition = {
   delayTurns: 2,
 };
 
+/**
+ * The engineer squad's deployable turret (#1138): two a mission, put
+ * down within two tiles for an action, as the dish is. What the turret
+ * then is — its gun, its plate, its battery — is `turret-tuning.ts`.
+ */
+export const TURRET: EquipmentDefinition = {
+  id: "turret",
+  name: "Turret",
+  kind: "turret",
+  uses: 2,
+  apCost: 1,
+  range: 2,
+};
+
 /** Every piece of equipment keyed by id, in catalogue order. */
 export const EQUIPMENT: Readonly<Record<EquipmentId, EquipmentDefinition>> = {
   [RADAR_DISH.id]: RADAR_DISH,
   [GRENADE.id]: GRENADE,
   [BREACHING_CHARGE.id]: BREACHING_CHARGE,
+  [TURRET.id]: TURRET,
 };

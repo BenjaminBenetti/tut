@@ -34,6 +34,7 @@ import type {
 import type { FrameUpdatable } from "../model/frame-updatable";
 import { ChargeView } from "../view/charge-view";
 import { RadarView } from "../view/radar-view";
+import { TurretView } from "../view/turret-view";
 import type { PlacedCharge } from "../../tactical/model/equipment";
 import type { Radar, RadarContact } from "../../tactical/model/radar";
 import {
@@ -135,6 +136,8 @@ export class TacticalSceneBuilder
   private readonly ghostUniforms: GhostUniforms;
   private readonly models: ModelLoader;
   private readonly radarView: RadarView;
+  /** Sweeping guns and smoking husks for turrets (#1138); ticked as `turretUpdatable`. */
+  private readonly turretView: TurretView;
   /** What was last asked for, kept so a change of storey can redraw it through the cut (#1134). */
   private lastCharges: readonly PlacedCharge[] = [];
   private lastRadars: readonly Radar[] = [];
@@ -180,6 +183,9 @@ export class TacticalSceneBuilder
   constructor(options: TacticalSceneBuilderOptions) {
     this.models = options.models;
     this.radarView = new RadarView(options.models);
+    this.turretView = new TurretView(options.models, (unitId) =>
+      this.unitObject(unitId),
+    );
     this.unitModels =
       options.unitModels ??
       new LoadoutUnitModelSource({ models: options.models });
@@ -204,6 +210,7 @@ export class TacticalSceneBuilder
       this.unitsGroup,
       this.tethers.root,
       this.radarView.root,
+      this.turretView.root,
     );
   }
 
@@ -352,6 +359,9 @@ export class TacticalSceneBuilder
     }
     await Promise.all(loads);
     this.drawTethers();
+    // Turrets animate on top of their unit meshes and leave husks when
+    // they burn out (#1138); the view reads the same units.
+    await this.turretView.updateTurrets(units);
   }
 
   /**
@@ -483,6 +493,16 @@ export class TacticalSceneBuilder
     return this.radarView;
   }
 
+  /** What the frame loop ticks so turret guns sweep and burnt-out ones smoke (#1138); the host adds it to its updatables. */
+  get turretUpdatable(): FrameUpdatable {
+    return this.turretView;
+  }
+
+  /** Counts the turret guns sweeping and the husks placed in the scene. */
+  turretCounts(): { sweeping: number; husks: number } {
+    return this.turretView.counts();
+  }
+
   /** Counts the scanner models and blips actually placed in the scene. */
   radarCounts(): { scanners: number; contacts: number } {
     return this.radarView.counts();
@@ -491,6 +511,7 @@ export class TacticalSceneBuilder
   /** Frees the map, every unit mesh and detaches the root. */
   dispose(): void {
     this.radarView.dispose();
+    this.turretView.dispose();
     for (const id of [...this.meshes.keys()]) {
       this.remove(id);
     }

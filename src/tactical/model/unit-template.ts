@@ -52,9 +52,13 @@ export interface UnitTemplate {
   readonly name: string;
   /** Hit points at full health. Positive integer. */
   readonly maxHp: number;
-  /** Action points per turn. Positive integer (GDD §6.2: two by default). */
+  /**
+   * Action points per turn. Positive integer (GDD §6.2: two by default),
+   * except for a deployed turret (#1138), which takes no orders and has
+   * none: its overwatch is set by the turn, not bought with an action.
+   */
   readonly maxAp: number;
-  /** Tiles one move action covers. Positive integer. */
+  /** Tiles one move action covers. Non-negative integer; a turret's is zero. */
   readonly move: number;
   /**
    * Every attack this unit can make (#532), ordered; the first is what a

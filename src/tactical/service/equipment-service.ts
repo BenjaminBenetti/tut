@@ -12,7 +12,7 @@ import type {
   EquipmentId,
   PlacedCharge,
 } from "../model/equipment";
-import { DEFAULT_CHARGE_DELAY_TURNS } from "../model/equipment";
+import { DEFAULT_CHARGE_DELAY_TURNS, isDeployable } from "../model/equipment";
 import { CHARGE_ID_PREFIX, usesLeftOf } from "../model/equipment";
 import { EQUIPMENT_USED } from "../model/equipment-used-event";
 import type { RadarTuning } from "../model/radar";
@@ -20,6 +20,7 @@ import type { TacticalError } from "../model/tactical-error";
 import type { TacticalEvent } from "../model/tactical-event";
 import type { TacticalHandler } from "../model/tactical-handler";
 import type { TacticalState } from "../model/tactical-state";
+import type { TurretTuning } from "../model/turret";
 import type { Unit, UnitId } from "../model/unit";
 import type { UnitTemplate } from "../model/unit-template";
 import type { UnitWeapon } from "../model/unit-weapon";
@@ -41,6 +42,7 @@ import { buildMoveGraph } from "./movement-service";
 import { placeRadar, validateRadarSite } from "./radar-service";
 import { hasLineOfSight } from "./sight-service";
 import type { PhaseStep } from "./turn-service";
+import { placeTurret, validateTurretSite } from "./turret-service";
 import { closestTiles } from "./weapon-reach-service";
 
 // ===========================================
@@ -69,6 +71,8 @@ export interface EquipmentDeps extends EquipmentRules {
   readonly attack: AttackDeps;
   /** Scan radius and battery for a placed dish. */
   readonly radar: RadarTuning;
+  /** Gun, plate and battery for a deployed turret (#1138). */
+  readonly turret: TurretTuning;
 }
 
 /** One item a unit carries, with what it has left of it. */
@@ -141,6 +145,7 @@ export function equipmentOf(
  *   unit   ──► unit-not-on-map · unit-dead · wrong-phase · no-action-points
  *   item   ──► no-equipment · equipment-spent
  *   radar  ──► radar-out-of-reach · radar-tile-blocked
+ *   turret ──► turret-out-of-reach · turret-tile-blocked (the same site rule, #1138)
  *   blast  ──► no-such-tile · out-of-range · tile-out-of-sight
  *   charge ──► the same as a blast
  * ```
@@ -183,8 +188,10 @@ export function validateEquipmentUse(
   if (usesLeft <= 0) {
     return err({ kind: "equipment-spent", unitId, equipmentId });
   }
-  if (definition.kind === "radar") {
-    const site = validateRadarSite(
+  if (isDeployable(definition)) {
+    const validateSite =
+      definition.kind === "turret" ? validateTurretSite : validateRadarSite;
+    const site = validateSite(
       mission,
       unit,
       tile,
@@ -226,7 +233,7 @@ export function validateEquipmentUse(
  * is refused, for the wheel and the footprint overlay: a grenade rolls
  * the same hit formula as a shot at the ground, a charge cannot miss,
  * and the blast says who stands in it — the unit itself included for a
- * charge, which spares nobody. A radar dish has no numbers to preview
+ * charge, which spares nobody. A radar dish or a turret has no numbers to preview
  * and is refused as `no-area-weapon`.
  *
  * @param mission - The mission.
@@ -257,7 +264,7 @@ export function previewEquipmentUse(
   }
   const { unit, definition, terrain } = checked.value;
   if (
-    definition.kind === "radar" ||
+    isDeployable(definition) ||
     definition.profile === undefined ||
     terrain === undefined
   ) {
@@ -298,6 +305,7 @@ export function previewEquipmentUse(
  * ```
  *   UseEquipment ──► EquipmentUsed { usesLeft }
  *                    ├─ radar  ──► RadarDeployed                    (placeRadar)
+ *                    ├─ turret ──► TurretDeployed, a turret unit on overwatch (placeTurret, #1138)
  *                    ├─ blast  ──► [UnitDied…] BlastResolved [StructureDestroyed…] [EffectStarted…]
  *                    │             the same run a shot at the ground emits, delivery "thrown"
  *                    └─ charge ──► ChargePlaced { detonatesOnTurn: turn + delay }
@@ -349,6 +357,10 @@ export function createUseEquipmentHandler(
     switch (definition.kind) {
       case "radar": {
         const placed = placeRadar(billed, unit, tile, deps.radar, ctx.ids);
+        return ok({ state: placed.state, events: [used, ...placed.events] });
+      }
+      case "turret": {
+        const placed = placeTurret(billed, unit, tile, deps.turret, ctx.ids);
         return ok({ state: placed.state, events: [used, ...placed.events] });
       }
       case "blast": {

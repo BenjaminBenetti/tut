@@ -37,6 +37,8 @@ import type { PlaceableUnit } from "../../tactical/model/place-unit-command";
 import { RELOAD } from "../../tactical/model/reload-command";
 import type { AttackDeps } from "../../tactical/service/combat-service";
 import { RADAR_TUNING } from "../../tactical/data/radar-tuning";
+import { TURRET_TUNING } from "../../tactical/data/turret-tuning";
+import { createTurretStep } from "../../tactical/service/turret-service";
 import { USE_EQUIPMENT } from "../../tactical/model/use-equipment-command";
 import { SHIPPED_EQUIPMENT } from "../../tactical/repository/equipment-catalogue";
 import type { EquipmentDeps } from "../../tactical/service/equipment-service";
@@ -237,7 +239,7 @@ const DEBUG_MECHS: readonly DebugMechSource[] = [
  * their own object to isolate the lifting path.
  *
  * ```
- *   EndTurn ──► phase steps: refreshSides, drain radars, detonate charges, burn, hatch, edge waves
+ *   EndTurn ──► phase steps: refreshSides, drain radars, run turrets, detonate charges, burn, hatch, edge waves
  *                    └──► bug phase runner ──► every living bug acts
  *                              └──► player turn + 1 (or MissionEnded)
  * ```
@@ -246,10 +248,12 @@ const DEBUG_MECHS: readonly DebugMechSource[] = [
  * whose phase begins pays for standing in one before it can move out,
  * and before anything hatches into it. Radar batteries drain as the
  * player's turn opens (#1130), before the fires, so a scanner that dies
- * this turn is announced at the top of the turn's account. Breaching
- * charges go off next (#1132), before the fires: whatever the blast
- * lights burns from this turn, and a bug the blast leaves standing in
- * a fire pays for it before it can move.
+ * this turn is announced at the top of the turn's account. Turrets run
+ * beside them (#1138): their batteries drain and the survivors go back
+ * on overwatch, after `refreshSides` has let last turn's watch lapse.
+ * Breaching charges go off next (#1132), before the fires: whatever the
+ * blast lights burns from this turn, and a bug the blast leaves
+ * standing in a fire pays for it before it can move.
  *
  * `placement` is the development tools' unit placement (#1136); left
  * out, as the headless sim leaves it, the handler is registered refusing
@@ -269,6 +273,7 @@ export function shippedTacticalHandlers(
     combat: COMBAT_TUNING,
     attack: attackDeps,
     radar: RADAR_TUNING,
+    turret: TURRET_TUNING,
   };
   const actions: TacticalHandlers = {
     [ATTACK]: createAttackHandler(COMBAT_TUNING, attackDeps),
@@ -295,6 +300,7 @@ export function shippedTacticalHandlers(
       [
         ...DEFAULT_PHASE_STEPS,
         drainRadarBatteries,
+        createTurretStep(TURRET_TUNING),
         createDetonateStep(equipment),
         createBurnStep(HAZARD_TUNING, COMBAT_TUNING),
         createHatchStep(spawn),

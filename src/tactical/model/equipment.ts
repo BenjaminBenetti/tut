@@ -18,15 +18,31 @@ export type EquipmentId = string;
  * | `radar`  | places a scanner on the tile (`radar-service`)           |
  * | `blast`  | resolves at once, like a shot at the ground (#1121)      |
  * | `charge` | is placed on the tile and detonates `delayTurns` later   |
+ * | `turret` | puts a turret unit on the tile (`turret-service`, #1138) |
  */
-export type EquipmentKind = "radar" | "blast" | "charge";
+export type EquipmentKind = "radar" | "blast" | "charge" | "turret";
 
 /** Every `EquipmentKind`, in a fixed order. */
 export const EQUIPMENT_KINDS = [
   "radar",
   "blast",
   "charge",
+  "turret",
 ] as const satisfies readonly EquipmentKind[];
+
+/**
+ * True for an item that is carried to a tile and put down there
+ * (#1138): a radar dish or a turret. Its range is a walk over the move
+ * graph rather than a throw, it has no hit chance or damage to preview,
+ * and it keeps its own entry on the wheel's ring rather than riding
+ * under Attack. The one predicate the rules, the range preview and the
+ * wheel share, so a fourth kind of deployable is added in one place.
+ */
+export function isDeployable(
+  definition: Pick<EquipmentDefinition, "kind">,
+): boolean {
+  return definition.kind === "radar" || definition.kind === "turret";
+}
 
 /** Prefix the id generator uses for placed charges, e.g. `"charge-2"`. */
 export const CHARGE_ID_PREFIX = "charge";
@@ -49,7 +65,8 @@ export const CHARGE_ID_PREFIX = "charge";
  *                                │
  *                                ├─ radar  ──► Radar placed
  *                                ├─ blast  ──► BlastResolved …   (resolveBlastAt)
- *                                └─ charge ──► PlacedCharge ──► detonates as turn T+delay opens
+ *                                ├─ charge ──► PlacedCharge ──► detonates as turn T+delay opens
+ *                                └─ turret ──► a turret Unit on overwatch (#1138)
  * ```
  */
 export interface EquipmentDefinition {
@@ -62,10 +79,10 @@ export interface EquipmentDefinition {
   /** Action points one use costs. Positive integer. */
   readonly apCost: number;
   /**
-   * Tiles from the user the tile may be. A radar dish is carried there
-   * on foot (a bounded walk over the move graph); a blast or a charge
-   * is thrown or placed, measured with `attackDistance` and needing a
-   * line of sight. Positive integer.
+   * Tiles from the user the tile may be. A radar dish or a turret is
+   * carried there on foot (a bounded walk over the move graph); a blast
+   * or a charge is thrown or placed, measured with `attackDistance` and
+   * needing a line of sight. Positive integer.
    */
   readonly range: number;
   /** What a blast or a charge does where it lands; absent for a radar. */

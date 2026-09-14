@@ -9,7 +9,9 @@ import { rankBonuses, rankIndexOf } from "../../roster/service/rank-service";
 import type { Squad } from "../../roster/model/squad";
 import type { SquadType } from "../../roster/model/squad-type";
 import type { BugUnitSource } from "../model/bug-unit-source";
-import type { Unit, UnitKind } from "../model/unit";
+import type { TurretTuning } from "../model/turret";
+import { TURRET_SOURCE_ID } from "../model/turret";
+import type { Team, Unit, UnitKind } from "../model/unit";
 import { UNIT_ID_PREFIX } from "../model/unit";
 import type { UnitTemplate, UnitTemplateId } from "../model/unit-template";
 import type { WeaponId } from "../model/unit-weapon";
@@ -195,6 +197,50 @@ export function bugUnit(
     placement,
     deps.ids,
   );
+}
+
+/**
+ * Builds a deployed turret from the turret tuning (#1138), for
+ * `placeTurret`. Every turret shares one template (`"turret:turret"`),
+ * as every bug of a species does, and starts at full health with a
+ * full battery. The template says it is `mechanical`, so a repair kit
+ * mends it and a medkit passes it over (`constructionOf`). Pure: reads
+ * only its arguments and draws one id.
+ */
+export function turretUnit(
+  tuning: TurretTuning,
+  team: Team,
+  placement: UnitPlacement,
+  ids: IdGenerator,
+): UnitBuild {
+  const template: UnitTemplate = {
+    id: templateIdFor("turret", TURRET_SOURCE_ID),
+    name: tuning.name,
+    maxHp: tuning.maxHp,
+    // A turret takes no orders: its overwatch is granted by the turn,
+    // never bought with an action, so it has none to spend.
+    maxAp: 0,
+    move: 0,
+    weapons: [tuning.weapon],
+    sightRange: tuning.sightRange,
+    armor: tuning.armor,
+    passClass: "infantry",
+    modelId: tuning.modelId,
+    construction: "mechanical",
+  };
+  const built = build(
+    "turret",
+    team,
+    TURRET_SOURCE_ID,
+    template,
+    tuning.maxHp,
+    placement,
+    ids,
+  );
+  return {
+    template,
+    unit: { ...built.unit, turnsLeft: tuning.batteryTurns },
+  };
 }
 
 // ===========================================

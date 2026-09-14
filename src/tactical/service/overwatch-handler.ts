@@ -2,8 +2,8 @@ import { ok } from "../../core/model/result";
 import { actingUnit } from "./acting-unit";
 import type { OverwatchCommand } from "../model/overwatch-command";
 import type { TacticalHandler } from "../model/tactical-handler";
-import type { UnitStatus } from "../model/unit";
 import { UNIT_STATUS_CHANGED } from "../model/unit-status-changed-event";
+import { enterOverwatch } from "./overwatch-status";
 
 // ===========================================
 // Handler
@@ -11,9 +11,10 @@ import { UNIT_STATUS_CHANGED } from "../model/unit-status-changed-event";
 
 /**
  * Applies an `Overwatch` (GDD §6.2): the unit spends every remaining
- * action point and gains the `overwatch` status, which `overwatchReaction`
- * consumes on the first enemy step it can fire at and `refreshSides`
- * lets lapse at the unit's next turn. Pure; draws nothing.
+ * action point and gains the `overwatch` status, with as many reaction
+ * shots as its gun grants (`enterOverwatch`, #1138), which
+ * `overwatchReaction` spends on the enemy steps it can fire at and
+ * `refreshSides` lets lapse at the unit's next turn. Pure; draws nothing.
  *
  * ```
  *   unit missing ──► err unit-not-on-map      down ──► err unit-dead
@@ -31,14 +32,16 @@ export const overwatchHandler: TacticalHandler<OverwatchCommand> = (
     return acting;
   }
   const unit = acting.value;
-  const status: readonly UnitStatus[] = unit.status.includes("overwatch")
-    ? unit.status
-    : [...unit.status, "overwatch"];
+  const watching = enterOverwatch(
+    { ...unit, ap: 0 },
+    mission.templates[unit.templateId]?.weapons ?? [],
+  );
+  const { status } = watching;
   return ok({
     state: {
       ...mission,
       units: mission.units.map((candidate) =>
-        candidate.id === unitId ? { ...candidate, ap: 0, status } : candidate,
+        candidate.id === unitId ? watching : candidate,
       ),
     },
     events: [{ type: UNIT_STATUS_CHANGED, payload: { unitId, status } }],

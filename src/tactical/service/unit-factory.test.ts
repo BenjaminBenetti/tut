@@ -15,11 +15,19 @@ import type { SquadType } from "../../roster/model/squad-type";
 import { StaticPartCatalogue } from "../../roster/repository/static-part-catalogue";
 import { validateLoadout } from "../../roster/service/loadout-validation-service";
 import { createMech } from "../../roster/service/mech-factory";
+import { TURRET_TUNING } from "../data/turret-tuning";
 import { UNIT_TUNING } from "../data/unit-tuning";
 import type { BugUnitSource } from "../model/bug-unit-source";
 import { passMaskFor } from "../model/unit";
 import type { UnitFactoryDeps, UnitPlacement } from "./unit-factory";
-import { bugUnit, mechUnit, squadUnit, templateIdFor } from "./unit-factory";
+import { constructionOf } from "./construction-service";
+import {
+  bugUnit,
+  mechUnit,
+  squadUnit,
+  templateIdFor,
+  turretUnit,
+} from "./unit-factory";
 
 // ===========================================
 // Fixtures
@@ -512,5 +520,57 @@ describe("bugUnit with a footprint (#1130)", () => {
     const big = bugUnit({ ...SWARMER, id: "big", footprint: 2 }, AT, d);
     expect(big.template.footprint).toBe(2);
     expect("footprint" in bugUnit(SWARMER, AT, d).template).toBe(false);
+  });
+});
+
+// ===========================================
+// Turrets (#1138)
+// ===========================================
+
+describe("turretUnit", () => {
+  it("builds a mechanical, orderless turret with a full battery, every turret sharing one template", () => {
+    const ids = new SequentialIdGenerator();
+    const first = turretUnit(TURRET_TUNING, "tdf", AT, ids);
+    const second = turretUnit(
+      TURRET_TUNING,
+      "tdf",
+      { ...AT, pos: { x: 4, y: 0, z: 4 } },
+      ids,
+    );
+    expect(first.template).toMatchObject({
+      id: templateIdFor("turret", "turret"),
+      name: "Turret",
+      maxHp: 30,
+      maxAp: 0,
+      move: 0,
+      armor: 2,
+      sightRange: 12,
+      passClass: "infantry",
+      modelId: "tdf.turret",
+      construction: "mechanical",
+      weapons: [TURRET_TUNING.weapon],
+    });
+    expect(second.template).toEqual(first.template);
+    expect(first.unit).toMatchObject({
+      kind: "turret",
+      team: "tdf",
+      sourceId: "turret",
+      templateId: first.template.id,
+      pos: AT.pos,
+      facing: "n",
+      hp: 30,
+      maxHp: 30,
+      ap: 0,
+      maxAp: 0,
+      status: [],
+      passClass: "infantry",
+      turnsLeft: 3,
+    });
+    expect(first.unit.charges).toBeUndefined();
+    expect(first.unit.id).not.toBe(second.unit.id);
+    // The template has to say it is metal: by kind alone a turret would
+    // read as organic, and the repair kit would pass it over.
+    expect(constructionOf(first.template, first.unit.kind)).toBe("mechanical");
+    expect(constructionOf({}, "turret")).toBe("organic");
   });
 });

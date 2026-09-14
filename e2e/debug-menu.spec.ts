@@ -133,11 +133,23 @@ test("the debug menu places a bug and a squad where the map is clicked", async (
   await toggle.click();
   await expect(menu).toBeVisible();
   await expect(menu).toContainText("Debug");
-  await expect(menu).toContainText("Place unit");
   // On the left of the screen, over the rail.
   const box = await menu.boundingBox();
   expect(box).toBeTruthy();
   expect(box!.x + box!.width).toBeLessThan(1400 / 3);
+
+  // The menu opens on the tool list (#1138): Spawn is the one tool, and
+  // the entries are on its page, behind it.
+  const spawnTool = page.getByTestId("debug-tool-spawn");
+  await expect(spawnTool).toBeVisible();
+  await expect(spawnTool).toContainText("Spawn");
+  await expect(spawnTool).toContainText(
+    "Place a friendly or hostile unit on the map",
+  );
+  await expect(page.getByTestId("debug-place-bug-swarmer")).toHaveCount(0);
+  await spawnTool.click();
+  await expect(menu).toContainText("Spawn");
+  await expect(page.getByTestId("debug-back")).toBeVisible();
 
   // A swarmer, on the bugs' side, at the clicked tile.
   const before = await savedMission(page);
@@ -208,14 +220,27 @@ test("the debug menu places a bug and a squad where the map is clicked", async (
     "aria-pressed",
     "false",
   );
+  // Back returns to the tool list; closed and reopened, the menu is on
+  // the tool list again (#1138).
+  await page.getByTestId("debug-back").click();
+  await expect(spawnTool).toBeVisible();
+  await expect(page.getByTestId("debug-place-squad-rifle")).toHaveCount(0);
+  await spawnTool.click();
+  await expect(page.getByTestId("debug-place-squad-rifle")).toBeVisible();
+  await menu.locator('[data-action="debug-menu-close"]').click();
+  await expect(menu).toBeHidden();
+  await toggle.click();
+  await expect(spawnTool).toBeVisible();
+  await expect(page.getByTestId("debug-place-squad-rifle")).toHaveCount(0);
   await menu.locator('[data-action="debug-menu-close"]').click();
   await expect(menu).toBeHidden();
   expect(errors).toEqual([]);
 });
 
 /**
- * The frame for the design notes: the menu open on the left with the
- * swarmer armed, the instruction on the status line.
+ * The frame for the design notes: the menu open on the left on the
+ * Spawn page (#1138) with the swarmer armed, the instruction on the
+ * status line.
  *
  *   CAPTURE=1 pnpm exec playwright test e2e/debug-menu.spec.ts
  */
@@ -230,6 +255,7 @@ test("captures the debug menu open with an armed entry", async ({ page }) => {
   await tacticalModelsReady(page);
   await settleForShot(page);
   await page.getByTestId("debug-menu-toggle").click();
+  await page.getByTestId("debug-tool-spawn").click();
   await page.getByTestId("debug-place-bug-swarmer").click();
   await expect(page.getByTestId("debug-place-bug-swarmer")).toHaveAttribute(
     "aria-pressed",

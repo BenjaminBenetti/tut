@@ -2308,6 +2308,8 @@ describe("development tools (#1136)", () => {
     root.querySelector<HTMLButtonElement>(
       `[data-testid="debug-place-${kind}-${id}"]`,
     );
+  const spawnTool = (): HTMLButtonElement | null =>
+    root.querySelector<HTMLButtonElement>('[data-testid="debug-tool-spawn"]');
   const status = (): string =>
     root.querySelector<HTMLElement>('#turn-banner [data-role="status"]')
       ?.textContent ?? "";
@@ -2357,9 +2359,58 @@ describe("development tools (#1136)", () => {
     expect(panel()?.hidden).toBe(true);
   });
 
+  it("opens on the tool list, Spawn alone on it, and reaches the entries through Spawn (#1138)", () => {
+    setupDev(true);
+    toggle()?.click();
+    const list = [
+      ...root.querySelectorAll<HTMLElement>(
+        '[data-role="debug-tools"] .tut-btn__label',
+      ),
+    ].map((label) => label.textContent);
+    expect(list).toEqual(["Spawn"]);
+    expect(entry("bug", "swarmer")).toBeNull();
+    spawnTool()?.click();
+    expect(entry("bug", "swarmer")).not.toBeNull();
+    expect(entry("squad", "rifle")).not.toBeNull();
+    // Back returns to the list.
+    root
+      .querySelector<HTMLButtonElement>('[data-testid="debug-back"]')
+      ?.click();
+    expect(spawnTool()).not.toBeNull();
+    expect(entry("bug", "swarmer")).toBeNull();
+  });
+
+  it("closing the menu resets it to the tool list and disarms (#1138)", () => {
+    const { hud } = setupDev(true);
+    toggle()?.click();
+    spawnTool()?.click();
+    entry("bug", "swarmer")?.click();
+    expect(hud.getArmedPlacement()).toEqual(PLACEABLE[1]);
+    toggle()?.click();
+    expect(hud.getArmedPlacement()).toBeUndefined();
+    expect(status()).toBe("");
+    toggle()?.click();
+    expect(spawnTool()).not.toBeNull();
+    expect(entry("bug", "swarmer")).toBeNull();
+  });
+
+  it("Back from the spawn page disarms, so the status line drops the instruction (#1138)", () => {
+    const { hud } = setupDev(true);
+    toggle()?.click();
+    spawnTool()?.click();
+    entry("squad", "rifle")?.click();
+    expect(status()).toBe("Place: Rifle Squad — click the map, Esc cancels");
+    root
+      .querySelector<HTMLButtonElement>('[data-testid="debug-back"]')
+      ?.click();
+    expect(hud.getArmedPlacement()).toBeUndefined();
+    expect(status()).toBe("");
+  });
+
   it("arms an entry, says so on the status line, and places it where the map is clicked, staying armed", () => {
     const { hud, commands, mission } = setupDev(true);
     toggle()?.click();
+    spawnTool()?.click();
     entry("bug", "swarmer")?.click();
     expect(hud.getArmedPlacement()).toEqual(PLACEABLE[1]);
     expect(entry("bug", "swarmer")?.getAttribute("aria-pressed")).toBe("true");
@@ -2390,6 +2441,7 @@ describe("development tools (#1136)", () => {
   it("disarms on Escape, on the entry pressed again, and on closing the menu", () => {
     const { hud, commands } = setupDev(true);
     toggle()?.click();
+    spawnTool()?.click();
     entry("squad", "rifle")?.click();
     hud.handleIntent({ kind: "action", action: "cancel" });
     expect(hud.getArmedPlacement()).toBeUndefined();
@@ -2411,8 +2463,11 @@ describe("development tools (#1136)", () => {
     expect(panel()?.hidden).toBe(true);
     expect(hud.getArmedPlacement()).toBeUndefined();
 
-    entry("squad", "rifle")?.click();
+    // Closed, the menu is back on the tool list (#1138).
     toggle()?.click();
+    spawnTool()?.click();
+    entry("squad", "rifle")?.click();
+    expect(hud.getArmedPlacement()).toEqual(PLACEABLE[0]);
     toggle()?.click();
     expect(hud.getArmedPlacement()).toBeUndefined();
   });

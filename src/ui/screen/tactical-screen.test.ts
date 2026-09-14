@@ -1547,6 +1547,10 @@ describe("TacticalScreen development tools (#1136)", () => {
     root
       .querySelector<HTMLButtonElement>('[data-testid="debug-menu-toggle"]')
       ?.click();
+    // The menu opens on the tool list; the entries are on Spawn's page (#1138).
+    root
+      .querySelector<HTMLButtonElement>('[data-testid="debug-tool-spawn"]')
+      ?.click();
     root
       .querySelector<HTMLButtonElement>(
         '[data-testid="debug-place-bug-swarmer"]',

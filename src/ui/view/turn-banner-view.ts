@@ -40,14 +40,18 @@ export interface TurnBannerModel {
   /** Living bugs. */
   readonly bugUnits: number;
   /**
-   * Which storey the scene is drawing, one-based, and how many there are
-   * (#961); `undefined` before a scene is attached.
+   * Which floor the scene is drawing, one-based, or `undefined` for the
+   * roofed top view; and how many floors the map has (#961, #1136).
+   * `undefined` as a whole before a scene is attached.
    *
    * The player is changing this constantly, so it is a banner stat and
-   * not a menu: it has to be readable without being looked for.
+   * not a menu: it has to be readable without being looked for. The top
+   * view is not numbered because it is not a floor: it is every floor
+   * with the roofs back on, and numbering it sent the player looking
+   * for a floor that was not there.
    */
   readonly layer:
-    { readonly storey: number; readonly storeyCount: number } | undefined;
+    { readonly floor: number | undefined; readonly floors: number } | undefined;
 }
 
 /**
@@ -271,7 +275,10 @@ export class TurnBannerView {
     return button;
   }
 
-  /** Writes the storey readout and enables each button only where it can go. */
+  /**
+   * Writes the storey readout and enables each button only where it can
+   * go: "All" at the roofed top, "floor / floors" below it (#1136).
+   */
   private setLayer(layer: TurnBannerModel["layer"] | undefined): void {
     if (!layer) {
       this.setField("floor", "—");
@@ -285,13 +292,17 @@ export class TurnBannerView {
     }
     this.setField(
       "floor",
-      `${formatWhole(layer.storey)} / ${formatWhole(layer.storeyCount)}`,
+      layer.floor === undefined
+        ? "All"
+        : `${formatWhole(layer.floor)} / ${formatWhole(layer.floors)}`,
     );
     if (this.layerDown) {
-      this.layerDown.disabled = layer.storey <= 1;
+      // Down from the top goes to the last floor, when there is one.
+      this.layerDown.disabled =
+        layer.floor === undefined ? layer.floors < 1 : layer.floor <= 1;
     }
     if (this.layerUp) {
-      this.layerUp.disabled = layer.storey >= layer.storeyCount;
+      this.layerUp.disabled = layer.floor === undefined;
     }
   }
 

@@ -9,6 +9,7 @@ import { leaveMissionSummary } from "../../tactical/service/abandon-mission-hand
 import type { RankTuning } from "../../roster/model/rank";
 import type { ObjectiveTuning } from "../../tactical/model/objective-tuning";
 import type { PreviewDeps } from "../../tactical/service/combat-service";
+import type { PlaceableUnit } from "../../tactical/model/place-unit-command";
 import type { TacticalCommand } from "../../tactical/model/tactical-command";
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { TacticalState } from "../../tactical/model/tactical-state";
@@ -49,6 +50,14 @@ export interface TacticalScreenDeps {
   readonly phaseBanner?: PhaseBannerOptions;
   /** Idle limit and timers for the playback watchdog (#1132); the defaults are the DOM's. */
   readonly playbackWatchdog?: PlaybackWatchdogOptions;
+  /**
+   * The development tools (#1136): what the debug menu can place. Set
+   * by the bootstrap from the composition in a dev build only; absent,
+   * the HUD builds no menu and no button for it.
+   */
+  readonly devTools?: {
+    readonly placeable: readonly PlaceableUnit[];
+  };
   /** Builds and owns the three.js scene for the mission; absent in unit tests that only check the DOM. */
   readonly sceneHost?: TacticalSceneHost;
   /**
@@ -275,6 +284,7 @@ export class TacticalScreen implements Screen {
           : { previewDeps: deps.previewDeps }),
         phaseBanner: deps.phaseBanner,
         shortcuts: TACTICAL_SHORTCUTS,
+        ...(deps.devTools === undefined ? {} : { devTools: deps.devTools }),
       },
     );
     // A settled batch waiting on "Bug phase" is released the moment the

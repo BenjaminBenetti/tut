@@ -97,6 +97,7 @@ export const ICON_MANIFEST = {
     label: "Elevation",
   },
   ammo: { path: "assets/ui/icons/ammo.svg", label: "Ammunition / charges" },
+  bug: { path: "assets/ui/icons/bug.svg", label: "Debug menu" },
 } as const satisfies Record<string, IconAssetEntry>;
 
 /** Union of registered icon ids. */

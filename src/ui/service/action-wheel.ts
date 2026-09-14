@@ -32,7 +32,10 @@ import type {
 } from "../../tactical/model/equipment";
 import { SHIPPED_EQUIPMENT } from "../../tactical/repository/equipment-catalogue";
 import { chargeDelayText } from "./charge-delay-text";
-import type { EquipmentRules } from "../../tactical/service/equipment-service";
+import type {
+  EquipmentCarried,
+  EquipmentRules,
+} from "../../tactical/service/equipment-service";
 import {
   equipmentOf,
   previewEquipmentUse,
@@ -148,8 +151,11 @@ const COMFORTABLE_HIT_CHANCE = 50;
  * different hat, and a wheel that lies is worse than no wheel.
  *
  * ```
- *   tile      ──► Move (path) · Attack at the ground (#1121; weapons page
- *                 when there are several) · Board (drop ship tile) · Overwatch · Reload
+ *   tile      ──► Move (path) · Attack at the ground (#1121) · Board (drop
+ *                 ship tile) · Deploy radar · Overwatch · Reload
+ *                   └─ Attack turns to a page — weapons, then the grenade
+ *                      and the charge (#1136) — when there is more than one
+ *                      way to hit the tile; a lone weapon is the shot itself
  *   enemy     ──► Attack (hub: hit chance) · Overwatch · Reload
  *   spawner   ──► Attack · Interact (if this one is in reach) · Overwatch · Reload
  *   own unit  ──► Overwatch · Reload · Interact · Board
@@ -252,6 +258,37 @@ export function weaponWheel(
     items,
     hub: { value: enemy.name, caption: "pick a weapon" },
   };
+}
+
+/**
+ * Whether Attack on `target` turns the page rather than firing (#1112,
+ * #1136). One rule, asked here by the wheel that builds the entry and by
+ * the HUD that answers the click, so the two cannot disagree about what
+ * the entry does: at an enemy the page is the weapon page, opened for a
+ * unit carrying several; at a tile the grenade and the charge count as
+ * attacks too (Executive Director, #1136), so one rifle and one grenade
+ * open it as two weapons do.
+ *
+ * @param mission - The mission the unit is in.
+ * @param unitId - The unit that would attack.
+ * @param target - What the wheel is open on.
+ * @param combatTuning - Tuning `weaponOptions` is asked with.
+ * @returns True when the Attack entry opens a page.
+ */
+export function opensAttackPage(
+  mission: TacticalState,
+  unitId: UnitId,
+  target: TacticalInvokeTarget,
+  combatTuning: ActionAvailabilityDeps["combatTuning"],
+): boolean {
+  const weapons = weaponOptions(mission, unitId, combatTuning).length;
+  if (target.kind !== "tile") {
+    return weapons > 1;
+  }
+  const unit = mission.units.find((u) => u.id === unitId);
+  return (
+    weapons > 1 || (unit !== undefined && attackKitOf(mission, unit).length > 0)
+  );
 }
 
 /**
@@ -359,16 +396,20 @@ function tilePage(tile: TileCoord, unit: Unit, ctx: WheelContext): WheelPage {
   if (isDropshipTile(ctx.mission, tile)) {
     items.push(boardItem(unit, ctx));
   }
-  // Every item the unit carries (#1132): the dish where a scanner may
-  // go, a grenade or a charge on any tile it can throw to.
+  // The dish where a scanner may go (#1132). A grenade or a charge is an
+  // attack and rides under Attack with the weapons (#1136): the ring
+  // used to break them out beside it, and the Executive Director found
+  // two places to look for one kind of thing confusing.
   for (const carried of equipmentOf(
     ctx.mission.templates[unit.templateId],
     unit,
     SHIPPED_EQUIPMENT,
   )) {
-    items.push(
-      equipmentItem(tile, unit, carried.definition, carried.usesLeft, ctx),
-    );
+    if (carried.definition.kind === "radar") {
+      items.push(
+        equipmentItem(tile, unit, carried.definition, carried.usesLeft, ctx),
+      );
+    }
   }
   items.push(overwatchItem(unit, ctx), reloadItem(unit, ctx));
   return { items };
@@ -379,7 +420,9 @@ function tilePage(tile: TileCoord, unit: Unit, ctx: WheelContext): WheelPage {
  * keeps the entry it has always had — `deploy-radar:x,y,z`, "Deploy
  * radar", `1 AP · scan 30` — so a player and a test find it where it
  * was; a grenade or a charge reads like a shot at the ground, with the
- * uses left last. Closed with the rules' reason when the use is refused.
+ * uses left last, and since #1136 sits on the Attack page under the
+ * same id it had on the ring. Closed with the rules' reason when the
+ * use is refused.
  */
 function equipmentItem(
   tile: TileCoord,
@@ -459,9 +502,16 @@ function chargeDetail(preview: AttackPreview, unit: Unit): string {
  * Attack at the ground (#1121), built the way the enemy page builds it
  * so the two read as one action: closed with the rules' reason when the
  * unit cannot attack at all or nothing it carries marks the ground;
- * with several weapons it turns the page, with one it is the shot
- * itself, previewed on the ring. A rifle squad sees it closed with
- * "not at the ground", which is the fact rather than an absence.
+ * with more than one way to hit the tile it turns the page, with one
+ * weapon it is the shot itself, previewed on the ring. A rifle squad
+ * with no kit sees it closed with "not at the ground", which is the
+ * fact rather than an absence.
+ *
+ * A grenade or a charge is a way to hit the tile (#1136), so a rifle
+ * squad carrying one gets the page — the rifle on it closed, the
+ * grenade open — and dry weapons alone do not close the entry while
+ * there is a grenade to throw: `no-charges` is the weapons' refusal,
+ * not the unit's.
  */
 function tileAttackItem(
   tile: TileCoord,
@@ -469,11 +519,23 @@ function tileAttackItem(
   ctx: WheelContext,
 ): RadialMenuItem {
   const id = itemId("attack-tile", tileArgument(tile));
+  const kit = attackKitOf(ctx.mission, unit);
   const refusal = actionRefusal(ctx.mission, unit.id, "attack", ctx.deps);
-  if (refusal !== undefined) {
+  if (
+    refusal !== undefined &&
+    (kit.length === 0 || refusal.kind !== "no-charges")
+  ) {
     return closed(id, "Attack", "attack", refusal, ctx);
   }
   const weapons = weaponOptions(ctx.mission, unit.id, ctx.deps.combatTuning);
+  if (weapons.length > 1 || kit.length > 0) {
+    return {
+      id,
+      label: "Attack",
+      icon: "attack",
+      detail: optionsDetail(weapons.length + kit.length),
+    };
+  }
   const capable = tileWeaponOptions(
     ctx.mission,
     unit.id,
@@ -488,14 +550,6 @@ function tileAttackItem(
       { kind: "no-area-weapon", unitId: unit.id },
       ctx,
     );
-  }
-  if (weapons.length > 1) {
-    return {
-      id,
-      label: "Attack",
-      icon: "attack",
-      detail: `${String(weapons.length)} weapons`,
-    };
   }
   const preview = previewTileAttack(
     ctx.mission,
@@ -516,10 +570,19 @@ function tileAttackItem(
 }
 
 /**
- * The weapon page for a tile (#1121): every weapon the unit carries, the
- * ones that can fire at the ground open with their numbers, the rest
- * closed with the reason, and a way back — the enemy's page with the
- * ground at its centre.
+ * The attack page for a tile (#1121, #1136): every weapon the unit
+ * carries, the ones that can fire at the ground open with their
+ * numbers, the rest closed with the reason; then the grenade and the
+ * charge it carries, with the entries they had on the ring (#1132); and
+ * a way back — the enemy's page with the ground at its centre.
+ *
+ * ```
+ *   Ground · pick an attack
+ *     Autocannon  (closed: not at the ground)
+ *     Missile Pod  62% · 18–22 dmg
+ *     Grenade      55% · 8–13 dmg · 2/2
+ *     Back
+ * ```
  */
 function tileWeaponPage(
   tile: TileCoord,
@@ -558,8 +621,39 @@ function tileWeaponPage(
       items.push(closed(id, option.weapon.name, "attack", preview.error, ctx));
     }
   }
+  for (const carried of attackKitOf(ctx.mission, unit)) {
+    items.push(
+      equipmentItem(tile, unit, carried.definition, carried.usesLeft, ctx),
+    );
+  }
   items.push({ id: itemId("back", "ground"), label: "Back", icon: "back" });
-  return { items, hub: { value: "Ground", caption: "pick a weapon" } };
+  return { items, hub: { value: "Ground", caption: "pick an attack" } };
+}
+
+/**
+ * The equipment the unit attacks with (#1136): everything it carries
+ * but the radar dish, which is a scan and keeps its own entry. In the
+ * order the template lists it, so the page and the card agree.
+ */
+function attackKitOf(
+  mission: TacticalState,
+  unit: Unit,
+): readonly EquipmentCarried[] {
+  return equipmentOf(
+    mission.templates[unit.templateId],
+    unit,
+    SHIPPED_EQUIPMENT,
+  ).filter((carried) => carried.definition.kind !== "radar");
+}
+
+/**
+ * `2 options` under an Attack entry that turns the page: the count of
+ * what the page will list. One word whether the options are two weapons
+ * or a rifle and a grenade (#1136), so the entry reads the same on every
+ * ring.
+ */
+function optionsDetail(count: number): string {
+  return `${String(count)} ${count === 1 ? "option" : "options"}`;
 }
 
 /**
@@ -648,7 +742,7 @@ function enemyPage(targetId: string, unit: Unit, ctx: WheelContext): WheelPage {
         id: attackId,
         label: "Attack",
         icon: "attack",
-        detail: `${String(weapons.length)} weapons`,
+        detail: optionsDetail(weapons.length),
         primary: true,
       });
     } else {

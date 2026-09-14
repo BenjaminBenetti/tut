@@ -26,6 +26,7 @@ import { ATTACK } from "../../tactical/model/attack-command";
 import { END_TURN } from "../../tactical/model/end-turn-command";
 import { FINISH_MISSION } from "../../tactical/model/finish-mission-command";
 import { MISSION_ENDED } from "../../tactical/model/mission-ended-event";
+import { placeUnit } from "../../tactical/model/place-unit-command";
 import { TURN_STARTED } from "../../tactical/model/turn-started-event";
 import type { CommandError } from "../../core/model/command-error";
 import { commandError } from "../../core/model/command-error";
@@ -202,7 +203,7 @@ class FakeHost implements TacticalSceneHost {
   /** Every delta the screen asked for (#961). */
   readonly layerSteps: number[] = [];
   /** A three-storey map, so a step has somewhere to go and an end to clamp at. */
-  focus: LayerFocus = { storey: 2, storeyCount: 3, cutLevel: undefined };
+  focus: LayerFocus = { storey: 2, storeyCount: 3 };
   attach(
     _c: HTMLElement,
     mission: TacticalState,
@@ -300,7 +301,6 @@ class FakeHost implements TacticalSceneHost {
     this.focus = {
       storey: Math.min(2, Math.max(0, this.focus.storey + delta)),
       storeyCount: 3,
-      cutLevel: undefined,
     };
     return this.focus;
   }
@@ -375,11 +375,11 @@ describe("TacticalScreen", () => {
       sceneHost: host,
     }).mount(root);
     // Opens on the top storey without anyone pressing a key.
-    expect(field("floor")).toBe("3 / 3");
+    expect(field("floor")).toBe("All");
 
     host.intents?.emit({ kind: "layer-step", delta: -1 });
     expect(host.layerSteps).toEqual([-1]);
-    expect(field("floor")).toBe("2 / 3");
+    expect(field("floor")).toBe("2 / 2");
     expect(document.body.dataset.lastIntent).toBe("layer-step");
 
     // Clamped by the scene, and the readout follows the scene rather
@@ -387,7 +387,7 @@ describe("TacticalScreen", () => {
     host.intents?.emit({ kind: "layer-step", delta: -1 });
     host.intents?.emit({ kind: "layer-step", delta: -1 });
     host.intents?.emit({ kind: "layer-step", delta: -1 });
-    expect(field("floor")).toBe("1 / 3");
+    expect(field("floor")).toBe("1 / 2");
 
     // The mission is untouched throughout.
     expect(field("turn")).toBe("1");
@@ -408,10 +408,10 @@ describe("TacticalScreen", () => {
       .querySelector<HTMLButtonElement>('[data-action="layer-down"]')
       ?.click();
     expect(host.layerSteps).toEqual([-1]);
-    expect(field("floor")).toBe("2 / 3");
+    expect(field("floor")).toBe("2 / 2");
     root.querySelector<HTMLButtonElement>('[data-action="layer-up"]')?.click();
     expect(host.layerSteps).toEqual([-1, 1]);
-    expect(field("floor")).toBe("3 / 3");
+    expect(field("floor")).toBe("All");
   });
 
   /**
@@ -1423,7 +1423,7 @@ describe("TacticalScreen playback lock (#1130)", () => {
     endTurn();
     host.intents?.emit({ kind: "layer-step", delta: -1 });
     expect(host.layerSteps).toEqual([-1]);
-    expect(field("floor")).toBe("2 / 3");
+    expect(field("floor")).toBe("2 / 2");
     host.intents?.emit({ kind: "inspect", held: true });
     expect(document.body.dataset.lastIntent).toBe("inspect");
     host.intents?.emit({ kind: "inspect", held: false });
@@ -1501,5 +1501,64 @@ describe("TacticalScreen playback lock (#1130)", () => {
     expect(document.body.dataset.phasePlaying).toBe("false");
     expect(host.locked).toBe(false);
     logged.mockRestore();
+  });
+});
+
+// ===========================================
+// Development tools (#1136)
+// ===========================================
+
+describe("TacticalScreen development tools (#1136)", () => {
+  let root: HTMLElement;
+
+  beforeEach(() => {
+    document.body.innerHTML = "";
+    root = document.createElement("div");
+    document.body.appendChild(root);
+  });
+
+  const PLACEABLE = [{ kind: "bug", id: "swarmer", name: "Swarmer" }] as const;
+
+  /** A mounted screen in a live mission, with or without the tools. */
+  function mounted(devTools: boolean) {
+    const state = inMission();
+    const store = new FakeStore(state);
+    const host = new FakeHost();
+    const screen = new TacticalScreen({
+      router: fakeRouter().router,
+      session: sessionWith(store),
+      combatTuning: COMBAT_TUNING,
+      objectiveTuning: OBJECTIVE_TUNING,
+      sceneHost: host,
+      ...(devTools ? { devTools: { placeable: PLACEABLE } } : {}),
+    });
+    screen.mount(root);
+    return { screen, store, host, state };
+  }
+
+  it("renders nothing of the tools when the composition gave none", () => {
+    mounted(false);
+    expect(root.querySelector('[data-testid="debug-menu-toggle"]')).toBeNull();
+    expect(root.querySelector('[data-testid="debug-menu"]')).toBeNull();
+  });
+
+  it("hands the tools to the HUD, and an armed placement reaches the store as PlaceUnit for the live mission", () => {
+    const { store, host, state } = mounted(true);
+    root
+      .querySelector<HTMLButtonElement>('[data-testid="debug-menu-toggle"]')
+      ?.click();
+    root
+      .querySelector<HTMLButtonElement>(
+        '[data-testid="debug-place-bug-swarmer"]',
+      )
+      ?.click();
+    host.intents?.emit({ kind: "select-tile", tile: { x: 4, y: 0, z: 4 } });
+    expect(store.dispatched).toEqual([
+      placeUnit(state.activeMission!.missionId, "bug", "swarmer", {
+        x: 4,
+        y: 0,
+        z: 4,
+      }),
+    ]);
   });
 });

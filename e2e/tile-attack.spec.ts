@@ -122,8 +122,9 @@ test("the starter mech fires its missile pod at an empty tile from the wheel", a
   if (!chosen) return;
 
   // With the wheel open every weapon's footprint is painted together:
-  // the gun's one tile inside the pod's five.
-  await expect(wheelItem(page, tileId)).toContainText("2 weapons");
+  // the gun's one tile inside the pod's five. The entry counts what its
+  // page lists — weapons and thrown kit alike (#1136); the mech has no kit.
+  await expect(wheelItem(page, tileId)).toContainText("2 options");
   await expect(page.locator("body")).toHaveAttribute(
     "data-tactical-blast-tiles",
     /^[2-5]$/,

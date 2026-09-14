@@ -506,7 +506,7 @@ describe("TurnBannerView", () => {
       phase: "bugs",
       tdfUnits: 2,
       bugUnits: 5,
-      layer: { storey: 2, storeyCount: 3 },
+      layer: { floor: 2, floors: 3 },
     });
     // The banner names the city, never the id (#753).
     expect(field("mission-name")?.textContent).toBe("Seoul");
@@ -526,8 +526,10 @@ describe("TurnBannerView", () => {
   });
 
   // #961: the player is changing this constantly, so it is a banner stat
-  // with buttons beside it rather than something in a menu.
-  it("reads out the storey one-based and reports each button", () => {
+  // with buttons beside it rather than something in a menu. Since #1136
+  // the roofed top view reads "All" rather than a floor number: it is
+  // the roof going back on, not a floor to go looking for.
+  it("reads out the floor one-based, the roofed top as All, and reports each button", () => {
     const onLeave = vi.fn();
     const onLayerStep = vi.fn();
     const view = new TurnBannerView({ onLeave, onLayerStep });
@@ -539,7 +541,7 @@ describe("TurnBannerView", () => {
       tdfUnits: 2,
       bugUnits: 0,
     } as const;
-    view.update({ ...model, layer: { storey: 2, storeyCount: 3 } });
+    view.update({ ...model, layer: { floor: 2, floors: 3 } });
     expect(field("floor")?.textContent).toBe("2 / 3");
 
     const down = root.querySelector<HTMLButtonElement>(
@@ -554,16 +556,22 @@ describe("TurnBannerView", () => {
 
     // Disabled where there is nowhere to go, rather than removed: an
     // inert control is easier to learn than one that comes and goes.
-    view.update({ ...model, layer: { storey: 1, storeyCount: 3 } });
+    view.update({ ...model, layer: { floor: 1, floors: 3 } });
     expect(down?.disabled).toBe(true);
     expect(up?.disabled).toBe(false);
-    view.update({ ...model, layer: { storey: 3, storeyCount: 3 } });
+    // The top floor still has the roof-off view above it.
+    view.update({ ...model, layer: { floor: 3, floors: 3 } });
+    expect(down?.disabled).toBe(false);
+    expect(up?.disabled).toBe(false);
+    // The roofed top: nowhere up, and down takes the roof off.
+    view.update({ ...model, layer: { floor: undefined, floors: 3 } });
+    expect(field("floor")?.textContent).toBe("All");
     expect(down?.disabled).toBe(false);
     expect(up?.disabled).toBe(true);
 
-    // A single-storey map: both ends at once, and the control says so.
-    view.update({ ...model, layer: { storey: 1, storeyCount: 1 } });
-    expect(field("floor")?.textContent).toBe("1 / 1");
+    // Open ground: both ends at once, and the control says so.
+    view.update({ ...model, layer: { floor: undefined, floors: 0 } });
+    expect(field("floor")?.textContent).toBe("All");
     expect(down?.disabled).toBe(true);
     expect(up?.disabled).toBe(true);
 

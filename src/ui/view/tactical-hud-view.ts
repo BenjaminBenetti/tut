@@ -6,6 +6,8 @@ import type { CombatTuning } from "../../tactical/model/combat-tuning";
 import type { Unsubscribe } from "../../core/model/event-bus";
 import { endTurn } from "../../tactical/model/end-turn-command";
 import { move } from "../../tactical/model/move-command";
+import type { PlaceableUnit } from "../../tactical/model/place-unit-command";
+import { placeUnit } from "../../tactical/model/place-unit-command";
 import { overwatch } from "../../tactical/model/overwatch-command";
 import { extract } from "../../tactical/model/extract-command";
 import { interact } from "../../tactical/model/interact-command";
@@ -21,6 +23,7 @@ import type { TacticalCommand } from "../../tactical/model/tactical-command";
 import type { TacticalError } from "../../tactical/model/tactical-error";
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { LayerFocus } from "../../graphics/model/layer-focus";
+import { floorOf } from "../../graphics/service/layer-focus-service";
 import type { MissionView } from "../../tactical/model/mission-view";
 import type {
   TacticalPhase,
@@ -62,11 +65,14 @@ import { actionRefusal, interactTarget } from "../service/action-availability";
 import type { WheelContext, WheelPage } from "../service/action-wheel";
 import {
   actionWheel,
+  opensAttackPage,
   parseWheelChoice,
   weaponWheel,
 } from "../service/action-wheel";
 import type { ActionBarAction } from "./action-bar-view";
 import { ActionBarView } from "./action-bar-view";
+import { armedStatus, DebugMenuView } from "./debug-menu-view";
+import { iconGlyph } from "./icon-glyph";
 import { EventLogView } from "./event-log-view";
 import { HitPreviewView } from "./hit-preview-view";
 import { ObjectiveTrackerView } from "./objective-tracker-view";
@@ -194,6 +200,15 @@ export interface TacticalHudDeps {
    * given, which is a bar with no hints.
    */
   readonly shortcuts?: Readonly<Record<string, TacticalAction | "end-turn">>;
+  /**
+   * The development tools (#1136), in a dev build: the units the debug
+   * menu offers to place. Absent — every production build, and every
+   * test that does not ask — the bug button and the menu are not built
+   * at all, so nothing dev-only can render by accident.
+   */
+  readonly devTools?: {
+    readonly placeable: readonly PlaceableUnit[];
+  };
 }
 
 /** Which page of the wheel is open. */
@@ -363,6 +378,17 @@ export class TacticalHudView {
   private sideOverflow: { readonly dispose: () => void } | undefined;
   /** Torn down with the HUD; keeps panel clicks off the map picker. */
   private pointerGuard: { readonly dispose: () => void } | undefined;
+  /** The development tools' panel (#1136); built only in a dev build. */
+  private readonly debugMenu: DebugMenuView | undefined;
+  /** The bug button that opens it, at the bottom left of the bar. */
+  private debugToggle: HTMLButtonElement | undefined;
+  private debugOpen = false;
+  /**
+   * The unit the debug menu has armed for placement (#1136). While set,
+   * a click on the map is a placement there rather than a selection or
+   * a wheel, and Escape puts it down.
+   */
+  private armedPlacement: PlaceableUnit | undefined;
 
   // ===========================================
   // Constructor
@@ -402,6 +428,20 @@ export class TacticalHudView {
       },
       deps.shortcuts ?? {},
     );
+    this.debugMenu =
+      deps.devTools === undefined
+        ? undefined
+        : new DebugMenuView(
+            {
+              onArm: (entry) => {
+                this.armPlacement(entry);
+              },
+              onClose: () => {
+                this.setDebugMenuOpen(false);
+              },
+            },
+            deps.devTools.placeable,
+          );
   }
 
   // ===========================================
@@ -471,8 +511,15 @@ export class TacticalHudView {
     // The log closes the rail: bottom left, as it always was, and never
     // under the panels above it because the panels scroll instead.
     this.log.mount(rail);
+    // The development tools (#1136): the bug button leads the bar,
+    // apart from the actions, and the panel it opens lies over the rail.
+    if (this.debugMenu) {
+      this.debugToggle = this.buildDebugToggle(doc);
+      bottom.appendChild(this.debugToggle);
+    }
     this.actions.mount(bottom);
     hud.append(top, rail, side, bottom);
+    this.debugMenu?.mount(hud);
     this.watchSideOverflow(panels);
     this.watchSideOverflow(side);
     this.guardPointer(hud);
@@ -504,6 +551,8 @@ export class TacticalHudView {
       mission !== undefined && this.mission?.missionId !== mission.missionId;
     if (arrived) {
       this.log.clear();
+      // A placement armed for one mission is not armed for the next.
+      this.armedPlacement = undefined;
     }
     this.mission = mission;
     this.view = mission === undefined ? undefined : viewFor(mission, "tdf");
@@ -554,15 +603,34 @@ export class TacticalHudView {
     this.log.append([event], mission, this.campaign);
   }
 
-  /** Shows a one-line message in the banner (a rejected command, for instance). */
+  /**
+   * Shows a one-line message in the banner (a rejected command, for
+   * instance). An empty message — the screen's "nothing to report" after
+   * a command went through — gives the line back to the armed placement
+   * while there is one (#1136), so the tool's own instruction is not
+   * wiped by the placement it just made.
+   */
   showStatus(message: string): void {
-    this.banner.showStatus(message);
+    this.banner.showStatus(
+      message === "" && this.armedPlacement !== undefined
+        ? armedStatus(this.armedPlacement)
+        : message,
+    );
+  }
+
+  /** The unit the debug menu has armed for placement, if any (#1136). */
+  getArmedPlacement(): PlaceableUnit | undefined {
+    return this.armedPlacement;
   }
 
   /** Removes the HUD. */
   unmount(): void {
     this.sideOverflow?.dispose();
     this.sideOverflow = undefined;
+    this.debugMenu?.unmount();
+    this.debugToggle = undefined;
+    this.debugOpen = false;
+    this.armedPlacement = undefined;
     this.pointerGuard?.dispose();
     this.pointerGuard = undefined;
     this.stopFollowing?.();
@@ -670,6 +738,9 @@ export class TacticalHudView {
   /** Applies an intent from the input controller or the keyboard; drops all but Shift while a phase plays (#1130). */
   handleIntent(intent: TacticalIntent): void {
     if (this.playbackLocked && intent.kind !== "inspect") {
+      return;
+    }
+    if (this.placeArmed(intent)) {
       return;
     }
     switch (intent.kind) {
@@ -1057,6 +1128,112 @@ export class TacticalHudView {
     };
   }
 
+  // ===========================================
+  // Development tools (#1136)
+  // ===========================================
+
+  /**
+   * The bug button at the bottom left of the bar: opens and closes the
+   * debug menu. Built only when the HUD was given the tools, so a
+   * production build has no such element to find.
+   */
+  private buildDebugToggle(doc: Document): HTMLButtonElement {
+    const button = doc.createElement("button");
+    button.type = "button";
+    button.className = "tut-btn tut-hud__debug-toggle";
+    button.dataset.testid = "debug-menu-toggle";
+    button.dataset.action = "debug-menu";
+    button.setAttribute("aria-label", "Debug menu");
+    button.setAttribute("aria-pressed", "false");
+    button.title = "Debug menu";
+    button.appendChild(iconGlyph(doc, "bug"));
+    button.addEventListener("click", () => {
+      this.setDebugMenuOpen(!this.debugOpen);
+    });
+    return button;
+  }
+
+  /** Opens or closes the debug menu; closing puts any armed placement down. */
+  private setDebugMenuOpen(open: boolean): void {
+    this.debugOpen = open;
+    if (!open && this.armedPlacement !== undefined) {
+      this.armedPlacement = undefined;
+      this.showStatus("");
+    }
+    this.refresh();
+  }
+
+  /**
+   * Arms an entry for placement, or disarms with `undefined`. Arming
+   * closes the wheel — whatever it was asking is over — and puts the
+   * tool's instruction on the status line; disarming clears it. The
+   * entry stays armed across placements, so a row of swarmers is a row
+   * of clicks.
+   */
+  private armPlacement(entry: PlaceableUnit | undefined): void {
+    this.closeMenu();
+    this.armedPlacement = entry;
+    this.showStatus(entry === undefined ? "" : armedStatus(entry));
+    this.refresh();
+  }
+
+  /**
+   * While a placement is armed, the map click is the placement: any
+   * intent that names a tile — a tile itself, a unit or a spawner
+   * standing on one, by either button — dispatches `PlaceUnit` there,
+   * and Escape disarms. Returns whether the intent was taken, so the
+   * ordinary handling (selection, the wheel, a walk) does not also run.
+   *
+   * ```
+   *   armed, select-tile / invoke / select-unit / select-spawner ──► PlaceUnit at that tile
+   *   armed, action cancel                                        ──► disarm
+   *   armed, anything else, or not armed                          ──► not taken
+   * ```
+   *
+   * A click on a unit is a placement onto its tile, which the rules
+   * refuse as occupied: better a refusal that says so than a click that
+   * silently changes the selection while the tool reads armed.
+   */
+  private placeArmed(intent: TacticalIntent): boolean {
+    const armed = this.armedPlacement;
+    const mission = this.mission;
+    if (armed === undefined || mission === undefined) {
+      return false;
+    }
+    if (intent.kind === "action") {
+      if (intent.action === "cancel") {
+        this.armPlacement(undefined);
+        return true;
+      }
+      return false;
+    }
+    const tile = this.placementTileOf(intent);
+    if (tile === undefined) {
+      return false;
+    }
+    this.closeMenu();
+    this.handlers.onCommand(
+      placeUnit(mission.missionId, armed.kind, armed.id, tile),
+    );
+    return true;
+  }
+
+  /** The tile an intent points at, if it points at one. */
+  private placementTileOf(intent: TacticalIntent): TileCoord | undefined {
+    switch (intent.kind) {
+      case "select-tile":
+        return intent.tile;
+      case "invoke":
+        return this.tileOf(intent.target);
+      case "select-unit":
+        return this.tileOf({ kind: "unit", unitId: intent.unitId });
+      case "select-spawner":
+        return this.tileOf({ kind: "spawner", spawnerId: intent.spawnerId });
+      default:
+        return undefined;
+    }
+  }
+
   /** The tile a wheel target stands on, for the mark on the map. */
   private tileOf(target: TacticalInvokeTarget): TileCoord | undefined {
     switch (target.kind) {
@@ -1114,18 +1291,19 @@ export class TacticalHudView {
     // Turning the page keeps the ring; everything else closes it first,
     // and unconditionally: the view reports a choice but does not hide
     // itself, so every path out of here has to (#627).
+    // Whether the entry turns the page is the wheel's rule, asked once
+    // (#1136): a tile's page holds the grenade and the charge as well as
+    // the weapons, so counting weapons here would fire a lone rifle at
+    // the ground the wheel had promised to open a page for.
     if (
       (choice.action === "attack" || choice.action === "attack-tile") &&
-      choice.weaponId === undefined
+      choice.weaponId === undefined &&
+      this.mission !== undefined &&
+      opensAttackPage(this.mission, unitId, target, this.deps.combatTuning)
     ) {
-      const weapons = this.mission
-        ? weaponOptions(this.mission, unitId, this.deps.combatTuning)
-        : [];
-      if (weapons.length > 1) {
-        this.menuPage = "weapons";
-        this.refresh();
-        return;
-      }
+      this.menuPage = "weapons";
+      this.refresh();
+      return;
     }
     if (choice.action === "back") {
       this.menuPage = "actions";
@@ -1893,6 +2071,14 @@ export class TacticalHudView {
 
   /** Pushes the mission and the presentation state into every part. */
   private refresh(): void {
+    this.debugMenu?.update({
+      open: this.debugOpen,
+      armed: this.armedPlacement,
+    });
+    this.debugToggle?.setAttribute(
+      "aria-pressed",
+      this.debugOpen ? "true" : "false",
+    );
     if (this.radarLegend) {
       this.radarLegend.hidden = !(
         this.mission?.radars.some((radar) => radar.team === "tdf") ?? false
@@ -1936,14 +2122,10 @@ export class TacticalHudView {
       // how many are out there before anyone has seen one.
       bugUnits: this.view === undefined ? 0 : countAlive(this.view, "bugs"),
       // One-based for the player: "floor 1" is the ground floor, not
-      // "floor 0". The scene counts storeys from zero.
+      // "floor 0". The scene counts storeys from zero, and its top
+      // storey is the roof going back on rather than a floor (#1136).
       layer:
-        this.layerFocus === undefined
-          ? undefined
-          : {
-              storey: this.layerFocus.storey + 1,
-              storeyCount: this.layerFocus.storeyCount,
-            },
+        this.layerFocus === undefined ? undefined : floorOf(this.layerFocus),
     });
     // The card shows the enemy being aimed at while one is (#1134): the
     // player who clicked a bug wants to read it, and the shot's own

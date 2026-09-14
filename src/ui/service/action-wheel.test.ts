@@ -95,7 +95,7 @@ describe("actionWheel on a tile", () => {
       tile,
     });
   });
-  it("offers a grenade and a charge on a tile with their numbers and uses, closed when spent or out of reach (#1132)", () => {
+  it("keeps a grenade and a charge off the ring and puts them on the Attack page with their numbers and uses, closed when spent or out of reach (#1132, #1136)", () => {
     const base = hudMission();
     const kitted: TacticalState = {
       ...base,
@@ -108,16 +108,36 @@ describe("actionWheel on a tile", () => {
       },
     };
     const near = { x: 2, y: 0, z: 1 };
-    const page = actionWheel(
+    const ring = actionWheel(
       { kind: "tile", tile: near },
       contextFor(kitted, "s1"),
     );
-    const grenade = page.items.find(
-      (item) => item.id === "equipment:grenade:2,0,1",
+    // Nothing thrown or placed sits beside Attack any more (#1136): the
+    // ring offers Attack, and Attack turns to the page that lists them.
+    expect(ids(ring)).toEqual([
+      "move:2,0,1",
+      "attack-tile:2,0,1",
+      "overwatch",
+      "reload",
+    ]);
+    expect(ring.items[1]).toMatchObject({
+      label: "Attack",
+      detail: "3 options",
+    });
+    expect(ring.items[1]?.disabled).toBeUndefined();
+    const page = weaponWheel(
+      { kind: "tile", tile: near },
+      contextFor(kitted, "s1"),
     );
-    const charge = page.items.find(
-      (item) => item.id === "equipment:breaching-charge:2,0,1",
-    );
+    expect(ids(page)).toEqual([
+      "attack-tile:2,0,1:primary",
+      "equipment:grenade:2,0,1",
+      "equipment:breaching-charge:2,0,1",
+      "back:ground",
+    ]);
+    expect(page.hub).toEqual({ value: "Ground", caption: "pick an attack" });
+    const grenade = page.items[1];
+    const charge = page.items[2];
     expect(grenade).toMatchObject({ label: "Grenade", icon: "attack" });
     expect(grenade?.detail).toMatch(/^\d+% · [\d–]+ dmg .*2\/2$/);
     expect(grenade?.disabled).not.toBe(true);
@@ -139,25 +159,62 @@ describe("actionWheel on a tile", () => {
       ),
     };
     expect(
-      actionWheel(
+      weaponWheel(
         { kind: "tile", tile: near },
         contextFor(spent, "s1"),
       ).items.find((item) => item.id === "equipment:grenade:2,0,1"),
     ).toMatchObject({ disabled: true, detail: "none left" });
     const far = { x: 7, y: 0, z: 1 };
     expect(
-      actionWheel(
+      weaponWheel(
         { kind: "tile", tile: far },
         contextFor(kitted, "s1"),
       ).items.find((item) => item.id === "equipment:breaching-charge:7,0,1"),
     ).toMatchObject({ disabled: true, detail: "out of range" });
-    // A squad with no kit gets no such entries.
+    // A squad with no kit gets no such entries on either page.
     expect(
       actionWheel(
         { kind: "tile", tile: near },
         contextFor(base, "s1"),
       ).items.some((item) => item.id.startsWith("equipment:")),
     ).toBe(false);
+    expect(
+      weaponWheel(
+        { kind: "tile", tile: near },
+        contextFor(base, "s1"),
+      ).items.some((item) => item.id.startsWith("equipment:")),
+    ).toBe(false);
+  });
+
+  it("keeps the radar dish on the ring while the grenade goes under Attack (#1136)", () => {
+    const base = hudMission();
+    const radio: TacticalState = {
+      ...base,
+      templates: {
+        ...base.templates,
+        rifle: {
+          ...hudTemplate("rifle", "Radio Squad"),
+          equipment: ["grenade", "radar-dish"],
+        },
+      },
+    };
+    const tile = { x: 2, y: 0, z: 1 };
+    const ring = actionWheel({ kind: "tile", tile }, contextFor(radio, "s1"));
+    // The dish is a scan, not an attack: it stays where it was.
+    expect(ids(ring)).toEqual([
+      "move:2,0,1",
+      "attack-tile:2,0,1",
+      "deploy-radar:2,0,1",
+      "overwatch",
+      "reload",
+    ]);
+    expect(ring.items[1]).toMatchObject({ detail: "2 options" });
+    const page = weaponWheel({ kind: "tile", tile }, contextFor(radio, "s1"));
+    expect(ids(page)).toEqual([
+      "attack-tile:2,0,1:primary",
+      "equipment:grenade:2,0,1",
+      "back:ground",
+    ]);
   });
 
   it("offers Move with the path length, then the unit's own actions", () => {
@@ -385,7 +442,7 @@ describe("actionWheel on a tile with a weapon that marks the ground (#1121)", ()
     expect(page.items[1]).toMatchObject({
       id: "attack-tile:3,0,1",
       label: "Attack",
-      detail: "2 weapons",
+      detail: "2 options",
     });
     const weapons = weaponWheel(
       { kind: "tile", tile },
@@ -407,7 +464,133 @@ describe("actionWheel on a tile with a weapon that marks the ground (#1121)", ()
       primary: true,
     });
     expect(weapons.items[1]?.detail).toMatch(/^\d+% · \d+–\d+ dmg$/);
-    expect(weapons.hub).toEqual({ value: "Ground", caption: "pick a weapon" });
+    expect(weapons.hub).toEqual({ value: "Ground", caption: "pick an attack" });
+  });
+
+  it("a rocket squad's charge is off the ring and on the Attack page after the weapon, before Back (#1136)", () => {
+    const base = rocketMission();
+    const mission: TacticalState = {
+      ...base,
+      templates: {
+        ...base.templates,
+        rocket: { ...base.templates.rocket!, equipment: ["breaching-charge"] },
+      },
+    };
+    // (2,0,1) is a step from `s1` at (1,1): inside the charge's reach.
+    const tile = { x: 2, y: 0, z: 1 };
+    const ring = actionWheel({ kind: "tile", tile }, contextFor(mission, "s1"));
+    expect(ids(ring)).toEqual([
+      "move:2,0,1",
+      "attack-tile:2,0,1",
+      "overwatch",
+      "reload",
+    ]);
+    // One weapon and one charge: no longer the shot itself, but the
+    // page, counted honestly.
+    expect(ring.items[1]).toMatchObject({
+      label: "Attack",
+      icon: "attack",
+      detail: "2 options",
+    });
+    expect(ring.items[1]?.disabled).toBeUndefined();
+    const page = weaponWheel({ kind: "tile", tile }, contextFor(mission, "s1"));
+    expect(ids(page)).toEqual([
+      "attack-tile:2,0,1:primary",
+      "equipment:breaching-charge:2,0,1",
+      "back:ground",
+    ]);
+    expect(page.items[0]).toMatchObject({ label: "Attack", primary: true });
+    expect(page.items[0]?.detail).toMatch(/^\d+% · \d+–\d+ dmg/);
+    expect(page.items[1]).toMatchObject({
+      label: "Breaching charge",
+      icon: "warning",
+    });
+    expect(page.items[1]?.detail).toMatch(/dmg .* in 2 turns · 1\/1$/);
+    expect(page.items[1]?.primary).toBeUndefined();
+  });
+
+  it("a rifle squad with a grenade gets Attack as an opener, and the page shows the rifle closed and the grenade open (#1136)", () => {
+    const base = hudMission();
+    const mission: TacticalState = {
+      ...base,
+      templates: {
+        ...base.templates,
+        rifle: {
+          ...hudTemplate("rifle", "Rifle Squad"),
+          equipment: ["grenade"],
+        },
+      },
+    };
+    const tile = { x: 3, y: 0, z: 1 };
+    const ring = actionWheel({ kind: "tile", tile }, contextFor(mission, "s1"));
+    // Without the grenade this entry is closed with "not at the ground"
+    // (the test above); with it there is something to throw.
+    expect(ring.items[1]).toMatchObject({
+      id: "attack-tile:3,0,1",
+      label: "Attack",
+      detail: "2 options",
+    });
+    expect(ring.items[1]?.disabled).toBeUndefined();
+    const page = weaponWheel({ kind: "tile", tile }, contextFor(mission, "s1"));
+    expect(ids(page)).toEqual([
+      "attack-tile:3,0,1:primary",
+      "equipment:grenade:3,0,1",
+      "back:ground",
+    ]);
+    expect(page.items[0]).toMatchObject({
+      disabled: true,
+      detail: "not at the ground",
+    });
+    expect(page.items[1]).toMatchObject({ label: "Grenade", icon: "attack" });
+    expect(page.items[1]?.disabled).toBeUndefined();
+  });
+
+  it("a dry rifle does not close Attack while there is a grenade to throw; with no kit it does (#1136)", () => {
+    const base = hudMission();
+    const rifle = hudTemplate("rifle", "Rifle Squad");
+    const dry = (equipment: readonly string[]): TacticalState => ({
+      ...base,
+      templates: {
+        ...base.templates,
+        rifle: {
+          ...rifle,
+          weapons: rifle.weapons.map((w) => ({ ...w, charges: 4 })),
+          equipment,
+        },
+      },
+      units: base.units.map((u) =>
+        u.id === "s1" ? { ...u, charges: { primary: 0 } } : u,
+      ),
+    });
+    const tile = { x: 3, y: 0, z: 1 };
+    const kitted = actionWheel(
+      { kind: "tile", tile },
+      contextFor(dry(["grenade"]), "s1"),
+    );
+    expect(kitted.items[1]).toMatchObject({
+      id: "attack-tile:3,0,1",
+      detail: "2 options",
+    });
+    expect(kitted.items[1]?.disabled).toBeUndefined();
+    const page = weaponWheel(
+      { kind: "tile", tile },
+      contextFor(dry(["grenade"]), "s1"),
+    );
+    expect(page.items[0]).toMatchObject({ disabled: true, detail: "empty" });
+    expect(page.items[1]?.disabled).toBeUndefined();
+    const bare = actionWheel({ kind: "tile", tile }, contextFor(dry([]), "s1"));
+    expect(bare.items[1]).toMatchObject({
+      id: "attack-tile:3,0,1",
+      disabled: true,
+      detail: "empty",
+    });
+    // Spent action points close it whatever is carried: the unit cannot
+    // act, and a grenade costs an action too.
+    const winded = actionWheel(
+      { kind: "tile", tile },
+      contextFor(dry(["grenade"]), "s2"),
+    );
+    expect(winded.items[1]).toMatchObject({ disabled: true, detail: "no AP" });
   });
 
   it("parses the tile entries back into the shots they stand for", () => {
@@ -473,7 +656,7 @@ describe("actionWheel on an enemy", () => {
     );
     expect(page.items[0]).toMatchObject({
       id: "attack:b1",
-      detail: "2 weapons",
+      detail: "2 options",
       primary: true,
     });
     const best = Math.max(

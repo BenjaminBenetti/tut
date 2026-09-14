@@ -1,4 +1,3 @@
-import { STOREY_LAYERS } from "../../core/model/elevation";
 import type { LayerFocus } from "../model/layer-focus";
 
 // ===========================================
@@ -6,14 +5,12 @@ import type { LayerFocus } from "../model/layer-focus";
 // ===========================================
 
 /**
- * What the focus needs from a building: where it stands, and how many
- * storeys it has. Narrower than `Building` on purpose — the cut is
- * arithmetic over heights, and a `Building` brings a footprint, a roof,
- * entrances and connectors that have no say in it.
+ * What the focus needs from a building: how many storeys it has.
+ * Narrower than `Building` on purpose — the range is arithmetic over a
+ * floor count, and a `Building` brings a footprint, a roof, entrances
+ * and connectors that have no say in it.
  */
 export interface BuildingHeight {
-  /** Layer of the flattened terrain under the building. */
-  readonly groundLevel: number;
   /** Only the count is read. */
   readonly floors: readonly unknown[];
 }
@@ -28,32 +25,8 @@ export interface LayerFocusSource {
 // ===========================================
 
 /**
- * The elevation the **terrain** cut is measured from: the lowest ground
- * any building stands on, or `0` on a map with none.
- *
- * Since #978 this anchors only the ground, roads and anything else
- * outside a building. Buildings are cut by their own floor numbers, so
- * they no longer share an anchor — which is the whole of that fix: a
- * building standing four layers up a hill used to have its ground floor
- * above a cut taken from the building at the bottom, and vanished
- * entirely at the moment the player asked to see inside it.
- *
- * Terrain keeps the height rule because it has no floors to count, and
- * because hiding the hill a unit is standing on would remove the world
- * rather than open it up.
- *
- * @param map - The map's buildings.
- * @returns The anchor layer.
- */
-export function focusGroundLevel(map: LayerFocusSource): number {
-  return map.buildings.length === 0
-    ? 0
-    : Math.min(...map.buildings.map((building) => building.groundLevel));
-}
-
-/**
- * How many distinct storey views the map offers, at least one: the floor
- * count of the tallest building.
+ * How many distinct views the map offers, at least one: one per floor of
+ * the tallest building, **plus the roof** (#1136).
  *
  * Counted per building rather than across the map's height (#978). The
  * two agree on the 57 % of generated maps whose buildings all stand on
@@ -63,19 +36,23 @@ export function focusGroundLevel(map: LayerFocusSource): number {
  * mean the third floor of whatever they are looking at, not a height
  * that is the third floor of one building and the first of another.
  *
- * A map with no buildings, or whose tallest is a single storey, offers
- * exactly one: there is nothing above the ground floor to peel, so the
- * control is inert rather than absent. That is deliberate — a key that
- * does nothing on open ground is easier to explain than a key that
- * appears and disappears.
+ * The roof is a step of its own because it is the step the player was
+ * missing (#1136): with the count equal to the floors, the top view of
+ * the tallest building was its roof, and there was no press that took
+ * the roof off to show the top floor. A one-floor building therefore
+ * offers two views — its ground floor with the roof off, and roofed.
+ *
+ * A map with no buildings offers exactly one: there is nothing to peel,
+ * so the control is inert rather than absent. That is deliberate — a
+ * key that does nothing on open ground is easier to explain than a key
+ * that appears and disappears.
  *
  * @param map - The map's buildings.
- * @returns Storeys available, `>= 1`.
+ * @returns Views available, `>= 1`.
  */
 export function storeyCount(map: LayerFocusSource): number {
-  return Math.max(
-    1,
-    ...map.buildings.map((building) => building.floors.length),
+  return (
+    1 + Math.max(0, ...map.buildings.map((building) => building.floors.length))
   );
 }
 
@@ -88,23 +65,19 @@ export function storeyCount(map: LayerFocusSource): number {
  *
  * @param map - The map's buildings.
  * @param storey - Storey asked for; out-of-range values clamp.
- * @returns The focus, with the cut that produces it.
+ * @returns The focus.
  */
 export function focusAt(map: LayerFocusSource, storey: number): LayerFocus {
   const count = storeyCount(map);
-  const clamped = Math.min(count - 1, Math.max(0, Math.trunc(storey)));
   return {
-    storey: clamped,
+    storey: Math.min(count - 1, Math.max(0, Math.trunc(storey))),
     storeyCount: count,
-    cutLevel:
-      clamped >= count - 1
-        ? undefined
-        : focusGroundLevel(map) + (clamped + 1) * STOREY_LAYERS - 1,
   };
 }
 
 /**
- * The focus the map opens on: the top storey, which is the uncut map.
+ * The focus the map opens on: the top storey, which is the uncut map
+ * with every roof on.
  *
  * @param map - The map's buildings.
  * @returns The starting focus.
@@ -127,4 +100,40 @@ export function stepFocus(
   delta: number,
 ): LayerFocus {
   return focusAt(map, focus.storey + delta);
+}
+
+/**
+ * Whether `focus` is the top of its range: the whole map, roofs on.
+ *
+ * One predicate rather than a comparison at every consumer, because the
+ * map view, the fog and the HUD all need the same answer and "the top"
+ * is the one view where nothing at all is hidden (#1136).
+ *
+ * @param focus - The focus to ask about.
+ * @returns True at the roofed top view.
+ */
+export function isTopFocus(focus: LayerFocus): boolean {
+  return focus.storey >= focus.storeyCount - 1;
+}
+
+/**
+ * The floor `focus` shows, one-based for the player, or `undefined` at
+ * the roofed top view; and how many floors the map has to show.
+ *
+ * "Floor 2 of 2" then "All" rather than "2 of 3" then "3 of 3": the
+ * top view is not a floor, it is the roof going back on, and a readout
+ * that counted it as one made the player look for a third floor that
+ * was not there (#1136).
+ *
+ * @param focus - The focus to describe.
+ * @returns The floor shown and the floor count.
+ */
+export function floorOf(focus: LayerFocus): {
+  readonly floor: number | undefined;
+  readonly floors: number;
+} {
+  return {
+    floor: isTopFocus(focus) ? undefined : focus.storey + 1,
+    floors: focus.storeyCount - 1,
+  };
 }

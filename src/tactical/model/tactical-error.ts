@@ -118,7 +118,28 @@ export type TacticalError =
       readonly expected: string;
       readonly active: string;
     }
-  | { readonly kind: "unhandled-command"; readonly commandType: string };
+  | { readonly kind: "unhandled-command"; readonly commandType: string }
+  // The development tools' placement (#1136): a dev-only command that a
+  // production build refuses outright, and three ways a placement can
+  // fail on the map.
+  | { readonly kind: "debug-disabled" }
+  | {
+      readonly kind: "unknown-unit-type";
+      readonly unitKind: string;
+      readonly id: string;
+    }
+  | {
+      readonly kind: "tile-blocked";
+      readonly x: number;
+      readonly y: number;
+      readonly z: number;
+    }
+  | {
+      readonly kind: "tile-occupied";
+      readonly x: number;
+      readonly y: number;
+      readonly z: number;
+    };
 
 /** Human-readable text for a tactical error, for the status line and logs. */
 export function describeTacticalError(error: TacticalError): string {
@@ -211,6 +232,14 @@ export function describeTacticalError(error: TacticalError): string {
       return `Mission "${error.expected}" was expected but "${error.active}" is in progress`;
     case "unhandled-command":
       return `No rule handles "${error.commandType}" in this mission`;
+    case "debug-disabled":
+      return "The development tools are not available in this build";
+    case "unknown-unit-type":
+      return `No ${error.unitKind} of type "${error.id}" can be placed`;
+    case "tile-blocked":
+      return `A unit of that size cannot stand at (${String(error.x)}, ${String(error.y)}, ${String(error.z)})`;
+    case "tile-occupied":
+      return `Something already stands at (${String(error.x)}, ${String(error.y)}, ${String(error.z)})`;
   }
 }
 
@@ -275,6 +304,10 @@ export const TACTICAL_ERROR_KINDS: Readonly<
   "not-player-phase": true,
   "mission-mismatch": true,
   "unhandled-command": true,
+  "debug-disabled": true,
+  "unknown-unit-type": true,
+  "tile-blocked": true,
+  "tile-occupied": true,
 };
 
 /**

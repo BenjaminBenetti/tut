@@ -245,6 +245,15 @@ export function describeEvent(
         icon: "egg",
         tone: "bug",
       };
+    case "tactical:unit-placed":
+      // The development tools did this, and the log says so (#1136):
+      // a tester reading back a staged fight should see where the
+      // staging was.
+      return {
+        text: `Debug: placed ${nameOf(event.payload.unitId)} at (${String(event.payload.tile.x)}, ${String(event.payload.tile.z)})`,
+        icon: "bug",
+        tone: "dim",
+      };
     case "tactical:objective-updated":
       return {
         text: event.payload.complete

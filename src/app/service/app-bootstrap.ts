@@ -116,6 +116,10 @@ export async function bootstrapApp(doc: Document): Promise<void> {
     },
     onStore: mapSync.observe,
     ...(debug === undefined ? {} : { debug }),
+    // The development tools (#1136) exist in dev builds only; this is
+    // the one place the flag enters, and everything below reads what
+    // the composition made of it rather than the environment.
+    devTools: import.meta.env.DEV,
   });
 
   const router: DomScreenRouter = new DomScreenRouter(
@@ -228,6 +232,7 @@ export async function bootstrapApp(doc: Document): Promise<void> {
             objectiveTuning: OBJECTIVE_TUNING,
             rankTuning: game.content.rosterTuning.ranks,
             previewDeps: game.tactical.attackDeps,
+            ...(game.devTools === undefined ? {} : { devTools: game.devTools }),
             sceneHost: new DomTacticalSceneHost({
               baseUrl: import.meta.env.BASE_URL,
               onHooks: (hooks) => {

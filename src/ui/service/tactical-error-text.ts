@@ -269,6 +269,10 @@ export function describeRefusal(
       return `${names.unit(error.unitId)} is not standing in the extraction zone`;
     case "not-extractable":
       return `${names.unit(error.unitId)} cannot leave through the extraction zone`;
+    case "unknown-unit-type":
+      // A catalogue id, not an entity id, but it is still an id and
+      // the menu that sent it already knows what it asked for (#1136).
+      return `No ${error.unitKind} of that type can be placed`;
     default:
       // Every remaining kind names nothing, so the developer wording is
       // already the player's. The test guards that claim.

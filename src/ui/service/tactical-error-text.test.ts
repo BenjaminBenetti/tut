@@ -78,6 +78,10 @@ const EVERY_KIND: readonly TacticalError[] = [
   { kind: "no-such-tile", x: 1, y: 0, z: 2 },
   { kind: "no-aim", unitId: ID },
   { kind: "tile-out-of-sight", x: 1, y: 0, z: 2 },
+  { kind: "debug-disabled" },
+  { kind: "unknown-unit-type", unitKind: "bug", id: ID },
+  { kind: "tile-blocked", x: 1, y: 0, z: 2 },
+  { kind: "tile-occupied", x: 1, y: 0, z: 2 },
 ];
 
 describe("describeRefusal", () => {

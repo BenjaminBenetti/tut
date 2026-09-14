@@ -1131,7 +1131,7 @@ describe("TacticalMapView.setLayerFocus", () => {
   it("opens every building at its own floor, however high it stands", () => {
     const map = hillside(4).build();
     const view = new TacticalMapView(map);
-    view.setLayerFocus({ storey: 0, storeyCount: 2, cutLevel: 1 });
+    view.setLayerFocus({ storey: 0, storeyCount: 2 });
 
     // Level 0 is the low building's ground floor, level 4 the high
     // one's -- four layers above the cut the low building takes, and
@@ -1149,7 +1149,7 @@ describe("TacticalMapView.setLayerFocus", () => {
     const byHeight = new TacticalMapView(flat);
     byHeight.setMaxLevel(1);
     const byStorey = new TacticalMapView(flat);
-    byStorey.setLayerFocus({ storey: 0, storeyCount: 2, cutLevel: 1 });
+    byStorey.setLayerFocus({ storey: 0, storeyCount: 2 });
     expect(drawnLevels(byStorey)).toEqual(drawnLevels(byHeight));
     // And it is not vacuous: the cut is doing something on this map.
     expect(drawnLevels(byStorey)).toEqual([0]);
@@ -1163,13 +1163,118 @@ describe("TacticalMapView.setLayerFocus", () => {
     const view = new TacticalMapView(fixture.build());
     const all = drawnLevels(view);
     expect(all).toEqual([0, 2, 4, 6, 8]);
-    const top = { storey: 1, storeyCount: 2, cutLevel: undefined };
+    // Two floors offer three views since #1136: the roofed top, the
+    // roof off, and the ground floor.
+    const top = { storey: 2, storeyCount: 3 };
     view.setLayerFocus(top);
     expect(drawnLevels(view)).toEqual(all);
-    view.setLayerFocus({ storey: 0, storeyCount: 2, cutLevel: 1 });
+    view.setLayerFocus({ storey: 0, storeyCount: 3 });
     expect(drawnLevels(view)).toEqual([0, 4]);
+    // Roof off: both first floors drawn, the roof at 8 gone.
+    view.setLayerFocus({ storey: 1, storeyCount: 3 });
+    expect(drawnLevels(view)).toEqual([0, 2, 4, 6]);
     view.setLayerFocus(top);
     expect(drawnLevels(view)).toEqual(all);
+    view.dispose();
+  });
+
+  // The reported case (#1136): the hills were cut off around a building
+  // whose ground floor the player was looking at. Terrain has no floors
+  // and is never cut, whatever height it stands at.
+  it("never cuts terrain, however high it stands (#1136)", () => {
+    const fixture = hillside(4);
+    // A hilltop beside the high building, above every cut the old
+    // height rule would have taken: no building, no floor index.
+    fixture.tile({ x: 3, y: 8, z: 0 }, SurfaceIds.GRASS);
+    fixture.tile({ x: 3, y: 6, z: 1 }, SurfaceIds.GRASS);
+    const view = new TacticalMapView(fixture.build());
+    view.setLayerFocus({ storey: 0, storeyCount: 3 });
+    expect(drawnLevels(view)).toEqual([0, 4, 6, 8]);
+    expect(view.isCut({ x: 3, y: 8, z: 0 })).toBe(false);
+    // And the building tiles on those very levels are still cut: the
+    // high building's first floor is at 6, its roof would be at 8.
+    expect(view.isCut({ x: 2, y: 6, z: 2 })).toBe(true);
+    view.dispose();
+  });
+
+  // The other half of #1136: the roof is its own step. Below the top
+  // view every roof is off, so the view just under the top shows the
+  // top floor of the tallest building, which no press used to reach.
+  it("takes every roof off below the top view and puts them back at the top", () => {
+    const b = new FixtureMapBuilder(8, 8, 10).fillGround();
+    b.building(building("tall", 0, 2));
+    b.building(building("short", 0, 1));
+    for (let floor = 0; floor < 2; floor++) {
+      b.tile({ x: 1, y: floor * STOREY_LAYERS, z: 1 }, SurfaceIds.FLOOR, {
+        buildingId: "tall",
+        floorIndex: floor,
+      });
+    }
+    b.tile({ x: 1, y: 2 * STOREY_LAYERS, z: 1 }, SurfaceIds.ROOF, {
+      buildingId: "tall",
+    });
+    b.tile({ x: 5, y: 0, z: 5 }, SurfaceIds.FLOOR, {
+      buildingId: "short",
+      floorIndex: 0,
+    });
+    b.tile({ x: 5, y: STOREY_LAYERS, z: 5 }, SurfaceIds.ROOF, {
+      buildingId: "short",
+    });
+    const view = new TacticalMapView(b.build());
+    const tallRoof = { x: 1, y: 2 * STOREY_LAYERS, z: 1 };
+    const shortRoof = { x: 5, y: STOREY_LAYERS, z: 5 };
+    // The top: everything, roofs included.
+    view.setLayerFocus({ storey: 2, storeyCount: 3 });
+    expect(view.isCut(tallRoof)).toBe(false);
+    expect(view.isCut(shortRoof)).toBe(false);
+    // Roof off: the tall building's top floor is on show, and so is the
+    // short one's — its roof goes too, even though its storey is not
+    // above the one asked for.
+    view.setLayerFocus({ storey: 1, storeyCount: 3 });
+    expect(view.isCut(tallRoof)).toBe(true);
+    expect(view.isCut({ x: 1, y: STOREY_LAYERS, z: 1 })).toBe(false);
+    expect(view.isCut(shortRoof)).toBe(true);
+    expect(view.isCut({ x: 5, y: 0, z: 5 })).toBe(false);
+    view.setLayerFocus({ storey: 0, storeyCount: 3 });
+    expect(view.isCut(shortRoof)).toBe(true);
+    expect(view.isCut({ x: 1, y: STOREY_LAYERS, z: 1 })).toBe(true);
+    view.dispose();
+  });
+
+  // A pitched roof has no tiles: its cap is a model placement keyed on
+  // the top floor beneath it. It must go with the roofs, not with the
+  // floor it is keyed on, or the "roof off" view leaves a hat hanging
+  // over the top floor it exists to show (#1136).
+  it("takes a pitched roof cap off with the roofs, not with the floor under it", async () => {
+    const b = new FixtureMapBuilder(4, 4, 8).fillGround();
+    b.building({
+      ...building("house", 0, 1),
+      footprint: [{ x: 1, z: 1, w: 1, d: 1 }],
+      roof: { kind: "pitched", walkable: false },
+    });
+    b.tile({ x: 1, y: 0, z: 1 }, SurfaceIds.FLOOR, {
+      buildingId: "house",
+      floorIndex: 0,
+    });
+    const view = new TacticalMapView(b.build());
+    await view.loadModels(new FakeModelLoader());
+    const caps = named(view, "roofs-model:");
+    expect(caps.length).toBeGreaterThan(0);
+    const matrix = new Matrix4();
+    const drawn = (): boolean =>
+      caps.every((cap) => {
+        cap.getMatrixAt(0, matrix);
+        return matrix.determinant() !== 0;
+      });
+    view.setLayerFocus({ storey: 1, storeyCount: 2 });
+    expect(drawn()).toBe(true);
+    // The ground floor, roof off: the floor the cap is keyed on is
+    // drawn, the cap is not.
+    view.setLayerFocus({ storey: 0, storeyCount: 2 });
+    expect(drawn()).toBe(false);
+    expect(view.isCut({ x: 1, y: 0, z: 1 })).toBe(false);
+    view.setLayerFocus({ storey: 1, storeyCount: 2 });
+    expect(drawn()).toBe(true);
     view.dispose();
   });
 
@@ -1188,10 +1293,10 @@ describe("TacticalMapView.setLayerFocus", () => {
 
     view.setLayerFocus(undefined);
     expect(connectorDrawn(view, map)).toBe(true);
-    view.setLayerFocus({ storey: 0, storeyCount: 2, cutLevel: 1 });
+    view.setLayerFocus({ storey: 0, storeyCount: 2 });
     expect(levelGroupVisible(view, STOREY_LAYERS)).toBe(true);
     expect(connectorDrawn(view, map)).toBe(false);
-    view.setLayerFocus({ storey: 1, storeyCount: 2, cutLevel: undefined });
+    view.setLayerFocus({ storey: 1, storeyCount: 2 });
     expect(connectorDrawn(view, map)).toBe(true);
   });
 
@@ -1200,7 +1305,7 @@ describe("TacticalMapView.setLayerFocus", () => {
   it("keeps a cut tile hidden whatever vision says about it", () => {
     const map = hillside(4).build();
     const view = new TacticalMapView(map);
-    view.setLayerFocus({ storey: 0, storeyCount: 2, cutLevel: 1 });
+    view.setLayerFocus({ storey: 0, storeyCount: 2 });
     const cut = drawnLevels(view);
     const index = new TileIndex(map);
     view.setVision({
@@ -1256,14 +1361,16 @@ function flatWithRoofs(): FixtureMapBuilder {
 describe("the flat-map control for #978", () => {
   it("draws exactly what the old height cut drew, at every storey", () => {
     const map = flatWithRoofs().build();
-    // Three storeys, from the tallest building's floor count.
-    const storeys = 3;
+    // Four views, from the tallest building's three floors plus the roof
+    // (#1136). The height cut for the view under the top stops just
+    // under the roof, which is what "roof off" draws.
+    const storeys = 4;
     for (let storey = 0; storey < storeys; storey++) {
       const cutLevel = storey === storeys - 1 ? undefined : storey * 2 + 1;
       const byHeight = new TacticalMapView(map);
       byHeight.setMaxLevel(cutLevel);
       const byStorey = new TacticalMapView(map);
-      byStorey.setLayerFocus({ storey, storeyCount: storeys, cutLevel });
+      byStorey.setLayerFocus({ storey, storeyCount: storeys });
       expect(
         drawnLevels(byStorey),
         `storey ${String(storey)} must draw what the height cut drew`,
@@ -1277,7 +1384,7 @@ describe("the flat-map control for #978", () => {
   // storey is one above the top floor index.
   it("draws both roofs at the top of the range", () => {
     const view = new TacticalMapView(flatWithRoofs().build());
-    view.setLayerFocus({ storey: 2, storeyCount: 3, cutLevel: undefined });
+    view.setLayerFocus({ storey: 3, storeyCount: 4 });
     // Level 6 is the tall roof, level 2 the short one.
     expect(drawnLevels(view)).toContain(6);
     expect(drawnLevels(view)).toContain(2);

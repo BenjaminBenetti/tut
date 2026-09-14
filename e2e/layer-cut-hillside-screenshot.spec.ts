@@ -249,6 +249,8 @@ test("captures the hillside cut, before and after, in one run", async ({
   ).toBeGreaterThan(0);
 
   await centreOn(page, highest.tile);
+  // `storeys` counts the roof as a view since #1136, so this over-steps
+  // by one and the clamp absorbs it.
   for (let i = 0; i < storeys; i++) {
     await page.evaluate(() =>
       (globalThis as HookGlobal).__tutTactical__?.stepLayer(-1),

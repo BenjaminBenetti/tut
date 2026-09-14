@@ -77,6 +77,8 @@ export class UnexploredFog implements Disposable {
     BufferGeometry
   >();
   private known: ReadonlySet<number> | undefined;
+  /** The tiles the storey view has peeled away, whose fog goes with them (#1136). */
+  private hidden: ((key: number) => boolean) | undefined;
 
   /** Builds three shared-geometry sheets per populated level, hidden until vision arrives. */
   constructor(private readonly map: TileGridSource) {
@@ -157,20 +159,25 @@ export class UnexploredFog implements Disposable {
     this.known = vision === undefined ? undefined : known;
     for (const surface of this.surfaces)
       this.updateSurface(surface.coverage, surface.keys, surface.owners);
-    for (const fog of this.levels.values()) {
-      fog.data.fill(0);
-      let count = 0;
-      if (vision !== undefined) {
-        for (const tile of fog.tiles) {
-          if (!known.has(gridKey(tile, this.map.width, this.map.depth))) {
-            fog.data[tile.z * this.map.width + tile.x] = 255;
-            count++;
-          }
-        }
-      }
-      fog.mask.needsUpdate = true;
-      fog.root.visible = count > 0;
-    }
+    this.rebuildMasks();
+  }
+
+  /**
+   * Tells the fog which tiles the storey view is hiding, and redraws the
+   * sheets without them (#1136).
+   *
+   * The sheets used to go with their level group, which the storey view
+   * hid wholesale above the cut. Now that the view hides building tiles
+   * one by one and leaves the hills on the same level alone, a level's
+   * sheet stays, and without this the mist over an unexplored upper
+   * floor would hang in the air over the floor the player cut down to
+   * read — the same fault #1134 fixed for the overlays.
+   *
+   * @param hidden - Whether the tile behind a key is peeled away, or undefined to hide nothing.
+   */
+  setLayerCut(hidden: ((key: number) => boolean) | undefined): void {
+    this.hidden = hidden;
+    this.rebuildMasks();
   }
 
   /** Releases masks, materials, geometry, and scene attachments on mission teardown. */
@@ -247,6 +254,29 @@ export class UnexploredFog implements Disposable {
       ),
     );
     coverage.needsUpdate = true;
+  }
+
+  /**
+   * Writes every level's mask from what is known and what is peeled
+   * away, and shows a sheet only where it has something to draw.
+   */
+  private rebuildMasks(): void {
+    const known = this.known;
+    for (const fog of this.levels.values()) {
+      fog.data.fill(0);
+      let count = 0;
+      if (known !== undefined) {
+        for (const tile of fog.tiles) {
+          const key = gridKey(tile, this.map.width, this.map.depth);
+          if (!known.has(key) && !this.hidden?.(key)) {
+            fog.data[tile.z * this.map.width + tile.x] = 255;
+            count++;
+          }
+        }
+      }
+      fog.mask.needsUpdate = true;
+      fog.root.visible = count > 0;
+    }
   }
 
   /** Creates a level's coverage texture and softly offset mist sheets. */

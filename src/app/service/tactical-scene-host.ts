@@ -473,8 +473,9 @@ export class DomTacticalSceneHost implements TacticalSceneHost {
 
   /**
    * Records the focus on the body so an end-to-end test can read which
-   * storey is drawn without a hook. One-based, because that is what the
-   * player is shown.
+   * storey is drawn without a hook. One-based, as the floors are shown
+   * to the player; the top value is the roofed view, which the banner
+   * labels "All" rather than numbering (#1136).
    */
   private publishLayerFocus(): void {
     const focus = this.attached?.layerFocus;

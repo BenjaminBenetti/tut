@@ -572,7 +572,7 @@ describe("TacticalSceneBuilder elevation tethers", () => {
     // Uncut: the unit is standing on drawn floor, so no line.
     expect(tethersIn(builder).size).toBe(0);
 
-    builder.setLayerFocus({ storey: 0, storeyCount: 2, cutLevel: 1 });
+    builder.setLayerFocus({ storey: 0, storeyCount: 2 });
     const drawn = tethersIn(builder);
     expect([...drawn.keys()]).toEqual(["u1"]);
     // It spans from the ground it lands on to the unit's feet: the
@@ -588,7 +588,7 @@ describe("TacticalSceneBuilder elevation tethers", () => {
   it("draws nothing for a unit standing on floor the cut still shows", async () => {
     const { builder } = tetherScene();
     await builder.update([unit("u1", "squad:squad-1", 2, 2)], TEMPLATES);
-    builder.setLayerFocus({ storey: 0, storeyCount: 2, cutLevel: 1 });
+    builder.setLayerFocus({ storey: 0, storeyCount: 2 });
     expect(tethersIn(builder).size).toBe(0);
   });
 
@@ -603,7 +603,7 @@ describe("TacticalSceneBuilder elevation tethers", () => {
       ],
       TEMPLATES,
     );
-    builder.setLayerFocus({ storey: 0, storeyCount: 2, cutLevel: 1 });
+    builder.setLayerFocus({ storey: 0, storeyCount: 2 });
     const line = tethersIn(builder).get("b1");
     expect(line?.position.x).toBeCloseTo(3);
     expect(line?.position.z).toBeCloseTo(3);
@@ -636,7 +636,7 @@ describe("TacticalSceneBuilder elevation tethers", () => {
       ],
       TEMPLATES,
     );
-    builder.setLayerFocus({ storey: 0, storeyCount: 3, cutLevel: 1 });
+    builder.setLayerFocus({ storey: 0, storeyCount: 3 });
     const line = tethersIn(builder).get("u1");
     // Ground at layer 0, not the cut-away first floor at layer 2.
     expect(line?.scale.y).toBeCloseTo(tileTop(2 * STOREY_LAYERS) - tileTop(0));
@@ -673,7 +673,7 @@ describe("TacticalSceneBuilder elevation tethers", () => {
     );
     // Cut to the ground floor: the roof is gone, so the unit on it is
     // unsupported and the line lands on the ground.
-    builder.setLayerFocus({ storey: 0, storeyCount: 2, cutLevel: 1 });
+    builder.setLayerFocus({ storey: 0, storeyCount: 2 });
     const line = tethersIn(builder).get("u1");
     expect(line?.scale.y).toBeCloseTo(tileTop(2 * STOREY_LAYERS) - tileTop(0));
   });
@@ -708,26 +708,26 @@ describe("TacticalSceneBuilder elevation tethers", () => {
       TEMPLATES,
     );
     // The view the scene opens on: the roof is drawn, so no tether.
-    builder.setLayerFocus({ storey: 1, storeyCount: 2, cutLevel: undefined });
+    builder.setLayerFocus({ storey: 1, storeyCount: 2 });
     expect(tethersIn(builder).size).toBe(0);
     // And one appears the moment the player actually cuts below it.
-    builder.setLayerFocus({ storey: 0, storeyCount: 2, cutLevel: 1 });
+    builder.setLayerFocus({ storey: 0, storeyCount: 2 });
     expect(tethersIn(builder).size).toBe(1);
   });
 
   it("retires the line when the cut rises back over the unit", async () => {
     const { builder } = tetherScene();
     await builder.update([upstairs()], TEMPLATES);
-    builder.setLayerFocus({ storey: 0, storeyCount: 2, cutLevel: 1 });
+    builder.setLayerFocus({ storey: 0, storeyCount: 2 });
     expect(tethersIn(builder).size).toBe(1);
-    builder.setLayerFocus({ storey: 1, storeyCount: 2, cutLevel: undefined });
+    builder.setLayerFocus({ storey: 1, storeyCount: 2 });
     expect(tethersIn(builder).size).toBe(0);
   });
 
   it("retires the line when the unit dies", async () => {
     const { builder } = tetherScene();
     await builder.update([upstairs()], TEMPLATES);
-    builder.setLayerFocus({ storey: 0, storeyCount: 2, cutLevel: 1 });
+    builder.setLayerFocus({ storey: 0, storeyCount: 2 });
     expect(tethersIn(builder).size).toBe(1);
     await builder.update([{ ...upstairs(), hp: 0 }], TEMPLATES);
     expect(tethersIn(builder).size).toBe(0);
@@ -836,8 +836,8 @@ describe("TacticalSceneBuilder footprints", () => {
 describe("TacticalSceneBuilder marks under the storey cut (#1134)", () => {
   const groundFloor = { x: 2, y: 0, z: 2 };
   const firstFloor = { x: 2, y: STOREY_LAYERS, z: 2 };
-  const cutToGround = { storey: 0, storeyCount: 2, cutLevel: 1 };
-  const uncut = { storey: 1, storeyCount: 2, cutLevel: undefined };
+  const cutToGround = { storey: 0, storeyCount: 2 };
+  const uncut = { storey: 1, storeyCount: 2 };
 
   it("answers the map view's cut for a tile", () => {
     const { builder } = tetherScene();

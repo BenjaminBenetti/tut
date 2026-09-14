@@ -193,6 +193,37 @@ describe("UnexploredFog", () => {
     fog.dispose();
   });
 
+  // The sheets used to go with their level group, which the storey view
+  // hid above the cut. Since #1136 the view hides building tiles one by
+  // one and leaves the level's hills alone, so the fog has to drop the
+  // peeled tiles itself or the mist hangs over the floor below.
+  it("drops the mist over tiles the storey view has peeled away (#1136)", () => {
+    const map = new FixtureMapBuilder(2, 1, 1).fillGround().build();
+    const fog = new UnexploredFog(map);
+    const groups = new Map<number, Group>();
+    fog.attachTo((level) => {
+      const group = new Group();
+      groups.set(level, group);
+      return group;
+    });
+    const ground = groups.get(0)!;
+    fog.setVision({ visible: [], explored: [], spotted: [], lastSeen: {} });
+    const mask = maskOf(ground);
+    expect(Array.from(mask.image.data!)).toEqual([255, 255]);
+    expect(ground.children[0]?.visible).toBe(true);
+    fog.setLayerCut((key) => key === 1);
+    expect(Array.from(mask.image.data!)).toEqual([255, 0]);
+    // A cut that takes the whole level takes its sheet with it.
+    fog.setLayerCut(() => true);
+    expect(Array.from(mask.image.data!)).toEqual([0, 0]);
+    expect(ground.children[0]?.visible).toBe(false);
+    // Vision arriving later keeps the cut; lifting the cut restores.
+    fog.setVision({ visible: [0], explored: [0], spotted: [], lastSeen: {} });
+    expect(Array.from(mask.image.data!)).toEqual([0, 0]);
+    fog.setLayerCut(undefined);
+    expect(Array.from(mask.image.data!)).toEqual([0, 255]);
+    fog.dispose();
+  });
   it("never paints currently visible ground, even before explored catches up", () => {
     const map = new FixtureMapBuilder(1, 1, 1).fillGround().build();
     const group = new Group();

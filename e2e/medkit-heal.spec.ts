@@ -84,13 +84,15 @@ async function woundAndResume(page: Page, unitId: string): Promise<void> {
  * the tile behind a unit picks the unit in the isometric view, as the
  * debug-menu spec found — between `min` and `max` tiles out in either
  * axis. Nearest first, so a medic lands as close to the wound as the
- * map allows.
+ * map allows. `clearNeighbours` false drops the neighbour rule, for a
+ * tile the spec selects through a hook instead of the pointer.
  */
 function clearTilesAround(
   mission: TacticalState,
   around: Tile,
   min: number,
   max: number,
+  clearNeighbours = true,
 ): Tile[] {
   const exists = new Set(mission.map.tiles.map(keyOf));
   const living = mission.units.filter((u) => u.hp > 0);
@@ -109,7 +111,12 @@ function clearTilesAround(
       if (ring < min) continue;
       const tile = { x: around.x + dx, y: around.y, z: around.z + dz };
       const key = keyOf(tile);
-      if (!exists.has(key) || taken.has(key) || !clearOfUnits(tile)) continue;
+      if (
+        !exists.has(key) ||
+        taken.has(key) ||
+        (clearNeighbours && !clearOfUnits(tile))
+      )
+        continue;
       candidates.push(tile);
     }
   }
@@ -201,14 +208,42 @@ test("a placed medic heals a wounded squad from the tile's wheel", async ({
     "aria-pressed",
     "true",
   );
-  const site = await clickableTile(
-    page,
-    clearTilesAround(resumed!, wounded!.pos, 2, 3),
-  );
-  expect(site, "a clear tile near the wounded squad").toBeTruthy();
+  // A clear tile may still refuse a squad — a kerb, a prop, the drop
+  // ship's hull — and the spec does not know the pass rules, so it
+  // tries the nearest clear tiles in turn until one takes the medic.
   const unitsBefore = resumed!.units.length;
-  await drawnFrame(page);
-  await page.mouse.click(site!.at.x, site!.at.y);
+  let site: { tile: Tile; at: { x: number; y: number } } | undefined;
+  const candidates = clearTilesAround(resumed!, wounded!.pos, 2, 3);
+  for (let attempt = 0; attempt < 8 && candidates.length > 0; attempt += 1) {
+    const next = await clickableTile(page, candidates);
+    if (next === undefined) break;
+    candidates.splice(
+      candidates.findIndex((t) => keyOf(t) === keyOf(next.tile)),
+      1,
+    );
+    await drawnFrame(page);
+    await page.mouse.click(next.at.x, next.at.y);
+    const placed = await page
+      .waitForFunction(
+        (expected) => {
+          const raw = localStorage.getItem("tut:save:autosave");
+          if (raw === null) return false;
+          const envelope = JSON.parse(raw) as {
+            state: { activeMission?: { units: unknown[] } };
+          };
+          return (envelope.state.activeMission?.units.length ?? 0) >= expected;
+        },
+        unitsBefore + 1,
+        { timeout: 3_000 },
+      )
+      .then(() => true)
+      .catch(() => false);
+    if (placed) {
+      site = next;
+      break;
+    }
+  }
+  expect(site, "a tile near the wounded squad that takes a medic").toBeTruthy();
   await expect
     .poll(async () => (await savedMission(page))?.units.length)
     .toBe(unitsBefore + 1);
@@ -241,7 +276,9 @@ test("a placed medic heals a wounded squad from the tile's wheel", async ({
   );
   const placed = await savedMission(page);
   let healId = "";
-  for (const tile of clearTilesAround(placed!, wounded!.pos, 1, 1)) {
+  // Selected through the hook rather than the pointer, so the wound's
+  // own neighbours qualify here; the pick trap does not apply.
+  for (const tile of clearTilesAround(placed!, wounded!.pos, 1, 1, false)) {
     await page.evaluate(
       (t) => (globalThis as HookGlobal).__tutTactical__?.selectTile(t),
       tile,

@@ -21,6 +21,7 @@ import type { TacticalCommand } from "../../tactical/model/tactical-command";
 import type { TacticalError } from "../../tactical/model/tactical-error";
 import type { TacticalEvent } from "../../tactical/model/tactical-event";
 import type { LayerFocus } from "../../graphics/model/layer-focus";
+import { floorOf } from "../../graphics/service/layer-focus-service";
 import type { MissionView } from "../../tactical/model/mission-view";
 import type {
   TacticalPhase,
@@ -1936,14 +1937,10 @@ export class TacticalHudView {
       // how many are out there before anyone has seen one.
       bugUnits: this.view === undefined ? 0 : countAlive(this.view, "bugs"),
       // One-based for the player: "floor 1" is the ground floor, not
-      // "floor 0". The scene counts storeys from zero.
+      // "floor 0". The scene counts storeys from zero, and its top
+      // storey is the roof going back on rather than a floor (#1136).
       layer:
-        this.layerFocus === undefined
-          ? undefined
-          : {
-              storey: this.layerFocus.storey + 1,
-              storeyCount: this.layerFocus.storeyCount,
-            },
+        this.layerFocus === undefined ? undefined : floorOf(this.layerFocus),
     });
     // The card shows the enemy being aimed at while one is (#1134): the
     // player who clicked a bug wants to read it, and the shot's own

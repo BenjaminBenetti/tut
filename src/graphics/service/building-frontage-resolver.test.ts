@@ -366,7 +366,7 @@ describe("building use cues", () => {
       mesh.name.includes("residential-entry"),
     )!;
     const matrix = new Matrix4();
-    view.setLayerFocus({ storey: 0, storeyCount: 2, cutLevel: 3 });
+    view.setLayerFocus({ storey: 0, storeyCount: 2 });
     window.getMatrixAt(0, matrix);
     expect(matrix.determinant()).toBe(0);
     entry.getMatrixAt(0, matrix);

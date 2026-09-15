@@ -6,7 +6,10 @@ import { MechAssembler } from "../../graphics/service/mech-assembler";
 import { MechPreviewScene } from "../../graphics/service/mech-preview-scene";
 import { PlaceholderModelFactory } from "../../graphics/service/placeholder-model-factory";
 import type { MechLoadout } from "../../roster/model/mech-loadout";
-import type { MechPreviewHost } from "../../ui/model/mech-preview-host";
+import type {
+  MechPreviewHost,
+  MechPreviewListener,
+} from "../../ui/model/mech-preview-host";
 
 // ===========================================
 // Types
@@ -71,10 +74,15 @@ export class DomMechPreviewHost implements MechPreviewHost {
   // MechPreviewHost
   // ===========================================
 
-  /** Builds the scene inside `container`, releasing any earlier one. */
-  attach(container: HTMLElement): void {
+  /**
+   * Builds the scene inside `container`, releasing any earlier one.
+   *
+   * @param container - The element the canvas goes in.
+   * @param listener - Told where the parts landed after every draw.
+   */
+  attach(container: HTMLElement, listener?: MechPreviewListener): void {
     this.release();
-    this.scene = new MechPreviewScene(container);
+    this.scene = new MechPreviewScene(container, listener);
   }
 
   /** Assembles `loadout` and draws it, unless a newer call has superseded this one. */

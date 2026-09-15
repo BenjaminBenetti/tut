@@ -1,25 +1,33 @@
 import type { Unsubscribe } from "../../core/model/event-bus";
 import type { Result } from "../../core/model/result";
+import { err, ok } from "../../core/model/result";
 import { buildMech } from "../../overworld/model/build-mech-command";
 import { deleteLoadout } from "../../overworld/model/delete-loadout-command";
 import type { OverworldCommand } from "../../overworld/model/overworld-command";
 import { saveLoadout } from "../../overworld/model/save-loadout-command";
 import type { LoadoutError } from "../../roster/model/loadout-error";
 import type { MechLoadout } from "../../roster/model/mech-loadout";
+import type { MechPart } from "../../roster/model/mech-part";
 import type { MechRatingTuning } from "../../roster/model/mech-rating-tuning";
 import type { MechStatSheet } from "../../roster/model/mech-stat-sheet";
-import type { UnitTuning } from "../../tactical/model/unit-tuning";
 import type { PartCatalogue } from "../../roster/model/part-catalogue";
 import type { UpgradeTuning } from "../../roster/model/upgrade-tuning";
-import { validateLoadout } from "../../roster/service/loadout-validation-service";
+import {
+  fitPart,
+  removeUtility,
+} from "../../roster/service/loadout-fit-service";
+import type { LoadoutDescription } from "../../roster/service/loadout-validation-service";
+import { describeLoadout } from "../../roster/service/loadout-validation-service";
 import type { GameState } from "../../save/model/game-state";
+import type { UnitTuning } from "../../tactical/model/unit-tuning";
 import type { GameSession } from "../model/game-session";
 import type { MechPreviewHost } from "../model/mech-preview-host";
 import type { Screen, ScreenId } from "../model/screen";
 import type { ScreenRouter } from "../model/screen-router";
 import { formatCredits } from "../service/format";
-import { LoadoutEditorView } from "../view/loadout-editor-view";
-import { MechPreviewView } from "../view/mech-preview-view";
+import { sheetPreview } from "../service/sheet-preview";
+import { MechStageView } from "../view/mech-stage-view";
+import { PartPaletteView } from "../view/part-palette-view";
 import { SavedLoadoutsView } from "../view/saved-loadouts-view";
 import { StatSheetView } from "../view/stat-sheet-view";
 
@@ -31,7 +39,7 @@ import { StatSheetView } from "../view/stat-sheet-view";
 export interface MechBayScreenDeps {
   readonly router: ScreenRouter;
   readonly session: GameSession;
-  /** The parts the pickers offer and the validator resolves against. */
+  /** The parts the palette offers and the validator resolves against. */
   readonly parts: PartCatalogue;
   /** Combat-rating weights for the sheet. */
   readonly rating: MechRatingTuning;
@@ -45,8 +53,8 @@ export interface MechBayScreenDeps {
   readonly upgrades: UpgradeTuning;
   /**
    * Draws the draft as an assembled mech (#694). Optional: with none,
-   * the preview panel shows its empty note and the bay is unchanged,
-   * which is what the jsdom specs run against.
+   * the stage shows its empty note and the bay is unchanged, which is
+   * what the jsdom specs run against.
    */
   readonly preview?: MechPreviewHost;
 }
@@ -62,23 +70,31 @@ const DEFAULT_MECH_NAME = "Mech";
 // ===========================================
 
 /**
- * The mech bay (GDD §5.8): choose a chassis, fit parts, watch validation
- * and the stat sheet follow every change, then save the draft under its
- * name or build a mech from it. The draft starts from the campaign's
- * first saved template, or from the first catalogue part in each slot
- * when there is none. Save, Load, Delete and Build dispatch the #63
+ * The mech bay (GDD §5.8), built around the mech (#1145): the assembled
+ * draft stands in the middle with a badge on every fitted part, the
+ * palette on the left lists every catalogue part to drag onto it, the
+ * stat sheet on the right follows every change and previews what a
+ * rested-on part would do, and the saved templates live in a popover
+ * off the bottom bar. Save, Load, Delete and Build dispatch the #63
  * roster commands through the campaign store; a rejection lands in the
  * header's status line.
  *
  * ```
- *   ┌ #mech-bay-bar  MECH BAY  ¢5,000 ── status ── [Save] [mech name][Build ¢2,850] [Roster] ┐
- *   ├───────────────────────────────┬─────────────────────────────────────────────────────────┤
- *   │ #loadout-editor               │ #stat-sheet                                             │
- *   │ pickers + inline errors       │ values / error list                                     │
- *   │ #saved-loadouts               │                                                         │
- *   └───────────────────────────────┴─────────────────────────────────────────────────────────┘
+ *   ┌ #mech-bay-bar  MECH BAY  ¢5,000 ── status ── [mech name][Build ¢2,850] [Roster] ┐
+ *   ├──────────────┬────────────────────────────────────┬─────────────────────────────┤
+ *   │ #part-palette│ #mech-stage                        │ #stat-sheet                 │
+ *   │ search       │        ┌ BACK WEAPON ┐             │ Combat  HP 70  +6           │
+ *   │ slot chips   │        │ Missile Pod │             │         Armor 6             │
+ *   │ ┌──┐ Railgun │  ┌ARMS┐   [ mech ]  ┌ARM WEAPON┐  │ Build   Weight 60  +15      │
+ *   │ └──┘ T2 ¢…   │  └────┘             └──────────┘  │ ⚠ would be overweight       │
+ *   │ …            │  [UTILITY 1 Radiator ×][UTILITY 2] │                             │
+ *   ├──────────────┴────────────────────────────────────┴─────────────────────────────┤
+ *   │ [▴ Loadouts · Skirmisher]                                                       │
+ *   └─────────────────────────────────────────────────────────────────────────────────┘
  *
- *   editor.onChange(draft) ──► validateLoadout(draft) ──► sheet, editor errors, Build button
+ *   palette.onHover(part)  ──► fitPart(draft, part) ──► describeLoadout ──► sheet.preview(deltas)
+ *   palette drag ──► stage drop ──► fitPart(draft, part, slot) ──► validate(draft')
+ *   validate(draft) ──► describeLoadout ──► sheet, stage badges, preview host, Build button
  *   [Save]  ──► store.dispatch(saveLoadout(draft))
  *   [Build] ──► store.dispatch(saveLoadout(draft)) then store.dispatch(buildMech(draft.name, mechName))
  *   store.subscribe ──► credits, saved list, Build button
@@ -95,18 +111,17 @@ export class MechBayScreen implements Screen {
 
   readonly id: ScreenId = "mech-bay";
   private readonly deps: MechBayScreenDeps;
-  private readonly editor: LoadoutEditorView;
+  private readonly palette: PartPaletteView;
+  private readonly stage: MechStageView;
   private readonly sheet: StatSheetView;
-  private readonly preview = new MechPreviewView();
   private readonly saved: SavedLoadoutsView;
   private root: HTMLElement | undefined;
   private credits: HTMLElement | undefined;
   private status: HTMLElement | undefined;
-  private saveButton: HTMLButtonElement | undefined;
   private buildButton: HTMLButtonElement | undefined;
   private mechName: HTMLInputElement | undefined;
   private draft: MechLoadout | undefined;
-  private result: Result<MechStatSheet, LoadoutError[]> | undefined;
+  private description: LoadoutDescription | undefined;
   private unsubscribe: Unsubscribe | undefined;
   private readonly disposers: (() => void)[] = [];
 
@@ -114,26 +129,55 @@ export class MechBayScreen implements Screen {
   // Constructor
   // ===========================================
 
-  /** @param deps - Router, session and the content the editor and validator read. */
+  /** @param deps - Router, session and the content the palette and validator read. */
   constructor(deps: MechBayScreenDeps) {
     this.deps = deps;
     this.sheet = new StatSheetView(deps.unitTuning.mech);
-    this.editor = new LoadoutEditorView(
+    this.palette = new PartPaletteView(
       {
-        onChange: (loadout) => {
-          this.validate(loadout);
+        onHover: (part) => {
+          this.previewPart(part);
+        },
+        onFit: (part) => {
+          this.fit(part);
+        },
+        onDragStart: (part) => {
+          this.stage.setDragging(part);
+        },
+        onDragEnd: () => {
+          this.stage.setDragging(undefined);
         },
       },
       deps.parts,
     );
+    this.stage = new MechStageView({
+      onDrop: (part, utilityIndex) => {
+        this.stage.setDragging(undefined);
+        this.fit(part, utilityIndex);
+      },
+      onRemoveUtility: (index) => {
+        if (this.draft) {
+          this.validate(removeUtility(this.draft, index));
+        }
+      },
+    });
     this.saved = new SavedLoadoutsView({
       onLoad: (loadout) => {
-        this.editor.setLoadout(loadout);
         this.validate(loadout);
+        this.saved.setOpen(false);
         this.showStatus("");
       },
       onDelete: (name) => {
         this.dispatch(deleteLoadout(name));
+      },
+      onSave: () => {
+        this.save();
+      },
+      onNameChange: (name) => {
+        if (this.draft) {
+          this.draft = { ...this.draft, name };
+          this.refreshButtons(this.deps.session.state);
+        }
       },
     });
   }
@@ -151,19 +195,14 @@ export class MechBayScreen implements Screen {
     layout.appendChild(this.createBar(doc));
     const body = doc.createElement("div");
     body.className = "tut-mech-bay__body";
-    const left = doc.createElement("div");
-    left.className = "tut-stack";
-    this.editor.mount(left);
-    this.saved.mount(left);
-    body.appendChild(left);
-    // The sheet used to be the whole right column and ended 470 px shy
-    // of the bottom; the picture of the mech goes in that room (#694).
-    const right = doc.createElement("div");
-    right.className = "tut-stack";
-    this.sheet.mount(right);
-    this.preview.mount(right);
-    body.appendChild(right);
+    this.palette.mount(body);
+    this.stage.mount(body);
+    this.sheet.mount(body);
     layout.appendChild(body);
+    const footer = doc.createElement("footer");
+    footer.className = "tut-topbar tut-mech-bay__footer";
+    this.saved.mount(footer);
+    layout.appendChild(footer);
     root.appendChild(layout);
     this.root = layout;
 
@@ -174,15 +213,17 @@ export class MechBayScreen implements Screen {
       this.render(change.state);
     });
 
-    const viewport = this.preview.viewport();
+    const viewport = this.stage.viewport();
     if (viewport && this.deps.preview) {
-      this.deps.preview.attach(viewport);
-      this.preview.markAttached();
+      this.deps.preview.attach(viewport, {
+        framed: (anchors) => {
+          this.stage.setAnchors(anchors);
+        },
+      });
+      this.stage.markAttached();
     }
 
-    const draft = this.initialDraft(state);
-    this.editor.setLoadout(draft);
-    this.validate(draft);
+    this.validate(this.initialDraft(state));
   }
 
   /** Unsubscribes, unmounts the views and removes the layout. */
@@ -193,39 +234,83 @@ export class MechBayScreen implements Screen {
       dispose();
     }
     this.deps.preview?.release();
-    this.editor.unmount();
+    this.palette.unmount();
+    this.stage.unmount();
     this.saved.unmount();
     this.sheet.unmount();
-    this.preview.unmount();
     this.root?.remove();
     this.root = undefined;
     this.credits = undefined;
     this.status = undefined;
-    this.saveButton = undefined;
     this.buildButton = undefined;
     this.mechName = undefined;
   }
 
   // ===========================================
-  // Validation
+  // Draft
   // ===========================================
 
-  /** Runs the roster's validator over the draft and pushes the outcome to the views and buttons. */
+  /**
+   * Makes `loadout` the draft: describes it, and pushes the sheet, the
+   * badges, the palette marks, the picture and the buttons after it.
+   */
   private validate(loadout: MechLoadout): void {
     this.draft = loadout;
-    this.result = validateLoadout(
+    this.description = describeLoadout(
       loadout,
       this.deps.parts,
       this.deps.rating,
       this.deps.upgrades,
     );
-    this.sheet.update(this.result);
+    this.sheet.update(this.result());
+    this.sheet.preview(undefined);
+    this.stage.setLoadout(loadout, this.deps.parts);
+    this.stage.setErrors(this.description.errors);
+    this.palette.setLoadout(loadout);
+    this.saved.setName(loadout.name);
     // Drawn from the draft, not from the sheet: an over-weight mech is
     // still the mech the player is looking at, and hiding it on the
     // frame it goes invalid is the one moment they need to see it.
     void this.deps.preview?.show(loadout);
-    this.editor.setErrors(this.result.ok ? [] : this.result.error);
     this.refreshButtons(this.deps.session.state);
+  }
+
+  /** Fits a dropped or chosen part into the draft and re-validates. */
+  private fit(part: MechPart, utilityIndex?: number): void {
+    if (!this.draft) {
+      return;
+    }
+    this.validate(fitPart(this.draft, part, this.deps.parts, utilityIndex));
+    this.showStatus("");
+  }
+
+  /**
+   * Shows on the sheet what fitting `part` would change (#1145), or
+   * clears the preview when the pointer left the palette.
+   */
+  private previewPart(part: MechPart | undefined): void {
+    if (!this.draft || !this.description || part === undefined) {
+      this.sheet.preview(undefined);
+      return;
+    }
+    const next = describeLoadout(
+      fitPart(this.draft, part, this.deps.parts),
+      this.deps.parts,
+      this.deps.rating,
+      this.deps.upgrades,
+    );
+    this.sheet.preview(
+      sheetPreview(this.description.sheet, next, this.deps.unitTuning.mech),
+    );
+  }
+
+  /** The description as the verdict the sheet and buttons read. */
+  private result(): Result<MechStatSheet, LoadoutError[]> {
+    const description = this.description;
+    if (description?.sheet === undefined || description.errors.length > 0) {
+      return err([...(description?.errors ?? [])]);
+    }
+    return ok(description.sheet);
   }
 
   /** The first saved template, or the first catalogue part per slot with no utilities. */
@@ -252,7 +337,7 @@ export class MechBayScreen implements Screen {
   // Actions
   // ===========================================
 
-  /** Saves the draft under the name in the editor. */
+  /** Saves the draft under its name. */
   private save(): void {
     if (this.draft) {
       this.dispatch(saveLoadout(this.draft));
@@ -316,14 +401,14 @@ export class MechBayScreen implements Screen {
    * treasury to cover the sheet's total cost, which the button shows.
    */
   private refreshButtons(state: GameState | undefined): void {
-    if (!this.saveButton || !this.buildButton) {
+    if (!this.buildButton) {
       return;
     }
-    const valid = this.result?.ok === true;
+    const result = this.result();
     const hasCampaign = state !== undefined;
-    this.saveButton.disabled = !hasCampaign || !valid;
-    if (this.result?.ok) {
-      const cost = this.result.value.totalCost;
+    this.saved.setSaveEnabled(hasCampaign && result.ok);
+    if (result.ok) {
+      const cost = result.value.totalCost;
       const affordable = hasCampaign && state.economy.credits >= cost;
       this.buildButton.textContent = `Build ${formatCredits(cost)}`;
       this.buildButton.disabled = !affordable;
@@ -336,7 +421,7 @@ export class MechBayScreen implements Screen {
     }
   }
 
-  /** The header: title, credits, status, Save, mech name and Build, and the way back. */
+  /** The header: title, credits, status, mech name and Build, and the way back. */
   private createBar(doc: Document): HTMLElement {
     const bar = doc.createElement("header");
     bar.id = "mech-bay-bar";
@@ -355,10 +440,6 @@ export class MechBayScreen implements Screen {
     status.dataset.role = "status";
     status.hidden = true;
 
-    const save = this.createButton(doc, "save-loadout", "Save loadout", false);
-    this.listen(save, () => {
-      this.save();
-    });
     const mechName = doc.createElement("input");
     mechName.type = "text";
     mechName.className = "tut-input";
@@ -375,10 +456,9 @@ export class MechBayScreen implements Screen {
       this.deps.router.navigate("roster");
     });
 
-    bar.append(title, credits, spacer, status, save, mechName, build, roster);
+    bar.append(title, credits, spacer, status, mechName, build, roster);
     this.credits = credits;
     this.status = status;
-    this.saveButton = save;
     this.buildButton = build;
     this.mechName = mechName;
     return bar;

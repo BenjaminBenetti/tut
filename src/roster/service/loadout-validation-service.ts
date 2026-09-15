@@ -53,6 +53,29 @@ interface ResolvedLoadout {
 }
 
 // ===========================================
+// Types: description
+// ===========================================
+
+/**
+ * Everything the mech bay wants to know about a draft at once (#1145):
+ * the errors that make it unbuildable and, whenever the parts resolve,
+ * the sheet those parts add up to **even when the build is over
+ * capacity**. A validator that withholds the sheet from an overweight
+ * mech cannot tell the player how far over it is, or what fitting a
+ * lighter gun would do about it.
+ */
+export interface LoadoutDescription {
+  /**
+   * The sheet, present when the chassis and every single-part slot
+   * resolved. Absent on a structural error (missing, unknown or
+   * wrong-slot part), because there is nothing whole to sum.
+   */
+  readonly sheet: MechStatSheet | undefined;
+  /** Every reason the draft is not buildable; empty means it is. */
+  readonly errors: readonly LoadoutError[];
+}
+
+// ===========================================
 // Public Functions
 // ===========================================
 
@@ -82,6 +105,38 @@ export function validateLoadout(
   rating: MechRatingTuning,
   upgrades: UpgradeTuning,
 ): Result<MechStatSheet, LoadoutError[]> {
+  const { sheet, errors } = describeLoadout(
+    loadout,
+    catalogue,
+    rating,
+    upgrades,
+  );
+  if (errors.length > 0 || sheet === undefined) {
+    return err([...errors]);
+  }
+  return ok(sheet);
+}
+
+/**
+ * The same pass as `validateLoadout`, keeping the sheet and the errors
+ * apart instead of folding them into one verdict (#1145). The sheet is
+ * summed whenever every part resolved, capacity errors or not, so a
+ * caller can print "70t of 60t" beside the overweight error rather
+ * than dashes, and can difference two drafts while one of them is not
+ * yet buildable. Pure: reads only its arguments.
+ *
+ * ```
+ *   describeLoadout ──► { sheet?, errors }
+ *          │
+ *          └──► validateLoadout: errors.length > 0 ? err(errors) : ok(sheet)
+ * ```
+ */
+export function describeLoadout(
+  loadout: MechLoadout,
+  catalogue: PartCatalogue,
+  rating: MechRatingTuning,
+  upgrades: UpgradeTuning,
+): LoadoutDescription {
   const resolved = resolveLoadout(loadout, catalogue);
   const errors = [...resolved.errors];
   if (resolved.chassis !== undefined) {
@@ -89,18 +144,17 @@ export function validateLoadout(
       ...checkCapacity(resolved.chassis, resolved.components, upgrades),
     );
   }
-  if (errors.length > 0 || resolved.chassis === undefined) {
-    return err(errors);
-  }
-  return ok(
-    buildStatSheet(
-      resolved.chassis,
-      upgradeLevelOf(loadout, resolved.chassis.id),
-      resolved.components,
-      rating,
-      upgrades,
-    ),
-  );
+  const sheet =
+    resolved.chassis === undefined || resolved.errors.length > 0
+      ? undefined
+      : buildStatSheet(
+          resolved.chassis,
+          upgradeLevelOf(loadout, resolved.chassis.id),
+          resolved.components,
+          rating,
+          upgrades,
+        );
+  return { sheet, errors };
 }
 
 /**

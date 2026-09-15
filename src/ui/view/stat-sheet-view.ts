@@ -5,6 +5,8 @@ import type { MechCombatProfile } from "../../tactical/model/mech-combat-profile
 import type { MechUnitTuning } from "../../tactical/model/unit-tuning";
 import { mechCombatProfile } from "../../tactical/service/mech-combat-profile";
 import { formatCredits, formatWhole } from "../service/format";
+import type { SheetPreview } from "../service/sheet-preview";
+import { formatDelta } from "../service/sheet-preview";
 import { weaponProfileText } from "../service/weapon-profile-text";
 
 // ===========================================
@@ -84,7 +86,12 @@ const EMPTY = "—";
  * one source of truth with the tactical unit factory, so the bay can
  * never describe a mech the field contradicts. Values show dashes while
  * the draft is invalid, since there is no sheet to derive from; the
- * errors also render beside their slots in the editor.
+ * errors also render beside their slots on the stage.
+ *
+ * While a palette part is rested on, `preview` puts a signed delta
+ * beside every value it would move (#1145) — `Armor 6 +3` — the
+ * incoming weapon's line under the weapon it replaces, and a warning
+ * when the swap would leave the build unbuildable.
  */
 export class StatSheetView {
   // ===========================================
@@ -94,9 +101,11 @@ export class StatSheetView {
   private readonly tuning: MechUnitTuning;
   private root: HTMLElement | undefined;
   private fields = new Map<string, HTMLElement>();
+  private deltas = new Map<string, HTMLElement>();
   private weapons: HTMLElement | undefined;
   private verdict: HTMLElement | undefined;
   private errors: HTMLElement | undefined;
+  private warning: HTMLElement | undefined;
 
   // ===========================================
   // Lifecycle
@@ -160,6 +169,11 @@ export class StatSheetView {
     errors.dataset.role = "errors";
     errors.hidden = true;
 
+    const warning = doc.createElement("p");
+    warning.className = "tut-mech-bay__preview-warning";
+    warning.dataset.role = "preview-warning";
+    warning.hidden = true;
+
     panel.append(
       title,
       verdict,
@@ -167,6 +181,7 @@ export class StatSheetView {
       combat,
       buildTitle,
       build,
+      warning,
       errors,
     );
     parent.appendChild(panel);
@@ -174,6 +189,7 @@ export class StatSheetView {
     this.weapons = weapons;
     this.verdict = verdict;
     this.errors = errors;
+    this.warning = warning;
   }
 
   /** Shows the field and build numbers on success, or dashes plus every error on failure. */
@@ -227,31 +243,105 @@ export class StatSheetView {
     this.errors.hidden = false;
   }
 
+  /**
+   * Shows what a hovered part would change, or clears the last preview
+   * when given nothing (#1145). Every delta lands beside its value; a
+   * value the part leaves alone shows no delta at all, so the eye goes
+   * straight to what moves.
+   */
+  preview(preview: SheetPreview | undefined): void {
+    for (const el of this.deltas.values()) {
+      el.textContent = "";
+      el.hidden = true;
+      delete el.dataset.tone;
+    }
+    this.root
+      ?.querySelectorAll('[data-role="combat-weapon-preview"]')
+      .forEach((el) => {
+        el.remove();
+      });
+    if (this.warning) {
+      this.warning.textContent = "";
+      this.warning.hidden = true;
+    }
+    if (this.root) {
+      this.root.dataset.previewing = preview === undefined ? "false" : "true";
+    }
+    if (preview === undefined) {
+      return;
+    }
+    for (const delta of preview.deltas) {
+      const el = this.deltas.get(delta.field);
+      if (!el) {
+        continue;
+      }
+      el.textContent = formatDelta(delta.delta);
+      el.dataset.tone = delta.tone;
+      el.hidden = false;
+    }
+    for (const weapon of preview.weapons) {
+      const block = this.root?.querySelector<HTMLElement>(
+        `[data-role="combat-weapon"][data-weapon="${weapon.slot}"]`,
+      );
+      const doc = this.root?.ownerDocument;
+      if (!doc || !this.weapons) {
+        continue;
+      }
+      const line = doc.createElement("div");
+      line.className = "tut-mech-bay__weapon-preview";
+      line.dataset.role = "combat-weapon-preview";
+      line.dataset.weapon = weapon.slot;
+      line.textContent = `→ ${weapon.name} · ${weapon.text}`;
+      if (block) {
+        block.appendChild(line);
+      } else {
+        this.weapons.appendChild(line);
+      }
+    }
+    if (this.warning && preview.warnings.length > 0) {
+      this.warning.textContent = preview.warnings.join(" ");
+      this.warning.hidden = false;
+    }
+  }
+
   /** Removes the panel. */
   unmount(): void {
     this.root?.remove();
     this.root = undefined;
     this.fields = new Map<string, HTMLElement>();
+    this.deltas = new Map<string, HTMLElement>();
     this.weapons = undefined;
     this.verdict = undefined;
     this.errors = undefined;
+    this.warning = undefined;
   }
 
   // ===========================================
   // Helpers
   // ===========================================
 
-  /** One term/value pair for a grid, registered under `key`. */
+  /**
+   * One term/value pair for a grid, registered under `key`, with the
+   * delta cell the preview writes into beside the value.
+   */
   private row(doc: Document, key: string, label: string): HTMLElement[] {
     const term = doc.createElement("dt");
     term.className = "tut-label";
     term.textContent = label;
-    const value = doc.createElement("dd");
-    value.className = "tut-data";
+    const cell = doc.createElement("dd");
+    cell.className = "tut-data tut-mech-bay__value";
+    const value = doc.createElement("span");
     value.dataset.field = key;
     value.textContent = EMPTY;
+    const delta = doc.createElement("span");
+    delta.className = "tut-mech-bay__delta";
+    delta.dataset.role = "delta";
+    delta.dataset.field = key;
+    delta.hidden = true;
+    cell.append(value, delta);
     this.fields.set(key, value);
-    return [term, value];
+    this.deltas.set(key, delta);
+    return [term, cell];
   }
 
   /** Writes a field's text. */

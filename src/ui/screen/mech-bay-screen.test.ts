@@ -1,6 +1,5 @@
 // @vitest-environment jsdom
 import type { Mock } from "vitest";
-import { partThumbnail } from "../data/part-thumbnail-table";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Unsubscribe } from "../../core/model/event-bus";
@@ -30,7 +29,11 @@ import { StaticPartCatalogue } from "../../roster/repository/static-part-catalog
 import type { GameState } from "../../save/model/game-state";
 import { createNewGame } from "../../save/service/new-game-service";
 import type { CampaignStore, GameSession } from "../model/game-session";
-import type { MechPreviewHost } from "../model/mech-preview-host";
+import type {
+  MechPreviewHost,
+  MechPreviewListener,
+  SlotAnchor,
+} from "../model/mech-preview-host";
 import type { MechLoadout } from "../../roster/model/mech-loadout";
 import type { ScreenId } from "../model/screen";
 import type { ScreenRouter, ScreenRouterEvents } from "../model/screen-router";
@@ -44,6 +47,9 @@ type NavigateMock = Mock<(id: ScreenId) => void>;
 // ===========================================
 
 const PARTS = new StaticPartCatalogue(STARTER_PARTS);
+
+/** Every part the palette lists. */
+const PARTS_TOTAL = STARTER_PARTS.length;
 
 const newGame = (): GameState =>
   createNewGame(
@@ -140,9 +146,15 @@ class RealStore implements CampaignStore {
 class FakePreviewHost implements MechPreviewHost {
   readonly attached: HTMLElement[] = [];
   readonly shown: MechLoadout[] = [];
+  listener: MechPreviewListener | undefined;
   releases = 0;
-  attach(container: HTMLElement): void {
+  attach(container: HTMLElement, listener?: MechPreviewListener): void {
     this.attached.push(container);
+    this.listener = listener;
+  }
+  /** Pretends a frame was drawn with the parts at `anchors`. */
+  frame(anchors: readonly SlotAnchor[]): void {
+    this.listener?.framed(anchors);
   }
   show(loadout: MechLoadout): Promise<void> {
     this.shown.push(loadout);
@@ -216,23 +228,56 @@ describe("MechBayScreen", () => {
     if (!el) throw new Error(`missing ${selector}`);
     return el;
   };
-  const picker = (key: string): HTMLSelectElement =>
-    q<HTMLSelectElement>(`select[data-field="${key}"]`);
-  const choose = (key: string, value: string): void => {
-    const el = picker(key);
-    el.value = value;
-    el.dispatchEvent(new Event("change"));
+  /** The palette card for a part. */
+  const card = (partId: string): HTMLElement =>
+    q(`#part-palette [data-part-id="${partId}"]`);
+  /** The name shown on the stage badge for a slot key (`legs`, `utility-0`). */
+  const fitted = (key: string): string =>
+    q(`#mech-stage [data-role="part-name"][data-field="${key}"]`).textContent ??
+    "";
+  /** The part id a stage badge carries. */
+  const fittedId = (key: string): string | undefined =>
+    q(`#mech-stage [data-row="${key}"]`).dataset.partId;
+  /** Drags a palette card onto the stage, or onto one utility chip. */
+  const drop = (partId: string, utilityIndex?: number): void => {
+    card(partId).dispatchEvent(new Event("dragstart", { bubbles: true }));
+    const target =
+      utilityIndex === undefined
+        ? q("#mech-stage")
+        : q(`#mech-stage [data-index="${String(utilityIndex)}"]`);
+    target.dispatchEvent(new Event("dragover", { bubbles: true }));
+    target.dispatchEvent(new Event("drop", { bubbles: true }));
+    card(partId).dispatchEvent(new Event("dragend", { bubbles: true }));
+  };
+  /** Rests the pointer on a palette card, or on nothing. */
+  const hover = (partId: string | undefined): void => {
+    const list = q('[data-role="part-list"]');
+    if (partId === undefined) {
+      list.dispatchEvent(new MouseEvent("mouseout", { bubbles: true }));
+      return;
+    }
+    card(partId).dispatchEvent(new MouseEvent("mouseover", { bubbles: true }));
   };
   const sheetField = (name: string): string =>
-    q(`#stat-sheet [data-field="${name}"]`).textContent ?? "";
+    q(`#stat-sheet [data-field="${name}"]:not([data-role="delta"])`)
+      .textContent ?? "";
+  const delta = (name: string): HTMLElement =>
+    q(`#stat-sheet [data-role="delta"][data-field="${name}"]`);
   const errorCodes = (): string[] =>
     [
       ...root.querySelectorAll<HTMLElement>(
         '#stat-sheet [data-role="errors"] li',
       ),
     ].map((li) => li.dataset.code ?? "");
+  const button = (action: string): HTMLButtonElement =>
+    q<HTMLButtonElement>(`[data-action="${action}"]`);
+  const status = (): HTMLElement => q('[data-role="status"]');
 
-  it("seeds the editor from the first saved template and shows its validated sheet", () => {
+  // ===========================================
+  // Layout and seeding
+  // ===========================================
+
+  it("seeds the stage from the first saved template and shows its validated sheet", () => {
     mountWith(newGame(), root);
     expect(root.querySelector('[data-screen="mech-bay"]')).not.toBeNull();
     expect(q('#mech-bay-bar [data-field="credits"]').textContent).toBe(
@@ -241,12 +286,13 @@ describe("MechBayScreen", () => {
     expect(q<HTMLInputElement>('[data-field="loadout-name"]').value).toBe(
       STARTER_LOADOUT.name,
     );
-    expect(picker("chassis").value).toBe(STARTER_LOADOUT.chassisId);
-    expect(picker("arm-weapon").value).toBe(STARTER_LOADOUT.armWeaponId);
+    expect(fittedId("chassis")).toBe(STARTER_LOADOUT.chassisId);
+    expect(fittedId("arm-weapon")).toBe(STARTER_LOADOUT.armWeaponId);
+    expect(fitted("arm-weapon")).toBe("Autocannon");
     // Vanguard carries two utilities: one filled from the template, one empty.
-    expect(picker("utility-0").value).toBe(STARTER_LOADOUT.utilityIds[0]);
-    expect(picker("utility-1").value).toBe("");
-    expect(root.querySelector('select[data-field="utility-2"]')).toBeNull();
+    expect(fittedId("utility-0")).toBe(STARTER_LOADOUT.utilityIds[0]);
+    expect(q('#mech-stage [data-row="utility-1"]').dataset.empty).toBe("true");
+    expect(root.querySelector('#mech-stage [data-row="utility-2"]')).toBeNull();
     expect(q('#stat-sheet [data-field="verdict"]').dataset.tone).toBe("ok");
     expect(sheetField("combatRating")).toBe("113");
     expect(sheetField("totalCost")).toBe("¢2,850");
@@ -259,131 +305,234 @@ describe("MechBayScreen", () => {
     expect(root.querySelector('#stat-sheet [data-field="armor"]')).toBeNull();
   });
 
-  it("lists every catalogue part for a slot priced, and only that slot's parts", () => {
+  it("lays the bay out as palette, stage and sheet with the loadouts on the bottom bar", () => {
     mountWith(newGame(), root);
-    const options = [...picker("arm-weapon").options].map((o) => o.value);
-    expect(options).toEqual(PARTS.partsForSlot("arm-weapon").map((p) => p.id));
-    expect(picker("arm-weapon").options[0]?.textContent).toMatch(/· ¢[\d,]+$/);
-    expect([...picker("utility-0").options][0]?.value).toBe("");
+    const body = q(".tut-mech-bay__body");
+    expect([...body.children].map((el) => el.id)).toEqual([
+      "part-palette",
+      "mech-stage",
+      "stat-sheet",
+    ]);
+    expect(q(".tut-mech-bay__footer #saved-loadouts")).toBeTruthy();
+    expect(root.querySelector("select")).toBeNull();
   });
 
-  it("re-validates on every change: a heavy gun shows an overweight error inline and in the sheet", () => {
+  // ===========================================
+  // Palette
+  // ===========================================
+
+  it("lists every catalogue part as a draggable card with its picture, slot, tier and price", () => {
     mountWith(newGame(), root);
-    choose("arm-weapon", "arm-weapon-railgun");
+    const cards = [
+      ...root.querySelectorAll<HTMLElement>("#part-palette [data-part-id]"),
+    ];
+    const all = [
+      "chassis",
+      "legs",
+      "arms",
+      "arm-weapon",
+      "back-weapon",
+      "utility",
+    ].flatMap((slot) => PARTS.partsForSlot(slot as "chassis").map((p) => p.id));
+    expect(cards.map((c) => c.dataset.partId)).toEqual(all);
+    const railgun = card("arm-weapon-railgun");
+    expect(railgun.draggable).toBe(true);
+    expect(railgun.tabIndex).toBe(0);
+    expect(railgun.textContent).toContain("Railgun");
+    expect(railgun.textContent).toMatch(/Arm weapon · T2 · ¢[\d,]+/);
+    const picture = railgun.querySelector<HTMLImageElement>(
+      '[data-role="part-thumb"]',
+    );
+    expect(picture?.getAttribute("src")).toContain("assets/ui/thumbs/");
+    expect(picture?.alt).toBe("");
+    // A utility has no picture and says so with the ability glyph (#594).
+    const glyph = card("utility-radiator").querySelector<HTMLElement>(
+      '[data-role="part-thumb-none"]',
+    );
+    expect(glyph?.dataset.icon).toBe("ability");
+  });
+
+  it("marks the cards whose part the draft carries", () => {
+    mountWith(newGame(), root);
+    expect(card(STARTER_LOADOUT.armWeaponId).dataset.fitted).toBe("true");
+    expect(card("arm-weapon-railgun").dataset.fitted).toBe("false");
+    drop("arm-weapon-flamer");
+    expect(card("arm-weapon-flamer").dataset.fitted).toBe("true");
+    expect(card(STARTER_LOADOUT.armWeaponId).dataset.fitted).toBe("false");
+  });
+
+  it("filters the palette by slot chip and by search text", () => {
+    mountWith(newGame(), root);
+    const visible = (): string[] =>
+      [...root.querySelectorAll<HTMLElement>("#part-palette [data-part-id]")]
+        .filter((c) => !c.hidden)
+        .map((c) => c.dataset.partId ?? "");
+    expect(visible()).toHaveLength(PARTS_TOTAL);
+
+    q<HTMLButtonElement>('[data-filter="legs"]').click();
+    expect(visible()).toEqual(PARTS.partsForSlot("legs").map((p) => p.id));
+    expect(q('[data-filter="legs"]').getAttribute("aria-pressed")).toBe("true");
+    expect(q('[data-filter="all"]').getAttribute("aria-pressed")).toBe("false");
+
+    q<HTMLButtonElement>('[data-filter="all"]').click();
+    const search = q<HTMLInputElement>('[data-field="part-search"]');
+    search.value = "rail";
+    search.dispatchEvent(new Event("input"));
+    expect(visible()).toEqual(["arm-weapon-railgun"]);
+    expect(q('[data-role="no-parts"]').hidden).toBe(true);
+
+    search.value = "zzz";
+    search.dispatchEvent(new Event("input"));
+    expect(visible()).toEqual([]);
+    expect(q('[data-role="no-parts"]').hidden).toBe(false);
+  });
+
+  // ===========================================
+  // Drag and drop
+  // ===========================================
+
+  it("fits a part dropped on the stage into its slot and re-validates", () => {
+    const preview = new FakePreviewHost();
+    mountWith(newGame(), root, false, preview);
+    const before = preview.shown.length;
+    drop("legs-jumper");
+    expect(fittedId("legs")).toBe("legs-jumper");
+    expect(fitted("legs")).toBe("Jumper Legs");
+    expect(preview.shown).toHaveLength(before + 1);
+    expect(preview.shown.at(-1)?.legsId).toBe("legs-jumper");
+    expect(sheetField("totalCost")).not.toBe("¢2,850");
+  });
+
+  it("lights the slot a dragged part is made for while the drag lasts", () => {
+    mountWith(newGame(), root);
+    const stage = q("#mech-stage");
+    card("legs-jumper").dispatchEvent(
+      new Event("dragstart", { bubbles: true }),
+    );
+    expect(stage.dataset.dragging).toBe("legs");
+    expect(q('#mech-stage [data-slot="legs"]').dataset.target).toBe("true");
+    expect(q('#mech-stage [data-slot="chassis"]').dataset.target).toBe("false");
+    card("legs-jumper").dispatchEvent(new Event("dragend", { bubbles: true }));
+    expect(stage.dataset.dragging).toBeUndefined();
+    expect(q('#mech-stage [data-slot="legs"]').dataset.target).toBe("false");
+  });
+
+  it("re-validates on every drop: a heavy gun shows an overweight error on the chassis badge and in the sheet", () => {
+    mountWith(newGame(), root);
+    drop("arm-weapon-railgun");
     expect(errorCodes()).toEqual(["overweight"]);
     expect(q('#stat-sheet [data-field="verdict"]').dataset.tone).toBe("danger");
     expect(sheetField("combatRating")).toBe("—");
     const inline = q('[data-row="chassis"] [data-role="slot-error"]');
     expect(inline.hidden).toBe(false);
     expect(inline.textContent).toContain("carries at most");
+    expect(q('[data-row="chassis"]').dataset.tone).toBe("danger");
 
-    choose("arm-weapon", STARTER_LOADOUT.armWeaponId);
+    drop(STARTER_LOADOUT.armWeaponId);
     expect(errorCodes()).toEqual([]);
     expect(inline.hidden).toBe(true);
     expect(sheetField("combatRating")).toBe("113");
   });
 
-  it("shows a picture of the part each picker has chosen (#495)", () => {
+  it("drops a utility into the first free slot, onto a named slot, and removes one from its chip", () => {
     mountWith(newGame(), root);
-    const chassis = root.querySelector<HTMLImageElement>(
-      '[data-role="part-thumb"][data-field="chassis"]',
-    );
-    expect(chassis).not.toBeNull();
-    // The picture matches the part in the picker beside it.
-    expect(chassis?.dataset.thumb).toBe(partThumbnail(picker("chassis").value));
-    expect(chassis?.getAttribute("src")).toContain("assets/ui/thumbs/");
-    // Decorative: the picker already names the part.
-    expect(chassis?.alt).toBe("");
+    drop("utility-armor-plating");
+    expect(fittedId("utility-0")).toBe(STARTER_LOADOUT.utilityIds[0]);
+    expect(fittedId("utility-1")).toBe("utility-armor-plating");
+
+    drop("utility-targeting-computer", 0);
+    expect(fittedId("utility-0")).toBe("utility-targeting-computer");
+    expect(fittedId("utility-1")).toBe("utility-armor-plating");
+
+    q<HTMLButtonElement>(
+      '[data-row="utility-0"] [data-action="remove-utility"]',
+    ).click();
+    expect(fittedId("utility-0")).toBe("utility-armor-plating");
+    expect(q('[data-row="utility-1"]').dataset.empty).toBe("true");
   });
 
-  it("follows the picker: choosing another part swaps the picture", () => {
+  it("changing the chassis rebuilds the utility chips to its slot count and keeps the rest", () => {
     mountWith(newGame(), root);
-    const select = picker("chassis");
-    const thumb = root.querySelector<HTMLImageElement>(
-      '[data-role="part-thumb"][data-field="chassis"]',
-    );
-    if (!thumb) throw new Error("mech bay has no chassis row");
-    const before = thumb.dataset.thumb;
-    // Two frames may share a picture (the Courser wears the Vanguard's,
-    // #1130); the swap is only visible on one that does not.
-    const other = [...select.options]
-      .map((o) => o.value)
-      .find((v) => v !== select.value && partThumbnail(v) !== before);
-    if (other === undefined) throw new Error("no chassis with another picture");
-    select.value = other;
-    select.dispatchEvent(new Event("change", { bubbles: true }));
-    expect(thumb.dataset.thumb).toBe(partThumbnail(other));
-    expect(thumb.dataset.thumb).not.toBe(before);
-  });
-
-  it("marks a utility as a part with no picture rather than leaving the cell empty", () => {
-    mountWith(newGame(), root);
-    const utility = root.querySelector<HTMLImageElement>(
-      '[data-role="part-thumb"][data-field="utility-0"]',
-    );
-    // A utility has no visual slot, so there is no picture to show.
-    expect(utility).not.toBeNull();
-    expect(utility?.classList.contains("is-empty")).toBe(true);
-    expect(utility?.hasAttribute("src")).toBe(false);
-
-    // ...and the cell says so, instead of standing empty and reading as
-    // a picture that failed to load (#594).
-    const glyph = root.querySelector<HTMLElement>(
-      '[data-role="part-thumb-none"][data-field="utility-0"]',
-    );
-    expect(glyph).not.toBeNull();
-    expect(glyph?.hidden).toBe(false);
-    expect(glyph?.dataset.icon).toBe("ability");
-    // Decorative, like the picture it stands in for: the picker beside
-    // it names the part, and "no picture" is not worth announcing.
-    expect(glyph?.getAttribute("aria-hidden")).toBe("true");
-
-    // The picker rows stay aligned because the box is the same element
-    // either way: both live in one cell, and exactly one is showing.
-    const partGlyph = root.querySelector<HTMLElement>(
-      '[data-role="part-thumb-none"][data-field="chassis"]',
-    );
-    expect(partGlyph?.hidden).toBe(true);
-    expect(utility?.parentElement?.className).toBe(
-      root.querySelector<HTMLImageElement>(
-        '[data-role="part-thumb"][data-field="chassis"]',
-      )?.parentElement?.className,
-    );
-  });
-
-  it("swaps the glyph for the picture when a slot changes to a part that has one", () => {
-    mountWith(newGame(), root);
-    const select = picker("chassis");
-    const glyph = root.querySelector<HTMLElement>(
-      '[data-role="part-thumb-none"][data-field="chassis"]',
-    );
-    const thumb = root.querySelector<HTMLImageElement>(
-      '[data-role="part-thumb"][data-field="chassis"]',
-    );
-    expect(glyph?.hidden).toBe(true);
-    expect(thumb?.classList.contains("is-empty")).toBe(false);
-    const other = [...select.options]
-      .map((o) => o.value)
-      .find((v) => v !== select.value);
-    if (other === undefined) throw new Error("only one chassis to pick");
-    select.value = other;
-    select.dispatchEvent(new Event("change", { bubbles: true }));
-    // Still a part with a picture, so still no glyph.
-    expect(glyph?.hidden).toBe(true);
-    expect(thumb?.classList.contains("is-empty")).toBe(false);
-  });
-
-  it("changing the chassis rebuilds the utility pickers to its slot count and keeps the rest", () => {
-    mountWith(newGame(), root);
-    choose("chassis", "chassis-atlas");
-    expect(picker("chassis").value).toBe("chassis-atlas");
-    expect(picker("arm-weapon").value).toBe(STARTER_LOADOUT.armWeaponId);
-    expect(root.querySelectorAll('select[data-slot="utility"]')).toHaveLength(
-      5,
-    );
-    expect(picker("utility-0").value).toBe(STARTER_LOADOUT.utilityIds[0]);
+    drop("chassis-atlas");
+    expect(fittedId("chassis")).toBe("chassis-atlas");
+    expect(fittedId("arm-weapon")).toBe(STARTER_LOADOUT.armWeaponId);
+    expect(
+      root.querySelectorAll('#mech-stage [data-slot="utility"]'),
+    ).toHaveLength(5);
+    expect(fittedId("utility-0")).toBe(STARTER_LOADOUT.utilityIds[0]);
     expect(sheetField("totalCost")).toBe("¢5,250");
   });
+
+  it("fits a card on Enter and on a double-click, for the keyboard and the impatient", () => {
+    mountWith(newGame(), root);
+    card("legs-bastion").dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+    );
+    expect(fittedId("legs")).toBe("legs-bastion");
+    card("legs-jumper").dispatchEvent(new Event("dblclick", { bubbles: true }));
+    expect(fittedId("legs")).toBe("legs-jumper");
+  });
+
+  // ===========================================
+  // Hover deltas
+  // ===========================================
+
+  it("shows +X / −Y beside every stat a rested-on part would move, and clears on leave", () => {
+    mountWith(newGame(), root);
+    hover("utility-armor-plating");
+    expect(q("#stat-sheet").dataset.previewing).toBe("true");
+    const armor = delta("combat-armor");
+    expect(armor.hidden).toBe(false);
+    expect(armor.textContent).toMatch(/^\+\d+$/);
+    expect(armor.dataset.tone).toBe("better");
+    const cost = delta("totalCost");
+    expect(cost.hidden).toBe(false);
+    expect(cost.textContent).toMatch(/^\+\d+$/);
+    expect(cost.dataset.tone).toBe("neutral");
+    // The value itself is unchanged: the part is not fitted yet.
+    expect(sheetField("combat-armor")).toBe("6");
+    expect(fittedId("utility-1")).toBeUndefined();
+
+    hover(undefined);
+    expect(q("#stat-sheet").dataset.previewing).toBe("false");
+    expect(armor.hidden).toBe(true);
+    expect(cost.hidden).toBe(true);
+  });
+
+  it("previews the incoming weapon's line and warns when the swap would break the build", () => {
+    mountWith(newGame(), root);
+    hover("arm-weapon-railgun");
+    const line = q(
+      '[data-role="combat-weapon-preview"][data-weapon="arm-weapon"]',
+    );
+    expect(line.textContent).toContain("Railgun");
+    expect(line.textContent).toMatch(/range \d+ · acc \d+/);
+    const warning = q('[data-role="preview-warning"]');
+    expect(warning.hidden).toBe(false);
+    expect(warning.textContent).toContain("carries at most");
+    expect(delta("weight").dataset.tone).toBe("neutral");
+    // Nothing was fitted, and the sheet's verdict is untouched.
+    expect(q('#stat-sheet [data-field="verdict"]').dataset.tone).toBe("ok");
+    hover(undefined);
+    expect(
+      root.querySelector('[data-role="combat-weapon-preview"]'),
+    ).toBeNull();
+    expect(warning.hidden).toBe(true);
+  });
+
+  it("shows no delta for the part already fitted", () => {
+    mountWith(newGame(), root);
+    hover(STARTER_LOADOUT.armWeaponId);
+    expect(
+      [...root.querySelectorAll<HTMLElement>('[data-role="delta"]')].every(
+        (el) => el.hidden,
+      ),
+    ).toBe(true);
+  });
+
+  // ===========================================
+  // Seeding without a template, no campaign, navigation
+  // ===========================================
 
   it("starts from the first catalogue part per slot when no template is saved", () => {
     const state = newGame();
@@ -394,15 +543,17 @@ describe("MechBayScreen", () => {
     expect(q<HTMLInputElement>('[data-field="loadout-name"]').value).toBe(
       "New loadout",
     );
-    expect(picker("chassis").value).toBe(PARTS.partsForSlot("chassis")[0]?.id);
-    expect(picker("utility-0").value).toBe("");
+    expect(fittedId("chassis")).toBe(PARTS.partsForSlot("chassis")[0]?.id);
+    expect(q('[data-row="utility-0"]').dataset.empty).toBe("true");
     expect(q('#stat-sheet [data-field="verdict"]').dataset.tone).toBe("ok");
   });
 
   it("shows dashes for credits with no campaign and still edits a draft", () => {
     mountWith(undefined, root);
     expect(q('#mech-bay-bar [data-field="credits"]').textContent).toBe("—");
-    expect(picker("chassis").value).not.toBe("");
+    expect(fittedId("chassis")).not.toBe("");
+    drop("legs-jumper");
+    expect(fittedId("legs")).toBe("legs-jumper");
   });
 
   it("Roster navigates back and unmount unsubscribes and clears the DOM", () => {
@@ -423,24 +574,33 @@ describe("MechBayScreen", () => {
     [...root.querySelectorAll<HTMLElement>("#saved-loadouts li")].map(
       (li) => li.dataset.loadoutName ?? "",
     );
-  const button = (action: string): HTMLButtonElement =>
-    q<HTMLButtonElement>(`[data-action="${action}"]`);
-  const status = (): HTMLElement => q('[data-role="status"]');
+  const openLoadouts = (): void => {
+    button("toggle-loadouts").click();
+  };
 
-  it("lists the saved templates and shows the build cost on the button", () => {
+  it("lists the saved templates in the popover and shows the build cost on the button", () => {
     mountWith(newGame(), root, true);
+    expect(q('[data-role="loadout-popover"]').hidden).toBe(true);
+    openLoadouts();
+    expect(q('[data-role="loadout-popover"]').hidden).toBe(false);
     expect(savedNames()).toEqual([STARTER_LOADOUT.name]);
+    expect(button("toggle-loadouts").textContent).toContain(
+      STARTER_LOADOUT.name,
+    );
     expect(button("build-mech").textContent).toBe("Build ¢2,850");
     expect(button("build-mech").disabled).toBe(false);
     expect(button("save-loadout").disabled).toBe(false);
   });
 
-  it("Save loadout stores the draft under the editor's name and the list follows", () => {
+  it("Save stores the draft under the popover's name and the list follows", () => {
     const { store } = mountWith(newGame(), root, true);
+    openLoadouts();
     const name = q<HTMLInputElement>('[data-field="loadout-name"]');
     name.value = "Brawler";
     name.dispatchEvent(new Event("input"));
-    choose("arm-weapon", "arm-weapon-flamer");
+    drop("arm-weapon-flamer");
+    // The name typed in the popover survives the drop.
+    expect(name.value).toBe("Brawler");
     button("save-loadout").click();
     expect(savedNames()).toEqual([STARTER_LOADOUT.name, "Brawler"]);
     expect(store?.getState().roster.savedLoadouts[1]).toMatchObject({
@@ -450,7 +610,7 @@ describe("MechBayScreen", () => {
     expect(status().hidden).toBe(true);
   });
 
-  it("Load replaces the draft and Delete removes the template", () => {
+  it("Load replaces the draft and closes the popover; Delete removes the template", () => {
     const state = newGame();
     const brawler = {
       ...STARTER_LOADOUT,
@@ -465,6 +625,7 @@ describe("MechBayScreen", () => {
       root,
       true,
     );
+    openLoadouts();
     const row = q<HTMLElement>(
       '#saved-loadouts li[data-loadout-name="Brawler"]',
     );
@@ -472,8 +633,10 @@ describe("MechBayScreen", () => {
     expect(q<HTMLInputElement>('[data-field="loadout-name"]').value).toBe(
       "Brawler",
     );
-    expect(picker("arm-weapon").value).toBe("arm-weapon-flamer");
+    expect(fittedId("arm-weapon")).toBe("arm-weapon-flamer");
+    expect(q('[data-role="loadout-popover"]').hidden).toBe(true);
 
+    openLoadouts();
     row.querySelector<HTMLButtonElement>('[data-action="delete"]')!.click();
     expect(savedNames()).toEqual([STARTER_LOADOUT.name]);
   });
@@ -504,11 +667,11 @@ describe("MechBayScreen", () => {
 
   it("disables Save and Build while the draft is invalid", () => {
     mountWith(newGame(), root, true);
-    choose("arm-weapon", "arm-weapon-railgun");
+    drop("arm-weapon-railgun");
     expect(button("save-loadout").disabled).toBe(true);
     expect(button("build-mech").disabled).toBe(true);
     expect(button("build-mech").textContent).toBe("Build");
-    choose("arm-weapon", STARTER_LOADOUT.armWeaponId);
+    drop(STARTER_LOADOUT.armWeaponId);
     expect(button("build-mech").disabled).toBe(false);
   });
 
@@ -521,6 +684,7 @@ describe("MechBayScreen", () => {
     );
     // Nothing is saved, so Delete on a stale name cannot come from the list; drive the
     // store-facing path through Save with an empty name instead.
+    openLoadouts();
     const name = q<HTMLInputElement>('[data-field="loadout-name"]');
     name.value = "   ";
     name.dispatchEvent(new Event("input"));
@@ -531,18 +695,18 @@ describe("MechBayScreen", () => {
   });
 
   // ===========================================
-  // Assembly preview (#694)
+  // Assembly preview (#694) and slot anchors (#1145)
   // ===========================================
 
   describe("assembly preview", () => {
     const viewport = (): HTMLElement =>
-      q('#mech-preview [data-role="preview-viewport"]');
+      q('#mech-stage [data-role="preview-viewport"]');
     const emptyNote = (): HTMLElement =>
-      q('#mech-preview [data-role="preview-empty"]');
+      q('#mech-stage [data-role="preview-empty"]');
 
-    it("mounts the panel with no host, and says so", () => {
+    it("mounts the stage with no host, and says so", () => {
       // The bay works without a preview host: the jsdom specs and any
-      // headless caller get the panel and its note, not a broken screen.
+      // headless caller get the stage and its note, not a broken screen.
       mountWith(newGame(), root);
       expect(viewport()).toBeTruthy();
       expect(emptyNote().hidden).toBe(false);
@@ -565,24 +729,37 @@ describe("MechBayScreen", () => {
       );
     });
 
-    it("redraws on every picker change", () => {
-      // The point of the panel: the mech follows the part being chosen.
-      const preview = new FakePreviewHost();
-      mountWith(newGame(), root, false, preview);
-      const before = preview.shown.length;
-      choose("legs", "legs-jumper");
-      expect(preview.shown).toHaveLength(before + 1);
-      expect(preview.shown.at(-1)?.legsId).toBe("legs-jumper");
-    });
-
     it("still draws a draft the validator rejects", () => {
       // An over-weight mech is still the mech the player is looking at,
       // and the frame it goes invalid is the one they need to see it on.
       const preview = new FakePreviewHost();
       mountWith(newGame(), root, false, preview);
-      choose("arm-weapon", "arm-weapon-railgun");
+      drop("arm-weapon-railgun");
       expect(errorCodes()).toEqual(["overweight"]);
       expect(preview.shown.at(-1)?.armWeaponId).toBe("arm-weapon-railgun");
+    });
+
+    it("hangs each slot badge where the host says its part landed", () => {
+      const preview = new FakePreviewHost();
+      mountWith(newGame(), root, false, preview);
+      const layer = q('[data-role="slot-anchors"]');
+      expect(layer.classList.contains("is-anchored")).toBe(false);
+      preview.frame([
+        { slot: "legs", x: 100.4, y: 200.6 },
+        { slot: "arm-weapon", x: 150, y: 120 },
+      ]);
+      expect(layer.classList.contains("is-anchored")).toBe(true);
+      const legs = q('#mech-stage [data-slot="legs"]');
+      expect(legs.dataset.anchored).toBe("true");
+      expect(legs.style.left).toBe("100px");
+      expect(legs.style.top).toBe("201px");
+      // A part the host did not report keeps stacking with the others.
+      expect(q('#mech-stage [data-slot="chassis"]').dataset.anchored).toBe(
+        undefined,
+      );
+      preview.frame([]);
+      expect(layer.classList.contains("is-anchored")).toBe(false);
+      expect(legs.style.left).toBe("");
     });
 
     it("releases the host on unmount", () => {
@@ -590,7 +767,7 @@ describe("MechBayScreen", () => {
       const { screen } = mountWith(newGame(), root, false, preview);
       screen.unmount();
       expect(preview.releases).toBe(1);
-      expect(root.querySelector("#mech-preview")).toBeNull();
+      expect(root.querySelector("#mech-stage")).toBeNull();
     });
   });
 });

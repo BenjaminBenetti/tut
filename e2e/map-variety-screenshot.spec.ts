@@ -12,7 +12,7 @@ import { launchMission, settleForShot } from "./mission-capture.helper";
 
 /** Real gameplay and Map Lab context for the #1110 close-up comparisons. */
 const OUTPUT =
-  process.env.CAPTURE_OUTPUT ?? "docs/design/diagnostics/1110/after";
+  process.env.CAPTURE_OUTPUT ?? "test-results/captures/map-variety";
 
 test("map variety city overview", async ({ page }) => {
   test.skip(!process.env.CAPTURE, "set CAPTURE=1 to refresh review images");

@@ -92,7 +92,7 @@ Sources: [Chromium headless GPU support](https://chromium.googlesource.com/chrom
 [Mesa per-process device selection](https://docs.mesa3d.org/envvars.html),
 [Blender 4.5 Eevee backends](https://developer.blender.org/docs/release_notes/4.5/eevee/).
 
-[Recorded frames and measurements](../../docs/design/diagnostics/1069/) include
+[Recorded frames and measurements](https://github.com/BenjaminBenetti/tut/tree/evidence/diagnostics-2026-09-15/docs/design/diagnostics/1069) include
 the inspected pre-change/head SwiftShader control and non-evidence benchmark PNGs.
 The control and a fresh head repeat with `TUT_GPU=1 CI=1` share SHA-256
 `d693e4d272a772309b87fd9cbe589e0378355a6537b858145069655cbb3496df`.

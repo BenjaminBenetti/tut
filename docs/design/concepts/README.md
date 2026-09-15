@@ -21,6 +21,6 @@ Sheets are documentation, not runtime assets; they are stored at 1536 px wide.
 | [tileset-city-street](tileset-city-street.md) | Modular road, sidewalk, wall, roof, stairs and prop kit | §7, §4.3 |
 | [tactical-firefight](tactical-firefight.md) | A whole mission: what everything adds up to in one scene | §12, §4.1, §4.2 |
 
-Recipe and environment notes: `docs/handoff/art-director.md` §5. Prompt skeleton: `docs/design/style-guide.md` §10.
+Recipe and environment notes: `docs/design/art-tooling.md` §1. Prompt skeleton: `docs/design/style-guide.md` §10.
 
 Mech customisation reference (chassis, legs, arms, arm weapons, back weapons as separate swappable pieces): [`mech-bay/`](mech-bay/README.md).

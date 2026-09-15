@@ -12,6 +12,7 @@ import type {
   GroundPolygon,
   GroundRing,
 } from "../service/coastline-projection";
+import { writesLandStencil } from "../service/land-stencil";
 import {
   AXIS_COLOUR,
   COASTLINE_COLOUR,
@@ -52,7 +53,7 @@ describe("EarthWireframe", () => {
     ) as LineSegments;
     expect(glow.geometry).toBe(core.geometry);
     expect(core.position.y).toBeGreaterThan(0);
-    expect(core.position.y).toBeLessThan(OVERWORLD_SCENE_CONFIG.plateHeight);
+    expect(core.position.y).toBeLessThan(OVERWORLD_SCENE_CONFIG.markerLift);
   });
 
   it("draws hole edges as coast too", () => {
@@ -95,6 +96,35 @@ describe("EarthWireframe", () => {
     const material = land.material as MeshBasicMaterial;
     expect(material.color.getHex()).toBe(COASTLINE_COLOUR);
     expect(material.opacity).toBeLessThan(0.5);
+  });
+
+  it("stamps the land stencil from the claimable fill only, drawn first (#1149)", () => {
+    const { mapWidth, mapDepth } = OVERWORLD_SCENE_CONFIG;
+    // A polar block wholly south of −60°: the bottom sixth of the plane.
+    const polar: GroundPolygon = {
+      outer: square(2, mapDepth - 1, mapWidth - 2, mapDepth),
+      holes: [],
+    };
+    const wireframe = new EarthWireframe(
+      [ISLAND, polar],
+      OVERWORLD_SCENE_CONFIG,
+    );
+    const land = wireframe.object.getObjectByName("earth-land") as Mesh;
+    const unclaimed = wireframe.object.getObjectByName(
+      "earth-land-unclaimed",
+    ) as Mesh;
+    expect(writesLandStencil(land.material as MeshBasicMaterial)).toBe(true);
+    expect((land.material as MeshBasicMaterial).transparent).toBe(true);
+    expect(land.renderOrder).toBe(0);
+    expect(writesLandStencil(unclaimed.material as MeshBasicMaterial)).toBe(
+      false,
+    );
+    // The island is claimable, the polar block is not; both are filled.
+    expect(new Box3().setFromObject(land).max.z).toBeCloseTo(6);
+    expect(new Box3().setFromObject(unclaimed).min.z).toBeCloseTo(mapDepth - 1);
+    expect((unclaimed.material as MeshBasicMaterial).opacity).toBe(
+      (land.material as MeshBasicMaterial).opacity,
+    );
   });
 
   it("draws a 30° graticule with the border, and the two axes brighter", () => {
@@ -149,9 +179,10 @@ describe("EarthWireframe", () => {
       }
     });
     wireframe.dispose();
-    // Fill, graticule, axes, coastlines: four geometries (the glow shares one).
-    expect(disposed.filter((name) => name === "geometry")).toHaveLength(4);
+    // Two fills, graticule, axes, coastlines: five geometries (the glow shares one).
+    expect(disposed.filter((name) => name === "geometry")).toHaveLength(5);
     expect(disposed).toContain("earth-coastline-glow");
     expect(disposed).toContain("earth-land-fill");
+    expect(disposed).toContain("earth-land-unclaimed-fill");
   });
 });

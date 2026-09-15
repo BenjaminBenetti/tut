@@ -14,11 +14,13 @@ import {
 
 import type { Disposable } from "../model/disposable";
 import type { OverworldSceneConfig } from "../model/overworld-scene-config";
+import { partitionClaimableLand } from "../service/claimable-land";
 import type {
   GroundPoint,
   GroundPolygon,
-  GroundRing,
 } from "../service/coastline-projection";
+import { coastlineSegments } from "../service/coastline-segments";
+import { writeLandStencil } from "../service/land-stencil";
 
 // ===========================================
 // Constants
@@ -43,9 +45,10 @@ const LAND_FILL_OPACITY = 0.1;
  * Opacity of each of the four offset glow passes behind the coastline.
  * They blend normally rather than additively: additive passes that land
  * on the core's own pixel, which they all do at the widest zoom, push
- * `ui-info` to white, and the coast should stay the token.
+ * `ui-info` to white, and the coast should stay the token. The selected
+ * region's outline glows the same way (#1149).
  */
-const GLOW_OPACITY = 0.45;
+export const GLOW_OPACITY = 0.45;
 
 /**
  * Ground-plane offset of the glow passes, in world units. WebGL draws a
@@ -54,10 +57,10 @@ const GLOW_OPACITY = 0.45;
  * where it only softens the core's edge, and a two-pixel halo at the
  * tightest.
  */
-const GLOW_OFFSET = 0.012;
+export const GLOW_OFFSET = 0.012;
 
 /** The four directions the glow passes are offset in. */
-const GLOW_DIRECTIONS: readonly GroundPoint[] = [
+export const GLOW_DIRECTIONS: readonly GroundPoint[] = [
   { x: 1, z: 0 },
   { x: -1, z: 0 },
   { x: 0, z: 1 },
@@ -65,19 +68,21 @@ const GLOW_DIRECTIONS: readonly GroundPoint[] = [
 ];
 
 /**
- * Heights above the slab top, all under the region wash (which floats
- * above `plateHeight`) and far enough apart not to z-fight: fill, then
- * the graticule, then the coastline on top.
+ * Heights above the slab top, all under the markers (which stand at
+ * `markerLift`) and far enough apart not to z-fight: fill, then the
+ * graticule, then the coastline on top. The region territories (#1149)
+ * slot their fill and borders between these; see `region-territories`.
  */
 const FILL_LIFT = 0.01;
 const GRATICULE_LIFT = 0.02;
 const COASTLINE_LIFT = 0.03;
 
-/** Fill draws first among transparent objects, under the region washes. */
-const FILL_RENDER_ORDER = 0;
-
-/** How close to the map's edge a coordinate must be to count as on it. */
-const BORDER_EPSILON = 1e-6;
+/**
+ * Fill draws first among transparent objects: it stamps the land
+ * stencil that the region territories are clipped by, so it has to be
+ * on screen before they are.
+ */
+export const FILL_RENDER_ORDER = 0;
 
 // ===========================================
 // Wireframe
@@ -92,10 +97,10 @@ const BORDER_EPSILON = 1e-6;
  *
  * ```
  *   y ▲
- *     │ ░░ region wash (plateHeight + lift)
- *     │ ── coastline + glow       COASTLINE_LIFT
- *     │ ┼┼ graticule + axes       GRATICULE_LIFT
- *     │ ▒▒ land fill              FILL_LIFT
+ *     │ ●  city markers            markerLift
+ *     │ ── coastline + glow        COASTLINE_LIFT
+ *     │ ┼┼ graticule + axes        GRATICULE_LIFT
+ *     │ ▒▒ land fill (stencil = 1) FILL_LIFT
  *   0 ┼──── slab top, ui-bg
  * ```
  *
@@ -104,6 +109,11 @@ const BORDER_EPSILON = 1e-6;
  * Segments that lie along the map's border (Antarctica's edge at −90°,
  * the antimeridian) are not drawn: they are the edge of the plane, not
  * a coast.
+ *
+ * The land fill is drawn as two meshes. The claimable land stamps the
+ * stencil buffer as it draws, which is what clips the region
+ * territories (#1149) to land; Antarctica is drawn identically but
+ * leaves the stencil alone, so no region reaches it.
  */
 export class EarthWireframe {
   // ===========================================
@@ -128,7 +138,13 @@ export class EarthWireframe {
   ) {
     this.object = new Group();
     this.object.name = "earth-wireframe";
-    this.object.add(this.createLandFill(polygons));
+    const land = partitionClaimableLand(polygons, config);
+    const claimable = this.createLandFill(land.claimable, "earth-land");
+    writeLandStencil(claimable.material as MeshBasicMaterial);
+    this.object.add(claimable);
+    this.object.add(
+      this.createLandFill(land.unclaimed, "earth-land-unclaimed"),
+    );
     this.object.add(...this.createGraticule(config));
     this.object.add(...this.createCoastlines(polygons, config));
   }
@@ -150,10 +166,17 @@ export class EarthWireframe {
   // ===========================================
 
   /**
-   * A translucent fill of every land mass, triangulated from its rings
-   * with the inland seas cut out, lying flat on the ground plane.
+   * A translucent fill of the given land masses, triangulated from
+   * their rings with the inland seas cut out, lying flat on the ground
+   * plane.
+   *
+   * @param polygons - The land masses to fill.
+   * @param name - Name of the mesh; its material is `${name}-fill`.
    */
-  private createLandFill(polygons: readonly GroundPolygon[]): Mesh {
+  private createLandFill(
+    polygons: readonly GroundPolygon[],
+    name: string,
+  ): Mesh {
     const shapes = polygons.map((polygon) => {
       const shape = new Shape(polygon.outer.map(toShapePoint));
       for (const hole of polygon.holes) {
@@ -171,9 +194,9 @@ export class EarthWireframe {
       opacity: LAND_FILL_OPACITY,
       depthWrite: false,
     });
-    material.name = "earth-land-fill";
+    material.name = `${name}-fill`;
     const mesh = new Mesh(geometry, material);
-    mesh.name = "earth-land";
+    mesh.name = name;
     mesh.position.y = FILL_LIFT;
     mesh.renderOrder = FILL_RENDER_ORDER;
     this.disposables.push(geometry, material);
@@ -225,11 +248,8 @@ export class EarthWireframe {
     config: OverworldSceneConfig,
   ): LineSegments[] {
     const positions: number[] = [];
-    for (const polygon of polygons) {
-      pushRing(positions, polygon.outer, config);
-      for (const hole of polygon.holes) {
-        pushRing(positions, hole, config);
-      }
+    for (const segment of coastlineSegments(polygons, config)) {
+      pushSegment(positions, segment.a, segment.b);
     }
     const core = this.createLines(
       "earth-coastlines",
@@ -296,40 +316,4 @@ function pushSegment(
   b: GroundPoint,
 ): void {
   positions.push(a.x, 0, a.z, b.x, 0, b.z);
-}
-
-/** Appends every edge of a ring that is not part of the map's border. */
-function pushRing(
-  positions: number[],
-  ring: GroundRing,
-  config: OverworldSceneConfig,
-): void {
-  for (let i = 1; i < ring.length; i++) {
-    const a = ring[i - 1];
-    const b = ring[i];
-    if (a && b && !isBorderSegment(a, b, config)) {
-      pushSegment(positions, a, b);
-    }
-  }
-}
-
-/**
- * True when both ends of a segment lie on the same edge of the map
- * plane: the antimeridian on either side, the poles top and bottom.
- * Natural Earth closes Antarctica along −90° and the antimeridian, and
- * those edges drawn would be a line across the whole bottom of the map.
- */
-function isBorderSegment(
-  a: GroundPoint,
-  b: GroundPoint,
-  config: OverworldSceneConfig,
-): boolean {
-  const onEdge = (value: number, edge: number): boolean =>
-    Math.abs(value - edge) <= BORDER_EPSILON;
-  return (
-    (onEdge(a.x, 0) && onEdge(b.x, 0)) ||
-    (onEdge(a.x, config.mapWidth) && onEdge(b.x, config.mapWidth)) ||
-    (onEdge(a.z, 0) && onEdge(b.z, 0)) ||
-    (onEdge(a.z, config.mapDepth) && onEdge(b.z, config.mapDepth))
-  );
 }

@@ -16,6 +16,7 @@ import type { MechRatingTuning } from "../model/mech-rating-tuning";
 import { StaticPartCatalogue } from "../repository/static-part-catalogue";
 import {
   computeCombatRating,
+  describeLoadout,
   validateLoadout,
 } from "./loadout-validation-service";
 
@@ -391,5 +392,60 @@ describe("computeCombatRating", () => {
         gunsOnly,
       ),
     ).toBe(7);
+  });
+});
+
+describe("describeLoadout", () => {
+  it("returns the sheet and no errors for a buildable draft", () => {
+    const parts = new StaticPartCatalogue(STARTER_PARTS);
+    const description = describeLoadout(
+      STARTER_LOADOUT,
+      parts,
+      MECH_RATING_TUNING,
+      UPGRADE_TUNING,
+    );
+    expect(description.errors).toEqual([]);
+    expect(description.sheet).toEqual(
+      (() => {
+        const result = validateLoadout(
+          STARTER_LOADOUT,
+          parts,
+          MECH_RATING_TUNING,
+          UPGRADE_TUNING,
+        );
+        return result.ok ? result.value : undefined;
+      })(),
+    );
+  });
+
+  it("still sums the sheet for a draft that is over capacity (#1145)", () => {
+    const parts = new StaticPartCatalogue(STARTER_PARTS);
+    const heavy = { ...STARTER_LOADOUT, armWeaponId: "arm-weapon-railgun" };
+    const description = describeLoadout(
+      heavy,
+      parts,
+      MECH_RATING_TUNING,
+      UPGRADE_TUNING,
+    );
+    expect(description.errors.map((e) => e.code)).toEqual(["overweight"]);
+    // The bay can say how far over, and what a swap would change.
+    expect(description.sheet).toBeDefined();
+    expect(description.sheet?.weight).toBeGreaterThan(60);
+    // validateLoadout itself still refuses it.
+    expect(
+      validateLoadout(heavy, parts, MECH_RATING_TUNING, UPGRADE_TUNING).ok,
+    ).toBe(false);
+  });
+
+  it("withholds the sheet on a structural error", () => {
+    const parts = new StaticPartCatalogue(STARTER_PARTS);
+    const description = describeLoadout(
+      { ...STARTER_LOADOUT, legsId: "" },
+      parts,
+      MECH_RATING_TUNING,
+      UPGRADE_TUNING,
+    );
+    expect(description.sheet).toBeUndefined();
+    expect(description.errors.map((e) => e.code)).toEqual(["missing-part"]);
   });
 });

@@ -331,7 +331,7 @@ The roster's starter part catalogue (`src/roster/data/parts.ts`) maps to mech pa
 
 Reference assemblies: `tdf.mech.assembled-a` (Vanguard, Strider, Tracker, Autocannon, Missile Pod) and `tdf.mech.assembled-b` (Bulwark, Bastion, Brace, Railgun, Mortar).
 
-The mech bay assembles this table at runtime and shows the result (#694): `src/graphics/data/part-model-table.ts` holds it as code, `MechAssembler` hangs the parts on the §6 sockets, and `MechPreviewScene` draws them. See [`mech-bay-assembly.png`](mech-bay-assembly.png).
+The mech bay assembles this table at runtime and shows the result (#694): `src/graphics/data/part-model-table.ts` holds it as code, `MechAssembler` hangs the parts on the §6 sockets, and `MechPreviewScene` draws them. See [`mech-bay-assembly.png`](mech-bay-assembly.png). Since #1145 the assembled mech is the centre of the screen and the parts are dropped onto it: the assembler tags each part's root with the slot it fills (`MECH_SLOT_KEY`), the scene projects each part's own silhouette centre to the canvas after every draw, and the bay hangs a DOM badge there (ADR 0007). See [`ui-mech-bay.png`](ui-mech-bay.png).
 
 **The battlefield assembles the same table (#1115).** A mech's unit template carries its loadout, and `LoadoutUnitModelSource` draws it through the same assembler, flattened so the motion rig finds its limbs as it does on a reference GLB. The reference assemblies are drawn only for a mission saved before #1115. Every loadout the player can build is therefore a different mech on the field: [`diagnostics/1115`](diagnostics/1115/README.md) renders three side by side through the tactical scene builder.
 

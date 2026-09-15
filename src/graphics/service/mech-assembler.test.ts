@@ -5,7 +5,7 @@ import type { ModelAssetId } from "../../content/data/model-ids";
 import type { MechAssembly } from "../data/part-model-table";
 import type { AssetLogger } from "../model/asset-logger";
 import type { ModelLoader } from "../model/model-loader";
-import { MECH_ROOT_NAME, MechAssembler } from "./mech-assembler";
+import { MECH_ROOT_NAME, MECH_SLOT_KEY, MechAssembler } from "./mech-assembler";
 
 // ===========================================
 // Fixtures
@@ -97,6 +97,19 @@ describe("MechAssembler", () => {
     expect(pathTo(root, "tdf.mech.weapon-back.missile-pod").at(-1)).toBe(
       "socket_back",
     );
+  });
+
+  it("tags each part's root with the slot it fills, the left arm for arms (#1145)", async () => {
+    const assembler = new MechAssembler({ models: new FakeModelLoader() });
+    const mech = await assembler.assemble(FULL);
+    const tagOf = (name: string): unknown =>
+      mech.getObjectByName(name)?.userData[MECH_SLOT_KEY];
+    expect(tagOf("tdf.mech.legs-a")).toBe("legs");
+    expect(tagOf("tdf.mech.chassis-a")).toBe("chassis");
+    expect(tagOf("tdf.mech.arm-l-a")).toBe("arms");
+    expect(tagOf("tdf.mech.arm-r-a")).toBeUndefined();
+    expect(tagOf("tdf.mech.weapon-arm.autocannon")).toBe("arm-weapon");
+    expect(tagOf("tdf.mech.weapon-back.missile-pod")).toBe("back-weapon");
   });
 
   it("puts the arm weapon on the right arm, not on the chassis", async () => {

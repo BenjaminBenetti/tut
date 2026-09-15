@@ -455,6 +455,59 @@ describe("TacticalHudView", () => {
     expect(wheelOpen()).toBe(false);
   });
 
+  it("a grenade rides under Attack at an enemy too: the entry turns the page, resting on it paints the throw, and picking it throws at the bug's tile (#1143)", () => {
+    const commands: TacticalCommand[] = [];
+    const blasts: number[] = [];
+    const hud = new TacticalHudView(
+      {
+        onCommand: (c) => commands.push(c),
+        onLeave: vi.fn(),
+        anchorFor: () => ({ x: 100, y: 100 }),
+        onMarkBlast: (tiles) => blasts.push(tiles.length),
+      },
+      { combatTuning: COMBAT_TUNING, objectiveTuning: OBJECTIVE_TUNING },
+    );
+    hud.mount(root);
+    const base = hudMission();
+    hud.update({
+      ...base,
+      templates: {
+        ...base.templates,
+        rifle: {
+          ...hudTemplate("rifle", "Rifle Squad"),
+          equipment: ["grenade"],
+        },
+      },
+    });
+    hud.handleIntent({ kind: "select-unit", unitId: "s1" });
+    hud.handleIntent({ kind: "select-unit", unitId: "b1" });
+    expect(items()).toEqual(["attack:b1", "overwatch", "reload"]);
+    expect(item("attack:b1")?.disabled).toBe(false);
+    expect(item("attack:b1")?.textContent).toContain("2 options");
+    item("attack:b1")?.click();
+    // The Executive Director clicked a bug and got a rifle shot, never
+    // the grenade (#1143): now the entry turns the page and nothing fires.
+    expect(commands).toEqual([]);
+    expect(wheelOpen()).toBe(true);
+    expect(items()).toEqual([
+      "attack:b1:primary",
+      "equipment:grenade:4,0,1",
+      "back:b1",
+    ]);
+    expect(item("equipment:grenade:4,0,1")?.disabled).toBe(false);
+    item("equipment:grenade:4,0,1")?.dispatchEvent(new Event("pointerenter"));
+    expect(blasts.at(-1) ?? 0).toBeGreaterThan(0);
+    item("back:b1")?.click();
+    expect(items()[0]).toBe("attack:b1");
+    item("attack:b1")?.click();
+    item("equipment:grenade:4,0,1")?.click();
+    expect(commands).toEqual([
+      useEquipment("s1", "grenade", { x: 4, y: 0, z: 1 }),
+    ]);
+    expect(wheelOpen()).toBe(false);
+    expect(hud.getMode()).toBe("move");
+  });
+
   it("a medkit sits on the ring as Heal: resting on it paints the area, picking it uses the kit, and the card reads its numbers (#1138)", () => {
     const commands: TacticalCommand[] = [];
     const blasts: number[] = [];

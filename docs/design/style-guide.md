@@ -593,10 +593,12 @@ The case to check is a squad behind building geometry, with the surrounding map 
 | Ring | **8 rays** at waist height, **0.75 tiles** outside the footprint | The body's rays open the unit's silhouette; the ring opens the cone around it (#1138). The margin is in world units, so a mech's ring is not three times a squad's. |
 | Soft edge | **0.45 tiles**, measured inward from the ray radius | A hard circle reads as a stencil; a soft one reads as the building giving way. Measured inward rather than as a fraction of the radius, so softness does not change when the radius does. Widened with the radius in #1138 to keep a little over a third of it soft, as 0.25 was of 0.6. |
 | Fade in / out | **0.15 s** | Instant flickers as units move; longer lags the camera. |
-| What fades | Walls, floors, roofs, parapets and tall props between the camera and the unit, **above its feet** | Anything that can stand in the way. |
-| What never fades | Ground, the floor the unit stands on and anything below it, the unit itself, overlays, VFX, hook markers | These are the read. A slab at the unit's feet is in front of it and inside the radius, and fading it showed the storey below through the floor (#1118). |
+| What fades | Walls, roofs, parapets and rooftop props between the camera and the unit, **above its feet** | Anything that can stand in the way. |
+| What never fades | Ground, every floor slab and stair, the unit itself, overlays, VFX, hook markers | These are the read. A slab at the unit's feet is in front of it and inside the radius, and fading it showed the storey below through the floor (#1118). Fading the storey above hid the tiles the unit was climbing to (#1143). |
 
 **The floor holds (#1118).** A fragment fades only when it rises more than `GHOST_FOOT_MARGIN` (0.3 u) above the unit's feet. Without that the slab in front of a unit on an upper storey opened and the room below read through it, which the Executive Director found made the interior unreadable. [Before and after frames](diagnostics/1118/README.md), pitched and flat roofs at two yaws.
+
+**No floor ghosts at all (#1143).** The feet test kept the unit's own storey solid but let the storey above it fade, and when a unit was sent up a floor its reachable tiles sat on that fading slab: the Executive Director found the movement overlay very hard to read. Floor slabs and stairs (`building.floor`, `building.stairs`) are no longer given the cutaway material — `takesGhostCutaway` in `graphics/service/ghost-cutaway-eligibility.ts` is the rule — so a slab is either drawn solid or removed by the storey cut, which the player controls. Roofs still fade: they are what hides an interior, and the storey cut removes them too.
 
 Applies to **every unit the player can currently see**, not only their own: hiding a spotted bug behind a wall undoes the spotting. That is the same question fog of war answers (#531), so it wants one predicate, not two.
 

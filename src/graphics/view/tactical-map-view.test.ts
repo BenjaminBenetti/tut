@@ -1,4 +1,4 @@
-import type { Object3D } from "three";
+import type { Material, Object3D } from "three";
 import { BIOME_GROUND_STYLES } from "../data/biome-ground-styles";
 import {
   BoxGeometry,
@@ -513,6 +513,37 @@ describe("TacticalMapView.loadModels", () => {
     expect(prototype.material.name).not.toContain("ghosted");
     view.dispose();
     other.dispose();
+    prototype.material.dispose();
+    prototype.geometry.dispose();
+  });
+
+  it("leaves floor slabs and stairs solid while walls and roofs take the cutaway (#1143)", async () => {
+    const b = new FixtureMapBuilder(2, 1, 3).fillGround();
+    b.tile({ x: 0, y: 1, z: 0 }, SurfaceIds.FLOOR, { buildingId: "b" });
+    b.tile({ x: 1, y: 1, z: 0 }, SurfaceIds.STAIRS, { buildingId: "b" });
+    b.tile({ x: 0, y: 2, z: 0 }, SurfaceIds.ROOF, { buildingId: "b" });
+    b.wall({ x: 0, y: 1, z: 0 }, "n", "solid");
+    const prototype = new Mesh(new BoxGeometry(), new MeshStandardMaterial());
+    const models: ModelLoader = {
+      preload: () => Promise.resolve(),
+      load: () => Promise.resolve(prototype.clone()),
+    };
+    const view = new TacticalMapView(b.build(), createGhostUniforms(2, 0.15));
+    await view.loadModels(models);
+    const materialName = (prefix: string): string => {
+      const meshes = named(view, prefix);
+      expect(meshes.length, prefix).toBeGreaterThan(0);
+      return (meshes[0]!.material as Material).name;
+    };
+    expect(materialName("tiles-model:building.floor:")).not.toContain(
+      "ghosted",
+    );
+    expect(materialName("tiles-model:building.stairs:")).not.toContain(
+      "ghosted",
+    );
+    expect(materialName("tiles-model:building.roof:")).toContain("ghosted");
+    expect(materialName("walls-model:")).toContain("ghosted");
+    view.dispose();
     prototype.material.dispose();
     prototype.geometry.dispose();
   });

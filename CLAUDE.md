@@ -1,8 +1,6 @@
 # Terra Under Threat — Engineering Contract
 
-You are working on **Terra Under Threat (TUT)**, a browser-based XCOM-style tactics game. Read `docs/design/gdd.md` (what the game is) and `docs/design/architecture.md` (how it is built) before changing anything.
-
-Studio seats (the fleet agents) also follow `docs/process/studio.md`, then `docs/process/roles/<your-role>.md` and `docs/handoff/<your-role>.md`, in that order. A hands-on session is not a seat and ignores those three.
+You are working on **Terra Under Threat (TUT)**, a browser-based XCOM-style tactics game. Read `docs/design/architecture.md` before changing code. `docs/design/gdd.md` is the design document: read the section for the domain you touch, not the whole file. Releases follow `docs/process/releasing.md`.
 
 ## Hard rules
 
@@ -74,7 +72,7 @@ Provide ASCII diagrams in docs and doc comments when they clarify structure or f
 
 ## Conventions decided in ADRs
 
-Read `docs/adr/` once; the short version:
+The ADRs under `docs/adr/` are the record; this list is what you need day to day. Open a specific ADR only when code you touch cites it (0004 is the tactical map contract, 0006 fog of war, 0008 elevation layers, 0009 map scale).
 
 - Ids are plain `string` aliases, never branded types (ADR 0003 §2.4).
 - Exported constants are `UPPER_SNAKE_CASE`; tuning is one object typed by an interface in `model/` (ADR 0003 §2.5).

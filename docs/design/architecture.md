@@ -61,7 +61,7 @@ Follow `/<domain>/<type>/<file>` under `src/`. Types are things like `model`, `s
 | `roster` | Squads, mechs, parts, loadouts, validation, permadeath bookkeeping |
 | `tactical` | Tile grid runtime, units on map, turn engine, actions, cover/LOS, spawners, resolution |
 | `bugs` | Bug species data and AI behaviours |
-| `mapgen` | Procedural map generator, biomes, buildings, placement hooks, preview harness |
+| `mapgen` | Procedural map generator, biomes, buildings, placement hooks, preview harness; pass order in `mapgen-pipeline.md` |
 | `graphics` | Renderer, orthographic camera rig, scene builders for overworld and tactical, asset loader, VFX |
 | `ui` | DOM screens (menu, overworld, mech bay, deployment, mission HUD, results), shared components |
 | `content` | Cross-domain vocabulary: closed id unions (biome, settlement scale, model ids) and definitions more than one domain consumes (mission types). A definition only one domain reads lives in that domain's `data/`, keyed by the shared union (ADR 0002) |

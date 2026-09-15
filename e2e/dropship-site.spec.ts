@@ -98,7 +98,7 @@ for (const fixture of [
     ).toBe(true);
     expect(errors).toEqual([]);
     if (process.env.CAPTURE === undefined) return;
-    const out = `${process.env.CAPTURE_OUTPUT ?? "docs/design/diagnostics/911/generated"}/${fixture.folder}`;
+    const out = `${process.env.CAPTURE_OUTPUT ?? "test-results/captures/dropship-site"}/${fixture.folder}`;
     mkdirSync(out, { recursive: true });
     await settleForShot(page);
     await page.mouse.move(0, 0);

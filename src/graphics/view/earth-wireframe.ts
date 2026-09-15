@@ -1,5 +1,4 @@
 import {
-  AdditiveBlending,
   BufferGeometry,
   Float32BufferAttribute,
   Group,
@@ -38,16 +37,21 @@ export const AXIS_COLOUR = 0x8b94a6;
 export const GRATICULE_STEP_DEG = 30;
 
 /** How strongly land is filled behind its coastline; the ground always shows through. */
-const LAND_FILL_OPACITY = 0.08;
+const LAND_FILL_OPACITY = 0.1;
 
-/** Opacity of each of the four offset glow passes behind the coastline. */
-const GLOW_OPACITY = 0.3;
+/**
+ * Opacity of each of the four offset glow passes behind the coastline.
+ * They blend normally rather than additively: additive passes that land
+ * on the core's own pixel, which they all do at the widest zoom, push
+ * `ui-info` to white, and the coast should stay the token.
+ */
+const GLOW_OPACITY = 0.45;
 
 /**
  * Ground-plane offset of the glow passes, in world units. WebGL draws a
  * line one pixel wide on every platform, so the glow is the same line
  * drawn again slightly to each side: under a pixel at the widest zoom,
- * where it only brightens the core, and a two-pixel halo at the
+ * where it only softens the core's edge, and a two-pixel halo at the
  * tightest.
  */
 const GLOW_OFFSET = 0.012;
@@ -237,7 +241,6 @@ export class EarthWireframe {
       color: COASTLINE_COLOUR,
       transparent: true,
       opacity: GLOW_OPACITY,
-      blending: AdditiveBlending,
       depthWrite: false,
     });
     glowMaterial.name = "earth-coastline-glow";

@@ -81,7 +81,11 @@ export class SceneService {
     this.sceneCamera = options.camera;
     this.updatables = options.updatables ?? [];
 
-    this.renderer = new WebGLRenderer({ antialias: true });
+    // A stencil buffer, which three no longer allocates by default: the
+    // strategic map clips its region territories to land with it
+    // (#1149). The tactical scene never touches the stencil, so an
+    // unused plane costs it nothing but a little memory.
+    this.renderer = new WebGLRenderer({ antialias: true, stencil: true });
     this.renderer.setPixelRatio(window.devicePixelRatio);
     // Cast shadows, so height reads (#507).
     //

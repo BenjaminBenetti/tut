@@ -1,5 +1,7 @@
 import type {
   BoxGeometry,
+  LineBasicMaterial,
+  LineSegments,
   Material,
   Mesh,
   MeshBasicMaterial,
@@ -25,16 +27,24 @@ function rampStop(index: number): number {
   return stop.hex;
 }
 
-/** The wash material of a region's plate, as colour and opacity. */
-function washOf(
+/** The fill of a region's territory, as colour and opacity. */
+function fillOf(
   builder: OverworldSceneBuilder,
   regionId: string,
 ): { colour: number; opacity: number } {
-  const slab = builder.root.getObjectByName(`region-slab-${regionId}`) as
+  const mesh = builder.root.getObjectByName(`territory-fill-${regionId}`) as
     Mesh | undefined;
-  if (!slab) throw new Error(`no plate for ${regionId}`);
-  const material = slab.material as MeshStandardMaterial;
+  if (!mesh) throw new Error(`no territory for ${regionId}`);
+  const material = mesh.material as MeshBasicMaterial;
   return { colour: material.color.getHex(), opacity: material.opacity };
+}
+
+/** The selection outline's core line. */
+function outlineOf(builder: OverworldSceneBuilder): LineSegments {
+  const lines = builder.root.getObjectByName("territory-selection") as
+    LineSegments | undefined;
+  if (!lines) throw new Error("no selection outline");
+  return lines;
 }
 
 function withInfestation(
@@ -69,22 +79,28 @@ function markerOf(builder: OverworldSceneBuilder, cityId: string): Object3D {
 }
 
 describe("OverworldSceneBuilder", () => {
-  it("builds a slab, the wireframe Earth, one plate per region and one marker per city", () => {
+  it("builds a slab, the wireframe Earth, one territory per region and one marker per city", () => {
     const builder = new OverworldSceneBuilder();
     builder.build(EARTH_MAP);
     const names = builder.root.children.map((child) => child.name);
     expect(names.filter((name) => name === "map-slab")).toHaveLength(1);
     expect(names.filter((name) => name === "earth-wireframe")).toHaveLength(1);
-    expect(names.filter((name) => name.startsWith("region-"))).toHaveLength(
-      EARTH_MAP.regions.length,
+    expect(names.filter((name) => name === "region-territories")).toHaveLength(
+      1,
     );
+    for (const region of EARTH_MAP.regions) {
+      expect(fillOf(builder, region.id).opacity).toBe(0);
+      expect(
+        builder.regionTerritories()?.outlineSegmentCount(region.id),
+      ).toBeGreaterThan(0);
+    }
     expect(names.filter((name) => name.startsWith("city-"))).toHaveLength(
       EARTH_MAP.cities.length,
     );
     expect(builder.cityIds()).toEqual(EARTH_MAP.cities.map((city) => city.id));
   });
 
-  it("places markers inside the map plane and on top of the plates", () => {
+  it("places markers inside the map plane and above the wireframe", () => {
     const builder = new OverworldSceneBuilder();
     builder.build(EARTH_MAP);
     for (const city of EARTH_MAP.cities) {
@@ -119,7 +135,7 @@ describe("OverworldSceneBuilder", () => {
     ).not.toBeInstanceOf(Sprite);
   });
 
-  it("draws the wireframe Earth on the map plane, under the plates (#1144)", () => {
+  it("draws the wireframe Earth on the map plane, under the markers (#1144)", () => {
     const builder = new OverworldSceneBuilder();
     builder.build(EARTH_MAP);
     const wireframe = builder.root.getObjectByName("earth-wireframe");
@@ -133,7 +149,7 @@ describe("OverworldSceneBuilder", () => {
     expect(bounds.min.z).toBeGreaterThanOrEqual(-0.02);
     expect(bounds.max.z).toBeLessThanOrEqual(12.02);
     expect(bounds.min.y).toBeGreaterThan(0);
-    expect(bounds.max.y).toBeLessThan(OVERWORLD_SCENE_CONFIG.plateHeight);
+    expect(bounds.max.y).toBeLessThan(OVERWORLD_SCENE_CONFIG.markerLift);
     // A rebuild replaces it rather than stacking a second Earth.
     builder.build(EARTH_MAP);
     expect(wireframe.parent).toBeNull();
@@ -197,18 +213,18 @@ describe("OverworldSceneBuilder", () => {
     expect(markerOf(builder, "london")).toBe(london);
   });
 
-  it("washes a region with its worst city, not its average (#440)", () => {
+  it("fills a region with its worst city, not its average (#440)", () => {
     const builder = new OverworldSceneBuilder();
     builder.build(EARTH_MAP);
     const london = EARTH_MAP.cities.find((city) => city.id === "london");
     if (!london) throw new Error("fixture has no london");
-    const wash = washOf(builder, london.regionId);
-    expect(wash.opacity).toBe(0);
+    const clean = fillOf(builder, london.regionId);
+    expect(clean.opacity).toBe(0);
 
     builder.update(withInfestation(EARTH_MAP, "london", 100));
 
     // One city at 100 among clean neighbours still lights the region.
-    const lit = washOf(builder, london.regionId);
+    const lit = fillOf(builder, london.regionId);
     expect(lit.opacity).toBeGreaterThan(0);
     expect(lit.colour).toBe(rampStop(3));
   });
@@ -225,29 +241,41 @@ describe("OverworldSceneBuilder", () => {
       if (region.id === london.regionId) {
         continue;
       }
-      expect(washOf(builder, region.id).opacity).toBe(0);
+      expect(fillOf(builder, region.id).opacity).toBe(0);
     }
   });
 
-  it("shows the selected city's region and no other (#440)", () => {
+  it("lights the selected city's region outline, with no fill and no other region (#1149)", () => {
     const builder = new OverworldSceneBuilder();
     builder.build(EARTH_MAP);
     const london = EARTH_MAP.cities.find((city) => city.id === "london");
     if (!london) throw new Error("fixture has no london");
+    const outline = outlineOf(builder);
+    expect(outline.visible).toBe(false);
 
     builder.setSelected("london");
 
-    expect(washOf(builder, london.regionId).opacity).toBeGreaterThan(0);
-    expect(washOf(builder, london.regionId).colour).toBe(SELECTION_COLOUR);
+    expect(builder.regionTerritories()?.selectedRegion()).toBe(london.regionId);
+    expect(outline.visible).toBe(true);
+    expect((outline.material as LineBasicMaterial).color.getHex()).toBe(
+      SELECTION_COLOUR,
+    );
+    const coast = builder.root.getObjectByName(
+      "territory-selection-coast",
+    ) as LineSegments;
+    expect(coast.visible).toBe(true);
+    expect(
+      outline.geometry.getAttribute("position").count / 2 +
+        coast.geometry.getAttribute("position").count / 2,
+    ).toBe(builder.regionTerritories()?.outlineSegmentCount(london.regionId));
+    // Selection is an outline, not a wash: every fill stays clean.
     for (const region of EARTH_MAP.regions) {
-      if (region.id === london.regionId) {
-        continue;
-      }
-      expect(washOf(builder, region.id).opacity).toBe(0);
+      expect(fillOf(builder, region.id).opacity).toBe(0);
     }
 
     builder.setSelected(undefined);
-    expect(washOf(builder, london.regionId).opacity).toBe(0);
+    expect(outline.visible).toBe(false);
+    expect(builder.regionTerritories()?.selectedRegion()).toBeUndefined();
   });
 
   it("update rebuilds when the set of cities changes", () => {

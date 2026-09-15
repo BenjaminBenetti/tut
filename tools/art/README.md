@@ -8,6 +8,7 @@ Art Director build scripts. See `docs/design/style-guide.md` and `docs/design/ar
 | `gen-image.sh <prompt.txt> <out.png>` | Generates an image with the Codex CLI built-in image tool (concept art, textures, sprites). Recipe and environment fixes in `docs/design/art-tooling.md` §1. |
 | `preview/render-placeholders.mjs` | Renders each placeholder from two isometric yaws with headless Chromium into `preview/out/` (git-ignored) for visual checks. Needs `@playwright/test` with Chromium installed. |
 | `build-textures.mjs` | Builds the two 512² unit atlases (TDF, bug) procedurally from a seeded PRNG; `build-placeholders.mjs` imports its cell layout to remap UVs and reference the atlases from unit GLBs. `pnpm art:textures`. |
+| `build-coastlines.mjs [tolerance°]` | Downloads Natural Earth's 1:110m land polygons, simplifies them with Douglas–Peucker and writes `src/graphics/data/earth-coastlines.ts`, the vector Earth the strategic map draws (#1144). Deterministic for a given tolerance. |
 | `build-icons.mjs` | Builds the 24 px UI icon SVGs under `public/assets/ui/icons/` from path data; `src/ui/data/icon-manifest.ts` registers them. |
 | `preview/shoot-page.mjs <page> <out.png>` | Screenshots a repo page (e.g. `preview/ui-theme.html`) with headless Chromium. |
 | `preview/render-thumbnails.mjs` | Renders 128 px transparent thumbnails of every unit, mech part and bug into `public/assets/ui/thumbs/`; `src/ui/data/thumbnail-manifest.ts` registers them. |

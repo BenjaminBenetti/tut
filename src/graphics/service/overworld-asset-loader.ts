@@ -1,7 +1,6 @@
 import type { GlyphSource } from "../model/glyph-source";
 import type { OverworldSceneAssets } from "../model/overworld-scene-assets";
 import { CanvasTextTextureSource } from "./canvas-text-texture-source";
-import type { TextureSource } from "../model/texture-source";
 
 // ===========================================
 // Types
@@ -9,7 +8,6 @@ import type { TextureSource } from "../model/texture-source";
 
 /** Where the overworld art comes from. */
 export interface OverworldAssetLoaderDeps {
-  readonly textures: TextureSource;
   readonly glyphs: GlyphSource;
   /** Public URL of the city glyph SVG, resolved by the app from the icon manifest. */
   readonly markerGlyphUrl: string;
@@ -40,13 +38,11 @@ export const MARKER_GLYPH_RASTER_PX = 128;
 export async function loadOverworldAssets(
   deps: OverworldAssetLoaderDeps,
 ): Promise<OverworldSceneAssets> {
-  const [mapTexture, markerGlyph, missionGlyph] = await Promise.all([
-    deps.textures.loadTexture("overworld.earth-map"),
+  const [markerGlyph, missionGlyph] = await Promise.all([
     deps.glyphs.loadGlyph(deps.markerGlyphUrl, MARKER_GLYPH_RASTER_PX),
     deps.glyphs.loadGlyph(deps.missionGlyphUrl, MARKER_GLYPH_RASTER_PX),
   ]);
   return {
-    mapTexture,
     markerGlyph,
     missionGlyph,
     // Labels are rasterised on demand and cached per name (#439).

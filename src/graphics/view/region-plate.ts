@@ -37,7 +37,7 @@ const SELECTED_FLOOR = 0.5;
 
 /**
  * One region, drawn as a **wash of its infestation colour** over the
- * Earth texture: no border, and no fill at all while the region is
+ * wireframe Earth: no border, and no fill at all while the region is
  * clean.
  *
  * ```
@@ -54,7 +54,7 @@ const SELECTED_FLOOR = 0.5;
  * will never line up with anything the player recognises — the fix is to
  * stop drawing the box and draw only what the box is *for*.
  *
- * The biome tint went with it: the Earth texture already shows the
+ * The biome tint went with it: the Earth map already showed the
  * terrain, and tinting it by climate only muddied the one signal that
  * has to survive a glance (GDD §5.3). Infestation now owns the wash, on
  * the same ramp the city markers use, so a region and the cities inside

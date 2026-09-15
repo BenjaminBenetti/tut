@@ -22,20 +22,24 @@ describe("TEXTURE_MANIFEST", () => {
     }
   });
 
-  it("keeps every texture at its declared size and under 1.5 MB", () => {
+  it("keeps every texture at its declared size and within the 1024² cap", () => {
     for (const entry of Object.values(TEXTURE_MANIFEST)) {
       const bytes = readFileSync(`${publicDir}${entry.path}`);
       expect(pngSize(bytes), entry.path).toEqual({
         width: entry.width,
         height: entry.height,
       });
+      expect(
+        Math.max(entry.width, entry.height),
+        entry.path,
+      ).toBeLessThanOrEqual(1024);
       expect(bytes.length, entry.path).toBeLessThan(1.5 * 1024 * 1024);
     }
   });
 
   it("builds a URL from an id", () => {
-    expect(textureUrl("overworld.earth-map")).toBe(
-      "/assets/textures/overworld/earth-map_albedo.png",
+    expect(textureUrl("units.tdf-atlas")).toBe(
+      "/assets/textures/units/tdf-atlas_albedo.png",
     );
   });
 });

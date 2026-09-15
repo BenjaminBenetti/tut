@@ -5,12 +5,11 @@ import type { TextTextureSource } from "./text-texture-source";
 /**
  * Art the overworld scene can use when it is available. Every field is
  * optional by design (architecture §7: never block on art): the scene
- * builder substitutes flat colours and primitive markers for anything
- * missing, so a broken asset degrades the look, never the game.
+ * builder substitutes primitive markers for anything missing, so a
+ * broken asset degrades the look, never the game. The Earth itself is
+ * not art: it is drawn from coastline data (#1144).
  */
 export interface OverworldSceneAssets {
-  /** Plate carrée Earth map for the map plane; `undefined` paints flat ocean. */
-  readonly mapTexture: Texture | undefined;
   /** White-on-transparent city glyph for marker sprites; `undefined` uses discs. */
   readonly markerGlyph: Texture | undefined;
   /** White-on-transparent mission glyph for the active-mission badge; `undefined` uses a small disc. */
@@ -22,9 +21,8 @@ export interface OverworldSceneAssets {
   readonly text?: TextTextureSource | undefined;
 }
 
-/** No art at all: flat ocean and disc markers. */
+/** No art at all: disc markers. */
 export const NO_OVERWORLD_ASSETS: OverworldSceneAssets = {
-  mapTexture: undefined,
   markerGlyph: undefined,
   missionGlyph: undefined,
   text: undefined,

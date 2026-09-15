@@ -255,7 +255,7 @@ Implementation: `src/ui/style/theme.css` exposes the §4.4 tokens as CSS custom 
 
 The detailed brown bug kit replaces the original 600/1,000/2,000-triangle bug and 1,200-triangle spawner budgets. Geometry goes into continuous shell curvature, plate overlap, joints and blade profiles; per-file caps and runtime read/animation checks still apply. Authored continuous UVs map the whole sculpted surface into its atlas cell, preserving shared vertices and avoiding one repeated texture patch per triangle.
 
-Hard cap from the role brief: models < 500 KB, textures ≤ 1024², sprites ≤ 512². One documented exception: the overworld world-map texture is 2048×1024 (a 2:1 plate carrée needs the width for coastlines at map zoom); it is the only texture allowed over 1024² and must stay under 1.5 MB.
+Hard cap from the role brief: models < 500 KB, textures ≤ 1024², sprites ≤ 512². The strategic map is not a texture: its Earth is drawn as vector coastlines from `src/graphics/data/earth-coastlines.ts` (#1144), so nothing needs to exceed the cap.
 
 ## 7. Tile and building kit conventions
 

@@ -17,8 +17,10 @@ import type { CityId } from "../../overworld/model/city";
 import type { EarthMap } from "../../overworld/model/earth-map";
 import type { RegionId } from "../../overworld/model/region";
 import { citiesInRegion } from "../../overworld/service/earth-map-query-service";
+import { EARTH_COASTLINES } from "../data/earth-coastlines";
 import { createFalloffTexture } from "./falloff-texture";
 import type { CityPicker } from "../model/city-picker";
+import type { EarthCoastlines } from "../model/earth-coastlines";
 import type { OverworldSceneAssets } from "../model/overworld-scene-assets";
 import { NO_OVERWORLD_ASSETS } from "../model/overworld-scene-assets";
 import type { OverworldSceneConfig } from "../model/overworld-scene-config";
@@ -29,9 +31,11 @@ import type {
   CityMarkerLookReport,
 } from "../view/city-marker";
 import { CityMarker } from "../view/city-marker";
+import { EarthWireframe } from "../view/earth-wireframe";
 import { RegionPlate } from "../view/region-plate";
+import type { GroundPolygon } from "./coastline-projection";
+import { projectCoastlines } from "./coastline-projection";
 import {
-  cityMarkerLayout,
   layoutToWorld,
   mapCentre,
   regionPlateExtent,
@@ -45,16 +49,21 @@ import {
 export interface OverworldSceneBuilderOptions {
   /** Scene sizes; defaults to `OVERWORLD_SCENE_CONFIG`. */
   readonly config?: OverworldSceneConfig;
-  /** Loaded art; defaults to none, which paints flat colours and discs. */
+  /** Loaded art; defaults to none, which draws disc markers. */
   readonly assets?: OverworldSceneAssets;
+  /** Coastlines to draw the Earth from; defaults to the shipped Natural Earth set. */
+  readonly coastlines?: EarthCoastlines;
 }
 
 // ===========================================
 // Constants
 // ===========================================
 
-/** Ocean slab colour: `env-water-deep`, used for the sides and as the top's fallback. */
+/** Slab side colour: `env-water-deep`. */
 const OCEAN_COLOUR = 0x1f5c73;
+
+/** Slab top colour: `ui-bg`, the near-black ground the wireframe Earth is drawn on (#1144). */
+const GROUND_COLOUR = 0x0b0d12;
 
 /** `BoxGeometry` material slot for the +y face (order: +x, −x, +y, −y, +z, −z). */
 const BOX_TOP_FACE = 2;
@@ -80,14 +89,14 @@ const RING_OUTER_SCALE = 2;
 
 /**
  * Builds the strategic map scene from an `EarthMap` and keeps it in
- * step with later states: a slab whose top carries the Earth texture,
- * one translucent plate per region, one marker per city, plus
- * hit-testing for the pointer controller. Reads state, holds no game
- * truth (architecture §2.3). Art is optional: without the texture the
- * slab is flat ocean, without the glyph markers are discs.
+ * step with later states: a near-black slab with the wireframe Earth
+ * drawn on it, one translucent plate per region, one marker per city,
+ * plus hit-testing for the pointer controller. Reads state, holds no
+ * game truth (architecture §2.3). Art is optional: without the glyph
+ * markers are discs.
  *
  * ```
- *   build(map)            ─▶  slab + plates + markers under `root`
+ *   build(map)            ─▶  slab + wireframe + plates + markers under `root`
  *   update(map, missions) ─▶  markers retinted and badged in place (same objects)
  *   pickCity()   ─▶  raycast against marker pick targets
  *   dispose()    ─▶  everything released, `root` emptied
@@ -102,6 +111,8 @@ export class OverworldSceneBuilder implements CityPicker, MapStateView {
   readonly root: Group;
   private readonly config: OverworldSceneConfig;
   private readonly assets: OverworldSceneAssets;
+  /** Land masses on the ground plane, projected once; the wireframe is built from them. */
+  private readonly landPolygons: readonly GroundPolygon[];
   private readonly raycaster = new Raycaster();
   private readonly markerGeometry: CityMarkerGeometry;
   /** Radial alpha map every region wash shares; disposed with the builder. */
@@ -112,6 +123,7 @@ export class OverworldSceneBuilder implements CityPicker, MapStateView {
   /** Which region each city belongs to, for the selected region's wash. */
   private readonly regionOfCity = new Map<CityId, RegionId>();
   private slab: Mesh | undefined;
+  private wireframe: EarthWireframe | undefined;
   private hovered: CityId | undefined;
   private selected: CityId | undefined;
 
@@ -126,6 +138,10 @@ export class OverworldSceneBuilder implements CityPicker, MapStateView {
     const config = options.config ?? OVERWORLD_SCENE_CONFIG;
     this.config = config;
     this.assets = options.assets ?? NO_OVERWORLD_ASSETS;
+    this.landPolygons = projectCoastlines(
+      options.coastlines ?? EARTH_COASTLINES,
+      config,
+    );
     this.root = new Group();
     this.root.name = "overworld-map";
     this.markerGeometry = {
@@ -152,16 +168,13 @@ export class OverworldSceneBuilder implements CityPicker, MapStateView {
     return mapCentre(this.config);
   }
 
-  /** True when the slab top carries the Earth texture rather than flat ocean. */
-  usesMapTexture(): boolean {
-    return this.assets.mapTexture !== undefined;
-  }
-
   /** Builds every object from scratch, discarding anything built before. */
   build(map: EarthMap): void {
     this.clear();
     this.slab = this.createSlab();
     this.root.add(this.slab);
+    this.wireframe = new EarthWireframe(this.landPolygons, this.config);
+    this.root.add(this.wireframe.object);
     for (const region of map.regions) {
       const extent = regionPlateExtent(
         region,
@@ -181,7 +194,7 @@ export class OverworldSceneBuilder implements CityPicker, MapStateView {
       }
     }
     for (const city of map.cities) {
-      const ground = layoutToWorld(cityMarkerLayout(city), this.config);
+      const ground = layoutToWorld(city.layout, this.config);
       const base = { x: ground.x, y: this.config.plateHeight, z: ground.z };
       const marker = new CityMarker(
         city,
@@ -314,11 +327,9 @@ export class OverworldSceneBuilder implements CityPicker, MapStateView {
   // ===========================================
 
   /**
-   * Builds the slab the plates sit on: exactly the map plane in extent,
-   * so the Earth texture on its top face lines up with `layoutToWorld`
-   * (texture `u` runs west → east along +x, the image top is north at
-   * `z = 0`). Without the texture the top is flat ocean, unlit either way
-   * so the palette reads exactly.
+   * Builds the slab the wireframe and plates sit on: exactly the map
+   * plane in extent, its top the unlit `ui-bg` ground the vector Earth
+   * is drawn on (#1144), its sides the ocean tone.
    *
    * @returns The slab, with its top at `y = 0`.
    */
@@ -335,12 +346,8 @@ export class OverworldSceneBuilder implements CityPicker, MapStateView {
       roughness: 0.9,
     });
     side.name = "env-water-deep";
-    const top = this.assets.mapTexture
-      ? new MeshBasicMaterial({ map: this.assets.mapTexture })
-      : new MeshBasicMaterial({ color: OCEAN_COLOUR });
-    top.name = this.assets.mapTexture
-      ? "overworld.earth-map"
-      : "env-water-deep";
+    const top = new MeshBasicMaterial({ color: GROUND_COLOUR });
+    top.name = "ui-bg";
     const materials: Material[] = [side, side, side, side, side, side];
     materials[BOX_TOP_FACE] = top;
     const slab = new Mesh(geometry, materials);
@@ -407,11 +414,13 @@ export class OverworldSceneBuilder implements CityPicker, MapStateView {
         material.dispose();
       }
     }
+    this.wireframe?.dispose();
     this.markers.clear();
     this.targetToCity.clear();
     this.plates.clear();
     this.regionOfCity.clear();
     this.slab = undefined;
+    this.wireframe = undefined;
     this.root.clear();
   }
 }

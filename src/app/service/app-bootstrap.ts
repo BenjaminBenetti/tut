@@ -7,14 +7,12 @@ import {
   cityPickerAdapter,
   PickingController,
 } from "../../graphics/controller/picking-controller";
-import { TEXTURE_MANIFEST } from "../../graphics/data/texture-manifest";
 import {
   CAMERA_ZOOM,
   TOP_DOWN_PROJECTION,
 } from "../../graphics/model/camera-state";
 import { OVERWORLD_SCENE_CONFIG } from "../../graphics/model/overworld-scene-config";
 import { OrthographicCameraRig } from "../../graphics/service/orthographic-camera-rig";
-import { ManifestTextureLoader } from "../../graphics/service/manifest-texture-loader";
 import { loadOverworldAssets } from "../../graphics/service/overworld-asset-loader";
 import { OverworldSceneBuilder } from "../../graphics/service/overworld-scene-builder";
 import { SceneService } from "../../graphics/service/scene-service";
@@ -269,8 +267,8 @@ export async function bootstrapApp(doc: Document): Promise<void> {
 // ===========================================
 
 /**
- * The overworld map scene from #160: loads textures and marker glyphs,
- * builds the Earth scene, the isometric rig at minimum zoom, camera
+ * The overworld map scene from #160: loads the marker glyphs, builds
+ * the wireframe Earth scene (#1144), the isometric rig at minimum zoom, camera
  * input and city picking, all mounted into the given `#map-viewport`. A
  * selected city is mirrored to `body[data-selected-city]` and pushed into
  * `selection`, which the overworld panels render. The scene attaches to
@@ -288,11 +286,6 @@ async function composeScene(
   startMission: (missionId: string) => string | undefined,
 ): Promise<SceneService> {
   const assets = await loadOverworldAssets({
-    textures: new ManifestTextureLoader({
-      manifest: TEXTURE_MANIFEST,
-      baseUrl: import.meta.env.BASE_URL,
-      logger: console,
-    }),
     glyphs: new SvgGlyphRasteriser({ logger: console }),
     markerGlyphUrl: iconHref("marker-city"),
     missionGlyphUrl: iconHref("mission"),

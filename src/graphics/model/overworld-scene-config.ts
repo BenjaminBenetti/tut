@@ -11,7 +11,8 @@
  *   y ▲          markers stand on the plate top
  *     │   ┌─┐
  *     │ ┌─┴─┴───────┐ ◀── translucent region plate, plateHeight thick
- *   0 ┼─┴───────────┴──── slab top: the Earth texture, or flat ocean
+ *     │ ─────────────── ◀── wireframe Earth: coastlines and graticule (#1144)
+ *   0 ┼─┴───────────┴──── slab top: the ui-bg ground
  *     └──────────────────────────────▶ x / z
  * ```
  */

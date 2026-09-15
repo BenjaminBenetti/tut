@@ -3,6 +3,10 @@ import type { Page } from "@playwright/test";
 import { expect, test } from "@playwright/test";
 
 import type { TutTestHooks } from "../src/app/model/test-hooks";
+import { EARTH_COASTLINES } from "../src/graphics/data/earth-coastlines";
+import { OVERWORLD_SCENE_CONFIG } from "../src/graphics/model/overworld-scene-config";
+import { projectCoastlines } from "../src/graphics/service/coastline-projection";
+import { layoutToWorld } from "../src/graphics/service/overworld-layout";
 import { EARTH_MAP } from "../src/overworld/data/earth-map";
 import { MAP_READY_ATTRIBUTE } from "../src/ui/model/map-viewport-host";
 
@@ -15,6 +19,12 @@ interface HookGlobal {
   __tut__?: TutTestHooks;
 }
 
+/** A client-pixel point. */
+interface Point {
+  readonly x: number;
+  readonly y: number;
+}
+
 /** A client-pixel rectangle. */
 interface Box {
   readonly x: number;
@@ -23,20 +33,27 @@ interface Box {
   readonly height: number;
 }
 
-/** A city whose marker stands on water, with how far the nearest land is. */
-interface WaterHit {
-  readonly name: string;
-  readonly texel: readonly number[];
-  readonly texturePixel: string;
-  readonly pixelsToLand: number;
+/** Layout space → client pixels, as fitted from two markers. */
+interface ScreenFit {
+  readonly originX: number;
+  readonly originY: number;
+  readonly scaleX: number;
+  readonly scaleY: number;
 }
 
-/** What the plate looks like on screen and what stands on it. */
-interface MarkerReport {
-  readonly plate: Box;
-  readonly aspect: number;
-  readonly measured: number;
-  readonly water: readonly WaterHit[];
+/** One coastal city and where its nearest drawn coast vertex projects to. */
+interface CoastProbe {
+  readonly id: string;
+  readonly marker: Point;
+  readonly coast: Point;
+  readonly coastDistancePx: number;
+}
+
+/** What the screenshot showed at each probe. */
+interface ProbeReport {
+  readonly coastPixels: number;
+  readonly missingCoast: string[];
+  readonly litOcean: number;
 }
 
 // ===========================================
@@ -44,27 +61,44 @@ interface MarkerReport {
 // ===========================================
 
 /**
- * Public URL of the Earth albedo the slab is textured with. The path is
- * `TEXTURE_MANIFEST["overworld.earth-map"]`, written out here because
- * importing that module pulls `import.meta.env` into the Node-side test
- * project.
+ * Coastal cities the wireframe has to put on their coast: spread over
+ * every ocean, several of them the ones the drawn texture used to miss
+ * (#439), now with no nudge table behind them (#1144).
  */
-const EARTH_TEXTURE_URL = "/assets/textures/overworld/earth-map_albedo.png";
+const COASTAL_SAMPLE = [
+  "new-york",
+  "tokyo",
+  "sydney",
+  "auckland",
+  "reykjavik",
+  "singapore",
+  "lisbon",
+  "cairo",
+];
 
-/** How far the search for solid land gives up, in texture pixels. */
-const LAND_SEARCH_LIMIT = 80;
+/** Two cities far apart in both axes, to fit layout → screen from. */
+const FIT_PAIR = ["vancouver", "sydney"] as const;
 
 /**
- * How far from solid land a marker may stand, in texture pixels. The
- * coastline is a stylised drawing and a marker on a headland can sample
- * a pixel the art paints as sea; four texture pixels is under two screen
- * pixels at the default camera, so it is invisible under the glyph.
- * Anything past that is a marker sitting in open water, which is #439.
+ * How far from a marker its nearest drawn coast vertex may be, in
+ * client pixels. At the default zoom the map is 960 px for 360°, so
+ * this is six degrees: a coastal city whose coast is further away than
+ * that is a marker in open water.
  */
-const MAX_PIXELS_FROM_LAND = 4;
+const MAX_COAST_DISTANCE_PX = 16;
 
-/** The slab is a 24 × 12 plane, so its drawn rectangle must stay 2:1. */
-const PLATE_ASPECT = { min: 1.95, max: 2.05 };
+/** Half-size of the window searched for a coast pixel around a vertex. */
+const PROBE_RADIUS_PX = 4;
+
+/**
+ * The fewest coastline pixels a full map may draw. Earth's 110m
+ * coastline is over 15 000 px long at the default zoom; a tenth of that
+ * still fails on a map with no lines, and passes one that is cropped.
+ */
+const MIN_COAST_PIXELS = 1500;
+
+/** Open ocean, off every graticule line: the map must be dark here. */
+const OPEN_OCEAN = { latitude: -10, longitude: -140 };
 
 /** Cities used for the label check: well inside the plate, spread widely. */
 const LABEL_SAMPLE = ["london", "chicago", "cairo", "sao-paulo", "beijing"];
@@ -96,15 +130,9 @@ async function openOverworld(page: Page): Promise<string[]> {
 }
 
 /**
- * Waits until the map is worth measuring: the app says so (#473).
- *
- * This used to poll the canvas box against the cell box and then sleep
- * 250 ms on top. Both halves were wrong. The canvas takes the cell's
- * size a frame before the camera is rebuilt for it, so the comparison
- * can pass over a stale frustum — measured on seed 4242, the frame the
- * screen appears on already has a 960 px cell while `cityScreenPosition`
- * still answers 712.8 instead of 790.4, and it stays that way for two
- * frames. The sleep was what actually covered that, by guess.
+ * Waits until the map is worth measuring: the app says so (#473). The
+ * screen attribute flips before the camera has been rebuilt for the
+ * map cell, so for two frames every projected position is wrong.
  */
 async function waitForMapSettled(page: Page): Promise<void> {
   await expect(page.locator("body")).toHaveAttribute(
@@ -118,7 +146,7 @@ async function waitForMapSettled(page: Page): Promise<void> {
 async function markerAnchors(
   page: Page,
   cityIds: readonly string[],
-): Promise<Record<string, { x: number; y: number } | null>> {
+): Promise<Record<string, Point | null>> {
   return page.evaluate(
     (ids) =>
       Object.fromEntries(
@@ -133,216 +161,222 @@ async function markerAnchors(
   );
 }
 
+/** The layout of a shipped city. */
+function layoutOf(cityId: string): { x: number; y: number } {
+  const city = EARTH_MAP.cities.find((candidate) => candidate.id === cityId);
+  if (!city) {
+    throw new Error(`EARTH_MAP has no city ${cityId}`);
+  }
+  return city.layout;
+}
+
+/**
+ * Fits the axis-aligned layout → screen mapping from two markers. The
+ * orientation spec proves the map is axis aligned with one scale; this
+ * only needs the numbers.
+ */
+function fitScreen(anchors: Record<string, Point | null>): ScreenFit {
+  const [a, b] = FIT_PAIR;
+  const pa = anchors[a];
+  const pb = anchors[b];
+  if (!pa || !pb) {
+    throw new Error(`fit cities ${a} and ${b} did not project`);
+  }
+  const la = layoutOf(a);
+  const lb = layoutOf(b);
+  const scaleX = (pb.x - pa.x) / (lb.x - la.x);
+  const scaleY = (pb.y - pa.y) / (lb.y - la.y);
+  return {
+    scaleX,
+    scaleY,
+    originX: pa.x - scaleX * la.x,
+    originY: pa.y - scaleY * la.y,
+  };
+}
+
+/** A layout point on screen. */
+function toScreen(fit: ScreenFit, layout: { x: number; y: number }): Point {
+  return {
+    x: fit.originX + fit.scaleX * layout.x,
+    y: fit.originY + fit.scaleY * layout.y,
+  };
+}
+
+/**
+ * The drawn coast vertex nearest a city, in layout space. Every ring
+ * vertex lies on a drawn segment, so a coast pixel must be there.
+ */
+function nearestCoastVertex(cityId: string): { x: number; y: number } {
+  const config = OVERWORLD_SCENE_CONFIG;
+  const world = layoutToWorld(layoutOf(cityId), config);
+  let best = { x: 0, z: 0 };
+  let bestDistance = Number.POSITIVE_INFINITY;
+  for (const polygon of projectCoastlines(EARTH_COASTLINES, config)) {
+    for (const ring of [polygon.outer, ...polygon.holes]) {
+      for (const vertex of ring) {
+        const distance = Math.hypot(vertex.x - world.x, vertex.z - world.z);
+        if (distance < bestDistance) {
+          bestDistance = distance;
+          best = vertex;
+        }
+      }
+    }
+  }
+  return { x: best.x / config.mapWidth, y: best.z / config.mapDepth };
+}
+
 // ===========================================
-// Markers on land
+// Markers on the drawn coast
 // ===========================================
 
 /**
- * No city marker may stand on an ocean pixel of the Earth texture (#439).
- *
- * This reads the render, not the data, so it holds however the markers
- * are placed: it finds the plate's rectangle on screen, turns each
- * marker's drawn anchor into a texture coordinate, and samples the
- * albedo there. Ocean is blue-dominant; green, sand, rock and polar
- * white all count as ground, and five of the nine pixels around the
- * sample must be ground so one antialiased coast pixel cannot decide it.
+ * The strategic map draws the Earth as vector coastlines through the
+ * same projection the markers use (#1144), so a coastal city's marker
+ * must stand on a drawn coast: the coast vertex nearest the city
+ * projects to within a few pixels of the marker, and the screenshot
+ * shows a coastline-coloured pixel there.
  *
  * ```
- *   marker anchor (px) ──▶ (anchor − plate) / plate ──▶ texel ──▶ blue? ──▶ fail
+ *   city layout ──▶ nearest ring vertex ──▶ screen (fitted from markers)
+ *                                              └─▶ cyan pixel in a 9×9 window?
  * ```
  *
- * A failure names every offending city and how far solid land is, so the
- * size of the error is visible without re-running anything.
+ * Two controls keep the measurement honest: the whole plate must draw
+ * a coastline's worth of coast pixels, and open ocean must stay dark.
  */
-test("no city marker stands on an ocean pixel", async ({ page }) => {
+test("coastal city markers stand on the drawn coastline", async ({ page }) => {
   const errors = await openOverworld(page);
-
   await waitForMapSettled(page);
 
-  const cityIds = EARTH_MAP.cities.map((city) => city.id);
-  const names = Object.fromEntries(
-    EARTH_MAP.cities.map((city) => [city.id, city.name]),
-  );
-  const anchors = await markerAnchors(page, cityIds);
+  const anchors = await markerAnchors(page, [...FIT_PAIR, ...COASTAL_SAMPLE]);
+  const fit = fitScreen(anchors);
+  // A 2:1 plane drawn with one scale: the two axes agree.
+  expect(fit.scaleX / fit.scaleY).toBeGreaterThan(1.95);
+  expect(fit.scaleX / fit.scaleY).toBeLessThan(2.05);
+
   const cell = await page.locator("#map-viewport").boundingBox();
   if (!cell) {
     throw new Error("The overworld has no #map-viewport");
   }
+  const probes: CoastProbe[] = [];
+  for (const id of COASTAL_SAMPLE) {
+    const marker = anchors[id];
+    if (!marker) {
+      throw new Error(`${id} did not project`);
+    }
+    const coast = toScreen(fit, nearestCoastVertex(id));
+    probes.push({
+      id,
+      marker,
+      coast,
+      coastDistancePx: Math.hypot(coast.x - marker.x, coast.y - marker.y),
+    });
+  }
+  const adrift = probes.filter(
+    (probe) => probe.coastDistancePx > MAX_COAST_DISTANCE_PX,
+  );
+  expect(
+    adrift.map(
+      (probe) => `${probe.id}: ${probe.coastDistancePx.toFixed(1)} px`,
+    ),
+    `markers further than ${String(MAX_COAST_DISTANCE_PX)} px from the drawn coast`,
+  ).toEqual([]);
+
+  const plate: Box = {
+    x: Math.max(cell.x, fit.originX),
+    y: Math.max(cell.y, fit.originY),
+    width:
+      Math.min(cell.x + cell.width, fit.originX + fit.scaleX) -
+      Math.max(cell.x, fit.originX),
+    height:
+      Math.min(cell.y + cell.height, fit.originY + fit.scaleY) -
+      Math.max(cell.y, fit.originY),
+  };
+  const ocean = toScreen(fit, {
+    x: (OPEN_OCEAN.longitude + 180) / 360,
+    y: (90 - OPEN_OCEAN.latitude) / 180,
+  });
   const shot = `data:image/png;base64,${(await page.screenshot()).toString("base64")}`;
 
-  const report: MarkerReport = await page.evaluate(
-    async ({
-      shot,
-      cell,
-      anchors,
-      names,
-      textureUrl,
-      searchLimit,
-      tolerance,
-    }) => {
-      /** Decodes an image into raw pixels. */
-      const load = async (
-        url: string,
-      ): Promise<{ w: number; h: number; px: Uint8ClampedArray }> => {
-        const bitmap = await createImageBitmap(await (await fetch(url)).blob());
-        const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
-        const context = canvas.getContext("2d");
-        if (!context) {
-          throw new Error("No 2d context available");
-        }
-        context.drawImage(bitmap, 0, 0);
-        return {
-          w: bitmap.width,
-          h: bitmap.height,
-          px: context.getImageData(0, 0, bitmap.width, bitmap.height).data,
-        };
-      };
+  const report: ProbeReport = await page.evaluate(
+    async ({ shot, plate, probes, ocean, radius }) => {
+      const bitmap = await createImageBitmap(await (await fetch(shot)).blob());
+      const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+      const context = canvas.getContext("2d");
+      if (!context) {
+        throw new Error("No 2d context available");
+      }
+      context.drawImage(bitmap, 0, 0);
+      const image = context.getImageData(0, 0, bitmap.width, bitmap.height);
       /** The pixel at `(x, y)`, clamped into the image. */
-      const rgb = (
-        image: { w: number; h: number; px: Uint8ClampedArray },
-        x: number,
-        y: number,
-      ): number[] => {
-        const cx = Math.min(image.w - 1, Math.max(0, Math.round(x)));
-        const cy = Math.min(image.h - 1, Math.max(0, Math.round(y)));
-        const index = (cy * image.w + cx) * 4;
-        return [image.px[index], image.px[index + 1], image.px[index + 2]];
+      const rgb = (x: number, y: number): [number, number, number] => {
+        const cx = Math.min(image.width - 1, Math.max(0, Math.round(x)));
+        const cy = Math.min(image.height - 1, Math.max(0, Math.round(y)));
+        const index = (cy * image.width + cx) * 4;
+        return [
+          image.data[index],
+          image.data[index + 1],
+          image.data[index + 2],
+        ];
       };
-
-      const texture = await load(textureUrl);
-      const screen = await load(shot);
-
-      /** True for the albedo's ocean blue. */
-      const isOcean = (x: number, y: number): boolean => {
-        const [r, g, b] = rgb(texture, x, y);
-        return b > r + 18 && b >= g && b > 45;
+      /**
+       * The coastline tone, `ui-info` and its glow: blue-led, blue at
+       * least as strong as green, and well clear of red. Orange markers,
+       * the grey graticule, white labels and green washes all fail it.
+       */
+      const isCoast = (x: number, y: number): boolean => {
+        const [r, g, b] = rgb(x, y);
+        return b >= 150 && b >= g && b - r >= 40;
       };
-      /** True when most of the 3×3 block around the texel is ground. */
-      const isLand = (x: number, y: number): boolean => {
-        let ground = 0;
-        for (let dy = -1; dy <= 1; dy++) {
-          for (let dx = -1; dx <= 1; dx++) {
-            if (!isOcean(x + dx, y + dy)) {
-              ground++;
+      /** True when any pixel within `radius` of the point is coast. */
+      const coastNear = (point: { x: number; y: number }): boolean => {
+        for (let dy = -radius; dy <= radius; dy++) {
+          for (let dx = -radius; dx <= radius; dx++) {
+            if (isCoast(point.x + dx, point.y + dy)) {
+              return true;
             }
           }
         }
-        return ground >= 5;
-      };
-      /** Rings outward until solid land is found. */
-      const distanceToLand = (x: number, y: number): number => {
-        for (let r = 1; r <= searchLimit; r++) {
-          for (let dy = -r; dy <= r; dy++) {
-            for (let dx = -r; dx <= r; dx++) {
-              if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) {
-                continue;
-              }
-              if (isLand(x + dx, y + dy)) {
-                return Math.round(Math.hypot(dx, dy));
-              }
-            }
-          }
-        }
-        return searchLimit;
+        return false;
       };
 
-      // The plate is the lit region inside the map cell; everything
-      // around it is the page background.
-      let minX = Number.POSITIVE_INFINITY;
-      let minY = Number.POSITIVE_INFINITY;
-      let maxX = -1;
-      let maxY = -1;
-      for (
-        let y = Math.round(cell.y);
-        y < Math.round(cell.y + cell.height);
-        y++
-      ) {
-        for (
-          let x = Math.round(cell.x);
-          x < Math.round(cell.x + cell.width);
-          x++
-        ) {
-          const [r, g, b] = rgb(screen, x, y);
-          if (r + g + b > 110) {
-            minX = Math.min(minX, x);
-            maxX = Math.max(maxX, x);
-            minY = Math.min(minY, y);
-            maxY = Math.max(maxY, y);
+      let coastPixels = 0;
+      for (let y = Math.ceil(plate.y); y < plate.y + plate.height; y++) {
+        for (let x = Math.ceil(plate.x); x < plate.x + plate.width; x++) {
+          if (isCoast(x, y)) {
+            coastPixels++;
           }
         }
       }
-      const plate = {
-        x: minX,
-        y: minY,
-        width: maxX - minX,
-        height: maxY - minY,
-      };
-
-      const water: WaterHit[] = [];
-      let measured = 0;
-      for (const [id, anchor] of Object.entries(anchors)) {
-        if (!anchor) {
-          continue;
-        }
-        const u = (anchor.x - plate.x) / plate.width;
-        const v = (anchor.y - plate.y) / plate.height;
-        if (u < 0 || u > 1 || v < 0 || v > 1) {
-          continue; // Drawn outside the plate: clipped, not mis-placed.
-        }
-        measured++;
-        const x = Math.round(u * texture.w);
-        const y = Math.round(v * texture.h);
-        if (!isLand(x, y)) {
-          const pixelsToLand = distanceToLand(x, y);
-          if (pixelsToLand > tolerance) {
-            water.push({
-              name: names[id],
-              texel: rgb(texture, x, y),
-              texturePixel: `${String(x)},${String(y)}`,
-              pixelsToLand,
-            });
+      let litOcean = 0;
+      for (let dy = -radius; dy <= radius; dy++) {
+        for (let dx = -radius; dx <= radius; dx++) {
+          const [r, g, b] = rgb(ocean.x + dx, ocean.y + dy);
+          if (r + g + b > 90) {
+            litOcean++;
           }
         }
       }
       return {
-        plate,
-        aspect: plate.width / plate.height,
-        measured,
-        water,
+        coastPixels,
+        missingCoast: probes
+          .filter((probe) => !coastNear(probe.coast))
+          .map((probe) => probe.id),
+        litOcean,
       };
     },
-    {
-      shot,
-      cell,
-      anchors,
-      names,
-      textureUrl: EARTH_TEXTURE_URL,
-      searchLimit: LAND_SEARCH_LIMIT,
-      tolerance: MAX_PIXELS_FROM_LAND,
-    },
+    { shot, plate, probes, ocean, radius: PROBE_RADIUS_PX },
   );
 
-  // Guard the measurement itself: a clipped plate would make every
-  // texture coordinate wrong and the result meaningless.
   expect(
-    report.aspect,
-    `the plate is drawn ${report.plate.width}×${report.plate.height}, which is not the slab's 2:1 — the camera default changed and this measurement cannot be trusted`,
-  ).toBeGreaterThan(PLATE_ASPECT.min);
-  expect(report.aspect).toBeLessThan(PLATE_ASPECT.max);
+    report.coastPixels,
+    "too few coastline pixels on the plate: the wireframe Earth is not drawn",
+  ).toBeGreaterThan(MIN_COAST_PIXELS);
   expect(
-    report.measured,
-    "no city marker was measured against the plate",
-  ).toBeGreaterThanOrEqual(EARTH_MAP.cities.length - 2);
-
-  expect(
-    report.water,
-    `markers standing in open water on ${EARTH_TEXTURE_URL}, more than ${String(MAX_PIXELS_FROM_LAND)} px from land: ${report.water
-      .map(
-        (hit) =>
-          `${hit.name} at ${hit.texturePixel} rgb(${hit.texel.join(",")}), ${String(hit.pixelsToLand)} px from land`,
-      )
-      .join("; ")}`,
+    report.missingCoast,
+    `no coastline pixel drawn where these cities' coast should be: ${report.missingCoast.join(", ")}`,
   ).toEqual([]);
+  expect(report.litOcean, "open ocean is not dark").toBe(0);
   expect(errors).toEqual([]);
 });
 

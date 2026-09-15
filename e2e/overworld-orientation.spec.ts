@@ -1,7 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "@playwright/test";
 
-import { CITY_MARKER_NUDGES } from "../src/graphics/data/city-marker-nudges";
 import type { TutTestHooks } from "../src/app/model/test-hooks";
 import { MAP_READY_ATTRIBUTE } from "../src/ui/model/map-viewport-host";
 
@@ -24,32 +23,8 @@ interface StoredSave {
 /** How long to wait for the map viewport to reach its final size. */
 const SETTLE_TIMEOUT_MS = 5000;
 
-/** A point in normalised map-layout space. */
-interface LayoutPoint {
-  readonly x: number;
-  readonly y: number;
-}
-
 /** How far apart two cities must be in layout space to be worth comparing. */
 const MIN_SEPARATION = 0.05;
-
-/**
- * Where a marker is actually drawn: the city's layout plus its
- * presentation nudge (#439), which slides a handful of coastal cities
- * onto the coastline the Earth texture draws. The camera invariant below
- * is about the layout → screen mapping, so it has to start from the same
- * point the scene builder starts from.
- *
- * @param layout - The city's true equirectangular layout.
- * @param id - The city's id, used to look up its nudge.
- * @returns The layout point the marker is placed at.
- */
-function drawnLayout(layout: LayoutPoint, id: string): LayoutPoint {
-  const nudge = CITY_MARKER_NUDGES[id];
-  return nudge === undefined
-    ? layout
-    : { x: layout.x + nudge.x, y: layout.y + nudge.y };
-}
 
 /**
  * The strategic map is read straight on with north up (#420): a city
@@ -136,8 +111,10 @@ test("the world map is axis aligned: east is right, south is down", async ({
   sample.forEach((city, index) => {
     const at = anchors[index];
     if (at) {
+      // A marker is drawn at its city's true layout: the wireframe Earth
+      // is projected the same way, so nothing nudges it (#1144).
       placed.push({
-        layout: drawnLayout(city.layout, city.id),
+        layout: city.layout,
         x: at.x,
         y: at.y,
       });

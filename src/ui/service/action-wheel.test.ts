@@ -12,7 +12,12 @@ import {
   hudUnit,
 } from "../view/mission-hud.test-helper";
 import type { WheelContext } from "./action-wheel";
-import { actionWheel, parseWheelChoice, weaponWheel } from "./action-wheel";
+import {
+  actionWheel,
+  opensAttackPage,
+  parseWheelChoice,
+  weaponWheel,
+} from "./action-wheel";
 import { namesFor } from "./tactical-error-text";
 
 /** A wheel context for `unitId` in `mission`. */
@@ -750,6 +755,190 @@ describe("actionWheel on an enemy", () => {
       }),
     );
     expect(page.hub?.value).toBe(`${String(best)}%`);
+  });
+
+  /** The rifle template re-kitted with `equipment`, everyone's vision recomputed. */
+  function kittedMission(
+    equipment: readonly string[],
+    overrides: Partial<TacticalState> = {},
+  ): TacticalState {
+    const base = hudMission(overrides);
+    return {
+      ...base,
+      templates: {
+        ...base.templates,
+        rifle: { ...hudTemplate("rifle", "Rifle Squad"), equipment },
+      },
+    };
+  }
+
+  it("puts the grenade and the charge under Attack at an enemy, thrown at its tile, with the tile page's numbers and refusals (#1143)", () => {
+    const mission = kittedMission(["grenade", "breaching-charge"]);
+    const ctx = contextFor(mission, "s1");
+    // b1 stands at (4,0,1), three tiles from s1: inside the grenade's
+    // throw, past the charge's.
+    const ring = actionWheel({ kind: "unit", unitId: "b1" }, ctx);
+    expect(ids(ring)).toEqual(["attack:b1", "overwatch", "reload"]);
+    expect(ring.items[0]).toMatchObject({
+      label: "Attack",
+      detail: "3 options",
+      primary: true,
+    });
+    expect(ring.items[0]?.disabled).toBeUndefined();
+    // The hub reads the best chance among the rifle and the grenade.
+    const rifle = previewAttack(mission, "s1", "b1", COMBAT_TUNING);
+    if (!rifle.ok) throw new Error("fixture shot must be legal");
+    expect(ring.hub?.caption).toBe("hit chance");
+    expect(Number.parseInt(ring.hub?.value ?? "", 10)).toBeGreaterThanOrEqual(
+      rifle.value.hitChance,
+    );
+    // One rifle and one grenade open the page, as two weapons do; the
+    // HUD asks this before it fires.
+    expect(opensAttackPage(mission, "s1", COMBAT_TUNING)).toBe(true);
+    expect(opensAttackPage(hudMission(), "s1", COMBAT_TUNING)).toBe(false);
+    const page = weaponWheel({ kind: "unit", unitId: "b1" }, ctx);
+    expect(ids(page)).toEqual([
+      "attack:b1:primary",
+      "equipment:grenade:4,0,1",
+      "equipment:breaching-charge:4,0,1",
+      "back:b1",
+    ]);
+    expect(page.hub).toEqual({ value: "Swarmer", caption: "pick an attack" });
+    const grenade = page.items[1];
+    expect(grenade).toMatchObject({ label: "Grenade", icon: "attack" });
+    expect(grenade?.detail).toMatch(/^\d+% · [\d–]+ dmg .*2\/2$/);
+    expect(grenade?.disabled).toBeUndefined();
+    // The chosen grenade is the same use the tile page hands out, at the
+    // tile the bug stands on: the HUD's `use-equipment` path needs no
+    // new case.
+    expect(parseWheelChoice(grenade!.id)).toEqual({
+      action: "use-equipment",
+      equipmentId: "grenade",
+      tile: { x: 4, y: 0, z: 1 },
+    });
+    expect(page.items[2]).toMatchObject({
+      label: "Breaching charge",
+      disabled: true,
+      detail: "out of range",
+    });
+    // Spent: closed with the reason, and Attack still opens the page,
+    // so the player is told rather than shown a rifle that fires.
+    const spent: TacticalState = {
+      ...mission,
+      units: mission.units.map((u) =>
+        u.id === "s1" ? { ...u, equipment: { grenade: 0 } } : u,
+      ),
+    };
+    expect(
+      weaponWheel(
+        { kind: "unit", unitId: "b1" },
+        contextFor(spent, "s1"),
+      ).items.find((item) => item.id === "equipment:grenade:4,0,1"),
+    ).toMatchObject({ disabled: true, detail: "none left" });
+    // Out of reach: b2 is eleven tiles off, past the rifle and the throw.
+    const far = weaponWheel({ kind: "unit", unitId: "b2" }, ctx);
+    expect(
+      far.items.find((item) => item.id === "equipment:grenade:8,0,5"),
+    ).toMatchObject({ disabled: true, detail: "out of range" });
+    expect(
+      actionWheel({ kind: "unit", unitId: "b2" }, ctx).items[0],
+    ).toMatchObject({
+      id: "attack:b2",
+      disabled: true,
+      detail: "out of range",
+    });
+    // A squad with no kit gets the enemy page it always had.
+    expect(
+      ids(
+        weaponWheel(
+          { kind: "unit", unitId: "b1" },
+          contextFor(hudMission(), "s1"),
+        ),
+      ),
+    ).toEqual(["attack:b1:primary", "back:b1"]);
+  });
+
+  it("a dry rifle does not close Attack at an enemy while there is a grenade to throw (#1143)", () => {
+    const base = hudMission();
+    const rifle = hudTemplate("rifle", "Rifle Squad");
+    const dry: TacticalState = {
+      ...base,
+      templates: {
+        ...base.templates,
+        rifle: {
+          ...rifle,
+          weapons: rifle.weapons.map((w) => ({ ...w, charges: 4 })),
+          equipment: ["grenade"],
+        },
+      },
+      units: base.units.map((u) =>
+        u.id === "s1" ? { ...u, charges: { primary: 0 } } : u,
+      ),
+    };
+    const ring = actionWheel(
+      { kind: "unit", unitId: "b1" },
+      contextFor(dry, "s1"),
+    );
+    expect(ring.items[0]).toMatchObject({
+      id: "attack:b1",
+      detail: "2 options",
+    });
+    expect(ring.items[0]?.disabled).toBeUndefined();
+    const page = weaponWheel(
+      { kind: "unit", unitId: "b1" },
+      contextFor(dry, "s1"),
+    );
+    expect(page.items[0]).toMatchObject({ disabled: true, detail: "empty" });
+    expect(page.items[1]?.disabled).toBeUndefined();
+  });
+
+  it("throws the grenade and the charge at the tile a spawner occupies (#1143)", () => {
+    const base = hudMission();
+    const mission = kittedMission(["grenade", "breaching-charge"], {
+      spawners: [{ ...base.spawners[0]!, pos: { x: 2, y: 0, z: 2 } }],
+    });
+    const ctx = contextFor(mission, "s1");
+    const ring = actionWheel({ kind: "spawner", spawnerId: "spawner-1" }, ctx);
+    expect(ring.items[0]).toMatchObject({
+      id: "attack:spawner-1",
+      detail: "3 options",
+    });
+    expect(ring.items[0]?.disabled).toBeUndefined();
+    const page = weaponWheel({ kind: "spawner", spawnerId: "spawner-1" }, ctx);
+    expect(ids(page)).toEqual([
+      "attack:spawner-1:primary",
+      "equipment:grenade:2,0,2",
+      "equipment:breaching-charge:2,0,2",
+      "back:spawner-1",
+    ]);
+    expect(page.hub).toEqual({
+      value: "Egg spawner",
+      caption: "pick an attack",
+    });
+    // Two tiles off: the charge reaches too, and prints its delay.
+    expect(page.items[2]?.disabled).toBeUndefined();
+    expect(page.items[2]?.detail).toMatch(/dmg .* in 2 turns · 1\/1$/);
+    expect(parseWheelChoice(page.items[2]!.id)).toEqual({
+      action: "use-equipment",
+      equipmentId: "breaching-charge",
+      tile: { x: 2, y: 0, z: 2 },
+    });
+  });
+
+  it("keeps a medkit and a turret off the Attack page at an enemy: neither is an attack (#1143)", () => {
+    const mission = kittedMission(["medkit", "turret", "grenade"]);
+    const ctx = contextFor(mission, "s1");
+    const ring = actionWheel({ kind: "unit", unitId: "b1" }, ctx);
+    expect(ring.items[0]).toMatchObject({
+      id: "attack:b1",
+      detail: "2 options",
+    });
+    const page = weaponWheel({ kind: "unit", unitId: "b1" }, ctx);
+    expect(ids(page)).toEqual([
+      "attack:b1:primary",
+      "equipment:grenade:4,0,1",
+      "back:b1",
+    ]);
   });
 
   it("offers Interact on a spawner only when that spawner's objective is in reach", () => {

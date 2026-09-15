@@ -1293,14 +1293,15 @@ export class TacticalHudView {
     // and unconditionally: the view reports a choice but does not hide
     // itself, so every path out of here has to (#627).
     // Whether the entry turns the page is the wheel's rule, asked once
-    // (#1136): a tile's page holds the grenade and the charge as well as
-    // the weapons, so counting weapons here would fire a lone rifle at
-    // the ground the wheel had promised to open a page for.
+    // (#1136, #1143): the page holds the grenade and the charge as well
+    // as the weapons, at a tile and at an enemy alike, so counting
+    // weapons here would fire a lone rifle at the ground — or the bug —
+    // the wheel had promised to open a page for.
     if (
       (choice.action === "attack" || choice.action === "attack-tile") &&
       choice.weaponId === undefined &&
       this.mission !== undefined &&
-      opensAttackPage(this.mission, unitId, target, this.deps.combatTuning)
+      opensAttackPage(this.mission, unitId, this.deps.combatTuning)
     ) {
       this.menuPage = "weapons";
       this.refresh();

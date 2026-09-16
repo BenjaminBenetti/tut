@@ -71,12 +71,12 @@ describe("EARTH_COASTLINES", () => {
     expect(wet).toEqual([]);
   });
 
-  it("puts every city on drawn land, or within a marker radius of it (#1144)", () => {
+  it("puts every city on drawn land, or within half a settlement footprint of it (#1144)", () => {
     const adrift: string[] = [];
     for (const city of EARTH_MAP.cities) {
       const world = layoutToWorld(city.layout, OVERWORLD_SCENE_CONFIG);
       const distance = distanceToLand({ x: world.x, z: world.z }, polygons);
-      if (distance > OVERWORLD_SCENE_CONFIG.markerRadius) {
+      if (distance > OVERWORLD_SCENE_CONFIG.settlementFootprint / 2) {
         adrift.push(`${city.name} (${distance.toFixed(2)} u from land)`);
       }
     }

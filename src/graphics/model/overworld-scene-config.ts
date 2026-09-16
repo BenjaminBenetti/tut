@@ -8,9 +8,9 @@
  * `MapLayout` coordinates are scaled onto a `mapWidth × mapDepth` plane.
  *
  * ```
- *   y ▲          markers float at markerLift
- *     │   ┌─┐
- *     │   └─┘
+ *   y ▲          settlements stand at markerLift
+ *     │   ▄▟█▙▄
+ *     │  ▔▔▔▔▔▔▔  pad: settlementFootprint wide
  *     │ ─────────────── ◀── wireframe Earth and region territories (#1144, #1149)
  *   0 ┼──────────────── slab top: the ui-bg ground
  *     └──────────────────────────────▶ x / z
@@ -29,12 +29,23 @@ export interface OverworldSceneConfig {
   readonly markerLift: number;
   /** Thickness of the ocean slab beneath the map. */
   readonly oceanHeight: number;
-  /** Radius of a city marker. */
-  readonly markerRadius: number;
-  /** Height of a disc marker (the fallback when no glyph is available). */
-  readonly markerHeight: number;
-  /** Side of the square glyph sprite standing on a city, in world units. */
-  readonly markerGlyphSize: number;
+  /**
+   * Side of the square footprint every settlement model is authored
+   * on (#1152); the pad, ring and pick solid are sized from it.
+   */
+  readonly settlementFootprint: number;
+  /** Height of the invisible solid the pointer raycasts against, over a settlement. */
+  readonly markerPickHeight: number;
+  /** Side of the square footprint every installation model is authored on (#1153). */
+  readonly installationFootprint: number;
+  /**
+   * Radius of the ring installations are laid out on around their
+   * region's anchor (#1155): clear of a settlement standing on the
+   * anchor, and of each other.
+   */
+  readonly installationRingRadius: number;
+  /** Least distance an installation keeps from any city or other installation. */
+  readonly installationClearance: number;
 }
 
 /** Default sizes: a 2:1 plane that fits a 1280 px viewport at minimum zoom. */
@@ -43,7 +54,9 @@ export const OVERWORLD_SCENE_CONFIG: OverworldSceneConfig = {
   mapDepth: 12,
   markerLift: 0.05,
   oceanHeight: 0.1,
-  markerRadius: 0.3,
-  markerHeight: 0.25,
-  markerGlyphSize: 0.6,
+  settlementFootprint: 0.6,
+  markerPickHeight: 0.4,
+  installationFootprint: 0.45,
+  installationRingRadius: 0.7,
+  installationClearance: 0.55,
 };

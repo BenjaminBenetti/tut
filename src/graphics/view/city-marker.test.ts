@@ -1,15 +1,30 @@
-import { CylinderGeometry, RingGeometry, Sprite, Texture } from "three";
+import type { Object3D } from "three";
+import {
+  BoxGeometry,
+  CircleGeometry,
+  CylinderGeometry,
+  Group,
+  Mesh,
+  RingGeometry,
+  Texture,
+} from "three";
 import { describe, expect, it } from "vitest";
 
+import type { ModelAssetId } from "../../content/data/model-ids";
 import type { City } from "../../overworld/model/city";
+import type { ModelLoader } from "../model/model-loader";
 import { OVERWORLD_SCENE_CONFIG } from "../model/overworld-scene-config";
 import {
+  CITY_STAND_IN_HEIGHT,
   CityMarker,
   HOVER_COLOUR,
   INFESTATION_RAMP,
   infestationColour,
-  MISSION_COLOUR,
 } from "./city-marker";
+
+// ===========================================
+// Fixtures
+// ===========================================
 
 const CITY: City = {
   id: "london",
@@ -34,19 +49,48 @@ function stop(index: number): number {
   return entry.hex;
 }
 
+/** The shared geometry a builder would own. */
+function geometry() {
+  return {
+    pad: new CircleGeometry(0.34, 24),
+    ring: new RingGeometry(0.4, 0.48, 24),
+    pick: new CylinderGeometry(0.3, 0.3, 0.4, 12),
+    standIn: new BoxGeometry(0.6, CITY_STAND_IN_HEIGHT, 0.6),
+  };
+}
+
+/**
+ * A loader that answers every id with a fresh named group and records
+ * what was asked; `placeholderFor` ids come back named like the real
+ * fallback factory's boxes.
+ */
+function fakeLoader(
+  placeholderFor: readonly ModelAssetId[] = [],
+): ModelLoader & {
+  asked: ModelAssetId[];
+} {
+  const asked: ModelAssetId[] = [];
+  return {
+    asked,
+    load: (id) => {
+      asked.push(id);
+      const model = new Group();
+      model.name = placeholderFor.includes(id) ? `placeholder:${id}` : id;
+      return Promise.resolve(model);
+    },
+    preload: () => Promise.resolve(),
+  };
+}
+
 function makeMarker(
   city: City = CITY,
-  glyph?: Texture,
+  models?: ModelLoader,
   text?: { textTexture: (name: string) => Texture | undefined },
 ): CityMarker {
-  const geometry = {
-    body: new CylinderGeometry(0.3, 0.3, 0.25, 12),
-    ring: new RingGeometry(0.4, 0.5, 8),
-  };
   return new CityMarker(
     city,
     BASE,
-    { geometry, glyph, text },
+    { geometry: geometry(), models, text },
     OVERWORLD_SCENE_CONFIG,
   );
 }
@@ -67,6 +111,19 @@ function textSource(): {
     },
   };
 }
+
+/** Lets every pending model load land. */
+async function settled(): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+function named(marker: CityMarker, name: string): Object3D | undefined {
+  return marker.object.getObjectByName(name);
+}
+
+// ===========================================
+// Ramp
+// ===========================================
 
 describe("infestationColour", () => {
   it("hits every ramp stop exactly", () => {
@@ -110,38 +167,46 @@ describe("infestationColour", () => {
   });
 });
 
-describe("CityMarker (disc fallback)", () => {
-  it("stands on the plate top, named after its city, and does not use a glyph", () => {
+// ===========================================
+// Stand-in
+// ===========================================
+
+describe("CityMarker (stand-in, no loader)", () => {
+  it("stands on the plate top, named after its city, with a block, a pad and an invisible pick solid", () => {
     const marker = makeMarker();
     expect(marker.object.name).toBe("city-london");
-    expect(marker.object.position.toArray()).toEqual([BASE.x, BASE.y, BASE.z]);
-    expect(marker.usesGlyph()).toBe(false);
+    expect(marker.object.position.toArray()).toEqual([1, 0.05, 2]);
+    expect(marker.usesModel()).toBe(false);
+    expect(marker.look().model).toBe("stand-in");
+    expect(named(marker, "city-stand-in-london")).toBeInstanceOf(Mesh);
+    expect(named(marker, "city-pad-london")).toBeInstanceOf(Mesh);
     expect(marker.pickTarget.name).toBe("city-body-london");
+    expect(marker.pickTarget.visible).toBe(false);
   });
 
-  it("starts coloured for the city's infestation and retints in place", () => {
-    const marker = makeMarker({ ...CITY, infestation: 100 });
-    expect(marker.colourHex()).toBe(stop(3));
-    const target = marker.pickTarget;
-    marker.setInfestation(0);
+  it("tints the pad by infestation and retints in place", () => {
+    const marker = makeMarker();
     expect(marker.colourHex()).toBe(stop(0));
-    expect(marker.pickTarget).toBe(target);
+    marker.setInfestation(100);
+    expect(marker.colourHex()).toBe(stop(3));
+    expect(marker.look().colourHex).toBe(stop(3));
   });
 
-  it("grows and takes the accent while hovered, then restores its colour", () => {
-    const marker = makeMarker({ ...CITY, infestation: 50 });
-    const resting = marker.colourHex();
+  it("grows the visual and takes the accent while hovered, then restores its colour", () => {
+    const marker = makeMarker();
+    marker.setInfestation(50);
+    const before = marker.colourHex();
     marker.setHovered(true);
-    expect(marker.pickTarget.scale.x).toBeGreaterThan(1);
     expect(marker.colourHex()).toBe(HOVER_COLOUR);
+    expect(named(marker, "city-visual-london")?.scale.x).toBeGreaterThan(1);
     marker.setHovered(false);
-    expect(marker.pickTarget.scale.x).toBe(1);
-    expect(marker.colourHex()).toBe(resting);
+    expect(marker.colourHex()).toBe(before);
+    expect(named(marker, "city-visual-london")?.scale.x).toBe(1);
   });
 
   it("shows the ring only while selected", () => {
     const marker = makeMarker();
-    const ring = marker.object.getObjectByName("city-ring-london");
+    const ring = named(marker, "city-ring-london");
     expect(ring?.visible).toBe(false);
     marker.setSelected(true);
     expect(ring?.visible).toBe(true);
@@ -149,124 +214,130 @@ describe("CityMarker (disc fallback)", () => {
     expect(ring?.visible).toBe(false);
   });
 
-  it("reports a pick point at the centre of the disc", () => {
-    const marker = makeMarker();
-    marker.object.updateMatrixWorld(true);
-    expect(marker.pickPoint()).toEqual({
-      x: BASE.x,
-      y: BASE.y + OVERWORLD_SCENE_CONFIG.markerHeight / 2,
-      z: BASE.z,
-    });
-  });
-});
-
-describe("CityMarker (glyph sprite)", () => {
-  it("draws a sprite centred on its city, sized from the config (#420)", () => {
-    const marker = makeMarker(CITY, new Texture());
-    expect(marker.usesGlyph()).toBe(true);
-    expect(marker.pickTarget).toBeInstanceOf(Sprite);
-    const sprite = marker.pickTarget as Sprite;
-    // Centred, not bottom-anchored: a bottom-anchored sprite draws
-    // entirely above its anchor in screen space, which read as the
-    // marker sitting off its city.
-    expect(sprite.center.toArray()).toEqual([0.5, 0.5]);
-    expect(sprite.scale.x).toBe(OVERWORLD_SCENE_CONFIG.markerGlyphSize);
-    expect(sprite.scale.y).toBe(OVERWORLD_SCENE_CONFIG.markerGlyphSize);
-  });
-
-  it("tints the sprite by infestation and by hover", () => {
-    const marker = makeMarker({ ...CITY, infestation: 100 }, new Texture());
-    expect(marker.colourHex()).toBe(stop(3));
-    marker.setHovered(true);
-    expect(marker.colourHex()).toBe(HOVER_COLOUR);
-    expect(marker.pickTarget.scale.x).toBeGreaterThan(
-      OVERWORLD_SCENE_CONFIG.markerGlyphSize,
-    );
-    marker.setHovered(false);
-    expect(marker.colourHex()).toBe(stop(3));
-    expect(marker.pickTarget.scale.x).toBe(
-      OVERWORLD_SCENE_CONFIG.markerGlyphSize,
-    );
-  });
-
   it("reports its city's own position as the pick point (#420)", () => {
-    const marker = makeMarker(CITY, new Texture());
-    marker.object.updateMatrixWorld(true);
-    expect(marker.pickPoint()).toEqual({ x: BASE.x, y: BASE.y, z: BASE.z });
-  });
-
-  it("puts the mission badge beside the marker on the ground plane, not above it (#420)", () => {
-    const marker = makeMarker(CITY, new Texture());
-    const badge = marker.object.getObjectByName(`city-badge-${CITY.id}`);
-    expect(badge).toBeDefined();
-    if (!badge) return;
-    // East and north of the marker, so it reads up and to the right
-    // under the straight-down camera; an offset in y would point at it.
-    expect(badge.position.x).toBeGreaterThan(0);
-    expect(badge.position.z).toBeLessThan(0);
-    expect(badge.position.y).toBeLessThan(
-      OVERWORLD_SCENE_CONFIG.markerGlyphSize / 2,
-    );
-  });
-});
-
-describe("CityMarker mission badge", () => {
-  it("is hidden until setMission and reports through look()", () => {
     const marker = makeMarker();
-    const badge = marker.object.getObjectByName(`city-badge-${CITY.id}`);
-    expect(badge).toBeDefined();
-    expect(badge?.visible).toBe(false);
-    expect(marker.hasMission()).toBe(false);
-    marker.setMission(true);
-    expect(badge?.visible).toBe(true);
-    expect(marker.look()).toEqual({
-      colourHex: marker.colourHex(),
-      mission: true,
-    });
-    marker.setMission(false);
-    expect(badge?.visible).toBe(false);
+    marker.object.updateMatrixWorld(true);
+    expect(marker.pickPoint()).toEqual(BASE);
   });
 
-  it("draws the badge as a sprite when a mission glyph is given, tinted MISSION_COLOUR", () => {
-    const geometry = {
-      body: new CylinderGeometry(1, 1, 1, 12),
-      ring: new RingGeometry(1, 2, 24),
-    };
-    const marker = new CityMarker(
-      CITY,
-      { x: 0, y: 0, z: 0 },
-      { geometry, glyph: new Texture(), missionGlyph: new Texture() },
-      OVERWORLD_SCENE_CONFIG,
-    );
-    const badge = marker.object.getObjectByName(`city-badge-${CITY.id}`);
-    expect(badge).toBeInstanceOf(Sprite);
-    expect((badge as Sprite).material.color.getHex()).toBe(MISSION_COLOUR);
-    expect(badge!.position.x).toBeGreaterThan(0);
-    expect(badge!.position.y).toBeGreaterThan(0);
+  it("wants no eggs without a loader but still reports the mission", () => {
+    const marker = makeMarker();
+    marker.setMission(true);
+    expect(marker.hasMission()).toBe(true);
+    expect(marker.look().mission).toBe(true);
+    expect(named(marker, "city-eggs-london")).toBeUndefined();
   });
 });
+
+// ===========================================
+// Models
+// ===========================================
+
+describe("CityMarker (settlement model, #1155)", () => {
+  it("loads the settlement for the city's scale under the visual, reporting glb", async () => {
+    const loader = fakeLoader();
+    const marker = makeMarker({ ...CITY, scale: "town" }, loader);
+    expect(marker.look().model).toBe("loading");
+    await settled();
+    expect(loader.asked).toEqual(["overworld.settlement.town"]);
+    expect(marker.usesModel()).toBe(true);
+    expect(marker.look().model).toBe("glb");
+    const settlement = named(marker, "city-settlement-london");
+    expect(settlement?.parent?.name).toBe("city-visual-london");
+    expect(named(marker, "city-stand-in-london")).toBeUndefined();
+  });
+
+  it("reports a placeholder when the loader fell back to a box", async () => {
+    const marker = makeMarker(CITY, fakeLoader(["overworld.settlement.city"]));
+    await settled();
+    expect(marker.look().model).toBe("placeholder");
+    expect(marker.usesModel()).toBe(true);
+  });
+
+  it("adds the matching egg overlay at the settlement's origin while a mission is on offer, and removes it after", async () => {
+    const loader = fakeLoader();
+    const marker = makeMarker({ ...CITY, scale: "rural" }, loader);
+    await settled();
+    marker.setMission(true);
+    await settled();
+    expect(loader.asked).toEqual([
+      "overworld.settlement.rural",
+      "overworld.settlement-eggs.rural",
+    ]);
+    const eggs = named(marker, "city-eggs-london");
+    expect(eggs).toBeDefined();
+    expect(eggs?.parent?.name).toBe("city-visual-london");
+    expect(eggs?.position.toArray()).toEqual([0, 0, 0]);
+    expect(marker.look().mission).toBe(true);
+
+    marker.setMission(false);
+    expect(named(marker, "city-eggs-london")).toBeUndefined();
+    expect(marker.look().mission).toBe(false);
+
+    // Toggling back on reuses the overlay rather than fetching again.
+    marker.setMission(true);
+    await settled();
+    expect(named(marker, "city-eggs-london")).toBeDefined();
+    expect(loader.asked).toHaveLength(2);
+  });
+
+  it("does not add eggs that arrive after the mission is already gone", async () => {
+    let finish!: (model: Object3D) => void;
+    const marker = makeMarker(CITY, {
+      load: (id) =>
+        id === "overworld.settlement.city"
+          ? Promise.resolve(new Group())
+          : new Promise<Object3D>((resolve) => {
+              finish = resolve;
+            }),
+      preload: () => Promise.resolve(),
+    });
+    await settled();
+    marker.setMission(true);
+    marker.setMission(false);
+    finish(new Group());
+    await settled();
+    expect(named(marker, "city-eggs-london")).toBeUndefined();
+  });
+
+  it("drops a settlement that loads after disposal", async () => {
+    let finish!: (model: Object3D) => void;
+    const marker = makeMarker(CITY, {
+      load: () =>
+        new Promise<Object3D>((resolve) => {
+          finish = resolve;
+        }),
+      preload: () => Promise.resolve(),
+    });
+    marker.dispose();
+    finish(new Group());
+    await settled();
+    expect(named(marker, "city-settlement-london")).toBeUndefined();
+    expect(marker.look().model).toBe("loading");
+  });
+});
+
+// ===========================================
+// Labels
+// ===========================================
 
 describe("CityMarker name label (#439)", () => {
-  const labelOf = (marker: CityMarker) =>
-    marker.object.getObjectByName(`city-label-${CITY.id}`);
-
-  it("draws the city's name south of the marker, hidden until it is wanted", () => {
+  it("draws the city's name south of the settlement, hidden until it is wanted", () => {
     const text = textSource();
-    const marker = makeMarker(CITY, new Texture(), text);
-    expect(text.asked).toEqual([CITY.name]);
-    const label = labelOf(marker);
+    const marker = makeMarker(CITY, undefined, text);
+    expect(text.asked).toEqual(["London"]);
+    const label = named(marker, "city-label-london");
     expect(label).toBeDefined();
     expect(label?.visible).toBe(false);
-    expect(marker.labelVisible()).toBe(false);
-    // South on the ground plane, which is below the icon on screen under
-    // the strategic map's straight-down camera; the badge goes east and
-    // north, so they never sit on each other.
     expect(label?.position.z).toBeGreaterThan(0);
     expect(label?.position.x).toBe(0);
+    // Twice as wide as tall, like its texture.
+    expect(label?.scale.x).toBeCloseTo((label?.scale.y ?? 0) * 2, 5);
+    expect(marker.labelVisible()).toBe(false);
   });
 
   it("shows the name while hovered or selected, and hides it again", () => {
-    const marker = makeMarker(CITY, new Texture(), textSource());
+    const marker = makeMarker(CITY, undefined, textSource());
     marker.setHovered(true);
     expect(marker.labelVisible()).toBe(true);
     marker.setHovered(false);
@@ -278,8 +349,8 @@ describe("CityMarker name label (#439)", () => {
   });
 
   it("draws no label at all without a text source, as in the headless sim", () => {
-    const marker = makeMarker(CITY, new Texture());
-    expect(labelOf(marker)).toBeUndefined();
+    const marker = makeMarker();
+    expect(named(marker, "city-label-london")).toBeUndefined();
     marker.setHovered(true);
     expect(marker.labelVisible()).toBe(false);
   });

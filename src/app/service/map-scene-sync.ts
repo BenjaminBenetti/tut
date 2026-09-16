@@ -1,4 +1,5 @@
 import type { Unsubscribe } from "../../core/model/event-bus";
+import type { MapSceneState } from "../../graphics/model/map-scene-state";
 import type { MapStateView } from "../../graphics/model/map-state-view";
 import type { CityId } from "../../overworld/model/city";
 import type { OverworldState } from "../../overworld/model/overworld-state";
@@ -57,7 +58,7 @@ export class MapSceneSync {
   /** Remembers `state` and, when a scene is attached, pushes it there. */
   private apply(state: GameState): void {
     this.latest = state;
-    this.view?.update(state.overworld.map, missionCityIds(state.overworld));
+    this.view?.update(mapSceneState(state.overworld));
   }
 }
 
@@ -65,7 +66,29 @@ export class MapSceneSync {
 // Helpers
 // ===========================================
 
-/** Every city that currently hosts a mission. */
-export function missionCityIds(overworld: OverworldState): ReadonlySet<CityId> {
-  return new Set(overworld.missions.map((mission) => mission.cityId));
+/** The mission type whose offer the map cues with the egg overlay (#1155). */
+const EGG_CUE_MISSION_TYPE = "infestation-clearance";
+
+/**
+ * Every city with an infestation-clearance mission on offer: the ones
+ * that wear the egg overlay. Other mission types, when they arrive
+ * (GDD §5.4), will want a cue of their own rather than eggs.
+ */
+export function missionCueCityIds(
+  overworld: OverworldState,
+): ReadonlySet<CityId> {
+  return new Set(
+    overworld.missions
+      .filter((mission) => mission.typeId === EGG_CUE_MISSION_TYPE)
+      .map((mission) => mission.cityId),
+  );
+}
+
+/** What the scene draws from an overworld state. */
+export function mapSceneState(overworld: OverworldState): MapSceneState {
+  return {
+    map: overworld.map,
+    missionCueCityIds: missionCueCityIds(overworld),
+    deployables: overworld.deployables,
+  };
 }

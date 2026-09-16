@@ -8,14 +8,17 @@ import type {
   MeshStandardMaterial,
   Object3D,
 } from "three";
-import { Box3, Sprite, Texture, Vector3 } from "three";
+import { Box3, Group, Texture, Vector3 } from "three";
 import { describe, expect, it } from "vitest";
 
 import { EARTH_MAP } from "../../overworld/data/earth-map";
 import { SELECTION_COLOUR } from "../view/city-marker";
 import type { City } from "../../overworld/model/city";
+import type { Deployable } from "../../overworld/model/deployable";
 import type { EarthMap } from "../../overworld/model/earth-map";
 import { CAMERA_ZOOM } from "../model/camera-state";
+import type { MapSceneState } from "../model/map-scene-state";
+import type { ModelLoader } from "../model/model-loader";
 import { OVERWORLD_SCENE_CONFIG } from "../model/overworld-scene-config";
 import { INFESTATION_RAMP } from "../view/city-marker";
 import { OrthographicCameraRig } from "./orthographic-camera-rig";
@@ -58,6 +61,39 @@ function withInfestation(
       city.id === cityId ? { ...city, infestation } : city,
     ),
   };
+}
+
+/** A scene state over `map` with no missions and no installations unless given. */
+function stateOf(
+  map: EarthMap,
+  extra: Partial<Omit<MapSceneState, "map">> = {},
+): MapSceneState {
+  return {
+    map,
+    missionCueCityIds: new Set(),
+    deployables: [],
+    ...extra,
+  };
+}
+
+/** A loader answering every id with a fresh named group. */
+function fakeLoader(): ModelLoader & { asked: string[] } {
+  const asked: string[] = [];
+  return {
+    asked,
+    load: (id) => {
+      asked.push(id);
+      const model = new Group();
+      model.name = id;
+      return Promise.resolve(model);
+    },
+    preload: () => Promise.resolve(),
+  };
+}
+
+/** Lets every pending model load land. */
+async function settled(): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, 0));
 }
 
 function makeCamera(builder: OverworldSceneBuilder): OrthographicCameraRig {
@@ -111,7 +147,9 @@ describe("OverworldSceneBuilder", () => {
       expect(position.x).toBeLessThanOrEqual(24);
       expect(position.z).toBeGreaterThanOrEqual(0);
       expect(position.z).toBeLessThanOrEqual(12);
-      expect(position.y).toBeGreaterThan(0.05);
+      expect(position.y).toBeGreaterThanOrEqual(
+        OVERWORLD_SCENE_CONFIG.markerLift,
+      );
     }
     expect(builder.markerWorldPosition("atlantis")).toBeUndefined();
   });
@@ -131,8 +169,9 @@ describe("OverworldSceneBuilder", () => {
     expect(width).toBe(24);
     expect(depth).toBe(12);
     expect(
-      markerOf(builder, "london").getObjectByName("city-body-london"),
-    ).not.toBeInstanceOf(Sprite);
+      markerOf(builder, "london").getObjectByName("city-stand-in-london"),
+    ).toBeDefined();
+    expect(builder.markerLook("london")?.model).toBe("stand-in");
   });
 
   it("draws the wireframe Earth on the map plane, under the markers (#1144)", () => {
@@ -158,22 +197,98 @@ describe("OverworldSceneBuilder", () => {
     ).toHaveLength(1);
   });
 
-  it("draws glyph sprites on cities when art is given", () => {
-    const builder = new OverworldSceneBuilder({
-      assets: { markerGlyph: new Texture(), missionGlyph: undefined },
-    });
+  it("stands the settlement model for each city's scale when a loader is given (#1155)", async () => {
+    const models = fakeLoader();
+    const builder = new OverworldSceneBuilder({ assets: { models } });
     builder.build(EARTH_MAP);
+    await settled();
+    for (const city of EARTH_MAP.cities) {
+      expect(builder.markerLook(city.id)?.model).toBe("glb");
+      expect(
+        markerOf(builder, city.id).getObjectByName(`city-settlement-${city.id}`)
+          ?.children,
+      ).toBeDefined();
+    }
+    const london = EARTH_MAP.cities.find((city) => city.id === "london");
     expect(
-      markerOf(builder, "london").getObjectByName("city-body-london"),
-    ).toBeInstanceOf(Sprite);
+      markerOf(builder, "london").getObjectByName("city-settlement-london")
+        ?.name,
+    ).toBe("city-settlement-london");
+    expect(models.asked).toContain(
+      `overworld.settlement.${london?.scale ?? ""}`,
+    );
   });
 
-  it("picks glyph sprites through the real camera too", () => {
+  it("adds the egg overlay to a city with a clearance mission on offer and removes it after (#1155)", async () => {
     const builder = new OverworldSceneBuilder({
-      assets: {
-        markerGlyph: new Texture(),
-        missionGlyph: undefined,
+      assets: { models: fakeLoader() },
+    });
+    builder.build(EARTH_MAP);
+    builder.update(
+      stateOf(EARTH_MAP, { missionCueCityIds: new Set(["london"]) }),
+    );
+    await settled();
+    expect(builder.markerLook("london")?.mission).toBe(true);
+    expect(
+      markerOf(builder, "london").getObjectByName("city-eggs-london"),
+    ).toBeDefined();
+    expect(builder.markerLook("new-york")?.mission).toBe(false);
+    expect(
+      markerOf(builder, "new-york").getObjectByName("city-eggs-new-york"),
+    ).toBeUndefined();
+    builder.update(stateOf(EARTH_MAP));
+    expect(builder.markerLook("london")?.mission).toBe(false);
+    expect(
+      markerOf(builder, "london").getObjectByName("city-eggs-london"),
+    ).toBeUndefined();
+  });
+
+  it("places every installation in its region, dims offline ones and idles them through the animator (#1155)", async () => {
+    const builder = new OverworldSceneBuilder({
+      assets: { models: fakeLoader() },
+    });
+    builder.build(EARTH_MAP);
+    const deployables: Deployable[] = [
+      {
+        id: "deployable-1",
+        typeId: "sensor-array",
+        regionId: "east-asia",
+        builtDay: 1,
+        online: true,
       },
+      {
+        id: "deployable-2",
+        typeId: "defensive-battery",
+        regionId: "east-asia",
+        builtDay: 2,
+        online: false,
+      },
+    ];
+    builder.update(stateOf(EARTH_MAP, { deployables }));
+    await settled();
+    expect([...builder.installationIds()].sort()).toEqual([
+      "deployable-1",
+      "deployable-2",
+    ]);
+    expect(builder.installationLook("deployable-1")?.online).toBe(true);
+    expect(builder.installationLook("deployable-2")?.online).toBe(false);
+    const at = builder.installationWorldPosition("deployable-1");
+    expect(at?.y).toBe(OVERWORLD_SCENE_CONFIG.markerLift);
+    expect(
+      builder.root.getObjectByName("installation-deployable-1"),
+    ).toBeDefined();
+    // A GLB stand-in from the fake loader has no `animated` node, so nothing turns; the tick must still be safe.
+    builder.animator.update(1);
+    builder.update(stateOf(EARTH_MAP));
+    expect(builder.installationIds()).toEqual([]);
+    expect(
+      builder.root.getObjectByName("installation-deployable-1"),
+    ).toBeUndefined();
+  });
+
+  it("picks settlements through the real camera too", () => {
+    const builder = new OverworldSceneBuilder({
+      assets: { models: fakeLoader() },
     });
     builder.build(EARTH_MAP);
     const rig = makeCamera(builder);
@@ -186,11 +301,11 @@ describe("OverworldSceneBuilder", () => {
   });
 
   it("leaves the shared art alone on dispose", () => {
-    const markerGlyph = new Texture();
+    const label = new Texture();
     const disposed: string[] = [];
-    markerGlyph.addEventListener("dispose", () => disposed.push("glyph"));
+    label.addEventListener("dispose", () => disposed.push("label"));
     const builder = new OverworldSceneBuilder({
-      assets: { markerGlyph, missionGlyph: undefined },
+      assets: { models: fakeLoader(), text: { textTexture: () => label } },
     });
     builder.build(EARTH_MAP);
     builder.dispose();
@@ -202,11 +317,11 @@ describe("OverworldSceneBuilder", () => {
     builder.build(EARTH_MAP);
     const before = [...builder.root.children];
     const london = markerOf(builder, "london");
-    const body = london.getObjectByName("city-body-london") as Mesh;
-    const material = body.material as MeshStandardMaterial;
+    const pad = london.getObjectByName("city-pad-london") as Mesh;
+    const material = pad.material as MeshBasicMaterial;
     expect(material.color.getHex()).toBe(rampStop(0));
 
-    builder.update(withInfestation(EARTH_MAP, "london", 100));
+    builder.update(stateOf(withInfestation(EARTH_MAP, "london", 100)));
 
     expect(material.color.getHex()).toBe(rampStop(3));
     expect(builder.root.children).toEqual(before);
@@ -221,7 +336,7 @@ describe("OverworldSceneBuilder", () => {
     const clean = fillOf(builder, london.regionId);
     expect(clean.opacity).toBe(0);
 
-    builder.update(withInfestation(EARTH_MAP, "london", 100));
+    builder.update(stateOf(withInfestation(EARTH_MAP, "london", 100)));
 
     // One city at 100 among clean neighbours still lights the region.
     const lit = fillOf(builder, london.regionId);
@@ -235,7 +350,7 @@ describe("OverworldSceneBuilder", () => {
     const london = EARTH_MAP.cities.find((city) => city.id === "london");
     if (!london) throw new Error("fixture has no london");
 
-    builder.update(withInfestation(EARTH_MAP, "london", 100));
+    builder.update(stateOf(withInfestation(EARTH_MAP, "london", 100)));
 
     for (const region of EARTH_MAP.regions) {
       if (region.id === london.regionId) {
@@ -289,7 +404,7 @@ describe("OverworldSceneBuilder", () => {
       })),
       cities: EARTH_MAP.cities.filter((city) => city.id !== "london"),
     };
-    builder.update(fewer);
+    builder.update(stateOf(fewer));
     expect(builder.root.getObjectByName("city-london")).toBeUndefined();
     expect(builder.cityIds()).toHaveLength(EARTH_MAP.cities.length - 1);
     expect(london.parent).toBeNull();
@@ -319,8 +434,8 @@ describe("OverworldSceneBuilder", () => {
   it("applies hover and selection to exactly one marker at a time", () => {
     const builder = new OverworldSceneBuilder();
     builder.build(EARTH_MAP);
-    const body = (id: string): Mesh =>
-      markerOf(builder, id).getObjectByName(`city-body-${id}`) as Mesh;
+    const body = (id: string): Object3D =>
+      markerOf(builder, id).getObjectByName(`city-visual-${id}`)!;
     const ring = (id: string): boolean =>
       markerOf(builder, id).getObjectByName(`city-ring-${id}`)?.visible ??
       false;
@@ -347,7 +462,7 @@ describe("OverworldSceneBuilder", () => {
     const builder = new OverworldSceneBuilder();
     builder.build(EARTH_MAP);
     builder.setSelected("london");
-    builder.update(withInfestation(EARTH_MAP, "london", 40));
+    builder.update(stateOf(withInfestation(EARTH_MAP, "london", 40)));
     const ring = markerOf(builder, "london").getObjectByName(
       "city-ring-london",
     );

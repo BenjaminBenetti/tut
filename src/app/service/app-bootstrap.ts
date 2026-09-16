@@ -11,12 +11,14 @@ import {
   CAMERA_ZOOM,
   TOP_DOWN_PROJECTION,
 } from "../../graphics/model/camera-state";
+import { MODEL_MANIFEST } from "../../graphics/data/model-manifest";
 import { OVERWORLD_SCENE_CONFIG } from "../../graphics/model/overworld-scene-config";
+import { GltfModelLoader } from "../../graphics/service/gltf-model-loader";
 import { OrthographicCameraRig } from "../../graphics/service/orthographic-camera-rig";
 import { loadOverworldAssets } from "../../graphics/service/overworld-asset-loader";
 import { OverworldSceneBuilder } from "../../graphics/service/overworld-scene-builder";
+import { PlaceholderModelFactory } from "../../graphics/service/placeholder-model-factory";
 import { SceneService } from "../../graphics/service/scene-service";
-import { SvgGlyphRasteriser } from "../../graphics/service/svg-glyph-rasteriser";
 import { DEPLOYABLE_TYPES } from "../../overworld/data/deployable-types";
 import { EARTH_MAP } from "../../overworld/data/earth-map";
 import { COMBAT_TUNING } from "../../tactical/data/combat-tuning";
@@ -26,7 +28,6 @@ import { DataDeployableTypeCatalogue } from "../../overworld/repository/deployab
 import { findCity } from "../../overworld/service/earth-map-query-service";
 import type { SaveClock } from "../../save/model/save-clock";
 import { WebStorageKeyValueStore } from "../../save/repository/web-storage-key-value-store";
-import { iconHref } from "../../ui/data/icon-manifest";
 import type { ScreenId } from "../../ui/model/screen";
 import { GameOverScreen } from "../../ui/screen/game-over-screen";
 import { MainMenuScreen } from "../../ui/screen/main-menu-screen";
@@ -280,18 +281,20 @@ export async function bootstrapApp(doc: Document): Promise<void> {
 // ===========================================
 
 /**
- * The overworld map scene from #160: loads the marker glyphs, builds
- * the wireframe Earth scene (#1144), the isometric rig at minimum zoom, camera
- * input and city picking, all mounted into the given `#map-viewport`. A
+ * The overworld map scene from #160: preloads the settlement and
+ * installation models (#1155), builds the wireframe Earth scene
+ * (#1144), the top-down rig at minimum zoom, camera input and city
+ * picking, all mounted into the given `#map-viewport`. A
  * picked city is pushed into `selection`, which the overworld panels
  * render, and reported through `cityPicks` so the screen can open the
  * city wheel on it (#1154); the selection's city and region are mirrored
  * to `body[data-selected-city]` and `body[data-selected-region]`. The
  * scene attaches to
- * `mapSync` so every campaign store's state retints and badges the
- * markers (#302). In dev builds the `window.__tut__` hooks let
- * end-to-end tests select cities and read marker looks without pointer
- * input.
+ * `mapSync` so every campaign store's state retints the settlements,
+ * adds their egg cues and places the installations (#302, #1155). In
+ * dev builds the `window.__tut__` hooks let end-to-end tests select
+ * cities, focus the camera and read marker and installation looks
+ * without pointer input.
  */
 async function composeScene(
   doc: Document,
@@ -302,10 +305,17 @@ async function composeScene(
   mapSync: MapSceneSync,
   startMission: (missionId: string) => string | undefined,
 ): Promise<SceneService> {
+  // The settlements, egg overlays and installations are GLBs (#1155),
+  // loaded through the same manifest-backed loader the tactical scene
+  // uses, so a missing file falls back to a placeholder box and a
+  // warning rather than an empty map.
   const assets = await loadOverworldAssets({
-    glyphs: new SvgGlyphRasteriser({ logger: console }),
-    markerGlyphUrl: iconHref("marker-city"),
-    missionGlyphUrl: iconHref("mission"),
+    models: new GltfModelLoader({
+      manifest: MODEL_MANIFEST,
+      baseUrl: import.meta.env.BASE_URL,
+      fallback: new PlaceholderModelFactory(),
+      logger: console,
+    }),
   });
 
   const mapScene = new OverworldSceneBuilder({ assets });
@@ -362,7 +372,9 @@ async function composeScene(
   const scene = new SceneService(viewport, {
     camera: rig,
     content: mapScene.root,
-    updatables: [cameraInput],
+    // The map's installations idle every frame (#1155): dishes turn,
+    // barrels traverse, the dispersal sprays.
+    updatables: [cameraInput, mapScene.animator],
   });
 
   cameraInput.attach(viewport);
@@ -374,6 +386,21 @@ async function composeScene(
       },
       cityScreenPosition: (cityId) => picking.screenPositionOf(cityId),
       cityMarkerLook: (cityId) => mapScene.markerLook(cityId),
+      focusCity: (cityId, zoom) => {
+        const world = mapScene.markerWorldPosition(cityId);
+        if (!world) {
+          return;
+        }
+        rig.lookAt(world);
+        if (zoom !== undefined) {
+          rig.zoomBy(zoom / rig.getState().zoom);
+        }
+      },
+      installationLook: (id) => mapScene.installationLook(id),
+      installationScreenPosition: (id) => {
+        const world = mapScene.installationWorldPosition(id);
+        return world === undefined ? undefined : picking.projectPoint(world);
+      },
       startTacticalMission: startMission,
     };
     window.__tut__ = hooks;

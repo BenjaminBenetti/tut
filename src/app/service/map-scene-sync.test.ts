@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { ECONOMY_TUNING } from "../../economy/data/economy-tuning";
+import type { MapSceneState } from "../../graphics/model/map-scene-state";
 import type { MapStateView } from "../../graphics/model/map-state-view";
 import { EARTH_MAP } from "../../overworld/data/earth-map";
 import { NEW_GAME_TUNING } from "../../overworld/data/new-game-tuning";
@@ -18,7 +19,11 @@ import type { GameState } from "../../save/model/game-state";
 import { createNewGame } from "../../save/service/new-game-service";
 import type { CampaignGameStore } from "./game-session";
 import { GameStore } from "./game-store";
-import { MapSceneSync, missionCityIds } from "./map-scene-sync";
+import {
+  MapSceneSync,
+  mapSceneState,
+  missionCueCityIds,
+} from "./map-scene-sync";
 
 // ===========================================
 // Fixtures
@@ -56,9 +61,14 @@ const MISSION: Mission = {
 
 /** Records every update it receives. */
 class RecordingView implements MapStateView {
-  readonly calls: { map: EarthMap; missions: CityId[] }[] = [];
-  update(map: EarthMap, missionCityIds: ReadonlySet<CityId>): void {
-    this.calls.push({ map, missions: [...missionCityIds].sort() });
+  readonly calls: { map: EarthMap; missions: CityId[]; deployables: number }[] =
+    [];
+  update(state: MapSceneState): void {
+    this.calls.push({
+      map: state.map,
+      missions: [...state.missionCueCityIds].sort(),
+      deployables: state.deployables.length,
+    });
   }
 }
 
@@ -85,14 +95,28 @@ describe("MapSceneSync", () => {
     expect(view.calls).toHaveLength(1);
     expect(view.calls[0]?.map).toBe(state.overworld.map);
     expect(view.calls[0]?.missions).toEqual([]);
+    expect(view.calls[0]?.deployables).toBe(0);
 
     const withMission: GameState = {
       ...state,
-      overworld: { ...state.overworld, missions: [MISSION] },
+      overworld: {
+        ...state.overworld,
+        missions: [MISSION],
+        deployables: [
+          {
+            id: "deployable-1",
+            typeId: "sensor-array",
+            regionId: "east-asia",
+            builtDay: 1,
+            online: true,
+          },
+        ],
+      },
     };
     store.replaceState(withMission);
     expect(view.calls).toHaveLength(2);
     expect(view.calls[1]?.missions).toEqual(["new-york"]);
+    expect(view.calls[1]?.deployables).toBe(1);
 
     detach();
     store.replaceState(state);
@@ -111,11 +135,11 @@ describe("MapSceneSync", () => {
   });
 });
 
-describe("missionCityIds", () => {
-  it("collects one id per hosting city", () => {
+describe("missionCueCityIds", () => {
+  it("collects one id per city with a clearance mission on offer", () => {
     const state = newGame();
     expect(
-      missionCityIds({
+      missionCueCityIds({
         ...state.overworld,
         missions: [
           MISSION,
@@ -124,5 +148,28 @@ describe("missionCityIds", () => {
         ],
       }),
     ).toEqual(new Set(["new-york", "london"]));
+  });
+});
+
+describe("mapSceneState", () => {
+  it("hands the map, the egg cues and every deployable to the scene (#1155)", () => {
+    const state = newGame();
+    const overworld = {
+      ...state.overworld,
+      missions: [MISSION],
+      deployables: [
+        {
+          id: "deployable-1",
+          typeId: "defensive-battery" as const,
+          regionId: "western-europe",
+          builtDay: 1,
+          online: false,
+        },
+      ],
+    };
+    const scene = mapSceneState(overworld);
+    expect(scene.map).toBe(overworld.map);
+    expect(scene.missionCueCityIds).toEqual(new Set(["new-york"]));
+    expect(scene.deployables).toBe(overworld.deployables);
   });
 });

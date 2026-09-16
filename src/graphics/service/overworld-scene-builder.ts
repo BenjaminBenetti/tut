@@ -1,6 +1,7 @@
 import type { Camera, Material, Object3D } from "three";
 import {
   BoxGeometry,
+  CircleGeometry,
   CylinderGeometry,
   Group,
   Mesh,
@@ -14,28 +15,39 @@ import {
 
 import type { Vec2, Vec3 } from "../../core/model/grid";
 import type { CityId } from "../../overworld/model/city";
+import type { DeployableId } from "../../overworld/model/deployable";
 import type { EarthMap } from "../../overworld/model/earth-map";
 import type { RegionId } from "../../overworld/model/region";
 import { citiesInRegion } from "../../overworld/service/earth-map-query-service";
+import { DEPLOYABLE_ANIMATIONS } from "../data/deployable-animations";
 import { EARTH_COASTLINES } from "../data/earth-coastlines";
 import type { CityPicker } from "../model/city-picker";
 import type { EarthCoastlines } from "../model/earth-coastlines";
+import type { FrameUpdatable } from "../model/frame-updatable";
+import type { MapSceneState } from "../model/map-scene-state";
+import type { MapStateView } from "../model/map-state-view";
 import type { OverworldSceneAssets } from "../model/overworld-scene-assets";
 import { NO_OVERWORLD_ASSETS } from "../model/overworld-scene-assets";
 import type { OverworldSceneConfig } from "../model/overworld-scene-config";
 import { OVERWORLD_SCENE_CONFIG } from "../model/overworld-scene-config";
-import type { MapStateView } from "../model/map-state-view";
 import type {
   CityMarkerGeometry,
   CityMarkerLookReport,
 } from "../view/city-marker";
-import { CityMarker } from "../view/city-marker";
+import { CITY_STAND_IN_HEIGHT, CityMarker } from "../view/city-marker";
 import { EarthWireframe } from "../view/earth-wireframe";
+import type {
+  InstallationLook,
+  InstallationLookReport,
+} from "../view/installation-marker";
+import { INSTALLATION_STAND_IN_HEIGHT } from "../view/installation-marker";
+import { RegionInstallations } from "../view/region-installations";
 import { RegionTerritories } from "../view/region-territories";
 import { partitionClaimableLand } from "./claimable-land";
 import type { GroundPolygon } from "./coastline-projection";
 import { projectCoastlines } from "./coastline-projection";
 import { coastlineSegments } from "./coastline-segments";
+import { createFalloffTexture } from "./falloff-texture";
 import { layoutToWorld, mapCentre } from "./overworld-layout";
 import type { TerritorySeed } from "./region-territory-service";
 import { computeTerritories } from "./region-territory-service";
@@ -48,7 +60,7 @@ import { computeTerritories } from "./region-territory-service";
 export interface OverworldSceneBuilderOptions {
   /** Scene sizes; defaults to `OVERWORLD_SCENE_CONFIG`. */
   readonly config?: OverworldSceneConfig;
-  /** Loaded art; defaults to none, which draws disc markers. */
+  /** Loaded art; defaults to none, which draws stand-in blocks. */
   readonly assets?: OverworldSceneAssets;
   /** Coastlines to draw the Earth from; defaults to the shipped Natural Earth set. */
   readonly coastlines?: EarthCoastlines;
@@ -68,19 +80,20 @@ const GROUND_COLOUR = 0x0b0d12;
 const BOX_TOP_FACE = 2;
 
 /**
- * Radial segments for marker discs. Deliberately not a multiple of 8:
- * the camera always looks along a 45° diagonal, and with 8 or 16
- * segments a cap edge lies exactly on that diagonal, so a ray through a
- * marker's centre hits the shared edge and both triangles reject it.
+ * Radial segments for pads, rings and pick solids. Deliberately not a
+ * multiple of 8: the camera always looks along a 45° diagonal, and with
+ * 8 or 16 segments a cap edge lies exactly on that diagonal, so a ray
+ * through a marker's centre hits the shared edge and both triangles
+ * reject it.
  */
 const MARKER_SEGMENTS = 12;
 
-/** The empty mission set, for `update` calls that only carry a map. */
-const NO_CITIES: ReadonlySet<CityId> = new Set();
+/** Pad radius relative to half the settlement footprint. */
+const PAD_SCALE = 1.15;
 
-/** Selection ring radii relative to the marker radius. */
-const RING_INNER_SCALE = 1.5;
-const RING_OUTER_SCALE = 2;
+/** Selection ring radii relative to half the settlement footprint. */
+const RING_INNER_SCALE = 1.35;
+const RING_OUTER_SCALE = 1.6;
 
 // ===========================================
 // Builder
@@ -90,15 +103,18 @@ const RING_OUTER_SCALE = 2;
  * Builds the strategic map scene from an `EarthMap` and keeps it in
  * step with later states: a near-black slab with the wireframe Earth
  * drawn on it, the regions as territories divided from the city
- * positions (#1149), one marker per city, plus hit-testing for the
- * pointer controller. Reads state, holds no game truth (architecture
- * §2.3). Art is optional: without the glyph markers are discs.
+ * positions (#1149), one settlement model per city with its egg cue
+ * (#1155), every built installation in its region, plus hit-testing
+ * for the pointer controller. Reads state, holds no game truth
+ * (architecture §2.3). Art is optional: without a model loader the
+ * settlements and installations are stand-in blocks.
  *
  * ```
- *   build(map)            ─▶  slab + wireframe + territories + markers under `root`
- *   update(map, missions) ─▶  markers and territories retinted in place (same objects)
- *   pickCity()   ─▶  raycast against marker pick targets
- *   dispose()    ─▶  everything released, `root` emptied
+ *   build(map)     ─▶  slab + wireframe + territories + markers + installations under `root`
+ *   update(state)  ─▶  markers retinted and egg-cued, installations synced, territories retinted
+ *   animator       ─▶  tick every frame: installations idle
+ *   pickCity()     ─▶  raycast against marker pick solids
+ *   dispose()      ─▶  everything released, `root` emptied
  * ```
  */
 export class OverworldSceneBuilder implements CityPicker, MapStateView {
@@ -108,12 +124,15 @@ export class OverworldSceneBuilder implements CityPicker, MapStateView {
 
   /** Add this to the scene. Everything the builder creates lives under it. */
   readonly root: Group;
+  /** Tick this every frame; it idles the installations. */
+  readonly animator: FrameUpdatable;
   private readonly config: OverworldSceneConfig;
   private readonly assets: OverworldSceneAssets;
   /** Land masses on the ground plane, projected once; the wireframe is built from them. */
   private readonly landPolygons: readonly GroundPolygon[];
   private readonly raycaster = new Raycaster();
   private readonly markerGeometry: CityMarkerGeometry;
+  private readonly installationStyle: InstallationLook;
   private readonly markers = new Map<CityId, CityMarker>();
   private readonly targetToCity = new Map<Object3D, CityId>();
   /** Which region each city belongs to, for the selected region's outline. */
@@ -121,6 +140,7 @@ export class OverworldSceneBuilder implements CityPicker, MapStateView {
   private slab: Mesh | undefined;
   private wireframe: EarthWireframe | undefined;
   private territories: RegionTerritories | undefined;
+  private installations: RegionInstallations | undefined;
   private hovered: CityId | undefined;
   private selected: CityId | undefined;
 
@@ -141,18 +161,40 @@ export class OverworldSceneBuilder implements CityPicker, MapStateView {
     );
     this.root = new Group();
     this.root.name = "overworld-map";
+    const half = config.settlementFootprint / 2;
     this.markerGeometry = {
-      body: new CylinderGeometry(
-        config.markerRadius,
-        config.markerRadius,
-        config.markerHeight,
-        MARKER_SEGMENTS,
-      ),
+      pad: new CircleGeometry(half * PAD_SCALE, MARKER_SEGMENTS * 2),
       ring: new RingGeometry(
-        config.markerRadius * RING_INNER_SCALE,
-        config.markerRadius * RING_OUTER_SCALE,
+        half * RING_INNER_SCALE,
+        half * RING_OUTER_SCALE,
         MARKER_SEGMENTS * 2,
       ),
+      pick: new CylinderGeometry(
+        half,
+        half,
+        config.markerPickHeight,
+        MARKER_SEGMENTS,
+      ),
+      standIn: new BoxGeometry(
+        config.settlementFootprint,
+        CITY_STAND_IN_HEIGHT,
+        config.settlementFootprint,
+      ),
+    };
+    this.installationStyle = {
+      models: this.assets.models,
+      animations: DEPLOYABLE_ANIMATIONS,
+      falloff: createFalloffTexture(),
+      standIn: new BoxGeometry(
+        config.installationFootprint,
+        INSTALLATION_STAND_IN_HEIGHT,
+        config.installationFootprint,
+      ),
+    };
+    this.animator = {
+      update: (deltaSeconds) => {
+        this.installations?.update(deltaSeconds);
+      },
     };
   }
 
@@ -187,8 +229,7 @@ export class OverworldSceneBuilder implements CityPicker, MapStateView {
         base,
         {
           geometry: this.markerGeometry,
-          glyph: this.assets.markerGlyph,
-          missionGlyph: this.assets.missionGlyph,
+          models: this.assets.models,
           text: this.assets.text,
         },
         this.config,
@@ -197,30 +238,52 @@ export class OverworldSceneBuilder implements CityPicker, MapStateView {
       this.targetToCity.set(marker.pickTarget, city.id);
       this.root.add(marker.object);
     }
+    this.installations = new RegionInstallations(
+      this.installationStyle,
+      this.config,
+    );
+    this.installations.setMap(map);
+    this.root.add(this.installations.root);
     this.applyHighlights();
   }
 
   /**
-   * Brings the scene up to date with a newer map and the cities that
-   * currently host a mission. Markers are retinted and badged in place;
-   * nothing is rebuilt unless the set of cities changed, which falls
-   * back to `build` (and then badges).
+   * Brings the scene up to date with a newer state: markers retinted
+   * and egg-cued in place, installations placed, moved, dimmed or
+   * removed, territories retinted. Nothing is rebuilt unless the set
+   * of cities changed, which falls back to `build` first.
    */
-  update(map: EarthMap, missionCityIds: ReadonlySet<CityId> = NO_CITIES): void {
-    if (!this.hasSameCities(map)) {
-      this.build(map);
+  update(state: MapSceneState): void {
+    if (!this.hasSameCities(state.map)) {
+      this.build(state.map);
     }
-    for (const city of map.cities) {
+    for (const city of state.map.cities) {
       const marker = this.markers.get(city.id);
       marker?.setInfestation(city.infestation);
-      marker?.setMission(missionCityIds.has(city.id));
+      marker?.setMission(state.missionCueCityIds.has(city.id));
     }
-    this.applyRegionInfestation(map);
+    this.installations?.sync(state.deployables);
+    this.applyRegionInfestation(state.map);
   }
 
   /** What a city's marker currently shows, or `undefined` for an unknown city. */
   markerLook(cityId: CityId): CityMarkerLookReport | undefined {
     return this.markers.get(cityId)?.look();
+  }
+
+  /** What an installation currently shows, or `undefined` for an unknown id. */
+  installationLook(id: DeployableId): InstallationLookReport | undefined {
+    return this.installations?.look(id);
+  }
+
+  /** World position of an installation, or `undefined` for an unknown id. */
+  installationWorldPosition(id: DeployableId): Vec3 | undefined {
+    return this.installations?.worldPosition(id);
+  }
+
+  /** Ids of the installations currently drawn. */
+  installationIds(): readonly DeployableId[] {
+    return this.installations?.ids() ?? [];
   }
 
   /** The region territories as built, or `undefined` before `build`. */
@@ -234,8 +297,12 @@ export class OverworldSceneBuilder implements CityPicker, MapStateView {
    */
   dispose(): void {
     this.clear();
-    this.markerGeometry.body.dispose();
+    this.markerGeometry.pad.dispose();
     this.markerGeometry.ring.dispose();
+    this.markerGeometry.pick.dispose();
+    this.markerGeometry.standIn.dispose();
+    this.installationStyle.standIn.dispose();
+    this.installationStyle.falloff.dispose();
   }
 
   /** Ids of the cities currently built, in map order. */
@@ -248,12 +315,12 @@ export class OverworldSceneBuilder implements CityPicker, MapStateView {
   // ===========================================
 
   /**
-   * Raycasts marker pick targets from a normalised device coordinate.
-   * Glyph sprites are billboards taller than the gap between close
-   * cities, so several can sit under one ray; the hit whose marker
-   * anchor is nearest the ray wins, which makes a click near a pin's
-   * base pick that pin even inside a cluster. World matrices are
-   * refreshed first so a pick between frames sees the current layout.
+   * Raycasts marker pick solids from a normalised device coordinate.
+   * Close cities' solids can overlap, so several can sit under one
+   * ray; the hit whose marker anchor is nearest the ray wins, which
+   * makes a click near a settlement's centre pick that settlement even
+   * inside a cluster. World matrices are refreshed first so a pick
+   * between frames sees the current layout.
    */
   pickCity(ndc: Vec2, camera: Camera): CityId | undefined {
     if (this.targetToCity.size === 0) {
@@ -302,7 +369,7 @@ export class OverworldSceneBuilder implements CityPicker, MapStateView {
     return this.selected;
   }
 
-  /** A world point inside a city's marker, or `undefined` for an unknown city. */
+  /** A world point on a city's marker, or `undefined` for an unknown city. */
   markerWorldPosition(cityId: CityId): Vec3 | undefined {
     const marker = this.markers.get(cityId);
     if (!marker) {
@@ -419,6 +486,7 @@ export class OverworldSceneBuilder implements CityPicker, MapStateView {
       marker.dispose();
     }
     this.territories?.dispose();
+    this.installations?.dispose();
     if (this.slab) {
       this.slab.geometry.dispose();
       for (const material of new Set(materialsOf(this.slab))) {
@@ -432,6 +500,7 @@ export class OverworldSceneBuilder implements CityPicker, MapStateView {
     this.slab = undefined;
     this.wireframe = undefined;
     this.territories = undefined;
+    this.installations = undefined;
     this.root.clear();
   }
 }

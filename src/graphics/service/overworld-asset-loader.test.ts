@@ -1,46 +1,24 @@
-import { Texture } from "three";
+import { Group } from "three";
 import { describe, expect, it } from "vitest";
 
-import {
-  loadOverworldAssets,
-  MARKER_GLYPH_RASTER_PX,
-} from "./overworld-asset-loader";
+import type { ModelAssetId } from "../../content/data/model-ids";
+import { OVERWORLD_MODEL_IDS } from "../data/overworld-model-table";
+import { loadOverworldAssets } from "./overworld-asset-loader";
 
 describe("loadOverworldAssets", () => {
-  it("asks for both glyphs and bundles what came back", async () => {
-    const glyph = new Texture();
-    const asked: string[] = [];
-    const assets = await loadOverworldAssets({
-      glyphs: {
-        loadGlyph: (url, size) => {
-          asked.push(`glyph:${url}@${size}`);
-          return Promise.resolve(glyph);
-        },
+  it("preloads every overworld model and hands the loader on (#1155)", async () => {
+    const preloaded: ModelAssetId[] = [];
+    const models = {
+      load: () => Promise.resolve(new Group()),
+      preload: (ids: readonly ModelAssetId[]) => {
+        preloaded.push(...ids);
+        return Promise.resolve();
       },
-      markerGlyphUrl: "/icons/marker-city.svg",
-      missionGlyphUrl: "/icons/mission.svg",
-    });
-    expect(asked.sort()).toEqual([
-      `glyph:/icons/marker-city.svg@${MARKER_GLYPH_RASTER_PX}`,
-      `glyph:/icons/mission.svg@${MARKER_GLYPH_RASTER_PX}`,
-    ]);
-    expect(assets).toMatchObject({
-      markerGlyph: glyph,
-      missionGlyph: glyph,
-    });
+    };
+    const assets = await loadOverworldAssets({ models });
+    expect([...preloaded].sort()).toEqual([...OVERWORLD_MODEL_IDS].sort());
+    expect(assets.models).toBe(models);
     // City name labels are rasterised on demand rather than loaded (#439).
     expect(assets.text).toBeDefined();
-  });
-
-  it("passes missing assets through as undefined", async () => {
-    const assets = await loadOverworldAssets({
-      glyphs: { loadGlyph: () => Promise.resolve(undefined) },
-      markerGlyphUrl: "/icons/marker-city.svg",
-      missionGlyphUrl: "/icons/marker-city.svg",
-    });
-    expect(assets).toMatchObject({
-      markerGlyph: undefined,
-      missionGlyph: undefined,
-    });
   });
 });

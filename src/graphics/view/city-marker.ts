@@ -1,14 +1,13 @@
 import type { BufferGeometry, Object3D, Texture } from "three";
-import {
-  Group,
-  Mesh,
-  MeshStandardMaterial,
-  Sprite,
-  SpriteMaterial,
-} from "three";
+import { Group, Mesh, MeshBasicMaterial, Sprite, SpriteMaterial } from "three";
 
 import type { Vec3 } from "../../core/model/grid";
 import type { City, CityId } from "../../overworld/model/city";
+import {
+  SETTLEMENT_EGGS_MODEL_IDS,
+  SETTLEMENT_MODEL_IDS,
+} from "../data/overworld-model-table";
+import type { ModelLoader } from "../model/model-loader";
 import type { OverworldSceneConfig } from "../model/overworld-scene-config";
 import type { TextTextureSource } from "../model/text-texture-source";
 import type { RampStop } from "./infestation-ramp";
@@ -20,92 +19,113 @@ import { INFESTATION_RAMP, infestationColour } from "./infestation-ramp";
 export type { RampStop };
 export { INFESTATION_RAMP, infestationColour };
 
-/** Hovered marker tint: `ui-accent`. */
+// ===========================================
+// Constants
+// ===========================================
+
+/** Hovered pad tint: `ui-accent`. */
 export const HOVER_COLOUR = 0xf08a24;
 
 /** Selection ring colour: `tdf-orange`, the style guide's selection accent. */
 export const SELECTION_COLOUR = 0xf08a24;
 
-/** How much a hovered marker grows. */
+/** How much a hovered settlement grows. */
 const HOVER_SCALE = 1.25;
 
-/** Emissive strength of a hovered disc marker; unhovered discs emit nothing. */
-const HOVER_EMISSIVE = 0.6;
+/** Opacity of the infestation pad under a settlement; the ramp colour carries the reading. */
+const PAD_OPACITY = 0.6;
 
-/** Sprites draw after translucent plates so the plate tint never sits on the glyph. */
-const SPRITE_RENDER_ORDER = 2;
+/** Opacity of the pad while hovered: solid accent, so the hover is unmistakable. */
+const PAD_HOVER_OPACITY = 0.9;
 
-/** Mission badge tint: `ui-info`, distinct from every infestation stop and the accent. */
-export const MISSION_COLOUR = 0x7fd1ff;
+/** Height the pad floats above the marker base so it never z-fights the ground lines. */
+const PAD_LIFT = 0.004;
 
-/**
- * Badge size relative to the marker glyph, and where it sits from the
- * marker's centre **on the ground plane**: east and north, so it reads
- * up and to the right under the strategic map's straight-down camera
- * (#420). An offset in world `y` would point at the camera and show no
- * screen movement at all.
- */
-const BADGE_SCALE = 0.45;
-const BADGE_OFFSET_EAST = 0.55;
-const BADGE_OFFSET_NORTH = 0.55;
+/** Height the ring floats above the pad. */
+const RING_LIFT = 0.008;
 
-/** Height the badge floats above the plate so it never z-fights it. */
-const BADGE_LIFT = 0.02;
+/** Pads draw before the models on them; rings after the pads. */
+const PAD_RENDER_ORDER = 1;
+const RING_RENDER_ORDER = 2;
 
-/** Label height in world units, and how far south of the marker it sits. */
+/** Label height in world units, and how far south of the settlement it sits. */
 const LABEL_HEIGHT = 0.34;
 const LABEL_OFFSET_SOUTH = 0.62;
+
+/** Height the label floats at so it never z-fights the pad. */
+const LABEL_LIFT = 0.02;
 
 /** Labels draw above everything else on the map. */
 const LABEL_RENDER_ORDER = 4;
 
-/** Badges draw after the marker so they sit on top of the pin. */
-const BADGE_RENDER_ORDER = 3;
+/** Stand-in block drawn without a model loader: a settlement-sized slab in `env-concrete`. */
+const STAND_IN_COLOUR = 0x8e8a82;
+
+/** Height of the stand-in block; the builder sizes its geometry from it. */
+export const CITY_STAND_IN_HEIGHT = 0.25;
+
+/** Prefix the model loader's fallback factory gives a placeholder's root name. */
+const PLACEHOLDER_PREFIX = "placeholder:";
+
+// ===========================================
+// Types
+// ===========================================
+
+/** Geometries shared by every marker; the scene builder owns and disposes them. */
+export interface CityMarkerGeometry {
+  /** Flat disc under the settlement, tinted by infestation. */
+  readonly pad: BufferGeometry;
+  /** Flat ring shown around a selected settlement. */
+  readonly ring: BufferGeometry;
+  /** Invisible solid the pointer raycasts against, the settlement's footprint tall enough to hit. */
+  readonly pick: BufferGeometry;
+  /** Block drawn instead of a model when there is no loader. */
+  readonly standIn: BufferGeometry;
+}
+
+/** How markers look: shared geometry and, when art is available, the models and label text. */
+export interface CityMarkerLook {
+  readonly geometry: CityMarkerGeometry;
+  /** Resolves the settlement and egg models; `undefined` draws a stand-in block. */
+  readonly models: ModelLoader | undefined;
+  /** Rasterises the city's name; absent (or yielding nothing) draws no label. */
+  readonly text?: TextTextureSource | undefined;
+}
+
+/** Which settlement visual a marker currently shows. */
+export type CityModelState = "loading" | "glb" | "placeholder" | "stand-in";
+
+/** What a marker currently shows, for tests and the dev hooks. */
+export interface CityMarkerLookReport {
+  /** Pad tint as `0xRRGGBB`; hover overrides infestation. */
+  readonly colourHex: number;
+  /** True while the egg overlay is shown for a mission on offer. */
+  readonly mission: boolean;
+  /** Whether the settlement is the GLB, the loader's placeholder, a stand-in, or still loading. */
+  readonly model: CityModelState;
+}
 
 // ===========================================
 // Marker
 // ===========================================
 
-/** Geometries shared by every marker; the scene builder owns and disposes them. */
-export interface CityMarkerGeometry {
-  /** The pickable body of a disc marker. */
-  readonly body: BufferGeometry;
-  /** Flat ring shown under a selected marker. */
-  readonly ring: BufferGeometry;
-}
-
-/** How markers look: shared geometry and, when art is available, the glyphs. */
-export interface CityMarkerLook {
-  readonly geometry: CityMarkerGeometry;
-  /** White-on-transparent glyph; `undefined` draws a disc instead. */
-  readonly glyph: Texture | undefined;
-  /** White-on-transparent mission glyph for the badge; `undefined` draws a small disc. */
-  readonly missionGlyph?: Texture | undefined;
-  /** Rasterises the city's name; absent (or yielding nothing) draws no label. */
-  readonly text?: TextTextureSource | undefined;
-}
-
-/** What a marker currently shows, for tests and the dev hooks. */
-export interface CityMarkerLookReport {
-  /** Tint as `0xRRGGBB`; hover overrides infestation. */
-  readonly colourHex: number;
-  /** True while the active-mission badge is shown. */
-  readonly mission: boolean;
-}
-
 /**
- * One city on the strategic map: a pin glyph (or a disc when the glyph
- * is missing) tinted by infestation, accent-tinted and grown while
- * hovered, ringed while selected, badged while its city has an active
- * mission. Holds no game truth; `setInfestation` and `setMission` are
- * how state reaches it.
+ * One city on the strategic map (#1155): the settlement model for its
+ * scale standing on a pad tinted by infestation, grown and accent-tinted
+ * while hovered, ringed while selected, wearing the egg overlay while
+ * an infestation-clearance mission is on offer there. Holds no game
+ * truth; `setInfestation` and `setMission` are how state reaches it.
  *
  * ```
- *          ╱▔▔╲ ◆  glyph sprite, anchored at its bottom edge, mission
- *          ╲__╱    badge up and to the right (or discs without art)
- *       ═════╧═════  ring, visible only when selected
- *     ───────────────  plate top = the marker's base
+ *              ▄▟█▙▄      settlement GLB (+ egg overlay while on offer)
+ *          ▔▔▔▔▔▔▔▔▔▔▔    pad: infestation ramp, or the accent while hovered
+ *        ═══════╧═══════  ring, visible only when selected
+ *      ─────────────────  the marker's base, on the map plane
  * ```
+ *
+ * Models arrive asynchronously through the loader; the pick solid,
+ * pad and ring exist from construction so picking and highlights
+ * never wait on a fetch. A load that lands after `dispose` is dropped.
  */
 export class CityMarker {
   // ===========================================
@@ -113,32 +133,39 @@ export class CityMarker {
   // ===========================================
 
   readonly cityId: CityId;
-  /** Add this to the scene; it carries the visual and the ring. */
+  /** Add this to the scene; it carries the visual, the pad and the ring. */
   readonly object: Group;
-  /** The object raycasts hit. */
+  /** The object raycasts hit: an invisible solid over the footprint. */
   readonly pickTarget: Object3D;
-  private readonly visual: Sprite | Mesh;
-  private readonly material: SpriteMaterial | MeshStandardMaterial;
+  /** The settlement and its egg overlay, scaled together while hovered. */
+  private readonly visual: Group;
+  private readonly pad: Mesh;
+  private readonly padMaterial: MeshBasicMaterial;
   private readonly ring: Mesh;
-  private readonly ringMaterial: MeshStandardMaterial;
-  private readonly badge: Sprite | Mesh;
-  private readonly badgeMaterial: SpriteMaterial | MeshStandardMaterial;
+  private readonly ringMaterial: MeshBasicMaterial;
+  private readonly standInMaterial: MeshBasicMaterial | undefined;
   private readonly label: Sprite | undefined;
   private readonly labelMaterial: SpriteMaterial | undefined;
   private readonly config: OverworldSceneConfig;
+  private readonly models: ModelLoader | undefined;
+  private readonly scale: City["scale"];
+  private eggs: Object3D | undefined;
+  private eggsLoad: Promise<Object3D> | undefined;
+  private modelState: CityModelState;
   private infestationHex = 0;
   private hovered = false;
   private selected = false;
   private mission = false;
+  private disposed = false;
 
   // ===========================================
   // Constructor
   // ===========================================
 
   /**
-   * @param city - The city to represent; its id names the objects.
-   * @param base - Point on the plate top the marker stands on.
-   * @param look - Shared geometry and optional glyph.
+   * @param city - The city to represent; its id names the objects and its scale picks the model.
+   * @param base - Point on the map plane the settlement stands on.
+   * @param look - Shared geometry, the model loader and the label text source.
    * @param config - Marker sizes.
    */
   constructor(
@@ -149,92 +176,61 @@ export class CityMarker {
   ) {
     this.cityId = city.id;
     this.config = config;
+    this.models = look.models;
+    this.scale = city.scale;
     this.object = new Group();
     this.object.name = `city-${city.id}`;
     this.object.position.set(base.x, base.y, base.z);
 
-    if (look.glyph) {
-      const material = new SpriteMaterial({
-        map: look.glyph,
-        transparent: true,
-        depthWrite: false,
-      });
-      const sprite = new Sprite(material);
-      // Centred on the city, not standing on it: a bottom-anchored
-      // sprite always draws above its anchor in screen space, which read
-      // as the marker being offset from its city (#420).
-      sprite.center.set(0.5, 0.5);
-      sprite.renderOrder = SPRITE_RENDER_ORDER;
-      this.material = material;
-      this.visual = sprite;
-    } else {
-      const material = new MeshStandardMaterial({
-        flatShading: true,
-        metalness: 0,
-        roughness: 0.6,
-      });
-      const disc = new Mesh(look.geometry.body, material);
-      disc.position.y = config.markerHeight / 2;
-      this.material = material;
-      this.visual = disc;
-    }
-    this.visual.name = `city-body-${city.id}`;
-    this.pickTarget = this.visual;
-    this.object.add(this.visual);
+    this.padMaterial = new MeshBasicMaterial({
+      transparent: true,
+      opacity: PAD_OPACITY,
+      depthWrite: false,
+    });
+    this.pad = new Mesh(look.geometry.pad, this.padMaterial);
+    this.pad.name = `city-pad-${city.id}`;
+    this.pad.rotation.x = -Math.PI / 2;
+    this.pad.position.y = PAD_LIFT;
+    this.pad.renderOrder = PAD_RENDER_ORDER;
+    this.object.add(this.pad);
 
-    this.ringMaterial = new MeshStandardMaterial({
+    this.ringMaterial = new MeshBasicMaterial({
       color: SELECTION_COLOUR,
-      emissive: SELECTION_COLOUR,
-      emissiveIntensity: 0.8,
-      metalness: 0,
-      roughness: 0.6,
+      transparent: true,
+      opacity: 0.95,
+      depthWrite: false,
     });
     this.ring = new Mesh(look.geometry.ring, this.ringMaterial);
     this.ring.name = `city-ring-${city.id}`;
     this.ring.rotation.x = -Math.PI / 2;
-    this.ring.position.y = 0.01;
+    this.ring.position.y = RING_LIFT;
+    this.ring.renderOrder = RING_RENDER_ORDER;
     this.ring.visible = false;
     this.object.add(this.ring);
 
-    const badgeSize = config.markerGlyphSize * BADGE_SCALE;
-    if (look.missionGlyph) {
-      const material = new SpriteMaterial({
-        map: look.missionGlyph,
-        color: MISSION_COLOUR,
-        transparent: true,
-        depthWrite: false,
-      });
-      const sprite = new Sprite(material);
-      sprite.center.set(0.5, 0.5);
-      sprite.scale.set(badgeSize, badgeSize, 1);
-      sprite.renderOrder = BADGE_RENDER_ORDER;
-      this.badgeMaterial = material;
-      this.badge = sprite;
+    const pick = new Mesh(look.geometry.pick);
+    pick.name = `city-body-${city.id}`;
+    pick.position.y = config.markerPickHeight / 2;
+    pick.visible = false;
+    this.pickTarget = pick;
+    this.object.add(pick);
+
+    this.visual = new Group();
+    this.visual.name = `city-visual-${city.id}`;
+    this.object.add(this.visual);
+
+    if (this.models) {
+      this.modelState = "loading";
+      void this.loadSettlement(this.models);
+      this.standInMaterial = undefined;
     } else {
-      const material = new MeshStandardMaterial({
-        color: MISSION_COLOUR,
-        emissive: MISSION_COLOUR,
-        emissiveIntensity: 0.8,
-        flatShading: true,
-        metalness: 0,
-        roughness: 0.6,
-      });
-      const disc = new Mesh(look.geometry.body, material);
-      disc.scale.setScalar(BADGE_SCALE);
-      this.badgeMaterial = material;
-      this.badge = disc;
+      this.modelState = "stand-in";
+      this.standInMaterial = new MeshBasicMaterial({ color: STAND_IN_COLOUR });
+      const block = new Mesh(look.geometry.standIn, this.standInMaterial);
+      block.name = `city-stand-in-${city.id}`;
+      block.position.y = CITY_STAND_IN_HEIGHT / 2;
+      this.visual.add(block);
     }
-    const spread = this.usesGlyph()
-      ? config.markerGlyphSize
-      : config.markerRadius * 2;
-    this.badge.position.set(
-      spread * BADGE_OFFSET_EAST,
-      BADGE_LIFT,
-      -spread * BADGE_OFFSET_NORTH,
-    );
-    this.badge.name = `city-badge-${city.id}`;
-    this.badge.visible = false;
-    this.object.add(this.badge);
 
     const labelTexture = look.text?.textTexture(city.name);
     if (labelTexture) {
@@ -245,13 +241,13 @@ export class CityMarker {
       });
       const sprite = new Sprite(material);
       sprite.scale.set(LABEL_HEIGHT * aspectOf(labelTexture), LABEL_HEIGHT, 1);
-      // South of the marker, on the ground plane: under the strategic
-      // map's straight-down camera that reads as directly below the icon,
-      // clear of the badge, which sits east and north (#439).
+      // South of the settlement, on the ground plane: under the
+      // strategic map's straight-down camera that reads as directly
+      // below it (#439).
       sprite.position.set(
         0,
-        BADGE_LIFT,
-        this.config.markerGlyphSize * LABEL_OFFSET_SOUTH,
+        LABEL_LIFT,
+        this.config.settlementFootprint * LABEL_OFFSET_SOUTH,
       );
       sprite.renderOrder = LABEL_RENDER_ORDER;
       sprite.visible = false;
@@ -269,28 +265,22 @@ export class CityMarker {
   // Public Methods
   // ===========================================
 
-  /** True when the marker draws the glyph sprite rather than a disc. */
-  usesGlyph(): boolean {
-    return this.visual instanceof Sprite;
+  /** True when the settlement is a loaded model rather than the stand-in block. */
+  usesModel(): boolean {
+    return this.modelState === "glb" || this.modelState === "placeholder";
   }
 
-  /** Retints for the given infestation without rebuilding anything. */
+  /** Retints the pad for the given infestation without rebuilding anything. */
   setInfestation(infestation: number): void {
     this.infestationHex = infestationColour(infestation);
     this.applyTint();
   }
 
-  /** Grows the marker and tints it with the accent while hovered. */
+  /** Grows the settlement and tints the pad with the accent while hovered. */
   setHovered(hovered: boolean): void {
     this.hovered = hovered;
     this.refreshLabel();
-    const scale = hovered ? HOVER_SCALE : 1;
-    if (this.visual instanceof Sprite) {
-      const size = this.config.markerGlyphSize * scale;
-      this.visual.scale.set(size, size, 1);
-    } else {
-      this.visual.scale.setScalar(scale);
-    }
+    this.visual.scale.setScalar(hovered ? HOVER_SCALE : 1);
     this.applyTint();
   }
 
@@ -306,46 +296,93 @@ export class CityMarker {
     return this.label?.visible ?? false;
   }
 
-  /** Shows the mission badge while the city has an active mission. */
+  /**
+   * Adds the egg overlay while a clearance mission is on offer and
+   * removes it when the mission is gone. The overlay is fetched on
+   * first use and kept for the marker's life, so toggling is free.
+   */
   setMission(active: boolean): void {
     this.mission = active;
-    this.badge.visible = active;
+    if (active) {
+      void this.showEggs();
+    } else {
+      this.eggs?.removeFromParent();
+    }
   }
 
-  /** True while the mission badge is shown. */
+  /** True while the egg overlay is wanted. */
   hasMission(): boolean {
     return this.mission;
   }
 
-  /** Current tint as `0xRRGGBB`, for tests and debug readouts. */
+  /** Current pad tint as `0xRRGGBB`, for tests and debug readouts. */
   colourHex(): number {
-    return this.material.color.getHex();
+    return this.padMaterial.color.getHex();
   }
 
-  /** Tint and badge state together, for tests and the dev hooks. */
+  /** Tint, egg cue and model state together, for tests and the dev hooks. */
   look(): CityMarkerLookReport {
-    return { colourHex: this.colourHex(), mission: this.mission };
+    return {
+      colourHex: this.colourHex(),
+      mission: this.mission,
+      model: this.modelState,
+    };
   }
 
   /**
-   * A world-space point inside the pickable, for projecting to the
-   * screen: the marker's anchor, which is its city's own position, so a
-   * projected marker lands on its city rather than beside it (#420). A
-   * disc marker keeps its half-height so the point is inside the solid.
-   * Call after the scene's world matrices are up to date.
+   * A world-space point for projecting to the screen: the marker's
+   * anchor, which is its city's own position, so a projected marker
+   * lands on its city rather than beside it (#420). Call after the
+   * scene's world matrices are up to date.
    */
   pickPoint(): Vec3 {
-    const lift = this.usesGlyph() ? 0 : this.config.markerHeight / 2;
     const base = this.object.getWorldPosition(this.object.position.clone());
-    return { x: base.x, y: base.y + lift, z: base.z };
+    return { x: base.x, y: base.y, z: base.z };
   }
 
-  /** Releases the marker's materials. Geometry and glyph belong to the builder. */
+  /**
+   * Releases the marker's own materials and drops any load still in
+   * flight. Model geometry and materials belong to the loader; the
+   * label texture belongs to the text source.
+   */
   dispose(): void {
-    this.material.dispose();
+    this.disposed = true;
+    this.padMaterial.dispose();
     this.ringMaterial.dispose();
-    this.badgeMaterial.dispose();
+    this.standInMaterial?.dispose();
     this.labelMaterial?.dispose();
+    this.visual.clear();
+    this.eggs = undefined;
+  }
+
+  // ===========================================
+  // Private Methods
+  // ===========================================
+
+  /** Fetches the settlement model for the city's scale and stands it on the pad. */
+  private async loadSettlement(models: ModelLoader): Promise<void> {
+    const model = await models.load(SETTLEMENT_MODEL_IDS[this.scale]);
+    if (this.disposed) {
+      return;
+    }
+    this.modelState = isPlaceholder(model) ? "placeholder" : "glb";
+    model.name = `city-settlement-${this.cityId}`;
+    this.visual.add(model);
+  }
+
+  /** Fetches the egg overlay once and adds it while the mission is still wanted. */
+  private async showEggs(): Promise<void> {
+    if (!this.models) {
+      return;
+    }
+    this.eggsLoad ??= this.models.load(SETTLEMENT_EGGS_MODEL_IDS[this.scale]);
+    const eggs = await this.eggsLoad;
+    if (this.disposed || !this.mission) {
+      return;
+    }
+    eggs.name = `city-eggs-${this.cityId}`;
+    this.eggs = eggs;
+    this.visual.add(eggs);
   }
 
   /**
@@ -359,19 +396,22 @@ export class CityMarker {
     }
   }
 
-  // ===========================================
-  // Private Methods
-  // ===========================================
-
-  /** Pushes the hover or infestation colour onto the material. */
+  /** Pushes the hover or infestation colour onto the pad. */
   private applyTint(): void {
-    const hex = this.hovered ? HOVER_COLOUR : this.infestationHex;
-    this.material.color.setHex(hex);
-    if (this.material instanceof MeshStandardMaterial) {
-      this.material.emissive.setHex(hex);
-      this.material.emissiveIntensity = this.hovered ? HOVER_EMISSIVE : 0;
-    }
+    this.padMaterial.color.setHex(
+      this.hovered ? HOVER_COLOUR : this.infestationHex,
+    );
+    this.padMaterial.opacity = this.hovered ? PAD_HOVER_OPACITY : PAD_OPACITY;
   }
+}
+
+// ===========================================
+// Helpers
+// ===========================================
+
+/** True for the box the loader's fallback factory hands out when a GLB failed. */
+function isPlaceholder(model: Object3D): boolean {
+  return model.name.startsWith(PLACEHOLDER_PREFIX);
 }
 
 /**

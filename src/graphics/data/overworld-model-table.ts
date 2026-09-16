@@ -1,37 +1,48 @@
 import type { ModelAssetId } from "../../content/data/model-ids";
 import type { SettlementScale } from "../../content/model/settlement-scale";
+import { SETTLEMENT_SCALES } from "../../content/model/settlement-scale";
 import type { DeployableTypeId } from "../../overworld/model/deployable-type";
+import type { SettlementStyleId } from "../model/settlement-style";
+import { SETTLEMENT_STYLE_IDS } from "../model/settlement-style";
 
 // ===========================================
 // Settlements
 // ===========================================
 
 /**
- * The settlement model drawn for a city of each scale on the strategic
- * map (#1152, #1155): a hamlet, a town and a city block, all on a 0.6
- * unit footprint with the pivot at the base centre.
+ * The settlement model drawn for a city of a given regional style and
+ * scale on the strategic map (#1152, #1155): ten families × three
+ * scales, all on a 0.6 unit footprint with the pivot at the base centre.
+ * The template literal is checked against `MODEL_IDS`, so an id missing
+ * from the manifest fails to compile.
  */
-export const SETTLEMENT_MODEL_IDS: Readonly<
-  Record<SettlementScale, ModelAssetId>
-> = {
-  rural: "overworld.settlement.rural",
-  town: "overworld.settlement.town",
-  city: "overworld.settlement.city",
-};
+export function settlementModelId(
+  style: SettlementStyleId,
+  scale: SettlementScale,
+): ModelAssetId {
+  return `overworld.settlement.${style}.${scale}`;
+}
 
 /**
- * The egg overlay stacked on a settlement of each scale while an
- * infestation-clearance mission is on offer there (#1155). Authored to
- * share the base model's origin, so it is added at the same position
- * and nothing is offset.
+ * The egg overlay stacked on a settlement while an infestation-clearance
+ * mission is on offer there (#1155). Built from the same dressed layout
+ * as the base, sharing its origin, so it is added at the same position.
  */
-export const SETTLEMENT_EGGS_MODEL_IDS: Readonly<
-  Record<SettlementScale, ModelAssetId>
-> = {
-  rural: "overworld.settlement-eggs.rural",
-  town: "overworld.settlement-eggs.town",
-  city: "overworld.settlement-eggs.city",
-};
+export function settlementEggsModelId(
+  style: SettlementStyleId,
+  scale: SettlementScale,
+): ModelAssetId {
+  return `overworld.settlement-eggs.${style}.${scale}`;
+}
+
+/** Every settlement model and egg overlay, style-major then scale. */
+export const SETTLEMENT_MODEL_IDS: readonly ModelAssetId[] =
+  SETTLEMENT_STYLE_IDS.flatMap((style) =>
+    SETTLEMENT_SCALES.flatMap((scale) => [
+      settlementModelId(style, scale),
+      settlementEggsModelId(style, scale),
+    ]),
+  );
 
 // ===========================================
 // Deployables
@@ -59,7 +70,6 @@ export const DEPLOYABLE_ANIMATED_NODE = "animated";
 
 /** Every model the strategic map can draw, for preloading before the first frame. */
 export const OVERWORLD_MODEL_IDS: readonly ModelAssetId[] = [
-  ...Object.values(SETTLEMENT_MODEL_IDS),
-  ...Object.values(SETTLEMENT_EGGS_MODEL_IDS),
+  ...SETTLEMENT_MODEL_IDS,
   ...Object.values(DEPLOYABLE_MODEL_IDS),
 ];

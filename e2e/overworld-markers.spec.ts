@@ -41,7 +41,7 @@ async function settledLook(page: Page, cityId: string) {
   );
 }
 
-test("map markers follow the campaign: an overrun city with a mission wears eggs and reads red, a clean one does not", async ({
+test("map markers follow the campaign: a city with a mission wears eggs in its region's style, a clean one does not", async ({
   page,
 }) => {
   const errors: string[] = [];
@@ -91,20 +91,29 @@ test("map markers follow the campaign: an overrun city with a mission wears eggs
   const looks = {
     newYork: await settledLook(page, "new-york"),
     london: await settledLook(page, "london"),
+    tokyo: await settledLook(page, "tokyo"),
   };
   expect(looks.newYork).toBeDefined();
   expect(looks.london).toBeDefined();
-  // Both cities stand as settlement models (#1155), never as the stand-in box.
+  expect(looks.tokyo).toBeDefined();
+  // Every city stands as a settlement model (#1155), never as the stand-in box.
   expect(looks.newYork?.model).toBe("glb");
   expect(looks.london?.model).toBe("glb");
+  expect(looks.tokyo?.model).toBe("glb");
   // The mission on offer is cued by the egg overlay on New York alone.
   expect(looks.newYork?.mission).toBe(true);
   expect(looks.london?.mission).toBe(false);
-  expect(looks.newYork?.colourHex).not.toBe(looks.london?.colourHex);
-  // Overrun reads red: the red channel dominates and green has fallen away.
-  const hex = looks.newYork?.colourHex ?? 0;
-  expect((hex >> 16) & 0xff).toBeGreaterThan(0xc0);
-  expect((hex >> 8) & 0xff).toBeLessThan(0x80);
+  // Each region draws its own architectural family: three cities, three models.
+  expect(looks.newYork?.style).toBe("north-american");
+  expect(looks.london?.style).toBe("european");
+  expect(looks.tokyo?.style).toBe("east-asian");
+  expect(
+    new Set([
+      looks.newYork?.modelId,
+      looks.london?.modelId,
+      looks.tokyo?.modelId,
+    ]).size,
+  ).toBe(3);
 
   expect(errors).toEqual([]);
 });

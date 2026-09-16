@@ -1,26 +1,19 @@
 import type { MeshBasicMaterial, Object3D } from "three";
-import {
-  AdditiveBlending,
-  BoxGeometry,
-  CylinderGeometry,
-  Group,
-  Mesh,
-  RingGeometry,
-  Texture,
-} from "three";
+import { BoxGeometry, CylinderGeometry, Group, Mesh, Texture } from "three";
 import { describe, expect, it } from "vitest";
 
 import type { ModelAssetId } from "../../content/data/model-ids";
 import type { City } from "../../overworld/model/city";
 import type { ModelLoader } from "../model/model-loader";
 import { OVERWORLD_SCENE_CONFIG } from "../model/overworld-scene-config";
+import type { SettlementStyleSource } from "../model/settlement-style";
+import { settlementVariation } from "../service/settlement-variation";
 import {
   CITY_STAND_IN_HEIGHT,
   CityMarker,
-  HOVER_COLOUR,
-  INFESTATION_RAMP,
-  infestationColour,
+  SELECTION_COLOUR,
 } from "./city-marker";
+import { cornerBracketGeometry } from "./corner-bracket-geometry";
 
 // ===========================================
 // Fixtures
@@ -39,27 +32,20 @@ const CITY: City = {
 
 const BASE = { x: 1, y: 0.05, z: 2 };
 
-function channels(hex: number): [number, number, number] {
-  return [(hex >> 16) & 0xff, (hex >> 8) & 0xff, hex & 0xff];
-}
-
-function stop(index: number): number {
-  const entry = INFESTATION_RAMP[index];
-  if (!entry) throw new Error("missing stop");
-  return entry.hex;
-}
-
 /** The shared geometry a builder would own. */
 function geometry() {
   return {
-    halo: new RingGeometry(0.33, 0.35, 24),
-    haloGlow: new RingGeometry(0.31, 0.39, 24),
-    ring: new RingGeometry(0.42, 0.44, 24),
-    ringGlow: new RingGeometry(0.39, 0.47, 24),
+    brackets: cornerBracketGeometry(0.37, 0.09, 0.015),
     pick: new CylinderGeometry(0.3, 0.3, 0.4, 12),
     standIn: new BoxGeometry(0.6, CITY_STAND_IN_HEIGHT, 0.6),
   };
 }
+
+/** A style table that sends Western Europe to `european` and everything else to `east-asian`. */
+const STYLES: SettlementStyleSource = {
+  styleFor: (regionId) =>
+    regionId === "western-europe" ? "european" : "east-asian",
+};
 
 /**
  * A loader that answers every id with a fresh named group and records
@@ -92,7 +78,7 @@ function makeMarker(
   return new CityMarker(
     city,
     BASE,
-    { geometry: geometry(), models, text },
+    { geometry: geometry(), styles: STYLES, models, text },
     OVERWORLD_SCENE_CONFIG,
   );
 }
@@ -124,111 +110,74 @@ function named(marker: CityMarker, name: string): Object3D | undefined {
 }
 
 // ===========================================
-// Ramp
-// ===========================================
-
-describe("infestationColour", () => {
-  it("hits every ramp stop exactly", () => {
-    expect(infestationColour(0)).toBe(stop(0));
-    expect(infestationColour(100 / 3)).toBe(stop(1));
-    expect(infestationColour(200 / 3)).toBe(stop(2));
-    expect(infestationColour(100)).toBe(stop(3));
-  });
-
-  it("is the channel-wise midpoint between two neighbouring stops", () => {
-    const [r0, g0, b0] = channels(stop(0));
-    const [r1, g1, b1] = channels(stop(1));
-    expect(channels(infestationColour(100 / 6))).toEqual([
-      Math.round((r0 + r1) / 2),
-      Math.round((g0 + g1) / 2),
-      Math.round((b0 + b1) / 2),
-    ]);
-  });
-
-  it("stays between its neighbouring stops on every channel", () => {
-    for (let infestation = 0; infestation <= 100; infestation += 5) {
-      const t = infestation / 100;
-      const upperIndex = INFESTATION_RAMP.findIndex((s) => s.at >= t);
-      const lowerIndex = Math.max(0, upperIndex === 0 ? 0 : upperIndex - 1);
-      const lower = channels(stop(lowerIndex));
-      const upper = channels(stop(upperIndex));
-      const actual = channels(infestationColour(infestation));
-      for (let c = 0; c < 3; c++) {
-        const lo = Math.min(lower[c] ?? 0, upper[c] ?? 0);
-        const hi = Math.max(lower[c] ?? 0, upper[c] ?? 0);
-        expect(actual[c]).toBeGreaterThanOrEqual(lo);
-        expect(actual[c]).toBeLessThanOrEqual(hi);
-      }
-    }
-  });
-
-  it("clamps out-of-range and treats non-numbers as clean", () => {
-    expect(infestationColour(-20)).toBe(stop(0));
-    expect(infestationColour(250)).toBe(stop(3));
-    expect(infestationColour(Number.NaN)).toBe(stop(0));
-  });
-});
-
-// ===========================================
 // Stand-in
 // ===========================================
 
 describe("CityMarker (stand-in, no loader)", () => {
-  it("stands on the plate top, named after its city, with a block, a halo and an invisible pick solid", () => {
+  it("stands on the map plane, named after its city, with a block, brackets and an invisible pick solid, and no halo", () => {
     const marker = makeMarker();
     expect(marker.object.name).toBe("city-london");
     expect(marker.object.position.toArray()).toEqual([1, 0.05, 2]);
     expect(marker.usesModel()).toBe(false);
     expect(marker.look().model).toBe("stand-in");
     expect(named(marker, "city-stand-in-london")).toBeInstanceOf(Mesh);
-    expect(named(marker, "city-halo-london")).toBeInstanceOf(Mesh);
+    expect(named(marker, "city-brackets-london")).toBeInstanceOf(Mesh);
+    expect(named(marker, "city-halo-london")).toBeUndefined();
+    expect(named(marker, "city-ring-london")).toBeUndefined();
     expect(marker.pickTarget.name).toBe("city-body-london");
     expect(marker.pickTarget.visible).toBe(false);
   });
 
-  it("tints the halo by infestation and retints in place", () => {
+  it("draws nothing around a city that is neither hovered nor selected", () => {
     const marker = makeMarker();
-    expect(marker.colourHex()).toBe(stop(0));
-    marker.setInfestation(100);
-    expect(marker.colourHex()).toBe(stop(3));
-    expect(marker.look().colourHex).toBe(stop(3));
+    expect(marker.bracketsVisible()).toBe(false);
+    expect(marker.labelVisible()).toBe(false);
   });
 
-  it("grows the visual and takes the accent while hovered, then restores its colour", () => {
+  it("grows the visual and shows faint orange brackets while hovered, then hides them", () => {
     const marker = makeMarker();
-    marker.setInfestation(50);
-    const before = marker.colourHex();
     marker.setHovered(true);
-    expect(marker.colourHex()).toBe(HOVER_COLOUR);
     expect(named(marker, "city-visual-london")?.scale.x).toBeGreaterThan(1);
+    expect(marker.bracketsVisible()).toBe(true);
+    expect(marker.bracketOpacity()).toBeLessThan(0.5);
+    const brackets = named(marker, "city-brackets-london") as Mesh;
+    expect((brackets.material as MeshBasicMaterial).color.getHex()).toBe(
+      SELECTION_COLOUR,
+    );
     marker.setHovered(false);
-    expect(marker.colourHex()).toBe(before);
     expect(named(marker, "city-visual-london")?.scale.x).toBe(1);
+    expect(marker.bracketsVisible()).toBe(false);
   });
 
-  it("shows the ring and its glow only while selected", () => {
+  it("shows solid brackets while selected, whether or not hovered", () => {
     const marker = makeMarker();
-    const ring = named(marker, "city-ring-london");
-    const glow = named(marker, "city-ring-glow-london");
-    expect(ring?.visible).toBe(false);
-    expect(glow?.visible).toBe(false);
     marker.setSelected(true);
-    expect(ring?.visible).toBe(true);
-    expect(glow?.visible).toBe(true);
+    expect(marker.bracketsVisible()).toBe(true);
+    expect(marker.bracketOpacity()).toBeGreaterThan(0.9);
+    marker.setHovered(true);
+    expect(marker.bracketOpacity()).toBeGreaterThan(0.9);
+    marker.setHovered(false);
+    expect(marker.bracketsVisible()).toBe(true);
     marker.setSelected(false);
-    expect(ring?.visible).toBe(false);
-    expect(glow?.visible).toBe(false);
+    expect(marker.bracketsVisible()).toBe(false);
   });
 
-  it("tints the halo's glow with the halo, additively", () => {
+  it("applies the city's own mirror, yaw and height to the variant group", () => {
     const marker = makeMarker();
-    marker.setInfestation(100);
-    const glow = named(marker, "city-halo-glow-london") as Mesh;
-    const material = glow.material as MeshBasicMaterial;
-    expect(material.blending).toBe(AdditiveBlending);
-    expect(material.color.getHex()).toBe(stop(3));
-    marker.setHovered(true);
-    expect(material.color.getHex()).toBe(HOVER_COLOUR);
+    const variation = settlementVariation("london");
+    const variant = named(marker, "city-variant-london");
+    expect(variant?.rotation.y).toBeCloseTo(variation.yaw, 9);
+    expect(variant?.scale.x).toBe(variation.mirrored ? -1 : 1);
+    expect(variant?.scale.y).toBeCloseTo(variation.heightScale, 9);
+    expect(variant?.scale.z).toBe(1);
+    expect(marker.look().variation).toEqual(variation);
+  });
+
+  it("varies two cities of the same style and scale differently", () => {
+    const london = makeMarker();
+    const paris = makeMarker({ ...CITY, id: "paris", name: "Paris" });
+    expect(london.look().modelId).toBe(paris.look().modelId);
+    expect(london.look().variation).not.toEqual(paris.look().variation);
   });
 
   it("reports its city's own position as the pick point (#420)", () => {
@@ -251,21 +200,40 @@ describe("CityMarker (stand-in, no loader)", () => {
 // ===========================================
 
 describe("CityMarker (settlement model, #1155)", () => {
-  it("loads the settlement for the city's scale under the visual, reporting glb", async () => {
+  it("loads the settlement for the region's style and the city's scale under the variant, reporting glb", async () => {
     const loader = fakeLoader();
     const marker = makeMarker({ ...CITY, scale: "town" }, loader);
     expect(marker.look().model).toBe("loading");
     await settled();
-    expect(loader.asked).toEqual(["overworld.settlement.town"]);
+    expect(loader.asked).toEqual(["overworld.settlement.european.town"]);
     expect(marker.usesModel()).toBe(true);
     expect(marker.look().model).toBe("glb");
+    expect(marker.look().style).toBe("european");
+    expect(marker.look().modelId).toBe("overworld.settlement.european.town");
     const settlement = named(marker, "city-settlement-london");
-    expect(settlement?.parent?.name).toBe("city-visual-london");
+    expect(settlement?.parent?.name).toBe("city-variant-london");
     expect(named(marker, "city-stand-in-london")).toBeUndefined();
   });
 
+  it("gives Tokyo and London different models at the same scale", async () => {
+    const loader = fakeLoader();
+    makeMarker(CITY, loader);
+    makeMarker(
+      { ...CITY, id: "tokyo", name: "Tokyo", regionId: "east-asia" },
+      loader,
+    );
+    await settled();
+    expect(loader.asked).toEqual([
+      "overworld.settlement.european.city",
+      "overworld.settlement.east-asian.city",
+    ]);
+  });
+
   it("reports a placeholder when the loader fell back to a box", async () => {
-    const marker = makeMarker(CITY, fakeLoader(["overworld.settlement.city"]));
+    const marker = makeMarker(
+      CITY,
+      fakeLoader(["overworld.settlement.european.city"]),
+    );
     await settled();
     expect(marker.look().model).toBe("placeholder");
     expect(marker.usesModel()).toBe(true);
@@ -278,12 +246,12 @@ describe("CityMarker (settlement model, #1155)", () => {
     marker.setMission(true);
     await settled();
     expect(loader.asked).toEqual([
-      "overworld.settlement.rural",
-      "overworld.settlement-eggs.rural",
+      "overworld.settlement.european.rural",
+      "overworld.settlement-eggs.european.rural",
     ]);
     const eggs = named(marker, "city-eggs-london");
     expect(eggs).toBeDefined();
-    expect(eggs?.parent?.name).toBe("city-visual-london");
+    expect(eggs?.parent?.name).toBe("city-variant-london");
     expect(eggs?.position.toArray()).toEqual([0, 0, 0]);
     expect(marker.look().mission).toBe(true);
 
@@ -302,7 +270,7 @@ describe("CityMarker (settlement model, #1155)", () => {
     let finish!: (model: Object3D) => void;
     const marker = makeMarker(CITY, {
       load: (id) =>
-        id === "overworld.settlement.city"
+        id === "overworld.settlement.european.city"
           ? Promise.resolve(new Group())
           : new Promise<Object3D>((resolve) => {
               finish = resolve;

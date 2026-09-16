@@ -20,10 +20,10 @@ import { CAMERA_ZOOM } from "../model/camera-state";
 import type { MapSceneState } from "../model/map-scene-state";
 import type { ModelLoader } from "../model/model-loader";
 import { OVERWORLD_SCENE_CONFIG } from "../model/overworld-scene-config";
-import { INFESTATION_RAMP } from "../view/city-marker";
 import { projectEquirectangular } from "../../overworld/service/map-projection";
 import { OrthographicCameraRig } from "./orthographic-camera-rig";
 import { layoutToWorld } from "./overworld-layout";
+import { INFESTATION_RAMP } from "../view/infestation-ramp";
 import { OverworldSceneBuilder } from "./overworld-scene-builder";
 
 function rampStop(index: number): number {
@@ -211,14 +211,19 @@ describe("OverworldSceneBuilder", () => {
           ?.children,
       ).toBeDefined();
     }
-    const london = EARTH_MAP.cities.find((city) => city.id === "london");
     expect(
       markerOf(builder, "london").getObjectByName("city-settlement-london")
         ?.name,
     ).toBe("city-settlement-london");
-    expect(models.asked).toContain(
-      `overworld.settlement.${london?.scale ?? ""}`,
+    // London draws in the European family, Tokyo in the East Asian one.
+    expect(builder.markerLook("london")?.modelId).toBe(
+      "overworld.settlement.european.city",
     );
+    expect(builder.markerLook("tokyo")?.modelId).toBe(
+      "overworld.settlement.east-asian.city",
+    );
+    expect(models.asked).toContain("overworld.settlement.european.city");
+    expect(models.asked).toContain("overworld.settlement.east-asian.city");
   });
 
   it("adds the egg overlay to a city with a clearance mission on offer and removes it after (#1155)", async () => {
@@ -314,20 +319,18 @@ describe("OverworldSceneBuilder", () => {
     expect(disposed).toEqual([]);
   });
 
-  it("update recolours markers in place without rebuilding", () => {
+  it("update leaves the markers in place and carries infestation to the region fill, not the marker", () => {
     const builder = new OverworldSceneBuilder();
     builder.build(EARTH_MAP);
     const before = [...builder.root.children];
     const london = markerOf(builder, "london");
-    const halo = london.getObjectByName("city-halo-london") as Mesh;
-    const material = halo.material as MeshBasicMaterial;
-    expect(material.color.getHex()).toBe(rampStop(0));
+    expect(london.getObjectByName("city-halo-london")).toBeUndefined();
 
     builder.update(stateOf(withInfestation(EARTH_MAP, "london", 100)));
 
-    expect(material.color.getHex()).toBe(rampStop(3));
     expect(builder.root.children).toEqual(before);
     expect(markerOf(builder, "london")).toBe(london);
+    expect(london.getObjectByName("city-halo-london")).toBeUndefined();
   });
 
   it("fills a region with its worst city, not its average (#440)", () => {
@@ -429,7 +432,10 @@ describe("OverworldSceneBuilder", () => {
     builder.build(EARTH_MAP);
     const rig = makeCamera(builder);
     const ndcOf = (lon: number, lat: number): { x: number; y: number } => {
-      const world = layoutToWorld(projectEquirectangular(lat, lon), OVERWORLD_SCENE_CONFIG);
+      const world = layoutToWorld(
+        projectEquirectangular(lat, lon),
+        OVERWORLD_SCENE_CONFIG,
+      );
       const ndc = new Vector3(world.x, 0, world.z).project(rig.camera);
       return { x: ndc.x, y: ndc.y };
     };
@@ -442,14 +448,18 @@ describe("OverworldSceneBuilder", () => {
     expect(builder.pickRegion(ndcOf(-150, 0), rig.camera)).toBeUndefined();
     expect(builder.pickRegion(ndcOf(-30, 30), rig.camera)).toBeUndefined();
     expect(builder.pickRegion(ndcOf(0, -85), rig.camera)).toBeUndefined();
-    expect(builder.pickRegion({ x: -0.999, y: 0.999 }, rig.camera)).toBeUndefined();
+    expect(
+      builder.pickRegion({ x: -0.999, y: 0.999 }, rig.camera),
+    ).toBeUndefined();
   });
 
   it("lights a region selected on its own, and its hover, without a city (#1155)", () => {
     const builder = new OverworldSceneBuilder();
     builder.build(EARTH_MAP);
     const outline = outlineOf(builder);
-    const hover = builder.root.getObjectByName("territory-hover") as LineSegments;
+    const hover = builder.root.getObjectByName(
+      "territory-hover",
+    ) as LineSegments;
 
     builder.setSelectedRegion("east-asia");
     expect(builder.getSelectedRegion()).toBe("east-asia");
@@ -463,9 +473,7 @@ describe("OverworldSceneBuilder", () => {
     // Hovering a city lights its region the same way.
     builder.setHoveredRegion(undefined);
     builder.setHovered("london");
-    expect(builder.regionTerritories()?.hoveredRegion()).toBe(
-      "western-europe",
-    );
+    expect(builder.regionTerritories()?.hoveredRegion()).toBe("western-europe");
 
     // A city selection wins over the bare region only when the bare one is cleared.
     builder.setSelected("london");
@@ -493,8 +501,8 @@ describe("OverworldSceneBuilder", () => {
     builder.build(EARTH_MAP);
     const body = (id: string): Object3D =>
       markerOf(builder, id).getObjectByName(`city-visual-${id}`)!;
-    const ring = (id: string): boolean =>
-      markerOf(builder, id).getObjectByName(`city-ring-${id}`)?.visible ??
+    const brackets = (id: string): boolean =>
+      markerOf(builder, id).getObjectByName(`city-brackets-${id}`)?.visible ??
       false;
 
     builder.setHovered("london");
@@ -508,11 +516,11 @@ describe("OverworldSceneBuilder", () => {
 
     builder.setSelected("sydney");
     expect(builder.getSelected()).toBe("sydney");
-    expect(ring("sydney")).toBe(true);
-    expect(ring("london")).toBe(false);
+    expect(brackets("sydney")).toBe(true);
+    expect(brackets("london")).toBe(false);
     builder.setSelected("london");
-    expect(ring("sydney")).toBe(false);
-    expect(ring("london")).toBe(true);
+    expect(brackets("sydney")).toBe(false);
+    expect(brackets("london")).toBe(true);
   });
 
   it("keeps the selection across an update", () => {
@@ -521,7 +529,7 @@ describe("OverworldSceneBuilder", () => {
     builder.setSelected("london");
     builder.update(stateOf(withInfestation(EARTH_MAP, "london", 40)));
     const ring = markerOf(builder, "london").getObjectByName(
-      "city-ring-london",
+      "city-brackets-london",
     );
     expect(ring?.visible).toBe(true);
   });

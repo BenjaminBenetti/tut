@@ -6,7 +6,7 @@
         [--footprint 1x1] [--render docs/design/renders] [--samples 32] [--size 640] \
         [--max-triangles 4000] [--no-register] [--out-root public/assets/models]
 
-The model script must define ``build()`` that adds objects with ``bpy_kit``
+The model script must define ``build()`` (or ``build(**kwargs)``, fed by ``--build-arg key=value``) that adds objects with ``bpy_kit``
 helpers (feet on z = 0, front facing -Y). Optional module constants
 ``FOOTPRINT = (w, d)`` and ``SOCKETS`` are read if present; sockets are also
 discovered from ``socket_*`` empties.
@@ -60,6 +60,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--size", type=int, default=640)
     parser.add_argument("--max-triangles", type=int, default=4000)
     parser.add_argument("--no-register", action="store_true")
+    parser.add_argument(
+        "--build-arg",
+        action="append",
+        default=[],
+        metavar="KEY=VALUE",
+        help="keyword argument passed to the script's build(); repeatable (a parametrised script builds one variant per run)",
+    )
     parser.add_argument(
         "--no-textured",
         action="store_true",
@@ -179,7 +186,7 @@ def main() -> None:
     started = time.time()
     bpy_kit.reset_scene()
     module = load_model_module(os.path.abspath(args.script))
-    module.build()
+    module.build(**dict(arg.split("=", 1) for arg in args.build_arg))
     footprint = args.footprint or "x".join(str(v) for v in getattr(module, "FOOTPRINT", (1, 1)))
     w, d = (float(v) for v in footprint.lower().split("x"))
     lo, hi = bpy_kit.bounds()

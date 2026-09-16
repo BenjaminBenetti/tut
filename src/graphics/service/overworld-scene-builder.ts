@@ -9,7 +9,6 @@ import {
   MeshStandardMaterial,
   Plane,
   Raycaster,
-  RingGeometry,
   Vector2,
   Vector3,
 } from "three";
@@ -32,11 +31,13 @@ import type { OverworldSceneAssets } from "../model/overworld-scene-assets";
 import { NO_OVERWORLD_ASSETS } from "../model/overworld-scene-assets";
 import type { OverworldSceneConfig } from "../model/overworld-scene-config";
 import { OVERWORLD_SCENE_CONFIG } from "../model/overworld-scene-config";
+import type { SettlementStyleSource } from "../model/settlement-style";
 import type {
   CityMarkerGeometry,
   CityMarkerLookReport,
 } from "../view/city-marker";
 import { CITY_STAND_IN_HEIGHT, CityMarker } from "../view/city-marker";
+import { cornerBracketGeometry } from "../view/corner-bracket-geometry";
 import { EarthWireframe } from "../view/earth-wireframe";
 import type {
   InstallationLook,
@@ -52,6 +53,7 @@ import { coastlineSegments } from "./coastline-segments";
 import { createFalloffTexture } from "./falloff-texture";
 import { isOnLand } from "./land-query";
 import { layoutToWorld, mapCentre } from "./overworld-layout";
+import { SettlementStyleResolver } from "./settlement-style-resolver";
 import type { TerritoryCell, TerritorySeed } from "./region-territory-service";
 import { cellAt, computeTerritories } from "./region-territory-service";
 
@@ -67,6 +69,8 @@ export interface OverworldSceneBuilderOptions {
   readonly assets?: OverworldSceneAssets;
   /** Coastlines to draw the Earth from; defaults to the shipped Natural Earth set. */
   readonly coastlines?: EarthCoastlines;
+  /** Which architectural family each region's settlements wear; defaults to the shipped table (#1155). */
+  readonly styles?: SettlementStyleSource;
 }
 
 // ===========================================
@@ -86,7 +90,7 @@ const BOX_TOP_FACE = 2;
 const GROUND_PLANE = new Plane(new Vector3(0, 1, 0), 0);
 
 /**
- * Radial segments for halos, rings and pick solids. Deliberately not a
+ * Radial segments for pick solids. Deliberately not a
  * multiple of 8: the camera always looks along a 45° diagonal, and with
  * 8 or 16 segments a cap edge lies exactly on that diagonal, so a ray
  * through a marker's centre hits the shared edge and both triangles
@@ -95,27 +99,19 @@ const GROUND_PLANE = new Plane(new Vector3(0, 1, 0), 0);
 const MARKER_SEGMENTS = 12;
 
 /**
- * Halo and selection ring radii relative to half the settlement
- * footprint: the halo is a thin line hugging the model's pad, the ring
- * a thin line just outside it, each over a wider faint glow band, and
- * all of it stays clear of a neighbouring settlement half a unit away.
+ * Corner brackets relative to half the settlement footprint: just
+ * outside the model's plot, arms a quarter of the side long, thin, and
+ * clear of a neighbouring settlement half a unit away.
  *
  * ```
- *   pad ─┤ glow ├─ halo ─┤   ring glow   ├─ ring
- *   1.0  1.02  1.10 1.17 1.30   1.40 1.47  1.58
+ *   ┌─      ─┐   outer edge at 1.25 × half
+ *   │  plot  │   arm 0.3 × half, 0.05 × half thick
+ *   └─      ─┘
  * ```
  */
-const HALO_INNER_SCALE = 1.1;
-const HALO_OUTER_SCALE = 1.17;
-const HALO_GLOW_INNER_SCALE = 1.02;
-const HALO_GLOW_OUTER_SCALE = 1.3;
-const RING_INNER_SCALE = 1.4;
-const RING_OUTER_SCALE = 1.47;
-const RING_GLOW_INNER_SCALE = 1.3;
-const RING_GLOW_OUTER_SCALE = 1.58;
-
-/** Segments round a halo or ring: enough that it is a circle, not a polygon, at the closest zoom. */
-const RING_SEGMENTS = MARKER_SEGMENTS * 4;
+const BRACKET_SCALE = 1.25;
+const BRACKET_ARM_SCALE = 0.3;
+const BRACKET_THICKNESS_SCALE = 0.05;
 
 /**
  * The map's own fill light: a cool sky from `ui-info` over the near-black
@@ -169,6 +165,7 @@ export class OverworldSceneBuilder
   private readonly claimableLand: readonly GroundPolygon[];
   private readonly raycaster = new Raycaster();
   private readonly markerGeometry: CityMarkerGeometry;
+  private readonly styles: SettlementStyleSource;
   private readonly installationStyle: InstallationLook;
   private readonly markers = new Map<CityId, CityMarker>();
   private readonly targetToCity = new Map<Object3D, CityId>();
@@ -208,13 +205,13 @@ export class OverworldSceneBuilder
     this.root = new Group();
     this.root.name = "overworld-map";
     const half = config.settlementFootprint / 2;
-    const band = (inner: number, outer: number): RingGeometry =>
-      new RingGeometry(half * inner, half * outer, RING_SEGMENTS);
+    this.styles = options.styles ?? new SettlementStyleResolver();
     this.markerGeometry = {
-      halo: band(HALO_INNER_SCALE, HALO_OUTER_SCALE),
-      haloGlow: band(HALO_GLOW_INNER_SCALE, HALO_GLOW_OUTER_SCALE),
-      ring: band(RING_INNER_SCALE, RING_OUTER_SCALE),
-      ringGlow: band(RING_GLOW_INNER_SCALE, RING_GLOW_OUTER_SCALE),
+      brackets: cornerBracketGeometry(
+        half * BRACKET_SCALE,
+        half * BRACKET_ARM_SCALE,
+        half * BRACKET_THICKNESS_SCALE,
+      ),
       pick: new CylinderGeometry(
         half,
         half,
@@ -276,6 +273,7 @@ export class OverworldSceneBuilder
         base,
         {
           geometry: this.markerGeometry,
+          styles: this.styles,
           models: this.assets.models,
           text: this.assets.text,
         },
@@ -295,19 +293,19 @@ export class OverworldSceneBuilder
   }
 
   /**
-   * Brings the scene up to date with a newer state: markers retinted
-   * and egg-cued in place, installations placed, moved, dimmed or
-   * removed, territories retinted. Nothing is rebuilt unless the set
-   * of cities changed, which falls back to `build` first.
+   * Brings the scene up to date with a newer state: markers egg-cued
+   * in place, installations placed, moved, dimmed or removed,
+   * territories retinted. Nothing is rebuilt unless the set of cities
+   * changed, which falls back to `build` first.
    */
   update(state: MapSceneState): void {
     if (!this.hasSameCities(state.map)) {
       this.build(state.map);
     }
     for (const city of state.map.cities) {
-      const marker = this.markers.get(city.id);
-      marker?.setInfestation(city.infestation);
-      marker?.setMission(state.missionCueCityIds.has(city.id));
+      this.markers
+        .get(city.id)
+        ?.setMission(state.missionCueCityIds.has(city.id));
     }
     this.installations?.sync(state.deployables);
     this.applyRegionInfestation(state.map);
@@ -344,10 +342,7 @@ export class OverworldSceneBuilder
    */
   dispose(): void {
     this.clear();
-    this.markerGeometry.halo.dispose();
-    this.markerGeometry.haloGlow.dispose();
-    this.markerGeometry.ring.dispose();
-    this.markerGeometry.ringGlow.dispose();
+    this.markerGeometry.brackets.dispose();
     this.markerGeometry.pick.dispose();
     this.markerGeometry.standIn.dispose();
     this.installationStyle.standIn.dispose();

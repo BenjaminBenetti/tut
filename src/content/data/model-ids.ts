@@ -23,6 +23,10 @@ export const MODEL_IDS = [
   "building.residential-window-shutters",
   "building.wall-ac-unit",
   "building.chimney",
+  // Strategic-map deployables (#1153)
+  "overworld.deployable.defensive-battery",
+  "overworld.deployable.repellent-dispersal",
+  "overworld.deployable.sensor-array",
   // Units (TDF)
   "tdf.infantry.engineer",
   "tdf.infantry.medic",

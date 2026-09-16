@@ -1077,4 +1077,28 @@ export const MODEL_MANIFEST = {
     sockets: [],
     quality: "final",
   },
+  "overworld.deployable.defensive-battery": {
+    category: "props",
+    path: "assets/models/props/overworld-deployable-defensive-battery.glb",
+    footprint: { w: 0.45, d: 0.45 },
+    height: 0.29,
+    sockets: [],
+    quality: "final",
+  },
+  "overworld.deployable.repellent-dispersal": {
+    category: "props",
+    path: "assets/models/props/overworld-deployable-repellent-dispersal.glb",
+    footprint: { w: 0.45, d: 0.45 },
+    height: 0.29,
+    sockets: [],
+    quality: "final",
+  },
+  "overworld.deployable.sensor-array": {
+    category: "props",
+    path: "assets/models/props/overworld-deployable-sensor-array.glb",
+    footprint: { w: 0.45, d: 0.45 },
+    height: 0.29,
+    sockets: [],
+    quality: "final",
+  },
 } as const satisfies ModelManifest;

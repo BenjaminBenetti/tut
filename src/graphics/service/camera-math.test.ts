@@ -6,6 +6,9 @@ import {
   DEFAULT_CAMERA_STATE,
   ISOMETRIC_ELEVATION_RAD,
   ISOMETRIC_PROJECTION,
+  STRATEGIC_ELEVATION_RAD,
+  STRATEGIC_PITCH_RAD,
+  STRATEGIC_PROJECTION,
   TOP_DOWN_PROJECTION,
   ZOOM_FIT_FLOOR,
 } from "../model/camera-state";
@@ -433,6 +436,48 @@ describe("the top-down projection", () => {
       moved.target.z - TARGET.z,
     );
     expect(walked).toBeCloseTo(1 / Math.sin(ISOMETRIC_ELEVATION_RAD));
+  });
+});
+
+describe("the strategic projection (ADR 0005 §5)", () => {
+  const strategic = () =>
+    createCameraState({ target: TARGET, projection: STRATEGIC_PROJECTION });
+
+  it("is pitched 35° back from straight down", () => {
+    expect(STRATEGIC_PITCH_RAD).toBeCloseTo((35 * Math.PI) / 180);
+    expect(STRATEGIC_PROJECTION.elevationRad).toBe(STRATEGIC_ELEVATION_RAD);
+    expect(STRATEGIC_ELEVATION_RAD).toBeCloseTo(Math.PI / 2 - STRATEGIC_PITCH_RAD);
+  });
+
+  it("puts the camera south of the target, above it, never east or west", () => {
+    const at = cameraPosition(strategic(), 100);
+    expect(at.x).toBeCloseTo(TARGET.x);
+    expect(at.z).toBeCloseTo(TARGET.z + 100 * Math.cos(STRATEGIC_ELEVATION_RAD));
+    expect(at.y).toBeCloseTo(TARGET.y + 100 * Math.sin(STRATEGIC_ELEVATION_RAD));
+    expect(at.z).toBeGreaterThan(TARGET.z);
+  });
+
+  it("still reads the map north up and east right", () => {
+    const { right, up } = groundScreenAxes(0, STRATEGIC_PROJECTION);
+    expect(right.x).toBeCloseTo(1);
+    expect(right.z).toBeCloseTo(0);
+    expect(up.x).toBeCloseTo(0);
+    expect(up.z).toBeCloseTo(-1);
+  });
+
+  it("hands three's lookAt world +y, since the view is no longer parallel to it", () => {
+    expect(screenUpVector(strategic())).toEqual({ x: 0, y: 1, z: 0 });
+  });
+
+  it("pans east one unit per zoom pixel and north by the foreshortening", () => {
+    const state = strategic();
+    const moved = panBy(state, 2 * state.zoom, -3 * state.zoom);
+    expect(moved.target.x).toBeCloseTo(TARGET.x + 2);
+    // Three screen-units up covers more ground than three across: the
+    // plane is foreshortened by sin(elevation) up the screen.
+    expect(moved.target.z).toBeCloseTo(
+      TARGET.z - 3 / Math.sin(STRATEGIC_ELEVATION_RAD),
+    );
   });
 });
 

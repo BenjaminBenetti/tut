@@ -4,6 +4,7 @@ import { expect, test } from "@playwright/test";
 
 import type { TutTestHooks } from "../src/app/model/test-hooks";
 import { EARTH_COASTLINES } from "../src/graphics/data/earth-coastlines";
+import { STRATEGIC_PROJECTION } from "../src/graphics/model/camera-state";
 import { OVERWORLD_SCENE_CONFIG } from "../src/graphics/model/overworld-scene-config";
 import { projectCoastlines } from "../src/graphics/service/coastline-projection";
 import { layoutToWorld } from "../src/graphics/service/overworld-layout";
@@ -287,9 +288,11 @@ test("coastal city markers stand on the drawn coastline", async ({ page }) => {
 
   const anchors = await markerAnchors(page, [...FIT_PAIR, ...COASTAL_SAMPLE]);
   const fit = fitScreen(anchors);
-  // A 2:1 plane drawn with one scale: the two axes agree.
-  expect(fit.scaleX / fit.scaleY).toBeGreaterThan(1.95);
-  expect(fit.scaleX / fit.scaleY).toBeLessThan(2.05);
+  // A 2:1 plane drawn with one scale, foreshortened up the screen by
+  // the strategic camera's pitch (ADR 0005 §5): the two axes agree.
+  const expectedRatio = 2 / Math.sin(STRATEGIC_PROJECTION.elevationRad);
+  expect(fit.scaleX / fit.scaleY).toBeGreaterThan(expectedRatio - 0.05);
+  expect(fit.scaleX / fit.scaleY).toBeLessThan(expectedRatio + 0.05);
 
   const cell = await page.locator("#map-viewport").boundingBox();
   if (!cell) {

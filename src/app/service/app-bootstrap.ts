@@ -9,7 +9,7 @@ import {
 } from "../../graphics/controller/picking-controller";
 import {
   CAMERA_ZOOM,
-  TOP_DOWN_PROJECTION,
+  STRATEGIC_PROJECTION,
 } from "../../graphics/model/camera-state";
 import { MODEL_MANIFEST } from "../../graphics/data/model-manifest";
 import { OVERWORLD_SCENE_CONFIG } from "../../graphics/model/overworld-scene-config";
@@ -324,9 +324,10 @@ async function composeScene(
   const rig = new OrthographicCameraRig({
     target: mapScene.centre,
     zoom: CAMERA_ZOOM.min,
-    // The strategic map is looked at straight on with north up, the way
-    // a map is read, rather than from an isometric corner (#420).
-    projection: TOP_DOWN_PROJECTION,
+    // The strategic map is looked at from the south with north up, the
+    // way a map is read, pitched back just enough that the settlements
+    // show their skylines (#420, ADR 0005 §5).
+    projection: STRATEGIC_PROJECTION,
     // The target stays on the map plate, so a held pan key can never
     // carry Earth off screen (#218).
     bounds: {

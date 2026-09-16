@@ -23,7 +23,12 @@ export function assignRoomPurposes(
   );
   const ordered = rng
     .shuffle(privateRooms)
-    .sort((a, b) => distanceToRoom(a, entrance) - distanceToRoom(b, entrance));
+    .sort(
+      (a, b) =>
+        (a.layoutRole === "arrival" ? -1 : 0) -
+          (b.layoutRole === "arrival" ? -1 : 0) ||
+        distanceToRoom(a, entrance) - distanceToRoom(b, entrance),
+    );
   const kinds = new Map<string, string>();
   const arrival = ordered.shift();
   if (arrival !== undefined) {
@@ -32,12 +37,26 @@ export function assignRoomPurposes(
       program?.arrival ?? (groundFloor ? RoomKindIds.HALL : RoomKindIds.ROOM),
     );
   }
+  const primary = [...(program?.primary ?? [])];
+  for (const room of [...ordered]) {
+    const use =
+      room.layoutSlot === undefined
+        ? undefined
+        : program?.roomSlots?.[room.layoutSlot];
+    if (use === undefined) continue;
+    kinds.set(room.id, use);
+    ordered.splice(ordered.indexOf(room), 1);
+    const supplied = primary.indexOf(use);
+    if (supplied !== -1) primary.splice(supplied, 1);
+  }
   if (
     program?.compact !== undefined &&
     privateRooms.length >= program.compact.minRooms
   ) {
     const compact = [...ordered].sort(
-      (a, b) => a.rect.w * a.rect.d - b.rect.w * b.rect.d,
+      (a, b) =>
+        a.rect.w * a.rect.d - b.rect.w * b.rect.d ||
+        distanceToRoom(b, entrance) - distanceToRoom(a, entrance),
     )[0];
     if (compact !== undefined) {
       kinds.set(compact.id, program.compact.kind);
@@ -45,12 +64,14 @@ export function assignRoomPurposes(
     }
   }
   const repeat = rng.shuffle(program?.repeat ?? [RoomKindIds.ROOM]);
+  ordered.sort(
+    (a, b) =>
+      (a.layoutRole === "main" ? -1 : 0) - (b.layoutRole === "main" ? -1 : 0),
+  );
   ordered.forEach((room, index) => {
     kinds.set(
       room.id,
-      program?.primary[index] ??
-        repeat[index % repeat.length] ??
-        RoomKindIds.ROOM,
+      primary[index] ?? repeat[index % repeat.length] ?? RoomKindIds.ROOM,
     );
   });
   return rooms.map((room) => ({

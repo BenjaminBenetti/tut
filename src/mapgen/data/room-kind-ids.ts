@@ -15,6 +15,13 @@ export const RoomKindIds = {
   STORAGE: "storage",
   /** A corridor that rooms open onto and stairs land in (#829). */
   CORRIDOR: "corridor",
+  GROCERY: "grocery",
+  BAKERY_CAFE: "bakery-cafe",
+  PHARMACY: "pharmacy",
+  CLOTHING: "clothing",
+  ELECTRONICS: "electronics",
+  HARDWARE: "hardware",
+  BOOKSHOP: "bookshop",
   RETAIL: "retail",
   OFFICE: "office",
   RECEPTION: "reception",

@@ -98,49 +98,49 @@ interface Golden {
   readonly checksum: number;
 }
 
-// Repinned for purposeful room furnishing and the nearby outdoor objective fallback.
+// Repinned for balanced businesses, entrance-oriented architecture and specialist shop furniture.
 const GOLDENS: readonly Golden[] = [
   {
     seed: "golden-temperate",
     biome: "temperate",
     settlement: "town",
     size: "medium",
-    checksum: 976087724,
+    checksum: 4166501603,
   },
   {
     seed: "golden-snowy",
     biome: "snowy",
     settlement: "town",
     size: "medium",
-    checksum: 1898763256,
+    checksum: 1950351720,
   },
   {
     seed: "golden-desert",
     biome: "desert",
     settlement: "town",
     size: "medium",
-    checksum: 2083595298,
+    checksum: 1959862920,
   },
   {
     seed: "golden-coastal",
     biome: "coastal",
     settlement: "town",
     size: "medium",
-    checksum: 1293748405,
+    checksum: 3725587845,
   },
   {
     seed: "golden-rural",
     biome: "temperate",
     settlement: "rural",
     size: "small",
-    checksum: 2434824100,
+    checksum: 537109768,
   },
   {
     seed: "golden-city",
     biome: "desert",
     settlement: "city",
     size: "large",
-    checksum: 2034269113,
+    checksum: 3534312375,
   },
 ];
 

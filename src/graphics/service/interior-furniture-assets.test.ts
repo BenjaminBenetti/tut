@@ -15,6 +15,16 @@ import { resolveMapModels } from "./map-model-resolver";
 
 /** The new interior kit; dimensions, cover and asset paths come from production data. */
 const FURNITURE_KINDS = [
+  PropKindIds.PRODUCE_BIN,
+  PropKindIds.CHILLED_DISPLAY,
+  PropKindIds.BAKERY_CASE,
+  PropKindIds.CAFE_TABLE,
+  PropKindIds.COFFEE_COUNTER,
+  PropKindIds.CLOTHING_RACK,
+  PropKindIds.ELECTRONICS_DISPLAY,
+  PropKindIds.HARDWARE_SHELF,
+  PropKindIds.PHARMACY_SHELF,
+
   PropKindIds.RETAIL_SHELF,
   PropKindIds.CHECKOUT,
   PropKindIds.DESK_COMPUTER,

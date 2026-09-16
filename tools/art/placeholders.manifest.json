@@ -1986,5 +1986,131 @@
     "quality": "final",
     "triangles": 228,
     "bytes": 18900
+  },
+  {
+    "id": "prop.produce-bin",
+    "category": "props",
+    "path": "assets/models/props/prop-produce-bin.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.51,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 292,
+    "bytes": 30432
+  },
+  {
+    "id": "prop.cafe-table",
+    "category": "props",
+    "path": "assets/models/props/prop-cafe-table.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.5,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 264,
+    "bytes": 23368
+  },
+  {
+    "id": "prop.coffee-counter",
+    "category": "props",
+    "path": "assets/models/props/prop-coffee-counter.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.77,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 300,
+    "bytes": 27816
+  },
+  {
+    "id": "prop.clothing-rack",
+    "category": "props",
+    "path": "assets/models/props/prop-clothing-rack.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.05,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 268,
+    "bytes": 24828
+  },
+  {
+    "id": "prop.electronics-display",
+    "category": "props",
+    "path": "assets/models/props/prop-electronics-display.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.68,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 252,
+    "bytes": 24812
+  },
+  {
+    "id": "prop.chilled-display",
+    "category": "props",
+    "path": "assets/models/props/prop-chilled-display.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.1,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 300,
+    "bytes": 27064
+  },
+  {
+    "id": "prop.bakery-case",
+    "category": "props",
+    "path": "assets/models/props/prop-bakery-case.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 0.74,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 300,
+    "bytes": 30092
+  },
+  {
+    "id": "prop.hardware-shelf",
+    "category": "props",
+    "path": "assets/models/props/prop-hardware-shelf.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.07,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 300,
+    "bytes": 25200
+  },
+  {
+    "id": "prop.pharmacy-shelf",
+    "category": "props",
+    "path": "assets/models/props/prop-pharmacy-shelf.glb",
+    "footprint": {
+      "w": 1,
+      "d": 1
+    },
+    "height": 1.12,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 292,
+    "bytes": 25780
   }
 ]

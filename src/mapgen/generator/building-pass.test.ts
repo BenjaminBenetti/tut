@@ -269,6 +269,33 @@ describe("BuildingPass", () => {
     expect(tall).toBeGreaterThan(0);
   });
 
+  it.each(["town", "city"] as const)(
+    "balances actual %s lots between shops, workplaces and residential buildings",
+    (settlement) => {
+      let total = 0;
+      let homes = 0;
+      let shops = 0;
+      let workplaces = 0;
+      for (const biome of ["temperate", "snowy", "coastal"] as const) {
+        for (let i = 0; i < 8; i++) {
+          const { buildings } = run(biome, settlement, `business-mix-${i}`);
+          total += buildings.length;
+          homes += buildings.filter(
+            (b) => b.kind === "house" || b.kind === "apartment",
+          ).length;
+          shops += buildings.filter((b) => b.kind === "shop").length;
+          workplaces += buildings.filter(
+            (b) => b.kind === "tower" || b.kind === "warehouse",
+          ).length;
+        }
+      }
+      expect(homes / total).toBeGreaterThan(0.15);
+      expect(homes / total).toBeLessThan(0.45);
+      expect(shops / total).toBeGreaterThan(0.25);
+      expect(workplaces / total).toBeGreaterThan(0.2);
+    },
+  );
+
   it("mixes windows and solid walls", () => {
     const draft = run("desert", "town", "windows");
     const kinds = new Set<string>();

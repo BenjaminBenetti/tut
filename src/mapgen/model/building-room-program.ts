@@ -6,6 +6,15 @@ export interface BuildingRoomProgram {
   readonly primary: readonly string[];
   /** Uses repeated in seeded order after essential rooms have been assigned. */
   readonly repeat: readonly string[];
+  /** Uses tied to architectural slots, before remaining rooms are assigned. */
+  readonly roomSlots?: Readonly<Record<string, string>>;
   /** A service room assigned to the smallest private room on larger floors. */
   readonly compact?: { readonly kind: string; readonly minRooms: number };
+}
+
+/** A coherent business identity shared by all floors of one building. */
+export interface BuildingInteriorVariant {
+  readonly id: string;
+  readonly ground: BuildingRoomProgram;
+  readonly upper: BuildingRoomProgram;
 }

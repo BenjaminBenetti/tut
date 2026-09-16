@@ -15,12 +15,14 @@ export const BUILDING_ROOM_PROGRAMS: Readonly<
   house: {
     ground: {
       arrival: Room.LIVING_ROOM,
+      roomSlots: { kitchen: Room.KITCHEN, bedroom: Room.BEDROOM },
       primary: [Room.BEDROOM, Room.KITCHEN],
-      repeat: [Room.BEDROOM, Room.KITCHEN],
+      repeat: [Room.BEDROOM, Room.OFFICE],
       compact: { kind: Room.BATHROOM, minRooms: 4 },
     },
     upper: {
       arrival: Room.BEDROOM,
+      roomSlots: { kitchen: Room.BEDROOM, bedroom: Room.BEDROOM },
       primary: [Room.BATHROOM, Room.BEDROOM],
       repeat: [Room.BEDROOM, Room.OFFICE],
     },
@@ -28,12 +30,14 @@ export const BUILDING_ROOM_PROGRAMS: Readonly<
   apartment: {
     ground: {
       arrival: Room.LIVING_ROOM,
+      roomSlots: { kitchen: Room.KITCHEN, bedroom: Room.BEDROOM },
       primary: [Room.BEDROOM, Room.KITCHEN],
       repeat: [Room.BEDROOM, Room.LIVING_ROOM, Room.KITCHEN],
       compact: { kind: Room.BATHROOM, minRooms: 4 },
     },
     upper: {
       arrival: Room.LIVING_ROOM,
+      roomSlots: { kitchen: Room.KITCHEN, bedroom: Room.BEDROOM },
       primary: [Room.BEDROOM, Room.KITCHEN],
       repeat: [Room.BEDROOM, Room.LIVING_ROOM, Room.KITCHEN],
       compact: { kind: Room.BATHROOM, minRooms: 4 },
@@ -67,11 +71,13 @@ export const BUILDING_ROOM_PROGRAMS: Readonly<
   tower: {
     ground: {
       arrival: Room.RECEPTION,
+      roomSlots: { workfloor: Room.OFFICE },
       primary: [Room.OFFICE, Room.MEETING, Room.BREAK_ROOM],
       repeat: [Room.OFFICE, Room.OFFICE, Room.MEETING],
     },
     upper: {
       arrival: Room.OFFICE,
+      roomSlots: { workfloor: Room.OFFICE },
       primary: [Room.MEETING, Room.BREAK_ROOM, Room.OFFICE],
       repeat: [Room.OFFICE, Room.OFFICE, Room.MEETING],
     },

@@ -20,6 +20,126 @@ import type { KnownRoomKindId } from "./room-kind-ids";
 export const ROOM_FURNISHING: Readonly<
   Record<KnownRoomKindId, RoomFurnishing>
 > = {
+  grocery: furnishing("grocery", 4, 16, [
+    [
+      {
+        props: [Prop.PRODUCE_BIN],
+        zone: "aisle",
+        fallbackZone: "wall",
+        count: 2,
+      },
+      { props: [Prop.CHILLED_DISPLAY], zone: "wall", count: 2 },
+      { props: [Prop.CHECKOUT], zone: "counter", rearAccess: true, count: 1 },
+      { props: [Prop.RETAIL_SHELF], zone: "aisle", count: 6 },
+      { props: [Prop.PRODUCE_BIN], zone: "wall", count: 3 },
+    ],
+    [
+      { props: [Prop.CHILLED_DISPLAY], zone: "wall", count: 3 },
+      {
+        props: [Prop.PRODUCE_BIN],
+        zone: "aisle",
+        fallbackZone: "wall",
+        count: 2,
+      },
+      { props: [Prop.CHECKOUT], zone: "counter", rearAccess: true, count: 1 },
+      { props: [Prop.RETAIL_SHELF], zone: "wall", count: 5 },
+      { props: [Prop.PRODUCE_BIN], zone: "aisle", count: 3 },
+    ],
+  ]),
+  "bakery-cafe": furnishing("bakery-cafe", 5, 12, [
+    [
+      { props: [Prop.COFFEE_COUNTER], zone: "wall", count: 1 },
+      {
+        props: [Prop.BAKERY_CASE],
+        zone: "counter",
+        rearAccess: true,
+        count: 1,
+      },
+      {
+        props: [Prop.CAFE_TABLE],
+        zone: "center",
+        fallbackZone: "wall",
+        count: 5,
+        spacing: 2,
+      },
+      { props: [Prop.SOFA], zone: "wall", count: 2 },
+      { props: [Prop.PLANTER], zone: "corner", count: 2 },
+    ],
+    [
+      { props: [Prop.BAKERY_CASE], zone: "wall", count: 2 },
+      { props: [Prop.COFFEE_COUNTER], zone: "wall", count: 1 },
+      {
+        props: [Prop.CAFE_TABLE],
+        zone: "aisle",
+        fallbackZone: "wall",
+        count: 5,
+        spacing: 2,
+      },
+      { props: [Prop.PLANTER], zone: "corner", count: 2 },
+    ],
+  ]),
+  pharmacy: furnishing("pharmacy", 4, 12, [
+    [
+      { props: [Prop.PHARMACY_SHELF], zone: "wall", count: 3 },
+      { props: [Prop.CHECKOUT], zone: "counter", rearAccess: true, count: 1 },
+      { props: [Prop.PHARMACY_SHELF], zone: "aisle", count: 4 },
+      { props: [Prop.REFRIGERATOR], zone: "wall", count: 1 },
+      { props: [Prop.SOFA], zone: "wall", count: 1 },
+    ],
+  ]),
+  clothing: furnishing("clothing", 5, 12, [
+    [
+      {
+        props: [Prop.CLOTHING_RACK],
+        zone: "aisle",
+        fallbackZone: "wall",
+        count: 3,
+        spacing: 2,
+      },
+      { props: [Prop.CHECKOUT], zone: "counter", rearAccess: true, count: 1 },
+      { props: [Prop.CLOTHING_RACK], zone: "wall", count: 4 },
+      { props: [Prop.SOFA], zone: "wall", count: 1 },
+      { props: [Prop.PLANTER], zone: "corner", count: 2 },
+    ],
+  ]),
+  electronics: furnishing("electronics", 5, 12, [
+    [
+      {
+        props: [Prop.ELECTRONICS_DISPLAY],
+        zone: "aisle",
+        fallbackZone: "wall",
+        count: 3,
+        spacing: 2,
+      },
+      { props: [Prop.CHECKOUT], zone: "counter", rearAccess: true, count: 1 },
+      { props: [Prop.ELECTRONICS_DISPLAY], zone: "wall", count: 4 },
+      { props: [Prop.RETAIL_SHELF], zone: "wall", count: 2 },
+    ],
+  ]),
+  hardware: furnishing("hardware", 4, 16, [
+    [
+      { props: [Prop.HARDWARE_SHELF], zone: "wall", count: 3 },
+      { props: [Prop.WORKBENCH], zone: "wall", count: 1 },
+      { props: [Prop.CHECKOUT], zone: "counter", rearAccess: true, count: 1 },
+      { props: [Prop.HARDWARE_SHELF], zone: "aisle", count: 6 },
+      { props: [Prop.CRATE], zone: "wall", count: 3 },
+    ],
+  ]),
+  bookshop: furnishing("bookshop", 4, 14, [
+    [
+      { props: [Prop.BOOKCASE], zone: "wall", count: 3 },
+      { props: [Prop.CHECKOUT], zone: "counter", rearAccess: true, count: 1 },
+      {
+        props: [Prop.CAFE_TABLE],
+        zone: "center",
+        fallbackZone: "wall",
+        count: 1,
+      },
+      { props: [Prop.BOOKCASE], zone: "aisle", count: 5 },
+      { props: [Prop.SOFA], zone: "wall", count: 2 },
+      { props: [Prop.PLANTER], zone: "corner", count: 1 },
+    ],
+  ]),
   hall: furnishing("hall", 8, 3, [
     [
       { props: [Prop.SOFA], zone: "wall", count: 1 },
@@ -65,14 +185,14 @@ export const ROOM_FURNISHING: Readonly<
       { props: [Prop.WORKBENCH], zone: "wall", count: 1 },
     ],
   ]),
-  office: furnishing("office", 4, 7, [
+  office: furnishing("office", 4, 12, [
     [
-      { props: [Prop.DESK_COMPUTER], zone: "wall", count: 3, spacing: 2 },
+      { props: [Prop.DESK_COMPUTER], zone: "wall", count: 6, spacing: 2 },
       { props: [Prop.FILING_CABINET], zone: "wall", count: 2 },
       { props: [Prop.PLANTER], zone: "corner", count: 1 },
     ],
     [
-      { props: [Prop.DESK_COMPUTER], zone: "aisle", count: 2, spacing: 2 },
+      { props: [Prop.DESK_COMPUTER], zone: "aisle", count: 4, spacing: 2 },
       { props: [Prop.DESK_COMPUTER], zone: "wall", count: 1 },
       { props: [Prop.FILING_CABINET], zone: "wall", count: 2 },
       { props: [Prop.PLANTER], zone: "corner", count: 1 },
@@ -141,7 +261,7 @@ export const ROOM_FURNISHING: Readonly<
       { props: [Prop.DESK_COMPUTER], zone: "wall", count: 1 },
     ],
   ]),
-  kitchen: furnishing("kitchen", 4, 6, [
+  kitchen: furnishing("kitchen", 3, 6, [
     [
       { props: [Prop.KITCHEN_COUNTER], zone: "wall", count: 1 },
       { props: [Prop.REFRIGERATOR], zone: "wall", count: 1 },
@@ -154,7 +274,7 @@ export const ROOM_FURNISHING: Readonly<
       { props: [Prop.PLANTER], zone: "corner", count: 1 },
     ],
   ]),
-  bathroom: furnishing("bathroom", 4, 3, [
+  bathroom: furnishing("bathroom", 3, 3, [
     [
       { props: [Prop.BATHROOM_VANITY], zone: "wall", count: 1 },
       { props: [Prop.TOILET], zone: "wall", count: 1 },

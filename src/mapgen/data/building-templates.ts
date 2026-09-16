@@ -1,6 +1,8 @@
 import type { BuildingTemplate } from "../model/building-template";
 import type { KnownBuildingKindId } from "./building-kind-ids";
 import { BUILDING_ROOM_PROGRAMS } from "./building-room-programs";
+import { ARCHITECTURAL_PLANS } from "./architectural-plans";
+import { SHOP_INTERIOR_VARIANTS } from "./shop-interiors";
 
 // ===========================================
 // Building templates
@@ -37,22 +39,25 @@ export const BUILDING_TEMPLATES: Readonly<
     interior: {
       roomSize: { min: 3, max: 5 },
       corridorWidth: 1,
+      architecture: ARCHITECTURAL_PLANS.house,
       roomPrograms: BUILDING_ROOM_PROGRAMS.house,
     },
   },
   shop: {
     id: "shop",
-    footprintWidth: { min: 8, max: 12 },
+    footprintWidth: { min: 7, max: 12 },
     footprintDepth: { min: 6, max: 10 },
     floors: { min: 1, max: 2 },
     roof: "flat",
     roofWalkable: true,
     windowDensity: 0.3,
-    scales: ["town", "city"],
+    scales: ["rural", "town", "city"],
     // A shop is its floor and the rooms behind it; no corridor.
     interior: {
       roomSize: { min: 4, max: 7 },
       corridorWidth: 0,
+      architecture: ARCHITECTURAL_PLANS.shop,
+      roomProgramVariants: SHOP_INTERIOR_VARIANTS,
       roomPrograms: BUILDING_ROOM_PROGRAMS.shop,
     },
   },
@@ -69,6 +74,7 @@ export const BUILDING_TEMPLATES: Readonly<
     interior: {
       roomSize: { min: 6, max: 10 },
       corridorWidth: 0,
+      architecture: ARCHITECTURAL_PLANS.warehouse,
       roomPrograms: BUILDING_ROOM_PROGRAMS.warehouse,
     },
   },
@@ -84,6 +90,7 @@ export const BUILDING_TEMPLATES: Readonly<
     interior: {
       roomSize: { min: 3, max: 5 },
       corridorWidth: 2,
+      architecture: ARCHITECTURAL_PLANS.apartment,
       roomPrograms: BUILDING_ROOM_PROGRAMS.apartment,
     },
   },
@@ -99,6 +106,7 @@ export const BUILDING_TEMPLATES: Readonly<
     interior: {
       roomSize: { min: 3, max: 5 },
       corridorWidth: 2,
+      architecture: ARCHITECTURAL_PLANS.tower,
       roomPrograms: BUILDING_ROOM_PROGRAMS.tower,
     },
   },

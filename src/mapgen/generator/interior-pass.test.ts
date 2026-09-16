@@ -125,8 +125,11 @@ describe("InteriorPass", () => {
             expect(tile.roomId, building.id).toBe(room?.id);
           }
         }
-        const program = registries.buildingTemplates.get(building.kind).interior
-          .roomPrograms;
+        const template = registries.buildingTemplates.get(building.kind);
+        const program =
+          template.interior.roomProgramVariants?.find(
+            (variant) => variant.id === building.interiorStyle,
+          ) ?? template.interior.roomPrograms;
         expect(
           building.floors[0]?.rooms.some(
             (room) => room.kind === program?.ground.arrival,

@@ -10,6 +10,14 @@ import type { InteriorFurnitureStyle } from "../model/interior-furniture-style";
 export const INTERIOR_FURNITURE_STYLE: InteriorFurnitureStyle = {
   wallClearance: 0.055,
   rearExtents: {
+    [Prop.PRODUCE_BIN]: 0.293,
+    [Prop.CHILLED_DISPLAY]: 0.275,
+    [Prop.BAKERY_CASE]: 0.275,
+    [Prop.COFFEE_COUNTER]: 0.295,
+    [Prop.CLOTHING_RACK]: 0.21,
+    [Prop.ELECTRONICS_DISPLAY]: 0.25,
+    [Prop.HARDWARE_SHELF]: 0.2,
+    [Prop.PHARMACY_SHELF]: 0.1835,
     [Prop.RETAIL_SHELF]: 0.22,
     [Prop.DESK_COMPUTER]: 0.34,
     [Prop.FILING_CABINET]: 0.225,

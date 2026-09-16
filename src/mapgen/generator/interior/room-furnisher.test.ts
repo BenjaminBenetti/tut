@@ -97,6 +97,13 @@ function furnish(
 describe("purposeful room furnishing", () => {
   it.each([
     ["retail", ["checkout", "retail-shelf"]],
+    ["grocery", ["produce-bin", "chilled-display", "checkout"]],
+    ["bakery-cafe", ["bakery-case", "coffee-counter", "cafe-table"]],
+    ["pharmacy", ["pharmacy-shelf", "checkout"]],
+    ["clothing", ["clothing-rack", "checkout"]],
+    ["electronics", ["electronics-display", "checkout"]],
+    ["hardware", ["hardware-shelf", "workbench", "checkout"]],
+    ["bookshop", ["bookcase", "checkout", "cafe-table"]],
     ["office", ["desk-computer", "filing-cabinet"]],
     ["meeting", ["meeting-table"]],
     ["bedroom", ["bed", "wardrobe"]],
@@ -116,7 +123,19 @@ describe("purposeful room furnishing", () => {
   });
 
   it("keeps door approaches, stairs, furniture fronts and the whole building reachable", () => {
-    for (const kind of ["retail", "office", "storage", "bedroom"]) {
+    for (const kind of [
+      "retail",
+      "office",
+      "storage",
+      "bedroom",
+      "grocery",
+      "bakery-cafe",
+      "pharmacy",
+      "clothing",
+      "electronics",
+      "hardware",
+      "bookshop",
+    ]) {
       for (let seed = 0; seed < 6; seed++) {
         const draft = fixture(kind, 8, 7, 2);
         furnish(draft, seed);
@@ -238,6 +257,58 @@ describe("purposeful room furnishing", () => {
           0,
         ),
       ).toEqual([]);
+    }
+  });
+
+  it("fits a sink and toilet in compact two-by-three architectural bathrooms", () => {
+    for (let seed = 0; seed < 12; seed++) {
+      const draft = fixture("bathroom", 2, 3);
+      furnish(draft, seed);
+      expect(
+        draft.props.map((prop) => prop.kind),
+        `seed ${seed}`,
+      ).toEqual(expect.arrayContaining(["bathroom-vanity", "toilet"]));
+      expect(
+        unreachableInteriorTiles(
+          draft,
+          "building",
+          [],
+          { x: 3, y: 0, z: 2 },
+          0,
+        ),
+      ).toEqual([]);
+    }
+  });
+
+  it("fits a counter and refrigerator in compact kitchens without blocking their access", () => {
+    for (const [width, depth] of [
+      [2, 3],
+      [3, 2],
+    ] as const) {
+      for (let seed = 0; seed < 12; seed++) {
+        const draft = fixture("kitchen", width, depth);
+        furnish(draft, seed);
+        expect(
+          draft.props.map((prop) => prop.kind),
+          `${width}x${depth}/${seed}`,
+        ).toEqual(expect.arrayContaining(["kitchen-counter", "refrigerator"]));
+        for (const prop of draft.props) {
+          const front = FRONTS[prop.rotation]!;
+          const access = stepGridPos(prop.tile, front);
+          expect(draft.wallAt(prop.tile, front)).toBeUndefined();
+          expect(draft.propAt(access)).toBeUndefined();
+          expect(draft.getTile(access)?.roomId).toBe("room-0");
+        }
+        expect(
+          unreachableInteriorTiles(
+            draft,
+            "building",
+            [],
+            draft.buildings[0]!.entrances[0]!.tile,
+            0,
+          ),
+        ).toEqual([]);
+      }
     }
   });
 

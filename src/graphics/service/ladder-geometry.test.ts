@@ -23,8 +23,6 @@ import { TileIndex } from "../../mapgen/service/tile-index";
 import { ladderFacade } from "./ladder-fixture.test-helper";
 import { resolveMapModels } from "./map-model-resolver";
 import { LadderModelFactory } from "./ladder-model-factory";
-import { generateTacticalMap } from "../../mapgen/service/generate-tactical-map";
-import { DEFAULT_MISSION_HOOKS } from "../../mapgen/data/hook-requirements";
 
 /** Uses shipped positions, normals and UVs; image decoding is unnecessary for ray tests. */
 function shippedModels(): ModelLoader {
@@ -258,19 +256,25 @@ describe("shipped ladder connector (#891)", () => {
     second.geometry.dispose();
   });
   it("matches the ground-floor concrete finish after mirrored walls inherit their building family", () => {
-    const map = generateTacticalMap({
-      seed: "qa813-temperate-town-small-0",
-      params: {
-        archetype: "settlement",
-        biome: "temperate",
-        settlement: "town",
-        size: "small",
-        hooks: DEFAULT_MISSION_HOOKS,
-        slopeShare: 1,
-      },
-    });
+    const facade = ladderFacade(2, "concrete");
+    // Generated outdoor tiles own mirrored walls without owning the building.
+    // Pin that condition explicitly instead of relying on a seed's facade palette.
+    const map = {
+      ...facade,
+      tiles: facade.tiles.map((tile) =>
+        tile.surface === "sidewalk" ? { ...tile, buildingId: undefined } : tile,
+      ),
+    };
+    const connector = map.connectors[0]!;
+    const outside = new TileIndex(map).get(
+      connector.from.x,
+      connector.from.y,
+      connector.from.z,
+    );
+    expect(outside?.buildingId).toBeUndefined();
+    expect(outside?.walls.s).toBe("solid");
     const sections = resolveMapModels(map).connectors.filter(
-      (p) => p.ladder?.id === "ladder-1",
+      (p) => p.ladder?.id === connector.id,
     );
     expect(sections).toHaveLength(2);
     expect(sections[0]!.ladder).toMatchObject({

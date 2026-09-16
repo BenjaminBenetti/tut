@@ -13,6 +13,9 @@ import {
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { describe, expect, it } from "vitest";
 import type { ModelAssetId } from "../../content/data/model-ids";
+import { createRegistry } from "../../core/service/definition-registry";
+import type { MapGenRegistries } from "../../mapgen/model/registries";
+import { createDefaultRegistries } from "../../mapgen/service/default-registries";
 import type { ModelLoader } from "../model/model-loader";
 import { MODEL_MANIFEST } from "../data/model-manifest";
 import { FOUNDATION_MODEL } from "../data/map-model-table";
@@ -73,6 +76,35 @@ function buildingColumn(base: number, surface = "floor") {
   });
   b.tile({ x: 1, y: base + 4, z: 1 }, "roof", { buildingId: "building-1" });
   return b.build();
+}
+
+/** Preserves the reported raised footprints when production building weights change. */
+function reportedBuildingMix(biome: "snowy" | "desert"): MapGenRegistries {
+  const registries = createDefaultRegistries();
+  const buildingKinds =
+    biome === "snowy"
+      ? [
+          { template: "house", weight: 5 },
+          { template: "apartment", weight: 3 },
+          { template: "warehouse", weight: 2 },
+          { template: "shop", weight: 1 },
+        ]
+      : [
+          { template: "house", weight: 4 },
+          { template: "apartment", weight: 3 },
+          { template: "warehouse", weight: 2 },
+          { template: "shop", weight: 2 },
+          { template: "tower", weight: 1 },
+        ];
+  return {
+    ...registries,
+    biomes: createRegistry(
+      "biome",
+      registries.biomes.values.map((definition) =>
+        definition.id === biome ? { ...definition, buildingKinds } : definition,
+      ),
+    ),
+  };
 }
 
 /** Collects only the rendered support meshes, excluding floors and neighbouring terrain. */
@@ -227,17 +259,20 @@ describe("building foundations (#906)", () => {
     ["desert", "mc-opening-02", 31, 2, 17],
   ] as const)
     it(`${biome}: supports the exact reported building without changing its map record`, () => {
-      const map = generateTacticalMap({
-        seed,
-        params: {
-          archetype: "settlement",
-          biome,
-          settlement: "town",
-          size: "small",
-          hooks: DEFAULT_MISSION_HOOKS,
-          slopeShare: 1,
+      const map = generateTacticalMap(
+        {
+          seed,
+          params: {
+            archetype: "settlement",
+            biome,
+            settlement: "town",
+            size: "small",
+            hooks: DEFAULT_MISSION_HOOKS,
+            slopeShare: 1,
+          },
         },
-      });
+        { registries: reportedBuildingMix(biome) },
+      );
       const original = JSON.stringify(map),
         placements = resolveMapModels(map);
       const at = placements.foundations.filter(

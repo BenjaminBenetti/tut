@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { PlaceProfileId } from "../../content/model/place-profile-id";
+import { createRegistry } from "../../core/service/definition-registry";
 import { DEFAULT_MISSION_HOOKS } from "../../mapgen/data/hook-requirements";
+import type { MapGenRegistries } from "../../mapgen/model/registries";
 import type { TacticalMap } from "../../mapgen/model/tactical-map";
+import { createDefaultRegistries } from "../../mapgen/service/default-registries";
 import { FixtureMapBuilder } from "../../mapgen/service/fixture-map-builder";
 import { generateTacticalMap } from "../../mapgen/service/generate-tactical-map";
 import { resolveMapModels } from "./map-model-resolver";
@@ -14,6 +17,39 @@ function profiled(
   return {
     ...map,
     recipe: { ...map.recipe, params: { ...map.recipe.params, placeProfile } },
+  };
+}
+
+/** Retains both reported roof variants independently of the production building mix. */
+function reportedBuildingMix(): MapGenRegistries {
+  const registries = createDefaultRegistries();
+  return {
+    ...registries,
+    biomes: createRegistry(
+      "biome",
+      registries.biomes.values.map((biome) =>
+        biome.id === "temperate"
+          ? {
+              ...biome,
+              buildingKinds: [
+                { template: "house", weight: 5 },
+                { template: "apartment", weight: 3 },
+                { template: "shop", weight: 2 },
+                { template: "warehouse", weight: 1 },
+                { template: "tower", weight: 1 },
+              ],
+            }
+          : biome,
+      ),
+    ),
+    buildingTemplates: createRegistry(
+      "building template",
+      registries.buildingTemplates.values.map((template) =>
+        template.id === "shop"
+          ? { ...template, footprintWidth: { min: 8, max: 12 } }
+          : template,
+      ),
+    ),
   };
 }
 
@@ -52,17 +88,20 @@ describe("Johannesburg building finishes (#1084)", () => {
   it.each(["730982385", "1892582247"])(
     "broadens seed %s without changing its building, access or terrain records",
     (seed) => {
-      const plain = generateTacticalMap({
-        seed,
-        params: {
-          archetype: "settlement",
-          biome: "temperate",
-          settlement: "city",
-          size: seed === "730982385" ? "small" : "medium",
-          hooks: DEFAULT_MISSION_HOOKS,
-          slopeShare: 1,
+      const plain = generateTacticalMap(
+        {
+          seed,
+          params: {
+            archetype: "settlement",
+            biome: "temperate",
+            settlement: "city",
+            size: seed === "730982385" ? "small" : "medium",
+            hooks: DEFAULT_MISSION_HOOKS,
+            slopeShare: 1,
+          },
         },
-      });
+        { registries: reportedBuildingMix() },
+      );
       const local = profiled(plain, "johannesburg");
       const original = JSON.stringify(local);
       const before = resolveMapModels(plain),

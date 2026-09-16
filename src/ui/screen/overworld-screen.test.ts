@@ -570,10 +570,15 @@ describe("OverworldScreen", () => {
     expect(
       root.querySelector<HTMLElement>('[data-role="mission-details"]')?.hidden,
     ).toBe(true);
-    // East Asia has no mission on offer, so the list is empty; clearing
-    // the region shows every mission again.
+    // East Asia has no mission on offer, so the list is empty; Show all
+    // clears the region and every mission returns.
     expect(rows()).toHaveLength(0);
-    selection.selectRegion(undefined);
+    button("show-all-missions").click();
+    expect(selection.selection).toEqual({
+      regionId: undefined,
+      cityId: undefined,
+      missionId: undefined,
+    });
     expect(rows()).toHaveLength(2);
     expect(rows().some((r) => r.classList.contains("is-selected"))).toBe(false);
   });

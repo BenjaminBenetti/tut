@@ -21,6 +21,8 @@ import { formatCredits, formatWhole } from "../service/format";
 export interface MissionListViewHandlers {
   /** The player clicked a mission row. */
   readonly onSelectMission: (missionId: MissionId, cityId: CityId) => void;
+  /** The player asked for every mission rather than the selected region's (#1154). */
+  readonly onShowAll: () => void;
 }
 
 /** What the list needs to name things. */
@@ -58,10 +60,12 @@ export class MissionListView {
   private readonly handlers: MissionListViewHandlers;
   private root: HTMLElement | undefined;
   private heading: HTMLElement | undefined;
+  private showAll: HTMLButtonElement | undefined;
   private list: HTMLElement | undefined;
   private empty: HTMLElement | undefined;
   private readonly rows = new Map<MissionId, HTMLElement>();
   private onClick: ((event: Event) => void) | undefined;
+  private onShowAll: (() => void) | undefined;
 
   // ===========================================
   // Constructor
@@ -87,9 +91,20 @@ export class MissionListView {
     section.className = "tut-missions";
     section.dataset.role = "missions";
 
+    const header = doc.createElement("div");
+    header.className = "tut-missions__header";
     const title = doc.createElement("h3");
     title.dataset.field = "missions-heading";
     title.textContent = "Missions · all";
+    // The way back to every mission once a region has narrowed the
+    // list: nothing on the map clears a selection, so the list offers it.
+    const showAll = doc.createElement("button");
+    showAll.type = "button";
+    showAll.className = "tut-btn tut-missions__show-all";
+    showAll.dataset.action = "show-all-missions";
+    showAll.textContent = "Show all";
+    showAll.hidden = true;
+    header.append(title, showAll);
 
     const list = doc.createElement("ul");
     list.className = "tut-list tut-missions__list";
@@ -100,7 +115,7 @@ export class MissionListView {
     empty.dataset.role = "no-missions";
     empty.textContent = "No missions on offer. Advance the day.";
 
-    section.append(title, list, empty);
+    section.append(header, list, empty);
     parent.appendChild(section);
 
     this.onClick = (event: Event): void => {
@@ -116,9 +131,14 @@ export class MissionListView {
       }
     };
     list.addEventListener("click", this.onClick);
+    this.onShowAll = (): void => {
+      this.handlers.onShowAll();
+    };
+    showAll.addEventListener("click", this.onShowAll);
 
     this.root = section;
     this.heading = title;
+    this.showAll = showAll;
     this.list = list;
     this.empty = empty;
   }
@@ -167,6 +187,9 @@ export class MissionListView {
     if (this.heading && this.heading.textContent !== heading) {
       this.heading.textContent = heading;
     }
+    if (this.showAll) {
+      this.showAll.hidden = region === undefined;
+    }
     const emptyText =
       region && state && state.overworld.missions.length > 0
         ? `No missions in ${region.name}.`
@@ -176,18 +199,23 @@ export class MissionListView {
     }
   }
 
-  /** Removes the section and its listener. */
+  /** Removes the section and its listeners. */
   unmount(): void {
     if (this.list && this.onClick) {
       this.list.removeEventListener("click", this.onClick);
     }
+    if (this.showAll && this.onShowAll) {
+      this.showAll.removeEventListener("click", this.onShowAll);
+    }
     this.root?.remove();
     this.root = undefined;
     this.heading = undefined;
+    this.showAll = undefined;
     this.list = undefined;
     this.empty = undefined;
     this.rows.clear();
     this.onClick = undefined;
+    this.onShowAll = undefined;
   }
 
   // ===========================================

@@ -84,7 +84,7 @@
   inset: 0;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  grid-template-columns: minmax(0, 1fr) min(320px, 40vw);
+  grid-template-columns: minmax(0, 1fr) min(400px, 36vw);
   grid-template-areas:
     "bar bar"
     "map side";
@@ -106,12 +106,26 @@
   overflow: hidden;
 }
 
+/*
+ * The side column is wide enough for the longest build row at 1280 px
+ * (#1151) and never scrolls sideways: the panel clips on x and scrolls
+ * on y, and everything inside it may shrink below its content width so
+ * a long button wraps instead of pushing the panel wider.
+ */
 .tut-overworld__side {
   grid-area: side;
   align-self: start;
   margin: var(--space-4);
+  min-width: 0;
   max-height: calc(100% - 2 * var(--space-4));
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.tut-overworld__side > *,
+.tut-overworld__side .tut-stack > * {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .tut-topbar__status {
@@ -204,7 +218,13 @@
 }
 
 .tut-deployables__build .tut-btn {
+  justify-content: flex-start;
+  min-width: 0;
+  max-width: 100%;
+  padding-block: var(--space-2);
   text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 /* ===========================================
@@ -311,13 +331,13 @@
 }
 
 /* ====================================
-   Mech bay screen (#80)
+   Mech bay screen (#80, rebuilt around the mech in #1145)
    =========================================== */
 #ui > .tut-mech-bay {
   position: absolute;
   inset: 0;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
   background: var(--ui-bg, #0b0e12);
 }
 .tut-mech-bay__bar {
@@ -325,74 +345,299 @@
 }
 .tut-mech-bay__body {
   grid-row: 2;
-  overflow: auto;
-  padding: var(--space-4);
+  min-height: 0;
+  padding: var(--space-3);
   display: grid;
-  grid-template-columns: minmax(0, 1fr) min(360px, 40vw);
-  gap: var(--space-4);
-  align-content: start;
+  /* palette · stage · sheet: the mech gets whatever the two panels leave. */
+  grid-template-columns: clamp(220px, 22vw, 300px) minmax(0, 1fr) clamp(
+      260px,
+      26vw,
+      340px
+    );
+  gap: var(--space-3);
 }
-.tut-mech-bay__row {
-  display: grid;
-  /* label · part thumbnail · picker (#495) */
-  grid-template-columns: 8em auto minmax(0, 1fr);
+.tut-mech-bay__footer {
+  grid-row: 3;
+  height: auto;
+  min-height: 40px;
+  border-top: var(--line) solid var(--ui-line);
+  border-bottom: 0;
+  /* The popover opens upward out of this bar and must not be clipped. */
+  overflow: visible;
+  position: relative;
+  z-index: 5;
+}
+
+/* ---------- Palette ---------- */
+.tut-mech-bay__palette {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   gap: var(--space-2);
+}
+.tut-mech-bay__search {
+  width: 100%;
+  box-sizing: border-box;
+}
+.tut-mech-bay__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+.tut-mech-bay__chip {
+  min-height: 24px;
+  padding: 0 var(--space-2);
+  font-size: 10px;
+}
+.tut-mech-bay__chip[aria-pressed="true"] {
+  --surface: var(--ui-accent);
+  background: var(--ui-accent);
+  color: var(--ui-accent-text);
+}
+.tut-mech-bay__parts {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+.tut-list > li.tut-mech-bay__part {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  cursor: grab;
+  user-select: none;
 }
-
-/* The name field has no part to picture, so its input takes both cells. */
-.tut-mech-bay__row--no-thumb > .tut-input,
-.tut-mech-bay__row--no-thumb > .tut-select {
-  grid-column: 2 / -1;
+.tut-list > li.tut-mech-bay__part:focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: -2px;
 }
-
-.tut-mech-bay__error {
-  grid-column: 2 / -1;
-  color: var(--ui-danger);
-  font-size: 0.9em;
+.tut-list > li.tut-mech-bay__part.is-hovered {
+  background: var(--ui-panel-raised);
+}
+.tut-list > li.tut-mech-bay__part.is-dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+.tut-list > li.tut-mech-bay__part[data-fitted="true"] {
+  box-shadow: inset 2px 0 0 var(--ui-ok);
+}
+.tut-mech-bay__part-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.tut-mech-bay__part-name {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tut-mech-bay__part-meta {
+  font-size: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /*
- * A part's picture beside its picker. Rendered from the same model the
- * mech is assembled from, so the bay shows what is being built.
- */
-/*
- * The thumbnail cell (#495), which now holds either the part's picture
- * or the glyph for a part that has none (#594).
- *
- * The box lives on the cell rather than on the image, so it stays the
- * same size and keeps every picker aligned whichever of the two is
- * showing. Before this the utility cell was `visibility: hidden`, which
- * left a gap where the other rows have a bordered box — and a gap where
- * a picture belongs reads as a picture that failed to load.
+ * A part's picture, rendered from the same model the mech is assembled
+ * from (#495), or the ability glyph for a part that has none (#594): a
+ * utility has no visual slot, and an empty box reads as a picture that
+ * failed to load. The box is the same either way so the cards align.
  */
 .tut-mech-bay__thumb {
   display: grid;
   place-items: center;
-  width: 48px;
-  height: 48px;
-  background: var(--ui-panel);
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  background: var(--ui-bg);
   border: var(--line) solid var(--ui-line);
 }
-
 .tut-mech-bay__thumb-img {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  pointer-events: none;
 }
-
-.tut-mech-bay__thumb-img.is-empty {
-  display: none;
-}
-
-/* Dimmed, because it marks an absence rather than showing a part. */
 .tut-mech-bay__thumb-none {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   color: var(--ui-text-dim);
+}
+
+/* ---------- Stage ---------- */
+.tut-mech-bay__stage {
+  position: relative;
+  min-height: 0;
+  min-width: 0;
+  border: var(--line) solid var(--ui-line);
+  background: var(--ui-bg);
+  overflow: hidden;
+}
+.tut-mech-bay__stage.is-over {
+  box-shadow: inset 0 0 0 2px var(--ui-accent);
+}
+.tut-mech-bay__stage-view {
+  position: absolute;
+  inset: 0;
+}
+.tut-mech-bay__stage-view canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+.tut-mech-bay__stage-view [data-role="preview-empty"] {
+  margin: var(--space-4);
+}
+
+/*
+ * Slot badges. Before the host reports where the parts landed they
+ * stack in a column down the left; once anchored, each sits on its
+ * part's silhouette (ADR 0007) and moves with every redraw.
+ */
+.tut-mech-bay__anchors {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  pointer-events: none;
+}
+.tut-mech-bay__slot {
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: var(--space-1) var(--space-2);
+  background: color-mix(in srgb, var(--ui-panel) 88%, transparent);
+  border: var(--line) solid var(--ui-line);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  max-width: 180px;
+}
+.tut-mech-bay__anchors.is-anchored .tut-mech-bay__slot[data-anchored="true"] {
+  position: absolute;
+  transform: translate(-50%, -50%);
+}
+.tut-mech-bay__slot[data-tone="danger"] {
+  border-color: var(--ui-danger);
+}
+.tut-mech-bay__slot-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* The slot a dragged part would land in lights up; the others fade. */
+.tut-mech-bay__stage[data-dragging] .tut-mech-bay__slot[data-target="false"] {
+  opacity: 0.35;
+}
+.tut-mech-bay__stage[data-dragging] .tut-mech-bay__slot[data-target="true"] {
+  border-color: var(--ui-accent);
+  box-shadow: 0 0 0 1px var(--ui-accent);
+}
+.tut-mech-bay__error {
+  color: var(--ui-danger);
+  font-size: 11px;
+  white-space: normal;
+}
+
+/* Utility slots have no socket, so they line the bottom of the stage. */
+.tut-mech-bay__utilities {
+  position: absolute;
+  left: var(--space-3);
+  right: var(--space-3);
+  bottom: var(--space-3);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.tut-mech-bay__utility {
+  position: relative;
+  min-width: 120px;
+  padding-right: var(--space-6);
+}
+.tut-mech-bay__utility[data-empty="true"] {
+  border-style: dashed;
+}
+.tut-mech-bay__remove {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-height: 20px;
+  padding: 0 6px;
+  font-size: 12px;
+}
+.tut-mech-bay__drop-hint {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-3);
+  margin: 0;
+  font-size: 11px;
+  pointer-events: none;
+}
+
+/* ---------- Sheet ---------- */
+.tut-mech-bay__sheet {
+  min-height: 0;
+  overflow-y: auto;
+}
+.tut-mech-bay__value {
+  display: inline-flex;
+  justify-content: flex-end;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+.tut-mech-bay__delta {
+  font-size: 11px;
+  color: var(--ui-text-dim);
+}
+.tut-mech-bay__delta[data-tone="better"] {
+  color: var(--ui-ok);
+}
+.tut-mech-bay__delta[data-tone="worse"] {
+  color: var(--ui-danger);
+}
+.tut-mech-bay__weapon-preview {
+  color: var(--ui-info);
+}
+.tut-mech-bay__preview-warning {
+  margin: var(--space-2) 0 0;
+  color: var(--ui-warn);
+  font-size: 12px;
 }
 .tut-mech-bay__errors li {
   color: var(--ui-danger);
+}
+
+/* ---------- Loadout popover ---------- */
+.tut-mech-bay__library {
+  position: relative;
+}
+.tut-mech-bay__popover {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + var(--space-2));
+  width: min(440px, 80vw);
+  z-index: 30;
+}
+.tut-mech-bay__save-row {
+  margin-bottom: var(--space-3);
+}
+.tut-mech-bay__save-row .tut-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.tut-mech-bay__popover .tut-list > li.tut-row {
+  display: flex;
+}
+.tut-mech-bay__popover .tut-list [data-field="name"] {
+  flex: 1 1 auto;
+  text-align: left;
 }
 /* =========================================== */
 /* Game over                                   */

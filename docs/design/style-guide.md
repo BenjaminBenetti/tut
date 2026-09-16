@@ -216,6 +216,8 @@ see [the interior kit](kits/building-interiors.md).
 
 Contrast: all text on `ui-panel` meets WCAG AA (`ui-text-dim` on `ui-panel` is 6.3:1).
 
+**Infestation ramp** (`src/graphics/view/infestation-ramp.ts`, `INFESTATION_RAMP`): city markers and region fills sample one ramp so a region and the cities in it agree. Four evenly spaced stops: `ui-ok` `#7CCB5A` (clean) → `ui-bug` `#9CFF3D` → `ui-warn` `#F0C63C` → `#FF2A1E` (overrun). The top stop is deliberately hotter than `ui-danger`: at the territory fill's opacity `#E0453C` read as a muted brick next to the yellow stop (#1151), and a fully overrun region has to be the loudest thing on the map.
+
 ## 5. UI style
 
 Implementation: `src/ui/style/theme.css` exposes the §4.4 tokens as CSS custom properties (`--ui-*`) and provides the `.tut-*` components below (panel, button, label, data, table, badge, meter, top bar, icon). Icons are registered in `src/ui/data/icon-manifest.ts`. Preview: `docs/design/ui-theme-preview.png`, built from `tools/art/preview/ui-theme.html`.
@@ -265,7 +267,7 @@ Implementation: `src/ui/style/theme.css` exposes the §4.4 tokens as CSS custom 
 
 The detailed brown bug kit replaces the original 600/1,000/2,000-triangle bug and 1,200-triangle spawner budgets. Geometry goes into continuous shell curvature, plate overlap, joints and blade profiles; per-file caps and runtime read/animation checks still apply. Authored continuous UVs map the whole sculpted surface into its atlas cell, preserving shared vertices and avoiding one repeated texture patch per triangle.
 
-Hard cap from the role brief: models < 500 KB, textures ≤ 1024², sprites ≤ 512². One documented exception: the overworld world-map texture is 2048×1024 (a 2:1 plate carrée needs the width for coastlines at map zoom); it is the only texture allowed over 1024² and must stay under 1.5 MB.
+Hard cap from the role brief: models < 500 KB, textures ≤ 1024², sprites ≤ 512². The strategic map is not a texture: its Earth is drawn as vector coastlines from `src/graphics/data/earth-coastlines.ts` (#1144), so nothing needs to exceed the cap.
 
 ## 7. Tile and building kit conventions
 
@@ -341,7 +343,7 @@ The roster's starter part catalogue (`src/roster/data/parts.ts`) maps to mech pa
 
 Reference assemblies: `tdf.mech.assembled-a` (Vanguard, Strider, Tracker, Autocannon, Missile Pod) and `tdf.mech.assembled-b` (Bulwark, Bastion, Brace, Railgun, Mortar).
 
-The mech bay assembles this table at runtime and shows the result (#694): `src/graphics/data/part-model-table.ts` holds it as code, `MechAssembler` hangs the parts on the §6 sockets, and `MechPreviewScene` draws them. See [`mech-bay-assembly.png`](mech-bay-assembly.png).
+The mech bay assembles this table at runtime and shows the result (#694): `src/graphics/data/part-model-table.ts` holds it as code, `MechAssembler` hangs the parts on the §6 sockets, and `MechPreviewScene` draws them. See [`mech-bay-assembly.png`](mech-bay-assembly.png). Since #1145 the assembled mech is the centre of the screen and the parts are dropped onto it: the assembler tags each part's root with the slot it fills (`MECH_SLOT_KEY`), the scene projects each part's own silhouette centre to the canvas after every draw, and the bay hangs a DOM badge there (ADR 0007). See [`ui-mech-bay.png`](ui-mech-bay.png).
 
 **The battlefield assembles the same table (#1115).** A mech's unit template carries its loadout, and `LoadoutUnitModelSource` draws it through the same assembler, flattened so the motion rig finds its limbs as it does on a reference GLB. The reference assemblies are drawn only for a mission saved before #1115. Every loadout the player can build is therefore a different mech on the field: [`diagnostics/1115`](diagnostics/1115/README.md) renders three side by side through the tactical scene builder.
 
@@ -603,10 +605,12 @@ The case to check is a squad behind building geometry, with the surrounding map 
 | Ring | **8 rays** at waist height, **0.75 tiles** outside the footprint | The body's rays open the unit's silhouette; the ring opens the cone around it (#1138). The margin is in world units, so a mech's ring is not three times a squad's. |
 | Soft edge | **0.45 tiles**, measured inward from the ray radius | A hard circle reads as a stencil; a soft one reads as the building giving way. Measured inward rather than as a fraction of the radius, so softness does not change when the radius does. Widened with the radius in #1138 to keep a little over a third of it soft, as 0.25 was of 0.6. |
 | Fade in / out | **0.15 s** | Instant flickers as units move; longer lags the camera. |
-| What fades | Walls, floors, roofs, parapets and tall props between the camera and the unit, **above its feet** | Anything that can stand in the way. |
-| What never fades | Ground, the floor the unit stands on and anything below it, the unit itself, overlays, VFX, hook markers | These are the read. A slab at the unit's feet is in front of it and inside the radius, and fading it showed the storey below through the floor (#1118). |
+| What fades | Walls, parapets and rooftop props between the camera and the unit, **above its feet** | Anything that can stand in the way on the unit's own storey. |
+| What never fades | Ground, every floor slab, stair and roof, the unit itself, overlays, VFX, hook markers | These are the read. A slab at the unit's feet is in front of it and inside the radius, and fading it showed the storey below through the floor (#1118). Fading the storey above hid the tiles the unit was climbing to, and a roof fading over a solid floor opened a window onto nothing (#1143). |
 
 **The floor holds (#1118).** A fragment fades only when it rises more than `GHOST_FOOT_MARGIN` (0.3 u) above the unit's feet. Without that the slab in front of a unit on an upper storey opened and the room below read through it, which the Executive Director found made the interior unreadable. [Before and after frames](diagnostics/1118/README.md), pitched and flat roofs at two yaws.
+
+**No floor ghosts at all (#1143).** The feet test kept the unit's own storey solid but let the storey above it fade, and when a unit was sent up a floor its reachable tiles sat on that fading slab: the Executive Director found the movement overlay very hard to read. Floor slabs and stairs (`building.floor`, `building.stairs`) are no longer given the cutaway material — `takesGhostCutaway` in `graphics/service/ghost-cutaway-eligibility.ts` is the rule — so a slab is either drawn solid or removed by the storey cut, which the player controls. Roofs (`building.roof`, `building.roof-pitched`, `building.roof-hipped`) followed in the same round: with the floor beneath them solid, a roof that still faded opened a circle that showed only that floor, which the Executive Director called an awkward ghost circle (2026-09-16). Every slab is solid until the storey cut removes it; only walls, parapets and rooftop dressing fade.
 
 Applies to **every unit the player can currently see**, not only their own: hiding a spotted bug behind a wall undoes the spotting. That is the same question fog of war answers (#531), so it wants one predicate, not two.
 

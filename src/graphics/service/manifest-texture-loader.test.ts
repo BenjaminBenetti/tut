@@ -38,12 +38,12 @@ describe("ManifestTextureLoader", () => {
       urls.push(url);
       return Promise.resolve(new Texture());
     });
-    const texture = await loader.loadTexture("overworld.earth-map");
+    const texture = await loader.loadTexture("units.tdf-atlas");
     expect(urls).toEqual([
-      `${BASE_URL}${TEXTURE_MANIFEST["overworld.earth-map"].path}`,
+      `${BASE_URL}${TEXTURE_MANIFEST["units.tdf-atlas"].path}`,
     ]);
     expect(texture?.colorSpace).toBe(SRGBColorSpace);
-    expect(texture?.name).toBe("overworld.earth-map");
+    expect(texture?.name).toBe("units.tdf-atlas");
     expect(warn).not.toHaveBeenCalled();
   });
 
@@ -57,10 +57,10 @@ describe("ManifestTextureLoader", () => {
     const fetchTexture = vi.fn(() => Promise.resolve(new Texture()));
     const { loader } = makeLoader(fetchTexture);
     const [a, b] = await Promise.all([
-      loader.loadTexture("overworld.earth-map"),
-      loader.loadTexture("overworld.earth-map"),
+      loader.loadTexture("units.tdf-atlas"),
+      loader.loadTexture("units.tdf-atlas"),
     ]);
-    await loader.loadTexture("overworld.earth-map");
+    await loader.loadTexture("units.tdf-atlas");
     expect(fetchTexture).toHaveBeenCalledTimes(1);
     expect(a).toBe(b);
   });
@@ -68,12 +68,12 @@ describe("ManifestTextureLoader", () => {
   it("logs once with the asset prefix and yields undefined when a fetch fails", async () => {
     const fetchTexture = vi.fn(() => Promise.reject(new Error("404")));
     const { loader, warn } = makeLoader(fetchTexture);
-    expect(await loader.loadTexture("overworld.earth-map")).toBeUndefined();
-    expect(await loader.loadTexture("overworld.earth-map")).toBeUndefined();
+    expect(await loader.loadTexture("units.tdf-atlas")).toBeUndefined();
+    expect(await loader.loadTexture("units.tdf-atlas")).toBeUndefined();
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn).toHaveBeenCalledWith(
       expect.stringMatching(
-        new RegExp(`^\\${ASSET_WARNING_PREFIX} .*overworld\\.earth-map.*404`),
+        new RegExp(`^\\${ASSET_WARNING_PREFIX} .*units\\.tdf-atlas.*404`),
       ),
     );
     expect(fetchTexture).toHaveBeenCalledTimes(1);

@@ -11,7 +11,7 @@
 
 /** One registered texture asset. */
 export interface TextureAssetEntry {
-  /** Path under `public/`, e.g. `assets/textures/overworld/earth-map_albedo.png`. */
+  /** Path under `public/`, e.g. `assets/textures/units/tdf-atlas_albedo.png`. */
   readonly path: string;
   /** Pixel width. */
   readonly width: number;
@@ -345,13 +345,6 @@ export const TEXTURE_MANIFEST = {
     label: "depot business names 41–50",
   },
 
-  "overworld.earth-map": {
-    path: "assets/textures/overworld/earth-map_albedo.png",
-    width: 2048,
-    height: 1024,
-    colorSpace: "srgb",
-    label: "Stylised plate carrée world map for the overworld plane",
-  },
   "units.tdf-atlas": {
     path: "assets/textures/units/tdf-atlas_albedo.png",
     width: 512,

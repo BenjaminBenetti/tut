@@ -72,6 +72,7 @@ import { ROAD_STYLES } from "../data/road-styles";
 import { MODEL_MANIFEST } from "../data/model-manifest";
 import type { GhostUniforms } from "../service/ghost-cutaway";
 import { applyGhostCutaway } from "../service/ghost-cutaway";
+import { takesGhostCutaway } from "../service/ghost-cutaway-eligibility";
 import {
   CONNECTOR_COLOURS,
   FALLBACK_HOOK_COLOUR,
@@ -285,6 +286,19 @@ function stateOf(vision: IndexedVision, key: VisionTileKey): TileVisionState {
 // TacticalMapView
 // ===========================================
 
+/** What a map view may leave out. */
+export interface TacticalMapViewOptions {
+  /**
+   * Draw a marker on objective hook tiles. On by default for the mapgen
+   * preview, where the marker is how a placement is read; a mission
+   * turns it off because the marker would show the objective through
+   * fog of war.
+   */
+  readonly objectiveMarkers?: boolean;
+  /** Shared optional artwork source; absent in geometry-only previews and tests. */
+  readonly textures?: TextureSource;
+}
+
 /**
  * Renders a `TacticalMap` with placeholder geometry (ADR 0004 §7.5): a
  * box per tile coloured by surface, a thin quad per wall segment, boxes
@@ -300,33 +314,6 @@ function stateOf(vision: IndexedVision, key: VisionTileKey): TileVisionState {
  *   ▌    └──────┘ ← floor slab (level 1)
  *   ▌▒▒▒▒▒▒▒▒▒▒▒▒ ← ground pillar rises from world y = 0
  * ```
- */
-/**
- * Model ids that fade around an obscured unit: everything a building is
- * made of — walls, floors, roofs and parapets (style guide §12.4).
- *
- * Selected by model id rather than by category because the `tiles`
- * category carries both a building's floors and the ground itself, and
- * the ground must never fade: opening a hole in the map would be worse
- * than the wall it was trying to see past.
- */
-const GHOSTED_MODEL_PREFIX = "building.";
-
-/** What a map view may leave out. */
-export interface TacticalMapViewOptions {
-  /**
-   * Draw a marker on objective hook tiles. On by default for the mapgen
-   * preview, where the marker is how a placement is read; a mission
-   * turns it off because the marker would show the objective through
-   * fog of war.
-   */
-  readonly objectiveMarkers?: boolean;
-  /** Shared optional artwork source; absent in geometry-only previews and tests. */
-  readonly textures?: TextureSource;
-}
-
-/**
- *
  */
 export class TacticalMapView implements Disposable, TilePicker {
   // ===========================================
@@ -722,17 +709,18 @@ export class TacticalMapView implements Disposable, TilePicker {
                         : await models.load(batch.modelId);
       prototype.updateMatrixWorld(true);
       meshPartsOf(prototype).forEach((part, i) => {
-        // Walls are what stands between the camera and a unit, so they
-        // carry the ghost cutaway (#526). Their prototype material is
-        // shared by every instance of the model, so it is cloned rather
-        // than ghosted in place.
+        // Walls, roofs and rooftop props are what stands between the
+        // camera and a unit, so they carry the ghost cutaway (#526);
+        // floor slabs and stairs stay solid so the tiles a unit can
+        // move to read through it (#1143, `takesGhostCutaway`). The
+        // prototype material is shared by every instance of the model,
+        // so it is cloned rather than ghosted in place.
         const prototypeMaterial = Array.isArray(part.material)
           ? part.material[0]
           : part.material;
         const originalMaterial =
           this.ghostUniforms !== undefined &&
-          (batch.modelId.startsWith(GHOSTED_MODEL_PREFIX) ||
-            batch.modelId.startsWith("prop.rooftop-")) &&
+          takesGhostCutaway(batch.modelId) &&
           prototypeMaterial !== undefined
             ? this.ghostMaterial(prototypeMaterial)
             : part.material;

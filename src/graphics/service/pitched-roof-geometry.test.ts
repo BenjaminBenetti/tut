@@ -230,25 +230,25 @@ describe("pitched roof shelter (#916)", () => {
           expect(hits.length, `${x},${z}`).toBeGreaterThan(0);
           expect(hits[0]!.point.y).toBeCloseTo(expected, 5);
         }
-      // Roof art stays in the building cutaway program. All profiles share
-      // the same scene material, including mist, rather than clone per batch.
+      // Roof art is a slab, so it stays out of the building cutaway
+      // program (#1143: a roof fading over a solid floor opened a window
+      // onto nothing) while still carrying the mist. All profiles share
+      // the same scene material rather than clone per batch.
       const materials = new Set(meshes.map((m) => m.material));
       expect(materials.size).toBe(1);
       const material = meshes[0]!.material as Material;
-      expect(material.customProgramCacheKey()).toContain("ghost-cutaway");
+      expect(material.customProgramCacheKey()).not.toContain("ghost-cutaway");
+      expect(material.customProgramCacheKey()).toContain("unexplored-mist");
       const shader = {
         uniforms: {},
         vertexShader: "#include <common>\n#include <project_vertex>",
         fragmentShader: "#include <common>\n#include <dithering_fragment>",
       };
       material.onBeforeCompile(shader as never, {} as never);
-      expect((shader.uniforms as Record<string, unknown>).uGhostCount).toBe(
-        uniforms.uGhostCount,
-      );
-      expect((shader.uniforms as Record<string, unknown>).uGhostStrength).toBe(
-        uniforms.uGhostStrength,
-      );
-      expect(shader.fragmentShader).toContain("discard");
+      expect(
+        (shader.uniforms as Record<string, unknown>).uGhostCount,
+      ).toBeUndefined();
+      expect(shader.fragmentShader).not.toContain("discard");
       view.setVision({ visible: [], explored: [], spotted: [], lastSeen: {} });
       expect(
         meshes.every(

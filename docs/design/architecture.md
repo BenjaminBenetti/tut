@@ -89,6 +89,7 @@ Add domains via ADR when needed. Don't create `utils` dumping grounds.
 
 - Low-poly GLTF/GLB models under `public/assets/models/<category>/`. Textures under `public/assets/textures/`. UI images under `public/assets/ui/`.
 - A manifest per category (typed TS data) so code never references asset paths by string literal outside the manifest.
+- The strategic map's Earth is data, not art (#1144): `graphics/data/earth-coastlines.ts` holds Natural Earth's land polygons as closed `[lon, lat]` rings, rebuilt by `tools/art/build-coastlines.mjs`; `graphics/view/earth-wireframe.ts` draws them as glowing vector coastlines over a graticule, through the same equirectangular projection the city layout uses, so continents and markers agree by construction. Regions are territories derived from that same data (#1149): `graphics/service/region-territory-service.ts` partitions the map plane into a Voronoi cell per city, `graphics/view/region-territories.ts` draws the borders between cells of different regions and fills a region on the infestation ramp, and the land fill stamps a stencil the territories are clipped by, so nothing is drawn over ocean or Antarctica.
 - Placeholder primitives are acceptable until art lands; gameplay must never block on art.
 - Generated images (Codex) are committed with a short `.md` sidecar noting the prompt used.
 

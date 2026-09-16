@@ -2,6 +2,7 @@ import { Group } from "three";
 import type { Object3D } from "three";
 
 import type { ModelAssetId } from "../../content/data/model-ids";
+import type { SinglePartSlot } from "../../roster/model/mech-loadout";
 import type { MechAssembly } from "../data/part-model-table";
 import type { AssetLogger } from "../model/asset-logger";
 import { ASSET_WARNING_PREFIX } from "../model/asset-logger";
@@ -25,6 +26,15 @@ export interface MechAssemblerOptions {
 
 /** Name of the group returned by `assemble`, so a scene can find it again. */
 export const MECH_ROOT_NAME = "mech";
+
+/**
+ * `userData` key each part's root carries, naming the loadout slot it
+ * fills (#1145), so a scene can find "the legs" without knowing which
+ * model draws them. The bare left arm carries `"arms"`; the right arm
+ * is left untagged because the weapon hangs on it and the arms badge
+ * would otherwise sit on the gun.
+ */
+export const MECH_SLOT_KEY = "mechSlot";
 
 // ===========================================
 // MechAssembler
@@ -94,6 +104,11 @@ export class MechAssembler {
 
     const root = new Group();
     root.name = MECH_ROOT_NAME;
+    this.tag(legs, "legs");
+    this.tag(chassis, "chassis");
+    this.tag(armLeft, "arms");
+    this.tag(armWeapon, "arm-weapon");
+    this.tag(backWeapon, "back-weapon");
     // Each part hangs on the nearest host that loaded, so one absent
     // part costs its own picture and not the mech's.
     this.attach(legs, root, undefined);
@@ -109,6 +124,13 @@ export class MechAssembler {
   // ===========================================
   // Private Methods
   // ===========================================
+
+  /** Records on the part's root which slot it fills; a no-op for an absent part. */
+  private tag(part: Object3D | undefined, slot: SinglePartSlot): void {
+    if (part) {
+      part.userData[MECH_SLOT_KEY] = slot;
+    }
+  }
 
   /** Loads one part, or resolves to undefined when the slot names no model. */
   private loadPart(

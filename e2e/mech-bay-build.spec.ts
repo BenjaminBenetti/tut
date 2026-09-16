@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("saving a loadout and building a mech shows the mech in the roster", async ({
+test("saving a loadout from the popover and building a mech shows the mech in the roster", async ({
   page,
 }) => {
   const errors: string[] = [];
@@ -20,15 +20,25 @@ test("saving a loadout and building a mech shows the mech in the roster", async 
   await page.locator('[data-action="mech-bay"]').click();
   await expect(body).toHaveAttribute("data-screen", "mech-bay");
 
-  // Save a cheaper variant under a new name.
-  await page.locator('[data-field="loadout-name"]').fill("Brawler");
+  // Fit a cheaper gun by dropping it on the mech, then save under a new
+  // name from the loadouts popover (#1145).
   await page
-    .locator('select[data-field="arm-weapon"]')
-    .selectOption("arm-weapon-flamer");
+    .locator('#part-palette [data-part-id="arm-weapon-flamer"]')
+    .dragTo(page.locator("#mech-stage"));
+  await expect(
+    page.locator('#mech-stage [data-row="arm-weapon"]'),
+  ).toHaveAttribute("data-part-id", "arm-weapon-flamer");
+  const popover = page.locator('[data-role="loadout-popover"]');
+  await expect(popover).toBeHidden();
+  await page.locator('[data-action="toggle-loadouts"]').click();
+  await expect(popover).toBeVisible();
+  await page.locator('[data-field="loadout-name"]').fill("Brawler");
   await page.locator('[data-action="save-loadout"]').click();
   await expect(
     page.locator('#saved-loadouts li[data-loadout-name="Brawler"]'),
   ).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(popover).toBeHidden();
 
   // Build it.
   const build = page.locator('[data-action="build-mech"]');

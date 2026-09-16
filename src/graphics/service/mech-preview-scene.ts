@@ -11,6 +11,13 @@ import {
 } from "three";
 import type { Mesh, Object3D } from "three";
 
+import type { SinglePartSlot } from "../../roster/model/mech-loadout";
+import type {
+  MechPreviewListener,
+  SlotAnchor,
+} from "../../ui/model/mech-preview-host";
+import { MECH_SLOT_KEY } from "./mech-assembler";
+
 // ===========================================
 // Constants
 // ===========================================
@@ -31,8 +38,14 @@ const AMBIENT_INTENSITY = 0.8;
 /** Key light position, §12.1 — off-axis from every yaw stop so faces shade apart. */
 const KEY_POSITION: readonly [number, number, number] = [4, 8, 12];
 
-/** Yaw the mech is shown from: the game's default stop, so the bay matches the field. */
-const VIEW_YAW = Math.PI / 4;
+/**
+ * Yaw the mech is shown from. The field's default stop (+π/4) looks at
+ * the mech's front-left, which puts the weapon arm — the right arm, at
+ * −X on a +Z-facing model — behind the torso: a player who dropped a
+ * railgun on the stage saw nothing change (#1145). The mirror stop
+ * shows the weapon arm, the back weapon and the legs at once.
+ */
+const VIEW_YAW = -Math.PI / 4;
 
 /** True isometric elevation, as the tactical camera uses. */
 const VIEW_ELEVATION = Math.atan(Math.SQRT1_2);
@@ -59,9 +72,13 @@ const MIN_HALF_EXTENT = 0.5;
  * picture for as long as the screen is open.
  *
  * ```
- *   show(object) ──► clear content ──► add ──► frame() ──► render()
- *   resize       ──►         size canvas ──► frame() ──► render()
+ *   show(object) ──► clear content ──► add ──► frame() ──► render() ──► listener.framed(anchors)
+ *   resize       ──►         size canvas ──► frame() ──► render() ──► listener.framed(anchors)
  * ```
+ *
+ * After every frame the listener hears where each tagged part landed on
+ * screen (#1145), so the mech bay can hang a badge on the legs and the
+ * guns themselves rather than list them beside the picture.
  */
 export class MechPreviewScene {
   // ===========================================
@@ -74,14 +91,21 @@ export class MechPreviewScene {
   private readonly camera: OrthographicCamera;
   private readonly content = new Group();
   private readonly resizeObserver: ResizeObserver | undefined;
+  private readonly listener: MechPreviewListener | undefined;
 
   // ===========================================
   // Constructor
   // ===========================================
 
-  /** Creates the renderer, lights and camera, and mounts the canvas in `container`. */
-  constructor(container: HTMLElement) {
+  /**
+   * Creates the renderer, lights and camera, and mounts the canvas in `container`.
+   *
+   * @param container - The element the canvas goes in.
+   * @param listener - Told where the parts landed after every draw.
+   */
+  constructor(container: HTMLElement, listener?: MechPreviewListener) {
     this.container = container;
+    this.listener = listener;
     this.renderer = new WebGLRenderer({ antialias: true, alpha: false });
     this.renderer.setPixelRatio(window.devicePixelRatio);
     container.appendChild(this.renderer.domElement);
@@ -145,6 +169,40 @@ export class MechPreviewScene {
     this.renderer.setSize(width, height, false);
     this.frame();
     this.renderer.render(this.scene, this.camera);
+    this.listener?.framed(this.anchors(width, height));
+  }
+
+  /**
+   * Where each tagged part's own silhouette is centred on the canvas, in
+   * CSS pixels (#1145). "Own" means the part's meshes and not those of
+   * the parts hanging off it: a chassis box that included both arms and
+   * both guns would put the chassis badge somewhere in the middle of all
+   * of them.
+   *
+   * @param width - Canvas width in CSS pixels.
+   * @param height - Canvas height in CSS pixels.
+   * @returns One anchor per part that carries a slot tag.
+   */
+  private anchors(width: number, height: number): SlotAnchor[] {
+    const anchors: SlotAnchor[] = [];
+    const centre = new Vector3();
+    this.content.traverse((node) => {
+      const slot = node.userData[MECH_SLOT_KEY] as SinglePartSlot | undefined;
+      if (slot === undefined) {
+        return;
+      }
+      const box = ownBox(node);
+      if (box.isEmpty()) {
+        return;
+      }
+      box.getCenter(centre).project(this.camera);
+      anchors.push({
+        slot,
+        x: ((centre.x + 1) / 2) * width,
+        y: ((1 - centre.y) / 2) * height,
+      });
+    });
+    return anchors;
   }
 
   /**
@@ -247,4 +305,38 @@ export class MechPreviewScene {
       ? bounds
       : { minX: 0, maxX: 0, minY: 0, maxY: 0 };
   }
+}
+
+// ===========================================
+// Helpers
+// ===========================================
+
+/**
+ * The world-space box of `part`'s own meshes: its subtree, stopping at
+ * any descendant that is itself a tagged part.
+ *
+ * @param part - A part root, or any node.
+ * @returns The box; empty when the part has no geometry of its own.
+ */
+function ownBox(part: Object3D): Box3 {
+  const box = new Box3();
+  const stack: Object3D[] = [part];
+  while (stack.length > 0) {
+    const node = stack.pop();
+    if (node === undefined) {
+      break;
+    }
+    if (node !== part && node.userData[MECH_SLOT_KEY] !== undefined) {
+      continue;
+    }
+    const geometry = (node as Partial<Mesh>).geometry;
+    if (geometry) {
+      geometry.computeBoundingBox();
+      if (geometry.boundingBox) {
+        box.union(geometry.boundingBox.clone().applyMatrix4(node.matrixWorld));
+      }
+    }
+    stack.push(...node.children);
+  }
+  return box;
 }

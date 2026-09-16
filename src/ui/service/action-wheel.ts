@@ -1,3 +1,4 @@
+import type { Result } from "../../core/model/result";
 import type { TileCoord } from "../../mapgen/model/tile-coord";
 import type { TacticalError } from "../../tactical/model/tactical-error";
 import type { TacticalState } from "../../tactical/model/tactical-state";
@@ -174,7 +175,10 @@ const COMFORTABLE_HIT_CHANCE = 50;
  *                      and the charge (#1136) — when there is more than one
  *                      way to hit the tile; a lone weapon is the shot itself
  *   enemy     ──► Attack (hub: hit chance) · Overwatch · Reload
- *   spawner   ──► Attack · Interact (if this one is in reach) · Overwatch · Reload
+ *                   └─ the same page, the grenade and the charge thrown at
+ *                      the tile the enemy stands on (#1143)
+ *   spawner   ──► Attack (as at an enemy, at the spawner's tile) · Interact
+ *                 (if this one is in reach) · Overwatch · Reload
  *   own unit  ──► Overwatch · Reload · Interact · Board
  * ```
  *
@@ -212,7 +216,19 @@ export function actionWheel(
  * its own hit chance and damage against this target, and a way back.
  * The same page whether the target is an enemy or a tile (#1121): the
  * player picks a weapon the same way, and a weapon that cannot be
- * fired at the ground is on the ring, closed, with the reason.
+ * fired at the ground is on the ring, closed, with the reason. The
+ * grenade and the charge follow the weapons at an enemy or a spawner
+ * as they do at a tile (#1143), thrown at the tile the target stands
+ * on: the Executive Director clicked a bug and found no grenade to
+ * throw at it, and a thing that is an attack at the ground is an
+ * attack at whatever stands there.
+ *
+ * ```
+ *   Swarmer · pick an attack
+ *     Rifle        62% · 8–13 dmg
+ *     Grenade      55% · 8–13 dmg · 2/2      → equipment:grenade:4,0,1
+ *     Back
+ * ```
  *
  * @param target - The enemy unit, spawner or tile being aimed at.
  * @param ctx - The mission, the acting unit and the rules' tuning.
@@ -266,6 +282,15 @@ export function weaponWheel(
       items.push(closed(id, option.weapon.name, "attack", preview.error, ctx));
     }
   }
+  // The grenade and the charge land on the target's tile (#1143); for a
+  // spawner that is the tile it occupies. The entry carries the tile, so
+  // the same `use-equipment` choice serves here as on the tile's page.
+  const kit = attackKitOf(ctx.mission, unit);
+  for (const carried of kit) {
+    items.push(
+      equipmentItem(enemy.pos, unit, carried.definition, carried.usesLeft, ctx),
+    );
+  }
   items.push({
     id: itemId("back", targetId),
     label: "Back",
@@ -273,35 +298,36 @@ export function weaponWheel(
   });
   return {
     items,
-    hub: { value: enemy.name, caption: "pick a weapon" },
+    hub: {
+      value: enemy.name,
+      caption: kit.length > 0 ? "pick an attack" : "pick a weapon",
+    },
   };
 }
 
 /**
- * Whether Attack on `target` turns the page rather than firing (#1112,
- * #1136). One rule, asked here by the wheel that builds the entry and by
+ * Whether Attack turns the page rather than firing (#1112, #1136,
+ * #1143). One rule, asked here by the wheel that builds the entry and by
  * the HUD that answers the click, so the two cannot disagree about what
- * the entry does: at an enemy the page is the weapon page, opened for a
- * unit carrying several; at a tile the grenade and the charge count as
- * attacks too (Executive Director, #1136), so one rifle and one grenade
- * open it as two weapons do.
+ * the entry does: the page opens for a unit carrying several weapons,
+ * and the grenade and the charge count as attacks too (Executive
+ * Director, #1136), so one rifle and one grenade open it as two weapons
+ * do. The rule no longer asks what the wheel is open on (#1143): the
+ * page at an enemy holds the kit as the page at a tile does, so a rifle
+ * squad with a grenade would otherwise fire the rifle at a bug the
+ * wheel had promised a page for.
  *
  * @param mission - The mission the unit is in.
  * @param unitId - The unit that would attack.
- * @param target - What the wheel is open on.
  * @param combatTuning - Tuning `weaponOptions` is asked with.
  * @returns True when the Attack entry opens a page.
  */
 export function opensAttackPage(
   mission: TacticalState,
   unitId: UnitId,
-  target: TacticalInvokeTarget,
   combatTuning: ActionAvailabilityDeps["combatTuning"],
 ): boolean {
   const weapons = weaponOptions(mission, unitId, combatTuning).length;
-  if (target.kind !== "tile") {
-    return weapons > 1;
-  }
   const unit = mission.units.find((u) => u.id === unitId);
   return (
     weapons > 1 || (unit !== undefined && attackKitOf(mission, unit).length > 0)
@@ -464,10 +490,7 @@ function equipmentItem(
   usesLeft: number,
   ctx: WheelContext,
 ): RadialMenuItem {
-  const rules: EquipmentRules = {
-    catalogue: SHIPPED_EQUIPMENT,
-    combat: ctx.deps.combatTuning,
-  };
+  const rules = equipmentRulesOf(ctx);
   if (definition.kind === "radar") {
     const id = itemId("deploy-radar", tileArgument(tile));
     const site = validateEquipmentUse(
@@ -540,6 +563,11 @@ function equipmentItem(
         ].join(" · ")
       : `${blastDetail(preview.value, unit)} · ${uses}`;
   return { id, label: definition.name, icon, detail };
+}
+
+/** What the equipment rules are asked with: the shipped catalogue and the wheel's combat tuning. */
+function equipmentRulesOf(ctx: WheelContext): EquipmentRules {
+  return { catalogue: SHIPPED_EQUIPMENT, combat: ctx.deps.combatTuning };
 }
 
 /**
@@ -825,80 +853,9 @@ function selfPage(unit: Unit, ctx: WheelContext): WheelPage {
 
 /** Attack first, with the hit chance at the centre; Interact for a spawner in reach. */
 function enemyPage(targetId: string, unit: Unit, ctx: WheelContext): WheelPage {
-  const items: RadialMenuItem[] = [];
-  let hub: RadialMenuHub | undefined;
-  const weapons = weaponOptions(ctx.mission, unit.id, ctx.deps.combatTuning);
-  const refusal = actionRefusal(ctx.mission, unit.id, "attack", ctx.deps);
-  const attackId = itemId("attack", targetId);
-  if (refusal !== undefined) {
-    items.push(closed(attackId, "Attack", "attack", refusal, ctx));
-  } else if (weapons.length > 1) {
-    // Several weapons: the entry opens the weapon page rather than
-    // firing, and the hub shows the best chance among them so the ring
-    // still says whether the shot is worth taking before a weapon is
-    // chosen.
-    const previews = weapons.map((option) =>
-      previewAttack(
-        ctx.mission,
-        unit.id,
-        targetId,
-        ctx.deps.combatTuning,
-        option.weapon.id,
-      ),
-    );
-    const best = previews
-      .flatMap((preview) => (preview.ok ? [preview.value.hitChance] : []))
-      .sort((a, b) => b - a)[0];
-    if (best !== undefined) {
-      hub = hitHub(best);
-      items.push({
-        id: attackId,
-        label: "Attack",
-        icon: "attack",
-        detail: optionsDetail(weapons.length),
-        primary: true,
-      });
-    } else {
-      const first = previews[0];
-      items.push(
-        closed(
-          attackId,
-          "Attack",
-          "attack",
-          first !== undefined && !first.ok
-            ? first.error
-            : { kind: "no-charges", unitId: unit.id },
-          ctx,
-        ),
-      );
-    }
-  } else {
-    // One weapon: the entry is the shot itself, previewed right here.
-    const preview = previewAttack(
-      ctx.mission,
-      unit.id,
-      targetId,
-      ctx.deps.combatTuning,
-      undefined,
-      ctx.previewDeps,
-    );
-    if (preview.ok) {
-      hub = hitHub(preview.value.hitChance);
-      items.push({
-        id: attackId,
-        label: "Attack",
-        icon: "attack",
-        detail: alliesSuffix(
-          damageText(preview.value.damage),
-          preview.value,
-          unit,
-        ),
-        primary: true,
-      });
-    } else {
-      items.push(closed(attackId, "Attack", "attack", preview.error, ctx));
-    }
-  }
+  const attack = enemyAttackItem(targetId, unit, ctx);
+  const items: RadialMenuItem[] = [attack.item];
+  const hub = attack.hub;
   const objective = interactTarget(
     ctx.mission,
     unit.id,
@@ -909,6 +866,127 @@ function enemyPage(targetId: string, unit: Unit, ctx: WheelContext): WheelPage {
   }
   items.push(overwatchItem(unit, ctx), reloadItem(unit, ctx));
   return hub === undefined ? { items } : { items, hub };
+}
+
+/** The Attack entry of an enemy's ring, and the hub it puts at the centre when the shot is open. */
+interface EnemyAttackEntry {
+  readonly item: RadialMenuItem;
+  readonly hub?: RadialMenuHub;
+}
+
+/**
+ * Attack at an enemy or a spawner, built the way `tileAttackItem` builds
+ * it so the two rings read as one action: closed with the rules' reason
+ * when the unit cannot attack at all; with more than one way to hit the
+ * target — several weapons, or a weapon and a grenade (#1143) — it turns
+ * the page and the hub shows the best chance among them, so the ring
+ * still says whether the attack is worth making before one is chosen;
+ * with one weapon and no kit it is the shot itself, previewed on the
+ * ring.
+ *
+ * The grenade and the charge are previewed at the target's tile, and a
+ * dry weapon alone does not close the entry while there is a grenade to
+ * throw: `no-charges` is the weapons' refusal, not the unit's. A charge
+ * bids nothing for the hub — it prints no chance on its own entry
+ * either, since it cannot miss.
+ */
+function enemyAttackItem(
+  targetId: string,
+  unit: Unit,
+  ctx: WheelContext,
+): EnemyAttackEntry {
+  const attackId = itemId("attack", targetId);
+  const kit = attackKitOf(ctx.mission, unit);
+  const refusal = actionRefusal(ctx.mission, unit.id, "attack", ctx.deps);
+  if (
+    refusal !== undefined &&
+    (kit.length === 0 || refusal.kind !== "no-charges")
+  ) {
+    return { item: closed(attackId, "Attack", "attack", refusal, ctx) };
+  }
+  const weapons = weaponOptions(ctx.mission, unit.id, ctx.deps.combatTuning);
+  if (weapons.length > 1 || kit.length > 0) {
+    const previews: Result<AttackPreview, TacticalError>[] = weapons.map(
+      (option) =>
+        previewAttack(
+          ctx.mission,
+          unit.id,
+          targetId,
+          ctx.deps.combatTuning,
+          option.weapon.id,
+        ),
+    );
+    const enemy = findAttackTarget(ctx.mission, targetId);
+    if (enemy !== undefined) {
+      for (const carried of kit) {
+        if (carried.definition.kind === "charge") {
+          continue;
+        }
+        previews.push(
+          previewEquipmentUse(
+            ctx.mission,
+            unit.id,
+            carried.definition.id,
+            enemy.pos,
+            equipmentRulesOf(ctx),
+          ),
+        );
+      }
+    }
+    const best = previews
+      .flatMap((preview) => (preview.ok ? [preview.value.hitChance] : []))
+      .sort((a, b) => b - a)[0];
+    if (best !== undefined) {
+      return {
+        item: {
+          id: attackId,
+          label: "Attack",
+          icon: "attack",
+          detail: optionsDetail(weapons.length + kit.length),
+          primary: true,
+        },
+        hub: hitHub(best),
+      };
+    }
+    const first = previews[0];
+    return {
+      item: closed(
+        attackId,
+        "Attack",
+        "attack",
+        first !== undefined && !first.ok
+          ? first.error
+          : { kind: "no-charges", unitId: unit.id },
+        ctx,
+      ),
+    };
+  }
+  // One weapon: the entry is the shot itself, previewed right here.
+  const preview = previewAttack(
+    ctx.mission,
+    unit.id,
+    targetId,
+    ctx.deps.combatTuning,
+    undefined,
+    ctx.previewDeps,
+  );
+  if (!preview.ok) {
+    return { item: closed(attackId, "Attack", "attack", preview.error, ctx) };
+  }
+  return {
+    item: {
+      id: attackId,
+      label: "Attack",
+      icon: "attack",
+      detail: alliesSuffix(
+        damageText(preview.value.damage),
+        preview.value,
+        unit,
+      ),
+      primary: true,
+    },
+    hub: hitHub(preview.value.hitChance),
+  };
 }
 
 /** Overwatch, open or marked with why not. */

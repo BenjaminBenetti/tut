@@ -200,15 +200,20 @@ test("plays the overworld loop end to end without console errors", async ({
   // root wires the preview host, so nothing but an end-to-end check
   // notices if that wiring is dropped -- the panel would keep rendering
   // its "no preview" note and every unit test would stay green.
-  await expect(page.locator("#mech-preview canvas")).toBeVisible();
+  await expect(page.locator("#mech-stage canvas")).toBeVisible();
   await expect(
-    page.locator('#mech-preview [data-role="preview-empty"]'),
+    page.locator('#mech-stage [data-role="preview-empty"]'),
   ).toBeHidden();
+  // Saved loadouts live in the footer popover (#1145).
+  await page.locator('[data-action="toggle-loadouts"]').click();
+  await expect(page.locator('[data-role="loadout-popover"]')).toBeVisible();
   await page.locator('[data-field="loadout-name"]').fill("Loop");
   await page.locator('[data-action="save-loadout"]').click();
   await expect(
     page.locator('#saved-loadouts [data-loadout-name="Loop"]'),
   ).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.locator('[data-role="loadout-popover"]')).toBeHidden();
   const build = page.locator('[data-action="build-mech"]');
   await expect(build).toBeEnabled();
   const buildCost = parseCredits(await build.textContent());

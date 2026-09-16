@@ -2400,5 +2400,131 @@
     "quality": "final",
     "triangles": 96,
     "bytes": 20640
+  },
+  {
+    "id": "overworld.deployable.defensive-battery",
+    "category": "props",
+    "path": "assets/models/props/overworld-deployable-defensive-battery.glb",
+    "footprint": {
+      "w": 0.45,
+      "d": 0.45
+    },
+    "height": 0.29,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 236,
+    "bytes": 22608
+  },
+  {
+    "id": "overworld.deployable.sensor-array",
+    "category": "props",
+    "path": "assets/models/props/overworld-deployable-sensor-array.glb",
+    "footprint": {
+      "w": 0.45,
+      "d": 0.45
+    },
+    "height": 0.29,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 292,
+    "bytes": 27396
+  },
+  {
+    "id": "overworld.deployable.repellent-dispersal",
+    "category": "props",
+    "path": "assets/models/props/overworld-deployable-repellent-dispersal.glb",
+    "footprint": {
+      "w": 0.45,
+      "d": 0.45
+    },
+    "height": 0.29,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 296,
+    "bytes": 27104
+  },
+  {
+    "id": "overworld.settlement.rural",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-rural.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.21,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 224,
+    "bytes": 27596
+  },
+  {
+    "id": "overworld.settlement-eggs.rural",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-eggs-rural.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.13,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 436,
+    "bytes": 41336
+  },
+  {
+    "id": "overworld.settlement.town",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-town.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.28,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 216,
+    "bytes": 28592
+  },
+  {
+    "id": "overworld.settlement-eggs.town",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-eggs-town.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.25,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 542,
+    "bytes": 53148
+  },
+  {
+    "id": "overworld.settlement.city",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-city.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.35,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 408,
+    "bytes": 53464
+  },
+  {
+    "id": "overworld.settlement-eggs.city",
+    "category": "props",
+    "path": "assets/models/props/overworld-settlement-eggs-city.glb",
+    "footprint": {
+      "w": 0.6,
+      "d": 0.6
+    },
+    "height": 0.28,
+    "sockets": [],
+    "quality": "final",
+    "triangles": 798,
+    "bytes": 77960
   }
 ]

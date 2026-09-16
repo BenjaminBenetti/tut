@@ -317,8 +317,8 @@ describe("OverworldSceneBuilder", () => {
     builder.build(EARTH_MAP);
     const before = [...builder.root.children];
     const london = markerOf(builder, "london");
-    const pad = london.getObjectByName("city-pad-london") as Mesh;
-    const material = pad.material as MeshBasicMaterial;
+    const halo = london.getObjectByName("city-halo-london") as Mesh;
+    const material = halo.material as MeshBasicMaterial;
     expect(material.color.getHex()).toBe(rampStop(0));
 
     builder.update(stateOf(withInfestation(EARTH_MAP, "london", 100)));

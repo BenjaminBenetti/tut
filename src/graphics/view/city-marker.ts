@@ -30,29 +30,33 @@ export const HOVER_COLOUR = 0xf08a24;
 export const SELECTION_COLOUR = 0xf08a24;
 
 /** How much a hovered settlement grows. */
-const HOVER_SCALE = 1.25;
+const HOVER_SCALE = 1.15;
 
-/** Opacity of the infestation pad under a settlement; the ramp colour carries the reading. */
-const PAD_OPACITY = 0.6;
+/** Opacity of the infestation halo around a settlement; the ramp colour carries the reading. */
+const HALO_OPACITY = 0.6;
 
-/** Opacity of the pad while hovered: solid accent, so the hover is unmistakable. */
-const PAD_HOVER_OPACITY = 0.9;
+/** Opacity of the halo while hovered: solid accent, so the hover is unmistakable. */
+const HALO_HOVER_OPACITY = 1;
 
-/** Height the pad floats above the marker base so it never z-fights the ground lines. */
-const PAD_LIFT = 0.004;
+/** Height the halo floats above the marker base so it never z-fights the ground lines. */
+const HALO_LIFT = 0.004;
 
-/** Height the ring floats above the pad. */
+/** Height the ring floats above the halo. */
 const RING_LIFT = 0.008;
 
-/** Pads draw before the models on them; rings after the pads. */
-const PAD_RENDER_ORDER = 1;
+/** Halos draw before the models inside them; rings after the halos. */
+const HALO_RENDER_ORDER = 1;
 const RING_RENDER_ORDER = 2;
 
-/** Label height in world units, and how far south of the settlement it sits. */
+/**
+ * Label height in world units, and how far south of the settlement its
+ * centre sits, as a share of the footprint: clear of the model's south
+ * edge, the halo and the selection ring.
+ */
 const LABEL_HEIGHT = 0.34;
-const LABEL_OFFSET_SOUTH = 0.62;
+const LABEL_OFFSET_SOUTH = 1.15;
 
-/** Height the label floats at so it never z-fights the pad. */
+/** Height the label floats at so it never z-fights the halo. */
 const LABEL_LIFT = 0.02;
 
 /** Labels draw above everything else on the map. */
@@ -73,8 +77,8 @@ const PLACEHOLDER_PREFIX = "placeholder:";
 
 /** Geometries shared by every marker; the scene builder owns and disposes them. */
 export interface CityMarkerGeometry {
-  /** Flat disc under the settlement, tinted by infestation. */
-  readonly pad: BufferGeometry;
+  /** Flat ring around the settlement, tinted by infestation. */
+  readonly halo: BufferGeometry;
   /** Flat ring shown around a selected settlement. */
   readonly ring: BufferGeometry;
   /** Invisible solid the pointer raycasts against, the settlement's footprint tall enough to hit. */
@@ -97,7 +101,7 @@ export type CityModelState = "loading" | "glb" | "placeholder" | "stand-in";
 
 /** What a marker currently shows, for tests and the dev hooks. */
 export interface CityMarkerLookReport {
-  /** Pad tint as `0xRRGGBB`; hover overrides infestation. */
+  /** Halo tint as `0xRRGGBB`; hover overrides infestation. */
   readonly colourHex: number;
   /** True while the egg overlay is shown for a mission on offer. */
   readonly mission: boolean;
@@ -111,20 +115,22 @@ export interface CityMarkerLookReport {
 
 /**
  * One city on the strategic map (#1155): the settlement model for its
- * scale standing on a pad tinted by infestation, grown and accent-tinted
+ * scale inside a halo tinted by infestation, grown and accent-tinted
  * while hovered, ringed while selected, wearing the egg overlay while
  * an infestation-clearance mission is on offer there. Holds no game
  * truth; `setInfestation` and `setMission` are how state reaches it.
  *
  * ```
- *              ▄▟█▙▄      settlement GLB (+ egg overlay while on offer)
- *          ▔▔▔▔▔▔▔▔▔▔▔    pad: infestation ramp, or the accent while hovered
- *        ═══════╧═══════  ring, visible only when selected
- *      ─────────────────  the marker's base, on the map plane
+ *       ╭───────╮         ring, visible only when selected
+ *       │ ╭───╮ │         halo: infestation ramp, or the accent while hovered
+ *       │ │▟█▙│ │         settlement GLB (+ egg overlay while on offer)
+ *       │ ╰───╯ │
+ *       ╰───────╯
+ *          name           label, south, while hovered or selected
  * ```
  *
  * Models arrive asynchronously through the loader; the pick solid,
- * pad and ring exist from construction so picking and highlights
+ * halo and ring exist from construction so picking and highlights
  * never wait on a fetch. A load that lands after `dispose` is dropped.
  */
 export class CityMarker {
@@ -133,14 +139,14 @@ export class CityMarker {
   // ===========================================
 
   readonly cityId: CityId;
-  /** Add this to the scene; it carries the visual, the pad and the ring. */
+  /** Add this to the scene; it carries the visual, the halo and the ring. */
   readonly object: Group;
   /** The object raycasts hit: an invisible solid over the footprint. */
   readonly pickTarget: Object3D;
   /** The settlement and its egg overlay, scaled together while hovered. */
   private readonly visual: Group;
-  private readonly pad: Mesh;
-  private readonly padMaterial: MeshBasicMaterial;
+  private readonly halo: Mesh;
+  private readonly haloMaterial: MeshBasicMaterial;
   private readonly ring: Mesh;
   private readonly ringMaterial: MeshBasicMaterial;
   private readonly standInMaterial: MeshBasicMaterial | undefined;
@@ -182,17 +188,17 @@ export class CityMarker {
     this.object.name = `city-${city.id}`;
     this.object.position.set(base.x, base.y, base.z);
 
-    this.padMaterial = new MeshBasicMaterial({
+    this.haloMaterial = new MeshBasicMaterial({
       transparent: true,
-      opacity: PAD_OPACITY,
+      opacity: HALO_OPACITY,
       depthWrite: false,
     });
-    this.pad = new Mesh(look.geometry.pad, this.padMaterial);
-    this.pad.name = `city-pad-${city.id}`;
-    this.pad.rotation.x = -Math.PI / 2;
-    this.pad.position.y = PAD_LIFT;
-    this.pad.renderOrder = PAD_RENDER_ORDER;
-    this.object.add(this.pad);
+    this.halo = new Mesh(look.geometry.halo, this.haloMaterial);
+    this.halo.name = `city-halo-${city.id}`;
+    this.halo.rotation.x = -Math.PI / 2;
+    this.halo.position.y = HALO_LIFT;
+    this.halo.renderOrder = HALO_RENDER_ORDER;
+    this.object.add(this.halo);
 
     this.ringMaterial = new MeshBasicMaterial({
       color: SELECTION_COLOUR,
@@ -270,13 +276,13 @@ export class CityMarker {
     return this.modelState === "glb" || this.modelState === "placeholder";
   }
 
-  /** Retints the pad for the given infestation without rebuilding anything. */
+  /** Retints the halo for the given infestation without rebuilding anything. */
   setInfestation(infestation: number): void {
     this.infestationHex = infestationColour(infestation);
     this.applyTint();
   }
 
-  /** Grows the settlement and tints the pad with the accent while hovered. */
+  /** Grows the settlement and tints the halo with the accent while hovered. */
   setHovered(hovered: boolean): void {
     this.hovered = hovered;
     this.refreshLabel();
@@ -315,9 +321,9 @@ export class CityMarker {
     return this.mission;
   }
 
-  /** Current pad tint as `0xRRGGBB`, for tests and debug readouts. */
+  /** Current halo tint as `0xRRGGBB`, for tests and debug readouts. */
   colourHex(): number {
-    return this.padMaterial.color.getHex();
+    return this.haloMaterial.color.getHex();
   }
 
   /** Tint, egg cue and model state together, for tests and the dev hooks. */
@@ -347,7 +353,7 @@ export class CityMarker {
    */
   dispose(): void {
     this.disposed = true;
-    this.padMaterial.dispose();
+    this.haloMaterial.dispose();
     this.ringMaterial.dispose();
     this.standInMaterial?.dispose();
     this.labelMaterial?.dispose();
@@ -396,12 +402,14 @@ export class CityMarker {
     }
   }
 
-  /** Pushes the hover or infestation colour onto the pad. */
+  /** Pushes the hover or infestation colour onto the halo. */
   private applyTint(): void {
-    this.padMaterial.color.setHex(
+    this.haloMaterial.color.setHex(
       this.hovered ? HOVER_COLOUR : this.infestationHex,
     );
-    this.padMaterial.opacity = this.hovered ? PAD_HOVER_OPACITY : PAD_OPACITY;
+    this.haloMaterial.opacity = this.hovered
+      ? HALO_HOVER_OPACITY
+      : HALO_OPACITY;
   }
 }
 

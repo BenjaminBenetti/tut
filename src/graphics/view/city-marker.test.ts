@@ -1,7 +1,6 @@
 import type { Object3D } from "three";
 import {
   BoxGeometry,
-  CircleGeometry,
   CylinderGeometry,
   Group,
   Mesh,
@@ -52,7 +51,7 @@ function stop(index: number): number {
 /** The shared geometry a builder would own. */
 function geometry() {
   return {
-    pad: new CircleGeometry(0.34, 24),
+    halo: new RingGeometry(0.33, 0.42, 24),
     ring: new RingGeometry(0.4, 0.48, 24),
     pick: new CylinderGeometry(0.3, 0.3, 0.4, 12),
     standIn: new BoxGeometry(0.6, CITY_STAND_IN_HEIGHT, 0.6),
@@ -172,19 +171,19 @@ describe("infestationColour", () => {
 // ===========================================
 
 describe("CityMarker (stand-in, no loader)", () => {
-  it("stands on the plate top, named after its city, with a block, a pad and an invisible pick solid", () => {
+  it("stands on the plate top, named after its city, with a block, a halo and an invisible pick solid", () => {
     const marker = makeMarker();
     expect(marker.object.name).toBe("city-london");
     expect(marker.object.position.toArray()).toEqual([1, 0.05, 2]);
     expect(marker.usesModel()).toBe(false);
     expect(marker.look().model).toBe("stand-in");
     expect(named(marker, "city-stand-in-london")).toBeInstanceOf(Mesh);
-    expect(named(marker, "city-pad-london")).toBeInstanceOf(Mesh);
+    expect(named(marker, "city-halo-london")).toBeInstanceOf(Mesh);
     expect(marker.pickTarget.name).toBe("city-body-london");
     expect(marker.pickTarget.visible).toBe(false);
   });
 
-  it("tints the pad by infestation and retints in place", () => {
+  it("tints the halo by infestation and retints in place", () => {
     const marker = makeMarker();
     expect(marker.colourHex()).toBe(stop(0));
     marker.setInfestation(100);

@@ -73,6 +73,10 @@ city's own position. The mission badge offsets **across the ground plane**
 (east and north) rather than along `+y`: under a top-down camera an offset
 in `+y` points at the viewer and produces no screen movement at all.
 
+Since #1155 the marker is a settlement model and the mission badge is an
+egg overlay drawn at the same origin as the model; the rule stands, since
+everything a marker draws still sits on the ground plane around the city.
+
 ## 3. Consequences
 
 - Anything drawn for the strategic map must place itself on the ground

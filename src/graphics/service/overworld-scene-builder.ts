@@ -1,7 +1,6 @@
 import type { Camera, Material, Object3D } from "three";
 import {
   BoxGeometry,
-  CircleGeometry,
   CylinderGeometry,
   Group,
   Mesh,
@@ -80,7 +79,7 @@ const GROUND_COLOUR = 0x0b0d12;
 const BOX_TOP_FACE = 2;
 
 /**
- * Radial segments for pads, rings and pick solids. Deliberately not a
+ * Radial segments for halos, rings and pick solids. Deliberately not a
  * multiple of 8: the camera always looks along a 45° diagonal, and with
  * 8 or 16 segments a cap edge lies exactly on that diagonal, so a ray
  * through a marker's centre hits the shared edge and both triangles
@@ -88,12 +87,15 @@ const BOX_TOP_FACE = 2;
  */
 const MARKER_SEGMENTS = 12;
 
-/** Pad radius relative to half the settlement footprint. */
-const PAD_SCALE = 1.15;
-
-/** Selection ring radii relative to half the settlement footprint. */
-const RING_INNER_SCALE = 1.35;
-const RING_OUTER_SCALE = 1.6;
+/**
+ * Halo and selection ring radii relative to half the settlement
+ * footprint: the halo hugs the model, the ring sits just outside it,
+ * and both stay clear of a neighbouring settlement half a unit away.
+ */
+const HALO_INNER_SCALE = 1.08;
+const HALO_OUTER_SCALE = 1.3;
+const RING_INNER_SCALE = 1.42;
+const RING_OUTER_SCALE = 1.66;
 
 // ===========================================
 // Builder
@@ -163,7 +165,11 @@ export class OverworldSceneBuilder implements CityPicker, MapStateView {
     this.root.name = "overworld-map";
     const half = config.settlementFootprint / 2;
     this.markerGeometry = {
-      pad: new CircleGeometry(half * PAD_SCALE, MARKER_SEGMENTS * 2),
+      halo: new RingGeometry(
+        half * HALO_INNER_SCALE,
+        half * HALO_OUTER_SCALE,
+        MARKER_SEGMENTS * 2,
+      ),
       ring: new RingGeometry(
         half * RING_INNER_SCALE,
         half * RING_OUTER_SCALE,
@@ -297,7 +303,7 @@ export class OverworldSceneBuilder implements CityPicker, MapStateView {
    */
   dispose(): void {
     this.clear();
-    this.markerGeometry.pad.dispose();
+    this.markerGeometry.halo.dispose();
     this.markerGeometry.ring.dispose();
     this.markerGeometry.pick.dispose();
     this.markerGeometry.standIn.dispose();

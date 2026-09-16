@@ -10,7 +10,7 @@
  * ```
  *   y ▲          settlements stand at markerLift
  *     │   ▄▟█▙▄
- *     │  ▔▔▔▔▔▔▔  pad: settlementFootprint wide
+ *     │  ▔▔▔▔▔▔▔  halo ring: just outside the settlementFootprint
  *     │ ─────────────── ◀── wireframe Earth and region territories (#1144, #1149)
  *   0 ┼──────────────── slab top: the ui-bg ground
  *     └──────────────────────────────▶ x / z

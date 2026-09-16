@@ -57,6 +57,7 @@ Until M2, tactical missions are **auto-resolved** by a placeholder resolver so t
 - A map of Earth divided into **regions**, each containing one or more **major cities**. Cities are the infestation nodes.
 - Each city has an **infestation level** (0–100). Regions aggregate their cities.
 - A **global threat level** (0–100) derives from total infestation plus escalation over time.
+- On the strategic map each city stands as a **settlement model** sized by its scale (town, city, metropolis) with its name drawn beneath it while hovered or selected; a halo ring around the model carries the infestation colour ramp, and a selection ring marks the current city (#1155).
 
 ### 5.2 Time
 - Time is measured in **days**. Returning from a mission or pressing "advance" moves time forward.
@@ -72,6 +73,7 @@ Until M2, tactical missions are **auto-resolved** by a placeholder resolver so t
 ### 5.4 Missions and events
 - Missions are generated from the map state and attach to a city. Each has: type, difficulty, biome/settlement parameters for map generation, rewards, expiry, and consequences for ignoring it.
 - Baseline type: **Infestation clearance** (destroy egg spawners in a city). M3 adds hive assaults, spore crash sites, rescue/defend/escort style objectives, and special events.
+- A city with an infestation-clearance mission on offer wears an **egg overlay** on its settlement model; the eggs go when the mission does (#1155).
 - Events are non-combat happenings with choices (funding changes, research finds, city pleas, spore showers).
 
 ### 5.5 Economy
@@ -80,6 +82,7 @@ Until M2, tactical missions are **auto-resolved** by a placeholder resolver so t
 
 ### 5.6 Earth deployables
 - Region-level installations bought with credits. Examples: **defensive battery** (reduces spawn/growth in a region), **repellent dispersal** (deters spread to neighbours), **sensor array** (reveals missions earlier / better intel). Each has a build cost, upkeep, and a limited count per region.
+- Every built installation is drawn on the map near its region's anchor, spread deterministically on a ring clear of the region's cities so the same campaign always looks the same. Offline installations are dimmed, not hidden. Each type idles: the sensor dish turns about once every 12 s, the battery's barrels traverse, and the dispersal nozzle sweeps while puffing a pale spray (#1155).
 
 ### 5.7 Roster
 - **Infantry squads**: one roster entry = one squad token of ~5 soldiers. Types include rifle, rocket, sniper, engineer, medic, and radio (expand under Track: Arsenal). Each type fights with its own weapon, and the weapon is what tells the types apart on the field: rifle and medic squads carry carbines and fire twice a turn; radio squads carry SMGs, shorter and harder-hitting, one burst a turn; engineers carry shotguns, two blasts a turn at arm's length; snipers carry marksman rifles, one shot a turn out to the edge of sight; the rocket squad's one shot a turn is its rocket, with its blast and its force (§6.2.3) (Executive Director, 2026-09-13, #1130). Squads take casualties; a squad below strength can be reinforced for credits; a wiped squad is gone.

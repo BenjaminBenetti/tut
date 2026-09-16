@@ -68,8 +68,37 @@ test("selecting a city and building a battery charges credits and lists it", asy
   );
   await expect(build).toContainText("1/2");
 
+  // The installation stands in its region on the map (#1155): its model is
+  // loaded, it is lit as online and it projects to a point on the screen.
+  const deployableId = await rows.first().getAttribute("data-deployable-id");
+  expect(deployableId).not.toBeNull();
+  await expect
+    .poll(
+      () =>
+        page.evaluate(
+          (id) => (globalThis as HookGlobal).__tut__?.installationLook(id),
+          deployableId ?? "",
+        ),
+      { timeout: 10000 },
+    )
+    .toMatchObject({ typeId: "defensive-battery", online: true, model: "glb" });
+  const onMap = await page.evaluate(
+    (id) => (globalThis as HookGlobal).__tut__?.installationScreenPosition(id),
+    deployableId ?? "",
+  );
+  expect(onMap).toBeDefined();
+
   await rows.first().locator('[data-action="decommission-deployable"]').click();
   await expect(rows).toHaveCount(0);
+  // Decommissioned installations leave the map with the list.
+  await expect
+    .poll(() =>
+      page.evaluate(
+        (id) => (globalThis as HookGlobal).__tut__?.installationLook(id),
+        deployableId ?? "",
+      ),
+    )
+    .toBeUndefined();
   await expect(credits).toHaveText(
     `¢${(before - battery.buildCost).toLocaleString("en-US")}`,
   );

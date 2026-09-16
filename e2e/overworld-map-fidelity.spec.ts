@@ -400,7 +400,10 @@ test("coastal city markers stand on the drawn coastline", async ({ page }) => {
  * A city must show its name, not a blank plate (#439). The name is drawn
  * in the scene for the hovered or selected city, so this selects a city
  * and asserts that fresh marks appear on the ground just below its
- * marker, outside the selection ring.
+ * settlement model, outside the selection ring (#1155: the label sits
+ * `settlementFootprint × 1.15` south of the city, past the ring's outer
+ * edge of `settlementFootprint × 0.83`, so at the initial 64 px/unit the
+ * ring ends 32 px below the anchor and the label spans roughly 33–55 px).
  *
  * Reading the string itself needs a dev hook the map does not expose
  * yet; when one lands (`__tut__.cityLabel(cityId)`), assert the text
@@ -418,10 +421,10 @@ test("selecting a city draws its name under the marker", async ({ page }) => {
     if (!anchor) {
       continue;
     }
-    // A band below the marker, clear of the marker glyph and its ring.
+    // A band below the settlement model, clear of it and its selection ring.
     const band = {
       x: Math.round(anchor.x) - 55,
-      y: Math.round(anchor.y) + 10,
+      y: Math.round(anchor.y) + 34,
       width: 110,
       height: 26,
     };

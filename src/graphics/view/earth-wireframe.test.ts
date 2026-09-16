@@ -12,7 +12,6 @@ import type {
   GroundPolygon,
   GroundRing,
 } from "../service/coastline-projection";
-import { writesLandStencil } from "../service/land-stencil";
 import {
   AXIS_COLOUR,
   COASTLINE_COLOUR,
@@ -98,7 +97,7 @@ describe("EarthWireframe", () => {
     expect(material.opacity).toBeLessThan(0.5);
   });
 
-  it("stamps the land stencil from the claimable fill only, drawn first (#1149)", () => {
+  it("fills the claimable and the polar land as two look-alike meshes, drawn first (#1149)", () => {
     const { mapWidth, mapDepth } = OVERWORLD_SCENE_CONFIG;
     // A polar block wholly south of −60°: the bottom sixth of the plane.
     const polar: GroundPolygon = {
@@ -113,12 +112,9 @@ describe("EarthWireframe", () => {
     const unclaimed = wireframe.object.getObjectByName(
       "earth-land-unclaimed",
     ) as Mesh;
-    expect(writesLandStencil(land.material as MeshBasicMaterial)).toBe(true);
     expect((land.material as MeshBasicMaterial).transparent).toBe(true);
+    expect((land.material as MeshBasicMaterial).stencilWrite).toBe(false);
     expect(land.renderOrder).toBe(0);
-    expect(writesLandStencil(unclaimed.material as MeshBasicMaterial)).toBe(
-      false,
-    );
     // The island is claimable, the polar block is not; both are filled.
     expect(new Box3().setFromObject(land).max.z).toBeCloseTo(6);
     expect(new Box3().setFromObject(unclaimed).min.z).toBeCloseTo(mapDepth - 1);

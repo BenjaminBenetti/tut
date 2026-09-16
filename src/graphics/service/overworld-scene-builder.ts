@@ -156,6 +156,8 @@ export class OverworldSceneBuilder implements CityPicker, MapStateView {
   private readonly assets: OverworldSceneAssets;
   /** Land masses on the ground plane, projected once; the wireframe is built from them. */
   private readonly landPolygons: readonly GroundPolygon[];
+  /** The land regions may claim: the territories are cut to it and a region pick must land on it. */
+  private readonly claimableLand: readonly GroundPolygon[];
   private readonly raycaster = new Raycaster();
   private readonly markerGeometry: CityMarkerGeometry;
   private readonly installationStyle: InstallationLook;
@@ -185,6 +187,10 @@ export class OverworldSceneBuilder implements CityPicker, MapStateView {
       options.coastlines ?? EARTH_COASTLINES,
       config,
     );
+    this.claimableLand = partitionClaimableLand(
+      this.landPolygons,
+      config,
+    ).claimable;
     this.root = new Group();
     this.root.name = "overworld-map";
     const half = config.settlementFootprint / 2;
@@ -430,10 +436,10 @@ export class OverworldSceneBuilder implements CityPicker, MapStateView {
       width: this.config.mapWidth,
       depth: this.config.mapDepth,
     });
-    const land = partitionClaimableLand(this.landPolygons, this.config);
     return new RegionTerritories({
       cells,
-      coast: coastlineSegments(land.claimable, this.config),
+      land: this.claimableLand,
+      coast: coastlineSegments(this.claimableLand, this.config),
     });
   }
 

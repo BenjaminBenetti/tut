@@ -93,6 +93,13 @@ export const MODEL_IDS = [
   "prop.tree-oak",
   "prop.tree-palm",
   "prop.tree-pine",
+  // Overworld settlement markers and their egg overlays (#1152)
+  "overworld.settlement.rural",
+  "overworld.settlement.town",
+  "overworld.settlement.city",
+  "overworld.settlement-eggs.rural",
+  "overworld.settlement-eggs.town",
+  "overworld.settlement-eggs.city",
   // Tiles
   "tile.city.road-corner",
   "tile.city.road-cross",

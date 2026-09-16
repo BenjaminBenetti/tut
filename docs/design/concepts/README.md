@@ -21,6 +21,7 @@ Sheets are documentation, not runtime assets; they are stored at 1536 px wide.
 | [tileset-city-street](tileset-city-street.md) | Modular road, sidewalk, wall, roof, stairs and prop kit | §7, §4.3 |
 | [tactical-firefight](tactical-firefight.md) | A whole mission: what everything adds up to in one scene | §12, §4.1, §4.2 |
 | [overworld-deployables](overworld-deployables.md) | Strategic-map deployables: defensive battery, repellent dispersal, sensor array (#1153) | §4.1, §6 |
+| [overworld-settlement](overworld-settlement.md) | Strategic-map settlement markers at three scales, plus the egg-infested overlay | §4.2, §4.3, §6 |
 
 Recipe and environment notes: `docs/design/art-tooling.md` §1. Prompt skeleton: `docs/design/style-guide.md` §10.
 
